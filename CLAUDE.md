@@ -23,6 +23,12 @@ Claude implements. This file is what Claude reads first in every session.
    how Michael confirms which build he's running.
 7. Append the devlog entry (format below), update the backlog, commit.
 
+## Cloud sessions (the phone)
+Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.
+`scripts/cloud-setup.sh` (a SessionStart hook in `.claude/settings.json`) installs Playwright and
+Chromium there; locally it does nothing. A cloud session can only push its own branch, not `main`:
+commit there and open a PR for Michael to merge.
+
 ## Devlog entry format
 ```
 ## v80 — Session N — <title>
