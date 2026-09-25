@@ -1,0 +1,4772 @@
+# The Old Gates — devlog
+
+## State of the build (read this first in a fresh context)
+Single HTML file `dungeon_v80.html` (~2.5 MB), Three.js r128. The world module (`world_v80.js`, embedded in the HTML) generates a **three-island archipelago** from one seed: three nations (the Gatelands / the Crown, the Mark / the Captains' League, Aurenne / the Compact) with distinct climate, house style, banners and titles; four peoples (Gatelander, Markman, Aurennais, Old Blood) with bodies, name banks, dialect and opinions; towns as **prosperity states** the generator reads (size, shops, shuttered homes, walls, lamps, prices; burned/sacked/abandoned variants; investment, deeds, trade routes, coach lines); magic where guilds stop at Comprehension and only sigils give Mastery; a pantheon of six gods at the shrines and the Guest in a bricked chapel; a **story spine** — Act I authored (Ashenmoor, the burn, the commission), Act II across three islands (Corwin, three etched gates, Oswy Blackhand's log, Varek at the Ashfeld), Act III at the Root with three endings — and **Varek the Reader**, who reads the frame through the player (deaths, session gaps, discovery order, the chapel). Factions with ranks and exclusivity; anchored places solved from the seed (Caer Slige, Port Blackhand, Fortargent, the Salt Mouth, the Root). Enemies with archers, cowards, packs, boss phases, lair bosses that charge, dragons that breathe fire; lair caverns; dungeons with descending stairwells, room types, traps, look-at looting, lockpicking, sounds, mesh detail. Saves are **by location**. Everything runs through a light pool per scene (never a light-count change). A headless harness lives in `/home/claude/test/` (Node for world logic, Playwright for the DOM/render).
+
+Console: `devWorld(x?,z?)`, `devUnlockAll()`, `devGold(n)`, `devWeather(state)`, `devMusic(id?)`, `WORLD.setRadius(n)`, `WORLD.gazetteer()`, `WORLD.fastTravel(id)`, `forceTime(...)`.
+
+Design docs: `lore_canon_addendum.md` (the canon addendum: nations, peoples, the Old Blood and the Clearing, the pantheon, Varek's five discoveries, the acts, factions, anchored places, endings, settlement states); `language_audit.md`; `backlog.md` (outstanding items, pulled at Session 124).
+
+---
+# Dungeon of Shadows — devlog
+
+Cross-session technical reference. Narrative/world state lives in `lore_canon.md`.
+
+---
+
+## Project at a glance
+
+- **Format:** single HTML file, browser-native, no build step
+- **3D engine:** Three.js r128 (hosted from cdnjs, not bundled)
+- **Current build:** v80 — `dungeon_v80.html` (Session 88 — wishlist chunk 12: harvestables)
+- **File size:** ~2.09MB, ~36,900 lines
+- **Direction change (Session 54):** story demoted to ambient; world becomes a single streamed exterior; settlements/forts/dungeons become stamps. The zone-cell layer (gates, placeholders, buildVillage/buildTown) is still in the file but unreachable from a new game — it is retired piece by piece as content ports over. See § v80.
+- **Working copy:** `/home/claude/dungeon.html`
+
+## Version naming convention
+
+**From Session 48 onward**, each session ships under one clean version number — `v62`, `v63`, `v64`, etc. — incrementing the integer per session by default.
+
+If a session needs intra-ship iteration (a hotfix or follow-up patch), use decimals: `v62.1`, `v62.2`. No more letter suffix chains.
+
+The pre-v62 letter suffix chains (v61a → v61gj) accumulated organically over many sessions of rapid iteration; they're preserved as historical artifacts but the pattern is retired going forward.
+
+*Session 48 in practice: shipped as v62 → v62.1 → v62.2 → ... → v62.9 across a single conversation. The convention held — one base integer for the session's primary work (power attacks), decimals for follow-up ships (pointer lock, charge gating, lunge, sequencing, distance tune).*
+
+---
+
+## Architecture
+
+### Scene model
+
+Multiple Three.js scenes, one active at a time. `ACTIVE_SCENE` is the single variable the render loop reads:
+
+- `dScene` — the current dungeon (rebuilt on every dungeon entry)
+- `owScene` — Ashenmoor village (overworld)
+- `forestScene` — Deepwood forest
+- `ironhavenScene` — Ironhaven city
+- Interior scenes — generated per-house when entered
+
+The `lid` ("location id") tracks which macro context we're in (`'overworld'`, `'dungeon'`, interior string). `activeZoneId` is finer-grained for overworld contexts (`'overworld'` | `'forest'` | `'ironhaven'`).
+
+### Master data tables
+
+- `WORLD_DUNGEONS` — all ~20 dungeons across zones. Each has `seed`, `zone`, `theme`, `size`, `difficulty`, name
+- `SPELLS[]` — 38-entry spell catalog, locked
+- `SIGILS[]` — currently 7 Phase 1 sigils placed in world; 31 more pending Phase 2 rollout
+- `WEAPON_TYPES` — 6 entries (Dagger, Sword, Longsword, Scimitar, Mace, Flail); each carries `wType` (slash/pierce/blunt)
+- `ARMOR_TYPES` — armor slot definitions with `armorW` (weight)
+- `MATERIALS` — 10 tiers (Wooden → Starlight)
+- `TELEGRAPH_BY_NAME` — per-enemy wind-up durations
+- `POTION_LINES` — 5 elixir families × 3 tiers (Mild/Strong/Master) = 15 generated potions. Drives `POTIONS` registry via IIFE, plus loot-pool and shop-stock injection (v61x)
+- `IRONHAVEN_HOUSES` — building definitions with `bCol`/`sCol` (body + accent color) and `type` (weapon/armor/potion/misc/church/castle). `doorX`/`doorZ`/`doorFace` are **authored as stubs and overwritten at runtime** by `decorateFn` from the true door-wall position (v61y)
+
+### Cross-scene systems
+
+- `CORPSES[]` — dungeon corpses; reset on dungeon entry
+- `ZONE_CORPSES[]` — zone corpses; persist across zone transitions, scene-scoped
+- `CHESTS[]`, `BARRELS[]` — dungeon only
+- `staggered[]` — stagger tracking (shared between dungeon + zone)
+
+### Gate guards (v61d7 + v61d9)
+
+A gate object can carry an optional `guard` string field that conditionally blocks travel. Both the E-press travel handler in `interact()` and the proximity-prompt rendering branch check the guard and either pass through (rendering "Press 'E' to travel to X") or refuse (rendering a contextual message and emitting a `showMsg` toast on attempt).
+
+Current guard types:
+
+| Guard | Check | Locked prompt | Locked toast |
+|---|---|---|---|
+| `'tide'` | `!isTideOut()` | "The causeway to X is submerged." | "The causeway is submerged. The tide rises and falls — try again later." |
+| `'commission'` | `!worldState.commissioned` | "The road to X is closed. Royal commission required." | "The road is closed to those without royal commission." |
+
+**Architectural conventions:**
+
+- **Single-string field, not array.** A gate has at most one guard type. If a gate ever needs two simultaneously, refactor the field to an array — but YAGNI for now. The Inis Rua tide gate doesn't need commission (it's outside the royal network in lore).
+- **Guards on outgoing gates only at boundaries.** When implementing a new tier (e.g. commission), guard the *Tier 0 → Tier 1* outgoing edges, not the return edges. Pre-tier the player can't reach the higher tier anyway, so return gates being unguarded saves us nothing while complicating the audit.
+- **Both Ashenmoor configs need parallel updates.** The regular Ashenmoor zone config (~line 5890) and the burned-Ashenmoor variant (~line 6873) carry independent gate arrays. Any guard added to one must be added to the other.
+- **Mirror prompt + interact check.** Both the proximity prompt branch (in the overworld tick) and the E-press handler (`interact()`) need parallel guard checks. They render and act on the same condition; missing either creates inconsistent behavior.
+- **No save migration needed for guards** — the guard field is a static property of the gate definition, and the trigger flag (`worldState.commissioned`, the tide cycle) is already in the save payload.
+
+Adding a new guard type:
+1. Add the check branch in `interact()` near line 10960.
+2. Add the prompt branch in the proximity-prompt render near line 18833.
+3. Add `guard:'<name>'` to each gate that should be guarded.
+4. Re-run the audit script to verify the resulting reachability matches intent.
+
+---
+
+## Combat system
+
+### Damage pipeline
+
+Two parallel pipelines, unified return shape:
+
+```
+applySpellDamage(e, sp, tier) → {dmg, resistMult, defPierced}
+applyMeleeDamage(e, rawDmg)   → {dmg, resistMult, wType}
+```
+
+Both pass through `dmgTag(info, e)` for hit feedback: `(Weak!)`, `(Very weak!)`, `(Resisted)`, `(Heavily resisted)`, `(Armor pierced!)`.
+
+Order of operations in `applyMeleeDamage`:
+1. Base damage
+2. Dormant enemies (Gargoyle) take 2× — rewards player for first-strike
+3. Physical resist multiplier (`enemy.resist[wType]`)
+4. Flat def subtraction
+5. Floor at 1
+
+### Weapon damage types
+
+Each weapon carries `wType: 'slash' | 'pierce' | 'blunt'`. Legacy weapons without `wType` fall back via `WSHAPE_TO_WTYPE[weaponShape]`. Unarmed defaults to blunt.
+
+**Important:** `WSHAPE_TO_WTYPE` is declared **early in the script** (line ~868), not near `applyMeleeDamage`. `itemStatShort` and `itemDesc` reference it from higher in the file; putting the const declaration later caused the inventory-hides-weapons TDZ bug in v50. Don't move it back.
+
+### Enemy physical resist map
+
+| Enemy | Slash | Pierce | Blunt | Design intent |
+|---|---|---|---|---|
+| Skeleton | 0.7 | 0.5 | 1.35 | Bones |
+| Cave Troll / Forest Troll | 1.0 | 1.0 | 1.2 | Concussion |
+| Golem | 0.4 | 0.4 | 1.35 | Stone |
+| Gargoyle | 0.4 | 0.4 | 1.3 | Stone |
+| Phantom | 0.3 | 0.3 | 0.3 | Ethereal |
+| Wraith | 0.25 | 0.25 | 0.25 | More ethereal |
+| Slime / Small Slime | 0.3 | 0.3 | 0.6 | Liquid |
+| Fire Elemental | 0.2 | 0.2 | 0.6 | No solid form |
+| Spider | 1.0 | 1.2 | 1.1 | Carapace |
+| Goblin / Kobold / Wolf / Bandit / Mimic | 1.0 | 1.0 | 1.0 | Neutral |
+
+### Parry / block system (v61c6 + v61c7)
+
+- `blocking` — boolean, true while player holds block button
+- `lastBlockAttemptT` — game-time set when block input fires (v61c6). Required to gate the late-block branch; pre-v61c6 the late-block fired purely on hit-recency, producing false "Blocked!" messages on every secondary hit during multi-attacker fights
+- On enemy strike impact (`executeStrike`):
+  - `blocking === true` → **Perfect Parry**: 0 damage, enemy staggered 1.2s, gold flash, `lvAct.parries++`. Stamina cost = `rawDmg × 0.20 × resolveMult` (was `rawDmg`; v61c7 made parry CHEAPER than late-block, as it should be)
+  - `now - lastHitT < 0.5 && now - lastBlockAttemptT < 0.5` → **Late Block**: partial reduction (shield 0.65, bare 0.35). Stamina = `absorbed × resolveMult` (v61c7 added Resolve scaling)
+  - Else → unblocked
+- `resolveMult = max(0.5, 1 - resolve × 0.05)` — Resolve floor of 50% at Resolve 10. Mirrors the existing passive-block-drain mult
+- Stagger swaps enemy material to yellow emissive, restored via `setTimeout(1200ms)` — **note**: this mutates `e.mesh.children[0].material` which silently fails on the Faolchú (children[0] is a Group); known visual gap
+- **Magic block (v61c7)** — separate path, lower rates than physical:
+  - Boss Caor fireball + dungeon enemy orbs (Phantom/Wraith): `blocking` reduces by 40% with shield, 15% bare. Stamina cost = `absorbed × resolveMult`. No perfect-parry path for magic — projectiles don't have a readable wind-up at impact
+  - Shields can override via `sh.magicBlock` property (default 0.40)
+  - Pre-v61c7 the dungeon enemy-orb path skipped blocking entirely; right-click did nothing against magic in dungeons
+
+### Pre-attack telegraphs (v52)
+
+Enemies telegraph melee attacks before landing them:
+
+1. **Initiation** — in range, off cooldown, not already winding up → `sndTelegraph()` plays, `telegraphT` set to `telegraphDuration(e)`
+2. **Wind-up** — each frame decrements `telegraphT`; `telegraphPulse(e, progress)` sets emissive RGB (0.75, 0.08, 0.05) × progress
+3. **Strike** — when `telegraphT ≤ 0`, emissive resets, `executeDungeonStrike(e, now)` (or inline zone version) fires. Re-checks distance; whiffs with `sndSwing()` if player kited out (>1.3u dungeon, >1.4u zone)
+
+Telegraph durations per enemy (in `TELEGRAPH_BY_NAME`): brutes 0.48–0.55s, light/fast 0.24–0.28s, default 0.35s.
+
+**Open tuning question:** Visual cue may be too subtle to read in practice. Possible improvements: stronger emissive peak, larger body bob/pose shift, outline shader, wider red range. Telegraph duration may also be too short for the user's reaction time — try 0.4–0.6s baseline before changing visuals.
+
+### Functions worth knowing
+
+- `executeDungeonStrike(e, now)` — extracted strike body. Handles parry/late-block/unblocked. Range-rechecks; whiffs if player stepped out.
+- `telegraphPulse(e, progress)` / `telegraphReset(e)` — shared emissive helpers. Work because `buildEnemy` gives every body part a shared `mat` reference.
+- `applyWeaponEnchant(dmg, e)` — elemental weapon enchants trigger secondary damage/effects after a melee hit
+
+---
+
+## Boss system (v61c2 → v61c9)
+
+### Registry
+
+`BOSSES` (module-top, ~line 6800) parallel to `EM`. Currently one entry: `Faolchu`. Boss enemies are **scripted spawns**, not procedural pool entries — placement is authored, not random. Boss data shape extends regular enemy fields with:
+
+- `isBoss: true`, `bossId`, `displayName` — mark the entity for tick-path branches and the HUD healthbar lookup
+- `phases[]` — descending HP-fraction thresholds (1.00 / 0.66 / 0.33). Phase 1 is implicit; phase 2/3 trigger entry hooks on threshold cross
+- `biteRange`, `telegraphBase` — boss-specific overrides for the standard enemy tick (Faolchú: 2.8u bite, 0.55s base telegraph). Telegraph also scales by current phase's `telegraphMult` so wind-up shortens in phase 3 = frenzy
+- Standard `resist` map; the Faolchú signature is `blunt:1.5, solas:0.4, tine:0.7` — hammers chip but win, light/fire spells excel
+
+### Faolchú-specific architecture
+
+- **Mesh** (`buildFaolchuMesh`, module-top): quadruped wolf, scale 1.85. Hand-built head complex (separate eyes in dark recessed sockets, ears with tip wedges, upper snout + nose + lower jaw + 6 teeth wedges, 5 spine ridges). Two **back arms** built as `THREE.Group` per arm anchored at the shoulder mass, each with shoulder bulge / sigil seam ring / upper arm / dark elbow joint / forearm sub-pivot (rotates around elbow) / claw / sigil glints. Six sigil-trace strips share a `MeshBasicMaterial` so phase-pulse animates all of them via single material edit. The shared material is stored on `limbs.sigilTrace`
+- **Spawn** (`spawnFaolchu`): idempotent. Hooked into all four overworld-entry paths (`goToZone`, dungeon-exit return, interior-exit return, save-load restore). Spawns at village square (~32, 32) when `ashenmoorBurned && !faolchuDefeated && no boss already in ZE`
+- **Despawn** (`despawnFaolchu`): debug helper — normal flow leaves the corpse in `ZE` for loot
+- **Tick**: standard `tickZoneEnemies` path with `e.isBoss`-gated branches: sigil pulse animator (independent of telegraph), phase-state machine (HP threshold cross fires entry hook + roar + add spawn), bigger bite range, boss-aware stop distance (`biteRange - 1.0` so snout sits in player's face without body overshoot), Caor fireball cooldown machine (initial 5s, then 8-12s; 1.0s charge during which sigils flare; fires when player in 4-15u range and not melee-telegraphing)
+- **Death**: `killZoneEnemy` boss block — sets `worldState.faolchuDefeated`, prepends The Faolchú's Mark to corpse loot, fires `defeat_boss` quest event, plays death audio, sweeps any surviving lessers via `despawnLesserFaolchus`
+- **HUD healthbar** (`#bossHpHud` + `tickBossHud`): top-of-screen DOM overlay, three phase color states (red → orange → near-white). Reads first alive boss from ZE each frame. Cheap — `ZE.find` + one style mutation when the value changed
+
+### Lesser Faolchú adds (v61c4 + v61c9)
+
+`spawnLesserFaolchu(parentBoss)` builds a smaller wolf mesh (scale 1.10) at random offset 2.5-3.5u from boss. Stat block lives inline, NOT in `EM` — adds are scripted spawns that follow standard zone-enemy AI (chase + telegraph + bite, no phase machine, no special attacks). HP 250, dmg 14, **spd 5.0** (faster than player sprint at 4.69 — they catch up first, force engagement). Tagged `isLesserFaolchu` for the boss-death sweep. World-space HP bar visible (unlike boss which uses HUD only). Spawned from phase 2 entry hook (one) and phase 3 entry hook (one, plus catch-up if the boss skipped phase 2).
+
+### Boss-fired projectiles in `tickZoneBalls`
+
+Boss orbs ride the same `ZB` array as player spells. Distinguished by `userData.fromBoss`. The tick has a dedicated branch checking player-collision (instead of ZE) and applying damage with the magic block path. **Critical**: orbs are added to the active scene (`owBurnedScene` when burned), and `tickZoneBalls` must be passed the matching scene for `sc.remove(fb)` to actually clear them — pre-v61c6 it was hardcoded to `owScene`, causing orbs to splice out of `ZB` but persist visually forever.
+
+### Tuning levers
+
+All in `BOSSES.Faolchu` and `lesserDef` (in `spawnLesserFaolchu`), commented inline. Current values landed via 4 playtest passes:
+
+| Stat | Faolchú | Lesser |
+|---|---|---|
+| HP | 2000 | 250 |
+| Damage | 32 | 14 |
+| Speed | 4.0 | **5.0** |
+| Bite range | 2.8u | 1.4u (default) |
+| XP | 1500 | 120 |
+| Block resist | 1.5 (blunt), 0.4 (solas), 0.7 (tine) | 1.25 / 0.5 / 0.8 |
+
+Caor fireball: 38 dmg, 12 u/s, 1.0s charge, 8-12s cooldown.
+
+### The Faolchú's Mark (unique drop, v61c8)
+
+Tier-5 amulet, prepended to the corpse loot in `killZoneEnemy`. Carries a unique enchant **"of the Sigil-Reader"** that lives in `ARMOR_ENCHANTS` (so save/load `_restoreEnchant` finds it by id) but is flagged `_unique:true` so the random armor-enchant roller filters it out of the procedural pool. Stats: +3 def, +3 INT, +30 max mana, +0.30 mana/s. Buy 800g, sell 400g. Required INT 8. The pre-v61c8 version stored bonuses as top-level item properties that `getArmorEnchantBonuses` never read — the Mark was an inert +1-def curio. Fixed by routing through `enchantStats` properly.
+
+### Burned Ashenmoor music (v61c8 + v61c9)
+
+`_musicBurned` — procedural Web Audio ambient for burned overworld. Three layered drones (38 Hz sub, 75 Hz fundamental, 95 Hz overtone), slow filter LFO on the mid drone (~12s period), two asynchronous schedulers: distant keening every 8-15s (high sine pair bending downward, gain 0.027 — toned down ~40% in v61c9 from the original 0.045), wind/ash gusts every 5-10s (narrow-bandpass filtered noise). No melodic notes. Replaces the prior `'silent'` no-op fallback. Zone config in `ASHENMOOR_BURNED_CONFIG.musicTrack` and `_syncAshenmoorZoneEntry`.
+
+### Known issues (boss-specific)
+
+- **Parry stagger flash silent on the Faolchú** — `executeStrike` mutates `e.mesh.children[0].material`, but `children[0]` on the wolf mesh is a `THREE.Group` (front-leg pivot), not a Mesh. JS silently absorbs the assignment. Mechanic works (block, stagger, cooldown extension); visual gold-flash doesn't render. Fix: route through `limbs.torso` for wolf-shaped enemies
+- **Bespoke death VFX missing** — currently uses standard zone-corpse loot glow. Lore wants "bursts apart at the sigil-seams"
+- **Aldwyn post-fight dialog** — he doesn't yet name the Faolchú or explain its meaning when the player arrives in Ironhaven with the rubbing. Current customActiveDialog still fires on the rubbing handoff but doesn't acknowledge the boss kill
+- **Slime split bug family** — same class of "phase-triggered spawn" issue Michael flagged. Different code path (dungeon-side, calls `buildEnemy` with `splitsOnDeath` flag). Worth its own focused pass
+
+---
+
+## Inventory system
+
+### Weight-based encumbrance
+
+- `itemWeight(it)` — explicit `it.weight` or category default
+- `ARMOR_WEIGHT_BY_SLOT` (v61v): `{head:3, chest:8, hands:2, legs:5, feet:2, offhand:4, ring:0.1, amulet:0.2}`
+- Weapons 1.5–5 per `WEAPON_TYPES.weight` (v61v: scaled ~1.7× from earlier 1–3)
+- Potions 0.5, herbs 0.2, scrolls 0.1, misc 0.3
+- `maxCarry() = 50 + might * 5`
+
+Encumbrance states (ratio of carry / max):
+- `< 0.80` — clear (normal)
+- `0.80–1.00` — **burdened** (stamina regen × 0.8)
+- `1.00–1.25` — **overloaded** (no sprint, speed × 0.5)
+- `≥ 1.25` — **immobile** (movement zeroed)
+
+`canCarry(item)` — pre-check gate for pickup/buy/harvest paths. Refuses if adding would push past 125%. All four callers (loot take, shop buy, herb harvest, equipment pickup) use it.
+
+**Known quirk accepted by user:** equipped items count toward carry weight. Unequipping a sword to the bag feels like "adding" weight; the user confirmed this is fine as-is.
+
+### Oblivion-style inventory UI
+
+- `#hinv-right` — flex column container
+- `#inv-subtabs` — All / Weapons / Armor / Consumables / Misc buttons
+- `#inv-list` — scrolling list with `.inv-row` grid rows (5 columns as of v61q: Name/Stat/Wt/Value/Destroy)
+- `invSubtab` state persists across hub open/close
+- `setInvSubtab(name)` — sets state + re-renders
+- `itemCategory(it)` — routes to tab:
+  - `equip + slot==='weapon'` → `'weapon'`
+  - `equip` (other) → `'armor'`
+  - `potion` / `herb` → `'consumable'`
+  - else → `'misc'`
+- `itemStatShort(it)` — per-row stat column text (`ATK 9–11 S` / `+25 HP` / `+0.5/s HP, 60s`)
+- `itemDesc(it)` — long-form for shop listings and tooltips
+- Row render wrapped in try/catch — a bad item can't hide the rest
+
+### Destroy + quick-destroy (v61q–s)
+
+- Click trash icon → `.confirming` state with 2s auto-revert
+- Click again while confirming → stack removed, toast fires
+- Hold X with hub open → `.quick-destroy` on rows + red hover cue; any row-click destroys immediately (skips confirmation)
+- `invQuickDestroy` resets on hub close and X keyup
+- State lives purely on DOM classes — re-render naturally clears pending confirmations
+
+### Column sorting (v61r–s)
+
+- Four sortable column headers (Name/Stat/Wt/Value); destroy column not sortable
+- Click cycles: desc → asc → off (default tier+name sort)
+- Per-subtab `invSort` preferences so weapons-by-ATK and potions-by-heal can be independent
+- Both ▲▼ arrows always visible on each sortable header; active direction lights gold
+- Stat column uses `_statSortKey` semantic comparator: weapons by mid-atk, armor by def+block, potions by heal/mana/stam, herbs by effect amount, misc → 0 (piles at end when asc)
+
+### Save/load
+
+`_serItem(it)` whitelists fields:
+
+```
+name, ico, type, tier, material, slot, atk, def, weight,
+weaponShape, weaponType, wType, matCol, matGuard, matGlow,
+blockPct, twoHand, (more...), heal, mana, value, sellMult,
+effect, reqAttr, reqVal, buyPrice, enchant
+```
+
+**If adding new item fields, update this whitelist.** Potions were silently stripped of `heal`/`mana` for weeks due to missing whitelist entries (fixed v46).
+
+Load-time migrations for old saves:
+- Potion stats re-populated from `POTION_STATS` lookup table
+- Weapons without `wType` fall back via `WSHAPE_TO_WTYPE[weaponShape]` at use time (no migration needed)
+- `_migrateAccessoryDef` — accessories get their v54+ def bonus
+- `_migrateWeaponAtk` — weapons recompute atk from current `TIER_BASE_ATK` × `atkMult`; Rusty Sword guarded by name so its bespoke `[5,9]` range survives (v61w)
+- `_migrateItemValueAndReq` — buyPrice + reqAttr/reqVal from v57 curves
+- `_migrateItemWeight` (v61w) — weight rewritten on load: starter items by name, crafted weapons by `weaponShape`, crafted armor by `slot` (shields via `shieldType`). Fixes the v61v weight rebalance not propagating to pre-existing saves.
+- Enchant restoration (v61i): `_restoreEnchant` searches both WEAPON_ENCHANTS and ARMOR_ENCHANTS using the stamped `_enchantType`; armor paths re-derive `enchantStats` via `.apply()`. Fallback (v61j) parses `" of X"` from item name if `_enchantId` is missing entirely.
+
+**Intentionally NOT saved:** `ACTIVE_BUFFS` clears on load. Matches real-world expectations (buffs don't persist across save/reload) and avoids replaying regen ticks across sessions.
+
+---
+
+## Loot system
+
+### Container types
+
+- **Chests** — room-gated spawns (corner, 0.08 rate), pre-rolled loot at spawn, up to 5 items (geometric falloff from P(empty)=10%)
+- **Treasure chests** — like chests but first roll guaranteed and gold 3×
+- **Barrels** — up to 2 items (40%/20% drop rates)
+- **Corpses** — up to 2 items (lootDropChance + 25% bonus roll)
+- **Mimics** — reuse `buildChestShell(group, sc, woodCol)` for disguise
+
+### Kind-aware consumable pools (v54, extended v61x)
+
+Before v54, `rollLoot` drew from a single flat consumable pool for every container type. Now it takes a `kind` arg and routes to `LOOT_POOLS[kind]` — weighted tables per container. v61x appends 15 × 3 potion entries per pool via `wirePotionsIntoLoot` IIFE.
+
+| Item | Barrel | Chest | Corpse |
+|---|---|---|---|
+| Herb (random non-dungeon) | 40 | 8 | 13 |
+| Torch | 20 | 10 | — |
+| Stamina Draught | 15 | 10 | 15 |
+| Health Potion | 10 | 12 | 20 |
+| Gold | 10 | 25 | 30 |
+| Mana Draught | 5 | 10 | 10 |
+| Greater Potion | — | 15 | 12 |
+| Book (random unread) | — | 5 | — |
+| Elixirs (Mild, per line) | 3 | 3 | 3 |
+| Elixirs (Strong, per line) | 1 | 2 | 1 |
+| Elixirs (Master, per line) | 0.3 | 1 | 0.4 |
+
+Barrels are "mundane village storage" — herbs and torches dominate. Corpses are "what adventurers carry" — gold and potions. Chests are "treasure" — the only source of books, the only source of tier-premium content. Master-tier elixirs cluster toward chests for the same "treasure" flavor.
+
+**Mystic Scrolls removed.** Vestigial from the pre-sigil magic system. `useItem` still has a crumble-on-click path for any that remain in old saves, and load-time migration filters them from bags on load.
+
+### Shared helpers
+
+- `rollContainerLoot(kind, diffScale, theme, baseChance)` → items array. Threads `kind` through to `rollLoot`.
+- `rollLoot(diffScale, theme, kind)` → single item. Equip path unchanged; consumable path now delegates to `rollConsumable(kind)`.
+- `rollConsumable(kind)` → weighted pick from `LOOT_POOLS[kind]`.
+- `randomLootHerb()` → random non-dungeon `HERB_DEF.item` clone.
+- `randomBookItem()` → random `BOOKS[n]` wrapped in bag-ready shape.
+- `openLoot(container)` / `closeLoot()` / `renderLoot()` / `takeLootItem(idx)` / `takeAllLoot()`
+- `lootOpen` state flag — alongside `shopOpen`
+
+### Zone corpses
+
+- `ZONE_CORPSES[]` lives outside the dungeon reset
+- Each entry: `{x, z, y, name, displayName, items, gl, spark, scene, zone, looted}`
+- No despawn timer — persist until zone is re-entered or session ends
+- Overworld `interact()` has a corpse branch before NPC/board branches
+- Overworld `#ipr` prompt chain shows `Press 'E' to loot <name>` at the right priority
+
+### Magic system globals
+
+`SPELLS[]`, `TIER_MULT`, `knownSpells{id:tier}`, `touchedSigils` (Set), `SIGILS[]`, `activeSpellId`, `castT`, `staggered[]`
+
+Three-register naming (see lore canon): Irish = deep/sacred/true names, Anglo-Saxon = common, French/Norman = institutional.
+
+---
+
+## Monster system
+
+### Enemy schemas
+
+Dungeon EM table (~line 6035) defines per-type stats. Spawn fills in:
+
+```
+x, z, hp, maxHp, mesh, hpFg, limbs, el, name, baseType,
+spd, dead, alert, atkCd, path, pathT, floor, def, resist,
+variant, xpMult, drainCd, disguised, dormant, fleeT,
+telegraphT, telegraphMax, isWraith, dmgMult
+```
+
+Zone `buildZoneEnemy` return schema is similar but simpler (no disguise/dormant/drain).
+
+### Variant system
+
+`applyVariantToDef(baseDef, type, variantKey)` overlays variant properties. Zones pass `diff='normal'` to `pickVariant`, so only Greater applies in overworld. Dungeon variants stack with difficulty scaling.
+
+### Enemy roster
+
+- **Dungeon:** Skeleton, Goblin, Cave Troll, Golem, Phantom, Wraith, Slime, Small Slime, Kobold Thief, Fire Elemental, Gargoyle, Mimic
+- **Overworld zones:** Wolf, Spider, Forest Troll, Bandit
+
+### Special mechanics
+
+- **Phantom/Wraith drain** — `drainCd`, tightened to 1.6u range
+- **Mimic disguise** — reuses `buildChestShell`, reveals within 1.0u, HP bar hidden while disguised, burst damage on first hit (14 + level × 1.0) × dmgMult
+- **Gargoyle dormant** — takes 2× damage until within 4u; activates with flash + cry
+- **Slime split** — on death, spawns 2 Small Slimes (flag `splitsOnDeath`, only base Slime; Small Slimes don't re-split)
+- **Kobold flee** — low HP → `fleeT` runs; moves away from player
+- **Fire Elemental ranged** — uses existing ranged AI, fires fire orbs
+
+---
+
+## Worldbuilding systems
+
+### Village builder spec (canonical, post-v61es)
+
+The village builder is **declarative**. New villages are added by writing a `registerPlaceholderZone({kind:'village', ...})` call with the cfg fields below — no per-village code required. The 4 hand-built configs (Ashenmoor, Hearthwick, Ironhaven, Bealach South) call `buildVillage(cfg)` directly with the same cfg surface.
+
+**Layout / geometry**
+- `size` — square zone side length
+- `centerX, centerZ` — village center within zone
+- `villageR` — exclusion radius around center for interior trees / hedges
+- `flatR, hillR, terrainAmp` — heightmap profile knobs (flat zone radius, hill ramp radius, hill amplitude)
+- `terrainSlope:{dir, amount}` — optional directional slope (linear ramp on top of radial modulation; Salthaven uses `{dir:'W', amount:4.0}` for seaward fall)
+- `openSide` — `'N'|'S'|'E'|'W'`, suppresses perimeter hedges + perimeter trees + interior trees on that half (used by coastal villages for line-of-sight to sea)
+
+**Atmosphere**
+- `region` — `'coastal'|'bealach'|'foothills'|'royale'|'wastes'|'ashen'`. Inherits defaults from `REGION_PROFILES` for skyCol / fogColor / fogDensity / biome / musicTrack / propScatter (all overridable per-zone)
+- `biome` — `'forest'|'coast'|'wastes'`. Drives ground texture + skyRing variant (sea horizon vs mountains)
+- `skyCol, fogColor, fogDensity` — per-zone overrides
+- `musicTrack` — `'overworld'|'coast'|'wastes'|'village'|'town'|'silent'|'burned'`
+
+**Buildings (v61er+)**
+- `buildings[]` — `{x, z, w, d, face:'N|S|E|W', houseId, type?}`. Footprint x..x+w, z..z+d. Door on the named face (project convention: face='S' = door at h.z low-Z edge).
+- `houses[]` — parallel array keyed by `id` carrying `{id, doorX, doorZ, doorFace, name, keeper, type, ...}`. Shop type is patched onto buildings via `houseId` lookup before the decorator runs (so the icon system sees `h.type`).
+- `buildingMaterial` — village-wide: `'timber'` (default, MAT.wood) | `'stone'` (cool grey) | `'brick'` (reddish-brown)
+- `roofStyle` — village-wide: `'thatch_pitched'` (default) | `'slate_pitched'` (highland) | `'tile_pitched'` (capital/coastal) | `'flat'` (brownstone/walled-town slab)
+- Per-building override: `h.material`, `h.roofStyle`. Tables in `BUILDING_MATERIALS` and `BUILDING_ROOFS` just above `buildVillage`.
+
+**Decoration (v61em+)**
+- `decorateFn` — optional hook called for every non-church building with signature `(scene, sol, h, ty, getY)`. Default `genericVillageDecorate` (in v61eq+ form) handles signs (post + arm + board + type-keyed icon), windows (flank-the-door pattern), and type-keyed exterior props (`weapon` = anvil + barrel; `armor` = spear rack; `potion` = herb beam; `misc/harbor_supplies` = crate stack; `inn` = bench + barrel; `harbor_office` = pole + vane + rope coil).
+- Sign icons keyed by `h.type`: 7 types built in (sword/helmet/flask/scroll/anchor/fish/tankard). Ironhaven shop signs use the same vocabulary.
+- Props built in S-face local coordinates inside a `THREE.Group`, rotated face-aware. Y sampled at prop's actual world location via `getY(propX, propZ)` — works on slopes.
+- Ashenmoor uses its own hand-tuned `decorateFn` with houseId-keyed bespoke decoration (Bram's forge hearth, Edna's herb garden, etc.). Does not currently use the icon system.
+
+**Paths + plaza (v61er+, refined v61es)**
+- `pathStyle` — `'dirt'` (sandy-brown, default) | `'cobble'` (light grey) | `'plank'` (timber).
+- `plazaX, plazaZ` — defaults to `(centerX, centerZ)`
+- `plazaProp` — `'none'` (default) | `'well'` | `'market_post'` | `'tree'`
+- `autoPaths` — `true` by default; auto-routes a right-angle (L/Z-shape) path from each non-church / non-destroyed building's door to the plaza. Porch step (1.6u perpendicular to wall), then 90° turn, then run to plaza. Path subdivides into 1.5u box-segments that follow terrain Y per-midpoint sampling.
+- `paths` — explicit override: array of `{from:[x,z], to:[x,z]}` (single segment) or `{waypoints:[[x,z],...]}` (multi-point polyline).
+
+**Content arrays**
+- `npcDefs[]` — `{x, z, role, name, color, dialogTopics, ...}`. Falls back to global `NPC_DEF` if omitted (Ashenmoor pattern).
+- `enemies[]` — spawn entries respecting `nightOnly`/`duskOnly`/`dayOnly` flags (Day/Night Session C). Spawn density modulated 1.0×/1.3×/1.5× by time-of-day.
+- `herbs[]` / `herbSpawns[]` — herbal pickup positions
+- `gates[]` — `{x, z, targetZone, spawnX, spawnZ, spawnYaw, label, guard?}`. Yaw convention: `0=N (-Z), π=S (+Z), π/2=E (+X), -π/2=W (-X)`. Guard values: `'commission'` (Q7-locked) | `'tide'` (in-game-clock-driven).
+- `centerMarker:{title, text}` — convenience shorthand for the central notice board.
+
+**Customization hooks**
+- `decorateFn(scene, sol, h, ty, getY)` — per-building extras (described above)
+- `detailFn(scene, sol, getY)` — village-wide one-off geometry (Salthaven's harbor: dock, water mesh, beached rowboat, drying racks, Sea-Folk Shrine)
+
+**What the builder cannot currently do**
+- Multi-story buildings, balconies, towers, courtyards, market stalls
+- Stone-and-bone structures with bones embedded (Carraig Mór's lore canon — pending decorator extension)
+- Cliff-face / sea-cave architecture (Inis Rua — pending separate builder variant)
+- Walled-town patterns (Dunmore, Mur Pierre — use `buildTown`, separate code path)
+- Border types beyond the default hedge+tree ring (sand dunes, broken fences, dry-stone walls, palisade — flagged for next bundle, see backlog)
+- NPC idle motion (NPCs spawn at fixed coords and stand still — flagged)
+
+**Adding a new village from the lore doc** is now: pick zone size, choose region + biome, drop 3-8 buildings with face directions and houseIds, write 3-8 NPCs with greetings and topics, write a notice board, define gate connections, optionally pick `buildingMaterial` / `roofStyle` / `pathStyle` / `plazaProp` / region-prop scatter, write a verbatim dialog block in `quest_writing.md`, add a lore_canon entry. Ship.
+
+---
+
+- `HOUSES[]`, `IRONHAVEN_HOUSES[]`, `OW_NPCS[]`, `IRONHAVEN_NPCS[]`
+- `OW_NOTICE_BOARDS[]` — active in Ashenmoor
+- `OW_HERBS[]`, `FOREST_HERBS[]`, `IH_HERBS[]` — picked via `activeHerbs()`
+- `ZONES = {forest: {enemies, portals, gates}, ironhaven: {portals, gates}}`
+- `ASHENMOOR_GATES` — Ashenmoor's gate set (not inside ZONES table)
+
+### Audio
+
+- `startMusic('overworld' | 'dungeon' | 'tension')` — crossfades between zones
+- Procedural Web Audio via `sfxTone(freqStart, freqEnd, duration, volume, wave)` and `sfxNoise(duration, startFreq, endFreq, volume, filterFreq)`
+- New in v52: `sndTelegraph()` — rising triangle chirp + brief noise tick
+
+### Fast travel (v53)
+
+World-map click-to-travel built on top of existing `goToZone` machinery. Entry points:
+
+- `fastTravelTo(nodeName)` — public API. Gates on `lid === 'overworld'` (refuses in dungeons/interiors per design), checks `WM.discovered[nodeName]`, refuses if same zone, then closes hub and calls `goToZone` with spawn coords from `fastTravelSpawn(targetZone)`.
+- `fastTravelSpawn(targetZone)` — reuses existing gate `spawnX/spawnZ/spawnYaw` by scanning `ASHENMOOR_GATES`, `FOREST_GATES`, `IRONHAVEN_GATES` for any gate whose `targetZone` matches. Self-repairing if gates move. Fallbacks if no matching gate exists.
+- `WM_NODE_TO_ZONE` — name → zone id lookup. Only Ashenmoor, Deepwood Forest, Ironhaven are real zones today. All other `data-fasttravel="true"` nodes on the map are Act II/III placeholders; clicking them shows "Not yet reachable — future act."
+- `wmRefreshFtClasses()` — toggles `.wm-ft-eligible` (pointer cursor + hover glow) and `.wm-ft-current` (persistent glow on your current node). Called at end of `wmSyncZone` (so state refreshes on every hub open) and end of `wmWireInteraction` (initial paint).
+
+### Books & stamina potions (v54)
+
+**Stamina Draught.** New potion category alongside health/mana. Shape: `{type:'potion', stam:40, weight:0.5, buyPrice:22}`. `useItem` has a dedicated branch that refills stamina to `effMaxStamina()` and clears `staminaCD`. Added to Dagna's shop stock, Ironhaven War Supplies, and all three loot pools. `POTION_STATS` migration table and `_serItem` whitelist updated.
+
+**Books.** Read-once skill books, Oblivion model. Six books, one per attribute (might, fortitude, finesse, swiftness, intelligence, resolve). First read: +1 to the target attribute + book is consumed. Subsequent reads: lore only. State lives in `booksRead` Set, persisted as an array in saves.
+
+- `BOOKS[]` — catalog with `{id, name, ico, attr, pages}`. Pages are strings rendered in a page-turn reader.
+- Two books are tied to existing world lore: *Of Binding Stones* is attributed to Aldwyn (now the Q3 quest reward instead of a Mystic Scroll). *Letters from Ashwold* is correspondence from a healer during the Long Winter — soft foreshadowing for Edna.
+- Drop rate: books only appear in chests, weight 5 against ~85 of other outcomes. Genuinely rare.
+- `openBookReader(bagIndex)` grants the attribute on first read, then opens the overlay. Page nav: `bookNextPage()` / `bookPrevPage()`. ESC / E / click-close dismisses. Arrow keys + spacebar navigate pages.
+- Book reader overlay (`#book-overlay`) is a dedicated z-75 modal — CSS in the LU/HUB neighborhood.
+- `isBookOpen()` added to the main tick's input gate alongside hubOpen/dlgOpen/etc.
+
+**Accessory + shield defense.** `ARMOR_TYPES` defMults changed: Ring 0 → 0.15 (→ 1 def at tier 5), Amulet 0 → 0.3 (→ 2 def), Buckler 0 → 1.0 (→ 7 def, greaves-tier). `makeItem` now routes def to anything with `defMult > 0`, including shields. Shields keep their block value on top. Tooltip and inventory row display logic updated to show `Block X% · DEF +Y` on shields.
+
+**Balance watch:** shields now add ~7 def at tier 5 on top of ~94% block on a perfect parry. Combined with encumbrance, shields are meaningfully more attractive than they were. If they eclipse two-handers, the lever to pull is `TIER_BLOCK` or the `defMult:1.0` itself.
+
+### Quest signposting & dialog (v55)
+
+**Dialog ordering bug fix.** Q4's reward option 2 (`"What should I do while you brief him?"`) referenced Lord Caldric before option 1's response introduced him — broken if the player picked option 2 first. Rewrote to `"Who would be down there working?"` which is self-contained and still routes the player to Captain Brynn. Audit of Q1–Q6 reward response sets found this was the only case.
+
+**Same-NPC handoff.** When a quest completes and its `unlocks[0]` has the same `giver` as the current dialog NPC, the closer button now reads `Continue speaking with [NPC] →` instead of `Goodbye.` — tapping it rebuilds the topic list fresh via `buildQuestTopicsForNPC`, which naturally surfaces the new quest's acceptance topic. Applied to both `questComplete` and `questDialogComplete` branches in `pickDialogChoice`. The Q3→Q4 Aldwyn handoff is the primary beneficiary.
+
+**Sigil signposting.** Objectives and NPC dialog in Q2 and Q4 now explicitly use the word "sigils":
+- Q2 objective label: `"Find the sigils on floor 2 of the Dungeon of Shadows"` (was "Reach floor 2...")
+- Q4 objective label: `"Find the sigils on floor 2 of the Crypt of Embers"` (was "Reach floor 2...")
+- Edna says "sigil-carvings set into the stone" (was "marks carved into the stone")
+- Aldwyn says "Go to the second floor. Find the sigils." (was "Reach the second floor.")
+
+**In-dungeon compass markers.** `getActiveQuestMarkers()` gained an `activeZoneId==='dungeon'` branch. When an active quest has a `reach_dungeon_floor` objective matching the current dungeon's seed, every sigil on the target floor emits a `Sigil` compass marker in mauve. Compass bearing works across floor separation because it only uses XZ — sigils on floor 2 point correctly from floor 1.
+
+**Minimap additions.** Dungeon minimap now renders:
+- Gold `✦` for each sigil on the current floor (only where fog of war is cleared)
+- Green `↑` at `dEntranceX/dEntranceZ` on floor 1 — persistent navigational anchor, ignores fog so long runs don't strand the player
+
+### Combat balance — curve, scaling, variant ramp (v56)
+
+Three interlocking changes. None of them work alone — together they produce the "enemies feel tanky, gear matters but doesn't trivialise" target.
+
+**Softer weapon curve.** `TIER_BASE_ATK` rewritten:
+
+| Tier | Old | New |
+|---|---|---|
+| 1 Wooden | 8 | 8 |
+| 2 Bronze | 14 | 10 |
+| 3 Iron | 20 | 13 |
+| 4 Steel | 28 | 17 |
+| 5 Mithril | 38 | 22 |
+| 6 Adamant | 50 | 28 |
+| 7 Obsidian | 64 | 36 |
+| 8 Draconic | 82 | 47 |
+| 9 Demonic | 104 | 61 |
+| 10 Cosmic | 130 | 80 |
+
+Ratio stabilises at ~1.29×/tier. T1 unchanged (early game feels the same), T10 drops 38% (late game can't trivialise everything). Player damage formula `(weapon.hi + level×1.5) × (1 + might×0.03) × meleeBuff` is unchanged — the `level×1.5` flat bonus and might multiplier still do significant work. Weapon tier gives you ~5 points of baseline damage per tier now, not ~10.
+
+**Level-scaled enemy stats.** Two helpers applied at enemy spawn time:
+
+- `enemyHpScale() = min(3.0, 1 + (level-1) × 0.15)` — at level 5: 1.60×, level 10: 2.35×, level 15+: 3.0× cap.
+- `enemyDmgScale() = min(2.0, 1 + (level-1) × 0.08)` — gentler than HP so fights get longer, not spikier, as the player levels up.
+
+Applied in both `spawnFloorEnemies` (dungeon) and `buildZoneEnemy` (overworld zones). Level 1 player sees unscaled base values — that's the designed-for-baseline. Everyone else fights tougher versions of the same enemies in the same dungeons.
+
+**Variant density ramp.** `pickVariant` now scales spawn chance with player level over the variant's `minLevel`:
+
+```
+effChance = min(0.50, baseChance × (1 + (level - minLevel) × 0.15))
+```
+
+Greater (baseChance 10%, minLevel 5) progression: level 5 → 10%, level 10 → 17.5%, level 15 → 25%, level 20 → 32.5%. Capped at 50% so some encounters stay "clean."
+
+**Expected combat feel (math verified with python smoke test):**
+
+| Matchup | Old hits | New hits |
+|---|---|---|
+| L1 Wooden Sword vs Skeleton | ~9 | ~9 (unchanged) |
+| L5 Mithril Longsword vs Skeleton | ~1.5 | ~2.2 |
+| L5 Mithril Longsword vs Cave Troll | ~2 | ~3.2 |
+| L5 Mithril Longsword vs Goblin | ~1 | ~1.3 (still one-shot — trash stays satisfying) |
+| L5 Mithril **Longsword** vs Golem | ~6 | ~14 ⚠ |
+| L5 Mithril **Mace** vs Golem | ~3 | ~3 |
+
+The 14-hit Golem-with-slash case is intentional — the system is teaching weapon-type discipline. Watch flag in Active flags below; lever if it plays as unfair rather than teachable is raising Golem slash resist from 0.4 to 0.5.
+
+**Migration.** Existing weapons in EQ/BAG get re-rolled at load time via `_migrateWeaponAtk(it)` — looks up `WEAPON_TYPES` by stored `weaponShape`, applies new `TIER_BASE_ATK[tier] × atkMult`. Unlike `_migrateAccessoryDef`, this can both raise and lower values, so existing weapons will usually hit slightly less than they did pre-v56.
+
+Q1 Iron Sword inline reward recalibrated from `atk:[14,22]` → `atk:[10,12]` to match new T3 Iron. Also gained `weaponShape:'sword'` and `wType:'slash'` fields it was missing.
+
+### Loot economy — tier gate, reqs, pricing (v57)
+
+v56 fixed the damage curve but not the loot drops — player reported Adamant (T6) and Obsidian (T7) dropping at level 5, with a might-6 Mithril req easily reachable by level 3 in a melee-focused build. The economy wasn't actually gating progression.
+
+**Drop tier cap by level.** `rollLoot`'s maxTier formula rewritten:
+
+```
+maxTier = min(10, max(1, floor(1 + playerLv*0.4 + diffScale.hp*1.2)))
+```
+
+Was: `round(3 + diffScale.hp*5)` — didn't consider player level at all. Sanity:
+
+| Level | VeryEasy | Normal | Hard | VeryHard |
+|---|---|---|---|---|
+| 1 | 1 Wooden | 2 Bronze | 3 Iron | 4 Steel |
+| 5 | 3 Iron | 4 Steel | 5 Mithril | 5 Mithril |
+| 10 | 5 Mithril | 6 Adamant | 7 Obsidian | 8 Draconic |
+| 15 | 7 Obsidian | 8 Draconic | 9 Demonic | 10 Cosmic |
+
+**Material requirements tightened.** Old curve topped out at might 20 for Cosmic — trivially achievable. New curve tops at might 56.
+
+| Tier | Material | Old might req | New might req |
+|---|---|---|---|
+| 1 | Wooden | — | — |
+| 2 | Bronze | — | — |
+| 3 | Iron | 2 | 5 |
+| 4 | Steel | 4 | 10 |
+| 5 | Mithril | 6 | 16 |
+| 6 | Adamant | 8 | 24 |
+| 7 | Obsidian | 10 | 32 |
+| 8 | Draconic | 13 | 40 |
+| 9 | Demonic | 16 | 48 |
+| 10 | Cosmic | 20 | 56 |
+
+Armor requirements (fortitude) mirror the same curve via new `ARMOR_FORT_REQ[t]` table instead of the old `(t-3)*2` formula. A heavy-armor focused build now needs meaningful fortitude investment too.
+
+**Progressive pricing.** New `TIER_VALUE = [0, 5, 20, 40, 75, 275, 750, 2000, 5000, 12000, 30000]` gives a geometric jump curve (~2.5× between most tiers, but a big 3.7× at T4→T5 where items first become magical and glow). Replaces the old additive formula that capped out way too low. Final formulas:
+
+- **Weapons:** `max(3, TIER_VALUE[t] × atkMult[1])` — mace/flail > longsword > sword > dagger
+- **Armor:** `max(5, TIER_VALUE[t] × (0.5 + defMult × 0.3))` — cuirass premium, rings cheapest
+
+Representative final prices: Iron Longsword 42g, Mithril Longsword 289g, Adamant Longsword 788g, Obsidian Longsword 2100g, Cosmic Longsword 31500g. Cuirass parallel: 44g / 302g / 825g / 2200g / 33000g.
+
+**Migration.** `_migrateItemValueAndReq` runs on save load — recomputes buyPrice and reqVal for all tiered items in EQ and BAG by re-reading MATERIALS (weapons) or ARMOR_FORT_REQ (armor). Replaces stored values outright since curves shifted in both directions at different tiers.
+
+**Auto-unequip on req-mismatch.** After migration, any equipped item the player no longer qualifies for gets moved to bag with a toast: `"⚠ Requirements tightened. Unequipped: [names]. You'll need to grow into them."` Player doesn't lose the item — just has to build into it.
+
+### Naming cleanup + Bram/Edna beat (v58)
+
+Fix for a naming collision that was muddying Q6's Aldred reveal. Three characters shared the **Ald-** prefix — Aldric (blacksmith), Aldwyn (scholar-mage), Aldred (villain's true name). The Aldric–Aldred rhyme made the Q6 name-drop land weakly, and became actively problematic for the Act I climax (where Aldric is now the designated cost character dying in Ashenmoor's burn — mistakable, in the player's head, for the just-revealed villain name).
+
+Plus a fourth hiding in the Ironhaven notice board: "Lord **Aldric** Caldric the First," a historical ancestor. Four Ald-names was too many.
+
+**Renames:**
+- Aldric the blacksmith → **Bram.** Short, gruff, Germanic. Fits a man thirty years at the forge.
+- Lord Aldric Caldric the First → **Lord Caldric the First.** Dropped the first name; historical rulers often go by a single name.
+- **Aldwyn and Aldred are preserved and now intentional.** Added a "Personal-name conventions" section to `lore_canon.md` establishing the Ald- root as load-bearing — elder-noble, pre-kingdom, marking the two characters who know each other's true names.
+
+**Touchpoint count:** 13 code sites for Aldric, 1 for Lord Aldric Caldric. All updated. Zero remaining `Aldric` references in `dungeon_v58.html`. Also swept one stale Mystic Scroll reference in Edna's dialog (v54-era artifact — Mystic Scrolls were removed from the game but her "wisdom" response still mentioned them).
+
+**Book renamed.** *Aldric's Third Treatise on the Blade* → *The Forge-Man's Third Treatise*. The internal id stays `aldrics_third` so any save data referencing it doesn't need migration — only the display name changes. The prose was retooled to establish an in-world convention: the forge-men of Ashenmoor sign their treatises with the title, never with their own names. Makes the book a proper found artifact by an anonymous predecessor rather than the current blacksmith (who the player can walk over and talk to), and gives the world a free bit of generational texture.
+
+**Edna/Bram relationship beat — establishes the cost.** The burn needs Bram's loss to land; that requires his relationship with Edna to already exist in the player's head. Added on both sides:
+- **Bram's "Tell me about yourself" topic** now includes a closing line: *"Edna stitched me back together the winter the fever took half the village. I haven't forgotten."* A follow-up branch tells the full winter-fever story (Bram was 28, flat on his back three weeks, Edna came every morning, refused payment).
+- **Edna gained a dedicated "Tell me about Bram the blacksmith" topic.** She confirms the history from her side and adds the piece that makes the future loss sting: Bram has no wife, no children, no one waiting to take up the forge. If something happens to him, it goes quiet. *"He says that doesn't bother him. I don't believe him."*
+
+Both dialog branches are fully voiced (they inherit Bram's and Edna's existing voice profiles). The beat is accessible from Q1 onward — both NPCs already live in Ashenmoor when the player arrives — but the topics require the player to ask, so the emotional weight isn't forced on anyone who skips the conversation.
+
+**Lore canon (v58) resolved two previously-open narrative questions:**
+- Edna's fate during the burn → survives but is badly hurt.
+- Cost character during the burn → Bram.
+
+Still open: the mechanical shape of the burn itself (cutscene vs. escape sequence vs. time-gated return), whether Bram dies on-screen or off-screen, and whether Edna carries a physical evidence fragment into Act II or is the handoff herself.
+
+### Monster level-gating (v59)
+
+Playtest feedback: Mimics were wrecking new players in the starting dungeon. Opening a chest is one of the first loot-loop actions a player learns, and having a fake chest burst for 14+level×1.0 damage × 3.0 dmgMult in floor 1 of the Dungeon of Shadows is a rug-pull, not a challenge. Also flagged: Wraith's 0.25 physical resist means a level-1 melee-only player literally cannot kill one effectively, and that's in the starting dungeon's theme roster.
+
+**Fix: per-enemy `minLevel` field in EM and ZDEF.** The spawn systems filter the enemy pool by `(def.minLevel||1) <= level` and fall back to an emergency Skeleton if a theme is entirely gated (can't happen in practice since Skeleton is level 1).
+
+**Gate levels applied:**
+
+| Enemy | Gate | Why |
+|---|---|---|
+| Skeleton / Goblin / Slime / Kobold Thief | 1 | Baseline content. Safe for new players. |
+| Wolf / Spider (zone) | 1 | Baseline content. |
+| Cave Troll | 2 | Tank stats; needs a level under the belt. |
+| Forest Troll / Bandit (zone) | 2 | Matches dungeon brute tier. |
+| Phantom | 3 | 0.3 physical resist — needs some mitigation. |
+| Golem | 3 | 90 HP + 6 def + 0.4 phys resist — needs blunt weapon or magic. |
+| Fire Elemental | 3 | Ranged, needs positioning skill. |
+| Mimic | 4 | Ambush "chests bite" mechanic; player needs to be comfortable with loot loop first. |
+| Gargoyle | 4 | Same ambush family as Mimic. "Statues that aren't statues." |
+| Wraith | 5 | 0.25 phys resist across all three weapon types — needs magic or silver. |
+
+**Dungeon path:** `spawnFloorEnemies` now does `availableEnemies = themeEnemies.filter(n => (EM[n].minLevel||1) <= level)` before the spawn loop. Preserves theme weighting (repeated entries still weight spawn chance). At level 1 in the Dungeon of Shadows (theme=undead, roster `['Skeleton','Skeleton','Phantom','Wraith','Skeleton','Mimic']`), only the three Skeletons spawn — the floor is uniformly skeletons. By level 5, all entries are unlocked and the roster is at full theme intensity.
+
+**Zone path:** `buildZoneEnemy` still builds enemies regardless of level, but sets a `locked:true` flag and `mesh.visible=false` on entries where `minLevel > level`. Locked enemies are:
+- Invisible in 3D
+- Skipped in `tickZoneEnemies` (no AI, no collision)
+- Skipped in melee hit-check, spellball contact, spellball damage
+- Not counted in the "N creatures nearby" HUD line
+- Not drawn on the minimap
+
+On each tick of `tickZoneEnemies`, a one-pass check unlocks any locked enemies whose `minLevel` is now met. Level-up from anywhere causes them to appear on the next tick — a Forest Troll spawned at zone-build time when player was level 1 will "materialise" when they hit level 2. No zone rebuild needed; no lost enemy slots.
+
+**Sera's foreshadow hint.** Added a second-level follow-up to her "What about the enemies?" topic: *"...Statues that aren't statues. Chests that bite. Best advice I can give: after a dungeon or two, when you're past the easy floors — don't trust what doesn't move. And approach every chest like it might be the last one you open."* Accessible from Q1 onward. Ensures that by the time the player reaches level 4 and meets their first Mimic, the betrayal landed with narrative foreshadow.
+
+**Save compatibility.** Zone enemies in saved games don't carry `locked`/`minLevel` fields. On load, these default to `undefined` which coerces to truthy for locked check and `1` for minLevel — correct behavior for existing Wolves/Spiders, correct unlock on level-up for Forest Trolls/Bandits. No migration needed.
+
+### World map graph model — plumbing checkpoint (v60)
+
+**Context.** The world-map SVG has ~23 named nodes with detailed lore (settlements, road segments, POIs) but only three of them load as walkable zones: Ashenmoor, Ironhaven, and the Deepwood "forest" zone. The remaining 20 are illustrated fiction. User flagged three problems: (1) the map should be the story skeleton — everything on it should be reachable in some form; (2) "Deepwood Forest" as a single node is a category error — it's a biome/region, not a destination; (3) Ashenmoor→Ironhaven is directly connected via one forest zone when the map shows five road segments passing through Hearthwick and Droichead.
+
+**Solution architecture (Phase 1 complete-state, not yet built):**
+- Each named road edge on the map becomes a walkable wilderness zone
+- Each settlement node becomes a walkable town zone
+- Fast travel targets settlements only; wilderness zones are traversed
+- Biome variety (plains/forest/swamp/desert/ruins/beach/mountains) via a future `buildWildernessZone(cfg)` generalization
+
+**What v60 ships — plumbing only, zero gameplay change:**
+
+1. **`MAP_NODES` graph model.** Five nodes declared for Phase 1 scope: Ashenmoor (settlement, live), Ironhaven (settlement, live), Deepwood Forest (wilderness, live, biome:forest), and two planned nodes — An Bealach Mór — South (wilderness, biome:plains, live:false) and Hearthwick (settlement, live:false). `live` flag gates runtime honour — planned nodes are canonical intent for Phase 1 completion but don't yet correspond to buildable zones.
+
+2. **`MAP_EDGES` graph.** Ten directed edges total — four live (overworld↔forest↔ironhaven, preserving current behaviour) plus six planned (the overworld→bealach_south→hearthwick→forest chain for Phase 1 completion). Edges carry a `name` field matching the road's in-map label ("Ashenmoor's East Gate", "Hearthwick's West Road").
+
+3. **`buildVillage(cfg)` multi-gate support.** Previously hardcoded a single `cfg.gateX/gateZ/gateTarget`. Now accepts `cfg.gates[]` array for villages with multiple gates (Hearthwick will have west + east gates). Legacy single-gate config path preserved via synthesis into one-element array. Zone's gate storage is now per-village via `cfg.gateArr || []` instead of hardcoded `ASHENMOOR_GATES`.
+
+4. **`isOverworldZone()` data-driven.** Was `activeZoneId==='overworld'||===‘forest'||==='ironhaven'`. Now reads `MAP_NODES[activeZoneId]?.live` — same behaviour for the three live zones, automatically correct when new live zones are added.
+
+5. **Helpers added.** `isSettlementZone(id)`, `isWildernessZone(id)`, `isLiveZone(id)` — one-liners that read MAP_NODES. For when we start gating fast-travel UI by node kind.
+
+**What v60 does NOT yet do** (deferred to v61 — Session 13):
+- `buildForest()` → `buildWildernessZone(cfg)` extraction. The Deepwood is still hand-built. This is the biggest single piece of the Phase 1 completion — exposing biome, size, path waypoints, exits, enemy pool as cfg.
+- Hearthwick cfg object + zone
+- An Bealach Mór — South cfg object + zone
+- `goToZone()` data-driven routing via MAP_NODES (currently still a three-branch if-chain)
+- Fast travel updates for new settlements
+- `WM_NODE_TO_ZONE` expansion
+- World-map visual update (planned edges still shown dashed-gold as if walkable)
+
+**Settlement generators inventory (for the record — corrects an earlier mischaracterization):**
+- `buildVillage(cfg)` at line ~3522 — fully config-driven. Used for Ashenmoor. Any small open-settlement on the map (Hearthwick, Cill Beag, Droichead, Redwater Ford, Salthaven, Colmán's Rest, etc.) can be a cfg object for this.
+- `buildTown(cfg)` at line ~4826 — fully config-driven with fortress/wall params. Used for Ironhaven. Any walled town (Dunmore, Mur Pierre, Vieux Marché) can be a cfg object for this.
+- `buildForest()` at line ~4394 — NOT config-driven. Hardcoded path waypoints, hardcoded size, hardcoded enemy spawn list. One-off for the Deepwood. This is the function that needs generalization in v61.
+
+### v61e — Phase 2 scaffolding: Act I + buildTown multi-gate + Act II (Session 14)
+
+**Context.** v61d shipped the `registerPlaceholderZone(spec)` helper plus uniform `ZONES[id]` registration across all three builders. That made placeholder zones cost ~15 lines of spec instead of ~7 site updates. The v61e goal: actually populate the world map. Phase 2A targeted Act I (Ashenmoor's other neighbors); Phase 2B targeted the entire Act II network.
+
+**Phase 2A — Act I (11 zones).** Ashenmoor was previously a one-way street: only its compass-north exit worked. Added south_road→redwater_ford, west_track→salthaven→coastal_road_south→carraig_mor (with inis_rua as a fast-travel-only stub for the tidal-causeway mechanic). Filled out the Bealach corridor: bealach_central→droichead→{cill_beag_path→cill_beag, bealach_north_approach}. Hearthwick gained an east gate to bealach_central. Ashenmoor's config was ported from legacy single-gate to the new `cfg.gates[]` array (north→bealach_south, south→south_road, west→west_track).
+
+**buildTown multi-gate port — the critical refactor.** Phase 2B couldn't ship without this. `buildTown` had a hardcoded south-wall gate baked into its wall construction (`gapX=cfg.gateX||FX, gapZ=cfg.gateZ||FOFF_Z`), single-archway block, single approach road, and single `townGates.push`. Seven coordinated edits ported it to multi-gate:
+
+1. **`_townGateDefs` setup at top of buildTown.** Snapshots `cfg.gates[]` (or synthesizes a one-element array from legacy `cfg.gateX`/`gateZ`/`gateTarget`/etc. for backward compat). Tags each gate with `_side` ∈ {S, N, E, W} based on its zone-edge position (`z<=6→S, z>=SZ-6→N, x<=6→W, x>=SZ-6→E`). Note: 'S' here means low-Z edge, not compass-south — labels stay internally consistent but don't track compass directions because of zones like Ironhaven that have inverted internal orientation.
+
+2. **`_nearApproach(x,z)` generalization.** Was a south-only check for the legacy fortress approach corridor (used by tree-spawning to avoid blocking the path). Now iterates `_townGateDefs` and checks the corridor for each gate's side.
+
+3. **`ihHedge` gap check.** Previously single `if(Math.abs(x-cfg.gateX)<5&&z<cfg.gateZ+4)return;`. Now iterates all gates and skips hedge in any of their perimeter gaps (different test per side).
+
+4. **Wall construction → `_drawWall(sideKey, axisStart, axisEnd, perpPos, xVariesAlongWall)` helper.** Collects all gates on a side, sorts by axis position, emits wall segments with 6.2u gaps centered on each gate's perpendicular coord. Called 4× (S/N/W/E). Walls with no gates render as a single solid box — preserves single-gate Ironhaven's exact prior footprint.
+
+5. **Archway loop.** Each gate gets pillars/lintel/merlons/doors with geometry oriented on the right axis (`horiz = side==='S'||'N'`; lintel `BoxGeometry(6.0,0.9,1.0)` for horiz vs `(1.0,0.9,6.0)` for vertical; door geometry similarly flipped).
+
+6. **Approach roads.** Each outer gate gets `mkPath` from its zone-edge position to its corresponding fortress wall position.
+
+7. **Outer fence gates.** Per-gate `buildFenceGate` call with `rotY = (side==='S'||'N') ? 0 : Math.PI/2` so E/W-wall gates don't render sideways.
+
+**Regression-verified for Ironhaven single-gate case.** The legacy synthesis path produces exactly one south-edge gate at (100, 3); all four `_drawWall` calls fire but only S has a gap; archway is at the same wallX/wallZ as before; approach road `mkPath(100, 3, 100, 69, 2.8, 14)` matches prior. Identical output for the single-gate path, confirmed by inspection.
+
+**Ironhaven config ported to multi-gate.** Three gates now: south (z=3) → forest/Deepwood (preserves the existing Ironhaven internal-orientation quirk, where the "front" gate sits on the compass-north edge), north (z=197) → northern_road, east (x=197) → la_route_royale_west. Player walking out Ironhaven's now-real north and east walls sees proper archways with carved gaps in the fortress wall.
+
+**Phase 2B — Act II (19 zones).** Three corridors radiating out of Ironhaven, plus the Hollowed Wastes:
+
+- **Northern foothills:** Ironhaven → Northern Road → La Grise → Foothill Track → Colmán's Rest → Mountain Pass → Mur Pierre. Mur Pierre is a single-gate town (Mountain Pass is its only road in or out — fits the "isolated French garrison" lore).
+
+- **Eastern royale network:** Ironhaven → La Route Royale West → Vieux Marché (3-gate village: W to LRR-West, S to LRR-South, E to Dunmore West Road) → {LRR-South direct | Dunmore West Road alt} → Dunmore (4-gate town: N/W/E/S, the geographic crossroads of Act II) → Coastal Road North → Portclare (2-gate coastal town: W back to coastal road, N to Capital Road) → Capital Road → Coeur de Vie (placeholder village kind — proper city primitive deferred).
+
+- **Hollowed Wastes:** Bealach Central gained a south gate to hollowed_wastes (200×200 wilderness, 4 gates: W back to Bealach Central, E to Dunmore, N to Hermit's Camp, S to Caer Uaigneach). Hermit's Camp is a 30×30 single-NPC village stub. Caer Uaigneach is a 60×60 plague-haunted village stub with darker fog. The Ashfeld is registered as a wilderness zone but disconnected (`gates:[]`) — flagged for fast-travel-only access until a later session adds the proper path.
+
+**MAP_NODES expanded** from 17 to 36 entries. **WM_NODE_TO_ZONE expanded** from 9 to 19 settlement-name mappings. **Connectivity verified by grep:** every `targetZone` reference in the source resolves to a registered zone. **Parse-checked clean** via `node --check`.
+
+**What player can do that they couldn't before:**
+- Walk out of Ironhaven's north wall gate, follow Northern Road to La Grise, then Foothill Track west to Colmán's Rest, then Mountain Pass to Mur Pierre.
+- Walk out of Ironhaven's east wall gate, follow La Route Royale West to Vieux Marché, then south to Dunmore (or take the alternate Dunmore West Road), then continue east to Portclare and the Capital Road.
+- Walk south out of Bealach Central into the Hollowed Wastes, visit Hermit's Camp and Caer Uaigneach, then continue east to Dunmore.
+
+**Caveats / known limitations** (flagged for later):
+- Ironhaven now exhibits the orientation quirk on three edges instead of one. A player crossing through Ironhaven from Northern Road to Deepwood will see the compass flip twice (once entering on the south-map edge, once exiting on the north-map edge). Real fix is rotating Ironhaven's internal fortress orientation by 180° — deferred.
+- All Act II zones are placeholders: terrain + atmosphere + center notice board + multi-gate connections only. No buildings, NPCs, enemies, dungeons, quests, or herbs.
+- Coastal towns (Salthaven, Carraig Mór, Portclare, Inis Rua, Coeur de Vie) lack water rendering — they read as dry placeholder ground until a water/coast session lands.
+- Coeur de Vie is registered as a `village` kind. Proper city primitive (multi-district, concentric walls, royal keep, cathedral) is a future session.
+- Inis Rua and The Ashfeld are disconnected stubs (`gates:[]`) — fast-travel only.
+- Mountain Approach (mentioned in Northern Road's centerMarker text) is a waypoint, not a separate zone.
+
+### v61f — Playtest fixes + polish (Session 14.5)
+
+**Context.** Playtest of v61e surfaced seven issues across the Act I scaffold. All seven addressed in a single focused pass. Most were shared-root-cause — two gate-mesh bugs + two placeholder-template bugs account for six of the seven reports.
+
+**Bug 1 — Ashenmoor south gate invisible (trigger still worked).** `buildFenceGate` at line 4401 hardcoded `y=0`. Ashenmoor's north gate at z=1.5 is inside `flatR=48` so terrain is 0 and the gate was visible; the new south gate at z=118.5 is ~78u from center, beyond `hillR=70`, so terrain there is elevated by `terrainAmp*noise` and the gate mesh was buried underground. **Fix:** added optional `y` parameter to `buildFenceGate`; all three builders (`buildVillage`, `buildWildernessZone`, `buildTown`) now pass their zone's terrain height at the gate position.
+
+**Bug 2 — West-gate spawn floating in void.** Ashenmoor's west gate specified `spawnX:113` but `west_track` is only 80 units wide. Player spawned 33 units outside the zone. **Fix:** `spawnX:113 → 75`. Also added a post-edit Python audit script that cross-checks every `targetZone/spawnX/spawnZ` triple against the target zone's registered size. Audit confirmed all other 33 gates in bounds; only Ashenmoor's west-gate row was wrong.
+
+**Bug 3 — Redwater Ford NPCs were Ashenmoor's.** `buildVillage` line 87 reads `(cfg.npcDefs||NPC_DEF).forEach(...)`. `NPC_DEF` is Ashenmoor's global NPC roster. `registerPlaceholderZone` didn't pass `cfg.npcDefs`, so every placeholder village silently inherited Oda/Bram/Sera/Edna. **Fix:** `registerPlaceholderZone` for `kind==='village'` now explicitly sets `cfg.npcDefs=spec.npcDefs||[]`. Placeholder villages now render as empty — correct for pre-content-pass state.
+
+**Bug 4 — World map showed "Ashenmoor" when player was in Redwater Ford.** `WM.zoneToNode` was a hardcoded 3-entry map (`overworld/hearthwick/ironhaven`). For any other zone, `wmSyncZone`'s nodeName lookup returned undefined, and without an else-branch, `WM.currentNodeName` retained its stale previous value. **Fix:** expanded `zoneToNode` with all 15 Act I + Act II settlements. Added explicit fallthrough `else` clause in `wmSyncZone` to clear `currentNodeName` + `currentEdgeNames` when a zone matches neither — prevents future silent regressions for any new unmapped zone.
+
+**Bug 5 — Bealach Central's east gate was rotated sideways and occluded by a tree.** Two compounding bugs. First, `buildWildernessZone` passed `gd.rotY||0` but gate specs didn't set `rotY`, so E/W gates rendered with north-south orientation — a fence turned 90° off the wall axis. Second, the tree-wall loop at lines 4961-4964 called `_inGateGap` for N/S edges but not W/E, so a tree planted right where the east gate sat. **Fix:** gate rotation now derived from `_side` (`(side==='E'||side==='W') ? Math.PI/2 : 0`) — matching the same side-tagging that `buildTown` already did in v61e. Tree-wall loop now calls `_inGateGap` on all four edges.
+
+**Bug 6 — Ironhaven spawn from Deepwood stuck in tree.** Couldn't pinpoint exact cause from code inspection; spawn at (100, 12) should have been clear based on my trace of hedges/trees/archway geometry. **Fix:** two-layer approach. (a) Fence-gate Y-fix from Bug 1 — the buried gate at (100, 3) may have had edge geometry trapping the player via terrain-height seams. (b) Belt-and-suspenders: bumped Deepwood→Ironhaven spawn z from 12 → 20. Safely inside the approach corridor (z<69 per `_nearApproach`), well clear of any edge clutter.
+
+**Bug 7 — Music reverts to village after combat in non-core zones.** `tickMusic` lines 11509-11513 had a hardcoded 3-zone lookup table (`overworld/forest/ironhaven`). Every other zone fell through to default `'village'`. Bealach-South, Hearthwick, and all 30 Act I/II placeholders were affected. **Fix:** replaced the table with `ZONE_BUILDERS[activeZoneId]?.musicTrack` lookup. ZONE_BUILDERS has been the single source of truth for `musicTrack` since v61b — the hardcoded table was vestigial.
+
+**Polish — wilderness signposts removed.** `registerPlaceholderZone` previously built a notice-board mesh for any `centerMarker` spec, regardless of zone kind. Playtest flagged that signposts in the middle of open wilderness (South Road, Bealach Central) read as incomplete content rather than useful signage — and they're non-interactive on wilderness paths anyway (the interact handler gates notice-board prompts to settlements via `isSettlementZone`). **Fix:** helper now skips notice-board creation when `kind==='wilderness'`. The lore text in specs is preserved in source for reference but no mesh is built.
+
+**Polish — South Road 60→80 + pathWaypoints.** Road was too short to feel like travel. Added `pathWaypoints:[{x:40,z:5},{x:40,z:75}]` so the road renders visibly along the longer zone.
+
+**Polish — Bealach-South terrain variance + path-side herbs.** Added `cfg.terrainAmpMul` knob to `buildWildernessZone` (default 1.0, preserves all other zones). Bealach-South now sets 2.5 for visible rolling plains. The existing `flatFactor` logic (path corridor 6u wide stays flat, slopes from 6-14u out, full hill heights beyond 14u) is multiplier-agnostic, so the road is still walkable at any amplitude. Added 8 herb spawns just outside the path corridor (x=81-108, at z-waypoints 20/55/70/95/120/145/160/185) so the player harvests while walking rather than needing to detour into the hills.
+
+**Deferred / placeholder-expected (not fixed this session):**
+- No enemies/dungeons/buildings in Act I placeholder zones (Phase 3 content work)
+- Minimap not rendering for placeholder zones (needs per-zone minimap config pass)
+- Coastal water rendering (separate session for water/shore primitives)
+- Ironhaven's internal orientation quirk (double compass flip — needs 180° fortress rotation, known from v61c)
+
+### v61g — Second-round playtest fixes (Session 14.75)
+
+**Critical regression — Ironhaven fortress had no entry.** Playtest revealed that entering Ironhaven from the Deepwood showed the spawn working correctly (v61f bump to z=20) but the fortress walls ran continuously around the entire perimeter — no archway, no wall gap, no way to enter. Walls visible but unbreached.
+
+Root cause: `buildIronhaven()` at line 6137 contained `IRONHAVEN_CONFIG.gates = IRONHAVEN_GATES;`. This was legacy from when `cfg.gates` was the runtime-output gate array. In v61e, `cfg.gates` became the INPUT spec (3 multi-gates for south/north/east walls). At zone-build time, this line was silently overwriting the v61e spec with the empty `IRONHAVEN_GATES` array. `_townGateDefs` came up empty → `_gatesBySide` all empty → `_drawWall` emitted continuous unbroken walls on all four sides → the per-gate archway forEach loop iterated zero times.
+
+Fix: removed the overwrite. Ironhaven's three cfg.gates spec (south→Deepwood, north→Northern Road, east→La Route Royale West) is now preserved through to `buildTown`. `IRONHAVEN_GATES` remains as a declared-but-unused empty array; the minimap code at line 8639 that iterates it for gate markers is the only remaining reader and will just render no markers (minor visual loss, not functional). A future session can wire the runtime `townGates` back to `IRONHAVEN_GATES` via a `cfg.legacyGateArr` hook if desired.
+
+**Ashenmoor ↔ South Road spawn alignment.** Two issues reported:
+
+- **Ashenmoor south → South Road** placed player at (30, 7) — 10u WEST of the path, which sits at x=40 after the v61f 60→80 extension. Fix: `spawnX 30 → 40`.
+- **Redwater Ford → South Road** placed player at (30, 54) — 10u west of path AND 23u north of the actual south gate (z=77). Fix: `spawn (30, 54) → (40, 73)`. Now lands just north of the south gate, on the path.
+
+**South Road → Ashenmoor yaw flip.** Playtest reported: "facing south toward the gate, not north away from it." Per the in-file yaw convention (`yaw=0 → -Z → compass north`), `spawnYaw:0` at (60, 115) inside Ashenmoor should have pointed toward the village center. User consistently reported the opposite. Rather than spend more time debugging a convention mismatch that only matters on this one edge, flipped to `spawnYaw:Math.PI`, which is confirmed-correct per playtest. The root cause is unclear — possibly the overworld scene's camera setup differs from other zones, or there's a residual yaw-applied-to-camera offset on the overworld-specific render path. Flagged for a quieter session.
+
+**Redwater Ford entry clearance.** Spawn was at (25, 7); border hedges spawn in the 2-6u band, so z=7 put the player essentially inside the tree line. Bumped spawnZ 7→12.
+
+**Polish: Bealach-South now has actual hills.** v61f's `terrainAmpMul:2.5` produced visible noise-driven undulation, but the result read as "rolling" rather than landscape features you could point at. Added `cfg.hills:[{x,z,r,h}, ...]` to `buildWildernessZone` — each entry adds a cosine-falloff bump to the heightmap at the specified center, with radius `r` and peak height `h`. Hills stack additively with the base noise and are attenuated by the same `flatFactor` logic as the rest of the terrain, so the road stays walkable even where it passes near a hill. Populated Bealach-South with five hills (radii 22-30u, heights 3.5-5.5u) flanking the road on alternating sides. Biggest is the east flank at z=145, h=5.5u. This same `cfg.hills` hook is now available for any future wilderness zone wanting specific terrain features.
+
+**Still open / flagged:**
+- The South Road → Ashenmoor yaw puzzle (why `spawnYaw:0` produced +Z facing when the convention says it should be -Z). Non-blocking since the flip works.
+- Minimap for placeholder zones still not rendering.
+- Act I placeholder zones (redwater_ford, salthaven, carraig_mor, etc.) still have no buildings/NPCs/enemies/dungeons/quests. Content pass required.
+- Ironhaven's internal compass quirk unchanged — with three gates now connecting it to the Deepwood (south), Northern Road (north), and La Route Royale West (east), the 180°-rotated fortress interior means entering from Deepwood faces compass-north, exiting to Northern Road also faces compass-north. Same root cause as v61c deferred issue, now visible on 3 edges.
+
+### v61h — Auto-spawn (Session 14.9)
+
+**Context.** v61f + v61g playtest surfaced that hand-specifying `spawnX / spawnZ / spawnYaw` per gate was unreliable. Over 34 gates and my-shaky-grip-on-the-yaw-convention, errors crept in: spawns west of the path, spawns 22u from the return gate, spawns facing the wrong direction. v61g's "flip the yaw because the playtest reported wrong direction" was itself wrong — I flipped based on a likely-misreported v61f complaint, but the math had been right the first time.
+
+**Root cause of the manual-spawn class of bugs.** A gate spec defines 4 pieces of information: (a) where the gate sits on THIS zone's edge, (b) which zone it leads to, (c) where the player should SPAWN in that target zone, (d) which direction the player should FACE after arriving. Items (a) and (b) are inherent to the gate; (c) and (d) are redundant — they describe a position that's already implied by the TARGET zone's corresponding return-gate geometry. That redundancy is where the bugs lived.
+
+**Fix: `_autoGateSpawn(targetZone, originZone)`.** Given where we're going and where we came from, the helper:
+
+1. Looks up `ZONES[targetZone].gates` — the target zone's built-gate array.
+2. Finds the entry whose `targetZone === originZone` (the "return gate" back to where we came from).
+3. Reads that gate's (x, z) and the target zone's `size` to determine which edge it sits on.
+4. Computes: spawn position = gate position + 12u step into the zone interior; yaw = math-derived so the player faces away from that edge.
+
+The step-back distance (12u) is generous — clears all border hedges, trees, and the archway/fence mesh itself, and gives the player a clear view of the zone's content rather than the gate filling their screen.
+
+Wired into `goToZone`: captures `originZone = activeZoneId` before swapping, then after the target zone's builder has run (so `ZONES[target]` is populated), tries auto-spawn first. If it returns null (no matching return gate — e.g., Inis Rua is fast-travel only), falls back to the explicit `spawnX/spawnZ/spawnYaw` passed through from the gate spec.
+
+**What this replaces.** Every gate in the code still carries `spawnX`, `spawnZ`, `spawnYaw` in its spec — I'm not removing those, both for backward compat with fast-travel paths and because they're still the only source of truth for the fallback. But for normal gate-to-gate traversal, those values are now effectively dead code: the auto-computation wins.
+
+**Known limitations.**
+- Fast travel still uses explicit spawn values (via `fastTravelSpawn`, which reads from a gate's spec directly). Auto-spawn only kicks in via `goToZone`.
+- Auto-spawn assumes the return gate is at one of the four zone edges (z≤6, z≥SZ-6, x≤6, x≥SZ-6). Gates interior to a zone (not near an edge) get `null` and fall back to explicit. No current zone has this, but Ironhaven's fortress-interior archway positioning is internally different — see its internal-orientation quirk note.
+- Does not address the "distant gate in view" UX issue: even with math-correct facing, Ashenmoor's player at z=106 facing -Z sees buildings in the middle distance and the north gate ~100u away in the far distance. The player perceives "a gate ahead" regardless. If this continues to feel wrong in playtest, the real fix is spawn positioning — either offset from the gate-to-gate axis, or closer to the zone center.
+
+### v61i–v61k — Enchantment persistence trilogy (Session 15)
+
+**Context.** v61h playtest flagged that armor enchantments didn't rehydrate on reload and that weapon enchants didn't fire in zone combat. The audit revealed three layered bugs, each fixed in its own version so the diagnosis stayed legible in git history.
+
+**v61i — three systemic fixes:**
+- `_serItem` now stamps `_enchantType` based on `.apply` presence (armor enchants have `.apply(item)`, weapon enchants have `.effect(dmg)`). Prior code tried to read `it._enchantType` which was never set anywhere — `_restoreEnchant` always fell through to `ARMOR_ENCHANTS` and silently dropped weapon enchants on reload.
+- `_restoreEnchant` searches both tables by the stamped id, then for armor enchants also re-derives `enchantStats` via `.apply()` — pre-fix, enchantStats was missing from the whitelist so stat bonuses went dark on reload even when the enchant id was correctly restored.
+- `attackZoneEnemies` now calls `applyWeaponEnchant` (previously only `executeDungeonStrike` did, so enchants like Drain and Flame never fired in the overworld).
+
+**v61j — name-based enchant recovery.** Saves damaged by prior v61h load cycles had lost `_enchantId` entirely. Added fallback: parse `" of X"` suffix from the item name, match exactly against `WEAPON_ENCHANTS`/`ARMOR_ENCHANTS` tables. Doesn't help saves where the enchant was already silently dropped from the name, but recovers the majority.
+
+**v61k — toast race fix.** `applyWeaponEnchant` now returns `{tag, col}` instead of calling `showMsg` directly. Callers fold the enchant tag into their own hit message: `Hit Goblin for 8! · 🩸 Drain +1!`. Before, the enchant toast was silently overwritten by the hit toast on the same tick.
+
+### v61l — Zone blocking/parry (Session 15)
+
+**Bug.** v61h finding: blocking had no effect in the overworld. Input registered (stamina drain kicked in) but incoming zone-enemy damage didn't check the `blocking` flag.
+
+**Fix.** Extracted `executeStrike(e, rawDmg, now)` as a shared helper from `executeDungeonStrike`. `tickZoneEnemies` strike handler now delegates to the shared helper, so zone enemies get the full blocking/parry/stagger pipeline instead of a simplified "subtract def" path. Zone enemies picked up `_origCol:d.col` for stagger-color revert consistency. Zone hit message changed "bites" → "hits" for tone consistency with dungeon.
+
+### v61m — Zone-agnostic quest markers (Session 15)
+
+**Bug.** Quest markers only worked in Ashenmoor, Deepwood, and Ironhaven. In Hearthwick, Bealach-South, and Act I/II zones they either vanished or pointed at garbage coords. Root cause: hardcoded zone checks in the marker-positioning code.
+
+**Fix.** New `nextHopZone(from, target)` runs BFS over `MAP_EDGES`. `gateTowardZone` rewritten to use `nextHopZone` + `ZONES[id].gates` (uniform since v61d). `findNPCPos` uses `ZONES[zone].npcs` with `HOUSES`/`IRONHAVEN_HOUSES` fallback. Markers now work in every live `MAP_NODES` zone automatically — no per-zone wiring.
+
+### v61n — Q2 fix + staircase markers + sigil lore questline (Session 15)
+
+**Q2 completion bug** (v61g flag): was firing on floor-2 entry rather than on sigil touch. Swapped objective from `reach_dungeon_floor` to new `touch_sigil` event type with `firstTouch:true`. New event has scope filters (`spellId`/`floor`/`dungeonSeed`) and two modes (`firstTouch`, `minTier`).
+
+**Dungeon staircase markers** (v61g flag): Dungeon marker now routes to the staircase ("Descend"/"Ascend") when target floor ≠ currentFloor. `touchSigil` auto-activates locked sigil-lore Q1 on first touch + fires quest progress events.
+
+**New sigil lore questline.** Auto-generated 21 sigil quests (7 sigils × 3 tiers) via IIFE `generateSigilQuests()` after `SIGIL_PLACEMENTS`. IDs: `sigil_{spellId}_{1|2|3}`, questline `'sigil_lore'`, chained via unlocks. Rewards 30/75/150 XP per tier. Flavor text is placeholder — awaits per-sigil writing pass. New flags `autoComplete` (skip 'reward' state) and `autoAccept` (skip 'available' state) added for these. `completeQuest` toast shows XP fallback when no gold reward. `renderQuestLog` grouped by questline with section headers (Main Story / Sigil Lore).
+
+### v61o–v61p — Quest tracking + card redesign (Session 15)
+
+**v61o — tracking toggles.** Q4 objective parity fix (swapped to `touch_sigil`). `untrackedQuests` Set stores exceptions (default = tracked); persisted in save as `uQ`. Helpers `isQuestTracked(id)` / `toggleTrackedQuest(id)`. `getActiveQuestMarkers` filters untracked. Quest log entries get clickable pin (📍/○) with dim for untracked.
+
+**v61p — card redesign.** Playtest feedback: pin was too small, title was getting centered weirdly due to a 3-flex-item layout bug. Fixed:
+- Title-text wrapped in `.qlog-title-text` span (back to 2 items in the flex row — title+badge).
+- Left-edge pin strip (28px, gold=tracked, grey=untracked) via `.qlog-pin` class, `pointer-events:none` so clicks flow to the card's onclick.
+- Whole card is click target for trackable quests, with red hover cue.
+- Reward-state dungeon markers: point at ascending staircase (floor 2) or dungeon entrance (floor 1) so the compass keeps guiding the player out to find their giver.
+
+### v61q–v61s — Inventory destroy + sorting (Session 15)
+
+**v61q — destroy mechanic.** 5th column added to `.inv-row` grid (24px). `.inv-destroy` class: muted 🗑, brightens on hover, swaps to red ✕ with `.confirming`. `requestDestroyItem(i, el)` two-click state machine with 2s auto-revert; full stack deleted per click.
+
+**v61r — quick-destroy + sorting.** Persistent hint: "🗑 single-click to confirm · hold **X** + click to destroy instantly". `invQuickDestroy` flag driven by X keydown/keyup; skips confirmation when held. All 4 column headers clickable, cycle desc→asc→off. Per-subtab `invSort` preferences (weapon/armor/consumable/misc/all independent). `_statSortKey` semantic sort: weapons by mid-atk, armor by def+block, potions by heal/mana/stam.
+
+**v61s — row-wide quick destroy + persistent sort arrows.** X+click anywhere on row destroys (not just trash cell); `.quick-destroy` row class turns hover red. Both ▲▼ arrows always visible on headers, active direction lights up gold. `.sort-arrows` stacked vertical, 7px font-size.
+
+### v61t–v61u — Herb labels + weapon type tooltip (Session 15)
+
+**v61t — herb stat labels + compact weapon tag.** `itemStatShort` was dumping `effect.type` as raw string for non-heal herbs (`"stamina"`, `"mana"`, `"damage"`). Extended to format each type properly (`+N MP` / `+N Stam` / `N dmg`). Weapon damage-type tag shortened to single letter (`S`/`P`/`B`) so the Stat column doesn't get truncated mid-word.
+
+**v61u — weapon damage type in tooltip.** Added Type row (full word Slash/Pierce/Blunt) + italic mechanical hint. I audited the resist table before writing hints — the three weapon types are NOT symmetric:
+- Blunt is the only type with a clear "good vs" matchup in the data (1.2–1.35× vs skeletons, trolls, golems, gargoyles).
+- Slash and Pierce are mostly 1.0× with specific resist penalties rather than bonuses.
+
+Hints framed accordingly:
+- Slash: "Resisted by bone & stone"
+- Pierce: "Good vs carapace · resisted by bone & stone"
+- Blunt: "Good vs bone & stone · weak vs ethereal"
+
+More accurate than overclaiming, teaches the right lesson (weapon choice = avoiding penalties, not chasing bonuses).
+
+### v61v–v61w — Weight rebalance + rusty sword fix (Session 15)
+
+**v61v — weight table + rusty sword retune.** Audit: pre-v61v max carry was 50, burdened threshold 40. A full starter kit (sword 2 + tunic 5 + breeches 3 + boots 1.5 = 11.5) left 28.5 units before burdened — encumbrance never triggered. Scaled weapon + armor weights ~1.7× to anchor worn kits around 15–18, so burdened becomes reachable with ~15 bag items.
+
+Also caught during audit: Rusty Sword was `atk:[8,14]` at tier 1 — effectively tier-3 numbers. Matched Bronze Longsword's 9–11 midpoint, beat every wooden-tier shop weapon. Retuned to `[5,9]` — midpoint 7 — sits between Wooden Dagger and Wooden Mace. Every T1 and T2 shop weapon now has a meaningful purchase decision. Weight bumped 2→3 to match the new scale.
+
+**Bonus bug caught:** Starter armor (Tattered Tunic, Worn Breeches, Leather Boots) had no `weight`, `type`, or `slot` fields on their item objects. `itemWeight()` fell all the way through to the default 0.5 branch — a fresh character's worn kit was registering as if it were three potions (1.5 total vs the intended 5-6). Added explicit weights (tunic 2, breeches 2, boots 1).
+
+**v61w — save migration.** `_serItem` bakes `weight` into every save — my v61v weight bumps only affected *freshly generated* items; existing saves kept their old lightweight values. Same shape as the v46 potion save bug.
+
+New `_migrateItemWeight(it)` helper alongside the existing `_migrateAccessoryDef` / `_migrateWeaponAtk` / `_migrateItemValueAndReq` in `loadGame`:
+- Starter items matched by name (no slot/tier)
+- Crafted weapons by `weaponShape` in `WEAPON_TYPES`
+- Crafted armor/shields/accessories by `slot` (shields via `shieldType`) in `ARMOR_TYPES`
+
+Also noticed `_migrateWeaponAtk` was normalizing Rusty Sword back to the generic tier-1 formula `[6,7]` on every load, wiping the v61v custom range. Added a name-based guard: `if(it.name==='Rusty Sword'){ it.atk=[5,9]; return; }`.
+
+### v61x — Elixir / potion tier system (Session 15)
+
+**Design.** Fifteen new potions, 5 lines × 3 tiers:
+
+| Line | Buff type | Mild / Strong / Master |
+|---|---|---|
+| Regeneration | hpRegen | 0.5/1.2/2.5 HP/s, 60s |
+| Focus | mpRegen | 0.5/1.1/2.2 MP/s, 60s |
+| Energy | stRegen | 0.6/1.3/2.8 Stam/s, 60s |
+| Warding | dmgReduce | 15%/25%/40%, 45/60/75s |
+| Swiftness | sprintSpeed | +10%/+18%/+28%, 30/45/60s |
+
+Names follow "Elixir of X (Tier)" per Michael's preference over "Regen Tonic" variants.
+
+**Data-driven generation.** `POTION_LINES` table drives an IIFE `generatePotions()` that populates a `POTIONS` registry. `makePotion(id)` deep-copies templates for drops/shops so the registry never mutates.
+
+**Tier-aware stacking.** `_applyPotionBuff(eff)` checks `ACTIVE_BUFFS` for same-type entry. If existing tier > new tier → returns `'blocked'`, potion NOT consumed, toast explains. Equal or higher tier replaces (refresh or upgrade). Matches Michael's "can't waste a Mild on top of an active Strong, but upgrade path exists."
+
+**Two new buff types (`mpRegen` / `stRegen`).** Parallel ticks to `hpRegen` in the main update loop. Armor-enchant system uses these same keys as static bonuses (via `_ab` cache), buff system reads from `ACTIVE_BUFFS` — different paths, no collision, both additive.
+
+**Active Effects UI.** New `#buff-bar` with `.buff-pill` icon pills replaces the plain-text buff line. `BUFF_ICONS` map covers 12 types (hpRegen ❤️, mpRegen ✦, stRegen ⚡, dmgReduce 🛡, sprintSpeed 💨, spellDmg 🔮, goldFind 🪙, xpBoost ⭐, etc.); unknown types fall through to ✧. Timer shown per pill; full label via native `title` attribute on hover.
+
+**Loot pool injection.** IIFE `wirePotionsIntoLoot` appends 45 entries across barrel/chest/corpse pools. Per-tier weights keyed by pool:
+- barrel: {1:3, 2:1, 3:0.3}
+- chest: {1:3, 2:2, 3:1}
+- corpse: {1:3, 2:1, 3:0.4}
+
+Chest pool slightly skewed toward higher tiers (reward container).
+
+**Shop stock.** IIFE `wirePotionsIntoShops`: Ashenmoor potion shop gets all 5 Mild; Ironhaven War Supplies (Dagna) gets 5 Strong + 2 Master (HP Regen + Warding, the most combat-useful pair).
+
+**Bonus fix:** HP decimal truncation. `hv` HUD readout now uses `Math.floor(PHP)` like mana and stamina already did. Regen buffs introduced fractional dt-based accumulation that leaked to the display as "287.8238..." etc.
+
+### v61y–v61ab — Ironhaven legibility pass (Session 15)
+
+**Problem.** Michael flagged that Ironhaven's shops were hard to identify from the exterior: no signs, buildings pressed against the castle wall and sharing its color, players had to enter each to learn what it sold. Also Aldwyn's Royal Herald exit was spawning players into the castle wall.
+
+**v61y — first pass.**
+- Wired per-shop `bCol` body colors (the field existed in `IRONHAVEN_HOUSES` but was never read; every shop rendered in the shared grey stone).
+- 3D type icons on hanging signboards: sword (weapon), helmet (armor), flask (potion), scroll (misc).
+- Added a second cross on top of the church bell-tower cap for silhouette readability from any approach angle.
+- Latent bug fixed: `IRONHAVEN_HOUSES.doorFace` was stale — the 4 corner shops actually face E/W inward to the plaza but the data stayed at the declared 'S'. Fixed in `decorateFn`.
+- Exit offset bumped 2.0 → 3.0 for breathing room from walls.
+
+**v61z — playtest revisions.**
+- Deeper latent bug found: `decorateFn` was writing the building **center** (`cx`, `cz2`) into `IRONHAVEN_HOUSES.doorX/doorZ` instead of the actual door-wall position. For 7-wide corner shops with E/W doors, that put the reference point ~3.5 units inside the building. Entry worked by accident (the 1.5-radius check is fuzzy enough), but exit spawn math was working off a phantom center. Fixed to compute actual door position from face + dimensions.
+- Signs rotated perpendicular to walls (tavern-hanging style) instead of parallel. Icons rebuilt Z-symmetric (thickness ≥0.10) so a single mesh reads identically from both approach directions.
+- Stone-framed windows added to `mkStoneBuilding`.
+- Removed floating "gable cross" from church — the church uses a 4-sided pyramidal cone roof, not a gabled roof, so there was no triangular wall for the cross to sit on. It floated in empty space. Tower cross from v61y covers silhouette.
+- Castle overlap fix: `mkStoneBuilding` now skips rendering for `h.type==='castle'`. Pre-v61z, both `mkStoneBuilding` (generic stone box + cone + door) and `detailFn` (keep + towers + courtyard walls + inner arch + keep door) rendered the castle — producing the overlapping-mesh artifact.
+
+**v61aa — window + door detail.**
+- Windows: swapped for a direct port of Ashenmoor's `_win` (sky-blue glass `0x5ec8e8` + cross mullion + recessed pane). Previous dark navy glass blended with dark stone bodies and read as grey.
+- Shop doors: replaced plain box with a door Group containing main slab + three vertical plank grooves + iron knob (sphere on stem) + two hinge plates. Same treatment applied to Ashenmoor village doors.
+- Castle keep door: z-fighting fix (pushed from z=54.05 to z=53.80 — it was coplanar with the keep's front face). Given castle-grade detail: five planks, iron ring handle with plate backing, three horizontal iron reinforcement bands.
+
+**v61ab — door rotation fix.** Playtest flagged that E/W doors looked great but N/S doors still read as bare brown rectangles. Root cause: detail child meshes all live at local +Z; the group rotation needs to map local +Z to the direction the player approaches.
+
+| Face | Player at | Needs local +Z → | Correct rotation.y |
+|---|---|---|---|
+| S | −Z | −Z | π |
+| N | +Z | +Z | 0 |
+| E | +X | +X | π/2 |
+| W | −X | −X | −π/2 |
+
+v61aa had S and N swapped — S-face had rotation=0 (details facing into the wall); N-face had rotation=π (details correct but knob mirrored left/right). Fixed in all three door sites (Ironhaven shops, Ashenmoor buildings, castle keep).
+
+Also in v61ab: church lancet windows were rendering grey. Two bugs — (a) the `glassMat` color `0x6080a0` was a dim blue-grey, and (b) frame and glass sat at identical world coords (dark stone frame z-fought the glass into near-opacity). New `lancetGlassMat` with `0x5a8ec8` at 0.7 opacity + 0.03u outward offset per `outDir` param.
+
+**v61ac — church door detail.** `_buildChurchExterior` has its own door code separate from the shop/village pipeline (needs the stone arch above), so my v61aa door pass missed it. Given its own ecclesiastical detail treatment: vertical planks + horizontal iron bands + a small cross accent near the top + iron ring handle. Same rotation math as other door groups. Stone arch above unchanged.
+
+---
+
+### Door Group rotation convention
+
+**Established v61ab, documented here for stability.** Door detail meshes (planks, knob, hinges, crosses, bands) are placed at **local +Z** inside their THREE.Group. The group is then rotated so that local +Z maps to the direction the **player approaches from**:
+
+| Face | Group `rotation.y` |
+|---|---|
+| S | `Math.PI` |
+| N | `0` |
+| E | `Math.PI/2` |
+| W | `-Math.PI/2` |
+
+Applies to every Door Group in the codebase. Three sites that must stay in sync:
+- `mkStoneBuilding` (Ironhaven shops) — also has castle skip
+- `buildVillage` door block (Ashenmoor + Hearthwick)
+- `_buildChurchExterior` church door block
+- Castle keep door in `IRONHAVEN_CONFIG.detailFn` (v61aa-style, always S)
+
+### Shop sign architecture (v61y/z)
+
+**Anchor pattern for all shop signs.** Post + arm + board + icon group hanging perpendicular to the wall, tavern-style.
+
+- **Perpendicular rotation** — board's `rotation.y` rotates 90° from the wall's normal, so the sign face is visible from both approach directions along the wall.
+- **Z-symmetric icons** — icon meshes extend through both faces of the 0.07-thick board (thickness ≥0.10), no face-duplication needed. Cylinders aligned on Y are naturally symmetric; boxes/spheres positioned at local z=0.
+- **Per-face positioning:** sign post sits to the right of the door (as viewed from outside the building), offset `sideOff=0.95` laterally and `outOff=0.55` outward from the wall.
+
+Icons currently defined: weapon (sword), armor (helmet), potion (flask), misc (scroll with red ties). Driven by `ih.type` in `IRONHAVEN_HOUSES`. Church and castle skip sign rendering — their silhouettes are already distinct.
+
+Ashenmoor signposts use a different legacy system (see line ~4174, `signOffsets` table) with blank boards — not yet ported to the icon-based approach.
+
+---
+
+### v61ad — Ashenmoor burns · Act I climax + Q7 + commission (Session 16)
+
+**Context.** The single largest narrative beat Act I had been waiting on. Q6 had ended on Aldwyn's "I'll send for you" with no runtime hook; the world-map node already advertised Ashenmoor as destroyed but there was no in-world evidence. Shipped the full pipeline this session: burn trigger, burned-variant zone, scripted aftermath, Q7 courier quest, and Royal Mage Commission reward with one downstream gating hook wired up (Dagna's back-room stock).
+
+**worldState — new persistent flag store.** Lives alongside `QS` (per-quest) but tracks cross-quest world events. Serialized as `wS` in save payload. Four flags this session:
+- `ashenmoorBurned` — permanent post-Act-I state flag
+- `ashenmoorPending` — transient; set on Q6 completion, flipped to burned on next overworld re-entry
+- `commissioned` — Q7 reward; gates Dagna's full stock and future carriage/academy access
+- `bramBodyRead` — one-shot flavor text flag for Bram's body interact
+
+Saves bumped to v2. Old v1 saves still load — missing `wS` key falls through to all-false defaults, which is the correct "fresh Act I" state for any pre-burn save.
+
+**Burn trigger — `goToZone` gate.** Fires the burn the moment the player re-enters overworld with `ashenmoorPending && !ashenmoorBurned`. Flips `burned=true, pending=false`, calls `_syncAshenmoorZoneEntry()` to rewire `ZONE_BUILDERS.overworld`, unlocks Q7 ('locked' → 'available'), clears any lingering non-Bram zone corpses from pre-burn state, and shows a 700ms-delayed toast after the fade-in ("The village is smoke and ash. Something has happened here.").
+
+Q6's `unlocks:[]` stays empty — Q7 is unlocked by the burn, not the quest chain. Decoupling means the player gets the Q6 handoff in its intended quiet tone, and the burn hits with full weight when they physically return home.
+
+**`_syncAshenmoorZoneEntry()` — ZONE_BUILDERS.overworld swap helper.** Idempotent; called from the burn trigger and from `_applyLoadData` after every save load. Rewires four fields:
+- `sceneGet` → `()=>owBurnedScene` when burned, `()=>owScene` otherwise
+- `displayName` → `'🔥 Ashenmoor — Ruins'` / `'🌿 Village of Ashenmoor'`
+- `musicTrack` → `'silent'` / `'village'` — `startMusic('silent')` falls through to `_clearMusic()` and starts no track, which sells the shock of arrival harder than any haunt theme would
+- `builder` → lazy-builds `owBurnedScene` when burned; no-op otherwise (`owScene` is eagerly built at startup)
+
+**`ASHENMOOR_BURNED_CONFIG` + `buildAshenmoorBurned()`.** Separate config object, same zone id ('overworld'), same gates/terrain/seed — so fast-travel and quest routing don't break. Differences:
+- Duskier skybox (`0x4a4238`), ash-grey fog (`0x3a342e`), denser (`0.028`) so far edges fade to obscurity
+- Buildings carry `charred:'destroyed'|'damaged'` flags driving the new buildVillage branch (see below)
+- `npcDefs:[]` — no outdoor NPCs (all fled east to Ironhaven or fell in the attack)
+- `herbSpawns:[]` — ground is scorched
+- New notice board text: "Record of the Burning," signed "— E."
+- `detailFn` adds smoke columns at destroyed buildings (4 stacked cylinders, tapered and slightly drifting with height), scorched ground patches at path intersections, Bram's body with full interactable wiring
+
+**`buildVillage` — `h.charred` branch.** Added alongside the existing `h.type==='church'` branch. Two variants:
+- `destroyed` — four scorched wall stubs at ~0.9u height (with gaps so they read as "collapsed walls" not "short box"), leaning E/W stubs with slight `rotation.z` jitter, collapsed-roof debris box at center, ash mound cylinder underneath, 3 diagonal fallen beams, dim red point light for ember smolder
+- `damaged` — full walls in scorched-wood material, partial roof tilted (`rotation.z=0.22`), charred-but-functional door group still interactable (so the interior entry path keeps working), scorch marks on the walls. Used for Edna's cottage (h5)
+
+Church (h6) keeps `type:'church'` which takes priority over charred in the branch order, so it renders as its normal stone-body silhouette. Stone, older than everything else, still standing.
+
+**Bram's body interactable.** ZONE_CORPSES entry with `bramBody:true` marker, placed at `(25.5, 21.5)` — a few steps south of the forge. Prone body composed of box torso + sphere head + splayed arms + legs + one visible boot. Goblin axe still in his right hand (cylinder handle + box head). Small dim warm-tone point light (`0xaa7733`, intensity 0.6, range 4) so the body is visible from the gate approach without reading as a shiny loot drop. Broken helmet and an arrow stuck in the ground as dressing.
+
+First E-press on the body: one-shot flavor message — "He's gone. A goblin's axe is still in his hand. The forge behind him is a ruin." Sets `worldState.bramBodyRead=true` and returns without opening the loot panel. Second E-press: normal loot panel with the hammer.
+
+**The Forge-Man's Hammer.** Unique tier-3 blunt weapon. `atk:[11,17]` midpoint 14 — above baseline tier-3 mace so the drop feels like a boss reward. `mightBonus:2` is currently decorative per the known-issues list (fortify-* bonuses aren't wired into the attribute pipeline yet); left in place so the hammer works automatically when that gets addressed.
+
+Custom viewmodel in `buildViewmodel` gated by `w.name==="The Forge-Man's Hammer"`. Smith's-hammer profile (rectangular iron head + back wedge), not war-mace. Two-tone: darkened iron head + polished dark-wood haft + brass band at head-haft joint + brass pommel cap. Four stacked leather bands wrapping the bottom third of the haft with an iron rivet where the wrap terminates. Ember emissive on the +X-facing striking face (`emissive:0x3a1a08, emissiveIntensity:0.30`) plus a dim warm point light at the head — sells "the grip still smells of his forge" without magic-weapon glow. Small stamped forge-man's mark on the side of the head: inset square border + brass dot inside.
+
+**Hammer-respawn guard.** `ZONE_CORPSES` isn't in the save payload, so the naive path would respawn a fresh hammer on every reload into burned Ashenmoor. `buildAshenmoorBurned` now checks for an existing hammer in `EQ` or `BAG` before seeding Bram's items array — if the player has it already, the body is seeded with `items:[]` and `looted:true`, keeping the scene consistent across reloads without needing to serialize corpse state.
+
+**SHOP_DIALOG_BURNED — post-burn keeper override.** Interior dialog lookup (inside `goToInterior` → dialog resolver at line ~7640) now prefers `SHOP_DIALOG_BURNED[keeper]` when `worldState.ashenmoorBurned && activeZoneId==='overworld'`. Only Edna has an entry — the other keepers all either fled (Corwin/Mira/Barnaby/Tom/Finn/Pip/Aldhelm) or fell (Bram, Sera's fate offscreen), and their houses render as `destroyed` so they're not enterable anyway.
+
+Edna's burned greeting is intentionally softer and shorter than her peace-time dialog. Her topics: "What happened here?" (casualty roll — Bram, three Atherton children, four Glenns, old Humphrey's widow, two travelers), "Why didn't you leave with the others?" (pride + the mark on her wall), "What about the dungeon?" (still open, anchors broken, warning the player about changed lower floors — sets up Act II dungeon-state content).
+
+**Q7 — The Rubbing.** Courier beat. Edna hands the player a charcoal rubbing on accept (new `giveItemsOnAccept` field on the quest def — handled in `acceptQuest`); Aldwyn examines it in a scripted scene and hands back the Royal Mage Commission.
+
+Three-level `customActiveDialog` nesting on Aldwyn (deeper than Q3's two-level): "Give him Edna's rubbing" → his analysis of the inversion operator ("He was in Ashenmoor. In her house. While she slept.") → "Is this enough to move on him?" → his pivot ("On him? No. He has been careful for two hundred years and we have a drawing. But it's enough to change what I can give you. Come to the desk.") → "The desk." → commission speech + `questDialogComplete`.
+
+**`acceptQuest` + `completeQuest` hooks.** `acceptQuest` now honors a `giveItemsOnAccept` field — an array of items that get added to the bag on accept. `completeQuest` now has three new responsibilities:
+1. Consume items from `giveItemsOnAccept` (removes the rubbing from bag on Q7 turn-in — Aldwyn "takes it" in fiction)
+2. Set `worldState.ashenmoorPending=true` on Q6 completion (the burn-pending flip)
+3. Set `worldState.commissioned=true` on Q7 completion
+
+Note: `rewardSpeech`/`rewardResponses` on Q7 are dead code because `customActiveDialog` fires `questDialogComplete` which advances active → reward → complete in one tick, skipping the reward-state UI. Left in place as documentation; the climactic line is the "The desk." response, which is strong enough to carry the moment on its own. If we want to surface `rewardSpeech` in future, switch Q7 to the standard `talk_to` pattern and drop `customActiveDialog`.
+
+**Royal Mage Commission — reward + gate.** Unique misc item (`unique:true`), persists in bag post-Q7 as a permanent marker. Currently wired into one downstream system: Dagna's back-room stock at Ironhaven's War Supplies (ih2). `renderShop` detects `worldState.commissioned && currentHouse.id==='ih2'` and appends three Master-tier elixirs (MP regen, Stam regen, Swiftness) to her normal stock. She previously only sold the two combat-most-useful Masters (HP regen, Warding) per v61x design.
+
+Future commission gates — carriage-masters (next session), academy access (Act II).
+
+**Unique item destroy protection.** `requestDestroyItem` now refuses to destroy items with `unique:true` or names matching `"Aldwyn's Seal"` (retroactive guard — the Q6 reward had no protection previously). Toast: "`${item.name}` cannot be destroyed."
+
+**`_applyZoneFromSave` — burn-aware overworld load.** When the save's zone is overworld and `worldState.ashenmoorBurned`, lazy-builds `owBurnedScene` (if not already built) and routes the player into it with the `'🔥 Ashenmoor — Ruins'` banner. Previously always loaded `owScene`.
+
+**Version bump.** SAVE_VERSION 1 → 2. `loadFromSlot` permissive about v1 (old saves missing `wS` fall through to defaults); strict rejection for anything other than v1 or v2.
+
+---
+
+## Systems introduced this session
+
+### worldState flag pattern
+
+A global persistent flag store for cross-quest narrative events. Parallel to `QS` (per-quest) and `HERB_CONSUME_COUNTS` (per-herb) but with one-word named flags rather than keyed collections. Serialized as short-key `wS` in save payload.
+
+Pattern for adding a new flag:
+1. Add to `worldState` declaration with a default value (usually `false`)
+2. Add to `_applyLoadData` restore block with the safe-default fallback pattern: `worldState.XXX = !!(d.wS && d.wS.XXX);`
+3. No save payload changes needed — the whole `worldState` is spread into `wS` already
+
+Current flags: `ashenmoorBurned`, `ashenmoorPending`, `commissioned`, `bramBodyRead`.
+
+### Charred building render branch
+
+`buildVillage` now handles `h.charred='destroyed'|'damaged'` alongside the existing `h.type==='church'` special case. Destroyed = wall stubs + debris + ember; damaged = scorched full walls + tilted partial roof + still-functional door. Any village config can use these by setting the flags in `cfg.buildings[].charred`.
+
+### giveItemsOnAccept quest field
+
+Lets a quest hand the player an item at the moment of acceptance rather than at reward time. Paired with the new `completeQuest` hook that removes those same items on completion (NPC "takes it back"). Useful for courier quests where the player carries a physical object that has fiction weight.
+
+### SHOP_DIALOG_BURNED override
+
+Parallel dialog table consulted first in the interior resolver when `worldState.ashenmoorBurned`. Currently Edna + Brother Oswin. Pattern generalizes for any future zone-state-dependent dialog overlays.
+
+---
+
+### v61ae — Burn playtest fixes + Q7 four-stage restructure + Brother Oswin (Session 17)
+
+**Context.** First playtest of v61ad surfaced five bugs and several design asks. This session closed all the v61ad blockers, extended Q7 from a one-stage courier to a four-stage triage-and-courier arc, added Brother Oswin as the oratory's sole surviving keeper, animated the smoke columns, charred the village ground, softened Q6's dialog with a smoke-from-home hook, and renamed Aldhelm → Oswin to eliminate the Ald-ald-ald phonetic collision with Aldred and Aldwyn. Everything landed cleanly and the full Q6→burn→Q7→commission chain is now playable end-to-end.
+
+**Sol-array bug (the big one).** Burned Ashenmoor was writing colliders to a fresh array (`ASHENMOOR_BURNED_CONFIG.sol = []`) while `owSolid()` kept reading the pristine-village `OW_SOL`. Player was bumping into ghost colliders of the original buildings — including the one blocking Edna's doorway, which is why her cottage was unreachable. Fix: point `ASHENMOOR_BURNED_CONFIG.sol` at `OW_SOL` itself and clear it in-place (not reassign) before the burned rebuild so the ASHENMOOR_CONFIG reference held by the pristine builder stays valid.
+
+Paired fix: in the buildings loop, `destroyed` buildings now skip the full-volume collider and substitute a small debris-pile collider at center. Players can walk through ruined buildings visually (wall stubs + ash + fallen beams all have gaps) and also mechanically. Damaged buildings (Edna's cottage, the oratory) keep their full collider because the walls are still standing.
+
+**Bram body interact bug.** The `nearZoneCorpse` check required `items.length>0`, so a previously-looted body became un-interactable. Hoisted a dedicated `nearBram` check above that filter with its own 1.5u proximity radius, flavor-text gate on `worldState.bramBodyRead`, and a "you've taken what there was to take" message for post-loot revisits. Also added the `read_corpse` event fire on first read so Q7's Bram objective advances.
+
+**Hammer despawn on loot.** The goblin axe mesh lives as a child of the `bram` group. Stored as `bramAxe`/`bramGroup` refs on the ZONE_CORPSES entry. When `takeLootItem` runs and the item is The Forge-Man's Hammer, the axe is removed from the parent group. Also defensively removes the axe on rebuild if the player already has the hammer (reload case) — matches the existing has-hammer items-array guard.
+
+**Hammer viewmodel rotation.** Striking face was on local +X (sideways when held) rather than forward. Head reoriented 90° — striking face now on +Z (forward when swung), back wedge on -Z, stamped forge-man's mark moved to the +X face (the visible side when held), ember point light repositioned. All dimensions recomputed so the head silhouette stays the same shape as before, just facing the right way.
+
+**Persistent "Press E to leave" message.** Root cause: the per-frame tick only updates the prompt element when in a matching state (overworld branch clears overworld prompts, interior branch clears interior prompts) — but a transition doesn't proactively clear whatever was on screen. So if `lid` ever got into a stale state for even a few frames (which was happening in some save/load paths), the old prompt lingered visibly. Fixed via a new `_clearInteractPrompt()` helper called at the top of every zone/interior/dungeon transition entry: `goToZone`, `goToInterior`, `exitInterior`, `goToOW`, and `_applyZoneFromSave`. Also defensively added `currentHouse=null` to `_applyZoneFromSave` so no stale interior state can leak from a prior session.
+
+**Animated smoke.** Each destroyed building's smoke plume is now 4 slabs with per-slab phase offsets, sway amplitudes that increase with height, and per-frame rotation. Each plume owns its own material clone so opacity cycles independently — the six plumes sway and pulse out of phase with each other. Registered on a `_burnedSmokeMeshes` + `_burnedSmokeMaterials` pair of module-level arrays. Ticked via a new `tickBurnedSmoke(now)` function wired into the overworld branch of the main tick, short-circuited when the arrays are empty (normal Ashenmoor) or not-burned state.
+
+**Charred ground.** Village interior now has layered concentric discs at four clusters (plaza, Bram's forge NW, Pip's SE, guardhouse + Edna's SW) — darkest color at center, progressively lighter at outer rings — plus six small ember-orange accent patches scattered inside the charred zones. Transparent materials so the grass slightly shows through at the edges for a soft blend. Outer fields stay green: the village is ruined, not the world.
+
+**Q6 dialog rewrite.** Softened on Aldred — Aldwyn no longer names him outright, he says "a name I've been sitting on, I'll share it with you when you come back." Adds the explicit smoke-from-home hook: "A rider came in from the South Road an hour ago. Says there's smoke on the horizon — Ashenmoor direction. Probably nothing. Go home first." Gives the player an in-fiction reason to go check on Ashenmoor rather than just "the game told me to." Four reward responses instead of three.
+
+**Aldhelm → Brother Oswin rename.** Three phonetic "Ald-" names in close proximity (Aldred, Aldwyn, Aldhelm) made the Act I reveal muddier than it should be. Renamed across all three touch sites (HOUSES registry, SHOP_DIALOG entry, burned-config comment) plus a new voice profile (David voice, rate 0.90, pitch 0.88 — older, soft, measured).
+
+**Church damaged-variant render.** `_buildChurchExterior` now accepts `h.charred` and produces a darker palette (scorched stone, sooted roof, darkened glass), an ember-tinted single-candle interior glow (not gold, not full lamp array), five scorch streaks on the visible wall faces at asymmetric positions, one cracked lancet window with a dark diagonal crack through a glass pane, and a thin grey smoke wisp rising from the roof ridge. Geometry is unchanged so the silhouette still reads "church" from distance. Cross stays bright — deliberate narrative beat: "what had been held still holds, here." h6 in `ASHENMOOR_BURNED_BUILDINGS` is now `{type:'church', charred:'damaged'}`.
+
+**Q7 four-stage restructure.** Previously a single courier objective (take rubbing to Aldwyn). Now a triage-then-courier arc with four objectives and narrative gating:
+
+1. `{type:'read_corpse', corpseId:'bram', zone:'overworld'}` — player reads Bram's body flavor text
+2. `{type:'talk_to', npc:'Brother Oswin', zone:'overworld'}` — player checks on the priest in the oratory
+3. `{type:'receive_item', itemName:"Edna's Rubbing", prereqIndices:[0,1]}` — player returns to Edna after both check-ins and explicitly clicks the handoff topic
+4. `{type:'talk_to', npc:'Aldwyn', zone:'ironhaven', prereqIndices:[2]}` — player brings the rubbing to Aldwyn
+
+Objective 3 uses `receive_item` rather than `talk_to` so opening dialog with Edna doesn't auto-advance the quest — the player has to explicitly pick the handoff topic. Objective 4 has `prereqIndices:[2]` so Aldwyn's scripted scene doesn't surface until the rubbing is in the bag.
+
+**Brother Oswin's burned dialog.** Full dialog tree in `SHOP_DIALOG_BURNED.Oswin`: three greeting variants, six topics (what happened here; are you hurt; Edna sent me; will you stay here; why didn't you fight; what about the dungeon), nested follow-ups throughout. He names one of the Glenn children whose voice he heard through the door — specifically "the middle one" — but refuses to say which name, saying that belongs to her mother to speak first. Reads sitting at the altar; won't stand. Closing line about the sigils that's meant for Aldwyn ("whatever he did, it wasn't a binding being strained. It was a binding being edited") — sets up Act II dungeon-state content and gives Oswin a reason to walk to Ironhaven later.
+
+**prereqIndices objective field.** New optional field on any objective. An objective only starts counting once every listed prior-index objective is complete. Prevents multi-stage quest objectives from ticking out of order — e.g. Q7's "return to Edna" can't tick on the first frame after accepting the quest just because the player happens to still be near her. Inserted at the top of the objective-match loop in `checkQuestProgress`; if prereqs are unmet, the objective is skipped entirely for this event.
+
+**read_corpse event type.** New event distinct from `talk_to`. Fires from the Bram body first-read interact path. Keeps living-NPC dialog events cleanly separated from dead-body interacts.
+
+**receive_item event type.** New event that fires from `questMidQuestGive` dialog actions. Used for explicit item-handoff beats where the transfer is the thing that advances the quest — player must choose to take the item.
+
+**Multi-NPC `customActiveDialog` form + `resolveCustomActiveDialog` helper.** Previously `customActiveDialog` was `{label, response, follow}` applying to whichever NPC was a talk_to target. Q7 has three talk_to targets (Oswin, Edna, Aldwyn) but only Aldwyn should trigger the scripted scene. New form supports:
+
+- **Single-NPC (backward-compat):** `{label, response, follow}` — applies to any talk_to target. Used by Q3.
+- **Multi-NPC keyed:** `{'Aldwyn': {prereqIndices, label, response, follow}, ...}` — applies only when the player is talking to a keyed NPC. Each entry can carry its own prereqIndices.
+
+Hoisted `resolveCustomActiveDialog(qDef, npcName)` reads either form and returns the right entry (or null). Called from both call sites — `hasCustomDialog` check at `openDialog` and `activeCAD` computation inside `buildQuestTopicsForNPC`. Unified resolution means prereqIndices are respected in both places: a talk_to event for an NPC with unmet prereqs correctly fires and advances objectives rather than being spuriously blocked.
+
+**Q7 stage-3 dialog branch.** Hardcoded branch inside `buildQuestTopicsForNPC` for `qDef.id==='q7_the_rubbing' && isGiver`. When Bram + Oswin objectives are done but Edna's isn't yet, injects a dedicated "📜 I saw to them both." topic with a follow-up that fires `questMidQuestGive` — adds the rubbing, fires `receive_item` event, advances obj 2. Short (one topic, one follow), but voiced as a specific beat: Edna acknowledges she knew the player would go, defers Bram conversation for later, gives the rubbing with fresh context about the mirrored mark on her west wall.
+
+**Q6 dialog (softened).** Aldwyn's reward speech reworked from three responses to four. No longer names Aldred outright — says "a working theory and a name I've been sitting on, I'll share it with you next time we speak." The reward dialog now explicitly hooks the burn: "a rider came in from the South Road an hour ago. Smoke on the horizon — Ashenmoor direction. Probably nothing. Go home first." The "Aldred. Got it." reward response is gone; replaced with "Smoke. From Ashenmoor." (which keeps Aldwyn's measured tone and gives the player a chance to react with concern). The name-reveal now lives in Q7's Aldwyn handoff instead, where it has more narrative weight — delivered alongside the commission after the rubbing evidence arrives.
+
+---
+
+## Systems introduced this session
+
+### prereqIndices objective gating
+
+Any objective can carry `prereqIndices: [n, m, ...]`. Until every listed prior-index objective is at its required count, this objective is skipped entirely from event matching. Lets a quest declare ordered stages without needing separate quest entries.
+
+### read_corpse / receive_item event types
+
+Two new events distinct from talk_to, for narrative-weight interactions where the player is doing something other than talking to a live NPC. `read_corpse` fires from a ZONE_CORPSES flavor-text read; `receive_item` fires from a dialog-based item handoff.
+
+### questMidQuestGive dialog action
+
+`{items:[...], questEvent:'receive_item', eventData:{itemName:'...'}}` — adds items to the bag, fires the event, shows a toast. Lets a dialog action hand the player a quest item mid-active rather than only at accept or complete time.
+
+### Multi-NPC customActiveDialog keyed form
+
+`customActiveDialog: { 'NpcName': {prereqIndices, label, response, follow} }`. Each entry is NPC-specific, with its own prereqIndices gate. `resolveCustomActiveDialog(qDef, npcName)` is the unified resolver.
+
+### _clearInteractPrompt helper
+
+Called from every zone/interior/dungeon transition entry. Clears the interact prompt element proactively so any stale prompt from the prior state can't persist across a transition.
+
+### tickBurnedSmoke
+
+Per-frame update for burned-Ashenmoor smoke plumes. Each slab sways via sine with its own phase + amplitude, rotates slowly around Y, and each plume's material opacity cycles independently. Registered meshes/materials cleared on rebuild; tick short-circuits when arrays are empty.
+
+### Charred building rendering
+
+`h.charred='destroyed'` produces wall stubs + debris + ash mound + fallen beams + ember light. `h.charred='damaged'` produces scorched full walls + tilted partial roof + still-functional charred-variant door. `_buildChurchExterior` honors `h.charred` for damaged-variant stone body treatment.
+
+---
+
+### v61af — Save migration + ground redo + quest update popups (Session 18)
+
+**Context.** First playtest of v61ae surfaced a cluster of related issues — all traced to Q7's objective-array shape changing from 1 to 4 between v61ad and v61ae. Old saves stomped the fresh qsInit shape via `Object.assign(QS, d.QS)`, leaving checkQuestProgress iterating indices that didn't exist. The resulting exception killed the whole quest-progression loop, which cascaded into broken quest markers, broken minimap, and broken compass. The ground-texture treatment from v61ae also had visible z-fighting + transparency distortion artifacts. Finally, the request for Oblivion-style quest update popups landed as a cleanly-scoped add.
+
+**Q7 save-shape migration (the blocker fix).** Added to `_applyLoadData` after the QS object-assign restore. Walks every quest def and:
+- Pads shorter `qs.objectives` arrays with fresh `{current:0}` entries until they match the def
+- Trims longer arrays (defensive — shouldn't happen in practice)
+- Replaces any malformed slot (missing or non-numeric `current`) with a fresh object
+
+Saves predating v61ae now load without throwing. New quests added in future versions will continue to work via the same mechanism — the migration is general, not Q7-specific.
+
+**`checkQuestProgress` hardening.** Added defensive guard: if a slot is missing or malformed, skip that objective silently rather than throwing. Previously a single bad slot would `return` from the objective-match fn with an uncaught exception, which killed the outer `QUEST_DEFS.forEach`. That meant quest markers (which iterate quests for direction computation), minimap markers, and compass heading all went dark for the rest of the session until the next reload. With the guard, a bad slot is still skipped, but the rest of the iteration continues.
+
+**Ground texture redo.** Previous approach layered transparent concentric discs (inner dark, outer fading) + ember accent patches. Resulted in z-fighting at rim intersections + transparency-sort artifacts that made the ground appear to ripple based on camera angle. Replaced with two opaque layers:
+- One large **dead-ground disc** (brown-grey `0x5a4a38`, opaque) covering the village footprint + a separate smaller disc covering Pip's curiosities. No rings, no transparency.
+- **Black char patches** (near-black `0x1a1410`, opaque) directly under each destroyed building's footprint + two additional plaza-center patches at high-fire-intensity points. Rectangular, sized to match the debris-pile collider.
+
+No ember accents — they read as glitches in practice. The outer fields keep their grass because the discs are radially bounded, not full-map.
+
+**Quest update popup system.** Oblivion-style centered modal mounted inside the game viewport (`#g`). Two trigger points per quest:
+- **Ready to turn in** — fires when the final objective completes. Posts a "📜 Quest Updated" popup with the quest title and `qDef.readyText`. Chime plays simultaneously.
+- **Complete** — fires after `completeQuest` finishes giving rewards. Posts a "✅ Quest Complete" popup with the quest title and `qDef.completeText`. Same chime.
+
+Modal structure mirrors the existing `showSigilOverlay` pattern (position:absolute inside `#g`, radial-gradient backdrop, bordered card, click-or-Esc-to-close). Queueing: if a popup fires while one is already open, the second is queued and opens ~240ms after the first closes. Prevents overlapping popups in the rare case where a tick completes one quest and unlocks another whose completion also fires.
+
+**Popup chime (`sndQuestChime`).** Two-note procedural chime built on the existing Web Audio engine. E5 (659.25 Hz) → B5 (987.77 Hz), perfect fifth, triangle wave for soft attack, staggered by 180ms with exponential decay envelopes. Total duration ~800ms. Routed through `uiGain` so it respects the UI volume slider. Pattern matches the existing `uiTone`/`sfxTone` helpers — no new audio plumbing needed.
+
+**`readyText` / `completeText` quest fields.** New optional fields on `QUEST_DEFS` entries. First-person reflective voice — written as what the player character would think looking at their journal. Q7 has both this session:
+- `readyText`: "Edna's rubbing is in my bag. She's kept it for thirty years and she trusts me with it. The mark on her west wall was made while she slept, and it matches what's on the rubbing — mirrored. Aldwyn needs to see this. Ironhaven, then."
+- `completeText`: "Royal Mage Corps commission. Full ink, full seal. I have the name now — Aldred, the man he used to be, and Varek the man he is now. Aldwyn was sitting on both of them. The academies must let me in. The carriage-masters have routes I can take. And Aldwyn has told Captain Brynn to expect me back when I'm ready.\n\nNot tonight. Rest tonight. Act Two begins at the gatehouse."
+
+Q1–Q6 fields are deferred to a dedicated writing pass. Popups still fire on those quests — the fallback text ("'{title}' is ready. Return to {giver}.") is generic but functional.
+
+**Esc handler.** Added `quest-popup` check to the global keydown handler, ahead of the existing modal checks. Esc or E closes the popup and drains the queue.
+
+**Ground texture — architectural note.** The root cause of the z-fighting was putting transparent layers at tiny height offsets and trusting the painter's algorithm. The fix was to stop using transparency at all for the ground. Any future ground-tinting effect should start from the same constraint: single opaque layer, plus opaque accents at slightly greater heights. Transparency on nearly-coplanar geometry is a last-resort tool.
+
+---
+
+## Systems introduced this session
+
+### Quest-shape migration
+
+Generalized, not Q7-specific. Runs at save-load time; handles any quest where the def's objective array changed since the save was written (longer or shorter). Lets us keep evolving quest structures without breaking historical saves or introducing version gates.
+
+### Defensive event iteration
+
+`checkQuestProgress` now silently skips malformed objective slots rather than throwing. Pattern: guard the indexed access, `return` the forEach callback, continue the iteration. Broadly applicable — any hot loop that touches per-entry data from potentially-stale state should follow this pattern.
+
+### Quest update popup + chime
+
+Two-trigger modal system with queueing, independent of the toast/message system. The toast remains for at-a-glance status ("Quest accepted!" etc); the popup exists for punctuation moments (ready-to-turn-in, complete). Mirrors the sigil overlay's DOM-in-JS pattern — no pre-declared HTML, injected on first use.
+
+---
+
+### v61ag — Popup polish: audible chime, game pause, player-free gate (Session 18.5)
+
+**Context.** v61af's popup system shipped all the infrastructure but fell short on three things in playtest. Chime was too quiet to hear. Popup didn't pause the game, so a player could get hit while reading a reflective beat. Worst: popups fired mid-dialog, interrupting conversations with the giver NPC. All three fixed this turn without touching the popup's visual design — the UX shell was right, the behavior needed work.
+
+**Chime overhaul (`sndQuestChime`).** v61af had peak gain at 0.18 which was inaudible over ambient music/SFX. Three changes:
+- **Peak gain 0.18 → 0.48.** 2.7× louder at the same routing through `uiGain`.
+- **Three notes instead of two.** Added A5 between the existing E5 (659.25) and B5 (987.77). Now a rising triangle-wave arpeggio E → A → B with quick attack and long exponential decay on each note.
+- **Helper extracted.** A single `note(freq, startOffset, vol, tail)` closure inside the function. Previously two hand-written oscillator setups with duplicated boilerplate; now three one-liners. Easier to tune further if needed.
+
+**Popup pauses the game tick.** Added `quest-popup` to the main loop's early-return gate (line ~14461, alongside hub/dialog/shop). Also gated the viewmodel render so the weapon doesn't bob under the modal. Full pause of: enemy AI, stamina regen, buff decay, animation ticks. Matches the pause behavior of every other modal in the game.
+
+**`_isPlayerFree()` gate (the real fix).** New helper returns true only when none of these are open: dialog, shop, loot, hub, inventory, notice board, book, level-up, sigil overlay. All popup triggers now route through `showQuestUpdatePopup` which just queues and kicks a drain poll. The poll fires every 250ms while the queue has items AND the player isn't free. The moment the player closes whatever dialog/shop/etc they were in, the next poll fires the popup.
+
+Concretely for Q7: when Edna hands the rubbing, last-objective-complete fires. The popup queues. The poll checks — dlgOpen is true, player is in dialog with Edna. Back off. Player clicks "Goodbye." to close the dialog. Next 250ms poll: player is free. Popup fires. Same pattern on Aldwyn turn-in for the complete popup.
+
+**Simplified trigger sites.** Previous v61af code had `setTimeout` delays (450ms on ready, 600ms on complete) as workarounds to try to let dialogs close first. Those are gone — the queue-and-drain system handles it properly. Triggers are now just `showQuestUpdatePopup('ready', qDef)` and `showQuestUpdatePopup('complete', q)`, fire-and-forget.
+
+**Pattern is general.** `_isPlayerFree()` and the queue-drain pattern will work for other "interrupt-avoidant" notifications down the road — level-up banners that shouldn't fire mid-combat, achievement-style notifications, seasonal banners, etc. Any interruption notification should go through this same queue-and-gate pattern.
+
+---
+
+## Systems introduced this session
+
+### `_isPlayerFree()` gate
+
+Boolean helper that returns true only when the player has no modal/menu/dialog/overlay in the way. Single source of truth for "is the player in a position to be interrupted by a popup?" Reusable for any future notification system.
+
+### Queue-and-drain notification pattern
+
+Fire-and-forget API for interruption-avoidant popups. Callers push to a queue; a 250ms poll drains the queue only when `_isPlayerFree()` returns true. No caller-side timing coordination required.
+
+---
+
+### v61ah → v61aj (Sessions 18.75–19)
+
+See version history table for per-version summaries. Each of these sessions was single-purpose: v61ah fixed the chime routing (uiGain → sfxGain) + added rewards block; v61ai rewrote the chime using sfxTone directly to resolve a silent-audio bug; v61aj fixed the burned-Ashenmoor tick cascade (ZONE_CORPSES null-guard on gl/spark), added wall-stub perimeter colliders for destroyed buildings, grew scorch patches past the ruins, added 'accept' popup kind with `acceptText` quest field, and auto-accepted Q7 on burn-trigger entry (pre-v61ak design — later superseded).
+
+---
+
+### v61ak — Q7 Act-II opener restructure + per-objective popups (Session 19.5)
+
+**Context.** v61aj shipped the "quest auto-accepts on burn entry" design, but playtest feedback surfaced a structural problem: the burn trigger was doing two jobs at once (scene swap + quest accept), and making the arrival the quest-start moment meant players hit all four triage objectives simultaneously with Edna flagged as the rubbing giver. User asked: (a) can all three villagers carry quest markers so the player picks the triage order themselves, (b) can Aldwyn be the true Q7 giver (he's the one who heard the smoke report), (c) can the Ashenmoor arrival be an update-beat instead of a start-beat? All three are the right calls; restructured Q7 to match.
+
+**Q7 restructured from 4 to 6 objectives.** New shape:
+- Obj 0: `enter_zone` overworld — auto-ticks via the burn trigger. Carries a `completionText` with the "burned to the ground, I should see if anyone survived" journal-voice beat.
+- Obj 1: `read_corpse` Bram — parallel, no prereqs.
+- Obj 2: `talk_to` Brother Oswin — parallel.
+- Obj 3: `talk_to` Edna — parallel. Ticks on dialog-open (standard `talk_to` event from `openDialog`).
+- Obj 4: `receive_item` — prereq `[1,2,3]`. Only surfaces in Edna's topic list once all three triage objectives are complete.
+- Obj 5: `talk_to` Aldwyn — prereq `[4]`.
+
+Parallel design means the player sees three quest markers simultaneously on the minimap and compass — Bram, Oswin, Edna. Any order. The marker system already supported this (the marker iterator walks all active objectives), so no renderer changes were needed.
+
+**New `enter_zone` event type.** Fires only from the burn trigger in `goToZone` — NOT from every overworld entry. One-shot by construction: the burn trigger's preconditions (`ashenmoorPending && !ashenmoorBurned`) only hold for one zone transition in a playthrough. After the first burn, the flag flips and the event never fires again. Q7's obj 0 ticks once and stays ticked.
+
+**Per-objective `completionText` infrastructure.** New optional field on objective definitions. When an objective ticks to its needed count (not on partial tick-ups for multi-kill objectives), if it has `completionText`, a `'update'` popup fires with the field as body text. Routed through the standard queue-drain + player-free gate. Callers pass `{bodyText: obj.completionText}` as the third argument to `showQuestUpdatePopup(kind, qDef, opts)`. Reusable for any future objective that deserves a reflective beat — arrival scenes, first-kill milestones, stage-completion moments.
+
+**`'update'` popup kind.** Added as a third kind alongside `'accept'` and `'ready'` (all three share the purple palette — they signal "something changed, look at your journal"). Distinct from `'accept'` because the quest is already active; the semantic is "you're further along than you were." `'complete'` stays gold-palette for the end-of-quest punctuation moment.
+
+**Q6 unlocks Q7 directly.** Previously `Q6.unlocks = []` (the burn trigger set Q7 state). Now `Q6.unlocks = ['q7_the_rubbing']` with Q7 flagged `autoAccept:true` and the new `showAcceptPopup:true`. The chain: Q6 completes → `completeQuest` runs the unlocks forEach → finds Q7 with autoAccept → sets Q7 state to 'active' → sees showAcceptPopup → fires `showQuestUpdatePopup('accept', q7)`. Q7's acceptText is now the "Aldwyn heard smoke, I need to get home fast" beat — a *leaving* Aldwyn's office moment, not an arriving-at-Ashenmoor one.
+
+**`showAcceptPopup` opt-in flag.** Matters because sigil-lore quests also use `autoAccept` (they activate silently when the player touches their first sigil — the sigil overlay is their accept-UI). Sigil-lore quests leave `showAcceptPopup` false so the accept popup stays silent for them. Opt-in by quest-class, not by default. Documented inline near the flag-check so future quests know which to use.
+
+**Burn trigger simplified.** No longer mutates Q7 state. Just flips world flags, clears outdoor corpses, fires `enter_zone` event. Q7 is already active from Aldwyn's Q6 completion, so the event ticks obj 0, which fires the `'update'` popup via its completionText. Removed the redundant `showMsgLong` toast (v61aj already dropped that) and the hand-fire of showQuestUpdatePopup (now handled by checkQuestProgress's completionText branch).
+
+**Edna's burned dialog — 4 triage variants.** Edna's quest-topic injection in `buildQuestTopicsForNPC` expanded from a single "handoff when both triage done" check to four mutually-exclusive variants:
+- Neither Bram nor Oswin seen → "What do you need from me?" triage-request topic. Text is what used to live as the stage-1 accept dialog (the "go see them both" instruction). Now an in-progress prompt because the quest is already active when the player arrives.
+- Bram confirmed dead, Oswin unchecked → "I found Bram at the forge" acknowledgment + prompt to check Oswin.
+- Oswin confirmed alive, Bram unchecked → "Brother Oswin is alive" acknowledgment + prompt to check Bram.
+- Both done → existing rubbing handoff topic (unchanged).
+
+Each variant uses an early `return` to skip the default in-progress topic, so Edna always shows exactly one Q7-relevant topic per visit. The talk-to-Edna objective (obj 3) ticks on dialog-open regardless of which variant shows — the player can open dialog in any triage state and progress.
+
+**Scenario coverage.** All three visit-orderings are tested in code-review:
+1. *Edna first:* Opening dialog ticks obj 3. bramDone/oswinDone false. "What do you need" topic shows. Player leaves, goes to the others, comes back. Handoff topic now shows because all three are true.
+2. *Bram then Edna:* Reading Bram ticks obj 1. Opening Edna ticks obj 3. "I found Bram" variant shows + prompt to see Oswin. Player goes to Oswin (obj 2), returns to Edna — handoff shows.
+3. *Oswin then Edna:* Talking to Oswin ticks obj 2 (via the standard `talk_to` fire, since Oswin isn't a customActiveDialog target). Opening Edna ticks obj 3. "Brother Oswin is alive" variant shows + prompt to see Bram. Player reads Bram (obj 1), returns — handoff.
+
+**Debug helper updated.** `window._debugResetBurn()` now sets Q7 state to `'active'` (was `'locked'` in v61aj). Q7 is now given before the player walks into Ashenmoor, so the simulated "about to walk into burned Ashenmoor" state has Q7 already active — required for the `enter_zone` event to have an objective to tick.
+
+---
+
+## Systems introduced this session
+
+### `enter_zone` objective type
+
+Fires from the burn trigger only. Would generalize cleanly to any "narrative zone arrival" event in future acts (Act II hubs with their own scripted-arrival quests, the carriage-master network's first-ride destination reveals, etc.).
+
+### Per-objective `completionText`
+
+Any quest objective can now carry its own reflective popup text. When the objective ticks to its needed count, a `'update'` popup fires via the standard queue. Pattern complements the quest-level acceptText/readyText/completeText fields — those are for the quest as a whole, completionText is for individual stages within a quest that deserve punctuation.
+
+### `showAcceptPopup` opt-in flag
+
+Gates whether `autoAccept` quests fire the accept popup when their unlock chain activates them. Storyline quests opt in; sigil-lore quests stay silent. Prevents dozen-ish redundant popups for sigil activations while keeping Q7's accept moment intact.
+
+---
+
+## Tuning knobs (current values)
+
+| Knob | Value | Location |
+|---|---|---|
+| Corner chest spawn rate | 0.08 | chest gen |
+| Barrel loot rate | 0.40 | barrel gen |
+| Chest interact range | 1.1u | near check |
+| Barrel interact range | 1.0u | near check |
+| Corpse interact range | 1.3u | both dungeon + zone |
+| Caor blast radius | 2.2u | spell |
+| Mastery stack ceiling | 4.5s | mastery tick |
+| Solas-Gheal heal | 15% maxHP | spell |
+| Max carry | 50 + might×5 | `maxCarry()` |
+| Encumbrance thresholds | 80/100/125% | `encumbranceState()` |
+| Telegraph default | 0.35s | `telegraphDuration()` |
+| Telegraph peak emissive | (0.75, 0.08, 0.05) | `telegraphPulse()` |
+| Whiff threshold dungeon | 1.3u | `executeDungeonStrike` |
+| Whiff threshold zone | 1.4u | zone tick strike |
+| Mimic reveal range | 1.0u | mimic AI |
+| Drain range | 1.6u | Phantom/Wraith |
+| Gargoyle wake range | 4.0u | dormant check |
+| Enemy HP scale per level | +0.15, cap 3.0× | `enemyHpScale()` |
+| Enemy dmg scale per level | +0.08, cap 2.0× | `enemyDmgScale()` |
+| Variant chance ramp | +0.15 per level over minLevel, cap 0.50 | `pickVariant()` |
+| Weapon tier curve | ~1.29×/tier | `TIER_BASE_ATK` |
+| Weapon weight (dagger/sword/longsword) | 1.5 / 3 / 4 | `WEAPON_TYPES` (v61v) |
+| Weapon weight (mace/flail) | 4 / 5 | `WEAPON_TYPES` (v61v) |
+| Armor weight (cuirass/greaves/helmet) | 8 / 5 / 3 | `ARMOR_TYPES.armorW` (v61v) |
+| Rusty Sword atk | [5, 9] | hardcoded in starter EQ (v61v) |
+| Potion tier weights (barrel) | {M:3, S:1, Ma:0.3} | `wirePotionsIntoLoot` (v61x) |
+| Potion tier weights (chest) | {M:3, S:2, Ma:1} | `wirePotionsIntoLoot` (v61x) |
+| Regen buff rates (HP/MP/Stam per sec, Mild) | 0.5 / 0.5 / 0.6 | `POTION_LINES` (v61x) |
+| Regen buff rates (HP/MP/Stam per sec, Master) | 2.5 / 2.2 / 2.8 | `POTION_LINES` (v61x) |
+| Quick-destroy modifier key | X | `setQuickDestroy()` (v61r) |
+| Destroy confirm auto-revert | 2000ms | `requestDestroyItem()` (v61q) |
+
+---
+
+## Dev shortcuts (paste in console for testing)
+
+```js
+// Walk 10× faster (for playtest zone-transition testing). Not persisted —
+// resets on page reload. Hold Shift to stack sprint on top for ~12.25× total.
+DEV_SPEED_MUL = 10;
+DEV_SPEED_MUL = 1;   // back to normal
+
+// Max caster
+ATTRS.intelligence = 80;
+knownSpells.caor = 3;
+knownSpells.sioc = 3;
+knownSpells.solas_gheal = 3;
+activeSpellId = 'caor';
+maxMana = 9999; mana = 9999;
+spCd = 0;
+
+// Max fighter
+ATTRS.might = 60;
+level = 20;
+// unlock all weapon tiers in shop by bumping gold
+gold = 99999;
+```
+
+---
+
+## Known issues / tech debt
+
+### Active flags
+
+- **Golem-with-slash 14-hit watch (v56)** — intentional teaching moment for weapon-type discipline. If playtest shows it's unfair rather than teachable, raise Golem's slash resist from 0.4 to 0.5 (single-line change in `EM.Golem.resist`). Same lever applies to Gargoyle (0.4 slash resist as well).
+- **Variant density tuning (v56)** — `pickVariant` now ramps chance with `(1 + (level-minLevel) × 0.15)`. If variants feel too rare at level 10+, bump `0.15` to `0.20`. If too common, drop to `0.10`.
+- **Telegraph visual readability** (v52) — user reports wind-up is hard to see in play. Candidates: higher peak emissive, body scale bob, outline shader, or longer default duration
+- **Hand models / gauntlet rendering** — "unequip regenerates rusty sword" is a placeholder visual
+- **Greater variant XP may double-dip** in dungeons (HP-based XP + xpMult multiplier) — minor
+- **Resist overlays replace** rather than stack (Frost Cave Troll doesn't compound fire weakness)
+- **Zone corpses accumulate** indefinitely (no despawn) — could cap at ~50 later
+- **Zone corpses not serialized** — surfaced in v61ad: any ZONE_CORPSES state (loot availability, looted flag) is rebuilt on reload, not restored from save. Worked around for Bram's body with a has-hammer check, but a general fix would serialize `ZONE_CORPSES` (or at least the subset with `unique:true` items) in the save payload.
+- **Bag tooltip** doesn't show weight yet (one-line add in `showBagTooltip`)
+- **No drop-to-world mechanic** — destroy (v61q) covers the junk-cleanup pain point; actual drop-to-world would need ZONE_CORPSES/CORPSES routing plus a visible pickup marker. Deferred — destroy is enough for now.
+- ~~**No stash/storage system**~~ — ✅ shipped v61d4 (Caldric Safehouse with stashBag + bed-rest + grant scene; see Session 26 below).
+- **Label quirk** — inventory says "Bag" at top but weight includes equipped; user accepted this
+- **Q2 dead code** — `reach_dungeon_floor` event still fired from `goToFloor2` (line ~7115). No listeners remain after the v61n swap to `touch_sigil`. Harmless but worth cleaning up.
+- **Decorative armor enchants (Finding D)** — 5 fortify-* enchants (mightBonus/fortitudeBonus/finesseBonus/swiftnessBonus/intBonus) roll in `ARMOR_ENCHANTS` but nothing reads those bonus keys anywhere in the attribute pipeline. Either wire them through `effATTR` helpers or remove from the rolling pool. **Adjacent flag (v61ad):** The Forge-Man's Hammer has `mightBonus:2` as a flavor bonus that doesn't apply until this gets wired up. Will work automatically once the fortify-* audit ships.
+- **Weapon enchantments still unaudited** (v61g flag) — v61i fixed *persistence* of enchants but did not audit whether every enchant in `WEAPON_ENCHANTS` has a matching combat-tick handler. Lifesteal was called out specifically as decorative. Systematic audit still pending.
+- **Books destroyed on read** (v61g flag) — reading a skill book consumes the item. Should be reusable or at least lore-retainable. User flagged as unintended. Not touched this session.
+- **Ashenmoor signposts blank** — the Ashenmoor sign-board system at line ~4174 renders post + board but has no icon. Could get a similar 3D glyph treatment to Ironhaven's v61y/z signs. (Moot in burned Ashenmoor — signs are gone with the shops.)
+- **Q7 rewardSpeech / rewardResponses dead code** (v61ad) — because Q7 uses customActiveDialog's questDialogComplete which skips active→reward UI. Left in place as documentation; climactic "The desk." response carries the moment. If surfacing rewardSpeech becomes needed, switch Q7 to standard talk_to + drop customActiveDialog.
+
+### Viewmodel polish (v61h backlog, unchanged)
+
+- **Weapon bobs with terrain height** when moving on elevated surfaces — looks wrong. The viewmodel's Y-position is probably tracking terrain height through `camY` or `jumpY`; it should stay locked to the camera's local space (constant offset from camera Y), independent of world terrain.
+- **Offhand and weapon bob out of sync** — should move together as a coherent "breathing" motion. Probably two separate `Math.sin(swT * ...)` calls with different phase offsets or frequencies. Need to share a single phase value across both viewmodels, or at minimum make sure the sine frequencies match exactly.
+
+### World map / gate system (Session 31, v61ec-v61ef → closed Session 34, v61el)
+
+The gate-as-data system shipped in v61ec is the durable architectural answer — the SVG cannot drift from gate config because it's a pure function of it. The multi-session wave that started with v61ec closed at v61el; the map now matches the locked SVG spec, the gate graph is verified end-to-end via Python sim, and the lock topology matches the design rule (locked corridor = both ends guarded, downstream zones gated). Resolved this wave:
+
+- ✅ **Layout collisions in MAP_LAYOUT** — resolved v61eh. The grid was rebuilt to match the locked SVG spec; under the spec-matched grid every edge is either same-row, same-col, or a clean L-shape through an empty grid cell. `MAP_EDGE_OVERRIDES` infrastructure preserved (table + renderer branch) for any future content that needs waypoint control, but currently empty.
+- ✅ **Pre-Q7 Wastes-route to Coeur de Vie** — resolved v61eh + v61el. Geographic terminus shifted from Dunmore to Portclare (v61eh `wastes_east` repurposing). The Wastes back-door route is canonically accepted as the brave/scenic alternative, but Coeur de Vie itself is now Act III-gated (`capital_road` corridor commission-locked at both ends per v61el), so the route no longer reaches the capital pre-Act-III. Plague village + long dangerous wilderness still provide the soft cost on the route to Portclare.
+- ✅ **Browser playtest of full gate flow** — playtested clean across v61eh-v61el. Multi-gate zone arrival/exit verified for Ironhaven, Portclare, Vieux Marché, La Porte Grise, Hearthwick, Droichead.
+- ✅ **MAP_EDGE_OVERRIDES system** — built in v61eg, emptied in v61eh under the spec-matched grid. Infrastructure preserved.
+- ✅ **Lock asymmetry / lock topology** — resolved v61ek + v61el. v61ek added the back-prop pass to `_buildGateGraph` so asymmetric guard tagging is no longer a silent rendering bug. v61el re-tagged the corridors per the canonized "lock-as-zone-isolation" rule: `west_track` (coastal arc, Q7), `northern_road` (mountain region, Q7), `capital_road` (capital, Act III) — three locked corridors, three reveals at progression beats. Both ends of each locked corridor tagged.
+
+Remaining notes:
+
+- **Ironhaven fortress orientation note (constraint, not bug).** Ironhaven is built facing compass-north in 3D — its game-N gate is its front entrance. To preserve game-wall ↔ map-wall agreement, MAP_LAYOUT places Ironhaven directly south of La Grise (so game-N → map-N → up-toward-mountains) and Portclare south of Ironhaven (so game-S → map-S → down-toward-the-coast). This is the inverse of an intuitive top-down "Ironhaven is the central hub near the top" layout. If the layout rework re-positions Ironhaven, the fortress orientation in the 3D level needs to be checked; rotating the fortress in 3D would touch every NPC, building, and path inside it.
+
+- **`hollowed_wastes` save migration shim removable when?** The save shim that remaps `hollowed_wastes` → `wastes_west` is in `_applyZoneFromSave` (line ~17900). It's small and harmless, but if no playtester actually has a pre-v61eb save with that zone string, it can be retired. Decision: leave in place permanently as belt-and-suspenders. Cost is one comparison per save load. **Note (Session 34):** `wastes_west` itself was deprecated in v61ek (zero inbound gates, registered as harmless dead code). The migration shim now resolves to a stranded zone — players landing here from a pre-v61eb save will find themselves in a zone they cannot reach again once they leave. Acceptable tradeoff; the alternative is changing the migration target, which is a worse outcome for old saves than letting them visit a stranded zone once.
+
+### Session 15 playtest-round resolved finds
+
+Crossed off for the record — these were flagged in v61g/v61h and closed in session 15:
+
+- ✅ Armor enchantments don't rehydrate on reload — v61i
+- ✅ Blocking has no effect on the overworld — v61l
+- ✅ Quest markers only work in 3 zones — v61m
+- ✅ Q2 completion fires on floor-2 entry instead of sigil touch — v61n
+- ✅ Q2 quest marker broken on floors 1 and 2 — v61n
+- ✅ Aldwyn's shop spawn into castle wall — v61y (doorFace) + v61z (doorX/doorZ fix)
+- ✅ Church floating cross — v61z (removed gable cross; tower cross added v61y)
+- ✅ Weapon/armor weights too low — v61v
+- ✅ Rusty sword over-performs — v61v
+- ✅ Mild tier-1 regen/speed/warding potions — v61x (full 3-tier ladder)
+- ✅ Drop/destroy mechanic missing — v61q (destroy shipped; drop-to-world deferred)
+
+### Session 16 resolved finds
+
+Crossed off for the record — closed this session:
+
+- ✅ No Act I climax trigger — v61ad (full pipeline: burn trigger, burned-variant zone, Q7, commission)
+- ✅ Aldwyn's Seal could be destroyed — v61ad (retroactive unique-item protection)
+
+### Session 17 resolved finds
+
+Crossed off for the record — closed this session:
+
+- ✅ Edna's cottage unreachable in burned Ashenmoor — v61ae (sol-array detach bug; burned config now points at OW_SOL directly + destroyed buildings skip full-volume collider)
+- ✅ Bram's body not interactable after loot — v61ae (dedicated nearBram check hoisted above the items.length filter)
+- ✅ Hammer doesn't disappear after looting — v61ae (bramAxe/bramGroup refs + takeLootItem hook removes axe when hammer taken)
+- ✅ Hammer viewmodel sideways — v61ae (head reoriented from +X to +Z — striking face now forward)
+- ✅ Persistent "Press E to leave" prompt — v61ae (_clearInteractPrompt helper called on every zone/interior/dungeon transition)
+- ✅ Smoke columns static / not alive — v61ae (tickBurnedSmoke: per-slab sway + rotation + per-plume opacity cycle)
+- ✅ Village ground not visually destroyed — v61ae (layered charred-ground discs at 4 clusters + ember accent patches)
+- ✅ Q6 too heavy-handed on Aldred; no return-home prompt — v61ae (Aldred name deferred to Q7; Aldwyn adds smoke-from-home hook)
+- ✅ Aldhelm too close to Aldred/Aldwyn phonetically — v61ae (renamed Brother Oswin)
+- ✅ Church not visually scarred — v61ae (damaged-variant render: scorched stone, cracked lancet, roof wisp, ember candle)
+- ✅ Bram as disconnected quest objective — v61ae (Q7 restructured to 4 stages; Edna asks player to check Bram + Oswin before she'll hand over the rubbing)
+
+### Session 18 resolved finds
+
+Crossed off for the record — closed this session:
+
+- ✅ Console errors on Q7 tick from old saves — v61af (save-shape migration in _applyLoadData walks every quest def and pads missing objective slots)
+- ✅ Quest markers broken in burned Ashenmoor — v61af (downstream of the above; the uncaught exception was killing the iteration)
+- ✅ Minimap broken in burned Ashenmoor — v61af (same root cause)
+- ✅ Compass broken in burned Ashenmoor — v61af (same root cause)
+- ✅ Ground texture z-fighting / view-angle distortion — v61af (replaced transparent concentric discs with single opaque dead-ground disc + opaque black patches)
+- ✅ Quest completion lacks punctuation moment — v61af (Oblivion-style popup on ready-to-turn-in + complete, two-note chime via Web Audio)
+
+### Session 18.5 resolved finds (v61ag)
+
+- ✅ Quest chime inaudible — v61ag (peak 0.18 → 0.48 + third note; E5→A5→B5 arpeggio)
+- ✅ Quest popup didn't pause game — v61ag (added to main loop early-return gate + viewmodel render gate; matches hub/dialog/shop pause pattern)
+- ✅ Quest popup interrupted dialog — v61ag (new `_isPlayerFree()` gate + 250ms drain poll; popup waits for player to close dialog before firing)
+
+### Session 18.875 resolved finds (v61ah + v61ai)
+
+- ✅ Quest chime still inaudible — v61ah (root cause: `uiGain` is attenuated to 28% of sfxGain; rerouted chime to sfxGain + peak 0.48 → 0.60; effective output ~4.5× louder)
+- ✅ Popup doesn't show rewards — v61ah (new rewards block on completion popup — XP, gold, items with icons)
+- ✅ Chime still silent after routing fix — v61ai (replaced custom oscillator code with sfxTone calls; known-working SFX path)
+
+### Session 19 resolved finds (v61aj)
+
+- ✅ Burned Ashenmoor compass frozen / no interact popups / no footstep SFX — v61aj (root cause: ZONE_CORPSES forEach threw on `c.spark.position.y` when spark was null; Bram's body had spark:null because he's a named body with no loot-particle; added null guards on both gl and spark access)
+- ✅ Can walk through destroyed-building ruins — v61aj (wall-stub perimeter colliders: 4 edge stubs + 1 center debris = 5 small colliders per ruin; replaces the single center collider that was too small to match the visible stubs)
+- ✅ Scorch patches hidden under the ruins — v61aj (grown 0.85x → 1.4x footprint; extend past wall stubs so the char reads as "burn extends beyond where the building was")
+- ✅ No quest-started popup — v61aj (new 'accept' popup kind + `acceptText` quest field; fires through queue like ready/complete so it waits for player-free state)
+- ✅ Ashenmoor arrival lacks emotional punctuation — v61aj (Q7 auto-accepts on burn trigger; acceptText is the "burned to the ground, I should see if anyone survived" beat; replaces old transient showMsgLong toast)
+
+### Session 19.5 resolved finds (v61ak)
+
+- ✅ Q7 accept felt wrong narratively — Aldwyn should be the giver, not Ashenmoor arrival — v61ak (Q6 now `unlocks:['q7_the_rubbing']` + Q7 `autoAccept:true` + new `showAcceptPopup:true` flag; Q7 acceptText rewritten for Aldwyn's office)
+- ✅ Arrival should be a "quest updated" moment, not the start — v61ak (new per-objective `completionText` infrastructure + new `'update'` popup kind; Q7 obj 0 carries the burned-to-the-ground beat as its completionText, fires on burn-trigger enter_zone event)
+- ✅ Player should pick triage order themselves, not be forced into a path — v61ak (Q7 obj 1-3 parallel with no prereqs; marker iterator already supported — three markers appear simultaneously for Bram/Oswin/Edna)
+- ✅ Edna's dialog should reflect what player has already seen — v61ak (4 triage-state variants in `buildQuestTopicsForNPC`: neither-seen triage request, Bram-only acknowledgment, Oswin-only acknowledgment, both-seen handoff)
+
+### Session 19.75 resolved finds (v61al)
+
+- ✅ No compass indicator for Bram — v61al (marker iterator previously handled only `talk_to` and dungeon-seed objectives; now also handles `read_corpse` by looking up ZONE_CORPSES.corpseId, `receive_item` via quest giver, and `enter_zone` via gate-to-zone)
+- ✅ Bram interact triggered a save + wrong prompt — v61al (prompt now branches to "Press E to see to Bram" on first read / "Press E to loot Bram" after; removed the inline saveGame() call that was surprising in playtest)
+- ✅ Quest log bullets acted as spoilers — v61al (`renderQuestLog` skips objectives whose `prereqIndices` aren't yet complete; completed objectives stay visible as a "done so far" record)
+- ✅ Aldwyn compass marker always visible — v61al (marker iterator now checks prereqIndices and skips if prereqs aren't complete; tied to the quest-log fix via same mechanism)
+- ✅ No per-subtask reflective popups — v61al (Q7 obj 1-3 now carry `completionText` with short first-person journal beats for each triage encounter)
+- ✅ Forge-Man's Hammer viewmodel oriented wrong — v61al (head pieces wrapped in a subgroup rotated 90° around Y; strike face now points into the scene, wedge/pein nearer player)
+- ✅ Destroyed buildings still enterable — v61al (`_houseDestroyed()` helper cross-references HOUSES with ASHENMOOR_BURNED_BUILDINGS via houseId; prompt suppressed and interact blocked with "There's nothing of X left to enter")
+
+### Session 19.875 resolved finds (v61am)
+
+- ✅ Q7 quest log showed all 4 triage bullets before arrival — v61am (obj 1/2/3 given `prereqIndices:[0]`, so they hide until the enter_zone event ticks obj 0; completionText popup still fires on arrival as before)
+- ✅ Edna's handoff read as blowing off the player after begging for Bram news — v61am (handoff opener rewritten: "You don't have to say it. I saw him fall; you only had to stand over him for me. I'll grieve him. Later." Acknowledges the triage rather than dismissing it)
+- ✅ Hammer orientation still showed flat face to camera — v61am (removed v61al's subgroup+rotation approach which put strike at g-local +X not forward; now strike face at g-local -Z which maps to world -Z, genuinely pointing away from the camera toward enemies)
+
+### Session 20 resolved finds (v61an)
+
+- ✅ Edna's Oswin-first and Bram-first variants only showed the news-report topic — v61an (each variant now pushes TWO quest topics: the news report AND a "What else do you need?" triage-request — player can engage in either order and Edna's in-progress needs are surfaced even when the player has news first)
+- ✅ "Stand over him for me" phrasing read menacingly — v61an (replaced with "I watched it from the window. Someone going to him was what I needed." — same beat, softer and more honest)
+- ✅ Oswin's "Edna sent me" topic visible even when player hadn't spoken to Edna — v61an (removed from static `SHOP_DIALOG_BURNED.Oswin`, moved into `buildQuestTopicsForNPC` as a state-aware inject; "Edna sent me" only shows when obj 3 done, otherwise "I came to see if you made it" with Oswin asking about Edna)
+- ✅ enter_zone marker label showed internal zone ID — v61an (added zoneLabels map in `getActiveQuestMarkers`: 'overworld' → 'Ashenmoor', extendable for other named zones)
+- ✅ Forge-Man's Hammer mark only on one side — v61an (mirrored on -X lateral face so it's visible from either side of the viewmodel regardless of hand yaw)
+- ✅ No quest update popup after Edna handed over the rubbing — v61an (obj 4 carries a `completionText` with first-person next-step reflection; fires the moment the rubbing enters inventory, points the player to Aldwyn's office)
+
+### Session 26 resolved finds (v61d0–v61d6)
+
+The big session. Closed three threads end-to-end (Aldwyn Mark dialog, safehouse, combat backlog) and shipped a writing pass on Q1-Q6. Per-version breakdown lives in the version history table below; this section captures the cross-version closures.
+
+**Aldwyn Mark dialog beat (v61d0)**
+- ✅ Aldwyn's Q7 turn-in didn't acknowledge the Faolchú kill or the Mark — v61d0 (Mark-aware preamble: "Wait. What's that around your neck/in your bag?" with location-aware text. State branches on EQ.amulet vs BAG; falls through to existing rubbing-only flow if Mark not present. Restrained register — names the script-layer ("the deep tongue"), establishes binding-itself-misfiring as distinct from Varek's-hand, holds back full translation for Act II)
+- ✅ The Faolchú's Mark could be sold or skipped at the corpse — v61d0 (generalized unique-item sell protection in `sellItem`; new Q7 obj 2 `receive_item` for the Mark with chimera-rich completionText; loot indicator bumped 1.6u → 2.2u; new `sndFaolchuLootReveal` audio cue fires 1.8s post-death)
+
+**Combat backlog cleanup (v61d1, v61d5)**
+- ✅ Telegraph + parry stagger flash silently failed on humanoid/brute/wolf enemies — v61d1 (root cause: `mesh.children[0]` was a leg-pivot Group, not a Mesh, so material assignments silently absorbed. New `enemyBodyMesh()` helper resolves limbs.torso → limbs.body → first-with-material → children[0]. limbs.torso registered on humanoid+brute build branches. Parry stagger flash + telegraph pulse both routed through the helper. Telegraphs are now actually visible across the entire enemy roster for the first time — the audio cue had been carrying the warning signal alone)
+- ✅ Faolchú had no bespoke death VFX — v61d1 + v61d2 (`spawnFaolchuDeathBurst()` walks the boss's six sigil meshes, captures world positions, emits ~36 particle shards outward from each seam location, fades over 0.85s. Sigil emissive ramps to black over 0.5s as the binding "discharges." Coordinated with existing audio. v61d2 fixed initial-invisibility bug: `mesh.updateMatrixWorld(true)` call needed before reading sigil world positions, otherwise the corpse-pose rotation/translation hadn't applied yet and shards spawned ~1.4m above the corpse, off-camera)
+- ✅ Mimic landmine — v61d5 (replaced auto-proximity reveal with E-press; reveal starts telegraph; burst hit lands at telegraph end, block-able via existing pipeline)
+- ✅ Floor-2 enemy spells invisible — v61d5 (orb spawn Y now floor-aware)
+- ✅ Telegraph audit — v61d5 (Phantom + Wraith added; Slime tuned; vestigial Wolf removed)
+
+**Safehouse beat (v61d4, v61d6) — closes Caldric thread**
+- ✅ Caldric Safehouse building shipped — v61d4 (new `ih7` IRONHAVEN_HOUSES entry, SW interior at local 24,39, footprint 7×6, burgundy `bCol:0x4a2828`, type `'safehouse'`. New interior branch in `buildInterior` with bed against west wall, stash chest centered on back wall, side table with lantern, bookshelf + wooden chair, hearth NE corner. Compact 8×8 dimensions, ceilH 2.2, warmer fog. New `_intBed` and `_intStashChest` helpers. `house.keeper:null` gate added to NPC build so the safehouse doesn't spawn a phantom merchant)
+- ✅ Persistent shared stash shipped — v61d4 (new top-level `stashBag` array, `_serItem` serialization in save payload, migration-safe load. Two-column UI panel — bag + stash side-by-side, click-to-transfer in either direction, stack-aware via `_stashAdd` + `bagAdd` paths, weight-checked withdraw via `canCarry`, no weight cap on deposit. New `stashOpen` flag added to all six existing UI gates. Mirrors loot-panel close behavior on E/Esc)
+- ✅ Bed full-restore rest shipped — v61d4 (E-press near bed → `doFade()` → callback restores PHP/mana/stamina to max → save fires → fade back in. Free, no cooldown — gift-from-Caldric framing. New "💤 Rested at the safehouse" log entry)
+- ✅ Caldric grant scene shipped — v61d6 (auto-fires on first dialog with Caldric while `commissioned && !safehouseGranted`. Two-branch monologue in restrained register; both branches converge on the gift announcement. Final node carries `grantSafehouse:true` flag handled by new resolver in `pickDialogChoice` — flips worldState, persists save, emits journal log. Single-shot; subsequent visits fall through to normal Caldric topics)
+- ✅ Door gating shipped — v61d6 (entry handler refuses with "Locked. Lord Caldric has the key." pre-grant; same prompt visible from approach distance. Post-grant, opens normally)
+- ✅ Brynn relay topic shipped — v61d6 ("You called for me?" surfaces on Brynn while `commissioned && !safehouseGranted`, directs player to keep. Disappears post-grant. Lives in `buildQuestTopicsForNPC` outside the QUEST_DEFS forEach since it's purely worldState-driven)
+
+**Q1–Q6 writing pass (v61d3)**
+- ✅ Q1–Q6 readyText/completeText shipped — v61d3 (12 first-person passages in the Q7 voice. Cadence callbacks across the set — most readyTexts end on a "Walking now / Walking up / Back to the forge / Back to the Royal Herald's" transition phrase mirroring Q7's "Ironhaven, then. Aldwyn's office. The door shut." Q3's readyText is data-only — its customActiveDialog → questDialogComplete path bypasses the 'ready' popup entirely; documented in code. Q6's completeText is two-paragraph, mirroring Q7's structure. Full prose verbatim in quest_writing.md)
+
+### Session 27 resolved finds (v61d7–v61d9)
+
+The topology session. Started from a player-flagged frustration about linearity, ran a systematic graph audit of the world map, found and fixed three structural data bugs, then committed to topology design pattern C ("Toontown hub-and-spoke") and shipped Phase 1.
+
+**Audit methodology established (v61d7 prep)**
+- ✅ Graph audit script that extracts every gate from every zone (placeholder + built-in), builds adjacency, and flags structural problems: orphans (no incoming gates), dead-ends (no outgoing gates), duplicate routes (multiple wilderness zones connecting the same settlement pair), asymmetric edges (A→B with no B→A), label/target mismatches, and walkability from Ashenmoor. Reusable for future structural changes — every topology edit should re-run the audit before shipping.
+- ✅ Audit visual built (interactive node-link map showing reachability layers). Useful for explaining state but **don't trust it as ground truth** — diagrams lie by abstraction. The table form caught bugs the diagram hid (specifically the Vieux Marché ↔ Dunmore duplicate, which rendered as overlapping lines on the diagram). Prefer the table for verification.
+
+**Topology data bugs (v61d7, v61d8)**
+- ✅ Duplicate route Vieux Marché ↔ Dunmore — v61d7 (`dunmore_west_road` deleted; `la_route_royale_south` retained as the canonical north-south Royale connector. Vieux Marché 3→2 gates, Dunmore 4→3 gates).
+- ✅ The Ashfeld orphan + dead-end — v61d7 (reclassified to Act I; SVG marker repositioned to (210, 630) between Ashenmoor and Redwater Ford; inserted as a third zone on the south road. Walking south from Ashenmoor now goes Ashenmoor → South Road → The Ashfeld → Redwater Ford. Resolves part of "Ashfeld Road design" open question — the road is the south road, and Varek's first-meeting site is now physically traversed by every player walking to Redwater Ford. Lore canon updated to match).
+- ✅ Inis Rua orphan + dead-end — v61d7 (tidal causeway implementation. Session-time-based `isTideOut()` helper, 3-minute half-cycles. New `guard:'tide'` field on gates. Carraig Mór gained south gate to Inis Rua; Inis Rua gained north gate back. Both guarded. Pre-existing SVG bug also fixed — Coastal Road South edge line was drawn in the wrong direction).
+- ✅ Three label/target mismatches — v61d8 (Cill Beag's gate labeled "Road to Droichead" but arriving in zone "Road to Cill Beag" — real player-facing confusion; Droichead's two Bealach gates abbreviated. All three normalized to match target zone displayName).
+- ✅ Audit-script false positive — v61d8 (4 entries in `WM_COORDS` initially flagged as stale; actually valid. The keys cross-reference SVG `data-name` attributes, not MAP_NODES displayNames. Re-running the audit with the correct comparison: 0 stale entries. The flagged entries — Thorngate, Deepwood Forest, La Porte Grise, Mountain Approach — are flavor POIs the SVG renders for fog-reveal but don't correspond to walkable zones. By design.)
+
+**Topology design pass — pattern C committed (v61d9)**
+- Canonical answer to player-flagged linearity: **Toontown-style hub-and-spoke with commission-gated spokes**. Pre-commission, 8 zones reachable (the Q1-Q7 corridor). Post-commission, 27 more open at once. World "gets bigger" as a felt event at Q7 turn-in.
+- Phase 1 (gating mechanism) — v61d9 (5 gates flagged across 4 boundary edges. New `'commission'` guard type sibling to `'tide'`. Single-bit `worldState.commissioned` trigger. Existing post-Q7 saves see no change).
+- Phase 2 (world-map locked-road styling, Q7 unlock-moment UI beat) — deferred. The Phase 1 build is shippable and qualitatively different on its own; Phase 2 is the polish layer that makes the unlock cinematic.
+- Phase 3 (Tier 2/Tier 3 gates for later Act II/III content) — deferred. The `guard` field architecture extends to additional values when those tiers' triggers are designed.
+
+### Session 28 resolved finds (v61e0–v61e1)
+
+Topology Phase 2 ship — closes the v61d9 follow-up thread end-to-end (v61e0). Then a player-flagged map redraw + outpost promotion (v61e1).
+
+**Phase 2 deliverables (v61e0)**
+- ✅ World-map locked-road visual treatment — new `WM_LOCKED_EDGES` Set listing the 4 SVG `data-name`s; new `wmRefreshLockedEdges()` toggles `.wm-edge-locked` class (faded `#5a5040` stroke at 0.4 opacity, stroke-width 1.8) and injects/removes a `<g class="wm-lock-icon">` padlock glyph at the edge midpoint. Hooked into `wmSyncZone()` so it runs on every map open. The four locked spokes now read clearly as "you can see this road exists, you can't walk it" — Toontown principle landing as designed.
+- ✅ Q7 unlock-moment UI beat — three things fire when `worldState.commissioned` flips: persistent journal entry "🔓 The royal roads open to you", 5.5s gold-toned `showMsgLong` "🛡️ Royal Mage Commission accepted — new roads now open to you" delayed 2.4s so it follows the regular Q7 completion toast cleanly, and a live `wmRefreshLockedEdges()` call so the lock glyphs disappear in real time if the map is open.
+- ✅ 3D barrier crossbeam ride-along — new `_buildCommissionBarrier(scene, x, z, rotY, ty)` helper next to `buildFenceGate`. Spawned by both `buildVillage` and `buildTown` gate loops only when `gd.guard==='commission' && !worldState.commissioned`. Stored on runtime gate entry as `barrierMesh` for live-removal at Q7 turn-in (since Q7 turn-in fires inside Ironhaven, the two royal-network barriers there are removed live; other zones' barriers — Ashenmoor west, Hearthwick east — clear naturally on next entry because the build call sees `commissioned===true` and skips construction).
+
+**Latent v61d9 bug fixed in passing (v61e0)**
+- ✅ `gd.guard` was being dropped on the runtime gate-entry push in both `buildVillage` (line 6376) and `buildTown` (line 10059). The proximity checks at the interact handler (line 11038) and the prompt-render branch (line 18911) read `nearGate.guard` from `ZONES[activeZoneId].gates`, which was therefore undefined for every `guard:'commission'` gate. v61d9's commission-gating was only working at the world-map fast-travel layer, not at the walk-up-and-press-E layer. Both push sites now propagate `guard:gd.guard`. Tide-gated gates were unaffected because Inis Rua's gate goes through `registerPlaceholderZone`, which preserves the field.
+
+**Map redraw + outpost promotion (v61e1)**
+
+The starting frustration: when the player tries to run from Ashenmoor to Ironhaven, they go on "a completely different path than what the map suggests." Diagnosis revealed three overlapping problems — (1) the SVG's middle zigzag drew Hearthwick → Cill Beag instead of Hearthwick → Droichead because Cill Beag's pixel position was where the Bealach Central edge ended; (2) the SVG showed Thorngate, Deepwood Forest, La Porte Grise as discrete walkable nodes when in-game they were just labels along a single Forest zone; (3) the Bealach branch was drawn ON the main north road instead of as the commission-gated side spoke it actually was per v61d9.
+
+- ✅ Bealach branch repositioned as Hearthwick eastern spoke (Droichead at 390,540, Cill Beag at 455,470). Main north road now traces a clean diagonal Hearthwick → Thorngate → Forest → La Porte Grise → Ironhaven.
+- ✅ Thorngate and La Porte Grise promoted from map-only POI labels to **walkable outpost zones** (per Michael's request). New shield-shape SVG visual (third tier alongside settlement rounded rects and town circles). Each outpost is `kind:'village'` with size 40, one keeper-house, one shop NPC: Warden Edwin (`outpost_warden` shop type — peripheral, rations + basic gear) and Quartermaster Roland (`outpost_quartermaster` shop type — institutional, Mild elixirs + tier-2 gear). Notice boards auto-built from `centerMarker`. Walls + gates inherit from `buildVillage`. `MAP_NODES`, `WM_COORDS`, `WM_NODE_TO_ZONE` updated.
+- ✅ Road labels added to every edge — italicized Cinzel gold (or muted brown for Wastes paths, dim blue for Tidal Causeway), rotated to match each road's angle. Vertical roads use rotate(-90) so labels read bottom-to-top.
+- ✅ Deepwood Forest demoted from SVG node to plain road label. The Ashfeld changed from yellow diamond to small ruined-style red circle matching Ashenmoor's destroyed register.
+- ✅ Stale orphan SVG edges removed: "Dunmore West Road" (deleted from data graph in v61d7 but never removed from SVG), the old separate Forest Road South + Forest Road North (folded into the new Thorngate Road edge).
+- ✅ New SVG edge added: "Road to Cill Beag" — the data graph had `cill_beag_path` since v61e but the SVG never showed it.
+- ✅ Gate reroute: Hearthwick north → `thorngate`, Forest south → `thorngate`, Forest north → `la_porte_grise`, Ironhaven low-Z → `la_porte_grise`. `MAP_EDGES` updated with eight new live edges and four superseded entries.
+- ✅ New generic `ZONES[id].houses` lookup pattern. Threaded through `registerPlaceholderZone` (declared as a `houses` array on the spec, attached to the live ZONES entry after lazy build). Both the interact handler and the proximity-prompt branch get a generic per-zone houses fall-through after the existing Ashenmoor/Hearthwick/Ironhaven hardcoded branches. Future placeholder villages with shop NPCs plug in by populating the spec field — no per-zone interact/prompt edits required.
+- ✅ Third gate-push site fix in `buildWildernessZone` — `gd.guard` was being dropped (sibling of the v61e0 fixes for `buildVillage` and `buildTown`). All three push sites now propagate guard. Also added a `_buildCommissionBarrier` call in the wilderness gate loop for symmetry.
+
+**Discovered (and worked around) during v61e1 verification — `trade:true` from outdoor NPCs is a dead path**
+
+`openShop()` reads `currentHouse` to know which stock to render and returns silently if `currentHouse===null`. `currentHouse` is only ever set inside `goToInterior()` (line 13145) and cleared in `exitInterior()` and a couple of zone transitions. So a `trade:true` topic on an OUTDOOR NPC's `topics` array (talked to via `talkNPC()` → `openDialog()`) closes dialog and calls `openShop()` against a null `currentHouse` — nothing happens, no error, the player gets a confusing dead button.
+
+This is a pre-existing bug, not introduced by v61e1. Hearthwick's Oda has had this exact pattern since v61f (`{label:'Step inside — browse your wares.', trade:true}` in `HEARTHWICK_NPC_DEFS[0].topics`). Either nobody noticed, or the player learned to walk to the door and press E to enter, where the interior keeper-NPC's `SHOP_DIALOG['Oda']` `trade:true` topic works correctly because `currentHouse` is set by then.
+
+**Workaround applied for v61e1**: removed the `trade:true` line from the outdoor topics for Edwin and Roland. Replaced with a `'I'll head inside…'` / `'I'll step inside to see your stock.'` text response that nudges the player toward the door (where the interior path works). This is honest about what works and avoids the dead-button UX. Kept Oda's existing pattern unchanged — fixing it in this session would be scope creep, and Oda's outside-and-inside dialog were both written assuming the `trade:true` path works the same in both contexts. Roll into next session as a discrete fix.
+
+**Recommended next-session fix**: at the `c.trade` resolver in `pickDialogChoice` (around line 4827), if `currentHouse` is null, look up the NPC's keeper-house via the new `ZONES[activeZoneId].houses` array — find the entry whose `keeper` matches `dlgNPC.name` — and either (a) silently set `currentHouse=that house entry` before calling `openShop()`, or (b) trigger `goToInterior(thatHouse)` instead. (a) is simpler and matches the player's intent ("I want to shop"); (b) is cleaner narratively but disorienting (the dialog ends and they're suddenly inside). I'd vote (a). Same fix lifts Oda + every future outdoor-shop NPC simultaneously.
+
+**Topology Phase 3 still pending**
+- Phase 3 (Tier 2/Tier 3 gates for later Act II/III content) — held until Act II content lands and the trigger choice is obvious. The `guard` field architecture is now thoroughly battle-tested with both `'tide'` and `'commission'` guards, so adding `'tier2'`/`'capital'` follows the same pattern.
+
+### Session 29 resolved finds (v61e2–v61e6)
+
+A long session that spanned five ships: cleanup (v61e2), regional identity foundation (v61e3), regional identity system + Wastes depth (v61e4), backlog reconciliation + small fix (v61e5), and Day/Night clock foundation (v61e6). Plus a Day/Night design conversation captured in a new `design_notes.md` doc.
+
+**v61e2 — outdoor `trade:true` resolver fix**
+- ✅ The `c.trade` resolver in `pickDialogChoice` now recovers `currentHouse` from `ZONES[activeZoneId].houses` via keeper-name match when null, so outdoor `trade:true` topics on shopkeeper NPCs work directly. Lifts Edwin (Thorngate), Roland (La Porte Grise), AND silently fixes Oda's long-broken outdoor "Step inside — browse your wares." button which had been a dead path since v61f.
+- ✅ Edwin and Roland's outdoor topics restored to canonical `Browse your wares.` + `trade:true`. The v61e1 workaround text retired.
+- ✅ `HEARTHWICK_HOUSES` attached to `ZONES.hearthwick.houses` so the resolver can find Oda. Hearthwick's special-case interact + prompt branches left in place — additive, not refactored.
+- ✅ Workaround note in `quest_writing.md` replaced with an authoring note reframing the indoor/outdoor topic split as a real writing decision (deeper topics belong indoors), not a runtime quirk.
+
+**v61e3 — coastal arc regional identity (palette gradient + coast biome + music + Áine canonized)**
+- ✅ New `coast` biome added to `BIOME_PROFILES` — exposed, treeless, salt-bleached. Bone-pale path stone, cooler greens, very sparse border trees, duskier ground tones.
+- ✅ West Track and Coastal Road South flipped to `biome:'coast'`.
+- ✅ Five-zone palette gradient applied: West Track (transitional) → Salthaven (warm-harbor) → Coastal Road South (clifftop) → Carraig Mór (cold-stone) → Inis Rua (thin-and-strange). The arc darkens and saturates as you go further from inland.
+- ✅ New `_musicCoast` track — three drones (130/195/260 Hz), tide-like LFO, sparse low-passed wave-roll noise gusts. Modeled on `_musicWastes` but tuned warm. West Track and Coastal Road South use `musicTrack:'coast'`. Settlements keep `'village'` — design rationale: you hear the coast on the *road*, then arrive at a place with people in it.
+- ✅ **Áine canonized** — Elder of Carraig Mór. Full character profile in `lore_canon.md`. Verbatim dialog (greetings, intro response, outdoor + indoor topics) in `quest_writing.md`. Establishes new canon: *Béal an Domhain* (Irish-register name for the Mouth, used by Carraig Mór locals only); the bones-in-the-walls beat (literal, not metaphor); Caldric writes letters they don't answer; the brother-who-came-back-different beat — first canonical evidence that intact contact with the binding changes a person, distinct from the antibody mechanic.
+- ⏸️ **Áine build wiring deferred** — drafted but not wired. Pairs with Salthaven signature NPC in a follow-up session.
+
+**v61e4 — REGION_PROFILES system + 14 prop builders + Wastes depth**
+- ✅ New `REGION_PROFILES` table defines six regions: `coastal`, `bealach`, `foothills`, `royale`, `wastes`, `ashen`. Each profile carries skyCol/fogColor/fogDensity/biome/musicTrack/propScatter. `registerPlaceholderZone` reads `region:'X'` and inherits defaults for fields the spec doesn't override; explicit per-zone fields always win.
+- ✅ All 22 wilderness/settlement/town zones tagged with their region. Inis Rua keeps its bespoke extreme palette via per-zone override.
+- ✅ New `wastes` biome added to `BIOME_PROFILES` — burned-earth tones, bone-grey path stone, dim sun, dead-grey trunk colors, sparse skeletal trees instead of canopy. The Hollowed Wastes spoke pushed to depth: bespoke palette, dedicated biome, `_musicWastes` finally wired (was built but unused).
+- ✅ New `PROP_BUILDERS` table with 14 mesh primitives covering all five spokes plus the Act-I-tail orphans:
+  - **coastal:** driftwood, rope_coil, seaweed
+  - **bealach:** cart_wheel, milestone, wheat_stack
+  - **foothills:** stone_cairn, dry_stone_wall, ore_pile
+  - **royale:** royal_marker (wax-sealed post), wayside_shrine, milestone (shared)
+  - **wastes:** dead_tree, ash_pile, bone_pile
+  - **ashen:** broken_blade, cairn_low
+- ✅ Prop scatter loop in `buildWildernessZone` reads `cfg.propScatter`, dispatches to `PROP_BUILDERS`, places at off-path on-terrain candidate positions with 8-attempt fallback. Solid props (cairns, walls, milestones, dead trees) push collision; small flat decorative props (driftwood, seaweed, bones, ash, broken blades) stay walkable.
+- ✅ Coastal arc retrofitted with regional props on top of v61e3.
+- ✅ `lore_canon.md` open question #1 (regional identity per spoke) marked resolved with full system reference. Six regions canonized.
+
+**v61e5 — backlog reconciliation + Bram timing fix**
+- ✅ **Discovered three "Other pending" items were already shipped** but not crossed off — see "Backlog reconciliation findings" below.
+- ✅ One real find: `COMMISSION_LOCK_COPY['west_track'].toast` referenced "Bram's grandfather would have walked through" — but post-Q7 (when commission flips), Bram is dead. The line was timing-fragile. Fixed: replaced with coastal-flavored generic "The salt road waits" that doesn't depend on a person's life-state.
+
+**v61e6 Session A — Day/Night clock foundation (NO visible UI yet)**
+- ✅ `worldState.gameTimeMinutes` added (initial 360 = 06:00 = dawn). Single integer tracking in-game minutes, persisted to save payload via the existing `wS:{...worldState}` spread.
+- ✅ Helper functions: `gameHour()` returns float [0,24), `gameTimeOfDay()` returns one of 8 discrete states (dawn/morning/mid_morning/midday/afternoon/dusk/night/deep_night), `advanceClock(dt)` advances by real-time delta, `forceTime(target)` cinematic time-lock accepting either numeric hour or state-name string.
+- ✅ Cadence locked at 1 in-game minute per real-second (1 in-game hour per real-minute). Tick fires from main game loop *after* the pause-bailout, so UI-open / dialog / shop / loot all pause the clock (consistent with stamina/buffs/cooldowns).
+- ✅ Save payload: `gameTimeMinutes` rides along inside `wS:{...worldState}` (no schema change needed). Load migration: pre-v61e6 saves default to 360 (dawn) so old characters land at first light, not midnight.
+- ✅ Tide system ported from `performance.now()` to in-game clock. Lore canon's "twice a day" claim is now literally true: low tide during in-game hours 0-6 and 12-18, high tide during 6-12 and 18-24. The `TIDE_HALF_PERIOD_MS` constant (3-real-min half-cycle) is fully retired.
+- ✅ Three Q7 cinematic time-locks wired:
+  - Q7 burn (`worldState.ashenmoorBurned = true` flip) → `forceTime('dawn')`. Lore: morning-after, scorched ground, ambient silence.
+  - Q7 turn-in at Aldwyn (`worldState.commissioned = true` flip) → `forceTime('evening')`. Aldwyn's "you should rest tonight" is now literal.
+  - Caldric grant scene (`worldState.safehouseGranted = true`) → `forceTime('evening')`. Tonally aligned with Q7 turn-in evening lock that immediately precedes.
+- ✅ Smoke-tested the helpers in isolation (10 logic checks: initial state, tick advance, full-hour advance, force locks, tide cycle full-day, midnight wrap, evening→night-tod mapping). All passed.
+- ⏸️ **Visible effects deferred to Sessions B + C** per `design_notes.md`. Session A alone has no player-visible UI; the three Q7 time-locks technically fire but without lighting interpolation (Session B), the player won't *see* the difference. Tide window changes ARE visible at Inis Rua.
+
+**Backlog reconciliation findings (Session 29)**
+- ✅ **Per-gate commission-locked copy pass** (was: "small, high-flavor, low-risk session whenever it fits"). Discovered the system + bespoke copy already shipped — `COMMISSION_LOCK_COPY` exists with bespoke prompt + toast for all four boundary edges (west_track / bealach_central / northern_road / la_route_royale_west). The single real issue (Bram timing fragility on west_track) found and fixed in v61e5. Backlog entry was stale.
+- ✅ **"Portal" → "old gates" / "anchor places" dialog rewrite** (was: "content pass to update all NPC dialog references"). Discovered no player-visible NPC dialog contains the word "portal." The lore canon's claim that the rewrite was complete in v61b6 is correct; the survivors are SVG `data-pois`/`data-desc` attributes (which no JS reads — they're code-internal documentation), and code identifiers (`PORTALS`, `currentPortal.name`, etc.) which never surface to the player. Backlog entry was stale.
+- ✅ **Gold drop scaling** (was: "current gold drops feel high at low levels. Spawn rate fine, amounts should be 1-10 base and scale with Fortune"). Discovered `rollGold(tier)` already implements exactly this — base ranges 1-6 (barrel) / 4-12 (chest) / 2-8 (corpse) / 8-18 (treasure), with `lvBonus` per-tier and `fortuneMult = 1 + fortune * 0.05` and `goldFind` buff multiplier. Documented since v61c0 with a worked progression at L1/L5/L10. Backlog entry was stale, pre-dates v61c0.
+- ⚠️ **Backlog reconciliation needed before Session B picks up.** Three stale items in one session is a pattern. The "Other pending" list has accumulated entries that no longer reflect reality. Recommend a short reconciliation pass — walk every pending item, verify status, prune the false-pending. Should land before Day/Night Session B starts so the implementing-session has an accurate picture.
+
+**Day/Night design conversation (deliverable: `design_notes.md`)**
+
+Locked all six core decisions, captured implementation sequencing for Sessions A/B/C, documented open questions held for implementation, listed code touchpoints. Sibling to `lore_canon.md` and `devlog.md`. To be archived once Sessions B + C ship.
+
+Decisions locked:
+1. **Cadence:** 1 in-game minute per real-second (1 hour per minute). 24 real-min = full in-game day.
+2. **UI:** Sundial-style glyph, 8 discrete states, near compass HUD slot. (Session B.)
+3. **Quest time-locks:** Three locks total (Q7 burn → dawn, Q7 turn-in → evening, Caldric grant → evening). Q1-Q6 time-agnostic.
+4. **AI/spawn modulation:** Three-tier density multiplier (1.0× day / 1.3× dusk-dawn / 1.5× night) plus `nightOnly`/`duskOnly` filter flags. Settlement NPC retreat at night. Encounter content design (which monsters where) deferred. (Session C.)
+5. **Skybox/lighting:** Per-region day/night palette pair (`nightSkyCol` etc. on REGION_PROFILES), interpolated through dawn/dusk windows. Hand-designed night palettes mandatory for Wastes + Coastal; auto-derived for the other four regions. Sun intensity/color and ambient also modulate. (Session B.)
+6. **Persistence:** Real-time tracking in save (`gameTimeMinutes` field). Sleep at safehouse advances 8 hours. Tide ported to in-game clock.
+
+### Session 30 resolved finds (v61e7–v61e9)
+
+A focused session — Day/Night Session B end-to-end, plus a hotfix from playtest, plus Day/Night Session C. Closes ALL THREE implementation sessions of the Day/Night system. Ships in three patches: v61e7 ships the visual system; v61e8 hotfixes a skyRing bleed-through caught in browser playtest; v61e9 ships the spawn modulation, NPC retreat, respawn, and wait button — completing the trilogy.
+
+**v61e7 — Day/Night Session B: lighting interpolation + sundial UI + sleep advance**
+
+- ✅ **Locks confirmed.** Re-read `design_notes.md` with fresh eyes per its own closing protocol; all six core decisions still feel right. Locked four open questions before code: (1) sundial visual = disc + moving sun (option A), (2) settlement night palette = universal village-warm (option C), (3) burned Ashenmoor = locked at forced-dawn, clock still ticks underneath, (4) Coastal + Wastes night palettes pitched first, signed off, then baked.
+- ✅ **`REGION_NIGHT_PALETTES` table** with hand-designed Coastal (skyCol `#1a2438` deep moonlit blue, fogColor `#3a4658` cool slate-blue, sunCol `#8aa0c0` cool silver-blue moonlight — "the Carraig Mór note"; `fogDensityMul:1.27`) and Wastes (skyCol `#0a0808` near-black faint warm tint, fogColor `#181410` charcoal-warm ash, sunCol `#3a3038` sickly cold-purple, ambientCol `#1a1620` faintly violet — "this is night, and night here is wrong"; `fogDensityMul:1.55`) palettes. Both lore-canonical per design notes mandatory list.
+- ✅ **`SETTLEMENT_NIGHT_PALETTE`** — single shared universal-warm palette for all village/town zones (skyCol `#1a1820`, fogColor `#2a2620` warm muddy fog, sunCol `#9088a0` dim warm-cool, ambientCol `#3a3028` warm shadow tone). Reads "lit windows, smoke" rather than "wilderness in the dark" — settlements feel close at night. Per-settlement bespoke palettes deferred per design call C.
+- ✅ **`_autoDeriveNight(dayHex)` helper** — HSL shift + value reduction (rough: r×0.28, g×0.30, b×0.36+8 floor lift). Auto-derives functional night palettes for Bealach / Foothills / Royale / Ashen regions (the four without hand-designed palettes). Cool shift preserved (r darker than b), small floor lift on blue prevents pure black for low-saturation inputs.
+- ✅ **`resolveNightPalette({region, isSettlement, daySkyCol, dayFogColor})`** — single resolver. Settlement check fires first (universal warm wins regardless of region — the right behavior since settlements have their own register). Hand-designed regions return canonical palette. Everything else auto-derives. Tested: settlement+wastes returns SETTLEMENT (warm), wilderness+wastes returns hand-designed Wastes, wilderness+bealach returns auto-derived Bealach.
+- ✅ **`_nightFactor()`** — returns 0..1 night-ness from `gameHour()`. Linear ramps over hours 5-7 (dawn) and 17-19 (dusk). Pure day (hours 7-17) returns 0; pure night (hours 19-5) returns 1. Easeable to smoothstep later if linear reads robotic per design notes Q2 — held back per "start linear" call.
+- ✅ **`instrumentSceneForDayNight(scene, refs, day, region, isSettlement)`** — stashes `{sun, ambient, hemi, fog, day, night, isLocked, _lastApplied}` on `scene.userData.dayNight` at build time. Each scene captures its own day-palette refs so lerping into night targets are scene-specific (not global). `isLocked:true` short-circuits the interpolator (used by burned Ashenmoor).
+- ✅ **`applyDayNightLighting(now)`** — main-loop interpolator, throttled to 1Hz internally via `_dnLastTickT` against rAF timestamp (real-time, not gameplay-time, so the throttle is independent of pause state — but since the call is gated behind the pause bailout, paused gameplay still pauses lighting cleanly). Resolves active outdoor scene via `ZONE_BUILDERS[id].sceneGet()` for everything except overworld (where the burned/normal swap requires direct ref to `owScene`/`owBurnedScene`). Reads `_nightFactor()`, lerps THREE.Color values into existing live light/fog/bg objects (no allocations per tick — `_dnTmpDay`/`_dnTmpNight` are module-scoped scratch). Sun intensity drops to 20% at full night, ambient 30%, hemisphere 35%. Fog density bumps by region-specific multiplier. Cached `_lastApplied` early-out skips entire pipeline when night factor unchanged within 0.01 — most frames are no-ops once lighting settles into stable day or stable night.
+- ✅ **Three scene builders instrumented** — `buildVillage` (line ~5300), `buildWildernessZone` (line ~8628), `buildTown` (line ~9358). Each calls `instrumentSceneForDayNight()` immediately after sun/ambient/hemi/fog construction with the just-built day-palette values. Settlements pass `isSettlement:true` to force universal-warm; wilderness passes `false` to use region-based palette.
+- ✅ **`spec.region → cfg.region` propagation** in `registerPlaceholderZone` — was missing. Without this fix, every placeholder zone (22 zones in the world map) would have fallen through to auto-derive even for hand-designed Wastes/Coastal regions. Three-line fix routed before any kind-specific (`village`/`wilderness`/`town`) cfg block.
+- ✅ **`BEALACH_SOUTH_CONFIG` tagged `region:'bealach'`** — was the only hand-built wilderness zone without a region tag (predated the v61e4 region system). Now aligns with placeholder Bealach zones for night-palette derivation.
+- ✅ **Burned Ashenmoor lock** — `buildAshenmoorBurned()` tail sets `burnedScene.userData.dayNight.isLocked = true`. The burn forces dawn at trigger time via Session A's `forceTime('dawn')` cinematic time-lock; this lock keeps the visuals frozen at that dawn palette regardless of subsequent clock advance. Clock ticks globally (tide system, downstream scheduling, sundial all keep moving); only the visual rendering of burned Ashenmoor is frozen. Confirmed Michael's design call A on this — pausing the clock would have broken too many downstream systems.
+- ✅ **`drawSundial()` HUD glyph** — disc + moving sun design (option A). 32×32 canvas sibling to compass at top-center, offset right via `margin-left:108px`. Disc fill lerps day↔night sky tint (`#d4c49e` parchment ↔ `#161c30` deep cool blue) using same `_nightFactor()` as the lighting interpolator — sundial reads in step with the rendered scene. Continuous phase 0..1 across day arc (h=5 east → h=12 apex → h=19 west) and night arc (h=19 east → h=0 nadir → h=5 west). Sun glyph (warm `#ffe080` + glow ring) above horizon during day; moon glyph (pale `#dde4f0` + crescent shadow nibble) below horizon at night. Horizon line (rgba white 18% alpha) splits day/night halves. Called from per-frame draw loop alongside `drawCompass()`. Display flipped to `block` at the same `started=true` moment as the compass.
+- ✅ **Safehouse sleep advance** — `restAtBed()` now advances `worldState.gameTimeMinutes += 480` (8 hours) inside the existing `doFade()` callback, before the HUD refresh. Wraps modulo 1440 so a sleep starting at hour 20 lands at hour 4 next morning, not hour 28. Visible effect on fade-in: sundial reflects new time, lighting interpolator lerps to new state on next 1Hz tick. Free, no cooldown, infinite (per design notes — quests are not on a real clock).
+- ✅ **Save/load** — no schema change. `gameTimeMinutes` already persisted via Session A's `wS:{...worldState}` spread. The new `dayNight` userData lives on scene objects (rebuilt on load), not on persisted state. Existing saves work without migration.
+- ✅ **Smoke tests in isolation** — 28/28 passed. Six palette-resolution tests (wastes/coastal hand-designed beat region default; settlement override beats region; bealach auto-derives darker than day; auto-derive falls through for null region). Eleven night-factor across-24h tests (midday=0, midnight=1, hour 5/6/7 dawn ramp, hour 17/18/19 dusk ramp, deep night across midnight wrap, 4:59 last-second-of-night). Three auto-derive sanity tests (cool shift preserved, black stays black, no overflow). Six sundial phase-math tests (dawn/midday/just-before-dusk all day; dusk/midnight/last-night-hour all night; phase math correct in both halves). Two transition continuity tests (no jump across hour 7, no jump across hour 17).
+- ⏸️ **Browser playtest validation deferred to next session.** The build is parse-clean and smoke-tested in isolation, but has not been opened in a browser. Tour to walk: see Session 30 backlog entry for the six-step validation script.
+
+**v61e8 — skyRing tint hotfix (browser playtest find)**
+
+Browser playtest of v61e7 surfaced a wedge-shaped bright-day-sky bleed at night, visible as a triangular bright patch against the otherwise-dark scene that moved with the camera as the player turned. Symptom screenshots showed clearly: ground-level fog and horizon read correct night, but the upper hemisphere kept its day-sky paint.
+
+- ✅ **Diagnosed: the skyRing fake-background mesh.** Both `buildVillage` and `buildWildernessZone` construct a giant cylinder mesh (`skyRing`) with a hardcoded day-sky canvas texture (gradient + clouds + distant mountain silhouettes), used as a fake background filling the upper hemisphere where `scene.background`'s flat color geometrically can't reach the camera's view. The v61e7 lighting interpolator updated `scene.background`, fog, sun, ambient, and hemisphere — but didn't know about the skyRing. The skyRing's material is `MeshBasicMaterial` (unlit, ignores scene lights) AND has `fog:false` (the fog can't even mask it). At night the skyRing showed through bright while everything else was dark. Town doesn't have a skyRing (only flat `scene.background`) so no fix needed there.
+- ✅ **Fix: per-region tint via `material.color` lerp.** `MeshBasicMaterial` multiplies its texture color by `.color`. Lerping that color from white (day, no tint, canvas shows as-drawn) toward the region's night skyCol at full night multiplies the canvas to that hue, much darker. Per-region per Michael's design call: Wastes skyRing tints near-black (correct: "the horizon is gone"); Coastal tints toward moonlit silver-blue (correct: "the Carraig Mór note"); auto-derived for the four un-hand-designed regions. Architecturally consistent with the rest of the lighting interpolator's per-region night palette philosophy.
+- ✅ **Three small edits.** (1) `buildVillage` extracted the skyRing material to a named ref + stashed on `vScene.userData.skyRingMat`. (2) `buildWildernessZone` did the same on `sc.userData.skyRingMat`. (3) `applyDayNightLighting` extended its sky/background lerp block to also lerp the skyRing material's `.color` from `0xffffff` → `dn.night.skyCol` by t. Burned Ashenmoor's `isLocked` short-circuit means its skyRing also stays at its forced-dawn tint (correct lore behavior).
+- ✅ **5/5 smoke tests pass on the lerp math** — white at t=0, region tint at t=1, halfway at t=0.5, Wastes night much darker than day.
+
+**v61e9 — Day/Night Session C (final): spawn modulation + NPC retreat + respawn + wait button**
+
+Session C grew significantly during the design conversation. The original lock anticipated three pieces (spawn density / nightOnly flags / settlement NPC retreat). The play-through conversation with Michael surfaced two load-bearing additions:
+
+- **Respawn was needed** — without it, density modulation only registered on first zone entry, and the world goes static-cleared after one pass. Picked threshold of 24 in-game hours.
+- **A wait/pass-time mechanic was needed** — without it, NPC retreat strands the player (no safehouse pre-Q7, and even post-Q7 "walk back to Ironhaven and sleep" reads as awful). Picked a universal Wait button on the HUD.
+
+Both additions made the cut and shipped together with the original three. Ship is v61e9, parse-clean, 26/26 smoke tests pass.
+
+- ✅ **Spawn density multiplier** — `spawnDensityMultiplier()` returns 1.0 (day, hours 7-17) / 1.3 (dusk-dawn, hours 5-7 + 17-19) / 1.5 (night, hours 19-5). Round-up via `_scaleSpawnCount(base) = Math.ceil(base * mul)` so 1.5× of 2 = 3 (player feels the bump even on small groups). The wilderness builder's spawn loop now rolls the multiplier at build time, persisting for the zone session lifetime.
+- ✅ **`nightOnly` / `duskOnly` / `dayOnly` filter flags** — new optional fields on individual spawn entries in `cfg.enemies`. `filterSpawnEntriesByTime(entries)` filters at build/respawn time. **No populated content yet** — the system ships ready, content fills in over follow-up sessions per design lock.
+- ✅ **`respawn:false` flag** — new optional field on individual spawn entries marking them as one-shot (e.g. quest-bound enemies, lore-canonical encounters). Spawned on first build, NOT re-rolled on respawn. Applied via `e._noRespawn = true` flag at build time so the respawn function knows which existing enemies to leave alone.
+- ✅ **Per-zone respawn tracking** — `worldState.zoneSpawnT` map (zoneId → gameTimeMinutes-when-last-spawned), persisted via free-ride on the existing `wS:{...}` save spread (same trick Session A used for `gameTimeMinutes`). New `worldState.gameTimeAbsMinutes` non-wrapping counter alongside `gameTimeMinutes` so 24-hour respawn threshold math survives the modulo-1440 wrap. Threshold is **24 in-game hours** (matches the day cycle the system establishes).
+- ✅ **`respawnZoneEnemies(zoneId)`** — removes existing respawnable enemies (skipping bosses + `_noRespawn` flagged) from both the ZE array AND the THREE scene, then re-runs the spawn loop with current time-of-day. Self-contained — doesn't depend on which builder originally ran. Routes through `ZONES[id]._cfg` (newly stashed at all three builder ZONES population sites) and `ZONES[id].sol`.
+- ✅ **`checkZoneRespawn(zoneId)`** — dispatcher called from `goToZone` after scene resolution. Fires `respawnZoneEnemies` if `_shouldRespawnZone` returns true (24h threshold elapsed). Emits subtle log line on first re-entry after respawn: `'🌒 The wilds have stirred.'` for wilderness, `'⏳ Time has passed.'` for settlements (where the time-passage matters more for NPC retreat than for monster density). Visible-but-unobtrusive cue per design call.
+- ✅ **Settlement NPC retreat** — post-Q7 (`worldState.commissioned`) only, hours 19-6. `_shouldNPCsRetreat()`, `_isSettlementZone()` (matches `overworld` / `hearthwick` / `ironhaven`), `_applyRetreatToZone(zoneId, npcs)` (flips `n.g.visible` + `n.dot.visible` + sets `n._retreated`). `tickNPCRetreat()` piggybacks on the 1Hz day/night tick to catch hour-19 / hour-6 boundaries live; `goToZone` also calls retreat application on every settlement entry so an entering player sees the village empty immediately. Pre-Q7 retreat is disabled — Q1-Q6 stay unbothered.
+- ✅ **Wilderness NPCs exempt** — only settlement zones retreat. Áine (when wired) standing at Carraig Mór at night is canonical per lore; the design call codifies "wilderness characters stay out." `_isSettlementZone()` is the gate.
+- ✅ **`findNPCPos` retreat-aware** — extended to handle retreated NPCs. Keepers (Bram, Mira, Barnaby, Captain Vorn, Sera, Pip in Ashenmoor; equivalent in Ironhaven) reroute the marker to their keeper-house door with `indoors:true`. Non-keepers (Edna, Tom, Finn) return their day pos with `indoors:true` so the marker color picks up the cross-color (player understands "go inside / not currently reachable"). Existing UX pattern reused — quest marker code already handles `indoors:true` correctly.
+- ✅ **`talkNPC` silent gate** — retreated NPCs filtered from proximity scan in both the talk call AND the "Press E to talk" prompt. Player can't open dialog with an invisible mesh; can't see a prompt next to nothing. Design call A — no prompt, no explanation, the sundial tells the story.
+- ✅ **Wait button + modal.** New `#wait-btn` HUD element next to the sundial (clock-icon ⏳, 36×36 round button). Opens `#wait-modal` — small dialog with five buttons: Until Dawn (6:00) / Until Morning (8:00) / Until Noon (12:00) / Until Dusk (18:00) / Until Night (20:00). `passTimeToHour(targetHour)` calculates elapsed (day-wrap if target < current), advances both `gameTimeMinutes` and `gameTimeAbsMinutes`, fades to black via `doFade`, fires `updateHUD` + `saveGame`, shows a brief "Time passes — dawn" message. **Restrictions:** disabled in dungeons (`lid !== 'overworld'`), disabled in combat (any non-dead enemy aggroed within 20m of player), disabled while a UI modal is open. **Does NOT restore HP/mana/stamina** — wait is "the clock advances," sleep is "you rested."
+- ✅ **`gameTimeAbsMinutes`** — new non-wrapping counter on worldState. `advanceClock` advances both `gameTimeMinutes` (mod 1440) and `gameTimeAbsMinutes` (no wrap). `restAtBed` and `passTimeToHour` advance both. Used exclusively by respawn-threshold math; nothing else cares about absolute elapsed time. Lazily initialized — pre-v61e9 saves load with it absent and start at 0 on first advance, which is fine (respawn just doesn't fire until 24h elapses anyway).
+- ✅ **26/26 smoke tests pass** — spawn density multiplier across 24h cycle (5 tests), round-up scaling (6 tests, including 1.3× ceil edge), time-of-day filtering (3 tests for day/night/dusk), respawn threshold timing (5 tests across 0/23h/24h/48h/re-mark), NPC retreat post-Q7 gate (7 tests across pre-Q7/post-Q7 × times-of-day, including hour-19 boundary precision).
+- ⏸️ **Browser playtest validation deferred** — Session B's playtest tour covers the lighting/sundial; Session C adds: trigger Q7 commission, walk into Ashenmoor at night, confirm NPCs retreat (no proximity prompts, mesh hidden); follow a quest marker to a retreated keeper, confirm marker reroutes to door; click Wait button → Until Dawn, confirm fade + clock advance + NPCs return; visit a wilderness zone, kill some enemies, leave, advance 24+ in-game hours via Wait, return, confirm "🌒 The wilds have stirred." log entry + enemies repopulated.
+- ⏳ **Encounter content** — explicitly NOT in scope per design notes. The system ships ready; specific monster placements (which spawn entries get nightOnly, brigand designs, wolf packs) is its own session.
+
+
+
+Playtest feedback from session 17 flagged four combat/monster issues. Three resolved in Session 26 (v61d5); one deferred pending playtest repro.
+
+- ✅ ~~**Mimics overpowered + unavoidable.**~~ — fixed v61d5. E-press reveal replaces auto-proximity reveal; reveal starts a telegraph (0.32s) before the burst hit lands, giving block window. Same prompt as a real chest preserves the bait. The first-hit burst formula (14 + level × 1.0 - def × 0.3) routes through `executeStrike` so block/parry apply.
+- ✅ ~~**Monster attack telegraphs inconsistent.**~~ — audited and fixed v61d5. Phantom (0.30) + Wraith (0.32) added to TELEGRAPH_BY_NAME (were falling through to 0.35 default). Slime dropped 0.40 → 0.30 (over-tuned for tier-1). Vestigial Wolf entry removed (only wolf-shape is the Faolchú boss, which uses bossDef.telegraphBase). 11 existing values left untouched — playtest-driven retune deferred to a feel session now that v61d1 made all telegraphs visible.
+- ✅ ~~**Floor-2 enemy spells invisible.**~~ — fixed v61d5. Phantom/Wraith orb spawn Y was hardcoded `0.8` regardless of floor; now `(floor===2 ? FLOOR2_Y : 0) + 0.8`. Same pattern as v61c8's boss-corpse loot indicator fix. Floor-1 unchanged.
+- ⏸️ **Slimes don't split on death.** — investigation found no logic bug. Code path looks correct: `e.baseType === 'Slime' && e.variant !== 'small'` gate, `buildEnemy(smallDef)` returns expected `{g, hpFg, limbs}` shape, ENEMIES.push spawn entry includes all required fields. Either the bug was real at session 17 and has been fixed by adjacent refactors, or it's a flavor-toast collision (the "Slime splits!" message fires immediately after "Slime slain!" and may be getting clobbered by the toast queue). Marked deferred-pending-playtest. If split failure reproduces, send specific repro and dig in.
+
+### Session 33–34 resolved finds (v61ek–v61el)
+
+Closes the multi-session world-map rebuild wave (v61ea → v61el). The map and the gate graph are now in agreement; the lock topology matches the design rule.
+
+- ✅ **Lock asymmetry: 3 of 4 commission-locked edges drawn unlocked on the map** — v61ek (back-prop pass in `_buildGateGraph`). Hearthwick.W only declared `guard:'commission'` (Salthaven side didn't); Ironhaven.N/W only declared it (La Grise / Vieux Marché sides didn't). Renderer's first-touch-wins de-dup picked whichever side was iterated first; settlement-side gates iterated first via ZONE_BUILDERS order, so 3 of 4 locks rendered as unlocked. Architectural fix back-propagates lock state to the reciprocal side at graph-build time. Idempotent. Carraig Mór ↔ Inis Rua tide lock was already symmetric and stays symmetric (confirmation of idempotency).
+- ✅ **bealach_central had 3 gates (extra S → wastes_west)** — v61ek. Vestigial pre-spec route hook from v61eb. Deleted. Corridor between Hearthwick and Droichead is now clean 2-endpoint W↔E.
+- ✅ **Hermit's Camp had 3 gates (extra W → wastes_west)** — v61ek. Same orphaned corridor's other end. Deleted. Hermit's Camp now N (Cill Beag) + E (Caer Uaigneach).
+- ✅ **wastes_west zone deprecated** — v61ek. Both endpoints removed; zone left registered as harmless dead code (the save migration shim at line ~17957 remaps `hollowed_wastes` → `wastes_west`, so deleting the zone would force another migration). 0 inbound gates post-ship.
+- ✅ **Portclare S → wastes_east player faced wrong way on arrival** — v61ek. Same yaw-convention slip as v61ej. Was `spawnYaw:Math.PI/2` (faces +X / east, toward Portclare); now `-Math.PI/2` (faces -X / west, down the path toward Caer Uaigneach). The codebase's yaw convention is `0=N, π=S, π/2=E, -π/2=W` (line 3335) — non-obvious enough that this slip has happened twice now; broader spawn-yaw audit added as a Session 34 backlog item.
+- ✅ **Map showed Ironhaven on total lockdown (all 3 approaches locked)** — v61el. v61ek surfaced the truth that pre-existing config had been hiding: Ironhaven.N/W and (post-v61ek back-prop) the Vieux Marché / Portclare sides were all `guard:'commission'`. Per design: only `west_track`, `northern_road`, and `capital_road` should be locked corridors. Ironhaven sits on the canonical Q3 path through Vieux Marché — it MUST be reachable pre-Q7 (Aldwyn lives there; Q7 itself is granted there). Removed guards from Ironhaven.S → portclare and Ironhaven.W → la_route_royale_west; removed guard from Portclare.N → ironhaven; added guard to Portclare.E → capital_road (Coeur de Vie now Act III-gated, was previously walkable).
+- ✅ **Lock-as-zone-isolation rule canonized** — v61el. "A road with a lock on it should mean that a player cannot enter that wilderness zone from ANY area. The zone is entirely locked. Anything attached to it & anything further downstream is therefore locked as well." Both gates of `west_track`, `northern_road`, and `capital_road` now tagged `guard:'commission'` for full zone isolation. Belt-and-suspenders to the settlement-side guards. Combined with v61ek's back-prop pass, the architecture now enforces lock symmetry from both sides simultaneously. **Three Q7/Act-III reveals locked in:** coastal arc (Salthaven, Carraig Mór, Inis Rua) at Q7; mountain region (La Grise, Colmán's Rest, Mur Pierre) at Q7; capital (Coeur de Vie) at Act III.
+- ✅ **Pre-Q7 reachable set verified (BFS sim)** — 23 zones reachable pre-Q7 from Ashenmoor (Ironhaven, full Royale spine, Vieux Marché, Portclare, Wastes back-door route via Cill Beag → Hermit's Camp → Caer Uaigneach → wastes_east → Portclare). 7 zones gated (coastal 3 + mountain 3 + capital 1). Post-Q7: all 36 zones reachable. Q3-Q6 unbroken; the chicken-and-egg Aldwyn-in-Ironhaven dependency that v61ee originally fixed is preserved.
+
+### Pre-existing bugs (also queued for next session)
+
+Surfaced during session 17 playtest but pre-date v61ad/v61ae:
+
+- **Aldwyn + War Supplies spawn-into-wall.** Exit-from-interior offset puts player too close to the castle walls; can stick.
+- **Dungeon-exit-into-trees.** Some portal exits spawn behind the dungeon, potentially inside a tree — can stick.
+- **Active effect timers freeze in dungeons.** Buff timer stuck at its starting value (e.g. 60s) while in dungeons; works correctly in overworld.
+
+### Blocked on upstream systems
+
+- Séideán undodgeable (needs dodge stat)
+- Cloch Ghéar persistent slow (needs graded slow system)
+- Leigheas cleanse (needs status-effect system)
+
+### Other pending
+
+- ✅ ~~**Topology Phase 2 (v61d9 follow-up)**~~ — shipped v61e0. World-map locked-road styling (faded + grey + lock glyph at edge midpoint), Q7 unlock beat (journal entry + delayed 5.5s gold toast + live `wmRefreshLockedEdges` call), 3D gate-prop ride-along (barred crossbeam at every commission-gated overworld gate, removed live in active zone at Q7 turn-in, skipped on subsequent zone builds when commissioned). Latent v61d9 bug fixed in passing — `guard` field was being dropped on runtime gate entry push in both `buildVillage` and `buildTown`. See Session 28 entry.
+- **Topology Phase 3 (v61d9 follow-up)** — Tier 2 / Tier 3 gates wired to specific Act II / Act III triggers. The `guard` field architecture extends; we just need new guard-type values (e.g. `'tier2'`, `'capital'`) checking against new worldState flags, plus design decisions about WHICH triggers open them. Coeur de Vie is the obvious Tier 3 gate candidate (the Capital Road approach). Tier 2 is open — could trigger on visiting all Tier 1 zones, on a specific Act II quest, or on a Lord Caldric beat. Defer until Act II content lands and the trigger choice is obvious.
+- ✅ ~~**Regional identity pass (Michael Session 27 desire)**~~ — shipped v61e3 (coastal arc) + v61e4 (system + 22 zones). REGION_PROFILES table defines six regions (coastal/bealach/foothills/royale/wastes/ashen) with palette + biome + music + propScatter. New `coast` and `wastes` biomes added to BIOME_PROFILES. New `_musicCoast` track. 14 prop builders (driftwood, cart wheels, stone cairns, royal markers, dead trees, etc.) scatter via PROP_BUILDERS dispatch in `buildWildernessZone`. Wastes spoke pushed to depth via dedicated biome + bespoke palette + `_musicWastes` finally wired. Coastal arc retrofitted with regional props. Áine canonized for Carraig Mór (lore_canon.md + quest_writing.md). See Session 29 entry. **Open follow-ups:** signature NPCs for Salthaven + Bealach + Foothills + Royale + Wastes still pending; Áine build wiring deferred to a paired follow-up.
+- ✅ ~~**Skybox + fake-background touch-up (Michael Session 27 desire)**~~ — shipped via REGION_PROFILES system (path (a) per the original pitch — per-region tuning of existing knobs). Each region declares skyCol/fogColor/fogDensity; settlements honor them at build time, wilderness zones inherit through biome dispatch. Path (b) (gradient skybox + parallax mountain layer) deliberately not pursued — the per-region tuning was sufficient. If richer system needed later, day/night Session B will add `nightSkyCol`/`nightFogColor` fields per region as a natural extension.
+- ✅ ~~**Day/night system (Michael Session 27 desire)**~~ — **All three sessions shipped (v61e6 + v61e7/e8 + v61e9). Trilogy complete.** Session A built the clock foundation (gameTimeMinutes + helpers + save/load + tide port + Q7 cinematic time-locks). Session B built lighting interpolation + sundial UI + sleep advance (with v61e8 hotfix for skyRing tinting). Session C built spawn modulation + nightOnly/duskOnly filters + respawn at 24h threshold + settlement NPC retreat post-Q7 + universal Wait button. Locked design captured in `design_notes.md`; can be archived or repurposed for the next big system pre-design.
+- ✅ ~~**Per-gate flavor pass for the commission-locked prompt copy (v61d9 follow-up)**~~ — shipped silently before this session and confirmed in v61e5. `COMMISSION_LOCK_COPY` table keys all four boundary edges (west_track / bealach_central / northern_road / la_route_royale_west) with bespoke prompt + toast text. The single real issue (Bram timing fragility on west_track) found and fixed in v61e5. See Session 29 backlog reconciliation findings.
+- **Bealach North Approach blind spur (Session 27 audit-flagged)** — wilderness zone with one gate (back to Droichead) and one incoming gate (from Droichead). Inline comment says "Dead-ends at the Thorngate for now — not yet re-hooked into Deepwood's chain." Was scaffolded as part of an alternate Droichead → Thorngate → Deepwood route bypassing Hearthwick. Three resolutions: (a) finish the route — make Thorngate a real zone; (b) connect the spur directly to Deepwood; (c) delete it. Held for the next topology session — Phase 2 or later.
+- ✅ ~~**Gold drop scaling**~~ — was already shipped in v61c0 (rediscovered Session 29). `rollGold(tier)` implements per-tier base ranges (1-6 barrel / 4-12 chest / 2-8 corpse / 8-18 treasure) with `lvBonus` per-tier and `fortuneMult = 1 + fortune * 0.05` and `goldFind` buff multiplier. Documented progression at L1/L5/L10. Backlog entry was stale, pre-dated v61c0.
+- **Session 23 follow-up gaps** — (1) World-map gating: `wmDiscoverZone('overworld')` still fires unconditionally; Ashenmoor should stay shrouded until `worldState.tutorialDone=true`. Small change in the discovery handler. (2) South-road spawn coords (28, 78, yaw=Math.PI) were tuned without being playtested — may need to nudge X/Z to land somewhere visually correct relative to the actual gate position; if the player materializes inside a tree or facing the wrong way, adjust. (3) Tutorial scripted prompts (first attack, first block, first interact) deferred — current tutorial relies on the player remembering the existing message at first-time-X events. (4) Tutorial loot chest (mid-crypt potion pickup) deferred. (5) Bow/arrow system still on the backlog — Finesse +3% ranged damage hook is in place, no projectile system yet.
+- ✅ ~~**"Portal" → "old gates" / "anchor places" dialog rewrite**~~ — was already silently complete (rediscovered Session 29). No player-visible NPC dialog contains the word "portal." Survivors are SVG `data-pois`/`data-desc` attributes (no JS reads them — code-internal documentation only) and code identifiers (`PORTALS`, `currentPortal.name`, etc.) which never surface to the player. Backlog entry was stale.
+- **Bow/arrow system (deferred from v61au attribute pass)** — ammo slot exists but no projectile system was ever built. Real new system: arrow projectile physics, ammo consumption, draw timing, viewmodel for bow drawn/loaded states, distinct combat loop (vs the existing melee loop). Finesse +3% ranged damage hook is in place — applies multiplicatively when the system lands. Probably 1-2 dedicated sessions.
+- **Character creator Phase 2 (v61at follow-up)** — per-NPC voiced introduction responses replacing the generic "Pleased to make your acquaintance, {name}" fallback. Named cast: Bram, Edna, Sera, Tom, Pip, Mira, Aldwyn, Oswin, Captain Brynn. Each NPC's voice should come through — Sera curt and sceptical, Pip overly enthusiastic, Edna warm-eldery, Aldwyn formal-academic, etc. Mechanism: extend the intro-topic injection in `buildQuestTopicsForNPC` to look up an NPC-specific response (`INTRO_RESPONSES[npcName]`) and fall back to the generic line when missing. ~9 short responses, can be done in one writing session. Plus 2-3 archetype-aware moments — Pip commenting on goods relevant to a Scholar's books / Warrior's weapons / Rogue's lockpicks; Sera ribbing a Rogue. These read `playerArchetype` and inject one extra topic or vary an existing line.
+- Sigil-dungeon portal markers + map overlay glyphs
+- Phase 2 sigil rollout (31 remaining)
+- Sigil quest flavor text — 21 auto-generated placeholders (v61n) await per-sigil writing pass
+- Q1–Q6 dialog playtest in browser
+- Options panel
+- `buildWilderness(cfg)` template
+- Magic resistance potion — deliberately skipped from v61x since there's no generic "magic damage taken" multiplier in the code. Adding one means a new system hook (spell-damage pipeline vs melee's straight resist lookup).
+- **Carriage-master NPCs (v61ad follow-up)** — commission-gated fast-travel addition: driver NPCs at each town with a destination list that extends only when `worldState.commissioned`. Reuses the commission letter flag. Tethered-mule mesh shared with wilderness travelling merchants. Design locked in session 16 pre-planning. **Note (Session 27):** this now slots naturally as a Phase 3 affordance once Tier 1 zones have content worth fast-travelling to — and the commission-gated structure is now real (v61d9), so the carriage-master logic becomes "show destinations to Tier 1 zones the player has visited" rather than a separate gating mechanism.
+- **Wilderness travelling merchants (v61ad follow-up)** — spawns carriage + merchant on the road spline in wilderness zones (~30-40% per zone-session). Shares carriage mesh with town stations. Level-based gear stock.
+- ✅ ~~**Lord Caldric safehouse / stash system (v61ad follow-up)**~~ — shipped v61d4–v61d6. Building + interior + bed + stash UI in Session 26, then grant scene + door gating + Brynn relay topic. See Session 26 entry.
+- ✅ ~~**Q1–Q6 readyText / completeText writing pass (v61af follow-up)**~~ — shipped v61d3. 12 first-person passages in the Q7 voice. See Session 26 entry. (Note: Q3's readyText is data-only — its customActiveDialog → questDialogComplete path bypasses the 'ready' popup entirely. Documented in code comment.)
+- ✅ ~~**Inis Rua orphan + tidal mechanic deferred**~~ — shipped v61d7. Tidal causeway with `guard:'tide'` field, session-time-based half-cycle. See Session 27 entry.
+- ✅ ~~**The Ashfeld disconnected stub**~~ — shipped v61d7. Repositioned, wired, now physically on the south road. See Session 27 entry.
+- **Vault of the Tide F2 sigil placement (v61ae deferral)** — to add a sigil-touch objective to Q6 (parallel to Q2's sigil objective in the Dungeon of Shadows), we need a new tide/depth-themed Irish-register spell. Candidates: Taoide, Éirí, Doimhneas. Real content add: new SPELLS entry, viewmodel orb template, 3-tier lore quest auto-gen, carving text. Blocked on a dedicated Phase 2 sigil rollout session.
+
+### New (Session 29)
+
+- ✅ ~~**Day/Night Session B — sundial UI + lighting interpolation**~~ — shipped v61e7 + v61e8 hotfix (Session 30). 8-state sundial glyph (disc + moving sun design — sun arcs above the horizon during day, moon below during night, continuous phase calculated from `gameHour()` rather than snapping to the 8 discrete states). Per-second lighting interpolation tied to `gameHour()` — sun color/intensity, ambient color/intensity, hemisphere intensity, fog color/density, scene background, AND skyRing material tint (added v61e8 to fix a wedge-of-day-sky bleed-through caught in browser playtest) all lerp through dawn (5-7) and dusk (17-19) windows. New `REGION_NIGHT_PALETTES` table with hand-designed Wastes (near-black + violet ambient) and Coastal (moonlit silver-blue, "the Carraig Mór note") palettes. Auto-derived night palettes for Bealach / Foothills / Royale / Ashen via HSL shift + value reduction helper. Universal village-warm night palette for all settlement zones (design call C — settlement night reads "lit windows, warm fog" regardless of region). Safehouse bed rest now advances `gameTimeMinutes += 480`. Burned Ashenmoor scene tagged `dayNight.isLocked = true` (lore demands the burn read as an unchanging tomb; clock keeps ticking globally, only visuals stay frozen at forced-dawn). Each scene-builder (`buildVillage`/`buildWildernessZone`/`buildTown`) stashes lighting refs + palettes on `scene.userData.dayNight`; interpolator reads from active scene's userData. `BEALACH_SOUTH_CONFIG` tagged `region:'bealach'` (was untagged — predated the region system). 28/28 smoke tests pass for v61e7 in isolation; 5/5 additional smoke tests pass for v61e8 skyRing tint math. See Session 30 entry.
+- ✅ ~~**Day/Night Session C — spawn/AI density modulation**~~ — shipped v61e9 (Session 30). Spawn density multiplier (1.0/1.3/1.5), nightOnly/duskOnly/dayOnly filter flags, respawn:false flags, per-zone respawn at 24-in-game-hour threshold with subtle log cue, settlement NPC retreat post-Q7 with talk-gate + quest-marker rerouting, universal Wait button on the HUD with five time-of-day choices. Day/Night system trilogy now complete (A+B+C). See Session 30 entry for full v61e9 details.
+- 🏗️ **Encounter content design (Day/Night follow-up)** — the Session C system ships READY but with no populated nightOnly/duskOnly content. Need to design which spawn entries get which flags across the 22 wilderness zones. Suggested first pass: wolves are nightOnly in Bealach + Foothills + Coastal woodland; brigands are duskOnly on the Royale roads (the "highwaymen at twilight" beat); undead density 2× nightOnly in dungeon-adjacent wilderness (already in design notes). Bosses get respawn:false. Quest-bound enemies get respawn:false. Probably 1-2 sessions across all zones.
+- ⚠️ **Backlog reconciliation needed** — three "Other pending" items found stale in Session 29 (gold drop scaling / portal-rewrite / per-gate commission copy). The list has accumulated entries that no longer reflect reality. Recommend a short reconciliation pass — walk every pending item, verify status, prune the false-pending. Did NOT land before Session B (B took precedence); now overdue and should land before Session C.
+- **Áine build wiring (v61e3 follow-up)** — Áine's voice is canonized in `quest_writing.md` but she has no in-world NPC mesh yet. Pairs naturally with **Salthaven signature NPC design + wiring** in a single follow-up session. Salthaven's NPC isn't yet designed — Anglo-Saxon-coded harbor register per lore canon, working harbor character, "smells like fish" canonical. One session, two NPCs, the coastal arc gets faces.
+- **Per-spoke signature NPCs for Bealach / Foothills / Royale / Wastes** — the regional identity pass shipped palette + biome + music + props for all five spokes, but only Coastal got its signature NPC (Áine). Each remaining spoke needs at least one signature character to make the place feel inhabited. Per `lore_canon.md`: Droichead's bridge keystones with sigil-resembling markings (Bealach character could be the bridge keeper or ferryman); La Grise's indentured labor (Foothills character could be a worker who knows the magnetic ore); Vieux Marché's outsized self-importance (Royale character could be a market gossip); the Hermit's Camp (Wastes character — already lore-canonical, "trades information for silence"). Five characters, probably 1-2 sessions.
+- **Q1-Q6 dialog playtest in browser** — was already in the backlog, restated for visibility. The voiced quest chain has been live since well before Session 29 but hasn't had a dedicated audit pass for tone consistency.
+
+### New (Session 30)
+
+- **Day/Night Session B continued playtest validation** — v61e7 surfaced one bug in browser playtest (skyRing bleed-through), fixed in v61e8. Remaining tour: (1) Re-test forceTime('night') in Ashenmoor — confirm the wedge bleed is resolved with the v61e8 skyRing tint; (2) Carraig Mór at night — moonlit silver-blue (load-bearing per lore canon "the sea owns them twice a day"); (3) Hollowed Wastes at night — near-black, violet ambient, +55% fog density, skyRing now tints near-black; (4) Trigger the burn — burned Ashenmoor stays locked at dawn even after time advances; (5) Sleep at safehouse — clock jumps 8 hours, sundial reflects new time on fade-in. Tuning candidates if any of these read wrong: palette hex values (cheap), throttle interval (currently 1Hz, can drop to 2Hz if visible delta feels jerky), sundial canvas size (currently 32×32, may need 36 or 40 for moon-crescent legibility), sundial CSS positioning (currently `margin-left:108px` from compass center, may need adjustment).
+- **Per-settlement bespoke night palettes (deferred from Session B)** — design call C shipped a single universal-village-warm palette for Ashenmoor / Hearthwick / Ironhaven / placeholder villages. Per design notes this is "the right shape for v1, B is the right long-term answer." Bespoke palettes per settlement could land later as one-line overrides on the build's day-palette block — Ashenmoor warm-firelit (forge embers + lit windows), Ironhaven colder-stone, Hearthwick wood-warm. Polish pass, not load-bearing.
+- **Easing on dawn/dusk ramps (deferred from Session B)** — currently linear lerps over hours 5-7 (dawn) and 17-19 (dusk). Per design notes Q2: "Linear is simpler. Eased reads more natural. Start linear, ease later if it looks robotic." If playtest shows the transitions feel mechanical (lighting "ticks" rather than glides), swap the linear formula in `_nightFactor()` for smoothstep — one-line change, three sites if also applied to sundial sky tint and the auto-derive thresholds.
+
+### New (Session 34)
+
+- **`COMMISSION_LOCK_COPY` for `capital_road`** — the table at line ~12082 has bespoke flavor for `west_track` / `bealach_central` / `northern_road` / `la_route_royale_west`, but the v61el-added Portclare → capital_road gate falls back to the generic prompt ("The road to The Capital Road is closed. Royal commission required."). When Act III gating actually lands, this needs (a) bespoke flavor copy (Coeur de Vie–coded — formal, royal, gate-of-the-capital register) and (b) potentially a different `guard` value if Act III unlocks on a different flag than Q7's commission. The single-bit `worldState.commissioned` is currently doing double duty (Q7 + Act III), which is fine as a placeholder but needs untangling when Act III triggers are designed.
+- **Broader spawn-yaw audit on the new gate set.** v61ej and v61ek both fixed yaw-convention slips (Portclare.N, Portclare.S → wastes_east). The convention `0=N (-Z), π=S (+Z), π/2=E (+X), -π/2=W (-X)` is non-obvious enough that this failure mode has happened twice now. Worth a hand-walk audit of every spawnYaw on the v61eh-introduced gate restructure: Mur Pierre incoming spawns, Dunmore incoming spawns, Portclare's other two approaches (W, E), Vieux Marché (E, W), La Porte Grise (E, S), Coeur de Vie (W). v61ei flagged Mur Pierre / Dunmore / Portclare-other-approaches as candidates for the perimeter-spawn issue too — same audit pass can cover both. ~30-45 min walking each, browser-checked.
+- **Vestigial `MAP_EDGES` legacy fast-travel BFS table.** v61eh updated the table to reflect the new Act I routing but kept old direct edges marked `live:false` (preserving graph history). The table is used by `nextHopZone` for quest-marker compass routing. Now that the gate-as-data system has been stable for several ships, worth checking whether `nextHopZone` could be derived from the gate graph directly, retiring the hand-maintained table entirely. Same architectural pattern as v61ei's `WM_LOCKED_EDGES` retirement. Lower priority — the table works as-is.
+
+### Session 35 resolved finds (v61em)
+
+Salthaven fully built out — first complete placeholder-village fleshing pass since the v61e1 outposts. Five buildings, four voiced shopkeepers, one examinable shrine. Introduced a reusable `genericVillageDecorate` so future placeholder-village build-outs can ship without re-implementing windows-and-signs from scratch.
+
+- ✅ **`genericVillageDecorate` shipped.** A reusable per-building decorator for placeholder villages, mirroring Ashenmoor's `decorateFn` pattern but keyed on `h.type` rather than `h.houseId`. Provides: hanging shop sign on a post outside the door, windows on all four walls, and type-keyed exterior props for `weapon` (anvil + barrel), `armor` (spear rack), `potion` (hanging herb bunches), `misc` (crate stack), and `inn` (bench + cider barrel). Door-face aware — props position correctly whether door faces N, S, E, or W. **Ashenmoor's hand-tuned decorateFn left untouched** — Ashenmoor keeps its bespoke per-houseId props (forge hearth + chimney + glow for Bram's, vegetable garden for Edna's, etc). Decision call: lower risk than refactoring the playtested Ashenmoor build path, and the two systems can coexist indefinitely.
+- ✅ **Salthaven shipped (4 NPCs + shrine).** Five-building cluster on a 60×60 zone:
+  - **sh3 The Anchor Inn** (NW, face S) — Brand the innkeeper, former sailor, *"Don't ask about the hook."* `inn` shop type.
+  - **sh0 The Harbormaster's Office** (NE, face W) — Hilda the harbormaster, Salthaven's signature character. New `harbor_office` shop type (civic-institutional stock — maps, oilcloth, lantern oil, common potions). New decorator branch for this type — small weather-pole with a wind-vane and rope coil at the base.
+  - **sh1 The Salt House** (E-center, face W) — Wystan the salter, working-class Anglo-Saxon. New `harbor_supplies` shop type (salted fish, smoked eel, salt, rope, fishing hooks, torches). Decorator branch reuses misc's crate-stack — the working register matches.
+  - **sh2 The Net-Mender's Cottage** (SE, face W) — Old Aelflin, soft-voiced folk-magic apothecary. `potion` shop type. *Carries the seeded line that quietly rhymes with Áine's "Salthaven elder she hasn't spoken to in fifteen years" canon (the "her stones, I had my road" beat).* Aelflin is not named-Áine's-sister on-screen; the connection is a soft pointer that may or may not pay off in a later session.
+  - **sh4 The Sea-Folk Shrine** (south end, no NPC, examinable) — wooden open-walled platform, peaked roof, offering bowl with coins/carved fish/red ribbon. Approach prompt + `openNoticeBoard`-reused popup with bespoke flavor text. Establishes Salthaven's folk-coastal religious register, the third corner of Act I's three-register religious geography (alongside Brother Oswin's institutional and Carraig Mór's deep-ancestral). No mechanical effect, pure flavor. Hardcoded coords (44, 38) — when a second such shrine ships, generalize.
+- ✅ **Bespoke detailFn for Salthaven** — water mesh on the east edge (28×60 plane below ground level), wooden dock projecting east at z≈22 (8u long, walkable), two pilings, mooring post + coiled rope at the seaward end, beached-rowboat on the harbor edge, two fish-drying racks (helper-functioned for reuse), shrine geometry. Visual signature establishes the harbor at-a-glance.
+- ✅ **Notice board rewritten** — Hilda-voiced harbour notice replacing the placeholder `centerMarker` text. *"The dock's east end is condemned. A new plank is on order from Hearthwick. It has been on order since last summer."* Communal voice, dry, places Hilda as the village's institutional memory.
+- ✅ **Salthaven gate spawnYaw bugs fixed.** Two slips of the same yaw-convention pattern flagged by the Session 34 backlog item:
+  - Salthaven east gate → west_track: was `spawnYaw: -Math.PI/2` (W, faces back at Salthaven). Corrected to `Math.PI/2` (E, into the West Track wilderness).
+  - West Track west gate → salthaven: was `spawnYaw: Math.PI/2` (E, faces the village wall). Corrected to `-Math.PI/2` (W, into the village).
+  - West Track east gate → hearthwick yaw NOT fixed in this session — left for the broader spawn-yaw audit.
+- ✅ **Áine wiring NOT shipped this session** — drafted in v61e3, still pending. Salthaven was the higher-priority backlog item; Áine pairs with a Carraig Mór village fleshing pass in a future session.
+- ✅ **Documentation:** `lore_canon.md` Salthaven section added (Hilda + Wystan + Aelflin + Brand profiles, register positioning vs Carraig Mór, the Aelflin/Áine connection canon-noted-but-not-paid-off, the three-corners religious geography). `quest_writing.md` full verbatim dialog block for all four NPCs + shrine examine text + notice board.
+
+### Session 35 systems introduced
+
+#### Reusable village decorator
+
+`genericVillageDecorate(sc, sol, h, ty, getY)` — defined at line ~6966, sits next to Ashenmoor's `ASHENMOOR_CONFIG.decorateFn`. Spec usage: `decorateFn:genericVillageDecorate` in the placeholder spec block. Call site: `buildVillage` invokes `cfg.decorateFn` per-building when defined and the building isn't a church (church handles its own exterior). Type-keyed props handle `weapon`, `armor`, `potion`, `misc`, `inn`, `harbor_supplies` (alias of misc), and `harbor_office`. Unknown types fall through with no exterior props but still get sign + windows.
+
+When a future placeholder village wants exterior props for a new shop type, add a branch to the decorator. Pattern: read `h.type`, position relative to door face, push meshes via `sc.add`, optionally `sol.push` if the prop should block movement.
+
+#### Open water mesh
+
+Salthaven's detailFn introduces the first overworld water-as-flat-plane. PlaneGeometry, transparent material at opacity 0.85, color 0x4a6a78, with `rotation.x=-Math.PI/2`. After the v61em harbor-flip iteration, the plane is 36×80 centered at x:0 (west edge of zone, extending into negative x for sight-line continuity). Sits at `getY(18, 40) - 0.4` — tied to the shoreline ground height so the water meets the dock cleanly. No reflectivity, no animation — just a colored plane. Pattern reusable for future coastal villages (Carraig Mór, Inis Rua, Portclare). Day/night system inherits scene background but does not currently retint the water mesh — a polish item for a future session if the disagreement reads.
+
+### Session 35 iteration history (the path to v61em final)
+
+The first-ship of v61em was incomplete in three meaningful ways. The iteration log:
+
+**Iteration 1 — first ship.** Five buildings, four NPCs, dock + shrine + harbor mesh in detailFn. **Playtest revealed:** village rendered as plain boxes with no visible harbor, no dock, no shrine — only the four building cubes. **Root cause:** `registerPlaceholderZone` did not propagate `decorateFn` or `detailFn` from spec to cfg. Both fields were silently dropped at the registration boundary, so `buildVillage` was called with `cfg.decorateFn === undefined` and `cfg.detailFn === undefined` and both bailed out. **Fix:** 2-line passthrough in `registerPlaceholderZone`'s `kind:'village'` branch. Generic infrastructure — every future placeholder village benefits, not just Salthaven.
+
+**Iteration 2 — coastal identity pass.** Even with the wiring fixed, the village read as "forest hamlet with dock attached" rather than "salt-stained coastal harbor." Three architectural additions to `buildVillage`:
+- **Settlement biome support.** New `cfg.biome` field. When set to a `BIOME_PROFILES` entry, builds the ground texture from that biome's HSL palette via the same `mkTex` pattern wilderness zones use. Coastal villages get duskier, salt-bleached tones (`groundBase: '#7a8868'`) instead of bright forest-green. Inland villages with `cfg.biome` unset keep `MAT.grass`.
+- **Directional terrain slope.** New `cfg.terrainSlope:{dir, amount}` field. Adds a linear ramp on top of the existing radial flat-to-amp modulation. `dir:'W'` makes x:0 high, x:SIZE low (toward the harbor). Salthaven shipped at `amount:4.0` — pronounced enough that the dock physically reaches the water surface.
+- **Open side suppression.** New `cfg.openSide` field. Skips perimeter hedges + perimeter trees + interior trees on the named half of the village. Salthaven uses `'W'` so the western seaward horizon is unblocked. Inland villages leave it unset and get the full ring.
+- **Coastal skyRing variant.** Painted differently when `cfg.biome === 'coast'` — sea-blue gradient with low cliff silhouettes and a few seabird specks instead of mountain triangles + snow caps. Triggered by biome only; no new field. The default skyRing is what made the horizon read forest-y even after the trees came down.
+
+Plus size bumped 60→80 with everything repositioned (buildings, NPCs, dock, water, shrine, gate spawn coords). **villageR bumped 24→32** to encompass the building footprints — without this, interior trees rendered inside the buildings.
+
+**Iteration 3 — harbor geography flip.** Playtest of iteration 2 revealed the water was on the wrong side of the zone. Salthaven canon places it on the **west coast** with the **Windward Sea to its west**, but the East-side gate (which leads to Hearthwick — east of Salthaven on the world map) was sitting IN the water. Geographic structure was inverted: harbor needs to be on the WEST edge of the zone, not the east. Surgical mirror across the zone:
+- `terrainSlope: dir:'E'` → `dir:'W'`
+- `openSide: 'E'` → `'W'`
+- `centerX: 35` → `45` (slight east bias gives harbor more west real estate)
+- All four building x-coords mirrored
+- All four NPC x-coords mirrored
+- Building faces flipped (`'W'` → `'E'`) for the three harbor-facing shops; Inn stays face S
+- Water mesh moved x:80 → x:0
+- Dock + pilings + mooring + rope + rowboat + drying racks + shrine all mirrored
+- Both interact-handler shrine coordinates updated
+- Notice board copy: "dock's east end is condemned" → "dock's seaward end is condemned" (now generic-direction)
+
+Final result: player enters from East gate (Hearthwick), walks WEST through the village downhill toward the harbor, sees the open Windward Sea to the west.
+
+### New (Session 35)
+
+**Salthaven polish items flagged in browser playtest** — to handle next session BEFORE pushing on with new village fleshing. None block shipping; all degrade the village's readability.
+
+- **Signposts broken across three failure modes.** The hanging shop signs that `genericVillageDecorate` adds to each placeholder-village building are not landing right:
+  1. **Floating or buried.** Sign-post Y position uses `ty` (terrain Y at building corner), but the slope and radial terrain modulation mean the post's base often sits above or below the visible ground depending on building location. Likely fix: pass the terrain `getY` function through to the decorator and sample at the actual sign location, not the building anchor; OR sink the post visibly into the ground with a longer base section so small Y disagreements aren't visible. Worth tracing how Ashenmoor's signs handle this — they don't seem to suffer from it (probably because Ashenmoor is mostly flat).
+  2. **Boards oriented incorrectly.** The signboard rotation should match the building's door face — board parallel to the wall, readable from the approach direction. Currently rotating wrong relative to face.
+  3. **Missing actual signage.** The board is a blank wooden plane. The keeper's name + shop type should be painted on it (e.g. "HILDA — HARBOURMASTER" or "THE ANCHOR INN"). This was deliberately deferred in v61em ("ship the geometry first, paint signs second"), but at this point the absent text is what reads as wrong rather than the geometry. Pattern: render a small canvas with the text, use it as the board's texture. Probably 30 min of work plus visual tuning.
+
+- **NPCs are motionless.** Hilda, Wystan, Aelflin, Brand all stand frozen at their spawn points. Salthaven needs ambient NPC motion — slow path-walking between two waypoints, turning to face the player on approach, idle animations. Worth checking what Ashenmoor's NPCs do — Bram reportedly has some forge-tending animation, others may be similarly motionless. **If Ashenmoor NPCs are also static, this is a global gap to address as a system, not a Salthaven-local fix.** New abstraction candidate: `npcDef.idle = 'wander' | 'stand' | 'work_at:{x,z}'` with simple state machine in the per-frame NPC update loop. ~1 session if done as a system; less if Salthaven-only patch.
+
+- **Beached canoe is a hollow shell.** The boat hull mesh is `SphereGeometry(0.9, 8, 5, 0, Math.PI*2, 0, Math.PI/2.4)` — a partial sphere giving the half-dome silhouette of an upturned hull. Three.js renders only the front face by default; from inside the hull, the geometry is transparent. Two clean fixes: (a) add a second inverted hull mesh as the inside surface (`side:THREE.BackSide` on the material, or a second mesh with flipped normals); (b) switch the material to `side:THREE.DoubleSide` so the hull is visible from both sides. Fix (b) is a one-line change; fix (a) gives more authentic look (the inside could be a different darker color). 5-min fix either way.
+
+- **Dock collision question — walkable + jumpable.** The current dock has only a seaward end-stop; the surface itself is unblocked, so the player should already be walking on it. **What's actually missing:** there's no mesh-level "step up onto" affordance — the dock surface is only ~0.15u thick and sits on the ground, so walking onto it is more like walking over a flat plank than stepping onto a raised platform. **Bigger architectural question:** does the engine support player-jumpable terrain? Looking at the codebase: there's a `jump` keybind and physics constants, but I haven't traced whether vertical Y collision is honored on objects (sol entries seem to be 2D XZ blockers). If true 3D platforming isn't a feature, the dock-as-walkable-platform is essentially what we have. **Investigation needed:** read the player physics code, determine whether jumping onto/off-of objects is possible, and if so build the dock as a proper raised platform with stair-like access. If not, the current setup is the best we can do without a new physics feature. Probably a 1-hour audit pass to answer the underlying question definitively.
+
+**Carraig Mór village fleshing + Áine wiring** — natural follow-up to Salthaven shipping. Áine's full dialog already lives in quest_writing.md (canonized v61e3); needs the NPC mesh, keeper-house, and 4-6 building cluster to make Carraig Mór a place worth standing in. Áine canonically should sit closer to the seaward edge than the road gate so the player walks past her on the way to/from the Mouth. Reuses genericVillageDecorate (with the polish fixes above ideally landed first); will need a stone-wall variant or a `coastal_stone` decorator branch since Carraig Mór is canonically built from rock not timber. Reuses Salthaven's coastal-identity infrastructure (biome:'coast', terrainSlope, openSide, coastal skyRing). Probably 1 session.
+
+**Droichead village fleshing** — bridge village on the Dearg, the keystones-with-sigil-markings beat. Signature NPC: ferryman who "sells information" (canon). 4-5 buildings. Includes the bridge as bespoke detailFn (load-bearing — the bridge IS the village). Setup also for the Phase 2 sigil placement on the keystones in a later sigil-rollout session. Probably 1 session.
+
+**Redwater Ford village fleshing** — small farming/fishing settlement on the south road. 4 buildings, lower-stakes characters. Lands a friendly face on the Ashenmoor → Ashfeld → Redwater Ford walk. Probably 1 session, the lightest of the village-fleshing trio.
+
+**Cill Beag village fleshing** — small church village. The priest is de facto mayor (canon). One signature NPC — the priest. 3-4 buildings around the half-ruined oratory. Religious register; pairs with Brother Oswin tonally. Probably 1 session.
+
+**Salthaven dock as fishing/quest affordance** — the dock currently has no interaction. Future hook: a small bench at the seaward end where the player can sit and "watch the boats" (waits 1-2 game hours? small UI surface? regenerates a buff? unclear what's worth building). Holding open as a possible Act II Hilda-quest-giver hook if she ever earns one.
+
+**Salthaven water-mesh visual polish** — the water plane doesn't react to day/night palette shifts. Cool-cast at night, warm-cast at sunset, etc. Single-line addition to `_nightFactor()` interpolation if it earns priority.
+
+**`harbor_office` / `harbor_supplies` consolidation** — currently two new SHOP_STOCK entries plus two decorator branches. If subsequent coastal villages all share the same patterns, consider whether to consolidate into a single `harbor` shop type with stock variants, or keep the split for register-of-goods clarity. Hold for second use case.
+
+**West Track east-gate spawnYaw** — flagged in v61em but not fixed. The spawn-yaw audit backlog item from Session 34 is broadening; worth a dedicated 30-45 min audit pass that walks every gate that's been touched since v61eh.
+
+### Session 38 resolved finds (v61ey)
+
+The Inis Rua spec session. Closes the v61ew "matching north side still empty placeholder" follow-up and the cross-cutting causeway/ferry framing flag.
+
+**Inis Rua build (v61ey)**
+- ✅ **Inis Rua zone speced and built** — v61ey. Spec-only operation as predicted at end of Session 37, except for one new ground-texture catalog entry (`rust_stone`) which the design-call needed for the iron-rust origin of "Red Island." Three buildings (Niamh's Dwelling, the Net-Shed, the empty Watch-House), two voiced NPCs (Niamh as signature Keeper-of-the-Mouth + Fionn as fisherman), full north-side dock + ferry boat mirroring Carraig Mór's south side, the Mouth as a built-but-deferred sea-cave dungeon entrance with examine prompt. ~430 lines net. All NPC/building/gate-corridor clearances Python-checked clean.
+- ✅ **`GROUND_TEXTURES.rust_stone` catalog entry** — v61ey. Warm-grey base + 65% lichen / 20% cool-shadow / 15% rust-orange flecks + 4 elongated rust-runoff streaks per tile. Recipe documented inline; pairs with `cfg.buildingMaterial:'stone'`. Catalog now 10 entries.
+- ✅ **The Mouth examine system extension** — v61ey. Sibling examine point to Salthaven's Sea-Folk Shrine. Same `openNoticeBoard` plumbing, same hardcoded position-check pattern in both `interact()` and the proximity-prompt branch. Lore line ends on *"You are not ready to go in."* — designed to be the line that earns the deferred dungeon hookup. When wired into `WORLD_DUNGEONS`, the line should change or stop firing entirely.
+- ✅ **Causeway/ferry framing fully resolved on both sides** — v61ey. Inis Rua's `centerMarker.text` and `WM_NODES.inis_rua.desc` both updated from "causeway" to "ferry" framing. Closes the v61ew flag where the reframe shipped only on Carraig Mór's side.
+
+### Session 38 resolved finds (v61ez)
+
+The Droichead spec session. Bealach-region's signature road-stop bridge village; first village shipping a true bisecting natural feature with a walkable crossing; canon-decision session for two pieces of held-lightly canon (player-as-binding-interface, Mastery-touch as Varek-meeting trigger).
+
+**Droichead build (v61ez)**
+- ✅ **Droichead zone speced and built** — v61ez. Spec-only operation; no new builder knobs needed (Bealach is the canonical reference for the builder defaults). Three buildings (Tadgh's River-Hut, Bree's Wagon-Stop, the empty Old Cottage), two voiced NPCs (Tadgh as signature ferryman/information broker + Bree as Wagon-Stop trader). ~580 lines net (largely the river/bridge/cliff detailFn).
+- ✅ **The river + cliff geometry** — v61ez. Dearg river channel x:40-48, full N-S length, water mesh anchored 3.5u below grade at the bridge midpoint. Color `0x7a6a4a` (canonical "rust-brown from the bogland it flows through"). Cliff-face geometry on both banks running N-S in segments, with a gap at z:28-32 on both banks for the bridge corridor and a second gap at z:41-45 on the west bank for Tadgh's dock. Sol-blocked at every segment.
+- ✅ **The Bridge — Option B walkable implementation** — v61ez. Stone deck 12u × 4u spanning x:38-50, z:28-32, built at terrain Y of bridge midpoint (deck top flush to terrain). Two low stone railings flanking the deck; four squat stone abutment posts at deck corners; half-cylinder stone arch visible from below the deck. Invisible sol-blocker strips at z=28 and z=32 (rx=6, rz=0.15) prevent walk-off-into-river while leaving the east-west traversal axis clear. Honest about engine limitation; replaced when 3D-platforming lands.
+- ✅ **The Keystones examine** — v61ez. Two carved stone blocks at bridge midspan (44, 30), examinable from on-bridge. Sibling examine handler to Mouth + Sea-Folk Shrine. Lore-load-bearing closing line: *"The river runs beneath the bridge. The bridge holds."* Forward-compatible with Phase 2 sigil rollout.
+- ✅ **Tadgh's dock + skiff** — v61ez. Wooden platform at (40.5, 43) extending east through the cliff gap into the riverbed. 4 pilings, single moored skiff at the east end, single oar across the gunwales, mooring rope. Skiff sol-blocked. Player cannot board.
+- ✅ **Centermarker + WM_NODES.droichead.desc updated** — v61ez. Both bumped from v61ec placeholder copy to the canonized lore-load-bearing version (matches the canon-canonicalization pattern from v61ey).
+- ✅ **Layout sanity-check caught 2 real bugs pre-ship** — v61ez. (a) Tadgh originally placed at (37, 40), inside his own building dr0 River-Hut at (32-37, 36-41) — moved to (38, 41) clear of the building. (b) Tadgh's dock at (40.5, 43) collided with the unbroken west cliff segment z:34-46 — split into separate west/east cliff segment arrays so the west bank could have a dock gap at z:41-45 while the east bank stayed solid through the same range. Third "bug" (bridge railing sol entries blocking entry) investigated and confirmed false alarm — the railings are thin strips at z=28 and z=32, allowing free passage along the bridge axis at z=30.
+
+**Canon decisions**
+- ✅ **Player-as-binding-interface canonized** — v61ez. Held-lightly addition to lore_canon.md § The meta-awareness thread. The player is canonically an outside-of-the-world entity interfacing through the binding; the binding has been producing adventurers for centuries, and the player is the first one Varek registers as fundamentally different because the binding is *receiving* something through the player from outside. Fourth-wall integration that builds the wall into the cosmology rather than breaking it. Never said by an in-game character directly.
+- ✅ **Mastery-touch as Varek-meeting trigger canonized** — v61ez. Held-lightly addition to lore_canon.md § The Mastery-touch as the Varek-meeting trigger. The first on-screen Varek meeting at The Ashfeld is triggered by the player's first achievement of Mastery-tier comprehension on any spell — not by a quest state, not by a zone visit, but by the player crossing into Varek's linguistic register. Resolves both the Mouth design question and the Ashfeld trigger question through the same gesture. Open question #4 (Ashfeld trigger) moves to resolved.
+- ⚠ **Mastery-touch accessibility flag** — noted alongside the canon. The trigger has discoverability concerns: there is no in-world signpost telling the player they need Mastery to enter the Mouth or to trigger Varek. Mitigation candidates (quest hook, UI cue, both layered) deferred to the Mouth-hookup session.
+
+### New (Session 38)
+
+**3D platforming for overworld zones — flagged as candidate system.** The Salthaven dock-walkability question (Session 35 backlog) and the Droichead walkable-bridge requirement (Session 38) both surfaced the same engine limitation: `activeTerrainH(x, z)` is a pure XZ function, `sol[]` entries are 2D blockers with no Y dimension, and the player tick force-snaps `jumpY` to terrain height every frame in overworld. Standing on a raised mesh is impossible — the player snaps down to terrain Y instantly, falling through whatever they're "on." Today's workarounds are visual-only: build the bridge/dock at terrain height with cliff geometry and invisible side-blockers around it (Droichead's Option B). When at least 3-4 use cases are queued (current candidates: Salthaven dock as raised platform; Droichead bridge as proper deck above river; future Mur Pierre / Coeur de Vie stairs and tiered platforms; Watch-House Mouth-overlook if it earns a beat), this work becomes worth a dedicated session. **Audit pass first** (1 hour: trace the player tick, identify all the places `jumpY` gets force-set, identify the dungeon/interior systems to keep separate from any new overworld platforming logic). **Then build:** extend `sol[]` schema with a `topY`/`baseY` for stand-on-top mesh entries, add a "highest-platform-Y at this XZ" lookup that the player tick consults before snapping to terrain, handle edge cases (walking off the platform edge, jumping onto from below, NPC pathing on platforms, save/load of player Y when on a platform). Defer until a batch of use cases motivates the system; do not build it for one bridge.
+
+**The Mouth dungeon hookup** — held for the Act II story beat that sends the player in. Geometry shipped v61ey; `WORLD_DUNGEONS` entry not yet wired. Candidate parameters: theme `'deep'` or `'haunted'`, difficulty `'hard'` (slots between Vault of the Tide and a future Act III tier), seed TBD. The associated Phase 1/2 sigil should be tide/depth-themed Irish-register — candidates noted in lore canon: *Taoide* (tide), *Éirí* (rising), *Doimhneas* (depth). Niamh's "we have been watching the entrance since, in case another one comes" line is the canonical hook for the player's first emergence — when the dungeon opens and the player goes in and comes out, Niamh notices. **Trigger note (v61ez canon):** the Mouth opens when the player achieves their first Mastery-tier comprehension. The "you are not ready to go in" examine line stops firing once that threshold is met; the dungeon entrance becomes interactable. This same trigger fires Varek's first appearance at The Ashfeld.
+
+**The Watch-House interior** — held for any future writing pass that wants to give Inis Rua a small additional beat. Currently atmospheric only — closed shutters, blank sign, Niamh's keeper-tradition line refers to it as her mother's old quarters. If an Act II beat wants the player to enter (e.g., Niamh hands the player a key, or the door opens after a story trigger), the building exists physically; an interior `decorateFn` branch would need to land alongside the writing.
+
+**Niamh's "two lost visitors this year" beat as encounter seed** — the woman who went into the Mouth and the man who walked into the strait are stated flat with no follow-up asked. Either (or both) is a candidate for an Act II encounter — a body in the strait at low tide, a presence in the Mouth wearing the woman's shape, a half-decayed letter she left in the Watch-House. Held without commitment until the Mouth dungeon is wired.
+
+**Symmetric tide-message authoring** — currently the tide-guard prompt copy is hardcoded for one side ("The ferry to Inis Rua is held by the tide"). When the player is on Inis Rua's side trying to cross back, the same generic message fires. A `tideMsg` field on the gate def (or a small per-side dispatch table) would let Inis Rua's outgoing prompt read in its own register — e.g., "The boat is on the rock's side" or similar. Held; the current copy is functional, just one-sided.
+
+**Carraig Mór ↔ Inis Rua skybox cross-visibility** — open from Session 37's parking lot (skybox / horizon polish) and now slightly more pointed: Inis Rua should be visible from Carraig Mór's south edge, and Carraig Mór should be visible from Inis Rua's north edge, both as low silhouettes against the strait water. Currently neither zone renders the other; the strait reads as open ocean. Quick win when the skybox polish session lands.
+
+**NPC yaw configuration** — surfaced at v61ez ship: NPC defs do not currently support a yaw field. The NPC build pipeline (`buildNPCMesh` + the placement loop in `buildVillage`) calls `g.position.set` but never `g.rotation.y`, so all NPCs spawn facing +Z (south) regardless of context. This was tolerable through Niamh and Áine (their facing direction was tonally fine by accident) but it would have improved Tadgh (who canonically faces the river) and is worth a small system-level addition before more NPCs land. Single-line fix in the placement loop: read `def.yaw` and apply via `g.rotation.y`. Plus a per-NPC pass through existing villages to set yaws where they matter (Niamh facing the Mouth, Áine facing the strait, Tadgh facing the river, etc.).
+
+**Mastery-touch trigger discoverability** — noted from the canon decision. Mitigation candidates: (a) journal entry / popup that fires on the player's first Mastery-tier comprehension, hinting at the Mouth; (b) Aldwyn dialog beat fired at a specific Act II progression point; (c) Niamh dialog branch that surfaces if the player has already touched a sigil at Comprehension or higher. Decision deferred until the Mouth is actually wired into `WORLD_DUNGEONS` — solve the discoverability problem alongside the entry-mechanism problem.
+
+---
+
+## Version history
+
+| Version | Shipped | Summary |
+|---|---|---|
+| v34–v37 | | Pre-overhaul baseline |
+| v38 | Session 1 | Def + magic resist system; Smól Mastery armor pierce |
+| v39 | Session 2 | Variants; 5 new monsters; Phantom HP drain |
+| v40 | Tuning | Drain/reveal radii, Mimic disguise polish |
+| v41–v43 | | Interactable chests/barrels, room-gating |
+| v44 | | Shop-style loot UI, multi-item containers |
+| v45_debug | | Potion consumption debug build |
+| v46 | Bug fix | Potion save-bug (heal/mana stripped by `_serItem`) |
+| v47 | | Weight-based inventory + encumbrance |
+| v48 | | Oblivion-style row inventory with sub-tabs |
+| v49 | Session 3 | Overworld loot (`ZONE_CORPSES`) |
+| v50 | Session 4 | Weapon-type resistances (slash/pierce/blunt) |
+| v51 | Bug fix | `WSHAPE_TO_WTYPE` TDZ — moved const + try/catch row render |
+| v52 | Session 5 | Pre-attack telegraphs |
+| v53 | Session 6 | World-map fast travel |
+| v54 | Session 7 | Loot overhaul, Stamina Draughts, Skill Books, accessory defense |
+| v55 | Session 8 | Quest dialog audit, same-NPC handoff, sigil signposting |
+| v56 | Session 9 | Combat balance: softer weapon curve + level-scaled enemies + variant ramp |
+| v57 | Session 9.5 | Loot economy: tier cap by level, harder reqs, progressive pricing |
+| v58 | Session 10 | Aldric → Bram rename; Edna/Bram relationship beat; burn cost character locked |
+| v59 | Session 11 | Monster level-gating: per-enemy minLevel for dungeon + zone; Sera foreshadow hint |
+| v60 | Session 12 | World map graph model plumbing (MAP_NODES/MAP_EDGES); multi-gate buildVillage; Phase 1 checkpoint |
+| v61 | Session 13 | BIOME_PROFILES + buildWildernessZone; Hearthwick + Bealach-South + ZONE_BUILDERS table; Act I road chain rewire |
+| v61b–c | Session 13 | TDZ + clobber + interior-exit + notice-board + spawn-in-trees fixes; gate-orientation reset (compass convention) |
+| v61d | Session 14 | `registerPlaceholderZone` helper; ZONES uniform shape; collapsed three hot switches; wilderness notice boards |
+| v61e | Session 14 | Phase 2A Act I scaffolding (11 zones); buildTown multi-gate port; Phase 2B Act II scaffolding (19 zones); 30 new walkable zones total |
+| v61f | Session 14.5 | Playtest fixes: buildFenceGate terrain-Y + side-aware rotation; buildWildernessZone E/W tree-wall respects gates; placeholder villages stop inheriting Ashenmoor NPCs; tickMusic uses ZONE_BUILDERS; WM.zoneToNode expanded; cfg.terrainAmpMul; wilderness signposts removed; South Road 60→80; Bealach-South polish |
+| v61g | Session 14.75 | Critical fix: IRONHAVEN_CONFIG.gates overwrite wiped v61e multi-gate spec (no archway/wall gap). Ashenmoor↔South Road spawn alignment + yaw flip. Redwater Ford entry clearance. cfg.hills for localized hills; Bealach-South populated |
+| **v61h** | Session 14.9 | **_autoGateSpawn: per-gate spawnX/spawnZ/spawnYaw are now auto-derived from the target zone's return-gate geometry. Eliminates 3-values-per-gate × 34 gates of manual data. Stepback 12u in, math-derived yaw facing zone interior.** |
+| v61i | Session 15 | Enchantment persistence — _serItem stamps _enchantType; _restoreEnchant re-derives enchantStats; attackZoneEnemies calls applyWeaponEnchant |
+| v61j | Session 15 | Name-based enchant recovery for saves damaged by prior v61h load cycles |
+| v61k | Session 15 | Enchant toast race — applyWeaponEnchant returns {tag,col} instead of calling showMsg |
+| v61l | Session 15 | Zone blocking/parry — shared executeStrike helper; zone enemies respect block/parry/stagger |
+| v61m | Session 15 | Zone-agnostic quest markers — BFS over MAP_EDGES; works in every live MAP_NODES zone |
+| v61n | Session 15 | Q2 sigil-touch fix; staircase markers; 21 auto-generated sigil-lore quests; quest log grouping |
+| v61o | Session 15 | Per-quest tracking toggles; untrackedQuests Set persisted as uQ |
+| v61p | Session 15 | Quest card redesign (left-strip pin, whole-card click); reward-state exit markers |
+| v61q | Session 15 | Inventory destroy — two-click confirmation; full-stack deletion |
+| v61r | Session 15 | Hold-X quick destroy; column sorting cycle (desc→asc→off); per-subtab sort pref |
+| v61s | Session 15 | Row-wide quick destroy; persistent ▲▼ arrows on all sort headers |
+| v61t | Session 15 | Herb stat labels; weapon type abbreviated to single letter |
+| v61u | Session 15 | Weapon damage type + mechanical hint in tooltip (resist-table-accurate) |
+| v61v | Session 15 | Weight rebalance ~1.7×; Rusty Sword retune [8,14]→[5,9]; starter-armor weight fix |
+| v61w | Session 15 | Save migration for weight values; Rusty Sword atk preserved in _migrateWeaponAtk |
+| v61x | Session 15 | **Elixir system: POTION_LINES (5×3); _applyPotionBuff tier-aware stacking; new mpRegen/stRegen buffs; icon-pill buff bar** |
+| v61y | Session 15 | Ironhaven legibility — body colors, shop signs, tower cross, doorFace fix, exit offset |
+| v61z | Session 15 | Sign perpendicular-to-wall; Z-symmetric icons; stone windows; church floating-cross removal; castle overlap fix |
+| v61aa | Session 15 | Window Ashenmoor-parity; door detail (planks+knob+hinges); castle keep detail + z-fighting fix |
+| v61ab | Session 15 | Door rotation fix (S/N were swapped); church lancet glass color + offset fix |
+| v61ac | Session 15 | Church door detail pass (planks + iron bands + cross accent + ring handle) |
+| v61ad | Session 16 | Act I climax: Ashenmoor burns. worldState flag store; burn trigger in goToZone; ASHENMOOR_BURNED_CONFIG + buildAshenmoorBurned with charred building render; Bram's body + The Forge-Man's Hammer (custom smith-profile viewmodel); Q7 "The Rubbing" (Edna → Aldwyn courier with 3-level customActiveDialog); Royal Mage Commission reward gating Dagna's back-room stock; SHOP_DIALOG_BURNED override; unique-item destroy protection; SAVE_VERSION 1→2 |
+| v61ae | Session 17 | Burn playtest fixes + Q7 restructure: sol-array bug (burned collider was detached); Bram body re-interact; hammer despawn-on-loot; hammer viewmodel rotation 90°; _clearInteractPrompt helper. Animated smoke (per-plume sway+rotation+opacity). Charred ground tint (layered discs + ember accents). Q6 softened (no Aldred name-drop + smoke-from-home hook). Aldhelm → Brother Oswin rename. Church damaged-variant render. Q7 → 4 objectives (Bram, Oswin, Edna handoff, Aldwyn) with prereqIndices gating. Brother Oswin full burned dialog. Multi-NPC customActiveDialog form + resolveCustomActiveDialog helper. New event types: read_corpse, receive_item. New dialog action: questMidQuestGive. |
+| v61af | Session 18 | Save migration + ground redo + quest popups. Q7 save-shape migration in `_applyLoadData` + defensive objective-slot guard in `checkQuestProgress` — fixes quest-marker/compass/minimap cascade from old saves. Ground texture redo: single opaque dead-ground disc + opaque black patches at destroyed buildings. Replaces v61ae's transparent concentric discs (z-fighting + view-angle distortion). Oblivion-style quest update popups on "ready to turn in" and "complete". Two-note E5→B5 triangle-wave chime (`sndQuestChime`). New `readyText`/`completeText` quest fields — Q7 written this session, Q1–Q6 deferred. |
+| v61ag | Session 18.5 | Popup polish: chime 2.7× louder + third note (E5→A5→B5 arpeggio). Popup pauses game tick (added to main loop early-return gate + viewmodel render gate). `_isPlayerFree()` helper gates popup firing — popups now queue and drain via 250ms poll only when no dialog/shop/loot/hub/etc is open. Fires after dialog closes, not during. Dropped v61af's setTimeout workarounds. Pattern is reusable for future notification systems. |
+| v61ah | Session 18.75 | Chime routing fix + rewards display. Chime was routed through `uiGain` which is attenuated to 28% of sfxGain — explains the "still inaudible" playtest report. Rerouted through `sfxGain` and bumped peak 0.48 → 0.60. Effective output ~4.5× louder than v61ag. Rewards block added to completion popup: XP (✦), gold (🪙), items (icon + name) rendered below body text with bordered-top header. |
+| v61ai | Session 18.875 | Chime rewrite — use sfxTone directly (same pattern as sndLevelUp). v61af/ag/ah's custom oscillator+gain chain was audibly silent despite predicted-audible math; replacing with sfxTone eliminates custom code from the path entirely. Three rising notes (E5 → A5 → B5), triangle wave + sine overtone per note (matches sndLevelUp's bright-overtone pattern). Chime now fires BEFORE DOM updates, removing any timing concern with the popup's visibility change. |
+| v61aj | Session 19 | Burned Ashenmoor tick cascade + ruin collision + accept popups + Q7 auto-accept. Null-guard on ZONE_CORPSES.gl/spark (Bram's body had spark:null which threw, killing tick loop → cascading break of compass, interact prompts, footstep SFX). Wall-stub perimeter colliders for destroyed buildings (4 edges + center debris = 5 colliders per ruin). Scorch patches grown 0.85x → 1.4x footprint so they extend past wall stubs. New 'accept' popup kind (third trigger, paired with ready/complete) — purple palette, uses new `acceptText` quest field. Q7 now AUTO-ACCEPTS on burn-trigger zone entry (arrival IS the accept, not Edna) — Q7 acceptText delivers the "burned to the ground, I should see if anyone survived" beat as the player arrives. Replaces old showMsgLong toast. |
+| v61ak | Session 19.5 | Q7 Act-II opener restructure: 6 objectives with obj 0 as `enter_zone` (arrival auto-tick) and obj 1-3 as parallel triage (Bram / Oswin / Edna, any order, three markers). Q7 now GIVEN BY ALDWYN at Q6 completion via `unlocks` chain + new `autoAccept` + new `showAcceptPopup` opt-in flag. Arrival becomes an 'update' popup (via new per-objective `completionText` infrastructure) instead of the accept moment — the accept fires in Aldwyn's office with new acceptText ("Aldwyn heard smoke... I need to get home fast"). Edna's burned dialog gets 4 triage-state variants. Burn trigger simplified: no longer mutates Q7 state, just fires `enter_zone` event. |
+| v61al | Session 19.75 | Seven playtest fixes. (1) Bram's interact prompt now reads "Press E to see to Bram" on first read, switches to "loot" after. (2) Removed auto-save from Bram interact — quest popup is the state-change signal. (3) Marker iterator now handles `read_corpse`, `receive_item`, and `enter_zone` — Bram now has a compass marker. (4) Marker iterator gated on prereqIndices — Aldwyn's marker no longer shows during triage. (5) Quest log hides objectives whose prereqs aren't met — prevents future-stage spoilers. (6) Hammer viewmodel head wrapped in subgroup + rotated 90° Y — strike face now points forward (into the scene) instead of at the camera. (7) Destroyed Ashenmoor buildings no longer enterable: added `_houseDestroyed()` helper looking up ASHENMOOR_BURNED_BUILDINGS by houseId; prompt + E-key interact both skip destroyed buildings with "There's nothing of X left to enter." Q7 subtasks (Bram, Oswin, Edna) get `completionText` for per-stage reflective beats. |
+| v61am | Session 19.875 | Three fixes. (1) Q7 obj 1/2/3 now have `prereqIndices:[0]` — triage bullets hidden from quest log and compass until the player physically arrives at Ashenmoor. (2) Edna's rubbing-handoff opener rewritten to acknowledge the Bram news ("You don't have to say it. I saw him fall; you only had to stand over him for me.") rather than blowing it off — fixes dissonance between her Oswin-first plea to confirm Bram's fate and the prior handoff that said "don't say anything about Bram yet." (3) Hammer orientation corrected — v61al's subgroup+rotation approach put strike face at g-local +X (player's right, not forward). v61am removes the subgroup and places strike face at g-local -Z (into the scene, toward enemies), wedge/pein at +Z (toward player). |
+| v61an | Session 20 | Six fixes. (1) Edna mixed-state variants now push TWO topics — news report + triage request — so player can ask "what else do you need?" alongside delivering news. Previously the news report was the only option, which read as Edna not having asked. (2) Edna handoff opener rephrased: "I watched it from the window. Someone going to him was what I needed." Replaces the v61am "stand over him" line which read menacingly. (3) Oswin's "Edna sent me" topic removed from static `SHOP_DIALOG_BURNED.Oswin` and moved into `buildQuestTopicsForNPC` as a state-aware inject: shows "Edna sent me" if obj 3 done, "I came to see if you made it" otherwise. Fixes the order-dependent bind when player visits Oswin first. (4) enter_zone marker label: "Overworld" → "Ashenmoor" via a zoneLabels map in `getActiveQuestMarkers`. (5) Hammer forge-man's mark duplicated on -X lateral face so it's visible from either side of the viewmodel, not just one. (6) Q7 obj 4 (receive_item rubbing) now carries a `completionText` — fires the 'update' popup the moment Edna hands over the rubbing, pointing the player to Aldwyn's office in Ironhaven. |
+| v61ao | Session 21 | Quest-marker presence pass: in-world waypoint cones + interior exit-arrow + Q7 turn-in trace-through. (1) `tickQuestWaypoints()` — yellow downward-pointing 4-segment pyramids floating 2.8u (overworld) / 2.0u (dungeon) above each `getActiveQuestMarkers()` target. Bob ±0.2u + slow Y rotation (~11s/turn). Linear distance fade 50→120u. Mirrors the marker set one-to-one so per-quest tracking, prereq gating, and reward-state giver redirection come for free. Mesh pool reused; reparented on scene change; hidden indoors (interiorScene rebuilds wreck parented children, so cones stay parked in their last overworld/dungeon scene at `.visible=false` while the player is inside). 4 segments instead of 8 so unlit flat-yellow silhouette visibly oscillates as it spins. (2) `getActiveQuestMarkers()` — enter_zone gate markers now carry `noWaypoint:true`; cone iterator filters on it (compass ignores it, behaviour unchanged). The gate mesh + compass label already covers that case visually. (3) `drawCompass()` — interior branch promoted from a dead `// end !isInterior()` fall-through to a real else-block. When indoors AND `getActiveQuestMarkers().length > 0`, paints a single light-blue "Exit" arrow pointing at the room's +Z door. Bearing computed from current player pos to the door center (not to a real quest target — interior coords are room-local and would yield a spinning, drunk-feeling arrow). Door geometry comes from `currentHouse._roomW/._roomD`, stashed in `goToInterior` from the same type→dims table that already lived inline. (4) Q7 readyText/completeText double-fire concern — traced, no-op. The v61ae `hasCustomDialog` gate in `openDialog` blocks `talk_to` from firing on Aldwyn at the turn-in (because Q7's customActiveDialog Aldwyn entry resolves at obj 4), so the 'ready' popup never queues. `questDialogComplete`'s bulk objective assignment bypasses `checkQuestProgress` entirely and only ever queues 'complete'. Documented at the questDialogComplete site, including the latent-caveat that any future final-objective `completionText` on a customActiveDialog quest won't fire — use `readyText`/`completeText` for those instead. |
+| v61ap | Session 21 | Oblivion-style red/green palette + cone size pass. (1) Two new module-level constants `QM_COL_CROSS` (red `#ff5544`) and `QM_COL_INZONE` (green `#66dd66`) replace the previous 4-shade-of-yellow/orange/purple/gold marker palette. Red = the target requires a level/scene transition to reach (zone gates, dungeon portals, dungeon staircases between floors). Green = the target is in the current scene (NPCs, sigils, corpses, items, in-zone givers). Every `markers.push` site in `getActiveQuestMarkers` rewritten to pick one or the other; no marker still uses a literal hex. (2) Compass label color now derived from marker col via `_qmLabelCol(col)` helper — soft red rgba for cross-zone, soft green for in-zone, legacy yellow as fallback. (3) Cone material now reads `m.col` per frame in `tickQuestWaypoints` and updates `mesh.material.color.set(...)`. Pooled meshes can be reassigned to any marker on any frame, so per-tick sync is required (not a one-shot at build time). (4) Cone geometry shrunk from 0.5×1.4 → 0.3×0.9; outdoor float from 2.8u → 2.2u, dungeon float from 2.0u → 1.6u; bob amplitude 0.2u → 0.15u. Original size dwarfed Ashenmoor rooflines and read as a balloon parked over the building rather than a pointer. New size lands a head's-height above an NPC's hat, in line with the existing NPC quest-state dot's visual register. |
+| v61aq | Session 21 | Indoor-NPC marker pass + cone size pass 2. (1) `findNPCPos()` now returns `{x, z, indoors}`. zoneNpcs hit → indoors:false (live mesh position). HOUSES/IRONHAVEN_HOUSES hit → indoors:true (door position, NPC lives inside). (2) New helper `pushNPCMarker(name, zone, label)` consolidates the three same-zone NPC marker push sites (giver/talk_to/receive_item) and routes them by case: outdoors → green at world pos; indoors AND player IS in that interior → green at intNPCPos with `indoor:true` flag; indoors AND player NOT in that interior → RED at door (the door is a level-transition affordance, matches the v61ap red-for-transitions rule). (3) `tickQuestWaypoints` gained an indoor branch: dedicated single mesh `_indoorWaypointCone` lives in `interiorScene`, lazy-built and reattached when buildInterior creates a new scene instance. Float 1.7u so apex sits ~0.2u above the keeper's head, top edge stays clear of the typical 2.4u shop ceiling. Outdoor cones still hide indoors. Marker filter splits `allMarkers` into outdoor (`!indoor`) and indoor (`indoor`) so the dedicated mesh and the pool never compete. (4) `drawCompass` interior branch promoted from "exit arrow only" to "green chevron for indoor target → fall back to exit arrow if no indoor target → nothing if no active markers". Bearing math unchanged; both modes use the same room-local coordinate space the player moves through. (5) Cone geometry shrunk 50% again: 0.3×0.9 → 0.15×0.45. Outdoor float 2.2u → 2.0u, bob amplitude 0.15u → 0.10u. Now in the same visual register as the existing NPC quest-state dot. |
+| v61ar | Session 21 | Three small UX/affordance fixes. (1) Indoor exit-arrow recolored from light blue (`#88ccff`) to `QM_COL_CROSS` red. The door is a level-transition (interior → overworld), and red is the "you must transition to reach your goal" signal everywhere else (zone gates, dungeon portals, dungeon staircases). Keeping it blue split the palette without earning the distinction. (2) `#msg` z-index bumped from 5 → 210. The element was being painted UNDER the hub overlay (z 55), shop (z 45), level-up (z 70), and several other modal layers. Effect: any feedback message fired while a modal is open — most importantly the equip-block warning at the click site — was invisible to the player. The new z-index puts it above every modal, including the bag-tooltip (z 200). (3) Equip-block path in `useItem` now uses `showMsgLong` (5.5s) instead of `showMsg` (2.8s). Message text — "⚠ Requires Might 5 (you have 3)" — needs more than two and a half seconds to register. Combined with the z-index fix, the gate now reads at three points: at-a-glance (the `inv-row-locked` CSS class fades + red-tints unequippable rows in the hub inventory), on hover (existing tooltip already showed a red "Requires Might 5" line), and on click (showMsgLong warning above the hub). |
+| v61as | Session 21 | Two responsiveness bugs. (1) Bag tooltip now fires on `mouseenter` instead of after a 500ms delay. `scheduleBagTooltip` no longer schedules — it just calls `showBagTooltip` directly. The half-second gate read as unresponsiveness once the player learned to expect tooltip-driven info (especially the equip-requirement red line). hideBagTooltip on mouseleave still handles cleanup; positionBagTooltip on mousemove tracks the cursor, so brief diagonal traversals across multiple rows don't flicker. (2) Active buff countdowns no longer freeze in dungeons or interiors. Root cause: the countdown loop lived inside `tickHerbs`, which is only called from the five outdoor zone branches in the main-loop dispatch. The moment the player entered a portal or a shop, `tickHerbs` stopped running and buff `remaining` stopped decrementing — the HUD pill stalled, and (worse, hidden) the regen/dmg-reduce/sprint-speed effects persisted long past their stated durations. Fix: extracted the buff tick into a new `tickActiveBuffs(dt)` and call it unconditionally from the main loop right after the buff-regen reads, decoupled from zone dispatch entirely. NOTE: this is a behaviour change for in-flight saves — buffs that were "frozen" in a dungeon will now resume counting at the correct rate, so anyone with stale long-duration buffs from prior dungeon runs will see them expire faster than expected once. Going forward, durations honour what the tooltip claims regardless of zone. |
+| v61at | Session 22 | Character creator (Phase 1) — system foundation. Modal panel intercepting "Start New Adventure" before world spawn. Three sections: name input (default "Traveller" if blank), 4-tile archetype picker (Warrior / Rogue / Scholar / Adventurer — each spends 6 points across attributes with no individual stat above the +3 cap), and a per-attribute +/- grid for tweaking the archetype's preset. Continue/Load skip the creator entirely. Working state lives in `_ccState`; `applyArchetypePreset(id)` zeroes everything then copies the chosen archetype's attribute distribution; +/- buttons are gated by remaining-points (`CC_POINT_BUDGET=6`) and per-stat cap (`CC_ATTR_CAP=3`). Save/load extended with `pName`, `pArch`, `mN[]` fields (metNPCs serialized as array). Hub character sheet gained a name + archetype header at the top of the Attributes tab — name shows the player's choice, archetype line reads e.g. "⚔ Warrior · Level 1". `renderDialogNode` runs every text + choice label through a `{name}` regex pass so dialog data can use `{name}` literally and have it substituted at render time (cheap — one regex pass per dialog progression). Introduction system: `buildQuestTopicsForNPC` injects a "My name is X" topic at the end of any NPC's topic list when `metNPCs.has(npcName)` is false, with a generic "Pleased to make your acquaintance" response and `markMet:true` flag; `pickDialogChoice` checks markMet on every click and adds the NPC to metNPCs before any other action handler runs. Once a player has introduced themselves to an NPC, the topic disappears on subsequent dialogs (gate rebuilds fresh each open). Session 2 will replace the generic intro response with hand-written per-NPC voiced responses for the named cast (Bram, Edna, Sera, Tom, Pip, Mira, Aldwyn, Oswin, Captain Brynn), plus 2-3 archetype-aware dialog moments at flagship NPCs. |
+| v61au | Session 22 | Character creator expansion + attribute pass + starter weapon picker. (1) ARCHETYPES: 4 → 8, one anchored to each attribute. Warrior, Sentinel, Duelist, Scout, Monk, Scholar, Diplomat, Vagrant. Each carries a `primaries:[a,b,c]` field naming 3 attributes that get a flat +1 on level-up, on top of action-driven multipliers (so a Warrior who plays warrior-style gets BOTH the action multipliers AND +1 to Might/Fortitude/Resolve every level — substantial commitment reward without forcing a play style). All distributions sum to 8 points with no individual stat above the +3 cap. Rich 1-2 sentence flavor for each. Custom archetype removed (was proposed in last turn, decided against — paralysis with the new bonus system). (2) `CC_POINT_BUDGET` 6 → 8. (3) STARTER_WEAPONS: 4-tile picker (Wooden Sword/Club/Dagger/Staff). Each archetype declares a sensible `defaultWeapon` that applies on selection; player can override via the picker. Wooden Staff carries a small `spellPower:1.05` passive (5% spell damage while wielded), giving mage-flavored archetypes a real mechanical reason to pick it. Initial EQ shape now starts weapon-null; ccBegin equips the chosen template via JSON-clone. Pre-v61at saves with no weapon get a Wooden Sword fallback in `_applyLoadData`. The hardcoded Rusty Sword is gone. (4) Creator UI: each archetype tile is now compact (icon + name only), with a dedicated `#cc-arch-desc` block below the grid that paints the selected archetype's flavor + primaries summary. The +/- attribute grid now shows each attribute's flavor description below its name, and primary-attribute rows for the current archetype get a gold left border + ★ badge. (5) ATTRIBUTE PASS: **Resolve** — kept stam regen, added -5% block stamina cost (max 50% reduction at high Resolve, addresses "blocking is rarely worth doing"), added +1% magic resist (forward-compat — no enemy deals tagged magic damage yet, hook waits). **Intelligence** — kept max mana, took mana regen FROM Resolve (was double-purpose), added +3% spell power. Now the unambiguous mage stat. **Charisma** — kept barter, added +2% quest reward gold (multiplied at completeQuest), added merchant inventory threshold (`chaReq` filter on shop stock — items with chaReq above current Charisma are filtered from view rather than shown unbuyable; system reserved for future tagging). **Finesse** — kept parry/sprint, added +3% ranged damage (forward-compat for the bow/arrow system that's been on the backlog). (6) confirmLevelUp applies archetype primary +1 and its stat-patches (HP/stam/mana from Fortitude/Intelligence) on top of the multiplier-based gains. (7) applySpellDamage now multiplies by `(1 + Int*0.03) * (EQ.weapon.spellPower||1)`. Block stamina drain in main loop now `* Math.max(0.5, 1 - Resolve*0.05)`. completeQuest now `* (1 + Cha*0.02)` on the gold reward. Mana regen line in main loop reads `ATTRS.intelligence` (was resolve). All forward-compat hooks (magic resist, ranged dmg) are stored in ATTR_DEF.gains and described in gainDesc — they show in the hub Attributes tab and the creator's flavor descriptions, but no current content reads them. Bow/arrow system + magic-dealing enemies are separate future sessions; their math will be in place when they arrive. (8) Custom archetype concept dropped per design discussion — committing to who you are anchors the +1/level bonus to a stable identity, where Custom would have created paralysis in choosing primaries. |
+| v61av | Session 22 | Level-up modal surfaces archetype primary bonus. New `#lu-arch-bonus` line above the Confirm button reads e.g. "★ ⚔ Warrior bonus: +1 to Might · Fortitude · Resolve" — populated by `openLevelUp` from the current archetype's primaries before the modal opens. Closes the v61au feedback gap where the bonus was applied silently and only logged retroactively, leaving players to wonder if it actually fired. Hidden via `lu-arch-empty` class for legacy saves with no archetype. Pure UX surfacing — no mechanic change, the bonus is still applied unconditionally per Option A from the design discussion (archetype identity is destiny; the character grows into their primaries every level regardless of which 3 attributes the player ticks at level-up). |
+| v61aw | Session 23 | Tutorial crypt + black-screen intro fade. New characters now wake in a small undead-themed dungeon (the "Crypt of First Light"), fight 2-3 weakened skeletons, and emerge onto the south road into Ashenmoor. The "oh wow" overworld reveal lands on tutorial exit, not on game start. Architecture: `TUTORIAL_PORTAL` is a special standalone portal definition (not in `WORLD_DUNGEONS`, off-map, theme:undead, size:tiny, `tutorial:true` flag). The dungeon enemy spawn loop reads `portal.tutorial` and applies a 0.5× multiplier to both HP and damage on top of the existing `veryeasy` difficulty scaling — every skeleton in the crypt is roughly half what they'd be in a normal dungeon, so the first hits don't punish and the first kill feels reachable. Black-screen intro fade plays between character creator's "Begin →" and the tutorial spawn — three paragraphs (universal opening, archetype-specific middle, universal closing) fade in sequentially over ~7 seconds, then fade out to the crypt scene. Skip on click or any keypress (reveals all remaining lines, brief hold, fade out). Per-archetype middle lines drafted for all 8 archetypes — atmospheric one-liners tying the character's identity to a small physical detail their body notices on waking (Warrior: "the weight of a weapon is familiar," Scholar: "letters cross your mind unbidden"). Universal opening: *"Stone above. Stone below. The breath in your chest is your own — that, at least, you remember."* `goToOW()` patched with a tutorial-exit branch that triggers when `currentPortal.tutorial` is true: spawns player at south-of-Ashenmoor coords (px:28, pz:78, yaw:Math.PI facing the village), shows zone banner *"🌿 The road into Ashenmoor"*, sets `worldState.tutorialDone=true`, and fires `checkQuestProgress('enter_zone',{zone:'overworld'})` which ticks Q0. Q0 `q0_arrival` ("Reach Ashenmoor") is a new quest with `autoComplete:true`, no giver/turn-in, starting state 'active' from game start, completes inline via the existing autoComplete handling in checkQuestProgress, fires its `completeText` popup naming Bram explicitly so the player has a soft narrative push toward Q1, and unlocks Q1 via the standard unlocks chain. Q1 `q1_first_blood` init state changed from 'available' to 'locked' — its red waypoint cone over Bram's forge no longer shows during tutorial; it appears the moment Q0 completes (which happens on first overworld step, so the marker is there as soon as the player walks into Ashenmoor proper). Save migration: pre-v61aw saves get `worldState.tutorialDone=true` defaulted on load, and a missing `q0_arrival` QS entry is set to `{state:'complete', objectives:[{current:1}]}` so existing characters bypass the tutorial entirely. saveGame() skips persisting state when `currentPortal.tutorial` — the tutorial is meant to be a 5-minute single-sitting experience, closing the browser mid-tutorial drops the player back at character creation when they return. The autoSave on goToOW emergence is the first save the new character ever makes. WORLD_DUNGEONS gained a forward-compat note about the future `kind` field for non-`'cave_door'` entry types (sewers, crypt mouths, well shafts, ruin arches) — no mesh work today, just architectural reservation. World-map gating (Ashenmoor stays undiscovered until tutorial done) deferred — sub-scope feature, ships in a follow-up. |
+| v61ax | Session 23 | Tutorial crypt polish pass — six fixes against playtest feedback. (1) INTRO NO LONGER SKIPPABLE: removed click + keydown handlers on `#intro-overlay`, set `pointer-events:auto` so clicks under the overlay don't reach the dungeon, removed the `#intro-skip` element + CSS. The full ~12s intro plays start to finish; player hit it with an accidental click and missed everything in v61aw. (2) FIXED ORDER — INTRO OVER LOADED DUNGEON: ccBegin now paints the intro overlay opaque-black BEFORE running `_enterGame` + `goToDungeon`, so the entire dungeon-build (scene + music + spawn) happens behind the black layer. After 1.4s (long enough for goToDungeon's internal doFade to settle), the per-archetype text fades in. End of intro fades the overlay to transparent, revealing the player already standing in the dim crypt with dungeon music playing. Eliminates the v61aw symptom of "Ashenmoor flashes for a frame, then I get teleported to the dungeon" — Ashenmoor never renders. (3) DUNGEON UPSIZED + FAR-END SPAWN: tutorial portal `size:'tiny'` → `'small'` for a moderate procedural layout (target 3-5 minutes of gameplay). goToDungeon was patched with a `portal.tutorial` branch that spawns the player at the FAR end of the dungeon (the stair location, not the entrance) with a small offset, facing into open floor. The entrance is now the player's GOAL — they walk through the whole crypt to reach it. v61aw symptom of "I can turn around and leave immediately because the door is right behind me" is fully resolved. (4) SARCOPHAGUS WAKE CHAMBER: `buildDungeon` gained a tail block that fires only when `portal.tutorial` is set — places a stone sarcophagus (body + askew lid as if just pushed open) at the spawn location, plus 5 scattered bones around it. The player's wake-up beat now has a visible "I rose from this" cue without dialog. Pure mesh decoration on top of `dScene`; no impact on collision or pathing (sarcophagus is treated as decorative geometry). (5) NO MORE 'undefined' ON ENTRY: TUTORIAL_PORTAL gained an explicit `name` field ('The Crypt of First Light') so the addLog/showZoneName/showMsg lines in goToDungeon don't render 'undefined'. Additionally the entire log/banner/msg block is gated on `!portal.tutorial` — for the tutorial entry the intro fade is doing the orientation work in its own voice; a generic "Entered The Crypt of First Light [Very Easy]" overlay on top of atmospheric prose would break the spell. (6) Q0 REFRAMED + JOURNAL POPUP: `q0_arrival` retitled "Out of the Dark" (was "Reach Ashenmoor"), description rewritten as a player-POV journal entry ("I find myself inside of a crypt. I have no memory of the events that lead me to this place. The air is dank and stinks of death. I need to find a way out of here."), objective relabeled to "Find a way out of the crypt", completeText reworked to deliver the Bram nudge AFTER emergence ("Chimney smoke ahead — a village. There was a sign with a hammer painted on it: Bram, the smith"). The journal beat fires as a quest-update popup directly from ccBegin once `showIntroFade` resolves — uses the existing `showQuestUpdatePopup('accept', q0)` machinery, which queues correctly if anything else is on-screen. |
+| v61ay | Session 23 | Tutorial crypt — four playtest bugs fixed. (1) BRIEF ASHENMOOR MUSIC: `initAudio()` auto-fires `startMusic('overworld')` on the first user gesture (the Begin click). goToDungeon's own `startMusic('dungeon',...)` runs inside its async doFade callback ~600ms later, leaving an audible window of overworld music. ccBegin now calls `startMusic('dungeon', TUTORIAL_PORTAL.theme)` directly BEFORE goToDungeon. The brief track conflict is closed; `_musicZone` deduplication guards against the duplicate switch when goToDungeon runs its own startMusic. (2) OUT-OF-BOUNDS SPAWN: v61ax used `*0.6` offset from `dStairC/dStairR` which dropped the player INSIDE the stair tile itself — the stair has stair geometry rather than full floor, reading as "behind walls" in playtest. Spawn offset corrected to `*1` so the player lands on the cell-center of the verified-floor neighbor. (3) BONES OUTSIDE MAP BOUNDS: scattered bone meshes (radius 0.9–1.5 from the stair) landed in wall voids when the stair sat in a small room, producing little log-like artifacts visible through the dungeon walls. Bones removed entirely in v61ay — sarcophagus alone delivers the atmosphere. Sarcophagus also resized 0.85×1.9 → 0.55×0.85 so it fits cleanly inside a 1×1 dungeon cell (v61ax dimensions extended into adjacent cells and could clip into walls). (4) JOURNAL ENTRY VISIBLE EVERYWHERE: Q0 gained an explicit `acceptText` field with the journal entry text — the post-intro `showQuestUpdatePopup('accept', q0)` now displays the player-POV monologue instead of a generic "Out of the Dark has been added to my journal" fallback. `renderQuestLog` now renders `qDef.description` as an italic block under the giver line for active/reward state quests (hidden on locked/available/complete to avoid spoilers and clutter). New `.qlog-desc` CSS — slightly brighter than the giver line, faint left border to group it with the objective bullets below, padding tightened so the visual primary stays on the objective list. The journal entry now renders consistently in three places: the post-intro popup, the quest log card, and (forward-compat) any future NPC dialog that opens the quest's description block. |
+| v61az | Session 23 | Tutorial spawn — third time's the charm. v61ax used `*0.6` offset from `dStairC/dStairR`, v61ay corrected to `*1` offset on the same axis — both still landed the player out of bounds in playtest. Root cause: `dStairC/dStairR` are not reliable for the tutorial seed (`size:'small'` may not generate a floor-2 staircase, leaving them undefined or pointing at a non-floor cell). v61az drops the stair-coord approach entirely. New approach: `buildDungeon`'s tutorial decoration block walks the entire `dMap`, finds the walkable floor cell with maximum euclidean distance from the entrance, stores it on `portal._tutorialSpawn`, and places the sarcophagus there. `goToDungeon`'s tutorial spawn branch reads `portal._tutorialSpawn` and uses those coords directly. Bulletproof regardless of generator quirks — any cell with `dMap[r][c] >= 1 && dMap[r][c] !== 2` is by definition walkable, and the max-distance cell is reliably "the far end" of whatever layout the generator produced. Yaw computed via `atan2(dEntranceX-px, dEntranceZ-pz)` so the player wakes facing the entrance — their goal is in their forward view as the intro fade clears. Defensive fallback: if `portal._tutorialSpawn` is somehow undefined (shouldn't happen, but the codepath is preserved), goToDungeon falls back to the standard non-tutorial entrance + 2-cell offset spawn pattern. The sarcophagus and player are now at the same cell — the player wakes "standing in" the open coffin (camera at eye level looks down on the box; sarcophagus mesh has no collision data so the player walks freely off it as soon as input is accepted). |
+| v61b0 | Session 23 | Tutorial — two more playtest bugs. (1) PLAYER COULD BE KILLED DURING INTRO FADE: the ~12s intro overlay only blocked input — the main game tick kept ticking enemy AI behind it, so a skeleton spawned within reach of the wake-up cell could pummel the player to death while they were reading the intro text. New `_introFadeActive` global flag is set true in ccBegin before the fade starts and cleared in `showIntroFade`'s resolve callback. The main loop's pause gate (`if(!started||dead||won||...||_qpopOpen)return`) now includes `_introFadeActive`, so during the fade enemies don't move, attack, telegraph, or fire projectiles; stamina/mana don't regen; buffs don't tick down; the scene still RENDERS (the render call at top of loop is unconditional), but everything else freezes. The Q0 popup fires AFTER the flag clears so the popup's own `_qpopOpen` pause mechanism takes over cleanly. (2) ASHENMOOR MUSIC STILL LEAKING (real fix this time): v61ay tried calling `startMusic('dungeon')` from ccBegin BEFORE goToDungeon, but at that point `AX` (audio context) was still null because `initAudio` hadn't been called yet — the explicit startMusic was a silent no-op. Then `_enterGame` called `initAudio` which has a hardcoded `startMusic('overworld')` at its tail, kicking off village music. THEN goToDungeon switched to dungeon music inside its async doFade callback ~600ms later. Audible window remained. v61b0 adds an `_initialMusicOverride` global (`{zone, theme}` or null) that initAudio honors at its tail instead of the hardcoded overworld start. ccBegin sets it to `{zone:'dungeon', theme:TUTORIAL_PORTAL.theme}` BEFORE calling `_enterGame`, then resets to null immediately after. Audio context now initializes with dungeon music as its first track — no village music ever plays. The override pattern is forward-compat for any future "skip the default music" use case (e.g. spawning into a cutscene zone, deferred music for a silent intro). |
+| v61b1 | Session 23 | Tutorial — two pacing fixes from playtest. (1) ENEMY CAP: the procedural generator picks `gen.cfg.en` enemies based on dungeon size — for `'small'` that's 6+ skeletons, which felt crowded for a fresh-character tutorial in playtest (more than 3 in the corridor at once). Spawn loop now caps at 3 when `portal.tutorial` is true (`const _enemyCap = portal.tutorial ? 3 : gen.cfg.en`). Encounters spread out so each fight is a learning moment rather than a press of bone. (2) SPAWN YAW: the v61az/v61b0 spawn faced the entrance via `atan2(dEntranceX-px, dEntranceZ-pz)`, but the entrance direction often pointed straight at a wall corner because the corridor zig-zagged — the player woke staring at masonry. New algorithm walks the 4 cardinal directions from the spawn cell up to 10 steps, counts consecutive walkable cells before hitting a wall, and faces the direction with the longest open run. Computed in `buildDungeon`'s tutorial block (where the map data is already in scope) and stored on `portal._tutorialSpawn.yaw` alongside the spawn coords; `goToDungeon` reads it. The player now wakes looking down a hallway. Defensive fallback: if `_sp.yaw` isn't present (old saved state, partial init), fall back to the previous entrance-facing yaw. |
+| v61b2 | Session 23 | Tutorial — bigger crypt, key relocation. (1) DUNGEON SIZE: bumped from `'small'` (20×20 grid, 6-10 rooms) to `'medium'` (30×30 grid, 10-16 rooms) — roughly 2.25× the area, enough for the player to actually explore and have a sense of progression. Enemy cap from v61b1 stays at 3, so the bigger space is ALSO less crowded per square meter, not just bigger overall. (2) FORCED SINGLE FLOOR: medium normally ships with `floors:2` (a staircase to a second level), which is too much for a tutorial — the player would hit the stair, descend, get lost on a second floor with no narrative purpose. New cfg post-processing forces `cfg.floors = 1` when `seed===7` (the tutorial seed), keeping the layout one continuous space. Gated on seed rather than a tutorial flag because `makeDungeon` doesn't know about portals; seed-based gating is sufficient because the tutorial seed is unique and never reused. (3) KEY RELOCATION: keys were placed far from the ENTRANCE (the standard logic), but the player ALSO spawns far from the entrance for tutorial portals — meaning the key spawned right on top of the player and they never had to find it. New post-processing in the tutorial block walks the floor cells, ranks them by distance from the player's SPAWN, and re-positions any existing KEYS to the furthest cells (with a 3-cell minimum spread between keys for the multi-key case, defensive — tutorial typically has 1). The player now walks the dungeon to find the key, then walks back to the locked door near the entrance. Updates both `k.x/k.z` data fields and the visual `k.obj` / `k.gl` mesh positions so the rendered key sits where the data says it does. (4) Total tutorial loop: wake at far end → walk through 2× the previous space → fight 3 spaced-out skeletons → find key in opposite corner → walk back to locked door → exit. Target experience time bumps from ~3 minutes to ~5-6 minutes. |
+| v61b3 | Session 23 | Tutorial polish — three connection bugs. (1) UNDEFINED KEY NAME: the rendered key was titled "undefined Key" because `portal.keyBase` was never set on TUTORIAL_PORTAL — `makePortalDef` (where keyBase gets computed via `dungeonKeyBase(seed)`) is only called during WORLD_DUNGEONS hydration, and TUTORIAL_PORTAL bypasses that path as a standalone def. Added explicit `keyBase:'Crypt'` directly on the portal — fits the lore and matches the location's flavor better than the seed-7 lookup result. Key now renders as "Crypt Key" on pickup and in inventory. (2) SPAWN FACING WALL: v61b1's longest-corridor algorithm could land on a 1-cell alcove (a small dead-end room far from the entrance) where all 4 cardinals have length 0 or 1; the strict-greater bias in the loop kept the default `{dc:0, dr:1}` direction, which then pointed at a wall. New approach in v61b3 — sort all walkable cells by distance from entrance descending, then walk the list and accept the FIRST candidate whose longest cardinal corridor is at least 2 cells deep. The player now wakes in a cell that demonstrably has somewhere to go, looking down its longest visible corridor. Defensive fallback to the legacy "furthest cell" approach if no candidate qualifies (degenerate map). (3) SARCOPHAGUS CONNECTION + VAREK META-HOOK: intro fade gained a fourth line (`_awakening`) between the archetype-specific middle and the universal closing — anchors the player physically inside the open coffin ("The lid of the coffin lies aside. Your hand still rests on its edge, as if you only just pushed it free.") AND seeds the Varek meta-awareness thread without spoiling ("Somewhere very far from here, something turns its attention toward you. You feel it the way you feel weather coming."). The lore canon establishes Varek alone perceives the AI/human duality and senses this player from distance; players read the line as atmosphere on first run, on a second playthrough after the late-game reveal it lands as foreshadowing. Q0 description and acceptText also rewritten — was "I find myself inside of a crypt", now "I woke inside a stone coffin in a forgotten crypt. I have no memory of how I came to be here, or for how long I have lain." Concrete, embodied, anchors the journal entry to the same physical moment the intro is depicting. Total intro duration ~14.6s (was ~12s) — `STAGGER`/`HOLD_AFTER_LAST`/`FADE_OUT_MS` constants are parameterised on `lineEls.length` so adding the line auto-extended the timing. |
+| v61b4 | Session 23 | Tutorial spawn yaw — hardcode to SW. The corridor-walk algorithm from v61b3 picks the longest cardinal direction from the spawn cell, which is correct *for arbitrary seeds* but for the deterministic seed:7 tutorial it lands the player facing East, into the side wall of the sarcophagus chamber rather than out toward the doorway. Since the tutorial dungeon is the same layout every run (fixed seed), a hardcoded SW yaw (3π/4 in the local convention: 0=N, π/2=W, π=S, -π/2=E) reliably points the player at the open corridor every time. The corridor-walk algorithm stays in place computing `_spYaw` for forward-compat — non-tutorial portals using this block (none today) would still get the dynamic version. The tutorial-only override is one line: `const _tutYaw = portal.tutorial ? (3 * Math.PI / 4) : _spYaw;` followed by storing `_tutYaw` on `portal._tutorialSpawn.yaw`. |
+| v61b5 | Session 23 | Quest waypoint marker for Q0 inside the tutorial dungeon. Q0's objective is `enter_zone:overworld`, but the in-dungeon branch of `getActiveQuestMarkers` only handled `reach_dungeon_floor` and `touch_sigil` — `enter_zone` objectives fell through the `forEach` with no marker pushed, then the early `return` skipped the overworld branches that would have done something useful. Result: tutorial player got no compass chevron and no waypoint cone showing where to go. Added a third objective-type handler in the dungeon branch: `enter_zone` while in a dungeon points at `dEntranceX/dEntranceZ` (the dungeon entrance — i.e., the way out) with `QM_COL_CROSS` red coloring, matching the convention that red markers denote level-transition affordances ("go through this to reach the target zone"). The waypoint cone now hovers over the tutorial crypt entrance and the compass shows a red "Exit" chevron pointing toward it. When the player walks out, Q0 auto-completes inline via `checkQuestProgress('enter_zone',{zone:'overworld'})` (already wired in the v61aw goToOW tutorial-exit branch), the marker disappears, Q1 unlocks, and the green Bram cone takes over once they enter Ashenmoor proper. The new branch is gated on `typeof dEntranceX!=='undefined' && dEntranceX!==null` defensively — `enter_zone` objectives in non-dungeon zones still hit the existing overworld branches further down, no behaviour change for any other quest. |
+| v61b6 | Session 24 | Per-NPC voiced introduction responses + portal → old gates / anchor places content rewrite. (1) INTRO_RESPONSES table — 13 named NPCs now get hand-written intro replies in their voice when the player first introduces themselves: Bram (terse, hammer-rhythm), Mira (warm-clinical apothecary), Barnaby (transactional shopkeeper), Pip (manic curios dealer), Edna (warm-elderly), Brother Oswin (gentle priest), Sera (curt scrutinizing guard), Tom (plain-spoken farmer), Finn (kid enthusiasm), Corwin (knowing-amused traveller), Aldwyn (formal scholar), Captain Brynn (military brisk), Lord Caldric (slow-weighty lord). Each 1-2 sentences, in character. The intro topic injection in `buildQuestTopicsForNPC` now does `INTRO_RESPONSES[npcName] || generic fallback` so unnamed NPCs still get the original "Pleased to make your acquaintance, {name}" line. The `{name}` placeholder is substituted at render time by `renderDialogNode` (cheap one regex pass per dialog progression) so the table data stays clean and consistent with how dialog text elsewhere references the player. (2) PORTAL → OLD GATES / ANCHOR PLACES content rewrite. The lore canon established two registers — vernacular "the old gates" for everyday NPCs and scholarly "anchor places" for Aldwyn-tier characters — but every existing NPC dialog still called them "portals" / "glowing portals" from before the cave-door visual landed. Updated all user-facing dialog: Sera (greeting + glowing-portal topic now reads "What is that gate in the hillside?" + guardhouse + village-in-danger), Tom (greeting "the old gates have been restless" + farming + portal knowledge), Finn (Sera-watching reference), Corwin (three old gates and one pub), Bram (about-himself, do-the-old-gates-worry-you), Edna (greeting + burned ending), Hearthwick (Anya about Ashenmoor), Captain Brynn (Caldric focus + threat assessment), Lord Caldric (about himself), Town Crier (proclamations), Ironhaven proclamation signs (registration + bounty notice), and Aldwyn — Aldwyn's greeting + topics use the scholar register ("anchor places," "the anchors") rather than the vernacular form, matching his role as the lore-aware scholar character. Dialog is now consistent with the cave-door visuals and the lore canon's vocabulary. Final grep confirms zero "portal" references remain in user-facing dialog text — only code comments and the embedded SVG world map's `data-pois` / `data-dungeons` attributes (internal dev reference, not seen in normal play) still use the old term, both noted as deferred for later cleanup if desired. |
+| v61b7 | Session 24 | World-map fog of war pass — discovery is now strictly walked-only and tutorial-gated. (1) STRIPPED HARD-CODED REVEAL-AHEAD: `wmDiscoverZone` and `wmSyncZone` both contained duplicate `if(zoneId==='X'){WM.discovered['Y']=true;...}` blocks that auto-revealed adjacent settlements when the player entered certain zones (entering the Deepwood revealed Hearthwick + La Porte Grise + The Thorngate; entering Hearthwick revealed Ashenmoor + Deepwood + Thorngate; etc.). Result: the player's first walk along the Ashenmoor → Bealach South → Hearthwick → Deepwood → Ironhaven road chain spoiled the entire map by the second hop. Removed all hard-coded auto-reveal lines — each zone now reveals only itself on entry. The road chain unfurls one step at a time as the player actually walks it. Adjacent gate edges remain visible as faint road labels through the fog, which gives enough orientation without spoiling destinations. (2) ASHENMOOR TUTORIAL GATE: `wmDiscoverZone('overworld')` and `wmSyncZone` (when zid==='overworld') now check `worldState.tutorialDone` before flipping the discovery flag. Previously the village was visible the moment character creation finished — the tutorial dungeon is technically a sub-zone of overworld, so any wm sync fired during the intro flow would auto-reveal Ashenmoor before the player had ever seen it. Now the village stays shrouded through the entire tutorial; the moment goToOW's tutorial-exit branch flips `tutorialDone=true`, it explicitly calls `wmDiscoverZone('overworld')` to reveal it. The "oh wow" overworld emergence beat now lands properly on the WORLD MAP too, not just in the 3D scene. (3) PRE-v61aw SAVE COMPATIBILITY: existing characters get `tutorialDone=true` defaulted on load AND their `WM_discovered` carries forward unchanged, so the new gate doesn't cause the village to disappear from a save that already had it discovered. (4) THE 32 PLACEHOLDER ZONES (Acts II/III: Redwater Ford, Salthaven, Carraig Mór, Droichead, Cill Beag, Inis Rua, La Grise, Mur Pierre, Vieux Marché, Dunmore, Portclare, Coeur de Vie, plus their connecting wilderness segments) automatically inherit the same walked-only discovery model — no special handling needed. They'll reveal one at a time as the player traverses each. The 5 fully-built zones (Ashenmoor, Bealach South, Hearthwick, Deepwood, Ironhaven) handle the playable Act I arc; the player won't run out of content before the placeholders are reached, and once they are, building them as Act II quest content lands gives a natural cadence (one settlement built per arc-quest written). |
+| v61b8 | Session 24 | Three follow-up bugs from v61b7 playtest. (1) HARDCODED INITIAL DISCOVERY: `WM.discovered` was initialized as `{Ashenmoor:true, Deepwood Forest:true}` — those two settlements were visible on the world map from the moment a new character opened the hub, even mid-tutorial. The walked-only rule from v61b7 only fires on zone entry, so the static defaults overrode it. Empty initial discovery now (`discovered:{}`); pre-v61aw saves still load their saved `WM_discovered` via the existing load-path Object.assign so old characters keep what they'd discovered. (2) FOG OPACITY TOO LOW: at `0.87` opacity, undiscovered node shapes and labels were still readable as faint colored outlines through the fog rect (13% bleed-through). Bumped to `0.97` — node detail is fully obscured but continent silhouettes and ocean/mountain regions still show through faintly, so the map doesn't become a pure black rectangle. Discovered areas punch through unaffected via the existing radialGradient mask. (3) TUTORIAL ENEMY SPAWN ADJACENT TO PLAYER: skeletons could spawn within 1-2 cells of the wake-up sarcophagus because the candidate filter only excluded cells near the entrance (`Math.hypot(c-dEntranceX,r-dEntranceZ)>5`), not near the player's spawn cell. Added a tutorial-only second exclusion: cells within 6 of `portal._tutorialSpawn` are also rejected. Required hoisting the spawn-cell computation from the END of buildDungeon (where the sarcophagus mesh placement was) to the TOP, so the enemy spawn loop can reference `portal._tutorialSpawn` (which previously didn't exist yet at enemy-spawn time). The tutorial-decoration block at the bottom now just reads back from the precomputed value and places the sarcophagus + relocates the key. Same algorithm as before, just executed earlier in the function. Net effect: player wakes with at least 6 cells of breathing room, first combat is a chosen approach down the corridor rather than a forced wake-up encounter. |
+| v61b9 | Session 24 | `{NAME}` uppercase substitution. Finn's intro response uses `{NAME}` (uppercase) for shouting effect — "{NAME}? That's so cool!" — but the v61at substitution pass in `renderDialogNode` only matched lowercase `{name}`. The literal `{NAME}` token rendered as-is in the dialog bubble regardless of the player's actual name. Extended `_sub` to chain a second `.replace(/\{NAME\}/g, _pn.toUpperCase())` after the lowercase pass — Finn now correctly shouts the player's name in caps (TRAVELLER for default-named characters, MICHAEL for "Michael", etc.). Reserved as a general convention going forward: `{name}` for normal references, `{NAME}` for shouted/emphatic references, both substituted at render time. The default-name fallback ("Traveller" when input is blank) was working correctly already — the v61b8 playtest screenshot showing literal `{NAME}?` was the substitution gap, not the default-name logic. Cheap fix — one extra regex pass per dialog progression. |
+| v61c0 | Session 24 | Gold drop scaling — base 1-12 with level + Fortune scaling. Three loot tables (`LOOT_POOLS.barrel`, `LOOT_POOLS.chest`, `LOOT_POOLS.corpse`) each had a hardcoded `value:Math.floor(Math.random()*N+M)` gold roll that was static — same range at level 1 as level 20, no character-build scaling, no buff interaction. Replaced with a single `rollGold(tier)` helper called from each table's gold roll. Tier-based base ranges: barrel 1-6, corpse 2-8, chest 4-12 — all dramatically smaller at level 1 than the old 5-19/8-27/12-35 ranges, matching the design ask of "1-10 gold range at base." Level scaling: each tier adds `Math.floor(level * lvBonus)` flat per drop, with lvBonus 0.5/0.7/1.0 for barrel/corpse/chest — gentle linear growth so a level-10 chest drops ~14-22 base before multipliers, not exponentially escaping the economy. Fortune scaling: total multiplied by `1 + ATTRS.fortune * 0.05` — 5% per Fortune point, which gives a Vagrant archetype committed to Fortune meaningfully better drops without doubling the economy at low levels. `goldFind` buff multiplier (Goldenrod's herb passive) now ALSO factors into loot rolls — previously only applied to sell prices at line 11403, now feeds rollGold's final multiplier so the herb actually feels potent on the loot side too (small forward buff to Goldenrod). Final result clamped to >=1 so a Fortune 0 / Level 1 player can't roll 0 gold from a barrel. Sample distributions documented in code comment: barrel 1-6/3-13/8-26 at L1F0/L5F5/L10F10. Quest reward gold INTENTIONALLY does not use rollGold — quests have designed amounts already scaled by Charisma per v61au; stacking Fortune on top would over-stack. The mechanic-relevant outcome: early-game Ashenmoor combat now drops gold amounts that feel proportional to the fight (3 gold for a goblin, 7 for a wraith), Fortune-leaning archetypes (Scout/Vagrant) get tangible drop boost they can feel, and mid-game gold doesn't go stale because of the level additive. Existing pre-v61c0 saves automatically use the new system on next loot drop — no migration needed since the `rollGold` calls are lazy (evaluated each time a `roll: () =>` function fires). |
+| v61c1 | Session 24 | **Two playtest follow-ups. (1) TREASURE CHEST OVER-PAID: tutorial treasure chest dropped 24 gold at level 1 / Fortune 0 — well above the new system's max-of-13 for a regular chest. Root cause was an unexamined ×3 multiplier in `rollContainerLoot` (`if(kind==='treasure' && it.type==='gold') it.value=Math.floor(it.value*3)`), a leftover from when chest base values were 12-35 (so ×3 treasure = 36-105, rare and rewarding). With v61c0's base 4-12, the ×3 multiplier hit 12-36 — well over the design ask. Three-part fix: (a) `rollGold` gained a 'treasure' tier with its own range (8-18 base, 1.5/level), (b) the ×3 multiplier in `rollContainerLoot` removed entirely, (c) new `LOOT_POOLS.treasure` pool added that mirrors chest's item mix but uses `rollGold('treasure')` for the gold roll. Treasure now scales naturally through the same level + Fortune system as everything else. New L1F0 max for a treasure chest is 20 (was 36), L10F10 ~50 — still meaningfully better than a regular chest, no longer a magic-number outlier. The new pool was required because `rollLoot` now passes 'treasure' through to `rollConsumable`, and without a matching `LOOT_POOLS.treasure` entry the fallback (`pool[kind] || pool.corpse`) would have given corpse loot from a treasure chest. (2) ASHENMOOR EMERGENCE FACING WRONG WAY: goToOW's tutorial-exit branch had `yaw=Math.PI` with the comment "facing north toward the village" — but the local convention is yaw=0 → North (-Z), yaw=π → South (+Z). The code was setting south-facing while the comment intended north. Player exited the tutorial crypt and immediately had to turn 180° to see the village. Changed to `yaw=0`. The `_introFadeActive` clears just before this spawn point sets, so the player wakes already looking at chimney smoke and Ashenmoor's southern gate.** |
+| v61c2 | Session 25 | **Faolchú boss — initial implementation.** New boss enemy in burned Ashenmoor's village square as the climactic beat of Q7. Massive single edit pass: (1) `worldState.faolchuDefeated` flag with smart pre-v61c2 save migration (defaults to `true` if `ashenmoorBurned` is already set on a legacy save, since those characters completed Q7 under the 4-objective structure and shouldn't get a surprise wolf-shape on reload). (2) Module-top `BOSSES` registry with the Faolchú entry (HP 500 initial, scale 1.85, blunt 1.5×, solas 0.4× weakness, tine 0.7× weakness, 3-phase definitions). (3) `wolf` buildFn shape — quadruped with hunched shoulders, sigil-trace overlay matching concept art's red glowing seams. (4) `spawnFaolchu()` — idempotent, hooked into all four overworld-entry paths so the boss reliably spawns/respawns until defeated. (5) Boss-specific tick branches in `tickZoneEnemies`: sigil pulse animator, phase-state machine on HP threshold cross, longer telegraph (0.6s), bigger bite range (2.0u), always-alert override. (6) `killZoneEnemy` boss block fires `defeat_boss` quest event, sets the flag, prepends The Faolchú's Mark unique amulet to corpse loot. (7) `defeat_boss` event handler in `checkQuestProgress`. (8) Q7 restructure — inserted obj 1 (defeat boss), shifted triage prereqs from `[0]` to `[1]`, shifted rubbing prereqs from `[1,2,3]` to `[2,3,4]`, Aldwyn from `[4]` to `[5]`. (9) Edna and Oswin burned-state Q7 obj-index reads shifted to match. (10) Boss healthbar HUD — top-of-screen DOM overlay with three phase color states. (11) `tickZoneEnemies` now runs in overworld branch (was previously skipped). 22 surgical edits, parse-clean. |
+| v61c3 | Session 25 | **Faolchú feel pass.** Playtest showed the boss was passive: too slow to catch the player (1.6 spd vs 3.83 player walk), bite range too tight, blended into the grey ash visually, no audio character. Fixes: (1) Speed 1.6 → 4.0 (above player walk, below sprint — kiteable only with stamina). (2) Bite range 2.0 → 2.8 covers the snout extension. (3) Body color brightened (0x4a4640 → 0x6a4838) and aura light intensity 1.3 → 2.2, range 5 → 9 — boss now reads against grey backdrop. (4) Mesh rework: separate eyes in dark recessed sockets (replacing the v61c2 single eye-bar), pointed ears, lower jaw + 6 white teeth wedges, distinct snout + nose tip, two back arms (shoulder bulge / sigil seam / upper arm / elbow / forearm / claw), 5 spine ridges instead of 3, forehead sigil seam between eyes. (5) Stop distance fix — boss positions body center at `biteRange - 0.5 = 2.3u` from player so snout sits in player's face rather than overshooting through them. (6) HP bumped 500 → 1000 (still ended too quickly with a tooled-up player, raised again in v61c5). (7) Four procedural Faolchú audio functions: `sndFaolchuGrowl` (telegraph: descending sawtooth + scream overtone + breath noise), `sndFaolchuBite` (strike: sharp noise snap + low impact + airy snort tail evoking the design brief's horse-adjacent quality), `sndFaolchuRoar` (phase transition: three detuned sawtooth voices + scream layer + throat noise), `sndFaolchuDeath` (cracking + stuttering unmaking + descending wail dissolve). Hooked into telegraph trigger / strike commit / phase entry / `killZoneEnemy` boss block. Six edits. Mid-edit anchor mistake removed `sndEnemyDeath`'s closing brace; caught and fixed by parse check before ship. |
+| v61c4 | Session 25 | **Boss integrity pass — three reported bugs + special attack.** (1) FLOATING ARMS: v61c3 positioned arm pieces in absolute mesh space; they rendered hovering above the body. Rebuilt using `THREE.Group` per arm anchored at the shoulder mass; all arm pieces now positioned RELATIVE to the group. Forearm uses a sub-pivot at the elbow so it rotates around the joint. Arms now visibly emerge from the body. (2) HIT DETECTION ASYMMETRY: boss could hit player from 2.8u, player melee was 2.2u, boss stopped at 2.3u — created a 0.6u dead zone where boss could hit but player couldn't. Player attack range now scales with target: 3.0u for bosses (vs 2.2u default), and boss stop distance tightened from `biteRange-0.5` to `biteRange-1.0` (1.8u). Player is now naturally inside their own attack reach when boss is in range. (3) LESSER ADDS — finally implemented. `spawnLesserFaolchu(parentBoss)` spawns a smaller Faolchú at random offset 2.5-3.5u from boss. Same wolf mesh at scale 1.10, dimmer sigil glow, HP 125 / dmg 14 / spd 3.4. Hooked into phase 2 entry (one add) + phase 3 entry (one add, plus catch-up spawn if boss skipped phase 2). `despawnLesserFaolchus` called from boss death — surviving lessers vanish in red flicker since their binding source is gone. (4) CAOR FIREBALL SPECIAL ATTACK: boss now has a ranged attack on cooldown. Initial cd 5s after engage (lets player close to melee first), subsequent 8-12s. 1.0s wind-up with sigil flare; fires from snout toward player's CURRENT position. Projectile spd 8u/s, dmg 26, 2.5s lifetime. Only fires when player is 4-15u away. Boss-fired projectiles ride the same `ZB` array as player spells; distinguished by `userData.fromBoss`; `tickZoneBalls` has a dedicated branch checking player-collision instead of ZE. Late-block reduces with shield bonus. |
+| v61c5 | Session 25 | **Tuning bump.** Boss HP 1000 → 2000 (still too short against tooled-up player). Lesser HP 125 → 250 (was dying in single hits, made phase mechanic feel cosmetic). Caor fireball damage 26 → 38 (now slightly above melee bite at 32 — ranged should punish camping at safe distance, not be a chip-damage option). Caor projectile speed 8 → 12 u/s (~2.5× player sprint, can no longer outrun by running away — must strafe laterally during the 1.0s wind-up). Three small targeted edits, parse-clean. |
+| v61c6 | Session 25 | **Three real bugs from playtest.** (1) FALSE "BLOCKED!" MESSAGES: latent bug in `executeStrike` — late-block branch fired on `now - lastHitT < 0.5` alone, with no check that the player ever attempted to block. The comment claimed "player just raised block" but that condition got dropped at some point. Single-attacker fights rarely surfaced it; boss + 2 lessers + fireball stacked enough back-to-back hits that every secondary hit got auto-treated as a block, with misleading "Blocked!" UI. Fixed by adding `lastBlockAttemptT` global, set when right-click engages block. Late-block now requires both `lastHitT < 0.5s` AND `lastBlockAttemptT < 0.5s` — behavior matches the comment. (2) FIREBALL PERSISTENCE: scene mismatch — `spawnFaolchu` adds boss orbs to `owBurnedScene`, but the overworld branch passed `owScene` to `tickZoneBalls`. Cleanup `sc.remove(fb)` ran against the wrong scene, silently failed, orb spliced out of ZB but stayed visible forever. Fixed by resolving `_owActiveScene` once per overworld tick and passing it to both `tickZoneBalls` and `tickZoneEnemies` (deduped a duplicate scene-resolve while there). (3) ARMS POINTING STRAIGHT UP: arm group Z rotation was `s*0.35` (~20°) — too vertical, read as ear-stalks. Bumped to `s*0.85` (~49°) so they splay outward like crab claws, with a small forward X tilt (0.18 rad) so they angle toward the front rather than straight sideways. |
+| v61c7 | Session 25 | **Block economy + magic block parity.** Two questions surfaced about the block system: (a) does magic blocking actually work, (b) is blocking valuable given stamina cost. Investigation found magic blocking was broken outside the boss orb path I'd written, and parry was MORE expensive than late-block — backwards from what perfect timing should be. Three changes: (1) PARRY STAMINA REWORK: cost was `rawDmg` (100% of raw); now `rawDmg × 0.20 × resolveMult`. A 32-dmg Faolchú parry costs 6 stamina at Resolve 0, ~3 at Resolve 10. Late block also got Resolve scaling on its `absorbed` cost. Parry is now ~3× cheaper than late block — perfect timing rewarded. (2) MAGIC BLOCK PARITY: Phantom/Wraith bolts in dungeons now respect blocking (pre-v61c7 they hit full damage with no check). Magic uses lower rates than physical: 40% reduction with shield, 15% bare. Distinct purple flash + "🛡 Resisted!" message to differentiate from physical block. (3) BOSS CAOR FIREBALL aligned: was using physical rates (65%/35%); dropped to magic rates (40%/15%) for consistency. Shields can override via new `sh.magicBlock` property (default 0.40). No perfect-parry path for magic — projectiles don't have a readable wind-up at impact. `_resolveMult` formula `max(0.5, 1 - resolve*0.05)` mirrors the existing passive-block-drain mult. |
+| v61c8 | Session 25 | **Boss-fight finishing pass.** (1) LOOT INDICATOR HIDDEN INSIDE BOSS CORPSE: the yellow loot glow + spark were positioned at `terrainY + 0.55`, but the boss is scale 1.85 — when slumped on its side the body's vertical extent reaches ~0.82u. Spark sat buried inside the mesh. Fix: `lootY = terrainY + (e.isBoss ? 1.6 : 0.55)`. Loot indicator now floats clearly above the silhouette. (2) THE FAOLCHÚ'S MARK PROPERLY VALUABLE: the v61c2 implementation stored `intBonus: 2` and `resistTine: 0.10` as top-level item properties that `getArmorEnchantBonuses` never read (only reads `enchantStats`). Both bonuses were silently inert; `buyPrice: 0, sellMult: 0` made it worthless to merchants. The Mark was a +1-def curio for 6 versions. Now: tier 5, +3 def, carries unique enchant **"of the Sigil-Reader"** giving +3 INT / +30 max mana / +0.30 mana regen — properly routed through `enchantStats` so the aggregator picks it up. Buy 800g, sell 400g, requires INT 8. The unique enchant lives in `ARMOR_ENCHANTS` (so save/load reconstructs it) but is flagged `_unique:true`; the random enchant roller now filters `_unique` out of the pool so this signature doesn't accidentally roll on procedural drops. (3) BURNED ASHENMOOR MUSIC: replaced the `'silent'` no-op fallback with new `_musicBurned` procedural ambient — three layered drones (38 Hz sub-bass for chest-rumble, 75 Hz fundamental, 95 Hz detuned overtone), slow filter LFO on the mid drone (~12s period), two async schedulers (distant keening every 8-15s, wind/ash gust every 5-10s). No melodic notes, no tempo — silence as material between events. Updated `ASHENMOOR_BURNED_CONFIG.musicTrack` from `'silent'` to `'burned'`, added `'burned'` case in `startMusic` switch. |
+| **v61c9** | Session 25 | **Final tuning before doc save. (1) Keening volume reduced ~40% (.045 → .027 fade-in target, .040 → .024 sustain) — was cutting too prominently through the drone bed; now sits as background texture rather than foreground keen. (2) Lesser Faolchú speed 3.4 → 5.0. Lessers now outrun BOTH the boss (4.0) and player sprint (4.69). Repositioned as the harasser role: they catch up first, force the player to engage them while the boss closes more slowly. Player can no longer kite them with sprint — they have to be killed or actively dodged. Pairs with the 250 HP (3-5 hits) so the fight stays winnable; lessers are glass-cannon pressure pieces, not bullet sponges. Faolchú boss work bookmarked here for future Aldwyn post-fight dialog + bespoke death VFX session.** |
+| v61d0 | Session 26 | **Aldwyn Mark dialog beat + Mark essential-item conversion.** Closes the Aldwyn-post-Faolchú bookmark from v61c9. (1) Generalized unique-item sell protection — `sellItem` now gates on `it.unique` (mirrors the existing destroy gate). Pre-v61d0 the Mark sold for 400g (the only unique item with non-zero sellMult); now retains 800/400 prices as fictional value but can no longer be acted on at the merchant counter. (2) Q7 obj 2 inserted — `receive_item` for The Faolchú's Mark, prereq `[1]` (boss-defeated), with chimera-rich completionText that lists wolf-head + horse-arched-back + near-human-extra-arms in the order the eye would catch them. Triage prereqs shifted from `[1]` to remain `[1]`; rubbing handoff prereqs shifted `[2,3,4]` → `[3,4,5]`; Aldwyn talk_to shifted `[5]` → `[6]`. Five hardcoded objective-index references in `buildQuestTopicsForNPC` updated. (3) `takeLootItem` now fires `receive_item` quest event on item pickup (pre-v61d0 only fired from `questMidQuestGive` dialog handoff path — the Mark needed the corpse-pickup path). (4) Loot indicator bumped 1.6u → 2.2u to clear the boss aura glow envelope. (5) New `sndFaolchuLootReveal` audio cue — two pure sines in a perfect-fifth relationship + brief high-band breath, fires 1.8s after death as the descending wail dissolves. Tonal opposite of the boss's noise palette. (6) Aldwyn Q7 turn-in dialog gets a Mark-aware preamble built dynamically in `buildQuestTopicsForNPC`: "Wait. What's that around your neck?" (if EQ.amulet) or "in your bag?" (if BAG.some). Cascade wraps the existing CAD response/follow as a deeper node so Branch A/B/desk → commission tree is unchanged below. Restrained register — names "the deep tongue," establishes binding-itself-misfiring as distinct from Varek's-hand, holds back full translation for Act II. Missing-Mark players get the existing rubbing-only flow. ~136 lines net. |
+| v61d1 | Session 26 | **Combat-feel structural pass — telegraph + parry visual fix + Faolchú death VFX.** New `enemyBodyMesh(e)` helper that resolves limbs.torso → limbs.body → first-with-material → children[0]. Pre-v61d1 the telegraph and parry-stagger flash silently failed on humanoid/brute/wolf-shaped enemies because their `mesh.children[0]` was a leg-pivot Group (no `.material` property) — assignments absorbed silently. Slimes/elementals/wraiths/phantoms had a Mesh at children[0] and worked. The bug was masked by the audio cue carrying the warning signal alone; players learned to react to the sound and never noticed the missing visual. `telegraphPulse`/`telegraphReset` and the parry stagger flash both routed through the helper. `limbs.torso` registered on humanoid + brute branches in `buildEnemy`. Telegraphs across the entire enemy roster (goblin, kobold, bandit, skeleton, troll, golem, gargoyle, Faolchú/lessers) now actually render the red wind-up flash for the first time. Yellow parry stagger flash similarly fixed across all enemy shapes. Plus: bespoke Faolchú death VFX. New `spawnFaolchuDeathBurst(boss, sc)` walks the six sigil meshes, captures world positions, emits 6 shard particles per seam (~36 total) with randomized outward velocity + rotation + drag, ramps each sigil's emissive to black over 0.5s. Particles fade over 0.85s, coordinated with the existing audio sequence. New `tickFaolchuDeathBursts` hooked into overworld branch alongside `tickBurnedSmoke`. ~226 lines net. |
+| v61d2 | Session 26 | **One-line fix for v61d1 invisible-burst regression.** Playtest reported the death VFX wasn't visible. Root cause: matrixWorld staleness. `killZoneEnemy` mutates `boss.mesh.rotation.z = π/2` (corpse pose) and `boss.mesh.position.set(...)` just before `spawnFaolchuDeathBurst` fires, but `matrixWorld` doesn't recompute until the next render frame. `sigilMesh.getWorldPosition()` calls `updateMatrixWorld()` on the sigil but walks through the parent's STALE matrixWorld — returning positions from the upright pre-rotation pose, putting shards ~1.4m above the corpse and off-camera if the player was looking down at the loot. Fix: call `boss.mesh.updateMatrixWorld(true)` (recursive) at the top of `spawnFaolchuDeathBurst` before reading sigil world positions. |
+| v61d3 | Session 26 | **Q1–Q6 readyText / completeText writing pass.** 12 first-person reflective passages in the Q7 voice. Closes the v61af follow-up bookmark. Each quest gets a readyText (fires when objective completes) and completeText (fires after NPC turn-in). Cadence callbacks across the set — most readyTexts end on a "Walking now / Walking up / Back to the forge / Back to the Royal Herald's" transition phrase mirroring Q7's "Ironhaven, then. Aldwyn's office. The door shut." Q3's readyText is data-only — its customActiveDialog → questDialogComplete path bypasses the 'ready' popup entirely; written for canon completeness, documented in code comment. Q6's completeText is two-paragraph (mirroring Q7's structure) — first paragraph is the Act I reveal (single binding across three sites), second is the burn-foreshadowing rider hook. No parse risk; pure data field additions. Full prose verbatim in `quest_writing.md`. |
+| v61d4 | Session 26 | **Caldric Safehouse — building, interior, stash, bed, rest. (Session 1 of safehouse beat.)** New `ih7` IRONHAVEN_HOUSES entry — SW interior at local (24, 39), footprint 7×6, burgundy body color (`bCol:0x4a2828`), type `'safehouse'`. New interior branch in `buildInterior`: bed against west wall (head pointing north), stash chest centered on back wall, side table with lantern between bed and chest, bookshelf + wooden chair on east wall, hearth in NE corner with embers and warm point-light. Compact 8×8 dims, ceilH 2.2, warmer fog (5/16). New `_intBed(sc, x, z, headFace)` and `_intStashChest(sc, x, z)` helpers. New `intStashPos` and `intBedPos` interior interaction globals (cleared at top of `buildInterior`, set by safehouse branch). `house.keeper:null` gate on NPC build so the safehouse doesn't spawn a phantom merchant. New `stashBag` top-level array — same `_serItem` serialization as BAG, no weight cap, migration-safe (defaults to `[]` on pre-v61d4 saves). Two-column UI panel (#stash-panel) with bag-on-left / stash-on-right, click-to-transfer in either direction. New functions: `openStash`, `closeStash`, `renderStash`, `depositToStash`, `withdrawFromStash`, `_stashAdd`. `stashOpen` flag added to all six existing UI gates (_isPlayerFree, viewmodel render, main input, keyboard handler). Bed E-press triggers `restAtBed()` — `doFade()` callback restores PHP/mana/stamina to max, save fires, log entry "💤 Rested at the safehouse." Free + no cooldown per design call (gift framing). Door temporarily ungated for testing — gating lands in v61d6. ~430 lines net. |
+| v61d5 | Session 26 | **Combat backlog cleanup — mimic landmine, F2 spell VFX, telegraph audit.** (1) MIMIC LANDMINE: replaced auto-proximity reveal with E-press reveal. Disguised mimic now sits passive until player presses E (same prompt as a real chest — "Press 'E' to open chest" — preserves the bait). New `revealMimic(e)` flips disguise, plays cry, restores eye/teeth visibility, and starts a telegraph using the existing 0.32s Mimic value. New `_burstNext` flag in executeDungeonStrike applies the burst formula (14 + level × 1.0 - def × 0.3) on the first post-reveal strike — routed through `executeStrike` so block/parry apply for the first time. The "betrayal" of opening a chest-that-wasn't is preserved; the burst just becomes block-able. New disguised-mimic check in dungeon interact handler (caught BEFORE chest-find since both pass the proximity gate). New nearMimic detection in iprEl prompt fallthrough. (2) FLOOR-2 ENEMY SPELL VFX: Phantom/Wraith orb spawn Y was hardcoded `0.8` — correct for floor 1 (ground Y = 0) but well below floor-2 ground (`FLOOR2_Y`). Orbs spawned beneath the floor mesh and rendered invisibly. Fix: `(e.floor===2 ? FLOOR2_Y : 0) + 0.8`. Same pattern as v61c8's boss-corpse loot indicator. (3) TELEGRAPH AUDIT: Phantom (0.30) + Wraith (0.32) added to `TELEGRAPH_BY_NAME` (were falling through to 0.35 default). Slime dropped 0.40 → 0.30 (over-tuned for a tier-1 trash mob; shouldn't telegraph longer than a Skeleton). Vestigial Wolf entry removed (only wolf-shape is the Faolchú boss, which uses `bossDef.telegraphBase`). 11 existing values left untouched — playtest-driven retune deferred to a feel session now that v61d1 made all telegraphs visible. (4) SLIME SPLIT: investigated, no logic bug found in code path. Marked deferred-pending-playtest-repro. ~64 lines net. |
+| **v61d6** | Session 26 | **Caldric Safehouse — grant scene, door gating, Brynn relay. (Session 2 of safehouse beat — closes Caldric thread.)** New `worldState.safehouseGranted` flag with migration (defaults to false on pre-v61d6 saves; existing post-Q7 characters pick up the relay topic on Brynn naturally on next visit). Auto-fire grant scene in `openDialog` when `npc.name==='Lord Caldric' && worldState.commissioned && !worldState.safehouseGranted`. Skips the regular greeting + topics render entirely until the scene resolves. Two-beat structure: 4-paragraph Caldric monologue ending on "It is also other things," followed by two player choices ("What other things?" surfaces the asset framing more openly; "I understand." accepts subtext quietly). Both branches converge on the gift announcement (south-west of town, burgundy door, sworn-man's-widow context, key-in-the-lock). Final closer ("My thanks, Lord Caldric.") triggers new `c.grantSafehouse` resolver in `pickDialogChoice` — flips worldState, persists save, emits journal log entry "🔑 Lord Caldric granted you the safehouse," renders the Aldwyn-credit closing line. Subsequent visits fall through to standard Caldric dialog. Door gating: entry handler refuses with "Locked. Lord Caldric has the key." pre-grant (toast on E-press); proximity prompt shows the same line from a distance. Post-grant, falls through to normal goToInterior. Brynn relay topic — new "You called for me?" surfaces in `buildQuestTopicsForNPC` (outside QUEST_DEFS forEach since it's purely worldState-driven) when `commissioned && !safehouseGranted`. Single-shot label/response, no follow tree; player exits and walks to keep on their own. Disappears post-grant. ~94 lines net. **Caldric thread closed.** |
+| v61d7 | Session 27 | **Topology audit fixes part 1 — duplicate route deletion, Ashfeld wiring, Inis Rua tidal causeway.** Three structural bugs caught by the systematic graph audit. (1) DUPLICATE ROUTE: `dunmore_west_road` and `la_route_royale_south` both connected Vieux Marché ↔ Dunmore — same endpoints, redundant. `dunmore_west_road` removed entirely from MAP_NODES, registerPlaceholderZone registry, Vieux Marché's east gate, and Dunmore's west gate. Vieux Marché 3→2 gates, Dunmore 4→3 gates. (2) ASHFELD WIRING: `ashfeld` was registered as a zone but had `gates:[]` and zero incoming gates — orphan + dead-end despite being narratively load-bearing as Varek's first-meeting site. Reclassified from Act II to Act I, repositioned on the SVG world map from (310, 632) to (210, 630) — directly between Ashenmoor and Redwater Ford on the south road. South Road's south gate retargeted from `redwater_ford` to `ashfeld`. Redwater Ford's north gate retargeted from `south_road` to `ashfeld`. Ashfeld now has bidirectional gates to both. SVG South Road edge line split into two segments to visually pass through the Ashfeld diamond marker. WM_COORDS coordinate updated for fog-of-war compatibility. The player now walks Ashenmoor → South Road → The Ashfeld → Redwater Ford as the canonical route. (3) INIS RUA TIDAL CAUSEWAY: Inis Rua had `gates:[]` (orphan + dead-end) with a comment noting the tidal-causeway mechanic was deferred. Implemented the simplest viable tide system. New `isTideOut()` helper using `Math.floor(performance.now() / TIDE_HALF_PERIOD_MS) % 2` — 3-minute half-cycles (3 min exposed, 3 min submerged), session-time-based since there's no day/night clock yet. New `guard:'tide'` field on gate objects. Both `interact()` (E-press travel handler) and the prompt-rendering branch in the overworld tick check `nearGate.guard === 'tide'` and either show "Press 'E' to travel" / pass through, or show "The causeway to [X] is submerged." / refuse. Carraig Mór gained a south gate to Inis Rua (`guard:'tide'`); Inis Rua's single gate back to Carraig Mór carries the same guard. Pre-existing SVG bug also fixed: the "Coastal Road South" edge line was incorrectly drawn from y=570 to y=640 (wrong direction — toward Inis Rua); corrected to y=510 to y=568. Added a new "The Tidal Causeway" edge line in distinct blue dash pattern. Audit re-run: 0 orphans, 0 dead-ends, 0 duplicate routes, 0 asymmetric edges, 35/35 walkable from Ashenmoor (was 34/36). |
+| v61d8 | Session 27 | **Topology audit fixes part 2 — gate label/target normalization.** Three gate `label` strings didn't match their target zone's `displayName`, producing player-facing prompt-vs-arrival mismatches. (1) Cill Beag's only gate read "Press 'E' to travel to Road to Droichead" but arrived in a zone displayed as "Road to Cill Beag" — the gate was labeled by *destination beyond the road* rather than *the road itself*, confusing for first-time visitors. Aligned to "Road to Cill Beag." (2) Droichead's two An Bealach Mór gates were labeled "Bealach Central" and "Bealach — North Approach" — abbreviations that omitted the canonical "An Bealach Mór" prefix the actual zone displayNames carry. Aligned to full names. Audit recheck: 0 mismatches across all 35 zones. **One audit-script bug also caught and corrected:** earlier flagging of 4 stale `WM_COORDS` entries (Thorngate, Deepwood Forest, La Porte Grise, Mountain Approach) was a false positive — the comparison was against MAP_NODES displayNames but WM_COORDS keys actually match SVG `data-name` attributes (which is the correct lookup, and they all resolve). The four flagged entries are all valid flavor POIs the SVG renders for fog-reveal but don't correspond to walkable zones — by design. ~10 lines net. |
+| **v61d9** | Session 27 | **Commission gating — Phase 1 of topology design pass C ("Toontown hub-and-spoke"). Royal-network spokes are now closed pre-commission and open at Q7 turn-in.** New `'commission'` guard type extends the existing `guard` field (sibling of v61d7's `'tide'`). Both the gate-interact handler and the gate-prompt rendering branch get a third case checking `nearGate.guard === 'commission' && !worldState.commissioned`. Locked prompt copy: "The road to [label] is closed. Royal commission required." (provisional — pending per-gate flavor pass). Locked travel attempt: showMsg "The road is closed to those without royal commission." in the same amber tone as other commission-related copy. Five gates flagged across four boundary edges: (1) Ashenmoor → West Track (regular Ashenmoor config). (2) Ashenmoor → West Track (burned Ashenmoor config — kept in sync). (3) Hearthwick → Bealach Central. (4) Ironhaven → Northern Road. (5) Ironhaven → La Route Royale West. Together these four boundary edges produce a clean Tier 0 / Tier 1 partition: 8 zones reachable pre-commission (the Q1-Q7 corridor exactly — Ashenmoor, South Road, Ashfeld, Redwater Ford, Bealach South, Hearthwick, Forest, Ironhaven), 27 gated behind commission. **Topology principle locked:** guards belong on the *outgoing* gate at the Tier 0 → Tier 1 boundary; return gates from Tier 1 stay unguarded since pre-commission a player can't reach them anyway. The single-bit `worldState.commissioned` flag (already flipped at Q7 turn-in, already saved/loaded) is the entire trigger — no migration needed; existing post-Q7 saves see all gates open immediately. Phase 2 (world-map locked-road styling, Q7 unlock-moment UI beat) and Phase 3 (Tier 2/Tier 3 gates for later Act II/III content) deferred to future sessions; the `guard` field architecture is extensible to additional values when those tiers land. ~30 lines net. |
+| **v61e0** | Session 28 | **Topology Phase 2 — locked-road map styling, Q7 unlock beat, 3D barrier crossbeams. Closes v61d9 follow-up.** Three deliverables. (1) WORLD-MAP LOCKED-ROAD STYLING: new `WM_LOCKED_EDGES` set listing the 4 SVG `data-name`s (`The West Track`, `An Bealach Mór — Central`, `The Northern Road`, `La Route Royale — West`). New `wmRefreshLockedEdges()` reads `worldState.commissioned` and toggles `.wm-edge-locked` class on each matching `<g class="edge">` SVG element + injects/removes a `<g class="wm-lock-icon">` padlock glyph (background coin + lock body + shackle arc) at the edge midpoint. CSS class fades stroke to `#5a5040` at 0.4 opacity, drops stroke-width to 1.8 — the locked spokes read clearly as "you can see this exists, you can't walk it." Lock-glyph CSS uses `pointer-events:none` so hover passthrough still works on the underlying edge. Hooked into `wmSyncZone()` so it refreshes on every map-open. (2) Q7 UNLOCK BEAT: at the `worldState.commissioned = true` flip, three things fire: persistent journal log entry "🔓 The royal roads open to you", a 5.5s gold-toned `showMsgLong` "🛡️ Royal Mage Commission accepted — new roads now open to you" delayed 2.4s so it follows the regular quest-completion toast cleanly, and a `wmRefreshLockedEdges()` call so the lock glyphs vanish in real time if the map happens to be open. No animation per the design call — just clean state transitions on either side. (3) 3D GATE-PROP RIDE-ALONG: new `_buildCommissionBarrier(scene, x, z, rotY, ty)` helper next to `buildFenceGate`. Builds a Group: two stout posts (0.18×1.5×0.18, color 0x2a1808) outboard of the fence pickets at ±0.85, a heavy crossbeam (2.0×0.18×0.20, color 0x3a2410) at chest height (1.05m), plus two rope-wrap toruses (radius 0.13, tube 0.02, color 0x6a4818) where the beam meets the posts. Visually distinct from `buildFenceGate`'s open fence — reads as "barred" from across a field. Spawned by both `buildVillage` and `buildTown` gate loops only when `gd.guard==='commission' && !worldState.commissioned`. Stored on the runtime gate entry as `barrierMesh` for live-removal. At Q7 turn-in, the active zone (Ironhaven, since Q7 turn-in fires there) walks `ZONES[activeZoneId].gates` and removes any `barrierMesh.parent.remove(barrierMesh)` so the player walks out of Aldwyn's office to find their way actually open. Other zones' barriers (Ashenmoor west, Hearthwick east) clear naturally on next entry because the build call sees `worldState.commissioned===true` and skips the barrier construction. **Latent v61d9 bug fixed in passing:** both `buildVillage` and `buildTown` were dropping `gd.guard` on the runtime gate entry push, so `nearGate.guard` was undefined at the proximity-check site for every commission-gated gate. Tide-gated gates were unaffected (Inis Rua's gate config and the runtime push live in the same registerPlaceholderZone code path which preserves the field). v61d9's commission-gating was therefore only working at the world-map fast-travel layer, not at the walk-up-and-press-E layer. Both `buildVillage` and `buildTown` push now propagate `guard:gd.guard`. ~110 lines net. |
+| **v61e1** | Session 28 | **Map redraw + Thorngate / La Porte Grise outposts.** A wide-scope session resolving a player-flagged dissonance: the world map's middle zigzag did not match the actual in-game route from Ashenmoor to Ironhaven, and the Bealach branch (Droichead/Cill Beag/etc.) was visually drawn ON the main road instead of as the commission-gated side spoke it actually is. Six deliverables. (1) SVG REDRAW: the Hearthwick→Ironhaven main road now traces Hearthwick→Thorngate→Forest→La Porte Grise→Ironhaven on a clean diagonal. The Bealach branch repositions as Hearthwick's *eastern* spoke (Droichead at (390,540), Cill Beag at (455,470)) so the Toontown spoke geometry reads at a glance. The orphaned Forest Road South + Forest Road North SVG edges fold into a single `Thorngate Road` edge with the existing data-pois (Standing Stones, forester's camp). The Deepwood Forest node is removed entirely — it's no longer a stop, just a labeled road segment. Stale "Dunmore West Road" SVG edge removed (deleted from data graph in v61d7, never removed from SVG). New "Road to Cill Beag" SVG edge added (the data graph had `cill_beag_path` since v61e but the SVG never showed it). (2) ROAD LABELS: every road edge now carries an italicized Cinzel gold text label (or muted brown for Wastes paths, dim blue for the Tidal Causeway), rotated to match the road's angle and offset perpendicular to the line. Vertical roads use rotate(-90) so labels read bottom-to-top; horizontal/diagonal roads rotate to match. ~20 edges labeled. (3) NEW NODE TIER — OUTPOSTS: new shield-shape SVG visual (rounded rect with a curved bottom point, slate-blue stroke + dark fill) distinct from settlement rounded rects, town circles, and ruin red circles. Applied to the (now-walkable) Thorngate at (370,460) and La Porte Grise at (480,280). The Ashfeld also updated — yellow diamond replaced with small red ruined circle matching Ashenmoor's destroyed-state register, since per canon it's "an ancient battlefield." (4) NEW WALKABLE ZONES: `thorngate` and `la_porte_grise` registered as `kind:'village'` placeholder zones, size 40, each with one keeper-house and one shop NPC. Edwin (Anglo-Saxon-coded "Warden Edwin", Road-Warden role) staffs Thorngate with the `outpost_warden` shop type (cheap rations, basic dagger, buckler, torches — reflecting peripheral half-staffed register). Roland ("Quartermaster Roland", Royal Quartermaster role) staffs La Porte Grise with the `outpost_quartermaster` shop type (Mild elixirs, tier-2 sword, tier-2 helmet — reflecting institutional French-coded register). Both vendors get full `SHOP_DIALOG` entries: greeting trio + 2 lore topics + browse-wares trade + goodbye. Notice boards (auto-generated from spec.centerMarker) carry outpost-flavored text. Walls + south-facing keeper-house geometry inherit from `buildVillage`. (5) GATE REROUTE: Hearthwick north gate now targets `thorngate` (was `forest`). Forest south gate targets `thorngate` (was `hearthwick`); forest north gate targets `la_porte_grise` (was `ironhaven`). Ironhaven low-Z gate targets `la_porte_grise` (was `forest`). The road chain is now `hearthwick ↔ thorngate ↔ forest ↔ la_porte_grise ↔ ironhaven` — five hops where there were three. `MAP_EDGES` updated with eight new live edges and four superseded entries documenting the chain change. (6) GENERIC `ZONES[id].houses` SUPPORT: new field on the `registerPlaceholderZone` spec (declared as `houses:[{id,doorX,doorZ,doorFace,name,keeper,type,bCol,sCol,...}]`) is attached to the live ZONES entry after the lazy build runs. Both the interact handler (line 11140) and the proximity-prompt branch (line 19089) get a generic per-zone houses fall-through after the existing per-zone hardcoded branches (Ashenmoor/Hearthwick/Ironhaven), so any future placeholder village can ship with houses by populating the spec field — no per-zone interact/prompt edits required. **Third gate-push site fixed:** `buildWildernessZone` was dropping `gd.guard` on its push (sibling of the v61e0 fixes for `buildVillage`+`buildTown`). All three push sites now propagate guard. Also added a `_buildCommissionBarrier` call inside the wilderness gate loop so future tide/commission gating on a wilderness gate just works. **MAP_NODES updated:** Thorngate and La Porte Grise added as `kind:'settlement'` (so `isSettlementZone` returns true → notice boards work) with `fastTravel:true`. **WM_COORDS / WM_NODE_TO_ZONE updated:** Thorngate (370,460), La Porte Grise (480,280), Cill Beag (455,470), Droichead (390,540) — repositioned to match new SVG geometry. Deepwood Forest entry removed entirely. ~370 lines net. |
+| **v61e2** | Session 29 | **Outdoor `trade:true` resolver fix.** Patched `pickDialogChoice` at the `c.trade` resolver: when `currentHouse` is null (outdoor NPC dialog), look up `ZONES[activeZoneId].houses` for an entry whose keeper matches `dlgNPC.name`, set `currentHouse` to that, then call `openShop()`. Lifts Edwin (Thorngate), Roland (La Porte Grise), AND silently fixes Oda's long-broken outdoor "Step inside — browse your wares." button which had been a dead path since v61f. Edwin and Roland's outdoor topics restored to canonical `Browse your wares.` + `trade:true` (the v61e1 workaround text retired). `HEARTHWICK_HOUSES` attached to `ZONES.hearthwick.houses` so the resolver can find Oda; Hearthwick's existing special-case interact + prompt branches left in place — additive, not refactored. ~25 lines net. |
+| **v61e3** | Session 29 | **Coastal arc regional identity.** New `coast` biome added to `BIOME_PROFILES` — exposed, treeless, salt-bleached. Bone-pale path stone, cooler greens, very sparse border trees, duskier ground tones. West Track and Coastal Road South flipped to `biome:'coast'`. Five-zone palette gradient applied across West Track / Salthaven / Coastal Road South / Carraig Mór / Inis Rua — the arc darkens and saturates as you go further from inland; Inis Rua most extreme. New `_musicCoast` track — three drones (130/195/260 Hz), tide-like LFO, sparse low-passed wave-roll noise gusts. Modeled on `_musicWastes` but tuned warm. Wilderness segments use `musicTrack:'coast'`; settlements keep `'village'` (you hear the coast on the road, then arrive at a place with people in it). **Áine canonized** as Elder of Carraig Mór — full character profile in `lore_canon.md`, verbatim dialog (greetings, intro response, outdoor + indoor topics) in `quest_writing.md`. New canon: *Béal an Domhain* (Irish-register name for the Mouth, used by Carraig Mór locals only); the bones-in-the-walls beat (literal, not metaphor); Caldric writes letters they don't answer; the brother-who-came-back-different beat — first canonical evidence that intact contact with the binding changes a person, distinct from the antibody mechanic. Áine build wiring deferred to a paired follow-up with Salthaven's signature NPC. ~85 lines code + significant writing. |
+| **v61e4** | Session 29 | **REGION_PROFILES system + 14 prop builders + Wastes depth.** New `REGION_PROFILES` table defines six regions (`coastal`, `bealach`, `foothills`, `royale`, `wastes`, `ashen`); each profile carries skyCol/fogColor/fogDensity/biome/musicTrack/propScatter. `registerPlaceholderZone` reads `region:'X'` from the spec and inherits region defaults for any field the spec doesn't override (explicit per-zone fields always win, so Inis Rua keeps its bespoke palette). All 22 wilderness/settlement/town zones tagged with their region. New `wastes` biome added to `BIOME_PROFILES` — burned-earth tones, bone-grey path stone, dim sun, dead-grey trunk colors, sparse skeletal trees instead of canopy. Hollowed Wastes spoke pushed to depth: bespoke palette + dedicated biome + `_musicWastes` finally wired (was built but unused since Session 4 era). New `PROP_BUILDERS` table with 14 mesh primitives covering all five spokes plus the Act-I-tail orphans (driftwood/rope_coil/seaweed for coastal; cart_wheel/milestone/wheat_stack for bealach; stone_cairn/dry_stone_wall/ore_pile for foothills; royal_marker/wayside_shrine for royale; dead_tree/ash_pile/bone_pile for wastes; broken_blade/cairn_low for ashen). Each builder is 5-15 lines of inline Three.js geometry, no shared cache (regional props are scattered sparsely). Solid props (cairns, walls, milestones, dead trees) push collision; small flat decorative props (driftwood, seaweed, bones, ash, broken blades) stay walkable. Prop scatter loop in `buildWildernessZone` reads `cfg.propScatter`, dispatches to `PROP_BUILDERS`, places at off-path on-terrain candidate positions with 8-attempt fallback. Coastal arc retrofitted with regional props on top of v61e3. `lore_canon.md` open question #1 (regional identity per spoke) marked resolved with full system reference. ~480 lines net. |
+| **v61e5** | Session 29 | **Bram timing fix + backlog reconciliation.** Single one-line code change: `COMMISSION_LOCK_COPY['west_track'].toast` previously read "Bram's grandfather would have walked through" — but post-Q7 (when commission flips), Bram is dead. The line was timing-fragile. Replaced with coastal-flavored generic "The salt road waits" that doesn't depend on a person's life-state. **Plus three significant backlog reconciliation findings** (no code, but real findings that retire stale backlog items): per-gate commission copy was already shipped (the bespoke `COMMISSION_LOCK_COPY` table covers all four boundary edges); portal → old gates dialog rewrite was already silently complete (no player-visible NPC strings contain "portal"; survivors are SVG `data-pois` attributes that no JS reads, plus code identifiers); gold drop scaling was already shipped in v61c0 (`rollGold(tier)` with per-tier ranges + lvBonus + fortuneMult, documented progression at L1/L5/L10). Three "Other pending" entries marked ✅. ~1 line code. |
+| **v61e6** | Session 29 | **Day/Night Session A — clock foundation.** First of three sessions per `design_notes.md`. Adds `worldState.gameTimeMinutes` (initial 360 = 06:00 = dawn, persisted to save via existing `wS:{...worldState}` spread; load migration defaults pre-v61e6 saves to 360 so old characters land at first light, not midnight). New helpers: `gameHour()` returns float [0,24); `gameTimeOfDay()` returns one of 8 discrete states (dawn/morning/mid_morning/midday/afternoon/dusk/night/deep_night); `advanceClock(dt)` advances by real-time delta; `forceTime(target)` cinematic time-lock accepting either numeric hour or state-name string. Cadence locked at 1 in-game minute per real-second (1 in-game hour per real-minute). Tick fires from main game loop AFTER the pause-bailout, so UI-open / dialog / shop / loot all pause the clock (consistent with stamina/buffs/cooldowns). **Tide system ported from `performance.now()` to in-game clock** — lore canon's "twice a day" claim is now literally true: low tide during in-game hours 0-6 and 12-18, high tide during 6-12 and 18-24. The `TIDE_HALF_PERIOD_MS` constant (3-real-min half-cycle) fully retired. **Three Q7 cinematic time-locks wired:** burn → `forceTime('dawn')` (lore-canonical morning-after); Q7 turn-in at Aldwyn → `forceTime('evening')` (Aldwyn's "you should rest tonight" is now literal); Caldric grant → `forceTime('evening')` (tonally aligned with Q7 turn-in). **Visible effects deferred to Sessions B + C** — Session A alone has no player-visible UI; Session B (sundial UI + lighting interpolation) and C (spawn modulation + nightOnly flags + settlement NPC retreat) remain. Smoke-tested helpers in isolation (10 logic checks: initial state, tick advance, full-hour advance, force locks, tide cycle full-day, midnight wrap, evening→night-tod mapping). All passed. ~95 lines net. |
+| **v61e7** | Session 30 | **Day/Night Session B — lighting interpolation + sundial UI + sleep advance.** Second of three sessions per `design_notes.md`. (1) `REGION_NIGHT_PALETTES` table with hand-designed Coastal (`#1a2438` deep moonlit blue sky, `#8aa0c0` cool silver-blue moonlight — "the Carraig Mór note") and Wastes (`#0a0808` near-black sky, `#1a1620` faintly violet ambient — "this is night, and night here is wrong"; +55% fog density). `SETTLEMENT_NIGHT_PALETTE` is a single shared universal-warm palette for all village/town zones (Michael design call C — settlement night reads "lit windows, smoke" rather than wilderness-darkness; per-settlement bespoke palettes deferred). `_autoDeriveNight(dayHex)` HSL-shift + value-reduction helper for the four un-hand-designed regions (bealach/foothills/royale/ashen). `resolveNightPalette({region, isSettlement, daySkyCol, dayFogColor})` is the single resolver — settlement override beats region, hand-designed regions return canonical palette, everything else auto-derives. (2) `_nightFactor()` returns 0..1 from `gameHour()` — linear ramps over hours 5-7 (dawn) and 17-19 (dusk); 0 in pure day (7-17), 1 in pure night (19-5). Easeable to smoothstep later if linear reads robotic per design notes Q2 — held back per "start linear" call. (3) `instrumentSceneForDayNight(scene, refs, day, region, isSettlement)` stashes `{sun, ambient, hemi, fog, day, night, isLocked, _lastApplied}` on `scene.userData.dayNight` at build time. Each scene captures its own day-palette refs so lerping into night is scene-specific. (4) `applyDayNightLighting(now)` is the per-frame interpolator — throttled to 1Hz internally via `_dnLastTickT` against rAF timestamp, gated behind the main-loop pause bailout so paused gameplay pauses lighting. Resolves active outdoor scene via `ZONE_BUILDERS[id].sceneGet()` for everything except overworld (where the burned/normal swap requires direct refs). Lerps THREE.Color values into existing live light/fog/bg objects with no per-tick allocations (`_dnTmpDay`/`_dnTmpNight` module-scoped scratch). Sun intensity drops to 20% at full night, ambient 30%, hemisphere 35%. Cached `_lastApplied` early-out skips entire pipeline when night factor unchanged within 0.01. (5) Three scene builders instrumented — `buildVillage` (line ~5300), `buildWildernessZone` (line ~8628), `buildTown` (line ~9358) — each calls instrument helper immediately after its sun/ambient/hemi/fog construction, with settlements passing `isSettlement:true` to force universal-warm. (6) `spec.region → cfg.region` propagation added to `registerPlaceholderZone` — was missing; without it, every placeholder zone (22 zones) would have fallen through to auto-derive even for hand-designed Wastes/Coastal. (7) `BEALACH_SOUTH_CONFIG` tagged `region:'bealach'` — the only hand-built wilderness zone without a region tag (predated the v61e4 region system); now aligns with placeholder Bealach zones for night-palette derivation. (8) Burned Ashenmoor lock — `buildAshenmoorBurned()` tail sets `burnedScene.userData.dayNight.isLocked = true`. Forced-dawn palette set by Session A's `forceTime('dawn')` at burn trigger stays frozen visually regardless of subsequent clock advance. Clock ticks globally (tide system, downstream scheduling, sundial all keep moving); only burned-Ashenmoor visuals freeze. Per Michael's design call A — pausing the global clock would have broken too many downstream systems. (9) `drawSundial()` HUD glyph — disc + moving sun design (option A). 32×32 canvas sibling to compass at top-center (offset right via `margin-left:108px`). Disc fill lerps day↔night sky tint (`#d4c49e` parchment ↔ `#161c30` deep cool blue) using same `_nightFactor()` as the lighting interpolator — sundial reads in step with the rendered scene. Continuous phase 0..1 across day arc (h=5 east → h=12 apex → h=19 west) and night arc (h=19 east → h=0 nadir → h=5 west). Sun glyph (warm `#ffe080` + glow ring) above horizon during day; moon glyph (pale `#dde4f0` + crescent shadow nibble) below horizon at night. Horizon line (rgba white 18% alpha) splits day/night halves. Called from per-frame draw loop alongside `drawCompass()`. Display flipped to `block` at the same `started=true` moment as compass. (10) Safehouse sleep advance — `restAtBed()` now advances `worldState.gameTimeMinutes += 480` (8 hours) inside the existing `doFade()` callback before HUD refresh. Wraps modulo 1440 so a sleep starting at hour 20 lands at hour 4 next morning. (11) Save/load — no schema change; `gameTimeMinutes` already persisted via Session A's spread. The `dayNight` userData lives on scene objects (rebuilt on load), not on persisted state. Smoke-tested in isolation: 28/28 logic checks pass (palette resolution, night factor across 24h cycle, auto-derive sanity, sundial phase math, transition continuity). Browser playtest validation deferred to next session — see Session 30 backlog entry for tour script. ~340 lines net (HTML + JS combined). |
+| **v61e8** | Session 30 | **Day/Night Session B hotfix — skyRing tint.** Browser playtest of v61e7 surfaced a wedge-of-day-sky bleeding through at night (visible as a triangular bright patch against the otherwise-dark scene as the player turned). Root cause: `buildVillage` and `buildWildernessZone` both construct a `skyRing` cylinder mesh with a hardcoded day-sky canvas texture (gradient + clouds + distant mountain silhouettes) used as a "fake background" filling the upper hemisphere where `scene.background`'s flat color geometrically can't reach. The v61e7 lighting interpolator updated `scene.background`, fog, sun, ambient, hemisphere — but didn't know about the skyRing's `MeshBasicMaterial` (which is unlit AND has `fog:false` so neither the lighting nor the fog could touch it). At night the skyRing showed through bright while everything else was dark. Three-edit fix: (1) `buildVillage` now stashes the skyRing material on `vScene.userData.skyRingMat` instead of letting it go anonymous. (2) `buildWildernessZone` does the same on `sc.userData.skyRingMat`. (3) `applyDayNightLighting` extends its sky/background lerp block to also lerp the skyRingMat's `.color` from white (day, no tint, canvas shows as drawn) toward the region's night skyCol at full night (canvas multiplied to that hue, much darker). Per-region tint per Michael's design call — Wastes skyRing tints near-black (correct: "the horizon is gone"), Coastal tints toward moonlit silver-blue (correct: "the Carraig Mór note"), auto-derived for the other four regions. Settlements use their day palette's settlement night skyCol via the same `dn.night.skyCol` ref. Town has only flat `scene.background` (no skyRing) so no fix needed there. Burned Ashenmoor `isLocked` short-circuit means its skyRing also stays at its forced-dawn tint (correct). 5/5 smoke tests pass on the lerp math (white at t=0, region tint at t=1, halfway at t=0.5, Wastes night much darker than day). ~10 lines net. |
+| **v61e9** | Session 30 | **Day/Night Session C — spawn modulation, NPC retreat, respawn, wait button.** Last of the three Day/Night sessions per `design_notes.md`. Session C grew significantly beyond the original lock during the design conversation: the design doc anticipated only spawn density + nightOnly flags + settlement NPC retreat, but the play conversation surfaced two load-bearing additions — (a) a respawn system was needed, otherwise density modulation only registers on first zone entry and the world goes static-cleared after one pass, and (b) a wait/pass-time mechanic was needed, otherwise NPC retreat strands the player without recourse pre-safehouse. Both made the cut. **Subsystems shipped:** (1) `spawnDensityMultiplier()` returns 1.0 (day, hours 7-17) / 1.3 (dusk-dawn, hours 5-7 + 17-19) / 1.5 (night, hours 19-5). `_scaleSpawnCount(base)` is the round-up wrapper (1.5× of 2 = 3, 1.3× of 2 = 3 via ceil). `filterSpawnEntriesByTime(entries)` filters individual spawn entries by their `nightOnly` / `duskOnly` / `dayOnly` flags. (2) `cfg.enemies` spawn loop in `buildWildernessZone` rewritten to filter by time-of-day, scale group counts via round-up, synthesize extra positions within a 4-unit jitter radius around base positions when target count exceeds the base list. Respawn:false entries excluded on respawn build (allowed on first build). (3) Per-zone respawn tracking via `worldState.zoneSpawnT` map (free ride on the existing wS:{...} save spread). `worldState.gameTimeAbsMinutes` is a new non-wrapping counter alongside `gameTimeMinutes` so respawn threshold math survives the modulo-1440 wrap. Threshold is 24 in-game hours. `_shouldRespawnZone(id)`, `_markZoneSpawned(id)`, `respawnZoneEnemies(id)` (removes existing respawnable enemies + meshes, re-rolls spawns with current time-of-day), `checkZoneRespawn(id)` (dispatches + emits subtle log line "The wilds have stirred" for wilderness or "Time has passed" for settlements). `restAtBed` now also advances `gameTimeAbsMinutes += 480`. Three ZONES population sites (`buildVillage`, `buildWildernessZone`, `buildTown`) stash `cfg` ref on `ZONES[id]._cfg` so respawn can re-roll the spec without coupling to the original builder. (4) Settlement NPC retreat — post-Q7 (`worldState.commissioned`) only. `_shouldNPCsRetreat()` returns true at hours 19-6. `_isSettlementZone()` matches `overworld` / `hearthwick` / `ironhaven`. `_applyRetreatToZone(zoneId, npcs)` flips `n.g.visible` + `n.dot.visible` + sets `n._retreated` flag. `tickNPCRetreat()` piggybacks on the existing 1Hz day/night tick to catch hour-19 / hour-6 boundaries live. `goToZone` also calls `_applyRetreatToZone` on every settlement entry so an entering player at night sees the village empty immediately without waiting for the 1Hz tick. (5) `findNPCPos` extended — retreated NPCs with a keeper-house return the door position with `indoors:true` (existing UX pattern, quest markers reroute through cross-color "go inside" branch). Retreated non-keeper NPCs (Edna, Tom, Finn) return their day pos with `indoors:true` so the marker still reads "not currently reachable." (6) `talkNPC` filters retreated NPCs from its proximity scan; "Press E to talk" prompt likewise filtered. Silent gate per design call A — no prompt, no explanation, the sundial + missing mesh tells the player it's night. (7) **Wait button + modal.** Universal time-pass affordance — clock-icon button next to the sundial, opens a small modal with 5 buttons: Until Dawn (6:00) / Until Morning (8:00) / Until Noon (12:00) / Until Dusk (18:00) / Until Night (20:00). `passTimeToHour(target)` calculates elapsed (with day-wrap if target < current), advances both `gameTimeMinutes` and `gameTimeAbsMinutes`, fades to black via `doFade`, fires `updateHUD` + `saveGame`, shows a brief "Time passes — dawn" message. `_canWait()` gates: blocked in dungeons (lid !== 'overworld'), blocked in combat (any non-dead enemy aggroed within 20m), blocked while a UI modal is open. Does NOT restore HP/mana/stamina (that's safehouse-sleep's privilege — wait is "the clock advances," sleep is "you rested"). 26/26 smoke tests pass on all logic (spawn density across 24h cycle, round-up scaling, time-of-day filtering, respawn threshold timing, NPC retreat post-Q7 gate, wait button gating). **Encounter content design (specific monsters where, brigand designs, wolf packs) deferred to its own follow-up session per design notes.** ~430 lines net (HTML + JS combined). |
+| **v61ea** | Session 31 | **Backlog reorganization + four small fixes.** Devlog backlog consolidated from scattered "Pre-existing bugs / Other pending / New (Session 29) / New (Session 30) / Blocked on upstream" into a single 11-category `## Backlog` section. Reconciliation pass walked every pending item against current code; six items were silently shipped earlier and got pruned (Session 23 world-map gating, `buildWilderness(cfg)` template, south-road yaw bug, weapon enchants audit, active-effect timers in dungeons, Aldwyn War Supplies wall). Two items reframed (Character Creator Phase 2; decorative armor enchants). Plus 14 new player-mulled items added under proper categories. Final shape: 11 categories, ~49 active items + 6 pruned. Four small fixes shipped together: (1) Wooden Staff weapon mesh — was rendering as flanged mace because `weaponShape:'mace'` was the placeholder; new `staff` branch in `buildViewmodel` (long handle + copper guard band + emissive bladeCol-tinted orb head + small pommel) wired with `tipY:0.46`. Updated declaration to `weaponShape:'staff'`. Audit of all `weaponShape:` declarations confirmed no other silent fall-throughs. (2) Books retained on read — `openBookReader` was decrementing `it.qty` after first read, deleting the physical book. The `booksRead` Set already gates the re-bonus, so removed the consumption line entirely. Player keeps the book for re-reading + lore-as-collectible. (3) Q2 dead code removed — three sites referenced the orphaned `reach_dungeon_floor` event after v61n switched Q2 to `touch_sigil`. Removed handler in `checkQuestProgress`, marker code in dungeon-marker resolver, and firing site in `goToFloor2`. Replaced with a one-line explanatory comment so future-us can re-add cleanly if any future quest needs floor-entry triggers. (4) Q7 rewardSpeech kept (decision, not edit) — confirmed unreachable due to `customActiveDialog`'s `questDialogComplete` short-circuit, but the writing is canon-quality lore. Added an explicit comment block above the rewardSpeech entry explaining why it stays. Auto-generated empty-string variants in sigil-lore quest gen similarly stay as forward-compat plumbing. Backlog status post-v61ea: 49 → 27 effective active items. ~25 lines net code; ~70 lines devlog reorganization. |
+| **v61eb** | Session 31 | **Map↔code geometry audit + Hollowed Wastes refactor + grid-layout map redraw.** Largest single ship of Session 31. Began as a small bug-fix pass, expanded into an architectural session after audit found that the world map SVG and the code's gate definitions had drifted into multiple contradictions, plus one structural disagreement with the lore canon. **(1) WASTES ARCHITECTURAL REFACTOR:** lore canon (§ The Hollowed Wastes) explicitly says "Settlements: None. No roads run through it — only the dangerous Wastes Path." The previous `hollowed_wastes` zone violated this — it was a single hub-and-spoke wilderness with four gates, treating the Wastes as a destination rather than a region. Deleted. Replaced with two new wilderness zones: `wastes_west` (Bealach-side approach with Hermit's Camp branching off it) and `wastes_east` (Dunmore-side traverse with Caer Uaigneach branching off it). The two zones connect to each other in the middle of the Wastes — the canonical "Wastes Path" is now literally two wilderness segments matching the lore's "vast" feel. `region:'wastes'` tag continues to do the visual unification work the old hub-zone was doing structurally. Bealach Central south gate retargeted to `wastes_west`. Dunmore south gate retargeted to `wastes_east`. Hermit's Camp + Caer Uaigneach gates retargeted to their respective new zones. ZONE_REGISTRY entry split into two. Region-tag comment in code annotation block updated. **(2) SAVE MIGRATION SHIM:** pre-v61eb saves whose `zone` is `hollowed_wastes` get remapped to `wastes_west` on load — narratively the same approach (off Bealach Central) the old hub-zone was reached from. Welcome-back and slot-load `showMsg` calls switched from `d.zone` to post-migration `activeZoneId` so the displayed zone label is correct. **(3) BUG-1 NORTH APPROACH GATES:** the world map SVG showed `bealach_north_approach` as the Hearthwick→Thorngate corridor; the code had a direct Hearthwick→Thorngate teleport AND routed North Approach to a Droichead dead-end. Player teleported without ever entering "ambush country." Fixed: Hearthwick north gate → `bealach_north_approach`. Thorngate south gate → `bealach_north_approach`. North Approach gets two gates (south to Hearthwick, north to Thorngate). Droichead loses its erroneous gate to North Approach. Center-marker text updated from "Between Droichead and the Thorngate" to "Between Hearthwick and the Thorngate" so the in-zone banner agrees with map and lore. **(4) DAWN/DUSK EASING:** `_nightFactor()` linear ramps over hours 5-7 and 17-19 felt like the world flipped a switch at the boundary. Replaced with smoothstep (3t² − 2t³) at both ramps; transitions ease in and out, reading like an actual sunrise/sunset rather than a uniform-rate fade. **(5) WORLD MAP SVG FULLY REDRAWN:** the previous organic-style SVG (curved Bézier roads, region polygons, scenic Cinzel typography) had become unmaintainable — coordinates didn't snap to nodes, region polygons collided with edges, and the artistic direction was making it hard to debug map-vs-code mismatches. Replaced with a clean orthogonal grid layout. 14×11 cell layout (130px columns × 100px rows, origin (60, 60)). 21 nodes positioned on grid intersections; 22 edges as right-angle dashed paths anchored to node borders. Two node shapes: rounded rectangle (villages/outposts) and hexagon (fortress towns: Mur Pierre, Ironhaven, Carraig Mór, Coeur de Vie). Color encodes region — gold for royale, slate-purple for foothills, green for bealach, ochre for wastes, red for ashen, slate-blue for coastal. Edge labels dropped entirely — paths are named in the in-zone banner on entry, the map shows pure connectivity. The old `Mountain Approach` orphan node (no zone in code) removed. Three old "Wastes Path" SVG edges collapsed into two (`The Wastes Path — West` for the Cill Beag → Hermit's Camp drop; `The Wastes Path — East` for Hermit's → Caer Uaigneach; new `The Wastes Path — Dunmore` L-shape draws Caer's long northward exit around Portclare to Dunmore — the longest single edge on the map, narratively right since the Wastes are "deliberately vast"). New `The Ironhaven — Portclare` shortcut edge (eastern direct road from Ironhaven down to the Gilded Coast) added, replacing the previous implicit-only routing. All `data-*` attributes on nodes preserved verbatim from the old SVG so the discovery / fast-travel / tooltip / fog-of-war systems keep working with no changes. `WM_COORDS` regenerated to match the new grid. The `wm-cur-ring` / `wm-cur-dot` initial position pinned to the new Ashenmoor coordinates `(320, 560)`. ViewBox grew from 1100×720 to 1075×775. **(6) LOAD-TIME LINT SCRIPT:** new `wmLintMapVsCode()` runs once at first map open, walks every SVG `.node[data-name]` and verifies (a) it has an entry in `WM_NODE_TO_ZONE`, (b) the referenced zone exists in either `ZONE_REGISTRY` (placeholder) or `ZONES` (built), (c) it has a `WM_COORDS` entry. Reverse-checks every `WM_NODE_TO_ZONE` and `WM_COORDS` key against the SVG. Console-only output (never user-facing) — clean run logs `[wmLint] Map↔code consistency check passed (N nodes audited)`; mismatches log `console.warn` with a per-issue bullet. Locks the gate against future drift — if a map edit references a deleted zone, or a code refactor renames a zone, the next page load surfaces the issue immediately. Parse-clean, brace-balanced (5169 each), template-literal-balanced (952 backticks even). All four structural changes parse-checked individually before SVG swap; full file parse-checked again post-redraw and post-lint-script. ~600 lines net code (most in the new SVG markup). |
+| **v61ec** | Session 31 | **Gate-as-data system: map is a function of the gate config.** v61eb's hand-drawn SVG drifted out of sync with code gates within the same session it shipped — the structural problem was that the map and the code were two parallel descriptions of geography with no enforcement that they agree. v61ec resolves this at the architecture level: the world map is now RENDERED at init time from `MAP_LAYOUT` + a derived gate graph. The SVG cannot disagree with the gates because it is a pure function of them. **(1) GATE GRAPH BUILDER:** `_buildGateGraph()` walks every zone's gate array (placeholder zones via ZONES, hand-built configs via ASHENMOOR_CONFIG/HEARTHWICK_CONFIG/IRONHAVEN_CONFIG), determines each gate's wall (N/S/E/W) from its (x,z) and the zone's size using a 15% inset margin, and resolves wilderness-corridor targets to their final settlement endpoint. Returns `{zone_id → {N,S,E,W} → {to, lock, viaZone}}`. **(2) RESOLVER:** `_resolveGateDestination()` follows wilderness corridors through to their settlement endpoints — gates pointing at `bealach_central` resolve to whichever settlement is at the other end. Treats anything in MAP_LAYOUT as terminal (covers the Ashfeld, which is `kind:'wilderness'` but a real map node). Treats `village`/`town`/`settlement`/`fastTravel:true` as terminal. Only continues through pure-wilderness corridors. **(3) MAP_LAYOUT TABLE:** locked grid positions for every map node, plus shape (rect/hex) and region. 21 entries; adding a new settlement zone requires one entry here plus the existing gate config — the map updates automatically. Vertical layout flipped from v61eb to align with Ironhaven's compass-north fortress orientation: Ironhaven sits directly south of La Grise (its game-N gate maps to map-N), and La Porte Grise sits south of Ironhaven (matching the in-game 3D where the Deepwood is south of the Ironhaven outer wall). This is the inverse of an intuitive top-down layout but it preserves wall agreement between the map and the game. ViewBox grew from 1075×775 to 1200×875 to accommodate the additional row. **(4) RENDERER:** `renderWorldMapSVG()` builds the SVG from MAP_LAYOUT + the gate graph. Nodes drawn at their grid cell with region-colored fills/strokes. Edges drawn between matching wall pairs — Hearthwick's E points at Droichead's W, the renderer draws a right-angle dashed line between them. Lock glyphs render at edge midpoints for commission-locked gates. Tide-locked gates (Inis Rua causeway) render with water-blue dashed style instead of road-gold. All `data-*` attributes (data-name, data-type, data-act, data-desc, data-fasttravel, data-pois, data-dungeons) preserved on every node so the discovery / fast-travel / tooltip systems keep working unchanged. **(5) DERIVED LOOKUPS:** `WM_COORDS` and `WM_NODE_TO_ZONE` are now `_buildWMCoordsFromLayout()` and `_buildNodeToZoneFromLayout()` calls — they cannot drift from MAP_LAYOUT because they are pure functions of it. Old hand-maintained 50-line tables retired. **(6) GATE REALIGNMENTS:** with the geography now sourced from MAP_LAYOUT, several zones had their gates moved to align: **Hearthwick** loses its N gate (no more Hearthwick→Thorngate direct route — the canonical path is now Hearthwick→Droichead→Thorngate per the locked geography), gains a W gate to West Track. **Ashenmoor** loses its W gate to West Track (moved to Hearthwick) — Ashenmoor now has only N (Hearthwick) and S (Ashfeld), matching the map. Both ASHENMOOR_CONFIG and ASHENMOOR_BURNED_CONFIG updated in lockstep. **West Track** retargets its east endpoint from `overworld` to `hearthwick` (the lore "fishermen bring catch inland" makes more sense terminating at Hearthwick's inn anyway). **Droichead** gains a N gate to bealach_north_approach (Droichead→Thorngate corridor). **bealach_north_approach** corridor connects Droichead↔Thorngate (revert of v61eb's Hearthwick↔Thorngate routing, which was a misfix). **The Wastes** untangled: each corridor now connects exactly two endpoints (`wastes_west` does Bealach Central↔Hermit's Camp, `wastes_east` does Caer Uaigneach↔Dunmore), and the inter-Wastes connections (Cill Beag↔Hermit, Hermit↔Caer) are direct settlement-to-settlement gates rather than corridors. Cill Beag gains a south gate to Hermit's Camp. Hermit's Camp gains gates to Cill Beag (N), Caer Uaigneach (E), and wastes_west (W). Caer Uaigneach gains gates to Hermit's Camp (W) and wastes_east (N). **(7) IMPROVED LINT:** `wmLintMapVsCode()` now also checks (a) every MAP_LAYOUT entry has a corresponding ZONE_REGISTRY/hand-built zone, (b) every map node has MAP_NODE_META for tooltips, (c) every map-node-to-map-node gate has a return gate (one-way path detection). Logs to console — `[wmLint] Map↔code consistency check passed (21 nodes audited)` on clean. **VERIFICATION:** smoke-tested in pure Python against extracted live data. Result: 21 map-node edges resolve correctly, all paths bidirectional, all critical Act I+II destinations reachable from Ashenmoor (Ironhaven via Hearthwick→Droichead→Thorngate→La Porte Grise; Caer Uaigneach via Cill Beag→Hermit's Camp; Coeur de Vie via the eastern Royale spine; Mur Pierre via Ironhaven→La Grise→Colmán's Rest). **OPEN DESIGN CALL flagged in code as TODO:** Bealach Central remains commission-locked; under the new geography this means the player can't reach Ironhaven pre-Q7 (since Q7 turn-in is at Aldwyn IN Ironhaven — circular). Three resolution options documented inline in HEARTHWICK_CONFIG: drop the lock, move it to Droichead→Thorngate, or move it to Cill Beag's east path. Lock left in place pending design decision. Parse-clean, brace-balanced (5355/5355), template-literal-balanced (1016 backticks). ~700 lines net code (most in the new gate-system + renderer); ~150 lines retired (hand-maintained WM_COORDS, WM_NODE_TO_ZONE, WM_SVG_MARKUP). |
+| **v61ed** | Session 31 | **World map viewport fixes (post-v61ec gate-as-data ship).** Three small but blocking issues surfaced when the v61ec build first opened in browser. **(1) FOG MASK SIZED FOR OLD VIEWBOX.** `wmApplyFog()` had hardcoded the mask rectangle dimensions to `1100 × 720` — the pre-v61ec viewBox. The new layout is `1200 × 875`, leaving the right ~100px and bottom ~155px of the map permanently unfogged-and-unrenderable (or rather, fogged but with the mask not extending that far so they were just visible-with-no-reveal). Fixed by reading `viewBox` attribute from the rendered SVG at fog-build time, sized accordingly. **(2) FOG REVEAL RADIUS TOO SMALL.** Reveal radius was hardcoded `r=125`, sized for the old map's tighter spacing. With the new 130px column / 100px row grid, an active node's fog reveal didn't reach the immediately-adjacent grid cell — the player at Ashenmoor couldn't see Hearthwick directly to the north. Bumped to 165 so adjacent nodes are visible from a discovered location. **(3) RESET-VIEW CENTERED ON OLD COORDS.** `wmResetView()` panned to hardcoded `(280, 420)` — the old map's Ashenmoor area. On the new layout that's empty space (Ashenmoor moved to `(450, 660)`). Fresh-game players landed on a black void with the actual map content visible only in the lower-right. Replaced with `WM_COORDS[currentNodeName]` lookup so reset always centers on the player's current zone. Three coordinate fixes; the gate-system and rendering architecture from v61ec are unchanged. |
+| **v61ee** | Session 31 | **Bogus ZONE_REGISTRY reference fixed; gate graph now reads from ZONE_BUILDERS; commission lock moved per design call.** v61ec shipped with three real bugs that surfaced on first browser playtest. **(1) ZONE_REGISTRY DOESN'T EXIST.** The lint and the gate-resolver both checked `ZONE_REGISTRY[zid]` — a variable that was never defined as a global anywhere in the codebase. Short-circuit evaluation in the resolver (`MAP_NODES[direct] || ZONE_REGISTRY[direct]`) hid the bug because `MAP_NODES` always contained the map-node lookups, but the `||` fallback would have ReferenceError'd if anything ever fell through. The lint loop just no-op-checked everything and silently passed all entries through. Replaced both references with the actual registry: `MAP_NODES` (the line-5423 metadata table) is the canonical source for zone metadata; `ZONE_BUILDERS` is the runtime registry of placeholder zones (populated by `registerPlaceholderZone` for every `kind:'village'/'town'/'wilderness'` zone). **(2) GATE GRAPH READ FROM `ZONES` (BUILT SCENES) INSTEAD OF `ZONE_BUILDERS` (REGISTRATIONS).** `_buildGateGraph()` iterated `Object.keys(ZONES)` — but ZONES only has entries for zones that have been BUILT (entered in 3D). On a fresh game only `overworld` is built, so the graph saw 1 zone instead of 38 and the rendered map was empty of edges (only the four hand-built zones registered any wall connections). Fixed by reading from `ZONE_BUILDERS` instead, which is populated for every placeholder zone the moment its `registerPlaceholderZone()` call runs. Also extended `ZONE_BUILDERS[id]` to carry `gates`, `size`, and `kind` (was only carrying `builder`, `sceneGet`, `displayName`, `musicTrack`). **(3) BEALACH_SOUTH_CONFIG AND DEEPWOOD_CONFIG MISSING FROM HAND-BUILT-CONFIG INTAKE.** The gate graph special-cased ASHENMOOR_CONFIG, HEARTHWICK_CONFIG, IRONHAVEN_CONFIG — but `bealach_south` and `forest` (the Deepwood) are ALSO hand-built configs (BEALACH_SOUTH_CONFIG, DEEPWOOD_CONFIG), not registerPlaceholderZone calls. Without their gates in the graph, the resolver couldn't follow `overworld→bealach_south→hearthwick` or `thorngate→forest→la_porte_grise` — both critical Act I corridors — and the entire northern map was orphaned from Ashenmoor. Added both configs to the intake. **(4) COMMISSION LOCK MOVED.** Per Session 31 design call from Michael: West Track is the gated zone (Act II coastal arc — Salthaven, Carraig Mór, Inis Rua); Bealach Central is the Act I main path (Hearthwick→Droichead→Thorngate→Ironhaven, with Q7 turn-in at Aldwyn IN Ironhaven — needs to be reachable pre-commission). Hearthwick's W gate (`west_track`) now `guard:'commission'`; E gate (`bealach_central`) now unguarded. Resolves the chicken-and-egg circular dependency the v61ec TODO had flagged. Smoke-tested in pure Python against extracted live data: 21 map edges, all paths bidirectional, Act I path overworld→ironhaven traces correctly through Hearthwick→Droichead→Thorngate→La Porte Grise→Ironhaven, pre-Q7 player can reach Ironhaven (correct) but not Salthaven (correctly gated by West Track lock). |
+| **v61ef** | Session 31 | **Ashfeld→Redwater Ford direction corrected: south wall → east wall.** Per locked grid map (MAP_LAYOUT positions), Ashfeld at `(col 3, row 7)` and Redwater Ford at `(col 4, row 7)` are on the same row — the connection should be horizontal east-west, not vertical north-south. The code's gate placement had Ashfeld's gate to Redwater on its south wall (`z=77`) and Redwater's return gate on its north wall (`z=3`), so both the in-game 3D player-direction AND the rendered map edge drew north-south, contradicting the map intent. Moved Ashfeld gate to its east wall (`x=77`); moved Redwater Ford return gate to its west wall (`x=3`). The gate-as-data system reads the wall and renders the edge accordingly — both views now agree. **OPEN: 4 layout collisions identified by audit but NOT fixed in this ship**, deferred to focused next-session pass: (a) `thorngate→la_porte_grise` vertical line passes through Portclare (all in col 7, Portclare between them in row); (b) `vieux_marche→ironhaven` horizontal passes through La Porte Grise; (c) `caer_uaigneach→dunmore` L-shape vertical leg passes through Coeur de Vie at col 8; (d) `caer_uaigneach→dunmore` line visually crosses Cill Beag area in the rendered SVG. These are layout problems (MAP_LAYOUT positions cluster in too many same-column / same-row groupings) not architectural ones. The gate-as-data system is rendering correctly given the data. Fixing requires either a `MAP_EDGE_OVERRIDES` table for waypoint control on long routes, or a careful re-pass on MAP_LAYOUT positions to spread out clustered nodes. Tried a candidate fix in scratch and it cascaded into new collisions — held back from rushing it. |
+| **v61eg** | Session 32 | **`MAP_EDGE_OVERRIDES` waypoint table — all map edge collisions resolved.** Implements the "right architectural answer" called out in the v61ef ship note. Three deliverables. **(1) NEW TABLE `MAP_EDGE_OVERRIDES`** (line ~22041, between MAP_NODE_META and MAP_REGION_STYLE). Keyed by sorted-pair edge IDs (`${a}__${b}` with `a < b` alphabetically); value is an ordered list of `{x,y}` SVG-coordinate waypoints. Renderer threads `M src L wp1 L wp2 ... L dst` instead of its default same-axis straight or L-shape midpoint when an entry exists for that edge. The renderer auto-reverses waypoints when the actual edge runs in the non-sorted direction so the override stays direction-agnostic. **(2) RENDERER PATCH** (`renderWorldMapSVG()` line ~22176). New override branch added at the top of the path-composition cascade; existing same-axis straight and L-shape logic remain untouched as the no-override fallback. **Lock-glyph midpoint math also extended** to handle overridden edges — for an overridden commission-locked edge, the glyph now lands on the longest waypoint segment's midpoint instead of floating between the original anchors (no overridden edge currently carries a commission lock, but the math is in place for future content). **(3) FOUR OVERRIDE ENTRIES SHIPPED**, resolving every audited collision: (a) `la_porte_grise__thorngate` threads the gap at x=900 between vieux_marche (x_max=885) and portclare (x_min=925) — tightest possible bow, reads as a small road jog; (b) `ironhaven__vieux_marche` forces the clean L from the ironhaven side `(1015,160) → (795,160) → (795,260)` regardless of which iteration order the renderer happens to pick (this collision was orientation-dependent; one of the two L-shape orientations was already clean, the override locks in the clean one); (c) `caer_uaigneach__dunmore` bows east of Coeur de Vie at x=1180 then west across to dunmore — reads narratively as "the Wastes path goes around the capital from the east," geographically correct since the Wastes spoke is canonically vast and approaches Dunmore from the eastern flank; (d) `ironhaven__portclare` (the v61eb shortcut edge — newly identified in this session's geometry audit, not on the v61ef list) threads the gap at x=1040 between la_porte_grise (x_max=1015) and coeur_de_vie (x_min=1055) — bows toward the coast, reads as the eastern shortcut from Ironhaven to Portclare. **End-to-end audit:** all 22 map edges rendered against all 21 nodes, 0 collisions remaining (was 4 audited + 1 newly-found = 5 pre-fix). Parse-clean (5390/5390 braces, 1028 backticks). ~50 lines net. **Pre-Q7 Wastes back-door route to Coeur de Vie design call resolved as option (A) — accept as canon.** No code change for the design call itself; the Wastes route remains unguarded and serves as the "brave/scenic" alternative to the commission-locked Royale spine. The route's length, the Hermit's Camp/Caer Uaigneach atmospheric load, and Caer's `danger:true` flag in MAP_NODE_META provide the soft cost. Q7 quest gating (Aldwyn's pre-burn dialog state) remains the hard gate against actual progression skips. Resolved-question entry added to lore_canon. **POSTMORTEM (added Session 33):** the "0 collisions remaining" claim was based on a hand-coded audit script that did not match the live renderer's actual gate graph. When opened in browser the map was missing most edges — Royale cluster floating, Hearthwick→Ashenmoor invisible, three of the four MAP_EDGE_OVERRIDES entries were addressing collisions in edges that the live graph wasn't even drawing. Session 32 also burned ~40 minutes on speculative layout proposals before Michael provided the SVG spec. The override table itself is good infrastructure (used as designed in v61eh's verification path), but the four shipped entries were premature. Lessons: (a) verify gate graph against the live JS, not against a sketch of it; (b) ask for the target image before proposing layouts. |
+| **v61eh** | Session 33 | **World map rebuilt to match the locked SVG spec — layout, gates, viewBox.** This is the corrective ship for v61eg's broken state. Three coordinated deliverables, each verified by simulating the live `_buildGateGraph` in Python against the edited file before shipping (the Session 32 lesson, applied). **(1) MAP_LAYOUT REPLACED** with the spec-matching grid (dungeon_world_map_v2_grid_layout.svg). All 21 zones repositioned: Foothills row across cols 4–6 row 0; Royale cluster (La Porte Grise / Vieux Marché / Ironhaven) across row 1; the Royale south spine (Dunmore / Portclare / Coeur de Vie) across row 2; Thorngate alone in row 3; the Bealach + Coastal row at row 4 (Salthaven, Hearthwick, Droichead, Cill Beag); the mid-south Wastes/Coastal row at row 5 (Carraig Mór, Ashenmoor, Hermit's Camp, Caer Uaigneach); and the south row at row 6 (Inis Rua, Ashfeld, Redwater Ford). Verified each (col, row) lands on the spec SVG's exact node center when fed through the existing renderer formula (COL_W=130, ROW_H=100, ORIGIN_X=60, ORIGIN_Y=60) — bit-for-bit positional parity with the spec. **(2) FIVE EDGE FLIPS** in the underlying gate configs to make the live graph match the spec's 22 edges exactly. ADDED: `caer_uaigneach ↔ portclare` (via repurposed `wastes_east` corridor — old Caer↔Dunmore path retired, narrative load preserved); `ironhaven ↔ portclare` direct (commission-locked, royal network); `la_porte_grise ↔ vieux_marche` direct. REMOVED: `caer_uaigneach ↔ dunmore`; `ironhaven ↔ la_porte_grise`. Plus six wall relocations to keep map directions agreeing with the new geography: Ironhaven's gates restructured (N→northern_road, S→portclare, W→la_route_royale_west; was N→la_porte_grise, S→northern_road, E→la_route_royale_west); La Porte Grise dropped its N gate, added E→vieux_marche; Vieux Marché flipped W→ironhaven to E→ironhaven, added W→la_porte_grise; Dunmore dropped its S gate (wastes_east, no longer Caer-bound); Portclare gained N→ironhaven and S→wastes_east, moved capital_road from N to E; Coeur de Vie flipped its lone gate from S to W. Spawn coordinates updated for every wall-relocated gate's corridor return-target. The architectural pattern (gates-as-data, map derived from gate graph) is unchanged — only the data moved. **(3) VIEWBOX SHRUNK** from 1200×875 to 1075×775 to match the spec. Inner ornamental border rect resized to fit (5,5)→(VBOX_W-10, VBOX_H-60). The fog mask, reveal radius, and reset-view code already read viewBox dynamically (post-v61ed) so they adjust automatically. **(4) MAP_EDGE_OVERRIDES EMPTIED** — all four v61eg entries deleted. Under the spec-matched grid the audit shows zero collisions: every edge is either same-row, same-col, or a clean L-shape through an empty grid cell. Infrastructure preserved (the table + renderer branch) for any future content that needs waypoint control. **(5) MAP_EDGES (legacy fast-travel BFS table) UPDATED** to reflect the new Act I routing — la_porte_grise→ironhaven retired, replaced with la_porte_grise→vieux_marche→la_route_royale_west→ironhaven chain. Old direct edges marked `live:false` rather than deleted (preserving graph history). Without this Q3's quest-marker compass would have routed players at the wrong gate. **End-to-end verification:** Python sim of `_buildGateGraph` against the edited file produced exactly 22 edges, exact spec match, all four commission locks preserved (Hearthwick↔Salthaven via west_track; Ironhaven↔La Grise via northern_road; Ironhaven↔Vieux Marché via la_route_royale_west; Ironhaven↔Portclare direct), tide lock preserved (Carraig Mór↔Inis Rua), zero unexpected locks, zero visual collisions across all 22 edges. Parse-clean (5836/5836 braces, 1028 backticks). Net diff vs v61eg: ~80 lines changed across MAP_LAYOUT, MAP_EDGES, MAP_EDGE_OVERRIDES, IRONHAVEN_CONFIG, la_porte_grise/vieux_marche/dunmore/portclare/coeur_de_vie/caer_uaigneach/wastes_east placeholder zones, plus la_route_royale_west, northern_road, capital_road corridor spawn updates. Wastes back-door route narrative preserved with new terminus: Cill Beag → Hermit's Camp → Caer Uaigneach → wastes_east → Portclare → coastal_road → Coeur de Vie. The architectural decision logged as canon last session stands; only the eastern exit-point of the Wastes shifted from Dunmore to Portclare. |
+| **v61ei** | Session 33 | **Two playtest fixes from v61eh: lock glyphs not displaying, and Ironhaven fast-travel spawning into outer-ring forest.** v61eh shipped clean per the live-graph sim, but two bugs surfaced on first browser playtest. **(1) COMMISSION LOCK GLYPHS INVISIBLE.** `wmRefreshLockedEdges` had three problems compounding. (a) The hand-maintained `WM_LOCKED_EDGES` Set used pretty road-label names (`'The West Track'`, `'An Bealach Mór — Central'`, etc.) but the renderer emits `data-name="${zid}__${gate.to}"` (e.g., `'ironhaven__la_grise'`) — so the Set never matched any edge, the `.wm-edge-locked` class was never added, and no edge ever got "locked" styling. (b) The function tried to draw replacement glyphs by querying `el.querySelector('line.eline')` — but the renderer emits `<path class="eline">`, not `<line>`, so the glyph-add path always returned early. (c) The function's first action was `el.querySelector('.wm-lock-icon').remove()` — which DID find and remove the renderer's static lock glyphs (emitted at render time at line 22288), without ever adding replacements. Net effect: the renderer correctly drew lock glyphs at init, then `wmRefreshLockedEdges` stripped them all on the next refresh, leaving every commission-gated edge looking unlocked. Plus (d) the v61ei `ironhaven↔portclare` commission edge was new and would have needed adding to WM_LOCKED_EDGES anyway. **Fix:** retired WM_LOCKED_EDGES entirely. The renderer already emits `data-lock="commission"` on locked edges from the gate graph itself (single source of truth). New `wmRefreshLockedEdges` queries `[data-lock="commission"]`, toggles `.wm-edge-locked` based on `worldState.commissioned`, and only strips the renderer's static glyph AFTER commission has been earned (using `el.nextElementSibling` since the renderer emits the lock glyph as the edge's next sibling in DOM order). Idempotent, no new state, no separate list to keep in sync — same architectural pattern as the v61ec gate-as-data ship. Side effect: the v61ee commission move (off bealach_central onto west_track) and the v61ei new ironhaven↔portclare lock both now display correctly without any further change. **(2) FAST-TRAVEL TO IRONHAVEN SPAWNED INTO OUTER-RING FOREST.** The `northern_road → ironhaven` return spawn was set to `(spawnX:100, spawnZ:12)` — z=12 is at the very northern edge of Ironhaven's 200-unit zone, in the outer-ring forest (Ironhaven's `forestR:58` puts dense trees from the perimeter to ~42 units from the fortress wall at z=67). The gate's `_nearApproach` function (line 10484) explicitly excludes trees from the `Math.abs(x-100)<10 && z<69` corridor, but z=12 was so close to the perimeter hedge that the camera framed awkwardly close to nearby trees on first frame. Same problem on the new W gate spawn (`spawnX:10, spawnZ:100`) and the new arrival in Portclare from Ironhaven's S gate (`spawnX:90, spawnZ:12` in Portclare). **Fix:** bumped all three Ironhaven-area incoming spawns from coordinate ~10 to coordinate ~50, putting the player solidly inside the gate approach corridor with the fortress wall visible ahead. NOT fixed in this ship: the same pattern likely affects every other town's perimeter spawns (Mur Pierre, Dunmore, Portclare's other approaches) — left as known-issue/future-work since none have been playtested yet and conservative scope is preferred. **No graph changes** — Python sim confirms the same 22 edges with exact spec match and all 4 commission locks preserved. Parse-clean. ~50 lines net across `wmRefreshLockedEdges`, `WM_LOCKED_EDGES` deletion, three Ironhaven incoming-spawn updates. |
+| **v61ej** | Session 33 | **Spawn yaw fixed: arriving player now faces town center instead of away.** v61ei moved the Ironhaven incoming spawns away from the perimeter (good) but the playtest found the player still oriented backwards on arrival via Portclare's N gate — landed at z=190 facing south (further toward the perimeter), not facing the fortress at z=100. **Root cause:** the yaw convention in this codebase (line 3335: `yaw=0 → -Z (North), yaw=π → +Z (South)`) is the OPPOSITE of what an intuitive read suggests. Two spawn entries had this wrong. (1) `Portclare's N gate → ironhaven` had `spawnYaw:Math.PI` at `(100, 190)` — facing +Z when it should have been facing -Z toward the town center at z=100. Fixed: spawnZ:190→150 (matches v61ei's "step ~17 units inside the wall" pattern) and spawnYaw:Math.PI→0. (2) `Ironhaven's S gate → portclare` had `spawnYaw:0` at `(90, 50)` in Portclare — facing -Z (north, back toward Ironhaven) when it should have been facing +Z toward Portclare's fortress at z=90. Fixed: spawnYaw:0→Math.PI. (Bonus: my v61ei comment claimed "Yaw 0 = facing south, toward the harbor" — flat wrong, corrected in this ship.) **Verified the other Ironhaven incoming spawns by hand against the convention:** northern_road S→ironhaven `(100, 50, yaw=Math.PI)` ✓ (player south of fortress center, faces +Z south); la_route_royale_west W→ironhaven `(50, 100, yaw=Math.PI/2)` ✓ (player west of fortress center, faces +X east). Both already correct from v61ei. **No graph changes**, no architectural changes — two field updates and a comment correction. Parse-clean. The convention is non-obvious enough that future spawn edits should refer to line 3335's comment explicitly: `0=N (-Z), π=S (+Z), π/2=E (+X), -π/2=W (-X)`. |
+| **v61ek** | Session 34 | **Gate-graph cleanup: lock symmetry back-prop + wastes_west deprecated + Portclare yaw.** Four edits across three findings from playtest. **(1) LOCK BACK-PROPAGATION IN `_buildGateGraph`** — new pass after the side-keyed graph is built. Walks every `(zid, side, gate)` with a `lock`; finds the destination's reciprocal side (the side whose `to` points back at `zid`); copies our lock onto it if that side has no lock of its own. Idempotent. Asymmetric guard tagging is no longer a silent bug. Root cause this fixes: 3 of 4 commission-locked Q7 boundary edges were declared on only one side (Hearthwick.W only, Ironhaven.N/W only — Salthaven, La Grise, Vieux Marché had no reciprocal `guard:'commission'` on their facing gate). The renderer's first-touch-wins de-dup (drawnEdges Set keyed on sorted pair) meant the un-locked side won iteration order and the edge got drawn with no `data-lock` attribute. Player saw three of four locked edges as unlocked on the pause-menu map. Architecturally consistent with v61ec's "gate config is the single source of truth" — be lenient with input data, produce correct output. **(2) `wastes_west` DEPRECATED** — the corridor between bealach_central.S and hermit_camp.W was a vestigial pre-spec route hook from v61eb, orphaned at both ends after v61ec restructured the Wastes into direct settlement-to-settlement gates. Per playtest: bealach_central had 3 gates (W, E, S) where it should have had 2; Hermit's Camp had 3 gates (N, E, W) where it should have had 2. Deleted both. The post-v61eh canonical Wastes back-door route is Cill Beag → Hermit's Camp → Caer Uaigneach → wastes_east → Portclare; wastes_west was never on that path. Zone left registered as harmless dead code (the save migration shim at line ~17957 remaps `hollowed_wastes` → `wastes_west`, so deleting the zone would force another migration). 0 inbound gates to wastes_west post-ship (verified). **(3) Portclare S → wastes_east SPAWN YAW FIX** — was `spawnYaw:Math.PI/2` (faces +X / east, toward Portclare's exit), should have been `-Math.PI/2` (faces -X / west, down the path toward Caer Uaigneach). Same yaw-convention slip as v61ej Portclare.N — this is a recurring failure mode worth flagging. **End-to-end verification:** Python sim of `_buildGateGraph` against the patched file confirmed all 4 commission-locked edges show `data-lock="commission"` from both sides; bealach_central + hermit_camp gate counts both reduced to 2; tide-lock symmetry idempotent for Carraig Mór ↔ Inis Rua (was already symmetric); 0 inbound gates to wastes_west. Parse-clean (5837/5837 braces, 1034 backticks). Net diff vs v61ej: +2/+2 braces (new for-loops in the back-prop pass), +6 backticks (comments). Browser playtest confirmed all four findings resolved. |
+| **v61el** | Session 34 | **Lock topology corrected: zone-isolation rule, three reveals at progression beats.** v61ek surfaced the truth that pre-v61ek had been hiding behind the asymmetry bug — all three Ironhaven approaches were marked commission-locked on the map post-v61eh, including the canonical Q3 path through Vieux Marché. Player report: "the map shows Ironhaven on total lockdown" — but Ironhaven is the Act I hub where Q3-Q6 turn-ins happen and where Q7 itself is granted. **Design call from Michael:** "Locked routes should be locked on both sides. A road with a lock on it should mean that a player cannot enter that wilderness zone from ANY area. The zone is entirely locked. Anything attached to it & anything further downstream is therefore locked as well." Three locks total, three reveals: (a) **west_track** unlocks the **coastal arc** (Salthaven, Carraig Mór, Inis Rua) at Q7; (b) **northern_road** unlocks the **mountain region** (La Grise, Colmán's Rest, Mur Pierre) at Q7; (c) **capital_road** unlocks **Coeur de Vie** at Act III (currently bound to the same `worldState.commissioned` flag as the Q7 unlocks; comment notes this as the natural hookup point when the Act III gating beat lands). Five edits: (1) IRONHAVEN_CONFIG.S → portclare lost `guard:'commission'`; (2) IRONHAVEN_CONFIG.W → la_route_royale_west lost `guard:'commission'`; (3) PORTCLARE.N → ironhaven lost `guard:'commission'` (was the v61ek symmetric tag); (4) PORTCLARE.E → capital_road gained `guard:'commission'`; (5) Both gates of `west_track`, `northern_road`, and `capital_road` tagged `guard:'commission'` for full zone isolation belt-and-suspenders (the corridor's own gates are the receiving side; if a save somehow loads inside a locked corridor, the player is correctly trapped rather than free to walk into the otherwise-protected Tier 1 zone). **End-to-end verification:** Python BFS sim against the patched file confirms — pre-Q7: 23 zones reachable (Ironhaven, full Royale spine, Wastes back-door route all walkable; Aldwyn reachable; Q3-Q6 unbroken); pre-Q7: 7 zones gated (coastal 3 + mountain 3 + capital 1); post-Q7: all 36 zones reachable. Per-zone guard verification: Ironhaven has 1 commission gate (N only), Portclare has 1 (E only), la_route_royale_west has 0 (correctly NOT a locked corridor). Parse-clean (5837/5837 braces, 1038 backticks). Browser playtest confirmed clean. **Open follow-up:** `COMMISSION_LOCK_COPY` table has bespoke flavor for west_track / bealach_central / northern_road / la_route_royale_west, but `capital_road` falls back to the generic prompt ("The road to The Capital Road is closed. Royal commission required."). Bespoke copy + potential separate `guard` value (if Act III unlocks on a different flag than Q7's commission) deferred to whenever Act III gating actually lands. |
+| **v61em** | Session 35 | **Salthaven fully built out + reusable coastal village infrastructure.** Five buildings, four voiced shopkeepers, one examinable shrine, bespoke harbor detailFn, reusable `genericVillageDecorate`, and four pieces of generic infrastructure that benefit every future coastal village (settlement biome support, directional terrain slope, perimeter-tree open-side suppression, coastal skyRing variant). Shipped across three iterations in one session. **ITERATION 1 — first ship.** Five buildings on size-60 zone, full dialog, full detailFn. Surfaced a hidden bug in `registerPlaceholderZone`: spec.decorateFn and spec.detailFn were silently dropped at registration, so no placeholder village had ever been able to declare its own decorator or detailFn (Thorngate/La Porte Grise didn't need them, so the gap had hidden). 2-line fix unlocked the entire feature. **ITERATION 2 — coastal identity pass.** Even with wiring fixed, village read forest-y. Four additions to buildVillage: (a) `cfg.biome` honors `BIOME_PROFILES` for ground texture (salt-bleached pale instead of forest-green); (b) `cfg.terrainSlope:{dir, amount}` adds linear ramp on top of radial modulation; (c) `cfg.openSide` suppresses perimeter hedges + perimeter trees + interior trees on the named half; (d) skyRing painter now branches on `cfg.biome === 'coast'` to render sea horizon (gradient + low cliffs + seabirds) instead of mountain triangles. Plus size 60→80, villageR 24→32 to encompass building footprints, all positions repositioned. **ITERATION 3 — harbor geography flip.** Playtest revealed water mesh was on the east side, but Salthaven canon places the Windward Sea to the WEST, and the East gate goes to Hearthwick (which is east of Salthaven on the world map). Surgical mirror: `terrainSlope:dir 'E'→'W'`, `openSide 'E'→'W'`, `centerX 35→45`, all 4 building x's mirrored, building faces W→E (3 shops; Inn stays S), all 4 NPC x's mirrored, water mesh x:80→x:0, dock + pilings + mooring + rowboat + drying racks + shrine all mirrored, both interact-handler shrine coords updated, notice board copy "dock east end"→"dock seaward end". **REUSABLE FOUR-PART INFRASTRUCTURE** lands in this ship: the four buildVillage additions (biome / terrainSlope / openSide / coastal skyRing) work for any future coastal village by adding the relevant fields to the spec. Carraig Mór and the rest of the coastal arc inherit this for free. **GATE/SPAWN FIXES** — same v61ej/v61ek yaw-convention slip recurred: salthaven east-gate spawnYaw, west_track west-gate spawnYaw both fixed. Both gate spawn coords updated for the size-80 zone. Hearthwick-side west_track yaw left for the broader audit. **DIALOG/CANON** — Salthaven section in lore_canon.md (4 NPC profiles, register positioning vs Carraig Mór, the seeded Aelflin/Áine connection, three-corners religious geography canonized). Full verbatim dialog block in quest_writing.md. **GENERIC DECORATOR** — hanging shop sign + windows on all four walls + type-keyed exterior props (weapon = anvil + barrel; armor = spear rack; potion = herb bunches; misc/harbor_supplies = crate stack; inn = bench + cider barrel; harbor_office = weather-pole + wind-vane + rope coil). Door-face aware. Ashenmoor's hand-tuned decorateFn left untouched. **PLAYTEST FOLLOW-UPS** logged for next session: signposts (3 failure modes — floating, oriented wrong, no actual signage rendered), motionless NPCs, beached rowboat hollow when viewed from inside (Sphere geometry single-sided), dock-as-walkable-platform pending player-physics audit. **No graph changes.** Parse-clean. |
+| **v61en** | Session 36 | **Salthaven sign system pass — Y-positioning, rotation, icon meshes, plus rowboat + yaw fixes.** Closes three of v61em's playtest follow-ups in one ship. **(1) SIGN Y-POSITIONING:** `genericVillageDecorate` and `ASHENMOOR_CONFIG.decorateFn` shared identical sign code with the same buried bug — post/arm/board Y values were hardcoded literals (`.95`/`1.72`/`1.48`), no terrain sampling. On Salthaven's `terrainSlope:{dir:'W', amount:4.0}` slope, signs floated above the seaward side and dug into the landward side. Fixed by adding a `sty = getY(spx, spz)` sample at the sign's actual world location and offsetting all sign Y values from there. Ashenmoor unaffected (flat terrain at all building corners) but consistency-fixed. **(2) BOARD ROTATION TABLE:** initially I "fixed" `boardRots` by inverting it, reasoning the sign should face the player approaching the door. Wrong — the convention is **tavern-bracket mounting**: sign hangs perpendicular to wall, read by player walking *along* the wall (matches Ironhaven's identical convention with explanatory comment block I should have read first). Reverted in v61eo before any user-facing release. **(3) ICON SYSTEM:** ported Ironhaven's 4 shop-type icon meshes (sword/helmet/flask/scroll) into `genericVillageDecorate`, plus 3 new icons for Salthaven coverage — anchor (harbor_office), fish (harbor_supplies), tankard (inn). All icons Z-symmetric (≥0.10 thickness) so they protrude through both faces of the 0.07-thick board, readable from front and back. Group parented at board center, shares board rotation. Unknown shop types and non-shops correctly skip the icon (blank board). **(4) ROWBOAT DOUBLE-SIDED:** Salthaven's beached rowboat is a partial-sphere hull; its `boatMat` had no `side` field, so the back face rendered invisible from inside the hollow. One-line fix: `side:THREE.DoubleSide`. **(5) WEST_TRACK EAST-GATE YAW:** another instance of the recurring v61ej/v61ek/v61em yaw-convention slip. Was `-Math.PI/2` (W, faces back at corridor exit), should be `Math.PI/2` (E, into Hearthwick). **(6) HEARTHWICK W-GATE YAW:** sibling fix — was `Math.PI/2` (E, back at Hearthwick wall), should be `-Math.PI/2` (W, toward Salthaven). Closes the deferred audit follow-up from v61em. The `0=N, π=S, π/2=E, -π/2=W` convention noted in commit comments throughout the diff. ~150 lines net. Parse-clean, `node --check` passes. **Note:** the rotation-table flip in this ship was an over-correction reversed in v61eo; ship-as-shipped contained the buggy invert. |
+| **v61eo** | Session 36 | **Two fixes for v61en's rotation-table mistakes.** (1) **REVERTED ROTATION TABLE.** v61en's `boardRots:{E:π/2, W:π/2, S:0, N:0}` was based on a misread of the mounting convention — the actual convention is tavern-bracket (board hangs perpendicular to wall, read by player walking parallel along the wall), confirmed by Image 2 of v61en playtest showing Bram's forge sign read correctly from a southwest patrol angle, and by Ironhaven's identical convention with an explanatory comment block. Reverted to `{E:0, W:0, S:π/2, N:π/2}` in both `genericVillageDecorate` and `ASHENMOOR_CONFIG.decorateFn`. **(2) ICON SYSTEM WIRED PROPERLY.** v61en's icon meshes weren't appearing on Salthaven because shop type wasn't on the building objects — it lives in a parallel `houses[]` array keyed by `id`. The decorator branches on `h.type` but `h.type` was `undefined` for every Salthaven building (only Ashenmoor's church had inline `type:'church'`). Two-part fix: (a) `registerPlaceholderZone` now propagates `spec.houses → cfg.houses` (was attached to ZONES post-build but never to cfg, so buildVillage couldn't see it during render); (b) `buildVillage` patches `h.type` from `cfg.houses` lookup before each `decorateFn` call. Ashenmoor untouched (it doesn't use cfg.houses; uses houseId-keyed bespoke decoration). Salthaven's four shop icons (anchor, fish, flask, tankard) now render correctly. Y-positioning fix from v61en (terrain-sampling at sign location), rowboat double-side, both yaw fixes — all kept. ~5 lines net. Parse-clean. |
+| **v61ep** | Session 36 | **Door-clearance pass — windows flank the door, props clear E/W door walls.** Two systemic fixes in `genericVillageDecorate` after playtest showed v61eo's signposts looked great but type-keyed props and windows were clipping into doorways on E/W-face buildings. **(1) WINDOWS — FLANK THE DOOR ON EVERY FACE.** Pre-v61ep only S-face flanked the door; E/W/N each got a single centered window which sat directly on top of any door on that wall. Now each face's door wall gets two flanking windows (`bz+bd*.25` and `bz+bd*.75` for E/W; `bx+bw*.25` and `bx+bw*.75` for S/N). The other three walls each keep one centered window. **(2) PROPS — PER-PROP TUNED OFFSETS.** Five branches updated, each tuned for what reads best for that prop: armor (spear rack) `cz → bz+bd*.3`; potion (herb beam) `cz → bz+bd*.3`; misc/harbor_supplies (crate stack) `cz-.5 → bz+bd*.2`; harbor_office (pole) `cz → bz+bd*.3`; inn already correct (bracket pattern). Weapon was already correct. ~50 lines net. Parse-clean. |
+| **v61eq** | Session 36 | **Group + rotate prop architecture — fixes rotation, ground Y, door clearance.** v61ep playtest revealed three remaining issues: (a) some props had long-axis meshes pointing AWAY from the wall on E/W faces (herb beam, bench seat, vane, anvil top — all `BoxGeometry` with long axis on local-X, which became world-X regardless of face); (b) props phased into the ground on Salthaven's sloped lots because every mesh used `ty` (terrain Y at building center) instead of terrain Y at the prop's actual location; (c) the v61ep offsets (`bd*.3`) still felt too close to the door. Architecture flip — each prop now built in a `THREE.Group` in S-face local coordinates (+X local = along wall, -Z local = outward). The group's rotation Y orients the whole prop for the actual face; the group's position translates it. Three-line refactor pattern per prop block: pick `alongWall` + `outward` offsets, build the prop's meshes in local space (rotation-naive), `sc.add(grp)`. Two helpers — `doorX/doorZ/faceRot` derived once, `_propAt(alongWall, outward)` returns positioned + rotated group with terrain Y sampled at the prop's actual location via `getY(wx, wz)`. **Result:** oblong meshes (beam, bench, vane, anvil top) automatically run parallel to the wall regardless of face. Sloped lots no longer cause prop ground-phasing. Offsets pushed to `bw*.32`/`bw*.40` for ~1.3-2.0u clearance from door. Inn bracket pattern preserved (`bw*.20` bench, `bw*.25` barrel — asymmetric, matching the working Image 1 visual). Each prop block ~10 lines shorter than v61ep and stripped of all face-conditional position math. Adding a new prop is now: pick offsets, build in local space, done. ~50 lines net. Parse-clean, `node --check` passes. |
+| **v61er** | Session 36 | **Building materials, paths, plaza props — three new village-builder knobs.** Major systemic addition lifting the village builder from "rectangular timber box, dropped on field" to "configurable material + roof + visible street system + central plaza." Architecturally additive — every new knob defaults to current behavior, no spec changes required for existing villages. **(1) BUILDING MATERIALS:** new `BUILDING_MATERIALS` table — `timber` (default, MAT.wood), `stone` (cool grey #6e7078), `brick` (reddish-brown #7a3a28). `cfg.buildingMaterial` village-wide; `h.material` per-building override. Resolves through cfg → h → default cascade. **(2) ROOF STYLES:** new `BUILDING_ROOFS` table — `thatch_pitched` (default, current cone), `slate_pitched` (dark grey #4a4a52, slightly shorter cone), `tile_pitched` (terracotta #a84e2a), `flat` (slab box, dark grey #3a3838 — for brownstone/walled-town register). Pitched styles use existing 4-sided cone shape with material/height varied; flat style swaps to a thin BoxGeometry sitting flush atop the body. Y math fixed in passing (was a 0.05u gap between body top and cone base; now flush). **(3) PATH SYSTEM:** new `PATH_STYLES` table — `dirt` (sandy-brown #8a6a3a, default), `cobble` (light grey #88847c), `plank` (weathered timber #6a4a28). `cfg.pathStyle` selects. Auto-routes from each non-church / non-destroyed building's door to the village plaza. Each path subdivides into 1.5u box-segments that follow terrain Y via `_vGetY` per-segment-midpoint sampling — sloped villages get paths that descend with the land. Door world position computed face-aware (S/N/E/W) with 0.6u "stoop" offset so paths don't clip into the doorway. Suppress with `cfg.autoPaths: false` or override with explicit `cfg.paths: [{from:[x,z], to:[x,z]}]` array. **(4) PLAZA PROP:** `cfg.plazaProp` — `'well'` (stone ring + posts + pitched timber roof + bucket), `'market_post'` (timber post + horizontal arm + 3 notice papers), `'tree'` (oversized canopy tree), or `'none'` (default). Plaza coords default to `(centerX, centerZ)`; override via `cfg.plazaX, cfg.plazaZ`. Each adds a sol entry for collision. **(5) registerPlaceholderZone propagation:** all new fields (`buildingMaterial`, `roofStyle`, `pathStyle`, `plazaX`, `plazaZ`, `plazaProp`, `autoPaths`, `paths`) flow through `spec → cfg`. **Net architecture impact:** ~180 lines added. Hand-built villages (Ashenmoor, Hearthwick) untouched — they pass through `cfg.buildingMaterial` undefined → `'timber'` → `MAT.wood`, and don't supply paths. Salthaven and the outposts (Thorngate, La Porte Grise) get auto-paths from each door to plaza by default, no spec change. **Carraig Mór is now spec-able** with `buildingMaterial:'stone'`, `roofStyle:'slate_pitched'`. Parse-clean, `node --check` passes. |
+| **v61es** | Session 36 | **Right-angle path routing — paths now follow building footprints, not radiate diagonally from a hub.** v61er playtest showed paths converging at sharp diagonals from each door to the plaza, with some paths cutting close to building walls. Replaced straight-line door→plaza with L-shape (or Z-shape) routing: (1) walk PORCH_LEN (1.6u) perpendicular to wall; (2) turn 90° onto the axis the porch wasn't moving in (X for S/N faces, Z for E/W faces); (3) final 90° turn to the plaza coordinate. New `_doorToPlazaWaypoints(door, face, px, pz)` computes the right-angle polyline; new `_drawPathPolyline(points)` renders it. Explicit-path API extended to support multi-point `{waypoints:[[x,z],...]}` polylines alongside the existing single-segment `{from, to}` form. Paths now read as actual streets with right-angle turns following building footprints, not spokes from a hub. Worked example (Salthaven Hilda's office E-face, door at 30.6,16, plaza at 45,40): east 1.6 → south 24 → east 12.8 → plaza. **Edge case noted:** when a door's outward direction is opposite the plaza (e.g., Brand's S-face inn at the village's NE corner with plaza to the south), the porch step takes the player initially AWAY from the plaza, producing a U-shape (north 1.6 → west 18 → south 24). Architecturally correct — you can't walk through your own building. If the U-shape reads awkward in playtest, the building's `face` direction can be reconsidered. **Held for next iteration if playtest reveals issues:** building-footprint avoidance (right-angle routing reduces clipping but doesn't prevent it; lateral legs could still run through other buildings if they're positioned along the path's axis); plaza overlap (multiple paths converge at the plaza center — fine for cobble/dirt, may want a "plaza ring" if it reads messy). ~50 lines net. Parse-clean, `node --check` passes. **End of Session 36. Closes Salthaven's v61em playtest follow-up backlog except for: motionless NPCs (deferred — needs a system-level idle-motion state machine); dock walkability/jumpability audit (deferred — requires a 1-hour player-physics investigation pass).** |
+| **v61et** | Session 37 | **Held bundle from end of Session 36 — terrain profiles + border types — shipped, expanded with ground textures per design call.** Three new dispatch tables added to the village builder, all architecturally additive (defaults preserve prior behavior bit-for-bit). **(1) `TERRAIN_PROFILES`** — five presets bundling `terrainAmp` / `flatRRatio` / `hillRRatio`. Entries: `flat` (Bealach plains), `rolling` (current default — exact match to prior hardcoded values), `hilly` (foothills villages), `rocky` (Carraig Mór's flat-top-with-sharp-falls outcrop), `coastal` (Salthaven-shape, intended to pair with `terrainSlope`). Resolution: `cfg.terrainProfile` fills in unset terrainAmp/flatR/hillR; explicit cfg fields still win. **(2) `BORDER_TYPES`** — six entries replacing the prior unconditional perimeter loop. Each is a function `(scene, sol, cfg, helpers) → void` honoring `_inGap` (gate corridors) and `cfg.openSide` (line-of-sight clearing). Entries: `hedge_and_trees` (default — body of the prior loop verbatim), `broken_fence` (rural decayed — Hermit's Camp / Caer Uaigneach register), `sand_dunes` (low mounds + beach grass — beach-strip villages), `stone_walls` (dry-stone wall segments at chest height — Carraig Mór / Mur Pierre / hill-village register), `palisade` (tall pointed-log fence with tar-darkened tips — frontier outposts), `mixed_overgrown` (outgrown hedges + encroaching trees + fallen logs — older inland villages). **(3) `GROUND_TEXTURES`** — eight entries (added per the "all components in the builder, no exceptions" design call) replacing the prior `cfg.biome`-only path. Each function returns a fresh `MeshLambertMaterial` with a procedural `mkTex` canvas at 40×40 repeat. Resolution: `cfg.groundTexture` > `cfg.biome` (BIOME_PROFILES back-compat for Salthaven) > `MAT.grass`. Entries: `grass` (default — `MAT.grass` direct), `meadow` (lighter airier green — plains villages), `sand` (pale tan — beach), `stone` (cool grey speckle — Carraig Mór), `dirt` (sandy-brown trodden earth — frontier), `ash` (dark grey-charcoal with sparse warm flecks — knob-only, burned Ashenmoor still uses bespoke), `salt_flat` (bone-pale low-sat — Salthaven candidate), `mossy_stone` (cool grey + green moss patches — Inis Rua candidate). All eight ship despite some lacking immediate village mapping; catalog stays complete per design preference. **(4) `registerPlaceholderZone` propagation** — `terrainProfile`, `borderType`, `groundTexture` all flow through spec → cfg. ~500 lines net. Parse-clean. Existing villages render bit-identical. |
+| **v61eu** | Session 37 | **Carraig Mór speced from scratch — exercises every new v61et knob plus the prior Salthaven-era infrastructure.** Replaces the empty placeholder (gates only, no buildings/NPCs/detail) with a full 60×60 coastal-rock village. **Knobs used:** `terrainProfile:'rocky'` (flat top, sharp falls), `terrainSlope:{dir:'S', amount:3.0}` (rock descends toward the tide causeway / Inis Rua side per design call), `openSide:'S'` (border walls cleared on the south for line-of-sight), `groundTexture:'stone'`, `buildingMaterial:'stone'`, `roofStyle:'slate_pitched'`, `borderType:'stone_walls'`, `pathStyle:'cobble'`, `plazaProp:'well'`, `biome:'coast'` retained for the sky-ring (sea horizon, no inland mountains). **Three buildings + two examinable detailFn structures:** cm0 Áine's Hearth (private residence, no shop type — sign board stays blank as intended for residences); cm1 The Stone-Cutter's Workshop (Cuán, type:'armor'); cm2 The Tide-Singer's Cottage (Maire, type:'potion'); cm3 The Rock-Hall (NE plaza-edge stone pavilion with low walls, four corner posts, slate pyramidal roof, central fire-pit, examinable wall-tablet — text deferred); cm4 The Bone Lintel (south-edge threshold near the gate — two upright stones with horizontal lintel inset with five bone fragments, two flat offering stones at the bases). **Three voiced NPCs:** Áine outside near the south edge looking toward the causeway (28,48) — four lore-canon dialog beats locked into topic responses (the rent line + Caldric letters as follow-up; "we build with our dead"; Béal an Domhain; her brother who came back); Cuán the stone-cutter outside his workshop (18,22); Maire the Tide-Singer outside her cottage (22,38) — both two-topic NPCs (one trade, one lore). **Plus eight scattered loose-stone boulders** across the rock for "this is rock, not stone-themed dirt" texture. Layout sanity-checked in Python: all NPCs clear of buildings/structures, all buildings clear of gate corridors, no clipping, plaza at (30,30). Parse-clean. ~325 lines net. |
+| **v61ev** | Session 37 | **Stone palette warm rebalance + new `snow` ground texture per playtest.** v61eu first walked-in screenshot showed Carraig Mór reading as Arctic snow village — cool-blue stone bodies + cool-grey speckled ground + cool-tinted sky/fog stacked into "Carraig Snowbjörn." Diagnosis: `GROUND_TEXTURES.stone` used hue 200-240 (full blue-cyan) — under coastal sky tinting via ambient light, neutral-grey-with-blue-undertone reads BLUE. Three coordinated changes. **(1) `GROUND_TEXTURES.stone` rebalanced:** base `#7a7e84` → `#6e6c66` (slightly warmer + darker for solidity); speckle palette flipped from pure cool to **75% warm-grey lichen tones (hue 30-60)** + **25% cool-shadow flecks (hue 200-240)**; small sparse moss pass added (5 clusters per tile vs `mossy_stone`'s 25). Reads as old weathered coastal rock with the occasional damp patch where things grow. **(2) `GROUND_TEXTURES.snow` added** as a new entry — the v61eu accidental palette preserved for future use. Base `#d8dce4` (pale blue-white), mix of icy speckle (85%) and dark-grey footprint flecks (15%). Knob-only for now; no canon village uses it. Earmarked for highland/tundra/northern settlements when those land. Comment in code documents the discovery: "Discovered when v61eu's stone palette accidentally read as Arctic in playtest; the recipe was good, just wrong for the coast." **(3) Carraig Mór's `skyCol` and `fogColor` warmed** from `0x7a90a8`/`0x788494` to `0x96a4b0`/`0x8a8a90` — overcast Atlantic morning rather than alpine winter. Lore-canonical "cooler than Salthaven, lonelier and weathered" register preserved; Arctic register removed. ~70 lines net. Parse-clean. Ground-texture catalog now 9 entries. |
+| **v61ew** | Session 37 | **Building/roof palette warmed + south-side ocean and ferry boat + tide-causeway-to-ferry canon reframe + `noFence` gate flag.** Second-pass coastal palette work after v61ev — playtest still read the buildings as glacier-blue against the now-warm ground. Plus: the south side at the gate position was empty plain (gate triggered teleport with no visible affordance). Four edits in one ship. **(1) `BUILDING_MATERIALS.stone`** `0x6e7078` → `0x787068` — same lightness, hue shifted from cool-grey (~210) to warm grey-tan (~30). Affects every village using stone bodies (currently Carraig Mór; future stone villages benefit too). **(2) `BUILDING_ROOFS.slate_pitched`** `0x4a4a52` → `0x453e38` — same shape, hue shifted to warm dark brown-grey. Reads as old wet sea-slate. **(3) Ocean + dock + moored ferry boat** added to Carraig Mór's detailFn. Wide blue-grey transparent water mesh (80×30u) extending past the south zone boundary, anchored 0.4u below south-edge ground level (Salthaven precedent for water Y). Wooden plank dock spine (1.6u × 11u) running from z:55 (just past the bone lintel) through z:66 (past zone edge into the strait). Four pairs of pilings beneath the dock. Two mooring posts at the seaward end. A single coiled rope halfway along. Moored ferry boat at z:66: rightside-up half-sphere hull (`SphereGeometry` with `0..π/2.2` arc, scale 2.4×1.2×1.0), gunwale `TorusGeometry` trim, central thwart plank, rope tying to the nearer mooring post. Boat sol-blocked. Player walking south reads "rock → bone lintel → onto dock → ferry boat" with the E-prompt firing mid-dock at the existing gate trigger position. **(4) Tide-guard reframe — causeway to ferry.** The 'tide' guard predicate (`!isTideOut()`) is unchanged; only the player-facing fiction shifted. Toast: "The strait is too rough for the ferry. The tide rises and falls — try again later." Prompt: "The ferry to Inis Rua is held by the tide." Lore canon line about "tidal causeway" supersedes; the rhythm ("twice a day") and Maire's "we sing the tide out and the tide in" stay canonical. Logged as a small canon revision — strengthens the lore (the rock people are tenants of the sea who cross when the sea allows) without contradicting any prior beat. **(5) `noFence:true` gate flag** — new optional field on gate defs. Suppresses the default `buildFenceGate` mesh; logic unchanged. Carraig Mór's south gate uses it (the moored ferry boat IS the gate visual; the wooden fence-gate would have sat on the dock). One-line addition to `buildVillage`'s gate loop. ~115 lines net. Parse-clean. **Inis Rua centerMarker text and world-map description still say "causeway" — to be updated whenever Inis Rua's spec is touched next session, NOT this ship.** |
+| **v61ex** | Session 37 | **Interior trees + ground scatter promoted to builder knobs — final piece of the "no exceptions" village builder.** Two more unconditional blocks in `buildVillage` were forest-coded by default and surfaced as out-of-register at Carraig Mór: pine cones scattered through the village interior outside the village circle, and a 320-iteration grass+bushes loop in bright forest-green. Same treatment as the rest of the v61et bundle. **(1) `INTERIOR_TREES`** — 5 function entries + `'none'` sentinel. Each is a per-tree builder `(x, z, sc, sol, getY) → void` matching the prior `_borderTree` signature. Entries: `cone_pine` (default — bit-for-bit prior behavior), `windswept` (short bent trunk + sparse asymmetric canopy leaning ~20° off vertical — Inis Rua candidate, cliff-perched villages), `dead` (bare trunk + leafless branches dim grey-brown — wastes-edge, Caer Uaigneach), `birch_grove` (white-bark thin trunks with dark stripes + lighter sparse canopy — northern villages), `palm` (wide drooping fronds — catalog completeness for tropical/endgame procedural). `'none'` short-circuits the entire pass at the dispatch level. **(2) `GROUND_SCATTER`** — 6 function entries replacing the unconditional grass+bush loop. Each is `(scene, sol, cfg, helpers) → void` honoring `inVillage` (no scatter inside village circle) and `inGap` (gate corridors stay clear). Entries: `grass_and_bushes` (default — bit-for-bit prior 320-iteration behavior), `tussock_and_kelp` (160 iters; 70% pale yellow-green tussock-grass clumps with stiffer leaning blades; 30% mix of dried kelp ribbons and small barnacle-encrusted stones with off-white speckles — Carraig Mór's coastal-rock register), `none` (intentionally empty — clean-ground villages), `heather_and_thistle` (200 iters; 75% low purple-pink heather mounds, 25% thin thistle stalks with magenta heads — La Grise / hill villages), `ash_scrub` (150 iters; skeletal twiggy clumps with sticking-out twigs, plus small flat ash piles — wastes settlements), `sand_grass_and_driftwood` (220 iters; pale beach grass tufts + small weathered timber pieces — Salthaven beach, sand-dune coastal). **(3) Carraig Mór now uses** `interiorTreeStyle:'none'` + `groundScatter:'tussock_and_kelp'`. The rock now reads as exposed and lived-on rather than "village in a meadow." **(4) `registerPlaceholderZone` propagation** for both new fields. ~440 lines net. Parse-clean. Existing villages (Ashenmoor, Hearthwick, Salthaven) all render bit-identical — defaults preserve prior behavior. **End of Session 37. The village-builder system is now feature-complete for the planned coastal arc and most of Acts I-II content. Three knobs added in v61et (terrain/border/ground-texture) plus two in v61ex (interior trees / ground scatter) plus building materials / roof styles / path styles / plaza props from v61er = nine independent knobs, each with a sensible default. Adding a new village is now a spec-only operation in 95% of cases.** |
+| **v61ey** | Session 38 | **Inis Rua speced from scratch — exercises the new `rust_stone` ground texture plus the v61et/v61ex coastal builder kit, mirrors Carraig Mór's south-side ferry on its north side, and ships the Mouth (Béal an Domhain) as a built-but-deferred dungeon entrance.** First village built spec-only without any new builder knobs (almost — `rust_stone` is one new ground-texture catalog entry, ~75 lines, mechanical sibling of `mossy_stone`). The Session 37 prediction ("adding a new village is now a spec-only operation in 95% of cases") holds: ~95% of v61ey is spec, 5% is the new texture. **(1) `GROUND_TEXTURES.rust_stone`** added — warm-grey base with 65% lichen speckle / 20% cool-shadow / 15% rust-orange flecks, plus 4 rust-runoff streaks per tile (elongated mostly-horizontal smears in deeper rust-red simulating gravity-driven iron staining). Lore-coded as Inis Rua's "Red Island" iron-rust origin. Catalog now 10 entries. **(2) Inis Rua spec** — replaces the prior empty placeholder (single north gate to Carraig Mór, no buildings). 60×60 zone (was 50; bumped for symmetry). Knobs: `terrainProfile:'rocky'`, `terrainSlope:{dir:'N', amount:2.5}` (rock rises southward toward the cliff, opposite Carraig Mór's southward slope), `openSide:'N'` (line-of-sight back across the strait), `groundTexture:'rust_stone'`, `buildingMaterial:'stone'`, `roofStyle:'slate_pitched'`, `borderType:'stone_walls'`, `pathStyle:'cobble'`, `plazaProp:'well'`, `interiorTreeStyle:'windswept'` (the v61ex catalog entry was authored for this), `groundScatter:'tussock_and_kelp'` (matches Carraig Mór), `biome:'coast'`. Sky/fog cooler than Carraig Mór (`0x8a98a4`/`0x808488`/`0.016`) for the lonelier register. **Three buildings:** ir1 The Net-Shed (Fionn, type:'harbor_supplies', NE quadrant), ir2 The Watch-House (empty residence, no keeper, NW quadrant — quietly establishes the village had more people once), ir0 Niamh's Dwelling (private residence, no shop type, SE quadrant — Niamh is met outside on the cliff path, not as a shop interior). **Two voiced NPCs:** Niamh (Keeper of the Mouth, signature character at (32, 46) on the path to the Mouth — five lore-canon dialog beats including the canonical brother-cross-village-echo via her mother), Fionn (fisherman at (35, 22) outside his shed — three topics confirming the Salthaven → Coeur de Vie eastern catch route by omission, plus a soft Salthaven-history echo line). **(3) North-side dock + ferry boat** — mirror of Carraig Mór's south-side dock from v61ew. Dock spine 1.6u × 11u running from z:7 (just inside the zone) to z:-4 (past the zone edge into the strait). 4 pairs of pilings, 2 mooring posts at the seaward end, plus a loose-tangle "rope on the path" at the village end matching Fionn's "I have been meaning to coil it for a week" greeting line. Ferry boat (same scale + materials as Carraig Mór's; canonically the same boat, one ferry not two) moored at z:-4. Water mesh 80×30u centered at (25, -10), reusing the Carraig Mór y-anchoring pattern. Boat sol-blocked. **(4) The Mouth (Béal an Domhain)** — sea-cave dungeon entrance built into a cliff at the south edge. Three-segment cliff face (west: x:8..24, east: x:32..54, top span: x:24..32 above the arch) at 5.5u tall, blocking line-of-sight. Cave arch at (28, 55-57): 7.5u-wide × 3.5u-tall recessed dark archway in near-black material, angled stone side-walls, slight overhanging dark roof. Foam clusters at the cave base (pale-blue-white spheres at low Y) reading as tide working at it. **Sol entries on cliff segments + side walls; no sol entry directly in front of the arch** so the player can stand at examine-range without being pushed back. Examine prompt fires within 2.0u of (28, 53): "Press 'E' to examine the Mouth" → popup with the canonical lore line ending on *"You are not ready to go in."* Reuses the Sea-Folk Shrine's `openNoticeBoard` plumbing (sibling examine site in `interact()` and the proximity-prompt branch). **No `WORLD_DUNGEONS` entry yet — the cave is built but not walkable;** when wired, candidate params: theme `'deep'` or `'haunted'`, difficulty `'hard'`, sigil tide/depth-themed Irish-register (Taoide/Éirí/Doimhneas). **(5) `WM_NODES.inis_rua.desc` and zone `centerMarker.text` updated** from causeway-framing to ferry-framing, finally closing the v61ew framing-mismatch flag. Both ends of the connection now read consistently. **(6) Niamh's gate-spawn alignment + facing.** Outgoing gate at (25, 3) target Carraig Mór with `spawnX:30, spawnZ:55, spawnYaw:0`, plus `noFence:true` (the boat IS the gate visual, matching Carraig Mór's south-side convention). Niamh facing NPC default yaw — she stands at (32, 46) with the player approaching from the dock to the north, walking past her toward the Mouth. **Layout sanity-checked in Python**: all NPCs clear of buildings (Niamh: 3u from her dwelling; Fionn: 4u south of his shed), all buildings clear of gate corridor + each other (min 2u separation), Mouth examine trigger 2u in front of cliff face. ~430 lines net. Parse-clean. With Carraig Mór (v61eu) + Inis Rua (v61ey), the western coastal arc is content-complete for Act II's first leg. Salthaven needs the Session 35 polish backlog cleared before it's "done"; Carraig Mór's Rock-Hall tablet text is the only pending writing piece on it. |
+| **v61ez** | Session 38 | **Droichead speced from scratch — Bealach-region road-stop bridge village; first village shipping a true bisecting natural feature (the Dearg river N-S) with a walkable bridge crossing. Plus two pieces of held-lightly canon: player-as-binding-interface, and Mastery-touch as Varek-meeting trigger.** **(1) Droichead spec** — replaces v61ec placeholder (no buildings, gate-only). 60×60 zone, plaza at (25, 30), villageR 18. Knobs: default `terrainProfile:'rolling'`, `borderType:'hedge_and_trees'`, `pathStyle:'dirt'`, `plazaProp:'market_post'` — Bealach is the canonical reference for the builder defaults; no overrides needed. Three buildings on the WEST bank (dr1 Bree's Wagon-Stop, dr2 The Old Cottage empty residence, dr0 Tadgh's River-Hut), east bank intentionally sparse (small annex, no buildings, just the road continuing east). Two voiced NPCs: Tadgh (Ferryman / information broker, at (38,41) on the west bank just south of the bridge — five topics including the southbound-thinning beat which canonizes him as Aldwyn's quiet long-time Bealach-corridor source) and Bree (Wagon-Stop trader at (19,26) — `misc` shop, four topics including first in-dialog naming of the canonical Hearthwick→Droichead→Thorngate→Deepwood→Ironhaven route). **(2) River + bridge + cliffs detailFn** — the canonical "An Bealach Mór crosses An Dearg" geometry made literal. River channel x:40-48 (8u wide), full N-S length, water mesh anchored 3.5u below grade at the bridge midpoint. Color `0x7a6a4a` (rust-brown — canonical Dearg "the water runs red-brown from the bogland it flows through"). Cliff faces on both banks running N-S: west bank segments `[0,14][14,26][26,28][32,34][34,41][45,60]` (gap at z:28-32 for bridge corridor + gap at z:41-45 for Tadgh's dock); east bank segments `[0,14][14,26][26,28][32,34][34,46][46,60]` (only bridge gap, no dock gap). Sol-blocked at every segment with rx=0.2 thin-wall thickness. **(3) The Bridge** — 12u × 4u stone deck spanning x:38-50, z:28-32, built at terrain Y of bridge midpoint (44, 30) with deck top flush to terrain. Two low stone railings at z=28 and z=32 (deck edges); four squat stone abutment posts at deck corners; half-cylinder stone arch visible from below the deck; **Option B walkable-bridge implementation** — invisible sol-blocker strips at z=28 and z=32 (rx=6, rz=0.15) prevent walk-off-into-river while leaving the east-west deck axis clear for traversal. From first-person the illusion holds; low-camera-angle would show deck-terrain clipping (acceptable; no player-facing low-camera view). **(4) The Keystones** — two carved stone blocks at the bridge midspan (44, 30), one on each railing; lighter-tone inset face reads as carved-with-wear. Examinable from on-bridge — sibling to the Mouth and Sea-Folk Shrine examine sites. Title: "The Keystones." Body: canon-honoring ambiguity ("kin to but not the same as" sigils elsewhere), closing on the load-bearing line *"The river runs beneath the bridge. The bridge holds."* Forward-compatible with Phase 2 sigil rollout. **(5) Tadgh's dock + skiff** — wooden platform at (40.5, 43) extending east from the west bank into the riverbed through the cliff gap. 4 pilings, single moored skiff at the east end (smaller hull than Carraig Mór's ferry — one-man boat), single oar across the gunwales, mooring rope. Skiff sol-blocked. Player cannot board — Tadgh's trade is at the dock, not on the water. **(6) Atmospheric details** — 2 stacked grain sacks near Bree's stop, a hitching post by the W gate, 6 small reed clumps along the riverbanks at low water level. **(7) Examine handler wiring** — keystone examine added in `interact()` and the proximity-prompt rendering branch, sibling to the Mouth and Sea-Folk Shrine handlers. **(8) Centermarker + WM_NODES.droichead.desc** — both updated from v61ec placeholder copy to the canonized lore-load-bearing version. **(9) Two pieces of canon canonized in `lore_canon.md`:** "the player is canonically of-the-binding, not of-the-world" (held-lightly fourth-wall integration — never said by an in-game character; Varek alone perceives it via the meta-awareness thread); "Mastery-touch as Varek-meeting trigger" (resolves both the Mouth design and the Ashfeld first-meeting trigger through the same gesture — Mouth contains the canonical first Mastery sigil; achieving Mastery sets a worldState flag; next Ashfeld entry spawns Varek). Open question #4 (Ashfeld trigger) moves to resolved. **(10) Layout sanity-checked twice** — first pass caught two real bugs (Tadgh placed inside his own building; Tadgh's dock collides with cliff sol entries) which were both fixed before ship; one false alarm on bridge-railing accessibility was investigated and confirmed safe. Final layout: all NPCs clear of buildings, dock fits cleanly in cliff gap, bridge entry corridor unobstructed at z=30 between thin-strip railing sols. ~580 lines net (Droichead detailFn) + ~14 lines (keystone examine wiring). Parse-clean. **End of Session 38.** With Carraig Mór (v61eu), Inis Rua (v61ey), and Droichead (v61ez), the southern half of the world is now content-complete for Act II's first leg. Three signature villages, three different registers, three different relationships to the binding (memory, watch, traffic). |
+| **v61f0** | Session 39 | **Droichead playtest fixes — notice-board auto-offset (architectural), arch geometry rebuild, river visibility, eastward valley slope.** Four findings from first walked-in playtest of v61ez. **(1) NOTICE BOARD AUTO-OFFSET (architectural).** `registerPlaceholderZone` auto-places the notice board at `(centerX, centerZ)` (line ~13402); plaza props (well/market_post/tree) also default to `(centerX, centerZ)` (`buildVillage` line ~7724-25). Result: every village with a plaza prop stacked board-on-prop. Visible at Droichead (market_post + board both at (25, 30)), latent at Carraig Mór and Inis Rua (their wells were stacked too, just less visually obvious). **Fix** lifted into `buildVillage`'s notice-board block: when the requested noticeBoard position is within 1.5u of plaza center AND a plaza prop is non-none, search four cardinal 3u-offsets (S, E, N, W) for one that doesn't collide with a building footprint (0.5u margin), use the first hit, fall back to the requested position if all collide (no village in practice hits this). Whole board assembly rebuilt as a `THREE.Group` with `rotation.y` so the parchment face points toward plaza center regardless of which offset wins. Sol entry footprint also rotation-aware (long axis runs along world X for 0/π yaw, world Z for ±π/2). Architecturally the right shape: removes the implicit "centerX/Z must be empty" assumption that was latent in every village. Carraig Mór and Inis Rua silently fixed without spec changes. **(2) BRIDGE ARCH GEOMETRY REBUILT.** v61ez applied two rotations (x AND z) to a half-cylinder which double-flipped the orientation — the arch poked UPWARD through the deck instead of curving below it. Also `openEnded:true` made it single-sided and invisible from many viewing angles. Rebuilt as a shallow segmental arc: long axis along Z (single `rotation.x = π/2`), chord 8u (river width) at the deck-underside Y, sag ≈ 1.2u → effective radius ~7.27u, angular sweep ~1.17 rad (~67°). `thetaStart = π/2 - sweep/2` puts the arc on the lower half of the cross-section after rotation. `DoubleSide` material so the arc renders from every angle (player sees curved-down silhouette when crossing or looking at the bridge from N/S). Math worked through: chord_world_Y = meshCenterY - R·cos(sweep/2), so meshCenterY = deckY - 0.4 + R·cos(sweep/2) ≈ deckY + 6.04; deep sag point sits at deckY - 1.23, well above the v61f0 waterline at deckY - 2.0 but well below the deck. Not sol-blocked (player can't physically reach it). **(3) RIVER VISIBILITY (cliff height + water depth).** v61ez's RIVER_DEPTH was 3.5u; cliffs auto-derived to 4.0u tall. Together those values acted as a visual wall — a player standing on the west bank saw a grey cliff face, no water beyond it. Lowered RIVER_DEPTH from 3.5 → 2.0; cliffs auto-derive to 2.5u tall. The water surface is now visible from a standing player at grade level on the bank. Cliffs still read as a defended bank edge but no longer block sight. Sol-blocking unchanged. Skiff Y auto-adjusts (anchored to _waterY + 0.25). Pilings beneath the dock auto-adjust (length tied to RIVER_DEPTH + 0.5). Single-knob change with cascade through every dependent measurement. **(4) EASTWARD VALLEY SLOPE.** Added `terrainSlope:{dir:'E', amount:2.0}` to Droichead spec. Uses the existing generic knob (same system as Salthaven's westward harbor-descent from v61em). 2.0u total fall across 60u — mild but visible. Pairs with the v61f0 visibility fix so the player walking east toward the bridge feels the ground descend AND sees the river surface come into view, without having to step onto the bridge. **(4b) BRIDGE DECK ANCHOR FIXED for sloped terrain.** Pre-v61f0 the deck Y was anchored to `getY(44, 30)` (bridge midpoint). On the new sloped terrain, midpoint anchoring meant the deck floated 0.2u above local terrain at the east abutment (and buried 0.2u into the bank at the west abutment). Switched to `Math.min(getY(BRIDGE_X_MIN, 30), getY(BRIDGE_X_MAX, 30))` — the deck is at or below local terrain at both abutments. The slight bury at the higher bank reads as the deck sunk into the bank (architecturally correct); a float at the lower bank would have read as broken. **Held in reserve:** `groundTexture:'meadow'` for Droichead — the GROUND_TEXTURES catalog explicitly names Droichead as a candidate, but with terrainSlope adding visible relief and the river now visible, the existing grass default may read fine. Held to be added in a follow-up if needed. Same pattern as the Cill Beag holdback discussion — adding knobs is cheaper than retracting them. **NOT done this ship:** abutment posts use bridge midpoint Y (not local terrain Y), so on slope the east-bank posts float slightly. Acceptable; the deck-anchor fix is the primary issue. **Architectural separation preserved:** all systemic changes live in `buildVillage`; all Droichead-specific changes live in Droichead's spec/detailFn. No `if(zone === 'droichead')` branches added anywhere. Parse-clean. ~80 lines net code. |
+| **v61f1** | Session 39 | **Arch theta correction + slope bump.** v61f0's arch rebuild had the right rotation pipeline but the wrong `thetaStart` — playtest revealed the arch rendering as a tall vertical slab in the middle distance, not a curve under the deck. **Root cause:** I assumed Three.js's `CylinderGeometry` follows the convention `x = R·cos(θ), z = R·sin(θ)` (theta=0 along +X), but Three.js actually uses `x = R·sin(θ), z = R·cos(θ)` (theta=0 along **+Z**). v61f0's `thetaStart = π/2 - sweep/2` therefore placed the arc bulging in the **+X** direction (cylinder coords). After `rotation.x = π/2`, +X stays +X — so the chord ran VERTICALLY (along world Y) and the arc bulged horizontally toward +X, producing the tall slab silhouette the player saw. **Fix:** thetaStart changed to `-sweep/2`, thetaLength stays at `sweep`. The arc is now symmetric around θ=0 (cylinder +Z direction), which becomes world -Y after rotation.x=π/2 → arc curves DOWN below mesh center as originally intended. Math re-verified in scratch script before edit: chord at world Y = mesh center Y - R·cos(sweep/2), deep point at world Y = mesh center Y - R. With mesh center at `deckY + R·cos(sweep/2) - 0.4` ≈ `deckY + 5.66`, chord lands at `deckY - 0.4` (just under deck) and deep point at `deckY - 1.61` (1.21u below chord, well above the v61f0 waterline at deckY - 2.0). Switched to `archGeom.rotateX(π/2)` (mutating the vertex buffer at build time) instead of `mesh.rotation.x = π/2` per-frame application — both work, but rotating the geometry is marginally cheaper and the v61f0 comment about mesh-rotation "not taking effect" was a misdiagnosis worth correcting in the code. **Plus:** slope amount bumped 2.0 → 3.0u total fall per playtest feedback ("could even be a bit more dramatic"). Same direction (E), same builder knob. **Lesson logged:** Three.js trigonometric conventions on CylinderGeometry are `(sin, cos)` not `(cos, sin)`. Worth checking against the source next time any partial-cylinder geometry comes up; the wrong convention won't fail a parse check and the bug only surfaces visually. Parse-clean. ~10 lines net code. |
+| **v61f2** | Session 39 | **River carve system (architectural) — terrain mesh now actually dips into the channel; complete Droichead detailFn rebuild around it.** v61f1 playtest revealed a deeper problem than the arch or the slope: **the river was structurally invisible.** v61ez had built the river as a flat water-plane 2u below grade with "cliff blocks" anchored at terrain Y at the bank edges. The cliff blocks were positioned with their tops FLUSH with terrain Y — they extended entirely BELOW the surrounding terrain mesh, into the area the terrain plane already occupied. Because the terrain mesh is one continuous flat plane that runs UNDER the river area (never cut), the cliffs were buried in the terrain (invisible) and the water plane was also buried under the terrain (invisible). The "grey blocks" the player saw in playtest were the bridge abutment posts (the only river-area meshes that protruded above terrain Y). v61f0 and v61f1 were chasing visibility through cliff height and slope adjustments — none of those would have worked because the fundamental geometry was hidden under an uncut terrain mesh. **The proper fix is terrain-cutting.** Three architectural deliverables: **(1) `cfg.river` SPEC SUPPORT IN `buildVillage`.** New optional config field on the village spec: `{axis:'N-S'|'E-W', centerX|centerZ, channelWidth, bankSlope, depth}`. Carves a linear channel into the heights array AFTER the radial profile + slope have been applied. Cross-section: flat riverbed of `channelWidth` width at depth below grade, with linear-taper sloped banks of `bankSlope` width on each side rising back to grade. Carve runs in the same per-cell loop as profile + slope, so it composes cleanly. Forward-compatible water-feature hook — if Redwater Ford or any future village wants a river, declares the spec and gets the geometry. **(2) `registerPlaceholderZone` PROPAGATION.** `spec.river → cfg.river` passthrough added alongside the existing terrainProfile/borderType/groundTexture pattern. **(3) DROICHEAD detailFn REBUILT around the new carve.** Cliff blocks (~50 lines) deleted entirely — the carved terrain mesh IS the bank-and-channel geometry, no auxiliary bank meshes needed. The bridge arch (~30 lines) also removed — with the channel 2u below grade and the deck at bank-grade, there's only 2u vertical space beneath the deck which isn't enough for an arch to read meaningfully; the bridge is now a clean stone slab with railings, keystones, and abutments. Water mesh anchored to bed level (`gradeY - depth + 0.1`) instead of below grade. Bridge deck anchored to `gradeY` (sampled at x=40, well outside the carve) instead of the v61f0 min-of-endpoints. Tadgh's dock anchored to grade-Y (bank top). Skiff narrowed from 2.0× to 1.4× scale to fit the new 4u channel (was 8u). Bank-edge invisible sol-blockers (15 lines) added along the channel edges with gaps for the bridge corridor and the dock — these are the new enforcement layer where the old cliff-block sols used to be. **Droichead spec changes (~5 lines):** river declaration `{axis:'N-S', centerX:44, channelWidth:4, bankSlope:1, depth:2.0}` (4u flat bed + 1u banks = 6u total carve, narrower than v61ez's 8u to give the village more west-bank real estate). `terrainSlope` removed (the carved channel IS the valley; slope is no longer needed and was making terrain-Y math confusing across the river area). Tadgh's hut relocated from (32, 36) to (28, 36) so the auto-path from his door to the plaza runs at x≈35 — comfortably 6u west of the bank top, addressing the v61ez "bridge overlapping with house paths" playtest finding. **Lore impact:** the Dearg is narrower at this stretch than v61ez canon implied (4u channel vs 8u). Still rust-brown, still the spine river, still the canonical Dearg. The bridge "too well-made for a village this size" reads MORE imposingly as a 10u stone span over a 4u stream than as a 12u stone span over an 8u canyon — overengineering is more legible when the underlying need is modest. **Lesson logged:** Three.js terrain meshes are continuous opaque planes. Any feature that wants to be "below grade" (rivers, ponds, pits, ravines) requires modifying the heights array BEFORE the mesh is built, not auxiliary geometry placed below grade afterward. Decorative meshes anchored at terrain Y or below are buried unless the terrain itself is cut. **Architectural shape preserved:** river-feature support is now a builder-level system (any village can declare a river spec) rather than per-village bespoke code. No `if(zone === 'droichead')` branches anywhere. Parse-clean. ~250 lines net (~100 lines added in buildVillage's carve system + Droichead detailFn rebuild; ~150 lines retired in the deleted cliff + arch code). |
+| **v61f3** | Session 39 | **Platforms system (architectural) — player walks ON the bridge instead of descending into the river channel. Plus water level raise, tree-exclusion fix, and dock relocation.** v61f2 playtest revealed three coupled bugs: **(a)** player descends into the riverbed when "crossing" the bridge (engine constraint I had been writing comments about for several revisions without solving); **(b)** trees drop into the bridge approaches and block the path between the bridge and the E gate; **(c)** water level too low — "just looks like sand at the bottom" because the water mesh sat at `bedY + 0.1` (0.1u of water on a 2u bed). All three traced back to the same architectural gap: the v61f2 carved channel made the terrain-Y-snap engine constraint a much bigger problem than it was before (now there's actual depression for the player to fall into), and no system existed to override terrain Y on top of bridge geometry. **The fix is a builder-level `platforms` system.** Three architectural deliverables: **(1) `cfg.platforms` SPEC SUPPORT IN `buildVillage`.** New optional spec field: array of `{x0,x1,z0,z1,y|ySource,name?}` rectangular footprints. `y` is a fixed number; `ySource:[wx,wz]` samples terrain Y at that point (used when bridge Y derives from bank-top grade rather than being known a priori). Resolved upfront during heightmap construction so the resolved-Y array is available before border placement. **(2) `activeTerrainH` OVERRIDE.** The single chokepoint for player + NPC + enemy Y. Now checks `ZONES[id].platforms` first: if (wx, wz) inside any platform footprint, returns the platform's Y; otherwise falls through to terrain. This is what lets the player walk AT bridge-deck Y instead of falling into the carved riverbed below. Forward-compatible for any future raised walkway — docks, ramparts, balconies, fortress catwalks. Enemy + NPC Y reads through the same function, so a goblin chasing the player onto a bridge follows them up naturally. **(3) `_inGap` EXTENDED to skip platform footprints (+0.5u margin).** Border-tree placement now excludes platform regions automatically — bridge approaches stay clear of trees on both banks. Same mechanism as the existing portal-gap and gate-corridor exclusion. **(4) `registerPlaceholderZone` PROPAGATION** — `spec.platforms → cfg.platforms` passthrough. **Droichead spec changes (~6 lines):** `platforms:[{x0:36, x1:52, z0:27, z1:33, ySource:[40,30], name:'Droichead Bridge'}]`. Footprint INTENTIONALLY larger than the 10u×4u visible bridge deck: the wider 16u×6u footprint extends 3u east + 3u west to clear border-tree placement from both bridge approaches (E gate at x=57 has its own gate-corridor exclusion; the platform exclusion handles the gap between the bridge and the gate). The Y override at x:36..38 and x:50..52 is a no-op because terrain there is at gradeY anyway (outside the carve at x:41..47). **Water level fix:** raised water surface from `bedY + 0.1` to `gradeY - 0.5` — water is now 1.5u deep with 0.5u of dry bank lip visible above. Reads as a proper river, not a muddy puddle on bedrock. Water plane widened from channel-only (4u) to channel-plus-banks (6u, BANK_X_MIN to BANK_X_MAX) so the slope cells from x=41 down to x=42 (which now sit underwater at gradeY - 0.5 to gradeY - 2) don't render as dry mud rising out of water. **Dock relocation:** pulled west from center (40.5, 43) to center (39.75, 43) — east edge now at x=41 (bank top, just above waterline) rather than x=41.75 (which would have been submerged under the new water level). Pilings moved with it; skiff position unchanged (still in the channel at x=44); mooring rope reaches 2u from skiff to dock east edge. **What this unlocks:** future villages can declare bridges over rivers, raised viewing platforms, fortress catwalks, multi-level dock complexes — all by declaring a `platforms` spec entry. The Y override is global through `activeTerrainH`, so the entire game (player movement, enemy AI, NPC pathfinding, mesh placement) sees the elevated walkways correctly. **Lesson logged:** the "engine constraint: terrain-Y force-snap" is real but isn't a wall — it's a chokepoint at `activeTerrainH`, and adding a per-zone override array is enough to bypass it cleanly. Worth not writing "engine constraint preserved; player can't stand above terrain" disclaimers for three revisions before actually solving the problem. **Architectural separation preserved:** all systemic changes in `activeTerrainH` + `buildVillage` + `registerPlaceholderZone`; all Droichead-specific changes in Droichead's spec. No `if(zone === 'droichead')` branches. Parse-clean. ~80 lines net code. |
+| **v61f4** | Session 39 | **Bridge z-fighting fix — deck top lifted 0.05u above grade.** v61f3 playtest revealed grass tufts and terrain texture flickering THROUGH the bridge deck. **Root cause:** the deck top was set FLUSH with bank-grade Y so player foot-level (snapped to platform Y = gradeY via the v61f3 system) would coincide with deck top — but the terrain mesh ALSO continues across the bridge area at gradeY, putting deck-top and terrain-top as coplanar surfaces. Coplanar opaque meshes flicker (z-fighting); whichever fragment wins depth-test on a given pixel is non-deterministic. Same class of bug affected the railings (bottom flush with deck top, both at gradeY = z-fight band along the rail base) and the keystones (bottom flush with deck top, same). **Fix:** introduce `_deckTop = _bridgeDeckY + 0.05` and anchor ALL deck-mounted geometry to it instead of `_bridgeDeckY`. Deck mesh top at gradeY + 0.05 (above terrain — no z-fight); railing bottoms at gradeY + 0.05 (no z-fight); keystone bottoms at gradeY + 0.10 (extra 0.05u above deck — no z-fight). Player still walks at gradeY (platform-system Y unchanged), so the visible foot-to-deck gap is 0.05u — well below the perceptual threshold. **Lesson logged:** never have two coplanar opaque surfaces at exactly the same Y; pad by ≥0.05u. The standing auto-path system already does this (path mesh at `getY + 0.02`), and the new platform-mounted geometry should follow the same convention. Worth considering whether to wrap platform Y in a helper that auto-pads visible mesh top above platform Y, so future bridges don't repeat this; held for a follow-up refactor when a second platform consumer appears (Carraig Mór ramparts, Caer Uaigneach walls, etc). Parse-clean. ~15 lines net change. |
+| **v61f5** | Session 39 | **Final Droichead polish — river-exclusion in `_inGap`, keystone redesign, skiff repair, keystone-text contradiction fix.** Four playtest callouts from v61f4. **(1) TREES IN THE RIVER (architectural).** v61f4 still placed interior trees and border trees in the carved channel area, because `_inGap` only excluded portal-gaps + platform-footprints + gate-corridors — not the river carve itself. Trees dropped on the carved-down riverbed terrain, reading as "trees in the river." **Fix:** `_inGap` now ALSO returns true when (x,z) falls inside the river-carve region (channel + banks + 0.5u margin). Every border-type, the interior-tree pass, and the ground-scatter pass already check `inGap`, so all three inherit the river exclusion automatically. No per-pass plumbing needed. Same architectural shape as the v61f3 platforms exclusion. **(2) KEYSTONE REDESIGN.** v61f4 keystones were a single dark box (1.0×1.4×0.5) with a lighter-color rectangle inset INSIDE the box (carving face at z offset 0.18, but pillar half-depth 0.25 → carving entirely buried inside pillar bounds, z-fighting with the pillar's back face — visible as flicker). Replaced with a proper carved-monolith silhouette: 0.8×1.6×0.5 main pillar (stoneDark), 1.0×0.18×0.65 capstone (stoneMat, slightly wider), 1.0×0.20×0.65 base plinth (stoneMat, slightly wider — partially sunk into the deck), 0.55×1.0×0.04 lighter carving face SITTING PROUD of the pillar by 0.05u (not buried inside), and three small 0.10×0.10×0.06 sigil-bumps protruding 0.03u from the carving face. Reads as "old, deliberately made, marked with something the locals can no longer read" — matches the canon "bridge too well-made" beat. 5 meshes per keystone × 2 keystones = 10 meshes total. Geometry math worked through in scratch before edit: sigils are 0.03u proud of carving, carving 0.05u proud of pillar — no coplanar surfaces, no z-fighting. **(3) SKIFF REPAIR.** v61f4 skiff had the trim torus floating ~0.25u above the hull's open face (torus at skiffY+0.30; after the rotation.x=π hull flip the actual rim sat at skiffY+0.05). It also showed straight INTO the boat (hollow hemisphere, open side up), reading as "taking on water." **Fix:** trim torus pulled down to skiffY+0.05 (flush with the hull rim) and a plank floor mesh (1.7×0.04×1.1, trim-color wood) added inside the hull just above the water level at skiffY+0.02. Boat now reads as a moored wooden punt with plank decking, not a hollow shell flooded with water. Oar lowered to match (skiffY+0.12), mooring rope lowered (skiffY+0.10) to stay near the new rim height. **(4) KEYSTONE TEXT CONTRADICTION.** v61f4 keystone examine read "The shapes are kin to what you have seen underground; they are not what you have seen underground" — meant as "they resemble those shapes but are not identical" but reads as a flat contradiction because of the strict parallel construction. **Fix:** removed the contradictory clause. The preceding sentence ("It is older, perhaps. Or simpler. Or made by a hand that knew only part of the pattern.") already conveys the intended canon-protective ambiguity without the awkward parallelism. **Lesson logged (visual design):** decorative meshes need geometric depth to read as carved/dimensional rather than painted. A single inset rectangle on a flat slab will always look like a sticker; protruding sigils + a capstone + a plinth read as crafted stonework even though the total mesh count is small. Same principle as the auto-path needing the 0.02u Y offset — visible separation makes geometry legible. Parse-clean. ~90 lines net code. |
+| **v61f6** | Session 39 | **Skiff plank floor removed.** v61f5 added a plank floor mesh inside the boat to fix the v61f4 "taking on water" look. Positioned it at skiffY + 0.04 (basically AT the rim level) — which read in playtest as a "lid" covering the boat opening, not a wooden floor visible inside the hull. **Root cause of misjudgment:** I added the floor to fix the "see-through-to-water" issue, but the actual cause of that issue was the rim floating 0.25u above the hull (also fixed in v61f5). With the rim now flush with the hull's open face, the hemisphere's own closed bottom (pole at skiffY - 0.55) provides the visible floor — looking down INTO the boat shows the dark wood inside surface of the hemisphere, which reads as a punt's interior. The v61f5 plank-floor mesh was redundant clutter masquerading as a lid. **Fix:** deleted the floor mesh. Boat now reads correctly as moored wooden punt. **Lesson logged:** when fixing a visual bug, check whether the fix is actually addressing the cause vs adding compensating clutter on top of an existing problem. The v61f5 floor was a workaround for a problem that was independently being fixed in the same patch — should have shipped one fix at a time and verified before adding the second. Parse-clean. ~7 lines net removed. |
+| **v61f7** | Session 40 | **Greywatch — first overworld landmark with bespoke walkable interior; `cfg.detailFn` hook for wilderness zones.** Goal: variety in the overworld between road-stop / road-stop / road-stop. The Bealach North Approach corridor between Droichead and Thorngate gets a ruined watchtower the locals call Greywatch — a three-tier broken tower on a low hill, courtyard wall, slumped gate-arch, dry well. The PLACEMENT (between two settlements, off the road on the western hill, on the canonical route to Ironhaven) deliberately echoes The Mouth on the Inis Rua coast — attention-grabbing landmark on the way to somewhere else. Lore-light by design: canon notes it as "old, abandoned, locals call it Greywatch" with no faction commitment, no Aldred/Varek tie. Two examines (worn gate-pillar carving, broken interior staircase). Four bandits (one inside tower base guarding chest, two in courtyard, one south wall sentinel). **Architectural deliverable:** `cfg.detailFn` hook added to `buildWildernessZone` (mirrors the existing pattern in `buildVillage` line 8236 and `buildTown` line 12969). Lets a wilderness zone declare a `detailFn(scene, sol, getY)` that runs after base geometry, path, props, gates, and notice board are in place. Forward-compatible for any future wilderness landmark. **Additional `registerPlaceholderZone` propagation fixes:** six fields previously silently dropped on the wilderness branch are now passed through to cfg — `detailFn`, `enemies`, `herbSpawns`, `hills`, `fogColor`, `fogDensity`, `musicTrack`. **`hills` system extended to wilderness:** the village `hills` spec format `{x, z, r, h}` works in wilderness builders too with the same gaussian falloff. Greywatch declares `hills:[{x:20, z:35, r:14, h:2.5}]` — localized 2.5u rise under the tower visible above canopy. Greywatch built as a ~280-line detailFn: outer perimeter wall (12 fragmented box segments around (20,35) at radius 10), slumped gate-arch ruin with two stone pillars at deg=210 (intended south, became NW — see v61f8), fallen lintel inside, courtyard rubble scatter, three-tier watchtower (base CylinderGeometry walkable, mid-tier partially collapsed, crown remnant with moss patch), broken interior staircase (3 steps then rubble — withheld-affordance beat parallel to The Mouth), dry well with ring + dark hole. Two examines wired to interact() and the proximity prompt with hardcoded coordinates. Parse-clean. ~340 lines net code. |
+| **v61f8** | Session 40 | **Greywatch fixes + procedural-fort prototype.** Playtest of v61f7 found: gate on wrong side (player walks from south, expects gate on south, finds it NW); tower interior floor visibly tilting (hill profile leaking through cylinder walls); zone too cramped. Plus a broader design question — "would procedural-with-door make more sense than open ruins, so we can add forts across the map?" Two deliverables. **(1) GREYWATCH FIXES:** gate relocated from deg=210 (NW) to deg=85 (S) so the side path lands at the gate; west perimeter wall closed with three new segments where the gate used to be; side path rerouted from (40,42)→(30,36)→(18,38)→gate to a cleaner (40,50)→(30,48)→gate approach; fallen lintel moved to courtyard midpoint (had been clipping the tower arch); bandit 1 nudged from (22,40) [overlapping rubble + tower threshold] to (23,42) [clearly in courtyard]; both examine handlers updated to the new gate position (20.87, 44.96). **`cfg.platforms` SYSTEM EXTENDED TO WILDERNESS** (parallel to the v61f3 village plumbing): propagation in `registerPlaceholderZone` wilderness branch, resolution + `ZONES[id].platforms` exposure in `buildWildernessZone`. Greywatch declares `platforms:[{x0:14, x1:26, z0:30, z1:40, ySource:[20, 35]}]` — tower interior overrides activeTerrainH at hill apex Y, eliminating the radial slope leak. Forward-compatible for any future wilderness raised walkway. **(2) PROCEDURAL-FORT PROTOTYPE:** `kind` field propagated through `makePortalDef` (defaults `cave_door`). New `fort_door` branch in `spawnPortalMeshes` — gatehouse silhouette with twin flanking towers, crenellated lintel, curtain-wall stubs, heavy double-leaf door with iron banding, mounted torch. Built-stonework palette distinct from cave_door's carved-rock register. `spec.portalZone` propagated for wilderness zones. One prototype: `{zone:'bealach_central', x:60, z:80, seed:7100, size:'medium', theme:'ruins', diff:'normal', kind:'fort_door', canonicalName:'The Old Garrison'}`. The architectural shape: any wilderness zone can now host fort-door portals via one-line WORLD_DUNGEONS entries — no per-zone code changes. Parse-clean. ~190 lines net code. |
+| **v61f9** | Session 40 | **`FORT_EXTERIORS` registry — Greywatch refactored into the procedural-fort system as the first reusable exterior type.** Playtest of v61f8 reframed the direction: keep Greywatch's silhouette but hook it into the procedural system, with the watchtower exterior becoming one of N reusable exterior types ("could we have 5 or 6 unique fort exterior types?"). Architectural shape: every fort across the world uses the same `fort_door` portal + procedural interior. Variety comes from exterior styling, not from one-off walkable interiors. **Five architectural deliverables.** **(1) `FORT_EXTERIORS` REGISTRY** — maps exterior-type IDs to silhouette-builder functions. Each builder takes `(scene, sol, p, ty, M)` and constructs the visible mesh AROUND a portal coord; the door itself is delegated to a shared helper. Two exteriors registered: `gatehouse` (extracted from v61f8 inline fort_door — twin towers + crenellations + curtain-wall stubs) and `watchtower` (Greywatch's silhouette — three-tier tower + perimeter wall + courtyard with gate-arch, lintel, rubble, banner, well). Four named slots reserved: `palisade`, `monastery`, `earthwork`, `keep`. **(2) `_spawnFortDoor` HELPER** — centralized door + void + frame + torch + sol-block. All exterior types use the same door geometry at (p.x, p.z) so the interact zone is consistent regardless of styling. **(3) `exterior` FIELD ON WORLD_DUNGEONS** fort entries selects which FORT_EXTERIORS builder draws the surrounding silhouette. Default 'gatehouse' if absent, propagated through `makePortalDef`. **(4) GREYWATCH REFACTOR** — bespoke 280-line walkable detailFn torn down. Tower interior is now solid (no chest, no broken stair, no internal examines — the gate-pillar examine and broken-stair examine both removed from interact() + the proximity prompt). Geometry moved into `FORT_EXTERIORS.watchtower`. Zone spec drops from ~340 lines to ~80 lines — just zone config, bandit spawns, and a minimal side-path detailFn. New WORLD_DUNGEONS entry: `{zone:'bealach_north_approach', x:60, z:100, seed:7099, size:'medium', theme:'ruins', diff:'easy', kind:'fort_door', exterior:'watchtower', canonicalName:'Greywatch'}`. Theme/diff Act I appropriate. The fort interior becomes a normal procedurally-generated dungeon. Bandits redistributed for courtyard fiction: 2 sentinels outside perimeter on side-path approach, 2 in courtyard between gate-arch and tower door. **(5) ZONE SIZE BUMPS** for fort-hosting zones — `bealach_north_approach` 80→200, `bealach_central` 120→200 ("Deepwood-class but not Deepwood-scale"). Road spines repositioned for new sizes; gate spawn coords on four adjacent zones (Thorngate/Droichead→bealach_north_approach, Hearthwick/Droichead→bealach_central) updated to match. **Lesson logged:** the user's framing "make it one of N reusable exterior types" was a stronger architectural design than my proposed "tear it down and replace with gatehouse." Worth listening when the user describes a system shape, not just a fix. Parse-clean. ~127 lines net REMOVED (consolidation; the watchtower geometry now lives once instead of inline in Greywatch's bespoke detailFn). |
+| **v61f10** | Session 40 | **Latent tick-dispatch bug fix + watchtower geometry corrections post-playtest.** Playtest of v61f9 surfaced four findings, one of which exposed a long-standing architectural bug. **(1) BANDITS STUCK IN GROUND, NO AI (architectural).** The main render loop's zone-tick dispatch at `lid==='overworld'` was a hardcoded if/else chain matching exactly five zones: overworld, forest, ironhaven, bealach_south, hearthwick. Every other zone — all 30+ placeholder wilderness zones registered via `registerPlaceholderZone` — fell through to nothing. `ZE` populated correctly via goToZone, but `tickZoneEnemies` never ran, leaving enemies at `mesh.position.y = 0` (clipped into ground), never alerting, never chasing. The bug had been latent since `registerPlaceholderZone` shipped because no placeholder wilderness zone had ever declared enemies — `ZE.forEach` is a no-op when empty. Greywatch was the first to surface it. **Fix:** added a generic `else if(ZONES[activeZoneId] && ZONES[activeZoneId].scene)` fallthrough after the hearthwick branch — calls tickZoneEnemies + tickZoneBalls + tickHerbs with the registered scene reference. Benefits every future wilderness zone with enemies, not just Greywatch. **(2) DOOR ON WRONG SIDE.** v61f9's watchtower builder had `TZ = p.z + baseR` (tower NORTH of door, door faces NORTH), so the player approaching via the south-side perimeter gate had to walk AROUND the tower's south face to find the door on its hidden north face. **Fix:** flipped to `TZ = p.z - baseR` (tower SOUTH of door — wait, NORTH of door — door faces SOUTH). Player walks straight north through gate-arch → courtyard → door without circling. Gate-arch moved to deg=90 (due south of tower center, +Z direction = toward player approach). **(3) DOOR FRAME + ATTACHED TORCH.** Stone door frame added in `_spawnFortDoor` — two narrow pillars flanking + header above + small keystone. Torch repositioned with a horizontal wall bracket making the attachment visible (was floating in mid-air). **(4) COURTYARD DOUBLED, WALLS FULLER.** Perimeter radius 8→14. Wall heights 0.8-1.3→1.6-2.4. Segments densified to 19 (was 13), only two gaps remain — south for gate-arch (~7u opening), small ~3.5u west collapse. Each segment gets a darker cap-stone. Bandit positions updated for the flipped tower + bigger courtyard (all four verified clear of tower body, inside perimeter, in clear lines). **Lesson logged:** every wilderness zone touch from this point forward is a candidate to surface other latent bugs the hardcoded tick-dispatch chain was hiding. Worth a future audit pass to identify similar hardcoded chains for NPC ticks, retreat application, etc. Parse-clean. ~90 lines net code. |
+| **v61f11–v61f15** | Session 40 | **Door visibility iteration — four playtest screenshots, four z-math corrections.** Five micro-iterations on the same class of bug: the door visual being occluded by the surrounding geometry due to small z-position errors. **v61f11:** added a flat doorway-stub box between the curved cylinder (watchtower) and the door so the door has a clean wall surface to sit on. Cylinder cylinder bulges (polygon facets) past the door plane and occlude the door. **Bug shipped:** stub positioned 0.45u IN FRONT of the door rather than behind it, occluding the door, frame, and torch entirely. **v61f12:** fixed stub position to sit behind the door. **Bug shipped:** stub front face was still at `faceZ + 0.01` — 0.01u past the door plane — because the offset was `+0.01` not `-0.01`. The cylinder body itself still extended forward to `p.z` exactly, putting the door entirely inside the cylinder volume. **v61f13:** pushed the watchtower cylinder back by an additional 1.0u (`TZ = p.z - baseR - 1.0`) so the cylinder's south face sits at `p.z - 1.0`, leaving 0.3u of clearance for the door visual. **Door size + visibility ship:** door visible but small (cottage-scale) and door leaves invisible (too-dark wood color blending with the void background). **v61f14:** door void scaled 0.79×0.95 → 1.3×1.8 for fort-scale imposingness; stub width bumped 2.0→2.5; wood color lightened from 0x3a2810 to 0x6a4a28; iron banding doubled to two horizontal bands per leaf; iron studs and handle rings added. **Bug shipped:** door leaves z-positioned BEHIND the void plane from the player's perspective (since player approaches from +Z, "in front" means higher z, and leaves at `faceZ - 0.05` were lower z than void at `faceZ`). Same direction confusion landed in the stub front face being at `faceZ + 0.01` instead of well behind. **v61f15:** comprehensive z-stack fix. Stub repositioned cleanly behind door (front face at `faceZ - 0.30`). Door leaves moved IN FRONT of void at `faceZ + 0.02`. Iron bands at `faceZ + 0.08`, studs at `faceZ + 0.09`, handles at `faceZ + 0.10`. Frame at `faceZ + 0.04`. Result: player sees stone frame around heavy wooden door with iron bands/studs/handles, all set into the tower base. **Lesson logged:** I had a sign error in the coordinate convention that took four iterations to fully unwind. Yaw convention says yaw=0 → facing -Z (north). Player approaches from +Z looking toward -Z. "In front of the door from player view" = higher z (closer to player). I kept writing `faceZ - small` thinking "in front." Should have written a quick perspective-trace at the start of v61f11 before touching geometry; would have caught the error before shipping. Parse-clean. ~150 lines net code across the five versions. |
+| **v61f16** | Session 41 | **Six new fort exteriors + six placements + three zone-size bumps. The fort variety expansion ship.** Builds out the procedural-fort system from two exteriors (gatehouse + watchtower) to eight, and scatters six new forts across the wilderness. All architectural infrastructure was already in place from Session 40 (FORT_EXTERIORS registry, _spawnFortDoor helper, kind+exterior fields on WORLD_DUNGEONS, side-path detailFn pattern, zone size + adjacent spawn coord plumbing) — this ship is content using existing systems. **(1) FOUR NEW EXTERIORS + TWO VARIANTS REGISTERED:** `palisade` (wood register — pointed-log fence ring, log gate cap, canted watch-platform, courtyard crate+barrel), `monastery` (tall remnant wall with pointed arch + cross + low cloister stubs + fallen pews — Norman austerity), `earthwork` (concentric earth berms with sod caps + palisade fragments + stone retaining slabs at the door cut + cairn scatter — predecessor-culture Irish register), `keep` (single 4.4×5.0×4.0 stone block with arrow slits + dark capstone + corner crenellation stubs + faded banner), `ruined_gatehouse` (gatehouse variant: -X tower intact, +X tower collapsed to 1u stub, lintel sags -0.15 rad toward collapsed side, east curtain replaced with rubble heap), `watchtower_canopy` (watchtower variant: same three-tier tower with NO perimeter wall, NO gate-arch, NO courtyard — for fort placements where dense surrounding canopy reads as the natural perimeter). **(2) SIX FORT PLACEMENTS:** The Last Post (palisade) at wastes_east (80,80) seed:7101 theme:goblin diff:normal; The Wind Cloister (monastery) at mountain_pass (60,60) seed:7102 theme:haunted diff:hard; The Old Mound (earthwork) at coastal_road_north (80,80) seed:7103 theme:undead diff:normal; Pellam's Hold (keep) at la_route_royale_west (100,60) seed:7104 theme:ruins diff:normal; Hollow Gate (ruined_gatehouse) at northern_road (60,100) seed:7105 theme:goblin diff:normal; The Lonely Tower (watchtower_canopy) at forest (210,110) seed:7106 theme:haunted diff:easy. All except Lonely Tower include a 2-segment side-path detailFn branching off the road, four-bandit enemy entry (or two-skeleton/two-phantom for theme fit), and a portalZone declaration so the WORLD_DUNGEONS entry actually spawns the portal mesh. The Lonely Tower needs no side path (Deepwood canopy IS the perimeter, per the watchtower_canopy variant brief) and inherits forest's existing portalZone:'forest'. **(3) THREE ZONE SIZE BUMPS:** `mountain_pass` 80→200 (to host The Wind Cloister), `la_route_royale_west` 80→200 (to host Pellam's Hold), `northern_road` 90→200 (to host Hollow Gate). Same v61f9 pattern: pathWaypoints repositioned to span the new size (z=100 spine for E-W zones, x=100 spine for N-S northern_road), centerMarker text gets a single-sentence fort acknowledgment, gates moved to new edges. Adjacent zone spawn coords updated to land players at the new edge-of-bumped-zone road location: colmans_rest W→mountain_pass spawn (77,30)→(192,100); mur_pierre E→mountain_pass spawn (7,30)→(7,100); ironhaven W→la_route_royale_west spawn (75,40)→(192,100); vieux_marche E→la_route_royale_west spawn (7,40)→(7,100); ironhaven N→northern_road spawn (45,80)→(100,192); la_grise S→northern_road spawn (45,7)→(100,8). Six adjacent-zone updates total across three bumps. **(4) ENEMY THEMING.** Each fort's `enemies` array picks a single enemy type matching the fort's narrative register: The Last Post + Hollow Gate get Bandits (frontier outpost + abandoned-but-occupied-by-thieves register), The Old Mound gets Skeletons (predecessor-culture barrow register), The Wind Cloister gets Phantoms (abandoned cloister register), Pellam's Hold gets Bandits (lord's-hold-now-occupied register). Four enemies per fort, positioned 2 outside on the side-path approach + 2 inside the courtyard equivalent. The Lonely Tower has no surface enemies — canopy register, threat is inside the door. **(5) SIDE-PATH PATTERN.** All five non-canopy forts use the same `mkPathSeg` helper baked into each zone's detailFn — 2 segments branching off the road, terminating ~2u south of the fort's southern feature edge. Identical math to the v61f9 Greywatch detailFn; the duplication is intentional (each detailFn is self-contained, no shared helper extraction yet — KISS, defer abstraction until 3+ side-path forts make a clear pattern). **(6) AUDITS.** Two Python audit passes ran before final ship: (a) fort coords vs zone bounds — all six forts have ≥60u margin from zone edges on both axes; (b) adjacent zone spawn coords vs bumped zone sizes — all six adjacent spawns land cleanly inside the new larger zone interiors (192 in 200u zones gives 8u from far wall; 8 in 200u gives 8u from near wall; 100 is center). **(7) NAMING REGISTER.** All six names are folk-usage register per the lore canon § Fort-class landmarks ("voice register across all forts: lore-light"). No king, no order, no dated fall. The Last Post (Anglo-Saxon plain), The Wind Cloister (Anglo-Saxon, abandoned-religious), The Old Mound (Anglo-Saxon, oldest register), Pellam's Hold (Anglo-Saxon name on Norman-French road — quietly says "predates the road"), Hollow Gate (Anglo-Saxon atmospheric), The Lonely Tower (Anglo-Saxon plain). No Ald- prefix used (load-bearing per lore canon). **Verification:** parse-clean (single Node syntax check). Brace-balanced (6184 each). Template-literal balanced (1108 backticks, even). Lines ~28,130 (was 27,300; ~830 net added). **What's NOT in this ship:** the fort interior procedural generator. Per Session 41 plan-call, the interior generator is the next ship in Session 41; this ship is exteriors-first to playtest the new fort silhouettes on a stable interior baseline. New forts currently use the standard `makeDungeon` algorithm — cave-style random rooms — same as anchor dungeons. The interior-vs-exterior register mismatch (built stonework outside, cave layout inside) is the intentional playtest gap for the next ship to close. |
+| **v61g0** | Session 42 | **Fort Interior Procedural Generator + FORT_INTERIORS registry + hallway tile vocab.** First fort-interior ship — addresses the v61f16 interior-vs-exterior register mismatch by introducing a fort-specific layout generator. **(1) FORT_INTERIORS registry** at module level, symmetric with v61f9 FORT_EXTERIORS. Entries: `cave` → `makeDungeon` (default for cave_door portals), `fort_tee` → `makeFortInterior`. Reserved slots for `fort_linear` and `fort_courtyard` (future ships). **(2) `interior` field on WORLD_DUNGEONS** — defaults to `'cave'`; all 8 forts declare `interior:'fort_tee'`. Dispatched via FORT_INTERIORS[portal.interior] in `buildDungeon`, with defensive fallback to `'cave'` on unknown values. **(3) Tile `7` = hallway floor** added to dSolid as plain-walkable (parallel to `v===1`). New tile vocab marker for hallway cells — renderer can differentiate hallway lighting/material from room floor in future ships without rescanning geometry. **(4) `makeFortInterior(size, seed)`** — trunk + perpendicular cross-hall layout. Returns the same `{map, map2, W, H, rooms, ...}` shape as `makeDungeon` so downstream consumers (buildDungeon, dSolid, enemy spawn) need no special branching. Independent cfg table: medium fort `en:9` (vs cave `en:14`) — fort interiors are layout-denser, lower enemy count keeps combat-per-room similar. Single-floor only (no map2/stair this ship). **Layout (canonical orientation):** 3-cell-wide trunk N-S, 3-cell-wide cross-hall E-W at ~1/3 down from north, Great Hall (8×5, treasure-floor) at north end of trunk, Chapel (5×5) at west of cross, Lord's Chamber (5×5, locked treasure) at east of cross, 4 side rooms (4×4 each, paired east/west of trunk between cross and entry). 7 rooms total, 1 locked door. **Wired to all 8 fort placements.** Cave dungeons completely untouched. Parse-clean (28,383 lines, +252). |
+| **v61g1** | Session 42 | **Treasure room collision fix — 1-line replacement, dungeon-wide impact.** Investigation triggered by playtest report: "invisible walls in treasure rooms" + "can only partially enter most treasure rooms." Root cause: dSolid's `v===6` branch made treasure floor "solid until proven walkable by an adjacent open door within 3 cardinal cells." Three real bugs: (a) diagonal back-corner cells couldn't see the door cardinally → unreachable, (b) doors more than 3 cells away couldn't be found at all → larger treasure rooms had entire unreachable rows, (c) locked rooms read as sealed even when the door was open. Fix: `if(v===6) return false;` — plain-walkable, no special case. The "sealed-until-opened" property the old code was buying is already enforced geometrically (treasure room perimeter is `v===0`, only entrance is the door cell), so deleting the radius-3 logic loses no gameplay value. Affects every treasure room in every dungeon (cave anchor sites + new fort interiors). Parse-clean (28,381 lines, -2). |
+| **v61g2** | Session 42 | **Fort renderer styling — stone walls (continuous planar geometry), columns, ceiling beams, hallway torches.** The big visual upgrade ship. Replaces the cave-dungeon per-cell wall stamping with continuous planar geometry for fort interiors, plus adds architectural decoration. **(1) Fort detection flag** — `isFort = portal.interior?.startsWith('fort_')`. Extensible to future fort_* variants. **(2) Stone procedural wall texture** — cool-grey block-course pattern (running bond layout, 4 blocks wide × 6 courses tall, jittered tints, mortar lines drawn explicitly). **(3) Stone procedural floor texture** — grey flagstones with irregular grid and outlines. **(4) `renderFortWalls` continuous-wall pass** — scans map edges in two passes (horizontal + vertical) and emits ONE wall plane per run of same-orientation wall segments. A 5-cell-long wall becomes one 5-unit-wide plane instead of 5 separate cubes. Per-segment texture repeat keeps block courses tiling at 1 unit per grid cell. Eliminates the cubic facets that made cave dungeon walls read as "stamped grid." **(5) `renderFortArchitecture` decoration pass** — columns at door cells, ceiling beams crossing hallways at 4-cell intervals, wall torches at 5-cell intervals using existing `_intTorch` helper. Cave dungeons untouched. Parse-clean (28,796 lines, +415). **Two known issues post-ship:** (a) wall planes were single-sided so the player could see through them diagonally (transparent walls bug), (b) door-flanking columns blocked player movement through doors. Both fixed in v61g3. |
+| **v61g3** | Session 42 | **Fort scale 2x + column re-placement + chandeliers + rugs + DoubleSide walls.** Five-part ship addressing v61g2 playtest findings: forts feel small, walls are transparent, columns block doors, treasure rooms lack ceiling lighting, ceremonial rooms lack rugs. **(1) Fort cfg scaled 2x** — medium 30×30 → 60×60, en:9 → en:14 (sub-linear enemy scaling). All room dimensions scaled proportionally: Great Hall 8×5 → 16×10, CROSS_END 5×5 → 10×10, SIDE_W 4 → 8. Trunk and cross-hall widened 3→5 cells (cathedral-nave register). Side-room z-offsets scaled proportionally (crossZ1+5 upper, crossZ1+17 lower). **(2) Transparent walls fixed** — `mat.side = THREE.DoubleSide` on wall material clones. **(3) Columns moved from doors to hallways + ceremonial rooms.** Door-flanking columns removed entirely (they were blocking player movement). Two new placement strategies: hallway-mounted columns at 4-cell intervals on both walls of the trunk and cross-hall (half-buried in the wall plane, Battlehorn-cathedral-nave register), AND ceremonial-room columns in two parallel rows at 25%/75% across the short axis of large rooms (Great Hall, Lord's Chamber, Chapel — gen.rooms[] iteration with `room.w >= 8 || room.h >= 8 || hasTreasure` gate). **(4) Chandeliers in treasure rooms.** New `_intChandelier(sc, x, z, ceilY)` helper — iron ring with 6 candles + chain to ceiling + warm point light wired to TORCHES flicker. Great Hall (long axis ≥12) gets 2 chandeliers evenly spaced; smaller treasure rooms get 1 centered. Chapel intentionally skipped (sacred-not-noble register; gets altar candles in v61g5). **(5) Rugs in ceremonial rooms** — red Lambert plane on the floor, sized to 80% of long axis × 30% of short axis, positioned at baseY+0.01 to avoid z-fighting. Great Hall gets a long center runner; Chapel gets a runner; Lord's Chamber rug skipped (waiting on bed positioning). Side rooms get no rug (utility spaces). Parse-clean (29,064 lines, +268). |
+| **v61g4** | Session 42 | **Four playtest fixes: hallway columns visible, column collision, treasure-room overkill, torch density.** Iteration ship from v61g3 playtest screenshots. **(1) Hallway columns weren't visible.** Root cause: v61g3's column placement used `walkN && walkS` adjacent-walkable detection to identify trunk cells — but a 5-cell-wide trunk has walkable neighbors on all 4 sides at its center cell, so the center got mis-classified as "intersection" and skipped. Replaced with run-length comparison: trunk cells have a long N-S run + short E-W run, cross cells have the opposite, true intersections have long runs in both axes. Same fix applied to ceiling beam detection for consistency (beams still worked via edge-cell emission but now use the correct primitive). **(2) Column collision wired.** Module-level `DUNGEON_COLUMNS = []` array tracks `{x, z, r:0.27}` per column. Cleared on buildDungeon entry alongside ENEMIES/CORPSES/etc. `dSolid` consults it after the tile-map check on walkable tiles (1, 6, 7). New `placeColumn(x,z,h)` helper in renderFortArchitecture wraps `_intColumn` and registers collision; all `_intColumn(dScene,...)` calls in the architecture pass swapped to `placeColumn`. **(3) Treasure room overkill fixed.** Two contributing bugs: (a) `v===6 && Math.random() < 0.3` random per-cell floating yellow point lights were spawning ~75 lights across Great Hall + Lord's Chamber on top of chandeliers — gated to `!isFort`; (b) the 4×4 cluster treasure-chest algorithm produced ~10 treasure chests in the 16×10 Great Hall — replaced for fort interiors with "one treasure chest per treasure room, placed at the cell farthest from entry." Cave dungeons keep the 4×4 cluster algorithm. **(4) Torch density halved** — `torchInterval: 5 → 10`. Hallway torches now read as punctuation rather than floodlights, complementing chandelier lighting in treasure rooms. Parse-clean (29,147 lines, +83). |
+| **v61g5** | Session 43 | **Ship A: exterior scale 2× + perimeter walls on all 8 forts. The "this reads as a fort" ship.** Triggered by v61g4 playtest screenshot of The Old Garrison showing a gate-only exterior that read as "stone arch" not "compound." Addresses every FORT_EXTERIORS builder + `_spawnFortDoor` + WORLD_DUNGEONS coords + enemy placements + a coordinate-convention change. **(1) Coordinate convention reworked.** Each fort's WORLD_DUNGEONS `(x, z)` is now the INTERIOR DOOR coord at the back of the courtyard, not the gate. Gate showpiece sits at `z = p.z + perimR` (south of door, on the player-approach side). All 8 fort z-coords shifted by -24 to match: Old Garrison (100,60)→(100,36), Greywatch (60,100)→(60,76), Last Post (80,80)→(80,56), Wind Cloister (60,60)→(60,36), Old Mound (80,80)→(80,56), Pellam's Hold (100,60)→(100,36), Hollow Gate (60,100)→(60,76), Lonely Tower (210,110)→(210,86). Side-path endpoints unchanged — verified to land 3–14u south of new gate positions in all cases. Zone-margin audit: every new fort coord fits cleanly within its zone (≥32u to nearest edge). **(2) `_spawnFortDoor` scaled 2×.** `faceZ` -0.7→-1.4; void 1.3×1.8→2.6×3.6; stub 2.5×0.6→5.0×1.2 (the stub IS the back-wall opening that perimeter back-wall segments extend laterally from on every fort); all frame/header/keystone/door-leaf/iron-band/stud/handle dimensions doubled via local `S=2.0` factor; torch PointLight intensity 1.6→2.0 range 8→12; sol-blocker rx 0.6→1.2. **(3) All 8 FORT_EXTERIORS rewritten with local `S = 2.0` and `perimR = 24`.** Each footprint is a 48u-wide × 24u-deep rectangle (x ∈ [p.x-24, p.x+24], z ∈ [p.z, p.z+24]) with the gate opening on the south face at z = p.z+perimR, EXCEPT `earthwork` (concentric circular berms 24u-diameter, intentional hillfort register), and `watchtower_canopy` (sparse fragments at perimeter positions, no solid wall — canopy still narratively the perimeter). Per builder: `gatehouse` — twin towers + lintel serve as south gate showpiece, rectangular stone curtain perimeter, back wall splits around door stub at stubHalfW=2.5; slit-direction bug fixed (slits now face +Z outward toward attackers, not -Z into courtyard). `watchtower` — three-tier tower stays at TZ=p.z-baseR-1.0*S (just north of door); gate-arch ruin pillars at south face are now the SHOWPIECE; rectangular stone curtain perimeter 48×24; banner/rubble/well repositioned through larger courtyard. `palisade` — helper `palisadeRow(x1,z1,x2,z2,startSeed)` for placing logs at 0.6u spacing along rectangle edges; heavy gate logs + lintel at south face; watch-platform + crate/barrel scattered in courtyard. `monastery` — remnant wall IS the central back-wall section (door opens through it, aligning with stub); pointed-arch stones above doorway preserved; low cloister-style stone perimeter (peri_wallH=1.6*S, no dark caps = Norman austerity); pointed-arch stone gate showpiece at south face; cloister stubs reoriented to project INTO courtyard; cross + fallen pews in courtyard. `earthwork` — outer berm at outerR_actual=12 (24u diameter) centered at (p.x, p.z+12), gate at deg=75–105° south gap; inner sacred berm radius 6*S centered at (p.x, p.z+4*S), gap at deg=255–285° (north, toward door); predecessor-masonry stone gate (3.2*S-tall slabs + lintel) at outer-berm south gap is the showpiece; door retaining stones at back. `keep` — keep block (4.4*S × 5.0*S × 4.0*S) sits behind door as showpiece; low stone curtain perimeter peri_wallH=1.8*S; modest stone gate-arch (gatePostH=3.0*S) at south face — less imposing than gatehouse, matches keep austerity; back wall splits around keep's east+west faces; banner mount + arrow slits preserved. `ruined_gatehouse` — same as gatehouse but east tower collapsed to 1u stub + rubble heap, lintel sags z=-0.15 rad toward collapsed east side, east perimeter face built as TWO segments with a gap (z ranges p.z+(CZ-p.z)*0.55→CZ ruinous + p.z→p.z+(CZ-p.z)*0.40 intact, rubble pile in the gap); `wallSeg` accepts a `ruinous` flag (shorter+darker+rotated). `watchtower_canopy` — three-tier tower 2× + 6 scattered pointed-log fragments at rectangle corners/mid-edges with height/lean variance + single fallen-log gate marker lying horizontally at south arc (no standing gateposts; reads "this is the way in"). **(4) Enemy positions updated for 6 forts.** Pattern: 2 outside south of gate, 2 inside courtyard between gate and door, recalibrated to new coords. Greywatch, Hollow Gate, Wind Cloister, Pellam's Hold, Old Mound, Last Post all updated. Old Garrison has no enemies (prototype zone). Lonely Tower has no surface enemies by design. **(5) Audits.** Python passes verified: zone margins (all new fort coords have ≥32u to nearest edge on both axes); side-path landing distances (path endpoints now 3–14u south of new gate showpieces, no path edits needed); door-faces-+Z convention universal (re-verified for all 8 by tracing each fort's side-path approach direction). Parse-clean after each builder (8 individual checks). Brace-balanced (6821 each). Backtick-balanced (1120, even). Lines 29,598 (+451). **What's NOT in this ship:** interiors are unchanged (Ships B and C in Session 43 plan). The 5 of 8 forts that are Act-II-gated (The Last Post, Wind Cloister, Old Mound, Pellam's Hold, Hollow Gate) need Act I climax + commission to playtest naturally; Greywatch + The Old Garrison + The Lonely Tower remain the easy-access playtest set. |
+| **v61g5b** | Session 43 | **Three-part playtest fix from v61g5: doorhouse upgrade, gate torches, earthwork redesign.** Playtest of v61g5 showed three issues: (a) the door-stub looked detached from the perimeter back wall — stub at z=p.z-2.3 floated 2.3u behind the back-wall line at z=p.z, reading as a separate small panel rather than connected geometry; (b) gates were hard to identify from outside (no lighting); (c) the earthwork's concentric circular berms had near-identical radii (outer 12u, inner 12u offset 2u — coincidentally same size) and the inner berm's north-facing gap blocked the south-to-door corridor entirely — fort was unenterable. **(1) DOORHOUSE upgrade in `_spawnFortDoor`.** Stub upgraded from 5.0×1.2×4.6u panel to 10.0×3.0×6.0u proper built doorhouse (2× wider, 2.5× deeper, taller crown with 2 corner crenellations). Repositioned: stub center at `z = (p.z - 1.45) - stubD/2` so the south face sits at z=p.z-1.45, just behind the door plane at faceZ=p.z-1.4 — back-wall perimeter segments can now be placed at z=p.z-1.45 to meet the doorhouse east+west faces flush. Sol-blocker reworked from 2 stub-edge entries to 5 entries covering east+west+north edges and south-face flanks beside the door void, leaving the door interact corridor clear. **(2) Per-fort backwall rewire to meet the new doorhouse.** Every FORT_EXTERIORS builder updated: `stubHalfW` 2.5→5.0 (matches new doorhouse half-width), `backZ` p.z→p.z-1.45 (back wall meets doorhouse south face), east+west perimeter walls extended to span CZ→backZ (segLen now perimR+1.45=25.45u). Per-fort specifics: `gatehouse` and `ruined_gatehouse` (rectangular stone curtain) — back-wall segments left+right of stub at backZ. `watchtower` (rectangular stone curtain) — same pattern. `palisade` (rectangular wood-log curtain) — palisadeRow calls use backZ for east/west/back rows. `monastery` — remnant wall widened from 12u→16u and opening widened from 5u→10u to accommodate the wider doorhouse, doorClearH bumped 2.6*S→4.4*S for the taller door, pointed-arch stones scaled up 0.4→0.7*S width and repositioned at ±1.4*S offset / 4.0*S height, crumble caps respaced at ±2.5*S width 1.6*S to span the wider wall. `keep` — block widened 4.4*S→7.0*S (14u) and depth 4.0*S→5.0*S so it visibly engulfs the 10u doorhouse rather than being narrower than it; KZ recomputed as backZ-blockD/2 (block south face at backZ); arrow slits pushed from ±1.5*S→±3.5*S to sit outside the doorhouse on the visible keep face; banner mount repositioned higher; corner crenellations bumped 0.4*S→0.5*S; stone scatter pushed to ±4.5*S. `ruined_gatehouse` — east-face gap reanchored to the new (CZ→backZ) range using `backZ + (CZ-backZ)*0.45` and `*0.30` for the two halves, rubble pile recentered. **(3) GATE TORCHES.** New `_spawnGateTorches(sc, gx, gz, ty, gateOpeningHalfW, gatePostTopY, col)` helper after `_spawnFortDoor` in the file. Builds a bracket+stick+sphere flame+PointLight (intensity 2.4, range 16 — brighter+bigger than door torches, read from farther) on each side of the gate, positioned `gateOpeningHalfW + 0.6` outside the gate gap and 0.6u below the post top. Wired into 6 forts at their south gate showpiece: gatehouse (at ty + towerH*0.9), watchtower (at ty + 2.4*S), palisade (at ty + gateLogH*0.85), monastery (at ty + gatePostH*0.85), earthwork (at ty + 3.2*S*0.85), keep (at ty + gatePostH*0.85). `ruined_gatehouse` gets a SINGLE west-only torch inlined manually (east tower is collapsed — no east torch reads as "this fort still has someone tending the gate, but only one side"). `watchtower_canopy` skipped (austere canopy register, fallen-log gate marker only — no standing posts to attach a torch to). **(4) EARTHWORK redesign — circular concentric → rectangular 48×24.** Scrapped the two circular concentric berms entirely. New: rectangular 48×24 earthen berm matching the gatehouse perimeter pattern, with bermH=1.6*S and bermD=1.8u (lower than stone walls, earthen register). New `bermSeg(cx, cz, len, axis)` helper emits earth box + sod cap + sparse palisade log fragment every 2nd segment (via `palCounter` modulo) + sol entry. New `subdivide(x1,z1,x2,z2,n)` helper splits each face into n segments to distribute palisade fragments. South face split by 5u gate (3 segments each side); east/west faces 4 segments each from CZ to backZ; back face split by doorhouse (2 segments each side). Gate showpiece (predecessor-masonry slabs + lintel) preserved at south face — unchanged visual. Door retaining stones pushed out to ±10u flanking the doorhouse (was ±2.6u, way too narrow), lintel widened to 11*S. Cairn-stones repositioned for the rectangular layout. Path verified clear via Python sim: player at x=CX walks z=28→-3 without obstruction. **Verification.** Parse-clean after every str_replace (12 incremental checks total). Final brace count 6827 (was 6821). Backtick count 1120 (unchanged). Lines 29,665 (+67). Earthwork south corridor path-tested clear. **What changes for the player.** Door visually connected to the back wall. Gates lit and visible from outside the perimeter. Earthwork (Old Mound) actually enterable. Keep visibly dwarfs the doorhouse. Monastery's pointed arch now spans the wider doorway. **What's the same.** Coordinate convention, WORLD_DUNGEONS coords, side-path endpoints, enemy positions, interior dungeons. Ships B and C (interior variants + per-room props) still ahead. |
+| **v61g5c** | Session 43 | **Three more playtest fixes: watchtower geometry artifacts, road-side fort relocations.** Playtest of v61g5b on The Lonely Tower (watchtower_canopy) + The Old Mound (earthwork) surfaced three issues: (a) tier-3 tower crown rendered as a clipping glitch from one side (partial cylinder geometry was only visible from the closed angle, transparent from the broken-open angle); (b) tier-2 collapse rubble floated 9-11u up in mid-air next to the tower instead of resting at ground level; (c) watchtower_canopy palisade fragments had misaligned cone caps due to a sign error + missing y-component in cap-position rotation math; (d) The Old Mound (and by extension The Last Post) had the road on the NORTH side of the fort but the gate facing SOUTH — player walked PAST the fort, around it, then back through the south gate to enter. **(1) Watchtower tier-3 crown — closed geometry.** Replaced `CylinderGeometry(t3R, t3R, t3H, 12, 1, true, 0, Math.PI*0.7)` partial cylinder + backside-inner-cylinder pair (which only rendered from one angle, looked like a clipping glitch from the other) with a closed full CylinderGeometry + 4 scattered broken-stone BoxGeometries around the west-side rim. Reads "crown intact in the east, broken open in the west" from EVERY viewing angle. Applied to both `watchtower` (Greywatch) and `watchtower_canopy` (Lonely Tower) builders. **(2) Watchtower tier-2 rubble — ground level.** Three west-side collapse stones moved from y=9-11u (mid-air at tier-2 height, looked like floating boxes) to y=0.2-0.3u (resting at ground level, west of cylinder base). Now reads "stones that fell from the collapsed upper tier and settled at the foot of the tower." X positions shifted from `-t2R - offset` (next to tier-2) to `-baseR - offset` (next to tier-1 base). Applied to both watchtower variants. **(3) Watchtower_canopy fragment cap alignment.** Old code: `cap.position.set(lx + Math.sin(lean)*lh/2, ty + lh + 0.17*S, lz)` — wrong sign (+sin instead of -sin) AND ignored the Y-axis shortening from rotation. Fixed: use rotated up-vector `(ux, uy) = (-sin(lean), cos(lean))` and compute top-of-log position as `(lx + ux*lh/2, ty + lh/2 + uy*lh/2, lz)`, then offset cap center by `(ux, uy) * 0.175*S` along the rotated up axis. Also reduced lean variance from ±0.18 → ±0.04 max and made fragment heights uniform (2.4*S instead of varying 1.4-2.6*S) for a more deliberate "intentional marking" feel — these are 6 fragments at the perimeter rectangle corners + mid-edges, not random scatter. **(4) Old Mound + Last Post relocated.** Both forts had road@z=40 (E-W) but gate at z=fort.z+24 = 80 — gate faced south, player walked past fort to reach it, then walked back north through gate and courtyard to door. Moved both fort coords from (80, 56) to (80, 20) so gate ends up at z=44, just 4u south of the road. Player now walks south from road through gate, into courtyard (z=44→20), to door. Side path endpoints updated: was `mkPathSeg(80, 44, 80, 70); mkPathSeg(80, 70, 80, 88)` (two long segments past the fort), now `mkPathSeg(80, 36, 80, 42); mkPathSeg(80, 42, 80, 46)` (two short segments landing just south of gate). Enemy positions updated for both forts to match new coords: outside south of gate at z≈58-60, inside courtyard at z≈32-36. Zone margin audit: with fort.z=20, north margin to zone edge is 15.6u (clears doorhouse + ground halo), south margin is 116u, east/west 56u. All ≥15u. The other 4 forts (Greywatch, Wind Cloister, Pellam's Hold, Hollow Gate) already have road geometry that delivers the player to the south side of the fort — no changes needed for those. **Verification.** Parse-clean. Brace-balanced (6827 each). Backticks 1124 (was 1120; +4 from new code-comments that included `backtick-formatted` references — even count, no template-literal break). Lines 29,698 (+33). **What changes for the player.** Lonely Tower's silhouette is consistent from all viewing angles (no more clipping-bug crown), the rubble at its base reads as fallen-and-settled, the perimeter logs sit straight and uniform. Old Mound + Last Post: walk south from road, gate is RIGHT THERE, no detour. **Still deferred (own future sessions):** fort terrain elevation (forts should sit on a slight upslope), wilderness zone size bumps + curved roads. |
+| **v61g5d** | Session 43 | **One-tick fix: Old Mound + Last Post road buffer.** v61g5c moved both forts to fort.z=20 (gate at z=44, 4u south of road@z=40). Playtest showed the berm at the south face of the perimeter wrapped to z≈44 (perimeter south face at fort.z+24, bermD=1.8u thickness) which collided with the road's visual extent — the brown earthwork was sitting on top of the road. Bumped both forts further south to fort.z=30 (gate at z=54, 14u south of road). Side paths re-routed: was 6u of southward path landing at z=46, now 12u of southward path landing at z=56. Enemy positions shifted to match. Margins still comfortable (104u south, 25.55u north to zone edge for the doorhouse). The other 4 fort-with-road locations were already verified clean in earlier ships. Parse-clean, 29,693 lines (-5 from v61g5c — one fewer comment block per fort, the rest unchanged). |
+| **v61g6** | Session 44 | **Ship B: fort_linear + fort_courtyard interior variants + complete door system rework. The "no more find-the-key, every door is suspense" ship.** Two new generators register alongside fort_tee, distributed across the 8 forts (3 tee / 3 linear / 2 courtyard). Plus a foundational rework of the door system from "find-key-to-unlock" to "all doors closeable, none locked, every doorway is a tactical decision." **(1) `makeFortInterior_linear(size, seed)`** — long N-S trunk (5-cell wide) with 4 side rooms (8×8 each) on alternating W/E sides at evenly-spaced z slots along the trunk. Single Great Hall (16×10, treasure-floor, closeable unlocked door) at the north terminus of the trunk. No cross-hall. Reads "outpost" — long single spine, small rooms branching off, one ceremonial space at the back. Sizing: `en` ~70% of tee (smaller fort register), `tr:1` (no Lord's Chamber slot — single treasure room). **(2) `makeFortInterior_courtyard(size, seed)`** — short 5-cell entry corridor → central 12×12 treasure-floor courtyard room → 4 rooms doored off the courtyard walls (N door → Great Hall 16×10 treasure-floor, E door → Lord's Chamber 10×10 treasure-floor, W door → Chapel 10×10) + 2 utility rooms (8×8) flanking the entry corridor. Reads "keep" — the courtyard IS the hub, no long hallways. The courtyard is treasure-floor itself so it gets columns from the existing fort-architecture pass, reading as the hall of the keep. `tr:2`, `en` slightly higher than tee (concentrated combat in the central room). **(3) Routing across the 8 forts.** tee → Greywatch (watchtower), The Old Garrison (gatehouse), Hollow Gate (ruined_gatehouse) — the classic gatehouse-family forts. linear → The Last Post (palisade), The Old Mound (earthwork), The Lonely Tower (watchtower_canopy) — the smaller/older/less-fortified exteriors map to the outpost register. courtyard → Pellam's Hold (keep), The Wind Cloister (monastery) — the two "this is a building, not a perimeter" exteriors. **(4) DOOR SYSTEM REWORK — all fort doors closeable but unlocked.** Every fort generator emits `locked:false` for every door. Lord's Chamber door in tee (was locked + keyed) → unlocked. No keys spawn in fort interiors. Two visual variants in the door-mesh spawn loop: locked doors (cave treasure rooms only) keep the 3-vertical-bars + brass-lock-plate "vault" mesh; unlocked doors (forts + cave corridors) get 2-horizontal-iron-bands "mundane door" mesh. The door-mesh spawn loop now processes ALL `treasureDoors`, not just locked ones (pre-v61g6 the loop filtered `td.locked!==false`, so tile-4 "unlocked" doors had no mesh and were permanently-open passages). **(5) E-press handler reworked.** Locked door branch: existing key-check behavior preserved verbatim for caves (sndDoorUnlock, mesh removed, tile 5→1, key consumed from BAG). Unlocked door branch: toggle open/close on E. Open → sndDoorOpen, `mesh.visible=false`. Close → check player/enemy occupancy of the door cell first; if anything occupies, refuse with "Something is in the way." toast; otherwise sndDoorClose + mesh.visible=true. **(6) `dSolid` tile-4 update.** Pre-v61g6: tile 4 returned `!solid` unconditionally (unlocked doors had no mesh, always passable). Post-v61g6: tile 4 consults DOORS like tile 5 does — a closed unlocked door blocks pathing. **This means closing a door blocks player+enemy pathing AND enemy line-of-sight** (the existing LOS code uses `dSolid` via `bfs`). Closing a door behind you breaks pursuit and breaks ranged-enemy targeting — a genuine tactical lever. Fallback to "passable" when no DOORS entry exists at the cell (legacy saves, pre-v61g6 dungeons). **(7) Prompt + HUD updates.** Prompt at door proximity: locked closed → key check (unchanged); locked open → no prompt; unlocked closed → "Press 'E' to open door"; unlocked open → "Press 'E' to close door". HUD status line "N locked doors to find" now filters on `d.locked` instead of `!d.open` — without this, every closed fort door would have read as "locked" in the HUD. **(8) Sound design.** Two new functions next to `sndDoorUnlock`: `sndDoorOpen` (low filtered noise wood-scrape + descending sawtooth pitch) and `sndDoorClose` (fast low sawtooth thunk + brief low noise impact). Lighter than `sndDoorUnlock` — no lock-breaking thunk, no key-withdrawal beat — mundane and repeatable. **(9) Bram dialog preserved.** Bram's "find a key before you start hammering on locked doors" line still reads true — cave dungeons still produce locked treasure doors via `makeDungeon`. The keep-vs-cave register cleanly separates: caves have a treasure-and-key vibe, forts have a room-by-room-suspense vibe. **Verification.** Parse-clean. Brace-balanced (6904 each). Backticks 1124 (unchanged). Lines 30,076 (+383). Python sim verified all 3 generators × 5 sizes: entry cells at expected position, all rooms within bounds, all doors tile 4 (no locks), empty keyLocations, every room reachable from entry via BFS through tile 1/4/6/7. `node --check` passes. **What changes for the player.** Forts have three distinct interior shapes. Doors look different from cave treasure-room doors. Every doorway is a moment of suspense (what's behind this) plus a tactical tool (close it behind you to break enemy pursuit). No more keys in forts. **Saves mid-fort with half-collected fort keys** end up with a dangling cosmetic "Old Garrison Key" item that's harmless. |
+| **v61g7** | Session 44 | **Hotfix bundle from v61g6 playtest: chains-rebuilt + barrel-cluster-rework + crates-added + take-all-on-E.** Four small things bundled into one ship, addressing visual + UX paper-cuts surfaced during fort interior playtest. **(1) Chains rebuilt (haunted-theme clutter).** Pre-v61g7 chains rose ~0.35u from the floor with 4 torus links spaced 0.18u apart and alternating axis rotation — read as a stub of disconnected rings rather than a chain. New: ceiling-anchored (top link flush at `baseY + FLOOR_HEIGHT - 0.05`, hangs downward), tight 0.09u link spacing so alternating-axis links visually interlock, length jitter (1.5-2.9u so chains in the same room don't all hang to the same height), 50/50 charcoal `0x383838` / rust-iron `0x5a5048` color variance. Same haunted-theme trigger condition (`clutter:'chains'`) so it applies to Wind Cloister + Lonely Tower + any haunted cave automatically. **(2) Barrel sizing bump.** 0.15u radius → **0.22u**, 0.35u tall → **0.55u**. Bands repositioned at 1/4 and 3/4 of new height. Reads as proper lootable furniture rather than decorative trinket. Interact/prompt radius bumped 1.0 → 1.1u to match the larger mesh. **(3) Per-room cluster spawning — replaces per-cell scatter.** Pre-v61g7 ran a per-cell 4.5%-chance barrel spawn over every room floor cell, producing 9-14 scattered singletons per dungeon. New: per-cell loop removed; new per-room pass after the per-cell render. ~50% of rooms ≥4×4 spawn a cluster. Cluster picks one of 4 corners (1-cell inset from walls), drops 2-4 containers within ~0.7u of the corner anchor, with 0.55u minimum spacing between containers (collision-checked against existing BARRELS). Result: similar total count (~10/dungeon) but visually dense in corners instead of scattered. Each container in a cluster Y-rotates randomly so they don't all face the same direction. **(4) Crates added as sibling prop.** New `buildCrate(group)` mesh helper alongside `buildBarrel(group)` — 0.5u cube with 4 iron-trim strips around the top edge + thin lid slab. Mechanically identical to barrels: same `BARRELS[]` array, same `rollContainerLoot('barrel', ...)` table, same open-animation (lid pops up via the `top` ref). Cluster pass rolls 50/50 barrel/crate per container — clusters mix. Prompt text reads from `displayName` ("open barrel" vs "open crate"). **(5) E in loot panel = Take All + Close.** Pre-v61g7 the loot panel keydown branch closed the panel on E or Esc without taking anything; user had to click-each-item or click Take All button then close manually. New: E → `takeAllLoot()` + `closeLoot()` + `G.focus()`. Esc still closes without taking. Take All button now also closes the panel after grabbing. Click-individual-item flow preserved for selective looting (rare case). Panel hint updated: "Press E to grab everything · Esc to leave." Dynamic subtitle in `openLoot` updated to "Click an item to take just that one." **Verification.** Parse-clean. Brace-balanced (6922 each). Backticks 1124 (even). Lines 30,208 (+132). `node --check` passes. Sim'd ~10 containers per medium fort on average, occasional outliers up to 23, zero-cluster forts only ~0.7%. **Punted to its own session:** crosshair-targeted looting (the broader interaction-targeting refactor) — currently every interactable in the game uses proximity (chests, barrels, corpses, NPCs, sigils, doors, stairs, entrances, examinables). Switching just barrels to crosshair-target would break consistency; the right fix is a sweeping pass across all ~15 proximity-prompt branches in one ship. Cluster spacing at 0.55u min + 1.1u interact radius should resolve cleanly for 2-4 containers in a corner without ambiguity. |
+| **v61g8** | Session 44 | **Ship D: Per-room fixed prop signatures + kind-aware cluster spawn — forts feel curated.** The "every room has character" ship. Each fort interior room is tagged with a `kind` at generation time; a new `decorateFortRoom(room, baseY)` pass spawns kind-specific fixed props; the cluster spawn from v61g7 is now kind-aware (skips ceremonial rooms, prefers specific corners for utility kinds, force-clusters-all-corners for storerooms). **(1) `room.kind` tagged at generation time.** Modified `carveRoom` in all 3 fort generators (tee, linear, courtyard) to accept a `kind` parameter and store it on the room object. **Ceremonial kinds** (Great Hall, Lord's Chamber, Chapel, courtyard_hall) are slot-position-determined per generator. **Utility kinds** are Fisher-Yates shuffled per seed from a pool of `['barracks','kitchen','armory','storeroom','guardroom','storeroom']` (storeroom listed twice — slightly more common since it's the cluster-heavy kind that plays best with the cluster system). Two playthroughs of the same fort feel different (utility rooms shuffle). **(2) `decorateFortRoom(room, baseY)` function** added in `buildDungeon`, called after `renderFortArchitecture` for every fort room. Reads `room.kind` and dispatches to one of 8 kind branches (storeroom intentionally has no fixed props — handled entirely by the cluster pass). Helper closures: `box`, `boxAt`, `cyl`, `cylAt`, `candle` (wax cylinder + emissive sphere + small warm PointLight). Materials: woodDark `0x3a2a18`, woodLight `0x5a4028`, stone `0x4a4540`, linen `0x9a8a70`, iron `0x2a2218`, candleWax `0xc8b890`, flame emissive `0xffcc66`. **(3) Prop signatures per kind:** Great Hall — long banquet table on long axis (E-W in the 16w×10h hall), two bench rows flanking it, 3 candles spaced along the table, hanging red banner on the north wall. Lord's Chamber — bed (wood frame + linen mattress) against N wall, foot chest, side table with candle. Chapel — stone altar centered against N wall with 2 candles, 3 pew rows (bench + back) facing the altar. courtyard_hall — single brazier (iron cup + ember bed + warm PointLight intensity 1.8 range 6 + emissive ember sphere) dead center — minimal so combat reads. Barracks — 3 cots (2 along W wall, 1 along E) with footlockers per cot. Kitchen — dark-stone hearth box against N wall with glowing interior box + warm PointLight, preparation table centered. Armory — 2 weapon racks (against N and S walls) with base + 2 uprights + cross-bar + 3 sword-silhouette vertical iron boxes per rack. Guardroom — small table + chair + chair-back against N wall (sparse, "one or two stationed here briefly"). **(4) Cluster spawn now kind-aware.** Replaced the v61g7 50%-any-corner rule with a `KIND_CLUSTER_RULES` table. Ceremonial kinds (`great_hall`, `lords_chamber`, `chapel`, `courtyard_hall`) → no cluster, room is curated by `decorateFortRoom`. Utility kinds get a designated corner that avoids fixed props: barracks → SW or SE, kitchen → SE, armory → SE, guardroom → SW. Storeroom → all 4 corners with 2-3 containers per corner (8-12 total — bursts with crates/barrels, "this is the pantry"). Untagged rooms (cave dungeons) keep the original 50% any-corner behavior. **(5) Loot density.** Tee fort containers averaged ~10 pre-v61g8, now ~18 (range 11-22 depending on whether 0/1/2 storerooms roll in the 4 utility slots). Increase is concentrated in storerooms where it semantically belongs. Tunable by reducing storeroom's `corners.length` or `count` range if it feels excessive in playtest. **(6) Player collision NOT added on fixed props.** Walking through a banquet table or weapon rack doesn't block the player — decorative only. Adding collision would require a `DUNGEON_PROPS[]` array parallel to `DUNGEON_COLUMNS` with radius checks in `dSolid`; deferred as polish-pass item. **Verification.** Parse-clean. Brace-balanced (6978 each). Backticks 1126 (even, +2 from new template-literal-free code). Lines 30,511 (+303). `node --check` passes. All 3 generators kind-tagged correctly (verified by grep). Decorate function handles all 9 kinds. **What changes for the player.** Every fort room reads as a SPECIFIC kind of room. Great Halls have banquet tables, Lord's Chambers have beds, Chapels have altars and pews, the keep's central courtyard hall has its brazier, utility rooms each have their distinct prop register, and storerooms BURST with corner-clustered containers. Two visits to the same fort give different utility-kind layouts. Cave dungeons are visually unchanged. |
+| **v61g9** | Session 45 | **Fixed-prop collision — DUNGEON_PROPS[] array, axis-aligned rect lookup.** The deferred polish-pass item from v61g8 done as the first ship of Session 45. New `DUNGEON_PROPS[]` array parallel to `DUNGEON_COLUMNS`, cleared each `buildDungeon`. Each entry `{x0, x1, z0, z1}` is the AABB of a prop's footprint, INFLATED at registration time by `PLAYER_R = 0.22`u so `dPropHit(x, z)` is a tight point-in-rect check. Three new helper closures in `decorateFortRoom`: `boxSolid` / `boxAtSolid` / `cylSolid` wrap the existing `box` / `boxAt` / `cyl` and additionally call `registerProp(wx, wz, w, d)` to push the footprint. Rotation is ignored at registration — slightly rotated props (guardroom chair) get a slightly inflated axis-aligned bounding box, which is fine. **Integration in `dSolid`:** the three floor-tile branches that already call `dColumnHit` (tile 1 rooms, tile 6 treasure rooms, tile 7 hallways) now also call `dPropHit` and return `true` on overlap. **Audit (what's now solid):** Great Hall banquet table + both benches; Lord's Chamber bed frame + side table + foot chest (mattress stays non-solid, frame AABB covers it); Chapel altar + all pew benches (pew backs covered by bench AABB); courtyard_hall brazier base; all barracks cot frames + footlockers (mattresses non-solid); kitchen hearth + prep table; armory weapon racks (single unified AABB per rack covers base + uprights + crossbar + weapons — cleaner than per-element registration); guardroom table + chair. **Intentionally non-solid:** candles, banners, hearth glow, ember bed, mattresses on top of frames, pew backs, chair backs. **Verification.** Parse-clean. Brace-balanced (6534 each, +8 from v61g8 — accounts for `dPropHit`, `registerProp`, `boxSolid`, `boxAtSolid`, `cylSolid` function bodies counted inside `<script>` blocks). Backticks 1128 (even, +2). Lines 30,566 (+55). `node --check` passes. **What changes for the player.** Furniture is no longer walk-through. The hearth is a wall. Tables and beds physically block. Enemies pathfind around the new collision footprints via the existing BFS-through-`dSolid` system, no code change needed there. |
+| **v61ga** | Session 45 | **Room content pass — chapel orientation fix, barracks rebuild, storeroom shelves+chests, library kind, armory smithy, great hall hutches, staircase mesh, hallway center columns, library loot pool.** A big content ship layering on v61g9's collision foundation. **(1) Chapel pew orientation.** Pew backs moved from north side to south side of each bench — sitters now face the altar (north), not away from it. Pew-bench AABB still covers the back position so no collision change. **(2) Barracks rebuilt.** Bed count `clamp(floor(room.w/2), 4, 8)`, split symmetrically W/E (W gets the extra). Cots rotated to N-S long axis (head-foot runs N-S), footlockers at south end of each cot centered on cot X (no lateral offset — the v61g8 offset toward room-center looked sloppy). Wall-flush cot back faces with 0.02u z-fight margin. **(3) Storeroom upgrade.** Three wall-shelf units along the room's long wall (N or E depending on aspect), skipping corners (where clusters live). Plus 1-2 chests at room-interior cells via a new chest pass in `renderFloor` that runs alongside the storeroom + library kind detection. Cluster density unchanged at 8-12. **(4) Library — new 10th room kind.** Added to all three utility pools (`UTILITY_KINDS`, `UTILITY_KINDS_LIN`, `UTILITY_KINDS_CY`) as a single entry. `KIND_CLUSTER_RULES.library = {corners:[], forceAll:false}` — no clusters; bookshelves fill the walls. New `decorateFortRoom` library branch: bookshelves on BOTH long walls (3 per wall, 2.2u tall, 3 horizontal shelf rows each, 5-7 randomly-colored "book spine" boxes per shelf row at heights 0.55 / 1.10 / 1.65, ~10% skipped slots for a "well-read" look). Reading table + chair + candle + closed-book silhouette at room center. 1 lootable chest with the new `library_chest` loot pool. **(5) Armory expansion.** Forge against W wall (stone box with glowing east-facing maw + warm PointLight), anvil east of forge (wood stump base + iron T-shape), smelter against E wall (tall stone cylinder + coal glow base), weapon prep table at room center (with whetstone + 2 horizontal blade silhouettes lying flat). The room now reads as a working smithy. **(6) Great Hall hutches.** Two flanking the banner on the N wall, one on the S wall (W side — SE quadrant reserved for staircase). Each: 1.4w × 1.8h × 0.5d wood body with lighter top mantel, two cabinet-door strips on the front face proud by 0.02u, and a candle on top. **(7) Decorative staircase in Great Hall.** 8 stone steps × 0.55u deep × 0.3u rise against the east wall (SE quadrant), with iron balusters per step and tilted top rails on both sides. Each step is a registered collision footprint. Visual only — no walkable upper floor yet, but the climb LOOKS real. **(8) Hallway center columns.** New pass in `renderFortArchitecture` after the wall-mounted column logic. For trunk or cross hallways with run-width ≥ 5, place a single column on the centerline at every `colInterval = 4` step. Skip trunk-cross intersections (matches existing wall-column behavior). 3-wide hallways stay clear (no centerline column would fit). **(9) Library loot pool.** New `LOOT_POOLS.library_chest`: w35 random book from BOOKS array, w20 Worn Tome (sellable junk), w15 herb-or-torch, w12 Torch, w8 Ink Vial, w5 Quill, w5 gold. No equipment, no potions. New `library_chest` branch in `rollContainerLoot` — rolls 1-4 items, never empty, bypasses `rollLoot`'s equipment path entirely. `spawnChest` extended with optional `lootKind` override so library kind can request the library pool. **New item types:** Worn Tome (📕, junk, weight 0.6), Ink Vial (🖋️, junk, weight 0.2), Quill (🪶, junk, weight 0.1) — sellable flavor items with no read effect, distinct from the read-once BOOKS entries. **Verification.** Parse-clean. Brace-balanced (6595 each, +61). Backticks 1136 (even, +8). Lines 31,012 (+446). `node --check` passes. **What changes for the player.** Forts visibly read as proper buildings now — chapels with correctly-facing pews, barracks with rows of beds + footlockers, storerooms with shelves and chests, libraries with packed bookshelves and a reading table, armories with forge+anvil+smelter, Great Halls with hutches and a grand staircase. Wide hallways have a colonnade running down the spine. Library chests drop the existing read-once BOOKS plus new flavor items. |
+| **v61gb** | Session 45 | **Playtest fixes — staircase relocated to cross-hall, shelves/hutches snugged to walls, barracks bed-spacing tightened, footlocker alignment fixed, library spawn rate raised.** Six things bundled. **(1) Staircase OUT of Great Hall.** Removed from `decorateFortRoom`'s great_hall branch. New `renderFortStaircase(map, baseY)` function inside `buildDungeon` that finds the longest E-W tile-7 run (the cross-hall), requires `length >= 8` and `width >= 5`, and places a staircase against the north wall of that run, centered along X, climbing N (perpendicular to E-W traversal so players walking the cross-hall pass it rather than walking into it). Reduced to 6 steps (from 8) so a 5-wide cross-hall keeps ≥2u of walkable corridor south of the bottom step. **(2) Railings rebuilt.** Old approach was per-step segments rotated around X — produced visible artifacts. New: single tilted top rail per side (one Box with `rotation.x = atan2(dy, dz)`), one vertical baluster per step. Cleaner geometry, no per-step rotation accumulation. **(3) Ordering.** `renderFortStaircase` runs BEFORE `renderFortArchitecture` so its `DUNGEON_PROPS` footprints are registered before the v61ga center-column pass runs. The center column pass now checks `dPropHit` at the target column cell and skips placement if a prop is already there — prevents column/staircase z-fighting. **(4) Shelves/hutches snugged to walls.** Storeroom shelves: back face flush with wall inside face (0.02u z-fight margin) — was 0.5u off the wall, looked floating. Library bookshelves: same fix on N+S (or W+E) walls. Great Hall hutches: same. Math: `wall_inside_face = room.{y|x} − 0.5` for N/W walls, `+ room.{h|w} − 0.5` for S/E; prop center = wall + depth/2 + 0.02. **(5) Barracks bed count + spacing.** Linear scaling `clamp(floor(room.h / 1.5), 4, 10)` — for 8-tall rooms → 5 beds total (3 W + 2 E); 12-tall → 8 beds. Tighter 1.4u center-to-center spacing (was variable). Footlocker centered on cot X (no lateral offset — the v61ga "skew toward room center" looked sloppy at the cot's south end). Cot rotated 90° from v61ga: dimensions now `0.55w × 0.30h × 1.2d` (long axis runs N-S along the wall). **(6) Barracks cluster relocation.** Old `barracks: {corners: ['SW','SE']}` collided with the new bed-row layout. New `S_MID` anchor (and `N_MID`) added to `cornerMap` — center of the south wall between bed rows. Barracks rule: `{corners: ['S_MID']}`. **(7) Library spawn rate.** Dropped the duplicate `'storeroom'` from `UTILITY_KINDS` and `UTILITY_KINDS_LIN`. Pool sizes drop 7→6; library odds per tee/linear fort rise from ~57% to ~67%. Storeroom now single-entry like everything else, still picks 4-of-6 → very common. **Verification.** Parse-clean. Brace-balanced (6606 each, +11). Backticks 1138 (even, +2). Lines 31,104 (+92). |
+| **v61gc** | Session 45 | **Three playtest bugs from v61gb.** Bundled into one tight ship. **(1) Staircase placement (railings revisited, free-standing, faces entrance).** v61gb's "longest E-W run width-walk" walked the perpendicular extent by following tile-7 cells through the trunk — the T-junction made the staircase land at the Great Hall's south wall instead of the cross-hall. New algorithm: find longest E-W run (cross-hall), find longest N-S run (trunk) independently, verify they share a cell (the intersection). Place staircase **at the intersection cell**, climbing N (toward the Great Hall), free-standing — not touching any walls. Trunk and cross-hall both ≥5u wide at the intersection so there's ≥1.5u clearance on every side of the 2u × 3.3u staircase footprint. Player walking N from the south entrance up the trunk sees the staircase rising directly ahead. **(2) Railing rotation math fixed.** Old `railTilt = atan2(dy, dz)` produced quadrant-II angles (sin>0, cos<0) which mapped the rail's +Z end to (-Y, -Z) instead of (-Y, +Z) — top rail ended up pointing the wrong direction. New `railTilt = atan2(dy, -dz)` produces quadrant-I angles (sin>0, cos>0), correctly mapping +Z end to (low Y, high Z) = bottom of stairs (south). Rail now follows the slope cleanly from bottom-post-top to top-post-top. **(3) Barracks bed/door collision.** v61gb beds at room mid-Z sat directly inside the doorway since doors are at room mid-Z on the wall the bed-row sits against. New: `decorateFortRoom`'s barracks branch scans `gen.treasureDoors` for any door on this room's E or W walls, records `westDoorZ` / `eastDoorZ`. The `placeBeds` function now filters out bed slots whose Z falls within 1.6u of the door, then redistributes the removed beds across the two segments north and south of the door (proportional to segment length). **Verification.** Parse-clean. Brace-balanced (6623 each, +17). Backticks 1136 (even, -2 from temp-string cleanup). Lines 31,204 (+100). |
+| **v61gd** | Session 45 | **Two more staircase fixes — true center + ceiling height.** **(1) True-center placement.** v61gc picked `bestNSCol` and `bestEWRow` as the first column/row hitting the max-length scan. For a tee fort with 5-wide trunk, that's `cx - 2` (westmost trunk col) — staircase was offset 2u west of center. New code tracks ALL columns/rows hitting the max length (`nsMaxCols`, `ewMaxRows` arrays), then picks the center of each range. For a 5-wide trunk + 5-wide cross-hall: `nsMaxCols = [cx-2..cx+2]`, center = `cx`; `ewMaxRows = [cz-2..cz+2]`, center = `cz`. Staircase now lands at exact intersection cell `(cx, cz)`. **(2) Ceiling-reaching height.** v61gc's 6 steps × 0.3 rise = 1.8u total — only 56% of `FLOOR_HEIGHT = 3.2u`. Read as "stairs to nowhere." New: 8 steps × 0.38 rise = 3.04u, leaves 0.16u headroom under the ceiling. Reads as "stairs going up to an opening" rather than mashed into a wall. Step depth unchanged at 0.55u; total footprint 4.4u long (along Z) × 2u wide (along X). Still fits comfortably in the cross-hall intersection — cross-hall is 5u wide N-S, staircase takes 4.4u centered, leaves 0.3u corridor either side. Tight; players may detour via the cross-hall E-W to continue N-S along the trunk past the staircase. **Verification.** Parse-clean. Brace-balanced (6620 each, -3 from comment cleanup). Backticks 1136 (unchanged). Lines 31,189 (-15). |
+| **v61ge** | Session 45 | **Barracks cot orientation — proper military-bunk style.** v61gb–gd cot geometry had width and depth swapped — cot ran *parallel* to the wall (long side along the wall), reading like a bench, not a bunk. Real military bunks sit head-against-wall with the long axis perpendicular to the wall, lined up shoulder-to-shoulder. **Fix:** swapped cot dims `0.55w × 0.30h × 1.2d` → `1.2w × 0.30h × 0.55d`. Head touches wall inside face with 0.02u margin (cot center X for west-wall beds = `room.x + 0.12`). Foot points into room (at `headX + 0.6`). Footlocker relocated to the FOOT end (east of cot for west-wall, west for east-wall) sharing the cot's Z — reads as paired-with-cot. **Spacing:** 0.85u center-to-center along the wall (cot is 0.55 wide so ~0.3u shoulder gap between cots — packed but not crammed). **Bed count abandoned the formula entirely** — `placeBunksAlongWall` builds room-z segments (split by doors), computes how many cots fit at 0.85u spacing in each segment, places them centered. For an 8-tall barracks with a mid-Z door: ~3 bunks N + ~3 S per wall = ~12 total bunks. 12-tall room → more. **Door clearance band shrunk from 1.6u → 1.4u** since cots are now 0.55u along the door-wall axis (was 1.2u). **Verification.** Parse-clean. Brace-balanced (6619 each, -1). Backticks 1136 (unchanged). Lines 31,180 (-9). **What changes for the player.** Barracks now read like actual military barracks — rows of bunks lined up shoulder-to-shoulder along the W and E walls, heads against the wall, feet pointing into the center aisle. |
+| **v61gf** | Session 46 | **Door/SFX/container polish — visible door swing, weighted door SFX, restored barrel/crate open state, tighter cluster spacing.** Four polish items bundled, all held over from the v61g8 playtest list. **(1) Doors swing visibly on open.** Pre-v61gf, the open handler set `nearDoorObj.mesh.visible=false` — doors just disappeared. Restructured door mesh: every door now has a hinge sub-group. All visible parts (slab, bars/bands, lock plate) live under `hinge`, offset by +0.5 in x so the slab's center sits at the wall-slot center (where it visually used to). Open rotates `hinge.rotation.y = -1.48` (~−85°, "ajar" rather than "flung against the wall"). Close rotates back to 0. The `mesh.visible=false` fallback is preserved defensively for any door object that somehow lacks a hinge. Stored alongside `mesh` in the DOORS push: `hinge` field. Hinge always swings to one side (door's left when facing from −Z). Whether that swings into the room or into the corridor depends on which side of the wall the player is approaching from — follow-up item noted if playtest reveals doors swinging into walls. **(2) Door SFX rewritten as weighted multi-stage sounds.** Previous v61g6 sounds were ~0.22s and read as "poots" per playtest. New `sndDoorOpen` is ~1.2s in four stages: (a) handle/latch click (`sfxNoise(.05, 1, 1, 0.35, 1800)`), (b) initial creak — slow rising sawtooth with detune + filtered noise overlay (~0.45s, starts at +80ms), (c) sustained low groan — sub-bass sawtooth + dry rumble (~0.5s, starts at +380ms), (d) heavy thunk at the limit — low sawtooth + brief noise (~0.18s, starts at +1000ms). `sndDoorClose` is ~0.8s in three stages: handle, descending swing creak, frame-thunk (slightly louder than the open thunk — it's slamming the frame, not coming to rest). All stages use `setTimeout` offsets from the initial `AX.currentTime` base. **(3) Barrel/crate open-state animation restored.** The lid-pop animation in `openLoot()` had been broken since the v61g7 container resize. Gate was `container.top.position.y < 0.4`, but barrels spawn `top` at y=0.575 and crates at y=0.53 — the gate never fired. Switched to state-based via a new `topOpened` flag. Pop height bumped from absolute `.42` to relative `+0.12` above spawn y. Tilt reduced to .22 rad for a subtler "knocked askew" read (was .35). Re-opening a previously-opened container no longer re-animates. **(4) Container cluster spacing.** Min-distance check in the cluster-spawn loop bumped 0.55u → 0.70u. With 0.5u-wide crates randomly Y-rotated, 0.55 left only ~0.05u face-to-face gap which read as touching. 0.70 leaves ~0.2u shoulder gap. **Verification.** Parse-clean. Brace-balanced (6624 each, +5 from v61ge). Backticks 1146 (even, +10 — all in inline-code comments). Lines 31,240 (+59). `node --check` passes. **What changes for the player.** Doors visibly swing instead of disappearing. Heavier, longer creak on open. Barrel/crate lids pop up and tilt when looted. Crate clusters look like distinct objects instead of one merged mass. |
+| **v61gg** | Session 46 | **Library spawn-rate bug — Fisher-Yates wasn't broken, the seeded LCG was.** Playtest after v61gf flagged that across 5 forts and 3 fresh forts in a debug build, no library ever spawned. Diagnostic logs showed the four side-room kinds picked per fort were always drawn from `{barracks, kitchen, armory, storeroom, guardroom}` — `library` (index 5 in `UTILITY_KINDS`) was never picked. **Root cause.** The seeded LCG `(v * 1664525 + 1013904223) >>> 0` produces near-identical *first outputs* for sequential seeds. For all 8 canonical fort seeds (7099-7106), `r()` on the first call returned > 0.833 — which means `floor(r * 6) = 5`, and the first Fisher-Yates swap was `arr[5] <-> arr[5]` (no-op). Whatever sat at index 5 of the kinds array got frozen there for the entire shuffle. Library was at index 5 → library spawn rate **0/8 across canonical forts**. Verified by simulation: across random seeds 1-1000 the bug rate is 18.8% (still real but masked by mixing in non-canonical seeds); across the canonical 8, it's 100%. Not a library-specific bug — any kind put at index 5 would have been zeroed out. **Fix.** Added a top-level `hashSeed(x)` helper (xmxmx-style 32-bit integer hash). All three fort generators (`makeFortInterior`, `makeFortInterior_linear`, `makeFortInterior_courtyard`) now derive a *separate* shuffle sub-RNG via `rng(hashSeed(seed))` instead of reusing the layout RNG. This decouples the shuffle from the layout entropy and breaks the sequential-seed pattern. **Verification.** Canonical 8 forts post-fix: 7/8 spawn libraries (88%, above the expected 67% by chance with n=8). Sweep on seeds 1-1000: 64.3% library inclusion (target ~67%). Distribution across all 6 kinds is healthy. Parse-clean. Brace-balanced (6625 each, +1 from v61gf — `hashSeed` body). Backticks 1146 (unchanged). Lines 31,265 (+25). `node --check` passes. **Architectural side benefit.** Future shuffles in fort generation can call `rng(hashSeed(seed ^ someConstant))` to get independent sub-streams that won't be coupled to layout entropy. Worth keeping the helper around. |
+| **v61gh** | Session 46 | **Library polish — lootable bookshelves, room-center spine orientation, chest removal.** Playtest of the first actual library spawn (post-v61gg) surfaced three issues. **(1) Book spines facing wrong way on one wall.** The `placeBookshelf` function hardcoded the spine offset at `wz + 0.20` for x-axis shelves and `wx - 0.20` for z-axis shelves. Correct for the north wall and west wall; on south and east walls the spines pointed *away* from the room (into the wall). Fix: added a `facingSign` parameter (+1 or −1). N/W shelves use +1 (front faces south/east, toward room center); S/E shelves use −1 (front faces north/west, toward room center). Shelf-board strips, spine slabs, and front-of-back-board geometry all use the sign. **(2) Bookshelves now lootable containers.** Each `placeBookshelf` call pushes into `BARRELS[]` with `displayName: 'Bookshelf'`, no `top` field (so the v61gf lid-pop is a no-op). The existing interact loop, prompt, loot panel, and open-sound handle bookshelves transparently — no changes to those paths. Floor hardcoded to 1 in the BARRELS push (fort interiors are canonically single-floor, and `decorateFortRoom` runs outside `renderFloor`'s `floorIdx` scope). **(3) New `library_shelf` rollContainerLoot kind.** Thin pool — 17% chance any shelf has loot; if it does, 25% chance of a second item. Pulls from the existing `library_chest` consumable pool (books, Worn Tomes, Ink Vials, Quills, herbs, Torches, gold — no equipment, no potions). Math: 6 shelves × 0.17 × ~1.25 = ~1.3 items per library on average. Slightly *less* total loot than the old single chest (~1.8 mean) — matches canon's "scholarly space, mostly picked over." **(4) Chest removed from libraries.** The chest pass in `renderFloor` no longer matches `room.kind === 'library'` (only `'storeroom'` now). Removed the now-dead `lootKind` argument in the `spawnChest` call as well. `library_chest` loot pool is preserved — still referenced indirectly by `library_shelf`. **Verification.** Parse-clean. Brace-balanced (6628 each, +3 from v61gg — accounts for the `BARRELS.push({...})` body inside `placeBookshelf`). Backticks 1144 (even, -2 from comment cleanup). Lines 31,300 (+35). `node --check` passes. **What changes for the player.** Libraries look right from every angle — book spines face the room from every wall. The reading table sits alone in the room center, no chest. Each of the 6 bookshelves can be opened individually; most are empty (well-read register), some have books / tomes / ink vials / quills / herbs / torches. |
+| **v61gi** | Session 46 | **Enemy spawn props-aware — enemies no longer spawn inside furniture.** Playtest after v61gh found mobs occasionally clipped into bookshelves, banquet tables, forges, etc. The cause: the spawn candidate filter at the top of the enemy spawn loop only checked floor tiles (`map[r][c]===1`) and rejected cells too close to the entrance. It did not consult `DUNGEON_PROPS` or `DUNGEON_COLUMNS` — both of which had been registered well before the spawn loop runs (`decorateFortRoom` at line 19789, spawn filter at line 20030). An enemy spawned on a cell whose `dSolid` would return true gets immediately stuck inside the prop's collision footprint. **Fix.** One line added to the candidate filter: `if(dPropHit(c, r) || dColumnHit(c, r)) return false;`. Since `DUNGEON_PROPS` AABBs are already inflated by `PLAYER_R = 0.22u` at registration (so `dPropHit` is a tight point-in-rect check), a cell that passes this filter is guaranteed walkable for both player and enemy. Caves don't register props or columns, so the filter is a no-op there — only fort interiors are affected, which is where the problem existed. **Edge case considered.** In pathologically dense rooms (small library with 6 bookshelves + reading table + chair, etc.), the filter can reduce candidate count below `_enemyCap`. The existing spawn loop stops cleanly when candidates run out — fewer enemies spawn, no error. The slime-split spawn path (`ENEMIES.push` at the death point of a parent Slime) is a separate code path and unaffected. **Verification.** Parse-clean. Brace-balanced (6628 each, unchanged from v61gh). Backticks 1144 (unchanged). Lines 31,307 (+7). `node --check` passes. |
+| **v61gj-a** | Session 47 | **Combat redesign Session 1 (first half): hidden posture meter + stagger-crit chain.** First ship of the 7-session combat redesign arc captured in `combat_redesign.md`. Delivers the Posture half of Session 1; power attacks come in v62 (next session). **Five phases shipped:** (1) Posture constants block at line 1043 — `POSTURE_DRAIN_NORMAL=8`, `POSTURE_DRAIN_POWER=25` (queued for v62), `POSTURE_BREAK_STUN=1.5s`, `POSTURE_CRIT_MULT=1.5`. Plus `POSTURE_FAMILY_MULT` per-family table (brutes 1.5×, light enemies 0.7×, slimes 0.8×, Faolchú boss 2.5×, etc.). (2) Generalised helpers — `enemyPostureFamily(e)` resolves family via `bossId` → `shape` → `buildFn` → name-match fallback, `initPosture(e)` idempotently stamps `posture` / `maxPosture` (base = `maxHp × 0.5 × familyMult`), `isStaggered(target)` queries the existing `staggered[]` array, `applyPostureDamage(target, amount, now)` drains and returns `true` on break, `tickPostureRegen(target, dt, now)` adds 5/sec after a 1.5s post-hit delay. All helpers intentionally generalised to work on any entity — player gets a posture field in a later ship by adding it; no rewrite needed. (3) Init at every spawn site: main dungeon `ENEMIES.push` (line 20078), slime-split spawn (21760), zone enemy `buildZoneEnemy` return (12037), Faolchú boss (11657), Lesser Faolchú (11879). `buildFn` / `shape` stamped on the entity so the family lookup resolves without name-matching. (4) Regen + lazy-init in both ticks: dungeon enemy tick (~29678) and zone enemy tick (~12169) both call `if(typeof e.posture!=='number') initPosture(e); tickPostureRegen(e, dt, now)` at the top of their forEach. Lazy init catches saves taken before this ship landed. (5) `applyMeleeDamage` (line 24898) — adds `staggerMult = isStaggered(e) ? POSTURE_CRIT_MULT : 1.0` before resist/def. Both `attack()` (21715) and `attackZoneEnemies()` (12800) post-hit blocks call `applyPostureDamage` and push to `staggered[]` on break, with the existing yellow emissive flash via `enemyBodyMesh(e)`. Hit message now suffixes " (CRIT)" when the stagger bonus fired. **Architectural notes.** Posture-break feeds into the same existing `staggered[]` global the v61c6 parry-stagger / v35 Sioc-freeze already use — no parallel system. The crit bonus therefore fires from ANY stagger source (parry, Sioc, frost weapon enchant, posture-break), which is the design intent: parry is one route to the highest-DPS loop, posture pressure is another. Save migration is automatic — `initPosture` idempotent + lazy-init in tick covers any pre-ship save. Parse-clean. Brace-balanced (6652 each, +24). Backticks even (1158, +14, all comment-internal). Lines 31,485 (+178). `node --check` passes. **Playtest deliverables Michael verified:** posture-break feels meaningful on brutes (~7-8 swings), parry-stagger now produces visible crits, Sioc-frozen enemies take crit follow-ups, hit message " (CRIT)" suffix renders. **Surfaced unrelated bug**: the parry branch fires unconditionally whenever `blocking=true` is held — no timing requirement. Pre-existing v61c6 bug, but it makes the new staggered-crit chain trivially easy to access. Fix queued for v61gj-a2. |
+| **v61gj-a2** | Session 47 | **Parry-window fix + three-tier defense + shield/sword recoil.** Patch to v61gj-a addressing the parry-always-fires bug surfaced during a-playtest, plus the visual-impact request that came out of the same conversation. **(1) Parry now requires timing.** `executeStrike` branch reworked. Pre-a2 condition was `if(blocking)` — held block auto-parried every hit. Post-a2 condition is `if(blocking && (now/1000 - lastBlockAttemptT) < parryWindow)` where `parryWindow = PARRY_WINDOW_BASE (0.20s) + ATTRS.finesse * PARRY_WINDOW_FINESSE (0.01s)`. At Finesse 10 the window opens to 300ms; at 20, 400ms. **(2) Held-block branch activated.** The "late block" branch existed since v61c6 but was dead code — the parry branch always ate first when blocking was held. The branch is now reachable: held-block (past the parry window) falls into the existing partial-reduction path (shield 65%, bare-hand 35%), with stamina cost based on absorbed damage scaled by Resolve. Renamed in code comments from "late block" to "held block" since it covers held-too-long + pressed-too-late. **(3) Three-tier defense.** Perfect Parry (zero damage + stagger, gold flash) / Held Block (partial reduction, blue flash) / Unblocked (full damage, red flash). Pre-a2 the game was effectively two-tier (auto-parry-with-shield-up + unblocked); the canon Bram dialog "block early, not late — a perfect parry costs you nothing and staggers the attacker" finally reads true. **(4) Shield/sword recoil on impact.** New `shieldImpact(kind, rawDmg, attackerWorldX, attackerWorldZ)` helper at line 1059. Sets impulse state variables (`shieldImpactX/Z/Rot`, `shieldImpactT`, `shieldImpactMax`) that decay each frame in the existing shield viewmodel animation block. Parry impulse = forward shove + lateral toward attacker, sharp 0.35s decay. Held-block impulse = backward push + lateral away from attacker, slower 0.50s decay. Bare-hand falls back to `swordImpact*` state that recoils backward always (no real bare-hand "parry" in the physical sense — mechanic stays the same, visual just sells "this hit landed"). Magnitude scales with `rawDmg / 30` so a Faolchú bite kicks much harder than a goblin nick. Direction converted from world-space to camera-local via player `fwdX/Z, rgtX/Z` — flank hits jostle laterally, near-zero variation in 1v1 with enemy dead-ahead, meaningful variation in pack fights. **Two call sites** in `executeStrike` parry and held-block branches: `shieldImpact('parry', rawDmg, e.x, e.z)` / `shieldImpact('block', rawDmg, e.x, e.z)`. Decay block added in the shield viewmodel animation (line ~30093) and a parallel block in the sword viewmodel (line ~30106) so bare-hand recoil is wired even without a shield equipped. **Verification.** Parse-clean. Brace-balanced (6659 each, +7). Backticks even (1166, +8). Lines 31,581 (+96). `node --check` passes. **Surfaced new bug during playtest**: shield drifts visibly out of position over multiple blocks. Fix queued for v61gj-a3. |
+| **v61gj-a3** | Session 47 | **Shield position drift hotfix.** v61gj-a2 added impact recoil deltas via `+=` on `vmShield.position.z` and `vmShield.rotation.z` — but the existing shield animation block only eased three axes (`position.x`, `position.y`, `rotation.y`). The two unmanaged axes had no equilibrium-restoring lerp, so each recoil left a small residual offset that compounded over many blocks. Over a long fight the shield slowly drifted backward and accumulated rotation until it was visibly mis-oriented. **Fix.** Two lines added to the shield animation block: `vmShield.position.z+=(0-vmShield.position.z)*Math.min(1,dt*14)` and `vmShield.rotation.z+=(0-vmShield.rotation.z)*Math.min(1,dt*14)` — mirrors the existing x/y/yaw lerp pattern. The recoil block now adds onto a self-resetting equilibrium and decays cleanly. **Sword unaffected by the bug.** The sword viewmodel uses `position.set(...)` / `rotation.set(...)` (full reset every frame at line 29405–29406) before adding any deltas, so sword recoil was already self-clearing. The shield drift was unique to the lerp-based animation pattern. **Lesson logged:** when adding additive `+=` to a viewmodel axis, verify the surrounding animation has an equilibrium-restoring lerp on that axis. Without one, the offset will compound indefinitely. The architectural pattern that prevents this is either (a) full `position.set` / `rotation.set` per frame like the sword, or (b) an explicit lerp toward a target like x/y/yaw. The unmanaged-axis case is the trap. Parse-clean. Brace-balanced (6659 each, unchanged). Backticks even (1172, +6). Lines 31,590 (+9). **Surfaced edge case during playtest**: loaded save from v61gj-a2 build carried accumulated offsets too large for the new `dt*14` lerp to recover from in reasonable time, AND the lerp target was zero — wrong, since shield's base pose has `position.z=-0.55, rotation.z=0.08`. Fix queued for v61gj-a4. |
+| **v61gj-a4** | Session 47 | **Stale-state recovery + lerp target fix.** Two latent bugs from v61gj-a3 surfaced when Michael's v61gj-a2 save loaded into a3: shield stuck visibly far off-screen, never recovering. **Bug 1: lerp targets were zero, should have been base pose.** The shield's canonical pose has `position.z=-0.55` (held forward toward camera) and `rotation.z=0.08` (slight roll), set in `buildShieldViewmodel`. v61gj-a3 lerped these axes to ZERO, which would have slowly walked the shield into a flat-against-the-camera pose even without any drift accumulation. Latent because the lerp was slow and the offset small in fresh sessions. **Bug 2: stale impact state across save/load.** Module-level globals (`shieldImpactX/Z/Rot`, `shieldImpactT`) survive across save/load. A save taken from the v61gj-a2 build carried accumulated offsets that the a3 lerp could *technically* recover from, but at `dt*14` and against the wrong target, recovery was slow and incomplete. **Fix.** Three changes: (a) lerp targets corrected to base pose values (`_shBaseZ = -0.55`, `_shBaseRotZ = 0.08`) instead of zero — base pose IS the equilibrium, anything else is transient; (b) z-axis lerp rate bumped from `dt*14` to `dt*30` (~100ms recovery from any offset, recoil feel preserved because the recoil fade uses its own `shieldImpactT` timer independent of the lerp rate); (c) hard-reset of impact state vars in `buildShieldViewmodel` (line 2321) — every time the viewmodel rebuilds (load, equip change, unequip, initial spawn) the impact state zeroes out, catching saves carrying stale impact deltas that would otherwise reactivate on the next render frame. **Architectural pattern locked.** The "additive `+=` to a viewmodel axis without an equilibrium-restoring lerp toward the BASE POSE of that axis" trap is the lesson. Always lerp to the actual rest position, not to zero — zero is only correct if the rest position happens to be zero. Future viewmodels (bow in Session 3, two-hander variants) should follow either the full-reset pattern (sword) or the lerp-to-base-pose pattern (shield), not a third one. Parse-clean. Brace-balanced (6659 each, unchanged). Backticks even (1166, -6 from comment cleanup). Lines 31,605 (+15). **What changes for the player.** Loading an old save with broken shield positioning auto-corrects on load; any future drift accumulation auto-corrects in ~100ms; the shield's natural rest pose is preserved correctly. |
+| **v62 → v62.9** | Session 48 | **Combat Redesign Session 1b: power attacks + Pointer Lock rewrite + lunge.** Shipped across a single conversation as ten incremental ships (v62 base + nine decimal patches), all consolidated here. **First clean-integer version per new naming convention.**<br><br>**v62 — Power attacks (the headline ship).** Skyrim-style click-and-hold. Tap LMB = normal attack; hold LMB past threshold + release = power attack. Replaces the original `combat_redesign.md` 3-stance proposal per Session 47 design pivot. **Mechanic:** `attack(isPower)` refactored to take an `isPower` flag through both `attack()` (dungeon) and `attackZoneEnemies()` (zone) — when true: damage × `POWER_DMG_MULT` (1.8), stamina × `POWER_STAM_MULT` (2.0), posture drain switches from `POSTURE_DRAIN_NORMAL` (8) → `POSTURE_DRAIN_POWER` (25, already a constant from v61gj-a, finally consumed), `swingT` uses `POWER_SWING_T` (0.55 vs 0.38), `atkCd` × `POWER_ATK_CD_MULT`. **Input state:** `powerCharging`/`powerCharge`/`powerArmed` module-level flags. mousedown starts the charge timer; render loop accumulates it; threshold cross latches `powerArmed=true` and fires `sndPowerCharge`. mouseup resolves: `wasArmed ? attack(true) : attack(false)`. **Viewmodel:** sword cocks back over the shoulder while charging via a `powerBlend` lerp parallel to the existing `guardBlend`; longer arc magnitude (× 1.4) on the power swing tween via a `swingMax` latch that tracks per-swing duration (so power swings divide arc progress by 0.55 not the hardcoded 0.38). **Audio:** new `sndPowerCharge` (winding tone + breathy noise) at threshold cross, `sndPowerHit` (heavier than `sndHitEnemy` with sub-bass body) on power-hit landing. **Hit message:** suffixes ` (POWER)` next to the existing ` (CRIT)`. **Constants block** at line 1112 — every tunable lever in one place.<br><br>**v62.1 — Pointer Lock rewrite.** Surfaced during v62 playtest: holding LMB to charge was incompatible with the legacy click-and-drag camera-look — every camera turn was triggering a power attack. Decision: do the proper FPS fix, not a workaround. Built a full Pointer Lock system: `setPointerLock` helper, `_isMenuOpen` predicate (ORs invOpen/hubOpen/shopOpen/lootOpen/stashOpen/dlgOpen/nbOpen/luOpen/_questPopupOpen + DOM-visibility checks for 7 modal IDs: `sigil-overlay`/`book-overlay`/`wait-modal`/`slmenu`/`cc-modal`/`ov`/`quest-popup`), `pointerlockchange` listener, `visibilitychange` listener (alt-tab cleanup), `reconcilePointerLock` called from the render loop frame-tick. New `#resume-overlay` DOM ("⏸ Paused / Click to resume", z-index 180) shown when in combat but unlocked. Title-screen UI text updated ("Mouse drag" → "Mouse"; "Left-click — attack" → "Left-click — attack (hold for power)"). Mousedown handler refactored: if not locked → request lock + consume event; else combat input. Mouseup drag-distance check removed. Mousemove driven by `e.movementX/Y` deltas instead of anchor math. Touch input untouched (pointer lock is desktop-only). **The architectural choice:** state-driven reconciliation instead of instrumenting all ~14 menu open/close functions individually. One reconciler reads menu state every frame, releases lock when state changes, shows the resume overlay when appropriate.<br><br>**v62.2 — Cursor-cache repaint hotfix attempt.** Reconciler-driven `exitPointerLock` released the lock but cursor stayed invisible until Esc. First hypothesis was cursor-cache invalidation — added explicit `cursor:default` style writes + defensive CSS rule on menu containers + cursor toggle trick. Didn't work. Screenshot proved Chrome's native "press Esc to show cursor" was still showing while menu was open — the lock was NOT actually releasing.<br><br>**v62.3 — Cursor toggle + retry attempts.** Doubled down on cursor-cache approach with `crosshair`-then-`default` toggle, layout-flush reflow, synthetic mousemove dispatch, retry-on-next-animation-frame. Still didn't work. Real root cause confirmed: Chrome silently rejects programmatic `exitPointerLock()` calls made on delayed/decoupled callbacks (the reconciler ran one frame after the menu opened — Chrome treats this as "accidental exit" and ignores it).<br><br>**v62.4 — Real fix: gesture-context lock release.** The reliable fix is calling `exitPointerLock` SYNCHRONOUSLY inside the user-gesture handler that triggered the menu open. Added a module-scope `_releasePointerLockForMenu()` helper at line 1053, prepended to every menu-opening function: `openHub`, `openInv`, `openDialog`, `openShop`, `openLoot`, `openStash`, `openBookReader`, `openSLMenu`, `openNoticeBoard`, `openWaitMenu`, `openLevelUp`, `showSigilOverlay`, `_renderQuestUpdatePopup`. Thirteen call sites, one-line addition each. **Architectural pattern locked** — future menu-opening functions MUST call `_releasePointerLockForMenu()` at the top, before any DOM mutation, because Chrome's gesture-context heuristic only accepts the call within the synchronous handler tick. The reconciler-driven retry was the wrong tool. Reconciler simplified back to a defense-in-depth fallback for any code path that bypasses the helper.<br><br>**v62.5 — Threshold tune + visual/audio feedback.** Playtest found that swing-while-walking clicks were brushing against the 0.35s charge threshold and incidentally power-attacking. Raised `POWER_CHARGE_THRESHOLD` 0.35 → 0.5. Rebalanced `sndPowerCharge` louder (tone vol 0.08 → 0.16) with a brighter 290Hz triangle overtone. Added a gold screen-edge tint while `powerArmed` is true (steady alpha .42), using the existing `#df` boxShadow surface; new `powerFlashFadeT` timer carries the tint for 0.25s after release so it doesn't snap off. Priority chain: hurt (red) > block-flash (blue/gold) > bare-hand block (faint blue) > power-armed (gold) > none.<br><br>**v62.6 — Charge feedback gated on commit, not press.** v62.5 didn't fix it. The stutter was still there because **the visual/feel-able charge effects (move penalty, sword cock pose) fired on `powerCharging` (mousedown) instead of `powerArmed` (threshold crossed)**. Even a 100ms tap was showing 100ms of "I'm charging" before the click resolved. Fix: gate movement penalty and viewmodel cock pose on `powerArmed` instead of `powerCharging`. `powerCharging` becomes a pure-timer flag with no visible effects; `powerArmed` is the single source of truth for everything player-visible. Tap-and-release clicks below threshold now leave the sword in its idle/walk pose with zero movement penalty. The cock animation only begins once the player has actually committed.<br><br>**v62.7 — Forward lunge.** Power-attack release with W (or ArrowUp) held + weapon equipped = forward lunge for `LUNGE_DURATION` (0.4s) at `LUNGE_SPEED_MULT` (initially 2.4×, retuned to 1.8 in v62.9). Direction: camera-facing forward (`fwdX/fwdZ`). Bailout: release W → boost disappears the same frame (multiplier acts on the W movement vector). Hit-cancel: any source that sets `hurtT > 0` zeroes `lungeT`. FOV punch to `LUNGE_FOV` (92, vs sprint 85 / idle 75) layered into the existing FOV-target lerp. **Implementation detail:** lunge speed boost is forward-component-only (`fwdX*spd*(_lungeMult-1)`) added on top of normal WASD motion, so strafing mid-lunge doesn't accelerate sideways. Movement code at line ~29528 now computes `tdx/tdz` (boosted) for overworld + dungeon paths; interior path stays on `dx/dz` (no combat there). State cleanup mirrored across pointerlockchange, visibilitychange — `lungeT=0` on lock acquire/loss/tab-hide.<br><br>**v62.8 — Deferred power swing sequencing.** v62.7 playtest found the visible bug: swing-tween fired immediately on release, THEN the lunge carried the player into range — so by the time the player reached the enemy, the swing was over. Wasted stamina, no damage. Decision: defer the entire swing (animation + sound + hit check) by `POWER_WINDUP_DELAY` (0.30s) so it lands near the end of the lunge. **Architecture:** `attack(isPower, _isDeferred)` — second optional arg. When true, skips cost gates and bookkeeping (already paid in mouseup); jumps straight to swing-tween + sound + hit loop. Same flag wired through `attackZoneEnemies`. New module-level `powerSwingDelayT` timer ticked in render loop; when it crosses zero, fires `attack(true, true)`. Cocked-pose viewmodel gate extended: `(powerArmed || powerSwingDelayT > 0) ? 1 : 0` so the sword visibly stays "ready to strike" during the windup. **Cancel rules:** dead → cancel pending swing. Blocking → cancel pending swing (RMB takes priority). Hit (`hurtT`) → swing still fires, lunge cancels (per design — blade is committed). **Cooldown bumped** `POWER_ATK_CD_MULT` 1.4 → 1.7 to cover the full commitment cycle (~0.85s windup + swing + recovery), preventing power-attack queueing. **The new timeline:** release at t=0 (pay cost, start lunge, schedule swing), windup 0-0.30s (cocked pose held, player rushes in), deferred swing fires at 0.30s (animation + hit-check), swing peak at ~0.575s (blade lands), swing tween ends 0.85s.<br><br>**v62.9 — Lunge distance tune.** Playtest found the player was overshooting enemies (compounded by absence of mob collision — every overshoot becomes a clean pass-through and miss). Dropped `LUNGE_SPEED_MULT` 2.4 → 1.8 (~25% shorter total travel). Mob collision deferred to v63 as its own dedicated ship.<br><br>**Verification end of session 48.** Parse-clean. Brace-balanced (7166/7166, +522 from end of Session 47 — most of that delta is comments and the pointer-lock reconciler / helper functions). Backticks 1180 (even). Lines 32,159 (+554). `node --check` passes. **What changes for the player.** Combat now has a real risk/reward tap-vs-hold distinction. Mouse moves camera continuously (no more click-and-drag). Charging a power attack visibly cocks the sword back, tints the screen gold, plays a winding sound, slows movement. Release while moving forward = lunge into the strike. The whole power-attack commitment (windup + lunge + strike) reads as one fluid 0.85s sequence. **Surfaced bug deferred to v63:** no enemy-mob collision, so lunges that overshoot pass cleanly through enemies and miss. Lunge distance tune in v62.9 mitigates; proper fix is mob collision system. |
+| **v63** | Session 49 | **Combat Redesign Session 2: backstab + sneak + detection overhaul + dungeon patrols.** Shipped as a single integrated ship across the session. Each layer in order:<br><br>**Backstab (the headline mechanic).** Position-based — player must be in the enemy's rear 150° cone (`BACKSTAB_CONE_COS = -0.259`) as measured against the enemy's stored `combatYaw`. Dagger weapons (`weaponShape === 'dagger'`) get `BACKSTAB_DAGGER_MULT` (3.0); all other weapons (and bare hand) get `BACKSTAB_OTHER_MULT` (1.5). Stacks multiplicatively with the existing staggered-crit ×1.5: dagger-on-staggered-from-behind = ×4.5 burst window. **Excluded:** bosses, dormant enemies (Gargoyle statue form has its own ×2 dormant bonus), slimes (no clear facing), ranged enemies (Phantom/Wraith/Fire Elemental — they don't enter the melee telegraph window, will revisit in Bow session). **Hit-feedback tag** `(BACKSTAB)` slots in next to `(POWER)` and `(CRIT)` in the inline damage popup; **kill-blow tag** also added (originally missing — kill messages now read e.g. `Bandit slain! (BACKSTAB) Search the body.`).<br><br>**Enemy combat facing — the critical primitive.** `e.combatYaw` field added to every dungeon and zone enemy spawn record. Updated live every frame while the enemy is alert AND idle (telegraphT ≤ 0 AND atkCd ≤ 0); **frozen** the moment they start a telegraph windup (stamped at the windup-init site for both attack pipelines); randomized at spawn for unaware enemies. This is what makes backstab actually attainable: alert enemies always visually face the player via `mesh.lookAt`, but their combat facing freezes during attacks so the player has a real positional window to circle into the rear arc. **Iteration note:** an early hybrid model (backstab = unaware OR staggered, no position check) was rejected after design discussion — backstab must LITERALLY be a backstab, earned through positioning. Canon now reflects this.<br><br>**Sneak system (Ctrl-toggle).** Module-level `_sneaking` flag toggled by Ctrl (both ControlLeft and ControlRight, `!e2.repeat` to prevent key-held re-trigger). Modal-aware via the existing early-return gates on each menu. **Effects:** detection radius × `_sneakDetectMult()` (base 0.7, -1% per Finesse point, floor 0.25 — at Finesse 10 = 0.6×); movement speed × `SNEAK_MOVE_MULT` (0.7); sprint disabled while sneaking. **Stacks multiplicatively with the existing `detectReduce` potion buff** (Muirfhear Shroud at 0.70×) — high-Finesse + Shroud = meaningful synergy without becoming invisible. Finesse `gainDesc` updated to include "-1% sneak detection"; new `sneakDetectPct` field added to attribute gains renderer. Title screen controls help text updated ("Ctrl — toggle sneak"). **Bug fixed along the way:** zone enemy detection (`if(dist<9)e.alert=true`) had NO multiplier applied — `detectReduce` potions never affected overworld enemies. Now consistent across biomes.<br><br>**Crouch visuals.** New `_eyeHeightCur` smoothed state lerps between `EYE_STAND` (0.92) and `EYE_CROUCH` (0.60) at exponential rate `CROUCH_LERP_RATE = 10` (~95% complete in 0.30s). Headbob amplitude × `SNEAK_BOB_MULT` (0.5) while sneaking — applied to both the camera bob calc and the viewmodel sword's walk-bob/sway so the visual stays coherent. Replaces the previous local `const EYE_HEIGHT = 0.92`. New DOM elements: `#sneakVignette` (inset box-shadow that fades on/off via `.on` class, 0.35s transition) and `#sneakInd` ("◔ SNEAKING" indicator, bottom-center). Both driven by `toggleSneak()`.<br><br>**Detection overhaul — vision cone + hearing.** Replaced the omnidirectional radius check with directional detection via new `canSeePlayer(e, dist, baseSightRadius)` predicate. Returns true if EITHER (1) `dist < HEARING_RADIUS` (0.5u, omnidirectional, NOT modulated by sneak — the "you can't sneak through someone" guarantee), or (2) `dist < sightRadius` AND player is in forward 150° cone (`dot(forwardVec, toPlayer) > VISION_CONE_COS = 0.259`, i.e. cos(75°)). Sight radius is modulated by `detectReduce` buff × sneak multiplier; hearing is not. **Wired into both zone and dungeon detection.** Zone detection also gained an LOS check (step-cast against `currentZoneSolid`) — zones previously had no LOS check at all, enemies detected through walls. Hearing radius tuned 1.5 → 0.5 mid-session after playtest found backstab impossible at striking distance.<br><br>**Dungeon patrol behavior — fixing motionless dungeons.** Dungeon enemies previously stood frozen when unaware (the pre-alert tick early-returned with no idle logic). Now every dungeon enemy carries a `patrolType` field randomized 50/50 at spawn between `'wander'` (slow circular patrol within ~2u of spawn `homeX`/`homeZ`, mirrors zone wander code, faces direction of motion) and `'scan'` (stands still, slowly rotates combatYaw via sine sweep over ~16s for a full turn). Per-enemy `patrolPhase` offset prevents lockstep synchronization. Wraith hover preserved during patrol. **Excluded from patrol:** dormant Gargoyles (statue pose), slimes (just bob in place), mimics (static whether disguised or revealed — they're ambush enemies, motion would break the conceit). `homeX`/`homeZ` now stamped on dungeon enemy spawn (previously only zone enemies had them).<br><br>**Verification end of session 49.** Parse-clean. Brace-balanced (7198/7198, +32 from v62.9). Backticks 1186 (even, +6). Lines 32,483 (+324). `node --check` passes. **What changes for the player.** A dagger build with high Finesse and patience can now sneak up on a wandering enemy, line up the rear cone, and one-shot it with `(BACKSTAB)` (×3.0 dagger × dormant if applicable). Mid-combat, the same player can sidestep an enemy's windup and circle into the rear arc during the commitment window for another `(BACKSTAB)`. Parry-into-stagger followed by flank-and-strike compounds to ×4.5 dagger damage — the canonical earned-burst combo. Sword builds get smaller backstabs (×1.5) but still feel positioning matters. Detection is now directional and LOS-aware; sneak makes a real difference; dungeons feel alive with wandering and scanning enemies. **Forward-compat hooks consumed:** the Session 2 backstab × 2.5 hook from `combat_redesign.md` (multiplier finalized at ×3.0/×1.5), the canonical combat-facing field (`combatYaw` — reused by patrol logic). **Open tuning items flagged for revision:** `BACKSTAB_DAGGER_MULT = 3.0`, `BACKSTAB_OTHER_MULT = 1.5`, `BACKSTAB_CONE_COS = -0.259` (150° arc), `HEARING_RADIUS = 0.5`, `VISION_CONE_COS = 0.259`, sneak detection scaling, patrol radius (2.0u) and speed (0.3× chase). |
+| v64 | Session 50 | **Combat Redesign Session 3: bow / ranged class.** `Bow` WEAPON_TYPES entry (`twoHand:true`, `shape:'bow'`, pierce); draw/release via mousedown-hold → `fireArrow(strength)`; arrow projectile rides `BALLS`/`ZB` with `isArrow` collision branch; `ARROW_IRON` ammo template (bundles of 12) in `EQ.ammo`; `_clearOffhandForTwoHander()` helper (first user); Barnaby (T1 Wooden Bow) + Wulfric (T3 Iron Bow) procurement arc. Draw strength scales damage + speed. Deferred to Session 4 polish: aim-zoom, arrow trajectory drop, archer enemies, arrow-type expansion, character-creator bow slot. Point-revs v64.1 (draw→speed+damage), v64.2 (gravity `ARROW_GRAVITY=4.0` + per-frame orientation + sticky projectiles via scene-graph parenting, 30s stuck life). |
+| v65 | Session 51 | **Two-handed weapons + animation overhaul.** Claymore/GreatAxe/WarHammer (Iron) + GreatClub (Wooden T1). Cleave is the 2H identity: 1H now hits exactly **one** enemy/swing (`CLEAVE_DEFAULT=1`), 2H hits up to `cleaveTargets` (Claymore 3 / GreatAxe 2 / WarHammer·GreatClub 1). Block tiers formalized via `blockReduce` (shield 65% / steel 2H 50% / wood 2H 40% / bare 35%). Power-vs-shielded = pure stagger (dormant scaffolding for Shieldbearer). **Lesson codified:** any new WEAPON_TYPES field = def + makeItem copy + save whitelist. Animation overhaul v65.2–v65.9: X-pitch-dominant 3-phase S-curve swings, 3 random variants (V0/V1 diagonals, V2 overhead), power-attack variant binding (1H→V0, 2H→V2), `ANIM_PARAMS` object + live debug panel (backtick toggle) — the canonical animation-tuning tool going forward. |
+| v66 | Session 52 | **Character-creator weapon classes — bow + 2H slots.** STARTER_WEAPONS gained `bow` and `greatclub` entries. Unlike the four hand-authored melee starters, these carry a `buildVia` flag and are materialized at `ccBegin` finalize via `makeItem()` against the live WEAPON_TYPES def — so a starter bow is byte-for-byte the shop copy (correct `twoHand`/`cleaveTargets`/`weaponShape`), no field-set duplication/drift. Bow grants a 12-arrow `ARROW_IRON` quiver via `grantsAmmo`. Picker tiles show a `2H` badge. Option C framing: all archetypes can still pick any starter; two defaults nudged — **Scout → bow**, **Warrior → greatclub**. Both archetype intro lines already weapon-agnostic. |
+| v67 | Session 52 | **Shop UI rebuilt on the inventory component (Oblivion-style).** Flat stock/bag lists replaced with shared category tabs (All · Weapons · Armor · Consumables · Misc) driving BOTH panels at once — merchant stock (buy) beside your bag (sell), each using `.inv-*`-style rows (tier pip, icon, name, Stat/Wt/Price cols). Single-click still transacts; tab resets to All on open. **Comparison deltas (merchant side):** `▲+5`/`▼−5`/`—` vs equipped, like-to-like only (bows compare only to an equipped bow, staves compare on spell-power %, armor on def; no melee↔bow cross-compare). **Bow/2H affordances:** `2H` badge, "stows your <offhand>" warning when a shield is equipped, bow arrow-stock indicator. New: `setShopTab`, `shopRowHTML`, `_shopCompareBadge`, `_shopAffordanceNote`. |
+| **v68** | Session 52 | **Buy-back + stackable quantity prompt.** (1) BUY-BACK: `merchantStock={}` overlay keyed by `house.id` — sold items reappear in *that* merchant's stock tagged "(sold)" at the price received. Persisted in save payload (`_serItem` whitelist gained `_boughtBack`; load preserves buy-back `buyPrice` across the value-migration that would otherwise reset it to retail). Stackables merge by name; buying back consumes the overlay entry (stackable + non-stackable paths). (2) QUANTITY PROMPT (option C): clicking a stackable opens a centered modal (×1/×5/×10/Max/Custom + live cost readout + affordability clamp); non-stackables buy on click unchanged. Same prompt on the sell side. Unit semantics: native stock unit = one authored bundle (12 arrows); buy-back + sell unit = one piece. Row shows bundle size "×12". Esc closes the prompt before the shop. New: `_pushBuyBack`, `_consumeBuyBack`, `openQtyModal`/`qtyPick*`, `_buyStackable`, `_sellStackable`. **Verified:** parse-clean, braces 7110, headless sims of full buy/sell/buyback cycle + clamp + unit-semantic cases all pass. |
+| v69 | Session 52 | **Combat feel: impact-synced damage/audio + weight-driven swing speed.** ROOT CAUSE: damage + swing audio fired on the click frame (start of windup), while the visual blade took the full swing to arc — so hit/sound landed ~0.4s before the blade visually connected (a gap the v65 long-swing overhaul exposed). FIX (1): damage + audio now fire when swing progress crosses `ANIM_PARAMS.swing.impactPoint` (default 0.55). `attack()`/`attackZoneEnemies()` set up the swing and stash a `_pendingStrike`; the render loop fires it at impact, with a safety-net fire at swing-end so a strike is never dropped. Candidates gathered AT impact (enemy that steps into range during windup gets hit). Resolution bodies extracted to `_resolveDungeonStrike`/`_resolveZoneStrike`. FIX (2): `_weaponSwingFactor()` scales BOTH swing animation duration AND attack cooldown from weapon weight, kept in lockstep (heavy weapon animates slow AND can't be re-swung early). Partial/bounded: factor = clamp(0.67 + 0.11·weight, 0.72, 1.40), calibrated so Sword (w3)=1.0× baseline. Dagger 0.46s · Sword 0.55s · WarHammer 0.77s. Fixed latent bug: power-attack variant binding used `swingT>0.57` to detect power swings, which breaks under weight-scaling — now reads `_pendingStrike.isPow`. All five new values + weight constants exposed in the backtick debug panel. Verified parse-clean (braces 7122) + headless sims of curve, single-fire-at-impact, impact-gather, safety net. |
+| v69.1 | Session 52 | **Weighted swing whoosh.** Swing is now two sounds: `sndWhoosh` (air, fired at swing start) → `sndSwing` (contact, at impact). `sndWhoosh` is swept band-passed noise whose centre frequency scales INVERSELY with weapon weight via `_weaponSwingFactor()` (so pitch + speed stay coherent): Dagger ~1080 Hz/0.17s, Sword 900 Hz/0.19s, WarHammer ~640 Hz/0.25s, with a glide-down "whoo→sh" tail and a low sawtooth body added for weapons heavier than a sword. `sndSwing` tightened (shorter noise, higher bandpass) toward a percussive contact/arrival character so it's distinct from the leading whoosh. Wired into both attack paths. |
+| v70 | Session 52 | **First-person hands.** `buildHandMesh()` builds a low-poly fist clamped to a per-weapon grip anchor, parented into the weapon/shield viewmodel group so it inherits all swing/block/cast animation for free. Two hands on 2H weapons (claymore/axe/hammer/club + bow drawing hand), one hand on 1H + a hand on the shield/torch when an offhand is equipped, nothing on an empty offhand. Hand colour from equipped Gauntlets (`EQ.hands` matCol/matGuard); bare = skin tone. Equipping/unequipping gauntlets rebuilds viewmodels to recolour. Data side needed nothing new (hands slot + Gauntlets type already existed with colour fields). |
+| v70.1 | Session 52 | **Hands fix pass.** (1) Grip anchors were at the crossguard (y≈-0.02) → hand looked like it held the BLADE; moved to actual handle-mesh centres per shape (sword -0.11, longsword -0.13, claymore -0.15, etc.). (2) 1H weapons raised in frame (rest Y -0.28→-0.22; 2H/bow unchanged). (3) Added an ARM coloured by the CHESTPLATE (independent of gauntlet colour) — so bare-hand + steel cuirass shows a skin fist on a steel sleeve. Chest equip/unequip now also rebuilds viewmodels. (NOTE: this static arm was replaced in v70.2.) |
+| v70.2 | Session 52 | **Two-anchor dynamic arm.** The v70.1 arm was parented to the hand, so it inherited the weapon's full swing and lay along the blade. Replaced with a per-frame IK-style bridge: arm lives in VM_SCENE (sibling of the weapon), spanning a FIXED shoulder anchor (`SHOULDER_R`/`SHOULDER_L`, never moves) to the WRIST (hand, which follows the swing). `_updateArmBridge()` reads the hand's world position each frame, then positions/orients/scales a unit-length sleeve to connect the two. Single stretchy segment (no elbow IK yet). Right shoulder→weapon hand; left shoulder→shield/torch hand, or the 2H weapon's second hand when no offhand. Verified span math lands wrist-end on hand to 0.00000 across rest/mid-swing/extreme/overhead poses. |
+| **v70.3** | Session 52 | **Hand/arm geometry cleanup.** Playtest (1H block, no offhand) showed 4 distinct pieces where one hand + one arm was expected — a single hand's sub-parts (fist + free-floating cuff cube + knuckle plate + finger bars) were reading as separate chunks at viewmodel scale. Consolidated: hand 7 boxes → 4 (fist, knuckle ridge fused to front face, small thumb, cuff fused flush to back as a same-width base — no floating pieces). Arm 3 pieces → 1 (single tapered sleeve cylinder; dropped the 2-cylinder split + elbow accent band that also read as separate chunks). Now reads as one fist + one arm. Diagnosis was a READABILITY problem, not a duplicate-hand logic bug. Verified parse-clean, braces 7154. |
+| **v71** | Session 53 | **Shieldbearer enemy + Bash (block-bash).** Two paired combat features. **(A) Shieldbearer** — new humanoid `EM` entry (minLevel:2, neutral physical resists, `shieldUp:true`), added to the `ruins` + `goblin` theme rosters (so it garrisons Act I fort interiors). Lights up the dormant v65 power-vs-shield force-break for free. New `shieldFrontMult()` (reuses v63 `isPlayerBehind`) reduces FRONTAL melee to `SHIELDBEARER_FRONT_BLOCK = 0.35`; flank/rear-cone bypasses entirely → the v63 positional system is the second answer. `(GUARDED)` hit tag surfaces the reduction. Power-break flips `shieldUp=false` + `dropShieldGuard()` so follow-ups land full and the raised arm visibly lowers. Mesh: `attachShieldProp()` builds a round wood+iron shield on the left arm in a raised guard pose. `shieldUp` now propagated def→entity in the dungeon spawn (was never copied). **(B) Bash** — `doBash()` fires on LMB-while-RMB-held (blocking), costs stamina, shares `atkCd`, deals ZERO damage (pure stagger, parallel to the parry→enemy-stagger loop). Shield equipped → full force-break; weapon/bare → `BASH_BARE_POSTURE = 20` chunk (breaks weak enemies, dents brutes). Hits all eligible enemies in the front cone (no cleave cap — no damage to balance). A raised Shieldbearer guard is IMMUNE (design call G) — "glances off the raised shield." Reuses `shieldImpact('parry')` for the forward-shove visual; new `sndBash(hasShield)` (metal clang vs dull shove). Input branch sits before the power-charge path and returns; mouseup attack is gated on `!blocking` so no double-fire. Both features work in dungeon + zone paths. Verified parse-clean (braces 7179) + headless symbol/wiring smoke test (21 checks). **v71.1 follow-ups:** bash given a dedicated `'bash'` impact kind (strong forward −Z thrust, not the parry's jostle-and-twist) so it reads as a strike out toward the enemy; fixed a latent viewmodel bug where the sword rode ~0.20u higher on floor 2 — the jump-bob term keyed off absolute `jumpY` (0 on floor 1, `FLOOR2_Y`=5.0 on floor 2), now keyed off `jumpDisp` (height above the current floor/terrain), which also fixes drift on elevated overworld terrain. **Guard recovery:** a broken Shieldbearer now RE-RAISES its guard when its stagger expires (`reraiseGuard` at both stagger-expiry sites) — so a drawn-out fight requires re-breaking it (power/flank) rather than being one-and-done; brief cyan flash + toast on recovery. |
+
+
+---
+
+## Next session backlog (queued after Session 42)
+
+Three ships planned for Session 43, in order. Decisions on each have already been locked with Michael in Session 42; the work is ready to execute in a fresh session.
+
+### Ship A — v61g5 — Exterior scale 2x + perimeter walls on all 8 ✅ SHIPPED
+
+**Shipped Session 43.** See v61g5 row in the version table above for the full breakdown. Summary: every fort got 2× scale on its showpiece geometry, every fort now has a closed perimeter (rectangular stone curtain for the gatehouse-pattern forts, concentric berms for earthwork, sparse log fragments for watchtower_canopy), the interior door moved to the back of the courtyard at the new WORLD_DUNGEONS coord with the gate showpiece at z = p.z + 24, and all 6 fort enemy blocks were repositioned to the new 2-outside-gate + 2-inside-courtyard pattern.
+
+### Ship B — v61g6 — Add fort_linear and fort_courtyard interior variants ✅ SHIPPED
+
+**Shipped Session 44.** See v61g6 row in the version table above for the full breakdown. Summary: both new generators register alongside fort_tee. Routed: tee → Greywatch, Old Garrison, Hollow Gate. linear → Last Post, Old Mound, Lonely Tower. courtyard → Pellam's Hold, Wind Cloister. Bonus: complete door system rework — all fort doors closeable but unlocked (no more find-the-key). Closing a door blocks pathing AND enemy line-of-sight, making it a real tactical lever.
+
+### Ship C — v61g8 — Per-room props pass ✅ SHIPPED (renumbered from v61g7)
+
+**Shipped Session 44.** Renumbered because v61g7 became a four-item hotfix bundle (chains/barrels/crates/take-all) that landed between Ship B and Ship D. See v61g8 row above. Summary: every fort interior room is now tagged with a `kind` at generation time; `decorateFortRoom` spawns kind-specific fixed props; cluster spawn is kind-aware. 9 room kinds total (great_hall, lords_chamber, chapel, courtyard_hall, barracks, kitchen, armory, storeroom, guardroom). Utility kinds shuffle per seed so two visits to the same fort feel different. Storerooms BURST with containers.
+
+---
+
+## Working session-handoff state (post v71 / end Session 53)
+
+- Latest shipped build: `dungeon_v71.html`
+- Parse-clean (full JS parse via `node --check` succeeds), brace-balanced (7179 each), ~35,260 lines
+- **Combat Redesign Sessions 1a + 1b + 2 + 3 all shipped** (posture/stagger/parry/recoil S47; power/lunge/deferred-swing/pointer-lock S48; backstab/sneak/detection/patrols S49; bow class S50/v64). **Two-handed weapons + animation overhaul S51/v65. Weapon-class follow-through + shop + combat feel + first-person hands S52/v66–v70.3.**
+- **Session 53 shipped v71 — Shieldbearer enemy + Bash.** Combat Redesign Session 5 (Shieldbearer) lands, and a new bash mechanic ships alongside it:
+  - **Shieldbearer** — the dormant v65 power-vs-shield force-break finally has a live target. Frontal block (0.35×) via `shieldFrontMult()` reusing the v63 `isPlayerBehind` cone; flank/rear bypasses. Power-attack the front OR flank the rear are the two answers. `(GUARDED)` hit tag. Round shield prop on the left arm in a raised pose; drops on break.
+  - **Bash (block-bash)** — LMB while holding RMB. No damage, pure stagger. Shield = force-break; weapon/bare = `BASH_BARE_POSTURE` chunk. Raised Shieldbearer guard is immune (so a Shieldbearer's shield is the one thing a bash can't crack — flank or power it). Costs stamina, shares the swing cooldown.
+- **Session 52 recap (v66–v70.3):** weapon-class slots (v66) → shop rebuild + buy-back (v67/v68) → impact-synced combat feel + weighted whoosh (v69/v69.1) → first-person hands + two-anchor arm (v70–v70.3). All closed.
+- **Next-ship candidates** (no commitment): arrow-type expansion (Silver/Broadhead/Bodkin — v64 architecture ready); dwarven smithy + Great Axe (completes 2H family); a second Shieldbearer-style mechanical enemy from the Session 5 ladder (Charger / Hexweaver / Pack Leader / Cave Viper); swing-animation polish ship. The combat-redesign monster-mechanics wave (ladder Session 5) is now *started* — Shieldbearer was its first entry.
+
+### Shieldbearer + Bash (new Session 53, v71)
+
+**Shieldbearer enemy.** `EM.Shieldbearer` — humanoid, minLevel:2, hp:48, neutral physical resists, `shieldUp:true`. In the `ruins` + `goblin` theme rosters (fort interiors). The shield is the defense, not toughness:
+- **Frontal block:** `shieldFrontMult(e)` returns `SHIELDBEARER_FRONT_BLOCK` (0.35) for a front-cone hit on a `shieldUp` enemy, 1.0 otherwise. Reuses the v63 `isPlayerBehind(e)` rear-cone predicate, so flanking/backstab bypasses the shield entirely. Applied as a `rawDmg` multiplier in BOTH `_resolveDungeonStrike` and `_resolveZoneStrike`. `(GUARDED)` decoration tag appended to the hit message when it fires, so the small number is legible.
+- **Guard break:** the existing v65 `_isPow && e.shieldUp` branch (both resolvers) now additionally sets `e.shieldUp=false` and calls `dropShieldGuard(e)` — follow-ups land full damage and the raised arm lowers. Power attack is one answer; flanking is the other.
+- **`shieldUp` propagation:** the dungeon spawn schema now copies `shieldUp:!!d.shieldUp` (it was never copied before — the flag only existed on `EM` defs and the Faolchú special-case). Any future shielded enemy inherits the whole stack by setting the def flag.
+- **Mesh:** `attachShieldProp(g, limbs, sc)` (module scope, near `enemyBodyMesh`) builds a round wood disc + iron rim + boss, parents it to `limbs.armL`, and raises the arm (`shieldArmUpX/Z`) into a guard pose. `dropShieldGuard(e)` lerps the arm back to rest. Only the humanoid build exposes `armL`; guarded defensively.
+
+**Bash (`doBash()`, module scope, just above `attack()`).** Fires from the mousedown handler when LMB is pressed while `blocking` (RMB held) in a combat context, with a weapon or shield equipped. Routing branch sits BEFORE the power-charge branch and `return`s, so a bash never also starts a charge. Mouseup's `attack()` is already gated on `!blocking`, so the LMB release while still holding RMB is a no-op — no double-fire.
+- **No damage — pure stagger.** Mirrors the player-side parry→enemy-stagger loop from the other direction.
+- **Two strengths (design call D):** shield equipped → force-break (drain `maxPosture`, instant stagger on any breakable enemy); weapon-only/bare → drain `BASH_BARE_POSTURE` (20, ≈2.5× a normal swing's 8) — breaks weak enemies, dents brutes (1.5× family mult survives it).
+- **Shieldbearer immunity (design call G):** a `shieldUp` enemy is skipped in the bash loop and triggers a one-shot "glances off the raised shield" toast. Bashing the thing whose job is to absorb a bash does nothing — the player's answer to a Shieldbearer is power-attack or flank, never bash.
+- **Cost/cone:** stamina `(armorW·1.5+4)` with a shield, flat `BASH_STAM_BARE` (10) bare; shares `atkCd` (the swing recovery); `BASH_RANGE` 2.0 (shorter than a swing's 2.2), `BASH_CONE_COS` 0.45 (same ~117° front cone). Hits ALL eligible enemies in cone (no cleave cap — nothing to balance without damage).
+- **Feel:** dedicated `shieldImpact('bash', …)` kind — a strong forward thrust (−Z ≈ 0.4u into the scene, minimal rotation) on the shield OR sword viewmodel, so the bash reads as a *strike out toward the enemy*, not a recoil. (The parry kind, by contrast, is a small jostle-and-twist; reusing it for the bash read as "rotating the weapon," fixed in v71.) New `sndBash(hasShield)` — bright metallic clang + boss clonk + body thud with a shield; a duller low shove bare-handed.
+
+**Open tuning items (v71 baselines, revisit after extended playtest):**
+- `SHIELDBEARER_FRONT_BLOCK = 0.35` — drop toward 0.2 if frontal melee still feels too viable (should push players to flank/power); raise toward 0.5 if it feels unfairly spongy.
+- `EM.Shieldbearer` hp:48 / dmg via dmgMult:2.6 — tuned as a mid-tier blocker, not a brute. Bump hp if it dies before the player learns the lesson.
+- `BASH_BARE_POSTURE = 20` — the weapon-only bash strength. Bump if bare bash feels useless vs the shield bash; the shield should stay clearly better but bare shouldn't be pointless.
+- Bash stamina (`armorW·1.5+4` shield / `BASH_STAM_BARE` 10 bare) — bash should be affordable as a combo-opener but not spammable; tune if it reads as either.
+- `BASH_RANGE = 2.0` — bump to 2.2 (swing parity) if the shove whiffs at melee distance in playtest.
+- **Open question:** bash currently hits *all* enemies in the cone with no cap. If a shield-bash into a pack trivializes group fights, add a target cap (e.g. 2) or a per-target falloff. Holding for playtest signal — the no-damage nature may keep it fair as-is.
+- **Forecast:** the Session 5 monster-mechanics ladder is now open. Charger (rush + knockback), Pack Leader (buffs nearby), Hexweaver (debuff caster), Cave Viper (poison — needs the status framework, ladder Session 6) are the remaining entries. Shieldbearer proved the "set a def flag, the dormant rule fires" pattern.
+
+### Things to playtest at session start (next session, post v71)
+
+**Shieldbearer — the three intended answers:**
+- **Power-attack the front** — hold LMB into a Shieldbearer's raised guard. Should fire "guard breaks!", 1.5s stagger, zero damage on the breaking swing, then the shield is DOWN (arm lowers) and follow-up swings land full damage.
+- **Flank the rear** — circle to the Shieldbearer's back (its `combatYaw` rear cone) and hit. Should bypass the block entirely (full damage, no `(GUARDED)` tag) — the v63 positional system paying off. Backstab with a dagger from the rear should still land `(BACKSTAB)`.
+- **Frontal normal hit** — swing the front without power. Damage should read ~35% with a `(GUARDED)` tag so the small number is legible. Confirm this is annoying-enough to push the player toward power/flank but not impossible.
+- **Spawn check** — Shieldbearer appears in `ruins` + `goblin` dungeons at player level 2+ (not level 1, not the tutorial). Fort interiors (ruins/goblin theme) are the easy place to find one. Confirm the raised-shield arm pose reads from a distance.
+
+**Bash:**
+- **Shield bash** — equip a shield, hold RMB, click LMB on a normal enemy. Should force-break → instant stagger, no damage, metallic clang, shield punches forward. Costs stamina.
+- **Weapon/bare bash** — same with a 1H weapon and no shield (and bare-handed). Should stagger a weak enemy (skeleton/goblin) but only dent a brute (Cave Troll) — dull shove sound.
+- **Bash vs Shieldbearer (the immunity)** — bash a Shieldbearer with its guard UP. Should do NOTHING — "glances off the raised shield" toast. Then power-break its guard and bash again — now it should stagger (shieldUp is false). This is the key design-call-G check.
+- **No double-fire** — bash (LMB while holding RMB), then release LMB while STILL holding RMB. Releasing LMB should NOT also fire a swing. Then release RMB.
+- **Stamina gating** — bash repeatedly until gassed; confirm it stops firing when stamina < the bash min, same as a swing.
+- **(Session 47 items still relevant)** Brute posture-break in 7-8 swings, goblin pack 3-4, Faolchú boss-break rare-but-achievable, parry timing on red telegraph pulse.
+
+### First-person hands + arm (new Session 52, v70–v70.3)
+
+**Hand.** `buildHandMesh(isLeft, scale)` builds a 4-box fist (fist body, knuckle ridge fused to front, thumb, cuff fused to back). Coloured by `_gauntletHandColors()` — reads `EQ.hands` matCol/matGuard, bare = skin tone. Parented INTO the weapon/shield viewmodel group so it inherits swing/block/cast animation automatically. Tagged `userData.isHandAnchor`; the weapon group stores `userData.handMain` (+ `handLow` for 2H).
+
+**Grip anchors.** Per-`weaponShape` `gripY` table in `buildViewmodel` (the HANDLE centre, well below the guard at y=0). Parallels the `tipY` table. 2H weapons get a second hand lower on the haft (bow: a drawing hand near the string).
+
+**Arm — two-anchor dynamic bridge (NOT parented to the hand).** A single tapered sleeve cylinder living in VM_SCENE as a sibling of the weapon. `_updateArmBridge(bridge)` runs every frame before the VM render: reads the wrist (hand) world position, takes a FIXED shoulder anchor (`SHOULDER_R`/`SHOULDER_L`, constant Vector3s), then positions the bridge at the shoulder, rotates its local +Y to point at the wrist (`setFromUnitVectors`), and scales Y to the shoulder→wrist distance. So the shoulder stays planted while the arm stretches/rotates to follow the hand through any swing. Coloured by `_chestArmColors()` (reads `EQ.chest` — independent of the gauntlet hand colour). Right shoulder → weapon hand; left shoulder → shield/torch hand, or the 2H weapon's second hand when no offhand. `buildShieldViewmodel` owns `vmArmL`; `buildViewmodel` owns `vmArmR` and calls `buildShieldViewmodel` at its end to reconcile the left arm after a weapon change.
+
+**Rebuild triggers.** Equipping/unequipping weapon, offhand, **hands** (glove colour), or **chest** (sleeve colour) rebuilds the relevant viewmodel(s). Single-segment arm only — no elbow IK yet (deferred; flagged as a possible follow-up if the straight arm reads stiff at extreme poses).
+
+**v70.3 lesson:** at viewmodel scale, a hand made of many small boxes fragments into "separate pieces" visually. Keep FPV detail meshes few and fused. The fix was readability (consolidate geometry), not logic.
+
+### Bow / ranged system (new Session 50, v64)
+
+**Weapon class.** `WEAPON_TYPES` gained `Bow` entry: `{type:'Bow', slot:'weapon', weight:3, atkMult:[0.60,0.80], shape:'bow', wType:'pierce', twoHand:true}`. The `twoHand:true` flag triggers `_clearOffhandForTwoHander()` at the equip site — generic helper, future claymore/great axe/war hammer ships reuse verbatim. Inverse guard at equip site refuses offhand-equip while a two-hander is in slot (soft refusal via showMsgLong, no auto-unequip of the weapon).
+
+**Bow viewmodel.** New shape branch in `buildViewmodel`: upper/lower limbs + tips + riser + leather grip + bowstring (top + bottom segments, the bowstring pulls back along Z during draw via `vmSword.userData.bowStringTop/bowStringBot`) + a nock-arrow indicator that fades in (`bowNockArrow`, opacity 0 at rest). The cast-orb `tipY` map gained a `bow:0.40` entry so spell casts from a bow don't crash.
+
+**Draw / release state.** Module-level `_bowDrawing`, `_bowDrawT`. Helpers `_isBowEquipped()`, `_hasArrows()`, `_bowDrawStrength()`. Mousedown handler branches on `_isBowEquipped()`:
+- Bow + arrows → start draw (`_bowDrawing = true`, `sndBowDraw()`)
+- Bow + no arrows → dry click (`sndBowEmpty()`, showMsg)
+- Melee → unchanged (power-charge path)
+
+Mouseup handler routes bow releases to `fireArrow(strength)` before the existing power/normal attack path. RMB while drawing cancels the draw (no arrow consumed) instead of starting a block.
+
+**Draw tick** in render loop alongside `powerCharging`:
+- Accumulate `_bowDrawT`, drain `BOW_STAM_DRAIN_PER_SEC × dt` from stamina
+- Clamp at `BOW_DRAW_MAX`
+- Stamina-out triggers auto-release at current strength (or auto-cancel if below `BOW_DRAW_MIN`)
+- Bow viewmodel string + nock animate proportional to draw progress
+
+**fireArrow pipeline.** Module function next to `attack()`:
+1. Consume one arrow from `EQ.ammo.qty`; clear slot if depleted
+2. Roll damage: `(bow.atk roll + ammo.arrowDmg roll + level*1.0) × drawMult × finesseMult`
+3. Resolve `wType` — arrow override wins over bow (forward-compat hook for Silver/Broadhead arrows that override damage type)
+4. Build arrow group (shaft + cone tip + 3 fletch fins), orient via `atan2(vx, vz)` and `-asin(vy/speed)`
+5. Spawn into active scene's projectile array (`BALLS` dungeon / `ZB` zone)
+6. `sndBowRelease(strength)`, showMsg with strength + arrows remaining, increment `lvAct.arrowsFired`
+
+**Collision branches in both `tickBalls` loops.** Detect `fb.userData.isArrow` BEFORE the spell-specific blocks. Single-target hit (despawns on first contact), applies `wType`-resolved physical resist via `e.resist[wType]`, flat def subtraction, dormant Gargoyle ×2 bonus parity with melee. Posture drain at normal-melee tier (NOT power-attack tier; bow has its own commitment loop, doesn't get to stack two commitment loops). Routes through `killE` (dungeon) / `killZoneEnemy` (zone) on kill with ` (ARROW)` tag.
+
+**Constants block.** All in the existing combat constants area (~line 1399):
+- `BOW_DRAW_MIN = 0.25`, `BOW_DRAW_MAX = 1.10` (release threshold + cap)
+- `BOW_DAMAGE_MULT_MIN = 0.45`, `BOW_DAMAGE_MULT_MAX = 1.40` (linear interp by strength)
+- `BOW_STAM_DRAIN_PER_SEC = 8`, `BOW_RELEASE_STAM_COST = 6`
+- `ARROW_SPEED = 28`, `ARROW_LIFE = 2.2`, `ARROW_HIT_RADIUS = 0.55`
+- `BOW_FINESSE_DMG = 0.04` (+4% per Finesse point)
+
+**Item system.** New `ARROW_IRON` template: `type:'ammo', slot:'ammo', ammoType:'arrow', qty:12, arrowDmg:[3,6], buyPrice:2`. `bagAdd()` and `buyItem()` now honor bundle `qty` for stackable items (was always defaulting to 1 — fix needed for arrow bundles). `useItem` got a new ammo branch: same-name ammo merges stacks, different-name swaps with displaced ammo going to bag. `itemDesc`/`itemStatShort` show arrow-damage range + wType. Save whitelist (`_serItem`) gained `arrowDmg`.
+
+**Audio.** `sndBowDraw()` (rising creak + noise), `sndBowRelease(strength)` (snap + thump scaled by strength), `sndBowEmpty()` (dry click for no-ammo presses).
+
+**Procurement.** Barnaby's `misc` stock (Ashenmoor): T1 Wooden Bow + Iron Arrow stack. Wulfric's `weapon` stock (Ironhaven Armory): T3 Iron Bow + Iron Arrow stack. This is the same Ashenmoor-starter → Ironhaven-scale arc-shape as melee weapon procurement.
+
+**Things the v64 ship deliberately deferred to Session 4 polish:**
+- **No aim-zoom.** Crosshair is the aim indicator. Add scope-style zoom if playtest finds shots feel imprecise.
+- **No arrow trajectory drop.** Arrows fly perfectly straight. Realistic ballistics if Session 4 wants them; the `vy = sin(pitch) × speed` is in place.
+- **No archer enemies.** Skeletal Archer + cover/LOS = Session 4 (the canon `combatYaw` field already supports backstab on ranged enemies; their telegraph window needs to stamp on it).
+- **No arrow types beyond Iron.** Silver (anti-wraith), Broadhead (slash for skeletons), Bodkin (armor-piercer), Black Caor (firebolt) all queued behind tasting Iron at playtest. The wType override architecture is in v64; just the content is pending.
+- **No bow starter slot in character creator.** `STARTER_WEAPONS` unchanged. Scout still gets dagger by default. Adding a bow starter is a design decision about archetype-bow pairing — held until we see how the Buy-from-Barnaby path feels.
+- **Backstab does NOT apply to arrows.** Canonical decision in v64; revisit in Session 4 only if archery feels like it's missing a commitment payoff loop.
+
+### Fort interior state (carried from Session 46)
+
+- All 8 forts have 2× scale + perimeter walls + upgraded doorhouse + clean fort-side approaches
+- All 8 forts wired to one of three interior generators (`fort_tee`, `fort_linear`, `fort_courtyard`)
+- All fort doors closeable but unlocked; closing doors blocks pursuit + LOS. Doors swing visibly on open via hinge sub-group rotation.
+- Every fort room has a `kind` and matching prop signature. **10 room kinds:** great_hall, lords_chamber, chapel, courtyard_hall, barracks, kitchen, armory, storeroom, guardroom, library.
+- Fixed-prop collision live — `DUNGEON_PROPS[]` parallel to `DUNGEON_COLUMNS`, integrated into `dSolid` (v61g9). Furniture is no longer walk-through.
+- Library fully built — 6 individually-lootable bookshelves, `library_shelf` loot pool (17% per shelf, ~1.3 items mean per library).
+- Central staircase at the cross-hall/trunk intersection of tee forts — decorative only.
+- Door SFX, barrel/crate lid-pop, container cluster spacing all polished. Enemy spawns props-aware (no in-furniture mobs).
+- `hashSeed` helper at top of fort generators for decoupled sub-RNGs.
+
+### Resolved in Session 50 (v64)
+
+- ~~No ranged attack option~~ — Bow class shipped with draw-and-release input grammar
+- ~~`ammo` slot was scaffolding only~~ — Real ammo equip/consume/merge/swap pipeline shipped
+- ~~No two-handed weapon precedent~~ — `_clearOffhandForTwoHander()` helper shipped; bow is first user, claymore reuses verbatim
+- ~~`bagAdd` discarded bundle qty~~ — Now honors `item.qty` when >1 for stackable items (arrow bundles work)
+- ~~No ammo branch in `useItem`~~ — Ammo equip path added with merge-vs-swap logic
+- ~~No ammo description in `itemDesc`/`itemStatShort`~~ — Both gained ammo branches
+- ~~`arrowDmg` not in save whitelist~~ — Added to `_serItem`
+
+### Open tuning items flagged for revision after extended playtest (Session 50)
+
+- `BOW_DRAW_MIN = 0.25` — bump if accidental short-draw fires feel like noise
+- `BOW_DRAW_MAX = 1.10` — bump if max-draw feels too quick to be a real commitment
+- `BOW_DAMAGE_MULT_MIN = 0.45` / `BOW_DAMAGE_MULT_MAX = 1.40` — the strength spread; narrow if partial draws feel useless, widen if full draws feel under-rewarded
+- `BOW_STAM_DRAIN_PER_SEC = 8` — bump if infinite-hold draws feel gamey
+- `BOW_RELEASE_STAM_COST = 6` — flat release cost; relevant for "rapid fire" rhythm tuning
+- `ARROW_SPEED = 28` — fast enough to feel like a real ranged option; slow if Session 4 wants visible trajectory drop
+- `BOW_FINESSE_DMG = 0.04` — +4% per Finesse point. At Finesse 10 = +40% bow damage. May overshadow base bow tier; tune down to 0.03 if archer builds feel too dominant.
+- Bow `atkMult: [0.60, 0.80]` — bow is intentionally weaker than swords on its own contribution since the arrow stacks on top. Bump if v64 bows feel weak relative to sword equivalents.
+- `ARROW_IRON.arrowDmg: [3,6]` — arrow contribution; the high end of the equation that scales with arrow type rather than bow tier
+
+### v65 — Two-handed weapons + combat depth (Session 51)
+
+**The two-hander pillar ships.** Four new weapons across two tiers: Wooden Great Club (T1, Barnaby — entry-tier starter), Iron Claymore + Iron War Hammer (T3, Wulfric). Great Axe deliberately reserved for the future dwarven smithy NPC. All consume the bow ship's `_clearOffhandForTwoHander()` helper and `twoHand:true` flag pattern. **The ship is consumption of established architecture, not new architecture** — exactly the forecast at the end of the v64 entry.
+
+**Identity grid (locked):**
+- **Claymore** — slash, atkMult [1.4,1.7], **cleaves 3**, posture×1.75, block 50%. Pack-clearing weapon.
+- **War Hammer** — blunt, atkMult [1.65,2.0], **cleaves 1**, posture×2.25, block 50%. Single-target specialist (+15% damage compensation for the cleave-1 penalty). Best vs brutes / mini-bosses.
+- **Great Axe** — slash, atkMult [1.5,1.85], cleaves 2, posture×1.75, block 50%. Reserved at dwarven smithy.
+- **Wooden Great Club** — blunt, atkMult [0.55,0.75], cleaves 1, posture×1.5, block 40%. T1 starter at Barnaby's misc shop.
+
+**Cleave is the canonical 2H identity (v65).** Previously the swing forEach hit every enemy in arc, which was a sleeper bug masquerading as 1H utility — fixed in v65. 1H weapons now hit exactly **one enemy per swing** via `CLEAVE_DEFAULT = 1`; 2H weapons hit up to their `cleaveTargets` count. **Sort-by-distance** so the closest N candidates are consumed first — feels fair. This is the most important player-facing behavior shift in the ship and the one to watch for in playtest ("1H feels less powerful in pack fights now"). If playtest reads as too punishing, bump 1H default to 2; otherwise lean into "1H = precision."
+
+**Power-vs-shielded-enemy = pure stagger.** The lore_canon line about "power attacks bypass frontal shields" was implemented as a stagger break rather than damage-through-shield. Power swing + `e.shieldUp:true` → 1.5s stun, zero HP damage, free follow-up window for the player. Mirrors the player-side parry-stagger loop. Branch lives in `attack()` and `attackZoneEnemies()` before the damage call — call-site routing rather than threading a power flag through `applyMeleeDamage`. **Scaffolding is dormant** until Shieldbearer ships with the flag.
+
+**Block tier formalized (v65):**
+- Shield equipped: ~65% reduction (`sh.block` value)
+- Steel 2H (Claymore/Great Axe/War Hammer): **50% reduction**
+- Wooden 2H (Great Club): **40% reduction**
+- 1H weapon no shield / bare hand: 35% (`BLOCK_REDUCE_NO_SHIELD`)
+
+Encoded on WEAPON_TYPES entries via `blockReduce`. `executeStrike` reads `EQ.weapon.blockReduce` if no shield, falls back to bare-hand rate. All 2H weapons can block (half-sword / haft-parry canon); bows can also block at the bare-hand rate — confirmed in v65.2 playtest, lore-coherent ("desperate parry, no real absorbing surface").
+
+**Cone tightening (v65.2).** Hit-arc dot threshold tightened from 0.35 (~140°) to 0.45 (~117°) for both 1H and 2H. Was catching enemies at hips and reading as "I hit something behind me." Uniform across weapon classes — cleave already differentiates 2H by target count; widening the cone would be a second differentiator without design justification.
+
+**Architectural lesson — adding a weapon-type field touches three places (v65.1 retrospective).** The v65 2H ship initially missed copying `cleaveTargets`/`postureMult`/`blockReduce` through `makeItem`, so the fields ended up `undefined` on shop-bought weapons and cleave defaulted to 1. Save whitelist also needed the new fields. Codified in lore_canon: **any new WEAPON_TYPES field = WEAPON_TYPES def + makeItem copy + save whitelist.**
+
+### v65 animation overhaul (v65.2 — v65.9)
+
+What started as a focused 2H ship developed into a major animation refactor. The 2H viewmodel placements led to swing animation tuning, which led to block pose tuning, which led to a live-tuning debug panel. Each step is worth recording as canon.
+
+**v65.2 — initial swing/block pose changes.**
+- 2H viewmodels held two-handed (centered, tilted) — initial pose differentiation from 1H grip.
+- Swing animation rewritten from forward-pitch-dominant to Y-yaw-dominant horizontal slice (later overturned — Y rotation around a vertical blade is invisible).
+- Alternating swing direction per click (later replaced with random variants).
+- Block pose moved across body via additive deltas to base pose (later overturned).
+
+**v65.3 — block pose absolute-target via lerp.** The v65.2 additive-delta block pose compounded with the base pose's pre-existing yaw, producing a vertical-blade-pointing-skyward failure mode. **Canon fix:** `gb` blend lerps between base pose and an absolute guard-pose target — not "base + delta." Per-weapon-class targets: 1H, 2H (more horizontal), bow (softer rotation since the bow viewmodel's long axis is vertical at rest). This is the canonical pattern for any future hold-pose blending.
+
+**v65.4 — swing axis priorities corrected.** Y-rotation around a vertical blade is invisible. **X-pitch is what tips the blade forward into the scene** (toward enemy); **Z-rotation is what varies blade angle in the screen plane** (slicing diagonal). v65.4 made X-pitch dominant (`-1.20`) and Z-rotation secondary. Same correction made for block — Z to PI/2 rotates blade flat across body; Y to PI/2 spins it invisibly.
+
+**v65.5 — wider arcs with anticipation/follow-through.** Three-phase asymmetric S-curve replaced the symmetric sin tween. **Anticipation phase** moves opposite swing direction (windup), **sweep phase** carries weapon all the way through to far side, **settle phase** eases back. Wider total visible travel (0.85u→0.95u from one side of screen to the other). Normal swing duration bumped 0.38→0.50s, power 0.55→0.65s. Combat hit detection unchanged — it fires once at swing-start, duration is purely visual.
+
+**v65.6 — randomized variant system.** Three variants per swing:
+- **V0** — UR→LL diagonal slash
+- **V1** — UL→LR diagonal slash (mirror of V0)
+- **V2** — overhead chop (no horizontal travel, big downward pitch)
+
+Latched at swing-start onto `vmSword.userData.swingVariant`. Probability weights normalized at runtime. The alternation-per-swing model from v65.2 is **retired** — randomization reads more decisive and natural.
+
+**v65.7 — ANIM_PARAMS extraction + live debug panel.** Pulled every animation tunable into a single `ANIM_PARAMS` object at module scope. Render loop reads from it each frame. Built a sibling-DOM debug panel toggled with backtick (`) — sliders for every parameter, dropdowns for variant lock and power-attack bind, "Copy values" button that dumps live params to clipboard as JSON. **Workflow proven this session:** lock a variant, drag sliders until it feels right, copy JSON, paste back to bake as new defaults. This pattern is canon for any future animation tuning need.
+
+**v65.8 — depth push + tuned defaults baked.** Player-tuned values baked as new defaults (the ANIM_PARAMS object now reflects what felt right after one tuning pass). New `swingPushZ` parameter pushes weapon AWAY from camera during sweep+hold (prevents visual collision with player shield during big arcs). Default `-1.0` after playtest. Variant chance system rewritten from "v0 + v1 + remainder for v2" (v65.6/7) to "three explicit weights normalized at runtime" (v65.8) — fixed a bug where `v0_chance: 1, v1_chance: 1` gave V2 zero probability.
+
+**v65.9 — power-attack variant binding + V2 reachable on normal swings.** Three additions:
+1. **Power-attack variant bind:** 1H power attacks → V0 (heaviest committed UR→LL slash); 2H power attacks → V2 (overhead chop, natural heavy-weapon power fantasy). Configurable in panel via two new dropdowns.
+2. **Priority:** Panel variantLock wins over everything (debug authority); else power bind fires if set; else weighted random. The bind values live in ANIM_PARAMS so they're tunable too.
+3. **V2 now reachable on normal swings:** explicit `v2_chance` weight (default 0.2 alongside v0/v1 at 1.0 each) gives roughly 45/45/9 distribution, so overhead chops appear as a ~10% special even outside power attacks.
+
+**Animation tuning workflow is now canon.** ANIM_PARAMS + debug panel is the long-term tool for any animation tweaking. The pattern: extract numeric constants into a parameter object, build a sibling DOM panel that mutates them live, ship the panel with the build (cheap to comment out), iterate with sliders, copy values, bake as defaults. **This pattern should be applied to other animation systems if they need feel tuning** — e.g. cast windup, lunge curve, telegraph timing.
+
+### v65 known tuning items + open polish
+
+- **1H cleave behavior change** (cap of 1) is the highest-impact playtest signal to watch for. If 1H feels under-powered in pack fights, bump `CLEAVE_DEFAULT` to 2 or add a 1H-specific cleave field on WEAPON_TYPES. If players adapt, leave as canon.
+- **Power-attack-vs-shielded scaffolding** is dormant. Will fire automatically when Shieldbearer (Session 5) ships with `shieldUp:true`.
+- **Animation panel ships in v65.9.** Cheap to comment out before any release/distribution; the IIFE at the bottom of the script is the entire panel + wiring, removing it leaves the game intact.
+- **Per-variant depth push** could split if V2 needs different push than V0/V1; currently uniform `swingPushZ`. Hold for playtest signal.
+- **Swing blend between consecutive swings** (decay residual + accumulate new) was scoped but deferred to a later polish ship. Currently if you button-mash, the second swing snaps from the previous's settle position; the snap is small with the current 0.50s normal swing.
+
+### v65 retired patterns
+
+- **Alternating swing direction (v65.2).** Replaced by random variants. The `_lastSwingDir` flag remains as a dead variable for declaration stability; safe to delete in a future cleanup pass.
+- **Block pose via additive deltas (v65.2).** Replaced by absolute-target lerp (v65.3).
+- **Swing animation as Y-yaw dominant (v65.2/v65.3).** Replaced by X-pitch dominant + position translation (v65.4+).
+
+---
+
+
+
+### v64 playtest results (Session 50, point-revs shipped)
+
+**v64 played well overall.** Bow draw rhythm, ammo merge, stamina-out forced release, RMB-cancel all worked first try. Three issues surfaced and got fixed in point-revs:
+
+**v64.1 fixes:**
+1. **Phantom melee swing.** With a bow equipped, the first click after equip (or after alt-tab) would swing the bow like a sword. Root cause: mouseup falling through to `attack(false)` whenever `_bowDrawing===false`, which is true in several legitimate paths (pointer-lock-consumed first click, alt-tab cleared state, post-RMB-cancel LMB release). **Fix:** mouseup handler gates by weapon class — `if(_isBowEquipped()) return;` before reaching the melee branch. Canonical pattern; any future weapon class without a melee swing needs the same gate.
+2. **Arrow speed scales with draw.** Originally only damage scaled. Now both: weak draw → weak + slow; full draw → strong + fast. `ARROW_SPEED_MULT_MIN/MAX = 0.55..1.0`. Speed spread is narrower than damage spread by design — a 30%-speed arrow would lob and feel broken.
+3. **Bowstring separation.** Original model: two parallel vertical bars translated back as pillars when drawn. They slid back together but had no connecting horizontal, so the string visually detached from the bow. **Fix:** rebuilt the string as two tip-anchored pivoting `THREE.Group`s. Each segment's origin sits at its bow-tip; the string box inside extends toward the midline; the draw tick rotates each group around X so the far ends (the nock) swing toward the camera. At rest: two segments line up flush as one straight string. At full draw: classic archer triangle.
+
+**v64.2 ships gravity + sticky arrows (player request):**
+1. **Gravity (`ARROW_GRAVITY = 4.0 u/s²`).** Low value — ~40% of real gravity. Close-range feels point-and-click; long-range demonstrably arcs. Per-frame orientation update from velocity vector keeps arcing arrows pointing along their flight (otherwise descent looks broken). Weak-draw arrows arc more for the same range because they spend longer in the air → emergent skill gradient with no extra mechanics.
+2. **Geometry-stick.** Arrows missing enemies but hitting walls/floors/terrain plant in place. Sub-stepped collision (3 sub-steps per frame at standard dt) prevents tunneling through thin walls. Stuck arrows persist for `STUCK_ARROW_LIFE = 30s`.
+3. **Enemy-stick.** Arrow hits that don't kill reparent the arrow to the enemy body mesh via `body.worldToLocal()` + `body.getWorldQuaternion().invert()` math. Arrow follows the enemy through movement, rotation, telegraphs, and corpse-fall. Despawns with the corpse when the body mesh is eventually removed.
+4. **Architecture:** new module-scope helpers `tickArrowMotion(arrow, dt, isOW)` (returns `'flying' | 'stuck-geom' | 'stuck-enemy' | 'expired'`) and `_stickArrowToEnemy(arrow, body, scene)`. Both projectile loops gained an early-branch `if(fb.userData.isArrow)` block that routes through these helpers instead of the generic spell-motion code. Sticky pattern uses scene-graph parenting, not synthetic follow code — this is now canon for any future stick-into-target effect (planted runes, thrown spears).
+
+**Open tuning items (v64.2 baselines, revisit after extended playtest):**
+- `ARROW_GRAVITY = 4.0` — low end. Bump to 6-7 if archery feels too forgiving at range.
+- `STUCK_ARROW_LIFE = 30s` — generous so the player can admire their work. Drop to 15-20s if visual clutter becomes a problem on busy zones.
+- `BOW_DRAW_MIN = 0.25`, `BOW_DRAW_MAX = 1.10` — draw window. Unchanged from v64.
+- `ARROW_SPEED_MULT_MIN/MAX = 0.55/1.0` — speed spread. Widen if weak-draw arrows feel too similar to full-draws.
+- `BOW_FINESSE_DMG = 0.04` — +4%/point; +40% at Finesse 10. Possibly over-tuned; tune down to 0.03 if archer builds feel too dominant after extended play.
+- Sub-step count `STEPS = 3` in `tickArrowMotion` — bump to 4 if arrows tunnel through thin walls.
+
+### Things to playtest at session start (next session, post v64.2)
+
+- **Bow buy + equip + shield auto-stow.** ✅ confirmed working v64.
+- **Bow draw rhythm.** ✅ confirmed working v64; string fix landed v64.1.
+- **Arrow vs enemy types.** Still TODO — test wType resist against skeleton (resists pierce), goblin (neutral), slime (0.3× pierce). The resist-tag should appear in the hit message.
+- **Arrow trajectory at long range.** New v64.2 test: shoot a target ~25u away. Should see a clear arc and need to compensate. Compare partial-draw vs full-draw at the same range — partial should drop noticeably more.
+- **Stuck arrows visual sanity.** Shoot at walls, floors, terrain. Arrows should plant cleanly, not vanish, not embed past the surface. Shoot a moving enemy — arrow should follow them as they walk, telegraphs, dies.
+- **Despawn-with-corpse.** Kill an enemy with stuck arrows. Confirm arrows ride the corpse fall and disappear with the body on loot/cleanup.
+- **Bow + spell coexistence.** Equip bow + a learned spell. Press F to cast — should work; cast orb spawns from bow `tipY:0.40` position.
+- **Save/load with bow + arrows.** Save mid-zone with Iron Bow + 8 arrows equipped. Reload → both should restore intact, including arrow `arrowDmg`.
+
+### Pointer Lock system (new Session 48, v62.1 → v62.4)
+
+**Architecture — gesture-context release, frame-tick reconcile.**
+- `_releasePointerLockForMenu()` helper at module scope (line 1053). Called at the TOP of every menu-opening function: `openHub`, `openInv`, `openDialog`, `openShop`, `openLoot`, `openStash`, `openBookReader`, `openSLMenu`, `openNoticeBoard`, `openWaitMenu`, `openLevelUp`, `showSigilOverlay`, `_renderQuestUpdatePopup`. **This is the only reliable path** for releasing lock — Chrome silently rejects delayed/decoupled `exitPointerLock()` calls (the v62.1 reconciler approach failed for this reason; the gesture-context call works).
+- `_isMenuOpen()` predicate ORs every menu flag + DOM-visibility checks for 7 modal IDs. Used by reconciler and by mousedown handler's "should I lock?" check.
+- `reconcilePointerLock()` runs once per render frame BEFORE pause bailout. Three states: menu-open + locked → release (defense-in-depth, primary path is the helper); combat + unlocked → show resume overlay; combat + locked → hide overlay.
+- `#resume-overlay` DOM ("⏸ Paused / Click to resume") shown when in combat but unlocked. z-index 180. Click anywhere re-acquires lock.
+- `pointerlockchange` listener: on acquire → hide overlay, flush combat state, set `body.cursor='none'`. On loss → flush combat state, restore cursor via crosshair→default toggle trick + force reflow + synthetic mousemove dispatch (cursor cache repaint defense).
+- `visibilitychange` listener: alt-tab clears all transient combat state (powerCharging, powerArmed, blocking, lungeT, powerSwingDelayT).
+
+**Architectural pattern locked.** ANY future menu-opening function must call `_releasePointerLockForMenu()` at the top, before any DOM mutation. Forgetting it means the cursor stays invisible until the player hits Esc. The reconciler will eventually catch it but Chrome's gesture-context heuristic only honors the helper-call path reliably.
+
+**Input model change.** Mouse no longer needs to drag to look — camera turns continuously while locked. LMB / RMB are pure combat inputs. The legacy `drag` flag remains only for touch input (pointer lock is desktop-only).
+
+### Combat redesign state (Sessions 47 + 48)
+
+**Posture system — live across every enemy in every scene.** (Session 47)
+- Hidden posture meter on every melee enemy. Base = `maxHp × 0.5 × familyMult`.
+- `POSTURE_FAMILY_MULT` family multipliers: brute 1.5×, humanoid 1.0×, wraith/phantom 0.9×, slime 0.8×, spider 0.7×, wolf 0.8×, mimic 1.2×, faolchu (boss) 2.5×.
+- Drain on normal melee hit: 8. **Drain on power-attack hit: 25** (v62, finally consuming the v61gj-a constant).
+- Regen: 5/sec after a 1.5s post-hit delay. Refills to full on stagger expiry.
+- Posture-break → push to existing `staggered[]` array for 1.5s (`POSTURE_BREAK_STUN`). Yellow emissive flash via `enemyBodyMesh(e)`. "💥 [Name] staggered!" toast.
+
+**Stagger-crit chain wired into `applyMeleeDamage`.** (Session 47)
+- Striking ANY enemy in `staggered[]` (from posture-break, parry, Sioc freeze, frost weapon enchant) deals × 1.5 damage via `POSTURE_CRIT_MULT`. Hit message suffixes " (CRIT)".
+
+**Parry-window timing + held-block tier.** (Session 47, v61gj-a2)
+- Parry fires only if block was raised within `PARRY_WINDOW_BASE (0.20s) + ATTRS.finesse * PARRY_WINDOW_FINESSE (0.01s)`. Finesse 10 = 300ms window; Finesse 20 = 400ms.
+- Held-block branch (past parry window): partial reduction (shield 65%, bare-hand 35%), stamina cost scales with absorbed damage and Resolve.
+- Three-tier defense: Perfect Parry (gold flash, zero damage + stagger) / Held Block (blue flash, partial reduction) / Unblocked (red flash, full damage).
+
+**Shield/sword recoil on impact.** (Session 47, v61gj-a2 → a4)
+- `shieldImpact(kind, rawDmg, ax, az)` at line 1059. Parry impulse forward+lateral toward attacker (sharp 0.35s decay). Held-block impulse backward+lateral away (slower 0.50s). Bare-hand fallback recoils sword backward. Magnitude `rawDmg/30`, direction camera-local.
+
+**Power attacks.** (Session 48, v62)
+- Click-and-hold LMB past `POWER_CHARGE_THRESHOLD` (0.5s — v62.5 tune from 0.35). Release fires power attack; tap fires normal attack.
+- Damage × `POWER_DMG_MULT` (1.8). Stamina × `POWER_STAM_MULT` (2.0). Posture drain `POSTURE_DRAIN_POWER` (25). Cooldown × `POWER_ATK_CD_MULT` (1.7 — v62.8 bump from 1.4).
+- `powerCharging` (timer flag, no visible effects, fires on mousedown) vs `powerArmed` (threshold crossed, drives all visible/feel-able effects). Critical separation: tap-and-release clicks below threshold show ZERO charge feedback (v62.6 fix).
+- Visible/audible feedback at threshold cross: `sndPowerCharge` plays (winding tone + bright overtone), sword cocks back over shoulder via `powerBlend` lerp, gold screen-edge tint on `#df` boxShadow, movement penalty `POWER_MOVE_MULT` (0.4) applied to forward speed.
+- Cocked pose holds during the deferred-swing windup so the player visually stays "ready to strike" while the lunge carries them in.
+
+**Forward lunge.** (Session 48, v62.7 + v62.9 tune)
+- Triggers on power-attack release IF: W (or ArrowUp) is held at release AND weapon equipped.
+- `LUNGE_DURATION` 0.4s. `LUNGE_SPEED_MULT` 1.8× (v62.9 tune from 2.4; ~25% shorter total travel after overshoot playtest feedback). Forward-component-only (`fwdX*spd*(_lungeMult-1)`) added on top of WASD motion — strafing mid-lunge doesn't accelerate sideways.
+- FOV punch to `LUNGE_FOV` (92, vs sprint 85 / idle 75).
+- Bailout: release W → boost vanishes the same frame. Hit-cancel: `hurtT > 0` zeroes `lungeT`. Swing-still-fires per design (commit carries the blade).
+
+**Deferred power swing sequencing.** (Session 48, v62.8)
+- `attack(isPower, _isDeferred)` — second optional arg. Power-attack release in mouseup pays cost+cooldown+lunge immediately, schedules `powerSwingDelayT = POWER_WINDUP_DELAY` (0.30s). Frame-tick decrements; at zero, fires `attack(true, true)` which skips cost gates and runs swing-tween + sound + hit detection.
+- Timeline: release → cost paid (t=0) → cocked-pose-windup (0-0.30s) → deferred swing fires (0.30s) → swing peak / blade lands (~0.575s) → swing tween ends (0.85s). Lunge ends at 0.40s, slightly before swing peak — "stop and strike" feel.
+- Cancel rules: dead → cancel. Blocking → cancel. Hit → swing still fires.
+
+**Architectural notes worth remembering.**
+- `applyPostureDamage`, `tickPostureRegen`, `isStaggered` are generalised to work on any entity. **Player gets posture in a later ship just by adding a posture field — no rewrite needed.**
+- `enemyPostureFamily(e)` resolves family via `bossId` → `shape` → `buildFn` → name-match. Future enemies should stamp `buildFn` or `shape` at spawn time to avoid the name-match fallback.
+- Save migration is automatic — `initPosture` is idempotent and lazily called at the top of both enemy ticks.
+- **Viewmodel additive-`+=`-without-equilibrium-lerp trap (v61gj-a4):** when adding `+=` deltas to a viewmodel axis, verify the surrounding animation has an equilibrium-restoring lerp toward the BASE POSE of that axis. Always lerp to actual rest position, not zero. Sword uses full `position.set` / `rotation.set` per frame — clean. Shield uses lerp-toward-target — also clean now.
+- **Pointer Lock gesture-context rule (v62.4):** every menu-opening function must call `_releasePointerLockForMenu()` at the top, synchronously inside the user-gesture handler. Reconciler is defense-in-depth only.
+- **Power attack feedback gates on `powerArmed`, not `powerCharging` (v62.6):** the timer flag (`powerCharging`) has no visible effects; the threshold-crossed flag (`powerArmed`) drives everything player-visible. Maintain this separation when adding new charge-related effects.
+- **Swing animation duration latched per-swing (v62):** the viewmodel block latches `vmSword.userData.swingMax` at the start of each swing so arc progress divides by the right number (0.55 for power, 0.38 for normal). Don't reintroduce hardcoded `0.38` in the tween — future swing variants (two-handers, swing animations 8+ ships) will want this latch.
+
+### Combat redesign state (Session 49, v63)
+
+**Backstab is positional — earned, not granted.** (Session 49, v63)
+- `applyBackstab(e)` at line ~1240 returns the multiplier: `BACKSTAB_DAGGER_MULT` (3.0) for dagger-shape weapons, `BACKSTAB_OTHER_MULT` (1.5) for everything else (and bare hand). Returns 1.0 if the enemy is excluded (boss, dormant, slime, ranged) or the player isn't in the rear arc.
+- `isPlayerBehind(e)` measures `dot(enemyForward, enemyToPlayer)` against `BACKSTAB_CONE_COS` (-0.259, i.e. cos(105°) → 150° rear arc).
+- Wired into `applyMeleeDamage` alongside `staggerMult` — both multiplied multiplicatively. Stagger × backstab on a dagger = ×1.5 × ×3.0 = ×4.5 (the canonical earned-burst combo). Returns `info.backstab` flag in addition to existing `info.crit`.
+- `(BACKSTAB)` tag fires in BOTH the non-killing hit message AND the killing blow ("X slain! (BACKSTAB) ..."). Composed inline at the four call sites (two for non-kill in zone+dungeon, two for kill in zone+dungeon). The kill-blow surface was specifically a player-feedback ask.
+
+**`combatYaw` — the canonical enemy combat-facing field.** (Session 49, v63)
+- Stamped on every dungeon spawn (`combatYaw: Math.random()*Math.PI*2`), every zone spawn (same), small slime split-spawn (defensive).
+- **Live-update rules in both ticks:** updated every frame to `Math.atan2(px-e.x, pz-e.z)` when the enemy is alert AND idle (`telegraphT <= 0 && atkCd <= 0`); **frozen** the moment a melee windup starts (stamped at the windup-init site, both pipelines).
+- For unaware enemies: updated by patrol logic (wander faces motion direction; scan rotates via sine sweep) — so unaware enemies have a meaningful "front" the player has to flank around.
+- The visual mesh continues to call `mesh.lookAt(px, ..., pz)` every frame when alert — `combatYaw` is the *combat* facing, not the visual one. This separation is load-bearing: alert enemies look like they're tracking the player (turret feel), but their combat facing lags behind during attacks, giving the player a real positional window.
+
+**Sneak system.** (Session 49, v63)
+- `_sneaking` boolean toggled by Ctrl (both ControlLeft/Right, `!e2.repeat`). Modal-aware via existing keydown gates.
+- Detection multiplier: `_sneakDetectMult() = max(0.25, SNEAK_DETECT_BASE - SNEAK_DETECT_PER_FINESSE × Finesse)` — base 0.7, -1% per Finesse point, floor 0.25.
+- Movement: `_sneakMoveMult` (0.7) applied to the consolidated `spd` calc. Sprint disabled while sneaking (`_canSprint &&= !_sneaking`).
+- Stacks with the `_buffMult('detectReduce', 1)` potion buff in `canSeePlayer` — Muirfhear Shroud (0.70×) + sneak at Finesse 10 (0.6×) = 0.42× total. Genuine synergy.
+- Crouch visuals: `_eyeHeightCur` smoothly lerps between `EYE_STAND` (0.92) and `EYE_CROUCH` (0.60) at `CROUCH_LERP_RATE` (10, ~0.30s to ~95%). Headbob × `SNEAK_BOB_MULT` (0.5). `#sneakVignette` + `#sneakInd` DOM driven by `toggleSneak()`.
+- Finesse `gainDesc` updated to include "-1% sneak detection"; new `sneakDetectPct` renderer added to the gains-display function. Finesse description updated to "Parry tighter. Strike from afar. Move unseen."
+
+**Directional detection — vision cone + hearing.** (Session 49, v63)
+- `canSeePlayer(e, dist, baseSightRadius)` unified predicate. Returns true if EITHER `dist < HEARING_RADIUS` (0.5, omnidirectional, NOT sneak-modulated) OR `dist < sightRadius * detectMult` AND player in 150° forward cone (`dot(forward, toPlayer) > VISION_CONE_COS = 0.259`).
+- Wired into both zone (`baseSightRadius = 9`) and dungeon (`baseSightRadius = 3.5`) detection. Zone detection ALSO gained an LOS step-cast against `currentZoneSolid` — previously zone enemies detected through walls (a v62 oversight discovered while implementing sneak).
+- LOS check stays separate at each call site (different solid functions: `dSolid` vs `currentZoneSolid`).
+- **Hearing tuned 1.5 → 0.5** mid-session after playtest found backstab impossible at striking distance.
+
+**Dungeon patrol behavior.** (Session 49, v63)
+- Dungeon enemies previously stood frozen when unaware (early-return at the pre-alert tick). Replaced with patrol logic.
+- New per-enemy fields at spawn: `patrolType` ('wander' | 'scan', random 50/50), `patrolPhase` (random offset, 0 to 2π), `scanT` (timer accumulator), `homeX`/`homeZ` (anchor position).
+- **Wander pattern:** slow circular patrol within ~2u of home (`Math.sin(walkT*0.4 + patrolPhase) * 2.0` offset). Speed `e.spd * 0.3 * dt` (matches zone wander). Uses `dSlide` for collision. Faces direction of motion via `combatYaw = atan2(dx/wd, dz/wd)`.
+- **Scan pattern:** stationary, `combatYaw = patrolPhase + sin(scanT * 0.4) * π` — full sweep every ~16s, per-enemy phase prevents synchronization.
+- Wraith hover preserved during patrol (`_hoverY = isWraith ? sin(swT*1.4+ph)*0.12 : 0`).
+- **Excluded from patrol:** dormant (statue pose, the existing dormant block), slimes (just bob in place), mimics (static whether disguised or revealed — they're ambush enemies).
+
+**Architectural notes worth remembering.**
+- `canSeePlayer` is the unified detection predicate. Future enemy types should funnel through it rather than re-implementing radius checks. Bow/ranged enemies will need `combatYaw` stamping in their telegraph path so backstab works on them too (deferred to Bow session per design).
+- `combatYaw` is the canonical combat-facing field. Anywhere we previously would have used `mesh.rotation.y` for combat logic, we should use `combatYaw` instead — mesh rotation is now purely visual.
+- The `(BACKSTAB)` tag flow lives at the call sites, not in `dmgTag()`. `dmgTag` handles only physical resist messages (Armor pierced! / Weak! / Resisted). When adding new combat decoration tags (e.g. critical hits, environmental kills), follow the inline-at-call-site pattern.
+- Kill-blow tag composition `_killTag` is built at all four kill call sites (zone direct kill, zone enchant kill, dungeon direct kill, dungeon enchant kill). Future combat-decoration additions need to update all four if they should appear on kills.
+
+### Resolved in Session 49 (v63)
+
+- ~~Backstab not implemented~~ — shipped as position-based with weapon-type-aware multipliers
+- ~~Combat-facing field needed for backstab~~ — `combatYaw` field added, dual update rules (live alert-idle, frozen during attacks)
+- ~~No stealth system~~ — sneak shipped (Ctrl-toggle, Finesse-scaled, crouch visuals)
+- ~~Detection was 360° everywhere~~ — vision cone (150°) + hearing radius (0.5u) shipped
+- ~~Zone enemies detected through walls~~ — LOS check added to zone (was a v62 oversight)
+- ~~Zone enemies ignored `detectReduce` potion buff~~ — fixed in same overhaul
+- ~~Dungeon enemies stood frozen when unaware~~ — patrol behavior (wander / scan, 50/50 random at spawn)
+- ~~Killing-blow message dropped `(BACKSTAB)` tag~~ — kill-tag composition added at all four kill call sites
+
+### Open tuning items flagged for revision after extended playtest (Session 49)
+
+- `BACKSTAB_DAGGER_MULT = 3.0` / `BACKSTAB_OTHER_MULT = 1.5` — bias dagger identity if non-dagger backstabs feel too generous
+- `BACKSTAB_CONE_COS = -0.259` (150° rear arc) — tighten to 120° (`-0.5`) if flanking feels too easy
+- `HEARING_RADIUS = 0.5` — bump if aggro-spam through close quarters becomes gamey
+- `VISION_CONE_COS = 0.259` (150° vision cone, 75° each side) — narrow if stealth feels too easy from the sides
+- `SNEAK_DETECT_BASE = 0.7`, `SNEAK_DETECT_PER_FINESSE = 0.01` — lever both for sneak power curve
+- `SNEAK_MOVE_MULT = 0.7` — slower if commitment should feel stronger
+- `EYE_CROUCH = 0.60`, `CROUCH_LERP_RATE = 10`, `SNEAK_BOB_MULT = 0.5` — body-state visual tuning
+- Patrol radius (2.0u), patrol speed (`e.spd * 0.3`), scan sweep rate (0.4 rad/s) — dungeon liveliness levers
+- Patrol type randomization — currently 50/50; may want to bias toward 'scan' if too much movement makes dungeons noisy, or toward 'wander' if they feel sleepy
+
+### Things to playtest at session start (next session, post v63)
+
+- **Stealth approach** — sneak toward a wandering enemy from behind, line up the rear cone (150°), backstab with dagger. Should one-shot most early enemies (×3.0 multiplier on top of base damage).
+- **Parry-into-flank combo** — parry an attacking enemy, sprint around to their rear during the 1.5s stagger window, strike. Should land `(BACKSTAB) (CRIT)` with dagger ×4.5 burst.
+- **Sword build stealth** — sneak-approach a wandering enemy with a non-dagger weapon, backstab. Should land `(BACKSTAB)` with ×1.5 — meaningful but not dagger-equivalent.
+- **Aggression test** — walk straight at an alerted enemy. They should track you, attack, and you should NOT get backstab from the front. Sidestepping during their windup → backstab should fire.
+- **Detection from behind** — sneak at sneak-walking speed up to an enemy from behind in both biomes. Should be able to get within striking distance without alerting. Brush past at <0.5u → instant alert via hearing.
+- **Mimics + slimes + dormant** — verify they never enter patrol logic (mimics stay disguised, slimes bob, gargoyles statue-still).
+- **Patrol variety** — watch a room full of unaware dungeon enemies. Some should wander, some should scan-rotate, motions should be desynchronized.
+- **Sneak crouch transitions** — toggle Ctrl multiple times, verify smooth camera height transitions (~0.3s), vignette fade, indicator appearance, headbob reduction.
+- **Zone LOS** — stand behind a building/tree in an overworld zone and verify the enemy on the other side doesn't detect you. Previously they did.
+
+### Resolved in Session 48 (v62 → v62.9)
+
+- ~~Power attacks not implemented~~ — addressed by v62
+- ~~LMB-drag camera-look conflicts with hold-to-charge~~ — addressed by v62.1 Pointer Lock rewrite
+- ~~`exitPointerLock` silently rejected from reconciler~~ — addressed by v62.4 (gesture-context helper called from every open*)
+- ~~Cursor stays invisible until Esc when menu opens~~ — addressed by v62.4 (real root cause: lock wasn't releasing) + cursor-cache toggle defense from v62.3
+- ~~Swing-and-walk clicks incidentally charging power~~ — addressed by v62.5 threshold bump + v62.6 feedback-gating-on-armed
+- ~~Power attack swung before lunge carried player into range~~ — addressed by v62.8 deferred-swing sequencing
+- ~~Lunge overshoots enemies~~ — partially addressed by v62.9 speed-tune; deeper fix (mob collision) deferred to v63
+
+### Open tuning items flagged for revision after extended playtest
+
+- `POWER_CHARGE_THRESHOLD = 0.5` — bump 0.6/0.7 if still feels eager
+- `POWER_WINDUP_DELAY = 0.30` — shorten if combat feels sluggish, lengthen if strike-at-end-of-lunge timing feels off
+- `LUNGE_SPEED_MULT = 1.8` — bump back up after mob collision ships (v63), since wall-stop will handle overshoot naturally
+- `LUNGE_DURATION = 0.4` — tune in tandem with windup delay if rhythm feels off
+- `POWER_DMG_MULT = 1.8` — bump to 2.0 if power attacks don't feel meaningfully heavier
+- `POWER_ATK_CD_MULT = 1.7` — current value covers the full commitment cycle; bump higher to make power attacks feel even more committed
+- Gold tint alpha (`.42`) and fade duration (`0.25s`) — tune if visibility is off
+- Standing-still power-attack windup delay — currently 0.30s for all power attacks regardless of W. If standing-still power-attacks feel sluggish without the lunge to fill the windup, consider gating `powerSwingDelayT` on lunge state.
+- (Session 47 still-open items carry forward) `POSTURE_DRAIN_NORMAL = 8`, `POSTURE_REGEN = 5.0/sec`, `POSTURE_CRIT_MULT = 1.5`, `POSTURE_BREAK_STUN = 1.5s`, `PARRY_WINDOW_BASE = 0.20`, `PARRY_WINDOW_FINESSE = 0.01`, Faolchú base posture (2500), held-block reduction (65%/35%).
+
+### Things to playtest at session start (next session)
+
+- **Power attack against an enemy at medium range** — lunge-W, release, sword stays cocked during 0.30s windup, lunge carries you in, swing fires at end of lunge, blade lands. The "wasted swing before reaching enemy" v62.7 bug is gone.
+- **Standing-still power attack** — does the 0.30s windup feel right without lunge filling it? If sluggish, the gate-on-lunge fix is in the tuning notes.
+- **Mob pass-through during overshoot** — confirm that even with v62.9's reduced lunge speed, you can still pass through enemies (this is the v63 mob-collision ship). Note frequency for context on prioritization.
+- **Pointer lock + menu flow** — open every menu type (I, Tab map, dialog via E, shop, wait button, sigil) and confirm cursor appears immediately on open, lock re-acquires cleanly on close.
+- **Alt-tab mid-combat** — return → resume overlay, transient combat state cleared.
+- **(Session 47 items still relevant)** Brute posture-break in 7-8 swings, goblin pack 3-4, Faolchú boss-break rare-but-achievable, parry timing on red telegraph pulse, held-block tank stamina drain, shield recoil readability, bare-hand parry mechanics.
+
+### Combat-redesign arc progress (from `combat_redesign.md`)
+
+| Session | Ship | Status |
+|---|---|---|
+| 1a | Posture meter + stagger-crit chain | ✅ Shipped v61gj-a Session 47 |
+| 1b | Power attacks + windup commitment | ✅ Shipped v62 → v62.9 Session 48 |
+| — | Pointer Lock input system rewrite | ✅ Shipped v62.1 → v62.4 Session 48 (not originally in the redesign doc — surfaced as a prerequisite for power attacks) |
+| — | Forward lunge | ✅ Shipped v62.7 → v62.9 Session 48 |
+| 2 | Positional / flanking / backstab | ✅ Shipped v63 Session 49 (backstab redesigned to position-based; sneak + detection overhaul + dungeon patrols shipped in same session) |
+| 3 | Bow scaffolding | ✅ Shipped v64 Session 50 (bow class, draw/release, arrow projectile, two-hander helper, ammo slot consumption, Barnaby + Wulfric stock arc) |
+| 4 | Bow polish + Skeletal Archer + cover | Queued — arrow type expansion (Silver bypasses wraith resists; Broadhead = slash type), arrow trajectory drop, aim-zoom, enemy archers, cover/LOS |
+| 5 | Monster mechanics wave (Shieldbearer, Charger, Hexweaver, Pack Leader, Cave Viper) | 🟡 Started v71 Session 53 — **Shieldbearer shipped** (frontal block + power-break + flank-bypass; the dormant v65 power-vs-shield hook fired for free). Charger / Hexweaver / Pack Leader / Cave Viper still queued (Cave Viper needs the Session 6 status framework for poison). The "set a def flag, the dormant rule fires" pattern is proven. |
+| — | Bash (block-bash) | ✅ Shipped v71 Session 53 (not originally in the redesign doc — paired with Shieldbearer). LMB-while-blocking → no-damage stagger. Shield = force-break, weapon/bare = posture chunk. Raised Shieldbearer guard immune. |
+| 6 | Status framework + poison + hotbar | Queued |
+| 7 | Enchanting + essence + scrolls | Queued |
+| Next | Two-handed weapons (claymore / great axe / war hammer) | **Next ship after v64.2.** Helper `_clearOffhandForTwoHander()` already proven via the bow ship; this is the second user. Wider melee swing arc + slower wind-up + higher damage roll. Existing `attack(isPower, _isDeferred)` pipeline handles them with weapon-type-specific tuning. |
+| 8+ | Swing animation variations (4 directional procedural tweens for L→R, R→L, TR→BL, TL→BR) | Queued as own polish ship |
+| — | **Mob collision** | Queued — originally queued for v63, but Session 49 focused on Combat Redesign Session 2 (backstab + sneak + detection + patrols) which the design naturally suggested. Same scope: enemy mesh bounds, `currentZoneSolid`/`dSlide` extensions, enemy-vs-enemy (probably no in pass 1), corpse exclusion, Faolchú special shape, NPC edge cases (Bram/Edna/etc). Own session. |
+
+### Stance system — design pivot logged
+
+Original `combat_redesign.md` proposed 3 stances (High Guard / Heavy / Light) with `Q`-to-cycle. **Session 47 design discussion replaced this with a simpler model:** tap LMB = normal attack, hold LMB = power attack (Skyrim-style). No stance keybind, no per-weapon `defaultStance` field. Backstab × 2.5 (originally Light-Stance-locked) became a **position-based bonus with weapon-type-native dagger scaling** in Session 2 (shipped v63 Session 49 — ×3.0 dagger / ×1.5 other, gated on rear 150° cone). Anti-shield (originally Heavy-Stance-locked) becomes the power-attack-bypasses-frontal-shield rule, hook already wired in v61gj-a. Cleaner, fewer save fields, no `Q`-cycle latency problem. **Session 48 validated the pivot in practice** — the tap/hold model felt natural after the v62.6 feedback-gating fix, and the lunge-on-hold layered cleanly without needing a stance system. **Session 49 validated Session 2's design pivot** — backstab as a position-based mechanic with a dedicated stealth approach loop (sneak) felt better than the original Light-Stance-locked × 2.5 because it can be earned multiple ways (stealth approach, mid-combat flank, parry-and-circle). The redesign doc remains canonical *aspirationally* but Session 1 onward follows the simplified model.
+
+---
+
+## Next ship — TBD (Session 54)
+
+**Session 53 shipped v71** — Shieldbearer enemy + Bash (block-bash). The dormant v65 power-vs-shield force-break got its first live target; a no-damage stagger bash shipped alongside (shield force-break / weapon posture-chunk, Shieldbearer-immune). Both work in dungeon + zone paths. See the v71 row in the version-history table and the Shieldbearer + Bash subsection in the handoff state. This opened the Combat Redesign Session 5 monster-mechanics ladder — Shieldbearer was its first entry.
+
+**Next-ship candidates** (no commitment, just inventory):
+
+1. **More Session 5 monster mechanics** — Charger (rush + knockback), Pack Leader (buffs nearby enemies), Hexweaver (debuff caster). All follow the Shieldbearer pattern (def flag + a behavior hook). Cave Viper (poison) waits on the Session 6 status framework. Lowest-risk continuation — proven pattern.
+
+2. **Dwarven smithy NPC** + Great Axe procurement. Adds a new NPC, completes the 2H family. Likely paired with mountain biome content if that ships alongside.
+
+4. **Swing animation polish ship** — multi-swing blending (residual decay from previous swing accumulates into new one), additional animation variants (thrust, overhead-with-spin for war hammer specifically), per-variant `swingPushZ` if uniform push doesn't hold up in extended playtest.
+
+5. **Cast/lunge/telegraph timing extracted into ANIM_PARAMS pattern** — apply the v65.7 pattern to other animation systems. Cheap, high return for any future "this casts too slow / lunge feels weird" feedback.
+
+6. **v65 playtest fixes (point-revs).** If playtest reveals issues with cleave-1 for 1H, the cone tightening, or the swing variants, those go first.
+
+**Resolved this session (was a candidate, now shipped):** Shop buy-back (v68). **Buy-back design as built:** per-merchant overlay, persisted, buy-back price = sell price received, stackables merge. A future polish could add decay (Oblivion-style restock cycling) but it's not needed — flagged only if buy-back lists get cluttered in playtest.
+
+## Deferred to future sessions
+
+**Walkable upper floor / second level** — the v61ga–gd staircase mesh is decorative only. Real upper-floor support means: per-cell Y override (similar to v61f3 `cfg.platforms` system), mirrored floor plan with shuffled room kinds (or a basement instead of upper), enemy pathfinding across floors, staircase-transition logic, save-state for which floor the player is on. Own multi-ship arc.
+
+**Door swing side** — v61gf doors always swing to the door's left (when facing from −Z). If playtest finds doors swinging into walls or systematically into corridors instead of rooms, a per-door swing-side flag set from room geometry is the fix. Holding for playtest signal.
+
+**Library loot density** — v61gh shipped the conservative end (17% per shelf, ~1.3 items mean per library). If playtest reads as too sparse, dial the `library_shelf` rolls up. Cheap to tune.
+
+**Courtyard fort library odds** — courtyard forts allocate 2 utility rooms from a pool of 5 → library odds ~40%. Canon claims ~40% so this is in-range, but if we want libraries to feel guaranteed-discoverable across all fort variants, a fixed-include slot in courtyard layouts would address it.
+
+**Crosshair-targeted looting (interaction-targeting refactor)** — currently every interactable in the game uses proximity (chests, barrels, corpses, NPCs, sigils, doors, stairs, entrances, examinables). Sweeping pass to crosshair-target across ~15 prompt branches. Own ship. Discussed but punted in Session 44 — playtest first whether v61g7's 0.55u min spacing + 1.1u interact radius actually creates ambiguity before committing to the refactor.
+
+**Fort terrain elevation** — forts should sit on a slight upslope rising from the surrounding landscape (annular ring of raised terrain extending ~6-10u outside perimeter, sloping geometry, collision so player walks up smoothly). Doable but needs new ground mesh + collision integration. Own ship.
+
+**Wilderness zone size bumps + curved road paths** — currently most wilderness zones are 100-160u with straight pathWaypoints arrays. Bumping sizes to 200u and adding curvature (5-7 waypoints per zone with slight bezier) would make the wilderness feel proportional to the scaled-up forts. Cascades into adjacent-zone spawn coord updates (the v61f16 audit pattern). Own ship.
+
+**Loot density tuning** — v61g8 averaged ~18 containers per tee fort vs ~10 pre-ship. Concentrated in storerooms (the design intent), but may feel like too much in playtest. Easy to tune: reduce storeroom's corner count from 4 → 3, or reduce per-corner count range from 2-3 → 2-2. Still queued from Session 44.
+
+- Discovered during Session 42 playtest: 5 of 8 forts are Act II zones (The Last Post, The Wind Cloister, The Old Mound, Pellam's Hold, Hollow Gate) — accessible only after Act I climax + commission, or via fast-travel if previously visited. Act I forts (Greywatch, The Old Garrison, The Lonely Tower) are the easy-access playtest set.
+
+---
+
+## Working style preferences (from Michael)
+
+- Targeted file edits over full rewrites
+- Concrete pitches to react to, not open-ended brainstorming
+- "Start with the end in mind" on story
+- Appreciates architectural explanations inline with edits
+- Parse check before shipping — catches editing mistakes early
+- Real playtest feedback trumps theoretical correctness
+
+
+---
+
+## v80 — Session 54 — Streamed world, Session 1 of the world rework
+
+**Why.** Post-v71 retrospective: systems strong, story load-bearing in a way that stalled content. Decisions locked this session: (1) story is **ambient only** — books, rumors, ruins, no main quest, no quest-gated geography; (2) art path is **procedural primitives with discipline**, single-file preserved (GLB base64-embedding stays an escape hatch for characters only); (3) world model is a **continuous streamed exterior** with interiors/dungeons as scene swaps. Three.js stays on **r128** for now — current releases are ESM-only (would move the whole file to module semantics, break paste-in-console shortcuts) and changed the lighting model (every light in every scene retuned). That upgrade is its own session.
+
+**What v80 is.** `dungeon_v71.html` + one module (`var WORLD=(()=>{...})()`, inserted just above the boot line) + eight small integration patches. Combat, dungeons, inventory, loot, magic, day/night clock: untouched.
+
+### WORLD module (search `v80 — STREAMED WORLD`)
+- **Map:** `SIZE=2400`. x east, z south (yaw 0 = north = −Z). Ferrous mountain wall at z<300 (impassable by height). Sea on west/south/east edges (`sstep(190,40,edge)` pulls land to −8). No inland lakes yet (inland floor clamped ≥1.4).
+- **Height:** `WORLD.rawH(x,z)` = continental swell (scale 420, ±9 around +6) + regional relief (scale 95, amplitude from region) + detail. `WORLD.worldH(x,z)` = rawH with **stamp flattening** (smoothstep blend to stamp centre height inside `r`, over `blend`). Pure function of the seed; no stored heightmap. `slopeNormalY` by finite difference.
+- **Regions:** `WORLD.REGIONS` — 8 soft radial fields laid out per lore cardinal map: coastal (W), deepwood, ashen (SW, Ashenmoor), bealach, foothills (N), wastes (centre), greywood (E-centre), royale (E). Each carries `biome` (→ `BIOME_PROFILES` for sky/fog/ground colour), `amp`, `trees` species, `density`, `rocks`, `music`. `regionWeights()` blends by inverse-distance²; borders are gradients.
+- **Chunks:** `CHUNK=64`, `SEGS=16` (4u verts), ring `RADIUS=4` (9×9=81; `WORLD.setRadius(n)` to tune). Terrain tile = PlaneGeometry with vertex colours (biome blend + noise + slope-rock + high-snow + shore-sand + deep bed) × a 512px crisp-grain detail canvas (`terrainMat`, anisotropy 8). Builds are nearest-first, 1/frame (`BUILD_PER_FRAME`); sync on entry behind the fade (81 chunks ≈ 335 ms headless).
+- **Scatter:** deterministic per-chunk lattice (4u cells, hashed jitter). Trees by dominant region species with minority mixing; density × clumping fbm (clearings/thickets), slope- and altitude-gated. Rocks favour slopes and rocky regions; bushes on open ground. Six vertex-coloured prototypes (`PROTO`: conifer, broadleaf, dead, scrub, bush, rock) merged without BufferGeometryUtils (`mergeParts`). One `InstancedMesh` per species per chunk with per-instance tint via `setColorAt`. **r128 gotcha, fixed:** an InstancedMesh is frustum-culled by its geometry's bounding sphere (the prototype's, at the origin) — every chunk was dropped from the shadow pass. Each mesh now gets a cheap `geometry.clone()` with a chunk-sized `boundingSphere`.
+- **Solids:** `WORLD.solidAt(x,z)` — world edge, deep water (`worldH < SEA_Y−0.9`), trunk/rock AABBs from the 3×3 surrounding chunks, plus `STATIC_SOL` (stamps/doors). Exposed as `ZONES.world.solidFn`; `currentZoneSolid` delegates to it.
+- **Sun/shadows:** `REN.shadowMap` on (PCFSoft). One DirectionalLight, 2048 map, ±70u ortho following the player; elevation by `gameHour()` (clamped ≥0.32). Terrain receives; trees/rocks cast. Remember `shadow.camera.updateProjectionMatrix()` after changing bounds.
+- **Atmosphere:** `atmosphere(dt)` owns sky/fog/light state for this scene (the scene's `userData.dayNight={isLocked:true}` keeps the engine's 1 Hz pass off it). Region-blended day colours (forest sky lifted 55% toward plains — the authored forest sky was a canopy-ceiling reading), night via `_nightFactor()`, per-frame ease so region borders never snap. Sky dome = gradient luminance × `material.color`. Water plane follows the player (8u grid snap). Music by dominant region with hysteresis (`w>0.62`).
+- **Far terrain:** one 24u-step mesh of the whole world, lowered 0.8u, tinted toward canopy green by tree density so the treeline pop-in at ~290u is softer.
+- **Stamps (Session 1):** `ashenmoor_site` (800,1780, r58) — a cleared shelf where the village lands in Session 2 — and its seven anchor dungeons converted from the old overworld zone's local coords (`(e−60)×1.25` offset). Doors are real `spawnPortalMeshes` output; enter/exit round-trips through the existing dungeon code.
+- **Entry points:** `WORLD.enter(x,z,yaw,label)` (fade, save), `WORLD.restore(x,z,yaw)` (save-load path), `WORLD.tick(dt)` (called from the outdoor tick chain), `devWorld(x?,z?)` console shortcut. Spawn: `WORLD.spawn` = (740,1690) facing NW into the Deepwood edge.
+
+### Integration patches (all tagged `v80`)
+1. Module inline above the boot line. **`var`, not `const`** — the boot line lives inside the file-level `if(REN){}` guard; a const there is block-scoped and invisible from the console.
+2. `currentZoneSolid` → delegates to `ZONES[id].solidFn` when present.
+3. `isOverworldZone()` → true for `'world'`.
+4. Outdoor tick chain → `WORLD.tick(dt)` before the zone `if`-chain.
+5. Tutorial exit → `WORLD.enter(spawn)`. Q0 closed quietly (its completeText names Bram/Ashenmoor); **Q1 not unlocked**.
+6. `_applyZoneFromSave` → `'world'` branch → `WORLD.restore(px,pz,yaw)`.
+7. Renderer: shadow maps on; `CAM` far plane 200 → 1800 (far mesh + sky dome).
+8. `ZONE_BUILDERS.world` entry (no `gates` array, so the gate-graph builder skips it).
+
+### Verified headless (Chromium + SwiftShader, r128 served locally)
+Boot clean, no page errors. Deepwood / foothills / coast / wastes / night all render with the intended palettes. Shadows render (after the culling fix). Hub tabs (map/inv/quests) open in the world without throwing — the map is simply empty. Save → load restores into the world at the saved coords. First dungeon door sits on a flat pad at h≈4.0. Node harness: 81-chunk sync build ≈335 ms; streaming across a border <1 ms/frame; densest forest ring ≈9k instances (~600k tris incl. shadows).
+
+### Things to playtest at session start (post v80)
+- **Frame rate in a real browser** (headless SwiftShader can't say). Target 60 at `RADIUS=4`; if it dips, `WORLD.setRadius(3)` in the console and note the difference. Shadow map size (2048) is the other knob.
+- **Shadow acne / peter-panning** on trees at dawn/dusk (`shadow.bias −0.0006`, `normalBias 0.6`).
+- **Treeline pop-in** at the ring edge (~290u). Options if it bothers: RADIUS 5, or a billboard/impostor ring (Session 5).
+- **Chunk-boundary hitch** when a forest chunk builds mid-walk (1/frame time-slicing). If visible, split terrain and scatter into separate frames.
+- **The seven doors** — walk to one, enter, clear, exit; confirm you land at the door in the world, not in Ashenmoor.
+- **Deep water block** — wade until it stops you; confirm it's ~knee-deep, not a wall on the beach.
+- **Region borders** — walk deepwood → ashen → bealach and watch sky/fog/music crossfade; should be a gradient, not a step.
+- **New game from the title** (not `devWorld`): tutorial crypt → emerge on the Deepwood edge, Q0 gone from the log.
+- **Ground texture at close range** — reworked to crisp grain this session; judge it on a real GPU with anisotropy.
+
+### Known gaps / deliberate holds
+- World map, minimap, fast travel and compass markers don't know about world coordinates — Session 4.
+- No enemies, herbs, roads, signposts, or NPCs in the world yet — Sessions 2–3. Regional encounter tables will reuse `ZONES.world.enemies` + `tickZoneEnemies`.
+- No inland water; no rivers (river-carve as splines, Session 2 with roads).
+- Old zones (Ashenmoor, Ironhaven, placeholders) still exist and can be reached via fast travel; harmless, retire later. Old saves in those zones still load into them.
+- `tickHerbs` in `'world'` ticks `OW_HERBS` (Ashenmoor's) — harmless no-op on their scene.
+- Night foliage a touch bright; tuned down once, judge in-browser.
+
+### Next session (Session 2) plan
+Roads as splines between settlement stamps (`MAP_EDGES` → road list; terrain flattening along them; signposts at junctions), region polygons replacing radial fields where the layout needs it, river carve, then port **Ironhaven** and the **fort exteriors + remaining `WORLD_DUNGEONS`** as stamps at world coords (`buildTown`/`buildVillage` need an origin offset and a parent-group target instead of their own scene).
+
+
+---
+
+## v80 — Session 55 — Streamed world, Session 2: the world has things in it
+
+Session 1 gave an empty landscape; this session gives it sites, roads, every dungeon and fort, regional encounters, and a merchant — the Elder Scrolls loop end-to-end (wander → find a door → clear → sell). Still no settlements built (Session 3) and the map/minimap/fast-travel still don't know world coords (Session 4).
+
+### Regions realigned to the lore map
+`MAP_LAYOUT` (the world map's col/row grid) is the source of truth for where things are: `GX(c)=250+c·270`, `GZ(r)=330+r·295`. Regions moved to match: foothills along the north wall (y≈330), Royale/capital NE, Bealach centre, coast west, Ashenmoor SW, Wastes SE, Greywood between Wastes and Royale, Deepwood on the Thorngate→La Porte Grise corridor. The Ashenmoor site is now at the grid position (790,1805) — 30u from Session 1's guess, so doors/spawn moved with it. Each region also carries `enc` (encounter density per chunk).
+
+### Sites (`WORLD.SITES` / `WORLD.SITE[id]`)
+21 entries with `kind` (village/town/city/outpost/garrison/camp/ruin/poi) and `pad` (flattened radius; the Session 3 generator builds inside it). Each pad gets a cairn, a two-sided name board, and a signpost at the pad edge with one arm per outgoing road (canvas-text planes). Inis Rua has no pad (tidal island later).
+- Mur Pierre (garrison) 1330,330
+- Colmán's Rest (village) 1600,330
+- La Grise (village) 1870,330
+- La Porte Grise (outpost) 1330,625
+- Vieux Marché (town) 1600,625
+- Ironhaven (town) 1870,625
+- Dunmore (town) 1600,920
+- Portclare (town) 1870,920
+- Coeur de Vie (city) 2140,920
+- The Thorngate (outpost) 1330,1215
+- Salthaven (village) 250,1510
+- Hearthwick (village) 790,1510
+- Droichead (village) 1330,1510
+- Cill Beag (village) 1600,1510
+- Carraig Mór (town) 250,1805
+- Ashenmoor (village) 790,1805
+- Hermit's Camp (camp) 1600,1805
+- Caer Uaigneach (ruin) 1870,1805
+- Inis Rua (poi) 250,2100
+- The Ashfeld (poi) 790,2100
+- Redwater Ford (village) 1060,2100
+
+### Roads (`WORLD.ROAD_DEFS`, `WORLD.roads`, `WORLD.roadInfo(x,z)`)
+21 hand-authored site pairs along the lore's named corridors (An Bealach Mór, South Road, West Track, Coastal Road, Deepwood Road, La Route Royale, Garrison Road, Capital Road, North Approach, Cill Beag Path, Northern Road, Foothill Track, Mountain Pass, the Wastes). The gate graph was too tangled by legacy edges to derive from. Each road: Catmull-Rom through the two sites + 3 interior points pushed sideways by hashed noise (±11% of length), sampled every 6u; sample heights = `baseH` smoothed over ±5 samples so the bed rolls with the land (max grade ≈10%). `worldH = baseH + road blend` (full flatten within `ROAD_HALF=2.6`, blend to 9.5). Segments indexed in a 32u grid so `roadInfo` is one lookup. Per-chunk **ribbon** quad strip (biome `pathCol`, worn edges) at +0.07; verge tint on the terrain; trees excluded within 5.6u. Two bugs fixed on the way: quad winding faced down (culled), and `DoubleSide` then flipped the normal to unlit — winding is now chosen per quad by cross product with straight-up normals.
+
+### Dungeons and forts (`WORLD.dungeonPos[seed]`)
+All 28 `WORLD_DUNGEONS` entries placed. Caves: old zone-local coords mapped through `ZONE_ANCHOR` (overworld→Ashenmoor ×1.25, forest→Deepwood corridor ×1.15, ironhaven→Ironhaven ×1.6). Forts: on their corridor's road at `fortAt` (default midpoint), **40u off the road on the north side of E–W roads** so the compound's south-facing gate looks at the road (the v61g5 gatehouse is a ~24u-radius walled ring; the Lonely Tower sits 60u into the Deepwood). Placement guards: pushed perpendicular off any road bed (<16u), out of site pads, ≥30u from any other door (forts ≥ r+22). Pads: cave r7/blend12, fort r30/blend26. Doors are real `spawnPortalMeshes` output on the shared scene; enter/exit round-trips through `goToOW`.
+- The Dungeon of Shadows [undead/easy] 805,1740
+- The Crypt of Embers [elemental/normal] 840,1761
+- #891 [deep/normal] 750,1848
+- #204 [goblin/veryeasy] 861,1794
+- #315 [haunted/easy] 718,1840
+- #428 [ruins/normal] 825,1855
+- #539 [undead/veryeasy] 796,1869
+- #601 [goblin/easy] 1255,816
+- #623 [undead/easy] 1473,839
+- #645 [goblin/normal] 1232,931
+- #667 [haunted/normal] 1490,966
+- #689 [elemental/hard] 1260,1023
+- #700 [deep/hard] 1473,1046
+- #801 [undead/normal] 1750,545
+- #823 [elemental/hard] 1982,513
+- The Vault of the Tide [deep/hard] 2006,721
+- #867 [goblin/normal] 1742,713
+- #889 [haunted/hard] 1877,757
+- #911 [ruins/veryhard] 1760,650
+- #922 [elemental/veryhard] 1994,625
+- The Old Garrison [ruins/normal/fort] 1066,1523
+- Greywatch [ruins/easy/fort] 1382,1353
+- The Last Post [goblin/normal/fort] 1723,1785
+- The Wind Cloister [haunted/hard/fort] 1452,305
+- The Old Mound [undead/normal/fort] 1721,882
+- Pellam's Hold [ruins/normal/fort] 1732,604
+- Hollow Gate [goblin/normal/fort] 1734,475
+- The Lonely Tower [haunted/easy/fort] 1304,903
+
+### Encounters (`ENC` table, `spawnChunkEncounters`, `WORLD.cleared`)
+Per-region tables; each chunk rolls once against `region.enc` (×1.35 at night) when it builds, deterministically per 48-hour epoch so re-entry doesn't reroll. A hit spawns 2–5 of one group at open points (road groups anchor near the road). Enemies are tagged to their chunk and removed when it drops; a chunk whose spawns all died is cleared for `RESPAWN_H=48` in-game hours. Densities after tuning: coast .08, ashen .16, bealach .14, deepwood .22, foothills .18, royale .08, wastes .20, greywood .20 (~15–30 enemies in a 9×9 ring, ~65 in the Wastes at night). **New zone-enemy types** in `buildZoneEnemy.ZDEF`: Cave Bear (foothills, brute, L4), Ash Hound (wastes, wolf, L4), Hollowed (wastes, humanoid, L5, night-heavy). Loot is generic corpse loot. `cleared` is not yet serialized (Session 4).
+
+### Trader
+Fen's Wagon at the Ashenmoor pad (tent, fire, NPC). `talkNPC` now opens a shop directly for any NPC def carrying `shop:Ellipsis`; `closeShop` clears `currentHouse` when not in an interior. Stock = `SHOP_STOCK.misc`. Stopgap until the settlement generator.
+
+### Other fixes
+- Inland floor was a soft compression, not a floor (hollows reached ~1u, could go negative). Now `h=1.6−0.6(1−e^{(h−1.6)/1.5})` below 1.6 — asymptote ≈1.0, so no inland water yet.
+- Stamps carry `kind` ('site'/'door') so scatter, spawns and placement can tell pads from doors.
+- `WORLD.tick(dt,now)`; NPCs tick via the module (face the player within 6u, no wander).
+- Spawn is derived from the road: `build()` walks the Ashenmoor→Hearthwick spline to the first sample >62u from the site centre and faces along it (≈(769,1743)). `WORLD.enter(null,…)` resolves the spawn *after* build — the tutorial exit and `devWorld()` pass null, because reading `WORLD.spawn` before the world exists returns the fallback pad-edge coordinate, which can sit in a tree (playtest catch, Session 55). `freeSpot()` also spirals out of any solid on entry/restore. `WORLD.gazetteer()` prints all coordinates.
+
+### Verified headless
+Parse clean, no page errors. Sites/roads/forts/doors placed with zero violations of the guards. Road ribbon and signposts render; the Old Garrison reads as a compound through the trees from the road; Lonely Tower rises over the Deepwood canopy; Wastes at night spawn Ash Hounds and Hollowed by a torch-lit palisade. Trader shop opens/closes cleanly; dungeon enter/exit returns to the world beside the door.
+
+### Playtest list (post Session 55)
+- Walk Ashenmoor → Hearthwick on the road. Does the road read as *the* way to go? Signpost arms legible at walking distance?
+- Frame rate on a real GPU with encounters ticking (`ZE.length` in console). If the Wastes at night drags, lower `wastes` `enc`.
+- Fight a road bandit group and a Deepwood troll; check they path around trunks and don't wade into deep water.
+- Approach the Old Garrison from the road: gate faces you, road doesn't clip the wall. Enter, clear, exit.
+- Kill everything in a chunk, walk away past the ring edge and back — it should stay empty (48h).
+- Sell to Fen. Then check `currentHouse` is null (console) after closing.
+- Ironhaven-zone doors ring the Ironhaven pad at ~120u: too dense? They were an Act I hub's dungeons; thin or spread if so.
+
+### Known gaps / holds
+- No settlements built — pads with cairns only. Ashenmoor, Ironhaven, and the generator: Session 3.
+- Map, minimap, compass markers, fast travel: still zone-based (Session 4). `cleared` and NPC state not serialized.
+- No rivers/inland water (with settlements, Session 3). Portclare/Coeur de Vie are inland despite "coastal" lore — an east inlet is the fix, later.
+- Mountain Pass road climbs into the wall ramp; the Wind Cloister pad carves a shelf. Judge on foot.
+- Signpost text is Georgia on a canvas — fine for now, style pass later.
+
+### Next session (Session 3) plan
+Settlement generator: seed + region + kind → layout (hamlet/village/market town/walled town/city), buildings from the existing house/shop/church primitives with an origin offset and a parent-group target, roads through the pad, NPC roster from role templates with register-aware names and pooled dialog, shops per kind. Then Ashenmoor and Ironhaven as hero stamps (port `buildVillage`/`buildTown` to a group target). Rivers as splines alongside.
+
+
+---
+
+## v80 — Session 56 — Streamed world, Session 3: settlements
+
+Every site pad now grows a settlement. The generator (search `SETTLEMENTS (Session 3)`) runs from (seed, region, kind) and streams: a site builds when the player is within `SETTLE_IN=380` and disposes beyond `SETTLE_OUT=460`, so the scene holds one to four at a time. Generation is 4–17 ms per site (one merged mesh per building), no hitch on approach. Fen's tent is retired — shops are real.
+
+### What a settlement is
+- **Streets.** Lots every ~10u along each road that crosses the pad, on both sides, one row (village) or two (town/city), building fronts turned to face the road. Extra lots ring the plaza if the streets gave too few. Shops take the lots nearest the centre.
+- **Buildings.** `buildingGeo`: stone plinth, body, timber corner posts + mid rail (French/Anglo registers), gable roof as an extruded prism with eaves, ridge beam, chimney on ~65%, dark window insets, framed door. `churchGeo` (tall body, bell tower, spire), `keepGeo` (6.5u body, four corner towers, crenellations) for `castle`. Register palettes in `STYLE` (irish/french/anglo; garrisons and cities use `stone`). Everything is merged vertex-colour geometry, one `Mesh` per building, cast+receive shadow.
+- **Plaza.** Well, market stalls (town 3, city 5) with coloured canopies and goods; the cairn stays.
+- **Walls.** Towns/cities/garrisons: stone ring at `pad−5`, crenellated, gaps where a road crosses with two round towers flanking each gate, and a guard at each gate. Outposts get a palisade ring with square towers. Camps: tents + fire + a hermit. Ruins: broken wall clusters. POIs (Ashfeld): standing stones.
+- **Shops → interiors.** Each shop pushes `{id:'g_<site>_<n>', doorX/Z, doorFace, exitX/Z/Yaw, name, keeper, type, tagline}` onto `ZONES.world.houses`; the existing door prompt / `goToInterior` / `buildInterior` path works unchanged. **`exitInterior` now prefers `h.exitX/exitZ/exitYaw`** when present (rotated buildings defeat the engine's cardinal 3u step-out). Shop set by kind: village weapon/potion/misc/inn (+church 50%); town + armor/misc/church; city + inn/castle; garrison weapon/armor/potion/inn; outpost misc/inn.
+- **Naming.** Register from the dominant region (`REGISTER`): Irish (coast, Ashen, Bealach, Deepwood), French (Foothills, Royale), Anglo (Wastes, Greywood). Name pools per register and sex; shop nouns per register (Forge/Smithy, Apothecary/Herboristerie/Physic, Goods/Comptoir/Stores, Oratory/Chapelle/Chapel); inn names per register; taglines per type. Hanging two-sided sign board by each shop door.
+- **Hero rosters.** `heroShops()` feeds the authored rosters through the same generator: Ashenmoor = `HOUSES` (Bram's Forge, Mira's Apothecary, Barnaby's Goods, The Guardhouse, Pip's Curiosities, The Old Cottage, the Oratory), Ironhaven = `IRONHAVEN_HOUSES` minus the safehouse (Barracks, Armory, War Supplies, Royal Herald, Castle Gatehouse, Chapel, Caldric Keep as `castle`), Hearthwick = `HEARTHWICK_HOUSES` (Oda's Inn…). Keepers keep their names; the buildings are generated.
+- **NPCs.** Keeper at every shop door (static, faces the player within 6u), guards at gates, villagers on the plaza (village 3 / town 4 / city 6) who wander within 10u of home and go indoors at night (`_retreated`, mesh hidden). Ticked by `tickNPCs` in the module, not `tickNPCsFor`.
+- **Dialog — the ambient lore channel.** `makeDef` builds a `{name, role, ico, greeting[], topics[]}` def the existing `openDialog` renders. Topics: *What is this place?* (from `MAP_NODE_META[site].desc`, first two sentences), *Where do the roads go?* (real roads, compass directions, destinations), *Anything dangerous nearby?* (the three nearest doors with direction, distance band, and a hint by difficulty — "rats and bones, mostly" / "leave it be"), *Any news?* (register rumor pool — Varek, the Hollowed, the cloister's bell, the lantern in the Wastes), plus *What do you sell?* on keepers. Role greeting pools for Smith/Armourer/Apothecary/Merchant/Innkeeper/Priest/Steward/Villager/Guard/Hermit.
+- **Solids.** Settlement solids live in the settlement (`settleSolid`), consulted by `solidAt`. Buildings and wall segments are **rotated rectangles** (`{cx,cz,rx,rz,c,s}`), exact rather than bounding boxes, so a 45° house doesn't block its own doorstep. Verified: zero blocked exits across all 20 sites.
+- Encounters keep `pad+24` clear of every site.
+
+### Verified headless
+All 20 padded sites generate (Ashenmoor 7 shops/24 meshes, Ironhaven 7/34, Coeur de Vie 9/50, Thorngate 2/24, camp/ruin/POI variants). Browser: spawn streams Hearthwick+Ashenmoor+Ashfeld; Bram's Forge enter → interior → exit lands outside the door on open ground; Bram's dialog opens with Smith greeting and the five topics; Ironhaven's walls read from the road; Coeur de Vie's main street has stalls, sign boards, keepers. No page errors.
+
+### Playtest list (post Session 56)
+- Walk into Ashenmoor from the spawn. Does it read as a village — street, plaza, shops facing you? Are the buildings the right scale next to the trees?
+- Enter three shops and the Oratory; buy/sell; step out — you should be on the doorstep, facing away from the door.
+- Talk to a keeper, a villager, a gate guard (Ironhaven). Read *Anything dangerous nearby?* — is that the right amount of lore per line?
+- Night in a village: villagers gone, keepers and guards still up. Windows are dark insets (no glow yet — Session 5).
+- Ironhaven: walls, gate towers, Caldric Keep. Is the wall ring the right radius (pad−5) or should the town breathe more?
+- Coeur de Vie: is a 95u pad big enough for a capital, or does it need to be the one exception with a bigger pad and an outer ring?
+- Frame rate inside a city with shadows (≈50 building meshes + NPCs).
+
+### Known gaps / holds
+- **Rivers deferred** (again) — they belong with the map/coast pass in Session 4 now that sites are fixed.
+- Windows don't glow at night; roofs are one material; no fences/gardens/wells beyond the plaza one; no inn beds (rest) or safehouse in the world yet.
+- Hearthwick/Ironhaven villagers are generated, not the authored NPC_DEF characters (Sera etc.) — those carry quest dialog and are intentionally left in the old zones.
+- Ironhaven's safehouse (ih7) not generated; the stash/rest system needs a home in the world (Session 4 with saves).
+- Wall solids on steep pads follow the terrain per segment; a wall on a slope can float slightly at one end.
+- Map/minimap/fast travel/compass still zone-based; `cleared`, settlement NPC state not serialized — **Session 4**.
+
+### Next session (Session 4) plan
+World-coordinate map: render regions, roads, discovered sites and doors from `WORLD` data; minimap and compass markers from world coords; fast travel between discovered sites; serialize `cleared`, discovered sites, and world position; rivers/coast inlets so Portclare and Coeur de Vie sit on water; retire `MAP_LAYOUT`/gate-graph map code paths.
+
+
+---
+
+## v80 — Session 57 — Streamed world, Session 4: world map, fast travel, terrain drama
+
+Cut short by usage limits; shipped at a verified checkpoint. Parse-clean, no page errors in the last headless run.
+
+### Terrain (search `LANDMARKS`)
+- `landH` = land before water; `rawH` = landH with rivers/lake/inlet carved; pads and road beds measure from `landH` so nothing flattens underwater. Regional amplitude ×1.6, a ridged-noise component, north wall 70–130u.
+- **Peaks** (`PEAKS`): Sliabh Mór (1010,900) summit ≈210u; The Cinder (1820,1600) ≈130u. Climbable; ridged profile.
+- **Rivers** (`RIVERS`): the Redwater from the north wall past Droichead (west of the pad) to Redwater Ford and the south sea; the Westwater from Sliabh Mór through Loch Liath to the coast south of Salthaven. Roads cross as raised fords (road bed clamped ≥ +0.6; 13 samples over water, none drowned). Deep water (< −0.9) still blocks — rivers are barriers with fords.
+- **Loch Liath** (560,1250, r105). **The Gilded Bay**: sea inlet to (1960,1065), south of Coeur de Vie/Portclare.
+- Water plane 6000u, brighter with slight emissive. Far mesh 16u step, colours ×0.72 to match near tiles. Fog thins with altitude (`altK`, floor .22) — from a summit the whole map is in view; camera far 3400, sky dome 2900.
+- Verified: max height 210 at Sliabh Mór; inland water 5.7%; all sites/doors dry; max road grade .17.
+
+### Landmark impostors (`buildImpostors`)
+Merged low-poly stand-ins for every padded site (house clusters, wall ring + keep for towns/cities) and every fort (tower + ring), always in the scene, hidden while the real settlement is streamed in. Cities read from a ridge before they build.
+
+### Discovery (`tickDiscovery`, `worldState.wdisc`)
+Sites within pad+30, doors within 34, peaks within 140, lakes within r+60 → toast + log. Saved with worldState (load restores `wdisc` and `wcleared`; encounter `cleared` now lives in `worldState.wcleared` via a Proxy and uses `gameTimeAbsMinutes`, fixing the daily-wrap bug).
+
+### World map (`openMap`, hub Map tab in the world)
+Oblivion-style parchment: 640px terrain image rendered once from `worldH` (elevation bands, NW hillshade, forest stipple by density, waste tint, hatched water, paper grain), dashed roads, region/peak/lake names in Georgia italic, compass rose. Discovered places only, with glyphs per kind (city/town/village/outpost/fort/cave/camp/ruin/poi/peak/lake); labels for cities/towns/peaks always, others on zoom or hover. Drag to pan, wheel to zoom (1–5×) about the cursor, clamped; opens centred on the player at 1.35×. Right panel shows name/sub and a **Travel** button when discovered. `hubTab('map')` calls `WORLD.openMap()` in the world and `closeMap()` elsewhere (old SVG map hidden, not removed).
+
+### Fast travel (`fastTravel(id)`, `arrivalFor`)
+Closes the hub, advances the clock (one game hour per ~230u), `enter()`s at the site's signpost spot / a door's step / a peak's shoulder / a lake shore. Verified: Ironhaven travel lands at (1787,625), settlement streams in.
+
+### Not reviewed (session cut off)
+The last render pass (map icon scale ×1.45, far-mesh darkening, lake shore, bay view) ran but I did not get to look at the screenshots. First thing next session: open the map, look at the bay from (1960,1140), stand on Sliabh Mór and look south-west.
+
+### Playtest list
+- Climb Sliabh Mór from the Hearthwick side. Does the haze lift? Can you pick out Hearthwick, Ashenmoor, the lake, the river?
+- Map: is the parchment readable at the pane size? Icon size right? Try zooming to a village and travelling.
+- Cross the Redwater at a ford and try to cross it elsewhere (should stop you). Walk the lake shore.
+- Does The Cinder read as a landmark from the Wastes road?
+- Save, reload: discovered places and cleared chunks persist.
+
+### Holds
+Minimap/compass markers still zone-based; old `MAP_LAYOUT`/gate-graph map code still present (hidden); inn rest / safehouse in the world; window glow; Session 5 visual pass on characters and buildings.
+
+
+---
+
+## v80 — Session 58 — Streamed world, Session 5: playtest fixes + towns rebuilt on a street grid
+
+Driven by Michael's first real playtest of v80 (walls, forts, density, foundations, trees, herbs, enemies, loot, paths).
+
+- **Walls were 90° off.** Wall segments were rotated by the ring's radial angle instead of its tangent (`ry:-am` → `ry:-am-Math.PI/2`), for the box, the crenellations, and the rotated-rect solid. Verified tangent·radial = 0.000.
+- **Forts moved into the wilderness.** Placement now picks the point on the fort's corridor farthest from any settlement, pushes 120u off the road (north of E–W roads so the south gate faces back), and refuses to sit within `pad+120` of any site. Nearest-site distances are now 142–283u (were as low as ~135). Fort pads r46/blend34. **Spur footpaths** (`addFortSpurs`) run from each gate to the nearest road point through the same `registerRoad` path as roads (bed flattening, ribbon, tree exclusion) — that was the "blocked entrance": trees and slope right at the gate. All eight gates verified free.
+- **Foundations.** Plinth 0.45 → 0.22 (and sunk .15), building meshes sit 0.06 below ground level.
+- **Old forest.** Conifers ~15u and broadleafs ~12u at scale 1 (were ~7u/5u), scale .8–1.5 with rare giants (1.7–1.9), broadleafs have limbs and a fourth canopy blob, dead trees ~8u. Lattice 6u (was 4) with density compensated; trunk solids .5×scale.
+- **Towns/cities on a grid.** `genSettlement` layout rewritten: towns, cities and garrisons lay a Daggerfall-style street grid aligned to the main road (G=30u town / 34u city) inside the wall ring; lots face the streets, 15u apart (was ~10), lot spacing radius +2.0; villages keep road-street lots at 14u. Streets are flat path ribbons; **every door gets a footpath** to the street/road it faces. Pads grew: towns 90–100, Coeur de Vie 135, Mur Pierre 70.
+- **Herbs in the open world** (`spawnChunkHerbs`): 0–2 per chunk from `HERB_DEF`, by region → old zone (forest herbs in Deepwood/Greywood, Ironhaven herbs in Foothills/Royale, Ashenmoor herbs elsewhere), off roads and pads; glow lights kept out of the scene (80 chunks would be ~120 point lights). `tickHerbs` reads `activeHerbs()` in the world; harvest/respawn unchanged.
+- **More enemy variety, farther out.** Encounters now keep `pad+110` clear of every settlement (was 24). New `ZDEF` types: Goblin (L1, ashen/bealach), Skeleton (L3, night, bealach/greywood), Ogre (L6, foothills/greywood).
+- **Loot barrels and crates** in settlements (village 4 / town 7 / city 10) beside buildings, pushed onto `ZONE_CORPSES` with `zone:'world'` so the existing loot panel opens them; contents from `rollContainerLoot('barrel')` **filtered to no weapons/armor**, with a fallback pool of everyday goods (candle, rope, salt, bread, letter, cup). Removed when the settlement disposes.
+
+### Verified
+Parse clean, no page errors. Headless: forts/spurs/gates as above; all 20 sites generate with zero blocked exits; Ironhaven walls tangent. Browser: Coeur de Vie street spread out with the keep behind; Deepwood reads as old forest; Old Garrison alone at the end of its spur with Sliabh Mór behind.
+
+### Playtest list
+- Walk Ironhaven's wall from outside: does it read as one continuous ring with gate towers now?
+- Coeur de Vie: is the grid too regular / too sparse? G and LOT_STEP are the knobs.
+- Forest: tree height vs. building height — do villages look toy-sized next to the trees now?
+- Find herbs on the road to Hearthwick; open a barrel in Ashenmoor.
+- Meet a goblin pack (Ashen moors) and, at night on the Bealach, skeletons.
+
+### Holds
+Fences/gardens around lots, window glow, a second wall ring for the capital, inn rest, minimap/compass on world coords.
+
+
+---
+
+## v80 — Session 59 — Session 5b: full cities, enterable homes, one NPC per building
+
+Playtest: cities felt empty. Cause was my own cap — the grid produced plenty of lots but `use=kept.slice(0,want)` kept 20–26 for a city.
+
+- **Counts.** `KIND_PLAN.n`: village 9–13, town 26–34, city 46–60, garrison 11–15, outpost 3–4. Shop sets widened: city gets two forges, two armourers, two apothecaries, three general stores, three inns, church, keep (+optional second church/store); town two inns (+optional). Coeur de Vie now ≈50 buildings (16 shops / 34 homes); towns ≈27.
+- **Every residence is enterable.** Non-shop lots become `type:'home'` houses: named resident (register-appropriate), `keeper` = resident, `dlg` = their def. **New `home` interior** in `buildInterior` — the safehouse room (bed, table lamp, shelves, chair, hearth) without the stash chest; keeper role `Resident`. Interior interact: residences open dialog (`currentHouse.dlg`), shops still open the shop.
+- **One NPC per building, at least.** Each resident idles by their door in daylight (leash 4u) and goes indoors at night; keepers stand at every shop door; guards at gates; villagers on the plaza. Measured 1.14–1.30 NPCs per building across city/town/village/garrison.
+- Verified headless: zero blocked exits on all sites; browser: enter a home → room built with keeper → talk → exit lands outside on open ground.
+
+### Playtest
+- Is the city too *full* now? Knobs: `KIND_PLAN.n`, grid `G`, `LOT_STEP`.
+- Resident interiors are identical rooms — next pass could vary by role (weaver's loom, cooper's barrels, fisher's nets).
+- Inn interiors have no rest yet; the `home` bed works for rest via `intBedPos` (sleeping in strangers' beds — decide if that stays).
+- NPC count in a city is ~57 ticking; watch frame rate.
+
+
+---
+
+## v80 — Session 60 — Session 5c: flat paths, trade signs, regional building styles
+
+- **Floating paths.** Two causes, both fixed. (1) Road beds inside a pad carried smoothed-in heights from outside the pad, so the verge dipped inside the flat pad — `registerRoad` now pins bed height to the pad's `y` inside `r−14` (deviation measured 0.000). (2) Street-grid lines and door footpaths were single quads sampled only at their endpoints, bridging any dip — all path ribbons now subdivide to ≤3u with every vertex on `worldH`.
+- **Trade signs** (`buildTradeSign`, `signTexture`): iron bracket from the wall above the door, angled brace, a 1.06u board hanging beneath with a painted 256px canvas on both faces — symbol per business (forge: hammer over anvil; armoury: shield; apothecary: bottle with leaf; goods: sack; inn: tankard; church: flame over cross; keep: tower), board colour per trade, name lettered below. Faces double-sided with fronts outward (mirrored-text bug fixed). Replaces the plank-beside-the-door.
+- **Regional building styles** (`STYLE`): irish — whitewashed lime, dark stone footing, straw thatch with a thick rounded ridge, low, green doors; french — cream plaster, dark half-timbering, steep slate, tall, 55% two-storey with a jetty band and upper windows; anglo — grey rubble, dark timber, low dark shingle; stone (cities) — pale ashlar, terracotta tile, 70% two-storey, cornice band; garrison — ashlar with slate, squat. `buildingGeo` takes height/pitch/thatch/two-storey/door colour from the style. Verified in browser at Hearthwick, Vieux Marché, Caer Uaigneach, Coeur de Vie — four visibly different towns.
+
+### Playtest
+- Walk Ashenmoor's street and read the signs from the road — legible at walking distance? Symbols obvious?
+- Any path still lifting? Note where (pad edge near a road is the suspect).
+- Does the capital's terracotta read as "Gilded Coast" or too Mediterranean?
+
+
+---
+
+## v80 — Session 61 — Session 6: dense cities, interior overhaul, keeps
+
+- **Density.** `KIND_PLAN.n`: city 150–190, town 60–85, garrison 24–32, village 10–14; city lots every 11u (town 12), lateral gap 1.2, two back-to-back rows per block (grid G: city 38 / town 34 so two rows fit), more shops (city: 5 inns, 5 stores, 3 forges, 3 apothecaries, 2 armouries, 2 churches, keep; town: 3 inns, 3 stores). Coeur de Vie ≈167 buildings (22 shops / 145 homes), Ironhaven/Vieux Marché ≈70–76. Gen ≈190 ms for the capital — acceptable on approach but the first thing to time-slice if it hitches.
+- **Resident NPC streaming.** A 145-home city can't tick 145 NPC groups. Residents live as defs in `S.residents` and spawn within 70u / despawn beyond 95u (`tickSettlements`); keepers, guards and plaza villagers are always live. Capital measured ~87 live NPCs in the busiest spot.
+- **Interior overhaul** (`buildInteriorFor`, routed from `goToInterior` for `g_` houses; `_roomW/_roomD` from `house.intW/intD`). Rooms sized from the building footprint (×1.8 / ×2.0; church ×1.5/×2.4 at 6.5 ceiling; keep ×1.5/×2.2 at 7.2). Walls and floors are generated canvas textures tiled by wall length (no stretch): lime/cream plaster (Irish/French), rubble (Anglo), ashlar + flagstones (stone, church, keep), plank floors elsewhere; French rooms get timber studs. **Two-storey exteriors get a gallery floor** (mezzanine along the north half, railing, stair on the west wall, beds up top). Trade furnishing: forge (hearth with embers, anvil on a stump, quench barrel, weapon racks, grindstone), armoury (three armour stands, shield wall, workbench), apothecary (three shelves of bottles, drying herbs from the beams, glowing cauldron, mortar), goods (crates, barrels, sacks, shelves, scales), inn (bar with bottles, hearth, four tables with benches and mugs, beds), church (dais, altar with candles, pews, pulpit, amber windows, pillars), keep (dais, throne, runner, pillars with banners, braziers, long table), home (bed, hearth, table with candle, chairs, chest, shelves, plus loom/nets/sacks/barrels by the resident's trade). Keeper/resident placed per type with the engine's amble box; `intBedPos` set for inns and homes.
+- **Keeps.** Plinth mostly buried (was a 0.8u exposed band); the trade sign is replaced by **two heraldic banners flanking the gate** (device from the castle sign texture) and a **carved stone name plaque** at 3.9u.
+
+### Verified
+Headless: all four dense sites generate with zero blocked exits; every interior type builds with its own size and NPC. Browser: dense capital street; forge, inn (with gallery), keep hall and home all read as distinct rooms; enter/exit round-trips clean.
+
+### Playtest
+- Is the capital *too* dense now? Knobs in `KIND_PLAN.n` / `LOT_STEP`.
+- Walk a gallery stair — it is visual only (no second-floor collision); if you want to walk up, that's a movement-system change.
+- Interiors are bright (window panes + lantern); dim `AmbientLight` in `buildInteriorFor` if you prefer Oblivion gloom.
+- The hero shops (Bram's Forge etc.) still use the engine's original interiors — port them to the generator if you want consistency.
+
+
+---
+
+## v80 — Session 62 — Session 7: footholds (climbable stairs), proportions, interior collision
+
+- **FOOTHOLDS** (engine, next to `FLOOR2_Y`): `let FOOTHOLDS=[]` of platforms `{x0,x1,z0,z1,y}` or ramps `{…,axis:'x'|'z',y0,y1}`. `footholdY(x,z,py,base)` returns the highest foothold no more than `STEP_UP=.62` above the player — so ramps climb, decks are walkable, the space under a deck stays at base, and stepping past an edge falls (movement: indoors and in dungeons, `floorBaseY` is now the foothold; on ground the player eases up to it or drops off it; landing checks use it). Reset per interior by `buildInteriorFor`. This is the general multi-level mechanism — dungeons can use the same list.
+- **Climbable galleries.** Two-storey interiors: deck over the north half at `gy=ceil−.1` (a platform), a straight stair against the west wall (a ramp, ~32°, treads + risers + handrail), railing along the deck edge (solid) open at the stair head, beds and a chest lifted onto the deck. Verified with keyboard input: height 0 → 2.0 over the flight, holds on the deck, railing blocks the front edge.
+- **Proportions.** Eye height is 0.92u. Cottage ceilings now 2.0–2.6 (church 5.0, keep 5.6). All furniture placed through `box/cyl/glow/light` helpers is scaled vertically by `F=.62` — counters top out at ~0.62u, tables at ~0.45u; shell pieces (walls, beams, deck, pillars) use raw units via `boxRaw`. Windows lowered and shrunk to match.
+- **Interior collision.** Movement used a fixed per-type room table (`_intW/_intDd`) — generated rooms are other sizes, so walls were wrong; now reads `currentHouse._roomW/_roomD`. Generated rooms replace the hard-coded "behind the counter" box with **INT_SOL** furniture solids (counters, forge hearth, bar, tables, pillars, altar, railing).
+- **Hero shops** (Bram's Forge, Oda's Inn, the Armory…) already go through the generator — their ids are `g_<site>_n` — so the Session 61 note that they used the engine's original rooms was wrong; Oda's Inn is the gallery inn tested above.
+
+### Dungeons — next session's plan (not done here)
+The dungeon's "stairs" are a 1u-wide pit cell with a fade teleport (`goToFloor2`), and floor 2 is a separate map rendered at `FLOOR2_Y=5`. A real climb needs the generator to reserve a **2×2 stairwell** so a spiral (or two switchback flights) fits the player's radius: build it as FOOTHOLD ramps around a central post, drop the teleport, and switch `currentFloor` by height (`jumpY>2.5`) so collision/enemies read the right map. The mechanism is in place; the generator change is the work.
+
+### Playtest
+- Climb Oda's Inn stair and walk the gallery. Does the slope feel right (steeper is more period-correct)?
+- Counter/table heights relative to you — anything still tall? Chairs? Beds (engine `_intBed`, unscaled)?
+- Try to walk through a counter or a pillar — INT_SOL should stop you.
+
+
+---
+
+## v80 — Session 63 — Session 8: dungeons on real stairs
+
+The two-floor dungeon's pit-and-teleport stair is replaced by a climbable spiral, using the FOOTHOLD system from Session 62.
+
+- **Generator** (`makeDungeon`): the stair is now a **2×2 stairwell** (`map[r..r+1][c..c+1]=3`, anchored at `stairC/stairR`, clamped inside bounds) on both floors; the floor-2 corridor carve still targets `(stairC,stairR)`, so connectivity holds.
+- **Renderer** (`buildStairwell`, called once per dungeon at the anchor cell): stone post, 30 wedge-box treads with risers on a two-turn helix at radius 0.62 rising to `FLOOR2_Y=5` (~33°), shaft walls across the 3.2–5.0 band, two warm lights. Floor 1 draws no ceiling over the shaft; floor 2 draws no floor in it (open well).
+- **Footholds:** new `kind:'spiral'` (`cx,cz,r0,r1,y0,y1,turns`) — every turn is a candidate height and the resolver keeps the highest within `STEP_UP` — and platforms accept a `hole`. Per dungeon: the spiral, plus floor 2 as a platform over the whole map with the shaft cut out. `FOOTHOLDS` reset before `renderFloor`.
+- **Movement:** with a stairwell present the base floor is 0 and floor 2 is a foothold (no more `FLOOR2_Y` snap); `currentFloor` follows height (`jumpY > FLOOR2_Y/2`), so `activeMap()`, enemy activation and barrels switch automatically halfway up. The E-key teleport and its prompt are gated off when a stairwell exists (`DUNGEON_STAIRWELL`), kept for legacy/no-stair layouts.
+- **Verified** (browser, frame-paced): 0 → 5.0 up the helix, floor flips to 2 at 2.5, step off onto a floor-2 cell at 5.0, walk back into the shaft and descend to 0 with the floor flipping back. A floor-2 skeleton attacked the test character at the top — enemy activation by height confirmed the hard way.
+- **Death respawn** now wakes you at the Ashenmoor pad in the streamed world (`WORLD.restore(spawn)`) instead of the retired Ashenmoor zone.
+
+### Playtest
+- Climb a stair by hand: is the helix too tight to walk (radius .62, player R .3)? `r0/r1` and the tread radius are the knobs; widening means a 3×3 stairwell in the generator.
+- Slope at ~33° over two turns; one-and-a-half turns would be steeper and shorter.
+- Falling into the well from floor 2 lands you on the treads below (by design). Add a kerb if it's too easy to blunder in.
+- Enemies pathing: floor-1 enemies won't follow you up (no stair pathing); floor-2 enemies engage once you're past half height.
+
+### Holds
+Three-floor dungeons (repeat the stairwell per floor pair); stair pathing for enemies; ladders/hatches as a cheaper vertical link for forts.
+
+
+---
+
+## v80 — Session 64 — Session 9: level-scaled dungeons, You Died, bed-gated levelling, exhausted swings, mesh detail
+
+- **Dungeon difficulty = player level.** `levelDiffKey()` maps L1–2 → veryeasy, 3–5 easy, 6–9 normal, 10–14 hard, 15+ veryhard; `makePortalDef` now exposes `diff`/`diffScale` as getters that resolve at use time, so every door scales with you (the authored `diff` on `WORLD_DUNGEONS` is ignored; enemy level scaling `enemyHpScale/DmgScale` still applies on top). Map subtitles and NPC "anything dangerous nearby?" lines no longer grade doors — they hint by theme instead ("the dead walk it", "goblins nest there"…).
+- **You Died screen.** `playerDead` no longer respawns or empties the bag: it releases the pointer, shows a `#died` overlay ("YOU DIED", last-save summary from `loadFromSlot(getActiveSlot())`), with **Load last save** (`reloadActiveSlot()` → `_applyLoadData` + `_applyZoneFromSave` behind a fade) and **Main menu** (reload). No autosave fires on death. Note: autosaves still happen on world entry (fast travel, dungeon exit) — entering a dungeon does not save, so "last save" is usually the moment you stepped out of the last one.
+- **Levelling needs a bed.** `chkLvl` only banks XP and says "find a bed and rest" once; `takeLevelIfReady()` runs on waking from `restAtBed` (one level per rest). Beds: inns and homes (existing `intBedPos`), **roadside camps** (`buildCamps`: every ~260u along a road, 16u to one side — two tents, a fire, a bedroll in `ZONES.world.beds`, E to rest), and **fort cots** (`D_BEDS`: a cot beside a fort's entrance cell, E to rest).
+- **Exhausted attacks.** Both attack sites swing when stamina is under the minimum; the stamina bar flashes gold (`flashStamina`), cooldown ×1.3, and `applyMeleeDamage` scales the hit to 45% while `_exhaustedStrike` is set.
+- **Mesh detail.** `buildNPCMesh`: neck, hair cap (colour hashed from the name, some with a back fall), brow, nose, hands, shoulders, belt with buckle, tunic hem, boots; role dress — priest hood, merchant hat, smith/armourer leather apron, apothecary/scholar cap, innkeeper white apron, farmer/fisher straw hat, some villagers in a coif (20 → 27 parts). Zone enemies: wolves get ears, a darker back stripe, nose and paws; brutes get heavy arms with fists, jaw, tusks and a hide belt.
+
+### Verified
+Browser: diff flips Very Easy → Hard when `level` is set to 12; XP banked, rest at a camp bedroll → level 2 with the attribute screen; exhausted hit 9 vs 20; death overlay shows "slot 1 — the open country, level 2", load returns alive to the world; Bram wears his apron.
+
+### Playtest
+- Is L1–2 "very easy" too soft now? The bands are one line (`levelDiffKey`).
+- Rest to level: does one level per rest feel right, or should a long rest take all banked levels?
+- Camps: ~one per 260u of road. Too many? Bandits should probably ambush at camps at night (not done).
+- Exhausted swing at 45% — tune in `applyMeleeDamage`.
+- NPC detail reads at conversation distance; dungeon enemies (separate builder) untouched this pass.
+
+### Holds
+Buying a house (a stash + your own bed) — the `home` interior already has the bed; needs a deed item and ownership on the house entry. Dungeon-enemy mesh pass. Camp ambushes.
+
+
+---
+
+## v80 — Session 65 — Session 10: interior fixes, NPC schedules, one person per building
+
+### Interior fixes (from playtest)
+- **Invisible walls.** The gallery railing's collision rect had no height, so it blocked the ground floor along the deck-edge line too. `INT_SOL` entries now take an optional `y0..y1` band checked against `jumpY`; the railing only exists on the deck. (The counter/bar/table/pillar solids are unchanged — if a wall still feels phantom, it's one of those; `INT_SOL` in the console lists them.)
+- **Stair seam.** A landing (tread + platform foothold) now spans the deck edge to the top step, and the stair ramp runs a quarter-unit past the floor so the bottom step is never a hop.
+- **Beds.** Two bugs: the interior E-handler tested "walk south to exit" against a fixed per-type room depth (so in a larger generated room it exited before reaching the bed check), and only one `intBedPos` was registered. Now every bed is in `INT_BEDS` (with its deck height), E within 1.6u rests, and the HUD hint says "Press E to rest" when you're beside one.
+
+### NPC schedules (`scheduleFor`, `tickNPCs`)
+Every settlement NPC carries a `sched`. Keepers: at their door 7–8, behind the counter 8–18 (hidden in the street), walk to the inn 18–21 and go in, home at night. Innkeepers: always inside. Residents: wander the plaza/streets 7–18 (new target every 10–20 s), inn or home in the evening, asleep at night. Villagers: roam by day, gone by 20. Guards: patrol gate ↔ plaza around the clock. Walking uses `npcStep` with slide-around-solids and a stuck counter; NPCs bob slightly when moving and turn to face you when idle and near.
+
+### One person per building
+The street mesh and the interior mesh are still two meshes — interiors are separate scenes, and rendering an interior in the world (so one mesh could walk through the door) is the engine change the question implies. But they're now the **same person on one clock**: `npcInsideNow(house)` decides who's inside from the hour, so the keeper you watched walk to the inn at dusk is *not* behind his counter if you go in, and the resident asleep upstairs at night is *not* in the street. Shops other than inns/church/keep are **closed 18–8** ("closed. Opens at 8."). It reads as one NPC because it is one schedule.
+
+### Verified
+Midday: 0/7 keepers in the street, 9/9 villagers out; Oda's Inn has its keeper, 3 beds, 3 footholds; E in the gallery bed restores and takes a banked level (→ L2, attribute screen); no solid under the railing at ground level; railing solid on the deck.
+
+### Playtest
+- Walk a village from 7 to 22 with the Wait button — do the comings and goings read?
+- Evening inn: several keepers/residents should arrive and vanish inside; the interior doesn't yet *show* the crowd (only the keeper spawns). Next step: spawn evening patrons in the inn interior from the settlement's roster.
+- Closed shops at night: fine, or should the keeper's home be enterable to buy after hours?
+
+
+---
+
+## v80 — Session 66 — Session 11: floor-aware collision, climbable furniture, sleep dialog, living towns
+
+### Interiors
+- **Solids know their height.** Every `INT_SOL` entry has `y0..y1`. `intSolidAt` ignores an object whose top is within `STEP_UP` of your feet (you step onto it — it's a foothold too) and one whose bottom is above your head (`PLAYER_H=1.0`, you walk under it). So the ground-floor bar no longer blocks you on the gallery, the railing only exists on the deck, and a jump (apex ≈0.84u) clears the railing (top 0.8 above the deck).
+- **Climbable furniture.** `solid(x,z,hw,hd,top)` registers a foothold at `top`: tables (0.47) and beds are stepped onto; counters/bar (0.71) and the forge need a hop; pillars/altar are full height. Jump onto a table, onto the counter, over the railing down to the floor — all foothold-driven.
+- **Beds.** Height-aware within 0.9u; the legacy single-bed check only applies to engine rooms (`INT_BEDS` empty).
+- **Sleep dialog** (`openSleepUI`): Oblivion-style parchment — "How long would you like to sleep?", 1–24h slider, day/time line (`gameDateLine`), "You are ready to advance" hint, Continue/Cancel. `restAtBed(hours)` advances the clock by the hours slept, restores proportionally (full at 6h+), then takes a banked level after waking. Game loop pauses while it's open (`sleepOpen`).
+
+### Towns
+- **Hidden NPCs are not interactable** — `_retreated` follows visibility (keepers behind the counter, evening drinkers inside the inn).
+- **Guard torches** after dark (19–6:30): stick, flame, small point light in the off hand (`ensureTorch`).
+- **Lamps.** Iron lamp posts at the four plaza corners and inside each gate carry real lights after dark (7 in a village); every shop door has a wall lantern that glows (no light — a city has 150). Toggled per settlement in `tickSettlements` (`S.lamps`, `S._lit`).
+- **Chatter.** When two visible NPCs come within 2.4u (checked every 1.2s within 45u of the player, 35% chance), they turn to each other, speech bubbles (canvas sprites) appear over both for ~3s with pleasantries, and they linger a few seconds before moving on.
+
+### Verified
+Bar blocks at ground, not from the deck; rail blocks on the deck, passes mid-jump, absent below; deck bed not usable from the ground; sleep 10h at Oda's → 10 pm, full health, level 2 with the attribute screen; at night hidden keepers are non-interactable and all 7 lamp lights are lit.
+
+### Playtest
+- Jumping onto the counter — worth it, or should keepers object?
+- Chatter frequency (35%/1.2s in close range) — too chatty in a full plaza?
+- Torches: only walled sites have guards; villages have none. Add a night watchman per village?
+
+
+### Session 66 addendum (same day) — lamps that burn, hand-sized torches, village watchmen
+- **Lamps had no flame** because the glowing glass box sat *inside* the iron housing box. Lamp posts are now an open frame (four corner ribs, a pyramidal cap, a base plate) with a translucent pane and a flame cone inside; wall lanterns likewise get a bracket, ribs, cap, pane and flame. Both light/glow only after dark as before.
+- **Guard torch** scaled to 0.55 and moved into the hand.
+- **Night watchman**: every unwalled village with streets gets one (`sched.type='watch'`): hidden by day, patrols road-in ↔ plaza from 19:00 to 6:30 with a torch. Verified at Hearthwick at night: watchman visible with torch, 7 lamp lights lit, 8 glows.
+
+
+---
+
+## v80 — Session 67 — Session 12: local map, third person, guilds
+
+### Local map (`drawLocalMap`, `drawMinimap`)
+North-up render of the player's surroundings: terrain cells shaded by biome/height (water blue), roads, and — for any streamed settlement — every building footprint (rotated rects from the settlement solids), walls (thick grey), doors as dots (homes cream, inns orange, shops gold, guilds violet), dungeon/fort doors, camp bedrolls, NPCs (guards blue), enemies red, the player arrow. The HUD minimap (`drawMM`) uses it in the world at radius 58, redrawn at 4 Hz into an offscreen canvas. The hub Map tab has a **World / Local** toggle (`MAP.mode`); Local draws the same view at radius 130 with door detail.
+
+### Third person
+`V` toggles. Camera sits 3.2u behind and 0.5u above, over the right shoulder, and rises as you look down; the viewmodel (camera children) hides. `PLAYER_MODEL` is a `buildNPCMesh` in the archetype's colours (guard/scholar/merchant dress by warrior/mage/rogue), placed at the player's feet facing along yaw, with a walk bob and swinging arms when moving. Re-parented to whichever scene is active.
+
+### Guilds (`GUILDS` section)
+- **Halls** in every town and city (hero towns included): `guild_f` / `guild_m` are shop types with a 13×11 two-storey stone hall (crossed-swords / six-point-star sign), always open. Interior 23×22: steward's desk and notice board at the head; fighters get weapon racks, armour stands, a long table and a grindstone; mages get bottle shelves, a library wall, a glowing cauldron and pillars; both have a **dormitory of 8 beds** (plus the gallery beds) and **three members** who wander the hall and talk (`INT_NPCS`, `tickInterior`, `interiorTalk`).
+- **Steward dialog** (dynamic topics via the new `c.fn` hook in `pickDialogChoice`): *Any work?* offers a task, *It's done.* turns in, *My standing?* shows rank.
+- **Tasks** (`genTask`) built from the live world. Fighters: **clear** (kill N inside a named door — counted via `killE` when `currentPortal.id` matches), **hunt** (N of a type in the open — `killZoneEnemy`), **beast** (a Cave Bear/Ogre/Troll spawned outside a nearby village when you get within 220u, tagged to the task), **raid** (N Bandits spawned at a village's pad when you arrive; all its NPCs go indoors until the last raider falls). Mages: **relic** (a glowing binding-stone placed by a fort/door; walk over it), **gather** (N herbs of a type — `harvestHerb`), **deliver** (talk to any resident of the target town — `talkNPC`), **hearth** (enter any home in the target town, stand by the hearth, cast — `castSpell`), **wizard** (a Rogue Mage at a door), **creature** (a Shore Wisp at Loch Liath). New `ZDEF` types: Rogue Mage, Shore Wisp.
+- **Progression**: gold + XP on turn-in; rank every 3 tasks (Recruit→Blade→Warden→Champion→Master; Novice→Adept→Evoker→Warlock→Archmage); task difficulty and pay scale with tier. State in `worldState.guild` (saved/restored).
+
+### Verified
+Ironhaven: both halls present; hall built with keeper, 3 members, 9 beds; "Any work?" → *Clear Hollow Gate — north-east of here… 71 gold*; turn-in → 71 gold, rank Recruit. Local map renders two towns' layouts; minimap live in the HUD; third person shows the model.
+
+### Not exercised in the browser
+Beast/raid/wizard/creature spawning and the hearth cast path ran only through the code — playtest those first. Raid uses the village's `S.raid` flag to hide everyone; if a raider gets stuck in geometry the town stays hidden (kill from the map's red dots).
+
+### Holds
+Guild services (special stock, training); a quest-log entry for the active task (it's in the log tab as text only); a compass marker for the task target; multiple concurrent tasks.
+
+
+---
+
+## v80 — Session 68 — Session 13: guild banners, rooms, Y-aware interaction, dialog polish
+
+- **Interaction respects height.** Keeper talk (E and the HUD prompt) needs `|jumpY|<1.2`; guild members likewise; world NPC pick skips anyone more than 1.6u above/below you. Beds were already height-gated.
+- **Exit trigger.** "Press E to leave" and the exit itself now require being within 1.6u of the door's x, on the ground floor (`jumpY<.6`), not just anywhere along the back wall. Uses the generated room's real depth.
+- **Guild exteriors**: two tall cloth banners in the guild colour with the crest device flank the door, plus the trade sign.
+- **Rooms.** `partition(x0,z0,x1,z1,by,hh,doorT)` builds full-height wall segments (textured to match the room, full-height solids) with an optional doorway + lintel. Guild ground floor: hall (north) → cross wall with a central doorway → corridor → **four dormitory rooms** (two beds and a chest each) → front door. Upstairs (all two-storey rooms): a corridor along the deck edge with **rooms behind it**, each with a doorway; inns and guilds get one or two beds per room (guild hall: 18 beds total).
+- **Stairs vary**: west or east wall by house hash; railing, landing and handrail follow.
+- **Tables** are furniture now: thick plank top with lip and plank lines, aprons, turned legs with feet, optional benches with rails — `table(x,z,w,d,benches)` used by inn, hall, keep, home, guild.
+- **Dialog**: every NPC def ends with **Farewell** (`bye`); guild task topics are marked `quest` and styled gold (`.dlg-quest`).
+
+### Verified (Ironhaven Fighters' Guild)
+4 banners across the two halls; 27 partition segments, 15 upper-room wall solids, 18 beds (10 upstairs); exit prompt only at the door centre; keeper not talkable from the gallery; steward topics: 3 quest-coloured + Farewell.
+
+### Playtest
+- Doorways are 1.5u wide — tight with a shield? Widen in `partition` (`.75/L` gap).
+- Upstairs rooms have no doors on the outer walls, only from the corridor — intended.
+- Guild ground-floor door cutting rebuilds the side walls; if a wall ever appears doubled, it's that step.
+
+
+---
+
+## v80 — Session 69 — Continent Session A: 12×12 cells, water mask, cell streaming, job budget
+
+**Decision recorded:** 12×12 grid; the authored world is the home province and keeps its Irish identity; substantial water with a naval element to come (Session C).
+
+### No rebasing
+12×12 cells of 2,400u = 28,800u across — inside float precision (jitter starts ~100k), so the world uses one absolute coordinate space. Combat, NPC, enemy and interior code are untouched. Cell (i,j) occupies [i·SIZE,(i+1)·SIZE)×[j·SIZE,(j+1)·SIZE); the home cell is (5,10), so Ashenmoor now sits near (12,790, 25,805).
+
+### Mask (`MASK`, `maskAt`, `isLandCell`)
+Generated once from the seed: a lumpy continent, an eastern gulf, a western strait, six island cells in the outer sea, the home cell forced to a peninsula tip (sea W/S/E, land N). Current split: ~57% land (`land`/`coast`) / 40% sea / 3 islands. Printed grid in the harness; retune the ellipse threshold (`d<.60`) to move the coastline.
+
+### Cell data (`getCell`, `genCellData`, `homeCellData`)
+Deterministic per cell from `cellHash(i,j,k)`: 4–6 soft regions (biome weighted by climate/coast), 4×4 jittered sites with kinds by weight (one town or city per cell, **ports** pulled to a sea-facing shore), an MST road net plus extras, **border portals** shared by both neighbours (`edgePortal` — verified identical from both sides), a road from the nearest site to each portal, 10–18 doors (25% forts with valid exterior/interior pairs, themes from `THEME_DEF`), a peak/lake/river by chance, and **ridges** on some land borders (`ridgeOnEdge`, symmetric). Sea and mountains are now mask-driven (`seaAt`, `ridgeAt`) instead of the single map's edges. Names come from syllable banks per register (Session B replaces with cultures). The home cell converts the authored tables with the cell offset and gets border portals too.
+
+### Loading (`loadCellSteps`, `staticSteps`, `tickCells`)
+The 3×3 around the player is loaded through the job queue in 7 steps per cell (regions/sites/stamps → roads → doors+spurs → impostors → far mesh → tag); heavy statics (door rocks, fort exteriors, signposts, camps) are built only when the player is within 420u of a cell and dropped beyond 900u — nine cells of statics was ~2,000 draw calls. Unloading removes every array entry by cell tag and rebuilds the road grid. Live arrays (`REGIONS`, `SITES/SITE`, `ROADS/ROAD_DEFS`, `STAMPS` with a spatial grid `SGRID`, `DOORS`, `PEAKS/LAKES/RIVERS/INLETS`, `portals`, `beds`) replace the authored consts. Map: the parchment renders the player's current cell window with the cell's own region/peak/lake names and the province name (continent overview: Session D).
+
+### Stutter
+- Chunk builds are budgeted (4 ms/frame): light chunks batch, heavy ones go one per frame.
+- Settlements generate through the job queue at 480u (out at 580) instead of synchronously at 380.
+- Resident NPC spawns capped at 2 per tick.
+- `runJobs`: 6 ms budget, at most 2 job steps per frame.
+- **Still synchronous:** `genSettlement` itself (a city ≈190 ms) and a cell's far mesh (~50–150 ms). Time-slicing `genSettlement` per building is the next perf item.
+
+### Verified
+Headless: mask, home cell (21 sites/28 doors/29 roads), 3×3 load (68 sites, 67 doors, 89 roads), border portal identical on both sides, generated province "Fortrouge" with 11 sites incl. a city, walking north loads row 8 and drops row 11, a generated village builds 7 buildings, zero wet doors. Browser: software GL could not render a continent frame inside the harness timeout, so the generated province was **not** eyeballed — first thing to do on a real GPU: walk north from Mur Pierre through the pass into Fortrouge.
+
+### Known gaps
+- Fast travel to a site whose cell isn't loaded fails silently (`arrivalFor` needs `SITE[id]`) — Session D loads the target cell first.
+- Generated forts are placed like caves (not off a road) — spur still links them.
+- Ports are towns on the shore with no harbour yet (Session B/C).
+- Ridge passes: the road bed cuts through, but the ridge may look odd where two cells' ridges meet at a corner.
+
+
+### Session 69 hotfix — frozen player and bare ground after the continent switch
+Three checks still treated the world as a single 2,400u square: the continent-edge test in `solidAt` (every position past x=2,400 was "outside the world", so the player couldn't move), the chunk streamer's grid cap (`maxC` — no chunk past the first cell was ever built, hence no trees, scatter or ground detail — the green you saw was the far mesh), and the scatter lattice's bounds. All three now use `SIZE*GRID`. Verified headless (movement free, 10 chunks, 347 instances, all 28 home doors inside the home cell) and in the browser (W moves; 9 chunks, ~300 instances around the spawn).
+
+
+### Session 69b — continent map, cross-cell fast travel, `devUnlockAll()`
+- **Map modes**: **Continent** (all 144 cells: sea, coast, land, islands; province names; ✦ for a city, ⚓ per port; undiscovered provinces dimmed; home cell outlined; player arrow; hover shows the province's summary, click opens its parchment) · **Province** (the parchment for one cell — any cell, loaded or not: `withCellData` lends the cell's regions/landmarks to `worldH` while rendering, roads are real splines when loaded and cartographer's lines when not, icons come from the cell's own data) · **Local**.
+- **Fast travel anywhere**: `arrivalFor` resolves sites, doors, peaks and lakes from cell data (`siteAnywhere`, `doorAnywhere`); `enter()` now force-loads the destination's 3×3 (with statics) behind the fade — ~2 s for a far province in node, which is the cost of a continent hop.
+- **Console:** `devUnlockAll()` marks every site, door, peak and lake on the continent discovered (2,292 places) so all of them can be travelled to from the map. `devWorld()` still drops you at the spawn.
+
+
+---
+
+## v80 — Session 70 — Continent Session B: cultures, provinces, ports
+
+### Cultures (`makeCulture`, `CULTURES`, `cultureOfCell`)
+A culture is the bundle the authored registers were. Five generated cultures (`cul0`–`cul4`) join irish/french/anglo; each is built from a seeded subset of phonemes (a favoured 7 onsets / 5 nuclei / 5 codas, no coda before a consonant cluster so names stay sayable) and registered **into the same tables** the consumers already read — `NAMES` (12 m / 12 f), `SYL` (place-name halves), `STYLE` (wall/roof hue pair, thatch or framing, height, pitch, two-storey chance, door colour), `SHOP_NOUN` (forge/armoury/apothecary/goods/church/shipwright words), `INN_NAMES`, `RUMORS`. So dialog, signs, interiors and building styles all follow the culture with no consumer changes. Cultures spread from seeded capital cells (nearest capital + noise), so provinces cluster into countries; the home cell stays irish. Current spread on this seed: irish 22 cells (south), french 13, cul3 16 (north-west), cul2 11, cul0 9, cul1 8, cul4 5, anglo 2.
+- **Bug fixed on the way:** `genSettlement` took its style from the home region table, so every generated town was Irish. It now uses the site's cell culture.
+
+### Provinces (`climateOfCell`, `polityOfCell`)
+- **Climate** by latitude with noise: cold (forest-heavy, snow line at 18u), temperate (38u), warm (plains/wastes, effectively no snow). `groundColor` reads `snowLineAt`.
+- **Polity**: **realm** (more sites, 38% city chance, few ruins), **marches** (outposts, camps, 45% of doors are forts), **wilds** (fewer sites, ruins and camps, few forts). Province names end in Realm/Marches/Wilds. The continent map's hover shows culture · climate · summary.
+
+### Ports (`buildHarbour`, kind `port`)
+A coast cell's shore-facing village/outpost becomes a **port** (pad 80, plan: shipwright, forge, apothecary, two stores, two inns, church; 30–45 buildings, no walls, 3 stalls). `shoreDir` finds the sea edge; the harbour runs from the pad edge to 34u past the waterline: a stone **quay** (8u wide, a walkable platform at y 1.1 via `ZONES.world.platforms`), bollards, a harbour lantern (lit at night), a curved **breakwater** of stone blocks in the water, **2–3 moored boats** (hull, deck, prow, mast, sail), nets/crates on the landward end, and a **harbourmaster** NPC. The **shipwright** is a shop type (anchor sign, culture noun; misc interior/stock for now — Session C turns it into the place you buy a ship). Platforms are removed when the settlement disposes.
+
+### Verified (headless)
+Culture map coherent; sample names: Heireim, Marnraros, Fornhoros, Vairporos. Port "Horbral" (cell 5,1, culture cul2): 32 buildings, shipwright present, 2 boats, quay platform 8×91 at y 1.1 with its seaward end over water (−3.7) and landward end on land, harbourmaster present. Not eyeballed in a browser — software GL — so **walk a port first**: fast-travel to any anchor on the continent map (after `devUnlockAll()`), stand on the quay, look at the boats.
+
+### Holds
+Ship purchase/sailing (Session C); culture-specific building *shapes* (only palette/framing/thatch vary); culture names for regions inside a cell; harbour on rivers/lakes.
+
+
+---
+
+## v80 — Session 71 — Continent Session C: ships and swimming (+ the Ceilfouey quay)
+
+### Quay fix (playtest: port clipping under the terrain)
+The quay began at the pad edge, but the ground between the pad and the shore was above the quay top, so the platform override pulled the player under the terrain. Now the quay **starts where the ground falls to quay height** (walking seaward from the pad edge), runs 34u past the waterline, and a small pad stamp flattens the shore strip to the quay top so the ground meets it. Verified: ground along a quay reads 1.1 → 0.2 → −2.4 → −3.3 → −4.2.
+
+### Swimming
+Deep water no longer blocks. `ZONES.world.getY` is `groundY`: the water surface (−0.35) is the ground wherever the bed is deeper, so you float with your head above water; swim speed 1.7 (walk 3.83). NPCs and enemies see the same ground — they can cross deep water at the surface; not yet gated (hold).
+
+### Ships (`SHIP`, `buildShipMesh`, `buyShip`, `shipInteract`, `tickShip`)
+- **Buy** at a shipwright (dialog topic, gold-coloured, 400 gold): the ship spawns moored off the seaward end of the quay, beam-on. One ship; `worldState.ship {x,z,yaw}` saves/restores; it's rebuilt on world build.
+- **Board** by walking on: the deck is a moving platform (`ZONES.world.platforms` entry updated each frame, AABB of the rotated hull, deck at y 1.0 — the quay is 1.1, so you step across).
+- **Helm**: E within 1.8u of the wheel (HUD hint "Press E to take the wheel"). W/S throttle (7.5 u/s ahead, half astern), A/D turn (rate scales with speed), E lets go. You stand at the wheel; the camera is free. The ship keeps its own key state (`KEYS`) so it doesn't depend on the engine's block-scoped `K`.
+- **Aground**: if the bow's ground is above −1.4 (or the continent edge), speed drops to 0 with a message; walk off the bow into shallows or onto shore.
+- Mesh: hull, deck, prow, sterncastle, rails, mast, sail, yard, wheel on a post; slight bob and roll.
+- Not yet: cargo, cabin bed, ship fast-travel, other ships, river/lake launching (only sea quays), damage.
+
+### Verified (headless)
+Buy → moored in −4.7 water; helm prompt; sailed 20u then aground on the shore; let go → persisted; deep water not solid, groundY −0.35. Not rendered in a browser — first thing: buy a ship at a port, take the wheel, sail out past the breakwater, jump off and swim back.
+
+- **Console:** `devGold(n)` adds n gold (default 1000) — e.g. `devGold(500)` covers a ship. Alongside `devUnlockAll()` and `devWorld()`.
+
+
+### Session 71 hotfix — sinking on the way to the dock; boarding
+- **Sinking near the quay** (Ceilfouey): the shore-shelf stamp was added at settlement generation, after the chunks were built — so your feet followed the flattened height while the visible terrain still showed the slope. The shelf (and the quay start, `site.quayStart`) is now stamped in the cell's first load step, before any chunk exists. Verified: chunk mesh vs `worldH` deviation 0.000 at the shelf.
+- **Boarding**: E within ~13u of your ship (from the quay or the water) climbs aboard; E anywhere on deck takes the helm (you're moved to the wheel); E lets go. HUD prompts: "Press E to board your ship" / "Press E to take the wheel". The shipwright's purchase line now says where she's moored. The moored boats at every quay are scenery.
+
+
+---
+
+## v80 — Session 72 — Ship polish (from the first sail) and the naval roadmap
+
+- **Steering from the wrong end**: the hull mesh's prow (+z) pointed opposite the movement direction. Mesh rotation is now `yaw+π`; verified prow·forward = 1.00 and the wheel 4.1u astern of centre.
+- **Deck flicker**: the deck box top was coplanar with the hull top. Deck raised (top at 1.05 vs hull 1.0), slightly wider.
+- **Sounds** (`tickSeaSounds`, on the engine's `AX`/`sfxGain`): a looping low-passed noise **wind** whose gain follows speed; **creaks** while turning (bandpassed noise + a low triangle); **splashes** every 1.2–2.8 s underway, and every ~1–2 s while swimming and moving; a bigger **plunge** the moment you enter deep water.
+- **Waves**: the water plane is now 140×140 segments with a vertex-shader displacement (three summed sines on world x/z, ~0.1u), `uTime` driven each frame. Lambert shading, so it reads as motion rather than sparkle — that's the cheap version.
+- **Shipwright at the quay head**: ports give the shipwright its own lot 11u from the quay start, door facing the water, instead of a street lot (was 73u).
+
+### Naval roadmap (from your list) — proposed Session D
+1. **Diving & breath**: point down + forward to dive, up to rise; a breath bar (~40 s), damage when empty; surfacing splash. Needs a small hook in the vertical movement when `isSwimming`.
+2. **Sea floor content**: aquatic herbs (kelp, sea-lily, pearl-weed) in shallows and reefs, harvestable; **wrecks** (hull halves, mast, a chest or two) and **sea caves** as stamps in sea/coast cells; more **islands** (the mask has 6 island cells; add islets as stamps in open-sea cells — 2–4 per cell with a beach, a tree clump, sometimes a ruin or a hermit).
+3. **Wildlife**: fish schools (instanced, drift in shallows), dolphins that pace the ship, sharks that hunt a swimmer (`ZDEF` 'shark', swim-only), gulls at ports.
+4. **Pirates**: a roaming AI ship per sea region with an archer crew that closes on the player's ship and shoots (the engine already has arrows); **boardable** — when hulls touch, a plank; a chest in the sterncastle; sinking or fleeing once the crew is down. Merchant ships as the peaceful counterpart.
+5. **Your ship**: cabin bed (rest), cargo hold (stash), ship fast-travel between discovered ports, repair at a shipwright.
+
+### Playtest this build
+Sail again: the prow should lead and the wheel be behind you; listen for wind rising with speed; turn and hear the creak; swim off the side for the plunge.
+
+
+### Session 72b — shipwright buried, no wheel prompt, wrong side of the wheel
+- **Shipwright buried in the slope**: its lot at the quay head sat on the hillside between the town pad and the quay shelf. The cell's first load step now stamps a flat pad (`swpad_`) for that lot too (`site.shipwrightLot`), before chunks exist. Verified: ground 1.05 at the centre and all round the footprint.
+- **No prompt**: the ship checks were placed after the generic "Press E near a villager" branch of the hint line, so they never ran. The ship now comes first in both the top-left hint and the centre prompt: "Press E to board the *Old Ram*" / "Press E to pilot the *Old Ram*" / "Press E to let go of the wheel".
+- **Helm**: the helmsman stands a pace *aft* of the wheel and your view is set to the ship's heading when you take it (verified: helmsman −5.8 along-ship, wheel −4.9, yaw = heading).
+- Ships get a **name** at purchase (Grey Gull, Salt Heron, Kestrel, Old Ram…), saved with the ship and used in every prompt.
+
+
+### Session 72c — waterfront ports, settlement collision reach, stern room
+- **Shipwright "buried"**: the port's pad sat on a 10u bluff and the shipwright's pad at the quay's 1.05u, so its lot was a 9u pit. **Port pads now sit at the waterfront** (site stamp `y = min(land, 3.0)`); the shipwright's pad is a step below that. Ground around it now reads 1.1 → 1.5 → 3.0 → 3.1.
+- **No collision there**: `settleSolid` skipped anything farther than `pad+6` from the town centre; the shipwright lot is ~120u out. Each settlement now records its real `reach` from its solids.
+- **Stern**: the sterncastle box became a low taffrail with posts; the wheel moved forward to −3.7 along-ship and the helmsman stands at −4.8 — 1.5u clear of the rail.
+
+
+---
+
+## v80 — Session 73 — Session D part 1: diving, the sea floor, islets (+ far-mesh poke-through)
+
+- **The light patches on the ground** were the coarse far-terrain mesh showing through where the fine terrain dips (around pads especially). It exists for the horizon only, so it now sits 3u under the near tiles instead of 0.8.
+- **Diving** (`diveTick`, hooked into the engine's terrain follow in the world): while swimming over deep water, look down and hold W to dive (2.2 u/s), look up or Space to rise, let go and you drift up. Depth is clamped to the bed +0.55. **Breath** bar (bottom centre) appears when submerged: ~40 s, then 6 damage/s; refills at the surface. Underwater the sky/fog go blue-green and dense (`cameraUnderwater`). A splash on submerging.
+- **Sea-floor herbs** (`spawnSeaHerbs`): `HERB_DEF` gains kelp (+20 stamina), sea lily (+15 mana), pearlweed (+25 HP), placed on the bed in shallows/reefs (bed −1.2 to −9), 0–3 per chunk, harvestable with the normal E while diving.
+- **Wrecks** (`spawnWreck`): ~1 in 22 sea-bed chunks gets a broken hull (two hull halves, mast, plank) with a **sea chest** (`rollContainerLoot('chest',1.4)`) pushed onto `ZONE_CORPSES`, removed with the chunk.
+- **Islets**: open-sea cells get 1–3 islets (r 60–140) via `seaAt` (`cell.islets`), with beaches and scrub (the sea fallback region now scatters at .28). Verified: land 5.7 at an islet centre, −8 water 200u off.
+
+### Not done yet (Session D part 2)
+Fish/dolphins/sharks/gulls; **pirate ships** (roaming, archers, boardable, chest); merchant ships; your ship's cabin bed, hold, port-to-port travel, repair. Sea caves as stamps. NPC/enemy crossing of deep water still not gated.
+
+### Playtest
+Swim off the quay, look down and hold W; watch the breath bar; find kelp on the bed; sail to an islet; look for a wreck's chest in the shallows off one.
+
+
+---
+
+## v80 — Session 74 — Session D part 2: the living sea
+
+- **Cabin** (your questions): an instanced room like any building. A hatch at the stern is a house entry (`CABIN.house`, type `cabin`) whose door/exit follow the ship every frame; "Press E to go below" at the hatch. Inside (8×9, low beams): bunk (rest/level), chart table with a map and lantern, bottle shelves, barrels, a porthole, and **the hold — the engine's stash chest** (`_intStashChest`), so what you leave there persists.
+- **Whitecaps**: the water shader (`waterShader`) now sums four wave terms (max ~0.36u) and passes a foam varying to the fragment: crests whiten by height with a streak noise so foam is patchy, and go opaque where they break.
+- **Ship on the map**: `kind:'ship'` entry (always known) with a hull-and-sail glyph, in the province view and on the minimap (as a heading arrow); **Travel** to "The *Old Ram*" drops you on her deck. Other ships show as red (pirate) / grey (merchant) dots on the minimap.
+- **Wildlife**: fish schools (instanced, circling in shallows, ~1 in 3 shallow chunks), gulls circling every port's quay, two dolphins that pace and leap beside your ship above 3 u/s, and **sharks** (`ZDEF`, wolf shape ×1.5) in open-water chunks (~6%) that stay in deep water and only take an interest while you're swimming.
+- **Pirates and merchants** (`OTHER`): when you're at sea, up to one black-sailed pirate (skull-flagged) and one merchantman spawn 260–460u off. Both roam waypoints in deep water. A pirate within 300u of a player at sea **closes to ~30u, holds off, and looses volleys** (2–3 arrows every ~2.5 s inside 70u; arcs to where you were, 6+level damage on a hit, blocking halves it). **Board** either by getting within ~14u (hulls alongside, or swimming up) and pressing E: you're put on her deck (a moving platform), she stops. A pirate's crew of **three Pirates** spawns and fights on deck (kept aboard by `tickCrew`); a merchant's crew keeps their heads down. A **chest** appears in her stern (`rollContainerLoot('chest')`, richer on a pirate). Ships despawn beyond 700u.
+
+### Verified (headless)
+Cabin hatch follows the ship; E enters a cabin interior; ship appears in map entries and `arrivalFor('ship')` targets her deck; a spawned pirate closed from 120u to 20u, loosed 4 volleys (HP 100→65), boarding put three crew and a captain's chest on her deck.
+
+### Playtest
+Sail out, watch the whitecaps and the dolphins; wait for black sails; try to outrun the volleys, then turn and come alongside to board; go below for the hold. Fast-travel to the ship from the map. Pirates don't board *you* yet, sharks don't attack the ship, and the merchant can't be traded with — next.
+
+
+### Session 74b — falling through quays and decks; crew on deck from the start
+- **Dropping into the water on a quay/deck**: `diveTick` ran after the engine had resolved the platform under the player, saw deep water below and replaced the platform height with the swim depth. It now returns null whenever the resolved surface is above the water (any platform), and `isSwimming()` is false on a platform. Verified: quay over −2.6u bed → stay on the quay; on deck → stay on deck; in the water beside her → swim.
+- **Pirate crew** spawn with the ship (three on deck, not alert), ride her as she moves (`tickCrew` shifts them by the ship's delta and keeps them inside the deck), and turn on you when you board. Verified: crew aboard after 27u of sailing.
+
+
+---
+
+## v80 — Session 75 — One continuous map
+
+- **The zoom/pan jumble**: `mapDraw` cleared only `MAP.W×MAP.H` (the shorter dimension squared), so on a wide pane the right-hand strip kept stale pixels. The whole canvas is cleared every draw.
+- **Continent + Province are now one map** (`MAP.mode='map'`), a single parchment for the whole 12×12 continent that you scroll to zoom (1× = continent, up to 64×) and drag to pan — no clicking in and out of provinces, and standing between provinces is no longer a problem. **Local** stays as the second mode.
+- **Tiles**: each cell is a tile. A **coarse** 48px tile (~2k height samples) is generated the first time a cell is on screen; a **fine** 320px tile is generated when a cell is ≥220px across, spread over frames (`tileStep` renders 12 rows per step under a 24 ms budget in the map's own rAF loop, so the map never hitches). Tiles are cached for the session. Unvisited cells render from their own data via `withCellData`.
+- **What appears at which zoom**: province names from 60px/cell; icons for major places (cities, towns, ports, forts, peaks, lakes, your ship) from 60px, all discovered places from 160px; roads from 160px (real splines for loaded cells, cartographer's lines otherwise); faint dashed province borders from 140px; region/peak/lake names and the big province name from 520px. Undiscovered provinces sit under a light sepia wash. Pirates/merchants are red/grey dots; the player arrow and compass as before.
+- **Panel**: hovering empty ground shows the province summary (culture · climate · settlements · doors · known); hovering/clicking a place shows it with **Travel**. Opens at province scale centred on the player.
+- Fine-tile hillshade floor raised (.55 → .72) so border ridges read as mountains rather than black bands.
+
+### Verified (browser)
+Open at province scale (home province with terrain, labels, icons); wheel out to the whole continent (coastlines, islands, no grid); wheel into a six-province corner (fine tiles, borders, roads, icons). No jumble on zoom/pan.
+
+
+---
+
+## v80 — Session 76 — Fluid geography
+
+The square continent had three causes; all replaced.
+- **Coasts** (`landField`, `seaAt`): the mask is sampled at cell centres and bilinearly interpolated into one continuous land field, then **domain-warped** (two noise fields displacing the sample point by up to ±950u at a 2,600u scale plus ±300u at 900u) and given two octaves of shoreline noise. Coasts curve, cross borders, and the gulf/strait/peninsulas bend organically. Island cells are a large blob (`islets` with r ≈ 0.3·SIZE) and open-sea islets stay blobs on top. **Every site pad pushes the sea back** (`sea *= sstep(r, r+blend, d)`), so nothing authored or generated drowns regardless of where the shoreline wanders (1,019/1,034 sites are on land even before that; the rest are ruins/camps in the surf).
+- **Mountain ranges** (`ridgeAt`): the band wanders ±85u along the border (noise), varies in height (0.5–1.5× via fbm) and has **passes** where a slow noise dips — so a range reads as peaks, shoulders and gaps (sampled: 56 → 20 → 76 → 101 → 78 → 32 → 100).
+- **Biome/landmark continuity on the map**: `withCellData` now lends the eight neighbours' regions, peaks, lakes and rivers as well as the cell's own while a tile renders, so tiles match what the world blends at runtime (the world already loads all nine).
+
+### Verified
+Continent render: fjord strait, inland gulf, ragged southern peninsulas, islets; mid zoom shows forest/plains patches and ranges running across province lines. Home spawn unchanged (h 2.7).
+
+### Notes
+- The mask still decides *where* land is at cell scale; the warp reshapes it. To change the continent's silhouette, edit `buildMask` (the ellipse, the gulf/strait carve, island picks).
+- Rivers still aren't drawn on the map tiles; roads may run through shallow water in a few coastal cells (fords) — worth a pass when we do rivers.
+
+
+---
+
+## Wishlist plan (agreed)
+1 quick fixes · 2 **music** (6–8 long calm orchestral exploring tracks from public-domain themes in the existing sequencer; shuffle/loop; persist through peaceful interiors; combat/dungeon cues unchanged) · 3 geography II (archipelago of 2–3 big islands + paid ferries; long rivers/ranges; tundra, fen, moor, autumn woods, dunes, swamp, wasteland; wild regional building styles — mushroom houses, ice structures, Bavarian timber) · 4 weather (visual/sound, rain/snow cut visibility) · 5 overworld combat density/variety/bandits · 6 interiors II (inns 5–25g/night, houses to buy, guild beds for members, camps/cots free; rentable rooms; instanced floors; painted windows by time of day; parity) · 7 forts (exteriors; multi-level single instances + some instanced basements) · 8 naval II (speed/cargo/class upgrades — no hull HP yet; swim-up-and-E fish; whales; pirates boarding you; collisions) · 9 magic (Morrowind/Oblivion feel; sigils out; basics at any Mages' Guild, tiers by rank, rare spellbooks in dungeons) · **10 dialog overhaul** (depth/variety) · **11 quest system** (Fighters' and Mages' questlines; town quests from lords/mayors) · **12 harvestable density** (far more, clustered hotspots, region/placement logic — near trees, on sand, by water, by houses).
+
+## v80 — Session 77 — Wishlist chunk 1: quick fixes
+- **Town walls & gates.** Gate towers were placed relative to the wall *segment's* midpoint, so a road crossing the ring off-centre ran into a tower. Towers now flank the road at its actual crossing (`ROAD_HALF+3.6` either side), one pair per crossing (`S._gates`). Second-row lots were bounds-checked by their street point, not their footprint; lots must now fit wholly inside the ring. Verified across five walled towns: 0/331 buildings outside, 0/12 gates blocked.
+- **Camp bedrolls** moved to the far side of the fire, clear of the tents (they were under a tent cone).
+- **"Press E to rest"** now shows in the centre prompt for any bed (`INT_BEDS`, height-aware), not just the legacy single bed.
+- **Sail** is square-rigged now (athwart, yard across) instead of fore-and-aft along the keel.
+- **Ship triggers**: board only within 3.5u of the hull's edge (from quay or water), pilot only within 2.4u of the wheel, cabin only within 1.1u of the hatch. The hatch moved to the **foredeck** with a trapdoor and ring (was next to the wheel).
+- **Jumping into water** is a fall now: the dive hook only claims the ground when you're at or below the surface, so you drop from the deck and splash rather than being snapped down.
+- **Sharks** have their own mesh (tapered body, dorsal and tail fins, pectorals — fin above the surface) and are `locked` unless you're actually swimming, so they ignore anyone on a boat or the quay.
+
+
+---
+
+## v80 — Session 78 — Wishlist chunk 2: original exploring music
+
+The old zone music was generative (drones + random pentatonic pings). This is a composed layer on the same WebAudio graph.
+
+- **Orchestra** (`VOICES`): strings (three detuned saws, slow attack, vibrato), low strings, horn (saw+triangle with a filter swell), flute (sine with breath harmonic and delayed vibrato), harp (triangle pluck with a bright transient), choir (dual-bandpass saws), bells (inharmonic partials), timpani (pitch-drop sine + filtered noise). Everything runs through a **hall reverb** (generated 2.6 s impulse, 32% wet) into `musicGain`, so the volume setting still applies.
+- **Sequencer** (`pieceEvents`, `explorePlay`): a piece is a key, mode, tempo, lead instrument and sections. A section is 8 bars of chord degrees, melody phrases in scale degrees ("5:3 4:1 3:4"), and an arrangement (pad/bass/harp/lead/counter/choir/bells/timp) with a dynamic. Playback expands the sections (A, A', B, A'', bridge, coda, with the middle repeated once an octave up and with the counter-line added), lays down the pad on chord tones, bass on 1 and 3, harp arpeggios in eighths, the lead melody, a counter-line a third below, bells and timpani where written. A look-ahead scheduler (300 ms, 1.2 s ahead) drives it; nodes are pruned as they finish.
+- **Seven original pieces** (~3–4 min each, ~25 min total): *The Home Province* (D dorian, horn), *Grey Roads* (A aeolian, flute, sparse), *Sails at Dawn* (F lydian, flute over harp, bright), *Snow on the Ridges* (E aeolian, choir and bells, slow horn), *Ashes and Heather* (G dorian, cello-led), *Wide Water* (C mixolydian, harp and flute), *Lantern Hours* (Bb major, gentle, for dusk in towns).
+- **Behaviour**: every peaceful zone (all outdoor regions, villages/towns/cities, shops, churches, keeps) shares one playlist that **keeps playing across them** — walking into a home doesn't restart the music. Pieces shuffle without immediate repeats and crossfade (2.5 s in, 1.2 s out). Combat, dungeon and burned cues are untouched; they fade the playlist out, and a new piece fades in when you're back.
+- **Console:** `devMusic()` lists the pieces; `devMusic('dawn')` or `devMusic(2)` plays one.
+
+### Verified (mock WebAudio)
+All seven pieces schedule every voice without error; durations 3.1–4.2 min; note counts 550–900 per piece. I can't listen here — the balance (lead vs pad, reverb amount, horn timbre) is what to tune first by ear: `VOICES` gains and `EXPLORE.verbGain`.
+
+
+---
+
+## v80 — Session 79 — Wishlist chunk 3: Geography II
+
+- **Archipelago** (`buildMask`): three islands — north-west, north-east, and the southern one carrying the home province — each an ellipse blob with light noise, separated by straits; islets in the channels. Verified: 3 landmasses (17/21/20 cells), home cell coastal, 103 ports.
+- **Ferries**: every harbourmaster offers **passage to the five nearest ports** (any island), 15–120 gold by distance; the crossing advances the clock (~1 h per 300u), lands you at the destination's quay head, and discovers it. Verified: a 19,500u crossing for 120 gold onto the quay (h 3.0).
+- **Ranges chain**: `ridgeOnEdge` now reads a slow noise field at the edge midpoint instead of an independent hash, so neighbouring borders share the decision and ranges run for several cells (75 ridge edges on this seed).
+- **Rivers cross borders** (`riverOnEdge`, symmetric, never on a ridge): a cell with two river borders links them; one river border runs to the sea or a lake; coastal cells may still spawn a peak-to-sea river. 51 rivers on this seed.
+- **Seven new region types**, assigned by climate: cold → tundra, moor (+forest); temperate → autumn, fen, moor (+forest/plains); warm → dunes, swamp, wasteland (+plains/wastes). Each has ground (`BIOME_PROFILES` extended at runtime), density, relief, music and **trees**: `snowpine` (conifer with white caps; also replaces conifers above the snow line), `autumn` (broadleaf tinted per instance red→orange→gold, with leaf litter on the ground), `mushroom` (stalk and red cap), `willow` (drooping cones) for fens, and `ember` rocks (glowing, unlit material) in wasteland. Region names follow the biome (Rust, Amber Wood, Fen, Bog, Cinders, Tundra…).
+- **Regional building styles**: swamp towns are **mushroom houses** (`mushroomGeo`: stalk, capped dome with spots, door and windows in the stalk); tundra towns are **ice lodges** (`iceGeo`: dome with banded courses, entrance tunnel, vent); autumn towns use a new **Bavarian** style (cream render, dark timber, very steep roofs, painted doors). Verified: a swamp town of 61 mushroom houses, a tundra town, a Bavarian town.
+
+### Playtest
+- Ferry between islands from any harbourmaster; sail the straits.
+- Walk an autumn wood and a tundra; the snow line sits at 18u in cold provinces.
+- Ranges still hug cell borders (they wander ±85u) — a later pass could run them diagonally.
+
+
+---
+
+## v80 — Session 80 — Wishlist chunk 4: weather
+
+- **States**: clear, overcast, fog, rain, storm, snow. Picked from weights by the **climate** of the player's cell (cold favours snow, warm favours clear and storms) and the **biome** underfoot (fens/swamps foggy and wet, coasts/dunes squally, tundra snowy, wasteland overcast, never snow). A state holds 2½–5½ real minutes, then blends to the next over 25 s.
+- **Rain**: 2,200 streak points falling at 26 u/s with drift, in a 44u box around the camera that follows you and wraps; the count drawn scales with intensity. **Snow**: 1,400 larger flakes at 2.2 u/s with drift. Both are hidden indoors, in dungeons and on other zones.
+- **Visibility and light**: sky and fog colours lerp to the weather's grey/blue, fog density multiplies by up to ×3.6 (fog itself much thicker), the sun dims to 45% in a storm. Applied inside `atmosphere()` so day/night blending and underwater still take precedence.
+- **Storms**: lightning flashes (sky to near-white, sun ×2.2 for ~140 ms) every 6–20 s, each followed 0.4–2.6 s later by **thunder** (two low noise bursts).
+- **Sound**: a looping band-passed rain wash whose level follows rain intensity (a whisper under snow), muted indoors.
+- **Console**: `devWeather()` shows the current state (and pending transition); `devWeather('storm')` forces one.
+
+### Verified (headless)
+Forced storm reaches state and holds through transition ticks without error. **Not rendered** (software GL times out on the particle pass): check that rain streaks read as rain at speed, snow looks right against the pale tundra ground, fog isn't so thick it hides a town at 60u, and the thunder timing feels right.
+
+
+---
+
+## v80 — Session 81 — Wishlist chunk 5: overworld combat
+
+- **Bestiary** (`ZDEF`, +15): Boar (L1), Kobold (L1), Highwayman (L2), Deserter (L3), Ghoul (L3), Snow Wolf (L3), Bog Crawler (L3), Sand Scorpion (L3), Cultist (L4), Dire Wolf (L4), Bandit Captain (L5), Marsh Hag (L5), Wraith (L6, resists pierce/blunt), Frost Troll (L6), Ash Wight (L7). All on the zone builder's shapes with their own colours/eyes/resistances; variants scale with level as before.
+- **Tables by biome** (`ENC_BIOME`) for all eleven region types — generated provinces used to fall back to one home table. Each entry can be `day`, `night` or `road`. **Night extras** by climate join every table after dark (wraiths and snow wolves in the cold, skeletons and ghouls in temperate, ghouls and cultists in the warm south). The home province keeps its authored per-region tables.
+- **Density**: per-chunk chance ×2.3 (×1.7 more at night); clearance around towns 110 → 70u so trouble sits just outside the gate.
+- **Road ambushes**: chunks within 40u of a road roll a separate 16% ambush — Bandits, Highwaymen or Deserters at the road — on top of the normal roll. Bandit/Highwayman groups of 2+ at level 5+ have a 50% chance to be led by a **Bandit Captain**; from level 6 groups can be one larger.
+- Verified headless (level 6): 17 → 37 enemies per 49 chunks by day, 39 at night with cultists and wights; a tundra at night: 23 snow wolves, 3 frost trolls, plus a road party.
+
+### Playtest
+- Is ×2.3 too dense on the roads (ambush 16% per road chunk)? Knobs: `dens` multiplier, ambush threshold, `NIGHT_EXTRA`.
+- Ash Wight at L7 in a wasteland the level-6 test walked — wastelands are meant to be dangerous; say if it bites too early.
+
+
+---
+
+## v80 — Session 82 — Wishlist chunk 6: Interiors II
+
+- **Beds have owners** (`INT_BEDS[].owner`): `inn`, `home`, `guild`, `free` (camps, fort cots, the ship's bunk). The engine's E-at-bed and the prompts route through `bedInteract`/`bedPrompt`:
+  - **Inn**: "Press E to rent this room (N gold)" — 5–25 by settlement size and house (village ~6, town ~12, port ~10, city ~20). Renting holds until the same time tomorrow (`worldState.rented`), then the bed sleeps normally.
+  - **Home**: someone else's bed refuses ("That's someone else's bed."); no rest prompt.
+  - **Guild**: "Members' beds" until you've done a task (`done>0` or `joined`).
+- **Buying a house**: ~28% of homes are for sale; the resident offers "Buy this house (N gold)" (village 450–750, town 900+, port 800+, city 1,500+). On purchase the house becomes **Your House**, the resident moves out (hidden for good, no one inside), the bed is yours, it's saved (`worldState.owned`), and it gets a **cellar**.
+- **Cellars** (instanced): inns, guild halls, keeps and owned homes have a floor hatch (back corner, ring pull) — "Press E to go down to the cellar" → a stone cellar sized from the building (casks, crates, a wine rack, a chest, a ladder). At the ladder, "Press E to climb up" returns you to the parent room beside the hatch. Sub-rooms carry `parent`.
+- **Windows** are painted backdrops (`windowTexture`): sky gradient by time of day (day with clouds, dawn, dusk, night with stars and a moon), a rooftop skyline with lit windows after dark, mullions and frame. Cached per period; churches keep amber glass.
+- Verified headless (Ironhaven): rent an inn room for 12 gold, then sleep; a stranger's bed refused; bought a house for 900 → renamed, owned, resident gone, own bed free, hatch present; cellar 8×10 with the ladder prompt; guild bed refused as a non-member and offered as a member.
+
+### Not in this pass
+Inn rooms are still the gallery/corridor rooms (rent covers the whole inn for a night, not one door); "more instanced floors" beyond cellars; windows don't show the actual town.
+
+
+---
+
+## v80 — Session 83 — Wishlist chunk 7: forts
+
+- **Compounds** (`buildFortCompound`): every fort exterior now sits inside a **curtain wall** (r 27, 3.2u segments with crenellations, built like town walls) with **four corner towers** and **two taller gate towers** flanking a gate on the road side (the exterior's door faces south, the spur leaves south), **banners** on the gate towers, **torches** that light at night, and **two stone barracks** either side of the yard facing the keep. The compound is a pseudo-settlement (`SETTLE 'fort_<seed>'`) so its rotated wall solids, lamps and disposal ride the existing machinery; it's built with the cell's statics and dropped with them. The fort spur now starts 33u out, just outside the gate. Verified on six forts: walled ring + open gate on all six.
+- **Upper floors** (`addUpperFloor`, engine): fort interiors (`fort_tee`, `fort_linear`, `fort_courtyard`) of medium/large size get a second floor: a 2×2 stairwell in a room far from the entrance, an upper layout of 3–6 rooms joined by corridors and linked to the shaft, `rooms2` for floor-2 enemies, `cfg.floors=2`. The Session-8 spiral stair connects them. Verified on a synthetic tee layout: 6 upper rooms, 133 floor cells, shaft open on both floors, stair 17 cells from the entrance.
+
+### Not in this pass
+Fort basements (an instanced level below — the engine's second floor is above; a downward instance needs the interior-from-dungeon return path). Fort exteriors themselves are unchanged inside the walls.
+
+### Playtest
+- Walk up to a fort: wall, towers, gate, barracks; at night the gate torches.
+- Inside a medium/large fort: find the stairwell in a far room, climb, and see enemies upstairs.
+
+
+---
+
+## v80 — Session 84 — Wishlist chunk 8: Naval II
+
+- **Ship classes and upgrades** at any shipwright (topics are live: purchase before you own one; refit/sails/hold after). **Refit** sloop → cog (900g, 17×5.6) → galleon (2,200g, 22×7); the hull, deck platform, wheel, hatch and cabin all rebuild to the new size. **Sails** three tiers (250/450/700g, +1.2 u/s each; galleon base 9.5). **Hold** two tiers (200/400g): +25 carry weight per tier while aboard or within 20u of her (`maxCarry` reads `WORLD.cargoBonus()`). No hull HP, as agreed. Saved in `worldState.ship` (`cls`, `sails`, `cargo`).
+- **Fish**: swim into a school (within its radius, at its depth) and "Press E to catch a fish" — herring/bream/mackerel in the shallows, cod/silverfin/ling in deep water, char and haddock in cold seas, grouper and snapper in warm; 12% are "Fine" and worth more. Each school rests 18–30 s after a catch. Fish are `misc` items with weight and sale value (food later).
+- **Whales**: up to two in deep water (bed < −6) near a player at sea; 14u body with tail flukes, fins and dorsal, surfacing on a slow cycle with a **spout** (Points) and a breath sound within 120u; despawn beyond 700u.
+- **Pirates board you**: a pirate that has held within 40u of your ship for 12 s and comes inside 16u sends **two of her crew** onto your deck ("Pirates on your deck!"); boarders ride your ship and stay aboard until dead.
+- **Hull collisions**: your ship and every other ship push apart when closer than 62% of their combined lengths, both lose way, a grinding sound and a message.
+
+### Verified (headless)
+Shipwright offers only the purchase before ownership, then refit/sails/hold; refit → cog 17×5.6; sails → 9.7; cargo +50 aboard, 0 ashore; caught a fish at a school with the cooldown then set; two whales spawned while sailing; two boarders on deck after 12 s alongside; hulls pushed to 9.3u apart.
+- Fish schools and wrecks now search nine points per chunk for the right depth instead of testing the chunk centre (shore bands are narrower than a chunk) — schools went from 0 to several around an islet.
+- Islet shelves were cliffs (+7.8 at 60u, −8 at 80u); islets now get their own gentler shore band (`seaAt`), ~50u of shallows for fish, kelp and wrecks.
+
+
+---
+
+## v80 — Session 85 — Wishlist chunk 9: magic
+
+- **Sigils retired.** `touchSigil` no longer teaches — a touch restores 15 mana and says the Mages' Guild teaches now. The sigil objects stay in dungeons as set dressing.
+- **Spell vendors.** Every Mages' Guild steward's dialog (now live/getter-built) lists what they can teach at your rank: **Learn** for a spell you don't know, **Deepen → Comprehension/Mastery** for tiers 2–3. Gating: the seven original spells at tier 1 for anyone (120g), tier 2 at Adept (320g), tier 3 at Evoker (700g); each new spell has its own rank and price (below); the rare ones only appear at Warlock. Intelligence requirements still apply (the steward tells you the number).
+- **Eight new self spells** (`role:'buff'`, cast with F like any spell, cost mana, cooldown, three tiers of duration): **Feather** (+40 carry; any guild, 80g), **Light** (a lantern that follows you; any guild, 60g), **Haste** (×1.5 speed; Adept, 250g), **Water Walking** (the surface is solid ground; Adept, 250g), **Water Breathing** (no breath drain; Adept, 250g), **Shield** (Warding 30/40/50% via the potion buff system; Evoker, 500g), **Night Eye** (ambient light ×3 at night; Evoker, 500g, rare), **Levitate** (no gravity — Space to climb, C to sink; Warlock, 800g, rare). Irish names in the Morrowind manner: Cleite, Lampa, Luas, Siúl Uisce, Anáil, Sciath, Súil Oíche, Eitilt.
+- **Spellbooks**: 7% of chests (dungeon treasure, sea chests, pirate/merchant chests) hold a spellbook for one of the rare four (Night Eye, Levitate, Shield, Water Walking); reading it from the inventory learns tier 1 if your Intelligence allows.
+
+### Verified (headless)
+Rank 0 vendor: Fireball, Feather, Light; Adept adds three; Warlock adds the rare ones; bought Feather (gold 2000 → 1920), Deepen offered after; INT gate refuses Haste at INT 5; a Levitate spellbook read → learned and consumed; Levitate state on; Shield applies a Warding buff ×0.6; the Ironhaven Mages' steward lists Learn topics (Fighters' does not); water walking makes deep water solid ground at 0.06 and isSwimming false.
+
+### Playtest
+- The magic hub UI may still label learning as sigils somewhere; say if you see stale text.
+- Levitate: Space/C while it's on; you can cross walls and water. Duration 25/50/100 s.
+
+
+---
+
+## v80 — Session 86 — Wishlist chunk 10: dialog depth and variety
+
+- **Temperaments**: every generated NPC has one of six (warm, gruff, nervous, pious, sly, weary), hashed from the name, colouring greetings and the goodbye line.
+- **Biographies** (`bioFor`): born here or in another settlement on the continent, years here, trade (by role: farmer, weaver, cooper, fisher, shepherd, thatcher, midwife…), spouse and children, a wish, a worry. *Who are you?* tells it; a **follow-up** (*↳ Anything troubling you?*) unlocks after you've asked — follow-ups appear on the next conversation, since the dialog panel renders its list on open.
+- **Town lords** (`lordFor`): every settlement has a named head — Lord/Lady (city), Mayor (town), Harbour Reeve (port), Captain (garrison), Elder (village) — with a reputation line. Towns and villages spawn them on the plaza by day (cities' lords keep to the keep; the steward speaks). NPCs will tell you what they make of them. This is the hook the quest chunk uses.
+- **Live topics** (built on open, `get topics`): *Any news?* prefers rumours from the world state — black sails off the coast, a guild raid or beast task in this town, night warnings, the province's polity, its lake or peak — over the culture's stock rumours; *How's the weather been?* reads the weather; *Tell me about the land here* names the province's peaks, lakes, rivers and port with directions; *What do you make of X?* gives an opinion of the lord and where to find them; villagers answer *Any work going?* by pointing at guilds and the lord; innkeepers gossip about guests; guards report on the watch; priests give a small blessing (+8 HP).
+- **Memory**: NPCs count meetings (`worldState.met`); a second visit greets you with "Back again?"; guild veterans get "Guildsman", house-owners in that town "Neighbour".
+- **Preserved**: shop *What do you sell?*, house purchases, ferry passage, guild task topics and the shipwright's live purchase/upgrade list all sit above the common topics (via `def._extra`).
+
+### Verified (headless, Hearthwick)
+Niamh (warm): greeting, ten topics, a biography from Glenowen, follow-up after asking, "Back again?" on the second greeting with met=2, a live rumour about Sliabh Mór; Elder Lorcan "fair but tired" on the plaza with his own topics; the innkeeper's guest gossip.
+
+
+---
+
+## v80 — Session 87 — Wishlist chunk 11: the quest system
+
+- **Journal** (`worldState.quests`, saved): the hub's Quests tab now opens with an **ACTIVE** section — town quests (gold bar) and guild tasks (violet bar), each with giver, the giver's words, the objective, reward, and a green tick when done. The old story questlines render beneath.
+- **Town quests** from every lord (village Elder, town Mayor, port Reeve, garrison Captain; in cities the keep's steward speaks for the Lord): *I'm looking for work* / *It's done.* One per town at a time; generated from the world:
+  - **Cull** — kill N of the region's pest (wolves, boars, snow wolves, bog crawlers, scorpions, ash hounds, kobolds) within sight of the town.
+  - **Retrieve** — an heirloom dropped by thieves at the door of a nearby dungeon or fort (a glowing pickup).
+  - **Deliver** — a letter to another town's lord, into their hand (talk to them).
+  - **Find** — a named villager who went out to a camp; they're spawned there when you arrive; talk to send them home.
+  - **Clear the road** — a bandit camp (tents, fire, 3–6 bandits, a captain from level 5) spawns on the town's road when you approach.
+  Rewards 40–130 gold + XP, scaled with level.
+- **Guild commissions** at the rank milestones (`COMMISSIONS`): at 2, 5 and 8 tasks done the steward gives an authored commission instead of a random task — Fighters: *Blooded* (a bandit captain), *Warden's Trial* (an ogre), *Champion* (a frost troll); Mages: *Adept's Reading* (a rogue mage), *Evoker's Proof* (a wisp), *Warlock* (a marsh hag). Bigger pay; the rank follows.
+- **Map markers**: every active objective with a location shows as a gold star on the map (province view and minimap radius), with the objective as its subtitle.
+- Hooks: kills (`qOnKill`), talking (`qOnTalk` — delivery and found villagers), pickups, arrival spawns (`qTick`).
+
+### Verified (headless)
+Hearthwick's Elder handed out deliver / cull / find / retrieve; a cull ran to turn-in (56 gold); a road quest spawned three bandits and a camp on approach and completed on their deaths; Ironhaven's Fighters' and Mages' stewards issued *Blooded* and *Evoker's Proof* at the milestones.
+
+### Not in this pass
+Escort quests; quests that chain from an NPC's "worry" line; town reputation. Old Ashenmoor story questlines untouched.
+
+
+---
+
+## v80 — Session 88 — Wishlist chunk 12: harvestable density and placement
+
+- **Density**: 3–8 herbs per chunk scaled by biome (forest/autumn ×1.3 … dunes ×0.5), up from 0–2. Measured 6–7 per chunk in forest, plains and autumn woods, 4–5 in fen and tundra, 5.5 on coasts.
+- **Hotspots**: 14% of chunks carry a cluster of 8–16 of one herb within ~8u of a point.
+- **Placement logic** (`HERB_PLACE`, `placeCtx`): every herb has preferred contexts — **tree** (within 4u of a trunk; chunks now remember their tree positions), **water** (the shore band, or a river/lake bed within 6u), **sand** (beach), **house** (within 11u of a door), **rock** (steep ground), **open** — and the biomes it grows in. A candidate spot is classified, then a herb is drawn from those that fit (3× weight for a first-choice context). So heartroot, shadowcap and fearnóg hug the trees; muirfhear and duilleog ghorm sit on beaches and by water; goldenrod and veilwort grow beside houses; ferrous weed and stonecress cling to rock. In an autumn wood 260 of 374 herbs were beside a tree.
+- The old region-id → zone pool mapping is gone; generated provinces get the full table by biome.
+- **Fixed on the way**: the keep steward's quest topics referenced `def` before it existed (a job error on every city build).
+
+### Verified (headless)
+Tallies per biome above; largest single-type cluster 16; the capital's keep builds with the Lord's quests on the steward.
+
+## Wishlist status
+All twelve chunks shipped: 1 quick fixes · 2 music · 3 geography II · 4 weather · 5 combat · 6 interiors II · 7 forts · 8 naval II · 9 magic · 10 dialog · 11 quests · 12 harvestables. Holds noted per session (fort basements, escort quests, inn single-room rental, ranges hugging borders, pirate ship-to-ship combat, music balance by ear).
+
+
+### Session 88 hotfix — everything black in cold regions
+Two things, the first the real cause: the seven new biomes (tundra, fen, moor, autumn, dunes, swamp, wasteland) had been added to `BIOME_PROFILES` with only a ground colour, so in those regions the atmosphere summed `undefined` sky/fog/density → **NaN fog** → every fragment black (the sky, which isn't fogged, stayed grey; snow particles rendered black for the same reason). They now carry full profiles (sky, fog colour, fog density, ground) cloned from the plains profile. Second, the weather fog was too heavy and used the near-black night fog colour: capped (storm ~×1.6, fog ~×2.6, less at night), fog colour kept blue-grey at night, and rain/snow particles are no longer fogged.
+
+
+---
+
+## v80 — Session 89 — The freeze: a fixed light pool
+
+**Symptom**: the overworld froze for up to a minute every ~10 s. **Cause**: three.js recompiles every material's shader whenever the *number* of lights in a scene changes, and the world added/removed point lights constantly — lamps with every settlement, camp fires with every chunk, guard torches, quest glows, enemy glows, door and fort-torch lights from the engine's portal meshes. Near spawn the scene held ~95 lights and ~1,400 materials; each change recompiled all of them.
+
+**Fix**: a **light pool** — 24 point lights created once at build and never added or removed. Everything else is a *virtual source* (`regLight`, `VLight`: position, colour, intensity, distance, optional `follow` object) and every quarter second the nearest live sources are mapped onto the pool (`tickLightPool`). Lamps, harbour lanterns, camp/plaza fires, fort and guard torches, task/quest glows are sources; settlement/cell disposal unregisters by owner. Engine-made lights (enemy glows via `mirrorLight`, door glows and fort torches from `spawnPortalMeshes`, herb glows) are caught by `sweepLights()` at the end of each tick: any real PointLight that isn't the pool is removed and mirrored as a source that follows its parent. The scene's light count is now constant (27: pool + sun + ambient + hemisphere). Verified in the browser: 68 → 27 lights; the 3–8 s periodic spikes disappeared.
+
+Also: one shared `MeshLambertMaterial({vertexColors:true})` (`VC_MAT`) for every merged mesh the world builds; shadows are no longer cast by herbs, small props (<80 vertices), NPC trinkets (only body and head cast) or small cell statics — the shadow pass had been doubling ~4,900 draw calls.
+
+### Still heavy (not a freeze)
+~4,800 meshes near a town is a lot of draw calls: NPCs are ~30 meshes each, herbs 2–3, every lantern/sign/lamp its own. Next perf pass: merge settlement props per settlement, merge NPC static parts, instance herbs by type.
+
+
+---
+
+## v80 — Session 90 — Draw calls: baked towns, instanced herbs; grids, boards, lamps
+
+### Layout fixes (before baking anything)
+- **Villages and ports on the street grid** too (villages: 17u blocks, one row per side, lots every 11u; ports 22u). Right angles, clean blocks.
+- **Perimeter lane**: every settlement gets a ring lane at its inner radius; streets run into it instead of ending in a field.
+- **Lamp posts face a direction** (`lampPost(x,z,lit,fx,fz)`): plaza lamps hang toward the plaza, gate lamps toward the road.
+- **Town name boards** replace the stone cairn: a wooden board on two posts beside each road in (up to three), lettered both sides, facing the road; the signpost stays.
+
+### Draw calls
+Census near spawn before: herbs 1,615 meshes (each a group of ~9), cell statics 1,869, settlements ~400+, NPCs 132, enemies 97, chunks 119 — ~4,500 draw calls plus shadows.
+- **Settlement bake** (`bakeMeshes`, `mergeGeos`): every static mesh with a plain lit material in a settlement (buildings, walls, towers, lamp irons, bollards, benches, stalls, quay, breakwater) is merged into 60u cluster meshes with vertex colours on the shared `VC_MAT` — a city is ~17 meshes. Skipped: textured signs, glass/glows (MeshBasic), banners/planes, boats. Fort compounds bake the same way.
+- **Cell statics bake**: door rocks, fort exteriors, signposts' woodwork, camps, name boards → clusters; impostors are flagged `noBake` (they toggle).
+- **Herbs instanced**: one `InstancedMesh` per herb type per chunk from a geometry built once per type (`herbGeoFor`); each herb keeps an empty `h.g` for the engine; harvest/respawn hides/shows the instance via scale (`tickHerbSync`).
+- **Soft rain/snow**: a radial-gradient sprite on the particles (they were hard squares).
+- Result: ~4,500 → ~1,000 meshes near spawn (1,630 with more cells loaded on a walk); shadow casters 279 → ~230; materials 1,363 → 814; light count fixed at 27.
+
+### Verified (headless)
+Villages 8–12 buildings on the grid, no blocked exits; Ironhaven 60 buildings → 69 meshes, the capital 155 → 130; herb instances hide on harvest and return on respawn.
+
+### If it's still heavy
+NPCs (≈30 meshes each, animated) and enemies are the next census entries; chunk terrain + six instanced species per chunk are the floor. `WORLD.setRadius(3)` in the console trades view distance for frames.
+
+
+### Session 90 hotfix — stuck after every teleport
+The render loop was throwing every frame (`isInterleavedBufferAttribute of null`), which stops the game loop — hence frozen but with music. Cause: the "one shared material" change had also swallowed the **scatter** material. Scatter instanced meshes carry per-instance colours; the herb instanced meshes don't; sharing one material between them compiles a shader that expects an instance-colour attribute the herbs never have. Materials are now split by usage: `VC_MAT` (merged non-instanced meshes), `SCATTER_MAT` (instanced with instance colours), `HERB_MAT` (instanced without). Verified: fast travel to Ironhaven, land at ground height, walk.
+
+
+---
+
+## v80 — Session 91 — Playtest fixes I
+
+- **Lights**: the engine re-adds the player's torch light to the scene *every frame*; the sweep mirrored it every time, leaving a fresh stale source per frame — a trail of your own torch positions (the "dense light" and the light left behind on unequip). The sweep now recognises lights it already mirrored (`l._swept`), loose sources expire 1.2 s after the engine stops re-adding them, sources following an object drop when the object leaves the scene, and the sweep runs **immediately before `REN.render`** so a spell projectile or a death glow never changes the light count mid-frame (that was the stutter on casts and kills). Pool mapping every 0.12 s so the torch tracks smoothly.
+- **Ports**: promotion had used distance to the cell's sea *edge*; the coastline is warped by up to ~950u, so ports landed inland (or at sea). Now a candidate walks toward the sea edge to the real shoreline (`seaBare`, stamp-free) and the port sits 62u behind it, with the shore direction recorded (`site.shore`, used by `shoreDir`). Port pads are smaller (flat r 0.72·pad, blend 0.3·pad) and their sea push-back is tight (water at ~0.95·pad) so the quay reaches water. Census: all 40 sampled generated ports have water 40–300u off the quay side (typically 90u), quay over −8u, 0 doors in water.
+- **Drowned towns**: every non-port site is nudged inland until `seaBare < .12` or dropped; pad heights are clamped above the waterline (ports ≥ sea+1.3, others ≥ sea+1.6). 709 sites, 2 marginal.
+- **Fort/cave doors** keep ≥ pad+110u (forts) / +60u (caves) from settlements and out of the sea; 808 doors, 0 overlaps.
+- **Dialog**: top level is the NPC's own business (shop, quests, purchases) plus three folders — *About you…*, *About this place…*, *News…* — and *Passage… (n routes)* for harbourmasters; folders swap the list in place with a ↩ Back. Follow-ups expand inside their folder. The talk prompt shows the NPC's name and role ("Dobra — Harbourmaster — Press E to talk").
+- **Third person**: everything under the camera (viewmodels) is hidden while in third person and restored on exit. (Equipped gear on the body model: not yet.)
+- **Ships**: the shipwright offers **"Fetch the *Gull* to this harbour (25–150 gold)"** when she's more than 140u away — she's brought alongside the quay. Customisation was already there: refit / sails / hold appear at any shipwright *once you own a ship*.
+- **Weather**: rain/snow loop at a third of its level.
+- **Enemies**: HP bars hidden until the creature has taken damage; encounter density ×1.5 again (3.4× the original), road ambush 26%, and a human band (bandits, highwaymen, deserters) is on every table.
+- **Guild halls**: long tables moved into the hall (they sat in the corridor); the gallery is shallower and its stair is on the west wall inside the hall, clear of the dormitories; the Mages' cauldron moved off the stair. Corridor clear along its length.
+- **Forts**: the engine's exterior kit (stray house shells, walk-through walls, grey blocks) is no longer spawned for fort doors; each fort gets a **stone keep** (two storeys, four turrets, banner) whose door is the portal, with solid walls and an open doorway, inside the Session-83 compound.
+
+### Next pass (agreed)
+The five POI types — glades, shrines, monster lairs, towers/spires, bandit camps — and folding the new town/guild quests into the original waypoint-driven quest system rather than beside it.
+
+
+---
+
+## v80 — Session 92 — Five new points of interest; life on the islets
+
+New site kinds, generated like camps and ruins (1–3 per province, on dry ground clear of other sites) and built by `genSettlement` through `buildPoi`; disposed with their creatures, herbs and chest. Map icons and subtitles for each.
+- **Glade** (pad 52): a pond (bowl stamp + water disc, shallow platform), reeds, a fallen log, ten big broadleafs at the edge, a **hotspot of 18 water/tree herbs** instanced onto the site, and 3–5 creatures at the water (boar and wolves; snow wolves in the cold, bog crawlers in fens).
+- **Shrine** (pad 28): a round columned temple — stepped base, eight columns, entablature ring, dome, a lit altar. "Press E to pray at the altar": full HP/mana/stamina and one of five **boons** (Road ×1.25 speed, Stone ×0.75 damage taken, Renewal, the Arm ×1.2 melee, the Mind ×0.7 spell cost) for 30 minutes; once per shrine per game day (`worldState.shrines`).
+- **Lair** (pad 38): a rock pile with a black cave mouth, bones, a **boss** of the region (Ogre or Cave Bear; Frost Troll in the tundra, Ash Wight in the wastes, Marsh Hag in the fens) at ×2.6 HP, ×1.4 damage, ×1.35 size, named after the place, with two dire/snow wolves and **The Hoard** (treasure chest ×2.2). Outdoors for now — the instanced-cavern version with dragons is the next step.
+- **Tower / Spire** (pad 26): a 38u stone spire with a conical roof and arrow slits; its door opens an **interior** shaft (`type:'tower'`, 9×9×31) with a central post and a **helix of 130 treads** (`FOOTHOLDS` spiral, five turns) to a landing at 30u and a treasure room with a chest (`INT_LOOT`, once per spire, ×2.4). Lantern at the door.
+- **Bandit camp** (pad 40): 5–8 tents, a fire with a stake ring, crates and barrels, bones, a stockade of 26 stakes, a black banner, **Bandits' Takings** (chest ×1.6) and **5–15 bandits/highwaymen** under a Captain (from level 4).
+- **Islets**: half of the ocean's islets (82 of 171 on this seed) carry a site — shrines (30), spires (11), lairs (13), glades (10), bandit camps (9), and on the larger ones a **village (5) or harbour (4)** (no lord). Ports there face east and sit back from the water.
+- Fixed on the way: `siteAnywhere` only matched `_s` ids, so nothing new could be travelled to or built; a cylinder built with the colour as its segment count (7 million radial segments) — the spire interior now builds in a blink.
+
+### Verified (headless)
+Site census (185 new POIs); each kind builds with the expected creatures/chests/herbs; prayer restores and grants a boon and refuses a second time; the spire interior registers its helix to 30u and the chest opens once; an islet village of 14 houses at +7u.
+
+### Deferred
+Folding the town/guild quests into the original waypoint quest system — next.
+
+
+---
+
+## v80 — Session 93 — The language purge (build half)
+
+Against `language_audit.md` and the addendum's §10.
+- **Title**: *The Old Gates* (title screen `<h2>`, and a `<title>` tag the page never had). "Dungeon of Shadows" survives only as the name of the one gate under Ashenmoor, in the mouths of the people who live there.
+- **Generic gate language** rewritten in 37 dialog/description lines, dialog strings only (lines carrying `response/label/greeting/desc/…`; code untouched; the proper noun protected): *the dungeons* → *the old gates*; *the dungeon* → *the old gate* / *the gate beneath*; *dungeon creatures/activity/threat/patrols* → *creatures from the gates / activity at the gates / the trouble at the gates / the gate patrols*; *the dungeon populations* → *what comes out of the gates*; *You emerge from the dungeon* → *You come up out of the gate*.
+- **Cardinal roads and the unnamed range**: *the road north / the north road* → *the Ironhaven road*; *the mountains* → *the Grise*; *the road north requires the king's seal* → *the Crown's seal*.
+- **One crown**: *across the realm* → *across the Gatelands*; *Does the kingdom not reach you here?* → *Does the Crown…*; *the mainland* (Inis Rua) → *Carraig Mór*.
+- **Portals** in dev-map descriptions → gates. *The Wastes* → *the Hollowed Wastes* where a place, not a biome, is meant.
+- Kept on purpose (correct under the new canon): every *Royal …* string (the Crown of the Gatelands, spoken on its own island), *the capital* in Gatelander mouths, *the village* from Ashenmoor's own people, *the coast* where it is this coast.
+
+### Not done here
+The two docs (`lore_canon.md`, `quest_writing.md`) — 318 flagged lines — are the author's text; the audit lists each with a rule. Generated-NPC dialog (Session 86) will be re-voiced per people when the `PEOPLES` table lands, which is the next block.
+
+### Session 94b — the block's second pass
+- **Authored cast exempt from the rename**: hero shopkeepers (Bram, Edna, Mira…) pass `authored:true` and are Gatelanders; only generated NPCs take a people's name.
+- **Foreign quarters**: at a port, lots within 34u of the quay build in the *other* nation's style (Gatelands ports get Aurennais plaster by the water, Aurenne's get Markish timber, the Mark's get Gatelander lime) — the blending is visible from the sea.
+- **Tolls and patrols**: Compact harbours tithe passage (×1.3 on ferry fares); the Crown patrols its roads (road-ambush chance 12% on Gatelands roads, 26% in Aurenne, 34% in the Mark).
+- **The Old Blood tattoo**: dark bands at both wrists on the mesh.
+
+
+---
+
+## v80 — Session 95 — Settlement states (addendum §12a)
+
+- **The store**: `worldState.towns[siteId] = {p, flags, builds}` (saved). Prosperity starts from the kind (village 45, town 60, city 75, port 65, garrison 55) ± a seeded jitter. `worldState.favor[siteId]` is the lord's ledger (+1 per quest turned in, +1 per build paid, +2 for a deed).
+- **The generator reads it**: lots built = plan × (35%–100%); shops appear in order by prosperity (forge 0, goods 10, inn 20, apothecary 30, church 35, shipwright 40, armoury 45, guilds 60, keep 80); below 35 half the homes are **shuttered** (no resident, "Gone to the city. Door nailed."); walls need 55 (or a threat); plaza lamps need 40; buy prices run ×1.15 at 10 → ×0.83 at 100 (`priceMulHere`). Verified on a town: 63 buildings at 70 → 38 at 22 with 13 shuttered and the guild halls and church gone.
+- **Variants**: `burned` and `abandoned` build every non-shop lot as a **shell** (black walls, no roof), no residents, no lord, no lamps, `S.dead`; `sacked` shells half. Verified burned → restored.
+- **Drivers**, once per game-day for loaded towns: each cleared road +1 (uncleared −0.15); the nearest lair or camp within 700u −0.6 alive / +0.6 dead; burned/sacked −0.2, plague −1, owned +0.4; a 1%/day drift back to the kind's base. **Roads clear** when a road quest is done or a bandit camp's crew all die (`tickSiteDeaths` also marks lairs dead — *"Fenmouth is quiet now."*).
+- **Sacking**: a bandit camp left alive counts days; at 20 the nearest unburned village or town within 700u is **sacked** (prosperity 15, shells) with a log line. The timer path is in place; the seed's first camp had no village within 700u, so the sacking itself is unverified — try it beside a village camp.
+- **Investment**: at prosperity ≥ 40 and favour ≥ 3 the lord's dialog offers *Pay for a well / inn / chapel / walls / guild hall / harbour* (priced by size; each gated by prosperity); a **scaffold** stands on the plaza for three game-days, then the build lands, prosperity jumps, favour +1. An inn, chapel or guild hall paid for becomes a real shop. Three builds and favour ≥ 5 → *Take the deed*: an owned town pays **weekly rents** to the player.
+- *How fares the town?* reads the state ("prosperous (69) · scaffold · and it counts you a friend"); the map's place panel shows it too.
+
+### Not yet
+Plague from a backlogged gate (waits on the magic block's anchor health); siege and occupation (faction block); pirates sacking ports; the ruin-refounding loop's ruin variant on the map.
+
+
+---
+
+## v80 — Session 96 — The map's town card; magic reconciled (addendum §7, §4.1)
+
+- **Map hover card** (`townCard`): hovering any settlement on the map shows a card at the cursor — name, kind, nation, culture and lord; **prosperity** with its word; **services** (from the built town, or from the plan gated by prosperity for one you haven't visited, plus anything you've paid for); **guild halls**; **people** (a real census if the town is built, an estimate otherwise); **issues** (flags, a live lair or bandit camp nearby, unpatrolled roads, shuttered homes).
+- **Guilds cap at Comprehension**: the Mages' vendors offer Learn and one Deepen; nothing past tier 2.
+- **Sigils teach again** (`touchSigil`): a touch resolves the next tier — Impression, Comprehension, then **Mastery, which only a sigil gives**; Intelligence still gates it; an **Old Blood player's first touch resolves at Comprehension**, and every Mastery touch adds to `worldState.cold` ("Something at the edge of your attention turns to look. You are colder."). Mastery touches are recorded per gate (`sigilsRead`).
+- **Sigil gates** are flagged at generation: every fort and one gate in four (`e.sigil`). On this seed 368 of 803.
+- **Finding them**: Mages' stewards sell a **rubbing** (60g) of the nearest unmarked sigil gate within 2,600u; reading it stars the gate on the map. Rumours mention warm stones with a direction. The new spell **Súil an Fhíodóra, the Weaver's Eye** (Adept, 180g) turns the compass toward the nearest unread sigil gate for 60/120/240 s.
+- **The Makers at their shrines**: each shrine belongs to one of six gods by hash — An Mhuir, An Spéir, Na Beithígh, An Chloch, An Teallach, An Fíodóir — the dome tinted by god, the site renamed *Shrine of An Mhuir*, the prompt naming them, and the boon fixed by domain (the Weaver gives a rubbing instead). The Guest has no shrine yet (§4.2 next).
+
+### Verified (headless)
+Card for a built town and an unbuilt port; 368 sigil gates; a steward sold a rubbing; the Eye found a gate; a shrine named and praying gave its god's boon.
+
+
+---
+
+## v80 — Session 97 — The reader (addendum §6) and the Guest's chapel (§4.2)
+
+- **State read** (`worldState.varek`): `deaths` (counted in `playerDead`), `gapH` (the real-clock gap between sessions, noted on load; the clock is stamped each minute of play), `shortRoad` (the first place fast-travelled before any of its roads had been walked; roads walked are logged as the player stands on them), `chapel`, and `masteries` (Mastery touches).
+- **Discoveries due**: *returns* — a Mastery touch and one death; *breath* — a Mastery touch and a session gap ≥ 6 h; *map* — two Masteries and a short road; *chapel* — the prayer below. Each once.
+- **The fields**: the Ashfeld on the home island; on the Mark and Aurenne, the bleakest site (a ruin or a camp) nearest the nation's centroid. When a discovery is due and the player comes within 420u of their nation's field, **Varek** stands there — Old Blood, weary, no role — with the line for that discovery ("Someone is standing at the field, looking out."). Talking marks it done; he's gone when you've walked 90u away.
+- **His lines** are the addendum's drafts, in his idiom: the returns (*"Áine's brother died in the Mouth… You didn't. I watched."*), the held breath (*"Nine days passed for me… I could tell by your boots."*), the map (*"You walked to X by the shortest road on your first day."*), and after the chapel he asks no question — he watches your hands.
+- **Cill an Aoi**: the cathedral of Aurenne's capital (Fortargent on this seed) has a bricked stair in place of a cellar; below is a chapel with a broken wall to step through, a dais, a **statue with no face**, cold candles and pews. "Press E to pray": the screen goes black for four seconds with the HUD lit and the world's sound running; then one line in the log — *It saw you.* — and Varek's next appearance is the chapel one.
+
+### Verified (headless)
+Fields for all three nations; Varek at the Ashfeld with the returns line after a death and a Mastery; talking clears it; a 9-hour gap queues the breath; the cathedral's stair leads to Cill an Aoi and the prayer flags the chapel (the black overlay itself is DOM — check it in the browser).
+
+
+---
+
+## v80 — Session 98 — Trade routes
+
+- **Opening one**: a lord (or a city's steward) with favour ≥ 1 in a town of prosperity ≥ 30 offers *Open a trade route to X* for every road-connected town (120 gold + the road's length ÷ 6). Both ends gain a point of favour and the route is saved (`worldState.routes`). Lord offers — routes and the investment menu — are now evaluated when the dialog opens, not when the lord was made.
+- **The caravan**: a merchant of the nation (Tadhg, Merchant) walks the road between the two towns with a laden mule and a cart — one leg out in the morning, back in the afternoon, position by the hour along the actual road spline. Spawned when you're within reach of the route, talkable (*What are you carrying?*; a small stock of rations, oil and cloth).
+- **Effect**: +0.8 prosperity at both ends per game-day while the route runs (measured: 45 → 46 in two days) — and it shows in the town card's services.
+- **Breaking**: a bandit camp alive within 500u of the road's midpoint takes the caravan — the route is *broken*, logged, and the lord offers to reopen it once you've dealt with the camp (`lairs[campId]` dead).
+- **Map**: open routes draw as a firm brown line along the road; broken ones in red dashes.
+
+### Coach lines (agreed shape, next after factions)
+The rail idea in canon-appropriate form: pay to raise a **coaching road** between two cities — waystations, milestones, a coaching inn at the midpoint, real objects on the map — and a **coach** runs it on a schedule you can board at either end and ride along the road spline, the ship's-deck mechanic on land. Prosperity for both cities; fast travel stays for the instant option.
+
+
+---
+
+## v80 — Session 99 — Factions (addendum §8.4) and the anchored places (§9)
+
+- **Anchored places** (`anchoredPlaces`, solved once over the whole continent, deterministic from the seed): **Caer Slige** — the Mark's garrison (or town) nearest the strait, the League's seat; **The Spire of Caer Slige** — the nearest spire; **Port Blackhand** — the Mark's port nearest the strait; **Fortargent** — Aurenne's capital, the Compact's seat, with Cill an Aoi beneath its cathedral; **The Salt Mouth** — the Aurennais lair nearest the strait, flagged for a dragon; **The Root** — the easternmost islet lair. Sites are renamed in place and carry an `anchor` tag.
+- **Factions** (`FACTIONS`, `worldState.factions`): the Crown (seat Coeur de Vie; Commissioner → Warden of Roads → Knight of the Gates; a keep at the top), the Captains' League (Caer Slige; Sworn → Reeve → Captain; a garrison), the Compact (Fortargent; Clerk → Factor → Prior; a house and a ship). At each seat the lord (or keep steward) offers *Serve the Crown/League/Compact* — a service is a town quest flavoured and counted; three services a rank. **Exclusivity**: past another faction's second rank, a seat answers *"the Crown has your oath. We don't share."* Rank 3 offers *Claim …* (a keep or house deeded to you). **Perks**: shops of the faction's nation discount 5% per rank; ferries free at rank 2.
+- Cities without a keep building (Coeur de Vie among them) now put their Lord on the plaza like a town, so every seat has a voice.
+
+### Verified (headless)
+All six anchors resolved; the Crown's seat at Coeur de Vie issued a service, three turn-ins made a Commissioner; Caer Slige's Reeve refused service at Crown rank 2; the capital's price multiplier reflects rank.
+
+### Next
+Coach lines (the rail idea in canon form); then the acts.
+
+
+---
+
+## v80 — Session 100 — Coach lines
+
+- **Raising one**: a lord of a town/city/port at prosperity ≥ 50 who counts you a friend (favour ≥ 3) offers *Raise a coaching road to X* for every road-connected town, city or port (600 gold + half the road's length). Both ends gain +3 prosperity at once, +1 per day after, and two favour. Saved in `worldState.coaches`.
+- **What appears on the road** (`buildCoachLine`): **milestones** every hundred units along the verge; a two-storey stone **coaching inn** at the midpoint on a pad of its own, with a lamp lit at night; and the **coach** — a red-lacquered body with windows, four wheels, a driver's box, and two horses in the traces.
+- **Schedule**: the coach waits at a station and leaves the near end at **06:00** and the far end at **18:00**, running the road at 13 u/s (a trot). At a station: *Press E to board the coach (leaves at six)*; on the road: *Press E to swing aboard*. Riding, you sit the coach and it carries you along the actual spline — the ship's-deck idea on land — and *Press E to step down* puts you on the verge.
+- **Map**: coaching roads draw as a paved double line, distinct from trade routes' single brown line.
+
+### Verified (headless)
+Ironhaven → a neighbour: offer, raise, line built (278u), the coach left at 06:03, boarded on the move, rode the whole road (u 0 → 1) 0.3u from the seat, stepped down.
+
+### Not yet
+Coaching inns aren't enterable; the coach doesn't stop at the midpoint inn; no coach when the road is broken by a camp (it should — same rule as the caravan).
+
+
+---
+
+## v80 — Session 101 — Standing on the character sheet
+
+The Attributes tab gains a **Standing** section beneath the derived stats, rendered from world state each time it opens, and its header line now reads *Warrior · Level 1 · Old Blood · in the Gatelands*.
+- **People** (and, for the Old Blood, the Cold).
+- **Each faction**: rank and services (*Commissioner · 4 services*), the house held at rank 3, or *closed to you* when another faction has your oath.
+- **Each guild**: rank and tasks, or *not a member*.
+- **Friend of**: every town with favour ≥ 3, with the number; **Unwelcome in** for ≤ −2.
+- **Holdings**: town deeds, houses, the ship and her class.
+- **Roads**: trade routes and coaching roads opened.
+- **Varek**: how many times he has spoken to you, once he has.
+
+Verified in the browser with a seeded state. A fuller overhaul of the sheet (layout, the derived grid, equipment summary) is still owed; this is the section that was missing.
+
+
+---
+
+## v80 — Session 102 — The acts (addendum §8)
+
+A story state machine in the journal (`worldState.story`: act, step, proof, choice, ending), Act I untouched.
+
+**Act II — The Widening Dark** begins when Aldwyn's commission is taken (`worldState.commissioned`).
+- *corwin*: **Corwin** waits at whichever harbour you land at (spawned by the nearest port, re-voiced per step, gone when you leave). He has seen the etching at three quays: *"not clearing them — writing over them."* Say you'll go, and the three **etched gates** are chosen — a sigil gate near Ironhaven, one near Caer Slige, one near Fortargent (`etchedGateFor`, flagged `etched`, starred on the map).
+- *proof*: entering each etched gate's portal counts (`onEnterPortal`, hooked where the engine sets `currentPortal`); *"One. Two. Three."* Then the courier step.
+- *courier*: Corwin names **Oswy Blackhand**. Off **Port Blackhand** a black-sailed ship rides at anchor, the *Kestrel*, her captain named and doubled in health; board her and **Oswy's Log** is in the captain's chest. Taking it moves the story to the Ashfeld.
+- *ashfeld*: at the Ashfeld **Varek** waits with the log's meaning — *"Sailors think someone is behind them. Someone is. It isn't me."* — and the etching explained as shutters, not theft. Three choices: **stop**, **help**, or **neither — see it first**; each sends you to the Root and opens Act III.
+
+**Act III — What Was Bound**: *"The Root, under the water off Aurenne's far shore."* Kill what guards the Root (its lair beast) and Varek stands at the mouth: *"When you look at me — what is between us?"* — and the answer the addendum drafted: *"You took too long to answer. That's the answer… I was the whole of your evening."* Three endings — **break it** (unbound: the world's release; a carry-over of name, people and one item is stored for the remade world), **seal it**, **leave it open, knowing** — each with an ending screen, a log line and a flag (`unbound`, `knowing`).
+
+- The discovery-reader Varek (§6) stands down while the story has him at the Ashfeld or the Root; story targets are gold stars on the map.
+
+### Verified (headless)
+Commission → Act II; Corwin at Woushstouir; three gates chosen and entered → courier; Oswy's ship and log at Port Blackhand; the Ashfeld choice → Act III; the Root's beast dead → Varek → the *open* ending.
+
+### Honest gaps
+The Root is the outdoor lair for now (the instanced cavern is still owed); *unbound* stores the carry-over but does not yet remake the world on a new seed (a title-screen hook); generated gate names in the proof step are the engine's plain ones ("the undead gate") — they want canonical names.
+
+
+---
+
+## v80 — Session 103 — The Root as a cavern; the loom released; gate names
+
+- **The Root is a cavern**: the anchored islet lair carries a portal door (`seed 9001`, large, *deep* theme, very hard, a sigil gate) beside the lair's mouth; the engine builds and runs it as any dungeon. The story now waits for you to **come up out of it with everything inside dead** (`onLeavePortal`, hooked where the engine surfaces you and reads `ENEMIES.every(dead)`); then *"The Root is quiet. Something is standing at its mouth."* and Varek is there. The outdoor beast at the lair still stands guard in the open.
+- **The loom released**: the *unbound* ending stores a carry-over (name, people, one item, a seed) in `localStorage.og_carry`. The world's `SEED` now reads it, so **a new game after that ending builds a different archipelago**; the creation screen pre-fills the name, sets the people, drops the carried item in the bag, and logs *"A new world. The same name; one thing carried through."* The carry is consumed once.
+- **Canonical gate names**: every generated gate is named at generation in its province's tongue by theme — *The Sepulchre of Dowoura*, *Trobrou Den*, *Diatriair Tower*, *Gonaen Gate*, *The Cold Barrow* — so the proof step, rubbings, rumours and the map all speak of places rather than "the undead gate".
+
+### Verified (headless)
+Gate names on a province; the Root's door built in the world at the lair; leaving the Root uncleared brings no one; leaving it cleared brings Varek to the mouth.
+
+
+---
+
+## v80 — Session 104 — Playtest fixes II
+
+- **Vitals in the hub**: a strip along the bottom of the pause menu with Health, Mana and Stamina bars and numbers, live under every tab (refreshed five times a second while the hub is open) — drink in the inventory and watch the bar.
+- **Dialog folders** now use the engine's own `follow` mechanism: choosing *About this place…* answers with a line and lists its topics, and *← Back to topics* rebuilds the full list. The list-swap that produced the empty "Back to topics" screen is gone. Folders open with a phrase of their own (*"News travels slow here. What I have:"*).
+- **Greeting asides** about your people come on a first meeting only and as an aside — *"You're Aurennais, by the look of you. Their ships come back. Ours don't."*; kin get *"One of our own, friend."*
+- **The map card** is legible (explicit parchment-on-dark colours, Georgia) and every **issue says what to do** — *roads unpatrolled — clear the road (a quest from the lord) or open a trade route*; *bandits at Fenmouth — clear the camp*; *homes shuttered — raise prosperity: clear roads, kill the nearby beast, pay for a well*; *route broken — clear the camp on the road, then reopen it with the lord*.
+- **The story never dead-ends**: if the crypt is done and *First Blood* is still locked, the log opens it; and the journal now leads with a **NEXT** card for every available quest — *First Blood — speak with Bram in Ashenmoor to begin.*
+
+Verified in the browser: NEXT after the crypt; the vitals strip; a villager's folders and Back.
+
+### Still owed
+The broader pause-menu overhaul (layout, typography, the derived grid, equipment summary); generated dialog is still thin in places — the *About this place* folder for a villager shows two topics, because the rest are filtered by role; worth a pass that gives every role six or so.
+
+
+---
+
+## v80 — Session 105 — The main story is handed to you; compass and world markers
+
+- **Auto-assign with the popup**: every main-story quest after the crypt carries `autoAccept` + `showAcceptPopup`, so completing one activates the next and shows the quest-preview modal (the one from the game's opening). A guard in the frame loop repairs the chain too: if a main quest is complete and what it unlocks is still locked (older saves, the crypt), the next goes active with the popup and a log line — nobody has to find Bram to learn there's a quest.
+- **Markers, the Oblivion way, on the dynamic world** (`WORLD.compassMarkers` → `getActiveQuestMarkers`): **red** for doors and portals — the etched gates, the Root, rubbed sigil gates, guild *clear* tasks — and **green** for people, items, creatures and places — cull/road/retrieve/find/deliver targets, the giver to report to, guild tasks, Corwin at the nearest harbour (or himself when he's there), the *Kestrel* or Port Blackhand, Varek at the Ashfeld and the Root, the reader at his field, and the authored giver of the next available main quest (Bram at his door). Each marker is a tick on the compass and a bobbing cone in the world at the target's own ground height, through the engine's existing renderer.
+
+### Verified (browser)
+Crypt complete → *First Blood* active with the popup; markers: *Wolves* (green), *Corwin — Cluainlough* (green), *The Dungeon of Shadows* (red); cones present in the scene.
+
+
+---
+
+## v80 — Session 106 — The piercing note; one icon family
+
+- **Music**: every voice now has a ceiling (strings 79, horn 74, flute 81, harp 86, choir 77, bells 88 in MIDI) and any note above it drops octaves until it's under — the octave-up repeats in *Sails at Dawn* and *Wide Water* were sending the flute and harp into the whistle register.
+- **Icons**: `iconHTML(it)` renders every inventory/equipment icon as one badge family — a rounded square coloured by **material or tier** (wood, bronze, iron, steel, silver, gold, mithril; leather, cloth, bone, obsidian) with a **glyph by kind**: sword/axe/mace/bow/staff for weapons, helm/tunic/breeches/boots/gloves/ring/amulet/shield by armour slot, a vial tinted by potion effect (red heal, blue mana, green stamina), a leaf for herbs, a book for spellbooks, a scroll for rubbings, a coin for gold. Applied everywhere `${it.ico}` / `${item.ico}` was rendered. Variants of one kind now read as the same thing in a different metal, the RuneScape way.
+
+Verified: parse; the badge markup is inline CSS so it needs no stylesheet change. Check the badge size against the list rows in play.
+
+### Session 106b
+- Equipment glyphs are neutral (near-black) inside the badge so the material colour carries the meaning; potions, herbs and books keep their tint.
+- The player doll renders equipped items through the same badge (slot renders that printed `.ico` now call `iconHTML`).
+- Still owed: the tooltip\x27s "Type undefined" for equipment; the wider pause-menu layout pass.
+
+
+---
+
+## v80 — Session 107 — The pause menu
+
+- **The paper doll** draws equipped items through the badge family (30px, neutral glyph on the material colour) and empty slots as a dim neutral glyph on a dark badge; the quick equipment strip likewise.
+- **Tooltips** name a type for everything — *Weapon*, *Armour — Feet*, *Shield*, *Ring*, *Amulet*, *Potion*, *Herb*, *Spellbook*, *Rubbing*, *Sundries* — no more *undefined*.
+- **Layout**: one stylesheet block gives every panel the same rhythm — Georgia throughout, tab labels with a gold underline on the active tab, uppercase letter-spaced section headings with a rule, sectioned cards on the Attributes tab, rounded equipment slots that light when filled, 30px list rows sized to the badge with a hover, consistent label/value rows in tooltips, a styled scrollbar, and room at the bottom for the vitals strip.
+
+Verified in the browser: doll head slot renders the badge; five badges in a seven-item bag; type words. Layout is CSS-only, no renderer changes.
+
+
+---
+
+## v80 — Session 108 — Consumables by effect; the Character tab; dialog depth
+
+- **Consumable badges** are coloured by what they do, for potions and herbs alike: red restores health, blue mana, green stamina, violet for other elixirs (reads the item's `heal / mana / stam` fields, then its name). Heartroot is blue.
+- **The Log tab is now Character**: **Renown** (Fame = quests ×2 + lairs ×3 + faction ranks ×5 + favour; Infamy = negative favour ×3 + pirates/townsfolk), days passed, quests complete, monsters killed, gold acquired, items sold, Mastery sigils, deaths, lairs cleared — counters in `worldState.stats` (kills via the guild kill hook, gold and sales via turn-ins and the sell action); then **Standing** (moved from Attributes, which keeps a hidden copy for it); then the **Journal** as before.
+- **Dialog depth**: fifteen new topics tagged by folder so every role fills out — *About you* 6–7 (what do you do, family, how long here, what do you want, your people…), *About this place* 11 (who runs things, where to sleep, what can I buy — listing the town's actual shops —, the law here by nation, the nearest old gate with a direction and whether it's warm, how things are honestly — reading prosperity), *News* 6 (what of the Crown/League/Compact, word from the sea — pirates if they're out —, how's trade — reading routes —, heard anything strange — the field, the etching, the bricked room). Verified: Villager 7/11/3/6, Smith 6/11/3/6, Guard 7/11/3/6.
+
+
+---
+
+## v80 — Session 109 — Enemy behaviour
+
+Layered over the engine's chase-and-hit in the world tick (`tickBehaviours`). The engine has no `locked` — the flag I'd used on sharks was CSS — so kiters and cowards are taken out of its alert state and driven here; sharks now simply drop alert while you're out of the water.
+- **Archers** (`Bandit Archer` L2, `Goblin Slinger` L1, and Cultists): hold 8–14u from you — back off inside 8, close from beyond 14, strafe between — face you, and loose an arrow every ~2.5 s within 26u (the volley arrows from the pirates: an arc, a hit if you're still there, blocking halves it). They give up beyond 40u. Archers sit on the plains, coast and road-ambush tables, and every bandit camp has three.
+- **Cowards** (Kobolds, Goblins): below 40% health they run to the nearest unalert friend within 70u — *"The kobold runs for help."* — wake everything within 12u of them, and rejoin the fight. Once.
+- **Packs** (wolves, dire and snow wolves, ash hounds): with two or more alert, each takes a slot around you (spread evenly, rotating slowly) and slides toward it while the engine's chase closes — they circle to your flanks instead of stacking in a line.
+- **Bosses** (lair beasts, captains, trolls, ogres, wights, hags, bears): at half health a second phase — *"X roars."*, speed ×1.3 — and every 6 s within 7u a **telegraphed heavy**: *"X winds up."*, a one-second swell of the mesh, then ×2.2 damage if you're within 3.2u (blocking cuts it to a third) or *"You step clear."*
+
+### Verified (headless)
+An archer kited from 3u to 8u and loosed two arrows while the engine's alert was off and ours on; three wolves spread to 117° around the player. Cowards and bosses read `hp/maxHp/spd/dmg`, which the engine's records carry (the harness stub doesn't), so those two are on you to feel: back a kobold into a corner, and take an ogre to half.
+
+
+---
+
+## v80 — Session 110 — The freeze on a kill in dungeons; combat parity
+
+- **The freeze**: the same disease the overworld had in Session 89. Dungeon enemies carry a point light for their eyes; when one dies the light leaves `dScene`, the light count changes, and three.js recompiles every material. The world's pool only guarded the world scene. Now **every non-world scene gets its own pool** (`_sweepScenePool`, 20 lights per scene, dungeons and interiors alike): every other PointLight — torches, eye glows, corpse glows, spell lights — becomes a virtual source following its parent, and the nearest twenty are mapped onto the pool before each render. Verified on a synthetic dungeon: 30 torches + 6 enemies → 20 lights; a kill → 20; a new corpse glow → 20. As a side effect dungeons with fifty torches now light with twenty real lights, the nearest ones.
+- **Parity**: the four behaviours (archers, cowards, packs, boss phases) are zone-agnostic — the active zone's enemy list, scene, ground (`activeTerrainH`) and collision (`dSolid` in dungeons) — and run from the frame loop while you're in a dungeon (the world tick doesn't run there). Arrows track the scene they were loosed in and are ticked in dungeons too.
+- **Still different, by design**: dungeon enemies are the engine's dungeon roster (its own AI base, spawn rules and corpse loot via `CORPSES`); world enemies are the zone roster with `ZONE_CORPSES`. Both loot on E. What differs now is content — which creatures — not behaviour.
+
+
+---
+
+## v80 — Session 111 — Dungeons: stairs go down, look-at looting, variance
+
+**Stairs go down.** `FLOOR2_Y` is −5: the second floor lies *below* the first. Everything that assumed "up" was flipped: the helix resolver walks in either direction; with a stairwell the ground base is the *lower* floor and floor one is a platform with the shaft as its hole (so you step into the well and descend, and there's nothing to fall through at the top any more); which floor is live follows your height either way; the shaft is a hole in floor one's floor and has no ceiling on floor two; the post, risers and shaft walls are sized by magnitude. A **railing** — posts every third tread and a rail — runs the outer edge of the helix. Verified: the resolver walks 0 → −2.5 → −5 monotonically; beside the shaft on floor one you stand at 0.
+
+**Look-at looting.** A corpse, chest, barrel or crate counts only when it's under the crosshair (within ~14°, within 3u, roughly level) — `lookingAt(c)` replaces the radius searches in the E handler and the prompts, in dungeons and the world. The crosshair turns to a gold ◇ when E would open something.
+
+**Variance** — a decoration pass after any generator (`decorateDungeonRooms`), so it scales:
+- **Room types** by theme and seed, about half of rooms ≥4×4: *shrine* (altar, candles, a warm light, sometimes an urn), *library* (shelves with coloured spines, a reading table), *barracks* (cots, a weapon rack), *flooded* (a dark water plane and a blue light), *collapsed* (rubble and a fallen beam), *ossuary* (bone shelves, scattered bones, a sarcophagus), *treasury* (urns and a rack).
+- **Traps** in corridors, 2–5 per gate: **spike plates** (step on one — spikes rise, 8–15 + level damage, re-arm in 3 s) and **swinging blades** (a blade sweeps a corridor cell on a pendulum; 10 + level, blocking cuts it).
+- **Containers**: urns (coin, a potion, bones), sarcophagi (a silver ring, coin, grave dust) and weapon racks (an iron sword or helm, arrows) join `BARRELS`, so loot, prompts and look-at all see them.
+
+Verified in a large *deep* gate: 17 rooms, 5 typed; 1 urn, 2 sarcophagi among 31 containers; a blade and two spike plates; stairwell descending; 20 pool lights; no errors.
+
+
+---
+
+## v80 — Session 112 — Dungeon feel: sounds, monster detail, exteriors, lockpicking
+
+- **Doors** creak — old wood on iron, then the latch — open and shut; unlocking is two pin clicks and the bolt.
+- **Monster voices** by kind (`_voiceOf`): growl (wolves, hounds, boar, bear), rattle (skeletons), moan (ghouls, wights, wraiths, hags), chitter (goblins, kobolds), roar (ogres, trolls, golems, dragons), hiss (spiders, scorpions, crawlers, rats), shout (bandits, captains, cultists, archers). Every creature calls once on **detection** (a longer, louder phrase) and again every 2.5–6.5 s while within 14u, volume by distance — a dungeon is never silent when something is near.
+- **Hit sounds** by weapon class and resistance, at every melee/arrow hit site: **slash** — a wet *shhk* or, resisted, a ringing clang; **pierce** — a *thk* or a *tink* off armour; **blunt** — a crunch with a low thud, or a dull thud when the thing shrugs it. Resisted means the enemy's resistance to that class is below 0.8.
+- **Monster detail** (`detailEnemyMesh`, once per creature, dungeon and world): wolves get ears, a tail and fangs; boars tusks and a bristle ridge; bears ears and claws; skeletons ribs and a spine; ghouls claws and a torn collar; wights, wraiths and ghosts a spinning rune ring; ogres and trolls horns, a shoulder yoke and a club; goblins and kobolds big ears and a knife; spiders and scorpions a spiked tail; cultists a hood and a red sigil; captains a crown and a cloak; archers a bow across the back and a quiver; bandits a hood, a pauldron and a belt; hags a hat and a nose; rats a tail; anything else a belt so nothing is bare. A skeleton went from 7 parts to 13.
+- **Exteriors** (`dressPortalExterior`): three dressings per gate by seed from skull stakes, hanging chains, a dead tree, scattered bones, a cairn, ground mist that breathes, and ravens. **Sigil gates glow** in their theme's colour — undead violet, goblin green, elemental orange, deep blue, haunted teal, ruins and forts gold — a light that pulses, five lit runes over the arch, and 28 motes spiralling up. Nine glowing gates in the home ring: gold, blue, teal, orange.
+- **Lockpicking**: the floating gold key is gone. Locked doors are picked: **Lockpicks** (12 gold for three at goods shops; also in urns); chance = 35% + Finesse × 7% + level, capped at 92%; three pin-clicks, then *"The lock gives."* or *"The pick snaps."* (a pick is lost). Picked locks are counted for the Character tab.
+
+Verified in the browser: 39 mist planes and 9 sigil glows in the loaded ring; every enemy detailed in the world and in a large gate; no keys; a locked door picked at 36% (three picks left); no errors.
+
+### Session 112b — Strange Markings
+The Session-96 sigil-touch block returned before the quest hook and the first-visit bookkeeping that followed it, so touching the sigil taught the spell and never advanced *Strange Markings*. The hook (`checkQuestProgress(\x27touch_sigil\x27, …)`) and the sigil-lore unlocks now fire on every exit of the block — learned, Intelligence-gated, or nothing more to learn. Verified: active → reward on a floor-two touch.
+
+
+---
+
+## v80 — Session 113 — Playtest fixes III
+
+- **Look-at looting used the real view.** The Session-111 cone tested pitch with an assumed sign, and this camera's pitch is *negative* looking down — so only a level gaze passed, above the thing. `lookingAt` now takes the camera's world direction and the target's actual height (floor + the container's own), and standing within a unit of something counts regardless. Verified: a chest 2.2u away — looking down at it: yes; level: no; up: no.
+- **Empty things say so**: looking at a corpse, chest, barrel, crate, urn or sarcophagus with nothing in it shows *Chest — empty* / *Skeleton — empty* under the crosshair, and no E prompt.
+- **Skeletons are skeletons**: the solid torso is hidden and a spine, four ribs, a pelvis and a collar bone stand in its place (limbs and head kept). 16 parts, 1 hidden.
+- **Pitch** runs to ±83° (was ±29°) on mouse and touch.
+
+
+---
+
+## v80 — Session 114 — Playtest fixes IV
+
+- **Looting is pointing, nothing else.** The "standing over it" fallback let you loot facing away within a unit; gone. Every remaining radius search — the corpse prompt, the chest `_near` flag, the barrel prompt — now goes through `lookingAt`, and the cone is tighter (dot > 0.96, ~16°). The camera's real view vector against the container's real height, in every zone.
+- **Stair rail**: while you're between floors inside the stairwell's footprint, your radius from the post is clamped to the helix — you can't step off the outer edge into the walls or into the post. (The helix already fits the 2×2 shaft; the falls were off its edge.)
+- **Exteriors**: the grey sheet was the mist plane — it's a drifting cloud of soft points now. And each gate gets a **set piece** by seed that changes its silhouette: a ring of standing stones, a ruined arch with fallen blocks, a broken tower stub with rubble, or a sunken approach with steps and posts (or none) — on top of the three small dressings and the sigil glow.
+- **The torch in a dungeon**: the scene-pool's "already swept" flag was global, so a torch light swept in one scene was removed on sight in the next and never given a source there. The flag is per scene now. Verified: a torch-coloured pool light at the player inside a gate.
+- **Traps**: blades sweep ±24° (was ±63°) on a shorter arm, so they stay in their corridor cell instead of cutting through the walls.
+
+
+---
+
+## v80 — Session 115 — Playtest fixes V
+
+- **Spike plates** (the trap in the screenshot — Session 114 had misread the note as the blades): a plate is only laid on a true corridor *run* (floor two cells further on each side along the corridor, wall to both sides), so never against a wall face or in a doorway; the plate is 0.62 wide with spikes inside ±0.18 and 0.34 tall, so nothing pokes into the walls.
+- **Room clutter**: the decoration pass keeps an occupancy map seeded with the engine's barrels, crates and chests; every prop is placed only where it's clear, centre pieces (altar, table, beam) need a clear 1.1–1.2u, containers 0.6u; rooms must be ≥5×5 to be typed; the stairwell's room and rooms the engine has filled with chests are left alone; rubble is sparser and keeps a 1u margin from the walls.
+- **The stair entry**: the helix now **starts on the open side** of the shaft (the first neighbour that isn't wall — floor or doorway) and a **landing** — a quarter platform at floor level with its own tread — sits there, so you walk onto the stairs instead of dropping into the well. The spiral foothold carries the start angle and the resolver honours it. Verified on the Dungeon of Shadows: landing at 0, first tread at 0, the approach open through the doorway cell.
+
+
+---
+
+## v80 — Session 116 — The stairwell stands in the open
+
+The Session-115 landing solved the wrong half: it picked a side, but the generators could still put the well against a wall next to a corridor mouth (a 2×2 shaft in a 3×3 room touches every wall). Now the placement itself is fixed, in both generators:
+- **Floor one**: the well goes in the **biggest room of at least 5×5** away from the entrance (falling back to any room away from the entrance), at the room's centre, and a **ring of floor is carved** around the 2×2 shaft so it's open on all four sides.
+- **Floor two**: a **6×6 chamber** is carved around the foot of the stairs and joined to the nearest room by a corridor, on both floor-two builders (the main generator's and `addUpperFloor`'s).
+- **The landing faces the way in** — toward the dungeon entrance — rather than "the first open side".
+
+Verified on three seeds: floor one 12/12 cells open around the well in 9×9–10×9 rooms, landing toward the entrance; floor two 12/12 open and every cell of the lower floor reachable from the foot of the stairs.
+
+
+---
+
+## v80 — Session 117 — Lair caverns and dragons (addendum §5, §9)
+
+- **Every lair has a cavern.** At cell generation each lair site gets a portal beside its mouth (`lairDoorFor`: seed from the site id, *deep* or *haunted* by biome, medium — large for a dragon's — hard or very hard, named *"X's Lair — the cavern"*), carrying a `lair` record (place, boss, dragon). The beast at the mouth still guards the approach. 32 caverns on this seed.
+- **The master and the hoard** (`lairFinish`, after the engine builds the dungeon): the enemy farthest from the entrance on the lowest floor is promoted — renamed *"Fenmouth — Ogre"* or *"Fenmouth Wyrm"*, health ×3 (×6 for a dragon), damage ×1.6 (×2.2), mesh ×1.5 (×2.6), `boss` — and a treasure chest is set beside it: gold scaled by level, a tiered weapon or cuirass in iron/steel/silver (silver/gold/mithril for a dragon), greater potions, and dragon scale from a wyrm. *"Something large is waiting further in."*
+- **Dragons.** Canon's antibodies with wings: the **Salt Mouth** (anchored) and about one lair in twelve by hash. Outside, the mouth beast is a Wyrm (health ×5, mesh ×2.4). Inside, the master is a Wyrm. `detailDragon` grows the body: a four-segment neck, a horned head with ember eyes, two membrane wings on spars that **beat while alert**, a five-segment tail with a spike, dorsal spines. **Breath**: within 11u every 5.5–7.5 s — *"draws breath"*, then a plume of sixty embers and a light, and 18 + level×1.4 damage if you're within 10u and 26° of its aim (blocking halves it), else *"The fire misses you."* The boss-phase roar and heavy still apply. A `Dragon` ZDEF exists for world spawns (L8, 160 hp, fire-immune, resists slash and pierce).
+
+Verified: 32 caverns, 3 dragons; the Salt Mouth's cavern large and very hard; inside, *The Salt Mouth Wyrm* (318 hp, wings) with *The Wyrm's Hoard* (gold, silver sword, dragon scale, greater potion); a breath plume fired.
+
+
+---
+
+## v80 — Session 118 — The wishlist (Wishlist_2.docx) and the innkeeper
+
+**Interactions**
+- **Aimed at the mesh, not an area**: `aimAt(obj)` casts a ray from the crosshair against the object's own mesh within reach. Corpses, chests, barrels, urns, sarcophagi, racks, and now **NPCs** (world and interiors) only respond when the crosshair is on them — a whole corpse, not a box at its feet; a villager only when you're looking at them. Nothing is reachable facing away.
+- **The crosshair changes for every interaction**: gold ◇ for something to open, blue ◦ for someone to talk to, + otherwise.
+- **NPC names** show in the interior prompt too (*Oda — Press E to talk*).
+
+**Locations, compass, map**
+- **Distance on the compass**: each marker carries metres (or km) to go, under its label.
+- **Fast travel lands you on the plaza** — four units from the centre, facing the road out — not outside the pad.
+- **The map's player marker** never vanishes: inside a building it's drawn at the door you came in by; in a gate, at the gate.
+- **Search and filters** replace the legend: type a place name (towns, gates you've found) and click a result to pan, select and open its panel; checkboxes hide towns, gates, places or quest stars.
+
+**The old gates**
+- **A mouth in a rock face**: two broad tilted slabs either side, a heavy brow across the top, the dark of the maw behind the door, six stalactite teeth under the brow, a scatter of boulders — tinted by theme (violet-grey for undead, mossy for goblin, blue-grey for deep…) — and **every rock and dressing is solid** (the standing stones, arch pillars, tower stub, tree, skull stake, chains, cairn included). 13–17 solids around each gate.
+
+**NPCs**
+- **Shopkeepers hold their post** behind the counter (no ambling into it and spinning).
+- **Quest givers are always findable**: anyone holding an available, active or reward-stage quest keeps to their door at any hour instead of vanishing into a locked shop.
+- Homes and shops stay locked after hours as before; inns don't.
+- **The innkeeper lets the rooms**: *A bed for the night?* at the counter (5–25 gold; *"It's yours till this time tomorrow"*), plus *Something to eat and drink?*; the bed itself only says *Ask the innkeeper for a room*. Inns now open a dialog rather than a shop.
+
+**Main quest**
+- **No more bypassing the giver**: the next main quest is *announced* (the preview popup, retitled *First Blood — speak with Bram*, plus the green marker and the NEXT card) but stays *available* until the giver hands it over in conversation. Q7 keeps its authored auto-accept.
+
+**Sigils**
+- Touching a sigil marks every tier at or below what you now know **complete** and makes the **next tier's** quest the active one — and only that one. Verified with Caor: first touch → tiers [complete, active, locked]; second → [complete, complete, active].
+
+Verified in the browser: the innkeeper rented a room at Oda's Inn (7 gold, rented flag set); arrival 6u from Hearthwick's centre; an NPC aimed at from 2.5u yes, facing away no; Strange Markings announced and available after First Blood; search "iron" → Ironhaven.
+
+### Held for its own pass
+Wall tiers as part of town growth (fence → logs → stone → dressed stone) — a feature on the prosperity model rather than a fix.
+
+
+---
+
+## v80 — Session 119 — Loading a save put you in legacy Ashenmoor
+
+The save records `zone: activeZoneId`, and the load's zone chain knew only *world*, *forest*, *ironhaven* and — as the fallback for everything else — the legacy village. A save made inside a dungeon (`'dungeon'`) or a house fell through to old Ashenmoor with the old map.
+- **The save** now carries `worldGame:true` and `wret` — where you'd come out into the world: your position outdoors, the door of the house you're in, or three units outside the gate whose dungeon you're in (with the world's last outdoor position as a fallback).
+- **The load** restores any world game into the world at `wret`, whatever zone name the save carries — the legacy chain is only for saves that predate the world.
+
+Verified: saved inside a gate, loaded → the world, 3u outside that gate; a save re-stamped with the legacy zone name → still the world.
+
+### Session 119b — dialog
+- **The whole line at once**: the word-by-word reveal was the voice driving the bubble (`speakLine` filling it on each spoken word). The text now shows in full immediately; when the voice is on it speaks alongside without touching the text.
+- **Out of the way**: the dialog is docked bottom-left (480px or 46% wide, capped at 52% of the height, scrolling if needed) with tighter rows, so the middle of the screen — and the person you are talking to — stays clear.
+
+
+---
+
+## v80 — Session 120 — Playtest fixes VI
+
+- **Health bars in the overworld**: zone enemies were built with their bars hidden and only the dungeon damage path revealed them. The behaviour tick (world and dungeon) now shows a creature's bar the moment it's alert or hurt — a fight always has bars.
+- **Goblin (and wolf) ears** were sized from whatever the "head" turned out to be, which on the engine's humanoid is a large box — hence the sails. Ears are capped in absolute units now (goblin 0.28u tall, wolf 0.2u).
+- **The hero innkeeper lets rooms too**: authored keepers (Oda at Hearthwick) open the engine's scripted dialog, which bypassed the generated inn topics; the room and the food-and-drink topics are now prepended to any innkeeper's dialog, authored or not.
+- **The dialog sits middle-left** (left edge at 20% of the screen, 44% wide) rather than hard against the edge.
+- **Ingredients**: 8–16 herbs a chunk before the biome factor (was 3–8), plus a **verge pass** — up to six herbs along the sides of any road in the chunk, 1–3u off the surface. Loaded chunks went from ~4 to ~13 herbs each.
+
+### Session 120b — the innkeeper, properly
+- *A bed for the night?* now answers with the price — *"A room is 7 gold for the night — a bed, a bolt on the door, and breakfast if you are up for it. Shall I make it up?"* — and offers **Yes. 7 gold.** / **Not tonight.**; paying rents the room with a line back and the log entry; asking again says the room is already made up. The empty screen was the topic returning a null response.
+- Authored innkeepers keep their own *Browse your wares* — only the room topic is added to them, so no second shop trigger.
+
+
+---
+
+## v80 — Session 121 — Saves by location, not zone
+
+**The architecture question.** `activeZoneId` is the hand-built game's word — *overworld, forest, ironhaven, dungeon* — and the streamed world became one more value, *world*. Interiors never got one: a house interior runs as *world* with a `currentHouse` on the side, so a save inside Oda's Inn said "world, at (4, 3)" in the interior's own coordinates, and the loader believed it — the top-left of the continent, in the sea. Every save bug so far came from the zone id not naming where you are.
+
+**The fix is the one proposed: every place is its own location.** The save stores `where`:
+- `{kind:'world', x, z, yaw}`
+- `{kind:'house', id, parent, site, x, z, yaw, jumpY, door}` — the house by its durable id (cellars by their parent's), your spot inside, and the door outside
+- `{kind:'dungeon', seed, floor, x, z, yaw, jumpY, door}` — the gate by seed, the floor, your spot
+
+**The load** (`_reenterPlace`) restores the world at the place's door (never a position in the sea — an old indoor save falls back to the last outdoor position, then the spawn), then regenerates the place from its id and steps back in: for a house it waits for the settlement to build, finds the house by id, enters, and the interior consumes a pending position so you stand where you saved; for a dungeon it rebuilds the gate from its seed, enters, and restores floor and position. The engine's mode flag is untouched — a hundred checks depend on it — but saves no longer use it.
+
+Verified: saved inside Oda's Inn → loaded back inside at the same spot; saved on floor two of a gate → loaded on floor two of the same gate at the same spot; an old save with interior coordinates as "world" → on land, not in the sea.
+
+
+---
+
+## v80 — Session 122 — POIs, the compass, discovery, the level-up badge
+
+**The compass, the Elder Scrolls way.** Every place within **200 steps** — towns, ports, garrisons, glades, shrines, spires, lairs, camps, ruins, and the old gates — shows on the compass as a glyph (🏰 🏘 ⌂ ⚓ ⚔ ❀ ✦ ☠ ▲ ⛺ ◠ ⛫), **blurred and dim until discovered, sharp once found**, with the steps left under it. Quest markers read *steps* too. **Discovery** grants XP — 50 for a city, town or port, 30 for a gate, 25 for anything else — with a long flash *"Tullyard Glade discovered · +25 XP"* and a counter for the Character tab.
+
+**Glades** looked like a dent from afar because the pad is stamped long before the pond is built: POIs now build from **900u** (settlements stay at 480), so the pond and trees are there when you first see the clearing.
+
+**Shrines**: the two rings of the dais are **platforms** — you walk up the steps and stand on the floor — and the **dome is two-sided** (a separate mesh kept out of the bake), so it's there from inside.
+
+**Spires**: the **top floor leaves the well open** where the helix arrives, with a rail on the far side, so you can go back down; and a **hatch to the roof** — *"Press E to climb out onto the roof"* — puts you on a walkable platform inside a stone parapet at the top of the spire, the whole country below (*"Wind. The whole country, from up here."*); the hatch on the roof takes you back in at the top. The compass and discovery make the vantage worth the climb.
+
+**Lairs**: the beast wasn't there because the engine's level gate hides zone enemies whose `minLevel` is above yours — an Ogre at level two is latent and invisible. Site creatures (lair beasts, camp bandits, bosses) are now never latent. (That `locked` flag is the level gate; Session 109 had mistaken it for a CSS class.)
+
+**Density, off the road**: 3–6 POIs a cell (was 1–3), weighted glade 3 : shrine 3 : tower 2 : lair 1 : camp 1, placed anywhere in the cell — little rewards for leaving the road. This seed: 77 shrines, 70 glades, 57 spires (was ~30 each).
+
+**Level-up**: a pulsing gold badge — **▲ LEVEL UP — rest in a bed** — beside the XP readout whenever you have the XP, until you take the level.
+
+Verified: compass glyphs drawn; 25 XP on discovering a glade; shrine dais platforms and a two-sided dome; spire top-floor hole, roof hatch prompt, roof at y = ground + 39; the badge.
+
+
+---
+
+## v80 — Session 123 — Lair bosses, monster meshes, attack animation
+
+**Lair bosses**
+- **The boss bar**: the top-of-screen HUD the Faolchú uses now also takes the nearest alert boss within 40u in the world or a dungeon — lair beasts, captains, wyrms, cavern masters.
+- **Tougher, and a level check**: the beast at a lair's mouth has health ×4 (dragons ×6) and damage ×2 (×2.2), both scaled up with your level, and moves half again as fast. *Trabrou the Ogre* at level one: 389 health, 33 damage.
+- **The charge**: every 7 s, from 5–16u, a lair's beast comes at you at four times its speed; contact hits for double and throws you three units — *"bowls you over"*. Kiting a charger is a different proposition. The half-health roar and the telegraphed heavy still apply.
+- **One-time kills**: a lair whose beast has died spawns nothing at its mouth again; a cavern whose master has died (marked when you leave it cleared) has no master and no hoard — *"The master of this place is dead. Its hoard is long gone."*
+
+**Meshes**
+- The detail pass picked "the highest child" as the head — which was the **health bar**, so horns floated above it and clubs hung in the air. The head is now the highest **box** that isn't a bar and isn't tall (a torso). Verified on an Ogre: horns at the head box, below the bar.
+- Detail parts hide when a creature dies, so corpses don't leave ears and tails standing beside the body.
+
+**Attack animation**
+- Every zone enemy's strike now **lunges** — the body moves half a unit toward you and back over 0.3 s, and the first limb swings — so no creature attacks motionless. (Dungeon enemies keep the engine's own telegraph/strike animation.)
+
+Verified in the browser: horns on the head; a lair Ogre at 389/33/1.2; the boss bar naming it; a charge from 8u closing to 4.7u and hitting for 66.
+
+
+---
+
+## v80 — Session 124 — Forts, the shrine's top step, rain indoors
+
+- **The fort keep** was a plain grey block with a 1.4u corridor inside its front wall (the walls were solids, the interior mass sat inside them, and the doorway gap let you into the gap between) — the "massive grey box" and the corridor with a black door. Rebuilt: a keep with buttresses, a string course, arrow slits, a crenellated parapet, capped corner turrets, a **recessed arched doorway** with the dark of the door in it, the nation's banner above, torches either side — and **solid all the way through**: the door is the portal, not a way in. Verified at a fort door: the approach open, the face, the inside and the back all solid. (The compound's curtain wall probed solid at four angles; if a ring still lets you through, that's a different wall — tell me which.)
+- **The shrine's top step**: `activeTerrainH` returned the *first* platform under you, and the outer ring covers the whole footprint — so the inner ring and the floor never won. The **highest platform under you wins** now: 0.5 → 0.9 → floor.
+- **Rain indoors**: the weather tick only ran in the world, so the rain loop kept its last level underground and in houses. The frame loop now tells the world where you are: **muffled to a fifth in a house or shop, silent in a gate, keep, cellar or chapel**, full outside.
+
+Flagged for its own session: third-person.
+
+
+---
+
+## Session close — 15 Sep 2026
+
+Flagged at close for the backlog: **tutorial questlines feeding Act II** — a prosperity line (quest, road, route, investment) from a lord and a sailing line (the ship, a ferry, a crossing, a boarding) from Corwin. And **third-person** for its own session.
+
+`backlog.md` now holds every outstanding item, grouped: story and quests, systems, combat and creatures, world and presentation, interface, saves.
+
+
+---
+
+## v80 — Session 125 — The tutorial lines: a town worth keeping, salt water
+
+Two **optional** lines that teach systems already in the world and read back into Act II. Neither gates anything: the sea stays open from day one, the commission stays where it is. State in `worldState.tut = {town:{site,step,build}, sea:{step,note,from,target}, ferries}` (saved and restored). Both show under a new **LEADS — optional** section in the journal until taken, and each is one journal entry whose description and objective change with the step.
+
+**A Town Worth Keeping** — from any lord or keep steward: *What does X need, beyond a sword?* The first town you ask becomes the line's town; no other lord offers it after.
+- *work*: finish a job for this lord; a job already in hand counts.
+- *road*: the turn-in hands you a road quest (`townQuestFor(site,'road')`, tagged `tut:'town'`) with the lesson in the lord's words. If the first job **was** the road, this step is skipped. A road cleared by other means also counts.
+- *route*: open a trade route. For this town at this step the lord waives the prosperity ≥ 30 / favour ≥ 1 gate.
+- *invest*: pay for a build. The prosperity ≥ 40 / favour ≥ 3 gate is waived for the **well** only (favour is 3 by now anyway: job, road, route).
+- *building* → *report*: when it stands, *The well is finished.* pays 150 + 20×level, +3 prosperity, +1 favour. The coda points forward: the deed, coaching roads and the Crown's service; before Act II, Ironhaven and the commission; in Act II, the survey teams and Corwin.
+
+**Salt Water** — from **Corwin**, who now stands at the nearest harbour *before* the commission once the line is open (Q3 done, the crypt reached, Ashenmoor burned, or level 3). He is the same travelling merchant (*"Told you we'd cross paths"*). *Teach me the sea.*
+- *ferry*: any passage (every ferry is counted in `tut.ferries`). Done, and **Corwin's note** takes a quarter off a hull; the shipwright's topic reads *Buy a ship (300 gold, with Corwin's note)*.
+- *ship*: buy one; owning one already skips it. The nearest harbour on another island becomes the suggested target.
+- *crossing*: your own ship, sailing or on deck, within 200u of any harbour in another nation.
+- *board*: a boarded pirate with every crew member dead. While this step is live, black sails always come when you're at sea.
+- *report*: Corwin at any harbour, 200 + 20×level gold.
+
+**Act II reads it**: Corwin's first greeting notices the salt on you; *I'll go* sends you by your own ship's name instead of the ferries (or offers a hull if you have none); the courier step notes you've taken a black-sailed deck before. His Act II dialog carries the sea line's topics if it's still open.
+
+**Markers**: the line's lord at route/invest/report (and at *work* when you've no job from them); the harbourmaster, shipwright or Corwin at the nearest port; the crossing target. Map stars for the same.
+
+### Verified (headless — a jsdom harness on the real build)
+Town line on Colmán's Rest start to finish, both branches (the first job a road → straight to route; otherwise the tutorial road quest issued and turned in); the route gate waived at prosperity 20; the well offered alone at favour 3; the scaffold finishing → report → 230 gold; no second offer from another town. Sea line from Cluainlough: closed at level 1 before Q3, open after; Corwin at the quay pre-Act II; ferry → note → the hull at 300 → crossing to Wiawoura → a pirate boarded (no advance while the crew lives) → cleared → report at Wiawoura, 220 gold. Commission → Act II Corwin's salt greeting, the ship-by-name line, the courier aside. Shipwright label, map stars, and the LEADS section rendered.
+
+### Not in this pass
+The **recurring rival** — held for the faction questlines, where "twice ahead at the same givers" has three sets of givers to work with.
+
+
+---
+
+## v80 — Session 126 — Third person
+
+The Session-12 stub (a guard NPC mesh, a sine limb swing, a fixed 3.2u boom that went through walls and switched off the Light spell) is replaced. **V** toggles; the choice and the zoom are remembered (`localStorage og_tp`, `og_tp_d`).
+
+**The body** (`tpBuild`): a jointed model at NPC scale (~1.05u) with shoulder, elbow, wrist, hip and knee pivots, a torso and a head. Proportions, skin and hair come from the player's people and name; Old Blood players get dark arm bands.
+
+**The kit on the body**, rebuilt when the equipment signature changes (`tpSig`):
+- *Armour*: helmet or hood; cuirass plate with pauldrons, or cloth, or a long robe; greaves or breeches; boots; gauntlets. Coloured by `matCol` or the icon material table.
+- *Weapons*: a shape per type — dagger, sword, longsword, scimitar, mace, flail, war hammer, great club, axe, great axe, claymore, staff, bow.
+- *Off-hand*: round buckler, square or tower shield on the left forearm; torch or tome in the left hand.
+- *Extras*: a quiver on the back with a bow or arrows; an amulet bead.
+
+**The pose** (`tpPose`), read from the same state the first-person arms use:
+- *Getting around*: walk, sprint and sneak cycles (sneak lowers the hips and leans in); airborne tuck.
+- *Swings*: `vmSword.userData.swingVariant` drives three swing shapes — flat cut, overhead chop, rising thrust — each with wind-up, strike and recovery phases, larger on a power attack. Two-handers bring the left hand onto the grip.
+- *Block*: shield across the chest, weapon held across, or bare forearms.
+- *Bow*: body side-on, bow arm along the aim (following your view up and down), the right hand drawing to the cheek with `_bowDrawT`.
+- *Cast*: both hands out, the right leading.
+- *Reactions*: a flinch when health drops; down on the back on death. The head follows the view.
+
+**The camera** (`tpCamera`):
+- Pivot just above the eye, 0.34u to the right; slides out to the shoulder until blocked, then marches back along the view in 0.08u steps. Pulled in at once when blocked; eases out at 4/s.
+- Per zone (`tpBlocked`):
+  - *dungeons*: `dSolid` with a 0.14u probe, clamped under the floor's ceiling;
+  - *interiors*: the room's bounds and its real ceiling (`house._ceilH`, now recorded when an interior is built);
+  - *the world*: a new `WORLD.camSolid` that ignores solids under 0.55u (trunks, posts, stakes, lamp posts) so the camera doesn't jitter through forests and plazas; walls, rocks and houses still pull it in;
+  - *legacy zones*: `currentZoneSolid`.
+- Never below the ground or the sea.
+- Mouse wheel zooms 0.9–3.2u (capped at 1.7 in dungeons, 1.5 indoors). Too close to see past, the body steps out of the way.
+
+**Integration**:
+- The viewmodel scene is hidden rather than CAM's children, so the Light spell stays lit.
+- `aimAt` extends its reach by the boom and ignores anything between the camera and you, so looting and talking work from behind the shoulder.
+
+### Verified (headless — the jsdom harness)
+- *Pose directions, measured*: rest blade up-forward; the cut sweeps right to left; the chop winds up behind the head and ends forward; the thrust ends forward; the blocking shield faces forward (solved numerically); the bow limb vertical and the bow arm along the aim, down when looking down; toggling back restores the first-person view.
+- *Poses, by eye*: a rendered contact sheet of 17 poses caught three wrong ones — rest grips in front of the face, the thrust ending sideways, the block out to the side. All fixed.
+- *Camera*:
+  - dungeon: 400 samples, 0 in a wall or through the ceiling; a wall at your back pulls the boom in on the first frame;
+  - Oda's Inn: 448 samples, 0 outside the room or through the ceiling;
+  - Hearthwick doorsteps: 200 samples, 0 in a wall or under the ground; with a house wall behind you, 25/25 pulled in (to 0.55) and none inside it;
+  - open country: 300 samples, 0 under the ground or the sea.
+
+### Not yet
+- Arrows and spells still leave from the eye; at close range there is a slight parallax against the shoulder crosshair.
+- The ship's deck and the coach seat are untested with the boom.
+- Weapon trails, footstep-synced feet and a pose for drinking or looting are not in.
+
+
+---
+
+## v80 — Session 127 — The look: a builder in the creator
+
+**First, the "phasing" helmet.** The wedges cutting into the face and the hair on the Session-126 contact sheet were the sheet, not the model: it sorted triangles back-to-front by centroid with no depth buffer, and where the helmet box and head box intersect the sort gets it wrong. The sheet renderer now rasterises with a z-buffer, and the same rig renders cleanly — helmet as a cap on the skull, hair as a cap on the head — which is what the game's own depth buffer does. Geometry unchanged.
+
+**The look.** `worldState.look = {skin, hair, style, beard, tunic, breeches, boots}`, saved, carried through the unbound ending's new world, and restored on load.
+- *In the creator*: a **Your look** step between *Your people* and *Starting weapon*: a live, slowly turning preview of the third-person rig, and swatch rows — skin and hair from the chosen people's own palette (so a Markman is fair and a Old Blood grey-pale, as the canon says), hair style (cropped / long / tied back / bare), beard, tunic (eight dyes), breeches (five), boots (four), and a **Shuffle**. Picking a people resets skin and hair to its palette; picking a beginning sets the tunic (madder for a warrior, woad for a mage, charcoal for a rogue) until you've chosen one yourself.
+- *In the game*: the rig reads it. **Your own clothes under whatever you buy** — a cloth item with no material colour (the starting tunic, breeches and boots, and any legacy garment) takes the look's colours; anything from `makeItem` keeps its own. The first-person hands take the skin tone (`HAND_SKIN` via `applyLook`, viewmodel rebuilt on begin and on load).
+- Defaults without a chosen look fall back to the Session-126 name hash, so old saves look the same as before.
+
+### Verified (headless)
+Creator: opening it seeds the look from the first people; the Markman button swaps to the Markman palette; swatch clicks set style, beard and tunic; shuffle; an archetype click leaves an explicitly chosen tunic alone. Begin → `worldState.look` carried; hands palm/cuff take the skin; the rig uses the chosen tunic colour and carries the beard and the tie; equipping an Iron Cuirass rebuilds it with the cuirass's own colour; the look survives a save. A twelve-look sheet across all four peoples rendered with the z-buffer (`looks.png`).
+
+### Not verified
+The WebGL preview canvas itself (headless has no GL) — the code path is guarded; if it fails the swatches still work and the game reads the look.
+
+
+---
+
+## v80 — Session 128 — The faction lines, and Hesket Rowe
+
+The Crown, the League and the Compact each had a rank ladder and a counter with random town quests behind it. Now each has **nine authored services** (three per rank, the ninth a set piece) and the same rival runs through all three.
+
+**How a service is built** (`factionQuestFor`): the town-quest generator still supplies the mechanics — it picks the creature, the gate, the lord, the road, and writes the objective — and the line supplies the words: the seat's lord speaks the authored brief, then the generator's mechanical sentence, with the generator's random item or villager replaced by the service's own (*the old survey*, *the reeve's seal*, *the reliquary*, *the survey team's marker*; *Hesket Rowe* where she is the one lost). Two kinds are new: **duel** (a `road` quest with one named Bandit Captain and no camp, on the yard east of the seat) and **sail** (a boarded black-sailed hull with her crew dead; black sails always come while it's open, as for the tutorial).
+
+**The lines.**
+- *The Crown* (Coeur de Vie): the King's wolves → the south road → a letter under seal · the old survey → the Warden's tally → *Where is Warden Rowe?* · word to the lords → the last camp → **The Silent Survey**: a survey team in a gate has stopped answering; bring back their marker. The after-line: *they were etching, not clearing, on orders under Aldwyn's seal that Aldwyn never sent* — the Crown's thread of Act II, handed to a Knight.
+- *The League* (Caer Slige): meat for the garrison → the hill road → a reeve's letter · the reeve's seal → the watch on the spire → *Where is Rowe?* · the captains' word → the free captains (*"don't ask whose coin they carry"*) → **The Duel at Caer Slige**: Rowe claims the challenge; a Captain is made on the yard. The after-line: *something in the spire pays my sergeants in light* — Varek's agent, said aloud.
+- *The Compact* (Fortargent): the tithe roll → the Church's flocks → the pilgrim road · what the sea gave back → a Prior's letter → *Where is Factor Rowe?* · the uncleared → the tithe road → **The Black Sail**: board the hull taking tithe-ships in the strait. The after-line: the house and the ship, and Rowe gone north to the League.
+
+**Hesket Rowe** — a Markish mercenary (*"Half the swords on these islands are. The other half are asking where we're from."*), one rank ahead of you until she isn't:
+- service 2, *mentioned*: she cleared the other road last week;
+- service 4, *present*: she stands at the seat and introduces herself by the rank above yours (*"Sworn, is it? I'm Reeve."*);
+- service 6, *in trouble*: she is the one you find sitting in a camp (*"Tell them Rowe's coming — and tell them who found her."*);
+- the finale: for the League she is the duel; for the Crown and the Compact she stands at the seat afterwards with a line that points at Act II — she was in a survey team once and got out; she's going north to see the captain who pays in light.
+`tickRival` spawns her at the most-advanced faction's seat when her beat calls for it, keyed by faction, service and rank, and removes her otherwise. The lost-villager spawn now keeps the quest's name (`keepName`) — the plain rescue quests had been renaming their villager too.
+
+The set pieces pay 200 + 20×level; the after-lines ride the rank-up. Exclusivity, the counter, the claim of the keep/garrison/house-and-ship, and the price perks are unchanged.
+
+### Verified (headless)
+All three lines driven start to finish at level 6 on the real seats (Coeur de Vie, Caer Slige, Fortargent): every service issued with the authored brief and the generator's mechanics behind it; the duel spawned one *Hesket Rowe* on the yard with no camp; the black sail completed from a cleared boarding; each rank named at 3/6/9 with the after-lines; the claim offered at rank 3; the League closed once the Crown had two ranks. Rowe: mentioned at 2, present at 4 with the right rank, found at 6 (Markish, her own lines), and standing at the seat after the Crown's and the Compact's finales, gone after the League's.
+
+### Not yet
+- The duel is a fight with a Bandit Captain wearing her name; a real duel (a ring, the garrison watching, yield at low health) is a later pass.
+- The League's spire after *The Duel* — "the spire's yours to hold" — has nothing behind it yet; siege and occupation is the next systems block and should use it.
+
+
+---
+
+## v80 — Session 129 — Walls, war, black sails, sickness, ruins, the coach
+
+The settlement and world systems block from the backlog.
+
+**Wall tiers** (`wallTierFor`, `WALL_SPEC`). Any walled plan now has *something* at every prosperity: **fence** (post-and-rail, no towers) below 45; **logs** (the palisade, box towers) from 45 or a paid wall; **stone** from 65 (round towers, crenels); **dressed stone** from 85 (taller, pale ashlar, bigger towers, denser crenels). A threatened, besieged or occupied town reads as logs or stone whatever its purse. The old ≥55 gate is gone.
+
+**The war** (`worldState.war`). The cold peace breaks when a faction names you to its third rank: the Crown against the Mark (the last war, remembered), the League against the Compact and the Compact against the Mark (the two shores of the strait). Nations are islands, so a *border town* is any town, city, port or garrison within two and a half cells of the other nation's land (the coast facing it), with the four nearest as a fallback.
+- The first siege is laid at once on your faction's seat if it is a border town (Caer Slige is: *"the spire's yours to hold"* now means something), else the nearest border town to it. After that, each day a 15% chance of a new siege on a random border town of either side.
+- **Siege**: the `besieged` flag; −2 prosperity a day; the lord has one topic. Near the town a camp sits on the road out — tents in the attacker's colour, a banner, six-plus soldiers named for their nation with a captain. Kill them all and the siege is broken: +5 prosperity, +3 favour, a line in the log.
+- **Occupation**: twelve days unbroken and the town falls. The `occupied` flag; −½ a day; banners and guards fly the occupier's colours (the builder reads `st.occupier` for `NAT`); the lord's chair is taken (*"Kill the garrison and it's ours again"*). A garrison of five-plus holds the plaza; kill it and the town is free (+5, +4 favour).
+- **Peace** after five sieges resolved either way; the war is kept in `worldState.wars`. Compass markers for sieges anywhere and occupations within 1500u.
+
+**Black sails.** Each day, every unprotected port (no harbour or wall paid for, walls below stone) risks a sacking: 5% while the Mark is at war, 2.5% from Act II. Sacked and burned towns rebuild after a month once prosperity is back to 30.
+
+**Sickness from a backlogged gate.** A town within 700u of an uncleared lair counts the days; after thirty, an 8% daily chance of the `plague` flag (already −1 a day), with the lair named in the log. It passes when the lair is cleared or after twenty days. This is the anchor-health the backlog asked for: the uncleared gate is the anchor.
+
+**A ruin re-founded.** From any lord within 1500u who counts you a friend: *Send settlers to re-found X (900 gold)* — the abandoned flag lifts, prosperity 25, the deed in your name.
+
+**The coach halts.** A camp on the road or a broken route stops the coach where it is (it was already stopping the caravan); it goes on in the direction it was travelling once the road is clear.
+
+### Verified (headless)
+Walls built at 30/50/70/90 prosperity (fence/logs/stone/dressed, solids 83→114). League finale → war Mark–Aurenne, Caer Slige besieged by Aurenne on day one; the lord's siege topic; the camp spawned on the road (eight, *Compact Captain* and *Compact Man-at-arms*); all killed → siege broken, favour 3, `broken` 1. A second siege left thirteen days → occupied; the lord's occupation topic; the settlement rebuilt under occupation; the garrison spawned; killed → liberated. Three more sieges → peace at five resolved, recorded. A port sacked by black sails; a village sickened after 29 days near its lair with the lair named; a ruin re-founded for 900 gold, owned at 25; a coach halted on a broken road and resumed when it cleared.
+
+### Not yet
+- Siege soldiers wear the Bandit models with new names; the occupier's patrols in town are the ordinary guards in the occupier's colours.
+- The Compact's tithe lowering a port and raising the capital, and the occupied League town losing its duels, are still lines in the canon, not systems (there is no duel system yet).
+- Sieges against towns *you* own get no special word from the town.
+
+
+---
+
+## v80 — Session 130 — Creatures, second pass
+
+**One attack pose for both worlds** (`attackPose`, `enemyArm`). The telegraph now writes `e._wind` (0→1 through the wind-up) and the strike reads its own timer (`atkAnim` in the dungeon, `_lunge` in the world). Through the wind-up the body pulls back a fifth of a unit and the arm rises behind; through the strike it lunges and the arm swings forward. Creatures without arms rear back and dip instead; the scorpion cocks and whips its tail. The dungeon's red emissive pulse stays on top of it. The world's humanoids had no registered limbs at all, so the old "swing the first limb" was doing nothing for bandits — they now have shoulder pivots (`limbs.armL/armR/torso`).
+
+**Shapes of their own** (`zShapeExtra`):
+- *Spider*: a small cephalothorax, an abdomen behind, fangs, and eight jointed legs (hip out and up, knee down to the ground) instead of six stuck-on sticks.
+- *Sand Scorpion*: a flat plated body, eight short jointed legs, two claws on shoulder pivots, and a five-segment tail curling up and over with a sting.
+- *Bog Crawler*: a low wide body, six splayed legs, mandibles.
+- *Shore Wisp*: a translucent core with a halo and three circling motes; it hovers.
+- *Dragon* (the world kind): body with a belly plate and dorsal spines, a three-segment neck, a horned head with a jaw, two wings on `_wing` pivots so `tickDragons` flaps them, four legs, a five-segment tail with a tipped end. `e.dragon=true` so it breathes; ~6u nose to tail at its ZDEF scale.
+
+**Bosses that ask something of you.**
+- *The lair beast's charge*: if the charge meets a wall or a tree, the beast is **dazed for 2.4 s** and takes double damage — the message says *now!*. The skill is to sidestep it into something solid.
+- *Captains* (the Bandit Captain and every siege captain) raise the Shieldbearer's **frontal guard**: frontal hits do 35% until a power attack or a bash breaks it; it comes back up after the stagger. Flank them or break it.
+- *The cavern master* scales with level like the world's lair beast (+8% hp, +4% damage per level).
+
+**Dragons in the open.** A rare encounter (weight .35) on the tundra and the wasteland, gated by the kind's level 8.
+
+### Verified (headless)
+Every kind built without error with the pivots registered (scorpion: claws and tail; dragon: neck, head, wings, tail; captain: the guard up with the prop attached); a contact sheet of twelve creatures plus wind-up and strike on a bandit and a scorpion, checked by eye (the arm direction was backwards on the first render and fixed).
+
+### Not verified
+The pose in motion, the daze in a real fight, and the captain's guard against a real power attack — headless can't run the combat loop. Three things to feel in play.
+
+
+---
+
+## v80 — Session 131 — The forts were never there; rooms behind the counter; the map's key
+
+**The fort compound.** The backlog said the curtain wall was solid at four angles but a walk-through ring was reported. A full probe (every degree of the ring, five radii, the player's own `solidAt`) found the ring open at all 360°. Cause: `placeDoor`'s fort branch read `p.nx`/`p.nz` from `roadPoint`, which now returns `{x,z,ang}`; every fort's world position was NaN, so all eight compounds, keeps and doors were built at nowhere — the four-angle probe must have run against an older build. Fixed by deriving the road normal from the angle. Re-probed: the ring is solid except the sixteen degrees of gate at +z, the gate is passable, the keep door sits inside. **All eight forts** (The Old Garrison, Greywatch, The Last Post, The Wind Cloister, The Old Mound, Pellam's Hold, Hollow Gate, The Lonely Tower) are back in the world.
+
+**Interior variety** (`buildInteriorFor`):
+- *Shops* (weapon, armour, potion, misc, shipwright, goods, forge, apothecary, armoury; single-storey, D ≥ 9): a partition across the back with a doorway and lintel; behind it the keeper's bed, a table, crates, a rug, a lamp. The bed registers as a bed.
+- *Single-storey inns*: two private rooms at the back — a partition with two doors and a wall between, a bed, a crate and a lamp in each. Two-storey inns keep the mezzanine as their upstairs.
+- *The coaching inn*: when a coach line ends at a town, its inn gets a board by the door (posted sheets), a tack rack and a hay corner. The coaching inn is the town's inn.
+All partitions are height-aware solids (`SOL` with `y0/y1`), so upstairs and downstairs don't fight.
+
+**Interface.** A **Key** button on the map strip opens a legend of the glyphs, the line colours and the ferry dashes (search had replaced the old legend). The **Character** tab opens with **WORN**: every slot's item, attack, armour and carried weight at a glance.
+
+### Verified (headless)
+Fort positions finite for all eight; ring probe 360° → open only 83–98°; the gate line passable; the keep door inside. Bram's Forge: a back room, the wall solid beside the door and the doorway open, the walker stopped only by the bed's own collision. Oda's Inn (two-storey): no ground rooms; with a coach line ending at Hearthwick it gains the board. The key button and box exist; the Character tab renders WORN.
+
+### Not this session (needs eyes)
+Weather visuals by eye; the Guest's chapel black screen in the real DOM; performance in a forty-NPC town.
+
+
+---
+
+## v80 — Session 132 — One fort, not two
+
+Playtest screenshots (Session 131's build) showed a second fort on top of each compound: tall rectangular slabs at 2× scale, a corridor with its own *Press E to enter* door, a low rectangular cloister wall around the ring. That was the engine's **exterior kit** (`FORT_EXTERIORS` — gatehouse, palisade, monastery, earthwork, keep, ruined gatehouse, watchtower), which the Session-83 note said was no longer spawned for fort doors. The world's own portal path does skip it — but the **legacy zones embedded in the world** (the wilderness zones with a `portalZone`: bealach_central, wastes_east, mountain_pass, coastal_road_north, la_route_royale_west, northern_road, the forest; the village and town builders) still collected every `WORLD_DUNGEONS` entry of their zone, fort doors included, and built the kit at the zone's own coordinates. While the world's forts sat at NaN (Session 131) the kit was the only fort you could see; once they came back, both were there.
+
+Fixed at the source: the legacy zone, village and town portal filters now exclude `fort_door`. Forts belong to the world's compound (the ring, the gate towers, the barracks) and keep (the door).
+
+### Verified (headless)
+Visited The Lonely Tower, The Wind Cloister, The Old Garrison and The Last Post: the kit never fired, one fort door within 120u of each, the compound present, the keep door approach open.
+
+### Not verified
+The picture itself — the ring, the gate, the keep and the two barracks seen from the road, and the E-to-enter prompt on the keep's door. Two screenshots would settle it.
+
+**Session 132, second pass — the build tag and the sunken herbs.** A faint *build s132* now sits at the end of the controls line so a screenshot says which file is running. Herbs (`propH`): the chunk mesh is `worldH` sampled every 4u and interpolated, so between vertices the drawn ground can sit above the analytic surface (measured: 2% of points by more than 0.08u, worst 0.35u) — enough to bury a small plant. Herbs now sit on the drawn ground (the max of the analytic height, the bilinear and the triangle plane, +0.06), and `tickHerbSync` re-seats any herb whose ground has moved since it was placed (a settlement pad stamped after the chunk built). Verified: 1,106 loaded herbs, none below the drawn ground.
+
+**Session 132, third pass — what the "inner ring" was.** With the build tag confirming the fixed file, the screenshot from the gate still showed a wide tan wall ahead with two cone caps above it, and the minimap showed the ring with nothing inside. That wall was the **keep's south face**: 13u wide and 9.5u tall, flat, its door recess unlit, seen from 25u at night — and on `STATIC_SOL`, which the local map never drew. One fort; a keep built and lit like a wall, and a map that hid it.
+- *The keep* is 11×9×7.2 now, with a warm glowing doorway, lit windows, two torch flames beside the door, steps, and stronger door lights — the door reads from the gate.
+- *The ring* is 3.4u (was 4.2) and the gate towers 1.4–1.6u radius and 5.6u (were 1.9–2.1 and 7.2): a wall and towers at the player's scale, not cliffs.
+- *The local map* draws every large static solid (keeps first), so the inside of a fort is on it.
+- **F8** writes a *survey* to the log (Character tab) and the console: settlements, static solids, keeps, doors and meshes within 60u — so a playtest can say what is actually built where. At The Wind Cloister's gate: one settlement (the compound, 58 solids), one large static (the keep, 12×10), one keep, one door.
+- `fort_overhead.png`: the compound rendered from above out of this build — ring, keep, two barracks, the road.
+
+**Session 132, fourth pass — the ring inside the fort, found.** A perspective render from 4u south of the gate reproduced the playtest screenshot exactly, and a census of every mesh over the keep's footprint found it: a **64-triangle, 48u-wide, 12u-tall grey cylinder centred on the door** — the fort's **landmark impostor**, the low-poly stand-in every settlement and fort gets for distance. Settlements hide theirs when they build (`IMPOSTORS[site.id].visible=false`), but a fort's impostor is keyed `door_<seed>` and the compound builder never touched it, so the stand-in stayed under the real compound: a smooth, continuous, un-crenellated inner ring, on no map. It has been there since the compounds came back in Session 131 (and before that, while the compounds sat at NaN, it was the only fort visible — which is why the kit and the impostor together looked like "two forts").
+
+Fixed: the compound hides its impostor when it builds and shows it again when it unloads. Verified: the 48u cylinder is `visible:false` with the compound built; the gate render now shows the paved way, the keep with its arched door, banner and windows, the barracks and the ring behind (`fort_from_the_gate.png`). The Session-132 keep and ring changes (smaller keep in warm stone with a glowing door, a lower ring, the paved way, the map drawing keeps, F8 survey) stand.
+
+
+---
+
+## v80 — Session 133 — Playtest fixes
+
+From Michael's playtest of build s132.
+
+- **Corwin and the main quest.** Two things had crossed: the Session-125 sea line let Corwin stand at the harbours from level 3, while Act I still wanted him in Ashenmoor for *The Merchant Knows* — so a player met the harbour Corwin by chance and the journal never pointed anywhere, because the Act I compass only knew a giver by his loaded NPC or his house, and Corwin has neither. Now the sea line waits for *The Merchant Knows* to be done (or Act II), the compass points at **Ashenmoor** for any village giver who isn't loaded (*"Corwin — Ashenmoor"*), and the harbour Corwin stands on the plaza rather than under the quay.
+- **One journal.** The old *NEXT* box is gone; an available main quest says *Speak with X in Y to begin* as its objective. The world's quests (towns, guilds, factions, the tutorial lines) and the *Leads* now render in the same cards as the main story — pin strip, title, badge (*Active* / *! Turn In* / *Lead*), giver, description, objective, reward — under *Main Story* → *In the world* → *Leads*.
+- **Guild hunts say where.** *Hunt 4 Spiders* now names the nearest region whose encounter table carries the creature and the direction (*"Woushbrou Shaw, north-east of here, is their ground"*), and the compass marks it until the tally is met.
+- **Trees and plants on the drawn ground.** `meshH` is the chunk mesh's own triangle; trees, rocks and bushes are placed on it (trunks floated on convex ground, bushes sank in hollows). Herbs keep `propH` (the max, lifted).
+- **The bedroll says so.** Standing at a camp bedroll shows *A bedroll — Press 'E' to rest*, and *…and take your level* when one is banked.
+- **Torchlight in the open.** The torch reaches the world through the light pool correctly (verified: a pool light at the player at 2.8/11u), so the fault is scale: the world is bigger and darker than a corridor. In the world the torch is 4.6 at 16u. Needs eyes.
+
+### Verified (headless)
+Sea line closed at level 5 before the merchant quest; the *Corwin — Ashenmoor* marker from far away; Corwin on a port plaza on the ground; spider ground found and marked; the journal with no NEXT box, the three sections, the begin line, world cards in the shared style, the turn-in badge, the lead badge.
+
+### Carried to the next sessions
+- **134 — the home province re-laid**: spread out; the gates around Ashenmoor and Ironhaven thinned; a port; shrines, glades and spires off the roads; bridges as a road POI over rivers.
+- **135 — world enemies to dungeon parity**: health bars, loot, detection radii, archers, group behaviour.
+- The green sheet over a river's end (a screenshot shows it; the water or lake plane at the river mouth) — to find in play with F8.
+
+
+---
+
+## v80 — Session 134 — The home province, re-laid
+
+**The green sheet at a river's end** (Michael's F8: a village at 75u, nothing else). Rivers, lakes and inlets carve `rawH` only while their cell is loaded, so a chunk built before its neighbour's water arrived kept the uncarved ground — a green sheet over the river's end, with no collision under it because `worldH` had the river by then. `refreshChunksNearWater` now re-samples the heights and colours of every built chunk a newly loaded cell's water touches. Verified: a river added after the chunk was built takes the vertex from 8.5 to the bed at −1.5.
+
+**The province by hand.** The 21 home sites sat on a 270×295 grid (neighbouring towns 270u apart with 195u of that in their pads) and leaned east because that's where the old zones were. They now have hand-set positions on the real coast map:
+- *North:* La Porte Grise (450,350), Coeur de Vie (1150,380), Ironhaven (1900,450); *the Deepwood* between Thorngate (450,800) and La Porte Grise; Mur Pierre (800,700) at the pass; Vieux Marché (1500,800).
+- *Middle:* Salthaven (350,1050), La Grise (1350,1050), Colmán's Rest (1000,1250), Droichead (1250,1200), Hearthwick (1100,1450), Dunmore (1550,1400), **Portclare (1950,1250) — now a port**, on the east coast with sea 110u off; the Wastes: Hermit's Camp (1750,1000), Caer Uaigneach (2100,900).
+- *South-west lobe:* Ashenmoor (800,1750), Carraig Mór (450,1800), Cill Beag (1350,1650), the Ashfeld (600,2000), Redwater Ford (950,2050), Inis Rua (150,2050) offshore.
+Every site on land (Inis Rua excepted); the closest two towns 427u apart; the smallest gap between any two pads 151u; sites 7/11/4 west/centre/east. The roads are unchanged by id and re-route themselves.
+
+**The gates.** Seven legacy gates ringed Ashenmoor at 75u and seven Ironhaven at 160u (the old zone anchors at scale 1.25/1.6). The anchors now scale 3.4 / 2.6 / 1.5 (forest), and `placeDoor` keeps every door out of any settlement's pad. Verified: 0 doors within 120u of Ashenmoor, 0 within 160u of Ironhaven, 0 inside any pad, 70 doors loaded.
+
+**Off the beaten path.** The road generator was treating shrines, glades and spires as network nodes — 14 of 17 loaded POIs were road endpoints. Roads now join settlements only (shrines, glades, spires, lairs, camps and ruins excluded). Verified: 1 of 17 within 25u of a road, by chance.
+
+**Bridges.** Where a built road crosses a loaded river (a run of road points inside the river's width, with the road dipping to the ford), a stone bridge: a deck above the ford, two parapets (solid), piers to the bed; a named place on the map (*West Track Bridge*, glyph ⌒). Bank passes that never dip are not crossings. Verified: four bridges in the loaded cells, the deck walkable end to end, the parapet solid, the deck above water.
+
+### Needs eyes
+The province as a whole from the map; Portclare's quay and shipwright on the new coast; a bridge from the road.
+
+
+---
+
+## v80 — Session 135 — World enemies to dungeon parity
+
+From Michael's playtest: *not lootable, no health bars, terrible detection, slow and unthreatening, no archers, no flanking*. Each had a cause.
+
+- **Health bars.** The zone builder made a background and a foreground bar and hid both until first hurt — but only `hpFg` was put on the record, so the "show once hurt" test (`e.hpBg&&!e.hpBg.visible`) never passed. `hpBg` is on the record now; the bar shows at the first hit.
+- **Loot.** World corpses stored an absolute ground height as `y`; `lookingAt` adds the ground height to `y`, so in the world the look-at target floated at twice the terrain height and the crosshair could never find it (the legacy zones sit at y≈0, so it worked there). Corpses in the world store a relative 0.45.
+- **Detection.** Sight 9u → **15u** in the open, and alert is kept to 30u (was 18). Line of sight used the movement solids, so every trunk and post hid you; it now uses the camera's solid set (walls, rocks, houses). **The pack hears**: when one sees you, or is hit, every enemy within 16u wakes (`alertPack`).
+- **They come at a run and spread out.** Alert non-boss enemies move at 1.25× and, when others in the pack are alert, each takes a flank angle around you (±30–75°) at 1.5–2.6u instead of queueing on one line.
+- **Archers.** Bandit Archers and Goblin Slingers hold 6–13u (backing off when you close, closing when you run), and every 2.2–3s with line of sight loose an **arrow**: a shaft that flies flat at 17u/s; a block facing the archer takes it at 35% and costs stamina, otherwise it lands for the archer's damage less half your armour. Arrows drop into the ground and time out at 1.6s.
+
+### Verified (headless)
+A pack of three bandits and an archer at 8–12u: one look and all four alert; after eight seconds the bandits at −82°, −73°, +73° around the player at 1–2u; the archer holding at 12.4u; three arrows in ten seconds; 144 HP lost in ten seconds at level 5 with 200 HP (they are a threat now — worth feeling in play); the bar visible once hurt; the corpse at y=0.45 and `lookingAt` true from 1.5u looking down.
+
+### Needs eyes
+The arrow in flight and its block; whether three bandits at a run is too much at level 3.
+
+
+---
+
+## v80 — Session 136 — The save store
+
+Michael hit *Save failed (storage full?)*. A fresh save is 7 KB and nothing in the payload runs away, which points at the origin: on `file://`, Chrome gives every local page on the machine one shared 5 MB `localStorage`, so other projects and older builds were eating the quota. Saves have moved.
+
+**The store** (`SS`, `ss*`): payloads in **IndexedDB** (`the_old_gates` / `saves`, a quota of hundreds of MB), a small **index** of what exists in `localStorage` (`OG_save_index`) so menus render at once, and the active key (`OG_save_active`). A localStorage fallback if IndexedDB is missing. Loading is asynchronous now (`ssLoad(key)` → Promise); the Continue button, the death screen's reload and the Load tab all wait for it; the death screen's *Last save* line reads the index.
+
+**Characters.** Every character gets a `charId` at first save (kept in `worldState`, restored on load). The Load tab groups saves by character — name, level, people, last played — with autosaves and slots under each and a *delete character* link. The Save tab shows the current character's eight slots and their autosaves.
+
+**Autosave ring.** `saveGame()` writes to a ring of **five** per character, oldest replaced, and won't write twice within ninety seconds so the ring holds distinct moments (Oblivion's stack). Manual slots are separate.
+
+**Delete.** A 🗑 on every row, two clicks to confirm; deleting the active save moves the pointer to the character's newest.
+
+**Migration.** On first boot, `DOS_save_0…9` in localStorage move into the store under a *legacy* character and the localStorage copies are removed (freeing the shared quota); the old active slot becomes the active key.
+
+### Verified (headless, fake-indexeddb)
+A legacy slot migrated and its localStorage key removed; a manual save keyed by character (7.1 KB); seven autosaves → five in the ring, slots 0–4; two characters listed; a manual load returns level, gold and charId; delete removes the entry and moves the active pointer to an autosave; both tabs render (rows, delete buttons, the character headers); deleting a character clears its saves.
+
+
+---
+
+## v80 — Session 137 — Saves that say why
+
+Michael, on s136: a slot primes (*Click again to overwrite*) but the second click does nothing; an empty slot does nothing; no autosaves ever appear. The Load tab's character grouping worked, so migration had run.
+
+**What was wrong, and a correction to Session 136.** `ssWrite` built the payload and called `JSON.stringify` *before* its promise chain, so any throw there escaped the `.catch` and died inside the row's `onclick`: no message, menu left open. `saveGame()` goes through the same function, which is why the autosave ring stayed empty. The s135 code wrapped build, stringify and `setItem` in one `try` and printed *storage full?* for **any** exception, so Session 136's quota diagnosis was an inference from that message. The shared-origin quota is real on `file://`, but it was never shown to be the cause.
+
+Tested this session in headless **Chromium** (real IndexedDB, `file://`), not fake-indexeddb. Findings:
+- **Live handles in the payload.** A find quest stores its spawned NPC on the quest (`q._npc`), retrieve quests and guild relics store a mesh and light (`_obj`), and quests live in `worldState`, which the payload copies. three.js objects stringify through `toJSON` into scene-graph dumps: one lost person took a 5.6 KB save to 25 KB. That is how Michael's legacy slot reached 62 KB. It serialized in every state tried here (all five town-quest kinds, a lost person spawned), but a live object graph is one reference away from a circular throw.
+- **Stale spawn flags on load.** The dump comes back as a plain object and `spawned` comes back `true`, so after a load the lost person never re-spawns, a retrieve pickup never rebuilds, and a road camp never returns. The quest could not be finished. *Where is Gráinne?* was in this state.
+- **Silent hangs in the store.** IndexedDB reports quota at commit as an `abort` event, which `ssPut` didn't listen for, so the promise never settled. A connection closed under the page threw `InvalidStateError` with no reopen.
+- **Continue Adventure was broken.** It still called `setActiveSlot(slotN)`, a variable from before the S136 key rewrite: `ReferenceError` before anything loaded.
+
+The exact throw in Michael's three-hour world was not reproduced from a fresh one. So the fix closes every silent path, and anything that still fails now prints its reason.
+
+**The fix.**
+- `ssStringify`: the payload skips `_npc`/`_obj` by key and any engine object by value (`isObject3D`, material, geometry, texture, skeleton, DOM node). On a `TypeError` it retries with cycle-cutting and logs what was cut (`SS.cut`).
+- `ssWrite`: build, stringify and put all run inside the chain. A failure sets `SS.lastErr`, logs `Save failed (slot N): <error>` to the Character-tab log, and shows it on screen.
+- `ssOpen` / `ssPut`: settle exactly once; `onabort` handled; 8 s / 10 s timeouts reject with a named error; `onclose`/`onversionchange` drop the connection; a closed connection reopens and retries once. `ssGet` handles abort, `ssDel` can't hang, and `ssLoad` reports a failed read.
+- `ssSanitizeLoaded()` (called from `_applyLoadData`): deletes dumped `_npc`/`_obj` from quests and guild tasks. It resets `spawned` on unfinished find, road, beast/wizard/creature and raid tasks so their live pieces come back.
+- **Menu.** A failed slot save keeps the menu open. The Save and Load tabs open with a storage line (*Saved in IndexedDB · N saves, K KB · browser storage X of Y MB*, or the localStorage fallback named) and, on the Save tab, *Last save failed (when): why*.
+- **Continue** uses the active key; its log line reads *Slot N* or *Autosave*.
+- Build tag **s137**.
+
+### Verified (headless Chromium)
+A legacy `DOS_save_0` written the s135 way with a lost person spawned (24 KB) migrated to `legacy_manual_0`. **Continue** loaded it (Lv5, 359 gold, `charId` legacy, no errors). The find quest's flag reset and the NPC re-spawned live on walking back into range. From that character: an empty slot saved and closed the menu (8.6 KB); an overwrite by two clicks worked (the 24.6 KB slot rewritten at 8.6 KB); an autosave was written. A new character with a lost person spawned saves at 6.4 KB (was 25 KB), by real mouse clicks.
+
+Forced failures: a circular object put in `worldState` saves with `cycle:self` cut; a throwing payload builder keeps the menu open with the TypeError on the red line and the toast; an aborted transaction settles with *the write failed*; a closed connection reopens and saves.
+
+### Needs eyes
+Michael's own save in real Chrome. The Save tab's first line should read *Saved in IndexedDB*; if it names localStorage instead, IndexedDB is unavailable on that `file://` profile, and that is the next thing to chase. If a save still fails, the red line is the diagnosis: a screenshot of it settles the cause. The 62 KB legacy slot stays 62 KB until it is overwritten.
+
+
+---
+
+## v80 — Session 138 — Wayfinding: the town on the map, and directions
+
+Michael, after the s137 playtest: a large town is hard to read, and there is no way to ask where anything is.
+
+**Buildings by type, on both maps.** `drawLocalMap` filled every footprint the same tan and only the Local view's detail pass used a building's type, as a dot at its door, with both guilds sharing one purple; the minimap (`detail=false`) showed no types at all. The footprints now carry their type: the lot loop tags `bt` (with `hid`, and `sh` for a shuttered home), town and fort walls tag `wall`, fort barracks `barracks`. One table, `BLD`, holds the colours and drives the Local view, the minimap and the Key.
+
+Michael's scheme, with the rest assigned here: **grey-white** home, **gold** keep, **red** Fighters' Guild, **blue** Mages' Guild, **purple** church, **orange** inn, **charcoal** smith and armourer, **green** apothecary, **brown** goods, **teal** shipwright, **dark red** barracks, tan *Other* for anything unrecognised (`safehouse` reads as a home). A door is a dark notch on the footprint. Most towns have no keep — the city prosperity gate keeps `castle` out below 80 — so **the lord is a gold dot** wherever he stands, and **your own house** is outlined in light gold.
+
+**Directions.** Every townsperson carries a *Where can I find …* folder: the lord, and the nearest of each building the town has. The answer is computed when asked, from where you are standing, through the existing `compassWord`, and the place goes on the compass with its glyph and a gold ring on the Local view until you reach it (5u) or leave the town (pad + 220u). Guild heads get the folder from `guildDef`. Wording is banded by distance (*at the door* / *a short walk* / *on across the town* / *the far side of town*), plurals count (*There are 4 inns here. The nearest is …*), and a keeper asked about his own shop says so.
+
+Three faults found while building it:
+- **Indoors, `px`/`pz` are the room's own coordinates**, not the world's, and innkeepers, stewards and guild heads all talk inside. Directions measure from the building's front door (`wayFrom`) when `isInterior()`, and the waypoint doesn't update while inside.
+- **A keeper was recognised by name**, and the name bank is small enough that a guard called Olivier claimed *Olivier's Smithy*. The def now carries `_houseId`.
+- **After dark the lord is indoors** and his mesh hidden: townsfolk say so and mark the square for the morning rather than pointing at a hidden body.
+
+**Compass glyphs** (the backlog's note): a marker draws the place's glyph where it has one, underlined in the marker's colour — ☠ hunts and beasts, ⛺ a bandit camp, ◆ an item or relic, 👤 a person — and any marker within 25u of a place takes that place's own glyph.
+
+Build tag **s138**. `WORLD` exports `drawLocalMap`, `BLD`, `directionTopics`, `compassWord`, `way` and `settle` for testing.
+
+### Verified (headless Chromium)
+Dunmore, Coeur de Vie (147 houses), Ironhaven (a keep) and Portclare (a shipwright): every footprint tagged, nothing untagged. Local view and minimap rendered from the build — `local_dunmore.png`, `mini_dunmore.png`, `local_noon.png`. Asked a real townsperson every question in four towns: each answer's compass word matches the true bearing from the player, each picks the nearest of its type, each sets the marker with the right glyph, and the marker clears on arrival. At 06:00 the lord is indoors and the square is marked; at noon he is on the square and the gold dot draws. Owned house outlined. From inside an inn (room coords 6,9) the answer still matches the bearing from its door, and the waypoint holds still. The Key renders its town section. No page errors.
+
+### Needs eyes
+The colours against real terrain at night and in snow (the Local view was read at noon on grass); whether the charcoal smith reads on a dark biome. The compass glyph at real size. Whether the folder should also name places outside the walls (the roads topic still covers those).
+
+
+---
+
+## v80 — Session 139 — A character as a file
+
+The last thing owed from the save work (Session 136). Saves live in IndexedDB on one `file://` profile: a cleared profile, a new machine or a browser that loses its store takes everything with it, and there was no way to carry a character anywhere.
+
+**Export.** An *export* link on every character (the Load tab's header, and the Save tab's own character) reads that character's saves out of the store and downloads one JSON file: `{format:'the-old-gates/character', v:1, build, exported, char:{id,name,people,arch,level}, saves:[{kind,slot,ts,level,gold,zone,data}]}` — `data` being the save payload exactly as stored, so nothing is re-derived. Named `the-old-gates_<name>_lv<n>_<date>.json`. A save that can't be read is left out rather than failing the export; if none can be read, the export says so.
+
+**Import.** A *⤓ Import a character from a file* button above the character list opens the browser's own picker. The file is checked (format string, a `saves` array, at most 64 rows, 48 MB), each row is parsed on its own, and rows that are corrupt or of a save version this build doesn't read are skipped and counted rather than aborting the import. The character's `charId` is rewritten into every payload (and into `wS`) before it's written.
+
+**Import never overwrites.** If the file's own `charId` is not in the store — the usual case, restoring after a loss — the character lands back under its own id, with its own keys. If that id is already here, it comes in as a **second character** under a fresh id, named *"… (imported)"*. Saves are packed into slots in order (manual 1–8, the autosave ring 1–5); anything beyond that is skipped and counted.
+
+Both paths report in words (`showMsg` and the Character-tab log) with the same `ssWhy` reason strings as the save store.
+
+### Verified (headless Chromium, real downloads)
+A Lv6 character with two manual saves and two autosaves exported by clicking the link: `the-old-gates_Traveller_lv6_2026-09-17.json`, 25.1 KB, four rows carrying the right levels and gold. Deleted the character, imported the file: the same four keys came back under the same id, and loading slot 2 gave Lv6, 999 gold and `charId` intact. Importing the same file again, with the character present, made a second *Traveller (imported)* and left the first untouched. A junk file and a wrong-shaped JSON both refused with a message and wrote nothing. A file with one unparseable row and one of a future save version imported the two good rows and reported *2 saves, 2 skipped*. The picker opens a `.json` file input. No page errors.
+
+Build tag **s139**.
+
+### Needs eyes
+The download itself in real Chrome on `file://` (Chromium here allows it; a real profile may ask where to put the file). Whether a save exported from one build and imported into a much later one is worth a warning beyond the version check.
+
+
+---
+
+## v80 — Session 141 — A room, not the inn
+
+Renting at an inn set `worldState.rented={id,until}` and the innkeeper said *upstairs, any bed you like* — the whole house was yours for the night, including the beds in every other room. The backlog asked for a single room twice.
+
+**Rooms.** The inn's upstairs is already partitioned (`nRooms = floor(W/4.5)`), and `W` comes from the building's footprint, so the room count is known from the house record without entering: `innRooms(house)`. Beds now carry the room they stand in (`bedAt(x,z,y,room)`, `room` only for inns), so a room with two beds gives you both.
+
+**Letting.** The innkeeper names the room you'd get and how many other guests are in: *"One other guest in tonight. A room is 11 gold — the first door on the left, a bed, a bolt on the door…"*. Paying stores `{id,room,until}`. Asking again says which room is yours and that the key's in the door. Other guests are steady for a given inn on a given night (`innTaken`: a hash of the inn's id and the day), and never fill the house — with `n` rooms at most `n-1` are taken — so an inn is never a dead end at midnight. The *every room's taken* line is kept as a guard but is unreachable by that rule.
+
+**The other doors.** `bedInteract` lets you sleep in your own room and turns you away from the rest (*"Another guest's room. Yours is the first door on the left."*); `bedPrompt` reads *Your room — press 'E' to rest* or *Another guest's room* before you press anything. A save from before this session rents no particular room (`room` absent), and keeps the old any-bed behaviour rather than locking a paid-for night out.
+
+Build tag **s141**.
+
+### Verified (headless Chromium)
+The Bramble Hearth in Dunmore (2 rooms, 4 beds): the offer named the free room and the guest count; paying took 11 gold and stored `{id:'g_dunmore_8',room:0}`; asking again named that room. Inside, both beds of room 0 handed off to the engine's sleep, both beds of room 1 refused with the message and the prompt read *Another guest's room*. An old-style rent with no room slept in all four. After the night ran out the prompt returned to *Ask the innkeeper for a room (11 gold)*. No page errors.
+
+### Needs eyes
+Whether being turned away from a room you can see reads as fair in play, and whether one room per inn per night is enough when a town has four inns. Rooms are still identical inside; a price difference between a front room and a back one would need the interior to vary.
+
+
+---
+
+## v80 — Session 142 — The lock, by hand
+
+Michael asked for Oblivion's lock. `tryLockpick` was one roll against `pickChance()` — finesse and level against a number — with a 460 ms pause and a result.
+
+**The lock.** An overlay (`#lockpick`) with a pin per tumbler and a dashed shear line. Pressing pushes the current pin; it rises (170 ms), **holds at the shear for a moment**, then falls back. Press during the hold and the pin sets, gold, at the line. Press while it is still rising, or once it has begun to fall, and the pick snaps. A pin that falls back on its own costs nothing — only a press at the wrong moment does. Click or **space** pushes, **←/→** choose a pin, **Esc** steps back and leaves the door alone.
+
+**The lock's own difficulty** is steady per door (`lpDifficulty`, hashed from the door's seed or position, plus depth): 2–5 pins, and a hold window of 110–300 ms that narrows as pins rise. **Finesse widens the window** (+22 ms a point), which is where the old `pickChance` attribute weighting went.
+
+**Breaking a pick** costs the pick and drops the last pin you had set — the lock gives ground grudgingly. Running out ends the attempt with *No picks left. The lock holds.* Success unlocks exactly as before: `door.open`, the mesh out of the scene, the map cell walkable, `stats.picked`, and the same unlock sound.
+
+Timing is read from the clock (`lpPhase()` / `lpPinY()` off `performance.now()`), not from the last animation frame. The first cut judged a press against the phase the last frame had written, so a dropped frame could snap a pick on a perfectly timed press — it showed up immediately in the harness as a *too late* press being called *too soon*.
+
+`lockOpen` joins the pause gates and `_isMenuOpen`, and `lockpick` joins the DOM-modal id list, so the world holds still and clicks don't swing your sword while you work.
+
+### Verified (headless Chromium)
+No picks: the old message, no overlay. With picks: the overlay opens paused, 3 pins on a first-floor door. A press during the hold sets a pin (*It holds. 2 to go.*); a press while rising snaps a pick, drops the set pin and reports *Too soon*; a press during the fall reports *Too late*; every pin set gives *The lock gives*, opens the door and counts `stats.picked`; the last pick snapping closes with *No picks left* and the door stays shut; Esc leaves the door untouched. No page errors.
+
+### Needs eyes
+Whether 110–300 ms is fair at speed in a real fight-adjacent moment, and whether dropping the last set pin on a break is too harsh (one line in `lpBreak`). Chests and world doors still don't use locks at all — only dungeon doors do.
+
+
+---
+
+## v80 — Session 143 — Doors inside buildings
+
+Michael: the dungeon's doors, sized for interiors — starting with the inn room you now rent, and usable anywhere else.
+
+**The part.** `partition(...)` already cuts a 1.5u doorway and hangs a lintel; nothing hung in the gap. `intDoorAt(sc_,SOL,x,z,by,ang,col)` now hangs a leaf on the hinge side: a 1.34 × 1.46 panel with two iron bands and a knob, in a group pivoted at the hinge post so it swings. Which way it swings is steady per doorway (hashed from its position). Shut, it pushes a solid into the interior's `SOL`; opened, that solid's bounds are moved out of the world and restored on closing, so collision follows the leaf without rebuilding the room. `INT_DOORS` is reset with `INT_BEDS` when an interior builds.
+
+**Where they are.** Every doorway the main `partition` cuts: the inn's upstairs rooms (one per room — the room you rent now shuts), and the guild halls' hall and member rooms. The shopkeeper's back room is built by a second, local partition helper with its own signature, so it gets the same call and its own door.
+
+**Using them.** E takes a door within 1.5u and 1.3u of its floor height, ahead of the bed check (you stand in a doorway, not on a bed), and the interior prompt reads *Press 'E' to open the door* / *…to close the door*. Closing is refused while an interior NPC stands in the gap (*Someone is in the doorway.*) — the same rule the dungeon uses. `sndDoorOpen`/`sndDoorClose` are shared with the cave doors. While fixing the prompt line, the interior prompt also started using `bedPrompt`'s own text, so Session 141's *Your room* and *Another guest's room* now actually show.
+
+The swing is read off the clock (`performance.now`, 300 ms, smoothstepped), not off frame count: the first cut lerped by `dt` each frame and only reached half travel in 700 ms under the harness's ~14 fps.
+
+### Verified (headless Chromium)
+The Bramble Hearth: two doors, one per upstairs room. Lorcan's Forge and Cathal's Apothecary: one door each on the back-room wall. For each: the prompt reads *open* when shut and *close* when open, `intSolidAt` at the doorway is solid when shut, clear when open, and solid again after closing, and the leaf swings the full 1.62 rad. A body in the gap refuses the close with the message and the door stays open; once clear it shuts. A bed away from a doorway still gets the bed prompt and E still rests.
+
+### Needs eyes
+The leaf itself in frame — the harness's camera fell to the ground floor between shots, so the look of a door in a room is unverified: how it reads at eye height, whether 1.46u is tall enough against a 2.1u ceiling, and whether the swing clears the beds. Interior NPCs don't open doors: a shut door pens the innkeeper's guests in, which is fine while nothing needs to walk through, and is the next thing to do if it looks wrong.
+
+
+---
+
+## v80 — Session 144 — The land, on the map
+
+Michael: the world map reads as brown or green, and you can't tell where the tundra is.
+
+**Why.** `mapPixel` coloured by **height** only — parchment → low → hill → mountain → snow — with two exceptions: a forest tint by density, and a wastes tint. The generated continent uses ten biomes (`forest, autumn, plains, coast, dunes, moor, fen, swamp, tundra, wasteland`), so nine of them looked identical. Worse, the wastes test read `biome==='wastes'`, the home province's own name; generated cells carry `'wasteland'`, so that branch never fired outside the home province.
+
+**Now.** A `MAPBIO` table gives every biome a tint and a strength: forest green (still scaled by its density, so a thin wood reads thinner), autumn ochre, plains straw, coast pale sand, dunes bright sand, moor heather, fen olive, swamp deep green, tundra near-white, wasteland and wastes ash. The tint is laid over the parchment and fades from 36u to 72u, so peaks still go to rock and snow whatever grows below them, and the map keeps its drawn-chart look rather than turning into a biome key.
+
+The **Key** gains a *The land* section built from the same table, with a line saying what the colours mean: colour is the country, shading is the height.
+
+### Verified (headless Chromium)
+Rendered the same view from the s143 and s144 builds: 41% of land pixels changed, and the spread of colour across the land rose from 10.2 to 13.7 (a third more variation) — a shift you can see without it turning gaudy. At the north of the continent, the tundra realm now reads pale against the tan and green land east of it. The Key renders *The land* with its swatches.
+
+### Needs eyes
+The palette against the parchment at a real zoom, and whether moor-heather and swamp-green are too strong in a region that mixes them.
+
+**Weather, for the playtest** (asked this session): the console command is `devWeather('rain')`, and the types are `clear, overcast, rain, storm, snow, fog`. `devWeather()` with no argument reports the current one and what it's changing to. The change is a blend that takes about 25 seconds, and it holds for roughly four minutes before the world picks its own weather again. Weather only runs in the open world, and the region's own weights still apply when it rolls (tundra leans snow, wasteland leans overcast).
+
+
+---
+
+## v80 — Session 145 — Weather you can feel
+
+From Michael's playtest of s144: fog does nothing; rain is far too loud and follows you indoors; snow should be near-silent.
+
+**Fog did nothing, and the reason was two bugs stacked.** The weather multiplied the biome's fog density by 2.2 — against a plains `fogDen` of ~.008, a haze — and then the density was scaled again by `.55 × altK` on assignment, so the weather's contribution was cut by nearly half after the fact. On top of that, the **authored day/night interpolator was overwriting `fog.density` every frame** with the zone's own curve, so whatever the weather asked for was reset before it could be seen. The world module owns fog density in the open world now (the interpolator stands down there), fog carries a floor clamped on the *final* value (.028 by day, .020 at night), and its multiplier rises to ~4.7. Sight in fog goes from roughly 460 steps to **36**; three seconds of play takes you from clear to full fog.
+
+**Rain was loud and followed you.** The gain was a flat `.11`, and — the real fault — the weather's sound was ticked inside `WORLD.tick`, which returns early outside the open world. Step into a house or a cave and the gain simply froze at whatever it was: a downpour at full volume, indefinitely. The sound now runs from the main loop as `wxAudio(dt)` wherever you are, and it's quieter and placed: rain **.055** in the open, **.012** inside a building (about a fifth — muffled, not cut, as asked), **.003** in a dungeon, storm **.075**.
+
+**Snow is a breath of wind.** It shares the rain's noise source, so the filter moves: 2600 Hz and a hiss for rain, **380 Hz** and a low wind for snow, at .012 gain.
+
+### Verified (headless Chromium, ticking the world at a fixed 1/60 so convergence is deterministic)
+Fog density by weather: clear .0021 (467 steps of sight), overcast .0030, rain .0039, storm .0047 (214), snow .0044, **fog .0278 (36)**. From clear, three seconds of play reaches .0277. Audio gains: rain outside .0549 / inside .0121 / dungeon .0028, storm .0749, snow .0120 at 419 Hz, clear 0. A screenshot in fog shows the far hillside gone and the near trees whitened.
+
+One console error appeared while driving `WORLD.tick` by hand out of its usual order (`matrixWorld` of null) and not during normal play; I've treated it as harness-induced rather than a build fault, which is worth confirming if it ever shows up in a real session.
+
+### Needs eyes
+Whether fog at 36 steps is atmospheric or claustrophobic (one number: `WX.fogFloor`), and whether rain indoors at a fifth is the right amount of muffle.
+
+
+---
+
+## v80 — Session 146 — Weather with a place, and snow that lies
+
+Michael, after s145: the same storm shouldn't fall the same everywhere, and snow should settle.
+
+**Strength by where you are.** `WX_BIO` gives every biome a rain, snow and fog multiplier plus a `cold` value, and `wxLocal(k)` blends them across `regionWeights(px,pz)` — the same weighting the atmosphere uses — so the numbers slide as you walk rather than snapping at a border. Out over water (`worldH < SEA_Y+1`) rain and fog take a further ×1.25: nothing breaks the weather at sea. Tundra takes snow ×1.75 and rain ×0.35; forest rain ×1.35; fen and swamp fog ×1.75–1.85; dunes are nearly dry (rain ×0.30, snow ×0.05). The strength feeds the particle draw range, the fog multiplier and floor, and the sound gain. The particle pools grew (rain 2200 → 3200, snow 1400 → 2600) and the base draw is now ~60% of the pool, so a hard place can actually show more than a mild one.
+
+**Snow that lies.** `WX.cover` (0–1) rises while snow falls, scaled by the local snow strength and cold, and falls back when it stops, slower where it's cold. Where `cold ≥ .85` — the far north — it never goes below **.30**, so the tundra keeps a covering of its own. The cover is blended inside `groundColor()`, so a chunk built during a snowfall matches one recoloured by it: flat ground holds it (by the vertex normal), steep ground sheds it, and it thickens with altitude. When the depth moves more than .045, every loaded chunk is queued and repainted **six per frame** (`snowRepaint` / `snowRepaintStep`) so a snowfall doesn't hitch — the chunk colour pass already existed for rivers arriving late. The Local view and minimap lift toward white with the same value.
+
+### Verified (headless Chromium, ticking at a fixed 1/60)
+Walking a line north: plains 1.00/1.00/1.00, autumn rain 1.22 fog 1.43, coast rain 1.44 fog 1.69, forest rain 1.69, far north `cold` 1.00. Snow from bare ground in the north: cover .79 at 30s, 1.00 at 60s; in the home province it takes about two minutes. Two minutes of clear weather in the north melts 1.00 → .52 and keeps falling toward the .30 floor. Ground vertex colours on the chunk under the player: bare [.52,.65,.28] → covered [.74,.80,.69]. A screenshot with cover at 1.0 shows the grass gone pale while the trees stay green; the repaint queue drains to empty.
+
+### Needs eyes and owed
+- **A town's ground doesn't take snow.** Settlements bake their own ground mesh, which isn't a terrain chunk, so a covered countryside meets a bare village square. That's the next piece of this.
+- Trees, rocks and roofs stay their own colour — snow lies on the ground only.
+- Cover is one number for the world, not a per-cell depth: walk south with a covering and it melts as you go, which reads correctly but isn't real per-place snow.
+- **Footprints** are still owed, and are the natural follow-on now that cover exists.
+
+
+---
+
+## v80 — Session 147 — Tracks in it
+
+Following Session 146: the bare ground in a snowy town, and footprints.
+
+**A correction to S146.** The note said settlements bake their own ground mesh, so a village square stayed bare. That was wrong: a settlement's ground *is* terrain chunk, and it whitened correctly. What stayed bare were the **road and footpath ribbons** — flat geometry on the shared `ROAD_MAT` (which is `VC_MAT`, the same material as every building), so they couldn't be tinted through the material without whitening the houses too.
+
+**Roads take a dusting.** Each ribbon keeps a copy of its own vertex colours when it's built (`snowWatch`), and the snow pass lerps them toward a pale grey by `cover × .55`, capped at .62 — so a road under deep snow is lighter but still legibly a road, trodden rather than buried. Measured on a road ribbon: [.555,.502,.344] bare → [.729,.716,.652] under full cover.
+
+**Footprints.** A fixed ring of 48 flat marks (`FP`), re-used round-robin, dropped as you walk and rotated to your facing, alternating left and right of your line by .19u. They only appear in the open world with `cover ≥ .18`, and no closer together than .55u, so sprinting doesn't carpet the ground. Each fades over about 26 seconds, and its opacity is also multiplied by the cover, so when the snow melts the tracks go with it. Foot-sized at .15 × .30 after a first pass came out reading as grey floor tiles.
+
+**Underfoot.** `sndSnowStep` — shorter, softer and lower than `sndFootstep` — plays instead of the normal step whenever a print is laid, so the sound and the mark agree.
+
+### Verified (headless Chromium)
+No print with no snow (`footprint()` returns false, nothing visible). Walking on cover .9: twelve calls, twelve marks, alternating sides along the line of travel, opacity .5. Thirty seconds later: none visible. Laying eight and then dropping the cover to zero: all gone within two seconds. Road ribbon colours as above.
+
+### Needs eyes
+The trail itself at a walking camera — the harness kept parking the view on a road, so the look of a line of prints across a field is unverified; size and opacity are one line each. Trees, rocks and roofs still take no snow, and cover is still one depth for the world rather than per-region.
+
+
+---
+
+## v80 — Session 148 — Sun, moon and stars
+
+The dome was flat colour: no sun, no moon, and nights with nothing overhead.
+
+**Riding the same angle as the light.** The sun light already takes its azimuth and elevation from `gameHour()` (`dayAng = π(hr−6)/12`). The discs use that same angle, so the sun you see is where the shadows say it is. The light clamps its elevation at .32 so the world is never lit from below; the *disc* uses the true sine, dropping below the horizon at night. The sun sits at radius 620, the moon at 580 on the opposite side, both billboarded at the camera each frame, both `fog:false` so distance haze doesn't eat them, and both drawn behind everything (`renderOrder` −3).
+
+**The moon's phase** is a second disc in the sky's own colour, slid across the face: illumination `(1−cos 2πp)/2` from the day number over a 29-day cycle, offset by that fraction of the moon's width, to one side while waxing and the other while waning. Day 0 is a full moon rather than a dark sky. A first pass had the offset inverted, which put a dark disc *beside* the moon instead of across it.
+
+**Stars** are 760 points on the upper hemisphere with varied sizes, parented to the player's position and scaled to the sky radius, fading in on the existing `_nightFactor` — half strength through dusk and dawn, full at midnight.
+
+**The weather draws the curtain.** A cloud value from the current and incoming weather (storm 1.0, rain .9, snow .85, fog .95, overcast .75) multiplies all three: a storm at midnight has no stars and no moon; fog at noon leaves the sun a faint smudge. The sun also reddens and dims as it nears the horizon.
+
+### Verified (headless Chromium)
+Through the day at h0/3/6/9/12/15/18/21/23: the sun is hidden below the horizon at night, at .30 opacity on the horizon at 6 and 18, and .95 and high at noon; the moon is opposite it, .92 at night, .10 at dusk, hidden by day; stars .90 at night, .45 at dusk, absent by day. A storm at midnight hides all three; fog at noon leaves the sun at .05. Photographs: a star field at 22h, a crescent moon at day 11, a full moon at day 0, and the sun in a morning sky.
+
+### Needs eyes
+The sun's size (26 units at 620 — it reads about right in a screenshot, but it's a taste call), and whether the moon should be bigger. Interiors and dungeons don't show sky at all, so nothing changes there. The moon is drawn opposite the sun, which is true for a full moon and a convention for the rest — the phase is decorative rather than an ephemeris.

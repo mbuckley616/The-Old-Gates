@@ -1,0 +1,7 @@
+node_modules/
+tests/out/
+tests/tmp/
+*.log
+.DS_Store
+# per-character save exports you don't want in history
+*.ogsave.json

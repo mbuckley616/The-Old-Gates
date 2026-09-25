@@ -1,0 +1,13 @@
+{
+  "name": "the-old-gates",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "check": "python3 scripts/parsecheck.py",
+    "postinstall": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}
