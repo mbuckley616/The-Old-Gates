@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s148</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s150</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -18806,7 +18806,7 @@ function interact(){
   // chest — opens panel. Finds any chest on this floor in range whose items aren't exhausted OR hasn't been opened yet
   // (empty-on-spawn chests still show panel once so the "oh, empty" reveal happens).
   const ch=CHESTS.find(c=>c.floor===currentFloor&&lookingAt(c)&&(!c.opened||c.items.length>0)); // v80 — look-at
-  if(ch){ openLoot(ch); return; }
+  if(ch){ if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } // S150 — a locked chest is picked first
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
   if(typeof D_BEDS!=='undefined'){const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(bd){openSleepUI();return;}} // v80 S9 — fort cots
@@ -20816,7 +20816,9 @@ function buildDungeon(portal){
       // Default behavior unchanged — treasure → 'treasure' pool, else 'chest'.
       const poolKind = lootKind || (treasure?'treasure':'chest');
       const items = rollContainerLoot(poolKind, ds, th2);
-      CHESTS.push({x:c,z:r,opened:false,lid,treasure,floor:floorIdx,mesh:group,items,displayName:treasure?'Treasure Chest':'Chest'});
+      const chObj={x:c,z:r,opened:false,lid,treasure,floor:floorIdx,mesh:group,items,displayName:treasure?'Treasure Chest':'Chest'};
+      if(treasure||chestLockedAt(c,r,floorIdx))lockChest(chObj); // S150
+      CHESTS.push(chObj);
     };
     // Pass 1: dead-ends INSIDE rooms (tucked into room corners, not corridor stubs)
     for(let r=0;r<dR;r++)for(let c=0;c<dC;c++){
@@ -27303,10 +27305,21 @@ const LP={door:null,pins:[],cur:0,phase:'idle',pushed:0,raf:0,rise:170,dwell:260
 function lpDifficulty(door){ // steady per door: how many pins, and how long the top holds
   const h=String((door&&(door.seed!=null?door.seed:(door.x+'_'+door.z+'_'+(door.floor||0)))) ).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);
   const depth=Math.max(0,(door&&door.floor||1)-1);
-  const pins=Math.min(5,2+(h%3)+(depth>2?1:0));
+  const pins=Math.min(5,Math.max((door&&door.minPins)||0,2+(h%3)+(depth>2?1:0)+((door&&door.lockBonus)||0))); // S150 — chests carry a bonus or a floor
   const fin=(typeof ATTRS!=='undefined'&&ATTRS.finesse)||0;
   const dwell=Math.round(Math.max(110,300-pins*28-(h%40)+fin*22)); // a steady hand buys time
   return {pins,dwell,fall:Math.round(420+ (h%120))};
+}
+// S150 — which dungeon chests are locked: every treasure chest, and ordinary ones by floor (1 in 5 on the
+// first, 2 in 5 on the second). Steady per cell, so a mimic in the same place wears the same lock.
+function chestLockedAt(x,z,floor){
+  const h=String(Math.round(x)+'_'+Math.round(z)+'_'+(floor||1)+'_c').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);
+  return (h%100)<((floor||1)>=2?40:20);
+}
+function lockChest(ch){
+  ch.locked=true;ch.lockBonus=ch.treasure?1:0;ch.lockTitle=ch.treasure?'A locked treasure chest':'A locked chest';
+  ch.onPick=()=>{ch.locked=false;if(typeof openLoot==='function')openLoot(ch);};
+  return ch;
 }
 function lpPicks(){const i=BAG.findIndex(b=>b.name==='Lockpick');return i<0?0:(BAG[i].qty||1);}
 function lpSpendPick(){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)return 0;const it=BAG[i];it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return lpPicks();}
@@ -27316,7 +27329,7 @@ function openLockpick(door){
   LP.pins=Array.from({length:d.pins},()=>({set:false,y:0}));
   lockOpen=true;_releasePointerLockForMenu();
   const el=document.getElementById('lockpick');el.style.display='flex';
-  document.getElementById('lp-title').textContent=d.pins>=4?'A good lock':'A locked door';
+  document.getElementById('lp-title').textContent=d.pins>=4?'A good lock':((door&&door.lockTitle)||'A locked door');
   lpRender();lpStatus('Push a pin. Press again when it holds.');
   if(!LP.raf)LP.raf=requestAnimationFrame(lpTick);
 }
@@ -27400,7 +27413,8 @@ function lpWin(){
   try{sndDoorUnlock();}catch(e){}
   setTimeout(()=>{
     closeLockpick();
-    if(door){door.open=true;if(door.mesh&&typeof dScene!=='undefined')dScene.remove(door.mesh);
+    if(door&&door.onPick){try{door.onPick();}catch(e){console.error(e);}} // S150 — a chest opens itself
+    else if(door){door.open=true;if(door.mesh&&typeof dScene!=='undefined')dScene.remove(door.mesh);
       try{const map=activeMap();if(map[door.z]&&map[door.z][door.x]===5)map[door.z][door.x]=1;}catch(e){}}
     (worldState.stats||(worldState.stats={})).picked=((worldState.stats||{}).picked||0)+1;
     showMsg('The lock gives.','#ffd700');
@@ -37719,8 +37733,11 @@ var WORLD=(()=>{
   function hasCellar(house){return house&&(house.type==='inn'||house.type==='guild_f'||house.type==='guild_m'||house.type==='castle'||house.ownedByPlayer||isGuestCathedral(house));}
   const HATCH={x:0,z:0,y:0,active:false};
   let INT_LOOT=null;
-  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2)return "Press 'E' to open the chest";return null;}
-  function lootInteract(){if(!lootPrompt())return false;const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
+  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2)return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
+  function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock
+  function lootInteract(){if(!lootPrompt())return false;
+    if(towerLocked()){const id=INT_LOOT.id;if(typeof tryLockpick==='function')tryLockpick({seed:'tower_'+id,minPins:4,lockTitle:'A locked chest',onPick:()=>{(worldState.towerPicked||(worldState.towerPicked={}))[id]=true;lootInteract();}});return true;}
+    const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
   function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9)return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
   function hatchInteract(){if(!hatchPrompt())return false;const h=currentHouse;
     if(HATCH.roof){const S=SETTLE.get((h.siteId)||'');const site=siteAnywhere(h.siteId);const roof=(S&&S.roof)||(site?roofFor(site):null);if(!roof)return false;const hh=h;if(typeof exitInterior==='function'){window._pendingWorldPos={x:roof.x,z:roof.z+1.2,yaw:Math.PI,jumpY:roof.y};exitInterior();}showMsg('Wind. The whole country, from up here.','#c8b880');return true;}
@@ -38966,7 +38983,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,guestPrompt,guestInteract,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},guestPrompt,guestInteract,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
@@ -40394,8 +40411,9 @@ function loop(now){
       iprEl.style.opacity='1';iprEl.style.display='block';
     }
     else if(nearCorpsePrompt){iprEl.textContent=`Press 'E' to loot ${nearCorpsePrompt.name}`;iprEl.style.opacity='1';iprEl.style.display='block';}
-    else if(nearChest){iprEl.textContent=nearChest.treasure?(nearChest.opened?"Press 'E' — treasure chest":"Press 'E' to open treasure"):(nearChest.opened?"Press 'E' — chest":"Press 'E' to open chest");iprEl.style.opacity='1';iprEl.style.display='block';}
-    else if(nearMimic){iprEl.textContent="Press 'E' to open chest";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearChest){iprEl.textContent=nearChest.locked?(nearChest.treasure?"Press 'E' to pick the treasure chest's lock":"Press 'E' to pick the chest's lock"):nearChest.treasure?(nearChest.opened?"Press 'E' — treasure chest":"Press 'E' to open treasure"):(nearChest.opened?"Press 'E' — chest":"Press 'E' to open chest");iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearMimic){ // S150 — a mimic wears the same lock a chest there would
+      iprEl.textContent=chestLockedAt(nearMimic.x,nearMimic.z,nearMimic.floor)?"Press 'E' to pick the chest's lock":"Press 'E' to open chest";iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearBarrelPrompt){iprEl.textContent="Press 'E' to open "+(nearBarrelPrompt.displayName||'Barrel').toLowerCase();iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearDoorObj2){
       // v61g6: distinct prompt by lock state and open state.

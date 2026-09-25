@@ -4787,3 +4787,21 @@ Before: 0/5 suites. With `CHROME=/opt/pw-browsers/chromium`: 5/5. After the chan
 
 ### Needs eyes
 Nothing in the game. If the container's Chromium drifts far from the pinned Playwright, launches could break; allowing `cdn.playwright.dev` in the environment's network settings would remove the fallback entirely.
+
+---
+
+## v80 — Session 150 — Locks on chests
+
+Asked for locks on chests and on world doors, the lockpicking owed since Session 142. Michael's calls: dungeon chests by depth plus the chest atop each tower; shops and homes locked at night — but **a crime system first**, so the town doors wait for it. The chests have no crime in them, so they were built now.
+
+**Which chests.** Every treasure chest is locked. Ordinary dungeon chests are locked 1 in 5 on the first floor and 2 in 5 on the second (`chestLockedAt`), decided by a hash of the cell rather than a roll, so the same place always says the same thing. That matters for mimics: the prompt over a disguised mimic now reads *pick the chest's lock* wherever a real chest there would be locked, so the word "lock" doesn't tell you it's a real chest. Pressing E on a mimic still wakes it, as before. The tower's hoard is always locked and always a good lock (at least four pins); once picked it stays picked (`worldState.towerPicked`), alongside the existing `towerLoot`. Ship, wreck and lair chests are unchanged.
+
+**The pick opens the chest in place.** `lpWin` used to assume a door: it removed the mesh and cleared the map cell. It now hands off to the target's own `onPick` when there is one, so a chest keeps its mesh, unlocks and opens its loot panel directly. `lpDifficulty` takes a `lockBonus` (a treasure chest carries one more pin than an ordinary chest in the same cell) and a `minPins` floor (the tower); the overlay's title comes from the target (*A locked chest*, *A locked treasure chest*; *A good lock* at four pins or more, as before). No pick: the same *Locked. A lockpick would do it* line as a door. `WORLD.intLoot` is a new read-only getter, for the test.
+
+**Housekeeping this session, before the feature:** the author's three docs went into git; `lore_canon_addendum.md` was folded into `lore_canon.md` as Part II, verbatim, with a note that Part II wins where they disagree (a real merge of the two is owed and wants Michael at the table); cloud sessions got a SessionStart hook (`scripts/cloud-setup.sh`), which Session 149 then fixed from the cloud side. The tag jumps s148 → s150 because Session 149 changed no game code.
+
+### Verified (headless Chromium)
+New `tests/locks.test.mjs`, 8 checks. The rule over 4,000 cells: .199 locked on floor 1, .401 on floor 2, steady under sub-cell jitter. A real dungeon entered through a world door: 9 chests, 5 of them treasure, all 5 locked, 6 locked in all, none off the rule. Without a pick the chest stays shut and no panel opens. With picks, setting every pin at the shear opens that chest's loot panel with the mesh still in the scene and no pick spent. Pressing the real E key while looking at a locked chest brings out the pick, not the loot. Treasure at a cell: 3 pins against 2 for a plain chest. The tower nearest the home province (c5_9_p1): the prompt says *pick*, four pins titled *A good lock*; picked, it yields its hoard and the prompt goes. No page errors. Full suite 6/6.
+
+### Needs eyes
+How many picks a dungeon now costs: with every treasure chest locked, the one run above had 6 of 9 chests locked. That may be too many. Whether the mimic's borrowed lock reads fairly. Whether picking a chest should take a moment of animation rather than cutting straight to the loot. From reading the code (not tested): the *closed, opens at 8* check for shops seems to sit in the legacy overworld branch, not the open world's door path. The crime-system design should settle that before any town door is locked.

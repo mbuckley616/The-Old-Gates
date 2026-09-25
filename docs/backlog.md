@@ -1,4 +1,4 @@
-# The Old Gates — Backlog (as of Session 148, 17 Sep 2026)
+# The Old Gates — Backlog (as of Session 150, 25 Sep 2026)
 
 Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 93–124, plus the items raised at session close. Grouped by area; within each, roughly in the order they'd pay off.
 
@@ -16,9 +16,10 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 ## B. Systems
 - ~~Prosperity: wall tiers, plague, siege and occupation, pirates sacking ports, the ruin variant~~ — **done, Session 129**. Owed: soldier models of their own; occupation effects from the canon (tithe, duels); a word from a town you own when it's besieged.
 - **Coach lines**: enterable coaching inns; a midpoint stop. ~~The coach halts when a camp breaks the road~~ — done, Session 129.
+- **Crime system** (next, before town locks — Michael, Session 150): theft, trespass and being seen; what a witness does (favour with the town, a shopkeeper who won't trade, a bounty, guards); how it's paid off or lived down. Open design — wants its own session and probably Fable (it touches NPC schedules, favour, towns and saves). Then: shops and homes locked at night, a strongbox of takings to make a break-in worth it. Check first: the *closed, opens at 8* shop check looks like it only runs in the legacy overworld, not the open world.
 - **Trade routes**: the caravan visibly attacked when a route breaks.
 - **Cargo trading** between ports with prices by island; **skills by use** (the Morrowind model). ~~Inn single-room rental vs the whole inn~~ — **done, Session 141**: the innkeeper lets one named room, other guests hold the others, the rest of the landing turns you away.
-- ~~Lockpicking as a minigame~~ — **done, Session 142** (Oblivion's lock: a pin per tumbler, set it at the shear, a mistimed press snaps the pick; difficulty steady per door, finesse widens the window). Owed: locks on chests and on world doors — only dungeon doors are locked today.
+- ~~Lockpicking as a minigame~~ — **done, Session 142** (Oblivion's lock: a pin per tumbler, set it at the shear, a mistimed press snaps the pick; difficulty steady per door, finesse widens the window). ~~Locks on chests~~ — **done, Session 150** (treasure chests always, ordinary dungeon chests 1 in 5 / 2 in 5 by floor, the tower's hoard a good lock; mimics wear the same lock a chest there would). Owed: locks on world doors — shops and homes at night — **after the crime system** (Michael's call).
 
 ## C. Combat and creatures
 - ~~Third-person~~ — **done, Session 126** (jointed body, kit on the body, poses from combat state, collision-aware camera). Owed: arrows/spells from the hands rather than the eye; weapon trails; drink/loot poses.
@@ -45,6 +46,7 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 - ~~Compass quest markers taking the place glyph set~~ — done, Session 138.
 
 ## G. Playtest checks (built, verified only headless)
+- **Chest locks (Session 150)**: a dungeon run's worth of chests — whether the picks it costs feel fair (one test run had 6 of 9 locked); the tower hoard's lock; whether the mimic's borrowed lock reads fairly.
 - **Sky (Session 148)**: sun and moon size at real distance; a clear night versus an overcast one; sunrise colour on the horizon.
 - **Snow tracks (Session 147)**: a line of prints across a snowy field at walking height — size, darkness and how long they last; a road under deep snow.
 - **Weather by place (Session 146)**: whether tundra snow and fen fog feel different enough as you travel; how the snow line looks where open ground meets a town.
