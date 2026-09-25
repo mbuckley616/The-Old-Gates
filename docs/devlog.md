@@ -4770,3 +4770,20 @@ Through the day at h0/3/6/9/12/15/18/21/23: the sun is hidden below the horizon 
 
 ### Needs eyes
 The sun's size (26 units at 620 — it reads about right in a screenshot, but it's a taste call), and whether the moon should be bigger. Interiors and dungeons don't show sky at all, so nothing changes there. The moon is drawn opposite the sun, which is true for a full moon and a convention for the rest — the phase is decorative rather than an ephemeris.
+
+
+---
+
+## v80 — Session 149 — Tests in a cloud session without the download
+
+A cloud session's `npm test` failed every suite: the environment's network policy blocks `cdn.playwright.dev`, so the setup hook couldn't fetch the Chromium build the pinned Playwright wants (1243), and every `boot()` died on a missing executable. The cloud container already ships an older Chromium at `/opt/pw-browsers/chromium` (1194), and the harness already honoured a `CHROME` override — it just had to be typed by hand.
+
+**The harness falls back on its own.** `boot()` in `tests/lib/game.mjs` now uses `/opt/pw-browsers/chromium` when no `CHROME` is set, Playwright's own browser is missing, and the pre-installed one exists. Locally, with Playwright's browser present, nothing changes.
+
+**The setup hook tells the truth.** `scripts/cloud-setup.sh` runs `npm install --ignore-scripts` (the `postinstall` download used to fail the install itself), then tries the browser download separately; if that's blocked and the pre-installed Chromium is there, it says so instead of reporting failure. No change to `index.html`, so no tag bump.
+
+### Verified (headless Chromium)
+Before: 0/5 suites. With `CHROME=/opt/pw-browsers/chromium`: 5/5. After the change, re-running the setup hook in the cloud container printed the fallback line, and plain `npm test` passed 5/5 (export, interiors, saves, wayfinding, weather) with no page errors.
+
+### Needs eyes
+Nothing in the game. If the container's Chromium drifts far from the pinned Playwright, launches could break; allowing `cdn.playwright.dev` in the environment's network settings would remove the fallback entirely.

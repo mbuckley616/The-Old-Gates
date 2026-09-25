@@ -28,10 +28,16 @@ export function localBuild(src = path.join(ROOT, 'index.html')) {
   return out;
 }
 
+const PREINSTALLED = '/opt/pw-browsers/chromium';
+
 export async function boot(opts = {}) {
   const file = localBuild(opts.src);
   const launch = { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] };
   if (process.env.CHROME) launch.executablePath = process.env.CHROME;
+  else if (!fs.existsSync(chromium.executablePath()) && fs.existsSync(PREINSTALLED)) {
+    // Cloud containers ship their own Chromium; use it when Playwright's download was blocked.
+    launch.executablePath = PREINSTALLED;
+  }
   const browser = await chromium.launch(launch);
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, acceptDownloads: true });
   const page = await ctx.newPage();
