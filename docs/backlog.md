@@ -37,6 +37,16 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 - ~~**The Guest's chapel**: the black-screen prayer checked in the real DOM~~ — **done, Session 152**: the black was right; the capital itself was found only among loaded cells, now solved over the whole grid (Fortargent).
 - **Performance**: NPC part merging if towns of forty NPCs ever stutter.
 
+## H. Look and feel — meshes and animation (Michael, 26 Sep 2026)
+The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/spheres/cones, every material `MeshLambertMaterial`, no skinning, characters as rigid parts turned at the joints (three.js r128). Goal: smoother and better across the board. **Cross-cutting — Fable sessions**, one area each, verified with before/after screenshots, with a frame-time check in a forty-NPC town before and after each.
+- **Design first (open):** the target style (stylised smooth low-poly is the natural step; realistic is not a single-file game); procedural in code vs imported CC0 models embedded in the file (size, licence, one consistent style); the frame budget on Michael's machine.
+- **1. A shape kit**: rounded/bevelled boxes, lathed bodies (barrels, pots, torsos), capsule and tapered limbs, smooth normals, soft vertex-colour shading and ambient occlusion; one place every builder draws from.
+- **2. People**: player body and NPCs as one continuous skinned mesh on a skeleton, instead of jointed blocks; faces, hands, hair and clothes that read at a distance.
+- **3. Animation**: blending between poses rather than snapping; eased timing, anticipation and follow-through on swings; walk and run cycles with planted feet; idle breathing and weight shifts; secondary motion (cloaks, hair). Hits and timings stay as they are; only the look changes.
+- **4. Creatures**: the same pass over the enemy families (wolves, spiders, dragon, undead, mimic).
+- **5. The world**: buildings (roof overhangs, beams, window depth), trees and rocks (more silhouette, less cube), props and dungeon kit.
+- **6. Performance**: merge and share geometry, level-of-detail at distance; the NPC part merging already owed under D.
+
 ## E. Interface
 - **The look, later**: a barber/tailor in towns to change hair and dyes after the creator; NPCs could draw from the same tunic dyes by nation.
 - **Pause menu**: ~~an equipment summary on the sheet~~ (Session 131); keyboard navigation of folders.
