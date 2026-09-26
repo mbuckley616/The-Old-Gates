@@ -1,4 +1,4 @@
-# The Old Gates — Backlog (as of Session 155, 26 Sep 2026)
+# The Old Gates — Backlog (as of Session 156, 26 Sep 2026)
 
 Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 93–124, plus the items raised at session close. Grouped by area; within each, roughly in the order they'd pay off.
 
@@ -43,6 +43,7 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 - ~~**Sun, moon and stars**~~ — **done, Session 148**: sun and moon ride the same angle as the sun light (so the disc agrees with the shadows), moon phase over a 29-day cycle, 760 stars fading in on the night factor, and weather hides all three. Owed: the sun's and moon's size judged by eye; they're decorative rather than an ephemeris.
 - ~~**The Guest's chapel**: the black-screen prayer checked in the real DOM~~ — **done, Session 152**: the black was right; the capital itself was found only among loaded cells, now solved over the whole grid (Fortargent).
 - **Performance**: NPC part merging if towns of forty NPCs ever stutter.
+- **Test flake**: `locks.test.mjs` sometimes dies in setup when `WORLD.DOORS` has no dungeon door loaded yet (Session 156 saw it once in a full run; it passed on re-run). The setup should wait for a door rather than take the first.
 
 ## H. Look and feel — meshes and animation (Michael, 26 Sep 2026)
 The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/spheres/cones, every material `MeshLambertMaterial`, no skinning, characters as rigid parts turned at the joints (three.js r128). Goal: smoother and better across the board. **Cross-cutting — Fable sessions**, one area each, verified with before/after screenshots, with a frame-time check in a forty-NPC town before and after each.
@@ -55,7 +56,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - **5. The world** (Michael, 26 Sep): buildings, houses, structures and POIs with more detail, quality and uniqueness (roof overhangs, beams, window depth, per-town and per-nation variation so two towns don't share one house); trees and rocks (more silhouette, less cube); props and dungeon kit.
 - **5a. Plants** (Michael, 26 Sep): size the herb and plant meshes by what they are — they are all roughly one size and easy to miss; a bush should read as a bush, a tall herb as tall.
 - **5b. Boats** (Michael, 26 Sep): ship, ferry and the other ships' hulls less boxy and more interesting — a lathed hull, a keel, a proper stem and stern, rigging.
-- **6. Performance**: ~~NPC part merging~~ (Session 153: one draw call per person; Dunmore 863 calls against 1,290). Owed: level-of-detail — a person is 4–8k triangles and the shadow pass draws every one in town (796k against 312k before).
+- **6. Performance**: ~~NPC part merging~~ (Session 153: one draw call per person; Dunmore 863 calls against 1,290). ~~A distant low-detail person~~ — **Session 156**: a second bake at half the segments (37–50% of the triangles) on the same skeleton, swapped in past 17 units, back under 15; `PEOPLE_LOD`. Owed: the saving inside a town is small (Dunmore's square −9–11% of the view's triangles, the road outside −10–15%) because most people stand within 17 units and the shadow pass draws them at full detail — a shadow-pass tier or a third tier past ~40 units; the run cycle; a frame-time check on a real machine.
 
 ## E. Interface
 - **The look, later**: a barber/tailor in towns to change hair and dyes after the creator (the creator now has the townsfolk's thirteen styles and fourteen beards, Session 154); ~~NPCs could draw from the same tunic dyes by nation~~ (Session 153).
@@ -66,6 +67,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~Compass quest markers taking the place glyph set~~ — done, Session 138.
 
 ## G. Playtest checks (built, verified only headless)
+- **Distant townsfolk (Session 156)**: walk towards a crowd and watch for the swap at 15–17 units (curly and afro hair, hat brims); whether 12 units would pass unseen; frame time in a forty-NPC town before and after.
 - **Town locks (Session 155)**: pick a shop door at night and the strongbox behind it; whether four pins per shop in a rich town is fair; the strongbox's and the home chest's spots against the furniture; the takings against a low-level purse.
 - **The player's body (Session 154)**: third person in real play — proportions, the walk, sprint (a fast walk for now), sneak, the swings on the rounder arms; a cuirass over a tunic; the creator's preview and shuffle with the new styles and beards.
 - **Townsfolk (Session 153)**: the new people in real light beside the world's Lambert buildings; proportions at a doorway; the stride at walking and guard pace; the greeting wave; which hair and beards look wrong on which people; the keeper indoors matching the street.
