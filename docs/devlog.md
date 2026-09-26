@@ -4805,3 +4805,17 @@ New `tests/locks.test.mjs`, 8 checks. The rule over 4,000 cells: .199 locked on 
 
 ### Needs eyes
 How many picks a dungeon now costs: with every treasure chest locked, the one run above had 6 of 9 chests locked. That may be too many. Whether the mimic's borrowed lock reads fairly. Whether picking a chest should take a moment of animation rather than cutting straight to the loot. From reading the code (not tested): the *closed, opens at 8* check for shops seems to sit in the legacy overworld branch, not the open world's door path. The crime-system design should settle that before any town door is locked.
+
+---
+
+## v80 — Session 151 — Shop hours in the open world
+
+A bug found while scoping the crime system in Session 150. Session 10 (devlog: Session 65) closed shops from 18 to 8: the keeper has walked to the inn, so the counter is empty and the door says *closed. Opens at 8.* In the open world it never did. The check sat in the door handler's `activeZoneId==='overworld'` branch and tested `activeZoneId==='world'` inside it, which can never be true there. The open world takes the generic `ZONES[zone].houses` branch below, which had no check. So every shop let you in at any hour, into an empty room with nobody to trade with.
+
+**The fix** moves the check into the branch the world uses and deletes the dead copy. The door's prompt now says so before you press: *Lorcan's Forge — closed. Opens at 8.* in place of *Press 'E' to enter*. The hours and the building types that stay open (inn, church, keep, guilds, homes, towers, cellars) are `shopClosedNow`'s, unchanged. Loading a save made inside a shop still puts you inside it, whatever the hour.
+
+### Verified (headless Chromium)
+New `tests/shophours.test.mjs`, in Dunmore through the real E key. Before the fix: at 23h *Lorcan's Forge* reported itself closed and let you in anyway. After: at 23h it stays shut and the prompt reads *closed. Opens at 8.*; at 12h the prompt says *enter* and you go in; the inn at 23h still lets you in. No page errors. Full suite 7/7.
+
+### Needs eyes
+Shops now shut at dusk in real play, which they haven't done since the open world arrived. Worth a look at whether anything leans on a shop being open late: a guild task, a quest turn-in or a merchant errand at dusk. Nothing in the tests does. This is also the ground the crime system will stand on: a closed shop is the first door it would let you pick.

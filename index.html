@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s150</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s151</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -18610,7 +18610,6 @@ function interact(){
           showMsg(`There's nothing of ${nearHouse.name} left to enter.`, '#a89080');
           return;
         }
-        if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shopClosedNow(nearHouse)){showMsg(`${nearHouse.name} is closed. Opens at 8.`,'#c8b880');return;} // v80 S10
         goToInterior(nearHouse);return;
       }
     } else if(activeZoneId==='hearthwick'){
@@ -18639,7 +18638,11 @@ function interact(){
       const zHouses=(ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||null;
       if(zHouses){
         const nearZH=zHouses.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
-        if(nearZH){goToInterior(nearZH);return;}
+        if(nearZH){
+          // v80 S10's shop hours, moved here in S151: the open world comes through this branch, not the one above
+          if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shopClosedNow(nearZH)){showMsg(`${nearZH.name} is closed. Opens at 8.`,'#c8b880');return;}
+          goToInterior(nearZH);return;
+        }
       }
     }
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
@@ -39864,6 +39867,8 @@ function loop(now){
       // it isn't your door yet" rather than a silent no-op.
       if(nearHouse.id==='ih7' && !worldState.safehouseGranted){
         iprOW.textContent='Locked. Lord Caldric has the key.';
+      } else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shopClosedNow(nearHouse)){
+        iprOW.textContent=`${nearHouse.name} — closed. Opens at 8.`; // S151 — say so before the press
       } else {
         iprOW.textContent=`Press 'E' to enter ${nearHouse.name}`;
       }
