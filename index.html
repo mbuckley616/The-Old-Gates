@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s153</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s154</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9562,11 +9562,11 @@ function buildPerson(g){
   if(g.hat==='kerchief'&&cap){cap.userData.col=mixC(cloth,0xffffff,.2);cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),mixC(cloth,0xffffff,.2),head,0,.06,-.13);}
   if(g.hat==='flatcap')part(SK.lathe([[0,0],[.15,0],[.155,.02],[.14,.05],[0,.06]],16),mixC(sleeve,0x000000,.2),head,0,.21,.01).rotation.x=-.2;
   if(g.hat==='fur'){part(new THREE.CylinderGeometry(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(new THREE.TorusGeometry(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
-  if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
+  if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
   if(g.hat==='chaperon'){part(new THREE.TorusGeometry(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
   if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(new THREE.TorusGeometry(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
   if(g.hat==='brim'){part(SK.lathe([[0,0],[.24,0],[.245,.02],[.15,.03],[.14,.19],[.12,.21],[0,.22]],20),C(0x3a2808),head,0,.2,-.01).rotation.x=-.1;}
-  if(g.hat==='helm')part(SK.lathe([[0,0],[.19,0],[.195,.01],[.15,.022],[.143,.07],[.125,.12],[.07,.155],[0,.163]],20),steel,head,0,.155,0);
+  if(g.hat==='helm')part(SK.lathe([[0,0],[.19,0],[.195,.01],[.15,.022],[.143,.07],[.125,.12],[.07,.155],[0,.163]],20),g.helmCol!=null?C(g.helmCol):steel,head,0,.155,0);
   if(g.hat==='crown'){part(new THREE.CylinderGeometry(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(new THREE.ConeGeometry(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
   // arms and legs: side 1 is the figure's left (+x), -1 its right
   ['L','R'].forEach((k,i)=>{const s=i===0?1:-1;
@@ -9589,6 +9589,15 @@ function buildPerson(g){
   if(g.gear==='hoe'){part(new THREE.CylinderGeometry(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
   if(g.gear==='stick'){part(new THREE.CylinderGeometry(.013,.017,.56,8),C(0x4a3018),gear,0,-.24,0);part(SK.ball(.024,8,6),C(0x5a4028),gear,0,.03,0);}
   if(g.gear==='hammer'){part(new THREE.CylinderGeometry(.014,.016,.36,8),C(0x4a3018),gear,0,.06,0);part(new THREE.BoxGeometry(.16,.07,.07),C(0x666666),gear,0,.24,0);}
+  // the player's kit (tpBuild): a cuirass and pauldrons over the tunic, greaves, gauntlets, an amulet, a quiver
+  if(g.eq){const E=g.eq;
+    if(E.chest&&!E.chest.cloth){const ac=C(E.chest.col);part(SK.lathe(chestPts.map(q=>[q[0]*bw*1.08,q[1]]),14),ac,spine,0,-.005,0).scale.z=.78;
+      [-1,1].forEach(sd=>part(SK.ball(.085*bw,10,7),ac,spine,sd*.19*bw,.31,0).scale.set(1,.7,1));
+      part(new THREE.TorusGeometry(.2*bw,.03,5,18),ac,hips,0,-.05,0).rotation.x=Math.PI/2;}
+    if(E.legs&&!E.legs.cloth){const lc=C(E.legs.col);['L','R'].forEach(k=>part(new THREE.CylinderGeometry(.056*bw,.05*bw,.16,10,1,true),lc,B['kn'+k],0,-.09,0));}
+    if(E.hands){const hc=C(E.hands.col);B.handL.userData.col=hc;B.handR.userData.col=hc;['L','R'].forEach(k=>part(new THREE.CylinderGeometry(.046*bw,.04*bw,.06,10),hc,B['el'+k],0,-.115,0));}
+    if(E.amulet)part(SK.ball(.018,8,6),C(0xd8b040),spine,0,.3,.13*bw);
+    if(E.quiver){part(new THREE.CylinderGeometry(.04,.035,.34,8),C(0x5a3a20),spine,.09,.2,-.14).rotation.z=-.35;for(let i=0;i<3;i++)part(new THREE.CylinderGeometry(.006,.006,.1,4),C(0xd8d0c0),spine,.1+i*.015,.4+i*.01,-.14).rotation.z=-.35;}}
   if(g.extras.includes('satchel')){part(new THREE.BoxGeometry(.14,.16,.06),C(0x5a7a30),hips,-.2*bw,-.02,.06);part(new THREE.CylinderGeometry(.03,.04,.16,6),C(0x4a8a28),hips,-.2*bw,.1,.06).rotation.z=.3;}
   if(g.extras.includes('bag'))part(new THREE.BoxGeometry(.13,.13,.08),C(0x8a6030),hips,-.21*bw,-.05,.05);
   if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
@@ -19973,7 +19982,8 @@ try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=pa
 const LOOK_TUNICS=[0x6a5a44,0x5a2a20,0x2a3a6a,0x3a4a2a,0x6a4a1a,0x2a2a2a,0x7a6a5a,0x4a2a4a];
 const LOOK_BREECHES=[0x3a2a1a,0x4a4030,0x2a2a3a,0x5a3a2a,0x1a1a1a];
 const LOOK_BOOTS=[0x2a1c10,0x4a3018,0x1a1a1a,0x5a4a3a];
-const LOOK_STYLES=[['short','Cropped'],['long','Long'],['tied','Tied back'],['bald','Bare']];
+const LOOK_STYLES=[['short','Cropped'],['long','Long'],['tied','Tied back'],['bald','Shorn'],['braid','A braid'],['twin','Two braids'],['warrior','Warrior braids'],['mohawk','A crest'],['curly','Curly'],['afro','An afro'],['shaggy','Shaggy'],['bun','A bun'],['thin','Thinning']];
+const LOOK_BEARDS=[['no','None'],['full','Full'],['short','Trimmed'],['long','Long'],['braided','Braided'],['forked','Forked'],['goatee','Goatee'],['vandyke','Goatee and moustache'],['walrus','Walrus'],['handlebar','Handlebar'],['pencil','Pencil'],['horseshoe','Horseshoe'],['mutton','Mutton chops'],['chinstrap','Chinstrap'],['stubble','Stubble']];
 function lookDefault(pp,arch,name){let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const h=[...(name||'you')].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
   return {skin:P&&P.skin?P.skin[h%P.skin.length]:0xd4a878,hair:P&&P.hair?P.hair[(h>>3)%P.hair.length]:0x3a2a1a,style:h%3===0?'long':'short',beard:false,tunic:arch==='mage'?0x2a3a6a:arch==='rogue'?0x2a2a2a:0x5a2a20,breeches:0x3a2a1a,boots:0x2a1c10};}
 function lookNow(){return (typeof worldState!=='undefined'&&worldState.look)||null;}
@@ -20001,12 +20011,8 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   else{B(.03,.1,.03,grip,0,0,0);B(.04,.46,.012,blade,0,.3,0);}
   return g;}
 function tpBuild(lookIn,ppIn){
-  const root=new THREE.Group();root.rotation.order='YXZ';
   let pp=ppIn||'gatelander',P=null;try{if(!ppIn)pp=WORLD.playerPeople();P=WORLD.PEOPLES[pp];}catch(e){}
-  const h=[...(playerName||'you')].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
   const LK=Object.assign(lookDefault(pp,playerArchetype,playerName),lookIn||lookNow()||{});
-  const skin=LK.skin,hair=LK.hair;
-  const hs=P&&P.height||1,ws=P&&P.width||1;root.scale.set(ws,hs,ws);
   const archCol=playerArchetype==='mage'?0x2a3a6a:playerArchetype==='rogue'?0x3a3a2a:0x5a2a20;
   const ch=EQ.chest,lg=EQ.legs,ft=EQ.feet,hd=EQ.head,gl=EQ.hands;
   // your own clothes under whatever you buy: a cloth item with no material colour takes the look's
@@ -20014,47 +20020,34 @@ function tpBuild(lookIn,ppIn){
   const chestCol=!ch?LK.tunic:own(ch)?LK.tunic:tpMatColor(ch,archCol),chestCloth=tpIsCloth(ch);
   const legCol=!lg?LK.breeches:own(lg)?LK.breeches:tpMatColor(lg,0x3a2a1a),legCloth=tpIsCloth(lg);
   const bootCol=!ft?LK.boots:own(ft)?LK.boots:tpMatColor(ft,0x2a1c10);
-  const R={root};
-  R.hips=tpGroup(root,0,.38,0);
-  // legs
-  for(const [k,s] of [['L',1],['R',-1]]){const th=tpGroup(R.hips,s*.09,0,0);tpBox(.13,.2,.13,legCol,th,0,-.1,0);if(!legCloth){tpBox(.15,.12,.15,legCol,th,0,-.07,.005);}
-    const kn=tpGroup(th,0,-.2,0);tpBox(.12,.17,.12,legCol,kn,0,-.085,0);if(!legCloth)tpBox(.13,.1,.08,legCol,kn,0,-.07,.03);tpBox(.14,.07,.17,bootCol,kn,0,-.155,.02);
-    R['thigh'+k]=th;R['knee'+k]=kn;}
-  // torso
-  R.torso=tpGroup(R.hips,0,0,0);
-  tpBox(.36,.5,.22,chestCloth?chestCol:0x4a3a2a,R.torso,0,.17,0);
-  tpBox(.37,.05,.24,0x2a1c10,R.torso,0,-.04,0); tpBox(.05,.04,.02,0xb89a4a,R.torso,0,-.04,.125);
-  if(ch&&!chestCloth){tpBox(.39,.34,.25,chestCol,R.torso,0,.24,.005);for(const s of [-1,1]){const p=tpBox(.14,.07,.24,chestCol,R.torso,s*.19,.41,0);p.rotation.z=s*.25;}tpBox(.38,.1,.25,chestCol,R.torso,0,0,0).scale.set(1,1,1);}
-  if(ch&&/robe/i.test(ch.name||'')){tpBox(.38,.28,.26,chestCol,R.torso,0,-.18,0);}
-  else tpBox(.38,.08,.25,chestCloth?chestCol:0x3a2a1a,R.torso,0,-.1,0);
-  if(EQ.amulet)tpBox(.035,.035,.02,0xd8b040,R.torso,0,.33,.12);
-  if(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow')){const q=tpBox(.08,.32,.08,0x5a3a20,R.torso,.08,.24,-.15);q.rotation.z=-.35;for(let i=0;i<3;i++){const f=tpBox(.012,.08,.012,0xd8d0c0,R.torso,.1+i*.015-.02,.42+i*.01,-.15);f.rotation.z=-.35;}}
-  if(pp==='oldblood'){for(const s of [-1,1])tpBox(.1,.025,.1,0x1a1a22,R.torso,s*.225,.3,0);}
-  // head
-  R.head=tpGroup(R.torso,0,.46,0);
-  tpBox(.1,.06,.1,skin,R.head,0,0,0);tpBox(.28,.28,.28,skin,R.head,0,.17,0);tpBox(.1,.035,.02,0x222222,R.head,0,.18,.145);tpBox(.04,.05,.04,skin,R.head,0,.15,.15);
-  if(hd){const hc=tpMatColor(hd,0x8a8f98);if(tpIsCloth(hd)){tpBox(.32,.2,.32,hc,R.head,0,.25,-.01);tpBox(.3,.16,.06,hc,R.head,0,.14,-.15);}else{tpBox(.31,.16,.31,hc,R.head,0,.27,0);tpBox(.33,.03,.33,hc,R.head,0,.2,0);tpBox(.03,.1,.02,hc,R.head,0,.15,.16);}}
-  else{if(LK.style!=='bald')tpBox(.32,.12,.32,hair,R.head,0,.27,-.01);if(LK.style==='long')tpBox(.25,.2,.06,hair,R.head,0,.16,-.16);if(LK.style==='tied')tpBox(.1,.14,.08,hair,R.head,0,.14,-.17);}
-  if(LK.beard)tpBox(.22,.09,.08,hair,R.head,0,.045,.12);
-  // arms
-  const armCol=chestCloth?chestCol:(ch?chestCol:archCol);const handCol=gl?tpMatColor(gl,0x5a3a20):skin;
-  for(const [k,s] of [['L',1],['R',-1]]){const sh=tpGroup(R.torso,s*.225,.4,0);tpBox(.09,.2,.09,armCol,sh,0,-.1,0);
-    const el=tpGroup(sh,0,-.2,0);tpBox(.085,.17,.085,gl?handCol:armCol,el,0,-.085,0);if(gl)tpBox(.1,.06,.1,handCol,el,0,-.03,0);
-    const hand=tpGroup(el,0,-.19,0);tpBox(.08,.07,.08,handCol,hand,0,0,0);
-    R['sh'+k]=sh;R['el'+k]=el;R['hand'+k]=hand;}
-  // what the hands hold
+  // the genome: the look's choices over the people's build, never re-rolled
+  const styleMap={short:'crop',long:'straight',bald:'buzz'};
+  const g=personGenome({name:playerName||'you',role:'',people:pp,sCol:LK.skin,hairCol:LK.hair,bCol:chestCol},{key:'player'});
+  Object.assign(g,{skin:new THREE.Color(LK.skin),hair:new THREE.Color(LK.hair),style:styleMap[LK.style]||LK.style||'crop',beard:LK.beard===true?'full':LK.beard||'none',
+    cloth:new THREE.Color(chestCol),sleeve:new THREE.Color(chestCol).multiplyScalar(.9),legs:new THREE.Color(legCol),boot:new THREE.Color(bootCol),
+    dress:!!(ch&&/robe/i.test(ch.name||'')),cloak:false,apron:null,gear:null,extras:[],freckles:false,ruddy:false,age:'adult',child:false,height:1,build:1,
+    hat:hd?(tpIsCloth(hd)?'hood':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
+    eq:{chest:ch?{col:chestCol,cloth:chestCloth}:null,legs:lg?{col:legCol,cloth:legCloth}:null,hands:gl?{col:tpMatColor(gl,0x5a3a20)}:null,amulet:!!EQ.amulet,quiver:!!(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow'))},
+    bodyScale:[P&&P.width||1,P&&P.height||1,P&&P.width||1]});
+  const rig=buildPerson(g);PEOPLE_RIGS.delete(rig); // tpPose drives this one, not tickPeople
+  const B=rig.B;for(const k in B){if(B[k].isBone)B[k].rotation.order='YXZ';}
+  rig.mesh.castShadow=false;rig.mesh.userData.tp=true;
+  const root=rig.root;root.rotation.order='YXZ';
+  const R={root,rig,hips:B.hips,hipsY0:.47,thighL:B.thL,thighR:B.thR,kneeL:B.knL,kneeR:B.knR,ankleL:B.anL,ankleR:B.anR,torso:B.spine,head:B.head,shL:B.shL,shR:B.shR,elL:B.elL,elR:B.elR,handL:B.wrL,handR:B.wrR};
+  // what the hands hold (the weapon kit itself is a later pass)
   const w=EQ.weapon;R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow');R.bow=!!(w&&w.weaponShape==='bow');
-  if(w){const wm=tpWeapon(w);if(R.bow){wm.rotation.set(0,0,0);R.handL.add(wm);R.weaponL=wm;}else{wm.rotation.set(Math.PI/2,0,0);R.handR.add(wm);R.weapon=wm;}}
+  const grip=(hand,m)=>{m.position.set(0,-.04,.008);hand.add(m);return m;};
+  if(w){const wm=tpWeapon(w);if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}}
   const oh=EQ.offhand;R.shield=null;R.torch=null;
-  if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const g=new THREE.Group();
-    if(round){const m=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.03,12),new THREE.MeshLambertMaterial({color:c}));m.rotation.z=Math.PI/2;g.add(m);const b=new THREE.Mesh(new THREE.SphereGeometry(.05,6,5),new THREE.MeshLambertMaterial({color:rim}));b.position.x=.02;g.add(b);}
-    else{tpBox(.03,big?.5:.34,big?.32:.26,c,g,0,0,0);tpBox(.035,big?.52:.36,.03,rim,g,0,0,0);}
-    g.position.set(.07,-.08,0);R.elL.add(g);R.shield=g;}
-  else if(oh&&oh.torchType==='torch'){const g=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,g,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;g.add(f);g.rotation.x=Math.PI/2;R.handL.add(g);R.torch=g;}
-  else if(oh){const g=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.02,.06);R.tome=g;}
+  if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
+    if(round){const m=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.03,12),new THREE.MeshLambertMaterial({color:c}));m.rotation.z=Math.PI/2;sg.add(m);const bs=new THREE.Mesh(new THREE.SphereGeometry(.05,6,5),new THREE.MeshLambertMaterial({color:rim}));bs.position.x=.02;sg.add(bs);}
+    else{tpBox(.03,big?.5:.34,big?.32:.26,c,sg,0,0,0);tpBox(.035,big?.52:.36,.03,rim,sg,0,0,0);}
+    sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;}
+  else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
+  else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.userData.tp=true;}});
   return R;}
-function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});}
+function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
 function tpSet(g,x,y,z,k){g.rotation.x=_tpL(g.rotation.x,x,k);g.rotation.y=_tpL(g.rotation.y,y||0,k);g.rotation.z=_tpL(g.rotation.z,z||0,k);}
 // ── camera collision ──
@@ -20099,9 +20092,14 @@ function tpPose(R,dt,st){
   if(sneak){thL-=.55;thR-=.55;knL+=.9;knR+=.9;}
   if(air){thL=-.7;thR=-.25;knL=1.1;knR=.6;}
   if(blocking&&!st.moving){thL=-.25;knL=.3;thR=.2;knR=.25;}
-  tpSet(R.thighL,thL,0,0,k);tpSet(R.thighR,thR,0,0,k);tpSet(R.kneeL,knL,0,0,k);tpSet(R.kneeR,knR,0,0,k);
-  const bob=st.moving&&!air?Math.abs(Math.sin(ph))*(st.sprinting?.035:.02):Math.sin(now*1.6)*.004;
-  R.hips.position.y=_tpL(R.hips.position.y,.38+bob-(sneak?.1:0)-(blocking?.02:0),k);
+  // the gait (S154): on the new rig, walking legs are placed by the planted-foot stride, driven by ground covered
+  let anL=0,anR=0,hipsY=(R.hipsY0||.38)+(st.moving&&!air?Math.abs(Math.sin(ph))*(st.sprinting?.035:.02):Math.sin(now*1.6)*.004);
+  let gait=false;
+  if(R.rig&&st.moving&&!air&&!sneak){const W=pwWalk(TP.gph||0,{holds:false});thL=W.thL[0];knL=W.knL[0];anL=W.anL[0];thR=W.thR[0];knR=W.knR[0];anR=W.anR[0];hipsY=W.hipsY+(st.sprinting?.01:0);gait=true;}
+  const kl=gait?1:k; // the gait's legs land exactly; eased legs would slide the planted foot
+  tpSet(R.thighL,thL,0,0,kl);tpSet(R.thighR,thR,0,0,kl);tpSet(R.kneeL,knL,0,0,kl);tpSet(R.kneeR,knR,0,0,kl);
+  if(R.ankleL){tpSet(R.ankleL,anL,0,0,kl);tpSet(R.ankleR,anR,0,0,kl);}
+  R.hips.position.y=_tpL(R.hips.position.y,hipsY-(sneak?.1:0)-(blocking?.02:0),kl);
   // torso
   let tx=sneak?-.4:st.sprinting?-.18:0,ty=0,tz=0;
   // arms: locomotion swing by default
@@ -20158,6 +20156,7 @@ function tpUpdate(dt,st){
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
+  {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;TP.gph=((TP.gph||0)+d/(PW.cycle*(R.root.scale.x||1)))%1;} // S154 — the stride follows the ground
   tpPose(R,dt,st);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
@@ -41429,7 +41428,7 @@ function ccLookRows(){const box=document.getElementById('cc-look-rows');if(!box)
   row('Skin',P&&P.skin||[0xd4a878],()=>L.skin,v=>{L.skin=v;});
   row('Hair',P&&P.hair||[0x3a2a1a],()=>L.hair,v=>{L.hair=v;});
   row('Style',LOOK_STYLES,()=>L.style,v=>{L.style=v;});
-  row('Beard',[['no','None'],['yes','Bearded']],()=>L.beard?'yes':'no',v=>{L.beard=v==='yes';});
+  row('Beard',LOOK_BEARDS,()=>L.beard===true?'full':L.beard||'no',v=>{L.beard=v==='no'?false:v;});
   row('Tunic',LOOK_TUNICS,()=>L.tunic,v=>{L.tunic=v;CCL.explicit.tunic=true;});
   row('Breeches',LOOK_BREECHES,()=>L.breeches,v=>{L.breeches=v;});
   row('Boots',LOOK_BOOTS,()=>L.boots,v=>{L.boots=v;});}
@@ -41444,7 +41443,7 @@ function ccLookRebuild(){const cv=document.getElementById('cc-look-cv');if(!cv||
   if(!CCL.raf)ccLookLoop();}
 function ccLookLoop(){CCL.raf=requestAnimationFrame(ccLookLoop);const m=document.getElementById('cc-modal');if(!m||m.style.display==='none'){ccLookStop();return;}if(CCL.r&&CCL.rig){CCL.rig.root.rotation.y+=.006;try{CCL.r.render(CCL.s,CCL.c);}catch(e){}}}
 function ccLookStop(){if(CCL.raf)cancelAnimationFrame(CCL.raf);CCL.raf=0;}
-(function(){const sh=document.getElementById('cc-look-shuffle');if(sh)sh.onclick=()=>{const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const pk=a=>a[Math.floor(Math.random()*a.length)];const L=window._ccLook||lookDefault(pp,playerArchetype);L.skin=pk(P&&P.skin||[L.skin]);L.hair=pk(P&&P.hair||[L.hair]);L.style=pk(LOOK_STYLES)[0];L.beard=Math.random()<.35;L.tunic=pk(LOOK_TUNICS);L.breeches=pk(LOOK_BREECHES);L.boots=pk(LOOK_BOOTS);CCL.explicit.tunic=true;window._ccLook=L;ccLookRows();ccLookRebuild();};})();
+(function(){const sh=document.getElementById('cc-look-shuffle');if(sh)sh.onclick=()=>{const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const pk=a=>a[Math.floor(Math.random()*a.length)];const L=window._ccLook||lookDefault(pp,playerArchetype);L.skin=pk(P&&P.skin||[L.skin]);L.hair=pk(P&&P.hair||[L.hair]);L.style=pk(LOOK_STYLES)[0];L.beard=Math.random()<.35?pk(LOOK_BEARDS.slice(1))[0]:false;L.tunic=pk(LOOK_TUNICS);L.breeches=pk(LOOK_BREECHES);L.boots=pk(LOOK_BOOTS);CCL.explicit.tunic=true;window._ccLook=L;ccLookRows();ccLookRebuild();};})();
 const _ccBeginBtn=document.getElementById('cc-begin');
 if(_ccBeginBtn) _ccBeginBtn.onclick=ccBegin;
 const _ccNameEl=document.getElementById('cc-name');

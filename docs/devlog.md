@@ -4858,3 +4858,20 @@ New `tests/people.test.mjs`. Dunmore: 82 townsfolk, all one SkinnedMesh on seven
 
 ### Needs eyes
 The look in real light: the material is `MeshStandardMaterial` at roughness .86 beside a world of Lambert — do people read as belonging? Proportions against doorways and the player's eye. The stride at a guard's pace (.95 u/s comes out at three steps a second). The wave when you walk up — charming or too much? Which hair and beards look wrong on which people. The player's own third-person body and the creator's look preview are still the box figure (pass 2 owes them); creatures are pass 4; no level-of-detail yet, so a forty-person town is a third of a million triangles in the shadow pass (pass 6).
+
+
+---
+
+## v80 — Session 154 — The player's body (Fable)
+
+Michael's call after Session 153: the character mesh next. The player's third-person body and the creator's look preview were the last box figures; they now come from the same builder as the townsfolk.
+
+**The same person, dressed by the look and the kit.** `tpBuild` makes a genome from the look — skin, hair, style, beard, tunic, breeches, boots — over the people's build (`PEOPLES` height and width, the Old Blood's wrist bands), never re-rolled, and hands it to `buildPerson`. The creator's *Style* row now offers the full thirteen styles and *Beard* the fourteen beards from the townsfolk (an old save's `beard:true` reads as a full beard). Equipment goes on as a kit block in the genome, which `buildPerson` learned this session: a cuirass and pauldrons over the tunic for a non-cloth chest piece, greaves for non-cloth legs, gauntlets colouring the hands, a hood or a helm in the item's own colour, an amulet, a quiver with a bow or arrows, a robe as a long hem. Cloth kit takes the look's colours as before (`tpMatColor`, `tpIsCloth`). Weapons, shields, torches and tomes are still the box kit, gripped at the new wrists; they are pass 5's.
+
+**tpPose kept, with the gait underneath.** The rig exposes the joint names `tpPose` already drives — hips, thighs, knees, torso, head, shoulders, elbows, hands, and now ankles — with the bones' rotation order set to match the old groups, so every authored combat pose carries over unchanged: the three swings, the block, the bow draw, casting, the hurt rock, death. Two things changed in `tpPose`: the hips sit at the rig's own height, and when you walk (not sneaking, not airborne) the legs are placed by the townsfolk's planted-foot stride, its phase driven by the ground you actually cover (`TP.gph`, from `px, pz` in `tpUpdate`), with the hips riding the standing leg. Those legs land exactly rather than easing — `tpSet`'s quarter-per-frame ease is right for a swing and wrong for IK, and left the planted foot creeping 5mm a frame until the gait was exempted. Sneaking keeps its crouch, jumping its tuck. `tpDispose` no longer disposes the material, which is now the shared `PEOPLE_MAT`; that would have blanked every townsperson on the first change of kit.
+
+### Verified (headless Chromium)
+New `tests/player.test.mjs`. The creator preview is a skinned rig, with 13 styles and 15 beard choices in its rows. Third person: one SkinnedMesh on seventeen bones, hips at .47, in the scene, and not in `PEOPLE_RIGS`. Equipping a cuirass, helm, gauntlets, amulet, sword and shield changes the signature and rebuilds with all six on the body (4,210 → 5,294 triangles). Walking 1.08 units: the stride advances 0.092 cycles against 0.093 expected, the stiller foot moves at most 0.87mm a frame while the other swings 40mm; a swing with `swingT` set raises the sword arm. Photograph from behind with the kit on: `tests/out/player-third.png`. No page errors; full suite passes.
+
+### Needs eyes
+The body in third person in real play: proportions against the camera distance, the walk and sprint (sprint has no run cycle yet, so it is a fast walk), sneaking's crouch on the new legs, and whether the swings still read with the rounder arms. The cuirass and pauldrons over a tunic; a robe's hem when running. The creator: whether the preview's new styles and beards look right at 200×250, and the shuffle. The first-person hands are untouched.
