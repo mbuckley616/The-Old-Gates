@@ -44,8 +44,10 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**1. A shape kit**~~ — **started, Session 153**: `SK` (lathes, tapered limbs, textured spheres, vertex-coloured bake to one mesh). Owed: rounded/bevelled boxes for buildings and props, ambient occlusion.
 - ~~**2. People**~~ — **done for NPCs, Session 153**: every townsperson is one skinned mesh on seventeen bones with the genome (hair, beards, faces, dress, roles) from prototypes 3–5; the keeper indoors is the keeper in the street. Owed: the player's third-person body and the creator's look preview (still the box figure); wealth in clothes.
 - **3. Animation** — **townsfolk done, Session 153**: crossfaded idle/walk/wave, a planted-foot gait driven by distance moved, breathing and weight shifts, a greeting wave. Owed: a run cycle (guards at .95 u/s take three steps a second), the player's swings (anticipation, follow-through), secondary motion (cloaks, hair), creatures.
-- **4. Creatures**: the same pass over the enemy families (wolves, spiders, dragon, undead, mimic).
-- **5. The world**: buildings (roof overhangs, beams, window depth), trees and rocks (more silhouette, less cube), props and dungeon kit.
+- **4. Creatures** (Michael, 26 Sep: *comparable quality to the NPCs*): the same pass over the enemy families (wolves, spiders, dragon, undead, mimic, bandits) — the shape kit, smooth shading, a skeleton where the creature walks, the same one-mesh bake.
+- **5. The world** (Michael, 26 Sep): buildings, houses, structures and POIs with more detail, quality and uniqueness (roof overhangs, beams, window depth, per-town and per-nation variation so two towns don't share one house); trees and rocks (more silhouette, less cube); props and dungeon kit.
+- **5a. Plants** (Michael, 26 Sep): size the herb and plant meshes by what they are — they are all roughly one size and easy to miss; a bush should read as a bush, a tall herb as tall.
+- **5b. Boats** (Michael, 26 Sep): ship, ferry and the other ships' hulls less boxy and more interesting — a lathed hull, a keel, a proper stem and stern, rigging.
 - **6. Performance**: ~~NPC part merging~~ (Session 153: one draw call per person; Dunmore 863 calls against 1,290). Owed: level-of-detail — a person is 4–8k triangles and the shadow pass draws every one in town (796k against 312k before).
 
 ## E. Interface
