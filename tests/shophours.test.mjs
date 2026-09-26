@@ -17,7 +17,7 @@ async function tryDoor(type, hour) {
 const types = await page.evaluate(() => [...new Set(WORLD.settle.get('dunmore').houses.map(h => h.type))]);
 const shop = ['weapon', 'armor', 'potion', 'misc'].find(t => types.includes(t));
 const night = await tryDoor(shop, 23);
-check('a shop at night stays shut, and its door says so', night.closed && !night.inside && /closed/.test(night.prompt), night);
+check('a shop at night is locked, and its door says so', night.closed && !night.inside && /locked/.test(night.prompt), night);
 const day = await tryDoor(shop, 12);
 check('the same shop at noon lets you in', !day.closed && day.inside && /enter/.test(day.prompt), day);
 const inn = await tryDoor('inn', 23);

@@ -4875,3 +4875,22 @@ New `tests/player.test.mjs`. The creator preview is a skinned rig, with 13 style
 
 ### Needs eyes
 The body in third person in real play: proportions against the camera distance, the walk and sprint (sprint has no run cycle yet, so it is a fast walk), sneaking's crouch on the new legs, and whether the swings still read with the rounder arms. The cuirass and pauldrons over a tunic; a robe's hem when running. The creator: whether the preview's new styles and beards look right at 200×250, and the shuffle. The first-person hands are untouched.
+
+
+---
+
+## v80 — Session 155 — Town locks and strongboxes (the crime system, part 1 of 4)
+
+Michael and I designed the crime system this afternoon (the spec is in the backlog under B); this is the first of its four sessions, the one with no crime in it yet: the locks, and something behind them worth the risk.
+
+**Doors locked after hours.** A shop is locked while it is shut (18–8, the S151 hours) and a home from night to dawn (21–7), unless the home is yours. The door's prompt says so before you press — *Lorcan's Forge — locked till 8 · E to pick the lock* — and E brings out S142's pick (or the *a lockpick would do it* line if you have none). The lock is steady per door and set by the town: a shop in a town of prosperity 60 or more is a four-pin lock (*A shop door, locked for the night — a good lock*), poorer towns three, a home two. A picked door stays open for twelve hours, so you can come and go for the night. The S151 *closed, opens at 8* refusal is gone; the door is a lock now, which is what the spec asked for.
+
+**A strongbox in every shop, a chest in every home.** `buildInteriorFor` puts a strongbox in the shop's back room (or behind the counter where there is no back room) and a small chest in the corner of every home, both with the dungeon's chest shell. Each is a lock of its own, at the same difficulty as the door. Picked, the strongbox yields the takings — 20 to 200 gold by the town's prosperity, a fifth more at a smith's or an armourer's, a fifth less at an apothecary's — plus one thing from that shop's stock table; a home's chest a few coins and a keepsake (a tin locket, a carved bird, a lock of hair in paper). Then it is empty for five game-days and refills locked. The Ashenmoor-era interiors (`buildInterior`) are untouched; this is the generated world.
+
+**For part 2.** Every pick and every theft is written to `worldState.crimes` with the town, the house, the day and the minute; part 2 (witnesses and favour) reads that list. Nothing yet watches you.
+
+### Verified (headless Chromium)
+New `tests/crime1.test.mjs`, in Dunmore at 23h through the real key. Lorcan's Forge reports a shop lock and a home a home lock; the door prompt reads *locked till 8 · E to pick the lock*; E without a pick leaves you outside with no overlay. With picks, the lock opens titled *A shop door, locked for the night — a good lock* with four pins (Dunmore is prosperous); every pin set, the door is remembered as picked, a *lock* crime is recorded and you are inside with a strongbox present. The strongbox prompts *pick the lock*, opens as *A strongbox — a good lock*, and picked yields 168 gold and one stock item; it then reads *empty* and a second press gives nothing; ten days back-dated, it prompts *pick* again. A home is locked at night, open by day, never locked when owned; its chest opens as *A small chest* for 8 gold and a keepsake. The shop-hours test now expects the lock. No page errors; full suite passes.
+
+### Needs eyes
+Whether four pins on every shop in a prosperous town is too much — a night's burgling of Dunmore would cost a handful of picks. The strongbox's spot in the back room (beside the bed) and the home chest's corner against whatever furniture the home generator put there. The takings: 168 gold from one forge is a lot for a level-one character; the numbers are the spec's and part 2's consequences are what balance them. The keepsakes are sellable oddments with no story yet.

@@ -1,4 +1,4 @@
-# The Old Gates — Backlog (as of Session 154, 26 Sep 2026)
+# The Old Gates — Backlog (as of Session 155, 26 Sep 2026)
 
 Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 93–124, plus the items raised at session close. Grouped by area; within each, roughly in the order they'd pay off.
 
@@ -23,10 +23,10 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
   - *Guards*: with a bounty, guards approach and demand the fine; refuse and they draw; at low health you can yield — pay double, or a night in the cells with the stolen goods taken. Killing a guard: −5 favour, the town's gates shut to you until paid, the Church notes it.
   - *Loot*: a shop's strongbox holds 20–200 gold by the town's prosperity and the shop's kind plus one item from its stock; a home holds a few coins and a keepsake; both refill over game-days.
   - *Numbers*: fine = 25 gold per favour point lost (a lock 25, theft 50 + the goods' value, assault 75), paid to a guard or the lord; favour recovers 1 point per 3 game-days without a crime in that town.
-  - *Order*: **1** doors locked after hours (shops and homes), strongboxes and home caches with loot, the pick minigame on them (S142's `LP`, difficulty by prosperity); **2** witnesses, favour loss, keeper refusal, fines to the lord; **3** guards confront, fight, yield, the cells; **4** Church and faction reactions. Each verified headless; each its own devlog session.
+  - *Order*: ~~**1** doors locked after hours (shops and homes), strongboxes and home caches with loot, the pick minigame on them~~ — **done, Session 155** (crimes recorded in `worldState.crimes` for part 2); **2** witnesses, favour loss, keeper refusal, fines to the lord; **3** guards confront, fight, yield, the cells; **4** Church and faction reactions. Each verified headless; each its own devlog session.
 - **Trade routes**: the caravan visibly attacked when a route breaks.
 - **Cargo trading** between ports with prices by island; **skills by use** (the Morrowind model). ~~Inn single-room rental vs the whole inn~~ — **done, Session 141**: the innkeeper lets one named room, other guests hold the others, the rest of the landing turns you away.
-- ~~Lockpicking as a minigame~~ — **done, Session 142** (Oblivion's lock: a pin per tumbler, set it at the shear, a mistimed press snaps the pick; difficulty steady per door, finesse widens the window). ~~Locks on chests~~ — **done, Session 150** (treasure chests always, ordinary dungeon chests 1 in 5 / 2 in 5 by floor, the tower's hoard a good lock; mimics wear the same lock a chest there would). Owed: locks on world doors — shops and homes at night — **after the crime system** (Michael's call).
+- ~~Lockpicking as a minigame~~ — **done, Session 142** (Oblivion's lock: a pin per tumbler, set it at the shear, a mistimed press snaps the pick; difficulty steady per door, finesse widens the window). ~~Locks on chests~~ — **done, Session 150** (treasure chests always, ordinary dungeon chests 1 in 5 / 2 in 5 by floor, the tower's hoard a good lock; mimics wear the same lock a chest there would). ~~Locks on world doors~~ — **Session 155**, as the crime system's part 1.
 
 ## C. Combat and creatures
 - ~~Third-person~~ — **done, Session 126** (jointed body, kit on the body, poses from combat state, collision-aware camera). Owed: arrows/spells from the hands rather than the eye; weapon trails; drink/loot poses.
@@ -66,6 +66,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~Compass quest markers taking the place glyph set~~ — done, Session 138.
 
 ## G. Playtest checks (built, verified only headless)
+- **Town locks (Session 155)**: pick a shop door at night and the strongbox behind it; whether four pins per shop in a rich town is fair; the strongbox's and the home chest's spots against the furniture; the takings against a low-level purse.
 - **The player's body (Session 154)**: third person in real play — proportions, the walk, sprint (a fast walk for now), sneak, the swings on the rounder arms; a cuirass over a tunic; the creator's preview and shuffle with the new styles and beards.
 - **Townsfolk (Session 153)**: the new people in real light beside the world's Lambert buildings; proportions at a doorway; the stride at walking and guard pace; the greeting wave; which hair and beards look wrong on which people; the keeper indoors matching the street.
 - **Shop hours (Session 151)**: shops shut 18–8 in the open world now; whether any errand or turn-in needs a shop open at dusk.
