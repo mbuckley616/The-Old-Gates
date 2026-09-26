@@ -48,6 +48,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - Dialogue: `makeDef` builds a town NPC, `topics` is a getter; folders are `{label, folder:true, follow:[...]}`.
 - Maps: `drawLocalMap` (Local view + minimap), `mapPixel` (world map), `BLD` (building colours), `MAPBIO` (biome tints).
 - Lockpicking: `LP`, `openLockpick`, `lpPhase()` reads the clock.
+- People (S153): `SK` shape kit, `personGenome(def,{nation,key})` → `buildPerson(g)` (one SkinnedMesh, 17 bones,
+  `PEOPLE_MAT`), `buildNPCMesh` caches genomes by `name|site`, `PEOPLE_RIGS`, poses `pwIdle/pwWalk/pwWave`,
+  `tickPeople` in the main loop. Bone matrices are kept local to the mesh (see the comment in `buildPerson`).
 - Console helpers for testing: `devWeather('rain')`, `forceTime(h)`, `WORLD.devUnlockAll()`.
 
 ## Things that have bitten us
@@ -57,6 +60,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - Site stamps are applied after rivers are carved: a pad over a river fills it in.
 - `BAG` is a `const`; mutate it, don't reassign.
 - A dropped animation frame must never change an outcome (lockpicking, doors): read `performance.now()`.
+- The world sits at x, z ≈ 13,000–25,000. Anything that puts world coordinates through a float32 shader path
+  (skinning did) loses precision or vanishes; keep vertex work in local space.
+- The camera looks along `(-sin yaw, -cos yaw)`; NPCs face `(sin ry, cos ry)`.
 
 ## Roles
 - Michael makes the design calls; Claude flags risks and asks when the design is open.

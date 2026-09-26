@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s152</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s153</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9366,260 +9366,336 @@ function mkHerbMesh(hx,hz,def,sc){
 // Builds a THREE.Group for an NPC with visual traits based on their role.
 // Supports: guard, elder, farmer, kid, merchant, scholar, priest, town crier,
 //           and a generic fallback for anything else.
-function buildNPCMesh(def){
-  const role=(def.role||'').toLowerCase();
-  const g=new THREE.Group();
-
-  // ── Scale by role (kids are shorter, elders slightly shorter) ─
-  const isKid   = role.includes('kid')  || role.includes('child');
-  const isElder = role.includes('elder')|| role.includes('old');
-  const scaleY  = isKid ? 0.72 : isElder ? 0.90 : 1.0;
-
-  const bMat=new THREE.MeshLambertMaterial({color:def.bCol||0x5a4030});
-  const sMat=new THREE.MeshLambertMaterial({color:def.sCol||0xd4a878});
-  const eyeMat=new THREE.MeshBasicMaterial({color:0x222222});
-
-  // Leg colour varies by role
-  const legCol = role.includes('guard')  ? 0x505060 :
-                 role.includes('scholar')? 0x2a2a4a :
-                 role.includes('merchant')? 0x3a2a10 :
-                 role.includes('farmer') ? 0x4a3010 :
-                 role.includes('crier')  ? 0x5a1010 :
-                 role.includes('priest') || role.includes('sister') || role.includes('brother') ? 0x1a1a1a :
-                 0x3a2a10;
-  const legMat=new THREE.MeshLambertMaterial({color:legCol});
-
-  // Body (torso)
-  const bodyH=0.5*scaleY, bodyW=isKid?0.28:0.36;
-  const body=new THREE.Mesh(new THREE.BoxGeometry(bodyW,bodyH,.22),bMat);
-  body.position.y=0.55*scaleY; g.add(body);
-
-  // Head — shape varies slightly
-  const headSz=isKid?0.24:isElder?0.26:0.28;
-  const head=new THREE.Mesh(new THREE.BoxGeometry(headSz,headSz,headSz),sMat);
-  head.position.y=(0.55+bodyH/2+headSz/2+0.03)*scaleY; g.add(head);
-
-  // Eyes
-  const eyes=new THREE.Mesh(new THREE.BoxGeometry(.10,.035,.02),eyeMat);
-  eyes.position.set(0,(0.55+bodyH/2+headSz/2+0.04)*scaleY,.15*scaleY); g.add(eyes);
-
-  // Arms
-  const armH=0.36*scaleY;
-  [-1,1].forEach(s=>{
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(.09,armH,.09),bMat);
-    arm.position.set(s*(bodyW/2+.045),(0.55+bodyH/2-armH/2+0.02)*scaleY,0); g.add(arm);
-  });
-
-  // Legs
-  const legH=0.38*scaleY;
-  [-1,1].forEach(s=>{
-    const leg=new THREE.Mesh(new THREE.BoxGeometry(.13,legH,.13),legMat);
-    leg.position.set(s*.09,legH/2,0); g.add(leg);
-  });
-  // v80 S9 — detail pass: neck, hair, nose, hands, belt, boots, tunic hem, shoulders; role hats.
-  {
-    const hsh=(def.name||role).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
-    const hairCols=[0x2a1a10,0x4a2c14,0x8a6a3a,0x3a3a3a,0xb89a6a,0x6a3a1a,0x1a1a1a];
-    const hairMat=new THREE.MeshLambertMaterial({color:def.hairCol||hairCols[hsh%hairCols.length]});
-    const headY=head.position.y;
-    const neck=new THREE.Mesh(new THREE.BoxGeometry(.10,.06,.10),sMat);neck.position.y=headY-headSz/2-.03;g.add(neck);
-    const hair=new THREE.Mesh(new THREE.BoxGeometry(headSz+.04,headSz*.42,headSz+.04),hairMat);hair.position.set(0,headY+headSz*.32,-.01);g.add(hair);
-    if(hsh%3===0){const back=new THREE.Mesh(new THREE.BoxGeometry(headSz*.9,headSz*.7,.06),hairMat);back.position.set(0,headY-headSz*.05,-headSz/2-.02);g.add(back);}
-    const nose=new THREE.Mesh(new THREE.BoxGeometry(.04,.05,.04),sMat);nose.position.set(0,headY-.02,headSz/2+.01);g.add(nose);
-    const brow=new THREE.Mesh(new THREE.BoxGeometry(.12,.02,.02),hairMat);brow.position.set(0,headY+.06,headSz/2+.005);g.add(brow);
-    [-1,1].forEach(s=>{const hand=new THREE.Mesh(new THREE.BoxGeometry(.08,.07,.08),sMat);hand.position.set(s*(bodyW/2+.045),(0.55+bodyH/2-armH+0.02)*scaleY-.03,0);g.add(hand);
-      const shoulder=new THREE.Mesh(new THREE.BoxGeometry(.12,.08,.20),bMat);shoulder.position.set(s*(bodyW/2+.01),(0.55+bodyH/2)*scaleY-.02,0);g.add(shoulder);
-      const boot=new THREE.Mesh(new THREE.BoxGeometry(.14,.09,.16),new THREE.MeshLambertMaterial({color:0x2a1c10}));boot.position.set(s*.09,.045,.015);g.add(boot);});
-    const belt=new THREE.Mesh(new THREE.BoxGeometry(bodyW+.02,.05,.24),new THREE.MeshLambertMaterial({color:0x2a1c10}));belt.position.y=(0.55-bodyH/2+.06)*scaleY;g.add(belt);
-    const buckle=new THREE.Mesh(new THREE.BoxGeometry(.05,.04,.02),new THREE.MeshLambertMaterial({color:0xb89a4a}));buckle.position.set(0,belt.position.y,.125);g.add(buckle);
-    const hem=new THREE.Mesh(new THREE.BoxGeometry(bodyW+.03,.08,.25),bMat);hem.position.y=(0.55-bodyH/2)*scaleY-.02;g.add(hem);
-    if(role.includes('priest')||role.includes('sister')||role.includes('brother')){const hood=new THREE.Mesh(new THREE.BoxGeometry(headSz+.08,headSz*.75,headSz+.06),bMat);hood.position.set(0,headY+headSz*.2,-.02);g.add(hood);}
-    else if(role.includes('merchant')||role.includes('trader')){const brim=new THREE.Mesh(new THREE.CylinderGeometry(headSz*.85,headSz*.85,.03,10),new THREE.MeshLambertMaterial({color:0x3a2a1a}));brim.position.y=headY+headSz/2+.01;g.add(brim);const crown=new THREE.Mesh(new THREE.CylinderGeometry(headSz*.45,headSz*.5,.14,10),new THREE.MeshLambertMaterial({color:0x3a2a1a}));crown.position.y=headY+headSz/2+.08;g.add(crown);}
-    else if(role.includes('smith')||role.includes('armourer')){const apron=new THREE.Mesh(new THREE.BoxGeometry(bodyW*.8,bodyH*.95,.03),new THREE.MeshLambertMaterial({color:0x4a3a2a}));apron.position.set(0,0.55*scaleY-.02,.125);g.add(apron);}
-    else if(role.includes('apothecary')||role.includes('scholar')){const cap=new THREE.Mesh(new THREE.BoxGeometry(headSz*.9,.06,headSz*.9),new THREE.MeshLambertMaterial({color:0x2a3a4a}));cap.position.y=headY+headSz/2+.03;g.add(cap);}
-    else if(role.includes('innkeeper')){const apron=new THREE.Mesh(new THREE.BoxGeometry(bodyW*.8,bodyH*.9,.03),new THREE.MeshLambertMaterial({color:0xd8d0b8}));apron.position.set(0,0.55*scaleY-.03,.125);g.add(apron);}
-    else if(role.includes('farmer')||role.includes('fisher')){const straw=new THREE.Mesh(new THREE.ConeGeometry(headSz*.9,.12,9),new THREE.MeshLambertMaterial({color:0xb8a060}));straw.position.y=headY+headSz/2+.05;g.add(straw);}
-    else if(role.includes('villager')&&hsh%2===0){const coif=new THREE.Mesh(new THREE.BoxGeometry(headSz+.05,headSz*.5,headSz+.05),new THREE.MeshLambertMaterial({color:0xd8d0c0}));coif.position.set(0,headY+headSz*.28,-.01);g.add(coif);}
-  }
-
-  // ── Role-specific accessories ─────────────────────────────────
-  const dkMat=new THREE.MeshLambertMaterial({color:0x3a2010});
-  const stoneMat2=new THREE.MeshLambertMaterial({color:0x888070});
-  const metalMat=new THREE.MeshLambertMaterial({color:0x909090});
-
-  if(role.includes('guard') || role.includes('captain') || role.includes('sergeant')){
-    // Helmet (flat-topped box over head)
-    const helm=new THREE.Mesh(new THREE.BoxGeometry(0.30,0.10,0.30),metalMat);
-    helm.position.y=head.position.y+headSz/2+0.04; g.add(helm);
-    // Spear — tall thin shaft + cone tip, held to right side
-    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.022,.026,.95,5),dkMat);
-    shaft.position.set(.28,.48*scaleY,0); g.add(shaft);
-    const tip=new THREE.Mesh(new THREE.ConeGeometry(.04,.14,5),metalMat);
-    tip.position.set(.28,1.0*scaleY,0); g.add(tip);
-
-  } else if(role.includes('elder') || role.includes('herbalist')){
-    // Hood / headscarf
-    const hood=new THREE.Mesh(new THREE.SphereGeometry(headSz*.62,6,5),
-      new THREE.MeshLambertMaterial({color:def.bCol||0x5a3a28}));
-    hood.scale.set(1,.55,1);
-    hood.position.y=head.position.y+headSz*.18; g.add(hood);
-    // Walking stick
-    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.72,5),dkMat);
-    stick.position.set(-.28,.36*scaleY,.05);
-    stick.rotation.z=0.18; g.add(stick);
-
-  } else if(role.includes('farmer')){
-    // Straw hat — wide flat brim + small crown
-    const brim=new THREE.Mesh(new THREE.CylinderGeometry(.26,.26,.04,8),
-      new THREE.MeshLambertMaterial({color:0xd4a830}));
-    brim.position.y=head.position.y+headSz*.52; g.add(brim);
-    const crown=new THREE.Mesh(new THREE.CylinderGeometry(.14,.16,.14,8),
-      new THREE.MeshLambertMaterial({color:0xc49820}));
-    crown.position.y=head.position.y+headSz*.52+.08; g.add(crown);
-    // Hoe — held out at angle
-    const hoeShaft=new THREE.Mesh(new THREE.CylinderGeometry(.02,.025,.7,5),dkMat);
-    hoeShaft.position.set(.25,.45*scaleY,0);
-    hoeShaft.rotation.z=0.25; g.add(hoeShaft);
-    const hoeBlade=new THREE.Mesh(new THREE.BoxGeometry(.16,.04,.08),metalMat);
-    hoeBlade.position.set(.35,.82*scaleY,0); g.add(hoeBlade);
-
-  } else if(role.includes('kid') || role.includes('child')){
-    // Messy tuft of hair (small sphere lumps on top of head)
-    const hairCol=new THREE.MeshLambertMaterial({color:def.sCol||0x7a5030});
-    [[-0.05,0],[.05,.02],[0,-.04]].forEach(([hx,hz])=>{
-      const tuft=new THREE.Mesh(new THREE.SphereGeometry(.07,4,3),hairCol);
-      tuft.position.set(hx,head.position.y+headSz*.48,hz); g.add(tuft);
-    });
-
-  } else if(role.includes('blacksmith') || role.includes('smith')){
-    // Leather apron — dark panel over torso front
-    const apronMat=new THREE.MeshLambertMaterial({color:0x3a2010});
-    const apron=new THREE.Mesh(new THREE.BoxGeometry(bodyW-.02,.42*scaleY,.06),apronMat);
-    apron.position.set(0,(0.55-bodyH/2+0.21)*scaleY,.13); g.add(apron);
-    // Rolled-up sleeve cuffs — slightly lighter forearm bands
-    const cuffMat=new THREE.MeshLambertMaterial({color:0x7a4a20});
-    [-1,1].forEach(s=>{
-      const cuff=new THREE.Mesh(new THREE.BoxGeometry(.11,.09,.11),cuffMat);
-      cuff.position.set(s*(bodyW/2+.045),(0.55-bodyH/2+0.06)*scaleY,0); g.add(cuff);
-    });
-    // Tongs / hammer — held at side
-    const toolMat=new THREE.MeshLambertMaterial({color:0x666666});
-    const hammer=new THREE.Mesh(new THREE.BoxGeometry(.07,.42,.07),toolMat);
-    hammer.position.set(bodyW/2+.055,.45*scaleY,.04); g.add(hammer);
-    const hammerHead=new THREE.Mesh(new THREE.BoxGeometry(.18,.1,.1),toolMat);
-    hammerHead.position.set(bodyW/2+.055,.70*scaleY,.04); g.add(hammerHead);
-
-  } else if(role.includes('apothecary') || role.includes('herbalist')){
-    // Small satchel of herbs — worn across body
-    const herbSatchelMat=new THREE.MeshLambertMaterial({color:0x5a7a30});
-    const satchel=new THREE.Mesh(new THREE.BoxGeometry(.16,.18,.06),herbSatchelMat);
-    satchel.position.set(-.20,.48*scaleY,.10); g.add(satchel);
-    // Herb bundle sticking out of satchel top
-    const bundleMat=new THREE.MeshLambertMaterial({color:0x4a8a28});
-    const bundle=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.18,5),bundleMat);
-    bundle.position.set(-.20,.62*scaleY,.10);
-    bundle.rotation.z=0.3; g.add(bundle);
-    // Simple head wrap / kerchief
-    const wrapMat=new THREE.MeshLambertMaterial({color:def.bCol||0x5a3a28});
-    const wrap=new THREE.Mesh(new THREE.BoxGeometry(headSz+.04,.07,headSz+.04),wrapMat);
-    wrap.position.y=head.position.y+headSz*.42; g.add(wrap);
-
-  } else if(role.includes('merchant') || role.includes('trader')){
-    // Wide-brimmed travel hat
-    const tBrim=new THREE.Mesh(new THREE.CylinderGeometry(.24,.24,.04,8),
-      new THREE.MeshLambertMaterial({color:0x3a2808}));
-    tBrim.position.y=head.position.y+headSz*.52; g.add(tBrim);
-    const tCrown=new THREE.Mesh(new THREE.CylinderGeometry(.13,.15,.18,8),
-      new THREE.MeshLambertMaterial({color:0x2a1808}));
-    tCrown.position.y=head.position.y+headSz*.52+.10; g.add(tCrown);
-    // Satchel bag on hip
-    const bag=new THREE.Mesh(new THREE.BoxGeometry(.14,.14,.08),
-      new THREE.MeshLambertMaterial({color:0x8a6030}));
-    bag.position.set(-.22,.42*scaleY,.08); g.add(bag);
-
-  } else if(role.includes('scholar')){
-    // Round spectacles — torus default lies in XY plane (normal +Z), no rotation needed
-    const specMat=new THREE.MeshLambertMaterial({color:0x888860});
-    [-1,1].forEach(s=>{
-      const spec=new THREE.Mesh(new THREE.TorusGeometry(.052,.009,6,12),specMat);
-      // No rotation — default torus faces +Z, correct for face-on glasses
-      spec.position.set(s*.058,head.position.y+0.01,.15); g.add(spec);
-    });
-    // Thin bridge between lenses
-    const bridge=new THREE.Mesh(new THREE.BoxGeometry(.022,.008,.008),specMat);
-    bridge.position.set(0,head.position.y+0.01,.15); g.add(bridge);
-    // Book held in arm
-    const book=new THREE.Mesh(new THREE.BoxGeometry(.14,.18,.04),
-      new THREE.MeshLambertMaterial({color:0x2a1a50}));
-    book.position.set(-.22,.5*scaleY,.08); g.add(book);
-
-  } else if(role.includes('lord') || role.includes('regent') || role.includes('king') || role.includes('queen')){
-    // Crown — gold band with spikes
-    const crownMat=new THREE.MeshLambertMaterial({color:0xd4a020});
-    const band=new THREE.Mesh(new THREE.CylinderGeometry(headSz*.56,headSz*.58,.10,8),crownMat);
-    band.position.y=head.position.y+headSz*.5+.04; g.add(band);
-    for(let ci=0;ci<5;ci++){
-      const ang=ci*(Math.PI*2/5);
-      const spike=new THREE.Mesh(new THREE.ConeGeometry(.035,.14,4),crownMat);
-      spike.position.set(Math.sin(ang)*headSz*.5,head.position.y+headSz*.5+.14,Math.cos(ang)*headSz*.5);
-      g.add(spike);
-    }
-    // Royal mantle — slightly wider shoulder overlay
-    const mantleMat=new THREE.MeshLambertMaterial({color:0x6a1010});
-    const mantle=new THREE.Mesh(new THREE.BoxGeometry(bodyW+.12,.18,.26),mantleMat);
-    mantle.position.y=body.position.y+bodyH/2-.04; g.add(mantle);
-    // Gold trim on mantle edge
-    const trim=new THREE.Mesh(new THREE.BoxGeometry(bodyW+.14,.04,.28),crownMat);
-    trim.position.y=body.position.y+bodyH/2-.14; g.add(trim);
-    // Sceptre held upright in right hand
-    const sceptreShaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.7,6),
-      new THREE.MeshLambertMaterial({color:0xb88820}));
-    sceptreShaft.position.set(bodyW/2+.055,.68*scaleY,.04); g.add(sceptreShaft);
-    const sceptreHead=new THREE.Mesh(new THREE.SphereGeometry(.055,6,5),crownMat);
-    sceptreHead.position.set(bodyW/2+.055,1.06*scaleY,.04); g.add(sceptreHead);
-
-  } else if(role.includes('crier') || role.includes('herald')){
-    // Feathered cap — cylinder with a small feather
-    const capMat=new THREE.MeshLambertMaterial({color:0x8a1010});
-    const cap=new THREE.Mesh(new THREE.CylinderGeometry(.13,.15,.18,8),capMat);
-    cap.position.y=head.position.y+headSz*.52+.06; g.add(cap);
-    const feather=new THREE.Mesh(new THREE.BoxGeometry(.03,.22,.02),
-      new THREE.MeshLambertMaterial({color:0xf0e060}));
-    feather.position.set(.06,head.position.y+headSz*.52+.22,0);
-    feather.rotation.z=0.3; g.add(feather);
-    // Horn / scroll in hand
-    const scroll=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.22,6),
-      new THREE.MeshLambertMaterial({color:0xd4b878}));
-    scroll.rotation.z=Math.PI/2;
-    scroll.position.set(.24,.54*scaleY,.0); g.add(scroll);
-
-  } else if(role.includes('priest') || role.includes('sister') || role.includes('brother') || role.includes('oratory') || role.includes('chapel')){
-    // Hood/cowl — flat panels covering left, right, back of head + thick top cap
-    const cowlMat=new THREE.MeshLambertMaterial({color:0x1a1a2a});
-    const hY=head.position.y; // head center Y
-    const hS=headSz;          // 0.28 for normal NPC
-    const panelThk=0.04;      // panel thickness
-    // Left panel (covers left face of head, hangs slightly below)
-    const cowlL=new THREE.Mesh(new THREE.BoxGeometry(panelThk, hS*1.3, hS*1.05),cowlMat);
-    cowlL.position.set(-(hS/2+panelThk/2), hY-hS*0.08, 0); g.add(cowlL);
-    // Right panel
-    const cowlR=new THREE.Mesh(new THREE.BoxGeometry(panelThk, hS*1.3, hS*1.05),cowlMat);
-    cowlR.position.set( (hS/2+panelThk/2), hY-hS*0.08, 0); g.add(cowlR);
-    // Back panel (covers back of head, same height as sides)
-    const cowlB=new THREE.Mesh(new THREE.BoxGeometry(hS+panelThk*2, hS*1.3, panelThk),cowlMat);
-    cowlB.position.set(0, hY-hS*0.08, -(hS/2+panelThk/2)); g.add(cowlB);
-    // Top cap — slightly thicker, spans all three sides
-    const cowlTop=new THREE.Mesh(new THREE.BoxGeometry(hS+panelThk*2, panelThk*2, hS+panelThk*2),cowlMat);
-    cowlTop.position.set(0, hY+hS/2+panelThk, 0); g.add(cowlTop);
-    // Cross pendant — proper + shape
-    const crossMat2=new THREE.MeshLambertMaterial({color:0xccc0a0});
-    const crossV2=new THREE.Mesh(new THREE.BoxGeometry(.03,.18,.03),crossMat2);
-    crossV2.position.set(0,.52*scaleY,.12); g.add(crossV2);
-    const crossH3=new THREE.Mesh(new THREE.BoxGeometry(.10,.03,.03),crossMat2);
-    crossH3.position.set(0,.55*scaleY,.12); g.add(crossH3);
-  }
-
+// ═══ PEOPLE (v80 S153) — the shape kit and the townsperson ═══════════════════════════════
+// Every person is one skinned mesh (one draw call, vertex colours) on seventeen bones, shaped by a
+// genome seeded from the NPC's name and place, so the same person looks the same on every visit and
+// behind the counter as in the street. The parts are lathed and rounded rather than boxed. The walk
+// is a gait cycle with planted feet, driven by how far the figure actually moved (tickPeople, in the
+// main loop so it runs indoors too). Roles dress over the top: a guard's helm and spear, a smith's
+// apron and hammer. Prototyped at claude.ai/artifact/WmgDqFPQ1dyBBKX3u8P6Ma (backlog H).
+const PEOPLE_RIGS=new Set();
+const PEOPLE_GENOMES=new Map();
+const PEOPLE_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:0,side:THREE.DoubleSide,skinning:true});
+// ── the shape kit: geometries any builder can draw from ──
+const SK={
+  v2:(x,y)=>new THREE.Vector2(x,y),
+  lathe(pts,seg){return new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]),q[1])),seg||12);},
+  // a tapered limb: radius r0 at the joint, r1 at the far end, rounded at both
+  limb(len,r0,r1){const p=[];for(let i=0;i<=5;i++){const a=i/5*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r1*Math.sin(a)),-len-r1*Math.cos(a)));}
+    for(let i=1;i<=5;i++){const a=i/5*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r0*Math.cos(a)),r0*Math.sin(a)));}return new THREE.LatheGeometry(p,8);},
+  ball(r,w,h,a0,a1,b0,b1){return new THREE.SphereGeometry(r,w||10,h||7,a0||0,a1==null?Math.PI*2:a1,b0||0,b1==null?Math.PI:b1);},
+  // a lumpy surface for curls, wool and beards
+  bumpy(geo,amp,freq,k){const pos=geo.attributes.position,v=new THREE.Vector3(),n=new THREE.Vector3();
+    for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i);n.copy(v).normalize();
+      const b=Math.sin(n.x*freq+k)*Math.sin(n.y*freq*1.27+k*.7)*Math.sin(n.z*freq*.91+k*1.3);
+      v.addScaledVector(n,amp*Math.pow(Math.abs(b),.55));pos.setXYZ(i,v.x,v.y,v.z);}
+    geo.computeVertexNormals();return geo;}
+};
+// ── the peoples' looks (canon §2) and the nations' dyes; palettes match PEOPLES in the world ──
+const PEOPLE_LOOK={
+  gatelander:{skin:[0xe8c8a8,0xf0d0b0,0xe0b898,0xd8b090],hair:[0x2a1a10,0x4a2c14,0x8a3a1a,0xa04a20,0x3a2a1a],eyes:[0x4a6a3a,0x3a5a8a,0x6a5a2a,0x4a3020],freckles:.34,ruddy:.5,beard:.35,
+    styles:{f:[['straight',.2],['braid',.15],['twin',.1],['curly',.15],['bun',.12],['tied',.1],['shaggy',.08],['warrior',.1]],m:[['crop',.22],['shaggy',.15],['curly',.12],['straight',.08],['tied',.1],['warrior',.1],['buzz',.1],['mohawk',.08],['braid',.05]]},
+    beards:[['full',.16],['short',.18],['walrus',.1],['mutton',.1],['goatee',.08],['vandyke',.08],['handlebar',.06],['long',.06],['horseshoe',.06],['chinstrap',.06],['stubble',.06]]},
+  markman:{skin:[0xf0dcc8,0xecd4c0,0xf4e0d0,0xe8d0b8],hair:[0xd8c8a0,0xb8a070,0x8a8a80,0xe8dcc0,0x5a4a3a],eyes:[0x7a8288,0x6a8aa8,0x5a6a78],freckles:.08,ruddy:.6,beard:.65,
+    styles:{f:[['straight',.2],['warrior',.25],['braid',.2],['twin',.15],['bun',.1],['tied',.1]],m:[['warrior',.3],['straight',.12],['mohawk',.15],['shaggy',.13],['buzz',.15],['crop',.15]]},
+    beards:[['long',.15],['braided',.2],['full',.18],['forked',.1],['short',.08],['walrus',.1],['horseshoe',.1],['mutton',.05],['stubble',.04]]},
+  aurennais:{skin:[0xc8a078,0xb88860,0xa87850,0xd0a880],hair:[0x1a1210,0x2a1a10,0x3a2818,0x1a1a1a],eyes:[0x3a2414,0x24160c,0x5a4420],freckles:.03,ruddy:.1,beard:.4,
+    styles:{f:[['curly',.25],['afro',.2],['straight',.12],['bun',.15],['braid',.13],['tied',.15]],m:[['curly',.25],['afro',.15],['crop',.25],['buzz',.15],['tied',.1],['straight',.1]]},
+    beards:[['short',.2],['goatee',.15],['vandyke',.15],['pencil',.14],['handlebar',.1],['chinstrap',.1],['full',.08],['stubble',.08]]},
+  oldblood:{skin:[0xd8d0cc,0xcfc8c4,0xe0d8d4,0xc8c0bc],hair:[0x0e0c0c,0x141212,0x1a1616],eyes:[0xb4bcc2],freckles:0,ruddy:0,beard:.25,tattoo:true,
+    styles:{f:[['straight',.4],['braid',.3],['bun',.15],['twin',.15]],m:[['straight',.3],['crop',.25],['buzz',.2],['braid',.25]]},
+    beards:[['short',.2],['goatee',.2],['long',.2],['pencil',.2],['stubble',.2]]}
+};
+const NATION_DRESS={
+  gatelands:{cloth:[0x5a4030,0x4a5a30,0x7a3a22,0x9a7a3a,0x3a4a5a,0x6a5a3a],trim:0x2a1c10,cloak:.12,hats:[['coif',.28],['flatcap',.2],['none',.52]]},
+  mark:{cloth:[0x4a4a4c,0x26262c,0x8a7a60,0x2a3448,0x5a4a3a],trim:0x6a5a48,cloak:.6,hats:[['fur',.3],['hood',.25],['none',.45]]},
+  aurenne:{cloth:[0x1e3a7a,0xe4e0d4,0xb08a3a,0x6a2a3a,0x2a5a5a],trim:0xc8a850,cloak:.1,hats:[['chaperon',.3],['coif',.15],['none',.55]]}
+};
+const PEOPLE_CAPPED=new Set(['crop','straight','braid','twin','bun','tied','buzz','thin']); // styles a coif or cap can sit on
+// a seeded dice: the same name and place always roll the same person
+function pHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function pRng(seed){let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;};}
+const pPick=(r,a)=>a[Math.floor(r()*a.length)];
+const pPickW=(r,a)=>{let q=r();for(const [v,w] of a){if((q-=w)<=0)return v;}return a[a.length-1][0];};
+const pGauss=r=>{let u=0;for(let i=0;i<4;i++)u+=r();return (u-2)*1.732;};
+function personGenome(def,opts){
+  opts=opts||{};const role=(def.role||'').toLowerCase();
+  const pk=(def.people&&PEOPLE_LOOK[def.people])?def.people:'gatelander';const P=PEOPLE_LOOK[pk];
+  const nk=NATION_DRESS[opts.nation]?opts.nation:'gatelands';const N=NATION_DRESS[nk];
+  const seed=pHash((def.name||role||'?')+'|'+(opts.key||''));const r=pRng(seed);
+  const banks=(typeof WORLD!=='undefined'&&WORLD.NAMES)||null;
+  let female=def.female!=null?!!def.female:null;
+  if(female==null&&banks&&def.name){const bs=Object.values(banks);if(bs.some(b=>b&&b.f&&b.f.includes(def.name)))female=true;else if(bs.some(b=>b&&b.m&&b.m.includes(def.name)))female=false;}
+  if(female==null)female=/sister|lady|queen|mother|wife|maid|matron/.test(role)?true:/brother|lord|king|father|priest|monk/.test(role)?false:r()<.5;
+  const child=/kid|child/.test(role);
+  const age=child?'child':/elder|old/.test(role)?'elder':r()<.16?'elder':r()<.4?'young':'adult';
+  const C=x=>new THREE.Color(x);
+  const skin=C(def.sCol!=null?def.sCol:pPick(r,P.skin)).lerp(C(pPick(r,P.skin)),r()*.4);
+  const hair=C(def.hairCol!=null?def.hairCol:pPick(r,P.hair)).lerp(C(pPick(r,P.hair)),r()*.3);
+  const grey=age==='elder'?.55+r()*.35:age==='adult'&&r()<.2?.2:0;hair.lerp(C(0xd4d0c8),grey);
+  const styles=child?[['crop',.4],['shaggy',.3],['braid',.15],['twin',.15]]:(age==='elder'&&!female&&r()<.45)?[['thin',1]]:P.styles[female?'f':'m'];
+  const beard=(child||female)?'none':(age==='young'&&r()<.7)?'none':(r()<P.beard?pPickW(r,P.beards):r()<.35?'stubble':'none');
+  const dyeA=pPick(r,N.cloth);let dyeB=pPick(r,N.cloth);if(dyeB===dyeA)dyeB=N.cloth[(N.cloth.indexOf(dyeA)+2)%N.cloth.length];
+  const plain=P.tattoo?.35:0;
+  const g={seed,people:pk,nation:nk,name:def.name||'',role,female,age,child,
+    height:(1+pGauss(r)*.035)*(female?.95:1)*(age==='elder'?.97:child?.72:1),
+    build:(1+pGauss(r)*.06)*(female?.93:1)*(child?.9:1),
+    head:(child?1.12:1)*(1+pGauss(r)*.03),jaw:1+pGauss(r)*.05+(female?-.03:.02),nose:[1+pGauss(r)*.15,1+pGauss(r)*.15],
+    brow:[.7+r()*.7+(female?-.15:.1),pGauss(r)*.12],ears:1+pGauss(r)*.1,
+    skin,hair,eye:C(pPick(r,P.eyes)),freckles:r()<P.freckles,ruddy:r()<P.ruddy,style:pPickW(r,styles),beard,
+    dress:female&&!child&&r()<.7,
+    cloth:def.bCol!=null?C(def.bCol):C(dyeA).lerp(C(0x3a3a3a),plain),
+    sleeve:def.bCol!=null?C(def.bCol).multiplyScalar(.88):C(dyeB).lerp(C(0x3a3a3a),plain),
+    legs:C(pPick(r,[0x3a2a10,0x4a3a28,0x3a3a40,0x2a2420])),boot:C(pPick(r,[0x2a1c10,0x3a2616,0x1e1a16])),trim:C(N.trim),
+    cloak:!child&&r()<N.cloak,hat:child?'none':pPickW(r,N.hats),apron:null,tattoo:!!P.tattoo,gear:null,extras:[],
+    phase:r()*20,tempo:.85+r()*.3,bodyScale:def.bodyScale||null};
+  if(g.hat==='coif'&&!female&&r()<.7)g.hat='none';
+  if(g.hat==='flatcap'&&female)g.hat='coif';
+  // the role dresses over the top
+  if(/guard|captain|sergeant|watch|blade|warden|recruit|soldier/.test(role)){g.hat='helm';g.gear='spear';g.cloak=false;g.dress=false;}
+  else if(/farmer/.test(role)){g.hat='straw';g.gear='hoe';}
+  else if(/fisher/.test(role)){g.hat='straw';}
+  else if(/elder|hermit/.test(role)){g.gear='stick';}
+  else if(/smith|armourer/.test(role)){g.apron=0x3a2010;g.gear='hammer';g.hat='none';g.dress=false;}
+  else if(/apothecary|herbalist/.test(role)){g.extras.push('satchel');g.hat='kerchief';}
+  else if(/merchant|trader/.test(role)){g.hat='brim';g.extras.push('bag');}
+  else if(/scholar|adept|novice|evoker|mage/.test(role)){g.extras.push('spectacles','book');}
+  else if(/lord|lady|regent|king|queen/.test(role)){g.hat='crown';g.extras.push('mantle');g.cloak=false;}
+  else if(/priest|sister|brother|prior/.test(role)){g.hat='hood';}
+  else if(/innkeeper/.test(role)){g.apron=0xd8d0b8;}
+  if(!PEOPLE_CAPPED.has(g.style)&&(g.hat==='coif'||g.hat==='flatcap'||g.hat==='fur'||g.hat==='chaperon'))g.hat='none';
   return g;
+}
+// ── the body: rounded parts on bones, baked into one skinned mesh ──
+function buildPerson(g){
+  const bones=[],B={};
+  const bone=(name,parent,x,y,z)=>{const b=new THREE.Bone();b.name=name;b.position.set(x||0,y||0,z||0);if(parent)parent.add(b);b.userData.i=bones.length;bones.push(b);B[name]=b;return b;};
+  const parts=[];
+  const part=(geo,col,b,x,y,z)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);o.userData.geo=geo;o.userData.col=col;b.add(o);parts.push(o);return o;};
+  const C=x=>(x&&x.isColor)?x:new THREE.Color(x);const mixC=(a,b,t)=>C(a).clone().lerp(C(b),t);
+  const bw=g.build,fem=g.female,hs=g.head;
+  const cloth=C(g.cloth),sleeve=C(g.sleeve),skin=C(g.skin),legs=C(g.legs),hair=C(g.hair),boot=C(g.boot),trim=C(g.trim),dark=C(0x1b1410),steel=C(0x9a9c9e);
+  const hips=bone('hips',null,0,.47,0);
+  // the tunic's skirt, or a dress to the shin
+  const hem=g.dress?[[0,-.37],[.25,-.37],[.255,-.355],[.215,-.2],[.18,-.05],[.16,.02],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
+  part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
+  part(new THREE.TorusGeometry((g.dress?.247:.214)*bw,.012,5,22),trim,hips,0,g.dress?-.36:-.125,0).rotation.x=Math.PI/2;
+  const belt=part(new THREE.TorusGeometry(.172*bw*(fem?.96:1),.02,5,20),dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;
+  if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
+  const spine=bone('spine',hips,0,.03,0);
+  const chestPts=fem?[[0,-.01],[.155,-.01],[.15,.06],[.17,.15],[.172,.22],[.15,.3],[.095,.36],[.052,.39],[0,.4]]:[[0,-.01],[.165,-.01],[.172,.05],[.19,.17],[.188,.25],[.16,.32],[.1,.37],[.055,.395],[0,.4]];
+  part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;
+  if(g.cloak){part(new THREE.CylinderGeometry(.17*bw,.27*bw,.62,14,1,true,Math.PI/2+.25,Math.PI-.5),mixC(cloth,0x000000,.3),spine,0,.02,-.005).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
+  if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
+  const neck=bone('neck',spine,0,.39,0);part(new THREE.CylinderGeometry(.043,.05,.09,10),skin,neck,0,.03,0);
+  const head=bone('head',neck,0,.07,0);
+  part(SK.ball(.13*hs,14,10),skin,head,0,.12,0).scale.set(g.jaw,fem?1.05:1.08,1.02);
+  // every feature sits on the head's own surface: zs(x,y) is how far forward the skin is at that point
+  const R=.13*hs,zs=(x,y)=>R*1.02*Math.sqrt(Math.max(0,1-(x/(R*g.jaw))**2-((y-.12)/(R*(fem?1.05:1.08)))**2));
+  part(SK.ball(.017,8,6),skin,head,0,.102,zs(0,.102)+.002).scale.set(g.nose[0]*.9,g.nose[1]*1.25,1);
+  part(new THREE.CylinderGeometry(.005,.005,.036,5),mixC(skin,0x7a3a30,.45),head,0,.066,zs(0,.066)+.001).rotation.z=Math.PI/2;
+  [-1,1].forEach(s=>{const ex=s*.046*g.jaw,ez=zs(ex,.135);
+    part(SK.ball(.0165,8,6),C(0xf0ece4),head,ex,.135,ez-.002).scale.set(1,.78,.45);
+    part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);
+    part(SK.ball(.0042,5,4),C(0x0a0806),head,ex,.135,ez+.0078);
+    const bx=s*.047*g.jaw;part(new THREE.CylinderGeometry(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
+    part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
+    const cx=s*.07*g.jaw;if(g.ruddy)part(SK.ball(.03,8,6),mixC(skin,0xc8604e,.3),head,cx,.093,zs(cx,.093)-.005).scale.set(1,.7,.3);
+    if(g.extras.includes('spectacles'))part(new THREE.TorusGeometry(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
+  });
+  if(g.freckles){const fr=pRng(g.seed+99);const fc=mixC(skin,0x7a4a2a,.45);for(let i=0;i<12;i++){const x=(fr()<.5?-1:1)*(.02+fr()*.07),y=.09+fr()*.04;part(SK.ball(.0045,5,4),fc,head,x,y,zs(x,y));}}
+  // hair: a bumped sphere for texture, a chain of offset lobes with a tie for a plait
+  const plait=(pts,r,col)=>{const n=pts.length-1,per=4;let last=null;
+    for(let i=0;i<n*per;i++){const u=i/(n*per),seg=Math.floor(u*n),f=u*n-seg,a=pts[seg],b=pts[seg+1];
+      const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f,z=a[2]+(b[2]-a[2])*f;const rr=r*(1-.3*u),side=(i%2?1:-1)*rr*.38;
+      const lobe=part(SK.ball(rr,6,5),col||hair,head,x+side,y,z);lobe.scale.set(1,1.5,.9);lobe.rotation.z=side*6;last=[x,y,z,rr];}
+    part(new THREE.TorusGeometry(last[3]*.8,.006,4,8),trim,head,last[0],last[1]-.012,last[2]).rotation.x=Math.PI/2;
+    part(new THREE.ConeGeometry(last[3]*.85,.05,6),col||hair,head,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
+  const shorn=(t)=>{const c=part(SK.ball(R*1.012,14,8,0,Math.PI*2,0,Math.PI*.56),mixC(skin,hair,t||.4),head,0,.125,-.006);c.rotation.x=-.3;c.scale.set(g.jaw,1.06,1.03);return c;};
+  const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
+  let cap=null;const st=g.style;
+  if(st==='thin'){const f=part(new THREE.TorusGeometry(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
+  else if(st==='buzz')cap=shorn(.7);
+  else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(new THREE.ConeGeometry(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
+  else if(st==='curly')part(SK.bumpy(SK.ball(.15*hs,20,14),.022,23,g.seed%13),hair,head,0,.17,-.045).scale.set(g.jaw,.98,1);
+  else if(st==='afro')part(SK.bumpy(SK.ball(.2*hs,24,16),.014,27,g.seed%11),hair,head,0,.2,-.07).scale.set(g.jaw,.95,1);
+  else if(st==='shaggy'){const c=part(SK.bumpy(SK.ball(.147*hs,18,11,0,Math.PI*2,0,Math.PI*.5),.016,15,g.seed%7),hair,head,0,.125,-.012);c.rotation.x=-.4;c.scale.set(g.jaw*1.03,1.12,1.06);
+    part(SK.bumpy(SK.ball(.12*hs,16,10,Math.PI*.85,Math.PI*1.3,Math.PI*.35,Math.PI*.4),.014,15,3),hair,head,0,.06,-.04).scale.set(g.jaw*1.12,1.3,1.02);}
+  else if(st==='warrior'){shorn();const top=part(SK.ball(.141*hs,18,8,0,Math.PI*2,0,Math.PI*.3),hair,head,0,.13,-.01);top.rotation.x=-.2;top.scale.set(g.jaw*.8,1.08,1.08);
+    part(SK.ball(.034,10,8),hair,head,0,.265,-.07).scale.set(1,.85,1);
+    plait([[0,.26,-.1],[0,.2,-.16],[0,.12,-.17],[0,.04,-.16]],.022);
+    [-1,1].forEach(sd=>plait([[sd*.118*g.jaw,.14,.03],[sd*.125*g.jaw,.04,.05],[sd*.12*g.jaw,-.08,.07],[sd*.115*g.jaw,-.2,.075]],.017));}
+  else cap=capHair();
+  if(st==='straight')part(new THREE.CylinderGeometry(.136*hs*g.jaw,.155*g.jaw,.36,16,1,true,Math.PI*.3,Math.PI*1.4),hair,head,0,-.01,-.006).scale.z=.95;
+  if(st==='braid')plait([[0,.1,-.135],[0,-.02,-.16],[0,-.15,-.15],[0,-.27,-.13],[0,-.35,-.12]],.024);
+  if(st==='twin')[-1,1].forEach(sd=>plait([[sd*.1*g.jaw,.08,-.07],[sd*.135*g.jaw,-.02,-.03],[sd*.14*g.jaw,-.13,0],[sd*.135*g.jaw,-.22,.02]],.019));
+  if(st==='bun')part(SK.ball(.052,10,8),hair,head,0,.2,-.1);
+  if(st==='tied')part(new THREE.ConeGeometry(.035,.17,8),hair,head,0,.03,-.145).rotation.x=Math.PI+.35;
+  // beards: a shell over the jaw, a chin mass, moustaches from two drooping halves
+  if(g.beard&&g.beard!=='none'){
+    const bc=g.beard==='stubble'?mixC(skin,hair,.22):mixC(hair,0x8a4a2a,.12);
+    const shell=(w,t0,t1,rad,amp,freq,ys)=>{const geo=SK.ball(rad,18,10,Math.PI/2-w,2*w,t0,t1);if(amp)SK.bumpy(geo,amp,freq,g.seed%9);const m=part(geo,bc,head,0,.12,0);m.scale.set(g.jaw,ys,1.02);return m;};
+    const lump=(r,x,y,z,sx,sy,sz,amp)=>{const m=part(amp?SK.bumpy(SK.ball(r,12,10),amp,26,g.seed%5):SK.ball(r,12,10),bc,head,x,y,z);m.scale.set(sx,sy,sz);return m;};
+    const my=.082,mz=zs(0,.082)+.003;
+    const tache=(kind)=>{
+      if(kind==='pencil'){part(new THREE.CylinderGeometry(.0035,.0035,.05,5),bc,head,0,.079,zs(0,.079)+.002).rotation.z=Math.PI/2;return;}
+      const big=kind==='walrus',r=big?.028:.021;
+      [-1,1].forEach(sd=>{const h=lump(r,sd*(big?.02:.018),my-(big?.005:0),mz,big?1.45:1.5,big?.75:.42,big?.7:.55,big?.004:0);h.rotation.z=-sd*(big?.45:.25);});
+      if(kind==='handlebar')[-1,1].forEach(sd=>{const c=part(new THREE.TorusGeometry(.011,.0045,4,10,Math.PI*1.4),bc,head,sd*.047,my+.009,mz-.006);c.rotation.set(0,sd*.35,sd>0?-.4:Math.PI+.4);});};
+    const Bd=g.beard;
+    if(Bd==='stubble')shell(Math.PI*.5,Math.PI*.63,Math.PI*.33,R*1.008,0,0,1.08);
+    if(Bd==='chinstrap')shell(Math.PI*.52,Math.PI*.8,Math.PI*.17,R*1.02,.004,30,1.1);
+    if(Bd==='short'||Bd==='braided'){shell(Math.PI*.55,Math.PI*.62,Math.PI*.37,R*1.035,.008,30,1.12);tache('bar');}
+    if(Bd==='full'||Bd==='long'||Bd==='forked'){shell(Math.PI*.6,Math.PI*.6,Math.PI*.4,R*1.06,.014,22,1.25);lump(.065,0,-.03,.075,1.15,1.15,.85,.012);tache('bar');}
+    if(['short','braided','full','long','forked'].includes(Bd))[-1,1].forEach(sd=>{const x=sd*.112*g.jaw;lump(.028,x,.1,zs(x,.1)-.014,.5,1.6,.9,.006).rotation.z=sd*.15;});
+    if(Bd==='long')part(SK.bumpy(new THREE.ConeGeometry(.075,.24,14,4),.006,30,2),bc,head,0,-.13,.085).rotation.x=Math.PI+.15;
+    if(Bd==='forked')[-1,1].forEach(sd=>part(SK.bumpy(new THREE.ConeGeometry(.036,.14,10,3),.004,30,3),bc,head,sd*.03,-.1,.09).rotation.set(Math.PI+.1,0,sd*.22));
+    if(Bd==='braided')plait([[0,-.02,.11],[0,-.1,.12],[0,-.18,.11],[0,-.25,.1]],.02,bc);
+    if(Bd==='goatee'||Bd==='vandyke')lump(.03,0,.006,zs(0,.006)-.004,1,1.5,.8,.005);
+    if(Bd==='vandyke')tache('bar');
+    if(Bd==='walrus'||Bd==='handlebar'||Bd==='pencil')tache(Bd==='walrus'?'walrus':Bd);
+    if(Bd==='horseshoe'){tache('bar');[-1,1].forEach(sd=>lump(.012,sd*.04,.045,zs(sd*.04,.045)+.002,1,3.2,.8,0));}
+    if(Bd==='mutton'){tache('walrus');[-1,1].forEach(sd=>{const x=sd*.1*g.jaw;lump(.04,x,.075,zs(x,.075)-.012,.55,1.6,.9,.008).rotation.z=sd*.25;});}
+  }
+  // hats
+  if(g.hat==='coif'&&cap){cap.userData.col=C(0xd8d0c0);cap.scale.set(g.jaw*1.05,1.1,1.08);}
+  if(g.hat==='kerchief'&&cap){cap.userData.col=mixC(cloth,0xffffff,.2);cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),mixC(cloth,0xffffff,.2),head,0,.06,-.13);}
+  if(g.hat==='flatcap')part(SK.lathe([[0,0],[.15,0],[.155,.02],[.14,.05],[0,.06]],16),mixC(sleeve,0x000000,.2),head,0,.21,.01).rotation.x=-.2;
+  if(g.hat==='fur'){part(new THREE.CylinderGeometry(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(new THREE.TorusGeometry(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
+  if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
+  if(g.hat==='chaperon'){part(new THREE.TorusGeometry(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
+  if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(new THREE.TorusGeometry(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
+  if(g.hat==='brim'){part(SK.lathe([[0,0],[.24,0],[.245,.02],[.15,.03],[.14,.19],[.12,.21],[0,.22]],20),C(0x3a2808),head,0,.2,-.01).rotation.x=-.1;}
+  if(g.hat==='helm')part(SK.lathe([[0,0],[.19,0],[.195,.01],[.15,.022],[.143,.07],[.125,.12],[.07,.155],[0,.163]],20),steel,head,0,.155,0);
+  if(g.hat==='crown'){part(new THREE.CylinderGeometry(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(new THREE.ConeGeometry(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
+  // arms and legs: side 1 is the figure's left (+x), -1 its right
+  ['L','R'].forEach((k,i)=>{const s=i===0?1:-1;
+    const sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),sleeve,sh).scale.set(1,.9,.9);
+    part(SK.limb(.155,.05*bw,.044*bw),sleeve,sh);
+    const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),sleeve,el);
+    part(new THREE.TorusGeometry(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
+    if(g.tattoo)[-.105,-.09].forEach(y=>part(new THREE.TorusGeometry(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
+    const wr=bone('wr'+k,el,0,-.14,0);const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
+    part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
+    const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(.2,.066*bw,.05*bw),legs,th);
+    const kn=bone('kn'+k,th,0,-.2,0);part(SK.limb(.19,.05*bw,.04*bw),legs,kn);
+    part(new THREE.CylinderGeometry(.05*bw,.046*bw,.1,10),boot,kn,0,-.15,0);
+    const an=bone('an'+k,kn,0,-.19,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
+  });
+  // held gear sits in the right fist: the shaft runs through the hand, fingers wrap it, the wrist keeps it upright
+  const gear=bone('gear',B.wrR,0,-.035,.006);
+  if(g.gear){part(new THREE.TorusGeometry(.028,.014,6,12),skin,gear).rotation.x=Math.PI/2;B.handR.scale.set(.72,.85,.7);}
+  if(g.gear==='spear'){part(new THREE.CylinderGeometry(.015,.017,1.55,8),C(0x5a3a22),gear,0,.225,0);part(new THREE.ConeGeometry(.034,.16,10),steel,gear,0,1.08,0);}
+  if(g.gear==='hoe'){part(new THREE.CylinderGeometry(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
+  if(g.gear==='stick'){part(new THREE.CylinderGeometry(.013,.017,.56,8),C(0x4a3018),gear,0,-.24,0);part(SK.ball(.024,8,6),C(0x5a4028),gear,0,.03,0);}
+  if(g.gear==='hammer'){part(new THREE.CylinderGeometry(.014,.016,.36,8),C(0x4a3018),gear,0,.06,0);part(new THREE.BoxGeometry(.16,.07,.07),C(0x666666),gear,0,.24,0);}
+  if(g.extras.includes('satchel')){part(new THREE.BoxGeometry(.14,.16,.06),C(0x5a7a30),hips,-.2*bw,-.02,.06);part(new THREE.CylinderGeometry(.03,.04,.16,6),C(0x4a8a28),hips,-.2*bw,.1,.06).rotation.z=.3;}
+  if(g.extras.includes('bag'))part(new THREE.BoxGeometry(.13,.13,.08),C(0x8a6030),hips,-.21*bw,-.05,.05);
+  if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
+  // bake: every part into one geometry, each vertex bound to its bone
+  const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
+  hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone
+  for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
+    for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(n.x,n.y,n.z);
+      const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);si.push(bi,0,0,0);sw.push(1,0,0,0);}
+    if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
+    base+=pa.count;o.parent.remove(o);geo.dispose();}
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
+  geo.computeBoundingSphere();geo.boundingSphere.radius*=1.35;
+  const mesh=new THREE.SkinnedMesh(geo,PEOPLE_MAT);mesh.add(hips);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));
+  mesh.castShadow=true;mesh.receiveShadow=false;
+  // Bone matrices stay local to the mesh. three.js feeds the shader world-space bone matrices and cancels the
+  // world position back out in float32; at this world's coordinates (x, z around 25,000) that cancellation
+  // loses the figure entirely. Detached binding with identity bind matrices, and bones composed from the mesh.
+  mesh.bindMode='detached';mesh.bindMatrix.identity();mesh.bindMatrixInverse.identity();
+  {const sk=mesh.skeleton,mats=bones.map(()=>new THREE.Matrix4()),off=new THREE.Matrix4();
+    sk.update=function(){for(let i=0;i<bones.length;i++){const b=bones[i];b.updateMatrix();const p=b.parent&&b.parent.isBone?mats[b.parent.userData.i]:null;
+      if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
+      if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  const root=new THREE.Group();root.add(mesh);
+  root.scale.setScalar(g.height);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
+  const rig={root,mesh,B,g,w:{idle:1,walk:0,wave:0},phase:g.phase%1,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris:idx.length/3};
+  root.userData.rig=rig;PEOPLE_RIGS.add(rig);
+  return rig;
+}
+function buildNPCMesh(def,opts){
+  opts=opts||{};const key=(def.name||'')+'|'+(opts.key||'');
+  // the same name in the same place is the same person, behind the counter as in the street
+  let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
+  if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
+  return buildPerson(g).root;
+}
+// ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
+const PW={JOINTS:['hips','spine','neck','head','shL','elL','wrL','shR','elR','wrR','thL','knL','anL','thR','knR','anR'],L1:.2,L2:.19,FOOT:.07,HIPJ:.02,STRIDE:.16,DUTY:.62};
+PW.cycle=2*PW.STRIDE/PW.DUTY; // ground covered per stride cycle, in figure units
+function pwZero(){const p={};PW.JOINTS.forEach(j=>p[j]=[0,0,0]);p.sway=0;p.hipsY=0;return p;}
+const pwClamp=x=>Math.max(-1,Math.min(1,x));
+// two-bone IK in the leg's plane: the thigh and knee angles that put the ankle at (z, y) from the hip joint
+function pwIK(z,y){const L1=PW.L1,L2=PW.L2,h=-y;const d=Math.min(Math.hypot(z,h),L1+L2-1e-4);
+  const k=Math.PI-Math.acos(pwClamp((L1*L1+L2*L2-d*d)/(2*L1*L2)));const b=Math.acos(pwClamp((L1*L1+d*d-L2*L2)/(2*L1*d)));return [Math.atan2(-z,h)-b,k];}
+function pwReach(th,kn){return PW.L1*Math.cos(th)+PW.L2*Math.cos(th+kn)+PW.FOOT;}
+function pwHold(p,swing,gear){const bend=gear==='stick'?-.45:-1.2;p.shR=[-.12+swing,0,-.1];p.elR=[bend,0,0];p.wrR=[0,0,0];}
+function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),old=o.elder?1:0;
+  p.spine=[.02*b-.01+.13*old,0,.015*w];p.hips=[0,.04*w,-.02*w];p.neck=[-.01*b-.08*old,.35*Math.sin(t*.23)*Math.sin(t*.11+1),0];p.head=[.03*Math.sin(t*.29)-.04*old,0,.02*w];
+  p.shL=[.02*b,0,.07+.01*b];p.shR=[.02*b,0,-.07-.01*b];p.elL=[-.12,0,0];p.elR=[-.12,0,0];p.wrL=[0,0,.05];p.wrR=[0,0,-.05];
+  p.thL=[-.03,0,.02*w+.02];p.thR=[.03,0,.02*w-.02];p.knL=[.06+.04*Math.max(0,w)+.06*old,0,0];p.knR=[.06+.04*Math.max(0,-w)+.06*old,0,0];
+  p.anL=[-.03,0,-.02];p.anR=[-.03,0,.02];p.sway=.012*w;
+  p.hipsY=Math.max(pwReach(p.thL[0],p.knL[0]),pwReach(p.thR[0],p.knR[0]))+PW.HIPJ;
+  if(o.holds)pwHold(p,.02*b,o.gear);return p;}
+// A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
+// forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
+function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
+  p.hipsY=.442-.01*Math.cos(2*a);
+  const c=Math.cos(a),s=Math.sin(a);
+  p.hips=[0,-.07*c,.025*s];
+  // the pelvis turns and tips as it walks, which carries each hip joint fore and aft: the leg aims from where
+  // the joint actually is, so the planted foot stays put and the joint moves around it
+  const foot=(f,sd)=>{let z,lift=0,toe=0;
+    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));}
+    const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
+  const L=foot(phL,1),Rr=foot(phR,-1);
+  // the pelvis sways and tips sideways over the standing foot; the thighs aim across so the feet stay put
+  p.sway=.014*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
+  p.thL=[L[0],0,.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],0,-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
+  p.spine=[.07,.11*c,-.02*s];p.neck=[-.05,-.04*c,0];p.head=[-.02,0,-.01*s];
+  p.shL=[.32*c,0,.09];p.shR=[-.32*c,0,-.09];
+  p.elL=[-.24-.2*Math.max(0,-Math.cos(a-.6)),0,0];p.elR=[-.24-.2*Math.max(0,Math.cos(a-.6)),0,0];
+  p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
+  if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
+  if(o.holds){p.shL=[-.25,0,2.35];p.elL=[0,.2,.55-.42*w];p.wrL=[0,0,-.25*w];p.neck=[0,.18,0];p.head=[.04,0,.08];p.spine=[p.spine[0],.06,-.03];}
+  else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
+  return p;}
+// blend toward the chosen motion over about a third of a second
+function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
+  const out=pwZero();let tot=0;
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='wave'?pwWave(t,o):pwIdle(t,o);
+    PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
+  if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
+function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
+  B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
+  // the wrist keeps a held shaft upright whatever the arm is doing
+  B.gear.rotation.x=-(P.hips[0]+P.spine[0]+P.shR[0]+P.elR[0]+P.wrR[0]);B.gear.rotation.z=-(P.hips[2]+P.spine[2]+P.shR[2]+P.elR[2]+P.wrR[2]);}
+// Every person in the active scene, each frame: the stride is driven by how far the figure moved, so the
+// feet stay planted whatever moves it (the town's schedules, an interior amble, a legacy zone's wander).
+function tickPeople(dt,now){
+  for(const rig of PEOPLE_RIGS){
+    const root=rig.root;
+    if(!root.parent){PEOPLE_RIGS.delete(rig);try{rig.mesh.geometry.dispose();}catch(e){}continue;}
+    if(root.parent!==scene||!root.visible)continue;
+    let d=rig.lx==null?0:Math.hypot(root.position.x-rig.lx,root.position.z-rig.lz);rig.lx=root.position.x;rig.lz=root.position.z;
+    if(d>1.5)d=0; // a teleport, not a stride
+    const spd=dt>0?d/dt:0,s=root.scale.x||1;
+    rig.phase=(rig.phase+d/(PW.cycle*s))%1;
+    const near=Math.hypot(px-root.position.x,pz-root.position.z);
+    if(near<2.8&&rig.lastNear>=2.8&&spd<.05&&now-rig.wavedAt>25000)rig.wavedAt=now; // a greeting when you walk up
+    rig.lastNear=near;
+    const mode=now-rig.wavedAt<2200?'wave':spd>.08?'walk':'idle';
+    const t=now/1000*rig.g.tempo+rig.g.phase;
+    pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -34985,7 +35061,10 @@ var WORLD=(()=>{
     const head=new THREE.Mesh(new THREE.CylinderGeometry(.05,.04,.1,6),new THREE.MeshLambertMaterial({color:0x2a2018}));head.position.y=.53;t.add(head);
     const flame=new THREE.Mesh(new THREE.ConeGeometry(.06,.16,6),new THREE.MeshBasicMaterial({color:0xffa030}));flame.position.y=.66;t.add(flame);
     const l=regLight(0xff9a40,1.1,7,'npc');l.follow=t;t.userData.light=l;
-    t.scale.set(.55,.55,.55);t.position.set(-.26,.42,.14);t.rotation.z=.3;n.g.add(t);n._torch=t;return t;
+    t.scale.set(.55,.55,.55);const rig=n.g.userData.rig;
+    if(rig&&rig.B.wrL){t.position.set(0,-.05,.05);t.rotation.x=-.45;rig.B.wrL.add(t);} // S153 — in the left hand
+    else{t.position.set(-.26,.42,.14);t.rotation.z=.3;n.g.add(t);}
+    n._torch=t;return t;
   }
   // A few words when two of them meet: bubbles over both heads for a moment.
   const PLEASANTRIES=["Morning.","Fine day for it.","Mind the road after dark.","Any news from the coast?","Heard the wolves again last night.","Keep well.","The smith's prices, eh?","Rain's coming, I can feel it.","Good to see you.","Aye.","Watch yourself out there.","Bread's dear this week."];
@@ -35052,7 +35131,7 @@ var WORLD=(()=>{
       else if(plan.patrol){n._leg=n._leg||0;const t=plan.patrol[n._leg];const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._leg=1-n._leg;}moving=!arrived;}
       if(n.sched&&(n.sched.type==='guard'||n.sched.type==='watch')){const dark=isNight()||h<6.5||h>=19;const t=ensureTorch(n);t.visible=dark;t.userData.light.intensity=dark?1.1:0;}
       const cy=worldH(n.g.position.x,n.g.position.z);
-      n.g.position.y=cy+Math.sin(now*.002+n.ph)*.006+(moving?Math.abs(Math.sin(now*.012+n.ph))*.03:0);
+      n.g.position.y=cy; // S153 — the rig carries its own breath and stride
       n.dot.position.set(n.g.position.x,cy+1.52,n.g.position.z);
       const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);
       if(d<5&&!moving){const target=Math.atan2(px-n.g.position.x,pz-n.g.position.z);let diff=target-n.g.rotation.y;diff=Math.atan2(Math.sin(diff),Math.cos(diff));n.g.rotation.y+=diff*Math.min(1,dt*4);}
@@ -35969,12 +36048,11 @@ var WORLD=(()=>{
     if(S)S.baked=clusters.size;return out;
   }
   function t_reach(sol,site){let m=site.pad+6;for(const s of sol){m=Math.max(m,Math.abs(s.cx-site.x)+Math.max(s.rx,s.rz)+2,Math.abs(s.cz-site.z)+Math.max(s.rx,s.rz)+2);}return m;}
+  function nationAt(x,z){try{const c=cellOf(x,z);return nationKeyOf(c[0],c[1]);}catch(e){return 'gatelands';}}
   function spawnNPC(def,ry,isStatic){
-    const g=buildNPCMesh(def);g.position.set(def.x,worldH(def.x,def.z),def.z);g.rotation.y=ry;sc.add(g);
+    const g=buildNPCMesh(def,{nation:nationAt(def.x,def.z),key:_curSettle&&_curSettle.site?_curSettle.site.id:''});g.position.set(def.x,worldH(def.x,def.z),def.z);g.rotation.y=ry;sc.add(g);
     const dot=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),new THREE.MeshBasicMaterial({color:0xffdd00}));dot.position.set(def.x,worldH(def.x,def.z)+1.5,def.z);dot.visible=false;sc.add(dot);
     g.children.forEach((c,i)=>{c.castShadow=i<2;c.traverse&&c.traverse(o=>{if(o!==c&&o.isMesh)o.castShadow=false;});});
-    if(def.bodyScale)g.scale.set(def.bodyScale[0],def.bodyScale[1],def.bodyScale[2]);
-    if(def.people==='oldblood'){[-1,1].forEach(sd=>{const band=new THREE.Mesh(new THREE.TorusGeometry(.075,.018,5,10),new THREE.MeshLambertMaterial({color:0x1a1a22}));band.position.set(sd*.28,.86,0);band.rotation.x=Math.PI/2;band.castShadow=false;g.add(band);});}
     const n={g,dot,def,wa:Math.random()*Math.PI*2,wt:0,ph:Math.random()*Math.PI*2,_static:isStatic,home:{x:def.x,z:def.z}};
     n._settle=_curSettle;npcs.push(n);return n;
   }
@@ -36646,7 +36724,7 @@ var WORLD=(()=>{
       const memberRoles=F_?['Blade','Warden','Recruit']:['Adept','Novice','Evoker'];
       const names=NAMES[reg]||NAMES.irish;
       for(let k=0;k<3;k++){const nm=pick(Math.random,Math.random()<.5?names.m:names.f);const def={name:nm,role:memberRoles[k]+' of the '+(F_?'Fighters':'Mages'),ico:F_?'⚔':'✨',greeting:F_?["Steward's at the desk.","New? Don't touch the racks.","Come to spar sometime."]:["Mind the cauldron.","Have you read the board?","The Archmage sees everyone eventually."],topics:[{label:'What is it like here?',response:F_?'Beds, bread, and the odd broken nose. Better than the road.':'Quiet, mostly. Until something on a shelf goes off.'},{label:'Any advice?',response:F_?'Take the small jobs first. Beasts don\'t care about your rank.':'Never carry a relic in your bare hands longer than you must.'},{label:'Farewell.',bye:true}]};
-        const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878});const x=4+k*(W-8)/2,z=D*.4+(k%2)*2;g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
+        const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});const x=4+k*(W-8)/2,z=D*.4+(k%2)*2;g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
         INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:2,x1:W-2,z0:5,z1:D-4}});}
       npc={x:W/2,z:2.2,maxZ:2.6,paused:false};
     } else if(type==='tower'){
@@ -36743,7 +36821,7 @@ var WORLD=(()=>{
     // (the same person you see in the street is the one behind the counter).
     if(npcInsideNow(house)){
     const roleName=type==='church'?'Priest':type==='home'?'Resident':type==='inn'?'Innkeeper':type==='castle'?'Steward':type==='guild_f'?'guard':type==='guild_m'?'scholar':'Merchant';
-    const g=buildNPCMesh({role:roleName,name:house.keeper,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878});
+    const g=buildNPCMesh({role:roleName,name:house.keeper,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
     g.rotation.y=type==='church'?0:Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
     intNPCMesh.userData.amble={wa:Math.random()*Math.PI*2,wt:1+Math.random()*3,minZ:.6,maxZ:npc.maxZ,minX:.8,maxX:W-.8,speed:.25,paused:npc.paused};
     } else {intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -38991,7 +39069,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
@@ -39013,6 +39091,7 @@ function loop(now){
   // Main scene render
   REN.autoClear=true;
   tickCrosshair(); // v80 — the crosshair shows what E will open
+  try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
   try{if(typeof WORLD!=='undefined'&&WORLD.rainIndoor)WORLD.rainIndoor(activeZoneId!=='world'?0:(currentHouse?(/^(inn|home|church|castle|guild_f|guild_m|weapon|armor|potion|misc|goods|forge|apothecary|armoury|shipwright)$/.test(currentHouse.type)?.22:0):1));}catch(e){} // v80 — rain is muffled indoors, silent underground
   try{tickMonsterSounds(1/60);tickEnemyDetail();tickPortalFx(1/60);tickDragons(1/60);}catch(e){} // v80 — dungeon feel, dragons
   if(typeof WORLD!=='undefined'&&scene===WORLD.scene)WORLD.sweepLights(); // v80 — never render with a changed light count
