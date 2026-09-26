@@ -4913,3 +4913,26 @@ New `tests/crime2.test.mjs`, in Dunmore at 23h with the town's own NPCs. A witne
 
 ### Needs eyes
 The sight ranges in real play — twelve by day, six at night, three sneaking at night — and whether the line-of-sight sampling lets a witness see through a doorway it shouldn't. Whether five days of refused custom is the right sting when the only smith is the one you robbed. The refusal only fires on trade; the keeper still chats.
+
+
+---
+
+## v80 — Session 157 — Guards (the crime system, part 3 of 4)
+
+Parts 1 and 2 gave the town locks, witnesses and a fine; the fine was a number nobody collected. Now the watch collects it.
+
+**Halt.** With a fine on you in a town, a guard or watchman within five units and a clear line stops you — a dialogue in his own name: *Halt. There's a fine of 25 gold on you in Dunmore. Pay it, or I draw.* Pay, and it clears (and the gates, if they were shut). Refuse, and he draws. *Not now* buys you a minute before the next guard asks. This runs from `tickCrime` inside the world's tick, so it only happens in the open world.
+
+**Drawn.** A drawn guard steps out of the street and a zone enemy stands in for him: *Town Guard*, built on the Bandit (the watch's red on the Bandit body for now — the routine's creature pass will give him his own), forty hit points plus eight a level, damage six plus one a level, no experience for killing him. The guard NPC is hidden and skipped by his schedule until it's over. While any dialogue is open the drawn guards hold — the world doesn't pause for talk, so `tickCrime` un-alerts them every frame you're talking.
+
+**Yield.** At under thirty per cent health with a fine standing, the guard offers once: *Yield, and it goes easier. N gold, or a night in the cells.* Pay double and they stand down. Take the cells and the fade brings you to the next morning at seven on both clocks (`gameTimeMinutes` and `gameTimeAbsMinutes` drift apart under `forceTime`, so the cells advance each by the same span), at the keep's door or the town centre where there is no keep, with half your health, the stolen goods gone from your bag (everything a strongbox or chest gave you carries `stolen:true` now) and the fine cleared. *Fight on* closes the offer.
+
+**Killing a guard** (`killZoneEnemy` sees `e._guard`): five favour, a further 125 on the fine, the town's gates shut to you — while shut, guards draw on sight, no talk and no cooldown — and a note for the Church (`worldState.church.notes`, for part 4). Paying the lord or a guard opens the gates again.
+
+**Assault.** A swing that finds no enemy in its cone now finds a townsperson (`_resolveZoneStrike` → `WORLD.strikeNpc`): the victim always sees it — three favour, a 75-gold fine, an *assault* in the record — and runs from you for twenty seconds. Strike a guard and he draws at once.
+
+### Verified (headless Chromium)
+New `tests/crime3.test.mjs`, in Dunmore at noon with the town's own guards. With a 25-gold fine and Cathal 2.5 units off, one tick opens his dialogue with the greeting and the three choices. Refusing: *Then it's the sword*, a *Town Guard* enemy at 48 hit points, alert, and Cathal gone from the street. At a fifth of health the yield is offered and the drawn guards are un-alerted while it stands; *The cells*: the clock reads 7, absolute time advanced 1,140 minutes, the tin locket (stolen) is gone and the honest bread kept, the fine is 0, no guard enemies remain, Cathal is back, and you stand at the town centre (Dunmore has no keep) at half health. Striking a guard at 1.8 units draws him: favour −3 and a 75 fine; killing him: favour −8 in all, fine 200, gates shut, one Church note; a second guard then draws without a word; the lord's *Pay my fine* opens the gates and clears it. Striking Pádraig the villager: favour −3, fine 75, an assault recorded, and he runs. No page errors; full suite passes.
+
+### Needs eyes
+The drawn guard's look (a red Bandit) until the creature pass. The fight itself: Town Guard at 48 hit points against a level-one character is a real fight; whether the yield comes at the right moment. The cells' fade and where you wake. Whether a struck villager running for twenty seconds reads as fear or as a glitch. Guards indoors don't stop you (the confrontation is the world's tick).
