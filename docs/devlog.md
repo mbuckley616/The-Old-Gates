@@ -4819,3 +4819,19 @@ New `tests/shophours.test.mjs`, in Dunmore through the real E key. Before the fi
 
 ### Needs eyes
 Shops now shut at dusk in real play, which they haven't done since the open world arrived. Worth a look at whether anything leans on a shop being open late: a guild task, a quest turn-in or a merchant errand at dusk. Nothing in the tests does. This is also the ground the crime system will stand on: a closed shop is the first door it would let you pick.
+
+---
+
+## v80 — Session 152 — The Guest's chapel, checked in the DOM
+
+Owed since Session U: the prayer at Cill an Aoi was verified in the harness, but its black screen is DOM and had never been checked in a browser. The check found a real bug on the way in.
+
+**The capital was wherever the cells happened to be.** `guestChapelHouse` picked Aurenne's capital by walking `CELLS.values()`, but cells are generated lazily as you travel. From the home province it found no Aurenne city at all: the cathedral had no stair, the chapel didn't exist, and `worldState.chapelAt` fell back to *the cathedral*. Once cells had loaded, the capital was the first Aurenne city in load order, which depends on your route and could pick a different city on a different save. It is now solved once over the whole grid in grid order (the way `anchoredPlaces` does it) and remembered: **Fortargent**, the city Session U named, whatever you've loaded. `guestChapelHouse` is now on `WORLD`, for the test.
+
+**The black screen itself was right.** The overlay goes in after the canvas at z-index 0, so it covers the scene and every HUD element stays above it: bars, compass, minimap, the controls line. It lifts after four seconds and leaves *It saw you.* in the log. Nothing in the prayer changed.
+
+### Verified (headless Chromium)
+New `tests/chapel.test.mjs`. It settles Fortargent (`c9_1_s7`) straight from the home province, takes its cathedral's stair to Cill an Aoi and stands at the dais: *Press 'E' to pray*. Pressing the real E key: at 1.2s no point of the scene shows through (centre and four corners hit the overlay or the HUD, never the canvas), and `#hud` and `#compass` paint above the black. At 4.8s the overlay is gone, the log's last line is *It saw you.* and `chapelAt` is *Fortargent*. Screenshot of the dark moment in `tests/out/chapel-dark.png`. (The probe temporarily switches on mouse hits for the overlay and HUD, because both ignore the mouse and `elementFromPoint` skips anything that does.) No page errors. Full suite 8/8.
+
+### Needs eyes
+Whether four seconds of black is long enough to land, or too long. The *Press 'E' to pray* prompt stays on screen through the dark; it could go. The world's sound running through it wasn't checked; it's untouched.
