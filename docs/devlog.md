@@ -4894,3 +4894,22 @@ New `tests/crime1.test.mjs`, in Dunmore at 23h through the real key. Lorcan's Fo
 
 ### Needs eyes
 Whether four pins on every shop in a prosperous town is too much — a night's burgling of Dunmore would cost a handful of picks. The strongbox's spot in the back room (beside the bed) and the home chest's corner against whatever furniture the home generator put there. The takings: 168 gold from one forge is a lot for a level-one character; the numbers are the spec's and part 2's consequences are what balance them. The keepsakes are sellable oddments with no story yet.
+
+
+---
+
+## v80 — Session 156 — Witnesses and favour (the crime system, part 2 of 4)
+
+Part 1 put locks on the town and something behind them; nothing watched. Now something does.
+
+**Anyone awake within sight.** When a lock is picked or a strongbox emptied, `witnessOf` looks for a townsperson or guard who is out, not hidden by the town's schedule, within twelve units, with a clear line — sampled every sixty centimetres against the town's solids, so a wall or a house between you counts. Sneaking halves the range; night halves it again, so a burglar at 23h who crouches is safe beyond three units. Indoors it is whoever is in the room with you within six: the keeper if the schedule has them there, a guild member. The check runs at the moment the lock gives, which is the lock's own 620ms after the last pin, so a patrol that walks round the corner in that time never saw you.
+
+**Seen.** Favour with the town drops on the canon's scale (§12: −1 for a lock, −2 for theft, −3 for assault when part 3 adds it), a fine of 25 gold a point accrues against you in that town, and the wronged keeper will not trade with you for five game-days — `openShop` turns you away with *I know what you did. Take your custom elsewhere*, whichever topic you came through. The log says who saw you and where. The lord's dialogue gains *Pay my fine (N gold)* while a fine stands; paying clears the fine but not the memory. Favour lost to crime comes back a point for every three quiet days in that town, and no further: the town's own daily tick (`tickCrimeDay`, beside war and plague) does the counting.
+
+**Not yet.** Guards do nothing about a bounty (part 3), and nothing in the Church or the factions notices (part 4). Assault is scored but there is no way to commit it.
+
+### Verified (headless Chromium)
+New `tests/crime2.test.mjs`, in Dunmore at 23h with the town's own NPCs. A witness nine units off along the street sees nothing; one three units off sees the pick: favour goes 0 → −1, the fine stands at 25, the keeper is on notice, and the log reads *Séamus saw you pick the lock at Niamh's Armoury; Dunmore will not forget it.* Inside that shop at noon `openShop` refuses with Niamh's line and the shop stays shut; with the notice expired it opens. The lord's topics carry *Pay my fine (25 gold)*: with 10 gold, *come back when you have it*; with 500, paid, the fine is 0 and the purse 475. With the last crime three days back one tick returns favour to 0; a second tick does nothing. No page errors; full suite passes.
+
+### Needs eyes
+The sight ranges in real play — twelve by day, six at night, three sneaking at night — and whether the line-of-sight sampling lets a witness see through a doorway it shouldn't. Whether five days of refused custom is the right sting when the only smith is the one you robbed. The refusal only fires on trade; the keeper still chats.
