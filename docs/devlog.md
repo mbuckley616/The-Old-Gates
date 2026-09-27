@@ -5354,3 +5354,84 @@ The full suite on Session 182 (two suites at a time) passed 21 of 22. The one fa
 
 ### Needs eyes
 Nothing: tests only.
+## v80 — Session 166 — The night watch (a beat past the shop doors; a guard who follows at favour −2)
+
+The first item on the systems builder's list: the critic's *the night is free* (backlog I), whose fix Michael approved on the 27th as the critic's proposal (backlog B, *The night watch*). At 23h in Dunmore the only people outdoors were the two gate guards, pacing from a point on the road in to a spot six units off the centre, and the nearest of them was 74–115 units from every shop door against a night sight range of six. All seven shops and strongboxes could be picked in one night unseen.
+
+**The beat.** From 19h to 6:30 (the hours the guards already carry a torch) a guard no longer paces the gate road: he walks a loop through the street in front of every shop door (the lots of kind weapon, armour, apothecary and goods), in order round the town's centre, and stands two to four seconds at each door before going on. The guards of a town start the loop spread out along it, so the doors are passed in turn rather than by a procession. By day they keep their old gate patrol. Villages without walls keep their night watchman and his road-to-plaza walk unless they have a shop, in which case he walks the beat too. A town without shops keeps the old patrol.
+
+**Going by the streets.** The first version walked straight from door to door, and two of Dunmore's seven doors were never reached: Niamh's Armoury stands across the line from Clodagh's Goods, and `npcStep` only slides along the axes, so the guards ground against its wall and gave up after forty frames. A single detour point pulled in towards the centre did not clear it either. So each walled town now gets a one-unit grid of its pad (solid or not, from `solidAt`) and a breadth-first search between doors, pulled straight wherever the line is clear (`townRoute`). Dunmore's beat is 7 doors and 8 turning points, 191 units round. The grid costs about a third of a second to build on this machine, so it is built with the town when it loads, not at nightfall; the beat itself costs 46ms on the first night tick.
+
+**A third guard.** A walled town of prosperity 60 or more gets a third guard, of the existing *watch* kind: asleep by day, on the beat with a torch at night. He is spawned last in `genSettlement`, after the barrels and the villagers, so every draw before him (names, barrels, villagers) is what it was, and the town's other people are unchanged.
+
+**Guards follow (canon §12, *favour ≤ −2: guards follow*).** With a town's favour at −2 or worse, the nearest guard on duty trails you while you are on its pad and out of doors: he closes to eight units, then stands and watches you; if you walk on he follows, faster the further behind he is (his walking pace up to 3.4 units a second, so he keeps up with a running player), and goes round buildings by the same grid, re-planning once a second when the line to you is blocked. One guard per town, kept until he goes off duty, favour recovers to −1, or you leave the pad. He stops at eight, outside the five units at which a guard with a fine on you halts you, so walking up to him is still how you get stopped. Witnessing is unchanged: the guards are simply there to see.
+
+### Verified (headless Chromium)
+New `tests/watch.test.mjs`, in Dunmore (prosperity 61). By day: three guards, two on their gate patrol and the third (the watch) hidden. At 23h, over 360 seconds of ticks with the player off the pad: three guards on duty, three torches lit, the beat 7 doors plus 8 turns, 191 units round; the nearest any guard came to each door 0.1–0.8 units, and every door had a guard within the night sight range, first at 44–147 seconds in. The critic's night had 74–115. The average number of people outdoors at night is now 3. At noon with favour −1, no one follows. At −2 a guard (Cathal) closes to 7.99 units and holds there; the player walks twelve units and stops, and fifteen seconds later he is back at 7.99, the same guard, the only one following. Favour back to −1 and he stops; at −2 but twenty units off the pad, no one follows. No page errors. Full suite: 17 of 17 suites pass.
+
+### Needs eyes
+The beat at night in a real town: whether three torches moving door to door read as a watch or as a crowd, and whether a guard standing two to four seconds at each door looks like looking. Whether being followed at eight units feels like the canon's warning or like being chased; he walks up to 3.4 units a second to keep up, which is a run on the S162 gait. Whether night burglary is now fair: a door is passed about once every minute or two of real time in Dunmore; the crime numbers wait on this. A town with more guards in the shadow pass at night costs a little more (three skinned meshes, the distant copies in the shadow pass).
+
+## v80 — Session 167 — Indoor witnesses need a line of sight
+
+Backlog I, the critic's second finding (*indoor witnesses ignore walls*). Session 156's witness rule outdoors is twelve units with a clear line (halved sneaking, halved again at night); indoors it was only six units from the keeper, with no line at all. Whether a keeper at the counter saw you at the strongbox in the back room came down to how far apart the floor plan happened to put them: the critic measured 3.9–8.9 units across Dunmore's shops and emptied Niamh's Armoury's box unseen at noon, and the wall between counter and back room did nothing either way.
+
+**The fix.** `witnessOf` indoors now asks for a clear line as well as the six units, for the keeper and for anyone else in the room (`intSightLine`, exposed on `WORLD` for tests). The line is sampled every tenth of a unit against the room's own solids, but only the ones that block sight at eye height: a partition wall (every solid 1.8 units tall or more, which is the walls `partition()` cuts, not the counters, tables and beds, all well under that) and a door hung in a doorway while it is shut. An open door moves its box out of the collision set (Session 143), so it moves out of the line too, and a keeper can see through a doorway you left open. The six units stay, and so does everything outdoors.
+
+**What Dunmore looks like now.** The fix matters less there than the critic's figures suggested. Of the seven shops, the four with a back room keep the strongbox behind its shut door and 6.8–9.1 units from the keeper, unseen under either rule. The three without one keep it in the shop itself, 4.2–5.8 units from the counter in plain view, seen under either rule (the critic's 3.9 was Clodagh's Goods, one of these, with no wall to see through). What changes is the rest of the back room: in the Armoury and Cathal's Apothecary, 40 and 52 spots (half-unit grid) lie within six units of the keeper but behind the wall, and the old rule saw you at every one of them. A daylight theft from a one-room shop is still seen; whether that is the design (rob it at night, or make the keeper look away) is a question for the crime numbers, not this fix.
+
+### Verified (headless Chromium)
+New `tests/witness.test.mjs`, all seven Dunmore shops at 13h, shop open, keeper at the counter. A step and a half from the keeper you are seen in all seven. At the strongbox you are seen exactly when the keeper is within six units with a clear line (seen in the three one-room shops at 4.15–5.80, unseen in the four others at 6.83–9.07). A step past the back-room door, on the line from the keeper, 5.37 and 5.49 units off in the Armoury and the Apothecary: unseen while the door is shut, seen once it is open. Every spot within six units that a wall hides is unseen (40 and 52 of them; 0 seen). No page errors. Full suite: 18 of 18 suites pass.
+
+### Needs eyes
+Whether a keeper who sees you through the open back-room door reads as fair; the doorway is 1.4 wide and the six units still apply. Whether one-room shops, where the strongbox sits in the keeper's sight all day, should keep it somewhere else (a design question for the crime numbers).
+
+## v80 — Session 168 — The theft fine and the cells take the gold
+
+Backlog I, the critic's third finding (*theft pays even when caught*). The crime system's spec (backlog B, designed with Michael on the 26th) says: *fine = 25 gold per favour point lost (a lock 25, theft 50 + the goods' value, assault 75)*, and a yield to the watch means *a night in the cells with the stolen goods taken*. The build charged 25 a point for everything, so a seen theft was 50 flat, and the cells took the stolen items but not the stolen gold. The critic yielded holding 900 gold and woke with 900. A Dunmore strongbox pays 90–183, so a seen theft still cleared 40–130 after its fine, and the cells cost only the night. This session makes the code do what the spec says. No number is new.
+
+**The fine.** `noteCrime` now carries the value of what was taken, and `seenCrime` adds it to a theft's bounty: 50 for the two favour points as before, plus the coins and the listed price (`buyPrice`) of the thing from the stock or the keepsake. Locks and assault are unchanged.
+
+**The cells.** Every strongbox or chest emptied in a town adds its coins to that town's count of stolen gold (`worldState.crime[site].loot`), seen or not, the same way the stolen things carry their `stolen` mark whether anyone saw or not. The count is not a record: the lord, the priest and the factions still look only at the fine, the favour owed and the gates (`recordAt`, `nationRecord`). Taking the cells now takes that gold back as well, as much of it as you are carrying, and resets the count. The message and the log name the sum (*They took what you stole (595 gold)*). Paying double to walk away does not touch it; that is the price of not going to the cells.
+
+### Verified (headless Chromium)
+New `tests/theft.test.mjs`, in Dunmore at 13h, through the real strongbox and lock. Unseen, from the back room of Lorcan's Forge: 140 gold and a Health Potion (18), fine 0, favour 0, the town's count up by 140. Seen, at Aoife's Goods (a one-room shop, the keeper within sight, Session 167): 113 gold and a Torch (8), fine 171 = 50 + 121, favour −2. Then with 900 gold on you, a guard drawn and the yield taken to the cells: 595 gold back (every box the test emptied on its way round the town), 305 left, the count reset, the stolen things gone, the honest bread kept, the fine cleared, and the message and log naming 595. With only 40 gold against 300 stolen, the cells take the 40. No page errors. Full suite: 19 of 19 suites pass.
+
+### Needs eyes
+Whether a theft's fine, now the goods' value on top of 50, and the double of it at a yield, is too steep against a level-one purse. The strongbox takings (20–200 by prosperity) were left alone. The critic's other small note (stolen goods sell back to the shop they came from with no questions) is not changed; whether a keeper should refuse his own goods is a design call.
+
+## v80 — Session 169 — Prices at the counter
+
+Backlog I, the critic's fourth finding (*the counter ignores the town's prices*). Prosperity pricing (a town's buy prices run from 1.15 at prosperity 10 to .83 at 100) and the faction discount (5% a rank, withdrawn while a fine stands, Session 158) were computed by `WORLD.priceMulHere()`, which looks for the nearest town to `px, pz`. Inside a shop those are room coordinates, a few units from the origin, so it found no town and returned 1. Every shop is an interior, so neither rule ever reached a purchase. The critic measured .966 in Dunmore's square and 1 at the apothecary's counter. Two more faults sat beside it: the shop list and the *Bought X for N* line showed the base `buyPrice` whatever was charged, and anything bought through the quantity prompt (potions, arrows, every stackable) was charged the base price with no multiplier at all.
+
+**The fix.** One price, used everywhere the shop names or takes one: `shopCost(it)`, the base price times `shopMul()`. `shopMul()` is the house's own town indoors (`WORLD.priceMulAt(currentHouse.siteId)`, the same prosperity and faction factors), the nearest town outdoors as before, and 1 anywhere else. The list, the affordability check, the single buy, its message and the quantity prompt's unit price all read it. A bought-back item (something you sold here, which the shop lists again at what it paid you, v68) keeps that price and is not multiplied; the old single-buy path multiplied it, but it never ran indoors. Sell prices are unchanged.
+
+### Verified (headless Chromium)
+New `tests/prices.test.mjs`, in Dunmore at 13h. The multiplier in the square is .9665, and at Cathal's Apothecary's counter it is now .9665 too (it was 1). The list shows the town's prices: a Greater Potion at base 40 is listed at 39, a Health Potion at 15 is listed at 14, and buying one Health Potion through the quantity prompt charges 14. At the forge a Wooden Sword is listed at 5, charged 5, and the message says *for 5🪙*. With the Crown at rank 2 the counter's multiplier is .8698 (the .9 discount); with a 25-gold fine standing it is back to .9665. No page errors. Full suite: 20 of 20 suites pass.
+
+### Needs eyes
+Prices in a poor town against a rich one, now that they reach the counter: a prosperity-10 village charges 15% over base, a city at 100 17% under. Whether the shop should say it (a line under the keeper's name, *prices are high here*) is a design call and not done.
+
+## v80 — Session 170 — Lockpicks for sale
+
+Backlog I, the critic's fifth finding (*no one sells a lockpick*). With no pick in the bag, a locked door says *Locked. A lockpick would do it — the goods shops sell them.* No shop table had one: picks came only from dungeon chests and urns, so a player who met the town locks (Session 155) before a dungeon had no way to try them. This makes the line true, which is a fix and not a new rule.
+
+**What changed.** `SHOP_STOCK.misc` (the table every generated goods shop draws from) lists a Lockpick, one pick a unit, at the price the loot table already gives it (12 gold, with the town's multiplier from Session 169 on top). Picks are now stackable (`isStackable`): bought picks go through the quantity prompt like arrows, and every pick in the bag, bought or found, sits in one stack. Before this, picks from two different chests made two bag rows, and `lpPicks()`, which reads the first row it finds, showed the lock only one row's count.
+
+One consequence to know about: a strongbox's item is drawn from the shop's own table, so a goods shop's strongbox can now yield a (stolen) pick. It joins your stack, and a merged stack keeps the stolen mark of whichever row came first. The same is already true of stolen potions.
+
+### Verified (headless Chromium)
+New `tests/lockpicks.test.mjs`, in Dunmore. At Clodagh's Goods at 13h the list shows *Lockpick 12🪙* (12 × .9665 rounds to 12); the row opens the quantity prompt at 12 a unit, and buying 3 costs 36. The bag holds one stack of 3; adding a looted bundle of 3 makes one stack of 6, and `lpPicks()` reads 6. At 23h a shop door's lock opens to the pick with the bought stack (*A shop door, locked for the night — a good lock*), and spending a pick leaves 5. No page errors. Full suite: 21 of 21 suites pass.
+
+### Needs eyes
+Whether 12 gold a pick is right against the takings of a strongbox (90–183 in Dunmore) and the chance of snapping picks on a four-pin lock. The price is the loot table's, not a new decision; Michael may want it higher now that the town locks pay.
+
+## v80 — Session 171 — The yield speaks in the guard's name
+
+Backlog I, the critic's seventh finding (small): the halt names the guard (*Cathal*), but a moment later, at low health, the offer to yield came from *The guard*. `offerYield` hard-coded the name. It now takes the name of the guard who drew (the drawn enemy keeps a link to its townsperson, `e._guard.npc`), and falls back to *The guard* only when there is none.
+
+### Verified (headless Chromium)
+`tests/crime3.test.mjs` gains a check: with Cathal drawn and the player at a fifth of health, the yield dialogue is headed *Cathal*, the same name as the guard. The rest of crime3 is unchanged and passes. No page errors. Full suite: 21 of 21 suites pass.
+
+### Needs eyes
+Nothing new.
