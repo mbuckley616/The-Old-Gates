@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s192</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s193</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36643,10 +36643,15 @@ var WORLD=(()=>{
       streetLines.forEach(l=>{
         const half=Math.sqrt(Math.max(0,inner*inner-((l.px-cx)*(l.px-cx)+(l.pz-cz)*(l.pz-cz))));
         if(half<8)return;
-        paths.push({w:2.4,pts:[{x:l.px-l.dx*half,z:l.pz-l.dz*half},{x:l.px+l.dx*half,z:l.pz+l.dz*half}]});
+        // S193 — where a road already runs along or across the street, the road is the street: the ribbon breaks
+        // there rather than doubling it or weaving beside it (the playtest's overlapping patterns)
+        let run=[];const flush=()=>{if(run.length>1&&Math.hypot(run[run.length-1].x-run[0].x,run[run.length-1].z-run[0].z)>3)paths.push({w:2.4,pts:[run[0],run[run.length-1]]});run=[];};
+        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+1.2+3.5)flush();else run.push({x,z});}flush();
       });
       // a perimeter lane every street runs into (no dead ends in a field)
-      {const ring=[];const n=Math.max(24,Math.round(inner/3));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2;ring.push({x:cx+Math.cos(a)*inner,z:cz+Math.sin(a)*inner});}paths.push({w:2.2,pts:ring});}
+      // (S193: broken where a road crosses it, the road being the way through there)
+      {let ring=[];const n=Math.max(48,Math.round(inner/1.5));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2,x=cx+Math.cos(a)*inner,z=cz+Math.sin(a)*inner;const ri=roadInfo(x,z);
+        if(ri&&ri.d<ROAD_HALF+1.2+1.5){if(ring.length>1)paths.push({w:2.2,pts:ring});ring=[];}else ring.push({x,z});}if(ring.length>1)paths.push({w:2.2,pts:ring});}
     }
     // Candidate lots along a line direction (dx,dz) through (px,pz): both sides.
     function lotsAlong(px_,pz_,dx,dz,extent,latBase,rowsN){
@@ -36715,7 +36720,11 @@ var WORLD=(()=>{
     // earlier one (shops come first, so churches/keeps keep their room).
     lots.forEach((lot,i)=>{const t=shopTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.w=13;lot.d=11;}});
     const kept=[];
+    // S193 — a lot made bigger above (a keep, a guild hall, a church) is checked against the roads again: its corners
+    // could reach one (3 of 1,062 buildings in thirty towns stood on a road)
+    const lotOnRoad=lot=>{const c=Math.cos(lot.ry),s_=Math.sin(lot.ry);for(let u=-1;u<=1;u+=.5)for(let v=-1;v<=1;v+=.5){const lx=u*lot.w/2,lz=v*lot.d/2;const ri=roadInfo(lot.x+lx*c+lz*s_,lot.z-lx*s_+lz*c);if(ri&&ri.d<ROAD_HALF+.6)return true;}return false;};
     lots.forEach(lot=>{const rad=Math.max(lot.w,lot.d)/2+2.0;if(Math.hypot(lot.x-cx,lot.z-cz)>inner-Math.max(lot.w,lot.d)/2-1)return; // whole footprint inside the ring
+      if(lot.w*lot.d>60&&lotOnRoad(lot))return;
       if(kept.some(k=>Math.hypot(k.x-lot.x,k.z-lot.z)<Math.max(k.w,k.d)/2+2.0+rad))return;kept.push(lot);});
     const use=kept.slice(0,Math.max(want,0)); // homes fill whatever the shops don't
     // ports: the shipwright gets its own lot at the quay head, door toward the quay
@@ -36726,6 +36735,7 @@ var WORLD=(()=>{
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
+    const footReq=[];
     use.forEach((lot,i)=>{
       const type=shopTypes[i]||null;
       const isShop=!!type;
@@ -36749,7 +36759,7 @@ var WORLD=(()=>{
         const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
         let ex=fx+lot.tx*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND)),ez=fz+lot.tz*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND));
         const ri=roadInfo(ex,ez);if(ri&&ri.d>ROAD_HALF+1&&!lot.street){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,t=ri.t;ex=sg.ax+vx*t;ez=sg.az+vz*t;}
-        paths.push({w:1.3,pts:[{x:fx,z:fz},{x:ex,z:ez}]});
+        footReq.push({fx,fz,ex,ez,lot,hid:`g_${site.id}_${i}`}); // S193 — routed once every building stands (below)
       }
       const doorX=lot.x+lot.tx*(lot.d/2+.15),doorZ=lot.z+lot.tz*(lot.d/2+.15);
       if(!isShop){
@@ -36876,9 +36886,11 @@ var WORLD=(()=>{
       for(let i=0;i<segs;i++){
         const a0=i/segs*Math.PI*2,a1=(i+1)/segs*Math.PI*2,am=(a0+a1)/2;
         const mx=cx+Math.cos(am)*R,mz=cz+Math.sin(am)*R;
-        const ri=roadInfo(mx,mz);
+        // S193 — the road is looked for along the whole segment (about 20 long), not at its middle alone: a road crossing
+        // near a segment's end ran into the wall
+        let ri=null,qx=mx,qz=mz;for(let k=0;k<=8;k++){const a=a0+(a1-a0)*k/8,x=cx+Math.cos(a)*R,z=cz+Math.sin(a)*R;const r2=roadInfo(x,z);if(r2&&(!ri||r2.d<ri.d)){ri=r2;qx=x;qz=z;}}
         if(ri&&ri.d<9){ // gate: towers flank the road where it actually crosses the ring
-          const sg=ri.seg;const vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L2=vx*vx+vz*vz||1;const t=Math.max(0,Math.min(1,((mx-sg.ax)*vx+(mz-sg.az)*vz)/L2));const gx=sg.ax+vx*t,gz=sg.az+vz*t;
+          const sg=ri.seg;const vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L2=vx*vx+vz*vz||1;const t=Math.max(0,Math.min(1,((qx-sg.ax)*vx+(qz-sg.az)*vz)/L2));const gx=sg.ax+vx*t,gz=sg.az+vz*t;
           if(S._gates.some(g=>Math.hypot(g.x-gx,g.z-gz)<12))continue; // one pair per crossing
           S._gates.push({x:gx,z:gz});if(!WS.towers)continue;
           [-1,1].forEach(sd=>{const tx=gx+Math.cos(am+Math.PI/2)*sd*(ROAD_HALF+3.6),tz=gz+Math.sin(am+Math.PI/2)*sd*(ROAD_HALF+3.6);
@@ -36919,6 +36931,18 @@ var WORLD=(()=>{
     if(plan.ruins){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
     if(plan.stones){for(let i=0;i<plan.stones;i++){const ang=i/plan.stones*Math.PI*2;addMesh(standingStoneGeo(r),cx+Math.cos(ang)*11,cz+Math.sin(ang)*11,ang,.6);}}
     // Footpaths and streets as flat ribbons on the pad.
+    // S193 — footpaths: straight from the door to its street when nothing stands between; otherwise a dog-leg out
+    // of the door, along the gap beside the house in the way and on to the street; with no way through, none (a
+    // back-row door's path used to run straight through the house in front: 7–18% of footpath in a town)
+    {const blds=sol.filter(b=>b.bt);const inB=(x,z,own)=>blds.some(b=>{if(b.hid===own)return false;const ex=x-b.cx,ez=z-b.cz,c=b.c==null?1:b.c,s_=b.s||0;return Math.abs(ex*c-ez*s_)<b.rx+.5&&Math.abs(ex*s_+ez*c)<b.rz+.5;});
+      const clear=(a,b,own)=>{const L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/.4));for(let k=0;k<=n;k++){if(inB(a.x+(b.x-a.x)*k/n,a.z+(b.z-a.z)*k/n,own))return false;}return true;};
+      const clearPath=(P,own)=>{for(let k=0;k<P.length-1;k++)if(!clear(P[k],P[k+1],own))return false;return true;};
+      for(const q of footReq){const F={x:q.fx,z:q.fz},E={x:q.ex,z:q.ez},own=q.hid;let P=[F,E];
+        if(!clearPath(P,own)){P=null;const tx=q.lot.tx,tz=q.lot.tz,px_=-tz,pz_=tx;const A={x:F.x+tx*1.1,z:F.z+tz*1.1};
+          outer:for(const o of [q.lot.w/2+1.4,q.lot.w/2+3,q.lot.w/2+5])for(const sd of [1,-1]){const B={x:A.x+px_*sd*o,z:A.z+pz_*sd*o},C={x:E.x+px_*sd*o,z:E.z+pz_*sd*o};
+            const cand=[F,A,B,C,E];if(clearPath(cand,own)){P=cand;break outer;}}}
+        if(P)paths.push({w:1.3,pts:P});}}
+    S.paths=paths; // S193 — kept for the checks on overlaps
     if(paths.length){
       const pos=[],col=[];const tone=roadTone(cx,cz).clone().multiplyScalar(.92);
       paths.forEach(pth=>{const W=pth.w/2;

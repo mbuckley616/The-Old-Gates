@@ -5574,3 +5574,23 @@ New `tests/trees.test.mjs`, 6 checks, all passing, no page errors. The four new 
 
 ### Needs eyes
 The start and a conifer forest in real play: whether the mix reads as a wood of several kinds or as clutter; the birch's size (smaller than the rest by design); and frame time on Michael's machine with the extra draw calls.
+
+## v80 — Session 193 — Town roads: the obvious overlaps (Playtest s162)
+Michael's playtest item: overlapping path patterns in towns, and roads running into buildings. The polish belongs to the roads rewrite (backlog D), but the builder may fix the obvious overlaps in the stamps. This session is that.
+
+**Measured first.** A new helper, `tests/lib/townroads.mjs`, builds thirty settlements (every kind with a pad: villages, towns, cities, ports, a garrison) and samples their drawn paths every half unit across the ribbon, along with every building's footprint. Before the fixes:
+- **Footpaths through buildings**: 7–18% of a town's footpath lay inside another building. A back-row house's path runs straight out of its door "to the street", and the street is on the far side of the house in front. Villages (one row) had none.
+- **Streets on the roads**: the street grid is laid square to the first road out of town, whatever the other roads do. So another road crossing at an angle had grid streets running beside it and across it, and the grid's central street lay along the first road itself: up to 6% of a town's street ribbon on a road and as much again within five units of one. That is the doubled, weaving look.
+- **Buildings on roads**: 3 of 1,062 footprints, and all three were town-wall segments. A wall segment is about 20 units long, and a gate was opened only if the road came within 9 of the segment's middle, so a road crossing near a segment's end went through the wall.
+
+**What changed** (in `genSettlement`, none of it touching the town's dice, so every town keeps its layout, names and people):
+- Footpaths are collected as the buildings go up and routed once every building stands. When the straight line from the door to its street is clear, it stays. Otherwise the path steps 1.1 out of the door, along the gap beside its own house (1.4, 3 or 5 past its half-width, on either side) and straight on to the street. With no clear way it is left out rather than drawn through a house.
+- The grid's streets are walked in 1.5-unit steps and broken wherever a road runs within 3.5 of the street's edge. The road is the street there. The perimeter lane breaks the same way where a road crosses it.
+- The wall ring looks for a road along the whole of each segment (nine points), and opens its gate at the nearest one.
+- A lot enlarged after placement (keep, guild hall, church) is checked again against the roads, and dropped if a corner reaches one.
+
+### Verified (headless Chromium)
+New `tests/townroads.test.mjs`, 6 checks, all passing, no page errors. Across 30 settlements no footpath sample lies in a building (worst town before: 18.4%), no building or wall stands on a road (3 before), streets on a road are at most 2% in any town (6.3% before in Dunmore, 1.4% now), and streets inside buildings stay under 1.5% (worst .9%). `watch`, `crime1`, `crime2`, `wayfinding` and `theft`, which all walk Dunmore's layout, pass. Pictures: `docs/prototypes/townroads-before.png` and `townroads-after.png`, Dunmore from above at noon.
+
+### Needs eyes
+Dunmore from the ground: whether the gaps where streets meet a road read as junctions or as streets that stop short. Whether the dog-leg footpaths look deliberate. The rest (streets that follow the roads rather than a grid, junction shapes) is the roads rewrite's.
