@@ -5522,3 +5522,18 @@ New `tests/dungeon.test.mjs`, 7 checks, all passing, no page errors. In the ruin
 
 ### Needs eyes
 A real dungeon by torchlight: whether the courses are too regular or too large (1.6 a repeat, eight courses to the wall), whether the bevels read at the corners, and whether the foot's shading is too dark in the darker themes (goblin and deep). Frame time on Michael's machine: far fewer draw calls but more triangles. Still owed, a slice each: ceiling beams or vaults; rubble and props; damp and moss by theme; the fort's first floor; the dungeon's box foes.
+
+## v80 — Session 190 — Vaults, beams, damp (Playtest s162, item 7, slice 2)
+This is the second slice of Michael's dungeon item. He asked for ceiling beams or vaults, and for damp and moss by biome. Both go into the shell that Session 189 built.
+
+**The vault.** Above .7 of its height, each wall now leans out over the room on a curve, .34 at the top (`DUN_SHELL.COVE`), and the ceiling closes over what is left. A one-cell corridor keeps .3 of flat crown and reads as a barrel vault; a room gets coved edges to a flat ceiling. The lean has to agree where faces meet at a corner, so its direction comes from the position alone: the sum of the directions to the open cells that touch that point. On a straight wall that is the wall's normal. At an outside corner it points away diagonally, and at an inside corner towards the one open cell, so the corners lean together with no crack. The cove starts at 2.24, above the player's eye (1.6), the wall torches and the doors' heads (2.8, where the lean is still only .08).
+
+**The beams.** Every room at least three cells across gets timbers across its shorter span every two cells, .16 under the ceiling. They are a .18 × .2 section in dark oak with a per-vertex variation in tone, one merged mesh a floor. The test dungeon has 34 on its first floor and 30 on its second.
+
+**Damp.** `DUN_DAMP` gives each theme a wet colour: moss green for goblin and ruins, a cold blue for the deep, grey-violet for the undead, a pale lichen for the haunted, and soot for the elemental. Where a noise field of the position says the wall is wet, the foot of the wall takes that tint, fading out by 1.2 up. The floor takes it along the edges where it meets the wall. On a ruins dungeon the foot of the wall comes out 10% greener than red on average, in patches.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has two new checks, and 9 of 9 pass with no page errors. At the top of the wall the vertices stand .216 on average off the wall's line into the room, while below the cove no vertex strays more than .196. The ruins walls' foot has green over red at 1.10. There are beams on both floors (34 and 30). Every Session 189 check still passes: 310 faces for 310 sides, all facing the open, and the floor under all 346 cells. Cost for the whole dungeon: 1,099 meshes, 837 draw calls, 83k triangles. Pictures: `docs/prototypes/dungeon-vault.png` (a ruins corridor), `dungeon-room-beams.png` (a goblin room).
+
+### Needs eyes
+Whether the cove is too strong in a corridor (the crown is narrow) and too weak in a big room. Whether the beams should rest on corbels or posts; they are plain timbers into the wall. The damp is subtle under the foot's shading, and may want more contrast in real torchlight. Still owed: rubble and props, the fort's first floor, and the dungeon's box foes.
