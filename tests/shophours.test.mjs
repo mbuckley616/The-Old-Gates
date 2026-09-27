@@ -7,7 +7,10 @@ async function tryDoor(type, hour) {
   await page.evaluate(([type, hour]) => { forceTime(hour);
     const h = WORLD.settle.get('dunmore').houses.find(x => x.type === type); window._h = h;
     px = h.doorX; pz = h.doorZ + .3; jumpY = 0; }, [type, hour]);
-  await page.waitForTimeout(1500); const prompt = await page.evaluate(() => document.getElementById('ipr').textContent);
+  await page.waitForTimeout(1500);
+  // the prompt is written by the main loop: on a slow runner 1.5s can pass without a frame, leaving the last door's text
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const prompt = await page.evaluate(() => document.getElementById('ipr').textContent);
   await page.keyboard.press('e'); await page.waitForTimeout(3000);
   const out = await page.evaluate(() => ({ zone: activeZoneId, inside: currentHouse === window._h, closed: WORLD.shopClosedNow(window._h), hour: Math.floor(gameHour()), name: window._h.name }));
   out.prompt = prompt;
