@@ -11,6 +11,8 @@ const rule = await page.evaluate(() => { let a = 0, b = 0, same = true; const N 
 check('about 1 in 5 locked on floor 1, 2 in 5 on floor 2', Math.abs(rule.f1 - .2) < .04 && Math.abs(rule.f2 - .4) < .05 && rule.same, rule);
 
 // a real dungeon: every chest follows the rule, treasure chests always locked
+// the world lists only the doors of loaded cells, so wait for one to load rather than take whatever is there
+for (let k = 0; k < 24 && !(await page.evaluate(() => WORLD.DOORS.some(e => e && e.seed != null))); k++) await page.waitForTimeout(2500);
 await page.evaluate(() => { const d = WORLD.DOORS.find(e => e && e.seed != null) || [...WORLD.DOORS.values?.() || []][0];
   const p = makePortalDef(d); p.zone = 'world'; goToDungeon(p); });
 await page.waitForTimeout(12000); await g.hide();

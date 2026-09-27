@@ -43,7 +43,7 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 - ~~**Sun, moon and stars**~~ — **done, Session 148**: sun and moon ride the same angle as the sun light (so the disc agrees with the shadows), moon phase over a 29-day cycle, 760 stars fading in on the night factor, and weather hides all three. Owed: the sun's and moon's size judged by eye; they're decorative rather than an ephemeris.
 - ~~**The Guest's chapel**: the black-screen prayer checked in the real DOM~~ — **done, Session 152**: the black was right; the capital itself was found only among loaded cells, now solved over the whole grid (Fortargent).
 - **Performance**: NPC part merging if towns of forty NPCs ever stutter.
-- **Test flake**: `locks.test.mjs` sometimes dies in setup when `WORLD.DOORS` has no dungeon door loaded yet (Session 156 saw it once in a full run; it passed on re-run). The setup should wait for a door rather than take the first.
+- ~~**Test flake**: `locks.test.mjs` died in setup when `WORLD.DOORS` had no dungeon door loaded yet~~ — **fixed, Session 156** (it failed once locally and once in CI on the Auto sessions PR); the setup now waits up to a minute for a door.
 
 ## H. Look and feel — meshes and animation (Michael, 26 Sep 2026)
 The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/spheres/cones, every material `MeshLambertMaterial`, no skinning, characters as rigid parts turned at the joints (three.js r128). Goal: smoother and better across the board. **Cross-cutting — Fable sessions**, one area each, verified with before/after screenshots, with a frame-time check in a forty-NPC town before and after each.
