@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Trolls, golems, gargoyles and the Faolchú — what they look like (Session 201)
+The last foes still on the old box bodies are the dungeon's heavy hitters (cave trolls, golems, gargoyles) and the Faolchú, the canon's first named antibody and Act I's boss. The canon describes the Faolchú's look exactly: wolf-shaped and hunched, with extra arms from a spine seam that glows red, and sigil-script along its sides. It gives no look for the others beyond "cave trolls ... categories the world's existing folklore had words for". Each picture has a townsperson at the left for scale, two standing and one moving:
+- **Cave troll**: the people's body grown to one and a half times a person's height, heavy and stooped, grey-green hide, tusks, yellow eyes, a hide tunic and a club. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures2-troll.png
+- **Golem**: dressed stone blocks on the people's bones, with a blue rune-light in the seams (an X on the chest, a slit for eyes). https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures2-golem.png
+- **Gargoyle A**: a crouched stone figure on the people's body, with bat wings, horns, a tail and lit eyes. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures2-gargoyle.png
+- **Gargoyle B**: a stone beast on the dragon's bones (four legs, wings, a tail), grey, eyes lit. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures2-gargB.png
+- **The Faolchú**: the dire wolf hunched, with two pairs of clawed arms from a red-glowing seam down its spine and orange sigil marks along its flanks, as the canon has it. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures2-faol.png
+
+**Options:** (A) build them all as shown, with gargoyle B; (B) as shown, but with gargoyle A; (C) build the troll, golem and Faolchú and rethink the gargoyle; (D) not yet. **Recommendation: A.** Gargoyle A reads as a grey doll with wings (the people's body is too soft for stone). B sits like the carved beasts on a roof, and it uses the dragon's walk and flight poses as they are. The troll's face is the townsfolk's face grown large, so the build would give it a heavier brow and jaw. Slimes, the elementals, the Bog Crawler, the Sand Scorpion and the Shore Wisp would follow in a second prototype.
 
 ## Answered
 

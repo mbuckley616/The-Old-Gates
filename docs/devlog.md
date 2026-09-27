@@ -5731,3 +5731,21 @@ This session also has the result of the full suite started during Session 195: 3
 
 ### Needs eyes
 Barrels by torchlight: the hoops' darkness, and whether the belly reads.
+
+## v80 — Session 201 — Trolls, golems, gargoyles and the Faolchú: a prototype and a question (H.4, waiting on Michael)
+With the people-shaped foes all on the new bodies, the open world's and the dungeon's other families are the ones still on boxes: the cave troll, the golem, the gargoyle, the slimes and elementals, a few regional creatures, and the Faolchú. Michael approved the wolves' style for "the other families (spiders, undead, dragon, mimic, bandits)". These are not on that list, and the canon gives only the Faolchú a look, so this is a prototype and a DECISION. `index.html` is unchanged in this session (the build tag stays at s200).
+
+**The prototype** (`docs/prototypes/creatures2/shoot.mjs`) boots the game and builds each one from the game's own kits, with the parts they lack hung on the bones as plain meshes, as Session 178's goblins were.
+- **Cave troll**: the people's body grown heavy (build 1.75, one and a half times a person's height) and stooped, in grey-green hide, with tusks and a club.
+- **Golem**: the people's bones with the flesh hidden, carrying dressed stone blocks (the kit's rounded box), with a blue rune-light. The chest rune was a cross in the first render, and I changed it to an X so it would not read as the Church's sign.
+- **Gargoyle A**: a crouched, winged stone figure on the people's body.
+- **Gargoyle B**: a stone beast on the dragon's bones. The dragon's red vertex colours are desaturated to grey in a copy of its geometry.
+- **The Faolchú**, as the canon describes it: the Dire Wolf hunched, with two pairs of clawed arms from a red-glowing seam down the spine and orange sigil marks along its flanks.
+
+Gargoyle A's crouch first floated above the floor. Its hips were lowered by what the bent legs lose, and it still reads as a grey doll, which is why B is offered and recommended.
+
+### Verified (headless Chromium)
+`node docs/prototypes/creatures2/shoot.mjs` renders the five pictures (`docs/prototypes/creatures2-troll.png`, `-golem.png`, `-gargoyle.png`, `-gargB.png`, `-faol.png`) with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all as shown with gargoyle B (recommended), with gargoyle A, the three without the gargoyle, or not yet.
