@@ -5834,3 +5834,14 @@ Round the doorway, on the door's group and so staying put when the door swings, 
 
 ### Needs eyes
 The frame is mostly hidden in the walls' warp and shows only as an edge. Whether it wants to stand proud of the wall face.
+
+## v80 — Session 207 — CI: the suite in six shards (tests only)
+Every CI run on this branch today ended "cancelled" at almost exactly 30 minutes. That is the `headless` job's `timeout-minutes: 30`: the suite has grown to 37 suites, which take about 50 minutes one after another on this machine and longer on GitHub's runners. The runs on this branch were cancelled from Session 186's onwards, which is from this run's first pushes, so CI has not had a verdict on any of this run's work.
+
+**What changed.** `tests/run.mjs` takes `--shard i/n`: it sorts the suites and runs every n-th one, starting from the i-th. The workflow runs the `headless` job as a matrix of six shards side by side (`fail-fast: false`, so one failing shard does not stop the others), each under the same 30 minutes, with six or seven suites a shard. `node tests/run.mjs` with no arguments still runs everything, and `node tests/run.mjs <name>` still runs one suite. No test was changed, skipped or removed.
+
+### Verified (headless Chromium)
+The shard split was checked by listing it: the six shards take 37 suites between them with none left out or repeated (6 or 7 each). A full local run started during Session 205 was still going at this commit; its result goes in the next entry or in the PR.
+
+### Needs eyes
+The first CI run on this commit: whether every shard finishes inside 30 minutes on GitHub's runners. If a shard still runs long, the number can go to eight.

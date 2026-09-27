@@ -11,10 +11,14 @@ jobs:
   headless:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - run: node tests/run.mjs
+      - run: node tests/run.mjs --shard ${{ matrix.shard }}/6
