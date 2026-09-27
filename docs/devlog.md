@@ -5594,3 +5594,41 @@ New `tests/townroads.test.mjs`, 6 checks, all passing, no page errors. Across 30
 
 ### Needs eyes
 Dunmore from the ground: whether the gaps where streets meet a road read as junctions or as streets that stop short. Whether the dog-leg footpaths look deliberate. The rest (streets that follow the roads rather than a grid, junction shapes) is the roads rewrite's.
+
+## v80 — Session 194 — Houses in detail, every nation, with a distant copy (H.5, Michael's A)
+Michael answered Session 179's question: **A**, all of it, all nations, with a distant copy. Each culture should take in variations from its neighbours: anything Nordic can join the Mark's designs, anything Mediterranean Aurenne's, anything Irish, Celtic or Western European the Irish-inspired nation's. He asked for three faults to be fixed: the thatch read as a board, the lean-to was crude, and the Irish eaves covered the window heads.
+
+**Keeping the towns.** A town is rolled on one sequence of dice: lots, shop types, names, people. The old `buildingGeo` took two or three rolls a house. If the detailed house took its dozens of rolls from the same dice, every town's people would change. So `buildingGeo` now calls the old builder first, renamed `buildingGeoLo`, which takes exactly its old rolls and reports what it picked (wall colour, roof colour, storeys). `buildingGeoHi` then rolls its own dice, seeded from those picks and the house's size. Every town keeps its layout, names and people. The plain house is kept as the detailed house's distant copy.
+
+**The house** (`buildingGeoHi`, ported from `docs/prototypes/houses/houses.src.js`):
+- **Footing and walls**: a footing ringed with rough stones. Braced half-timbering where the style frames, and a jetty on joist ends on a framed two-storey house.
+- **Windows and door**: recessed windows with the glass set back, a sill, a lintel, a mullion and transom, and shutters in the nation's paint. A framed plank door set back, with hinges, a latch and a step.
+- **Roof**: a roof with thickness on rafter ends, bargeboards, and courses of slate, shingle or half-round tile. The Mark's gables have crossed horns.
+- **Chimney and yard**: a coursed chimney with a cap. By its own dice, a lean-to, a woodpile and a water butt.
+
+**The three faults.**
+- The thatch is now a rounded, lumpy slab (the kit's new `SK.rbox`, bumped) with a rolled lip along each eave and a thick ridge roll.
+- The lean-to has two posts and a plate, a sloping roof with thickness, plank walls at the back, and a woodpile under it.
+- The windows are placed from the roof's numbers: the top of a ground-floor window is kept .22 under the lowest point of the eaves, thatch's thickness included.
+
+**Variants** (`HOUSE_VARIANTS`, one picked per house by its own dice):
+- Irish: whitewash and thatch, a red door, grey rubble stone under slate (the Welsh and upland Celtic cottage), and a framed slate house (the Western European one).
+- The Mark: longhouses in shingle or turf (a green, lumpy, rolled roof: the Norse turf house), in two timber tones.
+- Aurenne: tile over cream, ochre, rose or white plaster, with blue, green or red shutters.
+- The rest: French and Bavarian framed houses with their shutter colours, the Anglo house in shingle or rubble, the city's stone blocks in tile, the garrison in slate.
+
+**The distant copy.** `addMesh` hangs each detailed house's plain twin beside it. `bakeMeshes` bakes them into separate 60-unit clusters (the key carries `hi` or `lo`), each detailed cluster paired with its twin by key. `houseLod`, called from the world's tick, shows the detailed cluster when the camera is within 70 of it (measured to the cluster's centre less half its radius) and the plain one past 80, keeping whichever it had in between. Burnt and abandoned shells stay plain. The garrison POI's two houses and the roadside inn are built directly and have no twin (owed).
+
+Cost: a detailed house is 1.7–7.4k triangles (the tiled Aurenne and city houses are the heaviest) against 116–212 plain. Dunmore's detailed clusters are 144k triangles, all showing from the square; its plain copies are 7.3k.
+
+### Verified (headless Chromium)
+New `tests/houses.test.mjs`, 6 checks, all passing, no page errors.
+- Every style (the eight named ones and the generated culture styles) builds a detailed house of 1.7k–7.4k triangles over 48 sizes and seeds, with a plain copy under 400.
+- No one-storey house of any style has a window top above its eaves.
+- Forty Irish houses include both thatch and slate; forty of the Mark's include turf and shingle.
+- Dunmore has 9 detailed clusters, each paired with its plain twin. From the square all 9 detailed ones show; from 400 units away none do, and all 9 plain ones do.
+
+`crime1`, `watch`, `shophours` and `interiors`, which walk Dunmore's houses and doors, pass: the layout is unchanged. Pictures: `docs/prototypes/houses-ingame.png` (one of each style), `houses-ingame-irish.png`, `houses-ingame-mark.png`, `houses-ingame-aurenne.png`, and `houses-dunmore.png` (a Dunmore street).
+
+### Needs eyes
+A town in real play: frame time with the detailed clusters near (Dunmore's square shows all nine); whether 70 units is far enough that the swap is unseen (the plain house has no eaves or shutters, so the swap is visible if you watch for it); whether the thatch is still too yellow in sunlight. Owed: churches, keeps and the POIs' buildings on the same builder; a distant copy for the garrison POI's houses and the roadside inn.

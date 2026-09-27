@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s193</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s194</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36402,7 +36402,93 @@ var WORLD=(()=>{
   }
 
   // ── Building geometry (merged, vertex-coloured; one mesh per building) ──
-  function buildingGeo(w,d,st,r,opts){
+  // ── S194: the house in detail (backlog H.5; Michael's decision A on Session 179's prototype) ──
+  // buildingGeo builds today's house (buildingGeoLo, on the town's own dice, exactly as before, so every town keeps
+  // its layout and its people) and a detailed one beside it, which rolls its own dice from what the plain one picked.
+  // The detailed house is what you see near; the plain one is its distant copy (houseLod, per baked cluster).
+  // Parts: a footing ringed with rough stones; walls; half-timbering with braces and a jetty where the style frames;
+  // recessed windows with sills, lintels, mullions and shutters, kept under the eaves; a framed plank door with hinges
+  // and a step; a roof with thickness, eaves on rafter ends, bargeboards, and its covering in courses (slate, shingle,
+  // half-round tile), or a rounded, lumpy thatch; a coursed chimney with a cap; by the house's dice a lean-to, a
+  // woodpile, a water butt. Each culture draws variants from its neighbours (Michael: Nordic into the Mark, the
+  // Mediterranean into Aurenne, Irish, Celtic and Western European into the Irish).
+  const HOUSE_VARIANTS={
+    irish:[{},{},{thatch:false,slate:true,roof:0x4a4e58,roof2:0x3a3e48,wall:0xb8b0a0,wall2:0xa49c8c,rubble:true},{wall:0xf0e8d8,door:0xa02a2a},{thatch:false,slate:true,roof:0x3e4450,roof2:0x30343e,framed:true,frame:0x2a2018,wall:0xe8e0cc,twoStoryAdd:.3}],
+    anglo:[{},{shingle:true},{rubble:true}],
+    french:[{shutter:0x3a5a4a},{shutter:0x6a3a2a},{shutter:0x4a5a7a,wall:0xe8dcc0}],
+    bavarian:[{shutter:0x2a5a2a},{shutter:0x7a2a1a},{shutter:0x2a3a6a,wall:0xf4ecd8}],
+    mark:[{long:true,shingle:true},{long:true,turf:true},{long:true,shingle:true,wall:0x5a4430},{long:true,turf:true,wall:0x3e2e20}],
+    aurenne:[{tile:true,shutter:0x3a6a9a},{tile:true,shutter:0x3a7a5a,wall:0xecc89a},{tile:true,shutter:0x8a4a3a,wall:0xf2d8c8},{tile:true,shutter:0x3a6a9a,wall:0xfaf6ee}],
+    stone:[{tile:true},{tile:true,shutter:0x4a5a3a}],
+    garrison:[{slate:true}]};
+  let _houseN=0;
+  function houseKey(st){for(const k in STYLE)if(STYLE[k]===st)return k;return null;}
+  function buildingGeoHi(w,d,st0,r,opts,lo){
+    const key=houseKey(st0)||opts.styleKey||'irish';const V=HOUSE_VARIANTS[key]||[{}];
+    const r0=pRng((Math.round(w*7)*131+Math.round(d*7)*977+lo.wallHex+lo.roofHex*3+(_houseN++)*7919)>>>0);
+    const st=Object.assign({},st0,V[Math.floor(r0()*V.length)%V.length]);if(key==='french'&&st.slate==null)st.slate=true;if(key==='bavarian'||key==='garrison')st.slate=true;
+    const P=[];const c=x=>new THREE.Color(x);const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});};
+    const two=lo.two,H=(opts.h||st.h||2.6)+(two?2.2:0),pl=.3,fr=st.frame,dark=0x1e1a18;
+    const wallC=st0.wall===st.wall?lo.wallHex:c(st.wall).lerp(c(st.wall2||st.wall),r0()*.4).getHex();
+    const stoneC=st.plinth;
+    add(new THREE.BoxGeometry(w+.2,pl,d+.2),stoneC,0,pl/2,0,0,0,0,.1);
+    for(let i=0;i<Math.floor((w+d)*1.6);i++){const t=r0(),side=r0()<.5;const x=side?(t-.5)*w:(r0()<.5?-1:1)*(w/2+.08),z=side?(r0()<.5?-1:1)*(d/2+.08):(t-.5)*d;const s=.16+r0()*.14;
+      add(SK.bumpy(SK.ball(s,6,4),.03,9,r0()*9),c(stoneC).multiplyScalar(.85+r0()*.3).getHex(),x,.12,z,0,r0()*3,0,.05);}
+    add(new THREE.BoxGeometry(w,H,d),wallC,0,pl+H/2,0,0,0,0,.05);
+    // rubble-stone walls (Celtic and upland variants): stones proud of the face in rough courses
+    if(st.rubble)for(const fz of [1,-1])for(let y=pl+.25;y<pl+H-.2;y+=.42)for(let x=-w/2+.3+(Math.round(y*10)%2)*.25;x<w/2-.2;x+=.55+r0()*.2){if(fz>0&&Math.abs(x)<.75&&y<pl+2.1)continue;
+      add(new THREE.BoxGeometry(.4+r0()*.16,.26+r0()*.08,.08),c(wallC).lerp(c(stoneC),.35).multiplyScalar(.68+r0()*.3).getHex(),x+(r0()-.5)*.08,y+(r0()-.5)*.05,fz*(d/2+.02),0,0,(r0()-.5)*.12,.06);}
+    if(st.framed){for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]])add(new THREE.BoxGeometry(.2,H,.2),fr,sx*w/2,pl+H/2,sz*d/2,0,0,0,.04);
+      for(const fz of [1,-1]){for(const y of [pl+.08,pl+H-.08,two?pl+H-2.3:null])if(y!=null)add(new THREE.BoxGeometry(w+.04,.16,.08),fr,0,y,fz*(d/2+.03),0,0,0,.04);
+        const n=Math.max(2,Math.round(w/1.1));for(let k=1;k<n;k++){const x=-w/2+k*w/n;if(Math.abs(x)<.7)continue;add(new THREE.BoxGeometry(.12,H,.07),fr,x,pl+H/2,fz*(d/2+.03),0,0,0,.04);}
+        for(const sx of [-1,1]){const hh=Math.min(H,2.2)*.9,L=Math.hypot(w/n,hh);add(new THREE.BoxGeometry(.1,L,.06),fr,sx*(w/2-w/n/2),pl+Math.min(H,2.2)*.5,fz*(d/2+.035),0,0,sx*fz*Math.atan2(w/n,hh),.04);}}}
+    if(two&&st.framed){add(new THREE.BoxGeometry(w+.5,.24,d+.5),fr,0,pl+H-2.25,0);for(let k=0;k<Math.round(w/.5);k++)add(new THREE.BoxGeometry(.12,.12,.3),fr,-w/2+.25+k*.5,pl+H-2.42,d/2+.15);}
+    // the roof's numbers first: the windows are kept under its eaves (Michael: the Irish eaves covered the window heads)
+    const rise=opts.rise||st.rise||1.6,thatch=!!(st.thatch||st.turf),over=thatch?.45:.55,run=d/2+over,slope=Math.atan2(rise,d/2),len=Math.hypot(run,rise*run/(d/2)),th=thatch?.46:.14;
+    const yb=pl+H,eaveLow=yb-over*rise/(d/2)-th/2/Math.cos(slope);
+    const win=(x,y,z,fz,wd,ht)=>{add(new THREE.BoxGeometry(wd,ht,.08),0x2a3038,x,y,z-fz*.06,0,0,0,0);add(new THREE.BoxGeometry(wd+.24,.1,.24),stoneC,x,y-ht/2-.05,z+fz*.04);add(new THREE.BoxGeometry(wd+.2,.12,.14),st.framed?fr:stoneC,x,y+ht/2+.06,z+fz*.02);
+      add(new THREE.BoxGeometry(.05,ht,.06),fr,x,y,z-fz*.02);add(new THREE.BoxGeometry(wd,.05,.06),fr,x,y+.05,z-fz*.02);for(const s of [-1,1])add(new THREE.BoxGeometry(.06,ht,.1),fr,x+s*wd/2,y,z);
+      if(st.shutter)for(const s of [-1,1])add(new THREE.BoxGeometry(wd/2,ht+.04,.05),st.shutter,x+s*(wd*.75+.06),y,z+fz*.03,0,s*fz*.25,0,.06);};
+    const wh=.78,wy=Math.min(pl+Math.min(H,st.h||2.6)*.58,(two?yb-2.2:eaveLow)-.22-wh/2-.06),nw=st.long?3:2;
+    for(let k=0;k<nw;k++){const x=(k-(nw-1)/2)*w/nw*1.05;if(Math.abs(x)<.8)continue;win(x,wy,d/2,1,.62,wh);}
+    win(0,wy,-d/2,-1,.62,wh);if(two)for(const x of [-w*.28,0,w*.28])win(x,Math.min(pl+H-1.1,eaveLow-.22-.35-.06),d/2+(st.framed?.25:0),1,.56,.7);
+    add(new THREE.BoxGeometry(1.2,2.05,.12),st.framed?fr:stoneC,0,pl+1.02,d/2+.01);add(new THREE.BoxGeometry(.92,1.85,.08),st.door||0x3e2a16,0,pl+.93,d/2-.02,0,0,0,.03);
+    for(let k=-2;k<=2;k++)add(new THREE.BoxGeometry(.02,1.8,.02),c(st.door||0x3e2a16).multiplyScalar(.7).getHex(),k*.18,pl+.93,d/2+.025,0,0,0,0);
+    for(const y of [.5,1.4])add(new THREE.BoxGeometry(.5,.05,.03),dark,-.18,pl+y,d/2+.03,0,0,0,0);add(SK.ball(.04,6,4),0x8a7a4a,.3,pl+.95,d/2+.05);
+    add(new THREE.BoxGeometry(1.4,.16,.55),stoneC,0,.08,d/2+.35,0,0,0,.08);
+    const rc=st0.roof===st.roof?lo.roofHex:c(st.roof).lerp(c(st.roof2||st.roof),r0()*.4).getHex();
+    const turfC=0x5a7a3a;
+    for(const s of [1,-1]){const cz=s*(run/2),cy=yb+rise/2-(over/(d/2))*rise/2;
+      if(thatch){// a rounded, lumpy slab (it read as a board) with a rolled lip along the eaves
+        const g=SK.bumpy(SK.rbox(w+over*2,th,len,.16,2),.05,7,s*3+r0()*5);add(g,st.turf?turfC:rc,0,cy,cz,s*slope,0,0,.07);
+        const ex=-Math.cos(slope)*len/2,lipY=cy-Math.sin(slope)*len/2*1,lipZ=cz+s*Math.cos(slope)*len/2;
+        add(SK.bumpy(SK.cyl(.2,.2,w+over*2,8),.03,9,s),st.turf?turfC:c(rc).multiplyScalar(.9).getHex(),0,lipY,lipZ,0,0,Math.PI/2,.06);}
+      else{add(new THREE.BoxGeometry(w+over*2,th,len),c(rc).multiplyScalar(.8).getHex(),0,cy,cz,s*slope,0,0,.04);
+        const rows=Math.round(len/(st.tile?.4:.26));for(let k=0;k<rows;k++){const t=(k+.5)/rows-.5;const y=cy-Math.sin(slope)*t*len+th*.6*Math.cos(slope),z=cz+s*Math.cos(slope)*t*len+s*th*.6*Math.sin(slope);
+          if(st.tile){for(let q=0;q<Math.round((w+over*2)/.3);q++){const g=SK.cyl(.12,.12,.42,4,1,true,-Math.PI/2,Math.PI);add(g,c(rc).multiplyScalar(.85+r0()*.3).getHex(),-(w/2+over)+.15+q*.3,y,z,s*(Math.PI/2+slope),0,0,.05);}}
+          else add(new THREE.BoxGeometry(w+over*2,.05,len/rows*1.08),c(rc).multiplyScalar(.82+r0()*.3).getHex(),0,y,z,s*slope,0,0,.08);}
+        for(let k=0;k<Math.round((w+over*2)/.6);k++)add(new THREE.BoxGeometry(.1,.12,over+.1),fr,-(w/2+over)+.3+k*.6,yb-.08-(over/2)*rise/(d/2),s*(d/2+over/2),s*slope,0,0,.04);}}
+    if(thatch)add(SK.bumpy(new THREE.CylinderGeometry(.44,.44,w+over*2+.3,10,1),.05,8,2),st.turf?turfC:c(st.roof2||st.roof).getHex(),0,yb+rise+.02,0,0,0,Math.PI/2,.05);
+    else add(SK.cyl(.12,.12,w+over*2+.1,6),st.roof2||st.roof,0,yb+rise+.08,0,0,0,Math.PI/2,.04);
+    for(const gx of [1,-1]){const gt=new THREE.Shape();gt.moveTo(-d/2,0);gt.lineTo(d/2,0);gt.lineTo(0,rise-.02);gt.closePath();add(new THREE.ShapeGeometry(gt),wallC,gx*(w/2+.001),yb,0,0,gx*Math.PI/2,0,.04);
+      if(!thatch)for(const s of [1,-1]){const L=Math.hypot(run,rise*run/(d/2));add(new THREE.BoxGeometry(.06,.26,L),fr,gx*(w/2+over+.02),yb+rise/2-(over/(d/2))*rise/2+.06,s*run/2,s*slope,0,0,.04);}
+      if(st.long)for(const s of [1,-1])add(new THREE.BoxGeometry(.08,.9,.14),fr,gx*(w/2+over+.02),yb+rise+.3,s*.18,s*.5,0,0,.04);}
+    if(opts.chimney){const chx=w*.3*(r0()<.5?1:-1),chz=-d*.18;for(let k=0;k<6;k++)add(new THREE.BoxGeometry(.56,.24,.56),c(stoneC).multiplyScalar(.85+r0()*.25).getHex(),chx,yb+rise*.4+k*.25,chz,0,(r0()-.5)*.08,0,.06);
+      add(new THREE.BoxGeometry(.7,.1,.7),stoneC,chx,yb+rise*.4+1.55,chz);}
+    // a lean-to against a gable end (it was a box): two posts, a sloping roof with thickness on a plate, plank walls
+    // at the back and one side, a woodpile under it
+    if(!opts.noYard&&r0()<.55){const s=r0()<.5?1:-1,lw=1.5,ld=Math.min(d*.8,3.2),lz=-d*.08,hi_=Math.min(2.1,H-.2),lo_=1.45,x0=s*w/2,x1=s*(w/2+lw);
+      for(const z of [lz-ld/2+.1,lz+ld/2-.1])add(new THREE.BoxGeometry(.14,lo_,.14),fr,x1-s*.07,pl+lo_/2,z,0,0,0,.05);
+      add(new THREE.BoxGeometry(.14,.14,ld),fr,x1-s*.07,pl+lo_,lz,0,0,0,.04);
+      const ang=Math.atan2(hi_-lo_,lw),rl=Math.hypot(lw,hi_-lo_)+.25;add(new THREE.BoxGeometry(rl,.08,ld+.3),c(rc).multiplyScalar(.85).getHex(),(x0+x1)/2+s*.08,pl+(hi_+lo_)/2+.1,lz,0,0,-s*ang,.06);
+      for(let k=0;k<Math.floor(lw/.3);k++)add(new THREE.BoxGeometry(.28,1.35,.05),c(0x6a4a2a).multiplyScalar(.8+r0()*.3).getHex(),x0+s*(.17+k*.3),pl+.68,lz-ld/2+.06,0,0,0,.05);
+      for(let k=0;k<12;k++)add(SK.cyl(.08,.08,.8,6),0x7a5a3a,(x0+x1)/2+s*.1+(k%4)*.17*s-s*.3,pl+.1+Math.floor(k/4)*.15,lz+ld*.1,Math.PI/2,0,0,.1);}
+    if(!opts.noYard&&r0()<.5){const x=(r0()<.5?1:-1)*(w/2-.6);for(let k=0;k<9;k++)add(SK.cyl(.08,.08,.7,6),0x7a5a3a,x+(k%3)*.17-.17,.1+Math.floor(k/3)*.15,d/2+.4,0,0,Math.PI/2,.1);}
+    if(!opts.noYard&&r0()<.5)add(SK.lathe([[.001,0],[.25,0],[.28,.3],[.26,.6],[.001,.6]],10),0x6a4a2a,-w/2+.5,0,d/2+.45);
+    const g=mergeParts(P);g.userData.variant=key;g.userData.thatch=thatch;g.userData.winTop=wy+wh/2+.12;g.userData.eaveLow=eaveLow;return g;}
+  function buildingGeo(w,d,st,r,opts){opts=opts||{};const lo=buildingGeoLo(w,d,st,r,opts);if(opts.plain)return lo;
+    const hi=buildingGeoHi(w,d,st,r,opts,lo.userData.picks);hi.userData.lo=lo;return hi;}
+  function buildingGeoLo(w,d,st,r,opts){
     const parts=[];const c=x=>new THREE.Color(x);
     const two=opts.twoStory!=null?opts.twoStory:(r()<(st.twoStory||0));
     const H=(opts.h||st.h||2.6)+(two?2.2:0), plinthH=.22;
@@ -36425,7 +36511,7 @@ var WORLD=(()=>{
     const tri=new THREE.Shape();tri.moveTo(-(d/2+over),0);tri.lineTo(d/2+over,0);tri.lineTo(0,rise);tri.closePath();
     const roofG=new THREE.ExtrudeGeometry(tri,{depth:w+over*2,bevelEnabled:false});
     // extrude is along +z; rotate so the ridge runs along x
-    parts.push({geo:roofG,color:c(st.roof).lerp(c(st.roof2),r()*.5),x:-(w/2+over),y:plinthH+H-.05,z:0,ry:Math.PI/2,jitter:.08});
+    const roofC=c(st.roof).lerp(c(st.roof2),r()*.5);parts.push({geo:roofG,color:roofC,x:-(w/2+over),y:plinthH+H-.05,z:0,ry:Math.PI/2,jitter:.08});
     // ridge beam (thatch gets a thick rounded ridge cap instead)
     if(st.thatch)parts.push({geo:new THREE.CylinderGeometry(.34,.34,w+over*2+.2,7),color:c(st.roof2),y:plinthH+H+rise-.1,rz:Math.PI/2,jitter:.08});
     else parts.push({geo:new THREE.BoxGeometry(w+over*2+.1,.14,.22),color:c(st.roof2),y:plinthH+H+rise-.05,jitter:.05});
@@ -36440,7 +36526,7 @@ var WORLD=(()=>{
     // door on the front face (+z)
     parts.push({geo:new THREE.BoxGeometry(.9,1.7,.1),color:c(st.door||0x3e2a16),x:0,y:plinthH+.85,z:d/2+.03,jitter:.04});
     parts.push({geo:new THREE.BoxGeometry(1.1,.14,.16),color:c(st.frame),x:0,y:plinthH+1.78,z:d/2+.04,jitter:0});
-    return mergeParts(parts);
+    const g=mergeParts(parts);g.userData.picks={wallHex:wallC.getHex(),roofHex:roofC.getHex(),two};return g;
   }
   function churchGeo(w,d,st,r){
     const parts=[];const c=x=>new THREE.Color(x);
@@ -36612,6 +36698,7 @@ var WORLD=(()=>{
     const placed=[]; // {x,z,rad}
     function addMesh(geo,x,z,ry,solR){
       const m=new THREE.Mesh(geo,SETTLE_MAT);m.position.set(x,worldH(x,z)-.06,z);m.rotation.y=ry||0;m.castShadow=true;m.receiveShadow=true;group.add(m);
+      if(geo.userData&&geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,SETTLE_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.receiveShadow=true;l.userData.lod='lo';group.add(l);} // S194 — its distant copy
       if(solR)sol.push({cx:x,cz:z,rx:solR,rz:solR});
       return m;
     }
@@ -36741,7 +36828,7 @@ var WORLD=(()=>{
       const isShop=!!type;
       let geo,solR;
       if(TST&&(burnedV||abandonedV||(sackedV&&!isShop&&r()<.5))){ // a shell: black walls, no roof, nobody home
-        const sh=buildingGeo(lot.w,lot.d,Object.assign({},st,{wall:burnedV?0x1a1614:0x6a665e,wall2:burnedV?0x120f0d:0x5a564e,roof:burnedV?0x0a0806:0x3a3632,roof2:0x0a0806,thatch:false,framed:false}),r,{chimney:false,twoStory:false,h:st.h*.8,rise:.2});const m=addMesh(sh,lot.x,lot.z,lot.ry,0);return;} // forEach: skip the rest of this lot
+        const sh=buildingGeoLo(lot.w,lot.d,Object.assign({},st,{wall:burnedV?0x1a1614:0x6a665e,wall2:burnedV?0x120f0d:0x5a564e,roof:burnedV?0x0a0806:0x3a3632,roof2:0x0a0806,thatch:false,framed:false}),r,{chimney:false,twoStory:false,h:st.h*.8,rise:.2});const m=addMesh(sh,lot.x,lot.z,lot.ry,0);return;} // forEach: skip the rest of this lot
       if(!isShop&&TST&&r()<shutteredShare(site))lot._shuttered=true;
       if(type==='church')geo=churchGeo(lot.w,lot.d,st,r);
       else if(type==='castle')geo=keepGeo(lot.w,lot.d,st,r);
@@ -37017,6 +37104,13 @@ var WORLD=(()=>{
       o+=cnt;}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.computeBoundingSphere();return geo;
   }
+  // S194 — the houses' distant copies: each baked cluster of detailed houses is drawn near the eye (under HOUSE_LOD.near),
+  // its plain twin past HOUSE_LOD.far, whichever it had in between
+  const HOUSE_LOD={near:70,far:80};
+  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){const L=S.lodMeshes;if(!L)continue;
+    for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
+      const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
+      const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}}}
   function bakeSettlement(S){return bakeMeshes(S.group.children.slice(),S.group,new Set(S.boats||[]),S);}
   // bake any list of meshes: merged clusters go into addTo; originals are removed from their parents
   function bakeMeshes(meshes,addTo,keep,S){
@@ -37027,10 +37121,11 @@ var WORLD=(()=>{
       if(!mat||mat.map||mat.isMeshBasicMaterial||mat.transparent||!g||!g.attributes||!g.attributes.position)continue;
       if(g.type==='PlaneGeometry'||g.type==='CircleGeometry')continue;
       const src=g.index?g.toNonIndexed():g;const m=o.matrixWorld.clone();const c=(mat.vertexColors?new THREE.Color(1,1,1):mat.color)||new THREE.Color(1,1,1);
-      const k=Math.floor(o.position.x/60)+','+Math.floor(o.position.z/60);(clusters.get(k)||clusters.set(k,[]).get(k)).push([src,m,c]);dead.push(o);
+      const k=Math.floor(o.position.x/60)+','+Math.floor(o.position.z/60)+(o.userData.lod?','+o.userData.lod:'');(clusters.get(k)||clusters.set(k,[]).get(k)).push([src,m,c]);dead.push(o);
     }
     dead.forEach(o=>{if(o.parent)o.parent.remove(o);});
-    const out=[];for(const [k,list] of clusters){const geo=mergeGeos(list);const m=new THREE.Mesh(geo,VC_MAT);m.castShadow=true;m.receiveShadow=true;m.userData.baked=true;addTo.add(m);out.push(m);}
+    const out=[];for(const [k,list] of clusters){const geo=mergeGeos(list);const m=new THREE.Mesh(geo,VC_MAT);m.castShadow=true;m.receiveShadow=true;m.userData.baked=true;
+      const lod=/,(hi|lo)$/.exec(k);if(lod&&S){m.userData.lod=lod[1];m.userData.ckey=k.slice(0,-3);m.visible=lod[1]==='lo';(S.lodMeshes||(S.lodMeshes=[])).push(m);}addTo.add(m);out.push(m);}
     if(S)S.baked=clusters.size;return out;
   }
   function t_reach(sol,site){let m=site.pad+6;for(const s of sol){m=Math.max(m,Math.abs(s.cx-site.x)+Math.max(s.rx,s.rz)+2,Math.abs(s.cz-site.z)+Math.max(s.rx,s.rz)+2);}return m;}
@@ -40361,6 +40456,7 @@ var WORLD=(()=>{
     tickCells(dt,false);runJobs();
     tickLightPool(dt);tickWeather(dt);tickShip(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickOtherShips(dt,now||performance.now());tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
+    houseLod();
     atmosphere(dt);
     tickSettlements(dt,false);
     tickNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
@@ -40399,7 +40495,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
