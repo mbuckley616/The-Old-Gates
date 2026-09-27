@@ -84,10 +84,13 @@ const shadowCost = async (where) => { await page.evaluate(w => { forceTime(12); 
   return page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); tickPeople(1 / 60, 6e5);
     const run = (cast, lo) => { rs.forEach(r => { r.mesh.castShadow = cast; if (!lo) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (lo) tickPeople(1 / 60, 6e5); PEOPLE_LOD.shadowLo = lo; REN.render(scene, CAM);
       REN.info.autoReset = false; REN.info.reset(); REN.render(scene, CAM); const t = REN.info.render.triangles; REN.info.autoReset = true; return t; };
-    const full = run(true, false), fullNone = run(false, false), now = run(true, true), nowNone = run(false, true); run(true, true);
-    return { people: rs.length, distant: rs.filter(r => r.lod).length, viewFull: full, viewNow: now, shadowFull: full - fullNone, shadowNow: now - nowNone, cut: +(1 - (now - nowNone) / (full - fullNone)).toFixed(2), viewCut: +(1 - now / full).toFixed(3) }; }); };
+    const full = run(true, false), fullNone = run(false, false), now = run(true, true), nowNone = run(false, true);
+    rs.forEach(r => { r.mesh.visible = false; }); const nobody = run(true, true); rs.forEach(r => { r.mesh.visible = true; }); run(true, true);
+    return { people: rs.length, distant: rs.filter(r => r.lod).length, viewFull: full, viewNow: now, nobody, peopleFull: full - nobody, peopleNow: now - nobody, shadowFull: full - fullNone, shadowNow: now - nowNone, cut: +(1 - (now - nowNone) / (full - fullNone)).toFixed(2), peopleCut: +(1 - (now - nobody) / (full - nobody)).toFixed(3), viewCut: +(1 - now / full).toFixed(3) }; }); };
 const sSq = await shadowCost('square'), sRoad = await shadowCost('road');
-check('the townsfolk cost the shadow pass under 65% of what their full meshes did, the whole view at least 10% less (the people in the sun\'s reach)', [sSq, sRoad].some(m => m.shadowFull > 0) && [sSq, sRoad].every(m => (m.shadowFull === 0 || (m.shadowNow > 0 && m.cut > .35)) && m.viewCut > .1), { square: sSq, road: sRoad });
+// (the whole view's cut is reported, not checked: its denominator is whatever terrain and trees have loaded, which on CI
+// ran from 640k to 843k triangles for the same view; the check is on what the townsfolk themselves cost, eye and shadow)
+check('the townsfolk cost the shadow pass under 65% of what their full meshes did, and the view at least 30% less (the people in the sun\'s reach)', [sSq, sRoad].some(m => m.shadowFull > 0) && [sSq, sRoad].every(m => (m.shadowFull === 0 || (m.shadowNow > 0 && m.cut > .35)) && m.peopleFull > 0 && m.peopleCut > .3), { square: sSq, road: sRoad });
 
 // the shadow's photograph: one person in the afternoon sun, drawn full, the shadow cast by the full mesh, by the distant
 // copy, and not at all. The player (and so the shadow map) stays put; the subject tries spots on a ring around them and

@@ -4997,3 +4997,17 @@ A test bug worth recording: the first run of the photograph showed no difference
 
 ### Needs eyes
 Shadows in a real browser, especially long evening ones, where a shadow is stretched and a hat brim or plait could show the coarser outline. Frame time in a forty-NPC town on Michael's machine, now with both halves of the level of detail in place. Still owed from H.6: a third tier past ~40 units if the frame time needs it, and the run cycle.
+
+## v80 — Session 161 — Two CI failures on the Auto sessions PR (tests only)
+
+CI had already failed on the branch when this run started, both times on the commit that closed Session 160, each run on a different suite, so this session is the CI fix round. Nothing in `index.html` changed, so the build tag stays where it was.
+
+**`lod.test.mjs`, the shadow-cost check.** It asked that the whole view (eye and shadow passes together) draw at least 10% fewer triangles with the distant copies. One CI run measured 8.6% and 8.7%, while saving *more* triangles than any local run (72k in the square, 80k from the road). The fraction was the wrong thing to check: its denominator is everything in view, and how much terrain and woodland had loaded when the test looked ran from 640k to 843k triangles for the same view across two runs of the same commit. The test now also draws the frame with the townsfolk hidden, and checks what the townsfolk themselves cost, eye and shadow together: at least 30% less with the distant copies. The whole-view fraction is still reported. Session 160's entry claimed "the whole frame 11–12% less"; that is true of the views it measured, not of a view with more of the world loaded, and should be read as the townsfolk's share instead.
+
+**`locks.test.mjs`, E at a locked chest.** The test moved you to the chest, waited 600ms, and pressed E. The chest under your eye is found by the main loop, and on a slow runner 600ms can pass without a frame, so E found nothing and neither the pick nor the loot opened (`lockOpen:false, loot:false`). The same fault as `shophours` and `crime1` in Session 159: it now waits for three real frames with `g.frames()` before pressing and two after.
+
+### Verified (headless Chromium)
+`lod.test.mjs`: the townsfolk cost the view 119,526 triangles at full detail and 51,465 with the distant copies (−57%) in both views, their shadows 10,868 → 4,224; the whole view's cut, for the record, 12.7% (square) and 11.8% (road). `locks.test.mjs` passes, and passes again pinned to one core (`taskset -c 0`), the E check opening the pick both times. Full suite: 15 of 15 on the first run.
+
+### Needs eyes
+Nothing new in the game. Session 160's needs-eyes stand.
