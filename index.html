@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s194</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s195</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36528,7 +36528,71 @@ var WORLD=(()=>{
     parts.push({geo:new THREE.BoxGeometry(1.1,.14,.16),color:c(st.frame),x:0,y:plinthH+1.78,z:d/2+.04,jitter:0});
     const g=mergeParts(parts);g.userData.picks={wallHex:wallC.getHex(),roofHex:roofC.getHex(),two};return g;
   }
-  function churchGeo(w,d,st,r){
+  // ── S195: churches and keeps in detail (H.5, Michael's A: buildings and structures, with a distant copy) ──
+  // The old builders stay as the distant copies; neither took the town's dice, so the detailed ones roll their own.
+  let _civN=0;
+  function churchGeoHi(w,d,st){const r0=pRng((Math.round(w*13)+Math.round(d*29)*7+(_civN++)*7919)>>>0);const P=[];const c=x=>new THREE.Color(x);
+    const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});};
+    const S=STYLE.stone,wallC=c(S.wall).lerp(c(S.wall2),r0()*.4).getHex(),dk=c(wallC).multiplyScalar(.82).getHex(),roofC=S.roof,H=4.2,b=.5;
+    // stepped plinth
+    add(new THREE.BoxGeometry(w+.6,.28,d+.6),st.plinth,0,.14,0,0,0,0,.08);add(new THREE.BoxGeometry(w+.3,.3,d+.3),st.plinth,0,.4,0,0,0,0,.08);
+    add(new THREE.BoxGeometry(w,H,d),wallC,0,b+H/2,0);
+    // string course and cornice; quoins up every corner
+    add(new THREE.BoxGeometry(w+.14,.12,d+.14),dk,0,b+H*.42,0);add(new THREE.BoxGeometry(w+.3,.22,d+.3),dk,0,b+H-.05,0);
+    for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]])for(let k=0;k<Math.floor(H/.45);k++){const L=k%2?.5:.32;add(new THREE.BoxGeometry(k%2?L:.34,.4,k%2?.34:L),c(wallC).multiplyScalar(1.05+r0()*.1).getHex(),sx*(w/2-(k%2?L/2-.14:0)),b+.22+k*.45,sz*(d/2-(k%2?0:L/2-.14)),0,0,0,.04);}
+    // buttresses along the sides, stepped back twice, and lancet windows between them
+    const nb=Math.max(2,Math.round(d/2.6));for(let k=0;k<=nb;k++){const z=-d/2+k*d/nb;if(Math.abs(z)>d/2-.2&&k>0&&k<nb)continue;
+      for(const sx of [-1,1]){add(new THREE.BoxGeometry(.6,H*.62,.5),dk,sx*(w/2+.3),b+H*.31,z,0,0,0,.05);add(new THREE.BoxGeometry(.4,H*.3,.46),dk,sx*(w/2+.2),b+H*.62+H*.15,z,0,0,0,.05);add(new THREE.BoxGeometry(.62,.1,.52),S.plinth,sx*(w/2+.3),b+H*.62,z,0,0,-sx*.4);}
+      if(k<nb)for(const sx of [-1,1]){const zc=z+d/nb/2;add(new THREE.BoxGeometry(.08,1.7,.48),0x2a2a36,sx*(w/2+.01),b+H*.55,zc,0,0,0,0);add(SK.cone(.3,.5,4),0x2a2a36,sx*(w/2+.01),b+H*.55+1.1,zc,0,Math.PI/4,0,0);
+        add(new THREE.BoxGeometry(.14,.1,.6),S.plinth,sx*(w/2+.05),b+H*.55-.9,zc);}}
+    // the roof: two slabs with thickness, courses of slate, a ridge
+    const rise=2.4,over=.4,run=w/2+over,slope=Math.atan2(rise,w/2),len=Math.hypot(run,rise*run/(w/2)),yb=b+H;
+    for(const s of [1,-1]){const cx=s*run/2,cy=yb+rise/2-(over/(w/2))*rise/2;add(new THREE.BoxGeometry(len,.16,d+over*2),c(roofC).multiplyScalar(.8).getHex(),cx,cy,0,0,0,-s*slope,.04);
+      const rows=Math.round(len/.32);for(let k=0;k<rows;k++){const t=(k+.5)/rows-.5;add(new THREE.BoxGeometry(len/rows*1.08,.05,d+over*2),c(roofC).multiplyScalar(.82+r0()*.3).getHex(),cx+s*Math.cos(slope)*t*len-s*.1*Math.sin(slope),cy-Math.sin(slope)*t*len+.1*Math.cos(slope),0,0,0,-s*slope,.06);}}
+    add(SK.cyl(.13,.13,d+over*2+.1,6),S.roof2,0,yb+rise+.08,0,Math.PI/2,0,0,.04);
+    for(const gz of [1,-1]){const gt=new THREE.Shape();gt.moveTo(-w/2,0);gt.lineTo(w/2,0);gt.lineTo(0,rise-.02);gt.closePath();add(new THREE.ShapeGeometry(gt),wallC,0,yb,gz*(d/2+.001),0,gz>0?0:Math.PI,0,.04);}
+    // the west front: a rose window, a gabled porch with an arch over the door, and a cross on the gable
+    add(new THREE.CylinderGeometry(.6,.6,.1,14),0x2a2a36,0,yb+.7,d/2+.02,Math.PI/2,0,0,0);add(SK.torus(.62,.08,6,16),S.plinth,0,yb+.7,d/2+.05,0,0,0);
+    for(let k=0;k<6;k++)add(new THREE.BoxGeometry(.04,1.1,.04),S.plinth,0,yb+.7,d/2+.06,0,0,k*Math.PI/6,0);
+    const pw=2.2,pd=1.3,ph=2.8;add(new THREE.BoxGeometry(pw,ph,pd),wallC,0,b+ph/2,d/2+pd/2);
+    const pg=new THREE.Shape();pg.moveTo(-pw/2-.15,0);pg.lineTo(pw/2+.15,0);pg.lineTo(0,1.1);pg.closePath();add(new THREE.ExtrudeGeometry(pg,{depth:pd+.2,bevelEnabled:false}),S.roof,0,b+ph,d/2-.1,0,0,0,.05);
+    add(new THREE.BoxGeometry(1.2,1.9,.1),0x3e2a16,0,b+.95,d/2+pd+.01,0,0,0,.03);add(SK.torus(.6,.1,6,12,Math.PI),S.plinth,0,b+1.9,d/2+pd+.04,0,0,0,.04);
+    add(new THREE.BoxGeometry(.12,.9,.12),0x8a7a5a,0,yb+rise+.5,d/2-.1);add(new THREE.BoxGeometry(.5,.12,.12),0x8a7a5a,0,yb+rise+.68,d/2-.1);
+    // the bell tower at the east end: quoined, a belfry with an opening each way, a cornice, a slated spire and a cross
+    const tz=-d/2+1.1,TH=H+3.2,tw=2.4;add(new THREE.BoxGeometry(tw,TH,tw),c(wallC).multiplyScalar(.95).getHex(),0,b+TH/2,tz);
+    for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]])add(new THREE.BoxGeometry(.3,TH,.3),dk,sx*tw/2,b+TH/2,tz+sz*tw/2,0,0,0,.05);
+    for(let q=0;q<4;q++){const a=q*Math.PI/2,ox=Math.sin(a)*(tw/2+.01),oz=Math.cos(a)*(tw/2+.01);add(new THREE.BoxGeometry(.7,1.2,.1),0x16141a,ox,b+TH-1,tz+oz,0,a,0,0);add(SK.cone(.35,.4,4),0x16141a,ox,b+TH-.2,tz+oz,0,a+Math.PI/4,0,0);}
+    add(new THREE.BoxGeometry(tw+.4,.25,tw+.4),dk,0,b+TH+.1,tz);add(SK.cone(1.75,4.2,8),S.roof2,0,b+TH+.2+2.1,tz,0,Math.PI/8,0,.05);
+    add(new THREE.BoxGeometry(.12,1.1,.12),0x8a7a5a,0,b+TH+4.8,tz);add(new THREE.BoxGeometry(.6,.12,.12),0x8a7a5a,0,b+TH+5.0,tz);
+    // a few graves in the yard
+    for(let k=0;k<4;k++)if(r0()<.7){const gx=(r0()<.5?-1:1)*(w/2+1.4+r0()*.8),gz=-d/2+1+r0()*(d-2);add(SK.rbox(.5,.8,.14,.08,2),0x7a7a74,gx,.4,gz,0,Math.PI/2+(r0()-.5)*.3,(r0()-.5)*.15,.08);}
+    return mergeParts(P);}
+  function keepGeoHi(w,d,st){const r0=pRng((Math.round(w*17)+Math.round(d*31)*5+(_civN++)*104729)>>>0);const P=[];const c=x=>new THREE.Color(x);
+    const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});};
+    const S=STYLE.stone,wallC=S.wall,w2=S.wall2,dk=c(w2).multiplyScalar(.85).getHex(),H=6.5,b=.35;
+    // a battered base (the wall's foot splays out), the wall, courses of stone proud of it
+    add(new THREE.CylinderGeometry(Math.hypot(w,d)/2*.72,Math.hypot(w,d)/2*.78,1.2,4,1),dk,0,.25,0,0,Math.PI/4,0,.06);
+    add(new THREE.BoxGeometry(w+.5,1,d+.5),dk,0,.2,0,0,0,0,.08);add(new THREE.BoxGeometry(w,H,d),wallC,0,b+H/2,0);
+    for(let y=b+.6;y<b+H;y+=.55)add(new THREE.BoxGeometry(w+.06,.06,d+.06),dk,0,y,0,0,0,0,.03);
+    // a machicolated parapet all round: corbels, the walk's overhang, merlons on every side
+    const top=b+H;for(const [lx,lz,L,ax] of [[0,d/2,w,1],[0,-d/2,w,1],[w/2,0,d,0],[-w/2,0,d,0]]){const n=Math.floor(L/.8);
+      for(let k=0;k<n;k++){const t=-L/2+.4+k*L/n;const x=ax?t:lx,z=ax?lz:t;add(new THREE.BoxGeometry(.3,.5,.3),dk,x+(ax?0:Math.sign(lx)*.2),top-.2,z+(ax?Math.sign(lz)*.2:0),0,0,0,.05);}
+      add(new THREE.BoxGeometry(ax?L+.6:.5,.7,ax?.5:L+.6),w2,lx+(ax?0:Math.sign(lx)*.25),top+.3,lz+(ax?Math.sign(lz)*.25:0));
+      for(let k=0;k<Math.floor(L/1.2);k++){const t=-L/2+.6+k*1.2;add(new THREE.BoxGeometry(ax?.7:.5,.7,ax?.5:.7),w2,ax?t:lx+Math.sign(lx)*.25,top+1,ax?lz+Math.sign(lz)*.25:t,0,0,0,.05);}}
+    // corner towers: round, a battered foot, arrow slits, a corbelled ring and a conical cap with a finial
+    for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const x=sx*w/2,z=sz*d/2,TH=H+2.2;add(new THREE.CylinderGeometry(1.4,1.75,1.4,10),dk,x,.5,z,0,0,0,.05);
+      add(new THREE.CylinderGeometry(1.4,1.5,TH,12),w2,x,.8+TH/2,z,0,0,0,.05);add(new THREE.CylinderGeometry(1.7,1.45,.5,12),dk,x,.8+TH+.1,z);
+      for(let q=0;q<3;q++){const a=Math.atan2(sz,sx)+(q-1)*.9;add(new THREE.BoxGeometry(.12,.8,.1),0x14121a,x+Math.cos(a)*1.46,2+q*1.6,z+Math.sin(a)*1.46,0,-a+Math.PI/2,0,0);}
+      add(SK.cone(1.85,2.4,12),S.roof2,x,.8+TH+.35+1.2,z,0,0,0,.05);add(SK.ball(.14,6,4),0x8a7a4a,x,.8+TH+.35+2.45,z);}
+    // arrow slits in the curtain, the gate: a round arch, a portcullis, a stone surround
+    for(const fz of [1,-1])for(let k=-1;k<=1;k++){if(fz>0&&k===0)continue;add(new THREE.BoxGeometry(.12,.9,.1),0x14121a,k*w/3.2,b+H*.6,fz*(d/2+.01),0,0,0,0);}
+    add(new THREE.BoxGeometry(2.4,3.3,.3),dk,0,.8+1.65,d/2+.08);add(new THREE.BoxGeometry(1.6,2.6,.2),0x1a140e,0,.8+1.3,d/2+.15);add(SK.torus(.82,.14,6,14,Math.PI),w2,0,.8+2.6,d/2+.22);
+    for(let k=-3;k<=3;k++)add(new THREE.BoxGeometry(.05,2.2,.05),0x3a3a3a,k*.22,.8+1.5,d/2+.28,0,0,0,0);for(let k=0;k<5;k++)add(new THREE.BoxGeometry(1.5,.05,.05),0x3a3a3a,0,.8+.6+k*.45,d/2+.28,0,0,0,0);
+    // a flag pole on the roof
+    add(SK.cyl(.06,.06,3.2,5),0x4a3018,w*.2,top+1.6,-d*.2);add(new THREE.BoxGeometry(1.1,.7,.03),0x8a2a2a,w*.2+.58,top+2.8,-d*.2,0,0,0,.08);
+    return mergeParts(P);}
+  function churchGeo(w,d,st,r){const lo=churchGeoLo(w,d,st,r);const hi=churchGeoHi(w,d,st);hi.userData.lo=lo;return hi;}
+  function churchGeoLo(w,d,st,r){
     const parts=[];const c=x=>new THREE.Color(x);
     const H=4.2;
     parts.push({geo:new THREE.BoxGeometry(w+.3,.5,d+.3),color:c(st.plinth),y:.25,jitter:.1});
@@ -36544,7 +36608,8 @@ var WORLD=(()=>{
     parts.push({geo:new THREE.BoxGeometry(1.2,2.2,.12),color:c(0x3e2a16),x:0,y:.5+1.1,z:d/2+.03,jitter:.04});
     return mergeParts(parts);
   }
-  function keepGeo(w,d,st,r){
+  function keepGeo(w,d,st,r){const lo=keepGeoLo(w,d,st,r);const hi=keepGeoHi(w,d,st);hi.userData.lo=lo;return hi;}
+  function keepGeoLo(w,d,st,r){
     const parts=[];const c=x=>new THREE.Color(x);
     const H=6.5;
     parts.push({geo:new THREE.BoxGeometry(w+.3,.9,d+.3),color:c(st.plinth),y:-.1,jitter:.1}); // mostly buried
@@ -40495,7 +40560,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

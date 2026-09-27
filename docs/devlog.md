@@ -5632,3 +5632,28 @@ New `tests/houses.test.mjs`, 6 checks, all passing, no page errors.
 
 ### Needs eyes
 A town in real play: frame time with the detailed clusters near (Dunmore's square shows all nine); whether 70 units is far enough that the swap is unseen (the plain house has no eaves or shutters, so the swap is visible if you watch for it); whether the thatch is still too yellow in sunlight. Owed: churches, keeps and the POIs' buildings on the same builder; a distant copy for the garrison POI's houses and the roadside inn.
+
+## v80 — Session 195 — Churches and keeps in detail (H.5, Michael's A)
+This session carries Michael's decision A (buildings, houses, structures and POIs, all with a distant copy) from the houses to the two civic buildings every town has: the church and the lord's keep. Neither old builder took the town's dice, so the detailed ones roll their own, and towns are unchanged.
+
+**The church** (`churchGeoHi`):
+- Walls: a stepped plinth; ashlar walls with a string course and a cornice; alternating quoins up every corner.
+- Sides: buttresses stepped back twice with weathered offsets, and lancet windows with sills between them.
+- Roof: two slate slabs with thickness and courses, and a ridge.
+- West front: a rose window with its tracery, a gabled porch with an arched door, and a cross on the gable.
+- Tower: at the east end, quoined, with a belfry opening on each face, a cornice, a slated octagonal spire and a cross.
+- Yard: a few gravestones, by its own dice.
+
+**The keep** (`keepGeoHi`):
+- Walls: a battered foot where the walls splay out, and coursed walls.
+- Parapet: a machicolated parapet all round (corbels under an overhanging walk, merlons on every side).
+- Towers: four round corner towers, each with a battered foot, three arrow slits, a corbelled ring and a conical cap with a finial.
+- Gate and roof: arrow slits in the curtain, an arched gate in a stone surround with a portcullis, and a flag on the roof.
+
+Both are about 2.9k triangles (2,910 and 2,824). Each keeps the old one (92 and 368) as its distant copy, through the same `addMesh` and `houseLod` path as the houses. A first render showed a stray half-disc over the church door as a dark rod across it, and it was removed.
+
+### Verified (headless Chromium)
+`houses.test.mjs` has a new check, and all 7 pass with no page errors: the church is 2,910 triangles with a 92-triangle copy, the keep 2,824 with a 368-triangle copy. Picture: `docs/prototypes/civic-ingame.png`, the church and keep in front with their old selves behind.
+
+### Needs eyes
+A town with a keep in real play: the keep's size against its lot (the towers overhang the footprint, as the old ones did); whether the church's tower should stand at the west end instead. Still owed: the POIs' buildings, and a distant copy for the garrison POI's houses and the roadside inn.
