@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s209</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s210</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9683,6 +9683,7 @@ function personBakeQ(g,q){
     part(SK.ball(.0042,5,4),C(0x0a0806),head,ex,.135,ez+.0078);
     const bx=s*.047*g.jaw;part(SK.cyl(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
     if(g.goblin){const e=part(SK.cone(.045,.26,6),skin,head,s*(.1*hs+.1),.15,-.01);e.rotation.set(0,0,-s*1.3);e.scale.set(1,1,.45);} // S184 — a goblin's long pointed ears
+    else if(g.gargoyle){const e=part(SK.cone(.035,.16,5),skin,head,s*(.1*hs+.05),.17,-.02);e.rotation.set(-.3,0,-s*1.1);e.scale.set(1,1,.45);} // S210 — a gargoyle's pointed ears
     if(g.troll)part(SK.cone(.022,.09,6),C(0xe8dcc0),head,s*.042*hs,.052,zs(s*.042*hs,.06)+.012).rotation.set(-.3,0,s*.3); // S208 — a troll's tusks, up from the underbite
     else part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
     const cx=s*.07*g.jaw;if(g.ruddy)part(SK.ball(.03,8,6),mixC(skin,0xc8604e,.3),head,cx,.093,zs(cx,.093)-.005).scale.set(1,.7,.3);
@@ -9767,6 +9768,23 @@ function personBakeQ(g,q){
     part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);
     const an=bone('an'+k,kn,0,-PW.L2,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
+  // S210 — the gargoyle (Michael's answer on Session 201: gargoyle A, with better wings): horns, a tail on its own bone,
+  // and bat wings on a bone each at the shoulder blades: a leading edge of arm and forearm, three fingers from the wrist,
+  // the membrane between them scalloped at the trailing edge. tickPeople folds them while it sleeps as a statue.
+  if(g.gargoyle){const dk=mixC(skin,0x000000,.28),mem=mixC(skin,0x2a2420,.35),up=new THREE.Vector3(0,1,0);
+    const seg=(b,a,c,r0,r1,col)=>{const d=new THREE.Vector3(c[0]-a[0],c[1]-a[1],c[2]-a[2]),L=d.length();const o=part(SK.cyl(r1,r0,L,6),col,b,(a[0]+c[0])/2,(a[1]+c[1])/2,(a[2]+c[2])/2);o.quaternion.setFromUnitVectors(up,d.normalize());return o;};
+    [-1,1].forEach(s=>{seg(B.head,[s*.06*hs,.2,-.01],[s*.1*hs,.29,-.07],.026,.016,dk);seg(B.head,[s*.1*hs,.29,-.07],[s*.1*hs,.33,-.16],.016,.004,dk);});
+    const tl=bone('tail',B.hips,0,-.03,-.13);const TP=[[0,0,0],[0,-.08,-.14],[0,-.13,-.3],[0,-.1,-.46],[0,-.02,-.58]];
+    for(let i=0;i<4;i++)seg(tl,TP[i],TP[i+1],.04-.008*i,.032-.008*i,skin);
+    {const sp=part(SK.cone(.05,.1,4),dk,tl,0,.02,-.63);sp.rotation.x=-1.2;sp.scale.set(1,1,.3);}
+    ['L','R'].forEach((k,i)=>{const sd=i===0?1:-1;const wb=bone('wing'+k,B.spine,sd*.07*bw,.3,-.1);const P=(x,y)=>[sd*x,y,0];
+      const J=[[0,0],[.2,.17],[.4,.29]],T=[[.66,.24],[.62,-.02],[.46,-.2]];
+      seg(wb,P(...J[0]),P(...J[1]),.024,.02,dk);seg(wb,P(...J[1]),P(...J[2]),.02,.014,dk);part(SK.ball(.022,6,5),dk,wb,...P(...J[2]));
+      T.forEach(t=>seg(wb,P(...J[2]),P(...t),.012,.004,dk));part(SK.cone(.012,.05,4),dk,wb,...P(.2,.22)).rotation.z=-sd*.5;
+      const sh=new THREE.Shape(),M=(x,y)=>sh.lineTo(sd*x,y);sh.moveTo(0,.01);M(...J[1]);M(...J[2]);M(...T[0]);
+      M(.54,.12);M(...T[1]);M(.44,.02);M(...T[2]);M(.3,-.12);M(.1,-.24);M(0,-.06);
+      part(new THREE.ShapeGeometry(sh),mem,wb,0,0,-.004);});
+  }
   if(g.skel){bodyOpen=true; // the bones: a skull with dark sockets, a spine, a ribcage open at the front, a pelvis, the limb bones and joints
     const bc=C(0xd8d0b8),bd=C(0xa89c80),sock=C(0x140e0a);const head=B.head,spine=B.spine,neck=B.neck;
     part(SK.ball(.075,12,9),bc,head,0,.085,.005).scale.set(.88,1,1.05);
@@ -9884,6 +9902,7 @@ const FOE_DRESS={
   // tusked, in a hide tunic, carrying a maul; the hide by where they live
   'Cave Troll':    {troll:true,skin:0x6e7a5c,skin2:0x5a664c,hair:0x3a3e30,eye:0xd0a020,cloth:0x4e4030,gear:'maul'},
   'Forest Troll':  {troll:true,skin:0x5a6e40,skin2:0x4a5a34,hair:0x2e3420,eye:0xd8b030,cloth:0x4a3a26,gear:'maul'},
+  'Gargoyle':      {gargoyle:true,skin:0x77746c,eye:0xff5020}, // S210 — a winged stone figure that sleeps as a statue, crouched, until you come close
   'Golem':         {golem:true,skin:0x7c776e,rune:0x6ab0ff}, // S209 — dressed stone on the people's bones, a blue rune-light in the seams
   'Frost Troll':   {troll:true,skin:0xaebac2,skin2:0x96a4ae,hair:0xe0e4e8,eye:0x70b0ff,cloth:0x5a5048,gear:'maul'}
 };
@@ -9899,6 +9918,9 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.troll){const r=pRng(g.seed+11);g.troll=true;g.skin=new THREE.Color(dr.skin).lerp(new THREE.Color(dr.skin2),r());g.height=1;g.build=1.75;g.head=1.15;g.age='elder';g.beard='none';g.hat='none';
       g.style=r()<.5?'buzz':'shaggy';g.hair=new THREE.Color(dr.hair);g.nose=[2.2,1.8];g.ears=1.3;g.eye=new THREE.Color(dr.eye);g.ruddy=false;g.freckles=false;g.female=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=g.skin.clone();g.legs=g.skin.clone().multiplyScalar(.9);g.boot=g.skin.clone().multiplyScalar(.7);g.bodyScale=[1.15,1,1.1];}
+    if(dr.gargoyle){const r=pRng(g.seed+17);g.gargoyle=true;g.skin=new THREE.Color(dr.skin).multiplyScalar(.94+r()*.1);g.height=.95;g.build=1.05;g.head=1.1;g.style='buzz';g.hair=g.skin.clone().multiplyScalar(.8);
+      g.cloth=g.skin.clone().multiplyScalar(.9);g.sleeve=g.skin.clone();g.legs=g.skin.clone();g.boot=g.skin.clone().multiplyScalar(.8);g.trim=g.skin.clone().multiplyScalar(.75);g.eye=new THREE.Color(dr.eye);
+      g.nose=[1.4,1.1];g.ears=1.4;g.beard='none';g.hat='none';g.gear=null;g.ruddy=false;g.freckles=false;g.female=false;g.age='elder';g.tattoo=false;}
     if(dr.golem){g.golem=true;g.skin=new THREE.Color(dr.skin);g.build=1.5;g.height=1;g.gear=null;g.hat='none';g.female=false;g.rune=dr.rune;}
     if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
@@ -9912,7 +9934,8 @@ function buildFoe(type,x,z,genome,eyeCol){
   if(g.golem){const rm=new THREE.MeshBasicMaterial({color:g.rune||0x6ab0ff});const hang=(b,w,h,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.02),rm);m.position.set(x,y,z);m.rotation.z=rz||0;b.add(m);return m;};
     rig.runes=[hang(rig.B.head,.15,.026,0,.11,.126),hang(rig.B.spine,.022,.3,0,.2,.175,.6),hang(rig.B.spine,.022,.3,0,.2,.175,-.6)];}
   // a skeleton's eyes burn in its sockets (the enemy's eye colour), one small unlit mesh on the head
-  if((g.skel||g.dead)&&eyeCol!=null){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+  if(g.gargoyle){rig.w.idle=0;rig.w.crouch=1;rig.fold=1;eyeCol=0xff5020;}
+  if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
   return rig;
 }
@@ -9994,9 +10017,14 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // blend toward the chosen motion over about a third of a second
+// S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
+function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
+  p.thL=[th,0,.12];p.thR=[th,0,-.12];p.knL=[kn,0,0];p.knR=[kn,0,0];p.anL=[-(th+kn)+.05,0,-.08];p.anR=[-(th+kn)+.05,0,.08];
+  p.spine=[.6,0,0];p.neck=[-.35,0,0];p.head=[-.3,0,0];p.shL=[-.75,0,.18];p.shR=[-.75,0,-.18];p.elL=[-.35,0,0];p.elR=[-.35,0,0];p.wrL=[.3,0,0];p.wrR=[.3,0,0];
+  p.hipsY=h+PW.FOOT+PW.HIPJ;return p;}
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
@@ -10041,10 +10069,15 @@ function tickPeople(dt,now){
     if(PW.GREET&&!rig.foe&&near<2.8&&rig.lastNear>=2.8&&spd<.05&&now-rig.wavedAt>25000)rig.wavedAt=now;
     rig.lastNear=near;
     let mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
+    if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
     const t=now/1000*rig.g.tempo+rig.g.phase;
     pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
+    // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
+    if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);
+      rig.B.wingL.rotation.set(.1+.2*fo,.35+.95*fo,-.75*fo+.3*beat);rig.B.wingR.rotation.set(.1+.2*fo,-.35-.95*fo,.75*fo-.3*beat);
+      rig.B.tail.rotation.set(.35*fo,.3*Math.sin(now*.0017+rig.g.phase)*(1-fo),0);}
     if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
   }
 }

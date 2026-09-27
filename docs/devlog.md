@@ -5944,3 +5944,19 @@ New `tests/golem.test.mjs`, 6 checks, all passing, no page errors. A golem is on
 
 ### Needs eyes
 A golem in a dungeon's torchlight: whether the stone reads against the dressed-stone walls (the two greys are close), and whether the runes are bright enough, or too bright. A dead golem's runes stay lit. Dimming them on death would be a small follow-up, if wanted.
+
+## v80 — Session 210 — The gargoyle, with better wings (H.4, Michael's B)
+Michael chose gargoyle A, the winged stone figure on the people's body, over B, the beast on the dragon's bones. He asked for better wings, and said B's mesh would be good for a dragon later. The prototype's wings were two flat grey polygons fixed to the back. The gargoyle is found only in dungeons (the haunted and ruins themes), where it sleeps as a statue until you come within 4 units.
+
+**What changed.** `FOE_DRESS.Gargoyle` builds a person in stone. The skin, the hair (cropped), the tunic, the sleeves and the legs are all tones of one grey, the eyes are orange and lit (hung on the head like the risen dead's), the ears are pointed (a shorter version of the goblin's), and it carries nothing. It has the elder's slight stoop. `personBakeQ` adds, for a gargoyle:
+- **Horns**: two segments each, rising and curving back.
+- **A tail** on a new `tail` bone at the hips: four tapering segments that droop and rise to a flattened spade.
+- **Wings** on two new bones, `wingL` and `wingR`, at the shoulder blades. Each wing has a leading edge of arm and forearm to a wrist knuckle, a thumb claw, three fingers fanning from the wrist, and a membrane stretched between them. The membrane is scalloped between the finger tips and runs back down to the waist. It is darker than the stone and baked into the one mesh like everything else.
+
+**The statue.** There is a new pose, `pwCrouch`: on the haunches (the legs placed by the same IK as the walk), leaning forward, head up, hands down by the feet. `tickPeople` blends to it while the gargoyle's enemy is dormant, with the wings folded back and down the body and the tail curled. When it wakes, the usual crossfade takes it to its feet in about a third of a second, the wings spread and beat slowly (a sine on the wing bones, off while folded), and the tail sways. It stays a brute for the fight, and the dormant rules (no damage dealt, double damage taken) are unchanged.
+
+### Verified (headless Chromium)
+New `tests/gargoyle.test.mjs`, 5 checks, all passing, no page errors. A gargoyle has 4,850 triangles. Its wing bones carry 544 vertices and its tail 179. The wings reach .73 out from the centre in figure units, and it has lit eyes and no weapon. In a haunted dungeon at level 6 the gargoyle is a person linked to its enemy, with posture family `brute`. Dormant, its hips are at .29 with the wings folded (fold 1, wing turned 1.30). Woken, 1.5 seconds later its hips are at .64, the wings are spread (fold .01, turned .36). `foes`, `golem` and `trolls` still pass. Picture: `docs/prototypes/gargoyle-ingame.png` (a bandit, a sleeping gargoyle, one awake from the front, one from behind).
+
+### Needs eyes
+Whether the statue reads as a statue in a dungeon's light, and whether the moment it wakes, with no leap and no roar beyond the old cry, is startling enough. Whether the tunic suits it: it is the people's body, so it has a skirt in stone. Leaving the skirt off would take a flag in the bake, if wanted.
