@@ -5749,3 +5749,14 @@ Gargoyle A's crouch first floated above the floor. Its hips were lowered by what
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): all as shown with gargoyle B (recommended), with gargoyle A, the three without the gargoyle, or not yet.
+
+## v80 — Session 202 — Distant copies for the fort compound's barracks and the roadside inn (H.5)
+Session 194 left two buildings outside the distant-copy scheme, because they are built directly and not through a settlement's `addMesh`: the two barracks in a fort compound (`buildFortCompound`) and the coach line's roadside inn (`buildCoachLine`). Both got the detailed house and kept it at every distance.
+
+**What changed.** A fort compound is baked like a settlement (`bakeSettlement`), so its barracks now hang their plain twins beside them, tagged the way `addMesh` tags houses. The bake pairs them by cluster, and `houseLod` swaps them. The coach line's group is never baked, so the inn is a `THREE.LOD` with two levels, the detailed inn from 0 and the plain one from 80 (`HOUSE_LOD.far`). three.js switches LOD levels itself from the camera that draws the frame.
+
+### Verified (headless Chromium)
+`houses.test.mjs` has a new check, and all 8 pass with no page errors. The test funds a coach route out of Dunmore (`worldState.coaches`) and ticks the world, and the inn that appears is a LOD of two levels with the switch at 80. No fort compound was loaded within the test's walk, so its half of the check found nothing to check. It runs the same pairing code as the towns, which the Dunmore check covers.
+
+### Needs eyes
+A coach station on the road: the inn's swap at 80 units.

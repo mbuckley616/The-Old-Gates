@@ -32,6 +32,12 @@ const lod = await page.evaluate(() => { const S = WORLD.settlements.get('dunmore
   return { hi: hi.length, lo: lo.length, triHi: tri(hi), triLo: tri(lo), near, far, paired }; });
 check('each baked cluster of detailed houses has its plain twin', lod.hi > 3 && lod.hi === lod.lo && lod.paired, lod);
 check('from the square the near clusters are detailed; from 400 away every cluster is its plain copy', lod.near.hiVis > 0 && lod.far.hiVis === 0 && lod.far.loVis === lod.lo, lod);
+// the roadside inns (Session 202): a LOD of the detailed inn and its plain copy; the fort compounds' barracks paired in their clusters
+await page.evaluate(() => { const rd = WORLD.roads.find(r => (r.def.a === 'dunmore' || r.def.b === 'dunmore') && r.def.via !== 'spur'); if (!rd) return; const a = rd.def.a, b = rd.def.b; const key = a < b ? a + '|' + b : b + '|' + a;
+  (worldState.coaches || (worldState.coaches = {}))[key] = { a, b }; for (let i = 0; i < 5; i++) WORLD.tick(1 / 60, performance.now()); });
+const road = await page.evaluate(() => { const out = { inns: 0, lods: 0, forts: 0, fortPaired: 0 }; for (const C of (WORLD.coachLines || new Map()).values()) { C.group.traverse(o => { if (o.isLOD) { out.inns++; if (o.levels.length === 2 && o.levels[1].distance === 80) out.lods++; } }); }
+  for (const S of WORLD.settlements.values()) { if (!S.impostorId || !S.lodMeshes) continue; out.forts++; const hi = S.lodMeshes.filter(m => m.userData.lod === 'hi'); if (hi.length && hi.every(m => S.lodMeshes.some(o => o.userData.lod === 'lo' && o.userData.ckey === m.userData.ckey))) out.fortPaired++; } return out; });
+check('every roadside inn (a coach line funded out of Dunmore) is a LOD of its detailed and plain selves; a fort compound\'s barracks pair with their copies (Session 202)', road.inns > 0 && road.lods === road.inns && road.fortPaired === road.forts, road);
 const shot = await houseLineup(page, ['irish', 'anglo', 'french', 'bavarian', 'mark', 'aurenne', 'stone', 'garrison'], 3, { lo: false, gap: 10 });
 fs.writeFileSync('tests/out/houses-lineup.png', Buffer.from(shot.split(',')[1], 'base64'));
 console.log('  cost', JSON.stringify({ dunmoreHi: lod.triHi, dunmoreLo: lod.triLo }));

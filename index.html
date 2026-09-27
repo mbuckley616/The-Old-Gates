@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s200</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s202</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35368,7 +35368,7 @@ var WORLD=(()=>{
     const wallMesh=new THREE.Mesh(mergeParts(parts),VC_MAT);wallMesh.position.set(cx,y0,cz);wallMesh.castShadow=true;wallMesh.receiveShadow=true;group.add(wallMesh);
     // barracks either side of the yard, doors toward the keep
     const S={site:{id:'fort_'+e.seed,x:cx,z:cz,pad:R+2,kind:'fort'},group,sol,houses:[],npcs:[],reg:'anglo',residents:[],lamps:[],_gates:[],reach:R+6};
-    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;m.castShadow=true;m.receiveShadow=true;group.add(m);sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
+    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
     // v80 S132 — a paved way from the gate to the keep's steps, so the courtyard reads as a courtyard
     {const z0=cz+R-1,z1=cz-8.5+4.5+2.4;const segs2=Math.max(4,Math.round(Math.abs(z0-z1)/3));for(let i=0;i<segs2;i++){const zz=z0+(z1-z0)*(i+.5)/segs2;const m=new THREE.Mesh(new THREE.BoxGeometry(2.6,.12,Math.abs(z1-z0)/segs2+.1),new THREE.MeshLambertMaterial({color:0x8a8078}));m.position.set(cx,worldH(cx,zz)+.05,zz);group.add(m);}}
     // torches on the gate towers
@@ -40175,7 +40175,7 @@ var WORLD=(()=>{
     const m=new THREE.Mesh(mergeParts(posts),VC_MAT);g.add(m);
     const mid=roadPoint(rd,.5);const ix=mid.x+Math.cos(mid.ang)*(ROAD_HALF+7),iz=mid.z-Math.sin(mid.ang)*(ROAD_HALF+7);const iy=worldH(ix,iz);
     addStamp({id:'inn_'+key,kind:'site',x:ix,z:iz,r:9,blend:8,y:iy});
-    const inn=new THREE.Mesh(buildingGeo(9,6,STYLE.stone,Math.random,{chimney:true,twoStory:true,h:3.0,rise:1.4}),VC_MAT);inn.position.set(ix,iy-.06,iz);inn.rotation.y=mid.ang+Math.PI/2;inn.castShadow=true;g.add(inn);STATIC_SOL.push({cx:ix,cz:iz,rx:4.7,rz:3.2,c:Math.cos(inn.rotation.y),s:Math.sin(inn.rotation.y)});
+    const innGeo=buildingGeo(9,6,STYLE.stone,Math.random,{chimney:true,twoStory:true,h:3.0,rise:1.4});const inn=new THREE.LOD();{const hi=new THREE.Mesh(innGeo,VC_MAT),lo=new THREE.Mesh(innGeo.userData.lo,VC_MAT);hi.castShadow=lo.castShadow=true;inn.addLevel(hi,0);inn.addLevel(lo,HOUSE_LOD.far);} /* S202 — the roadside inn in detail near, plain past 80 */inn.position.set(ix,iy-.06,iz);inn.rotation.y=mid.ang+Math.PI/2;g.add(inn);STATIC_SOL.push({cx:ix,cz:iz,rx:4.7,rz:3.2,c:Math.cos(inn.rotation.y),s:Math.sin(inn.rotation.y)});
     const l=regLight(0xffb050,1.4,14,'coach:'+key);l.position.set(mid.x+Math.cos(mid.ang)*(ROAD_HALF+2),iy+3,mid.z-Math.sin(mid.ang)*(ROAD_HALF+2));
     // the coach
     const cart=new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(1.7,1.3,3.0),color:c(0x5a2a1a),y:1.15},{geo:new THREE.BoxGeometry(1.8,.1,3.1),color:c(0x3a1a10),y:1.85},{geo:new THREE.BoxGeometry(.5,.5,.06),color:c(0xb8c8d8),x:.86,y:1.3,z:.6},{geo:new THREE.BoxGeometry(.5,.5,.06),color:c(0xb8c8d8),x:-.86,y:1.3,z:.6},{geo:new THREE.CylinderGeometry(.55,.55,.14,12),color:c(0x2a1a10),x:.95,y:.55,z:1.0,rz:Math.PI/2},{geo:new THREE.CylinderGeometry(.55,.55,.14,12),color:c(0x2a1a10),x:-.95,y:.55,z:1.0,rz:Math.PI/2},{geo:new THREE.CylinderGeometry(.45,.45,.14,12),color:c(0x2a1a10),x:.95,y:.45,z:-1.0,rz:Math.PI/2},{geo:new THREE.CylinderGeometry(.45,.45,.14,12),color:c(0x2a1a10),x:-.95,y:.45,z:-1.0,rz:Math.PI/2},{geo:new THREE.BoxGeometry(1.4,.3,.6),color:c(0x4a3018),y:1.9,z:1.6},{geo:new THREE.BoxGeometry(.08,.08,2.6),color:c(0x4a3018),y:.8,z:2.8}]),VC_MAT);sc.add(cart);
