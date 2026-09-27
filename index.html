@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s173</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s174</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1779,7 +1779,7 @@ const ANIM_PARAMS = {
 // (no weapon) uses weight 2. Returns a clamped multiplier; Sword (w3) = 1.0.
 function _weaponSwingFactor(){
   const _SP = ANIM_PARAMS.swing;
-  const w = (EQ.weapon && EQ.weapon.weight) || 2;
+  const w = (EQ.weapon && EQ.weapon.weight) || FISTS.weight;
   return Math.min(_SP.weightMax, Math.max(_SP.weightMin, _SP.weightA + _SP.weightB * w));
 }
 // v66.1 — Pending melee strike. Set by attack()/attackZoneEnemies() at click;
@@ -2376,6 +2376,11 @@ function confirmLevelUp(){
 // (no creator) get a Wooden Sword applied as a fallback in _applyLoadData.
 const EQ={head:null,chest:{name:'Tattered Tunic',ico:'👕',def:1,weight:2},hands:null,legs:{name:'Worn Breeches',ico:'👖',def:1,weight:2},feet:{name:'Leather Boots',ico:'👢',def:0,weight:1},weapon:null,offhand:null,ring:null,amulet:null,ammo:null};
 const BAG=[];
+// v80 S173 — every slot may be empty (Michael, 27 Sep). With no weapon you fight with your fists:
+// light, quick and weak. The starter clothes and anything else taken off go to the bag as gear
+// that can be put back on (the starter kit never carried a type or slot, so it could not).
+const FISTS={name:'Fists',atk:[2,4],weight:1,wType:'blunt'};
+function eqBagCopy(it,slot){return {...it,qty:1,type:it.type||'equip',slot:it.slot||slot};}
 // v61d4 — Persistent shared stash. Lives in the Caldric Safehouse, accessed
 // via the chest on the back wall. Mirrors BAG's structure (array of item
 // objects, same _serItem serialization) but has NO weight cap and persists
@@ -14802,7 +14807,7 @@ function attackZoneEnemies(isPower, _isDeferred){
   const _isPow = !!(isPower && _w);
   const _swFactor = _weaponSwingFactor();
   if(!_isDeferred){
-    const _wt=(_w&&_w.weight)||2;
+    const _wt=(_w&&_w.weight)||FISTS.weight;
     const _stMul = _isPow ? POWER_STAM_MULT : 1.0;
     const _stCost=_wt*7*_stMul;const _stMin=_wt*5*_stMul;
     if(atkCd>0)return;
@@ -14861,7 +14866,7 @@ function _resolveZoneStrike(_isPow){
       continue;
     }
     {
-      const w=EQ.weapon,lo=w?w.atk[0]:8,hi=w?w.atk[1]:14;
+      const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
       const mightMult=1+(ATTRS.might*ATTR_DMG_PER_POINT);
       const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1);
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
@@ -24675,7 +24680,7 @@ function attack(isPower, _isDeferred){
   // v66.1 — weight→speed factor scales swing duration AND cooldown together.
   const _swFactor = _weaponSwingFactor();
   if(!_isDeferred){
-    const _wt=(_w&&_w.weight)||2;
+    const _wt=(_w&&_w.weight)||FISTS.weight;
     const _stMul = _isPow ? POWER_STAM_MULT : 1.0;
     const _stCost=_wt*7*_stMul;const _stMin=_wt*5*_stMul;
     if(atkCd>0)return;
@@ -24754,7 +24759,7 @@ function _resolveDungeonStrike(_isPow){
       continue; // no damage on the breaking swing; skip resist/kill resolution
     }
     {
-      const w=EQ.weapon,lo=w?w.atk[0]:8,hi=w?w.atk[1]:14;
+      const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
       const mightMult=1+(ATTRS.might*ATTR_DMG_PER_POINT);
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block. A Shieldbearer hit from the front (not the
@@ -25348,7 +25353,7 @@ function _applyPotionBuff(eff){
 
 function openInv(){_releasePointerLockForMenu();invOpen=true;document.getElementById('ip').style.display='block';renderInv();}
 function closeInv(){invOpen=false;document.getElementById('ip').style.display='none';G.focus();}
-function renderInv(){[['head','🪖'],['chest','👕'],['hands','🧤'],['legs','👖'],['feet','👢'],['weapon','⚔️'],['offhand','🛡']].forEach(([k,def])=>{const el1=document.getElementById('qi-'+k),el2=document.getElementById('qn-'+k);if(!el1)return;const it=EQ[k];if(it)el1.innerHTML=iconHTML(it).replace('margin-right:6px','margin:0');else el1.textContent=def;el2.textContent=it?it.name:'—';});const w=EQ.weapon,lo=w?w.atk[0]:8,hi=w?w.atk[1]:14;document.getElementById('sa').textContent=`${lo+Math.floor(level*1.5)}–${hi+Math.floor(level*1.5)}`;const def2=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);document.getElementById('sd').textContent=def2;document.getElementById('sl').textContent=level;document.getElementById('sk').textContent=kills;document.getElementById('sg').textContent=gold;const _tw=totalCarryWeight(),_mx=maxCarry();document.getElementById('si').textContent=_tw.toFixed(1);document.getElementById('bc').textContent=`(${_tw.toFixed(1)}/${_mx.toFixed(0)} wt)`;const grid=document.getElementById('bgrid');grid.innerHTML='';const cellCount=Math.max(20,BAG.length);for(let i=0;i<cellCount;i++){const div=document.createElement('div');if(i<BAG.length){const it=BAG[i];div.className='bi';div.innerHTML=`<span class="bo">${iconHTML(it)}</span><span class="bn">${it.name}</span>${it.qty>1?`<span class="bq">x${it.qty}</span>`:''}`;div.onclick=()=>useItem(i);}else{div.className='be';}grid.appendChild(div);}}
+function renderInv(){[['head','🪖'],['chest','👕'],['hands','🧤'],['legs','👖'],['feet','👢'],['weapon','⚔️'],['offhand','🛡']].forEach(([k,def])=>{const el1=document.getElementById('qi-'+k),el2=document.getElementById('qn-'+k);if(!el1)return;const it=EQ[k];if(it)el1.innerHTML=iconHTML(it).replace('margin-right:6px','margin:0');else el1.textContent=def;el2.textContent=it?it.name:'—';});const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];document.getElementById('sa').textContent=`${lo+Math.floor(level*1.5)}–${hi+Math.floor(level*1.5)}`;const def2=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);document.getElementById('sd').textContent=def2;document.getElementById('sl').textContent=level;document.getElementById('sk').textContent=kills;document.getElementById('sg').textContent=gold;const _tw=totalCarryWeight(),_mx=maxCarry();document.getElementById('si').textContent=_tw.toFixed(1);document.getElementById('bc').textContent=`(${_tw.toFixed(1)}/${_mx.toFixed(0)} wt)`;const grid=document.getElementById('bgrid');grid.innerHTML='';const cellCount=Math.max(20,BAG.length);for(let i=0;i<cellCount;i++){const div=document.createElement('div');if(i<BAG.length){const it=BAG[i];div.className='bi';div.innerHTML=`<span class="bo">${iconHTML(it)}</span><span class="bn">${it.name}</span>${it.qty>1?`<span class="bq">x${it.qty}</span>`:''}`;div.onclick=()=>useItem(i);}else{div.className='be';}grid.appendChild(div);}}
 function useItem(i){
   const it=BAG[i];if(!it)return;
   if(it.type==='herb'){useHerb(i);return;}
@@ -25425,7 +25430,7 @@ function useItem(i){
     if(it.slot==='weapon' && it.twoHand){
       _displacedOff = _clearOffhandForTwoHander('two-hander equipped');
     }
-    const old=EQ[it.slot];EQ[it.slot]=it;BAG.splice(i,1);if(old&&old.name)bagAdd({...old,qty:1});
+    const old=EQ[it.slot];EQ[it.slot]=it;BAG.splice(i,1);if(old&&old.name)bagAdd(eqBagCopy(old,it.slot));
     if(_displacedOff){
       showMsg(`Equipped ${it.name}! (${_displacedOff.name} stowed — two-handed weapon)`,'#c8a84a');
     } else {
@@ -27148,26 +27153,22 @@ function hoverEqSlot(key){
   if(!key){nameEl.textContent='Hover or click a slot';statEl.textContent='';hintEl.textContent='';return;}
   const s=EQ_SLOTS.find(x=>x.key===key);
   const it=EQ[key];
-  if(!it){nameEl.textContent='— '+s.lbl+' (empty) —';statEl.textContent='';hintEl.textContent='Equip from bag below';return;}
+  if(!it){nameEl.textContent='— '+s.lbl+' (empty) —';statEl.textContent=key==='weapon'?'Fists  ·  ATK '+FISTS.atk[0]+'–'+FISTS.atk[1]:'';hintEl.textContent='Equip from bag below';return;}
   nameEl.innerHTML=iconHTML(it)+' '+it.name;
   const lines=[];
   if(it.atk)lines.push('ATK '+it.atk[0]+'–'+it.atk[1]);
   if(it.def)lines.push('DEF +'+it.def);
   if(it.block)lines.push('Block '+Math.round(it.block*100)+'%');
   statEl.textContent=lines.join('  ·  ')||'No combat stats';
-  const defaults=['Tattered Tunic','Worn Breeches','Leather Boots','Rusty Sword'];
-  hintEl.textContent=defaults.includes(it.name)?'Default gear':'Click to unequip';
+  hintEl.textContent='Click to unequip';
 }
 function clickEqSlot(key){
   const it=EQ[key];
   if(!it)return;
-  const defaults=['Tattered Tunic','Worn Breeches','Leather Boots','Rusty Sword'];
-  if(defaults.includes(it.name))return; // can't unequip starter gear
-  // Note: unequipping moves item from EQ to BAG. Weight stays in total carry so no cap check needed —
-  // if default gear replaces it, a small weight delta may push past 125%, which is player's choice.
-  bagAdd({...it,qty:1});
-  const defMap={chest:{name:'Tattered Tunic',ico:'👕',def:1},legs:{name:'Worn Breeches',ico:'👖',def:1},feet:{name:'Leather Boots',ico:'👢',def:0},weapon:{name:'Rusty Sword',ico:'⚔️',atk:[10,18],weight:2}};
-  EQ[key]=defMap[key]||null;
+  // Unequipping moves the item from EQ to BAG and leaves the slot empty (S173: no default gear
+  // takes its place; an empty weapon slot is your fists). Weight stays in total carry.
+  bagAdd(eqBagCopy(it,key));
+  EQ[key]=null;
   invalidateArmorCache();
   if(key==='weapon')buildViewmodel();
   if(key==='offhand')buildShieldViewmodel();
@@ -28111,7 +28112,7 @@ function _applyLoadData(d){
   // restores whatever EQ.weapon it had. If a save somehow loads without
   // any weapon at all (corrupted save, mid-migration), drop in a Wooden
   // Sword so the player isn't unarmed by surprise.
-  if(!EQ.weapon){
+  if(!EQ.weapon&&!(d.EQ&&'weapon' in d.EQ)){ // S173 — a saved empty hand stays empty
     EQ.weapon = JSON.parse(JSON.stringify(STARTER_WEAPONS.sword));
   }
   BAG.length=0;
