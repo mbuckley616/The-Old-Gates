@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s182</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s184</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9660,7 +9660,8 @@ function personBakeQ(g,q){
     part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);eyes.push([ex,.135,ez+.006]);
     part(SK.ball(.0042,5,4),C(0x0a0806),head,ex,.135,ez+.0078);
     const bx=s*.047*g.jaw;part(SK.cyl(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
-    part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
+    if(g.goblin){const e=part(SK.cone(.045,.26,6),skin,head,s*(.1*hs+.1),.15,-.01);e.rotation.set(0,0,-s*1.3);e.scale.set(1,1,.45);} // S184 — a goblin's long pointed ears
+    else part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
     const cx=s*.07*g.jaw;if(g.ruddy)part(SK.ball(.03,8,6),mixC(skin,0xc8604e,.3),head,cx,.093,zs(cx,.093)-.005).scale.set(1,.7,.3);
     if(g.extras.includes('spectacles'))part(SK.torus(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
   });
@@ -9837,13 +9838,20 @@ const FOE_DRESS={
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
   'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
   'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear'},
-  'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null} // S176 — robed, pale, see-through, gliding
+  'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
+  'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
+  'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
+  'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'} // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
 };
 function buildFoe(type,x,z,genome,eyeCol){
   let g=genome;
   if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
     g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
     g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth||0x3a3a3a).multiplyScalar(.8);
+    if(dr.goblin){const r=pRng(g.seed+7);g.goblin=true;g.skin=new THREE.Color(0x7a9a4a).lerp(new THREE.Color(0x5a7a3a),r());g.head=1.32;g.build=.92;g.nose=[1.7,1.5];g.beard='none';g.age='adult';g.ruddy=false;g.freckles=false;
+      g.style=r()<.5?'shaggy':'buzz';g.hair=new THREE.Color(0x2a2016);g.eye=new THREE.Color(0xd8b030);g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);g.legs=new THREE.Color(0x3a2e20);g.boot=new THREE.Color(0x2a2016);}
+    if(dr.kobold){g.style='buzz';g.head=1.25;g.build=1.05;g.age='elder';g.beard='long';g.hair=new THREE.Color(0x8a8a82);g.skin=new THREE.Color(0xb08a6a);g.nose=[1.5,1.4];g.height=Math.min(g.height,.86);
+      g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.85);g.legs=new THREE.Color(0x3a3028);}
     if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
     if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;

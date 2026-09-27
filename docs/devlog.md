@@ -5435,3 +5435,18 @@ Backlog I, the critic's seventh finding (small): the halt names the guard (*Cath
 
 ### Needs eyes
 Nothing new.
+
+## v80 — Session 184 — Goblins and kobolds on the people's body (H.4)
+Michael answered Session 178's question on 27 Sep: goblins A, the folklore goblin, and kobolds B, the old German mine-sprite. An answered decision is the next session, so this run built them before the Playtest s162 list. The run also merged main into the branch first: main's systems sessions (numbered 166–171 there) and this branch's 180–182 had both fixed the witness line, the theft fine and the yield's name. Main's versions were kept, as the routine's rule says, and both `intClearLine` and main's `intSightLine` stay exported, since each has a test. The duplicate numbers are left as they are; both sets of entries are kept in the order they were written.
+
+**What changed.** `FOE_DRESS` has three more kinds, and `buildFoe` builds them the way it builds the bandits. Each is a genome seeded from the kind and the place where it was met, on its own copy of the people's material, walked by `tickPeople` from the enemy's position.
+- **Goblin** and **Goblin Slinger** set a `g.goblin` flag. `personBakeQ` bakes that as a long, flattened cone for each ear, swept out and up from the side of the skull in place of the ear lobe, so the ears are part of the one skinned mesh and carry into the distant copy and the shadow pass. The skin varies by seed between two greens. The head is 1.32 of a person's, the build is slighter, the nose longer, the hair dark, shaggy or shorn, the eyes yellow, and there is no beard or hat. The goblin carries a club (the gear kit's stick); the slinger's hands are empty.
+- **Kobold** is an elder, stooped in the idle, with a long grey beard, a hood, a mattock (the smith's hammer), a head 1.25 of a person's, and a russet coat. Its genome height is capped at .86, so with the zone's .75 it stands about two-thirds of a person. Its hair is shorn under the hood, because a first render showed curly and shaggy hair poking through the hood's crown.
+
+The zone table already sized them (goblin .72, slinger .8, kobold .75), and the flight logic is unchanged: kobolds and goblins are still the cowards who run to fetch friends. The dungeon's Goblin and Kobold Thief are built by the dungeon's own `buildEnemy`, which is still the box body for its whole roster, skeletons included; they wait for the dungeon pass.
+
+### Verified (headless Chromium)
+New `tests/goblins.test.mjs`, 7 checks, all passing, no page errors. Goblin, Goblin Slinger and Kobold are skinned people on their own material, with the right shoulder as the striking arm. The goblin is green (g > r and g > b), head 1.32, no hat, no beard, club in hand; the slinger has no gear. The head's vertices reach .357 out from the centre line against a bandit's .165: the ears. The kobold is hooded, long-bearded and carries the hammer, and its root scale is .65 against a bandit's .91. Two goblins met in different places have different genomes. At 1.5 u/s a chasing goblin runs (weight 1), and standing it idles. Triangles: goblin 4.9k, slinger 4.1k, kobold 6.6k (the beard). `foes.test.mjs` still passes 11 of 11, and `crime3`, `witness` and `crime5` pass after the merge. Photograph: `docs/prototypes/goblins-ingame.png`, a bandit for scale, two goblins, a slinger running, and three kobolds, one running.
+
+### Needs eyes
+A goblin camp in the ashen lands and kobolds on the moor, in real light: whether the ears read at fighting distance; whether the club (a walking stick until the weapon kit) and the smith's hammer read as weapons. The kobold is built on the old man's stoop, and I have not judged at speed whether it runs like a sprite.
