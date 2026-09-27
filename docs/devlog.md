@@ -5489,3 +5489,16 @@ New check in `people.test.mjs` (12 of 12): three townsfolk have the hip joint at
 
 ### Needs eyes
 The townsfolk and your own body in real play: whether 1.4 is enough or too much (one number, `PW.LEGK`, which I compared at 1.25 and 1.4 before picking 1.4); whether the smaller trunk makes arms and hands read short; the slower cadence of the run. Whether the head should also shrink towards a real 7.5-head figure is a question for Michael.
+
+## v80 — Session 188 — The creator's preview: framed, facing you, turned by hand (Playtest s162)
+Michael's playtest item: the character creator's camera crops the top of the head, starts with the character facing away, and the only way to turn it is a very slow auto-turn. He asked for head to knees, facing the camera at the start, drag or arrow keys to rotate, and the auto-turn only when idle.
+
+**What was wrong.** The preview's camera was fixed at .72 high, 2.7 back, looking at .6. That frames up to about 1.27, and a tall people (the Markmen are 1.08) in a helm or with tall hair goes past it. The figure was set to .85 of a half-turn every time the look was rebuilt, which on every click of a style or colour was nearly its back to you, and it then turned .006 a frame for ever.
+
+**What changed.** `ccLookFrame` frames the figure from its own bounding box after every rebuild: from the crown to 17% of the height (just under the knee, since the knee is at 24.5% after Session 187's legs), with 8% to spare, at whatever distance the 28° lens needs. A tall people is framed the same as a short one. The turn is one number, `CCL.yaw`, kept across rebuilds and set to 0, facing you, when the creator opens. Dragging on the preview turns it (.012 rad a pixel, the cursor a grab hand, and pointer capture so a drag that leaves the canvas still turns it). Left and Right turn it by .2 unless you are typing in the name field. The auto-turn runs only when nothing has touched the preview for four seconds, at .3 rad a second of real time, not per frame.
+
+### Verified (headless Chromium)
+New `tests/creator.test.mjs`, 7 checks, all passing, no page errors. On opening, the face points at the camera (a dot of .99) with the crown at .93 of the frame's half-height and the knee at −.76, both in the frame. It has not turned after 1.5 s. A 100-pixel drag turns it 1.2 rad. Two presses of Left take off exactly .4. With the last touch five seconds ago it turns .34–.4 rad in 1.5 s. The tallest people (Markman, 1.08) is framed the same and faces you. Pictures: `docs/prototypes/creator-before.png` (the back of the head, the figure small in the frame) and `creator-after.png`.
+
+### Needs eyes
+The drag's speed with a real mouse and on a touch screen; whether head to knees is too tight to judge boots (the boots start just below the frame). A zoom-out on the scroll wheel would be the natural next step if so.
