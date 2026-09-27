@@ -129,4 +129,5 @@ Michael wants to hear proposals from the team before anything is built. Each pro
 - **Survival skills**: mining, woodcutting, cooking; finish alchemy as a skill (never completed).
 - **Platforming**: with better movement, places that need it — scaling a tower, crossing a chasm, jumping a dungeon trap.
 - **Online play**: keep the door open for co-op (a friend joins your world with their character) and perhaps a PvP arena. Architecture consequences now, the feature later.
+- **Sailing as a loop (Michael, 27 Sep 2026)**: real waves, especially in open water (the boat pitches and rolls on them; the look is the builder's, H.5b); hull damage from storms, rocks, rams and pirates; a hull and mast repair system tied to skills — woodcutting for timber, a crafting skill for the work — and a shipwright who does it for coin. Ties to the skills proposal and the survival skills.
 - **Journal and calendar**: see E and D — the entry style and the names of days, months and eras come from the quest writer.
