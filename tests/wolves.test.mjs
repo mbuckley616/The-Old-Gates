@@ -22,6 +22,16 @@ check('the four wolf kinds are one skinned mesh each on 24 bones (plus the shini
 check('every wolf of a kind shares its geometry; each has its own material for its flashes', built.shared, { shared: built.shared });
 check('a wolf is 4–6.5k triangles close, its distant copy about half', ['Wolf', 'Snow Wolf', 'Dire Wolf', 'Ash Hound', 'Boar'].every(n => built[n].tris > 3000 && built[n].tris < 6500 && built[n].trisLo < built[n].tris * .6), Object.fromEntries(Object.entries(built).filter(([k]) => k !== 'shared').map(([k, v]) => [k, [v.tris, v.trisLo]])));
 
+// the dragon (Session 177): the wolf's bones and gait with two wing bones; the wings lie folded at rest and beat once it is roused
+const drg = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); const x = px + fx * 60, z = pz + fz * 60;
+  const e = buildZoneEnemy(WORLD.scene, [], x, z, 'Dragon', null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; const r = e.limbs && e.limbs.wolf; if (!r) return { rig: false };
+  let t = 9e5; for (let i = 0; i < 90; i++) tickCreatures(1 / 60, t += 16.7); const rest = +r.B.wingL.rotation.z.toFixed(2), restY = +r.B.wingL.rotation.y.toFixed(2);
+  e.alert = true; const zs = []; for (let i = 0; i < 120; i++) { tickCreatures(1 / 60, t += 16.7); zs.push(r.B.wingL.rotation.z); }
+  const out = { rig: true, dragon: !!r.k.dragon, bones: r.mesh.skeleton.bones.length, tris: r.tris, trisLo: r.trisLo, scale: +r.root.scale.x.toFixed(2), rest, restY, beatMin: +Math.min(...zs.slice(60)).toFixed(2), beatMax: +Math.max(...zs.slice(60)).toFixed(2), mirrored: Math.abs(r.B.wingR.rotation.z + r.B.wingL.rotation.z) < 1e-6, breath: !!e.dragon };
+  e.mesh.parent.remove(e.mesh); tickCreatures(1 / 60, t); return out; });
+check('the dragon is one skinned mesh on the wolf\'s 24 bones and two wing bones; at rest the wings lie folded back, roused they beat (mirrored), and it still breathes fire',
+  drg.rig && drg.dragon && drg.bones === 26 && drg.tris > 3000 && drg.tris < 8000 && drg.restY > 1 && drg.beatMax - drg.beatMin > .6 && drg.mirrored && drg.breath, drg);
+
 // Drive one wolf along its facing at a pace for n frames; measure its paws in world space. A paw in its stance at
 // both ends of a frame (by the stride's own phase) must not move; `flight` counts frames where all four are up.
 const drive = (kind, pace, n) => page.evaluate(([kind, pace, n]) => {

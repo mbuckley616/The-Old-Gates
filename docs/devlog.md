@@ -5250,3 +5250,23 @@ Its own material is transparent at .68 opacity, and it casts no shadow. `tickPeo
 
 ### Needs eyes
 A wraith at night: whether .68 is ghostly enough or too solid, whether the robe needs to trail or fade at the hem (it ends in a hard edge), and whether the eyes carry at a distance. Transparent skinned meshes can sort badly against each other: two wraiths overlapping may show one through the other wrongly.
+
+## v80 — Session 177 — The dragon (H.4)
+
+The dragon is on Michael's list of families. The world's (a rare tundra and wasteland encounter, and the Salt Mouth's) was Session 130's boxes: a box body, box neck and tail joints, a flat plane on a pivot for each wing. It is now a kind on the wolf's rig, as the boar is, so it walks on the wolf's IK gait, crouches and springs, and has the distant copy and the shadow-pass swap, with a skeleton and parts of its own.
+
+**The bones.** `wolfSkeleton` gives a dragon a longer neck (the head .26 beyond the neck bone against the wolf's .15), a longer tail (the three tail joints .16, .26 and .28 apart against .11, .1 and .08), and two wing bones on the spine. The wing bones come after the legs' bones, so the legs keep their indices and the gait code is untouched. At scale 1.8 × 1.6 its shoulder stands about 1.15 high and its body is about 2.3 long, near the old box's size.
+
+**The parts.** A deep scaled chest and haunches, the belly plates the counter-shading's light underside. A spine of horn from the neck down the back to the hips. A long skull and snout, a jaw lined with teeth, brow ridges, swept-back horns, nostrils, and eyes that glow (the glow mesh now takes a per-kind eye position, `k.eyePos`). Heavy scaled legs with three claws a foot. A long tapering tail with a spade at the tip. Each wing is an arm from the shoulder with three fingers sweeping back and the membrane between them, baked with both faces so it shows from below.
+
+**The wings.** At rest they lie folded back along the flanks at shoulder height. While the dragon is roused (alert, or aggressive) `tickCreatures` blends them over half a second into a beat, about once a second, the two mirrored. Dead, they sag half open. The old `tickDragons` wing code looks for `_wing` pivots, finds none on the new body and does nothing; the fire breath is unchanged (`e.dragon`). The health bar sits higher (1.55 × scale). The dungeon's wyrm (a lair's master, `detailDragon`) keeps its own builder.
+
+The first pass had the folded wings swung forward to the ground, the glowing eyes off the painted ones and too portly a body (bulk 1.5); all three were fixed (bulk 1.28) before this commit.
+
+### Verified (headless Chromium)
+`tests/wolves.test.mjs` extended, 18 checks, all passing, no page errors. A Dragon from `buildZoneEnemy` is one skinned mesh on 26 bones (5,432 triangles, 3,072 for the distant copy). Its wings at rest are swept back (yaw over 1 radian). Roused, over the second second they beat through more than .6 radians, the right wing mirroring the left exactly. It is still flagged to breathe. The photograph `docs/prototypes/dragon-ingame.png`: one standing with its wings folded, one walking with them raised.
+
+Full suite on Session 175 (the head before the wraith and the dragon), two suites at a time: every suite that has finished has passed, including `lod` and `locks`.
+
+### Needs eyes
+A dragon in the tundra in real play: its size against you, the wing beat's speed, the fold against the flank, the long tail on slopes. It walks on the wolf's trot and gallop scaled up; a heavier, slower gait of its own may suit it. It still never flies.
