@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s160</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s162</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9628,6 +9628,7 @@ function personBakeQ(g,q){
 }
 function buildPerson(g,opts){
   const {geo,bones,B,hips,tris}=personBake(g,1);
+  B.thL.rotation.order=B.thR.rotation.order='YXZ'; // a thigh's turn is about the pelvis's upright, before it swings (pwRun)
   // the distant copy, on the same skeleton: tickPeople swaps it in past PEOPLE_LOD.far (opts.noLod for the player)
   const lo=opts&&opts.noLod?null:personBake(g,PEOPLE_LOD.q);
   const mesh=new THREE.SkinnedMesh(geo,PEOPLE_MAT);mesh.add(hips);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));
@@ -9642,7 +9643,7 @@ function buildPerson(g,opts){
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
   const root=new THREE.Group();root.add(mesh);
   root.scale.setScalar(g.height);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
-  const rig={root,mesh,B,g,w:{idle:1,walk:0,wave:0},phase:g.phase%1,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
+  const rig={root,mesh,B,g,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
     geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
   return rig;
@@ -9685,12 +9686,36 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   const L=foot(phL,1),Rr=foot(phR,-1);
   // the pelvis sways and tips sideways over the standing foot; the thighs aim across so the feet stay put
   p.sway=.014*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
-  p.thL=[L[0],0,.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],0,-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
+  p.thL=[L[0],-p.hips[1],.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],-p.hips[1],-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
   p.spine=[.07,.11*c,-.02*s];p.neck=[-.05,-.04*c,0];p.head=[-.02,0,-.01*s];
   p.shL=[.32*c,0,.09];p.shR=[-.32*c,0,-.09];
   p.elL=[-.24-.2*Math.max(0,-Math.cos(a-.6)),0,0];p.elR=[-.24-.2*Math.max(0,Math.cos(a-.6)),0,0];
   p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
   if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+// A run (S162): each foot is down for only a third of the stride, so both are off the ground between steps. The
+// body sits lowest over the standing foot and rises through the flight; the heel kicks up behind as the leg swings
+// through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
+// unit tall) the gait blends from the walk into this; back under PW.RUN.off.
+PW.RUN={STRIDE:.25,DUTY:.33,HIPS:.378,BOB:.018,LIFT:.15,on:1.4,off:1.15};
+PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
+function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
+  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2));
+  const c=Math.cos(a),s=Math.sin(a);
+  p.hips=[0,-.09*c,.02*s];
+  const foot=(f,sd)=>{let z,lift=0,toe=0;
+    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=R.LIFT*Math.sin(Math.PI*Math.pow(u,.65));toe=.45*Math.sin(Math.PI*Math.min(1,u*1.3));}
+    const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
+  const L=foot(phL,1),Rr=foot(phR,-1);
+  p.sway=.008*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
+  // the thighs turn back against the pelvis's twist (their Euler order is YXZ), so a planted foot is not dragged sideways
+  p.thL=[L[0],-p.hips[1],.01+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],-p.hips[1],-.01+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
+  p.spine=[.2,.15*c,-.015*s];p.neck=[-.14,-.08*c,0];p.head=[-.04,0,-.01*s];
+  p.shL=[.6*c,0,.12];p.shR=[-.6*c,0,-.12];
+  p.elL=[-1.2-.3*Math.max(0,-Math.cos(a-.4)),0,0];p.elR=[-1.2-.3*Math.max(0,Math.cos(a-.4)),0,0];
+  p.wrL=[-.1,0,.1];p.wrR=[-.1,0,-.1];
+  if(o.holds)pwHold(p,-.15*c,o.gear);return p;}
+// the ground one stride cycle covers, for a mix of walk and run
+function pwCycle(w){const a=w.walk||0,b=w.run||0;return a+b>.001?(a*PW.cycle+b*PW.RUN.cycle)/(a+b):PW.cycle;}
 function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   if(o.holds){p.shL=[-.25,0,2.35];p.elL=[0,.2,.55-.42*w];p.wrL=[0,0,-.25*w];p.neck=[0,.18,0];p.head=[.04,0,.08];p.spine=[p.spine[0],.06,-.03];}
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
@@ -9698,7 +9723,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
 // blend toward the chosen motion over about a third of a second
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='wave'?pwWave(t,o):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
@@ -9727,11 +9752,14 @@ function tickPeople(dt,now){
     let d=rig.lx==null?0:Math.hypot(root.position.x-rig.lx,root.position.z-rig.lz);rig.lx=root.position.x;rig.lz=root.position.z;
     if(d>1.5)d=0; // a teleport, not a stride
     const spd=dt>0?d/dt:0,s=root.scale.x||1;
-    rig.phase=(rig.phase+d/(PW.cycle*s))%1;
+    rig.phase=(rig.phase+d/(pwCycle(rig.w)*s))%1;
+    // walk or run by the pace, smoothed over a few frames, in heights a second
+    rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
+    if(!rig.run&&rig.v/s>PW.RUN.on)rig.run=true;else if(rig.run&&rig.v/s<PW.RUN.off)rig.run=false;
     const near=Math.hypot(px-root.position.x,pz-root.position.z);
     if(near<2.8&&rig.lastNear>=2.8&&spd<.05&&now-rig.wavedAt>25000)rig.wavedAt=now; // a greeting when you walk up
     rig.lastNear=near;
-    const mode=now-rig.wavedAt<2200?'wave':spd>.08?'walk':'idle';
+    const mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     const t=now/1000*rig.g.tempo+rig.g.phase;
     pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
   }
@@ -20128,16 +20156,22 @@ function tpPose(R,dt,st){
   // the gait (S154): on the new rig, walking legs are placed by the planted-foot stride, driven by ground covered
   let anL=0,anR=0,hipsY=(R.hipsY0||.38)+(st.moving&&!air?Math.abs(Math.sin(ph))*(st.sprinting?.035:.02):Math.sin(now*1.6)*.004);
   let gait=false;
-  if(R.rig&&st.moving&&!air&&!sneak){const W=pwWalk(TP.gph||0,{holds:false});thL=W.thL[0];knL=W.knL[0];anL=W.anL[0];thR=W.thR[0];knR=W.knR[0];anR=W.anR[0];hipsY=W.hipsY+(st.sprinting?.01:0);gait=true;}
+  let GP=null;
+  if(R.rig&&st.moving&&!air&&!sneak){const rw=TP.rw||0,W=pwWalk(TP.gph||0,{holds:false}),U=rw>.001?pwRun(TP.gph||0,{holds:false}):W,m=(a,b)=>a+(b-a)*rw;
+    GP={shL:m(W.shL[0],U.shL[0]),shR:m(W.shR[0],U.shR[0]),elL:m(W.elL[0],U.elL[0]),elR:m(W.elR[0],U.elR[0]),spine:m(W.spine[0],U.spine[0])};
+    thL=m(W.thL[0],U.thL[0]);knL=m(W.knL[0],U.knL[0]);anL=m(W.anL[0],U.anL[0]);thR=m(W.thR[0],U.thR[0]);knR=m(W.knR[0],U.knR[0]);anR=m(W.anR[0],U.anR[0]);hipsY=m(W.hipsY,U.hipsY);gait=true;}
   const kl=gait?1:k; // the gait's legs land exactly; eased legs would slide the planted foot
   tpSet(R.thighL,thL,0,0,kl);tpSet(R.thighR,thR,0,0,kl);tpSet(R.kneeL,knL,0,0,kl);tpSet(R.kneeR,knR,0,0,kl);
   if(R.ankleL){tpSet(R.ankleL,anL,0,0,kl);tpSet(R.ankleR,anR,0,0,kl);}
   R.hips.position.y=_tpL(R.hips.position.y,hipsY-(sneak?.1:0)-(blocking?.02:0),kl);
   // torso
-  let tx=sneak?-.4:st.sprinting?-.18:0,ty=0,tz=0;
+  // S162: on this rig a positive turn of the spine leans forward (the old rig's was negative, and sneak and sprint leant back)
+  let tx=sneak?.4:GP?GP.spine+(st.sprinting?.08:0):0,ty=0,tz=0;
   // arms: locomotion swing by default
   let wR=0,shY=R.shield?-.25:0,shZ=0;
   let aL={x:Math.sin(ph)*amp*.6,y:0,z:.06},aR={x:Math.sin(ph+Math.PI)*amp*.6,y:0,z:-.06},eL=-.2-(st.sprinting?.6:0),eR=-.2-(st.sprinting?.6:0);
+  // on the gait the arms swing with the legs, pumping bent at a run
+  if(GP){aL.x=GP.shL;aR.x=GP.shR;eL=GP.elL;eR=GP.elR;}
   if(sneak){aL.x=-.4;aR.x=-.4;eL=-.9;eR=-.9;}
   if(air){aL={x:-.5,y:0,z:.5};aR={x:-.5,y:0,z:-.5};}
   // weapon at rest: blade up and forward
@@ -20189,7 +20223,12 @@ function tpUpdate(dt,st){
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
-  {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;TP.gph=((TP.gph||0)+d/(PW.cycle*(R.root.scale.x||1)))%1;} // S154 — the stride follows the ground
+  // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
+  {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;
+    TP.v=(TP.v||0)+(v-(TP.v||0))*(1-Math.exp(-dt/.15));
+    if(!TP.run&&TP.v/s>PW.RUN.on)TP.run=true;else if(TP.run&&TP.v/s<PW.RUN.off)TP.run=false;
+    TP.gph=((TP.gph||0)+d/(pwCycle({walk:1-(TP.rw||0),run:TP.rw||0})*s))%1;
+    TP.rw=(TP.rw||0)+((TP.run?1:0)-(TP.rw||0))*(1-Math.exp(-dt/.11));}
   tpPose(R,dt,st);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
