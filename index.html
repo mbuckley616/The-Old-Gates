@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s171</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s172</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35557,6 +35557,10 @@ var WORLD=(()=>{
   };
   function rngFor(a,b){let s=(a*73856093^b*19349663^SEED)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
   function pick(r,arr){return arr[Math.floor(r()*arr.length)%arr.length];}
+  // v80 S172 — the same single draw as pick(); if that one is taken in this town, the next free one along the list (so a
+  // town's draws, and every name that did not collide, stay as they were). Taken by everyone: the draw stands.
+  let _townNames=null;
+  function pickFree(r,arr,used){const v=pick(r,arr);if(!used||!used.has(v))return v;const i=arr.indexOf(v);for(let k=1;k<arr.length;k++){const c=arr[(i+k)%arr.length];if(!used.has(c))return c;}return v;}
   function cardinalFace(tx,tz){ // unit vector → 'N' (−z) 'S' (+z) 'E' 'W'
     if(Math.abs(tx)>Math.abs(tz))return tx>0?'E':'W';
     return tz>0?'S':'N';
@@ -35754,10 +35758,10 @@ var WORLD=(()=>{
     topics.push({label:'Farewell.',bye:true});
     let people=(extra&&extra.people)||peopleOfNpc(site,r);const P=PEOPLES[people];
     if(!(extra&&extra.authored)){ // rename into the people's bank (keep gender) unless told to keep it; take the people's body
-      const bank=NAMES[P.names]||NAMES.irish;const female=Object.values(NAMES).some(b=>b.f&&b.f.includes(name));if(!(extra&&extra.keepName))name=pick(r,female?bank.f:bank.m);
+      const bank=NAMES[P.names]||NAMES.irish;const female=Object.values(NAMES).some(b=>b.f&&b.f.includes(name));if(!(extra&&extra.keepName))name=pickFree(r,female?bank.f:bank.m,_townNames);
       extra=Object.assign({},extra||{},{sCol:pick(r,P.skin),hairCol:pick(r,P.hair),bodyScale:[P.width,P.height,P.width]});}
     const def=Object.assign({name,role,ico:ICO[role]||'👤',greeting:greetPool[role]||greetPool.Villager,topics,x:0,z:0},extra||{});
-    def.people=people;
+    def.people=people;if(_townNames)_townNames.add(def.name);
     def.temper=temperOf(name);def.bio=bioFor(site,reg,r,role,name);def._roadLine=roadLine;def._doorLine=doorLine;def._extra=extraTopics;
     return dialogFor(site,reg,r,role,name,extraTopics,def);
   }
@@ -35765,7 +35769,7 @@ var WORLD=(()=>{
   // ── Generator ────────────────────────────────────────────────────────
   function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
-    const r=rngFor(site.c*31+7,site.r*17+3);
+    const r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();const _innNames=new Set(); // S172 — names unique within the town where the bank allows
     const reg=site.reg||REGISTER[dominantRegion(site.x,site.z).r.id]||'irish'; // the cell's culture
     const biome=dominantRegion(site.x,site.z).r.biome;
     const [ni,nj]=cellOf(site.x,site.z);const _ts=worldState.towns&&worldState.towns[site.id];const NAT=(_ts&&_ts.flags.occupied!=null&&NATIONS[_ts.occupier])?NATIONS[_ts.occupier]:nationOf(ni,nj); // v80 S129 — an occupied town flies the occupier's colours
@@ -35938,7 +35942,8 @@ var WORLD=(()=>{
       const heroH=hero&&hero[i];
       const keeper=heroH?heroH.keeper:newName();
       const noun=SHOP_NOUN[type]?(SHOP_NOUN[type][reg]||SHOP_NOUN[type].irish||''):'';
-      let name=heroH?heroH.name:type==='inn'?pick(r,INN_NAMES[reg]):type==='church'?(reg==='french'?`Chapelle de ${site.name}`:`The ${site.name} ${noun}`):type==='castle'?`${site.name} Keep`:(type==='guild_f'||type==='guild_m')?GUILD_DEF[type].name:`${keeper}'s ${noun}`;
+      let name=heroH?heroH.name:type==='inn'?pickFree(r,INN_NAMES[reg],_innNames):type==='church'?(reg==='french'?`Chapelle de ${site.name}`:`The ${site.name} ${noun}`):type==='castle'?`${site.name} Keep`:(type==='guild_f'||type==='guild_m')?GUILD_DEF[type].name:`${keeper}'s ${noun}`;
+      if(type==='inn')_innNames.add(name);
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
       const house={id:`g_${site.id}_${i}`,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};
@@ -36144,7 +36149,7 @@ var WORLD=(()=>{
     sc.add(group);
     houses.forEach(h=>ZONES.world.houses.push(h));
     if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;
-    SETTLE.set(site.id,S);
+    SETTLE.set(site.id,S);_townNames=null;
     if(guardsOf(S).length)try{townRoute(S);}catch(e){} // S166 — the watch's street grid, built with the town rather than at nightfall
     return S;
   }
@@ -37129,8 +37134,9 @@ var WORLD=(()=>{
   function offer(g,site){const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const t=commissionFor(g,site)||genTask(g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+` Pay is ${t.gold} gold.`;}
   function guildDef(g,site,keeper,extra){
     const gd=GUILD_DEF[g];
-    const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pick(Math.random,Math.random()<.4?gb.f:gb.m);
-    return Object.assign({name:keeper,people:gp,sCol:pick(Math.random,PEOPLES[gp].skin),hairCol:pick(Math.random,PEOPLES[gp].hair),bodyScale:[PEOPLES[gp].width,PEOPLES[gp].height,PEOPLES[gp].width],role:gd.role,ico:g==='guild_f'?'⚔':'✨',greeting:g==='guild_f'?["The board's behind me. Work if you want it.","You look like you can swing something."]:["Mind the shelves. Some of that bites.","Yes? The Guild has need of feet, if not minds."],
+    const gr=rngFor(site.c*31+(g==='guild_f'?101:211),site.r*17+5); // S172 — the same head every visit (was Math.random: a new name and face each time)
+    const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pickFree(gr,gr()<.4?gb.f:gb.m,_townNames);if(_townNames)_townNames.add(keeper);
+    return Object.assign({name:keeper,people:gp,sCol:pick(gr,PEOPLES[gp].skin),hairCol:pick(gr,PEOPLES[gp].hair),bodyScale:[PEOPLES[gp].width,PEOPLES[gp].height,PEOPLES[gp].width],role:gd.role,ico:g==='guild_f'?'⚔':'✨',greeting:g==='guild_f'?["The board's behind me. Work if you want it.","You look like you can swing something."]:["Mind the shelves. Some of that bites.","Yes? The Guild has need of feet, if not minds."],
       get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site)},{label:"It's done.",quest:true,fn:()=>turnIn(g)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} tasks done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));return base.concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
   }
   // ── interior extras: members who wander and talk ──
