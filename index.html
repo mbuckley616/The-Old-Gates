@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s177</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s178</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38980,6 +38980,7 @@ var WORLD=(()=>{
   }
   function removeCoachLine(key){const C=COACHES.get(key);if(!C)return;sc.remove(C.group);sc.remove(C.cart);C.horses.forEach(h=>sc.remove(h));const i=ZONES.world.platforms.indexOf(C.plat);if(i>=0)ZONES.world.platforms.splice(i,1);unregLights('coach:'+key);COACHES.delete(key);}
   const COACH_SPEED=13;
+  const COACH_STOP=15; // S178 — a quarter of an hour (real seconds, a game minute each) at the midpoint inn, each way
   function tickCoaches(dt){
     const Cs=coaches();
     for(const key in Cs){const rt=Cs[key];const a=siteAnywhere(rt.a),b=siteAnywhere(rt.b);if(!a||!b)continue;const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key);const near=Math.hypot(px-(a.x+b.x)/2,pz-(a.z+b.z)/2)<Math.hypot(a.x-b.x,a.z-b.z)/2+500;
@@ -38989,7 +38990,11 @@ var WORLD=(()=>{
       const h=hourNow();
       if(C.state==='wait'){if(roadBroken(a,b)){C.halted=true;}else{C.halted=false;if(C.u>0.001&&C.u<0.999){C.state='run';C.dir=C.resumeDir||1;}else if(h>=6&&h<6.2&&C.u<=0.001){C.state='run';C.dir=1;}else if(h>=18&&h<18.2&&C.u>=0.999){C.state='run';C.dir=-1;}}}
       if(C.state==='run'&&roadBroken(a,b)&&C.u>.02&&C.u<.98){C.state='wait';C.halted=true;C.resumeDir=C.dir;C.dir=0;} // the coach halts where it is and goes on when the road is clear
-      if(C.state==='run'){C.u+=C.dir*COACH_SPEED*dt/C.len;if(C.u>=1){C.u=1;C.state='wait';}if(C.u<=0){C.u=0;C.state='wait';}}
+      // S178 — the coach draws up at the coaching inn halfway, once each way, and goes on after COACH_STOP
+      if(C.state==='stop'){C.stopT-=dt;if(C.stopT<=0){C.state='run';C.dir=C.resumeDir||C.dir;C.stopped=true;}}
+      if(C.state==='run'){const u0=C.u;C.u+=C.dir*COACH_SPEED*dt/C.len;
+        if(!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
+        if(C.u>=1){C.u=1;C.state='wait';C.stopped=false;}if(C.u<=0){C.u=0;C.state='wait';C.stopped=false;}}
       const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=worldH(p.x,p.z);
       C.cart.position.set(p.x,y,p.z);C.cart.rotation.y=ang;
       C.horses.forEach((hm,k)=>{const ox=(k?-.45:.45);hm.position.set(p.x+Math.sin(ang)*3.2+Math.cos(ang)*ox,worldH(p.x,p.z),p.z+Math.cos(ang)*3.2-Math.sin(ang)*ox);hm.rotation.y=ang;});
@@ -38998,7 +39003,7 @@ var WORLD=(()=>{
     }
   }
   function coachNear(){for(const C of COACHES.values()){const d=Math.hypot(px-C.cart.position.x,pz-C.cart.position.z);if(d<3.2)return C;}return null;}
-  function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='wait')return `Press 'E' to board the coach (leaves at ${C.u<=0.001?'six':'six in the evening'})`;return "Press 'E' to swing aboard";}
+  function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='stop')return "Press 'E' to board the coach (it goes on shortly)";if(C.state==='wait')return `Press 'E' to board the coach (leaves at ${C.u<=0.001?'six':'six in the evening'})`;return "Press 'E' to swing aboard";}
   function coachInteract(){const C=coachNear();if(!C)return false;if(C.riding){C.riding=false;const ang=C.cart.rotation.y;px=C.cart.position.x+Math.cos(ang)*2.2;pz=C.cart.position.z-Math.sin(ang)*2.2;jumpY=worldH(px,pz);showMsg('You step down.','#c8b880');return true;}C.riding=true;showMsg(C.state==='wait'?'You take a seat. The coach leaves on the hour.':'You swing aboard.','#c8b880');if(typeof addLog==='function')addLog('🐎','Took the coach.');return true;}
   function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const T=worldState.towns||{};let sum=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}

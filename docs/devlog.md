@@ -5262,3 +5262,15 @@ New `tests/snowrepaint.test.mjs`: in clear weather at the start, the cover pinne
 
 ### Needs eyes
 Snow settling in real play: whether a far chunk visibly lags its neighbours while a repaint runs (it should not; the whole pass takes under a second). F9 while it snows on the laptop.
+
+## v80 — Session 178 — The coach stops at the inn
+
+Backlog B, coach lines: *a midpoint stop*. Session 100 built the shape agreed in Session 98, a coaching road with milestones, a two-storey coaching inn at the midpoint and a coach that leaves each end at six. It listed as not yet done that *the coach doesn't stop at the midpoint inn*. The coach ran straight past the inn it was built beside.
+
+**What changed.** In `tickCoaches`, a running coach that reaches the halfway point (`u = .5`, where `buildCoachLine` puts the inn) draws up there and waits `COACH_STOP`, 15 seconds, which is a quarter of an hour on the game clock (a game minute to the second). Then it goes on the way it was going. It stops once each way: the mark (`C.stopped`) clears when it reaches either end. While it waits, the prompt reads *Press 'E' to board the coach (it goes on shortly)*, so you can board at the inn as at a station. A passenger stays aboard through the stop, and a coach halted by a broken road keeps the stop it has already made. The quarter of an hour is a first choice and one constant to change.
+
+### Verified (headless Chromium)
+New `tests/coachstop.test.mjs`: a coaching road raised between Ironhaven and Vieux Marché (548 units; camps kept off it for the test), driven by the world's tick. Outbound from u .3: the coach stops at u .500 for 15.0 s and arrives at the far end (u 1, waiting). Homebound from u .7: it stops at .500 for 15.0 s and arrives at the near end. With a passenger aboard, the passenger is still riding at the stop, .3 from the seat. No page errors.
+
+### Needs eyes
+The stop in play: whether a quarter of an hour at the inn reads as a coach stop or as a halt. A 548-unit road now takes 57 seconds end to end instead of 42. The coaching inn itself is still not enterable, which is the other half of this backlog item. What it holds inside (rooms to let, a meal, a stable) is for Michael to say.

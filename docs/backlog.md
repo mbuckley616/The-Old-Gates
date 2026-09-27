@@ -15,7 +15,7 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 
 ## B. Systems
 - ~~Prosperity: wall tiers, plague, siege and occupation, pirates sacking ports, the ruin variant~~ — **done, Session 129**. Owed: soldier models of their own; occupation effects from the canon (tithe, duels); a word from a town you own when it's besieged.
-- **Coach lines**: enterable coaching inns; a midpoint stop. ~~The coach halts when a camp breaks the road~~ — done, Session 129.
+- **Coach lines**: enterable coaching inns (what they hold inside is Michael's call); ~~a midpoint stop~~ — **done, Session 178** (a quarter of an hour at the inn, each way). ~~The coach halts when a camp breaks the road~~ — done, Session 129.
 - **Crime system** — **designed with Michael, 26 Sep 2026** (four sessions, local; the routine stays off it):
   - *Crimes*: picking a town lock (shop or home after hours, a strongbox); taking from a strongbox or home; striking a townsperson or guard (NPCs become hittable, guards at least). Being inside after hours is not itself a crime.
   - *Witnesses*: anyone awake within sight — a townsperson or guard within ~12 units with a clear line, not asleep indoors; sneaking halves the range, night halves it again. Unseen, nothing happens.
