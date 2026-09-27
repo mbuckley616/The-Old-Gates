@@ -68,7 +68,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **Legs too short** on the player and the townsfolk — lengthen the leg proportion in `SK`/`personGenome` (the torso reads long); check against a 7.5-head figure.
   - **Tunic hem ring floats** — the ring at the bottom of the tunic is not attached to the fabric; weld it to the hem or drop it.
   - **Character creator camera**: crops the top of the head, starts with the character facing away, and the only rotation is a very slow auto-turn. Frame head to knees, start facing the camera, drag (or arrow keys) to rotate, auto-turn only when idle.
-  - **Stop the greeting wave**: it looks odd in the street. Keep the pose in the kit for scripted moments and quests later; idle/walk only for now.
+  - ~~**Stop the greeting wave**~~ — **done, Session 185** (auto): `PW.GREET=false`; setting a rig's `wavedAt` still plays the pose for a scripted moment. Was: it looks odd in the street. Keep the pose in the kit for scripted moments and quests later; idle/walk only for now.
   - **Trees**: variety, not density — trunk girth and colour, foliage colour, more species per biome; the starting area is very dense and may be costing frames (measure before thinning).
   - **Town roads**: overlapping path patterns, roads running into buildings. Polish belongs with the cross-cutting roads rewrite (D); the builder may fix the obvious overlaps in the stamps.
 

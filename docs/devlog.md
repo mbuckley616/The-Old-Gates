@@ -5450,3 +5450,14 @@ New `tests/goblins.test.mjs`, 7 checks, all passing, no page errors. Goblin, Gob
 
 ### Needs eyes
 A goblin camp in the ashen lands and kobolds on the moor, in real light: whether the ears read at fighting distance; whether the club (a walking stick until the weapon kit) and the smith's hammer read as weapons. The kobold is built on the old man's stoop, and I have not judged at speed whether it runs like a sprite.
+
+## v80 — Session 185 — The greeting wave switched off (Playtest s162)
+From Michael's playtest list: townsfolk waving as you walk up looks odd in the street. He asked for the pose to stay in the kit for scripted moments and quests later, and for idle and walk only for now.
+
+`tickPeople` started a wave when you came within 2.8 units of a standing townsperson, once in 25 seconds. That trigger now depends on a switch, `PW.GREET`, which is false. Nothing else changed: `pwWave` and the crossfade are still there, and anything that sets a rig's `wavedAt` to the present time still gets the 2.2-second wave. A quest that wants someone to wave uses that. Foes never waved and still don't.
+
+### Verified (headless Chromium)
+`people.test.mjs` has a new check, and all 10 pass with no page errors. In Dunmore the test walks the player up to a standing townsperson, from 5 units out to under 1, over 120 frames: the wave's weight stays at 0. Setting `wavedAt` then gives a wave weight of 1 after 40 frames. `foes.test.mjs`'s check that a foe never waves still passes.
+
+### Needs eyes
+Walking up to someone in a real town: whether they now look too still with no acknowledgement. A head turn towards you would be the quiet alternative, if one is wanted.

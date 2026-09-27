@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s184</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s185</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9874,6 +9874,7 @@ function buildNPCMesh(def,opts){
 }
 // ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
 const PW={JOINTS:['hips','spine','neck','head','shL','elL','wrL','shR','elR','wrR','thL','knL','anL','thR','knR','anR'],L1:.2,L2:.19,FOOT:.07,HIPJ:.02,STRIDE:.16,DUTY:.62};
+PW.GREET=false; // S185 — townsfolk no longer wave as you walk up (tickPeople)
 PW.cycle=2*PW.STRIDE/PW.DUTY; // ground covered per stride cycle, in figure units
 function pwZero(){const p={};PW.JOINTS.forEach(j=>p[j]=[0,0,0]);p.sway=0;p.hipsY=0;return p;}
 const pwClamp=x=>Math.max(-1,Math.min(1,x));
@@ -9980,7 +9981,9 @@ function tickPeople(dt,now){
     rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
     if(!rig.run&&rig.v/s>PW.RUN.on)rig.run=true;else if(rig.run&&rig.v/s<PW.RUN.off)rig.run=false;
     const near=Math.hypot(px-at.x,pz-at.z);
-    if(!rig.foe&&near<2.8&&rig.lastNear>=2.8&&spd<.05&&now-rig.wavedAt>25000)rig.wavedAt=now; // a greeting when you walk up (not from a foe)
+    // the greeting wave when you walk up is switched off (Michael, playtest s162: it looks odd in the street); the pose
+    // stays in the kit for scripted moments: set rig.wavedAt=performance.now() and the rig waves for 2.2 seconds
+    if(PW.GREET&&!rig.foe&&near<2.8&&rig.lastNear>=2.8&&spd<.05&&now-rig.wavedAt>25000)rig.wavedAt=now;
     rig.lastNear=near;
     let mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
