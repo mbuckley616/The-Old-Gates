@@ -5718,3 +5718,16 @@ The same session measured the frame cost of Session 194's detailed houses in Dun
 
 ### Needs eyes
 A Shieldbearer fight in a real dungeon: the shield's size on a person (it was sized for the box's arm), and the guard dropping on a power attack and coming back up.
+
+## v80 — Session 200 — Barrels on the kit (item 7's props)
+The dungeon's barrels were three straight cylinders and two thin bands, the last of the dungeon's loot furniture still a stack of primitives. `kitBarrel(s, woodCol)` builds one on the kit: bellied staves (a lathe whose radius swells 14% at the middle), four iron hoops that follow the belly, and a sunk head. It is one merged mesh, plus a separate lid disc, so looting can still pop the lid as it always has (`top`). The dungeon's `buildBarrel` uses it at scale 1. The towns' loot barrels use it at 1.75, and their crates are now the kit's rounded box. A first render had dark stave joints standing off the belly (straight lines on a curved barrel), and they were dropped.
+
+A barrel is 912 triangles against about 80 before. A dungeon has a few dozen at most (22 in the test dungeon).
+
+This session also has the result of the full suite started during Session 195: 33 of 33 suites passed on the build as it stood while they ran.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has a new check, and all 12 pass. All 8 barrels in the fort are the kit's barrel, each with its own lid in the same group. `houses` and `crime1` (which build Dunmore, with its loot barrels and crates) pass. Picture: `docs/prototypes/barrels-ingame.png`.
+
+### Needs eyes
+Barrels by torchlight: the hoops' darkness, and whether the belly reads.

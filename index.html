@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s199</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s200</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -20642,6 +20642,17 @@ function buildChestShell(g, sc, woodCol=0x8b5a2b){
   const lidMesh=dunMerge(L,'chest');lid.add(lidMesh);lid.userData.mesh=lidMesh;
   return {body, lid};
 }
+// S200 — a barrel on the kit: bellied staves (a lathe), four iron hoops, a sunk head; the lid a
+// separate disc so it can pop off when looted. s scales the dungeon's barrel (.22 across, .55 high).
+function kitBarrel(s,woodCol){const R_=.22*s,Hh=.55*s,wood=new THREE.Color(woodCol),iron=new THREE.Color(0x2a241e),P=[];
+  const add=(geo,col,x,y,z,rx,ry,rz)=>P.push([geo,col,new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(1,1,1))]);
+  const prof=[];for(let i=0;i<=8;i++){const u=i/8;prof.push([R_*(.86+.14*Math.sin(Math.PI*u)),Hh*u]);}
+  add(new THREE.LatheGeometry(prof.map(q=>new THREE.Vector2(q[0],q[1])),16),wood,0,0,0);
+  for(const u of [.1,.3,.7,.9])add(new THREE.TorusGeometry(R_*(.86+.14*Math.sin(Math.PI*u))+.004*s,.012*s,4,20),iron,0,Hh*u,0,Math.PI/2,0,0);
+  add(new THREE.CircleGeometry(R_*.84,16),wood.clone().multiplyScalar(.75),0,.02*s,0,Math.PI/2,0,0);
+  const body=dunMerge(P,'barrel');
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(R_*.86,R_*.86,.03*s,16),new THREE.MeshLambertMaterial({color:wood.clone().multiplyScalar(.7)}));top.position.y=Hh-.03*s;
+  return {body,top};}
 // the mimic's mouth (S198): teeth along the lid's rim and the body's, a tongue, eyes under the lid; hidden till it wakes
 function buildMimicMouth(g, sc, lid, eyeCol){const W=.5*sc,H=.35*sc,D=.4*sc;const T=[];const E=[];const tooth=new THREE.Color(0xe8e0c8);
   const addT=(list,geo,col,x,y,z,rx,ry,rz)=>{list.push([geo,col,new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(1,1,1))]);};
@@ -21582,24 +21593,8 @@ function buildDungeon(portal){
     // Both mesh paths push into BARRELS[] with the same fields — downstream
     // open / loot / despawn code treats them identically. Only displayName
     // ("Barrel" / "Crate") differs in the loot-panel title.
-    const buildBarrel = (group) => {
-      const barrelMat = new THREE.MeshLambertMaterial({color: th.clutter==='junk' ? 0x5a3a10 : 0x3a2810});
-      const bandMat = new THREE.MeshLambertMaterial({color: 0x2a1808});
-      const lidMat = new THREE.MeshLambertMaterial({color: 0x2a1808});
-      // Barrel body: 0.22u radius, 0.55u tall. Sits flush to floor.
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .55, 10), barrelMat);
-      barrel.position.set(0, .275, 0);
-      group.add(barrel);
-      const top = new THREE.Mesh(new THREE.CylinderGeometry(.23, .23, .05, 10), lidMat);
-      top.position.set(0, .575, 0);
-      group.add(top);
-      // Two iron bands at 1/4 and 3/4 of barrel height.
-      for(const by of [0.14, 0.41]){
-        const band = new THREE.Mesh(new THREE.CylinderGeometry(.226, .226, .035, 10), bandMat);
-        band.position.set(0, by, 0);
-        group.add(band);
-      }
-      return {top};
+    const buildBarrel = (group) => { // S200 — the kit's barrel (it was three cylinders)
+      const B=kitBarrel(1,th.clutter==='junk' ? 0x5a3a10 : 0x3a2810);group.add(B.body);group.add(B.top);B.top.position.y=.575;return {top:B.top};
     };
     const buildCrate = (group) => {
       const crateMat = new THREE.MeshLambertMaterial({color: th.clutter==='junk' ? 0x6b4820 : 0x4a3418});
@@ -37146,8 +37141,8 @@ var WORLD=(()=>{
         const side=r()<.5?-1:1;const sx=lot.x-lot.tz*side*(lot.w/2+.9)+lot.tx*(r()-.5)*lot.d*.6,sz=lot.z+lot.tx*side*(lot.w/2+.9)+lot.tz*(r()-.5)*lot.d*.6;
         if(solidAt(sx,sz)||settleSolid(sx,sz,.4))continue;
         const y=worldH(sx,sz);const kind=r()<.55?'barrel':'crate';let g,top;
-        if(kind==='barrel'){g=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.9,9),barrelMat);g.position.set(sx,y+.45,sz);top=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,.08,9),new THREE.MeshLambertMaterial({color:0x4a3018}));top.position.set(sx,y+.92,sz);}
-        else{g=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.9),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}
+        if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
+        else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}
         g.castShadow=true;group.add(g);group.add(top);
         let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9):[])||[];
         items=items.filter(it=>it&&it.dmg==null&&it.def==null&&!it.slot&&it.type!=='weapon'&&it.type!=='armor');

@@ -53,6 +53,8 @@ const fort = await page.evaluate(() => { const s = []; dScene.traverse(o => { if
 check('another theme and a fort build, the fort\'s first floor on the shell too (Session 197)', gob.zone === 'dungeon' && gob.shell >= 3 && fort.zone === 'dungeon' && fort.shell === (fort.upper ? 6 : 3), { gob, fort });
 check('the props are one merged mesh a floor, much of the rubble lying along the walls (Session 191)', r.props === r.floors && r.rubbleByWalls > .3, { props: r.props, rubbleByWalls: r.rubbleByWalls });
 check('the kit\'s rounded box has rounded corners (a unit cube with radius .1 reaches .793, not .866)', Math.abs(r.rboxCorner - (Math.sqrt(3) * .4 + .1)) < .005, { corner: r.rboxCorner });
+const bar = await page.evaluate(() => { const B = BARRELS.filter(b => b.displayName === 'Barrel'); return { n: B.length, kit: B.filter(b => b.mesh.children.some(o => o.userData && o.userData.dunShell === 'barrel') && b.top && b.top.parent === b.mesh).length }; });
+check('the dungeon\'s barrels are the kit\'s barrel, the lid still its own to pop off (Session 200)', bar.n === 0 || bar.kit === bar.n, bar);
 console.log('  cost', JSON.stringify({ meshes: r.meshes, calls: r.calls, tris: r.tris }));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
