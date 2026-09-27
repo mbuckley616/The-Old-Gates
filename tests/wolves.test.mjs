@@ -140,5 +140,12 @@ const shot = await page.evaluate(async () => { forceTime(12); const kinds = ['Wo
   rigs.forEach(([r, G]) => sc.remove(G)); sc.remove(floor); tickCreatures(1 / 60, 7e5);
   return out.toDataURL(); });
 fs.writeFileSync('tests/out/wolves.png', Buffer.from(shot.split(',')[1], 'base64'));
+// turning on the spot (Session 213): a standing wolf swung round a quarter turn in half a second treads round, not pivots
+const turn = await page.evaluate(() => { const e = _W['Wolf'], rig = e.limbs.wolf, G = e.mesh; let t = 6e6; G.rotation.set(0, 0, 0);
+  for (let i = 0; i < 90; i++) tickCreatures(1 / 60, t += 16.7); const before = { stand: +rig.w.stand.toFixed(2) }; const ph0 = rig.phase;
+  for (let i = 1; i <= 30; i++) { G.rotation.set(0, i / 30 * Math.PI / 2, 0); tickCreatures(1 / 60, t += 16.7); }
+  const during = { stand: +rig.w.stand.toFixed(2), trot: +rig.w.trot.toFixed(2), phase: +(((rig.phase - ph0) % 1 + 1) % 1).toFixed(2) };
+  for (let i = 0; i < 60; i++) tickCreatures(1 / 60, t += 16.7); return { before, during, after: { stand: +rig.w.stand.toFixed(2) } }; });
+check('a wolf turning on the spot steps round (it trots through the turn) and stands again after', turn.before.stand > .95 && turn.during.trot > .5 && turn.during.phase > .1 && turn.after.stand > .9, turn);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s212</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s213</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -10347,7 +10347,11 @@ function tickCreatures(dt,now){
     if(rig.spider){tickSpider(rig,g,e,dt,now);continue;}
     const x=e?e.x:g.position.x,z=e?e.z:g.position.z;
     let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>1.5)d=0;
-    const s=rig.root.scale.x*(g.scale.x||1),spd=dt>0?d/dt:0;
+    const s=rig.root.scale.x*(g.scale.x||1);
+    // S213 — turning on the spot steps round: the heading's change counts as ground covered by the paws, a quarter of a
+    // body-length out from the middle, so a wolf that swings to face you treads round instead of pivoting on planted feet
+    {const q=g.quaternion,yw=Math.atan2(2*(q.x*q.z+q.w*q.y),1-2*(q.x*q.x+q.y*q.y));if(rig.lyaw!=null){let dy=yw-rig.lyaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));if(Math.abs(dy)<1.2)d+=Math.abs(dy)*.25*s;}rig.lyaw=yw;}
+    const spd=dt>0?d/dt:0;
     rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
     if(!rig.gallop&&rig.v/s>WG.GALLOP.on)rig.gallop=true;else if(rig.gallop&&rig.v/s<WG.GALLOP.back)rig.gallop=false;
     rig.phase=(rig.phase+d/(wgCycle(rig.w)*s))%1;

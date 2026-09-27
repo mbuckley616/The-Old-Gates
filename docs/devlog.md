@@ -5991,3 +5991,14 @@ The open world's Wraith has been a robed, hooded, see-through person since Sessi
 
 ### Needs eyes
 The picture shows the Wraith's hood (Session 176's) reading more like a close cap than a hood when seen from the front. That was there before this session. A deeper, peaked hood would be a small follow-up if it bothers in play.
+
+## v80 — Session 213 — Wolves step round when they turn (H.4)
+An item owed since Session 166: a wolf that swung round to face you, or turned at the end of a charge, pivoted on planted paws. Its stride is driven by the ground its body covers, and turning on the spot covers none, so its feet stayed on the ground while the body rotated above them.
+
+**What changed.** `tickCreatures` now reads each wolf's heading from its group every frame. The change in heading, times a quarter of a body length (at the wolf's scale), counts as ground covered. A wolf turning in place therefore treads round on its trot: the gait is chosen by that pace and the stride advances with it, as it would over the same distance forward. A jump in heading of more than 1.2 radians in one frame (a respawn, a snap) is ignored, as a jump in position of more than 1.5 already is. This covers every creature on the wolf's bones (the wolves, the boar, the dragon, the Faolchú). Spiders have their own tick and are not changed.
+
+### Verified (headless Chromium)
+`wolves.test.mjs` has a new check, and all pass. A wolf standing still (stand weight 1) is turned a quarter circle over half a second without moving: its trot weight rises to .98 and its stride advances .29 of a cycle through the turn. A second after the turn it stands again (stand weight 1). The planted-paw checks on straight runs still pass.
+
+### Needs eyes
+Whether a trot in place reads as stepping round or as a shuffle. A proper turn, the forelegs crossing and the hind legs pivoting, would be its own pose.
