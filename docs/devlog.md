@@ -5288,3 +5288,25 @@ My recommendation to Michael is goblins A and kobolds B, with the reasons in `do
 
 ### Needs eyes
 The DECISION: which goblin, which kobold, or neither.
+
+## v80 — Session 179 — House prototype: detail and a character per nation (H.5, waiting on Michael)
+
+With H.4's approved families built and H.5a and H.5b in the game, the next item in the routine's order is H.5 itself: "buildings, houses, structures and POIs with more detail, quality and uniqueness". It is a visual item and open, so this is a prototype and a DECISION; `index.html` is unchanged and the build tag stays at s177.
+
+**What is there today.** `buildingGeo(w,d,st,r,opts)` in the world module merges a handful of boxes into one vertex-coloured mesh: a plinth, the body, a triangular prism roof with no thickness, a ridge, a chimney box, two or three flat dark rectangles as windows, a door slab (104–200 triangles). The nations differ only in colours, height, pitch, the thatch roll and corner posts.
+
+**The prototype** (`docs/prototypes/houses/houses.html`, `houses.src.js`, `shoot.mjs`) copies today's `buildingGeo` for the left of each picture and puts a new builder beside it. The new builder keeps the same frame (w by d, +z the front, the door on it) and the same merge (one mesh). Its parts:
+- **Footing and walls:** a footing ringed with rough stones. Braced half-timbering where the nation frames (sill and head beams, studs, diagonal braces), and a jetty on joist ends for a two-storey framed house.
+- **Windows and door:** each window is a recess with the glass set back, a stone sill, a lintel, a mullion and transom, and painted shutters where the nation has them. The door is a frame, a plank door set back with iron hinges and a latch, and a stone step.
+- **Roof:** two slabs with thickness and overhanging eaves, rafter ends under them, and bargeboards up the gables. Slate, shingle or half-round tile courses on top, or a rolled thatch. The Mark's longhouse has crossed horns on its gables.
+- **Chimney and yard:** a chimney of coursed stone with a cap, and, by the house's dice, a lean-to, a woodpile or a water butt.
+
+The first pass tilted both roof slopes the wrong way (they stood up like walls), and the tiles cost 8k triangles. The sign was fixed, the tiles coarsened (5.1k for the Aurenne house), and the thatch's overhang shortened.
+
+### Verified (headless Chromium)
+`node docs/prototypes/houses/shoot.mjs` renders the four pictures with no page errors. Triangles, today against proposed: Irish 120 against 2,238, Royale 200 against 3,062, Mark 104 against 2,602, Aurenne 140 against 5,098.
+
+### Needs eyes
+The DECISION: this direction for all nations with a distant copy (A), a plainer version at about 1k triangles (B), or not yet (C). Faults seen: the thatch reads as a board, the lean-to is crude, and the Irish eaves cover the window heads.
+
+Session 177's full suite (two suites at a time) was still running at this commit; its result goes in the next entry.

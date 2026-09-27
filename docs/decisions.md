@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Buildings — more detail and a character per nation (Session 179)
+Backlog H.5: "buildings, houses, structures and POIs with more detail, quality and uniqueness". Today every house is one merged box: a box body, a paper-thin prism for a roof, flat dark rectangles for windows (104–200 triangles). The prototype is a new builder for the same house (still one merged mesh, one draw call), shown beside today's for four nations:
+- **Irish cottage:** a rolled thatch, whitewash, a stone footing of rough stones, recessed small-paned windows. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houses-irish.png
+- **Royale half-timbered:** braced framing, a jetty on joist ends, slate in courses, green shutters. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houses-french.png
+- **Mark longhouse:** dark timber, shingles in courses, crossed horns on the gables. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houses-mark.png
+- **Aurenne house:** plaster, a low-pitched roof of half-round tiles, rafter ends under the eaves, blue shutters. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houses-aurenne.png
+
+Every house also gets a roof with thickness and eaves; a framed plank door with hinges and a step; a coursed stone chimney with a cap; and, by the house's own dice, a lean-to, a woodpile or a water butt, so two houses in a town differ. It costs 2.2–5.1k triangles a house against 0.1–0.2k. A town of forty houses is 90–200k more, so the build would want a distant copy (the townsfolk's LOD) and would bake courses and tiles only close up.
+
+**Options:** (A) this direction, all nations, with a distant copy; (B) this direction but plainer (keep the roofs, windows, doors and footing; drop the courses, tiles and yard clutter), about 1k triangles a house and no LOD needed; (C) not yet: towns stay as they are while other things come first. **Recommendation: A.** Known faults to fix in the build: the thatch reads as a board (it wants a rounded, softer mass and a lower hip); the lean-to is crude; the Irish eaves come down over the window heads.
+
 ### Goblins and kobolds — what they look like (Session 178)
 The canon has goblins among the antibodies "folklore had words for" and says nothing of their look; kobolds are not in it at all. Today both are the humanoid box. Everything else you fight in the open world is now on the shape kit (wolves, boar, spider, dragon, bandits, the undead), so these two are what's left, and their look is your call. The prototype puts both on the people's body (they would walk, run and strike as the bandits do), with the parts a person lacks hung on the bones. A townsperson stands at the left of each picture for scale.
 - **Goblins A — the folklore goblin**: green, three-quarters of a person's height, a big head, long pointed ears, a long nose, ragged hide. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/goblins-gobA.png
