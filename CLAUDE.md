@@ -8,6 +8,8 @@ Claude implements. This file is what Claude reads first in every session.
 - `docs/devlog.md` — one entry per session, appended at the end of the session. Never rewrite old entries.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
+- `docs/design_brief.md` — Michael's brief: what the game is and the three things it must feel like. Every proposal and
+  every design call argues from it. `docs/decisions.md` — questions for Michael and his answers; nothing is a spec without a `Michael:` line.
 - `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all.
 - `scripts/parsecheck.py` — syntax-checks every inline script block. `scripts/tag.py bump` bumps the build tag.
 
