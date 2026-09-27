@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s176</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s177</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -22883,7 +22883,8 @@ function goToDungeon(portal){doFade(()=>{
     showZoneName('\u2694 '+portal.name+' ['+_ds.label+']');
   }
   document.getElementById('fbtn').style.display='block';
-  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){} // v80 — the lair's master and its hoardif(window._playerTorchLight){try{[owScene,forestScene,ironhavenScene].forEach(s=>{if(s)s.remove(window._playerTorchLight);});if(typeof WORLD!=='undefined'&&WORLD.scene)WORLD.scene.remove(window._playerTorchLight);dScene.add(window._playerTorchLight);}catch(e){}} // v80 — the torch comes with you
+  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){} // v80 — the lair's master and its hoard
+  if(window._playerTorchLight){try{[owScene,forestScene,ironhavenScene].forEach(s=>{if(s)s.remove(window._playerTorchLight);});if(typeof WORLD!=='undefined'&&WORLD.scene)WORLD.scene.remove(window._playerTorchLight);dScene.add(window._playerTorchLight);}catch(e){}} // v80 — the torch comes with you
   startMusic('dungeon',portal.theme);
   if(portal.tutorial){
     // v61az: spawn at the cell buildDungeon stored on portal._tutorialSpawn —
@@ -37823,7 +37824,8 @@ var WORLD=(()=>{
   }
   function snowRepaintStep(){
     if(!WX.coverQ||!WX.coverQ.length)return;
-    let n=0;while(WX.coverQ.length&&n<6){const ch=WX.coverQ.pop();if(ch&&ch.terrain)recolourChunk(ch);n++;}
+    // S177 — two chunks a frame (was six): a chunk costs about a millisecond, and a town's hundred or so are still done inside a second
+    let n=0;while(WX.coverQ.length&&n<2){const ch=WX.coverQ.pop();if(ch&&ch.terrain)recolourChunk(ch);n++;}
   }
   function recolourChunk(ch){
     const geo=ch.terrain,pa=geo.attributes.position,col=geo.attributes.color;const ox=ch.cx*CHUNK,oz=ch.cz*CHUNK;const c=_tmpC;
