@@ -44,6 +44,14 @@ check('the floor is under every ordinary open cell', r.floorMiss === 0 && r.floo
 check('the wall darkens towards its foot', r.foot < r.mid * .75, { foot: r.foot, mid: r.mid });
 check('the tops of the walls lean out over the room in a cove (Session 190)', r.coveTop > .2, { coveTop: r.coveTop, belowCoveMax: r.farFromGrid });
 check('damp greens the foot of the walls in patches; the rooms have beams (Session 190)', r.dampGR > 1.05 && r.beams.length === r.floors && r.beams.every(n => n >= 2), { dampGR: r.dampGR, beams: r.beams });
+// the doors (Session 206): planks, straps and a ring on the hinge, a stone frame that stays; a picture of one
+const door = await page.evaluate(() => { const D = DOORS.filter(d => d.hinge); if (!D.length) return { n: 0 }; const d = D[0];
+  const ok = D.filter(x => x.hinge.children.some(o => o.userData && o.userData.dunShell === 'door') && x.mesh.children.some(o => o.userData && o.userData.dunShell === 'doorframe')).length;
+  const cam = new THREE.PerspectiveCamera(55, REN.domElement.width / REN.domElement.height, .05, 40); const ex = d.isEW ? 2.2 : 0, ez = d.isEW ? 0 : 2.2; const side = dMap[Math.round(d.z + ez)] && dMap[Math.round(d.z + ez)][Math.round(d.x + ex)] > 0 ? 1 : -1;
+  cam.position.set(d.x + ex * side + .4, 1.5, d.z + ez * side + .3); cam.lookAt(d.x, 1.3, d.z); const L = new THREE.PointLight(0xffc080, 2, 8); L.position.copy(cam.position); dScene.add(L); dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L);
+  const o = document.createElement('canvas'); o.width = REN.domElement.width; o.height = REN.domElement.height; o.getContext('2d').drawImage(REN.domElement, 0, 0); return { n: D.length, ok, url: o.toDataURL() }; });
+if (door.url) fs.writeFileSync('tests/out/dungeon-door.png', Buffer.from(door.url.split(',')[1], 'base64')); delete door.url;
+check('the doors are planked, strapped and framed in stone (Session 206)', door.n > 0 && door.ok === door.n, door);
 const shots = await dungeonShots(page); shots.forEach((s, i) => fs.writeFileSync(`tests/out/dungeon-ruins-${i}.png`, Buffer.from(s.url.split(',')[1], 'base64')));
 // a second theme and a fort's upper floor build too
 await enterDungeon(page, { theme: 'goblin', seed: 5 });

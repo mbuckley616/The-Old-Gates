@@ -5819,3 +5819,18 @@ A bandit camp was open five-sided cones for tents, six flat boxes round the fire
 
 ### Needs eyes
 A camp in real play: the tents' size against the bandits, and the stockade's spacing.
+
+## v80 — Session 206 — The dungeon's doors on the kit (item 7's props)
+The last of the dungeon's props on plain boxes were its doors: a flat slab with a texture, two bands, and on a locked door three grey bars and a gold square. The door keeps its hinge group (`hinge`, turned by the open code), and on it is now one merged mesh:
+- five planks of slightly different tone;
+- two iron straps across both faces with nail heads at each plank;
+- a ring pull on its boss;
+- on a locked door, an iron grille in the upper half and a brass lock plate with a keyhole.
+
+Round the doorway, on the door's group and so staying put when the door swings, is a dressed stone frame: jambs of five blocks and a lintel.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has a new check, and all 13 pass. All 4 doors in the test fort have the merged door on their hinge and a frame. Picture: `docs/prototypes/dungeon-door.png`, a locked door in a coved corridor.
+
+### Needs eyes
+The frame is mostly hidden in the walls' warp and shows only as an edge. Whether it wants to stand proud of the wall face.
