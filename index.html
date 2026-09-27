@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s170</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s171</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38028,8 +38028,9 @@ var WORLD=(()=>{
     ZONES.world.enemies.push(e);showMsg(`${(n.def&&n.def.name)||'The guard'} draws.`,'#ff8060');return e;}
   function standDown(S){for(const e of ZONES.world.enemies){if(!e._guard||e.dead||e._guard.site!==S.site.id)continue;e.dead=true;try{sc.remove(e.mesh);}catch(err){}if(e.el)e.el.intensity=0;
     const n=e._guard.npc;if(n){n._drawn=false;n._retreated=false;n.g.visible=true;if(n.dot)n.dot.visible=true;}}}
-  function offerYield(S,c){const dbl=c.bounty*2;drawnAt(S).forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);}); // they hold while the offer stands
-    openDialog({name:'The guard',role:'Guard',ico:'⚔',greeting:[`Yield, and it goes easier. ${dbl} gold, or a night in the cells.`],topics:[
+  function offerYield(S,c){const dbl=c.bounty*2;const D_=drawnAt(S);D_.forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);}); // they hold while the offer stands
+    const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
+    openDialog({name:gn,role:'Guard',ico:'⚔',greeting:[`Yield, and it goes easier. ${dbl} gold, or a night in the cells.`],topics:[
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return 'You haven’t got it. The cells, then, or fight on.';gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return 'Wise. Go on, then.';}},
       {label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return 'Come along, then.';}},
       {label:'Fight on.',bye:true}]});}

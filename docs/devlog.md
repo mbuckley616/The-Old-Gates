@@ -5150,3 +5150,13 @@ New `tests/lockpicks.test.mjs`, in Dunmore. At Clodagh's Goods at 13h the list s
 
 ### Needs eyes
 Whether 12 gold a pick is right against the takings of a strongbox (90–183 in Dunmore) and the chance of snapping picks on a four-pin lock. The price is the loot table's, not a new decision; Michael may want it higher now that the town locks pay.
+
+## v80 — Session 171 — The yield speaks in the guard's name
+
+Backlog I, the critic's seventh finding (small): the halt names the guard (*Cathal*), but a moment later, at low health, the offer to yield came from *The guard*. `offerYield` hard-coded the name. It now takes the name of the guard who drew (the drawn enemy keeps a link to its townsperson, `e._guard.npc`), and falls back to *The guard* only when there is none.
+
+### Verified (headless Chromium)
+`tests/crime3.test.mjs` gains a check: with Cathal drawn and the player at a fifth of health, the yield dialogue is headed *Cathal*, the same name as the guard. The rest of crime3 is unchanged and passes. No page errors. Full suite: 21 of 21 suites pass.
+
+### Needs eyes
+Nothing new.
