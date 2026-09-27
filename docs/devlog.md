@@ -5322,3 +5322,15 @@ Session 177's full suite, which Session 179 left running: 14 of 21 suites done a
 
 ### Needs eyes
 Nothing new; the guards' owed play-check (Session 157) stands.
+
+## v80 — Session 181 — A seen theft is fined for what was taken (section I)
+
+The critic found that a seen theft cost a flat 50 gold. The crime design Michael set on 26 Sep (backlog B) says "theft 50 + the goods' value". Implementing a number the design already states needs no new decision, so this session does it. `noteCrime` and `seenCrime` now carry the value of what was taken, and a seen theft adds it to the 25-gold-a-point fine. From a strongbox or a home's chest that value is the coins taken plus each item's price. Locks (25) and assault (75) are unchanged.
+
+The other half of that critic item is left: the cells take stolen items but not stolen gold. The spec says the cells take "the stolen goods", and whether coins count is Michael's call. Also looked at and left: the duplicate names in a town (the critic's next item). The Irish name bank has 12 men's names against Dunmore's 60-odd residents, and the keepers' names, `makeDef`'s rename into the people's bank and the inn names are each picked blind to the others. So keepers, guards and the mayor collide (the Cathal of Session 171), and a collision shares a look under the genome cache. The fix wants an order (the keepers, guards and lord named first and uniquely, residents after) and a genome key that isn't the name alone. That is more than a short session could verify, so it is written into the backlog item for a later one.
+
+### Verified (headless Chromium)
+New `tests/crime5.test.mjs`, 2 checks, passing: in Niamh's Armoury at 13h, with the keeper beside you, emptying the strongbox took 137 gold and a 44-gold item, and the fine rose by 231, exactly 50 + 137 + 44. The log says Niamh saw it.
+
+### Needs eyes
+Whether a strongbox theft's fine (often 150–300 now) feels right against the takings. By the spec it always costs more than it gave you, if you are seen.

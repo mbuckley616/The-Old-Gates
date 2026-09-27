@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s180</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s181</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38780,13 +38780,14 @@ var WORLD=(()=>{
       const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR);return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
-  function seenCrime(kind,house,w){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
-    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=25*pts;c.debt+=pts;c.last=dayNow();}
+  // the fine is 25 gold a favour point, and a theft adds the value of what was taken (the spec, backlog B; S181)
+  function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
+    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=25*pts+(kind==='theft'?Math.max(0,Math.round(value||0)):0);c.debt+=pts;c.last=dayNow();}
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     showMsg(`${w.name} saw you ${what}.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you ${what} at ${house.name}${site?'; '+site.name+' will not forget it':''}.`);}
-  function noteCrime(kind,house){(worldState.crimes||(worldState.crimes=[])).push({kind,site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});
-    const w=witnessOf(house);if(w)seenCrime(kind,house,w);return !!w;}
+  function noteCrime(kind,house,value){(worldState.crimes||(worldState.crimes=[])).push({kind,site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});
+    const w=witnessOf(house);if(w)seenCrime(kind,house,w,value);return !!w;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const C=worldState.crime;const c=C&&C[typeof site==='string'?site:site.id];return c?c.bounty:0;}
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
@@ -38884,7 +38885,7 @@ var WORLD=(()=>{
     else{const mult=/weapon|armor|armoury|forge/.test(X.type)?1.2:/potion|apothecary/.test(X.type)?.8:1;coins=Math.round((20+180*Math.max(0,Math.min(100,p))/100)*mult*(.8+Math.random()*.4));
       try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},bpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
-    (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house);
+    (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((t,it)=>t+(it.buyPrice||0),0));
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
     if(typeof renderInv==='function')renderInv();return true;}
   let INT_LOOT=null;
