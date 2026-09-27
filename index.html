@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s167</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s168</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -3885,7 +3885,7 @@ function activeTerrainH(wx,wz){
   // so a goblin chasing the player onto the bridge will follow them up.
   const zr=ZONES[activeZoneId];
   if(zr&&zr.platforms){ // v80 — the highest platform under you wins (a dais's inner ring over its outer)
-    let best=null;for(let i=0;i<zr.platforms.length;i++){const p=zr.platforms[i];if(wx>=p.x0 && wx<=p.x1 && wz>=p.z0 && wz<=p.z1){if(best===null||p.y>best)best=p.y;}}
+    let best=null;for(let i=0;i<zr.platforms.length;i++){const p=zr.platforms[i];if(wx>=p.x0 && wx<=p.x1 && wz>=p.z0 && wz<=p.z1 && (!p.inside||p.inside(wx,wz))){if(best===null||p.y>best)best=p.y;}}
     if(best!==null)return best;
   }
   if(zr&&zr.getY)return zr.getY(wx,wz);
@@ -37611,8 +37611,8 @@ var WORLD=(()=>{
     const nb=2+Math.floor(r()*2);
     for(let k=0;k<nb;k++){
       const t=-len/2+8+k*10;const side=k%2?1:-1;const bx=mx+sd.dx*t-sd.dz*side*(QW/2+3.2),bz=mz+sd.dz*t+sd.dx*side*(QW/2+3.2);
-      const hull=mergeParts([{geo:new THREE.BoxGeometry(2.4,1.1,6.5),color:new THREE.Color(0x5a3a1c),y:.3,jitter:.06},{geo:new THREE.BoxGeometry(2.0,.2,5.8),color:new THREE.Color(0x8a6a3a),y:.85},{geo:new THREE.ConeGeometry(1.25,1.6,4),color:new THREE.Color(0x5a3a1c),z:3.7,y:.4,rx:Math.PI/2,ry:Math.PI/4,jitter:.06},{geo:new THREE.CylinderGeometry(.08,.1,5,6),color:new THREE.Color(0x4a3018),y:3.2},{geo:new THREE.BoxGeometry(.06,3.2,2.2),color:new THREE.Color(0xd8d0b8),y:3.4,z:.3,jitter:.04}]);
-      const bm=new THREE.Mesh(hull,VC_MAT);bm.position.set(bx,SEA_Y+.05,bz);bm.rotation.y=ang+(r()-.5)*.2;bm.castShadow=true;group.add(bm);S.boats=S.boats||[];S.boats.push(bm);
+      const hull=boatBake(Math.floor(r()*4)).geo; // S168 — an open clinker boat, four paints, one bake each
+      const bm=new THREE.Mesh(hull,SHIP_MAT);bm.position.set(bx,SEA_Y+.05,bz);bm.rotation.y=ang+(r()-.5)*.2;bm.castShadow=true;group.add(bm);S.boats=S.boats||[];S.boats.push(bm);
     }
     // nets, crates and barrels on the landward end
     for(let k=0;k<5;k++){const t=-len/2+2+r()*10;const bx=mx+sd.dx*t-sd.dz*(r()-.5)*(QW-2),bz=mz+sd.dz*t+sd.dx*(r()-.5)*(QW-2);
@@ -37638,37 +37638,233 @@ var WORLD=(()=>{
   const DECK_Y=SEA_Y+1.0,SHIP_PRICE=400;
   const KEYS={};
   window.addEventListener('keydown',e=>{KEYS[e.code]=true;});window.addEventListener('keyup',e=>{KEYS[e.code]=false;});
-  function buildShipMesh(SHIP_L,SHIP_W){
-    SHIP_L=SHIP_L||13;SHIP_W=SHIP_W||4.4;
-    const c=x=>new THREE.Color(x);
-    const g=mergeParts([
-      {geo:new THREE.BoxGeometry(SHIP_W,1.8,SHIP_L),color:c(0x5a3a1c),y:.1,jitter:.06},
-      {geo:new THREE.BoxGeometry(SHIP_W-.3,.14,SHIP_L-.6),color:c(0x9a7a4a),y:DECK_Y-SEA_Y+.05,jitter:.05},
-      {geo:new THREE.ConeGeometry(SHIP_W/2,3.2,4),color:c(0x5a3a1c),z:SHIP_L/2+1.4,y:.2,rx:Math.PI/2,ry:Math.PI/4,jitter:.06},
-      {geo:new THREE.BoxGeometry(SHIP_W,.45,.24),color:c(0x4a2e14),z:-SHIP_L/2+.15,y:1.3,jitter:.05},{geo:new THREE.BoxGeometry(.14,.5,.14),color:c(0x4a2e14),x:SHIP_W/2-.2,z:-SHIP_L/2+.15,y:1.32},{geo:new THREE.BoxGeometry(.14,.5,.14),color:c(0x4a2e14),x:-SHIP_W/2+.2,z:-SHIP_L/2+.15,y:1.32},
-      {geo:new THREE.BoxGeometry(.18,.9,.18),color:c(0x2a2622),x:SHIP_W/2-.1,y:1.45,z:0},{geo:new THREE.BoxGeometry(.18,.9,.18),color:c(0x2a2622),x:-SHIP_W/2+.1,y:1.45,z:0},
-      {geo:new THREE.BoxGeometry(SHIP_W,.12,.12),color:c(0x2a2622),y:1.9,z:0},
-      {geo:new THREE.CylinderGeometry(.14,.18,9,7),color:c(0x4a3018),y:5.4,z:.6},
-      {geo:new THREE.BoxGeometry(4.6,5.6,.08),color:c(0xe8e0c8),y:5.6,z:.9,jitter:.03},
-      {geo:new THREE.BoxGeometry(5.2,.1,.1),color:c(0x4a3018),y:8.5,z:.9},
-    ]);
-    const mesh=new THREE.Mesh(g,VC_MAT);mesh.castShadow=true;
-    // wheel at the stern
-    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,6,12),new THREE.MeshLambertMaterial({color:0x6a4a2a}));wheel.position.set(0,1.9,-SHIP_L/2+2.8);mesh.add(wheel);
-    const post=new THREE.Mesh(new THREE.BoxGeometry(.14,.9,.14),new THREE.MeshLambertMaterial({color:0x4a3018}));post.position.set(0,1.4,-SHIP_L/2+2.9);mesh.add(post);
-    const hatch=new THREE.Mesh(new THREE.BoxGeometry(1.1,.08,1.1),new THREE.MeshLambertMaterial({color:0x3a2612}));hatch.position.set(0,DECK_Y-SEA_Y+.14,SHIP_L/2-3.2);mesh.add(hatch);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(.3,DECK_Y-SEA_Y+.2,SHIP_L/2-3.2);ring.rotation.x=Math.PI/2;mesh.add(ring);
-    mesh.userData.wheel=wheel;
+  // ── Ships on the shape kit (backlog H.5b, Session 168) ──
+  // A hull is lofted, not boxed: stations along the length, each a round-bilged section from the keel to the gunwale,
+  // fining to a stem at the bow and a transom or sternpost aft, the gunwale rising to both ends; each row of faces is a
+  // strake with its own shade, tarred below the waterline. Deck, rails, wale, keel and stem, rudder, bowsprit, rigging
+  // and sails are baked with it into one vertex-coloured geometry: one draw call a ship, as before. The frame is the
+  // game's: the mesh sits at SEA_Y, +z is the prow, the deck is flat at 1.0 (DECK_Y), the wheel at -L/2+2.8, the hatch at
+  // L/2-3.2. The deck you can stand on follows the hull's breadth (mesh.userData.deckAt), not the old box's rectangle.
+  // Prototype: docs/prototypes/boats (Michael, 27 Sep: the rigs per class, the pirate and merchant looks; the sails
+  // filled, ratlines, the spritsail brought in).
+  const SHIP_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,metalness:0,side:THREE.DoubleSide});
+  const SHIP_DECK=1.0;
+  function ShipBake(){this.parts=[];}
+  {const _e=new THREE.Euler(0,0,0,'YXZ'),_q=new THREE.Quaternion();
+    ShipBake.prototype.add=function(geo,p,r,s,col){_e.set(r?r[0]:0,r?r[1]:0,r?r[2]:0,'YXZ');_q.setFromEuler(_e);
+      const m=new THREE.Matrix4().compose(new THREE.Vector3(p?p[0]:0,p?p[1]:0,p?p[2]:0),_q,new THREE.Vector3(s?s[0]:1,s?s[1]:1,s?s[2]:1));
+      this.parts.push([geo,m,col==null?null:new THREE.Color(col)]);return this;};}
+  // a part between two points (spars, stays, shrouds, ratlines)
+  ShipBake.prototype.rod=function(a,b,r0,r1,col,seg){const A=new THREE.Vector3(a[0],a[1],a[2]),B=new THREE.Vector3(b[0],b[1],b[2]),d=B.clone().sub(A),L=d.length();
+    const g=new THREE.CylinderGeometry(r1==null?r0:r1,r0,L,seg||5,1,true);g.translate(0,L/2,0);
+    const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+    this.parts.push([g,new THREE.Matrix4().compose(A,q,new THREE.Vector3(1,1,1)),new THREE.Color(col)]);return this;};
+  ShipBake.prototype.bake=function(){
+    let n=0;const flat=this.parts.map(([g,m,c])=>{const gg=g.index?g.toNonIndexed():g.clone();g.dispose();gg.applyMatrix4(m);if(!gg.attributes.normal)gg.computeVertexNormals();n+=gg.attributes.position.count;return [gg,c];});
+    const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3);let o=0;
+    flat.forEach(([g,c])=>{const p=g.attributes.position,nn=g.attributes.normal,vc=g.attributes.color;
+      for(let i=0;i<p.count;i++,o++){pos[o*3]=p.getX(i);pos[o*3+1]=p.getY(i);pos[o*3+2]=p.getZ(i);nor[o*3]=nn.getX(i);nor[o*3+1]=nn.getY(i);nor[o*3+2]=nn.getZ(i);
+        if(c){col[o*3]=c.r;col[o*3+1]=c.g;col[o*3+2]=c.b;}else{col[o*3]=vc.getX(i);col[o*3+1]=vc.getY(i);col[o*3+2]=vc.getZ(i);}}g.dispose();});
+    const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(pos,3));out.setAttribute('normal',new THREE.BufferAttribute(nor,3));out.setAttribute('color',new THREE.BufferAttribute(col,3));
+    out.computeBoundingBox();out.computeBoundingSphere();return out;};
+  const shC=x=>new THREE.Color(x);
+  // the hull: o {L,W,draft,sheer,bowRise,sternRise,stem,transom,full,strakes,bottom,wale,band,rows,stations}
+  // returns the geometry, a transom, at(z) -> {b half-breadth at the gunwale, g gunwale height, k keel}, and the keel and gunwale lines
+  function shipHull(o){
+    const D=SHIP_DECK,L=o.L,W=o.W,NS=o.stations||28,NR=o.rows||12,zs=-L/2-(o.transom?.15:.6),zb=L/2+(o.stem||2.2);
+    const rows=[],kpts=[],gpts=[];const U=u=>zs+(zb-zs)*u;
+    const breadth=u=>{const z=U(u);let k=1;
+      if(z>L/2-2.4){const t=(z-(L/2-2.4))/(zb-(L/2-2.4));k=Math.max(.015,1-Math.pow(t,o.full||1.7));}
+      if(z<-L/2+2.2){const t=(-L/2+2.2-z)/(-L/2+2.2-zs);k=Math.min(k,1-Math.pow(t,2.2)*(1-(o.transom||.12)));}
+      return W/2*k;};
+    const gun=u=>{const z=U(u),t=z/(L/2);return D+(o.sheer||.45)+(t>0?(o.bowRise||.5)*Math.pow(Math.max(0,t),2.2):(o.sternRise||.35)*Math.pow(-t,2.4));};
+    const keel=u=>{const z=U(u);let y=-(o.draft||1.1);
+      if(z>L/2-3.5){const t=(z-(L/2-3.5))/(zb-(L/2-3.5));y+=(gun(u)-.05-y)*Math.pow(t,2.1);}
+      if(z<-L/2+1.5){const t=(-L/2+1.5-z)/(-L/2+1.5-zs);y+=(o.transom?(.55+.3*t):1.2)*t*t;}
+      return y;};
+    for(let s=0;s<=NS;s++){const u=s/NS,z=U(u),b=breadth(u),g=gun(u),k=keel(u);kpts.push(new THREE.Vector3(0,k,z));gpts.push(new THREE.Vector3(b,g,z));
+      const ring=[];for(let j=0;j<=NR;j++){const th=j/NR*Math.PI/2;const sx=Math.pow(Math.sin(th),.45),cy=Math.pow(Math.cos(th),.55);
+        const flare=1+.05*Math.max(0,(1-cy)-.6);ring.push([b*sx*flare,g-(g-k)*cy,z]);}
+      rows.push(ring);}
+    const pos=[],colr=[];const push=(a,c)=>{pos.push(a[0],a[1],a[2]);colr.push(c.r,c.g,c.b);};
+    const strake=(j,y,s)=>{if(y<.08)return shC(o.bottom||0x2e2620);if(o.wale&&y>D-.28&&y<D-.02)return shC(o.wale);
+      if(o.band&&y>D+.02)return shC(o.band);const base=shC(o.strakes[j%o.strakes.length]);return base.multiplyScalar(.94+.06*((s*7)%3)/2);};
+    for(let s=0;s<NS;s++)for(let j=0;j<NR;j++)for(const side of [1,-1]){
+      const a=rows[s][j],b=rows[s+1][j],c=rows[s+1][j+1],d=rows[s][j+1];const f=q=>[q[0]*side,q[1],q[2]];
+      const col=strake(NR-1-j,(a[1]+c[1])/2,Math.floor(s/4));
+      const tri=side>0?[a,b,c,a,c,d]:[a,c,b,a,d,c];for(const q of tri)push(f(q),col);}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colr,3));
+    geo.computeVertexNormals();shipSmoothNormals(geo);
+    let tgeo=null;if(o.transom){const r=rows[0],cz=r[0][2],tp=[],tc=[];const col=shC(o.transomCol||o.strakes[0]).multiplyScalar(.85);
+      for(let j=0;j<NR;j++)for(const side of [1,-1]){const a=r[j],d=r[j+1];const f=q=>[q[0]*side,q[1],cz];
+        const quad=[a,d,[0,d[1],cz],[0,a[1],cz]];const ix=side>0?[0,2,1,0,3,2]:[0,1,2,0,2,3];for(const i of ix){const q=f(quad[i]);tp.push(q[0],q[1],q[2]);tc.push(col.r,col.g,col.b);}}
+      tgeo=new THREE.BufferGeometry();tgeo.setAttribute('position',new THREE.Float32BufferAttribute(tp,3));tgeo.setAttribute('color',new THREE.Float32BufferAttribute(tc,3));tgeo.computeVertexNormals();}
+    const at=z=>{const u=Math.min(1,Math.max(0,(z-zs)/(zb-zs)));return {b:breadth(u),g:gun(u),k:keel(u)};};
+    return {geo,tgeo,at,kpts,gpts,zs,zb};
+  }
+  // smooth normals across faces that share a point: the strakes are coloured flat, the hull shades round
+  function shipSmoothNormals(g){const p=g.attributes.position,n=g.attributes.normal,m=new Map();const key=i=>`${p.getX(i).toFixed(3)},${p.getY(i).toFixed(3)},${p.getZ(i).toFixed(3)}`;
+    for(let i=0;i<p.count;i++){const k=key(i);let v=m.get(k);if(!v)m.set(k,v=new THREE.Vector3());v.x+=n.getX(i);v.y+=n.getY(i);v.z+=n.getZ(i);}
+    for(let i=0;i<p.count;i++){const v=m.get(key(i)).clone().normalize();n.setXYZ(i,v.x,v.y,v.z);}}
+  // the deck: planks fore and aft, clipped to the hull's breadth. deckAt(z) is the half-breadth you can stand on there
+  function shipDeck(B,H,L,cols){const y=SHIP_DECK,NZ=24,NP=9;const pos=[],col=[];const z0=-L/2-.05,z1=H.zb-.5;
+    for(let s=0;s<NZ;s++){const za=z0+(z1-z0)*s/NZ,zb=z0+(z1-z0)*(s+1)/NZ;const ba=H.at(za).b*.97,bb=H.at(zb).b*.97;
+      for(let p=0;p<NP;p++){const fa=-1+2*p/NP,fb=-1+2*(p+1)/NP;const c=shC(cols[(p+(s>>3))%cols.length]);
+        const q=[[ba*fa,y,za],[ba*fb,y,za],[bb*fb,y,zb],[bb*fa,y,zb]];for(const i of [0,2,1,0,3,2]){pos.push(q[i][0],q[i][1],q[i][2]);col.push(c.r,c.g,c.b);}}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();B.add(g);
+    return {z0,z1,at:z=>z<z0||z>z1?0:H.at(z).b*.97};}
+  function shipRail(B,H,r,col,dy){for(const side of [1,-1]){const pts=H.gpts.filter((q,i)=>i%2===0||i===H.gpts.length-1).map(q=>new THREE.Vector3(q.x*side,q.y+(dy||0),q.z));
+    B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),28,r,5,false),null,null,null,col);}}
+  function shipWale(B,H,y,r,col){for(const side of [1,-1]){const pts=[];for(let z=H.zs+.2;z<H.zb-.6;z+=.6){const b=H.at(z).b;pts.push(new THREE.Vector3(b*side*1.01,y,z));}
+    B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,r,4,false),null,null,null,col);}}
+  function shipKeel(B,H,r,col,top){const pts=H.kpts.filter((q,i)=>i%2===0).map(q=>q.clone());const last=H.kpts[H.kpts.length-1];pts.push(new THREE.Vector3(0,last.y+(top||.35),last.z+.12));
+    B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),40,r,5,false),null,null,null,col);}
+  // a square sail, filled: it bellies forward most in the middle and low down, the foot curving up at the clews, the
+  // leeches drawn in a little, the way a sail full of wind hangs from its yard
+  function shipSail(B,w0,w1,h,belly,col,seam,at){const nx=8,ny=8,pos=[],cl=[];const c0=shC(col),c1=shC(seam||col);
+    const P=(i,j)=>{const t=j/ny,u=i/nx,w=w1+(w0-w1)*t,s=Math.sin(Math.PI*u);const x=(u-.5)*w*(1-.06*Math.sin(Math.PI*t));
+      const y=-h*t+h*.1*t*t*(1-s);const bz=belly*s*Math.pow(Math.sin(Math.PI*(.12+.8*t)),.8)*(.75+.25*t);return [x,y,bz];};
+    for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const q=[P(i,j),P(i+1,j),P(i+1,j+1),P(i,j+1)];const c=(i%2?c1:c0);for(const k of [0,1,2,0,2,3])pos.push(q[k][0],q[k][1],q[k][2]),cl.push(c.r,c.g,c.b);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(cl,3));g.computeVertexNormals();
+    B.add(g,at);}
+  // the wheel is its own small mesh on the hull, so it can turn with the helm
+  function shipWheelMesh(){const B=new ShipBake(),W=0x5a3a1c;B.add(SK.torus(.4,.045,6,14),[0,0,0],0,null,W);
+    for(let k=0;k<8;k++){const a=k/8*Math.PI*2;B.rod([Math.cos(a)*.1,Math.sin(a)*.1,0],[Math.cos(a)*.56,Math.sin(a)*.56,0],.022,.018,W,4);}
+    B.add(SK.cyl(.08,.1,.1,8),[0,0,0],[Math.PI/2,0,0],null,0x3a2410);const m=new THREE.Mesh(B.bake(),SHIP_MAT);m.castShadow=true;return m;}
+  function shipHatch(B,z){const D=SHIP_DECK;B.add(new THREE.BoxGeometry(1.3,.14,1.3),[0,D+.07,z],0,null,0x4a3018);
+    for(let k=-2;k<=2;k++)B.add(new THREE.BoxGeometry(1.1,.04,.12),[0,D+.15,z+k*.22],0,null,0x2e1e10);
+    B.add(SK.torus(.1,.022,5,10),[.34,D+.16,z],[Math.PI/2,0,0],null,0x2a2622);}
+  function shipBarrel(B,x,z,col){const y=SHIP_DECK;B.add(SK.lathe([[.001,0],[.2,0],[.24,.12],[.26,.25],[.24,.38],[.2,.5],[.001,.5]],10),[x,y,z],0,null,col||0x7a5228);
+    for(const h of [.06,.44])B.add(SK.torus(.235,.018,5,10),[x,y+h,z],[Math.PI/2,0,0],null,0x3a3530);}
+  function shipCrate(B,x,z,s,ry){const y=SHIP_DECK;B.add(new THREE.BoxGeometry(s,s*.8,s),[x,y+s*.4,z],[0,ry||0,0],null,0x8a6a38);B.add(new THREE.BoxGeometry(s*1.02,s*.12,s*1.02),[x,y+s*.4,z],[0,ry||0,0],null,0x5a4020);}
+  function shipLantern(B,x,y,z){B.rod([x,y-.5,z],[x,y,z],.03,.03,0x2a2622,4);B.add(SK.cyl(.08,.1,.22,6),[x,y+.11,z],0,null,0xffc860);B.add(SK.cone(.12,.1,6),[x,y+.27,z],0,null,0x2a2622);}
+  // shrouds from the chains at the gunwale to the masthead, and ratlines across them every .42 up to climb by
+  function shipShrouds(B,H,z,top,n,dz,rc){for(const s of [1,-1]){const ends=[];for(let k=0;k<n;k++){const zz=z-dz*(n-1)/2+k*dz;const a=H.at(zz);const lo=[a.b*s*1.02,a.g-.1,zz],hi=[.13*s,top,z];B.rod(lo,hi,.02,.02,rc,3);ends.push([lo,hi]);}
+    if(n<2)continue;const lo0=ends[0][0][1],steps=Math.floor((top-lo0)*.62/.42);
+    for(let q=1;q<=steps;q++){const pts=ends.map(([lo,hi])=>{const t=q*.42/(top-lo[1]);return [lo[0]+(hi[0]-lo[0])*t,lo[1]+(hi[1]-lo[1])*t,lo[2]+(hi[2]-lo[2])*t];});
+      for(let k=0;k<pts.length-1;k++)B.rod(pts[k],pts[k+1],.011,.011,rc,3);}}}
+  // a gaff sail aft of a mast: boom at bY, gaff peaking up from gY, the sail between them filled to leeward
+  function shipGaff(B,mz,bY,gY,boomL,gaffL,lk){B.rod([0,bY,mz-.1],[0,bY+.25,mz-boomL],.07,.05,0x5a3c1e,6);B.rod([0,gY,mz-.1],[0,gY+gaffL*.3,mz-gaffL],.06,.045,0x5a3c1e,6);
+    const nx=8,ny=8,pos=[],cl=[];const c0=shC(lk.sail),c1=shC(lk.seam);
+    const Pm=(i,j)=>{const t=i/nx,v=j/ny;const zf=mz-.15-t*(v*(gaffL-.2)+(1-v)*(boomL-.3));const yb=bY+.1+.25*t,yt=gY-.05+gaffL*.3*t;const y=yb+(yt-yb)*v;
+      return [1.05*Math.pow(Math.sin(Math.PI*t),.85)*Math.sin(Math.PI*(.12+.8*v))*(1-.35*v),y,zf];};
+    for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const q=[Pm(i,j),Pm(i+1,j),Pm(i+1,j+1),Pm(i,j+1)];const c=j%2?c1:c0;for(const k of [0,1,2,0,2,3])pos.push(q[k][0],q[k][1],q[k][2]),cl.push(c.r,c.g,c.b);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(cl,3));g.computeVertexNormals();B.add(g);}
+  // a mast with a top, its shrouds and ratlines, the yard and a square sail (and a topsail over it)
+  function shipSquareMast(B,H,z,h,yardW,sailH,o){const D=SHIP_DECK,mc=o.mast||0x5a3c1e,rc=o.rope||0x2e2820;const foot=D-.8;
+    B.add(SK.cyl(.1*o.k,.17*o.k,h+.8,8),[0,foot+(h+.8)/2,z],0,null,mc);
+    if(o.top)B.add(SK.cyl(.42*o.k,.3*o.k,.14,10),[0,D+h*.72,z],0,null,mc);
+    shipShrouds(B,H,z,D+h*.72,3,.55,rc);
+    const yy=D+h*.66;B.rod([-yardW/2,yy,z+.18],[yardW/2,yy,z+.18],.06*o.k,.06*o.k,mc,6);
+    shipSail(B,yardW*.94,yardW*1.02,sailH,yardW*.11,o.sail,o.seam,[0,yy-.05,z+.22]);
+    if(o.topsail){const y2=D+h*.95;B.rod([-yardW*.35,y2,z+.14],[yardW*.35,y2,z+.14],.045,.045,mc,6);shipSail(B,yardW*.66,yardW*.84,h*.2,yardW*.07,o.sail,o.seam,[0,y2-.04,z+.18]);}
+    return yy;}
+  const SHIP_LOOKS={
+    player:{strakes:[0x6a4424,0x5c3a1e,0x714a28],wale:0x3a2410,band:null,bottom:0x2e2620,sail:0xece2c8,seam:0xdccfac,trim:0x3a2410,deck:[0xa8865a,0x9c7c52,0xb08e62]},
+    pirate:{strakes:[0x2e2824,0x26201c,0x322a24],wale:0x6a1a14,band:0x1a1614,bottom:0x1e1a16,sail:0x2a2624,seam:0x1e1a18,trim:0x6a1a14,deck:[0x6a5a44,0x5e503c,0x72604a]},
+    merchant:{strakes:[0x7a5a34,0x6e5030,0x84623a],wale:0x2a4a3a,band:0x3a6a52,bottom:0x3a2e24,sail:0xeee2c6,seam:0xa84a30,trim:0x2a4a3a,deck:[0xb09264,0xa48658,0xb89a6c]}
+  };
+  const SHIP_GEO=new Map();
+  // kind 'sloop' | 'cog' | 'galleon'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
+  function shipBake(kind,look){const key=kind+'|'+look;let r=SHIP_GEO.get(key);if(r)return r;
+    const D=SHIP_DECK,lk=SHIP_LOOKS[look]||SHIP_LOOKS.player;const B=new ShipBake();
+    const cls={sloop:{L:13,W:4.4},cog:{L:17,W:5.6},galleon:{L:22,W:7.0}}[kind];const L=cls.L,W=cls.W;
+    const hopt={sloop:{draft:1.05,sheer:.42,bowRise:.45,sternRise:.3,stem:2.4,transom:.34,full:1.8},
+      cog:{draft:1.25,sheer:.55,bowRise:.85,sternRise:.9,stem:1.4,transom:0,full:1.3},
+      galleon:{draft:1.5,sheer:.5,bowRise:.7,sternRise:1.25,stem:3.0,transom:.62,full:2.0}}[kind];
+    const H=shipHull(Object.assign({L,W,strakes:lk.strakes,wale:lk.wale,band:lk.band,bottom:lk.bottom,transomCol:lk.strakes[1],stations:kind==='galleon'?34:28},hopt));
+    B.add(H.geo);if(H.tgeo)B.add(H.tgeo);const deckAt=shipDeck(B,H,L,lk.deck);
+    shipRail(B,H,.06,lk.trim,.02);shipWale(B,H,D-.15,.07,lk.wale);shipKeel(B,H,.09,lk.trim,kind==='cog'?.2:.45);
+    const st=H.at(H.zs+.01);B.rod([0,st.k-.1,H.zs-.05],[0,st.g+.1,H.zs-.12],.08,.08,lk.trim,5);
+    const rud=new THREE.BoxGeometry(.12,1,1);rud.translate(0,-.5,-.5);B.add(rud,[0,D-.15,H.zs-.1],null,[1,1.1+hopt.draft*.7,.8],lk.trim);
+    const bow=H.at(H.zb-.3);const sp=kind==='cog'?1.8:kind==='galleon'?6:4.4;const bz=H.zb-.6,by=bow.g-.05;
+    const spA=[0,by-.15,bz-1.2],spB=[0,by+sp*.35,bz+sp];B.rod(spA,spB,.13,.06,lk.trim,6);
+    B.add(SK.cyl(.1,.13,.95,6),[0,D+.475,-L/2+2.92],0,null,0x4a3018); // the wheel's post; the wheel itself turns (shipWheelMesh)
+    shipHatch(B,L/2-3.2);
+    shipLantern(B,0,H.at(-L/2).g+.55,H.zs+.15);
+    shipBarrel(B,W/2-.7,-1.6);shipBarrel(B,W/2-.75,-2.25,0x6a4a22);shipCrate(B,-W/2+.8,-1.9,.7,.3);shipCrate(B,-W/2+.75,-2.6,.55,-.2);
+    const mopt={k:kind==='galleon'?1.25:kind==='cog'?1.1:1,sail:lk.sail,seam:lk.seam,rope:0x2e2820,mast:0x5a3c1e};
+    let mastTop=D+8.6,mastZ=.6;
+    if(kind==='sloop'){
+      // one mast, a gaff mainsail aft of it and a jib to the bowsprit
+      const mz=.6,mh=8.6;B.add(SK.cyl(.11,.17,mh+.8,8),[0,D-.8+(mh+.8)/2,mz],0,null,0x5a3c1e);
+      shipShrouds(B,H,mz,D+mh*.85,2,.5,0x2e2820);
+      B.rod([0,D+mh*.85,mz],[0,by+sp*.33,bz+sp-.2],.022,.022,0x2e2820,3);B.rod([0,D+mh,mz],[0,H.at(-L/2).g,-L/2+.3],.02,.02,0x2e2820,3);
+      shipGaff(B,mz,D+1.6,D+mh*.82,7.2,5.2,lk);
+      // the jib, filled: a triangle from the masthead to the bowsprit and the deck at the bow, bellied to leeward
+      const jh=[0,D+mh*.82,mz+.25],jt=[0,by+sp*.3,bz+sp-.5],jc=[.3,D+.6,L/2-.8];const jp=[],jcl=[];const N=7;const c=shC(lk.sail);
+      const pt=(a,b)=>{const w=1-a-b;return [jh[0]*w+jt[0]*a+jc[0]*b+12*a*b*w,jh[1]*w+jt[1]*a+jc[1]*b,jh[2]*w+jt[2]*a+jc[2]*b];};
+      for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){const A=pt(i/N,j/N),Bq=pt((i+1)/N,j/N),Cq=pt(i/N,(j+1)/N);jp.push(...A,...Bq,...Cq);jcl.push(c.r,c.g,c.b,c.r,c.g,c.b,c.r,c.g,c.b);
+        if(j<N-i-1){const Dq=pt((i+1)/N,(j+1)/N);jp.push(...Bq,...Dq,...Cq);jcl.push(c.r,c.g,c.b,c.r,c.g,c.b,c.r,c.g,c.b);}}
+      const jg=new THREE.BufferGeometry();jg.setAttribute('position',new THREE.Float32BufferAttribute(jp,3));jg.setAttribute('color',new THREE.Float32BufferAttribute(jcl,3));jg.computeVertexNormals();B.add(jg);
+    }
+    if(kind==='cog'){
+      // one tall mast, one great square sail; castle rails on posts over the raised ends (the deck stays flat to walk on)
+      shipSquareMast(B,H,.4,10.5,8.2,6.6,Object.assign({top:true},mopt));mastTop=D+10.5;mastZ=.4;
+      B.rod([0,D+10.5*.72,.4],[0,by+sp*.3,bz+sp-.1],.025,.025,0x2e2820,3);
+      for(const [z0,z1] of [[-L/2+.2,-L/2+3.2],[L/2-1.8,L/2+.8]])for(const s of [1,-1]){for(let z=z0;z<=z1+.01;z+=.75){const a=H.at(z);B.rod([a.b*s*.96,a.g,z],[a.b*s*.96,a.g+.55,z],.045,.045,lk.trim,4);}
+        const pts=[];for(let z=z0;z<=z1+.01;z+=.5){const a=H.at(z);pts.push(new THREE.Vector3(a.b*s*.96,a.g+.55,z));}B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),10,.05,4,false),null,null,null,lk.trim);}
+      if(look!=='pirate'){const sh=H.at(0);for(const s of [1,-1])for(let k=0;k<4;k++){const z=-2.4+k*1.5;B.add(SK.cyl(.36,.36,.06,10),[sh.b*s*1.03,sh.g-.28,z],[0,0,Math.PI/2],null,[0xa83a2a,0xd8c49a,0x2a4a7a,0xd8c49a][k]);}}
+    }
+    if(kind==='galleon'){
+      // fore and main square-rigged with topsails, a gaff mizzen; the spritsail hangs from a yard under the bowsprit,
+      // a third of the way out (the prototype's hung far ahead of the bow)
+      shipSquareMast(B,H,5.2,10.5,7.4,5.8,Object.assign({top:true,topsail:true},mopt));
+      shipSquareMast(B,H,-.4,13,9.4,7.2,Object.assign({top:true,topsail:true},mopt));mastTop=D+13;mastZ=-.4;
+      const mz=-6.6,mh=9;B.add(SK.cyl(.12,.19,mh+.8,8),[0,D-.8+(mh+.8)/2,mz],0,null,0x5a3c1e);
+      shipShrouds(B,H,mz,D+mh*.8,2,.5,0x2e2820);
+      shipGaff(B,mz,D+1.9,D+mh*.78,4.6,3.6,lk);
+      const t=.36,sy=spA[1]+(spB[1]-spA[1])*t-.18,sz=spA[2]+(spB[2]-spA[2])*t;
+      B.rod([-2.1,sy,sz],[2.1,sy,sz],.045,.045,0x5a3c1e,5);shipSail(B,4.0,4.3,1.7,.4,lk.sail,lk.seam,[0,sy-.05,sz+.05]);
+      for(const [a,b] of [[[0,D+13*.72,-.4],[0,D+10.5*.72,5.2]],[[0,D+10.5*.72,5.2],[0,by+sp*.3,bz+sp-.2]],[[0,D+9*.8,mz],[0,D+13*.72,-.4]]])B.rod(a,b,.025,.025,0x2e2820,3);
+      const tz=H.zs-.02;for(let k=-2;k<=2;k++){B.add(new THREE.BoxGeometry(.5,.55,.06),[k*.72,D+.55,tz],0,null,0x1a1a22);B.add(new THREE.BoxGeometry(.62,.08,.1),[k*.72,D+.87,tz],0,null,0xc8a040);}
+      B.add(new THREE.BoxGeometry(4.2,.12,.14),[0,D+.2,tz],0,null,0xc8a040);
+      const gp=look==='merchant'?0:6;for(const s of [1,-1])for(let k=0;k<gp;k++){const z=-5+k*2.1;const a=H.at(z);B.add(new THREE.BoxGeometry(.06,.42,.5),[a.b*s*1.005,D-.45,z],0,null,0x1a1614);}
+      shipLantern(B,-1.6,H.at(-L/2).g+.5,H.zs+.2);shipLantern(B,1.6,H.at(-L/2).g+.5,H.zs+.2);
+    }
+    if(look==='pirate'){const fl=new THREE.PlaneGeometry(1.4,.9,3,1);const p=fl.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*3)*.08);fl.computeVertexNormals();
+      B.add(fl,[0,mastTop+.9,mastZ-.8],[0,Math.PI/2,0],null,0x111111);B.add(SK.ball(.14,8,6),[.03,mastTop+.95,mastZ-.8],0,[1,1,.6],0xd8d0c0);B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
+    r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb};SHIP_GEO.set(key,r);return r;}
+  // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
+  function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
+    const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
+    const L=6,W=2.2,G=.55;const H=shipHull({L,W,draft:.55,sheer:G-SHIP_DECK,bowRise:.35,sternRise:.25,stem:1.0,transom:.4,full:1.5,rows:9,stations:20,strakes:[0x7a5634,0x6a4a2c,0x84603a],band:null,wale:null,bottom:0x3a3028});
+    B.add(H.geo);if(H.tgeo)B.add(H.tgeo);const at=z=>H.at(z);
+    for(const side of [1,-1]){const pts=H.gpts.filter((q,i)=>i%2===0).map(q=>new THREE.Vector3(q.x*side,q.y+.02,q.z));B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),20,.05,4,false),null,null,null,paint);}
+    const pts=H.kpts.filter((q,i)=>i%2===0).map(q=>new THREE.Vector3(0,q.y,q.z));B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),20,.06,4,false),null,null,null,paint);
+    B.add(new THREE.BoxGeometry(W*.5,.04,L*.72),[0,at(0).k+.22,-.1],0,null,0x9a7a4a);
+    for(const z of [-1.7,-.2,1.2]){const a=at(z);B.add(new THREE.BoxGeometry(a.b*1.9,.07,.3),[0,a.g-.2,z],0,null,0xa0804e);}
+    const st=at(-L/2);B.add(new THREE.BoxGeometry(st.b*1.8,.07,.9),[0,st.g-.22,-L/2+.3],0,null,0xa0804e);
+    for(const s of [.3,-.3]){B.rod([s,at(0).g-.1,-2.2],[s*.8,at(0).g-.08,2.1],.03,.03,0xb09060,4);B.add(new THREE.BoxGeometry(.14,.02,.55),[s*.8,at(0).g-.08,2.3],0,null,0xb09060);}
+    const mz=1.2,mh=3.6;B.add(SK.cyl(.05,.08,mh,6),[0,at(mz).k+mh/2+.1,mz],0,null,0x5a3c1e);
+    const yy=at(mz).k+mh-.2;B.rod([0,yy,mz+.1],[0,yy-.9,mz-2.2],.035,.03,0x5a3c1e,5);B.rod([0,yy-.12,mz-.05],[0,yy-.95,mz-2.1],.1,.07,0xd8ccae,8);
+    B.add(SK.torus(.16,.04,5,12),[.35,at(-1).k+.3,-1],[Math.PI/2,0,0],null,0x8a7a58);
+    B.add(SK.bumpy(SK.ball(.28,10,6,0,Math.PI*2,0,1.8),.05,11,R()*9),[-.2,at(.5).k+.28,.5],0,[1,.5,1.3],0x8a8060);
+    B.add(SK.lathe([[.001,0],[.16,0],[.2,.22],[.19,.24],[.001,.24]],9),[.3,at(-2.4).k+.24,-2.4],0,null,0x9a7a40);
+    r={geo:B.bake()};SHIP_GEO.set(key,r);return r;}
+  // a point in world space against a ship's deck: in the mesh's frame (turned by rotation.y), within the deck's breadth there
+  function onShipDeck(mesh,wx,wz){const d=mesh.userData.deck;if(!d)return true;const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry);
+    const dx=wx-mesh.position.x,dz=wz-mesh.position.z;const lx=dx*c-dz*s,lz=dx*s+dz*c;return Math.abs(lx)<d.at(lz)-.1;}
+  // the ship's mesh: the class by its length, the look by who sails her; the wheel a child that turns with the helm
+  function buildShipMesh(SHIP_L,SHIP_W,look){
+    const kind=(SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop';const r=shipBake(kind,look||'player');
+    const mesh=new THREE.Mesh(r.geo,SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
+    const wheel=shipWheelMesh();wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);
+    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;
     return mesh;
   }
+  // the deck platform's box: the hull turned by yaw (the bow's deck reaches past L/2 now); the deck's own outline is plat.inside
+  function shipPlatBox(plat,mesh,x,z,yaw,L,W){const d=mesh&&mesh.userData.deck;const hl=d?Math.max(-d.z0,d.z1):L/2;
+    const c=Math.abs(Math.cos(yaw)),s=Math.abs(Math.sin(yaw));const hw=W/2*c+hl*s,hd=W/2*s+hl*c;
+    plat.x0=x-hw;plat.x1=x+hw;plat.z0=z-hd;plat.z1=z+hd;if(mesh&&!plat.inside)plat.inside=(wx,wz)=>onShipDeck(mesh,wx,wz);}
   function shipUpdatePlacement(){
     const m=SHIP.mesh;if(!m)return;
     m.position.set(SHIP.x,SEA_Y+Math.sin(performance.now()*.0012)*.05,SHIP.z);m.rotation.y=SHIP.yaw+Math.PI; // mesh +z is the prow; movement forward is (-sin,-cos)
     m.rotation.z=Math.sin(performance.now()*.0017)*.02;
-    // deck platform: AABB of the rotated hull (generous at 45°, fine)
-    const c=Math.abs(Math.cos(SHIP.yaw)),s=Math.abs(Math.sin(SHIP.yaw));
-    const hw=SHIP.W/2*c+SHIP.L/2*s,hd=SHIP.W/2*s+SHIP.L/2*c;
+    // deck platform: the box around the turned hull, and within it the deck's own outline (S168)
     if(!SHIP.plat){SHIP.plat={x0:0,x1:0,z0:0,z1:0,y:DECK_Y,ship:true};ZONES.world.platforms.push(SHIP.plat);}
-    SHIP.plat.x0=SHIP.x-hw;SHIP.plat.x1=SHIP.x+hw;SHIP.plat.z0=SHIP.z-hd;SHIP.plat.z1=SHIP.z+hd;
+    if(SHIP.plat.mesh!==m){SHIP.plat.mesh=m;SHIP.plat.inside=null;}m.updateMatrix();
+    shipPlatBox(SHIP.plat,m,SHIP.x,SHIP.z,SHIP.yaw,SHIP.L,SHIP.W);
     // the wheel in world space
     const wx=-Math.sin(SHIP.yaw)*(-SHIP.L/2+2.8),wz=-Math.cos(SHIP.yaw)*(-SHIP.L/2+2.8);
     SHIP.wheel.x=SHIP.x+wx;SHIP.wheel.z=SHIP.z+wz;
@@ -37698,7 +37894,7 @@ var WORLD=(()=>{
     return `She\u2019s the ${SHIP.name}, and she\u2019s yours — moored off the seaward end of the quay, ${compassWord(bx-site.x,bz-site.z)} of here. Walk out, press E beside her to board, E again for the wheel.`;
   }
   // E near the wheel takes / leaves the helm
-  function onDeck(){const p=SHIP.plat;return !!p&&px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&Math.abs(jumpY-DECK_Y)<1;}
+  function onDeck(){const p=SHIP.plat;return !!p&&px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-DECK_Y)<1;}
   function hullDist(){const p=SHIP.plat;if(!p)return 1e9;const dx=Math.max(p.x0-px,0,px-p.x1),dz=Math.max(p.z0-pz,0,pz-p.z1);return Math.hypot(dx,dz);}
   function nearShip(){return !!SHIP.mesh&&!onDeck()&&hullDist()<3.5&&jumpY<4;}
   function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<2.4;}
@@ -37756,7 +37952,7 @@ var WORLD=(()=>{
   const SWIM_Y=SEA_Y-.35;
   function groundY(x,z){const h=worldH(x,z);if(h<SWIM_Y&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
   function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!SHIP.sailing&&worldH(px,pz)<SWIM_Y-.05&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
-  function onAnyPlatform(){for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&Math.abs(jumpY-p.y)<1.2)return true;}return false;}
+  function onAnyPlatform(){for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-p.y)<1.2)return true;}return false;}
 
   // ═══ UNDER THE WATER (Session D) ═════════════════════════════════════
   // Diving: while swimming, look down and hold W to dive, look up (or Space)
@@ -37930,8 +38126,7 @@ var WORLD=(()=>{
   // ── other ships: pirates and merchants ──
   const OTHER=[]; // {kind,mesh,x,z,yaw,speed,plat,crew:[],chest,boarded,volleyT,dead}
   function spawnOtherShip(kind,x,z){
-    const m=buildShipMesh(13,4.4);m.traverse(o=>{if(o.isMesh&&o.geometry.attributes.color){const c=o.geometry.attributes.color;for(let i=0;i<c.count;i++){if(kind==='pirate'){c.setXYZ(i,c.getX(i)*.6,c.getY(i)*.55,c.getZ(i)*.5);}else{c.setXYZ(i,Math.min(1,c.getX(i)*1.1),c.getY(i),c.getZ(i));}}c.needsUpdate=true;}});
-    if(kind==='pirate'){const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.8),new THREE.MeshLambertMaterial({color:0x111111,side:THREE.DoubleSide}));flag.position.set(0,9.2,.6);m.add(flag);const skull=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),new THREE.MeshLambertMaterial({map:signTexture('guild_f',''),side:THREE.DoubleSide}));skull.position.set(0,9.2,.62);m.add(skull);}
+    const m=buildShipMesh(13,4.4,kind==='pirate'?'pirate':'merchant'); // S168 — the black sail and the merchantman are looks of their own, not tints
     sc.add(m);
     const o={kind,mesh:m,x,z,yaw:Math.random()*Math.PI*2,speed:0,L:13,W:4.4,plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
     ZONES.world.platforms.push(o.plat);OTHER.push(o);placeOther(o);
@@ -37941,8 +38136,7 @@ var WORLD=(()=>{
   function despawnOtherShip(o){sc.remove(o.mesh);const i=ZONES.world.platforms.indexOf(o.plat);if(i>=0)ZONES.world.platforms.splice(i,1);o.crew.forEach(e=>{if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);}});if(o.chest&&typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(o.chest);if(k>=0)ZONE_CORPSES.splice(k,1);}const j=OTHER.indexOf(o);if(j>=0)OTHER.splice(j,1);}
   function placeOther(o){
     o.mesh.position.set(o.x,SEA_Y+Math.sin(performance.now()*.0011+o.x)*.05,o.z);o.mesh.rotation.y=o.yaw+Math.PI;
-    const c=Math.abs(Math.cos(o.yaw)),s=Math.abs(Math.sin(o.yaw));const hw=o.W/2*c+o.L/2*s,hd=o.W/2*s+o.L/2*c;
-    o.plat.x0=o.x-hw;o.plat.x1=o.x+hw;o.plat.z0=o.z-hd;o.plat.z1=o.z+hd;
+    shipPlatBox(o.plat,o.mesh,o.x,o.z,o.yaw,o.L,o.W);
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}
   let _seaT=0;
@@ -39657,7 +39851,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
