@@ -5657,3 +5657,14 @@ Both are about 2.9k triangles (2,910 and 2,824). Each keeps the old one (92 and 
 
 ### Needs eyes
 A town with a keep in real play: the keep's size against its lot (the towers overhang the footprint, as the old ones did); whether the church's tower should stand at the west end instead. Still owed: the POIs' buildings, and a distant copy for the garrison POI's houses and the roadside inn.
+
+## v80 — Session 196 — The dungeon's skeletons, goblins and kobolds on the people's body (H.4, item 7)
+Sessions 171–184 moved the open world's human and humanoid foes onto the townsfolk's body. The dungeon kept its own builder, `buildEnemy`, where every humanoid was still the box of rigid blocks. That was the last of the '90s look inside a dungeon the player meets face to face, so it follows the shell slices.
+
+**What changed.** `buildEnemy` now takes the enemy's name. A humanoid whose name has a `FOE_DRESS` entry and carries no shield is built by `buildFoe`, exactly as in the open world: the Skeleton on the people's bones, the Goblin (Michael's folklore goblin), and the Kobold Thief, which gets the same hooded mine-sprite as the open world's Kobold under a new `FOE_DRESS` row. Its right shoulder is the striking arm (`limbs.armR`), its own material takes the telegraph's flash, and a small light glows in the eyes' colour. Once the enemy exists its body is linked to it (`rig.e`), so `tickPeople` walks it by the enemy's own dungeon position, with the same walk, run, idle and lie-still-when-dead as outside. The health bar sits over a person's head (1.3 × scale). The dungeon's walk code only touches `legL`/`legR` when they exist, so it leaves the people alone. The Shieldbearer keeps its box, since its shield hangs on the box's arm pivot; so do the slimes, brutes, elementals, gargoyles and the mimic.
+
+### Verified (headless Chromium)
+New `tests/dungeonfoes.test.mjs`, 4 checks, all passing, no page errors. Across four dungeons (goblin seeds 5 and 12, undead seed 7, ruins seed 11), all 46 goblins, 12 kobold thieves and 28 skeletons are people, each in the rig set and linked to its own enemy. Slimes stay slimes. A skeleton moved 1.2 u/s for 120 ticks walks (walk weight 1). `foes`, `goblins` and `dungeon` still pass. Picture: `docs/prototypes/dungeon-foes.png`, a skeleton with a spear in an undead dungeon.
+
+### Needs eyes
+A goblin dungeon in real play: the dungeon's own attack timing on the person's arm; bodies left where they fall; frame time with twenty-odd people on a floor (each has the distant copy past 17 units).
