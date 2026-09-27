@@ -30,7 +30,7 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 - ~~Lockpicking as a minigame~~ — **done, Session 142** (Oblivion's lock: a pin per tumbler, set it at the shear, a mistimed press snaps the pick; difficulty steady per door, finesse widens the window). ~~Locks on chests~~ — **done, Session 150** (treasure chests always, ordinary dungeon chests 1 in 5 / 2 in 5 by floor, the tower's hoard a good lock; mimics wear the same lock a chest there would). ~~Locks on world doors~~ — **Session 155**, as the crime system's part 1.
 
 ## C. Combat and creatures
-- ~~Third-person~~ — **done, Session 126** (jointed body, kit on the body, poses from combat state, collision-aware camera). Owed: arrows/spells from the hands rather than the eye; weapon trails; drink/loot poses.
+- ~~Third-person~~ — **done, Session 126** (jointed body, kit on the body, poses from combat state, collision-aware camera). Owed: ~~arrows/spells from the hands rather than the eye~~ (Session 175: from the bow hand and the right hand, at the crosshair's point 30 units out); weapon trails; drink/loot poses.
 - ~~Dungeon enemies' attack animation~~ — done, Session 130 (one shared pose).
 - ~~Mesh cleanup, second pass~~ — done, Session 130 (spider family, dragon, humanoid pivots). There are no rats; the note was wrong.
 - ~~Boss tuning by level~~ — done, Session 130 (the master scales; the charge into a wall dazes; captains guard). Owed: a mechanic for the dungeon master beyond numbers.

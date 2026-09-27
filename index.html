@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s174</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s175</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -20244,6 +20244,18 @@ function tpUpdate(dt,st){
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
 }
+// S175 — in third person a shot leaves the hand that makes it (the bow hand for an arrow, the right hand for
+// a spell) and flies to where the crosshair points, a point AIM_REACH along the camera's line. In first person
+// (or with the body hidden, too close to see past) it returns null and the caller keeps its eye-side origin.
+const AIM_REACH=30;
+function tpAimPoint(){const d=CAM.getWorldDirection(new THREE.Vector3());return CAM.position.clone().addScaledVector(d,AIM_REACH);}
+function tpShotFrom(hand,sc,aim){
+  if(!thirdPerson||!TP.rig||!TP.rig.root.visible||TP.rig.root.parent!==sc)return null;
+  const b=hand==='L'?TP.rig.handL:TP.rig.handR;if(!b)return null;
+  TP.rig.root.updateMatrixWorld(true);const from=b.getWorldPosition(new THREE.Vector3());
+  const dir=(aim||tpAimPoint()).clone().sub(from).normalize();
+  return {from,dir};
+}
 function tpToggle(){thirdPerson=!thirdPerson;TP.cur=0;try{localStorage.setItem('og_tp',thirdPerson?'1':'0');}catch(e){}showMsg(thirdPerson?'Third person — mouse wheel to zoom':'First person','#c8b880');}
 window.addEventListener('wheel',e=>{if(!thirdPerson||!started||dead)return;if(invOpen||shopOpen||lootOpen||stashOpen||hubOpen)return;if(typeof MAP!=='undefined'&&MAP.mode==='map')return;TP.want=Math.max(.9,Math.min(3.2,TP.want+(e.deltaY>0?.2:-.2)));try{localStorage.setItem('og_tp_d',String(TP.want));}catch(e2){}},{passive:true});
 let _exhaustedStrike=false; // v80 S9 — set per swing when stamina was below the minimum
@@ -24891,14 +24903,16 @@ function fireArrow(strength){
   const spawnX = px + fwdX*0.5 + rgtX*0.15;
   const spawnZ = pz + fwdZ*0.5 + rgtZ*0.15;
   arrowGroup.position.set(spawnX, spawnY, spawnZ);
+  const _tpShot = tpShotFrom('L', sc);
+  if(_tpShot) arrowGroup.position.copy(_tpShot.from);
   const cosPitch = Math.cos(pitch);
   // v64.1 — Speed scales with draw strength (mirrors damage scaling). A weak
   // shot fires slower (more readable, more arc-feeling); a full draw snaps.
   const speedMult = ARROW_SPEED_MULT_MIN + (ARROW_SPEED_MULT_MAX - ARROW_SPEED_MULT_MIN) * strength;
   const arrowSpd = ARROW_SPEED * speedMult;
-  const vx = fwdX * arrowSpd * cosPitch;
-  const vz = fwdZ * arrowSpd * cosPitch;
-  const vy = Math.sin(pitch) * arrowSpd;
+  const vx = _tpShot ? _tpShot.dir.x * arrowSpd : fwdX * arrowSpd * cosPitch;
+  const vz = _tpShot ? _tpShot.dir.z * arrowSpd : fwdZ * arrowSpd * cosPitch;
+  const vy = _tpShot ? _tpShot.dir.y * arrowSpd : Math.sin(pitch) * arrowSpd;
   // Orient arrow group so its +Z axis points along the velocity vector.
   // We use the same yaw-based lookAt as enemies — three-point trig.
   arrowGroup.rotation.y = Math.atan2(vx, vz);
@@ -25074,6 +25088,7 @@ function castSpell(){
   const snapFwdX=fwdX, snapFwdZ=fwdZ, snapRgtX=rgtX, snapRgtZ=rgtZ;
   const snapPitch=pitch, snapPx=px, snapPz=pz;
   const snapIsOW=isOverworldZone(), snapScene=snapIsOW?scene:dScene, snapFloor=currentFloor;
+  const snapAim=thirdPerson?tpAimPoint():null; // S175 — the crosshair's point at the click, as the rest is snapped
 
   setTimeout(()=>{
     // Main cast SFX fires at release so the sound lines up with the visual release and projectile spawn.
@@ -25108,20 +25123,23 @@ function castSpell(){
       const spawnX = snapPx + snapRgtX*0.3 + snapFwdX*0.7;
       const spawnZ = snapPz + snapRgtZ*0.3 + snapFwdZ*0.7;
       fb.position.set(spawnX, spellBaseY, spawnZ);
-      const cosPitch=Math.cos(snapPitch);
+      const _tpShot=tpShotFrom('R',snapScene,snapAim);
+      if(_tpShot)fb.position.copy(_tpShot.from);
+      const cosPitch=_tpShot?Math.hypot(_tpShot.dir.x,_tpShot.dir.z):Math.cos(snapPitch);
       const cj=Math.cos(aimJitter), sj=Math.sin(aimJitter);
-      const aimFwdX = snapFwdX*cj - snapFwdZ*sj;
-      const aimFwdZ = snapFwdX*sj + snapFwdZ*cj;
+      const _fx=_tpShot?_tpShot.dir.x/(cosPitch||1):snapFwdX, _fz=_tpShot?_tpShot.dir.z/(cosPitch||1):snapFwdZ;
+      const aimFwdX = _fx*cj - _fz*sj;
+      const aimFwdZ = _fx*sj + _fz*cj;
       const vx=aimFwdX*sp.speed*cosPitch;
       const vz=aimFwdZ*sp.speed*cosPitch;
-      const vy=Math.sin(snapPitch)*sp.speed;
+      const vy=_tpShot?_tpShot.dir.y*sp.speed:Math.sin(snapPitch)*sp.speed;
       fb.userData={vx,vy,vz,life:3,spell:sp,tier,_halo:fb.userData._halo};
       snapScene.add(fb);
       if(snapIsOW)ZB.push(fb); else BALLS.push(fb);
 
       // Cast flash at release — at the weapon tip, not the player center
       const flash=new THREE.PointLight(sp.glowCol, TIER_LIGHT*0.9, TIER_RANGE*0.7);
-      flash.position.set(spawnX, spellBaseY, spawnZ);
+      flash.position.copy(fb.position);
       snapScene.add(flash);
       let fLife=0.18;
       const flashTick=()=>{

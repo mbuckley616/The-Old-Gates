@@ -5210,3 +5210,17 @@ New `tests/unequip.test.mjs`, a new character in the open world with the attribu
 
 ### Needs eyes
 The naked state in third person. The body still wears the look's own tunic and breeches, the colours chosen in the creator, because the shape kit has no bare torso. A bare body is a mesh, and meshes are section H. In first person an empty hand draws nothing: `buildViewmodel` shows no arm without a weapon, so a punch has no fist on screen. A fist viewmodel and a punch pose are meshes and animation, section H, and are owed there. Whether 2–4 and the quicker swing feel right in a fight.
+
+## v80 — Session 175 — Shots from the hands
+
+Backlog C, owed since Session 126 (third person): *arrows and spells from the hands rather than the eye*. An arrow was made at eye height half a unit in front of the player and a little to the right. A spell was made a unit up, seven tenths forward and three tenths right, the first-person sword tip. Both flew along the player's facing. In third person that put the arrow inside the body's head, 0.62 units from the bow the body is drawing. Both flew parallel to the camera's line instead of at the crosshair, because the camera sits over the shoulder, behind and to the right.
+
+**What changed.** `tpShotFrom(hand, scene, aim)`: in third person, with the body shown and in the scene the shot is fired into, it returns the world position of the hand that makes the shot (the left for the bow, which the body holds in its left fist; the right for a spell) and the direction from there to `tpAimPoint()`, the point 30 units (`AIM_REACH`) along the camera's line, which is what the crosshair covers. `fireArrow` and the projectile branch of `castSpell` use it when it answers. For a spell the aim point is taken at the click, as the rest of the cast already is (`snapPitch`, `snapFwdX`), so turning during the windup doesn't bend the shot; the hand is read at release. Scatter (the wild roll) still turns the shot by up to 20°, now about the new line. The cast flash sits where the orb starts. In first person, or with the camera so close that the body is hidden, nothing changes.
+
+**Also, a test fixed.** `theft.test.mjs` failed once in this run's check of Session 174. It seeds the bag with twenty unpriced picks. When Clodagh's strongbox happened to give a pick (a random draw since Session 170), the pick joined that unpriced stack and the test valued it at 0. The game's fine was right: 191 = 50 + 129 gold + a 12-gold pick. The seeded picks now carry the shops' price.
+
+### Verified (headless Chromium)
+New `tests/tpshots.test.mjs`, in the open world with a bow and arrows, third person on at 2.4 units, projectiles caught the moment they are made. Third person: the arrow starts 0 from the left hand and .62 from the old eye-side origin, and its line passes the crosshair's point at 30 units within .000; a projectile spell (tier 2, no wild roll) starts 0 from the right hand, .63 from the old origin, and passes the point within .000. First person: the arrow starts at the old origin exactly (0), as before. No page errors.
+
+### Needs eyes
+Whether shots now read as leaving the bow and the hand at real speed, and whether aiming at a point 30 units out feels right for near targets. Inside 30 units the shot crosses the camera's line only at 30. With the hand about .4 units left of the line, a target at 5 units is missed by about a third of a unit to the side. A raycast for the true point under the crosshair would fix that and is the next step if it shows.
