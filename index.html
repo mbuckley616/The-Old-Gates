@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s206</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s208</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9672,6 +9672,7 @@ function personBakeQ(g,q){
   const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);
   const head=bone('head',neck,0,.07,0);
   part(SK.ball(.13*hs,14,10),skin,head,0,.12,0).scale.set(g.jaw,fem?1.05:1.08,1.02);
+  if(g.troll)part(SK.ball(.12*hs,12,8),skin,head,0,.06,.03).scale.set(1.1,.6,1); // S208 — the troll's heavy jaw
   // every feature sits on the head's own surface: zs(x,y) is how far forward the skin is at that point
   const R=.13*hs,zs=(x,y)=>R*1.02*Math.sqrt(Math.max(0,1-(x/(R*g.jaw))**2-((y-.12)/(R*(fem?1.05:1.08)))**2));
   part(SK.ball(.017,8,6),skin,head,0,.102,zs(0,.102)+.002).scale.set(g.nose[0]*.9,g.nose[1]*1.25,1);
@@ -9682,6 +9683,7 @@ function personBakeQ(g,q){
     part(SK.ball(.0042,5,4),C(0x0a0806),head,ex,.135,ez+.0078);
     const bx=s*.047*g.jaw;part(SK.cyl(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
     if(g.goblin){const e=part(SK.cone(.045,.26,6),skin,head,s*(.1*hs+.1),.15,-.01);e.rotation.set(0,0,-s*1.3);e.scale.set(1,1,.45);} // S184 — a goblin's long pointed ears
+    if(g.troll)part(SK.cone(.022,.09,6),C(0xe8dcc0),head,s*.042*hs,.052,zs(s*.042*hs,.06)+.012).rotation.set(-.3,0,s*.3); // S208 — a troll's tusks, up from the underbite
     else part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
     const cx=s*.07*g.jaw;if(g.ruddy)part(SK.ball(.03,8,6),mixC(skin,0xc8604e,.3),head,cx,.093,zs(cx,.093)-.005).scale.set(1,.7,.3);
     if(g.extras.includes('spectacles'))part(SK.torus(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
@@ -9793,6 +9795,9 @@ function personBakeQ(g,q){
   if(g.gear==='hoe'){part(SK.cyl(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
   if(g.gear==='stick'){part(SK.cyl(.013,.017,.56,8),C(0x4a3018),gear,0,-.24,0);part(SK.ball(.024,8,6),C(0x5a4028),gear,0,.03,0);}
   if(g.gear==='hammer'){part(SK.cyl(.014,.016,.36,8),C(0x4a3018),gear,0,.06,0);part(new THREE.BoxGeometry(.16,.07,.07),C(0x666666),gear,0,.24,0);}
+  // S208 — a troll's maul: a long haft wrapped at the grip, a heavy iron head with bands at its faces
+  if(g.gear==='maul'){part(SK.cyl(.017,.021,.66,8),C(0x4a3420),gear,0,.16,0);part(SK.cyl(.024,.024,.12,8),C(0x2e2218),gear,0,-.02,0);
+    part(SK.rbox(.24,.12,.12,.025,2),C(0x55585a),gear,0,.5,0);[-1,1].forEach(sd=>part(SK.cyl(.066,.066,.018,10),C(0x3a3c3e),gear,sd*.11,.5,0).rotation.z=Math.PI/2);}
   // the player's kit (tpBuild): a cuirass and pauldrons over the tunic, greaves, gauntlets, an amulet, a quiver
   if(g.eq){const E=g.eq;
     if(E.chest&&!E.chest.cloth){const ac=C(E.chest.col);part(SK.lathe(chestPts.map(q=>[q[0]*bw*1.08,q[1]]),14),ac,spine,0,-.005,0).scale.z=.78;
@@ -9864,7 +9869,12 @@ const FOE_DRESS={
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',gear:'stick'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
   'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
-  'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'} // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
+  'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
+  // S208 — the trolls on the people's body (Michael's answer on Session 201: as shown, a hammer for the cane): heavy, stooped,
+  // tusked, in a hide tunic, carrying a maul; the hide by where they live
+  'Cave Troll':    {troll:true,skin:0x6e7a5c,skin2:0x5a664c,hair:0x3a3e30,eye:0xd0a020,cloth:0x4e4030,gear:'maul'},
+  'Forest Troll':  {troll:true,skin:0x5a6e40,skin2:0x4a5a34,hair:0x2e3420,eye:0xd8b030,cloth:0x4a3a26,gear:'maul'},
+  'Frost Troll':   {troll:true,skin:0xaebac2,skin2:0x96a4ae,hair:0xe0e4e8,eye:0x70b0ff,cloth:0x5a5048,gear:'maul'}
 };
 function buildFoe(type,x,z,genome,eyeCol){
   let g=genome;
@@ -9875,6 +9885,9 @@ function buildFoe(type,x,z,genome,eyeCol){
       g.style=r()<.5?'shaggy':'buzz';g.hair=new THREE.Color(0x2a2016);g.eye=new THREE.Color(0xd8b030);g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);g.legs=new THREE.Color(0x3a2e20);g.boot=new THREE.Color(0x2a2016);}
     if(dr.kobold){g.style='buzz';g.head=1.25;g.build=1.05;g.age='elder';g.beard='long';g.hair=new THREE.Color(0x8a8a82);g.skin=new THREE.Color(0xb08a6a);g.nose=[1.5,1.4];g.height=Math.min(g.height,.86);
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.85);g.legs=new THREE.Color(0x3a3028);}
+    if(dr.troll){const r=pRng(g.seed+11);g.troll=true;g.skin=new THREE.Color(dr.skin).lerp(new THREE.Color(dr.skin2),r());g.height=1;g.build=1.75;g.head=1.15;g.age='elder';g.beard='none';g.hat='none';
+      g.style=r()<.5?'buzz':'shaggy';g.hair=new THREE.Color(dr.hair);g.nose=[2.2,1.8];g.ears=1.3;g.eye=new THREE.Color(dr.eye);g.ruddy=false;g.freckles=false;g.female=false;
+      g.cloth=new THREE.Color(dr.cloth);g.sleeve=g.skin.clone();g.legs=g.skin.clone().multiplyScalar(.9);g.boot=g.skin.clone().multiplyScalar(.7);g.bodyScale=[1.15,1,1.1];}
     if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
     if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
@@ -14632,7 +14645,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     limbs.torso=wolfRig.mesh; // the wind-up's red and the parry's flash light this wolf's own material
     limbs.wolf=wolfRig;
   }
-  else if(d.shape==='humanoid'&&(FOE_DRESS[type]||(zOpts&&zOpts.genome))){ // v80 S171 — a human foe is a person
+  else if((d.shape==='humanoid'&&(FOE_DRESS[type]||(zOpts&&zOpts.genome)))||(d.shape==='brute'&&FOE_DRESS[type])){ // v80 S171 — a human foe is a person (S208: and a troll)
     const pr=buildFoe(type,x,z,zOpts&&zOpts.genome,d.eyeCol);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;if(/Captain/.test(type))limbs.armL=pr.B.shL;
   }
   else if(d.shape==='spider'&&SPIDER_KINDS[type]){ // v80 S169 — the spider on the shape kit: eight IK legs on alternating tetrapods
@@ -23320,7 +23333,8 @@ function buildDungeon(portal){
     const g=new THREE.Group();const mat=new THREE.MeshLambertMaterial({color:d.col});const sc=d.scale;const limbs={};
     // S196 — the dungeon's skeletons, goblins and kobold thieves on the people's body, as in the open world (H.4);
     // the rest of the humanoid roster (the Shieldbearer and its shield) keeps the box for now
-    if(d.buildFn==='humanoid'&&name&&FOE_DRESS[name]){const pr=buildFoe(name,Math.random()*999,Math.random()*999,null,d.eyeCol);pr.root.scale.multiplyScalar(sc);g.add(pr.root);
+    // S208 — the Cave Troll (a brute) is a person too
+    if((d.buildFn==='humanoid'||d.buildFn==='brute')&&name&&FOE_DRESS[name]){const pr=buildFoe(name,Math.random()*999,Math.random()*999,null,d.eyeCol);pr.root.scale.multiplyScalar(sc);g.add(pr.root);
       limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;if(d.shieldUp)limbs.armL=pr.B.shL; // S199 — the shield goes on the left shoulder bone
       const eyeGl=new THREE.PointLight(d.eyeCol,.35,1.4);eyeGl.position.set(0,1.1*sc,.25*sc);g.add(eyeGl);}
     else if(d.buildFn==='humanoid'){
@@ -23424,7 +23438,7 @@ function buildDungeon(portal){
     }
     // HP bar Y — matched to body height per buildFn
     // HP bar Y — matched to body height per buildFn
-    const barY=(d.buildFn==='brute'?1.05:d.buildFn==='wraith'?1.1:d.buildFn==='slime'?.85:d.buildFn==='elemental'?1.15:d.buildFn==='mimic'?.60:d.buildFn==='wolf'?1.25:limbs.person?1.3:.95)*sc; // S196 — over a person's head
+    const barY=(limbs.person?1.3:d.buildFn==='brute'?1.05:d.buildFn==='wraith'?1.1:d.buildFn==='slime'?.85:d.buildFn==='elemental'?1.15:d.buildFn==='mimic'?.60:d.buildFn==='wolf'?1.25:limbs.person?1.3:.95)*sc; // S196 — over a person's head
     const hpBg=new THREE.Mesh(new THREE.PlaneGeometry(.6,.07),new THREE.MeshBasicMaterial({color:0x440000,side:THREE.DoubleSide}));hpBg.position.set(0,barY,.01);g.add(hpBg);
     const hpFg=new THREE.Mesh(new THREE.PlaneGeometry(.6,.07),new THREE.MeshBasicMaterial({color:0x22dd22,side:THREE.DoubleSide}));hpFg.position.set(0,barY,.02);g.add(hpFg);
     // Disguised enemies (Mimic) shouldn't show an HP bar — would give away the disguise. Restored on reveal via limbs.hpBg reference.
