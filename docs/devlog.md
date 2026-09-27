@@ -4898,7 +4898,67 @@ Whether four pins on every shop in a prosperous town is too much — a night's b
 
 ---
 
-## v80 — Session 156 — A distant copy of every townsperson (level of detail, part 1)
+## v80 — Session 156 — Witnesses and favour (the crime system, part 2 of 4)
+
+Part 1 put locks on the town and something behind them; nothing watched. Now something does.
+
+**Anyone awake within sight.** When a lock is picked or a strongbox emptied, `witnessOf` looks for a townsperson or guard who is out, not hidden by the town's schedule, within twelve units, with a clear line — sampled every sixty centimetres against the town's solids, so a wall or a house between you counts. Sneaking halves the range; night halves it again, so a burglar at 23h who crouches is safe beyond three units. Indoors it is whoever is in the room with you within six: the keeper if the schedule has them there, a guild member. The check runs at the moment the lock gives, which is the lock's own 620ms after the last pin, so a patrol that walks round the corner in that time never saw you.
+
+**Seen.** Favour with the town drops on the canon's scale (§12: −1 for a lock, −2 for theft, −3 for assault when part 3 adds it), a fine of 25 gold a point accrues against you in that town, and the wronged keeper will not trade with you for five game-days — `openShop` turns you away with *I know what you did. Take your custom elsewhere*, whichever topic you came through. The log says who saw you and where. The lord's dialogue gains *Pay my fine (N gold)* while a fine stands; paying clears the fine but not the memory. Favour lost to crime comes back a point for every three quiet days in that town, and no further: the town's own daily tick (`tickCrimeDay`, beside war and plague) does the counting.
+
+**Not yet.** Guards do nothing about a bounty (part 3), and nothing in the Church or the factions notices (part 4). Assault is scored but there is no way to commit it.
+
+### Verified (headless Chromium)
+New `tests/crime2.test.mjs`, in Dunmore at 23h with the town's own NPCs. A witness nine units off along the street sees nothing; one three units off sees the pick: favour goes 0 → −1, the fine stands at 25, the keeper is on notice, and the log reads *Séamus saw you pick the lock at Niamh's Armoury; Dunmore will not forget it.* Inside that shop at noon `openShop` refuses with Niamh's line and the shop stays shut; with the notice expired it opens. The lord's topics carry *Pay my fine (25 gold)*: with 10 gold, *come back when you have it*; with 500, paid, the fine is 0 and the purse 475. With the last crime three days back one tick returns favour to 0; a second tick does nothing. No page errors; full suite passes.
+
+### Needs eyes
+The sight ranges in real play — twelve by day, six at night, three sneaking at night — and whether the line-of-sight sampling lets a witness see through a doorway it shouldn't. Whether five days of refused custom is the right sting when the only smith is the one you robbed. The refusal only fires on trade; the keeper still chats.
+
+
+---
+
+## v80 — Session 157 — Guards (the crime system, part 3 of 4)
+
+Parts 1 and 2 gave the town locks, witnesses and a fine; the fine was a number nobody collected. Now the watch collects it.
+
+**Halt.** With a fine on you in a town, a guard or watchman within five units and a clear line stops you — a dialogue in his own name: *Halt. There's a fine of 25 gold on you in Dunmore. Pay it, or I draw.* Pay, and it clears (and the gates, if they were shut). Refuse, and he draws. *Not now* buys you a minute before the next guard asks. This runs from `tickCrime` inside the world's tick, so it only happens in the open world.
+
+**Drawn.** A drawn guard steps out of the street and a zone enemy stands in for him: *Town Guard*, built on the Bandit (the watch's red on the Bandit body for now — the routine's creature pass will give him his own), forty hit points plus eight a level, damage six plus one a level, no experience for killing him. The guard NPC is hidden and skipped by his schedule until it's over. While any dialogue is open the drawn guards hold — the world doesn't pause for talk, so `tickCrime` un-alerts them every frame you're talking.
+
+**Yield.** At under thirty per cent health with a fine standing, the guard offers once: *Yield, and it goes easier. N gold, or a night in the cells.* Pay double and they stand down. Take the cells and the fade brings you to the next morning at seven on both clocks (`gameTimeMinutes` and `gameTimeAbsMinutes` drift apart under `forceTime`, so the cells advance each by the same span), at the keep's door or the town centre where there is no keep, with half your health, the stolen goods gone from your bag (everything a strongbox or chest gave you carries `stolen:true` now) and the fine cleared. *Fight on* closes the offer.
+
+**Killing a guard** (`killZoneEnemy` sees `e._guard`): five favour, a further 125 on the fine, the town's gates shut to you — while shut, guards draw on sight, no talk and no cooldown — and a note for the Church (`worldState.church.notes`, for part 4). Paying the lord or a guard opens the gates again.
+
+**Assault.** A swing that finds no enemy in its cone now finds a townsperson (`_resolveZoneStrike` → `WORLD.strikeNpc`): the victim always sees it — three favour, a 75-gold fine, an *assault* in the record — and runs from you for twenty seconds. Strike a guard and he draws at once.
+
+### Verified (headless Chromium)
+New `tests/crime3.test.mjs`, in Dunmore at noon with the town's own guards. With a 25-gold fine and Cathal 2.5 units off, one tick opens his dialogue with the greeting and the three choices. Refusing: *Then it's the sword*, a *Town Guard* enemy at 48 hit points, alert, and Cathal gone from the street. At a fifth of health the yield is offered and the drawn guards are un-alerted while it stands; *The cells*: the clock reads 7, absolute time advanced 1,140 minutes, the tin locket (stolen) is gone and the honest bread kept, the fine is 0, no guard enemies remain, Cathal is back, and you stand at the town centre (Dunmore has no keep) at half health. Striking a guard at 1.8 units draws him: favour −3 and a 75 fine; killing him: favour −8 in all, fine 200, gates shut, one Church note; a second guard then draws without a word; the lord's *Pay my fine* opens the gates and clears it. Striking Pádraig the villager: favour −3, fine 75, an assault recorded, and he runs. No page errors; full suite passes.
+
+### Needs eyes
+The drawn guard's look (a red Bandit) until the creature pass. The fight itself: Town Guard at 48 hit points against a level-one character is a real fight; whether the yield comes at the right moment. The cells' fade and where you wake. Whether a struck villager running for twenty seconds reads as fear or as a glitch. Guards indoors don't stop you (the confrontation is the world's tick).
+
+
+---
+
+## v80 — Session 158 — The Church and the factions (the crime system, part 4 of 4)
+
+The last part of the system Michael and I designed on the 26th. Parts 1 to 3 gave the town its locks, its witnesses, its watch. This gives the two institutions above the town a memory.
+
+**The priest hears a confession.** The church keeper's dialogue (the same `_extraFn` hook the lord's steward has) gains *Confess.* while you have a record in that town — favour still owed to crime, a fine standing, or the gates shut. A tithe of 25 gold buys back one point of the favour crime cost you, once in three game-days per town, on top of the slow recovery of part 2; the log notes it. Not for everything: while a guard of that town is dead by your hand and the town unpaid, the priest will not hear you (*the dead man had a name; learn it* when at last he does, and the Church's note is marked absolved). The canon's Church is the Church of the Makers, so the priest's lines swear by the Weaver and not by the Guest.
+
+**The faction reads the record.** A nation's faction — the Crown, the League, the Compact — will not take you on while any town of its nation has a fine on you or its gates shut: the seat answers *Serve the Crown?* with *Not while Dunmore has a fine on you*, and `factionPriceMul` drops its discount to nothing for the duration. Killing a guard in a faction's nation costs a service and the rank that went with it (`done` down three, rank recomputed). None of this reaches the story's factions lines; it is the standing they keep, not the quests.
+
+That closes the four sessions: locks and strongboxes (155), witnesses and favour (156), guards (157), Church and factions (158). Owed across them: the drawn guard's own body (the creature pass), guards who stop you indoors, and the balance of the numbers, which only play will tell.
+
+### Verified (headless Chromium)
+New `tests/crime4.test.mjs`, in Dunmore. With no record the priest offers nothing. With two points owed and favour at −2: *Confess.* takes 25 gold (500 → 475), favour goes to −1 and the debt to 1; a second confession the same day is refused (*You have confessed*); three days on it is heard again, favour 0, debt 0, and the topic is gone. With a guard's death noted and the town unpaid, he refuses; paid, he hears it and the note is absolved. The Crown at rank 2: the price multiplier at Dunmore is .870 clean and .966 with a 25-gold fine standing (the .9 faction discount removed, prosperity's own factor unchanged); `nationRecord('gatelands')` names Dunmore; the seat's topics collapse to the refusal, and return to *Serve the Crown.* when the fine clears; a guard's death drops the Crown's services from 6 to 3 and the rank from 2 to 1. No page errors; full suite passes.
+
+### Needs eyes
+Whether 25 gold a point is a fair tithe against the lord's 25 gold a point fine (the difference is that the tithe restores favour and the fine clears the bounty; both are needed to be clean). The priest's lines in real play. Whether losing a faction rank for a guard's death is too steep for a rank that took nine services.
+
+## v80 — Session 159 — A distant copy of every townsperson (level of detail, part 1)
+
+*Renumbered from Session 156 when auto/backlog was merged with main, which had its own Session 156 (witnesses) and went on to 158; the entry is otherwise as written.*
 
 Backlog H.6, the first job the routine was given: a person is 4–8k triangles and a town of eighty draws every one of them twice, once for the eye and once for the sun's shadow. This session gives every townsperson a second, lighter body for when they are far enough away that the difference cannot be seen, and swaps it in by distance. Nothing about a person up close changes: the full-detail mesh is built exactly as before (same triangle counts, 4,210–7,628).
 
