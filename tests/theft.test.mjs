@@ -5,7 +5,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 const stop = g.keepAlive();
 
-const ids = await page.evaluate(() => { forceTime(13); worldState.crime = {}; BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 20 });
+const ids = await page.evaluate(() => { forceTime(13); worldState.crime = {}; BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', buyPrice: 12, sellMult: .4, weight: .05, qty: 20 }); // priced as the shop's, so a stolen pick that joins this stack is valued at 12
   return WORLD.settle.get('dunmore').houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper).map(x => x.id); });
 const got = {};
 for (const id of ids) {
