@@ -4936,3 +4936,22 @@ New `tests/crime3.test.mjs`, in Dunmore at noon with the town's own guards. With
 
 ### Needs eyes
 The drawn guard's look (a red Bandit) until the creature pass. The fight itself: Town Guard at 48 hit points against a level-one character is a real fight; whether the yield comes at the right moment. The cells' fade and where you wake. Whether a struck villager running for twenty seconds reads as fear or as a glitch. Guards indoors don't stop you (the confrontation is the world's tick).
+
+
+---
+
+## v80 — Session 158 — The Church and the factions (the crime system, part 4 of 4)
+
+The last part of the system Michael and I designed on the 26th. Parts 1 to 3 gave the town its locks, its witnesses, its watch. This gives the two institutions above the town a memory.
+
+**The priest hears a confession.** The church keeper's dialogue (the same `_extraFn` hook the lord's steward has) gains *Confess.* while you have a record in that town — favour still owed to crime, a fine standing, or the gates shut. A tithe of 25 gold buys back one point of the favour crime cost you, once in three game-days per town, on top of the slow recovery of part 2; the log notes it. Not for everything: while a guard of that town is dead by your hand and the town unpaid, the priest will not hear you (*the dead man had a name; learn it* when at last he does, and the Church's note is marked absolved). The canon's Church is the Church of the Makers, so the priest's lines swear by the Weaver and not by the Guest.
+
+**The faction reads the record.** A nation's faction — the Crown, the League, the Compact — will not take you on while any town of its nation has a fine on you or its gates shut: the seat answers *Serve the Crown?* with *Not while Dunmore has a fine on you*, and `factionPriceMul` drops its discount to nothing for the duration. Killing a guard in a faction's nation costs a service and the rank that went with it (`done` down three, rank recomputed). None of this reaches the story's factions lines; it is the standing they keep, not the quests.
+
+That closes the four sessions: locks and strongboxes (155), witnesses and favour (156), guards (157), Church and factions (158). Owed across them: the drawn guard's own body (the creature pass), guards who stop you indoors, and the balance of the numbers, which only play will tell.
+
+### Verified (headless Chromium)
+New `tests/crime4.test.mjs`, in Dunmore. With no record the priest offers nothing. With two points owed and favour at −2: *Confess.* takes 25 gold (500 → 475), favour goes to −1 and the debt to 1; a second confession the same day is refused (*You have confessed*); three days on it is heard again, favour 0, debt 0, and the topic is gone. With a guard's death noted and the town unpaid, he refuses; paid, he hears it and the note is absolved. The Crown at rank 2: the price multiplier at Dunmore is .870 clean and .966 with a 25-gold fine standing (the .9 faction discount removed, prosperity's own factor unchanged); `nationRecord('gatelands')` names Dunmore; the seat's topics collapse to the refusal, and return to *Serve the Crown.* when the fine clears; a guard's death drops the Crown's services from 6 to 3 and the rank from 2 to 1. No page errors; full suite passes.
+
+### Needs eyes
+Whether 25 gold a point is a fair tithe against the lord's 25 gold a point fine (the difference is that the tithe restores favour and the fine clears the bounty; both are needed to be clean). The priest's lines in real play. Whether losing a faction rank for a guard's death is too steep for a rank that took nine services.
