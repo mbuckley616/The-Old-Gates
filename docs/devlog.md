@@ -5780,3 +5780,27 @@ New `tests/furniture.test.mjs`, 4 checks, all passing, no page errors. All five 
 
 ### Needs eyes
 A village with ruins and standing stones, and a camp's tents, in real play. The stall's awning seen from the square: it is thin and pitched, so from above the stripes may read as lines.
+
+## v80 — Session 204 — The tower, the shrine and the lair (H.5, Michael's A)
+The POIs have their own builders (`buildTower`, `buildShrine`, `buildLair`, `buildGlade`, `buildBanditCamp`). This session does the three that are mainly built pieces.
+
+**The wizard's tower** (`towerGeoHi`, 4.5k triangles):
+- a splayed plinth, and a string course banding the tapering shaft at every floor;
+- arched lancet windows with sills and hood moulds;
+- a corbel table under a crenellated parapet;
+- a spire in six slated rings with a gilt finial;
+- an arched door up three steps.
+
+A first pass had pilaster ribs, but they ran straight while the tower tapers, so they stood off it near the top, and were removed.
+
+**The shrine** (`shrineGeoHi`, 6k): eight fluted columns (the flutes cut into the cylinder), each on a moulded base under a moulded capital and abacus, a double ring of architrave, and a moulded altar with its slab.
+
+Each keeps its old self as the distant copy through a small helper, `poiLod`, which the POI's bake pairs and `houseLod` swaps, as it does a town's houses.
+
+**The lair's boulders** were dodecahedra, and they are now craggy rock (`cragGeo`): an icosahedron whose corners are pushed in and out by a hash of their position, so shared corners move together, then shaded flat, facet by facet. They are built on the same dice in the same order, so the lair's layout is unchanged. A first try with the kit's smooth bumps made them look like grey clouds.
+
+### Verified (headless Chromium)
+New `tests/pois.test.mjs`, 3 checks, all passing, no page errors. The first tower and shrine in the world's site list each build one detailed mesh paired with its plain twin, and from a camera 30–55 units off the detailed one shows. Pictures: `docs/prototypes/pois-ingame.png` (the tower and the shrine at noon) and `pois-lair.png` (a lair's rocks).
+
+### Needs eyes
+The tower and shrine in their real settings (the test's own pictures of them were taken before the terrain around them had loaded). Whether the lair's rocks are too faceted beside the smooth wolves that live in them. Still owed: the bandit camp's and the glade's pieces.
