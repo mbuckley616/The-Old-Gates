@@ -5,7 +5,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 const stop = g.keepAlive();
 
-const ids = await page.evaluate(() => { forceTime(13); worldState.crime = {}; BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 20 });
+const ids = await page.evaluate(() => { forceTime(13); worldState.crime = {}; BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', buyPrice: 12, sellMult: .4, weight: .05, qty: 20 }); // priced as the shop's, so a stolen pick that joins this stack is valued at 12
   return WORLD.settle.get('dunmore').houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper).map(x => x.id); });
 const got = {};
 for (const id of ids) {
@@ -14,9 +14,9 @@ for (const id of ids) {
   await page.waitForTimeout(4500); await g.hide();
   const r = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null;
     px = X.x; pz = X.z + .8; jumpY = 0; const seenHere = !!WORLD.witnessOf(window._h);
-    const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold, n0 = BAG.length; WORLD.boxInteract();
+    const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold; const q0 = {}; BAG.forEach(b => { q0[b.name] = (q0[b.name] || 0) + (b.qty || 1); }); WORLD.boxInteract();
     for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
-    await wait(900); const coins = gold - gold0; const taken = BAG.slice(n0); const value = coins + taken.reduce((a, it) => a + (it.buyPrice || 0), 0);
+    await wait(900); const coins = gold - gold0; const q1 = {}; BAG.forEach(b => { q1[b.name] = (q1[b.name] || 0) + (b.qty || 1); }); const taken = BAG.filter((b, i, A) => A.findIndex(x => x.name === b.name) === i && (q1[b.name] || 0) > (q0[b.name] || 0)).map(b => ({ name: b.name, buyPrice: (b.buyPrice || 0) * ((q1[b.name] || 0) - (q0[b.name] || 0)) })); const value = coins + taken.reduce((a, it) => a + (it.buyPrice || 0), 0); // a taken thing may join a stack (a lockpick, Session 170)
     const c = (worldState.crime || {}).dunmore || {}; exitInterior();
     return { name: window._h.name, seenHere, coins, items: taken.map(i => i.name + ':' + (i.buyPrice || 0)), value, fine: (c.bounty || 0) - (c0.bounty || 0), loot: (c.loot || 0) - (c0.loot || 0), favour: WORLD.favor('dunmore') }; });
   await page.waitForTimeout(2500); await g.hide();
@@ -40,9 +40,7 @@ check('the cells take the stolen things and the gold stolen in the town, and cle
 
 // with less on you than you stole, they take what you have
 const poor = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const S = WORLD.settle.get('dunmore'); const site = S.site; const c = worldState.crime.dunmore;
-  // one crime tick with no guard drawn re-arms the yield (the game's own loop does it on its next frame; on a slow
-  // machine that frame may not have come yet, so the test gives it, rather than waiting a fixed time)
-  WORLD.tickCrime(1 / 60, performance.now());
+  try { closeDialog(); } catch (err) {} await wait(200); WORLD.tickCrime(1 / 60, performance.now()); // the cells' dialogue shut, and a tick with no one drawn resets the yield
   c.loot = 300; c.bounty = 75; gold = 40; px = site.x; pz = site.z + 18; const gd = WORLD.guardsOf(S)[0]; gd.g.visible = true; gd._retreated = false; gd._drawn = false; gd.g.position.set(px + 2.5, WORLD.worldH(px + 2.5, pz), pz);
   WORLD.guardDraw(gd, S); PHP = Math.round(maxHP * .2); const abs0 = worldState.gameTimeAbsMinutes || 0; WORLD.tickCrime(1 / 60, performance.now());
   const t = dlgOpen && dlgNPC.topics.find(x => /cells/i.test(x.label)); if (!t) return { noOffer: true }; t.fn();
