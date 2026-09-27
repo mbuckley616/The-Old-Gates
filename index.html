@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s202</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s203</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36645,22 +36645,22 @@ var WORLD=(()=>{
     parts.push({geo:new THREE.BoxGeometry(1.6,2.6,.2),color:c(0x2e2016),x:0,y:.8+1.3,z:d/2+.05,jitter:.03});
     return mergeParts(parts);
   }
-  function tentGeo(r){
+  function tentGeoLo(r){
     const parts=[];const c=x=>new THREE.Color(x);
-    parts.push({geo:new THREE.ConeGeometry(2.4,2.8,5,1,false),color:c(0xa89878).lerp(c(0x8a7a5a),r()),y:1.4,jitter:.08});
+    const tc=c(0xa89878).lerp(c(0x8a7a5a),r());parts.push({geo:new THREE.ConeGeometry(2.4,2.8,5,1,false),color:tc,y:1.4,jitter:.08});parts.tc=tc.getHex();
     parts.push({geo:new THREE.CylinderGeometry(.06,.06,3,5),color:c(0x4a3018),y:1.5});
-    return mergeParts(parts);
+    const g=mergeParts(parts);g.userData.picks={tc:parts.tc};return g;
   }
-  function stallGeo(r){
+  function stallGeoLo(r){
     const parts=[];const c=x=>new THREE.Color(x);
-    const cloth=pick(r,[0x9a3a2a,0x2a5a8a,0x8a7a2a,0x4a7a3a,0x7a3a6a]);
+    const cloth=pick(r,[0x9a3a2a,0x2a5a8a,0x8a7a2a,0x4a7a3a,0x7a3a6a]);const goods=[];
     [[-1.4,-.9],[1.4,-.9],[-1.4,.9],[1.4,.9]].forEach(([x,z])=>parts.push({geo:new THREE.BoxGeometry(.12,2.2,.12),color:c(0x5a3d1e),x,z,y:1.1}));
     parts.push({geo:new THREE.BoxGeometry(3.2,.08,2.2),color:c(cloth),y:2.25,jitter:.1});
     parts.push({geo:new THREE.BoxGeometry(3.0,.9,.9),color:c(0x6a4a2a),y:.45,z:.5,jitter:.06});
-    for(let i=0;i<3;i++)parts.push({geo:new THREE.BoxGeometry(.5,.35,.4),color:c(pick(r,[0xc8a040,0x8a3a2a,0x5a8a3a,0xd8d0b0,0x6a4a8a])),x:-1+i*1,y:1.05,z:.5,jitter:.1});
-    return mergeParts(parts);
+    for(let i=0;i<3;i++){const gc=pick(r,[0xc8a040,0x8a3a2a,0x5a8a3a,0xd8d0b0,0x6a4a8a]);goods.push(gc);parts.push({geo:new THREE.BoxGeometry(.5,.35,.4),color:c(gc),x:-1+i*1,y:1.05,z:.5,jitter:.1});}
+    const g=mergeParts(parts);g.userData.picks={cloth,goods};return g;
   }
-  function wellGeo(){
+  function wellGeoLo(){
     const parts=[];const c=x=>new THREE.Color(x);
     parts.push({geo:new THREE.CylinderGeometry(1.1,1.2,1.0,10),color:c(0x7a746a),y:.5,jitter:.1});
     parts.push({geo:new THREE.CylinderGeometry(.75,.75,1.02,10),color:c(0x1a2028),y:.5});
@@ -36669,15 +36669,62 @@ var WORLD=(()=>{
     parts.push({geo:new THREE.BoxGeometry(2.6,.5,1.6),color:c(0x6b5a3a),y:2.7,jitter:.06});
     return mergeParts(parts);
   }
-  function ruinGeo(r){
+  function ruinGeoLo(r){
     const parts=[];const c=x=>new THREE.Color(x);
     const n=2+Math.floor(r()*3);
-    for(let i=0;i<n;i++){parts.push({geo:new THREE.BoxGeometry(2+r()*4,.6+r()*2.4,.6),color:c(0x6a6258).lerp(c(0x4a443c),r()),x:(r()-.5)*5,z:(r()-.5)*5,y:.6,ry:r()*Math.PI,jitter:.12});}
-    return mergeParts(parts);
+    const picks=[];for(let i=0;i<n;i++){const w=2+r()*4,h=.6+r()*2.4,col=c(0x6a6258).lerp(c(0x4a443c),r()),x=(r()-.5)*5,z=(r()-.5)*5,ry=r()*Math.PI;picks.push({w,h,col:col.getHex(),x,z,ry});parts.push({geo:new THREE.BoxGeometry(w,h,.6),color:col,x,z,y:.6,ry,jitter:.12});}
+    const g=mergeParts(parts);g.userData.picks=picks;return g;
   }
-  function standingStoneGeo(r){
-    return mergeParts([{geo:new THREE.BoxGeometry(.9+r()*.6,2.6+r()*1.8,.6),color:new THREE.Color(0x5a5852),y:1.6,ry:r()*.6,rz:(r()-.5)*.15,jitter:.12}]);
+  function standingStoneGeoLo(r){
+    const w=.9+r()*.6,h=2.6+r()*1.8,ry=r()*.6,rz=(r()-.5)*.15;const g=mergeParts([{geo:new THREE.BoxGeometry(w,h,.6),color:new THREE.Color(0x5a5852),y:1.6,ry,rz,jitter:.12}]);g.userData.picks={w,h,ry,rz};return g;
   }
+  // ── S203: the town's furniture and the POIs' structures in detail (H.5, Michael's A), each with its old self as the
+  // distant copy. The old builders take the town's dice as before and report what they picked; the detailed ones
+  // follow those picks (a ruin's walls stand where they stood) and roll the rest on their own dice.
+  let _furnN=0;const furnRng=()=>pRng(((_furnN++)*2654435761)>>>0);
+  const FPART=(P,geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});
+  function wellGeoHi(){const r0=furnRng(),P=[];const stone=0x7a746a;
+    for(let ring=0;ring<3;ring++)for(let k=0;k<12;k++){const a=(k+(ring%2)*.5)/12*Math.PI*2;FPART(P,SK.rbox(.62,.3,.34,.06,1),new THREE.Color(stone).multiplyScalar(.82+r0()*.3).getHex(),Math.sin(a)*1.02,.16+ring*.31,Math.cos(a)*1.02,0,a,0,.05);}
+    FPART(P,new THREE.CylinderGeometry(1.14,1.14,.1,14),0x6a655c,0,1.0,0);FPART(P,new THREE.CircleGeometry(.8,14),0x16202a,0,.55,0,-Math.PI/2,0,0,0);
+    for(const x of [-.95,.95]){FPART(P,SK.rbox(.16,2.4,.16,.03,1),0x5a3d1e,x,1.2,0,0,0,0,.05);}
+    FPART(P,SK.cyl(.14,.14,1.7,10),0x6a4a2a,0,1.85,0,0,0,Math.PI/2);FPART(P,SK.cyl(.02,.02,.4,5),0x2a2420,1.0,1.85,.18,0,0,0);FPART(P,SK.cyl(.018,.018,.25,5),0x2a2420,1.0,1.7,.3,Math.PI/2,0,0);
+    FPART(P,SK.cyl(.012,.012,1.1,4),0xb09a70,0,1.25,0);FPART(P,SK.lathe([[.001,0],[.13,0],[.15,.22],[.001,.22]],8),0x5a4028,0,.6,0);
+    for(const s of [1,-1])FPART(P,SK.rbox(2.6,.08,1.0,.03,1),0x4a3a2a,0,2.72,s*.42,s*.55,0,0,.08);FPART(P,SK.cyl(.06,.06,2.7,6),0x3a2a1a,0,2.95,0,0,0,Math.PI/2);
+    return mergeParts(P);}
+  function stallGeoHi(pk){const r0=furnRng(),P=[];const cl=new THREE.Color(pk.cloth),wh=new THREE.Color(0xe8e0c8);
+    for(const [x,z] of [[-1.4,-.9],[1.4,-.9],[-1.4,.9],[1.4,.9]])FPART(P,SK.rbox(.12,z<0?2.5:2.1,.12,.02,1),0x5a3d1e,x,z<0?1.25:1.05,z,0,0,0,.05);
+    for(let k=0;k<8;k++)FPART(P,new THREE.BoxGeometry(.42,.04,2.5),(k%2?wh:cl).getHex(),-1.47+k*.42,2.36,0,-.16,0,0,.05);
+    for(let k=0;k<8;k++)FPART(P,SK.cone(.21,.22,3),(k%2?wh:cl).getHex(),-1.47+k*.42,2.05,1.23,Math.PI,Math.PI/6,0,.05);
+    FPART(P,SK.rbox(3.0,.08,1.0,.02,1),0x7a5a36,0,.92,.5,0,0,0,.06);FPART(P,SK.rbox(2.9,.84,.9,.03,1),0x6a4a2a,0,.46,.5,0,0,0,.06);for(let k=0;k<6;k++)FPART(P,new THREE.BoxGeometry(.02,.7,.02),0x4a3420,-1.25+k*.5,.46,.96,0,0,0,0);
+    pk.goods.forEach((gc,i)=>{const x=-1+i;const kind=Math.floor(r0()*3);
+      if(kind===0)for(let q=0;q<5;q++)FPART(P,SK.ball(.1,8,6),gc,x+(q%3-1)*.14,1.06+Math.floor(q/3)*.11,.45+(q%2)*.1,0,0,0,.1);
+      else if(kind===1)FPART(P,SK.lathe([[.001,0],[.13,0],[.17,.12],[.12,.26],[.07,.3],[.001,.3]],10),gc,x,.96,.5,0,0,0,.06);
+      else{FPART(P,SK.rbox(.5,.18,.38,.03,1),0x8a6a40,x,1.05,.5,0,0,0,.05);for(let q=0;q<3;q++)FPART(P,SK.ball(.08,6,5),gc,x-.14+q*.14,1.17,.5,0,0,0,.1);}});
+    return mergeParts(P);}
+  function tentGeoHi(pk){const P=[];const tc=pk.tc;
+    FPART(P,SK.lathe([[.001,2.9],[.25,2.75],[1.4,1.4],[2.2,.55],[2.35,.35],[2.35,0],[2.2,0],[2.2,.3],[2.05,.5],[1.3,1.35],[.2,2.72],[.001,2.82]],12),tc,0,0,0,0,0,0,.06);
+    FPART(P,SK.cyl(.06,.06,3.2,6),0x4a3018,0,1.6,0);FPART(P,SK.ball(.1,6,5),0x8a2a1a,0,3.25,0);
+    for(let k=0;k<6;k++){const a=k/6*Math.PI*2+.3,x0=Math.sin(a)*2.2,z0=Math.cos(a)*2.2,x1=Math.sin(a)*3.4,z1=Math.cos(a)*3.4;const L=Math.hypot(x1-x0,.55,z1-z0);
+      const g=SK.cyl(.012,.012,L,4);g.translate(0,L/2,0);const v=new THREE.Vector3(x1-x0,-.55,z1-z0).normalize();const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v);const e=new THREE.Euler().setFromQuaternion(q);
+      FPART(P,g,0xb09a70,x0,.55,z0,e.x,e.y,e.z,0);FPART(P,SK.cyl(.03,.02,.3,4),0x5a4028,x1,.1,z1,0,0,0);}
+    FPART(P,new THREE.BoxGeometry(.9,1.1,.04),new THREE.Color(tc).multiplyScalar(.6).getHex(),0,.55,2.12,-.2,0,0,0);
+    return mergeParts(P);}
+  function ruinGeoHi(pk){const r0=furnRng(),P=[];
+    for(const w of pk.picks){const c0=Math.cos(w.ry),s0=Math.sin(w.ry);const rows=Math.max(1,Math.round(w.h/.34));
+      for(let row=0;row<rows;row++){const top=row===rows-1;const n=Math.max(1,Math.round(w.w/.55));for(let k=0;k<n;k++){if(top&&r0()<.35)continue;if(row>rows*.5&&(k<n*.2||k>n*.8)&&r0()<.6)continue;
+        const lx=-w.w/2+(k+.5+(row%2)*.3)*w.w/n;if(Math.abs(lx)>w.w/2)continue;const y=.17+row*.34;const x=w.x+lx*c0,z=w.z-lx*s0;
+        FPART(P,SK.rbox(w.w/n*.94,.3,.58,.06,1),new THREE.Color(w.col).multiplyScalar(.85+r0()*.35).getHex(),x,y,z,0,w.ry+(r0()-.5)*.06,(r0()-.5)*.05,.06);}}
+      for(let k=0;k<4;k++){const a=r0()*6.28,d=1+r0()*1.5;FPART(P,SK.rbox(.5,.28,.4,.06,1),new THREE.Color(w.col).multiplyScalar(.8+r0()*.3).getHex(),w.x+Math.sin(a)*d,.14,w.z+Math.cos(a)*d,(r0()-.5)*.4,r0()*3,(r0()-.5)*.4,.06);}
+      for(let k=0;k<3;k++)FPART(P,SK.bumpy(SK.ball(.22,8,5,0,Math.PI*2,0,Math.PI/2),.04,8,k),0x4a6a30,w.x+(r0()-.5)*w.w*.8*c0,.02,w.z-(r0()-.5)*w.w*.8*s0,0,0,0,.1);}
+    return mergeParts(P);}
+  function standingStoneGeoHi(pk){const r0=furnRng(),P=[];const g=SK.bumpy(SK.rbox(pk.w,pk.h,.6,.18,3),.05,6,r0()*9);
+    FPART(P,g,0x5a5852,0,1.6,0,0,pk.ry,pk.rz,.1);for(let k=0;k<5;k++){const y=.4+r0()*pk.h*.8;FPART(P,SK.ball(.12+r0()*.1,6,4),r0()<.5?0x8a9a5a:0xb0a878,(r0()-.5)*pk.w*.7,y,.31,0,0,0,.1);}
+    FPART(P,SK.bumpy(SK.ball(.7,10,5,0,Math.PI*2,0,Math.PI/2),.06,7,3),0x4a6a30,0,0,0,0,0,0,.1);return mergeParts(P);}
+  function wellGeo(){const lo=wellGeoLo(),hi=wellGeoHi();hi.userData.lo=lo;return hi;}
+  function stallGeo(r){const lo=stallGeoLo(r),hi=stallGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
+  function tentGeo(r){const lo=tentGeoLo(r),hi=tentGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
+  function ruinGeo(r){const lo=ruinGeoLo(r),hi=ruinGeoHi({picks:lo.userData.picks});hi.userData.lo=lo;return hi;}
+  function standingStoneGeo(r){const lo=standingStoneGeoLo(r),hi=standingStoneGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
   const SETTLE_MAT=VC_MAT;
 
   // ── Dialog pools ─────────────────────────────────────────────────────
@@ -40582,7 +40629,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

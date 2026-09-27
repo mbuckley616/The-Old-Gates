@@ -5760,3 +5760,23 @@ Session 194 left two buildings outside the distant-copy scheme, because they are
 
 ### Needs eyes
 A coach station on the road: the inn's swap at 80 units.
+
+## v80 — Session 203 — The town's furniture and the POIs' pieces in detail (H.5, Michael's A)
+Michael's decision A covered "buildings, houses, structures and POIs". After the houses, churches and keeps, the remaining pieces built from boxes were the ones a town and the POIs scatter about: the well in the square, the market stalls, a camp's tents, a village's ruins and its standing stones.
+
+**Keeping the dice.** Four of these took the town's dice (`r`) to choose sizes, colours and places. As with the houses (Session 194), each old builder runs first, renamed `…GeoLo`. It takes exactly its old rolls and now reports what it picked: a ruin's walls (size, colour, place, turn), a stone's size and lean, a stall's awning and goods colours, a tent's canvas. The detailed builder follows those picks and rolls anything else on its own dice (`furnRng`). Dunmore's shops keep their names.
+
+**The pieces.**
+- **The well**: three courses of rounded stones in a ring with a coping, dark water, two posts, a windlass drum with its crank, a rope and bucket, and a small pitched roof on a ridge beam.
+- **The market stall**: a canvas awning striped in its cloth colour and white, with a scalloped valance, pitched to the front. A planked counter, and on it the stall's three goods as fruit, a jar or a basket of bread, one of the three by the stall's dice.
+- **The tent**: a bell tent (a lathe with a skirt), a pole with a finial, six guy ropes to pegs, and a door flap.
+- **Ruins**: each wall the plain ruin had, rebuilt as courses of rounded rubble stones where it stood. The top course is gapped and the upper ends crumble away. Fallen stones lie about, with moss at the foot.
+- **Standing stones**: a weathered, lumpy slab at the old one's size and lean, with lichen patches and a turf skirt.
+
+Each hangs its old self as the distant copy through `addMesh`, as the houses do. Triangles: well 2,158 (plain 128), stall 1,220 (108), tent 540 (35), ruin 3,504 (24), stone 702 (12).
+
+### Verified (headless Chromium)
+New `tests/furniture.test.mjs`, 4 checks, all passing, no page errors. All five build in detail with a plain copy at least half as small again. A ruin's detailed walls span the whole width of its plain ones (overlap 1.0). Dunmore's shops are the same (Clodagh's Goods, Lorcan's Forge, Niamh's Armoury among them). `houses`, `crime1` and `wayfinding` pass. Picture: `docs/prototypes/furniture-ingame.png`.
+
+### Needs eyes
+A village with ruins and standing stones, and a camp's tents, in real play. The stall's awning seen from the square: it is thin and pitched, so from above the stripes may read as lines.
