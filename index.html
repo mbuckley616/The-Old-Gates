@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s204</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s205</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39817,13 +39817,20 @@ var WORLD=(()=>{
   function buildBanditCamp(S,site,r){
     const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
     const tentMat=new THREE.MeshLambertMaterial({color:0x6a5a44,side:THREE.DoubleSide});const n=5+Math.floor(r()*4);
-    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.5,rr=7+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const t=new THREE.Mesh(new THREE.ConeGeometry(2.0,2.6,5,1,true),tentMat);t.position.set(x,worldH(x,z)+1.3,z);t.rotation.y=r()*6;t.userData.noBake=true;group.add(t);sol.push({cx:x,cz:z,rx:1.6,rz:1.6});}
+    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.5,rr=7+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const t=new THREE.Mesh(campTentGeo(i),VC_MAT);t.position.set(x,worldH(x,z),z);t.rotation.y=r()*6;t.castShadow=true;t.userData.noBake=true;group.add(t);sol.push({cx:x,cz:z,rx:1.6,rz:1.6});} // S205 — a ridge tent of canvas on poles (it was an open cone)
     // fire, cooking frame, crates, barrels, bones, a stockade of stakes
     const fire=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));fire.position.set(cx,y+.28,cz);fire.userData.noBake=true;group.add(fire);const fl=regLight(0xff8a30,1.5,13,site.id);fl.position.set(cx,y+1.0,cz);
-    const c=x=>new THREE.Color(x);const parts=[];for(let i=0;i<6;i++){const a=i/6*Math.PI*2;parts.push({geo:new THREE.BoxGeometry(.15,.15,.9),color:c(0x2a2622),x:Math.cos(a)*.9,z:Math.sin(a)*.9,y:.08,ry:-a});}
-    for(let i=0;i<5;i++){const a=r()*6.28,rr=4+r()*5;parts.push({geo:i%2?new THREE.CylinderGeometry(.45,.45,.9,8):new THREE.BoxGeometry(.9,.8,.9),color:c(i%2?0x8a6a3a:0x7a5a30),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:.42});}
-    for(let i=0;i<12;i++){const a=r()*6.28,rr=2+r()*14;parts.push({geo:new THREE.BoxGeometry(.1,.08,.4+r()*.5),color:c(0xe8e0d0),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:.04,ry:r()*3});}
-    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const rr=site.pad-6;parts.push({geo:new THREE.CylinderGeometry(.08,.14,2.2,5),color:c(0x4a3018),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:1.0,rx:(r()-.5)*.3,rz:(r()-.5)*.3});}
+    // S205 — on the kit, on the same dice in the same order: a ring of fire stones with logs and a cooking tripod, crates
+    // and bellied barrels, bones that are bones, pointed stakes
+    const c=x=>new THREE.Color(x);const parts=[];for(let i=0;i<9;i++){const a=i/9*Math.PI*2;parts.push({geo:cragGeo(.26,i+3),color:c(0x5a5650).multiplyScalar(.85+(i%3)*.12),x:Math.cos(a)*.95,z:Math.sin(a)*.95,y:.12,ry:-a,jitter:.06});}
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.4;parts.push({geo:SK.cyl(.08,.1,1.1,6),color:c(0x3a2818),x:Math.cos(a)*.25,z:Math.sin(a)*.25,y:.2,rx:Math.PI/2-.35,ry:-a+Math.PI/2,jitter:.08});}
+    for(let i=0;i<3;i++){const a=i/3*Math.PI*2;parts.push({geo:SK.cyl(.04,.05,2.1,5),color:c(0x4a3018),x:Math.cos(a)*.75,z:Math.sin(a)*.75,y:.95,rx:Math.sin(a)*-.35,rz:Math.cos(a)*.35});}
+    parts.push({geo:SK.cyl(.01,.01,.7,4),color:c(0x2a2622),y:1.55},{geo:SK.lathe([[.001,0],[.2,0],[.26,.12],[.24,.28],[.18,.3],[.001,.3]],10),color:c(0x2a2622),y:1.0});
+    for(let i=0;i<5;i++){const a=r()*6.28,rr=4+r()*5;const X=Math.cos(a)*rr,Z=Math.sin(a)*rr;
+      if(i%2){parts.push({geo:SK.lathe([0,.125,.25,.375,.5,.625,.75,.875,1].map(u=>[.4*(.86+.14*Math.sin(Math.PI*u)),.9*u]),12),color:c(0x8a6a3a),x:X,z:Z,y:0});for(const u of [.15,.85])parts.push({geo:new THREE.TorusGeometry(.4*(.86+.14*Math.sin(Math.PI*u))+.01,.02,4,14),color:c(0x2a241e),x:X,z:Z,y:.9*u,rx:Math.PI/2});}
+      else parts.push({geo:SK.rbox(.9,.8,.9,.05,2),color:c(0x7a5a30),x:X,z:Z,y:.4});}
+    for(let i=0;i<12;i++){const a=r()*6.28,rr=2+r()*14;const L=.4+r()*.5;parts.push({geo:SK.limb(L,.05,.04),color:c(0xe8e0d0),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:.05,rx:Math.PI/2,ry:r()*3});}
+    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const rr=site.pad-6;const rx=(r()-.5)*.3,rz=(r()-.5)*.3;parts.push({geo:SK.cyl(.1,.14,2.0,6),color:c(0x4a3018),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:1.0,rx,rz,jitter:.08},{geo:SK.cone(.1,.45,6),color:c(0x6a4a28),x:Math.cos(a)*rr+Math.sin(rz)*-1.1,z:Math.sin(a)*rr+Math.sin(rx)*1.1,y:2.2,rx,rz});}
     const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
     // a banner and the loot
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,4,6),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(cx+3,y+2,cz-3);group.add(pole);const cloth=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.9),new THREE.MeshLambertMaterial({color:0x2a2020,side:THREE.DoubleSide}));cloth.position.set(cx+3.6,y+3.5,cz-3);group.add(cloth);
@@ -39861,6 +39868,15 @@ var WORLD=(()=>{
   // together) and shaded flat, facet by facet
   function cragGeo(s,seed){const g=new THREE.IcosahedronGeometry(s,1),p=g.attributes.position;const h=(x,y,z)=>{const v=Math.sin(x*12.9898+y*78.233+z*37.719+seed*.917)*43758.5453;return v-Math.floor(v);};
     for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);const k=1+(h(Math.round(x*100),Math.round(y*100),Math.round(z*100))-.5)*.45;p.setXYZ(i,x*k,y*k*.85,z*k);}g.computeVertexNormals();return g;}
+  // a bandit's ridge tent: two canvas slopes over a ridge pole on two uprights, the gables closed, the door flap tied
+  // back, guy lines to pegs; the canvas a patched brown by the tent's number
+  function campTentGeo(k){const P=[];const cv=new THREE.Color([0x6a5a44,0x5e5240,0x74624a][k%3]),dk=0x3a2a1a,L=3.2,W=2.4,H=1.9;const add=(geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:col.isColor?col:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.08:j});
+    const sl=Math.atan2(H,W/2),sLen=Math.hypot(W/2,H);for(const s of [1,-1])add(new THREE.BoxGeometry(.04,sLen,L),cv,s*W/4,H/2,0,0,0,s*(Math.PI/2-sl),.1);
+    for(const s of [1,-1]){const tri=new THREE.Shape();tri.moveTo(-W/2,0);tri.lineTo(W/2,0);tri.lineTo(0,H);tri.closePath();const g=new THREE.ShapeGeometry(tri);add(g,s>0?cv.clone().multiplyScalar(.9):cv.clone().multiplyScalar(.8),0,0,s*L/2,0,s>0?0:Math.PI,0,.06);}
+    add(SK.cyl(.05,.05,L+.3,5),dk,0,H+.02,0,Math.PI/2,0,0);for(const s of [1,-1])add(SK.cyl(.05,.05,H,5),dk,0,H/2,s*(L/2+.05));
+    add(new THREE.BoxGeometry(.6,1.3,.04),cv.clone().multiplyScalar(.7),.45,.65,L/2+.08,0,-.6,0,.05);
+    for(const s of [1,-1])for(const z of [-L/2+.3,L/2-.3]){const x0=s*W/2,x1=s*(W/2+.9);const gl=SK.cyl(.012,.012,Math.hypot(.9,H*.6),4);const ang=Math.atan2(.9,H*.6);add(gl,0xb09a70,(x0+x1)/2,H*.3,z,0,0,s*ang,0);add(SK.cyl(.025,.02,.25,4),0x5a4028,x1,.08,z);}
+    return mergeParts(P);}
   function buildPoi(S,site,r){const k=site.kind;if(k==='glade')buildGlade(S,site,r);else if(k==='shrine')buildShrine(S,site,r);else if(k==='lair')buildLair(S,site,r);else if(k==='tower')buildTower(S,site,r);else if(k==='bcamp')buildBanditCamp(S,site,r);}
 
   // ═══ PEOPLES AND NATIONS (Session N) ═════════════════════════════════

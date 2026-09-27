@@ -5804,3 +5804,18 @@ New `tests/pois.test.mjs`, 3 checks, all passing, no page errors. The first towe
 
 ### Needs eyes
 The tower and shrine in their real settings (the test's own pictures of them were taken before the terrain around them had loaded). Whether the lair's rocks are too faceted beside the smooth wolves that live in them. Still owed: the bandit camp's and the glade's pieces.
+
+## v80 — Session 205 — The bandit camp on the kit (H.5, Michael's A)
+A bandit camp was open five-sided cones for tents, six flat boxes round the fire, boxes and cylinders for its stores, flat white boxes for bones, and plain posts for its stockade. Everything in the camp that took the camp's dice still takes the same rolls in the same order, so the camp's layout and its bandits are where they were.
+
+**What changed.**
+- **Tents** (`campTentGeo`): ridge tents. Two canvas slopes over a ridge pole on two uprights, the gables closed, a door flap tied back, and guy lines out to pegs, in three patched browns by the tent's number. A first pass had both slopes and the guy lines leaning the wrong way (a sign), fixed before this commit.
+- **The fire**: nine craggy stones in a ring (Session 204's `cragGeo`), four logs leaning into the fire, and a tripod over it with a hanging pot.
+- **Stores**: the crates are the kit's rounded box. The barrels are bellied, with two hoops.
+- **Bones and stakes**: the bones are tapered bones, and the stockade's stakes are pointed.
+
+### Verified (headless Chromium)
+`pois.test.mjs` has a new check, and all 4 pass with no page errors. The first bandit camp in the site list has six merged ridge tents. `foes`, whose bandits stand in camps like these, passes. Picture: `docs/prototypes/pois-bcamp.png`, the camp from above its fire (the terrain around it had not loaded).
+
+### Needs eyes
+A camp in real play: the tents' size against the bandits, and the stockade's spacing.
