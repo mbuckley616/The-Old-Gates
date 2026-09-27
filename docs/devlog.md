@@ -5334,3 +5334,13 @@ New `tests/crime5.test.mjs`, 2 checks, passing: in Niamh's Armoury at 13h, with 
 
 ### Needs eyes
 Whether a strongbox theft's fine (often 150–300 now) feels right against the takings. By the spec it always costs more than it gave you, if you are seen.
+
+## v80 — Session 182 — Indoors, walls hide you (section I)
+
+The critic's second crime item: indoors, `witnessOf` took the keeper (or any interior NPC) within six units as a witness, walls or no walls. So whether picking a strongbox in the back room was seen depended on how far the floor plan put the keeper, not on whether they could see you. Keeper to strongbox in Dunmore runs 3.9–8.9 units, often through a partition. A witness indoors now also needs a clear line. `intClearLine` walks from you to them a quarter-unit at a time through the room's solids (`INT_SOL`), counting only what stands across eye height (a band reaching above 1.5 and starting below 1.2): walls, partitions, a shut door, but not a counter or a table you could see over. The open world's witness check already had its own clear line (`clearLine`) and is unchanged; the six-unit indoor range is unchanged.
+
+### Verified (headless Chromium)
+`tests/crime5.test.mjs` extended, 3 checks, all passing. In Niamh's Armoury, with a full-height partition between you and the keeper 2.4 units apart, the keeper is not a witness. With the keeper beside you on your side of it, they are (Niamh). `intClearLine` is clear along the wall and blocked across it. The seen theft of Session 181 still fines 50 and the value taken (143 gold and a 32-gold item: 225).
+
+### Needs eyes
+Robbing a shop by day with the keeper in the front room and the strongbox in the back: now possible unseen, which the critic's run suggests makes daytime theft easy; the numbers may want another look in play.
