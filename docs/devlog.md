@@ -5124,3 +5124,15 @@ New `tests/theft.test.mjs`, in Dunmore at 13h, through the real strongbox and lo
 
 ### Needs eyes
 Whether a theft's fine, now the goods' value on top of 50, and the double of it at a yield, is too steep against a level-one purse. The strongbox takings (20–200 by prosperity) were left alone. The critic's other small note (stolen goods sell back to the shop they came from with no questions) is not changed; whether a keeper should refuse his own goods is a design call.
+
+## v80 — Session 169 — Prices at the counter
+
+Backlog I, the critic's fourth finding (*the counter ignores the town's prices*). Prosperity pricing (a town's buy prices run from 1.15 at prosperity 10 to .83 at 100) and the faction discount (5% a rank, withdrawn while a fine stands, Session 158) were computed by `WORLD.priceMulHere()`, which looks for the nearest town to `px, pz`. Inside a shop those are room coordinates, a few units from the origin, so it found no town and returned 1. Every shop is an interior, so neither rule ever reached a purchase. The critic measured .966 in Dunmore's square and 1 at the apothecary's counter. Two more faults sat beside it: the shop list and the *Bought X for N* line showed the base `buyPrice` whatever was charged, and anything bought through the quantity prompt (potions, arrows, every stackable) was charged the base price with no multiplier at all.
+
+**The fix.** One price, used everywhere the shop names or takes one: `shopCost(it)`, the base price times `shopMul()`. `shopMul()` is the house's own town indoors (`WORLD.priceMulAt(currentHouse.siteId)`, the same prosperity and faction factors), the nearest town outdoors as before, and 1 anywhere else. The list, the affordability check, the single buy, its message and the quantity prompt's unit price all read it. A bought-back item (something you sold here, which the shop lists again at what it paid you, v68) keeps that price and is not multiplied; the old single-buy path multiplied it, but it never ran indoors. Sell prices are unchanged.
+
+### Verified (headless Chromium)
+New `tests/prices.test.mjs`, in Dunmore at 13h. The multiplier in the square is .9665, and at Cathal's Apothecary's counter it is now .9665 too (it was 1). The list shows the town's prices: a Greater Potion at base 40 is listed at 39, a Health Potion at 15 is listed at 14, and buying one Health Potion through the quantity prompt charges 14. At the forge a Wooden Sword is listed at 5, charged 5, and the message says *for 5🪙*. With the Crown at rank 2 the counter's multiplier is .8698 (the .9 discount); with a 25-gold fine standing it is back to .9665. No page errors. Full suite: 20 of 20 suites pass.
+
+### Needs eyes
+Prices in a poor town against a rich one, now that they reach the counter: a prosperity-10 village charges 15% over base, a city at 100 17% under. Whether the shop should say it (a line under the keeper's name, *prices are high here*) is a design call and not done.
