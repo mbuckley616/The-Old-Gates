@@ -5474,3 +5474,18 @@ New check in `people.test.mjs` (11 of 11 pass, no page errors). At the hem's hei
 
 ### Needs eyes
 A skirt in a real walk: the thighs swing through the skirt's lathe, which is rigid on the hips, so a knee can still push through the cloth at full stride. That is the skirt, not the ring, and it would want the skirt skinned to the thighs.
+
+## v80 — Session 187 — Longer legs (Playtest s162)
+Michael's playtest item: the legs are too short on the player and the townsfolk, and the torso reads long; lengthen the legs and check against a 7.5-head figure.
+
+**Measured first.** Before the change a person's hip joint was at .45 of a figure 1.225 tall: 37% of the height. A 7.5-head figure has it at about 50%. The head, chin to crown, is .27–.30, so the figure was 4.2–4.5 heads. The head is the stylised big head of the townsfolk prototypes Michael approved, and a 7.5-head figure would need it much smaller. That is a change of look, not of proportion, so I did not make it; it is noted in the backlog if he wants it. What the change does is set the legs against the figure's own height.
+
+**What changed.** One factor, `PW.LEGK = 1.4`, lengthens the thigh and shin bones and their limbs (`PW.L1`/`PW.L2`, .28 and .266). The hips rise by what that adds (`PW.DL`, .152). The dress, the dress's hem ring and the skeleton's leg bones follow it. The walk and the run are written in the leg's own terms, so they scale with it: the hip joint's height over the foot in the walk (.352) and the run (.288), the stride (.16 and .25), the swing's lift and the run's bob are each multiplied by `LEGK`. A first try that raised the hips by `DL` but kept the run's crouch the same over-reached the standing leg (1.048 of its length) and slid the planted foot 17 mm. Then `buildPerson` scales the whole figure by `PW.BODY` (.89), so a person stands as tall in the world as before. Doors, health bars, name heights and the camera see no change; the head and trunk come out 11% smaller and the legs 25% longer. The hip joint is now at 43.6–43.7% of the height, and the figure is 4.6–4.95 heads. The third-person player's rest height reads `PW.HIPS`.
+
+Longer legs take longer strides at the same speed, so steps are slower: a stroll takes 2.3 steps a second, the player's ordinary run 4.1 (it was about 5), a guard's walk 3.1.
+
+### Verified (headless Chromium)
+New check in `people.test.mjs` (12 of 12): three townsfolk have the hip joint at .436–.437 of their height, and each stands within 0.3% of the height they had before (1.182 against 1.179, for example). `gait.test.mjs` passes 7 of 7 against its old bounds: the planted foot holds to .68 mm walking and 1.07 mm running, the standing leg's worst reach is .995 of its length, the flight is 25% of the run, and the player's planted foot holds to 1.44 mm. `player`, `lod`, `foes`, `goblins` and `interiors` all pass. Pictures: `docs/prototypes/legs-before.png` and `legs-after.png` (five townsfolk front-on), and `legs-walk.png`.
+
+### Needs eyes
+The townsfolk and your own body in real play: whether 1.4 is enough or too much (one number, `PW.LEGK`, which I compared at 1.25 and 1.4 before picking 1.4); whether the smaller trunk makes arms and hands read short; the slower cadence of the run. Whether the head should also shrink towards a real 7.5-head figure is a question for Michael.

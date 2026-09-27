@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s186</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s187</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9636,13 +9636,13 @@ function personBakeQ(g,q){
   const C=x=>(x&&x.isColor)?x:new THREE.Color(x);const mixC=(a,b,t)=>C(a).clone().lerp(C(b),t);
   const bw=g.build,fem=g.female,hs=g.head;
   const cloth=C(g.cloth),sleeve=C(g.sleeve),skin=C(g.skin),legs=C(g.legs),hair=C(g.hair),boot=C(g.boot),trim=C(g.trim),dark=C(0x1b1410),steel=C(0x9a9c9e);
-  const hips=bone('hips',null,0,.47,0);
+  const hips=bone('hips',null,0,PW.HIPS,0);const DL=PW.DL;
   // the tunic's skirt, or a dress to the shin
-  const hem=g.dress?[[0,-.37],[.25,-.37],[.255,-.355],[.215,-.2],[.18,-.05],[.16,.02],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
+  const hem=g.dress?[[0,-.37-DL],[.25,-.37-DL],[.255,-.355-DL],[.215,-.2-DL*.6],[.18,-.05],[.16,.02],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
   part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
   // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
   // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
-  {const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
+  {const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
   const belt=part(SK.torus(.172*bw*(fem?.96:1),.02,5,20),dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);
@@ -9741,10 +9741,10 @@ function personBakeQ(g,q){
     if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
     const wr=bone('wr'+k,el,0,-.14,0);const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
     part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
-    const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(.2,.066*bw,.05*bw),legs,th);
-    const kn=bone('kn'+k,th,0,-.2,0);part(SK.limb(.19,.05*bw,.04*bw),legs,kn);
-    part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,-.15,0);
-    const an=bone('an'+k,kn,0,-.19,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
+    const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
+    const kn=bone('kn'+k,th,0,-PW.L1,0);part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
+    part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);
+    const an=bone('an'+k,kn,0,-PW.L2,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
   if(g.skel){bodyOpen=true; // the bones: a skull with dark sockets, a spine, a ribcage open at the front, a pelvis, the limb bones and joints
     const bc=C(0xd8d0b8),bd=C(0xa89c80),sock=C(0x140e0a);const head=B.head,spine=B.spine,neck=B.neck;
@@ -9763,8 +9763,8 @@ function personBakeQ(g,q){
       part(SK.ball(.03,7,5),bc,sh);part(SK.limb(.14,.02,.017),bc,sh);part(SK.ball(.02,6,5),bd,el);
       for(const o2 of [.012,-.012])part(SK.limb(.13,.011,.009),bc,el,o2,0,0);
       part(SK.ball(.022,6,5),bc,wr,0,-.02,0).scale.set(1,.8,.7);for(let f=0;f<3;f++)part(SK.cyl(.005,.004,.05,4),bc,wr,-.012+f*.012,-.05,.004);
-      part(SK.ball(.03,7,5),bc,th);part(SK.limb(.2,.024,.019),bc,th);part(SK.ball(.022,6,5),bc,kn,0,0,.016);
-      part(SK.limb(.18,.018,.014),bc,kn);part(SK.limb(.17,.008,.007),bc,kn,.02,0,-.01);
+      part(SK.ball(.03,7,5),bc,th);part(SK.limb(PW.L1,.024,.019),bc,th);part(SK.ball(.022,6,5),bc,kn,0,0,.016);
+      part(SK.limb(PW.L2-.01,.018,.014),bc,kn);part(SK.limb(PW.L2-.02,.008,.007),bc,kn,.02,0,-.01);
       part(SK.ball(.03,8,5),bc,an,0,-.02,.035).scale.set(.85,.45,1.9);});
   }
   // held gear sits in the right fist: the shaft runs through the hand, fingers wrap it, the wrist keeps it upright
@@ -9817,7 +9817,7 @@ function buildPerson(g,opts){
       if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
   const root=new THREE.Group();root.add(mesh);
-  root.scale.setScalar(g.height);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
+  root.scale.setScalar(g.height*PW.BODY);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
   const rig={root,mesh,B,g,eyes,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
     geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
@@ -9875,7 +9875,11 @@ function buildNPCMesh(def,opts){
   return buildPerson(g).root;
 }
 // ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
-const PW={JOINTS:['hips','spine','neck','head','shL','elL','wrL','shR','elR','wrR','thL','knL','anL','thR','knR','anR'],L1:.2,L2:.19,FOOT:.07,HIPJ:.02,STRIDE:.16,DUTY:.62};
+// S187 — the legs a quarter longer (Michael, playtest s162: the legs read short, the torso long). LEGK scales the thigh and
+// shin, DL is what that adds under the hips, and BODY scales the whole figure back so a person stands as tall as before
+// (buildPerson's root): the head and trunk come out 8% smaller, the legs 15% longer, of the same height.
+const PW={JOINTS:['hips','spine','neck','head','shL','elL','wrL','shR','elR','wrR','thL','knL','anL','thR','knR','anR'],LEGK:1.4,FOOT:.07,HIPJ:.02,DUTY:.62};
+PW.L1=.2*PW.LEGK;PW.L2=.19*PW.LEGK;PW.DL=.38*(PW.LEGK-1);PW.STRIDE=.16*PW.LEGK;PW.HIPS=.47+PW.DL;PW.BODY=1.225/(1.225+PW.DL);
 PW.GREET=false; // S185 — townsfolk no longer wave as you walk up (tickPeople)
 PW.cycle=2*PW.STRIDE/PW.DUTY; // ground covered per stride cycle, in figure units
 function pwZero(){const p={};PW.JOINTS.forEach(j=>p[j]=[0,0,0]);p.sway=0;p.hipsY=0;return p;}
@@ -9895,13 +9899,13 @@ function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),
 // A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
 // forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
 function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
-  p.hipsY=.442-.01*Math.cos(2*a);
+  p.hipsY=PW.FOOT+PW.HIPJ+(.352-.01*Math.cos(2*a))*PW.LEGK; // the hip joint's height over the foot, scaled with the leg
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.07*c,.025*s];
   // the pelvis turns and tips as it walks, which carries each hip joint fore and aft: the leg aims from where
   // the joint actually is, so the planted foot stays put and the joint moves around it
   const foot=(f,sd)=>{let z,lift=0,toe=0;
-    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));}
+    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*PW.LEGK*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));}
     const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
   const L=foot(phL,1),Rr=foot(phR,-1);
   // the pelvis sways and tips sideways over the standing foot; the thighs aim across so the feet stay put
@@ -9916,7 +9920,7 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
 // body sits lowest over the standing foot and rises through the flight; the heel kicks up behind as the leg swings
 // through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
 // unit tall) the gait blends from the walk into this; back under PW.RUN.off.
-PW.RUN={STRIDE:.25,DUTY:.33,HIPS:.378,BOB:.018,LIFT:.15,on:1.4,off:1.15};
+PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*PW.LEGK,LIFT:.15*PW.LEGK,on:1.4,off:1.15};
 PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
   p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2));
@@ -20763,7 +20767,7 @@ function tpBuild(lookIn,ppIn){
   const B=rig.B;for(const k in B){if(B[k].isBone)B[k].rotation.order='YXZ';}
   rig.mesh.castShadow=false;rig.mesh.userData.tp=true;
   const root=rig.root;root.rotation.order='YXZ';
-  const R={root,rig,hips:B.hips,hipsY0:.47,thighL:B.thL,thighR:B.thR,kneeL:B.knL,kneeR:B.knR,ankleL:B.anL,ankleR:B.anR,torso:B.spine,head:B.head,shL:B.shL,shR:B.shR,elL:B.elL,elR:B.elR,handL:B.wrL,handR:B.wrR};
+  const R={root,rig,hips:B.hips,hipsY0:PW.HIPS,thighL:B.thL,thighR:B.thR,kneeL:B.knL,kneeR:B.knR,ankleL:B.anL,ankleR:B.anR,torso:B.spine,head:B.head,shL:B.shL,shR:B.shR,elL:B.elL,elR:B.elR,handL:B.wrL,handR:B.wrR};
   // what the hands hold (the weapon kit itself is a later pass)
   const w=EQ.weapon;R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow');R.bow=!!(w&&w.weaponShape==='bow');
   const grip=(hand,m)=>{m.position.set(0,-.04,.008);hand.add(m);return m;};

@@ -79,11 +79,19 @@ check('walking up to a townsperson brings no wave; a scripted wave still plays',
 // ring was round, so it stood off the cloth before and behind; at the hem's height the depth is now the skirt's .76 of the width
 const hem = await page.evaluate(() => { const out = [];
   for (const [name, dress] of [['Aoife', false], ['Brendan', false], ['Deirdre', true], ['Maeve', true]]) { const gn = personGenome({ name, role: 'villager' }, { key: 'hemtest' }); gn.dress = dress; gn.cloak = false; gn.apron = null;
-    const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); const P = r.mesh.geometry.attributes.position; const y0 = .47 + (dress ? -.36 : -.125);
+    const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); const P = r.mesh.geometry.attributes.position; const y0 = PW.HIPS + (dress ? -.36 - PW.DL : -.125);
     let dx = 0, dz = 0; for (let i = 0; i < P.count; i++) { if (Math.abs(P.getY(i) - y0) > .014) continue; dx = Math.max(dx, Math.abs(P.getX(i))); dz = Math.max(dz, Math.abs(P.getZ(i))); }
     r.mesh.geometry.dispose(); out.push({ name, dress, width: +dx.toFixed(3), depth: +dz.toFixed(3), ratio: +(dz / dx).toFixed(2) }); }
   return out; });
 check('the hem ring hugs the skirt front and back (tunic and dress)', hem.every(h => h.ratio < .85), hem);
+// the legs (Session 187, playtest s162: the legs read short): the hip joint at 43% of the height or more (it was 37%), and a
+// person as tall as before (the figure is scaled back by PW.BODY), so doors, bars and the camera are unchanged
+const legs = await page.evaluate(() => { const out = [];
+  for (const n of ['Aoife', 'Brendan', 'Cathal']) { const gn = personGenome({ name: n, role: 'villager' }, { key: 'legtest' }); gn.hat = 'none'; gn.style = 'buzz';
+    const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); r.mesh.geometry.computeBoundingBox(); const top = r.mesh.geometry.boundingBox.max.y;
+    out.push({ n, hip: +((PW.HIPS - PW.HIPJ) / top).toFixed(3), tall: +(top * r.root.scale.y).toFixed(3), was: +(gn.height * 1.225).toFixed(3) }); r.mesh.geometry.dispose(); }
+  return out; });
+check('the legs are longer (hip joint at 43%+ of the height) and a person is as tall as before', legs.every(l => l.hip >= .43 && Math.abs(l.tall - l.was) / l.was < .02), legs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
 
