@@ -5543,7 +5543,7 @@ The third slice of the dungeon item: Michael's *rubble and props*. The shape kit
 
 **The rounded box.** `SK.rbox(w, h, d, r, n)` subdivides a box and pulls every vertex onto a rounded shell: clamp the point to the box shrunk by `r`, then push it out `r` along the direction it was clamped. The result has flat faces, quarter-round edges and spherical corners. `SK.smooth(g)` averages normals over coincident vertices, so the six faces shade as one surface. It is general: crates, stone and, later, the buildings' pass can all use it.
 
-**The props.** A floor's props are now one mesh (`dunMerge`: parts of geometry, colour and matrix, with the colour baked into the vertices). Before, each bone, stone, plank and chain link was its own mesh with its own material; a hanging chain was 17 to 32 meshes.
+**The props.** A floor's props are now one mesh (`dunMerge`: parts of geometry, colour and matrix, with the colour baked into the vertices). Before, each bone, stone, plank and chain link was its own mesh with its own material; a hanging chain was 16 to 32 meshes.
 - **Rubble**: along every side where open ground meets a wall there is a chance of a heap (14% where the theme's clutter is rubble, 6% elsewhere). A heap is 4 to 9 rounded stones of .07–.21, tumbled and half-sunk, in the wall's colour lightened. A quarter of the heaps also have a fallen dressed block from the courses.
 - **The theme's clutter** is on the kit. Bones are tapered limbs lying flat. The skull is a ball with dark sockets and a jaw. The junk is rounded planks and an earthenware pot (a lathe), sometimes knocked over. Chains keep their hang from the ceiling but are links of the one mesh. Rubble-theme clutter is a small heap.
 - The crates' bodies are the rounded box.
