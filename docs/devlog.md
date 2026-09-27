@@ -5142,3 +5142,19 @@ A note on Session 166's and 167's suites: `lod.test.mjs` failed twice when three
 
 ### Needs eyes
 Spiders in a real forest by day and at night: the gait (the feet planted, the knees up), whether the run reads as scuttling, the rear before the bite, and the eye glow. The legs are round, even tubes between the joint bands; a real spider's are hairier and kinked at each joint, which may want a pass. Frame time with a nest of four close by (about 28k triangles).
+
+## v80 — Session 170 — The boar on the wolf's bones (H.4), and the shadow-pass flake
+
+The Boar is on every plains, forest and autumn table, and since the first build it has been the box wolf in brown (`shape:'wolf'`, with S9's tusk boxes added by `detailEnemyMesh`). Session 166 left it on that box. This session gives it a body of its own without a new rig: `WOLF_KINDS.Boar` has `boar:true`, and `wolfBakeQ` hangs the boar's parts on the wolf's 24 bones in place of the wolf's. It trots, gallops, crouches and springs with the wolf's IK gait, and it shares the wolf's level of detail and shadow-pass swap.
+
+**The body.** The chest and haunches are a deep barrel (the chest lathe .17 across against the wolf's .15, and deeper), whose belly comes down to about .19 of the shoulder's .40. That hides the upper legs, so the legs read short and sturdy with no change to the skeleton. A ridge of dark bristles runs from the neck down the back. The head is a heavy wedge to a flat pinkish disc snout with two nostrils, ivory tusks curving up from the jaw, small eyes set high, and small pricked ears. The head is carried low: `k.neck` tips the neck down and the head back up a little in `wgApply`. The legs end in dark hooves, and the thin tail has a dark tuft. The boar has no shining eyes (the wolves' eye mesh is skipped for it). The first pass hung the barrel almost to the ground and read as a blob; it was slimmed and raised before this commit (`docs/prototypes/boar-ingame.png` is the second pass). The Boar uses the wolves' walk; it is not in the pack behaviour, so it doesn't circle.
+
+**The shadow-pass flake.** Sessions 166–169 recorded `lod.test.mjs` failing when suites ran two or three at a time: its shadow-pass checks read no triangles from the townsfolk. This session's first wolves run did the same (the shadow pass drew no wolf in that frame). A probe that rendered 25 times between real frames saw the shadow pass draw the wolf every time. The deciding run was `lod` on `origin/main` and on this branch side by side, with two CPU-burning processes beside them. `main` failed (the distant-copy shadow check read no change at all) and this branch passed. So the failure predates this work. It is a frame, on a loaded machine, whose shadow pass draws none of the townsfolk; the cause is still not found. `lod.test.mjs` is left as it was. The wolves test's shadow check now renders across up to twelve real frames until the shadow pass has drawn the wolf, then checks which copy it drew; that is waiting for what the check needs, and the check is no weaker.
+
+### Verified (headless Chromium)
+`tests/wolves.test.mjs` extended, 17 checks, all passing, no page errors. The Boar from `buildZoneEnemy` is one skinned mesh on the wolf's 24 bones with no eye mesh, 4,028 triangles (2,272 for the distant copy). With the Boar among them, the test's six wolves beside the player draw at full detail and add 5,556 triangles each (eye and shadow). The shadow check drew the distant copy on its first try. The photograph `docs/prototypes/wolf-ingame.png` now has the Boar at the end of the row.
+
+Full suite on Session 169 (the spider), two suites at a time: 19 of 20 passed; `lod` failed as above. The side-by-side run above shows that failure on `main` too.
+
+### Needs eyes
+The boar in a field by day: the barrel against the legs, the low head, the tusks. Whether it should keep the wolves' trot or want a shorter, choppier gait of its own; whether it should charge (it is not a lair beast).

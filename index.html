@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s169</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s170</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9923,7 +9923,9 @@ const WOLF_KINDS={
   'Wolf':      {coat:0x7a6a5c,saddle:0x3e342c,belly:0xd8ccb4,eye:0xddaa44,ruff:1.0,ears:1.0,muzzle:1.0},
   'Snow Wolf': {coat:0xdcdce0,saddle:0x9a9ca4,belly:0xf4f2ee,eye:0x80c0ff,ruff:1.25,ears:.85,muzzle:.95},
   'Dire Wolf': {coat:0x3a3230,saddle:0x1a1614,belly:0x6a5e54,eye:0xffb030,ruff:1.35,ears:.9,muzzle:1.12,bulk:1.15},
-  'Ash Hound': {coat:0x5a5048,saddle:0x2a2420,belly:0x8a7a6a,eye:0xff5020,ruff:.55,ears:1.25,muzzle:1.2,lean:.86,embers:true}
+  'Ash Hound': {coat:0x5a5048,saddle:0x2a2420,belly:0x8a7a6a,eye:0xff5020,ruff:.55,ears:1.25,muzzle:1.2,lean:.86,embers:true},
+  // the boar shares the wolf's bones and gait; its parts are its own (wolfBakeQ's k.boar), its head carried low (neck)
+  'Boar':      {coat:0x5a4030,saddle:0x2e2016,belly:0x8a6a50,eye:0x3a2010,boar:true,neck:.35,bulk:1.05}
 };
 const WOLF_RIGS=new Set();
 const WOLF_GEO=new Map();
@@ -9966,6 +9968,32 @@ function wolfBakeQ(k,q){
   const seg=(b,d,r0,r1,belly,col)=>{const L=Math.hypot(d[0],d[1]);const o=part(limbGeo(L,r0,r1,belly||0),col||coat,b,0,0,0,true);o.rotation.x=Math.atan2(-d[1],-d[0]);return o;};
   // a lathe along +z (the body's axis)
   const zlathe=(pts,n)=>{const g=SK.lathe(pts,n||14);g.rotateX(Math.PI/2);return g;};
+  if(k.boar){ // v80 S170 — the boar on the wolf's bones: a deep barrel that hides the upper legs, the head carried low, tusks, a bristled ridge, hooves
+    const F=WOLF_LEGS.fore,H=WOLF_LEGS.hind,bw=k.bulk||1;
+    part(zlathe([[0,-.24],[.08,-.23],[.14,-.16],[.17,-.06],[.172,.04],[.15,.13],[.09,.19],[0,.21]],16),coat,B.spine,0,-.025,0,true).scale.set(.84*bw,1.08*bw,1);
+    part(zlathe([[0,-.2],[.09,-.19],[.14,-.11],[.152,0],[.15,.12],[.13,.2],[0,.26]],14),coat,hips,0,-.01,0,true).scale.set(.92*bw,1.05*bw,1);
+    seg(B.spine,[.1,.13],.12*bw,.1*bw,.01).position.set(0,-.04,.08);
+    // the bristled ridge down the neck and back
+    for(let i=0;i<9;i++){const b=i<5?B.spine:hips,z=i<5?.2-i*.07:.14-(i-5)*.09;const o=part(SK.bumpy(SK.cone(.024,.055-Math.abs(i-3)*.004,6),.004,17,i),C(k.saddle),b,0,.18-(i>6?.02:0),z);o.rotation.x=-.6;o.scale.set(.6,1,1.4);}
+    // the head: a heavy wedge to a flat disc snout, tusks curving up from the jaw, small eyes set high, small pricked ears
+    const head=B.head;
+    part(SK.ball(.085,14,10),coat,head,0,-.01,-.01,true).scale.set(.95,1,1.15);
+    part(zlathe([[0,0],[.075,0],[.065,.08],[.05,.15],[.044,.19],[0,.195]],12),coat,head,0,-.03,.04,true).scale.set(1,.85,1);
+    part(SK.cyl(.046,.046,.02,12),C(0x7a5a52),head,0,-.03,.235).rotation.x=Math.PI/2;
+    for(const s of [1,-1]){part(SK.ball(.009,6,4),C(0x2a1a18),head,s*.017,-.028,.246);
+      const t=part(SK.cone(.013,.075,6),C(0xe8e0c8),head,s*.045,-.06,.16);t.rotation.set(-.5,0,-s*.35);
+      if(q>=1){part(SK.ball(.011,7,5),C(k.eye),head,s*.052,.035,.06);part(SK.ball(.005,5,4),dark,head,s*.055,.035,.066);}
+      const e=part(SK.cone(.028,.07,5),coat,head,s*.05,.08,-.03,true);e.rotation.set(-.4,0,-s*.5);e.scale.set(1,1,.45);}
+    part(zlathe([[0,0],[.05,0],[.045,.1],[.03,.15],[0,.155]],10),coat,B.jaw,0,-.02,0,true).scale.set(1,.4,1);
+    // legs: short and sturdy below the barrel, dark hooves
+    ['L','R'].forEach(K=>{
+      seg(B['sh'+K],F.a,.055*bw,.04*bw,.012);seg(B['el'+K],F.b,.036,.028,.006);part(SK.ball(.028,7,5),coat,B['wr'+K],0,0,0,true);
+      seg(B['wr'+K],F.c,.026,.024,0,C(0x2a2018));part(SK.cyl(.026,.03,.035,8),C(0x1e1612),B['pf'+K],0,.0,.01);
+      seg(B['th'+K],H.a,.07*bw,.045*bw,.016);seg(B['kn'+K],H.b,.038,.028,.006);part(SK.ball(.028,7,5),coat,B['hk'+K],0,0,0,true);
+      seg(B['hk'+K],H.c,.026,.024,0,C(0x2a2018));part(SK.cyl(.026,.03,.035,8),C(0x1e1612),B['ph'+K],0,.0,.01);});
+    // a thin tail with a dark tuft
+    const tl=part(SK.limb(.13,.014,.01),coat,B.tail1,0,0,0,true);tl.rotation.x=Math.atan2(.1,.05);part(SK.bumpy(SK.ball(.025,7,5),.008,19,2),C(k.saddle),B.tail2,0,-.02,-.02);
+  }else{
   // the body: a deep chest on the spine (narrower than the prototype's, which was heavy from the front), a tucked waist and haunches on the hips
   part(zlathe([[0,-.22],[.07,-.21],[.12,-.15],[.145,-.05],[.15,.03],[.13,.11],[.08,.16],[0,.18]],16),coat,B.spine,0,-.04,0,true).scale.set(.63*bw*ln,1.08*bw,1);
   part(zlathe([[0,-.15],[.08,-.14],[.11,-.07],[.108,.02],[.092,.12],[.085,.2],[0,.24]],14),coat,hips,0,.005,0,true).scale.set(.8*bw*ln,1*bw,1);
@@ -10002,6 +10030,7 @@ function wolfBakeQ(k,q){
   tseg(B.tail1,-.05,-.1,.035,.058,coat,true,1);tseg(B.tail2,-.06,-.08,.06,.066,coat,true,2);tseg(B.tail3,-.06,-.07,.066,.026,C(k.saddle),false,4);
   // the Ash Hound's embers: glowing seams along the back
   if(k.embers)for(let i=0;i<5;i++)part(SK.ball(.012,6,4),C(0xff6a20),i<3?B.spine:hips,0,.1-(i<3?i*.005:0),i<3?.08-i*.08:.12-(i-3)*.12).scale.set(1,.5,2.2);
+  }
   // bake: every part into one geometry, each vertex bound to its bone, the fur shaded by its normal
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;
   const sad=C(k.saddle),bel=C(k.belly),tmp=new THREE.Color();
@@ -10032,7 +10061,7 @@ function buildWolf(name,scale){
     sk.update=function(){for(let i=0;i<bones.length;i++){const b=bones[i];b.updateMatrix();const p=b.parent&&b.parent.isBone?mats[b.parent.userData.i]:null;
       if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
-  {const g1=new THREE.SphereGeometry(.011,6,4),a=g1.attributes.position.array,ix=g1.index.array,n=a.length/3;const P=new Float32Array(a.length*2),I=[];
+  if(!k.boar){const g1=new THREE.SphereGeometry(.011,6,4),a=g1.attributes.position.array,ix=g1.index.array,n=a.length/3;const P=new Float32Array(a.length*2),I=[];
     for(let s=0;s<2;s++){for(let i=0;i<n;i++){P[(s*n+i)*3]=a[i*3]+(s?.038:-.038);P[(s*n+i)*3+1]=a[i*3+1]+.03;P[(s*n+i)*3+2]=a[i*3+2]+.056;}for(let i=0;i<ix.length;i++)I.push(ix[i]+s*n);}
     g1.dispose();const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.BufferAttribute(P,3));eg.setIndex(I);
     const eyes=new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:k.eye}));B.head.add(eyes);}
@@ -10089,7 +10118,7 @@ function wgAttack(w,s,p){const q=wgZero();
 // a body on its side: the legs slack, the head and tail down, the jaw a little open
 function wgDead(){const p=wgZero();p.drop=0;p.neck=[.35,0,0];p.head=[.2,0,0];p.jaw=[.25,0,0];p.tail1=[-.6,0,0];p.tail2=[-.2,0,0];
   ['L','R'].forEach((K,i)=>{p['sh'+K]=[-.35-.15*i,0,0];p['el'+K]=[.3,0,0];p['wr'+K]=[.4,0,0];p['th'+K]=[.4+.2*i,0,0];p['kn'+K]=[-.3,0,0];p['hk'+K]=[.35,0,0];});return p;}
-function wgApply(rig,P){const B=rig.B;WG.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});B.hips.position.y=.40-P.drop;}
+function wgApply(rig,P){const B=rig.B;WG.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});B.hips.position.y=.40-P.drop;if(rig.k.neck){B.neck.rotation.x+=rig.k.neck;B.head.rotation.x-=rig.k.neck*.6;}}
 function wgCycle(w){const a=w.trot||0,b=w.gallop||0;return a+b>.001?(a*WG.TROT.cycle+b*WG.GALLOP.cycle)/(a+b):WG.TROT.cycle;}
 // every wolf (and spider, tickSpider) in the active scene, each frame: the stride is driven by how far the creature moved (its logical
 // position, so the lunge's forward lurch does not step the feet), trot below WG.GALLOP.on body-lengths a second
