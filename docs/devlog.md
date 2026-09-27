@@ -5110,3 +5110,17 @@ New `tests/witness.test.mjs`, all seven Dunmore shops at 13h, shop open, keeper 
 
 ### Needs eyes
 Whether a keeper who sees you through the open back-room door reads as fair; the doorway is 1.4 wide and the six units still apply. Whether one-room shops, where the strongbox sits in the keeper's sight all day, should keep it somewhere else (a design question for the crime numbers).
+
+## v80 — Session 168 — The theft fine and the cells take the gold
+
+Backlog I, the critic's third finding (*theft pays even when caught*). The crime system's spec (backlog B, designed with Michael on the 26th) says: *fine = 25 gold per favour point lost (a lock 25, theft 50 + the goods' value, assault 75)*, and a yield to the watch means *a night in the cells with the stolen goods taken*. The build charged 25 a point for everything, so a seen theft was 50 flat, and the cells took the stolen items but not the stolen gold. The critic yielded holding 900 gold and woke with 900. A Dunmore strongbox pays 90–183, so a seen theft still cleared 40–130 after its fine, and the cells cost only the night. This session makes the code do what the spec says. No number is new.
+
+**The fine.** `noteCrime` now carries the value of what was taken, and `seenCrime` adds it to a theft's bounty: 50 for the two favour points as before, plus the coins and the listed price (`buyPrice`) of the thing from the stock or the keepsake. Locks and assault are unchanged.
+
+**The cells.** Every strongbox or chest emptied in a town adds its coins to that town's count of stolen gold (`worldState.crime[site].loot`), seen or not, the same way the stolen things carry their `stolen` mark whether anyone saw or not. The count is not a record: the lord, the priest and the factions still look only at the fine, the favour owed and the gates (`recordAt`, `nationRecord`). Taking the cells now takes that gold back as well, as much of it as you are carrying, and resets the count. The message and the log name the sum (*They took what you stole (595 gold)*). Paying double to walk away does not touch it; that is the price of not going to the cells.
+
+### Verified (headless Chromium)
+New `tests/theft.test.mjs`, in Dunmore at 13h, through the real strongbox and lock. Unseen, from the back room of Lorcan's Forge: 140 gold and a Health Potion (18), fine 0, favour 0, the town's count up by 140. Seen, at Aoife's Goods (a one-room shop, the keeper within sight, Session 167): 113 gold and a Torch (8), fine 171 = 50 + 121, favour −2. Then with 900 gold on you, a guard drawn and the yield taken to the cells: 595 gold back (every box the test emptied on its way round the town), 305 left, the count reset, the stolen things gone, the honest bread kept, the fine cleared, and the message and log naming 595. With only 40 gold against 300 stolen, the cells take the 40. No page errors. Full suite: 19 of 19 suites pass.
+
+### Needs eyes
+Whether a theft's fine, now the goods' value on top of 50, and the double of it at a yield, is too steep against a level-one purse. The strongbox takings (20–200 by prosperity) were left alone. The critic's other small note (stolen goods sell back to the shop they came from with no questions) is not changed; whether a keeper should refuse his own goods is a design call.
