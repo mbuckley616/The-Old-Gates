@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s210</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s211</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -10326,6 +10326,7 @@ function wgAttack(w,s,p){const q=wgZero();
 function wgDead(){const p=wgZero();p.drop=0;p.neck=[.35,0,0];p.head=[.2,0,0];p.jaw=[.25,0,0];p.tail1=[-.6,0,0];p.tail2=[-.2,0,0];
   ['L','R'].forEach((K,i)=>{p['sh'+K]=[-.35-.15*i,0,0];p['el'+K]=[.3,0,0];p['wr'+K]=[.4,0,0];p['th'+K]=[.4+.2*i,0,0];p['kn'+K]=[-.3,0,0];p['hk'+K]=[.35,0,0];});return p;}
 function wgApply(rig,P){const B=rig.B;WG.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});B.hips.position.y=.40-P.drop;if(rig.k.neck){B.neck.rotation.x+=rig.k.neck;B.head.rotation.x-=rig.k.neck*.6;}
+  if(rig.hunch){B.spine.rotation.x+=rig.hunch[0];B.neck.rotation.x+=rig.hunch[1];B.head.rotation.x+=rig.hunch[2];} // S211 — the Faolchú's hunch
   // a dragon's wings (S177): folded back along its flanks at rest, beating while it is roused (rig.wing 0..1 blends them)
   if(B.wingL){const w=rig.wing||0,f=rig.flap||0;const z=-.3*(1-w)+(.15+.5*Math.sin(f))*w,y=1.35*(1-w);B.wingL.rotation.set(0,y,z);B.wingR.rotation.set(0,-y,-z);}}
 function wgCycle(w){const a=w.trot||0,b=w.gallop||0;return a+b>.001?(a*WG.TROT.cycle+b*WG.GALLOP.cycle)/(a+b):WG.TROT.cycle;}
@@ -13940,220 +13941,38 @@ const BOSSES={
 // hpFg is updated each tick for the HUD healthbar's data source even though
 // the world-space bar itself is hidden (HUD takes over for bosses).
 function buildFaolchuMesh(d){
+  // S211 — the Faolchú on the shape kit (Michael's answer on Session 201: "great as is"): the Dire Wolf's skinned body
+  // hunched, two pairs of clawed arms from a red seam down its spine, orange sigil-script along its flanks. About the old
+  // box's height (its ears topped out at .92 of its scale), a little shorter from nose to tail; bite range and hits are unchanged.
+  // The glowing parts share one unlit material (limbs.sigilTrace, which the phases recolour) and are listed in
+  // limbs.sigilMeshes (the death burst reads their positions); the arms and claws are ordinary meshes on the wolf's bones.
   const sc = d.scale;
   const g = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({color:d.col});
-  // Slightly darker shade for "shadow" pieces — under-jaw, joints, claws.
-  const darkMat = new THREE.MeshLambertMaterial({color:0x2a1a14});
   const limbs = {};
-  // Sigil-trace overlay material — emissive red. Held on limbs.sigilTrace
-  // for the tick to pulse during phase transitions. Shared across all sigil
-  // mesh pieces so a single material edit pulses all of them.
   const sigilMat = new THREE.MeshBasicMaterial({color:0xff1a0a});
-  // Front legs (larger, forward shoulder)
-  [-1,1].forEach((s,i)=>{
-    const pivot=new THREE.Group();
-    pivot.position.set(s*.18*sc, .42*sc, .35*sc);
-    const leg=new THREE.Mesh(new THREE.BoxGeometry(.13*sc,.42*sc,.13*sc),mat);
-    leg.position.y=-.21*sc;
-    pivot.add(leg);
-    g.add(pivot);
-    limbs[i===0?'frontL':'frontR']=pivot;
-  });
-  // Back legs (smaller, rear)
-  [-1,1].forEach((s,i)=>{
-    const pivot=new THREE.Group();
-    pivot.position.set(s*.16*sc, .36*sc, -.35*sc);
-    const leg=new THREE.Mesh(new THREE.BoxGeometry(.11*sc,.36*sc,.11*sc),mat);
-    leg.position.y=-.18*sc;
-    pivot.add(leg);
-    g.add(pivot);
-    limbs[i===0?'backL':'backR']=pivot;
-  });
-  // Torso — elongated horizontal body
-  const torso=new THREE.Mesh(new THREE.BoxGeometry(.36*sc,.32*sc,.92*sc),mat);
-  torso.position.set(0, .56*sc, 0);
-  g.add(torso);
-  limbs.torso = torso;
-  // Hunched shoulders — extra mass over the front legs (signature ridge
-  // silhouette from the concept art).
-  const shoulder=new THREE.Mesh(new THREE.BoxGeometry(.42*sc,.18*sc,.34*sc),mat);
-  shoulder.position.set(0, .76*sc, .26*sc);
-  g.add(shoulder);
-  // Spine ridge — five spike-like blocks along the back, taller front,
-  // tapering rearward (replacing the earlier 3-block version for more
-  // pronounced silhouette).
-  [.30, .10, -.10, -.30, -.50].forEach((zOff, i)=>{
-    const sp=new THREE.Mesh(new THREE.BoxGeometry(.07*sc,(.20-i*.025)*sc,.10*sc),mat);
-    sp.position.set(0, (.84-i*.015)*sc, zOff*sc);
-    g.add(sp);
-  });
-  // ── HEAD COMPLEX ──────────────────────────────────────────
-  // Neck connector
-  const neck=new THREE.Mesh(new THREE.BoxGeometry(.20*sc,.20*sc,.22*sc),mat);
-  neck.position.set(0, .68*sc, .54*sc);
-  g.add(neck);
-  // Head — slightly wider than v61c2 to support side eye placement
-  const head=new THREE.Mesh(new THREE.BoxGeometry(.28*sc,.24*sc,.30*sc),mat);
-  head.position.set(0, .64*sc, .78*sc);
-  g.add(head);
-  limbs.head = head;
-  // Ears — two pointed wedges angled outward and back. Each is a small box
-  // rotated 30° on Z (outward) and -15° on X (slightly backward). Sized to
-  // read at distance as "wolf, not a brick."
-  [-1,1].forEach(s=>{
-    const ear=new THREE.Mesh(new THREE.BoxGeometry(.06*sc,.18*sc,.05*sc),mat);
-    ear.position.set(s*.10*sc, .82*sc, .76*sc);
-    ear.rotation.z = s*0.4;
-    ear.rotation.x = -0.2;
-    g.add(ear);
-    // Ear tip — darker, smaller, gives the ear visual point
-    const tip=new THREE.Mesh(new THREE.BoxGeometry(.04*sc,.05*sc,.04*sc),darkMat);
-    tip.position.set(s*.13*sc, .92*sc, .72*sc);
-    tip.rotation.z = s*0.4;
-    g.add(tip);
-  });
-  // Upper snout — long, tapering forward
-  const snoutUpper=new THREE.Mesh(new THREE.BoxGeometry(.18*sc,.13*sc,.26*sc),mat);
-  snoutUpper.position.set(0, .60*sc, 1.02*sc);
-  g.add(snoutUpper);
-  // Snout tip (nose) — small, slightly raised, darker
-  const nose=new THREE.Mesh(new THREE.BoxGeometry(.08*sc,.06*sc,.06*sc),darkMat);
-  nose.position.set(0, .63*sc, 1.18*sc);
-  g.add(nose);
-  // Lower jaw — separate piece, hangs slightly open showing the gap. Reads
-  // as "mouth" rather than "block." Darker undermat for shadow.
-  const jaw=new THREE.Mesh(new THREE.BoxGeometry(.16*sc,.07*sc,.22*sc),darkMat);
-  jaw.position.set(0, .52*sc, 1.00*sc);
-  g.add(jaw);
-  // Teeth — six small white wedges, three upper + three lower, exposed in
-  // the gap between snouts. Tiny but bright; pulls the eye to the face.
-  const teethMat = new THREE.MeshBasicMaterial({color:0xeae0c0});
-  [-.05, 0, .05].forEach(xo=>{
-    const tu=new THREE.Mesh(new THREE.BoxGeometry(.025*sc,.04*sc,.025*sc),teethMat);
-    tu.position.set(xo*sc, .56*sc, 1.10*sc);
-    g.add(tu);
-    const tl=new THREE.Mesh(new THREE.BoxGeometry(.025*sc,.035*sc,.025*sc),teethMat);
-    tl.position.set(xo*sc, .54*sc, 1.06*sc);
-    g.add(tl);
-  });
-  // Eyes — TWO separate emissive points (replacing v61c2's single bar). Each
-  // sits in a small dark eye-socket box, giving "recessed glowing eye" look.
-  // PointLights still attached for ambient red wash.
-  const eyeMat = new THREE.MeshBasicMaterial({color:d.eyeCol});
-  [-1,1].forEach(s=>{
-    // Eye socket — dark recess
-    const sock=new THREE.Mesh(new THREE.BoxGeometry(.07*sc,.07*sc,.04*sc),darkMat);
-    sock.position.set(s*.08*sc, .70*sc, .94*sc);
-    g.add(sock);
-    // Eye — emissive cube inside the socket, slightly forward
-    const eye=new THREE.Mesh(new THREE.BoxGeometry(.045*sc,.045*sc,.025),eyeMat);
-    eye.position.set(s*.08*sc, .70*sc, .96*sc);
-    g.add(eye);
-  });
-  // Eye light — single point light between the eyes for shared red glow
+  const runeMat = new THREE.MeshBasicMaterial({color:0xff7a30});
+  const armMat = new THREE.MeshStandardMaterial({color:0x3a322c,roughness:.9});
+  const clawMat = new THREE.MeshStandardMaterial({color:0xd8d0c0,roughness:.6});
+  const w = buildWolf('Dire Wolf', sc*1.45);
+  g.add(w.root);
+  w.hunch=[-.18,.35,.15]; // the spine arched, the neck and head carried low (wgApply adds it to every pose)
+  limbs.torso = w.mesh; limbs.wolf = w;
+  const B = w.B, sigilMeshes = [];
+  const add = (bone, geo, mat, p, r) => { const m = new THREE.Mesh(geo, mat); m.position.set(p[0], p[1], p[2]); if (r) m.rotation.set(r[0], r[1], r[2]); bone.add(m); if (mat === sigilMat || mat === runeMat) sigilMeshes.push(m); return m; };
+  add(B.spine, new THREE.BoxGeometry(.018, .015, .42), sigilMat, [0, .085, .02], [.05, 0, 0]);
+  add(B.hips, new THREE.BoxGeometry(.018, .015, .26), sigilMat, [0, .095, -.05]);
+  add(B.head, new THREE.BoxGeometry(.05, .008, .008), sigilMat, [0, .07, .02]);
+  [-1, 1].forEach(sd => [[.16, .3], [-.02, -.1]].forEach(([z, a], k) => { const sh = new THREE.Group(); sh.position.set(sd * .04, .11, z); sh.rotation.set(a, 0, sd * 1.1); B.spine.add(sh);
+    add(sh, SK.limb(.2, .026, .02), armMat, [0, 0, 0]); const el = new THREE.Group(); el.position.set(0, -.2, 0); el.rotation.set(.9, 0, -sd * .6); sh.add(el); add(el, SK.limb(.18, .02, .014), armMat, [0, 0, 0]);
+    for (let f = -1; f <= 1; f++) add(el, SK.cone(.008, .05, 4), clawMat, [f * .012, -.2, .01], [Math.PI, 0, 0]);
+    add(sh, SK.ball(.03, 6, 5), sigilMat, [0, 0, 0]); if (k === 0) limbs['backArm' + (sd < 0 ? 'L' : 'R')] = sh; }));
+  for (const sd of [1, -1]) for (let k = 0; k < 7; k++) { const gl = k % 3 === 0 ? SK.torus(.018, .004, 4, 8, Math.PI * (1 + (k % 2) * .5)) : new THREE.BoxGeometry(.006, .03 + (k % 2) * .02, .006);
+    add(B.spine, gl, runeMat, [sd * .115, .02 + (k % 3) * .025, -.12 + k * .06], [0, sd * Math.PI / 2, k * .7]); }
   const eyeGl=new THREE.PointLight(d.eyeCol,1.6,3.5);
   eyeGl.position.set(0, .70*sc, 1.05*sc);
   g.add(eyeGl);
-  // ── BACK ARMS ─────────────────────────────────────────────
-  // v61c4 — Reworked. Previous version positioned arm pieces in absolute
-  // mesh space and they rendered floating ABOVE the body. Fix: each arm
-  // is now built in a Group anchored at the shoulder bulge, with all
-  // sub-pieces positioned RELATIVE to that group. Rotating the group
-  // rotates the whole arm around its actual shoulder pivot, so the arm
-  // visibly emerges from the body instead of hovering over it.
-  //
-  // Anchor point: just outboard of the spine ridges, on top of the
-  // shoulder mass. Same Y as the shoulder bulge — this is where the
-  // seam tried to close around an extra joint.
-  //
-  // Arm shape: short upper segment angled outward/up, elbow, longer
-  // forearm angled forward-and-down so the claw ends near the front
-  // shoulder. Reads as "extra reach over the head" without overshooting
-  // the body silhouette.
-  [-1,1].forEach(s=>{
-    const armGroup = new THREE.Group();
-    armGroup.position.set(s*.16*sc, .72*sc, .14*sc); // ON the shoulder mass
-    // v61c6 — Increased outward lean from 0.35 (~20°) to 0.85 (~49°). At
-    // the previous angle the arms read as "almost vertical, slightly
-    // tilted" — looked like the boss had two extra ear-shapes sticking
-    // up. Now they splay outward like crab claws / extra reach, while
-    // still anchored to the shoulder. Also added a small forward X
-    // rotation so the arms angle slightly toward the front of the body
-    // rather than reaching straight sideways.
-    armGroup.rotation.z = s*0.85;
-    armGroup.rotation.x = 0.18;
-    g.add(armGroup);
-    // Shoulder bulge — sits at group origin (visible attachment point)
-    const armShoulder=new THREE.Mesh(new THREE.BoxGeometry(.11*sc,.11*sc,.11*sc),mat);
-    armGroup.add(armShoulder);
-    // Sigil seam ring — thin glowing band around the shoulder joint where
-    // the arm emerges. Makes the attachment feel intentional and "wrong."
-    const armSeam=new THREE.Mesh(new THREE.BoxGeometry(.13*sc,.025*sc,.13*sc),sigilMat);
-    armSeam.position.set(0, -.05*sc, 0);
-    armGroup.add(armSeam);
-    // Upper arm — short segment going UP from the shoulder. Built so its
-    // BOTTOM sits at the group origin (Y -.16 puts the box center .16
-    // above origin, so the bottom face is at +0.0 = the shoulder).
-    const upperArm=new THREE.Mesh(new THREE.BoxGeometry(.07*sc,.22*sc,.07*sc),mat);
-    upperArm.position.set(0, .15*sc, 0);
-    armGroup.add(upperArm);
-    // Sigil glint along upper arm
-    const armSigil=new THREE.Mesh(new THREE.BoxGeometry(.025*sc,.18*sc,.025*sc),sigilMat);
-    armSigil.position.set(0, .15*sc, .04*sc);
-    armGroup.add(armSigil);
-    // Elbow joint — at top of upper arm, slight outboard offset
-    const elbow=new THREE.Mesh(new THREE.BoxGeometry(.09*sc,.09*sc,.09*sc),darkMat);
-    elbow.position.set(0, .28*sc, 0);
-    armGroup.add(elbow);
-    // Forearm — angles forward-and-down from the elbow. Built as a child
-    // of a sub-group so its rotation is around the elbow joint, not its
-    // own center. Forearm extends forward (+Z), bottom face at elbow Y.
-    const forearmPivot = new THREE.Group();
-    forearmPivot.position.set(0, .28*sc, 0); // at the elbow
-    forearmPivot.rotation.x = 1.0; // forward and down
-    armGroup.add(forearmPivot);
-    const forearm=new THREE.Mesh(new THREE.BoxGeometry(.065*sc,.28*sc,.065*sc),mat);
-    forearm.position.set(0, .14*sc, 0); // extends from pivot in +Y of pivot's local frame (which is forward in world)
-    forearmPivot.add(forearm);
-    // Sigil glint along forearm
-    const forearmSigil=new THREE.Mesh(new THREE.BoxGeometry(.022*sc,.22*sc,.022*sc),sigilMat);
-    forearmSigil.position.set(0, .14*sc, .03*sc);
-    forearmPivot.add(forearmSigil);
-    // Claw — at end of forearm, angled forward
-    const claw=new THREE.Mesh(new THREE.BoxGeometry(.06*sc,.11*sc,.06*sc),darkMat);
-    claw.position.set(0, .32*sc, .02*sc);
-    forearmPivot.add(claw);
-    limbs['backArm'+(s<0?'L':'R')] = armGroup;
-  });
-  // Tail — short angled box
-  const tail=new THREE.Mesh(new THREE.BoxGeometry(.08*sc,.08*sc,.34*sc),mat);
-  tail.position.set(0, .58*sc, -.62*sc);
-  tail.rotation.x = -.4;
-  g.add(tail);
-  // ── SIGIL TRACES ──────────────────────────────────────────
-  // Thin glowing strips along the body seams. Five primary strips (spine,
-  // shoulder cross, belly, both sides) plus the back-arm seams above and
-  // a forehead seam between the eyes (added v61c3 — pulls eye to face).
-  const sigilStrips=[
-    {sx:.04, sy:.04, sz:.92, x:0,   y:.74, z:0},   // spine seam
-    {sx:.42, sy:.04, sz:.04, x:0,   y:.86, z:.26}, // shoulder seam
-    {sx:.36, sy:.04, sz:.04, x:0,   y:.42, z:.05}, // belly seam
-    {sx:.04, sy:.20, sz:.78, x:-.18,y:.55, z:0},   // side seam L
-    {sx:.04, sy:.20, sz:.78, x:.18, y:.55, z:0},   // side seam R
-    {sx:.18, sy:.025, sz:.025, x:0, y:.78, z:.92}, // forehead seam
-  ];
-  const sigilMeshes = [];
-  sigilStrips.forEach(s=>{
-    const m=new THREE.Mesh(new THREE.BoxGeometry(s.sx*sc, s.sy*sc, s.sz*sc), sigilMat);
-    m.position.set(s.x*sc, s.y*sc, s.z*sc);
-    g.add(m);
-    sigilMeshes.push(m);
-  });
   limbs.sigilTrace = sigilMat;
   limbs.sigilMeshes = sigilMeshes;
-  // Body aura — bigger and warmer than v61c2 so the boss reads as
-  // dangerous from a distance against the grey-ash burned village.
   const auraGl=new THREE.PointLight(d.light, 2.2, 9);
   auraGl.position.set(0, .6*sc, 0);
   g.add(auraGl);
@@ -14247,6 +14066,7 @@ function spawnFaolchu(){
   // mult against the boss's 2000 maxHp → 2500 posture. So 100 posture damage from
   // a power swing = 25 power hits to break, or proportionally more normal swings.
   // Posture-break gives a 1.5s stagger window — meaningful, but not trivial to repeat.
+  if(limbs.wolf)limbs.wolf.e=e; // S211 — the wolf body strides by the boss's own position
   initPosture(e);
   ZE.push(e);
   // Also push into ZONES.overworld.enemies so a zone re-entry that re-reads
@@ -14366,6 +14186,7 @@ function spawnLesserFaolchu(parentBoss){
   // "Lesser Faolchú" contains no family keywords so it lands on humanoid default.
   // Stamp shape:'wolf' so it resolves to the wolf entry (0.8×) — appropriate for
   // a small fast canine add. Boss stays at faolchu (2.5×) for its bossId path.
+  if(limbs.wolf)limbs.wolf.e=e;
   e.shape = 'wolf';
   initPosture(e);
   ZE.push(e);

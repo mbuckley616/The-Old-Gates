@@ -5960,3 +5960,21 @@ New `tests/gargoyle.test.mjs`, 5 checks, all passing, no page errors. A gargoyle
 
 ### Needs eyes
 Whether the statue reads as a statue in a dungeon's light, and whether the moment it wakes, with no leap and no roar beyond the old cry, is startling enough. Whether the tunic suits it: it is the people's body, so it has a skirt in stone. Leaving the skirt off would take a flag in the bake, if wanted.
+
+## v80 — Session 211 — The Faolchú on the wolf's body (H.4, Michael's B)
+The last of the four creatures in Michael's answer on Session 201: "faolchu is great as is". The Faolchú is Act I's boss and the canon's first named antibody. Until now it was a box wolf with red strips.
+
+**What changed.** `buildFaolchuMesh` builds it on the Dire Wolf's skinned body (`buildWolf`), so it trots, gallops, crouches and springs as the wolves do, and lies down dead as they do. It is built as the prototype showed:
+- **Hunched.** A new `rig.hunch` on a wolf rig is added to every pose in `wgApply`: the spine arched .18, the neck carried .35 lower, the head .15.
+- **Arms.** Two pairs of clawed arms rise from a red seam down the spine, each with three claws and a red knot where it leaves the body.
+- **Sigils.** Orange sigil marks run along both flanks. There is a red seam over the hips and a red mark on the brow.
+
+The arms and claws are ordinary lit meshes on the wolf's bones. Everything that glows (21 pieces) is listed in `limbs.sigilMeshes`, as before, so the death burst still finds their positions. The seam still shares one unlit material, `limbs.sigilTrace`, which the phases recolour. The flank sigils keep their own orange. `spawnFaolchu` and `spawnLesserFaolchu` link the body to the boss's enemy, so it strides by the boss's own position.
+
+**Size.** The old box's ears topped out at 1.7 on the boss's scale of 1.85. The first build, at 1.75× the wolf's scale, came out 2.31 tall: a third bigger than the old boss and twice the prototype's size. It is now at 1.45×: 1.92 to the ear tips and 3.14 from nose to tail, against the old box's 1.7 and about 3.7. The fight's numbers (bite range 2.8, damage, speed) are untouched. The Lesser Faolchú builds the same way at its own scale.
+
+### Verified (headless Chromium)
+New `tests/faolchu.test.mjs`, 7 checks, all passing, no page errors. The Faolchú is a skinned wolf in the rig set, its mesh the boss's torso (so the wind-up's red lights its own material). It has both pairs of arms and 21 glowing pieces on the bones. Ticked beside a plain Dire Wolf in the same pose, its neck sits .35 lower. It is 1.92 tall and 3.14 long. Moved at 3 units a second it strides (trot and gallop weight 1). Setting the seam's colour reaches the seam, the death burst runs on it without error, and the lesser build is a wolf too. `wolves` still passes. Picture: `docs/prototypes/faolchu-ingame.png`, beside a bandit, in its own red aura.
+
+### Needs eyes
+The fight itself, in burned Ashenmoor: whether the hunched wolf at this size reads as the boss it was, and whether the arms, which hang fixed from the spine and do not strike, should join the attack. The phase-3 embers and the lessers need the real encounter. That is a playtest; this session did not play it through.
