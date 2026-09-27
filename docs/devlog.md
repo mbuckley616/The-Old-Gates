@@ -5221,3 +5221,15 @@ While this run's sessions ran the full suite two at a time, `locks.test.mjs` twi
 
 ### Needs eyes
 Nothing: tests only.
+
+## v80 — Session 175 — The bandit captain on a person's body, shield and all (H.4)
+
+Session 171 left the Bandit Captain on the box for one reason: its shield guard (Session 130, the Shieldbearer's mechanic) raises the box's left-arm pivot and holds it there. On a person, `tickPeople` rewrites every joint every frame, so a raised shield would drop at once. The captain is a person now, and the guard holds.
+
+**How.** `FOE_DRESS['Bandit Captain']` dresses it in a dark leather coat and a helm, with a club. For a captain, `buildZoneEnemy` gives the person's left shoulder as `limbs.armL`, so `attachShieldProp` hangs the round shield on that bone and the guard's up and down poses name it. A person's left arm is on its +x side, the box's on its −x, so across the body is −z for a person: `shieldArmUpZ` is −.5 for a person and .5 for the box. `tickPeople`, after posing a foe, holds the guard while `shieldUp` is set: the left shoulder at the guard's angles, the elbow bent. When a power attack or a bash breaks the guard (`dropShieldGuard`), `shieldUp` goes false and the arm is the walk's again. When it recovers (`reraiseGuard`), the shield comes back up, with the cyan flash on the captain's own material. The shield is sized for the person's frame, not scaled again by the enemy's scale.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs`, 10 checks, all passing, no page errors. The captain is a person with the shield prop parented to its left shoulder bone. After a tick with the guard up, the shoulder is at (−1.15, −.5) and the elbow at −1.1. With the guard dropped, 30 ticks later the shoulder is the walk's. Raised again, it is back at −1.15 with `shieldUp` set. The photograph `docs/prototypes/foes-ingame.png` now has the captain among the foes.
+
+### Needs eyes
+A captain fight: the shield across the body as it comes at you, the guard breaking on a power attack, and whether the shield sits right against the forearm and the helm (it was placed for the box's arm).

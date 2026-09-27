@@ -17,7 +17,14 @@ const humans = ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 
 check('the seven human foes are people, dressed for what they are, each with its own material and its right shoulder as the striking arm',
   humans.every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR && built[n].bar > 1.2) && built.Bandit.hat === 'hood' && built.Deserter.hat === 'helm' && built.Deserter.gear === 'spear' && built.Pirate.hat === 'kerchief' && built.Highwayman.hat === 'brim',
   Object.fromEntries(humans.map(n => [n, built[n]])));
-check('two bandits met in different places are different people; the captain (its shield guard) keeps its body', built.differ && !built['Bandit Captain'].person, { differ: built.differ, captain: built['Bandit Captain'] });
+check('two bandits met in different places are different people', built.differ, { differ: built.differ });
+// the captain (Session 175): a person with the shield on its left shoulder; the guard is held while it is up, and the
+// arm goes back to the walk when the guard breaks
+const cap = await page.evaluate(() => { const e = _F['Bandit Captain'], L = e.limbs, r = L.person; if (!r) return { person: false }; let t = 7e5;
+  const onArm = !!L.shieldProp && L.shieldProp.parent === r.B.shL; tickPeople(1 / 60, t += 17); const up = { x: +r.B.shL.rotation.x.toFixed(2), z: +r.B.shL.rotation.z.toFixed(2), el: +r.B.elL.rotation.x.toFixed(2) };
+  e.shieldUp = false; dropShieldGuard(e); for (let i = 0; i < 30; i++) tickPeople(1 / 60, t += 17); const down = { x: +r.B.shL.rotation.x.toFixed(2), z: +r.B.shL.rotation.z.toFixed(2) };
+  reraiseGuard(e); tickPeople(1 / 60, t += 17); const again = +r.B.shL.rotation.x.toFixed(2); return { person: true, onArm, up, down, again, shieldUp: e.shieldUp }; });
+check('the captain is a person with a shield on the left arm, held across the body while the guard is up, lowered when it breaks, raised again', cap.person && cap.onArm && cap.up.x === -1.15 && cap.up.z === -.5 && cap.up.el === -1.1 && cap.down.x !== -1.15 && cap.again === -1.15 && cap.shieldUp, cap);
 check('the skeleton (Session 172) is bones on the people\'s skeleton: no flesh or clothes, burning eyes, a spear or a club', built.Skeleton.person && built.Skeleton.skel && built.Skeleton.eyes && /spear|stick/.test(built.Skeleton.gear) && built.Skeleton.tris > 1500 && built.Skeleton.tris < 6000 && built.Skeleton.ownMat, built.Skeleton);
 
 check('the risen dead (Session 173) are people gone grey and stooped in rags, eyes lit; the wight in a helm with a spear; the wraith keeps its body',
@@ -49,7 +56,7 @@ check('a despawned foe leaves the rig set', gone.left, gone);
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = WORLD.scene; const bx = px + 300, bz = pz, y = WORLD.worldH(bx, bz) + 60;
   const out = document.createElement('canvas'); out.width = 1280; out.height = 720; const x2 = out.getContext('2d'); const cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, .05, 100);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 10), new THREE.MeshLambertMaterial({ color: 0x6a7a48 })); floor.rotation.x = -Math.PI / 2; floor.position.set(bx, y, bz); sc.add(floor);
-  const rigs = []; ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Skeleton', 'Hollowed', 'Ghoul', 'Ash Wight'].forEach((n, i) => { const r = buildFoe(n, i * 7, 3, null, 0x60c0ff); PEOPLE_RIGS.delete(r); r.root.position.set(bx - 3.5 + i * .7, y, bz); r.root.rotation.y = .35; sc.add(r.root); rigs.push(r);
+  const rigs = []; ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Bandit Captain', 'Skeleton', 'Hollowed', 'Ghoul', 'Ash Wight'].forEach((n, i) => { const r = buildFoe(n, i * 7, 3, null, 0x60c0ff); PEOPLE_RIGS.delete(r); r.root.position.set(bx - 3.85 + i * .7, y, bz); r.root.rotation.y = .35; sc.add(r.root); rigs.push(r);
     pwApply(r, i % 2 ? pwRun(.2 * i, {holds: r.holds, gear: r.g.gear, elder: r.g.age === 'elder'}) : pwIdle(i, {holds: r.holds, gear: r.g.gear, elder: r.g.age === 'elder'})); });
   cam.position.set(bx, y + 1.2, bz + 6.6); cam.lookAt(bx, y + .55, bz); sc.updateMatrixWorld(true); REN.render(sc, cam); x2.drawImage(cv, 0, 0, cv.width, cv.height, 0, 0, 1280, 720);
   rigs.forEach(r => sc.remove(r.root)); sc.remove(floor); return out.toDataURL(); });

@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s173</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s175</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9830,6 +9830,7 @@ const FOE_DRESS={
   'Cultist':       {cloth:0x3a1414,hat:'hood',gear:null},
   'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',gear:'stick'},
   'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',gear:'stick'},
+  'Bandit Captain':{cloth:0x3a2418,hat:'helm',gear:'stick'}, // S175 — the shield on the left shoulder; tickPeople holds the guard
   'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
   'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
@@ -9970,6 +9971,8 @@ function tickPeople(dt,now){
     const mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     const t=now/1000*rig.g.tempo+rig.g.phase;
     pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+    // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
+    if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
   }
 }
 
@@ -14542,7 +14545,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     limbs.wolf=wolfRig;
   }
   else if(d.shape==='humanoid'&&(FOE_DRESS[type]||(zOpts&&zOpts.genome))){ // v80 S171 — a human foe is a person
-    const pr=buildFoe(type,x,z,zOpts&&zOpts.genome,d.eyeCol);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;
+    const pr=buildFoe(type,x,z,zOpts&&zOpts.genome,d.eyeCol);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;if(/Captain/.test(type))limbs.armL=pr.B.shL;
   }
   else if(d.shape==='spider'&&SPIDER_KINDS[type]){ // v80 S169 — the spider on the shape kit: eight IK legs on alternating tetrapods
     wolfRig=buildSpider(type,sc2);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
@@ -14617,7 +14620,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*sc2;} // the bar over a person's head
   // v80 S130 — captains hold a frontal guard (the Shieldbearer's mechanic: a power attack or a bash breaks it); the world's dragon breathes
-  if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,sc2);zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=.5;reraiseGuard(zoneE);}catch(err){}}
+  if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,limbs.person?1:sc2);zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=limbs.person?-.5:.5;reraiseGuard(zoneE);}catch(err){}} // a person's left arm is on its +x side: across the body is -z
   if(type==='Dragon'){zoneE.dragon=true;zoneE._dragonBuilt=true;}
   if(g._hover)zoneE.baseY=g.position.y;
   return zoneE;
