@@ -5233,3 +5233,20 @@ Session 171 left the Bandit Captain on the box for one reason: its shield guard 
 
 ### Needs eyes
 A captain fight: the shield across the body as it comes at you, the guard breaking on a power attack, and whether the shield sits right against the forearm and the helm (it was placed for the box's arm).
+
+## v80 — Session 176 — The wraith glides (H.4, the undead done)
+
+The last of the world's undead on the box was the Wraith (a night creature of the tables; the dungeon's wraiths have their own builder). Session 173 held it back because it needs more than a colour: a ghost wants to be see-through and not to walk. It is a person through `buildFoe` now, marked `dead` and `wraith`.
+
+**How.** The genome goes the risen dead's way (the skin most of the way to a dark blue-grey, the elder's stoop, the eyes lit in the enemy's pale blue), then:
+- A long robe to the ground (the dress), a cloak and a hood.
+- The hair cut away under the hood and the brows drawn down and angled.
+- The legs, boots and hem trim in the robe's shadow, so what shows below the robe is dark.
+
+Its own material is transparent at .68 opacity, and it casts no shadow. `tickPeople` never steps a wraith: whatever its pace, it idles, and its body floats .19–.24 above the ground on a slow bob. It glides over the ground at its enemy's speed with the robe hanging still. The first pass showed a braid over the hood, a brown trim ring at the hem and a pleasant pale face; all three were fixed before this commit (`docs/prototypes/wraith-ingame.png` is the second pass, in walk poses to show the robe; in play it only ever idles).
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs`, 11 checks, all passing, no page errors. The Wraith is a person rig, dead, elder, lit eyes, hooded. Driven 90 frames at 1.4 u/s: transparent at .68, no shadow, walk and run weights 0, the body between .19 and .24 off the ground. `docs/prototypes/foes-ingame.png` now has all thirteen foes.
+
+### Needs eyes
+A wraith at night: whether .68 is ghostly enough or too solid, whether the robe needs to trail or fade at the hem (it ends in a hard edge), and whether the eyes carry at a distance. Transparent skinned meshes can sort badly against each other: two wraiths overlapping may show one through the other wrongly.
