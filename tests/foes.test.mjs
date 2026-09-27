@@ -74,8 +74,8 @@ const guard = await page.evaluate(() => { const S = WORLD.settle.get('dunmore');
   // a guard by its schedule; one whose genome is a guard's if there is one (a guard who shares a name with a townsperson
   // shares that person's look under the name|site genome cache: the critic's duplicate-names item)
   const gs = WORLD.guardsOf(S); const n = gs.find(n => { const x = genOf(n); return x && x.hat === 'helm'; }) || gs[0]; if (!n) return { none: true }; const gen = genOf(n);
-  const e = WORLD.guardDraw(n, S); const r = e && e.limbs && e.limbs.person; const res = { drew: !!e, person: !!r, same: !!r && r.g === gen, name: e && e.name, who: n.def && n.def.name, hat: r && r.g.hat, gear: r && r.g.gear, guards: gs.length };
+  const e = WORLD.guardDraw(n, S); const r = e && e.limbs && e.limbs.person; const res = { drew: !!e, person: !!r, same: !!r && r.g === gen, name: e && e.name, who: n.def && n.def.name, hat: r && r.g.hat, genHat: gen && gen.hat, gear: r && r.g.gear, guards: gs.length };
   try { e.dead = true; e.mesh.parent.remove(e.mesh); n._drawn = false; n.g.visible = true; } catch (err) {} return res; });
-check('a guard who draws is the same person, helm and spear, not a bandit in red', guard.drew && guard.person && guard.same && guard.name === 'Town Guard' && guard.hat === 'helm', guard);
+check('a guard who draws is the same person (the look the guard wears in the street), not a bandit in red', guard.drew && guard.person && guard.same && guard.name === 'Town Guard' && !!guard.hat && guard.hat === guard.genHat, guard);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

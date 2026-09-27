@@ -5344,3 +5344,13 @@ The critic's second crime item: indoors, `witnessOf` took the keeper (or any int
 
 ### Needs eyes
 Robbing a shop by day with the keeper in the front room and the strongbox in the back: now possible unseen, which the critic's run suggests makes daytime theft easy; the numbers may want another look in play.
+
+## v80 — Session 183 — The drawn guard's check reads the guard's own look (tests only)
+
+The full suite on Session 182 (two suites at a time) passed 21 of 22. The one failure was mine, in `foes.test.mjs` (Session 171): its guard check prefers a Dunmore guard whose genome wears a helm, falls back to the first guard when that one's rig has not built yet, and then asserted a helm anyway. This run fell back to Cathal, who wears the apothecary's kerchief (the name collision in section I). The drawn body was Cathal's own (`same: true`), which is what the check is for. It now asserts that the drawn body wears the hat the guard's own genome wears. No game code changed; the build tag stays at s182.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs`, 11 of 11 passing. Full suite on Session 182, two suites at a time: every other suite passed (crime1–5, chapel, export, gait, interiors, locks, people, lod, player, plants, ships, saves, spiders, shophours, wayfinding, wolves, weather).
+
+### Needs eyes
+Nothing: tests only.
