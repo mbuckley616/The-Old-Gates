@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s162</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s166</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9737,6 +9737,7 @@ function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].ro
 {const _smRender=REN.shadowMap.render;
   REN.shadowMap.render=function(){const sw=[];
     if(PEOPLE_LOD.shadowLo)for(const rig of PEOPLE_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
+    if(WOLF_LOD.shadowLo)for(const rig of WOLF_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
     try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;}};}
 // Every person in the active scene, each frame: the stride is driven by how far the figure moved, so the
 // feet stay planted whatever moves it (the town's schedules, an interior amble, a legacy zone's wander).
@@ -9762,6 +9763,215 @@ function tickPeople(dt,now){
     const mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     const t=now/1000*rig.g.tempo+rig.g.phase;
     pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+  }
+}
+
+// ── Creatures on the shape kit (backlog H.4, Session 166): the wolf family ──
+// Built the way buildPerson builds a townsperson: bones, SK parts hung on them, one skinned mesh with vertex
+// colours. Every wolf of a kind shares one baked geometry (and one distant copy); each has its own skeleton.
+// The fur is counter-shaded at the bake from each vertex's normal (the saddle darkens what faces the sky, the
+// belly lightens what faces the ground). The legs are placed by two-bone IK: a planted paw stays on the ground
+// and slides back under the body at the pace it moved, as the townsfolk's feet do. Prototype: docs/prototypes/creatures.
+// At scale 1 the wolf has the old box wolf's size (shoulder about .47, nose at z about .6), so reach and hits are unchanged.
+const WOLF_KINDS={
+  'Wolf':      {coat:0x7a6a5c,saddle:0x3e342c,belly:0xd8ccb4,eye:0xddaa44,ruff:1.0,ears:1.0,muzzle:1.0},
+  'Snow Wolf': {coat:0xdcdce0,saddle:0x9a9ca4,belly:0xf4f2ee,eye:0x80c0ff,ruff:1.25,ears:.85,muzzle:.95},
+  'Dire Wolf': {coat:0x3a3230,saddle:0x1a1614,belly:0x6a5e54,eye:0xffb030,ruff:1.35,ears:.9,muzzle:1.12,bulk:1.15},
+  'Ash Hound': {coat:0x5a5048,saddle:0x2a2420,belly:0x8a7a6a,eye:0xff5020,ruff:.55,ears:1.25,muzzle:1.2,lean:.86,embers:true}
+};
+const WOLF_RIGS=new Set();
+const WOLF_GEO=new Map();
+const WOLF_LOD={q:.5,far:17,near:15,shadowLo:true};
+const WOLF_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,skinning:true});
+// the legs: [shoulder or hip bone, elbow or stifle, wrist or hock, paw], each joint's offset from the one above
+const WOLF_LEGS={
+  fore:{root:[-.03,.03],a:[-.15,-.03],b:[-.15,.01],c:[-.07,.02]},
+  hind:{root:[-.02,-.02],a:[-.15,.07],b:[-.13,-.09],c:[-.09,.02]}
+};
+// the skeleton alone, the same bones in the same order every time, so one baked geometry skins to any wolf's
+function wolfSkeleton(k){
+  const bones=[],B={};const bw=k.bulk||1;
+  const bone=(name,parent,x,y,z)=>{const b=new THREE.Bone();b.name=name;b.position.set(x,y,z);if(parent)parent.add(b);b.userData.i=bones.length;bones.push(b);B[name]=b;return b;};
+  const hips=bone('hips',null,0,.40,-.2);
+  const spine=bone('spine',hips,0,.03,.34);
+  const neck=bone('neck',spine,0,.05,.1);
+  const head=bone('head',neck,0,.11,.1);
+  bone('jaw',head,0,-.035,.035);
+  const t1=bone('tail1',hips,0,.04,-.11),t2=bone('tail2',t1,0,-.05,-.1);bone('tail3',t2,0,-.06,-.08);
+  const F=WOLF_LEGS.fore,H=WOLF_LEGS.hind;
+  ['L','R'].forEach((K,i)=>{const s=i===0?1:-1;
+    const sh=bone('sh'+K,spine,s*.074*bw,F.root[0],F.root[1]);const el=bone('el'+K,sh,0,F.a[0],F.a[1]);const wr=bone('wr'+K,el,0,F.b[0],F.b[1]);bone('pf'+K,wr,0,F.c[0],F.c[1]);
+    const th=bone('th'+K,hips,s*.078*bw,H.root[0],H.root[1]);const kn=bone('kn'+K,th,0,H.a[0],H.a[1]);const hk=bone('hk'+K,kn,0,H.b[0],H.b[1]);bone('ph'+K,hk,0,H.c[0],H.c[1]);
+  });
+  return {bones,B,hips};
+}
+function wolfBake(k,q){SK.q=q;try{return wolfBakeQ(k,q);}finally{SK.q=1;}}
+function wolfBakeQ(k,q){
+  const {bones,B,hips}=wolfSkeleton(k);
+  const parts=[];
+  // fur:true parts are counter-shaded at the bake
+  const part=(geo,col,b,x,y,z,fur)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);o.userData.geo=geo;o.userData.col=col;o.userData.fur=fur;b.add(o);parts.push(o);return o;};
+  const C=x=>new THREE.Color(x);const coat=C(k.coat),dark=C(0x16100c),bw=k.bulk||1,ln=k.lean||1;
+  // a limb from a bone towards its child joint at (dy, dz): radius r0 at the joint, r1 at the far end, a muscle's belly
+  // swelling it by `belly` a third of the way down, so a thigh or a forearm is not a tube
+  const limbGeo=(L,r0,r1,belly)=>{const p=[];const n=belly?5:2;for(let i=0;i<=3;i++){const a=i/3*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r1*Math.sin(a)),-L-r1*Math.cos(a)));}
+    for(let i=n-1;i>=1;i--){const t=i/n;const r=r0+(r1-r0)*t+belly*Math.sin(Math.PI*Math.min(1,t*1.5));p.push(SK.v2(r,-L*t));}
+    for(let i=0;i<=3;i++){const a=i/3*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r0*Math.cos(a)),r0*Math.sin(a)));}return new THREE.LatheGeometry(p,SK.seg(8,5));};
+  const seg=(b,d,r0,r1,belly,col)=>{const L=Math.hypot(d[0],d[1]);const o=part(limbGeo(L,r0,r1,belly||0),col||coat,b,0,0,0,true);o.rotation.x=Math.atan2(-d[1],-d[0]);return o;};
+  // a lathe along +z (the body's axis)
+  const zlathe=(pts,n)=>{const g=SK.lathe(pts,n||14);g.rotateX(Math.PI/2);return g;};
+  // the body: a deep chest on the spine (narrower than the prototype's, which was heavy from the front), a tucked waist and haunches on the hips
+  part(zlathe([[0,-.22],[.07,-.21],[.12,-.15],[.145,-.05],[.15,.03],[.13,.11],[.08,.16],[0,.18]],16),coat,B.spine,0,-.04,0,true).scale.set(.63*bw*ln,1.08*bw,1);
+  part(zlathe([[0,-.15],[.08,-.14],[.11,-.07],[.108,.02],[.092,.12],[.085,.2],[0,.24]],14),coat,hips,0,.005,0,true).scale.set(.8*bw*ln,1*bw,1);
+  // the neck and its ruff
+  seg(B.spine,[.14,.13],.075*bw,.062*bw,.006).position.set(0,-.02,.06);
+  if(k.ruff>0)part(SK.bumpy(SK.ball(.1*k.ruff*bw,16,11),.018,19,3),coat,B.neck,0,-.01,0,true).scale.set(.84*ln,1.05,.85);
+  // the head: a skull, cheeks, a tapering muzzle over a hinged jaw, a nose, eyes, ears with dark insides
+  const head=B.head,M=k.muzzle;
+  part(SK.ball(.072,14,10),coat,head,0,.01,-.005,true).scale.set(.95,.85,1.05);
+  [-1,1].forEach(s=>part(SK.ball(.04,10,7),coat,head,s*.04,-.01,.01,true).scale.set(.9,.9,1.1));
+  part(zlathe([[0,0],[.045,0],[.04,.07],[.03,.13],[.018,.155],[0,.16]].map(p=>[p[0],p[1]*M]),12),coat,head,0,-.005,.03,true).scale.set(1,.72,1);
+  part(zlathe([[0,0],[.034,0],[.028,.08],[.016,.13],[0,.135]].map(p=>[p[0],p[1]*M]),10),coat,B.jaw,0,-.008,0,true).scale.set(1,.45,1);
+  part(SK.ball(.019,8,6),dark,head,0,.012,.03+.155*M).scale.set(1.25,.9,1);
+  [-1,1].forEach(s=>{
+    if(q>=1){part(SK.ball(.013,8,6),C(k.eye),head,s*.037,.03,.052);part(SK.ball(.006,6,4),dark,head,s*.039,.03,.061);}
+    const e=part(SK.cone(.032,.085*k.ears,6),coat,head,s*.042,.078,-.02,true);e.rotation.set(-.25,0,-s*.28);e.scale.set(1,1,.5);
+    const ei=part(SK.cone(.02,.06*k.ears,5),C(0x3a2a24),head,s*.042,.072,-.012);ei.rotation.set(-.25,0,-s*.28);ei.scale.set(1,1,.3);
+  });
+  // legs: a shoulder blade and a haunch worked into the body, muscled upper segments, slim cannons, knobbed joints
+  const F=WOLF_LEGS.fore,H=WOLF_LEGS.hind;
+  ['L','R'].forEach((K,i)=>{const s=i===0?1:-1;
+    const sh=B['sh'+K],el=B['el'+K],wr=B['wr'+K],pf=B['pf'+K],th=B['th'+K],kn=B['kn'+K],hk=B['hk'+K],ph=B['ph'+K];
+    part(SK.ball(.066*bw,10,8),coat,sh,-s*.01,.02,0,true).scale.set(.5,1.4,.95);
+    seg(sh,F.a,.05*bw,.032*bw,.012*bw);part(SK.ball(.03,7,5),coat,el,0,0,-.006,true).scale.set(.9,1,1.15);
+    seg(el,F.b,.03,.021,.006);part(SK.ball(.024,7,5),coat,wr,0,0,.004,true).scale.set(.95,1.1,1.05);
+    seg(wr,F.c,.021,.019,0);part(SK.ball(.03,9,6),coat,pf,0,-.005,.018,true).scale.set(1,.6,1.45);
+    part(SK.ball(.084*bw,11,8),coat,th,-s*.014,-.02,.01,true).scale.set(.55,1.15,1.05);
+    seg(th,H.a,.064*bw,.034*bw,.016*bw);part(SK.ball(.033,7,5),coat,kn,0,0,.004,true).scale.set(.9,1,1.1);
+    seg(kn,H.b,.032,.021,.007);part(SK.ball(.024,7,5),coat,hk,0,.004,-.012,true).scale.set(.9,1.1,1.25);
+    seg(hk,H.c,.02,.018,0);part(SK.ball(.029,9,6),coat,ph,0,-.004,.016,true).scale.set(1,.6,1.4);
+  });
+  // the tail: a brush of bumped lobes, darker at the tip, each running down and back along its bone to the next joint
+  const tseg=(b,dy,dz,r0,r1,col,fur,k2)=>{const L=Math.hypot(dy,dz)*1.25;const o=part(SK.bumpy(SK.limb(L,r0,r1),.009,21,k2),col,b,0,0,0,fur);o.rotation.x=Math.atan2(-dz,-dy);o.scale.set(.85,1,.95);return o;};
+  tseg(B.tail1,-.05,-.1,.035,.058,coat,true,1);tseg(B.tail2,-.06,-.08,.06,.066,coat,true,2);tseg(B.tail3,-.06,-.07,.066,.026,C(k.saddle),false,4);
+  // the Ash Hound's embers: glowing seams along the back
+  if(k.embers)for(let i=0;i<5;i++)part(SK.ball(.012,6,4),C(0xff6a20),i<3?B.spine:hips,0,.1-(i<3?i*.005:0),i<3?.08-i*.08:.12-(i-3)*.12).scale.set(1,.5,2.2);
+  // bake: every part into one geometry, each vertex bound to its bone, the fur shaded by its normal
+  const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;
+  const sad=C(k.saddle),bel=C(k.belly),tmp=new THREE.Color();
+  hips.updateMatrixWorld(true);
+  for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
+    for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(n.x,n.y,n.z);
+      tmp.copy(c);if(o.userData.fur){const up=n.y;if(up>0)tmp.lerp(sad,Math.min(1,up*1.25)*(v.y>.3?.85:.35));else tmp.lerp(bel,Math.min(1,-up*1.4)*.8);if(v.y<.1)tmp.lerp(bel,.12*(1-v.y/.1));}
+      col.push(tmp.r,tmp.g,tmp.b);si.push(bi,0,0,0);sw.push(1,0,0,0);}
+    if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
+    base+=pa.count;geo.dispose();}
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
+  geo.computeBoundingSphere();geo.boundingSphere.radius+=.15; // room for a stride or a lunge
+  return {geo,tris:idx.length/3};
+}
+function wolfGeo(name,q){const key=name+'|'+q;let r=WOLF_GEO.get(key);if(!r){r=wolfBake(WOLF_KINDS[name],q);WOLF_GEO.set(key,r);}return r;}
+// one wolf: its own skeleton on its kind's shared geometry; the eyes also shine at night (one small unlit mesh on the head)
+function buildWolf(name,scale){
+  const k=WOLF_KINDS[name];const hi=wolfGeo(name,1),lo=wolfGeo(name,WOLF_LOD.q);
+  const {bones,B,hips}=wolfSkeleton(k);
+  const mat=WOLF_MAT.clone(); // its own, so a wind-up's red flash and the corpse's darkening touch this wolf alone
+  const mesh=new THREE.SkinnedMesh(hi.geo,mat);mesh.add(hips);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));
+  mesh.castShadow=true;mesh.receiveShadow=false;
+  // bone matrices local to the mesh, as buildPerson's (world coordinates here are too large for the float32 cancel)
+  mesh.bindMode='detached';mesh.bindMatrix.identity();mesh.bindMatrixInverse.identity();
+  {const sk=mesh.skeleton,mats=bones.map(()=>new THREE.Matrix4()),off=new THREE.Matrix4();
+    sk.update=function(){for(let i=0;i<bones.length;i++){const b=bones[i];b.updateMatrix();const p=b.parent&&b.parent.isBone?mats[b.parent.userData.i]:null;
+      if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
+      if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  {const g1=new THREE.SphereGeometry(.011,6,4),a=g1.attributes.position.array,ix=g1.index.array,n=a.length/3;const P=new Float32Array(a.length*2),I=[];
+    for(let s=0;s<2;s++){for(let i=0;i<n;i++){P[(s*n+i)*3]=a[i*3]+(s?.038:-.038);P[(s*n+i)*3+1]=a[i*3+1]+.03;P[(s*n+i)*3+2]=a[i*3+2]+.056;}for(let i=0;i<ix.length;i++)I.push(ix[i]+s*n);}
+    g1.dispose();const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.BufferAttribute(P,3));eg.setIndex(I);
+    const eyes=new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:k.eye}));B.head.add(eyes);}
+  const root=new THREE.Group();root.add(mesh);root.scale.setScalar(scale||1);
+  const rig={root,mesh,B,k,name,geoHi:hi.geo,geoLo:lo.geo,tris:hi.tris,trisLo:lo.tris,lod:0,w:{stand:1,trot:0,gallop:0},phase:Math.random(),v:0,gallop:false,lx:null,lz:null,t0:Math.random()*20,e:null,deadPosed:false};
+  root.userData.rig=rig;WOLF_RIGS.add(rig);
+  return rig;
+}
+// ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
+const WG={
+  JOINTS:['hips','spine','neck','head','jaw','tail1','tail2','tail3','shL','elL','wrL','pfL','shR','elR','wrR','pfR','thL','knL','hkL','phL','thR','knR','hkR','phR'],
+  // a trot moves the diagonal pairs together; the gallop is a transverse one: hinds, then fores, each pair a beat apart
+  TROT:{S:.14,D:.46,LIFT:[.06,.05],DROP:.03,off:{L:[0,.5],R:[.5,0]}},
+  GALLOP:{S:.22,D:.3,LIFT:[.09,.07],DROP:.055,off:{L:[.5,0],R:[.6,.1]},on:1.3,back:1.0}
+};
+WG.TROT.cycle=WG.TROT.S/WG.TROT.D;WG.GALLOP.cycle=WG.GALLOP.S/WG.GALLOP.D;
+const wgAng=v=>Math.atan2(v[1],v[0]); // a leg vector [y,z]: a turn of θ about x adds θ to this angle
+const wgWrap=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;};
+const wgRot=(v,t)=>[v[0]*Math.cos(t)-v[1]*Math.sin(t),v[0]*Math.sin(t)+v[1]*Math.cos(t)];
+// Place a leg's paw at (dz, dy) from where it stands at rest, with the lowest segment turned by `fold` from its rest
+// angle (a paw curled up in the swing). Two-bone IK in the leg's plane for the upper two segments; returns their three angles.
+function wgLeg(L,dz,dy,fold){
+  const a=L.a,b=L.b,c=L.c;const rest=[a[0]+b[0]+c[0],a[1]+b[1]+c[1]];
+  const cw=wgRot(c,fold);const T=[rest[0]+dy-cw[0],rest[1]+dz-cw[1]];
+  const L1=Math.hypot(a[0],a[1]),L2=Math.hypot(b[0],b[1]);const d=Math.max(Math.abs(L1-L2)+1e-4,Math.min(Math.hypot(T[0],T[1]),L1+L2-1e-4));
+  const ab=[a[0]+b[0],a[1]+b[1]],sg=(ab[0]*a[1]-ab[1]*a[0])>0?1:-1; // bend the joint the way it bends at rest
+  const al=Math.acos(Math.max(-1,Math.min(1,(L1*L1+d*d-L2*L2)/(2*L1*d))));
+  const s1=wgAng(T)+sg*al,t1=wgWrap(s1-wgAng(a));const kn=[L1*Math.cos(s1),L1*Math.sin(s1)];
+  const t2=wgWrap(wgAng([T[0]-kn[0],T[1]-kn[1]])-wgAng(b)-t1);
+  return [t1,t2,wgWrap(fold-t1-t2)];
+}
+function wgZero(){const p={};WG.JOINTS.forEach(j=>p[j]=[0,0,0]);p.drop=0;return p;}
+function wgSetLeg(p,side,fore,r){const n=fore?['sh','el','wr']:['th','kn','hk'];for(let i=0;i<3;i++)p[n[i]+side][0]=r[i];}
+function wgStand(t){const p=wgZero();const b=Math.sin(t*1.9);p.drop=.008+.003*b;
+  p.neck=[-.1+.02*b,.28*Math.sin(t*.21)*Math.sin(t*.13+1),0];p.head=[.15,0,.05*Math.sin(t*.17)];p.tail1=[-.25,.12*Math.sin(t*.7),0];p.tail2=[-.2,.08*Math.sin(t*.7-.6),0];p.tail3=[-.05,0,0];
+  ['L','R'].forEach(s=>{wgSetLeg(p,s,true,wgLeg(WOLF_LEGS.fore,0,p.drop,0));wgSetLeg(p,s,false,wgLeg(WOLF_LEGS.hind,0,p.drop,0));});return p;}
+// a stride: each paw planted for D of the cycle, sliding back under the body at a steady speed, then swung forward on an eased arc
+function wgStride(G,ph,t,gallop){const p=wgZero();const a=Math.PI*2*ph;
+  p.drop=G.DROP+(gallop?.018*Math.sin(a*2+.6):.008*Math.abs(Math.cos(a*2)));
+  const one=(u,fore)=>{u=((u%1)+1)%1;const h=G.S/2;if(u<G.D)return {dz:h-G.S*u/G.D,dy:0,fold:0};const s=(u-G.D)/(1-G.D),e=s*s*(3-2*s);
+    return {dz:-h+G.S*e,dy:G.LIFT[fore?0:1]*Math.sin(Math.PI*s),fold:(fore?1.1:-.4)*Math.sin(Math.PI*Math.min(1,s*1.2))};};
+  ['L','R'].forEach(s=>{const o=G.off[s];const f=one(ph+o[0],true),h=one(ph+o[1],false);
+    wgSetLeg(p,s,true,wgLeg(WOLF_LEGS.fore,f.dz,f.dy+p.drop,f.fold));wgSetLeg(p,s,false,wgLeg(WOLF_LEGS.hind,h.dz,h.dy+p.drop,h.fold));});
+  if(gallop){p.neck=[.1+.1*Math.sin(a*2+1.2),0,0];p.head=[-.06-.06*Math.sin(a*2+1.2),0,0];p.tail1=[.25,.05*Math.sin(a),0];p.tail2=[-.05,0,0];p.jaw=[.12,0,0];}
+  else{p.neck=[.12,0,0];p.head=[-.04,0,0];p.tail1=[.05+.05*Math.sin(a*2),.14*Math.sin(a),0];p.tail2=[-.08,.06*Math.sin(a-.6),0];}
+  return p;}
+// the attack: a crouch as it winds up (hindquarters loaded, head low), then a spring: forepaws reach, hind legs drive back straight
+function wgAttack(w,s,p){const q=wgZero();
+  q.drop=.07*w*(1-s)-.015*s;
+  const fz=.13*s,fy=.07*s,hz=-.1*s;
+  ['L','R'].forEach(K=>{wgSetLeg(q,K,true,wgLeg(WOLF_LEGS.fore,fz-.02*w,fy+q.drop,.5*s));wgSetLeg(q,K,false,wgLeg(WOLF_LEGS.hind,hz+.03*w*(1-s),q.drop,-.25*s));});
+  q.neck=[.3*w*(1-s)-.15*s,0,0];q.head=[-.15*w-.1*s,0,0];q.jaw=[.2*w+.6*s,0,0];q.tail1=[-.3*w+.1*s,0,0];q.tail2=[-.1,0,0];
+  const k=Math.min(1,Math.max(w,s));WG.JOINTS.forEach(j=>{for(let i=0;i<3;i++)p[j][i]+=(q[j][i]-p[j][i])*k;});p.drop+=(q.drop-p.drop)*k;return p;}
+// a body on its side: the legs slack, the head and tail down, the jaw a little open
+function wgDead(){const p=wgZero();p.drop=0;p.neck=[.35,0,0];p.head=[.2,0,0];p.jaw=[.25,0,0];p.tail1=[-.6,0,0];p.tail2=[-.2,0,0];
+  ['L','R'].forEach((K,i)=>{p['sh'+K]=[-.35-.15*i,0,0];p['el'+K]=[.3,0,0];p['wr'+K]=[.4,0,0];p['th'+K]=[.4+.2*i,0,0];p['kn'+K]=[-.3,0,0];p['hk'+K]=[.35,0,0];});return p;}
+function wgApply(rig,P){const B=rig.B;WG.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});B.hips.position.y=.40-P.drop;}
+function wgCycle(w){const a=w.trot||0,b=w.gallop||0;return a+b>.001?(a*WG.TROT.cycle+b*WG.GALLOP.cycle)/(a+b):WG.TROT.cycle;}
+// every wolf in the active scene, each frame: the stride is driven by how far the creature moved (its logical
+// position, so the lunge's forward lurch does not step the feet), trot below WG.GALLOP.on body-lengths a second
+function tickCreatures(dt,now){
+  for(const rig of WOLF_RIGS){
+    const g=rig.root.parent;
+    if(!g||!g.parent){WOLF_RIGS.delete(rig);try{rig.mesh.material.dispose();}catch(e){}continue;} // the geometry is the kind's, shared
+    if(g.parent!==scene||!g.visible)continue;
+    const e=rig.e;
+    if(e&&e.dead){if(!rig.deadPosed){rig.deadPosed=true;wgApply(rig,wgDead());}continue;}
+    if(rig.geoLo){const cd=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
+      const lod=rig.lod?(cd>WOLF_LOD.near?1:0):(cd>WOLF_LOD.far?1:0);
+      if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod?rig.geoLo:rig.geoHi;}}
+    const x=e?e.x:g.position.x,z=e?e.z:g.position.z;
+    let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>1.5)d=0;
+    const s=rig.root.scale.x*(g.scale.x||1),spd=dt>0?d/dt:0;
+    rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
+    if(!rig.gallop&&rig.v/s>WG.GALLOP.on)rig.gallop=true;else if(rig.gallop&&rig.v/s<WG.GALLOP.back)rig.gallop=false;
+    rig.phase=(rig.phase+d/(wgCycle(rig.w)*s))%1;
+    const mode=rig.v>.06?(rig.gallop?'gallop':'trot'):'stand';const k=1-Math.exp(-dt/.12);
+    for(const m in rig.w)rig.w[m]+=((m===mode?1:0)-rig.w[m])*k;
+    const t=now/1000+rig.t0;const out=wgZero();let tot=0;
+    for(const m in rig.w){const wm=rig.w[m];if(wm<.001)continue;tot+=wm;const p=m==='stand'?wgStand(t):wgStride(m==='gallop'?WG.GALLOP:WG.TROT,rig.phase,t,m==='gallop');
+      WG.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.drop+=p.drop*wm;}
+    if(tot>0){WG.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.drop/=tot;}
+    const w=e?(e._wind||0):0,st=e&&e._lunge!=null?Math.sin(Math.max(0,e._lunge)/.3*Math.PI):0;
+    if(w>0||st>0)wgAttack(w,st,out);
+    wgApply(rig,out);
   }
 }
 
@@ -13886,7 +14096,7 @@ function attackPose(e,inDungeon){
   const w=e._wind||0;const st=inDungeon?(e.atkAnim>0?e.atkAnim/.35:0):(e._lunge!=null?Math.max(0,e._lunge)/.3:0);const s=Math.sin(st*Math.PI);
   const arm=enemyArm(e);const isTail=e.limbs&&!Array.isArray(e.limbs)&&arm===e.limbs.tail;
   if(arm&&arm.rotation){if(isTail){arm.rotation.x=(e._tailBase!=null?e._tailBase:(e._tailBase=arm.rotation.x))-w*.45+s*1.1;}else{arm.rotation.x=w*1.4-s*1.3;}}
-  if(e.mesh&&(!arm||isTail)){const lean=-w*.22+s*.18;if(inDungeon)e.mesh.rotateX(lean);else e.mesh.rotation.x=lean;}
+  if(e.mesh&&(!arm||isTail)&&!(e.limbs&&e.limbs.wolf)){const lean=-w*.22+s*.18;if(inDungeon)e.mesh.rotateX(lean);else e.mesh.rotation.x=lean;}
   if(e.mesh&&e.mesh._hover){const t=performance.now()*.003;e.mesh.position.y=(e.baseY||e.mesh.position.y-Math.sin(t-.05)*.08)+Math.sin(t)*.08;e.mesh.children.forEach(c=>{if(c._mote!=null){c.position.x=Math.cos(t+c._mote)*.3*(e.mesh.scale.x||1);c.position.z=Math.sin(t+c._mote)*.3;}});}
 }
 function buildZoneEnemy(sc,sol,x,z,type,variantKey){
@@ -13946,7 +14156,13 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey){
   const mat=new THREE.MeshLambertMaterial({color:d.col});
   const sc2=d.scale;
   const limbs={}; // v80 S130 — the world's creatures register their pivots
+  let wolfRig=null;
   if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
+  else if(d.shape==='wolf'&&WOLF_KINDS[type]){ // v80 S166 — the wolf family on the shape kit: one skinned mesh, planted paws
+    wolfRig=buildWolf(type,sc2);g.add(wolfRig.root);
+    limbs.torso=wolfRig.mesh; // the wind-up's red and the parry's flash light this wolf's own material
+    limbs.wolf=wolfRig;
+  }
   else if(d.shape==='wolf'){
     const body=new THREE.Mesh(new THREE.BoxGeometry(.45*sc2,.3*sc2,.7*sc2),mat);body.position.y=.32*sc2;g.add(body);
     const head=new THREE.Mesh(new THREE.BoxGeometry(.28*sc2,.25*sc2,.32*sc2),mat);head.position.set(0,.5*sc2,.3*sc2);g.add(head);
@@ -14014,6 +14230,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey){
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
   const zoneE = {limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,combatYaw:Math.random()*Math.PI*2};
   initPosture(zoneE);
+  if(wolfRig)wolfRig.e=zoneE;
   // v80 S130 — captains hold a frontal guard (the Shieldbearer's mechanic: a power attack or a bash breaks it); the world's dragon breathes
   if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,sc2);zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=.5;reraiseGuard(zoneE);}catch(err){}}
   if(type==='Dragon'){zoneE.dragon=true;zoneE._dragonBuilt=true;}
@@ -39303,6 +39520,7 @@ function loop(now){
   REN.autoClear=true;
   tickCrosshair(); // v80 — the crosshair shows what E will open
   try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
+  try{tickCreatures(dt,now);}catch(e){} // v80 S166 — every wolf's stride, crouch and spring
   try{if(typeof WORLD!=='undefined'&&WORLD.rainIndoor)WORLD.rainIndoor(activeZoneId!=='world'?0:(currentHouse?(/^(inn|home|church|castle|guild_f|guild_m|weapon|armor|potion|misc|goods|forge|apothecary|armoury|shipwright)$/.test(currentHouse.type)?.22:0):1));}catch(e){} // v80 — rain is muffled indoors, silent underground
   try{tickMonsterSounds(1/60);tickEnemyDetail();tickPortalFx(1/60);tickDragons(1/60);}catch(e){} // v80 — dungeon feel, dragons
   if(typeof WORLD!=='undefined'&&scene===WORLD.scene)WORLD.sweepLights(); // v80 — never render with a changed light count
