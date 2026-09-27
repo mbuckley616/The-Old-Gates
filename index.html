@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s172</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s173</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9629,7 +9629,7 @@ function personBakeQ(g,q){
   const parts=[];
   // a skeleton (g.skel, S172) is laid out on the same bones but none of the flesh, hair or clothes is hung on them:
   // until bodyOpen, a part is thrown away; the bones go on after the skeleton is built (skelParts below)
-  let bodyOpen=!g.skel;
+  let bodyOpen=!g.skel;const eyes=[]; // where the eyes went (buildFoe hangs a glow there for the dead)
   const part=(geo,col,b,x,y,z)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);if(!bodyOpen){geo.dispose();return o;}o.userData.geo=geo;o.userData.col=col;b.add(o);parts.push(o);return o;};
   const C=x=>(x&&x.isColor)?x:new THREE.Color(x);const mixC=(a,b,t)=>C(a).clone().lerp(C(b),t);
   const bw=g.build,fem=g.female,hs=g.head;
@@ -9655,7 +9655,7 @@ function personBakeQ(g,q){
   part(SK.cyl(.005,.005,.036,5),mixC(skin,0x7a3a30,.45),head,0,.066,zs(0,.066)+.001).rotation.z=Math.PI/2;
   [-1,1].forEach(s=>{const ex=s*.046*g.jaw,ez=zs(ex,.135);
     part(SK.ball(.0165,8,6),C(0xf0ece4),head,ex,.135,ez-.002).scale.set(1,.78,.45);
-    part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);
+    part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);eyes.push([ex,.135,ez+.006]);
     part(SK.ball(.0042,5,4),C(0x0a0806),head,ex,.135,ez+.0078);
     const bx=s*.047*g.jaw;part(SK.cyl(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
     part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
@@ -9794,10 +9794,10 @@ function personBakeQ(g,q){
   geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
   geo.computeBoundingSphere();geo.boundingSphere.radius*=1.35;
-  return {geo,bones,B,hips,tris:idx.length/3};
+  return {geo,bones,B,hips,tris:idx.length/3,eyes};
 }
 function buildPerson(g,opts){
-  const {geo,bones,B,hips,tris}=personBake(g,1);
+  const {geo,bones,B,hips,tris,eyes}=personBake(g,1);
   B.thL.rotation.order=B.thR.rotation.order='YXZ'; // a thigh's turn is about the pelvis's upright, before it swings (pwRun)
   // the distant copy, on the same skeleton: tickPeople swaps it in past PEOPLE_LOD.far (opts.noLod for the player)
   const lo=opts&&opts.noLod?null:personBake(g,PEOPLE_LOD.q);
@@ -9813,7 +9813,7 @@ function buildPerson(g,opts){
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
   const root=new THREE.Group();root.add(mesh);
   root.scale.setScalar(g.height);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
-  const rig={root,mesh,B,g,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
+  const rig={root,mesh,B,g,eyes,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
     geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
   return rig;
@@ -9830,17 +9830,23 @@ const FOE_DRESS={
   'Cultist':       {cloth:0x3a1414,hat:'hood',gear:null},
   'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',gear:'stick'},
   'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',gear:'stick'},
-  'Skeleton':      {skel:true} // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
+  'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
+  'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
+  'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
+  'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear'}
 };
 function buildFoe(type,x,z,genome,eyeCol){
   let g=genome;
   if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
     g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
     g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth||0x3a3a3a).multiplyScalar(.8);
-    if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}}
+    if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
+    // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
+    if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
+      g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
   // a skeleton's eyes burn in its sockets (the enemy's eye colour), one small unlit mesh on the head
-  if(g.skel&&eyeCol!=null){const P=[],I=[];for(const s2 of [1,-1]){const g1=new THREE.SphereGeometry(.011,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+s2*.028,a[i+1]+.09,a[i+2]+.066);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+  if((g.skel||g.dead)&&eyeCol!=null){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
   return rig;
 }

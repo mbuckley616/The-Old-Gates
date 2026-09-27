@@ -5193,3 +5193,21 @@ The held gear goes on as for anyone, so half the skeletons carry a spear and hal
 
 ### Needs eyes
 A skeleton patrol at night: the eyes' glow, the walk (it is the people's walk; a stiffer, jerkier one might suit the dead better), bones lying after the fight. The dungeon's skeletons are built by the dungeon's own builder and are unchanged.
+
+## v80 — Session 173 — The risen dead: Hollowed, Ghoul, Ash Wight (H.4)
+
+After the skeleton, the three undead humanoids that are dead people rather than bones: the Hollowed (the wastes, in numbers at night), the Ghoul, and the Ash Wight, a lair's beast in the wastes and wasteland. They go through the same `buildFoe` path as the bandits and the skeleton, so each is a genome seeded from where it was met, with a living person's face and build under the death.
+
+**How.** `FOE_DRESS` marks them `dead`, and `buildFoe` takes the living genome and turns it:
+- The skin goes three-quarters of the way to the kind's colour: grey for the Hollowed, a sick green for the Ghoul, ash for the Wight. The hair goes half grey, and the ruddiness and freckles go.
+- The age is set to elder, so every pose carries the elder's stoop: the spine bent forward, the head down, the knees soft.
+- They wear rags in the kind's colour with dark boots.
+- The eyes take the enemy's eye colour and shine. `personBakeQ` now reports where it put each eye (`eyes` on the bake and the rig), and `buildFoe` hangs a small unlit mesh there, as it does in a skeleton's sockets.
+
+The Wight wears a helm and carries a spear; the others are empty-handed. The Wraith keeps its box body: it is a ghost, and wants a translucent, hovering body of its own.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs` extended, 9 checks, all passing, no page errors. The Hollowed, the Ghoul and the Ash Wight are person rigs marked dead, aged elder, with the eye mesh and their own material. The Wight has a helm and a spear, and the Wraith is not a person. `docs/prototypes/foes-ingame.png` now has all eleven foes: seven living, the skeleton, and the three dead.
+
+### Needs eyes
+The dead at night in the wastes: whether grey and green skin under rags reads as dead or merely ill (a torn silhouette, a lolling head or a dragging walk would sell it better), and the eyes' glow at a distance. The Ghoul runs (its speed 1.8 is past the run's threshold): the people's run on a stooped body may look odd.
