@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s175</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s176</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39387,9 +39387,24 @@ window.devWorld=function(x,z){WORLD.enter(x==null?null:x,z==null?null:z,0,'🌍 
 
 let prevT=0,swT=0,atmT=0;
 const K={};
-window.addEventListener('keydown',e=>{if(e.code==='F8'&&started&&activeZoneId==='world'){e.preventDefault();try{WORLD.devSurvey();}catch(err){console.warn(err);}return;}if(e.code==='KeyV'&&started&&!dead&&!e.repeat){const ae=document.activeElement;if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'))return;tpToggle();}});
+window.addEventListener('keydown',e=>{if(e.code==='F9'&&started){e.preventDefault();perfToggle();return;}if(e.code==='F8'&&started&&activeZoneId==='world'){e.preventDefault();try{WORLD.devSurvey();}catch(err){console.warn(err);}return;}if(e.code==='KeyV'&&started&&!dead&&!e.repeat){const ae=document.activeElement;if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'))return;tpToggle();}});
 
+// v80 S176 — F9: a frame-rate readout, so a playtest on a real machine can say where a frame goes. Headless
+// Chromium draws on software GL and cannot time the GPU; this is the number that counts. Half-second averages:
+// frames a second, the frame's length and the worst in the window, the loop's work before the draw (the world's
+// tick, people, weather), the draw's own call (with the shadow pass), draw calls and triangles, the pixel ratio.
+const PERF={on:false,el:null,n:0,t0:0,frame:0,worst:0,js:0,draw:0,calls:0,tris:0,last:null,prev:0};window.PERF=PERF;
+function perfToggle(){PERF.on=!PERF.on;if(!PERF.el){const d=document.createElement('div');d.id='perf-hud';d.style.cssText='position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:300;pointer-events:none;font:11px/1.35 monospace;color:#dfe8c8;background:rgba(10,12,8,.72);padding:3px 8px;border-radius:3px;white-space:pre';document.body.appendChild(d);PERF.el=d;}
+  PERF.el.style.display=PERF.on?'block':'none';PERF.n=0;PERF.t0=0;PERF.prev=0;PERF.worst=0;if(PERF.on)PERF.el.textContent='measuring…';else if(PERF.last)console.log('PERF',JSON.stringify(PERF.last));}
+function perfNote(now,tLoop,tDraw0,tDraw1){
+  if(PERF.prev){const f=now-PERF.prev;PERF.frame+=f;if(f>PERF.worst)PERF.worst=f;PERF.n++;}PERF.prev=now;
+  PERF.js+=tDraw0-tLoop;PERF.draw+=tDraw1-tDraw0;PERF.calls+=REN.info.render.calls;PERF.tris+=REN.info.render.triangles;
+  if(!PERF.t0)PERF.t0=now;if(now-PERF.t0<500||!PERF.n)return;
+  const n=PERF.n,_fps=1000*n/PERF.frame,r={fps:_fps<10?+_fps.toFixed(1):Math.round(_fps),frameMs:+(PERF.frame/n).toFixed(1),worstMs:+PERF.worst.toFixed(1),jsMs:+(PERF.js/n).toFixed(1),drawMs:+(PERF.draw/n).toFixed(1),calls:Math.round(PERF.calls/n),tris:Math.round(PERF.tris/n),px:REN.getPixelRatio(),shadows:!!REN.shadowMap.enabled,w:REN.domElement.width,h:REN.domElement.height};
+  PERF.last=r;PERF.el.textContent=`${r.fps} fps · frame ${r.frameMs} ms (worst ${r.worstMs}) · loop ${r.jsMs} · draw ${r.drawMs}\n${r.calls} calls · ${(r.tris/1000).toFixed(0)}k tris · ${r.w}×${r.h} at ${r.px}× · shadows ${r.shadows?'on':'off'}`;
+  PERF.n=0;PERF.t0=now;PERF.frame=0;PERF.worst=0;PERF.js=0;PERF.draw=0;PERF.calls=0;PERF.tris=0;}
 function loop(now){
+  const _pfL=PERF.on?performance.now():0;
   requestAnimationFrame(loop);
   const dt=Math.min((now-prevT)/1000,.05);prevT=now;
   // Main scene render
@@ -39402,7 +39417,9 @@ function loop(now){
   else if(scene){_sweepScenePool(scene);if(typeof WORLD!=='undefined'&&scene===dScene&&!dead)try{WORLD.tickBehaviours();}catch(e){}if(scene===dScene&&!dead)try{tickDungeonTraps(1/60);}catch(e){}} // v80 — dungeons and interiors get a pool too (the freeze on a kill was this); behaviours run in dungeons
   // v80 — the main story is handed to you: if a main quest is complete and what it unlocks is still locked, hand it over with the popup
   try{if(!window._mqT||performance.now()-window._mqT>1500){window._mqT=performance.now();for(const q of QUEST_DEFS){if(qState(q.id)!=='complete'||!q.unlocks)continue;for(const nid of q.unlocks){const nq=getQuest(nid);if(!nq||qState(nid)!=='locked'||!QS[nid])continue;QS[nid].state=nq.autoAccept?'active':'available';if(nq.autoAccept){showQuestUpdatePopup('accept',nq);if(typeof addLog==='function')addLog('📜',`New quest: ${nq.title}.`);}else if(nq.announce&&!QS[nid]._announced){QS[nid]._announced=true;showQuestUpdatePopup('accept',Object.assign({},nq,{title:`${nq.title} — speak with ${nq.giver}`}));if(typeof addLog==='function')addLog('📜',`${nq.giver} has something for you: ${nq.title}.`);}}}}}catch(e){}
+  const _pfD=PERF.on?performance.now():0;
   REN.render(scene,CAM);
+  if(PERF.on)perfNote(now,_pfL,_pfD,performance.now());
   // Viewmodel render on top (clear depth only, not colour)
   if(started&&!dead&&!won&&!invOpen&&!shopOpen&&!lootOpen&&!stashOpen&&!hubOpen&&!(document.getElementById('quest-popup')&&document.getElementById('quest-popup').style.display==='flex')&&(vmSword||vmShield)){
     // v70.2 — recompute arm bridges so they span shoulder→wrist AFTER the swing
