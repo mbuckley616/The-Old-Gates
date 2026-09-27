@@ -5270,3 +5270,21 @@ Full suite on Session 175 (the head before the wraith and the dragon), two suite
 
 ### Needs eyes
 A dragon in the tundra in real play: its size against you, the wing beat's speed, the fold against the flank, the long tail on slopes. It walks on the wolf's trot and gallop scaled up; a heavier, slower gait of its own may suit it. It still never flies.
+
+## v80 — Session 178 — Goblins and kobolds: a prototype and a question (H.4, waiting on Michael)
+
+With the dragon done, the open world's goblins, goblin slingers and kobolds are the only foes still on the humanoid box. Their look is open: the canon names goblins among the antibodies that "folklore had words for" and says nothing of what they look like, and has no kobolds at all. So this is a prototype and a DECISION, and `index.html` is unchanged (the build tag stays at s177).
+
+**The prototype** (`docs/prototypes/goblins/shoot.mjs`) boots the game and builds each variant from `personGenome` and `buildPerson`, the way `buildFoe` would. The parts a person does not have (pointed ears, a snout, a crest, a tail) are plain meshes hung on the bones: enough to judge a look, not how the build would do it (that would bake them in, as the skeleton's bones are). Four pictures, each with a townsperson at the left for scale, three of the kind standing and one running:
+- **Goblins A:** green, small, big-headed, long pointed ears.
+- **Goblins B:** grey-brown, thin, ears swept back, eyes lit.
+- **Kobolds A:** little reptile folk with a snout, crest and tail.
+- **Kobolds B:** the old mine-sprite, bearded and hooded, with a mattock.
+
+My recommendation to Michael is goblins A and kobolds B, with the reasons in `docs/decisions.md` and the DECISION issue. The first pass of the pictures hid the ears and snouts inside the enlarged skull; they were set out from the skull by the head's size and made larger.
+
+### Verified (headless Chromium)
+`node docs/prototypes/goblins/shoot.mjs` renders the four pictures with no page errors.
+
+### Needs eyes
+The DECISION: which goblin, which kobold, or neither.

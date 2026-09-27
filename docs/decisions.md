@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Goblins and kobolds — what they look like (Session 178)
+The canon has goblins among the antibodies "folklore had words for" and says nothing of their look; kobolds are not in it at all. Today both are the humanoid box. Everything else you fight in the open world is now on the shape kit (wolves, boar, spider, dragon, bandits, the undead), so these two are what's left, and their look is your call. The prototype puts both on the people's body (they would walk, run and strike as the bandits do), with the parts a person lacks hung on the bones. A townsperson stands at the left of each picture for scale.
+- **Goblins A — the folklore goblin**: green, three-quarters of a person's height, a big head, long pointed ears, a long nose, ragged hide. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/goblins-gobA.png
+- **Goblins B — the antibody's goblin**: grey-brown and thin, ears swept back, no hair, amber eyes lit, spears and clubs. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/goblins-gobB.png
+- **Kobolds A — little reptile folk**: two-thirds of a person, scaled, a snout, a crest, a tail, spears (the modern game kobold). https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/goblins-kobA.png
+- **Kobolds B — the old German kobold**: a small bearded earth-sprite in a hood with a mattock (the mine-spirit the word came from). https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/goblins-kobB.png
+
+**Recommendation:** goblins A (they read at a glance as goblins, and the canon leans on folklore's words) and kobolds B (the Gatelands' folklore is Irish and Germanic, not tabletop, and a hooded mine-sprite sits better beside the kobolds' cowardice: they run to fetch friends). Other options: goblins B if the antibodies should all look a little wrong rather than storybook; or keep the kobolds as small goblins. Answer with the letters (and anything to change).
+
 ## Answered
 
 ### Wolves — the first creature on the shape kit (Session 163, issue #4)
