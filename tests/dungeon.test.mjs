@@ -50,7 +50,7 @@ await enterDungeon(page, { theme: 'goblin', seed: 5 });
 const gob = await page.evaluate(() => { const s = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell && o.userData.dunShell !== 'beams' && o.userData.dunShell !== 'props') s.push(o.userData.dunShell); }); return { zone: activeZoneId, shell: s.length }; });
 await enterDungeon(page, { theme: 'ruins', seed: 23, interior: 'fort_tee', size: 'medium' });
 const fort = await page.evaluate(() => { const s = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell && o.userData.dunShell !== 'beams' && o.userData.dunShell !== 'props') s.push(o.userData.dunShell); }); return { zone: activeZoneId, interior: currentPortal.interior, upper: !!dMap2, shell: s.length }; });
-check('another theme and a fort build (the fort\'s first floor keeps its own walls; its upper floor gets the shell)', gob.zone === 'dungeon' && gob.shell >= 3 && fort.zone === 'dungeon' && fort.shell === (fort.upper ? 3 : 0), { gob, fort });
+check('another theme and a fort build, the fort\'s first floor on the shell too (Session 197)', gob.zone === 'dungeon' && gob.shell >= 3 && fort.zone === 'dungeon' && fort.shell === (fort.upper ? 6 : 3), { gob, fort });
 check('the props are one merged mesh a floor, much of the rubble lying along the walls (Session 191)', r.props === r.floors && r.rubbleByWalls > .3, { props: r.props, rubbleByWalls: r.rubbleByWalls });
 check('the kit\'s rounded box has rounded corners (a unit cube with radius .1 reaches .793, not .866)', Math.abs(r.rboxCorner - (Math.sqrt(3) * .4 + .1)) < .005, { corner: r.rboxCorner });
 console.log('  cost', JSON.stringify({ meshes: r.meshes, calls: r.calls, tris: r.tris }));

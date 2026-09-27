@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s196</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s197</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21008,7 +21008,7 @@ function dunStoneTex(col,seed,kind){const rnd=pRng(seed);const C=new THREE.Color
       draw(0);if(xx+bw>w)draw(-w);xx+=bw;}}
   },128,128);}
 function buildDunShell(map,baseY,wallCol,floorCol,opts){
-  const H=FLOOR_HEIGHT,R=map.length,Cn=map[0].length,S=DUN_SHELL,seed=(opts&&opts.seed)||1;const N1=dunNoise(seed),N2=dunNoise(seed+7),N3=dunNoise(seed+13);
+  const H=FLOOR_HEIGHT,R=map.length,Cn=map[0].length,S=Object.assign({},DUN_SHELL,opts&&opts.amp!=null?{AMP:opts.amp}:{},opts&&opts.cove===false?{COVE:0}:{}),seed=(opts&&opts.seed)||1;const N1=dunNoise(seed),N2=dunNoise(seed+7),N3=dunNoise(seed+13);
   const wall=(c,r)=>r<0||r>=R||c<0||c>=Cn||map[r][c]===0;
   const skip=opts&&opts.skip||(()=>false); // cells whose floor and ceiling someone else draws (stairs, treasure)
   // where a point of the wall moves: the noise, then a bevel at an outside corner or a fill at an inside one
@@ -21312,8 +21312,10 @@ function buildDungeon(portal){
       return false;
     };
     // S189 — the shell: walls, floor and ceiling as three merged meshes (not the fort's first floor, which has its own)
-    const shellOn=!(isFort&&floorIdx===1);
-    if(shellOn){const sh=buildDunShell(map,baseY,floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:(c,r)=>map[r][c]===3||map[r][c]===6,
+    // S197 — a fort's first floor too: its walls dressed flatter (no cove: its halls carry banners and sconces high on
+    // the walls), in the fort's cool grey; its own floors and ceilings stay, so the shell lays ground only under walls
+    const shellOn=true,fortF1=isFort&&floorIdx===1;
+    if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6),amp:fortF1?.025:null,cove:!fortF1,
         damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:floorIdx===2?(gen.rooms2||[]):(gen.rooms||[])});
       dScene.add(sh.walls);dScene.add(sh.floor);dScene.add(sh.ceil);if(sh.beams)dScene.add(sh.beams);}
     // S191 — the floor's props, one merged mesh: rubble heaps where walls meet the floor, the theme's clutter
@@ -23159,7 +23161,8 @@ function buildDungeon(portal){
   renderFloor(dMap,1,thWallMat,thFloorMat,0);
   // v61g2: after the per-cell render pass, emit continuous fort walls
   // for fort interiors. Only runs on floor 1 (forts are single-floor).
-  if(isFort) renderFortWalls(dMap, 0);
+  // S197 — the fort's planar walls are the shell's now (renderFloor); the old pass is kept, unused
+  if(isFort&&false) renderFortWalls(dMap, 0);
   // v61gb: staircase BEFORE architecture so its DUNGEON_PROPS footprints
   // are registered before the center-column pass runs. The center column
   // pass checks dPropHit and skips column placement on staircase cells.

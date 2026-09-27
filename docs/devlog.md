@@ -5668,3 +5668,14 @@ New `tests/dungeonfoes.test.mjs`, 4 checks, all passing, no page errors. Across 
 
 ### Needs eyes
 A goblin dungeon in real play: the dungeon's own attack timing on the person's arm; bodies left where they fall; frame time with twenty-odd people on a floor (each has the distant copy past 17 units).
+
+## v80 — Session 197 — The fort's first floor on the shell (item 7)
+The last owed slice of the dungeon's walls. A fort's first floor (the `fort_*` interiors) drew its walls as long flat planes (`renderFortWalls`), each with a cloned material and a texture repeated along its length. It was the one place in a dungeon still made of flat walls with sharp corners.
+
+**What changed.** `renderFloor` builds the shell on every floor now, and a fort's first floor gets three changes. The walls are dressed flatter: the warp is .025, not .07, since a fort's walls are built, not hewn. There is no cove, because the fort's decoration pass hangs banners and sconces high on its walls. And they are in the fort's cool grey, 0x6c6c72, through `dunStoneTex`'s courses. The fort keeps its own flagged floors, treasure floors and ceilings. So that the warp can never open a slit at the wall's foot, the shell lays floor and ceiling only under the wall cells (its `skip` inverted). `buildDunShell` gained two options for this, `amp` and `cove`. The old planar pass is kept in the code but no longer called. The fort's rooms get the shell's beams like any other.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` passes 11 of 11, no page errors. A `fort_tee` now has six shell meshes (walls, floor strips and ceiling strips on its first floor, the full shell on its upper floor). Pictures: `docs/prototypes/fort-before.png` and `fort-after.png`, the same hall from the same place, with the banner and the sconces where they were.
+
+### Needs eyes
+A fort in real play: whether the grey courses sit well with the fort's pillars and carpets, and whether the banners and sconces still sit on the wall face everywhere (the warp is small, but they were placed against a perfectly flat plane).
