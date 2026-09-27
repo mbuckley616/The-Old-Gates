@@ -5537,3 +5537,21 @@ This is the second slice of Michael's dungeon item. He asked for ceiling beams o
 
 ### Needs eyes
 Whether the cove is too strong in a corridor (the crown is narrow) and too weak in a big room. Whether the beams should rest on corbels or posts; they are plain timbers into the wall. The damp is subtle under the foot's shading, and may want more contrast in real torchlight. Still owed: rubble and props, the fort's first floor, and the dungeon's box foes.
+
+## v80 — Session 191 — Rubble and props, and the kit's rounded box (Playtest s162, item 7, slice 3)
+The third slice of the dungeon item: Michael's *rubble and props*. The shape kit's owed rounded box comes with it, since this is the first thing to need it.
+
+**The rounded box.** `SK.rbox(w, h, d, r, n)` subdivides a box and pulls every vertex onto a rounded shell: clamp the point to the box shrunk by `r`, then push it out `r` along the direction it was clamped. The result has flat faces, quarter-round edges and spherical corners. `SK.smooth(g)` averages normals over coincident vertices, so the six faces shade as one surface. It is general: crates, stone and, later, the buildings' pass can all use it.
+
+**The props.** A floor's props are now one mesh (`dunMerge`: parts of geometry, colour and matrix, with the colour baked into the vertices). Before, each bone, stone, plank and chain link was its own mesh with its own material; a hanging chain was 17 to 32 meshes.
+- **Rubble**: along every side where open ground meets a wall there is a chance of a heap (14% where the theme's clutter is rubble, 6% elsewhere). A heap is 4 to 9 rounded stones of .07–.21, tumbled and half-sunk, in the wall's colour lightened. A quarter of the heaps also have a fallen dressed block from the courses.
+- **The theme's clutter** is on the kit. Bones are tapered limbs lying flat. The skull is a ball with dark sockets and a jaw. The junk is rounded planks and an earthenware pot (a lathe), sometimes knocked over. Chains keep their hang from the ceiling but are links of the one mesh. Rubble-theme clutter is a small heap.
+- The crates' bodies are the rounded box.
+
+The count dropped again: the test dungeon is 884–895 meshes and 660–728 draw calls (the clutter is rolled at random each visit), against 1,099 and 837 after Session 190 and 3,486 and 2,626 before Session 189. Triangles are 125–130k.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has two new checks, and 11 of 11 pass with no page errors. There is one props mesh per floor. 74% of its low vertices lie within .35 of a wall, which is the rubble along the walls. A unit `SK.rbox` with radius .1 reaches .793 at its corners, the rounded corner's distance (√3 × .4 + .1), not the sharp .866. Everything from Sessions 189 and 190 still passes. `locks.test.mjs` (a real dungeon's chests) passes. Pictures: `docs/prototypes/dungeon-rubble.png` (heaps at the foot of a ruins room's walls) and `dungeon-crates.png` (rounded crates in a corridor).
+
+### Needs eyes
+Whether the heaps are too pale against the walls: they are lit from the same lantern and are the wall's colour times 2.6, meant to read as broken stone lighter than the weathered face. Whether 14% of wall sides is too many in rubble themes. Still owed, a slice each: the fort's first floor, the dungeon's box foes, and barrels, chests and doors on the kit.
