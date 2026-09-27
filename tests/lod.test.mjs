@@ -1,4 +1,4 @@
-// Level of detail for townsfolk (Session 156): a distant copy of every person on the same skeleton,
+// Level of detail for townsfolk (Session 159, numbered 156 when written; the shadow proxy Session 160): a distant copy of every person on the same skeleton,
 // swapped in by distance from the eye, and what it saves in a whole town's view.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
@@ -14,6 +14,17 @@ const rigs = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r =>
   return { n: rs.length, ok, bonesOk, hi: [Math.min(...rs.map(r => r.tris)), Math.max(...rs.map(r => r.tris))], lo: [Math.min(...rs.map(r => r.trisLo)), Math.max(...rs.map(r => r.trisLo))],
     ratio: [+Math.min(...ratio).toFixed(2), +Math.max(...ratio).toFixed(2)], sumHi: rs.reduce((a, r) => a + r.tris, 0), sumLo: rs.reduce((a, r) => a + r.trisLo, 0) }; });
 check('every townsperson has a distant copy on the same skeleton, a third to a half the triangles', rigs.n >= 8 && rigs.ok === rigs.n && rigs.bonesOk && rigs.ratio[1] < .55, rigs);
+
+// the shadow pass (Session 160): every person is drawn into the sun's shadow map from the distant copy, and the eye's
+// geometry is back in place afterwards
+const sp = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); let lo = 0, hi = 0;
+  // the shadow pass draws through the renderer with a depth material, not PEOPLE_MAT: count which geometry it is handed
+  const rbd = REN.renderBufferDirect;
+  REN.renderBufferDirect = function (cam, scn, geo, mat, obj) { if (obj.isSkinnedMesh && obj.parent && obj.parent.userData.rig && mat !== PEOPLE_MAT) { const r = obj.parent.userData.rig; if (geo === r.geoLo) lo++; else if (geo === r.geoHi) hi++; } return rbd.apply(this, arguments); };
+  rs.forEach(r => { r.lod = 0; r.mesh.geometry = r.geoHi; });
+  try { REN.render(scene, CAM); } finally { REN.renderBufferDirect = rbd; }
+  return { people: rs.length, shadowDrawsLo: lo, shadowDrawsHi: hi, restored: rs.every(r => r.mesh.geometry === r.geoHi) }; });
+check('the shadow pass draws the townsfolk from their distant copies, and the eye keeps the full ones', sp.shadowDrawsLo > 0 && sp.shadowDrawsHi === 0 && sp.restored, sp);
 
 // the swap follows the camera, with a gap between the thresholds
 const sw = await page.evaluate(() => { const rig = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && r.root.visible); const p = rig.root.position; const out = [];
@@ -62,5 +73,50 @@ const view = async (where) => { await page.evaluate(w => { forceTime(12); const 
     return { people: rs.length, distant: rs.filter(r => r.lod).length, fullDetail: all, withLod: lod, saved: all.triangles - lod.triangles }; }); };
 const sq = await view('square'), road = await view('road');
 check('the town view draws fewer triangles with the distant copies, the same draw calls', [sq, road].every(m => m.distant > 0 && m.saved > 0 && m.withLod.calls === m.fullDetail.calls) && road.distant > sq.distant, { square: sq, road });
+
+// the shadow pass: what the townsfolk cost it at full detail (eye and shadow), with the distant copies (the eye's by range,
+// the shadow's always), and casting no shadows at all
+// (REN.info resets after the shadow pass, so it is read with the reset held off)
+const shadowCost = async (where) => { await page.evaluate(w => { forceTime(12); const S = WORLD.settle.get('dunmore'); const t = WORLD.siteAnywhere('dunmore');
+    px = S.site.x; pz = w === 'square' ? S.site.z + 6 : t.z + t.pad + 8; yaw = 0; pitch = -.05; }, where);
+  await page.waitForTimeout(3000);
+  return page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); tickPeople(1 / 60, 6e5);
+    const run = (cast, lo) => { rs.forEach(r => { r.mesh.castShadow = cast; if (!lo) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (lo) tickPeople(1 / 60, 6e5); PEOPLE_LOD.shadowLo = lo; REN.render(scene, CAM);
+      REN.info.autoReset = false; REN.info.reset(); REN.render(scene, CAM); const t = REN.info.render.triangles; REN.info.autoReset = true; return t; };
+    const full = run(true, false), fullNone = run(false, false), now = run(true, true), nowNone = run(false, true); run(true, true);
+    return { people: rs.length, distant: rs.filter(r => r.lod).length, viewFull: full, viewNow: now, shadowFull: full - fullNone, shadowNow: now - nowNone, cut: +(1 - (now - nowNone) / (full - fullNone)).toFixed(2), viewCut: +(1 - now / full).toFixed(3) }; }); };
+const sSq = await shadowCost('square'), sRoad = await shadowCost('road');
+check('the townsfolk cost the shadow pass under 65% of what their full meshes did, the whole view at least 10% less (the people in the sun\'s reach)', [sSq, sRoad].every(m => m.shadowFull > 0 && m.shadowNow > 0 && m.cut > .35 && m.viewCut > .1), { square: sSq, road: sRoad });
+
+// the shadow's photograph: one person in the afternoon sun, drawn full, the shadow cast by the full mesh, by the distant
+// copy, and not at all. The player (and so the shadow map) stays put; the subject tries spots on a ring around them and
+// keeps the one where its shadow shows most, since the town's buildings and trees shade much of the ground.
+const sh = await page.evaluate(() => { forceTime(16); const S = WORLD.settle.get('dunmore'); px = S.site.x; pz = S.site.z + 6;
+  const src = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo)[3]; const rig = buildPerson(src.g); window._sr = rig;
+  // in the scene, hidden: a rig with no parent is dropped and disposed by the next tickPeople
+  rig.root.visible = false; scene.add(rig.root); return rig.g.name; });
+await page.waitForTimeout(2500);
+const shR = await page.evaluate(() => { const rig = window._sr; rig.root.visible = true; rig.root.rotation.y = 0;
+  const others = [...PEOPLE_RIGS].filter(r => r !== rig && r.root.parent === scene); others.forEach(r => { r._v = r.root.visible; r.root.visible = false; });
+  const cam = new THREE.PerspectiveCamera(40, REN.domElement.width / REN.domElement.height, .1, 200); const cv = REN.domElement;
+  const place = (fx, fz) => { const fy = WORLD.worldH(fx, fz); rig.root.position.set(fx, fy, fz); pwApply(rig, pwIdle(3, { holds: rig.holds, gear: rig.g.gear })); rig.root.updateMatrixWorld(true);
+    cam.position.set(fx - 1, fy + 4, fz - 5); cam.lookAt(fx + .8, fy + .3, fz); cam.updateMatrixWorld(); };
+  const grab = (cast, lo) => { rig.mesh.castShadow = cast; PEOPLE_LOD.shadowLo = lo; REN.render(scene, cam); const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height;
+    const x = o.getContext('2d'); x.drawImage(cv, 0, 0); return { url: o.toDataURL(), px: x.getImageData(0, 0, cv.width, cv.height).data }; };
+  const cmp = (A, B) => { let n = 0, sum = 0; for (let i = 0; i < A.length; i += 4) { const e = (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2])) / 3; sum += e; if (e > 24) n++; }
+    return { changed: n, share: +(n / (A.length / 4)).toFixed(4), meanDiff: +(sum / (A.length / 4)).toFixed(3) }; };
+  let best = null;
+  for (const r of [12, 20, 28]) for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, fx = px + Math.cos(a) * r, fz = pz + Math.sin(a) * r; place(fx, fz);
+    const n = cmp(grab(true, false).px, grab(false, true).px).changed; if (!best || n > best.n) best = { n, fx, fz }; }
+  place(best.fx, best.fz);
+  const hi = grab(true, false), hi2 = grab(true, false), lo = grab(true, true), none = grab(false, true);
+  // the control: the shadow cast from someone else's distant copy, to show the comparison can see a wrong shadow
+  const other = [...PEOPLE_RIGS].find(r => r !== rig && r.geoLo && Math.abs(r.g.height - rig.g.height) > .04 && r.g.style !== rig.g.style) || [...PEOPLE_RIGS].find(r => r !== rig && r.geoLo);
+  const own = rig.geoLo; rig.geoLo = other.geoLo; const wrong = grab(true, true); rig.geoLo = own; rig.mesh.castShadow = true; PEOPLE_LOD.shadowLo = true;
+  scene.remove(rig.root); others.forEach(r => { r.root.visible = r._v; });
+  return { spot: [+(best.fx - px).toFixed(1), +(best.fz - pz).toFixed(1)], repeat: cmp(hi.px, hi2.px), distantShadow: cmp(hi.px, lo.px), otherPerson: cmp(hi.px, wrong.px), noShadow: cmp(hi.px, none.px), hi: hi.url, lo: lo.url, none: none.url }; });
+for (const k of ['hi', 'lo', 'none']) { fs.writeFileSync(`tests/out/lod-shadow-${k}.png`, Buffer.from(shR[k].split(',')[1], 'base64')); delete shR[k]; }
+check('the shadow from the distant copy: the shadow is there, another person\'s would show, and the copy changes under a tenth of the pixels the shadow itself does', shR.repeat.changed === 0 && shR.noShadow.changed > 40 && shR.otherPerson.changed > shR.distantShadow.changed && shR.distantShadow.changed < shR.noShadow.changed * .1, { subject: sh, ...shR });
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

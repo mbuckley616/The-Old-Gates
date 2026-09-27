@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s158</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s160</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9475,7 +9475,7 @@ function personGenome(def,opts){
 // personBake builds the figure at a quality q (SK.q) and returns its geometry and bones. At q<1 it is the
 // distant copy: fewer segments, and the tiny parts (pupils, irises, freckles) left out. Bones are created
 // in the same order at every quality, so either geometry skins to either skeleton.
-const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012};
+const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012,shadowLo:true};
 function personBake(g,q){SK.q=q;try{return personBakeQ(g,q);}finally{SK.q=1;}}
 function personBakeQ(g,q){
   const bones=[],B={};
@@ -9705,6 +9705,14 @@ function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].ro
   B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
   // the wrist keeps a held shaft upright whatever the arm is doing
   B.gear.rotation.x=-(P.hips[0]+P.spine[0]+P.shR[0]+P.elR[0]+P.wrR[0]);B.gear.rotation.z=-(P.hips[2]+P.spine[2]+P.shR[2]+P.elR[2]+P.wrR[2]);}
+// The sun's shadow pass draws every townsperson from the distant copy, whatever the range: a person's shadow is
+// ~25 texels tall in the 2048 map, where the two copies cast the same shape. The renderer has already listed each
+// mesh's geometry for the eye before it draws the shadows, so swapping it for the shadow pass alone costs nothing.
+// (A second mesh on a shadow-only layer does not work in r128: its shadow pass tests layers against the eye's camera.)
+{const _smRender=REN.shadowMap.render;
+  REN.shadowMap.render=function(){const sw=[];
+    if(PEOPLE_LOD.shadowLo)for(const rig of PEOPLE_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
+    try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;}};}
 // Every person in the active scene, each frame: the stride is driven by how far the figure moved, so the
 // feet stay planted whatever moves it (the town's schedules, an interior amble, a legacy zone's wander).
 function tickPeople(dt,now){

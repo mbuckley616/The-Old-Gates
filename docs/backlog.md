@@ -56,7 +56,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - **5. The world** (Michael, 26 Sep): buildings, houses, structures and POIs with more detail, quality and uniqueness (roof overhangs, beams, window depth, per-town and per-nation variation so two towns don't share one house); trees and rocks (more silhouette, less cube); props and dungeon kit.
 - **5a. Plants** (Michael, 26 Sep): size the herb and plant meshes by what they are — they are all roughly one size and easy to miss; a bush should read as a bush, a tall herb as tall.
 - **5b. Boats** (Michael, 26 Sep): ship, ferry and the other ships' hulls less boxy and more interesting — a lathed hull, a keel, a proper stem and stern, rigging.
-- **6. Performance**: ~~NPC part merging~~ (Session 153: one draw call per person; Dunmore 863 calls against 1,290). ~~A distant low-detail person~~ — **Session 156**: a second bake at half the segments (37–50% of the triangles) on the same skeleton, swapped in past 17 units, back under 15; `PEOPLE_LOD`. Owed: the saving inside a town is small (Dunmore's square −9–11% of the view's triangles, the road outside −10–15%) because most people stand within 17 units and the shadow pass draws them at full detail — a shadow-pass tier or a third tier past ~40 units; the run cycle; a frame-time check on a real machine.
+- **6. Performance**: ~~NPC part merging~~ (Session 153: one draw call per person; Dunmore 863 calls against 1,290). ~~A distant low-detail person~~ — **Session 159** (auto; numbered 156 before the merge): a second bake at half the segments (37–50% of the triangles) on the same skeleton, swapped in past 17 units, back under 15; `PEOPLE_LOD`. ~~The shadow pass at full detail~~ — **Session 160**: the sun's shadow pass draws every townsperson from the distant copy at every range (`REN.shadowMap.render` swaps the geometry for that pass alone): their shadows cost 56–57% less, the whole frame 11–12% less than all full detail. Owed: a third tier past ~40 units if the frame time needs it; the run cycle; a frame-time check on a real machine.
 
 ## E. Interface
 - **The look, later**: a barber/tailor in towns to change hair and dyes after the creator (the creator now has the townsfolk's thirteen styles and fourteen beards, Session 154); ~~NPCs could draw from the same tunic dyes by nation~~ (Session 153).
@@ -67,6 +67,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~Compass quest markers taking the place glyph set~~ — done, Session 138.
 
 ## G. Playtest checks (built, verified only headless)
+- **Shadows from the distant copy (Session 160)**: long evening shadows of townsfolk near you (hat brims, plaits) for a coarser outline.
 - **Distant townsfolk (Session 159)**: walk towards a crowd and watch for the swap at 15–17 units (curly and afro hair, hat brims); whether 12 units would pass unseen; frame time in a forty-NPC town before and after.
 - **Church and factions (Session 158)**: confess at a church with a record; try to serve a faction with a fine standing; the tithe against the fine.
 - **Guards (Session 157)**: get stopped with a fine, refuse, fight, yield; the cells; strike a villager and a guard; whether the Town Guard is too hard at level one.
