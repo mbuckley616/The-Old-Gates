@@ -5178,3 +5178,19 @@ The first full run failed two suites, both tests and not the game. `theft.test.m
 
 ### Needs eyes
 Whether the repeated first names among ordinary townsfolk (a bank of 12 per sex against a town of fifty) bother anyone in play. If they do, the fix is content: more names per people, or bynames, which are the author's to write.
+
+## v80 — Session 173 — Attributes are a small buff on damage
+
+Backlog C, *attribute damage scaling* (Michael, 27 Sep): the Melee DMG figure climbed far too fast with a few levels of points in Might. He wants damage rooted in the weapon and, later, a weapon skill, with attributes a small buff of about 1% a point or less, and asked for the curve to be flattened to that now, ahead of the skills work (decided 27 Sep: the Morrowind book).
+
+**What it was.** Might added 3% to every melee hit a point, Finesse 4% to the bow, Intelligence 3% to spells. A character who put ten points into Might hit 30% harder for it, and the level-up screen's five-point cards added 15% at a time.
+
+**What changed.** One constant, `ATTR_DMG_PER_POINT = 0.01`, read by the two melee strikes (open world and dungeon), the bow (`BOW_FINESSE_DMG` now points at it) and `applySpellDamage`. The attribute cards (`ATTR_DEF`: *+1% melee damage*, *+1% ranged dmg*, *+1% spell power*) and the hub's derived grid say the same; the grid gains *Ranged DMG* and *Spell DMG* rows beside *Melee DMG*, since those were never shown. The Finesse card said 3% while the bow gave 4%; both say 1% now.
+
+Not touched: the flat `level × 1.5` added to every melee hit (and `level × 1` to arrows, `level × dmgLvl` to spells). That is the level's share, not an attribute's, and it belongs to the skills work and to enemies scaling by place rather than level, which Michael made a condition of that decision.
+
+### Verified (headless Chromium)
+New `tests/attrdmg.test.mjs`. Every roll pinned (`Math.random = .5`), at level 50 so rounding cannot hide a tenth, a dummy a step in front of the player in the open world, struck through `_resolveZoneStrike`: 80 with no Might, 88 with 10, 104 with 30 (under the old 3% it would have been 104 at 10 and 152 at 30). A spell (`caor`, tier 1) does 20 with no Intelligence and 22 with 10. The bow's Finesse factor is .01. With 10 in each, the hub's grid reads *Melee DMG +10%*, *Ranged DMG +10%*, *Spell DMG +10%*, and the Might level-up card reads *+1% melee damage*. No page errors.
+
+### Needs eyes
+Whether melee feels weak at the middle levels now. Against the old curve a character with 10 in Might does 15% less melee damage, and with 20 a quarter less, until weapon skills arrive. If that bites before the skills sessions, the stopgap is the weapon's own tier, not the attribute.

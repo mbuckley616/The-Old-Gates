@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s172</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s173</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1990,9 +1990,13 @@ function _stickArrowToEnemy(arrow, body, scene){
   arrow.userData.stuckLife = STUCK_ARROW_LIFE;
   arrow.userData.vx = 0; arrow.userData.vy = 0; arrow.userData.vz = 0;
 }
-// Finesse contribution to bow damage. Mirrors might×0.03 melee scaling but
+// Finesse contribution to bow damage. Mirrors Might’s melee scaling but
 // rebases on finesse. The bow build identity: Finesse is the primary stat.
-const BOW_FINESSE_DMG = 0.04;         // +4% bow damage per Finesse point
+// v80 S173: attributes are a small buff on damage, 1% a point (Michael, 27 Sep);
+// the weapon, and later its skill, carries the damage. Might (melee), Finesse (bow)
+// and Intelligence (spells) all read this.
+const ATTR_DMG_PER_POINT = 0.01;
+const BOW_FINESSE_DMG = ATTR_DMG_PER_POINT;
 // Family multipliers on posture max (brutes are sturdier, light enemies break faster).
 // Resolved from enemy build-family field (`buildFn` for dungeon enemies; `shape` for
 // zone enemies; bosses keyed on `bossId`). Default 1.0 covers anything unrecognised.
@@ -2192,12 +2196,12 @@ let luSelected=[]; // which attrs picked this level-up
 // attribute "feels like" rather than the precise mechanical numbers, which
 // stay in the hub Attributes tab.
 const ATTR_DEF={
-  might:      {label:'Might',      icon:'⚔',  actKey:'kills',           thresholds:[0,2,4,7,10],  gainDesc:'+3% melee damage, +5 carry weight',                   gains:{meleePct:3, carry:5},                  desc:'Strike harder. Carry more.'},
+  might:      {label:'Might',      icon:'⚔',  actKey:'kills',           thresholds:[0,2,4,7,10],  gainDesc:'+1% melee damage, +5 carry weight',                   gains:{meleePct:1, carry:5},                  desc:'Strike harder. Carry more.'},
   fortitude:  {label:'Fortitude',  icon:'🛡',  actKey:'damageTaken',     thresholds:[0,50,120,220,350], gainDesc:'+10 max HP, +5 max stamina',                     gains:{maxHP:10,maxStamina:5},                desc:'Take more punishment. Bleed slower.'},
-  finesse:    {label:'Finesse',    icon:'🌀',  actKey:'parries',         thresholds:[0,2,4,7,10],  gainDesc:'+10ms parry window, -5% sprint cost, +3% ranged dmg, -1% sneak detection', gains:{parryMs:10,sprintCostPct:-5,rangedPct:3,sneakDetectPct:-1}, desc:'Parry tighter. Strike from afar. Move unseen.'},
+  finesse:    {label:'Finesse',    icon:'🌀',  actKey:'parries',         thresholds:[0,2,4,7,10],  gainDesc:'+10ms parry window, -5% sprint cost, +1% ranged dmg, -1% sneak detection', gains:{parryMs:10,sprintCostPct:-5,rangedPct:1,sneakDetectPct:-1}, desc:'Parry tighter. Strike from afar. Move unseen.'},
   swiftness:  {label:'Swiftness',  icon:'💨',  actKey:'sprintDist',      thresholds:[0,100,250,450,700],gainDesc:'+2% move speed, +1% attack speed',                gains:{movePct:2,atkSpdPct:1},                desc:'Run farther. Hit faster.'},
   resolve:    {label:'Resolve',    icon:'✦',   actKey:'staminaDepleted', thresholds:[0,1,3,5,8],   gainDesc:'+0.3/s stam regen, -5% block cost, +1% magic resist', gains:{staminaRegen:.3,blockCostPct:-5,magicResistPct:1}, desc:'Outlast the long fight. Endure the unseen.'},
-  intelligence:{label:'Intelligence',icon:'📖',actKey:'transactions',    thresholds:[0,3,6,10,15], gainDesc:'+10 max mana, +0.2/s mana regen, +3% spell power',  gains:{maxMana:10,manaRegen:.2,spellPct:3},   desc:'Read more. Cast harder. Mana flows.'},
+  intelligence:{label:'Intelligence',icon:'📖',actKey:'transactions',    thresholds:[0,3,6,10,15], gainDesc:'+10 max mana, +0.2/s mana regen, +1% spell power',  gains:{maxMana:10,manaRegen:.2,spellPct:1},   desc:'Read more. Cast harder. Mana flows.'},
   charisma:   {label:'Charisma',   icon:'💬',  actKey:'npcTalks',        thresholds:[0,2,4,7,10],  gainDesc:'+1% barter, +2% quest reward gold, merchant access',gains:{barterPct:1,questGoldPct:2,merchantTier:1}, desc:'A silver tongue. Better deals all around.'},
   fortune:    {label:'Fortune',    icon:'🍀',  actKey:'chestsOpened',    thresholds:[0,1,3,5,8],   gainDesc:'+2% crit chance, +1% loot quality',                gains:{critPct:2,lootPct:1},                  desc:'The world favors you. Crits and chests.'},
 };
@@ -14858,7 +14862,7 @@ function _resolveZoneStrike(_isPow){
     }
     {
       const w=EQ.weapon,lo=w?w.atk[0]:8,hi=w?w.atk[1]:14;
-      const mightMult=1+(ATTRS.might*0.03);
+      const mightMult=1+(ATTRS.might*ATTR_DMG_PER_POINT);
       const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1);
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block (see _resolveDungeonStrike for rationale).
@@ -24751,7 +24755,7 @@ function _resolveDungeonStrike(_isPow){
     }
     {
       const w=EQ.weapon,lo=w?w.atk[0]:8,hi=w?w.atk[1]:14;
-      const mightMult=1+(ATTRS.might*0.03);
+      const mightMult=1+(ATTRS.might*ATTR_DMG_PER_POINT);
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block. A Shieldbearer hit from the front (not the
       // rear cone) takes SHIELDBEARER_FRONT_BLOCK of the damage. shieldFrontMult
@@ -24842,7 +24846,7 @@ function fireArrow(strength){
   const arrowRoll = aLo + Math.floor(Math.random() * Math.max(1, aHi - aLo));
   // Draw scaling — linear MIN..MAX over strength 0..1.
   const drawMult = BOW_DAMAGE_MULT_MIN + (BOW_DAMAGE_MULT_MAX - BOW_DAMAGE_MULT_MIN) * strength;
-  // Finesse — bow's primary attribute, mirrors melee's might×0.03 pattern.
+  // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
   const finesseMult = 1 + (ATTRS.finesse||0) * BOW_FINESSE_DMG;
   // Per-level component (matches melee's level×1.5 floor).
   const lvlFloor = Math.floor(level * 1.0);
@@ -27262,7 +27266,7 @@ function renderHubAttrs(){
   const rows=document.getElementById('attr-rows');rows.innerHTML='';
   Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const mult=getMultiplier(key);const actVal=lvAct[def.actKey]||0;const t=def.thresholds;const curThresh=t[mult-1]||0;const nextThresh=t[mult]||t[t.length-1];const prog=nextThresh>curThresh?Math.min(1,(actVal-curThresh)/(nextThresh-curThresh)):1;const mc=['','lu-mult-1','lu-mult-2','lu-mult-3','lu-mult-4','lu-mult-5'][mult];const row=document.createElement('div');row.className='attr-row';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${ATTRS[key]}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${prog*100}%"></div></div><span class="attr-act-label">${actVal}</span><span class="attr-mult-badge ${mc}">×${mult}</span>`;rows.appendChild(row);});
   const dg=document.getElementById('derived-grid');dg.innerHTML='';
-  [['Melee DMG','+'+ATTRS.might*3+'%'],['Move Speed','+'+ATTRS.swiftness*2+'%'],['Atk Speed','+'+ATTRS.swiftness*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Max Mana Bonus','+'+ATTRS.intelligence*10],['Barter Bonus','+'+(ATTRS.intelligence+ATTRS.charisma)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
+  [['Melee DMG','+'+Math.round(ATTRS.might*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round((ATTRS.finesse||0)*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round((ATTRS.intelligence||0)*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+ATTRS.swiftness*2+'%'],['Atk Speed','+'+ATTRS.swiftness*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Max Mana Bonus','+'+ATTRS.intelligence*10],['Barter Bonus','+'+(ATTRS.intelligence+ATTRS.charisma)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
   // v80 — Standing: who you are to the world
   try{const sb=document.getElementById('standing-body');if(sb&&typeof WORLD!=='undefined'){
     const row=(k,v)=>`<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18)"><span style="color:#8a7a60;min-width:150px">${k}</span><span style="color:#e8dcc0">${v}</span></div>`;
@@ -29066,11 +29070,11 @@ function applySpellDamage(e, sp, tier){
   const resistMult = (e.resist && e.resist[sp.school] !== undefined) ? e.resist[sp.school] : 1.0;
   // Dormant enemies (Gargoyle statue form) take 2× damage — rewards the player for spotting and attacking first.
   const dormantMult = e.dormant ? 2.0 : 1.0;
-  // v61au: Intelligence scales spell damage. +3% per point, parallel to
+  // v61au: Intelligence scales spell damage. +1% per point (S173; was 3%), parallel to
   // Might's melee scaling. Staff weapons add a small passive (spellPower
   // field on EQ.weapon, currently +5% on Wooden Staff). Both stack
   // multiplicatively with the existing buff multipliers.
-  const intMult = 1 + (ATTRS.intelligence||0) * 0.03;
+  const intMult = 1 + (ATTRS.intelligence||0) * ATTR_DMG_PER_POINT;
   const weaponSpellMult = (EQ.weapon && EQ.weapon.spellPower) || 1.0;
   const afterMults = baseDmg * resistMult * dormantMult * intMult * weaponSpellMult * _buffMult('spellDmg',1) * _buffMult('magicDmg',1);
   // Smól Mastery — The Quiet-Sent-Out: ignores armor entirely. Resist still applies.
