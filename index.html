@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s166</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s167</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9323,9 +9323,155 @@ const HERB_DEF={
       buyPrice:50,sellMult:.9}},
 };
 
+// ── Plants sized by what they are (backlog H.5a, Session 167) ──
+// Each herb is given what it is (a moss patch, a rosette, a tussock, a berry bush, a rowan sapling…) and a builder
+// that places shape-kit parts and flat folded leaves, baked to one vertex-coloured geometry per kind, darker low down
+// and on the underside so a bush has its own shade. The world instances that geometry per chunk, as before.
+// A person is about 1.1 units tall: the plants run from .04 (a rosette on the road edge) to .85 (goldenrod, a rowan).
+// Picking a bush, a sapling, a shrub, a bramble or the fungus on a stump leaves the plant: it stays, bare of what you
+// took, and grows it back (PLANT_STAYS; the picked copy is PLANT_BUILD run with P.picked set). Prototype: docs/prototypes/plants.
+const PLANT_KIND={
+  firemoss:'moss',coldmoss:'moss',deepmoss:'moss',credearg:'clay',graywort:'rosette',stonecress:'cliffflower',
+  silverleaf:'herb',luibhuisce:'waterleaf',duilleogghorm:'broadleaf',veilwort:'wisp',heartroot:'root',
+  muirfhear:'tussock',goldenrod:'goldenrod',wolfsbane:'flowerspike',ferrousweed:'thistle',
+  mistfern:'fern',briarweed:'bramble',ashwort:'shrub',thornberry:'bush',caordubh:'lowbush',caorthann:'sapling',
+  fearnog:'bracket',shadowcap:'mushrooms'
+};
+const PLANT_STAYS=new Set(['bush','lowbush','sapling','shrub','bramble','bracket']);
+// the kinds tall enough to throw a shadow worth drawing (half a unit and more)
+const PLANT_SHADOW=new Set(['bush','tussock','flowerspike','goldenrod','sapling']);
+const PLANT_GEO=new Map();
+// a seeded dice so a kind always bakes the same (and its picked copy matches it part for part)
+function plantRng(s){let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return((h>>>0)%100000)/100000;};}
+// parts as [geometry, matrix, colour]; while `take` is set (what a picker takes) a picked plant leaves the part out.
+// The dice is rolled either way, so everything after it comes out the same in both copies.
+function Plant(picked){this.parts=[];this.picked=!!picked;this.take=false;}
+{const _q=new THREE.Quaternion(),_e=new THREE.Euler(0,0,0,'YXZ');
+  Plant.prototype.add=function(geo,p,r,s,col){if(this.take&&this.picked){geo.dispose();return this;}_e.set(r?r[0]:0,r?r[1]:0,r?r[2]:0,'YXZ');_q.setFromEuler(_e);
+    const m=new THREE.Matrix4().compose(new THREE.Vector3(p[0],p[1],p[2]),_q,new THREE.Vector3(s?s[0]:1,s?s[1]:1,s?s[2]:1));
+    this.parts.push([geo,m,new THREE.Color(col)]);return this;};}
+// a leaf: base at the point, reaching out along its yaw at an elevation, drooping at the tip (8 triangles, both sides lit)
+function plantLeaf(len,wid,thick,droop){const f=-wid*.18,v=[[0,0,0],[-wid*.4,f,len*.3],[0,0,len*.3],[wid*.4,f,len*.3],[-wid*.34,f,len*.66],[0,0,len*.66],[wid*.34,f,len*.66],[0,0,len]];
+  const ix=[0,1,2,0,2,3,2,1,4,2,4,5,2,5,6,2,6,3,5,4,7,5,7,6],pos=[];for(const i of ix){const p=v[i];pos.push(p[0],p[1]-(droop||0)*(p[2]/len)*(p[2]/len),p[2]);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));return g;}
+function plantStalk(h,r0,r1,seg){const g=SK.cyl(r1,r0,h,seg||5,3);g.translate(0,h/2,0);return g;}
+function plantBlade(h,w,bend){const g=SK.cone(w,h,3,4);g.translate(0,h/2,0);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i)/h;p.setZ(i,p.getZ(i)+bend*y*y);}return g;}
+Plant.prototype.bake=function(){
+  let n=0;const flat=this.parts.map(([g,m,c])=>{const gg=(g.index?g.toNonIndexed():g.clone());g.dispose();gg.applyMatrix4(m);n+=gg.attributes.position.count;return [gg,c];});
+  let top=.001;flat.forEach(([g])=>{const p=g.attributes.position;for(let i=0;i<p.count;i++)top=Math.max(top,p.getY(i));});
+  if(this.top)top=this.top; // a picked copy shades by its whole plant's height, so the two match
+  const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3);let o=0;
+  flat.forEach(([g,c])=>{g.computeVertexNormals();const p=g.attributes.position,nn=g.attributes.normal;
+    for(let i=0;i<p.count;i++,o++){pos[o*3]=p.getX(i);pos[o*3+1]=p.getY(i);pos[o*3+2]=p.getZ(i);const ny=nn.getY(i);nor[o*3]=nn.getX(i);nor[o*3+1]=ny;nor[o*3+2]=nn.getZ(i);
+      const k=(.62+.38*Math.min(1,p.getY(i)/top*1.4))*(.84+.16*ny);col[o*3]=c.r*k;col[o*3+1]=c.g*k;col[o*3+2]=c.b*k;}g.dispose();});
+  const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(pos,3));out.setAttribute('normal',new THREE.BufferAttribute(nor,3));out.setAttribute('color',new THREE.BufferAttribute(col,3));
+  out.computeBoundingBox();out.computeBoundingSphere();out.userData.top=top;return out;};
+const plantShade=(c,k)=>{const x=new THREE.Color(c);x.multiplyScalar(k);return x;};
+const plantMix=(a,b,t)=>new THREE.Color(a).lerp(new THREE.Color(b),t);
+const PLANT_BUILD={
+  // a low cushion patch, wide rather than tall: moss on stone or the forest floor
+  moss(P,R,col,stem,key){const n=5+Math.floor(R()*3);for(let i=0;i<n;i++){const a=i/n*6.283+R(),r=i?.12+R()*.16:0,s=.11+R()*.08;
+      P.add(SK.bumpy(SK.ball(1,10,6,0,6.283,0,1.7),.18,9,R()*9),[Math.sin(a)*r,-.01,Math.cos(a)*r],[0,R()*6,0],[s,s*.42,s],plantMix(col,stem,R()*.35));}
+    if(key==='firemoss')for(let i=0;i<14;i++){const a=R()*6.283,r=R()*.3;P.add(SK.ball(.012,4,3),[Math.sin(a)*r,.045,Math.cos(a)*r],0,0,0xffaa44);}},
+  // a lumpy wet red mound on the bank
+  clay(P,R,col,stem){for(let i=0;i<4;i++){const a=i*1.7+R(),r=i?.08+R()*.06:0,s=.07+R()*.05;P.add(SK.bumpy(SK.ball(1,8,5),.2,6,R()*5),[Math.sin(a)*r,s*.25,Math.cos(a)*r],0,[s*1.3,s*.8,s*1.1],plantMix(col,stem,R()*.4));}
+    for(let i=0;i<5;i++){const a=R()*6.283;P.add(plantBlade(.1+R()*.06,.008,.03),[Math.sin(a)*.14,.02,Math.cos(a)*.14],[.2,a,0],0,0x4a5a2a);}},
+  // a flat ring of leaves pressed to the ground (road edges)
+  rosette(P,R,col){for(let ring=0;ring<2;ring++){const n=ring?6:9;for(let i=0;i<n;i++){const a=i/n*6.283+ring*.35;P.add(plantLeaf(ring?.09:.16,ring?.05:.07,.012,.01),[0,.01+ring*.012,0],[-(.08+ring*.25),a,0],0,plantShade(col,ring?1.08:.95));}}},
+  // a cliff plant: a tight rosette and short stems of small flower heads
+  cliffflower(P,R,col,stem){for(let i=0;i<8;i++){const a=i/8*6.283;P.add(plantLeaf(.08,.035,.01,.01),[0,.01,0],[-.3,a,0],0,0x5a7a3a);}
+    for(let i=0;i<5;i++){const a=R()*6.283,t=.08+R()*.12;const x=Math.sin(a)*.03,z=Math.cos(a)*.03,tip=[x+Math.sin(a)*.05,t,z+Math.cos(a)*.05];P.add(plantStalk(t,.005,.004,4),[x,0,z],[.3*(R()-.5)+.25,a,0],0,stem);
+      for(let k=0;k<5;k++)P.add(SK.ball(.013,5,4),[tip[0]+(R()-.5)*.03,tip[1]+R()*.02,tip[2]+(R()-.5)*.03],0,0,col);}},
+  // an ordinary leafy herb, knee-low: pale broad leaves on short stems
+  herb(P,R,col,stem){const n=9+Math.floor(R()*4);for(let i=0;i<n;i++){const a=i*2.4+R()*.4,t=.05+R()*.18;P.add(plantStalk(t,.007,.005,4),[0,0,0],[.35,a,0],0,stem);
+      P.add(plantLeaf(.12+R()*.05,.07,.012,.03),[Math.sin(a)*t*.34,t,Math.cos(a)*t*.34],[-.25+R()*.3,a,0],0,plantShade(col,.9+R()*.2));}},
+  // waterside: round glossy leaves, some standing, some floating
+  waterleaf(P,R,col,stem){for(let i=0;i<14;i++){const a=R()*6.283,r=R()*.18,t=.03+R()*.22;P.add(plantStalk(t,.006,.005,4),[Math.sin(a)*r,0,Math.cos(a)*r],[.15,a,0],0,stem);
+      P.add(plantLeaf(.09,.08,.012,.01),[Math.sin(a)*r,t,Math.cos(a)*r],[-.1,a+R(),0],0,plantShade(col,.85+R()*.3));}},
+  // big deep-blue leaves from the base, arching like a hosta
+  broadleaf(P,R,col,stem){for(let i=0;i<8;i++){const a=i/8*6.283+R()*.3;P.add(plantLeaf(.26+R()*.06,.14,.016,.12),[0,.02,0],[-(.55+R()*.35),a,0],0,plantShade(col,.85+R()*.3));}
+    P.add(plantStalk(.36,.008,.006,4),[0,0,0],0,0,stem);for(let k=0;k<6;k++)P.add(SK.ball(.018,5,4),[(R()-.5)*.02,.26+k*.018,(R()-.5)*.02],0,0,0x6a88ee);},
+  // near-invisible: a few hair-thin pale stems with faint drooping bells
+  wisp(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,t=.16+R()*.12;R();P.add(plantBlade(t,.005,.04),[0,0,0],[0,a,0],0,stem);
+      P.add(SK.cone(.02,.035,6,1,true),[Math.sin(a)*.04,t-.02,Math.cos(a)*.04],[Math.PI,a,0],0,col);}
+    for(let i=0;i<6;i++){const a=i/6*6.283;P.add(plantLeaf(.07,.025,.008,.02),[0,.01,0],[-.35,a,0],0,plantShade(col,.8));}},
+  // leaves up top, the amber root crown showing at the ground: the thing you dig for
+  root(P,R,col,stem){P.add(SK.lathe([[.001,-.02],[.07,0],[.085,.05],[.06,.09],[.001,.1]],9),[0,0,0],0,0,col);
+    for(let i=0;i<3;i++){const a=i*2.1+R();P.add(SK.limb(.14,.03,.012),[Math.sin(a)*.06,.02,Math.cos(a)*.06],[1.25,a,0],0,plantShade(col,.8));}
+    for(let i=0;i<7;i++){const a=i/7*6.283,t=.12+R()*.12;P.add(plantStalk(t,.008,.006,4),[0,.08,0],[.3,a,0],0,stem);P.add(plantLeaf(.13,.06,.012,.04),[Math.sin(a)*t*.3,.08+t,Math.cos(a)*t*.3],[-.2,a,0],0,0x4a8a28);}},
+  // moor grass: a dense tussock of fine blades, knee-high, the tops bending out
+  tussock(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,8,5,0,6.283,0,1.7),.15,7,R()*4),[0,-.02,0],0,[.14,.1,.14],stem);
+    for(let i=0;i<40;i++){const a=R()*6.283,r=R()*.1;P.add(plantBlade(.3+R()*.22,.011,.07+R()*.1),[Math.sin(a)*r,.02,Math.cos(a)*r],[0,a,0],0,plantMix(col,0x6a6a3a,R()*.45));}},
+  // tall: waist-high stalks, each ending in an arching yellow plume
+  goldenrod(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,r=R()*.1,t=.55+R()*.25,lean=(R()-.5)*.18;const bx=Math.sin(a)*r,bz=Math.cos(a)*r;
+      P.add(plantStalk(t,.011,.007,5),[bx,0,bz],[lean,a,0],0,stem);
+      for(let k=0;k<6;k++){const y=.08+k*t*.1;const la=R()*6.283;P.add(plantLeaf(.09,.022,.008,.02),[bx+Math.sin(lean)*y*Math.sin(a),y,bz+Math.sin(lean)*y*Math.cos(a)],[-.3,la,0],0,0x5a7a2a);}
+      const tx=bx+Math.sin(lean)*t*Math.sin(a),tz=bz+Math.sin(lean)*t*Math.cos(a);
+      for(let k=0;k<5;k++){const pa=a+(k-2)*.5;P.add(SK.bumpy(SK.ball(1,6,4),.2,11,k),[tx+Math.sin(pa)*.04,t-.12+k*.03,tz+Math.cos(pa)*.04],[-.9,pa,0],[.028,.028,.1],plantShade(col,.9+R()*.2));}}},
+  // a white flower spike: a leafy base and tall hooded blooms up the stem
+  flowerspike(P,R,col,stem){for(let i=0;i<7;i++){const a=i/7*6.283;P.add(plantLeaf(.13,.07,.012,.04),[0,.03,0],[-.35,a,0],0,0x3a5a28);}
+    for(let s=0;s<3;s++){const a=s*2.1+R(),t=.42+R()*.18,bx=Math.sin(a)*.04,bz=Math.cos(a)*.04;P.add(plantStalk(t,.009,.006,5),[bx,0,bz],[.06,a,0],0,stem);
+      for(let k=0;k<9;k++){const y=t*.5+k*t*.055,fa=k*2.3;P.add(SK.ball(.022,5,3),[bx+Math.sin(fa)*.022,y,bz+Math.cos(fa)*.022],[0,fa,0],[1,1.25,.9],plantShade(col,.92+R()*.1));}}},
+  // a thistle: spiny rust-red leaves up a stout stem and a bristling head
+  thistle(P,R,col,stem){for(let s=0;s<2;s++){const a=s*3+R(),t=.3+R()*.14,bx=Math.sin(a)*.05,bz=Math.cos(a)*.05;P.add(plantStalk(t,.014,.009,5),[bx,0,bz],0,0,stem);
+      for(let k=0;k<5;k++){const la=k*2.4+s,y=.04+k*t*.15;P.add(plantLeaf(.16-k*.018,.075,.01,.03),[bx,y,bz],[-.35,la,0],0,plantShade(col,.7));for(let q=0;q<3;q++)P.add(SK.cone(.006,.04,3),[bx+Math.sin(la)*(.04+q*.035),y+.012,bz+Math.cos(la)*(.04+q*.035)],[0,la,1.2],0,plantShade(col,.6));}
+      P.add(SK.ball(.04,8,6),[bx,t,bz],0,0,plantShade(col,.55));P.add(SK.bumpy(SK.lathe([[.02,0],[.045,.02],[.035,.06],[.001,.07]],8),.008,20,s),[bx,t+.01,bz],0,0,col);}},
+  // a fern: arching fronds from a crown, leaflets shrinking to the tip
+  fern(P,R,col,stem){const n=7;for(let f=0;f<n;f++){const a=f/n*6.283+R()*.3,L=.5+R()*.12,el=1.25+R()*.2;
+      let x=0,y=.02,z=0,ang=el;const seg=9,dl=L/seg;
+      for(let k=0;k<seg;k++){const nx=x+Math.sin(a)*Math.cos(ang)*dl,ny=y+Math.sin(ang)*dl,nz=z+Math.cos(a)*Math.cos(ang)*dl;
+        const w=.09*(1-k/seg)+.015;for(const sd of[-1,1])P.add(plantLeaf(w,.03,.006,.01),[nx,ny,nz],[-(ang*.4)+.05,a+sd*1.35,0],0,plantShade(col,.9+k*.02));
+        x=nx;y=ny;z=nz;ang-=.19;}
+      P.add(SK.cyl(.004,.006,.05,4),[0,.02,0],0,0,stem);}},
+  // bramble: long canes arching over and back to the ground, a leaf here and there (picked, the canes stay bare)
+  bramble(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,r=i?.08+R()*.1:0,sz=.1+R()*.05;P.take=i>1;P.add(SK.bumpy(SK.ball(1,7,5),.22,8,R()*6),[Math.sin(a)*r,.08,Math.cos(a)*r],0,[sz,sz*.7,sz],plantMix(0x3a4a22,col,.3+R()*.3));}
+    for(let c=0;c<9;c++){const a=R()*6.283,L=.5+R()*.3,seg=10;let x=0,y=0,z=0;
+      for(let k=0;k<seg;k++){const t=(k+1)/seg,ny=Math.sin(t*Math.PI)*(.26+R()*.04),nx=Math.sin(a)*L*t,nz=Math.cos(a)*L*t;
+        const dx=nx-x,dy=ny-y,dz=nz-z,d=Math.hypot(dx,dy,dz);const g=SK.cyl(.007,.008,d,4,1,true);g.translate(0,d/2,0);
+        P.take=false;P.add(g,[x,y,z],[Math.atan2(Math.hypot(dx,dz),dy),Math.atan2(dx,dz),0],0,stem);
+        if(k<seg-2)for(const sd of[1,-1]){P.take=true;P.add(plantLeaf(.08,.06,.008,.02),[nx,ny,nz],[-.1,a+sd*(1+R()*.5),0],0,plantMix(0x4a5a22,col,.35+R()*.3));}x=nx;y=ny;z=nz;}}P.take=false;},
+  // a grey-green moor shrub: a low mound of small twiggy clumps (picked, three are left on the twigs)
+  shrub(P,R,col,stem){for(let i=0;i<4;i++){const a=R()*6.283;P.add(plantStalk(.2,.012,.008,4),[0,0,0],[.5,a,0],0,stem);}
+    for(let i=0;i<9;i++){const a=R()*6.283,r=i?.08+R()*.14:0,s=.1+R()*.06;P.take=i>=3;P.add(SK.bumpy(SK.ball(1,8,6),.22,8,R()*6),[Math.sin(a)*r,.2+R()*.12-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(col,0x9aa888,R()*.4));}P.take=false;},
+  // a berry bush, knee-high and wider than tall, red clusters hanging on the outside (picked, the clusters go)
+  bush(P,R,col,stem,key){const leaf=key==='thornberry'?0x3a5a22:0x2a4a1a;
+    for(let i=0;i<5;i++){const a=R()*6.283;P.add(plantStalk(.25,.014,.01,4),[0,0,0],[.55,a,0],0,stem);}
+    const blobs=[];for(let i=0;i<11;i++){const a=R()*6.283,r=i?.14+R()*.18:0,s=.13+R()*.07,y=.3+R()*.12-r*.45;blobs.push([a,r,s,y]);P.add(SK.bumpy(SK.ball(1,8,5),.2,8,R()*6),[Math.sin(a)*r,y,Math.cos(a)*r],0,[s,s*.85,s],plantMix(leaf,0x6a8a3a,R()*.3));}
+    P.take=true;for(let c=0;c<9;c++){const [a,r,s,y]=blobs[1+Math.floor(R()*10)];const oa=a+(R()-.5)*.6,rr=r+s*.9;
+      for(let k=0;k<5;k++)P.add(SK.ball(.024,5,3),[Math.sin(oa)*rr+(R()-.5)*.04,y-.02-R()*.05,Math.cos(oa)*rr+(R()-.5)*.04],0,0,plantShade(col,.9+R()*.2));}P.take=false;},
+  lowbush(P,R,col,stem,key){const leaf=0x2a3a20;for(let i=0;i<7;i++){const a=R()*6.283,r=i?.08+R()*.12:0,s=.1+R()*.05;P.add(SK.bumpy(SK.ball(1,8,6),.2,8,R()*6),[Math.sin(a)*r,.2+R()*.08-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(leaf,0x4a5a30,R()*.3));}
+    P.take=true;for(let c=0;c<7;c++){const a=R()*6.283,r=.16+R()*.08,y=.12+R()*.16;for(let k=0;k<4;k++)P.add(SK.ball(.022,5,3),[Math.sin(a)*r+(R()-.5)*.04,y+(R()-.5)*.04,Math.cos(a)*r+(R()-.5)*.04],0,0,0x1a0a20);}P.take=false;},
+  // a young rowan: a slim grey trunk, feathered leaves and heavy red clusters, head-high to a child (picked, the clusters go)
+  sapling(P,R,col,stem){P.add(plantStalk(.75,.028,.014,6),[0,0,0],[0,0,.04],0,0x6a6258);
+    for(let b=0;b<4;b++){const a=b*1.6+R(),y=.4+b*.1;P.add(plantStalk(.24,.012,.006,4),[0,y,0],[.9,a,0],0,0x6a6258);
+      const tx=Math.sin(a)*.2,tz=Math.cos(a)*.2,ty=y+.12;
+      for(let l=0;l<5;l++){const la=a+(l-2)*.55;P.add(plantLeaf(.16,.05,.01,.04),[tx,ty,tz],[-.1,la,0],0,plantShade(0x3a6a2a,.9+R()*.2));}
+      P.take=true;for(let k=0;k<10;k++)P.add(SK.ball(.022,5,3),[tx+(R()-.5)*.08,ty-.05-R()*.06,tz+(R()-.5)*.08],0,0,plantShade(col,.9+R()*.2));P.take=false;}
+    for(let l=0;l<5;l++){const la=l*1.26;P.add(plantLeaf(.16,.05,.01,.04),[0,.76,0],[-.3,la,0],0,0x3a6a2a);}},
+  // shelves of bracket fungus on an old stump (picked, the stump is left)
+  bracket(P,R,col,stem){P.add(SK.bumpy(SK.cyl(.13,.16,.28,10,3),.012,14,2),[0,.14,0],0,0,0x4a3a2a);P.add(SK.cyl(.12,.12,.01,10),[0,.285,0],0,0,0x8a7458);
+    P.take=true;for(let i=0;i<7;i++){const a=R()*6.283,y=.05+R()*.2,w=.07+R()*.04;P.add(SK.lathe([[.001,.012],[w,.004],[w*.95,-.008],[.001,-.012]],10),[Math.sin(a)*.14,y,Math.cos(a)*.14],[0,0,0],[1,1,.7],plantShade(col,.85+R()*.3));}P.take=false;},
+  // a cluster of mushrooms: stalks and domed caps, one tall, several small
+  mushrooms(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,r=i?.06+R()*.1:0,s=i?.5+R()*.4:1.1,h=.12*s,cr=.06*s;
+      P.add(SK.lathe([[.012*s,0],[.014*s,h*.5],[.011*s,h]],6),[Math.sin(a)*r,0,Math.cos(a)*r],[0,0,(R()-.5)*.3],0,0xcfc4d0);
+      P.add(SK.lathe([[.001,-.004],[cr*.9,0],[cr,.012*s],[cr*.7,.04*s],[.001,.05*s]],9),[Math.sin(a)*r,h,Math.cos(a)*r],0,0,plantShade(col,.9+R()*.3));}}
+};
+// the baked geometry of a herb (by its HERB_DEF key), whole or picked; null for anything without a kind (the sea's herbs)
+function plantGeo(key,picked){const kind=PLANT_KIND[key],def=typeof HERB_DEF!=='undefined'&&HERB_DEF[key];if(!kind||!def)return null;
+  if(picked&&!PLANT_STAYS.has(kind))return null;
+  const k=key+(picked?'|picked':'');let g=PLANT_GEO.get(k);if(g)return g;
+  const P=new Plant(picked);if(picked){const whole=plantGeo(key,false);P.top=whole.userData.top;}
+  PLANT_BUILD[kind](P,plantRng(key),def.col,def.stemCol,key);g=P.bake();PLANT_GEO.set(k,g);return g;}
+function plantKeyOf(def){if(typeof HERB_DEF==='undefined'||!def)return null;for(const k in HERB_DEF)if(HERB_DEF[k]===def||HERB_DEF[k].name===def.name)return k;return null;}
+const PLANT_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
+
 // mkHerbMesh — global, builds herb 3D mesh into any scene
 function mkHerbMesh(hx,hz,def,sc){
   const g=new THREE.Group();
+  {const key=plantKeyOf(def),geo=key&&plantGeo(key,false);if(geo){ // v80 S167 — the herb as the plant it is
+    const m=new THREE.Mesh(geo,PLANT_MAT);m.castShadow=PLANT_SHADOW.has(PLANT_KIND[key]);m.receiveShadow=true;g.add(m);
+    const gl=new THREE.PointLight(def.glowCol,def.glowInt||.5,def.glowRad||1.6);gl.position.set(0,.28,0);g.add(gl);
+    g.position.set(hx,activeTerrainH(hx,hz),hz);sc.add(g);return{g,gl};}}
   const stemMat=new THREE.MeshLambertMaterial({color:def.stemCol});
   const leafMat=new THREE.MeshLambertMaterial({color:def.col});
   const shape=def.shape||'clump';
@@ -33597,7 +33743,7 @@ registerPlaceholderZone({
 // ═══════════════════════════════════════════════════════════════════════
 var WORLD=(()=>{
   const VC_MAT=new THREE.MeshLambertMaterial({vertexColors:true}); // one shared material for every vertex-coloured (non-instanced) mesh
-  const HERB_MAT=new THREE.MeshLambertMaterial({vertexColors:true}); // instanced without instance colour: its own program
+  const HERB_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}); // instanced without instance colour: its own program; both sides, for the plants' flat leaves (S167)
   const SIZE=2400;        // world side length
   const CHUNK=64;         // chunk side length
   const SEGS=16;          // terrain segments per chunk (4u per vertex)
@@ -35462,6 +35608,7 @@ var WORLD=(()=>{
   const HERB_GEO={};
   function herbGeoFor(type,def){
     if(HERB_GEO[type])return HERB_GEO[type];
+    {const pg=plantGeo(type,false);if(pg)return (HERB_GEO[type]=pg);} // v80 S167 — the plant's own bake
     const {g,gl}=mkHerbMesh(0,0,def,sc);if(gl&&gl.parent)gl.parent.remove(gl);sc.remove(g);g.updateMatrixWorld(true);
     const list=[];g.traverse(o=>{if(!o.isMesh)return;const mat=o.material;if(!mat||mat.isMeshBasicMaterial||mat.map)return;const geo=o.geometry;if(!geo||!geo.attributes.position)return;const src=geo.index?geo.toNonIndexed():geo;list.push([src,o.matrixWorld.clone(),(mat.vertexColors?new THREE.Color(1,1,1):mat.color)||new THREE.Color(1,1,1)]);});
     HERB_GEO[type]=list.length?mergeGeos(list):null;return HERB_GEO[type];
@@ -35471,14 +35618,27 @@ var WORLD=(()=>{
     // build one InstancedMesh per type from the chunk's herb records
     const byType={};ch.herbs.forEach(h=>{if(!h.bed){(byType[h.type]||(byType[h.type]=[])).push(h);}});
     for(const type in byType){const list=byType[type];const geo=herbGeoFor(type,HERB_DEF[type]);if(!geo)continue;
-      const im=new THREE.InstancedMesh(geo,HERB_MAT,list.length);im.castShadow=false;im.receiveShadow=true;
-      list.forEach((h,i)=>{h.inst=im;h.idx=i;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(new THREE.Vector3(0,1,0),h.ph);_hs.set(1,1,1);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
-      im.instanceMatrix.needsUpdate=true;ch.group.add(im);}
+      herbIM(type,geo,list,ch.group,h=>propH(h.x,h.z));}
   }
-  function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.set(hidden?.001:1,hidden?.001:1,hidden?.001:1);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;}
+  // one InstancedMesh per kind, and for a plant that stays when picked (a bush, a sapling) a second of its picked
+  // copy: each herb shows in one of the two, the other holding it at a thousandth of its size (syncHerbInstance)
+  function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true);
+    const mk=(g,picked)=>{const im=new THREE.InstancedMesh(g,HERB_MAT,list.length);im.castShadow=false;im.receiveShadow=true;im.userData.noBake=true;
+      list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?1:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
+      im.instanceMatrix.needsUpdate=true;group.add(im);return im;};
+    const a=mk(geo,false),b=pg?mk(pg,true):null;let cx=0,cz=0;list.forEach(h=>{cx+=h.x;cz+=h.z;});cx/=list.length;cz/=list.length;
+    HERB_IMS.push({ims:b?[a,b]:[a],x:cx,z:cz,shadow:!!kind&&PLANT_SHADOW.has(kind)});}
+  // A plant a third of a unit tall is under a pixel past about seventy units, and a chunk's herbs are one mesh per kind,
+  // so each chunk's herb meshes are drawn only within HERB_LOD.far of the player, and the tall kinds cast shadows only
+  // within HERB_LOD.shadow (S167: all 81 loaded chunks' herbs were 1.8M triangles, and their shadows another .9M)
+  const HERB_IMS=[],HERB_LOD={far:100,shadow:45};
+  function tickHerbLod(){for(let i=HERB_IMS.length-1;i>=0;i--){const r=HERB_IMS[i],im=r.ims[0];if(!im.parent||!im.parent.parent){HERB_IMS.splice(i,1);continue;}
+      const d=Math.hypot(px-r.x,pz-r.z),vis=d<HERB_LOD.far,cast=r.shadow&&d<HERB_LOD.shadow;for(const m of r.ims){m.visible=vis;m.castShadow=cast;}}}
+  function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.set(hidden?.001:1,hidden?.001:1,hidden?.001:1);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;
+    if(h.instP){_hs.setScalar(h.harvested?1:.001);_hm.compose(_hp,_hq,_hs);h.instP.setMatrixAt(h.idx,_hm);h.instP.instanceMatrix.needsUpdate=true;}} // the picked bush stands where the whole one did
   const _hy=new THREE.Vector3(0,1,0);
   let _herbSyncT=0;
-  function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;const y=propH(h.x,h.z);if(hidden!==h._shownHidden||Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._shownHidden=hidden;h._y=y;syncHerbInstance(h);}}} // v80 S132 — re-seat when the ground under a herb changes (a pad stamped after it was placed)
+  function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;const y=propH(h.x,h.z);if(hidden!==h._shownHidden||Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._shownHidden=hidden;h._y=y;syncHerbInstance(h);}}} // v80 S132 — re-seat when the ground under a herb changes (a pad stamped after it was placed)
   function spawnChunkHerbs(ch){
     if(typeof mkHerbMesh!=='function'||typeof HERB_DEF==='undefined')return;
     const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;
@@ -38626,7 +38786,7 @@ var WORLD=(()=>{
     // herbs: a hotspot ring of 18 around the water
     if(typeof HERB_DEF!=='undefined'){const biome=dominantRegion(cx,cz).r.biome;const cands=herbCandidates(biome,'water').concat(herbCandidates(biome,'tree'));if(cands.length){for(let i=0;i<18;i++){const a=r()*Math.PI*2,rr=pr+2.5+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(r()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:r()*6.28};ZONES.world.herbs.push(h);(S.herbs=S.herbs||[]).push(h);}
       // instance them onto a chunk-less mesh owned by the settlement
-      const byType={};S.herbs.forEach(h=>(byType[h.type]||(byType[h.type]=[])).push(h));for(const type in byType){const geo=herbGeoFor(type,HERB_DEF[type]);if(!geo)continue;const list=byType[type];const im=new THREE.InstancedMesh(geo,HERB_MAT,list.length);im.userData.noBake=true;list.forEach((h,i)=>{h.inst=im;h.idx=i;_hm.compose(_hp.set(h.x,worldH(h.x,h.z),h.z),_hq.setFromAxisAngle(_hy,h.ph),_hs.set(1,1,1));im.setMatrixAt(i,_hm);});im.instanceMatrix.needsUpdate=true;group.add(im);}}}
+      const byType={};S.herbs.forEach(h=>(byType[h.type]||(byType[h.type]=[])).push(h));for(const type in byType){const geo=herbGeoFor(type,HERB_DEF[type]);if(!geo)continue;const list=byType[type];herbIM(type,geo,list,group,h=>worldH(h.x,h.z));}}}
     // creatures at the water
     if(worldState.lairs&&worldState.lairs[site.id]){S.creatures=[];S._deadMarked=true;} // v80 — a lair's beast dies once
     const cl=[];const biome=dominantRegion(cx,cz).r.biome;const beast=biome==='tundra'?'Snow Wolf':biome==='fen'||biome==='swamp'?'Bog Crawler':'Boar';for(let i=0;i<3+Math.floor(r()*3);i++){const a=r()*Math.PI*2,rr=pr+4+r()*10;cl.push([i%3===2?'Wolf':beast,cx+Math.cos(a)*rr,cz+Math.sin(a)*rr,false]);}siteCreatures(S,cl);
@@ -39497,7 +39657,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
