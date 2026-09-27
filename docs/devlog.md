@@ -5461,3 +5461,16 @@ From Michael's playtest list: townsfolk waving as you walk up looks odd in the s
 
 ### Needs eyes
 Walking up to someone in a real town: whether they now look too still with no acknowledgement. A head turn towards you would be the quiet alternative, if one is wanted.
+
+## v80 — Session 186 — The hem ring sits on the hem (Playtest s162)
+Michael's playtest item: the ring at the bottom of the tunic is not attached to the fabric; weld it to the hem or drop it.
+
+The cause was plain once it was photographed side-on. The tunic's skirt (and a dress's) is a lathe squashed to .76 of its width front to back (`scale.z=.76`), so the body is oval from above. The trim torus at its hem was left round. Its sides met the cloth, but in front and behind it stood about 5 cm out from the skirt (in figure units, .217 against the skirt's .165), and in a walk that read as a hoop floating around the legs. The ring is now flattened the same way, `scale.y=.76`, since the torus's y is the body's depth once it is laid flat. Its radius also takes the 4% a woman's skirt is wider, which it had not before. The belt already did this (`.74`), which is why only the hem looked wrong. The ring stays; it is the trim colour and reads as a hem once it is on the cloth. The player's body is built by the same `personBakeQ`, so this fixes it as well.
+
+A small helper came with it, `tests/lib/closeup.mjs`: a lit portrait of a row of townsfolk on a floor, for the look sessions to take before and after pictures from.
+
+### Verified (headless Chromium)
+New check in `people.test.mjs` (11 of 11 pass, no page errors). At the hem's height the mesh's depth against its width was .97–.99 before the fix: the round ring, deeper than the skirt. It is .75 after, the skirt's own proportion, for two tunics and two dresses. Run against the old `index.html`, the check fails. Pictures: `docs/prototypes/hem-before.png` and `hem-after.png`, four townsfolk walking, side-on.
+
+### Needs eyes
+A skirt in a real walk: the thighs swing through the skirt's lathe, which is rigid on the hips, so a knee can still push through the cloth at full stride. That is the skirt, not the ring, and it would want the skirt skinned to the thighs.

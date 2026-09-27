@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s185</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s186</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9640,7 +9640,9 @@ function personBakeQ(g,q){
   // the tunic's skirt, or a dress to the shin
   const hem=g.dress?[[0,-.37],[.25,-.37],[.255,-.355],[.215,-.2],[.18,-.05],[.16,.02],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
   part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
-  part(SK.torus((g.dress?.247:.214)*bw,.012,5,22),trim,hips,0,g.dress?-.36:-.125,0).rotation.x=Math.PI/2;
+  // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
+  // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
+  {const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
   const belt=part(SK.torus(.172*bw*(fem?.96:1),.02,5,20),dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);

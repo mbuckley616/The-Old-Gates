@@ -75,6 +75,15 @@ const greet = await page.evaluate(() => { const rig = [...PEOPLE_RIGS].find(r =>
   let t = 2e6; let maxWave = 0; px = at.x + 5; pz = at.z; for (let i = 0; i < 120; i++) { px = at.x + 5 - i * .035; tickPeople(1 / 60, t += 16.7); maxWave = Math.max(maxWave, rig.w.wave); }
   rig.wavedAt = t; for (let i = 0; i < 40; i++) tickPeople(1 / 60, t += 16.7); return { walkedUpWave: +maxWave.toFixed(3), scripted: +rig.w.wave.toFixed(2), greet: PW.GREET }; });
 check('walking up to a townsperson brings no wave; a scripted wave still plays', greet.walkedUpWave < .01 && greet.scripted > .5 && greet.greet === false, greet);
+// the hem's trim ring sits on the skirt (Session 186, playtest s162): the skirt is flattened to .76 front to back and the
+// ring was round, so it stood off the cloth before and behind; at the hem's height the depth is now the skirt's .76 of the width
+const hem = await page.evaluate(() => { const out = [];
+  for (const [name, dress] of [['Aoife', false], ['Brendan', false], ['Deirdre', true], ['Maeve', true]]) { const gn = personGenome({ name, role: 'villager' }, { key: 'hemtest' }); gn.dress = dress; gn.cloak = false; gn.apron = null;
+    const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); const P = r.mesh.geometry.attributes.position; const y0 = .47 + (dress ? -.36 : -.125);
+    let dx = 0, dz = 0; for (let i = 0; i < P.count; i++) { if (Math.abs(P.getY(i) - y0) > .014) continue; dx = Math.max(dx, Math.abs(P.getX(i))); dz = Math.max(dz, Math.abs(P.getZ(i))); }
+    r.mesh.geometry.dispose(); out.push({ name, dress, width: +dx.toFixed(3), depth: +dz.toFixed(3), ratio: +(dz / dx).toFixed(2) }); }
+  return out; });
+check('the hem ring hugs the skirt front and back (tunic and dress)', hem.every(h => h.ratio < .85), hem);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
 
