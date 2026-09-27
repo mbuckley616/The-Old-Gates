@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s168</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s169</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -10091,7 +10091,7 @@ function wgDead(){const p=wgZero();p.drop=0;p.neck=[.35,0,0];p.head=[.2,0,0];p.j
   ['L','R'].forEach((K,i)=>{p['sh'+K]=[-.35-.15*i,0,0];p['el'+K]=[.3,0,0];p['wr'+K]=[.4,0,0];p['th'+K]=[.4+.2*i,0,0];p['kn'+K]=[-.3,0,0];p['hk'+K]=[.35,0,0];});return p;}
 function wgApply(rig,P){const B=rig.B;WG.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});B.hips.position.y=.40-P.drop;}
 function wgCycle(w){const a=w.trot||0,b=w.gallop||0;return a+b>.001?(a*WG.TROT.cycle+b*WG.GALLOP.cycle)/(a+b):WG.TROT.cycle;}
-// every wolf in the active scene, each frame: the stride is driven by how far the creature moved (its logical
+// every wolf (and spider, tickSpider) in the active scene, each frame: the stride is driven by how far the creature moved (its logical
 // position, so the lunge's forward lurch does not step the feet), trot below WG.GALLOP.on body-lengths a second
 function tickCreatures(dt,now){
   for(const rig of WOLF_RIGS){
@@ -10099,10 +10099,11 @@ function tickCreatures(dt,now){
     if(!g||!g.parent){WOLF_RIGS.delete(rig);try{rig.mesh.material.dispose();}catch(e){}continue;} // the geometry is the kind's, shared
     if(g.parent!==scene||!g.visible)continue;
     const e=rig.e;
-    if(e&&e.dead){if(!rig.deadPosed){rig.deadPosed=true;wgApply(rig,wgDead());}continue;}
+    if(e&&e.dead){if(!rig.deadPosed){rig.deadPosed=true;if(rig.spider)sgApply(rig,sgDead());else wgApply(rig,wgDead());}continue;}
     if(rig.geoLo){const cd=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
       const lod=rig.lod?(cd>WOLF_LOD.near?1:0):(cd>WOLF_LOD.far?1:0);
       if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod?rig.geoLo:rig.geoHi;}}
+    if(rig.spider){tickSpider(rig,g,e,dt,now);continue;}
     const x=e?e.x:g.position.x,z=e?e.z:g.position.z;
     let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>1.5)d=0;
     const s=rig.root.scale.x*(g.scale.x||1),spd=dt>0?d/dt:0;
@@ -10119,6 +10120,147 @@ function tickCreatures(dt,now){
     if(w>0||st>0)wgAttack(w,st,out);
     wgApply(rig,out);
   }
+}
+
+// ── The spider on the shape kit (backlog H.4, Session 169): the second family, built the way the wolf is ──
+// A cephalothorax and a hairy abdomen, eight legs of three bones each (a hip that swings the leg round, a femur that
+// rises from it, a tibia that comes down to the ground: the knee stands up above the body, as a spider's does), fangs,
+// palps and a cluster of eyes. The legs are placed by IK: the hip turns the leg towards its foot, then two-bone IK in
+// that plane with the knee up. It walks on the spider's alternating tetrapods (L1 R2 L3 R4, then the other four), each
+// foot planted while it carries the body. One bake per kind, shared; each spider its own skeleton and material.
+const SPIDER_KINDS={
+  'Spider':{coat:0x2a2230,band:0x6a4a3a,belly:0x3a3040,mark:0xb09060,eye:0xff2200}
+};
+// the legs: hip position on the cephalothorax (x, z), the rest angle the leg points out at (0 = straight out to the side,
+// + forwards), and the femur and tibia lengths
+const SPIDER_LEGS=[[.075,.085,.75,.22,.3],[.085,.03,.28,.24,.3],[.085,-.025,-.2,.23,.29],[.075,-.08,-.62,.25,.32]];
+const SPIDER_H=.2,SPIDER_REACH=.36;
+const SPIDER_GEO=new Map();
+function spiderSkeleton(k){
+  const bones=[],B={};
+  const bone=(name,parent,x,y,z)=>{const b=new THREE.Bone();b.name=name;b.position.set(x,y,z);if(parent)parent.add(b);b.userData.i=bones.length;bones.push(b);B[name]=b;return b;};
+  const body=bone('body',null,0,SPIDER_H,0);
+  bone('abd',body,0,.03,-.1);
+  bone('fangL',body,.03,-.02,.15);bone('fangR',body,-.03,-.02,.15);
+  // legs 0–3 on the spider's left (+x), 4–7 on its right; each hip's rest yaw points the leg out (and forward or back)
+  SPIDER_LEGS.forEach(([x,z,ang,lf,lt],i)=>{for(const s of [1,-1]){const n=(s>0?'L':'R')+i;
+    const hip=bone('hip'+n,body,s*x,0,z);hip.rotation.y=s>0?-ang:Math.PI+ang;
+    const fem=bone('fem'+n,hip,0,0,0);bone('tib'+n,fem,lf,0,0);}});
+  return {bones,B,body};
+}
+function spiderBake(k,q){SK.q=q;try{return spiderBakeQ(k,q);}finally{SK.q=1;}}
+function spiderBakeQ(k,q){
+  const {bones,B,body}=spiderSkeleton(k);const parts=[];
+  const part=(geo,col,b,x,y,z,fur)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);o.userData.geo=geo;o.userData.col=col;o.userData.fur=fur;b.add(o);parts.push(o);return o;};
+  const C=x=>new THREE.Color(x);const coat=C(k.coat),band=C(k.band),dark=C(0x0c080c);
+  // a leg segment along +x from its bone: a hairy tapered limb (SK.limb runs down -y; turned to run out along +x)
+  const seg=(b,len,r0,r1,col,hair)=>{let g=SK.limb(len,r0,r1);if(hair)g=SK.bumpy(g,hair,23,len*40);const o=part(g,col,b,0,0,0,true);o.rotation.z=Math.PI/2;return o;};
+  // the cephalothorax: a low shield, the head end raised a little; the abdomen a hairy egg behind it
+  part(SK.lathe([[0,-.13],[.07,-.12],[.11,-.07],[.12,0],[.1,.07],[.07,.12],[0,.14]],14).rotateX(Math.PI/2),coat,body,0,0,0,true).scale.set(1,.55,1);
+  part(SK.ball(.07,12,8),coat,body,0,.035,.06,true).scale.set(1,.7,1.1);
+  const AB=[.152,.12,.192],AC=[0,.035,-.15]; // the abdomen's semi-axes and centre on its bone
+  part(SK.bumpy(SK.ball(.16,14,10),.011,17,2),coat,B.abd,AC[0],AC[1],AC[2],true).scale.set(AB[0]/.16,AB[1]/.16,AB[2]/.16);
+  // the abdomen's markings, each set on its surface: a pale chevron of paired spots down the back
+  const onAbd=(x,z)=>AC[1]+AB[1]*Math.sqrt(Math.max(0,1-(x/AB[0])**2-((z-AC[2])/AB[2])**2));
+  for(let i=0;i<4;i++)for(const s of [1,-1]){const x=s*(.022+i*.011),z=-.08-i*.045;const o=part(SK.ball(.016,6,4),C(k.mark),B.abd,x,onAbd(x,z)-.003,z);o.scale.set(1.8,.45,1);o.rotation.y=s*.6;}
+  part(SK.ball(.02,6,4),C(k.mark),B.abd,0,onAbd(0,-.03)-.004,-.03).scale.set(1,.45,1.4);
+  // fangs: a stout chelicera each with a curved dark fang; palps in front
+  for(const [n,s] of [['fangL',1],['fangR',-1]]){const f=B[n];part(SK.limb(.07,.024,.017),coat,f,0,0,0,true).rotation.x=-.25;
+    const t=part(SK.cone(.01,.045,5),dark,f,0,-.075,.02);t.rotation.x=Math.PI+.6;
+    const p=part(SK.limb(.09,.012,.009),band,body,s*.05,-.01,.15,true);p.rotation.set(-.9,0,-s*.5);}
+  // eyes: two large at the front, six small around them (the glow is its own unlit mesh on the body)
+  if(q>=1)for(const [x,y,z,r] of [[.018,.07,.12,.014],[-.018,.07,.12,.014],[.04,.068,.105,.009],[-.04,.068,.105,.009],[.03,.08,.09,.008],[-.03,.08,.09,.008],[.012,.082,.1,.007],[-.012,.082,.1,.007]])part(SK.ball(r,6,4),dark,body,x,y,z);
+  // the legs: femur and tibia, hairy, a pale band at each joint, dark at the tip
+  SPIDER_LEGS.forEach(([x,z,ang,lf,lt],i)=>{for(const s of [1,-1]){const n=(s>0?'L':'R')+i;
+    part(SK.ball(.028,7,5),band,B['hip'+n],0,0,0,true);
+    seg(B['fem'+n],lf,.024,.018,coat,.004);
+    part(SK.ball(.021,7,5),band,B['tib'+n],0,0,0,true);
+    seg(B['tib'+n],lt*.62,.018,.013,coat,.003).position.x=0;
+    const ta=seg(B['tib'+n],lt*.4,.012,.007,band,0);ta.position.x=lt*.6;
+    part(SK.ball(.009,5,4),dark,B['tib'+n],lt,0,0);}});
+  // bake, the fur counter-shaded: the back a shade darker, the underside lighter, the leg joints banded
+  const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),nn=new THREE.Vector3();let base=0;
+  const bel=C(k.belly),tmp=new THREE.Color(),sad=C(k.coat).multiplyScalar(.7);
+  body.updateMatrixWorld(true);
+  for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
+    for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);nn.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(nn.x,nn.y,nn.z);
+      tmp.copy(c);if(o.userData.fur){if(nn.y>0)tmp.lerp(sad,Math.min(1,nn.y)*.5);else tmp.lerp(bel,Math.min(1,-nn.y*1.3)*.6);}
+      col.push(tmp.r,tmp.g,tmp.b);si.push(bi,0,0,0);sw.push(1,0,0,0);}
+    if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
+    base+=pa.count;geo.dispose();}
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
+  geo.computeBoundingSphere();geo.boundingSphere.radius+=.2;
+  return {geo,tris:idx.length/3};
+}
+function spiderGeo(name,q){const key=name+'|'+q;let r=SPIDER_GEO.get(key);if(!r){r=spiderBake(SPIDER_KINDS[name],q);SPIDER_GEO.set(key,r);}return r;}
+function buildSpider(name,scale){
+  const k=SPIDER_KINDS[name];const hi=spiderGeo(name,1),lo=spiderGeo(name,WOLF_LOD.q);
+  const {bones,B,body}=spiderSkeleton(k);
+  const mat=WOLF_MAT.clone();
+  const mesh=new THREE.SkinnedMesh(hi.geo,mat);mesh.add(body);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));
+  mesh.castShadow=true;mesh.receiveShadow=false;
+  // bone matrices local to the mesh, as buildPerson's and buildWolf's
+  mesh.bindMode='detached';mesh.bindMatrix.identity();mesh.bindMatrixInverse.identity();
+  {const sk=mesh.skeleton,mats=bones.map(()=>new THREE.Matrix4()),off=new THREE.Matrix4();
+    sk.update=function(){for(let i=0;i<bones.length;i++){const b=bones[i];b.updateMatrix();const p=b.parent&&b.parent.isBone?mats[b.parent.userData.i]:null;
+      if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
+      if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  // the eyes shine: the two big ones and the six small, one unlit mesh on the body
+  {const P=[],I=[];const pts=[[.018,.07,.123,.013],[-.018,.07,.123,.013],[.04,.068,.108,.008],[-.04,.068,.108,.008],[.03,.08,.093,.007],[-.03,.08,.093,.007],[.012,.082,.103,.006],[-.012,.082,.103,.006]];
+    for(const [x,y,z,r] of pts){const g1=new THREE.SphereGeometry(r,5,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+x,a[i+1]+y,a[i+2]+z);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+    const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);body.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:k.eye})));}
+  const root=new THREE.Group();root.add(mesh);root.scale.setScalar(scale||1);
+  const rig={spider:true,root,mesh,B,k,name,geoHi:hi.geo,geoLo:lo.geo,tris:hi.tris,trisLo:lo.tris,lod:0,w:{stand:1,walk:0,run:0},run:false,phase:Math.random(),v:0,lx:null,lz:null,t0:Math.random()*20,e:null,deadPosed:false};
+  root.userData.rig=rig;WOLF_RIGS.add(rig);
+  return rig;
+}
+// ── the spider's motion ──
+// SG.D: each foot on the ground for this share of the stride; the two tetrapods half a stride apart
+// SG.RUN: the chase, a longer stride with the feet down for less of it, blended in past RUN.on body-lengths a second
+const SG={S:.16,D:.55,LIFT:.07,RUN:{S:.3,D:.4,LIFT:.1,on:1.6,off:1.2},
+  group:i=>((i>>1)+(i&1))%2 // leg i (0–7: L0 R0 L1 R1 …): L0 R1 L2 R3 in one tetrapod, the rest in the other
+};
+SG.cycle=SG.S/SG.D;SG.RUN.cycle=SG.RUN.S/SG.RUN.D;
+const sgCycle=w=>{const a=w.walk||0,b=w.run||0;return a+b>.001?(a*SG.cycle+b*SG.RUN.cycle)/(a+b):SG.cycle;};
+// the rest foot of each leg in the body's frame, on the ground: out along its rest yaw by SPIDER_REACH
+const SPIDER_FEET=(()=>{const out=[];SPIDER_LEGS.forEach(([x,z,ang],i)=>{for(const s of [1,-1]){const yaw=s>0?-ang:Math.PI+ang;out.push({s,i,n:(s>0?'L':'R')+i,hx:s*x,hz:z,fx:s*x+Math.cos(yaw)*SPIDER_REACH,fz:z-Math.sin(yaw)*SPIDER_REACH});}});return out;})();
+// hip yaw, femur and tibia angles that put leg L's foot at (fx, fy, fz) in the body's frame, with the knee up
+function sgLeg(L,fx,fy,fz,lf,lt){const dx=fx-L.hx,dz=fz-L.hz,dy=fy;const yaw=Math.atan2(-dz,dx);const r=Math.hypot(dx,dz);
+  const d=Math.max(Math.abs(lf-lt)+1e-4,Math.min(Math.hypot(r,dy),lf+lt-1e-4));const ph=Math.atan2(dy,r);
+  const al=Math.acos(Math.max(-1,Math.min(1,(lf*lf+d*d-lt*lt)/(2*lf*d))));const t1=ph+al;const kx=lf*Math.cos(t1),ky=lf*Math.sin(t1);
+  const t2=Math.atan2(dy-ky,r-kx)-t1;return [yaw,t1,t2];}
+// a pose: per leg [yaw,t1,t2], the body's drop, the fangs' spread, the abdomen's tilt; feet given as offsets from rest
+function sgPose(feet,drop,fang,abd){const legs=SPIDER_FEET.map((L,k)=>{const f=feet[k];const lg=SPIDER_LEGS[L.i];return sgLeg(L,L.fx+f[0],-SPIDER_H+drop+f[1],L.fz+f[2],lg[3],lg[4]);});return {legs,drop,fang,abd};}
+function sgStand(t){const b=Math.sin(t*1.3);return sgPose(SPIDER_FEET.map(()=>[0,0,0]),.004*b,.05+.05*Math.max(0,Math.sin(t*.7)),.04*b);}
+function sgStride(ph,t,G){G=G||SG;const h=G.S/2;const a=Math.PI*2*ph;
+  const feet=SPIDER_FEET.map((L,k)=>{const u=((ph+.5*SG.group(k))%1+1)%1;if(u<G.D)return [0,0,h-G.S*u/G.D];const s=(u-G.D)/(1-G.D),e=s*s*(3-2*s);return [0,G.LIFT*Math.sin(Math.PI*s),-h+G.S*e];});
+  return sgPose(feet,(G===SG?.012:.03)+.006*Math.cos(a*2),.05,.03*Math.sin(a*2));}
+// the attack: winding up, it rears, the front legs rising off the ground and the fangs spreading; the strike drops it forward
+function sgAttack(w,s,P){const feet=SPIDER_FEET.map(L=>L.i===0?[0,.2*w*(1-s)+.02*s,.06*w+.12*s]:L.i===1?[0,.05*w*(1-s),.03*s]:[0,0,-.03*w]);
+  const q=sgPose(feet,-.035*w*(1-s)+.03*s,.1+.5*w*(1-s)+.2*s,-.15*w);const k=Math.min(1,Math.max(w,s));
+  P.legs=P.legs.map((l,i)=>l.map((x,j)=>x+(q.legs[i][j]-x)*k));P.drop+=(q.drop-P.drop)*k;P.fang+=(q.fang-P.fang)*k;P.abd+=(q.abd-P.abd)*k;return P;}
+// dead: the legs curl in under the body
+function sgDead(){return {legs:SPIDER_FEET.map(L=>[L.s>0?-SPIDER_LEGS[L.i][2]:Math.PI+SPIDER_LEGS[L.i][2],-.5,-2.2]),drop:.1,fang:.2,abd:-.1};}
+function sgApply(rig,P){const B=rig.B;SPIDER_FEET.forEach((L,k)=>{const [y,t1,t2]=P.legs[k];B['hip'+L.n].rotation.y=y;B['fem'+L.n].rotation.z=t1;B['tib'+L.n].rotation.z=t2;});
+  B.body.position.y=SPIDER_H-P.drop;B.abd.rotation.x=P.abd;B.fangL.rotation.set(-P.fang*.4,0,P.fang);B.fangR.rotation.set(-P.fang*.4,0,-P.fang);}
+function tickSpider(rig,g,e,dt,now){
+  const x=e?e.x:g.position.x,z=e?e.z:g.position.z;
+  let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>1.5)d=0;
+  const s=rig.root.scale.x*(g.scale.x||1),spd=dt>0?d/dt:0;rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.12));
+  if(!rig.run&&rig.v/s>SG.RUN.on)rig.run=true;else if(rig.run&&rig.v/s<SG.RUN.off)rig.run=false;
+  rig.phase=(rig.phase+d/(sgCycle(rig.w)*s))%1;
+  const mode=rig.v>.05?(rig.run?'run':'walk'):'stand';const k=1-Math.exp(-dt/.1);for(const m in rig.w)rig.w[m]+=((m===mode?1:0)-rig.w[m])*k;
+  const t=now/1000+rig.t0;let P=null,tot=0;
+  // blend the motions by weight; a hip's yaw is taken the short way round
+  for(const m in rig.w){const wm=rig.w[m];if(wm<.001)continue;const q=m==='stand'?sgStand(t):sgStride(rig.phase,t,m==='run'?SG.RUN:SG);tot+=wm;
+    if(!P){P={legs:q.legs.map(l=>l.map(x=>x*wm)),drop:q.drop*wm,fang:q.fang*wm,abd:q.abd*wm,ref:q.legs};continue;}
+    q.legs.forEach((l,i)=>l.forEach((x,j)=>{let y=x;if(j===0){const r=P.ref[i][0];while(y-r>Math.PI)y-=Math.PI*2;while(r-y>Math.PI)y+=Math.PI*2;}P.legs[i][j]+=y*wm;}));P.drop+=q.drop*wm;P.fang+=q.fang*wm;P.abd+=q.abd*wm;}
+  P.legs=P.legs.map(l=>l.map(x=>x/tot));P.drop/=tot;P.fang/=tot;P.abd/=tot;
+  const w=e?(e._wind||0):0,st=e&&e._lunge!=null?Math.sin(Math.max(0,e._lunge)/.3*Math.PI):0;
+  if(w>0||st>0)sgAttack(w,st,P);
+  sgApply(rig,P);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -14308,6 +14450,9 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey){
     wolfRig=buildWolf(type,sc2);g.add(wolfRig.root);
     limbs.torso=wolfRig.mesh; // the wind-up's red and the parry's flash light this wolf's own material
     limbs.wolf=wolfRig;
+  }
+  else if(d.shape==='spider'&&SPIDER_KINDS[type]){ // v80 S169 — the spider on the shape kit: eight IK legs on alternating tetrapods
+    wolfRig=buildSpider(type,sc2);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(d.shape==='wolf'){
     const body=new THREE.Mesh(new THREE.BoxGeometry(.45*sc2,.3*sc2,.7*sc2),mat);body.position.y=.32*sc2;g.add(body);
