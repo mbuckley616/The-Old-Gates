@@ -5923,3 +5923,24 @@ New `tests/trolls.test.mjs`, 7 checks, all passing, no page errors. The Forest a
 
 ### Needs eyes
 A troll in a real fight: whether the maul reads as a weapon at fighting distance and whether its strike, which swings the right arm as a bandit's does, looks heavy enough for a troll (it is the same pose, slower only because the troll's attack is). Whether a Frost Troll's white hair and pale hide read against snow. The Ogre and Cave Bear are brutes too and keep their boxes: they were not in the prototype, and the bear wants four legs.
+
+## v80 — Session 209 — The golem on the people's bones (H.4, Michael's B)
+The second of the four creatures in Michael's answer on Session 201. The golem appears only in dungeons (the elemental, deep and ruins themes), and until now it was the brute's boxes in grey.
+
+**What changed.** A golem is a genome with `g.golem`, and `personBake` handles it the way it handles the skeleton: none of the flesh, hair or clothes is hung on the bones. On the same bones go dressed stone blocks on the kit's rounded box (`SK.rbox`), baked into the one skinned mesh:
+- a pelvis block, a chest block and a shoulder slab across the top, a neck stone;
+- a head block with a brow ledge;
+- a rounded boulder at each shoulder, upper-arm and forearm blocks, a block for a fist;
+- thigh and shin blocks sized to the legs' own lengths (`PW.L1`, `PW.L2`, so they follow `PW.LEGK`), and a flat foot.
+
+Each block takes its own tone of the stone (±6% from the seed), with the pelvis, fists and feet darker. The rune-light is three small unlit strokes hung on the bones, the way the skeleton's burning eyes are hung: a slit across the face and an X on the chest (Session 201 chose the X so it would not read as the Church's cross). A golem carries nothing.
+
+One change from the prototype. There the arms were tucked behind the chest block and did not show from the front. The golem's build is now 1.5, which sets the shoulder bones out to the chest's edge, so the arms hang at its sides and can be seen to swing.
+
+`FOE_DRESS.Golem` routes it through Session 208's brute path, and the fight still reads it as a brute (posture family `brute`).
+
+### Verified (headless Chromium)
+New `tests/golem.test.mjs`, 6 checks, all passing, no page errors. A golem is one skinned mesh of 3,616 triangles, and every vertex is a grey (100% within .08 of neutral), with no weapon. Its runes are three unlit meshes, on the head and spine bones. It is .92 wide in figure units against a bandit's .49. In a deep dungeon at level 6 the golem is a person, linked to its enemy and in the rig set, with posture family `brute`. Moved .8 units a second it walks (walk 1). Picture: `docs/prototypes/golem-ingame.png`.
+
+### Needs eyes
+A golem in a dungeon's torchlight: whether the stone reads against the dressed-stone walls (the two greys are close), and whether the runes are bright enough, or too bright. A dead golem's runes stay lit. Dimming them on death would be a small follow-up, if wanted.

@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s208</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s209</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9650,7 +9650,7 @@ function personBakeQ(g,q){
   const parts=[];
   // a skeleton (g.skel, S172) is laid out on the same bones but none of the flesh, hair or clothes is hung on them:
   // until bodyOpen, a part is thrown away; the bones go on after the skeleton is built (skelParts below)
-  let bodyOpen=!g.skel;const eyes=[]; // where the eyes went (buildFoe hangs a glow there for the dead)
+  let bodyOpen=!g.skel&&!g.golem;const eyes=[]; // where the eyes went (buildFoe hangs a glow there for the dead)
   const part=(geo,col,b,x,y,z)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);if(!bodyOpen){geo.dispose();return o;}o.userData.geo=geo;o.userData.col=col;b.add(o);parts.push(o);return o;};
   const C=x=>(x&&x.isColor)?x:new THREE.Color(x);const mixC=(a,b,t)=>C(a).clone().lerp(C(b),t);
   const bw=g.build,fem=g.female,hs=g.head;
@@ -9809,6 +9809,16 @@ function personBakeQ(g,q){
     if(E.quiver){part(SK.cyl(.04,.035,.34,8),C(0x5a3a20),spine,.09,.2,-.14).rotation.z=-.35;for(let i=0;i<3;i++)part(SK.cyl(.006,.006,.1,4),C(0xd8d0c0),spine,.1+i*.015,.4+i*.01,-.14).rotation.z=-.35;}}
   if(g.extras.includes('satchel')){part(new THREE.BoxGeometry(.14,.16,.06),C(0x5a7a30),hips,-.2*bw,-.02,.06);part(SK.cyl(.03,.04,.16,6),C(0x4a8a28),hips,-.2*bw,.1,.06).rotation.z=.3;}
   if(g.extras.includes('bag'))part(new THREE.BoxGeometry(.13,.13,.08),C(0x8a6030),hips,-.21*bw,-.05,.05);
+  // S209 — a golem (Michael's answer on Session 201): dressed stone blocks on the people's bones and none of the flesh;
+  // each block its own tone of the stone, bevelled; the rune-light is hung on the bones by buildFoe (unlit)
+  if(g.golem){bodyOpen=true;const gr=pRng(g.seed+13),s0=C(g.skin),tone=k=>s0.clone().multiplyScalar(k*(.94+gr()*.12));
+    const blk=(b,w,h,d,x,y,z,k)=>part(SK.rbox(w,h,d,Math.min(w,h,d)*.18,2),tone(k||1),b,x,y,z);
+    blk(B.hips,.38,.22,.28,0,-.02,0,.86);blk(B.spine,.5,.42,.34,0,.2,0);blk(B.spine,.58,.14,.37,0,.38,0,.86);
+    blk(B.neck,.13,.1,.13,0,.03,0,.8);blk(B.head,.24,.22,.22,0,.1,.01);blk(B.head,.26,.05,.09,0,.165,.075,.86);
+    ['L','R'].forEach((k,i)=>{const sd=i===0?1:-1;const sh=B['sh'+k];part(SK.ball(.11,8,6),tone(.9),sh,sd*.02,.02,0).scale.set(1,.8,1);
+      blk(sh,.17,.2,.17,0,-.1,0);blk(B['el'+k],.15,.18,.15,0,-.09,0);blk(B['wr'+k],.17,.13,.13,0,-.06,0,.86);
+      blk(B['th'+k],.19,PW.L1*.86,.19,0,-PW.L1/2,0);blk(B['kn'+k],.16,PW.L2*.86,.16,0,-PW.L2/2,0);blk(B['an'+k],.18,.08,.26,0,-.03,.04,.86);});
+  }
   if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
   // bake: every part into one geometry, each vertex bound to its bone
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
@@ -9874,6 +9884,7 @@ const FOE_DRESS={
   // tusked, in a hide tunic, carrying a maul; the hide by where they live
   'Cave Troll':    {troll:true,skin:0x6e7a5c,skin2:0x5a664c,hair:0x3a3e30,eye:0xd0a020,cloth:0x4e4030,gear:'maul'},
   'Forest Troll':  {troll:true,skin:0x5a6e40,skin2:0x4a5a34,hair:0x2e3420,eye:0xd8b030,cloth:0x4a3a26,gear:'maul'},
+  'Golem':         {golem:true,skin:0x7c776e,rune:0x6ab0ff}, // S209 — dressed stone on the people's bones, a blue rune-light in the seams
   'Frost Troll':   {troll:true,skin:0xaebac2,skin2:0x96a4ae,hair:0xe0e4e8,eye:0x70b0ff,cloth:0x5a5048,gear:'maul'}
 };
 function buildFoe(type,x,z,genome,eyeCol){
@@ -9888,6 +9899,7 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.troll){const r=pRng(g.seed+11);g.troll=true;g.skin=new THREE.Color(dr.skin).lerp(new THREE.Color(dr.skin2),r());g.height=1;g.build=1.75;g.head=1.15;g.age='elder';g.beard='none';g.hat='none';
       g.style=r()<.5?'buzz':'shaggy';g.hair=new THREE.Color(dr.hair);g.nose=[2.2,1.8];g.ears=1.3;g.eye=new THREE.Color(dr.eye);g.ruddy=false;g.freckles=false;g.female=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=g.skin.clone();g.legs=g.skin.clone().multiplyScalar(.9);g.boot=g.skin.clone().multiplyScalar(.7);g.bodyScale=[1.15,1,1.1];}
+    if(dr.golem){g.golem=true;g.skin=new THREE.Color(dr.skin);g.build=1.5;g.height=1;g.gear=null;g.hat='none';g.female=false;g.rune=dr.rune;}
     if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
     if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
@@ -9896,6 +9908,9 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=.68;rig.mesh.castShadow=false;}
+  // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
+  if(g.golem){const rm=new THREE.MeshBasicMaterial({color:g.rune||0x6ab0ff});const hang=(b,w,h,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.02),rm);m.position.set(x,y,z);m.rotation.z=rz||0;b.add(m);return m;};
+    rig.runes=[hang(rig.B.head,.15,.026,0,.11,.126),hang(rig.B.spine,.022,.3,0,.2,.175,.6),hang(rig.B.spine,.022,.3,0,.2,.175,-.6)];}
   // a skeleton's eyes burn in its sockets (the enemy's eye colour), one small unlit mesh on the head
   if((g.skel||g.dead)&&eyeCol!=null){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
