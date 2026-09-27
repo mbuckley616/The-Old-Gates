@@ -19,10 +19,13 @@ Co-op (a friend joins your world with their character) and perhaps a PvP arena. 
 ## Not this
 A heavyweight download. A punishing Souls-like. Systems that reduce to *buy more/better*. Placeholder plainness kept because it was there first.
 
-## Open questions (Michael to answer)
-- Who is the player? A solo adult who loves the Elder Scrolls; anyone else?
-- A session of play: twenty minutes on a laptop, or evenings?
-- Death: what does it cost?
-- How much of the story is authored versus emergent?
-- Difficulty: one setting, or a choice?
-- Scale: one continent deep, or the whole map wide?
+## Answered by Michael (27 Sep 2026)
+- **The player** is Michael, solo — with a way to host your world and have up to three friends join it (summoned, in the lore's terms). Design single-player first; never build something that makes hosting impossible.
+- **A session** is one to three hours, an evening. The game may ask for a long stretch: deep dungeons, journeys, plots that need the time. Save freely; don't chop the world into twenty-minute pieces.
+- **Death** costs a reload, nothing more.
+- **Story**: roughly 30% authored main quest; the rest factions, nations and other plotlines, in the Elder Scrolls' manner.
+- **Difficulty** is fixed: one tuned experience, the same for everyone in a shared world.
+- **Scale**: the whole world eventually. Build one continent deep first (Home, where the game starts); the others follow as expansions — but sailing already reaches them, so the far continents must stay coherent: fewer quests, not broken ones.
+
+## How to use this brief
+A proposal that serves the three feelings and respects the constraints (browser, laptop, hostable) is in scope. One that adds a system without a decision in it, or without progression, or that only a download could carry, is not. When two goods conflict, the order is: decisions with consequences, then progression, then combat and movement, then look.
