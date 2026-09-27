@@ -5705,3 +5705,16 @@ New `tests/mimic.test.mjs`, 4 checks, all passing, no page errors (a level-8 cha
 
 ### Needs eyes
 A mimic in real play: whether the bite reads in time to block. The chests at their real sizes: the strongbox at .6 scale and a home's chest at .45.
+
+## v80 — Session 199 — The Shieldbearer on the people's body (H.4)
+Session 196 left the dungeon's Shieldbearer on the box, because its shield hung on the box's arm pivot. The open world's Bandit Captain solved the same problem in Session 175: the shield goes on the person's left shoulder bone, and `tickPeople` holds the guard across the body while `shieldUp` is true. So the Shieldbearer now does the same.
+
+**What changed.** `FOE_DRESS` has a Shieldbearer (a helm, a steel-blue coat, a club), and `buildEnemy` no longer excludes shield-carriers from the people's body. For a person, `limbs.armL` is the left shoulder bone. `attachShieldProp` gets scale 1, since the bone is already inside the scaled figure. The raised guard's sideways turn is −.5 (a person's arm swings in the other sense from the box's). The rules around the shield are untouched: the frontal reduction, the power attack breaking the guard (`dropShieldGuard`) and the recovery (`reraiseGuard`) all read `e.shieldUp` and `limbs.shieldArm`, as before.
+
+The same session measured the frame cost of Session 194's detailed houses in Dunmore's square on the headless machine. With the detailed clusters showing, a render takes 13.5 ms (848k triangles, 771 calls); with their plain copies it takes 14.1 ms (755k, 771). That is the same within the noise, so the 70/80-unit swap stays as it is.
+
+### Verified (headless Chromium)
+`dungeonfoes.test.mjs` has a new check (4 of 4, no page errors). In a goblin dungeon at level 5 the Shieldbearer is a person. Its shield hangs from the left shoulder bone, which a tick of `tickPeople` holds at −1.15 with the guard up.
+
+### Needs eyes
+A Shieldbearer fight in a real dungeon: the shield's size on a person (it was sized for the box's arm), and the guard dropping on a power attack and coming back up.

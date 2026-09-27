@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s198</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s199</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9853,6 +9853,7 @@ const FOE_DRESS={
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
+  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',gear:'stick'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
   'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
   'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'} // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
 };
@@ -23308,8 +23309,8 @@ function buildDungeon(portal){
     const g=new THREE.Group();const mat=new THREE.MeshLambertMaterial({color:d.col});const sc=d.scale;const limbs={};
     // S196 — the dungeon's skeletons, goblins and kobold thieves on the people's body, as in the open world (H.4);
     // the rest of the humanoid roster (the Shieldbearer and its shield) keeps the box for now
-    if(d.buildFn==='humanoid'&&name&&FOE_DRESS[name]&&!d.shieldUp){const pr=buildFoe(name,Math.random()*999,Math.random()*999,null,d.eyeCol);pr.root.scale.multiplyScalar(sc);g.add(pr.root);
-      limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;
+    if(d.buildFn==='humanoid'&&name&&FOE_DRESS[name]){const pr=buildFoe(name,Math.random()*999,Math.random()*999,null,d.eyeCol);pr.root.scale.multiplyScalar(sc);g.add(pr.root);
+      limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;if(d.shieldUp)limbs.armL=pr.B.shL; // S199 — the shield goes on the left shoulder bone
       const eyeGl=new THREE.PointLight(d.eyeCol,.35,1.4);eyeGl.position.set(0,1.1*sc,.25*sc);g.add(eyeGl);}
     else if(d.buildFn==='humanoid'){
       const legH=0.32*sc;
@@ -23494,7 +23495,7 @@ function buildDungeon(portal){
       const scaledSpd=d.spd*ds.spd*(dmgMult>1?1.1:1);
       const{g,hpFg,limbs}=buildEnemy(d,name);
       // v71 — Shieldbearer: build + raise the shield prop on the left arm.
-      if(d.shieldUp) attachShieldProp(g, limbs, d.scale);
+      if(d.shieldUp){ attachShieldProp(g, limbs, limbs.person?1:d.scale); if(limbs.person){limbs.shieldArmUpZ=-.5;limbs.shieldArm.rotation.z=-.5;} } // S199 — a person's guard, as the captain's (S175)
       const baseYe=(d.buildFn==='wraith'?.3:0)+baseY;
       g.position.set(ec,baseYe,er);dScene.add(g);
       const el=new THREE.PointLight(d.light,.7,4);el.position.set(ec,baseY+.8,er);dScene.add(el);
