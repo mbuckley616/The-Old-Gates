@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Parchment UI</title>
+<!-- The Old Gates — UI style page (concept, 27 Sep 2026). Parchment and ink in Oblivion's manner, original art in CSS and SVG:
+     no images but the game's own screenshots (backdrop.png, map-crop.png, mini-crop.png). Every number and line is from build s171.
+     Each .screen is 1280×720; shoot.mjs photographs them one by one. The fonts are in fonts/ (OFL, 290 KB). -->
+<link href="fonts/fonts.css" rel="stylesheet"><!-- EB Garamond, IM Fell English (OFL), from Google Fonts, kept beside the page -->
+<style>
+:root{
+  /* paper */
+  --paper-hi:#ecdcb2; --paper:#e0c994; --paper-lo:#c9ab6e; --paper-edge:#7a4e1e;
+  /* ink */
+  --ink:#2e1c0c; --ink-soft:#5a4128; --ink-faint:#8a7050; --rubric:#7a1f10; --gilt:#9a7020;
+  /* metal (HUD only) */
+  --iron:#1c1812; --iron-hi:#3a3226; --bronze:#a07a38; --bronze-hi:#d8b46a; --bronze-lo:#5a4018;
+  /* vitals */
+  --hp:#a8281c; --hp-hi:#d8503a; --mp:#2c5aa6; --mp-hi:#5a8ad8; --st:#3c7e2e; --st-hi:#6aac48;
+  --display:'IM Fell English SC',Georgia,serif; --fell:'IM Fell English',Georgia,serif; --body:'EB Garamond',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141008;color:#e8dcc0;font:15px/1.4 var(--body);padding:24px 0}
+h1.page{font:28px var(--display);text-align:center;color:#e0c994;margin:8px 0 2px}
+p.lede{max-width:1100px;margin:0 auto 18px;text-align:center;color:#b8a888}
+.cap{width:1280px;margin:28px auto 8px;font:17px var(--display);color:#e0c994;letter-spacing:.04em}
+.cap small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:10px}
+.screen{width:1280px;height:720px;margin:0 auto;position:relative;overflow:hidden;background:#000 url(backdrop.png) center/cover;font-family:var(--body)}
+.screen.menu::before{content:"";position:absolute;inset:0;backdrop-filter:blur(3px) brightness(.42) sepia(.35);z-index:0}
+svg.ico{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.15em;flex:none}
+.num{font-variant-numeric:lining-nums tabular-nums}
+
+/* ───────── parchment ───────── */
+.parch{position:absolute;isolation:isolate;color:var(--ink);z-index:2}
+.parch::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:4px;
+  background:
+    radial-gradient(ellipse at 50% 42%,rgba(255,250,230,.35) 0,transparent 45%),
+    radial-gradient(ellipse at 50% 50%,transparent 58%,rgba(110,60,15,.30) 88%,rgba(80,40,8,.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .28  0 0 0 0 .08  0 0 0 -1.6 .9'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .06  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+    linear-gradient(170deg,var(--paper-hi),var(--paper) 55%,var(--paper-lo));
+  filter:url(#deckle) drop-shadow(0 14px 22px rgba(0,0,0,.6));}
+.parch.small::before{filter:url(#deckle-s) drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.rule{height:9px;margin:6px 0 8px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='9' preserveAspectRatio='none'><path d='M0 4.5 Q200 2.5 400 4.5' stroke='%235a4128' stroke-width='1.1' fill='none'/><path d='M40 6.5 Q200 5.2 360 6.5' stroke='%235a4128' stroke-width='.5' fill='none' opacity='.6'/></svg>") center/100% 100% no-repeat}
+.h{font:22px/1 var(--display);color:var(--rubric);letter-spacing:.02em}
+.h2{font:15px/1 var(--display);color:var(--ink-soft);letter-spacing:.08em}
+.meta{font:italic 14px var(--fell);color:var(--ink-soft)}
+.faint{color:var(--ink-faint)}
+.seal{position:absolute;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#f0d8b0;font:20px var(--display);
+  background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 55%,#5a0e08);box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,200,170,.35),0 3px 6px rgba(0,0,0,.5);
+  clip-path:polygon(50% 0,62% 4%,74% 2%,82% 11%,94% 16%,95% 29%,100% 40%,96% 52%,100% 64%,93% 74%,90% 87%,78% 92%,68% 100%,55% 96%,44% 100%,33% 94%,20% 96%,12% 86%,4% 77%,5% 64%,0 52%,4% 40%,2% 27%,10% 17%,20% 10%,32% 3%)}
+
+/* hub sheet and tabs */
+.sheet{left:52px;top:62px;width:1176px;height:620px;padding:22px 34px 0}
+.tabs{position:absolute;left:84px;top:18px;display:flex;gap:6px;z-index:1}
+.tab{position:relative;isolation:isolate;padding:9px 18px 14px;font:17px/1 var(--display);color:var(--ink-soft);display:flex;gap:8px;align-items:center}
+.tab::before{content:"";position:absolute;inset:0 0 -6px;z-index:-1;border-radius:6px 6px 0 0;background:linear-gradient(#c7a86c,#b18f55);filter:url(#deckle-s) drop-shadow(0 -2px 3px rgba(0,0,0,.4))}
+.tab.on{color:var(--rubric);top:-4px;z-index:3}
+.tab.on::before{background:linear-gradient(#ead9ae,#e6d3a6);inset:0 0 -14px}
+.tab .ico{font-size:19px}
+.close{right:-14px;top:-14px}
+.vitals{position:absolute;left:34px;right:34px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;font:15px var(--body)}
+.vital{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.vital b{font:15px var(--display);font-weight:400}
+.ibar{height:10px;border:1px solid var(--ink-soft);border-radius:1px;background:rgba(80,50,20,.12);position:relative;overflow:hidden}
+.ibar i{position:absolute;left:0;top:0;bottom:0;opacity:.85}
+.ibar i::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 3px,rgba(255,240,210,.18) 3px 4px)}
+
+/* lists */
+.cols{display:grid;grid-template-columns:30px 1fr 160px 54px 64px;gap:0 10px;align-items:center}
+.lh{font:13px var(--display);letter-spacing:.1em;color:var(--ink-faint);padding:0 10px 4px}
+.row{padding:6px 10px;font-size:17px;border-bottom:1px solid rgba(90,65,40,.18)}
+.row svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.row.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.04));box-shadow:inset 3px 0 var(--rubric)}
+.row.sel .n{color:var(--rubric)}
+.r{text-align:right}
+.qty{font:italic 14px var(--fell);color:var(--ink-faint);margin-left:6px}
+.subtabs{display:flex;gap:22px;font:16px var(--display);color:var(--ink-faint);margin:2px 0 8px 10px}
+.subtabs .on{color:var(--ink);border-bottom:2px solid var(--rubric)}
+
+/* paper-doll */
+.doll{display:grid;grid-template-columns:repeat(3,66px);grid-auto-rows:60px;gap:6px;justify-content:center}
+.slot{border:1.5px solid var(--ink-soft);border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:10px var(--display);letter-spacing:0;white-space:nowrap;color:var(--ink-faint);background:rgba(120,80,30,.07);box-shadow:inset 0 0 0 3px rgba(224,201,148,.8),inset 0 0 0 4px rgba(90,65,40,.35)}
+.slot svg.ico{width:28px;height:28px;color:var(--ink-faint);opacity:.55}
+.slot.full .ico{color:var(--ink);opacity:1}
+.slot.full{color:var(--ink-soft)}
+.gap{visibility:hidden}
+
+/* ───────── HUD (metal) ───────── */
+.plate{position:absolute;background:linear-gradient(#2c261c,#15110b);border:1px solid var(--bronze-lo);box-shadow:inset 0 0 0 1px rgba(216,180,106,.35),inset 0 1px 0 rgba(255,230,170,.25),0 3px 10px rgba(0,0,0,.6);border-radius:6px;z-index:3}
+.roundel{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:36px;color:#e6cf9a;
+  background:radial-gradient(circle at 50% 40%,#3a3124,#15110b 70%);border:3px solid var(--bronze);box-shadow:inset 0 0 0 1px var(--bronze-lo),inset 0 2px 6px rgba(0,0,0,.8),0 0 0 1px #0a0806,0 2px 6px rgba(0,0,0,.6)}
+.roundel.dim{color:#6a5a40}
+.hbar{position:relative;height:10px;border-radius:5px;background:#0b0906;box-shadow:inset 0 1px 2px #000,0 0 0 1px var(--bronze-lo),0 0 0 2px rgba(216,180,106,.25);overflow:hidden}
+.hbar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.hbar i::after{content:"";position:absolute;left:2px;right:2px;top:1px;height:3px;border-radius:2px;background:rgba(255,255,255,.28)}
+.hp i{background:linear-gradient(var(--hp-hi),var(--hp))} .mp i{background:linear-gradient(var(--mp-hi),var(--mp))} .st i{background:linear-gradient(var(--st-hi),var(--st))}
+.hudtxt{font:13px var(--body);color:#e6d4a8;text-shadow:0 1px 2px #000,0 0 6px #000}
+.compass{position:absolute;height:34px;width:380px;border-radius:17px;overflow:hidden;background:linear-gradient(#1f1a12,#0d0a07);box-shadow:inset 0 1px 4px #000,0 0 0 2px var(--bronze-lo),0 0 0 3px var(--bronze),0 0 0 4px #0a0806,0 3px 10px rgba(0,0,0,.6);z-index:3}
+.compass .strip{position:absolute;inset:0;display:flex;align-items:center;font:15px var(--display);color:#d8c290}
+.compass .strip span{position:absolute;transform:translateX(-50%)}
+.compass .tick{width:1px;height:8px;background:#8a7450;top:13px}
+.compass .n{color:#e8b050;font-size:19px}
+.compass::after{content:"";position:absolute;left:50%;top:0;width:0;height:0;border:6px solid transparent;border-top-color:var(--bronze-hi);transform:translateX(-50%)}
+.mini{position:absolute;width:150px;height:150px;border-radius:50%;background:url(mini-crop.png) center/115%;filter:sepia(.55) saturate(.8) contrast(1.05);box-shadow:inset 0 0 18px rgba(40,20,5,.7);z-index:3}
+.miniring{position:absolute;width:162px;height:162px;border-radius:50%;box-shadow:0 0 0 5px var(--bronze),0 0 0 6px #0a0806,inset 0 0 0 1px var(--bronze-lo),0 4px 12px rgba(0,0,0,.6);z-index:4}
+.miniring b{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:14px var(--display);color:#f0d8a0;background:radial-gradient(#3a3124,#15110b);border:2px solid var(--bronze);width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.ribbon{position:absolute;padding:6px 34px 7px;font:22px var(--display);color:var(--ink);z-index:3}
+.xh{position:absolute;left:640px;top:360px;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,245,220,.85);box-shadow:0 0 0 1px rgba(0,0,0,.6);z-index:3}
+.prompt{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;font:17px var(--body);color:#f0e2c0;text-shadow:0 1px 3px #000,0 0 8px #000;z-index:3}
+.key{font:14px var(--display);width:26px;height:26px;display:grid;place-items:center;border-radius:4px;color:#2e1c0c;background:linear-gradient(#ecdcb2,#c9ab6e);box-shadow:0 0 0 1px #5a4018,0 2px 3px rgba(0,0,0,.6);text-shadow:none}
+.cbar{position:absolute;right:14px;bottom:8px;font:13px var(--body);color:rgba(240,226,192,.85);text-shadow:0 1px 2px #000,0 0 5px #000;z-index:3}
+.dp{position:absolute;right:22px;bottom:92px;display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:4px;z-index:3}
+.dp div{border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(58,49,36,.85),rgba(21,17,11,.85));border:2px solid rgba(160,122,56,.8);color:#d8c290;display:grid;place-items:center;font-size:14px}
+
+/* dialogue */
+.dlg{left:260px;top:372px;width:760px;height:320px;padding:26px 40px 18px 40px}
+.dlg .who{display:flex;gap:16px;align-items:center}
+.dlg .line{font:20px/1.45 var(--body);margin:4px 0 10px;color:var(--ink)}
+.topics{display:grid;grid-template-columns:1fr 1fr;gap:2px 34px}
+.topic{font:18px/1.2 var(--body);padding:6px 4px;display:flex;gap:10px;border-bottom:1px dotted rgba(90,65,40,.35)}
+.topic i{font:italic 15px var(--fell);color:var(--ink-faint);width:14px;text-align:right}
+.topic.new{color:var(--rubric)}
+.topic.new::after{content:"❧";margin-left:auto;color:var(--gilt);font-size:15px}
+.topic.old{color:var(--ink-faint)}
+.foot{position:absolute;left:40px;right:40px;bottom:14px;font:italic 13px var(--fell);color:var(--ink-faint);display:flex;justify-content:space-between}
+
+/* magic */
+.school{font:14px var(--display);letter-spacing:.1em;color:var(--rubric);margin:10px 0 2px;display:flex;align-items:center;gap:8px}
+.school .ico{font-size:18px}
+.spell{display:grid;grid-template-columns:190px 1fr 70px;gap:10px;align-items:baseline;padding:4px 8px;font-size:16px;border-bottom:1px solid rgba(90,65,40,.14)}
+.spell .nm{font:18px var(--body);font-weight:500}
+.spell .gl{font:italic 13px var(--fell);color:var(--ink-faint);margin-left:6px}
+.spell.lock{color:var(--ink-faint)} .spell.lock .nm{font-weight:400}
+.spell.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.spell.sel .nm{color:var(--rubric)}
+
+/* attributes */
+.attr{display:grid;grid-template-columns:28px 150px 40px 1fr;gap:10px;align-items:center;padding:5px 0;font-size:18px;border-bottom:1px solid rgba(90,65,40,.14)}
+.attr .v{font:22px var(--display);text-align:right;color:var(--ink)}
+.pips{display:flex;gap:4px}
+.pips span{width:13px;height:13px;border:1.2px solid var(--ink-soft);transform:rotate(45deg) scale(.8)}
+.pips span.f{background:var(--ink-soft)}
+.dv{display:flex;justify-content:space-between;font-size:17px;padding:4px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+
+/* style sheet */
+.sw{display:flex;flex-direction:column;align-items:center;gap:4px;font:12px var(--body);color:var(--ink-soft);width:72px;text-align:center}
+.sw i{width:56px;height:30px;border-radius:3px;box-shadow:0 0 0 1px rgba(46,28,12,.5)}
+.iconset{display:grid;grid-template-columns:repeat(9,1fr);gap:8px 6px;font-size:30px;color:var(--ink)}
+.iconset div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.iconset small{font:11px var(--body);color:var(--ink-faint)}
+.btn{display:inline-block;font:16px var(--display);padding:7px 18px;border:1.5px solid var(--ink-soft);border-radius:2px;color:var(--ink);background:rgba(120,80,30,.08);box-shadow:inset 0 0 0 2px rgba(224,201,148,.8),inset 0 0 0 3px rgba(90,65,40,.3)}
+.btn.hot{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.1)}
+.btn.off{color:var(--ink-faint);border-color:var(--ink-faint);opacity:.7}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="deckle" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="4" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="deckle-s" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <!-- ink icon set: 24×24, stroked in currentColor; one <symbol> each, lifted straight into the game -->
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="M19.5 4.5 9 15M19.5 4.5l-.8 3.6M19.5 4.5l-3.6.8M7 12.5l4.5 4.5M9 15l-4.2 4.2"/><circle cx="4.3" cy="19.7" r="1"/></symbol>
+    <symbol id="i-dagger" viewBox="0 0 24 24"><path d="M17.5 6.5 10.5 13.5M17.5 6.5l-.6 2.6M17.5 6.5l-2.6.6M8.5 11.5l4 4M10.5 13.5l-3.2 3.2"/><circle cx="6.8" cy="17.2" r=".9"/></symbol>
+    <symbol id="i-club" viewBox="0 0 24 24"><path d="M5 20l6-6"/><path d="M11 14c-1.2-2.6 2.5-8.4 6-9.4 2-.5 3.3 1.2 2.6 3.2-1.2 3.3-6.2 7.6-8.6 6.2z"/><path d="M14.5 7.5l1.2 1.2M16.5 9.8l1 1"/></symbol>
+    <symbol id="i-helm" viewBox="0 0 24 24"><path d="M5 17c0-7 3-11 7-11s7 4 7 11z"/><path d="M5 17h14M12 6v11M8.5 12h7"/></symbol>
+    <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v4.2C7.6 8.3 6 10.4 6 13.5a6 6 0 0 0 12 0c0-3.1-1.6-5.2-4.5-6.3V3"/><path d="M6.6 13.2c2.2 1 4.6-.8 10.8 0"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="3.5"/><path d="M11 12h9.5M17.5 12v3M20 12v2"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M10 11h4l-1.2 10h-1.6z"/><path d="M12 10c-2.8-1.5-2.4-4.6 0-7 .2 2.4 3 3 2.2 5.6-.3 1-1.2 1.4-2.2 1.4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M12 3v18M5 10.5h14"/></symbol>
+    <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="14.5" r="5.5"/><path d="M10 9.3 12 6l2 3.3M10 6h4"/></symbol>
+    <symbol id="i-amulet" viewBox="0 0 24 24"><path d="M6 3c0 6 3 9.5 6 10.5 3-1 6-4.5 6-10.5"/><circle cx="12" cy="16.5" r="3.2"/><circle cx="12" cy="16.5" r="1" /></symbol>
+    <symbol id="i-tunic" viewBox="0 0 24 24"><path d="M8.5 4 4 7l2 3.3 2.3-1.1V20h7.4V9.2l2.3 1.1L20 7l-4.5-3c-.8 1.8-6.2 1.8-7 0z"/></symbol>
+    <symbol id="i-legs" viewBox="0 0 24 24"><path d="M7 4h10l1 16h-4l-2-10-2 10H6z"/><path d="M7 7h10"/></symbol>
+    <symbol id="i-boot" viewBox="0 0 24 24"><path d="M8 3h5v10.5l5.6 2c1.3.5 1.3 3.5 0 3.5H8z"/><path d="M8 16h11"/></symbol>
+    <symbol id="i-glove" viewBox="0 0 24 24"><path d="M7.5 21v-8.5L5.3 8.8c-.5-1 .9-1.9 1.6-.9l1.6 2.3V5a1 1 0 0 1 2 0v4.5V4a1 1 0 0 1 2 0v5.5V5a1 1 0 0 1 2 0v5.5V7a1 1 0 0 1 2 0v7c0 3.5-1.5 5.5-2 7z"/></symbol>
+    <symbol id="i-arrows" viewBox="0 0 24 24"><path d="M4 20 18 6M18 6l-3.8.6M18 6l-.6 3.8M4 20l.8-2.8M4 20l2.8-.8M8 20 20 8M20 8l-3 .5M20 8l-.5 3"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4.8"/><path d="M12 9.5v5"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 21c-4.5 0-6-4.5-4-8 1 1.8 2.4 2 2.4 0 0-4 1.6-6.2 1.6-10 3 2.8 6 6.6 6 11.5 0 4-2.5 6.5-6 6.5z"/></symbol>
+    <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z"/><path d="M9.2 15.5a3 3 0 0 0 2.6 2.7"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></symbol>
+    <symbol id="i-stone" viewBox="0 0 24 24"><path d="M4 17 8 7l7-2 5 7-3 7H7z"/><path d="M8 7l3 5 4-7M11 12l6 7M11 12l-7 5"/></symbol>
+    <symbol id="i-shadow" viewBox="0 0 24 24"><path d="M15 4a8 8 0 1 0 5 11 6.5 6.5 0 1 1-5-11z"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-1.8z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 13.5h6L10 22l9-12h-6z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5.5 3-8 7-8s7 2.5 7 8"/></symbol>
+    <symbol id="i-quill" viewBox="0 0 24 24"><path d="M20 3C12 4 7 10 5 19l-1 2"/><path d="M5 19c5-2 11-7 15-16M8 14.5h4.5M10 11h4"/></symbol>
+    <symbol id="i-scales" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M5 7.5h14M5 7.5 3 13h4zM19 7.5 17 13h4z"/><circle cx="12" cy="4" r="1"/></symbol>
+    <symbol id="i-pack" viewBox="0 0 24 24"><path d="M7 8c0-3 2-5 5-5s5 2 5 5"/><path d="M5 8h14l-1 13H6z"/><path d="M9 12h6v4H9z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+  </defs>
+</svg>
+
+<h1 class="page">The Old Gates — the parchment interface</h1>
+<p class="lede">A style page for backlog E, <i>UI overhaul</i>: “as close to Oblivion’s design as we can — parchment and scroll, not digital/corporate.” Every screen is 1280×720 and every line and number is today’s build (s171) in Dunmore. Paper for everything you read; dark iron and bronze for what sits on the world.</p>
+
+<!-- ═════════════ 1. HUD, Oblivion's layout ═════════════ -->
+<div class="cap">1 · The HUD, Oblivion’s layout <small>vitals and the readied weapon and spell bottom-left, the compass bottom-centre, the minimap kept top-right</small></div>
+<section class="screen" id="hud-a">
+  <div class="parch small ribbon" style="left:50%;top:26px;transform:translateX(-50%)">Dunmore</div>
+  <div class="mini" style="right:30px;top:30px"></div><div class="miniring" style="right:24px;top:24px"><b>N</b></div>
+  <div class="xh"></div>
+  <div class="prompt" style="top:392px"><span class="key">E</span>Press E to enter</div>
+
+  <div class="plate" style="left:22px;bottom:22px;width:360px;height:96px;padding:14px 16px;display:flex;gap:12px;align-items:center">
+    <div class="roundel"><svg class="ico"><use href="#i-club"/></svg></div>
+    <div class="roundel dim"><svg class="ico"><use href="#i-star"/></svg></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:7px;padding-left:4px">
+      <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--hp-hi);font-size:13px"><use href="#i-heart"/></svg><div class="hbar hp" style="flex:1"><i style="width:72%"></i></div></div>
+      <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--mp-hi);font-size:13px"><use href="#i-star"/></svg><div class="hbar mp" style="flex:1"><i style="width:100%"></i></div></div>
+      <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--st-hi);font-size:13px"><use href="#i-bolt"/></svg><div class="hbar st" style="flex:1"><i style="width:100%"></i></div></div>
+      <div class="hudtxt num" style="font-size:12px;display:flex;justify-content:space-between;opacity:.85"><span>Level 1</span><span>XP 25 / 200</span></div>
+    </div>
+  </div>
+  <div class="hudtxt" style="position:absolute;left:30px;bottom:124px;font-size:15px;z-index:3"><svg class="ico"><use href="#i-key"/></svg> Lockpick ×2 · <svg class="ico"><use href="#i-torch"/></svg> Torch</div>
+
+  <div class="compass" style="left:450px;bottom:30px">
+    <div class="strip">
+      <span style="left:4%">W</span><span class="tick" style="left:15%"></span><span style="left:27%">NW</span><span class="tick" style="left:38.5%"></span>
+      <span class="n" style="left:50%">N</span><span class="tick" style="left:61.5%"></span><span style="left:73%">NE</span><span class="tick" style="left:85%"></span><span style="left:96%">E</span>
+      <span style="left:66%;color:#e8b050;font-size:13px;top:3px">★</span>
+    </div>
+  </div>
+  <div class="roundel" style="position:absolute;left:846px;bottom:22px;width:48px;height:48px;font-size:24px;color:#f0c860;z-index:3"><svg class="ico"><use href="#i-sun"/></svg></div>
+  <div class="cbar">E interact · F cast · I inventory &nbsp;·&nbsp; <span style="opacity:.6">build s171</span></div>
+</section>
+
+<!-- ═════════════ 2. HUD, today's layout ═════════════ -->
+<div class="cap">2 · The HUD, today’s layout restyled <small>the same parts where they sit now: vitals top-left, compass top-centre; the touch pad kept</small></div>
+<section class="screen" id="hud-b">
+  <div class="plate" style="left:16px;top:16px;width:300px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--hp-hi);font-size:13px"><use href="#i-heart"/></svg><div class="hbar hp" style="flex:1"><i style="width:72%"></i></div><span class="hudtxt num" style="width:54px;text-align:right">94/130</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--mp-hi);font-size:13px"><use href="#i-star"/></svg><div class="hbar mp" style="flex:1"><i style="width:100%"></i></div><span class="hudtxt num" style="width:54px;text-align:right">100/100</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--st-hi);font-size:13px"><use href="#i-bolt"/></svg><div class="hbar st" style="flex:1"><i style="width:100%"></i></div><span class="hudtxt num" style="width:54px;text-align:right">115/115</span></div>
+    <div class="hudtxt num" style="font-size:12px;display:flex;justify-content:space-between;opacity:.85;padding-top:2px;border-top:1px solid rgba(160,122,56,.35)"><span>Level 1 · XP 25 / 200</span><span><svg class="ico"><use href="#i-key"/></svg> 2 · <svg class="ico"><use href="#i-torch"/></svg></span></div>
+  </div>
+  <div class="compass" style="left:450px;top:16px"><div class="strip">
+      <span style="left:4%">W</span><span class="tick" style="left:15%"></span><span style="left:27%">NW</span><span class="tick" style="left:38.5%"></span>
+      <span class="n" style="left:50%">N</span><span class="tick" style="left:61.5%"></span><span style="left:73%">NE</span><span class="tick" style="left:85%"></span><span style="left:96%">E</span>
+      <span style="left:66%;color:#e8b050;font-size:13px;top:3px">★</span></div></div>
+  <div class="roundel" style="position:absolute;left:846px;top:10px;width:46px;height:46px;font-size:23px;color:#f0c860;z-index:3"><svg class="ico"><use href="#i-sun"/></svg></div>
+  <div class="parch small ribbon" style="left:50%;top:76px;transform:translateX(-50%);font-size:19px;padding:5px 28px">Dunmore</div>
+  <div class="mini" style="right:30px;top:30px"></div><div class="miniring" style="right:24px;top:24px"><b>N</b></div>
+  <div class="xh"></div>
+  <div class="prompt" style="top:392px"><span class="key">E</span>Press E to enter</div>
+  <div style="position:absolute;left:18px;bottom:40px;display:flex;flex-direction:column;gap:8px;z-index:3">
+    <div class="plate" style="position:static;padding:7px 14px;font:15px var(--display);color:#8a7a58"><svg class="ico"><use href="#i-star"/></svg> No magic · F</div>
+    <div class="plate" style="position:static;padding:7px 14px;font:15px var(--display);color:#e6cf9a"><svg class="ico"><use href="#i-pack"/></svg> Inventory · I</div>
+  </div>
+  <div class="dp"><div style="grid-column:2">▲</div><div style="grid-row:2">◀</div><div style="grid-row:2">▼</div><div style="grid-row:2">▶</div></div>
+  <div class="cbar">WASD/drag move · Left-click attack · Right-click block · E interact · F cast · I inventory &nbsp;·&nbsp; <span style="opacity:.6">build s171</span></div>
+</section>
+
+<!-- shared hub chrome is repeated per screen so each can be shot alone -->
+<!-- ═════════════ 3. Inventory ═════════════ -->
+<div class="cap">3 · Inventory <small>worn gear as an inked paper-doll; the bag as a ledger, sortable by the column heads</small></div>
+<section class="screen menu" id="inventory">
+  <div class="tabs">
+    <div class="tab on"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:grid;grid-template-columns:270px 1fr;gap:34px;height:520px">
+      <div>
+        <div class="h">Worn</div><div class="rule"></div>
+        <div class="doll">
+          <div class="gap"></div><div class="slot"><svg class="ico"><use href="#i-helm"/></svg>HEAD</div><div class="gap"></div>
+          <div class="gap"></div><div class="slot"><svg class="ico"><use href="#i-amulet"/></svg>AMULET</div><div class="gap"></div>
+          <div class="slot"><svg class="ico"><use href="#i-shield"/></svg>OFF-HAND</div><div class="slot full"><svg class="ico"><use href="#i-tunic"/></svg>CHEST</div><div class="slot full" style="box-shadow:inset 0 0 0 3px rgba(224,201,148,.8),inset 0 0 0 4px var(--rubric)"><svg class="ico"><use href="#i-club"/></svg>WEAPON</div>
+          <div class="slot"><svg class="ico"><use href="#i-ring"/></svg>RING</div><div class="slot"><svg class="ico"><use href="#i-glove"/></svg>HANDS</div><div class="slot"><svg class="ico"><use href="#i-arrows"/></svg>AMMO</div>
+          <div class="gap"></div><div class="slot full"><svg class="ico"><use href="#i-legs"/></svg>LEGS</div><div class="gap"></div>
+          <div class="gap"></div><div class="slot full"><svg class="ico"><use href="#i-boot"/></svg>FEET</div><div class="gap"></div>
+        </div>
+        <div style="margin-top:12px;padding:8px 10px;border-top:1px solid rgba(90,65,40,.3)">
+          <div style="font:19px var(--body);color:var(--rubric)">Wooden GreatClub</div>
+          <div class="meta">Weapon · attack 4–6 · two hands</div>
+          <div class="num" style="font-size:15px;margin-top:4px">All worn: attack 4–6 · armour 2 · weight 9.0</div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="h">The Bag</div><div class="num" style="font:500 21px var(--body);color:var(--ink)"><svg class="ico" style="color:var(--gilt)"><use href="#i-coin"/></svg> 142 gold</div></div>
+        <div class="rule"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin:0 10px 10px;font-size:15px"><span class="h2">Weight</span><div class="ibar" style="flex:1"><i style="width:34%;background:var(--ink-soft)"></i><span style="position:absolute;left:80%;top:-2px;bottom:-2px;width:1px;background:var(--rubric)"></span></div><span class="num">22.1 / 65</span></div>
+        <div class="subtabs"><span class="on">All</span><span>Weapons</span><span>Armour</span><span>Consumables</span><span>Misc</span></div>
+        <div class="cols lh"><span></span><span>NAME ▾</span><span>STAT</span><span class="r">WT</span><span class="r">VALUE</span></div>
+        <div class="cols row"><svg class="ico"><use href="#i-dagger"/></svg><span class="n">Bronze Dagger</span><span class="num">Attack 6–7 · pierce</span><span class="r num">1.5</span><span class="r num">6</span></div>
+        <div class="cols row"><svg class="ico"><use href="#i-helm"/></svg><span class="n">Bronze Helmet</span><span class="num">Armour +2</span><span class="r num">3.0</span><span class="r num">6</span></div>
+        <div class="cols row sel"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="qty">×2</span></span><span class="num">+25 health</span><span class="r num">1.0</span><span class="r num">7</span></div>
+        <div class="cols row"><svg class="ico"><use href="#i-key"/></svg><span class="n">Lockpick<span class="qty">×2</span></span><span>—</span><span class="r num">0.1</span><span class="r num">4</span></div>
+        <div class="cols row"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Mana Draught</span><span class="num">+40 mana</span><span class="r num">0.5</span><span class="r num">15</span></div>
+        <div class="cols row"><svg class="ico"><use href="#i-torch"/></svg><span class="n">Torch</span><span>Light</span><span class="r num">4.0</span><span class="r num">2</span></div>
+        <div class="cols row"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="num">Attack 6–7 · slash</span><span class="r num">3.0</span><span class="r num">2</span></div>
+        <div class="meta" style="margin:10px 10px 0;font-size:13px">Click to use or wear · hold X and click to destroy</div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 4. Magic ═════════════ -->
+<div class="cap">4 · Magic <small>legibility first (backlog E): grouped by sigil, one line a spell, the gloss in English, cost in its own column</small></div>
+<section class="screen menu" id="magic">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab on"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 330px;gap:30px;height:524px">
+      <div>
+        <div class="school"><svg class="ico"><use href="#i-fire"/></svg>TINE · FIRE</div>
+        <div class="spell sel"><span class="nm">Caor<span class="gl">fireball</span></span><span class="meta" style="font-size:13px">known</span><span class="r num">30</span></div>
+        <div class="school"><svg class="ico"><use href="#i-water"/></svg>UISCE · WATER</div>
+        <div class="spell lock"><span class="nm">Sioc<span class="gl">frost</span></span><span></span><span class="r num">20</span></div>
+        <div class="spell lock"><span class="nm">Siúl Uisce<span class="gl">water-walk</span></span><span></span><span class="r num">22</span></div>
+        <div class="spell lock"><span class="nm">Anáil<span class="gl">breath</span></span><span></span><span class="r num">20</span></div>
+        <div class="school"><svg class="ico"><use href="#i-wind"/></svg>GAOTH · WIND</div>
+        <div class="spell lock"><span class="nm">Séideán<span class="gl">gust</span></span><span></span><span class="r num">22</span></div>
+        <div class="spell lock"><span class="nm">Cleite<span class="gl">feather</span></span><span></span><span class="r num">16</span></div>
+        <div class="spell lock"><span class="nm">Luas<span class="gl">speed</span></span><span></span><span class="r num">24</span></div>
+        <div class="spell lock"><span class="nm">Eitilt<span class="gl">flight</span></span><span></span><span class="r num">34</span></div>
+      </div>
+      <div>
+        <div class="school"><svg class="ico"><use href="#i-stone"/></svg>CLOCH · STONE</div>
+        <div class="spell lock"><span class="nm">Cloch Ghéar<span class="gl">stone spike</span></span><span></span><span class="r num">28</span></div>
+        <div class="spell lock"><span class="nm">Sciath<span class="gl">shield</span></span><span></span><span class="r num">28</span></div>
+        <div class="school"><svg class="ico"><use href="#i-shadow"/></svg>SCÁTH · SHADOW</div>
+        <div class="spell lock"><span class="nm">Smól<span class="gl">shadow dart</span></span><span></span><span class="r num">26</span></div>
+        <div class="spell lock"><span class="nm">Súil Oíche<span class="gl">night-eye</span></span><span></span><span class="r num">18</span></div>
+        <div class="spell lock"><span class="nm">Súil an Fhíodóra<span class="gl">weaver’s eye</span></span><span></span><span class="r num">14</span></div>
+        <div class="school"><svg class="ico"><use href="#i-light"/></svg>SOLAS · LIGHT</div>
+        <div class="spell lock"><span class="nm">Solas-Gheal<span class="gl">bright bolt</span></span><span></span><span class="r num">28</span></div>
+        <div class="spell lock"><span class="nm">Leigheas<span class="gl">healing</span></span><span></span><span class="r num">40</span></div>
+        <div class="spell lock"><span class="nm">Lampa<span class="gl">lamp</span></span><span></span><span class="r num">12</span></div>
+      </div>
+      <div style="border-left:1px solid rgba(90,65,40,.3);padding-left:26px">
+        <div class="h" style="font-size:30px">Caor</div>
+        <div class="meta" style="margin-top:4px">Tine · fire · 30 mana</div>
+        <div class="rule"></div>
+        <div style="font-size:19px;line-height:1.5">Launches a ball of fire.</div>
+        <div style="margin-top:20px;font-size:16px;line-height:1.6">
+          <div class="dv"><span>Cost</span><span class="num">30 mana</span></div>
+          <div class="dv"><span>Cast with</span><span>F</span></div>
+          <div class="dv"><span>Learned from</span><span>a Tine sigil</span></div>
+          <div class="dv"><span>Impression</span><span class="num">at Intelligence 3</span></div>
+        </div>
+        <div class="meta" style="margin-top:22px;font-size:14px;line-height:1.5">Locked spells are in faded ink: touch that sigil in the deep places to learn one.</div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 5. Attributes ═════════════ -->
+<div class="cap">5 · Attributes <small>the character sheet: the eight attributes as a ledger, what they give beside them</small></div>
+<section class="screen menu" id="attributes">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab on"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="text-align:center;margin-top:2px"><div class="h" style="font-size:34px">Traveller</div><div class="meta" style="font-size:16px;margin-top:4px">Warrior · Level 1 · Gatelander · in the Gatelands</div></div>
+    <div class="rule" style="margin:10px 120px 14px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;padding:0 20px">
+      <div>
+        <div class="h2" style="margin-bottom:6px">ATTRIBUTES</div>
+        <div class="attr"><svg class="ico"><use href="#i-sword"/></svg><span>Might</span><span class="v num">3</span><span class="pips"><span class="f"></span><span class="f"></span><span class="f"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr"><svg class="ico"><use href="#i-shield"/></svg><span>Fortitude</span><span class="v num">3</span><span class="pips"><span class="f"></span><span class="f"></span><span class="f"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr faint"><svg class="ico"><use href="#i-dagger"/></svg><span>Finesse</span><span class="v num faint">0</span><span class="pips"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr faint"><svg class="ico"><use href="#i-wind"/></svg><span>Swiftness</span><span class="v num faint">0</span><span class="pips"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr"><svg class="ico"><use href="#i-star"/></svg><span>Resolve</span><span class="v num">2</span><span class="pips"><span class="f"></span><span class="f"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr faint"><svg class="ico"><use href="#i-quill"/></svg><span>Intelligence</span><span class="v num faint">0</span><span class="pips"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr faint"><svg class="ico"><use href="#i-person"/></svg><span>Charisma</span><span class="v num faint">0</span><span class="pips"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+        <div class="attr faint"><svg class="ico"><use href="#i-coin"/></svg><span>Fortune</span><span class="v num faint">0</span><span class="pips"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+      </div>
+      <div>
+        <div class="h2" style="margin-bottom:6px">WHAT THEY GIVE</div>
+        <div class="dv"><span>Melee damage</span><span class="num">+9%</span></div>
+        <div class="dv"><span>Move speed</span><span class="num">+0%</span></div>
+        <div class="dv"><span>Attack speed</span><span class="num">+0%</span></div>
+        <div class="dv"><span>Critical chance</span><span class="num">+0%</span></div>
+        <div class="dv"><span>Mana bonus</span><span class="num">+0</span></div>
+        <div class="dv"><span>Barter</span><span class="num">+0%</span></div>
+        <div class="h2" style="margin:22px 0 6px">RECOVERY</div>
+        <div class="dv"><span>Health</span><span>potions only</span></div>
+        <div class="dv"><span>Mana</span><span class="num">1.2 a second</span></div>
+        <div class="dv"><span>Stamina</span><span class="num">3.6 a second</span></div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 6. Quests ═════════════ -->
+<div class="cap">6 · Quests <small>the log as a written page: the quest list on the left, the entry in a hand on the right</small></div>
+<section class="screen menu" id="quests">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab on"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:40px;height:520px">
+      <div style="border-right:1px solid rgba(90,65,40,.3);padding-right:26px">
+        <div class="h2">THE MAIN STORY</div><div class="rule"></div>
+        <div class="row sel" style="border:none"><span class="n" style="font-size:19px">Out of the Dark</span><div class="meta" style="font-size:13px">active</div></div>
+        <div class="h2" style="margin-top:22px">LEADS</div><div class="rule"></div>
+        <div class="row" style="border:none"><span style="font-size:18px">A Town Worth Keeping</span><div class="meta" style="font-size:13px">a lead, not yet taken</div></div>
+        <div class="h2" style="margin-top:22px;color:var(--ink-faint)">DONE</div><div class="rule" style="opacity:.5"></div>
+        <div class="meta faint" style="padding-left:10px">Nothing yet.</div>
+      </div>
+      <div>
+        <div class="h" style="font-size:30px">Out of the Dark</div>
+        <div class="meta" style="margin-top:4px">The main story · 50 XP</div>
+        <div class="rule"></div>
+        <p style="font:italic 21px/1.55 var(--fell);color:var(--ink);text-indent:1.4em">I woke inside a stone coffin in a forgotten crypt. I have no memory of how I came to be here, or for how long I have lain. The air is dank and stinks of death. I need to find a way out.</p>
+        <div style="margin-top:24px;font-size:19px;display:flex;gap:10px;align-items:center"><span style="width:16px;height:16px;border:1.5px solid var(--ink-soft);display:inline-block"></span>Find a way out of the crypt</div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 7. Map ═════════════ -->
+<div class="cap">7 · Map <small>today’s world map, inked onto the sheet (multiplied into the paper); the place panel as a margin note</small></div>
+<section class="screen menu" id="map">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab on"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:grid;grid-template-columns:1fr 250px;gap:24px;height:520px">
+      <div style="position:relative;border:1.5px solid var(--ink-soft);box-shadow:inset 0 0 0 4px rgba(224,201,148,.6),inset 0 0 0 5px rgba(90,65,40,.4);overflow:hidden">
+        <div style="position:absolute;inset:6px;background:url(map-crop.png) 42% 50%/cover no-repeat;mix-blend-mode:multiply;filter:grayscale(1) contrast(1.5) brightness(1.55) sepia(.35)"></div>
+        <div style="position:absolute;left:16px;bottom:10px;font:italic 14px var(--fell);color:var(--ink-soft)">Scroll to zoom, drag to pan.</div>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <div class="school" style="margin-top:0">MAP · <span class="faint">LOCAL</span></div>
+        <div class="rule"></div>
+        <div class="h" style="font-size:24px">The Home Province</div>
+        <div class="meta" style="margin:4px 0 10px">You are here: Dunmore</div>
+        <div style="font-size:16px;line-height:1.55">Hover a place to learn more; click a discovered place to travel there.<br><br><span class="meta">Places appear as you find them.</span></div>
+        <div style="margin-top:auto;font-size:15px;line-height:1.9">
+          <div class="h2" style="margin-bottom:4px">SHOW</div>
+          <div>☑ Towns &nbsp; ☑ Gates</div><div>☑ Places &nbsp; ☑ Quests</div>
+          <div style="margin-top:8px;border-bottom:1.5px solid var(--ink-soft);font:italic 15px var(--fell);color:var(--ink-faint);padding:2px 0">Search places…</div>
+        </div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 8. Dialogue ═════════════ -->
+<div class="cap">8 · Conversation <small>a sheet low on the screen so the speaker stays in view; new topics marked in red with a fleuron, spent ones faded</small></div>
+<section class="screen" id="dialogue">
+  <div style="position:absolute;inset:0;background:linear-gradient(transparent 38%,rgba(0,0,0,.55));z-index:1"></div>
+  <div class="parch dlg">
+    <div class="who">
+      <div class="seal" style="position:static;width:50px;height:50px;font-size:24px;flex:none"><svg class="ico"><use href="#i-sword"/></svg></div>
+      <div><div class="h" style="font-size:28px">Sorcha</div><div class="meta">Guildmaster · the Fighters’ Guild, Dunmore</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="line">“You look like you can swing something.”</div>
+    <div class="topics">
+      <div class="topic old"><i>1</i>My name is Traveller.</div>
+      <div class="topic"><i>5</i>Where can I find …</div>
+      <div class="topic new"><i>2</i>Any work?</div>
+      <div class="topic new"><i>6</i>What is this place?</div>
+      <div class="topic new"><i>3</i>It’s done.</div>
+      <div class="topic"><i>7</i>Farewell.</div>
+      <div class="topic new"><i>4</i>My standing?</div>
+    </div>
+    <div class="foot"><span>1–7 to choose · Esc to close</span><span>❧ not yet asked</span></div>
+  </div>
+</section>
+
+<!-- ═════════════ 9. The style sheet ═════════════ -->
+<div class="cap">9 · The kit <small>the tokens, type, states and ink icons the Fable session applies to every panel</small></div>
+<section class="screen menu" id="kit">
+  <div class="parch" style="left:40px;top:24px;width:1200px;height:672px;padding:20px 40px">
+    <div style="display:grid;grid-template-columns:520px 1fr;gap:44px">
+      <div>
+        <div class="h">Paper and ink</div><div class="rule"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px 4px">
+          <div class="sw"><i style="background:#ecdcb2"></i>paper-hi<br>#ecdcb2</div><div class="sw"><i style="background:#e0c994"></i>paper<br>#e0c994</div><div class="sw"><i style="background:#c9ab6e"></i>paper-lo<br>#c9ab6e</div><div class="sw"><i style="background:#2e1c0c"></i>ink<br>#2e1c0c</div><div class="sw"><i style="background:#5a4128"></i>ink-soft<br>#5a4128</div><div class="sw"><i style="background:#8a7050"></i>ink-faint<br>#8a7050</div>
+          <div class="sw"><i style="background:#7a1f10"></i>rubric<br>#7a1f10</div><div class="sw"><i style="background:#9a7020"></i>gilt<br>#9a7020</div><div class="sw"><i style="background:linear-gradient(#2c261c,#15110b);box-shadow:inset 0 0 0 2px #a07a38"></i>iron + bronze</div><div class="sw"><i style="background:linear-gradient(#d8503a,#a8281c)"></i>health</div><div class="sw"><i style="background:linear-gradient(#5a8ad8,#2c5aa6)"></i>mana</div><div class="sw"><i style="background:linear-gradient(#6aac48,#3c7e2e)"></i>stamina</div>
+        </div>
+        <div class="h" style="margin-top:12px">Type</div><div class="rule"></div>
+        <div style="font:26px var(--display);color:var(--rubric)">Headings — IM Fell English SC</div>
+        <div style="font:italic 19px var(--fell);margin:4px 0">A written entry — IM Fell English italic</div>
+        <div style="font:18px var(--body)">Lists, numbers, prices — EB Garamond <span class="num">94 / 130 · 22.1 · 142</span></div>
+        <div class="meta" style="font-size:13px;margin-top:4px">Both OFL, 290 KB as woff2; figures lining and tabular in columns.</div>
+        <div class="h" style="margin-top:12px">States</div><div class="rule"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><span class="btn">A button</span><span class="btn hot">Hovered / chosen</span><span class="btn off">Unavailable</span></div>
+        <div style="margin-top:6px">
+          <div class="cols row" style="grid-template-columns:30px 1fr 90px"><svg class="ico"><use href="#i-potion"/></svg><span>A row</span><span class="r num">7</span></div>
+          <div class="cols row sel" style="grid-template-columns:30px 1fr 90px"><svg class="ico"><use href="#i-potion"/></svg><span class="n">The selected row</span><span class="r num">7</span></div>
+          <div class="cols row" style="grid-template-columns:30px 1fr 90px;color:var(--ink-faint)"><svg class="ico"><use href="#i-key"/></svg><span>Locked or unaffordable — faded ink</span><span class="r num">12</span></div>
+          <div class="cols row" style="grid-template-columns:30px 1fr 90px"><svg class="ico" style="color:var(--rubric)"><use href="#i-dagger"/></svg><span style="color:var(--rubric)">Stolen — red ink, as a quest topic</span><span class="r num">6</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="h">Ink icons</div><div class="rule"></div>
+        <div class="iconset">
+          <div><svg class="ico"><use href="#i-sword"/></svg><small>sword</small></div><div><svg class="ico"><use href="#i-dagger"/></svg><small>dagger</small></div><div><svg class="ico"><use href="#i-club"/></svg><small>club</small></div><div><svg class="ico"><use href="#i-shield"/></svg><small>shield</small></div><div><svg class="ico"><use href="#i-arrows"/></svg><small>ammo</small></div><div><svg class="ico"><use href="#i-helm"/></svg><small>head</small></div><div><svg class="ico"><use href="#i-tunic"/></svg><small>chest</small></div><div><svg class="ico"><use href="#i-glove"/></svg><small>hands</small></div><div><svg class="ico"><use href="#i-legs"/></svg><small>legs</small></div>
+          <div><svg class="ico"><use href="#i-boot"/></svg><small>feet</small></div><div><svg class="ico"><use href="#i-ring"/></svg><small>ring</small></div><div><svg class="ico"><use href="#i-amulet"/></svg><small>amulet</small></div><div><svg class="ico"><use href="#i-potion"/></svg><small>potion</small></div><div><svg class="ico"><use href="#i-key"/></svg><small>lockpick</small></div><div><svg class="ico"><use href="#i-torch"/></svg><small>torch</small></div><div><svg class="ico"><use href="#i-coin"/></svg><small>gold</small></div><div><svg class="ico"><use href="#i-pack"/></svg><small>bag</small></div><div><svg class="ico"><use href="#i-map"/></svg><small>map</small></div>
+          <div><svg class="ico"><use href="#i-fire"/></svg><small>Tine</small></div><div><svg class="ico"><use href="#i-water"/></svg><small>Uisce</small></div><div><svg class="ico"><use href="#i-wind"/></svg><small>Gaoth</small></div><div><svg class="ico"><use href="#i-stone"/></svg><small>Cloch</small></div><div><svg class="ico"><use href="#i-shadow"/></svg><small>Scáth</small></div><div><svg class="ico"><use href="#i-light"/></svg><small>Solas</small></div><div><svg class="ico"><use href="#i-heart"/></svg><small>health</small></div><div><svg class="ico"><use href="#i-star"/></svg><small>mana</small></div><div><svg class="ico"><use href="#i-bolt"/></svg><small>stamina</small></div>
+          <div><svg class="ico"><use href="#i-quill"/></svg><small>quests</small></div><div><svg class="ico"><use href="#i-person"/></svg><small>character</small></div><div><svg class="ico"><use href="#i-scales"/></svg><small>attributes</small></div><div><svg class="ico"><use href="#i-sun"/></svg><small>day</small></div>
+        </div>
+        <div class="meta" style="margin-top:14px;font-size:14px;line-height:1.5">31 icons, 24×24, one stroke weight, drawn in the current ink colour. They replace the emoji (🪖 👕 🧪 🗝), which render differently on every phone and read as digital against paper.</div>
+        <div class="h" style="margin-top:16px">Metal, for the world</div><div class="rule"></div>
+        <div style="display:flex;gap:16px;align-items:center;background:#57503e;padding:14px;border-radius:4px">
+          <div class="roundel"><svg class="ico"><use href="#i-club"/></svg></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="hbar hp"><i style="width:72%"></i></div><div class="hbar mp"><i style="width:100%"></i></div><div class="hbar st"><i style="width:100%"></i></div></div>
+          <span class="key">E</span><div class="seal" style="position:static;width:40px;height:40px">✕</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<p class="lede" style="margin-top:24px">Before, for comparison: <code>current-hud.png</code>, <code>current-hub-*.png</code>, <code>current-dialogue.png</code> (build s171, shot by <code>shoot-current.mjs</code>).</p>
+</body>
+</html>
