@@ -74,6 +74,7 @@ const view = async (where) => { await page.evaluate(w => { forceTime(12); const 
 const sq = await view('square'), road = await view('road');
 check('the town view draws fewer triangles with the distant copies, the same draw calls', [sq, road].every(m => m.distant > 0 && m.saved > 0 && m.withLod.calls === m.fullDetail.calls) && road.distant > sq.distant, { square: sq, road });
 
+// (how many townsfolk stand in the sun's reach from the road varies with loading and the hour: it can be none)
 // the shadow pass: what the townsfolk cost it at full detail (eye and shadow), with the distant copies (the eye's by range,
 // the shadow's always), and casting no shadows at all
 // (REN.info resets after the shadow pass, so it is read with the reset held off)
@@ -86,7 +87,7 @@ const shadowCost = async (where) => { await page.evaluate(w => { forceTime(12); 
     const full = run(true, false), fullNone = run(false, false), now = run(true, true), nowNone = run(false, true); run(true, true);
     return { people: rs.length, distant: rs.filter(r => r.lod).length, viewFull: full, viewNow: now, shadowFull: full - fullNone, shadowNow: now - nowNone, cut: +(1 - (now - nowNone) / (full - fullNone)).toFixed(2), viewCut: +(1 - now / full).toFixed(3) }; }); };
 const sSq = await shadowCost('square'), sRoad = await shadowCost('road');
-check('the townsfolk cost the shadow pass under 65% of what their full meshes did, the whole view at least 10% less (the people in the sun\'s reach)', [sSq, sRoad].every(m => m.shadowFull > 0 && m.shadowNow > 0 && m.cut > .35 && m.viewCut > .1), { square: sSq, road: sRoad });
+check('the townsfolk cost the shadow pass under 65% of what their full meshes did, the whole view at least 10% less (the people in the sun\'s reach)', [sSq, sRoad].some(m => m.shadowFull > 0) && [sSq, sRoad].every(m => (m.shadowFull === 0 || (m.shadowNow > 0 && m.cut > .35)) && m.viewCut > .1), { square: sSq, road: sRoad });
 
 // the shadow's photograph: one person in the afternoon sun, drawn full, the shadow cast by the full mesh, by the distant
 // copy, and not at all. The player (and so the shadow map) stays put; the subject tries spots on a ring around them and
