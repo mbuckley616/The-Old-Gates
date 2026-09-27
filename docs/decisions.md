@@ -6,6 +6,9 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The night watch — guards walk a beat at night, and follow at favour ≤ −2 (the critic, 2026-09-27)
+Michael: Yes, build it as proposed. Guards walk a lantern beat past the shop doors at night (a third guard at prosperity ≥ 60); at favour ≤ −2 the nearest guard on duty trails you at six to eight units while you are on the town's pad. One session, before any crime numbers are tuned. Systems builder's, section B. (27 Sep 2026)
+
 ### Wolves — the first creature on the shape kit (Session 163, issue #4)
 Michael: Yes, build it. Same style as the townsfolk; fix the joint tubes, the heavy chest and the lunge's hind legs in the build. The other families (spiders, undead, dragon, mimic, bandits) follow the same way. (27 Sep 2026)
 
