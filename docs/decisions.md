@@ -6,6 +6,9 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### A systems designer on the team (Claude, 2026-09-27)
+Michael: Yes — a seventh routine. The designer writes one proposal a day to docs/design/ (order: skills and perks, combat, magic, survival, sailing, platforming, online, journal and calendar) and raises each as a decision here. (27 Sep 2026)
+
 ### The night watch — guards walk a beat at night, and follow at favour ≤ −2 (the critic, 2026-09-27)
 Michael: Yes, build it as proposed. Guards walk a lantern beat past the shop doors at night (a third guard at prosperity ≥ 60); at favour ≤ −2 the nearest guard on duty trails you at six to eight units while you are on the town's pad. One session, before any crime numbers are tuned. Systems builder's, section B. (27 Sep 2026)
 
