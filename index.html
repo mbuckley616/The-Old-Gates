@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s211</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s212</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9893,6 +9893,7 @@ const FOE_DRESS={
   'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
   'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear'},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
+  'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
   'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',gear:'stick'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
@@ -9927,9 +9928,10 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}
     // a wraith: a long robe to the ground under a cloak and hood, the feet lost in it; it glides (tickPeople)
-    if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}}
+    if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}
+    if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
-  if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=.68;rig.mesh.castShadow=false;}
+  if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
   if(g.golem){const rm=new THREE.MeshBasicMaterial({color:g.rune||0x6ab0ff});const hang=(b,w,h,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.02),rm);m.position.set(x,y,z);m.rotation.z=rz||0;b.add(m);return m;};
     rig.runes=[hang(rig.B.head,.15,.026,0,.11,.126),hang(rig.B.spine,.022,.3,0,.2,.175,.6),hang(rig.B.spine,.022,.3,0,.2,.175,-.6)];}
@@ -23203,7 +23205,9 @@ function buildDungeon(portal){
     // S196 — the dungeon's skeletons, goblins and kobold thieves on the people's body, as in the open world (H.4);
     // the rest of the humanoid roster (the Shieldbearer and its shield) keeps the box for now
     // S208 — the Cave Troll (a brute) is a person too
-    if((d.buildFn==='humanoid'||d.buildFn==='brute')&&name&&FOE_DRESS[name]){const pr=buildFoe(name,Math.random()*999,Math.random()*999,null,d.eyeCol);pr.root.scale.multiplyScalar(sc);g.add(pr.root);
+    // S212 — and the dungeon's Wraith and Phantom on the open world's wraith (S176): robed, hooded, see-through, gliding
+    if((d.buildFn==='humanoid'||d.buildFn==='brute'||d.buildFn==='wraith')&&name&&FOE_DRESS[name]){const pr=buildFoe(name,Math.random()*999,Math.random()*999,null,d.eyeCol);pr.root.scale.multiplyScalar(sc);g.add(pr.root);
+      if(d.buildFn==='wraith'){const au=new THREE.PointLight(d.light,.5,2.8);au.position.set(0,.6*sc,0);g.add(au);}
       limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;if(d.shieldUp)limbs.armL=pr.B.shL; // S199 — the shield goes on the left shoulder bone
       const eyeGl=new THREE.PointLight(d.eyeCol,.35,1.4);eyeGl.position.set(0,1.1*sc,.25*sc);g.add(eyeGl);}
     else if(d.buildFn==='humanoid'){
@@ -23390,7 +23394,7 @@ function buildDungeon(portal){
       const{g,hpFg,limbs}=buildEnemy(d,name);
       // v71 — Shieldbearer: build + raise the shield prop on the left arm.
       if(d.shieldUp){ attachShieldProp(g, limbs, limbs.person?1:d.scale); if(limbs.person){limbs.shieldArmUpZ=-.5;limbs.shieldArm.rotation.z=-.5;} } // S199 — a person's guard, as the captain's (S175)
-      const baseYe=(d.buildFn==='wraith'?.3:0)+baseY;
+      const baseYe=(d.buildFn==='wraith'&&!limbs.person?.3:0)+baseY; // S212 — a wraith person glides at its own height (tickPeople)
       g.position.set(ec,baseYe,er);dScene.add(g);
       const el=new THREE.PointLight(d.light,.7,4);el.position.set(ec,baseY+.8,er);dScene.add(el);
       // Disguised/dormant enemies should not glow at full strength — would give them away.

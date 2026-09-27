@@ -5978,3 +5978,16 @@ New `tests/faolchu.test.mjs`, 7 checks, all passing, no page errors. The Faolch�
 
 ### Needs eyes
 The fight itself, in burned Ashenmoor: whether the hunched wolf at this size reads as the boss it was, and whether the arms, which hang fixed from the spine and do not strike, should join the attack. The phase-3 embers and the lessers need the real encounter. That is a playtest; this session did not play it through.
+
+## v80 — Session 212 — The dungeon's Wraith and Phantom on the wraith's body (H.4, item 7)
+The open world's Wraith has been a robed, hooded, see-through person since Session 176, under Michael's approval of the undead family. The dungeon's Wraith and Phantom (the undead and haunted themes) were still the old dark box with a bar of light for eyes. This session gives them the same body. No new look is involved beyond the Phantom's variant, which is described below.
+
+**What changed.** The dungeon's `buildEnemy` sends a `buildFn:'wraith'` enemy with an entry in `FOE_DRESS` to the people's builder, as it already did for the humanoids and (since Session 208) the brutes. It keeps the ghostly aura light the box had. The Wraith uses the open world's dress. The **Phantom** is a new entry: the same robe and cloak, but bare-headed with long straight pale hair, bluer, and fainter (opacity .5 against the Wraith's .68). It reads as the lesser ghost it is (level 3 against the Wraith's 5).
+
+**One thing that would have doubled.** The box wraith was lifted .3 off the floor when placed. The wraith person glides at its own height (`tickPeople` sets it). The lift is now skipped for a person, so the two don't add up. The dungeon's hover bob (±.12) still applies on top, as it did before. The life-drain, the ranged attack and the posture family (`wraith`) read `isWraith` and `baseType`, which are unchanged.
+
+### Verified (headless Chromium)
+`dungeonfoes.test.mjs` has a new check, and all 5 pass. In an undead dungeon at level 6, the Wraith and the Phantom are both wraith people, each linked to its own enemy, still `isWraith`, taking no steps (walk weight 0). The Wraith's opacity is .68 and the Phantom's .5. They float .13 and .32 above their base (the glide plus the bob at that moment), inside .1–.45. Picture: `docs/prototypes/wraiths-dungeon.png` (a bandit, a Wraith, two Phantoms, at night).
+
+### Needs eyes
+The picture shows the Wraith's hood (Session 176's) reading more like a close cap than a hood when seen from the front. That was there before this session. A deeper, peaked hood would be a small follow-up if it bothers in play.
