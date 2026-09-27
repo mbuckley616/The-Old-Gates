@@ -5776,7 +5776,7 @@ Michael's decision A covered "buildings, houses, structures and POIs". After the
 Each hangs its old self as the distant copy through `addMesh`, as the houses do. Triangles: well 2,158 (plain 128), stall 1,220 (108), tent 540 (35), ruin 3,504 (24), stone 702 (12).
 
 ### Verified (headless Chromium)
-New `tests/furniture.test.mjs`, 4 checks, all passing, no page errors. All five build in detail with a plain copy at least half as small again. A ruin's detailed walls span the whole width of its plain ones (overlap 1.0). Dunmore's shops are the same (Clodagh's Goods, Lorcan's Forge, Niamh's Armoury among them). `houses`, `crime1` and `wayfinding` pass. Picture: `docs/prototypes/furniture-ingame.png`.
+New `tests/furniture.test.mjs`, 4 checks, all passing, no page errors. All five build in detail, each with a plain copy of under half its triangles. A ruin's detailed walls span the whole width of its plain ones (overlap 1.0). Dunmore's shops are the same (Clodagh's Goods, Lorcan's Forge, Niamh's Armoury among them). `houses`, `crime1` and `wayfinding` pass. Picture: `docs/prototypes/furniture-ingame.png`.
 
 ### Needs eyes
 A village with ruins and standing stones, and a camp's tents, in real play. The stall's awning seen from the square: it is thin and pitched, so from above the stripes may read as lines.
