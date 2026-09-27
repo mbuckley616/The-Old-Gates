@@ -72,6 +72,9 @@ export async function boot(opts = {}) {
     if (w) { const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; }
     for (let i = 0; i < n; i++) WORLD.tick(1 / 60, performance.now());
   }, [weather, frames]);
+  // wait for n real frames of the game's own loop: HUD text (the door prompt) is only written there, and on a slow
+  // runner a fixed pause can pass without one (Session 156)
+  g.frames = (n = 2) => page.evaluate(n => new Promise(r => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
   g.close = () => browser.close();
   return g;
 }

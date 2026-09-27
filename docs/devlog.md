@@ -4917,5 +4917,7 @@ A second correction, from CI on the Auto sessions PR: `people.test.mjs` then tim
 
 And a third: with the photograph fixed, `shophours.test.mjs` failed its second CI run at noon — you got in, but the prompt it had read still said *locked till 8*. It reads the door prompt 1.5s after moving you, and the prompt is written by the main loop; on a slow runner no frame had run, so it read the night's text. It now waits for two real frames first. Three local runs pass, one on one core.
 
+The next CI run caught `crime1.test.mjs` the same way (the night prompt read as empty). The wait is now a harness helper, `g.frames(n)` in `tests/lib/game.mjs`, used by both suites that read the on-screen prompt; both pass on one core.
+
 ### Needs eyes
 Walk towards a crowd in a real browser and watch for the swap at 15–17 units: a pop in a hairstyle's outline (curly and afro hair are bumped spheres, and their bumps sit on fewer vertices in the distant copy) or a hat brim. Whether 17 could come down to 12 without being seen, which would roughly double the saving in the square. The frame time on Michael's machine in a forty-NPC town, before and after (the backlog asks for it; software GL cannot give it).

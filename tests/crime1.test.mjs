@@ -6,7 +6,7 @@ await g.intoWorld(); await g.settle('dunmore');
 const shop = await page.evaluate(() => { forceTime(23); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => /weapon|armor|potion|misc/.test(x.type)); window._h = h;
   for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].name === 'Lockpick') BAG.splice(i, 1);
   px = h.doorX; pz = h.doorZ + .3; jumpY = 0; return { name: h.name, type: h.type, lock: WORLD.doorLockNow(h), home: S.houses.find(x => x.type === 'home' && !x.ownedByPlayer) ? WORLD.doorLockNow(S.houses.find(x => x.type === 'home' && !x.ownedByPlayer)) : null }; });
-await page.waitForTimeout(1500);
+await page.waitForTimeout(1500); await g.frames();
 const prompt = await page.evaluate(() => document.getElementById('ipr').textContent);
 await page.keyboard.press('e'); await page.waitForTimeout(1500);
 const noPick = await page.evaluate(() => ({ inside: currentHouse === window._h, lockOpen, zone: activeZoneId }));
