@@ -5555,3 +5555,22 @@ The count dropped again: the test dungeon is 884–895 meshes and 660–728 draw
 
 ### Needs eyes
 Whether the heaps are too pale against the walls: they are lit from the same lantern and are the wall's colour times 2.6, meant to read as broken stone lighter than the weathered face. Whether 14% of wall sides is too many in rubble themes. Still owed, a slice each: the fort's first floor, the dungeon's box foes, and barrels, chests and doors on the kit.
+
+## v80 — Session 192 — Trees: more species, each its own girth (Playtest s162)
+Michael's playtest item: trees want variety, not density. He listed trunk girth and colour, foliage colour, and more species per biome, and said the starting area is very dense and may be costing frames, so measure before thinning.
+
+**Measured first.** At the start (13100, 25450, broadleaf country) the loaded chunks hold about 870 broadleafs and 110 conifers. A broadleaf is 388 triangles, and all its instances come to 336k. In the start view the trees were 175k of 517k triangles drawn (34%) and 44 of 375 draw calls. On the headless machine's software GL, the median of four alternating renders was 435 ms with the trees against 356 without, so trees are about a fifth of the frame. That is real but not dominant, and thinning would cost the look Michael asked to keep, so nothing was thinned. The numbers are here for when frame time on his own machine is measured. The timings vary a lot from run to run on this machine (the scene loads differently each time), so they are indications, not a benchmark.
+
+**What changed.**
+- **Four new species**, each one merged, vertex-coloured prototype like the old ones: a birch (a slim white trunk with dark lenticel marks, light airy leaves), an oak (a thick short trunk, three heavy limbs, a wide low crown), a spruce (a narrow stack of five dark blue-green tiers), and a Scots pine (a tall bare trunk going red-brown above a dark foot, flat clouds of needles at the top). Each costs no more than the broadleaf: 384, 424, 138 and 328 triangles.
+- **Each biome's mix** (`TREE_MIX`). The main tree stays the majority. Conifer forest adds spruce 20%, broadleaf 10%, pine 10% and birch 6%. Broadleaf country adds oak 25%, birch 14% and conifer 8%. Autumn adds birch, oak and conifer. The tundra's snowpines take spruce and a few dead trees. The fen's willows take birch and dead trees. Above the tree line spruce stays spruce.
+- **Girth**: each tree rolls its own (`g`, .84–1.18). A wider tree is shorter and a slimmer one taller, so width over height runs from .76 to 1.35 among neighbours, and the collision radius follows the girth.
+- **Foliage colour**: the per-tree tint's hue, saturation and lightness spread is half as wide again. Birches and oaks have their own greens, and in autumn land they turn gold and russet with the rest.
+
+Birches and oaks add up to two instanced meshes a chunk in broadleaf country, which is about 40 more draw calls in view, and the same again in the shadow pass.
+
+### Verified (headless Chromium)
+New `tests/trees.test.mjs`, 6 checks, all passing, no page errors. The four new prototypes are 384, 424, 138 and 328 triangles, against the broadleaf's 388. The birch's bark at the foot is .84 bright. The pine's upper trunk has red over blue at 2.98. Every biome's mix leaves the main tree at least 20%. Near the start there are 262 oaks and 130 birches among 495 broadleafs. Width over height runs .76–1.35. `plants.test.mjs` passes. Pictures: `docs/prototypes/trees-species.png` (a line-up by day: conifer, spruce, pine, birch, broadleaf, oak, willow, snowpine, dead) and `trees-start.png` (the start at dusk).
+
+### Needs eyes
+The start and a conifer forest in real play: whether the mix reads as a wood of several kinds or as clutter; the birch's size (smaller than the rest by design); and frame time on Michael's machine with the extra draw calls.

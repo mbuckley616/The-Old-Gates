@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s191</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s192</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -34497,6 +34497,9 @@ var WORLD=(()=>{
     return out;
   }
   const PROTO={};
+  // S192 — the species that grow among each biome's main tree, and how often (the rest is the main tree)
+  const TREE_MIX={conifer:[['spruce',.2],['broadleaf',.1],['pine',.1],['birch',.06]],broadleaf:[['oak',.25],['birch',.14],['conifer',.08]],
+    autumn:[['birch',.14],['oak',.12],['conifer',.12]],snowpine:[['spruce',.16],['dead',.08]],willow:[['birch',.25],['dead',.1]]};
   function buildProtos(){
     const bark=new THREE.Color(0x4a3220),barkDk=new THREE.Color(0x3a2618);
     // Conifer: tapered trunk + three stacked cones, each slightly offset.
@@ -34540,6 +34543,38 @@ var WORLD=(()=>{
       {geo:new THREE.CylinderGeometry(.3,.55,4.4,7),color:c(0x4a3a24),y:2.2},
       {geo:new THREE.ConeGeometry(3.2,5.0,9),color:c(0x5a7a3a),y:5.5,rx:Math.PI},
       {geo:new THREE.ConeGeometry(2.2,3.5,9),color:c(0x6a8a44),y:7.6,rx:Math.PI}]);
+    // S192 — more species (Michael, playtest s162: variety, not density): birch, oak, spruce, Scots pine
+    const birchBark=c(0xdcd8cc),mark=c(0x2a2622);
+    PROTO.birch=mergeParts([
+      {geo:new THREE.CylinderGeometry(.14,.26,7.6,7),color:birchBark,y:3.8,jitter:.05},
+      ...[[1.1,.3],[2.0,2.1],[2.9,4.0],[3.8,1.2],[4.9,3.3],[5.9,.6]].map(([y,a])=>({geo:new THREE.CylinderGeometry(.262-.0155*y,.262-.0155*y,.09,7,1,true,a,1.1),color:mark,y,jitter:.02})),
+      {geo:new THREE.CylinderGeometry(.05,.09,2.6,4),color:birchBark,y:6.2,x:.7,rz:-.6,jitter:.05},
+      {geo:new THREE.CylinderGeometry(.05,.08,2.2,4),color:birchBark,y:5.8,x:-.6,z:.3,rz:.65,jitter:.05},
+      {geo:new THREE.IcosahedronGeometry(1.7,1),color:c(0x7aa84a),y:7.2,x:1.3,sy:1.2,jitter:.16},
+      {geo:new THREE.IcosahedronGeometry(1.5,1),color:c(0x86b050),y:6.6,x:-1.2,z:.4,sy:1.2,jitter:.16},
+      {geo:new THREE.IcosahedronGeometry(1.6,1),color:c(0x72a044),y:8.6,z:-.2,sy:1.3,jitter:.16}]);
+    PROTO.oak=mergeParts([
+      {geo:new THREE.CylinderGeometry(.6,1.0,4.4,8),color:c(0x3a2a1a),y:2.2,jitter:.1},
+      {geo:new THREE.CylinderGeometry(.22,.42,3.6,6),color:c(0x3a2a1a),y:4.9,x:1.3,rz:-.85,jitter:.08},
+      {geo:new THREE.CylinderGeometry(.2,.4,3.4,6),color:c(0x362618),y:4.8,x:-1.2,z:.5,rz:.8,rx:.2,jitter:.08},
+      {geo:new THREE.CylinderGeometry(.18,.34,3.0,6),color:c(0x362618),y:5.2,z:-1.1,rx:-.8,jitter:.08},
+      {geo:new THREE.IcosahedronGeometry(3.3,1),color:c(0x3f6f2a),y:7.0,x:2.4,z:.4,sy:.78,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(3.1,1),color:c(0x467a30),y:6.9,x:-2.3,z:.9,sy:.78,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(3.0,1),color:c(0x3a6a28),y:7.1,z:-2.2,sy:.78,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(3.4,1),color:c(0x4a7e34),y:8.4,x:.2,z:.2,sy:.72,jitter:.14}]);
+    PROTO.spruce=mergeParts([
+      {geo:new THREE.CylinderGeometry(.2,.42,8,6),color:c(0x3a2818),y:4},
+      {geo:new THREE.ConeGeometry(2.6,3.4,8),color:c(0x1f4430),y:4.4,ry:.2},{geo:new THREE.ConeGeometry(2.2,3.2,8),color:c(0x234a32),y:6.4,ry:.7},
+      {geo:new THREE.ConeGeometry(1.8,3.0,8),color:c(0x26503a),y:8.3,ry:1.2},{geo:new THREE.ConeGeometry(1.3,2.8,7),color:c(0x2a5638),y:10.1,ry:1.7},
+      {geo:new THREE.ConeGeometry(.8,2.4,7),color:c(0x2e5c3c),y:11.8}]);
+    PROTO.pine=mergeParts([
+      {geo:new THREE.CylinderGeometry(.3,.5,3.6,7),color:c(0x4a3020),y:1.8},
+      {geo:new THREE.CylinderGeometry(.22,.3,7.2,7),color:c(0x9a5a30),y:7.2,jitter:.06},
+      {geo:new THREE.CylinderGeometry(.07,.12,2.4,4),color:c(0x8a5030),y:10.4,x:.9,rz:-1.0},
+      {geo:new THREE.CylinderGeometry(.07,.12,2.2,4),color:c(0x8a5030),y:9.9,x:-.8,z:.4,rz:1.0},
+      {geo:new THREE.IcosahedronGeometry(2.2,1),color:c(0x2f5a2a),y:11.2,x:1.4,sy:.5,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(2.0,1),color:c(0x355f2e),y:10.6,x:-1.4,z:.5,sy:.5,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(2.4,1),color:c(0x2c5528),y:12.1,z:-.3,sy:.55,jitter:.14}]);
     PROTO.ember=mergeParts([{geo:new THREE.DodecahedronGeometry(.6,0),color:c(0x2a2220),y:.35},{geo:new THREE.DodecahedronGeometry(.32,0),color:c(0xff6a20),y:.55}]);
     PROTO.scrub=mergeParts([
       {geo:new THREE.CylinderGeometry(.08,.14,.5,5),color:bark,y:.25},
@@ -34584,14 +34619,11 @@ var WORLD=(()=>{
       const p=dens*(.5+clump*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
       if(roll<p){
         // Species by dominant biome, with a broadleaf minority in conifer land and vice versa.
-        let sp=dom.r.trees;
-        const mix=hash01(gx,gz,4);
-        if(sp==='conifer'&&mix<.18)sp='broadleaf';
-        else if(sp==='broadleaf'&&mix<.12)sp='conifer';
-        else if(sp==='autumn'&&mix<.15)sp='conifer';
-        else if(sp==='snowpine'&&mix<.1)sp='dead';
-        if(h>26&&sp!=='dead'&&sp!=='snowpine')sp=(snowLineAt(x,z)<30?'snowpine':'conifer');
-        const sc_=hash01(gx,gz,5);(trees[sp]=trees[sp]||[]).push({x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7)}); // .8–1.5, rare giants
+        // S192 — each biome's own mix: its main tree and the species that grow among it
+        let sp=dom.r.trees;const base=sp;
+        const mix=hash01(gx,gz,4);const MX=TREE_MIX[sp];if(MX){let acc=0;for(const [k,w] of MX){acc+=w;if(mix<acc){sp=k;break;}}}
+        if(h>26&&sp!=='dead'&&sp!=='snowpine'&&sp!=='spruce')sp=(snowLineAt(x,z)<30?'snowpine':'conifer');
+        const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
         _treePts.push(x,z);
         continue;
       }
@@ -34616,14 +34648,14 @@ var WORLD=(()=>{
       const im=new THREE.InstancedMesh(geo,SCATTER_MAT,list.length);
       list.forEach((t,i)=>{
         e.set(0,t.r,0);q.setFromEuler(e);
-        v.set(t.x,t.h+(t.sink||0),t.z);s3.set(t.s,t.s*(t.sy||1),t.s);
+        v.set(t.x,t.h+(t.sink||0),t.z);s3.set(t.s*(t.g||1),t.s*(t.sy||1),t.s*(t.g||1));
         m4.compose(v,q,s3);im.setMatrixAt(i,m4);
         tint(t,c);im.setColorAt(i,c);
-        if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s,rz:solR*t.s});
+        if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1)});
       });
       im.instanceMatrix.needsUpdate=true;
       if(im.instanceColor)im.instanceColor.needsUpdate=true;
-      im.castShadow=castShadow;im.receiveShadow=true;
+      im.castShadow=castShadow;im.receiveShadow=true;im.userData.scatter=proto; // S192 — which prototype (tests and the frame check read it)
       im.frustumCulled=true;
       group.add(im);
     }
@@ -34631,7 +34663,12 @@ var WORLD=(()=>{
       const dead=sp==='dead';
       place(trees[sp],sp,(t,c)=>{
         // Whole-tree tint: hue drift + brightness, warmer in wastes/coast.
-        let hue=dead?.06:(sp==='conifer'||sp==='snowpine'?.30:.24)+(t.t-.5)*.06,sat=dead?.15:.36+t.t*.18,lig=.47+(t.t-.5)*.14;
+        // S192 — a wider spread of greens tree to tree, and the new species' own
+        let hue=dead?.06:(sp==='conifer'||sp==='snowpine'?.30:.24)+(t.t-.5)*.09,sat=dead?.15:.3+t.t*.3,lig=.47+(t.t-.5)*.18;
+        if(sp==='birch'){hue=t.au?.1+t.t*.04:.2+t.t*.06;sat=t.au?.8:.45;lig=.55+(t.t-.5)*.1;}
+        if(sp==='oak'){hue=t.au?.05+t.t*.07:.25+(t.t-.5)*.08;sat=t.au?.7:.3+t.t*.2;lig=.44+(t.t-.5)*.12;}
+        if(sp==='spruce'){hue=.37+(t.t-.5)*.05;sat=.3;lig=.42+(t.t-.5)*.1;}
+        if(sp==='pine'){hue=.28+(t.t-.5)*.06;sat=.35;lig=.47+(t.t-.5)*.1;}
         if(sp==='autumn'){hue=.02+t.t*.10;sat=.75;lig=.5+(t.t-.5)*.1;}   // reds through oranges to gold
         if(sp==='mushroom'){hue=.02+t.t*.08;sat=.35;lig=.55;}
         if(sp==='willow'){hue=.22+t.t*.05;sat=.3;lig=.42;}
@@ -34639,7 +34676,7 @@ var WORLD=(()=>{
         // Vertex colour already carries the base; the tint is a multiplier
         // around white, so normalise toward 1.
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
-      },true,sp==='scrub'?0:.5);
+      },true,sp==='scrub'?0:({oak:.85,birch:.35,spruce:.45,pine:.45}[sp]||.5));
     }
     rocks.forEach(r=>{r.sink=-r.s*.35;});
     place(rocks,'rock',(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);
@@ -40338,7 +40375,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
