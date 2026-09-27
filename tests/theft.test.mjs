@@ -40,6 +40,9 @@ check('the cells take the stolen things and the gold stolen in the town, and cle
 
 // with less on you than you stole, they take what you have
 const poor = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const S = WORLD.settle.get('dunmore'); const site = S.site; const c = worldState.crime.dunmore;
+  // one crime tick with no guard drawn re-arms the yield (the game's own loop does it on its next frame; on a slow
+  // machine that frame may not have come yet, so the test gives it, rather than waiting a fixed time)
+  WORLD.tickCrime(1 / 60, performance.now());
   c.loot = 300; c.bounty = 75; gold = 40; px = site.x; pz = site.z + 18; const gd = WORLD.guardsOf(S)[0]; gd.g.visible = true; gd._retreated = false; gd._drawn = false; gd.g.position.set(px + 2.5, WORLD.worldH(px + 2.5, pz), pz);
   WORLD.guardDraw(gd, S); PHP = Math.round(maxHP * .2); const abs0 = worldState.gameTimeAbsMinutes || 0; WORLD.tickCrime(1 / 60, performance.now());
   const t = dlgOpen && dlgNPC.topics.find(x => /cells/i.test(x.label)); if (!t) return { noOffer: true }; t.fn();

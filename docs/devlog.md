@@ -5679,3 +5679,29 @@ The last owed slice of the dungeon's walls. A fort's first floor (the `fort_*` i
 
 ### Needs eyes
 A fort in real play: whether the grey courses sit well with the fort's pillars and carpets, and whether the banners and sconces still sit on the wall face everywhere (the warp is small, but they were placed against a perfectly flat plane).
+
+## v80 — Session 198 — The mimic, and every chest on the kit (H.4)
+Michael's answer on the creatures (27 Sep) named the mimic among the families to follow the wolves onto the shape kit. A mimic is a chest until it wakes, and it shares its body with every real chest (`buildChestShell`), so the chest had to come too, or the disguise would give it away.
+
+**The chest.**
+- The body is the kit's rounded box, with plank grooves, iron bands, iron corner caps top and bottom, and a lock plate with a keyhole.
+- The lid is a half barrel with end caps and banded iron. It hangs on a pivot at the back top edge, so opening it (`lid.rotation.x = -π/3`, as the loot code always did) turns it on its hinge instead of spinning it about its middle.
+- Body and lid are each one merged mesh (`dunMerge`, which now takes a tag) on their own material, so the telegraph's flash still lights only this chest.
+
+The treasure chests, the lair hoard, the dungeon chests and the town strongboxes all use it.
+
+**The mimic.** `buildMimicMouth` hangs a mouth on the same chest:
+- nine teeth along the body's rim and three down each side;
+- nine along the lid's underside;
+- a tongue;
+- two glowing eyes under the lid.
+
+All of it is hidden until `revealMimic`, which now shows both rows and the eyes. Awake, `tickMimicJaws` (in the main loop beside `tickPeople`) keeps the lid gaping and working. While the mimic winds up to bite, the lid opens wide in step with the telegraph. Dead, the lid sags nearly shut.
+
+**A test made robust.** `theft.test.mjs` (Session 168's) failed on this branch and passed on main. After the first trip to the cells, it drew a guard again at once and expected the yield to be offered. The yield is re-armed only by a crime tick with no guard drawn, which the game's own loop gives on its next frame. With Session 194's detailed houses, Dunmore's frames on software GL are slower, and that frame had not come within the test's 300 ms pause. The test now gives that one tick itself. The game is unchanged.
+
+### Verified (headless Chromium)
+New `tests/mimic.test.mjs`, 4 checks, all passing, no page errors (a level-8 character, so mimics spawn). Opened, a chest's lid front rises .26. A mimic has exactly one chest body and no teeth or eyes showing. Woken, both rows and the eyes show, the jaw gapes to −.45, and winding up to bite opens it to −1.08. `locks`, `lockpicks`, `crime1`, `theft` and `dungeon` pass. Picture: `docs/prototypes/mimic-ingame.png`: a chest, a woken mimic and an open chest in an undead dungeon.
+
+### Needs eyes
+A mimic in real play: whether the bite reads in time to block. The chests at their real sizes: the strongbox at .6 scale and a home's chest at .45.

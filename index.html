@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s197</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s198</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -20618,25 +20618,46 @@ let currentPortal=null;
 // Build a Mimic-style chest shell — wooden body, lid, iron bands, lock. Returns {body, lid} for callers that need refs.
 // Used by both the Mimic buildFn (as its disguise) AND by regular lootable chest spawns — identical visual so Mimics
 // are indistinguishable until they reveal. Wood color defaults to the Mimic's 0x8b5a2b so chest/mimic swap is seamless.
+// S198 — the chest on the shape kit (H.4, the mimic; every chest shares it, so a mimic's disguise stays exact): a
+// rounded body with iron corner caps, bands and a lock plate, feet, and a barrel lid hung on a hinge at the back (the
+// lid is a pivot group, so opening turns it about the hinge). Body and lid are one merged mesh each, on their own
+// material (the telegraph's flash is this chest's alone). {body, lid} as before; lid.rotation.x < 0 opens it.
 function buildChestShell(g, sc, woodCol=0x8b5a2b){
-  const woodMat = new THREE.MeshLambertMaterial({color: woodCol});
-  const body = new THREE.Mesh(new THREE.BoxGeometry(.5*sc, .35*sc, .4*sc), woodMat);
-  body.position.y = 0.18*sc;
-  g.add(body);
-  const lid = new THREE.Mesh(new THREE.BoxGeometry(.52*sc, .08*sc, .42*sc), woodMat);
-  lid.position.y = 0.40*sc;
-  g.add(lid);
-  const bandMat = new THREE.MeshLambertMaterial({color:0x3a2a1a});
-  for(const bz of [-0.15, 0, 0.15]){
-    const band = new THREE.Mesh(new THREE.BoxGeometry(.53*sc, .05*sc, .04*sc), bandMat);
-    band.position.set(0, 0.24*sc, bz*sc);
-    g.add(band);
-  }
-  const lock = new THREE.Mesh(new THREE.BoxGeometry(.10*sc, .12*sc, .04*sc), bandMat);
-  lock.position.set(0, 0.30*sc, 0.22*sc);
-  g.add(lock);
+  const W=.5*sc,H=.35*sc,D=.4*sc,iron=new THREE.Color(0x2e2a26),wood=new THREE.Color(woodCol),r0=pRng(((woodCol>>>0)+Math.round(sc*1000))>>>0);
+  const P=[];const add=(geo,col,x,y,z,rx,ry,rz)=>{const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(1,1,1));P.push([geo,col,m]);};
+  add(SK.rbox(W,H,D,.025*sc,2),wood,0,H/2+.02*sc,0);
+  // planks: three shallow grooves along the front and back
+  for(const fz of [1,-1])for(const y of [.33,.66])add(new THREE.BoxGeometry(W*.96,.008*sc,.01*sc),wood.clone().multiplyScalar(.55),0,.02*sc+H*y,fz*(D/2+.002));
+  for(const bx of [-.34,.34])add(SK.rbox(.05*sc,H+.01*sc,D+.02*sc,.01*sc,1),iron,bx*W,H/2+.02*sc,0);
+  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){add(SK.rbox(.07*sc,.07*sc,.07*sc,.015*sc,1),iron,sx*(W/2-.02*sc),H+.0*sc,sz*(D/2-.02*sc));add(SK.rbox(.07*sc,.05*sc,.07*sc,.015*sc,1),iron,sx*(W/2-.03*sc),.025*sc,sz*(D/2-.03*sc));}
+  add(SK.rbox(.11*sc,.13*sc,.03*sc,.01*sc,1),iron,0,H-.03*sc,D/2+.01*sc);add(new THREE.BoxGeometry(.018*sc,.04*sc,.01*sc),new THREE.Color(0x0a0806),0,H-.045*sc,D/2+.027*sc);
+  const body=dunMerge(P,'chest');g.add(body);
+  // the lid: a half barrel on the hinge at the back top edge
+  const lid=new THREE.Group();lid.position.set(0,H+.02*sc,-D/2);g.add(lid);const L=[];const addL=(geo,col,x,y,z,rx,ry,rz)=>{const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(1,1,1));L.push([geo,col,m]);};
+  const lr=D/2+.01*sc;addL(new THREE.CylinderGeometry(lr,lr,W+.02*sc,14,1,false,0,Math.PI),wood,0,0,D/2,0,0,Math.PI/2);
+  addL(new THREE.CircleGeometry(lr,14,0,Math.PI),wood.clone().multiplyScalar(.9),W/2+.011*sc,0,D/2,0,Math.PI/2,0);addL(new THREE.CircleGeometry(lr,14,0,Math.PI),wood.clone().multiplyScalar(.9),-W/2-.011*sc,0,D/2,0,-Math.PI/2,0);
+  for(const bx of [-.34,.34])addL(new THREE.CylinderGeometry(lr+.008*sc,lr+.008*sc,.05*sc,14,1,true,0,Math.PI),iron,bx*W,0,D/2,0,0,Math.PI/2);
+  addL(SK.rbox(.12*sc,.06*sc,.03*sc,.01*sc,1),iron,0,-.01*sc,D+.01*sc);
+  const lidMesh=dunMerge(L,'chest');lid.add(lidMesh);lid.userData.mesh=lidMesh;
   return {body, lid};
 }
+// the mimic's mouth (S198): teeth along the lid's rim and the body's, a tongue, eyes under the lid; hidden till it wakes
+function buildMimicMouth(g, sc, lid, eyeCol){const W=.5*sc,H=.35*sc,D=.4*sc;const T=[];const E=[];const tooth=new THREE.Color(0xe8e0c8);
+  const addT=(list,geo,col,x,y,z,rx,ry,rz)=>{list.push([geo,col,new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(1,1,1))]);};
+  for(let k=0;k<9;k++){const x=-W/2+.04*sc+k*(W-.08*sc)/8;addT(T,SK.cone(.022*sc,.07*sc,5),tooth,x,H+.02*sc-.03*sc+.06*sc,D/2-.03*sc,0,0,0);}
+  for(let k=0;k<3;k++)for(const sx of [-1,1])addT(T,SK.cone(.02*sc,.06*sc,5),tooth,sx*(W/2-.03*sc),H+.05*sc,D/2-.08*sc-k*.09*sc,0,0,0);
+  addT(T,SK.rbox(W*.55,.03*sc,D*.6,.012*sc,1),new THREE.Color(0x8a2a3a),0,H-.02*sc,.02*sc,-.15,0,0);
+  const low=dunMerge(T,'mimic');low.visible=false;g.add(low);
+  const U=[];for(let k=0;k<9;k++){const x=-W/2+.04*sc+k*(W-.08*sc)/8;addT(U,SK.cone(.022*sc,.07*sc,5),tooth,x,-.04*sc,D-.02*sc,Math.PI,0,0);}
+  const up=dunMerge(U,'mimic');up.visible=false;lid.add(up);
+  for(const s of [-1,1])addT(E,SK.ball(.028*sc,8,6),new THREE.Color(eyeCol),s*.09*sc,-.03*sc,D*.7,0,0,0);
+  const eyes=dunMerge(E,'mimic');eyes.material=new THREE.MeshBasicMaterial({color:eyeCol});eyes.visible=false;lid.add(eyes);
+  const teeth=new THREE.Group();teeth.visible=false;g.add(teeth); // one switch for reveal: it shows the two rows below
+  teeth.userData.rows=[low,up];return {teeth,eyes};}
+// the mimic's jaw, each frame while awake: a slow gape, wide while it winds up to bite
+function tickMimicJaws(now){if(typeof ENEMIES==='undefined')return;for(const e of ENEMIES){const L=e.limbs;if(!L||!L.jaw||e.disguised)continue;
+  if(e.dead){L.jaw.rotation.x+=(-.15-L.jaw.rotation.x)*.1;continue;}const wind=e.telegraphMax>0&&e.telegraphT>0?1-e.telegraphT/e.telegraphMax:0;
+  L.jaw.rotation.x=-(.35+.18*Math.abs(Math.sin(now*.005+e.ph))+wind*.7);}}
 
 function activeMap(){return currentFloor===2&&dMap2?dMap2:dMap;}
 
@@ -21070,12 +21091,12 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   return {walls,floor,ceil,beams};}
 // normals averaged over every vertex at the same place, so the bevels and the faces' shared edges shade smooth
 // S191 — the props of a floor as one mesh: parts are [geometry, colour, matrix]; each part's colour goes in its vertices
-function dunMerge(parts){const P=[],N=[],C=[],I=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
+function dunMerge(parts,tag){const P=[],N=[],C=[],I=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
   for(const [geo,col,m] of parts){const p=geo.attributes.position,n=geo.attributes.normal,b=P.length/3;nm.getNormalMatrix(m);
     for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(m);P.push(v.x,v.y,v.z);v.fromBufferAttribute(n,i).applyMatrix3(nm).normalize();N.push(v.x,v.y,v.z);C.push(col.r,col.g,col.b);}
     if(geo.index){const ix=geo.index.array;for(let i=0;i<ix.length;i++)I.push(ix[i]+b);}else for(let i=0;i<p.count;i++)I.push(b+i);geo.dispose();}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);
-  const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true}));mesh.userData.dunShell='props';return mesh;}
+  const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true}));mesh.userData.dunShell=tag||'props';return mesh;}
 function dunSmoothNormals(g){g.computeVertexNormals();const p=g.attributes.position,n=g.attributes.normal,acc=new Map();
   const key=i=>Math.round(p.getX(i)*500)+','+Math.round(p.getY(i)*500)+','+Math.round(p.getZ(i)*500);
   for(let i=0;i<p.count;i++){const k=key(i);const a=acc.get(k)||[0,0,0];a[0]+=n.getX(i);a[1]+=n.getY(i);a[2]+=n.getZ(i);acc.set(k,a);}
@@ -23367,19 +23388,14 @@ function buildDungeon(portal){
       limbs.bodyLight = bodyLight;
     } else if(d.buildFn==='mimic'){
       // Mimic — chest mesh (shared with real lootable chests via buildChestShell). Teeth/eyes hidden until reveal.
-      buildChestShell(g, sc, d.col);
-      const eye = new THREE.Mesh(new THREE.BoxGeometry(.32*sc, .05*sc, .03), new THREE.MeshBasicMaterial({color:d.eyeCol}));
-      eye.position.set(0, 0.42*sc, 0.21*sc);
-      eye.visible = false;
-      g.add(eye);
+      const shell=buildChestShell(g, sc, d.col);
+      const mouth=buildMimicMouth(g, sc, shell.lid, d.eyeCol);limbs.jaw=shell.lid; // S198 — a mouth under the lid
+      const eye = mouth.eyes;
       const eyeGl = new THREE.PointLight(d.eyeCol, 1.4, 2.8);
       eyeGl.position.set(0, 0.42*sc, 0.26*sc);
       eyeGl.intensity = 0;
       g.add(eyeGl);
-      const teeth = new THREE.Mesh(new THREE.BoxGeometry(.44*sc, .08*sc, .03), new THREE.MeshBasicMaterial({color:0xffffff}));
-      teeth.position.set(0, 0.38*sc, 0.22*sc);
-      teeth.visible = false;
-      g.add(teeth);
+      const teeth = mouth.teeth;
       limbs.revealEye = eye;
       limbs.revealTeeth = teeth;
       limbs.revealEyeGl = eyeGl;
@@ -30065,7 +30081,7 @@ function revealMimic(e){
   if(typeof sndEnemyCry==='function') sndEnemyCry('Mimic');
   if(e.limbs){
     if(e.limbs.revealEye) e.limbs.revealEye.visible = true;
-    if(e.limbs.revealTeeth) e.limbs.revealTeeth.visible = true;
+    if(e.limbs.revealTeeth){ e.limbs.revealTeeth.visible = true; (e.limbs.revealTeeth.userData.rows||[]).forEach(m=>m.visible=true); }
     if(e.limbs.revealEyeGl) e.limbs.revealEyeGl.intensity = 1.4;
     if(e.limbs.hpBg) e.limbs.hpBg.visible = true;
   }
@@ -40593,6 +40609,7 @@ function loop(now){
   REN.autoClear=true;
   tickCrosshair(); // v80 — the crosshair shows what E will open
   try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
+  try{tickMimicJaws(now);}catch(e){} // v80 S198
   try{tickCreatures(dt,now);}catch(e){} // v80 S166 — every wolf's stride, crouch and spring
   try{if(typeof WORLD!=='undefined'&&WORLD.rainIndoor)WORLD.rainIndoor(activeZoneId!=='world'?0:(currentHouse?(/^(inn|home|church|castle|guild_f|guild_m|weapon|armor|potion|misc|goods|forge|apothecary|armoury|shipwright)$/.test(currentHouse.type)?.22:0):1));}catch(e){} // v80 — rain is muffled indoors, silent underground
   try{tickMonsterSounds(1/60);tickEnemyDetail();tickPortalFx(1/60);tickDragons(1/60);}catch(e){} // v80 — dungeon feel, dragons

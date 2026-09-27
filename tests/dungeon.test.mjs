@@ -8,7 +8,7 @@ await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
 await enterDungeon(page, { theme: 'ruins', seed: 11 });
 const r = await page.evaluate(() => { const out = {}; let meshes = 0; const shell = []; dScene.traverse(o => { if (o.isMesh) meshes++; if (o.userData && o.userData.dunShell) shell.push(o); });
-  out.zone = activeZoneId; out.meshes = meshes; out.floors = dMap2 ? 2 : 1; out.shell = shell.map(o => o.userData.dunShell).filter(k => k !== 'beams' && k !== 'props').sort().join(','); out.beams = shell.filter(o => o.userData.dunShell === 'beams').map(o => o.geometry.index.count / 36);
+  out.zone = activeZoneId; out.meshes = meshes; out.floors = dMap2 ? 2 : 1; out.shell = shell.map(o => o.userData.dunShell).filter(k => k === 'walls' || k === 'floor' || k === 'ceiling').sort().join(','); out.beams = shell.filter(o => o.userData.dunShell === 'beams').map(o => o.geometry.index.count / 36);
   // no box left standing in for a wall cell
   let boxes = 0; dScene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'BoxGeometry' && Math.abs(o.geometry.parameters.height - FLOOR_HEIGHT) < 1e-6 && o.geometry.parameters.width === 1) boxes++; }); out.wallBoxes = boxes;
   const W = shell.find(o => o.userData.dunShell === 'walls'), P = W.geometry.attributes.position, N = W.geometry.attributes.normal, C = W.geometry.attributes.color;
@@ -47,9 +47,9 @@ check('damp greens the foot of the walls in patches; the rooms have beams (Sessi
 const shots = await dungeonShots(page); shots.forEach((s, i) => fs.writeFileSync(`tests/out/dungeon-ruins-${i}.png`, Buffer.from(s.url.split(',')[1], 'base64')));
 // a second theme and a fort's upper floor build too
 await enterDungeon(page, { theme: 'goblin', seed: 5 });
-const gob = await page.evaluate(() => { const s = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell && o.userData.dunShell !== 'beams' && o.userData.dunShell !== 'props') s.push(o.userData.dunShell); }); return { zone: activeZoneId, shell: s.length }; });
+const gob = await page.evaluate(() => { const s = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell && /^(walls|floor|ceiling)$/.test(o.userData.dunShell)) s.push(o.userData.dunShell); }); return { zone: activeZoneId, shell: s.length }; });
 await enterDungeon(page, { theme: 'ruins', seed: 23, interior: 'fort_tee', size: 'medium' });
-const fort = await page.evaluate(() => { const s = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell && o.userData.dunShell !== 'beams' && o.userData.dunShell !== 'props') s.push(o.userData.dunShell); }); return { zone: activeZoneId, interior: currentPortal.interior, upper: !!dMap2, shell: s.length }; });
+const fort = await page.evaluate(() => { const s = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell && /^(walls|floor|ceiling)$/.test(o.userData.dunShell)) s.push(o.userData.dunShell); }); return { zone: activeZoneId, interior: currentPortal.interior, upper: !!dMap2, shell: s.length }; });
 check('another theme and a fort build, the fort\'s first floor on the shell too (Session 197)', gob.zone === 'dungeon' && gob.shell >= 3 && fort.zone === 'dungeon' && fort.shell === (fort.upper ? 6 : 3), { gob, fort });
 check('the props are one merged mesh a floor, much of the rubble lying along the walls (Session 191)', r.props === r.floors && r.rubbleByWalls > .3, { props: r.props, rubbleByWalls: r.rubbleByWalls });
 check('the kit\'s rounded box has rounded corners (a unit cube with radius .1 reaches .793, not .866)', Math.abs(r.rboxCorner - (Math.sqrt(3) * .4 + .1)) < .005, { corner: r.rboxCorner });
