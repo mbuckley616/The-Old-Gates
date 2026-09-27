@@ -5136,3 +5136,17 @@ New `tests/prices.test.mjs`, in Dunmore at 13h. The multiplier in the square is 
 
 ### Needs eyes
 Prices in a poor town against a rich one, now that they reach the counter: a prosperity-10 village charges 15% over base, a city at 100 17% under. Whether the shop should say it (a line under the keeper's name, *prices are high here*) is a design call and not done.
+
+## v80 — Session 170 — Lockpicks for sale
+
+Backlog I, the critic's fifth finding (*no one sells a lockpick*). With no pick in the bag, a locked door says *Locked. A lockpick would do it — the goods shops sell them.* No shop table had one: picks came only from dungeon chests and urns, so a player who met the town locks (Session 155) before a dungeon had no way to try them. This makes the line true, which is a fix and not a new rule.
+
+**What changed.** `SHOP_STOCK.misc` (the table every generated goods shop draws from) lists a Lockpick, one pick a unit, at the price the loot table already gives it (12 gold, with the town's multiplier from Session 169 on top). Picks are now stackable (`isStackable`): bought picks go through the quantity prompt like arrows, and every pick in the bag, bought or found, sits in one stack. Before this, picks from two different chests made two bag rows, and `lpPicks()`, which reads the first row it finds, showed the lock only one row's count.
+
+One consequence to know about: a strongbox's item is drawn from the shop's own table, so a goods shop's strongbox can now yield a (stolen) pick. It joins your stack, and a merged stack keeps the stolen mark of whichever row came first. The same is already true of stolen potions.
+
+### Verified (headless Chromium)
+New `tests/lockpicks.test.mjs`, in Dunmore. At Clodagh's Goods at 13h the list shows *Lockpick 12🪙* (12 × .9665 rounds to 12); the row opens the quantity prompt at 12 a unit, and buying 3 costs 36. The bag holds one stack of 3; adding a looted bundle of 3 makes one stack of 6, and `lpPicks()` reads 6. At 23h a shop door's lock opens to the pick with the bought stack (*A shop door, locked for the night — a good lock*), and spending a pick leaves 5. No page errors. Full suite: 21 of 21 suites pass.
+
+### Needs eyes
+Whether 12 gold a pick is right against the takings of a strongbox (90–183 in Dunmore) and the chance of snapping picks on a four-pin lock. The price is the loot table's, not a new decision; Michael may want it higher now that the town locks pay.
