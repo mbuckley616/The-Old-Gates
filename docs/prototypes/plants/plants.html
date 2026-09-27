@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Plant prototype: herbs by size</title>
+<style>html,body{margin:0;background:#8fa3b0;overflow:hidden}canvas{display:block}#t{position:absolute;left:0;right:0;top:0;font:15px Georgia,serif;color:#fff;text-shadow:0 1px 2px #000;text-align:center;padding-top:8px}.l{position:absolute;font:12px Georgia,serif;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;transform:translateX(-50%);white-space:nowrap}</style>
+<script src="../../../tests/vendor/three.min.js"></script>
+<script src="../creatures/sk.js"></script><script src="plants.src.js"></script></head><body><div id="t"></div>
+<script>
+// views: #old and #new (every herb on one grid, same camera), #size (side on, by height, beside a person),
+// #meadow-old and #meadow-new (a plains verge at a third-person camera's height, the same spots)
+const view=(location.hash||'#new').slice(1),W=1280,H=720;
+const R=new THREE.WebGLRenderer({antialias:true});R.setSize(W,H);R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;document.body.appendChild(R.domElement);
+const S=new THREE.Scene();S.background=new THREE.Color(0x9fb4c2);S.fog=new THREE.Fog(0x9fb4c2,14,40);
+S.add(new THREE.HemisphereLight(0xdfe8f0,0x5a5040,.75));
+const sun=new THREE.DirectionalLight(0xfff0d8,1.05);sun.position.set(4,7,5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-7,right:7,top:7,bottom:-7});sun.shadow.bias=-.0005;S.add(sun);
+const gr=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshLambertMaterial({color:0x6a7a48}));gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;S.add(gr);
+const cam=new THREE.PerspectiveCamera(32,W/H,.05,80);const tags=[];const info={};
+const put=(o,x,z,ry)=>{o.position.set(x,0,z);o.rotation.y=ry||0;S.add(o);return o;};
+const keys=Object.keys(HERBS);
+if(view==='old'||view==='new'){const cols=6;keys.forEach((k,i)=>{const c=i%cols,r=Math.floor(i/cols);const x=(c-(cols-1)/2)*1.35,z=(r-1.5)*1.35;
+    const b=view==='old'?oldHerb(k):buildHerb(k);put(b.root,x,z,.4);info[k]=view==='old'?{tris:b.tris}:{kind:b.kind,tris:b.tris,h:+b.h.toFixed(2),w:+b.w.toFixed(2)};tags.push([HERBS[k][0],x,z]);});
+  put(personStandIn(),(5-2.5)*1.35,1.5*1.35);tags.push(['a person, 1.1',(5-2.5)*1.35,1.5*1.35]);
+  cam.position.set(0,4.6,9.2);cam.lookAt(0,.2,.1);
+  document.getElementById('t').textContent=view==='old'?'Today: every herb a .2–.3 tuft':'Proposed: sized and shaped by what each one is';}
+if(view==='size'){const bs=keys.map(k=>[k,buildHerb(k)]).sort((a,b)=>a[1].h-b[1].h);const half=12;
+  [bs.slice(0,half),bs.slice(half)].forEach((row,ri)=>{const z=ri?-1.6:0;let tot=0;row.forEach(([k,b])=>tot+=Math.max(.36,b.w)+.12);let x=-tot/2;
+    row.forEach(([k,b],i)=>{const w=Math.max(.36,b.w);x+=w/2;put(b.root,x,z,.3);tags.push([HERBS[k][0]+' '+b.h.toFixed(2),x,z+(i%2?.02:.2)]);x+=w/2+.12;});
+    if(ri){put(personStandIn(),x+.3,z);tags.push(['person 1.10',x+.3,z]);}});
+  cam.position.set(0,1.5,6.3);cam.lookAt(0,.2,-.8);cam.fov=36;cam.updateProjectionMatrix();document.getElementById('t').textContent='Proposed heights in units (a person is 1.1), smallest to tallest';}
+if(view.startsWith('meadow')){const old=view==='meadow-old';const R2=rng('meadow');
+  const mix=['goldenrod','thornberry','silverleaf','veilwort','briarweed','goldenrod','caorthann','silverleaf','thornberry','firemoss','stonecress','graywort'];
+  for(let i=0;i<26;i++){const k=mix[i%mix.length];const x=(R2()-.5)*12,z=-1-R2()*14;const b=old?oldHerb(k):buildHerb(k);put(b.root,x,z,R2()*6);}
+  put(personStandIn(),-.7,-.9,0);
+  cam.position.set(1.2,1.35,3.2);cam.lookAt(0,.4,-5);document.getElementById('t').textContent=(old?'Today':'Proposed')+': a plains verge from the third-person camera';}
+R.render(S,cam);
+const v=new THREE.Vector3();for(const [t,x,z] of tags){v.set(x,-.02,z+.42).project(cam);const d=document.createElement('div');d.className='l';d.textContent=t;d.style.left=((v.x+1)/2*W)+'px';d.style.top=((1-v.y)/2*H)+'px';document.body.appendChild(d);}
+window.INFO=info;window.READY=true;
+</script></body></html>
