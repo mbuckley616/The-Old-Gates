@@ -6,6 +6,12 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The interface — parchment and ink, and where the HUD sits (the concept artist, 2026-09-27)
+Michael: **Parchment everywhere; HUD in Oblivion's places** (A). (27 Sep 2026)
+
+### Trolls, golems, gargoyles and the Faolchú — what they look like (Session 201)
+Michael: **As shown, but with gargoyle A** (B) — Get rid of cave troll cane or add a hammer, gargoyle A but with better wings - mesh for gargoyle B would be great for a dragon later, faolchu is great as is. (27 Sep 2026)
+
 ### Skills and perks — how should skills, levels and perks fit together? (the designer, 2026-09-27)
 Today attributes are the only progression: a level-up puts up to eighteen points into them, Might pays 3% melee a point on top of a flat `level × 1.5`, and every enemy scales with your level. Which shape should skills that grow by use take, with weapon skills carrying damage and attributes at ≤1% a point? (Page: `docs/design/skills-and-perks.md`.)
 - **A.** Morrowind's: major and minor skills level you; the level-up raises attributes by multipliers from what you used; perks arrive on their own at 25/50/75/100. Two Opus sessions.
