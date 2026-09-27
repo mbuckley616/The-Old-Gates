@@ -5310,3 +5310,15 @@ The first pass tilted both roof slopes the wrong way (they stood up like walls),
 The DECISION: this direction for all nations with a distant copy (A), a plainer version at about 1k triangles (B), or not yet (C). Faults seen: the thatch reads as a board, the lean-to is crude, and the Irish eaves cover the window heads.
 
 Session 177's full suite (two suites at a time) was still running at this commit; its result goes in the next entry.
+
+## v80 — Session 180 — The yield has a name (section I)
+
+Both look-and-feel questions (goblins and kobolds, #11; the houses, #12) now wait on Michael, and the rest of H is done or waiting too, so the routine moves to section I, what the critic found in play. The smallest there: a guard halts you by name (*Cathal*), and when you are low in the fight a moment later the offer to yield is headed *The guard*. `offerYield` now takes the name of the guard NPC behind the first drawn guard at that town (`e._guard.npc`) and falls back to *The guard* only if there is none. Nothing else about the offer changes.
+
+### Verified (headless Chromium)
+`tests/crime3.test.mjs` extended with one check, 7 of 7 passing: halted by Cathal, the yield is offered by Cathal. The drawn guard is still named *Town Guard* with 48 health, and the cells, the struck guard and the assaulted townsperson are unchanged.
+
+Session 177's full suite, which Session 179 left running: 14 of 21 suites done at this commit, all passing so far (0 failures).
+
+### Needs eyes
+Nothing new; the guards' owed play-check (Session 157) stands.
