@@ -5211,3 +5211,13 @@ The Wight wears a helm and carries a spear; the others are empty-handed. The Wra
 
 ### Needs eyes
 The dead at night in the wastes: whether grey and green skin under rags reads as dead or merely ill (a torn silhouette, a lolling head or a dragging walk would sell it better), and the eyes' glow at a distance. The Ghoul runs (its speed 1.8 is past the run's threshold): the people's run on a stooped body may look odd.
+
+## v80 — Session 174 — The locks suite waits for its tower (tests only)
+
+While this run's sessions ran the full suite two at a time, `locks.test.mjs` twice failed its last check with `{"none":true}`: no tower among `WORLD.SITES`. The list only holds the sites of loaded cells, and after taking you back to the home province the test paused a fixed nine seconds before looking; on a loaded machine the cells had not streamed in yet. The test now waits (up to a minute and a half, polling every quarter-second) for the world to be the active zone with a tower in it, then goes on as before. Nothing in the game changed; the build tag stays at s173.
+
+### Verified (headless Chromium)
+`locks.test.mjs`, run as a third process beside two suites (the load it failed under): 8 of 8, the tower chest a four-pin lock, picked, the hoard taken.
+
+### Needs eyes
+Nothing: tests only.
