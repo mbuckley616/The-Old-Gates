@@ -115,8 +115,11 @@ const shR = await page.evaluate(() => { const rig = window._sr; rig.root.visible
   place(best.fx, best.fz);
   const hi = grab(true, false), hi2 = grab(true, false), lo = grab(true, true), none = grab(false, true);
   // the control: the shadow cast from someone else's distant copy, to show the comparison can see a wrong shadow
-  const other = [...PEOPLE_RIGS].find(r => r !== rig && r.geoLo && Math.abs(r.g.height - rig.g.height) > .04 && r.g.style !== rig.g.style) || [...PEOPLE_RIGS].find(r => r !== rig && r.geoLo);
-  const own = rig.geoLo; rig.geoLo = other.geoLo; const wrong = grab(true, true); rig.geoLo = own; rig.mesh.castShadow = true; PEOPLE_LOD.shadowLo = true;
+  // (Session 172: whoever is fourth in the town changed with its names, and one other person's shadow can match the
+  // subject's closely enough to change no pixel past the threshold; so try the four most unlike and keep the most visible)
+  const cands = [...PEOPLE_RIGS].filter(r => r !== rig && r.geoLo).sort((a, b) => (Math.abs(b.g.height - rig.g.height) + (b.g.style !== rig.g.style ? .1 : 0)) - (Math.abs(a.g.height - rig.g.height) + (a.g.style !== rig.g.style ? .1 : 0))).slice(0, 4);
+  const own = rig.geoLo; let wrong = null; for (const other of cands) { rig.geoLo = other.geoLo; const w = grab(true, true); if (!wrong || cmp(hi.px, w.px).changed > cmp(hi.px, wrong.px).changed) wrong = w; }
+  rig.geoLo = own; rig.mesh.castShadow = true; PEOPLE_LOD.shadowLo = true;
   scene.remove(rig.root); others.forEach(r => { r.root.visible = r._v; });
   return { spot: [+(best.fx - px).toFixed(1), +(best.fz - pz).toFixed(1)], repeat: cmp(hi.px, hi2.px), distantShadow: cmp(hi.px, lo.px), otherPerson: cmp(hi.px, wrong.px), noShadow: cmp(hi.px, none.px), hi: hi.url, lo: lo.url, none: none.url }; });
 for (const k of ['hi', 'lo', 'none']) { fs.writeFileSync(`tests/out/lod-shadow-${k}.png`, Buffer.from(shR[k].split(',')[1], 'base64')); delete shR[k]; }
