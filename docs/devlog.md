@@ -5174,3 +5174,22 @@ New `tests/foes.test.mjs`, 7 checks, all passing, no page errors. The seven are 
 
 ### Needs eyes
 A bandit camp in real play: whether they read as bandits or as villagers who took a wrong turn (the stick in hand looks like a walking stick; a proper weapon kit is still owed from pass 5), the strike's arm swing against the timing of your block, the bodies lying after a fight. A guard drawing on you in a town.
+
+## v80 — Session 172 — The skeleton on the people's bones (H.4, the undead begin)
+
+The world's Skeleton (at night in the bealach and the greywood tables) was the humanoid box. The undead are next on Michael's list, and a skeleton is a person without the person, so this session puts it on the townsfolk's own 17 bones: it walks, runs, strikes and dies exactly as the bandits of Session 171 do, through `buildFoe` and `tickPeople`.
+
+**How.** A genome can carry `skel`. `personBakeQ` lays out the same bones in the same order, but while it hangs the flesh, hair, beard and clothes, a skeleton throws each part away (`bodyOpen` false). After the bones it adds its own parts:
+- A skull with dark sockets, a nose hole and a row of teeth.
+- Neck vertebrae, and a column of vertebrae down the back.
+- A ribcage of five arcs open at the front, with a sternum.
+- Collarbones, and a pelvis with a tailbone.
+- A humerus, two forearm bones and a hand of three fingers per arm; a femur, a kneecap, a tibia with a fibula and a flat foot per leg.
+
+The held gear goes on as for anyone, so half the skeletons carry a spear and half a club, by their seed. The fist around it is bone-coloured, since the skin is bone. The enemy's eye colour burns in the sockets: a small unlit mesh on the head, as the wolves have. `FOE_DRESS.Skeleton` is `{skel:true}`, and `buildFoe` passes the enemy's `eyeCol`. The first pass's pelvis read as a nappy; it is smaller, darker and flatter now.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs` extended, 8 checks, all passing, no page errors. The Skeleton from `buildZoneEnemy` is a person rig with `skel`: no hat, a club on this seed, 4,336 triangles, its eye mesh on the head, its own material, the right shoulder as its striking arm. The other seven foes' checks are unchanged. The close-up `docs/prototypes/skeleton-ingame.png` is one skeleton standing and four side on through the walk and the run. `docs/prototypes/foes-ingame.png` has the seven foes and a skeleton.
+
+### Needs eyes
+A skeleton patrol at night: the eyes' glow, the walk (it is the people's walk; a stiffer, jerkier one might suit the dead better), bones lying after the fight. The dungeon's skeletons are built by the dungeon's own builder and are unchanged.

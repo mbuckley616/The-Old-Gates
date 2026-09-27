@@ -10,14 +10,15 @@ fs.mkdirSync('tests/out', { recursive: true });
 const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._F = {}; const out = {};
   ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Bandit Captain', 'Skeleton'].forEach((n, i) => { const x = px + fx * 30 + (i - 4) * 2, z = pz + fz * 30;
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; _F[n] = e; const r = e.limbs && e.limbs.person;
-    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, hat: r.g.hat, gear: r.g.gear, ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, bar: +e.hpFg.position.y.toFixed(2) } : { person: false }; });
+    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, hat: r.g.hat, gear: r.g.gear, skel: !!r.g.skel, tris: r.tris, eyes: r.B.head.children.some(c => c.isMesh && c.material.isMeshBasicMaterial), ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, bar: +e.hpFg.position.y.toFixed(2) } : { person: false }; });
   const b2 = buildZoneEnemy(WORLD.scene, [], px + fx * 30, pz + fz * 30 + 3, 'Bandit', null); out.differ = b2.limbs.person.g.seed !== _F.Bandit.limbs.person.g.seed; b2.mesh.parent.remove(b2.mesh);
   return out; });
 const humans = ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate'];
 check('the seven human foes are people, dressed for what they are, each with its own material and its right shoulder as the striking arm',
   humans.every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR && built[n].bar > 1.2) && built.Bandit.hat === 'hood' && built.Deserter.hat === 'helm' && built.Deserter.gear === 'spear' && built.Pirate.hat === 'kerchief' && built.Highwayman.hat === 'brim',
   Object.fromEntries(humans.map(n => [n, built[n]])));
-check('two bandits met in different places are different people; the captain (its shield guard) and the skeleton keep their bodies', built.differ && !built['Bandit Captain'].person && !built.Skeleton.person, { differ: built.differ, captain: built['Bandit Captain'], skeleton: built.Skeleton });
+check('two bandits met in different places are different people; the captain (its shield guard) keeps its body', built.differ && !built['Bandit Captain'].person, { differ: built.differ, captain: built['Bandit Captain'] });
+check('the skeleton (Session 172) is bones on the people\'s skeleton: no flesh or clothes, burning eyes, a spear or a club', built.Skeleton.person && built.Skeleton.skel && built.Skeleton.eyes && /spear|stick/.test(built.Skeleton.gear) && built.Skeleton.tris > 1500 && built.Skeleton.tris < 6000 && built.Skeleton.ownMat, built.Skeleton);
 
 // walking and running by the enemy's position (the group's lurch in a lunge is not a stride); no greeting wave
 const move = await page.evaluate(() => { const e = _F.Bandit, r = e.limbs.person, G = e.mesh; const out = {}; let t = 3e5;
@@ -44,7 +45,7 @@ check('a despawned foe leaves the rig set', gone.left, gone);
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = WORLD.scene; const bx = px + 300, bz = pz, y = WORLD.worldH(bx, bz) + 60;
   const out = document.createElement('canvas'); out.width = 1280; out.height = 720; const x2 = out.getContext('2d'); const cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, .05, 100);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 10), new THREE.MeshLambertMaterial({ color: 0x6a7a48 })); floor.rotation.x = -Math.PI / 2; floor.position.set(bx, y, bz); sc.add(floor);
-  const rigs = []; ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate'].forEach((n, i) => { const r = buildFoe(n, i * 7, 3); PEOPLE_RIGS.delete(r); r.root.position.set(bx - 2.4 + i * .8, y, bz); r.root.rotation.y = .35; sc.add(r.root); rigs.push(r);
+  const rigs = []; ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Skeleton'].forEach((n, i) => { const r = buildFoe(n, i * 7, 3, null, 0x60c0ff); PEOPLE_RIGS.delete(r); r.root.position.set(bx - 2.8 + i * .8, y, bz); r.root.rotation.y = .35; sc.add(r.root); rigs.push(r);
     pwApply(r, i % 2 ? pwRun(.2 * i, {holds: r.holds, gear: r.g.gear}) : pwIdle(i, {holds: r.holds, gear: r.g.gear})); });
   cam.position.set(bx, y + 1.2, bz + 5.6); cam.lookAt(bx, y + .55, bz); sc.updateMatrixWorld(true); REN.render(sc, cam); x2.drawImage(cv, 0, 0, cv.width, cv.height, 0, 0, 1280, 720);
   rigs.forEach(r => sc.remove(r.root)); sc.remove(floor); return out.toDataURL(); });

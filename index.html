@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s171</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s172</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9627,7 +9627,10 @@ function personBakeQ(g,q){
   const bones=[],B={};
   const bone=(name,parent,x,y,z)=>{const b=new THREE.Bone();b.name=name;b.position.set(x||0,y||0,z||0);if(parent)parent.add(b);b.userData.i=bones.length;bones.push(b);B[name]=b;return b;};
   const parts=[];
-  const part=(geo,col,b,x,y,z)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);o.userData.geo=geo;o.userData.col=col;b.add(o);parts.push(o);return o;};
+  // a skeleton (g.skel, S172) is laid out on the same bones but none of the flesh, hair or clothes is hung on them:
+  // until bodyOpen, a part is thrown away; the bones go on after the skeleton is built (skelParts below)
+  let bodyOpen=!g.skel;
+  const part=(geo,col,b,x,y,z)=>{const o=new THREE.Object3D();o.position.set(x||0,y||0,z||0);if(!bodyOpen){geo.dispose();return o;}o.userData.geo=geo;o.userData.col=col;b.add(o);parts.push(o);return o;};
   const C=x=>(x&&x.isColor)?x:new THREE.Color(x);const mixC=(a,b,t)=>C(a).clone().lerp(C(b),t);
   const bw=g.build,fem=g.female,hs=g.head;
   const cloth=C(g.cloth),sleeve=C(g.sleeve),skin=C(g.skin),legs=C(g.legs),hair=C(g.hair),boot=C(g.boot),trim=C(g.trim),dark=C(0x1b1410),steel=C(0x9a9c9e);
@@ -9738,6 +9741,27 @@ function personBakeQ(g,q){
     part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,-.15,0);
     const an=bone('an'+k,kn,0,-.19,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
+  if(g.skel){bodyOpen=true; // the bones: a skull with dark sockets, a spine, a ribcage open at the front, a pelvis, the limb bones and joints
+    const bc=C(0xd8d0b8),bd=C(0xa89c80),sock=C(0x140e0a);const head=B.head,spine=B.spine,neck=B.neck;
+    part(SK.ball(.075,12,9),bc,head,0,.085,.005).scale.set(.88,1,1.05);
+    part(SK.lathe([[.001,0],[.05,0],[.056,.03],[.042,.05],[.001,.05]],10),bc,head,0,0,.02).scale.set(1,1,.9);
+    for(const s2 of [1,-1])part(SK.ball(.021,8,6),sock,head,s2*.028,.09,.058);
+    part(SK.cone(.012,.022,4),sock,head,0,.064,.071).rotation.x=Math.PI;
+    part(new THREE.BoxGeometry(.05,.012,.012),C(0xe8e0c8),head,0,.034,.062);
+    for(let i=0;i<3;i++)part(SK.cyl(.017,.017,.02,6),bd,neck,0,i*.026,0);
+    for(let i=0;i<8;i++)part(SK.cyl(.02,.022,.03,6),bd,spine,0,.02+i*.045,-.045);
+    for(let i=0;i<5;i++){const r=(.125-.012*Math.abs(i-2.4))*bw;const rb=part(SK.torus(r,.011,4,14,Math.PI*1.5),bc,spine,0,.16+i*.042,-.015);rb.rotation.set(-Math.PI/2,0,-Math.PI/4);rb.scale.set(1,.72,1);}
+    part(SK.cyl(.012,.012,.16,5),bc,spine,0,.25,.085*bw);
+    for(const s2 of [1,-1]){const cl=part(SK.cyl(.01,.01,.17*bw,4),bc,spine,s2*.09*bw,.325,.025);cl.rotation.z=Math.PI/2;}
+    part(SK.lathe([[.045,-.035],[.085,-.012],[.095,.02],[.075,.034]],12),bd,B.hips,0,0,0).scale.z=.62;part(SK.cyl(.018,.012,.07,5),bd,B.hips,0,-.01,-.05);
+    ['L','R'].forEach(k=>{const sh=B['sh'+k],el=B['el'+k],wr=B['wr'+k],th=B['th'+k],kn=B['kn'+k],an=B['an'+k];
+      part(SK.ball(.03,7,5),bc,sh);part(SK.limb(.14,.02,.017),bc,sh);part(SK.ball(.02,6,5),bd,el);
+      for(const o2 of [.012,-.012])part(SK.limb(.13,.011,.009),bc,el,o2,0,0);
+      part(SK.ball(.022,6,5),bc,wr,0,-.02,0).scale.set(1,.8,.7);for(let f=0;f<3;f++)part(SK.cyl(.005,.004,.05,4),bc,wr,-.012+f*.012,-.05,.004);
+      part(SK.ball(.03,7,5),bc,th);part(SK.limb(.2,.024,.019),bc,th);part(SK.ball(.022,6,5),bc,kn,0,0,.016);
+      part(SK.limb(.18,.018,.014),bc,kn);part(SK.limb(.17,.008,.007),bc,kn,.02,0,-.01);
+      part(SK.ball(.03,8,5),bc,an,0,-.02,.035).scale.set(.85,.45,1.9);});
+  }
   // held gear sits in the right fist: the shaft runs through the hand, fingers wrap it, the wrist keeps it upright
   const gear=bone('gear',B.wrR,0,-.035,.006);
   if(g.gear){part(SK.torus(.028,.014,6,12),skin,gear).rotation.x=Math.PI/2;B.handR.scale.set(.72,.85,.7);}
@@ -9805,14 +9829,19 @@ const FOE_DRESS={
   'Deserter':      {cloth:0x5a5a4a,hat:'helm',gear:'spear'},
   'Cultist':       {cloth:0x3a1414,hat:'hood',gear:null},
   'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',gear:'stick'},
-  'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',gear:'stick'}
+  'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',gear:'stick'},
+  'Skeleton':      {skel:true} // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
 };
-function buildFoe(type,x,z,genome){
+function buildFoe(type,x,z,genome,eyeCol){
   let g=genome;
-  if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth};
-    g=personGenome(def,{key:'foe'});g.hat=dr.hat;g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
-    g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);}
+  if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
+    g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
+    g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth||0x3a3a3a).multiplyScalar(.8);
+    if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
+  // a skeleton's eyes burn in its sockets (the enemy's eye colour), one small unlit mesh on the head
+  if(g.skel&&eyeCol!=null){const P=[],I=[];for(const s2 of [1,-1]){const g1=new THREE.SphereGeometry(.011,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+s2*.028,a[i+1]+.09,a[i+2]+.066);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+    const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
   return rig;
 }
 function buildNPCMesh(def,opts){
@@ -14507,7 +14536,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     limbs.wolf=wolfRig;
   }
   else if(d.shape==='humanoid'&&(FOE_DRESS[type]||(zOpts&&zOpts.genome))){ // v80 S171 — a human foe is a person
-    const pr=buildFoe(type,x,z,zOpts&&zOpts.genome);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;
+    const pr=buildFoe(type,x,z,zOpts&&zOpts.genome,d.eyeCol);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;
   }
   else if(d.shape==='spider'&&SPIDER_KINDS[type]){ // v80 S169 — the spider on the shape kit: eight IK legs on alternating tetrapods
     wolfRig=buildSpider(type,sc2);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
