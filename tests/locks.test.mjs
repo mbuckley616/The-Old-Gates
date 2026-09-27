@@ -11,6 +11,8 @@ const rule = await page.evaluate(() => { let a = 0, b = 0, same = true; const N 
 check('about 1 in 5 locked on floor 1, 2 in 5 on floor 2', Math.abs(rule.f1 - .2) < .04 && Math.abs(rule.f2 - .4) < .05 && rule.same, rule);
 
 // a real dungeon: every chest follows the rule, treasure chests always locked
+// the world lists only the doors of loaded cells, so wait for one to load rather than take whatever is there
+for (let k = 0; k < 24 && !(await page.evaluate(() => WORLD.DOORS.some(e => e && e.seed != null))); k++) await page.waitForTimeout(2500);
 await page.evaluate(() => { const d = WORLD.DOORS.find(e => e && e.seed != null) || [...WORLD.DOORS.values?.() || []][0];
   const p = makePortalDef(d); p.zone = 'world'; goToDungeon(p); });
 await page.waitForTimeout(12000); await g.hide();
@@ -41,7 +43,8 @@ const viaKey = await page.evaluate(() => { const ch = CHESTS.find(c => c.locked 
 let keyOut = null;
 for (const yw of [0, Math.PI, Math.PI / 2, -Math.PI / 2]) {
   await page.evaluate((yw) => { yaw = yw; pitch = -.5; const ch = window._t; px = ch.x; pz = ch.z + 1.3; }, yw);
-  await page.waitForTimeout(600); await page.keyboard.press('e'); await page.waitForTimeout(400);
+  // the E prompt's target is found by the main loop: on a slow runner 600ms may hold no frame, so wait for real ones
+  await g.frames(3); await page.keyboard.press('e'); await g.frames(2);
   keyOut = await page.evaluate(() => ({ lockOpen, loot: lootOpen, still: window._t.locked }));
   if (keyOut.lockOpen || keyOut.loot) break;
 }

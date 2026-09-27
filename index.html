@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s158</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s162</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9377,13 +9377,18 @@ const PEOPLE_RIGS=new Set();
 const PEOPLE_GENOMES=new Map();
 const PEOPLE_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:0,side:THREE.DoubleSide,skinning:true});
 // ── the shape kit: geometries any builder can draw from ──
+// SK.q scales the segment counts: 1 for a person up close, lower for the distant copy (buildPerson's lod)
 const SK={
+  q:1,seg:(n,lo)=>SK.q>=1?n:Math.max(lo,Math.round(n*SK.q)),
   v2:(x,y)=>new THREE.Vector2(x,y),
-  lathe(pts,seg){return new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]),q[1])),seg||12);},
+  lathe(pts,seg){return new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]),q[1])),SK.seg(seg||12,8));},
   // a tapered limb: radius r0 at the joint, r1 at the far end, rounded at both
   limb(len,r0,r1){const p=[];for(let i=0;i<=5;i++){const a=i/5*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r1*Math.sin(a)),-len-r1*Math.cos(a)));}
-    for(let i=1;i<=5;i++){const a=i/5*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r0*Math.cos(a)),r0*Math.sin(a)));}return new THREE.LatheGeometry(p,8);},
-  ball(r,w,h,a0,a1,b0,b1){return new THREE.SphereGeometry(r,w||10,h||7,a0||0,a1==null?Math.PI*2:a1,b0||0,b1==null?Math.PI:b1);},
+    for(let i=1;i<=5;i++){const a=i/5*Math.PI/2;p.push(SK.v2(Math.max(1e-4,r0*Math.cos(a)),r0*Math.sin(a)));}return new THREE.LatheGeometry(p,SK.seg(8,5));},
+  torus(r,t,rs,ts,arc){return new THREE.TorusGeometry(r,t,SK.seg(rs||8,4),SK.seg(ts||6,6),arc);},
+  cyl(r0,r1,h,rs,hs,open,a0,a1){return new THREE.CylinderGeometry(r0,r1,h,SK.seg(rs||8,4),hs||1,open,a0,a1);},
+  cone(r,h,rs,hs,open){return new THREE.ConeGeometry(r,h,SK.seg(rs||8,4),hs||1,open);},
+  ball(r,w,h,a0,a1,b0,b1){return new THREE.SphereGeometry(r,SK.seg(w||10,5),SK.seg(h||7,4),a0||0,a1==null?Math.PI*2:a1,b0||0,b1==null?Math.PI:b1);},
   // a lumpy surface for curls, wool and beards
   bumpy(geo,amp,freq,k){const pos=geo.attributes.position,v=new THREE.Vector3(),n=new THREE.Vector3();
     for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i);n.copy(v).normalize();
@@ -9467,7 +9472,12 @@ function personGenome(def,opts){
   return g;
 }
 // ── the body: rounded parts on bones, baked into one skinned mesh ──
-function buildPerson(g){
+// personBake builds the figure at a quality q (SK.q) and returns its geometry and bones. At q<1 it is the
+// distant copy: fewer segments, and the tiny parts (pupils, irises, freckles) left out. Bones are created
+// in the same order at every quality, so either geometry skins to either skeleton.
+const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012,shadowLo:true};
+function personBake(g,q){SK.q=q;try{return personBakeQ(g,q);}finally{SK.q=1;}}
+function personBakeQ(g,q){
   const bones=[],B={};
   const bone=(name,parent,x,y,z)=>{const b=new THREE.Bone();b.name=name;b.position.set(x||0,y||0,z||0);if(parent)parent.add(b);b.userData.i=bones.length;bones.push(b);B[name]=b;return b;};
   const parts=[];
@@ -9479,29 +9489,29 @@ function buildPerson(g){
   // the tunic's skirt, or a dress to the shin
   const hem=g.dress?[[0,-.37],[.25,-.37],[.255,-.355],[.215,-.2],[.18,-.05],[.16,.02],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
   part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
-  part(new THREE.TorusGeometry((g.dress?.247:.214)*bw,.012,5,22),trim,hips,0,g.dress?-.36:-.125,0).rotation.x=Math.PI/2;
-  const belt=part(new THREE.TorusGeometry(.172*bw*(fem?.96:1),.02,5,20),dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;
+  part(SK.torus((g.dress?.247:.214)*bw,.012,5,22),trim,hips,0,g.dress?-.36:-.125,0).rotation.x=Math.PI/2;
+  const belt=part(SK.torus(.172*bw*(fem?.96:1),.02,5,20),dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);
   const chestPts=fem?[[0,-.01],[.155,-.01],[.15,.06],[.17,.15],[.172,.22],[.15,.3],[.095,.36],[.052,.39],[0,.4]]:[[0,-.01],[.165,-.01],[.172,.05],[.19,.17],[.188,.25],[.16,.32],[.1,.37],[.055,.395],[0,.4]];
   part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;
-  if(g.cloak){part(new THREE.CylinderGeometry(.17*bw,.27*bw,.62,14,1,true,Math.PI/2+.25,Math.PI-.5),mixC(cloth,0x000000,.3),spine,0,.02,-.005).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
+  if(g.cloak){part(SK.cyl(.17*bw,.27*bw,.62,14,1,true,Math.PI/2+.25,Math.PI-.5),mixC(cloth,0x000000,.3),spine,0,.02,-.005).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
   if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
-  const neck=bone('neck',spine,0,.39,0);part(new THREE.CylinderGeometry(.043,.05,.09,10),skin,neck,0,.03,0);
+  const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);
   const head=bone('head',neck,0,.07,0);
   part(SK.ball(.13*hs,14,10),skin,head,0,.12,0).scale.set(g.jaw,fem?1.05:1.08,1.02);
   // every feature sits on the head's own surface: zs(x,y) is how far forward the skin is at that point
   const R=.13*hs,zs=(x,y)=>R*1.02*Math.sqrt(Math.max(0,1-(x/(R*g.jaw))**2-((y-.12)/(R*(fem?1.05:1.08)))**2));
   part(SK.ball(.017,8,6),skin,head,0,.102,zs(0,.102)+.002).scale.set(g.nose[0]*.9,g.nose[1]*1.25,1);
-  part(new THREE.CylinderGeometry(.005,.005,.036,5),mixC(skin,0x7a3a30,.45),head,0,.066,zs(0,.066)+.001).rotation.z=Math.PI/2;
+  part(SK.cyl(.005,.005,.036,5),mixC(skin,0x7a3a30,.45),head,0,.066,zs(0,.066)+.001).rotation.z=Math.PI/2;
   [-1,1].forEach(s=>{const ex=s*.046*g.jaw,ez=zs(ex,.135);
     part(SK.ball(.0165,8,6),C(0xf0ece4),head,ex,.135,ez-.002).scale.set(1,.78,.45);
     part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);
     part(SK.ball(.0042,5,4),C(0x0a0806),head,ex,.135,ez+.0078);
-    const bx=s*.047*g.jaw;part(new THREE.CylinderGeometry(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
+    const bx=s*.047*g.jaw;part(SK.cyl(.006*g.brow[0],.006*g.brow[0],.05,5),hair,head,bx,.163,zs(bx,.163)+.002).rotation.z=Math.PI/2+s*(.1+g.brow[1]);
     part(SK.ball(.026,8,6),skin,head,s*.128*g.jaw,.115,-.005).scale.set(.45,g.ears,.8);
     const cx=s*.07*g.jaw;if(g.ruddy)part(SK.ball(.03,8,6),mixC(skin,0xc8604e,.3),head,cx,.093,zs(cx,.093)-.005).scale.set(1,.7,.3);
-    if(g.extras.includes('spectacles'))part(new THREE.TorusGeometry(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
+    if(g.extras.includes('spectacles'))part(SK.torus(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
   });
   if(g.freckles){const fr=pRng(g.seed+99);const fc=mixC(skin,0x7a4a2a,.45);for(let i=0;i<12;i++){const x=(fr()<.5?-1:1)*(.02+fr()*.07),y=.09+fr()*.04;part(SK.ball(.0045,5,4),fc,head,x,y,zs(x,y));}}
   // hair: a bumped sphere for texture, a chain of offset lobes with a tie for a plait
@@ -9509,14 +9519,14 @@ function buildPerson(g){
     for(let i=0;i<n*per;i++){const u=i/(n*per),seg=Math.floor(u*n),f=u*n-seg,a=pts[seg],b=pts[seg+1];
       const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f,z=a[2]+(b[2]-a[2])*f;const rr=r*(1-.3*u),side=(i%2?1:-1)*rr*.38;
       const lobe=part(SK.ball(rr,6,5),col||hair,head,x+side,y,z);lobe.scale.set(1,1.5,.9);lobe.rotation.z=side*6;last=[x,y,z,rr];}
-    part(new THREE.TorusGeometry(last[3]*.8,.006,4,8),trim,head,last[0],last[1]-.012,last[2]).rotation.x=Math.PI/2;
-    part(new THREE.ConeGeometry(last[3]*.85,.05,6),col||hair,head,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
+    part(SK.torus(last[3]*.8,.006,4,8),trim,head,last[0],last[1]-.012,last[2]).rotation.x=Math.PI/2;
+    part(SK.cone(last[3]*.85,.05,6),col||hair,head,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
   const shorn=(t)=>{const c=part(SK.ball(R*1.012,14,8,0,Math.PI*2,0,Math.PI*.56),mixC(skin,hair,t||.4),head,0,.125,-.006);c.rotation.x=-.3;c.scale.set(g.jaw,1.06,1.03);return c;};
   const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
   let cap=null;const st=g.style;
-  if(st==='thin'){const f=part(new THREE.TorusGeometry(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
+  if(st==='thin'){const f=part(SK.torus(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
   else if(st==='buzz')cap=shorn(.7);
-  else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(new THREE.ConeGeometry(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
+  else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(SK.cone(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
   else if(st==='curly')part(SK.bumpy(SK.ball(.15*hs,20,14),.022,23,g.seed%13),hair,head,0,.17,-.045).scale.set(g.jaw,.98,1);
   else if(st==='afro')part(SK.bumpy(SK.ball(.2*hs,24,16),.014,27,g.seed%11),hair,head,0,.2,-.07).scale.set(g.jaw,.95,1);
   else if(st==='shaggy'){const c=part(SK.bumpy(SK.ball(.147*hs,18,11,0,Math.PI*2,0,Math.PI*.5),.016,15,g.seed%7),hair,head,0,.125,-.012);c.rotation.x=-.4;c.scale.set(g.jaw*1.03,1.12,1.06);
@@ -9526,11 +9536,11 @@ function buildPerson(g){
     plait([[0,.26,-.1],[0,.2,-.16],[0,.12,-.17],[0,.04,-.16]],.022);
     [-1,1].forEach(sd=>plait([[sd*.118*g.jaw,.14,.03],[sd*.125*g.jaw,.04,.05],[sd*.12*g.jaw,-.08,.07],[sd*.115*g.jaw,-.2,.075]],.017));}
   else cap=capHair();
-  if(st==='straight')part(new THREE.CylinderGeometry(.136*hs*g.jaw,.155*g.jaw,.36,16,1,true,Math.PI*.3,Math.PI*1.4),hair,head,0,-.01,-.006).scale.z=.95;
+  if(st==='straight')part(SK.cyl(.136*hs*g.jaw,.155*g.jaw,.36,16,1,true,Math.PI*.3,Math.PI*1.4),hair,head,0,-.01,-.006).scale.z=.95;
   if(st==='braid')plait([[0,.1,-.135],[0,-.02,-.16],[0,-.15,-.15],[0,-.27,-.13],[0,-.35,-.12]],.024);
   if(st==='twin')[-1,1].forEach(sd=>plait([[sd*.1*g.jaw,.08,-.07],[sd*.135*g.jaw,-.02,-.03],[sd*.14*g.jaw,-.13,0],[sd*.135*g.jaw,-.22,.02]],.019));
   if(st==='bun')part(SK.ball(.052,10,8),hair,head,0,.2,-.1);
-  if(st==='tied')part(new THREE.ConeGeometry(.035,.17,8),hair,head,0,.03,-.145).rotation.x=Math.PI+.35;
+  if(st==='tied')part(SK.cone(.035,.17,8),hair,head,0,.03,-.145).rotation.x=Math.PI+.35;
   // beards: a shell over the jaw, a chin mass, moustaches from two drooping halves
   if(g.beard&&g.beard!=='none'){
     const bc=g.beard==='stubble'?mixC(skin,hair,.22):mixC(hair,0x8a4a2a,.12);
@@ -9538,18 +9548,18 @@ function buildPerson(g){
     const lump=(r,x,y,z,sx,sy,sz,amp)=>{const m=part(amp?SK.bumpy(SK.ball(r,12,10),amp,26,g.seed%5):SK.ball(r,12,10),bc,head,x,y,z);m.scale.set(sx,sy,sz);return m;};
     const my=.082,mz=zs(0,.082)+.003;
     const tache=(kind)=>{
-      if(kind==='pencil'){part(new THREE.CylinderGeometry(.0035,.0035,.05,5),bc,head,0,.079,zs(0,.079)+.002).rotation.z=Math.PI/2;return;}
+      if(kind==='pencil'){part(SK.cyl(.0035,.0035,.05,5),bc,head,0,.079,zs(0,.079)+.002).rotation.z=Math.PI/2;return;}
       const big=kind==='walrus',r=big?.028:.021;
       [-1,1].forEach(sd=>{const h=lump(r,sd*(big?.02:.018),my-(big?.005:0),mz,big?1.45:1.5,big?.75:.42,big?.7:.55,big?.004:0);h.rotation.z=-sd*(big?.45:.25);});
-      if(kind==='handlebar')[-1,1].forEach(sd=>{const c=part(new THREE.TorusGeometry(.011,.0045,4,10,Math.PI*1.4),bc,head,sd*.047,my+.009,mz-.006);c.rotation.set(0,sd*.35,sd>0?-.4:Math.PI+.4);});};
+      if(kind==='handlebar')[-1,1].forEach(sd=>{const c=part(SK.torus(.011,.0045,4,10,Math.PI*1.4),bc,head,sd*.047,my+.009,mz-.006);c.rotation.set(0,sd*.35,sd>0?-.4:Math.PI+.4);});};
     const Bd=g.beard;
     if(Bd==='stubble')shell(Math.PI*.5,Math.PI*.63,Math.PI*.33,R*1.008,0,0,1.08);
     if(Bd==='chinstrap')shell(Math.PI*.52,Math.PI*.8,Math.PI*.17,R*1.02,.004,30,1.1);
     if(Bd==='short'||Bd==='braided'){shell(Math.PI*.55,Math.PI*.62,Math.PI*.37,R*1.035,.008,30,1.12);tache('bar');}
     if(Bd==='full'||Bd==='long'||Bd==='forked'){shell(Math.PI*.6,Math.PI*.6,Math.PI*.4,R*1.06,.014,22,1.25);lump(.065,0,-.03,.075,1.15,1.15,.85,.012);tache('bar');}
     if(['short','braided','full','long','forked'].includes(Bd))[-1,1].forEach(sd=>{const x=sd*.112*g.jaw;lump(.028,x,.1,zs(x,.1)-.014,.5,1.6,.9,.006).rotation.z=sd*.15;});
-    if(Bd==='long')part(SK.bumpy(new THREE.ConeGeometry(.075,.24,14,4),.006,30,2),bc,head,0,-.13,.085).rotation.x=Math.PI+.15;
-    if(Bd==='forked')[-1,1].forEach(sd=>part(SK.bumpy(new THREE.ConeGeometry(.036,.14,10,3),.004,30,3),bc,head,sd*.03,-.1,.09).rotation.set(Math.PI+.1,0,sd*.22));
+    if(Bd==='long')part(SK.bumpy(SK.cone(.075,.24,14,4),.006,30,2),bc,head,0,-.13,.085).rotation.x=Math.PI+.15;
+    if(Bd==='forked')[-1,1].forEach(sd=>part(SK.bumpy(SK.cone(.036,.14,10,3),.004,30,3),bc,head,sd*.03,-.1,.09).rotation.set(Math.PI+.1,0,sd*.22));
     if(Bd==='braided')plait([[0,-.02,.11],[0,-.1,.12],[0,-.18,.11],[0,-.25,.1]],.02,bc);
     if(Bd==='goatee'||Bd==='vandyke')lump(.03,0,.006,zs(0,.006)-.004,1,1.5,.8,.005);
     if(Bd==='vandyke')tache('bar');
@@ -9561,50 +9571,51 @@ function buildPerson(g){
   if(g.hat==='coif'&&cap){cap.userData.col=C(0xd8d0c0);cap.scale.set(g.jaw*1.05,1.1,1.08);}
   if(g.hat==='kerchief'&&cap){cap.userData.col=mixC(cloth,0xffffff,.2);cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),mixC(cloth,0xffffff,.2),head,0,.06,-.13);}
   if(g.hat==='flatcap')part(SK.lathe([[0,0],[.15,0],[.155,.02],[.14,.05],[0,.06]],16),mixC(sleeve,0x000000,.2),head,0,.21,.01).rotation.x=-.2;
-  if(g.hat==='fur'){part(new THREE.CylinderGeometry(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(new THREE.TorusGeometry(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
+  if(g.hat==='fur'){part(SK.cyl(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(SK.torus(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
   if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
-  if(g.hat==='chaperon'){part(new THREE.TorusGeometry(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
-  if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(new THREE.TorusGeometry(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
+  if(g.hat==='chaperon'){part(SK.torus(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
+  if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(SK.torus(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
   if(g.hat==='brim'){part(SK.lathe([[0,0],[.24,0],[.245,.02],[.15,.03],[.14,.19],[.12,.21],[0,.22]],20),C(0x3a2808),head,0,.2,-.01).rotation.x=-.1;}
   if(g.hat==='helm')part(SK.lathe([[0,0],[.19,0],[.195,.01],[.15,.022],[.143,.07],[.125,.12],[.07,.155],[0,.163]],20),g.helmCol!=null?C(g.helmCol):steel,head,0,.155,0);
-  if(g.hat==='crown'){part(new THREE.CylinderGeometry(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(new THREE.ConeGeometry(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
+  if(g.hat==='crown'){part(SK.cyl(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(SK.cone(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
   // arms and legs: side 1 is the figure's left (+x), -1 its right
   ['L','R'].forEach((k,i)=>{const s=i===0?1:-1;
     const sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),sleeve,sh).scale.set(1,.9,.9);
     part(SK.limb(.155,.05*bw,.044*bw),sleeve,sh);
     const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),sleeve,el);
-    part(new THREE.TorusGeometry(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
-    if(g.tattoo)[-.105,-.09].forEach(y=>part(new THREE.TorusGeometry(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
+    part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
+    if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
     const wr=bone('wr'+k,el,0,-.14,0);const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
     part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
     const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(.2,.066*bw,.05*bw),legs,th);
     const kn=bone('kn'+k,th,0,-.2,0);part(SK.limb(.19,.05*bw,.04*bw),legs,kn);
-    part(new THREE.CylinderGeometry(.05*bw,.046*bw,.1,10),boot,kn,0,-.15,0);
+    part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,-.15,0);
     const an=bone('an'+k,kn,0,-.19,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
   // held gear sits in the right fist: the shaft runs through the hand, fingers wrap it, the wrist keeps it upright
   const gear=bone('gear',B.wrR,0,-.035,.006);
-  if(g.gear){part(new THREE.TorusGeometry(.028,.014,6,12),skin,gear).rotation.x=Math.PI/2;B.handR.scale.set(.72,.85,.7);}
-  if(g.gear==='spear'){part(new THREE.CylinderGeometry(.015,.017,1.55,8),C(0x5a3a22),gear,0,.225,0);part(new THREE.ConeGeometry(.034,.16,10),steel,gear,0,1.08,0);}
-  if(g.gear==='hoe'){part(new THREE.CylinderGeometry(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
-  if(g.gear==='stick'){part(new THREE.CylinderGeometry(.013,.017,.56,8),C(0x4a3018),gear,0,-.24,0);part(SK.ball(.024,8,6),C(0x5a4028),gear,0,.03,0);}
-  if(g.gear==='hammer'){part(new THREE.CylinderGeometry(.014,.016,.36,8),C(0x4a3018),gear,0,.06,0);part(new THREE.BoxGeometry(.16,.07,.07),C(0x666666),gear,0,.24,0);}
+  if(g.gear){part(SK.torus(.028,.014,6,12),skin,gear).rotation.x=Math.PI/2;B.handR.scale.set(.72,.85,.7);}
+  if(g.gear==='spear'){part(SK.cyl(.015,.017,1.55,8),C(0x5a3a22),gear,0,.225,0);part(SK.cone(.034,.16,10),steel,gear,0,1.08,0);}
+  if(g.gear==='hoe'){part(SK.cyl(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
+  if(g.gear==='stick'){part(SK.cyl(.013,.017,.56,8),C(0x4a3018),gear,0,-.24,0);part(SK.ball(.024,8,6),C(0x5a4028),gear,0,.03,0);}
+  if(g.gear==='hammer'){part(SK.cyl(.014,.016,.36,8),C(0x4a3018),gear,0,.06,0);part(new THREE.BoxGeometry(.16,.07,.07),C(0x666666),gear,0,.24,0);}
   // the player's kit (tpBuild): a cuirass and pauldrons over the tunic, greaves, gauntlets, an amulet, a quiver
   if(g.eq){const E=g.eq;
     if(E.chest&&!E.chest.cloth){const ac=C(E.chest.col);part(SK.lathe(chestPts.map(q=>[q[0]*bw*1.08,q[1]]),14),ac,spine,0,-.005,0).scale.z=.78;
       [-1,1].forEach(sd=>part(SK.ball(.085*bw,10,7),ac,spine,sd*.19*bw,.31,0).scale.set(1,.7,1));
-      part(new THREE.TorusGeometry(.2*bw,.03,5,18),ac,hips,0,-.05,0).rotation.x=Math.PI/2;}
-    if(E.legs&&!E.legs.cloth){const lc=C(E.legs.col);['L','R'].forEach(k=>part(new THREE.CylinderGeometry(.056*bw,.05*bw,.16,10,1,true),lc,B['kn'+k],0,-.09,0));}
-    if(E.hands){const hc=C(E.hands.col);B.handL.userData.col=hc;B.handR.userData.col=hc;['L','R'].forEach(k=>part(new THREE.CylinderGeometry(.046*bw,.04*bw,.06,10),hc,B['el'+k],0,-.115,0));}
+      part(SK.torus(.2*bw,.03,5,18),ac,hips,0,-.05,0).rotation.x=Math.PI/2;}
+    if(E.legs&&!E.legs.cloth){const lc=C(E.legs.col);['L','R'].forEach(k=>part(SK.cyl(.056*bw,.05*bw,.16,10,1,true),lc,B['kn'+k],0,-.09,0));}
+    if(E.hands){const hc=C(E.hands.col);B.handL.userData.col=hc;B.handR.userData.col=hc;['L','R'].forEach(k=>part(SK.cyl(.046*bw,.04*bw,.06,10),hc,B['el'+k],0,-.115,0));}
     if(E.amulet)part(SK.ball(.018,8,6),C(0xd8b040),spine,0,.3,.13*bw);
-    if(E.quiver){part(new THREE.CylinderGeometry(.04,.035,.34,8),C(0x5a3a20),spine,.09,.2,-.14).rotation.z=-.35;for(let i=0;i<3;i++)part(new THREE.CylinderGeometry(.006,.006,.1,4),C(0xd8d0c0),spine,.1+i*.015,.4+i*.01,-.14).rotation.z=-.35;}}
-  if(g.extras.includes('satchel')){part(new THREE.BoxGeometry(.14,.16,.06),C(0x5a7a30),hips,-.2*bw,-.02,.06);part(new THREE.CylinderGeometry(.03,.04,.16,6),C(0x4a8a28),hips,-.2*bw,.1,.06).rotation.z=.3;}
+    if(E.quiver){part(SK.cyl(.04,.035,.34,8),C(0x5a3a20),spine,.09,.2,-.14).rotation.z=-.35;for(let i=0;i<3;i++)part(SK.cyl(.006,.006,.1,4),C(0xd8d0c0),spine,.1+i*.015,.4+i*.01,-.14).rotation.z=-.35;}}
+  if(g.extras.includes('satchel')){part(new THREE.BoxGeometry(.14,.16,.06),C(0x5a7a30),hips,-.2*bw,-.02,.06);part(SK.cyl(.03,.04,.16,6),C(0x4a8a28),hips,-.2*bw,.1,.06).rotation.z=.3;}
   if(g.extras.includes('bag'))part(new THREE.BoxGeometry(.13,.13,.08),C(0x8a6030),hips,-.21*bw,-.05,.05);
   if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
   // bake: every part into one geometry, each vertex bound to its bone
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
   hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone
   for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
+    if(q<1){if(!geo.boundingSphere)geo.computeBoundingSphere();if(geo.boundingSphere.radius*o.scale.x<PEOPLE_LOD.tiny){o.parent.remove(o);geo.dispose();continue;}}
     for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(n.x,n.y,n.z);
       const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);si.push(bi,0,0,0);sw.push(1,0,0,0);}
     if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
@@ -9613,6 +9624,13 @@ function buildPerson(g){
   geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
   geo.computeBoundingSphere();geo.boundingSphere.radius*=1.35;
+  return {geo,bones,B,hips,tris:idx.length/3};
+}
+function buildPerson(g,opts){
+  const {geo,bones,B,hips,tris}=personBake(g,1);
+  B.thL.rotation.order=B.thR.rotation.order='YXZ'; // a thigh's turn is about the pelvis's upright, before it swings (pwRun)
+  // the distant copy, on the same skeleton: tickPeople swaps it in past PEOPLE_LOD.far (opts.noLod for the player)
+  const lo=opts&&opts.noLod?null:personBake(g,PEOPLE_LOD.q);
   const mesh=new THREE.SkinnedMesh(geo,PEOPLE_MAT);mesh.add(hips);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));
   mesh.castShadow=true;mesh.receiveShadow=false;
   // Bone matrices stay local to the mesh. three.js feeds the shader world-space bone matrices and cancels the
@@ -9625,7 +9643,8 @@ function buildPerson(g){
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
   const root=new THREE.Group();root.add(mesh);
   root.scale.setScalar(g.height);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
-  const rig={root,mesh,B,g,w:{idle:1,walk:0,wave:0},phase:g.phase%1,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris:idx.length/3};
+  const rig={root,mesh,B,g,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
+    geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
   return rig;
 }
@@ -9667,12 +9686,36 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   const L=foot(phL,1),Rr=foot(phR,-1);
   // the pelvis sways and tips sideways over the standing foot; the thighs aim across so the feet stay put
   p.sway=.014*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
-  p.thL=[L[0],0,.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],0,-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
+  p.thL=[L[0],-p.hips[1],.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],-p.hips[1],-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
   p.spine=[.07,.11*c,-.02*s];p.neck=[-.05,-.04*c,0];p.head=[-.02,0,-.01*s];
   p.shL=[.32*c,0,.09];p.shR=[-.32*c,0,-.09];
   p.elL=[-.24-.2*Math.max(0,-Math.cos(a-.6)),0,0];p.elR=[-.24-.2*Math.max(0,Math.cos(a-.6)),0,0];
   p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
   if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+// A run (S162): each foot is down for only a third of the stride, so both are off the ground between steps. The
+// body sits lowest over the standing foot and rises through the flight; the heel kicks up behind as the leg swings
+// through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
+// unit tall) the gait blends from the walk into this; back under PW.RUN.off.
+PW.RUN={STRIDE:.25,DUTY:.33,HIPS:.378,BOB:.018,LIFT:.15,on:1.4,off:1.15};
+PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
+function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
+  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2));
+  const c=Math.cos(a),s=Math.sin(a);
+  p.hips=[0,-.09*c,.02*s];
+  const foot=(f,sd)=>{let z,lift=0,toe=0;
+    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=R.LIFT*Math.sin(Math.PI*Math.pow(u,.65));toe=.45*Math.sin(Math.PI*Math.min(1,u*1.3));}
+    const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
+  const L=foot(phL,1),Rr=foot(phR,-1);
+  p.sway=.008*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
+  // the thighs turn back against the pelvis's twist (their Euler order is YXZ), so a planted foot is not dragged sideways
+  p.thL=[L[0],-p.hips[1],.01+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],-p.hips[1],-.01+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
+  p.spine=[.2,.15*c,-.015*s];p.neck=[-.14,-.08*c,0];p.head=[-.04,0,-.01*s];
+  p.shL=[.6*c,0,.12];p.shR=[-.6*c,0,-.12];
+  p.elL=[-1.2-.3*Math.max(0,-Math.cos(a-.4)),0,0];p.elR=[-1.2-.3*Math.max(0,Math.cos(a-.4)),0,0];
+  p.wrL=[-.1,0,.1];p.wrR=[-.1,0,-.1];
+  if(o.holds)pwHold(p,-.15*c,o.gear);return p;}
+// the ground one stride cycle covers, for a mix of walk and run
+function pwCycle(w){const a=w.walk||0,b=w.run||0;return a+b>.001?(a*PW.cycle+b*PW.RUN.cycle)/(a+b):PW.cycle;}
 function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   if(o.holds){p.shL=[-.25,0,2.35];p.elL=[0,.2,.55-.42*w];p.wrL=[0,0,-.25*w];p.neck=[0,.18,0];p.head=[.04,0,.08];p.spine=[p.spine[0],.06,-.03];}
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
@@ -9680,28 +9723,43 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
 // blend toward the chosen motion over about a third of a second
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='wave'?pwWave(t,o):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
   B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
   // the wrist keeps a held shaft upright whatever the arm is doing
   B.gear.rotation.x=-(P.hips[0]+P.spine[0]+P.shR[0]+P.elR[0]+P.wrR[0]);B.gear.rotation.z=-(P.hips[2]+P.spine[2]+P.shR[2]+P.elR[2]+P.wrR[2]);}
+// The sun's shadow pass draws every townsperson from the distant copy, whatever the range: a person's shadow is
+// ~25 texels tall in the 2048 map, where the two copies cast the same shape. The renderer has already listed each
+// mesh's geometry for the eye before it draws the shadows, so swapping it for the shadow pass alone costs nothing.
+// (A second mesh on a shadow-only layer does not work in r128: its shadow pass tests layers against the eye's camera.)
+{const _smRender=REN.shadowMap.render;
+  REN.shadowMap.render=function(){const sw=[];
+    if(PEOPLE_LOD.shadowLo)for(const rig of PEOPLE_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
+    try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;}};}
 // Every person in the active scene, each frame: the stride is driven by how far the figure moved, so the
 // feet stay planted whatever moves it (the town's schedules, an interior amble, a legacy zone's wander).
 function tickPeople(dt,now){
   for(const rig of PEOPLE_RIGS){
     const root=rig.root;
-    if(!root.parent){PEOPLE_RIGS.delete(rig);try{rig.mesh.geometry.dispose();}catch(e){}continue;}
+    if(!root.parent){PEOPLE_RIGS.delete(rig);try{rig.geoHi.dispose();if(rig.geoLo)rig.geoLo.dispose();}catch(e){}continue;}
     if(root.parent!==scene||!root.visible)continue;
+    // level of detail by distance from the eye, with a gap between the two thresholds so no one flickers at the line
+    if(rig.geoLo){const cd=Math.hypot(CAM.position.x-root.position.x,CAM.position.z-root.position.z);
+      const lod=rig.lod?(cd>PEOPLE_LOD.near?1:0):(cd>PEOPLE_LOD.far?1:0);
+      if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod?rig.geoLo:rig.geoHi;}}
     let d=rig.lx==null?0:Math.hypot(root.position.x-rig.lx,root.position.z-rig.lz);rig.lx=root.position.x;rig.lz=root.position.z;
     if(d>1.5)d=0; // a teleport, not a stride
     const spd=dt>0?d/dt:0,s=root.scale.x||1;
-    rig.phase=(rig.phase+d/(PW.cycle*s))%1;
+    rig.phase=(rig.phase+d/(pwCycle(rig.w)*s))%1;
+    // walk or run by the pace, smoothed over a few frames, in heights a second
+    rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
+    if(!rig.run&&rig.v/s>PW.RUN.on)rig.run=true;else if(rig.run&&rig.v/s<PW.RUN.off)rig.run=false;
     const near=Math.hypot(px-root.position.x,pz-root.position.z);
     if(near<2.8&&rig.lastNear>=2.8&&spd<.05&&now-rig.wavedAt>25000)rig.wavedAt=now; // a greeting when you walk up
     rig.lastNear=near;
-    const mode=now-rig.wavedAt<2200?'wave':spd>.08?'walk':'idle';
+    const mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     const t=now/1000*rig.g.tempo+rig.g.phase;
     pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
   }
@@ -20032,7 +20090,7 @@ function tpBuild(lookIn,ppIn){
     hat:hd?(tpIsCloth(hd)?'hood':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
     eq:{chest:ch?{col:chestCol,cloth:chestCloth}:null,legs:lg?{col:legCol,cloth:legCloth}:null,hands:gl?{col:tpMatColor(gl,0x5a3a20)}:null,amulet:!!EQ.amulet,quiver:!!(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow'))},
     bodyScale:[P&&P.width||1,P&&P.height||1,P&&P.width||1]});
-  const rig=buildPerson(g);PEOPLE_RIGS.delete(rig); // tpPose drives this one, not tickPeople
+  const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig); // tpPose drives this one, not tickPeople
   const B=rig.B;for(const k in B){if(B[k].isBone)B[k].rotation.order='YXZ';}
   rig.mesh.castShadow=false;rig.mesh.userData.tp=true;
   const root=rig.root;root.rotation.order='YXZ';
@@ -20098,16 +20156,22 @@ function tpPose(R,dt,st){
   // the gait (S154): on the new rig, walking legs are placed by the planted-foot stride, driven by ground covered
   let anL=0,anR=0,hipsY=(R.hipsY0||.38)+(st.moving&&!air?Math.abs(Math.sin(ph))*(st.sprinting?.035:.02):Math.sin(now*1.6)*.004);
   let gait=false;
-  if(R.rig&&st.moving&&!air&&!sneak){const W=pwWalk(TP.gph||0,{holds:false});thL=W.thL[0];knL=W.knL[0];anL=W.anL[0];thR=W.thR[0];knR=W.knR[0];anR=W.anR[0];hipsY=W.hipsY+(st.sprinting?.01:0);gait=true;}
+  let GP=null;
+  if(R.rig&&st.moving&&!air&&!sneak){const rw=TP.rw||0,W=pwWalk(TP.gph||0,{holds:false}),U=rw>.001?pwRun(TP.gph||0,{holds:false}):W,m=(a,b)=>a+(b-a)*rw;
+    GP={shL:m(W.shL[0],U.shL[0]),shR:m(W.shR[0],U.shR[0]),elL:m(W.elL[0],U.elL[0]),elR:m(W.elR[0],U.elR[0]),spine:m(W.spine[0],U.spine[0])};
+    thL=m(W.thL[0],U.thL[0]);knL=m(W.knL[0],U.knL[0]);anL=m(W.anL[0],U.anL[0]);thR=m(W.thR[0],U.thR[0]);knR=m(W.knR[0],U.knR[0]);anR=m(W.anR[0],U.anR[0]);hipsY=m(W.hipsY,U.hipsY);gait=true;}
   const kl=gait?1:k; // the gait's legs land exactly; eased legs would slide the planted foot
   tpSet(R.thighL,thL,0,0,kl);tpSet(R.thighR,thR,0,0,kl);tpSet(R.kneeL,knL,0,0,kl);tpSet(R.kneeR,knR,0,0,kl);
   if(R.ankleL){tpSet(R.ankleL,anL,0,0,kl);tpSet(R.ankleR,anR,0,0,kl);}
   R.hips.position.y=_tpL(R.hips.position.y,hipsY-(sneak?.1:0)-(blocking?.02:0),kl);
   // torso
-  let tx=sneak?-.4:st.sprinting?-.18:0,ty=0,tz=0;
+  // S162: on this rig a positive turn of the spine leans forward (the old rig's was negative, and sneak and sprint leant back)
+  let tx=sneak?.4:GP?GP.spine+(st.sprinting?.08:0):0,ty=0,tz=0;
   // arms: locomotion swing by default
   let wR=0,shY=R.shield?-.25:0,shZ=0;
   let aL={x:Math.sin(ph)*amp*.6,y:0,z:.06},aR={x:Math.sin(ph+Math.PI)*amp*.6,y:0,z:-.06},eL=-.2-(st.sprinting?.6:0),eR=-.2-(st.sprinting?.6:0);
+  // on the gait the arms swing with the legs, pumping bent at a run
+  if(GP){aL.x=GP.shL;aR.x=GP.shR;eL=GP.elL;eR=GP.elR;}
   if(sneak){aL.x=-.4;aR.x=-.4;eL=-.9;eR=-.9;}
   if(air){aL={x:-.5,y:0,z:.5};aR={x:-.5,y:0,z:-.5};}
   // weapon at rest: blade up and forward
@@ -20159,7 +20223,12 @@ function tpUpdate(dt,st){
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
-  {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;TP.gph=((TP.gph||0)+d/(PW.cycle*(R.root.scale.x||1)))%1;} // S154 — the stride follows the ground
+  // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
+  {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;
+    TP.v=(TP.v||0)+(v-(TP.v||0))*(1-Math.exp(-dt/.15));
+    if(!TP.run&&TP.v/s>PW.RUN.on)TP.run=true;else if(TP.run&&TP.v/s<PW.RUN.off)TP.run=false;
+    TP.gph=((TP.gph||0)+d/(pwCycle({walk:1-(TP.rw||0),run:TP.rw||0})*s))%1;
+    TP.rw=(TP.rw||0)+((TP.run?1:0)-(TP.rw||0))*(1-Math.exp(-dt/.11));}
   tpPose(R,dt,st);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;

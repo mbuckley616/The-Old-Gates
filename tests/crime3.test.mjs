@@ -20,7 +20,9 @@ check('refuse, and the guard draws: an enemy stands in for him and he leaves the
 const cells = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); BAG.push({ name: 'A tin locket', ico: '🎁', type: 'misc', weight: .1, qty: 1, stolen: true }); BAG.push({ name: 'Honest bread', ico: '🍞', type: 'misc', weight: .1, qty: 1 });
   PHP = Math.round(maxHP * .2); const abs0 = worldState.gameTimeAbsMinutes || 0; WORLD.tickCrime(1 / 60, performance.now());
   const offered = dlgOpen && /Yield/.test(dlgNPC.greeting[0]); const held = ZONES.world.enemies.filter(x => x._guard && !x.dead).every(x => !x.alert);
-  const t = dlgNPC.topics.find(x => /cells/i.test(x.label)); const line = t.fn(); await wait(1500);
+  const t = dlgNPC.topics.find(x => /cells/i.test(x.label)); const line = t.fn();
+  // the cells run inside a screen fade, which on a slow machine can take longer than any fixed pause: wait for the clock to move
+  for (let k = 0; k < 240 && (worldState.gameTimeAbsMinutes || 0) === abs0; k++) await wait(250); await wait(300);
   const absAdv = (worldState.gameTimeAbsMinutes || 0) - abs0; const keep = window._S.houses.find(h => h.type === 'castle');
   const there = keep ? [keep.exitX != null ? keep.exitX : keep.doorX, keep.exitZ != null ? keep.exitZ : keep.doorZ + 2] : [window._S.site.x, window._S.site.z];
   return { offered, held, line, hour: Math.floor(worldState.gameTimeMinutes / 60), absAdv: Math.round(absAdv), stolenGone: !BAG.some(i => i.stolen), breadKept: BAG.some(i => i.name === 'Honest bread'), bounty: WORLD.bountyAt('dunmore'), enemies: ZONES.world.enemies.filter(x => x._guard && !x.dead).length, guardBack: window._gd.g.visible, where: keep ? 'keep' : 'town centre (no keep)', atPlace: Math.hypot(px - there[0], pz - there[1]) < 1.5, hp: PHP / maxHP }; });

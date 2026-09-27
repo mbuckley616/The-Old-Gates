@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Boat prototype: hulls and rigging</title>
+<style>html,body{margin:0;background:#8fa3b0;overflow:hidden}canvas{display:block}#t{position:absolute;left:0;right:0;top:0;font:15px Georgia,serif;color:#fff;text-shadow:0 1px 2px #000;text-align:center;padding-top:8px}.l{position:absolute;font:12px Georgia,serif;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;transform:translateX(-50%);white-space:nowrap}</style>
+<script src="../../../tests/vendor/three.min.js"></script>
+<script src="../creatures/sk.js"></script><script src="boats.src.js"></script></head><body><div id="t"></div>
+<script>
+// views: #lineup (today's sloop beside the proposed one), #classes (sloop, cog, galleon with a person for scale),
+// #others (the black-sailed ship and the merchantman, today and proposed), #harbour (moored boats at a quay, today and proposed),
+// #deck (on the sloop's deck from about the third-person camera)
+const view=(location.hash||'#lineup').slice(1),W=1280,H=720;
+const R=new THREE.WebGLRenderer({antialias:true});R.setSize(W,H);R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;document.body.appendChild(R.domElement);
+const S=new THREE.Scene();S.background=new THREE.Color(0xa8bccb);S.fog=new THREE.Fog(0xa8bccb,40,140);
+S.add(new THREE.HemisphereLight(0xdfe8f0,0x3a4a50,.8));
+const sun=new THREE.DirectionalLight(0xfff0d8,1.0);sun.position.set(18,30,14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,far:120});sun.shadow.bias=-.0006;S.add(sun);
+const sea=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:0x3a6a80,roughness:.35,transparent:true,opacity:.86}));sea.rotation.x=-Math.PI/2;sea.receiveShadow=true;S.add(sea);
+const cam=new THREE.PerspectiveCamera(36,W/H,.1,300);const tags=[];const info={};
+const put=(o,x,z,ry,y)=>{o.position.set(x,y||0,z);o.rotation.y=ry||0;S.add(o);return o;};
+const T=s=>document.getElementById('t').textContent=s;
+if(view==='lineup'){const a=oldShip(13,4.4,'player'),b=buildShip('sloop','player');put(a.mesh,-9,0,-.7);put(b.mesh,9,0,-.7);
+  info.old=a.tris;info.sloop=b.tris;tags.push([`today: ${a.tris} triangles`,-9,5],[`proposed sloop: ${b.tris} triangles`,9,5]);
+  cam.position.set(0,9,30);cam.lookAt(0,3.6,0);T("The player's sloop, today and proposed");}
+if(view==='classes'){const ks=["sloop","cog","galleon"],xs=[-24,-1,24];ks.forEach((k,i)=>{const b=buildShip(k,'player');put(b.mesh,xs[i],-i*4,-Math.PI/2+.55);info[k]=b.tris;tags.push([`${k}: ${b.tris} triangles`,xs[i],8-i*4]);
+    const p=personStandIn();put(p,xs[i]+.8,-i*4-.4,0,DECK);});
+  cam.position.set(1,9,44);cam.lookAt(1,4.2,-3);cam.fov=50;cam.updateProjectionMatrix();T('The three hulls you can own (sloop 13, cog 17, galleon 22 long), each with a person on deck');}
+if(view==='others'){const set=[['pirate',oldShip(13,4.4,'pirate'),buildShip('sloop','pirate'),buildShip('galleon','pirate')],['merchant',oldShip(13,4.4,'merchant'),buildShip('cog','merchant'),buildShip('galleon','merchant')]];
+  set.forEach(([k,o,n,g],i)=>{const z=i?-34:0;put(o.mesh,-30,z,-2.2);put(n.mesh,-4,z,-2.2);put(g.mesh,26,z,-2.2);info[k]={old:o.tris,small:n.tris,large:g.tris};
+    tags.push([`${k}, today`,-30,z+7],[`${k}: ${i?'cog':'sloop'} hull`,-4,z+7],[`${k}: galleon hull`,26,z+7]);});
+  cam.position.set(0,20,52);cam.lookAt(0,3,-14);cam.fov=52;cam.updateProjectionMatrix();T('Other ships: the black sail and the merchantman (today a tint of the one hull)');}
+if(view==='harbour'){const quay=new THREE.Mesh(new THREE.BoxGeometry(6,3.2,40),new THREE.MeshLambertMaterial({color:0x8a857a}));quay.position.set(0,-.1,0);quay.receiveShadow=true;quay.castShadow=true;S.add(quay);
+  for(let k=0;k<3;k++){const o=oldBoat();put(o.mesh,-6.2,-12+k*9,.05*k,.05);info.old=o.tris;}
+  for(let k=0;k<3;k++){const b=buildBoat(k);put(b.mesh,6.2,-12+k*9,-.08+.06*k,.05);info['boat'+k]=b.tris;}
+  const p=personStandIn();put(p,1.2,6,0,1.5);tags.push([`today: ${info.old} triangles`,-6.2,10],[`proposed: ${info.boat0} triangles`,6.2,10]);
+  cam.position.set(0,11,27);cam.lookAt(0,0,-2);T('Boats moored along a quay, today (left) and proposed (right)');}
+if(view==='deck'){const b=buildShip('sloop','player');put(b.mesh,0,0,0);info.sloop=b.tris;const p=personStandIn();put(p,.7,-2.4,0,DECK);
+  cam.position.set(-.9,2.7,-6.2);cam.lookAt(0,2.2,4);cam.fov=60;cam.updateProjectionMatrix();T("On the sloop's deck, from behind the helm");}
+R.render(S,cam);
+const v=new THREE.Vector3();for(const [t,x,z] of tags){v.set(x,-.6,z).project(cam);const d=document.createElement('div');d.className='l';d.textContent=t;d.style.left=((v.x+1)/2*W)+'px';d.style.top=((1-v.y)/2*H)+'px';document.body.appendChild(d);}
+window.INFO=info;window.READY=true;
+</script></body></html>

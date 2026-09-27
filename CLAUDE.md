@@ -63,6 +63,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - The world sits at x, z ≈ 13,000–25,000. Anything that puts world coordinates through a float32 shader path
   (skinning did) loses precision or vanishes; keep vertex work in local space.
 - The camera looks along `(-sin yaw, -cos yaw)`; NPCs face `(sin ry, cos ry)`.
+- r128's shadow pass tests object layers against the *eye's* camera, not the shadow camera: a shadow-only layer draws nothing.
+  To draw something differently in the shadow pass, swap it inside `REN.shadowMap.render` (see the townsfolk's LOD).
+- `tickPeople` drops and disposes any rig whose root has no parent: add a test's rig to the scene (hidden) as soon as it is built.
 
 ## Roles
 - Michael makes the design calls; Claude flags risks and asks when the design is open.

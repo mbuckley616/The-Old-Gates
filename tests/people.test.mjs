@@ -57,10 +57,13 @@ await page.waitForTimeout(2500);
 const shotAt = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + t.pad + 6; yaw = Math.PI; pitch = -.08;
   const src = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && /villager|farmer|elder/.test(r.g.role))[2] || [...PEOPLE_RIGS][0];
   const rig = buildPerson(src.g); window._sr = rig; return rig.g.name + ' (' + rig.g.role + ')'; });
+// a frame can take seconds on software GL: wait until the camera has actually arrived before placing the subject in front of it
+for (let k = 0; k < 40 && !(await page.evaluate(() => Math.hypot(CAM.position.x - px, CAM.position.z - pz) < 1)); k++) await page.waitForTimeout(500);
 await page.waitForTimeout(1500);
 await page.evaluate(() => { const dir = new THREE.Vector3(); CAM.getWorldDirection(dir); const rig = window._sr; const fx = CAM.position.x + dir.x * 2.5, fz = CAM.position.z + dir.z * 2.5;
   rig.root.position.set(fx, WORLD.worldH(fx, fz), fz); rig.root.rotation.y = Math.atan2(-dir.x, -dir.z); scene.add(rig.root); });
-await page.waitForTimeout(2500); await page.screenshot({ path: 'tests/out/people-town.png' });
+// slow CI runners can take over 30s to hand over a frame here (Session 156); the photograph is not an assertion
+await page.waitForTimeout(2500); await page.screenshot({ path: 'tests/out/people-town.png', timeout: 120000 });
 const onScreen = await page.evaluate(() => { const h = new THREE.Vector3(); window._sr.root.updateMatrixWorld(true); window._sr.B.head.getWorldPosition(h); const p = h.project(CAM); return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(3) }; });
 check('the townsperson is in the frame in front of the camera', Math.abs(onScreen.x) < .5 && Math.abs(onScreen.y) < .6 && onScreen.z < 1, onScreen);
 const cost = await page.evaluate(() => { REN.render(scene, CAM); const i = REN.info.render; const t0 = performance.now(); for (let k = 0; k < 200; k++) tickPeople(1 / 60, 4e5 + k * 16.7); const ms = (performance.now() - t0) / 200;
