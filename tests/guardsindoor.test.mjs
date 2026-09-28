@@ -1,6 +1,7 @@
 // Guards indoors (Session 239; Michael, issue #23: B, "the guard should come in, but mind the player leaving quickly:
 // guards should still give chase and confront if they can catch the player"). Seen indoors with a fine on you, the
 // nearest guard on duty is sent: half a minute on he comes in and halts you; leave first and he chases you in the street.
+// Refuse him indoors and he draws there (Session 241).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -74,13 +75,42 @@ await spinIn(1); const s4a = await state(); await spinIn(8); const s4 = await st
 console.log('ducked in', JSON.stringify(duck), JSON.stringify(s4a), JSON.stringify(s4));
 check('ducking into another house with him close behind: he follows you in, in the time it takes him to reach the door', !duck.none && s4a && s4a.phase === 'coming' && s4a.house === duck.h3 && s4 && s4.phase === 'inside' && s4.mesh, { duck, s4a, s4 });
 
-// 5. refuse him indoors: he takes it outside and draws
+// 5. refuse him indoors: he draws there (Session 241). The fight runs on the zone-enemy code, on him alone, in the room.
 await spinIn(30, true); const d5 = await dlg();
-await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /not pay/.test(x.textContent)); if (b) b.click(); });
-await page.waitForTimeout(3500); await g.hide(); await spinOut(1);
-const drawn = await page.evaluate(() => ({ zone: activeZoneId, inside: typeof isInterior === 'function' && isInterior(), guards: ZONES.world.enemies.filter(e => e._guard && !e.dead).map(e => ({ name: e.displayName, d: +Math.hypot(e.x - px, e.z - pz).toFixed(1) })), sent: !!WORLD.guardSent }));
-console.log('refused', JSON.stringify(d5), JSON.stringify(drawn));
-check('refuse indoors: "Then outside", you are put out, and he draws in the street', d5.open && !drawn.inside && drawn.guards.length === 1 && drawn.guards[0].d < 6 && !drawn.sent, { d5, drawn });
 stop();
+await page.evaluate(() => { PHP = maxHP; const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /not pay/.test(x.textContent)); if (b) b.click(); });
+await g.frames(3);
+const f0 = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); return e ? { name: e.displayName, hp: e.hp, inRoom: e.mesh && e.mesh.parent === interiorScene, inside: isInterior() } : null; });
+const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = PHP; let solidT = 0, minD = 99;
+  for (let t = 0; t < 8; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
+  return { lost: hp0 - PHP, minD: +minD.toFixed(2), solidFrames: solidT, y: +e.mesh.position.y.toFixed(2) }; });
+console.log('refused', JSON.stringify(d5), JSON.stringify(f0), JSON.stringify(fight));
+check('refuse indoors and he draws in the room: a Town Guard there, in the room’s scene', d5.open && f0 && f0.inside && f0.inRoom && f0.name === 'Town Guard', { d5, f0 });
+check('he closes and strikes, on the floor and never inside the furniture', fight.lost > 0 && fight.minD < 2.2 && fight.solidFrames === 0 && fight.y === 0, fight);
+// your blows land on him
+const hit = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = e.hp;
+  for (let k = 0; k < 6 && e.hp === hp0; k++) { PHP = maxHP; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); await wait(700); }
+  return { hp0, hp: e.hp }; });
+check('your blows land on him indoors', hit.hp < hit.hp0, hit);
+// at a fifth of health he offers the yield; the cells take you out of the room and to the morning
+await page.evaluate(() => { PHP = Math.round(maxHP * .2); WORLD.tickInterior(1 / 60, performance.now()); });
+const y = await dlg();
+await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /cells/.test(x.textContent)); if (b) b.click(); });
+await page.waitForTimeout(9000); await g.hide();
+const cells = await page.evaluate(() => ({ inside: isInterior(), zone: activeZoneId, hour: Math.floor(gameHour()), fine: WORLD.bountyAt('dunmore'), guards: ZONES.world.enemies.filter(e => e._guard && !e.dead).length }));
+console.log('yield', JSON.stringify(y), JSON.stringify(cells));
+check('at a fifth of health he offers the yield; the cells take you out of the room to the morning, the fine cleared', /Yield/.test(y.text || '') && !cells.inside && cells.zone === 'world' && cells.hour === 7 && cells.fine === 0 && cells.guards === 0, { y, cells });
+// 6. run out of the door mid-fight: he follows and fights on in the street, as hurt as he was
+await page.evaluate(() => { forceTime(13); const c = worldState.crime.dunmore; c.bounty = 60; c.shut = false; });
+await enter(house2);
+await page.evaluate(() => { PHP = maxHP; WORLD.dispatchGuard(window._h, WORLD.settle.get('dunmore').site); });
+await spinIn(90, true);
+await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /not pay/.test(x.textContent)); if (b) b.click(); });
+await g.frames(3);
+const hurt = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); if (!e) return null; e.hp = Math.round(e.maxHp / 2); return e.hp; });
+await leave(); await spinOut(.5);
+const street = await page.evaluate(() => { const es = ZONES.world.enemies.filter(e => e._guard && !e.dead); return { inside: isInterior(), n: es.length, indoor: es.filter(e => e._indoor).length, hp: es[0] && es[0].hp, d: es[0] && +Math.hypot(es[0].x - px, es[0].z - pz).toFixed(1) }; });
+console.log('ran out', hurt, JSON.stringify(street));
+check('run out mid-fight: he follows and fights on in the street, as hurt as he was', hurt != null && !street.inside && street.n === 1 && street.indoor === 0 && street.hp === hurt && street.d < 4, { hurt, street });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

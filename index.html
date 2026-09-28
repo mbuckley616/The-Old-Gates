@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s240</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s241</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -3880,6 +3880,7 @@ let _forestTerrainH=null;   // (wx,wz)=>height — set in buildForest
 const FOREST_PATH_W=3.5;    // path half-width — used by minimap and buildForest
 let _ironhavenTerrainH=null; // (wx,wz)=>height — set in buildIronhaven
 function activeTerrainH(wx,wz){
+  if(typeof isInterior==='function'&&isInterior())return 0; // v80 S241 — indoors the floor is at 0 (a guard fights you in a room)
   // v61d: prefer ZONES[id].getY (populated by every builder). Legacy per-zone
   // terrain globals (_forestTerrainH etc.) remain as a safety fallback because
   // they're set late inside the builder closures and the ZONES entry might not
@@ -7428,6 +7429,7 @@ let ZONE_CORPSES=[]; // active zone corpses; reset on zone switch. Unified with 
 let ZB=[]; // active zone projectile balls (overworld spells)
 
 function currentZoneSolid(x,z){
+  if(typeof isInterior==='function'&&isInterior()&&typeof intSolidAt==='function')return intSolidAt(x,z,.3,0); // v80 S241 — indoors, the room's own solids
   const z2=ZONES[activeZoneId];
   if(!z2)return owSolid(x,z);
   if(z2.solidFn)return z2.solidFn(x,z); // v80: streamed world supplies its own solid test
@@ -38065,15 +38067,19 @@ var WORLD=(()=>{
     if(!best)return;if(CR.sent)endSent();
     CR.sent={site:site.id,house:house.id,npc:best,t:0,ct:0,from:{x:best.g.position.x,z:best.g.position.z},door:{x:house.exitX,z:house.exitZ},out:{x:house.exitX-house.doorX,z:house.exitZ-house.doorZ},walk:bd/CHASE_SPD,phase:'coming',mesh:null};
     best._follow=false;}
-  function endSent(){const s=CR.sent;if(!s)return;if(s.mesh&&s.mesh.parent)s.mesh.parent.remove(s.mesh);if(s.npc)s.npc._chase=false;CR.sent=null;}
+  function endSent(){const s=CR.sent;if(!s)return;if(s.mesh&&s.mesh.parent)s.mesh.parent.remove(s.mesh);if(s.enemy){const i=ZONES.world.enemies.indexOf(s.enemy);if(i>=0)ZONES.world.enemies.splice(i,1);}if(s.npc)s.npc._chase=false;CR.sent=null;}
   function tickSent(dt,indoor){const s=CR.sent;if(!s)return;const C=worldState.crime;const c=C&&C[s.site];if(!c||c.bounty<=0){endSent();return;}
-    const S=SETTLE.get(s.site);const n=s.npc;if(!S||!n||n._drawn){endSent();return;}
+    const S=SETTLE.get(s.site);const n=s.npc;if(!S||!n||(n._drawn&&s.phase!=='fight')){endSent();return;}
     s.t+=dt;const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;
-    if(indoor){const inHouse=typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.id===s.house;
+    if(indoor){CR.cool=Math.max(0,CR.cool-dt);/* S241 — the halt's minute runs indoors too (it only ran in the street's tick) */const inHouse=typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.id===s.house;
       if(s.phase==='chase'){ // you ducked in somewhere while he was on your heels (within 20 units): he follows you in
         if(currentHouse&&s.last&&s.last.d<=20){s.house=currentHouse.id;s.door={x:currentHouse.exitX,z:currentHouse.exitZ};s.out={x:currentHouse.exitX-currentHouse.doorX,z:currentHouse.exitZ-currentHouse.doorZ};s.phase='coming';s.t=GUARD_IN-s.last.d/CHASE_SPD;s.walk=0;n._chase=false;}
         else{endSent();}return;}
       if(!inHouse)return;
+      if(s.phase==='fight'){const e=s.enemy;if(!e||e.dead){endSent();return;} // S241 — killed (guardKilled has run) or stood down
+        if(talking){e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);return;}
+        e.alert=true;if(!CR.yielded&&PHP<maxHP*.3&&c.bounty>0){CR.yielded=true;offerYield(S,c);return;}
+        const keep=ZE;ZE=[e];try{tickZoneEnemies(dt,performance.now(),interiorScene);}finally{ZE=keep;}return;}
       if(s.phase==='coming'&&s.t>=Math.max(GUARD_IN,s.walk)){ // he comes in by the door
         const W=currentHouse._roomW||currentHouse.intW||10,D=currentHouse._roomD||currentHouse.intD||10;
         const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
@@ -38085,6 +38091,8 @@ var WORLD=(()=>{
         else if(d<=1.5&&!talking&&CR.cool<=0&&Math.abs(jumpY)<1.2)confrontIndoor(s,S,c);}
       return;}
     // out of doors
+    if(s.phase==='fight'){const e=s.enemy;const hp=e?e.hp:null;if(e){e.dead=true;try{e.mesh&&e.mesh.parent&&e.mesh.parent.remove(e.mesh);}catch(err){}const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);} // S241 — you ran out mid-fight: he follows and fights on in the street
+      const ol=Math.hypot(s.out.x,s.out.z)||1,gx=s.door.x+s.out.x/ol*1.8,gz=s.door.z+s.out.z/ol*1.8;n._drawn=false;n.g.position.set(gx,worldH(gx,gz),gz);s.enemy=null;endSent();const e2=guardDraw(n,S);if(e2&&hp!=null)e2.hp=Math.max(1,hp);return;}
     if(s.phase==='inside'||s.phase==='coming'){ // you are out: he is where his walk had got him (at the door if he was already in)
       const k=s.phase==='inside'?1:Math.min(1,s.t/Math.max(.01,s.walk));const x=s.from.x+(s.door.x-s.from.x)*k,z=s.from.z+(s.door.z-s.from.z)*k;
       if(s.mesh&&s.mesh.parent)s.mesh.parent.remove(s.mesh);s.mesh=null;
@@ -38095,22 +38103,27 @@ var WORLD=(()=>{
       const onPad=Math.hypot(px-S.site.x,pz-S.site.z)<(S.site.pad||40)+40;
       if(!onPad||s.ct>CHASE_MAX){showMsg(`${(n.def&&n.def.name)||'The guard'} gives up the chase.`,'#c8b880');endSent();}}
   }
+  // S241 — refused indoors, the guard draws where he stands: a Town Guard in the room, fought through the zone-enemy code
+  // (run on him alone, with the room's floor and solids); the yield comes at a fifth of health, as in the street.
+  function guardFightIndoor(s,S){if(!interiorScene||!s.mesh)return;const n=s.npc;const x=s.mesh.position.x,z=s.mesh.position.z;if(s.mesh.parent)s.mesh.parent.remove(s.mesh);s.mesh=null;
+    const e=guardEnemy(n,S,interiorScene,[],x,z);e._indoor=s.house;s.enemy=e;s.phase='fight';CR.yielded=false;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';
     openDialog({name,role:'Guard',ico:'⚔',greeting:[`Halt. There’s a fine of ${fine} gold on you in ${S.site.name}. Pay it, or I draw.`],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return 'You haven’t got it. Then find it, and quick.';gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return 'Good. Keep your nose clean.';}},
-      {label:'I’ll not pay.',quest:true,fn:()=>{s.drawOnExit=true;setTimeout(()=>{try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}},60);return 'Then outside. Walk.';}},
+      {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return 'Then it’s the sword.';}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';
     openDialog({name,role:'Guard',ico:'⚔',greeting:[`Halt. There’s a fine of ${fine} gold on you in ${S.site.name}. Pay it, or I draw.`],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return 'You haven’t got it. Then find it, and quick.';gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return 'Good. Keep your nose clean.';}},
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return 'Then it’s the sword.';}},
       {label:'Not now.',bye:true}]});}
-  function guardDraw(n,S){if(n._drawn)return null;n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false;
-    const e=buildZoneEnemy(sc,STATIC_SOL,n.g.position.x,n.g.position.z,'Bandit',null);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
+  function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
+  function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
+    const e=buildZoneEnemy(scn,sol,x,z,'Bandit',null);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
     e.hp=e.maxHp=Math.round(40+level*8);e.dmg=Math.round(6+level*1.2);e.spd=1.4;e.xpVal=0;e.def=3;e._guard={site:S.site.id,npc:n};e.alert=true;
     try{const body=enemyBodyMesh(e);if(body&&body.material&&body.material.color)body.material.color.setHex(0x6a2a2a);}catch(err){}
     ZONES.world.enemies.push(e);showMsg(`${(n.def&&n.def.name)||'The guard'} draws.`,'#ff8060');return e;}
-  function standDown(S){for(const e of ZONES.world.enemies){if(!e._guard||e.dead||e._guard.site!==S.site.id)continue;e.dead=true;try{sc.remove(e.mesh);}catch(err){}if(e.el)e.el.intensity=0;
+  function standDown(S){for(const e of ZONES.world.enemies){if(!e._guard||e.dead||e._guard.site!==S.site.id)continue;e.dead=true;try{(e.mesh&&e.mesh.parent||sc).remove(e.mesh);}catch(err){}if(e.el)e.el.intensity=0;
     const n=e._guard.npc;if(n){n._drawn=false;n._retreated=false;n.g.visible=true;if(n.dot)n.dot.visible=true;}}}
   function offerYield(S,c){const dbl=c.bounty*2;const D_=drawnAt(S);D_.forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);}); // they hold while the offer stands
     const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
@@ -38118,7 +38131,8 @@ var WORLD=(()=>{
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return 'You haven’t got it. The cells, then, or fight on.';gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return 'Wise. Go on, then.';}},
       {label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return 'Come along, then.';}},
       {label:'Fight on.',bye:true}]});}
-  function toCells(S,c){standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;
+  function toCells(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toCells(S,c);else setTimeout(w,100);};setTimeout(w,100);return;} // S241 — taken from a room: out first
+    standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;
     const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0; // S168 — the gold stolen in this town goes back too, as much of it as you still carry
     doFade(()=>{const gtm=worldState.gameTimeMinutes||0;const to=gtm<7*60?7*60-gtm:1440-gtm+7*60;worldState.gameTimeAbsMinutes=(worldState.gameTimeAbsMinutes||0)+to;worldState.gameTimeMinutes=7*60; // to the next morning, on both clocks
       const keep=S.houses.find(h=>h.type==='castle');if(keep){px=keep.exitX!=null?keep.exitX:keep.doorX;pz=keep.exitZ!=null?keep.exitZ:keep.doorZ+2;}else{px=S.site.x;pz=S.site.z;}jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));

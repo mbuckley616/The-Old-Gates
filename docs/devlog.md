@@ -5514,3 +5514,35 @@ New `tests/mainquest.test.mjs`, with Q1 and Q2 done and Q3 available:
 
 ### Needs eyes
 Taking Q3 from Corwin in Ashenmoor in real play, and whether the chain Q3 → Q6 now carries on in the world as the story expects. Q7 remains legacy-only.
+
+## v80 — Session 241 — The guard draws indoors
+
+This is the second half of Michael's **B** on issue #23. Session 239 left the refusal indoors as *Then outside*: you were put out and he drew in the street. Session 240's entry said the fight indoors was left for another run. It was built in this one, which corrects that entry.
+
+**What changed.**
+- **He draws in the room.** Refuse him indoors and he draws where he stands (`guardFightIndoor`). The guard becomes a Town Guard enemy in the room's scene, with the street's stats. He comes through the same maker as the street's draw (`guardEnemy`, which `guardDraw` now calls).
+- **The fight runs on the zone-enemy code.** It is the same code as every fight in the open world: telegraphs, blocks, posture and strikes. `tickSent` runs `tickZoneEnemies` on him alone while you are in that room. Your swings already went to the world's enemy list indoors (`activeZoneId` stays `'world'` in a house), and he is on it, so they land.
+- **Two helpers now know about rooms.** Indoors, `activeTerrainH` answers 0 (the floor) and `currentZoneSolid` answers the room's own `intSolidAt`. Both used to answer from the world at the room's small coordinates, which is also where an arrow or a spell loosed indoors looked for the ground.
+- **The yield and the cells.** At a fifth of health he offers the yield, as in the street. *The cells* now takes you out of the room first (`toCells` waits for the door), then to the morning as before. *Pay double* stands him down, and the stand-down removes his body from whichever scene holds it.
+- **Running out mid-fight.** If you leave the room mid-fight he follows, and draws in the street 1.8 units from the door with the health he had left.
+- **Killing him** is the street's rule, unchanged (`guardKilled`: −5 favour, the gates shut, the Church notes it).
+
+**Also fixed.** The halt's one-minute cooldown only counted down in the street's crime tick. After any earlier halt, a guard who came indoors would have stood beside you without a word until you left. It counts down indoors now.
+
+### Verified (headless Chromium)
+`tests/guardsindoor.test.mjs`, extended; all twelve checks pass:
+- **Session 239's checks.** The real seen theft, the halt indoors and paying, being caught after 11.9 s, the escape off the pad, and ducking in.
+- **The draw.** Refusing indoors: a Town Guard (48 health) in the room's scene.
+- **His attack.** In 8 s of the room's tick he closes to 0.94 units and takes 39 health. His feet stay at 0, and no frame finds him inside a solid.
+- **Your blows.** A swing faced at him lands (48 → 45).
+- **The yield.** At a fifth of health: *Yield, and it goes easier. 120 gold, or a night in the cells.* *The cells* puts you out of the room, at 7h, the fine cleared, no guard drawn.
+- **Running out.** Refused again in a home and his health set to 24, leaving by the door: one guard drawn in the street, 1.4 units away, with 24 health, and none left in the room's list.
+- **Regressions.** `interiors`, `intnpcs`, `coachinn`, `crime1`, `crime3`, `theft`, `witness`, `locks` and `unequip` pass with the two helpers answering for rooms. No page errors.
+
+### Needs eyes
+The fight in a shop in real play:
+- the Bandit body in the guard's red at close quarters among the furniture;
+- whether a room is too small for the telegraphs to read;
+- the camera in third person indoors.
+
+A guard beaten in a room leaves his body there until you leave.
