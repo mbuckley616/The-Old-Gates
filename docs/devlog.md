@@ -7977,3 +7977,23 @@ New `tests/posture.test.mjs`, 12 checks, passing twice, no page errors. Times ar
 - Whether being frozen in place for 0.8 s reads as a stagger without a pose (none yet; section H), and whether the red bar is enough.
 - The refill at 5 a second takes 20 s from empty to full, though the stagger itself refills you, so that only matters after a near-break.
 
+## v80 — Session 282 — Tells you read from the body
+This is the second of A's pieces under Michael's combat answer (B, A first). An enemy's wind-up lasted 0.24–0.55 s and glowed red the whole time. That is close to a human reaction time, so a parry went by rhythm and not by reading (`docs/design/combat.md`, *Today*). The page asks for 0.45–0.9 s tells read from the body's own wind-up pose, with the glow only in the last 0.15 s.
+
+**What changed.** Every tell in `TELEGRAPH_BY_NAME` is mapped from its old range onto the new one (0.24 → 0.45, 0.55 → 0.90), so the order is kept. The Kobold Thief is still the quickest at 0.45 and the Golem the slowest at 0.90. Trolls take 0.83, a Bandit 0.57 and a Skeleton 0.60. An enemy not in the table takes 0.61, which is where the old default of 0.35 maps. The design page names the range and not the per-enemy numbers, so keeping today's order within it is the least new decision. The Faolchú keeps its 0.6 s and its phases' shortening, floored at 0.45, so its frenzy tell is 0.45 where it was 0.33.
+
+The pose was already there. The shared attack pose (Session 130) reads `e._wind`, and so do the wolves' and spiders' own rigs. In the world and in dungeons the body draws back 0.2 units by it. It now runs through a tell twice as long. The red glow (`telegraphPulse`) is dark until 0.15 s before the blow and then rises to full at the strike (`TELL_GLOW_S`). The wind-up sound at the start is unchanged.
+
+A's three pieces are now in. What is left of B starts with its Fable session: the attack table and one resolver for the dungeon and the world, then commitment and the chain. The parry window still reads Finesse until the Guard skill comes with the skills sessions.
+
+### Verified (headless Chromium)
+New `tests/tells.test.mjs`, 9 checks, passing, no page errors:
+- **The table.** Every tell is 0.45–0.90. The quickest is the Kobold Thief and the slowest the Golem. A Bandit is 0.57 and an unlisted enemy 0.61.
+- **Pose against glow**, on a real Bandit: with 0.40 s left the pose is .30 wound and the glow is 0. With 0.20 s left it is .65 wound and still 0. With 0.075 s left the glow is .375 (half), and at the strike .75 (full).
+- **End to end through `tickZoneEnemies` at 1/60 ticks.** A Bandit a step away starts its wind-up on the first tick. The glow appears 0.15 s before the blow, and the blow lands 0.583 s after the wind-up began (35 ticks for a 0.57 tell), for 9.
+- **Nothing else moved.** `mimic` (its burst still waits on the tell), `faolchu`, `q7world`, `guardsindoor`, `dungeonfoes`, `crime3`, `roll` and `posture` pass.
+
+### Needs eyes
+- Whether the draw-back pose reads at 0.45–0.9 s on every family without the glow. The people's bodies (bandits, goblins, guards) may need a proper raised-arm wind-up from the look branch.
+- With longer tells, stepping back beats more blows. B's commitment (slowed while swinging) is what closes that. Until then fights may feel easier.
+

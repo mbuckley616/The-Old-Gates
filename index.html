@@ -761,7 +761,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s281</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s282</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -2614,16 +2614,22 @@ function weaponDamageType(w){
 // its own bossDef.telegraphBase path, not this table. No retuning of the existing
 // 11 values; that's a playtest-driven pass deferred to a future session now that
 // the visuals actually render (v61d1).
+// S282 — the tells lengthened to 0.45–0.9 s (combat, Michael's B: A's second piece). At 0.24–0.55 s they sat near a
+// human reaction time, so a parry went by rhythm, not by reading. Each value is today's mapped onto the new range
+// (0.24 → 0.45, 0.55 → 0.90), so the order is kept: the kobold is still the quickest, the golem the slowest. The tell
+// is read from the body now: the shared wind-up pose (e._wind, Session 130) runs the whole tell, and the red glow
+// comes only in its last 0.15 s (TELL_GLOW_S).
 const TELEGRAPH_BY_NAME = {
-  'Cave Troll':0.50, 'Forest Troll':0.50, 'Golem':0.55, 'Gargoyle':0.48,
-  'Goblin':0.28, 'Kobold Thief':0.24, 'Spider':0.28,
-  'Skeleton':0.34, 'Mimic':0.32, 'Slime':0.30, 'Small Slime':0.30,
-  'Bandit':0.32, 'Fire Elemental':0.38,
-  'Phantom':0.30, 'Wraith':0.32,
+  'Cave Troll':0.83, 'Forest Troll':0.83, 'Golem':0.90, 'Gargoyle':0.80,
+  'Goblin':0.51, 'Kobold Thief':0.45, 'Spider':0.51,
+  'Skeleton':0.60, 'Mimic':0.57, 'Slime':0.54, 'Small Slime':0.54,
+  'Bandit':0.57, 'Fire Elemental':0.65,
+  'Phantom':0.54, 'Wraith':0.57,
 };
+const TELL_MIN=.45,TELL_DEFAULT=.61,TELL_GLOW_S=.15;
 function telegraphDuration(e){
-  if(!e) return 0.35;
-  return TELEGRAPH_BY_NAME[e.baseType] ?? TELEGRAPH_BY_NAME[e.name] ?? 0.35;
+  if(!e) return TELL_DEFAULT;
+  return TELEGRAPH_BY_NAME[e.baseType] ?? TELEGRAPH_BY_NAME[e.name] ?? TELL_DEFAULT;
 }
 // Pulse the enemy's emissive red during wind-up; reset to black when done/cancelled.
 // Shared across dungeon + zone telegraph ticks so visual behavior stays consistent.
@@ -2658,9 +2664,11 @@ function enemyBodyMesh(e){
 }
 function telegraphPulse(e, progress){
   e._wind=progress; // v80 S130 — the shared attack pose reads it
+  // S282 — the glow only in the tell's last TELL_GLOW_S seconds; the pose carries the rest
+  const left=(1-progress)*(e.telegraphMax||TELL_DEFAULT),k=Math.max(0,Math.min(1,1-left/TELL_GLOW_S));
   const body = enemyBodyMesh(e);
   const m = body && body.material;
-  if(m && m.emissive) m.emissive.setRGB(progress*0.75, progress*0.08, progress*0.05);
+  if(m && m.emissive) m.emissive.setRGB(k*0.75, k*0.08, k*0.05);
 }
 function telegraphReset(e){
   e._wind=0;
@@ -15354,7 +15362,7 @@ function tickZoneEnemies(dt,now,sc){
       if(e.isBoss && e.bossDef){
         const phases = e.bossDef.phases || [];
         const ph = phases.find(p=>p.id===e.phaseId) || phases[0] || {telegraphMult:1.0};
-        e.telegraphMax = (e.bossDef.telegraphBase||0.6) * (ph.telegraphMult||1.0);
+        e.telegraphMax = Math.max(TELL_MIN, (e.bossDef.telegraphBase||0.6) * (ph.telegraphMult||1.0)); // S282 — no tell under 0.45 s, the frenzy included
       } else {
         e.telegraphMax = telegraphDuration(e);
       }
