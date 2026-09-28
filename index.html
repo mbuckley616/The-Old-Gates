@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s236</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s237</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36005,19 +36005,7 @@ var WORLD=(()=>{
       house.keeper=def.name;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[...upgradeTopics(site),...rest]:[buy,...rest];}});}
       if(house.guild||type==='shipwright'||type==='inn')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
-      if(type==='inn'){def._extra.unshift({label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
-        get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
-          if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
-          const others=taken===0?'The house is empty tonight.':taken===1?'One other guest in tonight.':`${taken} guests in tonight.`;
-          return `${others} A room is ${price} gold — ${innRoomName(free,n)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
-        get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
-          return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
-            if(free==null)return 'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.';
-            if(gold<price)return `That’s ${price} gold, and you’ve ${gold}. Come back with it.`;
-            gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
-            if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n)} at ${house.name} for ${price} gold.`);
-            return `${price} gold, thank you. ${innRoomName(free,n).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
-          {label:'Not tonight.',response:'Suit yourself. The fire’s free.'}];}});} // v80 — the innkeeper lets the rooms; S141 — one of them
+      if(type==='inn')def._extra.unshift(...innTopics(house)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
       if(type==='church'){def._extraFn=()=>[...penanceTopics(site)];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
       const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz}};snpcs.push(kn);
@@ -36964,7 +36952,7 @@ var WORLD=(()=>{
         _intCrate(sc_,mid-1.0,.25,D-.8,.42);_intCrate(sc_,mid+1.0,.25,D-.8,.42);light(mid-2.5,1.3,D-1.6,0xffb070,.6,4);light(mid+2.5,1.3,D-1.6,0xffb070,.6,4);
         house._rooms=2;}
         // a coaching inn: a board by the door and a stable corner if a coach line ends here
-        let coachHere=false;try{const sid=String(house.id||'').replace(/^g_/,'').replace(/_\d+$/,'');const Cs=coaches();for(const k in Cs){if(Cs[k].a===sid||Cs[k].b===sid)coachHere=true;}}catch(e){}
+        let coachHere=!!house.coachInn;try{const sid=String(house.id||'').replace(/^g_/,'').replace(/_\d+$/,'');const Cs=coaches();for(const k in Cs){if(Cs[k].a===sid||Cs[k].b===sid)coachHere=true;}}catch(e){}
         if(coachHere){boxRaw(1.2,1.35,.16,1.4,.9,.06,0x3a2a18);boxRaw(1.2,1.35,.2,1.2,.7,.02,0xd8c8a0);for(let i=0;i<4;i++)boxRaw(1.2,1.6-i*.15,.22,.9-(i%2)*.3,.03,.01,0x3a2a18);
           for(let i=0;i<3;i++)boxRaw(W-1.0,1.7,2.0+i*.6,.5,.04,.4,0x4a3018);[0x5a3a20,0x3a2a1a,0x6a4a2a].forEach((c,i)=>boxRaw(W-1.0,1.5,2.0+i*.6,.3,.35,.08,c));
           box(W-1.2,.25,D*.5,1.2,.5,1.0,0xc8a850);box(W-1.6,.55,D*.5+.2,.6,.3,.5,0xb89840);
@@ -37923,12 +37911,27 @@ var WORLD=(()=>{
   function rentedNow(id){const r=worldState.rented;if(!r||r.id!==id)return false;return (worldState.gameTimeAbsMinutes||0)<r.until;}
   // v80 S141 — you rent a room, not the inn. The interior's width comes from the footprint, so the
   // room count is known without going in; the other doors belong to other people.
+  // v80 S237 — the innkeeper's own business, a meal and a room (was inline in the town builder; the coaching inn shares it)
+  function innTopics(house){return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
+          get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
+            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
+            const others=taken===0?'The house is empty tonight.':taken===1?'One other guest in tonight.':`${taken} guests in tonight.`;
+            return `${others} A room is ${price} gold — ${innRoomName(free,n)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
+          get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
+            return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
+              if(free==null)return 'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.';
+              if(gold<price)return `That’s ${price} gold, and you’ve ${gold}. Come back with it.`;
+              gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
+              if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n)} at ${house.name} for ${price} gold.`);
+              return `${price} gold, thank you. ${innRoomName(free,n).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
+            {label:'Not tonight.',response:'Suit yourself. The fire’s free.'}];}}];}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
   function innRoomName(k,n){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
     const names=['the first door on the left','the first on the right','the second on the left','the second on the right','the third on the left','the third on the right'];
     return names[k]||(k===n-1?'the room at the end':`room ${k+1}`);}
   function innDay(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
-  function innTaken(house){const n=innRooms(house);if(n<=1)return 0;const h=String(house.id+'|'+innDay()).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return h%n;} // other guests: steady for the night, never the whole house
+  function innTaken(house){const n=innRooms(house);if(n<=1)return 0;if(house.coachInn)return n-1; // S237 — the roadside inn has one room to let; travellers hold the rest
+   const h=String(house.id+'|'+innDay()).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return h%n;} // other guests: steady for the night, never the whole house
   function innFreeRoom(house){const n=innRooms(house),taken=innTaken(house);return taken<n?taken:null;}
   function myRoom(id){const r=worldState.rented;return (r&&r.id===id&&r.room!=null)?r.room:null;}
   function innPrice(house){const k=house.reg||'irish';const base={village:6,town:12,port:10,city:20,garrison:8}[house.siteKind||'village']||10;const h=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);return Math.min(25,Math.max(5,base+(h%9)-3));}
@@ -38993,6 +38996,33 @@ var WORLD=(()=>{
   }
   function roadLen(rd){let L=0;for(let i=1;i<rd.pts.length;i++)L+=Math.hypot(rd.pts[i].x-rd.pts[i-1].x,rd.pts[i].z-rd.pts[i-1].z);return L;}
   function roadPoint(rd,u){const pts=rd.pts;const fi=Math.max(0,Math.min(1,u))*(pts.length-1);const i0=Math.min(pts.length-2,Math.floor(fi)),f=fi-i0;const p0=pts[i0],p1=pts[i0+1];return {x:p0.x+(p1.x-p0.x)*f,z:p0.z+(p1.z-p0.z)*f,ang:Math.atan2(p1.x-p0.x,p1.z-p0.z)};}
+  // S237 — the coaching inn halfway along a coach road (Michael, issue #24: A). A roadside inn: a keeper of the country
+  // it stands in, a meal and a drink, one room to let, the coach's board and a tack corner. Built with the line and kept
+  // stable by the road's key, so the same inn has the same name and keeper whenever you come back.
+  const COACH_INNS=new Map();
+  function coachInnHouse(key,rt,rd,ix,iz,L){
+    if(COACH_INNS.has(key))return COACH_INNS.get(key);
+    const mid=roadPoint(rd,.5),nx=Math.cos(mid.ang),nz=-Math.sin(mid.ang);
+    const hk=String(key).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,11);const r=rngFor(hk%100003,hk%7919);
+    const reg=REGISTER[dominantRegion(ix,iz).r.id]||'irish';const [ci,cj]=cellOf(ix,iz);const P=PEOPLES[nationOf(ci,cj).people]||PEOPLES.gatelander;
+    const bank=NAMES[P.names]||NAMES[reg]||NAMES.irish;const female=r()<.5;const keeper=pick(r,female?bank.f:bank.m);
+    const name=pick(r,INN_NAMES[reg]||INN_NAMES.irish);
+    const A=siteAnywhere(rt.a),B=siteAnywhere(rt.b);
+    const house={id:'g_coach_'+key,coachInn:key,type:'inn',doorX:ix-nx*3.4,doorZ:iz-nz*3.4,doorFace:cardinalFace(-nx,-nz),exitX:ix-nx*4.6,exitZ:iz-nz*4.6,exitYaw:Math.atan2(nx,nz),
+      name,keeper,tagline:'',bCol:0x5a4030,sCol:pick(r,P.skin),w:9,d:6,two:true,reg,style:'stone',siteKind:'village',siteId:null,innX:ix,innZ:iz};
+    const hm=m=>{const t=((m%1440)+1440)%1440;return `${Math.floor(t/60)}:${String(Math.round(t%60)).padStart(2,'0')}`;};
+    const half=Math.round(L/2/COACH_SPEED); // game minutes from either end to the inn
+    const board=`The coach for ${B?B.name:'the far end'} leaves ${A?A.name:'the near end'} at six and calls here about ${hm(6*60+half)}. The coach for ${A?A.name:'the near end'} leaves ${B?B.name:'the far end'} at six in the evening and calls here about ${hm(18*60+half)}. A quarter of an hour, then it goes on.`;
+    const def={name:keeper,role:'Innkeeper',ico:'\u{1F37A}',people:nationOf(ci,cj).people,x:0,z:0,bCol:house.bCol,sCol:house.sCol,
+      greeting:["Fire's lit. Take a seat.","Bed's upstairs. Bowl's on the way.","We don't ask where you've been. Boots off, though."],_extra:innTopics(house)};
+    Object.defineProperty(def,'topics',{configurable:true,get(){return [...def._extra,
+      {label:'When does the coach come through?',response:board},
+      {label:'What is this place?',response:`${name}, halfway between ${A?A.name:'one town'} and ${B?B.name:'the next'}. The coach stops, we feed whoever gets off, and the horses drink.`},
+      {label:'Any news?',get response(){return pick(Math.random,RUMORS[reg]||RUMORS.irish);}},
+      {label:'How’s the weather been?',get response(){return weatherLine();}},
+      {label:'Farewell.',bye:true}];}});
+    house.dlg=def;house._board=board;COACH_INNS.set(key,house);return house;
+  }
   function buildCoachLine(key,rt,rd){
     const c=x=>new THREE.Color(x);const g=new THREE.Group();
     // milestones every ~100u, an inn with a lamp at the midpoint
@@ -39000,7 +39030,8 @@ var WORLD=(()=>{
     const m=new THREE.Mesh(mergeParts(posts),VC_MAT);g.add(m);
     const mid=roadPoint(rd,.5);const ix=mid.x+Math.cos(mid.ang)*(ROAD_HALF+7),iz=mid.z-Math.sin(mid.ang)*(ROAD_HALF+7);const iy=worldH(ix,iz);
     addStamp({id:'inn_'+key,kind:'site',x:ix,z:iz,r:9,blend:8,y:iy});
-    const inn=new THREE.Mesh(buildingGeo(9,6,STYLE.stone,Math.random,{chimney:true,twoStory:true,h:3.0,rise:1.4}),VC_MAT);inn.position.set(ix,iy-.06,iz);inn.rotation.y=mid.ang+Math.PI/2;inn.castShadow=true;g.add(inn);STATIC_SOL.push({cx:ix,cz:iz,rx:4.7,rz:3.2,c:Math.cos(inn.rotation.y),s:Math.sin(inn.rotation.y)});
+    const inn=new THREE.Mesh(buildingGeo(9,6,STYLE.stone,Math.random,{chimney:true,twoStory:true,h:3.0,rise:1.4}),VC_MAT);inn.position.set(ix,iy-.06,iz);inn.rotation.y=mid.ang-Math.PI/2; // S237 — turned so its door (the mesh's +z face) looks onto the roadinn.castShadow=true;g.add(inn);STATIC_SOL.push({cx:ix,cz:iz,rx:4.7,rz:3.2,c:Math.cos(inn.rotation.y),s:Math.sin(inn.rotation.y)});
+    const house=coachInnHouse(key,rt,rd,ix,iz,L);if(!ZONES.world.houses.includes(house))ZONES.world.houses.push(house); // S237 — you can go in
     const l=regLight(0xffb050,1.4,14,'coach:'+key);l.position.set(mid.x+Math.cos(mid.ang)*(ROAD_HALF+2),iy+3,mid.z-Math.sin(mid.ang)*(ROAD_HALF+2));
     // the coach
     const cart=new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(1.7,1.3,3.0),color:c(0x5a2a1a),y:1.15},{geo:new THREE.BoxGeometry(1.8,.1,3.1),color:c(0x3a1a10),y:1.85},{geo:new THREE.BoxGeometry(.5,.5,.06),color:c(0xb8c8d8),x:.86,y:1.3,z:.6},{geo:new THREE.BoxGeometry(.5,.5,.06),color:c(0xb8c8d8),x:-.86,y:1.3,z:.6},{geo:new THREE.CylinderGeometry(.55,.55,.14,12),color:c(0x2a1a10),x:.95,y:.55,z:1.0,rz:Math.PI/2},{geo:new THREE.CylinderGeometry(.55,.55,.14,12),color:c(0x2a1a10),x:-.95,y:.55,z:1.0,rz:Math.PI/2},{geo:new THREE.CylinderGeometry(.45,.45,.14,12),color:c(0x2a1a10),x:.95,y:.45,z:-1.0,rz:Math.PI/2},{geo:new THREE.CylinderGeometry(.45,.45,.14,12),color:c(0x2a1a10),x:-.95,y:.45,z:-1.0,rz:Math.PI/2},{geo:new THREE.BoxGeometry(1.4,.3,.6),color:c(0x4a3018),y:1.9,z:1.6},{geo:new THREE.BoxGeometry(.08,.08,2.6),color:c(0x4a3018),y:.8,z:2.8}]),VC_MAT);sc.add(cart);
@@ -39009,7 +39040,7 @@ var WORLD=(()=>{
     const plat={x0:0,x1:0,z0:0,z1:0,y:0,coach:key};ZONES.world.platforms.push(plat);
     sc.add(g);const C={road:rd,rt,group:g,cart,horses:[h1,h2],plat,u:0,dir:1,state:'wait',len:L,riding:false};COACHES.set(key,C);return C;
   }
-  function removeCoachLine(key){const C=COACHES.get(key);if(!C)return;sc.remove(C.group);sc.remove(C.cart);C.horses.forEach(h=>sc.remove(h));const i=ZONES.world.platforms.indexOf(C.plat);if(i>=0)ZONES.world.platforms.splice(i,1);unregLights('coach:'+key);COACHES.delete(key);}
+  function removeCoachLine(key){const C=COACHES.get(key);if(!C)return;{const hs=ZONES.world.houses,i=hs.findIndex(h=>h.coachInn===key);if(i>=0&&!(typeof currentHouse!=='undefined'&&currentHouse===hs[i]))hs.splice(i,1);}sc.remove(C.group);sc.remove(C.cart);C.horses.forEach(h=>sc.remove(h));const i=ZONES.world.platforms.indexOf(C.plat);if(i>=0)ZONES.world.platforms.splice(i,1);unregLights('coach:'+key);COACHES.delete(key);}
   const COACH_SPEED=13;
   const COACH_STOP=15; // S178 — a quarter of an hour (real seconds, a game minute each) at the midpoint inn, each way
   function tickCoaches(dt){

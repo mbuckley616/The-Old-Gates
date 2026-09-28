@@ -5399,3 +5399,35 @@ New `tests/questtargets.test.mjs`, in the world's Ironhaven:
 
 ### Needs eyes
 The whole main quest in the open world, Q1 to Q7, in one playthrough. This session fixed the step every Ironhaven quest failed on, but nothing has run the chain end to end in the world. The Ironhaven radius (the pad and 40 units) is generous. A townsperson named Aldwyn or Brynn elsewhere can't match, because the zone must be Ironhaven. Standing at their doors at night by the rule is how givers already behave, and may look odd on a dark street.
+
+## v80 — Session 237 — The coaching inn, open
+
+Michael answered issue #24 with **B**: *the roadside inn, and the driver and a passenger or two waiting in the common room, tickets sold here*. This session builds its first half, option A. Since Session 100 the inn halfway along a coaching road has been a shell with a collision box. Since Session 178 the coach stops at it for a quarter of an hour, and there was nothing to get off for.
+
+**What changed.**
+- **An enterable inn.** Each coach line now registers its inn as a world house (`coachInnHouse`) with an inn's interior. The house is built with the line and removed with it, but kept while you are inside it. Its name and keeper are drawn from the road's key, so the same inn has the same name and keeper whenever you come back, including after a load. The keeper is of the country the inn stands in (its people's name bank, skin, genome), and the inn's name comes from the region's inn names.
+- **The door.** The inn mesh was turned half round. `buildingGeo` draws its door on the +z face, which faced away from the road; it now faces the road, and the enterable door is there. Its id begins `g_` so the world's interior generator and its furniture collision build it.
+- **Inside.** The town inn's interior: counter, hearth, tables, the gallery with its rooms upstairs, and the coach's board and tack corner. Those were already built for a town coaching inn and are now built here too (`house.coachInn`).
+- **The keeper's business.** *Something to eat and drink?* and *A bed for the night?* are the town innkeeper's own, lifted out of the town builder into `innTopics(house)` so both inns run the same code. Travellers hold every room but one (`innTaken` → n−1), which gives option A's *one room to let*. Two plain lines are new:
+  - *When does the coach come through?* reads the board's times, worked out from the road: each coach leaves its end at six (morning or evening) and reaches the inn after half the road at 13 units a second, a game minute each.
+  - *What is this place?* is a sentence of what the inn is for.
+  The keeper also has the town inn's greetings, rumours and weather, and nothing about a lord or a town's streets, because the inn has neither.
+
+**Also found (not fixed).** Session 236's owed check, the main quest end to end in the open world, went to a read-only audit. It is written up in backlog A. Q3 can't be taken, because Corwin is never in the world until Q3 is done. Q6's Ironhaven kills never count. Q7 exists only in the legacy zones.
+
+### Verified (headless Chromium)
+New `tests/coachinn.test.mjs`, on the Ironhaven–Vieux Marché coaching road (548 units):
+- **The house.** The inn registers as *Auberge du Pont*, kept by Cathal. Its door is on the road side, 6.2 units from where the coach draws up (the inn's centre is 9.6).
+- **In by the door.** At noon the door's prompt reads *Press 'E' to enter Auberge du Pont*, and E takes you in: a 16 × 12 interior with the board and tack corner, and the keeper there.
+- **The keeper.** His dialogue offers *Something to eat and drink?*, *A bed for the night?* and *When does the coach come through?*. The board reads: *The coach for Ironhaven leaves Vieux Marché at six and calls here about 6:21. The coach for Vieux Marché leaves Ironhaven at six in the evening and calls here about 18:21…*
+- **The room.** *2 guests in tonight. A room is 10 gold — the second on the left…* Yes: 10 gold paid, rented until this hour tomorrow.
+- **Out and back.** Leaving puts you at the door (0.0 units). The line torn down takes the inn with it; rebuilt, the inn is the same name and keeper, registered once.
+- **Regressions.** `interiors` and `coachstop` pass with the shared inn topics. No page errors.
+
+### Needs eyes
+The inn in play:
+- whether its interior (a town inn's, 16 × 12 with a gallery, in a 9 × 6 shell) feels right as a roadside stop;
+- whether the keeper's two new lines sit in the canon's register (the quest writer may want to rewrite them);
+- the door facing the road, and the building turned to match, by eye.
+
+The coach's driver and passengers and the tickets are the next session.
