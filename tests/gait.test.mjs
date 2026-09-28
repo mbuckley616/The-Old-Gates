@@ -4,6 +4,9 @@ import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
+// at noon, when villagers are out: at the boot's 6h the only walker with empty hands was the lord, and only while he wore
+// the first Niamh's face (Session 248 gave him his own, which carries a stick; corrected Session 254)
+await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now()); });
 fs.mkdirSync('tests/out', { recursive: true });
 
 // Drive one townsperson along its facing at a given pace for n frames, measuring the feet in world space.
