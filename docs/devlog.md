@@ -7086,3 +7086,18 @@ CI failed once on this branch, on the Session 263 push, and has passed on every 
 
 ### Needs eyes
 Nothing in the game.
+
+## v80 — Session 273 — The town gate itself: a prototype and a question (H.5, waiting on Michael)
+Session 249 left one line on the town walls: "still boxes: the gate itself (a gap between towers)". Where a road crosses a walled town's ring, `genSettlement` puts a pair of gate towers either side of it and leaves the wall open between them. It is a new structure rather than a remake of a box, so it is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/towngate/shoot.mjs`) builds a length of wall and the tower pair with the game's own builders (`WORLD.wallSegHi`, `WORLD.gateTowerHi`) at the game's spacing: each tower 3.6 beyond the road's half-width. It adds the gate from the shape kit:
+- **A, a gateway and open leaves.** For stone, an arch of seventeen voussoirs with a wall-walk and merlons over it. For the palisade, a braced timber lintel on two posts. In both, two plank leaves with iron bands and a brace stand open to the inside.
+- **B, the leaves alone,** on posts.
+
+The picture shows the stone tier and the palisade, today, A and B, from the road outside at noon.
+
+### Verified (headless Chromium)
+`node docs/prototypes/towngate/shoot.mjs` renders `docs/prototypes/towngate-grid.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A (recommended), B, or C (not yet). The leaves never shut, since nothing closes a town's gate. The dressed-stone and fence tiers would follow A's stone and timber forms.
