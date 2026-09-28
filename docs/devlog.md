@@ -6539,3 +6539,16 @@ Each picture follows one swing on a plain stage at noon, three-quarters from the
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): A, as shown (recommended); B, timing and matching only, with no coil or step; or C, not yet. In both rows, the left hand leaves a two-handed weapon's hilt through part of the swing, which is owed whichever is chosen. Only motion can judge whether the coil's short hold reads as weight or as a hitch.
+
+## v80 — Session 246 — Wealth in clothes: a prototype and a question (H.2, waiting on Michael)
+H.2 has owed wealth in clothes since Session 153. A townsperson's dress today is their people, nation and role, so a poor fisher and a well-off one dress alike, and so do the folk of a failing village and a thriving town. The game already models a town's fortune as `prosperity`, which the player's choices move, but on screen it shows only in how many lots are built, the shutters, lamps and banners. What wealth should look like, and whether it should follow the town, is a look call and touches the economy's meaning, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/wealth/shoot.mjs`) patches `personBakeQ` in two places, and each patch throws if it no longer matches. The wealth is read from `g.wealth`; without it a person is baked as today. Below .3 a person is poor. They get a rope belt, thinner and pale, with a knot; a patch on the chest; and a patch on the skirt when there is no dress. The script then fades the cloth, sleeves and legs towards undyed wool (0x7a6c5a, 45%, 45%, 30%), gives foot-wraps for boots, and drops a fur hat or a chaperon. Above .7 a person is well-off: a gilt buckle on the rounded box, a fine chain at the neck with a pendant, gilt trim, dark boots, and the dyes deepened. My first render raised the dyes' saturation by 40% and made an electric blue and a loud orange. The second is 15% more saturated and 18% darker, which reads as better cloth rather than brighter cloth. The pictures are the same five people, built from the same genome, three ways, face on at noon: five Gatelanders, then two Markish and three Aurennais.
+
+How a person's wealth would be set, if built: a base by role (lords .95; merchants, innkeepers and scholars .7; smiths, apothecaries and priests .55; villagers .45; farmers and fishers .35; hermits .15), moved by the town's prosperity by ±.25, and ±.1 on the person's own seed. This is in the question, not in the prototype.
+
+### Verified (headless Chromium)
+`node docs/prototypes/wealth/shoot.mjs` renders `docs/prototypes/wealth-1.png` and `-2.png` with no page errors. Against today's 4,350–7,662 triangles a person, poor adds 104–160 and well-off adds 416. The Markish man is 88 fewer when poor, because his fur hat comes off.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, wealth from the role and the town's prosperity, so the clothes follow the town's fortune (recommended); B, the role only; or C, not yet. Only a real screen can judge the foot-wraps and the chain at street distance, and whether gilt reads as money or as costume.

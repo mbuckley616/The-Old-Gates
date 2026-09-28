@@ -4,6 +4,33 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
+Backlog H.2 has owed wealth in clothes since Session 153. Today a townsperson dresses by their people, nation and role: a lord has a crown and a smith an apron, but a poor fisher and a well-off one dress alike. So do the folk of a failing village and of a thriving town. The prototype (`docs/prototypes/wealth/shoot.mjs`) patches a copy of the game; `index.html` is unchanged. It gives a person a wealth from 0 to 1 and dresses them by it in three steps:
+- **Poor** (below .3): faded cloth, drawn towards undyed wool; a patch on the chest and one on the skirt; a rope belt with a knot; foot-wraps for boots; no fur hat or chaperon.
+- **Middling:** today's look.
+- **Well-off** (above .7): deeper dyes, gilt trim at the hem and cuffs, a gilt buckle, a chain with a pendant, dark boots.
+
+Each picture shows the same five people (the same genome) in three rows: poor, today, well-off.
+- Gatelanders: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wealth-1.png
+- Markish and Aurennais: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wealth-2.png
+
+The cost is small: poor adds 104–160 triangles to a person of 4.4–7.7k, and well-off adds 416.
+
+**Where a person's wealth would come from, if built:**
+- Their role sets a base:
+  - lords and ladies .95;
+  - merchants, innkeepers and scholars .7;
+  - smiths, apothecaries and priests .55;
+  - villagers .45;
+  - farmers and fishers .35;
+  - hermits .15.
+- The town's prosperity moves it by (prosperity − 50) / 100 × .5, so ±.25.
+- Each person varies by ±.1 on their own seed.
+
+So in a village at prosperity 20, about half the villagers are poor; in a town at 90, some are well-off; and a merchant is well-off anywhere above about 50. Guards keep the town's kit. When a town's prosperity changes, its people's clothes follow on your next visit. It is the same person, only dressed by the town's fortune.
+
+**Options:** (A) all of it: wealth from the role and the town's prosperity, so a town you have raised or ruined shows it on its people; (B) wealth from the role only, so it never changes; (C) not yet. **Recommendation: A.** The brief's first line is that choices change the world you can see. Prosperity is already the thing your choices move (roads cleared, routes opened, a town sacked), and today it shows only in lots, shutters, lamps and banners. The same person's clothes following the town's fortune makes it show on its people too. No prices or quests are touched: this only reads prosperity. Things to judge: whether gilt trim reads as wealth or as costume; whether foot-wraps on the poor read at street distance; and whether a poor dress needs a patch on the skirt as well (the dress has none in the prototype). Children, who H.2 also owes, are not part of this.
+
 ### The player's swings in third person — anticipation and follow-through (Session 245)
 Backlog H.3 still owes the player's swings, with anticipation and follow-through. This is third person only. Today the body's swing is three equal-ish parts, each a smoothstep: it winds up over the first 30%, strikes over the next 30% and eases back over the last 40%. Only the arm moves, besides a small turn of the torso. It does not follow the first person's own timing: in first person the wind-up runs to .44 of the swing, the hit lands at .55 and the follow-through runs to .79. The body's forehand is also a flat cut and its backhand a rising diagonal, where the first person shows two falling diagonals. (Session 244 fixed a bug by which the body always played the flat cut.)
 
