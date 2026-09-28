@@ -5291,3 +5291,28 @@ New `tests/caravan.test.mjs`, on the Ironhaven–Vieux Marché road (92 road poi
 
 ### Needs eyes
 The fight in play: whether 3–4 bandits (a captain from level 5) is right against a caravan you've paid for, and whether the hour (dawn, 4–8h) is easy enough to be there for. There is no warning, so you have to know when to wait; option C's word from the lord was the answer to that and was not chosen. The overturned cart is today's box cart on its side. The caravan's mule and cart are still boxes, and belong to the look builder (H).
+
+## v80 — Session 231 — Combat music, rewritten
+
+Backlog C. Michael, 27 Sep: *"Update the combat music — it's pretty stale and simplistic."* The old cue was one pattern for every fight. It had a sawtooth ostinato of sixteen notes, square-wave stabs and a drone, all raw oscillators unlike the exploring score. Its notes were timed by `setTimeout` at 135 and 270 ms, so they drifted with every slow frame. At a few frames a second on a laptop, that is an audibly lurching rhythm. When the fight ended, `_clearMusic` stopped every node at once: a hard cut.
+
+**What changed.** `_musicCombat` now plays on the exploring music's orchestra (`VOICES`) through the same hall reverb, with two new voices: `spicc`, short bowed strings, and `taiko`, a low war drum. There are three themes, and a fight never gets the one before it:
+- *Steel*: D minor, 138 bpm.
+- *Ambush*: E phrygian, 146 bpm. The mode was added to `MODES`.
+- *Stand*: C dorian, 128 bpm.
+
+Each opens on a drum, timpani and horn hit, plays two bars of ostinato, then loops an eight-bar A section and an eight-bar B section. The layers follow the fight through `COMBAT.heat`, set each frame in `tickMusic`: each alert foe within 30 units counts one, a boss three.
+- Always: low spiccato ostinato and drums, with a timpani on each fourth bar.
+- From two foes: high spiccato arpeggios and a held string pad.
+- From three: the horn plays the theme.
+- From five, which a boss reaches alone: the choir.
+
+Bars are scheduled against `AX.currentTime` with a 0.6 s lookahead (`combatFill`), so the timing no longer depends on frames. When the fight ends, `combatEnd` (called from `_clearMusic`) lets the scheduled bar finish, closes on the tonic with drum, timpani and strings, and fades over three seconds while the exploring music ramps back in. The voices take an output (`_voiceOut`/`_vOut`), so the cue has its own bus and fading the exploring music never silences it. `window.devMusicHook` lets a test render the cue offline.
+
+The composition is a first draft. The themes are data (`COMBAT_THEMES`: chords per bar in scale degrees, the horn's phrases, the ostinato), so they can be rewritten without touching the scheduler.
+
+### Verified (headless Chromium)
+New `tests/combatmusic.test.mjs`, rendering the cue through an `OfflineAudioContext` at 22 kHz. Fourteen bars all land on the bar grid: the worst drift from `start + n × bar` was 0 s, against the old cue's 135 ms timers. The layers were *ost+drum* at one foe, *ost+drum+high+pad+horn* at three, and the choir added at a boss. The level measured by RMS per second was 0.050 at one foe and 0.104 with a boss; no second of the fight fell below .04. The close: .110, .072, .080, .037, then .0025 at 4 s and .0002 at 5 s, a fade rather than a cut. Six fights in a row never repeated the previous theme. In the game's own audio context, a fight scheduled its bars ahead and `startMusic('road')` then ended it: no bus, no timer, the exploring music playing. No page errors.
+
+### Needs eyes
+**Ears**, really: whether the three themes sound like fights in this game's world, whether the horn at three foes and the choir at a boss are the right thresholds, and whether the mix sits under the combat sounds (the fight's music is about twice the level of a one-foe skirmish at a boss). Whether a three-second fade and the tonic close feel like a fight ending. The old cue's code is gone. If a theme is disliked, it is one entry in `COMBAT_THEMES`.

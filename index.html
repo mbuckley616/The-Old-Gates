@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s230</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s231</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -29774,6 +29774,7 @@ let _musicZone='',_musicNodes=[],_musicScheduler=null,_musicScheduler2=null;
 let _combatActive=false,_combatFadeTimer=0;
 
 function _clearMusic(){
+  if(typeof combatEnd==='function')combatEnd(); // S231 — a fight's cue closes and fades rather than cutting
   _musicNodes.forEach(n=>{try{n.stop&&n.stop();n.disconnect&&n.disconnect();}catch(e){}});
   _musicNodes=[];
   if(_musicScheduler){clearTimeout(_musicScheduler);_musicScheduler=null;}
@@ -29802,7 +29803,7 @@ function _mkDrone(freq,gainVal,detune=0){
 // interior. Combat, dungeon and burned cues are untouched.
 // ═══════════════════════════════════════════════════════════════════════
 const EXPLORE={playing:false,track:null,nodes:[],timer:null,startAt:0,order:[],cursor:0,bus:null,verb:null,verbGain:null,fadeTo:null,lastIdx:-1};
-const MODES={aeolian:[0,2,3,5,7,8,10],dorian:[0,2,3,5,7,9,10],mixolydian:[0,2,4,5,7,9,10],ionian:[0,2,4,5,7,9,11],lydian:[0,2,4,6,7,9,11]};
+const MODES={aeolian:[0,2,3,5,7,8,10],phrygian:[0,1,3,5,7,8,10],dorian:[0,2,3,5,7,9,10],mixolydian:[0,2,4,5,7,9,10],ionian:[0,2,4,5,7,9,11],lydian:[0,2,4,6,7,9,11]};
 const NOTE_ROOT={C:60,D:62,E:64,F:65,G:67,A:69,Bb:70,B:71,Eb:63};
 function midiHz(m){return 440*Math.pow(2,(m-69)/12);}
 // degree (1-based, may exceed 7 or be ≤0) → midi in key/mode, octave offset
@@ -29819,28 +29820,35 @@ function _exBus(){
   EXPLORE.bus=bus;EXPLORE.verb=verb;EXPLORE.verbGain=vg;return bus;
 }
 // each voice: (midi, t0, dur, vel) → schedules nodes on the bus
+let _voiceOut=null;function _vOut(){return _voiceOut||_exBus();}
 const VOICES={
+  spicc(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.008);g.gain.exponentialRampToValueAtTime(.0004,t+Math.max(.08,dur)+.06);
+    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=Math.min(4200,f*6);lp.Q.value=.7;lp.connect(g);g.connect(_vOut());
+    [-6,5].forEach(dt=>{const o=AX.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;o.connect(lp);o.start(t);o.stop(t+dur+.1);EXPLORE.nodes.push(o);});EXPLORE.nodes.push(g);},
+  taiko(m,t,dur,vel){const g=AX.createGain();g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0004,t+.55);g.connect(_vOut());
+    const o=AX.createOscillator();o.type='sine';o.frequency.setValueAtTime(96,t);o.frequency.exponentialRampToValueAtTime(44,t+.18);o.connect(g);o.start(t);o.stop(t+.6);
+    const nb=AX.createBuffer(1,Math.ceil(AX.sampleRate*.12),AX.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);const n=AX.createBufferSource();n.buffer=nb;const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=220;const ng=AX.createGain();ng.gain.value=vel*.8;n.connect(lp);lp.connect(ng);ng.connect(_vOut());n.start(t);EXPLORE.nodes.push(o,g,n,ng);},
   strings(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+Math.min(.9,dur*.4));g.gain.setValueAtTime(vel,t+dur-Math.min(.6,dur*.3));g.gain.linearRampToValueAtTime(0,t+dur+.9);
-    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1500+vel*3000;lp.Q.value=.4;lp.connect(g);g.connect(_exBus());
+    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1500+vel*3000;lp.Q.value=.4;lp.connect(g);g.connect(_vOut());
     [-7,0,6].forEach(dt=>{const o=AX.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;const v=AX.createOscillator();v.frequency.value=4.6;const vg=AX.createGain();vg.gain.value=2.2;v.connect(vg);vg.connect(o.detune);v.start(t);v.stop(t+dur+1);o.connect(lp);o.start(t);o.stop(t+dur+1);EXPLORE.nodes.push(o,v);});EXPLORE.nodes.push(g);},
   lowstrings(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.35);g.gain.setValueAtTime(vel,t+dur-.3);g.gain.linearRampToValueAtTime(0,t+dur+.6);
-    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=420;lp.connect(g);g.connect(_exBus());
+    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=420;lp.connect(g);g.connect(_vOut());
     [-5,4].forEach(dt=>{const o=AX.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;o.connect(lp);o.start(t);o.stop(t+dur+.7);EXPLORE.nodes.push(o);});EXPLORE.nodes.push(g);},
   horn(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.18);g.gain.setValueAtTime(vel*.85,t+dur-.15);g.gain.linearRampToValueAtTime(0,t+dur+.45);
-    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(700,t);lp.frequency.linearRampToValueAtTime(1400,t+.25);lp.connect(g);g.connect(_exBus());
+    const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(700,t);lp.frequency.linearRampToValueAtTime(1400,t+.25);lp.connect(g);g.connect(_vOut());
     const o=AX.createOscillator();o.type='sawtooth';o.frequency.value=f;const o2=AX.createOscillator();o2.type='triangle';o2.frequency.value=f;o2.detune.value=3;const m2=AX.createGain();m2.gain.value=.7;o2.connect(m2);m2.connect(lp);o.connect(lp);o.start(t);o2.start(t);o.stop(t+dur+.5);o2.stop(t+dur+.5);EXPLORE.nodes.push(o,o2,g);},
-  flute(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.09);g.gain.setValueAtTime(vel,t+dur-.1);g.gain.linearRampToValueAtTime(0,t+dur+.25);g.connect(_exBus());
+  flute(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.09);g.gain.setValueAtTime(vel,t+dur-.1);g.gain.linearRampToValueAtTime(0,t+dur+.25);g.connect(_vOut());
     const o=AX.createOscillator();o.type='sine';o.frequency.value=f;const v=AX.createOscillator();v.frequency.value=5.2;const vg=AX.createGain();vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(5,t+.5);v.connect(vg);vg.connect(o.detune);const o2=AX.createOscillator();o2.type='sine';o2.frequency.value=f*2;const g2=AX.createGain();g2.gain.value=.18;o2.connect(g2);g2.connect(g);o.connect(g);o.start(t);o2.start(t);v.start(t);o.stop(t+dur+.3);o2.stop(t+dur+.3);v.stop(t+dur+.3);EXPLORE.nodes.push(o,o2,v,g);},
-  harp(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.006);g.gain.exponentialRampToValueAtTime(.0004,t+Math.max(.6,Math.min(2.2,dur*1.6)));g.connect(_exBus());
-    const o=AX.createOscillator();o.type='triangle';o.frequency.value=f;const o2=AX.createOscillator();o2.type='sine';o2.frequency.value=f*3.01;const g2=AX.createGain();g2.gain.setValueAtTime(vel*.25,t);g2.gain.exponentialRampToValueAtTime(.0004,t+.4);o2.connect(g2);g2.connect(_exBus());o.connect(g);o.start(t);o2.start(t);o.stop(t+2.4);o2.stop(t+.6);EXPLORE.nodes.push(o,o2,g,g2);},
+  harp(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.006);g.gain.exponentialRampToValueAtTime(.0004,t+Math.max(.6,Math.min(2.2,dur*1.6)));g.connect(_vOut());
+    const o=AX.createOscillator();o.type='triangle';o.frequency.value=f;const o2=AX.createOscillator();o2.type='sine';o2.frequency.value=f*3.01;const g2=AX.createGain();g2.gain.setValueAtTime(vel*.25,t);g2.gain.exponentialRampToValueAtTime(.0004,t+.4);o2.connect(g2);g2.connect(_vOut());o.connect(g);o.start(t);o2.start(t);o.stop(t+2.4);o2.stop(t+.6);EXPLORE.nodes.push(o,o2,g,g2);},
   choir(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+Math.min(1.2,dur*.5));g.gain.setValueAtTime(vel,t+dur-.4);g.gain.linearRampToValueAtTime(0,t+dur+1.2);
-    const bp=AX.createBiquadFilter();bp.type='bandpass';bp.frequency.value=720;bp.Q.value=1.1;const bp2=AX.createBiquadFilter();bp2.type='bandpass';bp2.frequency.value=1900;bp2.Q.value=2;bp.connect(g);bp2.connect(g);g.connect(_exBus());
+    const bp=AX.createBiquadFilter();bp.type='bandpass';bp.frequency.value=720;bp.Q.value=1.1;const bp2=AX.createBiquadFilter();bp2.type='bandpass';bp2.frequency.value=1900;bp2.Q.value=2;bp.connect(g);bp2.connect(g);g.connect(_vOut());
     [-9,0,8].forEach(dt=>{const o=AX.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;const v=AX.createOscillator();v.frequency.value=5;const vg=AX.createGain();vg.gain.value=4;v.connect(vg);vg.connect(o.detune);v.start(t);v.stop(t+dur+1.3);o.connect(bp);o.connect(bp2);o.start(t);o.stop(t+dur+1.3);EXPLORE.nodes.push(o,v);});EXPLORE.nodes.push(g);},
-  bells(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.004);g.gain.exponentialRampToValueAtTime(.0004,t+3.2);g.connect(_exBus());
+  bells(m,t,dur,vel){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.004);g.gain.exponentialRampToValueAtTime(.0004,t+3.2);g.connect(_vOut());
     [[1,1],[2.76,.32],[5.4,.12]].forEach(([r,a])=>{const o=AX.createOscillator();o.type='sine';o.frequency.value=f*r;const ga=AX.createGain();ga.gain.value=a;o.connect(ga);ga.connect(g);o.start(t);o.stop(t+3.3);EXPLORE.nodes.push(o,ga);});EXPLORE.nodes.push(g);},
-  timpani(m,t,dur,vel){const f=Math.max(40,midiHz(m-24));const g=AX.createGain();g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0004,t+1.4);g.connect(_exBus());
+  timpani(m,t,dur,vel){const f=Math.max(40,midiHz(m-24));const g=AX.createGain();g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0004,t+1.4);g.connect(_vOut());
     const o=AX.createOscillator();o.type='sine';o.frequency.setValueAtTime(f*1.4,t);o.frequency.exponentialRampToValueAtTime(f,t+.12);o.connect(g);o.start(t);o.stop(t+1.5);
-    const nb=AX.createBuffer(1,AX.sampleRate*.25,AX.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const n=AX.createBufferSource();n.buffer=nb;const ng=AX.createGain();ng.gain.value=vel*.35;const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;n.connect(lp);lp.connect(ng);ng.connect(_exBus());n.start(t);EXPLORE.nodes.push(o,g,n,ng);},
+    const nb=AX.createBuffer(1,AX.sampleRate*.25,AX.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const n=AX.createBufferSource();n.buffer=nb;const ng=AX.createGain();ng.gain.value=vel*.35;const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;n.connect(lp);lp.connect(ng);ng.connect(_vOut());n.start(t);EXPLORE.nodes.push(o,g,n,ng);},
 };
 
 // ── the pieces ──
@@ -30187,85 +30195,60 @@ function _musicDungeon(){
 }
 
 // ── Combat — Oblivion-inspired: dramatic hit, driving ostinato, brass stabs ─
-function _musicCombat(){
-  if(!AX)return;
-  const now=AX.currentTime;
-
-  // ── Opening impact — sharp dramatic hit ──────────────────────────────────
-  // Low boom
-  const boom=AX.createOscillator();boom.type='sine';boom.frequency.setValueAtTime(80,now);boom.frequency.exponentialRampToValueAtTime(30,now+.35);
-  const boomG=AX.createGain();boomG.gain.setValueAtTime(.5,now);boomG.gain.exponentialRampToValueAtTime(0.001,now+.4);
-  boom.connect(boomG);boomG.connect(musicGain);boom.start(now);boom.stop(now+.45);
-  _musicNodes.push(boom,boomG);
-  // High brass stab
-  const stab=AX.createOscillator();stab.type='sawtooth';stab.frequency.value=220;
-  const stabF=AX.createBiquadFilter();stabF.type='lowpass';stabF.frequency.value=900;
-  const stabG=AX.createGain();stabG.gain.setValueAtTime(.22,now);stabG.gain.exponentialRampToValueAtTime(0.001,now+.3);
-  stab.connect(stabF);stabF.connect(stabG);stabG.connect(musicGain);stab.start(now);stab.stop(now+.35);
-  _musicNodes.push(stab,stabF,stabG);
-  // Noise burst
-  const nbuf=AX.createBuffer(1,Math.ceil(AX.sampleRate*.08),AX.sampleRate);
-  const nd=nbuf.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=(Math.random()*2-1)*Math.pow(1-i/nd.length,1.2);
-  const nsrc=AX.createBufferSource();nsrc.buffer=nbuf;
-  const nf=AX.createBiquadFilter();nf.type='bandpass';nf.frequency.value=2000;nf.Q.value=1;
-  const ng=AX.createGain();ng.gain.value=.25;
-  nsrc.connect(nf);nf.connect(ng);ng.connect(musicGain);nsrc.start(now);
-  _musicNodes.push(nsrc,ng);
-
-  // ── Driving bass drone ────────────────────────────────────────────────────
-  const d1=_mkDrone(55,.07);d1.osc.type='sawtooth';d1.filter.frequency.value=300;
-  const d2=_mkDrone(82,.04,10);d2.osc.type='sawtooth';d2.filter.frequency.value=400;
-  // Fast tremolo LFO — creates urgency
-  const lfo=AX.createOscillator();lfo.frequency.value=12;
-  const lfoG=AX.createGain();lfoG.gain.value=0.03;
-  lfo.connect(lfoG);lfoG.connect(d1.gain);lfo.start();
-  _musicNodes.push(lfo,lfoG);
-
-  // ── Ostinato string pattern — fast repeated notes ─────────────────────────
-  // Minor key pattern: Em feel — E3, B2, G3, E3 repeating at ~180bpm
-  const OSTINATO=[164,123,196,164,146,123,164,196, 164,123,196,164,146,196,164,123];
-  let _oi=0;
-  function schedOstinato(){
-    if(_musicZone!=='combat')return;
-    const t=AX.currentTime;
-    const freq=OSTINATO[_oi%OSTINATO.length];_oi++;
-    const o=AX.createOscillator();o.type='sawtooth';o.frequency.value=freq;
-    const f=AX.createBiquadFilter();f.type='bandpass';f.frequency.value=freq*2.2;f.Q.value=5;
-    const g=AX.createGain();
-    g.gain.setValueAtTime(.09,t);g.gain.exponentialRampToValueAtTime(0.001,t+.16);
-    o.connect(f);f.connect(g);g.connect(musicGain);o.start(t);o.stop(t+.18);
-    _musicNodes.push(o,f,g);
-    _musicScheduler=setTimeout(schedOstinato,135); // ~180bpm 8th notes
-  }
-  setTimeout(schedOstinato, 80); // slight delay after impact
-
-  // ── Brass stabs on beats 1 and 3 ─────────────────────────────────────────
-  const BRASS_HITS=[0,1,2,3]; // beat indices that get stabs
-  let _bi=0;
-  function schedBrass(){
-    if(_musicZone!=='combat')return;
-    const t=AX.currentTime;
-    _bi++;
-    // Stab on beats 1 and 3 of a 4-beat bar
-    if(_bi%4===1||_bi%4===3){
-      const freq=_bi%8<4?220:196; // alternates pitch slightly
-      const o=AX.createOscillator();o.type='square';o.frequency.value=freq;
-      const f=AX.createBiquadFilter();f.type='lowpass';f.frequency.value=700;
-      const g=AX.createGain();g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(0.001,t+.22);
-      o.connect(f);f.connect(g);g.connect(musicGain);o.start(t);o.stop(t+.25);
-      _musicNodes.push(o,f,g);
-      // Accent low hit on beat 1 only
-      if(_bi%8===1){
-        const lo=AX.createOscillator();lo.type='sine';lo.frequency.value=55;
-        const lg=AX.createGain();lg.gain.setValueAtTime(.3,t);lg.gain.exponentialRampToValueAtTime(0.001,t+.35);
-        lo.connect(lg);lg.connect(musicGain);lo.start(t);lo.stop(t+.4);
-        _musicNodes.push(lo,lg);
-      }
-    }
-    setTimeout(schedBrass, 270); // quarter notes at ~112bpm bar tempo
-  }
-  setTimeout(schedBrass, 160);
+// ═══ COMBAT MUSIC (Session 231) ═══════════════════════════════════════
+// Michael, 27 Sep: "stale and simplistic". The fight's cue is now played by the exploring orchestra (VOICES, plus
+// spiccato strings and a war drum) in the same hall, and scheduled bar by bar against the audio clock with a 0.6 s
+// lookahead, so the eighths no longer drift with setTimeout. Three themes, a different one each fight; each loops an
+// A and a B section of eight bars after a two-bar opening. The layers follow the fight (COMBAT.heat, set in tickMusic:
+// each alert foe within 30 units counts one, a boss three): low strings and drums always; the high strings and a
+// held pad from two; the horn's theme from three; the choir from five. When the fight ends the cue closes on the
+// tonic and fades over three seconds while the exploring music comes back in.
+const COMBAT={bus:null,timer:null,bar:0,next:0,theme:null,heat:1,log:null,lastTheme:-1};
+const COMBAT_THEMES=[
+ {id:'steel',root:'D',mode:'aeolian',bpm:138,ost:[0,0,12,0,7,0,12,7],
+  A:{chords:[1,1,6,7,1,1,4,5],horn:['1:1.5 5:.5 5:2','.:4','4:1.5 3:.5 1:2','.:4','1:1.5 5:.5 8:2','7:2 5:2','6:1.5 5:.5 4:2','5:4']},
+  B:{chords:[6,6,7,7,4,4,5,5],horn:['3:2 4:1 5:1','6:4','5:2 4:1 3:1','2:4','3:2 4:1 5:1','8:4','7:2 6:2','5:4']}},
+ {id:'ambush',root:'E',mode:'phrygian',bpm:146,ost:[0,12,0,1,0,12,0,7],
+  A:{chords:[1,2,1,2,1,2,7,1],horn:['1:3 2:1','1:4','5:1 4:1 2:2','1:4','1:3 2:1','3:2 2:2','7:2 6:2','7:4']},
+  B:{chords:[6,6,2,2,6,6,7,7],horn:['6:2 5:1 3:1','2:4','3:2 2:1 1:1','2:4','6:2 5:1 3:1','5:2 6:2','7:2 5:2','2:4']}},
+ {id:'stand',root:'C',mode:'dorian',bpm:128,ost:[0,7,12,7,0,7,10,7],
+  A:{chords:[1,1,7,7,4,4,5,5],horn:['5:2 4:1 5:1','1:4','4:2 3:1 2:1','7:4','5:2 4:1 5:1','8:2 7:2','6:2 5:1 4:1','5:4']},
+  B:{chords:[4,4,1,1,7,7,5,5],horn:['4:1.5 5:.5 6:2','8:4','7:1.5 6:.5 5:2','4:4','4:1.5 5:.5 6:2','8:2 9:2','8:2 7:2','5:4']}}
+];
+function _cbVoice(v,m,t,d,vel){_voiceOut=COMBAT.bus;try{VOICES[v](m,t,d,vel);}finally{_voiceOut=null;}}
+function combatBar(t0,bar){
+  const T=COMBAT.theme,root=NOTE_ROOT[T.root]||60,beat=60/T.bpm,e8=beat/2;const intro=bar<2;
+  const S=(Math.floor(Math.max(0,bar-2)/8)%2)?T.B:T.A;const k=Math.max(0,bar-2)%8;const deg=intro?1:S.chords[k];
+  const ct=[degMidi(root,T.mode,deg,0),degMidi(root,T.mode,deg+2,0),degMidi(root,T.mode,deg+4,0)];
+  const heat=COMBAT.heat,L=['ost','drum'];
+  for(let q=0;q<8;q++)_cbVoice('spicc',ct[0]-24+T.ost[q],t0+q*e8,e8*.8,q%2?.075:.11);
+  _cbVoice('taiko',0,t0,1,.26);_cbVoice('taiko',0,t0+2*beat,1,.2);
+  if(bar%4===3){_cbVoice('taiko',0,t0+3.5*beat,1,.14);_cbVoice('taiko',0,t0+3.75*beat,1,.18);}
+  if(bar%4===0)_cbVoice('timpani',ct[0],t0,1,.2);
+  if(!intro&&heat>=2){L.push('high','pad');const arp=[ct[0],ct[1],ct[2],ct[1]+12,ct[2],ct[1],ct[0]+12,ct[2]];for(let q=0;q<8;q++)_cbVoice('spicc',arp[q]+12,t0+q*e8,e8*.7,.045);
+    ct.forEach((m,n)=>_cbVoice('strings',m-(n?0:12),t0,4*beat*.95,.035));}
+  if(!intro&&heat>=3){L.push('horn');let cur=t0;S.horn[k].split(' ').forEach(tok=>{const [dS,bS]=tok.split(':');const b=+bS;if(dS!=='.')_cbVoice('horn',degMidi(root,T.mode,+dS,0),cur,b*beat*.92,.12);cur+=b*beat;});}
+  if(!intro&&heat>=5&&k%4===0){L.push('choir');ct.forEach((m,n)=>_cbVoice('choir',m+(n===2?12:0),t0,8*beat*.95,.04));}
+  if(COMBAT.log)COMBAT.log.push({bar,t:t0,layers:L});
 }
+// for tests: swap in an OfflineAudioContext to render the cue, and reach the cue's state
+window.devMusicHook={swap(ctx,out){const prev=[AX,musicGain];AX=ctx;musicGain=out;return prev;},get combat(){return COMBAT;},get explore(){return EXPLORE;},set zone(v){_musicZone=v;},get zone(){return _musicZone;}};
+function combatFill(until){const beat=60/COMBAT.theme.bpm;while(COMBAT.next<until){combatBar(COMBAT.next,COMBAT.bar);COMBAT.next+=4*beat;COMBAT.bar++;}}
+function _musicCombat(){
+  if(!AX)return;_exBus();
+  let n=Math.floor(Math.random()*COMBAT_THEMES.length);if(n===COMBAT.lastTheme)n=(n+1)%COMBAT_THEMES.length;COMBAT.lastTheme=n;COMBAT.theme=COMBAT_THEMES[n];
+  const bus=AX.createGain();bus.gain.value=1;bus.connect(musicGain);bus.connect(EXPLORE.verb);COMBAT.bus=bus;
+  const now=AX.currentTime;COMBAT.bar=0;COMBAT.next=now+.08;
+  // the opening hit: drum, timpani and a low horn on the tonic
+  const root=NOTE_ROOT[COMBAT.theme.root]||60;_cbVoice('taiko',0,now+.02,1,.3);_cbVoice('timpani',root,now+.02,1,.24);_cbVoice('horn',root-12,now+.02,.5,.1);
+  const step=()=>{if(COMBAT.bus!==bus)return;combatFill(AX.currentTime+.6);COMBAT.timer=setTimeout(step,150);};step();
+}
+function combatEnd(){const bus=COMBAT.bus;if(!bus||!AX)return;COMBAT.bus=null;if(COMBAT.timer){clearTimeout(COMBAT.timer);COMBAT.timer=null;}
+  const t=Math.max(AX.currentTime,COMBAT.next-.02);const T=COMBAT.theme,root=NOTE_ROOT[T.root]||60;
+  // the close: the tonic held under a last drum, then away
+  _voiceOut=bus;try{VOICES.taiko(0,t,1,.24);VOICES.timpani(root,t,1,.2);VOICES.lowstrings(root-24,t,1.6,.1);[0,2,4].forEach(d=>VOICES.strings(degMidi(root,T.mode,1+d,0),t,1.6,.035));}finally{_voiceOut=null;}
+  bus.gain.cancelScheduledValues(AX.currentTime);bus.gain.setValueAtTime(1,t+1.2);bus.gain.linearRampToValueAtTime(0,t+3.2);
+  setTimeout(()=>{try{bus.disconnect();}catch(e){}},(t-AX.currentTime+3.5)*1000);}
 
 // ── Village — warm, childlike, safe ────────────────────────────────────
 function _musicVillage(){
@@ -30674,6 +30657,7 @@ function tickMusic(dt){
   if(!AX)return;
   const anyDungeonAlert=ENEMIES.some(e=>!e.dead&&e.alert);
   const anyZoneAlert=ZE.some(e=>!e.dead&&e.alert);
+  {let h=0;for(const e of (isInterior()?[]:lid==='overworld'?ZE:ENEMIES)){if(!e||e.dead||!e.alert)continue;if(Math.hypot(px-e.x,pz-e.z)<30)h+=(e.boss||e.isBoss)?3:1;}COMBAT.heat=Math.max(1,h);} // S231
 
   if(isInterior()){
     // Interior music based on shop type
