@@ -6,11 +6,11 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
 const r = await page.evaluate(() => { const out = {}; const shots = {};
-  for (const kind of ['tower', 'shrine', 'lair', 'bcamp']) { const t = WORLD.SITES.find(s => s.kind === kind && s.pad > 0); if (!t) { out[kind] = { none: true }; continue; }
+  for (const kind of ['tower', 'shrine', 'lair', 'bcamp', 'glade']) { const t = WORLD.SITES.find(s => s.kind === kind && s.pad > 0); if (!t) { out[kind] = { none: true }; continue; }
     let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); const L = S.lodMeshes || []; const hi = L.filter(m => m.userData.lod === 'hi');
     out[kind] = Object.assign(out[kind] || {}, { hi: hi.length, paired: hi.every(m => L.some(o => o.userData.lod === 'lo' && o.userData.ckey === m.userData.ckey)), tris: hi.reduce((a, m) => a + m.geometry.attributes.position.count / 3, 0) });
     // a picture from 30 units at noon, the camera close enough that the detailed piece shows
-    forceTime(12); const y = WORLD.worldH(t.x, t.z); const cam = new THREE.PerspectiveCamera(45, REN.domElement.width / REN.domElement.height, .3, 500); const d = kind === 'tower' ? 55 : kind === 'bcamp' ? 26 : 22; if (kind === 'bcamp') { out.bcamp = { tents: 0 }; S.group.traverse(o => { if (o.isMesh && o.geometry && o.geometry.attributes.color && o.userData.noBake && o.geometry.attributes.position.count > 100) out.bcamp.tents++; }); }
+    forceTime(12); const y = WORLD.worldH(t.x, t.z); const cam = new THREE.PerspectiveCamera(45, REN.domElement.width / REN.domElement.height, .3, 500); const d = kind === 'tower' ? 55 : kind === 'bcamp' ? 26 : kind === 'glade' ? 30 : 22; if (kind === 'bcamp') { out.bcamp = { tents: 0 }; S.group.traverse(o => { if (o.isMesh && o.geometry && o.geometry.attributes.color && o.userData.noBake && o.geometry.attributes.position.count > 100) out.bcamp.tents++; }); }
     cam.position.set(t.x + d * .6, y + (kind === 'tower' ? 18 : 6), t.z + d * .8); cam.lookAt(t.x, y + (kind === 'tower' ? 20 : 2), t.z); CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now());
     out[kind].hiShown = hi.some(m => m.visible); WORLD.scene.updateMatrixWorld(true); const fog = WORLD.scene.fog; WORLD.scene.fog = null; REN.render(WORLD.scene, cam); WORLD.scene.fog = fog;
     const o = document.createElement('canvas'); o.width = REN.domElement.width; o.height = REN.domElement.height; o.getContext('2d').drawImage(REN.domElement, 0, 0); shots[kind] = o.toDataURL(); }
@@ -27,5 +27,6 @@ const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElemen
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); ms.forEach(m => sc.remove(m)); sc.remove(floor); return o.toDataURL(); });
 fs.writeFileSync('tests/out/pois.png', Buffer.from(shot.split(',')[1], 'base64'));
 check('a bandit camp\'s tents are canvas ridge tents on the kit (Session 205)', o.bcamp && o.bcamp.tents >= 5, o.bcamp);
+check('the glade\'s reeds, log and lily pads are built in detail with the old reeds and log as the distant copy (Session 215)', !o.glade.none && o.glade.hi > 0 && o.glade.paired && o.glade.hiShown && o.glade.tris > 3000, o.glade);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

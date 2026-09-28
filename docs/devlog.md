@@ -6022,3 +6022,19 @@ Two things fell short in the renders and are said so in the question: the scorpi
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): all as shown (recommended), the Bog Crawler as a six-legged crawler of its own, only the Ogre, the dungeon pair and the wisp, or not yet.
+
+## v80 — Session 215 — The glade in detail (H.5, Michael's A)
+The last POI owed under Michael's A for buildings and POIs ("all of it, with a distant copy"). The glade is a pond in a clearing, ringed with big trees and herbs. Its own pieces were fourteen four-sided green cones for reeds and a seven-sided cylinder for a fallen log.
+
+**What changed.** `buildGlade` now builds those pieces as one merged mesh near and keeps the old ones as the distant copy (`poiLod`, swapped by `houseLod` at the houses' 70/80 units, as the tower's and the shrine's are):
+- **Reeds.** Each of the fourteen clumps is 13–19 flat blades, each its own green between moss and straw, leaning out at random, with one to three cattails on stalks. Each clump stands on the ground's own height at its spot.
+- **The fallen log.** Bark on a bumped cylinder, cut ends in heartwood with growth rings, two broken branch stubs, five patches of moss along the top, and a small cluster of mushrooms on its side. It is built along its length and turned where the old one lay, so its collision is unchanged.
+- **The pond.** Nine lily pads, each with its notch, a few carrying a pale flower, just on the water.
+
+The trees, the herbs and the creatures at the water are unchanged.
+
+### Verified (headless Chromium)
+`pois.test.mjs` has a new check, and all 6 pass. A glade is built with its detailed piece paired with its distant copy, and the detailed one shows from 30 units. It is about 6,000 triangles (6,023 in the test's glade; the reed count varies by site). Picture: `docs/prototypes/glade-ingame.png`. The test renders without the terrain loaded, so the pond's colour fills the ground there.
+
+### Needs eyes
+A glade in real light and terrain: whether the reeds read as reeds at walking distance, and whether the lily pads sit on the water when the pond's level differs from the pad's (they are placed at the water disc's height).
