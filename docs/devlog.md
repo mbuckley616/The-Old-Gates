@@ -6318,3 +6318,27 @@ New `tests/tpweapons.test.mjs`, 5 checks, all passing, no page errors:
 
 ### Needs eyes
 Whether the swings look right with the longer kit blades: the claymore is a little longer than the old box. Also whether a tower shield wants its own tall rectangular shape rather than a large kite.
+
+## v80 — Session 228 — The world's rocks: a prototype and a question (H.5, waiting on Michael)
+Backlog H.5 asks for "trees and rocks (more silhouette, less cube)". The trees got species, girth and colour in Session 192; the rocks did not. Every rock in the world is `PROTO.rock`: two jittered dodecahedra, 72 triangles, one grey, the same on the moor as in the dunes. A new look is Michael's call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/rocks/shoot.mjs`) makes a rock from an icosphere of 320 triangles:
+- Two noises push the sphere out: a broad one for the rock's lump, and a sharp one for cracks.
+- Six random fracture planes cut it flat wherever a vertex passes them, so it has faces and edges.
+- The normals are smoothed across neighbouring faces only where those faces are within 38° of each other. Worn stone reads rounded, and a fracture keeps its hard edge.
+- Colour is baked per vertex: darker in the hollows and underneath, mottled by a third noise, with the biome's dressing on the tops. Moss and snow take the tops by their normal; lichen goes in spots.
+
+An **outcrop** is the same stone flattened, stepped into six layers with alternate bands in a second colour, and tilted. A **cluster** is a boulder with three smaller stones half sunk around it.
+
+The first renders went wrong in two ways:
+- Plain face normals made every rock a faceted blob.
+- Smoothing across every welded corner then made them river pebbles.
+The angle limit on the smoothing is what made them read as stone.
+
+The start area has 17 rocks loaded, all on today's 72-triangle shape. Counted from the world's instanced meshes, the proposal would add about 5k triangles there.
+
+### Verified (headless Chromium)
+`node docs/prototypes/rocks/shoot.mjs` renders `docs/prototypes/rocks-kinds.png`, `rocks-biomes.png` and `rocks-scatter.png` with no page errors. Triangles: boulder 320, outcrop 320, cluster 1,280, today's 72.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all three kinds by biome (recommended), the boulder only, the dressing only, or not yet.
