@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s269</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s270</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -12910,109 +12910,7 @@ function buildAshenmoorBurned(){
     const bramX = 25.5, bramZ = 21.5; // south of forge (h0 is at 23-28 on x, 23-27 on z)
     const bramY = getY(bramX, bramZ);
 
-    // Body — prone: flattened torso + head + one visible arm + boots
-    const bodyMat = new THREE.MeshLambertMaterial({color:0x3a2820}); // dark tunic
-    const skinMat = new THREE.MeshLambertMaterial({color:0x7a5a42});
-    const bootMat = new THREE.MeshLambertMaterial({color:0x221812});
-    const bram = new THREE.Group();
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45,0.22,0.95),bodyMat);
-    torso.position.set(0, 0.11, 0);
-    bram.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16,10,8),skinMat);
-    head.position.set(0, 0.14, -0.55); // head facing north (Bram fell looking toward the village)
-    bram.add(head);
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.55),bodyMat);
-    armR.position.set(0.26, 0.08, 0.12);
-    armR.rotation.y = -0.3; // splayed slightly
-    bram.add(armR);
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.55),bodyMat);
-    armL.position.set(-0.24, 0.08, -0.05);
-    armL.rotation.y = 0.15;
-    bram.add(armL);
-    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.14,0.7),bodyMat);
-    legR.position.set(0.11, 0.08, 0.6);
-    bram.add(legR);
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.14,0.7),bodyMat);
-    legL.position.set(-0.11, 0.08, 0.65);
-    bram.add(legL);
-    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.12,0.2),bootMat);
-    boot.position.set(0.11, 0.06, 0.95);
-    bram.add(boot);
-
-    // Goblin axe stuck in the ground at his right hand — iconography for "weapon
-    // in hand" even though he's fallen. Slight tilt as if dropped.
-    const axeHandleMat=new THREE.MeshLambertMaterial({color:0x3a2818});
-    const axeHeadMat=new THREE.MeshLambertMaterial({color:0x504840});
-    const axeGroup=new THREE.Group();
-    const axeHandle=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,0.7,6),axeHandleMat);
-    axeHandle.rotation.z = 0.35;
-    axeGroup.add(axeHandle);
-    const axeHead=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.18,0.06),axeHeadMat);
-    axeHead.position.set(0.15,0.28,0);
-    axeHead.rotation.z = 0.35;
-    axeGroup.add(axeHead);
-    axeGroup.position.set(0.45, 0.0, 0.15);
-    bram.add(axeGroup);
-
-    bram.position.set(bramX, bramY, bramZ);
-    bram.rotation.y = 0.2; // slightly skewed
-    sc.add(bram);
-
-    // Subtle glow so the body is visible from a few meters out — dim, warm,
-    // not a shiny-loot-drop vibe. Just enough that the player notices from the
-    // gate path.
-    const bramGl = new THREE.PointLight(0xaa7733, 0.6, 4);
-    bramGl.position.set(bramX, bramY+0.4, bramZ);
-    sc.add(bramGl);
-
-    // Register in ZONE_CORPSES so the standard E-to-interact pipeline kicks in.
-    // items = [hammer]; looted = false; custom flag bramBody = true so the
-    // interaction layer can show flavor text on first read (one-shot via
-    // worldState.bramBodyRead) before opening the loot panel.
-    //
-    // v61ad: hammer-respawn guard. ZONE_CORPSES isn't serialized across saves,
-    // so on a reload into the already-burned state the builder would otherwise
-    // drop a fresh hammer at Bram's body on every load. Before seeding the
-    // items array, check if the player already carries (equipped or bagged)
-    // The Forge-Man's Hammer — if so, the body is just a body, no loot.
-    const _hasHammer = (EQ.weapon && EQ.weapon.name==="The Forge-Man's Hammer")
-                    || BAG.some(b=>b && b.name==="The Forge-Man's Hammer");
-    const _bramItems = _hasHammer ? [] : [{
-        name:"The Forge-Man's Hammer",
-        ico:'🔨',
-        type:'equip',
-        slot:'weapon',
-        unique:true,
-        weaponShape:'mace',
-        weaponType:'Mace',
-        wType:'blunt',
-        tier:3,
-        material:'Iron',
-        matCol:0x6a6862,
-        atk:[11,17],
-        weight:5,
-        buyPrice:0, sellMult:0,
-        reqAttr:'might', reqVal:8,
-        mightBonus:2,
-        desc:"The last hammer Bram forged. Heavier than a warhammer should be and better-balanced than it has any right to be. The grip still smells of his forge.",
-      }];
-    ZONE_CORPSES.push({
-      x:bramX, z:bramZ, y:bramY,
-      name:'Bram', displayName:'Bram',
-      items:_bramItems,
-      gl:bramGl, spark:null, age:0, scene:sc, zone:'overworld', looted:_hasHammer,
-      bramBody:true, // marker — interaction layer shows flavor text on first read
-      corpseId:'bram', // v61al: marker-iterator lookup key (Q7 obj 1 read_corpse)
-      // v61ae: axe mesh reference so takeLootItem can remove it when the hammer
-      // is taken. parent is `bram`, not the top-level scene.
-      bramAxe:axeGroup, bramGroup:bram,
-    });
-    // v61ae: if the player already has the hammer on reload, the axe should
-    // ALSO be absent — otherwise the scene re-renders an axe that was already
-    // "taken" on a previous session. Matches the items:[] guard above.
-    if(_hasHammer){
-      bram.remove(axeGroup);
-    }
+    buildBramBody(sc,bramX,bramY,bramZ,'overworld'); // S270 — the same body in the world's Ashenmoor
 
     // ── Scatter a few small props around the body so it reads as a fight ──
     // Broken helmet, spent torch, an arrow stuck in the ground. Pure dress.
@@ -13469,28 +13367,119 @@ function buildFaolchuMesh(d){
 // forge (25.5, 21.5), roughly at the notice board (30.7, 30). The player
 // enters the burned village from the south at (28, 78) facing north and
 // walks past Bram's body before encountering the boss in the square.
-function spawnFaolchu(){
-  if(worldState.faolchuDefeated) return null;
-  if(activeZoneId !== 'overworld') return null;
-  if(!worldState.ashenmoorBurned) return null;
-  // Idempotency: if a Faolchú is already in ZE (alive or dead), don't
-  // double-spawn. The 'dead' branch shouldn't happen since faolchuDefeated
-  // would be true in that case, but defensive.
-  if(ZE && ZE.find(e=>e && e.isBoss && e.bossId==='faolchu')) return null;
+// S270 — Bram's body, lifted out of buildAshenmoorBurned so the world's Ashenmoor lays the same one at its forge.
+// `zone` is the corpse's zone for the interact check ('overworld' in the legacy zone, 'world' in the open world).
+function buildBramBody(sc,bramX,bramY,bramZ,zone){
+    // Body — prone: flattened torso + head + one visible arm + boots
+    const bodyMat = new THREE.MeshLambertMaterial({color:0x3a2820}); // dark tunic
+    const skinMat = new THREE.MeshLambertMaterial({color:0x7a5a42});
+    const bootMat = new THREE.MeshLambertMaterial({color:0x221812});
+    const bram = new THREE.Group();
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45,0.22,0.95),bodyMat);
+    torso.position.set(0, 0.11, 0);
+    bram.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16,10,8),skinMat);
+    head.position.set(0, 0.14, -0.55); // head facing north (Bram fell looking toward the village)
+    bram.add(head);
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.55),bodyMat);
+    armR.position.set(0.26, 0.08, 0.12);
+    armR.rotation.y = -0.3; // splayed slightly
+    bram.add(armR);
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.55),bodyMat);
+    armL.position.set(-0.24, 0.08, -0.05);
+    armL.rotation.y = 0.15;
+    bram.add(armL);
+    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.14,0.7),bodyMat);
+    legR.position.set(0.11, 0.08, 0.6);
+    bram.add(legR);
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.14,0.7),bodyMat);
+    legL.position.set(-0.11, 0.08, 0.65);
+    bram.add(legL);
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.12,0.2),bootMat);
+    boot.position.set(0.11, 0.06, 0.95);
+    bram.add(boot);
+
+    // Goblin axe stuck in the ground at his right hand — iconography for "weapon
+    // in hand" even though he's fallen. Slight tilt as if dropped.
+    const axeHandleMat=new THREE.MeshLambertMaterial({color:0x3a2818});
+    const axeHeadMat=new THREE.MeshLambertMaterial({color:0x504840});
+    const axeGroup=new THREE.Group();
+    const axeHandle=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,0.7,6),axeHandleMat);
+    axeHandle.rotation.z = 0.35;
+    axeGroup.add(axeHandle);
+    const axeHead=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.18,0.06),axeHeadMat);
+    axeHead.position.set(0.15,0.28,0);
+    axeHead.rotation.z = 0.35;
+    axeGroup.add(axeHead);
+    axeGroup.position.set(0.45, 0.0, 0.15);
+    bram.add(axeGroup);
+
+    bram.position.set(bramX, bramY, bramZ);
+    bram.rotation.y = 0.2; // slightly skewed
+    sc.add(bram);
+
+    // Subtle glow so the body is visible from a few meters out — dim, warm,
+    // not a shiny-loot-drop vibe. Just enough that the player notices from the
+    // gate path.
+    const bramGl = new THREE.PointLight(0xaa7733, 0.6, 4);
+    bramGl.position.set(bramX, bramY+0.4, bramZ);
+    sc.add(bramGl);
+
+    // Register in ZONE_CORPSES so the standard E-to-interact pipeline kicks in.
+    // items = [hammer]; looted = false; custom flag bramBody = true so the
+    // interaction layer can show flavor text on first read (one-shot via
+    // worldState.bramBodyRead) before opening the loot panel.
+    //
+    // v61ad: hammer-respawn guard. ZONE_CORPSES isn't serialized across saves,
+    // so on a reload into the already-burned state the builder would otherwise
+    // drop a fresh hammer at Bram's body on every load. Before seeding the
+    // items array, check if the player already carries (equipped or bagged)
+    // The Forge-Man's Hammer — if so, the body is just a body, no loot.
+    const _hasHammer = (EQ.weapon && EQ.weapon.name==="The Forge-Man's Hammer")
+                    || BAG.some(b=>b && b.name==="The Forge-Man's Hammer");
+    const _bramItems = _hasHammer ? [] : [{
+        name:"The Forge-Man's Hammer",
+        ico:'🔨',
+        type:'equip',
+        slot:'weapon',
+        unique:true,
+        weaponShape:'mace',
+        weaponType:'Mace',
+        wType:'blunt',
+        tier:3,
+        material:'Iron',
+        matCol:0x6a6862,
+        atk:[11,17],
+        weight:5,
+        buyPrice:0, sellMult:0,
+        reqAttr:'might', reqVal:8,
+        mightBonus:2,
+        desc:"The last hammer Bram forged. Heavier than a warhammer should be and better-balanced than it has any right to be. The grip still smells of his forge.",
+      }];
+    ZONE_CORPSES.push({
+      x:bramX, z:bramZ, y:bramY,
+      name:'Bram', displayName:'Bram',
+      items:_bramItems,
+      gl:bramGl, spark:null, age:0, scene:sc, zone, looted:_hasHammer,
+      bramBody:true, // marker — interaction layer shows flavor text on first read
+      corpseId:'bram', // v61al: marker-iterator lookup key (Q7 obj 1 read_corpse)
+      // v61ae: axe mesh reference so takeLootItem can remove it when the hammer
+      // is taken. parent is `bram`, not the top-level scene.
+      bramAxe:axeGroup, bramGroup:bram,
+    });
+    // v61ae: if the player already has the hammer on reload, the axe should
+    // ALSO be absent — otherwise the scene re-renders an axe that was already
+    // "taken" on a previous session. Matches the items:[] guard above.
+    if(_hasHammer){
+      bram.remove(axeGroup);
+    }
+}
+
+// S270 — the Faolchú built at a point in a scene, for the legacy zone and for the world's Ashenmoor alike.
+function faolchuAt(sc, sx, sz, ey){
   const d = BOSSES.Faolchu;
   const {g, hpFg, hpBg, limbs} = buildFaolchuMesh(d);
-  // Spawn position — village square, north of Bram's forge. Slight
-  // randomization within ~0.5u so the boss isn't on the exact same patrol
-  // tile every reload (visual variety only; doesn't affect fight).
-  const sx = 32 + (Math.random()-0.5)*0.6;
-  const sz = 32 + (Math.random()-0.5)*0.6;
-  const ey = (typeof activeTerrainH==='function') ? activeTerrainH(sx,sz) : 0;
   g.position.set(sx, ey, sz);
-  // Add to the active overworld scene. After the burn fires,
-  // ZONE_BUILDERS.overworld.sceneGet returns owBurnedScene; before, owScene.
-  const sc = (typeof owBurnedScene!=='undefined' && owBurnedScene)
-             ? owBurnedScene
-             : owScene;
   sc.add(g);
   // Aura point light — separate light for ground-glow (mesh has its own
   // body-aura light internally; this one sits at ground level for the
@@ -13536,6 +13525,29 @@ function spawnFaolchu(){
   // a power swing = 25 power hits to break, or proportionally more normal swings.
   // Posture-break gives a 1.5s stagger window — meaningful, but not trivial to repeat.
   initPosture(e);
+  return e;
+}
+
+function spawnFaolchu(){
+  if(worldState.faolchuDefeated) return null;
+  if(activeZoneId !== 'overworld') return null;
+  if(!worldState.ashenmoorBurned) return null;
+  // Idempotency: if a Faolchú is already in ZE (alive or dead), don't
+  // double-spawn. The 'dead' branch shouldn't happen since faolchuDefeated
+  // would be true in that case, but defensive.
+  if(ZE && ZE.find(e=>e && e.isBoss && e.bossId==='faolchu')) return null;
+  // Spawn position — village square, north of Bram's forge. Slight
+  // randomization within ~0.5u so the boss isn't on the exact same patrol
+  // tile every reload (visual variety only; doesn't affect fight).
+  const sx = 32 + (Math.random()-0.5)*0.6;
+  const sz = 32 + (Math.random()-0.5)*0.6;
+  const ey = (typeof activeTerrainH==='function') ? activeTerrainH(sx,sz) : 0;
+  // Add to the active overworld scene. After the burn fires,
+  // ZONE_BUILDERS.overworld.sceneGet returns owBurnedScene; before, owScene.
+  const sc = (typeof owBurnedScene!=='undefined' && owBurnedScene)
+             ? owBurnedScene
+             : owScene;
+  const e = faolchuAt(sc, sx, sz, ey);
   ZE.push(e);
   // Also push into ZONES.overworld.enemies so a zone re-entry that re-reads
   // the array doesn't lose the reference. ZE is a reference to that array
@@ -14413,7 +14425,7 @@ function tickBossHud(){
   // Find the first alive boss in ZE. Multi-boss support is forward-compat
   // — for Session A there's only the Faolchú in burned Ashenmoor.
   let boss = (typeof ZE!=='undefined' && ZE)
-               ? ZE.find(e=>e && e.isBoss && !e.dead && !e.locked)
+               ? ZE.find(e=>e && e.isBoss && !e.dead && !e.locked && (activeZoneId!=='world' || (e.alert && Math.hypot(e.x-px,e.z-pz)<40))) // S270 — in the world, only a boss that is on you
                : null;
   if(!boss){ // v80 — lair beasts, captains, wyrms, and the masters below: the nearest alert boss within 40u
     const L=(activeZoneId==='world')?((ZONES.world&&ZONES.world.enemies)||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);let bd=40;for(const e of L){if(!e||e.dead||!(e.boss||e.isBoss)||!(e.alert||e._agg))continue;const d=Math.hypot(e.x-px,e.z-pz);if(d<bd){bd=d;boss=e;}}if(boss&&!boss.displayName)boss.displayName=boss.name;}
@@ -18829,6 +18841,9 @@ function interact(){
     // Check for bramBody FIRST, before the items.length gate below.
     const nearBram=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.bramBody&&Math.hypot(px-c.x,pz-c.z)<1.5);
     if(nearBram){
+      // S270 — the quest event fires on every read: read before the Faolchú is down (its prereq), the one-shot flag
+      // used to strand the objective, since nothing fired it again.
+      if(typeof checkQuestProgress==='function')checkQuestProgress('read_corpse',{corpseId:'bram',zone:'overworld'});
       if(!worldState.bramBodyRead){
         worldState.bramBodyRead = true;
         showMsgLong("He's gone. A goblin's axe is still in his hand. The forge behind him is a ruin.", '#c8a884');
@@ -35981,6 +35996,7 @@ var WORLD=(()=>{
       let geo,solR;
       const standing=burnedV&&storyRuin(site)&&hero&&hero[i]&&ASH_SURVIVORS.includes(hero[i].keeper); // S269 — Edna's cottage and the oratory come through the burning
       if(TST&&!standing&&(burnedV||abandonedV||(sackedV&&!isShop&&r()<.5))){ // a shell: black walls, no roof, nobody home
+        if(burnedV&&hero&&hero[i]&&hero[i].keeper==='Bram')S._forge={x:lot.x+lot.tx*(lot.d/2+1.6),z:lot.z+lot.tz*(lot.d/2+1.6)}; // S270 — where Bram fell, before his door
         const sh=buildingGeo(lot.w,lot.d,Object.assign({},st,{wall:burnedV?0x1a1614:0x6a665e,wall2:burnedV?0x120f0d:0x5a564e,roof:burnedV?0x0a0806:0x3a3632,roof2:0x0a0806,thatch:false,framed:false}),r,{chimney:false,twoStory:false,h:st.h*.8,rise:.2});const m=addMesh(sh,lot.x,lot.z,lot.ry,0);return;} // forEach: skip the rest of this lot
       if(!isShop&&TST&&r()<shutteredShare(site))lot._shuttered=true;
       if(type==='church')geo=churchGeo(lot.w,lot.d,st,r);
@@ -36221,6 +36237,9 @@ var WORLD=(()=>{
       const cn=spawnNPC(def,0,true);cn.sched={type:'constable',a:{x:cx-6,z:cz-3},b:{x:cx+6,z:cz+3}};snpcs.push(cn);
     }
     if(S.dead)clearDead(); // S269 — the villagers and the watch are drawn after the ruin's clearing (so the draws stay put): a ruin keeps nobody in the street
+    if(S._forge&&storyRuin(site)&&typeof buildBramBody==='function'){ // S270 — Bram's body at his forge, as in the legacy burned zone
+      for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
+      buildBramBody(group,S._forge.x,worldH(S._forge.x,S._forge.z),S._forge.z,'world');}
     S.reach=t_reach(sol,site);
     bakeSettlement(S);
     sc.add(group);
@@ -38855,7 +38874,11 @@ var WORLD=(()=>{
     if(worldState.ashenmoorPending&&!worldState.ashenmoorBurned&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-t.x,pz-t.z)<(t.pad||58)){
       worldState.ashenmoorBurned=true;worldState.ashenmoorPending=false;
       if(typeof addLog==='function')addLog('🔥','Ashenmoor has burned.');
-      if(typeof checkQuestProgress==='function')checkQuestProgress('enter_zone',{zone:'overworld'});}}
+      if(typeof checkQuestProgress==='function')checkQuestProgress('enter_zone',{zone:'overworld'});}
+    // S270 — the Faolchú waits on the plaza until killed (killZoneEnemy sets faolchuDefeated, drops the Mark and ticks Q7)
+    if(worldState.ashenmoorBurned&&!worldState.faolchuDefeated&&SETTLE.has('ashenmoor')&&typeof faolchuAt==='function'&&!ZONES.world.enemies.some(e=>e.isBoss&&e.bossId==='faolchu')){
+      const fx=t.x+4,fz=t.z+2;const e=faolchuAt(sc,fx,fz,worldH(fx,fz));e._site='ashenmoor';ZONES.world.enemies.push(e);
+      if(typeof addLog==='function')addLog('🐺','Something is moving in the ruins.');}}
   // ── drivers, ticked once per game-day for loaded towns ──
   let _pDay=-1;
   function tickProsperity(){
@@ -40523,6 +40546,7 @@ function loop(now){
       tickZoneEnemies(dt, now, _wScene);
       tickZoneBalls(dt, _wScene);
       tickHerbs(dt, now);
+      if(activeZoneId==='world'){if(typeof tickFaolchuDeathBursts==='function')tickFaolchuDeathBursts(dt);if(typeof tickBossHud==='function')tickBossHud();} // S270 — the Faolchú fights in the world's Ashenmoor too
     }
 
     // Zone-corpse glow pulse — only corpses in the current zone; emptied corpses stop glowing.

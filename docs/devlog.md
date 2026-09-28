@@ -5948,3 +5948,29 @@ New `tests/ashenburn.test.mjs`, 7 checks:
 
 ### Needs eyes
 Walking into the burnt village for the first time. The next session puts the Faolchú on the plaza and Bram at his forge; until then Q7 stops at *Drive off the wolf-shape*, which nothing in the world can yet tick.
+
+## v80 — Session 270 — The Rubbing, in the world
+The second half of Michael's A on issue #32. Session 269 burned the world's Ashenmoor and ticked *Return to Ashenmoor*. The rest of Q7 still needed the legacy zone: the Faolchú, Bram's body, and the triage that leads to Edna's rubbing. This session brings all of it into the world, and Q7 now plays from Q6's hand-in to Aldwyn's commission without leaving the open world.
+
+**What changed.**
+- **The Faolchú.** `spawnFaolchu` built the boss by hand for the legacy zone's scene. Its body is now `faolchuAt(scene, x, z, y)`, and the legacy spawn calls it unchanged. In the world, `tickAshenmoorStory` puts one on the plaza, four units from the centre, once Ashenmoor has burned for the story and until it is defeated. It is the same boss: 2,000 health, its phases, its fireballs. `killZoneEnemy` was already generic, so killing it in the world sets `faolchuDefeated`, drops the Mark on its body and ticks *Drive off the wolf-shape*. Taking the Mark ticks the next objective.
+- **The boss's bar and death burst.** Neither was ever ticked in the world, so the main loop's world branch now runs both. In the world the bar shows only a boss that is alert and within 40 units. Otherwise the Faolchú's bar would have hung on the screen from anywhere on the continent. This also brings in the bar the v80 code meant for lair beasts and captains, whose world branch was never reached.
+- **Bram.** His body was built inline in `buildAshenmoorBurned`. It is now `buildBramBody(scene, x, y, z, zone)`, called by the legacy zone as before. The world's ruin records where the forge's shell stands and lays him before its door, with the Forge-Man's Hammer and the goblin's axe, as a world corpse.
+- **Reading Bram.** It fired Q7's `read_corpse` only on the first read, and a one-shot flag kept it from ever firing again. Reading him before the Faolchú was down, which is his objective's prerequisite, stranded the objective for good. The event now fires on every read; the flavour text is still once.
+- **Oswin and Edna.** They are inside their houses (Session 269). Opening their dialogue fires the `talk_to` events, which the world already maps to Ashenmoor's zone. Once both are seen to, Edna's *I saw to them both.* gives the rubbing. Aldwyn in Ironhaven takes it through his Mark branch (*I took it off the seam.*) to *The desk.*, and Q7 is complete.
+
+**Not done.** The Faolchú's lesser wolves, which its phases call in, are still built only for the legacy zone's scene. In the world the fight has no adds. Owed in backlog A.
+
+### Verified (headless Chromium)
+New `tests/q7world.test.mjs`, 7 checks, played in order from Q6's hand-in:
+- **On arrival.** The Faolchú stands 4 units from the plaza's centre at 2,000 health, in the scene. Bram lies 17 units away at the forge, with his hammer.
+- **Bram too soon.** Reading him before the fight ticks nothing, and uses nothing up.
+- **The fight.** Brought to 5 health and struck by swings driven frame by frame, the Faolchú dies. Its bar showed while it was alert, `faolchuDefeated` is set and the Mark is on its body. Objectives go `11000000`.
+- **The Mark and Bram.** The Mark is taken and Bram is read: `11110000`.
+- **Oswin and Edna.** Oswin in the oratory, then Edna in her cottage, whose first topic is *📜 I saw to them both.*: the rubbing is in the bag, `11111110`.
+- **Aldwyn.** In Ironhaven, *Give him Edna's rubbing.* → *I took it off the seam.* → *Edna's rubbing. Here.* → *Is this enough to move on him?* → *The desk.*: Q7 complete, the Royal Mage Commission in the bag.
+
+`ashenburn`, `mainquest`, `questtargets`, `slimesplit` and `mainrun` pass. No page errors.
+
+### Needs eyes
+The fight itself on a real machine. The Faolchú was built for the legacy zone's small flat square, not a world plaza with a well and shells round it; its reach, its fireballs and its bar all need a real hand on the controls.
