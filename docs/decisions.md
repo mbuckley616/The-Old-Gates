@@ -15,6 +15,15 @@ Screens: [HUD, today beside A](https://raw.githubusercontent.com/mbuckley616/The
 
 ## Answered
 
+### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
+Michael: **B** — as shown, but the Bog Crawler gets a six-legged crawler's body of its own (a beetle or giant water-bug), prototyped first; the rest built one or two a session. (27 Sep 2026, via the control room)
+
+### The caravan attacked on the road — can you save it? (the systems builder, issue #18)
+Michael: **B** — defensible: bandits fall on it, the merchant runs, an overturned cart stays; driving them off keeps the route that day, the camp threatens again tomorrow. One session. (27 Sep 2026, via the control room)
+
+### The weapon kit — swords, axes, maces, bows, staves and shields on the shape kit (Session 220)
+Michael: **A** — the kit for everyone: the player's weapons in third person, every foe armed by what it is; foes' weapons are looks only, damage unchanged. (27 Sep 2026, via the control room)
+
 ### The interface — parchment and ink, and where the HUD sits (the concept artist, 2026-09-27)
 Michael: **Parchment everywhere; HUD in Oblivion's places** (A). (27 Sep 2026)
 
