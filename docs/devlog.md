@@ -6404,3 +6404,16 @@ The last shields outside the weapon kit were the two held up in a guard: the Ban
 
 ### Needs eyes
 Whether the tower shield on a raised shieldbearer's arm covers the body as the old disc did. It is taller (0.74) and narrower (0.46) than the disc's 0.4.
+
+## v80 — Session 232 — The first-person weapon: a prototype and a question (H.4, waiting on Michael)
+Michael's A on the weapon kit named "the player's weapons in third person" and "every foe", and both are built. The weapon you see most, in first person, is still `buildViewmodel`'s boxes. Whether it follows is a look question, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/fpweapons/shoot.mjs`) builds the first-person view for five items (a steel sword, an iron war axe, an iron mace, a hunting bow, an oak staff) and renders the world and the view scene as the main loop does. It then hides every mesh of the view model except the hands, and puts `tpWeapon(item)` in the fist at the hand's grip height. The picture is a grid: today's above, the kit below.
+
+The kit's metal came out nearly black in the view scene. That scene has its own few lights and nothing to reflect, so a metalness of .7 has nothing to show. At .25 it reads as steel. A build would give the first-person copies their own duller metal. Everything else stays: the bow's animated string and nocked arrow (they would be re-hung on the kit bow's tips), the enchantment glow and light, the hands and arm bridges, the swing, and the Forge-Man's Hammer's bespoke model.
+
+### Verified (headless Chromium)
+`node docs/prototypes/fpweapons/shoot.mjs` renders `docs/prototypes/fpweapons-grid.png`, `fpweapons-sword_today.png` and `fpweapons-sword_kit.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): the kit in first person for everything (recommended), for melee only, or not yet.

@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The first-person weapon on the kit too? (Session 232)
+Your answer on the weapon kit (Session 220) was A: "the player's weapons in third person, and every foe". Both are built now (Sessions 226–227, 231). In first person, which is how most of the game is played, your weapon is still `buildViewmodel`'s boxes: a white slab for a blade, a box for a mace's head, a stick for a bow. The prototype (`docs/prototypes/fpweapons/shoot.mjs`) builds today's first-person weapon for five items. It then hides the weapon's boxes and puts the kit's weapon in the same fist, tinted by the item as in third person. The hands, arms, position and swing are untouched.
+- Five items, today's above and the kit below (a steel sword, an iron war axe, an iron mace, a hunting bow, an oak staff): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fpweapons-grid.png
+- The sword full frame, today: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fpweapons-sword_today.png and on the kit: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fpweapons-sword_kit.png
+
+The view has its own small lit scene with nothing to reflect, so the kit's metal would be duller there (metalness .25, not .7), or it renders nearly black. What the build keeps: the bow's drawn string and nocked arrow (they would be re-hung on the kit bow), the enchantment glow, and the Forge-Man's Hammer's own bespoke model.
+
+**Options:** (A) yes, the kit in first person for every weapon, keeping the bow's draw, the glow and the Forge-Man's Hammer; (B) yes, but melee weapons only, the bow keeping today's first-person model with its string animation; (C) not yet. **Recommendation: A.** It is the weapon you look at most, and it would match what the foes carry and what you see in third person.
+
 ### The road coach, its horses, and the shark (Session 230)
 Outside the foes, the last boxes in the open world that you meet up close are the road coach and its pair of horses, and the shark in open water. The coach, which you can ride between towns, is a box on four discs. Each horse is a box on four sticks with a box for a head. The shark is a cylinder with four cones. None of them is in a family you have approved. The prototype (`docs/prototypes/coach/shoot.mjs`) builds them from the shape kit, each beside today's, with a highwayman for scale:
 - **The coach**: a panelled body on leaf springs, with framed windows, a door each side with a brass handle and a painted crest panel, a roof rail with luggage, the driver's bench and footboard in front, and two lamps. The four wheels have iron tyres and twelve spokes each, the back pair larger, and a pole runs forward to the horses.
