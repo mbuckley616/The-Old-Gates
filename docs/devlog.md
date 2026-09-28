@@ -6062,3 +6062,20 @@ Michael's plants decision (27 Sep) said picking leaves the plant: a bush or sapl
 
 ### Needs eyes
 Nothing new to look at beyond Session 167's bare bush, now in the Forest and Ironhaven too.
+
+## v80 — Session 218 — The coast's old boats are the harbours' clinker boat (H.5b)
+Owed from Michael's boats decision (Session 165: "ship, ferry and the other ships' hulls less boxy"). Three boats in the hand-built coastal zones were still a squashed half-sphere with a torus for a gunwale: the ferry moored at Carraig Mór's south dock, the same ferry at Inis Rua's north dock, and Salthaven's rowboat beached upside down.
+
+**What changed.** All three are now the open clinker boat that Session 168 built for the world's harbours: strakes, thwarts, oars shipped, a stubby mast with the sail furled. The world module exports `boatBake` and `SHIP_MAT` so the zone builders can use them. The zones are built lazily on first entry, after the world exists.
+- **The two ferries** lie along x where the old hull lay, scaled to its 4.8 length. The new hull is narrower than the half-sphere was, so the dock's mooring posts stood inside it. The boat now lies just past the dock's end (1.1 further out), with the posts beside it.
+- **Salthaven's rowboat** is the same boat upturned on the sand at the old one's place, scaled to its 3.6.
+
+The gates and ferry interactions go by their own points, not the boat's, so nothing else moved. The paints differ: the ferry is the blue one, the rowboat the green.
+
+**Not done: the sails swinging with the heading and the wind.** The game has no wind direction to swing them by. Inventing one for looks alone could fight the sailing system the designer is to propose (sailing is on the designer's list), so this waits for that.
+
+### Verified (headless Chromium)
+New `tests/ferry.test.mjs`, 4 checks, all passing, no page errors. It visits Carraig Mór, Inis Rua and Salthaven. In each there is one boat on the ship material at the expected spot and no half-sphere hull. The ferry's box is 5.78 long (a 4.8 hull plus its stem, rudder and oars). The Salthaven boat is turned keel up. Picture: `docs/prototypes/ferry-ingame.png` (the ferry beside the Carraig Mór dock).
+
+### Needs eyes
+Whether the ferry sits at the right height on the zone's water, and whether the furled sail on a ferry is right or it should be rowed only.

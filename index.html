@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s217</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s218</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -31708,11 +31708,10 @@ registerPlaceholderZone({
     // v61en: DoubleSide so the partial-sphere hull is visible from inside
     // (the player can walk close enough to see the hollow underside;
     // pre-v61en, that view rendered the hull invisible from the back face).
-    const boatMat=new THREE.MeshLambertMaterial({color:0x4a3818,side:THREE.DoubleSide});
-    const boatHull=new THREE.Mesh(new THREE.SphereGeometry(0.9,8,5,0,Math.PI*2,0,Math.PI/2.4), boatMat);
-    boatHull.scale.set(2.0,1.0,0.8);
-    boatHull.position.set(22, getY(22,46)+0.4, 46);
-    boatHull.rotation.x=Math.PI; // upside down (beached)
+    // S218 — the harbours' clinker boat (S168), upside down on the sand along x, scaled to the old hull's 3.6 length
+    const boatHull=new THREE.Mesh(WORLD.boatBake(0).geo, WORLD.SHIP_MAT);
+    boatHull.scale.setScalar(.6);boatHull.rotation.set(0,Math.PI/2,Math.PI);boatHull.castShadow=true;
+    boatHull.position.set(22, getY(22,46)+0.36, 46);
     sc.add(boatHull);
     sol.push({cx:22, cz:46, rx:1.8, rz:0.9});
 
@@ -32226,32 +32225,15 @@ registerPlaceholderZone({
     // (this one runs); rightside-up; nominally floating (Y at water
     // level + a small bob offset). No oars rendered — the framing is
     // "moored, waiting for the right tide."
-    const boatMat=new THREE.MeshLambertMaterial({color:0x3a2a18, side:THREE.DoubleSide});
-    const boatTrimMat=new THREE.MeshLambertMaterial({color:0x6a4a28});
     const boatY = _seawardY - 0.15;  // floating at water surface
     // Hull — half-sphere scaled into a boat shape, slightly larger
     // than Salthaven's.
-    const boatHull=new THREE.Mesh(
-      new THREE.SphereGeometry(1.0, 10, 6, 0, Math.PI*2, 0, Math.PI/2.2),
-      boatMat
-    );
-    boatHull.scale.set(2.4, 1.2, 1.0);
-    boatHull.position.set(30, boatY+0.2, 66);
-    boatHull.rotation.x=Math.PI;  // open side up (rightside-up)
+    // S218 — the ferry is the harbours' clinker boat (S168's bake, one of its four paints), lying along x where the old
+    // half-sphere hull lay, scaled to its 4.8 length (the boat is 6)
+    const boatHull=new THREE.Mesh(WORLD.boatBake(2).geo, WORLD.SHIP_MAT);
+    boatHull.scale.setScalar(.8);boatHull.rotation.y=Math.PI/2;boatHull.castShadow=true;
+    boatHull.position.set(30, boatY+0.12, 67.1); // past the mooring posts at the dock's end
     sc.add(boatHull);
-    // Hull rim — a thin trim band reading as the gunwale.
-    const boatRim=new THREE.Mesh(
-      new THREE.TorusGeometry(1.0, 0.06, 4, 16),
-      boatTrimMat
-    );
-    boatRim.scale.set(2.4, 1.0, 1.0);
-    boatRim.rotation.x=Math.PI/2;
-    boatRim.position.set(30, boatY+0.4, 66);
-    sc.add(boatRim);
-    // A central thwart (seat plank) across the middle of the boat.
-    const thwart=new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.3), boatTrimMat);
-    thwart.position.set(30, boatY+0.42, 66);
-    sc.add(thwart);
     // A small rope tying the boat to the nearer mooring post.
     const tieMat=new THREE.MeshLambertMaterial({color:0xb09870});
     const tie=new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 5), tieMat);
@@ -33384,28 +33366,13 @@ registerPlaceholderZone({
     // Carraig Mór's, since canonically it IS the same boat (one ferry,
     // not two). The boat is sometimes here, sometimes there; either way
     // the player sees it at whichever end they're standing on.
-    const boatMat=new THREE.MeshLambertMaterial({color:0x3a2a18, side:THREE.DoubleSide});
-    const boatTrimMat=new THREE.MeshLambertMaterial({color:0x6a4a28});
     const boatY = _seawardY - 0.15;
-    const boatHull=new THREE.Mesh(
-      new THREE.SphereGeometry(1.0, 10, 6, 0, Math.PI*2, 0, Math.PI/2.2),
-      boatMat
-    );
-    boatHull.scale.set(2.4, 1.2, 1.0);
-    boatHull.position.set(25, boatY+0.2, -4);
-    boatHull.rotation.x=Math.PI;
+    // S218 — the ferry is the harbours' clinker boat (S168's bake, one of its four paints), lying along x where the old
+    // half-sphere hull lay, scaled to its 4.8 length (the boat is 6)
+    const boatHull=new THREE.Mesh(WORLD.boatBake(2).geo, WORLD.SHIP_MAT);
+    boatHull.scale.setScalar(.8);boatHull.rotation.y=Math.PI/2;boatHull.castShadow=true;
+    boatHull.position.set(25, boatY+0.12, -5.1);
     sc.add(boatHull);
-    const boatRim=new THREE.Mesh(
-      new THREE.TorusGeometry(1.0, 0.06, 4, 16),
-      boatTrimMat
-    );
-    boatRim.scale.set(2.4, 1.0, 1.0);
-    boatRim.rotation.x=Math.PI/2;
-    boatRim.position.set(25, boatY+0.4, -4);
-    sc.add(boatRim);
-    const thwart=new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.3), boatTrimMat);
-    thwart.position.set(25, boatY+0.42, -4);
-    sc.add(thwart);
     const tieMat=new THREE.MeshLambertMaterial({color:0xb09870});
     const tie=new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 5), tieMat);
     tie.rotation.z=Math.PI/2.4;
@@ -40617,7 +40584,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
