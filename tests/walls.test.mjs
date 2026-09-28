@@ -34,7 +34,9 @@ check('the gate towers build in detail (a timber watchtower, round towers), unde
 const town = await page.evaluate(() => { const walled = []; for (const t of WORLD.SITES) { if (!t.pad || !['town', 'city', 'village', 'port', 'outpost'].includes(t.kind)) continue; let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); if (!S) continue;
     const w = S.sol.filter(q => q.bt === 'wall'); if (w.length) walled.push({ id: t.id, S, w: w.length }); if (walled.length >= 2) break; }
   if (!walled.length) return null; const { S, id, w } = walled[0]; const L = S.lodMeshes || []; const hi = L.filter(m => m.userData.lod === 'hi'), lo = L.filter(m => m.userData.lod === 'lo');
-  const saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); return hi.filter(m => m.visible).length; };
+  // (the town's current detailed meshes at each look: a town still building rebakes during the ticks, and the meshes it drops
+  // keep whatever visibility they had, which once read as a detailed cluster still shown from 600 away)
+  const saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); const S2 = WORLD.settlements.get(id) || S; return (S2.lodMeshes || []).filter(m => m.userData.lod === 'hi' && m.visible).length; };
   CAM.position.set(S.site.x, CAM.position.y, S.site.z); const near = look(); CAM.position.set(S.site.x + 600, CAM.position.y, S.site.z); const far = look(); CAM.position.copy(saved); look();
   return { id, walls: w, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), near, far, hi: hi.length }; });
 check('a walled town is found near the start', !!town, town);
@@ -47,7 +49,7 @@ if (fd) { await page.evaluate(f => goToZone('world', f.x, f.z + 45, 0, 'x'), fd)
 const fort = !fd ? null : await page.evaluate(seed => { const S = WORLD.settlements.get('fort_' + seed); if (!S || !S.lodMeshes) return { none: seed };
   const L = S.lodMeshes, hi = L.filter(m => m.userData.lod === 'hi'), lo = L.filter(m => m.userData.lod === 'lo'); const R = 27, segs = Math.round(2 * Math.PI * R / 3.2); let want = 0;
   for (let i = 0; i < segs; i++) { const am = (i + .5) / segs * Math.PI * 2; let d = am - Math.PI / 2; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) >= .16) want++; }
-  const cx = S.site.x, cz = S.site.z, saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); return hi.filter(m => m.visible).length; };
+  const cx = S.site.x, cz = S.site.z, saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); const S2 = WORLD.settlements.get('fort_' + seed) || S; return (S2.lodMeshes || []).filter(m => m.userData.lod === 'hi' && m.visible).length; };
   CAM.position.set(cx, CAM.position.y, cz + 40); const near = look(); CAM.position.set(cx + 700, CAM.position.y, cz); const far = look();
   forceTime(12); const cam = new THREE.PerspectiveCamera(55, REN.domElement.width / REN.domElement.height, .3, 600); const y = WORLD.worldH(cx, cz + 50);
   cam.position.set(cx + 14, y + 6, cz + 52); cam.lookAt(cx, y + 3, cz + 20); CAM.position.copy(cam.position); for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); WORLD.scene.updateMatrixWorld(true); const f = WORLD.scene.fog; WORLD.scene.fog = null; REN.render(WORLD.scene, cam); WORLD.scene.fog = f;

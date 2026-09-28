@@ -7073,3 +7073,16 @@ New `tests/cavedoor.test.mjs` builds a mouth (an undead theme) at an empty spot.
 
 ### Needs eyes
 The mouths in their own themes (goblin green, elemental red, deep blue) in real light. The maw is still a dark box that stands a little proud of the rock; making it a hollow in the rock would be the next step.
+
+## v80 — Session 272 — The walls suite read meshes a town had dropped (CI fix, test only)
+CI failed once on this branch, on the Session 263 push, and has passed on every push since. The failing check was in `tests/walls.test.mjs`, a walled town's detailed clusters giving way to their plain twins at a distance. It read `far: 2`: both of La Porte Grise's detailed clusters still shown with the eye 600 units away.
+
+**The likely cause:** the check gathered the town's detailed meshes once, then moved the eye and ticked the world. A town that is still building rebakes its clusters during those ticks. The meshes it drops leave its list, so `houseLod` no longer touches them, and they keep whatever visibility they had. I could not make it happen here, so this is the likely cause, not a proven one; the game's own distance switch was not at fault in any run.
+
+**The fix** is in the test alone: each look counts the settlement's current detailed meshes. The fort compound's check had the same pattern and gets the same change. The game is unchanged, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`walls` passes with the change, both the town's and the fort's checks.
+
+### Needs eyes
+Nothing in the game.
