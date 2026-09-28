@@ -4,14 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The caravan attacked on the road — can you save it? (systems builder, 2026-09-27, issue #18)
-Backlog B: *the caravan visibly attacked when a route breaks*. Today a route breaks silently on the day tick when a bandit camp stands within 500 units of the road's midpoint; the caravan just vanishes. Showing the attack is simple; what you can do about it is a rule of play.
-- **A. Seen, not saved.** When it breaks and you're near the caravan, three or four of the camp's bandits fall on it, the merchant runs, and the overturned cart stays on the road until the route reopens. You can fight, but the route breaks while the camp stands. One session.
-- **B. Defensible.** The same, and driving them off keeps the route that day (the camp threatens it again tomorrow). Not there: it breaks as now. One session.
-- **C. A warning first.** The lord sends word a day ahead and the attack comes at a set hour; defend as in B. Two sessions, and new dialogue for the quest writer.
-
-Recommendation: **B**. The caravan becomes something you can protect, with no new text, and the camp stays the real fix.
-
 ## Answered
 
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
@@ -19,6 +11,7 @@ Michael: **B** — as shown, but the Bog Crawler gets a six-legged crawler's bod
 
 ### The caravan attacked on the road — can you save it? (the systems builder, issue #18)
 Michael: **B** — defensible: bandits fall on it, the merchant runs, an overturned cart stays; driving them off keeps the route that day, the camp threatens again tomorrow. One session. (27 Sep 2026, via the control room)
+Built, Session 230 (systems builder): as answered. The threat's hour falls on the outbound leg, u .35–.65 of the road; you must be within 150 units of the caravan then; leaving 250 units with bandits alive breaks it. The duplicate entry left under Pending was removed. Issue #18 closed.
 
 ### The weapon kit — swords, axes, maces, bows, staves and shields on the shape kit (Session 220)
 Michael: **A** — the kit for everyone: the player's weapons in third person, every foe armed by what it is; foes' weapons are looks only, damage unchanged. (27 Sep 2026, via the control room)
