@@ -5656,3 +5656,16 @@ This finishes what Session 244 left owed. After a town rebuilt at another prospe
 
 ### Needs eyes
 Nothing new by eye. The three sessions together mean a town you know should keep its houses, people and faces through a war, a plague or a boom. That is worth a look the next time a town you own a house in changes hands.
+
+## v80 — Session 246 — The board over the door
+Section I on main is clear and the three open decisions (#31, #32, #37) are unanswered. The critic's run of 28 Sep (PR #40, not yet merged) confirmed four bugs; this session takes the first, *shop signs name the wrong keeper*.
+
+**What was wrong.** `genSettlement` hangs the trade sign over a shop's door as soon as it has the house's name, and that name uses the keeper's name as first drawn. A few lines later `makeDef` settles the keeper's real name (kept per lot since Session 172, unique in the town) and the house is renamed after them. The board was already painted, so it kept the first name. In Portclare all six keeper-named boards were wrong (*Leofgifu's Stores* over Fionnuala's Stores, *Wulfstan's Shipwright* over Lonán's); in Dunmore all seven were (*Órla's Goods* over Clodagh's, and no Órla in town). Inns, the church and the guild halls were right because their names don't carry a keeper.
+
+**What changed.** The sign's height is noted where the sign used to be built, and the board is painted after the rename, from `house.name`. Each face of a board carries its text in `userData.sign`, so a test can read it.
+
+### Verified (headless Chromium)
+`tests/signs.test.mjs`: every shop, inn, church and guild hall in Portclare (9) and Dunmore (14) has one board within two units of its door, and the board reads the house's name. On the build before this session the same test fails: 13 of 13 keeper-named boards named someone else. `names` (the town rebuilt gives the same houses and keepers) and `wayfinding` still pass. No page errors.
+
+### Needs eyes
+Stand three units from Fionnuala's Stores in Portclare at 11h and read the board.
