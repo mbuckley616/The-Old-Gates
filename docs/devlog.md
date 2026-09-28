@@ -7954,3 +7954,26 @@ New `tests/roll.test.mjs`, 15 checks, passing twice in a row, no page errors:
 - The first-person dip and the third-person tumble, which is a stand-in for a real pose (section H).
 - Whether stepping round a bandit's blow now reads, given that the tells are still 0.24–0.55 s of red glow until the next session.
 
+## v80 — Session 281 — A guard that can be broken
+This is the third of A's pieces under Michael's combat answer (B, A first). Until now nothing could stagger the player. You could hold a block through any number of blows and pay only stamina. `applyPostureDamage`'s own comment expected a player to have posture one day. This session gives the player one, to the numbers in `docs/design/combat.md`.
+
+**What changed.** You now have a posture of 100 plus 2 for each armour point (`playerMaxPosture`, recomputed as you change gear). A blow that lands unblocked drains its damage ×1.5, and a blow taken on a held block drains its damage ×1. A perfect parry and a rolled-under blow drain nothing. "Its damage" means the blow's own roll before your buffs take their share, the `rawDmg` both resolvers already pass to `executeStrike`. When posture empties you are **staggered for 0.8 s, and open**. The guard drops (*Your guard breaks!*, or *You are knocked off balance!* if you weren't blocking). A charging power attack, a pending swing and a bow draw are cancelled. Until it ends you can't swing, raise a block, roll or take a step. A blow that lands during the stagger adds nothing and doesn't lengthen it. You come out of the stagger with a full posture. Otherwise posture refills as an enemy's does: 5 a second, starting 1.5 s after the last blow (`POSTURE_REGEN`, `POSTURE_REGEN_DELAY`). The design page gives no rate of its own, so the player's refill borrows the enemies' existing rule. The stagger reads `performance.now()`.
+
+A thin gold bar under the stamina bar shows it (`#psw`/`#psb`). It stays hidden at full, as Elden Ring hides posture, and turns red while you are staggered. The interface's parchment pass (interface A) will restyle the vitals, and this bar will go with them.
+
+Of A's pieces, the tells as poses are still owed. So is the parry window's move from Finesse to the Guard skill, which comes with the skills sessions.
+
+### Verified (headless Chromium)
+New `tests/posture.test.mjs`, 12 checks, passing twice, no page errors. Times are passed in, so nothing reads the runner's clock.
+- **The numbers.** A new character with 2 armour has a posture of 104. A 20-armour cuirass in place of the 1-armour chest raises it to 142. An unblocked 20 drains 30. A held block of 20 drains 20. A perfect parry drains 0.
+- **The break.** At 10 posture, a blocked 20 empties it. You are staggered, the guard is down, and the message reads *Your guard breaks!* The stagger holds at 0.79 s and is gone at 0.81 s. No roll starts inside it. A second blow at 0.4 s leaves its end at 0.8 s. Out of it, posture is 104 again.
+- **The refill.** At 50, nothing comes back 1.0 s after the blow. At 1.6 s it is 55.
+- **The bar.** At half it shows at 50% width. At full it is hidden.
+- **End to end through `tickZoneEnemies`.** A real Bandit's unblocked blow (a roll of 6, pinned) drains 9.
+- **Nothing else moved.** `roll`, `guardsindoor` (a fight with a guard indoors), `faolchu`, `q7world`, `mimic`, `crime3`, `theft`, `register` and `player` pass.
+
+### Needs eyes
+- Whether 100 is right against a wolf pack. At 8–10 a bite, an unblocked player breaks after about eight bites, a few seconds against three wolves.
+- Whether being frozen in place for 0.8 s reads as a stagger without a pose (none yet; section H), and whether the red bar is enough.
+- The refill at 5 a second takes 20 s from empty to full, though the stagger itself refills you, so that only matters after a near-break.
+

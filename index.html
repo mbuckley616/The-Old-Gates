@@ -740,6 +740,7 @@
     </div>
     <div style="margin-bottom:2px">
       <span style="color:#40a040">⚡</span><div class="bar"><div class="bf" id="stb" style="background:#40a040;width:100%"></div></div><span id="sv" style="color:#a0c890">100</span>
+      <div id="psw" style="margin:1px 0 0 18px;width:88px;height:3px;background:#1a1410;border-radius:2px;overflow:hidden;opacity:0;transition:opacity .4s"><div id="psb" style="height:100%;width:100%;background:#c8a84a"></div></div>
     </div>
     <div style="color:#c8a84a;font-size:11px">Lv<span id="lv">1</span> XP <span id="xv">0</span>/<span id="xn">100</span> <span id="lvready" style="display:none;margin-left:8px;padding:2px 8px;border-radius:10px;background:#e8c040;color:#2a1a08;font:700 11px Georgia,serif;animation:lvpulse 1.1s ease-in-out infinite">▲ LEVEL UP — rest in a bed</span></div>
     <div id="bh" style="margin-top:3px;color:#9a8060;font-size:11px"></div>
@@ -760,7 +761,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s280</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s281</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1360,7 +1361,7 @@ let ROLL=null;
 function rollUntouchable(nowS){if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
-  if(ROLL||dead||!started||!onGround)return false;
+  if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
   if(typeof spellLevitating==='function'&&spellLevitating())return false;
   const enc=encumbranceState();if(enc==='immobile')return false;
@@ -1386,6 +1387,35 @@ function tickRoll(nowS){
   const r={dx:ROLL.dx*step,dz:ROLL.dz*step,p};
   if(p>=1)ROLL=null;
   return r;
+}
+// S281 — the player's posture (combat, Michael's B: A's third piece). 100 + 2 an armour point. An unblocked blow
+// drains its damage ×1.5, one taken on a held block its damage ×1, a perfect parry nothing. Empty, you are staggered
+// 0.8 s and open: the guard drops, and you can't swing, block, roll or step. You come out of it with it full; otherwise
+// it refills as an enemy's does (5 a second, 1.5 s after the last blow; POSTURE_REGEN). The stagger reads performance.now().
+const PPOST={posture:100,maxPosture:100,lastHitAt:0,stagUntil:0},PLAYER_STAGGER_S=.8;
+function playerMaxPosture(){return 100+2*Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);}
+function playerStaggered(nowS){return nowS<PPOST.stagUntil;}
+function playerPostureHit(amount,nowS,guard){
+  PPOST.maxPosture=playerMaxPosture();
+  PPOST.lastHitAt=nowS;
+  if(playerStaggered(nowS))return false;
+  PPOST.posture=Math.max(0,Math.min(PPOST.posture,PPOST.maxPosture)-amount);
+  if(PPOST.posture>0)return false;
+  PPOST.stagUntil=nowS+PLAYER_STAGGER_S;PPOST.broke=true;
+  blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;powerSwingDelayT=0;_bowDrawing=false;ROLL=null;
+  landShake=.14;
+  showMsg(guard?'Your guard breaks!':'You are knocked off balance!','#ff9040');
+  return true;
+}
+function tickPlayerPosture(dt,nowS){
+  PPOST.maxPosture=playerMaxPosture();
+  if(!playerStaggered(nowS)){
+    if(PPOST.broke){PPOST.broke=false;PPOST.posture=PPOST.maxPosture;}
+    else if(nowS-PPOST.lastHitAt>=POSTURE_REGEN_DELAY)PPOST.posture=Math.min(PPOST.maxPosture,PPOST.posture+POSTURE_REGEN*dt);
+  }
+  PPOST.posture=Math.min(PPOST.posture,PPOST.maxPosture);
+  const b=document.getElementById('psb'),w=document.getElementById('psw');
+  if(b&&w){const f=PPOST.posture/PPOST.maxPosture;b.style.width=(f*100)+'%';b.style.background=playerStaggered(nowS)?'#c04030':'#c8a84a';w.style.opacity=f<.999||playerStaggered(nowS)?'1':'0';}
 }
 let staggered=[];       // enemies currently staggered {e, t}
 let vmShield=null;       // shield viewmodel mesh group
@@ -15763,6 +15793,7 @@ function killZoneEnemy(e,sc,tag=''){
 }
 
 function attackZoneEnemies(isPower, _isDeferred){
+  if(playerStaggered(performance.now()/1000))return; // S281
   // v62 — see attack() for the design rationale. Same isPower semantics.
   // v62.8 — _isDeferred mirrors attack(): when true, the deferred fire of a
   // power attack that committed stamina+cooldown in mouseup. Skip cost gates;
@@ -25818,6 +25849,7 @@ function doBash(){
   else showMsg('Bash!', '#888');
 }
 function attack(isPower, _isDeferred){
+  if(playerStaggered(performance.now()/1000))return; // S281
   if(isOverworldZone()){attackZoneEnemies(isPower, _isDeferred);return;}
   // v62 — Power attack: hold LMB past POWER_CHARGE_THRESHOLD before release.
   // Requires a weapon equipped (bare-hand is the fallback path; no power
@@ -30411,6 +30443,7 @@ function executeStrike(e, rawDmg, now){
     // Lets the player feel the tier they're in without opening the hub.
     const _blockHint = hasShield ? '' : (w2hBlock ? ` — ${EQ.weapon.name} hafts the blow` : ' — equip a shield for better protection!');
     showMsg(`🛡 Blocked! ${e.name} hits for ${finalDmg} (reduced)${_blockHint}`, '#88aaff');
+    playerPostureHit(rawDmg, now/1000, true); // S281 — after the toast, so a guard that breaks says so
     // v61gj-a2 — Shield/sword recoil. Backward push — you absorbed the blow.
     shieldImpact('block', rawDmg, e.x, e.z);
     if(PHP<=0 && !dead) playerDead();
@@ -30422,6 +30455,7 @@ function executeStrike(e, rawDmg, now){
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;
     lastHitT = now/1000;
     showMsg(`${e.name} hits you for ${finalDmg}!`, '#ff4444');
+    playerPostureHit(rawDmg*1.5, now/1000, false); // S281
     e._lunge=.3; // v80 — every strike moves the body
     if(PHP<=0 && !dead) playerDead();
   }
@@ -42003,7 +42037,8 @@ function loop(now){
   // at SNEAK_MOVE_MULT (0.7×) of normal. Sprint is suppressed while sneaking
   // (the modal commitment is intentional — Ctrl is a state, not modifier).
   const _sneakMoveMult = _sneaking ? SNEAK_MOVE_MULT : 1.0;
-  const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*dt;
+  tickPlayerPosture(dt,performance.now()/1000); // S281
+  const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
     const sprintDrain=14*_buffMult('staminaCost',1);
     stamina=Math.max(0,stamina-dt*sprintDrain);
@@ -43558,6 +43593,7 @@ function _enterGame(){
       try{ CV.requestPointerLock(); }catch(_){}
       return;
     }
+    if(playerStaggered(performance.now()/1000)&&(e2.button===0||e2.button===2))return; // S281 — staggered, open
     if(e2.button===2){
       // v64 — RMB while drawing a bow cancels the draw (no arrow consumed,
       // no release fired). Does NOT start a block — bow + shield are mutually
