@@ -5802,6 +5802,8 @@ Backlog A has owed *a run of the whole main quest in the open world, Q1 to Q7* s
 
 **What it found.** A Slime killed in a dungeon threw `ReferenceError: buildEnemy is not defined`. `killE` splits a Slime into two Small Slimes with `buildEnemy`, but `buildEnemy` is defined inside `buildDungeon`, where `killE` can't reach it. The split has been there since the first push, so every Slime ever killed threw. No Small Slimes appeared, and the error broke off whatever had called the kill. The run hit it on Q5's floor of the Vault. `buildDungeon` now leaves a handle to its builder (`_dungeonBuildEnemy`), and the split uses it.
 
+The tag is s253: it follows the session number, so it skips s252, which Session 252 didn't use (as s149 was skipped).
+
 **Not a bug, noted for the next test.** The harness's `g.intoWorld()` skips the tutorial crypt, so a character made by it has Q0 still active and Q1 locked. In real play, leaving the crypt closes Q0 and opens Q1. A test of the story has to start the real way, as this one does.
 
 ### Verified (headless Chromium)
