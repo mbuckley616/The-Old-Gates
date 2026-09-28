@@ -8,8 +8,8 @@ fs.mkdirSync('tests/out', { recursive: true });
 
 const rigs = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
   const ok = rs.filter(r => r.geoLo && r.trisLo < r.tris).length;
-  // the distant copy binds to the same seventeen bones
-  const bonesOk = rs.every(r => { const a = r.geoLo.attributes.skinIndex.array; let mx = 0; for (let i = 0; i < a.length; i += 4) mx = Math.max(mx, a[i]); return mx < 17 && r.geoLo.attributes.position.count === a.length / 4; });
+  // the distant copy binds to the same bones (seventeen, and up to three more for a cloak and back hair, Session 267)
+  const bonesOk = rs.every(r => { const a = r.geoLo.attributes.skinIndex.array; let mx = 0; for (let i = 0; i < a.length; i += 4) mx = Math.max(mx, a[i]); return mx < r.mesh.skeleton.bones.length && r.geoLo.attributes.position.count === a.length / 4; });
   const ratio = rs.map(r => r.trisLo / r.tris);
   return { n: rs.length, ok, bonesOk, hi: [Math.min(...rs.map(r => r.tris)), Math.max(...rs.map(r => r.tris))], lo: [Math.min(...rs.map(r => r.trisLo)), Math.max(...rs.map(r => r.trisLo))],
     ratio: [+Math.min(...ratio).toFixed(2), +Math.max(...ratio).toFixed(2)], sumHi: rs.reduce((a, r) => a + r.tris, 0), sumLo: rs.reduce((a, r) => a + r.trisLo, 0) }; });
@@ -65,7 +65,9 @@ await page.evaluate(() => { scene.remove(window._lr.root); });
 const view = async (where) => { await page.evaluate(w => { forceTime(12); const S = WORLD.settle.get('dunmore'); const t = WORLD.siteAnywhere('dunmore');
     px = S.site.x; pz = w === 'square' ? S.site.z + 6 : t.z + t.pad + 8; yaw = 0; pitch = -.05; }, where);
   await page.waitForTimeout(3000);
-  return page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
+  // (the main loop puts the eye at the player and WORLD.tick the sun: do both here, since on a slow machine no frame may
+  // have run in the wait, and the townsfolk's distances would still be measured from where the player stood before)
+  return page.evaluate(() => { CAM.position.set(px, WORLD.worldH(px, pz) + 1.7, pz); CAM.rotation.y = yaw; CAM.rotation.x = pitch; for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
     const run = force => { rs.forEach(r => { if (force) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (!force) tickPeople(1 / 60, 6e5);
       REN.render(scene, CAM); REN.render(scene, CAM); return { calls: REN.info.render.calls, triangles: REN.info.render.triangles }; };
     const saved = { far: PEOPLE_LOD.far, near: PEOPLE_LOD.near }; PEOPLE_LOD.far = PEOPLE_LOD.near = 1e9; const all = run(true);
@@ -81,7 +83,9 @@ check('the town view draws fewer triangles with the distant copies, the same dra
 const shadowCost = async (where) => { await page.evaluate(w => { forceTime(12); const S = WORLD.settle.get('dunmore'); const t = WORLD.siteAnywhere('dunmore');
     px = S.site.x; pz = w === 'square' ? S.site.z + 6 : t.z + t.pad + 8; yaw = 0; pitch = -.05; }, where);
   await page.waitForTimeout(3000);
-  return page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); tickPeople(1 / 60, 6e5);
+  // (the sun and its shadow camera follow the player only in WORLD.tick, the eye only in the main loop: do both here, or on
+  // a slow machine the shadow map may still be framed on where the player stood before, with nobody of Dunmore in it)
+  return page.evaluate(() => { CAM.position.set(px, WORLD.worldH(px, pz) + 1.7, pz); CAM.rotation.y = yaw; CAM.rotation.x = pitch; for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); tickPeople(1 / 60, 6e5);
     const run = (cast, lo) => { rs.forEach(r => { r.mesh.castShadow = cast; if (!lo) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (lo) tickPeople(1 / 60, 6e5); PEOPLE_LOD.shadowLo = lo; REN.render(scene, CAM);
       REN.info.autoReset = false; REN.info.reset(); REN.render(scene, CAM); const t = REN.info.render.triangles; REN.info.autoReset = true; return t; };
     const full = run(true, false), fullNone = run(false, false), now = run(true, true), nowNone = run(false, true);
@@ -100,7 +104,7 @@ const sh = await page.evaluate(() => { forceTime(16); const S = WORLD.settle.get
   // in the scene, hidden: a rig with no parent is dropped and disposed by the next tickPeople
   rig.root.visible = false; scene.add(rig.root); return rig.g.name; });
 await page.waitForTimeout(2500);
-const shR = await page.evaluate(() => { const rig = window._sr; rig.root.visible = true; rig.root.rotation.y = 0;
+const shR = await page.evaluate(() => { for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rig = window._sr; rig.root.visible = true; rig.root.rotation.y = 0;
   const others = [...PEOPLE_RIGS].filter(r => r !== rig && r.root.parent === scene); others.forEach(r => { r._v = r.root.visible; r.root.visible = false; });
   const cam = new THREE.PerspectiveCamera(40, REN.domElement.width / REN.domElement.height, .1, 200); const cv = REN.domElement;
   const place = (fx, fz) => { const fy = WORLD.worldH(fx, fz); rig.root.position.set(fx, fy, fz); pwApply(rig, pwIdle(3, { holds: rig.holds, gear: rig.g.gear })); rig.root.updateMatrixWorld(true);
@@ -125,5 +129,15 @@ const shR = await page.evaluate(() => { const rig = window._sr; rig.root.visible
 for (const k of ['hi', 'lo', 'none']) { fs.writeFileSync(`tests/out/lod-shadow-${k}.png`, Buffer.from(shR[k].split(',')[1], 'base64')); delete shR[k]; }
 check('the shadow from the distant copy: the shadow is there, another person\'s would show, and the copy changes under a tenth of the pixels the shadow itself does', shR.repeat.changed === 0 && shR.noShadow.changed > 40 && shR.otherPerson.changed > shR.distantShadow.changed && shR.distantShadow.changed < shR.noShadow.changed * .1, { subject: sh, ...shR });
 
+// S229 — the owed third tier (H.6: "past ~40 units if the frame time needs it"): from the town's centre, looking four ways,
+// what share of the frame's triangles are townsfolk past 40 units. Under a tenth, a third tier would save too little to be
+// worth a third bake; this check says when that changes.
+const far = await page.evaluate(() => { const out = []; const t = WORLD.siteAnywhere('dunmore'); forceTime(12);
+  for (const yw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) { px = t.x + 3; pz = t.z + 3; yaw = yw; pitch = -.05; CAM.position.set(px, WORLD.worldH(px, pz) + 1.6, pz); CAM.rotation.order = 'YXZ'; CAM.rotation.set(pitch, yaw, 0); CAM.updateMatrixWorld(true);
+    tickPeople(1 / 60, 9e5); const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(CAM.projectionMatrix, CAM.matrixWorldInverse)); let n = 0, tris = 0, near = 0;
+    for (const x of PEOPLE_RIGS) { if (x.root.parent !== WORLD.scene || !x.root.visible) continue; const p = new THREE.Vector3(); x.root.getWorldPosition(p); if (!fr.containsPoint(p)) continue; const d = p.distanceTo(CAM.position); if (d < 40) { near++; continue; } n++; tris += x.mesh.geometry === x.geoLo ? x.trisLo : x.tris; }
+    REN.info.autoReset = false; REN.info.reset(); REN.render(scene, CAM); const all = REN.info.render.triangles; REN.info.autoReset = true; out.push({ near, far: n, farTris: tris, all, share: +(tris / all).toFixed(3) }); }
+  return out; });
+check('townsfolk past 40 units are under a tenth of the frame\'s triangles in every direction from the town\'s centre (no third tier needed)', far.every(v => v.share < .1) && far.some(v => v.far > 0), far);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
