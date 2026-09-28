@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s271</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s272</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38855,6 +38855,11 @@ var WORLD=(()=>{
   function favor(site){const F=worldState.favor||(worldState.favor={});return F[typeof site==='string'?site:site.id]||0;}
   function addFavor(site,n){const F=worldState.favor||(worldState.favor={});const id=typeof site==='string'?site:site.id;F[id]=(F[id]||0)+n;return F[id];}
   function setProsperity(site,p,why){const st=TS(site);const old=st.p;st.p=Math.max(0,Math.min(100,Math.round(p)));if(Math.abs(st.p-old)>=12&&SETTLE.has(site.id||site)){disposeSettlement(site.id||site);} }
+  // S272 — the town's own conditions keep their fraction (Michael, #44 B): st.pf carries what a day's flag effects (occupied −.5,
+  // owned +.4, burned or sacked −.2) leave under a whole point, so half a point a day is a point in two days. Roads, the lair and
+  // the drift home (`round`) are rounded together as before: carried too, they sank every town a third of the way in 120 days.
+  function driveProsperity(site,dd,round){const st=TS(site);st.pf=Math.round(((st.pf||0)+dd)*1e6)/1e6;const w=Math.trunc(st.pf);st.pf-=w;
+    const n=st.p+w+Math.round(round||0);if(n!==st.p)setProsperity(site,n);if((st.p>=100&&st.pf>0)||(st.p<=0&&st.pf<0))st.pf=0;}
   function flag(site,name,on){const st=TS(site);if(on)st.flags[name]=worldState.gameTimeAbsMinutes||0;else delete st.flags[name];if(SETTLE.has(site.id||site))disposeSettlement(site.id||site);}
   // what the generator reads
   function lotFactor(site,P){const p=P!=null?P:prosperity(site);return .35+.65*(p/100);}                     // 35%–100% of the plan
@@ -38893,14 +38898,14 @@ var WORLD=(()=>{
       let near=null,nd=1e9;for(const o of SITES){if((o.kind==='lair'||o.kind==='bcamp')&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
       if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead){camps[near.id]=(camps[near.id]||0)+1;if(camps[near.id]>=20&&st.flags.sacked==null&&st.flags.burned==null){sack(t,near);camps[near.id]=0;}}}
       // flags
-      if(st.flags.burned!=null||st.flags.sacked!=null)d-=.2;if(st.flags.plague!=null)d-=1;if(st.flags.owned!=null)d+=.4;if(st.flags.besieged!=null)d-=2;if(st.flags.occupied!=null)d-=.5;
+      let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;
       // drift home
-      const base=BASE_P[t.kind]||45;d+=(base-st.p)*.01;
+      const base=BASE_P[t.kind]||45;const drift=(base-st.p)*.01;
       // scaffolds finish
       st.builds.forEach(b=>{if(!b.done&&day>=b.doneDay){b.done=true;st.p+=b.p;showMsg(`${t.name}: the ${b.name} is finished.`,'#e8d8a0');if(SETTLE.has(t.id))disposeSettlement(t.id);}});
       if(st.p<=0&&st.flags.abandoned==null){flag(t,'abandoned',true);}
       if(st.flags.abandoned!=null&&st.p>=20)flag(t,'abandoned',false);
-      if(Math.abs(d)>0)setProsperity(t,st.p+d);
+      driveProsperity(t,c,d+drift);
       // prosperity is kept in whole points, so the tithe keeps its own account and is paid a point at a time, every second day
       if(st.flags.occupied!=null&&st.occupier==='aurenne'){st.tithe=(st.tithe||0)+.5;tithe+=.5;const w=Math.floor(st.tithe);if(w){st.tithe-=w;setProsperity(t,st.p-w);}}
     }

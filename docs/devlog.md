@@ -5989,3 +5989,21 @@ Owed by Session 270. When the Faolchú crosses into its second and third phases 
 
 ### Needs eyes
 Three wolf-shapes at once on the world's plaza, against a player at the level Q7 comes at.
+
+## v80 — Session 272 — Half a point is half a point
+Michael answered issue #44 with **B**: carry the fraction for the drivers, not the drift. A town's prosperity is kept in whole points. Once a game-day every driver was added up and the total rounded, so anything under half a point moved a town or not depending on the rest of its day. A town the Mark occupied lost its half point only when something else pushed it over. A town you own never gained its .4. A burned town's .2 did nothing on its own.
+
+**What changed.** The day's drivers now come in two parts. The town's own conditions (occupied −.5, owned +.4, burned or sacked −.2; plague −1 and siege −2 are whole already) go into an account on the town, `pf`, and only the whole points in it are paid out (`driveProsperity`). What is left over waits for the next day. The rest (the roads, the nearest lair or camp, and the drift home) is added up and rounded together, exactly as before. Trade routes' +.8 in `tickRoutesDay` also still rounds, to a point. The account is kept on `worldState.towns`, which the save carries whole, and it is emptied when a town sits at 0 or 100. The tithe's own account (Session 266) is untouched.
+
+**Why not the roads and lairs too.** B's words were "the drivers", and the first build carried every driver. Measured over 120 untended days, it sank all 17 towns of that measure by a mean of 33 points: every one fell by 10 or more, and the worst by 51. On today's build the same towns moved by less than a point. The reason is that an uncleared road's −.15 and a live lair's −.6 were answered by the drift home only when the two rounded together. Carried alone, they are never answered until a town is 50 below home. That is the rebalance B was chosen to avoid ("the towns you have built up don't start sinking"). So this build carries B's own examples, the half-point effects on the town itself, and leaves the rest as it was. The note under #44 in docs/decisions.md says so, for Michael.
+
+### Verified (headless Chromium)
+New `tests/wholepoints.test.mjs`, 6 checks, with Math.random seeded:
+- **The untended world, 120 days.** 52 towns: mean −6.7, least −77, most 0. The same figures were measured on Session 271's build.
+- **Each condition for ten days, from 50, in Dunmore and in Portclare.** The same town with no condition stays at 50. Occupied by the Mark it goes to 45 (a point every second day). Owned, it goes to 54. Burned, it goes to 48.
+- **The account.** It stays under a point and is kept on the town.
+
+`tithe` passes. Its Mark-held towns now lose exactly five points in ten days, where they lost eight (a point on most days, by rounding). The Aurenne-held ones lose ten, a point a day, where they lost 13–14. `crime4` passes, and so do `caravan` and `coachinn`. No page errors.
+
+### Needs eyes
+A town you own now climbs about a point in two and a half days. From its home level it reaches 100 in two to three months of game time, unless something else holds it back. Occupation now keeps sinking a town until the drift answers at 50 below home. In the measure, Portclare fell 56 in 120 days, where before it stopped at 36. Whether either pace is right is for play. If Michael wants roads and lairs exact as well, their numbers need retuning first.
