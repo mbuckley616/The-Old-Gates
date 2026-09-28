@@ -6179,3 +6179,27 @@ New `tests/slimes.test.mjs`, 6 checks, all passing, no page errors. It enters an
 
 ### Needs eyes
 Whether the slime's quiver reads as jelly or as a pulse. Whether 47 additive flames stay cheap in a room of three elementals on a laptop: they are small, unlit, and write no depth, but they overdraw.
+
+## v80 — Session 223 — The Cave Bear on the wolf's bones (H.4, Michael's answer B on Session 214)
+The third slice of Michael's B. The Cave Bear was the open world's box brute of the foothills: a lair beast by biome, the lair master half of the time, and one of the "a beast is taking sheep" commissions. The prototype built it on the wolf's bones with the wolf's own body, stretched by scaling bones. Session 214 said the build would give it a body of its own, as the boar has, and that is what this does.
+
+**What changed.** `WOLF_KINDS['Cave Bear']` (`bear:true`, bulk 1.3) has its own parts in `wolfBakeQ`:
+- a deep, shaggy barrel on the spine and hips (the kit's bumped lathes), with a hump over the shoulders;
+- a thick neck with a ruff;
+- a round head: cheeks, a short pale muzzle over a hinged jaw, a broad dark nose, and small round ears with dark insides;
+- thick legs, each swelling at the shoulder or haunch, on broad paws with four dark claws;
+- the tail a stub.
+
+It is one skinned mesh baked once per kind, with the distant copy, the shadow LOD and the counter-shaded fur the wolves have. It walks and runs on the wolf's planted-paw gait, and strikes with the wolf's crouch and spring.
+
+`buildZoneEnemy` sends the Cave Bear down the wolf path although its shape is still `brute`. Its posture family, 60 hit points, speed, damage and scale 1.35 are unchanged. A lair's wyrm made from a bear lair (Session 219's `dragonBody`) still swaps the body out: `tickCreatures` drops a rig whose root has lost its parent.
+
+### Verified (headless Chromium)
+New `tests/bear.test.mjs`, 4 checks, all passing, no page errors:
+- The zone's Cave Bear is one skinned mesh on the wolf's bones, linked to its enemy and in the rig set. It is still a brute with 60 hit points, with no box in its group, at 5.2k triangles.
+- It stands 1.00 tall, 0.62 wide and 1.26 long, against a dire wolf's 0.68, 0.33 and 1.11, and a boar's 0.50 tall.
+- It stands still, then trots (trot weight 1) when driven at 1.1 u/s.
+`wolves`, `wyrm` and `spiders` still pass. Picture: `docs/prototypes/bear-ingame.png` (a bandit, a bear standing, a bear walking, a dire wolf).
+
+### Needs eyes
+The bear walks on the wolf's trot. A real bear paces, with both legs on one side moving together; the kit's gait has no pace. If it reads as a trotting dog, a pace would be a small change to `WG`: an offset table for the bear.
