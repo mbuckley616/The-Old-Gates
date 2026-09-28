@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s266</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s267</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39190,13 +39190,36 @@ var WORLD=(()=>{
     const def={name:keeper,role:'Innkeeper',ico:'\u{1F37A}',people:nationOf(ci,cj).people,x:0,z:0,bCol:house.bCol,sCol:house.sCol,
       greeting:["Fire's lit. Take a seat.","Bed's upstairs. Bowl's on the way.","We don't ask where you've been. Boots off, though."],_extra:innTopics(house)};
     Object.defineProperty(def,'topics',{configurable:true,get(){return [...def._extra,
-      {label:'When does the coach come through?',response:board},
+      {label:'When does the coach come through?',response:board},seatTopic(key,A,B,half),
       {label:'What is this place?',response:`${name}, halfway between ${A?A.name:'one town'} and ${B?B.name:'the next'}. The coach stops, we feed whoever gets off, and the horses drink.`},
       {label:'Any news?',get response(){return pick(Math.random,RUMORS[reg]||RUMORS.irish);}},
       {label:'How’s the weather been?',get response(){return weatherLine();}},
       {label:'Farewell.',bye:true}];}});
     house.dlg=def;house._board=board;COACH_INNS.set(key,house);return house;
   }
+  // S267 — a seat held (Michael, issue #31: A). The keeper takes your name for the next coach to call, either way; it costs
+  // nothing and the ride stays free. That coach waits at the inn for you, up to an hour past its call, so you can eat or
+  // sleep without missing it. The coach stands still while you are indoors (WORLD.tick runs only outside), so a seat is
+  // also settled against the timetable when you come out: if its call has come and the hour is not up, it is at the door.
+  const SEAT_HOLD=60; // game minutes past the call
+  function seatNow(){const s=worldState.coachSeat;return s&&coaches()[s.key]?s:null;}
+  function nextCall(key,half){const C=COACHES.get(key);const now=worldState.gameTimeAbsMinutes||0;
+    if(C&&C.state==='stop')return {at:now,tod:worldState.gameTimeMinutes||0,dir:C.resumeDir||C.dir||1};
+    const tod=worldState.gameTimeMinutes||0;let best=null; // counted from the clock of the day, which the timetable reads
+    for(const [m,dir] of [[6*60+half,1],[18*60+half,-1]]){let dm=((m-tod)%1440+1440)%1440;if(dm===0)dm=1440;if(!best||dm<best.dm)best={dm,dir,m};}
+    return best&&{at:now+best.dm,tod:best.m,dir:best.dir};}
+  function seatTopic(key,A,B,half){const hm=m=>{const t=((m%1440)+1440)%1440;return `${Math.floor(t/60)}:${String(Math.round(t%60)).padStart(2,'0')}`;};
+    const dest=dir=>{const t=dir>0?B:A;return t?t.name:'the far end';};const S=seatNow();
+    if(S&&S.key===key)return {label:'My seat on the coach?',response:`The ${hm(S.tod)} for ${dest(S.dir)}. Your name's on it. If you're not at the door when it calls, it waits — an hour, no more.`};
+    return {label:'A seat on the next coach?',quest:true,fn:()=>{const c=nextCall(key,half);if(!c)return 'No coach calls here now.';
+      worldState.coachSeat={key,at:c.at,tod:c.tod,dir:c.dir};if(typeof addLog==='function')addLog('🐎',`A seat held on the ${hm(c.tod)} coach for ${dest(c.dir)}.`);
+      return `The ${hm(c.tod)} for ${dest(c.dir)}. It's yours, and it costs nothing; the driver knows to wait. An hour, no more.`;}};}
+  function seatHeldFor(C,key,dir){const S=seatNow();return !!S&&S.key===key&&S.dir===dir&&!C.riding;}
+  function seatCatchUp(C,key){const S=seatNow();if(!S||S.key!==key||C.riding)return;const now=worldState.gameTimeAbsMinutes||0;
+    if(now>=S.at+SEAT_HOLD){if(!(C.state==='stop'&&C.holdTo)){worldState.coachSeat=null;showMsg('The coach could not wait any longer. Your seat has gone with it.','#c8b880');}return;}
+    if(now<S.at)return;
+    const before=(C.state==='wait'&&(S.dir>0?C.u<=.001:C.u>=.999))||(C.state==='run'&&C.dir===S.dir&&!C.stopped);
+    if(before){C.u=.5;C.state='stop';C.stopT=0;C.resumeDir=S.dir;C.dir=S.dir;C.holdTo=S.at+SEAT_HOLD;}}
   // S238 — the coach's other half (Michael, issue #24: B): the driver and a traveller or two wait in the common room while
   // the inn is open. Who they are is steady for a day (the road's key and the day); they wander the floor like guild members.
   function coachInnFolk(house,sc_,W,D){
@@ -39241,12 +39264,17 @@ var WORLD=(()=>{
     for(const key in Cs){const rt=Cs[key];const a=siteAnywhere(rt.a),b=siteAnywhere(rt.b);if(!a||!b)continue;const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key);const near=Math.hypot(px-(a.x+b.x)/2,pz-(a.z+b.z)/2)<Math.hypot(a.x-b.x,a.z-b.z)/2+500;
       let C=COACHES.get(key);if(!rd||!near){if(C)removeCoachLine(key);continue;}
       if(!C)C=buildCoachLine(key,rt,rd);
+      seatCatchUp(C,key); // S267 — a seat held: the coach is at the inn if its call has come
       // schedule: leaves the a-end at 06:00 and the b-end at 18:00; otherwise waits at a station
       const h=hourNow();
       if(C.state==='wait'){if(roadBroken(a,b)){C.halted=true;}else{C.halted=false;if(C.u>0.001&&C.u<0.999){C.state='run';C.dir=C.resumeDir||1;}else if(h>=6&&h<6.2&&C.u<=0.001){C.state='run';C.dir=1;}else if(h>=18&&h<18.2&&C.u>=0.999){C.state='run';C.dir=-1;}}}
       if(C.state==='run'&&roadBroken(a,b)&&C.u>.02&&C.u<.98){C.state='wait';C.halted=true;C.resumeDir=C.dir;C.dir=0;} // the coach halts where it is and goes on when the road is clear
       // S178 — the coach draws up at the coaching inn halfway, once each way, and goes on after COACH_STOP
-      if(C.state==='stop'){C.stopT-=dt;if(C.stopT<=0){C.state='run';C.dir=C.resumeDir||C.dir;C.stopped=true;}}
+      if(C.state==='stop'){C.stopT-=dt;const nowM=worldState.gameTimeAbsMinutes||0;
+        if(C.riding&&seatNow()&&seatNow().key===key){worldState.coachSeat=null;C.holdTo=0;} // aboard: the seat is used
+        if(C.stopT<=0&&seatHeldFor(C,key,C.resumeDir||C.dir)){if(!C.holdTo)C.holdTo=nowM+SEAT_HOLD-COACH_STOP;}
+        if(C.stopT<=0&&!(C.holdTo&&nowM<C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir))){if(C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir)){worldState.coachSeat=null;showMsg('The coach could not wait any longer. Your seat has gone with it.','#c8b880');}
+          C.holdTo=0;C.state='run';C.dir=C.resumeDir||C.dir;C.stopped=true;}}
       if(C.state==='run'){const u0=C.u;C.u+=C.dir*COACH_SPEED*dt/C.len;
         if(!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
         if(C.u>=1){C.u=1;C.state='wait';C.stopped=false;}if(C.u<=0){C.u=0;C.state='wait';C.stopped=false;}}
@@ -39645,7 +39673,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

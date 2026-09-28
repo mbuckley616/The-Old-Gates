@@ -41,6 +41,7 @@ Michael's answer on #24 (the coaching inn, B) included *tickets sold here*. The 
 
 Recommendation: **A**. It gives the inn a reason to stop, and it doesn't charge you to ride a road you paid to build.
 Michael: **A seat held** (A) (28 Sep 2026, via the control room)
+Built, Session 267 (systems builder): the coaching inn's keeper holds a seat on the next coach to call, either way, for nothing. That coach waits at the door up to an hour past its call and goes on when you board or the hour is up. The coach stands still while you're indoors, so a seat is also settled on coming out: if its call has come and the hour isn't up, it is at the door. Issue #31 closed.
 
 ### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
 Michael: **Role and the town's prosperity** (A) (28 Sep 2026, via the control room)

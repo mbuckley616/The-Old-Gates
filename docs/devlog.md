@@ -5854,3 +5854,28 @@ Randomness was seeded identically in both runs. No page errors.
 
 ### Needs eyes
 Nothing to see on screen: the tithe shows only as prosperity (the keeper's *getting by* against *prosperous*, the walls' tier), and only in a war that Aurenne wins.
+
+## v80 — Session 267 — A seat held
+Michael answered issue #31 with **A**: a ticket costs nothing. Taking one from the keeper makes the next coach wait at the inn until you board, up to an hour, so you can eat or sleep without missing it. Riding stays free.
+
+**What changed.**
+- **The keeper.** The keeper of a coaching inn (Session 237) has a new topic: *A seat on the next coach?* The seat is for the next coach to call at the inn, whichever way it runs, or for the one at the door now. The keeper names its time and where it goes: *The 6:21 for Ironhaven. It's yours, and it costs nothing; the driver knows to wait. An hour, no more.* After that the topic reads *My seat on the coach?* and gives the same.
+- **The seat.** It is stored in `worldState.coachSeat` (the road's key, the call's absolute time and time of day, the direction), so it is saved.
+- **At the door.** The coach draws up for its quarter of an hour as before. If your seat is for it and you aren't aboard, it stays until an hour past its call. Board and the seat is used and it goes on. If the hour runs out it goes without you: *The coach could not wait any longer. Your seat has gone with it.*
+
+**The coach indoors.** `tickCoaches` runs in `WORLD.tick`, which runs only in the open world, so while you eat or sleep in the inn the coach stands wherever it was. Waiting at the door alone would not hold a seat for someone indoors. So `seatCatchUp` settles the seat against the timetable each tick outside. If its call has come and the hour is not up, and the coach has not yet reached the inn on that run (waiting at its departing end, or on the road towards the inn), it is put at the inn's door, held until the hour is up. Out of the inn twenty minutes after the 6:21 was due, the coach is at the door.
+
+**One slip, caught by the test.** The call's time was first counted on the absolute clock, which runs from a different start from the clock of the day that the timetable reads (and `forceTime` moves only the day's). The keeper named a *2:06* coach that was due at 6:21. The call is now counted from the time of day, and its time of day is kept on the seat for the keeper to name.
+
+### Verified (headless Chromium)
+New `tests/coachseat.test.mjs`, 9 checks, on the Ironhaven–Vieux Marché road (Auberge du Pont):
+- **No seat.** The coach stands 15 minutes and goes, as before.
+- **Taking a seat.** At 5:00 the seat is the 6:21 for Ironhaven, 81 minutes off, for nothing.
+- **Held and boarded.** The coach calls and is still at the door 40 minutes on. You board: the seat is used, it goes on, and 0 gold is spent.
+- **Not taken up.** It leaves 60 minutes past its call, and the seat goes with it.
+- **Indoors.** The world is skipped to 20 minutes past the call. At the first tick outside the coach is at the inn (u 0.5, stopped), still there at 50 minutes, gone at 65.
+
+`coachinn` and `coachstop` pass. No page errors.
+
+### Needs eyes
+Take a seat, go in, eat, and come out: the coach at the door is correct, but it appears there rather than being seen arriving.
