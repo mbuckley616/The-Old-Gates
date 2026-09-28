@@ -22,6 +22,13 @@ check('the Faolchú waits on the plaza, and Bram lies at his forge with his hamm
 const early = await page.evaluate(() => { const b = ZONE_CORPSES.find(c => c.bramBody && c.zone === 'world'); px = b.x + .5; pz = b.z; interact(); return QS.q7_the_rubbing.objectives[3].current || 0; });
 
 // the fight: brought low, the last blows by your hand
+// its second phase calls a lesser wolf out of it, in the world's scene
+await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); px = e.x; pz = e.z + 5; jumpY = WORLD.worldH(px, pz); e.alert = true; e.hp = Math.round(e.maxHp * .6); });
+await g.frames(4);
+const adds = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); const L = ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead);
+  return { phase: e.phaseId, n: L.length, d: L.map(x => +Math.hypot(x.x - e.x, x.z - e.z).toFixed(1)), sameScene: L.every(x => x.mesh && x.mesh.parent === e.mesh.parent) }; });
+console.log(JSON.stringify({ adds }));
+check('at its second phase a lesser wolf splits from its flank, in the world', adds.phase === 2 && adds.n === 1 && adds.d[0] < 4 && adds.sameScene, adds);
 await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); e.hp = 5; e.alert = true; window._hud = null; });
 await g.frames(4); await page.evaluate(() => { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; });
 for (let k = 0; k < 12; k++) {
@@ -30,10 +37,10 @@ for (let k = 0; k < 12; k++) {
   await page.evaluate(() => { if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } }); }
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu');
   const corpse = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark"));
-  return { hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse }; });
+  return { hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse, lessers: ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).length }; });
 console.log(JSON.stringify({ early, fight }), await obj());
 check('reading Bram first does nothing yet (his objective waits on the Faolchú)', early === 0, early);
-check('the Faolchú falls to your blows: defeated, its bar shown while it fought, the Mark on its body', fight.dead && fight.defeated && fight.hud === 'block' && fight.mark, fight);
+check('the Faolchú falls to your blows: defeated, its bar shown while it fought, the Mark on its body, its wolves gone', fight.dead && fight.defeated && fight.hud === 'block' && fight.mark && fight.lessers === 0, fight);
 const mark = await page.evaluate(() => { const c = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark")); openLoot(c); takeLootItem(c.items.findIndex(i => i.name === "The Faolchú's Mark")); try { closeLoot(); } catch (e) {} return BAG.some(b => b.name === "The Faolchú's Mark") || (EQ.amulet && EQ.amulet.name === "The Faolchú's Mark"); });
 const bram = await page.evaluate(() => { const b = ZONE_CORPSES.find(c => c.bramBody && c.zone === 'world'); px = b.x + .5; pz = b.z; interact(); try { closeLoot(); } catch (e) {} return QS.q7_the_rubbing.objectives[3].current || 0; });
 const o1 = await obj(); console.log(JSON.stringify({ mark, bram }), o1);

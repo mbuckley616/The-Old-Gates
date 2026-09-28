@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s270</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s271</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -13594,7 +13594,7 @@ function despawnFaolchu(){
 // they break the line-of-sight tunneling on the boss and force the player
 // to choose targets.
 function spawnLesserFaolchu(parentBoss){
-  if(activeZoneId !== 'overworld') return null;
+  if(activeZoneId !== 'overworld' && activeZoneId !== 'world') return null; // S271 — and in the world's burnt Ashenmoor
   if(typeof ZE === 'undefined') return null;
   if(parentBoss && parentBoss.dead) return null;
   // Pick a spawn offset around the boss — random angle, ~3u out so the
@@ -13631,9 +13631,10 @@ function spawnLesserFaolchu(parentBoss){
   }
   const ey = (typeof activeTerrainH==='function') ? activeTerrainH(sx,sz) : 0;
   g.position.set(sx, ey, sz);
-  const sc = (typeof owBurnedScene!=='undefined' && owBurnedScene)
+  const sc = (parentBoss && parentBoss.mesh && parentBoss.mesh.parent) // S271 — the boss's own scene (the world's, in the world)
+             || ((typeof owBurnedScene!=='undefined' && owBurnedScene)
              ? owBurnedScene
-             : owScene;
+             : owScene);
   sc.add(g);
   const el = new THREE.PointLight(lesserDef.light, 0.6, 4);
   el.position.set(sx, ey+0.5, sz);
@@ -13669,7 +13670,7 @@ function spawnLesserFaolchu(parentBoss){
   e.shape = 'wolf';
   initPosture(e);
   ZE.push(e);
-  if(typeof ZONES!=='undefined' && ZONES.overworld && ZONES.overworld.enemies && ZONES.overworld.enemies !== ZE){
+  if(activeZoneId==='overworld' && typeof ZONES!=='undefined' && ZONES.overworld && ZONES.overworld.enemies && ZONES.overworld.enemies !== ZE){
     ZONES.overworld.enemies.push(e);
   }
   return e;

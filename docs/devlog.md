@@ -5974,3 +5974,18 @@ New `tests/q7world.test.mjs`, 7 checks, played in order from Q6's hand-in:
 
 ### Needs eyes
 The fight itself on a real machine. The Faolchú was built for the legacy zone's small flat square, not a world plaza with a well and shells round it; its reach, its fireballs and its bar all need a real hand on the controls.
+
+## v80 — Session 271 — The wolves off its flank
+Owed by Session 270. When the Faolchú crosses into its second and third phases it calls a *Lesser Faolchú* out of its own body (*A second wolf-shape splits from its flank.*). `spawnLesserFaolchu` refused to run outside the legacy overworld zone, so in the world's Ashenmoor the log line came with no wolf behind it and the fight had no adds.
+
+**What changed.** The lesser is spawned in the world as well. It goes into its parent boss's own scene, which in the world is the world's scene, and on the terrain there. It joins the active enemy list, which in the world is the world's. The copy into the legacy zone's enemy list now happens only in that zone. Before, a legacy list left over from an earlier visit would have taken a world wolf as well. The sweep that removes the lessers when the boss dies already worked on the active list, so it needed nothing.
+
+### Verified (headless Chromium)
+`tests/q7world.test.mjs` gains a check and a condition, 8 checks in all, passing:
+- **Phase 2.** The Faolchú, alert and brought to 60% of its health, enters phase 2 and one Lesser Faolchú stands 2.4 units from it, in the same scene.
+- **The kill.** When it dies, no lesser is left alive.
+
+`mainrun` passes on Session 270's build, which confirms that entry's claim; the story it plays stops at Q7, before this change. No page errors.
+
+### Needs eyes
+Three wolf-shapes at once on the world's plaza, against a player at the level Q7 comes at.
