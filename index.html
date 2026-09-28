@@ -658,7 +658,7 @@
       <b style="color:#c8e88a">Mouse</b> — look / turn &nbsp;·&nbsp; <b style="color:#c8e88a">Shift</b> — sprint<br>
       <b style="color:#c8e88a">Space</b> — jump &nbsp;·&nbsp; <b style="color:#c8e88a">E</b> — interact &nbsp;·&nbsp; <b style="color:#c8e88a">Left-click</b> — attack (hold for power)<br>
       <b style="color:#c8e88a">Right-click</b> — block/parry &nbsp;·&nbsp; <b style="color:#c8e88a">F</b> — cast magic &nbsp;·&nbsp; <b style="color:#c8e88a">I</b> — inventory<br>
-      <b style="color:#c8e88a">Ctrl</b> — toggle sneak (reduces detection radius, slower move)<br><br>
+      <b style="color:#c8e88a">Q</b> — roll &nbsp;·&nbsp; <b style="color:#c8e88a">Ctrl</b> — toggle sneak (reduces detection radius, slower move)<br><br>
       Press <b style="color:#c8e88a">E</b> near a <span style="color:#a09070">cave entrance</span> to descend into a dungeon.<br>
       Press <b style="color:#c8e88a">E</b> near a <span style="color:#c8b880">door</span> to enter shops &amp; trade.
     </p>
@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s274</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s280</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1351,7 +1351,43 @@ function _releasePointerLockForMenu(){
 // even if the player never raised guard — produced false "Blocked!"
 // messages during multi-attacker fights (boss + lessers).
 let lastBlockAttemptT=-99;
-let staggered=[];        // enemies currently staggered {e, t}
+// S275 — the roll (combat, Michael's B: A's first piece). Q rolls you (keys: the held-key map, which lives in the loop's scope) the way you are moving, or back if you are
+// standing. Light: 0.45 s over 2.6 units, untouchable from 0.08 to 0.30 s. Carrying over 70% of what you can: 0.6 s
+// over 1.8 units, untouchable 0.08–0.24 s. 18 stamina either way. Distance and window read performance.now(), so a
+// dropped frame changes neither.
+const ROLL_LIGHT={dur:.45,dist:2.6,i0:.08,i1:.30},ROLL_HEAVY={dur:.6,dist:1.8,i0:.08,i1:.24},ROLL_STAM=18,ROLL_HEAVY_AT=.7;
+let ROLL=null;
+function rollUntouchable(nowS){if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
+function startRoll(nowS,keys){
+  const K=keys||{};
+  if(ROLL||dead||!started||!onGround)return false;
+  if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
+  if(typeof spellLevitating==='function'&&spellLevitating())return false;
+  const enc=encumbranceState();if(enc==='immobile')return false;
+  if(stamina<ROLL_STAM||staminaCD>0){showMsg('Too winded to roll.','#dd8844');flashStamina();return false;}
+  let mx=0,mz=0;
+  if(K['KeyW']||K['ArrowUp']){mx+=fwdX;mz+=fwdZ;}
+  if(K['KeyS']||K['ArrowDown']){mx-=fwdX;mz-=fwdZ;}
+  if(K['KeyA']){mx-=rgtX;mz-=rgtZ;}
+  if(K['KeyD']){mx+=rgtX;mz+=rgtZ;}
+  if(!mx&&!mz){mx=-fwdX;mz=-fwdZ;}
+  const l=Math.hypot(mx,mz)||1;mx/=l;mz/=l;
+  const heavy=totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT,sp=heavy?ROLL_HEAVY:ROLL_LIGHT;
+  blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;
+  stamina=Math.max(0,stamina-ROLL_STAM);if(stamina===0)staminaCD=2;
+  ROLL={t0:nowS,dur:sp.dur,dist:sp.dist,i0:sp.i0,i1:sp.i1,dx:mx,dz:mz,done:0,heavy,fwd:(mx*fwdX+mz*fwdZ)>=-.01?1:-1};
+  try{sndJump();}catch(err){}
+  return true;
+}
+// the roll's move this frame, {dx,dz,p}, or null; the way you go eases out, fast off the mark and slowing to your feet
+function tickRoll(nowS){
+  if(!ROLL)return null;
+  const p=Math.min(1,Math.max(0,(nowS-ROLL.t0)/ROLL.dur)),want=ROLL.dist*(1-(1-p)*(1-p)),step=want-ROLL.done;ROLL.done=want;
+  const r={dx:ROLL.dx*step,dz:ROLL.dz*step,p};
+  if(p>=1)ROLL=null;
+  return r;
+}
+let staggered=[];       // enemies currently staggered {e, t}
 let vmShield=null;       // shield viewmodel mesh group
 let blockFlashT=0;       // blue/gold vignette timer
 let blockFlashCol='';    // '#4488ff' normal, '#ffd700' parry
@@ -14970,7 +15006,7 @@ function fireZoneArrow(e,sc){const ax=px-e.x,az=pz-e.z,ad=Math.hypot(ax,az)||1;
   const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.7),new THREE.MeshLambertMaterial({color:0x9a7a4a}));const y=activeTerrainH(e.x,e.z)+1.0;m.position.set(e.x,y,e.z);m.rotation.y=Math.atan2(ax,az);sc.add(m);
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
-    const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75;const ground=activeTerrainH(a.x,a.z)>a.y;
+    const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const def2=Object.values(EQ).reduce((s_,v)=>s_+(v&&v.def?v.def:0),0);const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
       if(blocking&&facing){const red=Math.max(1,Math.round(raw*.35));PHP=Math.max(0,PHP-red);hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
@@ -15264,8 +15300,6 @@ function tickZoneEnemies(dt,now,sc){
         // v61c2 — bosses use a per-boss biteRange (Faolchú: 2.0u, vs the
         // 1.4u default). Bigger creature, longer reach. Damage roll
         // unchanged — boss damage tuning lives in BOSSES.dmg.
-        const _strikeRange = e.isBoss ? (e.bossDef.biteRange||1.4) : 1.4;
-        const dist2=Math.hypot(px-e.x,pz-e.z);
         e.atkCd=e.atkSpd;
         // v61c3 — Boss-specific strike sound. Fires regardless of hit/whiff
         // because the bite motion happens either way; the player sees jaws
@@ -15275,7 +15309,7 @@ function tickZoneEnemies(dt,now,sc){
         if(e.isBoss && e.bossId==='faolchu' && typeof sndFaolchuBite==='function'){
           sndFaolchuBite();
         }
-        if(dist2<=_strikeRange){
+        if(strikeReaches(e)){
           const def2=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);
           const rawDmg=Math.max(1,e.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
           executeStrike(e, rawDmg, now);
@@ -21254,8 +21288,19 @@ function tpUpdate(dt,st){
     TP.gph=((TP.gph||0)+d/(pwCycle({walk:1-(TP.rw||0),run:TP.rw||0})*s))%1;
     TP.rw=(TP.rw||0)+((TP.run?1:0)-(TP.rw||0))*(1-Math.exp(-dt/.11));}
   tpPose(R,dt,st);
+  tpRollTumble(R,st.roll);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
+}
+// S275 — through a roll the body turns once head over heels about its middle, forward or back as you roll, the
+// middle dropping to a crouch at the top of the turn. The pose sets the root's pitch every frame (the fall), so
+// outside a roll this leaves it alone.
+function tpRollTumble(R,roll){
+  if(!roll||!(roll.p<1)||dead)return;
+  const s=R.root.scale.y||1,h=.85*s,th=Math.PI*2*roll.p*(ROLL&&ROLL.fwd<0?-1:1);
+  const hp=h*(1-.45*Math.sin(Math.PI*roll.p)),fx=-Math.sin(yaw),fz=-Math.cos(yaw);
+  R.root.rotation.x=th;
+  R.root.position.set(px-fx*h*Math.sin(th),jumpY+hp-h*Math.cos(th),pz-fz*h*Math.sin(th));
 }
 // S175 — in third person a shot leaves the hand that makes it (the bow hand for an arrow, the right hand for
 // a spell) and flies to where the crosshair points, a point AIM_REACH along the camera's line. In first person
@@ -30249,7 +30294,25 @@ function applyMeleeDamage(e, rawDmg){
 // so raising guard on the overworld was cosmetic — stamina drained, damage didn't.
 // Callers compute their own rawDmg (dungeon and zone have independently tuned formulas)
 // and pass it in; this function handles everything downstream of that.
+// S275 — an enemy's blow lands in an arc about the way it faced when it wound up (combatYaw, frozen at the wind-up):
+// 1.6 units and 90° for most, 2.4 units and 140° for a troll's sweep, a boss's own reach where it has one. Before, it
+// hit anyone within 1.4 units (1.3 in a dungeon) whichever way it faced.
+const STRIKE_ARC={reach:1.6,deg:90},STRIKE_SWEEP={reach:2.4,deg:140};
+function strikeArc(e){
+  if(/Troll/.test(e.baseType||e.name||''))return STRIKE_SWEEP;
+  if(e.isBoss&&e.bossDef&&e.bossDef.biteRange)return {reach:Math.max(STRIKE_ARC.reach,e.bossDef.biteRange),deg:STRIKE_ARC.deg};
+  return STRIKE_ARC;
+}
+function strikeReaches(e,arc){
+  arc=arc||strikeArc(e);
+  const dx=px-e.x,dz=pz-e.z,d=Math.hypot(dx,dz);
+  if(d>arc.reach)return false;
+  if(typeof e.combatYaw!=='number'||d<.35)return true;
+  return (dx*Math.sin(e.combatYaw)+dz*Math.cos(e.combatYaw))/d>=Math.cos(arc.deg*Math.PI/360);
+}
 function executeStrike(e, rawDmg, now){
+  // S275 — mid-roll you are not there to be hit
+  if(rollUntouchable(now/1000)){sndSwing();e._lunge=.3;showMsg(`${e.name} strikes empty air.`,'#c8b880');return;}
   const sh = EQ.offhand;
   const hasShield = sh && sh.shieldType==='shield';
   // v65 — Block reduction tier (canon order):
@@ -30366,12 +30429,11 @@ function executeStrike(e, rawDmg, now){
 
 function executeDungeonStrike(e, now){
   const dx2 = px - e.x, dz3 = pz - e.z, dd = Math.hypot(dx2, dz3) || 1;
-  const dist = dd;
   e.atkCd = 1.0;
   e.atkDir = {x: dx2/dd, z: dz3/dd};
   e.atkAnim = 0.35;
-  // Whiff — player stepped out of reach during wind-up. Enemy still commits to the lunge.
-  if(dist > 1.3){ sndSwing(); return; }
+  // Whiff — player stepped out of reach during wind-up, or out of its arc (S275). Enemy still commits to the lunge.
+  if(!strikeReaches(e)){ sndSwing(); return; }
   // v61d5 — Mimic burst-pounce branch. The first strike after reveal uses
   // the burst formula (14 + level + dmgMult, scaled by .3 of def) instead
   // of the standard melee roll. This is the "pounced from a chest" hit —
@@ -41974,6 +42036,8 @@ function loop(now){
   if(K['KeyS']||K['ArrowDown']){mdx-=fwdX;mdz-=fwdZ;}
   if(K['KeyA']){mdx-=rgtX;mdz-=rgtZ;}
   if(K['KeyD']){mdx+=rgtX;mdz+=rgtZ;}
+  const _roll=tickRoll(performance.now()/1000);
+  if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
   const moving=!!(mdx||mdz);
   // v62.7 — Forward lunge boost. If lungeT > 0 AND W is currently held, add an
   // extra forward-direction displacement on top of normal WASD motion. The
@@ -41983,8 +42047,8 @@ function loop(now){
   // false. The boost ALSO respects the same collision-slide logic as normal
   // movement, so lunging into a wall stops at the wall rather than clipping.
   const _wHeldNow = !!(K['KeyW']||K['ArrowUp']);
-  const _lungeBoostActive = lungeT > 0 && _wHeldNow;
-  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=mdx/len*spd,dz=mdz/len*spd;
+  const _lungeBoostActive = lungeT > 0 && _wHeldNow && !_roll;
+  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=_roll?mdx:mdx/len*spd,dz=_roll?mdz:mdz/len*spd;
     // Extra forward displacement during lunge — added to the WASD-driven dx/dz.
     // Magnitude is (_lungeMult - 1) × spd so the total forward component
     // resolves to spd × _lungeMult (matching the design intent of "forward
@@ -42060,12 +42124,13 @@ function loop(now){
   const bob=moving?(lid==='overworld'?Math.sin(swT*4)*.008*_bobMult:Math.sin(swT*3.8)*.012*_bobMult):0;
   // In overworld: camera sits at terrain+eye. jumpY tracks terrain on ground, rises above on jump.
   // In dungeons/interiors: flat floor, jumpY is absolute Y above floor.
+  const _rollDip=_roll?.55*Math.sin(Math.PI*_roll.p):0; // S275 — the eye drops through a roll
   const camY=(lid==='overworld'&&isOverworldZone())
-    ? jumpY+_eyeHeightCur+bob-landShake
-    : jumpY+_eyeHeightCur+bob-landShake;
+    ? jumpY+_eyeHeightCur+bob-landShake-_rollDip
+    : jumpY+_eyeHeightCur+bob-landShake-_rollDip;
   CAM.position.set(px,camY,pz);CAM.rotation.y=yaw;CAM.rotation.x=pitch;
   // v80 S126 — third person: the jointed body, its kit and pose, and a camera that walls pull in
-  try{tpUpdate(dt,{moving,sprinting,camY,now:performance.now()});}catch(e){if(!window._tpErr){window._tpErr=1;console.warn('third person',e);}}
+  try{tpUpdate(dt,{moving,sprinting,camY,now:performance.now(),roll:_roll});}catch(e){if(!window._tpErr){window._tpErr=1;console.warn('third person',e);}}
 
   // Viewmodel sword animation
   if(vmSword){
@@ -43309,6 +43374,7 @@ function _enterGame(){
     if(invOpen){if(e2.code==='KeyI'||e2.code==='Escape')closeInv();return;}
     if(luOpen)return;
     K[e2.code]=true;if(['KeyW','KeyS','KeyA','KeyD','KeyF','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e2.code))e2.preventDefault();if(e2.code==='KeyF')castSpell();if(e2.code==='KeyI')openHub('inv');if(e2.code==='KeyE'){e2.preventDefault();interact();}
+    if(e2.code==='KeyQ'&&!e2.repeat)startRoll(performance.now()/1000,K); // S275 — the roll
     // v63 — Ctrl toggles sneak. Both ControlLeft and ControlRight handled.
     // !e2.repeat prevents key-held repeat-firing the toggle every frame.
     if((e2.code==='ControlLeft'||e2.code==='ControlRight')&&!e2.repeat){

@@ -7928,3 +7928,29 @@ The producer reported this branch's CI red on 9f6edca: `guardsindoor`, `reader` 
 
 ### Needs eyes
 Nothing in play; CI on the next push.
+
+## v80 — Session 280 — A roll, and a blow that has a direction
+Michael answered the combat question with **B**, Elden Ring's shape, built so that A's three pieces come first (`docs/design/combat.md`). This is the first of them: the roll and the arc. Before it there was no dodge. An enemy's blow hit anyone within 1.4 units (1.3 in a dungeon), whichever way the enemy faced, so stepping backwards was the only real defence.
+
+**The roll.** Q rolls you the way you are moving, or straight back if you are standing (nothing bound Q). It covers 2.6 units in 0.45 s and costs 18 stamina. From 0.08 to 0.30 s you are untouchable: a melee blow that lands then strikes empty air, and an enemy's arrow passes through you. If you carry more than 70% of what you can, the roll is heavier: 1.8 units in 0.6 s, untouchable only to 0.24 s. You cannot roll while winded (under 18 stamina, or on the stamina cooldown), while swimming, in the air or while levitating, or when you are too loaded to move. A roll drops your guard, a charging power attack and a lunge. It eases out, fast off the mark and slowing to your feet. The distance and the untouchable window both read `performance.now()`, as CLAUDE.md asks, so a slow frame changes neither. The roll goes through the same collision as walking, so a wall stops it. In first person the eye drops up to .55 through the roll. In third person the body turns once head over heels about its middle, forwards or backwards as you roll. That is a stand-in until the look builder gives it a roll pose.
+
+**The arc.** An enemy's blow now lands in an arc about the way it faced when it began its wind-up (`combatYaw`, which Session v63 already froze there). The arc is 1.6 units and 90° for most enemies and 2.4 units and 140° for a troll's sweep. A boss keeps its own reach where it has one, so the Faolchú keeps 2.0. So you can now beat a blow by stepping round the enemy as well as away from it, and the reach is a little longer straight ahead. The same test (`strikeArc`, `strikeReaches`) serves the world's enemies and the dungeon's.
+
+Not in this session: the tells as poses (A's second piece), player posture and guard break (the third), and the parry window moving from Finesse to the Guard skill, which waits for the skills sessions. Spells and the Faolchú's fire still hit through a roll. Only melee blows and enemy arrows are dodged.
+
+**A catch on the way.** `K`, the held-key map, lives inside the main loop's scope and not at the top level. The first `startRoll` read it from the top level and would have thrown on the first Q. The key handler now passes it in.
+
+### Verified (headless Chromium)
+New `tests/roll.test.mjs`, 15 checks, passing twice in a row, no page errors:
+- **Through the game's own loop.** Standing, a roll moves the player 2.60 units straight back (the dot with the backward direction is 1.00) for 18 stamina. With a load of 89% of capacity it is heavy: 1.80 units, 0.6 s.
+- **Frames don't matter.** The same roll ticked 60 times, 5 times or once covers 2.6 units, and the roll then clears. At 10 stamina there is no roll.
+- **The window.** A 20-point blow 0.15 s or 0.29 s into the roll does nothing. At 0.02 s or 0.35 s it takes 20.
+- **The arc**, against an enemy facing the player's spot: at 1.5 straight ahead it lands and at 1.7 it doesn't. At 1.2, 40° off lands, while 60° off and behind don't. A troll lands at 2.2 and 60° off, but not at 80° off or at 2.6. The Faolchú lands at 1.9 and not at 2.1.
+- **End to end through `tickZoneEnemies`**, with a real Bandit whose wind-up ends on that tick: at 1.5 straight ahead it hits for 9 (before, past 1.4 was a whiff). Stepped 70° round its frozen facing at 1.0, it whiffs (before, it hit). At 1.0, 0.15 s into a roll, it misses.
+- **Nothing else moved.** `guardsindoor`, `mimic`, `q7world`, `theft`, `player`, `crime3` and `register` pass. `crime3` and `register` crashed at setup (a town not yet built) when seven suites ran at once in this container, and passed run alone.
+
+### Needs eyes
+- How the roll feels on Q: 2.6 units against a wolf's lunge, and whether 18 stamina is too cheap to chain.
+- The first-person dip and the third-person tumble, which is a stand-in for a real pose (section H).
+- Whether stepping round a bandit's blow now reads, given that the tells are still 0.24–0.55 s of red glow until the next session.
+
