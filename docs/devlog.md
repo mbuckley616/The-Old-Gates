@@ -6468,3 +6468,20 @@ New `tests/crawler.test.mjs`, all 5 checks pass with no page errors:
 ### Needs eyes
 - Whether the forelegs' wind-up reads as a threat at play distance or looks like a wave. They rise high: 0.42 above the femur's base at the top.
 - Whether the moss lumps on its back are too bright a green for a thing that hides in bog water.
+
+## v80 — Session 235 — What a picked herb leaves: a prototype and a question (H.5a, waiting on Michael)
+The rest of section H is waiting on Michael: the rocks, the road coach and the shark, and the first-person weapon. So I took the plants' owed line from Session 167. A picked bush, sapling, shrub, bramble or bracket stump stays, bare, as Michael asked. The other seventeen kinds vanish outright and come back whole. What they should leave is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/herbstub/shoot.mjs`) takes each kind's baked plant from `plantGeo` and builds two picked copies:
+- **A, a stub.** It keeps every triangle that lies wholly under a cut height of 22% of the plant's height, held between 3.5 and 9 cm. Stalks are baked in three segments, so their bases survive as stubs, along with the crown and the lowest leaves. The flat kinds (under 13 cm: the mosses and the rosette) cannot be cut by height, so they are torn: the triangles on two opposite sectors are kept. The stub is darkened a little and sits on a patch of turned earth.
+- **B, the earth alone.**
+
+Two first renders were wrong. The earth was a mound that buried the stubs, and the frame cropped the outer columns. The earth is now a flat patch a quarter to a third of the plant's spread.
+
+The stubs run from 22 triangles (the broadleaf) to 516 (the heartroot, whose root crown stays). That is 3–65% of the whole plant, and most kinds are 10–40%. In the build, the stub would be the picked copy the bushes already have (`PLANT_STAYS`, `herbIM`'s second instanced mesh), so regrowth and instancing need nothing new.
+
+### Verified (headless Chromium)
+`node docs/prototypes/herbstub/shoot.mjs` renders `docs/prototypes/herbstub-1.png` and `herbstub-2.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, the stub on turned earth (recommended); B, the earth alone; or C, as today.
