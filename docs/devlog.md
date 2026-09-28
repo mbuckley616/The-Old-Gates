@@ -6079,3 +6079,26 @@ New `tests/ferry.test.mjs`, 4 checks, all passing, no page errors. It visits Car
 
 ### Needs eyes
 Whether the ferry sits at the right height on the zone's water, and whether the furled sail on a ferry is right or it should be rowed only.
+
+## v80 — Session 219 — A lair's wyrm is the dragon (H.4)
+Session 177 left "the dungeon's wyrm keeps its builder". Looking at it, the wyrm had no builder of its own. A dragon lair's master was whatever creature held that place, grown and given box parts:
+- in the world, the lair's beast (a Frost Troll, an Ash Wight, a Marsh Hag, a Cave Bear or an Ogre, by biome), scaled 2.4;
+- in a lair cavern, the deepest foe on the lowest floor (often a skeleton or a troll), scaled 2.6.
+
+`detailDragon` then stuck box wings, a box neck and head, a box tail and cones on the group. Now that most of those foes are people, a wyrm was a giant person in box wings. The Salt Mouth's wyrm, and any lair that rolls a dragon (8%), looked like that.
+
+**What changed.** A new `dragonBody(e, size)` swaps the master's body for Session 177's skinned dragon: the wolf's bones with a neck, a tail and two wing bones, beating its wings while roused, walking on the wolf's gait, breathing fire as before. What the master wore is removed: a person's rig drops out of `tickPeople` once its root is detached, and a box brute's parts go. The health bar planes and the lights stay. `detailDragon` now leaves a skinned dragon alone.
+
+**Its numbers do not change.** The master keeps the hit points, damage, speed and posture family it was given. Spawning the zone table's Dragon instead would have raised them (160 base hit points against a lair troll's 95), and that is a balance call, not a look. The size is the world dragon's (scale 2.88 in wolf units) in a cavern, and a little larger (3.2) at a world lair's mouth.
+
+**A slip I found on the way, not fixed (outside section H).** `goToDungeon`'s line that calls `lairFinish` ends in a `//` comment, and the code that moves the player's torch light into the dungeon scene sits after the comment on the same line. So that code has never run, since the first push. I have reported it in the PR rather than changed it.
+
+### Verified (headless Chromium)
+New `tests/wyrm.test.mjs`, 4 checks, all passing, no page errors:
+- In the world, a lair made a dragon lair builds "Carrigowen Wyrm" as the skinned dragon, linked to its enemy, in the rig set, with no box parts and no person left in its group. It is 6.3 long and 4.6 wide across the wings, with 285 hit points (the lair beast's ×6 as before).
+- In a deep lair cavern at level 8, "Test Wyrm" is the skinned dragon too, with no boxes and no person rig still pointing at it, its health bar kept. It is 5.6 long.
+
+`wolves` still passes.
+
+### Needs eyes
+A dragon in a cavern's rooms: whether 5.6 units fits between the walls or clips them. The old box dragon reached further, so it should not be worse.
