@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s267</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s268</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35161,6 +35161,7 @@ var WORLD=(()=>{
         if(night||eve&&h>=20)return {hide:true};
         return {wander:sc_.plaza,r:sc_.padR||14};
       case 'guard': {const B=(h>=19||h<6.5)&&beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};} // v80 S166 — the lantern beat after dark
+      case 'constable': return (h>=19||h<6.5)?{hide:true}:{patrol:[sc_.a,sc_.b]}; // S268 — the day constable, the watchman's other half
       case 'watch': {if(!(h>=19||h<6.5))return {hide:true};const B=beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};}
       case 'lost': return {idle:true};
       default: return {idle:true};
@@ -35280,7 +35281,7 @@ var WORLD=(()=>{
           const t=n._fw&&Math.hypot(n._fw.x-n.g.position.x,n._fw.z-n.g.position.z)>.9?n._fw:{x:px,z:pz};npcStep(n,t.x,t.z,Math.min(3.4,spd+(fd-8)*.6),dt);moving=true;}
         else n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}
       else if(plan.beat){const B=plan.beat;
-        if(n._beatI==null||n._beatI>=B.length){const G=guardsOf(n._settle);const k=Math.max(0,G.indexOf(n));n._beatI=Math.floor(k*B.length/Math.max(1,G.length))%B.length;}
+        if(n._beatI==null||n._beatI>=B.length){const G=guardsOf(n._settle).filter(g=>g.sched.type!=='constable');const k=Math.max(0,G.indexOf(n));n._beatI=Math.floor(k*B.length/Math.max(1,G.length))%B.length;}
         if(n._beatWait>0){n._beatWait-=dt;}
         else{const t=B[n._beatI]; // S247 — a beat point he can't walk straight to (he joins the beat anywhere, or a house is in the way) is reached by the streets
           const td=Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z);if(n._bwT!==t||td<n._bwBest-.5){n._bwT=t;n._bwBest=td;n._bwS=0;}else n._bwS+=dt;
@@ -36209,6 +36210,13 @@ var WORLD=(()=>{
       const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'w2',x:cx-4,z:cz+4,bCol:NAT.banner,sCol:0x808090});
       const wn=spawnNPC(def,0,true);wn.sched={type:'watch',a:{x:cx-4,z:cz+4},b:{x:cx+4,z:cz-4}};snpcs.push(wn);
     }
+    // S268 — a day constable (Michael, issue #41: B): a town without walls has only its night watchman, who sleeps by day,
+    // so nobody kept the law there from 6:30 to 19h. A second man walks the plaza by day and sleeps by night; he halts,
+    // follows and is sent indoors as any guard on duty. Spawned last, so every draw before him is as it was.
+    if(snpcs.some(n=>n.sched&&n.sched.type==='watch')&&!snpcs.some(n=>n.sched&&n.sched.type==='guard')){
+      const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'c',x:cx-5,z:cz-3,bCol:0x3a3a48,sCol:0xb89878,role:'constable'});def.role='Guard';
+      const cn=spawnNPC(def,0,true);cn.sched={type:'constable',a:{x:cx-6,z:cz-3},b:{x:cx+6,z:cz+3}};snpcs.push(cn);
+    }
     S.reach=t_reach(sol,site);
     bakeSettlement(S);
     sc.add(group);
@@ -37095,7 +37103,7 @@ var WORLD=(()=>{
     if(SHIP.mesh&&Math.abs(SHIP.x-px)<radius&&Math.abs(SHIP.z-pz)<radius){const [sx,sz]=toS(SHIP.x,SHIP.z);ctx.save();ctx.translate(sx,sz);ctx.rotate(-SHIP.yaw);ctx.fillStyle='#e8d8a0';ctx.strokeStyle='#2a1c10';ctx.beginPath();ctx.moveTo(0,-6);ctx.lineTo(3,4);ctx.lineTo(-3,4);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();}
     for(const o of OTHER){if(Math.abs(o.x-px)<radius&&Math.abs(o.z-pz)<radius){const [sx,sz]=toS(o.x,o.z);ctx.fillStyle=o.kind==='pirate'?'#ff4040':'#c8c8c8';ctx.beginPath();ctx.arc(sx,sz,3,0,Math.PI*2);ctx.fill();}}
     // people
-    for(const n of npcs){if(!n.g.visible)continue;const [sx,sz]=toS(n.g.position.x,n.g.position.z);if(sx<0||sz<0||sx>size||sz>size)continue;if(n.def&&n.def._lord){ctx.fillStyle=BLD.castle.col;ctx.strokeStyle='#2a1c10';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(sx,sz,Math.max(3,2.2*s),0,Math.PI*2);ctx.fill();ctx.stroke();continue;} ctx.fillStyle=n.sched&&(n.sched.type==='guard'||n.sched.type==='watch')?'#80b0ff':'#ffffff';ctx.beginPath();ctx.arc(sx,sz,Math.max(1.5,1.2*s),0,Math.PI*2);ctx.fill();} // v80 S138 — the lord in gold
+    for(const n of npcs){if(!n.g.visible)continue;const [sx,sz]=toS(n.g.position.x,n.g.position.z);if(sx<0||sz<0||sx>size||sz>size)continue;if(n.def&&n.def._lord){ctx.fillStyle=BLD.castle.col;ctx.strokeStyle='#2a1c10';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(sx,sz,Math.max(3,2.2*s),0,Math.PI*2);ctx.fill();ctx.stroke();continue;} ctx.fillStyle=n.sched&&(n.sched.type==='guard'||n.sched.type==='watch'||n.sched.type==='constable')?'#80b0ff':'#ffffff';ctx.beginPath();ctx.arc(sx,sz,Math.max(1.5,1.2*s),0,Math.PI*2);ctx.fill();} // v80 S138 — the lord in gold
     // v80 S138 — the place someone gave you directions to
     if(WAY){const [sx,sz]=toS(WAY.x,WAY.z);const ins=sx>=0&&sz>=0&&sx<=size&&sz<=size;ctx.save();ctx.strokeStyle='#f6d860';ctx.lineWidth=2;
       if(ins){const pr=5+1.5*Math.sin(performance.now()/260);ctx.beginPath();ctx.arc(sx,sz,pr+3,0,Math.PI*2);ctx.stroke();}
@@ -38102,7 +38110,7 @@ var WORLD=(()=>{
   // hears of it. Striking anyone is assault, seen by its victim; a struck guard draws at once.
   const CR={cool:0,yielded:false};
   function nearSite(){let best=null,bd=1e9;for(const S of SETTLE.values()){if(!S.site)continue;const d=Math.hypot(px-S.site.x,pz-S.site.z);if(d<(S.site.pad||40)+40&&d<bd){bd=d;best=S;}}return best;}
-  function guardsOf(S){return (S&&S.npcs||[]).filter(n=>n.sched&&(n.sched.type==='guard'||n.sched.type==='watch'));}
+  function guardsOf(S){return (S&&S.npcs||[]).filter(n=>n.sched&&(n.sched.type==='guard'||n.sched.type==='watch'||n.sched.type==='constable'));}
   function crimeOf(S){const C=worldState.crime;return C&&S&&C[S.site.id];}
   function drawnAt(S){return ZONES.world.enemies.filter(e=>e._guard&&!e.dead&&e._guard.site===S.site.id);}
   function tickCrime(dt,now){
@@ -38264,7 +38272,7 @@ var WORLD=(()=>{
     if(!best)return false;const name=(best.def&&best.def.name)||'someone';const site=S.site;
     addFavor(site,-3);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=75;c.debt+=3;c.last=dayNow();
     (worldState.crimes||(worldState.crimes=[])).push({kind:'assault',site:site.id,house:null,day:dayNow(),min:absMin()});
-    if(best.sched&&(best.sched.type==='guard'||best.sched.type==='watch')){showMsg(`You struck ${name}.`,'#ff6060');guardDraw(best,S);}
+    if(best.sched&&(best.sched.type==='guard'||best.sched.type==='watch'||best.sched.type==='constable')){showMsg(`You struck ${name}.`,'#ff6060');guardDraw(best,S);}
     else{best._scared=performance.now()+20000;showMsg(`You struck ${name}. ${site.name} will not forget it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} at ${site.name}.`);}
     return true;}
   function doorLockFor(house){const home=house.type==='home';return {seed:'door_'+house.id,minPins:lockPins(house),lockBonus:home?-1:0,lockTitle:home?'A locked door':'A shop door, locked for the night',

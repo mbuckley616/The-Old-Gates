@@ -5898,3 +5898,27 @@ New `tests/coachseat.test.mjs`, 9 checks, on the Ironhaven–Vieux Marché road 
 
 ### Needs eyes
 Take a seat, go in, eat, and come out: the coach at the door is correct, but it appears there rather than being seen arriving.
+
+## v80 — Session 268 — A constable by day
+The critic found it (28 Sep, backlog I): a town without walls, a port like Portclare or any village with streets, has one man of the law, the night watchman, and he sleeps from 6:30 to 19h. Seen twice in Portclare's square at 14h, the critic's favour went 0 → −4 and the fine to 355. Nobody halted them, and nobody followed at −2 or worse, until the watchman got up at 19h. Michael answered issue #41 with **B: a day constable**.
+
+**What changed.**
+- **Who gets one.** Every town that has a night watchman and no gate guards gets one more man: *the constable*. He is made like the watchman (`makeDef` as a Guard, the watch's dark coat, a kept name under the key `c`) and spawned last, so every draw before him (names, barrels, villagers) is what it was.
+- **His hours.** His schedule (`constable`) walks the plaza from corner to corner from 6:30 to 19h. By night he is indoors, which is the watchman's half.
+- **What he does.** `guardsOf` counts him, so he does whatever a guard on duty does. He halts you within five units with a fine (in the town's voice, Session 265). He trails you at favour −2 or worse. He is the one sent in when you are seen indoors (Session 239). Struck, he draws. He is a blue dot on the Local map.
+- **The night beat.** It is dealt out among the night men only, so the watchman's starting point on the beat is the same as before.
+
+In Portclare the pair are Gaspard (the watch) and Cellach (the constable). Portclare's own people read Old Blood today, so Cellach's halt is *Stop. Portclare is owed 355 gold by you. Pay, or I draw.*
+
+### Verified (headless Chromium)
+New `tests/constable.test.mjs`, 6 checks, in Portclare:
+- **Who is there.** One watchman and one constable, no gate guards, two different names.
+- **Their hours.** At 14h only the constable is up; at 23h only the watchman.
+- **The critic's case.** A fine of 355 in the square at 14h: the constable comes by and halts you 6.3 s after you stop.
+- **Following.** At favour −3 by day he follows, 8 units behind you.
+- **Indoors.** Seen indoors by day, he is the one sent.
+
+`watch`, `beat`, `witness`, `crime1`, `crime2`, `names` and `twins` pass. No page errors.
+
+### Needs eyes
+A village by day with a fine on you: whether one man walking the plaza feels like enough law for a village, and whether he should rather keep to the road in.
