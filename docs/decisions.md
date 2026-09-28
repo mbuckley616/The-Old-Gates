@@ -4,6 +4,22 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Furniture inside homes and inns — on the shape kit (the concept artist, 2026-09-28)
+Backlog H.5 asks for "props" with the buildings. Outside, every house, church, keep, well and stall is on the kit now; inside, the furniture is still boxes. A Dunmore home's furniture is 43 meshes and 556 triangles, each box with its own material; the inn's taproom is 147 meshes and 2,364 triangles. The bed is a box on four box legs, the hearth a grey box with a black one in it, the bottles on the inn's shelves cylinders of one colour. The prototype (`docs/prototypes/interiors/`, `index.html` unchanged) builds the pieces from the kit and bakes a room's furniture into one mesh, plus a small unlit one for the flames:
+- **A home:** a box bed with turned posts, a planked headboard, a stuffed tick, a quilt of three bands and a pillow (2,200 triangles); ladder-back chairs (848); a planked table with breadboard ends and turned legs (1,184); an iron-bound chest with a vaulted lid (856); a stone hearth with a timber lintel, a mantel, logs, flames and a pot on a crane, the chimney breast limewashed to the ceiling (3,842); wall shelves of jars, bowls and plates (768); a braided rag rug. 14,521 triangles in 2 meshes; the view's draw calls fall from 44 to 17.
+- **The inn's taproom:** a panelled bar with a brass foot rail and tankards (1,736), stools, casks on cradles with taps (908), a dresser of bottles, jugs and standing plates (2,784), tables with benches (192 a bench), the bigger hearth. 26,008 triangles in 2 meshes; draw calls 252 to 107.
+- **Sized to the people:** a townsperson is 1.18 tall; a table top stands at .46, a chair seat at .26, the bar at .69. The bed is 1.5 long (today's is 1.95, 1.65 times a person).
+- **By nation:** the Gatelands' oak and a madder, ochre and blue quilt; the Mark's dark pine and grey wool; Aurenne's walnut with the chairs, chests and headboards painted blue.
+
+Options:
+- **A. The kit in every interior.** Homes and inns as shown, then the shops, church, keep and guild halls in the same kit (the forge, armour stands, the apothecary's shelves, pews, the throne), one or two rooms a session, each room one baked mesh. Collision, beds, doors and where people stand are unchanged.
+- **B. Homes and inns only.** The pieces shown; the shops and halls keep their boxes for now.
+- **C. Not yet.**
+
+**Recommendation: A.** The rooms are where you sleep, trade and talk, and at present they are the last place the game looks like boxes. The cost is triangles, not draw calls: an interior draws one room, and the inn's 38,000 triangles in view are a fraction of a town street's.
+
+Pictures: [a home, today left, proposed right, two views](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/home.png) · [the inn's taproom, today and proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/inn.png) · [the home's pieces with a townsperson, front](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-home-front.png) · [three-quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-home-side.png) · [the inn's pieces](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-inn-front.png) · [bed, chair and chest by nation](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-nations-side.png)
+
 ### The town gate itself — an archway and gate leaves between the gate towers (Session 273)
 Where a road crosses a walled town's wall, two gate towers stand either side of it (Session 249 put them on the kit). Between them there is nothing: the wall simply stops, and the road runs through an open gap. Whether a town's gate should be a built thing, and how much of one, is a look call, so this is a prototype. The prototype (`docs/prototypes/towngate/shoot.mjs`) builds it from the game's own wall and tower builders with the gate made from the shape kit; `index.html` is unchanged.
 
