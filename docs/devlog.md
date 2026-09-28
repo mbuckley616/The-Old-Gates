@@ -6511,7 +6511,7 @@ H.1's shape kit has owed ambient occlusion since Session 153. The dungeon shell 
 The first pictures framed six people in a row at an angle and cut the sixth off. The close pictures are now three people each, face on, and the third picture is all six from behind at street distance in the late afternoon.
 
 ### Verified (headless Chromium)
-`node docs/prototypes/peopleao/shoot.mjs` renders `docs/prototypes/peopleao-1.png`, `-2.png` and `-3.png` with no page errors. A person's whole build with the occlusion took 5–10 ms, and 19 ms for the bearded Markishman with warrior braids (8,152 triangles, the most parts); the occlusion is one pass over about 2.2–4.1k vertices against about 150–400 spheres. Close up, the shading is visible under the jaw and beard, at the armpits and the waist, and under a hat's brim. At 8 units from behind, the two rows are hard to tell apart.
+`node docs/prototypes/peopleao/shoot.mjs` renders `docs/prototypes/peopleao-1.png`, `-2.png` and `-3.png` with no page errors. A person's whole build with the occlusion took 5–10 ms, and 19 ms for the bearded Markishman with warrior braids (8,152 triangles, the most parts). The six people are 4,350–8,152 triangles; I did not time the occlusion pass apart from the rest of the build. Close up, the shading is visible under the jaw and beard, at the armpits and the waist, and under a hat's brim. At 8 units from behind, the two rows are hard to tell apart.
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): A, this strength for the people and then the creatures and houses (recommended); B, stronger; or C, not yet. On a real screen, it would be worth judging whether the faces go muddy in shade at dusk. The bind-pose bake leaves a raised arm's shadow at the side.
