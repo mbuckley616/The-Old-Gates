@@ -5079,6 +5079,281 @@ The game's frame is kept so the build could drop in behind `buildShipMesh`: +z i
 ### Needs eyes
 The DECISION issue: whether this is the direction, whether the classes should differ in rig as proposed (a sloop with a gaff sail, a cog with one square sail, a galleon with three masts), and the pirate and merchant looks. The prototype's own faults, seen in the screenshots: the sails are flat-bellied and do not fill with the wind; the square sails read grey on their shaded side; the galleon's spritsail hangs a long way ahead; the shrouds are single lines without ratlines. Owed if this goes in: the deck walk against the hull's real outline (above), the cabin door against the new stern, whether the sails should swing with the heading and the wind (today nothing turns), and a frame-time check at a busy harbour.
 
+## v80 — Session 166 — The wolf family on the shape kit (H.4, in the game)
+
+Michael answered the three look-and-feel questions on 27 Sep (docs/decisions.md): yes to the wolf, in the townsfolk's style, with the prototype's three faults fixed in the build (the legs reading as tubes at the joints, the chest heavy from the front, the lunge folding its hind legs); the other families to follow the same way. An answered decision becomes the next session, so this run built the wolves before anything else. The Auto sessions PR (#2) had been merged into main; the branch carries on from main.
+
+**What changed.** The four kinds that used the box wolf (Wolf, Snow Wolf, Dire Wolf, Ash Hound) are now built in `buildZoneEnemy` by `buildWolf`: the prototype's skeleton of 24 bones, the shape kit's parts on them, baked into one skinned mesh with the fur counter-shaded by each vertex's normal. The bake is done once per kind (`WOLF_GEO`) and shared by every wolf of that kind; each wolf has its own skeleton and its own copy of the material, so a wind-up's red flash and a corpse's darkening touch that wolf alone. Bone matrices are kept local to the mesh the way `buildPerson` does it, for the same float32 reason. A small unlit mesh on the head bone keeps the old wolf's eyes shining at night. The Boar still uses the box wolf body (it only shared the shape); the Faolchú has its own builder and is untouched.
+
+**The three faults.** The legs are no longer uniform capsules: each upper segment is a lathe with a muscle's belly a third of the way down, the cannons are slim, and each joint (elbow, wrist, stifle, hock) has a knob, so a leg reads as a leg at the joints. The chest is narrowed to .63 of its depth (the prototype's .74) and the shoulders sit closer in, which is what made it heavy seen from the front. The lunge is no longer hand-set joint angles: it is placed by the same IK as the gait, the forepaws reaching ahead and up, the hind paws pushed back with the legs driving straight.
+
+**The motion** (`tickCreatures`, in the main loop beside `tickPeople`). Each leg is solved by two-bone IK in its own plane, the lowest segment (the pastern or the hock's cannon) held at a set angle that curls in the swing, so a planted paw stays exactly where it was put. The stride is driven by how far the wolf moved (its logical position, so the lunge's forward lurch does not step the feet). Below 1.3 body-lengths a second it trots, the diagonal pairs together, each paw planted for 46% of the stride; above it (back under 1.0) it gallops, a transverse gallop, the hind pair then the fore pair a tenth of a stride apart, each paw down for 30% with a flight between, the hips bobbing, the tail streaming. The three motions crossfade over about a tenth of a second. Standing, it breathes and looks about, the tail swaying. Winding up for a bite (`e._wind`) it crouches with its hindquarters loaded and its head low; the strike (`e._lunge`) springs it forward with the jaw wide. The shared attack pose (`attackPose`) no longer tips a wolf's whole body forward, since the wolf now does it with its bones. A dead wolf takes a slack pose once and is left alone. Past 17 units the distant copy (half the segments, the pupils left out) is swapped in, back under 15, and the sun's shadow pass draws every wolf from the distant copy at any range, as it does the townsfolk.
+
+### Verified (headless Chromium)
+New `tests/wolves.test.mjs`, 17 checks, all passing, no page errors. Each of the four kinds is one skinned mesh on 24 bones plus the eye mesh; the Boar keeps its 17-mesh box body. Triangles: 5,754 a wolf (5,934 the Ash Hound with its embers), 2,728 and 2,878 for the distant copies; the prototype's 5,290 grew with the muscled limbs and joint knobs, then came back down when the limbs' end caps and joints were cut from 9 to 8 and 7 segments (the first build was 7,360). Two wolves of a kind share one geometry object and have different materials; a telegraph turns one wolf's emissive to .75 red and leaves the other's at 0. Driving a Wolf along its facing at 1/60: at .48 u/s (its wander) it trots (weight 1), planted paws move 0.00mm a frame against 18mm for a swinging one, 2.1 strides a second; at 2.0 u/s (its chase) it gallops (weight 1), planted paws 0.00mm a frame against 55mm, all four paws off the ground in 32% of frames, 3.64 strides a second; a Dire Wolf at 2.4 u/s gallops the same way (0.01mm); slowing to .4 it trots again. A planted paw's height varies by 0.0mm through its stance, so the IK always reaches it; over the whole trot and gallop the solved leg never asks for more than .964 of its length. The attack, on a Snow Wolf: winding up, the hips drop 53mm and the head 91mm, the jaw opens .2; the lunge lifts the forepaw 63mm and puts it 117mm ahead, pushes the hind paw 86mm back, the jaw at .6; after, the hips are back within a centimetre; `attackPose` leaves the body's tilt at 0 (it was −.176 before the fix). Level of detail: full at 10 units, the distant copy at 20, still distant at 16, full again at 12. A render spied through `renderBufferDirect` shows a close wolf drawn from the full geometry for the eye and the distant copy for the shadow pass, and the full one put back after. A dead wolf takes the slack pose once and its bones stay still after; a despawned one leaves `WOLF_RIGS` and the kind's geometry is kept. The photograph `tests/out/wolves.png` (copied to `docs/prototypes/wolf-ingame.png`) shows the four kinds standing and one wolf side on through a trot, three gallop frames, the crouch and the lunge.
+
+### Needs eyes
+A pack in real play, in daylight and at night: the trot as they wander, the gallop when they come for you (does 3.6 strides a second look right at a chase?), the crouch and the bite against the timing of your block, the corpse on its side. The chest and the joints against the prototype. Whether the counter-shading reads on the Snow Wolf in snow. Frame time with two packs in view on a real machine. Owed: the Boar (its own body now that it no longer shares one), the Faolchú, and the other families: spiders, undead, dragon, mimic, bandits; a wolf turns its whole body to face you each frame (the old `lookAt`), so circling you it pivots rather than steps round.
+
+## v80 — Session 167 — Plants sized by what they are (H.5a, in the game)
+
+Michael's answer on the plants (docs/decisions.md, 27 Sep): yes, at the prototyped sizes; picking a bush or a sapling leaves the plant, bare of its berries or leaves, and it grows them back; the tallest kinds cast shadows if a dense forest chunk's frame time allows. This run built it, straight after the wolves.
+
+**What changed.** The prototype's builders are in the game as `PLANT_BUILD`, one per kind of plant, with `PLANT_KIND` saying what each of the 23 land herbs is (the three sea herbs keep the old tuft). `plantGeo(key)` bakes a kind once into a vertex-coloured geometry, darker low down and underneath, and caches it. The open world's `herbGeoFor` returns that bake, so the chunk instancing, placement and harvesting are unchanged; `mkHerbMesh` (the legacy zones, and anything else that builds a herb on its own) draws the same bake. The herb material is double-sided now, because the leaves are single folded sheets. The heights run from Graywort's .04 to goldenrod's and the rowan's .85, a person being 1.1.
+
+**Picking a bush.** Six kinds stay when picked (`PLANT_STAYS`): the thornberry and black-berry bushes and the rowan lose their berries, the ashwort keeps three of its nine clumps on bare twigs, the briarweed is left as bare canes, the bracket fungus leaves its stump. The picked copy is the same builder run with the parts a picker takes left out. The dice is still rolled for them, so the rest of the plant comes out identical, and it is shaded by the whole plant's height so the two match. Each chunk gets a second instanced mesh of the picked copy for those kinds; a herb shows in one of the two and sits at a thousandth of its size in the other, and `syncHerbInstance` swaps them when it is picked and again when it grows back (the respawn timer is the old one).
+
+**The frame check, and what it changed.** Measured in the test's loaded world (643 herb meshes, one per kind per chunk over the 81 loaded chunks), every herb together came to 1.8M triangles, and the tall kinds' shadows another .94M. The old tufts, at the prototype's mean of 236 a herb, were about 400k over the same herbs, and all of them were drawn: the herb meshes are not frustum-culled (their instances are placed in world space inside a mesh at the origin). A plant a third of a unit tall is under a pixel at seventy units, so each chunk's herb meshes are now drawn only within 100 units of you and the five tallest kinds (goldenrod, the rowan, the thornberry, the moor tussock, wolf's bane) cast shadows only within 45 (`HERB_LOD`, checked every half second with the herb sync). In the same frame that is 61 of the 643 meshes, 137k triangles for the eye and 12k in the shadow pass. That is fewer herb triangles than the old tufts cost, and fewer draw calls.
+
+**Session 166's full suite** (the wolf commit, run afterwards from a worktree, three suites at once): 17 of 19 passed; `locks` (no tower chest found in time) and `lod` (the shadow pass measured 0 triangles for the full and the distant townsfolk alike) failed under the parallel load and both passed run alone on the same commit. The wolves' frame cost from that run: five wolves beside the player added 5,862 triangles each (eye and shadow together), all five at full detail.
+
+### Verified (headless Chromium)
+New `tests/plants.test.mjs`, 9 checks, all passing, no page errors. All 23 land herbs bake (kelp, sea lily and pearlweed keep the old tuft). Heights and widths as prototyped: graywort .04, the mosses .06–.07 and .71–.74 across, thornberry .51 tall and .86 across, the moor tussock .53, goldenrod and the rowan .85. 120 (graywort) to 2,208 (briarweed) triangles a plant. The six that stay have picked copies of 22–46% of the whole (thornberry 1,764 → 864, the rowan 1,176 → 376, the stump 540 → 120), and the picked thornberry's vertices are the whole bush's to 0 difference, up to where its berries begin. In the world, a thornberry near the start is instanced from the plant's own bake with its picked copy beside it. Harvesting it puts the herb in the bag, shrinks the whole bush to .001 and grows the picked one to 1; letting it respawn swaps them back. The LOD rule holds for every herb mesh (drawn within 100, a tall kind casting within 45, no low kind casting), with the numbers above. The photograph `docs/prototypes/plants-ingame.png`: the plants by height beside a 1.1-unit post, then the six that stay, each whole and picked.
+
+### Needs eyes
+The plants in real light across a forest, a moor and a riverbank: whether 100 units is far enough that the herbs don't visibly appear as you walk (a tall goldenrod might want a longer reach than a moss), and whether the shadows' 45-unit edge shows. Picking a thornberry and a rowan: whether the bare plant reads as "picked" and not as a different plant. Frame time in a dense forest on a real machine. The earlier owed checks for the wolves stand (Session 166).
+
+## v80 — Session 168 — Ships and harbour boats on the shape kit (H.5b, in the game)
+
+The third of Michael's 27 Sep answers (docs/decisions.md): yes to the lofted hulls, with the rigs per class as proposed (the sloop a gaff mainsail and a jib, the cog one square sail, the galleon three masts) and the pirate and merchant looks. He also asked for four fixes to the prototype: fill the sails, add ratlines, fix the spritsail, and make the deck walk and the cabin door match the new hull.
+
+**What changed.** The prototype's hull loft, deck, rails, wale, keel and stem, rudder, bowsprit, masts, sails and deck clutter are in the world module (`shipHull`, `shipBake`, `boatBake`). One bake is made per class and look and shared by every ship that uses it, on one double-sided `SHIP_MAT`. `buildShipMesh(L,W,look)` picks the class by length, so the shipwright's refit (`applyShipClass`) now changes the rig as well as the size. The wheel is a small mesh of its own on the hull, so it still turns with the helm. The other ships (`spawnOtherShip`) were the same box darkened or reddened by rewriting its vertex colours; now they are the merchant and pirate looks. The black sail brings its own flag, so the old flat flag and its sign-texture skull are gone. The boats moored along every quay are four paints of the open clinker boat, picked by the harbour's dice as before.
+
+**The four fixes.** *Filled sails:* a square sail bellies forward by about a ninth of its yard's width, most in the middle and low down, its foot curving up towards the corners and its edges drawn in a little. The gaff mainsail bellies about a unit to leeward, and the jib bulges at its middle rather than along one edge (the prototype's did). *Ratlines:* every mast's shrouds carry rungs every .42 units up the lower six-tenths, between neighbouring shrouds. *The spritsail* hangs from its own yard a third of the way out along the bowsprit, just under it; the prototype's was 3.8 units ahead of the bow and 2.4 above it. *The deck:* a shaped hull does not fill the old walkable rectangle, so a ship's deck platform now carries the hull's outline. `plat.inside(x,z)` turns the point into the ship's frame and tests it against the deck's half-breadth there, and `activeTerrainH`, `onDeck` and `onAnyPlatform` all consult it. The bounding box still comes first (it is cheap) and now reaches the bow's deck, which runs past where the box ended (a sloop's deck goes to 8.4 forward against the box's 6.5). The hatch you go below by (the cabin door) and the wheel are where they were, and both are on the new deck.
+
+### Verified (headless Chromium)
+New `tests/ships.test.mjs`, 7 checks, all passing, no page errors. A merchantman and a black sail spawned at sea (13,398, 25,826): each is one baked sloop mesh plus its wheel, 4,525 and 4,619 triangles, and they are different bakes. Standing on the merchantman (deck at 1.0): the middle, beside the rail (1.9 out), the wheel, the hatch, and the bow at 7.6 (past the old box) are all deck. The old box's bow corner (2.0, 6.2), its stern corner (2.1, −6.4), and 3.0 out amidships are water (−.35). Turned .65 radians, the middle is still deck and the old corner still water. By class: sloop 4,525 triangles, 20.3 long overall with the bowsprit, 9.7 to the masthead; cog 5,366, 21.1, 11.5; galleon 6,600, 31.5, 14.0. Two cogs share one geometry. The harbour boat is 1,688 triangles in each of its four paints (72 before). The photograph `docs/prototypes/boats-ingame.png`: the three classes side on at sea; the merchantman, the black sail and a harbour boat from the bow quarter.
+
+### Needs eyes
+Sailing each class, and a refit from sloop to cog to galleon at a shipwright. Boarding from the quay and walking the deck to the bow: does the edge fall where the rail is? Going below by the hatch. The black sail in a fight: the crew on its deck, the boarding. The sails' shaded side still reads grey against the sky (they face forward; the sun is often behind them), and the sails do not swing with the heading or the wind; both are owed. Frame time in a harbour with three boats and your ship, on a real machine.
+
+## v80 — Session 169 — The spider on the shape kit (H.4, the second family)
+
+Michael's answer on the wolf (27 Sep) said the other families "follow the same way", so after the wolf, the plants and the ships this run took the next most common thing you fight in the open world: the Spider (the ashen, deepwood, greywood and forest tables). The Bog Crawler, the Sand Scorpion and the Shore Wisp share the spider's `shape` but have their own bodies in `zShapeExtra` and are unchanged; there are no spiders in the dungeons.
+
+**The body.** `buildSpider` is built the way `buildWolf` is: a skeleton, shape-kit parts hung on its bones, one skinned mesh baked once per kind and shared (`SPIDER_GEO`), each spider with its own skeleton and its own material, bone matrices local to the mesh, the eyes a small unlit mesh so they glow at night. There are 28 bones: the cephalothorax, the abdomen, two chelicerae, and three per leg. The shield-shaped cephalothorax is raised at the head, with eight eyes (two large, six small). The abdomen is a hairy egg with a pale chevron of spots set on its surface. Each chelicera carries a curved dark fang, and there are two palps in front. The legs are hairy tapered segments with a pale band at every joint, dark at the tips. Counter-shading darkens the back and lightens the underside, as on the wolves.
+
+**The legs.** Each leg is a hip that swings it round (about the upright), a femur and a tibia. `sgLeg` places a foot by turning the hip towards it, then solving two-bone IK in that plane with the knee up, so the knees stand above the body the way a spider's do. The spider walks on its alternating tetrapods (the left first and third legs with the right second and fourth, then the other four), each foot planted for 55% of the stride and sliding back under the body at the pace it moves. A chase (past 1.6 body-lengths a second, back under 1.2) blends into a run: a stride nearly twice as long with the feet down for 40% of it, so the chase is 3.9 strides a second rather than 10. The stride is driven by the ground covered, as the wolves' is. Winding up to strike, it rears: the front pair of legs lift off the ground and reach forward, the second pair lighten, the fangs spread and the abdomen dips. The strike drops it forward. Dead, its legs curl in under it. It goes through the same `tickCreatures`, level of detail and shadow-pass swap as the wolves.
+
+### Verified (headless Chromium)
+New `tests/spiders.test.mjs`, 5 checks, all passing, no page errors. A Spider from `buildZoneEnemy` is one skinned mesh on 28 bones plus the eye mesh, 6,946 triangles (4,026 for the distant copy). Two spiders share one geometry and have different materials. A Sand Scorpion is unchanged. Driven along its facing at 1/60: at .42 u/s (its wander) it walks, the planted feet move 0.00mm a frame at 0.0mm off the ground, 2.4 strides a second. At 1.75 u/s (its chase) it runs, planted feet 0.00mm against 58mm for a swinging one, 3.9 strides a second. Over the whole walk and run no leg is asked for more than .974 of its length. Winding up, the front left foot rises 118mm off the ground while the back feet stay down, and the fangs spread from .08 to .6. Dead, the tibias curl to −2.2. The photograph `docs/prototypes/spider-ingame.png`: a spider standing and one rearing, then four side on through the walk and the run.
+
+A note on Session 166's and 167's suites: `lod.test.mjs` failed twice when three or two suites ran at once on this container. Both times its two shadow-pass checks measured no triangles from the townsfolk, at full detail and distant alike. It passed every time it ran alone, and passed on both `main` and this branch when those two ran side by side. The stale-sun explanation I tried did not hold: the checks still pass with the pauses cut to zero. So the cause is not found and the test is unchanged; it is recorded here in case CI's slower machines meet it.
+
+### Needs eyes
+Spiders in a real forest by day and at night: the gait (the feet planted, the knees up), whether the run reads as scuttling, the rear before the bite, and the eye glow. The legs are round, even tubes between the joint bands; a real spider's are hairier and kinked at each joint, which may want a pass. Frame time with a nest of four close by (about 28k triangles).
+
+## v80 — Session 170 — The boar on the wolf's bones (H.4), and the shadow-pass flake
+
+The Boar is on every plains, forest and autumn table, and since the first build it has been the box wolf in brown (`shape:'wolf'`, with S9's tusk boxes added by `detailEnemyMesh`). Session 166 left it on that box. This session gives it a body of its own without a new rig: `WOLF_KINDS.Boar` has `boar:true`, and `wolfBakeQ` hangs the boar's parts on the wolf's 24 bones in place of the wolf's. It trots, gallops, crouches and springs with the wolf's IK gait, and it shares the wolf's level of detail and shadow-pass swap.
+
+**The body.** The chest and haunches are a deep barrel (the chest lathe .17 across against the wolf's .15, and deeper), whose belly comes down to about .19 of the shoulder's .40. That hides the upper legs, so the legs read short and sturdy with no change to the skeleton. A ridge of dark bristles runs from the neck down the back. The head is a heavy wedge to a flat pinkish disc snout with two nostrils, ivory tusks curving up from the jaw, small eyes set high, and small pricked ears. The head is carried low: `k.neck` tips the neck down and the head back up a little in `wgApply`. The legs end in dark hooves, and the thin tail has a dark tuft. The boar has no shining eyes (the wolves' eye mesh is skipped for it). The first pass hung the barrel almost to the ground and read as a blob; it was slimmed and raised before this commit (`docs/prototypes/boar-ingame.png` is the second pass). The Boar uses the wolves' walk; it is not in the pack behaviour, so it doesn't circle.
+
+**The shadow-pass flake.** Sessions 166–169 recorded `lod.test.mjs` failing when suites ran two or three at a time: its shadow-pass checks read no triangles from the townsfolk. This session's first wolves run did the same (the shadow pass drew no wolf in that frame). A probe that rendered 25 times between real frames saw the shadow pass draw the wolf every time. The deciding run was `lod` on `origin/main` and on this branch side by side, with two CPU-burning processes beside them. `main` failed (the distant-copy shadow check read no change at all) and this branch passed. So the failure predates this work. It is a frame, on a loaded machine, whose shadow pass draws none of the townsfolk; the cause is still not found. `lod.test.mjs` is left as it was. The wolves test's shadow check now renders across up to twelve real frames until the shadow pass has drawn the wolf, then checks which copy it drew; that is waiting for what the check needs, and the check is no weaker.
+
+### Verified (headless Chromium)
+`tests/wolves.test.mjs` extended, 17 checks, all passing, no page errors. The Boar from `buildZoneEnemy` is one skinned mesh on the wolf's 24 bones with no eye mesh, 4,028 triangles (2,272 for the distant copy). With the Boar among them, the test's six wolves beside the player draw at full detail and add 5,556 triangles each (eye and shadow). The shadow check drew the distant copy on its first try. The photograph `docs/prototypes/wolf-ingame.png` now has the Boar at the end of the row.
+
+Full suite on Session 169 (the spider), two suites at a time: 19 of 20 passed; `lod` failed as above. The side-by-side run above shows that failure on `main` too.
+
+### Needs eyes
+The boar in a field by day: the barrel against the legs, the low head, the tusks. Whether it should keep the wolves' trot or want a shorter, choppier gait of its own; whether it should charge (it is not a lair beast).
+
+## v80 — Session 171 — Bandits and the other human foes on the townsfolk's body (H.4)
+
+The next family on Michael's list is the bandits. They are people, so rather than build them a creature this session puts them on the townsfolk's own body. The same change pays an old debt: since Session 157 a town guard who draws on you turned into a red-tinted Bandit box, and now the guard who draws is the guard you spoke to.
+
+**What changed.** `buildZoneEnemy` builds seven human foes from `buildFoe`: Bandit, Bandit Archer, Highwayman, Deserter, Cultist, Rogue Mage and Pirate. The humanoid box stays for the Bandit Captain (its shield guard raises and lowers the box's arm pivot, which the people's pose would overwrite every frame), and for the goblins, kobolds, skeletons, hollowed, ghouls, wraiths, the hag and the wight, which are other families. A foe is `buildPerson` on a genome seeded from its kind and where it was met, so each bandit in a camp is a different person. `FOE_DRESS` dresses the kind: bandits and archers hooded in leather and moss, the highwayman in a dark coat and a brimmed hat, the deserter in a helm with a spear, the cultist hooded in blood-red, the rogue mage hooded in blue, the pirate in a kerchief. Cloaks, aprons, dresses and extras are left off. Each foe has its own copy of the people's material, so a wind-up's red flash and the corpse's darkening touch that foe alone and never the town. `limbs.armR` is the right shoulder bone, so the shared attack pose swings the arm back through the wind-up and forward through the strike, without tipping the whole body. The health bar sits over the head (1.3 against the box's 1.1).
+
+**Moving.** `tickPeople` now drives a body that hangs inside an enemy's group: that group is what stands in the scene, and the enemy's own position is what the stride and the level of detail read. So a wandering bandit walks, a chasing one runs (their chase is 1.6 u/s, past the run's threshold), and the lunge's forward lurch, which moves the group but not the enemy, takes no stride. A foe never waves at you. A dead foe is left lying still, and a despawned one leaves `PEOPLE_RIGS` with its geometry and material disposed. The shadow pass draws foes from the distant copy like everyone else.
+
+**The guard.** `guardDraw` finds the genome of the guard NPC who drew and passes it to `buildZoneEnemy` (a new optional last argument, `{genome}`), and the red tint is skipped for a person. The test found that one Dunmore guard shares a name with the apothecary (the critic's duplicate-names item, section I) and so, under the `name|site` genome cache, wears the apothecary's look and kerchief in the street. The drawn guard wears the same, which is right for this change; the cache collision is that item's to fix.
+
+### Verified (headless Chromium)
+New `tests/foes.test.mjs`, 7 checks, all passing, no page errors. The seven are people (skinned, their own material, the right shoulder as the striking arm, the bar at 1.3). Hats and gear: Bandit hood and stick, Deserter helm and spear, Pirate kerchief, Highwayman brim. Two bandits met in different places have different genomes; the Captain and a Skeleton keep their bodies. Driven by the enemy's position at 1/60: standing it idles (weight 1) and does not wave with you 1.5 units away; at .39 u/s it walks, at 1.63 u/s it runs; moving the group 20 frames without the enemy advances the stride by 0. A wind-up of .9 sets the right shoulder to 1.26 with the body's tilt at 0. A full telegraph lights this foe's emissive to .75 while the shared people's material and another foe's stay at 0. Dead, its spine does not move across two ticks. Removed from the scene, it leaves the rig set. In Dunmore, `guardDraw` on a guard gives a Town Guard whose body is that guard's genome. The photograph `docs/prototypes/foes-ingame.png`: the seven, standing and running.
+
+### Needs eyes
+A bandit camp in real play: whether they read as bandits or as villagers who took a wrong turn (the stick in hand looks like a walking stick; a proper weapon kit is still owed from pass 5), the strike's arm swing against the timing of your block, the bodies lying after a fight. A guard drawing on you in a town.
+
+## v80 — Session 172 — The skeleton on the people's bones (H.4, the undead begin)
+
+The world's Skeleton (at night in the bealach and the greywood tables) was the humanoid box. The undead are next on Michael's list, and a skeleton is a person without the person, so this session puts it on the townsfolk's own 17 bones: it walks, runs, strikes and dies exactly as the bandits of Session 171 do, through `buildFoe` and `tickPeople`.
+
+**How.** A genome can carry `skel`. `personBakeQ` lays out the same bones in the same order, but while it hangs the flesh, hair, beard and clothes, a skeleton throws each part away (`bodyOpen` false). After the bones it adds its own parts:
+- A skull with dark sockets, a nose hole and a row of teeth.
+- Neck vertebrae, and a column of vertebrae down the back.
+- A ribcage of five arcs open at the front, with a sternum.
+- Collarbones, and a pelvis with a tailbone.
+- A humerus, two forearm bones and a hand of three fingers per arm; a femur, a kneecap, a tibia with a fibula and a flat foot per leg.
+
+The held gear goes on as for anyone, so half the skeletons carry a spear and half a club, by their seed. The fist around it is bone-coloured, since the skin is bone. The enemy's eye colour burns in the sockets: a small unlit mesh on the head, as the wolves have. `FOE_DRESS.Skeleton` is `{skel:true}`, and `buildFoe` passes the enemy's `eyeCol`. The first pass's pelvis read as a nappy; it is smaller, darker and flatter now.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs` extended, 8 checks, all passing, no page errors. The Skeleton from `buildZoneEnemy` is a person rig with `skel`: no hat, a club on this seed, 4,336 triangles, its eye mesh on the head, its own material, the right shoulder as its striking arm. The other seven foes' checks are unchanged. The close-up `docs/prototypes/skeleton-ingame.png` is one skeleton standing and four side on through the walk and the run. `docs/prototypes/foes-ingame.png` has the seven foes and a skeleton.
+
+### Needs eyes
+A skeleton patrol at night: the eyes' glow, the walk (it is the people's walk; a stiffer, jerkier one might suit the dead better), bones lying after the fight. The dungeon's skeletons are built by the dungeon's own builder and are unchanged.
+
+## v80 — Session 173 — The risen dead: Hollowed, Ghoul, Ash Wight (H.4)
+
+After the skeleton, the three undead humanoids that are dead people rather than bones: the Hollowed (the wastes, in numbers at night), the Ghoul, and the Ash Wight, a lair's beast in the wastes and wasteland. They go through the same `buildFoe` path as the bandits and the skeleton, so each is a genome seeded from where it was met, with a living person's face and build under the death.
+
+**How.** `FOE_DRESS` marks them `dead`, and `buildFoe` takes the living genome and turns it:
+- The skin goes three-quarters of the way to the kind's colour: grey for the Hollowed, a sick green for the Ghoul, ash for the Wight. The hair goes half grey, and the ruddiness and freckles go.
+- The age is set to elder, so every pose carries the elder's stoop: the spine bent forward, the head down, the knees soft.
+- They wear rags in the kind's colour with dark boots.
+- The eyes take the enemy's eye colour and shine. `personBakeQ` now reports where it put each eye (`eyes` on the bake and the rig), and `buildFoe` hangs a small unlit mesh there, as it does in a skeleton's sockets.
+
+The Wight wears a helm and carries a spear; the others are empty-handed. The Wraith keeps its box body: it is a ghost, and wants a translucent, hovering body of its own.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs` extended, 9 checks, all passing, no page errors. The Hollowed, the Ghoul and the Ash Wight are person rigs marked dead, aged elder, with the eye mesh and their own material. The Wight has a helm and a spear, and the Wraith is not a person. `docs/prototypes/foes-ingame.png` now has all eleven foes: seven living, the skeleton, and the three dead.
+
+### Needs eyes
+The dead at night in the wastes: whether grey and green skin under rags reads as dead or merely ill (a torn silhouette, a lolling head or a dragging walk would sell it better), and the eyes' glow at a distance. The Ghoul runs (its speed 1.8 is past the run's threshold): the people's run on a stooped body may look odd.
+
+## v80 — Session 174 — The locks suite waits for its tower (tests only)
+
+While this run's sessions ran the full suite two at a time, `locks.test.mjs` twice failed its last check with `{"none":true}`: no tower among `WORLD.SITES`. The list only holds the sites of loaded cells, and after taking you back to the home province the test paused a fixed nine seconds before looking; on a loaded machine the cells had not streamed in yet. The test now waits (up to a minute and a half, polling every quarter-second) for the world to be the active zone with a tower in it, then goes on as before. Nothing in the game changed; the build tag stays at s173.
+
+### Verified (headless Chromium)
+`locks.test.mjs`, run as a third process beside two suites (the load it failed under): 8 of 8, the tower chest a four-pin lock, picked, the hoard taken.
+
+### Needs eyes
+Nothing: tests only.
+
+## v80 — Session 175 — The bandit captain on a person's body, shield and all (H.4)
+
+Session 171 left the Bandit Captain on the box for one reason: its shield guard (Session 130, the Shieldbearer's mechanic) raises the box's left-arm pivot and holds it there. On a person, `tickPeople` rewrites every joint every frame, so a raised shield would drop at once. The captain is a person now, and the guard holds.
+
+**How.** `FOE_DRESS['Bandit Captain']` dresses it in a dark leather coat and a helm, with a club. For a captain, `buildZoneEnemy` gives the person's left shoulder as `limbs.armL`, so `attachShieldProp` hangs the round shield on that bone and the guard's up and down poses name it. A person's left arm is on its +x side, the box's on its −x, so across the body is −z for a person: `shieldArmUpZ` is −.5 for a person and .5 for the box. `tickPeople`, after posing a foe, holds the guard while `shieldUp` is set: the left shoulder at the guard's angles, the elbow bent. When a power attack or a bash breaks the guard (`dropShieldGuard`), `shieldUp` goes false and the arm is the walk's again. When it recovers (`reraiseGuard`), the shield comes back up, with the cyan flash on the captain's own material. The shield is sized for the person's frame, not scaled again by the enemy's scale.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs`, 10 checks, all passing, no page errors. The captain is a person with the shield prop parented to its left shoulder bone. After a tick with the guard up, the shoulder is at (−1.15, −.5) and the elbow at −1.1. With the guard dropped, 30 ticks later the shoulder is the walk's. Raised again, it is back at −1.15 with `shieldUp` set. The photograph `docs/prototypes/foes-ingame.png` now has the captain among the foes.
+
+### Needs eyes
+A captain fight: the shield across the body as it comes at you, the guard breaking on a power attack, and whether the shield sits right against the forearm and the helm (it was placed for the box's arm).
+
+## v80 — Session 176 — The wraith glides (H.4, the undead done)
+
+The last of the world's undead on the box was the Wraith (a night creature of the tables; the dungeon's wraiths have their own builder). Session 173 held it back because it needs more than a colour: a ghost wants to be see-through and not to walk. It is a person through `buildFoe` now, marked `dead` and `wraith`.
+
+**How.** The genome goes the risen dead's way (the skin most of the way to a dark blue-grey, the elder's stoop, the eyes lit in the enemy's pale blue), then:
+- A long robe to the ground (the dress), a cloak and a hood.
+- The hair cut away under the hood and the brows drawn down and angled.
+- The legs, boots and hem trim in the robe's shadow, so what shows below the robe is dark.
+
+Its own material is transparent at .68 opacity, and it casts no shadow. `tickPeople` never steps a wraith: whatever its pace, it idles, and its body floats .19–.24 above the ground on a slow bob. It glides over the ground at its enemy's speed with the robe hanging still. The first pass showed a braid over the hood, a brown trim ring at the hem and a pleasant pale face; all three were fixed before this commit (`docs/prototypes/wraith-ingame.png` is the second pass, in walk poses to show the robe; in play it only ever idles).
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs`, 11 checks, all passing, no page errors. The Wraith is a person rig, dead, elder, lit eyes, hooded. Driven 90 frames at 1.4 u/s: transparent at .68, no shadow, walk and run weights 0, the body between .19 and .24 off the ground. `docs/prototypes/foes-ingame.png` now has all thirteen foes.
+
+### Needs eyes
+A wraith at night: whether .68 is ghostly enough or too solid, whether the robe needs to trail or fade at the hem (it ends in a hard edge), and whether the eyes carry at a distance. Transparent skinned meshes can sort badly against each other: two wraiths overlapping may show one through the other wrongly.
+
+## v80 — Session 177 — The dragon (H.4)
+
+The dragon is on Michael's list of families. The world's (a rare tundra and wasteland encounter, and the Salt Mouth's) was Session 130's boxes: a box body, box neck and tail joints, a flat plane on a pivot for each wing. It is now a kind on the wolf's rig, as the boar is, so it walks on the wolf's IK gait, crouches and springs, and has the distant copy and the shadow-pass swap, with a skeleton and parts of its own.
+
+**The bones.** `wolfSkeleton` gives a dragon a longer neck (the head .26 beyond the neck bone against the wolf's .15), a longer tail (the three tail joints .16, .26 and .28 apart against .11, .1 and .08), and two wing bones on the spine. The wing bones come after the legs' bones, so the legs keep their indices and the gait code is untouched. At scale 1.8 × 1.6 its shoulder stands about 1.15 high and its body is about 2.3 long, near the old box's size.
+
+**The parts.** A deep scaled chest and haunches, the belly plates the counter-shading's light underside. A spine of horn from the neck down the back to the hips. A long skull and snout, a jaw lined with teeth, brow ridges, swept-back horns, nostrils, and eyes that glow (the glow mesh now takes a per-kind eye position, `k.eyePos`). Heavy scaled legs with three claws a foot. A long tapering tail with a spade at the tip. Each wing is an arm from the shoulder with three fingers sweeping back and the membrane between them, baked with both faces so it shows from below.
+
+**The wings.** At rest they lie folded back along the flanks at shoulder height. While the dragon is roused (alert, or aggressive) `tickCreatures` blends them over half a second into a beat, about once a second, the two mirrored. Dead, they sag half open. The old `tickDragons` wing code looks for `_wing` pivots, finds none on the new body and does nothing; the fire breath is unchanged (`e.dragon`). The health bar sits higher (1.55 × scale). The dungeon's wyrm (a lair's master, `detailDragon`) keeps its own builder.
+
+The first pass had the folded wings swung forward to the ground, the glowing eyes off the painted ones and too portly a body (bulk 1.5); all three were fixed (bulk 1.28) before this commit.
+
+### Verified (headless Chromium)
+`tests/wolves.test.mjs` extended, 18 checks, all passing, no page errors. A Dragon from `buildZoneEnemy` is one skinned mesh on 26 bones (5,432 triangles, 3,072 for the distant copy). Its wings at rest are swept back (yaw over 1 radian). Roused, over the second second they beat through more than .6 radians, the right wing mirroring the left exactly. It is still flagged to breathe. The photograph `docs/prototypes/dragon-ingame.png`: one standing with its wings folded, one walking with them raised.
+
+Full suite on Session 175 (the head before the wraith and the dragon), two suites at a time: every suite that has finished has passed, including `lod` and `locks`.
+
+### Needs eyes
+A dragon in the tundra in real play: its size against you, the wing beat's speed, the fold against the flank, the long tail on slopes. It walks on the wolf's trot and gallop scaled up; a heavier, slower gait of its own may suit it. It still never flies.
+
+## v80 — Session 178 — Goblins and kobolds: a prototype and a question (H.4, waiting on Michael)
+
+With the dragon done, the open world's goblins, goblin slingers and kobolds are the only foes still on the humanoid box. Their look is open: the canon names goblins among the antibodies that "folklore had words for" and says nothing of what they look like, and has no kobolds at all. So this is a prototype and a DECISION, and `index.html` is unchanged (the build tag stays at s177).
+
+**The prototype** (`docs/prototypes/goblins/shoot.mjs`) boots the game and builds each variant from `personGenome` and `buildPerson`, the way `buildFoe` would. The parts a person does not have (pointed ears, a snout, a crest, a tail) are plain meshes hung on the bones: enough to judge a look, not how the build would do it (that would bake them in, as the skeleton's bones are). Four pictures, each with a townsperson at the left for scale, three of the kind standing and one running:
+- **Goblins A:** green, small, big-headed, long pointed ears.
+- **Goblins B:** grey-brown, thin, ears swept back, eyes lit.
+- **Kobolds A:** little reptile folk with a snout, crest and tail.
+- **Kobolds B:** the old mine-sprite, bearded and hooded, with a mattock.
+
+My recommendation to Michael is goblins A and kobolds B, with the reasons in `docs/decisions.md` and the DECISION issue. The first pass of the pictures hid the ears and snouts inside the enlarged skull; they were set out from the skull by the head's size and made larger.
+
+### Verified (headless Chromium)
+`node docs/prototypes/goblins/shoot.mjs` renders the four pictures with no page errors.
+
+### Needs eyes
+The DECISION: which goblin, which kobold, or neither.
+
+## v80 — Session 179 — House prototype: detail and a character per nation (H.5, waiting on Michael)
+
+With H.4's approved families built and H.5a and H.5b in the game, the next item in the routine's order is H.5 itself: "buildings, houses, structures and POIs with more detail, quality and uniqueness". It is a visual item and open, so this is a prototype and a DECISION; `index.html` is unchanged and the build tag stays at s177.
+
+**What is there today.** `buildingGeo(w,d,st,r,opts)` in the world module merges a handful of boxes into one vertex-coloured mesh: a plinth, the body, a triangular prism roof with no thickness, a ridge, a chimney box, two or three flat dark rectangles as windows, a door slab (104–200 triangles). The nations differ only in colours, height, pitch, the thatch roll and corner posts.
+
+**The prototype** (`docs/prototypes/houses/houses.html`, `houses.src.js`, `shoot.mjs`) copies today's `buildingGeo` for the left of each picture and puts a new builder beside it. The new builder keeps the same frame (w by d, +z the front, the door on it) and the same merge (one mesh). Its parts:
+- **Footing and walls:** a footing ringed with rough stones. Braced half-timbering where the nation frames (sill and head beams, studs, diagonal braces), and a jetty on joist ends for a two-storey framed house.
+- **Windows and door:** each window is a recess with the glass set back, a stone sill, a lintel, a mullion and transom, and painted shutters where the nation has them. The door is a frame, a plank door set back with iron hinges and a latch, and a stone step.
+- **Roof:** two slabs with thickness and overhanging eaves, rafter ends under them, and bargeboards up the gables. Slate, shingle or half-round tile courses on top, or a rolled thatch. The Mark's longhouse has crossed horns on its gables.
+- **Chimney and yard:** a chimney of coursed stone with a cap, and, by the house's dice, a lean-to, a woodpile or a water butt.
+
+The first pass tilted both roof slopes the wrong way (they stood up like walls), and the tiles cost 8k triangles. The sign was fixed, the tiles coarsened (5.1k for the Aurenne house), and the thatch's overhang shortened.
+
+### Verified (headless Chromium)
+`node docs/prototypes/houses/shoot.mjs` renders the four pictures with no page errors. Triangles, today against proposed: Irish 120 against 2,238, Royale 200 against 3,062, Mark 104 against 2,602, Aurenne 140 against 5,098.
+
+### Needs eyes
+The DECISION: this direction for all nations with a distant copy (A), a plainer version at about 1k triangles (B), or not yet (C). Faults seen: the thatch reads as a board, the lean-to is crude, and the Irish eaves cover the window heads.
+
+Session 177's full suite (two suites at a time) was still running at this commit; its result goes in the next entry.
+
+## v80 — Session 180 — The yield has a name (section I)
+
+Both look-and-feel questions (goblins and kobolds, #11; the houses, #12) now wait on Michael, and the rest of H is done or waiting too, so the routine moves to section I, what the critic found in play. The smallest there: a guard halts you by name (*Cathal*), and when you are low in the fight a moment later the offer to yield is headed *The guard*. `offerYield` now takes the name of the guard NPC behind the first drawn guard at that town (`e._guard.npc`) and falls back to *The guard* only if there is none. Nothing else about the offer changes.
+
+### Verified (headless Chromium)
+`tests/crime3.test.mjs` extended with one check, 7 of 7 passing: halted by Cathal, the yield is offered by Cathal. The drawn guard is still named *Town Guard* with 48 health, and the cells, the struck guard and the assaulted townsperson are unchanged.
+
+Session 177's full suite, which Session 179 left running: 14 of 21 suites done at this commit, all passing so far (0 failures).
+
+### Needs eyes
+Nothing new; the guards' owed play-check (Session 157) stands.
+
+## v80 — Session 181 — A seen theft is fined for what was taken (section I)
+
+The critic found that a seen theft cost a flat 50 gold. The crime design Michael set on 26 Sep (backlog B) says "theft 50 + the goods' value". Implementing a number the design already states needs no new decision, so this session does it. `noteCrime` and `seenCrime` now carry the value of what was taken, and a seen theft adds it to the 25-gold-a-point fine. From a strongbox or a home's chest that value is the coins taken plus each item's price. Locks (25) and assault (75) are unchanged.
+
+The other half of that critic item is left: the cells take stolen items but not stolen gold. The spec says the cells take "the stolen goods", and whether coins count is Michael's call. Also looked at and left: the duplicate names in a town (the critic's next item). The Irish name bank has 12 men's names against Dunmore's 60-odd residents, and the keepers' names, `makeDef`'s rename into the people's bank and the inn names are each picked blind to the others. So keepers, guards and the mayor collide (the Cathal of Session 171), and a collision shares a look under the genome cache. The fix wants an order (the keepers, guards and lord named first and uniquely, residents after) and a genome key that isn't the name alone. That is more than a short session could verify, so it is written into the backlog item for a later one.
+
+### Verified (headless Chromium)
+New `tests/crime5.test.mjs`, 2 checks, passing: in Niamh's Armoury at 13h, with the keeper beside you, emptying the strongbox took 137 gold and a 44-gold item, and the fine rose by 231, exactly 50 + 137 + 44. The log says Niamh saw it.
+
+### Needs eyes
+Whether a strongbox theft's fine (often 150–300 now) feels right against the takings. By the spec it always costs more than it gave you, if you are seen.
+
+## v80 — Session 182 — Indoors, walls hide you (section I)
+
+The critic's second crime item: indoors, `witnessOf` took the keeper (or any interior NPC) within six units as a witness, walls or no walls. So whether picking a strongbox in the back room was seen depended on how far the floor plan put the keeper, not on whether they could see you. Keeper to strongbox in Dunmore runs 3.9–8.9 units, often through a partition. A witness indoors now also needs a clear line. `intClearLine` walks from you to them a quarter-unit at a time through the room's solids (`INT_SOL`), counting only what stands across eye height (a band reaching above 1.5 and starting below 1.2): walls, partitions, a shut door, but not a counter or a table you could see over. The open world's witness check already had its own clear line (`clearLine`) and is unchanged; the six-unit indoor range is unchanged.
+
+### Verified (headless Chromium)
+`tests/crime5.test.mjs` extended, 3 checks, all passing. In Niamh's Armoury, with a full-height partition between you and the keeper 2.4 units apart, the keeper is not a witness. With the keeper beside you on your side of it, they are (Niamh). `intClearLine` is clear along the wall and blocked across it. The seen theft of Session 181 still fines 50 and the value taken (143 gold and a 32-gold item: 225).
+
+### Needs eyes
+Robbing a shop by day with the keeper in the front room and the strongbox in the back: now possible unseen, which the critic's run suggests makes daytime theft easy; the numbers may want another look in play.
+
+## v80 — Session 183 — The drawn guard's check reads the guard's own look (tests only)
+
+The full suite on Session 182 (two suites at a time) passed 21 of 22. The one failure was mine, in `foes.test.mjs` (Session 171): its guard check prefers a Dunmore guard whose genome wears a helm, falls back to the first guard when that one's rig has not built yet, and then asserted a helm anyway. This run fell back to Cathal, who wears the apothecary's kerchief (the name collision in section I). The drawn body was Cathal's own (`same: true`), which is what the check is for. It now asserts that the drawn body wears the hat the guard's own genome wears. No game code changed; the build tag stays at s182.
+
+### Verified (headless Chromium)
+`tests/foes.test.mjs`, 11 of 11 passing. Full suite on Session 182, two suites at a time: every other suite passed (crime1–5, chapel, export, gait, interiors, locks, people, lod, player, plants, ships, saves, spiders, shophours, wayfinding, wolves, weather).
+
+### Needs eyes
+Nothing: tests only.
 ## v80 — Session 166 — The night watch (a beat past the shop doors; a guard who follows at favour −2)
 
 The first item on the systems builder's list: the critic's *the night is free* (backlog I), whose fix Michael approved on the 27th as the critic's proposal (backlog B, *The night watch*). At 23h in Dunmore the only people outdoors were the two gate guards, pacing from a point on the road in to a spot six units off the centre, and the nearest of them was 74–115 units from every shop door against a night sight range of six. All seven shops and strongboxes could be picked in one night unseen.
@@ -5161,6 +5436,415 @@ Backlog I, the critic's seventh finding (small): the halt names the guard (*Cath
 ### Needs eyes
 Nothing new.
 
+## v80 — Session 184 — Goblins and kobolds on the people's body (H.4)
+Michael answered Session 178's question on 27 Sep: goblins A, the folklore goblin, and kobolds B, the old German mine-sprite. An answered decision is the next session, so this run built them before the Playtest s162 list. The run also merged main into the branch first: main's systems sessions (numbered 166–171 there) and this branch's 180–182 had both fixed the witness line, the theft fine and the yield's name. Main's versions were kept, as the routine's rule says, and both `intClearLine` and main's `intSightLine` stay exported, since each has a test. The duplicate numbers are left as they are; both sets of entries are kept in the order they were written.
+
+**What changed.** `FOE_DRESS` has three more kinds, and `buildFoe` builds them the way it builds the bandits. Each is a genome seeded from the kind and the place where it was met, on its own copy of the people's material, walked by `tickPeople` from the enemy's position.
+- **Goblin** and **Goblin Slinger** set a `g.goblin` flag. `personBakeQ` bakes that as a long, flattened cone for each ear, swept out and up from the side of the skull in place of the ear lobe, so the ears are part of the one skinned mesh and carry into the distant copy and the shadow pass. The skin varies by seed between two greens. The head is 1.32 of a person's, the build is slighter, the nose longer, the hair dark, shaggy or shorn, the eyes yellow, and there is no beard or hat. The goblin carries a club (the gear kit's stick); the slinger's hands are empty.
+- **Kobold** is an elder, stooped in the idle, with a long grey beard, a hood, a mattock (the smith's hammer), a head 1.25 of a person's, and a russet coat. Its genome height is capped at .86, so with the zone's .75 it stands about two-thirds of a person. Its hair is shorn under the hood, because a first render showed curly and shaggy hair poking through the hood's crown.
+
+The zone table already sized them (goblin .72, slinger .8, kobold .75), and the flight logic is unchanged: kobolds and goblins are still the cowards who run to fetch friends. The dungeon's Goblin and Kobold Thief are built by the dungeon's own `buildEnemy`, which is still the box body for its whole roster, skeletons included; they wait for the dungeon pass.
+
+### Verified (headless Chromium)
+New `tests/goblins.test.mjs`, 7 checks, all passing, no page errors. Goblin, Goblin Slinger and Kobold are skinned people on their own material, with the right shoulder as the striking arm. The goblin is green (g > r and g > b), head 1.32, no hat, no beard, club in hand; the slinger has no gear. The head's vertices reach .357 out from the centre line against a bandit's .165: the ears. The kobold is hooded, long-bearded and carries the hammer, and its root scale is .65 against a bandit's .91. Two goblins met in different places have different genomes. At 1.5 u/s a chasing goblin runs (weight 1), and standing it idles. Triangles: goblin 4.9k, slinger 4.1k, kobold 6.6k (the beard). `foes.test.mjs` still passes 11 of 11, and `crime3`, `witness` and `crime5` pass after the merge. Photograph: `docs/prototypes/goblins-ingame.png`, a bandit for scale, two goblins, a slinger running, and three kobolds, one running.
+
+### Needs eyes
+A goblin camp in the ashen lands and kobolds on the moor, in real light: whether the ears read at fighting distance; whether the club (a walking stick until the weapon kit) and the smith's hammer read as weapons. The kobold is built on the old man's stoop, and I have not judged at speed whether it runs like a sprite.
+
+## v80 — Session 185 — The greeting wave switched off (Playtest s162)
+From Michael's playtest list: townsfolk waving as you walk up looks odd in the street. He asked for the pose to stay in the kit for scripted moments and quests later, and for idle and walk only for now.
+
+`tickPeople` started a wave when you came within 2.8 units of a standing townsperson, once in 25 seconds. That trigger now depends on a switch, `PW.GREET`, which is false. Nothing else changed: `pwWave` and the crossfade are still there, and anything that sets a rig's `wavedAt` to the present time still gets the 2.2-second wave. A quest that wants someone to wave uses that. Foes never waved and still don't.
+
+### Verified (headless Chromium)
+`people.test.mjs` has a new check, and all 10 pass with no page errors. In Dunmore the test walks the player up to a standing townsperson, from 5 units out to under 1, over 120 frames: the wave's weight stays at 0. Setting `wavedAt` then gives a wave weight of 1 after 40 frames. `foes.test.mjs`'s check that a foe never waves still passes.
+
+### Needs eyes
+Walking up to someone in a real town: whether they now look too still with no acknowledgement. A head turn towards you would be the quiet alternative, if one is wanted.
+
+## v80 — Session 186 — The hem ring sits on the hem (Playtest s162)
+Michael's playtest item: the ring at the bottom of the tunic is not attached to the fabric; weld it to the hem or drop it.
+
+The cause was plain once it was photographed side-on. The tunic's skirt (and a dress's) is a lathe squashed to .76 of its width front to back (`scale.z=.76`), so the body is oval from above. The trim torus at its hem was left round. Its sides met the cloth, but in front and behind it stood about 5 cm out from the skirt (in figure units, .217 against the skirt's .165), and in a walk that read as a hoop floating around the legs. The ring is now flattened the same way, `scale.y=.76`, since the torus's y is the body's depth once it is laid flat. Its radius also takes the 4% a woman's skirt is wider, which it had not before. The belt already did this (`.74`), which is why only the hem looked wrong. The ring stays; it is the trim colour and reads as a hem once it is on the cloth. The player's body is built by the same `personBakeQ`, so this fixes it as well.
+
+A small helper came with it, `tests/lib/closeup.mjs`: a lit portrait of a row of townsfolk on a floor, for the look sessions to take before and after pictures from.
+
+### Verified (headless Chromium)
+New check in `people.test.mjs` (11 of 11 pass, no page errors). At the hem's height the mesh's depth against its width was .97–.99 before the fix: the round ring, deeper than the skirt. It is .75 after, the skirt's own proportion, for two tunics and two dresses. Run against the old `index.html`, the check fails. Pictures: `docs/prototypes/hem-before.png` and `hem-after.png`, four townsfolk walking, side-on.
+
+### Needs eyes
+A skirt in a real walk: the thighs swing through the skirt's lathe, which is rigid on the hips, so a knee can still push through the cloth at full stride. That is the skirt, not the ring, and it would want the skirt skinned to the thighs.
+
+## v80 — Session 187 — Longer legs (Playtest s162)
+Michael's playtest item: the legs are too short on the player and the townsfolk, and the torso reads long; lengthen the legs and check against a 7.5-head figure.
+
+**Measured first.** Before the change a person's hip joint was at .45 of a figure 1.225 tall: 37% of the height. A 7.5-head figure has it at about 50%. The head, chin to crown, is .27–.30, so the figure was 4.2–4.5 heads. The head is the stylised big head of the townsfolk prototypes Michael approved, and a 7.5-head figure would need it much smaller. That is a change of look, not of proportion, so I did not make it; it is noted in the backlog if he wants it. What the change does is set the legs against the figure's own height.
+
+**What changed.** One factor, `PW.LEGK = 1.4`, lengthens the thigh and shin bones and their limbs (`PW.L1`/`PW.L2`, .28 and .266). The hips rise by what that adds (`PW.DL`, .152). The dress, the dress's hem ring and the skeleton's leg bones follow it. The walk and the run are written in the leg's own terms, so they scale with it: the hip joint's height over the foot in the walk (.352) and the run (.288), the stride (.16 and .25), the swing's lift and the run's bob are each multiplied by `LEGK`. A first try that raised the hips by `DL` but kept the run's crouch the same over-reached the standing leg (1.048 of its length) and slid the planted foot 17 mm. Then `buildPerson` scales the whole figure by `PW.BODY` (.89), so a person stands as tall in the world as before. Doors, health bars, name heights and the camera see no change; the head and trunk come out 11% smaller and the legs 25% longer. The hip joint is now at 43.6–43.7% of the height, and the figure is 4.6–4.95 heads. The third-person player's rest height reads `PW.HIPS`.
+
+Longer legs take longer strides at the same speed, so steps are slower: a stroll takes 2.3 steps a second, the player's ordinary run 4.1 (it was about 5), a guard's walk 3.1.
+
+### Verified (headless Chromium)
+New check in `people.test.mjs` (12 of 12): three townsfolk have the hip joint at .436–.437 of their height, and each stands within 0.3% of the height they had before (1.182 against 1.179, for example). `gait.test.mjs` passes 7 of 7 against its old bounds: the planted foot holds to .68 mm walking and 1.07 mm running, the standing leg's worst reach is .995 of its length, the flight is 25% of the run, and the player's planted foot holds to 1.44 mm. `player`, `lod`, `foes`, `goblins` and `interiors` all pass. Pictures: `docs/prototypes/legs-before.png` and `legs-after.png` (five townsfolk front-on), and `legs-walk.png`.
+
+### Needs eyes
+The townsfolk and your own body in real play: whether 1.4 is enough or too much (one number, `PW.LEGK`, which I compared at 1.25 and 1.4 before picking 1.4); whether the smaller trunk makes arms and hands read short; the slower cadence of the run. Whether the head should also shrink towards a real 7.5-head figure is a question for Michael.
+
+## v80 — Session 188 — The creator's preview: framed, facing you, turned by hand (Playtest s162)
+Michael's playtest item: the character creator's camera crops the top of the head, starts with the character facing away, and the only way to turn it is a very slow auto-turn. He asked for head to knees, facing the camera at the start, drag or arrow keys to rotate, and the auto-turn only when idle.
+
+**What was wrong.** The preview's camera was fixed at .72 high, 2.7 back, looking at .6. That frames up to about 1.27, and a tall people (the Markmen are 1.08) in a helm or with tall hair goes past it. The figure was set to .85 of a half-turn every time the look was rebuilt, which on every click of a style or colour was nearly its back to you, and it then turned .006 a frame for ever.
+
+**What changed.** `ccLookFrame` frames the figure from its own bounding box after every rebuild: from the crown to 17% of the height (just under the knee, since the knee is at 24.5% after Session 187's legs), with 8% to spare, at whatever distance the 28° lens needs. A tall people is framed the same as a short one. The turn is one number, `CCL.yaw`, kept across rebuilds and set to 0, facing you, when the creator opens. Dragging on the preview turns it (.012 rad a pixel, the cursor a grab hand, and pointer capture so a drag that leaves the canvas still turns it). Left and Right turn it by .2 unless you are typing in the name field. The auto-turn runs only when nothing has touched the preview for four seconds, at .3 rad a second of real time, not per frame.
+
+### Verified (headless Chromium)
+New `tests/creator.test.mjs`, 7 checks, all passing, no page errors. On opening, the face points at the camera (a dot of .99) with the crown at .93 of the frame's half-height and the knee at −.76, both in the frame. It has not turned after 1.5 s. A 100-pixel drag turns it 1.2 rad. Two presses of Left take off exactly .4. With the last touch five seconds ago it turns .34–.4 rad in 1.5 s. The tallest people (Markman, 1.08) is framed the same and faces you. Pictures: `docs/prototypes/creator-before.png` (the back of the head, the figure small in the frame) and `creator-after.png`.
+
+### Needs eyes
+The drag's speed with a real mouse and on a touch screen; whether head to knees is too tight to judge boots (the boots start just below the frame). A zoom-out on the scroll wheel would be the natural next step if so.
+
+## v80 — Session 189 — The dungeon's shell: stone courses, bevels, one mesh a floor (Playtest s162, item 7, slice 1)
+Michael's playtest item: dungeon walls, floors and ceilings read as a '90s screensaver, all flat textures and hard right angles. He asked for rounded or bevelled edges, stone courses, rubble and props, uneven floors, ceiling beams or vaults, and damp and moss by biome, and said it is the shape kit's owed *rounded boxes* applied to the dungeon kit first. This is too much for one session, so this is the first slice: the shell that the rest will sit on.
+
+**What was there.** Every wall cell was its own `BoxGeometry` (1 × 3.2 × 1) and every open cell had its own floor plane and ceiling plane. A 30 × 30 ruins dungeon was 3,486 meshes and 2,626 draw calls. The walls had a flat texture of the theme colour with dark specks, and the ceiling was flat near-black.
+
+**What changed.** `buildDunShell(map, baseY, wallCol, floorCol, {seed, skip})` builds three meshes a floor: walls, floor and ceiling. `renderFloor` uses it for every floor except a fort's first floor, which already draws its walls as continuous segments with its own coursed texture.
+- **Walls** are faced only where an open cell meets a wall (310 faces on the test dungeon's first floor; its two floors had 1,068 wall boxes between them before). Each face is a 4 × 8 grid. Every vertex is moved by a smooth noise field of its world position (±.07, with a finer ±.02), so two faces meeting at an edge move together and never open a crack. At a cell corner with one wall around it (an outside corner) the vertex is pulled back into the wall by .16: a bevel. At a corner with three walls around it (an inside corner) it is pushed out by .1: a fill. Normals are averaged over every vertex at the same place, so the bevels shade round rather than faceted. The texture is new, `dunStoneTex`: dressed stone in courses of uneven height, running bond, per-block tint, a lit top edge and a shadowed foot on each stone, chipped arrises. It is laid in world units (1.6 a repeat), so courses run on across cells. The vertex colours darken the foot of the wall to about half, the top a little, and inside corners to .72.
+- **The floor** is one grid over every cell except stairs and treasure cells, which keep their own planes. It is flagstones, darkened by how many walls meet at each vertex, and a little uneven (±3 cm) between each cell's rims, so it still meets the stair and treasure planes. It runs under the walls as well, so no warp can show a gap.
+- **The ceiling** is the same grid facing down, ±8 cm uneven, in slabs of the wall colour, darkened at the walls.
+
+A ruins dungeon is now 1,120 meshes and 804 draw calls, and on the headless machine's software GL a render takes 24 ms against 53 ms before. It draws 81k triangles against 24k, since the walls are subdivided and the floor runs under them. Collision still reads the grid (`dMap`). The warp reaches at most .2 from a wall's line, and less towards the room than the player's radius.
+
+A helper came with it, `tests/lib/dungeonshot.mjs`. It enters a dungeon of a given theme and seed and photographs its longest views with a lantern at the eye, so a before and an after are lit the same.
+
+### Verified (headless Chromium)
+New `tests/dungeon.test.mjs`, 7 checks, all passing, no page errors. In the ruins dungeon (seed 11, two floors) there are two sets of shells and not one 1 × 3.2 × 1 wall box. The walls have one face for each of the 310 open sides, and every sampled vertex's normal looks into an open cell (100%). No wall vertex strays more than .196 from its cell boundary. A ray straight down finds the floor over all 346 ordinary open cells. The foot of the wall is .49 bright against .96 at head height. A goblin dungeon builds its shell, and a `fort_tee` builds a shell on its upper floor only. `locks.test.mjs`, which enters a real dungeon, still passes. Pictures: `docs/prototypes/dungeon-before.png` and `dungeon-after.png` (the same corridor), `dungeon-room-before.png` and `dungeon-room.png` (a goblin-theme room).
+
+### Needs eyes
+A real dungeon by torchlight: whether the courses are too regular or too large (1.6 a repeat, eight courses to the wall), whether the bevels read at the corners, and whether the foot's shading is too dark in the darker themes (goblin and deep). Frame time on Michael's machine: far fewer draw calls but more triangles. Still owed, a slice each: ceiling beams or vaults; rubble and props; damp and moss by theme; the fort's first floor; the dungeon's box foes.
+
+## v80 — Session 190 — Vaults, beams, damp (Playtest s162, item 7, slice 2)
+This is the second slice of Michael's dungeon item. He asked for ceiling beams or vaults, and for damp and moss by biome. Both go into the shell that Session 189 built.
+
+**The vault.** Above .7 of its height, each wall now leans out over the room on a curve, .34 at the top (`DUN_SHELL.COVE`), and the ceiling closes over what is left. A one-cell corridor keeps .3 of flat crown and reads as a barrel vault; a room gets coved edges to a flat ceiling. The lean has to agree where faces meet at a corner, so its direction comes from the position alone: the sum of the directions to the open cells that touch that point. On a straight wall that is the wall's normal. At an outside corner it points away diagonally, and at an inside corner towards the one open cell, so the corners lean together with no crack. The cove starts at 2.24, above the player's eye (1.6), the wall torches and the doors' heads (2.8, where the lean is still only .08).
+
+**The beams.** Every room at least three cells across gets timbers across its shorter span every two cells, .16 under the ceiling. They are a .18 × .2 section in dark oak with a per-vertex variation in tone, one merged mesh a floor. The test dungeon has 34 on its first floor and 30 on its second.
+
+**Damp.** `DUN_DAMP` gives each theme a wet colour: moss green for goblin and ruins, a cold blue for the deep, grey-violet for the undead, a pale lichen for the haunted, and soot for the elemental. Where a noise field of the position says the wall is wet, the foot of the wall takes that tint, fading out by 1.2 up. The floor takes it along the edges where it meets the wall. On a ruins dungeon the foot of the wall comes out 10% greener than red on average, in patches.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has two new checks, and 9 of 9 pass with no page errors. At the top of the wall the vertices stand .216 on average off the wall's line into the room, while below the cove no vertex strays more than .196. The ruins walls' foot has green over red at 1.10. There are beams on both floors (34 and 30). Every Session 189 check still passes: 310 faces for 310 sides, all facing the open, and the floor under all 346 cells. Cost for the whole dungeon: 1,099 meshes, 837 draw calls, 83k triangles. Pictures: `docs/prototypes/dungeon-vault.png` (a ruins corridor), `dungeon-room-beams.png` (a goblin room).
+
+### Needs eyes
+Whether the cove is too strong in a corridor (the crown is narrow) and too weak in a big room. Whether the beams should rest on corbels or posts; they are plain timbers into the wall. The damp is subtle under the foot's shading, and may want more contrast in real torchlight. Still owed: rubble and props, the fort's first floor, and the dungeon's box foes.
+
+## v80 — Session 191 — Rubble and props, and the kit's rounded box (Playtest s162, item 7, slice 3)
+The third slice of the dungeon item: Michael's *rubble and props*. The shape kit's owed rounded box comes with it, since this is the first thing to need it.
+
+**The rounded box.** `SK.rbox(w, h, d, r, n)` subdivides a box and pulls every vertex onto a rounded shell: clamp the point to the box shrunk by `r`, then push it out `r` along the direction it was clamped. The result has flat faces, quarter-round edges and spherical corners. `SK.smooth(g)` averages normals over coincident vertices, so the six faces shade as one surface. It is general: crates, stone and, later, the buildings' pass can all use it.
+
+**The props.** A floor's props are now one mesh (`dunMerge`: parts of geometry, colour and matrix, with the colour baked into the vertices). Before, each bone, stone, plank and chain link was its own mesh with its own material; a hanging chain was 16 to 32 meshes.
+- **Rubble**: along every side where open ground meets a wall there is a chance of a heap (14% where the theme's clutter is rubble, 6% elsewhere). A heap is 4 to 9 rounded stones of .07–.21, tumbled and half-sunk, in the wall's colour lightened. A quarter of the heaps also have a fallen dressed block from the courses.
+- **The theme's clutter** is on the kit. Bones are tapered limbs lying flat. The skull is a ball with dark sockets and a jaw. The junk is rounded planks and an earthenware pot (a lathe), sometimes knocked over. Chains keep their hang from the ceiling but are links of the one mesh. Rubble-theme clutter is a small heap.
+- The crates' bodies are the rounded box.
+
+The count dropped again: the test dungeon is 884–895 meshes and 660–728 draw calls (the clutter is rolled at random each visit), against 1,099 and 837 after Session 190 and 3,486 and 2,626 before Session 189. Triangles are 125–130k.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has two new checks, and 11 of 11 pass with no page errors. There is one props mesh per floor. 74% of its low vertices lie within .35 of a wall, which is the rubble along the walls. A unit `SK.rbox` with radius .1 reaches .793 at its corners, the rounded corner's distance (√3 × .4 + .1), not the sharp .866. Everything from Sessions 189 and 190 still passes. `locks.test.mjs` (a real dungeon's chests) passes. Pictures: `docs/prototypes/dungeon-rubble.png` (heaps at the foot of a ruins room's walls) and `dungeon-crates.png` (rounded crates in a corridor).
+
+### Needs eyes
+Whether the heaps are too pale against the walls: they are lit from the same lantern and are the wall's colour times 2.6, meant to read as broken stone lighter than the weathered face. Whether 14% of wall sides is too many in rubble themes. Still owed, a slice each: the fort's first floor, the dungeon's box foes, and barrels, chests and doors on the kit.
+
+## v80 — Session 192 — Trees: more species, each its own girth (Playtest s162)
+Michael's playtest item: trees want variety, not density. He listed trunk girth and colour, foliage colour, and more species per biome, and said the starting area is very dense and may be costing frames, so measure before thinning.
+
+**Measured first.** At the start (13100, 25450, broadleaf country) the loaded chunks hold about 870 broadleafs and 110 conifers. A broadleaf is 388 triangles, and all its instances come to 336k. In the start view the trees were 175k of 517k triangles drawn (34%) and 44 of 375 draw calls. On the headless machine's software GL, the median of four alternating renders was 435 ms with the trees against 356 without, so trees are about a fifth of the frame. That is real but not dominant, and thinning would cost the look Michael asked to keep, so nothing was thinned. The numbers are here for when frame time on his own machine is measured. The timings vary a lot from run to run on this machine (the scene loads differently each time), so they are indications, not a benchmark.
+
+**What changed.**
+- **Four new species**, each one merged, vertex-coloured prototype like the old ones: a birch (a slim white trunk with dark lenticel marks, light airy leaves), an oak (a thick short trunk, three heavy limbs, a wide low crown), a spruce (a narrow stack of five dark blue-green tiers), and a Scots pine (a tall bare trunk going red-brown above a dark foot, flat clouds of needles at the top). Each costs no more than the broadleaf: 384, 424, 138 and 328 triangles.
+- **Each biome's mix** (`TREE_MIX`). The main tree stays the majority. Conifer forest adds spruce 20%, broadleaf 10%, pine 10% and birch 6%. Broadleaf country adds oak 25%, birch 14% and conifer 8%. Autumn adds birch, oak and conifer. The tundra's snowpines take spruce and a few dead trees. The fen's willows take birch and dead trees. Above the tree line spruce stays spruce.
+- **Girth**: each tree rolls its own (`g`, .84–1.18). A wider tree is shorter and a slimmer one taller, so width over height runs from .76 to 1.35 among neighbours, and the collision radius follows the girth.
+- **Foliage colour**: the per-tree tint's hue, saturation and lightness spread is half as wide again. Birches and oaks have their own greens, and in autumn land they turn gold and russet with the rest.
+
+Birches and oaks add up to two instanced meshes a chunk in broadleaf country, which is about 40 more draw calls in view, and the same again in the shadow pass.
+
+### Verified (headless Chromium)
+New `tests/trees.test.mjs`, 6 checks, all passing, no page errors. The four new prototypes are 384, 424, 138 and 328 triangles, against the broadleaf's 388. The birch's bark at the foot is .84 bright. The pine's upper trunk has red over blue at 2.98. Every biome's mix leaves the main tree at least 20%. Near the start there are 262 oaks and 130 birches among 495 broadleafs. Width over height runs .76–1.35. `plants.test.mjs` passes. Pictures: `docs/prototypes/trees-species.png` (a line-up by day: conifer, spruce, pine, birch, broadleaf, oak, willow, snowpine, dead) and `trees-start.png` (the start at dusk).
+
+### Needs eyes
+The start and a conifer forest in real play: whether the mix reads as a wood of several kinds or as clutter; the birch's size (smaller than the rest by design); and frame time on Michael's machine with the extra draw calls.
+
+## v80 — Session 193 — Town roads: the obvious overlaps (Playtest s162)
+Michael's playtest item: overlapping path patterns in towns, and roads running into buildings. The polish belongs to the roads rewrite (backlog D), but the builder may fix the obvious overlaps in the stamps. This session is that.
+
+**Measured first.** A new helper, `tests/lib/townroads.mjs`, builds thirty settlements (every kind with a pad: villages, towns, cities, ports, a garrison) and samples their drawn paths every half unit across the ribbon, along with every building's footprint. Before the fixes:
+- **Footpaths through buildings**: 7–18% of a town's footpath lay inside another building. A back-row house's path runs straight out of its door "to the street", and the street is on the far side of the house in front. Villages (one row) had none.
+- **Streets on the roads**: the street grid is laid square to the first road out of town, whatever the other roads do. So another road crossing at an angle had grid streets running beside it and across it, and the grid's central street lay along the first road itself: up to 6% of a town's street ribbon on a road and as much again within five units of one. That is the doubled, weaving look.
+- **Buildings on roads**: 3 of 1,062 footprints, and all three were town-wall segments. A wall segment is about 20 units long, and a gate was opened only if the road came within 9 of the segment's middle, so a road crossing near a segment's end went through the wall.
+
+**What changed** (in `genSettlement`, none of it touching the town's dice, so every town keeps its layout, names and people):
+- Footpaths are collected as the buildings go up and routed once every building stands. When the straight line from the door to its street is clear, it stays. Otherwise the path steps 1.1 out of the door, along the gap beside its own house (1.4, 3 or 5 past its half-width, on either side) and straight on to the street. With no clear way it is left out rather than drawn through a house.
+- The grid's streets are walked in 1.5-unit steps and broken wherever a road runs within 3.5 of the street's edge. The road is the street there. The perimeter lane breaks the same way where a road crosses it.
+- The wall ring looks for a road along the whole of each segment (nine points), and opens its gate at the nearest one.
+- A lot enlarged after placement (keep, guild hall, church) is checked again against the roads, and dropped if a corner reaches one.
+
+### Verified (headless Chromium)
+New `tests/townroads.test.mjs`, 6 checks, all passing, no page errors. Across 30 settlements no footpath sample lies in a building (worst town before: 18.4%), no building or wall stands on a road (3 before), streets on a road are at most 2% in any town (6.3% before in Dunmore, 1.4% now), and streets inside buildings stay under 1.5% (worst .9%). `watch`, `crime1`, `crime2`, `wayfinding` and `theft`, which all walk Dunmore's layout, pass. Pictures: `docs/prototypes/townroads-before.png` and `townroads-after.png`, Dunmore from above at noon.
+
+### Needs eyes
+Dunmore from the ground: whether the gaps where streets meet a road read as junctions or as streets that stop short. Whether the dog-leg footpaths look deliberate. The rest (streets that follow the roads rather than a grid, junction shapes) is the roads rewrite's.
+
+## v80 — Session 194 — Houses in detail, every nation, with a distant copy (H.5, Michael's A)
+Michael answered Session 179's question: **A**, all of it, all nations, with a distant copy. Each culture should take in variations from its neighbours: anything Nordic can join the Mark's designs, anything Mediterranean Aurenne's, anything Irish, Celtic or Western European the Irish-inspired nation's. He asked for three faults to be fixed: the thatch read as a board, the lean-to was crude, and the Irish eaves covered the window heads.
+
+**Keeping the towns.** A town is rolled on one sequence of dice: lots, shop types, names, people. The old `buildingGeo` took two or three rolls a house. If the detailed house took its dozens of rolls from the same dice, every town's people would change. So `buildingGeo` now calls the old builder first, renamed `buildingGeoLo`, which takes exactly its old rolls and reports what it picked (wall colour, roof colour, storeys). `buildingGeoHi` then rolls its own dice, seeded from those picks and the house's size. Every town keeps its layout, names and people. The plain house is kept as the detailed house's distant copy.
+
+**The house** (`buildingGeoHi`, ported from `docs/prototypes/houses/houses.src.js`):
+- **Footing and walls**: a footing ringed with rough stones. Braced half-timbering where the style frames, and a jetty on joist ends on a framed two-storey house.
+- **Windows and door**: recessed windows with the glass set back, a sill, a lintel, a mullion and transom, and shutters in the nation's paint. A framed plank door set back, with hinges, a latch and a step.
+- **Roof**: a roof with thickness on rafter ends, bargeboards, and courses of slate, shingle or half-round tile. The Mark's gables have crossed horns.
+- **Chimney and yard**: a coursed chimney with a cap. By its own dice, a lean-to, a woodpile and a water butt.
+
+**The three faults.**
+- The thatch is now a rounded, lumpy slab (the kit's new `SK.rbox`, bumped) with a rolled lip along each eave and a thick ridge roll.
+- The lean-to has two posts and a plate, a sloping roof with thickness, plank walls at the back, and a woodpile under it.
+- The windows are placed from the roof's numbers: the top of a ground-floor window is kept .22 under the lowest point of the eaves, thatch's thickness included.
+
+**Variants** (`HOUSE_VARIANTS`, one picked per house by its own dice):
+- Irish: whitewash and thatch, a red door, grey rubble stone under slate (the Welsh and upland Celtic cottage), and a framed slate house (the Western European one).
+- The Mark: longhouses in shingle or turf (a green, lumpy, rolled roof: the Norse turf house), in two timber tones.
+- Aurenne: tile over cream, ochre, rose or white plaster, with blue, green or red shutters.
+- The rest: French and Bavarian framed houses with their shutter colours, the Anglo house in shingle or rubble, the city's stone blocks in tile, the garrison in slate.
+
+**The distant copy.** `addMesh` hangs each detailed house's plain twin beside it. `bakeMeshes` bakes them into separate 60-unit clusters (the key carries `hi` or `lo`), each detailed cluster paired with its twin by key. `houseLod`, called from the world's tick, shows the detailed cluster when the camera is within 70 of it (measured to the cluster's centre less half its radius) and the plain one past 80, keeping whichever it had in between. Burnt and abandoned shells stay plain. The garrison POI's two houses and the roadside inn are built directly and have no twin (owed).
+
+Cost: a detailed house is 1.7–7.4k triangles (the tiled Aurenne and city houses are the heaviest) against 116–212 plain. Dunmore's detailed clusters are 144k triangles, all showing from the square; its plain copies are 7.3k.
+
+### Verified (headless Chromium)
+New `tests/houses.test.mjs`, 6 checks, all passing, no page errors.
+- Every style (the eight named ones and the generated culture styles) builds a detailed house of 1.7k–7.4k triangles over 48 sizes and seeds, with a plain copy under 400.
+- No one-storey house of any style has a window top above its eaves.
+- Forty Irish houses include both thatch and slate; forty of the Mark's include turf and shingle.
+- Dunmore has 9 detailed clusters, each paired with its plain twin. From the square all 9 detailed ones show; from 400 units away none do, and all 9 plain ones do.
+
+`crime1`, `watch`, `shophours` and `interiors`, which walk Dunmore's houses and doors, pass: the layout is unchanged. Pictures: `docs/prototypes/houses-ingame.png` (one of each style), `houses-ingame-irish.png`, `houses-ingame-mark.png`, `houses-ingame-aurenne.png`, and `houses-dunmore.png` (a Dunmore street).
+
+### Needs eyes
+A town in real play: frame time with the detailed clusters near (Dunmore's square shows all nine); whether 70 units is far enough that the swap is unseen (the plain house has no eaves or shutters, so the swap is visible if you watch for it); whether the thatch is still too yellow in sunlight. Owed: churches, keeps and the POIs' buildings on the same builder; a distant copy for the garrison POI's houses and the roadside inn.
+
+## v80 — Session 195 — Churches and keeps in detail (H.5, Michael's A)
+This session carries Michael's decision A (buildings, houses, structures and POIs, all with a distant copy) from the houses to the two civic buildings every town has: the church and the lord's keep. Neither old builder took the town's dice, so the detailed ones roll their own, and towns are unchanged.
+
+**The church** (`churchGeoHi`):
+- Walls: a stepped plinth; ashlar walls with a string course and a cornice; alternating quoins up every corner.
+- Sides: buttresses stepped back twice with weathered offsets, and lancet windows with sills between them.
+- Roof: two slate slabs with thickness and courses, and a ridge.
+- West front: a rose window with its tracery, a gabled porch with an arched door, and a cross on the gable.
+- Tower: at the east end, quoined, with a belfry opening on each face, a cornice, a slated octagonal spire and a cross.
+- Yard: a few gravestones, by its own dice.
+
+**The keep** (`keepGeoHi`):
+- Walls: a battered foot where the walls splay out, and coursed walls.
+- Parapet: a machicolated parapet all round (corbels under an overhanging walk, merlons on every side).
+- Towers: four round corner towers, each with a battered foot, three arrow slits, a corbelled ring and a conical cap with a finial.
+- Gate and roof: arrow slits in the curtain, an arched gate in a stone surround with a portcullis, and a flag on the roof.
+
+Both are about 2.9k triangles (2,910 and 2,824). Each keeps the old one (92 and 368) as its distant copy, through the same `addMesh` and `houseLod` path as the houses. A first render showed a stray half-disc over the church door as a dark rod across it, and it was removed.
+
+### Verified (headless Chromium)
+`houses.test.mjs` has a new check, and all 7 pass with no page errors: the church is 2,910 triangles with a 92-triangle copy, the keep 2,824 with a 368-triangle copy. Picture: `docs/prototypes/civic-ingame.png`, the church and keep in front with their old selves behind.
+
+### Needs eyes
+A town with a keep in real play: the keep's size against its lot (the towers overhang the footprint, as the old ones did); whether the church's tower should stand at the west end instead. Still owed: the POIs' buildings, and a distant copy for the garrison POI's houses and the roadside inn.
+
+## v80 — Session 196 — The dungeon's skeletons, goblins and kobolds on the people's body (H.4, item 7)
+Sessions 171–184 moved the open world's human and humanoid foes onto the townsfolk's body. The dungeon kept its own builder, `buildEnemy`, where every humanoid was still the box of rigid blocks. That was the last of the '90s look inside a dungeon the player meets face to face, so it follows the shell slices.
+
+**What changed.** `buildEnemy` now takes the enemy's name. A humanoid whose name has a `FOE_DRESS` entry and carries no shield is built by `buildFoe`, exactly as in the open world: the Skeleton on the people's bones, the Goblin (Michael's folklore goblin), and the Kobold Thief, which gets the same hooded mine-sprite as the open world's Kobold under a new `FOE_DRESS` row. Its right shoulder is the striking arm (`limbs.armR`), its own material takes the telegraph's flash, and a small light glows in the eyes' colour. Once the enemy exists its body is linked to it (`rig.e`), so `tickPeople` walks it by the enemy's own dungeon position, with the same walk, run, idle and lie-still-when-dead as outside. The health bar sits over a person's head (1.3 × scale). The dungeon's walk code only touches `legL`/`legR` when they exist, so it leaves the people alone. The Shieldbearer keeps its box, since its shield hangs on the box's arm pivot; so do the slimes, brutes, elementals, gargoyles and the mimic.
+
+### Verified (headless Chromium)
+New `tests/dungeonfoes.test.mjs`, 4 checks, all passing, no page errors. Across four dungeons (goblin seeds 5 and 12, undead seed 7, ruins seed 11), all 46 goblins, 12 kobold thieves and 28 skeletons are people, each in the rig set and linked to its own enemy. Slimes stay slimes. A skeleton moved 1.2 u/s for 120 ticks walks (walk weight 1). `foes`, `goblins` and `dungeon` still pass. Picture: `docs/prototypes/dungeon-foes.png`, a skeleton with a spear in an undead dungeon.
+
+### Needs eyes
+A goblin dungeon in real play: the dungeon's own attack timing on the person's arm; bodies left where they fall; frame time with twenty-odd people on a floor (each has the distant copy past 17 units).
+
+## v80 — Session 197 — The fort's first floor on the shell (item 7)
+The last owed slice of the dungeon's walls. A fort's first floor (the `fort_*` interiors) drew its walls as long flat planes (`renderFortWalls`), each with a cloned material and a texture repeated along its length. It was the one place in a dungeon still made of flat walls with sharp corners.
+
+**What changed.** `renderFloor` builds the shell on every floor now, and a fort's first floor gets three changes. The walls are dressed flatter: the warp is .025, not .07, since a fort's walls are built, not hewn. There is no cove, because the fort's decoration pass hangs banners and sconces high on its walls. And they are in the fort's cool grey, 0x6c6c72, through `dunStoneTex`'s courses. The fort keeps its own flagged floors, treasure floors and ceilings. So that the warp can never open a slit at the wall's foot, the shell lays floor and ceiling only under the wall cells (its `skip` inverted). `buildDunShell` gained two options for this, `amp` and `cove`. The old planar pass is kept in the code but no longer called. The fort's rooms get the shell's beams like any other.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` passes 11 of 11, no page errors. A `fort_tee` now has six shell meshes (walls, floor strips and ceiling strips on its first floor, the full shell on its upper floor). Pictures: `docs/prototypes/fort-before.png` and `fort-after.png`, the same hall from the same place, with the banner and the sconces where they were.
+
+### Needs eyes
+A fort in real play: whether the grey courses sit well with the fort's pillars and carpets, and whether the banners and sconces still sit on the wall face everywhere (the warp is small, but they were placed against a perfectly flat plane).
+
+## v80 — Session 198 — The mimic, and every chest on the kit (H.4)
+Michael's answer on the creatures (27 Sep) named the mimic among the families to follow the wolves onto the shape kit. A mimic is a chest until it wakes, and it shares its body with every real chest (`buildChestShell`), so the chest had to come too, or the disguise would give it away.
+
+**The chest.**
+- The body is the kit's rounded box, with plank grooves, iron bands, iron corner caps top and bottom, and a lock plate with a keyhole.
+- The lid is a half barrel with end caps and banded iron. It hangs on a pivot at the back top edge, so opening it (`lid.rotation.x = -π/3`, as the loot code always did) turns it on its hinge instead of spinning it about its middle.
+- Body and lid are each one merged mesh (`dunMerge`, which now takes a tag) on their own material, so the telegraph's flash still lights only this chest.
+
+The treasure chests, the lair hoard, the dungeon chests and the town strongboxes all use it.
+
+**The mimic.** `buildMimicMouth` hangs a mouth on the same chest:
+- nine teeth along the body's rim and three down each side;
+- nine along the lid's underside;
+- a tongue;
+- two glowing eyes under the lid.
+
+All of it is hidden until `revealMimic`, which now shows both rows and the eyes. Awake, `tickMimicJaws` (in the main loop beside `tickPeople`) keeps the lid gaping and working. While the mimic winds up to bite, the lid opens wide in step with the telegraph. Dead, the lid sags nearly shut.
+
+**A test made robust.** `theft.test.mjs` (Session 168's) failed on this branch and passed on main. After the first trip to the cells, it drew a guard again at once and expected the yield to be offered. The yield is re-armed only by a crime tick with no guard drawn, which the game's own loop gives on its next frame. With Session 194's detailed houses, Dunmore's frames on software GL are slower, and that frame had not come within the test's 300 ms pause. The test now gives that one tick itself. The game is unchanged.
+
+### Verified (headless Chromium)
+New `tests/mimic.test.mjs`, 4 checks, all passing, no page errors (a level-8 character, so mimics spawn). Opened, a chest's lid front rises .26. A mimic has exactly one chest body and no teeth or eyes showing. Woken, both rows and the eyes show, the jaw gapes to −.45, and winding up to bite opens it to −1.08. `locks`, `lockpicks`, `crime1`, `theft` and `dungeon` pass. Picture: `docs/prototypes/mimic-ingame.png`: a chest, a woken mimic and an open chest in an undead dungeon.
+
+### Needs eyes
+A mimic in real play: whether the bite reads in time to block. The chests at their real sizes: the strongbox at .6 scale and a home's chest at .45.
+
+## v80 — Session 199 — The Shieldbearer on the people's body (H.4)
+Session 196 left the dungeon's Shieldbearer on the box, because its shield hung on the box's arm pivot. The open world's Bandit Captain solved the same problem in Session 175: the shield goes on the person's left shoulder bone, and `tickPeople` holds the guard across the body while `shieldUp` is true. So the Shieldbearer now does the same.
+
+**What changed.** `FOE_DRESS` has a Shieldbearer (a helm, a steel-blue coat, a club), and `buildEnemy` no longer excludes shield-carriers from the people's body. For a person, `limbs.armL` is the left shoulder bone. `attachShieldProp` gets scale 1, since the bone is already inside the scaled figure. The raised guard's sideways turn is −.5 (a person's arm swings in the other sense from the box's). The rules around the shield are untouched: the frontal reduction, the power attack breaking the guard (`dropShieldGuard`) and the recovery (`reraiseGuard`) all read `e.shieldUp` and `limbs.shieldArm`, as before.
+
+The same session measured the frame cost of Session 194's detailed houses in Dunmore's square on the headless machine. With the detailed clusters showing, a render takes 13.5 ms (848k triangles, 771 calls); with their plain copies it takes 14.1 ms (755k, 771). That is the same within the noise, so the 70/80-unit swap stays as it is.
+
+### Verified (headless Chromium)
+`dungeonfoes.test.mjs` has a new check (4 of 4, no page errors). In a goblin dungeon at level 5 the Shieldbearer is a person. Its shield hangs from the left shoulder bone, which a tick of `tickPeople` holds at −1.15 with the guard up.
+
+### Needs eyes
+A Shieldbearer fight in a real dungeon: the shield's size on a person (it was sized for the box's arm), and the guard dropping on a power attack and coming back up.
+
+## v80 — Session 200 — Barrels on the kit (item 7's props)
+The dungeon's barrels were three straight cylinders and two thin bands, the last of the dungeon's loot furniture still a stack of primitives. `kitBarrel(s, woodCol)` builds one on the kit: bellied staves (a lathe whose radius swells 14% at the middle), four iron hoops that follow the belly, and a sunk head. It is one merged mesh, plus a separate lid disc, so looting can still pop the lid as it always has (`top`). The dungeon's `buildBarrel` uses it at scale 1. The towns' loot barrels use it at 1.75, and their crates are now the kit's rounded box. A first render had dark stave joints standing off the belly (straight lines on a curved barrel), and they were dropped.
+
+A barrel is 912 triangles against 160 before (four ten-sided cylinders). A dungeon has a few dozen at most (22 in the test dungeon).
+
+This session also has the result of the full suite started during Session 195: 33 of 33 suites passed on the build as it stood while they ran.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has a new check, and all 12 pass. All 8 barrels in the fort are the kit's barrel, each with its own lid in the same group. `houses` and `crime1` (which build Dunmore, with its loot barrels and crates) pass. Picture: `docs/prototypes/barrels-ingame.png`.
+
+### Needs eyes
+Barrels by torchlight: the hoops' darkness, and whether the belly reads.
+
+## v80 — Session 201 — Trolls, golems, gargoyles and the Faolchú: a prototype and a question (H.4, waiting on Michael)
+With the people-shaped foes all on the new bodies, the open world's and the dungeon's other families are the ones still on boxes: the cave troll, the golem, the gargoyle, the slimes and elementals, a few regional creatures, and the Faolchú. Michael approved the wolves' style for "the other families (spiders, undead, dragon, mimic, bandits)". These are not on that list, and the canon gives only the Faolchú a look, so this is a prototype and a DECISION. `index.html` is unchanged in this session (the build tag stays at s200).
+
+**The prototype** (`docs/prototypes/creatures2/shoot.mjs`) boots the game and builds each one from the game's own kits, with the parts they lack hung on the bones as plain meshes, as Session 178's goblins were.
+- **Cave troll**: the people's body grown heavy (build 1.75, one and a half times a person's height) and stooped, in grey-green hide, with tusks and a club.
+- **Golem**: the people's bones with the flesh hidden, carrying dressed stone blocks (the kit's rounded box), with a blue rune-light. The chest rune was a cross in the first render, and I changed it to an X so it would not read as the Church's sign.
+- **Gargoyle A**: a crouched, winged stone figure on the people's body.
+- **Gargoyle B**: a stone beast on the dragon's bones. The dragon's red vertex colours are desaturated to grey in a copy of its geometry.
+- **The Faolchú**, as the canon describes it: the Dire Wolf hunched, with two pairs of clawed arms from a red-glowing seam down the spine and orange sigil marks along its flanks.
+
+Gargoyle A's crouch first floated above the floor. Its hips were lowered by what the bent legs lose, and it still reads as a grey doll, which is why B is offered and recommended.
+
+### Verified (headless Chromium)
+`node docs/prototypes/creatures2/shoot.mjs` renders the five pictures (`docs/prototypes/creatures2-troll.png`, `-golem.png`, `-gargoyle.png`, `-gargB.png`, `-faol.png`) with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all as shown with gargoyle B (recommended), with gargoyle A, the three without the gargoyle, or not yet.
+
+## v80 — Session 202 — Distant copies for the fort compound's barracks and the roadside inn (H.5)
+Session 194 left two buildings outside the distant-copy scheme, because they are built directly and not through a settlement's `addMesh`: the two barracks in a fort compound (`buildFortCompound`) and the coach line's roadside inn (`buildCoachLine`). Both got the detailed house and kept it at every distance.
+
+**What changed.** A fort compound is baked like a settlement (`bakeSettlement`), so its barracks now hang their plain twins beside them, tagged the way `addMesh` tags houses. The bake pairs them by cluster, and `houseLod` swaps them. The coach line's group is never baked, so the inn is a `THREE.LOD` with two levels, the detailed inn from 0 and the plain one from 80 (`HOUSE_LOD.far`). three.js switches LOD levels itself from the camera that draws the frame.
+
+### Verified (headless Chromium)
+`houses.test.mjs` has a new check, and all 8 pass with no page errors. The test funds a coach route out of Dunmore (`worldState.coaches`) and ticks the world, and the inn that appears is a LOD of two levels with the switch at 80. No fort compound was loaded within the test's walk, so its half of the check found nothing to check. It runs the same pairing code as the towns, which the Dunmore check covers.
+
+### Needs eyes
+A coach station on the road: the inn's swap at 80 units.
+
+## v80 — Session 203 — The town's furniture and the POIs' pieces in detail (H.5, Michael's A)
+Michael's decision A covered "buildings, houses, structures and POIs". After the houses, churches and keeps, the remaining pieces built from boxes were the ones a town and the POIs scatter about: the well in the square, the market stalls, a camp's tents, a village's ruins and its standing stones.
+
+**Keeping the dice.** Four of these took the town's dice (`r`) to choose sizes, colours and places. As with the houses (Session 194), each old builder runs first, renamed `…GeoLo`. It takes exactly its old rolls and now reports what it picked: a ruin's walls (size, colour, place, turn), a stone's size and lean, a stall's awning and goods colours, a tent's canvas. The detailed builder follows those picks and rolls anything else on its own dice (`furnRng`). Dunmore's shops keep their names.
+
+**The pieces.**
+- **The well**: three courses of rounded stones in a ring with a coping, dark water, two posts, a windlass drum with its crank, a rope and bucket, and a small pitched roof on a ridge beam.
+- **The market stall**: a canvas awning striped in its cloth colour and white, with a scalloped valance, pitched to the front. A planked counter, and on it the stall's three goods as fruit, a jar or a basket of bread, one of the three by the stall's dice.
+- **The tent**: a bell tent (a lathe with a skirt), a pole with a finial, six guy ropes to pegs, and a door flap.
+- **Ruins**: each wall the plain ruin had, rebuilt as courses of rounded rubble stones where it stood. The top course is gapped and the upper ends crumble away. Fallen stones lie about, with moss at the foot.
+- **Standing stones**: a weathered, lumpy slab at the old one's size and lean, with lichen patches and a turf skirt.
+
+Each hangs its old self as the distant copy through `addMesh`, as the houses do. Triangles: well 2,158 (plain 128), stall 1,220 (108), tent 540 (35), ruin 3,504 (24), stone 702 (12).
+
+### Verified (headless Chromium)
+New `tests/furniture.test.mjs`, 4 checks, all passing, no page errors. All five build in detail, each with a plain copy of under half its triangles. A ruin's detailed walls span the whole width of its plain ones (overlap 1.0). Dunmore's shops are the same (Clodagh's Goods, Lorcan's Forge, Niamh's Armoury among them). `houses`, `crime1` and `wayfinding` pass. Picture: `docs/prototypes/furniture-ingame.png`.
+
+### Needs eyes
+A village with ruins and standing stones, and a camp's tents, in real play. The stall's awning seen from the square: it is thin and pitched, so from above the stripes may read as lines.
+
+## v80 — Session 204 — The tower, the shrine and the lair (H.5, Michael's A)
+The POIs have their own builders (`buildTower`, `buildShrine`, `buildLair`, `buildGlade`, `buildBanditCamp`). This session does the three that are mainly built pieces.
+
+**The wizard's tower** (`towerGeoHi`, 4.5k triangles):
+- a splayed plinth, and a string course banding the tapering shaft at every floor;
+- arched lancet windows with sills and hood moulds;
+- a corbel table under a crenellated parapet;
+- a spire in six slated rings with a gilt finial;
+- an arched door up three steps.
+
+A first pass had pilaster ribs, but they ran straight while the tower tapers, so they stood off it near the top, and were removed.
+
+**The shrine** (`shrineGeoHi`, 6k): eight fluted columns (the flutes cut into the cylinder), each on a moulded base under a moulded capital and abacus, a double ring of architrave, and a moulded altar with its slab.
+
+Each keeps its old self as the distant copy through a small helper, `poiLod`, which the POI's bake pairs and `houseLod` swaps, as it does a town's houses.
+
+**The lair's boulders** were dodecahedra, and they are now craggy rock (`cragGeo`): an icosahedron whose corners are pushed in and out by a hash of their position, so shared corners move together, then shaded flat, facet by facet. They are built on the same dice in the same order, so the lair's layout is unchanged. A first try with the kit's smooth bumps made them look like grey clouds.
+
+### Verified (headless Chromium)
+New `tests/pois.test.mjs`, 3 checks, all passing, no page errors. The first tower and shrine in the world's site list each build one detailed mesh paired with its plain twin, and from a camera 30–55 units off the detailed one shows. Pictures: `docs/prototypes/pois-ingame.png` (the tower and the shrine at noon) and `pois-lair.png` (a lair's rocks).
+
+### Needs eyes
+The tower and shrine in their real settings (the test's own pictures of them were taken before the terrain around them had loaded). Whether the lair's rocks are too faceted beside the smooth wolves that live in them. Still owed: the bandit camp's and the glade's pieces.
+
+## v80 — Session 205 — The bandit camp on the kit (H.5, Michael's A)
+A bandit camp was open five-sided cones for tents, six flat boxes round the fire, boxes and cylinders for its stores, flat white boxes for bones, and plain posts for its stockade. Everything in the camp that took the camp's dice still takes the same rolls in the same order, so the camp's layout and its bandits are where they were.
+
+**What changed.**
+- **Tents** (`campTentGeo`): ridge tents. Two canvas slopes over a ridge pole on two uprights, the gables closed, a door flap tied back, and guy lines out to pegs, in three patched browns by the tent's number. A first pass had both slopes and the guy lines leaning the wrong way (a sign), fixed before this commit.
+- **The fire**: nine craggy stones in a ring (Session 204's `cragGeo`), four logs leaning into the fire, and a tripod over it with a hanging pot.
+- **Stores**: the crates are the kit's rounded box. The barrels are bellied, with two hoops.
+- **Bones and stakes**: the bones are tapered bones, and the stockade's stakes are pointed.
+
+### Verified (headless Chromium)
+`pois.test.mjs` has a new check, and all 4 pass with no page errors. The first bandit camp in the site list has six merged ridge tents. `foes`, whose bandits stand in camps like these, passes. Picture: `docs/prototypes/pois-bcamp.png`, the camp from above its fire (the terrain around it had not loaded).
+
+### Needs eyes
+A camp in real play: the tents' size against the bandits, and the stockade's spacing.
+
+## v80 — Session 206 — The dungeon's doors on the kit (item 7's props)
+The last of the dungeon's props on plain boxes were its doors: a flat slab with a texture, two bands, and on a locked door three grey bars and a gold square. The door keeps its hinge group (`hinge`, turned by the open code), and on it is now one merged mesh:
+- five planks of slightly different tone;
+- two iron straps across both faces with nail heads at each plank;
+- a ring pull on its boss;
+- on a locked door, an iron grille in the upper half and a brass lock plate with a keyhole.
+
+Round the doorway, on the door's group and so staying put when the door swings, is a dressed stone frame: jambs of five blocks and a lintel.
+
+### Verified (headless Chromium)
+`dungeon.test.mjs` has a new check, and all 13 pass. All 4 doors in the test fort have the merged door on their hinge and a frame. Picture: `docs/prototypes/dungeon-door.png`, a locked door in a coved corridor.
+
+### Needs eyes
+The frame is mostly hidden in the walls' warp and shows only as an edge. Whether it wants to stand proud of the wall face.
+
+## v80 — Session 207 — CI: the suite in six shards (tests only)
+Every CI run on this branch today ended "cancelled" at almost exactly 30 minutes. That is the `headless` job's `timeout-minutes: 30`: the suite has grown to 37 suites, which take about 50 minutes one after another on this machine and longer on GitHub's runners. The runs on this branch were cancelled from Session 186's onwards, which is from this run's first pushes, so CI has not had a verdict on any of this run's work.
+
+**What changed.** `tests/run.mjs` takes `--shard i/n`: it sorts the suites and runs every n-th one, starting from the i-th. The workflow runs the `headless` job as a matrix of six shards side by side (`fail-fast: false`, so one failing shard does not stop the others), each under the same 30 minutes, with six or seven suites a shard. `node tests/run.mjs` with no arguments still runs everything, and `node tests/run.mjs <name>` still runs one suite. No test was changed, skipped or removed.
+
+### Verified (headless Chromium)
+The shard split was checked by listing it: the six shards take 37 suites between them with none left out or repeated (6 or 7 each). A full local run started during Session 205 was still going at this commit; its result goes in the next entry or in the PR.
+
+### Needs eyes
+The first CI run on this commit: whether every shard finishes inside 30 minutes on GitHub's runners. If a shard still runs long, the number can go to eight.
 ## v80 — Session 172 — One name per shop, and the guild heads stay who they are
 
 Backlog I, the critic's sixth finding (*two shops with one name*): Dunmore had two *Clodagh's Goods*, and given Session 153's genome cache by `name|site`, the two keepers were twins. The critic also found the mayor and the armourer both Niamh, and a guard and the apothecary both Cathal.
@@ -5224,6 +5908,1210 @@ New `tests/tpshots.test.mjs`, in the open world with a bow and arrows, third per
 
 ### Needs eyes
 Whether shots now read as leaving the bow and the hand at real speed, and whether aiming at a point 30 units out feels right for near targets. Inside 30 units the shot crosses the camera's line only at 30. With the hand about .4 units left of the line, a target at 5 units is missed by about a third of a unit to the side. A raycast for the true point under the crosshair would fix that and is the next step if it shows.
+
+## v80 — Session 208 — The trolls on the people's body (H.4, Michael's B)
+Michael answered Session 201's question on 27 Sep: B, as shown, with gargoyle A given better wings, the cave troll's cane gone or a hammer added, and the Faolchú as it is. The answer covers four creatures; this session builds the trolls, and the golem, the gargoyle and the Faolchú follow, one session each. The merge with main at the start of the run brought the answer in (and the interface answer, and the systems builder's Sessions 172–175); `docs/decisions.md` kept both sides.
+
+**What changed.** `FOE_DRESS` has three trolls, the Cave Troll (the dungeon's), the Forest Troll and the Frost Troll (the open world's), and `buildFoe` builds them as it builds goblins: a genome seeded from the kind and the place, set heavy (build 1.75, a head 1.15, the body 15% wider and 10% deeper), stooped (the elder's idle), bare-headed, beardless, a big nose and ears, yellow eyes (a frost troll's pale blue). The hide is by kind, blended within two tones: grey-green in the caves, moss-green in the forest, blue-grey on the ice, and the arms and legs are bare hide under a brown hide tunic. `personBakeQ` bakes two things for a troll: a heavy underjaw (a flattened ball under the face) and two tusks rising from it. In the prototype the troll carried the walking stick; Michael asked for a hammer instead, so there is a new held gear, the **maul**: a long haft wrapped at the grip, and a rounded iron head with a band at each face, held head up as the smith holds a hammer.
+
+The trolls stay brutes (`shape:'brute'`, the dungeon's `buildFn:'brute'`) for everything the fight reads from that: posture, stagger, the family multipliers. Only the body changed: `buildZoneEnemy` and the dungeon's `buildEnemy` now send a brute with an entry in `FOE_DRESS` to the people's builder, which is how the Golem and Gargoyle will follow. The dungeon's health bar sits over a person's head for any person, where before a brute's bar sat at 1.05 of its scale, inside a troll's chest.
+
+One slip on the way, worth recording: my first edit put a comment after the opening brace of the dungeon's branch, which commented out the code after it on that line, and the page failed to load ("pr is not defined"). It is the file's standing rule, and parsecheck cannot see it; the page error in a test run did.
+
+### Verified (headless Chromium)
+New `tests/trolls.test.mjs`, 7 checks, all passing, no page errors. The Forest and Frost Troll are skinned people on their own material, the right shoulder as the striking arm, still brutes; build 1.75, head 1.15, a maul. A Frost Troll stands 1.94 tall and 1.38 wide against a bandit's 1.19 and .36. The maul's head reaches 1.19 above the wrist against the kobold's hammer at .90. Standing, a troll idles (idle 1); chasing at 1 unit a second, it walks (walk 1). In a goblin dungeon at level 6 the Cave Troll is a troll person with a maul, walked by its own enemy and in the rig set. A troll is 4.8–5.3k triangles, a bandit 5.6k. `dungeonfoes` (4/4) and `foes` (11/11) still pass. Picture: `docs/prototypes/trolls-ingame.png` (a bandit for scale, a cave troll, a forest troll walking, a frost troll).
+
+### Needs eyes
+A troll in a real fight: whether the maul reads as a weapon at fighting distance and whether its strike, which swings the right arm as a bandit's does, looks heavy enough for a troll (it is the same pose, slower only because the troll's attack is). Whether a Frost Troll's white hair and pale hide read against snow. The Ogre and Cave Bear are brutes too and keep their boxes: they were not in the prototype, and the bear wants four legs.
+
+## v80 — Session 209 — The golem on the people's bones (H.4, Michael's B)
+The second of the four creatures in Michael's answer on Session 201. The golem appears only in dungeons (the elemental, deep and ruins themes), and until now it was the brute's boxes in grey.
+
+**What changed.** A golem is a genome with `g.golem`, and `personBake` handles it the way it handles the skeleton: none of the flesh, hair or clothes is hung on the bones. On the same bones go dressed stone blocks on the kit's rounded box (`SK.rbox`), baked into the one skinned mesh:
+- a pelvis block, a chest block and a shoulder slab across the top, a neck stone;
+- a head block with a brow ledge;
+- a rounded boulder at each shoulder, upper-arm and forearm blocks, a block for a fist;
+- thigh and shin blocks sized to the legs' own lengths (`PW.L1`, `PW.L2`, so they follow `PW.LEGK`), and a flat foot.
+
+Each block takes its own tone of the stone (±6% from the seed), with the pelvis, fists and feet darker. The rune-light is three small unlit strokes hung on the bones, the way the skeleton's burning eyes are hung: a slit across the face and an X on the chest (Session 201 chose the X so it would not read as the Church's cross). A golem carries nothing.
+
+One change from the prototype. There the arms were tucked behind the chest block and did not show from the front. The golem's build is now 1.5, which sets the shoulder bones out to the chest's edge, so the arms hang at its sides and can be seen to swing.
+
+`FOE_DRESS.Golem` routes it through Session 208's brute path, and the fight still reads it as a brute (posture family `brute`).
+
+### Verified (headless Chromium)
+New `tests/golem.test.mjs`, 6 checks, all passing, no page errors. A golem is one skinned mesh of 3,616 triangles, and every vertex is a grey (100% within .08 of neutral), with no weapon. Its runes are three unlit meshes, on the head and spine bones. It is .92 wide in figure units against a bandit's .49. In a deep dungeon at level 6 the golem is a person, linked to its enemy and in the rig set, with posture family `brute`. Moved .8 units a second it walks (walk 1). Picture: `docs/prototypes/golem-ingame.png`.
+
+### Needs eyes
+A golem in a dungeon's torchlight: whether the stone reads against the dressed-stone walls (the two greys are close), and whether the runes are bright enough, or too bright. A dead golem's runes stay lit. Dimming them on death would be a small follow-up, if wanted.
+
+## v80 — Session 210 — The gargoyle, with better wings (H.4, Michael's B)
+Michael chose gargoyle A, the winged stone figure on the people's body, over B, the beast on the dragon's bones. He asked for better wings, and said B's mesh would be good for a dragon later. The prototype's wings were two flat grey polygons fixed to the back. The gargoyle is found only in dungeons (the haunted and ruins themes), where it sleeps as a statue until you come within 4 units.
+
+**What changed.** `FOE_DRESS.Gargoyle` builds a person in stone. The skin, the hair (cropped), the tunic, the sleeves and the legs are all tones of one grey, the eyes are orange and lit (hung on the head like the risen dead's), the ears are pointed (a shorter version of the goblin's), and it carries nothing. It has the elder's slight stoop. `personBakeQ` adds, for a gargoyle:
+- **Horns**: two segments each, rising and curving back.
+- **A tail** on a new `tail` bone at the hips: four tapering segments that droop and rise to a flattened spade.
+- **Wings** on two new bones, `wingL` and `wingR`, at the shoulder blades. Each wing has a leading edge of arm and forearm to a wrist knuckle, a thumb claw, three fingers fanning from the wrist, and a membrane stretched between them. The membrane is scalloped between the finger tips and runs back down to the waist. It is darker than the stone and baked into the one mesh like everything else.
+
+**The statue.** There is a new pose, `pwCrouch`: on the haunches (the legs placed by the same IK as the walk), leaning forward, head up, hands down by the feet. `tickPeople` blends to it while the gargoyle's enemy is dormant, with the wings folded back and down the body and the tail curled. When it wakes, the usual crossfade takes it to its feet in about a third of a second, the wings spread and beat slowly (a sine on the wing bones, off while folded), and the tail sways. It stays a brute for the fight, and the dormant rules (no damage dealt, double damage taken) are unchanged.
+
+### Verified (headless Chromium)
+New `tests/gargoyle.test.mjs`, 5 checks, all passing, no page errors. A gargoyle has 4,850 triangles. Its wing bones carry 544 vertices and its tail 179. The wings reach .73 out from the centre in figure units, and it has lit eyes and no weapon. In a haunted dungeon at level 6 the gargoyle is a person linked to its enemy, with posture family `brute`. Dormant, its hips are at .29 with the wings folded (fold 1, wing turned 1.30). Woken, 1.5 seconds later its hips are at .64, the wings are spread (fold .01, turned .36). `foes`, `golem` and `trolls` still pass. Picture: `docs/prototypes/gargoyle-ingame.png` (a bandit, a sleeping gargoyle, one awake from the front, one from behind).
+
+### Needs eyes
+Whether the statue reads as a statue in a dungeon's light, and whether the moment it wakes, with no leap and no roar beyond the old cry, is startling enough. Whether the tunic suits it: it is the people's body, so it has a skirt in stone. Leaving the skirt off would take a flag in the bake, if wanted.
+
+## v80 — Session 211 — The Faolchú on the wolf's body (H.4, Michael's B)
+The last of the four creatures in Michael's answer on Session 201: "faolchu is great as is". The Faolchú is Act I's boss and the canon's first named antibody. Until now it was a box wolf with red strips.
+
+**What changed.** `buildFaolchuMesh` builds it on the Dire Wolf's skinned body (`buildWolf`), so it trots, gallops, crouches and springs as the wolves do, and lies down dead as they do. It is built as the prototype showed:
+- **Hunched.** A new `rig.hunch` on a wolf rig is added to every pose in `wgApply`: the spine arched .18, the neck carried .35 lower, the head .15.
+- **Arms.** Two pairs of clawed arms rise from a red seam down the spine, each with three claws and a red knot where it leaves the body.
+- **Sigils.** Orange sigil marks run along both flanks. There is a red seam over the hips and a red mark on the brow.
+
+The arms and claws are ordinary lit meshes on the wolf's bones. Everything that glows (21 pieces) is listed in `limbs.sigilMeshes`, as before, so the death burst still finds their positions. The seam still shares one unlit material, `limbs.sigilTrace`, which the phases recolour. The flank sigils keep their own orange. `spawnFaolchu` and `spawnLesserFaolchu` link the body to the boss's enemy, so it strides by the boss's own position.
+
+**Size.** The old box's ears topped out at 1.7 on the boss's scale of 1.85. The first build, at 1.75× the wolf's scale, came out 2.31 tall: a third bigger than the old boss and twice the prototype's size. It is now at 1.45×: 1.92 to the ear tips and 3.14 from nose to tail, against the old box's 1.7 and about 3.7. The fight's numbers (bite range 2.8, damage, speed) are untouched. The Lesser Faolchú builds the same way at its own scale.
+
+### Verified (headless Chromium)
+New `tests/faolchu.test.mjs`, 7 checks, all passing, no page errors. The Faolchú is a skinned wolf in the rig set, its mesh the boss's torso (so the wind-up's red lights its own material). It has both pairs of arms and 21 glowing pieces on the bones. Ticked beside a plain Dire Wolf in the same pose, its neck sits .35 lower. It is 1.92 tall and 3.14 long. Moved at 3 units a second it strides (trot and gallop weight 1). Setting the seam's colour reaches the seam, the death burst runs on it without error, and the lesser build is a wolf too. `wolves` still passes. Picture: `docs/prototypes/faolchu-ingame.png`, beside a bandit, in its own red aura.
+
+### Needs eyes
+The fight itself, in burned Ashenmoor: whether the hunched wolf at this size reads as the boss it was, and whether the arms, which hang fixed from the spine and do not strike, should join the attack. The phase-3 embers and the lessers need the real encounter. That is a playtest; this session did not play it through.
+
+## v80 — Session 212 — The dungeon's Wraith and Phantom on the wraith's body (H.4, item 7)
+The open world's Wraith has been a robed, hooded, see-through person since Session 176, under Michael's approval of the undead family. The dungeon's Wraith and Phantom (the undead and haunted themes) were still the old dark box with a bar of light for eyes. This session gives them the same body. No new look is involved beyond the Phantom's variant, which is described below.
+
+**What changed.** The dungeon's `buildEnemy` sends a `buildFn:'wraith'` enemy with an entry in `FOE_DRESS` to the people's builder, as it already did for the humanoids and (since Session 208) the brutes. It keeps the ghostly aura light the box had. The Wraith uses the open world's dress. The **Phantom** is a new entry: the same robe and cloak, but bare-headed with long straight pale hair, bluer, and fainter (opacity .5 against the Wraith's .68). It reads as the lesser ghost it is (level 3 against the Wraith's 5).
+
+**One thing that would have doubled.** The box wraith was lifted .3 off the floor when placed. The wraith person glides at its own height (`tickPeople` sets it). The lift is now skipped for a person, so the two don't add up. The dungeon's hover bob (±.12) still applies on top, as it did before. The life-drain, the ranged attack and the posture family (`wraith`) read `isWraith` and `baseType`, which are unchanged.
+
+### Verified (headless Chromium)
+`dungeonfoes.test.mjs` has a new check, and all 5 pass. In an undead dungeon at level 6, the Wraith and the Phantom are both wraith people, each linked to its own enemy, still `isWraith`, taking no steps (walk weight 0). The Wraith's opacity is .68 and the Phantom's .5. They float .13 and .32 above their base (the glide plus the bob at that moment), inside .1–.45. Picture: `docs/prototypes/wraiths-dungeon.png` (a bandit, a Wraith, two Phantoms, at night).
+
+### Needs eyes
+The picture shows the Wraith's hood (Session 176's) reading more like a close cap than a hood when seen from the front. That was there before this session. A deeper, peaked hood would be a small follow-up if it bothers in play.
+
+## v80 — Session 213 — Wolves step round when they turn (H.4)
+An item owed since Session 166: a wolf that swung round to face you, or turned at the end of a charge, pivoted on planted paws. Its stride is driven by the ground its body covers, and turning on the spot covers none, so its feet stayed on the ground while the body rotated above them.
+
+**What changed.** `tickCreatures` now reads each wolf's heading from its group every frame. The change in heading, times a quarter of a body length (at the wolf's scale), counts as ground covered. A wolf turning in place therefore treads round on its trot: the gait is chosen by that pace and the stride advances with it, as it would over the same distance forward. A jump in heading of more than 1.2 radians in one frame (a respawn, a snap) is ignored, as a jump in position of more than 1.5 already is. This covers every creature on the wolf's bones (the wolves, the boar, the dragon, the Faolchú). Spiders have their own tick and are not changed.
+
+### Verified (headless Chromium)
+`wolves.test.mjs` has a new check, and all pass. A wolf standing still (stand weight 1) is turned a quarter circle over half a second without moving: its trot weight rises to .98 and its stride advances .29 of a cycle through the turn. A second after the turn it stands again (stand weight 1). The planted-paw checks on straight runs still pass.
+
+### Needs eyes
+Whether a trot in place reads as stepping round or as a shuffle. A proper turn, the forelegs crossing and the hind legs pivoting, would be its own pose.
+
+## v80 — Session 214 — The last box creatures: a prototype and a question (H.4, waiting on Michael)
+With the trolls, the golem, the gargoyle, the Faolchú and the dungeon's ghosts built, seven kinds of creature are still on the old box bodies: the Ogre and the Cave Bear (open world, brutes), the dungeon's Slime (with the Small Slime it splits into) and Fire Elemental, and the regional Bog Crawler, Sand Scorpion and Shore Wisp (Session 130's bodies). None of them is in a family Michael approved, so this is a prototype and a DECISION. `index.html` is unchanged (the build tag stays at s213).
+
+**The prototype** (`docs/prototypes/creatures3/shoot.mjs`) boots the game and builds each one from its kits, with the missing parts hung on the bones as plain meshes:
+- **Ogre**: the people's body at build 1.95, fat (a belly ball on the spine), bald, ruddy, sometimes bearded, in a kilt, holding a knotted club in the right fist.
+- **Cave Bear**: a wolf kind with bulk 1.6. The shoulder and hip bones are scaled out for thick legs, there is a hump on the spine, the ears are round, the muzzle short, and the tail bones are shrunk away.
+- **Slime**: a noise-deformed ball flattened at its foot, glassy and half see-through, with a dark heart, a swallowed skull and coin, and two eyes. The Small Slime is the same at .55.
+- **Fire Elemental**: a molten core under additive flame tongues, arms of flame with clawed flame hands, and a crown.
+- **Bog Crawler**: the spider kit in fen green, with moss on its back.
+- **Sand Scorpion**: the spider kit in sand, with pincers on the fang bones and a six-segment tail from the abdomen.
+- **Shore Wisp**: a white core in layered additive blue halos, three motes and a fading tail.
+
+Two things fell short in the renders and are said so in the question: the scorpion's tail is mostly hidden behind the abdomen, and the Bog Crawler has eight legs where the box had six.
+
+### Verified (headless Chromium)
+`node docs/prototypes/creatures3/shoot.mjs` renders the five pictures (`creatures3-ogre.png`, `-bear.png`, `-dungeon.png`, `-crawlers.png`, `-wisp.png`) with no page errors. The kinds it registers for the pictures (`Proto Bear`, `Proto Crawler`, `Proto Scorpion`) are removed before it returns.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all as shown (recommended), the Bog Crawler as a six-legged crawler of its own, only the Ogre, the dungeon pair and the wisp, or not yet.
+
+## v80 — Session 215 — The glade in detail (H.5, Michael's A)
+The last POI owed under Michael's A for buildings and POIs ("all of it, with a distant copy"). The glade is a pond in a clearing, ringed with big trees and herbs. Its own pieces were fourteen four-sided green cones for reeds and a seven-sided cylinder for a fallen log.
+
+**What changed.** `buildGlade` now builds those pieces as one merged mesh near and keeps the old ones as the distant copy (`poiLod`, swapped by `houseLod` at the houses' 70/80 units, as the tower's and the shrine's are):
+- **Reeds.** Each of the fourteen clumps is 13–19 flat blades, each its own green between moss and straw, leaning out at random, with one to three cattails on stalks. Each clump stands on the ground's own height at its spot.
+- **The fallen log.** Bark on a bumped cylinder, cut ends in heartwood with growth rings, two broken branch stubs, five patches of moss along the top, and a small cluster of mushrooms on its side. It is built along its length and turned where the old one lay, so its collision is unchanged.
+- **The pond.** Nine lily pads, each with its notch, a few carrying a pale flower, just on the water.
+
+The trees, the herbs and the creatures at the water are unchanged.
+
+### Verified (headless Chromium)
+`pois.test.mjs` has a new check, and all 6 pass. A glade is built with its detailed piece paired with its distant copy, and the detailed one shows from 30 units. It is about 6,000 triangles (6,023 in the test's glade; the reed count varies by site). Picture: `docs/prototypes/glade-ingame.png`. The test renders without the terrain loaded, so the pond's colour fills the ground there.
+
+### Needs eyes
+A glade in real light and terrain: whether the reeds read as reeds at walking distance, and whether the lily pads sit on the water when the pond's level differs from the pad's (they are placed at the water disc's height).
+
+## v80 — Session 216 — The Marsh Hag on the people's body (H.4)
+Session 215's picture of a lair showed a green box figure beside the boulders. It was the Marsh Hag, the boss of a fen or swamp lair, and she comes out at night there too. Every other humanoid foe in the zone table has been a person since Sessions 171–184. She was missed because she has no entry in `FOE_DRESS`, so `buildZoneEnemy` fell through to the box.
+
+She is a human foe, so she falls under what Michael approved for bandits "and the other human foes" (Session 171). I built her as the name says, with no new look to ask about: an old woman in a long bog-green dress and cloak, hooded, long lank grey hair, a sallow cast to the skin, a long nose, pale yellow eyes, and a crooked staff (the gear kit's stick). `FOE_DRESS['Marsh Hag']` sets `hag`, and `buildFoe` dresses the genome as an elder woman. She walks, strikes and dies as the other people-foes do, on her own copy of the material.
+
+That leaves only the non-human creatures on boxes: the Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion and Shore Wisp, which wait on Session 214's question. The Shark (the sea's) was not in that prototype, and would go in the next question.
+
+### Verified (headless Chromium)
+`foes.test.mjs` has a new check, and all 12 pass. The Marsh Hag built by `buildZoneEnemy` is a person, female, elder, hooded, in a dress, with a staff, on her own material, with the right shoulder as the striking arm. Picture: `docs/prototypes/hag-ingame.png` (a bandit, two hags standing, one walking).
+
+### Needs eyes
+Whether a plain old woman is menacing enough for a lair's boss. If Michael wants the folklore hag instead (green-skinned, clawed, with teeth), that is a question for him, not something I would change unasked.
+
+## v80 — Session 217 — A bush picked in the old zones stays (H.5a)
+Michael's plants decision (27 Sep) said picking leaves the plant: a bush or sapling picked of its berries or leaves stays, bare, and grows them back. Session 167 did that for the streamed world, where herbs are instances with a picked copy beside each. The old hand-built zones (the Forest, Ironhaven, the legacy overworld) build each herb as its own mesh with `mkHerbMesh`, and `harvestHerb` hid the whole group, so a bush there still vanished when picked.
+
+**What changed.** For a plant that stays (a bush, low bush, sapling, shrub, bramble or bracket fungus), `mkHerbMesh` now also builds the picked copy from the same bake as the world's (`plantGeo(key,true)`) and hangs it, hidden, in the herb's group. `harvestHerb` shows the picked copy and hides the whole one in place of hiding the group. When the herb grows back (`tickHerbs`), they swap back. Herbs that go whole when picked (the flowers, the mosses) and the sea's herbs are unchanged. The world's instanced herbs never carry the picked mesh, so the world's own path is untouched.
+
+### Verified (headless Chromium)
+`plants.test.mjs` has a new check, and all 10 pass. A briarweed built by `mkHerbMesh` has its picked copy hidden. Picked, the group stays visible with the whole bush hidden and the bare one shown, and one briarweed goes in the bag. After its regrowth time, the whole bush is back and the bare one hidden again.
+
+### Needs eyes
+Nothing new to look at beyond Session 167's bare bush, now in the Forest and Ironhaven too.
+
+## v80 — Session 218 — The coast's old boats are the harbours' clinker boat (H.5b)
+Owed from Michael's boats decision (Session 165: "ship, ferry and the other ships' hulls less boxy"). Three boats in the hand-built coastal zones were still a squashed half-sphere with a torus for a gunwale: the ferry moored at Carraig Mór's south dock, the same ferry at Inis Rua's north dock, and Salthaven's rowboat beached upside down.
+
+**What changed.** All three are now the open clinker boat that Session 168 built for the world's harbours: strakes, thwarts, oars shipped, a stubby mast with the sail furled. The world module exports `boatBake` and `SHIP_MAT` so the zone builders can use them. The zones are built lazily on first entry, after the world exists.
+- **The two ferries** lie along x where the old hull lay, scaled to its 4.8 length. The new hull is narrower than the half-sphere was, so the dock's mooring posts stood inside it. The boat now lies just past the dock's end (1.1 further out), with the posts beside it.
+- **Salthaven's rowboat** is the same boat upturned on the sand at the old one's place, scaled to its 3.6.
+
+The gates and ferry interactions go by their own points, not the boat's, so nothing else moved. The paints differ: the ferry is the blue one, the rowboat the green.
+
+**Not done: the sails swinging with the heading and the wind.** The game has no wind direction to swing them by. Inventing one for looks alone could fight the sailing system the designer is to propose (sailing is on the designer's list), so this waits for that.
+
+### Verified (headless Chromium)
+New `tests/ferry.test.mjs`, 4 checks, all passing, no page errors. It visits Carraig Mór, Inis Rua and Salthaven. In each there is one boat on the ship material at the expected spot and no half-sphere hull. The ferry's box is 5.78 long (a 4.8 hull plus its stem, rudder and oars). The Salthaven boat is turned keel up. Picture: `docs/prototypes/ferry-ingame.png` (the ferry beside the Carraig Mór dock).
+
+### Needs eyes
+Whether the ferry sits at the right height on the zone's water, and whether the furled sail on a ferry is right or it should be rowed only.
+
+## v80 — Session 219 — A lair's wyrm is the dragon (H.4)
+Session 177 left "the dungeon's wyrm keeps its builder". Looking at it, the wyrm had no builder of its own. A dragon lair's master was whatever creature held that place, grown and given box parts:
+- in the world, the lair's beast (a Frost Troll, an Ash Wight, a Marsh Hag, a Cave Bear or an Ogre, by biome), scaled 2.4;
+- in a lair cavern, the deepest foe on the lowest floor (often a skeleton or a troll), scaled 2.6.
+
+`detailDragon` then stuck box wings, a box neck and head, a box tail and cones on the group. Now that most of those foes are people, a wyrm was a giant person in box wings. The Salt Mouth's wyrm, and any lair that rolls a dragon (8%), looked like that.
+
+**What changed.** A new `dragonBody(e, size)` swaps the master's body for Session 177's skinned dragon: the wolf's bones with a neck, a tail and two wing bones, beating its wings while roused, walking on the wolf's gait, breathing fire as before. What the master wore is removed: a person's rig drops out of `tickPeople` once its root is detached, and a box brute's parts go. The health bar planes and the lights stay. `detailDragon` now leaves a skinned dragon alone.
+
+**Its numbers do not change.** The master keeps the hit points, damage, speed and posture family it was given. Spawning the zone table's Dragon instead would have raised them (160 base hit points against a lair troll's 95), and that is a balance call, not a look. The size is the world dragon's (scale 2.88 in wolf units) in a cavern, and a little larger (3.2) at a world lair's mouth.
+
+**A slip I found on the way, not fixed (outside section H).** `goToDungeon`'s line that calls `lairFinish` ends in a `//` comment, and the code that moves the player's torch light into the dungeon scene sits after the comment on the same line. So that code has never run, since the first push. I have reported it in the PR rather than changed it.
+
+### Verified (headless Chromium)
+New `tests/wyrm.test.mjs`, 4 checks, all passing, no page errors:
+- In the world, a lair made a dragon lair builds "Carrigowen Wyrm" as the skinned dragon, linked to its enemy, in the rig set, with no box parts and no person left in its group. It is 6.3 long and 4.6 wide across the wings, with 285 hit points (the lair beast's ×6 as before).
+- In a deep lair cavern at level 8, "Test Wyrm" is the skinned dragon too, with no boxes and no person rig still pointing at it, its health bar kept. It is 5.6 long.
+
+`wolves` still passes.
+
+### Needs eyes
+A dragon in a cavern's rooms: whether 5.6 units fits between the walls or clips them. The old box dragon reached further, so it should not be worse.
+
+## v80 — Session 220 — The weapon kit: a prototype and a question (H.4, waiting on Michael)
+Owed since the first foes went onto the people's body (Session 171): "their weapons (the gear kit's stick and spear stand in)". The player's weapons are boxes too. `tpWeapon` builds them from `BoxGeometry` and notes that "the weapon kit itself is a later pass". A weapon's look is a new look, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/weapons/shoot.mjs`) builds, in the game:
+- **Blades** (dagger, arming sword, longsword): each is an outline with a tapering point, extruded thin with a bevel, so the edge and the flat catch the light differently. Each has a wrapped grip (a leather core with cord turns), a rounded guard with finials and a pommel, in brass or steel.
+- **Axe**: a bearded head extruded with a bevel, on a haft with a socket.
+- **Mace**: six flanges round a steel head, with a spike.
+- **War hammer**: a rounded head, a back spike and a top spike.
+- **Staff**: a bumped, gnarled shaft, three prongs holding a crystal in a faint glow.
+- **Bow**: a recurve bow, the limbs a tube along a curve, with a leather grip and a string.
+- **Shields**: a round shield of five planks of varying tone with an iron rim and a domed boss; a kite shield with a bevelled edge, a boss and rivets.
+
+Two pictures: today's box weapons above the kit, and the kit in the hands of five foes (built empty-handed for the picture, with the kit on their gear and wrist bones).
+
+The first kite shield had a brass cross on its face. I replaced it with a boss and rivets, for the reason Session 201 changed the golem's rune.
+
+### Verified (headless Chromium)
+`node docs/prototypes/weapons/shoot.mjs` renders `docs/prototypes/weapons-lineup.png` and `weapons-hands.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): the kit for the player and every foe (recommended), for the foes only, for the player only, or not yet.
+
+## v80 — Session 221 — The Ogre is a person (H.4, Michael's answer B on Session 214)
+Michael answered the last box creatures (Session 214) with **B**: build them as shown, one or two a session, except the Bog Crawler, which gets a six-legged body of its own, prototyped first. This session builds the first of them, the Ogre. It was the open world's box brute: foothills and greywood encounters, the Warden's Trial commission, a lair's beast by biome, the master of The Root.
+
+**What changed.** The Ogre joins `FOE_DRESS` as a person on the townsfolk's body, built in `buildFoe` as the prototype built it:
+- the troll's build made heavier (build 1.95 against the troll's 1.75, the body 1.2 wide and 1.25 deep), bald, ruddy, a broad nose and big ears, half of them with a short beard;
+- skin drawn from its own seed between two ruddy browns, so every ogre is someone and the same place gives the same ogre;
+- a leather jerkin and kilt over a bare belly (one skin ball on the spine bone, sized by the build so it stands out in front of the jerkin, as it did in the prototype);
+- a new `club` gear: a tree limb thin at the grip and swelling to a rounded head, with five knots where branches were.
+
+It still goes through the brute path in `buildZoneEnemy` (as the trolls did in Session 208), so its numbers do not change: 90 hit points, speed .8, the same damage and resistances, scale 1.6. The club sits upright in the fist, as the troll's maul does; the prototype held it slanted across the body, which was only the picture's pose. The weapon kit (Michael's A on Session 220) will replace the club with its own, so I kept this one simple.
+
+### Verified (headless Chromium)
+New `tests/ogre.test.mjs`, 7 checks, all passing, no page errors:
+- The zone's Ogre is a skinned person on its own material, the right shoulder striking, still a brute, with 90 hit points and no box left in its group.
+- It is fat (build 1.95), bald, and carries the club. It stands 2.0 tall against the Frost Troll's 1.94 and a bandit's 1.19, and is 1.64 wide and 1.17 deep against the troll's 1.38 and 0.90.
+- The club reaches 1.32 above the fist, against the kobold's hammer at 0.90.
+- Twelve ogres from twelve places have twelve skins and both beards; the same place gives the same ogre.
+- It stands idle when still and walks when it chases.
+`trolls`, `foes`, `wyrm` and `people` still pass. Picture: `docs/prototypes/ogre-ingame.png` (a bandit, three ogres, one walking, and a frost troll).
+
+### Needs eyes
+Whether the ogre's 2.0 height over a bandit's 1.2 feels right at a fight's distance, and whether the bare belly reads as a belly or as a patch in daylight.
+
+## v80 — Session 222 — The dungeon's slimes and Fire Elemental (H.4 / H.7, Michael's answer B on Session 214)
+The second slice of Michael's B: the slime and the Fire Elemental, as shown in Session 214's prototype. Both were still the dungeon's oldest bodies. The slime was an eight-sided sphere with an inner ball. The elemental was four stacked boxes around a box core.
+
+**The slime.** `buildEnemy`'s slime branch now builds the prototype's blob:
+- a 28×20 sphere, squat and spread at the foot, rippled by its own seed, on a glassy standard material (opacity .62, low roughness) so the floor shows through;
+- a darker heart inside, and what it has swallowed: a skull and a gold coin in a full-sized slime, each at even odds in a small one;
+- two white eyes with dark pupils.
+
+The body is `limbs.body`, so the wind-up's red and the parry's flash light it as before. It quivers (a squash and stretch, faster when it is alert).
+
+**The Fire Elemental.**
+- 47 unlit, additive flames over a molten core: tongues up the body, two arms of fire, clawed hands of flame and a crown of fire.
+- The flames flicker, each on its own phase.
+- The core glows with its emissive. The wind-up and every parry flash overwrite that emissive and then set it to black, so the tick eases it back to its orange glow once the wind-up has ended.
+
+Both are built at the prototype's proportions in a group scaled by the enemy's own scale (.7 for a slime, .42 for a small one, .9 for the elemental). Their sizes, hit points and everything else are unchanged. The prototype picture drew them a little larger (1.0 and 1.05); I kept the game's sizes because the hit reach goes by them.
+
+The quiver and flicker run at the top of the dungeon's per-enemy loop, for every foe on the floor whether alert or not. The old slime's comment said "tick animates scale for wobble", but nothing did.
+
+**A bug found on the way, not fixed (combat, the systems builder's).** `killE` makes a slime split by calling `buildEnemy`. But `buildEnemy` is declared inside `buildDungeon` and is not in scope in `killE`. So killing a full-sized Slime throws a ReferenceError after the "slain" message: the two Small Slimes are never made, and whatever called `killE` stops there. A spell's hit loop, for one, skips the rest of its work that frame. It has been this way since the split was written. So the small slime's new look is only reachable once that is fixed. I have reported it in the PR.
+
+### Verified (headless Chromium)
+New `tests/slimes.test.mjs`, 6 checks, all passing, no page errors. It enters an elemental dungeon at level 6, finds a Slime and a Fire Elemental on the current floor, and checks:
+- The slime is a 609-vertex glassy blob on a standard material, with no box left.
+- The elemental has 47 additive flames without depth writes, a core glowing #ff4400, its light, and no box left.
+- The wind-up turns the core red (#bf140c), and the reset clears it to black, as for every foe.
+- After twelve real frames, the slime's height scale has moved to 1.06, all 47 flames have changed height, and the core is back to #ed3f00.
+`dungeon`, `dungeonfoes`, `mimic` and `golem` still pass. Picture: `docs/prototypes/slimes-ingame.png` (a slime and a fire elemental in an elemental dungeon, by a lantern).
+
+### Needs eyes
+Whether the slime's quiver reads as jelly or as a pulse. Whether 47 additive flames stay cheap in a room of three elementals on a laptop: they are small, unlit, and write no depth, but they overdraw.
+
+## v80 — Session 223 — The Cave Bear on the wolf's bones (H.4, Michael's answer B on Session 214)
+The third slice of Michael's B. The Cave Bear was the open world's box brute of the foothills: a lair beast by biome, the lair master half of the time, and one of the "a beast is taking sheep" commissions. The prototype built it on the wolf's bones with the wolf's own body, stretched by scaling bones. Session 214 said the build would give it a body of its own, as the boar has, and that is what this does.
+
+**What changed.** `WOLF_KINDS['Cave Bear']` (`bear:true`, bulk 1.3) has its own parts in `wolfBakeQ`:
+- a deep, shaggy barrel on the spine and hips (the kit's bumped lathes), with a hump over the shoulders;
+- a thick neck with a ruff;
+- a round head: cheeks, a short pale muzzle over a hinged jaw, a broad dark nose, and small round ears with dark insides;
+- thick legs, each swelling at the shoulder or haunch, on broad paws with four dark claws;
+- the tail a stub.
+
+It is one skinned mesh baked once per kind, with the distant copy, the shadow LOD and the counter-shaded fur the wolves have. It walks and runs on the wolf's planted-paw gait, and strikes with the wolf's crouch and spring.
+
+`buildZoneEnemy` sends the Cave Bear down the wolf path although its shape is still `brute`. Its posture family, 60 hit points, speed, damage and scale 1.35 are unchanged. A lair's wyrm made from a bear lair (Session 219's `dragonBody`) still swaps the body out: `tickCreatures` drops a rig whose root has lost its parent.
+
+### Verified (headless Chromium)
+New `tests/bear.test.mjs`, 4 checks, all passing, no page errors:
+- The zone's Cave Bear is one skinned mesh on the wolf's bones, linked to its enemy and in the rig set. It is still a brute with 60 hit points, with no box in its group, at 5.2k triangles.
+- It stands 1.00 tall, 0.62 wide and 1.26 long, against a dire wolf's 0.68, 0.33 and 1.11, and a boar's 0.50 tall.
+- It stands still, then trots (trot weight 1) when driven at 1.1 u/s.
+`wolves`, `wyrm` and `spiders` still pass. Picture: `docs/prototypes/bear-ingame.png` (a bandit, a bear standing, a bear walking, a dire wolf).
+
+### Needs eyes
+The bear walks on the wolf's trot. A real bear paces, with both legs on one side moving together; the kit's gait has no pace. If it reads as a trotting dog, a pace would be a small change to `WG`: an offset table for the bear.
+
+## v80 — Session 224 — The Sand Scorpion and the Shore Wisp (H.4, Michael's answer B on Session 214)
+The fourth slice of Michael's B, and the last creatures built "as shown": the dunes' Sand Scorpion and the coast's Shore Wisp. What is left of Session 214 is the Bog Crawler. Michael asked for a six-legged crawler body of its own for it, to be prototyped first.
+
+**The Sand Scorpion.** It was a box body with box legs and a box tail. It is now the spider's kit (`SPIDER_KINDS['Sand Scorpion']`, `scorpion:true`), baked once like the spider:
+- **Colours and body.** Sand-coloured. The abdomen is long and flat, with five dorsal plates across it where the spider has its chevron.
+- **Pincers.** Two big pincers sit on the fang bones in place of the spider's fangs and palps: an arm out and forward, a swollen claw, and two dark fingers. The fangs' spread, which the strike already drives, opens them.
+- **Tail.** A jointed tail of seven segments arches up from the abdomen's end over the back, with a bulb and a sting. Session 214's picture hid the tail behind the abdomen; this one raises it, as that entry promised.
+- **The tail's bone.** The tail is on a bone of its own. The bone is added last to the scorpion's skeleton only, so the spider's 28 bones keep their order and its shared bake is untouched.
+- **Motion.** `tickCreatures` sways the tail while the scorpion stands, cocks it back through the wind-up, and brings it forward over the head on the strike (rotation −.4 wound, +.96 at the strike).
+
+It walks on the spider's tetrapods. Its numbers are unchanged (30 hit points, scale .85).
+
+**The Shore Wisp.** It was already spheres, not boxes, but plain ones. Now it is the prototype's cold light:
+- a white core in three layered blue haloes;
+- three white motes, which `attackPose`'s hover still circles;
+- a tail of eight fading lights trailing behind and below.
+
+Everything is additive, unlit and without depth writes. I left out the prototype's point light. Every new light in the world's scene changes the light count that every lit material is compiled for, and a wisp that appears would stall the frame to recompile them. The haloes carry the glow instead.
+
+### Verified (headless Chromium)
+New `tests/scorpion.test.mjs`, 5 checks, all passing, no page errors:
+- The zone's Sand Scorpion is a spider-kit rig with 29 bones, one more than the spider's 28, at 8.6k triangles. It is still spider-shaped with 30 hit points, and no box is left.
+- The spider keeps its own bones and has no tail.
+- The Shore Wisp is 15 additive meshes plus its health bar, with 3 motes and its hover, and no box.
+- The tail's rotation reads −.04 standing, −.40 after the wind-up, +.96 at the strike, and back to .03 after it.
+`spiders`, `lod` and `foes` still pass. One check in `spiders` (Session 169) asserted that the Sand Scorpion keeps its old body, to show the spider kit caught nothing else. It now asks the same of the Bog Crawler, the one crawler still on its S130 body. Pictures: `docs/prototypes/scorpion-ingame.png`, `docs/prototypes/wisp-ingame.png`.
+
+### Needs eyes
+The scorpion's legs are the spider's: long and thin. A real scorpion's are shorter and thicker. If it reads as a spider with a tail, the legs want their own lengths in `SPIDER_LEGS` for this kind, which is a gait change and so its own session. Also, whether a wisp without its own light reads as a light at night.
+
+## v80 — Session 225 — The Bog Crawler: a prototype and a question (H.4, waiting on Michael)
+Michael's answer on Session 214 was B. It included one condition: the Bog Crawler (fen and swamp) is not to be the spider kit in fen colours but a six-legged crawler of its own, "a beetle or a giant water-bug", prototyped first. This is that prototype. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/crawler/shoot.mjs`) builds two bodies in the game from SK shapes. Both are in the fen's colours with moss on the back, at the Bog Crawler's size, with a bandit for scale and a spider for comparison:
+- **A, a great diving beetle.** A glossy olive-black dome, flattened underneath, with a seam down the back that follows the curve and a bronze rim. A small head with short mandibles and antennae. Six legs, the hind pair long and swept back like oars with a fringe of hairs.
+- **B, a giant water bug.** A flat oval body, narrowing to the head, mottled mud-brown with pale flecks. Two wing covers cross at the tail. A short pointed beak. Raptorial forelegs are held up and forward, the tibia folding back on the femur like a jack-knife with a hook. The hind legs end in flattened paddles.
+
+The first render of the beetle had its seam as a straight rod, which stood off the dome at both ends. It is now a sliver of the dome itself.
+
+I recommended B. It reads as an ambusher in bog water, and its forelegs give the strike a pose of its own. The DECISION is in `docs/decisions.md` and a GitHub issue.
+
+### Verified (headless Chromium)
+`node docs/prototypes/crawler/shoot.mjs` renders `docs/prototypes/crawler-both.png` and `crawler-close.png` with no page errors.
+
+### Needs eyes
+The DECISION: the beetle, the water bug (recommended), the water bug with the beetle's shine, or the spider kit in fen colours after all.
+
+## v80 — Session 226 — The weapon kit, and the foes armed by what they are (H.4, Michael's answer A on Session 220)
+Michael answered the weapon kit (Session 220) with A: "the kit for everyone: the player's weapons in third person, every foe armed by what it is; foes' weapons are looks only, damage unchanged." This session builds the kit in the game and arms the foes. The player's weapons are the next session.
+
+**The kit.** `wpnBuild(kind, rust)` builds the prototype's weapons from the shape kit:
+- dagger, arming sword, longsword, and a new cutlass (a curved blade and a knuckle bow, for the pirates);
+- bearded axe, flanged mace, war hammer;
+- a staff with a crystal in three prongs;
+- a recurve bow;
+- a planked round shield and a kite shield.
+
+Each weapon is merged by material into at most four meshes: a metal and a matte standard material with the parts' colours in the vertex colours, plus the staff's glow and halo. The merged geometry is built once per kind and shared by every foe that carries it (`WPN_GEO`, `buildWeapon`). A rusted copy is built once for the dead: its metal parts lerp towards rust and use the matte material. A weapon has 970–1,170 triangles. The grip is at the origin, so it hangs on the people's gear bone as the gear kit's tools did. Weapons cast no shadow.
+
+**Who carries what** (`FOE_DRESS` gains `wpn`, `shield`, `shieldP`; the choice is from the foe's own seed, so a given bandit always carries the same thing):
+- **Bandits:** a sword or an axe; a third or so also carry a round shield.
+- **Highwaymen:** a sword or an axe.
+- **Deserters:** a mace or the gear kit's spear, always with a kite shield.
+- **Archers:** the bow, in the left hand.
+- **Rogue mages:** the staff. **Cultists:** a dagger. **Pirates:** the cutlass.
+- **The Bandit Captain:** a sword, with its S175 shield as before. **The Shieldbearer:** a mace, with its shield as before.
+- **Skeletons:** those that carried the club now carry a rusted sword; the spears stay.
+- **Unchanged:** the goblin's club, the kobold's mattock, the hag's staff, the troll's maul and the ogre's club, each already its own.
+
+A foe's weapon is a looks change only: damage, reach and timing are untouched. The fist closes on it (gear `'kit'`, which bakes nothing), and the forearm is carried forward with the blade up, as with the other held gear.
+
+### Verified (headless Chromium)
+New `tests/weapons.test.mjs`, 9 checks, all passing, no page errors:
+- All eleven kinds build without a box, in two to four meshes, with their geometry shared.
+- Over 24 seeds each:
+  - Bandits carried 9 swords and 15 axes, 11 with a round shield. Highwaymen carried 12 swords and 12 axes.
+  - Deserters carried 17 maces and 7 spears, all 24 with a kite shield.
+  - Every archer's bow was on the left wrist. Every mage had a staff, every cultist a dagger, every pirate a cutlass, every captain a sword.
+  - Every kit weapon hung on the gear bone.
+  - Skeletons carried 11 rusted swords and 13 spears. Kobolds and trolls kept their own tools.
+- A highwayman's sword moves 0.31 through the wind-up, with the arm.
+- All 14 skeletons in an undead dungeon are armed.
+
+`foes`, `trolls`, `dungeonfoes`, `goblins` and `people` still pass. Two checks in `foes` (Sessions 171 and 172) asked for the old gear: a deserter always with a spear, a skeleton with a spear or a club. They now accept the kit's mace (gear `'kit'`) and the rusted sword. Picture: `docs/prototypes/weapons-ingame.png` (a bandit with a sword and shield, a highwayman with an axe, a deserter with a mace and kite shield, an archer, a mage, a pirate, a cultist and a skeleton).
+
+### Needs eyes
+Whether a foe's weapon reads at fighting distance, since they cast no shadow. Also whether the mace is too small in a big fist (it is the prototype's size).
+
+## v80 — Session 227 — The player's weapons and shields on the kit (H.4, Michael's answer A on Session 220)
+The second half of Michael's A: "the player's weapons in third person". `tpWeapon` built every weapon you hold in third person from boxes and called the kit "a later pass"; the shield on your forearm was a box or a flat disc. Both now come from the weapon kit that Session 226 built for the foes.
+
+**What changed.**
+- **The weapon's shape.** `tpWeapon` takes it as before (the item's `weaponShape`, or its name). It asks `buildWeapon` for the matching kit weapon, and the kit grew the shapes the player's items name that the foes had not needed:
+  - a claymore: a long grip, a wide guard with finials, a 0.76 blade;
+  - a great axe: a bigger bearded head on a long haft, with a back spike;
+  - a flail: a spiked ball on a short chain;
+  - a great club: a knobbed wooden club bound with two iron bands and studded.
+  - The scimitar is the cutlass.
+- **The item's own colours.** `wpnBuild` takes a tint. The item's `matCol` replaces the steel, and a darker shade of it the dark steel. `matGuard` replaces the brass, `matGlow` the staff's crystal and its halo. A bow's `matCol` is its wood. An Elven Sword keeps its pale green blade and gilt guard. Each tinted weapon is built once and shared, keyed by its colours, so a shop full of iron swords is one geometry.
+- **The bow** is turned half round in the left hand, so the string is on your side of the grip as the box bow had it.
+- **The shield.** A round shield or a buckler is the kit's planked round shield, with its face in the item's material colour and its rim and boss in the guard's. A buckler is 0.8 the size. A kite shield is the kite, and any other shield (the tower) is the kite at 1.35. The kite's face takes the material colour.
+
+The weapons still go in the same hands at the same grip, so `tpPose`'s swings are unchanged. The first-person view model is not touched.
+
+### Verified (headless Chromium)
+New `tests/tpweapons.test.mjs`, 5 checks, all passing, no page errors:
+- All thirteen shapes the items name (dagger to bow) build from the kit with no box.
+- Heights grow from dagger 0.36 to sword 0.66, longsword 0.87 and claymore 1.08; the great axe is 0.95 against the axe's 0.56.
+- An Elven Sword's blade colour is on 528 vertices and its gilt guard on 333. An iron sword has none of the elven colour. Two Elven Swords share one geometry, and the iron one does not.
+- On the body, the Steel Sword is in the right hand and the Round Shield on the left forearm. A Kite Shield and a Hunting Bow in the left hand follow.
+`player`, `tpshots`, `unequip`, `creator` and `weapons` still pass. Picture: `docs/prototypes/tpweapons-ingame.png` (the kit as the items tint it, and the two shields).
+
+### Needs eyes
+Whether the swings look right with the longer kit blades: the claymore is a little longer than the old box. Also whether a tower shield wants its own tall rectangular shape rather than a large kite.
+
+## v80 — Session 228 — The world's rocks: a prototype and a question (H.5, waiting on Michael)
+Backlog H.5 asks for "trees and rocks (more silhouette, less cube)". The trees got species, girth and colour in Session 192; the rocks did not. Every rock in the world is `PROTO.rock`: two jittered dodecahedra, 72 triangles, one grey, the same on the moor as in the dunes. A new look is Michael's call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/rocks/shoot.mjs`) makes a rock from an icosphere of 320 triangles:
+- Two noises push the sphere out: a broad one for the rock's lump, and a sharp one for cracks.
+- Six random fracture planes cut it flat wherever a vertex passes them, so it has faces and edges.
+- The normals are smoothed across neighbouring faces only where those faces are within 38° of each other. Worn stone reads rounded, and a fracture keeps its hard edge.
+- Colour is baked per vertex: darker in the hollows and underneath, mottled by a third noise, with the biome's dressing on the tops. Moss and snow take the tops by their normal; lichen goes in spots.
+
+An **outcrop** is the same stone flattened, stepped into six layers with alternate bands in a second colour, and tilted. A **cluster** is a boulder with three smaller stones half sunk around it.
+
+The first renders went wrong in two ways:
+- Plain face normals made every rock a faceted blob.
+- Smoothing across every welded corner then made them river pebbles.
+The angle limit on the smoothing is what made them read as stone.
+
+The start area has 17 rocks loaded, all on today's 72-triangle shape. Counted from the world's instanced meshes, the proposal would add about 5k triangles there.
+
+### Verified (headless Chromium)
+`node docs/prototypes/rocks/shoot.mjs` renders `docs/prototypes/rocks-kinds.png`, `rocks-biomes.png` and `rocks-scatter.png` with no page errors. Triangles: boulder 320, outcrop 320, cluster 1,280, today's 72.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all three kinds by biome (recommended), the boulder only, the dressing only, or not yet.
+
+## v80 — Session 229 — The third level of detail: measured, not needed (H.6)
+H.6 owed "a third tier past ~40 units if the frame time needs it". I measured before building one.
+
+**The measurement.** Stand at Dunmore's centre at noon and look four ways. Count the townsfolk in view past 40 units and the triangles they cost (already their distant copies, per Session 159), against everything the frame draws. The start of this session's attempt got the ruler wrong: my first camera was outside the town, and saw townsfolk 300–570 units off and in far zones. Standing where `settle` puts you, in the square, with 69 townsfolk loaded:
+
+| looking | people past 40 | their triangles | the frame | share |
+|---|---|---|---|---|
+| north | 12 | 28,569 | 863,962 | 3.3% |
+| east | 17 | 39,317 | 931,211 | 4.2% |
+| south | 4 | 11,259 | 814,681 | 1.4% |
+| west | 5 | 12,935 | 797,547 | 1.6% |
+
+A third bake at a quarter of the segments would save roughly half of that: 1–2% of a frame. That is not worth a third geometry per person (memory, bake time on entering a town) or a third swap to tune. So nothing is built. The check stays in `tests/lod.test.mjs`, so the day the towns fill up and the share passes a tenth, the suite says so.
+
+**Seen once, not mine to fix here.** On the first run, Session 161's check "the shadow from the distant copy" failed. Its comparison image of another person's shadow changed no pixels, so the subject had no neighbour to compare with. The rerun passed. It depends on where the townsfolk happen to stand when it runs; if it recurs in CI it wants to place its own second person.
+
+### Verified (headless Chromium)
+`tests/lod.test.mjs` gains one check, and all 9 pass (on the second run; see above): townsfolk past 40 units are under a tenth of the frame's triangles in every direction from Dunmore's centre. The shares are 3.3%, 4.2%, 1.4% and 1.6%. No page errors. `index.html` is unchanged.
+
+### Needs eyes
+A frame-time check on a real laptop, which a headless software renderer cannot give. The triangle shares above say where the time would go, not how long it takes.
+
+## v80 — Session 230 — The road coach, its horses and the shark: a prototype and a question (H.4 / H.5, waiting on Michael)
+With the foes on the kit, I looked for what else in the open world is still boxes that you meet up close:
+- **The road coach** (`buildCoachLine`): a 1.7 × 1.3 × 3 box on four discs, which you ride between towns.
+- **Its two horses:** a box on four sticks each, with a box for a head.
+- **The shark in open water** (`buildZoneEnemy`'s `shark` shape): a cylinder, a cone for a nose and four cones for fins.
+
+None of them belongs to a family Michael has approved, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/coach/shoot.mjs`) builds all three from SK shapes as plain meshes, each beside a copy of today's built the way the world builds it, with a highwayman for scale:
+- **The coach.** A rounded, panelled body on leaf springs, with windows in frames, a door each side with a handle and a crest panel, a roof rail with luggage, the driver's bench, a footboard and two lamps. The wheels have an iron tyre, a felloe, twelve spokes and a hub.
+- **A horse.** A lathed barrel with a chest and haunches, legs of three segments to a dark hoof, a neck and a lathed head, a mane of lumps and a tail. It wears a collar, a pad and a bridle. It comes in two coats and two poses.
+- **The shark.** A lathed body, counter-shaded in two layers, with extruded fins (dorsal, a crescent tail, pectorals, a small second dorsal), gill slits and an eye.
+
+Two first renders were wrong. The horses carried their heads pointing at the sky: the tilt had the wrong sign. The shark read as a whale: its profile was too deep and too blunt at the front.
+
+### Verified (headless Chromium)
+`node docs/prototypes/coach/shoot.mjs` renders `docs/prototypes/coach-pair.png`, `coach-horses.png` and `coach-shark.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all three as shown (recommended), the coach and horses first, the coach body only, or not yet.
+
+## v80 — Session 231 — The guard arm's shields on the kit, a tower shield, and a correction to the kite (H.4, Michael's answer A on Session 220)
+The last shields outside the weapon kit were the two held up in a guard: the Bandit Captain's (Session 175) and the Shieldbearer's (Session 199). Both used `attachShieldProp`'s v71 disc, a plain cylinder with a torus rim, on the left shoulder bone. Michael's A was "the kit for everyone", which names the captain's sword and shield.
+
+**What changed.**
+- **Kit shields in the guard.** `attachShieldProp` takes a kind. For a foe on the people's body, it hangs the kit's shield where the disc was, turned to face forward along the raised arm. The captain carries the round shield. The shieldbearer carries a new tower shield, which suits the dungeon's shield wall. Box-bodied foes keep the disc. The guard, the raise and the break are unchanged.
+- **The tower shield.** It is four planks bowed round the bearer (the edges swept back by a bend of the vertices), with iron bands down both edges and across the top, middle and foot, and a brass boss. The player's tower shields (any shield named neither round, buckler nor kite) now use it too. Session 227 had given them a kite at 1.35.
+
+**Correction to Session 226.** The kite shield's boss and rivets sat on its −x face. Every shield hangs on the left forearm with its +x face outward, so the deserters' and the player's kite shields showed the body their boss and the world their plain back. The boss and rivets are now on the +x face. I found it by photographing the three shields turned the same way.
+
+### Verified (headless Chromium)
+`tests/weapons.test.mjs` gains 2 checks and `tests/tpweapons.test.mjs` extends one. All pass, no page errors:
+- The zone's Bandit Captain carries the kit's round shield on its guard arm, with no cylinder left, and its guard up.
+- The dungeon's Shieldbearer (a goblin dungeon at level 5) carries the tower shield on its guard arm and a mace.
+- The player's Tower Shield builds as `tower`.
+`dungeonfoes`, `foes` and `player` still pass. Pictures: `docs/prototypes/tpweapons-ingame.png` (now with the tower shield, and the three shields' faces turned to the camera) and `weapons-ingame.png`.
+
+### Needs eyes
+Whether the tower shield on a raised shieldbearer's arm covers the body as the old disc did. It is taller (0.74) and narrower (0.46) than the disc's 0.4.
+
+## v80 — Session 232 — The first-person weapon: a prototype and a question (H.4, waiting on Michael)
+Michael's A on the weapon kit named "the player's weapons in third person" and "every foe", and both are built. The weapon you see most, in first person, is still `buildViewmodel`'s boxes. Whether it follows is a look question, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/fpweapons/shoot.mjs`) builds the first-person view for five items (a steel sword, an iron war axe, an iron mace, a hunting bow, an oak staff) and renders the world and the view scene as the main loop does. It then hides every mesh of the view model except the hands, and puts `tpWeapon(item)` in the fist at the hand's grip height. The picture is a grid: today's above, the kit below.
+
+The kit's metal came out nearly black in the view scene. That scene has its own few lights and nothing to reflect, so a metalness of .7 has nothing to show. At .25 it reads as steel. A build would give the first-person copies their own duller metal. Everything else stays: the bow's animated string and nocked arrow (they would be re-hung on the kit bow's tips), the enchantment glow and light, the hands and arm bridges, the swing, and the Forge-Man's Hammer's bespoke model.
+
+### Verified (headless Chromium)
+`node docs/prototypes/fpweapons/shoot.mjs` renders `docs/prototypes/fpweapons-grid.png`, `fpweapons-sword_today.png` and `fpweapons-sword_kit.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): the kit in first person for everything (recommended), for melee only, or not yet.
+
+## v80 — Session 233 — Two flaky checks made steady (CI fix)
+CI on the Auto sessions PR failed on the pushes of Sessions 227 and 229, and passed on 228 in between. Two checks from earlier look sessions were failing by chance, each on how its creature happened to be breathing.
+
+**`faolchu` — "hunched: the neck carried .35 lower than a dire wolf's in the same pose"** (Session 211). CI read 0.38 and 0.39, and I read 0.37 here. The tolerance is ±0.02. The idle pose puts `-.1+.02·sin(1.9t)` on every wolf's neck, and `t` includes each rig's random `t0`. So the Faolchú and the dire wolf it is compared with breathe out of step, and the difference wanders by up to 0.04 around the true 0.35. The comparison wolf now takes the Faolchú's `t0`. It read 0.35 on three runs in a row.
+
+**`dungeonfoes` — "the dungeon's wraiths and phantoms … gliding"** (Session 212). CI read a lift of 0.08, and the check wanted more than 0.1. The lift summed two things:
+- the rig's own glide, 0.19–0.29 (`tickPeople`'s `.24+.05·sin`);
+- the dungeon's hover bob on the enemy's group, ±0.12 by the enemy's phase.
+
+A low bob took the sum under 0.1. The check now takes them apart: the glide between 0.15 and 0.33, the bob within ±0.125. It passed twice (glide 0.21 and 0.20, bob −0.05 and 0.09).
+
+Neither change touches the game. Both tests now wait for nothing and depend on no phase. While writing the second fix I put a `//` comment on a test line that had code after it, which swallowed the line's closing brackets. That is the same trap CLAUDE.md warns of in `index.html`.
+
+### Verified (headless Chromium)
+`faolchu` passes three runs out of three, and `dungeonfoes` two out of two. No page errors. `index.html` is unchanged.
+
+### Needs eyes
+Nothing to see. If CI goes red again on the next push, it is something else.
+
+## v80 — Session 236 — The Bog Crawler as a giant water bug (H.4, Michael's answer B on Session 225)
+Michael chose the giant water bug for the Bog Crawler (issue #25). It was the last creature in the open world still on a box-era body: the S130 flattened sphere on six stick legs.
+
+**What changed.** The water bug joins the spider's kit as a third kind (`SPIDER_KINDS['Bog Crawler']`, `bug:true`). The kit used to have one leg table for every kind. Now each kind can carry its own legs, with each leg's own reach, and its own body height: `spLegs`, `spH`, and `spiderFeet(k)` in place of the fixed `SPIDER_FEET`. The spider and the Sand Scorpion keep the old table and are unchanged. The water bug's shapes are the prototype's, baked to one skinned mesh:
+- a flat oval body narrowing to the head, with a pronotum and a head with a short dark beak;
+- two wing covers crossing at the tail, on the abdomen bone so they lift a little as it breathes;
+- pale flecks and moss on the back.
+
+Its bones:
+- **Forelegs.** The raptorial forelegs sit on the fang bones. Each has a new `hook` bone at the knee, and its hooked tibia folds shut on the femur about a hinge across the two (`BUG_ARM`).
+- **Walking legs.** It walks on the other four legs, placed by the spider's IK. The hind pair's tibias carry a flat paddle.
+
+That makes 18 bones and 4.8k triangles (2.3k for the distant copy).
+
+**How it moves.** The Session 225 note said "walked on alternating tripods". That was wrong for this body. The forelegs are held up and never walk, so the four walking feet step in diagonal pairs, L0 with R1 and R0 with L1. The spider's `SG.group` gives those pairs unchanged. Standing, the forelegs twitch a little. Through the wind-up it rises on its feet and the forelegs lift and swing wide open. On the strike it lunges and snaps them shut. Dead, its legs curl and the forelegs fold. Its numbers (26 health, 7 damage, speed, resistances, where it spawns) are unchanged. The old body stays in `zShapeExtra` behind a `!SPIDER_KINDS` guard, as the scorpion's does.
+
+The first render had the fold backwards: the hook's positive angle closed the leg instead of opening it. The test's reach measure caught it. The baked dark eyes also fought the glow mesh drawn in the same place, so the eyes are now the glow mesh alone, a dull olive.
+
+### Verified (headless Chromium)
+New `tests/crawler.test.mjs`, all 5 checks pass with no page errors:
+- One skinned mesh on 18 bones plus its eyes, shared by the kind with its own material. No box. Health, damage and shape unchanged.
+- The walking legs are never asked past their length through the walk, the run and the attack (worst 0.97 of the leg). The first try with the hind reach at .54 gave 1.03, so it is .5 now. The feet step in the diagonal pairs.
+- Planted feet do not move, walking (0 mm) or running (0 mm), and sit on the ground (0–0.1 mm). The swinging feet travel up to 50 mm a frame.
+- Measured from the femur's base, the claw's tip is 0.26 at rest, 0.47 at the top of the wind-up and 0.14 at the strike. Both sides agree to the millimetre, and it settles back to 0.26.
+- Dead, the forelegs fold and the body sinks 0.06.
+
+`tests/spiders.test.mjs`'s first check said the Bog Crawler keeps its old body. It now checks that the crawler is the bug's own bake. `spiders` and `scorpion` still pass. The whole suite ran as three shards side by side on this container's four cores: 52 of 54 suites passed. `pois` ("none": no tower, shrine, camp or glade found) and `townroads` (15 of thirty settlements) failed because the world's sites had not finished generating under that load. Run alone afterwards, both pass. Pictures: `docs/prototypes/crawler-ingame.png` (a bandit, a spider, the bug standing and striking) and `crawler-ingame-close.png` (standing, and at the top of the wind-up).
+
+### Needs eyes
+- Whether the forelegs' wind-up reads as a threat at play distance or looks like a wave. They rise high: 0.42 above the femur's base at the top.
+- Whether the moss lumps on its back are too bright a green for a thing that hides in bog water.
+
+## v80 — Session 237 — What a picked herb leaves: a prototype and a question (H.5a, waiting on Michael)
+**Numbering.** This entry and the one before it were first written as Sessions 234 and 235, and their commits carry those numbers. The systems builder had already taken 234 and 235 on auto/systems a few minutes earlier, so they are now 236 and 237.
+
+The rest of section H is waiting on Michael: the rocks, the road coach and the shark, and the first-person weapon. So I took the plants' owed line from Session 167. A picked bush, sapling, shrub, bramble or bracket stump stays, bare, as Michael asked. The other seventeen kinds vanish outright and come back whole. What they should leave is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/herbstub/shoot.mjs`) takes each kind's baked plant from `plantGeo` and builds two picked copies:
+- **A, a stub.** It keeps every triangle that lies wholly under a cut height of 22% of the plant's height, held between 3.5 and 9 cm. Stalks are baked in three segments, so their bases survive as stubs, along with the crown and the lowest leaves. The flat kinds (under 13 cm: the mosses and the rosette) cannot be cut by height, so they are torn: the triangles on two opposite sectors are kept. The stub is darkened a little and sits on a patch of turned earth.
+- **B, the earth alone.**
+
+Two first renders were wrong. The earth was a mound that buried the stubs, and the frame cropped the outer columns. The earth is now a flat patch a quarter to a third of the plant's spread.
+
+The stubs run from 22 triangles (the broadleaf) to 516 (the heartroot, whose root crown stays). That is 3–65% of the whole plant, and most kinds are 10–40%. In the build, the stub would be the picked copy the bushes already have (`PLANT_STAYS`, `herbIM`'s second instanced mesh), so regrowth and instancing need nothing new.
+
+### Verified (headless Chromium)
+`node docs/prototypes/herbstub/shoot.mjs` renders `docs/prototypes/herbstub-1.png` and `herbstub-2.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, the stub on turned earth (recommended); B, the earth alone; or C, as today.
+
+## v80 — Session 242 — Cloaks and hair that swing: a prototype and a question (H.3, waiting on Michael)
+The rest of section H is waiting on Michael: the rocks, the road coach and the shark, the first-person weapon, and what a picked herb leaves. So I took an owed line from H.3 that nobody had started, secondary motion. Today a cloak is one rigid half-cylinder fixed to the spine, and a plait or a tied tail is fixed to the head. They turn with the body and never move on their own, so a running Markish townsman's cloak stays glued to his back. How much a cloak should move is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/secondary/shoot.mjs`) writes a patched copy of the game to `tests/tmp/` and boots it. The patch is eight string replacements, and each throws if it no longer matches. The cloak hangs from a new `cloak` bone at the shoulders, in two halves: the lower half is on a `cloak2` bone hinged at the middle of the back, and the halves overlap by 3 cm so the fold does not open a gap. A braid, the warrior's back plait and the tied tail hang from a `hairB` bone at the nape; `plait()` takes the bone and keeps its points in the head's frame. Each of the three bones is a damped pendulum in two axes, pitch and roll. Its driver is how the bone's pivot moves in the world: the pivot's acceleration along the heading and across it, gravity plus the vertical acceleration, and a drag that goes with the square of the forward speed. The parent bone's own pitch and roll in the body's frame are taken off, so the pendulum hangs in the world rather than in the spine. The angles are clamped so the cloak never swings into the back (pitch −.05 to .85, the lower half 0 to .6).
+
+Two first tries were wrong. A single rigid cloak with a strong drag stood straight out like a board at the clamp (1.25 rad). With the drag cut to a third, and seen three-quarters from behind, the lift did not read at all. The two hinged halves, a drag of .3 and .2, and a side view show it.
+
+Each picture follows one person through a scripted run: standing for 1 s, walking for 1.5 s at 1.3 u/s, running for 2 s at 3.8 u/s with a turn to the left in the last second, a dead stop, then standing for 2 s. The top row is the same person with the pendulums off, which is today's look; the bottom row is the proposal. The three people are a Markish woman with a dress and a plait, a Markish man with warrior braids, and a Gatelands woman with a tied tail. The pictures are quantised to steps of 12 per channel, because the grass's noise otherwise makes each one 1.7 MB (now about 0.9 MB).
+
+### Verified (headless Chromium)
+`node docs/prototypes/secondary/shoot.mjs` renders `docs/prototypes/secondary-1.png`, `-2.png` and `-3.png` with no page errors. The cloak's upper half peaks at the .85 clamp while running for all three. Standing and settled, the proposal is identical to today.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, the cloak and the back hair, for everyone who wears them (recommended); B, the cloak only; or C, not yet. The plaits' swing is small in the pictures, and the hinge shows a faint fold line when the cloak is bent hard. What only motion can judge is whether the cloak's lag at the start and stop reads as cloth or as a flap; a still picture cannot show that.
+
+## v80 — Session 243 — Shading in the townsfolk's creases: a prototype and a question (H.1, waiting on Michael)
+H.1's shape kit has owed ambient occlusion since Session 153. The dungeon shell bakes its own darkening at the foot of walls and in corners (Session 189), but a person is baked part by part with flat colours: an armpit, the underside of a beard, the inside of the thighs and the skin under a hat's brim are lit like a cheek. Whether the people should carry that shading, and how strongly, is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/peopleao/shoot.mjs`) patches a copy of the game in three places. The bake keeps each part's range of vertices. After the bake, `personAO` stands each part in by one to six spheres along its longest axis. A sphere's radius is the mean of the part's two shorter half-extents, so a plaited lobe is one sphere and a shin is several. Each vertex is then darkened by the spheres of every other part it faces, using the analytic sphere occlusion: the cosine from the normal to the sphere's centre, times r²/d² capped at 1, summed, times .75, and capped at a darkening of .5. A part never shades itself, so a head does not darken its own face. This is worked out once per bake, in the bind pose, into the colours the vertices already carry: no new triangles, no shader, nothing per frame.
+
+The first pictures framed six people in a row at an angle and cut the sixth off. The close pictures are now three people each, face on, and the third picture is all six from behind at street distance in the late afternoon.
+
+### Verified (headless Chromium)
+`node docs/prototypes/peopleao/shoot.mjs` renders `docs/prototypes/peopleao-1.png`, `-2.png` and `-3.png` with no page errors. A person's whole build with the occlusion took 5–10 ms, and 19 ms for the bearded Markishman with warrior braids (8,152 triangles, the most parts). The six people are 4,350–8,152 triangles; I did not time the occlusion pass apart from the rest of the build. Close up, the shading is visible under the jaw and beard, at the armpits and the waist, and under a hat's brim. At 8 units from behind, the two rows are hard to tell apart.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, this strength for the people and then the creatures and houses (recommended); B, stronger; or C, not yet. On a real screen, it would be worth judging whether the faces go muddy in shade at dusk. The bind-pose bake leaves a raised arm's shadow at the side.
+
+## v80 — Session 244 — The body's swing follows the swing you made (H.3, a bug)
+I came to H.3's owed line, the player's swings (anticipation and follow-through), meaning to prototype it. Reading how the third-person body swings, I found it could only ever do one of its three swings. `tpPose` reads the viewmodel's record of the current swing, its variant and whether it is a power swing, on the swing's first frame. But `tpUpdate` runs earlier in the main loop than the viewmodel's block, and that block only picks the variant and the power flag later in the same frame. It also sets both back to 0 when each swing ends. So on the first frame the body read 0 and false every time, and it did not read them again while the swing ran. In third person every swing was the flat cut at a normal swing's size, and the overhead chop and the rising diagonal never played. A two-handed power attack showed the chop in first person and the ordinary flat cut in third.
+
+**The fix:** while the viewmodel has not yet started the swing (`swingMax` still 0), the body waits one frame before it takes up the swing. The swing is .55 s, so the wait is one frame in about thirty-three. The two sides also number their swings differently. The viewmodel's are 0 the forehand diagonal, 1 the backhand diagonal and 2 the overhead chop; the body's are 0 the flat cut, 1 the chop and 2 the rising diagonal. `TP_SWING_OF` maps one to the other, so the chop is the chop on both, including the two-handed power attack. The forehand goes to the flat cut and the backhand to the rising diagonal, which are the nearest the body has. Timing, damage and the first-person view are unchanged.
+
+### Verified (headless Chromium)
+New `tests/tpswing.test.mjs` drives the game's own `loop` one frame at a time (1/60 s, `requestAnimationFrame` stubbed for the run), so the order within a frame is the real one. It locks the viewmodel's variant and swings a steel sword. Against the old build it fails as described: all three variants and the power swing posed as the flat cut, with the shoulder's peak turn 1.07 each time. With the fix, every posed frame of the swing (33 of 34) is the right swing. The chop raises the shoulder to −2.67 against the flat cut's −1.45. A power swing's cut turns the shoulder to 1.45 against a normal one's 1.07, and after the swing the body lets go. No page errors. `tpweapons`, `tpshots` and `player` pass unchanged.
+
+### Needs eyes
+In third person, swing a few times: you should now see all three swings, and a power attack should be visibly bigger. The body's forehand is a flat cut where the first person shows a diagonal, and its backhand rises where the first person's falls. Matching them properly, and giving the swings a wind-up and a follow-through, is the prototype this session was meant to be. That comes next as a question.
+
+## v80 — Session 245 — The player's swings with a wind-up and a follow-through: a prototype and a question (H.3, waiting on Michael)
+H.3 has owed the player's swings (anticipation, follow-through) since Session 154. In third person the body's swing is three smoothsteps on a clock of its own: a wind-up over the first 30% of the swing, a strike over the next 30% and a recovery over the last 40%. The arm does the work, with a small turn of the torso and a lift of the left thigh. The first person runs on other phases (`ANIM_PARAMS.swing`: the wind-up to .44, the hit at .55, the follow-through to .79). So at the moment of the hit the body's blade is still on its way, and its forehand and backhand are not the first person's diagonals. How a swing should look is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/swings/shoot.mjs`) patches a copy of the game in six places, each of which throws if it no longer matches, behind a `window.PROTO_SWING` switch, so the same page renders both rows. The proposal's poses are keyed to the first person's phases. The wind-up eases out into a held coil, with the torso turned away and the weight on the back foot. The strike is an ease-in (progress to the power 1.6) that ends at the hit, with the left foot stepping in and the torso unwinding. The follow-through is an ease-out past the hit to .79, then a smoothstep back to guard. Each of the three swings is a four-pose track (guard, coil, hit, carry) for the shoulder, elbow, wrist and torso; a power swing widens it by a quarter. My first render had the blade still overhead at .52, just before the hit. The swing's strike is .11 of .55 s, about 60 ms, and the joints' usual easing rate (`dt*22`, about 45 ms of lag) could not keep up with it. The proposal eases the arm and torso at `dt*50` during a swing, and the blade now arrives by .52. In the second render the claymore's carry went through the floor, so the chop now stops its carry higher (the shoulder at −.8 rather than −.45).
+
+Each picture follows one swing on a plain stage at noon, three-quarters from the front on the sword side, at seven moments (guard, .30, .44, .52, .58, .72, .90). The white line is the path so far of the weapon's farthest point from the fist. The swings are a sword-and-shield forehand, backhand and overhead chop, and a two-handed power chop with a claymore.
+
+### Verified (headless Chromium)
+`node docs/prototypes/swings/shoot.mjs` renders `docs/prototypes/swings-1.png` to `-4.png` with no page errors. Each swing is 30 frames at 1/60 s up to the .90 snapshot (35 for the power swing, at 1.4× the power duration). In the pictures the proposal's blade has come down to the hit by .52 in all four. Today's strike runs to .60 by design, so at .52 the blade is still mid-swing.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, as shown (recommended); B, timing and matching only, with no coil or step; or C, not yet. In both rows, the left hand leaves a two-handed weapon's hilt through part of the swing, which is owed whichever is chosen. Only motion can judge whether the coil's short hold reads as weight or as a hitch.
+
+## v80 — Session 246 — Wealth in clothes: a prototype and a question (H.2, waiting on Michael)
+H.2 has owed wealth in clothes since Session 153. A townsperson's dress today is their people, nation and role, so a poor fisher and a well-off one dress alike, and so do the folk of a failing village and a thriving town. The game already models a town's fortune as `prosperity`, which the player's choices move, but on screen it shows only in how many lots are built, the shutters, lamps and banners. What wealth should look like, and whether it should follow the town, is a look call and touches the economy's meaning, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/wealth/shoot.mjs`) patches `personBakeQ` in two places, and each patch throws if it no longer matches. The wealth is read from `g.wealth`; without it a person is baked as today. Below .3 a person is poor. They get a rope belt, thinner and pale, with a knot; a patch on the chest; and a patch on the skirt when there is no dress. The script then fades the cloth, sleeves and legs towards undyed wool (0x7a6c5a, 45%, 45%, 30%), gives foot-wraps for boots, and drops a fur hat or a chaperon. Above .7 a person is well-off: a gilt buckle on the rounded box, a fine chain at the neck with a pendant, gilt trim, dark boots, and the dyes deepened. My first render raised the dyes' saturation by 40% and made an electric blue and a loud orange. The second is 15% more saturated and 18% darker, which reads as better cloth rather than brighter cloth. The pictures are the same five people, built from the same genome, three ways, face on at noon: five Gatelanders, then two Markish and three Aurennais.
+
+How a person's wealth would be set, if built: a base by role (lords .95; merchants, innkeepers and scholars .7; smiths, apothecaries and priests .55; villagers .45; farmers and fishers .35; hermits .15), moved by the town's prosperity by ±.25, and ±.1 on the person's own seed. This is in the question, not in the prototype.
+
+### Verified (headless Chromium)
+`node docs/prototypes/wealth/shoot.mjs` renders `docs/prototypes/wealth-1.png` and `-2.png` with no page errors. Against today's 4,350–7,662 triangles a person, poor adds 104–160 and well-off adds 416. The Markish man is 88 fewer when poor, because his fur hat comes off.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, wealth from the role and the town's prosperity, so the clothes follow the town's fortune (recommended); B, the role only; or C, not yet. Only a real screen can judge the foot-wraps and the chain at street distance, and whether gilt reads as money or as costume.
+
+## v80 — Session 247 — Both hands on a two-handed weapon (H.3)
+Session 245's pictures showed that in third person the left hand leaves a two-handed weapon's grip. The body's left arm was posed by fixed angles: at rest, and in a swing as the right arm's angles plus an offset. Nothing checked that the hand arrived at the grip. At rest the left wrist was 25.6 cm from the grip. Through an overhead chop it waved in the air above the head, up to 42.6 cm off. This is owed whichever way the swing question (Session 245) is answered, so it is a fix and not a question.
+
+**The reach** (`tpGripL`): after the pose is set each frame, the left arm reaches for a point on the grip a hand's width from the right fist towards the pommel. That point is worked out once from the weapon's own shape when the body is built (`R.gripL`). The reach is a two-bone solve. The elbow is a hinge bent one way, and the solve halves on the real bones (14 steps) for the bend that makes shoulder-to-wrist as long as shoulder-to-grip. Then the shoulder turns the wrist onto the grip. It runs for a two-handed weapon (not a bow) unless you are dead or casting. A first try by coordinate descent stalled with the hinge and got no nearer than 11 cm at rest. The halving solve gave the same 11 cm, which showed the grip was simply out of reach.
+
+**The two-handed guard:** the stylised arms are short (0.26 m shoulder to wrist here). With the right fist out on the right side as before, the grip below it was 0.37 m from the left shoulder. I searched the right arm's angles for poses that bring the grip within reach with the fist in front. The rest pose for a two-handed weapon is now the right shoulder at (−.9, 1.1) and the elbow at −.6, where it was (−.45, .35) and −.85. The fist is at the middle of the chest, the grip is at 90% of the left arm's reach, and the blade slants up across the body. That is a small change to how a greatsword rests, and is in the picture. Swings still use their one-handed poses. Where those take the grip out of reach, the left arm stretches straight towards it; two-handed swing poses belong with the Session 245 answer.
+
+### Verified (headless Chromium)
+`tests/tpswing.test.mjs` gains a claymore case, driven through the real loop frame by frame. The grip point is on the pommel side of the fist, away from the blade. With the reach, the left wrist is 0.0 cm from the grip at rest and when blocking. With it turned off in the same build it is 15.0 cm and 13.9 cm; in the old build it was 25.6 cm at rest. The worst frame across a forehand, a backhand and a chop is 25.9 cm with the reach, against 42.6 cm without. The suite also now skips the render while it steps the loop, which makes no difference to what it measures, so it runs in about 50 s rather than timing out. `docs/prototypes/twohand-shot.mjs` renders `docs/prototypes/twohand-ingame.png`: the old build above and this build below, at rest, blocking and at three moments of a chop. No page errors. `tpweapons`, `tpshots`, `player` and `creator` pass unchanged.
+
+### Needs eyes
+The new greatsword rest pose, blade across the body, in play. The left arm's elbow can point oddly when the grip is near the edge of its reach. The rest of a two-handed swing waits on the Session 245 answer.
+
+## v80 — Session 248 — Stone arch bridges, and bridges that come back when their cell reloads (H.5)
+H.5's structures have been going onto the kit one at a time under Michael's answer A on buildings ("Churches, keeps and the POIs follow"). Every river crossing was still the Session 134 bridge: a flat box for a deck, a box for each rail and a box for each pier, in two new plain Lambert materials per bridge, 5–7 meshes and about 60–85 triangles, casting no shadow.
+
+**The bridge** (`bridgeGeo(len,drop,seed)`) is one vertex-coloured mesh on the shared `VC_MAT`, so it is one draw call. The side's profile is a shape with an opening cut for each span between the piers. It is extruded across the bridge's width, so the piers, the spandrel walls and the barrel vaults under the deck are one solid. Each span is a segmental arch: a semicircle where there is height for one, flatter where the river is shallow. A ring of arch stones stands proud on each face, with the keystone a little larger. The piers get pointed cutwaters up- and downstream, up to where the arches spring, capped with stone pyramids. A string course runs under the rails. The deck is paved in rows of slabs laid broken-joint. Each rail is two courses of blocks, also broken-joint, on a dark mortar core, with a rounded coping, and there is a post with a pyramid cap at each end. The deck, its width and length, the rails' positions and their collision are all as before. The deck's walking face is at .28, where the old deck's top was .25. A bridge is 4.3–6.7k triangles; there are four in reach of the start, and nothing else needed a distant copy for that.
+
+**The bug:** measuring, only one of the four bridge sites had a bridge. Cells are cached (`CELLS`) with their sites, and a bridge's site stays in its cell's list after the cell unloads. On a reload, `buildBridges` found that site within 40 units and skipped the crossing as already bridged. So after its cell's first reload a bridge was gone, with its rail collision, while its site (and name) stayed. The start itself reloads cells, so the nearest bridge to the home province's start was already missing in the build before this one (the left of the picture). Now only a crossing already bridged in the same pass is skipped. A crossing bridged on an earlier load is built again and keeps its old site.
+
+**Found, not mine (roads, D):** `buildRoad` seeds a road's bends from its index in `ROAD_DEFS`, and `rebuildRoadGrid` renumbers the live roads when a cell unloads. So a reloaded road can take a different line depending on what else is loaded, and its river crossings move with it. After a reload the bridges follow the road to where it now crosses. The stale sites at the old crossings stay in the cell's list, as they did before; a stale site that is more than 40 units from every new crossing is not rebuilt, so it has a name and no bridge. That belongs to the roads rewrite.
+
+### Verified (headless Chromium)
+New `tests/bridges.test.mjs` drains the cell-loading job queue first (`WORLD.jobs`), because cells load in real time and a check made too early sees half-built cells. All four bridges near the start are one vertex-coloured mesh with no children, casting shadows: 4,382, 4,310, 6,652 and 4,754 triangles. Each is its old length to within .02 and 8.97 across, which is the 5.2 deck plus the cutwaters. Each has its deck at the old height and two rail colliders. The rails and posts top out at 1.87. The deck's walking face is at .28. A line across the bridge 1.2 under the deck at mid-span passes through the vault, and one at the deck hits the bridge 3 times. The reload check unloads and reloads a bridge's cell twice. The second reload starts from the same roads as the first, so it isolates the fix. Both reloads build the same three bridges in the same places with six rail colliders. With the old skip put back, the second reload builds none and the first test sees one bridge of four. No page errors. `pois`, `lod` and `townroads` pass unchanged. `docs/prototypes/bridges-shot.mjs` renders `docs/prototypes/bridges-ingame.png`: the nearest crossing to the start, the build before on the left (no bridge there) and this build on the right, from the bank and along the deck, at noon.
+
+### Needs eyes
+The bridge in real light and fog, and whether the cutwaters read against the river's colour. The arches' height on a shallow river, where they flatten. Walking across: the deck is .03 above the old one and should not catch the feet. The wandering roads above: a reloaded road can move under you.
+
+## v80 — Session 249 — Town walls and gate towers in detail (H.5)
+The next structure under Michael's answer A on buildings. A town's wall comes in four tiers by its prosperity (`wallTierFor`): a fence below 45, a log palisade, stone from 65, and dressed stone from 85. Every tier was boxes. A ring of straight segments about 20 long was merged into one mesh at the town's centre: the fence two rails and a post, the palisade and the stone walls one box each with two to five crenel blocks on top. The gate towers were a 1.6 box (the palisade's) or an eight-sided cylinder under a cone. Each segment sat flat at the height of its middle, so on a slope one end floated and the other was buried.
+
+**Now** each segment is its own pair of meshes: the detail near, and today's boxes, in the segment's own frame, as the distant copy. The bake clusters them with the houses by place and `houseLod` swaps them at 70/80 units, the same as a house. Each segment reads the ground at its two ends. The fence and the palisade follow it post by post and log by log, and the stone tiers sink a footing below the lower end.
+- **Fence:** split posts every ~2.4, a little out of true, and two rails per bay following the ground. 536 triangles a segment.
+- **Palisade:** logs of varied height at .44 spacing with pointed tops, and two bracing rails on the inside. 1,128.
+- **Stone:** a plinth, then rubble courses of uneven height and mottled blocks laid broken-joint on a dark mortar core. It has buttresses on the outer face with sloped caps, and a parapet on the outer edge crenellated along the whole run (it had three blocks a segment). 1,608.
+- **Dressed stone:** pale ashlar in even courses, a string course, and a projecting crenellated parapet on a row of corbels. 2,340.
+- **Gate towers:** the palisade's is now an open timber watchtower: four posts, cross-braces, a planked lookout and a pyramid roof (552). The stone tiers' round tower is sixteen-sided with a battered foot, course bands, arrow slits, a corbelled top with eight merlons, and a slated cone in courses with a finial (1,380–1,476).
+
+A town's dice (`r`) are untouched: the new pieces roll on their own seed from the site's id and the segment. The collision (`sol`), the gates and the guards are as before. The gate is still a gap between two towers; an arch over the road would change what passes under it, so it is left.
+
+### Verified (headless Chromium)
+New `tests/walls.test.mjs`. On ground .8 above the middle at one end and .6 below at the other, every tier builds a vertex-coloured segment of the full 20 units that reaches below the lower end (−.9 to −1.1). None rises more than 1.3 above its old height, and all are under 4k triangles (536, 1,128, 1,608, 2,340). The towers are 552–1,476 triangles. La Porte Grise, the walled town near the start, bakes its detailed clusters (walls among them) paired with plain twins: shown from the town's middle, none shown from 600 units off. No page errors. `houses`, `lod` (the townsfolk's share of a Dunmore frame still under a tenth), `townroads`, `furniture`, `watch` and `wayfinding` pass unchanged. `docs/prototypes/walls-shot.mjs` renders `docs/prototypes/walls-ingame.png`. It rebuilds La Porte Grise at prosperity 50, 72 and 90 (palisade, stone and dressed stone), with the build before on the left and this one on the right, at noon, outside a gate at each tier and along the stone wall. The staged pictures from the test (`tests/out/walls-*.png`) are lit by a sky that is not ticked, so they are dim.
+
+### Needs eyes
+The walls at the swap distance: at 70–80 units the plain ring replaces the detail per cluster, and the crenels jump from three a segment to a dozen. The palisade's watchtower roofs take the stone style's tile red (`STYLE.stone.roof2`), as the old towers did; shingle might suit timber better. The buttresses stand a little paler than the wall face in low sun.
+
+## v80 — Session 250 — The harbour in detail (H.5)
+The harbour was the last of a port's pieces on plain boxes. The quay was a box 8 wide and 3.2 deep with a thin box for a deck. It had wooden pegs for bollards, a breakwater of seven 6-unit cubes that read from the water as one grey wall, crates as plain boxes, and nets as wireframe cones. This session is under Michael's answer A on buildings, as the bridges and walls were.
+
+**The quay** (`quayGeoHi`) is one mesh with the old box and deck as its distant copy, paired for the bake like a house.
+- **Faces:** both long faces and the head are courses of blocks, laid broken-joint on a dark mortar core, with iron mooring rings under the coping.
+- **Tide line:** everything below sea level + .3 is darkened and turned towards green, fading over .7 (`tideLine`, applied to the vertex colours after the merge), so the quay has a wet, weedy foot at the water.
+- **Top:** a kerbed coping of rounded stones runs round the edge, and the deck between is paved in rows of slabs laid broken-joint.
+- **Steps:** a flight of six steps goes down the right-hand face towards the water near the head. They are for the look only: the walkable platform is still the flat deck at 1.1.
+
+**Around it:**
+- The bollards are cast iron (a lathe: a base, a waist and a cap).
+- Each breakwater block is a heap of armour stone: a large craggy boulder and four smaller ones round it, dark below the tide line, with the old cube as its distant copy (`breakwaterHeap`).
+- The quay's crates are the town's rounded crate.
+- A net is a low lumpy heap with cork and red floats (`netHeapGeo`).
+
+The town's dice are drawn in the same order as before. The new pieces roll on their own seeds, so boats, crates and the harbourmaster stand where they stood. The quay's platform and the breakwater's seven colliders are unchanged.
+
+### Verified (headless Chromium)
+New `tests/harbour.test.mjs`.
+- **The quay alone:** a 40-long quay is 40 long, 9.38 across with the steps, with its top at .100 (the old deck's) and its foot at −3.2. Below the tide line its colour averages .88 (the sum of r, g and b) against 1.22 just under the coping. It is 8,544 triangles; a breakwater heap is 400, topping out at 2.31 within 3.9 of its centre (the old block's top was 2.4); a net is 456.
+- **Portclare**, the nearest port, settled into: its quay platform is still one, at 1.1; its breakwater still has seven colliders; its detailed clusters are paired with plain twins, and three show from the quay.
+- A check I first wrote, that no wireframe nets remain, proved nothing: the settlement's bake merges every mesh into vertex-coloured clusters, so it would pass on the old build too. It is dropped.
+- No page errors. `ships`, `ferry`, `furniture` and `lod` pass unchanged.
+- `docs/prototypes/harbour-shot.mjs` renders `docs/prototypes/harbour-ingame.png`: Portclare before (left) and after (right), at noon, from the water, towards the breakwater, and along the quay.
+
+### Needs eyes
+The tide line against the real water's colour and its swell. The steps meet the water only where the sea is shallow, and on a deep quay they end in the air below the surface. From the water, the breakwater's heaps might look too separate where the old blocks ran together; a heap or two more between the seven would close it up, but that changes its collision, so it is left. The quay is 8.5k triangles; there is one in a port and it has a distant copy, but it is the heaviest single piece this pass has made.
+
+## v80 — Session 251 — The fort compound's ring and towers in detail (H.5)
+A fort compound (the ring round a fort door's keep, Session 132) still had the old look. It was fifty-odd box segments, 3.4 tall and 3.5 long, with three cap blocks each, and six eight-sided towers under cones, all merged into one mesh at the fort's centre. It had no distant copy, because it had only one detail level. The keep and the barracks were already done (Sessions 195 and 202).
+
+**Now** each segment is coursed stone from Session 249's builder (`wallSegHi('stone', …)`): the plinth, rubble courses on a mortar core and a crenellated parapet. The builder takes a new flag that leaves out the buttresses, because on a 3.5-unit run it would put one on every segment. Each segment is paired with its old box and caps as the distant copy. Each tower is Session 249's coursed round tower (`gateTowerHi`) at the fort's heights (4.8 at the corners, 5.6 at the gate), paired with its old cylinder and cone in its own place. That places each distant copy in the same bake cluster as its tower; an old tower left in the centre's cluster would have swapped with the wrong piece. The tower builder now leaves out an arrow slit that would sit within 1.2 of the top, which a tower this short would otherwise get. The seeds come from the fort's seed and the piece's number; the fort's own dice are untouched.
+
+**A regression, caught in the picture:** the new towers are wider (1.8–2.0 against 1.4–1.6), and the gate towers' banners, hung 1.6 from the centre, disappeared inside them. The pole and the cloth now hang at 2.05 and 2.3.
+
+**Found, not fixed here:** about sixty trees and plants stand inside the ring, 25 units from the centre of the fort nearest the start. A fort door flattens a stamp of radius 46 round itself, and trees are not scattered on a stamp. But a chunk that was built before its cell placed the door keeps the trees it scattered, and only its terrain is refreshed for late features (`refreshChunksNearWater`). This happens when you arrive by jumping there, which is how the test arrives. Fast travel and loading a save arrive the same way. This is the next session.
+
+### Verified (headless Chromium)
+`tests/walls.test.mjs` gains the fort nearest the start, Cnocowen Keep at 13034, 23697, about 1,750 from the start. The test goes there as the harness goes anywhere, and drains the loader until the compound is built. It has 50 wall colliders, the number the ring's formula gives outside the gate gap, and 6 tower colliders. Its detailed clusters are all paired with plain twins: 4 shown from 40 units off, none from 700. No page errors. `walls`, `houses` and `dungeon` pass. `docs/prototypes/fort-shot.mjs` renders `docs/prototypes/fort-ingame.png`: the fort before (left) and after (right), from above at noon. The instanced trees and plants are hidden for that picture, because they stand in the courtyard (above).
+
+### Needs eyes
+The ring at the swap distance. The towers' tile-red cones against the keep's dark ones (the garrison style's roof colour, as before). The banners at their new distance from the towers.
+
+## v80 — Session 252 — The forest no longer grows in a fort's courtyard (H.5)
+Session 251's pictures found about sixty trees, bushes and rocks standing inside the ring of Cnocowen Keep, the fort nearest the start. Seen from above, the fort was under the canopy.
+
+**Cause:** trees, bushes and rocks are scattered per chunk, and the scatter skips any point inside a stamp's core (`stampAt`). A fort door's stamp (radius 46, flattening the ground for the compound) is added when the fort's cell places its doors, the third step of loading a cell. When you walk in, cells load well ahead of the chunks near you, so the stamp is there first. When you arrive all at once, by fast travel, a loaded save, or a jump as the tests make, the chunks round you are built at once and the cell's steps come after. The chunk keeps what it scattered. Late features only refresh a chunk's ground (`refreshChunksNearWater`), and even that was not called for doors. The same applies to any stamp that arrives late: a town's pad, a port's quay, a cave door's apron.
+
+**The fix** (`clearScatterUnder`): when a cell's door step has added its stamps, every chunk already built under one of the cell's stamps is checked. Each tree, bush or rock inside a stamp's core is taken out of its instanced mesh, the mesh's last instance moving into the gap and its count dropping by one, so no empty or degenerate instance is left. Its collider and its tree point go with it, matched by position within .05 because the instance matrix stores float32. Then the chunk's ground is refreshed so the stamp's flattening shows. Nothing is rebuilt or respawned: the chunk's herbs, encounters and fish stay as they were. My first version zero-scaled the instances instead. That gave the trees suite a 0/0 girth, and a zero-scale instance is still drawn, so it was changed. The redundant tag it added is gone too; the scatter meshes already name their species in `userData.scatter`.
+
+### Verified (headless Chromium)
+`tests/walls.test.mjs` goes to Cnocowen Keep by a jump, as before, and now counts the scatter instances and small colliders within 26 of the fort's centre. With the fix both are 0. With the clearing call turned off in the same build they are 56 and 54. No page errors. `walls`, `trees` (each tree its own girth, which the zero-scale version broke), `plants`, `saves`, `townroads`, `pois`, `bridges`, `weather` and `houses` pass. `docs/prototypes/fort-trees-shot.mjs` renders `docs/prototypes/fort-trees.png`: the fort after a jump there, before (left: all canopy) and after (right: the compound in its clearing, the forest round it), from above at noon.
+
+### Needs eyes
+The trees in the stamp's blend band (46–80 from the door) were scattered on the old ground. Their ground is now blended towards the pad, so some may float or sink a little at the clearing's edge. A pale road runs through the fort's back wall; it was hidden by the trees before. That is the roads' (D). Fast travel into a town and a loaded save should now show clear pads where they sometimes had trees.
+
+## v80 — Session 253 — Signposts and name boards on the kit (H.5)
+Every town with a road in has a signpost at its edge and a name board beside each road in. Both were boxes. The signpost was a square post with a box arm and a four-sided cone point for each road, five or more meshes. The name board was two square posts and a flat board, three meshes. They are the first thing a traveller reads of a town, so they are the next small structure under Michael's answer A on buildings.
+
+**The signpost** (`signpostGeo`) is one vertex-coloured mesh. A round weathered post with a pointed cap stands in a little cairn of five rounded stones. Each arm is a plank .12 thick, extruded from an arrow-shaped outline so the point is part of the plank, and pegged to the post with an iron pin. The arms are at the old heights and bearings. **The name board** (`nameBoardGeo`) is one mesh: two round posts with pointed caps on stone footings, and a board with rounded edges inside a darker frame. The lettering stays the textured planes it was. The signpost's lettering moves in from .095 to .068 from the arm's centre, because the plank is thinner than the old .16 box; the name board's stays at .05 in front of a face at .04. The colliders are unchanged.
+
+### Verified (headless Chromium)
+New `tests/signposts.test.mjs`. A three-armed signpost is 404 triangles and 3.45 tall. Its arms reach their points at 1.72, and the plank faces lie at .060, inside the lettering at .068. My first version of that check measured nothing: the plank has vertices only at its ends, and I had looked in the middle. It now requires a face to be found. The name board is 304 triangles, with its face at .040 inside the lettering at .05. Hearthwick's signpost and name board, found by the builder's own placing, keep their colliders. No page errors. `wayfinding` and `pois` pass. `docs/prototypes/signposts-shot.mjs` renders `docs/prototypes/signposts-ingame.png`: Hearthwick's signpost and board before (top) and after (bottom), from two sides at noon. Between the two builds a tree near the signpost comes and goes. That is load order: roads can take different lines from run to run (Session 248's note), and trees keep off roads.
+
+### Needs eyes
+The lettering on the arms from a steep angle, now that the planks are thinner. Whether the cairn reads at walking distance or is lost in the grass.
+
+## v80 — Session 254 — The roadside camps on the kit (H.5)
+Along the roads, every 260 units or so, there is a travellers' camp with a bed you can sleep in (`buildCampsFor`; 21 are in reach of the start). Each still had the look the bandit camp had before Session 205: two open five-sided cones on poles for tents, seven dodecahedra round a glowing ball for a fire, and a box bedroll with a box pillow.
+
+**Now** the tents are the bandit camp's ridge tents (`campTentGeo`): canvas over a ridge pole on two uprights, closed gables, a tied-back door flap, and guy lines to pegs, in three shades of canvas. The fire is its ring of nine craggy stones with three logs laid in, round the same ember and light. The bed is a blanket laid out with its head rolled, and a leather pack beside it. The fire ring and the bed are one vertex-coloured mesh, and each tent is one. The camp's stamp, its colliders (two tents and the fire), the bed you sleep in and its place are all unchanged. Nothing in the camp rolls dice, so no other placement moves.
+
+### Verified (headless Chromium)
+New `tests/camps.test.mjs` drains the loader and casts rays down at the three camps nearest the start (114–205 units off). The ridge over each tent's middle is at 1.96, where the old cone's apex was 2.4. The fire ring's stones are at .30–.33 and the rolled blanket at .22 above the ground. Each camp keeps its two tent colliders. No page errors. `pois` passes. `docs/prototypes/camps-shot.mjs` renders `docs/prototypes/camps-ingame.png`: the nearest camp before (top) and after (bottom), from two sides at noon. The two builds' nearest camps stand in different places, because camps follow the roads and the roads vary with load order (Session 248's note).
+
+### Needs eyes
+The tents' gables are single-sided, so they cannot be seen from inside a tent, as with the bandit camp's. Whether a blanket on the grass reads as a bed to sleep in.
+
+## v80 — Session 255 — A town's works under way, on the kit (H.5)
+When you pay for a work in a town (a wall, a harbour, a watch), the town shows it being built until it is done, one site for each unfinished work beside the plaza. It is the one thing on the ground that says your money went somewhere, which is the brief's first feeling: decisions with consequences you can see. It was four square posts, a slab across them, and a grey block.
+
+**Now** (`buildSiteGeo`) it is a building site, one vertex-coloured mesh.
+- **Scaffold:** round poles, a little out of true, lashed with rope at two heights. Ledgers run between them and diagonal braces cross each side.
+- **Deck:** five planks on the scaffold, with a ladder leaning against its edge.
+- **The wall going up:** five courses of rounded blocks laid broken-joint. Each course is shorter than the one below, so the top steps down to one end.
+- **Materials:** a stack of cut stone beside it and a pile of timber.
+- **Hoist:** a gin pole with a pulley, its rope and a stone on the hook.
+
+It keeps the old footprint (a 3.4 square, with the ladder's foot at 2.19 from the middle), the collider (1.8) and the place. It rolls its own seed from the town and the work's number, so the town's dice are untouched.
+
+### Verified (headless Chromium)
+New `tests/buildsite.test.mjs`. A site is 2,192 triangles, spanning −1.70 to 2.19 by ±1.61 and 4.59 tall. My first ladder stood out to 2.42 with its top leaning away from the deck; I found both from the bounds and the picture, and fixed them. The test pays for a wall in Hearthwick, rebuilds the town, finds the site's collider where the builder puts it, takes a picture, and restores the town. No page errors. `docs/prototypes/buildsite-shot.mjs` renders `docs/prototypes/buildsite-ingame.png`: Hearthwick with a wall paid for, before (left) and after (right), from two sides at noon.
+
+### Needs eyes
+The same site stands for every kind of work. A harbour or a watch-house might want its own site (piles and planks, or a timber frame), but that is a design question and left. The site stays until the work is done, three days on.
+
+## v80 — Session 256 — The fort's keep on the kit (H.5)
+Session 251 put the fort compound's ring and towers on the kit; the keep in the middle, whose door is the fort's way in, was still the Session 132 keep: a box with box buttresses, box slits and box merlons, four plain cylinders with cones, a flat dark box for the doorway and a half torus over it. It is the first thing you walk towards once through the gate.
+
+**Now** (`fortKeepGeoHi`) the keep is one vertex-coloured mesh.
+- **Walls:** a battered plinth that splays out at the foot and runs a metre into the ground for a slope. Above it, courses of rubble laid broken-joint on a mortar core, leaving the doorway and the windows open. There are stepped buttresses on the long sides, a pale string course, and the arrow slits in dressed surrounds.
+- **Top:** corbels under a projecting walk, merlons on the old spacing, and a low hipped lead roof inside them.
+- **Turrets:** coursed round towers on a battered foot, with slits, a corbelled crenellated top, a slated cone and a gilt finial.
+- **Doorway:** a real opening, .95 deep to a dark back. It has dressed jambs in long and short stones, eleven voussoirs with a keystone, and the two plank leaves standing open against the reveals with iron straps and a ring. There is a threshold, and the old two steps are now rounded slabs.
+- **Windows:** round-headed, with a dark recess and a sill on the string course. The lit panes are the old planes where they were.
+- **Torches and banner:** iron brackets under the old flames, and the nation's banner on a pole, cut to a point.
+
+The keep was added straight to the scene, so it had no distant copy. Its meshes now go into the compound's group: `buildFortKeep` (the cell's doors step) leaves its old parts in `FORT_KEEP` by seed, and `buildFortCompound` (the next step) adds the detailed keep and the old keep at the same spot, so they share a bake cluster and swap with the houses' distance rule. Everything else stays in `buildFortKeep` and is unchanged: the glow in the doorway, the lit windows, the torches and their lights, the keep's collider (the whole mass) and its stamp. The keep rolls its own seed from the fort's, so the fort's dice are untouched. It is 12,317 triangles. My first version was 19,241; tori ringing every course of the turrets and rounded boxes for every corbel were most of it. For scale, a fort's ring is about fifty segments of 1–2k each.
+
+### Verified (headless Chromium)
+New `tests/keep.test.mjs`:
+- **The mesh:** a keep is 12,317 triangles, spanning ±6.92 by −5.92 to 7.30 (the steps in front, as before) and 12.32 tall. The old turrets reached ±6.7 and 11.2.
+- **Openings:** a ray at the doorway's middle, and one under the arch, meets the dark back at 3.55 (the face is at 4.5). A ray at the wall beside the door meets the courses at 4.60. A ray at a window meets its recess at 4.49, behind the face.
+- **In the game:** at Cnocowen Keep (the fort nearest the start), the compound's baked meshes hold the keep in detail and its old self in the same cluster. From 30 units the detailed one shows; from 700, the old one. The keep's collider (6 by 5) and its portal are where they were.
+- No page errors.
+
+`walls`, `pois`, `dungeon`, `houses` and `saves` pass. `lod` passed once in three runs with this change and once in three without it. Each failing run failed on the townsfolk's shadow pass: either no triangles were counted in it (`shadowFull` 0) or no person's shadow reached the picture. That is a flake that was already there, not this change; it is the next session. `docs/prototypes/keep-shot.mjs` renders `docs/prototypes/keep-ingame.png`: the keep before (left) and after (right), from the gate side and from behind a corner turret, at noon.
+
+### Needs eyes
+The door leaves stand open, but the old warm glow plane still hangs in front of the doorway, so the opening reads orange from close by. Whether that is right, or the glow should move to the back of the recess, is a matter of taste. The turrets keep the old keep's pale stone against the dark walls (Session 132's choice). The keep changes from detailed to plain between 70 and 80 units from the eye, the houses' distances, which is about the length of the courtyard from outside the gate.
+
+## v80 — Session 257 — The lod suite waited for frames it may not get (H.6)
+Session 256 found `tests/lod.test.mjs` failing about two runs in three, with and without that session's change. It failed on the townsfolk's shadow pass in two ways: no triangles counted in the shadow pass at all (`shadowFull` 0, in the square and on the road), or, in the shadow's photograph, no person's shadow in the picture, not even another person's. A third check, the town view's triangles, failed once too.
+
+**Cause:** each of those steps moves the player (`px`, `pz`) to Dunmore's square or road and waits three seconds of real time. It then measures from the camera (`CAM`), which the main loop puts at the player, and under the sun, whose shadow camera `WORLD.tick` centres on the player with a 70-unit reach. At the few frames a second the software renderer manages, and fewer with a batch of suites running, those three seconds need not hold a frame. The eye and the sun's shadow box could then still be where the player stood before. Nobody in Dunmore was in the shadow map, and the people's distances (and so their distant copies) were measured from the wrong place.
+
+**The fix** is in the test alone: before measuring, each step puts the eye at the player as the main loop does and ticks the world three times at 1/60. The game is unchanged, so the build tag is not bumped.
+
+### Verified (headless Chromium)
+Before the fix, `lod` passed 1 of 3 runs on the Session 255 build and 1 of 3 on Session 256's. With only the shadow steps ticking, 3 runs passed the shadow checks, but one of them failed the town view's check. That is what showed the view step had the same weakness. With all three steps ticking, 4 of 4 runs passed.
+
+### Needs eyes
+Nothing in the game. Other suites that move the player and then wait on the clock may have the same weakness; `walls`, `keep` and the prototype shots drain the loader and tick themselves.
+
+## v80 — Session 258 — A town's ironwork on the kit (H.5)
+A town's ironwork was still boxes, and it is at eye height by every shop door:
+- **Lamp posts:** plain six-sided iron posts with a box arm, four box ribs, a four-sided cone and a box base. They stand round the plaza and at street ends.
+- **Door lanterns:** a box bracket, box ribs and a cone, one by every shop door.
+- **Trade signs:** a box arm, a box brace, a plain box board and two box chains, over every shop and guild door.
+
+They are the last of a town's furniture under Michael's answer A on buildings.
+
+**Now** each is one vertex-coloured mesh in its own frame, turned as the old pieces were.
+- **Lamp post** (`lampPostGeo`): a stone footing, a lathed iron post with collars and a ball finial, an arm with a scroll under it, and a hook. The lantern's cage hangs from the hook: a base plate, four round ribs, a pyramid cap and a ring. The arm now runs at 3.26, above the cage's cap; the old arm at 3.1 ran through it.
+- **Door lantern** (`doorLanternGeo`): a wall plate, a round bracket with a scroll under it, and the same cage.
+- **Trade sign** (`tradeSignGeo`): a wall plate, a round arm to 1.3 with a finial, a scrolled brace, rings and short chain links, and a board in a darker frame. The frame runs round the old painted faces, never over them.
+
+The lit glass and flames of both lanterns are the old groups, where they were, so the lamps still light and go out as before. The sign's painted faces are the old planes, and the lamp posts' colliders are unchanged. None of these pieces rolls dice.
+
+### Verified (headless Chromium)
+New `tests/ironwork.test.mjs`:
+- **Sizes:** a lamp post is 542 triangles, 3.46 tall, its cage reaching .57 out (the glass hangs at .42). A door lantern is 284, keeping within .35 of the wall. A sign is 624, reaching 1.71 out with its finial.
+- **The paint stays clear:** across the painted area, no vertex of the board or its frame is more than .030 from the board's middle. The faces are at .035.
+- **In the game:** Hearthwick builds with an inn to look at, and its four lamps are listed.
+- No page errors.
+
+`houses`, `wayfinding` and `lod` pass. `docs/prototypes/ironwork-shot.mjs` renders `docs/prototypes/ironwork-ingame.png`: Hearthwick's inn sign and door lantern, and a street lamp, before (left) and after (right), at noon.
+
+### Needs eyes
+The scrolls under the arms are thin (.015–.018) and may vanish past a few metres. Whether they are worth keeping, or should be thicker, is a matter of taste. A city has a hundred door lanterns; at 284 triangles each that is about 28k, within the bake. A frame-time check in a big city on a real machine would confirm it.
+
+## v80 — Session 259 — The wreck and the world's hoards on the kit (H.5)
+About one sea chunk in sixteen has a wreck on its floor, two to eight units down, with a sea chest beside it (`spawnWreck`). It was two tilted boxes for the hull halves, a cylinder for the mast and a box plank. Its chest was two boxes, a body and a lid that rose and tilted when looted. The lairs' hoards and the bandit camps' takings (`siteChest`) were the same two boxes. Session 198 put every dungeon and indoor chest on one kit chest, but these three had been missed.
+
+**The wreck** (`wreckGeo`) is one vertex-coloured mesh: a hull broken in two, each half an open run of bent ribs on a keel.
+- **Ribs:** each is a flattened half torus shaped to the hull's section. About one in five has rotted to a stub on one side.
+- **Planking:** seven strakes a side, laid between ribs and rotted through in places. More are gone higher up, and one side of each half has lost its upper strakes.
+- **The halves:** the stern half is heeled one way and still largely planked. The bow half is heeled the other way, more broken, with its stem post.
+- **Around it:** the snapped mast lies across both halves, with a stump and loose planks round about. The wood darkens to a weed green towards the sand.
+
+It keeps the old wreck's length (about 12) and its place, turn and collider. The seed comes from the chunk, so the chunk's dice are untouched.
+
+**The chests** are S198's kit chest (`buildChestShell`) at 1.8 scale, the old box's size: a rounded body with iron bands, corner caps and a lock plate, and a barrel lid. The loot record now carries the lid as `lid` instead of `top`, so opening swings it back on its hinge as a dungeon chest does, where the old lid popped up askew. A hoard's chest faces the site's middle. The sea chest sits a little askew on the sand. The kit chest is a group, which the site's bake leaves whole (it bakes only direct meshes), so the lid stays free to open.
+
+### Verified (headless Chromium)
+New `tests/wreck.test.mjs`:
+- **The mesh:** a wreck is 2,180 triangles, spanning −2.69 to 3.40 across and −5.76 to 6.65 along, 2.21 high, and reaching 1.18 into the sea floor.
+- **A hoard:** the nearest lair to the start, `c6_10_i0`, has its hoard as the kit chest (two meshes, body and lid), still in the scene after the site's bake. `openLoot` swings its lid from 0 to −1.047.
+- No page errors.
+
+`pois`, `saves`, `locks` and `unequip` pass. `docs/prototypes/wreck-shot.mjs` renders `docs/prototypes/wreck-ingame.png`. It shows the old wreck and chest (rebuilt from the old parts) beside the new ones on a sand floor at noon, with the fog off, from the side and from above. A real wreck is only seen through the sea's murk.
+
+### Needs eyes
+The wreck through real water and the underwater tint: whether the ribs read, or the dark wood is lost against the dark. The bow half is sparse by design (broken off); whether it reads as wreckage or as litter. The sea chest's lid now opens on the hinge, as the dungeon's do.
+
+## v80 — Session 260 — The shark on the kit (H.4, Michael's A on Session 230)
+Michael answered Session 230's question through the control room: **all three as shown**, meaning the road coach, its horses and the shark. The answer is recorded under Answered in `docs/decisions.md` on the producer's branch, which reaches main with the Producer PR. The shark comes first. It lives apart from the coach, which the systems builder is working on this week (the coaching inn, tickets), so building it risks no clash.
+
+**It was** `buildZoneEnemy`'s `shark` shape: a cylinder, a cone for a nose, a four-sided cone for a dorsal and one for a tail, two cones for pectorals and a box eye, all in one flat grey.
+
+**Now** it is the prototype's shark in two vertex-coloured meshes.
+- **Body:** a lathed body with a pointed snout, counter-shaded: every surface facing down blends from the back's grey to a pale belly, the fins' undersides too.
+- **Fins:** extruded, bevelled fins. The pectorals now lie near-flat and swept back. The prototype's hung down on the near side and read as a stick in a side view; I found this in the picture and fixed it.
+- **Details:** gill slits and eyes.
+- **The tail:** the body behind the dorsal, with the crescent tail and the small second dorsal and anal fin, is a second mesh on a pivot. `tickSharks` sweeps it from side to side, gently while cruising and faster and wider when the shark hunts. That is `performance.now()`-driven and visual only. At the joint the tail's part overlaps the body by .1 and is 2% fuller, so no gap or bright cap shows as it turns.
+
+The body is `limbs.torso`, so the wind-up's red and the parry's flash light it; the tail shares its material. The shark's size, speed, damage and behaviour are unchanged. It is built at the old body's middle and scale, and is about 3.9 long, as before.
+
+### Verified (headless Chromium)
+New `tests/shark.test.mjs`:
+- **The mesh:** a shark built by `buildZoneEnemy` is 2 kit meshes of 1,044 triangles. It is 3.90 long and 1.46 across the pectorals, with its dorsal 1.27 above its origin (the old tip was at 1.44).
+- **Counter-shading:** its downward faces average 1.90 in colour (r+g+b) against its upward faces' .99.
+- **The tail:** ticking the world six times over .7 s swept it through six different angles between −.19 and .19.
+- No page errors.
+
+`foes` passes. `docs/prototypes/shark-ingame.png` (from above and in front) and `shark-ingame-side.png` are from the test, on a sand floor at noon with the fog off.
+
+### Needs eyes
+The shark in real water, at the surface with its dorsal showing, where it has always swum. Whether the tail's sweep reads as swimming at its speed. The coach and its horses follow in their own sessions. The coach is built in `buildCoachLine`, which the systems builder is also changing, so I will look at auto/systems first.
+
+## v80 — Session 261 — The road coach on the kit (H.5, Michael's A on Session 230)
+The second of the three in Michael's "all three as shown". The coach that runs a coaching road you have paid for (`buildCoachLine`) was a 1.7 × 1.3 × 3 box, a roof slab, two box windows, four discs for wheels, a box bench and a stick for a pole.
+
+**Now** (`coachGeo`) it is the prototype's coach in one vertex-coloured mesh.
+- **Body:** a rounded panelled body on a lower frame, with two framed windows and a door each side. Each door has a brass handle and a crest panel.
+- **Roof:** an iron rail on four posts, with two pieces of luggage.
+- **Front:** the driver's bench, its backrest and a sloped footboard, and two lamps.
+- **Running gear:** leaf springs over both axles, and four wheels with iron tyres, felloes, twelve spokes and hubs, larger behind. The pole runs out to the horses.
+
+It is built at .9 of the prototype. At that size its roof comes to 1.91, where the rider already stands (the coach's platform is 1.9 over the road), and its pole reaches 2.79 ahead, about the old one's reach. The platform, boarding, schedule and the horses' places are unchanged. The only line changed in `buildCoachLine` is the cart's own. The systems builder's coaching-inn work on auto/systems touches the lines round it, not that one.
+
+The wheels do not turn. They are part of the one mesh, as the old discs were. Turning them would mean four more meshes a coach and a tick; that is left for the horses' session, which will need a tick anyway.
+
+### Verified (headless Chromium)
+New `tests/coach.test.mjs`:
+- **The mesh:** a coach is 6,920 triangles, spanning ±.94 across and −1.38 to 2.79 along, 2.23 tall with the luggage, and standing on its tyres (−.01).
+- **The roof:** a ray down beside the luggage meets it at 1.908.
+- **In the game:** the test opens a coaching road (`dunmore|vieux_marche`, the nearest town-to-town road) by writing it into `worldState.coaches` as paying for it does, and stands halfway along it. The line builds its coach from `coachGeo`, with its ride platform 1.9 over the road.
+- No page errors.
+
+`houses` (which checks the coaching inns) passes. `docs/prototypes/coach-ingame.png` is the coach waiting in Dunmore, from the test, at noon. The horses in front of it are still the old boxes.
+
+### Needs eyes
+The coach on the move along a road at its trot, and riding on its roof between the rails. The horses follow, on a skeleton so they walk: the wolf's bones have fixed leg lengths, so a horse needs its own proportions there.
+
+## v80 — Session 262 — The coach's horses, on the wolf's bones (H.4, Michael's A on Session 230)
+The last of the three. The coach's two horses were each a box on four sticks with a box for a head, gliding along the road beside the coach. The Boar, the Cave Bear and the dragon all stand on the wolf's bones and gait (Sessions 170, 223, 177), and that is the way to a horse that walks. But the wolf's legs were fixed: one table of segment lengths (`WOLF_LEGS`), a hip height of .40, and strides sized for it, all shared. A horse on those bones would be a dog.
+
+**The rig now takes a kind's own legs.**
+- **Legs:** `wolfLegs(k)` returns the kind's table: its own (`k.legs`), the wolf's scaled by `k.legK`, or the wolf's.
+- **Hips:** `wolfHipY(k)` places the hips (`k.hipY`, or raised with the scale).
+- **Where they are used:** the skeleton, every body branch of the bake and the pose functions read them. `tickCreatures` sets them per rig (`WG_L`, `WG_LK`) before it poses the rig, and resets them after the loop.
+- **Gait:** stride length, foot lift and bounce scale with `legK`. The phase advances by ground covered over the longer stride, and the gallop threshold is measured in the longer legs' body lengths.
+- **The wolf family is unchanged:** at `legK` 1 every value is the wolf's own.
+
+**The horse** (`k.horse`, two coats: `Horse`, a bay, and `Grey Horse`) has a horse's legs: a high hock and long cannons, the hips at .70 against the wolf's .40, and strides 1.8 times as long. Its neck and head bones sit further out and higher, so the neck is long and carried up. On the bones:
+- **Body:** a deep barrel and haunches, and a thick neck with a mane of dark lobes along its crest.
+- **Head:** a long head with its face angled down, nostrils, pricked ears and a bridle.
+- **Legs:** slim, with muscle at the forearm and gaskin, knobbed knees and hocks, dark lower legs and hooves.
+- **Tail:** a long hanging tail. The gait's own tail pose raised it like a lifted leg, so a horse's tail is set to hang and keeps only the gait's side-to-side swing.
+- **Harness:** a collar, a pad and girth, and a brass boss.
+
+The coach builds its team from these at 1.6 scale: one bay, and a bay or a grey by the road's key. `tickCreatures` walks them from the ground they cover, as it does any wolf, so they stand at the station and trot or gallop with the coach (13 units a second is a gallop at their size). Their places, beside the pole 3.2 ahead, are unchanged.
+
+### Verified (headless Chromium)
+`tests/coach.test.mjs`, extended:
+- **The horses:** each coat is a skinned body of 6,108 triangles. Standing, its lowest point is .023 below the ground and it is 1.90–1.92 to the ears.
+- **The stride:** moved .2 a tick for 40 ticks, a horse goes through 29–35 different leg poses with its gait weights fully off standing.
+- **The coach:** the coaching road test (Dunmore to Vieux Marché) now waits for the road list to hold a town-to-town road; one run found none at the start, because the list fills as cells load. It passes as before.
+- No page errors.
+
+`wolves`, `bear`, `faolchu` and `wyrm` pass: the shared rig is unchanged at legK 1. `docs/prototypes/horses-shot.mjs` renders `docs/prototypes/horses-ingame.png`: a bay standing and a grey trotting, at noon. `docs/prototypes/coach-ingame.png` is now the coach with its new team, waiting in Dunmore.
+
+### Needs eyes
+The team in motion with the coach at its speed, in real frames: the gallop is the wolf's transverse gallop, stretched, and a horse's differs. Whether the harness reads (the collar and pad are simple). The horses are about 1.9 to the ears at 1.6 scale; the old box horses' heads were at 1.9 too. The coach and the horses do not yet share a harness line; the pole ends between them.
+
+## v80 — Session 263 — What a picked herb leaves: a stub on turned earth (H.5a, Michael's A on Session 237)
+Michael answered Session 237: **a stub on turned earth**. Until now the six kinds that stay when picked (the bushes, the sapling, the shrub, the bramble, the bracket stump) left their bare plant. The other seventeen vanished outright until they grew back.
+
+**Now** those seventeen leave the prototype's stub (`plantStubGeo`).
+- **Most kinds:** every triangle of the baked plant that lies wholly under a cut of 22% of its height (held to 3.5–9 cm) is kept, so stalk bases, the crown and the lowest leaves stay, darkened a little.
+- **The flat kinds:** the mosses and the rosette (under 13 cm) are torn instead, keeping two opposite sectors.
+- **The earth:** each stub sits on a flat patch of turned earth, a quarter to a third of the plant's spread.
+
+`plantGeo(key, true)`, which returned nothing for these kinds, now returns the stub, cached as the bushes' picked copies are. So it takes the path the bushes already take. In the open world it is the chunk's second instanced mesh (`herbIM`), swapped in at the herbs' half-second sync (`syncHerbInstance`) and swapped back when the herb regrows. In the old zones it is `mkHerbMesh`'s hidden copy.
+
+That would have given every herb kind a second instanced mesh per chunk, where only six kinds had one, and most would hold nothing but hidden instances. So a chunk's picked copy of a kind is now drawn only while one of its herbs of that kind is picked (`rec.picked`, set at the build and at each sync; `tickHerbLod` reads it). This also takes the bushes' empty picked meshes out of the draw.
+
+### Verified (headless Chromium)
+New `tests/herbstub.test.mjs`:
+- **Found:** a veilwort (a wisp kind) near the start has its stub as its picked copy, which is not drawn while none is picked.
+- **Picked:** the plant's instance goes to .001 and the stub's to 1, shown, on the next sync.
+- **Regrown:** the plant returns (1) and the stub goes (.001).
+- No page errors.
+
+`tests/plants.test.mjs` is updated for Michael's answer. Its check "nothing else keeps a picked copy" became "nothing else keeps a bare plant". A new check requires the other 17 kinds each to leave a stub. Its rule for loaded herb meshes now allows a picked mesh to be hidden while nothing in it is picked. It passes, bush checks and all. `docs/prototypes/herbstub-ingame.png` is the veilwort's stub where it stood, at noon.
+
+### Needs eyes
+Whether a field of picked herbs reads right in real play: the earth patches are dark, and a picked meadow would be spotted with them. The herbs' glow lights (the old zones) are as before.
+
+## v80 — Session 264 — The world's rocks: boulders, outcrops and clusters, dressed by biome (H.5, Michael's A on Session 228)
+Michael answered Session 228: **all three kinds, dressed by biome**. Every rock in the world was one shape: two jittered dodecahedra (72 triangles), one grey, the same everywhere, sunk .35 into the ground.
+
+**Now** the chunk scatter builds the prototype's rocks (`rockBake`, `rockProto`).
+- **How a rock is made:** an icosphere pushed out by noise and cut by six fracture planes, so it has flat split faces and hard edges. Its normals are smoothed only across faces within 38° of each other. It is darker in its hollows.
+- **Three kinds:**
+  - a **boulder**, 320 triangles;
+  - an **outcrop**: a tilted slab in banded strata, 320 triangles;
+  - a **cluster**: a boulder with three smaller stones half sunk round it, 1,280 triangles.
+- **Six dressings,** by the rock's biome:
+  - lichen on the moor, the plains and the coast;
+  - moss on the tops in the forest (and autumn wood);
+  - moss on the tops in the fen (and swamp);
+  - sandstone in the dunes;
+  - basalt in the wastes and wasteland;
+  - snow on the tundra's tops.
+
+The scatter's places, sizes, turns, tints and colliders are what they were. Each rock's kind comes from a die of its own (`hash01(gx,gz,13)`), so no other roll moves. It is half boulders, three in ten outcrops and two in ten clusters, with outcrops likelier on a slope. Each dressing and kind is one geometry, made the first time a chunk needs it. A chunk instances each kind it holds as the old rock was instanced: one mesh per kind rather than one, in practice two or three.
+
+The prototype's two known faults are fixed: the lichen is weaker (.4 against .55), and the strata are stronger (.75 against .6) so they carry from further off. A new fault turned up in the pictures. The fracture cuts flatten a rock's underside, so the prototype's fixed offset left rocks perched on a point. Each kind is now seated by its own lowest point, .32 into the ground; the old rock sank .35.
+
+### Verified (headless Chromium)
+New `tests/rocks.test.mjs`:
+- **Near the start:** 39 rocks load (22 boulders, 11 outcrops, 6 clusters, all moor stone) and no old rock is left. The kinds are 320, 320 and 1,280 triangles. The rocks in view there are 18k triangles against the old rock's 2.8k for as many.
+- **The dressings:** all six bake, and differ in colour. Mean vertex colour (r, g, b): dunes .667/.556/.389, wastes .202/.188/.181, tundra .473/.488/.507, against the moor's .418/.404/.365.
+- No page errors.
+
+`trees` and `walls` (which count the scatter inside a fort's ring) pass. `docs/prototypes/rocks-shot.mjs` renders `docs/prototypes/rocks-ingame.png`: the three rocks nearest the start, before (left) and after (right), at noon, with the trees and bushes hidden.
+
+### Needs eyes
+The other dressings in their own country: moss in the deep wood, snow on the tundra, sandstone in the dunes. Only the moor's is near the start. The rocks now cost about six times the old ones' triangles; they are few near the start, but a frame check in a rocky region (the coastal hills, rocks ×1.4) on a real machine would say whether it matters. Cave doors' rock faces (Session 230's note) still use the old dodecahedra and could take these kinds next.
+
+## v80 — Session 265 — Shading in the townsfolk's creases (H.1, Michael's A on Session 243)
+Michael answered Session 243: **this strength**. The prototype's occlusion is now in the game's person bake, as it was patched into a copy there:
+- **The spheres:** `personBakeQ` keeps each part's range of vertices. `personAO` then stands each part in by one to six spheres along its longest axis.
+- **The darkening:** each vertex is darkened by the spheres of every other part it faces. That is the cosine to the centre times r²/d², capped at 1, summed, times .75, and capped at a darkening of .5. A part never shades itself.
+
+It is worked out once per bake, in the bind pose, into the colours the vertices already carry: no triangles, no shader, nothing per frame. It applies to both bakes, full and distant, and so to every townsperson, human foe and the player's own body, all built by `buildPerson`. `PAO.on` turns it off, for comparisons.
+
+### Verified (headless Chromium)
+New `tests/peopleao.test.mjs` bakes six of Hearthwick's townsfolk with the shading off and on:
+- **Same vertices:** the bake has the same vertex count either way.
+- **The cap:** no vertex is darkened past .5.
+- **Clear surfaces:** 18–21% of vertices are untouched, the open surfaces.
+- **The mean:** darkening averages .29–.34. That is high because many vertices lie inside other parts, where the shading is deepest and never seen. The picture is the judge, and it matches the prototype's.
+- **Cost:** the fastest of three bakes each way is 1.8–3.8 ms without the shading and 3.3–7.8 ms with it.
+- No page errors.
+
+A first version of the timing check used single bakes; one of them took 52 ms, so it would have been a flaky test on CI. `people` and `lod` pass. `docs/prototypes/peopleao-ingame.png` is three of Hearthwick's people face on, in the afternoon.
+
+### Needs eyes
+Faces in shade at dusk, which Session 243 flagged. A raised arm keeps the bind pose's shadow at its side. Michael's A named the creatures and houses to follow; the wolf family's and the houses' bakes are separate and not yet shaded.
+
+## v80 — Session 266 — The weapon kit in first person, and the bow turned the right way (H.4, Michael's A on Session 232)
+Michael answered Session 232: **yes, every weapon**, with a note: "Check the bow again, it looks like it's facing backwards, towards the player."
+
+**The bow.** `tpWeapon` turns the kit's bow half round, which puts its string towards the camera in third person, where the camera is behind the body. The prototype put `tpWeapon`'s bow straight into the first-person view, which looks the other way. That turned the belly towards the eye and the string away, which is what Michael saw. In first person the bow is now not turned: its grip lies .08 further from the eye than its tips, and the string is on your side. It is the kit's bow without its string (a new `bowbare` kind in the weapon builder), scaled to the view model's bow so its tips sit at ±.40. That keeps the view model's own two-segment string and nocked arrow hanging from them, so the draw still pulls the string back from the tips as before.
+
+**Every other weapon** except the Forge-Man's Hammer, which keeps its own model:
+- **Swapped:** `buildViewmodel` now hides the box weapon's meshes and puts `tpWeapon(item)`, tinted by the item's metal, guard and glow, in the fist at the grip.
+- **Kept:** the hands, the arm bridges, the enchantment's light and orbiting sparks, and the swing.
+- **Duller metal:** the view scene has nothing for metal to reflect, which left the kit's steel nearly black in the prototype, so the first-person copy's metal has its own material at metalness .25.
+
+### Verified (headless Chromium)
+New `tests/fpweapons.test.mjs` builds the first-person view for a steel sword, an iron war axe, an iron mace, a hunting bow, an oak staff and the Forge-Man's Hammer:
+- **The five:** each shows the kit (1–3 meshes) and none of the box weapon.
+- **The Hammer:** it keeps its 18 meshes and no kit.
+- **The bow:** its grip is at −.088 against its tips at −.008 in the view's depth (further from the eye), and its string is shown.
+- No page errors.
+
+`player`, `tpswing` and `tpweapons` pass. `docs/prototypes/fpweapons-ingame.png` is the six in first person, left to right.
+
+### Needs eyes
+Drawing the bow in real play: the view model's string is the old thin box pair, now on a rounder bow. The staff's head is above the frame at rest, as it was.
+
+## v80 — Session 267 — Cloaks and hair that swing (H.3, Michael's A on Session 242)
+Michael answered Session 242: **the cloak and the back hair, for everyone who wears them**. The prototype's eight patches are now in the person bake, as written:
+- **The cloak:** it hangs from a `cloak` bone at the shoulders in two halves. The lower half is on a `cloak2` bone hinged at the middle of the back.
+- **The back hair:** a braid, the warrior's back plait and the tied tail hang from a `hairB` bone at the nape. `plait()` takes the bone and keeps its points in the head's frame.
+
+The pendulum is `peopleSwing`, run by `tickPeople` after each person's pose, for near people only (the full-detail copy). It is the prototype's damped pendulum in pitch and roll for each of the three bones:
+- **What drives it:** how the bone's pivot moves in the world. That is its acceleration along the heading and across it, gravity plus the vertical acceleration, and a drag with the square of the forward speed.
+- **Hanging in the world:** less what the parent bone has already turned.
+- **Clamped:** so the cloak never swings into the back.
+
+Two things were added to the prototype. A step of more than 30 units a second, a teleport or a rebuild, is not taken as a swing. The step is capped at .05 s. A human foe's heading comes from its group, as the rest of the body's does. The player's own third-person body has the bones but not yet the swing, since `tickPeople` does not pose it; its cloak hangs at rest as before.
+
+### Verified (headless Chromium)
+New `tests/secondary.test.mjs` builds a Markish woman with a cloak and a braid, and moves her under `tickPeople` at 1/60:
+- **Standing:** the cloak's upper bone is at .031.
+- **Running at 3.8:** it peaks at .458, within its clamp of .85, and the plait swings to .457.
+- **Stopped:** four seconds after the stop, both halves are back to −.011 and 0.
+- No page errors.
+
+`people` and `lod` asserted exactly seventeen bones on every townsperson. A cloak adds two and back hair one, so both now allow seventeen to twenty. `lod`'s distant copy is checked against the rig's own bone count. Both pass, as do `foes` and `peopleao`. `docs/prototypes/secondary-ingame.png` is the test's runner from the side.
+
+### Needs eyes
+What Session 242 could not show in a still: whether the cloak's lag at a start and a stop reads as cloth or as a flap, in real frames, and the faint fold at the hinge when it bends hard.
+
+## v80 — Session 268 — Wealth in clothes, from the role and the town's fortune (H.2, Michael's A on Session 246)
+Michael answered Session 246: **the role and the town's prosperity**, so the clothes follow the town's fortune.
+
+**How wealth is set.** `personGenome` gives a person of a place (built with a settlement as its key) a wealth from 0 to 1:
+- **By role:** lords .95; merchants, innkeepers, scholars and shipwrights .7; smiths, apothecaries, priests, stewards and elders .55; villagers .45; farmers and fishers .35; hermits .15.
+- **By the town:** moved by the town's prosperity, ±.25 across 0–100.
+- **By the person:** ±.1 on the person's own seed. That is drawn after every other trait, so nobody's face, hair or dress changes otherwise.
+
+A guard in uniform, and a person of no place (a foe, the player), carry none and dress as before. The genome cache is per session, so a town's people change clothes when the town is rebuilt, and a change of 12 prosperity already rebuilds it.
+
+**How it looks** is the prototype's, as shown:
+- **Poor (under .3):** cloth, sleeves and legs faded towards undyed wool, foot-wraps for boots, no fur hat or chaperon. In the bake, a thinner pale rope belt with a knot, a patch on the chest, and one on the skirt when there is no dress.
+- **Well-off (over .7):** dyes 15% more saturated and 18% darker, gilt trim, dark boots, darker legs. In the bake, a gilt buckle, a fine chain at the neck and a pendant.
+
+### Verified (headless Chromium)
+New `tests/wealth.test.mjs` builds one woman in Hearthwick at several fortunes:
+- **Wealth:** a farmer in a failing town (prosperity 5) is .21, a villager at 50 is .54, and a merchant at 95 and a lord at 50 are both 1.
+- **Dress:** the poor farmer's cloth is faded (716248 against the villager's 6a5a3a) with foot-wraps (7a6a52). The merchant's trim is gilt (c8a040) and her boots dark (1a120c). The triangle counts differ too, but across different roles with their own gear, so they do not isolate the patches and chain.
+- **Excluded:** a guard, and a person of no place, carry no wealth.
+- **The town:** Hearthwick's 73 people as built run from .21 to 1.
+- No page errors.
+
+`people`, `lod` and `crime1` pass. `docs/prototypes/wealth-ingame.png` is the same farmer, villager and merchant in Hearthwick failing (5), as today (50) and thriving (95), left to right.
+
+### Needs eyes
+The foot-wraps and the chain at street distance, and whether gilt reads as money or as costume (Session 246's note). At Hearthwick's own prosperity (37) most folk are middling, a few farmers poor and the merchants well-off. Whether a town's change of fortune should show sooner than its next rebuild is a design question.
+
+## v80 — Session 269 — The player's swings in third person: a coil, a step and a carry (H.3, Michael's A on Session 245)
+Michael answered Session 245: **as shown**. The prototype's six patches are now in `tpPose`, with its window switch replaced by a constant, `TP_SWING_NEW` (false brings back the old swing).
+- **Keyed to the first person:** the body's swing follows the first person's own phases (`ANIM_PARAMS.swing`: the wind-up to .44, the hit at .55, the follow-through to .79), where it used to run 30/30/40 smoothsteps on a clock of its own.
+- **The three swings:** the forehand, backhand and overhead chop are the first person's own, not the body's nearest. Each is a four-pose track (guard, coil, hit, carry) for the shoulder, elbow, wrist and torso.
+- **The motion:** the wind-up eases into a held coil with the weight on the back foot. The strike accelerates into the hit with the left foot stepping in and the torso unwinding. The carry runs past the hit and slows, then it all smooths back to guard.
+- **Power and pace:** a power swing is a quarter wider. The arm and torso ease at `dt*50` during a swing, where the usual rate would leave the blade behind the 60 ms strike.
+
+One slip on the way. The comment I put on the switch's line swallowed the code after it (`const SP=...`), and the body stood at guard through every swing until the existing test caught it. The comment is on its own line now, as CLAUDE.md says.
+
+### Verified (headless Chromium)
+`tests/tpswing.test.mjs`, which drives the game's own loop a frame at a time:
+- **Session 244's checks still hold on the new poses:** the chop raises the shoulder to −3.0, the forehand turns it 1.15, the backhand 1.05, and a power swing 1.44. The body takes the viewmodel's swing from its first posed frame to its last and lets go after.
+- **New check, the phases:** the chop's shoulder is at −3.0 (coiled) at the wind-up's end. It comes down through −2.57 and −1.98 to −1.31 one frame after the hit, and carries on to −.83 by .73. The arm arrives a frame (17 ms) after the pose's own time, because of the joints' easing; the check reads the hit one frame on.
+
+`player`, `tpweapons` and `tpshots` pass. There is no new picture: this is the prototype as shown in `docs/prototypes/swings-1.png` to `-4.png`.
+
+### Needs eyes
+In motion, whether the coil's short hold reads as weight or as a hitch (Session 245's note). The swings are still one-handed poses, so a two-handed weapon's left hand stretches for the grip through them (Session 247). Two-handed swing poses would be their own small piece.
+
+## v80 — Session 270 — Shading in the creatures' creases (H.1, Michael's A on Session 243, the second part)
+Michael's A on Session 243 was this strength "for the people and then the creatures and houses". Session 265 did the people. The creatures' bakes are built part by part as the people's are, so the same pass fits them unchanged:
+- **The wolf family:** `wolfBakeQ`, which also bakes the Boar, the Cave Bear, the dragon, the Faolchú and now the horses.
+- **The spider family:** `spiderBakeQ`, which also bakes the Bog Crawler and the Sand Scorpion.
+
+Each bake now keeps each part's range of vertices and runs `personAO` over them. Every other part's spheres darken the vertices they crowd, capped at .5, once per bake into the colours. `PAO.on` turns it off for all of them.
+
+### Verified (headless Chromium)
+New `tests/creatureao.test.mjs` bakes a wolf, a cave bear, a horse and a spider with the shading off and on:
+- **The bakes:** each has the same vertices.
+- **The darkening:** the mean is .28–.30, which is high for the reason Session 265 gave (vertices buried inside other parts).
+- **The cap and the open surfaces:** none past .5, and 17–24% untouched.
+- No page errors.
+
+`wolves`, `bear`, `spiders`, `crawler`, `scorpion` and `coach` (the horses) pass. `docs/prototypes/creatureao-ingame.png` is the `bear` suite's picture, a person, two bears and a wolf, now shaded.
+
+### Needs eyes
+Dark coats (the Dire Wolf, the Faolchú) may go too dark in their creases at dusk. The houses are the last part of the answer and are built by a different bake (`mergeParts` of whole boxes). The same idea there would darken walls under eaves and at the foot, which is a design of its own and left.
+
+## v80 — Session 271 — The cave doors' rock faces on the world's rocks (H.5)
+The cave doors' rock faces had waited on the rocks question since Session 254. Michael answered it (A, Session 264 built it), so they follow. A cave mouth in the open world (`spawnPortalMeshes`) was:
+- four box slabs leaning in either side;
+- a box brow across the top;
+- seven dodecahedron boulders scattered round;
+
+all in one theme tint.
+
+**Now** each is one of the world's fracture-cut rocks, fitted to its old box's size (a little larger, so the faces meet):
+- **The slabs:** outcrops for the two tall ones, boulders for the two short ones.
+- **The brow:** an outcrop stretched across.
+- **The boulders:** boulders, with about three in ten clusters.
+
+They keep the old places, lean and turn, and their colliders. The theme's tint lies over the stone's own colours, brought up to full brightness so it tints rather than darkens. The dark maw, the teeth under the brow, the door and its frame, the torch, the light and the mouth's dressing are unchanged, and so is the Old Gates' own dressing, which is the lore's. In the old zones, where the world's rocks are not to hand, the mouth keeps its boxes.
+
+### Verified (headless Chromium)
+New `tests/cavedoor.test.mjs` builds a mouth (an undead theme) at an empty spot. Its twelve rocks (four slabs, the brow, seven boulders) are the world's rocks, with no dodecahedron left and one tall box: the dark maw, as before. It keeps 15 colliders. No page errors. `pois` and `dungeon` pass. `docs/prototypes/cavedoor-ingame.png` is the test's mouth at noon; the pale pillars in front of it are the seed's dressing.
+
+### Needs eyes
+The mouths in their own themes (goblin green, elemental red, deep blue) in real light. The maw is still a dark box that stands a little proud of the rock; making it a hollow in the rock would be the next step.
+
+## v80 — Session 272 — The walls suite read meshes a town had dropped (CI fix, test only)
+CI failed once on this branch, on the Session 263 push, and has passed on every push since. The failing check was in `tests/walls.test.mjs`, a walled town's detailed clusters giving way to their plain twins at a distance. It read `far: 2`: both of La Porte Grise's detailed clusters still shown with the eye 600 units away.
+
+**The likely cause:** the check gathered the town's detailed meshes once, then moved the eye and ticked the world. A town that is still building rebakes its clusters during those ticks. The meshes it drops leave its list, so `houseLod` no longer touches them, and they keep whatever visibility they had. I could not make it happen here, so this is the likely cause, not a proven one; the game's own distance switch was not at fault in any run.
+
+**The fix** is in the test alone: each look counts the settlement's current detailed meshes. The fort compound's check had the same pattern and gets the same change. The game is unchanged, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`walls` passes with the change, both the town's and the fort's checks.
+
+### Needs eyes
+Nothing in the game.
+
+## v80 — Session 273 — The town gate itself: a prototype and a question (H.5, waiting on Michael)
+Session 249 left one line on the town walls: "still boxes: the gate itself (a gap between towers)". Where a road crosses a walled town's ring, `genSettlement` puts a pair of gate towers either side of it and leaves the wall open between them. It is a new structure rather than a remake of a box, so it is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/towngate/shoot.mjs`) builds a length of wall and the tower pair with the game's own builders (`WORLD.wallSegHi`, `WORLD.gateTowerHi`) at the game's spacing: each tower 3.6 beyond the road's half-width. It adds the gate from the shape kit:
+- **A, a gateway and open leaves.** For stone, an arch of seventeen voussoirs with a wall-walk and merlons over it. For the palisade, a braced timber lintel on two posts. In both, two plank leaves with iron bands and a brace stand open to the inside.
+- **B, the leaves alone,** on posts.
+
+The picture shows the stone tier and the palisade, today, A and B, from the road outside at noon.
+
+### Verified (headless Chromium)
+`node docs/prototypes/towngate/shoot.mjs` renders `docs/prototypes/towngate-grid.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A (recommended), B, or C (not yet). The leaves never shut, since nothing closes a town's gate. The dressed-stone and fence tiers would follow A's stone and timber forms.
+
+## v80 — Session 274 — The cave mouth's maw as a hollow (H.5)
+Session 271's picture showed the cave mouth's maw as it always was: a dark box, 2 by 2.6 by 1.6, standing a little proud of the new rock. With the world's rocks round it, the maw is now a dark hollow: the upper quarter of a sphere, 2.1 wide and 2.4 high, its crown going .9 into the rock and its open face at the rock's front. It is drawn on both sides, so from the road you look into its inside, and it is an arch above the ground wherever the mouth stands. It keeps the old box's colour and place. The door behind it, the teeth, the torch and the colliders are unchanged. In the old zones (no world rocks) it stays the box.
+
+The first try was a whole half-sphere. At a mouth by the sea its lower half showed through the water, so it is a quarter now.
+
+### Verified (headless Chromium)
+`tests/cavedoor.test.mjs`, tightened: a mouth now has no tall box at all (it had one, the maw), with its twelve rocks and fifteen colliders as before. It passes. `docs/prototypes/cavedoor-ingame.png` is redrawn.
+
+### Needs eyes
+The maw at night with the torch lit, and whether the small wooden door behind it should come forward into the hollow, where it could be seen. It sat behind the old box too.
 
 ## v80 — Session 176 — Where a frame goes: a profile, and F9
 

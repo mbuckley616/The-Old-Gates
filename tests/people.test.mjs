@@ -6,10 +6,11 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 
 const rigs = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
-  return { n: rs.length, skinned: rs.filter(r => r.mesh.isSkinnedMesh && r.mesh.skeleton.bones.length === 17 && r.root.children.length === 1).length,
+  return { n: rs.length, skinned: rs.filter(r => r.mesh.isSkinnedMesh && r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20 && r.root.children.length === 1).length,
     tris: rs.map(r => r.tris), styles: new Set(rs.map(r => r.g.style)).size, beards: new Set(rs.map(r => r.g.beard)).size, hats: new Set(rs.map(r => r.g.hat)).size,
     skins: new Set(rs.map(r => r.g.skin.getHex())).size, roles: [...new Set(rs.map(r => r.g.role))].slice(0, 12) }; });
-check('every townsperson is one skinned mesh on seventeen bones', rigs.n >= 8 && rigs.skinned === rigs.n && rigs.tris.every(t => t > 1500 && t < 9000), { n: rigs.n, skinned: rigs.skinned, tris: [Math.min(...rigs.tris), Math.max(...rigs.tris)] });
+// (Session 267: a cloak adds two bones and back hair one, the swinging parts')
+check('every townsperson is one skinned mesh on seventeen bones (and up to three more for a cloak and back hair)', rigs.n >= 8 && rigs.skinned === rigs.n && rigs.tris.every(t => t > 1500 && t < 9000), { n: rigs.n, skinned: rigs.skinned, tris: [Math.min(...rigs.tris), Math.max(...rigs.tris)] });
 check('and no two look the same', rigs.styles >= 4 && rigs.skins >= 4 && rigs.hats >= 2, rigs);
 
 const det = await page.evaluate(() => { const pick = x => [x.style, x.beard, x.hat, x.skin.getHex(), x.hair.getHex(), x.height.toFixed(4), x.female, x.age];
@@ -72,6 +73,29 @@ check('the townsperson is in the frame in front of the camera', Math.abs(onScree
 const cost = await page.evaluate(() => { REN.render(scene, CAM); const i = REN.info.render; const t0 = performance.now(); for (let k = 0; k < 200; k++) tickPeople(1 / 60, 4e5 + k * 16.7); const ms = (performance.now() - t0) / 200;
   const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene); const bs = rs[0].mesh.geometry.boundingSphere;
   return { calls: i.calls, triangles: i.triangles, people: rs.length, shown: rs.filter(r => r.root.visible).length, sphere: [+bs.center.y.toFixed(2), +bs.radius.toFixed(2)], tickMs: +ms.toFixed(3) }; });
+// no greeting wave (Session 185, playtest s162): walk up to a standing townsperson and they keep to idle; the pose is
+// still in the kit, and a scripted moment that sets wavedAt gets it
+const greet = await page.evaluate(() => { const rig = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && r.root.visible && !r.foe); const at = new THREE.Vector3(); rig.root.getWorldPosition(at);
+  let t = 2e6; let maxWave = 0; px = at.x + 5; pz = at.z; for (let i = 0; i < 120; i++) { px = at.x + 5 - i * .035; tickPeople(1 / 60, t += 16.7); maxWave = Math.max(maxWave, rig.w.wave); }
+  rig.wavedAt = t; for (let i = 0; i < 40; i++) tickPeople(1 / 60, t += 16.7); return { walkedUpWave: +maxWave.toFixed(3), scripted: +rig.w.wave.toFixed(2), greet: PW.GREET }; });
+check('walking up to a townsperson brings no wave; a scripted wave still plays', greet.walkedUpWave < .01 && greet.scripted > .5 && greet.greet === false, greet);
+// the hem's trim ring sits on the skirt (Session 186, playtest s162): the skirt is flattened to .76 front to back and the
+// ring was round, so it stood off the cloth before and behind; at the hem's height the depth is now the skirt's .76 of the width
+const hem = await page.evaluate(() => { const out = [];
+  for (const [name, dress] of [['Aoife', false], ['Brendan', false], ['Deirdre', true], ['Maeve', true]]) { const gn = personGenome({ name, role: 'villager' }, { key: 'hemtest' }); gn.dress = dress; gn.cloak = false; gn.apron = null;
+    const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); const P = r.mesh.geometry.attributes.position; const y0 = PW.HIPS + (dress ? -.36 - PW.DL : -.125);
+    let dx = 0, dz = 0; for (let i = 0; i < P.count; i++) { if (Math.abs(P.getY(i) - y0) > .014) continue; dx = Math.max(dx, Math.abs(P.getX(i))); dz = Math.max(dz, Math.abs(P.getZ(i))); }
+    r.mesh.geometry.dispose(); out.push({ name, dress, width: +dx.toFixed(3), depth: +dz.toFixed(3), ratio: +(dz / dx).toFixed(2) }); }
+  return out; });
+check('the hem ring hugs the skirt front and back (tunic and dress)', hem.every(h => h.ratio < .85), hem);
+// the legs (Session 187, playtest s162: the legs read short): the hip joint at 43% of the height or more (it was 37%), and a
+// person as tall as before (the figure is scaled back by PW.BODY), so doors, bars and the camera are unchanged
+const legs = await page.evaluate(() => { const out = [];
+  for (const n of ['Aoife', 'Brendan', 'Cathal']) { const gn = personGenome({ name: n, role: 'villager' }, { key: 'legtest' }); gn.hat = 'none'; gn.style = 'buzz';
+    const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); r.mesh.geometry.computeBoundingBox(); const top = r.mesh.geometry.boundingBox.max.y;
+    out.push({ n, hip: +((PW.HIPS - PW.HIPJ) / top).toFixed(3), tall: +(top * r.root.scale.y).toFixed(3), was: +(gn.height * 1.225).toFixed(3) }); r.mesh.geometry.dispose(); }
+  return out; });
+check('the legs are longer (hip joint at 43%+ of the height) and a person is as tall as before', legs.every(l => l.hip >= .43 && Math.abs(l.tall - l.was) / l.was < .02), legs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
 

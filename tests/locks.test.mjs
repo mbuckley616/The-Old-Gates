@@ -58,6 +58,9 @@ check('a treasure chest is a harder lock', bonus.treasure === Math.min(5, bonus.
 
 // the tower: the chest at the top is locked, a good lock, and once picked stays picked
 await page.evaluate(() => { goToZone('world', 13100, 25450, 0, 'x'); }); await page.waitForTimeout(9000); await g.hide();
+// on a loaded machine the world can still be building after the pause (Session 173: no tower was found, twice, with suites
+// running two at a time); wait for it to be the active zone with its towers placed, up to a minute and a half
+await page.waitForFunction(() => activeZoneId === 'world' && [...WORLD.SITES].some(t => t.kind === 'tower'), null, { timeout: 90000, polling: 250 }).catch(() => {});
 const tower = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
   const s = [...WORLD.SITES].filter(t => t.kind === 'tower').sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz))[0];
   if (!s) return { none: true }; px = s.x; pz = s.z + 12;

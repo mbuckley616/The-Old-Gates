@@ -19,7 +19,7 @@ check('refuse, and the guard draws: an enemy stands in for him and he leaves the
 // low on health, the offer to yield; the cells take the stolen goods and the night
 const cells = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); BAG.push({ name: 'A tin locket', ico: '🎁', type: 'misc', weight: .1, qty: 1, stolen: true }); BAG.push({ name: 'Honest bread', ico: '🍞', type: 'misc', weight: .1, qty: 1 });
   PHP = Math.round(maxHP * .2); const abs0 = worldState.gameTimeAbsMinutes || 0; WORLD.tickCrime(1 / 60, performance.now());
-  const offered = dlgOpen && /cells/.test(dlgNPC.greeting[0]); const yielder = dlgNPC && dlgNPC.name; const held = ZONES.world.enemies.filter(x => x._guard && !x.dead).every(x => !x.alert);
+  const offered = dlgOpen && /cells|Yield/.test(dlgNPC.greeting[0]); const yielder = dlgNPC && dlgNPC.name; window._yieldName = yielder; const held = ZONES.world.enemies.filter(x => x._guard && !x.dead).every(x => !x.alert);
   const t = dlgNPC.topics.find(x => /cells/i.test(x.label)); const line = t.fn();
   // the cells run inside a screen fade, which on a slow machine can take longer than any fixed pause: wait for the clock to move
   for (let k = 0; k < 240 && (worldState.gameTimeAbsMinutes || 0) === abs0; k++) await wait(250); await wait(300);
@@ -28,6 +28,8 @@ const cells = await page.evaluate(async () => { const wait = ms => new Promise(r
   return { offered, yielder, guard: window._gd.def.name, held, line, hour: Math.floor(worldState.gameTimeMinutes / 60), absAdv: Math.round(absAdv), stolenGone: !BAG.some(i => i.stolen), breadKept: BAG.some(i => i.name === 'Honest bread'), bounty: WORLD.bountyAt('dunmore'), enemies: ZONES.world.enemies.filter(x => x._guard && !x.dead).length, guardBack: window._gd.g.visible, where: keep ? 'keep' : 'town centre (no keep)', atPlace: Math.hypot(px - there[0], pz - there[1]) < 1.5, hp: PHP / maxHP }; });
 check('the yield is offered by the guard who drew, by name (Session 171)', cells.yielder === cells.guard && cells.yielder !== 'The guard', { yielder: cells.yielder, guard: cells.guard });
 check('at low health he offers a yield; the guards hold while you talk; the cells take the night, the stolen goods and the fine', cells.offered && cells.held && /Come along/.test(cells.line) && cells.hour === 7 && cells.absAdv >= 1100 && cells.absAdv <= 1200 && cells.stolenGone && cells.breadKept && cells.bounty === 0 && cells.enemies === 0 && cells.guardBack && cells.atPlace && cells.hp >= .5, cells);
+const yn = await page.evaluate(() => ({ offer: window._yieldName, guard: window._gd && window._gd.def && window._gd.def.name }));
+check('the yield is offered by the guard who halted you, by name (Session 180)', yn.guard && yn.offer === yn.guard, yn);
 
 // striking a guard draws him; killing him shuts the gates and the Church hears; then guards draw on sight; the lord's fine opens the gates
 const kill = await page.evaluate(async (setup) => { const wait = ms => new Promise(r => setTimeout(r, ms)); eval(setup); worldState.crime = {}; const f0 = WORLD.favor(window._S.site);

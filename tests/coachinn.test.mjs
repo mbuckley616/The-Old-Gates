@@ -19,7 +19,7 @@ const r = await page.evaluate(() => {
   line.u = .5; WORLD.tick(1 / 60, performance.now());
   const doorToStop = Math.hypot(h.doorX - line.cart.position.x, h.doorZ - line.cart.position.z), innToStop = Math.hypot(ix - line.cart.position.x, iz - line.cart.position.z);
   // the building itself: in the line's group, and solid (Session 239: a comment had swallowed both since 237)
-  const innMesh = line.group.children.find(o => o.isMesh && Math.hypot(o.position.x - ix, o.position.z - iz) < .5);
+  const innMesh = line.group.children.find(o => (o.isMesh || o.isLOD) && Math.hypot(o.position.x - ix, o.position.z - iz) < .5);
   const fz = innMesh ? new THREE.Vector3(0, 0, 1).applyQuaternion(innMesh.quaternion) : null; const drawnGap = fz ? +Math.hypot(ix + fz.x * 3.4 - h.doorX, iz + fz.z * 3.4 - h.doorZ).toFixed(2) : null;
   const solid = WORLD.solidAt(ix, iz);
   return { key, built: !!innMesh, solid, drawnGap, name: h.name, keeper: h.keeper, len: Math.round(line.len), toRoad, doorCloserToStop: doorToStop < innToStop, doorToStop: +doorToStop.toFixed(1), innToStop: +innToStop.toFixed(1), board: h._board };
