@@ -4,14 +4,31 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The interface — parchment and ink, and where the HUD sits (the concept artist, 2026-09-27)
-Backlog E asks for the whole interface "as close to Oblivion's design as we can — parchment and scroll", style page first. The style page is `docs/prototypes/ui/index.html`: nine 1280×720 screens with build s171's own text and numbers in Dunmore (two HUD layouts, inventory, magic, attributes, quests, map, a conversation, and the kit). Panels are one parchment sheet with a torn edge (an SVG displacement filter over a CSS gradient and noise, no images), dark-brown ink, red rubric for headings and anything new or chosen, faded ink for locked or spent; tabs are bookmarks on the sheet's top edge; close is a wax seal. The HUD sits on the world in dark iron and bronze. Type is IM Fell English SC for headings and EB Garamond for lists and numbers (both OFL, 290 KB). The emoji icons (🪖 👕 🧪 🗝) become 31 drawn ink icons (24×24 SVG, one stroke). Magic is regrouped by sigil, one line a spell with an English gloss and the cost in a column (the legibility ask). The world map is today's, inked into the paper.
-- **A.** Parchment everywhere, and the HUD in Oblivion's places: health, mana and stamina with the readied weapon and spell bottom-left, the compass bottom-centre, the minimap kept top-right as a bronze-ringed disc. Today's yellow HUD text over a bright sky is hard to read (`current-hud.png`); the bottom keeps it off the sky.
-- **B.** Parchment everywhere, the HUD restyled but left where it is now (vitals top-left, compass top-centre).
-- **C.** Parchment only for what you read (conversation, quests, books, notice boards, map); inventory, magic and attributes keep a dark panel with the new type and icons. Less change, less Oblivion.
+## Answered
 
-Recommendation: **A**. It is the look asked for, and the HUD moves off the sky. One Fable session applies the kit to every panel (the shop, loot, save/load, lockpicking and the creator follow the same sheet); the journal stays its own item.
-Screens: [HUD, today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-hud-a.png) · [HUD, B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-hud-b.png) · [inventory, today beside proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-inventory.png) · [magic, today beside proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-magic.png) · [attributes](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-attributes.png) · [quests](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-quests.png) · [map](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-map.png) · [conversation, today beside proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-dialogue.png) · [the kit: colours, type, states, icons](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-kit.png)
+### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
+Michael: **Role and the town's prosperity** (A) (28 Sep 2026, via the control room)
+
+### The player's swings in third person — anticipation and follow-through (Session 245)
+Michael: **As shown** (A) (28 Sep 2026, via the control room)
+
+### Shading in the creases of the townsfolk — baked ambient occlusion (Session 243)
+Michael: **This strength** (A) (28 Sep 2026, via the control room)
+
+### Cloaks and hair that swing (Session 242)
+Michael: **Cloak and back hair** (A) (28 Sep 2026, via the control room)
+
+### What a picked herb leaves behind (Session 237)
+Michael: **A stub on turned earth** (A) (28 Sep 2026, via the control room)
+
+### The first-person weapon on the kit too? (Session 232)
+Michael: **Yes, every weapon** (A) — "Check the bow again - it looks like it’s facing backwards, towards the player" (28 Sep 2026, via the control room)
+
+### The road coach, its horses, and the shark (Session 230)
+Michael: **All three as shown** (A) (28 Sep 2026, via the control room)
+
+### The world's rocks — boulders, outcrops and clusters, dressed by biome (Session 228)
+Michael: **All three kinds, dressed by biome** (A) (28 Sep 2026, via the control room)
 
 ### Combat — which shape should the fight take: tightened, Elden Ring's, or directional? (the designer, 2026-09-28)
 Today an enemy glows for 0.24–0.55 s and hits anyone within 1.4 units whichever way it faces, every enemy has one attack, there is no dodge, and nothing staggers you, so fights come down to swinging and stepping back. Which shape should the reimagined combat take, with damage from the weapon skill and enemies scaled by place? (Page: `docs/design/combat.md`.)
@@ -21,7 +38,25 @@ Today an enemy glows for 0.24–0.55 s and hits anyone within 1.4 units whicheve
 
 Recommendation: **B**, with A's three pieces built first. Move sets and commitment are what make counters punishing and the combat weighty; decide before the next creature families are built, so their attack poses follow the table.
 
-## Answered
+Michael: **Elden Ring's shape** (B) — "I like the idea of moving more towards Elden ring combat, but it’s a pretty fundamental change… as long as this is possible I’m up for it." (28 Sep 2026, via the control room)
+
+### Occupation's effects from the canon — the League's duels and the Compact's tithe (systems builder, 2026-09-28, issue #37)
+Michael: **A tithe on the Compact's occupations** (A) (28 Sep 2026, via the control room)
+
+### Q7 “The Rubbing” in the open world — how does Ashenmoor burn? (systems builder, 2026-09-28, issue #32)
+Michael: **Ashenmoor burns in the world** (A) (28 Sep 2026, via the control room)
+
+### Coach tickets — what does a ticket buy, and what does it cost? (systems builder, 2026-09-28, issue #31)
+Michael: **A seat held** (A) (28 Sep 2026, via the control room)
+
+### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
+Michael: **The giant water bug** (B). (28 Sep 2026, via the control room)
+
+### The coaching inn halfway — what is inside? (systems builder, 2026-09-28, issue #24)
+Michael: **A, plus the coach's other half** (B) — the roadside inn with keeper, meal, a room and the board, and also the driver and a passenger or two waiting in the common room, with tickets sold here. (28 Sep 2026, via the control room)
+
+### Guards indoors — what happens when you are seen inside a building? (systems builder, 2026-09-28, issue #23)
+Michael: **The guard comes in** (B) — "The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player" (28 Sep 2026, via the control room)
 
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Michael: **B** — as shown, but the Bog Crawler gets a six-legged crawler's body of its own (a beetle or giant water-bug), prototyped first; the rest built one or two a session. (27 Sep 2026, via the control room)
@@ -33,6 +68,13 @@ Michael: **B** — defensible: bandits fall on it, the merchant runs, an overtur
 Michael: **A** — the kit for everyone: the player's weapons in third person, every foe armed by what it is; foes' weapons are looks only, damage unchanged. (27 Sep 2026, via the control room)
 
 ### The interface — parchment and ink, and where the HUD sits (the concept artist, 2026-09-27)
+Backlog E asks for the whole interface "as close to Oblivion's design as we can — parchment and scroll", style page first. The style page is `docs/prototypes/ui/index.html`: nine 1280×720 screens with build s171's own text and numbers in Dunmore (two HUD layouts, inventory, magic, attributes, quests, map, a conversation, and the kit). Panels are one parchment sheet with a torn edge (an SVG displacement filter over a CSS gradient and noise, no images), dark-brown ink, red rubric for headings and anything new or chosen, faded ink for locked or spent; tabs are bookmarks on the sheet's top edge; close is a wax seal. The HUD sits on the world in dark iron and bronze. Type is IM Fell English SC for headings and EB Garamond for lists and numbers (both OFL, 290 KB). The emoji icons (🪖 👕 🧪 🗝) become 31 drawn ink icons (24×24 SVG, one stroke). Magic is regrouped by sigil, one line a spell with an English gloss and the cost in a column (the legibility ask). The world map is today's, inked into the paper.
+- **A.** Parchment everywhere, and the HUD in Oblivion's places: health, mana and stamina with the readied weapon and spell bottom-left, the compass bottom-centre, the minimap kept top-right as a bronze-ringed disc. Today's yellow HUD text over a bright sky is hard to read (`current-hud.png`); the bottom keeps it off the sky.
+- **B.** Parchment everywhere, the HUD restyled but left where it is now (vitals top-left, compass top-centre).
+- **C.** Parchment only for what you read (conversation, quests, books, notice boards, map); inventory, magic and attributes keep a dark panel with the new type and icons. Less change, less Oblivion.
+
+Recommendation: **A**. It is the look asked for, and the HUD moves off the sky. One Fable session applies the kit to every panel (the shop, loot, save/load, lockpicking and the creator follow the same sheet); the journal stays its own item.
+Screens: [HUD, today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-hud-a.png) · [HUD, B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-hud-b.png) · [inventory, today beside proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-inventory.png) · [magic, today beside proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-magic.png) · [attributes](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-attributes.png) · [quests](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-quests.png) · [map](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-map.png) · [conversation, today beside proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/compare-dialogue.png) · [the kit: colours, type, states, icons](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/ui/new-kit.png)
 Michael: **Parchment everywhere; HUD in Oblivion's places** (A). (27 Sep 2026)
 
 ### Trolls, golems, gargoyles and the Faolchú — what they look like (Session 201)
