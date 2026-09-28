@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s227</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s228</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -20838,6 +20838,9 @@ let thirdPerson=false,PLAYER_MODEL=null; // v80 S12 — V toggles third person
 // the sea — and eases back out. The mouse wheel sets the boom length.
 // Joint convention: the model faces +z, its right is −x. A negative x
 // rotation swings a limb forward; knees bend with positive x.
+// S244: the viewmodel's variants (0 the forehand diagonal, 1 the backhand diagonal, 2 the overhead chop) as the body's
+// (0 the flat cut, 1 the overhead chop, 2 the rising diagonal)
+const TP_SWING_OF=[0,2,1];
 const TP={rig:null,sig:'',dist:1.9,want:1.9,cur:1.9,phase:0,lastHP:null,hurtT:0,deadT:0,swingSeen:0,swMax:0,swVar:0,swPow:false,hidVM:false,near:0};
 try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=parseFloat(localStorage.getItem('og_tp_d'));if(d>0)TP.want=d;}catch(e){}
 // ── the look (Session 127): worldState.look = {skin,hair,style,beard,tunic,breeches,boots}
@@ -20978,7 +20981,10 @@ function tpPose(R,dt,st){
   if(R.torch){aL.x=Math.min(aL.x,-.3);eL=-1.2;}
   // swing — read the viewmodel's own record of the current swing
   const vu=(typeof vmSword!=='undefined'&&vmSword)?vmSword.userData:{};
-  if(swingT>0){if(!TP.swMax||swingT>TP.swingSeen+.001){TP.swMax=vu.swingMax||swingT;TP.swVar=vu.swingVariant||0;TP.swPow=!!vu.swingIsPower;}TP.swingSeen=swingT;
+  // S244: the viewmodel picks a swing's variant and power later in the frame than this runs (and clears them when a
+  // swing ends), so on a swing's first frame they still read 0: wait a frame for them, or every swing was the flat cut
+  const vmReady=!(typeof vmSword!=='undefined'&&vmSword)||vu.swingMax>0;
+  if(swingT>0&&vmReady){if(!TP.swMax||swingT>TP.swingSeen+.001){TP.swMax=vu.swingMax||swingT;TP.swVar=TP_SWING_OF[vu.swingVariant||0]||0;TP.swPow=!!vu.swingIsPower;}TP.swingSeen=swingT;
     const p=Math.max(0,Math.min(1,1-swingT/(TP.swMax||swingT)));const wind=p<.3?p/.3:1,strike=p<.3?0:p<.6?(p-.3)/.3:1,rec=p<.6?0:(p-.6)/.4;const ease=x=>x*x*(3-2*x);const S=ease(strike),W=ease(wind),Rc=ease(rec);const mag=TP.swPow?1.35:1;
     if(TP.swVar===0){ // flat cut, right to left
       aR={x:-1.45,y:_tpL(_tpL(0,-1.2*mag,W),1.0*mag,S)*(1-Rc*.7),z:0};eR=-.35;wR=_tpL(.4,1.6,Math.max(W*.5,S))*(1-Rc);ty=_tpL(_tpL(0,-.45*mag,W),.5*mag,S)*(1-Rc);}
