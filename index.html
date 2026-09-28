@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s235</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s236</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36018,7 +36018,6 @@ var WORLD=(()=>{
   const beds=[];
   function buildCamps(){}
   function buildCampsFor(c,k){
-    const tentMat=new THREE.MeshLambertMaterial({color:0x8a7a5a,side:THREE.DoubleSide}),poleMat=new THREE.MeshLambertMaterial({color:0x4a3018});
     let n=0;const LD=LOADED.get(k);if(!LD)return 0;
     LD.roads.forEach((rd,ri)=>{
       if(rd.def.via==='spur')return;
@@ -36033,13 +36032,18 @@ var WORLD=(()=>{
         if(stampAt(cx,cz))continue;
         const cs=addStamp({id:'camp_'+k+'_'+ri+'_'+i,kind:'door',x:cx,z:cz,r:7,blend:9,cell:k});LD.stamps.push(cs);
         const y=worldH(cx,cz);
-        [[-2.6,-1.2,.4],[2.4,-1.6,2.6]].forEach(([ox,oz,ry])=>{const t=new THREE.Mesh(new THREE.ConeGeometry(1.9,2.4,5,1,true),tentMat);t.position.set(cx+ox,worldH(cx+ox,cz+oz)+1.2,cz+oz);t.rotation.y=ry;t.castShadow=true;sc.add(t);
-          const p=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.6,5),poleMat);p.position.set(cx+ox,worldH(cx+ox,cz+oz)+1.3,cz+oz);sc.add(p);STATIC_SOL.push({cx:cx+ox,cz:cz+oz,rx:1.4,rz:1.4});});
-        const stone=new THREE.MeshLambertMaterial({color:0x5a5450});for(let k=0;k<7;k++){const ang=k/7*Math.PI*2;const m=new THREE.Mesh(new THREE.DodecahedronGeometry(.24,0),stone);m.position.set(cx+Math.cos(ang)*.7,y+.16,cz+1.2+Math.sin(ang)*.7);sc.add(m);}
+        [[-2.6,-1.2,.4],[2.4,-1.6,2.6]].forEach(([ox,oz,ry],ti)=>{const t=new THREE.Mesh(campTentGeo(ri+i+ti),VC_MAT);t.position.set(cx+ox,worldH(cx+ox,cz+oz),cz+oz);t.rotation.y=ry;t.castShadow=true;t.receiveShadow=true;t.userData.roadCamp=true;sc.add(t); // S254 — the bandit camp's ridge tent (it was an open cone on a pole)
+          STATIC_SOL.push({cx:cx+ox,cz:cz+oz,rx:1.4,rz:1.4});});
+        {const q=x=>new THREE.Color(x),P=[];for(let s=0;s<9;s++){const a=s/9*Math.PI*2;P.push({geo:cragGeo(.24,s+ri+3),color:q(0x5a5650).multiplyScalar(.85+(s%3)*.12),x:Math.cos(a)*.85,z:1.2+Math.sin(a)*.85,y:.1,ry:-a,jitter:.06});} // S254 — the bandit camp's fire ring and logs (seven dodecahedra), a blanket with its head rolled and a pack (two boxes)
+          for(let s=0;s<3;s++){const a=s/3*Math.PI*2+.4;P.push({geo:SK.cyl(.07,.09,.9,6),color:q(0x3a2818),x:Math.cos(a)*.22,z:1.2+Math.sin(a)*.22,y:.18,rx:Math.PI/2-.35,ry:-a+Math.PI/2,jitter:.08});}
+          const bx0=-.2,bz0=3.6,cr=Math.cos(.3),sr=Math.sin(.3),at=(u,w)=>[bx0+u*cr+w*sr,bz0-u*sr+w*cr];
+          {const [x,z]=at(0,.1);P.push({geo:SK.rbox(.72,.06,1.4,.025,1),color:q(0x6a5a3a),x,z,y:worldH(cx+x,cz+z)-y+.04,ry:.3,jitter:.1});}
+          {const [x,z]=at(0,-.72);P.push({geo:SK.cyl(.11,.11,.74,8),color:q(0x7a6a48),x,z,y:worldH(cx+x,cz+z)-y+.11,ry:.3,rz:Math.PI/2,jitter:.08});}
+          {const [x,z]=at(-.62,-.5);P.push({geo:SK.rbox(.34,.4,.26,.06,1),color:q(0x5a3a1e),x,z,y:worldH(cx+x,cz+z)-y+.2,ry:.3+.4,jitter:.06});}
+          const m=new THREE.Mesh(mergeParts(P),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;m.receiveShadow=true;m.userData.roadCamp=true;sc.add(m);}
         const ember=new THREE.Mesh(new THREE.SphereGeometry(.24,6,6),new THREE.MeshBasicMaterial({color:0xff7a22}));ember.position.set(cx,y+.2,cz+1.2);sc.add(ember);
         const fl=regLight(0xff8a30,1.1,9,'cell:'+k);fl.position.set(cx,y+.9,cz+1.2);STATIC_SOL.push({cx,cz:cz+1.2,rx:.8,rz:.8});
-        const bx=cx-.2,bz=cz+3.6;const roll=new THREE.Mesh(new THREE.BoxGeometry(.7,.16,1.6),new THREE.MeshLambertMaterial({color:0x6a5a3a}));roll.position.set(bx,worldH(bx,bz)+.08,bz);roll.rotation.y=.3;sc.add(roll);
-        const pillow=new THREE.Mesh(new THREE.BoxGeometry(.5,.12,.3),new THREE.MeshLambertMaterial({color:0xb8a880}));pillow.position.set(bx-.2,worldH(bx,bz)+.2,bz-.6);pillow.rotation.y=.3;sc.add(pillow);
+        const bx=cx-.2,bz=cz+3.6;
         beds.push({x:bx,z:bz,cell:k});n++;
       }
     });

@@ -6665,3 +6665,14 @@ New `tests/signposts.test.mjs`. A three-armed signpost is 404 triangles and 3.45
 
 ### Needs eyes
 The lettering on the arms from a steep angle, now that the planks are thinner. Whether the cairn reads at walking distance or is lost in the grass.
+
+## v80 — Session 254 — The roadside camps on the kit (H.5)
+Along the roads, every 260 units or so, there is a travellers' camp with a bed you can sleep in (`buildCampsFor`; 21 are in reach of the start). Each still had the look the bandit camp had before Session 205: two open five-sided cones on poles for tents, seven dodecahedra round a glowing ball for a fire, and a box bedroll with a box pillow.
+
+**Now** the tents are the bandit camp's ridge tents (`campTentGeo`): canvas over a ridge pole on two uprights, closed gables, a tied-back door flap, and guy lines to pegs, in three shades of canvas. The fire is its ring of nine craggy stones with three logs laid in, round the same ember and light. The bed is a blanket laid out with its head rolled, and a leather pack beside it. The fire ring and the bed are one vertex-coloured mesh, and each tent is one. The camp's stamp, its colliders (two tents and the fire), the bed you sleep in and its place are all unchanged. Nothing in the camp rolls dice, so no other placement moves.
+
+### Verified (headless Chromium)
+New `tests/camps.test.mjs` drains the loader and casts rays down at the three camps nearest the start (114–205 units off). The ridge over each tent's middle is at 1.96, where the old cone's apex was 2.4. The fire ring's stones are at .30–.33 and the rolled blanket at .22 above the ground. Each camp keeps its two tent colliders. No page errors. `pois` passes. `docs/prototypes/camps-shot.mjs` renders `docs/prototypes/camps-ingame.png`: the nearest camp before (top) and after (bottom), from two sides at noon. The two builds' nearest camps stand in different places, because camps follow the roads and the roads vary with load order (Session 248's note).
+
+### Needs eyes
+The tents' gables are single-sided, so they cannot be seen from inside a tent, as with the bandit camp's. Whether a blanket on the grass reads as a bed to sleep in.
