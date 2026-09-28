@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s272</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s273</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35165,6 +35165,8 @@ var WORLD=(()=>{
     switch(sc_.type){
       case 'keeper':
         if(h>=HRS.shopOpen&&h<HRS.shopClose)return {hide:true};
+        // S273 — the sea tutorial sends you to buy a ship: until you have one, the shipwright waits at his door out of hours (S236's rule)
+        if(sc_.shop==='shipwright'&&!worldState.ship&&TUT().sea&&TUT().sea.step==='ship')return {go:sc_.door,idle:true};
         if(eve)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
         if(night)return {hide:true};
         return {go:sc_.door,idle:true}; // dawn: at the door before opening
@@ -36085,7 +36087,7 @@ var WORLD=(()=>{
       if(type==='inn')def._extra.unshift(...innTopics(house)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
       if(type==='church'){def._extraFn=()=>[...penanceTopics(site)];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
-      const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz}};snpcs.push(kn);
+      const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz},shop:type};snpcs.push(kn);
     });
     {const innH=houses.find(h=>h.type==='inn');S.innDoor=innH?{x:innH.exitX,z:innH.exitZ}:null;snpcs.forEach(n=>{if(n.sched&&n.sched.type==='keeper')n.sched.inn=S.innDoor;});}
     const clearDead=()=>{snpcs.forEach(n=>{sc.remove(n.g);sc.remove(n.dot);});snpcs.length=0;}; // S269 — out of the scene too, not only out of the list

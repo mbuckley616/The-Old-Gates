@@ -6007,3 +6007,19 @@ New `tests/wholepoints.test.mjs`, 6 checks, with Math.random seeded:
 
 ### Needs eyes
 A town you own now climbs about a point in two and a half days. From its home level it reaches 100 in two to three months of game time, unless something else holds it back. Occupation now keeps sinking a town until the drift answers at 50 below home. In the measure, Portclare fell 56 in 120 days, where before it stopped at 36. Whether either pace is right is for play. If Michael wants roads and lairs exact as well, their numbers need retuning first.
+
+## v80 — Session 273 — A shipwright at his door
+Owed by Session 235 in section G. The sea tutorial's step *buy a ship* is a topic of the shipwright, and the tutorial's compass marker points at him. He keeps a shop's hours, though: inside from 8 to 18, at his door from 7 to 8, off to the inn from 18, and gone from 21 to 7. So for ten hours a night the marker pointed at a man who couldn't be found. Session 236 set the rule for the main quest: whoever an active quest sends you to is findable at any hour. The tutorial was left out of it because its steps are not `QUEST_DEFS`. That rule is applied here, so this is a fix, not a new rule.
+
+**What changed.** A keeper's schedule now knows the kind of shop (`sched.shop`). Out of shop hours, while the sea tutorial's step is *ship* and you have no ship, the shipwright stands at his door (`scheduleFor`, the `keeper` case). By day he is inside at his counter as before, which is where you can already reach him. Once you have a ship, or the step is past, he keeps his own hours again.
+
+### Verified (headless Chromium)
+New `tests/shipwright.test.mjs`, 8 checks, at Portclare (Lonán):
+- **Without the tutorial.** He is gone at 23h and 3h, and at 19.5h he is 11.5 units from his door, on his way to the inn: his hours, unchanged.
+- **At the step.** He is out at 23h, 3h and 19.5h, 0.8–1.0 units from his door. At 12h he is inside. Past the step (*crossing*) he is gone at 23h again.
+- **Buying at 23h.** E on him opens his dialogue with *Buy a ship (300 gold, with Corwin's note)*. Choosing it gives you the *Mercy* and takes 300 of 1,000 gold.
+
+`shoperrands` and `shophours` pass. No page errors.
+
+### Needs eyes
+The tutorial's marker at night leading to a man standing by a dark shop.
