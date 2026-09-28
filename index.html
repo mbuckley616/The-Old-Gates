@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s245</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s246</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9664,6 +9664,19 @@ function personGenome(def,opts){
 // distant copy: fewer segments, and the tiny parts (pupils, irises, freckles) left out. Bones are created
 // in the same order at every quality, so either geometry skins to either skeleton.
 const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012,shadowLo:true};
+// S265 — shading in the people's creases (Michael's A on Session 243, this strength): after the bake, each part stands in
+// as one to six spheres along its longest axis (the radius the mean of its two shorter half-extents), and each vertex is
+// darkened by the spheres of every other part it faces, the analytic sphere occlusion (the cosine to the centre times
+// r²/d², capped at 1), summed, times .75, capped at a darkening of .5. A part never shades itself. Once per bake, in the
+// bind pose, into the colours: no triangles, no shader, nothing per frame. PAO.on turns it off for a comparison.
+const PAO={k:.75,max:.5,on:true};
+function personAO(pos,nor,col,PR){if(!PAO.on)return;const S=[];
+  PR.forEach(([s,c],pi)=>{const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
+    const e=[0,1,2].map(k=>(mx[k]-mn[k])/2),ax=e.indexOf(Math.max(e[0],e[1],e[2])),o=[0,1,2].filter(k=>k!==ax),r=Math.max(.004,(e[o[0]]+e[o[1]])/2),n=Math.min(6,Math.max(1,Math.round(e[ax]/r)));
+    for(let j=0;j<n;j++){const c3=[0,1,2].map(k=>(mn[k]+mx[k])/2);c3[ax]=mn[ax]+e[ax]*2*(j+.5)/n;S.push(c3[0],c3[1],c3[2],Math.min(r,e[ax]),pi);}});
+  PR.forEach(([s,c],pi)=>{for(let i=s;i<s+c;i++){const x=pos[i*3],y=pos[i*3+1],z=pos[i*3+2],nx=nor[i*3],ny=nor[i*3+1],nz=nor[i*3+2];let occ=0;
+    for(let q=0;q<S.length;q+=5){if(S[q+4]===pi)continue;const dx=S[q]-x,dy=S[q+1]-y,dz=S[q+2]-z,L2=dx*dx+dy*dy+dz*dz,L=Math.sqrt(L2)||1e-6;const cs=(dx*nx+dy*ny+dz*nz)/L;if(cs<=0)continue;occ+=cs*Math.min(1,S[q+3]*S[q+3]/L2);}
+    const a=1-Math.min(PAO.max,occ*PAO.k);col[i*3]*=a;col[i*3+1]*=a;col[i*3+2]*=a;}});}
 function personBake(g,q){SK.q=q;try{return personBakeQ(g,q);}finally{SK.q=1;}}
 function personBakeQ(g,q){
   const bones=[],B={};
@@ -9864,14 +9877,15 @@ function personBakeQ(g,q){
   }
   if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
   // bake: every part into one geometry, each vertex bound to its bone
-  const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
+  const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
   hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone
   for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
     if(q<1){if(!geo.boundingSphere)geo.computeBoundingSphere();if(geo.boundingSphere.radius*o.scale.x<PEOPLE_LOD.tiny){o.parent.remove(o);geo.dispose();continue;}}
     for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(n.x,n.y,n.z);
       const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);si.push(bi,0,0,0);sw.push(1,0,0,0);}
     if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
-    base+=pa.count;o.parent.remove(o);geo.dispose();}
+    PR.push([base,pa.count]);base+=pa.count;o.parent.remove(o);geo.dispose();}
+  personAO(pos,nor,col,PR);
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);

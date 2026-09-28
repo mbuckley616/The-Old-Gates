@@ -6920,3 +6920,24 @@ New `tests/rocks.test.mjs`:
 
 ### Needs eyes
 The other dressings in their own country: moss in the deep wood, snow on the tundra, sandstone in the dunes. Only the moor's is near the start. The rocks now cost about six times the old ones' triangles; they are few near the start, but a frame check in a rocky region (the coastal hills, rocks ×1.4) on a real machine would say whether it matters. Cave doors' rock faces (Session 230's note) still use the old dodecahedra and could take these kinds next.
+
+## v80 — Session 265 — Shading in the townsfolk's creases (H.1, Michael's A on Session 243)
+Michael answered Session 243: **this strength**. The prototype's occlusion is now in the game's person bake, as it was patched into a copy there:
+- **The spheres:** `personBakeQ` keeps each part's range of vertices. `personAO` then stands each part in by one to six spheres along its longest axis.
+- **The darkening:** each vertex is darkened by the spheres of every other part it faces. That is the cosine to the centre times r²/d², capped at 1, summed, times .75, and capped at a darkening of .5. A part never shades itself.
+
+It is worked out once per bake, in the bind pose, into the colours the vertices already carry: no triangles, no shader, nothing per frame. It applies to both bakes, full and distant, and so to every townsperson, human foe and the player's own body, all built by `buildPerson`. `PAO.on` turns it off, for comparisons.
+
+### Verified (headless Chromium)
+New `tests/peopleao.test.mjs` bakes six of Hearthwick's townsfolk with the shading off and on:
+- **Same vertices:** the bake has the same vertex count either way.
+- **The cap:** no vertex is darkened past .5.
+- **Clear surfaces:** 18–21% of vertices are untouched, the open surfaces.
+- **The mean:** darkening averages .29–.34. That is high because many vertices lie inside other parts, where the shading is deepest and never seen. The picture is the judge, and it matches the prototype's.
+- **Cost:** the fastest of three bakes each way is 1.8–3.8 ms without the shading and 3.3–7.8 ms with it.
+- No page errors.
+
+A first version of the timing check used single bakes; one of them took 52 ms, so it would have been a flaky test on CI. `people` and `lod` pass. `docs/prototypes/peopleao-ingame.png` is three of Hearthwick's people face on, in the afternoon.
+
+### Needs eyes
+Faces in shade at dusk, which Session 243 flagged. A raised arm keeps the bind pose's shadow at its side. Michael's A named the creatures and houses to follow; the wolf family's and the houses' bakes are separate and not yet shaded.
