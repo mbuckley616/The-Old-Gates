@@ -6250,3 +6250,44 @@ I recommended B. It reads as an ambusher in bog water, and its forelegs give the
 
 ### Needs eyes
 The DECISION: the beetle, the water bug (recommended), the water bug with the beetle's shine, or the spider kit in fen colours after all.
+
+## v80 — Session 226 — The weapon kit, and the foes armed by what they are (H.4, Michael's answer A on Session 220)
+Michael answered the weapon kit (Session 220) with A: "the kit for everyone: the player's weapons in third person, every foe armed by what it is; foes' weapons are looks only, damage unchanged." This session builds the kit in the game and arms the foes. The player's weapons are the next session.
+
+**The kit.** `wpnBuild(kind, rust)` builds the prototype's weapons from the shape kit:
+- dagger, arming sword, longsword, and a new cutlass (a curved blade and a knuckle bow, for the pirates);
+- bearded axe, flanged mace, war hammer;
+- a staff with a crystal in three prongs;
+- a recurve bow;
+- a planked round shield and a kite shield.
+
+Each weapon is merged by material into at most four meshes: a metal and a matte standard material with the parts' colours in the vertex colours, plus the staff's glow and halo. The merged geometry is built once per kind and shared by every foe that carries it (`WPN_GEO`, `buildWeapon`). A rusted copy is built once for the dead: its metal parts lerp towards rust and use the matte material. A weapon has 970–1,170 triangles. The grip is at the origin, so it hangs on the people's gear bone as the gear kit's tools did. Weapons cast no shadow.
+
+**Who carries what** (`FOE_DRESS` gains `wpn`, `shield`, `shieldP`; the choice is from the foe's own seed, so a given bandit always carries the same thing):
+- **Bandits:** a sword or an axe; a third or so also carry a round shield.
+- **Highwaymen:** a sword or an axe.
+- **Deserters:** a mace or the gear kit's spear, always with a kite shield.
+- **Archers:** the bow, in the left hand.
+- **Rogue mages:** the staff. **Cultists:** a dagger. **Pirates:** the cutlass.
+- **The Bandit Captain:** a sword, with its S175 shield as before. **The Shieldbearer:** a mace, with its shield as before.
+- **Skeletons:** those that carried the club now carry a rusted sword; the spears stay.
+- **Unchanged:** the goblin's club, the kobold's mattock, the hag's staff, the troll's maul and the ogre's club, each already its own.
+
+A foe's weapon is a looks change only: damage, reach and timing are untouched. The fist closes on it (gear `'kit'`, which bakes nothing), and the forearm is carried forward with the blade up, as with the other held gear.
+
+### Verified (headless Chromium)
+New `tests/weapons.test.mjs`, 9 checks, all passing, no page errors:
+- All eleven kinds build without a box, in two to four meshes, with their geometry shared.
+- Over 24 seeds each:
+  - Bandits carried 9 swords and 15 axes, 11 with a round shield. Highwaymen carried 12 swords and 12 axes.
+  - Deserters carried 17 maces and 7 spears, all 24 with a kite shield.
+  - Every archer's bow was on the left wrist. Every mage had a staff, every cultist a dagger, every pirate a cutlass, every captain a sword.
+  - Every kit weapon hung on the gear bone.
+  - Skeletons carried 11 rusted swords and 13 spears. Kobolds and trolls kept their own tools.
+- A highwayman's sword moves 0.31 through the wind-up, with the arm.
+- All 14 skeletons in an undead dungeon are armed.
+
+`foes`, `trolls`, `dungeonfoes`, `goblins` and `people` still pass. Two checks in `foes` (Sessions 171 and 172) asked for the old gear: a deserter always with a spear, a skeleton with a spear or a club. They now accept the kit's mace (gear `'kit'`) and the rusted sword. Picture: `docs/prototypes/weapons-ingame.png` (a bandit with a sword and shield, a highwayman with an axe, a deserter with a mace and kite shield, an archer, a mage, a pirate, a cultist and a skeleton).
+
+### Needs eyes
+Whether a foe's weapon reads at fighting distance, since they cast no shadow. Also whether the mace is too small in a big fist (it is the prototype's size).

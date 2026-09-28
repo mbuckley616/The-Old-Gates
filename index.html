@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s223</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s224</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9885,15 +9885,65 @@ function buildPerson(g,opts){
 // A human enemy is a person: a genome seeded from its kind and where it was met (so each bandit in a camp is someone),
 // dressed for what it is, on its own copy of the people's material (a wind-up's red flash, a corpse's darkening, touch it
 // alone). tickPeople walks it by its enemy's position; the attack pose swings its right arm (limbs.armR is the shoulder).
+// ── S226 — the weapon kit (Michael's answer A on Session 220): blades extruded from an outline with a bevel so they have an
+// edge, wrapped grips, guards and pommels, a bearded axe, a flanged mace, a spiked war hammer, a staff with a crystal, a
+// recurve bow, a planked round shield and a kite shield. Built once per kind (and once rusted, for the dead), merged by
+// material into at most four meshes that every foe of that kind shares; hung on the gear bone (the bow in the left hand,
+// a shield on the left forearm). Looks only: what a foe deals is unchanged. The grip is at the origin, the blade up +y.
+const WPN_MAT={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34}),matte:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.85}),
+  glow:new THREE.MeshBasicMaterial({color:0x88c0ff}),halo:new THREE.MeshBasicMaterial({color:0x4080ff,transparent:true,opacity:.15,depthWrite:false})};
+const WPN_GEO=new Map();
+const WPN_KINDS=['dagger','sword','cutlass','longsword','axe','mace','warhammer','staff','bow','round','kite'];
+function wpnBuild(kind,rust){
+  const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
+  const col=(m,c)=>rust&&m==='metal'?new THREE.Color(c).lerp(new THREE.Color(RU),.62):new THREE.Color(c);
+  const add=(geo,m,c,p,r,sc)=>{o.position.set(...(p||[0,0,0]));o.rotation.set(...(r||[0,0,0]));o.scale.set(...(sc||[1,1,1]));o.updateMatrix();L.push([geo,rust&&m==='metal'?'matte':m,col(m,c),o.matrix.clone()]);};
+  const STEEL=0xc8ccd4,DSTEEL=0x6a6e76,BRASS=0xc8a050,WOOD=0x6a4428,DWOOD=0x4a2e18,LEATH=0x3a2618;
+  const blade=(len,w,tip,curve)=>{const sh=new THREE.Shape();const cv=curve||0;sh.moveTo(-w/2,0);sh.lineTo(-w/2*.92+cv*.3,len*.8);sh.quadraticCurveTo(-w/2*.7+cv,len*.93,cv,len*(1+tip));sh.quadraticCurveTo(w/2*.7+cv,len*.93,w/2*.92+cv*.3,len*.8);sh.lineTo(w/2,0);sh.lineTo(-w/2,0);
+    const g=new THREE.ExtrudeGeometry(sh,{depth:.004,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:2,curveSegments:6});g.translate(0,0,-.002);return g;};
+  const grip=(len,r,y0)=>{add(SK.cyl(r,r,len,10),'matte',LEATH,[0,y0+len/2,0]);for(let i=0;i<6;i++)add(SK.torus(r*1.02,r*.18,4,10),'matte',DWOOD,[0,y0+len*(i+.5)/6,0],[Math.PI/2,0,0]);};
+  const K={
+    sword:()=>{grip(.1,.014,-.05);add(SK.ball(.022,10,8),'metal',BRASS,[0,-.06,0]);add(SK.rbox(.15,.022,.03,.008,2),'metal',BRASS,[0,.06,0]);add(SK.ball(.012,6,5),'metal',BRASS,[.075,.06,0]);add(SK.ball(.012,6,5),'metal',BRASS,[-.075,.06,0]);add(blade(.46,.042,.08),'metal',STEEL,[0,.07,0]);},
+    cutlass:()=>{grip(.1,.014,-.05);add(SK.ball(.02,10,8),'metal',BRASS,[0,-.06,0]);add(SK.torus(.045,.007,5,14,Math.PI),'metal',BRASS,[.0,.0,.0],[0,Math.PI/2,Math.PI/2]);add(SK.rbox(.1,.02,.03,.007,2),'metal',BRASS,[0,.06,0]);add(blade(.42,.05,.06,.05),'metal',STEEL,[0,.07,0]);},
+    longsword:()=>{grip(.16,.015,-.1);add(SK.ball(.026,10,8),'metal',STEEL,[0,-.115,0]);add(SK.rbox(.19,.024,.034,.009,2),'metal',DSTEEL,[0,.065,0]);add(blade(.6,.046,.07),'metal',STEEL,[0,.077,0]);},
+    dagger:()=>{grip(.08,.013,-.04);add(SK.ball(.018,8,6),'metal',BRASS,[0,-.05,0]);add(SK.rbox(.09,.018,.026,.006,2),'metal',BRASS,[0,.045,0]);add(blade(.2,.034,.15),'metal',STEEL,[0,.054,0]);},
+    axe:()=>{add(SK.cyl(.016,.019,.5,8),'matte',WOOD,[0,.15,0]);grip(.1,.02,-.08);const sh=new THREE.Shape();sh.moveTo(0,-.03);sh.lineTo(-.06,-.05);sh.quadraticCurveTo(-.15,-.08,-.14,.02);sh.quadraticCurveTo(-.155,.1,-.1,.12);sh.lineTo(0,.04);sh.lineTo(0,-.03);
+      add(new THREE.ExtrudeGeometry(sh,{depth:.006,bevelEnabled:true,bevelThickness:.005,bevelSize:.004,bevelSegments:2}),'metal',STEEL,[-.012,.34,-.003]);add(SK.rbox(.04,.07,.036,.01,2),'metal',DSTEEL,[0,.36,0]);},
+    mace:()=>{add(SK.cyl(.015,.018,.4,8),'matte',DWOOD,[0,.12,0]);grip(.1,.019,-.08);add(SK.ball(.045,12,9),'metal',DSTEEL,[0,.34,0]);
+      for(let i=0;i<6;i++){const a=i/6*Math.PI*2;add(SK.rbox(.012,.09,.05,.004,1),'metal',DSTEEL,[Math.cos(a)*.035,.34,Math.sin(a)*.035],[0,-a,0]);}add(SK.cone(.02,.05,6),'metal',DSTEEL,[0,.4,0]);},
+    warhammer:()=>{add(SK.cyl(.018,.022,.72,8),'matte',WOOD,[0,.22,0]);grip(.14,.023,-.12);add(SK.rbox(.2,.085,.085,.018,2),'metal',DSTEEL,[.02,.56,0]);add(SK.cone(.03,.12,6),'metal',DSTEEL,[-.14,.56,0],[0,0,Math.PI/2]);add(SK.cone(.02,.08,6),'metal',DSTEEL,[0,.64,0]);},
+    staff:()=>{add(SK.bumpy(SK.cyl(.016,.022,1.0,8,10),.004,23,30),'matte',DWOOD,[0,.22,0]);for(let i=0;i<3;i++){const a=i/3*Math.PI*2;add(SK.cone(.008,.12,5),'matte',DWOOD,[Math.cos(a)*.022,.76,Math.sin(a)*.022],[Math.sin(a)*-.35,0,Math.cos(a)*.35]);}
+      add(new THREE.OctahedronGeometry(.04,0),'glow',0xffffff,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',0xffffff,[0,.8,0]);},
+    bow:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
+    round:()=>{const R=.19;for(let i=0;i<5;i++){const w=R*2/5,x=-R+w*(i+.5),h=2*Math.sqrt(Math.max(0,R*R-x*x));add(SK.rbox(.02,h*.98,w*.96,.004,1),'matte',[0x7a5230,0x6a4628,0x82583a][i%3],[0,0,x]);}
+      add(SK.torus(R,.012,6,28),'metal',DSTEEL,[0,0,0],[0,Math.PI/2,0]);add(SK.ball(.05,12,8,0,Math.PI*2,0,Math.PI/2),'metal',DSTEEL,[.012,0,0],[0,0,-Math.PI/2]);},
+    kite:()=>{const sh=new THREE.Shape();sh.moveTo(0,.24);sh.quadraticCurveTo(.17,.24,.16,.1);sh.quadraticCurveTo(.13,-.12,0,-.3);sh.quadraticCurveTo(-.13,-.12,-.16,.1);sh.quadraticCurveTo(-.17,.24,0,.24);
+      add(new THREE.ExtrudeGeometry(sh,{depth:.02,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:2}),'matte',0x7a2020,[0,0,0],[0,Math.PI/2,0]);
+      add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[-.014,.05,0],[0,0,Math.PI/2]);for(const [a,b2] of [[.24,.12],[-.3,0]])add(SK.ball(.012,6,5),'metal',BRASS,[-.014,a,b2]);}
+  };
+  (K[kind]||K.sword)();
+  // merge by material: vertex colours carry each part's colour
+  const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
+  const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
+  for(const m in by){const P=[],N=[],C=[],I=[];for(const [geo,c,mx] of by[m]){const g=geo.index?geo:geo,p=g.attributes.position,n=g.attributes.normal,b=P.length/3;nm.getNormalMatrix(mx);
+      for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(mx);P.push(v.x,v.y,v.z);v.fromBufferAttribute(n,i).applyMatrix3(nm).normalize();N.push(v.x,v.y,v.z);C.push(c.r,c.g,c.b);}
+      if(g.index){const ix=g.index.array;for(let i=0;i<ix.length;i++)I.push(ix[i]+b);}else for(let i=0;i<p.count;i++)I.push(b+i);geo.dispose();}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeBoundingSphere();
+    out.push({geo:g,mat:m});}
+  return out;
+}
+function buildWeapon(kind,opts){opts=opts||{};const key=kind+(opts.rust?'|rust':'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust);WPN_GEO.set(key,parts);}
+  const G=new THREE.Group();G.name='weapon:'+kind;G.userData.wpn=kind;for(const p of parts){const m=new THREE.Mesh(p.geo,WPN_MAT[p.mat]);m.castShadow=false;G.add(m);}return G;}
 const FOE_DRESS={
-  'Bandit':        {cloth:0x4a3a2a,hat:'hood',gear:'stick'},
-  'Bandit Archer': {cloth:0x3a4a2a,hat:'hood',gear:null},
-  'Highwayman':    {cloth:0x2a2a30,hat:'brim',gear:'stick'},
-  'Deserter':      {cloth:0x5a5a4a,hat:'helm',gear:'spear'},
-  'Cultist':       {cloth:0x3a1414,hat:'hood',gear:null},
-  'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',gear:'stick'},
-  'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',gear:'stick'},
-  'Bandit Captain':{cloth:0x3a2418,hat:'helm',gear:'stick'}, // S175 — the shield on the left shoulder; tickPeople holds the guard
+  'Bandit':        {cloth:0x4a3a2a,hat:'hood',wpn:['sword','axe'],shield:'round',shieldP:.35}, // S226 — armed from the weapon kit (wpn), a shield at shieldP
+  'Bandit Archer': {cloth:0x3a4a2a,hat:'hood',wpn:'bow'},
+  'Highwayman':    {cloth:0x2a2a30,hat:'brim',wpn:['sword','axe']},
+  'Deserter':      {cloth:0x5a5a4a,hat:'helm',wpn:['mace','spear'],shield:'kite'},
+  'Cultist':       {cloth:0x3a1414,hat:'hood',wpn:'dagger'},
+  'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',wpn:'staff'},
+  'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',wpn:'cutlass'},
+  'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword'}, // S175 — the shield on the left shoulder; tickPeople holds the guard
   'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
   'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
@@ -9903,7 +9953,7 @@ const FOE_DRESS={
   'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
-  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',gear:'stick'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
+  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
   'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
   'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
   // S208 — the trolls on the people's body (Michael's answer on Session 201: as shown, a hammer for the cane): heavy, stooped,
@@ -9944,8 +9994,16 @@ function buildFoe(type,x,z,genome,eyeCol){
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}
     // a wraith: a long robe to the ground under a cloak and hood, the feet lost in it; it glides (tickPeople)
     if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}
-    if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}}
+    if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}
+    // S226 — a weapon from the kit by what the foe is (a spear stays the gear kit's); a skeleton's club becomes a rusted sword
+    if(dr.wpn){const r=pRng(g.seed+23);const w=Array.isArray(dr.wpn)?dr.wpn[Math.floor(r()*dr.wpn.length)]:dr.wpn;
+      if(w==='spear')g.gear='spear';else{g.wpn=w;g.gear=w==='bow'?null:'kit';}
+      if(dr.shield&&r()<(dr.shieldP==null?1:dr.shieldP))g.shieldKit=dr.shield;}
+    if(g.skel&&g.gear==='stick'){g.gear='kit';g.wpn='sword';}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
+  // S226 — the kit's weapon in the fist (the bow in the left hand), a shield on the left forearm; the dead's are rusted
+  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);rig.B.wrL.add(w);}else rig.B.gear.add(w);rig.weapon=w;}
+  if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
   if(g.golem){const rm=new THREE.MeshBasicMaterial({color:g.rune||0x6ab0ff});const hang=(b,w,h,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.02),rm);m.position.set(x,y,z);m.rotation.z=rz||0;b.add(m);return m;};

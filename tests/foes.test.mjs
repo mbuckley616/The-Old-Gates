@@ -15,7 +15,7 @@ const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
   return out; });
 const humans = ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate'];
 check('the seven human foes are people, dressed for what they are, each with its own material and its right shoulder as the striking arm',
-  humans.every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR && built[n].bar > 1.2) && built.Bandit.hat === 'hood' && built.Deserter.hat === 'helm' && built.Deserter.gear === 'spear' && built.Pirate.hat === 'kerchief' && built.Highwayman.hat === 'brim',
+  humans.every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR && built[n].bar > 1.2) && built.Bandit.hat === 'hood' && built.Deserter.hat === 'helm' && /spear|kit/.test(built.Deserter.gear) && built.Pirate.hat === 'kerchief' && built.Highwayman.hat === 'brim',
   Object.fromEntries(humans.map(n => [n, built[n]])));
 check('two bandits met in different places are different people', built.differ, { differ: built.differ });
 // the captain (Session 175): a person with the shield on its left shoulder; the guard is held while it is up, and the
@@ -25,7 +25,7 @@ const cap = await page.evaluate(() => { const e = _F['Bandit Captain'], L = e.li
   e.shieldUp = false; dropShieldGuard(e); for (let i = 0; i < 30; i++) tickPeople(1 / 60, t += 17); const down = { x: +r.B.shL.rotation.x.toFixed(2), z: +r.B.shL.rotation.z.toFixed(2) };
   reraiseGuard(e); tickPeople(1 / 60, t += 17); const again = +r.B.shL.rotation.x.toFixed(2); return { person: true, onArm, up, down, again, shieldUp: e.shieldUp }; });
 check('the captain is a person with a shield on the left arm, held across the body while the guard is up, lowered when it breaks, raised again', cap.person && cap.onArm && cap.up.x === -1.15 && cap.up.z === -.5 && cap.up.el === -1.1 && cap.down.x !== -1.15 && cap.again === -1.15 && cap.shieldUp, cap);
-check('the skeleton (Session 172) is bones on the people\'s skeleton: no flesh or clothes, burning eyes, a spear or a club', built.Skeleton.person && built.Skeleton.skel && built.Skeleton.eyes && /spear|stick/.test(built.Skeleton.gear) && built.Skeleton.tris > 1500 && built.Skeleton.tris < 6000 && built.Skeleton.ownMat, built.Skeleton);
+check('the skeleton (Session 172) is bones on the people\'s skeleton: no flesh or clothes, burning eyes, a spear or (S226) a rusted sword from the weapon kit', built.Skeleton.person && built.Skeleton.skel && built.Skeleton.eyes && /spear|kit/.test(built.Skeleton.gear) && built.Skeleton.tris > 1500 && built.Skeleton.tris < 6000 && built.Skeleton.ownMat, built.Skeleton);
 
 check('the risen dead (Session 173) are people gone grey and stooped in rags, eyes lit; the wight in a helm with a spear; the wraith (Session 176) robed and hooded',
   ['Hollowed', 'Ghoul', 'Ash Wight', 'Wraith'].every(n => built[n].person && built[n].dead && built[n].age === 'elder' && built[n].eyes && built[n].ownMat) && built['Ash Wight'].hat === 'helm' && built['Ash Wight'].gear === 'spear' && built.Wraith.hat === 'hood',
