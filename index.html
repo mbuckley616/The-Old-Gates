@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s219</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s220</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9671,6 +9671,7 @@ function personBakeQ(g,q){
   part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;
   if(g.cloak){part(SK.cyl(.17*bw,.27*bw,.62,14,1,true,Math.PI/2+.25,Math.PI-.5),mixC(cloth,0x000000,.3),spine,0,.02,-.005).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
   if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
+  if(g.ogre)part(SK.ball(.12*bw,12,9),skin,spine,0,.1,.085*bw).scale.set(1.1,.85,.9); // S221 — an ogre's belly, bare below the jerkin
   const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);
   const head=bone('head',neck,0,.07,0);
   part(SK.ball(.13*hs,14,10),skin,head,0,.12,0).scale.set(g.jaw,fem?1.05:1.08,1.02);
@@ -9818,6 +9819,9 @@ function personBakeQ(g,q){
   // S208 — a troll's maul: a long haft wrapped at the grip, a heavy iron head with bands at its faces
   if(g.gear==='maul'){part(SK.cyl(.017,.021,.66,8),C(0x4a3420),gear,0,.16,0);part(SK.cyl(.024,.024,.12,8),C(0x2e2218),gear,0,-.02,0);
     part(SK.rbox(.24,.12,.12,.025,2),C(0x55585a),gear,0,.5,0);[-1,1].forEach(sd=>part(SK.cyl(.066,.066,.018,10),C(0x3a3c3e),gear,sd*.11,.5,0).rotation.z=Math.PI/2);}
+  // S221 — an ogre's club: a tree limb, thin at the grip and swelling to a head, with knots left where the branches were
+  if(g.gear==='club'){const wd=C(0x5a4028),kn=C(0x4a3420);part(SK.cyl(.05,.024,.78,8),wd,gear,0,.27,0);part(SK.ball(.052,8,6),wd,gear,0,.66,0).scale.set(1,.7,1);
+    for(let i=0;i<5;i++)part(SK.ball(.03+(i%2)*.008,6,5),kn,gear,Math.sin(i*2)*.042,.3+i*.075,Math.cos(i*2)*.042);}
   // the player's kit (tpBuild): a cuirass and pauldrons over the tunic, greaves, gauntlets, an amulet, a quiver
   if(g.eq){const E=g.eq;
     if(E.chest&&!E.chest.cloth){const ac=C(E.chest.col);part(SK.lathe(chestPts.map(q=>[q[0]*bw*1.08,q[1]]),14),ac,spine,0,-.005,0).scale.z=.78;
@@ -9908,7 +9912,10 @@ const FOE_DRESS={
   'Forest Troll':  {troll:true,skin:0x5a6e40,skin2:0x4a5a34,hair:0x2e3420,eye:0xd8b030,cloth:0x4a3a26,gear:'maul'},
   'Gargoyle':      {gargoyle:true,skin:0x77746c,eye:0xff5020}, // S210 — a winged stone figure that sleeps as a statue, crouched, until you come close
   'Golem':         {golem:true,skin:0x7c776e,rune:0x6ab0ff}, // S209 — dressed stone on the people's bones, a blue rune-light in the seams
-  'Frost Troll':   {troll:true,skin:0xaebac2,skin2:0x96a4ae,hair:0xe0e4e8,eye:0x70b0ff,cloth:0x5a5048,gear:'maul'}
+  'Frost Troll':   {troll:true,skin:0xaebac2,skin2:0x96a4ae,hair:0xe0e4e8,eye:0x70b0ff,cloth:0x5a5048,gear:'maul'},
+  // S221 — the Ogre (Michael's answer on Session 214: as shown): the people's body grown huge and fat, bald and ruddy,
+  // sometimes bearded, in a leather kilt, carrying a knotted tree-limb club
+  'Ogre':          {ogre:true,cloth:0x6a5034,gear:'club'}
 };
 function buildFoe(type,x,z,genome,eyeCol){
   let g=genome;
@@ -9922,6 +9929,9 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.troll){const r=pRng(g.seed+11);g.troll=true;g.skin=new THREE.Color(dr.skin).lerp(new THREE.Color(dr.skin2),r());g.height=1;g.build=1.75;g.head=1.15;g.age='elder';g.beard='none';g.hat='none';
       g.style=r()<.5?'buzz':'shaggy';g.hair=new THREE.Color(dr.hair);g.nose=[2.2,1.8];g.ears=1.3;g.eye=new THREE.Color(dr.eye);g.ruddy=false;g.freckles=false;g.female=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=g.skin.clone();g.legs=g.skin.clone().multiplyScalar(.9);g.boot=g.skin.clone().multiplyScalar(.7);g.bodyScale=[1.15,1,1.1];}
+    if(dr.ogre){const r=pRng(g.seed+13);g.ogre=true;g.skin=new THREE.Color(0xb88a68).lerp(new THREE.Color(0x9a7050),r());g.height=1;g.build=1.95;g.head=1.1;g.style='thin';g.hair=new THREE.Color(0x3a2a1a);
+      g.beard=r()<.5?'short':'none';g.nose=[2.3,1.7];g.ears=1.5;g.eye=new THREE.Color(0x6a4a20);g.ruddy=true;g.freckles=false;g.female=false;g.age='adult';g.hat='none';
+      g.cloth=new THREE.Color(dr.cloth);g.sleeve=g.skin.clone();g.legs=g.skin.clone().multiplyScalar(.92);g.boot=new THREE.Color(0x3a2a1a);g.bodyScale=[1.2,1,1.25];}
     if(dr.hag){g.female=true;g.age='elder';g.beard='none';g.style='straight';g.hair=new THREE.Color(0x8a8a78);g.skin.lerp(new THREE.Color(0x9aa078),.35);g.nose=[1.8,1.7];g.ruddy=false;g.freckles=false;
       g.dress=true;g.cloak=true;g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);g.trim=new THREE.Color(0x2a3020);g.legs=new THREE.Color(0x2a2a20);g.boot=new THREE.Color(0x1e1a14);g.eye=new THREE.Color(0xc8c060);}
     if(dr.gargoyle){const r=pRng(g.seed+17);g.gargoyle=true;g.skin=new THREE.Color(dr.skin).multiplyScalar(.94+r()*.1);g.height=.95;g.build=1.05;g.head=1.1;g.style='buzz';g.hair=g.skin.clone().multiplyScalar(.8);

@@ -6124,3 +6124,26 @@ The first kite shield had a brass cross on its face. I replaced it with a boss a
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): the kit for the player and every foe (recommended), for the foes only, for the player only, or not yet.
+
+## v80 — Session 221 — The Ogre is a person (H.4, Michael's answer B on Session 214)
+Michael answered the last box creatures (Session 214) with **B**: build them as shown, one or two a session, except the Bog Crawler, which gets a six-legged body of its own, prototyped first. This session builds the first of them, the Ogre. It was the open world's box brute: foothills and greywood encounters, the Warden's Trial commission, a lair's beast by biome, the master of The Root.
+
+**What changed.** The Ogre joins `FOE_DRESS` as a person on the townsfolk's body, built in `buildFoe` as the prototype built it:
+- the troll's build made heavier (build 1.95 against the troll's 1.75, the body 1.2 wide and 1.25 deep), bald, ruddy, a broad nose and big ears, half of them with a short beard;
+- skin drawn from its own seed between two ruddy browns, so every ogre is someone and the same place gives the same ogre;
+- a leather jerkin and kilt over a bare belly (one skin ball on the spine bone, sized by the build so it stands out in front of the jerkin, as it did in the prototype);
+- a new `club` gear: a tree limb thin at the grip and swelling to a rounded head, with five knots where branches were.
+
+It still goes through the brute path in `buildZoneEnemy` (as the trolls did in Session 208), so its numbers do not change: 90 hit points, speed .8, the same damage and resistances, scale 1.6. The club sits upright in the fist, as the troll's maul does; the prototype held it slanted across the body, which was only the picture's pose. The weapon kit (Michael's A on Session 220) will replace the club with its own, so I kept this one simple.
+
+### Verified (headless Chromium)
+New `tests/ogre.test.mjs`, 7 checks, all passing, no page errors:
+- The zone's Ogre is a skinned person on its own material, the right shoulder striking, still a brute, with 90 hit points and no box left in its group.
+- It is fat (build 1.95), bald, and carries the club. It stands 2.0 tall against the Frost Troll's 1.94 and a bandit's 1.19, and is 1.64 wide and 1.17 deep against the troll's 1.38 and 0.90.
+- The club reaches 1.32 above the fist, against the kobold's hammer at 0.90.
+- Twelve ogres from twelve places have twelve skins and both beards; the same place gives the same ogre.
+- It stands idle when still and walks when it chases.
+`trolls`, `foes`, `wyrm` and `people` still pass. Picture: `docs/prototypes/ogre-ingame.png` (a bandit, three ogres, one walking, and a frost troll).
+
+### Needs eyes
+Whether the ogre's 2.0 height over a bandit's 1.2 feels right at a fight's distance, and whether the bare belly reads as a belly or as a patch in daylight.

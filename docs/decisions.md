@@ -17,6 +17,7 @@ Seven kinds of creature are still on the old box bodies. None of them is in a fa
 
 **Options:** (A) build them all as shown, one or two a session; (B) as shown, but give the Bog Crawler a six-legged crawler's body of its own (a beetle or a giant water-bug) rather than a spider's, and I will prototype that first; (C) build the Ogre, the slimes, the elemental and the wisp now, and rethink the bear and the two crawlers; (D) not yet. **Recommendation: A.** Each reuses a kit the game already has, so they are quick to build and share the townsfolk's and the wolves' animation. The bear's own body (a heavier kit piece than the wolf's legs) is the one bigger job.
 Michael: **B** — as shown, but the Bog Crawler gets a six-legged crawler's body of its own (a beetle or giant water-bug), prototyped first; the rest built one or two a session. (27 Sep 2026, via the control room)
+Done in part, Session 221 (auto): the Ogre, as shown (`docs/prototypes/ogre-ingame.png`). The Cave Bear, the slimes, the Fire Elemental, the Sand Scorpion and the Shore Wisp follow; the Bog Crawler's six-legged body is prototyped first.
 
 ### The caravan attacked on the road — can you save it? (the systems builder, issue #18)
 Michael: **B** — defensible: bandits fall on it, the merchant runs, an overturned cart stays; driving them off keeps the route that day, the camp threatens again tomorrow. One session. (27 Sep 2026, via the control room)
