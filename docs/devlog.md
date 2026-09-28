@@ -5769,3 +5769,24 @@ New `tests/saveui.test.mjs`, 13 checks, one session of play:
 
 ### Needs eyes
 The same round trip in Michael's own Chrome with a file kept on disk between two browsers or profiles. That settles G's two lines for good; headless it is settled.
+
+## v80 — Session 252 — Room to swing
+Backlog G has owed a check since Session 143: *open and shut a door in an inn room and a shop's back room: its height against the ceiling, its swing against the furniture*. Both are geometry, so both can be measured. This session measured them and changed no game code, so the tag stays at s251, as Session 149's did.
+
+**How.** Every interior in Dunmore (31 doors) and Portclare (12) was built with `buildInteriorFor`: shops' back rooms, inn rooms and landings, the guild halls. For each door:
+- the leaf, 1.34 long from its hinge, was swept through its whole quarter turn (to 1.62 rad) in steps of 0.05, against every solid in the room between shin and head height;
+- the gap it shuts was measured along the wall line;
+- the door's top (1.48) was set against the room's ceiling (2.0–2.6 by style), and against the tallest head among the 69 townsfolk rigged in Dunmore.
+
+**What it showed.**
+- **The swing.** No door touches anything in its swing: no wall, counter, bed, shelf or barrel.
+- **The gaps** are 1.18, 1.26 and 1.28 against a 1.34 leaf. The shut door tucks 3–8 cm into the wall at each side, inside the wall's thickness, so no light shows round it.
+- **Headroom.** The tallest head bone stands at 1.03 (a villager at scale 1.07; the median is 0.93). With a crown and a hat's 0.3 that is still under the 1.48 door, and every door is at least 0.5 below its ceiling.
+
+At the game's scale (the eye stands at 0.92) the doorway is about a head and a half taller than the tallest townsperson.
+
+### Verified (headless Chromium)
+New `tests/intdoors.test.mjs`, 5 checks, all passing with the numbers above.
+
+### Needs eyes
+Whether 1.48 *looks* right beside a person in real light: a doorway that tall is generous for an old house. That is taste, not fit.
