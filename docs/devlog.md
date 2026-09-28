@@ -6808,3 +6808,28 @@ New `tests/shark.test.mjs`:
 
 ### Needs eyes
 The shark in real water, at the surface with its dorsal showing, where it has always swum. Whether the tail's sweep reads as swimming at its speed. The coach and its horses follow in their own sessions. The coach is built in `buildCoachLine`, which the systems builder is also changing, so I will look at auto/systems first.
+
+## v80 — Session 261 — The road coach on the kit (H.5, Michael's A on Session 230)
+The second of the three in Michael's "all three as shown". The coach that runs a coaching road you have paid for (`buildCoachLine`) was a 1.7 × 1.3 × 3 box, a roof slab, two box windows, four discs for wheels, a box bench and a stick for a pole.
+
+**Now** (`coachGeo`) it is the prototype's coach in one vertex-coloured mesh.
+- **Body:** a rounded panelled body on a lower frame, with two framed windows and a door each side. Each door has a brass handle and a crest panel.
+- **Roof:** an iron rail on four posts, with two pieces of luggage.
+- **Front:** the driver's bench, its backrest and a sloped footboard, and two lamps.
+- **Running gear:** leaf springs over both axles, and four wheels with iron tyres, felloes, twelve spokes and hubs, larger behind. The pole runs out to the horses.
+
+It is built at .9 of the prototype. At that size its roof comes to 1.91, where the rider already stands (the coach's platform is 1.9 over the road), and its pole reaches 2.79 ahead, about the old one's reach. The platform, boarding, schedule and the horses' places are unchanged. The only line changed in `buildCoachLine` is the cart's own. The systems builder's coaching-inn work on auto/systems touches the lines round it, not that one.
+
+The wheels do not turn. They are part of the one mesh, as the old discs were. Turning them would mean four more meshes a coach and a tick; that is left for the horses' session, which will need a tick anyway.
+
+### Verified (headless Chromium)
+New `tests/coach.test.mjs`:
+- **The mesh:** a coach is 6,920 triangles, spanning ±.94 across and −1.38 to 2.79 along, 2.23 tall with the luggage, and standing on its tyres (−.01).
+- **The roof:** a ray down beside the luggage meets it at 1.908.
+- **In the game:** the test opens a coaching road (`dunmore|vieux_marche`, the nearest town-to-town road) by writing it into `worldState.coaches` as paying for it does, and stands halfway along it. The line builds its coach from `coachGeo`, with its ride platform 1.9 over the road.
+- No page errors.
+
+`houses` (which checks the coaching inns) passes. `docs/prototypes/coach-ingame.png` is the coach waiting in Dunmore, from the test, at noon. The horses in front of it are still the old boxes.
+
+### Needs eyes
+The coach on the move along a road at its trot, and riding on its roof between the rails. The horses follow, on a skeleton so they walk: the wolf's bones have fixed leg lengths, so a horse needs its own proportions there.
