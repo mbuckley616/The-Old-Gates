@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s246</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s247</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35168,11 +35168,12 @@ var WORLD=(()=>{
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
     for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
-    S._route=(a,b)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
+    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;
         for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;
           if(prev[k]>=0||(sol[k]&&k!==g0))continue;if(di&&dj&&(sol[cj*N+ni]||sol[nj*N+ci]))continue;prev[k]=c;q.push(k);}}
-      if(prev[g0]<0)return [];const cells=[];for(let c=g0;c!==s0;c=prev[c])cells.push({x:cx-R+c%N,z:cz-R+Math.floor(c/N)});cells.reverse();
+      if(prev[g0]<0)return [];const cells=[];for(let c=g0;c!==s0;c=prev[c])cells.push({x:cx-R+c%N,z:cz-R+Math.floor(c/N)});cells.push({x:cx-R+ai,z:cz-R+aj});cells.reverse(); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
+      if(raw)return cells; // S247 — every cell of the way, for a man the pulled-straight path has already failed
       const out=[];let from=a;for(let i=0;i<cells.length-1;i++){if(!clearLine(from.x,from.z,cells[i+1].x,cells[i+1].z)){out.push(cells[i]);from=cells[i];}}return out;};
     return S._route;}
   // v80 S166 — the night watch's beat: a loop through the street in front of every shop door, in order round the
@@ -35236,9 +35237,10 @@ var WORLD=(()=>{
       }
     }
   }
-  function npcStep(n,tx,tz,spd,dt){
+  function npcStep(n,tx,tz,spd,dt,near){
     const gx=n.g.position.x,gz=n.g.position.z,dx=tx-gx,dz=tz-gz,d=Math.hypot(dx,dz);
-    if(d<.8)return true;
+    if(d<(near||.8))return true;
+    if(near&&d<spd*dt){n.g.position.x=tx;n.g.position.z=tz;return true;}
     const mx=dx/d*spd*dt,mz=dz/d*spd*dt;
     const try_=(x,z)=>!solidAt(x,z);
     if(try_(gx+mx,gz+mz)){n.g.position.x+=mx;n.g.position.z+=mz;}
@@ -35275,7 +35277,14 @@ var WORLD=(()=>{
       else if(plan.beat){const B=plan.beat;
         if(n._beatI==null||n._beatI>=B.length){const G=guardsOf(n._settle);const k=Math.max(0,G.indexOf(n));n._beatI=Math.floor(k*B.length/Math.max(1,G.length))%B.length;}
         if(n._beatWait>0){n._beatWait-=dt;}
-        else{const t=B[n._beatI];const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._beatI=(n._beatI+1)%B.length;n._beatWait=2+Math.random()*2;}moving=!arrived;}}
+        else{const t=B[n._beatI]; // S247 — a beat point he can't walk straight to (he joins the beat anywhere, or a house is in the way) is reached by the streets
+          const td=Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z);if(n._bwT!==t||td<n._bwBest-.5){n._bwT=t;n._bwBest=td;n._bwS=0;}else n._bwS+=dt;
+          if(n._bwS>2.5&&!(n._bwp&&n._bwp.length)){n._bwS=0;n._bwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t);}
+          const w=n._bwp&&n._bwp.length?n._bwp[0]:null;const next=()=>{n._beatI=(n._beatI+1)%B.length;n._beatWait=2+Math.random()*2;n._bwp=null;n._bwTry=null;};
+          if(w){if(npcStep(n,w.x,w.z,spd,dt,.2)){if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._bwp.shift();else next();}moving=true;}
+          else{let arrived=npcStep(n,t.x,t.z,spd,dt); // blocked for good (npcStep gives up) is not arriving: once more cell by cell, then on to the next point
+            if(arrived&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>=.8&&n._bwTry!==t){n._bwTry=t;n._bwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t,true);arrived=!n._bwp.length;}
+            if(arrived)next();moving=!arrived;}}}
       else if(plan.go){const arrived=npcStep(n,plan.go.x,plan.go.z,spd,dt);if(arrived&&plan.thenHide)n._arrivedHide=true;moving=!arrived;}
       else if(plan.wander){
         n.wt-=dt;

@@ -5669,3 +5669,27 @@ Section I on main is clear and the three open decisions (#31, #32, #37) are unan
 
 ### Needs eyes
 Stand three units from Fionnuala's Stores in Portclare at 11h and read the board.
+
+## v80 — Session 247 — The long way round
+The critic's second bug from 28 Sep (PR #40): *a night guard sticks behind Clodagh's Goods*. In Dunmore at 23h the guard Róisín stood 492 of 600 seconds 4.6 units behind Clodagh's door, with the house between her and the door she should have been watching.
+
+**What was wrong.** Three things in how the Session 166 beat is walked:
+- **Joining the beat.** Each guard joins the loop at his own point (his share of it) and walked there in a straight line from wherever nightfall found him. For Róisín that line ran into the back of Clodagh's house. `npcStep` slides along a wall one axis at a time, and as long as it slides it never counts as stuck, so she never gave up and never went round.
+- **Starting from a corner.** The street grid (`townRoute`) plans from the one-unit cell a guard stands in, then pulls the path straight from where he actually stands. From inside a corner that straight line to the first turn can cut the wall. Freed from the house, Róisín pinned herself at (+26.8, +29.4) this way.
+- **A give-up counted as arriving.** When `npcStep` is blocked outright for 40 frames it reports arrival, and the beat took that as having reached the point: a door's pause, then the next point. In Portclare a wall stands between the watchman Gaspard and the turn before Fionnuala's Stores. He "arrived" at the turn and at the door from four units away, and in ten minutes never came within three units of that door or of Odhrán's (0 passes each, on the build before this one too).
+
+**What changed.**
+- A beat point he gains no half-unit on for two and a half seconds is reached by the street grid.
+- The grid's path keeps the guard's own cell as its first point whenever the line from where he stands to the next turn is blocked. This also serves the Session 239 chase, which uses the same grid.
+- A give-up short of the point is no longer an arrival. He tries once more by the grid, cell by cell (the unpulled path, each cell reached to within 0.2), and only if that fails too does he move on to the next point.
+
+`npcStep` takes an optional arrival distance for that.
+
+### Verified (headless Chromium)
+`tests/beat.test.mjs`, ten minutes of night in two towns, sampled every half second:
+- **Dunmore.** The longest any guard stands still at once is 4 s (Róisín 496.5 s on the previous build). Every guard stands still 70–96 s in all, which is the 2–4 s pause at each of the beat's points. Every shop door is passed by a lantern within 3 units 5–7 times (3–4 before).
+- **Portclare.** Gaspard's longest stand is 4 s (11 s before). All five shop doors are passed 3 times each (4, 0, 3, 3, 0 before).
+- `watch`, `guardsindoor`, `crime3` and `witness` still pass. No page errors.
+
+### Needs eyes
+Dunmore after 23h: follow a lantern round the beat and watch for a guard rounding a corner by little one-unit steps (the cell-by-cell retry) where he used to stop.
