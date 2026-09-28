@@ -5813,3 +5813,22 @@ New `tests/slimesplit.test.mjs`: a Slime on the Vault of the Tide's lower floor,
 
 ### Needs eyes
 Kill a Slime in a real dungeon: the split, and the two small ones coming at you.
+
+## v80 — Session 254 — Eight at once
+This run's one CI session. Every `check` run on `auto/systems` today, as far back as the list goes (06:00), ended **cancelled**, never red or green. The headless job ran every suite one after another under `timeout-minutes: 30`. A full local run of the 49 suites takes 65 minutes (from 12 s for `combatmusic` to 324 s for `placesave`), so the job was cut off before it could report. This run's new suites made it longer still (`mainrun` 318 s, `beat` 95 s, `saveui` 110 s), but it was already over.
+
+**What changed.**
+- **Eight shares.** The headless job runs as eight jobs side by side (a matrix, `fail-fast: false`), each with its own 30 minutes, each running `node tests/run.mjs --shard=k/8`.
+- **Dealt by time.** `run.mjs` deals the suites heaviest first to the lightest share, from a small table of the long suites' measured seconds (a suite not in it counts as 60). The shares come to 504–558 s each.
+- **Per-suite cap.** It goes from 10 to 15 minutes, because `mainrun` plays the main quest in five.
+- **Timings.** After a full or shared run, `run.mjs` prints each suite's time. `node tests/run.mjs` and `node tests/run.mjs <name>` work as before.
+
+**A correction to Session 248.** Its test run missed `gait`, which failed in this full run for the same reason `people` did then. The test walked the first visible townsperson with nothing in hand at the boot's 6h, and that was Dunmore's lord only while he wore the first Niamh's face. It now picks its walker at noon; its assertions are unchanged.
+
+No game code changed, so the tag stays s253.
+
+### Verified
+The full suite locally: 48 of 49 passed; the 49th was `gait`, then fixed and passing (6 checks). `--shard=2/8` runs its five suites (`crime2`, `lockpicks`, `mainrun`, `signs`, `wayfinding`) in 8 minutes, all passing. The eight shares together cover all 49 suites, each once. Whether GitHub's runners fit each share in 30 minutes shows on the next push.
+
+### Needs eyes
+The next `check` run on the PR: eight headless jobs, each green or red, not cancelled.
