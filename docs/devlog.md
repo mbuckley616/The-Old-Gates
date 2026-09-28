@@ -6364,3 +6364,24 @@ A third bake at a quarter of the segments would save roughly half of that: 1–2
 
 ### Needs eyes
 A frame-time check on a real laptop, which a headless software renderer cannot give. The triangle shares above say where the time would go, not how long it takes.
+
+## v80 — Session 230 — The road coach, its horses and the shark: a prototype and a question (H.4 / H.5, waiting on Michael)
+With the foes on the kit, I looked for what else in the open world is still boxes that you meet up close:
+- **The road coach** (`buildCoachLine`): a 1.7 × 1.3 × 3 box on four discs, which you ride between towns.
+- **Its two horses:** a box on four sticks each, with a box for a head.
+- **The shark in open water** (`buildZoneEnemy`'s `shark` shape): a cylinder, a cone for a nose and four cones for fins.
+
+None of them belongs to a family Michael has approved, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/coach/shoot.mjs`) builds all three from SK shapes as plain meshes, each beside a copy of today's built the way the world builds it, with a highwayman for scale:
+- **The coach.** A rounded, panelled body on leaf springs, with windows in frames, a door each side with a handle and a crest panel, a roof rail with luggage, the driver's bench, a footboard and two lamps. The wheels have an iron tyre, a felloe, twelve spokes and a hub.
+- **A horse.** A lathed barrel with a chest and haunches, legs of three segments to a dark hoof, a neck and a lathed head, a mane of lumps and a tail. It wears a collar, a pad and a bridle. It comes in two coats and two poses.
+- **The shark.** A lathed body, counter-shaded in two layers, with extruded fins (dorsal, a crescent tail, pectorals, a small second dorsal), gill slits and an eye.
+
+Two first renders were wrong. The horses carried their heads pointing at the sky: the tilt had the wrong sign. The shark read as a whale: its profile was too deep and too blunt at the front.
+
+### Verified (headless Chromium)
+`node docs/prototypes/coach/shoot.mjs` renders `docs/prototypes/coach-pair.png`, `coach-horses.png` and `coach-shark.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all three as shown (recommended), the coach and horses first, the coach body only, or not yet.
