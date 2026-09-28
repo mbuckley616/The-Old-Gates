@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s225</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s226</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -2607,11 +2607,14 @@ function telegraphReset(e){
 // and raises that arm across the torso into a guard pose. Stores refs on limbs so
 // dropShieldGuard can lower the arm when the guard breaks. Only the humanoid build
 // exposes armL/torso; guarded against missing limbs defensively.
-function attachShieldProp(g, limbs, sc){
+function attachShieldProp(g, limbs, sc, kind){
   if(!limbs || !limbs.armL) return;
   const arm = limbs.armL;
   // Round shield — short cylinder (disc) faced forward, wood body + dark rim + boss.
   const shieldG = new THREE.Group();
+  // S231 — a person carries the weapon kit's shield (the captain's round, the shieldbearer's tower), its face turned to +z
+  if(limbs.person&&typeof buildWeapon==='function'){const k=buildWeapon(kind||'round');k.rotation.y=-Math.PI/2;shieldG.add(k);shieldG.userData.kit=kind||'round';}
+  else{
   const wood = new THREE.MeshLambertMaterial({color:0x6b4a2a});
   const iron = new THREE.MeshLambertMaterial({color:0x3a3a40});
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(.20*sc,.20*sc,.05*sc,16), wood);
@@ -2622,7 +2625,7 @@ function attachShieldProp(g, limbs, sc){
   shieldG.add(rim);
   const boss = new THREE.Mesh(new THREE.SphereGeometry(.05*sc,8,8), iron);
   boss.position.z = .04*sc;
-  shieldG.add(boss);
+  shieldG.add(boss);}
   // Position the shield off the forearm, rotated to sit across the front of the body.
   shieldG.position.set(0, -0.20*sc, 0.12*sc);
   arm.add(shieldG);
@@ -9893,7 +9896,7 @@ function buildPerson(g,opts){
 const WPN_MAT={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34}),matte:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.85}),
   glow:new THREE.MeshBasicMaterial({vertexColors:true}),halo:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.15,depthWrite:false})};
 const WPN_GEO=new Map();
-const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','round','kite'];
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
@@ -9927,9 +9930,16 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
     round:()=>{const R=.19;for(let i=0;i<5;i++){const w=R*2/5,x=-R+w*(i+.5),h=2*Math.sqrt(Math.max(0,R*R-x*x));add(SK.rbox(.02,h*.98,w*.96,.004,1),'matte',tint.face!=null?new THREE.Color(tint.face).multiplyScalar([1,.88,1.08][i%3]).getHex():[0x7a5230,0x6a4628,0x82583a][i%3],[0,0,x]);}
       add(SK.torus(R,.012,6,28),'metal',DSTEEL,[0,0,0],[0,Math.PI/2,0]);add(SK.ball(.05,12,8,0,Math.PI*2,0,Math.PI/2),'metal',DSTEEL,[.012,0,0],[0,0,-Math.PI/2]);},
+    // S231 — a tower shield: four planks bowed round the bearer (the edges swept back), iron bands at the edges and across,
+    // a boss; faced +x like the others
+    tower:()=>{const bend=g=>{const p=g.attributes.position;for(let i=0;i<p.count;i++){const z=p.getZ(i);p.setX(i,p.getX(i)-z*z*.9);}g.computeVertexNormals();return g;};const W=.46,H=.74;
+      for(let i=0;i<4;i++){const w=W/4,z=-W/2+w*(i+.5);add(bend(SK.rbox(.024,H,w*.97,.005,1).translate(0,0,z)),'matte',tint.face!=null?new THREE.Color(tint.face).multiplyScalar([1,.9,1.06,.94][i]).getHex():[0x6a4a2a,0x5e4226,0x74502e,0x644628][i]);}
+      for(const z of [-W/2,W/2])add(bend(SK.rbox(.036,H+.02,.02,.006,1).translate(.004,0,z)),'metal',DSTEEL);for(const y of [-H/2,0,H/2])add(bend(SK.rbox(.034,.022,W,.006,1).translate(.004,y,0)),'metal',DSTEEL);
+      add(SK.ball(.055,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.016,.04,0],[0,0,-Math.PI/2]);},
     kite:()=>{const sh=new THREE.Shape();sh.moveTo(0,.24);sh.quadraticCurveTo(.17,.24,.16,.1);sh.quadraticCurveTo(.13,-.12,0,-.3);sh.quadraticCurveTo(-.13,-.12,-.16,.1);sh.quadraticCurveTo(-.17,.24,0,.24);
       add(new THREE.ExtrudeGeometry(sh,{depth:.02,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:2}),'matte',tint.face!=null?tint.face:0x7a2020,[0,0,0],[0,Math.PI/2,0]);
-      add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[-.014,.05,0],[0,0,Math.PI/2]);for(const [a,b2] of [[.24,.12],[-.3,0]])add(SK.ball(.012,6,5),'metal',BRASS,[-.014,a,b2]);}
+      // S231 — the boss and rivets on the +x face, the face every shield turns outward from the left forearm (it faced the body)
+      add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.028,.05,0],[0,0,-Math.PI/2]);for(const [a,b2] of [[.2,.1],[-.24,0]])add(SK.ball(.012,6,5),'metal',BRASS,[.03,a,b2]);}
   };
   (K[kind]||K.sword)();
   // merge by material: vertex colours carry each part's colour
@@ -14725,7 +14735,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*sc2;} // the bar over a person's head
   if(wolfRig&&wolfRig.k.dragon){hpBg.position.y=hpFg.position.y=1.55*sc2;}
   // v80 S130 — captains hold a frontal guard (the Shieldbearer's mechanic: a power attack or a bash breaks it); the world's dragon breathes
-  if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,limbs.person?1:sc2);zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=limbs.person?-.5:.5;reraiseGuard(zoneE);}catch(err){}} // a person's left arm is on its +x side: across the body is -z
+  if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,limbs.person?1:sc2,'round');zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=limbs.person?-.5:.5;reraiseGuard(zoneE);}catch(err){}} // a person's left arm is on its +x side: across the body is -z
   if(type==='Dragon'){zoneE.dragon=true;zoneE._dragonBuilt=true;}
   if(g._hover)zoneE.baseY=g.position.y;
   return zoneE;
@@ -20838,9 +20848,9 @@ function tpBuild(lookIn,ppIn){
   if(w){const wm=tpWeapon(w);if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}}
   const oh=EQ.offhand;R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
-    // S227 — the kit's shields: planked and round with a rim and boss, or the kite (a tower shield is the kite grown); the face is
+    // S227 — the kit's shields: planked and round with a rim and boss, the kite, or (S231) the tower shield; the face is
     // the item's material colour, the rim and boss its guard's
-    const k=buildWeapon(round?'round':'kite',{tint:{face:c,guard:rim,metal:rim}});k.scale.setScalar(big&&!/kite/i.test(oh.name||'')?1.35:round&&/buckler/i.test(oh.name||'')?.8:1);sg.add(k);sg.userData.kit=round?'round':'kite';
+    const kk=round?'round':big&&!/kite/i.test(oh.name||'')?'tower':'kite';const k=buildWeapon(kk,{tint:{face:c,guard:rim,metal:rim}});if(round&&/buckler/i.test(oh.name||''))k.scale.setScalar(.8);sg.add(k);sg.userData.kit=kk; // S231 — a tower shield its own shape
     sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;}
   else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
@@ -23514,7 +23524,7 @@ function buildDungeon(portal){
       const scaledSpd=d.spd*ds.spd*(dmgMult>1?1.1:1);
       const{g,hpFg,limbs}=buildEnemy(d,name);
       // v71 — Shieldbearer: build + raise the shield prop on the left arm.
-      if(d.shieldUp){ attachShieldProp(g, limbs, limbs.person?1:d.scale); if(limbs.person){limbs.shieldArmUpZ=-.5;limbs.shieldArm.rotation.z=-.5;} } // S199 — a person's guard, as the captain's (S175)
+      if(d.shieldUp){ attachShieldProp(g, limbs, limbs.person?1:d.scale, 'tower'); if(limbs.person){limbs.shieldArmUpZ=-.5;limbs.shieldArm.rotation.z=-.5;} } // S199 — a person's guard, as the captain's (S175)
       const baseYe=(d.buildFn==='wraith'&&!limbs.person?.3:0)+baseY; // S212 — a wraith person glides at its own height (tickPeople)
       g.position.set(ec,baseYe,er);dScene.add(g);
       const el=new THREE.PointLight(d.light,.7,4);el.position.set(ec,baseY+.8,er);dScene.add(el);

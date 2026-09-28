@@ -6385,3 +6385,22 @@ Two first renders were wrong. The horses carried their heads pointing at the sky
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): all three as shown (recommended), the coach and horses first, the coach body only, or not yet.
+
+## v80 — Session 231 — The guard arm's shields on the kit, a tower shield, and a correction to the kite (H.4, Michael's answer A on Session 220)
+The last shields outside the weapon kit were the two held up in a guard: the Bandit Captain's (Session 175) and the Shieldbearer's (Session 199). Both used `attachShieldProp`'s v71 disc, a plain cylinder with a torus rim, on the left shoulder bone. Michael's A was "the kit for everyone", which names the captain's sword and shield.
+
+**What changed.**
+- **Kit shields in the guard.** `attachShieldProp` takes a kind. For a foe on the people's body, it hangs the kit's shield where the disc was, turned to face forward along the raised arm. The captain carries the round shield. The shieldbearer carries a new tower shield, which suits the dungeon's shield wall. Box-bodied foes keep the disc. The guard, the raise and the break are unchanged.
+- **The tower shield.** It is four planks bowed round the bearer (the edges swept back by a bend of the vertices), with iron bands down both edges and across the top, middle and foot, and a brass boss. The player's tower shields (any shield named neither round, buckler nor kite) now use it too. Session 227 had given them a kite at 1.35.
+
+**Correction to Session 226.** The kite shield's boss and rivets sat on its −x face. Every shield hangs on the left forearm with its +x face outward, so the deserters' and the player's kite shields showed the body their boss and the world their plain back. The boss and rivets are now on the +x face. I found it by photographing the three shields turned the same way.
+
+### Verified (headless Chromium)
+`tests/weapons.test.mjs` gains 2 checks and `tests/tpweapons.test.mjs` extends one. All pass, no page errors:
+- The zone's Bandit Captain carries the kit's round shield on its guard arm, with no cylinder left, and its guard up.
+- The dungeon's Shieldbearer (a goblin dungeon at level 5) carries the tower shield on its guard arm and a mace.
+- The player's Tower Shield builds as `tower`.
+`dungeonfoes`, `foes` and `player` still pass. Pictures: `docs/prototypes/tpweapons-ingame.png` (now with the tower shield, and the three shields' faces turned to the camera) and `weapons-ingame.png`.
+
+### Needs eyes
+Whether the tower shield on a raised shieldbearer's arm covers the body as the old disc did. It is taller (0.74) and narrower (0.46) than the disc's 0.4.

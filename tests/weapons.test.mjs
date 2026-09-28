@@ -43,6 +43,16 @@ for (const seed of [7, 12]) { await enterDungeon(page, { theme: 'undead', seed }
     return { n: L.length, armed: L.filter(e => e.limbs.person.weapon || e.limbs.person.g.gear === 'spear').length }; }); if (!dun.none) break; }
 check('the dungeon\'s skeletons carry a rusted sword or a spear', !dun.none && dun.armed === dun.n, dun);
 
+// S231 — the shields carried on the guard arm: the captain's is the kit's round shield, the shieldbearer's a tower shield
+const cap = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 22, z = pz + fz * 22; const e = buildZoneEnemy(WORLD.scene, [], x, z, 'Bandit Captain', null); const sp = e.limbs.shieldProp;
+  let cyl = 0; sp.traverse(o => { if (o.isMesh && o.geometry.type === 'CylinderGeometry') cyl++; }); return { kit: sp && sp.userData.kit, onArm: sp && sp.parent === e.limbs.armL, cyl, guard: e.shieldUp }; });
+check('the bandit captain\'s shield is the kit\'s round shield on its guard arm, the old disc gone', cap.kit === 'round' && cap.onArm && cap.cyl === 0 && cap.guard, cap);
+let sb = { none: true };
+for (const seed of [5, 12, 17, 23]) { await page.evaluate(() => { level = 5; }); await enterDungeon(page, { theme: 'goblin', seed });
+  sb = await page.evaluate(() => { const e = ENEMIES.find(x => (x.baseType || x.name) === 'Shieldbearer'); if (!e) return { none: true }; const sp = e.limbs.shieldProp; const bb = new THREE.Box3().setFromObject(sp);
+    return { kit: sp.userData.kit, onArm: sp.parent === e.limbs.armL, tall: +(bb.max.y - bb.min.y).toFixed(2), wpn: e.limbs.person && e.limbs.person.weapon && e.limbs.person.weapon.userData.wpn }; }); if (!sb.none) break; }
+check('the dungeon\'s shieldbearer carries a tower shield on its guard arm and a mace', !sb.none && sb.kit === 'tower' && sb.onArm && sb.wpn === 'mace', sb);
+
 // the photograph
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = scene; const bx = px + 300, bz = pz, y = 60; const objs = [];
   const cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, .05, 100);
