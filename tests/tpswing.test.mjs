@@ -17,9 +17,9 @@ const run = (lock, pow) => page.evaluate(([lock, pow]) => {
     swingT = 0; _pendingStrike = null; for (let i = 0; i < 4; i++) step();
     swingT = ANIM_PARAMS.swing.normalDur; _pendingStrike = { resolveFn: () => {}, isPow: pow, fired: false };
     const R = TP.rig, seen = []; let peakY = 0, peakX = 0;
-    while (swingT > 0 && seen.length < 80) { step(); if (TP.swMax > 0) seen.push(TP.swVar); peakY = Math.max(peakY, Math.abs(R.shR.rotation.y)); peakX = Math.min(peakX, R.shR.rotation.x); }
+    const trace = []; while (swingT > 0 && seen.length < 80) { step(); if (TP.swMax > 0) { seen.push(TP.swVar); trace.push([+(1 - swingT / TP.swMax).toFixed(3), +R.shR.rotation.x.toFixed(2)]); } peakY = Math.max(peakY, Math.abs(R.shR.rotation.y)); peakX = Math.min(peakX, R.shR.rotation.x); }
     for (let i = 0; i < 3; i++) step();
-    return { vmVar: vmSword.userData.swingVariant, tpVar: TP.swVar, pow: TP.swPow, vars: [...new Set(seen)], frames: seen.length, peakY: +peakY.toFixed(2), peakX: +peakX.toFixed(2), after: swingT, cleared: TP.swMax };
+    return { trace, vmVar: vmSword.userData.swingVariant, tpVar: TP.swVar, pow: TP.swPow, vars: [...new Set(seen)], frames: seen.length, peakY: +peakY.toFixed(2), peakX: +peakX.toFixed(2), after: swingT, cleared: TP.swMax };
   } finally { window.requestAnimationFrame = raf; REN.render = rr; ANIM_PARAMS.swing.variantLock = -1; }
 }, [lock, pow]);
 
@@ -28,6 +28,14 @@ console.log('chop', JSON.stringify(chop)); console.log('forehand', JSON.stringif
 check('the viewmodel\'s overhead chop is the body\'s overhead chop, from the swing\'s first posed frame to its last', chop.vars.length === 1 && chop.vars[0] === 1 && chop.frames > 20, chop);
 check('the forehand is the body\'s flat cut, the backhand its rising diagonal', fore.vars.join() === '0' && back.vars.join() === '2', { fore: fore.vars, back: back.vars });
 check('the chop raises the arm overhead (shoulder past -2.2), the flat cut swings it across (turn past .9)', chop.peakX < -2.2 && fore.peakY > .9, { chop: chop.peakX, fore: fore.peakY });
+// Session 269 (Michael's A on Session 245): the body's swing keyed to the first person's phases: the chop coiled overhead by
+// the end of the wind-up (antEnd), down at the hit (impactPoint), carried past it, then back to guard
+{ const P = await page.evaluate(() => ({ A: ANIM_PARAMS.swing.antEnd, I: ANIM_PARAMS.swing.impactPoint })); const at = q => chop.trace.reduce((b, t) => Math.abs(t[0] - q) < Math.abs(b[0] - q) ? t : b);
+  // (the joints ease towards the pose at dt*50, so the arm arrives a frame, 17 ms, after the pose's own time: the hit is read
+  // one frame on)
+  const coil = at(P.A), hit = at(P.I + 1 / 33), end = chop.trace[chop.trace.length - 1];
+  console.log('chop phases', JSON.stringify({ A: P.A, I: P.I, coil, hit, end, near: chop.trace.filter(t => t[0] > .4 && t[0] < .75) }));
+  check('the chop is coiled overhead at the wind-up\'s end (shoulder past −2.6) and down by a frame after the hit (above −1.6), as the first person strikes', coil[1] < -2.6 && hit[1] > -1.6, { coil, hit }); }
 const pow = await run(0, true);
 console.log('power', JSON.stringify(pow));
 check('a power swing is the body\'s power swing, wider than a normal one', pow.pow === true && pow.peakY > fore.peakY + .1, { pow: pow.peakY, normal: fore.peakY });

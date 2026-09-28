@@ -7014,3 +7014,22 @@ New `tests/wealth.test.mjs` builds one woman in Hearthwick at several fortunes:
 
 ### Needs eyes
 The foot-wraps and the chain at street distance, and whether gilt reads as money or as costume (Session 246's note). At Hearthwick's own prosperity (37) most folk are middling, a few farmers poor and the merchants well-off. Whether a town's change of fortune should show sooner than its next rebuild is a design question.
+
+## v80 — Session 269 — The player's swings in third person: a coil, a step and a carry (H.3, Michael's A on Session 245)
+Michael answered Session 245: **as shown**. The prototype's six patches are now in `tpPose`, with its window switch replaced by a constant, `TP_SWING_NEW` (false brings back the old swing).
+- **Keyed to the first person:** the body's swing follows the first person's own phases (`ANIM_PARAMS.swing`: the wind-up to .44, the hit at .55, the follow-through to .79), where it used to run 30/30/40 smoothsteps on a clock of its own.
+- **The three swings:** the forehand, backhand and overhead chop are the first person's own, not the body's nearest. Each is a four-pose track (guard, coil, hit, carry) for the shoulder, elbow, wrist and torso.
+- **The motion:** the wind-up eases into a held coil with the weight on the back foot. The strike accelerates into the hit with the left foot stepping in and the torso unwinding. The carry runs past the hit and slows, then it all smooths back to guard.
+- **Power and pace:** a power swing is a quarter wider. The arm and torso ease at `dt*50` during a swing, where the usual rate would leave the blade behind the 60 ms strike.
+
+One slip on the way. The comment I put on the switch's line swallowed the code after it (`const SP=...`), and the body stood at guard through every swing until the existing test caught it. The comment is on its own line now, as CLAUDE.md says.
+
+### Verified (headless Chromium)
+`tests/tpswing.test.mjs`, which drives the game's own loop a frame at a time:
+- **Session 244's checks still hold on the new poses:** the chop raises the shoulder to −3.0, the forehand turns it 1.15, the backhand 1.05, and a power swing 1.44. The body takes the viewmodel's swing from its first posed frame to its last and lets go after.
+- **New check, the phases:** the chop's shoulder is at −3.0 (coiled) at the wind-up's end. It comes down through −2.57 and −1.98 to −1.31 one frame after the hit, and carries on to −.83 by .73. The arm arrives a frame (17 ms) after the pose's own time, because of the joints' easing; the check reads the hit one frame on.
+
+`player`, `tpweapons` and `tpshots` pass. There is no new picture: this is the prototype as shown in `docs/prototypes/swings-1.png` to `-4.png`.
+
+### Needs eyes
+In motion, whether the coil's short hold reads as weight or as a hitch (Session 245's note). The swings are still one-handed poses, so a two-handed weapon's left hand stretches for the grip through them (Session 247). Two-handed swing poses would be their own small piece.
