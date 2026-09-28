@@ -7911,3 +7911,20 @@ New `tests/shipwright.test.mjs`, 8 checks, at Portclare (Lonán):
 
 ### Needs eyes
 The tutorial's marker at night leading to a man standing by a dark shop.
+
+## v80 — Session 274 — Three tests that read the runner's clock
+The producer reported this branch's CI red on 9f6edca: `guardsindoor`, `reader` and `snowrepaint`. The run on Session 273's commit failed `guardsindoor`, `reader` and `placesave`. The game is not at fault in any of them. Each test let wall-clock time decide an outcome, which CLAUDE.md warns against. On a slow or busy runner the outcome flipped.
+
+**`guardsindoor`, *your blows land on him indoors*.** The test swung, waited 700 ms of wall clock, and swung again, six times. A blow lands at the swing's impact point, which the game's own loop reaches frame by frame. On this container 700 ms was about 0.2 s of game time, a third of the swing (`swingT` 0.61 → 0.39), so every swing was restarted before it could land and the guard kept 48 of 48. This has failed since the merge of main at cfb68b9 (measured on that commit). The test now waits until the pending strike has resolved (up to 15 s), and the first swing lands (48 → 45).
+
+**`guardsindoor`, *ducking into another house*.** Entering the house plays a four-second fade in wall clock. Meanwhile the game's own loop runs the interior tick and adds game time to the guard's half-minute. The more frames the runner gave, the later he appeared. At t = 28 plus the fade he was sometimes already inside (t 30.4) when the test looked for him still *coming*. Which guard was sent also varies by run (Séamus in one, Eilís in the next), so the check passed or failed by the runner. The test now holds the loop's interior clock at dt 0 during the fade, so only its own `spinIn` moves time.
+
+**`reader` and `placesave`.** Both crashed in `page.reload()` with Playwright's default 30 s navigation timeout. On the CI runner a reload of the 2.7 MB page went past it. The harness (`tests/lib/game.mjs`) now allows 180 s for any navigation.
+
+`snowrepaint` passed in the later CI run and passes here. Nothing in its failure on 9f6edca is left to act on.
+
+### Verified (headless Chromium)
+`guardsindoor` passes twice in a row. Before the change, it failed on this branch's head, on 7779a6e (the ducking check) and on cfb68b9 (the blows check). `reader` and `placesave` pass. No page errors.
+
+### Needs eyes
+Nothing in play; CI on the next push.

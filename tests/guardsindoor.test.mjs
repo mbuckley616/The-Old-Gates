@@ -70,7 +70,9 @@ await spinIn(1); await leave();
 const duck = await page.evaluate(() => { const s = WORLD.guardSent; if (!s) return { none: true }; const n = s.npc; for (let t = 0; t < 3; t += 1 / 60) WORLD.tick(1 / 60, performance.now());
   const S = WORLD.settle.get('dunmore'); const h3 = S.houses.filter(x => x.type === 'home' && x.id !== window._h.id).map(x => ({ x, d: Math.hypot(x.exitX - n.g.position.x, x.exitZ - n.g.position.z) })).sort((a, b) => a.d - b.d)[0].x;
   px = h3.exitX; pz = h3.exitZ; jumpY = WORLD.worldH(px, pz); n.g.position.set(px + 6, WORLD.worldH(px + 6, pz), pz); WORLD.tick(1 / 60, performance.now()); window._h3 = h3; return { h3: h3.id, d: +Math.hypot(n.g.position.x - px, n.g.position.z - pz).toFixed(1), phase: WORLD.guardSent && WORLD.guardSent.phase }; });
-if (!duck.none) { await page.evaluate(() => { window._h = window._h3; goToInterior(window._h3); }); await page.waitForTimeout(4000); await g.hide(); }
+// the fade's four seconds of wall clock run the game's own loop at whatever rate the runner gives; hold its interior clock
+// meanwhile (dt 0), so only spinIn moves the guard's half minute (Session 274: this check passed or failed by the runner)
+if (!duck.none) { await page.evaluate(() => { if (!WORLD._tiHeld) { const f = WORLD.tickInterior; WORLD._tiHeld = true; WORLD.tickInterior = (dt, now) => f(window._holdLoop ? 0 : dt, now); } window._holdLoop = true; window._h = window._h3; goToInterior(window._h3); }); await page.waitForTimeout(4000); await g.hide(); await page.evaluate(() => { window._holdLoop = false; }); }
 await spinIn(1); const s4a = await state(); await spinIn(8); const s4 = await state();
 console.log('ducked in', JSON.stringify(duck), JSON.stringify(s4a), JSON.stringify(s4));
 check('ducking into another house with him close behind: he follows you in, in the time it takes him to reach the door', !duck.none && s4a && s4a.phase === 'coming' && s4a.house === duck.h3 && s4 && s4.phase === 'inside' && s4.mesh, { duck, s4a, s4 });
@@ -89,7 +91,7 @@ check('refuse indoors and he draws in the room: a Town Guard there, in the roomâ
 check('he closes and strikes, on the floor and never inside the furniture', fight.lost > 0 && fight.minD < 2.2 && fight.solidFrames === 0 && fight.y === 0, fight);
 // your blows land on him
 const hit = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = e.hp;
-  for (let k = 0; k < 6 && e.hp === hp0; k++) { PHP = maxHP; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); await wait(700); }
+  for (let k = 0; k < 6 && e.hp === hp0; k++) { PHP = maxHP; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); for (let w = 0; w < 60 && _pendingStrike; w++) await wait(250); await wait(100); } // S274 â€” wait for the blow to land: on a slow runner 700 ms was a third of the swing
   return { hp0, hp: e.hp }; });
 check('your blows land on him indoors', hit.hp < hit.hp0, hit);
 // at a fifth of health he offers the yield; the cells take you out of the room and to the morning
