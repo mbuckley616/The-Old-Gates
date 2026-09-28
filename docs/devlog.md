@@ -7204,3 +7204,22 @@ The measuring step now records each town's first gate (tier, place, the town's c
 
 ### Needs eyes
 Nothing in the game.
+
+## v80 — Session 280 — The walls suite's town was dropped by the player's distance (CI fix, test only; corrects Session 272)
+CI failed on shard 6 at the Session 277 push, in `tests/walls.test.mjs`: `far: 2`, the same check that failed at Session 263's push. **Correcting Session 272**, whose guess (a town still building rebakes its clusters) was wrong.
+
+`tickSettlements` drops any settlement more than 580 units from the player, and it checks every half-second of accumulated game time. The suite takes the first walled town it can find, La Porte Grise, about 1,280 from the start, and moves only the eye. Whether the half-second check fell inside the near look depended on how many frames had ticked before it. When it did, the town was dropped after `houseLod` had shown its detail. Both looks then read the dropped town's meshes, which nothing updates any more: `far: 2`.
+
+Session 279's `towngate` failure was the same thing: a town generated far from the player, dropped between steps.
+
+The suite now stands the player at the town while the eye moves, and puts both back after. The game is unchanged; the distance rule is right for play.
+
+### Verified (headless Chromium)
+A scratch copy of the check ticked at .6 s, so the half-second check always fires inside each look:
+- **The old logic:** `near: 2, far: 2`, the CI failure reproduced.
+- **The new logic:** `near: 2, far: 0`.
+
+`walls` passes.
+
+### Needs eyes
+Nothing in the game.

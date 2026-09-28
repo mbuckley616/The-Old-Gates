@@ -36,8 +36,11 @@ const town = await page.evaluate(() => { const walled = []; for (const t of WORL
   if (!walled.length) return null; const { S, id, w } = walled[0]; const L = S.lodMeshes || []; const hi = L.filter(m => m.userData.lod === 'hi'), lo = L.filter(m => m.userData.lod === 'lo');
   // (the town's current detailed meshes at each look: a town still building rebakes during the ticks, and the meshes it drops
   // keep whatever visibility they had, which once read as a detailed cluster still shown from 600 away)
-  const saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); const S2 = WORLD.settlements.get(id) || S; return (S2.lodMeshes || []).filter(m => m.userData.lod === 'hi' && m.visible).length; };
-  CAM.position.set(S.site.x, CAM.position.y, S.site.z); const near = look(); CAM.position.set(S.site.x + 600, CAM.position.y, S.site.z); const far = look(); CAM.position.copy(saved); look();
+  // (Session 280) and the player stands in the town while the eye moves: the world drops a settlement more than 580 from the
+  // player at its half-second check, and this one is found wherever it is (La Porte Grise, ~1,280 from the start); dropped
+  // between the two looks, its meshes kept the near look's visibility, which read as far: 2
+  const saved = CAM.position.clone(), spx = px, spz = pz; px = S.site.x; pz = S.site.z; const look = () => { WORLD.tick(1 / 60, performance.now()); const S2 = WORLD.settlements.get(id) || S; return (S2.lodMeshes || []).filter(m => m.userData.lod === 'hi' && m.visible).length; };
+  CAM.position.set(S.site.x, CAM.position.y, S.site.z); const near = look(); CAM.position.set(S.site.x + 600, CAM.position.y, S.site.z); const far = look(); CAM.position.copy(saved); px = spx; pz = spz; look();
   return { id, walls: w, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), near, far, hi: hi.length }; });
 check('a walled town is found near the start', !!town, town);
 if (town) { check('its detailed clusters (walls among them) show near and give way to their plain twins far', town.paired && town.near > 0 && town.far === 0, town); }
