@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
+Your answer on the last box creatures (Session 214) was B: the Bog Crawler gets a six-legged crawler's body of its own, a beetle or a giant water bug, prototyped first. It lives in the fen and swamp, at a spider's size or a little over. Both prototypes are built in the game from the shape kit, in the fen's colours with moss on the back (`docs/prototypes/crawler/shoot.mjs`). Each picture has a bandit for scale and a spider for comparison.
+- **A. A great diving beetle**: a glossy olive-black dome split down the back with a bronze rim, a small head with short mandibles and antennae, and hind legs swept back like oars with a fringe of hairs.
+- **B. A giant water bug**: flat and oval, mottled mud-brown with pale flecks, wing covers crossing at the tail, a short pointed beak, and raptorial forelegs held up and forward to grab, as the real one does. Its hind legs are flattened paddles.
+- Side by side: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/crawler-both.png
+- Close: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/crawler-close.png
+
+**Options:** (A) the diving beetle; (B) the giant water bug; (C) the water bug's body with the beetle's shine (a glossy dark bug with the grabbing forelegs); (D) keep the spider kit in fen colours, as Session 214 first showed. **Recommendation: B.** It reads as something that waits in bog water and grabs, which suits a fen ambush. Its raised forelegs give the strike a pose the spiders do not have: the forelegs snap shut. The beetle reads as a harmless beetle grown large.
+
+In the build, either one would be a new six-legged skeleton beside the spider's, walked on alternating tripods, with the spider's IK.
+
 
 ## Answered
 

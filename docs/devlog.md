@@ -6233,3 +6233,20 @@ New `tests/scorpion.test.mjs`, 5 checks, all passing, no page errors:
 
 ### Needs eyes
 The scorpion's legs are the spider's: long and thin. A real scorpion's are shorter and thicker. If it reads as a spider with a tail, the legs want their own lengths in `SPIDER_LEGS` for this kind, which is a gait change and so its own session. Also, whether a wisp without its own light reads as a light at night.
+
+## v80 — Session 225 — The Bog Crawler: a prototype and a question (H.4, waiting on Michael)
+Michael's answer on Session 214 was B. It included one condition: the Bog Crawler (fen and swamp) is not to be the spider kit in fen colours but a six-legged crawler of its own, "a beetle or a giant water-bug", prototyped first. This is that prototype. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/crawler/shoot.mjs`) builds two bodies in the game from SK shapes. Both are in the fen's colours with moss on the back, at the Bog Crawler's size, with a bandit for scale and a spider for comparison:
+- **A, a great diving beetle.** A glossy olive-black dome, flattened underneath, with a seam down the back that follows the curve and a bronze rim. A small head with short mandibles and antennae. Six legs, the hind pair long and swept back like oars with a fringe of hairs.
+- **B, a giant water bug.** A flat oval body, narrowing to the head, mottled mud-brown with pale flecks. Two wing covers cross at the tail. A short pointed beak. Raptorial forelegs are held up and forward, the tibia folding back on the femur like a jack-knife with a hook. The hind legs end in flattened paddles.
+
+The first render of the beetle had its seam as a straight rod, which stood off the dome at both ends. It is now a sliver of the dome itself.
+
+I recommended B. It reads as an ambusher in bog water, and its forelegs give the strike a pose of its own. The DECISION is in `docs/decisions.md` and a GitHub issue.
+
+### Verified (headless Chromium)
+`node docs/prototypes/crawler/shoot.mjs` renders `docs/prototypes/crawler-both.png` and `crawler-close.png` with no page errors.
+
+### Needs eyes
+The DECISION: the beetle, the water bug (recommended), the water bug with the beetle's shine, or the spider kit in fen colours after all.
