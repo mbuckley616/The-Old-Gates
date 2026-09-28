@@ -12,7 +12,7 @@ const r = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(
   const w = limbs.wolf; out.skinned = !!(w && w.mesh.isSkinnedMesh); out.torso = limbs.torso === (w && w.mesh); out.inRigs = WOLF_RIGS.has(w);
   out.sigils = limbs.sigilMeshes.length; out.arms = !!(limbs.backArmL && limbs.backArmR); out.onBones = limbs.sigilMeshes.every(m => m.parent && (m.parent.isBone || m.parent.parent));
   const e = { x, z, dead: false, alert: true }; w.e = e; let t = 4e5; for (let k = 0; k < 30; k++) tickCreatures(1 / 60, t += 16.7);
-  const plain = buildWolf('Dire Wolf', 1), PG = new THREE.Group(); PG.add(plain.root); PG.position.set(x + 4, WORLD.worldH(x, z), z); WORLD.scene.add(PG); plain.e = { x: x + 4, z, dead: false };
+  const plain = buildWolf('Dire Wolf', 1), PG = new THREE.Group(); PG.add(plain.root); PG.position.set(x + 4, WORLD.worldH(x, z), z); WORLD.scene.add(PG); plain.e = { x: x + 4, z, dead: false }; plain.t0 = w.t0; // S233 — the same breathing phase: each rig's random t0 moved the neck ±.04 and made the comparison flaky
   for (let k = 0; k < 30; k++) tickCreatures(1 / 60, t += 16.7); out.hunch = +(w.B.neck.rotation.x - plain.B.neck.rotation.x).toFixed(2); WORLD.scene.remove(PG);
   G.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(w.mesh); out.tall = +(bb.max.y - bb.min.y).toFixed(2); out.long = +(bb.max.z - bb.min.z).toFixed(2);
   // it strides by its own position

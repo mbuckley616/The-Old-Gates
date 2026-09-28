@@ -6417,3 +6417,22 @@ The kit's metal came out nearly black in the view scene. That scene has its own 
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): the kit in first person for everything (recommended), for melee only, or not yet.
+
+## v80 — Session 233 — Two flaky checks made steady (CI fix)
+CI on the Auto sessions PR failed on the pushes of Sessions 227 and 229, and passed on 228 in between. Two checks from earlier look sessions were failing by chance, each on how its creature happened to be breathing.
+
+**`faolchu` — "hunched: the neck carried .35 lower than a dire wolf's in the same pose"** (Session 211). CI read 0.38 and 0.39, and I read 0.37 here. The tolerance is ±0.02. The idle pose puts `-.1+.02·sin(1.9t)` on every wolf's neck, and `t` includes each rig's random `t0`. So the Faolchú and the dire wolf it is compared with breathe out of step, and the difference wanders by up to 0.04 around the true 0.35. The comparison wolf now takes the Faolchú's `t0`. It read 0.35 on three runs in a row.
+
+**`dungeonfoes` — "the dungeon's wraiths and phantoms … gliding"** (Session 212). CI read a lift of 0.08, and the check wanted more than 0.1. The lift summed two things:
+- the rig's own glide, 0.19–0.29 (`tickPeople`'s `.24+.05·sin`);
+- the dungeon's hover bob on the enemy's group, ±0.12 by the enemy's phase.
+
+A low bob took the sum under 0.1. The check now takes them apart: the glide between 0.15 and 0.33, the bob within ±0.125. It passed twice (glide 0.21 and 0.20, bob −0.05 and 0.09).
+
+Neither change touches the game. Both tests now wait for nothing and depend on no phase. While writing the second fix I put a `//` comment on a test line that had code after it, which swallowed the line's closing brackets. That is the same trap CLAUDE.md warns of in `index.html`.
+
+### Verified (headless Chromium)
+`faolchu` passes three runs out of three, and `dungeonfoes` two out of two. No page errors. `index.html` is unchanged.
+
+### Needs eyes
+Nothing to see. If CI goes red again on the next push, it is something else.

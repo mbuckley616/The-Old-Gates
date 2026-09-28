@@ -23,14 +23,15 @@ check('the Shieldbearer is a person with the shield on its left shoulder, held u
 const walk = await page.evaluate(() => { const e = ENEMIES.find(x => x.limbs && x.limbs.person && !x.dead); if (!e) return { none: true }; const r = e.limbs.person; e.mesh.visible = true; let t = 5e5;
   for (let i = 0; i < 120; i++) { e.x += 1.2 / 60; e.mesh.position.x = e.x; tickPeople(1 / 60, t += 16.7); } return { name: e.name, walk: +r.w.walk.toFixed(2), run: +r.w.run.toFixed(2) }; });
 check('a dungeon foe walks by the ground it covers', walk.none || walk.walk + walk.run > .9, walk);
+// S233 — the glide (the rig's own lift) and the dungeon's hover bob (±.12 by phase) are checked apart: summed, a low bob dipped under .1
 // the dungeon's Wraith and Phantom (Session 212): the open world's wraith, robed and see-through, gliding at its own height
 let gh = { none: true };
 for (const seed of [7, 12, 17, 23, 31]) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'undead', seed });
   gh = await page.evaluate(() => { const out = {}; for (const n of ['Wraith', 'Phantom']) { const e = ENEMIES.find(x => (x.baseType || x.name) === n); if (!e) continue; const r = e.limbs && e.limbs.person;
       if (!r) { out[n] = { person: false }; continue; } e.mesh.visible = true; let t = 8e5; for (let k = 0; k < 30; k++) tickPeople(1 / 60, t += 16.7);
-      out[n] = { person: true, wraith: !!r.g.wraith, phantom: !!r.g.phantom, opacity: r.mesh.material.opacity, linked: r.e === e, isWraith: e.isWraith, lift: +(e.mesh.position.y - e.baseY + r.root.position.y).toFixed(2), walk: r.w.walk }; }
+      out[n] = { person: true, wraith: !!r.g.wraith, phantom: !!r.g.phantom, opacity: r.mesh.material.opacity, linked: r.e === e, isWraith: e.isWraith, lift: +r.root.position.y.toFixed(2), bob: +(e.mesh.position.y - e.baseY).toFixed(2), walk: r.w.walk }; }
     return Object.keys(out).length ? out : { none: true }; });
   if (gh.Wraith && gh.Phantom) break; }
-check('the dungeon\'s wraiths and phantoms are the robed, see-through wraith, gliding (Session 212)', !gh.none && Object.values(gh).every(v => v.person && v.wraith && v.linked && v.isWraith && v.opacity < .7 && v.lift > .1 && v.lift < .45 && v.walk === 0) && (!gh.Phantom || (gh.Phantom.phantom && gh.Phantom.opacity === .5)), gh);
+check('the dungeon\'s wraiths and phantoms are the robed, see-through wraith, gliding (Session 212)', !gh.none && Object.values(gh).every(v => v.person && v.wraith && v.linked && v.isWraith && v.opacity < .7 && v.lift > .15 && v.lift < .33 && Math.abs(v.bob) <= .125 && v.walk === 0) && (!gh.Phantom || (gh.Phantom.phantom && gh.Phantom.opacity === .5)), gh);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
