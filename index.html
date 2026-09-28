@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s254</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s255</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9699,13 +9699,19 @@ const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012,shadowLo:true};
 // r²/d², capped at 1), summed, times .75, capped at a darkening of .5. A part never shades itself. Once per bake, in the
 // bind pose, into the colours: no triangles, no shader, nothing per frame. PAO.on turns it off for a comparison.
 const PAO={k:.75,max:.5,on:true};
-function personAO(pos,nor,col,PR){if(!PAO.on)return;const S=[];
+const HAO={k:.75,max:.5,on:false,cut:4,minR:0,keep:false,ms:0,n:0}; // S276 — the houses' creases: off until Michael picks (docs/decisions.md); cut and minR as personAO describes
+function personAO(pos,nor,col,PR,O){O=O||PAO;if(!O.on)return;const S=[];
   PR.forEach(([s,c],pi)=>{const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
     const e=[0,1,2].map(k=>(mx[k]-mn[k])/2),ax=e.indexOf(Math.max(e[0],e[1],e[2])),o=[0,1,2].filter(k=>k!==ax),r=Math.max(.004,(e[o[0]]+e[o[1]])/2),n=Math.min(6,Math.max(1,Math.round(e[ax]/r)));
-    for(let j=0;j<n;j++){const c3=[0,1,2].map(k=>(mn[k]+mx[k])/2);c3[ax]=mn[ax]+e[ax]*2*(j+.5)/n;S.push(c3[0],c3[1],c3[2],Math.min(r,e[ax]),pi);}});
-  PR.forEach(([s,c],pi)=>{for(let i=s;i<s+c;i++){const x=pos[i*3],y=pos[i*3+1],z=pos[i*3+2],nx=nor[i*3],ny=nor[i*3+1],nz=nor[i*3+2];let occ=0;
-    for(let q=0;q<S.length;q+=5){if(S[q+4]===pi)continue;const dx=S[q]-x,dy=S[q+1]-y,dz=S[q+2]-z,L2=dx*dx+dy*dy+dz*dz,L=Math.sqrt(L2)||1e-6;const cs=(dx*nx+dy*ny+dz*nz)/L;if(cs<=0)continue;occ+=cs*Math.min(1,S[q+3]*S[q+3]/L2);}
-    const a=1-Math.min(PAO.max,occ*PAO.k);col[i*3]*=a;col[i*3+1]*=a;col[i*3+2]*=a;}});}
+    if(O.minR&&r<O.minR)return;for(let j=0;j<n;j++){const c3=[0,1,2].map(k=>(mn[k]+mx[k])/2);c3[ax]=mn[ax]+e[ax]*2*(j+.5)/n;S.push(c3[0],c3[1],c3[2],Math.min(r,e[ax]),pi);}});
+  // O.cut (the houses, S276): a part only asks the spheres within cut radii of its own box; past that a sphere darkens by
+  // under 1/cut², and a house has thousands of them. O.minR: only parts at least that thick (twice it) shade others.
+  const all=[];for(let q=0;q<S.length;q+=5)all.push(q);
+  PR.forEach(([s,c],pi)=>{let Q=all;if(O.cut){const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
+      Q=[];for(let q=0;q<S.length;q+=5){if(S[q+4]===pi)continue;let d2=0;for(let k=0;k<3;k++){const v=S[q+k],e=v<mn[k]?mn[k]-v:v>mx[k]?v-mx[k]:0;d2+=e*e;}const R=O.cut*S[q+3];if(d2<R*R)Q.push(q);}}
+    for(let i=s;i<s+c;i++){const x=pos[i*3],y=pos[i*3+1],z=pos[i*3+2],nx=nor[i*3],ny=nor[i*3+1],nz=nor[i*3+2];let occ=0;
+    for(let qi=0;qi<Q.length;qi++){const q=Q[qi];if(S[q+4]===pi)continue;const dx=S[q]-x,dy=S[q+1]-y,dz=S[q+2]-z,L2=dx*dx+dy*dy+dz*dz,L=Math.sqrt(L2)||1e-6;const cs=(dx*nx+dy*ny+dz*nz)/L;if(cs<=0)continue;occ+=cs*Math.min(1,S[q+3]*S[q+3]/L2);}
+    const a=1-Math.min(O.max,occ*O.k);col[i*3]*=a;col[i*3+1]*=a;col[i*3+2]*=a;}});}
 function personBake(g,q){SK.q=q;try{return personBakeQ(g,q);}finally{SK.q=1;}}
 function personBakeQ(g,q){
   const bones=[],B={};
@@ -34751,8 +34757,8 @@ var WORLD=(()=>{
   // Merged from primitives without BufferGeometryUtils (not bundled with
   // r128 on the CDN): everything is converted to non-indexed and the
   // attribute arrays are concatenated.
-  function mergeParts(parts){ // parts: [{geo, color:THREE.Color, x,y,z, rx,ry,rz, sx,sy,sz}]
-    const pos=[],nor=[],col=[];
+  function mergeParts(parts,ao){ // parts: [{geo, color:THREE.Color, x,y,z, rx,ry,rz, sx,sy,sz}]; ao: shade the creases (personAO's options)
+    const pos=[],nor=[],col=[],PR=[];
     const m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),n=new THREE.Vector3(),nm=new THREE.Matrix3();
     parts.forEach(p=>{
       const g=p.geo.index?p.geo.toNonIndexed():p.geo;
@@ -34767,9 +34773,12 @@ var WORLD=(()=>{
         const j=1+(Math.random()-.5)*(p.jitter==null?.08:p.jitter);
         col.push(p.color.r*j,p.color.g*j,p.color.b*j);
       }
+      PR.push([pos.length/3-pa.count,pa.count]);
       if(g!==p.geo)g.dispose();
     });
-    const out=new THREE.BufferGeometry();
+    const raw=ao&&ao.keep?{pos:pos.slice(),nor:nor.slice(),col:col.slice(),PR}:null; // a comparison's copy, before the shading
+    if(ao){const t0=performance.now();personAO(pos,nor,col,PR,ao);HAO.ms+=performance.now()-t0;HAO.n++;}
+    const out=new THREE.BufferGeometry();if(raw)out.userData.raw=raw;
     out.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
     out.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
     out.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
@@ -36975,7 +36984,7 @@ var WORLD=(()=>{
       for(let k=0;k<12;k++)add(SK.cyl(.08,.08,.8,6),0x7a5a3a,(x0+x1)/2+s*.1+(k%4)*.17*s-s*.3,pl+.1+Math.floor(k/4)*.15,lz+ld*.1,Math.PI/2,0,0,.1);}
     if(!opts.noYard&&r0()<.5){const x=(r0()<.5?1:-1)*(w/2-.6);for(let k=0;k<9;k++)add(SK.cyl(.08,.08,.7,6),0x7a5a3a,x+(k%3)*.17-.17,.1+Math.floor(k/3)*.15,d/2+.4,0,0,Math.PI/2,.1);}
     if(!opts.noYard&&r0()<.5)add(SK.lathe([[.001,0],[.25,0],[.28,.3],[.26,.6],[.001,.6]],10),0x6a4a2a,-w/2+.5,0,d/2+.45);
-    const g=mergeParts(P);g.userData.variant=key;g.userData.thatch=thatch;g.userData.winTop=wy+wh/2+.12;g.userData.eaveLow=eaveLow;return g;}
+    const g=mergeParts(P,HAO);g.userData.variant=key;g.userData.thatch=thatch;g.userData.winTop=wy+wh/2+.12;g.userData.eaveLow=eaveLow;return g;}
   function buildingGeo(w,d,st,r,opts){opts=opts||{};const lo=buildingGeoLo(w,d,st,r,opts);if(opts.plain)return lo;
     const hi=buildingGeoHi(w,d,st,r,opts,lo.userData.picks);hi.userData.lo=lo;return hi;}
   function buildingGeoLo(w,d,st,r,opts){

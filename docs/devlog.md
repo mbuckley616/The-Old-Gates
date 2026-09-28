@@ -7137,3 +7137,24 @@ New `tests/towngate.test.mjs`:
 - The fence tier's gate: a tall timber frame over a knee-high fence may read as too much. A lower frame, or posts and leaves alone, would be the fallback.
 - The palisade's gate has not been seen in the game yet: none of the towns near the start is palisaded.
 - Whether a crossing left open beside a junction looks like a missing gate.
+
+## v80 — Session 276 — Shading in the houses' creases: a prototype and a question (H.1, waiting on Michael)
+Michael's A on Session 243 shaded the creases at the people's strength, "then the creatures and houses". Sessions 265 and 270 did the people and the creatures. The houses were owed, so I wired the same pass (`personAO`) into the house bake. `mergeParts` takes the options and keeps each part's range of vertices, and `buildingGeoHi` passes `HAO`.
+
+**The first run was too slow.** Each vertex asks every sphere, and a house has thousands of parts, so a stone house took 174 ms to shade against 14 ms to build. Now a part asks only the spheres within four radii of its own box (`O.cut`); past that a sphere darkens by under a sixteenth. That brings it to 3–14 ms a house. The people's pass is unchanged, since it passes no `cut`.
+
+**The picture is why this is a question.** At the people's strength the slates, shingles, turfs, course blocks and footing stones all shade each other. Whole plaster and stone walls go grey instead of just their creases.
+
+With `O.minR`, only parts at least .35 thick cast the shading: walls, roof slabs, the chimney, the lean-to, the jetty. That darkens the window reveals, under the eaves and under a jettied floor, and leaves open walls their colour.
+
+Rather than choose a strength Michael has not seen, I've switched the houses' shading off (`HAO.on=false`, so the game looks as it did) and asked. The options are A (as is), B (large parts only, recommended) or C (not for houses), in `docs/decisions.md` and a DECISION issue.
+
+`docs/prototypes/houseao/shoot.mjs` builds each style once (keeping the unshaded bake behind `HAO.keep`) and shades the same bake three ways. That matters because a house's variant depends on a running counter, so two builds of one seed are not the same house.
+
+### Verified (headless Chromium)
+- **The prototype:** `node docs/prototypes/houseao/shoot.mjs` renders `docs/prototypes/houseao-grid.png` (irish, stone, aurenne, mark, french; today, A, B) with no page errors.
+- **Mean darkening:** .25–.37 under A and .20–.27 under B. As with the people, most of it falls on vertices buried inside other parts, so the picture is the judge.
+- **Other suites:** `peopleao`, `creatureao` and `houses` pass.
+
+### Needs eyes
+The DECISION. If B, the next session switches it on and checks a whole town's build time before and after.

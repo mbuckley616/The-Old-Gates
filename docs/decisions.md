@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Shading in the houses' creases — the people's strength, or only the large parts (Session 276)
+Michael's A on Session 243 was the creases shaded at the people's strength, then the creatures and then the houses. The people and the creatures are done (Sessions 265 and 270). The same pass over a house does something different. A house is built from thousands of small parts: slates, shingles, turfs, course blocks and footing stones. At the people's strength they all shade each other, so whole walls and roofs go grey and muddy rather than just the creases. The plaster and stone houses show it most. So this is a question, not a build. The game is unchanged: the shading is wired into the house bake but switched off.
+
+- **A, the people's strength, as it is.** Every part shades every other part it faces. The plaster and stone walls come out a shade or two darker all over.
+- **B, the large parts only.** The same strength, but only parts at least .35 thick cast the shading: walls, roof slabs, the chimney, the lean-to, the jetty. The slates and stones still receive it but don't cast it. This darkens the window reveals, under the eaves, under a jettied floor and inside the lean-to, and leaves open walls their colour. It costs about 3–14 ms per house when a town builds.
+- **C, not for the houses.** Leave them as they are.
+
+**Recommendation: B.** It is what the people's shading does on a body: creases, not the whole surface.
+
+The picture shows five house styles, each built once and shaded three ways (today, A, B), in the afternoon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houseao-grid.png
+
 ## Answered
 
 ### Prosperity in whole points — should small daily changes count? (systems builder, 2026-09-28, issue #44)
