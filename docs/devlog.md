@@ -6941,3 +6941,25 @@ A first version of the timing check used single bakes; one of them took 52 ms, s
 
 ### Needs eyes
 Faces in shade at dusk, which Session 243 flagged. A raised arm keeps the bind pose's shadow at its side. Michael's A named the creatures and houses to follow; the wolf family's and the houses' bakes are separate and not yet shaded.
+
+## v80 — Session 266 — The weapon kit in first person, and the bow turned the right way (H.4, Michael's A on Session 232)
+Michael answered Session 232: **yes, every weapon**, with a note: "Check the bow again, it looks like it's facing backwards, towards the player."
+
+**The bow.** `tpWeapon` turns the kit's bow half round, which puts its string towards the camera in third person, where the camera is behind the body. The prototype put `tpWeapon`'s bow straight into the first-person view, which looks the other way. That turned the belly towards the eye and the string away, which is what Michael saw. In first person the bow is now not turned: its grip lies .08 further from the eye than its tips, and the string is on your side. It is the kit's bow without its string (a new `bowbare` kind in the weapon builder), scaled to the view model's bow so its tips sit at ±.40. That keeps the view model's own two-segment string and nocked arrow hanging from them, so the draw still pulls the string back from the tips as before.
+
+**Every other weapon** except the Forge-Man's Hammer, which keeps its own model:
+- **Swapped:** `buildViewmodel` now hides the box weapon's meshes and puts `tpWeapon(item)`, tinted by the item's metal, guard and glow, in the fist at the grip.
+- **Kept:** the hands, the arm bridges, the enchantment's light and orbiting sparks, and the swing.
+- **Duller metal:** the view scene has nothing for metal to reflect, which left the kit's steel nearly black in the prototype, so the first-person copy's metal has its own material at metalness .25.
+
+### Verified (headless Chromium)
+New `tests/fpweapons.test.mjs` builds the first-person view for a steel sword, an iron war axe, an iron mace, a hunting bow, an oak staff and the Forge-Man's Hammer:
+- **The five:** each shows the kit (1–3 meshes) and none of the box weapon.
+- **The Hammer:** it keeps its 18 meshes and no kit.
+- **The bow:** its grip is at −.088 against its tips at −.008 in the view's depth (further from the eye), and its string is shown.
+- No page errors.
+
+`player`, `tpswing` and `tpweapons` pass. `docs/prototypes/fpweapons-ingame.png` is the six in first person, left to right.
+
+### Needs eyes
+Drawing the bow in real play: the view model's string is the old thin box pair, now on a rounder bow. The staff's head is above the frame at rest, as it was.

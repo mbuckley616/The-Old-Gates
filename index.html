@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s246</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s247</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -3717,6 +3717,20 @@ function buildViewmodel(){
     }
     g.add(handLow);
     g.userData.handLow = handLow;
+  }
+  // S266 — the weapon kit in first person too (Michael's A on Session 232): every weapon but the Forge-Man's Hammer (its own
+  // model) is the kit's, tinted by the item, in the fist at the grip; the box weapon's meshes are hidden, the hands, the
+  // enchantment's light and sparks kept. The view scene has nothing for metal to reflect, so the kit's metal is duller here.
+  // The bow is not turned as it is in third person (which put the string towards the camera there and away from it here,
+  // Michael's "facing backwards"): its belly faces out, and it is the kit's bow without its string, scaled to the view
+  // model's (tips at ±.40), so the view model's own string still draws back with the nocked arrow.
+  if(w.name!=="The Forge-Man's Hammer"&&typeof buildWeapon==='function'){
+    const keep=new Set();[handMain,g.userData.handLow,g.userData.bowStringTopGroup,g.userData.bowStringBotGroup,g.userData.bowNockArrow].forEach(o=>o&&o.traverse(c=>keep.add(c)));
+    g.children.forEach(c=>{if(keep.has(c)||c.isLight||c.userData.orbitPhase!==undefined)return;c.traverse(o=>{if(o.isMesh&&!keep.has(o))o.visible=false;});});
+    let k;if(_isBow){k=new THREE.Group();const b=buildWeapon('bowbare',{tint:{wood:tpHex(w.matCol,0x6a4428)}});const S=.40/.34;b.scale.setScalar(S);b.position.set(.012,0,-.025*S);k.add(b);k.userData.kit='bow';}
+    else{k=tpWeapon(w);k.position.y=handMain.position.y;}
+    k.traverse(o=>{if(o.isMesh&&o.material.metalness>.3){o.material=o.material.clone();o.material.metalness=.25;o.material.roughness=.4;}});
+    k.userData.fpKit=true;g.add(k);g.userData.kit=k;
   }
 
   // ── v70.2 — Arm bridges ────────────────────────────────────────────────
@@ -9958,6 +9972,9 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       for(let i=0;i<6;i++){const a=i*1.05;add(SK.cone(.012,.035,5),'metal',DSTEEL,[Math.cos(a)*.052,.53+(i%2)*.05,Math.sin(a)*.052],[0,-a,-Math.PI/2]);}},
     bow:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
+    // S266 — the bow without its string, for first person, where the view model's own string draws back
+    bowbare:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);},
     round:()=>{const R=.19;for(let i=0;i<5;i++){const w=R*2/5,x=-R+w*(i+.5),h=2*Math.sqrt(Math.max(0,R*R-x*x));add(SK.rbox(.02,h*.98,w*.96,.004,1),'matte',tint.face!=null?new THREE.Color(tint.face).multiplyScalar([1,.88,1.08][i%3]).getHex():[0x7a5230,0x6a4628,0x82583a][i%3],[0,0,x]);}
       add(SK.torus(R,.012,6,28),'metal',DSTEEL,[0,0,0],[0,Math.PI/2,0]);add(SK.ball(.05,12,8,0,Math.PI*2,0,Math.PI/2),'metal',DSTEEL,[.012,0,0],[0,0,-Math.PI/2]);},
     // S231 — a tower shield: four planks bowed round the bearer (the edges swept back), iron bands at the edges and across,
