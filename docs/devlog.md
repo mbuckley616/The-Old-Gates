@@ -6888,3 +6888,35 @@ New `tests/herbstub.test.mjs`:
 
 ### Needs eyes
 Whether a field of picked herbs reads right in real play: the earth patches are dark, and a picked meadow would be spotted with them. The herbs' glow lights (the old zones) are as before.
+
+## v80 — Session 264 — The world's rocks: boulders, outcrops and clusters, dressed by biome (H.5, Michael's A on Session 228)
+Michael answered Session 228: **all three kinds, dressed by biome**. Every rock in the world was one shape: two jittered dodecahedra (72 triangles), one grey, the same everywhere, sunk .35 into the ground.
+
+**Now** the chunk scatter builds the prototype's rocks (`rockBake`, `rockProto`).
+- **How a rock is made:** an icosphere pushed out by noise and cut by six fracture planes, so it has flat split faces and hard edges. Its normals are smoothed only across faces within 38° of each other. It is darker in its hollows.
+- **Three kinds:**
+  - a **boulder**, 320 triangles;
+  - an **outcrop**: a tilted slab in banded strata, 320 triangles;
+  - a **cluster**: a boulder with three smaller stones half sunk round it, 1,280 triangles.
+- **Six dressings,** by the rock's biome:
+  - lichen on the moor, the plains and the coast;
+  - moss on the tops in the forest (and autumn wood);
+  - moss on the tops in the fen (and swamp);
+  - sandstone in the dunes;
+  - basalt in the wastes and wasteland;
+  - snow on the tundra's tops.
+
+The scatter's places, sizes, turns, tints and colliders are what they were. Each rock's kind comes from a die of its own (`hash01(gx,gz,13)`), so no other roll moves. It is half boulders, three in ten outcrops and two in ten clusters, with outcrops likelier on a slope. Each dressing and kind is one geometry, made the first time a chunk needs it. A chunk instances each kind it holds as the old rock was instanced: one mesh per kind rather than one, in practice two or three.
+
+The prototype's two known faults are fixed: the lichen is weaker (.4 against .55), and the strata are stronger (.75 against .6) so they carry from further off. A new fault turned up in the pictures. The fracture cuts flatten a rock's underside, so the prototype's fixed offset left rocks perched on a point. Each kind is now seated by its own lowest point, .32 into the ground; the old rock sank .35.
+
+### Verified (headless Chromium)
+New `tests/rocks.test.mjs`:
+- **Near the start:** 39 rocks load (22 boulders, 11 outcrops, 6 clusters, all moor stone) and no old rock is left. The kinds are 320, 320 and 1,280 triangles. The rocks in view there are 18k triangles against the old rock's 2.8k for as many.
+- **The dressings:** all six bake, and differ in colour. Mean vertex colour (r, g, b): dunes .667/.556/.389, wastes .202/.188/.181, tundra .473/.488/.507, against the moor's .418/.404/.365.
+- No page errors.
+
+`trees` and `walls` (which count the scatter inside a fort's ring) pass. `docs/prototypes/rocks-shot.mjs` renders `docs/prototypes/rocks-ingame.png`: the three rocks nearest the start, before (left) and after (right), at noon, with the trees and bushes hidden.
+
+### Needs eyes
+The other dressings in their own country: moss in the deep wood, snow on the tundra, sandstone in the dunes. Only the moor's is near the start. The rocks now cost about six times the old ones' triangles; they are few near the start, but a frame check in a rocky region (the coastal hills, rocks ×1.4) on a real machine would say whether it matters. Cave doors' rock faces (Session 230's note) still use the old dodecahedra and could take these kinds next.
