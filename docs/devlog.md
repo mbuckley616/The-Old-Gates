@@ -5611,3 +5611,30 @@ New `tests/placesave.test.mjs`, eleven checks, all pass:
 ### Needs eyes
 - A town you own a house in, through a war or a plague. The house should stay where you bought it.
 - The renamed townsfolk after a rebuild, and whether that is worth fixing at the cost of today's names.
+
+## v80 — Session 244 — Names that stay
+
+Session 243 left one thing owed: when a town rebuilt at another prosperity, most of its people changed their names (Dunmore 61 → 48 renamed 49 of 57 houses). The houses now stay on their lots, but the forge on the corner could be Lorcan's before a plague and Ruairí's after. A save made in Maeve's House came back as Niamh's.
+
+**Why.** Every name is drawn from the town's one random stream, in lot order. `makeDef` then re-draws it from the bank of the person's people (Session 172). A rebuild at another prosperity uses a different set of lots, so the stream reaches each lot at a different point and every later draw changes.
+
+**What changed.** The first time a town is built, `makeDef` records each person it makes under a key in the town's state (`worldState.towns[id].nm`, as *name|people*):
+- a resident or a shopkeeper is keyed by the lot's id number;
+- the gate guards by their gate;
+- the night watch and the third night guard by their posts;
+- inns keep their names by lot as well.
+
+A later build of that town takes the name and people from the record. Every draw is still made, so the stream is untouched: a town's first build is exactly what it was, and nothing else drawn after the names moves. A lot that changes from a shop to a home keeps its person, who is now a resident instead of a keeper. A guild hall's master is not a shopkeeper (guild heads are seeded by `guildDef`, Session 172), so a lot that stops being a guild hall gets its recorded keeper, not the guildmaster. The record is saved with the town's state; `towns` was already in the load's list.
+
+**Not done.** Skin and hair are still drawn in the stream's new order, so after such a rebuild and a page reload a person can keep their name and people but come out with different colouring. In the same session the look is held by the genome cache (`name|site`). Holding the colours as well would mean recording each person's look; left owed.
+
+### Verified (headless Chromium)
+`tests/placesave.test.mjs` gains the names check; all twelve checks pass:
+- **Rebuilds.** Dunmore, Carraig Mór, Portclare and Colman's Rest were rebuilt at their prosperity ±13 and ±26. No keeper or resident changes name, apart from the guild-hall lots (two per town at 60, where the guildmaster goes). The guards at each prosperity are a subset of those at the start (the third night guard exists only at 60 and above).
+- **Saved while the town fell.** Saved in a home as the town fell 13 behind you, then reload and Continue: *Maeve's House*, the name it was saved in. On Session 243's build it came back as *Niamh's House*.
+- **The previous build**, through the same check: 43 of 47 shared keepers renamed at Dunmore 48, and 49 at 87.
+- **Fresh worlds.** The first build of six towns (Dunmore, Portclare, Colman's Rest, Carraig Mór, La Grise, Hearthwick) against the build before Session 243: all 357 records identical (houses with keeper, people and skin, townsfolk, residents with people and hair).
+- **Regressions.** `names`, `saves`, `export`, `reader`, `watch`, `intnpcs`, `witness`, `questtargets`, `mainquest` and `crime1` pass. No page errors.
+
+### Needs eyes
+Whether a town's people should keep their colouring as well after a rebuild; nobody may ever notice it.

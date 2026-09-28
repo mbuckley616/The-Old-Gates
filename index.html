@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s243</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s244</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35591,7 +35591,7 @@ var WORLD=(()=>{
   function pick(r,arr){return arr[Math.floor(r()*arr.length)%arr.length];}
   // v80 S172 — the same single draw as pick(); if that one is taken in this town, the next free one along the list (so a
   // town's draws, and every name that did not collide, stay as they were). Taken by everyone: the draw stands.
-  let _townNames=null;
+  let _townNames=null,_curNM=null;
   function pickFree(r,arr,used){const v=pick(r,arr);if(!used||!used.has(v))return v;const i=arr.indexOf(v);for(let k=1;k<arr.length;k++){const c=arr[(i+k)%arr.length];if(!used.has(c))return c;}return v;}
   function cardinalFace(tx,tz){ // unit vector → 'N' (−z) 'S' (+z) 'E' 'W'
     if(Math.abs(tx)>Math.abs(tz))return tx>0?'E':'W';
@@ -35788,10 +35788,12 @@ var WORLD=(()=>{
     if(extra&&extra.topics){extraTopics=extra.topics.slice();extra=Object.assign({},extra);delete extra.topics;}
     const ICO={Smith:'⚒',Armourer:'🛡',Apothecary:'🌿',Merchant:'📦',Innkeeper:'🍺',Priest:'🕯',Steward:'🏰',Villager:'👤',Guard:'⚔',Hermit:'🪶',Harbourmaster:'⚓',Shipwright:'⛵',Lord:'👑',Lady:'👑',Mayor:'📜',Elder:'🌾','Harbour Reeve':'⚓',Captain:'⚔'};
     topics.push({label:'Farewell.',bye:true});
-    let people=(extra&&extra.people)||peopleOfNpc(site,r);const P=PEOPLES[people];
+    const NK=(extra&&extra.nameKey!=null&&!extra.authored&&_curNM)?String(extra.nameKey):null,kept=NK&&_curNM[NK]?String(_curNM[NK]).split('|'):null; // S244
+    let people=(extra&&extra.people)||peopleOfNpc(site,r);if(kept&&PEOPLES[kept[1]])people=kept[1];const P=PEOPLES[people];
     if(!(extra&&extra.authored)){ // rename into the people's bank (keep gender) unless told to keep it; take the people's body
       const bank=NAMES[P.names]||NAMES.irish;const female=Object.values(NAMES).some(b=>b.f&&b.f.includes(name));if(!(extra&&extra.keepName))name=pickFree(r,female?bank.f:bank.m,_townNames);
       extra=Object.assign({},extra||{},{sCol:pick(r,P.skin),hairCol:pick(r,P.hair),bodyScale:[P.width,P.height,P.width]});}
+    if(NK){if(kept)name=kept[0];else _curNM[NK]=name+'|'+people;}
     const def=Object.assign({name,role,ico:ICO[role]||'👤',greeting:greetPool[role]||greetPool.Villager,topics,x:0,z:0},extra||{});
     def.people=people;if(_townNames)_townNames.add(def.name);
     def.temper=temperOf(name);def.bio=bioFor(site,reg,r,role,name);def._roadLine=roadLine;def._doorLine=doorLine;def._extra=extraTopics;
@@ -35933,7 +35935,7 @@ var WORLD=(()=>{
       return {r,use,shopTypes,hero,lots};}
     const PL=planLots(TST?prosperity(site):0,true);const use=PL.use,shopTypes=PL.shopTypes,hero=PL.hero;r=PL.r;
     {const base=TST?planLots(baseProsperity(site),false).use:use;const at=new Map();base.forEach((l,i)=>at.set(l.k,i));
-      const idOf=l=>`g_${site.id}_${at.has(l.k)?at.get(l.k):1000+(typeof l.k==='number'?l.k:0)}`;
+      const idOf=l=>{l.n=at.has(l.k)?at.get(l.k):1000+(typeof l.k==='number'?l.k:0);return `g_${site.id}_${l.n}`;};
       // every lot this build could use, in order; your own house is never dropped for want of lots nor given to a shop
       const all=PL.lots;all.forEach(l=>l.id=idOf(l));use.forEach(l=>l.id=idOf(l));
       const mine=l=>ownedHouse(l.id);
@@ -35942,6 +35944,12 @@ var WORLD=(()=>{
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
+    // v80 S244 — a person, once drawn for a lot (or a gate's post), is the town's for good: a rebuild at another prosperity
+    // draws the stream in another order and used to rename most of the town. makeDef keeps the name and people under
+    // extra.nameKey in the town's state (TST.nm) and still makes every draw, so the stream and all else drawn from it is
+    // exactly what it was.
+    const NM=TST?(TST.nm||(TST.nm={})):null;_curNM=NM;
+    function keptName(key,drawn){if(!NM)return drawn;if(NM[key]==null)NM[key]=drawn;return NM[key];}
     use.forEach((lot,i)=>{
       const type=shopTypes[i]||null;
       const isShop=!!type;
@@ -35973,7 +35981,7 @@ var WORLD=(()=>{
         // house inside and idles by the door outside in daylight.
         const resident=newName();
         const exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
-        const rdef=makeDef(site,reg,r,'Villager',resident,{x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
+        const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:lot.n,x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
         rdef.roleTag=rdef.role;rdef.role='Villager';
         const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:`${rdef.name}'s House`,keeper:rdef.name,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
         if(lot._shuttered){hh.shuttered=true;hh.name=`${rdef.name}'s House (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
@@ -35986,7 +35994,7 @@ var WORLD=(()=>{
       const heroH=hero&&hero[i];
       const keeper=heroH?heroH.keeper:newName();
       const noun=SHOP_NOUN[type]?(SHOP_NOUN[type][reg]||SHOP_NOUN[type].irish||''):'';
-      let name=heroH?heroH.name:type==='inn'?pickFree(r,INN_NAMES[reg],_innNames):type==='church'?(reg==='french'?`Chapelle de ${site.name}`:`The ${site.name} ${noun}`):type==='castle'?`${site.name} Keep`:(type==='guild_f'||type==='guild_m')?GUILD_DEF[type].name:`${keeper}'s ${noun}`;
+      let name=heroH?heroH.name:type==='inn'?keptName('i'+lot.n,pickFree(r,INN_NAMES[reg],_innNames)):type==='church'?(reg==='french'?`Chapelle de ${site.name}`:`The ${site.name} ${noun}`):type==='castle'?`${site.name} Keep`:(type==='guild_f'||type==='guild_m')?GUILD_DEF[type].name:`${keeper}'s ${noun}`;
       if(type==='inn')_innNames.add(name);
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
@@ -36024,7 +36032,7 @@ var WORLD=(()=>{
       const kx=doorX+lot.tx*1.6+lot.tz*.9,kz=doorZ+lot.tz*1.6-lot.tx*.9;
       const role=SHOP_ROLE[type]||'Merchant';
       if(type==='guild_f'||type==='guild_m'){house.guild=type;house.dlg=null;}
-      const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{get label(){return `Buy a ship (${shipPriceNow()} gold${shipPriceNow()<SHIP_PRICE?", with Corwin's note":''})`;},quest:true,fn:()=>buyShip(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:[{label:`What do you sell?`,response:house.tagline}]});
+      const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{get label(){return `Buy a ship (${shipPriceNow()} gold${shipPriceNow()<SHIP_PRICE?", with Corwin's note":''})`;},quest:true,fn:()=>buyShip(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:[{label:`What do you sell?`,response:house.tagline}]});
       def._houseId=house.id; // v80 S138 — who keeps what, by identity (names collide)
       house.keeper=def.name;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[...upgradeTopics(site),...rest]:[buy,...rest];}});}
@@ -36104,7 +36112,7 @@ var WORLD=(()=>{
       streets.slice(0,2).forEach((rd,gi)=>{
         const q=rd.pts.find(p=>Math.abs(Math.hypot(p.x-cx,p.z-cz)-(R-6))<4);
         if(!q)return;
-        const def=makeDef(site,reg,r,'Guard',newName(),{x:q.x+3,z:q.z,bCol:NAT.banner,sCol:0x808090});
+        const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'g'+gi,x:q.x+3,z:q.z,bCol:NAT.banner,sCol:0x808090});
         const gn=spawnNPC(def,Math.atan2(cx-q.x,cz-q.z),true);gn.sched={type:'guard',a:{x:q.x+3,z:q.z},b:{x:cx+6,z:cz+6}};snpcs.push(gn);
       });
     }
@@ -36112,7 +36120,7 @@ var WORLD=(()=>{
     // the road-in ↔ plaza with a torch after dark.
     if(!plan.walls&&plan.rows>0&&streets.length){
       const rd=streets[0];const q=rd.pts.find(p=>Math.abs(Math.hypot(p.x-cx,p.z-cz)-(pad-6))<5)||rd.pts[0];
-      const def=makeDef(site,reg,r,'Guard',newName(),{x:cx+4,z:cz+4,bCol:0x3a3a48,sCol:0xb89878,role:'night watch'});def.role='Guard';
+      const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'w',x:cx+4,z:cz+4,bCol:0x3a3a48,sCol:0xb89878,role:'night watch'});def.role='Guard';
       const wn=spawnNPC(def,0,true);wn.sched={type:'watch',a:{x:q.x+2,z:q.z},b:{x:cx+4,z:cz+4}};snpcs.push(wn);
     }
     // Camps, ruins, standing stones.
@@ -36173,7 +36181,7 @@ var WORLD=(()=>{
     // v80 S166 — a rich town (prosperity 60 or more) puts a third man on the night watch; he sleeps by day.
     // Spawned last so the draws before it (names, barrels, villagers) are the same as before Session 166.
     if(snpcs.some(n=>n.sched&&n.sched.type==='guard')&&prosperity(site)>=60){
-      const def=makeDef(site,reg,r,'Guard',newName(),{x:cx-4,z:cz+4,bCol:NAT.banner,sCol:0x808090});
+      const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'w2',x:cx-4,z:cz+4,bCol:NAT.banner,sCol:0x808090});
       const wn=spawnNPC(def,0,true);wn.sched={type:'watch',a:{x:cx-4,z:cz+4},b:{x:cx+4,z:cz-4}};snpcs.push(wn);
     }
     S.reach=t_reach(sol,site);
