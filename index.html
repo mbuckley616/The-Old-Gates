@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s224</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s225</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9891,14 +9891,16 @@ function buildPerson(g,opts){
 // material into at most four meshes that every foe of that kind shares; hung on the gear bone (the bow in the left hand,
 // a shield on the left forearm). Looks only: what a foe deals is unchanged. The grip is at the origin, the blade up +y.
 const WPN_MAT={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34}),matte:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.85}),
-  glow:new THREE.MeshBasicMaterial({color:0x88c0ff}),halo:new THREE.MeshBasicMaterial({color:0x4080ff,transparent:true,opacity:.15,depthWrite:false})};
+  glow:new THREE.MeshBasicMaterial({vertexColors:true}),halo:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.15,depthWrite:false})};
 const WPN_GEO=new Map();
-const WPN_KINDS=['dagger','sword','cutlass','longsword','axe','mace','warhammer','staff','bow','round','kite'];
-function wpnBuild(kind,rust){
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','round','kite'];
+// tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
+function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
   const col=(m,c)=>rust&&m==='metal'?new THREE.Color(c).lerp(new THREE.Color(RU),.62):new THREE.Color(c);
   const add=(geo,m,c,p,r,sc)=>{o.position.set(...(p||[0,0,0]));o.rotation.set(...(r||[0,0,0]));o.scale.set(...(sc||[1,1,1]));o.updateMatrix();L.push([geo,rust&&m==='metal'?'matte':m,col(m,c),o.matrix.clone()]);};
-  const STEEL=0xc8ccd4,DSTEEL=0x6a6e76,BRASS=0xc8a050,WOOD=0x6a4428,DWOOD=0x4a2e18,LEATH=0x3a2618;
+  const STEEL=tint.metal!=null?tint.metal:0xc8ccd4,DSTEEL=tint.metal!=null?new THREE.Color(tint.metal).multiplyScalar(.55).getHex():0x6a6e76,BRASS=tint.guard!=null?tint.guard:0xc8a050,WOOD=tint.wood!=null?tint.wood:0x6a4428,DWOOD=0x4a2e18,LEATH=0x3a2618;
+  const GLOW=tint.glow!=null?tint.glow:0x88c0ff,HALO=tint.glow!=null?new THREE.Color(tint.glow).multiplyScalar(.7).getHex():0x4080ff;
   const blade=(len,w,tip,curve)=>{const sh=new THREE.Shape();const cv=curve||0;sh.moveTo(-w/2,0);sh.lineTo(-w/2*.92+cv*.3,len*.8);sh.quadraticCurveTo(-w/2*.7+cv,len*.93,cv,len*(1+tip));sh.quadraticCurveTo(w/2*.7+cv,len*.93,w/2*.92+cv*.3,len*.8);sh.lineTo(w/2,0);sh.lineTo(-w/2,0);
     const g=new THREE.ExtrudeGeometry(sh,{depth:.004,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:2,curveSegments:6});g.translate(0,0,-.002);return g;};
   const grip=(len,r,y0)=>{add(SK.cyl(r,r,len,10),'matte',LEATH,[0,y0+len/2,0]);for(let i=0;i<6;i++)add(SK.torus(r*1.02,r*.18,4,10),'matte',DWOOD,[0,y0+len*(i+.5)/6,0],[Math.PI/2,0,0]);};
@@ -9913,13 +9915,20 @@ function wpnBuild(kind,rust){
       for(let i=0;i<6;i++){const a=i/6*Math.PI*2;add(SK.rbox(.012,.09,.05,.004,1),'metal',DSTEEL,[Math.cos(a)*.035,.34,Math.sin(a)*.035],[0,-a,0]);}add(SK.cone(.02,.05,6),'metal',DSTEEL,[0,.4,0]);},
     warhammer:()=>{add(SK.cyl(.018,.022,.72,8),'matte',WOOD,[0,.22,0]);grip(.14,.023,-.12);add(SK.rbox(.2,.085,.085,.018,2),'metal',DSTEEL,[.02,.56,0]);add(SK.cone(.03,.12,6),'metal',DSTEEL,[-.14,.56,0],[0,0,Math.PI/2]);add(SK.cone(.02,.08,6),'metal',DSTEEL,[0,.64,0]);},
     staff:()=>{add(SK.bumpy(SK.cyl(.016,.022,1.0,8,10),.004,23,30),'matte',DWOOD,[0,.22,0]);for(let i=0;i<3;i++){const a=i/3*Math.PI*2;add(SK.cone(.008,.12,5),'matte',DWOOD,[Math.cos(a)*.022,.76,Math.sin(a)*.022],[Math.sin(a)*-.35,0,Math.cos(a)*.35]);}
-      add(new THREE.OctahedronGeometry(.04,0),'glow',0xffffff,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',0xffffff,[0,.8,0]);},
+      add(new THREE.OctahedronGeometry(.04,0),'glow',GLOW,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',HALO,[0,.8,0]);},
+    claymore:()=>{grip(.22,.016,-.14);add(SK.ball(.028,10,8),'metal',DSTEEL,[0,-.155,0]);add(SK.rbox(.27,.026,.036,.01,2),'metal',DSTEEL,[0,.065,0]);[-1,1].forEach(sd=>add(SK.ball(.016,6,5),'metal',DSTEEL,[sd*.135,.065,0]));add(blade(.76,.052,.06),'metal',STEEL,[0,.078,0]);},
+    greataxe:()=>{add(SK.cyl(.018,.022,.86,8),'matte',WOOD,[0,.27,0]);grip(.14,.023,-.12);const sh=new THREE.Shape();sh.moveTo(0,-.04);sh.lineTo(-.08,-.08);sh.quadraticCurveTo(-.22,-.12,-.2,.03);sh.quadraticCurveTo(-.22,.16,-.14,.18);sh.lineTo(0,.06);sh.lineTo(0,-.04);
+      add(new THREE.ExtrudeGeometry(sh,{depth:.008,bevelEnabled:true,bevelThickness:.006,bevelSize:.005,bevelSegments:2}),'metal',STEEL,[-.014,.6,-.004]);add(SK.rbox(.05,.1,.046,.012,2),'metal',DSTEEL,[0,.63,0]);add(SK.cone(.022,.09,6),'metal',DSTEEL,[.06,.63,0],[0,0,-Math.PI/2]);},
+    flail:()=>{add(SK.cyl(.016,.019,.34,8),'matte',DWOOD,[0,.1,0]);grip(.1,.02,-.08);add(SK.cyl(.022,.022,.03,8),'metal',DSTEEL,[0,.28,0]);for(let i=0;i<4;i++)add(SK.torus(.014,.004,4,8),'metal',DSTEEL,[0,.31+i*.024,0],[0,i%2?Math.PI/2:0,0]);
+      add(SK.ball(.045,12,9),'metal',DSTEEL,[0,.44,0]);for(let i=0;i<8;i++){const a=i/8*Math.PI*2,b=i%2?.5:-.5;add(SK.cone(.012,.04,5),'metal',STEEL,[Math.cos(a)*.045*Math.cos(b),.44+Math.sin(b)*.045,Math.sin(a)*.045*Math.cos(b)],[0,-a,-Math.PI/2+b]);}},
+    greatclub:()=>{add(SK.bumpy(SK.cyl(.055,.024,.8,9,6),.006,19,4),'matte',WOOD,[0,.28,0]);grip(.12,.026,-.1);for(const y of [.46,.6])add(SK.torus(.047,.009,5,14),'metal',DSTEEL,[0,y,0],[Math.PI/2,0,0]);
+      for(let i=0;i<6;i++){const a=i*1.05;add(SK.cone(.012,.035,5),'metal',DSTEEL,[Math.cos(a)*.052,.53+(i%2)*.05,Math.sin(a)*.052],[0,-a,-Math.PI/2]);}},
     bow:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
-    round:()=>{const R=.19;for(let i=0;i<5;i++){const w=R*2/5,x=-R+w*(i+.5),h=2*Math.sqrt(Math.max(0,R*R-x*x));add(SK.rbox(.02,h*.98,w*.96,.004,1),'matte',[0x7a5230,0x6a4628,0x82583a][i%3],[0,0,x]);}
+    round:()=>{const R=.19;for(let i=0;i<5;i++){const w=R*2/5,x=-R+w*(i+.5),h=2*Math.sqrt(Math.max(0,R*R-x*x));add(SK.rbox(.02,h*.98,w*.96,.004,1),'matte',tint.face!=null?new THREE.Color(tint.face).multiplyScalar([1,.88,1.08][i%3]).getHex():[0x7a5230,0x6a4628,0x82583a][i%3],[0,0,x]);}
       add(SK.torus(R,.012,6,28),'metal',DSTEEL,[0,0,0],[0,Math.PI/2,0]);add(SK.ball(.05,12,8,0,Math.PI*2,0,Math.PI/2),'metal',DSTEEL,[.012,0,0],[0,0,-Math.PI/2]);},
     kite:()=>{const sh=new THREE.Shape();sh.moveTo(0,.24);sh.quadraticCurveTo(.17,.24,.16,.1);sh.quadraticCurveTo(.13,-.12,0,-.3);sh.quadraticCurveTo(-.13,-.12,-.16,.1);sh.quadraticCurveTo(-.17,.24,0,.24);
-      add(new THREE.ExtrudeGeometry(sh,{depth:.02,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:2}),'matte',0x7a2020,[0,0,0],[0,Math.PI/2,0]);
+      add(new THREE.ExtrudeGeometry(sh,{depth:.02,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:2}),'matte',tint.face!=null?tint.face:0x7a2020,[0,0,0],[0,Math.PI/2,0]);
       add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[-.014,.05,0],[0,0,Math.PI/2]);for(const [a,b2] of [[.24,.12],[-.3,0]])add(SK.ball(.012,6,5),'metal',BRASS,[-.014,a,b2]);}
   };
   (K[kind]||K.sword)();
@@ -9933,7 +9942,7 @@ function wpnBuild(kind,rust){
     out.push({geo:g,mat:m});}
   return out;
 }
-function buildWeapon(kind,opts){opts=opts||{};const key=kind+(opts.rust?'|rust':'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust);WPN_GEO.set(key,parts);}
+function buildWeapon(kind,opts){opts=opts||{};const t=opts.tint;const key=kind+(opts.rust?'|rust':'')+(t?'|'+[t.metal,t.guard,t.wood,t.glow,t.face].join(','):'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust,t);WPN_GEO.set(key,parts);}
   const G=new THREE.Group();G.name='weapon:'+kind;G.userData.wpn=kind;for(const p of parts){const m=new THREE.Mesh(p.geo,WPN_MAT[p.mat]);m.castShadow=false;G.add(m);}return G;}
 const FOE_DRESS={
   'Bandit':        {cloth:0x4a3a2a,hat:'hood',wpn:['sword','axe'],shield:'round',shieldP:.35}, // S226 — armed from the weapon kit (wpn), a shield at shieldP
@@ -20793,17 +20802,11 @@ function tpGroup(parent,x,y,z){const g=new THREE.Group();g.position.set(x||0,y||
 // ── weapons: built along +y from the grip (the hand's local "up" once the forearm is raised) ──
 function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   const blade=tpHex(it.matCol,0xb8bcc4),guard=tpHex(it.matGuard,0x6a5030),grip=0x3a2616;const sh=it.weaponShape||(/bow/i.test(it.name)?'bow':/staff/i.test(it.name)?'staff':/axe/i.test(it.name)?'axe':/mace|hammer|club/i.test(it.name)?'mace':/dagger|knife/i.test(it.name)?'dagger':'sword');
-  const B=(w,h,d,c,x,y,z)=>tpBox(w,h,d,c,g,x,y,z);
-  if(sh==='dagger'){B(.03,.08,.03,grip,0,0,0);B(.1,.02,.03,guard,0,.05,0);B(.035,.22,.012,blade,0,.17,0);}
-  else if(sh==='sword'||sh==='scimitar'){B(.03,.1,.03,grip,0,0,0);B(.14,.025,.035,guard,0,.06,0);const b=B(.04,.46,.012,blade,0,.3,0);if(sh==='scimitar')b.rotation.z=.12;}
-  else if(sh==='longsword'){B(.03,.14,.03,grip,0,-.02,0);B(.16,.025,.035,guard,0,.06,0);B(.042,.58,.012,blade,0,.36,0);}
-  else if(sh==='claymore'){B(.034,.22,.034,grip,0,-.06,0);B(.22,.03,.04,guard,0,.06,0);B(.05,.72,.014,blade,0,.43,0);}
-  else if(sh==='mace'||sh==='flail'){B(.03,.34,.03,grip,0,.1,0);const h=new THREE.Mesh(new THREE.DodecahedronGeometry(.07,0),new THREE.MeshLambertMaterial({color:blade}));h.position.y=sh==='flail'?.36:.3;g.add(h);if(sh==='flail')B(.012,.08,.012,0x555555,0,.3,0);}
-  else if(sh==='warhammer'||sh==='greatclub'){B(.035,.62,.035,grip,0,.18,0);if(sh==='warhammer')B(.2,.09,.09,blade,0,.5,0);else{const c=new THREE.Mesh(new THREE.CylinderGeometry(.07,.045,.3,7),new THREE.MeshLambertMaterial({color:tpHex(it.matCol,0x6a4a2a)}));c.position.y=.42;g.add(c);}}
-  else if(sh==='greataxe'||sh==='axe'){const big=sh==='greataxe';B(.032,big?.66:.42,.032,grip,0,big?.2:.12,0);const hd=B(big?.2:.13,big?.2:.13,.014,blade,-.07,big?.46:.3,0);hd.rotation.z=.2;}
-  else if(sh==='staff'){B(.03,.9,.03,0x5a3a1e,0,.2,0);const o=new THREE.Mesh(new THREE.OctahedronGeometry(.05,0),new THREE.MeshBasicMaterial({color:tpHex(it.matGlow,0x88aaff)}));o.position.y=.68;g.add(o);}
-  else if(sh==='bow'){const wood=tpHex(it.matCol,0x6a4a2a);for(const s of [-1,1]){const limb=B(.022,.3,.03,wood,0,s*.15,0);limb.rotation.x=s*.22;limb.position.z=-.03;}B(.03,.1,.035,grip,0,0,0);B(.004,.6,.004,0xe8e0c8,0,0,-.035);g.userData.bow=true;}
-  else{B(.03,.1,.03,grip,0,0,0);B(.04,.46,.012,blade,0,.3,0);}
+  // S227 — the weapon kit (Michael's A on Session 220), tinted by the item's own metal, guard and glow; the bow's wood is its
+  // material colour, and it turns to put the string on your side of the grip, as the box bow had it
+  const kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
+  const w=buildWeapon(kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
+  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}g.userData.kit=kind;
   return g;}
 function tpBuild(lookIn,ppIn){
   let pp=ppIn||'gatelander',P=null;try{if(!ppIn)pp=WORLD.playerPeople();P=WORLD.PEOPLES[pp];}catch(e){}
@@ -20835,8 +20838,9 @@ function tpBuild(lookIn,ppIn){
   if(w){const wm=tpWeapon(w);if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}}
   const oh=EQ.offhand;R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
-    if(round){const m=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.03,12),new THREE.MeshLambertMaterial({color:c}));m.rotation.z=Math.PI/2;sg.add(m);const bs=new THREE.Mesh(new THREE.SphereGeometry(.05,6,5),new THREE.MeshLambertMaterial({color:rim}));bs.position.x=.02;sg.add(bs);}
-    else{tpBox(.03,big?.5:.34,big?.32:.26,c,sg,0,0,0);tpBox(.035,big?.52:.36,.03,rim,sg,0,0,0);}
+    // S227 — the kit's shields: planked and round with a rim and boss, or the kite (a tower shield is the kite grown); the face is
+    // the item's material colour, the rim and boss its guard's
+    const k=buildWeapon(round?'round':'kite',{tint:{face:c,guard:rim,metal:rim}});k.scale.setScalar(big&&!/kite/i.test(oh.name||'')?1.35:round&&/buckler/i.test(oh.name||'')?.8:1);sg.add(k);sg.userData.kit=round?'round':'kite';
     sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;}
   else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}

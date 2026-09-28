@@ -6291,3 +6291,30 @@ New `tests/weapons.test.mjs`, 9 checks, all passing, no page errors:
 
 ### Needs eyes
 Whether a foe's weapon reads at fighting distance, since they cast no shadow. Also whether the mace is too small in a big fist (it is the prototype's size).
+
+## v80 — Session 227 — The player's weapons and shields on the kit (H.4, Michael's answer A on Session 220)
+The second half of Michael's A: "the player's weapons in third person". `tpWeapon` built every weapon you hold in third person from boxes and called the kit "a later pass"; the shield on your forearm was a box or a flat disc. Both now come from the weapon kit that Session 226 built for the foes.
+
+**What changed.**
+- **The weapon's shape.** `tpWeapon` takes it as before (the item's `weaponShape`, or its name). It asks `buildWeapon` for the matching kit weapon, and the kit grew the shapes the player's items name that the foes had not needed:
+  - a claymore: a long grip, a wide guard with finials, a 0.76 blade;
+  - a great axe: a bigger bearded head on a long haft, with a back spike;
+  - a flail: a spiked ball on a short chain;
+  - a great club: a knobbed wooden club bound with two iron bands and studded.
+  - The scimitar is the cutlass.
+- **The item's own colours.** `wpnBuild` takes a tint. The item's `matCol` replaces the steel, and a darker shade of it the dark steel. `matGuard` replaces the brass, `matGlow` the staff's crystal and its halo. A bow's `matCol` is its wood. An Elven Sword keeps its pale green blade and gilt guard. Each tinted weapon is built once and shared, keyed by its colours, so a shop full of iron swords is one geometry.
+- **The bow** is turned half round in the left hand, so the string is on your side of the grip as the box bow had it.
+- **The shield.** A round shield or a buckler is the kit's planked round shield, with its face in the item's material colour and its rim and boss in the guard's. A buckler is 0.8 the size. A kite shield is the kite, and any other shield (the tower) is the kite at 1.35. The kite's face takes the material colour.
+
+The weapons still go in the same hands at the same grip, so `tpPose`'s swings are unchanged. The first-person view model is not touched.
+
+### Verified (headless Chromium)
+New `tests/tpweapons.test.mjs`, 5 checks, all passing, no page errors:
+- All thirteen shapes the items name (dagger to bow) build from the kit with no box.
+- Heights grow from dagger 0.36 to sword 0.66, longsword 0.87 and claymore 1.08; the great axe is 0.95 against the axe's 0.56.
+- An Elven Sword's blade colour is on 528 vertices and its gilt guard on 333. An iron sword has none of the elven colour. Two Elven Swords share one geometry, and the iron one does not.
+- On the body, the Steel Sword is in the right hand and the Round Shield on the left forearm. A Kite Shield and a Hunting Bow in the left hand follow.
+`player`, `tpshots`, `unequip`, `creator` and `weapons` still pass. Picture: `docs/prototypes/tpweapons-ingame.png` (the kit as the items tint it, and the two shields).
+
+### Needs eyes
+Whether the swings look right with the longer kit blades: the claymore is a little longer than the old box. Also whether a tower shield wants its own tall rectangular shape rather than a large kite.
