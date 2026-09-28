@@ -5316,3 +5316,17 @@ New `tests/combatmusic.test.mjs`, rendering the cue through an `OfflineAudioCont
 
 ### Needs eyes
 **Ears**, really: whether the three themes sound like fights in this game's world, whether the horn at three foes and the choir at a boss are the right thresholds, and whether the mix sits under the combat sounds (the fight's music is about twice the level of a one-foe skirmish at a boss). Whether a three-second fade and the tonic close feel like a fight ending. The old cue's code is gone. If a theme is disliked, it is one entry in `COMBAT_THEMES`.
+
+## v80 — Session 232 — Guild members keep to the floor they stand on
+
+Found while settling section G's interior-doors check, *whether a shut door traps an NPC awkwardly*, by reading the collision code. The doors are fine: a door refuses to shut with someone within 0.8 units of it (Session 143), and a shut door blocks a wanderer like a wall. But every step a wandering indoor NPC takes was tested with `intSolidAt(x, z, .3)`, and `intSolidAt` measures against `jumpY`, **the player's** height. When the player stands on something (a guild hall's footholds reach 2.0 units), every solid whose top is within a step of the player's feet stops counting: tables, racks, shelves and the low partitions. So the members walked straight through them for as long as the player stayed up there. Guild halls are the only interiors with wandering NPCs today.
+
+**What changed.** `intSolidAt` takes an optional fourth argument, the height of whoever is moving; the player's calls leave it out and are unchanged. `tickInterior` passes each member's own height (`n.g.position.y`). Two lines of code.
+
+**On section G.** The interior-doors check stays open for what only eyes can judge: the door's height against the ceiling, its swing against the furniture. The *NPC trapped by a door* half is settled: a door can't be shut on anyone, and nothing walks through a shut one.
+
+### Verified (headless Chromium)
+New `tests/intnpcs.test.mjs`, in Dunmore's guild hall: 3 members, 41 solids (22 with a top below the ceiling), footholds up to 2.0. Each run is 120 s of `tickInterior` at 1/60 with a seeded wander, from the same start, counting member-frames spent inside a solid at floor height. The test does its own collision check, independent of the game's. This build: 0 of 21,600 with the player on the floor, 0 with the player 1.0 up, 0 with the player at 2.0. The previous build: 0, 0, and **3,279 of 21,600 (15%)** at 2.0. `interiors.test.mjs` passes unchanged. No page errors.
+
+### Needs eyes
+Nothing new to judge; the members should simply never be seen inside a rack.

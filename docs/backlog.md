@@ -104,7 +104,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - **Weather by place (Session 146)**: whether tundra snow and fen fog feel different enough as you travel; how the snow line looks where open ground meets a town.
 - **Weather (Session 145)**: fog at 36 steps of sight — atmospheric or claustrophobic; rain indoors at a fifth of outdoor volume; snow's low wind.
 - **Map colour (Session 144)**: the biome tints at a real zoom — especially moor and swamp together.
-- **Interior doors (Session 143)**: open and shut a door in an inn room and a shop's back room — height against the ceiling, the swing against the furniture, and whether a shut door traps an NPC awkwardly.
+- **Interior doors (Session 143)**: open and shut a door in an inn room and a shop's back room — height against the ceiling, the swing against the furniture. ~~Whether a shut door traps an NPC awkwardly~~ — settled headless, Session 232: a door can't shut on anyone, and nothing walks through a shut one; the check found guild members walking through racks while you stood on a foothold (they tested collisions at *your* height), fixed.
 - **Lockpicking (Session 142)**: pick a dungeon door by feel — whether the hold window is fair, and whether losing a set pin on a snap is too harsh.
 - **Inn rooms (Session 141)**: rent a room, sleep in it, try another guest's door; whether being turned away reads as fair.
 - **Export/import (Session 139)**: export a character in real Chrome on `file://` and import it back; a file kept outside the browser is also the way to hand me a save to debug.
