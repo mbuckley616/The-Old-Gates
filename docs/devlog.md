@@ -7101,3 +7101,14 @@ The picture shows the stone tier and the palisade, today, A and B, from the road
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): A (recommended), B, or C (not yet). The leaves never shut, since nothing closes a town's gate. The dressed-stone and fence tiers would follow A's stone and timber forms.
+
+## v80 — Session 274 — The cave mouth's maw as a hollow (H.5)
+Session 271's picture showed the cave mouth's maw as it always was: a dark box, 2 by 2.6 by 1.6, standing a little proud of the new rock. With the world's rocks round it, the maw is now a dark hollow: the upper quarter of a sphere, 2.1 wide and 2.4 high, its crown going .9 into the rock and its open face at the rock's front. It is drawn on both sides, so from the road you look into its inside, and it is an arch above the ground wherever the mouth stands. It keeps the old box's colour and place. The door behind it, the teeth, the torch and the colliders are unchanged. In the old zones (no world rocks) it stays the box.
+
+The first try was a whole half-sphere. At a mouth by the sea its lower half showed through the water, so it is a quarter now.
+
+### Verified (headless Chromium)
+`tests/cavedoor.test.mjs`, tightened: a mouth now has no tall box at all (it had one, the maw), with its twelve rocks and fifteen colliders as before. It passes. `docs/prototypes/cavedoor-ingame.png` is redrawn.
+
+### Needs eyes
+The maw at night with the torch lit, and whether the small wooden door behind it should come forward into the hollow, where it could be seen. It sat behind the old box too.

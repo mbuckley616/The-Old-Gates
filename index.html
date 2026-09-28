@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s252</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s253</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9075,7 +9075,7 @@ function spawnPortalMeshes(sc,portals,sol,getY){
      const slab=(ox,oy,w,ht,d,rz_,ry_)=>{const m=kitOK?new THREE.Mesh(kitRock(ht>2?'outcrop':'boulder',w*1.15,ht*1.05,d*1.1),kM):new THREE.Mesh(new THREE.BoxGeometry(w,ht,d),rM);m.position.set(p.x+ox,ty+oy+ht/2-.2,rz-.2+(rz_||0));m.rotation.z=ry_||0;m.rotation.y=(rr(ox*3|0)-.5)*.3;m.castShadow=true;sc.add(m);if(sol)sol.push({cx:m.position.x,cz:m.position.z,rx:w/2*.8,rz:d/2*.8});return m;};
      slab(-2.0,0,1.6,3.6,2.2,0,.18);slab(2.0,0,1.6,3.6,2.2,0,-.18);slab(-1.1,.3,1.2,2.8,1.8,.4,.35);slab(1.1,.3,1.2,2.8,1.8,.4,-.35);
      const brow=kitOK?new THREE.Mesh(kitRock('outcrop',5.6,1.3,2.6),kM):new THREE.Mesh(new THREE.BoxGeometry(5.2,1.1,2.4),rM);brow.position.set(p.x,ty+3.3,rz-.3);brow.rotation.z=(rr(11)-.5)*.08;brow.castShadow=true;sc.add(brow);
-     const maw=new THREE.Mesh(new THREE.BoxGeometry(2.0,2.6,1.6),dM);maw.position.set(p.x,ty+1.1,rz+.9);sc.add(maw);
+     const maw=kitOK?new THREE.Mesh(SK.ball(1,14,9,0,Math.PI,0,Math.PI/2),dM):new THREE.Mesh(new THREE.BoxGeometry(2.0,2.6,1.6),dM);if(kitOK){dM.side=THREE.DoubleSide;maw.rotation.x=-Math.PI/2;maw.scale.set(1.05,.9,2.4);maw.position.set(p.x,ty-.05,rz+.95);}else maw.position.set(p.x,ty+1.1,rz+.9);sc.add(maw); // S274 — with the world's rocks, the maw a dark rounded hollow in the rock face (a half-dome, its crown into the rock), not a box standing proud
      for(let i=0;i<6;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(.09+rr(20+i)*.08,.5+rr(30+i)*.5,5),rM);t.position.set(p.x-1.3+i*.52,ty+2.75-(.25+rr(40+i)*.25),rz+.55);t.rotation.x=Math.PI;sc.add(t);}
      for(let i=0;i<7;i++){const a=rr(50+i)*Math.PI*2,d2=3.2+rr(60+i)*2.6;const x=p.x+Math.cos(a)*d2,z=p.z+Math.sin(a)*d2;const sz=.35+rr(70+i)*.7;const bm=kitOK?new THREE.Mesh(kitRock(rr(95+i)<.3?'cluster':'boulder',sz*2.2,sz*1.5,sz*2),kM):new THREE.Mesh(new THREE.DodecahedronGeometry(sz,0),rM);bm.position.set(x,(_y?_y(x,z):ty)+sz*.5,z);if(kitOK)bm.rotation.set(0,rr(80+i)*6.28,0);else bm.rotation.set(rr(80+i)*3,rr(90+i)*3,0);bm.castShadow=true;sc.add(bm);if(sol)sol.push({cx:x,cz:z,rx:sz*.8,rz:sz*.8});}
      const gl=new THREE.PointLight(0x3a2a20,.6,7);gl.position.set(p.x,ty+1.2,rz+1.2);sc.add(gl);}

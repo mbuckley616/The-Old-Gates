@@ -16,7 +16,7 @@ const r = await page.evaluate(() => { const x = px + 400, z = pz + 30, grp = new
   return { kit, dodeca, bigBox, sol: sol.length, shot: o.toDataURL() }; });
 fs.writeFileSync('tests/out/cavedoor.png', Buffer.from(r.shot.split(',')[1], 'base64')); delete r.shot;
 console.log(JSON.stringify(r));
-check('a cave mouth\'s four slabs, brow and seven boulders are the world\'s rocks (12), with no dodecahedron or tall box left', r.kit === 12 && r.dodeca === 0 && r.bigBox <= 1, r);
+check('a cave mouth\'s four slabs, brow and seven boulders are the world\'s rocks (12), with no dodecahedron or tall box left (Session 274: the maw is a hollow, not a box)', r.kit === 12 && r.dodeca === 0 && r.bigBox === 0, r);
 check('its rocks stay solid as before (four slabs, seven boulders, the door)', r.sol >= 12, r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
