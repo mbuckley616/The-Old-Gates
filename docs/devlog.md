@@ -6436,3 +6436,35 @@ Neither change touches the game. Both tests now wait for nothing and depend on n
 
 ### Needs eyes
 Nothing to see. If CI goes red again on the next push, it is something else.
+
+## v80 — Session 234 — The Bog Crawler as a giant water bug (H.4, Michael's answer B on Session 225)
+Michael chose the giant water bug for the Bog Crawler (issue #25). It was the last creature in the open world still on a box-era body: the S130 flattened sphere on six stick legs.
+
+**What changed.** The water bug joins the spider's kit as a third kind (`SPIDER_KINDS['Bog Crawler']`, `bug:true`). The kit used to have one leg table for every kind. Now each kind can carry its own legs, with each leg's own reach, and its own body height: `spLegs`, `spH`, and `spiderFeet(k)` in place of the fixed `SPIDER_FEET`. The spider and the Sand Scorpion keep the old table and are unchanged. The water bug's shapes are the prototype's, baked to one skinned mesh:
+- a flat oval body narrowing to the head, with a pronotum and a head with a short dark beak;
+- two wing covers crossing at the tail, on the abdomen bone so they lift a little as it breathes;
+- pale flecks and moss on the back.
+
+Its bones:
+- **Forelegs.** The raptorial forelegs sit on the fang bones. Each has a new `hook` bone at the knee, and its hooked tibia folds shut on the femur about a hinge across the two (`BUG_ARM`).
+- **Walking legs.** It walks on the other four legs, placed by the spider's IK. The hind pair's tibias carry a flat paddle.
+
+That makes 18 bones and 4.8k triangles (2.3k for the distant copy).
+
+**How it moves.** The Session 225 note said "walked on alternating tripods". That was wrong for this body. The forelegs are held up and never walk, so the four walking feet step in diagonal pairs, L0 with R1 and R0 with L1. The spider's `SG.group` gives those pairs unchanged. Standing, the forelegs twitch a little. Through the wind-up it rises on its feet and the forelegs lift and swing wide open. On the strike it lunges and snaps them shut. Dead, its legs curl and the forelegs fold. Its numbers (26 health, 7 damage, speed, resistances, where it spawns) are unchanged. The old body stays in `zShapeExtra` behind a `!SPIDER_KINDS` guard, as the scorpion's does.
+
+The first render had the fold backwards: the hook's positive angle closed the leg instead of opening it. The test's reach measure caught it. The baked dark eyes also fought the glow mesh drawn in the same place, so the eyes are now the glow mesh alone, a dull olive.
+
+### Verified (headless Chromium)
+New `tests/crawler.test.mjs`, all 5 checks pass with no page errors:
+- One skinned mesh on 18 bones plus its eyes, shared by the kind with its own material. No box. Health, damage and shape unchanged.
+- The walking legs are never asked past their length through the walk, the run and the attack (worst 0.97 of the leg). The first try with the hind reach at .54 gave 1.03, so it is .5 now. The feet step in the diagonal pairs.
+- Planted feet do not move, walking (0 mm) or running (0 mm), and sit on the ground (0–0.1 mm). The swinging feet travel up to 50 mm a frame.
+- Measured from the femur's base, the claw's tip is 0.26 at rest, 0.47 at the top of the wind-up and 0.14 at the strike. Both sides agree to the millimetre, and it settles back to 0.26.
+- Dead, the forelegs fold and the body sinks 0.06.
+
+`tests/spiders.test.mjs`'s first check said the Bog Crawler keeps its old body. It now checks that the crawler is the bug's own bake. `spiders` and `scorpion` still pass. Pictures: `docs/prototypes/crawler-ingame.png` (a bandit, a spider, the bug standing and striking) and `crawler-ingame-close.png` (standing, and at the top of the wind-up).
+
+### Needs eyes
+- Whether the forelegs' wind-up reads as a threat at play distance or looks like a wave. They rise high: 0.42 above the femur's base at the top.
+- Whether the moss lumps on its back are too bright a green for a thing that hides in bog water.

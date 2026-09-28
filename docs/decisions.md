@@ -41,6 +41,8 @@ A boulder or an outcrop is 320 triangles and a cluster 1,280, against today's 72
 
 **Options:** (A) all three kinds, dressed by biome, mixed by the ground's own dice; (B) the boulder only, dressed by biome, in place of today's rock; (C) A, but the dressing only (moss, lichen, snow) and all rocks one grey stone; (D) not yet. **Recommendation: A.** The outcrops break up hillsides the way the trees now break up forests, and the clusters give the eye places to rest. Known faults to fix in the build: the outcrop's strata are faint from far off, and the lichen spots catch the light too brightly.
 
+## Answered
+
 ### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
 Your answer on the last box creatures (Session 214) was B: the Bog Crawler gets a six-legged crawler's body of its own, a beetle or a giant water bug, prototyped first. It lives in the fen and swamp, at a spider's size or a little over. Both prototypes are built in the game from the shape kit, in the fen's colours with moss on the back (`docs/prototypes/crawler/shoot.mjs`). Each picture has a bandit for scale and a spider for comparison.
 - **A. A great diving beetle**: a glossy olive-black dome split down the back with a bronze rim, a small head with short mandibles and antennae, and hind legs swept back like oars with a fringe of hairs.
@@ -52,8 +54,8 @@ Your answer on the last box creatures (Session 214) was B: the Bog Crawler gets 
 
 In the build, either one would be a new six-legged skeleton beside the spider's, walked on alternating tripods, with the spider's IK.
 
-
-## Answered
+Michael: **B** — the giant water bug. (28 Sep 2026, via the control room, issue #25)
+Done, Session 234: the water bug on the spider's kit, its forelegs raised on the fang bones with a hooked tibia that snaps shut on the strike, walking on the other four legs in diagonal pairs (`docs/prototypes/crawler-ingame.png`).
 
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Seven kinds of creature are still on the old box bodies. None of them is in a family you have approved, so here is how each would look. Each is built in the game from its own kits (`docs/prototypes/creatures3/shoot.mjs`), with a bandit beside it for scale.

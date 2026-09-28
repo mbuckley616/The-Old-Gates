@@ -10,10 +10,11 @@ const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
   const e = buildZoneEnemy(WORLD.scene, [], x, z, 'Spider', null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; window._S = e;
   const e2 = buildZoneEnemy(WORLD.scene, [], x + 3, z, 'Spider', null); window._S2 = e2; const r = e.limbs.wolf;
   let meshes = 0; e.mesh.traverse(c => { if (c.isMesh && !(c.userData && c.userData.hpBar)) meshes++; });
-  // S224: the Sand Scorpion is on the spider's kit now (tests/scorpion.test.mjs); the Bog Crawler still keeps its own body
-  const sc = buildZoneEnemy(WORLD.scene, [], x - 3, z, 'Bog Crawler', null); const scorp = !(sc.limbs && sc.limbs.wolf); sc.mesh.parent.remove(sc.mesh);
+  // S224: the Sand Scorpion is on the spider's kit now (tests/scorpion.test.mjs); S234: the Bog Crawler is a water bug on it
+  // (tests/crawler.test.mjs), so what stays checked here is that the spider's bake is not the bug's
+  const sc = buildZoneEnemy(WORLD.scene, [], x - 3, z, 'Bog Crawler', null); const scorp = !!(sc.limbs && sc.limbs.wolf && sc.limbs.wolf.k.bug && sc.limbs.wolf.mesh.geometry !== r.mesh.geometry); sc.mesh.parent.remove(sc.mesh);
   return { spider: !!r && r.spider, skinned: r.mesh.isSkinnedMesh, bones: r.mesh.skeleton.bones.length, meshes, tris: r.tris, trisLo: r.trisLo, shared: r.mesh.geometry === e2.limbs.wolf.mesh.geometry, ownMat: r.mesh.material !== e2.limbs.wolf.mesh.material, scorpionUnchanged: scorp }; });
-check('the spider is one skinned mesh on 28 bones plus its shining eyes, shared by its kind with its own material; the bog crawler keeps its body',
+check('the spider is one skinned mesh on 28 bones plus its shining eyes, shared by its kind with its own material; the bog crawler is its own bake',
   built.spider && built.skinned && built.bones === 28 && built.meshes === 2 && built.shared && built.ownMat && built.scorpionUnchanged && built.tris > 2500 && built.tris < 8000 && built.trisLo < built.tris * .65, built);
 
 // drive it along its facing; each foot in its stance (by the stride's own phase) must not move
