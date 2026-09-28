@@ -29,7 +29,8 @@ const town = await page.evaluate(() => { const found = []; for (const t of WORLD
       // across the ring along the road through the gate, and 1.5 either side of the road's middle
       for (let k = -8; k <= 8; k++) for (const o of [-1.5, 0, 1.5]) { const x = gt.x + rx * k * .5 - rz * o, z = gt.z + rz * k * .5 + rx * o; probes++; if (WORLD.solidAt(x, z)) blocked++; } }
     for (const lf of S.sol.filter(q => q.bt === 'gate' && q.rx > 1)) for (const h of S.sol) { if (h.bt === 'gate' || h.bt === 'wall' || h.c !== undefined) continue; if (Math.abs(lf.cx - h.cx) < h.rx && Math.abs(lf.cz - h.cz) < h.rz) leafInHouse++; }
-    out.push({ id: t.id, gates, open, gsol, probes, blocked, leafInHouse }); }
+    // the first gate's tier and place, kept here: the world may unload a town it did not need before the next step (it did on CI)
+    const g0 = S._gates[0]; out.push({ id: t.id, gates, open, gsol, probes, blocked, leafInHouse, first: { tier: g0.tier, gx: g0.x, gz: g0.z, tx: t.x, tz: t.z } }); }
   return out; });
 console.log(JSON.stringify(town));
 check('walled towns near the start are found', town.length > 0, town);
@@ -37,7 +38,7 @@ check('each gate adds its two jambs and two leaves to the town\'s colliders (a c
 check('the road through every gate is open (no collider within 1.5 of its middle for 4 either side of the wall)', town.every(t => t.blocked === 0), town);
 check('no leaf stands inside a house', town.every(t => t.leafInHouse === 0), town);
 // pictures: a stone gate and a timber one from the road outside at noon, with the town and its ground loaded
-const byTier = await page.evaluate(ids => { const out = {}; for (const id of ids) { const S = WORLD.settlements.get(id); const k = S._gates[0].tier; const f = k === 'stone' || k === 'dressed' ? 'stone' : 'timber'; if (!out[f]) out[f] = { id, tier: k, gx: S._gates[0].x, gz: S._gates[0].z, tx: S.site.x, tz: S.site.z }; } return out; }, town.map(t => t.id));
+const byTier = {}; for (const t of town) { const k = t.first.tier, f = k === 'stone' || k === 'dressed' ? 'stone' : 'timber'; if (!byTier[f]) byTier[f] = { id: t.id, ...t.first }; }
 if (!byTier.stone) { const far = await page.evaluate(() => { const c = WORLD.SITES.filter(t => t.pad && ['town', 'city', 'port'].includes(t.kind)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
   for (const t of c.slice(0, 16)) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); if (S && S._gates && S._gates.length && S._gates[0].tier && S._gates[0].tier !== 'fence' && S._gates[0].tier !== 'logs') return { id: t.id, tier: S._gates[0].tier, gx: S._gates[0].x, gz: S._gates[0].z, tx: t.x, tz: t.z }; } return null; });
   if (far) byTier.stone = far; }

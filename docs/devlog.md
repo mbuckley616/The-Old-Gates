@@ -7193,3 +7193,14 @@ Nothing run: no code changed.
 
 ### Needs eyes
 The DECISION.
+
+## v80 — Session 279 — The town gate suite read a town the world had dropped (CI fix, test only)
+CI failed on shard 4 at the Session 276 push, in `tests/towngate.test.mjs`. Every check had passed. Then the picture step asked `WORLD.settlements` for the first town's gate and got nothing: the world had unloaded the town between the two page steps, since it was generated for the test, not needed by the player. It is the Session 272 pattern again, a test holding on to a town across steps.
+
+The measuring step now records each town's first gate (tier, place, the town's centre) while the town is in hand, and the picture step works from that record. The game is unchanged, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`towngate` passes, with both pictures taken. The CI failure did not reproduce here; the change removes the dependence rather than waiting on it.
+
+### Needs eyes
+Nothing in the game.
