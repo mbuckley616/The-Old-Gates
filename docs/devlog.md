@@ -7112,3 +7112,28 @@ The first try was a whole half-sphere. At a mouth by the sea its lower half show
 
 ### Needs eyes
 The maw at night with the torch lit, and whether the small wooden door behind it should come forward into the hollow, where it could be seen. It sat behind the old box too.
+
+## v80 — Session 275 — The town gate itself (H.5)
+Michael chose A on Session 273's prototype: a gateway and open leaves. Where a road crosses a walled town's ring there were two gate towers and nothing between them. Now `townGateGeo` builds the gate there, one mesh with its old-style boxes as the distant copy, as the walls have:
+- **Stone and dressed stone:** an arch of seventeen voussoirs from jamb to jamb, the spandrels filled with coursed blocks, a wall-walk over the crown with a string course and merlons on its outer edge.
+- **Palisade and fence:** two round posts, a doubled timber lintel and two braces. The fence has no towers, so its posts stand 4 from the road's middle; its leaves are field gates, 1.3 high.
+- **In all four,** two plank leaves with iron bands and a brace, hinged by the jambs and standing open into the town. Nothing shuts them; that waits on a system that closes a town.
+
+The jambs and both leaves are solid. The arch leaves the road clear to 3.9 (stone) and 4.8 (dressed stone); the lintels are higher.
+
+**Two things were wrong once the gate stood.**
+- The towers were set along the ring's tangent at the wall segment's middle, not where the road crosses. That is up to 33 degrees askew. And roads cross the ring up to 49 degrees off the radial (Vieux Marché), so an arch along the ring put a jamb on the road. The gate and its towers now stand square to the road where it crosses, and the road runs straight through.
+- At one of Vieux Marché's three crossings a second road joins the first just inside the ring, and a jamb and a leaf fell on it. Where any jamb or leaf would stand on a road, that crossing keeps its open gap and its towers, as before. That was one crossing in the eight tested.
+
+### Verified (headless Chromium)
+New `tests/towngate.test.mjs`:
+- **The gate itself,** in all four tiers: 800 triangles for timber, 1,824 for stone, each with a distant copy and two leaves. The road is clear to at least 3.4. The leaves stand 4–5.3 into the town, and the stone gate's top is 6.7, under its towers.
+- **In La Porte Grise, Vieux Marché and Ironhaven** (all fence tier near the start): every built gate adds its four colliders. No point within 1.5 of the road's middle, 4 either side of the wall, is solid (408 probes). No leaf stands in a house.
+- **Pictures:** `docs/prototypes/towngate-ingame.png` shows Cœur de Vie's stone gate from the road at noon, and `towngate-ingame-timber.png` shows La Porte Grise's fence gate.
+
+`walls` and `townroads` pass. `townroads` failed twice on the way (the askew and the junction cases above) before the two fixes.
+
+### Needs eyes
+- The fence tier's gate: a tall timber frame over a knee-high fence may read as too much. A lower frame, or posts and leaves alone, would be the fallback.
+- The palisade's gate has not been seen in the game yet: none of the towns near the start is palisaded.
+- Whether a crossing left open beside a junction looks like a missing gate.
