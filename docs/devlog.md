@@ -5832,3 +5832,23 @@ The full suite locally: 48 of 49 passed; the 49th was `gait`, then fixed and pas
 
 ### Needs eyes
 The next `check` run on the PR: eight headless jobs, each green or red, not cancelled.
+
+## v80 — Session 265 — Every town in its own voice
+The quest review's first run (docs/quest_review.md, 28 Sep) found three sets of lines that broke the canon's register (§1.5: speech follows the speaker, not the province). Findings are applied as written, without a decision, and this session applies them:
+- **The guild heads** greeted in Markish in every hall. Session 172 gave them a people, a name from that people's bank and that people's body, but not their voice. `GUILD_GREET` now holds two lines for each hall and each of the four peoples. `guildDef` picks the row by the head's people, falling back to the Markish row, which is the old text.
+- **The halt** (`confront`, and `confrontIndoor` from Session 239, which is the same exchange) and **the yield** (`offerYield`) spoke Markish in every town. `HALT_LINES` and `YIELD_LINES` hold the review's lines, and `haltLines(S)`/`yieldLines(S)` pick them by `peopleOfSite(S.site)`, with Markish as the fallback. Every greeting and response goes through them: short of gold, paid, refused, the cells.
+
+Dunmore is Gatelander, so its watch now says *Stand a moment. There’s a fine of 25 gold owed in Dunmore, and it won’t pay itself…*. Two older tests matched the Markish words (*Halt*, *Yield*). They now match what every people's line shares (*fine of N gold*, *cells*). No test was removed.
+
+**Numbering.** This is Session 265, not 254. The look branch (auto/backlog) has already used Sessions 257–264, so a 254 here would have collided with them on merge. The tag is s265.
+
+### Verified (headless Chromium)
+New `tests/register.test.mjs`, 5 checks. All four peoples have both guild lines, and the Markish row is the old text. In Dunmore (Gatelander), by play:
+- the guard halts you with the Gatelander greeting; short of gold he gives the Gatelander *poor* line, and paying he gives *Paid is paid. Walk easy.* (gold 100 → 75);
+- refused, he answers *Then the sword, and Weaver forgive the both of us.*; at a fifth of health the yield is *A bent knee mends faster than a broken head. 50 gold…*;
+- the Fighters' and Mages' heads (Gráinne and Sorcha, both Gatelander) greet with the Gatelander rows.
+
+`crime3` and `guardsindoor` pass with their widened matches. No page errors.
+
+### Needs eyes
+An Aurennais or Markish town's watch, met in play: whether the four voices read as four peoples, and whether *Master* in a guard's mouth sits right.
