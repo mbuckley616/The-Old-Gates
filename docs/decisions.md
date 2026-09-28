@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Shading in the creases of the townsfolk — baked ambient occlusion (Session 243)
+Backlog H.1 still owes ambient occlusion in the shape kit. Today every part of a person is baked with its flat colour, so an armpit, the underside of a chin or beard, the inside of the thighs and the skin under a hat's brim are as bright as a cheek. The dungeon walls already darken in their corners (Session 189); the people do not. The prototype (`docs/prototypes/peopleao/shoot.mjs`) patches a copy of the game. After a person is baked, each part is stood in for by a few spheres along its length, and each vertex is darkened by the other parts in front of it, by at most half. This is worked out once per person, in the standing pose, into the colours they already carry, so it costs nothing per frame and adds no triangles. Each picture has two rows, today above and with the occlusion below:
+- Three people close, at noon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/peopleao-1.png
+- Three more close, at noon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/peopleao-2.png
+- All six at street distance, from behind, at 17h: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/peopleao-3.png
+
+Close up it gives the figures weight: the neck sits under the jaw, the arms stand off the body, and a hat shades the brow. At street distance it is hardly visible.
+
+**Options:** (A) this strength, for the townsfolk, the foes built on them and the player, then the same bake for the creatures and the houses in later sessions; (B) the same, but stronger (darker creases, visible at street distance); (C) not yet. **Recommendation: A.** It is free at run time and makes the close view, which is where you talk to people, less flat. B risks muddy faces. One known fault: it is worked out in the standing pose, so a raised arm keeps the shadow of an arm at its side. That is the usual price of a baked occlusion.
+
 ### Cloaks and hair that swing (Session 242)
 Backlog H.3 still owes "secondary motion (cloaks, hair)". Today a cloak is one stiff shell fixed to the back, and a plait or a tied tail is fixed to the head. They turn with the body and never move on their own. A cloak is worn by 60% of the Mark's townsfolk, 12% of the Gatelands' and 10% of Aurenne's. The prototype (`docs/prototypes/secondary/shoot.mjs`) builds a copy of the game with three extra bones. The cloak hangs from the shoulders in two halves, hinged at the middle so it bends. A plait, a warrior's back plait or a tied tail hangs from the nape. Each is a damped pendulum driven by how the body moves. It streams back with the pace, lags when you start, swings forward when you stop, swings out on a turn, and settles when you stand. Each picture has two rows, today above and the proposal below. The six columns are standing, walking, running, running through a turn to the left, just stopped, and settled.
 - A Markish woman with a dress, a cloak and a plait: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/secondary-1.png

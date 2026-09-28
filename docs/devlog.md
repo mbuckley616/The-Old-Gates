@@ -6502,3 +6502,16 @@ Each picture follows one person through a scripted run: standing for 1 s, walkin
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): A, the cloak and the back hair, for everyone who wears them (recommended); B, the cloak only; or C, not yet. The plaits' swing is small in the pictures, and the hinge shows a faint fold line when the cloak is bent hard. What only motion can judge is whether the cloak's lag at the start and stop reads as cloth or as a flap; a still picture cannot show that.
+
+## v80 — Session 243 — Shading in the townsfolk's creases: a prototype and a question (H.1, waiting on Michael)
+H.1's shape kit has owed ambient occlusion since Session 153. The dungeon shell bakes its own darkening at the foot of walls and in corners (Session 189), but a person is baked part by part with flat colours: an armpit, the underside of a beard, the inside of the thighs and the skin under a hat's brim are lit like a cheek. Whether the people should carry that shading, and how strongly, is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/peopleao/shoot.mjs`) patches a copy of the game in three places. The bake keeps each part's range of vertices. After the bake, `personAO` stands each part in by one to six spheres along its longest axis. A sphere's radius is the mean of the part's two shorter half-extents, so a plaited lobe is one sphere and a shin is several. Each vertex is then darkened by the spheres of every other part it faces, using the analytic sphere occlusion: the cosine from the normal to the sphere's centre, times r²/d² capped at 1, summed, times .75, and capped at a darkening of .5. A part never shades itself, so a head does not darken its own face. This is worked out once per bake, in the bind pose, into the colours the vertices already carry: no new triangles, no shader, nothing per frame.
+
+The first pictures framed six people in a row at an angle and cut the sixth off. The close pictures are now three people each, face on, and the third picture is all six from behind at street distance in the late afternoon.
+
+### Verified (headless Chromium)
+`node docs/prototypes/peopleao/shoot.mjs` renders `docs/prototypes/peopleao-1.png`, `-2.png` and `-3.png` with no page errors. A person's whole build with the occlusion took 5–10 ms, and 19 ms for the bearded Markishman with warrior braids (8,152 triangles, the most parts); the occlusion is one pass over about 2.2–4.1k vertices against about 150–400 spheres. Close up, the shading is visible under the jaw and beard, at the armpits and the waist, and under a hat's brim. At 8 units from behind, the two rows are hard to tell apart.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, this strength for the people and then the creatures and houses (recommended); B, stronger; or C, not yet. On a real screen, it would be worth judging whether the faces go muddy in shade at dusk. The bind-pose bake leaves a raised arm's shadow at the side.
