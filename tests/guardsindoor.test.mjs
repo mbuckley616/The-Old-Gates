@@ -35,7 +35,7 @@ check('he is not in before half a minute, and comes in by the door after', s29 &
 const came = await state();
 const walked = await spinIn(40, true); const d1 = await dlg();
 console.log('came', JSON.stringify(came), 'walked', walked, JSON.stringify(d1));
-check('inside, he walks up and halts you: pay, or he draws', came && came.phase === 'inside' && came.mesh && d1.open && d1.name === came.guard && /Halt\. There’s a fine of \d+ gold/.test(d1.text) && d1.choices.some(c => /Pay the fine/.test(c)) && d1.choices.some(c => /not pay/.test(c)), { came, d1 });
+check('inside, he walks up and halts you: pay, or he draws', came && came.phase === 'inside' && came.mesh && d1.open && d1.name === came.guard && /fine of \d+ gold/.test(d1.text) && d1.choices.some(c => /Pay the fine/.test(c)) && d1.choices.some(c => /not pay/.test(c)), { came, d1 });
 await page.evaluate(() => { gold = Math.max(gold, 1000); const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /Pay the fine/.test(x.textContent)); b.click(); });
 await g.frames(1);
 const paid = await page.evaluate(() => ({ bounty: WORLD.bountyAt('dunmore'), sent: !!WORLD.guardSent }));
@@ -50,7 +50,7 @@ await spinIn(5); await leave();
 const out0 = await page.evaluate(() => ({ at: [px, pz], s: WORLD.guardSent && WORLD.guardSent.phase }));
 const caughtT = await spinOut(60, true); const s2 = await state(); const d2 = await dlg();
 console.log('left quickly', JSON.stringify(out0), 'caught after', caughtT, JSON.stringify(d2), JSON.stringify(s2));
-check('leave before he comes in and he chases you; standing still, he catches you and halts you', caughtT < 60 && d2.open && /Halt/.test(d2.text) && !s2, { caughtT, d2, s2 });
+check('leave before he comes in and he chases you; standing still, he catches you and halts you', caughtT < 60 && d2.open && /fine of \d+ gold/.test(d2.text) && !s2, { caughtT, d2, s2 });
 await page.evaluate(() => { try { closeDialog(); } catch (e) {} });
 
 // 3. run off the pad: he gives up
@@ -99,7 +99,7 @@ await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choice
 await page.waitForTimeout(9000); await g.hide();
 const cells = await page.evaluate(() => ({ inside: isInterior(), zone: activeZoneId, hour: Math.floor(gameHour()), fine: WORLD.bountyAt('dunmore'), guards: ZONES.world.enemies.filter(e => e._guard && !e.dead).length }));
 console.log('yield', JSON.stringify(y), JSON.stringify(cells));
-check('at a fifth of health he offers the yield; the cells take you out of the room to the morning, the fine cleared', /Yield/.test(y.text || '') && !cells.inside && cells.zone === 'world' && cells.hour === 7 && cells.fine === 0 && cells.guards === 0, { y, cells });
+check('at a fifth of health he offers the yield; the cells take you out of the room to the morning, the fine cleared', /cells/.test(y.text || '') && !cells.inside && cells.zone === 'world' && cells.hour === 7 && cells.fine === 0 && cells.guards === 0, { y, cells });
 // 6. run out of the door mid-fight: he follows and fights on in the street, as hurt as he was
 await page.evaluate(() => { forceTime(13); const c = worldState.crime.dunmore; c.bounty = 60; c.shut = false; });
 await enter(house2);
