@@ -6580,3 +6580,21 @@ New `tests/bridges.test.mjs` drains the cell-loading job queue first (`WORLD.job
 
 ### Needs eyes
 The bridge in real light and fog, and whether the cutwaters read against the river's colour. The arches' height on a shallow river, where they flatten. Walking across: the deck is .03 above the old one and should not catch the feet. The wandering roads above: a reloaded road can move under you.
+
+## v80 — Session 249 — Town walls and gate towers in detail (H.5)
+The next structure under Michael's answer A on buildings. A town's wall comes in four tiers by its prosperity (`wallTierFor`): a fence below 45, a log palisade, stone from 65, and dressed stone from 85. Every tier was boxes. A ring of straight segments about 20 long was merged into one mesh at the town's centre: the fence two rails and a post, the palisade and the stone walls one box each with two to five crenel blocks on top. The gate towers were a 1.6 box (the palisade's) or an eight-sided cylinder under a cone. Each segment sat flat at the height of its middle, so on a slope one end floated and the other was buried.
+
+**Now** each segment is its own pair of meshes: the detail near, and today's boxes, in the segment's own frame, as the distant copy. The bake clusters them with the houses by place and `houseLod` swaps them at 70/80 units, the same as a house. Each segment reads the ground at its two ends. The fence and the palisade follow it post by post and log by log, and the stone tiers sink a footing below the lower end.
+- **Fence:** split posts every ~2.4, a little out of true, and two rails per bay following the ground. 536 triangles a segment.
+- **Palisade:** logs of varied height at .44 spacing with pointed tops, and two bracing rails on the inside. 1,128.
+- **Stone:** a plinth, then rubble courses of uneven height and mottled blocks laid broken-joint on a dark mortar core. It has buttresses on the outer face with sloped caps, and a parapet on the outer edge crenellated along the whole run (it had three blocks a segment). 1,608.
+- **Dressed stone:** pale ashlar in even courses, a string course, and a projecting crenellated parapet on a row of corbels. 2,340.
+- **Gate towers:** the palisade's is now an open timber watchtower: four posts, cross-braces, a planked lookout and a pyramid roof (552). The stone tiers' round tower is sixteen-sided with a battered foot, course bands, arrow slits, a corbelled top with eight merlons, and a slated cone in courses with a finial (1,380–1,476).
+
+A town's dice (`r`) are untouched: the new pieces roll on their own seed from the site's id and the segment. The collision (`sol`), the gates and the guards are as before. The gate is still a gap between two towers; an arch over the road would change what passes under it, so it is left.
+
+### Verified (headless Chromium)
+New `tests/walls.test.mjs`. On ground .8 above the middle at one end and .6 below at the other, every tier builds a vertex-coloured segment of the full 20 units that reaches below the lower end (−.9 to −1.1). None rises more than 1.3 above its old height, and all are under 4k triangles (536, 1,128, 1,608, 2,340). The towers are 552–1,476 triangles. La Porte Grise, the walled town near the start, bakes its detailed clusters (walls among them) paired with plain twins: shown from the town's middle, none shown from 600 units off. No page errors. `houses`, `lod` (the townsfolk's share of a Dunmore frame still under a tenth), `townroads`, `furniture`, `watch` and `wayfinding` pass unchanged. `docs/prototypes/walls-shot.mjs` renders `docs/prototypes/walls-ingame.png`. It rebuilds La Porte Grise at prosperity 50, 72 and 90 (palisade, stone and dressed stone), with the build before on the left and this one on the right, at noon, outside a gate at each tier and along the stone wall. The staged pictures from the test (`tests/out/walls-*.png`) are lit by a sky that is not ticked, so they are dim.
+
+### Needs eyes
+The walls at the swap distance: at 70–80 units the plain ring replaces the detail per cluster, and the crenels jump from three a segment to a dozen. The palisade's watchtower roofs take the stone style's tile red (`STYLE.stone.roof2`), as the old towers did; shingle might suit timber better. The buttresses stand a little paler than the wall face in low sun.
