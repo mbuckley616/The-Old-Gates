@@ -18,11 +18,16 @@ const r = await page.evaluate(() => {
   const ix = h.innX, iz = h.innZ; const toRoad = Math.hypot(h.exitX - ix, h.exitZ - iz) > Math.hypot(h.doorX - ix, h.doorZ - iz);
   line.u = .5; WORLD.tick(1 / 60, performance.now());
   const doorToStop = Math.hypot(h.doorX - line.cart.position.x, h.doorZ - line.cart.position.z), innToStop = Math.hypot(ix - line.cart.position.x, iz - line.cart.position.z);
-  return { key, name: h.name, keeper: h.keeper, len: Math.round(line.len), toRoad, doorCloserToStop: doorToStop < innToStop, doorToStop: +doorToStop.toFixed(1), innToStop: +innToStop.toFixed(1), board: h._board };
+  // the building itself: in the line's group, and solid (Session 239: a comment had swallowed both since 237)
+  const innMesh = line.group.children.find(o => o.isMesh && Math.hypot(o.position.x - ix, o.position.z - iz) < .5);
+  const fz = innMesh ? new THREE.Vector3(0, 0, 1).applyQuaternion(innMesh.quaternion) : null; const drawnGap = fz ? +Math.hypot(ix + fz.x * 3.4 - h.doorX, iz + fz.z * 3.4 - h.doorZ).toFixed(2) : null;
+  const solid = WORLD.solidAt(ix, iz);
+  return { key, built: !!innMesh, solid, drawnGap, name: h.name, keeper: h.keeper, len: Math.round(line.len), toRoad, doorCloserToStop: doorToStop < innToStop, doorToStop: +doorToStop.toFixed(1), innToStop: +innToStop.toFixed(1), board: h._board };
 });
 console.log(JSON.stringify(r));
 check('a coaching road was raised and its inn registered as a house', !!r.key && !!r.name, r);
 check('its door is on the road side, facing where the coach draws up', r.toRoad && r.doorCloserToStop, r);
+check('the building stands and is solid, and its drawn door is where the house\u2019s door is', r.built && r.solid && r.drawnGap != null && r.drawnGap < .1, { built: r.built, solid: r.solid, drawnGap: r.drawnGap });
 // walk to the door at noon and press E
 await page.evaluate(() => { forceTime(12); const h = _ci; px = h.exitX + (h.doorX - h.exitX) * .7; pz = h.exitZ + (h.doorZ - h.exitZ) * .7; jumpY = WORLD.worldH(px, pz); yaw = h.exitYaw + Math.PI; });
 await g.frames(3);

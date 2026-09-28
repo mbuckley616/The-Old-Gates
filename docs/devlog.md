@@ -5453,3 +5453,33 @@ The lines are few and plain; the quest writer may want them.
 
 ### Needs eyes
 The common room in play: three or four people in a 16 × 12 room with a gallery, and whether the driver's and travellers' lines sit in the canon's register. The travellers don't board the coach when it calls. They are there for the day, which is a simplification.
+
+## v80 — Session 239 — The guard comes in
+
+Michael answered issue #23 with **B**: *"The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player."* Before this, a keeper who saw you rob a shop put the fine on you, and no guard did anything while you stayed inside. The street's halt (*Halt. There's a fine…*) only ran when a guard was within five units of you out of doors, so you could finish and walk out. B was offered as two sessions. This is the first: the guard coming in, the chase, and the halt indoors. The fight indoors is the second.
+
+**What changed.**
+- **Sent.** When a crime indoors is seen and the town has put a fine on you (`seenCrime`), the nearest guard on duty is sent (`dispatchGuard`). A guard already sent to the same house isn't sent twice, so a picked strongbox and its theft make one errand.
+- **The clock.** The world's tick doesn't run indoors, so the errand keeps its own clock, advanced by both the world's tick and `tickInterior` (`tickSent`).
+- **Stay inside.** After half a minute, or after his walk to the door if that is longer (3 units a second), he comes in by the door, walks up and halts you with the street's words. *Pay the fine* clears it and he goes. *Not now* puts him off for the street's minute. *I'll not pay* is answered *Then outside. Walk.*: you are put out and he draws in the street, 1.8 units from the door. That is the street fight as it stands (yield, the cells), used until the next session builds a fight indoors.
+- **Leave first.** He is in the street where his walk had got him, and gives chase at 3 units a second by the town's streets (`townRoute`). If he catches you, the street halt runs as it always has. He gives up when you leave the town's pad, or after a minute and a half. Duck into another house with him within 20 units and he follows you in, in the time it takes him to reach that door.
+
+**A correction to Session 237.** When I turned the coaching inn to face the road, I appended a `//` comment to the middle of its line. That commented out `inn.castShadow=true;g.add(inn);STATIC_SOL.push(…)`, so since s237 the inn's building was neither drawn nor solid; you could walk into its door from nowhere. The test didn't look for the building. It does now, and the building is back. The same slip in this session's `confront` edit swallowed the street halt, and this session's test caught it. CLAUDE.md gains the gotcha: mid-line notes are `/* */`.
+
+### Verified (headless Chromium)
+New `tests/guardsindoor.test.mjs`, in Dunmore at 13h:
+- **A real theft.** A strongbox picked in the keeper's sight in *Clodagh's Goods* (fine 215) sends Róisín, a 33-second walk away. At 29 s she is not in. She comes in by the door, walks up, and the dialogue reads *Halt. There's a fine of 215 gold on you in Dunmore. Pay it, or I draw*, with pay, refuse and not now. Paying clears the fine and ends the errand.
+- **Leaving quickly.** Five seconds after being seen: she is in the street, gives chase, and halts you after 12.0 s standing still.
+- **Escaping.** Running off the pad: *Róisín gives up the chase*, and no halt.
+- **Ducking in.** Into another house with her 6 units behind: she follows you in; the errand is retargeted and she is inside 8 s later.
+- **Refusing indoors.** You are put out and a Town Guard draws in the street.
+- **Session 237's inn.** `coachinn.test.mjs` now checks the building: in the line's group, solid, with its drawn door 0.00 units from the house's door. The previous build had only the milestones in the group.
+- **Regressions.** `crime1`, `crime2`, `crime3`, `watch`, `theft` and `witness` pass. No page errors.
+
+### Needs eyes
+Being robbed and chased in play:
+- whether half a minute is the right grace indoors;
+- whether 3 units a second catches a walking player too easily or a running one never;
+- whether the guard walking up to you in a shop reads right.
+
+The indoor guard is the townsperson's body in the guard's colours. When refused he is not yet a fighter indoors; that is the next session.
