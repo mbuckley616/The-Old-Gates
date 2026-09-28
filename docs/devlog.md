@@ -6654,3 +6654,14 @@ Session 251's pictures found about sixty trees, bushes and rocks standing inside
 
 ### Needs eyes
 The trees in the stamp's blend band (46–80 from the door) were scattered on the old ground. Their ground is now blended towards the pad, so some may float or sink a little at the clearing's edge. A pale road runs through the fort's back wall; it was hidden by the trees before. That is the roads' (D). Fast travel into a town and a loaded save should now show clear pads where they sometimes had trees.
+
+## v80 — Session 253 — Signposts and name boards on the kit (H.5)
+Every town with a road in has a signpost at its edge and a name board beside each road in. Both were boxes. The signpost was a square post with a box arm and a four-sided cone point for each road, five or more meshes. The name board was two square posts and a flat board, three meshes. They are the first thing a traveller reads of a town, so they are the next small structure under Michael's answer A on buildings.
+
+**The signpost** (`signpostGeo`) is one vertex-coloured mesh. A round weathered post with a pointed cap stands in a little cairn of five rounded stones. Each arm is a plank .12 thick, extruded from an arrow-shaped outline so the point is part of the plank, and pegged to the post with an iron pin. The arms are at the old heights and bearings. **The name board** (`nameBoardGeo`) is one mesh: two round posts with pointed caps on stone footings, and a board with rounded edges inside a darker frame. The lettering stays the textured planes it was. The signpost's lettering moves in from .095 to .068 from the arm's centre, because the plank is thinner than the old .16 box; the name board's stays at .05 in front of a face at .04. The colliders are unchanged.
+
+### Verified (headless Chromium)
+New `tests/signposts.test.mjs`. A three-armed signpost is 404 triangles and 3.45 tall. Its arms reach their points at 1.72, and the plank faces lie at .060, inside the lettering at .068. My first version of that check measured nothing: the plank has vertices only at its ends, and I had looked in the middle. It now requires a face to be found. The name board is 304 triangles, with its face at .040 inside the lettering at .05. Hearthwick's signpost and name board, found by the builder's own placing, keep their colliders. No page errors. `wayfinding` and `pois` pass. `docs/prototypes/signposts-shot.mjs` renders `docs/prototypes/signposts-ingame.png`: Hearthwick's signpost and board before (top) and after (bottom), from two sides at noon. Between the two builds a tree near the signpost comes and goes. That is load order: roads can take different lines from run to run (Session 248's note), and trees keep off roads.
+
+### Needs eyes
+The lettering on the arms from a steep angle, now that the planks are thinner. Whether the cairn reads at walking distance or is lost in the grass.
