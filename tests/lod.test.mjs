@@ -125,5 +125,15 @@ const shR = await page.evaluate(() => { const rig = window._sr; rig.root.visible
 for (const k of ['hi', 'lo', 'none']) { fs.writeFileSync(`tests/out/lod-shadow-${k}.png`, Buffer.from(shR[k].split(',')[1], 'base64')); delete shR[k]; }
 check('the shadow from the distant copy: the shadow is there, another person\'s would show, and the copy changes under a tenth of the pixels the shadow itself does', shR.repeat.changed === 0 && shR.noShadow.changed > 40 && shR.otherPerson.changed > shR.distantShadow.changed && shR.distantShadow.changed < shR.noShadow.changed * .1, { subject: sh, ...shR });
 
+// S229 — the owed third tier (H.6: "past ~40 units if the frame time needs it"): from the town's centre, looking four ways,
+// what share of the frame's triangles are townsfolk past 40 units. Under a tenth, a third tier would save too little to be
+// worth a third bake; this check says when that changes.
+const far = await page.evaluate(() => { const out = []; const t = WORLD.siteAnywhere('dunmore'); forceTime(12);
+  for (const yw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) { px = t.x + 3; pz = t.z + 3; yaw = yw; pitch = -.05; CAM.position.set(px, WORLD.worldH(px, pz) + 1.6, pz); CAM.rotation.order = 'YXZ'; CAM.rotation.set(pitch, yaw, 0); CAM.updateMatrixWorld(true);
+    tickPeople(1 / 60, 9e5); const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(CAM.projectionMatrix, CAM.matrixWorldInverse)); let n = 0, tris = 0, near = 0;
+    for (const x of PEOPLE_RIGS) { if (x.root.parent !== WORLD.scene || !x.root.visible) continue; const p = new THREE.Vector3(); x.root.getWorldPosition(p); if (!fr.containsPoint(p)) continue; const d = p.distanceTo(CAM.position); if (d < 40) { near++; continue; } n++; tris += x.mesh.geometry === x.geoLo ? x.trisLo : x.tris; }
+    REN.info.autoReset = false; REN.info.reset(); REN.render(scene, CAM); const all = REN.info.render.triangles; REN.info.autoReset = true; out.push({ near, far: n, farTris: tris, all, share: +(tris / all).toFixed(3) }); }
+  return out; });
+check('townsfolk past 40 units are under a tenth of the frame\'s triangles in every direction from the town\'s centre (no third tier needed)', far.every(v => v.share < .1) && far.some(v => v.far > 0), far);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

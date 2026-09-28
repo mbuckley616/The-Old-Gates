@@ -6342,3 +6342,25 @@ The start area has 17 rocks loaded, all on today's 72-triangle shape. Counted fr
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): all three kinds by biome (recommended), the boulder only, the dressing only, or not yet.
+
+## v80 — Session 229 — The third level of detail: measured, not needed (H.6)
+H.6 owed "a third tier past ~40 units if the frame time needs it". I measured before building one.
+
+**The measurement.** Stand at Dunmore's centre at noon and look four ways. Count the townsfolk in view past 40 units and the triangles they cost (already their distant copies, per Session 159), against everything the frame draws. The start of this session's attempt got the ruler wrong: my first camera was outside the town, and saw townsfolk 300–570 units off and in far zones. Standing where `settle` puts you, in the square, with 69 townsfolk loaded:
+
+| looking | people past 40 | their triangles | the frame | share |
+|---|---|---|---|---|
+| north | 12 | 28,569 | 863,962 | 3.3% |
+| east | 17 | 39,317 | 931,211 | 4.2% |
+| south | 4 | 11,259 | 814,681 | 1.4% |
+| west | 5 | 12,935 | 797,547 | 1.6% |
+
+A third bake at a quarter of the segments would save roughly half of that: 1–2% of a frame. That is not worth a third geometry per person (memory, bake time on entering a town) or a third swap to tune. So nothing is built. The check stays in `tests/lod.test.mjs`, so the day the towns fill up and the share passes a tenth, the suite says so.
+
+**Seen once, not mine to fix here.** On the first run, Session 161's check "the shadow from the distant copy" failed. Its comparison image of another person's shadow changed no pixels, so the subject had no neighbour to compare with. The rerun passed. It depends on where the townsfolk happen to stand when it runs; if it recurs in CI it wants to place its own second person.
+
+### Verified (headless Chromium)
+`tests/lod.test.mjs` gains one check, and all 9 pass (on the second run; see above): townsfolk past 40 units are under a tenth of the frame's triangles in every direction from Dunmore's centre. The shares are 3.3%, 4.2%, 1.4% and 1.6%. No page errors. `index.html` is unchanged.
+
+### Needs eyes
+A frame-time check on a real laptop, which a headless software renderer cannot give. The triangle shares above say where the time would go, not how long it takes.
