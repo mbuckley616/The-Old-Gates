@@ -4,6 +4,13 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The weapon kit — swords, axes, maces, bows, staves and shields on the shape kit (Session 220)
+Every weapon in the game is still built from boxes: the player's in third person (`tpWeapon`, which calls itself "a later pass"). The foes carry the people's walking stick for a club, or a spear. This prototype (`docs/prototypes/weapons/shoot.mjs`) builds a kit: blades extruded from an outline with a bevel so they have an edge and a point, wrapped grips, guards and pommels, a bearded axe head, a flanged mace, a spiked war hammer, a gnarled staff with a crystal held in three prongs, a recurve bow on a curve with its string, a planked round shield with a rim and boss, and a kite shield with a boss. (The kite shield's first render had a cross on it; I took it off so it would not read as the Church's sign.)
+- Today's box weapons (top row) beside the kit (bottom row): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/weapons-lineup.png
+- In the hands, one weapon per kind of foe: a bandit with a sword and round shield, a highwayman with an axe, a deserter with a mace and kite shield, an archer with a bow, a rogue mage with a staff: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/weapons-hands.png
+
+**Options:** (A) the kit for everyone: the player's weapons in third person, and every foe armed by what it is (bandits and highwaymen swords or axes, deserters mace or spear with a shield, archers bows, mages staves, captains sword and shield, the dead rusted versions, trolls their maul); (B) the kit for the foes only, the player's weapons later with the first-person view; (C) the player's weapons only; (D) not yet. **Recommendation: A.** It is one kit, and the player's weapon names already say which shape to build. The foes' weapons would be looks only, with the damage they deal unchanged.
+
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Seven kinds of creature are still on the old box bodies. None of them is in a family you have approved, so here is how each would look. Each is built in the game from its own kits (`docs/prototypes/creatures3/shoot.mjs`), with a bandit beside it for scale.
 - **Ogre**: the people's body grown huge and fat (the troll's build, heavier), bald and ruddy, sometimes bearded, in a leather kilt, carrying a knotted tree-limb club. It lives in the open world. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures3-ogre.png

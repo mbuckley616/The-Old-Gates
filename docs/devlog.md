@@ -6102,3 +6102,25 @@ New `tests/wyrm.test.mjs`, 4 checks, all passing, no page errors:
 
 ### Needs eyes
 A dragon in a cavern's rooms: whether 5.6 units fits between the walls or clips them. The old box dragon reached further, so it should not be worse.
+
+## v80 — Session 220 — The weapon kit: a prototype and a question (H.4, waiting on Michael)
+Owed since the first foes went onto the people's body (Session 171): "their weapons (the gear kit's stick and spear stand in)". The player's weapons are boxes too. `tpWeapon` builds them from `BoxGeometry` and notes that "the weapon kit itself is a later pass". A weapon's look is a new look, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/weapons/shoot.mjs`) builds, in the game:
+- **Blades** (dagger, arming sword, longsword): each is an outline with a tapering point, extruded thin with a bevel, so the edge and the flat catch the light differently. Each has a wrapped grip (a leather core with cord turns), a rounded guard with finials and a pommel, in brass or steel.
+- **Axe**: a bearded head extruded with a bevel, on a haft with a socket.
+- **Mace**: six flanges round a steel head, with a spike.
+- **War hammer**: a rounded head, a back spike and a top spike.
+- **Staff**: a bumped, gnarled shaft, three prongs holding a crystal in a faint glow.
+- **Bow**: a recurve bow, the limbs a tube along a curve, with a leather grip and a string.
+- **Shields**: a round shield of five planks of varying tone with an iron rim and a domed boss; a kite shield with a bevelled edge, a boss and rivets.
+
+Two pictures: today's box weapons above the kit, and the kit in the hands of five foes (built empty-handed for the picture, with the kit on their gear and wrist bones).
+
+The first kite shield had a brass cross on its face. I replaced it with a boss and rivets, for the reason Session 201 changed the golem's rune.
+
+### Verified (headless Chromium)
+`node docs/prototypes/weapons/shoot.mjs` renders `docs/prototypes/weapons-lineup.png` and `weapons-hands.png` with no page errors.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): the kit for the player and every foe (recommended), for the foes only, for the player only, or not yet.
