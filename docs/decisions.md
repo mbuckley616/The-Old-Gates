@@ -41,6 +41,13 @@ Michael: **All three as shown** (A) (28 Sep 2026, via the control room)
 Michael: **All three kinds, dressed by biome** (A) (28 Sep 2026, via the control room)
 
 ### Combat — which shape should the fight take: tightened, Elden Ring's, or directional? (the designer, 2026-09-28)
+Today an enemy glows for 0.24–0.55 s and hits anyone within 1.4 units whichever way it faces, every enemy has one attack, there is no dodge, and nothing staggers you, so fights come down to swinging and stepping back. Which shape should the reimagined combat take, with damage from the weapon skill and enemies scaled by place? (Page: `docs/design/combat.md`.)
+- **A.** Tighten what is there: a roll (0.45 s, 2.6 units, 18 stamina), tells of 0.45–0.9 s read from the body's pose, enemy hits in an arc, a parry window from the Guard skill, and a posture bar the player can lose. Three Opus sessions.
+- **B.** Elden Ring's shape: A, plus swings that commit you (slowed during wind-up and strike, a three-hit chain), two to four attacks per enemy family (heavy, delayed, gap-closer), a riposte after a perfect parry and a finisher on a broken posture, and lock-on. One Fable and six Opus sessions, the move sets arriving with the creature passes.
+- **C.** Directional: the mouse picks one of four swings and a block must match the side. Nine or more sessions; most of the roster (wolves, spiders, trolls, the Faolchú) has no side to read.
+
+Recommendation: **B**, with A's three pieces built first. Move sets and commitment are what make counters punishing and the combat weighty; decide before the next creature families are built, so their attack poses follow the table.
+
 Michael: **Elden Ring's shape** (B) — "I like the idea of moving more towards Elden ring combat, but it’s a pretty fundamental change… as long as this is possible I’m up for it." (28 Sep 2026, via the control room)
 
 ### Occupation's effects from the canon — the League's duels and the Compact's tithe (systems builder, 2026-09-28, issue #37)
