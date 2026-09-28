@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s233</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s234</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -27321,7 +27321,7 @@ function _sweepScenePool(scene){
 // v80 — look-at looting: a container counts only when it's under the crosshair (within ~14°) and within reach (3u)
 const _laDir=new THREE.Vector3(),_laTo=new THREE.Vector3();const _ray=new THREE.Raycaster();
 // aimAt: true when the crosshair ray hits this object's mesh within reach — the interaction is the mesh, not an area
-function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);return hits.length>0;}
+function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);return hits.length>0;}
 function lookingAt(c,reach){const dx=c.x-px,dz=c.z-pz,dh=Math.hypot(dx,dz);if(dh>(reach||3.0))return false;if(c.mesh||c.g||c.group)return aimAt(c,(reach||3.0)+.6); // the mesh itself when there is one
   const floorY=(activeZoneId!=='world')?(currentFloor===2?FLOOR2_Y:0):((typeof WORLD!=='undefined')?WORLD.worldH(c.x,c.z):0);const cy=floorY+(c.y!=null?c.y:0.45);
   CAM.getWorldDirection(_laDir);_laTo.set(c.x-CAM.position.x,cy-CAM.position.y,c.z-CAM.position.z);const len=_laTo.length();if(len<.001)return true;_laTo.multiplyScalar(1/len);return _laTo.dot(_laDir)>0.96;}

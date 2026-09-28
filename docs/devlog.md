@@ -5344,3 +5344,15 @@ The critic's s158 run noted, under *Frame cost*, that every `forceTime` in Dunmo
 
 ### Needs eyes
 On the laptop: F9 at 17:59 → 18:00 on the first evening of a session, and again on the second. The first should show one long frame, the second nothing. How long that one frame is on a real GPU decides whether prewarming the creatures is worth a session.
+
+## v80 — Session 234 — Facing a townsperson who is talking
+
+Found while writing Session 235's test, which kept raising `Cannot read properties of null (reading 'matrixWorld')` from three.js's raycaster. When two townsfolk meet they each say a line in a bubble (`sayBubble`), a **Sprite** on the person's group for 3.2 s. `aimAt`, which decides whether you are looking at someone, casts a ray against the whole group. It never gave the raycaster a camera, and a Sprite's raycast reads the camera, so it threw. The main loop calls `aimAt` for the NPC prompt with nothing to catch it. Standing within reach and facing a townsperson who was mid-sentence threw on every frame, and each throw skipped the rest of that frame's loop: arrows and spells in flight, enemies' AI, footsteps, the music, the HUD, the minimap and the compass. The world's tick and the draw come earlier in the loop, so the picture kept moving while the HUD and any fight around you stood still. E still worked (`talkNPC` goes by distance), and the crosshair's check has its own `try`.
+
+**The fix**: `aimAt` sets `_ray.camera=CAM`. One assignment. The bubble now counts as part of the person, which is right: it hangs over their head.
+
+### Verified (headless Chromium)
+New `tests/aimbubble.test.mjs`, in Dunmore at noon: a villager with a bubble over their head, the player 1.3 units in front and facing them. This build: `aimAt` does not throw, four frames of the game's own loop raise no error, and E opens Niamh's dialogue. The previous build (Session 233's `index.html` through the same test): an error on every frame, dozens in four frames. No other page errors.
+
+### Needs eyes
+Nothing to judge; the HUD should simply never stall beside a chatting townsperson.
