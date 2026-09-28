@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s268</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s269</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -18952,7 +18952,7 @@ function interact(){
       // remaining keeper in the ruins). Falls through to normal lookup for
       // any other house interior (and in Ironhaven where ashenmoorBurned is
       // narratively true but the UI hasn't changed).
-      const _burned = worldState.ashenmoorBurned && activeZoneId==='overworld';
+      const _burned = worldState.ashenmoorBurned && (activeZoneId==='overworld'||(activeZoneId==='world'&&currentHouse&&currentHouse.siteId==='ashenmoor')); // S269 — and in the world's Ashenmoor
       const dlgData=(_burned && typeof SHOP_DIALOG_BURNED!=='undefined' && SHOP_DIALOG_BURNED[keeper])
                    ||SHOP_DIALOG[keeper]||IRONHAVEN_DIALOG[keeper];
       if(dlgData){const extra=(currentHouse&&currentHouse.type==='inn'&&currentHouse.dlg&&currentHouse.dlg._extra)?currentHouse.dlg._extra.filter(t=>/bed for the night/.test(t.label)):[];openDialog({...dlgData,name:keeper,topics:[...extra,...(dlgData.topics||[])]});} // v80 — the innkeeper lets rooms, authored or not
@@ -35132,6 +35132,7 @@ var WORLD=(()=>{
   function hourNow(){return (typeof gameHour==='function')?gameHour():12;}
   function npcInsideNow(house){
     const h=hourNow(),t=house.type;
+    if(house.siteId==='ashenmoor'&&storyRuin('ashenmoor')&&ASH_SURVIVORS.includes(house.keeper))return true; // S269 — Edna can't walk; Oswin won't leave
     if(t==='inn')return h>=6||h<2;
     if(t==='church')return h>=6&&h<21;
     if(t==='castle')return h>=8&&h<20;
@@ -35978,7 +35979,8 @@ var WORLD=(()=>{
       const type=shopTypes[i]||null;
       const isShop=!!type;
       let geo,solR;
-      if(TST&&(burnedV||abandonedV||(sackedV&&!isShop&&r()<.5))){ // a shell: black walls, no roof, nobody home
+      const standing=burnedV&&storyRuin(site)&&hero&&hero[i]&&ASH_SURVIVORS.includes(hero[i].keeper); // S269 — Edna's cottage and the oratory come through the burning
+      if(TST&&!standing&&(burnedV||abandonedV||(sackedV&&!isShop&&r()<.5))){ // a shell: black walls, no roof, nobody home
         const sh=buildingGeo(lot.w,lot.d,Object.assign({},st,{wall:burnedV?0x1a1614:0x6a665e,wall2:burnedV?0x120f0d:0x5a564e,roof:burnedV?0x0a0806:0x3a3632,roof2:0x0a0806,thatch:false,framed:false}),r,{chimney:false,twoStory:false,h:st.h*.8,rise:.2});const m=addMesh(sh,lot.x,lot.z,lot.ry,0);return;} // forEach: skip the rest of this lot
       if(!isShop&&TST&&r()<shutteredShare(site))lot._shuttered=true;
       if(type==='church')geo=churchGeo(lot.w,lot.d,st,r);
@@ -36069,7 +36071,8 @@ var WORLD=(()=>{
       const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz}};snpcs.push(kn);
     });
     {const innH=houses.find(h=>h.type==='inn');S.innDoor=innH?{x:innH.exitX,z:innH.exitZ}:null;snpcs.forEach(n=>{if(n.sched&&n.sched.type==='keeper')n.sched.inn=S.innDoor;});}
-    if(burnedV||abandonedV){S.dead=true;snpcs.length=0;S.npcs.forEach(n=>{});}
+    const clearDead=()=>{snpcs.forEach(n=>{sc.remove(n.g);sc.remove(n.dot);});snpcs.length=0;}; // S269 — out of the scene too, not only out of the list
+    if(burnedV||abandonedV){S.dead=true;clearDead();}
     if(TST)TST.builds.forEach((b,k)=>{if(b.done)return;const sx=cx+14+k*6,sz=cz-16;const y=worldH(sx,sz);const m=new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:-1.5,y:2,z:-1.5},{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:1.5,y:2,z:-1.5},{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:-1.5,y:2,z:1.5},{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:1.5,y:2,z:1.5},{geo:new THREE.BoxGeometry(3.4,.1,3.4),color:new THREE.Color(0x9a7a4a),y:2.2},{geo:new THREE.BoxGeometry(2.4,1.2,2.4),color:new THREE.Color(0x8a8478),y:.6}]),VC_MAT);m.position.set(sx,y,sz);group.add(m);sol.push({cx:sx,cz:sz,rx:1.8,rz:1.8});});
     // The town's lord: by the well through the day (cities' lords keep to the keep; the steward speaks for them)
     if(plan.rows>0&&(site.kind!=='city'||!houses.some(h=>h.type==='castle'))&&!site.lordless&&!burnedV&&!abandonedV){const lord=lordFor(site);const ldef=makeDef(site,reg,r,lord.title,lord.name,{keepName:true,nameKey:'lord',people:NAT.people,x:cx+3,z:cz-4,bCol:[0x6a2a2a,0x2a3a6a,0x4a3a1a][site.kind==='town'?1:2],sCol:0xd4a878,topics:lordTopics(site)});
@@ -36217,6 +36220,7 @@ var WORLD=(()=>{
       const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'c',x:cx-5,z:cz-3,bCol:0x3a3a48,sCol:0xb89878,role:'constable'});def.role='Guard';
       const cn=spawnNPC(def,0,true);cn.sched={type:'constable',a:{x:cx-6,z:cz-3},b:{x:cx+6,z:cz+3}};snpcs.push(cn);
     }
+    if(S.dead)clearDead(); // S269 — the villagers and the watch are drawn after the ruin's clearing (so the draws stay put): a ruin keeps nobody in the street
     S.reach=t_reach(sol,site);
     bakeSettlement(S);
     sc.add(group);
@@ -38840,6 +38844,18 @@ var WORLD=(()=>{
   function lampsLit(site){return prosperity(site)>=40;}
   function bannersUp(site){return prosperity(site)>=70;}
   function priceMul(site){const p=prosperity(site);return 1.18-p*.0035;} // buy prices: 1.15 at 10 → .83 at 100
+  // ═══ S269 — Q7 in the open world: Ashenmoor burns (Michael, issue #32: A) ═══
+  // Handing in Q6 ("Smoke. From Ashenmoor.") sets worldState.ashenmoorPending. From then the world's Ashenmoor is the
+  // war code's ruin, for good: burnt shells, nobody in the street, no lord; only Edna's cottage and Brother Oswin's
+  // oratory stand, with the two of them inside. Coming onto its pad is Q7's first step, as entering the legacy zone was.
+  const ASH_SURVIVORS=['Edna','Brother Oswin'];
+  function storyRuin(site){return !!site&&(site.id||site)==='ashenmoor'&&!!(worldState.ashenmoorPending||worldState.ashenmoorBurned);}
+  function tickAshenmoorStory(){if(!(worldState.ashenmoorPending||worldState.ashenmoorBurned))return;const t=siteAnywhere('ashenmoor');if(!t)return;
+    if(TS(t).flags.burned==null)flag(t,'burned',true);
+    if(worldState.ashenmoorPending&&!worldState.ashenmoorBurned&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-t.x,pz-t.z)<(t.pad||58)){
+      worldState.ashenmoorBurned=true;worldState.ashenmoorPending=false;
+      if(typeof addLog==='function')addLog('🔥','Ashenmoor has burned.');
+      if(typeof checkQuestProgress==='function')checkQuestProgress('enter_zone',{zone:'overworld'});}}
   // ── drivers, ticked once per game-day for loaded towns ──
   let _pDay=-1;
   function tickProsperity(){
@@ -38945,7 +38961,7 @@ var WORLD=(()=>{
   // ── what changes with the day ──
   function tickWorldSystemsDay(){try{tickWarDay();}catch(e){console.warn('war',e);}try{tickPortsDay();}catch(e){}try{tickPlagueDay();}catch(e){}try{tickCrimeDay();}catch(e){}
     // sacked and burned towns rebuild in a month
-    const day=dayNow();for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;for(const f of ['sacked','burned']){if(st.flags[f]!=null&&day-st.flags[f]/1440>=30&&st.p>=30)flag(t,f,false);}}}
+    const day=dayNow();for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;for(const f of ['sacked','burned']){if(f==='burned'&&storyRuin(t))continue;if(st.flags[f]!=null&&day-st.flags[f]/1440>=30&&st.p>=30)flag(t,f,false);}}}
   function roadBroken(a,b){const R=routes();const rt=R[routeKey(a.id,b.id)];if(rt&&rt.broken)return true;const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;return !!SITES.find(t=>t.kind==='bcamp'&&Math.hypot(t.x-mx,t.z-mz)<500&&!(worldState.lairs&&worldState.lairs[t.id]));}
   // ── investment and the deed ──
   const BUILDS=[{key:'well',name:'well',cost:120,p:6,min:0},{key:'inn',name:'inn',cost:400,p:10,min:30},{key:'chapel',name:'chapel',cost:500,p:8,min:35},{key:'walls',name:'walls',cost:900,p:8,min:45},{key:'guild',name:'guild hall',cost:1200,p:10,min:55},{key:'harbour',name:'harbour',cost:1500,p:12,min:50,port:true}];
@@ -39648,7 +39664,7 @@ var WORLD=(()=>{
     tickNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
     tickChatter(dt);
     ensureTaskWorldObjects();tickPickups();qTick();
-    tickHerbSync(dt);tickProsperity();tickRents();tickCaravans(dt);tickCoaches(dt);tickStory();tickSiteDeaths();tickVarek(dt);sweepLights();
+    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickCaravans(dt);tickCoaches(dt);tickStory();tickSiteDeaths();tickVarek(dt);sweepLights();
     tickCleared();
     tickDiscovery(dt);
   }

@@ -5922,3 +5922,29 @@ New `tests/constable.test.mjs`, 6 checks, in Portclare:
 
 ### Needs eyes
 A village by day with a fine on you: whether one man walking the plaza feels like enough law for a village, and whether he should rather keep to the road in.
+
+## v80 — Session 269 — Smoke from Ashenmoor
+Michael answered issue #32 with **A**. When Q6 is handed in, the world's Ashenmoor becomes the ruin variant the war code already has: burnt shells, no market. Edna and Brother Oswin stay; Bram's body lies at the forge; the Faolchú waits on the plaza until killed; and the ruin is permanent, as in the canon. This is the first of A's two sessions: the burning, who comes through it, and Q7's first step.
+
+**Before.** Handing in Q6 set `worldState.ashenmoorPending`, and Q7 went active. Only the legacy zone change read the flag, so in the open world nothing burned. Q7's first objective, *Return to Ashenmoor*, is an `enter_zone` for the legacy overworld, and it could never tick.
+
+**What changed.**
+- **The burning.** `tickAshenmoorStory` runs in the world tick. Once Q6 is in, it flags the world's Ashenmoor `burned`. That flag rebuilds the town as the Session 129 ruin: every lot a black shell, no roof, nobody home, no lord and no lamps. It happens wherever you are, so the ruin is there before you arrive. The 30-day wear-off that lets a burned town rebuild skips Ashenmoor once the story has burned it (`storyRuin`).
+- **The survivors.** Edna's cottage and the oratory (`ASH_SURVIVORS`) are built whole, as the legacy burned zone keeps them. Edna can't walk and Oswin won't leave, so they are inside at every hour (`npcInsideNow`).
+- **Edna's voice.** Her burned dialogue (`SHOP_DIALOG_BURNED.Edna`) was read only in the legacy zone. It is now also read in her world cottage.
+- **The arrival.** Coming onto Ashenmoor's pad outdoors marks the town burned for the story, as entering the legacy zone did. It logs *Ashenmoor has burned.* and fires Q7's `enter_zone`, so *Return to Ashenmoor* ticks and its journal text plays.
+
+**A fix on the way: a ruin kept people in its street.** The ruin variant took the town's people off its list but left their figures in the scene. Worse, the villagers of a village and its night men are drawn after that clearing, so a burned village still had four people walking its plaza: three villagers and Session 268's new constable. The clearing now removes the figures from the scene. It runs again after the last of them is drawn, so the draws before it stay where they were. This affects every burned or abandoned town, not only Ashenmoor.
+
+### Verified (headless Chromium)
+New `tests/ashenburn.test.mjs`, 7 checks:
+- **Before.** The living Ashenmoor has 15 people in the scene.
+- **Q6 handed in 400 units away.** Q6 is complete, Q7 active, and Ashenmoor is flagged burned before you arrive; *Return to Ashenmoor* has not ticked yet.
+- **Arriving at 14h.** The town is dead, with 0 people visible, 0 figures in the scene and no lord. The only houses are Edna's cottage and the oratory. *Return to Ashenmoor* is done (objectives `[1,0,0,0,0,0,0,0]`).
+- **Edna.** In her cottage at 23h she is home and speaks in her burned greeting.
+- **Later.** Forty game-days on, at prosperity 60, the ruin is still a ruin.
+
+`constable` passes. No page errors.
+
+### Needs eyes
+Walking into the burnt village for the first time. The next session puts the Faolchú on the plaza and Bram at his forge; until then Q7 stops at *Drive off the wolf-shape*, which nothing in the world can yet tick.

@@ -34,6 +34,7 @@ The main quest now runs from Q1 through Q6 in the open world (Sessions 236 and 2
 
 Recommendation: **A**. It keeps the story in the world you play, and the canon has Ashenmoor lost for good.
 Michael: **Ashenmoor burns in the world** (A) (28 Sep 2026, via the control room)
+Built, Session 269 (systems builder), the first of A's two sessions: handing in Q6 turns the world's Ashenmoor into the ruin for good (it never wears off). Only Edna's cottage and Brother Oswin's oratory stand, with the two of them inside, and Edna speaks as she does after the burning. Coming onto its pad is Q7's *Return to Ashenmoor*. The Faolchú on the plaza, Bram's body at the forge and the triage are the next session.
 
 ### Coach tickets — what does a ticket buy, and what does it cost? (systems builder, 2026-09-28, issue #31)
 Michael's answer on #24 (the coaching inn, B) included *tickets sold here*. The inn, the driver and the travellers are built (Sessions 237–238). Tickets are held back, because today every coach is **free to ride**. The player raised the road themselves (600 gold and up), so a ticket needs a rule.
