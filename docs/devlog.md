@@ -6437,7 +6437,7 @@ Neither change touches the game. Both tests now wait for nothing and depend on n
 ### Needs eyes
 Nothing to see. If CI goes red again on the next push, it is something else.
 
-## v80 — Session 234 — The Bog Crawler as a giant water bug (H.4, Michael's answer B on Session 225)
+## v80 — Session 236 — The Bog Crawler as a giant water bug (H.4, Michael's answer B on Session 225)
 Michael chose the giant water bug for the Bog Crawler (issue #25). It was the last creature in the open world still on a box-era body: the S130 flattened sphere on six stick legs.
 
 **What changed.** The water bug joins the spider's kit as a third kind (`SPIDER_KINDS['Bog Crawler']`, `bug:true`). The kit used to have one leg table for every kind. Now each kind can carry its own legs, with each leg's own reach, and its own body height: `spLegs`, `spH`, and `spiderFeet(k)` in place of the fixed `SPIDER_FEET`. The spider and the Sand Scorpion keep the old table and are unchanged. The water bug's shapes are the prototype's, baked to one skinned mesh:
@@ -6463,13 +6463,15 @@ New `tests/crawler.test.mjs`, all 5 checks pass with no page errors:
 - Measured from the femur's base, the claw's tip is 0.26 at rest, 0.47 at the top of the wind-up and 0.14 at the strike. Both sides agree to the millimetre, and it settles back to 0.26.
 - Dead, the forelegs fold and the body sinks 0.06.
 
-`tests/spiders.test.mjs`'s first check said the Bog Crawler keeps its old body. It now checks that the crawler is the bug's own bake. `spiders` and `scorpion` still pass. Pictures: `docs/prototypes/crawler-ingame.png` (a bandit, a spider, the bug standing and striking) and `crawler-ingame-close.png` (standing, and at the top of the wind-up).
+`tests/spiders.test.mjs`'s first check said the Bog Crawler keeps its old body. It now checks that the crawler is the bug's own bake. `spiders` and `scorpion` still pass. The whole suite ran as three shards side by side on this container's four cores: 52 of 54 suites passed. `pois` ("none": no tower, shrine, camp or glade found) and `townroads` (15 of thirty settlements) failed because the world's sites had not finished generating under that load. Run alone afterwards, both pass. Pictures: `docs/prototypes/crawler-ingame.png` (a bandit, a spider, the bug standing and striking) and `crawler-ingame-close.png` (standing, and at the top of the wind-up).
 
 ### Needs eyes
 - Whether the forelegs' wind-up reads as a threat at play distance or looks like a wave. They rise high: 0.42 above the femur's base at the top.
 - Whether the moss lumps on its back are too bright a green for a thing that hides in bog water.
 
-## v80 — Session 235 — What a picked herb leaves: a prototype and a question (H.5a, waiting on Michael)
+## v80 — Session 237 — What a picked herb leaves: a prototype and a question (H.5a, waiting on Michael)
+**Numbering.** This entry and the one before it were first written as Sessions 234 and 235, and their commits carry those numbers. The systems builder had already taken 234 and 235 on auto/systems a few minutes earlier, so they are now 236 and 237.
+
 The rest of section H is waiting on Michael: the rocks, the road coach and the shark, and the first-person weapon. So I took the plants' owed line from Session 167. A picked bush, sapling, shrub, bramble or bracket stump stays, bare, as Michael asked. The other seventeen kinds vanish outright and come back whole. What they should leave is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
 
 **The prototype** (`docs/prototypes/herbstub/shoot.mjs`) takes each kind's baked plant from `plantGeo` and builds two picked copies:

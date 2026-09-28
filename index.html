@@ -10496,7 +10496,7 @@ const SPIDER_KINDS={
   // S224 — the Sand Scorpion (Michael's answer B on Session 214, as shown): the spider's legs and gait in sand, a long flat
   // plated abdomen, two pincers on the fang bones, and a jointed tail on a bone of its own curling over the back to a sting
   'Sand Scorpion':{coat:0xb89a58,band:0x8a6e38,belly:0xd8c890,mark:0x6a5028,eye:0x202020,scorpion:true},
-  // S234 — the Bog Crawler, a giant water bug (Michael's answer B on Session 225): flat and oval, mud-brown with pale
+  // S236 — the Bog Crawler, a giant water bug (Michael's answer B on Session 225): flat and oval, mud-brown with pale
   // flecks, wing covers crossing at the tail, a short beak; the raptorial forelegs held up on the fang bones (a femur and
   // a hooked tibia that closes on it), and it walks on the other four legs in diagonal pairs, the hind pair paddles
   'Bog Crawler':{coat:0x4a4230,band:0x2a2418,belly:0x3a3424,mark:0x7a6a48,eye:0x7a8a38,bug:true,H:.12,
@@ -10506,10 +10506,10 @@ const SPIDER_KINDS={
 // + forwards), and the femur and tibia lengths
 const SPIDER_LEGS=[[.075,.085,.75,.22,.3],[.085,.03,.28,.24,.3],[.085,-.025,-.2,.23,.29],[.075,-.08,-.62,.25,.32]];
 const SPIDER_H=.2,SPIDER_REACH=.36;
-// S234 — each kind may carry its own legs ([x, z, rest angle, femur, tibia, reach]) and body height; the spider's by default
+// S236 — each kind may carry its own legs ([x, z, rest angle, femur, tibia, reach]) and body height; the spider's by default
 const spLegs=k=>(k&&k.legs)||SPIDER_LEGS,spH=k=>(k&&k.H)||SPIDER_H;
 const SPIDER_GEO=new Map();
-// S234 — the water bug's foreleg, from the fang bone (+x side; mirrored): the knee raised forward, the tibia folding back
+// S236 — the water bug's foreleg, from the fang bone (+x side; mirrored): the knee raised forward, the tibia folding back
 // and down to a hook; axis() is the fold's hinge, across the femur and the tibia
 const BUG_ARM={knee:[.14,.2,.12],tip:[-.08,-.12,.16],claw:[-.12,-.16,.12],
   axis:s=>new THREE.Vector3(s*.14,.2,.12).cross(new THREE.Vector3(-s*.08,-.12,.16)).normalize()};
@@ -10524,7 +10524,7 @@ function spiderSkeleton(k){
     const hip=bone('hip'+n,body,s*x,0,z);hip.rotation.y=s>0?-ang:Math.PI+ang;
     const fem=bone('fem'+n,hip,0,0,0);bone('tib'+n,fem,lf,0,0);}});
   if(k.scorpion)bone('tail',B.abd,0,.06,-.33); // S224 — appended last, so the spider's own bones keep their order
-  // S234 — a water bug's foreleg tibia: a bone at the knee that jack-knifes shut on the femur (the fang bone)
+  // S236 — a water bug's foreleg tibia: a bone at the knee that jack-knifes shut on the femur (the fang bone)
   if(k.bug)for(const [n,s] of [['L',1],['R',-1]])bone('hook'+n,B['fang'+n],s*BUG_ARM.knee[0],BUG_ARM.knee[1],BUG_ARM.knee[2]);
   return {bones,B,body};
 }
@@ -10546,7 +10546,7 @@ function spiderBakeQ(k,q){
   if(scor){part(SK.ball(.16,14,10),coat,B.abd,AC[0],AC[1]-.02,AC[2]-.02,true).scale.set(AB[0]/.16,AB[1]*.65/.16,AB[2]*1.12/.16);
     for(let i=0;i<5;i++)part(SK.ball(.1,12,6),band,B.abd,0,AC[1]+.052-Math.abs(i-2)*.006,-.03-i*.065,true).scale.set(1.35-Math.abs(i-2)*.12,.2,.34);}
   else if(!bug)part(SK.bumpy(SK.ball(.16,14,10),.011,17,2),coat,B.abd,AC[0],AC[1],AC[2],true).scale.set(AB[0]/.16,AB[1]/.16,AB[2]/.16);
-  // S234 — the water bug (the prototype's shapes, Session 225; its y less the body's height): a flat oval body narrowing
+  // S236 — the water bug (the prototype's shapes, Session 225; its y less the body's height): a flat oval body narrowing
   // to the head, the two wing covers crossing at the tail on the abdomen bone, the pronotum, the head and beak, pale
   // flecks and moss on the back (the eyes are the glow mesh, buildSpider); the forelegs on the fang bones and hook bones
   if(bug){const H=spH(k),mem=C(k.belly),pale=C(k.mark),moss=C(0x4a6a2a);
@@ -10588,7 +10588,7 @@ function spiderBakeQ(k,q){
     seg(B['tib'+n],lt*.62,.018,.013,coat,.003).position.x=0;
     const ta=seg(B['tib'+n],lt*.4,.012,.007,band,0);ta.position.x=lt*.6;
     part(SK.ball(.009,5,4),dark,B['tib'+n],lt,0,0);}});
-  // S234 — the water bug's walking legs: smooth, a dark knee, the hind pair's tibia a flattened paddle fringed pale
+  // S236 — the water bug's walking legs: smooth, a dark knee, the hind pair's tibia a flattened paddle fringed pale
   if(bug)spLegs(k).forEach(([x,z,ang,lf,lt],i)=>{for(const s of [1,-1]){const n=(s>0?'L':'R')+i,r=i?.026:.024;
     part(SK.ball(r*1.1,7,5),coat,B['hip'+n],0,0,0,true);seg(B['fem'+n],lf,r,r*.8,coat,0);
     part(SK.ball(r*.95,7,5),band,B['tib'+n],0,0,0);seg(B['tib'+n],lt,r*.8,r*.35,coat,0).position.x=0;
@@ -10641,7 +10641,7 @@ const SG={S:.16,D:.55,LIFT:.07,RUN:{S:.3,D:.4,LIFT:.1,on:1.6,off:1.2},
 SG.cycle=SG.S/SG.D;SG.RUN.cycle=SG.RUN.S/SG.RUN.D;
 const sgCycle=w=>{const a=w.walk||0,b=w.run||0;return a+b>.001?(a*SG.cycle+b*SG.RUN.cycle)/(a+b):SG.cycle;};
 // the rest foot of each leg in the body's frame, on the ground: out along its rest yaw by SPIDER_REACH
-// (S234: per kind, from its legs; a leg's own reach if it gives one. A water bug's four walking feet L0 R0 L1 R1 fall into
+// (S236: per kind, from its legs; a leg's own reach if it gives one. A water bug's four walking feet L0 R0 L1 R1 fall into
 // SG.group's diagonal pairs, L0 R1 and R0 L1)
 const SP_FEET=new Map();
 function spiderFeet(k){const legs=spLegs(k);let out=SP_FEET.get(legs);if(out)return out;out=[];
@@ -10661,7 +10661,7 @@ function sgStride(ph,t,G,K){G=G||SG;const h=G.S/2;const a=Math.PI*2*ph;
   return sgPose(feet,(G===SG?.012:.03)+.006*Math.cos(a*2),.05,.03*Math.sin(a*2),K);}
 // the attack: winding up, it rears, the front legs rising off the ground and the fangs spreading; the strike drops it forward
 function sgAttack(w,s,P,K){
-  // S234 — a water bug keeps its feet and rises a little on them, the forelegs opening wide, then lunges and snaps them shut
+  // S236 — a water bug keeps its feet and rises a little on them, the forelegs opening wide, then lunges and snaps them shut
   if(K&&K.bug){const q=sgPose(spiderFeet(K).map(()=>[0,0,-.03*w]),-.03*w*(1-s)+.03*s,.1+1.1*w*(1-s)-.5*s,-.12*w,K);const k=Math.min(1,Math.max(w,s));
     P.legs=P.legs.map((l,i)=>l.map((x,j)=>x+(q.legs[i][j]-x)*k));P.drop+=(q.drop-P.drop)*k;P.fang+=(q.fang-P.fang)*k;P.abd+=(q.abd-P.abd)*k;return P;}
   const feet=SPIDER_FEET.map(L=>L.i===0?[0,.2*w*(1-s)+.02*s,.06*w+.12*s]:L.i===1?[0,.05*w*(1-s),.03*s]:[0,0,-.03*w]);
@@ -10671,7 +10671,7 @@ function sgAttack(w,s,P,K){
 function sgDead(K){const LG=spLegs(K);return {legs:spiderFeet(K).map(L=>[L.s>0?-LG[L.i][2]:Math.PI+LG[L.i][2],-.5,-2.2]),drop:K&&K.bug?.06:.1,fang:K&&K.bug?-.5:.2,abd:-.1};}
 function sgApply(rig,P){const B=rig.B,K=rig.k;spiderFeet(K).forEach((L,k)=>{const [y,t1,t2]=P.legs[k];B['hip'+L.n].rotation.y=y;B['fem'+L.n].rotation.z=t1;B['tib'+L.n].rotation.z=t2;});
   B.body.position.y=spH(K)-P.drop;B.abd.rotation.x=P.abd;
-  // S234 — a water bug's fang is its foreleg: open raises the femur and swings the hooked tibia out; shut folds it in
+  // S236 — a water bug's fang is its foreleg: open raises the femur and swings the hooked tibia out; shut folds it in
   if(B.hookL){const o=P.fang;for(const [n,s] of [['L',1],['R',-1]]){B['fang'+n].rotation.set(-.5*o,0,0);B['hook'+n].quaternion.setFromAxisAngle(rig.hookAx[n]||(rig.hookAx[n]=BUG_ARM.axis(s)),-1.2*o);}}
   else{B.fangL.rotation.set(-P.fang*.4,0,P.fang);B.fangR.rotation.set(-P.fang*.4,0,-P.fang);}
   if(B.tail)B.tail.rotation.x=P.tail||0;}

@@ -1,5 +1,5 @@
 // node docs/prototypes/herbstub/shoot.mjs -> docs/prototypes/herbstub-*.png
-// Session 235: what a picked herb leaves (backlog H.5a, owed since Session 167). Today a picked bush, sapling, shrub,
+// Session 237: what a picked herb leaves (backlog H.5a, owed since Session 167). Today a picked bush, sapling, shrub,
 // bramble or bracket stump stays, bare (Michael's answer on Session 164); the other seventeen kinds vanish until they
 // regrow. Two proposals, built from the game's own baked plants (index.html is not changed):
 //   A. a stub: the plant cut near the ground (every triangle wholly under a cut height kept: stalk bases, the crown,

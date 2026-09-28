@@ -4,7 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### What a picked herb leaves behind (Session 235)
+### What a picked herb leaves behind (Session 237)
 Your answer on the plants (Session 164) was that picking leaves the plant: a picked bush, sapling, shrub, bramble or the fungus's stump stays, bare, and grows back. The other seventeen kinds vanish when you pick them, and reappear whole when they regrow: the mosses, the clay, the rosette, the cliff flower, the leafy herbs, the waterleaf, the broadleaf, the veilwort, the heartroot, the tussock, goldenrod, wolfsbane, the thistle, the fern and the mushrooms. The prototype (`docs/prototypes/herbstub/shoot.mjs`) builds two ways of leaving a mark from the game's own plants. Each picture has three rows: the whole plant at the back, then A, then B.
 - **A. A stub on turned earth.** The plant is cut near the ground: the stalk bases, the crown and the lowest leaves stay (under 4–9 cm, by the plant's height). A flat plant (a moss or a rosette) is torn, with about half left. It sits on a small patch of dark turned earth. It is 20–60% of the whole plant's triangles.
 - **B. Turned earth only.** The patch of earth, nothing else.
@@ -65,7 +65,7 @@ Your answer on the last box creatures (Session 214) was B: the Bog Crawler gets 
 In the build, either one would be a new six-legged skeleton beside the spider's, walked on alternating tripods, with the spider's IK.
 
 Michael: **B** — the giant water bug. (28 Sep 2026, via the control room, issue #25)
-Done, Session 234: the water bug on the spider's kit, its forelegs raised on the fang bones with a hooked tibia that snaps shut on the strike, walking on the other four legs in diagonal pairs (`docs/prototypes/crawler-ingame.png`).
+Done, Session 236: the water bug on the spider's kit, its forelegs raised on the fang bones with a hooked tibia that snaps shut on the strike, walking on the other four legs in diagonal pairs (`docs/prototypes/crawler-ingame.png`).
 
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Seven kinds of creature are still on the old box bodies. None of them is in a family you have approved, so here is how each would look. Each is built in the game from its own kits (`docs/prototypes/creatures3/shoot.mjs`), with a bandit beside it for scale.

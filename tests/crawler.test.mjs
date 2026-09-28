@@ -1,4 +1,4 @@
-// The Bog Crawler as a giant water bug (Session 234, Michael's answer B on Session 225): the spider's kit with legs of its
+// The Bog Crawler as a giant water bug (Session 236, Michael's answer B on Session 225): the spider's kit with legs of its
 // own, a flat oval body, wing covers and a beak; the raptorial forelegs held up on the fang bones, each with a hooked tibia
 // that opens through the wind-up and snaps shut on the strike; it walks on the other four legs in diagonal pairs.
 import { boot, check } from './lib/game.mjs';
