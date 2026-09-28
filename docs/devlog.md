@@ -7052,3 +7052,24 @@ New `tests/creatureao.test.mjs` bakes a wolf, a cave bear, a horse and a spider 
 
 ### Needs eyes
 Dark coats (the Dire Wolf, the Faolchú) may go too dark in their creases at dusk. The houses are the last part of the answer and are built by a different bake (`mergeParts` of whole boxes). The same idea there would darken walls under eaves and at the foot, which is a design of its own and left.
+
+## v80 — Session 271 — The cave doors' rock faces on the world's rocks (H.5)
+The cave doors' rock faces had waited on the rocks question since Session 254. Michael answered it (A, Session 264 built it), so they follow. A cave mouth in the open world (`spawnPortalMeshes`) was:
+- four box slabs leaning in either side;
+- a box brow across the top;
+- seven dodecahedron boulders scattered round;
+
+all in one theme tint.
+
+**Now** each is one of the world's fracture-cut rocks, fitted to its old box's size (a little larger, so the faces meet):
+- **The slabs:** outcrops for the two tall ones, boulders for the two short ones.
+- **The brow:** an outcrop stretched across.
+- **The boulders:** boulders, with about three in ten clusters.
+
+They keep the old places, lean and turn, and their colliders. The theme's tint lies over the stone's own colours, brought up to full brightness so it tints rather than darkens. The dark maw, the teeth under the brow, the door and its frame, the torch, the light and the mouth's dressing are unchanged, and so is the Old Gates' own dressing, which is the lore's. In the old zones, where the world's rocks are not to hand, the mouth keeps its boxes.
+
+### Verified (headless Chromium)
+New `tests/cavedoor.test.mjs` builds a mouth (an undead theme) at an empty spot. Its twelve rocks (four slabs, the brow, seven boulders) are the world's rocks, with no dodecahedron left and one tall box: the dark maw, as before. It keeps 15 colliders. No page errors. `pois` and `dungeon` pass. `docs/prototypes/cavedoor-ingame.png` is the test's mouth at noon; the pale pillars in front of it are the seed's dressing.
+
+### Needs eyes
+The mouths in their own themes (goblin green, elemental red, deep blue) in real light. The maw is still a dark box that stands a little proud of the rock; making it a hollow in the rock would be the next step.
