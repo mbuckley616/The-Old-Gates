@@ -4,6 +4,23 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The player's swings in third person — anticipation and follow-through (Session 245)
+Backlog H.3 still owes the player's swings, with anticipation and follow-through. This is third person only. Today the body's swing is three equal-ish parts, each a smoothstep: it winds up over the first 30%, strikes over the next 30% and eases back over the last 40%. Only the arm moves, besides a small turn of the torso. It does not follow the first person's own timing: in first person the wind-up runs to .44 of the swing, the hit lands at .55 and the follow-through runs to .79. The body's forehand is also a flat cut and its backhand a rising diagonal, where the first person shows two falling diagonals. (Session 244 fixed a bug by which the body always played the flat cut.)
+
+The prototype (`docs/prototypes/swings/shoot.mjs`) patches a copy of the game; `index.html` is unchanged. It keys the body to the first person's phases:
+- a wind-up that eases into a held coil: the torso turned away and the weight on the back foot;
+- a strike that speeds up into the hit, with a step of the front foot and the torso unwinding, the blade arriving at .55;
+- a follow-through that carries past the hit and slows;
+- then back to guard.
+
+It has the same three swings the first person shows: the forehand from high right to low left, the backhand from high left to low right, and the overhead chop. The arm eases faster during the swing, because the strike lasts only about 60 ms. Timing, damage and the first-person view are unchanged. Each picture has two rows, today above and the proposal below, across seven moments of one swing; the white line is the path of the weapon's point:
+- Forehand, sword and shield: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/swings-1.png
+- Backhand, sword and shield: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/swings-2.png
+- Overhead chop, sword and shield: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/swings-3.png
+- Two-handed power chop, claymore: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/swings-4.png
+
+**Options:** (A) as shown: the coil, the step and the carry, timed to the hit, with the first person's three swings; (B) timing only: today's poses moved onto the first person's phases, so the blade lands at the hit, and the swings matched, but no coil or step; (C) not yet. **Recommendation: A.** The brief puts weighty combat third, above look. Today the body's blade is still travelling at the moment of the hit, and the swing is done by the arm alone. A shows the weight going into the blow and lets you read the swing's direction. Known faults, in both rows: on a two-handed weapon the left hand does not stay on the hilt all the way through the swing; that is owed either way. Some swings bring the blade close to the head in the wind-up. Whether the coil's hold reads as weight or as a hitch only shows in motion.
+
 ### Shading in the creases of the townsfolk — baked ambient occlusion (Session 243)
 Backlog H.1 still owes ambient occlusion in the shape kit. Today every part of a person is baked with its flat colour, so an armpit, the underside of a chin or beard, the inside of the thighs and the skin under a hat's brim are as bright as a cheek. The dungeon walls already darken in their corners (Session 189); the people do not. The prototype (`docs/prototypes/peopleao/shoot.mjs`) patches a copy of the game. After a person is baked, each part is stood in for by a few spheres along its length, and each vertex is darkened by the other parts in front of it, by at most half. This is worked out once per person, in the standing pose, into the colours they already carry, so it costs nothing per frame and adds no triangles. Each picture has two rows, today above and with the occlusion below:
 - Three people close, at noon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/peopleao-1.png
