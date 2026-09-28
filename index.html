@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s242</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s243</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -27699,6 +27699,8 @@ function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.worl
 // v80 — step back into a saved place once the world around its door exists
 function _reenterPlace(W,tries){tries=tries||0;try{
   if(W.kind==='house'){const houses=(ZONES.world&&ZONES.world.houses)||[];let hs=houses.find(x=>x.id===W.id);
+    // S243 — a save from before house ids followed their lots can name another building: the door it was saved behind decides
+    if(W.door&&W.door.x!=null&&!W.parent){const at=h=>Math.hypot(h.exitX-W.door.x,h.exitZ-W.door.z);if(!hs||at(hs)>1){const b=houses.find(h=>h.exitX!=null&&at(h)<.5);if(b)hs=b;}}
     if(!hs&&W.parent){const p=houses.find(x=>x.id===W.parent);if(p&&typeof WORLD!=='undefined'&&WORLD.cellarFor)hs=WORLD.cellarFor(p);}
     if(!hs){if(tries<60){if(typeof WORLD!=='undefined')WORLD.tick(1/60,performance.now());setTimeout(()=>_reenterPlace(W,tries+1),100);}else showMsg('The door you saved behind has moved on. You are outside it.','#c8b880');return;}
     window._pendingPos={x:W.x,z:W.z,yaw:W.yaw,jumpY:W.jumpY};goToInterior(hs);return;}
@@ -35799,7 +35801,7 @@ var WORLD=(()=>{
   // ── Generator ────────────────────────────────────────────────────────
   function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
-    const r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();const _innNames=new Set(); // S172 — names unique within the town where the bank allows
+    let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();const _innNames=new Set(); // S172 — names unique within the town where the bank allows
     const reg=site.reg||REGISTER[dominantRegion(site.x,site.z).r.id]||'irish'; // the cell's culture
     const biome=dominantRegion(site.x,site.z).r.biome;
     const [ni,nj]=cellOf(site.x,site.z);const _ts=worldState.towns&&worldState.towns[site.id];const NAT=(_ts&&_ts.flags.occupied!=null&&NATIONS[_ts.occupier])?NATIONS[_ts.occupier]:nationOf(ni,nj); // v80 S129 — an occupied town flies the occupier's colours
@@ -35811,7 +35813,6 @@ var WORLD=(()=>{
     const pad=site.pad;
     const cx=site.x,cz=site.z;
     if(POI_KINDS.includes(site.kind)){buildPoi(S,site,r);S.reach=t_reach(sol,site);bakeSettlement(S);sc.add(group);houses.forEach(h=>ZONES.world.houses.push(h));if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;SETTLE.set(site.id,S);return S;}
-    const placed=[]; // {x,z,rad}
     function addMesh(geo,x,z,ry,solR){
       const m=new THREE.Mesh(geo,SETTLE_MAT);m.position.set(x,worldH(x,z)-.06,z);m.rotation.y=ry||0;m.castShadow=true;m.receiveShadow=true;group.add(m);
       if(solR)sol.push({cx:x,cz:z,rx:solR,rz:solR});
@@ -35824,7 +35825,6 @@ var WORLD=(()=>{
     // nearest street. `paths` collects ribbon polylines drawn at the end.
     const paths=[];
     const streets=ROADS.filter(rd=>(rd.def.a===site.id||rd.def.b===site.id)&&rd.def.via!=='spur');
-    const lots=[];
     const LOT_STEP=site.kind==='city'?11:plan.rows>1?12:site.kind==='village'?11:14, LAT_GAP=1.2;
     const gridKinds={town:1,city:1,garrison:1,village:1,port:1};
     const useGrid=!!gridKinds[site.kind];
@@ -35850,81 +35850,95 @@ var WORLD=(()=>{
       // a perimeter lane every street runs into (no dead ends in a field)
       {const ring=[];const n=Math.max(24,Math.round(inner/3));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2;ring.push({x:cx+Math.cos(a)*inner,z:cz+Math.sin(a)*inner});}paths.push({w:2.2,pts:ring});}
     }
-    // Candidate lots along a line direction (dx,dz) through (px,pz): both sides.
-    function lotsAlong(px_,pz_,dx,dz,extent,latBase,rowsN){
-      const nx=-dz,nz=dx;
-      for(let t=-extent;t<=extent;t+=LOT_STEP){
-        const mx=px_+dx*t,mz=pz_+dz*t;
-        if(Math.hypot(mx-cx,mz-cz)>inner)continue;
-        for(let row=0;row<rowsN;row++)for(const side of [-1,1]){
-          const w=5+Math.floor(r()*3),d=4+Math.floor(r()*3);
-          const lat=latBase+LAT_GAP+row*(9.5+LAT_GAP);
-          const lx=mx+nx*side*(lat+d/2),lz=mz+nz*side*(lat+d/2);
-          const dc=Math.hypot(lx-cx,lz-cz);
-          if(dc>inner-4||dc<13)continue;
-          const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
-          // keep clear of every street line (grid) — not in an intersection
-          let nearStreet=false;
-          for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;const dist=Math.abs(ex*(-l.dz)+ez*l.dx);if(dist<Math.max(w,d)/2+2.2&&!(Math.abs(l.dx-dx)<1e-6&&Math.abs(l.dz-dz)<1e-6&&Math.abs(ex*(-l.dz)+ez*l.dx-0)<1e-3)){/* different line too close */ if(!(l.px===px_&&l.pz===pz_&&l.dx===dx&&l.dz===dz))nearStreet=true;}}
-          if(nearStreet)continue;
-          const rad=Math.max(w,d)/2+2.0;
-          if(placed.some(p=>Math.hypot(p.x-lx,p.z-lz)<p.rad+rad))continue;
-          const ry=Math.atan2(-nx*side,-nz*side);
-          placed.push({x:lx,z:lz,rad});
-          lots.push({x:lx,z:lz,w,d,ry,tx:-nx*side,tz:-nz*side,row,street:{px:px_,pz:pz_,dx,dz}});
+    // v80 S243 — the lots as a function of prosperity, so that a house's id follows its lot. A rebuild at another
+    // prosperity (fewer lots; the guild halls gone below 60) used to hand every id in the town to another building, and
+    // your own house (worldState.owned is keyed by id) with it. Ids are now the lot's place in the town's layout at its
+    // starting prosperity with no builds paid for, which is the layout every existing id was given in.
+    const TST=(site.kind in BASE_P)?TS(site):null;const burnedV=!!(TST&&TST.flags.burned!=null),sackedV=!!(TST&&TST.flags.sacked!=null),abandonedV=!!(TST&&TST.flags.abandoned!=null);
+    function planLots(P,withBuilds){const r=rngFor(site.c*31+7,site.r*17+3);const placed=[],lots=[];
+      // Candidate lots along a line direction (dx,dz) through (px,pz): both sides.
+      function lotsAlong(px_,pz_,dx,dz,extent,latBase,rowsN){
+        const nx=-dz,nz=dx;
+        for(let t=-extent;t<=extent;t+=LOT_STEP){
+          const mx=px_+dx*t,mz=pz_+dz*t;
+          if(Math.hypot(mx-cx,mz-cz)>inner)continue;
+          for(let row=0;row<rowsN;row++)for(const side of [-1,1]){
+            const w=5+Math.floor(r()*3),d=4+Math.floor(r()*3);
+            const lat=latBase+LAT_GAP+row*(9.5+LAT_GAP);
+            const lx=mx+nx*side*(lat+d/2),lz=mz+nz*side*(lat+d/2);
+            const dc=Math.hypot(lx-cx,lz-cz);
+            if(dc>inner-4||dc<13)continue;
+            const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
+            // keep clear of every street line (grid) — not in an intersection
+            let nearStreet=false;
+            for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;const dist=Math.abs(ex*(-l.dz)+ez*l.dx);if(dist<Math.max(w,d)/2+2.2&&!(Math.abs(l.dx-dx)<1e-6&&Math.abs(l.dz-dz)<1e-6&&Math.abs(ex*(-l.dz)+ez*l.dx-0)<1e-3)){/* different line too close */ if(!(l.px===px_&&l.pz===pz_&&l.dx===dx&&l.dz===dz))nearStreet=true;}}
+            if(nearStreet)continue;
+            const rad=Math.max(w,d)/2+2.0;
+            if(placed.some(p=>Math.hypot(p.x-lx,p.z-lz)<p.rad+rad))continue;
+            const ry=Math.atan2(-nx*side,-nz*side);
+            placed.push({x:lx,z:lz,rad});
+            lots.push({x:lx,z:lz,w,d,ry,tx:-nx*side,tz:-nz*side,row,street:{px:px_,pz:pz_,dx,dz},k:lots.length});
+          }
         }
       }
-    }
-    if(useGrid){
-      streetLines.forEach(l=>{const half=Math.sqrt(Math.max(0,inner*inner-((l.px-cx)*(l.px-cx)+(l.pz-cz)*(l.pz-cz))));if(half>8)lotsAlong(l.px,l.pz,l.dx,l.dz,half,1.6,plan.rows);});
-    } else {
-      // villages: lots along the road samples, both sides, wide spacing
-      streets.forEach(rd=>{
-        const pts=rd.pts;let acc=LOT_STEP;
-        for(let i=1;i<pts.length;i++){
-          const a=pts[i-1],b=pts[i];const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
-          const dc=Math.hypot(mx-cx,mz-cz);if(dc>inner||dc<12){acc=LOT_STEP;continue;}
-          acc+=Math.hypot(b.x-a.x,b.z-a.z);if(acc<LOT_STEP)continue;acc=0;
-          const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1;
-          lotsAlong(mx,mz,dx/L,dz/L,0,ROAD_BLEND-1,plan.rows);
-        }
-      });
-    }
-    // Ring lots around the plaza if still short.
-    const hero0=heroShops(site);
-    const TST=(site.kind in BASE_P)?TS(site):null;const burnedV=!!(TST&&TST.flags.burned!=null),sackedV=!!(TST&&TST.flags.sacked!=null),abandonedV=!!(TST&&TST.flags.abandoned!=null);
-    const want=Math.max(Math.round((plan.n[0]+Math.floor(r()*(plan.n[1]-plan.n[0]+1)))*(TST?lotFactor(site):1)),(hero0?hero0.length:plan.shops.length)+2);
-    for(let k=0;k<40&&lots.length<want;k++){
-      const ang=r()*Math.PI*2,rad0=18+r()*Math.max(8,inner-30);
-      const lx=cx+Math.cos(ang)*rad0,lz=cz+Math.sin(ang)*rad0;
-      const w=5+Math.floor(r()*3),d=4+Math.floor(r()*3);
-      const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
-      let nearStreet=false;for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;if(Math.abs(ex*(-l.dz)+ez*l.dx)<Math.max(w,d)/2+2.2)nearStreet=true;}
-      if(nearStreet)continue;
-      const rad=Math.max(w,d)/2+2.0;
-      if(placed.some(p=>Math.hypot(p.x-lx,p.z-lz)<p.rad+rad))continue;
-      const tx=(cx-lx),tz=(cz-lz),L=Math.hypot(tx,tz)||1;
-      placed.push({x:lx,z:lz,rad});
-      lots.push({x:lx,z:lz,w,d,ry:Math.atan2(tx/L,tz/L),tx:tx/L,tz:tz/L,row:0,street:null});
-    }
-    lots.sort((a,b)=>Math.hypot(a.x-cx,a.z-cz)-Math.hypot(b.x-cx,b.z-cz));
-    // Shops: nearest lots to the centre get the shops; hero rosters override.
-    const hero=heroShops(site);
-    let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5)]; // hero towns get guild halls too
-    if(TST&&!hero)shopTypes=shopsFor(site,shopTypes);
-    if(TST){TST.builds.forEach(b=>{if(!b.done)return;if(b.key==='inn'&&!shopTypes.includes('inn'))shopTypes.push('inn');if(b.key==='chapel'&&!shopTypes.includes('church'))shopTypes.push('church');if(b.key==='guild'&&!shopTypes.includes('guild_f'))shopTypes.push('guild_f');});}
-    // Size shop lots by type first, then drop any later lot that overlaps an
-    // earlier one (shops come first, so churches/keeps keep their room).
-    lots.forEach((lot,i)=>{const t=shopTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.w=13;lot.d=11;}});
-    const kept=[];
-    lots.forEach(lot=>{const rad=Math.max(lot.w,lot.d)/2+2.0;if(Math.hypot(lot.x-cx,lot.z-cz)>inner-Math.max(lot.w,lot.d)/2-1)return; // whole footprint inside the ring
-      if(kept.some(k=>Math.hypot(k.x-lot.x,k.z-lot.z)<Math.max(k.w,k.d)/2+2.0+rad))return;kept.push(lot);});
-    const use=kept.slice(0,Math.max(want,0)); // homes fill whatever the shops don't
-    // ports: the shipwright gets its own lot at the quay head, door toward the quay
-    if(site.kind==='port'&&site.quayStart){const si=shopTypes.indexOf('shipwright');const sd=shoreDir(site);
-      if(si>=0&&sd){const q=site.quayStart;const lx=site.shipwrightLot?site.shipwrightLot.x:q.x-sd.dx*9-sd.dz*11,lz=site.shipwrightLot?site.shipwrightLot.z:q.z-sd.dz*9+sd.dx*11;const tx=-(-sd.dz),tz=-(sd.dx);
-        const lot={x:lx,z:lz,w:7,d:6,ry:Math.atan2(tx,tz),tx,tz,row:0,street:null,two:true};
-        shopTypes.splice(si,1);shopTypes.unshift('shipwright');use.unshift(lot);}}
+      if(useGrid){
+        streetLines.forEach(l=>{const half=Math.sqrt(Math.max(0,inner*inner-((l.px-cx)*(l.px-cx)+(l.pz-cz)*(l.pz-cz))));if(half>8)lotsAlong(l.px,l.pz,l.dx,l.dz,half,1.6,plan.rows);});
+      } else {
+        // villages: lots along the road samples, both sides, wide spacing
+        streets.forEach(rd=>{
+          const pts=rd.pts;let acc=LOT_STEP;
+          for(let i=1;i<pts.length;i++){
+            const a=pts[i-1],b=pts[i];const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+            const dc=Math.hypot(mx-cx,mz-cz);if(dc>inner||dc<12){acc=LOT_STEP;continue;}
+            acc+=Math.hypot(b.x-a.x,b.z-a.z);if(acc<LOT_STEP)continue;acc=0;
+            const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1;
+            lotsAlong(mx,mz,dx/L,dz/L,0,ROAD_BLEND-1,plan.rows);
+          }
+        });
+      }
+      // Ring lots around the plaza if still short.
+      const hero0=heroShops(site);
+      const want=Math.max(Math.round((plan.n[0]+Math.floor(r()*(plan.n[1]-plan.n[0]+1)))*(TST?lotFactor(site,P):1)),(hero0?hero0.length:plan.shops.length)+2);
+      for(let k=0;k<40&&lots.length<want;k++){
+        const ang=r()*Math.PI*2,rad0=18+r()*Math.max(8,inner-30);
+        const lx=cx+Math.cos(ang)*rad0,lz=cz+Math.sin(ang)*rad0;
+        const w=5+Math.floor(r()*3),d=4+Math.floor(r()*3);
+        const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
+        let nearStreet=false;for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;if(Math.abs(ex*(-l.dz)+ez*l.dx)<Math.max(w,d)/2+2.2)nearStreet=true;}
+        if(nearStreet)continue;
+        const rad=Math.max(w,d)/2+2.0;
+        if(placed.some(p=>Math.hypot(p.x-lx,p.z-lz)<p.rad+rad))continue;
+        const tx=(cx-lx),tz=(cz-lz),L=Math.hypot(tx,tz)||1;
+        placed.push({x:lx,z:lz,rad});
+        lots.push({x:lx,z:lz,w,d,ry:Math.atan2(tx/L,tz/L),tx:tx/L,tz:tz/L,row:0,street:null,k:lots.length});
+      }
+      lots.sort((a,b)=>Math.hypot(a.x-cx,a.z-cz)-Math.hypot(b.x-cx,b.z-cz));
+      // Shops: nearest lots to the centre get the shops; hero rosters override.
+      const hero=heroShops(site);
+      let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5)]; // hero towns get guild halls too
+      if(TST&&!hero)shopTypes=shopsFor(site,shopTypes,P);
+      if(TST&&withBuilds){TST.builds.forEach(b=>{if(!b.done)return;if(b.key==='inn'&&!shopTypes.includes('inn'))shopTypes.push('inn');if(b.key==='chapel'&&!shopTypes.includes('church'))shopTypes.push('church');if(b.key==='guild'&&!shopTypes.includes('guild_f'))shopTypes.push('guild_f');});}
+      // Size shop lots by type first, then drop any later lot that overlaps an
+      // earlier one (shops come first, so churches/keeps keep their room).
+      lots.forEach((lot,i)=>{const t=shopTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.w=13;lot.d=11;}});
+      const kept=[];
+      lots.forEach(lot=>{const rad=Math.max(lot.w,lot.d)/2+2.0;if(Math.hypot(lot.x-cx,lot.z-cz)>inner-Math.max(lot.w,lot.d)/2-1)return; // whole footprint inside the ring
+        if(kept.some(k=>Math.hypot(k.x-lot.x,k.z-lot.z)<Math.max(k.w,k.d)/2+2.0+rad))return;kept.push(lot);});
+      const use=kept.slice(0,Math.max(want,0)); // homes fill whatever the shops don't
+      // ports: the shipwright gets its own lot at the quay head, door toward the quay
+      if(site.kind==='port'&&site.quayStart){const si=shopTypes.indexOf('shipwright');const sd=shoreDir(site);
+        if(si>=0&&sd){const q=site.quayStart;const lx=site.shipwrightLot?site.shipwrightLot.x:q.x-sd.dx*9-sd.dz*11,lz=site.shipwrightLot?site.shipwrightLot.z:q.z-sd.dz*9+sd.dx*11;const tx=-(-sd.dz),tz=-(sd.dx);
+          const lot={x:lx,z:lz,w:7,d:6,ry:Math.atan2(tx,tz),tx,tz,row:0,street:null,two:true,k:'sw'};
+          shopTypes.splice(si,1);shopTypes.unshift('shipwright');use.unshift(lot);}}
+      return {r,use,shopTypes,hero,lots};}
+    const PL=planLots(TST?prosperity(site):0,true);const use=PL.use,shopTypes=PL.shopTypes,hero=PL.hero;r=PL.r;
+    {const base=TST?planLots(baseProsperity(site),false).use:use;const at=new Map();base.forEach((l,i)=>at.set(l.k,i));
+      const idOf=l=>`g_${site.id}_${at.has(l.k)?at.get(l.k):1000+(typeof l.k==='number'?l.k:0)}`;
+      // every lot this build could use, in order; your own house is never dropped for want of lots nor given to a shop
+      const all=PL.lots;all.forEach(l=>l.id=idOf(l));use.forEach(l=>l.id=idOf(l));
+      const mine=l=>ownedHouse(l.id);
+      all.forEach(l=>{if(mine(l)&&!use.some(u=>u.k===l.k)&&!use.some(u=>Math.hypot(u.x-l.x,u.z-l.z)<Math.max(u.w,u.d)/2+2+Math.max(l.w,l.d)/2+2))use.push(l);});
+      const nS=shopTypes.length;for(let i=0;i<Math.min(nS,use.length);i++){if(!mine(use[i]))continue;const j=use.findIndex((u,k)=>k>=nS&&!mine(u));if(j<0)break;const o=use[i];use[i]=use[j];use.splice(j,1);use.push(o);}}
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
@@ -35945,7 +35959,7 @@ var WORLD=(()=>{
       solR=Math.max(lot.w,lot.d)/2*.85;
       const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
       // rotated footprint (settleSolid understands {c,s} rotated rects)
-      sol.push({cx:lot.x,cz:lot.z,rx:lot.w/2+.15,rz:lot.d/2+.15,c:Math.cos(lot.ry),s:Math.sin(lot.ry),bt:type||'home',hid:`g_${site.id}_${i}`,sh:lot._shuttered?1:0}); // v80 S138 — the map colours it by type
+      sol.push({cx:lot.x,cz:lot.z,rx:lot.w/2+.15,rz:lot.d/2+.15,c:Math.cos(lot.ry),s:Math.sin(lot.ry),bt:type||'home',hid:lot.id,sh:lot._shuttered?1:0}); // v80 S138 — the map colours it by type
       // footpath: door → the street/road it faces
       {
         const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
@@ -35961,7 +35975,7 @@ var WORLD=(()=>{
         const exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
         const rdef=makeDef(site,reg,r,'Villager',resident,{x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
         rdef.roleTag=rdef.role;rdef.role='Villager';
-        const hh={id:`g_${site.id}_${i}`,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:`${rdef.name}'s House`,keeper:rdef.name,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
+        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:`${rdef.name}'s House`,keeper:rdef.name,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
         if(lot._shuttered){hh.shuttered=true;hh.name=`${rdef.name}'s House (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
@@ -35976,7 +35990,7 @@ var WORLD=(()=>{
       if(type==='inn')_innNames.add(name);
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
-      const house={id:`g_${site.id}_${i}`,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};
+      const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};
       houses.push(house);
       { // wall lantern by the door (glow only)
         const lx=doorX+lot.tx*.25+lot.tz*1.05,lz=doorZ+lot.tz*.25-lot.tx*1.05,ly=worldH(doorX,doorZ)+2.05;
@@ -38723,13 +38737,14 @@ var WORLD=(()=>{
   const BASE_P={village:45,town:60,city:75,port:65,garrison:55,outpost:35};
   function TS(site){const T=worldState.towns||(worldState.towns={});const id=typeof site==='string'?site:site.id;if(!T[id]){const kind=typeof site==='string'?'village':site.kind;const h=String(id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);T[id]={p:Math.max(10,Math.min(95,(BASE_P[kind]||45)+(h%21)-10)),flags:{},builds:[],t:worldState.gameTimeAbsMinutes||0};}return T[id];}
   function prosperity(site){return TS(site).p;}
+  function baseProsperity(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);return Math.max(10,Math.min(95,(BASE_P[site.kind]||45)+(h%21)-10));} // S243 — what TS() starts a town at
   function favor(site){const F=worldState.favor||(worldState.favor={});return F[typeof site==='string'?site:site.id]||0;}
   function addFavor(site,n){const F=worldState.favor||(worldState.favor={});const id=typeof site==='string'?site:site.id;F[id]=(F[id]||0)+n;return F[id];}
   function setProsperity(site,p,why){const st=TS(site);const old=st.p;st.p=Math.max(0,Math.min(100,Math.round(p)));if(Math.abs(st.p-old)>=12&&SETTLE.has(site.id||site)){disposeSettlement(site.id||site);} }
   function flag(site,name,on){const st=TS(site);if(on)st.flags[name]=worldState.gameTimeAbsMinutes||0;else delete st.flags[name];if(SETTLE.has(site.id||site))disposeSettlement(site.id||site);}
   // what the generator reads
-  function lotFactor(site){const p=prosperity(site);return .35+.65*(p/100);}                     // 35%–100% of the plan
-  function shopsFor(site,list){const p=prosperity(site);const order={forge:0,goods:10,inn:20,apothecary:30,church:35,armoury:45,shipwright:40,guild_f:60,guild_m:60,keep:80,castle:80};return list.filter(t=>p>=(order[t]==null?0:order[t]));}
+  function lotFactor(site,P){const p=P!=null?P:prosperity(site);return .35+.65*(p/100);}                     // 35%–100% of the plan
+  function shopsFor(site,list,P){const p=P!=null?P:prosperity(site);const order={forge:0,goods:10,inn:20,apothecary:30,church:35,armoury:45,shipwright:40,guild_f:60,guild_m:60,keep:80,castle:80};return list.filter(t=>p>=(order[t]==null?0:order[t]));}
   function shutteredShare(site){const p=prosperity(site);return p<35?.5:p<50?.25:0;}
   function wallsAllowed(site){return prosperity(site)>=55||TS(site).flags.threatened!=null;}
   function lampsLit(site){return prosperity(site)>=40;}

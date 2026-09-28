@@ -5577,3 +5577,37 @@ New `tests/reader.test.mjs`. The clock is shifted through `localStorage`, which 
 ### Needs eyes
 - Varek's three lines in real play: the breath after a real night away, and the map after a first fast travel.
 - Old characters will now load with their real day count. A save made before this build has its true `gameTimeAbsMinutes` in it, so the first load can jump the day forward. Favour recovery and the keepers' refusals then catch up at once. That is correct, but it may surprise.
+
+## v80 — Session 243 — The house that moved
+
+Section I is clear and every open decision is still waiting (#31, #32, #37). This session took backlog F's one owed watch, *a place that fails to regenerate (a house id that changed)*, and settled it headless.
+
+**What was checked first.** A save made inside each kind of place, then a page reload and Continue: a home, a forge, the inn, the inn's cellar, the Fighters' Guild and the church in Dunmore, a POI tower (Cnocmore Spire) and a bought ship's cabin. All eight came back in the same room at the same spot. So nothing fails at a steady prosperity.
+
+**What was wrong.** A house's id was its index among the lots a build used (`g_dunmore_14`). A town rebuilds when its prosperity moves twelve points, a flag changes (war, plague) or a paid building finishes. At another prosperity it keeps a different number of lots, and the guild halls' large lots come and go at 60. That shifted every lot after them. Dunmore at 61 rebuilt at 48 put every one of its 50 ids on another building (49 moved, the 50th changed type), and all 36 homes landed on another lot. Carraig Mór rising from 56 to 69 did the same to all 44 of its ids. Anything keyed by id followed the wrong building:
+- **Your own house.** `worldState.owned` is keyed by id. An owned home in Dunmore, after a fall to 35, stood 97 units across town, and the farthest one owned was gone.
+- **A save made inside a house.** It named an id that could now be another building.
+- **Strongbox, picked-door and refused-trade records.** These are keyed by id too.
+
+**What changed.**
+- **Lots are planned apart from the build.** `genSettlement` now plans its lots in `planLots(P, withBuilds)`, on its own copy of the town's random stream. Each lot remembers the order it was made in.
+- **An id belongs to a lot.** It is the lot's index in the town's layout at its starting prosperity (`baseProsperity`, the value `TS()` gives a new town) with nothing paid for. A lot that only a richer town uses gets an id from 1000 up. At the starting prosperity that is exactly the old id. Across six towns (161 houses) every id, type, name and door is the same as the previous build, so fresh worlds, their interiors, their houses for sale and their prices are unchanged.
+- **Your house is never given away.** It is never handed to a shop when the town grows, and never dropped when it shrinks.
+- **Older saves.** `_reenterPlace` trusts the door a save was made behind over its id when the two disagree.
+
+**Not fixed.** An owned house bought before this build, in a town whose prosperity had already moved from its start, is keyed by an old index that now means its lot at the starting layout. Without the old layout there is nothing to map it back by. Townsfolk's names still change when their town rebuilds at another prosperity: Dunmore 61 → 48 renames 49 of 57 houses, because names are drawn from the same stream after the lots. Keeping them would change every name in existing worlds, so it is left owed rather than done quietly.
+
+### Verified (headless Chromium)
+New `tests/placesave.test.mjs`, eleven checks, all pass:
+- **Prosperity swings.** Dunmore, Carraig Mór, Portclare and Colman's Rest were each rebuilt at their prosperity ±13 and ±26. No id lands on another lot (lot centres to 0.01), and ids stay unique. The only doors that shift (2 to 3.5 units) belong to a lot whose building changed size, such as a guild hall that became a forge, on the same centre.
+- **An owned house.** The Dunmore home nearest the centre, one in the middle and the farthest were each owned in turn, with the town rebuilt at 87, 35 and 16. Each is still *Your House*, a home, 0.00 units from its door. Without ownership the farthest lot isn't used below 61, and the middle one isn't used at 16.
+- **Saves by place.** Saved in the home, the forge, the inn, its cellar, the guild and the church, then reload and Continue: the same id, name and spot for each.
+- **Saving mid-rebuild.** Saved in a home as the town fell 13 behind you: back in the same house, behind the same door.
+- **A save that names the wrong id.** It comes back behind the door it was made behind.
+- **The previous build, through the same checks.** Both swing checks fail there. Dunmore at 48 moved 49 of its 50 ids, and the owned homes moved 97, 29 and 107 units or vanished.
+- **Build time.** Dunmore's median build is 215 ms on both builds.
+- **Regressions.** `saves`, `reader`, `interiors`, `locks`, `crime1`, `crime3`, `names`, `wayfinding`, `shophours`, `coachinn`, `theft`, `intnpcs`, `watch` and `guardsindoor` pass. No page errors.
+
+### Needs eyes
+- A town you own a house in, through a war or a plague. The house should stay where you bought it.
+- The renamed townsfolk after a rebuild, and whether that is worth fixing at the cost of today's names.
