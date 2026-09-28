@@ -7175,3 +7175,21 @@ The player never wears a cloak: `tpBuild` sets `cloak:false`, and there is no cl
 
 ### Needs eyes
 The player's braid in third person at a run and at a sudden turn, which moves the nape sideways faster than any townsperson turns.
+
+## v80 — Session 278 — The black sail and the merchantman's hulls: a question (H.5b, waiting on Michael)
+The boats line has owed this since Session 168: "the black sail and the merchantman on the larger hulls (they stay 13 long because boarding places the crew by that length)". I read `spawnOtherShip` and `crewUp`, and the constraint no longer holds:
+- **The crew:** the three pirates stand 3 apart along the middle of the deck, which fits any hull.
+- **The deck:** the platform comes from `shipPlatBox` with the ship's own length and width.
+
+So the change itself would be small: build the mesh at the class's length and give the ship the class's `L` and `W`. Which hull each ship gets is a look and a fight, though, and Michael approved the looks, not their sizes. The Session 165 prototype already drew both looks on each candidate hull (`docs/prototypes/boats-others.png`), so the question goes with that picture:
+- **A:** the merchantman on the cog, the pirate staying on the sloop (recommended).
+- **B:** the pirate on the galleon as well.
+- **C:** neither.
+
+`index.html` is unchanged.
+
+### Verified (headless Chromium)
+Nothing run: no code changed.
+
+### Needs eyes
+The DECISION.
