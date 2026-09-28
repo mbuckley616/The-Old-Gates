@@ -6676,3 +6676,21 @@ New `tests/camps.test.mjs` drains the loader and casts rays down at the three ca
 
 ### Needs eyes
 The tents' gables are single-sided, so they cannot be seen from inside a tent, as with the bandit camp's. Whether a blanket on the grass reads as a bed to sleep in.
+
+## v80 — Session 255 — A town's works under way, on the kit (H.5)
+When you pay for a work in a town (a wall, a harbour, a watch), the town shows it being built until it is done, one site for each unfinished work beside the plaza. It is the one thing on the ground that says your money went somewhere, which is the brief's first feeling: decisions with consequences you can see. It was four square posts, a slab across them, and a grey block.
+
+**Now** (`buildSiteGeo`) it is a building site, one vertex-coloured mesh.
+- **Scaffold:** round poles, a little out of true, lashed with rope at two heights. Ledgers run between them and diagonal braces cross each side.
+- **Deck:** five planks on the scaffold, with a ladder leaning against its edge.
+- **The wall going up:** five courses of rounded blocks laid broken-joint. Each course is shorter than the one below, so the top steps down to one end.
+- **Materials:** a stack of cut stone beside it and a pile of timber.
+- **Hoist:** a gin pole with a pulley, its rope and a stone on the hook.
+
+It keeps the old footprint (a 3.4 square, with the ladder's foot at 2.19 from the middle), the collider (1.8) and the place. It rolls its own seed from the town and the work's number, so the town's dice are untouched.
+
+### Verified (headless Chromium)
+New `tests/buildsite.test.mjs`. A site is 2,192 triangles, spanning −1.70 to 2.19 by ±1.61 and 4.59 tall. My first ladder stood out to 2.42 with its top leaning away from the deck; I found both from the bounds and the picture, and fixed them. The test pays for a wall in Hearthwick, rebuilds the town, finds the site's collider where the builder puts it, takes a picture, and restores the town. No page errors. `docs/prototypes/buildsite-shot.mjs` renders `docs/prototypes/buildsite-ingame.png`: Hearthwick with a wall paid for, before (left) and after (right), from two sides at noon.
+
+### Needs eyes
+The same site stands for every kind of work. A harbour or a watch-house might want its own site (piles and planks, or a timber frame), but that is a design question and left. The site stays until the work is done, three days on.
