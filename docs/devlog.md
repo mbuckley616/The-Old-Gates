@@ -6732,3 +6732,30 @@ Before the fix, `lod` passed 1 of 3 runs on the Session 255 build and 1 of 3 on 
 
 ### Needs eyes
 Nothing in the game. Other suites that move the player and then wait on the clock may have the same weakness; `walls`, `keep` and the prototype shots drain the loader and tick themselves.
+
+## v80 — Session 258 — A town's ironwork on the kit (H.5)
+A town's ironwork was still boxes, and it is at eye height by every shop door:
+- **Lamp posts:** plain six-sided iron posts with a box arm, four box ribs, a four-sided cone and a box base. They stand round the plaza and at street ends.
+- **Door lanterns:** a box bracket, box ribs and a cone, one by every shop door.
+- **Trade signs:** a box arm, a box brace, a plain box board and two box chains, over every shop and guild door.
+
+They are the last of a town's furniture under Michael's answer A on buildings.
+
+**Now** each is one vertex-coloured mesh in its own frame, turned as the old pieces were.
+- **Lamp post** (`lampPostGeo`): a stone footing, a lathed iron post with collars and a ball finial, an arm with a scroll under it, and a hook. The lantern's cage hangs from the hook: a base plate, four round ribs, a pyramid cap and a ring. The arm now runs at 3.26, above the cage's cap; the old arm at 3.1 ran through it.
+- **Door lantern** (`doorLanternGeo`): a wall plate, a round bracket with a scroll under it, and the same cage.
+- **Trade sign** (`tradeSignGeo`): a wall plate, a round arm to 1.3 with a finial, a scrolled brace, rings and short chain links, and a board in a darker frame. The frame runs round the old painted faces, never over them.
+
+The lit glass and flames of both lanterns are the old groups, where they were, so the lamps still light and go out as before. The sign's painted faces are the old planes, and the lamp posts' colliders are unchanged. None of these pieces rolls dice.
+
+### Verified (headless Chromium)
+New `tests/ironwork.test.mjs`:
+- **Sizes:** a lamp post is 542 triangles, 3.46 tall, its cage reaching .57 out (the glass hangs at .42). A door lantern is 284, keeping within .35 of the wall. A sign is 624, reaching 1.71 out with its finial.
+- **The paint stays clear:** across the painted area, no vertex of the board or its frame is more than .030 from the board's middle. The faces are at .035.
+- **In the game:** Hearthwick builds with an inn to look at, and its four lamps are listed.
+- No page errors.
+
+`houses`, `wayfinding` and `lod` pass. `docs/prototypes/ironwork-shot.mjs` renders `docs/prototypes/ironwork-ingame.png`: Hearthwick's inn sign and door lantern, and a street lamp, before (left) and after (right), at noon.
+
+### Needs eyes
+The scrolls under the arms are thin (.015–.018) and may vanish past a few metres. Whether they are worth keeping, or should be thicker, is a matter of taste. A city has a hundred door lanterns; at 284 triangles each that is about 28k, within the bake. A frame-time check in a big city on a real machine would confirm it.

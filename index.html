@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s238</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s239</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36019,19 +36019,44 @@ var WORLD=(()=>{
     const tex=new THREE.CanvasTexture(cv);_signCache[key]=tex;return tex;
   }
   // Bracket from the wall above the door, board hanging beneath it, both faces painted.
+  // S258 — a town's ironwork on the kit, each piece one vertex-coloured mesh in its own frame (local +z out from the wall or
+  // towards the street, y 0 at the ground or the lantern's middle); the lit glass and flames stay the old groups.
+  const IRON=0x2a2622,IRON2=0x3a3430;
+  const ironAdd=P=>(geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.04:j});
+  // a lantern's housing round its middle: a base plate, four ribs, a pyramid cap with a ring on top (s the half-width)
+  function lanternCage(add,s,h,z,y){y=y||0;add(SK.rbox(2*s+.04,.035,2*s+.04,.012,1),IRON,0,y-h/2-.02,z);for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]])add(SK.cyl(.012,.012,h,4),IRON,a*s,y,z+b*s);
+    add(SK.cone(s*1.55,h*.45,4),IRON,0,y+h/2+h*.2,z,0,Math.PI/4,0);add(SK.torus(.035,.01,3,8),IRON2,0,y+h/2+h*.48,z);}
+  // a lamp post: a stone footing, a lathed iron post with collars and a finial, a scrolled arm and the lantern hung at .42
+  function lampPostGeo(){const P=[],add=ironAdd(P);
+    add(SK.rbox(.46,.22,.46,.05,1),0x7a746a,0,.09,0,0,0,0,.06);
+    add(SK.lathe([[.001,.2],[.12,.2],[.12,.3],[.085,.38],[.07,1.15],[.095,1.2],[.07,1.26],[.055,3.18],[.085,3.22],[.085,3.31],[.001,3.35]],8),IRON,0,0,0);
+    add(SK.ball(.055,6,4),IRON2,0,3.4,0);
+    add(SK.cyl(.022,.022,.5,5),IRON,0,3.26,.25,Math.PI/2,0,0);add(SK.ball(.035,5,4),IRON2,0,3.26,.5);
+    add(SK.torus(.13,.015,3,10,Math.PI*1.1),IRON,0,3.13,.14,0,Math.PI/2,-.1);
+    add(SK.cyl(.012,.012,.08,4),IRON,0,3.23,.42);lanternCage(add,.13,.36,.42,2.85);
+    return mergeParts(P);}
+  // a door lantern: a wall plate, a bracket with a scroll under it, the lantern hung at .25 out, its middle at y 0
+  function doorLanternGeo(){const P=[],add=ironAdd(P);
+    add(SK.rbox(.1,.26,.03,.01,1),IRON,0,.12,.015);add(SK.cyl(.016,.016,.3,4),IRON,0,.14,.15,Math.PI/2,0,0);
+    add(SK.torus(.08,.01,3,8,Math.PI),IRON,0,.06,.08,0,Math.PI/2,Math.PI/2);lanternCage(add,.08,.24,.25);return mergeParts(P);}
+  // a hanging trade sign: a wall plate, the arm out to 1.3 with a finial, a scrolled brace below it, rings and short chains,
+  // and a framed board round the old painted faces (1.0 square at x ±.035, its middle 1.15 out and 2.1 up)
+  function tradeSignGeo(){const P=[],add=ironAdd(P);
+    add(SK.rbox(.12,.5,.035,.012,1),IRON,0,2.55,.018);add(SK.cyl(.028,.028,1.3,5),IRON,0,2.65,.65,Math.PI/2,0,0);
+    add(SK.ball(.045,6,4),IRON2,0,2.65,1.32);
+    for(const [r_,y,z] of [[.36,2.32,.34],[.16,2.52,.72]])add(SK.torus(r_,.016,3,10,Math.PI/2),IRON,0,y,z,0,Math.PI/2,Math.PI/2);
+    add(SK.cyl(.018,.018,.7,4),IRON,0,2.36,.27,.95,0,0);
+    for(const s of [-1,1]){const z=1.15+s*.38;add(SK.torus(.03,.008,3,6),IRON2,0,2.62,z);add(SK.torus(.025,.007,3,6),IRON2,0,2.64,z,0,Math.PI/2,0);}
+    add(SK.rbox(.06,1.02,1.02,.015,1),0x4a3a26,0,2.1,1.15,0,0,0,.06);
+    for(const [w,h,y,dz] of [[1.12,.06,2.63,0],[1.12,.06,1.57,0],[.06,1.12,2.1,-.53],[.06,1.12,2.1,.53]])add(SK.rbox(.078,h,w===1.12?1.12:.06,.012,1),0x3a2a1a,0,y,1.15+dz,0,0,0,.06);
+    return mergeParts(P);}
   function buildTradeSign(group,type,name,doorX,doorZ,tx,tz,ry,y){
-    const iron=new THREE.MeshLambertMaterial({color:0x2a2622});
-    const armLen=1.3;
-    const ax=doorX+tx*armLen/2,az=doorZ+tz*armLen/2;
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(.08,.08,armLen),iron);arm.position.set(ax,y+2.65,az);arm.rotation.y=ry;group.add(arm);
-    const brace=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.95),iron);brace.position.set(doorX+tx*.42,y+2.35,doorZ+tz*.42);brace.rotation.y=ry;brace.rotation.x=-.75;group.add(brace);
-    const bx=doorX+tx*(armLen-.15),bz=doorZ+tz*(armLen-.15);
+    const armLen=1.3;const bx=doorX+tx*(armLen-.15),bz=doorZ+tz*(armLen-.15);
+    {const m=new THREE.Mesh(tradeSignGeo(),VC_MAT);m.position.set(doorX,y,doorZ);m.rotation.y=ry;m.castShadow=true;group.add(m);} // S258 — the arm, brace, chains and framed board on the kit
     const tex=signTexture(type,name);
-    const board=new THREE.Mesh(new THREE.BoxGeometry(.06,1.06,1.06),new THREE.MeshLambertMaterial({color:0x4a3a26}));board.position.set(bx,y+2.1,bz);board.rotation.y=ry;group.add(board);
     [1,-1].forEach(sd=>{const f=new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.0),new THREE.MeshLambertMaterial({map:tex,side:THREE.DoubleSide}));
       // board faces along the wall: normal = wall tangent
       f.position.set(bx+(-tz)*sd*.035,y+2.1,bz+(tx)*sd*.035);f.rotation.y=ry-Math.PI/2*sd;group.add(f);}); // front of each face points away from the board
-    [1,-1].forEach(sd=>{const ch=new THREE.Mesh(new THREE.BoxGeometry(.03,.14,.03),iron);ch.position.set(bx+tx*sd*.3,y+2.6,bz+tz*sd*.3);group.add(ch);});
   }
   const _txtCache={};
   function textPlane(str,w,h,fg,bg){
@@ -37300,10 +37325,7 @@ var WORLD=(()=>{
       houses.push(house);
       { // wall lantern by the door (glow only)
         const lx=doorX+lot.tx*.25+lot.tz*1.05,lz=doorZ+lot.tz*.25-lot.tx*1.05,ly=worldH(doorX,doorZ)+2.05;
-        const iron=new THREE.MeshLambertMaterial({color:0x2a2622});
-        const br=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.3),iron);br.position.set(doorX+lot.tx*.12+lot.tz*1.05,ly+.14,doorZ+lot.tz*.12-lot.tx*1.05);br.rotation.y=lot.ry;group.add(br);
-        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const rib=new THREE.Mesh(new THREE.BoxGeometry(.02,.24,.02),iron);rib.position.set(lx+sx*.08,ly,lz+sz*.08);group.add(rib);});
-        const cap=new THREE.Mesh(new THREE.ConeGeometry(.14,.1,4),iron);cap.position.set(lx,ly+.17,lz);cap.rotation.y=Math.PI/4;group.add(cap);
+        {const m=new THREE.Mesh(doorLanternGeo(),VC_MAT);m.position.set(doorX+lot.tz*1.05,ly,doorZ-lot.tx*1.05);m.rotation.y=lot.ry;group.add(m);} // S258 — bracket and cage on the kit
         const lg=new THREE.Group();const pane=new THREE.Mesh(new THREE.BoxGeometry(.12,.17,.12),new THREE.MeshBasicMaterial({color:0xffc860,transparent:true,opacity:.55}));lg.add(pane);
         const fl=new THREE.Mesh(new THREE.ConeGeometry(.03,.09,6),new THREE.MeshBasicMaterial({color:0xffe090}));fl.position.y=-.01;lg.add(fl);lg.position.set(lx,ly,lz);group.add(lg);S.lamps.push({glass:lg,light:null});
       }
@@ -37362,16 +37384,12 @@ var WORLD=(()=>{
     // Lamps: iron posts around the plaza and at the gates carry real lights
     // after dark; every shop door gets a wall lantern that glows (no light —
     // a city has a hundred of them). Lit state toggled in tickSettlements.
-    const lampPost=(x,z,lit,fx,fz)=>{const y=worldH(x,z);const iron=new THREE.MeshLambertMaterial({color:0x2a2622});
+    const lampPost=(x,z,lit,fx,fz)=>{const y=worldH(x,z);
       // the arm and lantern hang toward (fx,fz) — the street or the plaza
       let dx=fx==null?0:fx-x,dz=fz==null?1:fz-z;const Ld=Math.hypot(dx,dz)||1;dx/=Ld;dz/=Ld;const ang=Math.atan2(dx,dz);
-      const post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.09,3.2,6),iron);post.position.set(x,y+1.6,z);group.add(post);
-      const arm=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.5),iron);arm.position.set(x+dx*.2,y+3.1,z+dz*.2);arm.rotation.y=ang;group.add(arm);
-      // housing: four corner ribs, a cap and a base, flame + glass inside
+      // S258 — the post, its footing, the scrolled arm and the lantern's cage on the kit, one mesh; flame + glass inside
+      {const m=new THREE.Mesh(lampPostGeo(),VC_MAT);m.position.set(x,y,z);m.rotation.y=ang;m.castShadow=true;group.add(m);}
       const hx=x+dx*.42,hy=y+2.85,hz=z+dz*.42;
-      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const rib=new THREE.Mesh(new THREE.BoxGeometry(.03,.36,.03),iron);rib.position.set(hx+sx*.13,hy,hz+sz*.13);group.add(rib);});
-      const cap=new THREE.Mesh(new THREE.ConeGeometry(.22,.16,4),iron);cap.position.set(hx,hy+.26,hz);cap.rotation.y=Math.PI/4;group.add(cap);
-      const base=new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.3),iron);base.position.set(hx,hy-.18,hz);group.add(base);
       const glass=new THREE.Group();
       const pane=new THREE.Mesh(new THREE.BoxGeometry(.2,.26,.2),new THREE.MeshBasicMaterial({color:0xffc860,transparent:true,opacity:.55}));glass.add(pane);
       const flame=new THREE.Mesh(new THREE.ConeGeometry(.05,.14,6),new THREE.MeshBasicMaterial({color:0xffe090}));flame.position.y=-.02;glass.add(flame);
@@ -41019,7 +41037,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
