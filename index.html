@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s235</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s236</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -6272,6 +6272,17 @@ function ttsToggleMute(){
   showMsg(ttsEnabled?'🔊 Dialog voice on':'🔇 Dialog voice muted', ttsEnabled?'#88ccff':'#999999');
 }
 
+// v80 S236 — the quest zone of the place you stand in. The main quest names 'ironhaven' or 'overworld' (Ashenmoor's
+// legacy zone); in the open world both are settlements, so the world's Ironhaven (or a house of it) counts as 'ironhaven'.
+function questZoneNow(){
+  if(activeZoneId==='ironhaven')return 'ironhaven';
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'){try{
+    const h=(typeof currentHouse!=='undefined')?currentHouse:null;
+    if(h&&h.siteId)return h.siteId==='ironhaven'?'ironhaven':'overworld';
+    const t=WORLD.siteAnywhere('ironhaven');if(t&&Math.hypot(px-t.x,pz-t.z)<(t.pad||60)+40)return 'ironhaven';
+  }catch(e){}}
+  return 'overworld';
+}
 function openDialog(npc){
   _releasePointerLockForMenu();
   try{
@@ -6336,7 +6347,7 @@ function openDialog(npc){
     // form to keep Oswin's/Edna's talk_to events firing normally while only
     // Aldwyn triggers the custom dialog.
     const greet=npc.greeting[Math.floor(Math.random()*npc.greeting.length)];
-    const npcZone=activeZoneId==='ironhaven'?'ironhaven':'overworld';
+    const npcZone=questZoneNow();
     // v61ae: use the hoisted resolver so prereqIndices are respected here too.
     // hasCustomDialog should ONLY block talk_to auto-fire if the custom dialog
     // actually surfaces for this NPC in this state — an NPC with an unmet
@@ -6841,7 +6852,7 @@ function pickDialogChoice(i){
   }
   if(c.back){
     // Rebuild topics fresh (quest state may have changed)
-    const npcZone=activeZoneId==='ironhaven'?'ironhaven':'overworld';
+    const npcZone=questZoneNow();
     const questTopics=buildQuestTopicsForNPC(dlgNPC.name,npcZone);
     const allTopics=[...questTopics,...(dlgNPC.topics||[])];
     renderDialogNode(dlgNPC.greeting[Math.floor(Math.random()*dlgNPC.greeting.length)], allTopics);
@@ -6890,7 +6901,7 @@ function pickDialogChoice(i){
     // (rebuilt fresh, so the new quest's acceptance topic surfaces automatically).
     const _nextId=(()=>{const q=getQuest(c.questComplete);return q&&q.unlocks&&q.unlocks[0];})();
     const _nextQ=_nextId?getQuest(_nextId):null;
-    const _npcZoneNow=activeZoneId==='ironhaven'?'ironhaven':'overworld';
+    const _npcZoneNow=questZoneNow();
     const _sameNPC=_nextQ && _nextQ.giver===dlgNPC.name && (_nextQ.giverZone||'overworld')===_npcZoneNow;
     if(c.response){
       const closer=_sameNPC
@@ -6935,7 +6946,7 @@ function pickDialogChoice(i){
     // Same-NPC handoff (mirror of questComplete path above)
     const _nextId2=(()=>{const q=getQuest(c.questDialogComplete);return q&&q.unlocks&&q.unlocks[0];})();
     const _nextQ2=_nextId2?getQuest(_nextId2):null;
-    const _npcZoneNow2=activeZoneId==='ironhaven'?'ironhaven':'overworld';
+    const _npcZoneNow2=questZoneNow();
     const _sameNPC2=_nextQ2 && _nextQ2.giver===dlgNPC.name && (_nextQ2.giverZone||'overworld')===_npcZoneNow2;
     if(c.response){
       const closer=_sameNPC2
@@ -35118,7 +35129,7 @@ var WORLD=(()=>{
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel')return false;return !npcInsideNow(house);}
   function scheduleFor(n,h){
-    try{if(typeof QUEST_DEFS!=='undefined'&&n.def&&QUEST_DEFS.some(q=>q.giver===n.def.name&&(qState(q.id)==='available'||qState(q.id)==='active'||qState(q.id)==='reward')))return {go:(n.sched&&n.sched.door)||{x:n.def.x,z:n.def.z},idle:true};}catch(e){} // v80 — a quest giver is always findable
+    try{if(typeof QUEST_DEFS!=='undefined'&&n.def&&QUEST_DEFS.some(q=>q.giver===n.def.name&&(qState(q.id)==='available'||qState(q.id)==='active'||qState(q.id)==='reward')||qState(q.id)==='active'&&(q.objectives||[]).some(o=>o.type==='talk_to'&&o.npc===n.def.name)))return {go:(n.sched&&n.sched.door)||{x:n.def.x,z:n.def.z},idle:true};}catch(e){} // v80 — a quest giver is always findable (S236: and whoever an active quest sends you to)
     const sc_=n.sched;if(!sc_)return {idle:true};
     const eve=h>=HRS.eve&&h<HRS.night,night=h>=HRS.night||h<HRS.dawn,day=!eve&&!night;
     switch(sc_.type){

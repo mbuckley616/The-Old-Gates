@@ -5372,3 +5372,30 @@ New `tests/shoperrands.test.mjs`. In Dunmore, townsfolk out of doors whose name 
 
 ### Needs eyes
 Take a ferry at midday from a real port. Owed, not checked: in the open world, main quest Q3 and Q7's *talk to Aldwyn* step. Aldwyn keeps The Royal Herald, a shop, and the quest-giver rule covers only a quest's giver, so from 21 to 7 he can't be found. The audit also doubts whether the Ironhaven-zone story NPCs match in the open world at all; that wants its own look. Lords and stewards can't be found from about 20 to 7, which is by their schedules, not a shop's.
+
+## v80 — Session 236 — The main quest in the open world's Ironhaven
+
+This is Session 235's owed check, *talk to Aldwyn* at night, and it turned out to be much larger. The quest-giver rule at the top of `scheduleFor` keeps a main quest's giver at their door at any hour while the quest is live. The person an active quest sends you *to* is left on their own schedule. Aldwyn (the target of Q3 and Q7) keeps The Royal Herald, a shop, so from 21 to 7 he was hidden while the compass pointed at him. Testing that fix found the bigger fault: at *any* hour, the world's Aldwyn had no quest choice at all.
+
+**What was wrong.** The main quest names each step's place as `'ironhaven'` or `'overworld'` (Ashenmoor's legacy zone). The dialogue code (`openDialog`, and `pickDialogChoice` three times) worked out where you are as `activeZoneId==='ironhaven' ? 'ironhaven' : 'overworld'`. That was right while Ironhaven was its own zone, but in the open world `activeZoneId` is `'world'`, so every Ironhaven townsperson counted as Ashenmoor. In the open world, therefore:
+- Q3 *The Merchant Knows* (talk to Aldwyn) could never complete.
+- Aldwyn never offered Q4 or Q6.
+- Captain Brynn never offered Q5 or his relay to Caldric.
+- Q7's last step (the rubbing to Aldwyn) could never complete.
+
+The main quest stalled after Q2. Ashenmoor's steps (zone `'overworld'`) were unaffected, which is presumably why no playtest has met this yet.
+
+**What changed.**
+- `questZoneNow()` answers the question in one place. In the legacy Ironhaven zone it answers `'ironhaven'`, as before. In the open world it answers `'ironhaven'` inside one of Ironhaven's houses (by the house's `siteId`) or within its pad and 40 units, and `'overworld'` everywhere else. The four copies call it.
+- The quest-giver rule also keeps whoever an active quest's *talk to* step names at their door at any hour (Aldwyn, and Q7's Brother Oswin and Edna). They stand where the givers stand, by the same rule, until the quest is done.
+
+### Verified (headless Chromium)
+New `tests/questtargets.test.mjs`, in the world's Ironhaven:
+- **Aldwyn's hours.** With no quest wanting him, he is in his shop at noon and gone at 23h and 3h (his own hours, unchanged). With Q3 active he is at his door at 23h, 3h and noon.
+- **Q3 at 23h.** The real E key finds him. His dialogue offers *📜 Tell him about Edna's sigils*, then *What do you mean, 'failing'?*, and Q3 reads **complete**.
+- **The givers at noon.** Aldwyn offers *📜 The Crypt of Embers* and Captain Brynn *📜 Lord Caldric's Commission*.
+- **The previous build**, run through the same test: Aldwyn out at none of the three hours with Q3 active, E found no one at 23h, and neither quest was offered.
+- `crime3` and `names` pass. No page errors.
+
+### Needs eyes
+The whole main quest in the open world, Q1 to Q7, in one playthrough. This session fixed the step every Ironhaven quest failed on, but nothing has run the chain end to end in the world. The Ironhaven radius (the pad and 40 units) is generous. A townsperson named Aldwyn or Brynn elsewhere can't match, because the zone must be Ironhaven. Standing at their doors at night by the rule is how givers already behave, and may look odd on a dark street.
