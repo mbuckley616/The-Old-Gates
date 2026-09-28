@@ -6487,3 +6487,18 @@ The stubs run from 22 triangles (the broadleaf) to 516 (the heartroot, whose roo
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): A, the stub on turned earth (recommended); B, the earth alone; or C, as today.
+
+## v80 — Session 242 — Cloaks and hair that swing: a prototype and a question (H.3, waiting on Michael)
+The rest of section H is waiting on Michael: the rocks, the road coach and the shark, the first-person weapon, and what a picked herb leaves. So I took an owed line from H.3 that nobody had started, secondary motion. Today a cloak is one rigid half-cylinder fixed to the spine, and a plait or a tied tail is fixed to the head. They turn with the body and never move on their own, so a running Markish townsman's cloak stays glued to his back. How much a cloak should move is a look call, so this is a prototype and a DECISION. `index.html` is unchanged.
+
+**The prototype** (`docs/prototypes/secondary/shoot.mjs`) writes a patched copy of the game to `tests/tmp/` and boots it. The patch is eight string replacements, and each throws if it no longer matches. The cloak hangs from a new `cloak` bone at the shoulders, in two halves: the lower half is on a `cloak2` bone hinged at the middle of the back, and the halves overlap by 3 cm so the fold does not open a gap. A braid, the warrior's back plait and the tied tail hang from a `hairB` bone at the nape; `plait()` takes the bone and keeps its points in the head's frame. Each of the three bones is a damped pendulum in two axes, pitch and roll. Its driver is how the bone's pivot moves in the world: the pivot's acceleration along the heading and across it, gravity plus the vertical acceleration, and a drag that goes with the square of the forward speed. The parent bone's own pitch and roll in the body's frame are taken off, so the pendulum hangs in the world rather than in the spine. The angles are clamped so the cloak never swings into the back (pitch −.05 to .85, the lower half 0 to .6).
+
+Two first tries were wrong. A single rigid cloak with a strong drag stood straight out like a board at the clamp (1.25 rad). With the drag cut to a third, and seen three-quarters from behind, the lift did not read at all. The two hinged halves, a drag of .3 and .2, and a side view show it.
+
+Each picture follows one person through a scripted run: standing for 1 s, walking for 1.5 s at 1.3 u/s, running for 2 s at 3.8 u/s with a turn to the left in the last second, a dead stop, then standing for 2 s. The top row is the same person with the pendulums off, which is today's look; the bottom row is the proposal. The three people are a Markish woman with a dress and a plait, a Markish man with warrior braids, and a Gatelands woman with a tied tail. The pictures are quantised to steps of 12 per channel, because the grass's noise otherwise makes each one 1.7 MB (now about 0.9 MB).
+
+### Verified (headless Chromium)
+`node docs/prototypes/secondary/shoot.mjs` renders `docs/prototypes/secondary-1.png`, `-2.png` and `-3.png` with no page errors. The cloak's upper half peaks at the .85 clamp while running for all three. Standing and settled, the proposal is identical to today.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): A, the cloak and the back hair, for everyone who wears them (recommended); B, the cloak only; or C, not yet. The plaits' swing is small in the pictures, and the hinge shows a faint fold line when the cloak is bent hard. What only motion can judge is whether the cloak's lag at the start and stop reads as cloth or as a flap; a still picture cannot show that.
