@@ -6833,3 +6833,34 @@ New `tests/coach.test.mjs`:
 
 ### Needs eyes
 The coach on the move along a road at its trot, and riding on its roof between the rails. The horses follow, on a skeleton so they walk: the wolf's bones have fixed leg lengths, so a horse needs its own proportions there.
+
+## v80 — Session 262 — The coach's horses, on the wolf's bones (H.4, Michael's A on Session 230)
+The last of the three. The coach's two horses were each a box on four sticks with a box for a head, gliding along the road beside the coach. The Boar, the Cave Bear and the dragon all stand on the wolf's bones and gait (Sessions 170, 223, 177), and that is the way to a horse that walks. But the wolf's legs were fixed: one table of segment lengths (`WOLF_LEGS`), a hip height of .40, and strides sized for it, all shared. A horse on those bones would be a dog.
+
+**The rig now takes a kind's own legs.**
+- **Legs:** `wolfLegs(k)` returns the kind's table: its own (`k.legs`), the wolf's scaled by `k.legK`, or the wolf's.
+- **Hips:** `wolfHipY(k)` places the hips (`k.hipY`, or raised with the scale).
+- **Where they are used:** the skeleton, every body branch of the bake and the pose functions read them. `tickCreatures` sets them per rig (`WG_L`, `WG_LK`) before it poses the rig, and resets them after the loop.
+- **Gait:** stride length, foot lift and bounce scale with `legK`. The phase advances by ground covered over the longer stride, and the gallop threshold is measured in the longer legs' body lengths.
+- **The wolf family is unchanged:** at `legK` 1 every value is the wolf's own.
+
+**The horse** (`k.horse`, two coats: `Horse`, a bay, and `Grey Horse`) has a horse's legs: a high hock and long cannons, the hips at .70 against the wolf's .40, and strides 1.8 times as long. Its neck and head bones sit further out and higher, so the neck is long and carried up. On the bones:
+- **Body:** a deep barrel and haunches, and a thick neck with a mane of dark lobes along its crest.
+- **Head:** a long head with its face angled down, nostrils, pricked ears and a bridle.
+- **Legs:** slim, with muscle at the forearm and gaskin, knobbed knees and hocks, dark lower legs and hooves.
+- **Tail:** a long hanging tail. The gait's own tail pose raised it like a lifted leg, so a horse's tail is set to hang and keeps only the gait's side-to-side swing.
+- **Harness:** a collar, a pad and girth, and a brass boss.
+
+The coach builds its team from these at 1.6 scale: one bay, and a bay or a grey by the road's key. `tickCreatures` walks them from the ground they cover, as it does any wolf, so they stand at the station and trot or gallop with the coach (13 units a second is a gallop at their size). Their places, beside the pole 3.2 ahead, are unchanged.
+
+### Verified (headless Chromium)
+`tests/coach.test.mjs`, extended:
+- **The horses:** each coat is a skinned body of 6,108 triangles. Standing, its lowest point is .023 below the ground and it is 1.90–1.92 to the ears.
+- **The stride:** moved .2 a tick for 40 ticks, a horse goes through 29–35 different leg poses with its gait weights fully off standing.
+- **The coach:** the coaching road test (Dunmore to Vieux Marché) now waits for the road list to hold a town-to-town road; one run found none at the start, because the list fills as cells load. It passes as before.
+- No page errors.
+
+`wolves`, `bear`, `faolchu` and `wyrm` pass: the shared rig is unchanged at legK 1. `docs/prototypes/horses-shot.mjs` renders `docs/prototypes/horses-ingame.png`: a bay standing and a grey trotting, at noon. `docs/prototypes/coach-ingame.png` is now the coach with its new team, waiting in Dunmore.
+
+### Needs eyes
+The team in motion with the coach at its speed, in real frames: the gallop is the wolf's transverse gallop, stretched, and a horse's differs. Whether the harness reads (the collar and pad are simple). The horses are about 1.9 to the ears at 1.6 scale; the old box horses' heads were at 1.9 too. The coach and the horses do not yet share a harness line; the pole ends between them.

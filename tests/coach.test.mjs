@@ -15,6 +15,8 @@ check('the coach is one vertex-coloured mesh of 3–12k triangles', r.colours &&
 check('its roof is at the rider\'s height (1.85–1.95; the platform is at 1.9) and it stands on its wheels (from 0)', r.roof > 1.85 && r.roof < 1.95 && r.box[2] > -.02 && r.box[2] < .05, r);
 check('it keeps about the old coach\'s size: within ±1.1 across, its pole out to about the old one\'s (2.6–3.0 ahead), under 2.4 tall', r.box[0] > -1.1 && r.box[1] < 1.1 && r.box[5] > 2.6 && r.box[5] < 3.0 && r.box[3] < 2.4, r.box);
 // a coach line in the game: its cart is the kit coach, and a picture of it with its horses
+// (the world's road list fills as cells load: wait until it holds a road between two towns)
+await page.waitForFunction(() => { const T = ['town', 'city', 'port']; return WORLD.ROAD_DEFS.some(d => { const a = WORLD.siteAnywhere(d.a), b = WORLD.siteAnywhere(d.b); return a && b && T.includes(a.kind) && T.includes(b.kind); }); }, null, { timeout: 60000, polling: 500 }).catch(() => {});
 // a coaching road is one the player pays for: open one from Hearthwick along its first road to a town, and stand halfway
 const opened = await page.evaluate(() => { const T = ['town', 'city', 'port'];
   const defs = WORLD.ROAD_DEFS.map(d => ({ d, a: WORLD.siteAnywhere(d.a), b: WORLD.siteAnywhere(d.b) })).filter(q => q.a && q.b && T.includes(q.a.kind) && T.includes(q.b.kind)).sort((p, q) => Math.hypot((p.a.x + p.b.x) / 2 - px, (p.a.z + p.b.z) / 2 - pz) - Math.hypot((q.a.x + q.b.x) / 2 - px, (q.a.z + q.b.z) / 2 - pz));
@@ -32,5 +34,19 @@ const c = await page.evaluate(() => { for (let i = 0; i < 3; i++) WORLD.tick(1 /
 if (c && c.shot) { fs.writeFileSync('tests/out/coach.png', Buffer.from(c.shot.split(',')[1], 'base64')); delete c.shot; }
 console.log(JSON.stringify({ opened, ...c }));
 check('a coach line near the start runs the kit coach, its ride platform 1.9 over the road', !!c && c.tris === r.tris && c.platY === 1.9, c);
+// the horses (Session 262): the wolf's bones on legs 1.8 as long, a body of their own; standing on their hooves, walked by
+// tickCreatures from the ground they cover
+const h = await page.evaluate(() => { const out = {}; for (const kind of ['Horse', 'Grey Horse']) { const hg = new THREE.Group(), rg = buildWolf(kind, 1.6); hg.add(rg.root); WORLD.scene.add(hg); hg.position.set(px + 400, 0, pz); hg.visible = true;
+    const snap = () => rg.B.thL.rotation.x + rg.B.shR.rotation.x; tickCreatures(1 / 60, performance.now()); hg.updateMatrixWorld(true); rg.mesh.skeleton.update();
+    // the lowest and highest skinned vertex at rest, from the bone matrices
+    const geo = rg.mesh.geometry, P = geo.attributes.position, SI = geo.attributes.skinIndex, v = new THREE.Vector3(), m = new THREE.Matrix4(); let lo = 1e9, top = -1e9;
+    for (let i = 0; i < P.count; i += 2) { m.fromArray(rg.mesh.skeleton.boneMatrices, SI.getX(i) * 16); v.fromBufferAttribute(P, i).applyMatrix4(m).multiplyScalar(1.6); lo = Math.min(lo, v.y); top = Math.max(top, v.y); }
+    const rest = snap(), seen = new Set(); for (let k = 0; k < 40; k++) { hg.position.z += .2; tickCreatures(1 / 60, performance.now() + k * 16); seen.add(snap().toFixed(2)); }
+    out[kind] = { tris: rg.tris, foot: +lo.toFixed(3), top: +top.toFixed(2), poses: seen.size, trot: +(rg.w.trot + rg.w.gallop).toFixed(2) }; WORLD.scene.remove(hg); }
+  return out; });
+console.log(JSON.stringify(h));
+check('each horse coat is a skinned kit body of 3–12k triangles', Object.values(h).every(q => q.tris > 3000 && q.tris < 12000), h);
+check('a horse stands on its hooves (its lowest point within .06 of the ground) and is horse-sized (1.8–2.6 to the ears)', Object.values(h).every(q => Math.abs(q.foot) < .06 && q.top > 1.8 && q.top < 2.6), h);
+check('a horse moved along the ground strides (its legs through many poses, its gait weights off standing)', Object.values(h).every(q => q.poses > 10 && q.trot > .5), h);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
