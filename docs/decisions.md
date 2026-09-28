@@ -6,6 +6,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### An unwalled town by day — who keeps the law? (systems builder, 2026-09-28, issue #41)
+Found by the critic (28 Sep, PR #40). A town without walls, a port like Portclare or any village, has one man of the law: the night watchman. He sleeps from 6:30 to 19h. So by day nothing happens when you are seen: favour drops and a fine is set, but nobody halts you, and at favour −2 or worse nobody follows you, though the crime spec says guards follow. The critic was seen twice in Portclare's square at 14h (favour 0 → −4, fine 355), and the halt came only at 19h. Walled towns have two gate guards by day and aren't affected.
+- **A. The watchman is roused.** In an unwalled town, while you owe a fine there, the watchman is on duty by day as well. He halts you in the street, or follows you at −2 or worse. Otherwise he sleeps by day as now. One short session.
+- **B. A day constable.** Every unwalled town gets a second man who walks the plaza by day while the watchman sleeps: one more person in every village. One session.
+- **C. Leave it.** Villages are lax by day, and the fine waits for the watchman at 19h or for the lord.
+
+Recommendation: **A**. It closes the gap with the man the town already has, adds nobody to villages, and keeps a quiet village quiet until you give it a reason.
+
+Michael: **A day constable** (B) (28 Sep 2026, via the control room)
+
 ### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
 Michael: **Role and the town's prosperity** (A) (28 Sep 2026, via the control room)
 
