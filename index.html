@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s216</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s217</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9481,6 +9481,8 @@ function mkHerbMesh(hx,hz,def,sc){
   const g=new THREE.Group();
   {const key=plantKeyOf(def),geo=key&&plantGeo(key,false);if(geo){ // v80 S167 — the herb as the plant it is
     const m=new THREE.Mesh(geo,PLANT_MAT);m.castShadow=PLANT_SHADOW.has(PLANT_KIND[key]);m.receiveShadow=true;g.add(m);
+    // S217 — a plant that stays when picked (a bush, a sapling, the stump's fungus) carries its picked copy, hidden until then
+    const pg=plantGeo(key,true);if(pg){const pm=new THREE.Mesh(pg,PLANT_MAT);pm.castShadow=m.castShadow;pm.receiveShadow=true;pm.visible=false;g.add(pm);g.userData.whole=m;g.userData.picked=pm;}
     const gl=new THREE.PointLight(def.glowCol,def.glowInt||.5,def.glowRad||1.6);gl.position.set(0,.28,0);g.add(gl);
     g.position.set(hx,activeTerrainH(hx,hz),hz);sc.add(g);return{g,gl};}}
   const stemMat=new THREE.MeshLambertMaterial({color:def.stemCol});
@@ -18508,7 +18510,7 @@ function tickHerbs(dt,now){
   const allHerbs=activeZoneId==='world'?activeHerbs():activeZoneId==='forest'?FOREST_HERBS:activeZoneId==='ironhaven'?IH_HERBS:OW_HERBS; // v80 — streamed world keeps its herbs in ZONES.world.herbs
   allHerbs.forEach(h=>{
     if(h.harvested){
-      if(h.def.respawn!=null){h.respawnT-=dt;if(h.respawnT<=0){h.harvested=false;h.g.visible=true;h.gl.intensity=h.def.glowInt||.5;}}
+      if(h.def.respawn!=null){h.respawnT-=dt;if(h.respawnT<=0){h.harvested=false;h.g.visible=true;h.gl.intensity=h.def.glowInt||.5;const u=h.g.userData;if(u&&u.picked){u.whole.visible=true;u.picked.visible=false;}}}
       return;
     }
     const baseY=activeTerrainH(h.x,h.z);
@@ -18599,7 +18601,8 @@ function harvestHerb(h){
   if(typeof WORLD!=='undefined')WORLD.guild.onHarvest(h); // v80 S12
   const item={...h.def.item,qty:1,_typeKey:h.type};
   if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return;}
-  h.harvested=true;h.g.visible=false;h.gl.intensity=0;
+  h.harvested=true;h.gl.intensity=0;
+  {const u=h.g.userData;if(u&&u.picked){u.whole.visible=false;u.picked.visible=true;}else h.g.visible=false;} // S217 — a bush picked in the old zones stays, bare, as in the world
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
   bagAdd(item);
   addLog('🌿','Harvested '+h.def.name);

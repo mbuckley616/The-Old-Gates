@@ -6051,3 +6051,14 @@ That leaves only the non-human creatures on boxes: the Ogre, Cave Bear, slimes, 
 
 ### Needs eyes
 Whether a plain old woman is menacing enough for a lair's boss. If Michael wants the folklore hag instead (green-skinned, clawed, with teeth), that is a question for him, not something I would change unasked.
+
+## v80 — Session 217 — A bush picked in the old zones stays (H.5a)
+Michael's plants decision (27 Sep) said picking leaves the plant: a bush or sapling picked of its berries or leaves stays, bare, and grows them back. Session 167 did that for the streamed world, where herbs are instances with a picked copy beside each. The old hand-built zones (the Forest, Ironhaven, the legacy overworld) build each herb as its own mesh with `mkHerbMesh`, and `harvestHerb` hid the whole group, so a bush there still vanished when picked.
+
+**What changed.** For a plant that stays (a bush, low bush, sapling, shrub, bramble or bracket fungus), `mkHerbMesh` now also builds the picked copy from the same bake as the world's (`plantGeo(key,true)`) and hangs it, hidden, in the herb's group. `harvestHerb` shows the picked copy and hides the whole one in place of hiding the group. When the herb grows back (`tickHerbs`), they swap back. Herbs that go whole when picked (the flowers, the mosses) and the sea's herbs are unchanged. The world's instanced herbs never carry the picked mesh, so the world's own path is untouched.
+
+### Verified (headless Chromium)
+`plants.test.mjs` has a new check, and all 10 pass. A briarweed built by `mkHerbMesh` has its picked copy hidden. Picked, the group stays visible with the whole bush hidden and the bare one shown, and one briarweed goes in the bag. After its regrowth time, the whole bush is back and the bare one hidden again.
+
+### Needs eyes
+Nothing new to look at beyond Session 167's bare bush, now in the Forest and Ironhaven too.

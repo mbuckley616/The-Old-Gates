@@ -74,5 +74,14 @@ const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElemen
   strip(['thornberry', 'caordubh', 'caorthann', 'ashwort', 'briarweed', 'fearnog'].flatMap(k => [[k, false], [k, true]]), 2);
   sc.remove(floor); return out.toDataURL(); });
 fs.writeFileSync('tests/out/plants.png', Buffer.from(shot.split(',')[1], 'base64'));
+// the old zones (Session 217): a herb there is its own mesh (mkHerbMesh), not an instance; picking a bush leaves it too
+const old = await page.evaluate(() => { const key = Object.keys(PLANT_KIND).find(k => PLANT_STAYS.has(PLANT_KIND[k]) && HERB_DEF[k] && HERB_DEF[k].respawn != null); if (!key) return { none: true };
+  const def = HERB_DEF[key]; const x = px + 3, z = pz + 3; const { g: G, gl } = mkHerbMesh(x, z, def, WORLD.scene); const h = { x, z, type: key, def, g: G, gl, harvested: false, respawnT: 0, ph: 0 };
+  const u = G.userData; const before = { hasPicked: !!u.picked, whole: u.whole && u.whole.visible, picked: u.picked && u.picked.visible };
+  const n0 = BAG.reduce((a, b) => a + (b && b._typeKey === key ? (b.qty || 1) : 0), 0); harvestHerb(h); const n1 = BAG.reduce((a, b) => a + (b && b._typeKey === key ? (b.qty || 1) : 0), 0);
+  const after = { harvested: h.harvested, g: G.visible, whole: u.whole.visible, picked: u.picked.visible, took: n1 - n0 };
+  ZONES.world.herbs.push(h); h.respawnT = .001; tickHerbs(1 / 60, performance.now()); ZONES.world.herbs.splice(ZONES.world.herbs.indexOf(h), 1);
+  const back = { harvested: h.harvested, whole: u.whole.visible, picked: u.picked.visible }; WORLD.scene.remove(G); return { key, before, after, back }; });
+check('in the old zones a picked bush stays standing bare, the herb goes in the bag, and the whole bush grows back (Session 217)', !old.none && old.before.hasPicked && old.before.whole && !old.before.picked && old.after.harvested && old.after.g && !old.after.whole && old.after.picked && old.after.took >= 1 && !old.back.harvested && old.back.whole && !old.back.picked, old);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
