@@ -6864,3 +6864,27 @@ The coach builds its team from these at 1.6 scale: one bay, and a bay or a grey 
 
 ### Needs eyes
 The team in motion with the coach at its speed, in real frames: the gallop is the wolf's transverse gallop, stretched, and a horse's differs. Whether the harness reads (the collar and pad are simple). The horses are about 1.9 to the ears at 1.6 scale; the old box horses' heads were at 1.9 too. The coach and the horses do not yet share a harness line; the pole ends between them.
+
+## v80 — Session 263 — What a picked herb leaves: a stub on turned earth (H.5a, Michael's A on Session 237)
+Michael answered Session 237: **a stub on turned earth**. Until now the six kinds that stay when picked (the bushes, the sapling, the shrub, the bramble, the bracket stump) left their bare plant. The other seventeen vanished outright until they grew back.
+
+**Now** those seventeen leave the prototype's stub (`plantStubGeo`).
+- **Most kinds:** every triangle of the baked plant that lies wholly under a cut of 22% of its height (held to 3.5–9 cm) is kept, so stalk bases, the crown and the lowest leaves stay, darkened a little.
+- **The flat kinds:** the mosses and the rosette (under 13 cm) are torn instead, keeping two opposite sectors.
+- **The earth:** each stub sits on a flat patch of turned earth, a quarter to a third of the plant's spread.
+
+`plantGeo(key, true)`, which returned nothing for these kinds, now returns the stub, cached as the bushes' picked copies are. So it takes the path the bushes already take. In the open world it is the chunk's second instanced mesh (`herbIM`), swapped in at the herbs' half-second sync (`syncHerbInstance`) and swapped back when the herb regrows. In the old zones it is `mkHerbMesh`'s hidden copy.
+
+That would have given every herb kind a second instanced mesh per chunk, where only six kinds had one, and most would hold nothing but hidden instances. So a chunk's picked copy of a kind is now drawn only while one of its herbs of that kind is picked (`rec.picked`, set at the build and at each sync; `tickHerbLod` reads it). This also takes the bushes' empty picked meshes out of the draw.
+
+### Verified (headless Chromium)
+New `tests/herbstub.test.mjs`:
+- **Found:** a veilwort (a wisp kind) near the start has its stub as its picked copy, which is not drawn while none is picked.
+- **Picked:** the plant's instance goes to .001 and the stub's to 1, shown, on the next sync.
+- **Regrown:** the plant returns (1) and the stub goes (.001).
+- No page errors.
+
+`tests/plants.test.mjs` is updated for Michael's answer. Its check "nothing else keeps a picked copy" became "nothing else keeps a bare plant". A new check requires the other 17 kinds each to leave a stub. Its rule for loaded herb meshes now allows a picked mesh to be hidden while nothing in it is picked. It passes, bush checks and all. `docs/prototypes/herbstub-ingame.png` is the veilwort's stub where it stood, at noon.
+
+### Needs eyes
+Whether a field of picked herbs reads right in real play: the earth patches are dark, and a picked meadow would be spotted with them. The herbs' glow lights (the old zones) are as before.

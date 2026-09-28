@@ -9,7 +9,7 @@ fs.mkdirSync('tests/out', { recursive: true });
 // every herb with a kind bakes; its height is what it is
 const kinds = await page.evaluate(() => { const out = {};
   for (const k in PLANT_KIND) { const geo = plantGeo(k, false); const bb = geo.boundingBox; const pg = plantGeo(k, true);
-    out[k] = { kind: PLANT_KIND[k], h: +bb.max.y.toFixed(2), w: +Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z).toFixed(2), tris: geo.attributes.position.count / 3, picked: pg ? pg.attributes.position.count / 3 : null }; }
+    out[k] = { kind: PLANT_KIND[k], h: +bb.max.y.toFixed(2), w: +Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z).toFixed(2), tris: geo.attributes.position.count / 3, picked: pg ? pg.attributes.position.count / 3 : null, stub: !!(pg && pg.userData.stub), stubTop: pg && pg.userData.stub ? +pg.boundingSphere.radius.toFixed(2) : null }; }
   out._missing = Object.keys(HERB_DEF).filter(k => !PLANT_KIND[k]); return out; });
 const K = Object.fromEntries(Object.entries(kinds).filter(([k]) => k !== '_missing'));
 check('all 23 land herbs bake as plants (only the sea\'s keep the old tuft)', Object.keys(K).length === 23 && kinds._missing.every(k => /kelp|lily|pearl/.test(k)), { n: Object.keys(K).length, missing: kinds._missing });
@@ -17,17 +17,21 @@ check('sizes follow what they are: mosses and the rosette hug the ground, golden
   K.graywort.h < .07 && K.firemoss.h < .1 && K.goldenrod.h > .7 && K.caorthann.h > .7 && K.thornberry.w > K.thornberry.h && K.thornberry.h > .4 && K.muirfhear.h > .45,
   Object.fromEntries(Object.entries(K).map(([k, v]) => [k, [v.h, v.w]])));
 check('a plant is 100–2,500 triangles', Object.values(K).every(v => v.tris >= 100 && v.tris <= 2500), Object.fromEntries(Object.entries(K).map(([k, v]) => [k, v.tris])));
-const stays = Object.entries(K).filter(([, v]) => v.picked != null);
-check('the bushes, the sapling, the shrub, the bramble and the stump keep a picked copy, smaller than the whole; nothing else does',
+const stays = Object.entries(K).filter(([, v]) => v.picked != null && !v.stub);
+check('the bushes, the sapling, the shrub, the bramble and the stump keep a picked copy, smaller than the whole; nothing else keeps a bare plant',
   stays.map(([k]) => k).sort().join() === ['ashwort', 'briarweed', 'caordubh', 'caorthann', 'fearnog', 'thornberry'].join() && stays.every(([, v]) => v.picked < v.tris && v.picked > v.tris * .2),
   Object.fromEntries(stays.map(([k, v]) => [k, [v.tris, v.picked]])));
 const same = await page.evaluate(() => { const a = plantGeo('thornberry', false), b = plantGeo('thornberry', true); const pa = a.attributes.position.array, pb = b.attributes.position.array;
   // the picked bush's first vertices (the stems and leaf blobs, which come before the berries) are the whole bush's
   let d = 0; for (let i = 0; i < pb.length; i++) d = Math.max(d, Math.abs(pa[i] - pb[i])); return { maxDiff: d, same: plantGeo('thornberry', false) === a }; });
+// Session 263 (Michael's A on Session 237): every other kind leaves a stub on turned earth, well under the whole plant
+const stubs = Object.entries(K).filter(([, v]) => v.stub);
+check('the other 17 kinds each leave a stub on turned earth, smaller than the whole plant', stubs.length === 17 && stubs.every(([, v]) => v.picked < v.tris + 200 && v.picked > 20),
+  Object.fromEntries(stubs.map(([k, v]) => [k, [v.tris, v.picked]])));
 check('the picked bush is the same bush without its berries (and each bake is made once)', same.maxDiff < 1e-6 && same.same, same);
 
 // the open world: find a herb that stays when picked among the loaded chunks, walking out until one turns up
-const found = await page.evaluate(async () => { const want = h => h.inst && h.instP && !h.harvested;
+const found = await page.evaluate(async () => { const want = h => h.inst && h.instP && !h.harvested && PLANT_STAYS.has(PLANT_KIND[h.type]);
   const x0 = px, z0 = pz; let h = ZONES.world.herbs.find(want), tries = 0;
   for (let r = 1; !h && r < 14; r++) { const a = r * 2.4; px = x0 + Math.cos(a) * r * 60; pz = z0 + Math.sin(a) * r * 60; for (let i = 0; i < 40; i++) WORLD.tick(1 / 60, performance.now()); await new Promise(res => setTimeout(res, 300)); h = ZONES.world.herbs.find(want); tries = r; }
   if (!h) return { none: true, types: [...new Set(ZONES.world.herbs.map(h => h.type))] };
@@ -53,9 +57,9 @@ await g.spin(null, 40);
 const cost = await page.evaluate(() => { const { list, lod } = WORLD.herbLod; let all = 0, drawn = 0, shadow = 0, n = 0, vis = 0, ok = true, tallNear = 0;
   for (const r of list) { const d = Math.hypot(px - r.x, pz - r.z); for (const im of r.ims) { const t = im.geometry.attributes.position.count / 3 * im.count; all += t; n++;
       if (im.visible) { drawn += t; vis++; } if (im.castShadow) shadow += t;
-      if (im.visible !== d < lod.far || im.castShadow !== (r.shadow && d < lod.shadow)) ok = false; if (r.shadow && d < lod.shadow) tallNear++; } }
+      if (im.visible !== (d < lod.far && (im === r.ims[0] || r.picked)) || im.castShadow !== (r.shadow && d < lod.shadow)) ok = false; if (r.shadow && d < lod.shadow) tallNear++; } }
   const low = list.filter(r => !r.shadow).some(r => r.ims.some(im => im.castShadow));
-  const frame = () => { REN.render(scene, CAM); return REN.info.render.triangles; }; const on = frame(); list.forEach(r => r.ims.forEach(im => im.visible = false)); const off = frame(); list.forEach(r => { const d = Math.hypot(px - r.x, pz - r.z); r.ims.forEach(im => im.visible = d < lod.far); });
+  const frame = () => { REN.render(scene, CAM); return REN.info.render.triangles; }; const on = frame(); list.forEach(r => r.ims.forEach(im => im.visible = false)); const off = frame(); list.forEach(r => { const d = Math.hypot(px - r.x, pz - r.z); r.ims.forEach((im, k) => im.visible = d < lod.far && (k === 0 || r.picked)); });
   return { meshes: n, drawnMeshes: vis, allTris: all, drawnTris: drawn, shadowTris: shadow, tallNear, rulesHold: ok, lowCasts: low, frameOn: on, frameOff: off, herbsInFrame: on - off }; });
 check('herbs are drawn only near the player (a fraction of what is loaded), the tall kinds cast shadows only close by, the low never', cost.rulesHold && !cost.lowCasts && cost.drawnMeshes < cost.meshes * .5 && cost.drawnTris < cost.allTris * .5, cost);
 

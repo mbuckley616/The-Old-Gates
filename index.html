@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s243</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s244</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9472,10 +9472,26 @@ const PLANT_BUILD={
 };
 // the baked geometry of a herb (by its HERB_DEF key), whole or picked; null for anything without a kind (the sea's herbs)
 function plantGeo(key,picked){const kind=PLANT_KIND[key],def=typeof HERB_DEF!=='undefined'&&HERB_DEF[key];if(!kind||!def)return null;
-  if(picked&&!PLANT_STAYS.has(kind))return null;
+  if(picked&&!PLANT_STAYS.has(kind)){const k2=key+'|stub';let g2=PLANT_GEO.get(k2);if(!g2){g2=plantStubGeo(key,plantGeo(key,false));PLANT_GEO.set(k2,g2);}return g2;}
   const k=key+(picked?'|picked':'');let g=PLANT_GEO.get(k);if(g)return g;
   const P=new Plant(picked);if(picked){const whole=plantGeo(key,false);P.top=whole.userData.top;}
   PLANT_BUILD[kind](P,plantRng(key),def.col,def.stemCol,key);g=P.bake();PLANT_GEO.set(k,g);return g;}
+// S263 — what a picked herb leaves (Michael's A on Session 237): the plant cut near the ground, every triangle wholly under a
+// cut of 22% of its height (held to 3.5–9 cm) kept, so stalk bases, the crown and the lowest leaves stay, darkened; a flat
+// kind (under 13 cm: the mosses, the rosette) torn instead, two opposite sectors kept; on a flat patch of turned earth a
+// quarter to a third of its spread. It is the picked copy the bushes already have, so it stands and regrows the same way.
+function plantStubGeo(key,whole){const src=whole.index?whole.toNonIndexed():whole;const top=whole.userData.top||.3,cut=Math.max(.035,Math.min(.09,top*.22)),flat=top<.13;
+  const p=src.attributes.position,n=src.attributes.normal,c=src.attributes.color,P=[],N=[],C=[];let h=7;for(const ch of key)h=h*31+ch.charCodeAt(0);
+  for(let t=0;t+2<p.count;t+=3){let keep;if(flat){const cx=(p.getX(t)+p.getX(t+1)+p.getX(t+2))/3,cz=(p.getZ(t)+p.getZ(t+1)+p.getZ(t+2))/3;keep=Math.sin(Math.atan2(cx,cz)*2+h)>.15;}
+    else keep=Math.max(p.getY(t),p.getY(t+1),p.getY(t+2))<cut;
+    if(!keep)continue;for(let v=t;v<t+3;v++){P.push(p.getX(v),p.getY(v),p.getZ(v));N.push(n.getX(v),n.getY(v),n.getZ(v));C.push(c.getX(v)*.8,c.getY(v)*.75,c.getZ(v)*.7);}}
+  if(src!==whole)src.dispose();
+  whole.computeBoundingBox();const bb=whole.boundingBox,r=Math.max(.08,Math.min(.18,Math.max(bb.max.x-bb.min.x,bb.max.z-bb.min.z)*.3));
+  const e0=SK.bumpy(SK.ball(1,12,6,0,6.283,0,1.6),.25,7,h&7);e0.scale(r,.018,r);e0.translate(0,-.006,0);const e=e0.index?e0.toNonIndexed():e0;e.computeVertexNormals();
+  const ep=e.attributes.position,en=e.attributes.normal;for(let i=0;i<ep.count;i++){const k=.8+.2*Math.sin(i*7.1+h);P.push(ep.getX(i),ep.getY(i),ep.getZ(i));N.push(en.getX(i),en.getY(i),en.getZ(i));C.push(.29*k,.22*k,.15*k);}
+  e0.dispose();if(e!==e0)e.dispose();
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+  g.computeBoundingSphere();g.userData.top=flat?top:cut;g.userData.stub=true;return g;}
 function plantKeyOf(def){if(typeof HERB_DEF==='undefined'||!def)return null;for(const k in HERB_DEF)if(HERB_DEF[k]===def||HERB_DEF[k].name===def.name)return k;return null;}
 const PLANT_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
 
@@ -36464,15 +36480,16 @@ var WORLD=(()=>{
       list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?1:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
       im.instanceMatrix.needsUpdate=true;group.add(im);return im;};
     const a=mk(geo,false),b=pg?mk(pg,true):null;let cx=0,cz=0;list.forEach(h=>{cx+=h.x;cz+=h.z;});cx/=list.length;cz/=list.length;
-    HERB_IMS.push({ims:b?[a,b]:[a],x:cx,z:cz,shadow:!!kind&&PLANT_SHADOW.has(kind)});}
+    const rec={ims:b?[a,b]:[a],x:cx,z:cz,shadow:!!kind&&PLANT_SHADOW.has(kind),list,picked:list.some(h=>h.harvested)};list.forEach(h=>{h._imr=rec;});HERB_IMS.push(rec);} // S263 — the picked copy is drawn only while one is picked (every kind has one now)
   // A plant a third of a unit tall is under a pixel past about seventy units, and a chunk's herbs are one mesh per kind,
   // so each chunk's herb meshes are drawn only within HERB_LOD.far of the player, and the tall kinds cast shadows only
   // within HERB_LOD.shadow (S167: all 81 loaded chunks' herbs were 1.8M triangles, and their shadows another .9M)
   const HERB_IMS=[],HERB_LOD={far:100,shadow:45};
   function tickHerbLod(){for(let i=HERB_IMS.length-1;i>=0;i--){const r=HERB_IMS[i],im=r.ims[0];if(!im.parent||!im.parent.parent){HERB_IMS.splice(i,1);continue;}
-      const d=Math.hypot(px-r.x,pz-r.z),vis=d<HERB_LOD.far,cast=r.shadow&&d<HERB_LOD.shadow;for(const m of r.ims){m.visible=vis;m.castShadow=cast;}}}
+      const d=Math.hypot(px-r.x,pz-r.z),vis=d<HERB_LOD.far,cast=r.shadow&&d<HERB_LOD.shadow;for(let k=0;k<r.ims.length;k++){const m=r.ims[k];m.visible=vis&&(k===0||r.picked);m.castShadow=cast;}}}
   function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.set(hidden?.001:1,hidden?.001:1,hidden?.001:1);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;
-    if(h.instP){_hs.setScalar(h.harvested?1:.001);_hm.compose(_hp,_hq,_hs);h.instP.setMatrixAt(h.idx,_hm);h.instP.instanceMatrix.needsUpdate=true;}} // the picked bush stands where the whole one did
+    if(h.instP){_hs.setScalar(h.harvested?1:.001);_hm.compose(_hp,_hq,_hs);h.instP.setMatrixAt(h.idx,_hm);h.instP.instanceMatrix.needsUpdate=true;}
+    if(h._imr){h._imr.picked=h._imr.list.some(q=>q.harvested);if(h._imr.picked&&h.instP)h.instP.visible=h.inst.visible;}} // the picked bush stands where the whole one did
   const _hy=new THREE.Vector3(0,1,0);
   let _herbSyncT=0;
   function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;const y=propH(h.x,h.z);if(hidden!==h._shownHidden||Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._shownHidden=hidden;h._y=y;syncHerbInstance(h);}}} // v80 S132 — re-seat when the ground under a herb changes (a pad stamped after it was placed)
