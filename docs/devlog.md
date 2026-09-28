@@ -7158,3 +7158,20 @@ Rather than choose a strength Michael has not seen, I've switched the houses' sh
 
 ### Needs eyes
 The DECISION. If B, the next session switches it on and checks a whole town's build time before and after.
+
+## v80 — Session 277 — The player's own hair swings (H.3, Michael's A on Session 242, the last part)
+Session 267 swung the cloaks and back hair of everyone `tickPeople` poses. The player's third-person body is posed by `tpPose` instead, so it had the bones but hung still. `tpUpdate` now runs the same pendulum (`peopleSwing`) on it after `tpPose`. That covers the braid, the warrior's back plait and the tied tail.
+
+The player never wears a cloak: `tpBuild` sets `cloak:false`, and there is no cloak item. If one comes, it will swing with no further change. The pendulum reads the root's heading from `rotation.y` (yaw + π here), as it does for the townsfolk. A jump in position, from first person back to third or a fast travel, is not taken as a swing, by the 30-units-a-second rule Session 267 set.
+
+### Verified (headless Chromium)
+`tests/secondary.test.mjs` extended: the player with a braid, walked forward at 3.83 a second through `tpUpdate` at 1/60.
+- **Standing:** the hair bone is at 0.
+- **Running:** it peaks at .215.
+- **Stopped:** five seconds after the stop, it has settled to .002.
+- **Without the new line** the same check reads 0 throughout and fails.
+
+`gait`, `player` and `tpswing` pass.
+
+### Needs eyes
+The player's braid in third person at a run and at a sudden turn, which moves the nape sideways faster than any townsperson turns.
