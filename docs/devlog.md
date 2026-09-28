@@ -7033,3 +7033,22 @@ One slip on the way. The comment I put on the switch's line swallowed the code a
 
 ### Needs eyes
 In motion, whether the coil's short hold reads as weight or as a hitch (Session 245's note). The swings are still one-handed poses, so a two-handed weapon's left hand stretches for the grip through them (Session 247). Two-handed swing poses would be their own small piece.
+
+## v80 — Session 270 — Shading in the creatures' creases (H.1, Michael's A on Session 243, the second part)
+Michael's A on Session 243 was this strength "for the people and then the creatures and houses". Session 265 did the people. The creatures' bakes are built part by part as the people's are, so the same pass fits them unchanged:
+- **The wolf family:** `wolfBakeQ`, which also bakes the Boar, the Cave Bear, the dragon, the Faolchú and now the horses.
+- **The spider family:** `spiderBakeQ`, which also bakes the Bog Crawler and the Sand Scorpion.
+
+Each bake now keeps each part's range of vertices and runs `personAO` over them. Every other part's spheres darken the vertices they crowd, capped at .5, once per bake into the colours. `PAO.on` turns it off for all of them.
+
+### Verified (headless Chromium)
+New `tests/creatureao.test.mjs` bakes a wolf, a cave bear, a horse and a spider with the shading off and on:
+- **The bakes:** each has the same vertices.
+- **The darkening:** the mean is .28–.30, which is high for the reason Session 265 gave (vertices buried inside other parts).
+- **The cap and the open surfaces:** none past .5, and 17–24% untouched.
+- No page errors.
+
+`wolves`, `bear`, `spiders`, `crawler`, `scorpion` and `coach` (the horses) pass. `docs/prototypes/creatureao-ingame.png` is the `bear` suite's picture, a person, two bears and a wolf, now shaded.
+
+### Needs eyes
+Dark coats (the Dire Wolf, the Faolchú) may go too dark in their creases at dusk. The houses are the last part of the answer and are built by a different bake (`mergeParts` of whole boxes). The same idea there would darken walls under eaves and at the foot, which is a design of its own and left.

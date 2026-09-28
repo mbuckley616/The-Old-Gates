@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s250</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s251</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -10480,7 +10480,7 @@ function wolfBakeQ(k,q){
   if(k.embers)for(let i=0;i<5;i++)part(SK.ball(.012,6,4),C(0xff6a20),i<3?B.spine:hips,0,.1-(i<3?i*.005:0),i<3?.08-i*.08:.12-(i-3)*.12).scale.set(1,.5,2.2);
   }
   // bake: every part into one geometry, each vertex bound to its bone, the fur shaded by its normal
-  const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;
+  const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;
   const sad=C(k.saddle),bel=C(k.belly),tmp=new THREE.Color();
   hips.updateMatrixWorld(true);
   for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
@@ -10488,7 +10488,8 @@ function wolfBakeQ(k,q){
       tmp.copy(c);if(o.userData.fur){const up=n.y;if(up>0)tmp.lerp(sad,Math.min(1,up*1.25)*(v.y>.3?.85:.35));else tmp.lerp(bel,Math.min(1,-up*1.4)*.8);if(v.y<.1)tmp.lerp(bel,.12*(1-v.y/.1));}
       col.push(tmp.r,tmp.g,tmp.b);si.push(bi,0,0,0);sw.push(1,0,0,0);}
     if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
-    base+=pa.count;geo.dispose();}
+    PR.push([base,pa.count]);base+=pa.count;geo.dispose();}
+  personAO(pos,nor,col,PR); // S270 — the creatures' creases shaded as the people's (Michael's A on Session 243: the people, then the creatures)
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
@@ -10718,7 +10719,7 @@ function spiderBakeQ(k,q){
     part(SK.ball(r*.95,7,5),band,B['tib'+n],0,0,0);seg(B['tib'+n],lt,r*.8,r*.35,coat,0).position.x=0;
     if(i)part(SK.ball(.06,8,6),C(k.mark),B['tib'+n],lt*.62,0,0).scale.set(1.7,.9,.22);}});
   // bake, the fur counter-shaded: the back a shade darker, the underside lighter, the leg joints banded
-  const pos=[],nor=[],col=[],idx=[],si=[],sw=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),nn=new THREE.Vector3();let base=0;
+  const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),nn=new THREE.Vector3();let base=0;
   const bel=C(k.belly),tmp=new THREE.Color(),sad=C(k.coat).multiplyScalar(.7);
   body.updateMatrixWorld(true);
   for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
@@ -10726,7 +10727,8 @@ function spiderBakeQ(k,q){
       tmp.copy(c);if(o.userData.fur){if(nn.y>0)tmp.lerp(sad,Math.min(1,nn.y)*.5);else tmp.lerp(bel,Math.min(1,-nn.y*1.3)*.6);}
       col.push(tmp.r,tmp.g,tmp.b);si.push(bi,0,0,0);sw.push(1,0,0,0);}
     if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
-    base+=pa.count;geo.dispose();}
+    PR.push([base,pa.count]);base+=pa.count;geo.dispose();}
+  personAO(pos,nor,col,PR); // S270 — as the wolf family's
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));geo.setIndex(idx);
