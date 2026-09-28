@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s248</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s249</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9671,6 +9671,16 @@ function personGenome(def,opts){
   else if(/priest|sister|brother|prior/.test(role)){g.hat='hood';}
   else if(/innkeeper/.test(role)){g.apron=0xd8d0b8;}
   if(!PEOPLE_CAPPED.has(g.style)&&(g.hat==='coif'||g.hat==='flatcap'||g.hat==='fur'||g.hat==='chaperon'))g.hat='none';
+  // S268 — wealth in clothes (Michael's A on Session 246: from the role and the town's prosperity): a base by role, moved by
+  // the town's fortune by ±.25 and ±.1 on the person's own seed (drawn last, so no other trait moves). Poor (under .3) is
+  // cloth faded towards undyed wool, foot-wraps, no fur hat or chaperon, and in the bake a rope belt and patches; well-off
+  // (over .7) deeper dyes, gilt trim, dark boots, and a buckle, a chain and a pendant. Only a person of a place (opts.key a
+  // settlement) and not in uniform; the rest dress as before. The clothes follow the town when its people are rebuilt.
+  if(opts.key&&!/guard|captain|sergeant|watch|blade|warden|recruit|soldier/.test(role)&&typeof WORLD!=='undefined'){let pr=null;try{const st=WORLD.siteAnywhere(opts.key);if(st)pr=WORLD.prosperity(st);}catch(e){}
+    if(pr!=null){const base=/lord|lady|regent|king|queen/.test(role)?.95:/merchant|trader|innkeeper|scholar|adept|mage|shipwright|harbour/.test(role)?.7:/smith|armourer|apothecary|herbalist|priest|sister|brother|prior|steward|mayor|elder/.test(role)?.55:/farmer|fisher/.test(role)?.35:/hermit/.test(role)?.15:.45;
+      const w=Math.max(0,Math.min(1,base+(pr-50)/50*.25+(r()-.5)*.2));g.wealth=w;const C=x=>new THREE.Color(x);
+      if(w<.3){const u=C(0x7a6c5a);g.cloth=g.cloth.clone().lerp(u,.45);g.sleeve=g.sleeve.clone().lerp(u,.45);g.legs=g.legs.clone().lerp(u,.3);g.trim=g.cloth.clone().multiplyScalar(.8);g.boot=C(0x7a6a52);if(g.hat==='chaperon'||g.hat==='fur')g.hat='none';}
+      else if(w>.7){for(const k of ['cloth','sleeve']){const h={};g[k].getHSL(h);g[k]=new THREE.Color().setHSL(h.h,Math.min(1,h.s*1.15+.03),h.l*.82);}g.trim=C(0xc8a040);g.boot=C(0x1a120c);g.legs=g.legs.clone().multiplyScalar(.8);}}}
   return g;
 }
 // ── the body: rounded parts on bones, baked into one skinned mesh ──
@@ -9710,11 +9720,11 @@ function personBakeQ(g,q){
   // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
   // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
   {const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
-  const belt=part(SK.torus(.172*bw*(fem?.96:1),.02,5,20),dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;
+  const WL=g.wealth==null?.5:g.wealth,gold=C(0xc8a040); /* S268 — wealth in the bake: a rope belt and patches, or a buckle, a chain and a pendant */const belt=part(SK.torus(.172*bw*(fem?.96:1),WL<.3?.016:.02,5,20),WL<.3?C(0x9a8458):dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;if(WL<.3){if(!g.dress)part(SK.ball(.034,7,5),mixC(cloth,0x3a3024,.45),hips,.085*bw,-.075,.136*bw).scale.set(1.1,.9,.28);part(SK.ball(.016,6,5),C(0x9a8458),hips,.06*bw,.0,.128*bw);}if(WL>.7)part(SK.rbox(.042,.034,.012,.005,2),gold,hips,0,.02,.13*bw);
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);
   const chestPts=fem?[[0,-.01],[.155,-.01],[.15,.06],[.17,.15],[.172,.22],[.15,.3],[.095,.36],[.052,.39],[0,.4]]:[[0,-.01],[.165,-.01],[.172,.05],[.19,.17],[.188,.25],[.16,.32],[.1,.37],[.055,.395],[0,.4]];
-  part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;
+  part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;if(WL<.3)part(SK.ball(.036,7,5),mixC(cloth,0x3a3024,.4),spine,-.07*bw,.13,.124*bw).scale.set(1,1.1,.26);if(WL>.7){const ch=part(SK.torus(.085*bw,.005,4,18),gold,spine,0,.35,.035);ch.rotation.x=Math.PI/2-.55;part(SK.ball(.018,8,6),gold,spine,0,.285,.13*bw).scale.z=.5;}
   if(g.cloak){const cb=bone('cloak',spine,0,.33,-.1),cb2=bone('cloak2',cb,0,-.31,-.08),cc=mixC(cloth,0x000000,.3); /* S267 — the cloak hangs from its own bone at the shoulders, in two halves hinged at the middle of the back (peopleSwing) */part(SK.cyl(.17*bw,.225*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb,0,-.17,.095).scale.z=.8;part(SK.cyl(.215*bw,.27*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb2,0,-.14,.175).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
   if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
   if(g.ogre)part(SK.ball(.12*bw,12,9),skin,spine,0,.1,.085*bw).scale.set(1.1,.85,.9); // S221 — an ogre's belly, bare below the jerkin

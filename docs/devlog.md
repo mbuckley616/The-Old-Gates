@@ -6987,3 +6987,30 @@ New `tests/secondary.test.mjs` builds a Markish woman with a cloak and a braid, 
 
 ### Needs eyes
 What Session 242 could not show in a still: whether the cloak's lag at a start and a stop reads as cloth or as a flap, in real frames, and the faint fold at the hinge when it bends hard.
+
+## v80 — Session 268 — Wealth in clothes, from the role and the town's fortune (H.2, Michael's A on Session 246)
+Michael answered Session 246: **the role and the town's prosperity**, so the clothes follow the town's fortune.
+
+**How wealth is set.** `personGenome` gives a person of a place (built with a settlement as its key) a wealth from 0 to 1:
+- **By role:** lords .95; merchants, innkeepers, scholars and shipwrights .7; smiths, apothecaries, priests, stewards and elders .55; villagers .45; farmers and fishers .35; hermits .15.
+- **By the town:** moved by the town's prosperity, ±.25 across 0–100.
+- **By the person:** ±.1 on the person's own seed. That is drawn after every other trait, so nobody's face, hair or dress changes otherwise.
+
+A guard in uniform, and a person of no place (a foe, the player), carry none and dress as before. The genome cache is per session, so a town's people change clothes when the town is rebuilt, and a change of 12 prosperity already rebuilds it.
+
+**How it looks** is the prototype's, as shown:
+- **Poor (under .3):** cloth, sleeves and legs faded towards undyed wool, foot-wraps for boots, no fur hat or chaperon. In the bake, a thinner pale rope belt with a knot, a patch on the chest, and one on the skirt when there is no dress.
+- **Well-off (over .7):** dyes 15% more saturated and 18% darker, gilt trim, dark boots, darker legs. In the bake, a gilt buckle, a fine chain at the neck and a pendant.
+
+### Verified (headless Chromium)
+New `tests/wealth.test.mjs` builds one woman in Hearthwick at several fortunes:
+- **Wealth:** a farmer in a failing town (prosperity 5) is .21, a villager at 50 is .54, and a merchant at 95 and a lord at 50 are both 1.
+- **Dress:** the poor farmer's cloth is faded (716248 against the villager's 6a5a3a) with foot-wraps (7a6a52). The merchant's trim is gilt (c8a040) and her boots dark (1a120c). The triangle counts differ too, but across different roles with their own gear, so they do not isolate the patches and chain.
+- **Excluded:** a guard, and a person of no place, carry no wealth.
+- **The town:** Hearthwick's 73 people as built run from .21 to 1.
+- No page errors.
+
+`people`, `lod` and `crime1` pass. `docs/prototypes/wealth-ingame.png` is the same farmer, villager and merchant in Hearthwick failing (5), as today (50) and thriving (95), left to right.
+
+### Needs eyes
+The foot-wraps and the chain at street distance, and whether gilt reads as money or as costume (Session 246's note). At Hearthwick's own prosperity (37) most folk are middling, a few farmers poor and the merchants well-off. Whether a town's change of fortune should show sooner than its next rebuild is a design question.
