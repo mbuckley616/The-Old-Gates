@@ -6,6 +6,42 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
+Michael: **Role and the town's prosperity** (A) (28 Sep 2026, via the control room)
+
+### The player's swings in third person — anticipation and follow-through (Session 245)
+Michael: **As shown** (A) (28 Sep 2026, via the control room)
+
+### Shading in the creases of the townsfolk — baked ambient occlusion (Session 243)
+Michael: **This strength** (A) (28 Sep 2026, via the control room)
+
+### Cloaks and hair that swing (Session 242)
+Michael: **Cloak and back hair** (A) (28 Sep 2026, via the control room)
+
+### What a picked herb leaves behind (Session 237)
+Michael: **A stub on turned earth** (A) (28 Sep 2026, via the control room)
+
+### The first-person weapon on the kit too? (Session 232)
+Michael: **Yes, every weapon** (A) — "Check the bow again - it looks like it’s facing backwards, towards the player" (28 Sep 2026, via the control room)
+
+### The road coach, its horses, and the shark (Session 230)
+Michael: **All three as shown** (A) (28 Sep 2026, via the control room)
+
+### The world's rocks — boulders, outcrops and clusters, dressed by biome (Session 228)
+Michael: **All three kinds, dressed by biome** (A) (28 Sep 2026, via the control room)
+
+### Combat — which shape should the fight take: tightened, Elden Ring's, or directional? (the designer, 2026-09-28)
+Michael: **Elden Ring's shape** (B) — "I like the idea of moving more towards Elden ring combat, but it’s a pretty fundamental change… as long as this is possible I’m up for it." (28 Sep 2026, via the control room)
+
+### Occupation's effects from the canon — the League's duels and the Compact's tithe (systems builder, 2026-09-28, issue #37)
+Michael: **A tithe on the Compact's occupations** (A) (28 Sep 2026, via the control room)
+
+### Q7 “The Rubbing” in the open world — how does Ashenmoor burn? (systems builder, 2026-09-28, issue #32)
+Michael: **Ashenmoor burns in the world** (A) (28 Sep 2026, via the control room)
+
+### Coach tickets — what does a ticket buy, and what does it cost? (systems builder, 2026-09-28, issue #31)
+Michael: **A seat held** (A) (28 Sep 2026, via the control room)
+
 ### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
 Michael: **The giant water bug** (B). (28 Sep 2026, via the control room)
 
