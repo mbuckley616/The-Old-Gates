@@ -5852,3 +5852,24 @@ New `tests/register.test.mjs`, 5 checks. All four peoples have both guild lines,
 
 ### Needs eyes
 An Aurennais or Markish town's watch, met in play: whether the four voices read as four peoples, and whether *Master* in a guard's mouth sits right.
+
+## v80 — Session 266 — The Compact's tithe
+Michael answered issue #37 with **A**: a town the Compact (Aurenne) occupies pays a tithe of an extra half point of prosperity a game-day, and Aurenne's capital gains the same, capped at 100. The League's duels wait until duels exist.
+
+**What changed.** `tickProsperity` runs once a game-day over the loaded towns. For each town flagged occupied whose occupier is `aurenne`, it now charges the tithe and adds it to the day's total. After the loop, the total goes to the Compact's seat (`FACTIONS.compact.seat`, set by `anchoredPlaces`: Fortargent on this seed). The seat is found with `siteAnywhere`, so it collects even while its island isn't loaded. It collects nothing while it is itself occupied. `setProsperity` holds the cap at 100.
+
+**Why the tithe keeps its own account.** Prosperity is stored in whole points: `setProsperity` rounds. The first build added the half point to the day's other drivers, and the test showed it had no effect at all. A town held ten days by Aurenne and one held by the Mark both lost exactly a point a day, because −0.5 and −1.0 on top of that day's other drivers rounded to the same step.
+
+So the tithe now keeps its own half points (`st.tithe` on the town, the same on the capital) and pays a whole point when one has built up. An occupied town pays a point every second day, and the capital takes a point a day for every two towns. The account lives in `worldState.towns`, so it is saved.
+
+**A finding, not changed.** The same rounding applies to occupation's own half point (Session 129) and to the drift towards a town's home level, which is 1% of the gap a day, under half a point for any gap under 50. Whether each of these moves a town depends on what else happened to it that day. Changing that means carrying fractions for every driver, which would rebalance every town in the world. That is left as a note in backlog B, not done here.
+
+### Verified (headless Chromium)
+New `tests/tithe.test.mjs`, 4 checks. The Compact's seat is Fortargent, a city of Aurenne. Dunmore and Portclare were set at 50 and held ten game-days by Aurenne, then (from the same state) ten days by the Mark:
+- **The towns.** Held by Aurenne they end at 35, held by the Mark at 40: exactly five points more.
+- **The capital.** Fortargent, set at 50, ends at 60 when Aurenne holds them and at 50 when the Mark does: ten points, a point a day for two towns.
+
+Randomness was seeded identically in both runs. No page errors.
+
+### Needs eyes
+Nothing to see on screen: the tithe shows only as prosperity (the keeper's *getting by* against *prosperous*, the walls' tier), and only in a war that Aurenne wins.
