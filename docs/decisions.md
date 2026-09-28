@@ -17,6 +17,8 @@ The leaves never shut: nothing in the game closes a town's gate yet. A later ses
 
 The picture shows the stone tier (top) and the palisade (bottom), today, A and B, seen from the road outside at noon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/towngate-grid.png
 
+## Answered
+
 ### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
 Backlog H.2 has owed wealth in clothes since Session 153. Today a townsperson dresses by their people, nation and role: a lord has a crown and a smith an apron, but a poor fisher and a well-off one dress alike. So do the folk of a failing village and of a thriving town. The prototype (`docs/prototypes/wealth/shoot.mjs`) patches a copy of the game; `index.html` is unchanged. It gives a person a wealth from 0 to 1 and dresses them by it in three steps:
 - **Poor** (below .3): faded cloth, drawn towards undyed wool; a patch on the chest and one on the skirt; a rope belt with a knot; foot-wraps for boots; no fur hat or chaperon.
@@ -43,6 +45,7 @@ The cost is small: poor adds 104–160 triangles to a person of 4.4–7.7k, and 
 So in a village at prosperity 20, about half the villagers are poor; in a town at 90, some are well-off; and a merchant is well-off anywhere above about 50. Guards keep the town's kit. When a town's prosperity changes, its people's clothes follow on your next visit. It is the same person, only dressed by the town's fortune.
 
 **Options:** (A) all of it: wealth from the role and the town's prosperity, so a town you have raised or ruined shows it on its people; (B) wealth from the role only, so it never changes; (C) not yet. **Recommendation: A.** The brief's first line is that choices change the world you can see. Prosperity is already the thing your choices move (roads cleared, routes opened, a town sacked), and today it shows only in lots, shutters, lamps and banners. The same person's clothes following the town's fortune makes it show on its people too. No prices or quests are touched: this only reads prosperity. Things to judge: whether gilt trim reads as wealth or as costume; whether foot-wraps on the poor read at street distance; and whether a poor dress needs a patch on the skirt as well (the dress has none in the prototype). Children, who H.2 also owes, are not part of this.
+Michael: **Role and the town's prosperity** (A) (28 Sep 2026, via the control room)
 
 ### The player's swings in third person — anticipation and follow-through (Session 245)
 Backlog H.3 still owes the player's swings, with anticipation and follow-through. This is third person only. Today the body's swing is three equal-ish parts, each a smoothstep: it winds up over the first 30%, strikes over the next 30% and eases back over the last 40%. Only the arm moves, besides a small turn of the torso. It does not follow the first person's own timing: in first person the wind-up runs to .44 of the swing, the hit lands at .55 and the follow-through runs to .79. The body's forehand is also a flat cut and its backhand a rising diagonal, where the first person shows two falling diagonals. (Session 244 fixed a bug by which the body always played the flat cut.)
@@ -60,6 +63,7 @@ It has the same three swings the first person shows: the forehand from high righ
 - Two-handed power chop, claymore: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/swings-4.png
 
 **Options:** (A) as shown: the coil, the step and the carry, timed to the hit, with the first person's three swings; (B) timing only: today's poses moved onto the first person's phases, so the blade lands at the hit, and the swings matched, but no coil or step; (C) not yet. **Recommendation: A.** The brief puts weighty combat third, above look. Today the body's blade is still travelling at the moment of the hit, and the swing is done by the arm alone. A shows the weight going into the blow and lets you read the swing's direction. Known faults, in both rows: on a two-handed weapon the left hand does not stay on the hilt all the way through the swing; that is owed either way. Some swings bring the blade close to the head in the wind-up. Whether the coil's hold reads as weight or as a hitch only shows in motion.
+Michael: **As shown** (A) (28 Sep 2026, via the control room)
 
 ### Shading in the creases of the townsfolk — baked ambient occlusion (Session 243)
 Backlog H.1 still owes ambient occlusion in the shape kit. Today every part of a person is baked with its flat colour, so an armpit, the underside of a chin or beard, the inside of the thighs and the skin under a hat's brim are as bright as a cheek. The dungeon walls already darken in their corners (Session 189); the people do not. The prototype (`docs/prototypes/peopleao/shoot.mjs`) patches a copy of the game. After a person is baked, each part is stood in for by a few spheres along its length, and each vertex is darkened by the other parts in front of it, by at most half. This is worked out once per person, in the standing pose, into the colours they already carry, so it costs nothing per frame and adds no triangles. Each picture has two rows, today above and with the occlusion below:
@@ -70,6 +74,7 @@ Backlog H.1 still owes ambient occlusion in the shape kit. Today every part of a
 Close up it gives the figures weight: the neck sits under the jaw, the arms stand off the body, and a hat shades the brow. At street distance it is hardly visible.
 
 **Options:** (A) this strength, for the townsfolk, the foes built on them and the player, then the same bake for the creatures and the houses in later sessions; (B) the same, but stronger (darker creases, visible at street distance); (C) not yet. **Recommendation: A.** It is free at run time and makes the close view, which is where you talk to people, less flat. B risks muddy faces. One known fault: it is worked out in the standing pose, so a raised arm keeps the shadow of an arm at its side. That is the usual price of a baked occlusion.
+Michael: **This strength** (A) (28 Sep 2026, via the control room)
 
 ### Cloaks and hair that swing (Session 242)
 Backlog H.3 still owes "secondary motion (cloaks, hair)". Today a cloak is one stiff shell fixed to the back, and a plait or a tied tail is fixed to the head. They turn with the body and never move on their own. A cloak is worn by 60% of the Mark's townsfolk, 12% of the Gatelands' and 10% of Aurenne's. The prototype (`docs/prototypes/secondary/shoot.mjs`) builds a copy of the game with three extra bones. The cloak hangs from the shoulders in two halves, hinged at the middle so it bends. A plait, a warrior's back plait or a tied tail hangs from the nape. Each is a damped pendulum driven by how the body moves. It streams back with the pace, lags when you start, swings forward when you stop, swings out on a turn, and settles when you stand. Each picture has two rows, today above and the proposal below. The six columns are standing, walking, running, running through a turn to the left, just stopped, and settled.
@@ -80,6 +85,7 @@ Backlog H.3 still owes "secondary motion (cloaks, hair)". Today a cloak is one s
 The pendulums cost a few multiplications per person per frame, and they would run only for the near copy of a person (within 17 units). The triangle count is unchanged.
 
 **Options:** (A) the cloak in two hinged halves and the back hair, for the townsfolk, the foes who wear cloaks and the player's third-person body; (B) the cloak only, with the hair staying fixed; (C) not yet. **Recommendation: A.** A cloak that streams behind a runner is one of the cheapest ways to make the movement read as fluid, which is the third thing the brief asks for. Known faults to fix in the build: the hinge shows a slight fold line when the cloak is bent hard, and the plaits' swing is small, so they need a lighter damping.
+Michael: **Cloak and back hair** (A) (28 Sep 2026, via the control room)
 
 ### What a picked herb leaves behind (Session 237)
 Your answer on the plants (Session 164) was that picking leaves the plant: a picked bush, sapling, shrub, bramble or the fungus's stump stays, bare, and grows back. The other seventeen kinds vanish when you pick them, and reappear whole when they regrow: the mosses, the clay, the rosette, the cliff flower, the leafy herbs, the waterleaf, the broadleaf, the veilwort, the heartroot, the tussock, goldenrod, wolfsbane, the thistle, the fern and the mushrooms. The prototype (`docs/prototypes/herbstub/shoot.mjs`) builds two ways of leaving a mark from the game's own plants. Each picture has three rows: the whole plant at the back, then A, then B.
@@ -90,6 +96,7 @@ Your answer on the plants (Session 164) was that picking leaves the plant: a pic
 - Kinds 10–17: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/herbstub-2.png
 
 **Recommendation: A.** It fits your rule for the bushes: you can see where you have been picking, and a cut goldenrod or a torn moss still reads as that plant. In the build, the stub would be the picked copy the bushes already use, so the regrowth and instancing need nothing new. B is the cheapest, but a field of identical earth patches reads as a mark rather than a plant.
+Michael: **A stub on turned earth** (A) (28 Sep 2026, via the control room)
 
 ### The first-person weapon on the kit too? (Session 232)
 Your answer on the weapon kit (Session 220) was A: "the player's weapons in third person, and every foe". Both are built now (Sessions 226–227, 231). In first person, which is how most of the game is played, your weapon is still `buildViewmodel`'s boxes: a white slab for a blade, a box for a mace's head, a stick for a bow. The prototype (`docs/prototypes/fpweapons/shoot.mjs`) builds today's first-person weapon for five items. It then hides the weapon's boxes and puts the kit's weapon in the same fist, tinted by the item as in third person. The hands, arms, position and swing are untouched.
@@ -99,6 +106,7 @@ Your answer on the weapon kit (Session 220) was A: "the player's weapons in thir
 The view has its own small lit scene with nothing to reflect, so the kit's metal would be duller there (metalness .25, not .7), or it renders nearly black. What the build keeps: the bow's drawn string and nocked arrow (they would be re-hung on the kit bow), the enchantment glow, and the Forge-Man's Hammer's own bespoke model.
 
 **Options:** (A) yes, the kit in first person for every weapon, keeping the bow's draw, the glow and the Forge-Man's Hammer; (B) yes, but melee weapons only, the bow keeping today's first-person model with its string animation; (C) not yet. **Recommendation: A.** It is the weapon you look at most, and it would match what the foes carry and what you see in third person.
+Michael: **Yes, every weapon** (A) — "Check the bow again - it looks like it’s facing backwards, towards the player" (28 Sep 2026, via the control room)
 
 ### The road coach, its horses, and the shark (Session 230)
 Outside the foes, the last boxes in the open world that you meet up close are the road coach and its pair of horses, and the shark in open water. The coach, which you can ride between towns, is a box on four discs. Each horse is a box on four sticks with a box for a head. The shark is a cylinder with four cones. None of them is in a family you have approved. The prototype (`docs/prototypes/coach/shoot.mjs`) builds them from the shape kit, each beside today's, with a highwayman for scale:
@@ -112,6 +120,7 @@ Outside the foes, the last boxes in the open world that you meet up close are th
 In the build, the horses would be a new kind on the wolf's bones, as the boar and bear are, with longer legs, and they would walk and trot on its gait as the coach moves. That would also give the game a horse for anything later (a mount, a farm). The shark would be one skinned mesh with its body and tail bending as it swims.
 
 **Options:** (A) all three as shown, the horses on the wolf's bones and gait; (B) the coach and horses now, the shark later; (C) the coach body only, keeping the horses and shark for when mounts and sailing are designed; (D) not yet. **Recommendation: A.** The coach is something you ride and watch, so its boxes are seen for a whole journey. Known faults to fix in the build: the bridle and reins are crude, and the horses' legs are thin at the forearm and gaskin.
+Michael: **All three as shown** (A) (28 Sep 2026, via the control room)
 
 ### The world's rocks — boulders, outcrops and clusters, dressed by biome (Session 228)
 Backlog H.5 asks for "trees and rocks (more silhouette, less cube)". The trees got their variety in Session 192. Every rock in the world is still one shape: two dodecahedra, 72 triangles, one grey, the same in every biome. The prototype (`docs/prototypes/rocks/shoot.mjs`) builds three kinds of rock from a noise-shaped sphere:
@@ -127,8 +136,26 @@ Each is dressed by where it lies: lichen spots on the moor, moss on the tops in 
 A boulder or an outcrop is 320 triangles and a cluster 1,280, against today's 72. The start area has 17 rocks loaded, so this is about 5k more triangles there, and more in rocky hills. The build would still draw every rock of a kind in one instanced call, as today.
 
 **Options:** (A) all three kinds, dressed by biome, mixed by the ground's own dice; (B) the boulder only, dressed by biome, in place of today's rock; (C) A, but the dressing only (moss, lichen, snow) and all rocks one grey stone; (D) not yet. **Recommendation: A.** The outcrops break up hillsides the way the trees now break up forests, and the clusters give the eye places to rest. Known faults to fix in the build: the outcrop's strata are faint from far off, and the lichen spots catch the light too brightly.
+Michael: **All three kinds, dressed by biome** (A) (28 Sep 2026, via the control room)
 
-## Answered
+### Combat — which shape should the fight take: tightened, Elden Ring's, or directional? (the designer, 2026-09-28)
+Today an enemy glows for 0.24–0.55 s and hits anyone within 1.4 units whichever way it faces, every enemy has one attack, there is no dodge, and nothing staggers you, so fights come down to swinging and stepping back. Which shape should the reimagined combat take, with damage from the weapon skill and enemies scaled by place? (Page: `docs/design/combat.md`.)
+- **A.** Tighten what is there: a roll (0.45 s, 2.6 units, 18 stamina), tells of 0.45–0.9 s read from the body's pose, enemy hits in an arc, a parry window from the Guard skill, and a posture bar the player can lose. Three Opus sessions.
+- **B.** Elden Ring's shape: A, plus swings that commit you (slowed during wind-up and strike, a three-hit chain), two to four attacks per enemy family (heavy, delayed, gap-closer), a riposte after a perfect parry and a finisher on a broken posture, and lock-on. One Fable and six Opus sessions, the move sets arriving with the creature passes.
+- **C.** Directional: the mouse picks one of four swings and a block must match the side. Nine or more sessions; most of the roster (wolves, spiders, trolls, the Faolchú) has no side to read.
+
+Recommendation: **B**, with A's three pieces built first. Move sets and commitment are what make counters punishing and the combat weighty; decide before the next creature families are built, so their attack poses follow the table.
+
+Michael: **Elden Ring's shape** (B) — "I like the idea of moving more towards Elden ring combat, but it’s a pretty fundamental change… as long as this is possible I’m up for it." (28 Sep 2026, via the control room)
+
+### Occupation's effects from the canon — the League's duels and the Compact's tithe (systems builder, 2026-09-28, issue #37)
+Michael: **A tithe on the Compact's occupations** (A) (28 Sep 2026, via the control room)
+
+### Q7 “The Rubbing” in the open world — how does Ashenmoor burn? (systems builder, 2026-09-28, issue #32)
+Michael: **Ashenmoor burns in the world** (A) (28 Sep 2026, via the control room)
+
+### Coach tickets — what does a ticket buy, and what does it cost? (systems builder, 2026-09-28, issue #31)
+Michael: **A seat held** (A) (28 Sep 2026, via the control room)
 
 ### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
 Your answer on the last box creatures (Session 214) was B: the Bog Crawler gets a six-legged crawler's body of its own, a beetle or a giant water bug, prototyped first. It lives in the fen and swamp, at a spider's size or a little over. Both prototypes are built in the game from the shape kit, in the fen's colours with moss on the back (`docs/prototypes/crawler/shoot.mjs`). Each picture has a bandit for scale and a spider for comparison.
@@ -143,6 +170,13 @@ In the build, either one would be a new six-legged skeleton beside the spider's,
 
 Michael: **B** — the giant water bug. (28 Sep 2026, via the control room, issue #25)
 Done, Session 236: the water bug on the spider's kit, its forelegs raised on the fang bones with a hooked tibia that snaps shut on the strike, walking on the other four legs in diagonal pairs (`docs/prototypes/crawler-ingame.png`).
+Michael: **The giant water bug** (B). (28 Sep 2026, via the control room)
+
+### The coaching inn halfway — what is inside? (systems builder, 2026-09-28, issue #24)
+Michael: **A, plus the coach's other half** (B) — the roadside inn with keeper, meal, a room and the board, and also the driver and a passenger or two waiting in the common room, with tickets sold here. (28 Sep 2026, via the control room)
+
+### Guards indoors — what happens when you are seen inside a building? (systems builder, 2026-09-28, issue #23)
+Michael: **The guard comes in** (B) — "The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player" (28 Sep 2026, via the control room)
 
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Seven kinds of creature are still on the old box bodies. None of them is in a family you have approved, so here is how each would look. Each is built in the game from its own kits (`docs/prototypes/creatures3/shoot.mjs`), with a bandit beside it for scale.
