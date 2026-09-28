@@ -6203,3 +6203,33 @@ New `tests/bear.test.mjs`, 4 checks, all passing, no page errors:
 
 ### Needs eyes
 The bear walks on the wolf's trot. A real bear paces, with both legs on one side moving together; the kit's gait has no pace. If it reads as a trotting dog, a pace would be a small change to `WG`: an offset table for the bear.
+
+## v80 — Session 224 — The Sand Scorpion and the Shore Wisp (H.4, Michael's answer B on Session 214)
+The fourth slice of Michael's B, and the last creatures built "as shown": the dunes' Sand Scorpion and the coast's Shore Wisp. What is left of Session 214 is the Bog Crawler. Michael asked for a six-legged crawler body of its own for it, to be prototyped first.
+
+**The Sand Scorpion.** It was a box body with box legs and a box tail. It is now the spider's kit (`SPIDER_KINDS['Sand Scorpion']`, `scorpion:true`), baked once like the spider:
+- **Colours and body.** Sand-coloured. The abdomen is long and flat, with five dorsal plates across it where the spider has its chevron.
+- **Pincers.** Two big pincers sit on the fang bones in place of the spider's fangs and palps: an arm out and forward, a swollen claw, and two dark fingers. The fangs' spread, which the strike already drives, opens them.
+- **Tail.** A jointed tail of seven segments arches up from the abdomen's end over the back, with a bulb and a sting. Session 214's picture hid the tail behind the abdomen; this one raises it, as that entry promised.
+- **The tail's bone.** The tail is on a bone of its own. The bone is added last to the scorpion's skeleton only, so the spider's 28 bones keep their order and its shared bake is untouched.
+- **Motion.** `tickCreatures` sways the tail while the scorpion stands, cocks it back through the wind-up, and brings it forward over the head on the strike (rotation −.4 wound, +.96 at the strike).
+
+It walks on the spider's tetrapods. Its numbers are unchanged (30 hit points, scale .85).
+
+**The Shore Wisp.** It was already spheres, not boxes, but plain ones. Now it is the prototype's cold light:
+- a white core in three layered blue haloes;
+- three white motes, which `attackPose`'s hover still circles;
+- a tail of eight fading lights trailing behind and below.
+
+Everything is additive, unlit and without depth writes. I left out the prototype's point light. Every new light in the world's scene changes the light count that every lit material is compiled for, and a wisp that appears would stall the frame to recompile them. The haloes carry the glow instead.
+
+### Verified (headless Chromium)
+New `tests/scorpion.test.mjs`, 5 checks, all passing, no page errors:
+- The zone's Sand Scorpion is a spider-kit rig with 29 bones, one more than the spider's 28, at 8.6k triangles. It is still spider-shaped with 30 hit points, and no box is left.
+- The spider keeps its own bones and has no tail.
+- The Shore Wisp is 15 additive meshes plus its health bar, with 3 motes and its hover, and no box.
+- The tail's rotation reads −.04 standing, −.40 after the wind-up, +.96 at the strike, and back to .03 after it.
+`spiders`, `lod` and `foes` still pass. One check in `spiders` (Session 169) asserted that the Sand Scorpion keeps its old body, to show the spider kit caught nothing else. It now asks the same of the Bog Crawler, the one crawler still on its S130 body. Pictures: `docs/prototypes/scorpion-ingame.png`, `docs/prototypes/wisp-ingame.png`.
+
+### Needs eyes
+The scorpion's legs are the spider's: long and thin. A real scorpion's are shorter and thicker. If it reads as a spider with a tail, the legs want their own lengths in `SPIDER_LEGS` for this kind, which is a gait change and so its own session. Also, whether a wisp without its own light reads as a light at night.
