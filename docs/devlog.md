@@ -6038,3 +6038,16 @@ The trees, the herbs and the creatures at the water are unchanged.
 
 ### Needs eyes
 A glade in real light and terrain: whether the reeds read as reeds at walking distance, and whether the lily pads sit on the water when the pond's level differs from the pad's (they are placed at the water disc's height).
+
+## v80 — Session 216 — The Marsh Hag on the people's body (H.4)
+Session 215's picture of a lair showed a green box figure beside the boulders. It was the Marsh Hag, the boss of a fen or swamp lair, and she comes out at night there too. Every other humanoid foe in the zone table has been a person since Sessions 171–184. She was missed because she has no entry in `FOE_DRESS`, so `buildZoneEnemy` fell through to the box.
+
+She is a human foe, so she falls under what Michael approved for bandits "and the other human foes" (Session 171). I built her as the name says, with no new look to ask about: an old woman in a long bog-green dress and cloak, hooded, long lank grey hair, a sallow cast to the skin, a long nose, pale yellow eyes, and a crooked staff (the gear kit's stick). `FOE_DRESS['Marsh Hag']` sets `hag`, and `buildFoe` dresses the genome as an elder woman. She walks, strikes and dies as the other people-foes do, on her own copy of the material.
+
+That leaves only the non-human creatures on boxes: the Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion and Shore Wisp, which wait on Session 214's question. The Shark (the sea's) was not in that prototype, and would go in the next question.
+
+### Verified (headless Chromium)
+`foes.test.mjs` has a new check, and all 12 pass. The Marsh Hag built by `buildZoneEnemy` is a person, female, elder, hooded, in a dress, with a staff, on her own material, with the right shoulder as the striking arm. Picture: `docs/prototypes/hag-ingame.png` (a bandit, two hags standing, one walking).
+
+### Needs eyes
+Whether a plain old woman is menacing enough for a lair's boss. If Michael wants the folklore hag instead (green-skinned, clawed, with teeth), that is a question for him, not something I would change unasked.

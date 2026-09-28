@@ -77,5 +77,10 @@ const guard = await page.evaluate(() => { const S = WORLD.settle.get('dunmore');
   const e = WORLD.guardDraw(n, S); const r = e && e.limbs && e.limbs.person; const res = { drew: !!e, person: !!r, same: !!r && r.g === gen, name: e && e.name, who: n.def && n.def.name, hat: r && r.g.hat, genHat: gen && gen.hat, gear: r && r.g.gear, guards: gs.length };
   try { e.dead = true; e.mesh.parent.remove(e.mesh); n._drawn = false; n.g.visible = true; } catch (err) {} return res; });
 check('a guard who draws is the same person (the look the guard wears in the street), not a bandit in red', guard.drew && guard.person && guard.same && guard.name === 'Town Guard' && !!guard.hat && guard.hat === guard.genHat, guard);
+// the Marsh Hag (Session 216): the fen lairs' mistress, the last human foe on a box — an old woman in bog rags, hooded, with a staff
+const hag = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); const x = px + fx * 25, z = pz + fz * 25 + 6;
+  const e = buildZoneEnemy(WORLD.scene, [], x, z, 'Marsh Hag', null); const r = e.limbs && e.limbs.person; const out = r ? { person: true, female: r.g.female, elder: r.g.age === 'elder', hat: r.g.hat, dress: r.g.dress, gear: r.g.gear, ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR } : { person: false };
+  e.mesh.parent && e.mesh.parent.remove(e.mesh); return out; });
+check('the Marsh Hag is an old woman on the people\'s body: hooded, in a long dress, with a staff (Session 216)', hag.person && hag.female && hag.elder && hag.hat === 'hood' && hag.dress && hag.gear === 'stick' && hag.ownMat && hag.armR, hag);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

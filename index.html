@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s215</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s216</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9896,6 +9896,7 @@ const FOE_DRESS={
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
   'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
+  'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
   'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',gear:'stick'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
   'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
   'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
@@ -9919,6 +9920,8 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.troll){const r=pRng(g.seed+11);g.troll=true;g.skin=new THREE.Color(dr.skin).lerp(new THREE.Color(dr.skin2),r());g.height=1;g.build=1.75;g.head=1.15;g.age='elder';g.beard='none';g.hat='none';
       g.style=r()<.5?'buzz':'shaggy';g.hair=new THREE.Color(dr.hair);g.nose=[2.2,1.8];g.ears=1.3;g.eye=new THREE.Color(dr.eye);g.ruddy=false;g.freckles=false;g.female=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=g.skin.clone();g.legs=g.skin.clone().multiplyScalar(.9);g.boot=g.skin.clone().multiplyScalar(.7);g.bodyScale=[1.15,1,1.1];}
+    if(dr.hag){g.female=true;g.age='elder';g.beard='none';g.style='straight';g.hair=new THREE.Color(0x8a8a78);g.skin.lerp(new THREE.Color(0x9aa078),.35);g.nose=[1.8,1.7];g.ruddy=false;g.freckles=false;
+      g.dress=true;g.cloak=true;g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);g.trim=new THREE.Color(0x2a3020);g.legs=new THREE.Color(0x2a2a20);g.boot=new THREE.Color(0x1e1a14);g.eye=new THREE.Color(0xc8c060);}
     if(dr.gargoyle){const r=pRng(g.seed+17);g.gargoyle=true;g.skin=new THREE.Color(dr.skin).multiplyScalar(.94+r()*.1);g.height=.95;g.build=1.05;g.head=1.1;g.style='buzz';g.hair=g.skin.clone().multiplyScalar(.8);
       g.cloth=g.skin.clone().multiplyScalar(.9);g.sleeve=g.skin.clone();g.legs=g.skin.clone();g.boot=g.skin.clone().multiplyScalar(.8);g.trim=g.skin.clone().multiplyScalar(.75);g.eye=new THREE.Color(dr.eye);
       g.nose=[1.4,1.1];g.ears=1.4;g.beard='none';g.hat='none';g.gear=null;g.ruddy=false;g.freckles=false;g.female=false;g.age='elder';g.tattoo=false;}
