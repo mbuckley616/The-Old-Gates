@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s250</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s251</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -28495,6 +28495,7 @@ function _applyZoneFromSave(d){
 // ── Save/Load menu ────────────────────────────────────────────────────────
 let _slMode='save'; // 'save' | 'load'
 let _slFromTitle=false; // true when opened from title screen
+let _slLoaded=false; // S251 — set once a save is loaded from the menu
 
 function openSLMenu(mode, fromTitle){
   _releasePointerLockForMenu();
@@ -28506,6 +28507,7 @@ function openSLMenu(mode, fromTitle){
 
 function closeSLMenu(){
   document.getElementById('slmenu').style.display='none';
+  if(_slFromTitle&&!_slLoaded){location.reload();return;} // S251 — Load Game has already stepped into the scene; back out to the title for real
   if(_slFromTitle){
     // Return to title — don't start the game
   } else {
@@ -28550,7 +28552,7 @@ function renderSLSlots(){
     for(let i=0;i<SS_MANUAL;i++)container.appendChild(row(mine.saves.find(e=>e.kind==='manual'&&e.slot===i)||null,'manual',i,cid));
     const autos=mine.saves.filter(e=>e.kind==='auto').sort((a,b)=>b.ts-a.ts);if(autos.length){header('Autosaves',`${autos.length} of ${SS_AUTO} · newest first · load from the Load tab`);autos.forEach(a=>container.appendChild(row(a,'auto',a.slot,cid)));}
     return;}
-  if(!chars.length){container.innerHTML='<div style="color:#5a5040;padding:12px">No saves yet.</div>';return;}
+  if(!chars.length){const none=document.createElement('div');none.style.cssText='color:#5a5040;padding:12px';none.textContent='No saves yet.';container.appendChild(none);return;} // S251 — below the Import button, not over it: a new browser is where a character comes in
   for(const c of chars){const h=header(`${c.name}${c.id===curId?' <span style="color:#8ac880;font-size:11px">(playing)</span>':''}`,`Lv${c.level}${c.people?' · '+c.people:''} · ${fmtT(c.last)}`);
     h.appendChild(_slExportBtn(c.id)); // v80 S139 — a copy of this character, outside the browser
     const delc=document.createElement('button');delc.type='button';delc.textContent='\uD83D\uDDD1 Delete character';delc.className='sl-btn sl-danger';delc.title='Remove this character and every one of their saves';delc.style.marginLeft='8px';
@@ -28581,7 +28583,7 @@ function _slotSaveClick(div,slot,existing){
 
 function _slotLoadClick(div,meta){
   if(div.dataset.primed==='1'){
-    ssLoad(meta.key).then(d=>{if(!d){closeSLMenu();return;}ssSetActive(meta.key);_applyLoadData(d);_applyZoneFromSave(d);closeSLMenu();updateHUD();renderInv();buildViewmodel();buildShieldViewmodel();
+    ssLoad(meta.key).then(d=>{if(!d){closeSLMenu();return;}_slLoaded=true;ssSetActive(meta.key);_applyLoadData(d);_applyZoneFromSave(d);closeSLMenu();updateHUD();renderInv();buildViewmodel();buildShieldViewmodel();
       addLog('💾',`${meta.kind==='auto'?'Autosave':'Slot '+(meta.slot+1)} loaded — Lv${d.level}, ${d.gold}\uD83E\uDE99`);showMsg(`Save loaded. (${ZONE_LABEL[activeZoneId]||activeZoneId})`,'#c8e88a');});
   } else {
     document.querySelectorAll('#sl-slots .sl-slot').forEach(b=>{b.dataset.primed='0';b.style.borderColor='';});div.dataset.primed='1';div.style.borderColor='rgba(100,200,80,.7)';const nm=div.querySelector('.sl-slot-name');if(nm){nm.textContent='Click again to load';nm.style.color='#8ac880';}
@@ -41167,7 +41169,7 @@ function loop(now){
 if(REN)requestAnimationFrame(loop);
 
 // ── Title screen: show Continue/Load once the save store has read its index (and moved any old localStorage slots in) ──
-ssMigrate().then(()=>{if(hasAnySave()){document.getElementById('cb').style.display='block';document.getElementById('lgb').style.display='block';}});
+ssMigrate().then(()=>{document.getElementById('lgb').style.display='block';if(hasAnySave())document.getElementById('cb').style.display='block';}); // S251 — Load Game always: with no saves it holds the Import button, the way into a new browser
 
 // Shared UI reveal + input binding — called by all entry paths
 function _enterGame(){

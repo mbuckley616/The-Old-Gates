@@ -5745,3 +5745,27 @@ New `tests/twinsrebuild.test.mjs`. Dunmore at 61 has 59 people with records, 36 
 
 ### Needs eyes
 Nothing new to see; this keeps Session 248's faces where they were.
+
+## v80 — Session 251 — A new browser
+Backlog G has owed two checks since Sessions 137 and 139: *a slot, an overwrite, an autosave and Continue, in real Chrome on `file://`*, and *export a character on `file://` and import it back*. The existing tests call the save functions directly. This session drove the whole path the way a player does, headless Chromium on `file://`: the menu's own buttons, a real download, the browser's file picker, and full page reloads in between. The round trip works. Along the way it found two ways the title screen fails a player with an empty browser.
+
+**What was wrong.**
+- **No way to import into a new browser.** With no saves, the title hides *Load Game* (and *Continue*). And the Load menu, when it has no characters to list, replaced everything in it with *No saves yet*, including Session 139's *Import a character from a file* button. So a new browser, a new machine or a cleared cache (the very place a kept file is for) could import only after starting a throwaway character and using the in-game menu.
+- **Closing Load Game didn't go back.** *Load Game* on the title steps into the scene before it opens the menu (`_enterGame`: the title hidden, the HUD shown, the keys bound). Closing that menu without loading anything left you in that half-entered game, with no character and no title. `closeSLMenu`'s comment said *Return to title*, and nothing did. This was possible before too, whenever there were saves.
+
+**What changed.**
+- *Load Game* is always on the title. *Continue* still needs a save.
+- With no saves, the Load menu shows *No saves yet* below the Import button, not in place of it.
+- Closing the Load menu opened from the title without loading anything reloads the page, which is the title. Nothing in the half-entered scene is worth keeping.
+
+### Verified (headless Chromium, `file://`)
+New `tests/saveui.test.mjs`, 13 checks, one session of play:
+- **Slots by the menu.** Slot 1 is empty and saves on one click, and the menu closes. The overwrite asks (*Click again to overwrite*), keeps 321 gold on the first click and writes 654 on the second. An autosave (700) is written.
+- **Reload and Continue.** After a page reload the three saves are there, not on the localStorage fallback, and Continue is offered. Continue loads the newest, the autosave: 700 gold, the name and level, and the spot she stood on to the unit. The Load tab arms and then loads the slot (654).
+- **Export, delete, reload.** *Export* downloads `the-old-gates_Traveller_lv4_2026-09-28.json` holding all three saves. *Delete character*, clicked twice, empties the store, and it stays empty after a reload.
+- **The empty title.** With no saves the title shows *Load Game* and not *Continue*. Closing that menu without loading returns to the title.
+- **Import by the picker.** *Import* through the browser's file chooser brings the character back with three saves, listed at once. After another reload, *Load Game* on the title, with the slot armed and clicked, starts the game with 654 gold.
+- `saves` and `export` still pass. No page errors.
+
+### Needs eyes
+The same round trip in Michael's own Chrome with a file kept on disk between two browsers or profiles. That settles G's two lines for good; headless it is settled.
