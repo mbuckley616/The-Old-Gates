@@ -5431,3 +5431,25 @@ The inn in play:
 - the door facing the road, and the building turned to match, by eye.
 
 The coach's driver and passengers and the tickets are the next session.
+
+## v80 — Session 238 — The coach's other half
+
+This is the second half of Michael's **B** on issue #24: *the driver and a passenger or two waiting in the common room, tickets sold here*.
+
+**What changed.** While the roadside inn is open (the town inn's hours, 6 to 2), its common room holds the coach's driver and one or two travellers (`coachInnFolk`, called where the interior builder puts up the board). They are drawn from the road's key and the day, so the same people are there all day and different ones tomorrow. Their names come from the inn's country's name bank, never the keeper's own. Each starts on a free spot of floor, tested against the room's own collision, and wanders the common room's half like the guild halls' members, colliding at their own height (Session 232).
+- **The driver** says when the coach leaves (the board's times) and how the road is. The road reads *There's trouble on the road. We stand here till it's cleared* while the line is halted or the route broken, and *Clear, today* otherwise.
+- **A traveller** says which end they are bound for and one short reason.
+
+The lines are few and plain; the quest writer may want them.
+
+**Tickets are not built.** Every coach is free to ride today, and the player paid to raise the road. What a ticket would buy, and what it would cost, changes a rule of play, so it is a question for Michael: issue #31, in docs/decisions.md under Pending. My recommendation there is a free ticket that holds the next coach at the inn.
+
+### Verified (headless Chromium)
+`tests/coachinn.test.mjs`, extended, on the Ironhaven–Vieux Marché road:
+- **At noon.** The common room holds Clodagh (Coach Driver) and Bríd and Eilís (Travellers), none of them standing in a solid. E by the driver opens *When does the coach leave?* and *How's the road?*.
+- **The same day.** Leaving and coming back finds the same three.
+- **At 3h.** The door still opens, and nobody is there: no keeper, no travellers.
+- **Session 237's checks** all pass again: the door, the board, the keeper, the room, and the inn coming back the same. No page errors.
+
+### Needs eyes
+The common room in play: three or four people in a 16 × 12 room with a gallery, and whether the driver's and travellers' lines sit in the canon's register. The travellers don't board the coach when it calls. They are there for the day, which is a simplification.

@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s237</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s238</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36956,6 +36956,7 @@ var WORLD=(()=>{
         if(coachHere){boxRaw(1.2,1.35,.16,1.4,.9,.06,0x3a2a18);boxRaw(1.2,1.35,.2,1.2,.7,.02,0xd8c8a0);for(let i=0;i<4;i++)boxRaw(1.2,1.6-i*.15,.22,.9-(i%2)*.3,.03,.01,0x3a2a18);
           for(let i=0;i<3;i++)boxRaw(W-1.0,1.7,2.0+i*.6,.5,.04,.4,0x4a3018);[0x5a3a20,0x3a2a1a,0x6a4a2a].forEach((c,i)=>boxRaw(W-1.0,1.5,2.0+i*.6,.3,.35,.08,c));
           box(W-1.2,.25,D*.5,1.2,.5,1.0,0xc8a850);box(W-1.6,.55,D*.5+.2,.6,.3,.5,0xb89840);
+          if(house.coachInn)coachInnFolk(house,sc_,W,D); // S238 — the driver and the travellers waiting in the common room
           house._coaching=true;}
       }
     }catch(e){console.warn('interior variety',e);}
@@ -39022,6 +39023,25 @@ var WORLD=(()=>{
       {label:'How’s the weather been?',get response(){return weatherLine();}},
       {label:'Farewell.',bye:true}];}});
     house.dlg=def;house._board=board;COACH_INNS.set(key,house);return house;
+  }
+  // S238 — the coach's other half (Michael, issue #24: B): the driver and a traveller or two wait in the common room while
+  // the inn is open. Who they are is steady for a day (the road's key and the day); they wander the floor like guild members.
+  function coachInnFolk(house,sc_,W,D){
+    if(!npcInsideNow(house))return;const key=house.coachInn;const rt=coaches()[key];if(!rt)return;
+    const A=siteAnywhere(rt.a),B=siteAnywhere(rt.b);const C=COACHES.get(key);
+    const hk=String(key).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);const r=rngFor((hk+innDay())%100003,innDay()%7919);
+    const [ci,cj]=cellOf(house.doorX,house.doorZ);const P=PEOPLES[nationOf(ci,cj).people]||PEOPLES.gatelander;const bank=NAMES[P.names]||NAMES[house.reg]||NAMES.irish;
+    const nm=()=>pick(r,r()<.5?bank.f:bank.m);const used=new Set([house.keeper]);const fresh=()=>{let n=nm();for(let k=0;k<6&&used.has(n);k++)n=nm();used.add(n);return n;};
+    const road=()=>(C&&C.halted)||(A&&B&&roadBroken(A,B))?"There's trouble on the road. We stand here till it's cleared.":"Clear, today.";
+    const folk=[{name:fresh(),role:'Coach Driver',ico:'\u{1F40E}',greeting:["Horses first, then me.","Quarter of an hour and we're off.","Mind the step when she's in."],
+      topics:[{label:'When does the coach leave?',response:house._board||'At six, either end.'},{label:'How’s the road?',get response(){return road();}},{label:'Farewell.',bye:true}]}];
+    const n=1+(r()<.5?1:0);
+    for(let k=0;k<n;k++){const toB=r()<.5,dest=toB?B:A;const why=pick(r,['Family.','Work, if it’s still there.','A wedding. Not mine.','I’ve a debt to collect.','The same as everyone. Something better.']);
+      folk.push({name:fresh(),role:'Traveller',ico:'\u{1F9F3}',greeting:["Waiting on the coach, same as you.","Sit, if you like. It won't come faster standing.","Is it six yet?"],
+        topics:[{label:'Where are you headed?',response:`${dest?dest.name:'The next town'}. ${why}`},{label:'Farewell.',bye:true}]});}
+    folk.forEach((def,k)=>{const g=buildNPCMesh({role:'villager',name:def.name,bCol:k?0x4a4038:0x3a2a20,sCol:pick(r,P.skin)},{nation:nationAt(house.doorX,house.doorZ),key:'coach_'+key});
+      let x=W/2,z=D*.7;for(let t=0;t<40;t++){const cx=2.5+r()*(W-5),cz=Math.max(5.5,D*.5)+r()*(D*.5-2.5);if(!intSolidAt(cx,cz,.45,0)&&!INT_NPCS.some(o=>Math.hypot(o.g.position.x-cx,o.g.position.z-cz)<1.2)){x=cx;z=cz;break;}}g.position.set(x,0,z);g.rotation.y=r()*Math.PI*2;sc_.add(g);
+      INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:2,x1:W-2,z0:Math.max(5,D*.5),z1:D-2}});});
   }
   function buildCoachLine(key,rt,rd){
     const c=x=>new THREE.Color(x);const g=new THREE.Group();
