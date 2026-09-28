@@ -5790,3 +5790,24 @@ New `tests/intdoors.test.mjs`, 5 checks, all passing with the numbers above.
 
 ### Needs eyes
 Whether 1.48 *looks* right beside a person in real light: a doorway that tall is generous for an old house. That is taste, not fit.
+
+## v80 — Session 253 — From the crypt to the smoke
+Backlog A has owed *a run of the whole main quest in the open world, Q1 to Q7* since Session 236. Q7 waits on issue #32 (Ashenmoor has to burn in the world first). This session played Q0 to Q6 from a new character, headless, the way a player does:
+- **The start.** Character creation, the tutorial crypt, and out of it by the crypt's own exit.
+- **Taking and handing in.** Every quest taken from its giver by walking up and pressing E, then through the giver's own dialogue (the first choice that doesn't back out) until the quest moved. Every hand-in the same way.
+- **Kills.** Every kill made in the dungeon that the quest's world door opens (`killE`, with the door's portal).
+- **Sigils.** Every sigil touched on its floor (`touchSigil`).
+
+**What it showed.** The story holds. Bram gives *First Blood* at his forge in Ashenmoor, and five kills in the Dungeon of Shadows bring it to hand-in. Edna gives *Strange Markings*, and a sigil on the Shadows' second floor closes it. Corwin stands in Ashenmoor with *The Merchant Knows* (Session 240) and sends you to Aldwyn in Ironhaven, found at the Royal Herald by E with *📜 Tell him about Edna's sigils*. Aldwyn gives the Crypt of Embers (a sigil on its second floor). Captain Brynn gives the Vault of the Tide (eight kills on its second floor). Aldwyn gives *The Binding Stone* (twenty kills across Ironhaven's dungeons, Session 240's fix). Handing that in, his *Smoke. From Ashenmoor.* makes Q7 active, and there the world stops, as #32 says.
+
+**What it found.** A Slime killed in a dungeon threw `ReferenceError: buildEnemy is not defined`. `killE` splits a Slime into two Small Slimes with `buildEnemy`, but `buildEnemy` is defined inside `buildDungeon`, where `killE` can't reach it. The split has been there since the first push, so every Slime ever killed threw. No Small Slimes appeared, and the error broke off whatever had called the kill. The run hit it on Q5's floor of the Vault. `buildDungeon` now leaves a handle to its builder (`_dungeonBuildEnemy`), and the split uses it.
+
+**Not a bug, noted for the next test.** The harness's `g.intoWorld()` skips the tutorial crypt, so a character made by it has Q0 still active and Q1 locked. In real play, leaving the crypt closes Q0 and opens Q1. A test of the story has to start the real way, as this one does.
+
+### Verified (headless Chromium)
+New `tests/mainrun.test.mjs`: from a new character, Q0–Q6 each complete by play and Q7 is active after, with no page errors. The state after each step is logged (e.g. *Q5 kills (8) → q5:reward*, *Q6 handed in → q6:complete q7:active*).
+
+New `tests/slimesplit.test.mjs`: a Slime on the Vault of the Tide's lower floor, killed, leaves two Small Slimes at the spot and in the scene, with no error. On the previous build the same kill throws and leaves none.
+
+### Needs eyes
+Kill a Slime in a real dungeon: the split, and the two small ones coming at you.

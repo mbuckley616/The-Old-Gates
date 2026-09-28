@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s251</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s252</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -20328,6 +20328,7 @@ function goToFloor1(){
   });
 }
 
+let _dungeonBuildEnemy=null; // S253 — set by buildDungeon: the Slime's split needs the dungeon's enemy builder
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
@@ -22533,6 +22534,7 @@ function buildDungeon(portal){
     // gate, the melee-side analogue to Wraith's magic gate.
     Shieldbearer:{minLevel:2, col:0x5a5550,hp:48,spd:1.15,scale:1.0, buildFn:'humanoid',dmgMult:2.6,ranged:false,eyeCol:0xffcc55,light:0xbb9933, def:3, resist:{}, shieldUp:true},
   };
+  _dungeonBuildEnemy=d=>buildEnemy(d); // S253 — killE's slime split builds its Small Slimes outside this function
   function buildEnemy(d){
     const g=new THREE.Group();const mat=new THREE.MeshLambertMaterial({color:d.col});const sc=d.scale;const limbs={};
     if(d.buildFn==='humanoid'){
@@ -25000,11 +25002,11 @@ function killE(e,tag=''){
   if(e.baseType === 'Slime' && e.variant !== 'small'){
     // Skip if this is already a Small Slime that got here somehow
     const smallDef = {col:0x5fd85f,hp:10,spd:0.75,scale:0.42,buildFn:'slime',dmgMult:1.2,ranged:false,eyeCol:0xffdd44,light:0x44ff44,def:0,resist:{cloch:1.35,tine:1.5,uisce:0.7}};
-    for(let s=0; s<2; s++){
+    for(let s=0; s<2&&_dungeonBuildEnemy; s++){
       const offX = (Math.random()-0.5) * 1.2;
       const offZ = (Math.random()-0.5) * 1.2;
       const sx = e.x + offX, sz = e.z + offZ;
-      const nb = buildEnemy(smallDef);
+      const nb = _dungeonBuildEnemy(smallDef);
       const byE = (0)+floorGroundY; // slimes sit on floor
       nb.g.position.set(sx, byE, sz);
       dScene.add(nb.g);
