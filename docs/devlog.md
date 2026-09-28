@@ -6694,3 +6694,28 @@ New `tests/buildsite.test.mjs`. A site is 2,192 triangles, spanning −1.70 to 2
 
 ### Needs eyes
 The same site stands for every kind of work. A harbour or a watch-house might want its own site (piles and planks, or a timber frame), but that is a design question and left. The site stays until the work is done, three days on.
+
+## v80 — Session 256 — The fort's keep on the kit (H.5)
+Session 251 put the fort compound's ring and towers on the kit; the keep in the middle, whose door is the fort's way in, was still the Session 132 keep: a box with box buttresses, box slits and box merlons, four plain cylinders with cones, a flat dark box for the doorway and a half torus over it. It is the first thing you walk towards once through the gate.
+
+**Now** (`fortKeepGeoHi`) the keep is one vertex-coloured mesh.
+- **Walls:** a battered plinth that splays out at the foot and runs a metre into the ground for a slope. Above it, courses of rubble laid broken-joint on a mortar core, leaving the doorway and the windows open. There are stepped buttresses on the long sides, a pale string course, and the arrow slits in dressed surrounds.
+- **Top:** corbels under a projecting walk, merlons on the old spacing, and a low hipped lead roof inside them.
+- **Turrets:** coursed round towers on a battered foot, with slits, a corbelled crenellated top, a slated cone and a gilt finial.
+- **Doorway:** a real opening, .95 deep to a dark back. It has dressed jambs in long and short stones, eleven voussoirs with a keystone, and the two plank leaves standing open against the reveals with iron straps and a ring. There is a threshold, and the old two steps are now rounded slabs.
+- **Windows:** round-headed, with a dark recess and a sill on the string course. The lit panes are the old planes where they were.
+- **Torches and banner:** iron brackets under the old flames, and the nation's banner on a pole, cut to a point.
+
+The keep was added straight to the scene, so it had no distant copy. Its meshes now go into the compound's group: `buildFortKeep` (the cell's doors step) leaves its old parts in `FORT_KEEP` by seed, and `buildFortCompound` (the next step) adds the detailed keep and the old keep at the same spot, so they share a bake cluster and swap with the houses' distance rule. Everything else stays in `buildFortKeep` and is unchanged: the glow in the doorway, the lit windows, the torches and their lights, the keep's collider (the whole mass) and its stamp. The keep rolls its own seed from the fort's, so the fort's dice are untouched. It is 12,317 triangles. My first version was 19,241; tori ringing every course of the turrets and rounded boxes for every corbel were most of it. For scale, a fort's ring is about fifty segments of 1–2k each.
+
+### Verified (headless Chromium)
+New `tests/keep.test.mjs`:
+- **The mesh:** a keep is 12,317 triangles, spanning ±6.92 by −5.92 to 7.30 (the steps in front, as before) and 12.32 tall. The old turrets reached ±6.7 and 11.2.
+- **Openings:** a ray at the doorway's middle, and one under the arch, meets the dark back at 3.55 (the face is at 4.5). A ray at the wall beside the door meets the courses at 4.60. A ray at a window meets its recess at 4.49, behind the face.
+- **In the game:** at Cnocowen Keep (the fort nearest the start), the compound's baked meshes hold the keep in detail and its old self in the same cluster. From 30 units the detailed one shows; from 700, the old one. The keep's collider (6 by 5) and its portal are where they were.
+- No page errors.
+
+`walls`, `pois`, `dungeon`, `houses` and `saves` pass. `lod` passed once in three runs with this change and once in three without it. Each failing run failed on the townsfolk's shadow pass: either no triangles were counted in it (`shadowFull` 0) or no person's shadow reached the picture. That is a flake that was already there, not this change; it is the next session. `docs/prototypes/keep-shot.mjs` renders `docs/prototypes/keep-ingame.png`: the keep before (left) and after (right), from the gate side and from behind a corner turret, at noon.
+
+### Needs eyes
+The door leaves stand open, but the old warm glow plane still hangs in front of the doorway, so the opening reads orange from close by. Whether that is right, or the glow should move to the back of the recess, is a matter of taste. The turrets keep the old keep's pale stone against the dark walls (Session 132's choice). The keep changes from detailed to plain between 70 and 80 units from the eye, the houses' distances, which is about the length of the courtyard from outside the gate.
