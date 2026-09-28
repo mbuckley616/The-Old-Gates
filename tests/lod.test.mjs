@@ -8,8 +8,8 @@ fs.mkdirSync('tests/out', { recursive: true });
 
 const rigs = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
   const ok = rs.filter(r => r.geoLo && r.trisLo < r.tris).length;
-  // the distant copy binds to the same seventeen bones
-  const bonesOk = rs.every(r => { const a = r.geoLo.attributes.skinIndex.array; let mx = 0; for (let i = 0; i < a.length; i += 4) mx = Math.max(mx, a[i]); return mx < 17 && r.geoLo.attributes.position.count === a.length / 4; });
+  // the distant copy binds to the same bones (seventeen, and up to three more for a cloak and back hair, Session 267)
+  const bonesOk = rs.every(r => { const a = r.geoLo.attributes.skinIndex.array; let mx = 0; for (let i = 0; i < a.length; i += 4) mx = Math.max(mx, a[i]); return mx < r.mesh.skeleton.bones.length && r.geoLo.attributes.position.count === a.length / 4; });
   const ratio = rs.map(r => r.trisLo / r.tris);
   return { n: rs.length, ok, bonesOk, hi: [Math.min(...rs.map(r => r.tris)), Math.max(...rs.map(r => r.tris))], lo: [Math.min(...rs.map(r => r.trisLo)), Math.max(...rs.map(r => r.trisLo))],
     ratio: [+Math.min(...ratio).toFixed(2), +Math.max(...ratio).toFixed(2)], sumHi: rs.reduce((a, r) => a + r.tris, 0), sumLo: rs.reduce((a, r) => a + r.trisLo, 0) }; });

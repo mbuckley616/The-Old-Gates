@@ -6,10 +6,11 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 
 const rigs = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
-  return { n: rs.length, skinned: rs.filter(r => r.mesh.isSkinnedMesh && r.mesh.skeleton.bones.length === 17 && r.root.children.length === 1).length,
+  return { n: rs.length, skinned: rs.filter(r => r.mesh.isSkinnedMesh && r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20 && r.root.children.length === 1).length,
     tris: rs.map(r => r.tris), styles: new Set(rs.map(r => r.g.style)).size, beards: new Set(rs.map(r => r.g.beard)).size, hats: new Set(rs.map(r => r.g.hat)).size,
     skins: new Set(rs.map(r => r.g.skin.getHex())).size, roles: [...new Set(rs.map(r => r.g.role))].slice(0, 12) }; });
-check('every townsperson is one skinned mesh on seventeen bones', rigs.n >= 8 && rigs.skinned === rigs.n && rigs.tris.every(t => t > 1500 && t < 9000), { n: rigs.n, skinned: rigs.skinned, tris: [Math.min(...rigs.tris), Math.max(...rigs.tris)] });
+// (Session 267: a cloak adds two bones and back hair one, the swinging parts')
+check('every townsperson is one skinned mesh on seventeen bones (and up to three more for a cloak and back hair)', rigs.n >= 8 && rigs.skinned === rigs.n && rigs.tris.every(t => t > 1500 && t < 9000), { n: rigs.n, skinned: rigs.skinned, tris: [Math.min(...rigs.tris), Math.max(...rigs.tris)] });
 check('and no two look the same', rigs.styles >= 4 && rigs.skins >= 4 && rigs.hats >= 2, rigs);
 
 const det = await page.evaluate(() => { const pick = x => [x.style, x.beard, x.hat, x.skin.getHex(), x.hair.getHex(), x.height.toFixed(4), x.female, x.age];

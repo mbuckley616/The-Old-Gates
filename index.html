@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s247</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s248</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9715,7 +9715,7 @@ function personBakeQ(g,q){
   const spine=bone('spine',hips,0,.03,0);
   const chestPts=fem?[[0,-.01],[.155,-.01],[.15,.06],[.17,.15],[.172,.22],[.15,.3],[.095,.36],[.052,.39],[0,.4]]:[[0,-.01],[.165,-.01],[.172,.05],[.19,.17],[.188,.25],[.16,.32],[.1,.37],[.055,.395],[0,.4]];
   part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;
-  if(g.cloak){part(SK.cyl(.17*bw,.27*bw,.62,14,1,true,Math.PI/2+.25,Math.PI-.5),mixC(cloth,0x000000,.3),spine,0,.02,-.005).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
+  if(g.cloak){const cb=bone('cloak',spine,0,.33,-.1),cb2=bone('cloak2',cb,0,-.31,-.08),cc=mixC(cloth,0x000000,.3); /* S267 — the cloak hangs from its own bone at the shoulders, in two halves hinged at the middle of the back (peopleSwing) */part(SK.cyl(.17*bw,.225*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb,0,-.17,.095).scale.z=.8;part(SK.cyl(.215*bw,.27*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb2,0,-.14,.175).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
   if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
   if(g.ogre)part(SK.ball(.12*bw,12,9),skin,spine,0,.1,.085*bw).scale.set(1.1,.85,.9); // S221 — an ogre's belly, bare below the jerkin
   const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);
@@ -9740,12 +9740,12 @@ function personBakeQ(g,q){
   });
   if(g.freckles){const fr=pRng(g.seed+99);const fc=mixC(skin,0x7a4a2a,.45);for(let i=0;i<12;i++){const x=(fr()<.5?-1:1)*(.02+fr()*.07),y=.09+fr()*.04;part(SK.ball(.0045,5,4),fc,head,x,y,zs(x,y));}}
   // hair: a bumped sphere for texture, a chain of offset lobes with a tie for a plait
-  const plait=(pts,r,col)=>{const n=pts.length-1,per=4;let last=null;
+  const plait=(pts,r,col,pb)=>{const n=pts.length-1,per=4;let last=null;const PB=pb||head;if(pb)pts=pts.map(p=>[p[0]-pb.position.x,p[1]-pb.position.y,p[2]-pb.position.z]);
     for(let i=0;i<n*per;i++){const u=i/(n*per),seg=Math.floor(u*n),f=u*n-seg,a=pts[seg],b=pts[seg+1];
       const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f,z=a[2]+(b[2]-a[2])*f;const rr=r*(1-.3*u),side=(i%2?1:-1)*rr*.38;
-      const lobe=part(SK.ball(rr,6,5),col||hair,head,x+side,y,z);lobe.scale.set(1,1.5,.9);lobe.rotation.z=side*6;last=[x,y,z,rr];}
-    part(SK.torus(last[3]*.8,.006,4,8),trim,head,last[0],last[1]-.012,last[2]).rotation.x=Math.PI/2;
-    part(SK.cone(last[3]*.85,.05,6),col||hair,head,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
+      const lobe=part(SK.ball(rr,6,5),col||hair,PB,x+side,y,z);lobe.scale.set(1,1.5,.9);lobe.rotation.z=side*6;last=[x,y,z,rr];}
+    part(SK.torus(last[3]*.8,.006,4,8),trim,PB,last[0],last[1]-.012,last[2]).rotation.x=Math.PI/2;
+    part(SK.cone(last[3]*.85,.05,6),col||hair,PB,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
   const shorn=(t)=>{const c=part(SK.ball(R*1.012,14,8,0,Math.PI*2,0,Math.PI*.56),mixC(skin,hair,t||.4),head,0,.125,-.006);c.rotation.x=-.3;c.scale.set(g.jaw,1.06,1.03);return c;};
   const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
   let cap=null;const st=g.style;
@@ -9758,14 +9758,14 @@ function personBakeQ(g,q){
     part(SK.bumpy(SK.ball(.12*hs,16,10,Math.PI*.85,Math.PI*1.3,Math.PI*.35,Math.PI*.4),.014,15,3),hair,head,0,.06,-.04).scale.set(g.jaw*1.12,1.3,1.02);}
   else if(st==='warrior'){shorn();const top=part(SK.ball(.141*hs,18,8,0,Math.PI*2,0,Math.PI*.3),hair,head,0,.13,-.01);top.rotation.x=-.2;top.scale.set(g.jaw*.8,1.08,1.08);
     part(SK.ball(.034,10,8),hair,head,0,.265,-.07).scale.set(1,.85,1);
-    plait([[0,.26,-.1],[0,.2,-.16],[0,.12,-.17],[0,.04,-.16]],.022);
+    plait([[0,.26,-.1],[0,.2,-.16],[0,.12,-.17],[0,.04,-.16]],.022,null,bone('hairB',head,0,.26,-.1));
     [-1,1].forEach(sd=>plait([[sd*.118*g.jaw,.14,.03],[sd*.125*g.jaw,.04,.05],[sd*.12*g.jaw,-.08,.07],[sd*.115*g.jaw,-.2,.075]],.017));}
   else cap=capHair();
   if(st==='straight')part(SK.cyl(.136*hs*g.jaw,.155*g.jaw,.36,16,1,true,Math.PI*.3,Math.PI*1.4),hair,head,0,-.01,-.006).scale.z=.95;
-  if(st==='braid')plait([[0,.1,-.135],[0,-.02,-.16],[0,-.15,-.15],[0,-.27,-.13],[0,-.35,-.12]],.024);
+  if(st==='braid')plait([[0,.1,-.135],[0,-.02,-.16],[0,-.15,-.15],[0,-.27,-.13],[0,-.35,-.12]],.024,null,bone('hairB',head,0,.1,-.135));
   if(st==='twin')[-1,1].forEach(sd=>plait([[sd*.1*g.jaw,.08,-.07],[sd*.135*g.jaw,-.02,-.03],[sd*.14*g.jaw,-.13,0],[sd*.135*g.jaw,-.22,.02]],.019));
   if(st==='bun')part(SK.ball(.052,10,8),hair,head,0,.2,-.1);
-  if(st==='tied')part(SK.cone(.035,.17,8),hair,head,0,.03,-.145).rotation.x=Math.PI+.35;
+  if(st==='tied')part(SK.cone(.035,.17,8),hair,bone('hairB',head,0,.1,-.12),0,-.07,-.025).rotation.x=Math.PI+.35;
   // beards: a shell over the jaw, a chin mass, moustaches from two drooping halves
   if(g.beard&&g.beard!=='none'){
     const bc=g.beard==='stubble'?mixC(skin,hair,.22):mixC(hair,0x8a4a2a,.12);
@@ -10183,6 +10183,26 @@ function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].ro
     try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;}};}
 // Every person in the active scene, each frame: the stride is driven by how far the figure moved, so the
 // feet stay planted whatever moves it (the town's schedules, an interior amble, a legacy zone's wander).
+// S267 — cloaks and hair that swing (Michael's A on Session 242: the cloak and the back hair, for everyone who wears them):
+// the cloak's two bones and the back hair's are each a damped pendulum in pitch and roll, driven by how the bone's pivot
+// moves in the world (its acceleration along the heading and across it, gravity plus the vertical, a drag with the square
+// of the forward speed), less what the parent bone has already turned, so it hangs in the world; clamped so the cloak never
+// swings into the back. Near people only (the full-detail copy); standing still it settles to the rest pose.
+const PEND={cloak:{L:.3,c:3.4,drag:.3,lo:-.05,hi:.85,side:.45},cloak2:{L:.2,c:3,drag:.2,lo:0,hi:.6,side:.35},hairB:{L:.26,c:2.2,drag:.12,lo:-.5,hi:1.1,side:.8}};
+const _pw=new THREE.Vector3(),_pq=new THREE.Quaternion(),_pq2=new THREE.Quaternion(),_pe=new THREE.Euler();
+function peopleSwing(rig,dt){if(!(dt>0))return;const sw=rig.sw||(rig.sw={});const root=rig.root;root.updateMatrixWorld(true);root.getWorldQuaternion(_pq).invert();
+  const ry=(rig.foe&&root.parent?root.parent.rotation.y:0)+root.rotation.y,fw0=Math.sin(ry),fw1=Math.cos(ry),sx0=Math.cos(ry),sx1=-Math.sin(ry),G=9.8;dt=Math.min(dt,.05);
+  for(const k in PEND){const b=rig.B[k];if(!b)continue;const P=PEND[k],L=P.L*(root.scale.x||1);
+    const st=sw[k]||(sw[k]={p:0,vp:0,r:0,vr:0,last:null,vel:null});b.getWorldPosition(_pw);
+    let vx=0,vy=0,vz=0,ax=0,ay=0,az=0;if(st.last){vx=(_pw.x-st.last[0])/dt;vy=(_pw.y-st.last[1])/dt;vz=(_pw.z-st.last[2])/dt;}
+    if(st.vel){ax=(vx-st.vel[0])/dt;ay=(vy-st.vel[1])/dt;az=(vz-st.vel[2])/dt;const al=Math.hypot(ax,ay,az);if(al>40){ax*=40/al;ay*=40/al;az*=40/al;}}
+    if(Math.hypot(vx,vy,vz)>30){vx=vy=vz=ax=ay=az=0;} // a jump (a teleport, a rebuild) is not a swing
+    st.last=[_pw.x,_pw.y,_pw.z];st.vel=[vx,vy,vz];
+    const vf=vx*fw0+vz*fw1,af=ax*fw0+az*fw1,as=ax*sx0+az*sx1,gy=G+ay;
+    st.vp+=(-gy/L*Math.sin(st.p)+af/L*Math.cos(st.p)+P.drag*vf*Math.abs(vf)/L-P.c*st.vp)*dt;st.p+=st.vp*dt;
+    st.vr+=(-gy/L*Math.sin(st.r)-as/L*Math.cos(st.r)-P.c*st.vr)*dt;st.r+=st.vr*dt;
+    b.parent.getWorldQuaternion(_pq2).premultiply(_pq);_pe.setFromQuaternion(_pq2,'XZY');
+    b.rotation.x=Math.max(P.lo,Math.min(P.hi,st.p-_pe.x));b.rotation.z=Math.max(-P.side,Math.min(P.side,st.r-_pe.z));}}
 function tickPeople(dt,now){
   for(const rig of PEOPLE_RIGS){
     const root=rig.root;
@@ -10214,6 +10234,7 @@ function tickPeople(dt,now){
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
     const t=now/1000*rig.g.tempo+rig.g.phase;
     pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+    if((rig.B.cloak||rig.B.hairB)&&!rig.lod)peopleSwing(rig,dt); // S267
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
     if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);

@@ -6963,3 +6963,27 @@ New `tests/fpweapons.test.mjs` builds the first-person view for a steel sword, a
 
 ### Needs eyes
 Drawing the bow in real play: the view model's string is the old thin box pair, now on a rounder bow. The staff's head is above the frame at rest, as it was.
+
+## v80 — Session 267 — Cloaks and hair that swing (H.3, Michael's A on Session 242)
+Michael answered Session 242: **the cloak and the back hair, for everyone who wears them**. The prototype's eight patches are now in the person bake, as written:
+- **The cloak:** it hangs from a `cloak` bone at the shoulders in two halves. The lower half is on a `cloak2` bone hinged at the middle of the back.
+- **The back hair:** a braid, the warrior's back plait and the tied tail hang from a `hairB` bone at the nape. `plait()` takes the bone and keeps its points in the head's frame.
+
+The pendulum is `peopleSwing`, run by `tickPeople` after each person's pose, for near people only (the full-detail copy). It is the prototype's damped pendulum in pitch and roll for each of the three bones:
+- **What drives it:** how the bone's pivot moves in the world. That is its acceleration along the heading and across it, gravity plus the vertical acceleration, and a drag with the square of the forward speed.
+- **Hanging in the world:** less what the parent bone has already turned.
+- **Clamped:** so the cloak never swings into the back.
+
+Two things were added to the prototype. A step of more than 30 units a second, a teleport or a rebuild, is not taken as a swing. The step is capped at .05 s. A human foe's heading comes from its group, as the rest of the body's does. The player's own third-person body has the bones but not yet the swing, since `tickPeople` does not pose it; its cloak hangs at rest as before.
+
+### Verified (headless Chromium)
+New `tests/secondary.test.mjs` builds a Markish woman with a cloak and a braid, and moves her under `tickPeople` at 1/60:
+- **Standing:** the cloak's upper bone is at .031.
+- **Running at 3.8:** it peaks at .458, within its clamp of .85, and the plait swings to .457.
+- **Stopped:** four seconds after the stop, both halves are back to −.011 and 0.
+- No page errors.
+
+`people` and `lod` asserted exactly seventeen bones on every townsperson. A cloak adds two and back hair one, so both now allow seventeen to twenty. `lod`'s distant copy is checked against the rig's own bone count. Both pass, as do `foes` and `peopleao`. `docs/prototypes/secondary-ingame.png` is the test's runner from the side.
+
+### Needs eyes
+What Session 242 could not show in a still: whether the cloak's lag at a start and a stop reads as cloth or as a flap, in real frames, and the faint fold at the hinge when it bends hard.
