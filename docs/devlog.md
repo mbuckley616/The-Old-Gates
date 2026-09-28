@@ -5546,3 +5546,34 @@ The fight in a shop in real play:
 - the camera in third person indoors.
 
 A guard beaten in a room leaves his body there until you leave.
+
+## v80 — Session 242 — What the load forgot
+
+Section I is clear, and nothing waits on an answer (issues #31 and #32 are still open). So this session took an owed check that a headless test can settle: backlog A's *the Reader's discoveries in real play*. *The map* (fast travel to a place before walking any of its roads) had only been tried in the harness. *The held breath* (a real gap of six hours or more between sessions) wanted a check across a real gap. Session 97 verified the breath by setting the gap directly. This session drove both the way play does: a save, a page reload, and Continue, with the browser's clock moved on seven hours.
+
+**What was wrong.** Neither discovery could ever happen for a player who reloads the page. The save writes the whole of `worldState` (`wS:{...worldState}`), but `_applyLoadData` reads it back key by key from a list, and that list stopped growing some time ago. Twenty keys were saved and never loaded:
+- The Reader's state (`varek`, with the real-time stamp the gap is measured from), `masteries` (which every discovery needs), `roadsWalked` and `chapelAt`. After a reload the gap was measured from the moment the page opened, so it was always 0.
+- **The day count, `gameTimeAbsMinutes`.** Every day-based rule restarted at day 0 on each reload. That covers favour's recovery, the keeper's five days of refusal, the rents' week and the cleared lairs' and roads' dates. A lair killed on day 20 and loaded on day 0 reads as killed in the future. That last point is read from the code, not run.
+- The crime record: `crime`, `crimes`, `refuse`, `boxes` (emptied strongboxes), `picked`, and the Church's `church` notes (a guard's death).
+- The war (`war`, `wars`), `lairDays`, `shrines`, the tower's `towerLoot` and `towerPicked`, `knowing` and `unbound` (the unbound ending), and `_rentWk`.
+
+Continue in the same tab without a reload kept these from memory, which is why no test or playtest saw it. It also meant loading a second character carried the first one's fines.
+
+**What changed.**
+- The load now reads all twenty back. A key the save doesn't have is cleared, so one character's record never carries into another's.
+- The real-time stamp the Reader measures from (`tickRealClock`) ran only in `WORLD.tick`, which stops indoors and underground. Seven hours in a dungeon, a save there and an immediate Continue read as a seven-hour absence. The stamp now runs in the main loop in every zone (CLAUDE.md's first gotcha).
+- CLAUDE.md gains the gotcha that a new `worldState` key must be added to the load's list.
+
+### Verified (headless Chromium)
+New `tests/reader.test.mjs`. The clock is shifted through `localStorage`, which survives the reload, and every step is a real `saveToSlot`, page reload and Continue click:
+- **Straight back.** Gap 0, nothing due. Masteries 1, day 9 and the Church's note all come back.
+- **Seven hours on.** Gap 7.01 h, *the held breath* is due, and Varek stands 5.0 units from the Ashfeld's centre with *Nine days passed for me…*.
+- **Seven hours underground,** then saved and continued at once: gap 0, nothing due.
+- **The map.** A real `fastTravel` to Ironhaven with none of its roads walked sets the short road to *Ironhaven*, *the map* is due, and you arrive 6 units from it.
+- **A walked road.** Standing on the Dunmore–Portclare road logs it, and travelling to Dunmore afterwards names no short road.
+- **The previous build**, through the same test: after the seven-hour reload the gap read 0 and nothing was due. Masteries came back as `undefined`, and Varek never appeared. The underground case read a false 7.01 h once the load was fixed and before the clock moved to the main loop.
+- **Regressions.** `saves`, `export`, `chapel`, `crime1`, `crime4` and `hourhitch` pass. No page errors.
+
+### Needs eyes
+- Varek's three lines in real play: the breath after a real night away, and the map after a first fast travel.
+- Old characters will now load with their real day count. A save made before this build has its true `gameTimeAbsMinutes` in it, so the first load can jump the day forward. Favour recovery and the keepers' refusals then catch up at once. That is correct, but it may surprise.

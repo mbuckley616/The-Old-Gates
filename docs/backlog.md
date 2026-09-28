@@ -11,7 +11,7 @@ Pulled from every "owed", "not yet" and "flagged" note in the devlog, sessions 9
 - **Consequence hooks still open**: shrines remembering (three prayers → the boon permanent); *"someone says one of the three descriptions to you and goes back to their bread"* in the open ending; Varek's list found in the first gate after the unbound ending.
 - **Lore objects**: the Guest lorebook, defaced niches, the Church's line on the Guest; sigil-lore books in the guilds.
 - **The Root's cavern** wants authored rooms (a set piece at the root itself), not only the *deep* generator.
-- **The Reader's discoveries** in real play: *the map* (fast travel before walking a road) is untested outside the harness; *the held breath* wants a check across a real six-hour gap.
+- ~~**The Reader's discoveries** in real play: *the map* (fast travel before walking a road) is untested outside the harness; *the held breath* wants a check across a real six-hour gap.~~ — **settled headless, Session 242**: across a real save, reload and Continue, neither could ever happen: the load never read back the Reader's state (or the masteries it counts), nor sixteen other saved keys, among them the day count, the crime record, the Church's notes and the war. Fixed; the real-time clock also runs underground now. Owed: Varek's lines judged in play.
 - ~~A recurring rival~~ — **done, Session 128**: Hesket Rowe, through all three faction lines (mentioned at 2, present at 4, found at 6, the duel or the coda at 9).
 - **Docs purge**: the 318 flagged lines in `lore_canon.md` / `quest_writing.md` are the author's text; the audit lists each with its rule.
 
@@ -117,6 +117,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 ## F. Saves
 - ~~Storage full; delete; autosave ring; character groups~~ — **done, Session 136** (IndexedDB store, per-character groups, a ring of five, delete). ~~A storage-used line on the menu~~ (Session 137); ~~export/import a character as a file~~ (Session 139: one JSON per character, import lands as a new character rather than overwriting, bad rows skipped and counted). **Nothing owed on saves.**
 - ~~Saves silently doing nothing; Continue broken~~ — **fixed, Session 137**: the payload skips live scene handles; every store failure settles with a named reason on screen; Continue's stale `slotN`; quests and guild tasks re-spawn their NPC, pickup or camp after a load. **Playtest first:** the Save tab's top line says *IndexedDB*, a slot writes, an autosave appears; *Where is Gráinne?*: she stands again when you walk back.
+- ~~**The load dropped half of `worldState`**~~ — **fixed, Session 242**: the save carried the whole of it, the load read back a list that had stopped growing; twenty keys never came back (the day count `gameTimeAbsMinutes`, `crime`, `church`, `refuse`, `boxes`, `war`, the Reader, the masteries…). A new key in `worldState` must be added to that list in `_applyLoadData`.
 - Saves are **by location** now (world / house by id / dungeon by seed and floor). Old saves without `where` fall back to the last outdoor position, then the spawn. Nothing owed; watch for a place that fails to regenerate (a house id that changed).
 
 ## I. Found in play (the critic)
