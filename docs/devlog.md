@@ -6598,3 +6598,31 @@ New `tests/walls.test.mjs`. On ground .8 above the middle at one end and .6 belo
 
 ### Needs eyes
 The walls at the swap distance: at 70–80 units the plain ring replaces the detail per cluster, and the crenels jump from three a segment to a dozen. The palisade's watchtower roofs take the stone style's tile red (`STYLE.stone.roof2`), as the old towers did; shingle might suit timber better. The buttresses stand a little paler than the wall face in low sun.
+
+## v80 — Session 250 — The harbour in detail (H.5)
+The harbour was the last of a port's pieces on plain boxes. The quay was a box 8 wide and 3.2 deep with a thin box for a deck. It had wooden pegs for bollards, a breakwater of seven 6-unit cubes that read from the water as one grey wall, crates as plain boxes, and nets as wireframe cones. This session is under Michael's answer A on buildings, as the bridges and walls were.
+
+**The quay** (`quayGeoHi`) is one mesh with the old box and deck as its distant copy, paired for the bake like a house.
+- **Faces:** both long faces and the head are courses of blocks, laid broken-joint on a dark mortar core, with iron mooring rings under the coping.
+- **Tide line:** everything below sea level + .3 is darkened and turned towards green, fading over .7 (`tideLine`, applied to the vertex colours after the merge), so the quay has a wet, weedy foot at the water.
+- **Top:** a kerbed coping of rounded stones runs round the edge, and the deck between is paved in rows of slabs laid broken-joint.
+- **Steps:** a flight of six steps goes down the right-hand face towards the water near the head. They are for the look only: the walkable platform is still the flat deck at 1.1.
+
+**Around it:**
+- The bollards are cast iron (a lathe: a base, a waist and a cap).
+- Each breakwater block is a heap of armour stone: a large craggy boulder and four smaller ones round it, dark below the tide line, with the old cube as its distant copy (`breakwaterHeap`).
+- The quay's crates are the town's rounded crate.
+- A net is a low lumpy heap with cork and red floats (`netHeapGeo`).
+
+The town's dice are drawn in the same order as before. The new pieces roll on their own seeds, so boats, crates and the harbourmaster stand where they stood. The quay's platform and the breakwater's seven colliders are unchanged.
+
+### Verified (headless Chromium)
+New `tests/harbour.test.mjs`.
+- **The quay alone:** a 40-long quay is 40 long, 9.38 across with the steps, with its top at .100 (the old deck's) and its foot at −3.2. Below the tide line its colour averages .88 (the sum of r, g and b) against 1.22 just under the coping. It is 8,544 triangles; a breakwater heap is 400, topping out at 2.31 within 3.9 of its centre (the old block's top was 2.4); a net is 456.
+- **Portclare**, the nearest port, settled into: its quay platform is still one, at 1.1; its breakwater still has seven colliders; its detailed clusters are paired with plain twins, and three show from the quay.
+- A check I first wrote, that no wireframe nets remain, proved nothing: the settlement's bake merges every mesh into vertex-coloured clusters, so it would pass on the old build too. It is dropped.
+- No page errors. `ships`, `ferry`, `furniture` and `lod` pass unchanged.
+- `docs/prototypes/harbour-shot.mjs` renders `docs/prototypes/harbour-ingame.png`: Portclare before (left) and after (right), at noon, from the water, towards the breakwater, and along the quay.
+
+### Needs eyes
+The tide line against the real water's colour and its swell. The steps meet the water only where the sea is shallow, and on a deep quay they end in the air below the surface. From the water, the breakwater's heaps might look too separate where the old blocks ran together; a heap or two more between the seven would close it up, but that changes its collision, so it is left. The quay is 8.5k triangles; there is one in a port and it has a distant copy, but it is the heaviest single piece this pass has made.
