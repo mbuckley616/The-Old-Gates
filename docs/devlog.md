@@ -5638,3 +5638,21 @@ A later build of that town takes the name and people from the record. Every draw
 
 ### Needs eyes
 Whether a town's people should keep their colouring as well after a rebuild; nobody may ever notice it.
+
+## v80 — Session 245 — And they look the same
+
+This finishes what Session 244 left owed. After a town rebuilt at another prosperity its people kept their names but not their looks. Skin and hair are drawn in `makeDef` from the town's stream, and so are a resident's clothes and trade (*farmer*, *weaver*, *cooper*). The rebuild reaches each person at a different point in that stream. The genome cache held the old look for the rest of the session. After a reload, Maeve of the same house came back darker-haired, in another colour, and a weaver instead of a farmer.
+
+**What changed.** The town's record of each person (`worldState.towns[id].nm`) now keeps the skin, hair, clothes and trade alongside the name and people. Each field is kept once it is drawn. A Session 244 record, which has only name and people, fills in the rest the next time its town builds. As before, every draw is still made and then overridden, so a town's first build is unchanged. Two things are kept only when the person is again what they were:
+- **Clothes.** A shopkeeper's clothes come from the shop, so a lot that was a home and becomes a shop again takes the shop's colours.
+- **Trade.** A resident's trade is applied only to a resident, so a keeper stays *Smith*.
+
+### Verified (headless Chromium)
+`tests/placesave.test.mjs` gains the look check (skin, hair, clothes, trade), and all thirteen checks pass:
+- **Rebuilds.** Dunmore, Carraig Mór, Portclare and Colman's Rest were each rebuilt at their prosperity ±13 and ±26. Every person whose lot keeps its kind and name keeps all four.
+- **Session 244's build**, through the same check: 33 of 47 shared Dunmore lots came back looking different at 48, 52 of 57 at 87, and 32 of 44 in Carraig Mór at 69.
+- **Fresh worlds.** The first build of six towns against the build before Session 243: all 357 records are identical (names, people, skin, hair, clothes, trades, houses, doors).
+- **Regressions.** `names`, `saves`, `export`, `intnpcs`, `people` and `lod` pass. No page errors.
+
+### Needs eyes
+Nothing new by eye. The three sessions together mean a town you know should keep its houses, people and faces through a war, a plague or a boom. That is worth a look the next time a town you own a house in changes hands.

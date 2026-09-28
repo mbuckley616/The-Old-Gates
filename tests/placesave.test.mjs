@@ -23,12 +23,13 @@ for (const id of ['dunmore', 'carraig_mor', 'portclare', 'colmans_rest']) {
   swing.push(await page.evaluate((id) => {
     const site = WORLD.siteAnywhere(id); const p0 = WORLD.prosperity(site);
     const build = (p) => { WORLD.setProsperity(site, p); if (WORLD.settle.has(id)) WORLD.disposeSettlement(id); WORLD.genSettlement(site);
-      return WORLD.settle.get(id).houses.filter(h => /^g_/.test(h.id)).map(h => { const l = WORLD.settle.get(id).sol.find(q => q.hid === h.id); return { id: h.id, t: h.type, x: h.doorX, z: h.doorZ, cx: l ? l.cx : NaN, cz: l ? l.cz : NaN, who: h.keeper }; }); };
+      return WORLD.settle.get(id).houses.filter(h => /^g_/.test(h.id)).map(h => { const l = WORLD.settle.get(id).sol.find(q => q.hid === h.id); const S = WORLD.settle.get(id); const d = h.type === 'home' ? h.dlg : (S.npcs.find(n => n.def && n.def._houseId === h.id) || {}).def;
+      return { id: h.id, t: h.type, x: h.doorX, z: h.doorZ, cx: l ? l.cx : NaN, cz: l ? l.cz : NaN, who: h.keeper, look: d ? [d.sCol, d.hairCol, d.bCol, d.roleTag || d.role].join('/') : null }; }); };
     const guards = () => WORLD.settle.get(id).npcs.filter(n => n.def && n.def.role === 'Guard').map(n => n.def.name);
     const a = build(p0); const g0 = guards(); const r = { id, p0, n: a.length, cases: [] };
     for (const p of [p0 - 13, p0 + 13, p0 - 26, p0 + 26]) { if (p < 5 || p > 100) continue; const b = build(p);
-      let both = 0, moved = 0; const renamed = []; const mv = []; for (const h of a) { const o = b.find(x => x.id === h.id); if (!o) continue; both++; const dd = Math.hypot(o.x - h.x, o.z - h.z); if (dd > .5) { mv.push([h.id, h.t, o.t, +dd.toFixed(1), +Math.hypot(o.cx - h.cx, o.cz - h.cz).toFixed(2)]); if (Math.hypot(o.cx - h.cx, o.cz - h.cz) > .01) moved++; } const guild = t => /^guild_/.test(t); if (o.who !== h.who && h.who && o.who && !guild(h.t) && !guild(o.t)) renamed.push([h.id, h.who, o.who]); }
-      const ids = new Set(b.map(h => h.id)); r.cases.push({ p, n: b.length, both, moved, mv, renamed, guardsSame: (x => x.every(n => g0.includes(n)) || g0.every(n => x.includes(n)))(guards()), unique: ids.size === b.length }); }
+      let both = 0, moved = 0; const renamed = [], relooked = []; const mv = []; for (const h of a) { const o = b.find(x => x.id === h.id); if (!o) continue; both++; const dd = Math.hypot(o.x - h.x, o.z - h.z); if (dd > .5) { mv.push([h.id, h.t, o.t, +dd.toFixed(1), +Math.hypot(o.cx - h.cx, o.cz - h.cz).toFixed(2)]); if (Math.hypot(o.cx - h.cx, o.cz - h.cz) > .01) moved++; } const guild = t => /^guild_/.test(t); if (o.t === h.t && h.look && o.look && o.look !== h.look && h.who === o.who) relooked.push([h.id, h.look, o.look]); if (o.who !== h.who && h.who && o.who && !guild(h.t) && !guild(o.t)) renamed.push([h.id, h.who, o.who]); }
+      const ids = new Set(b.map(h => h.id)); r.cases.push({ p, n: b.length, both, moved, mv, renamed, relooked, guardsSame: (x => x.every(n => g0.includes(n)) || g0.every(n => x.includes(n)))(guards()), unique: ids.size === b.length }); }
     build(p0); return r; }, id));
 }
 console.log('swing', JSON.stringify(swing));
@@ -51,6 +52,7 @@ const owned = await page.evaluate(() => {
   build(p0); return { p0, res, bare };
 });
 console.log('owned', JSON.stringify(owned));
+check('and they look the same: skin, hair, clothes and a resident\u2019s trade are kept with the name', swing.every(s => s.cases.every(c => c.relooked.length === 0)), swing.map(s => ({ id: s.id, cases: s.cases.map(c => ({ p: c.p, relooked: c.relooked.length, first: c.relooked[0] })) })));
 check('an owned home is still Your House at its own door after the town rises 26 or falls 26 and 45', owned.res.every(r => r.found && r.type === 'home' && r.name === 'Your House' && r.moved === 0), owned.res);
 
 // 3. save inside each kind of place, reload, Continue: the same room at the same spot

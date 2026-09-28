@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s244</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s245</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35793,7 +35793,10 @@ var WORLD=(()=>{
     if(!(extra&&extra.authored)){ // rename into the people's bank (keep gender) unless told to keep it; take the people's body
       const bank=NAMES[P.names]||NAMES.irish;const female=Object.values(NAMES).some(b=>b.f&&b.f.includes(name));if(!(extra&&extra.keepName))name=pickFree(r,female?bank.f:bank.m,_townNames);
       extra=Object.assign({},extra||{},{sCol:pick(r,P.skin),hairCol:pick(r,P.hair),bodyScale:[P.width,P.height,P.width]});}
-    if(NK){if(kept)name=kept[0];else _curNM[NK]=name+'|'+people;}
+    if(NK){ // S245 — the look and the trade too: skin, hair, clothes and a resident's trade, each field kept once drawn (an S244 record fills in)
+      const F=[['sCol',36],['hairCol',36],['bCol',36],['role',0]],rec=[kept?kept[0]:name,people];if(kept)name=kept[0];const o={};
+      F.forEach(([k,b],i)=>{const v=kept&&kept[i+2];if(v){if(k==='sCol'||k==='hairCol'||(extra&&extra[k]!=null))o[k]=b?parseInt(v,b):v;rec.push(v);}else{const c=extra&&extra[k];rec.push(c==null?'':b?Number(c).toString(b):String(c));}});
+      extra=Object.assign({},extra||{},o);_curNM[NK]=rec.join('|');}
     const def=Object.assign({name,role,ico:ICO[role]||'👤',greeting:greetPool[role]||greetPool.Villager,topics,x:0,z:0},extra||{});
     def.people=people;if(_townNames)_townNames.add(def.name);
     def.temper=temperOf(name);def.bio=bioFor(site,reg,r,role,name);def._roadLine=roadLine;def._doorLine=doorLine;def._extra=extraTopics;
