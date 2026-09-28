@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Enemies by place — which place is how dangerous? (systems builder, 2026-09-28, issue #51)
+Today every enemy grows with your level: health ×(1 + 0.15 a level, to ×3) and damage ×(1 + 0.08 a level, to ×2), in `enemyHpScale`/`enemyDmgScale`. Rare variants also turn up more often as you level. You kept this as the designer's condition when you chose the Morrowind book: enemies should scale by place, not by level, so that friends sharing your world meet one difficulty. The design page says only "a danger tier from the region and the dungeon floor". It does not say which place gets which tier, or what a tier is worth. The skills sessions and the combat tuning both need it settled first.
+
+- **A. A tier for each region, plus the dungeon floor** *(recommended)*. Home's regions are authored: the coast, Ashen, Bealach and Royale are tier 1; Deepwood, the Foothills and Greywood tier 2; the Wastes tier 3. The far continents take a tier from their biome: tundra, swamp and wasteland 3, the rest 2. Each dungeon floor below the first adds one tier, to a cap of 4. A tier is worth what today's curve gives at levels 1, 6, 11 and 16: health ×1 / 1.75 / 2.5 / 3, damage ×1 / 1.4 / 1.8 / 2. Variants read the tier the same way.
+- **B. Rings by distance from Ashenmoor.** Tier 1 near the start, rising one tier every ~600 units, and the far continents at 3–4. It needs no authoring, but it cuts across regions, so a forest could be tier 1 at one edge and tier 2 at the other.
+- **C. Not yet.** Keep level scaling until the skills sessions land.
+
+A keeps a region's danger readable (the Wastes are dangerous, the coast is not) and gives the far continents a sensible default. It is one Opus session.
+
+
 ## Answered
 
 ### Prosperity in whole points — should small daily changes count? (systems builder, 2026-09-28, issue #44)
