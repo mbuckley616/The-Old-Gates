@@ -65,7 +65,9 @@ await page.evaluate(() => { scene.remove(window._lr.root); });
 const view = async (where) => { await page.evaluate(w => { forceTime(12); const S = WORLD.settle.get('dunmore'); const t = WORLD.siteAnywhere('dunmore');
     px = S.site.x; pz = w === 'square' ? S.site.z + 6 : t.z + t.pad + 8; yaw = 0; pitch = -.05; }, where);
   await page.waitForTimeout(3000);
-  return page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
+  // (the main loop puts the eye at the player and WORLD.tick the sun: do both here, since on a slow machine no frame may
+  // have run in the wait, and the townsfolk's distances would still be measured from where the player stood before)
+  return page.evaluate(() => { CAM.position.set(px, WORLD.worldH(px, pz) + 1.7, pz); CAM.rotation.y = yaw; CAM.rotation.x = pitch; for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
     const run = force => { rs.forEach(r => { if (force) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (!force) tickPeople(1 / 60, 6e5);
       REN.render(scene, CAM); REN.render(scene, CAM); return { calls: REN.info.render.calls, triangles: REN.info.render.triangles }; };
     const saved = { far: PEOPLE_LOD.far, near: PEOPLE_LOD.near }; PEOPLE_LOD.far = PEOPLE_LOD.near = 1e9; const all = run(true);
@@ -81,7 +83,9 @@ check('the town view draws fewer triangles with the distant copies, the same dra
 const shadowCost = async (where) => { await page.evaluate(w => { forceTime(12); const S = WORLD.settle.get('dunmore'); const t = WORLD.siteAnywhere('dunmore');
     px = S.site.x; pz = w === 'square' ? S.site.z + 6 : t.z + t.pad + 8; yaw = 0; pitch = -.05; }, where);
   await page.waitForTimeout(3000);
-  return page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); tickPeople(1 / 60, 6e5);
+  // (the sun and its shadow camera follow the player only in WORLD.tick, the eye only in the main loop: do both here, or on
+  // a slow machine the shadow map may still be framed on where the player stood before, with nobody of Dunmore in it)
+  return page.evaluate(() => { CAM.position.set(px, WORLD.worldH(px, pz) + 1.7, pz); CAM.rotation.y = yaw; CAM.rotation.x = pitch; for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && r.geoLo); tickPeople(1 / 60, 6e5);
     const run = (cast, lo) => { rs.forEach(r => { r.mesh.castShadow = cast; if (!lo) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (lo) tickPeople(1 / 60, 6e5); PEOPLE_LOD.shadowLo = lo; REN.render(scene, CAM);
       REN.info.autoReset = false; REN.info.reset(); REN.render(scene, CAM); const t = REN.info.render.triangles; REN.info.autoReset = true; return t; };
     const full = run(true, false), fullNone = run(false, false), now = run(true, true), nowNone = run(false, true);
@@ -100,7 +104,7 @@ const sh = await page.evaluate(() => { forceTime(16); const S = WORLD.settle.get
   // in the scene, hidden: a rig with no parent is dropped and disposed by the next tickPeople
   rig.root.visible = false; scene.add(rig.root); return rig.g.name; });
 await page.waitForTimeout(2500);
-const shR = await page.evaluate(() => { const rig = window._sr; rig.root.visible = true; rig.root.rotation.y = 0;
+const shR = await page.evaluate(() => { for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rig = window._sr; rig.root.visible = true; rig.root.rotation.y = 0;
   const others = [...PEOPLE_RIGS].filter(r => r !== rig && r.root.parent === scene); others.forEach(r => { r._v = r.root.visible; r.root.visible = false; });
   const cam = new THREE.PerspectiveCamera(40, REN.domElement.width / REN.domElement.height, .1, 200); const cv = REN.domElement;
   const place = (fx, fz) => { const fy = WORLD.worldH(fx, fz); rig.root.position.set(fx, fy, fz); pwApply(rig, pwIdle(3, { holds: rig.holds, gear: rig.g.gear })); rig.root.updateMatrixWorld(true);

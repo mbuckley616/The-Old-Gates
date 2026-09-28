@@ -6719,3 +6719,16 @@ New `tests/keep.test.mjs`:
 
 ### Needs eyes
 The door leaves stand open, but the old warm glow plane still hangs in front of the doorway, so the opening reads orange from close by. Whether that is right, or the glow should move to the back of the recess, is a matter of taste. The turrets keep the old keep's pale stone against the dark walls (Session 132's choice). The keep changes from detailed to plain between 70 and 80 units from the eye, the houses' distances, which is about the length of the courtyard from outside the gate.
+
+## v80 — Session 257 — The lod suite waited for frames it may not get (H.6)
+Session 256 found `tests/lod.test.mjs` failing about two runs in three, with and without that session's change. It failed on the townsfolk's shadow pass in two ways: no triangles counted in the shadow pass at all (`shadowFull` 0, in the square and on the road), or, in the shadow's photograph, no person's shadow in the picture, not even another person's. A third check, the town view's triangles, failed once too.
+
+**Cause:** each of those steps moves the player (`px`, `pz`) to Dunmore's square or road and waits three seconds of real time. It then measures from the camera (`CAM`), which the main loop puts at the player, and under the sun, whose shadow camera `WORLD.tick` centres on the player with a 70-unit reach. At the few frames a second the software renderer manages, and fewer with a batch of suites running, those three seconds need not hold a frame. The eye and the sun's shadow box could then still be where the player stood before. Nobody in Dunmore was in the shadow map, and the people's distances (and so their distant copies) were measured from the wrong place.
+
+**The fix** is in the test alone: before measuring, each step puts the eye at the player as the main loop does and ticks the world three times at 1/60. The game is unchanged, so the build tag is not bumped.
+
+### Verified (headless Chromium)
+Before the fix, `lod` passed 1 of 3 runs on the Session 255 build and 1 of 3 on Session 256's. With only the shadow steps ticking, 3 runs passed the shadow checks, but one of them failed the town view's check. That is what showed the view step had the same weakness. With all three steps ticking, 4 of 4 runs passed.
+
+### Needs eyes
+Nothing in the game. Other suites that move the player and then wait on the clock may have the same weakness; `walls`, `keep` and the prototype shots drain the loader and tick themselves.
