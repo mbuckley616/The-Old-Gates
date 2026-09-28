@@ -6759,3 +6759,27 @@ New `tests/ironwork.test.mjs`:
 
 ### Needs eyes
 The scrolls under the arms are thin (.015–.018) and may vanish past a few metres. Whether they are worth keeping, or should be thicker, is a matter of taste. A city has a hundred door lanterns; at 284 triangles each that is about 28k, within the bake. A frame-time check in a big city on a real machine would confirm it.
+
+## v80 — Session 259 — The wreck and the world's hoards on the kit (H.5)
+About one sea chunk in sixteen has a wreck on its floor, two to eight units down, with a sea chest beside it (`spawnWreck`). It was two tilted boxes for the hull halves, a cylinder for the mast and a box plank. Its chest was two boxes, a body and a lid that rose and tilted when looted. The lairs' hoards and the bandit camps' takings (`siteChest`) were the same two boxes. Session 198 put every dungeon and indoor chest on one kit chest, but these three had been missed.
+
+**The wreck** (`wreckGeo`) is one vertex-coloured mesh: a hull broken in two, each half an open run of bent ribs on a keel.
+- **Ribs:** each is a flattened half torus shaped to the hull's section. About one in five has rotted to a stub on one side.
+- **Planking:** seven strakes a side, laid between ribs and rotted through in places. More are gone higher up, and one side of each half has lost its upper strakes.
+- **The halves:** the stern half is heeled one way and still largely planked. The bow half is heeled the other way, more broken, with its stem post.
+- **Around it:** the snapped mast lies across both halves, with a stump and loose planks round about. The wood darkens to a weed green towards the sand.
+
+It keeps the old wreck's length (about 12) and its place, turn and collider. The seed comes from the chunk, so the chunk's dice are untouched.
+
+**The chests** are S198's kit chest (`buildChestShell`) at 1.8 scale, the old box's size: a rounded body with iron bands, corner caps and a lock plate, and a barrel lid. The loot record now carries the lid as `lid` instead of `top`, so opening swings it back on its hinge as a dungeon chest does, where the old lid popped up askew. A hoard's chest faces the site's middle. The sea chest sits a little askew on the sand. The kit chest is a group, which the site's bake leaves whole (it bakes only direct meshes), so the lid stays free to open.
+
+### Verified (headless Chromium)
+New `tests/wreck.test.mjs`:
+- **The mesh:** a wreck is 2,180 triangles, spanning −2.69 to 3.40 across and −5.76 to 6.65 along, 2.21 high, and reaching 1.18 into the sea floor.
+- **A hoard:** the nearest lair to the start, `c6_10_i0`, has its hoard as the kit chest (two meshes, body and lid), still in the scene after the site's bake. `openLoot` swings its lid from 0 to −1.047.
+- No page errors.
+
+`pois`, `saves`, `locks` and `unequip` pass. `docs/prototypes/wreck-shot.mjs` renders `docs/prototypes/wreck-ingame.png`. It shows the old wreck and chest (rebuilt from the old parts) beside the new ones on a sand floor at noon, with the fog off, from the side and from above. A real wreck is only seen through the sea's murk.
+
+### Needs eyes
+The wreck through real water and the underwater tint: whether the ribs read, or the dark wood is lost against the dark. The bow half is sparse by design (broken off); whether it reads as wreckage or as litter. The sea chest's lid now opens on the hinge, as the dungeon's do.
