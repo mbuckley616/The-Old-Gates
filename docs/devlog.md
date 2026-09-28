@@ -6535,7 +6535,7 @@ H.3 has owed the player's swings (anticipation, follow-through) since Session 15
 Each picture follows one swing on a plain stage at noon, three-quarters from the front on the sword side, at seven moments (guard, .30, .44, .52, .58, .72, .90). The white line is the path so far of the weapon's farthest point from the fist. The swings are a sword-and-shield forehand, backhand and overhead chop, and a two-handed power chop with a claymore.
 
 ### Verified (headless Chromium)
-`node docs/prototypes/swings/shoot.mjs` renders `docs/prototypes/swings-1.png` to `-4.png` with no page errors. Each swing is 30 frames at 1/60 s up to the .90 snapshot (35 for the power swing, at 1.4× the power duration). In the proposal the blade has reached the hit by .52 in all four; today it arrives later, at .58.
+`node docs/prototypes/swings/shoot.mjs` renders `docs/prototypes/swings-1.png` to `-4.png` with no page errors. Each swing is 30 frames at 1/60 s up to the .90 snapshot (35 for the power swing, at 1.4× the power duration). In the pictures the proposal's blade has come down to the hit by .52 in all four. Today's strike runs to .60 by design, so at .52 the blade is still mid-swing.
 
 ### Needs eyes
 The DECISION (in `docs/decisions.md` and a GitHub issue): A, as shown (recommended); B, timing and matching only, with no coil or step; or C, not yet. In both rows, the left hand leaves a two-handed weapon's hilt through part of the swing, which is owed whichever is chosen. Only motion can judge whether the coil's short hold reads as weight or as a hitch.
