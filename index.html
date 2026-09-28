@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s239</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s240</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -24961,7 +24961,7 @@ function killE(e,tag=''){
   if(currentPortal){
     checkQuestProgress('kill_in_dungeon',{seed:currentPortal.seed});
     checkQuestProgress('kill_on_dungeon_floor',{seed:currentPortal.seed,floor:currentFloor});
-    checkQuestProgress('kill_in_zone',{zone:currentPortal.zone||'overworld'});
+    checkQuestProgress('kill_in_zone',{zone:(currentPortal.zone==='world'?((WORLD_DUNGEONS.find(d=>d.seed===currentPortal.seed)||{}).zone||'world'):currentPortal.zone)||'overworld'}); // v80 S240 — a world door counts as its canonical dungeon's zone (Q6: Ironhaven's dungeons)
   }
   // Notable kill logging
   const isBrute=e.name==='Cave Troll'||e.name==='Golem';
@@ -39373,7 +39373,7 @@ var WORLD=(()=>{
     if(step==='courier')return {greet:"Three. Then it's not a man with a chisel. Someone is *moving* what they take.",topics:[{label:'Moving it where?',response:`By sea. Every harbourmaster on the strait knows a black-sailed captain who pays in silver and asks no tithe — Oswy Blackhand, out of Port Blackhand in the Mark.${TUT().sea&&TUT().sea.step==='done'?" You've taken a black-sailed deck before; this one's the same, with a better captain.":''} He keeps a log. Captains like him always do; it's the only thing they're afraid of losing.`},{label:'And then?',response:"Then bring me the log, and we take it to whichever of them you trust — Caldric, Aldwyn, the Prior. I have opinions. Bring me the log first."}]};
     if(step==='ashfeld')return {greet:"You read it. So did I, over your shoulder — forgive me. 'The one who reads over my shoulder.' He wasn't writing to Varek.",topics:[{label:'Then who?',response:"I don't know. I know where he is. The Ashfeld. He always goes back to the Ashfeld. Whatever you decide there, decide it with your eyes open."}]};
     return {greet:"Go on. I'll be at the harbour.",topics:[]};}
-  function tickCorwin(){const S=story();const seaKey=(TUT().sea?TUT().sea.step:'none')+(tutSeaOpen()?'':'x');const early=S.act<2&&tutSeaOpen();if(!early&&(S.act<2||S.step==='root'||S.step==='end')){if(CORWIN.npc)removeCorwin();return;}
+  function tickCorwin(){const S=story();if(corwinInAshenmoor(S))return;const seaKey=(TUT().sea?TUT().sea.step:'none')+(tutSeaOpen()?'':'x');const early=S.act<2&&tutSeaOpen();if(!early&&(S.act<2||S.step==='root'||S.step==='end')){if(CORWIN.npc)removeCorwin();return;}
     // the nearest port within reach
     let best=null,bd=1e9;for(const t of SITES){if(t.kind!=='port')continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
     if(!best||bd>140){if(CORWIN.npc&&Math.hypot(px-CORWIN.npc.g.position.x,pz-CORWIN.npc.g.position.z)>220)removeCorwin();return;}
@@ -39381,6 +39381,16 @@ var WORLD=(()=>{
     const q={x:best.x+3,z:best.z+3};const L=early?corwinEarly():corwinLines(S.step,S); // v80 S133 — on the plaza, not under the quay
     const def={name:'Corwin',role:'',ico:'📜',authored:true,people:'gatelander',sCol:0xe0b898,hairCol:0x3a2a1a,bodyScale:[1,1,1],bCol:0x3a4a5a,x:q.x-6,z:q.z+3,greeting:[L.greet],topics:[...L.topics,...tutCorwinTopics(),{label:'Farewell.',bye:true}]};def.temper='weary';
     const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CORWIN.npc=n;CORWIN.site=best;CORWIN.step=ckey;}
+  // S240 — while the merchant's own quest is his to give (Q3: available, active, or its reward owed) Corwin is in Ashenmoor,
+  // where the journal sends you. Only the legacy village ever placed him there, so in the open world Q3 could not be taken.
+  function corwinInAshenmoor(S){let due=false;try{due=S.act<2&&!tutSeaOpen()&&QUEST_DEFS.some(q=>q.giver==='Corwin'&&['available','active','reward'].includes(qState(q.id)));}catch(e){}
+    if(!due){if(CORWIN.npc&&CORWIN.step==='ashenmoor')removeCorwin();return false;}const A=siteAnywhere('ashenmoor');if(!A)return false;
+    if(Math.hypot(px-A.x,pz-A.z)>(A.pad||40)+180){if(CORWIN.npc)removeCorwin();return true;}
+    if(CORWIN.npc&&CORWIN.step==='ashenmoor')return true;if(CORWIN.npc)removeCorwin();
+    const src=(typeof NPC_DEF!=='undefined'&&NPC_DEF.find(n=>n.name==='Corwin'))||{name:'Corwin',role:'Traveling Merchant',ico:'\u{1F9F3}',greeting:['Just passing through.'],topics:[{label:'Safe travels.',bye:true}]};
+    let x=A.x+6,z=A.z+4;for(let k=0;k<16;k++){const a=k*.785,r=5+Math.floor(k/8)*3,cx=A.x+Math.cos(a)*r,cz=A.z+Math.sin(a)*r;if(!solidAt(cx,cz)){x=cx;z=cz;break;}}
+    const def=Object.assign({},src,{authored:true,people:'gatelander',x,z});def.temper='weary';
+    const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);CORWIN.npc=n;CORWIN.site=A;CORWIN.step='ashenmoor';return true;}
   // before the commission: Corwin trading at the quays, with the sea to teach
   function corwinEarly(){const E=TUT().sea;const step=E?E.step:null;
     const greet=!E?"You again. Told you we'd cross paths. I've taken to the quays — there's more to buy on a harbour than in a village, and more to hear.":step==='done'?"The sailor. Go on — the tide won't wait and neither will I.":step==='report'?"You've the look of someone who's been shot at from a deck. Tell me.":"Still learning the water? Good. Nobody stops.";

@@ -5483,3 +5483,34 @@ Being robbed and chased in play:
 - whether the guard walking up to you in a shop reads right.
 
 The indoor guard is the townsperson's body in the guard's colours. When refused he is not yet a fighter indoors; that is the next session.
+
+## v80 — Session 240 — The main quest past Q2 in the open world
+
+Session 237's read-only audit found the main quest stopped after Q2 in the open world, and Session 236 had fixed only the Ironhaven dialogue step. This session takes the two contained breaks the audit found. Q7 is left for its own piece (below).
+
+**Q3 could not be taken.** Its giver is Corwin (`giverZone:'overworld'`, Ashenmoor), and the journal sends you to Ashenmoor for him (Session 133). But only the legacy village ever put him there, from the authored `NPC_DEF`. In the open world he appears only at the harbours, and only once Q3 is done (`tutSeaOpen`), so no one could hand you Q3.
+
+Now `corwinInAshenmoor()` runs first in `tickCorwin`. While a quest of Corwin's is available, active or awaiting its reward, and the sea line isn't yet open, he stands in the world's Ashenmoor with his authored definition (*Traveling Merchant*, his own greetings and topics). He stands a few units from the centre, on a spot that isn't solid. The quest's offer surfaces through the ordinary giver path. When the quest is done he leaves, and the harbours have him as before.
+
+**Q6's kills never counted.** Its objective is *kill 20 enemies in Ironhaven's dungeons* (`kill_in_zone`, zone `'ironhaven'`). `killE` reported `currentPortal.zone`, which is `'world'` for every world door. A world door now reports the zone of its canonical dungeon in `WORLD_DUNGEONS`, found by seed. Ironhaven's seven dungeons (801–922) are all placed in the world with their seeds. A generated door with no canonical entry still reports `'world'`.
+
+**Still owed: Q7.** It exists only in the legacy zones:
+- *Return to Ashenmoor* fires only from `goToZone`'s burn trigger;
+- the Faolchú spawns only in the legacy overworld;
+- Bram's body is a legacy zone corpse.
+
+In the world it needs Ashenmoor to burn (the ruin variant exists), the Faolchú and Bram's body placed there, and Edna's burned dialogue there. That is a larger piece and is in backlog A.
+
+**Not done this run: the fight indoors** (#23 B's second half). Interiors have no enemies. The world's zone-enemy tick, its heights and its collision all assume world coordinates. A guard who draws indoors needs a small fight loop of his own in `tickInterior`. It is left whole for the next session rather than half built.
+
+### Verified (headless Chromium)
+New `tests/mainquest.test.mjs`, with Q1 and Q2 done and Q3 available:
+- **Corwin in Ashenmoor.** He stands 5.0 units from the world's Ashenmoor centre, as *Traveling Merchant*.
+- **Taking Q3.** E finds him. *📜 The Merchant Knows* opens his three accept lines, and *I'll head out at first light.* makes Q3 **active**.
+- **After Q3.** With Q3 complete, no Corwin is in Ashenmoor. The nearest port, Portclare, is 1,254 units away.
+- **Q6.** Active, entered through the world door of seed 801, three real kills through `killE` move *Kill enemies in Ironhaven dungeons* from 0 to 3.
+- **The previous build**, through the same test: no Corwin anywhere near Ashenmoor (the first check read *null*), and the test could go no further. Q6 on the previous build is read from the code, not run: every world door reported `'world'`.
+- **Regressions.** `questtargets` passes. No page errors.
+
+### Needs eyes
+Taking Q3 from Corwin in Ashenmoor in real play, and whether the chain Q3 → Q6 now carries on in the world as the story expects. Q7 remains legacy-only.
