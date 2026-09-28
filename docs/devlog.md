@@ -5717,3 +5717,16 @@ The critic's fourth bug from 28 Sep (PR #40): *keepers and guards still share na
 
 ### Needs eyes
 Two townsfolk of the same name in one town should now look like two people. The lord of Dunmore looks different from the last build.
+
+## v80 — Session 249 — Two articles
+A short one from the small items of the critic's 28 Sep run (PR #40): La Grise's church board read *The La Grise Oratory*. A church outside the French register is named *The {town} {Oratory|Chapel}*, and a place whose name already begins with an article got two. Now a name that starts with *La*, *Le*, *Les*, *L'* or *The* drops the church's *The*: *La Grise Oratory*, while Dunmore keeps *The Dunmore Oratory*. Since Session 246 the board takes the house's name, so it reads the same.
+
+What this does not change: the home province's French-named places (La Grise, Vieux Marché, Mur Pierre) sit in the Irish register, so their buildings take Irish nouns (*Oratory*, not *Chapelle*). Whether they should is a question for the lore, not a bug. The critic's other small item, a Wooden Bow and a Wooden GreatClub at 4 gold in the goods shops (half a torch), is a price, so it is Michael's and not touched here.
+
+Also, on the critic's notes from both of its runs, three stale backlog lines: the header's *as of Session 158*, D's *NPC part merging* (done in H.6, Session 153), and A's *Playtest 16 Sep* (both of its items done). Struck or updated, nothing removed.
+
+### Verified (headless Chromium)
+`tests/churchname.test.mjs`: La Grise's church is *La Grise Oratory* and its board says so; Dunmore's is *The Dunmore Oratory*. No page errors.
+
+### Needs eyes
+Nothing beyond reading the board.
