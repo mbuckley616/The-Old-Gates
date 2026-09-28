@@ -101,5 +101,21 @@ console.log(JSON.stringify({ ...e2e, ...e2 }));
 check('a bandit\'s blow lands 1.5 ahead (it whiffed past 1.4)', e2e.ahead > 0, e2e);
 check('stepped 70° round its frozen facing at 1.0, it whiffs', e2.round70 === 0, e2);
 check('mid-roll, a bandit\'s blow at 1.0 misses', e2.rolling === 0, e2);
+// Session 283: the rest of an enemy's damage goes by a roll too. A troll's heavy blow (the world's behaviours: at half
+// health it winds up a second and hits everything within 3.2) lands standing and misses 0.15 s into a roll.
+const heavy2 = await page.evaluate(() => {
+  const one = rolling => {
+    const e = buildZoneEnemy(WORLD.scene, [], px + 2, pz, 'Cave Troll', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
+    e.locked = false; e.alert = true; e.x = px + 2; e.z = pz; e.hp = e.maxHp * .4; e._phase2 = true; e._heavyT = 99; e._windup = .001; e.atkCd = 99; e.spd = 0;
+    ZE.push(e); PHP = maxHP; blocking = false;
+    ROLL = rolling ? { t0: performance.now() / 1000 - .15, dur: .45, dist: 0, i0: .08, i1: .3, dx: 0, dz: 0, done: 0, fwd: 1 } : null;
+    try { WORLD.tickBehaviours(1 / 60); } finally { ROLL = null; ZE.splice(ZE.indexOf(e), 1); WORLD.scene.remove(e.mesh); }
+    const lost = maxHP - PHP; PHP = maxHP; return lost; };
+  return { standing: one(false), rolling: one(true) };
+});
+console.log(JSON.stringify(heavy2));
+check('a troll\'s heavy blow lands standing and misses mid-roll', heavy2.standing > 0 && heavy2.rolling === 0, heavy2);
+const src = await page.evaluate(() => [executeStrike, tickZoneArrows].map(f => /rollUntouchable/.test(String(f))));
+check('melee blows and arrows read the roll', src.every(Boolean), src);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

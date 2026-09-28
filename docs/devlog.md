@@ -7997,3 +7997,24 @@ New `tests/tells.test.mjs`, 9 checks, passing, no page errors:
 - Whether the draw-back pose reads at 0.45–0.9 s on every family without the glow. The people's bodies (bandits, goblins, guards) may need a proper raised-arm wind-up from the look branch.
 - With longer tells, stepping back beats more blows. B's commitment (slowed while swinging) is what closes that. Until then fights may feel easier.
 
+## v80 — Session 283 — Untouchable means untouchable
+Owed by Session 280. The design page says a roll leaves you *untouchable* from 0.08 to 0.30 s. Session 280 applied that to melee blows (`executeStrike`) and to world enemies' arrows (`tickZoneArrows`), and noted the other paths as owed. This session makes the rest of the enemies' damage do what that entry says.
+
+**What changed.** Five more places now check `rollUntouchable`:
+- the Faolchú's fireball, which passes through you;
+- a dungeon caster's bolt (Phantom and Wraith);
+- a lair beast's charge, which goes past you instead of bowling you over;
+- a strong foe's half-health heavy blow (the Captain, trolls, the Ogre, the Wight, the Hag, the Bear), which misses;
+- a boarding party's arrow volley, which lands where you were.
+
+Traps (spikes, the swinging blade, the fire jet) are not an enemy's blow and still catch you mid-roll. A Wraith's life-drain is a hold, not a blow, and it still drains.
+
+### Verified (headless Chromium)
+`tests/roll.test.mjs` gains two checks, 17 in all, passing.
+- **The heavy blow.** A Cave Troll at 40% health ends its heavy wind-up 2 units away (`WORLD.tickBehaviours` at 1/60). Standing, it hits for 11. At 0.15 s into a roll, it hits for 0.
+- **The earlier paths.** The melee and arrow paths still carry the check.
+- **Not driven by a test.** The fireball, the bolt, the charge and the volley use the same one-line condition. `faolchu`, `dungeonfoes`, `ships` and `trolls` pass.
+
+### Needs eyes
+Rolling through the Faolchú's fire on the plaza, and through a charging bear.
+
