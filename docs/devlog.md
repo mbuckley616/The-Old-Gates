@@ -6002,3 +6002,23 @@ An item owed since Session 166: a wolf that swung round to face you, or turned a
 
 ### Needs eyes
 Whether a trot in place reads as stepping round or as a shuffle. A proper turn, the forelegs crossing and the hind legs pivoting, would be its own pose.
+
+## v80 — Session 214 — The last box creatures: a prototype and a question (H.4, waiting on Michael)
+With the trolls, the golem, the gargoyle, the Faolchú and the dungeon's ghosts built, seven kinds of creature are still on the old box bodies: the Ogre and the Cave Bear (open world, brutes), the dungeon's Slime (with the Small Slime it splits into) and Fire Elemental, and the regional Bog Crawler, Sand Scorpion and Shore Wisp (Session 130's bodies). None of them is in a family Michael approved, so this is a prototype and a DECISION. `index.html` is unchanged (the build tag stays at s213).
+
+**The prototype** (`docs/prototypes/creatures3/shoot.mjs`) boots the game and builds each one from its kits, with the missing parts hung on the bones as plain meshes:
+- **Ogre**: the people's body at build 1.95, fat (a belly ball on the spine), bald, ruddy, sometimes bearded, in a kilt, holding a knotted club in the right fist.
+- **Cave Bear**: a wolf kind with bulk 1.6. The shoulder and hip bones are scaled out for thick legs, there is a hump on the spine, the ears are round, the muzzle short, and the tail bones are shrunk away.
+- **Slime**: a noise-deformed ball flattened at its foot, glassy and half see-through, with a dark heart, a swallowed skull and coin, and two eyes. The Small Slime is the same at .55.
+- **Fire Elemental**: a molten core under additive flame tongues, arms of flame with clawed flame hands, and a crown.
+- **Bog Crawler**: the spider kit in fen green, with moss on its back.
+- **Sand Scorpion**: the spider kit in sand, with pincers on the fang bones and a six-segment tail from the abdomen.
+- **Shore Wisp**: a white core in layered additive blue halos, three motes and a fading tail.
+
+Two things fell short in the renders and are said so in the question: the scorpion's tail is mostly hidden behind the abdomen, and the Bog Crawler has eight legs where the box had six.
+
+### Verified (headless Chromium)
+`node docs/prototypes/creatures3/shoot.mjs` renders the five pictures (`creatures3-ogre.png`, `-bear.png`, `-dungeon.png`, `-crawlers.png`, `-wisp.png`) with no page errors. The kinds it registers for the pictures (`Proto Bear`, `Proto Crawler`, `Proto Scorpion`) are removed before it returns.
+
+### Needs eyes
+The DECISION (in `docs/decisions.md` and a GitHub issue): all as shown (recommended), the Bog Crawler as a six-legged crawler of its own, only the Ogre, the dungeon pair and the wisp, or not yet.

@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
+Seven kinds of creature are still on the old box bodies. None of them is in a family you have approved, so here is how each would look. Each is built in the game from its own kits (`docs/prototypes/creatures3/shoot.mjs`), with a bandit beside it for scale.
+- **Ogre**: the people's body grown huge and fat (the troll's build, heavier), bald and ruddy, sometimes bearded, in a leather kilt, carrying a knotted tree-limb club. It lives in the open world. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures3-ogre.png
+- **Cave Bear**: on the wolf's bones, as the boar is, but heavy: thick legs, a shoulder hump, round ears, a short muzzle, the tail gone. In the build its body would be its own kit piece, as the boar's is. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures3-bear.png
+- **Slime** (and the Small Slime it splits into): a soft glassy blob you can half see through, with a darker heart, things it has swallowed inside (a skull, a coin), and two eyes. **Fire Elemental**: a figure of flame over a molten core, with arms of fire, clawed hands of flame and a crown of fire. Both are dungeon creatures. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures3-dungeon.png
+- **Bog Crawler** (fen and swamp): the spider kit in the fen's colours, with moss on its back. It has eight legs; the old box had six. **Sand Scorpion** (dunes): the spider kit in sand, with two big pincers, and a jointed tail curling over its back to a sting. In the picture the tail is mostly hidden behind the abdomen; the build would raise it. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures3-crawlers.png
+- **Shore Wisp**: a cold light over the tide line: a white core in a blue halo, three motes circling, and a tail of fading light. It stays close to what it is now, but softer. https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/creatures3-wisp.png
+
+**Options:** (A) build them all as shown, one or two a session; (B) as shown, but give the Bog Crawler a six-legged crawler's body of its own (a beetle or a giant water-bug) rather than a spider's, and I will prototype that first; (C) build the Ogre, the slimes, the elemental and the wisp now, and rethink the bear and the two crawlers; (D) not yet. **Recommendation: A.** Each reuses a kit the game already has, so they are quick to build and share the townsfolk's and the wolves' animation. The bear's own body (a heavier kit piece than the wolf's legs) is the one bigger job.
+
 ## Answered
 
 ### The interface — parchment and ink, and where the HUD sits (the concept artist, 2026-09-27)
