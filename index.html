@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s232</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s233</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35237,7 +35237,7 @@ var WORLD=(()=>{
       const gx=n.g.position.x,gz=n.g.position.z;
       const plan=(n._settle&&n._settle.raid)?{hide:true}:scheduleFor(n,h);
       // hidden = indoors somewhere; the interior generator spawns them there
-      if(plan.hide||(n._arrivedHide)){if(n.g.visible){n.g.visible=false;n.dot.visible=false;}n._retreated=true;if(plan.hide)n._arrivedHide=false;continue;}
+      if(plan.hide||(n._arrivedHide)){if(n.g.visible){n.g.visible=false;n.dot.visible=false;}if(n._torch&&n._torch.visible){n._torch.visible=false;n._torch.userData.light.intensity=0;}n._retreated=true;if(plan.hide)n._arrivedHide=false;continue;}
       if(n._drawn)continue; // S157 — drawn against you; the enemy stands in
       if(!n.g.visible){n.g.visible=true;n._retreated=false;n.g.position.set(n.home.x,worldH(n.home.x,n.home.z),n.home.z);}
       n._retreated=false;

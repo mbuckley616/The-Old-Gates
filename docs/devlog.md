@@ -5330,3 +5330,17 @@ New `tests/intnpcs.test.mjs`, in Dunmore's guild hall: 3 members, 41 solids (22 
 
 ### Needs eyes
 Nothing new to judge; the members should simply never be seen inside a rack.
+
+## v80 — Session 233 — The hour-change stall, and the watchman's torch
+
+The critic's s158 run noted, under *Frame cost*, that every `forceTime` in Dunmore (12→18, 18→23, 23→12) was followed three frames later by a single frame of 20–24 *seconds* on software GL. The shader program count stayed at 30, which it read as programs being rebuilt, and it asked for a look at 17:59 → 18:00 on Michael's machine. Section I has nothing open, so this was the next item: backlog D, performance, which is the systems builder's.
+
+**What it is.** Nothing is rebuilt. New `tests/hourhitch.test.mjs` counts every `compileShader` the GL context runs and every program three.js adds, in Dunmore. It waits until the town has stopped compiling at noon, then jumps 12→18→23→12→6→21→12 and crosses 17:59→18:00 and 18:59→19:00 by the clock. The **first dusk** after arriving compiles 8 shaders, 4 programs, once. They are for what night brings into the scene: the night encounter table's enemies (4 health bars, 16 skinned rigs, the Points of their effects), about 250 meshes in all, and the guards' torches. Every later change of hour compiled nothing, and the scene's light count stayed at 27 throughout. Diffing each material's program before and after dusk found none that changed program, so no material is being re-keyed by the time of day. On SwiftShader, with 24 pooled point lights in every lit shader, four programs can plausibly take the critic's 20 s. On a GPU it is a hitch the first time night falls, and the same hitch the first time any new creature kind comes into view. That is arrival, not the hour. `REN.compile(scene, CAM)` after the town settled paid for the torches' two programs ahead of time (r128's `compile` walks invisible objects too), but not the enemies', because they don't exist until night. So I did not add it: prewarming properly means building each creature family once behind the loading fade, which is its own item (owed, D).
+
+**What was wrong along the way.** The first run found one torch lit at noon. The night watchman (the third guard, prosperity ≥ 60) goes indoors at dawn, and `tickNPCs` skips a hidden NPC before the line that puts torches out by the hour. So his torch stayed lit, and its pooled light (intensity 1.1, reach 7) glowed all day at the door he went in by, holding one of the 24 light slots. The hide branch now puts out a hidden NPC's torch, flame and light. One line.
+
+### Verified (headless Chromium)
+`hourhitch.test.mjs`: settled at noon with 0 compiles over four quiet checks and 25 programs. First dusk: +8 shaders, 25 → 29 programs, its worst frame 2.7 s (a quiet noon's worst frame was 4.8 s on this runner). Nine more changes of hour: 0 shaders, 0 programs, no frame over 2.8 s. Lights 27 at every step. Torches lit by step: 2, 3, **0** at noon, 3, 3, **0** at noon, 0 at 17:59, 2 at 18:00, 2, 3 at 19:00. Flame and pooled light agree at every step. Before the fix the noon counts were 1 and 1. `watch.test.mjs` passes unchanged: three torches on the beat at night, the trailing guard at 7.99. No page errors.
+
+### Needs eyes
+On the laptop: F9 at 17:59 → 18:00 on the first evening of a session, and again on the second. The first should show one long frame, the second nothing. How long that one frame is on a real GPU decides whether prewarming the creatures is worth a session.
