@@ -6147,3 +6147,35 @@ New `tests/ogre.test.mjs`, 7 checks, all passing, no page errors:
 
 ### Needs eyes
 Whether the ogre's 2.0 height over a bandit's 1.2 feels right at a fight's distance, and whether the bare belly reads as a belly or as a patch in daylight.
+
+## v80 — Session 222 — The dungeon's slimes and Fire Elemental (H.4 / H.7, Michael's answer B on Session 214)
+The second slice of Michael's B: the slime and the Fire Elemental, as shown in Session 214's prototype. Both were still the dungeon's oldest bodies. The slime was an eight-sided sphere with an inner ball. The elemental was four stacked boxes around a box core.
+
+**The slime.** `buildEnemy`'s slime branch now builds the prototype's blob:
+- a 28×20 sphere, squat and spread at the foot, rippled by its own seed, on a glassy standard material (opacity .62, low roughness) so the floor shows through;
+- a darker heart inside, and what it has swallowed: a skull and a gold coin in a full-sized slime, each at even odds in a small one;
+- two white eyes with dark pupils.
+
+The body is `limbs.body`, so the wind-up's red and the parry's flash light it as before. It quivers (a squash and stretch, faster when it is alert).
+
+**The Fire Elemental.**
+- 47 unlit, additive flames over a molten core: tongues up the body, two arms of fire, clawed hands of flame and a crown of fire.
+- The flames flicker, each on its own phase.
+- The core glows with its emissive. The wind-up and every parry flash overwrite that emissive and then set it to black, so the tick eases it back to its orange glow once the wind-up has ended.
+
+Both are built at the prototype's proportions in a group scaled by the enemy's own scale (.7 for a slime, .42 for a small one, .9 for the elemental). Their sizes, hit points and everything else are unchanged. The prototype picture drew them a little larger (1.0 and 1.05); I kept the game's sizes because the hit reach goes by them.
+
+The quiver and flicker run at the top of the dungeon's per-enemy loop, for every foe on the floor whether alert or not. The old slime's comment said "tick animates scale for wobble", but nothing did.
+
+**A bug found on the way, not fixed (combat, the systems builder's).** `killE` makes a slime split by calling `buildEnemy`. But `buildEnemy` is declared inside `buildDungeon` and is not in scope in `killE`. So killing a full-sized Slime throws a ReferenceError after the "slain" message: the two Small Slimes are never made, and whatever called `killE` stops there. A spell's hit loop, for one, skips the rest of its work that frame. It has been this way since the split was written. So the small slime's new look is only reachable once that is fixed. I have reported it in the PR.
+
+### Verified (headless Chromium)
+New `tests/slimes.test.mjs`, 6 checks, all passing, no page errors. It enters an elemental dungeon at level 6, finds a Slime and a Fire Elemental on the current floor, and checks:
+- The slime is a 609-vertex glassy blob on a standard material, with no box left.
+- The elemental has 47 additive flames without depth writes, a core glowing #ff4400, its light, and no box left.
+- The wind-up turns the core red (#bf140c), and the reset clears it to black, as for every foe.
+- After twelve real frames, the slime's height scale has moved to 1.06, all 47 flames have changed height, and the core is back to #ed3f00.
+`dungeon`, `dungeonfoes`, `mimic` and `golem` still pass. Picture: `docs/prototypes/slimes-ingame.png` (a slime and a fire elemental in an elemental dungeon, by a lantern).
+
+### Needs eyes
+Whether the slime's quiver reads as jelly or as a pulse. Whether 47 additive flames stay cheap in a room of three elementals on a laptop: they are small, unlit, and write no depth, but they overdraw.
