@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s232</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s233</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35438,7 +35438,7 @@ var WORLD=(()=>{
   function buildFortCompound(e,p,cellK){
     const cx=p.x,cz=p.z+4,R=27;const st=STYLE.garrison;const c=x=>new THREE.Color(x);const wallC=c(st.wall),capC=c(st.wall2);
     const r=(function(){let q=e.seed%2147483647;return()=>{q=(q*48271)%2147483647;return q/2147483647;};})();
-    const group=new THREE.Group();const sol=[];const parts=[];const y0=worldH(cx,cz);
+    const group=new THREE.Group();const sol=[];const y0=worldH(cx,cz);
     const gateAng=Math.PI/2; // the door faces +z; the spur leaves south
     const segs=Math.round(2*Math.PI*R/3.2);
     for(let i=0;i<segs;i++){
@@ -35446,15 +35446,19 @@ var WORLD=(()=>{
       let d=am-gateAng;d=Math.atan2(Math.sin(d),Math.cos(d));
       if(Math.abs(d)<.16)continue; // the gate gap
       const mx=cx+Math.cos(am)*R,mz=cz+Math.sin(am)*R;const len=2*R*Math.sin(Math.PI/segs)+.3;const wry=-am-Math.PI/2;
-      parts.push({geo:new THREE.BoxGeometry(len,3.4,1.0),color:wallC,x:mx-cx,z:mz-cz,y:1.7,ry:wry,jitter:.06}); // v80 S132 — 3.4 tall: a wall, not a cliff
-      for(let k=-1;k<=1;k++)parts.push({geo:new THREE.BoxGeometry(.8,.55,1.1),color:capC,x:mx-cx+Math.cos(am+Math.PI/2)*k*len*.3,z:mz-cz+Math.sin(am+Math.PI/2)*k*len*.3,y:3.65,ry:wry,jitter:.05});
+      // S251 — each segment coursed stone near (the town walls' builder, no buttresses on so short a run), its old box and
+      // three caps (v80 S132: 3.4 tall, a wall, not a cliff) the distant copy
+      {const lp=[{geo:new THREE.BoxGeometry(len,3.4,1.0),color:wallC,y:1.7,jitter:.06}];for(let k=-1;k<=1;k++)lp.push({geo:new THREE.BoxGeometry(.8,.55,1.1),color:capC,x:k*len*.3,y:3.65,jitter:.05});
+        const tx_=-Math.sin(am)*len/2,tz_=Math.cos(am)*len/2;const hiG=wallSegHi('stone',len,3.4,1.0,wallC,capC,worldH(mx-tx_,mz-tz_)-y0,worldH(mx+tx_,mz+tz_)-y0,pRng(pHash('fort|'+e.seed+'|'+i)),true);
+        for(const [geo,lod] of [[hiG,'hi'],[mergeParts(lp),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(mx,y0,mz);m.rotation.y=wry;m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;group.add(m);}}
       sol.push({cx:mx,cz:mz,rx:len/2,rz:.8,c:Math.cos(wry),s:Math.sin(wry),bt:'wall'});
     }
     // corner towers and gate towers
     const towers=[Math.PI/4,3*Math.PI/4,5*Math.PI/4,7*Math.PI/4,gateAng-.24,gateAng+.24];
-    towers.forEach((a,i)=>{const tx=cx+Math.cos(a)*R,tz=cz+Math.sin(a)*R;const gate=i>=4;const h=gate?5.6:4.8;parts.push({geo:new THREE.CylinderGeometry(1.4,1.6,h,8),color:capC,x:tx-cx,z:tz-cz,y:h/2,jitter:.05});parts.push({geo:new THREE.ConeGeometry(1.7,1.4,8),color:c(st.roof),x:tx-cx,z:tz-cz,y:h+.8,jitter:.05});sol.push({cx:tx,cz:tz,rx:2.0,rz:2.0});
-      if(gate){const pole=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,1.0),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(tx,y0+h+.4,tz+1.2);group.add(pole);const cloth=new THREE.Mesh(new THREE.PlaneGeometry(.9,2.6),new THREE.MeshLambertMaterial({color:nationOf(...cellOf(cx,cz)).banner,side:THREE.DoubleSide}));cloth.position.set(tx,y0+h-.9,tz+1.6);group.add(cloth);}});
-    const wallMesh=new THREE.Mesh(mergeParts(parts),VC_MAT);wallMesh.position.set(cx,y0,cz);wallMesh.castShadow=true;wallMesh.receiveShadow=true;group.add(wallMesh);
+    towers.forEach((a,i)=>{const tx=cx+Math.cos(a)*R,tz=cz+Math.sin(a)*R;const gate=i>=4;const h=gate?5.6:4.8;sol.push({cx:tx,cz:tz,rx:2.0,rz:2.0});
+      // S251 — a coursed round tower near, the old tower its distant copy, both where the tower stands
+      for(const [geo,lod] of [[gateTowerHi('stone',h-2.4,capC,c(st.roof),pRng(pHash('fortT|'+e.seed+'|'+i))),'hi'],[mergeParts([{geo:new THREE.CylinderGeometry(1.4,1.6,h,8),color:capC,y:h/2,jitter:.05},{geo:new THREE.ConeGeometry(1.7,1.4,8),color:c(st.roof),y:h+.8,jitter:.05}]),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(tx,y0,tz);m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;group.add(m);}
+      if(gate){ /* S251 — the banner hangs clear of the wider tower */ const pole=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,1.0),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(tx,y0+h+.4,tz+2.05);group.add(pole);const cloth=new THREE.Mesh(new THREE.PlaneGeometry(.9,2.6),new THREE.MeshLambertMaterial({color:nationOf(...cellOf(cx,cz)).banner,side:THREE.DoubleSide}));cloth.position.set(tx,y0+h-.9,tz+2.3);group.add(cloth);}});
     // barracks either side of the yard, doors toward the keep
     const S={site:{id:'fort_'+e.seed,x:cx,z:cz,pad:R+2,kind:'fort'},group,sol,houses:[],npcs:[],reg:'anglo',residents:[],lamps:[],_gates:[],reach:R+6};
     [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
@@ -36805,7 +36809,7 @@ var WORLD=(()=>{
   // ── S249: a town's walls and gate towers in detail (H.5, Michael's A), the old boxes as the distant copy. A wall
   // segment is built along local x (len long, the outer face at -z), its foot at 0 in the middle; gA and gB are the
   // ground at its two ends against the middle, so posts, logs and footings follow a slope where the box floated.
-  function wallSegHi(WT,len,H,d,wallC,capC,gA,gB,rr){const P=[];const add=(geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});
+  function wallSegHi(WT,len,H,d,wallC,capC,gA,gB,rr,noButt){const P=[];const add=(geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});
     const vary=(c,a)=>new THREE.Color(c).multiplyScalar(1-a+rr()*a*2).getHex(),gAt=x=>gA+(gB-gA)*(x/len+.5),foot=Math.min(0,gA,gB)-.5,slope=Math.atan2(gB-gA,len);
     const wc=wallC.getHex(),cc=capC.getHex();
     if(WT==='fence'){const n=Math.max(2,Math.round(len/2.4));for(let i=0;i<=n;i++){const x=-len/2+i*len/n,g=gAt(x);add(SK.cyl(.065,.085,1.6,6),vary(cc,.12),x,g+.5,0,(rr()-.5)*.06,0,(rr()-.5)*.06,.04);}
@@ -36821,7 +36825,7 @@ var WORLD=(()=>{
     // courses of blocks laid broken-joint on the mortar core: rubble uneven and mottled, ashlar even and pale
     for(let y=plinth+.1;y<H-.05;){const ch=Math.min(H-y,dressed?.5:.5+rr()*.3);let x=-len/2;
       while(x<len/2-.05){const bl=Math.min(len/2-x,dressed?1.3+rr()*.5:1.0+rr()*1.4);const inset=dressed?0:(rr()-.5)*.08;add(new THREE.BoxGeometry(bl-.06,ch-.05,d+inset),vary(wc,dressed?.06:.16),x+bl/2,y+ch/2,0,0,0,0,.05);x+=bl;}y+=ch;}
-    if(!dressed){const nb=Math.max(1,Math.round(len/7));for(let i=0;i<nb;i++){const x=-len/2+(i+.5)*len/nb,g=Math.min(0,gAt(x))-.4,bh=H*.72-g;add(SK.rbox(.9,bh,.8,.06,1),vary(wc,.08),x,g+bh/2,-d/2-.35,0,0,0,.05);add(new THREE.BoxGeometry(.9,.5,.6),vary(cc,.06),x,H*.72+.1,-d/2-.28,-.6,0,0,.04);}}
+    if(!dressed){const nb=noButt?0:Math.max(1,Math.round(len/7));for(let i=0;i<nb;i++){const x=-len/2+(i+.5)*len/nb,g=Math.min(0,gAt(x))-.4,bh=H*.72-g;add(SK.rbox(.9,bh,.8,.06,1),vary(wc,.08),x,g+bh/2,-d/2-.35,0,0,0,.05);add(new THREE.BoxGeometry(.9,.5,.6),vary(cc,.06),x,H*.72+.1,-d/2-.28,-.6,0,0,.04);}}
     else{add(SK.rbox(len,.2,d+.24,.06,1),cc,0,H-1.4,0,0,0,0,.03);for(let x=-len/2+.5;x<len/2-.2;x+=1.0)add(new THREE.BoxGeometry(.28,.4,.34),vary(cc,.05),x,H-.2,-d/2-.12,0,0,0,.03);}
     // the parapet on the outer edge, crenellated: merlons and embrasures along the whole run
     const pz=-d/2+(dressed?-.08:.2),pd=dressed?.5:.42;add(new THREE.BoxGeometry(len,.35,pd),vary(cc,.05),0,H+.17,pz,0,0,0,.04);
@@ -36839,7 +36843,7 @@ var WORLD=(()=>{
     add(new THREE.CylinderGeometry(R1+.05,R1+.4,1.6,16),new THREE.Color(cc).multiplyScalar(.85).getHex(),0,.3,0);
     add(new THREE.CylinderGeometry(R0,R1,T,16,4),cc,0,T/2,0,0,0,0,.08);
     for(let y=1.6;y<T-.8;y+=1.3){const rr2=R1-(R1-R0)*(y/T);add(SK.torus(rr2+.01,.05,3,16),new THREE.Color(cc).multiplyScalar(.8).getHex(),0,y,0,Math.PI/2,0,0,.03);}
-    for(let i=0;i<3;i++){const a=i/3*Math.PI*2+rr()*.6,y=2.2+i*1.3,rr2=R1-(R1-R0)*(y/T)+.02;add(new THREE.BoxGeometry(.16,.8,.12),0x14141a,Math.sin(a)*rr2,y,Math.cos(a)*rr2,0,a,0,0);}
+    for(let i=0;i<3;i++){const a=i/3*Math.PI*2+rr()*.6,y=2.2+i*1.3,rr2=R1-(R1-R0)*(y/T)+.02;if(y>T-1.2)continue;add(new THREE.BoxGeometry(.16,.8,.12),0x14141a,Math.sin(a)*rr2,y,Math.cos(a)*rr2,0,a,0,0);}
     add(new THREE.CylinderGeometry(R0+.35,R0,.5,16),new THREE.Color(cc).multiplyScalar(.92).getHex(),0,T-.15,0);add(new THREE.CylinderGeometry(R0+.35,R0+.35,.3,16),cc,0,T+.25,0);
     for(let k=0;k<8;k++){const a=k/8*Math.PI*2;add(SK.rbox(.9,.7,.4,.06,1),vary(cc,.06),Math.sin(a)*(R0+.18),T+.75,Math.cos(a)*(R0+.18),0,a,0,.05);}
     for(let k=0;k<5;k++){const r1=(R0+.1)*(1-k/5),r2=(R0+.1)*(1-(k+1)/5);add(new THREE.CylinderGeometry(Math.max(.04,r2),r1,.62,16,1,true),vary(rc,.08),0,T+.4+k*.6+.31,0,0,0,0,.05);}

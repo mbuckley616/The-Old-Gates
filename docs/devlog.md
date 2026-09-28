@@ -6626,3 +6626,18 @@ New `tests/harbour.test.mjs`.
 
 ### Needs eyes
 The tide line against the real water's colour and its swell. The steps meet the water only where the sea is shallow, and on a deep quay they end in the air below the surface. From the water, the breakwater's heaps might look too separate where the old blocks ran together; a heap or two more between the seven would close it up, but that changes its collision, so it is left. The quay is 8.5k triangles; there is one in a port and it has a distant copy, but it is the heaviest single piece this pass has made.
+
+## v80 — Session 251 — The fort compound's ring and towers in detail (H.5)
+A fort compound (the ring round a fort door's keep, Session 132) still had the old look. It was fifty-odd box segments, 3.4 tall and 3.5 long, with three cap blocks each, and six eight-sided towers under cones, all merged into one mesh at the fort's centre. It had no distant copy, because it had only one detail level. The keep and the barracks were already done (Sessions 195 and 202).
+
+**Now** each segment is coursed stone from Session 249's builder (`wallSegHi('stone', …)`): the plinth, rubble courses on a mortar core and a crenellated parapet. The builder takes a new flag that leaves out the buttresses, because on a 3.5-unit run it would put one on every segment. Each segment is paired with its old box and caps as the distant copy. Each tower is Session 249's coursed round tower (`gateTowerHi`) at the fort's heights (4.8 at the corners, 5.6 at the gate), paired with its old cylinder and cone in its own place. That places each distant copy in the same bake cluster as its tower; an old tower left in the centre's cluster would have swapped with the wrong piece. The tower builder now leaves out an arrow slit that would sit within 1.2 of the top, which a tower this short would otherwise get. The seeds come from the fort's seed and the piece's number; the fort's own dice are untouched.
+
+**A regression, caught in the picture:** the new towers are wider (1.8–2.0 against 1.4–1.6), and the gate towers' banners, hung 1.6 from the centre, disappeared inside them. The pole and the cloth now hang at 2.05 and 2.3.
+
+**Found, not fixed here:** about sixty trees and plants stand inside the ring, 25 units from the centre of the fort nearest the start. A fort door flattens a stamp of radius 46 round itself, and trees are not scattered on a stamp. But a chunk that was built before its cell placed the door keeps the trees it scattered, and only its terrain is refreshed for late features (`refreshChunksNearWater`). This happens when you arrive by jumping there, which is how the test arrives. Fast travel and loading a save arrive the same way. This is the next session.
+
+### Verified (headless Chromium)
+`tests/walls.test.mjs` gains the fort nearest the start, Cnocowen Keep at 13034, 23697, about 1,750 from the start. The test goes there as the harness goes anywhere, and drains the loader until the compound is built. It has 50 wall colliders, the number the ring's formula gives outside the gate gap, and 6 tower colliders. Its detailed clusters are all paired with plain twins: 4 shown from 40 units off, none from 700. No page errors. `walls`, `houses` and `dungeon` pass. `docs/prototypes/fort-shot.mjs` renders `docs/prototypes/fort-ingame.png`: the fort before (left) and after (right), from above at noon. The instanced trees and plants are hidden for that picture, because they stand in the courtyard (above).
+
+### Needs eyes
+The ring at the swap distance. The towers' tile-red cones against the keep's dark ones (the garrison style's roof colour, as before). The banners at their new distance from the towers.

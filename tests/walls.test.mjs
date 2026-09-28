@@ -39,5 +39,22 @@ const town = await page.evaluate(() => { const walled = []; for (const t of WORL
   return { id, walls: w, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), near, far, hi: hi.length }; });
 check('a walled town is found near the start', !!town, town);
 if (town) { check('its detailed clusters (walls among them) show near and give way to their plain twins far', town.paired && town.near > 0 && town.far === 0, town); }
+// a fort compound's ring and towers (Session 251): the same builders, its old ring the distant copy
+// the nearest fort door to the start: go there as the harness goes anywhere, and drain the loader so its compound builds
+const fd = await page.evaluate(() => { const out = []; const [hi, hj] = WORLD.cellOf(px, pz); for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { let c; try { c = WORLD.getCell(hi + di, hj + dj); } catch (e) { continue; } if (c) for (const e of c.doors) if (e.kind === 'fort_door') out.push({ seed: e.seed, x: e.x, z: e.z, d: Math.hypot(e.x - px, e.z - pz) }); } return out.sort((a, b) => a.d - b.d)[0] || null; });
+if (fd) { await page.evaluate(f => goToZone('world', f.x, f.z + 45, 0, 'x'), fd); await page.waitForTimeout(9000); await g.hide();
+  await page.evaluate(seed => { for (let k = 0; k < 900 && !WORLD.settlements.has('fort_' + seed); k++) { WORLD.tick(1 / 60, performance.now()); while (WORLD.jobs.length) { const j = WORLD.jobs.shift(); let more = false; try { more = j.fn(); } catch (e) {} if (more) WORLD.jobs.push(j); } } }, fd.seed); }
+const fort = !fd ? null : await page.evaluate(seed => { const S = WORLD.settlements.get('fort_' + seed); if (!S || !S.lodMeshes) return { none: seed };
+  const L = S.lodMeshes, hi = L.filter(m => m.userData.lod === 'hi'), lo = L.filter(m => m.userData.lod === 'lo'); const R = 27, segs = Math.round(2 * Math.PI * R / 3.2); let want = 0;
+  for (let i = 0; i < segs; i++) { const am = (i + .5) / segs * Math.PI * 2; let d = am - Math.PI / 2; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) >= .16) want++; }
+  const cx = S.site.x, cz = S.site.z, saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); return hi.filter(m => m.visible).length; };
+  CAM.position.set(cx, CAM.position.y, cz + 40); const near = look(); CAM.position.set(cx + 700, CAM.position.y, cz); const far = look();
+  forceTime(12); const cam = new THREE.PerspectiveCamera(55, REN.domElement.width / REN.domElement.height, .3, 600); const y = WORLD.worldH(cx, cz + 50);
+  cam.position.set(cx + 14, y + 6, cz + 52); cam.lookAt(cx, y + 3, cz + 20); CAM.position.copy(cam.position); for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); WORLD.scene.updateMatrixWorld(true); const f = WORLD.scene.fog; WORLD.scene.fog = null; REN.render(WORLD.scene, cam); WORLD.scene.fog = f;
+  const o = document.createElement('canvas'); o.width = REN.domElement.width; o.height = REN.domElement.height; o.getContext('2d').drawImage(REN.domElement, 0, 0); CAM.position.copy(saved); look();
+  return { id: S.site.id, walls: S.sol.filter(q => q.bt === 'wall').length, want, towers: S.sol.filter(q => q.rx === 2 && q.rz === 2).length, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), hi: hi.length, near, far, shot: o.toDataURL() }; }, fd.seed);
+if (fort && fort.shot) { fs.writeFileSync('tests/out/walls-fort.png', Buffer.from(fort.shot.split(',')[1], 'base64')); delete fort.shot; }
+check('the fort compound nearest the start builds its ring and towers in detail, each paired with its old self, near shown and far not (Session 251)', fort && fort.paired && fort.near > 0 && fort.far === 0, fort);
+check('the fort\'s ring keeps its collision: one wall a segment outside the gate gap, six towers', fort && fort.walls === fort.want && fort.towers === 6, fort);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
