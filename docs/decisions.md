@@ -6,6 +6,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
+Michael: **The giant water bug** (B). (28 Sep 2026, via the control room)
+
+### The coaching inn halfway — what is inside? (systems builder, 2026-09-28, issue #24)
+Michael: **A, plus the coach's other half** (B) — the roadside inn with keeper, meal, a room and the board, and also the driver and a passenger or two waiting in the common room, with tickets sold here. (28 Sep 2026, via the control room)
+
+### Guards indoors — what happens when you are seen inside a building? (systems builder, 2026-09-28, issue #23)
+Michael: **The guard comes in** (B) — "The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player" (28 Sep 2026, via the control room)
+
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Michael: **B** — as shown, but the Bog Crawler gets a six-legged crawler's body of its own (a beetle or giant water-bug), prototyped first; the rest built one or two a session. (27 Sep 2026, via the control room)
 
