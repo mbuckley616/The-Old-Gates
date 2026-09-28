@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s265</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s266</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38837,6 +38837,7 @@ var WORLD=(()=>{
   function tickProsperity(){
     const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);if(day===_pDay)return;_pDay=day;
     const cleared=worldState.roadsCleared||{};const camps=worldState.camps||(worldState.camps={});
+    let tithe=0; // S266 — the Compact's tithe (Michael, #37 A): a town Aurenne occupies pays half a point a day more, and its capital gains it
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=TS(t);let d=0;
       // roads: cleared roads lift; ambush-ridden ones drain
       const rds=ROAD_DEFS.filter(x=>x.a===t.id||x.b===t.id);rds.forEach(x=>{d+=cleared[x.a+'|'+x.b]||cleared[x.b+'|'+x.a]?1:-.15;});
@@ -38852,7 +38853,11 @@ var WORLD=(()=>{
       if(st.p<=0&&st.flags.abandoned==null){flag(t,'abandoned',true);}
       if(st.flags.abandoned!=null&&st.p>=20)flag(t,'abandoned',false);
       if(Math.abs(d)>0)setProsperity(t,st.p+d);
+      // prosperity is kept in whole points, so the tithe keeps its own account and is paid a point at a time, every second day
+      if(st.flags.occupied!=null&&st.occupier==='aurenne'){st.tithe=(st.tithe||0)+.5;tithe+=.5;const w=Math.floor(st.tithe);if(w){st.tithe-=w;setProsperity(t,st.p-w);}}
     }
+    if(tithe>0){anchoredPlaces();const cap=FACTIONS.compact.seat?siteAnywhere(FACTIONS.compact.seat):null;
+      if(cap&&TS(cap).flags.occupied==null){const cs=TS(cap);cs.tithe=(cs.tithe||0)+tithe;const w=Math.floor(cs.tithe);if(w){cs.tithe-=w;setProsperity(cap,cs.p+w);}}}
     tickRoutesDay();try{tickWorldSystemsDay();}catch(e){console.warn('systems',e);}
   }
   function sack(t,camp){const st=TS(t);flag(t,'sacked',true);st.p=15;const lord=lordFor(t);if(typeof addLog==='function')addLog('🔥',`${t.name} was sacked by the bandits of ${camp.name}.`);showMsg(`Word comes that ${t.name} has been sacked.`,'#ff8060');}
