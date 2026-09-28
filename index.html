@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s240</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s241</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -14727,13 +14727,27 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     const nose=new THREE.Mesh(new THREE.BoxGeometry(.06*sc2,.05*sc2,.05*sc2),new THREE.MeshLambertMaterial({color:0x1a1210}));nose.position.set(0,.47*sc2,.57*sc2);g.add(nose);
     [[-1,1],[1,1],[-1,-1],[1,-1]].forEach(([s,f])=>{const paw=new THREE.Mesh(new THREE.BoxGeometry(.11*sc2,.06*sc2,.13*sc2),new THREE.MeshLambertMaterial({color:new THREE.Color(d.col).multiplyScalar(.6)}));paw.position.set(s*.17*sc2,.03*sc2,f*.1*sc2+.02*sc2);g.add(paw);});
   } else if(d.shape==='shark'){
-    // v80 — a shark: long tapered body, dorsal fin, tail; swims at the surface with the fin showing
-    const body=new THREE.Mesh(new THREE.CylinderGeometry(.22*sc2,.42*sc2,2.6*sc2,8),mat);body.rotation.x=Math.PI/2;body.position.set(0,.2*sc2,0);g.add(body);
-    const nose=new THREE.Mesh(new THREE.ConeGeometry(.22*sc2,.7*sc2,8),mat);nose.rotation.x=Math.PI/2;nose.position.set(0,.2*sc2,1.6*sc2);g.add(nose);
-    const dorsal=new THREE.Mesh(new THREE.ConeGeometry(.18*sc2,.7*sc2,4),new THREE.MeshLambertMaterial({color:new THREE.Color(d.col).multiplyScalar(.85)}));dorsal.position.set(0,.85*sc2,-.1*sc2);dorsal.rotation.z=0;g.add(dorsal);
-    const tail=new THREE.Mesh(new THREE.ConeGeometry(.16*sc2,.9*sc2,4),mat);tail.rotation.z=Math.PI;tail.rotation.x=.3;tail.position.set(0,.5*sc2,-1.6*sc2);g.add(tail);
-    [-1,1].forEach(s=>{const fin=new THREE.Mesh(new THREE.ConeGeometry(.12*sc2,.5*sc2,4),mat);fin.rotation.z=s*Math.PI/2;fin.position.set(s*.45*sc2,.1*sc2,.4*sc2);g.add(fin);});
-    const ey=new THREE.Mesh(new THREE.BoxGeometry(.2*sc2,.05*sc2,.02),new THREE.MeshBasicMaterial({color:d.eyeCol}));ey.position.set(0,.3*sc2,1.2*sc2);g.add(ey);
+    // S260 — the shark on the kit (Michael's A on Session 230, as shown): a lathed body counter-shaded, grey above and pale
+    // beneath, a pointed snout, extruded fins (a tall dorsal, pectorals, a crescent tail, a small second dorsal), gill slits
+    // and eyes; the body from behind the dorsal is a second mesh on a pivot, so the tail sweeps as it swims (tickSharks).
+    // Built in the prototype's units about the old body's middle (y .2), times sc2 as the old one was.
+    const u=sc2,back=new THREE.Color(0x5a6a74),belly=new THREE.Color(0xd8dcd8),gill=new THREE.Color(0x3a4a54),eyeC=new THREE.Color(0x0a0a0a),Y0=.2,ZP=-.35;
+    const MX=(x,y,z,rx,ry,rz,k)=>new THREE.Matrix4().compose(new THREE.Vector3(x*u,y*u,z*u),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(u*(k||1),u*(k||1),u*(k||1)));
+    const prof=[[0,-1.5],[.07,-1.3],[.14,-.9],[.24,-.4],[.31,.1],[.32,.45],[.27,.85],[.17,1.2],[.07,1.45],[0,1.56]];
+    const bodyPart=(z0,z1)=>{const pts=[];for(const q of prof){if(q[1]<z0-1e-6||q[1]>z1+1e-6)continue;pts.push(q);}
+      const lo=prof.filter(q=>q[1]<z0),hi=prof.filter(q=>q[1]>z1);const lerpAt=z=>{for(let k=0;k<prof.length-1;k++){const a=prof[k],b=prof[k+1];if(z>=a[1]&&z<=b[1]){const t=(z-a[1])/(b[1]-a[1]);return [a[0]+(b[0]-a[0])*t,z];}}return [0,z];};
+      if(lo.length)pts.unshift(lerpAt(z0));if(hi.length)pts.push(lerpAt(z1));if(lo.length)pts.unshift([0,z0]);if(hi.length)pts.push([0,z1]);
+      const g=new THREE.LatheGeometry(pts.map(q=>new THREE.Vector2(Math.max(1e-4,q[0]),q[1])),20);g.rotateX(Math.PI/2);g.scale(.78,.88,1);return g;};
+    const fin=(pts2)=>{const sh=new THREE.Shape();sh.moveTo(pts2[0][0],pts2[0][1]);for(let k=1;k<pts2.length;k++)sh.lineTo(pts2[k][0],pts2[k][1]);const g=new THREE.ExtrudeGeometry(sh,{depth:.03,bevelEnabled:true,bevelThickness:.015,bevelSize:.015,bevelSegments:2});g.translate(0,0,-.015);return g;};
+    const F=[],T=[];
+    F.push([bodyPart(ZP,1.56),back,MX(0,Y0,0)]);F.push([fin([[0,0],[.18,.55],[.3,.56],[.42,0]]),back,MX(0,Y0+.28,.05,0,Math.PI/2,0)]);
+    for(const sd of [1,-1]){F.push([fin([[0,0],[.5*sd,-.38],[.43*sd,-.47],[0,-.17]]),back,MX(sd*.22,Y0-.1,.5,Math.PI/2,0,-sd*.3)]);F.push([SK.ball(.03,8,6),eyeC,MX(sd*.15,Y0+.09,1.12)]);
+      for(let k=0;k<4;k++)F.push([SK.cyl(.006,.006,.14,4),gill,MX(sd*.25,Y0+.02,.78-k*.06)]);}
+    {const tg=bodyPart(-1.5,ZP+.1);tg.scale(1.02,1.02,1);T.push([tg,back,MX(0,Y0,-ZP)]);}T.push([fin([[0,0],[-.2,.75],[-.08,.75],[.22,.06],[-.18,-.5],[-.28,-.48],[0,0]]),back,MX(0,Y0+.02,-1.45-ZP,0,Math.PI/2,0)]);
+    T.push([fin([[0,0],[.1,.22],[.2,0]]),back,MX(0,Y0+.12,-.95-ZP,0,Math.PI/2,0,.8)]);T.push([fin([[0,0],[.14,-.16],[.22,-.14],[.2,0]]),back,MX(0,Y0-.2,-.95-ZP,0,Math.PI/2,0,.8)]);
+    const shade=m=>{const n=m.geometry.attributes.normal,c=m.geometry.attributes.color;for(let k=0;k<c.count;k++){if(Math.abs(c.getX(k)-back.r)>1e-3||Math.abs(c.getZ(k)-back.b)>1e-3)continue;const t=Math.max(0,Math.min(1,(-n.getY(k)+.05)/.45));c.setXYZ(k,back.r+(belly.r-back.r)*t,back.g+(belly.g-back.g)*t,back.b+(belly.b-back.b)*t);}c.needsUpdate=true;};
+    const front=dunMerge(F,'shark');shade(front);g.add(front);const tail=dunMerge(T,'shark');shade(tail);tail.material.dispose();tail.material=front.material;
+    const piv=new THREE.Group();piv.position.set(0,0,ZP*u);piv.add(tail);g.add(piv);g._sharkTail=piv;limbs.torso=front;
   } else if(d.shape==='spider'){ // v80 S130 — an abdomen behind, a head with fangs, eight jointed legs
     const body=new THREE.Mesh(new THREE.SphereGeometry(.16*sc2,7,6),mat);body.position.set(0,.26*sc2,.02*sc2);g.add(body);
     const abd=new THREE.Mesh(new THREE.SphereGeometry(.22*sc2,8,6),new THREE.MeshLambertMaterial({color:new THREE.Color(d.col).multiplyScalar(.8).getHex()}));abd.scale.set(1,.85,1.25);abd.position.set(0,.3*sc2,-.3*sc2);g.add(abd);
@@ -39243,6 +39257,7 @@ var WORLD=(()=>{
   }
   function tickSharks(){
     for(const e of ZONES.world.enemies){if(e.dead||e.name!=='Shark')continue;
+      if(e.mesh&&e.mesh._sharkTail){const t=performance.now()*.001;e.mesh._sharkTail.rotation.y=Math.sin(t*(e.alert?7:3.4)+(e.homeX||0))*(e.alert?.34:.22);} // S260 — the tail sweeps, faster when it hunts
       if(worldH(e.x,e.z)>-1.6){const dx=e.x-(e.homeX||e.x),dz=e.z-(e.homeZ||e.z),L=Math.hypot(dx,dz)||1;e.x-=dx/L*1.5;e.z-=dz/L*1.5;}
       if(!isSwimming())e.alert=false;
     }

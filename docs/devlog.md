@@ -6783,3 +6783,28 @@ New `tests/wreck.test.mjs`:
 
 ### Needs eyes
 The wreck through real water and the underwater tint: whether the ribs read, or the dark wood is lost against the dark. The bow half is sparse by design (broken off); whether it reads as wreckage or as litter. The sea chest's lid now opens on the hinge, as the dungeon's do.
+
+## v80 — Session 260 — The shark on the kit (H.4, Michael's A on Session 230)
+Michael answered Session 230's question through the control room: **all three as shown**, meaning the road coach, its horses and the shark. The answer is recorded under Answered in `docs/decisions.md` on the producer's branch, which reaches main with the Producer PR. The shark comes first. It lives apart from the coach, which the systems builder is working on this week (the coaching inn, tickets), so building it risks no clash.
+
+**It was** `buildZoneEnemy`'s `shark` shape: a cylinder, a cone for a nose, a four-sided cone for a dorsal and one for a tail, two cones for pectorals and a box eye, all in one flat grey.
+
+**Now** it is the prototype's shark in two vertex-coloured meshes.
+- **Body:** a lathed body with a pointed snout, counter-shaded: every surface facing down blends from the back's grey to a pale belly, the fins' undersides too.
+- **Fins:** extruded, bevelled fins. The pectorals now lie near-flat and swept back. The prototype's hung down on the near side and read as a stick in a side view; I found this in the picture and fixed it.
+- **Details:** gill slits and eyes.
+- **The tail:** the body behind the dorsal, with the crescent tail and the small second dorsal and anal fin, is a second mesh on a pivot. `tickSharks` sweeps it from side to side, gently while cruising and faster and wider when the shark hunts. That is `performance.now()`-driven and visual only. At the joint the tail's part overlaps the body by .1 and is 2% fuller, so no gap or bright cap shows as it turns.
+
+The body is `limbs.torso`, so the wind-up's red and the parry's flash light it; the tail shares its material. The shark's size, speed, damage and behaviour are unchanged. It is built at the old body's middle and scale, and is about 3.9 long, as before.
+
+### Verified (headless Chromium)
+New `tests/shark.test.mjs`:
+- **The mesh:** a shark built by `buildZoneEnemy` is 2 kit meshes of 1,044 triangles. It is 3.90 long and 1.46 across the pectorals, with its dorsal 1.27 above its origin (the old tip was at 1.44).
+- **Counter-shading:** its downward faces average 1.90 in colour (r+g+b) against its upward faces' .99.
+- **The tail:** ticking the world six times over .7 s swept it through six different angles between −.19 and .19.
+- No page errors.
+
+`foes` passes. `docs/prototypes/shark-ingame.png` (from above and in front) and `shark-ingame-side.png` are from the test, on a sand floor at noon with the fog off.
+
+### Needs eyes
+The shark in real water, at the surface with its dorsal showing, where it has always swum. Whether the tail's sweep reads as swimming at its speed. The coach and its horses follow in their own sessions. The coach is built in `buildCoachLine`, which the systems builder is also changing, so I will look at auto/systems first.
