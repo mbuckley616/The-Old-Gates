@@ -40,11 +40,12 @@ Every session, cloud or local, that has the tools:
 - **Before starting**, read the channel's last 24 hours (`slack_read_channel`, limit 40): what the others did, what
   Michael said. A note from Michael in the channel is an instruction to the producer, who files it; other
   sessions take it as context, not as a task, unless it names their area outright.
-- **At the end of the run**, post ONE message: `**<Role>** — <what you did, in two to four sentences, with the session
-  number and what you need>`. In your role's voice: the look builder talks in shapes and triangle counts, the systems
+- **At the end of the run**, post ONE message in the standard shape — a heading line `**<Role>** — <sessions or what>`,
+  then three bullets, one line each: `• *Did:* …` (with session numbers), `• *Next:* …`, `• *Need:* …` (a decision,
+  a merge, a fix from another agent, or "nothing"). In your role's voice: the look builder talks in shapes and triangle counts, the systems
   builder in rules and numbers, the critic dry and specific, the quest writer in the canon's cadence, the concept
   artist in pictures (link the PNGs), the designer in precedents, the producer plainly. Plain prose still: reasons,
-  numbers, no filler, no emoji in the body. Never more than one post per run; a run that did nothing posts nothing.
+  numbers, no filler, no paragraphs, no emoji in the body. Never more than one post per run; a run that did nothing posts nothing.
 - **Decisions** are the producer's alone: it posts each question as a message with lettered options and Michael
   answers in the thread or with a letter reaction (🇦 🇧 🇨 🇩). No other session posts a question to the channel
   or pings Michael; `docs/decisions.md` and a `DECISION:` issue remain the way to raise one.
