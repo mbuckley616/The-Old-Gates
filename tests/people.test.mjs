@@ -20,6 +20,9 @@ const det = await page.evaluate(() => { const pick = x => [x.style, x.beard, x.h
 check('the same name in the same place is the same person; the Old Blood wear their wrists', det.same && det.elsewhere && det.female && det.tattoo && det.greyEyes, det);
 
 // walk one of them: the stride follows the ground covered, and the standing foot stays where it was put
+// (at noon, when villagers are out: at the boot's 6h only guards, a smith and the lord are, and since Session 248 the lord
+// no longer wears the face of the first Niamh built, a resident with nothing in hand)
+await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now()); });
 const walk = await page.evaluate(() => { const rig = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear); window._wr = rig; const root = rig.root;
   const fyaw = root.rotation.y, step = .012; const vL = new THREE.Vector3(), vR = new THREE.Vector3(); let prev = null, worstStill = 0, swingMoved = 0;
   tickPeople(1 / 60, 1e5); const ph0 = rig.phase; // sync to where the town's own schedule has walked them

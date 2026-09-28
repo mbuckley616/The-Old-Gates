@@ -5693,3 +5693,27 @@ The critic's second bug from 28 Sep (PR #40): *a night guard sticks behind Cloda
 
 ### Needs eyes
 Dunmore after 23h: follow a lantern round the beat and watch for a guard rounding a corner by little one-unit steps (the cell-by-cell retry) where he used to stop.
+
+## v80 — Session 248 — Two Cathals
+The critic's fourth bug from 28 Sep (PR #40): *keepers and guards still share names*. In Dunmore, Cathal kept the apothecary, stood guard and lived in a house. Róisín kept a shop and was a guard, Ruairí kept the Bramble Hearth and walked the night watch, and Niamh was the Archmage and the mayor. A face is seeded and cached by `name|town`, so each pair was one face.
+
+**What was wrong.**
+- **The bank runs out.** Session 172's `pickFree` keeps names unique while the people's bank lasts: twelve names a sex. Dunmore has 65 townsfolk and the 43 residents are drawn first, so the bank is spent before the keepers, guards and lord are named. From then on a name repeats, and nothing kept the repeats off the people with posts.
+- **The lord comes last.** His name is his own (`lordFor`, per site, kept by `keepName`), and he is made after the guild halls. So the Archmage, drawn first, took Niamh freely.
+- **Found by this session's test: faces by the last town built.** `spawnNPC` keyed a face by `_curSettle`, the last town generated, not the person's own. Residents are spawned lazily, two a tick, as you come near. So a resident met in the street after a neighbouring village had built wore a different face from the one they had at home. In Portclare, Étaín and Cellach did.
+
+**What changed.**
+- **Names.** Someone with a post (keeper, guard, watch, lord, guild head) whose drawn name is taken, with the bank used up, takes the next name that no other post-holder has, a resident's name if it must. The lord's name is reserved when the town's naming starts. `pickFor` makes no extra draws from the town's stream, and a town's kept names (Session 244) still win, so a town already in a save keeps its names.
+- **Faces.** `makeDef` counts each name as it is given out. The second holder of a name carries `_twin: 1`, the third `_twin: 2`, and the face key becomes `name|town#n`. The house carries its keeper's `_twin`, so the keeper behind the counter, the resident at home and the guard who comes in after you (Session 239) all wear the face they have in the street. The first holder of every name keeps the face they had.
+- **The town in the key.** Every def remembers its town (`_siteId`), and `spawnNPC` keys the face by it.
+
+**A correction to a test.** `people`'s walk check took the first visible townsperson with nothing in hand, at the boot's 6h. The only one was Dunmore's lord, and only because he wore the face (and empty hands) of the first Niamh built, a resident. He has his own face now, and it carries a stick. The check now picks its walker at noon. Its assertions are unchanged.
+
+### Verified (headless Chromium)
+`tests/twins.test.mjs`:
+- **Dunmore** (22 in the street, 43 residents, 18 posts). No two post-holders share a name (on the previous build: Niamh the mayor, and Cathal, Róisín and Ruairí as guards). No two people share a face though 40 share a name (over 30 shared faces before). All 55 keepers and residents indoors match the street.
+- **Portclare** (15, 23, 12). The same, and Étaín's and Cellach's houses now match the street; they didn't before.
+- `names` (a rebuilt town has the same houses, names and keepers), `people`, `guardsindoor`, `intnpcs`, `placesave` and `signs` pass. No page errors.
+
+### Needs eyes
+Two townsfolk of the same name in one town should now look like two people. The lord of Dunmore looks different from the last build.
