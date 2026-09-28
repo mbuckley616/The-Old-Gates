@@ -5730,3 +5730,18 @@ Also, on the critic's notes from both of its runs, three stale backlog lines: th
 
 ### Needs eyes
 Nothing beyond reading the board.
+
+## v80 — Session 250 — The same face after the plague
+**A correction to Session 248**, found by reading it back against Session 245. Session 248 gave the second holder of a name a face of their own (`name|town#1`), numbered in the order the town was built. Session 245 had promised that a person keeps their look when the town rebuilds at another prosperity. A rebuild uses other lots in another order, so the numbers shifted. Dunmore rebuilt at 35 gave six people another face: Aoife, Eoin and Sinéad each moved up a number. At 87 the night watchman Cormac went from #2 to #1. The names held; the faces didn't.
+
+**What changed.**
+- **Each person's record keeps the number.** The town's record (`worldState.towns[id].nm`, Sessions 244–245) now holds each person's face number as a seventh field, beside name, people, skin, hair, clothes and trade.
+- **Numbers held by the record are reserved.** When a town builds, every number any record holds is reserved first. A newcomer, someone on a lot the town hasn't used before, takes the lowest number for their name that nobody on the record holds.
+- **The lord and guild heads have records too.** The lord now has a record (`lord`). The guild heads, who come from their own stream, keep theirs as `tw:guild_f` and `tw:guild_m`.
+- **Older records.** A record from before this build has no number. It takes one the next time its town builds, in the same order as Session 248's first build, so nobody's face changes on the way in.
+
+### Verified (headless Chromium)
+New `tests/twinsrebuild.test.mjs`. Dunmore at 61 has 59 people with records, 36 of whom share a name. It is rebuilt at 35 (47 people, 42 of them also in the first build), 87 (67; 59), 16 (38; 33) and back at 61. Everyone present in both builds has the same face number (6 moved at 35, 1 at 87 and 6 at 16 before this session), and in no build do two people share a face. `twins`, `names`, `placesave`, `people` and `intnpcs` pass. No page errors.
+
+### Needs eyes
+Nothing new to see; this keeps Session 248's faces where they were.

@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s249</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s250</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -35601,10 +35601,12 @@ var WORLD=(()=>{
   function pick(r,arr){return arr[Math.floor(r()*arr.length)%arr.length];}
   // v80 S172 — the same single draw as pick(); if that one is taken in this town, the next free one along the list (so a
   // town's draws, and every name that did not collide, stay as they were). Taken by everyone: the draw stands.
-  let _townNames=null,_curNM=null,_townCount=null,_roleNames=null; // S248 — how many hold each name, and the names held by someone with a post
+  let _townNames=null,_curNM=null,_twinUsed=null,_roleNames=null; // S248 — how many hold each name, and the names held by someone with a post
   function pickFor(r,arr,post){const v=pickFree(r,arr,_townNames);if(!post||!_townNames||!_townNames.has(v)||!_roleNames||!_roleNames.has(v))return v; // S248 — a bank used up: a man with a post takes a name no other post-holder has
     const i=arr.indexOf(v);for(let k=1;k<arr.length;k++){const c=arr[(i+k)%arr.length];if(!_roleNames.has(c))return c;}return v;}
-  function noteName(name,post){if(!_townNames)return 0;_townNames.add(name);if(post&&_roleNames)_roleNames.add(name);if(!_townCount)return 0;const c=_townCount.get(name)||0;_townCount.set(name,c+1);return c;}
+  function noteName(name,post,fixed){if(!_townNames)return 0;_townNames.add(name);if(post&&_roleNames)_roleNames.add(name);if(!_twinUsed)return 0; // S250 — a kept number, or the lowest one nobody on the town's record holds
+    let u=_twinUsed.get(name);if(!u)_twinUsed.set(name,u=new Set());let t=fixed!=null&&fixed!==''&&!isNaN(+fixed)?+fixed:null;if(t==null){t=0;while(u.has(t))t++;}u.add(t);return t;}
+  function twinsFromRecord(NM){const m=new Map();for(const k in NM){const p=String(NM[k]).split('|');const nm=p[0],t=k.startsWith('tw:')?p[1]:p[6];if(t==null||t===''||isNaN(+t))continue;let u=m.get(nm);if(!u)m.set(nm,u=new Set());u.add(+t);}return m;}
   function pickFree(r,arr,used){const v=pick(r,arr);if(!used||!used.has(v))return v;const i=arr.indexOf(v);for(let k=1;k<arr.length;k++){const c=arr[(i+k)%arr.length];if(!used.has(c))return c;}return v;}
   function cardinalFace(tx,tz){ // unit vector → 'N' (−z) 'S' (+z) 'E' 'W'
     if(Math.abs(tx)>Math.abs(tz))return tx>0?'E':'W';
@@ -35811,7 +35813,8 @@ var WORLD=(()=>{
       F.forEach(([k,b],i)=>{const v=kept&&kept[i+2];if(v){if(k==='sCol'||k==='hairCol'||(extra&&extra[k]!=null))o[k]=b?parseInt(v,b):v;rec.push(v);}else{const c=extra&&extra[k];rec.push(c==null?'':b?Number(c).toString(b):String(c));}});
       extra=Object.assign({},extra||{},o);_curNM[NK]=rec.join('|');}
     const def=Object.assign({name,role,ico:ICO[role]||'👤',greeting:greetPool[role]||greetPool.Villager,topics,x:0,z:0},extra||{});
-    def.people=people;def._siteId=site&&site.id;{const tw=noteName(def.name,role!=='Villager');if(tw)def._twin=tw;} // S248 — the second of a name in the town is another face
+    def.people=people;def._siteId=site&&site.id;{const tw=noteName(def.name,role!=='Villager',kept?kept[6]:null);if(tw)def._twin=tw; // S248 — the second of a name in the town is another face
+      if(NK){const p=String(_curNM[NK]).split('|');while(p.length<6)p.push('');p[6]=String(tw);_curNM[NK]=p.join('|');}} // S250 — and keeps its number through a rebuild
     def.temper=temperOf(name);def.bio=bioFor(site,reg,r,role,name);def._roadLine=roadLine;def._doorLine=doorLine;def._extra=extraTopics;
     return dialogFor(site,reg,r,role,name,extraTopics,def);
   }
@@ -35819,7 +35822,7 @@ var WORLD=(()=>{
   // ── Generator ────────────────────────────────────────────────────────
   function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
-    let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();_townCount=new Map();_roleNames=new Set();const _innNames=new Set();if(!site.lordless)try{const ln_=lordFor(site).name;_townNames.add(ln_);_roleNames.add(ln_);}catch(e){} // S248 — the lord's name is his own; the guild heads drawn before him leave it // S172 — names unique within the town where the bank allows
+    let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();_twinUsed=new Map();_roleNames=new Set();const _innNames=new Set();if(!site.lordless)try{const ln_=lordFor(site).name;_townNames.add(ln_);_roleNames.add(ln_);}catch(e){} // S248 — the lord's name is his own; the guild heads drawn before him leave it // S172 — names unique within the town where the bank allows
     const reg=site.reg||REGISTER[dominantRegion(site.x,site.z).r.id]||'irish'; // the cell's culture
     const biome=dominantRegion(site.x,site.z).r.biome;
     const [ni,nj]=cellOf(site.x,site.z);const _ts=worldState.towns&&worldState.towns[site.id];const NAT=(_ts&&_ts.flags.occupied!=null&&NATIONS[_ts.occupier])?NATIONS[_ts.occupier]:nationOf(ni,nj); // v80 S129 — an occupied town flies the occupier's colours
@@ -35964,7 +35967,7 @@ var WORLD=(()=>{
     // draws the stream in another order and used to rename most of the town. makeDef keeps the name and people under
     // extra.nameKey in the town's state (TST.nm) and still makes every draw, so the stream and all else drawn from it is
     // exactly what it was.
-    const NM=TST?(TST.nm||(TST.nm={})):null;_curNM=NM;
+    const NM=TST?(TST.nm||(TST.nm={})):null;_curNM=NM;if(NM)_twinUsed=twinsFromRecord(NM);
     function keptName(key,drawn){if(!NM)return drawn;if(NM[key]==null)NM[key]=drawn;return NM[key];}
     use.forEach((lot,i)=>{
       const type=shopTypes[i]||null;
@@ -36064,7 +36067,7 @@ var WORLD=(()=>{
     if(burnedV||abandonedV){S.dead=true;snpcs.length=0;S.npcs.forEach(n=>{});}
     if(TST)TST.builds.forEach((b,k)=>{if(b.done)return;const sx=cx+14+k*6,sz=cz-16;const y=worldH(sx,sz);const m=new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:-1.5,y:2,z:-1.5},{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:1.5,y:2,z:-1.5},{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:-1.5,y:2,z:1.5},{geo:new THREE.BoxGeometry(.14,4,.14),color:new THREE.Color(0x8a6a3a),x:1.5,y:2,z:1.5},{geo:new THREE.BoxGeometry(3.4,.1,3.4),color:new THREE.Color(0x9a7a4a),y:2.2},{geo:new THREE.BoxGeometry(2.4,1.2,2.4),color:new THREE.Color(0x8a8478),y:.6}]),VC_MAT);m.position.set(sx,y,sz);group.add(m);sol.push({cx:sx,cz:sz,rx:1.8,rz:1.8});});
     // The town's lord: by the well through the day (cities' lords keep to the keep; the steward speaks for them)
-    if(plan.rows>0&&(site.kind!=='city'||!houses.some(h=>h.type==='castle'))&&!site.lordless&&!burnedV&&!abandonedV){const lord=lordFor(site);const ldef=makeDef(site,reg,r,lord.title,lord.name,{keepName:true,people:NAT.people,x:cx+3,z:cz-4,bCol:[0x6a2a2a,0x2a3a6a,0x4a3a1a][site.kind==='town'?1:2],sCol:0xd4a878,topics:lordTopics(site)});
+    if(plan.rows>0&&(site.kind!=='city'||!houses.some(h=>h.type==='castle'))&&!site.lordless&&!burnedV&&!abandonedV){const lord=lordFor(site);const ldef=makeDef(site,reg,r,lord.title,lord.name,{keepName:true,nameKey:'lord',people:NAT.people,x:cx+3,z:cz-4,bCol:[0x6a2a2a,0x2a3a6a,0x4a3a1a][site.kind==='town'?1:2],sCol:0xd4a878,topics:lordTopics(site)});
       ldef._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];
       ldef._lord=true;const ln=spawnNPC(ldef,0,false);ln.sched={type:'villager',plaza:{x:cx,z:cz},padR:6};snpcs.push(ln);S.lordNpc=ln;}
     // Lamps: iron posts around the plaza and at the gates carry real lights
@@ -36207,7 +36210,7 @@ var WORLD=(()=>{
     sc.add(group);
     houses.forEach(h=>ZONES.world.houses.push(h));
     if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;
-    SETTLE.set(site.id,S);_townNames=null;_townCount=null;_roleNames=null;
+    SETTLE.set(site.id,S);_townNames=null;_twinUsed=null;_roleNames=null;
     if(guardsOf(S).length)try{townRoute(S);}catch(e){} // S166 — the watch's street grid, built with the town rather than at nightfall
     return S;
   }
@@ -37194,7 +37197,7 @@ var WORLD=(()=>{
   function guildDef(g,site,keeper,extra){
     const gd=GUILD_DEF[g];
     const gr=rngFor(site.c*31+(g==='guild_f'?101:211),site.r*17+5); // S172 — the same head every visit (was Math.random: a new name and face each time)
-    const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pickFor(gr,gr()<.4?gb.f:gb.m,true);const tw=noteName(keeper,true);
+    const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pickFor(gr,gr()<.4?gb.f:gb.m,true);const tk='tw:'+g,tr=_curNM&&_curNM[tk]?String(_curNM[tk]).split('|'):null;const tw=noteName(keeper,true,tr&&tr[0]===keeper?tr[1]:null);if(_curNM)_curNM[tk]=keeper+'|'+tw;
     return Object.assign({name:keeper,_twin:tw||undefined,_siteId:site.id,people:gp,sCol:pick(gr,PEOPLES[gp].skin),hairCol:pick(gr,PEOPLES[gp].hair),bodyScale:[PEOPLES[gp].width,PEOPLES[gp].height,PEOPLES[gp].width],role:gd.role,ico:g==='guild_f'?'⚔':'✨',greeting:g==='guild_f'?["The board's behind me. Work if you want it.","You look like you can swing something."]:["Mind the shelves. Some of that bites.","Yes? The Guild has need of feet, if not minds."],
       get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site)},{label:"It's done.",quest:true,fn:()=>turnIn(g)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} tasks done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));return base.concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
   }
