@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s233</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s234</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -34802,6 +34802,21 @@ var WORLD=(()=>{
   function refreshChunkTerrain(ch){const geo=ch.terrain;const pa=geo.attributes.position;const col=geo.attributes.color;const ox=ch.cx*CHUNK,oz=ch.cz*CHUNK;const c=_tmpC;
     for(let i=0;i<pa.count;i++){const x=pa.getX(i)+ox+CHUNK/2,z=pa.getZ(i)+oz+CHUNK/2;const h=worldH(x,z);pa.setY(i,h);const ny=slopeNormalY(x,z);groundColor(x,z,h,ny,c);col.setXYZ(i,c.r,c.g,c.b);}
     pa.needsUpdate=true;col.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();}
+  // S252 — stamps that arrive after a chunk was built (a cell placing its doors and pads after you jumped, fast-travelled
+  // or loaded a save into it) left the chunk's trees, bushes and rocks standing on them: a forest in a fort's courtyard.
+  // Scatter skips a stamp's core, so take out what stands in one now (the mesh's last instance fills the gap), drop its
+  // collider and tree point, and refresh the ground so the stamp's flattening shows. Nothing is rebuilt or respawned.
+  function clearScatterUnder(stamps){let n=0;const m=new THREE.Matrix4(),v=new THREE.Vector3(),c=new THREE.Color();
+    for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;const hit=stamps.filter(st=>st.x+st.r>x0&&st.x-st.r<x0+CHUNK&&st.z+st.r>z0&&st.z-st.r<z0+CHUNK);if(!hit.length)continue;
+      const gone=[];for(const o of ch.group.children){if(!o.isInstancedMesh||!o.userData.scatter)continue;let k=0;
+        for(let i=0;i<o.count;){o.getMatrixAt(i,m);v.setFromMatrixPosition(m);if(!hit.some(st=>Math.hypot(v.x-st.x,v.z-st.z)<st.r)){i++;continue;}
+          gone.push(v.x,v.z);k++;const last=o.count-1;if(i<last){o.getMatrixAt(last,m);o.setMatrixAt(i,m);if(o.instanceColor){o.getColorAt(last,c);o.setColorAt(i,c);}}o.count=last;} // the last instance takes the gap
+        if(k){o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true;n+=k;}}
+      if(gone.length){const at=(x,z)=>{for(let i=0;i<gone.length;i+=2)if(Math.abs(gone[i]-x)<.05&&Math.abs(gone[i+1]-z)<.05)return true;return false;}; // float32 positions against the colliders' own
+        for(let i=ch.sol.length-1;i>=0;i--)if(at(ch.sol[i].cx,ch.sol[i].cz))ch.sol.splice(i,1);
+        if(ch.treePts){const tp=[];for(let i=0;i<ch.treePts.length;i+=2)if(!hit.some(st=>Math.hypot(ch.treePts[i]-st.x,ch.treePts[i+1]-st.z)<st.r))tp.push(ch.treePts[i],ch.treePts[i+1]);ch.treePts=tp;}}
+      refreshChunkTerrain(ch);}
+    return n;}
   function refreshChunksNearWater(feats){let n=0;for(const ch of chunks.values()){const cx0=ch.cx*CHUNK,cz0=ch.cz*CHUNK;let hit=false;
       for(const f of feats){const reach=(f.w!=null?f.w:f.r||0)+(f.blend||0)+CHUNK;if(f.pts){for(const p of f.pts){if(p[0]>cx0-reach&&p[0]<cx0+CHUNK+reach&&p[1]>cz0-reach&&p[1]<cz0+CHUNK+reach){hit=true;break;}}}else if(f.x!=null&&f.x>cx0-reach&&f.x<cx0+CHUNK+reach&&f.z>cz0-reach&&f.z<cz0+CHUNK+reach)hit=true;if(hit)break;}
       if(hit){refreshChunkTerrain(ch);n++;}}return n;}
@@ -35393,7 +35408,7 @@ var WORLD=(()=>{
              // the shipwright's own flat pad at the quay head
              const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});},
       ()=>{c.roadDefs.forEach(def=>{const rd=buildRoad(def);if(rd){rd.cell=k;L.roads.push(rd);}});try{track(()=>buildBridges(c,k,L));}catch(e){console.warn('bridges',e);}},
-      ()=>{solStart=STATIC_SOL.length;c.doors.forEach(e=>{const w=placeDoor(e,k);if(w)L.doorSeeds.push(e.seed);});c.doors.forEach(e=>{if(e.kind==='fort_door'&&dungeonWorldPos[e.seed])addFortSpur(e,k);});L.stamps.push(...STAMPS.filter(s=>s.cell===k&&s.kind==='door'));},
+      ()=>{solStart=STATIC_SOL.length;c.doors.forEach(e=>{const w=placeDoor(e,k);if(w)L.doorSeeds.push(e.seed);});c.doors.forEach(e=>{if(e.kind==='fort_door'&&dungeonWorldPos[e.seed])addFortSpur(e,k);});L.stamps.push(...STAMPS.filter(s=>s.cell===k&&s.kind==='door'));try{L.cleared=clearScatterUnder(L.stamps);}catch(e){console.warn('clear',e);}},
       ()=>track(()=>buildImpostorsFor(c)),
       ()=>track(()=>buildFarFor(c)),
       ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)STATIC_SOL[n].cell=k;L.pending=false;if(c.home)homeLoaded();},

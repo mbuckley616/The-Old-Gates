@@ -6641,3 +6641,16 @@ A fort compound (the ring round a fort door's keep, Session 132) still had the o
 
 ### Needs eyes
 The ring at the swap distance. The towers' tile-red cones against the keep's dark ones (the garrison style's roof colour, as before). The banners at their new distance from the towers.
+
+## v80 — Session 252 — The forest no longer grows in a fort's courtyard (H.5)
+Session 251's pictures found about sixty trees, bushes and rocks standing inside the ring of Cnocowen Keep, the fort nearest the start. Seen from above, the fort was under the canopy.
+
+**Cause:** trees, bushes and rocks are scattered per chunk, and the scatter skips any point inside a stamp's core (`stampAt`). A fort door's stamp (radius 46, flattening the ground for the compound) is added when the fort's cell places its doors, the third step of loading a cell. When you walk in, cells load well ahead of the chunks near you, so the stamp is there first. When you arrive all at once, by fast travel, a loaded save, or a jump as the tests make, the chunks round you are built at once and the cell's steps come after. The chunk keeps what it scattered. Late features only refresh a chunk's ground (`refreshChunksNearWater`), and even that was not called for doors. The same applies to any stamp that arrives late: a town's pad, a port's quay, a cave door's apron.
+
+**The fix** (`clearScatterUnder`): when a cell's door step has added its stamps, every chunk already built under one of the cell's stamps is checked. Each tree, bush or rock inside a stamp's core is taken out of its instanced mesh, the mesh's last instance moving into the gap and its count dropping by one, so no empty or degenerate instance is left. Its collider and its tree point go with it, matched by position within .05 because the instance matrix stores float32. Then the chunk's ground is refreshed so the stamp's flattening shows. Nothing is rebuilt or respawned: the chunk's herbs, encounters and fish stay as they were. My first version zero-scaled the instances instead. That gave the trees suite a 0/0 girth, and a zero-scale instance is still drawn, so it was changed. The redundant tag it added is gone too; the scatter meshes already name their species in `userData.scatter`.
+
+### Verified (headless Chromium)
+`tests/walls.test.mjs` goes to Cnocowen Keep by a jump, as before, and now counts the scatter instances and small colliders within 26 of the fort's centre. With the fix both are 0. With the clearing call turned off in the same build they are 56 and 54. No page errors. `walls`, `trees` (each tree its own girth, which the zero-scale version broke), `plants`, `saves`, `townroads`, `pois`, `bridges`, `weather` and `houses` pass. `docs/prototypes/fort-trees-shot.mjs` renders `docs/prototypes/fort-trees.png`: the fort after a jump there, before (left: all canopy) and after (right: the compound in its clearing, the forest round it), from above at noon.
+
+### Needs eyes
+The trees in the stamp's blend band (46–80 from the door) were scattered on the old ground. Their ground is now blended towards the pad, so some may float or sink a little at the clearing's edge. A pale road runs through the fort's back wall; it was hidden by the trees before. That is the roads' (D). Fast travel into a town and a loaded save should now show clear pads where they sometimes had trees.

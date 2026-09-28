@@ -52,9 +52,12 @@ const fort = !fd ? null : await page.evaluate(seed => { const S = WORLD.settleme
   forceTime(12); const cam = new THREE.PerspectiveCamera(55, REN.domElement.width / REN.domElement.height, .3, 600); const y = WORLD.worldH(cx, cz + 50);
   cam.position.set(cx + 14, y + 6, cz + 52); cam.lookAt(cx, y + 3, cz + 20); CAM.position.copy(cam.position); for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); WORLD.scene.updateMatrixWorld(true); const f = WORLD.scene.fog; WORLD.scene.fog = null; REN.render(WORLD.scene, cam); WORLD.scene.fog = f;
   const o = document.createElement('canvas'); o.width = REN.domElement.width; o.height = REN.domElement.height; o.getContext('2d').drawImage(REN.domElement, 0, 0); CAM.position.copy(saved); look();
-  return { id: S.site.id, walls: S.sol.filter(q => q.bt === 'wall').length, want, towers: S.sol.filter(q => q.rx === 2 && q.rz === 2).length, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), hi: hi.length, near, far, shot: o.toDataURL() }; }, fd.seed);
+  let inside = 0, cols = 0; { const m = new THREE.Matrix4(), v = new THREE.Vector3(); WORLD.scene.traverse(o => { if (!o.isInstancedMesh || !o.userData.scatter) return; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); v.setFromMatrixPosition(m); if (Math.hypot(v.x - cx, v.z - cz) < 26) inside++; } });
+    for (const ch of WORLD.chunkList()) for (const q of ch.sol) if (Math.hypot(q.cx - cx, q.cz - cz) < 26 && q.rx < 1.5) cols++; }
+  return { id: S.site.id, inside, cols, walls: S.sol.filter(q => q.bt === 'wall').length, want, towers: S.sol.filter(q => q.rx === 2 && q.rz === 2).length, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), hi: hi.length, near, far, shot: o.toDataURL() }; }, fd.seed);
 if (fort && fort.shot) { fs.writeFileSync('tests/out/walls-fort.png', Buffer.from(fort.shot.split(',')[1], 'base64')); delete fort.shot; }
 check('the fort compound nearest the start builds its ring and towers in detail, each paired with its old self, near shown and far not (Session 251)', fort && fort.paired && fort.near > 0 && fort.far === 0, fort);
 check('the fort\'s ring keeps its collision: one wall a segment outside the gate gap, six towers', fort && fort.walls === fort.want && fort.towers === 6, fort);
+check('no tree, bush or rock stands inside the fort\'s ring, and no tree collider (Session 252: the chunks were built before the fort\'s stamp)', fort && fort.inside === 0 && fort.cols === 0, fort && { inside: fort.inside, cols: fort.cols });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
