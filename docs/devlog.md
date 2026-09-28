@@ -5356,3 +5356,19 @@ New `tests/aimbubble.test.mjs`, in Dunmore at noon: a villager with a bubble ove
 
 ### Needs eyes
 Nothing to judge; the HUD should simply never stall beside a chatting townsperson.
+
+## v80 — Session 235 — Shop hours: nothing leans on them, except the harbourmaster
+
+Section G's check from Session 151: *shops shut 18–8 in the open world now; whether any errand or turn-in needs a shop open at dusk.* It can be settled from the code and a test. I read every quest source for anything that needs a shop, a shopkeeper, or a purchase: story quests (`QUEST_DEFS`), town quests (`townQuestFor`), guild tasks (`genTask`), faction services, the town and sea tutorials, and Acts II–III.
+
+**What leans on shop hours.**
+- *Nothing that must be finished.* Town quests, faction services and the town tutorial go through the lord or the keep's steward. Guild tasks go through the always-open hall. Acts II–III go through Corwin, Varek and the Root, who are always present. The four main-quest givers who keep shops (Bram, Edna, Aldwyn, Captain Brynn) stand at their doors at any hour while their quest is live (the quest-giver rule at the top of `scheduleFor`).
+- *The Mages' draught* ("ask the first resident you meet") is the one errand that reaches townsfolk by their house. It is taken by anyone who keeps a house in the town, a home or a shop. Residents are in the street from 7 to 20, so it never needs a shop open.
+- *The sea tutorial's "buy a ship"* is a topic of the shipwright, who is a keeper. You can reach him inside by day and in the street 18–21 and 7–8, not 21–7. The tutorial is optional and the hours are the shop's own, so this is left as it is (owed, below).
+- *The harbourmaster* was wrong. Every port's harbourmaster was spawned with `sched={type:'keeper'}`, the shopkeeper's schedule, but he has no shop. So from 8 to 18 he was "inside" nothing: hidden, with his *Passage…* topics and the ferry gone from the quay all day. The ferry was reachable only 7–8 and 18–21, the reverse of what anyone would expect. Session 106's ferry says every harbourmaster offers passage. He now has a `harbour` schedule: at his post at the landward end of the quay from 7 to 21, and gone at night exactly as before (21–7). So no hour he could be found before is lost.
+
+### Verified (headless Chromium)
+New `tests/shoperrands.test.mjs`. In Dunmore, townsfolk out of doors whose name keeps a house, by hour: 3 at 6h (guards), 50 at 7.5h, 42 at 12h and 17.5h, 43 at 18.3h, 36 at 20h, 3 at 23h. At 18.3h all 7 shops are shut. The draught is handed over by the real E key at noon (Niamh, a villager) and at 18.3h with every shop shut (Lorcan, a keeper on his way to the inn), with the game's own *takes the draught* message. At Portclare, Cúán the harbourmaster is out at 7.5, 12, 15 and 20h with 5 passages in his dialogue, and gone at 6h and 23h. On the previous build's schedule (`keeper`: hidden 8–18) he would have been gone at 12 and 15h. That is read from the code, not run. No page errors (after Session 234's fix).
+
+### Needs eyes
+Take a ferry at midday from a real port. Owed, not checked: in the open world, main quest Q3 and Q7's *talk to Aldwyn* step. Aldwyn keeps The Royal Herald, a shop, and the quest-giver rule covers only a quest's giver, so from 21 to 7 he can't be found. The audit also doubts whether the Ironhaven-zone story NPCs match in the open world at all; that wants its own look. Lords and stewards can't be found from about 20 to 7, which is by their schedules, not a shop's.
