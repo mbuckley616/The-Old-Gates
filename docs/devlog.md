@@ -8414,3 +8414,18 @@ New `tests/fortify.test.mjs`, 10 checks, passing, no page errors. Bare, on a fre
 
 ### Needs eyes
 Whether the gates should count what you wear, as Morrowind's did. That is a rule, so it is left as it was and would be Michael's call. Whether a found fortify amulet now feels worth wearing.
+
+## v80 — Session 338 — The Boon of Renewal heals
+Michael's A on #60. Praying at a shrine restores you and gives one of five boons for 30 minutes (1,800 s of play). An Spéir's *Boon of Renewal* (type `regen`) had no rate, and nothing read it, so every prayer at An Spéir's and a fifth of prayers at the other shrines gave nothing after the restore. Now the boon carries `rate` 0.5 (`RENEWAL_RATE`, beside `CAOR_RISK`). The main loop adds it to health, stamina and mana each second, beside the regen tonics, capped at the worn maximum. It ticks through the stamina cooldown, as the Vigor tonic does. The shrine's `_applyBuff` call passed only the type and multiplier, so it now passes the rate as well.
+
+Found on the way: every prayer threw a page error at its closing chime. `sfxTone(660,.6,.15)` was missing an argument, so the gain came through undefined and `setValueAtTime` refused it. The boon and the log line had already been applied, but the E handler never got its `true`. It is now `sfxTone(660,660,.6,.15)`: the same note held, at the length and gain the call meant.
+
+### Verified (headless Chromium)
+New `tests/renewal.test.mjs`, 7 checks, passing, no page errors. The nearest shrine of An Spéir (c6_8_p1), prayed at through the E handler (`WORLD.shipInteract`):
+- The prayer gives the Boon of Renewal at 0.5 a second with 1,800 s remaining, and fills health to 130 of 130.
+- Over 40 frames (2 s of play at the loop's 0.05 s cap), from 10 of each, with the stamina cooldown held: health +1.00, stamina +1.00, mana +2.60 (its own 0.8 plus the boon's 0.5).
+- Without the boon, the same 40 frames: health +0, stamina +0, mana +1.59.
+- From 0.1 below each maximum, all three stop at the maximum (130, 100, 115).
+
+### Needs eyes
+Whether half a point a second is felt between fights over half an hour, or reads as nothing next to the full restore the prayer already gives.

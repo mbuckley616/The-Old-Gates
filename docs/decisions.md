@@ -12,6 +12,8 @@ The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row sh
 - **C. Charisma, buying only** (1% a point, up to 25%). Selling stays at the item's fixed share, so trade loot can't be turned into a gold engine.
 - **D. Strike the barter line** from the card and the hub until skills-by-use gives it a home.
 
+## Answered
+
 ### The Boon of Renewal — how fast should it heal? (systems builder, 2026-09-29, issue #60)
 Praying at a shrine restores you in full and gives one of five boons for 30 minutes of play. Four work: the Road (+25% speed), Stone (blows ×0.75), the Arm (+20% melee), the Mind (spells ×0.7). An Spéir's *Boon of Renewal* (type `regen`, mult 1) has no rate: nothing reads it, so a fifth of shrine prayers, and every prayer at An Spéir's, gives nothing after the restore. For scale, the regeneration tonics give 0.5/1.2/2.5 health a second (Mild/Strong/Master) for 60 s.
 
@@ -20,7 +22,9 @@ Praying at a shrine restores you in full and gives one of five boons for 30 minu
 - **C. Health 2 a second, but only out of combat** (no blow taken or given for 5 s). It reads as rest, not armour.
 - **D. Replace it** with a boon that already has a rule (say, +20% stamina regen).
 
-## Answered
+Michael: **A** — health, stamina and mana each 0.5 a second for the 30 minutes (29 Sep 2026, on #60, via the producer)
+
+*Done, Session 338:* the boon carries `rate` 0.5 (`RENEWAL_RATE`) and the main loop adds it to all three bars, capped at the worn maximum. Found alongside: every prayer threw a page error at its closing chime (`sfxTone` given three arguments), fixed.
 
 ### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
 Sessions 320–323 wired up every buff and attribute line whose text said what it does. Four lines are left, because the game has no rule for them to plug into:

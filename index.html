@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s317</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s318</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -19118,6 +19118,7 @@ function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding
 // S328 (Michael's A on #58) — Caor Dubh's risk: while its fury lasts you take a fifth more from everything. Fortune's
 // crit: 2% a point that a melee blow or an arrow lands for half again, on top of any stagger, riposte or backstab.
 const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
+const RENEWAL_RATE=.5;
 function _fortuneCrit(){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&Math.random()<c?FORTUNE_CRIT_MULT:1;}
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
 function _warded(d,src){return d>0?Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1))):d;}
@@ -40874,15 +40875,17 @@ var WORLD=(()=>{
     // a low ring of steps for the pad edge
     for(let i=0;i<3;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(7.2+i*.9,7.4+i*.9,.22,28),new THREE.MeshLambertMaterial({color:0xcfc7b8}));s.position.set(cx,y-i*.2,cz);group.add(s);}
   }
-  const GODS=[{key:'muir',name:'An Mhuir',en:'the Sea',boon:{type:'swiftness',mult:1.25,label:'the Boon of the Road'},tint:0x7a9ab0},{key:'speir',name:'An Spéir',en:'the Sky',boon:{type:'regen',mult:1,label:'the Boon of Renewal'},tint:0xa8b8d0},{key:'beithigh',name:'Na Beithígh',en:'the Beasts',boon:{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},tint:0x8a7a5a},{key:'cloch',name:'An Chloch',en:'the Stone',boon:{type:'warding',mult:.75,label:'the Boon of Stone'},tint:0x8a8478},{key:'teallach',name:'An Teallach',en:'the Hearth',boon:{type:'spellCost',mult:.7,label:'the Boon of the Mind'},tint:0xb8946a},{key:'fiodoir',name:'An Fíodóir',en:'the Weaver',boon:null,tint:0xc8b8d8}];
+  // S338 (Michael's A on #60) — the Boon of Renewal: health, stamina and mana each come back half a point a second while
+  // it lasts (a Mild tonic's rate, over the boon's whole span); the main loop reads it beside the regen tonics
+  const GODS=[{key:'muir',name:'An Mhuir',en:'the Sea',boon:{type:'swiftness',mult:1.25,label:'the Boon of the Road'},tint:0x7a9ab0},{key:'speir',name:'An Spéir',en:'the Sky',boon:{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},tint:0xa8b8d0},{key:'beithigh',name:'Na Beithígh',en:'the Beasts',boon:{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},tint:0x8a7a5a},{key:'cloch',name:'An Chloch',en:'the Stone',boon:{type:'warding',mult:.75,label:'the Boon of Stone'},tint:0x8a8478},{key:'teallach',name:'An Teallach',en:'the Hearth',boon:{type:'spellCost',mult:.7,label:'the Boon of the Mind'},tint:0xb8946a},{key:'fiodoir',name:'An Fíodóir',en:'the Weaver',boon:null,tint:0xc8b8d8}];
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
-  const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
+  const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
   function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   function shrineInteract(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(Math.random()*SHRINE_BOONS.length)];if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
-    else{if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,duration:1800,label:b.label,col:'#e8d8a0'});showMsg(`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,.6,.15);return true;}
+    else{if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:1800,label:b.label,col:'#e8d8a0'});showMsg(`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
   function buildLair(S,site,r){
     const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);const c=x=>new THREE.Color(x);const parts=[];
@@ -42092,6 +42095,7 @@ function loop(now){
   // hpRegen does. Clamped to effective max (which includes enchant bonuses).
   ACTIVE_BUFFS.filter(b=>b.type==='mpRegen').forEach(b=>{mana=Math.min(_emMana,mana+dt*(b.rate||0));});
   ACTIVE_BUFFS.filter(b=>b.type==='stRegen').forEach(b=>{stamina=Math.min(_emSt,stamina+dt*(b.rate||0));});
+  ACTIVE_BUFFS.filter(b=>b.type==='regen').forEach(b=>{const r=dt*(b.rate||0);PHP=Math.min(_emHP,PHP+r);mana=Math.min(_emMana,mana+r);stamina=Math.min(_emSt,stamina+r);});
   // v61as: buff countdown — runs every frame regardless of zone. Used to
   // be inside tickHerbs (only called from outdoor zones), so buff timers
   // froze in dungeons and interiors and the player saw effects persist
