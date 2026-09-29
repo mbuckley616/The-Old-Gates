@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s310</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s311</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -29013,7 +29013,11 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     // S243 — a save from before house ids followed their lots can name another building: the door it was saved behind decides
     if(W.door&&W.door.x!=null&&!W.parent){const at=h=>Math.hypot(h.exitX-W.door.x,h.exitZ-W.door.z);if(!hs||at(hs)>1){const b=houses.find(h=>h.exitX!=null&&at(h)<.5);if(b)hs=b;}}
     if(!hs&&W.parent){const p=houses.find(x=>x.id===W.parent);if(p&&typeof WORLD!=='undefined'&&WORLD.cellarFor)hs=WORLD.cellarFor(p);}
-    if(!hs){if(tries<60){if(typeof WORLD!=='undefined')WORLD.tick(1/60,performance.now());setTimeout(()=>_reenterPlace(W,tries+1),100);}else showMsg('The door you saved behind has moved on. You are outside it.','#c8b880');return;}
+    // S326 — the town is built here and now rather than waited for behind the world's job queue, which a slow machine drains a job or two a frame; the wait is 30 s of the clock, not 60 tries
+    if(!hs&&typeof WORLD!=='undefined'&&WORLD.genSettlement){const sid=W.site||((/^g_(.+)_\d+(?:_cellar)?$/.exec(W.parent||W.id||'')||[])[1]);
+      if(sid&&!WORLD.settle.has(sid)){const s=WORLD.siteAnywhere(sid);if(s&&s.pad>0){try{WORLD.genSettlement(s);}catch(err){console.warn('reenter gen',err);}if(WORLD.settle.has(sid))return _reenterPlace(W,tries+1);}}}
+    if(W._t0==null)W._t0=performance.now();
+    if(!hs){if(tries<60||performance.now()-W._t0<30000){if(typeof WORLD!=='undefined')WORLD.tick(1/60,performance.now());setTimeout(()=>_reenterPlace(W,tries+1),100);}else showMsg('The door you saved behind has moved on. You are outside it.','#c8b880');return;}
     window._pendingPos={x:W.x,z:W.z,yaw:W.yaw,jumpY:W.jumpY};goToInterior(hs);return;}
   if(W.kind==='dungeon'){const e=(typeof WORLD!=='undefined')&&WORLD.doorAnywhere(W.seed);if(!e){showMsg('The gate you saved in is closed to you. You are outside it.','#c8b880');return;}
     const p=makePortalDef(e);const wp=WORLD.dungeonPos[W.seed];if(wp){p.x=wp.x;p.z=wp.z;}p.zone='world';

@@ -8303,3 +8303,19 @@ New `tests/stonecress.test.mjs`, 5 checks, passing, no page errors. Stonecress i
 
 ### Needs eyes
 Nothing to see. It is a number that no longer drifts.
+
+## v80 — Session 326 — `placesave` and `lockon` wait for what they need
+Owed first from the end of the last run (backlog I): `placesave` failed 2 of 13 at Session 325's head, the rooms coming back with no id in the open world, and 320–325 were to be bisected against it. They are not the cause. Run alone at 325's head, the suite passed 13 of 13. A single Continue into a saved room took 24–30 s in this container, measured, and the test gave it a fixed 5 s for the reload and 15 s after Continue. A loaded runner goes past that and reads the player still outside. `cont()` now waits for the menu, then for `started` and a room (up to two minutes each), and prints how long it took.
+
+Reading the re-entry for the cause, I found a real weakness beside it. `_reenterPlace` looks for the saved house among the world's houses. If the town is not built yet, it ticked the world and tried again, 60 times at 100 ms, then gave up: *The door you saved behind has moved on. You are outside it.* A town is built by a job in the world's queue, which runs a job or two a frame on a 6 ms budget. On a slow machine, or behind a queue of cells, six seconds may not reach it. At a 3× CPU throttle the old build still got back into the inn, after 60 s. Now, when the house is missing and its town is not built, the re-entry builds the town there and then. The site comes from the save's `site`, or from the house id (`g_<site>_<n>`, a cellar's parent). The retry limit is 30 s of the clock as well as the 60 tries, for houses that are not in a town (the coach inns).
+
+`lockon`'s circle, which the last run also saw fail, failed here run alone: 12.7° round the foe, 1.34 units walked. The walk was 20 s of the clock. The game's loop moves at most 0.05 s a frame, and frames were coming about 1.3 s apart, so 20 s was well under a second of walking. It now counts 400 of the loop's frames, and it reached 46.8° in 26. The last run's *four detail-copy checks (`none: true`)* I could not tie to a suite. `none: true` was `lockon`'s own output line. `bridges`, the one suite with a detail-mesh `none`, passes alone.
+
+### Verified (headless Chromium)
+- `placesave` alone at 325's head (98ebde2), unchanged: 13 of 13, 6m42s.
+- `placesave` now: 14 of 14 through the runner, 7m09s. Each Continue took 24.2–29.8 s. A first run hit the runner's 15-minute cap after the 11th check, with nothing failed; I could not reproduce that, and the two runs after it took 7m.
+- New check: with `WORLD.tick` stubbed to nothing (a queue that never drains) and Dunmore disposed, the re-entry to the inn at 8 s: the old build had said *moved on* and left the player outside (id null, town not built). The new build had built the town and put the player in the inn, with no *moved on*.
+- `lockon` 17 of 17 alone (2m40s); `bridges` 10 of 10 alone.
+
+### Needs eyes
+Continue into a saved room on Michael's laptop: whether it lands inside, and how long it takes.

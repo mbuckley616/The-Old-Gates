@@ -75,9 +75,11 @@ await g.frames(3);
 const mark = await page.evaluate(() => { const m = document.getElementById('lockmk'); return { shown: m.style.display, left: parseFloat(m.style.left), top: parseFloat(m.style.top) }; });
 check('a gold mark sits on the foe near the middle of the screen', mark.shown === 'block' && Math.abs(mark.left - 50) < 12 && mark.top > 25 && mark.top < 75, mark);
 await page.keyboard.down('d');
-const circ = await page.evaluate(() => new Promise(res => { const t0 = performance.now(); const t = setInterval(() => {
+// Session 326: counted in the loop's frames, not the clock. A frame moves at most 0.05 s of game time, so on a slow runner
+// 20 s of the clock was a few seconds of walking (1.3 units, 12.7°); 400 frames are 6.7 s or more.
+const circ = await page.evaluate(() => new Promise(res => { const t0 = performance.now(); let n = 0; const f = () => { n++;
   const e = _foe, a = Math.atan2(px - e.x, pz - e.z); let da = a - _c0.a; da = Math.atan2(Math.sin(da), Math.cos(da));
-  if (Math.abs(da) > .8 || performance.now() - t0 > 20000) { clearInterval(t); res({ r0: +_c0.r.toFixed(2), r: +Math.hypot(px - e.x, pz - e.z).toFixed(2), turned: +(Math.abs(da) * 180 / Math.PI).toFixed(1), moved: +Math.hypot(px - _c0.x, pz - _c0.z).toFixed(2), facing: _ang(e), locked: LOCK.t === e }); } }, 100); }));
+  if (Math.abs(da) > .8 || n > 400 || performance.now() - t0 > 180000) { res({ frames: n, r0: +_c0.r.toFixed(2), r: +Math.hypot(px - e.x, pz - e.z).toFixed(2), turned: +(Math.abs(da) * 180 / Math.PI).toFixed(1), moved: +Math.hypot(px - _c0.x, pz - _c0.z).toFixed(2), facing: _ang(e), locked: LOCK.t === e }); } else requestAnimationFrame(f); }; requestAnimationFrame(f); }));
 await page.keyboard.up('d');
 // the loop runs a few frames a second on software GL, so this walks a part of the circle, not all of it
 check('holding D circles the foe: 20°+ round it, the distance kept within .4 of a unit, still facing it', circ.turned > 20 && Math.abs(circ.r - circ.r0) < .4 && circ.facing < 8 && circ.locked, circ);

@@ -7,10 +7,12 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(() => WORLD.devUnlockAll());
-const cont = async () => {
+const cont = async () => { const t0 = Date.now();
   await page.evaluate(() => saveToSlot(0)); await page.waitForTimeout(1200);
-  await page.reload(); await page.waitForTimeout(5000);
-  await page.evaluate(() => document.getElementById('cb').click()); await page.waitForTimeout(15000); await g.hide();
+  // Session 326: waits for what it needs (the menu, then the room), not for fixed times a loaded runner can outlast
+  await page.reload(); await page.waitForFunction(() => document.getElementById('cb') && typeof saveToSlot === 'function', null, { timeout: 120000 }); await page.waitForTimeout(1500);
+  await page.evaluate(() => document.getElementById('cb').click());
+  await page.waitForFunction(() => started && currentHouse && currentHouse.id, null, { timeout: 120000, polling: 500 }).catch(() => {}); await page.waitForTimeout(1500); await g.hide(); console.log('cont', (Date.now() - t0) / 1000, 's');
   return page.evaluate(() => ({ started, id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
 };
 const here = () => page.evaluate(() => ({ id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
@@ -87,5 +89,24 @@ await page.evaluate(() => { currentHouse = Object.assign(Object.create(Object.ge
 const back5 = await cont();
 console.log('legacy', JSON.stringify({ real, back5 }));
 check('a save naming the wrong id comes back behind the door it was made behind', back5.id === real, { real, back5 });
+await out();
+
+// 6. Session 326: on a slow machine the town behind a saved door can still be queued when the re-entry looks for it; the
+// world's job queue drains a job or two a frame, and the re-entry gave up after 60 tries (6 s). Starve the world's tick
+// outright, drop the town, and ask for the inn: the re-entry must build the town itself.
+await g.settle('dunmore');
+await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(h => h.type === 'inn'); goToInterior(h); });
+await page.waitForTimeout(3000); await g.hide();
+const W6 = await page.evaluate(() => { const h = currentHouse; return { kind: 'house', id: h.id, parent: null, site: h.siteId, x: px, z: pz, yaw, jumpY, door: { x: h.exitX, z: h.exitZ, yaw: h.exitYaw || 0 } }; });
+await out();
+const starved = await page.evaluate(async (W) => {
+  const tick = WORLD.tick; WORLD.tick = () => {}; const msgs = []; const sm = showMsg; showMsg = function (m) { msgs.push(m); return sm.apply(this, arguments); };
+  WORLD.disposeSettlement('dunmore'); const gone = !WORLD.settle.has('dunmore');
+  _reenterPlace(W); await new Promise(r => setTimeout(r, 8000));
+  const r = { gone, id: currentHouse && currentHouse.id, built: WORLD.settle.has('dunmore'), movedOn: msgs.filter(m => /moved on/.test(m)).length };
+  WORLD.tick = tick; showMsg = sm; return r; }, W6);
+console.log('starved', JSON.stringify({ want: W6.id, starved }));
+check('with the world\u2019s tick starved and the town unbuilt, a save behind the inn door still comes back in the inn (it gave up after 6 s)', starved.gone && starved.built && starved.id === W6.id && starved.movedOn === 0, { want: W6.id, starved });
+await out();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
