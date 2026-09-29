@@ -8541,3 +8541,17 @@ New `tests/investwords.test.mjs`, 6 checks, passing, no page errors. Dunmore's l
 
 ### Needs eyes
 Nothing. #65 waits on Michael.
+
+## v80 — Session 350 — `walls`' distant check measured a town the loader had dropped
+This is a CI fix. PR #22's pull-request run on 7e4b078 (Session 341) failed one check: `walls`' *its detailed clusters show near and give way to their plain twins far*, with near 2 and far 2. The push run on the same commit passed. The producer put this to Michael as a flake. It is not one, and it is not in the game.
+
+**What was wrong.** The check takes the first walled town near the start (La Porte Grise, about 1,300 units from the player) and builds it with `genSettlement` if it isn't loaded. Then it moves the camera over it and 600 units off, and reads `houseLod`'s choice each time. Locally it failed 1 run in 3. With the settlement's state printed at each look, every failing run showed the same thing: `WORLD.settlements.get(id)` was no longer the object measured. The loader had streamed the town out, because the player stood far away. `houseLod` only walks the live settlements, so the dropped copy kept its detailed meshes shown from wherever they were last set. That was the test measuring a corpse. The game does not draw a dropped town.
+
+**What changed.** Only the test. It now puts the player in the town (restored afterwards) and ticks the loader until the town is live with its LOD meshes, as the fort check below it already did. Then it measures the live settlement. It reports `live: true` so a future failure says which case it is.
+
+### Verified (headless Chromium)
+- Before: `walls` alone failed 1 run in 3 (near 2, far 2). The instrumented copy showed `inSettle: false` in the failing run only.
+- After: 6 runs of 6 pass, each with *live: true, near 2, far 0*. The fort checks are unchanged and pass.
+
+### Needs eyes
+Nothing by eye. Also owed from CI: the push run on 976745f (docs only; its pull-request twin passed) failed `mainrun` and `hourhitch` once. Neither is root-caused yet. The next CI-fix session takes them if they come back red.

@@ -33,12 +33,17 @@ check('the gate towers build in detail (a timber watchtower, round towers), unde
 // a walled town in the game: its walls near in detail, far plain; the wall's collision as before
 const town = await page.evaluate(() => { const walled = []; for (const t of WORLD.SITES) { if (!t.pad || !['town', 'city', 'village', 'port', 'outpost'].includes(t.kind)) continue; let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); if (!S) continue;
     const w = S.sol.filter(q => q.bt === 'wall'); if (w.length) walled.push({ id: t.id, S, w: w.length }); if (walled.length >= 2) break; }
-  if (!walled.length) return null; const { S, id, w } = walled[0]; const L = S.lodMeshes || []; const hi = L.filter(m => m.userData.lod === 'hi'), lo = L.filter(m => m.userData.lod === 'lo');
+  if (!walled.length) return null; const { id, w } = walled[0];
+  // stand in the town and let the loader hold it: a town built here from 1,300 units off can be streamed out in the next
+  // tick, and a dropped copy is never touched by houseLod (it failed 1 run in 3 that way; Session 350)
+  const opx = px, opz = pz; px = walled[0].S.site.x; pz = walled[0].S.site.z + 4;
+  for (let k = 0; k < 900 && !(WORLD.settlements.get(id) && (WORLD.settlements.get(id).lodMeshes || []).length); k++) { WORLD.tick(1 / 60, performance.now()); while (WORLD.jobs.length) { const j = WORLD.jobs.shift(); let more = false; try { more = j.fn(); } catch (e) {} if (more) WORLD.jobs.push(j); } }
+  const S = WORLD.settlements.get(id) || walled[0].S; const L = S.lodMeshes || []; const hi = L.filter(m => m.userData.lod === 'hi'), lo = L.filter(m => m.userData.lod === 'lo');
   // (the town's current detailed meshes at each look: a town still building rebakes during the ticks, and the meshes it drops
   // keep whatever visibility they had, which once read as a detailed cluster still shown from 600 away)
   const saved = CAM.position.clone(); const look = () => { WORLD.tick(1 / 60, performance.now()); const S2 = WORLD.settlements.get(id) || S; return (S2.lodMeshes || []).filter(m => m.userData.lod === 'hi' && m.visible).length; };
-  CAM.position.set(S.site.x, CAM.position.y, S.site.z); const near = look(); CAM.position.set(S.site.x + 600, CAM.position.y, S.site.z); const far = look(); CAM.position.copy(saved); look();
-  return { id, walls: w, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), near, far, hi: hi.length }; });
+  CAM.position.set(S.site.x, CAM.position.y, S.site.z); const near = look(); CAM.position.set(S.site.x + 600, CAM.position.y, S.site.z); const far = look(); CAM.position.copy(saved); px = opx; pz = opz; look();
+  return { id, live: WORLD.settlements.get(id) === S, walls: w, paired: hi.every(m => lo.some(o => o.userData.ckey === m.userData.ckey)), near, far, hi: hi.length }; });
 check('a walled town is found near the start', !!town, town);
 if (town) { check('its detailed clusters (walls among them) show near and give way to their plain twins far', town.paired && town.near > 0 && town.far === 0, town); }
 // a fort compound's ring and towers (Session 251): the same builders, its old ring the distant copy
