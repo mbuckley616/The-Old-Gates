@@ -8183,3 +8183,20 @@ New `tests/fortcot.test.mjs`, passing, no page errors. The three fort layouts (`
 
 ### Needs eyes
 Whether a cot one cell inside the door reads as a place to rest or as clutter in the entry hall. That is the look builder's to judge once the kit bed is merged.
+
+## v80 — Session 320 — The ward on every blow
+Owed from Session 316. The Warding potion reads *-X% damage taken*, and since 316 the Shield spell (*Blows land softer*) and the Boon of Stone share its multiplier, `_wardMult()`. But it was only ever wired into two paths: the unblocked melee blow and the Faolchú's fire. Everything else that hurts you ignored all three: a blow taken on a held block, an archer's arrow in the open world (blocked or not), the volleys from a ship's deck and the camp archers, a Phantom's or Wraith's bolt, their life drain, a charge, a heavy blow, the spike plate, the swinging blade and a dragon's breath. So a tier-3 Shield halved a bandit's sword and did nothing against his friend's arrow. This makes each do what its own text says; no number is new.
+
+**What changed.** A helper `_warded(d)` (at least 1 when something landed) wraps the damage in each of those paths, after armour and after the block's own share, so the order matches the fire's. On the held block the stamina a block costs is still worked from what the *block* absorbed, not the ward's share, so the Shield doesn't make blocking dearer. Two paths are left alone on purpose: drowning (not a blow) and a spell's own backlash (your own doing). One small fix rode along: the swinging blade's message named the unblocked damage even when a raised guard took .4 of it; it now names what you took.
+
+### Verified (headless Chromium)
+New `tests/wardall.test.mjs`, 7 checks, passing, no page errors. Each path is driven through the game's own code, bare, under a tier-3 Shield (×.5), and (in the open world) under a Master Warding potion (×.6):
+- A 40-point blow on a held block (`executeStrike`, outside the parry window): 24 → 12 Shield, 14 potion.
+- A 30-damage archer's arrow (`fireZoneArrow` + `tickZoneArrows`): 29 → 15, 17; on a raised guard facing the archer 10 → 5, 6.
+- In a dungeon, through the real `loop`: a Phantom's 30-point bolt 30 → 15; the spike plate 8 → 4; the swinging blade 11 → 6.
+- `wardswift`, `counters`, `posture`, `faolchu` and `dungeonfoes` pass.
+
+The deck volleys, the charge, the heavy blow, the drain and the dragon's breath got the same one-word wrap but are not driven by the test (they sit inside the world module's behaviours or a timeout).
+
+### Needs eyes
+Whether a Shield that now also halves arrows and traps makes the tier-3 spell too strong for 28 mana; it lasts as long as it did.

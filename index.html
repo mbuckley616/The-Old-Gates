@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s304</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s305</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -15161,8 +15161,8 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const def2=Object.values(EQ).reduce((s_,v)=>s_+(v&&v.def?v.def:0),0);const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
-      if(blocking&&facing){const red=Math.max(1,Math.round(raw*.35));PHP=Math.max(0,PHP-red);hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
-      else{PHP=Math.max(0,PHP-raw);hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${raw}!`,'#ff6060');}
+      if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*.35)));PHP=Math.max(0,PHP-red);hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
+      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${hitD}!`,'#ff6060');}
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
 function tickZoneEnemies(dt,now,sc){
@@ -19114,6 +19114,8 @@ function _hasBuff(type){return ACTIVE_BUFFS.some(b=>b.type===type);}
 // (`warding`, which nothing read before) are one kind of protection, so the stronger holds and they don't stack; the
 // Stoneskin kind (`physResist`) multiplies on top, as before.
 function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding',1))*_buffMult('physResist',1);}
+// S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
+function _warded(d){return d>0?Math.max(1,Math.round(d*_wardMult())):d;}
 function _applyBuff(he){
   // Remove existing buff of same type first
   const idx=ACTIVE_BUFFS.findIndex(b=>b.type===he.type);
@@ -28685,9 +28687,9 @@ function decorateDungeonRooms(gen,portal){
 }
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
-    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=8+Math.floor(Math.random()*8)+Math.floor(level*.8);PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
+    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(Math.random()*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
-    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;const sweep=Math.abs(a)<.35;t.hitT-=dt;if(sweep&&d<.7&&t.hitT<=0){t.hitT=1.2;const dmg=10+Math.floor(level*1.2);PHP=Math.max(0,PHP-(blocking?Math.round(dmg*.4):dmg));updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
+    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;const sweep=Math.abs(a)<.35;t.hitT-=dt;if(sweep&&d<.7&&t.hitT<=0){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 
@@ -28980,7 +28982,7 @@ function dragonBreath(e){const d=Math.hypot(e.x-px,e.z-pz);if(d>11)return;const 
     const l=new THREE.PointLight(0xff6020,2.5,12);l.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+1.5,e.z);sc.add(l);_BREATH.push({pts,vel,t:0,l,sc});
     try{sfxNoise(1.1,0,0,.35,1200);sfxTone(120,60,1.0,.2,'sawtooth');}catch(err){}
     const dx=px-e.x,dz=pz-e.z,dd=Math.hypot(dx,dz);const ta=Math.atan2(dx,dz);let diff=Math.abs(ta-ang);if(diff>Math.PI)diff=Math.PI*2-diff;
-    if(dd<10&&diff<.45){const dmg=Math.round((18+level*1.4)*(blocking?.5:1));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
+    if(dd<10&&diff<.45){const dmg=_warded(Math.round((18+level*1.4)*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
     else showMsg('The fire misses you.','#c8e88a');},900);}
 function tickBreath(dt){for(let i=_BREATH.length-1;i>=0;i--){const b=_BREATH[i];b.t+=dt;const a=b.pts.geometry.attributes.position.array;for(let k=0;k<b.vel.length;k++){a[k*3]+=b.vel[k][0]*dt;a[k*3+1]+=b.vel[k][1]*dt;a[k*3+2]+=b.vel[k][2]*dt;b.vel[k][1]+=dt*.8;}b.pts.geometry.attributes.position.needsUpdate=true;b.pts.material.opacity=Math.max(0,.9-b.t*.9);b.l.intensity=Math.max(0,2.5-b.t*3);if(b.t>1.1){b.sc.remove(b.pts);b.sc.remove(b.l);_BREATH.splice(i,1);}}}
 function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.world.enemies||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);for(const e of E){if(e.dead||!e.dragon)continue;if(!e._dragonBuilt)detailDragon(e);
@@ -30559,8 +30561,9 @@ function executeStrike(e, rawDmg, now){
     // ternary collapsed back into shieldBlock for shield wielders and bareBlock
     // for everyone else — the new tier system handles all cases uniformly.
     const reduction = shieldBlock;
-    const finalDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
-    const absorbed = rawDmg - finalDmg;
+    const blockedDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
+    const absorbed = rawDmg - blockedDmg;
+    const finalDmg = _warded(blockedDmg);
     PHP = Math.max(0, PHP-finalDmg); hurtT = .3;
     // v61c7 — Held block stamina also scales with Resolve (was raw `absorbed`).
     // Held block stays MORE expensive than parry (because 0.65 absorbed beats
@@ -39763,12 +39766,12 @@ var WORLD=(()=>{
       // a lair's beast charges: every 7 s from 5–16u it comes at you at four times its speed; contact hits for double and throws you
       if(e.lair&&e.alert&&!e.dead){e._chT=(e._chT==null?4:e._chT)-dt;if(e._chT<=0&&d>5&&d<16&&e._charge==null){e._chT=7;e._charge=1.1;e._cAng=Math.atan2(px-e.x,pz-e.z);showMsg(`${e.name} charges!`,'#ff8060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.25,300);}
         if(e._charge!=null){e._charge-=dt;const sp=(e.spd||1.4)*4*dt;const nx=e.x+Math.sin(e._cAng)*sp,nz=e.z+Math.cos(e._cAng)*sp;if(!blocked(nx,nz))_setPos(e,nx,nz);else{e._charge=0;e._stun=2.4;showMsg(`${e.name} slams into the ground, dazed — now!`,'#e8d8a0');}if(e.mesh)e.mesh.rotation.y=e._cAng;
-          if(Math.hypot(e.x-px,e.z-pz)<2.3&&!rollUntouchable(performance.now()/1000)){const dmg=Math.round((e.dmg||10)*2*(blocking?.5:1));PHP=Math.max(0,PHP-dmg);updateHUD();const kx=(px-e.x)/(d||1),kz=(pz-e.z)/(d||1);for(let k=1;k<=3;k++){if(!blocked(px+kx*k,pz+kz*k)){px+=kx;pz+=kz;}}showMsg(`${e.name} bowls you over: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.3,250);e._charge=null;if(PHP<=0&&typeof playerDead==='function')playerDead();}
+          if(Math.hypot(e.x-px,e.z-pz)<2.3&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((e.dmg||10)*2*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);updateHUD();const kx=(px-e.x)/(d||1),kz=(pz-e.z)/(d||1);for(let k=1;k<=3;k++){if(!blocked(px+kx*k,pz+kz*k)){px+=kx;pz+=kz;}}showMsg(`${e.name} bowls you over: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.3,250);e._charge=null;if(PHP<=0&&typeof playerDead==='function')playerDead();}
           if(e._charge!=null&&e._charge<=0)e._charge=null;}}
       if((e.boss||/Captain|Troll|Ogre|Wight|Hag|Bear/.test(e.name))&&e.alert){if(!e._phase2&&e.hp<e.maxHp*.5){e._phase2=true;e.spd=(e.spd||1)*1.3;showMsg(`${e.name} roars.`,'#ff8060');if(typeof sfxNoise==='function')sfxNoise(.8,0,0,.3,200);}
         if(e._phase2){e._heavyT=(e._heavyT||3)-dt;if(e._heavyT<=0&&d<7){e._heavyT=6;e._windup=1.0;showMsg(`${e.name} winds up.`,'#ffb060');}
           if(e._windup!=null){e._windup-=dt;if(e.mesh){const k=1+Math.sin(Math.max(0,e._windup)*Math.PI)*.18;if(e._baseScale==null)e._baseScale=e.mesh.scale.x;e.mesh.scale.setScalar(e._baseScale*k);}
-            if(e._windup<=0){e._windup=null;if(e.mesh)e.mesh.scale.setScalar(e._baseScale||1);if(Math.hypot(e.x-px,e.z-pz)<3.2&&!rollUntouchable(performance.now()/1000)){const dmg=Math.round((e.dmg||10)*2.2*(blocking?.35:1));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`${e.name}'s heavy blow: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.18,300);if(PHP<=0&&typeof playerDead==='function')playerDead();}else showMsg('You step clear.','#c8e88a');}}}}
+            if(e._windup<=0){e._windup=null;if(e.mesh)e.mesh.scale.setScalar(e._baseScale||1);if(Math.hypot(e.x-px,e.z-pz)<3.2&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((e.dmg||10)*2.2*(blocking?.35:1)));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`${e.name}'s heavy blow: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.18,300);if(PHP<=0&&typeof playerDead==='function')playerDead();}else showMsg('You step clear.','#c8e88a');}}}}
     }
   }
   function tickSharks(){
@@ -39835,7 +39838,7 @@ var WORLD=(()=>{
   function tickArrows(dt){
     for(let i=ARROWS.length-1;i>=0;i--){const a=ARROWS[i];a.t+=dt;const u=Math.min(1,a.t/a.dur);const arc=Math.sin(u*Math.PI)*a.dur*4;
       const x=a.sx+(a.tx-a.sx)*u,z=a.sz+(a.tz-a.sz)*u,y=a.sy+(a.ty-a.sy)*u+arc;a.m.position.set(x,y,z);a.m.lookAt(a.tx,a.ty,a.tz);
-      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=Math.round((6+level*.8)*(blocking?.4:1));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
   }
   // boarding: E beside another ship (hulls close, or swimming up to her)
   function nearOther(){let best=null,bd=1e9;for(const o of OTHER){const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));if(d>0&&d<3.5&&d<bd&&jumpY<4){bd=d;best=o;}}return best;}
@@ -42974,7 +42977,7 @@ function loop(now){
           if(blocking){
             const magicReduction = hasShield ? (sh.magicBlock||0.40) : 0.15;
             const reducedRaw = Math.round(dmg * (1-magicReduction));
-            finalDmg = Math.max(1, reducedRaw - Math.floor(def2*.3));
+            finalDmg = _warded(Math.max(1, reducedRaw - Math.floor(def2*.3)));
             const absorbed = dmg - reducedRaw;
             const magicBlockStamCost = Math.max(1, Math.round(absorbed * _resolveMult));
             stamina = Math.max(0, stamina - magicBlockStamCost);
@@ -42982,7 +42985,7 @@ function loop(now){
             sndBlock(); blockFlashT = 0.4; blockFlashCol = '#cc44ff';
             showMsg('🛡 Resisted! Magic bolt hits for '+finalDmg+' (reduced)','#cc88ff');
           } else {
-            finalDmg = Math.max(1, dmg - Math.floor(def2*.3));
+            finalDmg = _warded(Math.max(1, dmg - Math.floor(def2*.3)));
             showMsg('Magic bolt hits you for '+finalDmg+'!','#cc44ff');
             sndPlayerHurt();
           }
@@ -43272,7 +43275,7 @@ function loop(now){
           const baseDrain = isWraithType ? 6 : 4;
           const rawDrain = Math.max(1, Math.round((baseDrain + level * 0.5) * (e.dmgMult || 1.0)));
           const def2 = Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);
-          const finalDrain = Math.max(1, rawDrain - Math.floor(def2 * 0.3));
+          const finalDrain = _warded(Math.max(1, rawDrain - Math.floor(def2 * 0.3)));
           PHP = Math.max(0, PHP - finalDrain);
           hurtT = 0.25;
           // Heal for 50% of damage dealt (rounded up so it's never zero)
