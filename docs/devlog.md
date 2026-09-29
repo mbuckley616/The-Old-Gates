@@ -8118,3 +8118,18 @@ New `tests/lockswitch.test.mjs`, 10 checks, passing, no page errors. Four real B
 ### Needs eyes
 - Whether 90 px in 0.2 s is a flick you make on purpose and never by accident at your mouse's sensitivity; the numbers are one constant each (`LOCK_FLICK`, `LOCK_FLICK_MS`).
 - Trackpads still have no middle click, so none of lock-on reaches a laptop without a mouse; a key for it remains Michael's call.
+
+## v80 — Session 310 — The strongboxes against the furniture (a check settled headless)
+Backlog G has asked since Session 155 whether the strongbox's and the home chest's spots sit well against the furniture. Part of that is measurable, in the way Session 252 measured the interior doors, so this session measures it. No game code changed; the build tag stays s300.
+
+**What was measured.** Every shop and home in Dunmore, Portclare, Ironhaven and Ashenmoor (132 interiors with a box) is built with `buildInteriorFor`. For each chest: its drawn bounds against every other solid across its height; its mesh against every other furniture-sized mesh in the room (floors, walls, ceilings and rugs left out); and a flood fill on a 0.1-unit grid from inside the front door, with a 0.3 body that climbs on nothing, to find how close you can stand to it. The prompt opens it from 1.6 units.
+
+**One near thing, not a fault.** The first form of the test compared the chest's collision box with the others. In all six back-room shops of Dunmore and Portclare (the forge, the armoury, both apothecaries, the shipwright, Amaury's Stores) the strongbox's collision box runs 0.17 into the foot of the back-room bed's. The shop chest is drawn 0.30 × 0.24 but collides as 0.64 × 0.56, and the chest itself stands 0.03–0.04 clear of the bed's foot. So nothing shows or catches, and the test now compares the chest as drawn. Also noted: the chest (0.5 high) is under the 0.62 step-up, so the game lets you step onto it, as it does a bed.
+
+### Verified (headless Chromium)
+New `tests/boxspots.test.mjs`, passing, no page errors. Dunmore 50 boxes, Portclare 29, Ironhaven 45, Ashenmoor 8.
+- No chest stands in another solid, and no chest's mesh passes through a counter, bed, crate, shelf or wall. The nearest solid to any chest is 0.04 away (the homes' chests against the wall, the back-room strongbox at the bed's foot).
+- From the front door, every chest can be walked up to without climbing on anything, to between 0.6 and 1.0 units of its centre, inside the prompt's 1.6.
+
+### Needs eyes
+The rest of G's *Town locks* line is play: whether four pins in a rich town is fair, and the takings against a low-level purse. Whether a strongbox tucked against the bed's foot looks like a place a keeper would keep one is a look call.
