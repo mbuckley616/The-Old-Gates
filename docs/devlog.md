@@ -7374,3 +7374,17 @@ The rooms Michael's A reaches after the named ones. Each is one bake.
 
 ### Needs eyes
 The chapel's pillar is a plain moulded column. What stands on that dais is the lore's to say, and I have not guessed.
+
+## v80 — Session 294 — The wizard's tower: one bake for the helix, and its treasure put back on its floor (H.5, #46 A)
+The tower's interior was 130 box treads, each its own mesh and draw call, climbing 30 units round a cylinder. The treads, the post, the far rail and the treasure chest are now one bake on the kit: dressed-stone treads at the same places and turns, the post in drums of coursed stone, the rail of posts with a top rail, and the prototype's chest. The spiral foothold, the roof hatch, the loot's place and the top floor's slabs are unchanged.
+
+**Three things were at the wrong height**, because the room's helpers scale heights by the furniture factor F (.62) and the tower's are raw:
+- **The post:** the cylinder was F-scaled, so it stopped at 18.6 of the 30-unit climb, and the treads above it circled nothing. Its solid stopped there too. Both now reach 30.
+- **The chest and its glow:** they stood at 18.8, inside the shaft under the helix. The loot (`INT_LOOT`) was always at 30, so the chest you opened was invisible. The chest and its glow now stand on the top floor.
+- **The four window glows** were at 19.6 and are now up at the top floor.
+
+### Verified (headless Chromium)
+- **`oddfurn`**, extended: the tower built through `WORLD.buildInteriorFor` draws 25 meshes (about 165 before, 130 of them treads). The bake reaches 31.8, 7 boxes are left (the floor slabs and the door), and the spiral foothold is there. The six glows are at 30.6–31.6, the post's solid is 30 high, and the loot is at 30. The other three rooms pass as in Session 293. The tower is the fourth panel of `docs/prototypes/oddrooms-ingame.png`.
+
+### Needs eyes
+The climb itself in play: the treads are the same size and place, but they are rounded stone now. And whether the chest's being visible at last changes how the tower's reward reads.

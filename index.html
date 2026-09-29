@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s266</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s267</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39101,8 +39101,16 @@ var WORLD=(()=>{
     } else if(type==='tower'){
       // a stone post, a helix of treads to a landing 30u up, a chest in the treasure room
       const TOP=30,turns=5,r0=1.1,r1=3.9;const cx_=W/2,cz_=D/2;
-      cyl(cx_,TOP/2,cz_,.9,1.0,TOP,0x6a665e,10);solid(cx_,cz_,1.0,1.0,TOP);
-      const steps=turns*26;for(let i=0;i<steps;i++){const t=i/steps;const a=t*Math.PI*2*turns;const y=t*TOP;const x=cx_+Math.cos(a)*(r0+r1)/2,z=cz_+Math.sin(a)*(r0+r1)/2;const m=boxRaw(x,y+.05,z,r1-r0+.2,.14,.9,0x7a746a);m.rotation.y=-a;}
+      // S294 — the helix, the post, the far rail and the treasure chest are one bake on the kit: 130 treads of dressed stone
+      // (they were 130 boxes, 130 draw calls), the post in drums of coursed stone the whole height (the old cylinder was
+      // F-scaled and stopped at 18.6 of the 30), the rail of posts and a top rail, the prototype's chest
+      {const K=furnKit(),P=K.Parts(),rr=i=>((Math.sin(i*12.9898+7.1)*43758.5453)%1+1)%1,stoneC=i=>new THREE.Color(0x7a746a).offsetHSL(0,0,(rr(i)-.5)*.08);
+        const steps=turns*26;for(let i=0;i<steps;i++){const t=i/steps;const a=t*Math.PI*2*turns;const y=t*TOP;const x=cx_+Math.cos(a)*(r0+r1)/2,z=cz_+Math.sin(a)*(r0+r1)/2;P(SK.rbox(r1-r0+.2,.14,.9,.03,1),stoneC(i),x,y+.05,z,0,-a,0);}
+        for(let i=0;i<TOP/.5;i++)P(SK.cyl(.95,.95,.5,14),new THREE.Color(0x6a665e).offsetHSL(0,0,(rr(i+500)-.5)*.1),cx_,.25+i*.5,cz_,0,rr(i+900)*6,0);
+        for(let k=0;k<6;k++)P(SK.rbox(.06,1.8,.06,.015,1),0x3a2e22,cx_-1.5+k*.6,TOP+.9,cz_-3.2);P(SK.rbox(3.4,.06,.06,.015,1),0x3a2e22,cx_,TOP+1.8,cz_-3.2);
+        P.put(K.chest(FN,FSEED),cx_+2.2,cz_-2.2,0,TOP);
+        const room=K.bake(P);room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      solid(cx_,cz_,1.0,1.0,TOP/F);
       FOOTHOLDS.push({kind:'spiral',cx:cx_,cz:cz_,r0,r1,y0:0,y1:TOP,turns});
       // landing and treasure room floor
       // the top floor, with the well left open where the helix arrives (so you can go back down), and a hatch to the roof
@@ -39111,11 +39119,10 @@ var WORLD=(()=>{
       boxRaw((ex-1.4+W)/2, TOP-.08, (ez-1.6)/2, W-(ex-1.4), .16, ez-1.6, 0x6a665e); // right, before the well
       boxRaw((ex-1.4+W)/2, TOP-.08, (ez+1.6+D)/2, W-(ex-1.4), .16, D-(ez+1.6), 0x6a665e); // right, after the well
       FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y:TOP,hole:{x0:ex-1.4,x1:W,z0:ez-1.6,z1:ez+1.6}});
-      for(let k=0;k<6;k++)boxRaw(cx_-1.5+k*.6,TOP+.9,cz_-3.2,.06,1.8,.06,0x3a2e22);boxRaw(cx_,TOP+1.8,cz_-3.2,3.4,.06,.06,0x3a2e22); // a rail on the far side
       HATCH.x=cx_;HATCH.z=cz_-2.2;HATCH.y=TOP;HATCH.active=true;HATCH.roof=true; // the roof hatch
-      box(cx_+2.2,TOP+.3,cz_-2.2,.9,.6,.6,0x5a3a1c);box(cx_+2.2,TOP+.62,cz_-2.2,.95,.08,.65,0x4a2810);glow(cx_+2.2,TOP+.9,cz_-2.2,0xffd080);
+      glow(cx_+2.2,(TOP+.9)/F,cz_-2.2,0xffd080); // S294 — glow() scales y by F: the old chest and its glow sat at 18.8, in the shaft
       INT_LOOT={x:cx_+2.2,z:cz_-2.2,y:TOP,id:house.id};
-      for(let k=0;k<4;k++){const a=k/4*Math.PI*2;const wx=cx_+Math.cos(a)*(W/2-.4),wz=cz_+Math.sin(a)*(D/2-.4);glow(wx,TOP+1.6,wz,0xa0c0ff);}
+      for(let k=0;k<4;k++){const a=k/4*Math.PI*2;const wx=cx_+Math.cos(a)*(W/2-.4),wz=cz_+Math.sin(a)*(D/2-.4);glow(wx,(TOP+1.6)/F,wz,0xa0c0ff);}
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else if(type==='chapel'){
       partition(0,D*.55,W*.38,D*.55,0,ceil-.3,null);partition(W*.62,D*.55,W,D*.55,0,ceil-.3,null);
