@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s324</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s325</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -41134,7 +41134,7 @@ var WORLD=(()=>{
       // drift home
       const base=BASE_P[t.kind]||45;const drift=(base-st.p)*.01;
       // scaffolds finish
-      st.builds.forEach(b=>{if(!b.done&&day>=b.doneDay){b.done=true;st.p+=b.p;showMsg(`${t.name}: the ${b.name} is finished.`,'#e8d8a0');if(SETTLE.has(t.id))disposeSettlement(t.id);}});
+      st.builds.forEach(b=>{if(!b.done&&day>=b.doneDay){b.done=true;st.p+=b.p;showMsg(`${t.name}: the ${b.name} ${b.key==='walls'?'are':'is'} finished.`,'#e8d8a0');if(SETTLE.has(t.id))disposeSettlement(t.id);}});
       if(st.p<=0&&st.flags.abandoned==null){flag(t,'abandoned',true);}
       if(st.flags.abandoned!=null&&st.p>=20)flag(t,'abandoned',false);
       driveProsperity(t,c,d+drift);
@@ -41226,11 +41226,12 @@ var WORLD=(()=>{
   function roadBroken(a,b){const R=routes();const rt=R[routeKey(a.id,b.id)];if(rt&&rt.broken)return true;const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;return !!SITES.find(t=>t.kind==='bcamp'&&Math.hypot(t.x-mx,t.z-mz)<500&&!(worldState.lairs&&worldState.lairs[t.id]));}
   // ── investment and the deed ──
   const BUILDS=[{key:'well',name:'well',cost:120,p:6,min:0},{key:'inn',name:'inn',cost:400,p:10,min:30},{key:'chapel',name:'chapel',cost:500,p:8,min:35},{key:'walls',name:'walls',cost:900,p:8,min:45},{key:'guild',name:'guild hall',cost:1200,p:10,min:55},{key:'harbour',name:'harbour',cost:1500,p:12,min:50,port:true}];
+  const aBuild=b=>b.key==='walls'?b.name:(/^[aeiou]/.test(b.name)?'an ':'a ')+b.name; // S349 — *an inn*, *walls*, not *a inn*, *a walls*
   function investTopics(site){
     const st=TS(site);const _tw=tutWaivesInvest(site);if((prosperity(site)<40||favor(site)<3)&&!_tw)return [];
     const out=[];const have=new Set(st.builds.map(b=>b.key));
     for(const b of BUILDS){if(have.has(b.key)||(prosperity(site)<b.min&&!(_tw&&b.key==='well'))||(b.port&&site.kind!=='port'))continue;const cost=Math.round(b.cost*(1+prosperity(site)/200));
-      out.push({label:`Pay for a ${b.name} (${cost} gold)`,quest:true,fn:()=>{if(gold<cost)return `A ${b.name} would cost the town ${cost} gold.`;gold-=cost;updateHUD();st.builds.push({key:b.key,name:b.name,p:b.p,doneDay:Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+3,done:false});addFavor(site,1);if(SETTLE.has(site.id))disposeSettlement(site.id);if(typeof addLog==='function')addLog('🏗',`Paid for a ${b.name} at ${site.name}.`);return `The masons start tomorrow. Three days, and it's yours as much as ours.`;}});}
+      out.push({label:`Pay for ${aBuild(b)} (${cost} gold)`,quest:true,fn:()=>{if(gold<cost)return `${aBuild(b).replace(/^./,c=>c.toUpperCase())} would cost the town ${cost} gold.`;gold-=cost;updateHUD();st.builds.push({key:b.key,name:b.name,p:b.p,doneDay:Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+3,done:false});addFavor(site,1);if(SETTLE.has(site.id))disposeSettlement(site.id);if(typeof addLog==='function')addLog('🏗',`Paid for ${aBuild(b)} at ${site.name}.`);return `The masons start tomorrow. Three days, and it's yours as much as ours.`;}});}
     out.push(...refoundTopics(site));
     if(st.builds.filter(b=>b.done).length>=3&&favor(site)>=5&&st.flags.owned==null)out.push({label:`Take the deed to ${site.name}`,quest:true,fn:()=>{flag(site,'owned',true);addFavor(site,2);if(typeof addLog==='function')addLog('📜',`${site.name} is yours.`);return `Then it's yours. The rents come to you on the first of the week. Don't let it burn.`;}});
     return out;
@@ -41785,7 +41786,7 @@ var WORLD=(()=>{
       const R=worldState.roadsCleared||{};if(Object.keys(R).some(k=>k.split('|').includes(site.id))&&!qActive().some(q=>q.tut==='town'))tutTownAdvance(site,'route',`${site.name}'s road is clean. ${lordName(site)} will want a cart on it.`);}
     if(T.step==='route'){const R=routes();if(Object.values(R).some(rt=>!rt.broken&&(rt.a===site.id||rt.b===site.id)))tutTownAdvance(site,'invest',`A cart on ${site.name}'s road. ${lordName(site)} counts you a friend now — ask what the town needs.`);}
     if(T.step==='invest'){const st=TS(site);const b=st.builds[st.builds.length-1];if(b){T.build=b.name;tutTownAdvance(site,b.done?'report':'building',`The masons are at ${site.name}. Three days.`);}}
-    if(T.step==='building'){const st=TS(site);if(st.builds.some(b=>b.done)){const b=st.builds.find(b=>b.done);T.build=b.name;tutTownAdvance(site,'report',`The ${b.name} at ${site.name} is standing. ${lordName(site)} will want to see you.`);}}
+    if(T.step==='building'){const st=TS(site);if(st.builds.some(b=>b.done)){const b=st.builds.find(b=>b.done);T.build=b.name;tutTownAdvance(site,'report',`The ${b.name} at ${site.name} ${b.key==='walls'?'are':'is'} standing. ${lordName(site)} will want to see you.`);}}
   }
   // gates the lord waives for the line's own town at the step that teaches them
   function tutWaivesRoute(site){const T=TUT().town;return !!T&&T.site===site.id&&T.step==='route';}

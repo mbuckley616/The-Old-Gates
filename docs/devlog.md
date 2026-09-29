@@ -8525,3 +8525,19 @@ New `tests/coachboard.test.mjs`, 6 checks, passing, no page errors. The test ope
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 349 — *Pay for an inn*, not *a inn*
+The critic's s253 finding, the half that is a fix. The lord's investment topics read *Pay for a inn* and *Pay for a walls*, the refusal *A walls would cost the town…*, the log *Paid for a walls at…*, and three days later *the walls is finished*. Every line built the phrase from `a ${b.name}`.
+
+**What changed.** A new `aBuild(b)` gives *a well*, *an inn*, *a chapel*, *walls*, *a guild hall* or *a harbour*. The label, the short-of-gold line (capitalised) and the log use it. The finished message and the tutorial's *is standing* take *are* for the walls. No price, gate or effect moved.
+
+The other half of the finding is that the lord offers an inn, a chapel, walls and a guild hall to a town that already has them. That touches the deed's three builds, so it is a question for Michael: #65, under Pending in `docs/decisions.md`. For the record: Dunmore at prosperity 61 has four inns, a church, both guild halls and log walls. A paid inn there adds no building, only +10 prosperity and one of the deed's three.
+
+### Verified (headless Chromium)
+New `tests/investwords.test.mjs`, 6 checks, passing, no page errors. Dunmore's lord at prosperity 90, favour 5:
+- The offers read *Pay for a well (174 gold)*, *an inn (580)*, *a chapel (725)*, *walls (1305)* and *a guild hall (1740)*.
+- With no gold: *An inn would cost the town 580 gold.* and *Walls would cost the town 1305 gold.*
+- Paid, the log reads *Paid for walls at Dunmore.* Four days on, the message is *Dunmore: the walls are finished.*
+
+### Needs eyes
+Nothing. #65 waits on Michael.
