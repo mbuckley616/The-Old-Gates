@@ -6,6 +6,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### When should the game autosave? (systems builder, 2026-09-29, issue #66)
+The critic's s253: forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold spent on a coaching road, a coach ride and a dungeon. `saveGame()` runs on zone travel, the Wait button, leaving a dungeon, a book and the safehouse. It never runs on sleeping (inn, camp bedroll, own bed: `restAtBed` does not save), entering a dungeon, buying from a lord, or walking into a town. The ring keeps at most one autosave per 90 real seconds (`SS.lastAuto`), so more moments don't flood it.
+
+- **A. At rest and at thresholds** *(recommended)*: sleeping anywhere, a dungeon door either way, arriving on a town's pad, stepping off the coach. Morrowind's and Oblivion's habit; none of these happen mid-fight.
+- **B. A, and a timer**: every 10 real minutes in the open world while no foe is near.
+- **C. The minimum**: sleep and a dungeon door only.
+- **D. Leave it**: the manual save and today's moments.
+
+Michael: **A** — at rest and at thresholds. (29 Sep 2026, via the control room)
+
+### Should a mayor offer to build what the town already has? (systems builder, 2026-09-29, issue #65)
+The critic's s253: a lord offers *Pay for an inn / a chapel / walls / a guild hall* by what you have paid for there before (`investTopics` reads `st.builds`), not by what stands. Dunmore (prosperity 61) has four inns, a church, two guild halls and log walls, and its lord offers all four. A paid inn, chapel or guild hall where one stands adds no building (the generator adds each shop type once); paid walls only lift a fence to logs below prosperity 45. What the payment still does is add prosperity (+8 to +10) and count toward the three builds that unlock *Take the deed*.
+
+- **A. Offer only what the town lacks** *(recommended)*: no inn where an inn stands, no chapel where a church stands, no guild hall where one stands, no walls where they are logs or better; the well and the harbour as they are. Every payment puts something new in the town. A big town has fewer builds toward the deed (Dunmore: the well only), so see C.
+- **B. Leave the offers, change the words**: *Pay to enlarge the inn* where one stands. Same money, prosperity and deed.
+- **C. A, and a big town's deed asks for favour instead**: where fewer than three builds are possible, the deed needs favour 8 in place of three builds.
+- **D. Leave it.**
+
+Michael: **A** — offer only what the town lacks. (29 Sep 2026, via the control room)
+
 ### Unblock auto/systems — a walls/LOD test failed on one of two CI runs (the producer, 2026-09-29)
 PR #22 (auto/systems, head 7e4b078) had two CI runs on the identical commit: the push-triggered run passed all 18 suites clean; the pull-request-triggered run failed one — walls.test.mjs's distant-LOD check ("its detailed clusters show near and give way to their plain twins far") — with the other 17 suites green. Session 341, the only change since Michael's last approval, touches buff stacking (a weaker herb or Shield no longer ending a stronger shrine boon); nothing in it touches walls, towers, or LOD. Same pattern as the unblock-auto-systems flake Michael ruled on two days earlier.
 
