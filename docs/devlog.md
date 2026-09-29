@@ -8100,3 +8100,21 @@ New `tests/locksight.test.mjs`, 9 checks, passing, no page errors.
 ### Needs eyes
 - Whether 1.5 s is the right grace when a wolf circles a tree stump or a bandit steps behind a cart; too short and the lock flickers off in a cluttered camp.
 - A low wall or a boulder you can see over still blocks the lock in the world (the camera's solids have no height). If that bites in play, the world's check needs heights.
+
+## v80 — Session 309 — Flick to the next foe
+Lock-on's other owed piece (Session 297): switching between foes while locked. Elden Ring does it with a flick of the right stick; here it is a flick of the mouse, since the mouse does nothing else while locked (Session 297 set it aside). No new key: the middle button still locks and lets go.
+
+**What changed.** While locked, a sideways flick (90 pixels of mouse movement one way within 0.2 s) moves the lock to the next foe on that side of the one held: of the lockable foes within 14 units with a clear line (Session 308's test), the one nearest by angle, seen from where you stand. There is no 60° cone for the switch, so a flick can reach a foe beside or behind the one held. With nothing on that side the lock stays. After a switch the mouse is ignored for 0.25 s, so one flick moves the lock once however far the hand travels, and a slow drift never adds up to a flick (the sum restarts after 0.2 s or a change of direction). The view then turns to the new foe as it does on any lock. The flick's timing reads `performance.now()` on each mouse event, not the frame clock. The 90 px, 0.2 s and 0.25 s are mine. The start screen's controls say *lock on (flick the mouse to switch foes)*; the controls line at the bottom is unchanged for length.
+
+### Verified (headless Chromium)
+New `tests/lockswitch.test.mjs`, 10 checks, passing, no page errors. Four real Bandits in a row 7 units off at −40°, −15°, +10°, +35° (screen x −.29, 0, .29, .73 once B is held); mouse moves go through the game's own handler, with pointer lock faked.
+- From B, a flick right (3 × 40 px) takes C; the same hand moving on another 120 px straight after leaves it on C; the next flick takes D; another finds nothing and keeps D; a flick left (2 × 50 px) returns to C.
+- Ten moves of 20 px 0.3 s apart (200 px in all) never switch.
+- A solid on the line to A leaves the lock on B; with the line clear the same switch takes A.
+- A foe 20 units off at 60° is not switched to.
+- After a switch to C the view is on C (0.00°) within 40 ticks.
+- `lockon` (17) and `locksight` (9) pass.
+
+### Needs eyes
+- Whether 90 px in 0.2 s is a flick you make on purpose and never by accident at your mouse's sensitivity; the numbers are one constant each (`LOCK_FLICK`, `LOCK_FLICK_MS`).
+- Trackpads still have no middle click, so none of lock-on reaches a laptop without a mouse; a key for it remains Michael's call.

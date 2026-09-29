@@ -658,7 +658,7 @@
       <b style="color:#c8e88a">Mouse</b> — look / turn &nbsp;·&nbsp; <b style="color:#c8e88a">Shift</b> — sprint<br>
       <b style="color:#c8e88a">Space</b> — jump &nbsp;·&nbsp; <b style="color:#c8e88a">E</b> — interact &nbsp;·&nbsp; <b style="color:#c8e88a">Left-click</b> — attack (hold for power)<br>
       <b style="color:#c8e88a">Right-click</b> — block/parry &nbsp;·&nbsp; <b style="color:#c8e88a">F</b> — cast magic &nbsp;·&nbsp; <b style="color:#c8e88a">I</b> — inventory<br>
-      <b style="color:#c8e88a">Q</b> — roll &nbsp;·&nbsp; <b style="color:#c8e88a">Middle-click</b> — lock on &nbsp;·&nbsp; <b style="color:#c8e88a">Ctrl</b> — toggle sneak (reduces detection radius, slower move)<br><br>
+      <b style="color:#c8e88a">Q</b> — roll &nbsp;·&nbsp; <b style="color:#c8e88a">Middle-click</b> — lock on (flick the mouse to switch foes) &nbsp;·&nbsp; <b style="color:#c8e88a">Ctrl</b> — toggle sneak (reduces detection radius, slower move)<br><br>
       Press <b style="color:#c8e88a">E</b> near a <span style="color:#a09070">cave entrance</span> to descend into a dungeon.<br>
       Press <b style="color:#c8e88a">E</b> near a <span style="color:#c8b880">door</span> to enter shops &amp; trade.
     </p>
@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s299</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s300</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1464,6 +1464,31 @@ function toggleLock(){
   const e=lockPick();
   if(!e){showMsg('Nothing to lock on to.','#aaa');return false;}
   lockOn(e);return true;
+}
+// S309 — switching foes while locked: a sideways flick of the mouse (LOCK_FLICK pixels within LOCK_FLICK_MS) moves the
+// lock to the next foe on that side of the one held, the nearest by angle as seen from you; the same reach, cone-free,
+// and the same clear line as a fresh lock. Nothing on that side, the lock stays. After a switch the mouse is ignored
+// for a moment so one flick moves the lock once.
+const LOCK_FLICK=90,LOCK_FLICK_MS=200,LOCK_FLICK_REST=250;
+const LFL={sum:0,t0:0,rest:0};
+function lockSwitch(dir){
+  const cur=LOCK.t;if(!cur)return false;
+  const bx=cur.x-px,bz=cur.z-pz,bd=Math.hypot(bx,bz)||1,fx=bx/bd,fz=bz/bd,rx=-fz,rz=fx;
+  let best=null,ba=1e9;
+  for(const e of lockPool()){
+    if(e===cur)continue;const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>LOCK_RANGE||d<1e-3)continue;
+    const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*dir;if(a<=.03)continue;
+    if(a<ba&&lockSight(e)){ba=a;best=e;}
+  }
+  if(!best)return false;
+  lockOn(best);return true;
+}
+function lockFlick(mx,now){
+  if(!LOCK.t)return;
+  if(now<LFL.rest){LFL.sum=0;return;}
+  if(now-LFL.t0>LOCK_FLICK_MS||Math.sign(mx)!==Math.sign(LFL.sum)){LFL.sum=0;LFL.t0=now;}
+  LFL.sum+=mx;
+  if(Math.abs(LFL.sum)>=LOCK_FLICK){const dir=Math.sign(LFL.sum);LFL.sum=0;LFL.rest=now+LOCK_FLICK_REST;lockSwitch(dir);}
 }
 function lockValid(e){
   if(!e||e.dead||!(e.hp>0)||!e.mesh||dead)return false;
@@ -43857,7 +43882,7 @@ function _enterGame(){
   window.addEventListener('mousemove',e2=>{
     if(document.pointerLockElement!==CV) return;
     if(invOpen) return;
-    if(LOCK.t) return;
+    if(LOCK.t){lockFlick(e2.movementX||0,performance.now());return;}
     yaw-=e2.movementX*.004;
     pitch=Math.max(-1.45,Math.min(1.45,pitch-e2.movementY*.004));
   });
