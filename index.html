@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s322</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s323</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -26886,10 +26886,10 @@ function updateHUD(){
   const ob=document.getElementById('ob');if(lid==='overworld'){ob.style.color='#88cc44';
   const _shipHint=(activeZoneId==='world'&&typeof WORLD!=='undefined')?WORLD.shipPrompt():null; // v80 C — the ship comes first
   if(_shipHint){ob.style.color='#c8b880';ob.textContent=_shipHint;}else
+  if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds&&ZONES.world.beds.some(b=>Math.hypot(px-b.x,pz-b.z)<1.5)){ob.style.color='#c8b880';ob.textContent="A bedroll — Press 'E' to rest"+(level<(typeof levelFor==='function'?levelFor(xp):level)?' and take your level':'');}else
   if(activeZoneId==='forest'){const alive=ZE.filter(e=>!e.dead&&!e.locked).length;ob.textContent=alive?`${alive} creature${alive>1?'s':''} nearby · Stay on the path`:'Deep in the Deepwood Forest · E near gate to travel';}
   else if(activeZoneId==='ironhaven'){ob.textContent='Press E near a soldier or gate · Press E near a building to enter';}
   else{ob.textContent='Press E near a villager to talk · Press E near a door or cave to enter';}
-}else if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds&&ZONES.world.beds.some(b=>Math.hypot(px-b.x,pz-b.z)<1.5)){ob.style.color='#c8b880';ob.textContent="A bedroll — Press 'E' to rest"+(level<(typeof levelFor==='function'?levelFor(xp):level)?' and take your level':''); // v80 S133 — the bedroll says so
 }else if(lid==='overworld'&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){ob.style.color='#c8b880';ob.textContent=WORLD.shipPrompt();}else if(lid&&isInterior()){ob.style.color='#c8b880';const _nb=INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9);const _hp=(typeof WORLD!=='undefined')?(WORLD.guestPrompt()||WORLD.hatchPrompt()||WORLD.lootPrompt()||WORLD.boxPrompt()):null;ob.textContent=_hp?_hp:_nb?((typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nb))||"Someone else's bed")+' · Walk south to exit':(intNPCMesh?'Press E near the keeper to talk · Walk south to exit':'No one is in · Walk south to exit');}else{const a=ENEMIES.filter(e=>!e.dead).length;const uk=KEYS.filter(k=>!k.collected).length;const ud=DOORS.filter(d=>!d.open&&d.locked).length;const sh=EQ.offhand&&EQ.offhand.shieldType==='shield';ob.style.color=blocking?'#88aaff':'#c8a84a';ob.textContent=a+' enemies'+(uk?' · '+uk+' key'+(uk>1?'s':'')+(ud?' to find':''):'')+(ud&&!uk?' · '+ud+' locked door'+(ud>1?'s':''):'')+(blocking?' · 🛡 '+(sh?'Blocking':'Guarding'):'');}}
 
 const mmC=document.getElementById('mm').getContext('2d');

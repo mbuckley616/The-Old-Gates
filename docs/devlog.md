@@ -8496,3 +8496,17 @@ New `tests/fortunecard.test.mjs`, 6 checks, passing, no page errors.
 
 ### Needs eyes
 Nothing by eye. *Item Drop* in the hub is added to the base chance (35% plus up to 20% for a tougher foe), not multiplied; the row says *+10%* at 4 points and means ten points more.
+
+## v80 — Session 347 — The bedroll says so again
+The critic's s253 finding, taken as written. On a camp's bedroll the prompt line read the generic *Press E near a villager to talk…*, never *A bedroll — Press 'E' to rest* (Session 133's line). The bedroll check sat in an `else if` after `if(lid==='overworld')` in `updateHUD`'s prompt chain. In the open world `lid` is always `'overworld'`, so the check could never be reached. E on the roll still opened the sleep dialog; only the words were lost.
+
+**What changed.** The check moved inside the overworld branch, after the ship's prompt and before the generic line, with the same words and the same *and take your level* when a level is owed. The unreachable copy is gone.
+
+### Verified (headless Chromium)
+New `tests/bedrollprompt.test.mjs`, 4 checks, passing, no page errors. The world had 21 bedrolls loaded around the spawn; the test used the first one it found, at (12,990, 25,482):
+- 0.4 units from the roll the line reads *A bedroll — Press 'E' to rest*.
+- Six units off it reads the generic line.
+- Against the build before this session the bedroll check fails, as the critic saw.
+
+### Needs eyes
+Nothing.
