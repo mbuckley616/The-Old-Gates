@@ -8570,3 +8570,20 @@ The producer filed this as a blocker from the quest writer: `mainrun` is red on 
 
 ### Needs eyes
 Nothing by eye. `hourhitch`'s single red on 976745f is still not root-caused.
+
+## v80 — Session 352 — A lord offers only what the town lacks
+Michael's A on #65, from the critic's s253. A lord's *Pay for…* topics were chosen by what you had paid for in that town before (`st.builds`), not by what stands there. Dunmore at prosperity 61 has four inns, a church, both guild halls and log walls, and its lord still offered an inn, a chapel, walls and a guild hall. A paid inn, chapel or guild hall where one stood added no building (the generator adds each shop type once). Paid walls lifted only a fence, and walls are offered from prosperity 45, where the ring is logs already.
+
+**What changed.** A new `buildStands(site)` says what stands. It reads the live town's houses when the town is loaded, and when it isn't, the plan's list at today's prosperity (`shopsFor`, as the town's hover card does). The lord no longer offers an inn where an inn stands, a chapel where a church does, or a guild hall where either guild's hall does. Walls are not offered in a walled town whose ring is logs or better, and in practice that is every walled town at 45 and over. The well and the harbour are offered as before. No price, prosperity gain or deed rule moved. As #65 said, a big town now has fewer builds toward the deed's three: Dunmore has the well only.
+
+### Verified (headless Chromium)
+New `tests/investlacks.test.mjs`, 6 checks, passing, no page errors:
+- Dunmore at prosperity 90 (inns, a church, both guild halls, walls) is offered *a well* only. The same town read from its plan while unloaded gives the same answer.
+- The same town with its inn, church and guild halls lifted out of the live houses is offered all three again (walls still stand, so walls are not).
+- Portclare at 90 (an inn, a church, no ring, no guild hall) is offered the well, walls, a guild hall and the harbour.
+- Across all five live towns (La Grise, Dunmore, Hearthwick, Droichead, Portclare), no offer names a building that stands there.
+
+`tests/investwords.test.mjs` read its wording at Dunmore, which now offers only the well. It reads the same six checks at Portclare now, with the inn and church lifted out for the look, and passes.
+
+### Needs eyes
+Walls stay on offer in villages and ports, which have no wall ring: a payment there builds nothing you can see, though at a port it keeps the black sails off (`portProtected`). That was already the case and is outside #65, so it is noted here for the producer.

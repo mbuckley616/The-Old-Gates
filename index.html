@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s326</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s327</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -41227,10 +41227,19 @@ var WORLD=(()=>{
   // ── investment and the deed ──
   const BUILDS=[{key:'well',name:'well',cost:120,p:6,min:0},{key:'inn',name:'inn',cost:400,p:10,min:30},{key:'chapel',name:'chapel',cost:500,p:8,min:35},{key:'walls',name:'walls',cost:900,p:8,min:45},{key:'guild',name:'guild hall',cost:1200,p:10,min:55},{key:'harbour',name:'harbour',cost:1500,p:12,min:50,port:true}];
   const aBuild=b=>b.key==='walls'?b.name:(/^[aeiou]/.test(b.name)?'an ':'a ')+b.name; // S349 — *an inn*, *walls*, not *a inn*, *a walls*
+  // S352 — Michael’s A on #65: a lord offers only what the town lacks. What stands is read off the live town's houses
+  // (the plan's list at today's prosperity when it isn't loaded): no inn where an inn stands, no chapel where a church
+  // does, no guild hall where either guild's hall does, no walls where the ring is logs or better. The well and the harbour as before.
+  function buildStands(site){const out=new Set();const S=SETTLE.get(site.id);let types;
+    if(S&&S.houses)types=S.houses.map(h=>h.type);
+    else{const plan=KIND_PLAN[site.kind]||KIND_PLAN.village;types=shopsFor(site,[...plan.shops,...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]);}
+    if(types.includes('inn'))out.add('inn');if(types.includes('church'))out.add('chapel');if(types.includes('guild_f')||types.includes('guild_m'))out.add('guild');
+    const plan=KIND_PLAN[site.kind]||KIND_PLAN.village;if(plan.walls&&wallTierFor(site)!=='fence')out.add('walls');
+    return out;}
   function investTopics(site){
     const st=TS(site);const _tw=tutWaivesInvest(site);if((prosperity(site)<40||favor(site)<3)&&!_tw)return [];
-    const out=[];const have=new Set(st.builds.map(b=>b.key));
-    for(const b of BUILDS){if(have.has(b.key)||(prosperity(site)<b.min&&!(_tw&&b.key==='well'))||(b.port&&site.kind!=='port'))continue;const cost=Math.round(b.cost*(1+prosperity(site)/200));
+    const out=[];const have=new Set(st.builds.map(b=>b.key));const stands=buildStands(site);
+    for(const b of BUILDS){if(have.has(b.key)||stands.has(b.key)||(prosperity(site)<b.min&&!(_tw&&b.key==='well'))||(b.port&&site.kind!=='port'))continue;const cost=Math.round(b.cost*(1+prosperity(site)/200));
       out.push({label:`Pay for ${aBuild(b)} (${cost} gold)`,quest:true,fn:()=>{if(gold<cost)return `${aBuild(b).replace(/^./,c=>c.toUpperCase())} would cost the town ${cost} gold.`;gold-=cost;updateHUD();st.builds.push({key:b.key,name:b.name,p:b.p,doneDay:Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+3,done:false});addFavor(site,1);if(SETTLE.has(site.id))disposeSettlement(site.id);if(typeof addLog==='function')addLog('🏗',`Paid for ${aBuild(b)} at ${site.name}.`);return `The masons start tomorrow. Three days, and it's yours as much as ours.`;}});}
     out.push(...refoundTopics(site));
     if(st.builds.filter(b=>b.done).length>=3&&favor(site)>=5&&st.flags.owned==null)out.push({label:`Take the deed to ${site.name}`,quest:true,fn:()=>{flag(site,'owned',true);addFavor(site,2);if(typeof addLog==='function')addLog('📜',`${site.name} is yours.`);return `Then it's yours. The rents come to you on the first of the week. Don't let it burn.`;}});
