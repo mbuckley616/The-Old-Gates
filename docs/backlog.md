@@ -165,3 +165,12 @@ Michael wants to hear proposals from the team before anything is built. Each pro
 - **Journal and calendar**: see E and D — the entry style and the names of days, months and eras come from the quest writer.
 - **Capes and cloaks as an item slot (Michael, 28 Sep 2026)**: "Can we add capes/cloaks as an item slot, and add a few cape types to the game? They should offer minimal bonuses, unless the cape is very rare/magical." Ties to H.3's swinging cloaks (Michael A, 28 Sep).
 - **Unique artifacts in the world (Michael, 28 Sep 2026)**: "Can we add a few ‘unique’ items with their own quests / placed in random spots in the world? And can we weave some of them into the lore? I’ like something comparable to the daedric artifacts from the elder scrolls. Maybe some of them are plainly visible in the world, but require a skill check to obtain (i.e. Might must be at 30 to pull sword from stone)." The lore half is the quest writer's; ties to the skills proposal.
+
+## K. Engineering (Michael, 29 Sep 2026)
+- **Split `index.html` into several files** (a Fable session, per CLAUDE.md). Michael, 29 Sep 2026: the one-file rule was self-imposed and goes; players reach the game through itch.io and the Pages link, where a folder plays the same. Why now: every builder edits one 41k-line file, so merges conflict and CI runs every suite on every change. The plan:
+  1. *Prep, no freeze.* A split **script** cuts the inline code at its existing seams (world, people, dialogue, interiors, maps, UI…) into plain `<script src>` files that share globals exactly as now — no modules, no rewrites. It proves the pieces concatenate back to today's code byte for byte, the full suite passes, and it ships the updated tests, CI, parsecheck and CLAUDE.md. Main keeps moving; the script is re-run on the day.
+  2. *Land the open work.* Merge auto/systems and auto/backlog to main first; the docs-only agents never touch index.html and keep going.
+  3. *Freeze the two code builders (a few hours).* Run the script on the latest main, run the suite, merge.
+  4. *Resume.* The builders' prompts get the new layout (Michael pastes them); later, CI runs only the suites a change touches.
+  - Must stay true: a downloaded copy still opens by double-clicking `index.html` (plain script tags, no fetch, no modules).
+- **Offline copy** (later, after the split): bundle three.js (now loaded from cdnjs) into the folder so a downloaded game runs with no connection.
