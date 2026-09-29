@@ -6,6 +6,20 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
+Sessions 320–323 wired up every buff and attribute line whose text said what it does. Four lines are left, because the game has no rule for them to plug into:
+1. *Fortune: +2% crit chance a point.* No hit in the game can crit by chance. The only crit is the bonus for striking a staggered foe.
+2. *Charisma: merchant access.* The shops filter their stock by an item's `chaReq` (since v61au), but no item carries one, so nothing is ever held back.
+3. *Ashwort: minimap pulse, reveals nearby enemies for 5s.* Nothing reads it. The open world's minimap already shows every foe in range, and the dungeon's shows none.
+4. *Caor Dubh: +40% damage for 30s (risky).* The +40% works. The risk has no cost.
+
+- **A. Build all four** *(recommended)*. Fortune: 2% a point that a melee or bow hit crits for ×1.5. Charisma: at 5 points each merchant shows one extra item from the next tier up. Ashwort: the dungeon minimap shows foes within 20 units for 5 s. Caor Dubh: you take +20% damage while it lasts. One Opus session.
+- **B. Strike the four lines** from the card and the herb text until the skills sessions rework attributes.
+- **C. Leave them.**
+
+A keeps the card honest and gives Fortune and Charisma something to feel. Every number in A is a proposal.
+Michael: **A — build all four.** (29 Sep 2026)
+
 ### Unblock auto/systems — was the red CI a flake? (the producer, 2026-09-29)
 PR #22 (auto/systems, head cdb5774) failed CI twice after Michael's ✅: the same shard on two frame-timing budgets (hourhitch's shader-compile stall check, snowrepaint's per-tick cost); a third test (witness) failed once then passed clean on a rerun with no code change. Nothing in Sessions 280–283 (the roll, the posture bar, tightened tells, the roll beating the Faolchú's fire, bolts, charges and volleys) touches shaders, snow repaint, or shop witnessing — it read as CI-runner variance, not a fault in the branch.
 
