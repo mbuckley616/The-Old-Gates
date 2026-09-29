@@ -7531,7 +7531,7 @@ The last two of the fort's ten room kinds, in the manner of Sessions 306–307:
 
 With this, every room inside a fort is on the kit, and every interior in the game is furnished from it.
 
-**Found, not fixed (systems):** the entrance cot never spawns. It looks for a floor cell (1) beside a fort's entrance, but the fort layouts floor their rooms with 7. In the tee fort at seed 23 the entrance's neighbours are 7, 7, off the map, and 7, and `D_BEDS` stays empty in all four forts the test enters. Resting there is a game rule, not the look, so it is left to the systems builder and noted in the backlog. The new cot is untested in play for the same reason.
+**Found, not fixed (systems):** the entrance cot never spawns. It looks for a floor cell (1) beside a fort's entrance, but the fort layouts floor their rooms with 7. In the tee fort at seed 23 the entrance's neighbours are 7, 7, off the map, and 7, and `D_BEDS` stays empty in all four forts the test enters. Resting there is a game rule, not the look, so it is left to the systems builder, and noted beside the fort rooms in the backlog. The new cot is untested in play for the same reason.
 
 ### Verified (headless Chromium)
 - **`fortfurn`**, extended: across the four forts all ten kinds turn up (25 rooms). The library is one bake of 10,555 triangles with 8 footprints and six lootable bookshelves. The storeroom is 7,092 with 3. The other eight rooms are as in Sessions 306–307. No box or cylinder in the old props' materials is left in any room. The picture is `docs/prototypes/fortfurn-ingame.png`, now ten panels.
