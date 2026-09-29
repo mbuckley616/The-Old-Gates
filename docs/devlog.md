@@ -8068,3 +8068,19 @@ New `tests/counters.test.mjs`, 15 checks, passing first time, no page errors. It
 - A Bandit has 13 posture, so a parry (5.2) and a couple of blows break it, and a finisher follows most parries. Whether that is too generous is the tuning B's attack table is for.
 - Whether 0.8 s is enough to start a swing after the parry flash, and whether ×2.5 and ×3 feel earned rather than routine against wolves and bandits.
 - The finisher has no pose of its own yet (H). The 1.2 s of safety is invisible, which may read as the foes missing.
+
+## v80 — Session 299 — Two red tests, read rather than retried
+PR #22 has been red on every CI run since main was merged into this branch (0c2e160). The same shard failed each time, on `hourhitch` (a shader compiled after the first night) and `snowrepaint` (a repainting tick over its 3 ms budget). The producer read both as runner flake, and Michael was asked whether to merge anyway (A), wait (B) or fix the budgets (C). Neither is a flake, and neither is a fault in the game. This is the run's one CI session.
+
+**hourhitch.** It fails here too, every time. Run against main's own game, it fails the same way. So it came in with main, not with Sessions 280–298: main doesn't carry the test, which is why main is green. A probe of the new program's users found two 24-bone skinned meshes with a material of their own: **wolves**, spawned near Dunmore by night, on the look branch's wolf kit. The first time a wolf comes into view its material is compiled. That is arrival, which the test already sets aside at noon (*a program compiled here is arrival, not the hour*). Which foes spawn after the first night is chance. The townsfolk carry 17 to 20 bones since the cloaks and hair swing, but they all share one program: float vertex textures are on, so three.js r128 gives every skeleton the same 1024-bone program. The test now sets aside programs used only by the zone's foes (`ZE`), two shaders each. Every other compile after the first night still fails it.
+
+**snowrepaint.** Locally a repainting tick is 1.1× one at rest (6.6 against 5.8 ms). On the CI runner it was 2× (16 against 8), so *3 ms over rest* measured the runner's speed. What Session 177 set is two chunks a tick (`n<2` in the repaint), and that can be checked exactly: the queue drains in half its length in ticks. The test now checks that, and bounds the cost relative to the runner (under 2.5× rest). Six chunks a tick, the regression it guards against, made a repainting tick nearly three times the two-chunk one (25 against 9 ms in Session 177's profile). The third test the producer named, `witness`, failed once and passed on the re-run, and it is not touched here.
+
+No game code changed. The build tag stays s298.
+
+### Verified (headless Chromium)
+- `hourhitch`, before: *after the first night* 8 → 10 shaders, 32 → 33 programs, here and against main's game (31 → 32 there). After: the same run passes, with one late program found to be foe-only (`foeLater` 1). The lights, the torches and the frame bound are unchanged and pass.
+- `snowrepaint`: 81 chunks queued, drained in 41 ticks (two a tick); median 6.7 ms against 4.6 at rest (6.6 against 5.8 on an earlier run), passing.
+
+### Needs eyes
+Nothing to play. Whether a wolf pack's first appearance hitches on a real GPU (one compile of its material) is worth a glance at dusk outside a town.
