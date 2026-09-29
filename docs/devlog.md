@@ -7472,3 +7472,17 @@ With the furniture on the kit (Sessions 295 and 300–302), the flat rug of the 
 
 ### Needs eyes
 The rag rug's bright rings in a shop, which is the kit's own look. What is left of this builder is its shell: box-frame windows with a pane, and flat walls. The generated rooms' windows are flat lit planes too, so a window on the kit would be a new piece to prototype, not a port.
+
+## v80 — Session 305 — Prototype: the interiors' windows on the kit (H.5)
+With every room's furniture on the kit, the windows are the flattest thing left inside. A generated room's window is a plane on the wall with a painted view of the town at dusk. The older builder's is the same view in a frame of three boxes. A church's is a plain lit rectangle. The game has no kit window to port, so this is a new look, prototyped rather than built. `docs/prototypes/windows/proto.mjs` boots the game, builds a home and a church through `WORLD.buildInteriorFor`, and puts a kit window over each of their panes, the painted view set back behind the frame. The game is not changed.
+- **A, a leaded casement:** a plastered reveal with splayed jambs and head, a stone sill, an oak frame with a mullion and a transom, and diamond leading clipped to each light. 2,400 triangles.
+- **B, a shuttered timber window:** a lintel beam, four panes behind glazing bars, two plank shutters folded back against the wall on strap hinges, and a plank sill. 1,080 triangles.
+- **C, a round-headed stone window** for the church's tall upper windows: coursed jambs of long and short blocks, nine voussoirs, a moulded sill, and square lead quarries. 1,392 triangles. The church's low windows take A in the picture.
+
+The question is in `docs/decisions.md` and a DECISION issue. It offers A everywhere, windows chosen by room (B in homes, A in trades and halls, C in churches and keeps; recommended), B everywhere, or leaving them as they are. A room's four to eight windows would add about 4–19k triangles to its furniture bake, with no extra draw call.
+
+### Verified (headless Chromium)
+The prototype renders without page errors: `docs/prototypes/windows-home.png` (a home as it is, with A, and with B; the room and a close view) and `docs/prototypes/windows-church.png` (a church as it is, and with C).
+
+### Needs eyes
+Michael's choice. Nothing in the game has changed.
