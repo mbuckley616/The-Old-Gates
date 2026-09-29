@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s271</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s272</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -24733,6 +24733,16 @@ function _legacyHallKit(type,W,D,ceilH){const K=furnKit(),n='gatelands',s=type==
     for(const z of [5.5,9.5,13.5])if(z<D-2)for(const x of [W/2-4,W/2+4])P.put(K.column(ceilH,.24,s+20+z),x,z,0);
     for(const z of [7.5,11.5])for(const x of [W*.1,W*.9]){const q=K.Parts();q(SK.cyl(.13,.15,.04,12),0x2a2420,0,.02,0);q(SK.cyl(.022,.035,.96,8),0x2a2420,0,.5,0);q(SK.cyl(.08,.05,.03,10),0x2a2420,0,.99,0);K.candle(q,0,1.005,0);P.put(q,x,z,0);}}
   const room=K.bake(P);room.userData.furn=true;room.userData.legacyFurn=true;interiorScene.add(room);return room;}
+// S302 — the legacy keep's hall on the kit (#46 A): a flagged dais with a runner and the carved throne, braziers before it, a
+// long runner to the door, columns with banners hung towards the aisle, petitioners' benches clear of the columns
+function _legacyKeepKit(W,D,ceilH){const K=furnKit(),n='gatelands',s=281,P=K.Parts(),dw=W*.55;
+  P.put(K.dais(dw,3.2,.37,s),W/2,1.7,0);P.put(K.runner(2.6,1.6,0x7a2020,s),W/2,2.4,0,.37);P.put(K.throne(n,s+1),W/2,1.0,0,.37);
+  P.put(K.runner(2.6,D-5,0x6a1010,s+2),W/2,3.3+(D-5)/2,0);
+  [D*.18,D*.36,D*.54,D*.72].forEach((z,i)=>{for(const x of [W*.15,W*.85]){P.put(K.column(ceilH,.42,s+30+i),x,z,0);
+    P.put(K.banner([0x7a2020,0x203a6a][i%2],s+i*2+(x<W/2?0:1)),x+(x<W/2?.6:-.6),z,Math.PI/2,ceilH*.6+1.2);}});
+  for(const x of [W/2-3.5,W/2+3.5])P.put(K.brazier(s+40+x),x,4.0,0);
+  [D*.35,D*.5,D*.65].forEach((z,i)=>{for(const x of [W*.3,W*.7])P.put(K.bench(W*.22,n,s+50+i*2+(x<W/2?0:1)),x,z,0);});
+  const room=K.bake(P);room.userData.furn=true;room.userData.legacyFurn=true;interiorScene.add(room);return room;}
 // S290 — the interiors' barrel and crate on the kit: the dungeon's barrel (kitBarrel, S200) at .44 high, and the shops' crate
 // of planks between battens in the room's wood; each size baked once and shared. S293: _intCrate's y is the crate's centre,
 // as every caller passes it (the old box sat its base there, so every crate floated by half its size)
@@ -24959,7 +24969,7 @@ function buildInterior(house){
   const rugColor=type==='church'?0x6a2020:type==='castle'?0x6a1010:type==='armor'||type==='weapon'?0x203050:0x7a2020;
   M.rug=new THREE.MeshLambertMaterial({color:rugColor});
   const rug=new THREE.Mesh(new THREE.PlaneGeometry(rugW,rugD),M.rug);
-  rug.rotation.x=-Math.PI/2;rug.position.set(W/2,.01,type==='church'||type==='castle'?D/2:D/2+.5);interiorScene.add(rug);
+  rug.rotation.x=-Math.PI/2;rug.position.set(W/2,.01,type==='church'||type==='castle'?D/2:D/2+.5);if(type!=='castle')interiorScene.add(rug); // S302 — the keep's runner is the kit's
 
   // Main overhead light
   const lantern=new THREE.PointLight(0xffaa44,2.8,Math.max(W,D)*1.4);lantern.position.set(W/2,ceilH-.3,D/2);interiorScene.add(lantern);
@@ -25046,88 +25056,15 @@ function buildInterior(house){
     intNPCPos={x:W/2,z:.7}; // priest behind the altar (it stood in it at D*.08)
   }
 
+  // S302 — the keep's hall on the kit, one bake (_legacyKeepKit); the column torches moved from the columns' centres (inside
+  // the shafts) to their faces towards the door; the throne's light and the guards where the new dais leaves room
   else if(type==='castle'){
-    const stoneMat2=new THREE.MeshLambertMaterial({color:0x7a7868});
-    const darkStoneMat=new THREE.MeshLambertMaterial({color:0x484840});
-    const goldMat=new THREE.MeshLambertMaterial({color:0xd4a020});
-    const bannerMats=[
-      new THREE.MeshLambertMaterial({color:0x8a1010}), // crimson
-      new THREE.MeshLambertMaterial({color:0x8a1010}),
-    ];
-    const woodMat3=new THREE.MeshLambertMaterial({color:0x5a3010});
-
-    // ── Stone columns — two rows down the hall ────────────────
-    [D*.18,D*.36,D*.54,D*.72].forEach(cz=>{
-      _intColumn(interiorScene,W*.15,cz,ceilH*.88);
-      _intColumn(interiorScene,W*.85,cz,ceilH*.88);
-    });
-
-    // ── Dais / throne platform at back wall ───────────────────
-    const daisW=W*.55, daisD=2.2, daisH=0.42;
-    _intBox(interiorScene,W/2,daisH/2,daisD/2,daisW,daisH,daisD,stoneMat2);
-    // Dais step (slightly wider, lower)
-    _intBox(interiorScene,W/2,0.14,daisD/2+0.5,daisW+0.8,0.28,0.7,darkStoneMat);
-
-    // ── Throne ────────────────────────────────────────────────
-    const throneX=W/2, throneZ=daisD*.35;
-    // Seat
-    _intBox(interiorScene,throneX,daisH+.22,throneZ,1.0,.12,.85,0x3a2010);
-    // Back rest — tall ornate
-    _intBox(interiorScene,throneX,daisH+.88,throneZ-.36,1.0,1.20,.10,0x3a2010);
-    // Back top finial
-    _intBox(interiorScene,throneX,daisH+1.56,throneZ-.36,1.1,.14,.12,0x3a2010);
-    // Armrests
-    [-1,1].forEach(s=>{
-      _intBox(interiorScene,throneX+s*.44,daisH+.42,throneZ-.1,.10,.18,.62,0x3a2010);
-      // Armrest finial ball
-      const ball=new THREE.Mesh(new THREE.SphereGeometry(.07,6,5),goldMat);
-      ball.position.set(throneX+s*.44,daisH+.56,throneZ-.38);interiorScene.add(ball);
-    });
-    // Gold crown motif on throne back
-    for(let ci=-1;ci<=1;ci++){
-      const spike=new THREE.Mesh(new THREE.ConeGeometry(.04,.18,5),goldMat);
-      spike.position.set(throneX+ci*.28,daisH+1.62,throneZ-.36);interiorScene.add(spike);
-    }
-    // Throne glow — warm candlelight from above
-    const throneLight=new THREE.PointLight(0xffcc66,1.8,5);throneLight.position.set(throneX,ceilH*.7,throneZ);interiorScene.add(throneLight);
-
-    // ── Wall banners — hang between columns on both side walls ─
-    [D*.18,D*.36,D*.54,D*.72].forEach((bz,i)=>{
-      const mat=bannerMats[i%2];
-      // West wall banner
-      const bL=new THREE.Mesh(new THREE.BoxGeometry(.08,1.8,.65),mat);
-      bL.position.set(.06,ceilH*.52,bz);interiorScene.add(bL);
-      // Gold trim top
-      _intBox(interiorScene,.06,ceilH*.52+.92,bz,.12,.06,.68,0xc8a020);
-      // Sigil on banner — simple diamond
-      const sigL=new THREE.Mesh(new THREE.BoxGeometry(.04,.28,.28),goldMat);
-      sigL.rotation.z=Math.PI/4;sigL.position.set(.08,ceilH*.52,bz);interiorScene.add(sigL);
-      // East wall banner
-      const bR=new THREE.Mesh(new THREE.BoxGeometry(.08,1.8,.65),mat);
-      bR.position.set(W-.06,ceilH*.52,bz);interiorScene.add(bR);
-      _intBox(interiorScene,W-.06,ceilH*.52+.92,bz,.12,.06,.68,0xc8a020);
-      const sigR=new THREE.Mesh(new THREE.BoxGeometry(.04,.28,.28),goldMat);
-      sigR.rotation.z=Math.PI/4;sigR.position.set(W-.08,ceilH*.52,bz);interiorScene.add(sigR);
-    });
-
-    // ── Wall torches — on columns and back wall ────────────────
-    [[W*.15,D*.18],[W*.85,D*.18],[W*.15,D*.54],[W*.85,D*.54],
-     [W*.15,D*.72],[W*.85,D*.72],[W/2-2,0.12],[W/2+2,0.12]].forEach(([tx,tz])=>{
-      _intTorch(interiorScene,tx,tz);
-    });
-    // Extra torches flanking the throne
-    [-1,1].forEach(s=>{
-      const tpx=W/2+s*(daisW/2+0.6);
-      _intTorch(interiorScene,tpx,0.2);
-    });
-
-    // ── Long side benches for petitioners ─────────────────────
-    [D*.35,D*.5,D*.65].forEach(bz=>{
-      _intBox(interiorScene,W*.26,0.44,bz,W*.22,.08,.42,woodMat3); // seat
-      _intBox(interiorScene,W*.26,0.28,bz,W*.22,.52,.38,woodMat3); // legs/base
-      _intBox(interiorScene,W*.74,0.44,bz,W*.22,.08,.42,woodMat3);
-      _intBox(interiorScene,W*.74,0.28,bz,W*.22,.52,.38,woodMat3);
-    });
+    const daisW=W*.55, daisD=3.3;
+    _legacyKeepKit(W,D,ceilH);
+    const throneLight=new THREE.PointLight(0xffcc66,1.8,5);throneLight.position.set(W/2,ceilH*.7,1.0);interiorScene.add(throneLight);
+    [W/2-3.5,W/2+3.5].forEach(x=>{const bl=new THREE.PointLight(0xff6a20,1.3,8);bl.position.set(x,1.0,4.0);interiorScene.add(bl);});
+    [[W*.15,D*.18],[W*.85,D*.18],[W*.15,D*.54],[W*.85,D*.54],[W*.15,D*.72],[W*.85,D*.72]].forEach(([tx,tz])=>_intTorch(interiorScene,tx,tz+.5));
+    [[W/2-2,0.12],[W/2+2,0.12]].forEach(([tx,tz])=>_intTorch(interiorScene,tx,tz));
 
     // ── Royal seal on floor at entrance ───────────────────────
     const sealMat=new THREE.MeshLambertMaterial({color:0xc8a020,transparent:true,opacity:.35});
@@ -25152,7 +25089,7 @@ function buildInterior(house){
       interiorScene.add(guardMesh);
     });
 
-    intNPCPos={x:W/2,z:2.8}; // regent stands in front of dais
+    intNPCPos={x:W/2,z:4.2}; // regent stands in front of dais (S302: at 2.8 he stood on it, sunk to the shins)
   }
 
   // v61d4 — Safehouse: the player's private space granted by Caldric. No
@@ -25202,7 +25139,7 @@ function buildInterior(house){
   }
 
   // Castle regent faces the entrance (throne is at z≈0.77 of daisD=2.2 → z≈0.62)
-  if(type==='castle') intNPCPos={x:W/2,z:2.8};
+  if(type==='castle') intNPCPos={x:W/2,z:4.2};
 
   // ── Interior NPC — look up keeper's actual role/colours for visual consistency ──
   // Priority: outdoor NPC_DEF (has role) → SHOP_DIALOG/IRONHAVEN_DIALOG (has role)
@@ -25241,8 +25178,8 @@ function buildInterior(house){
     wa: type==='church' ? 0 : Math.random()*Math.PI*2, // walk angle
     wt: 1+Math.random()*3,   // time until next direction change
     // Bounds: stay in front half of room (near counter/altar), away from entrance
-    minZ: 0.6,
-    maxZ: type==='church' ? D*.3 : type==='castle' ? 4.5 : Math.min(D*.55, 4.5),
+    minZ: type==='castle' ? 3.7 : 0.6,
+    maxZ: type==='church' ? D*.3 : type==='castle' ? 6.0 : Math.min(D*.55, 4.5),
     minX: 0.8,
     maxX: W-0.8,
     speed: 0.25,

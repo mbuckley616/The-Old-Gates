@@ -7436,3 +7436,19 @@ The next two rooms of the older `buildInterior`. The inn was four one-leg box ta
 
 ### Needs eyes
 The two rooms in play. The kit's own church (Session 291) has the same columns-in-pews layout whenever a generated church comes out ten wide, its narrowest; that builder is not touched here and is worth a look in a small town's church. The keep is this builder's last box room.
+
+## v80 — Session 302 — Hearthwick's legacy keep on the shape kit (H.5, #46 A)
+The last box room of the older `buildInterior`. The keep's hall had a throne of boxes with cone spikes and ball finials, a two-box dais, columns of box and cylinder, banners of boxes with a turned box for a device, and six benches of two boxes each. It is now one bake (`_legacyKeepKit`): the kit's flagged dais 3.2 deep with a runner and the carved throne at z 1.0, two braziers before it, a runner 17 long to the door, eight columns at the old places with the kit's banners hung under them towards the aisle, and six petitioners' benches. The benches are moved to W × .3 and × .7 from × .26 and × .74, where they stood through the columns' bases.
+
+**Four things were wrong in the old room:**
+- **The six column torches were at the columns' centres,** inside the shafts. They now hang on each column's face towards the door, half a unit out.
+- **The regent stood on the dais.** He was placed at z 2.8 and paced from z .6, which kept him on a .42 dais without standing on it, sunk to the shins. He now stands at 4.2, in front of the new dais (it ends at 3.3), and paces between 3.7 and 6.
+- **The flat red rug** lay where the kit's runner now runs, and the two would have fought for the same height. The keep no longer draws it.
+- **The two guards** flank the new dais's front corners at z 3.8 (they stood at 2.7, on the old step).
+
+### Verified (headless Chromium)
+- **`legacyhalls`**, extended: the keep is one bake of 11,488 triangles inside the room and under its 5.2 ceiling. It has no cylinders left (8 before) and 63 boxes left of 124, every one of them shell: sixteen three-box windows, six beams, the door and eight torch brackets. The regent is at z 4.2 and there is no flat rug. The inn and church pass as in Session 301. The keep is the third panel of `docs/prototypes/legacyhalls-ingame.png`.
+- **`legacyshops`**, **`oddfurn`**, **`interiors`**, **`civicfurn`** and **`keep`** pass.
+
+### Needs eyes
+The keep in play: the regent's pacing past the braziers, and whether the throne reads from the door. With this session every room of the legacy builder is on the kit. The shell still isn't: its windows are box frames with a plane of glass, and its walls are flat planes, the look the generated rooms had before their own shell work.
