@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Chimney smoke — should the towns' chimneys smoke, and when? (Session 337, issue #63)
 Two in three houses in a town have a chimney (the detailed houses since Session 194), and none of them smokes; the Hearthwick quest's own journal line says "Chimney smoke ahead — a village". Since Session 330 the world keeps a wind (`windDir()`), which only the ships read. I prototyped smoke on a patched copy of the build: each detailed house records its chimney's top, and a town draws all its smoke as one Points object, two dozen soft puffs a chimney that rise, drift downwind, swell from half a unit to three and fade over ten seconds. It is tinted by the hour, and a storm lays it flat and fast. Dunmore has 33 chimneys: 792 puffs, one draw call, positions kept relative to the town's centre (the float32 rule).
 
@@ -16,8 +18,8 @@ Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backl
 4. No smoke.
 
 Recommendation: 2. A town that lights its fires for breakfast and supper looks lived in, and the rhythm costs nothing to compute. It also follows the world's wind the way the sails do.
-
-## Answered
+Michael: **B** (option 2), by the hearth's hours. (29 Sep 2026)
+Done, Session 343: each detailed house records its chimney's top, and a town's smoke is one Points object (24 puffs a chimney) that rises, drifts along `windDir()` and fades, tinted by the hour. The inn, the smithy, the armourer and the guild halls smoke at every hour; homes and the other shops in full 6–9 and 17–23, a thread (.3) 9–17 and cold 23–6; every chimney at every hour in snow and in the tundra, easing between over a few seconds. A storm shortens the puffs' life so the plume lies flat without beading. `tests/smoke.test.mjs`, `docs/prototypes/smoke-ingame.png`.
 
 ### The interiors' shells on the kit — posts and joists, or only the trim? (Session 336, issue #62)
 The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes that meet the floor and each other with a hard edge, a flat dark ceiling, square box beams, the entrance door a plain brown box, and in Aurenne's rooms square box studs. I prototyped a kit shell for the generated rooms (homes, shops, inns, halls). The walls keep their plaster, rubble or ashlar textures; the furniture, windows and layouts do not move.

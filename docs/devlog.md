@@ -7730,3 +7730,36 @@ The prototype's stone plinth stood .03 into the wall; it is now flush. Each room
 - Whether the plastered walls are too bright against the dark timber at the lantern's range, as they are in the picture. The shading darkens the edges, not the middle of the wall.
 - In galleried rooms the posts on the north half rise through the deck to the roof. They read as the frame holding the gallery up, but nobody has looked at them from upstairs.
 - Churches, keep halls and Hearthwick's rooms are still owed.
+
+## v80 — Session 343 — Chimney smoke on the world's wind (H.5, Michael's B on #63)
+Michael answered #63 with B, by the hearth's hours. Session 337's prototype patched a copy of the build. This session writes the same smoke into the game.
+
+**The chimneys.** `buildingGeoHi` now keeps its chimney's top in `userData.chimney`, in the house's local frame. When a town lays out its lots, it turns each one into a world position with the building's type (`S.chimneys`). Dunmore has 33: 23 homes, four inns, the two guild halls, the smithy, the apothecary and two general shops. Burned and abandoned shells use the low-detail builder with no chimney, so they have no smoke.
+
+**The smoke.** Once the town is baked, `smokeFor(S)` gives it one `THREE.Points` object in its group, with 24 puffs a chimney. It is placed at the town's centre and holds every puff relative to it, so no world coordinate goes through the float32 path. The material is the prototype's: one shared shader, a soft round sprite sized by distance, and the fog. `tickSmoke` runs in `WORLD.tick`, beside the weather. Each puff lives ten seconds. In that time it rises about .4 a second, drifts downwind along `windDir()` and swells from .5 to 3.3 across. It fades in, then fades out. The whole town's smoke is tinted grey by day, warm at dusk and blue-grey at night. A town more than 300 units from the player hides its smoke and does no work for it. `disposeSettlement` frees the geometry.
+
+**The hours.** `smokeWant` gives each chimney's strength:
+- The inn, the smithy, the armourer and the guild halls: 1 at every hour.
+- Homes and the other shops: 1 from 6 to 9 and from 17 to 23; a thread of .3 from 9 to 17; nothing from 23 to 6. Michael's option named mornings, evenings and a thread "between"; it did not say what happens at night. I read it as the hearth going cold, and that is the open call in Needs eyes.
+- Every chimney at every hour when it is snowing, or when the town stands in the tundra.
+
+A chimney eases towards its strength over a few seconds, so the smoke thins and returns rather than switching. A weak chimney's puffs are smaller as well as fainter.
+
+**The storm.** This fixes the prototype's own Needs eyes. In a storm the puffs drifted faster than they were made, so the plume came apart into beads. Now a storm cuts a puff's life to a third (`L/(1+2·storm)`) while it drifts 3.7 times as fast. The plume stays about as long as a calm one (6.9 against 7.5) and lies lower (a rise of 2.3 against 3.2), and in the picture it is one continuous streak.
+
+### Verified (headless Chromium)
+- **`smoke`**, new.
+  - Dunmore's 33 chimneys all sit 3–12 above the ground, each inside its own lot. The town's smoke is one Points object in the town's group: 792 puffs, placed at the centre. Six towns were loaded, and each has its own smoke.
+  - The rule's values are exact: a home gives 1 at 7 and 19, .3 at 13 and 0 at 2. The inn, the smithy and a guild hall give 1 at 2. A home in snow gives 1 at 2.
+  - The same, live, after 15 seconds of ticks. The homes' mean alpha is .323 at 7, .097 at 13 and 0 at 2, and .324 at 2 in snow. The trades still smoke at 2 (.226).
+  - The mean drift lies along the wind (dot 1.00). When the wind turns from 2.79 to 1.65 rad, the smoke turns with it (dot 1.00).
+  - A storm: rise 2.25 against 3.15, length 6.89 against 7.47.
+  - Past 300 units the smoke is hidden, and it shows again on return.
+  - The picture is `docs/prototypes/smoke-ingame.png`. It shows the town from the hill at noon (homes a thread), at breakfast, at dusk and at 2 a.m. (only the trades), then close by a house, calm and in a storm.
+- **`houses`**, **`houseao`**, **`sailtrim`**, **`weather`**, **`townroads`**, **`lod`**, **`saves`** and **`towngate`** pass.
+
+### Needs eyes
+- Whether homes should keep a banked thread through the night rather than go cold. That is one number in `smokeWant`.
+- The fill cost of overlapping transparent sprites on a real GPU close to a busy inn, which is not measurable on software GL.
+- Hearthwick (the legacy cell) and the forts' barracks build their houses by other routes, so they have no smoke yet.
+- The tint changes in steps at 5.5, 7, 17.5 and 20.5, not smoothly with the sky.
