@@ -7262,3 +7262,17 @@ What the room does is unchanged. The bed is registered where it was, the table i
 
 ### Needs eyes
 The room in play: the hearth's glow on the new stone, whether the rug and the chest crowd the walk to the bed, and the Mark's and Aurenne's homes (only the Gatelands' was pictured). The inn is next.
+
+## v80 — Session 287 — The inn's taproom on the shape kit (H.5 props, Michael's A on #46)
+The second room of the concept artist's prototype. In `buildInteriorFor` the inn's boxes are gone: the bar of two boxes, the three shelves of cylinders, the hearth of four boxes, and the four tables with their benches and cups. `furnKit().inn` stands in their places. It builds a panelled bar with a brass foot rail, tankards and a jug, three stools in front of it, and the dresser of bottles, jugs and standing plates against the wall behind. There are two casks on cradles with taps, the big stone hearth on the east wall, and the four tables with benches, cups and candles. The wood comes from the nation at the door, and it bakes to one mesh and the flames as the home does.
+
+What the room does is unchanged. The bar's, tables' and benches' footholds are the old ones at the old places. The hearth is now solid (it was walk-through). The innkeeper, the beds, the private rooms, the coaching board and the tack are untouched. I asked the prototype for no beds (its `gallery` flag), because the inn's beds are `_intBed`'s, registered as rooms, and shared with homes, shops and halls. They are the next piece, done once for every room.
+
+A correction to Session 286: in a two-storey house the hearth's chimney breast stopped at the gallery's floor. In the inn the deck covers only part of the hearth, so the breast ended in mid-air. Both rooms now run it to the ceiling, through the deck as a chimney would.
+
+### Verified (headless Chromium)
+- **`homefurn`**, extended: Dunmore's inn (13 by 12, two storeys) has one furniture group of two meshes, 27,328 triangles, and draws 110 meshes in all. The bar is a foothold at .71, all four tables a foothold at .47 with both benches at .27, the hearth solid, and the four beds registered. The home's checks pass as before. The pictures are `docs/prototypes/innfurn-ingame.png` (two views of the taproom, the prototype's) and the home's again.
+- **`interiors`** (renting a room, the doors) passes.
+
+### Needs eyes
+The taproom by its own firelight, whether the stools crowd the bar's front, and whether the dresser reads under the gallery's shadow.

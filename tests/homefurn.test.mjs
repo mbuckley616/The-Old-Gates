@@ -1,4 +1,4 @@
-// A home's furniture on the shape kit (Session 286, H.5 props, Michael's A on the concept artist's prototype #46): the bed,
+// A home's and an inn's furniture on the shape kit (Sessions 286–287, H.5 props, Michael's A on the concept artist's prototype #46): the bed,
 // the stone hearth, a table and chairs with a candle, a chest, shelves and a rug, one baked mesh and the flames, by the
 // nation's wood; the bed, the table's and the hearth's solids, and the strongbox where they were.
 import { boot, check } from './lib/game.mjs';
@@ -28,5 +28,23 @@ const shot = await page.evaluate(() => { const sc = interiorScene, W = _H.intW, 
   return c.toDataURL(); });
 fs.mkdirSync('tests/out', { recursive: true });
 fs.writeFileSync('tests/out/homefurn.png', Buffer.from(shot.split(',')[1], 'base64'));
+// the inn's taproom (Session 287): the bar, dresser, casks, hearth, tables and benches on the kit; the beds, the bar's,
+// tables' and benches' footholds and the hearth's solid as before
+await page.evaluate(() => { try { exitInterior(); } catch (e) {} });
+await page.waitForTimeout(2500); await g.hide();
+await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'inn'); window._I = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
+await page.waitForTimeout(5000); await g.hide();
+const inn = await page.evaluate(() => { const sc = interiorScene, W = _I.intW, D = _I.intD, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
+  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);
+  const T = [[3.4, D * .42], [3.4, D * .66], [W - 3.4, D * .7], [W / 2, D * .6]];
+  return { W, D, two: !!_I.two, furn: furn.length, parts: furn[0] ? furn[0].children.length : 0, tris: furn[0] ? furn[0].userData.tris : 0, meshes, beds: INT_BEDS.length, bar: fh(W / 2, 2.2, .65, .75), hearth: intSolidAt(W - .3, D * .5, .1), tables: T.filter(([x, z]) => fh(x, z, .4, .5) && fh(x, z + .9, .2, .3) && fh(x, z - .9, .2, .3)).length }; });
+console.log(JSON.stringify(inn));
+check('the inn has one baked furniture group, the wood and stone and the flames, 15–40k triangles', inn.furn === 1 && inn.parts === 2 && inn.tris > 15000 && inn.tris < 40000, inn);
+check('the bar and the four tables with their benches are footholds as before, the hearth solid, the beds all there', inn.bar && inn.tables === 4 && inn.hearth && inn.beds >= 1, inn);
+const shot2 = await page.evaluate(() => { const sc = interiorScene, W = _I.intW, D = _I.intD, cv = REN.domElement, CW = cv.width, CH = cv.height, cam = new THREE.PerspectiveCamera(58, CW / CH, .05, 80);
+  const c = document.createElement('canvas'); c.width = CW; c.height = CH / 2; const x = c.getContext('2d');
+  [[W * .8, 1.6, D - .8, W * .42, .45, D * .28], [W * .32, 1.3, D * .84, W - .5, .7, D * .48]].forEach((v, i) => { cam.position.set(v[0], v[1], v[2]); cam.lookAt(v[3], v[4], v[5]); sc.updateMatrixWorld(true); REN.render(sc, cam); x.drawImage(cv, 0, 0, CW, CH, i * CW / 2, 0, CW / 2, CH / 2); });
+  return c.toDataURL(); });
+fs.writeFileSync('tests/out/innfurn.png', Buffer.from(shot2.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
