@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
 Sessions 320–323 wired up every buff and attribute line whose text said what it does. Four lines are left, because the game has no rule for them to plug into:
 1. *Fortune: +2% crit chance a point.* No hit in the game can crit by chance. The only crit is the bonus for striking a staggered foe.
@@ -18,8 +20,7 @@ Sessions 320–323 wired up every buff and attribute line whose text said what i
 A keeps the card honest and gives Fortune and Charisma something to feel. Every number in A is a proposal.
 
 Michael: **A — build all four** (29 Sep 2026, issue #58; written on auto/producer). Systems builder: Fortune's crit and Caor Dubh's risk built in Session 328 at the numbers above, Ashwort's dungeon pulse in Session 329; Charisma's extra item is next, then this moves to Answered and #58 closes.
-
-## Answered
+All four built: Charisma's extra item in Session 333 (moved here, #58 closed).
 
 ### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
 Opening the lockpick pauses the game, as the inventory does (Session 142), so the watch stands still while you work and whether you are seen is decided once, when the lock gives. A pick costs no world time, however long it takes you. The critic found night burglary nearly free (Portclare 5 doors, Dunmore 7, seen 0 times) and put it down to headless picks being instant. In real play they are instant too, as far as the guards can tell.

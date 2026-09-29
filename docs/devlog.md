@@ -8365,3 +8365,19 @@ New `tests/ashwort.test.mjs`, 3 checks, passing, no page errors. A goblin dungeo
 
 ### Needs eyes
 Whether 5 s is enough to read the minimap in a fight, and whether pulsed foes should show in a paler red than seen ones.
+
+## v80 — Session 333 — Charisma's merchant access
+The last of #58's four (Michael's A). The Charisma card has promised *merchant access* since v61au, and `renderShop` filters its stock by an item's `chaReq`, but no item ever carried one, so nothing was held back and nothing was opened. The rule Michael took: at 5 points each merchant shows one extra item from the next tier up.
+
+**What changed.** `_chaExtraItem(stock, cha)` sits above `renderShop` and adds its one piece to the list after the `chaReq` filter, at Charisma 5 or more (`CHA_MERCHANT_PTS`). For a shop that sells equipment it takes the best piece on the shelf, which is the first of the highest tier, not a torch, not enchanted. It makes the same kind one material up with `makeItem`: Dunmore's smith's Iron Sword gives a Steel Sword, the armourer's Iron Cuirass a Steel Cuirass, Ironhaven's armory's Steel Longsword a Mithril one. For an apothecary it takes the first tonic of the best strength and offers its line one strength up (Mild Regeneration gives Strong). Inns, food and oddments carry nothing tiered and get nothing. Nothing is offered past Cosmic or past Master, nor a piece the shelf already has. The piece is priced, bought and gated like any other: `shopCost` at the town's rate, and the red *locked* row if your Might or Fortitude is short of the material. The attribute is read as `ATTRS.charisma`, as the `chaReq` filter already did.
+
+### Verified (headless Chromium)
+New `tests/chamerchant.test.mjs`, 6 checks, passing, no page errors. Dunmore at 13h, inside the shop:
+- The smith at Charisma 4 lists 6 rows; at 5, 7. The seventh is a Steel Sword (tier 4) over a best of Iron (3). Bought from the row for 66, the price `shopCost` gives, and one lands in the bag.
+- The apothecary at 4 lists 9 rows; at 5, 10. The tenth is *Elixir of Regeneration (Strong)* over a best of Mild, bought for 87.
+- Charisma 4 at the smith's table gives nothing. So does an inn at 10, a Cosmic sword and a Master Warding.
+- `SHOP_STOCK.armor` gives a Steel Cuirass; Ironhaven's weapon table gives a Mithril Longsword (tier 5).
+- `prices`, `lockpicks` and `attrpromise` pass.
+
+### Needs eyes
+Whether one extra piece at 5 is felt at all, or wants a mark on the row saying why it's there (a line of text, so a question for Michael). Whether a Steel Sword in Dunmore at the price of 66 is too early for a Might 10 requirement. Charisma 5 is two level-ups for a bard.
