@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s281</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s282</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21975,7 +21975,51 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
-  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
+  // ── S331 — the windows (Michael's 2 on #53, by the room): local, the wall at z=0 and the room towards +z, the opening
+  // w by h centred on the origin; the painted view stays on the wall behind the frame ──
+  const wrb = (w, h, d, r) => SK.rbox(w, h, d, r == null ? Math.min(.012, w / 3, h / 3, d / 3) : r, 1);
+  // diamond leading over one light: the lines x±y=c clipped to the light's rectangle
+  function diamonds(p, x0, x1, y0, y1, step, col, z) {
+    for (const s of [1, -1]) for (let c = -3; c <= 3; c += step) { const pts = [];
+      for (const x of [x0, x1]) { const y = s * x + c; if (y >= y0 - 1e-6 && y <= y1 + 1e-6) pts.push([x, y]); }
+      for (const y of [y0, y1]) { const x = s * (y - c); if (x >= x0 - 1e-6 && x <= x1 + 1e-6) pts.push([x, y]); }
+      if (pts.length < 2) continue; const [a, b] = pts; const L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < .02) continue;
+      p(wrb(.008, L, .008, .003), col, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z, 0, 0, -Math.atan2(b[0] - a[0], b[1] - a[1])); } }
+  // A — a leaded casement in a plastered reveal: splayed jambs and head, a stone sill, a frame with a mullion and a transom
+  function winLead(w, h, n, seed) { const r = rng(seed || 3), p = Parts(), W = WOOD[n] || WOOD.gatelands, P = 0xd8ccb4, O = W.dark, L = 0x3a3a3c, S = 0xa89c88;
+    for (const sx of [-1, 1]) p(wrb(.14, h + .2, .16), jit(P, r, .03), sx * (w / 2 + .07), 0, .08, 0, sx * .18, 0);
+    p(wrb(w + .36, .14, .16), jit(P, r, .03), 0, h / 2 + .07, .08, -.12, 0, 0);
+    p(wrb(w + .44, .07, .26), jit(S, r, .05), 0, -h / 2 - .035, .12);
+    p(wrb(w + .06, .05, .06), O, 0, h / 2, .03); p(wrb(w + .06, .05, .06), O, 0, -h / 2 + .01, .03);
+    for (const x of [-w / 2, 0, w / 2]) p(wrb(.05, h, .06), O, x, 0, .03);
+    const ty = h * .22; p(wrb(w, .04, .05), O, 0, ty, .03);
+    for (const [x0, x1] of [[-w / 2 + .025, -.025], [.025, w / 2 - .025]]) { diamonds(p, x0, x1, -h / 2 + .035, ty - .02, .16, L, .02); diamonds(p, x0, x1, ty + .02, h / 2 - .025, .16, L, .02); }
+    return p; }
+  // B — a timber window with plank shutters folded back on strap hinges: a lintel beam, glazing bars, a plank sill
+  function winShutter(w, h, n, seed) { const r = rng(seed || 5), p = Parts(), W = WOOD[n] || WOOD.gatelands, O = W.wood, D = W.dark, SH = W.paint || W.wood, I = IRON;
+    p(wrb(w + .5, .16, .18), jit(D, r), 0, h / 2 + .08, .09);
+    p(wrb(w + .3, .06, .22), jit(O, r), 0, -h / 2 - .03, .11);
+    for (const sx of [-1, 1]) p(wrb(.1, h, .12), jit(O, r), sx * (w / 2 + .05), 0, .06);
+    p(wrb(.035, h, .04), D, 0, 0, .03); p(wrb(w, .035, .04), D, 0, 0, .03);
+    for (const sx of [-1, 1]) { const cx = sx * (w / 2 + .1 + w / 4);
+      for (let k = 0; k < 3; k++) p(wrb(w / 6 - .008, h - .02, .03), jit(SH, r, .08), cx + (k - 1) * w / 6, 0, .03);
+      for (const y of [-h * .3, h * .3]) { p(wrb(w / 2, .06, .025), jit(D, r), cx, y, .055); p(wrb(w / 2 * .7, .025, .012), I, cx - sx * w * .08, y, .07); p(SK.ball(.012, 5, 4), I, cx - sx * (w / 4 + .02), y, .07); } }
+    return p; }
+  // C — a round-headed stone window for a church or a keep's hall: coursed jambs of long and short blocks, nine voussoirs,
+  // a moulded sill, square lead quarries
+  function winArch(w, h, seed) { const r = rng(seed || 7), p = Parts(), S = 0xb0a894, L = 0x3a3a3c, R = w / 2, hs = h - R;
+    for (const sx of [-1, 1]) for (let k = 0, y = -h / 2; k < 5; k++) { const bh = hs / 5, bw = k % 2 ? .16 : .24; p(wrb(bw, bh - .015, .2), jit(S, r, .07), sx * (R + bw / 2), y + bh / 2, .1); y += bh; }
+    const cy = -h / 2 + hs; for (let i = 0; i < 9; i++) { const a = Math.PI * (i + .5) / 9, rr = R + .1; p(wrb(.2, R * Math.PI / 9 - .015, .2), jit(S, r, .07), -Math.cos(a) * rr, cy + Math.sin(a) * rr, .1, 0, 0, a - Math.PI / 2); }
+    p(wrb(w + .4, .08, .28), jit(S, r, .04), 0, -h / 2 - .04, .13);
+    for (let x = -R + w / 4; x < R - .01; x += w / 4) { const top = cy + Math.sqrt(Math.max(0, R * R - x * x)); p(wrb(.01, top + h / 2, .01, .003), L, x, (top - h / 2) / 2, .02); }
+    for (let y = -h / 2 + h / 7; y < cy + R - .02; y += h / 7) { const half = y <= cy ? R : Math.sqrt(Math.max(0, R * R - (y - cy) ** 2)); if (half > .03) p(wrb(half * 2, .01, .01, .003), L, 0, y, .02); }
+    return p; }
+  // the frame a room takes: C for the tall windows of churches and keep halls, A for the trades, inns, guilds and chapels,
+  // B for homes, cabins and the poorer rooms
+  const WIN_LEAD = { inn: 1, weapon: 1, armor: 1, potion: 1, misc: 1, shipwright: 1, guild_f: 1, guild_m: 1, chapel: 1, church: 1, castle: 1 };
+  function winKind(type, tall) { return tall && (type === 'church' || type === 'castle') ? 'C' : WIN_LEAD[type] ? 'A' : 'B'; }
+  function windowFrame(kind, w, h, n, seed) { return kind === 'C' ? winArch(w, h, seed) : kind === 'A' ? winLead(w, h, n, seed) : winShutter(w, h, n, seed); }
+  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
 }
 
 let _FURN = null;
@@ -24436,25 +24480,6 @@ function _intTorch(sc,x,z,W,D){
   const fcore=new THREE.Mesh(new THREE.SphereGeometry(.05,5,5),new THREE.MeshBasicMaterial({color:0xffcc44}));
   fcore.position.set(x,1.72,z);sc.add(fcore);
 }
-function _intWindow(sc,x,y,z,ry){
-  // Frame
-  const fr=new THREE.Mesh(new THREE.BoxGeometry(.9,.9,.06),new THREE.MeshLambertMaterial({color:0x5a3a10}));
-  fr.position.set(x,y,z);fr.rotation.y=ry;sc.add(fr);
-  // Glass
-  const gl=new THREE.Mesh(new THREE.PlaneGeometry(.7,.7),new THREE.MeshLambertMaterial({color:0x8ec8e8,transparent:true,opacity:.55,side:THREE.DoubleSide}));
-  gl.position.set(x,y,z+(ry===0?.03:ry===Math.PI?-.03:0));
-  gl.position.x+=ry===Math.PI/2?.03:ry===-Math.PI/2?-.03:0;
-  gl.rotation.y=ry;sc.add(gl);
-  // Cross bars
-  [[.35,0],[0,.35]].forEach(([bx,bz])=>{
-    const bar=new THREE.Mesh(new THREE.BoxGeometry(bx>.1?.06:.7,bz>.1?.7:.06,.07),new THREE.MeshLambertMaterial({color:0x4a2808}));
-    bar.position.set(x,y,z);bar.rotation.y=ry;sc.add(bar);
-  });
-  // Interior light bloom
-  const wl=new THREE.PointLight(0xc8e8ff,.6,3);wl.position.set(x,y,z+(ry===0?.5:ry===Math.PI?-.5:0));
-  wl.position.x+=ry===Math.PI/2?.5:ry===-Math.PI/2?-.5:0;
-  sc.add(wl);
-}
 function _intShelf(sc,x,y,z,len,items,itemCols){
   _intBox(sc,x,y,z,len,.07,.2,0x7a4818);
   for(let i=0;i<items;i++){
@@ -24737,14 +24762,19 @@ function buildInterior(house){
   eDisc.rotation.x=-Math.PI/2;eDisc.position.set(W/2,.02,D-.7);interiorScene.add(eDisc);
 
   // Windows — side walls
-  const winHeights=type==='church'?[ceilH*.55,ceilH*.82]:type==='castle'?[ceilH*.55,ceilH*.80]:[ceilH*.55];
+  // S331 (Michael's 2 on #53) — kit frames by the room, one bake: the trades and the inn leaded (A); a church or a keep's hall
+  // leaded below and round-headed stone (C) above, the rows eased apart so the frames clear each other. The pane behind is
+  // the painted view of Hearthwick (a village), or a church's lit glass
+  const winHeights=type==='church'?[ceilH*.45,ceilH*.78]:type==='castle'?[ceilH*.55,ceilH*.82]:[ceilH*.55];
   const winPositions=type==='church'?[D*.25,D*.5,D*.75]:type==='castle'?[D*.2,D*.38,D*.56,D*.74]:[D*.35,D*.65];
-  winPositions.forEach(wz=>{
-    winHeights.forEach(wy=>{
-      _intWindow(interiorScene,0,wy,wz,Math.PI/2);   // west wall
-      _intWindow(interiorScene,W,wy,wz,-Math.PI/2);  // east wall
-    });
-  });
+  {const K=furnKit(),WP=K.Parts();let wi=0;
+    winPositions.forEach(wz=>winHeights.forEach((wy,row)=>{const kind=K.winKind(type,row===1),w=type==='church'?.8:.9,h=kind!=='C'?(type==='church'?.8:.95):type==='church'?1.1:1.4;
+      for(const x of [0,W]){const west=x<1,R=w/2;let geo;if(kind==='C'){const sh=new THREE.Shape();sh.moveTo(-R,-h/2);sh.lineTo(R,-h/2);sh.lineTo(R,h/2-R);sh.absarc(0,h/2-R,R,0,Math.PI,false);sh.lineTo(-R,-h/2);geo=new THREE.ShapeGeometry(sh,12);}else geo=new THREE.PlaneGeometry(w,h);
+        const mat=type==='church'||kind==='C'?new THREE.MeshBasicMaterial({color:type==='church'?0xc8b070:0xa8b8c8}):new THREE.MeshBasicMaterial({map:WORLD.windowView(1,'gatelands')});
+        const pane=new THREE.Mesh(geo,mat);pane.position.set(west?.006:W-.006,wy,wz);pane.rotation.y=west?Math.PI/2:-Math.PI/2;interiorScene.add(pane);
+        {const wl=new THREE.PointLight(0xc8e8ff,.6,3);wl.position.set(west?.5:W-.5,wy,wz);interiorScene.add(wl);}
+        WP.put(K.windowFrame(kind,w,h,'gatelands',300+wi++),x,wz,west?Math.PI/2:-Math.PI/2,wy);}}));
+    const G=K.bake(WP);G.userData.legacyFurn=true;G.userData.windows=true;interiorScene.add(G);}
 
   // ── TYPE-SPECIFIC PROPS ──────────────────────────────────────────────
 
@@ -38608,8 +38638,15 @@ var WORLD=(()=>{
     if(st==='french'){for(let x=1.4;x<W-1;x+=1.6){boxRaw(x,H/2,.06,.14,H,.12,beamC);boxRaw(x,H/2,D-.06,.14,H,.12,beamC);}for(let z=1.4;z<D-1;z+=1.6){boxRaw(.06,H/2,z,.12,H,.14,beamC);boxRaw(W-.06,H/2,z,.12,H,.14,beamC);}}
     const nb=Math.max(2,Math.round(D/3));for(let i=1;i<=nb;i++)boxRaw(W/2,H-.1,D*i/(nb+1),W,.16,.22,beamC);
     // windows: lit panes on both long walls
-    const winY=Math.min(H-.6,1.35);
-    for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3)){[.03,W-.03].forEach(x=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,.95),windowMat(type));p.position.set(x,winY,z);p.rotation.y=x<1?Math.PI/2:-Math.PI/2;sc_.add(p);light(x<1?.6:W-.6,winY,z,0xc8d0e0,.35,5);});}
+    // S331 (Michael's 2 on #53) — each pane set back on the wall behind a kit frame chosen by the room (winKind); one bake a room
+    const winY=Math.min(H-.6,1.35);const WK=furnKit(),WP=WK.Parts(),wKind=WK.winKind(type,false);let wi=0;
+    for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3)){[.03,W-.03].forEach(x=>{const west=x<1;const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,.95),windowMat(type,house));p.position.set(west?.006:W-.006,winY,z);p.rotation.y=west?Math.PI/2:-Math.PI/2;sc_.add(p);
+      WP.put(WK.windowFrame(wKind,.9,.95,FN,FSEED+wi++),west?0:W,z,west?Math.PI/2:-Math.PI/2,winY);light(west?.6:W-.6,winY,z,0xc8d0e0,.35,5);});}
+    {const G=WK.bake(WP);G.userData.windows=wKind;sc_.add(G);}
+    // the tall windows of a church or a keep's hall: a round-headed pane of lit glass in a stone frame (C), one bake for the lot
+    const tallWins=(zs,y,w,h,col)=>{const T=WK.Parts();zs.forEach((z,k)=>[0,W].forEach(x=>{const west=x<1,R=w/2,sh=new THREE.Shape();sh.moveTo(-R,-h/2);sh.lineTo(R,-h/2);sh.lineTo(R,h/2-R);sh.absarc(0,h/2-R,R,0,Math.PI,false);sh.lineTo(-R,-h/2);
+      const g=new THREE.Mesh(new THREE.ShapeGeometry(sh,12),new THREE.MeshBasicMaterial({color:col}));g.position.set(west?.006:W-.006,y,z);g.rotation.y=west?Math.PI/2:-Math.PI/2;sc_.add(g);
+      T.put(WK.windowFrame('C',w,h,FN,FSEED+50+k*2+(west?0:1)),x,z,west?Math.PI/2:-Math.PI/2,y);}));const G=WK.bake(T);G.userData.windows='C';sc_.add(G);};
     sc_.add(new THREE.AmbientLight(0xffb070,type==='church'?.32:type==='castle'?.3:.45));
     const lan=new THREE.PointLight(0xffaa44,2.2,Math.max(W,D)*1.3);lan.position.set(W/2,H-.4,D/2);sc_.add(lan);const lc=new THREE.Mesh(new THREE.SphereGeometry(.06,5,5),new THREE.MeshBasicMaterial({color:0xffdd88}));lc.position.copy(lan.position);sc_.add(lc);
     // door on the south wall + the engine's exit disc
@@ -38706,7 +38743,7 @@ var WORLD=(()=>{
       // book, pews with shaped ends and kneelers, an eight-sided pulpit with steps, columns with bases and capitals; one bake
       {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
-      for(let z=3;z<D-2;z+=Math.max(3,D/4)){[.04,W-.04].forEach(x=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,2.6),new THREE.MeshBasicMaterial({color:0xc89050}));p.position.set(x,3.4,z);p.rotation.y=x<1?Math.PI/2:-Math.PI/2;sc_.add(p);});}
+      {const zs=[];for(let z=3;z<D-2;z+=Math.max(3,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);}
       for(const x of [W/2-4.1,W/2+4.1])for(let z=5.5;z<D-3;z+=4)solid(x,z,.4,.4,H/F); // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){
@@ -38717,7 +38754,7 @@ var WORLD=(()=>{
       for(let z=6;z<D-3;z+=4)[W/2-5,W/2+5].forEach(x=>solid(x,z,.5,.5,H/F));
       [W/2-3,W/2+3].forEach(x=>{light(x,1.4,5.2,0xff6a20,1.3,8);solid(x,5.2,.3,.3,1.1);});
       {const z=D*.3;solid(W/2,z,4,.8,.76);[-1,1].forEach(sd=>solid(W/2,z+sd*1.2,3.9,.2,.44));}
-      for(let z=4;z<D-3;z+=Math.max(4,D/5)){[.04,W-.04].forEach(x=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(1.0,2.4),new THREE.MeshBasicMaterial({color:0xa8b8c8}));p.position.set(x,4.2,z);p.rotation.y=x<1?Math.PI/2:-Math.PI/2;sc_.add(p);});}
+      {const zs=[];for(let z=4;z<D-3;z+=Math.max(4,D/5))zs.push(z);tallWins(zs,4.2,1.0,2.4,0xa8b8c8);}
       npc={x:W/2,z:4.6,maxZ:6.5,paused:false};
     } else if(type==='guild_f'||type==='guild_m'){
       const F_=type==='guild_f';
@@ -40279,10 +40316,17 @@ var WORLD=(()=>{
     if(h.type==='cellar'||h.type==='chapel'){const p=h.parent;goToInterior(p);setTimeout(()=>{if(currentHouse===p&&p._hatch){px=p._hatch.x;pz=p._hatch.z+.9;jumpY=0;}},900);return true;}
     const c=cellarFor(h);goToInterior(c);return true;}
   // ── painted windows ──
+  // S331 (Michael, on #53: "more medieval, and it should reflect the type of town") — the view through a window is drawn by
+  // the time of day, the town's prosperity and its nation: a poor place shows fields, trees and perhaps a cottage; a middling
+  // one a few gabled houses round a church tower; a rich one its curtain wall with towers and the roofs and spires inside.
+  // No mullions are painted: the kit frame in front of the pane carries them. One texture per (time, tier, nation), cached.
   const WINTEX={};
-  function windowTexture(){
+  function winTier(p){return p==null?0:p<35?0:p<60?1:2;}
+  function windowTexture(tier,nation){
     const h=hourNow();const key=h<5.5?'night':h<7.5?'dawn':h<17.5?'day':h<19.5?'dusk':'night';
-    if(WINTEX[key])return WINTEX[key];
+    tier=tier==null?1:tier;nation=nation||'gatelands';const ck=key+'|'+tier+'|'+nation;
+    if(WINTEX[ck])return WINTEX[ck];
+    let sd=(tier*7919+nation.length*104729+key.length*31)>>>0;const R=()=>{sd=(sd*16807)%2147483647||1;return sd/2147483647;};
     const cv=document.createElement('canvas');cv.width=256;cv.height=256;const ctx=cv.getContext('2d');
     const sky=ctx.createLinearGradient(0,0,0,256);
     if(key==='day'){sky.addColorStop(0,'#8fbce0');sky.addColorStop(1,'#d9e6ee');}
@@ -40290,18 +40334,61 @@ var WORLD=(()=>{
     else if(key==='dawn'){sky.addColorStop(0,'#5a6a9a');sky.addColorStop(.7,'#e8b890');sky.addColorStop(1,'#f8dcb0');}
     else{sky.addColorStop(0,'#0a0e22');sky.addColorStop(1,'#1c2242');}
     ctx.fillStyle=sky;ctx.fillRect(0,0,256,256);
-    if(key==='night'){ctx.fillStyle='#e8e8ff';for(let i=0;i<60;i++)ctx.fillRect(Math.random()*256,Math.random()*150,1.2,1.2);ctx.fillStyle='#f4f0d8';ctx.beginPath();ctx.arc(190,52,16,0,Math.PI*2);ctx.fill();}
-    if(key==='day'){ctx.fillStyle='rgba(255,255,255,.7)';[[40,50,30],[120,36,40],[200,60,26]].forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.arc(x+r*.8,y-r*.3,r*.7,0,Math.PI*2);ctx.arc(x-r*.7,y+r*.1,r*.6,0,Math.PI*2);ctx.fill();});}
-    // rooftops
-    const roof=key==='day'?'#6a6470':key==='dawn'?'#4a4256':'#1a1622';ctx.fillStyle=roof;
-    let x=0;while(x<256){const w=30+Math.random()*40,hgt=60+Math.random()*70;ctx.beginPath();ctx.moveTo(x,256);ctx.lineTo(x,256-hgt);ctx.lineTo(x+w/2,256-hgt-w*.45);ctx.lineTo(x+w,256-hgt);ctx.lineTo(x+w,256);ctx.closePath();ctx.fill();
-      if(key!=='day'){ctx.fillStyle='#ffc860';if(Math.random()<.7)ctx.fillRect(x+w*.3,256-hgt+20,8,10);ctx.fillStyle=roof;}x+=w+2;}
-    ctx.fillStyle=key==='day'?'#5a5464':'#120e18';ctx.fillRect(0,236,256,20);
-    // mullions
-    ctx.strokeStyle='rgba(40,30,20,.9)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(128,0);ctx.lineTo(128,256);ctx.moveTo(0,128);ctx.lineTo(256,128);ctx.stroke();ctx.lineWidth=10;ctx.strokeRect(0,0,256,256);
-    const tex=new THREE.CanvasTexture(cv);WINTEX[key]=tex;return tex;
+    if(key==='night'){ctx.fillStyle='#e8e8ff';for(let i=0;i<60;i++)ctx.fillRect(R()*256,R()*120,1.2,1.2);ctx.fillStyle='#f4f0d8';ctx.beginPath();ctx.arc(190,46,14,0,Math.PI*2);ctx.fill();}
+    if(key==='day'){ctx.fillStyle='rgba(255,255,255,.7)';[[40,44,24],[130,30,30],[210,54,20]].forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.arc(x+r*.8,y-r*.3,r*.7,0,Math.PI*2);ctx.arc(x-r*.7,y+r*.1,r*.6,0,Math.PI*2);ctx.fill();});}
+    // everything on the ground is drawn in day colours and pulled towards the light of the hour
+    const TINT={day:[0,[0,0,0]],dawn:[.35,[110,90,120]],dusk:[.5,[70,40,60]],night:[.82,[12,14,30]]}[key];
+    const col=hex=>{const c=parseInt(hex.slice(1),16),k=TINT[0],t=TINT[1];const m=(v,i)=>Math.round(v*(1-k)+t[i]*k);return `rgb(${m(c>>16,0)},${m((c>>8)&255,1)},${m(c&255,2)})`;};
+    const lit=key!=='day';const glow=()=>lit?'#ffc860':col('#2a2622');
+    const poly=(pts,fill)=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts.slice(1))ctx.lineTo(q[0],q[1]);ctx.closePath();ctx.fill();};
+    // hills: a far blue ridge and a nearer green one
+    const hill=(y0,amp,c,ph)=>{ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,256);for(let x=0;x<=256;x+=8)ctx.lineTo(x,y0-amp*Math.sin(x*.021+ph)-amp*.5*Math.sin(x*.047+ph*2));ctx.lineTo(256,256);ctx.closePath();ctx.fill();};
+    hill(150,12,col('#7c93a0'),R()*6);hill(176,9,col('#6f8a58'),R()*6);
+    // the roofs by nation: thatch and slate in the Gatelands, dark shingle in the Mark, terracotta in Aurenne
+    const ROOFS={gatelands:['#8a7448','#5a5e66','#7a6a44'],mark:['#4a3a2e','#3e3a36','#5a4838'],aurenne:['#a8583a','#b86a44','#9a4e34']}[nation]||['#8a7448','#5a5e66','#7a6a44'];
+    const WALLS={gatelands:['#d8ccb0','#cabb98'],mark:['#8a6a4a','#7a5c40'],aurenne:['#e0cfa8','#d4b890']}[nation]||['#d8ccb0','#cabb98'];
+    const tree=(x,y,r,dark)=>{ctx.fillStyle=col('#4a3622');ctx.fillRect(x-1.5,y-r*.4,3,r*.6);ctx.fillStyle=col(dark?'#3e5a2e':'#557038');ctx.beginPath();ctx.arc(x,y-r,r,0,Math.PI*2);ctx.arc(x-r*.6,y-r*.6,r*.7,0,Math.PI*2);ctx.arc(x+r*.6,y-r*.65,r*.7,0,Math.PI*2);ctx.fill();};
+    const pine=(x,y,hh)=>{ctx.fillStyle=col('#34502e');ctx.beginPath();ctx.moveTo(x,y-hh);ctx.lineTo(x+hh*.28,y);ctx.lineTo(x-hh*.28,y);ctx.closePath();ctx.fill();};
+    // a house: a wall with a door and a window, a steep gable roof, a chimney
+    const house=(x,y,w,hh,k)=>{const wall=col(WALLS[k%2]),roof=col(ROOFS[k%3]);ctx.fillStyle=wall;ctx.fillRect(x,y-hh,w,hh);
+      poly([[x-3,y-hh],[x+w/2,y-hh-w*.62],[x+w+3,y-hh]],roof);ctx.fillStyle=col('#3a2a1c');ctx.fillRect(x+w*.62,y-hh-w*.46,4,10);
+      ctx.fillStyle=glow();ctx.fillRect(x+w*.2,y-hh*.7,5,6);ctx.fillStyle=col('#4a3020');ctx.fillRect(x+w*.55,y-hh*.55,6,hh*.55);};
+    const tower=(x,y,w,hh,spire)=>{ctx.fillStyle=col('#a89c88');ctx.fillRect(x,y-hh,w,hh);if(spire)poly([[x-2,y-hh],[x+w/2,y-hh-w*2.2],[x+w+2,y-hh]],col(ROOFS[1]));
+      else{ctx.fillStyle=col('#a89c88');for(let k=0;k<w;k+=6)ctx.fillRect(x+k,y-hh-5,3.5,5);}ctx.fillStyle=lit?'#e0a850':col('#2a2622');ctx.fillRect(x+w/2-1.5,y-hh*.75,3,7);};
+    const ground=196;
+    if(tier===0){
+      // fields in strips, a hedge, trees, and a cottage one time in two
+      [['#8a9a50',ground-4],['#a89a58',ground+10],['#7a8a48',ground+26]].forEach(([c,y])=>poly([[0,y],[256,y-6],[256,256],[0,256]],col(c)));
+      ctx.fillStyle=col('#3e5a2e');for(let x=0;x<256;x+=5)ctx.fillRect(x,ground-6-2*Math.sin(x*.3),6,6);
+      if(R()<.5)house(150+R()*40,ground-2,38,20,0);
+      tree(30,ground+30,16,false);tree(78,ground-2,12,true);pine(118,ground-2,34);tree(222,ground+34,18,true);pine(240,ground,30);if(R()<.6)tree(190,ground-4,10,false);
+    }else if(tier===1){
+      // a village: gabled houses round a church tower, trees between
+      tower(118,ground-8,18,54,true);
+      let x=-6;const back=[];while(x<256){const w=30+R()*16;back.push([x,w]);x+=w+6+R()*10;}
+      back.forEach(([bx,w],k)=>{if(bx+w>112&&bx<140)return;house(bx,ground-6,w,20+R()*8,k);});
+      tree(20,ground+16,14,true);tree(236,ground+18,15,false);
+      ctx.fillStyle=col('#7a8a48');ctx.fillRect(0,ground-2,256,60);
+      for(let k=0;k<3;k++)house(10+k*86+R()*20,ground+18,40,26,k+1);
+      ctx.fillStyle=col('#9a8a68');poly([[110,256],[146,256],[132,ground+22],[124,ground+22]],col('#9a8a68'));
+    }else{
+      // a city: a curtain wall with round towers, a gate, and inside the roofs, a keep and a spire
+      tower(40,ground-30,22,70,false);tower(170,ground-34,16,82,true);
+      let x=-8;while(x<256){const w=20+R()*16,hh=22+R()*18;house(x,ground-24,w,hh,Math.floor(R()*6));x+=w+2;}
+      const wallY=ground+14,wc=col('#b0a48c');ctx.fillStyle=wc;ctx.fillRect(0,wallY-44,256,44);
+      ctx.fillStyle=wc;for(let k=0;k<256;k+=10)ctx.fillRect(k,wallY-52,6,8);
+      ctx.strokeStyle=col('#8a7e68');ctx.lineWidth=1;for(let y=wallY-40;y<wallY;y+=8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();}
+      for(const tx of [22,128,234]){ctx.fillStyle=col('#a89c84');ctx.fillRect(tx-14,wallY-66,28,66);poly([[tx-17,wallY-66],[tx,wallY-96],[tx+17,wallY-66]],col(ROOFS[1]));ctx.fillStyle=lit?'#e0a850':col('#2a2622');ctx.fillRect(tx-2,wallY-54,4,8);}
+      ctx.fillStyle=col('#2a2018');ctx.beginPath();ctx.moveTo(114,wallY);ctx.lineTo(114,wallY-18);ctx.arc(128,wallY-18,14,Math.PI,0);ctx.lineTo(142,wallY);ctx.closePath();ctx.fill();
+      ctx.fillStyle=col('#6f8a58');ctx.fillRect(0,wallY,256,256-wallY);poly([[112,256],[144,256],[140,wallY],[116,wallY]],col('#9a8a68'));
+      tree(60,wallY+30,12,true);tree(200,wallY+34,14,false);
+    }
+    const tex=new THREE.CanvasTexture(cv);WINTEX[ck]=tex;return tex;
   }
-  function windowMat(type){if(type==='church')return new THREE.MeshBasicMaterial({color:0xc8b070});return new THREE.MeshBasicMaterial({map:windowTexture()});}
+  // a window's view: the painted town of the room's own place (its settlement's prosperity and nation); a church's glass is lit
+  function windowMat(type,house){if(type==='church')return new THREE.MeshBasicMaterial({color:0xc8b070});
+    let tier=0,nation='gatelands';if(house){const t=houseSite(house)||(house.siteId&&siteAnywhere(house.siteId));if(t&&(t.kind in BASE_P))tier=winTier(prosperity(t));try{nation=nationAt(house.doorX,house.doorZ);}catch(e){}}
+    return new THREE.MeshBasicMaterial({map:windowTexture(tier,nation)});}
 
   // ═══ NAVAL II (Session H) ═════════════════════════════════════════════
   // Ship classes and upgrades (speed, cargo, hull size — no hull HP),
@@ -41615,7 +41702,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {shipTrim,windDir,SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,townGateGeo,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {shipTrim,windDir,windowView:windowTexture,SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,townGateGeo,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

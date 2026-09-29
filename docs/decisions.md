@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)
 Every interior window today is a flat pane on the wall: a painted view of the town at dusk in the generated rooms, the same in a box frame in Hearthwick's old rooms, and a plain lit rectangle in a church. Now that the furniture is on the kit, the windows are the flattest thing left in a room. I prototyped three kit windows. In each, the painted view stays, set back behind the frame. They are not in the game.
 
@@ -22,9 +24,8 @@ Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backl
 4. Leave the windows as they are.
 
 Recommendation: 2. It gives the same kind of variety by wealth that the townsfolk's clothes got (Session 268), and each builder can take a window by the room's type without changing a layout.
-
-
-## Answered
+Michael: **2 — by the room.** — Can we also adjust the flat image on the windows? The image looks very modern metropolitan. It needs to look more medieval, and it should reflect the type of town it's in. If it's a low prosperity town, we should see maybe some trees and possibly a house. If it's a rich city, we should see buildings and walls. (29 Sep 2026)
+Done, Session 331: the three kit frames are in every room, chosen by the room's type (`winKind`, one bake a room), in the generated rooms and Hearthwick's. The painted view is redrawn in three tiers by the town's prosperity (under 35: fields, a hedge, trees, a cottage one time in two; 35–60: gabled houses round a church spire; 60 and up: a curtain wall with towers and a gate, roofs, a keep and a spire), with roofs and walls by nation, and no painted mullions. Picture: `docs/prototypes/windows-ingame.png`.
 
 ### The ships' sails trimmed to a wind — should the world have one? (Session 319, issue #57)
 Every ship's sails are baked into the hull and always stand square across it, whatever the heading, and the gaff booms always lie on the centreline. Session 168 left this owed ("the sails swinging with the heading and the wind"). The world has no wind to trim to: the weather has rain, snow and fog but no direction.

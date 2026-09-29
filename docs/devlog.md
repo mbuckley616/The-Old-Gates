@@ -7627,3 +7627,29 @@ Michael answered #57 with 1: a wind the world keeps, and every ship trims to it,
 
 ### Needs eyes
 Whether the wind swinging about 25° a real minute at its fastest reads as weather or as fidgeting; the swells' periods are one number each to lengthen. Whether a storm's gusts (up to about 35°, over two to four seconds) look like a storm or a broken rig. The flag on the black sail's masthead is still in the hull's bake and does not stream with the wind; smoke and banners could read `windDir()` later.
+
+## v80 — Session 331 — The interiors' windows on the kit, and a medieval view by the town (H.5, Michael's 2 on #53)
+Michael answered #53 with 2, frames by the room, and added a note on the painted view behind them: it looked modern and metropolitan, and it should look medieval and fit the town. A poor place should show trees and perhaps a house; a rich city should show buildings and walls.
+
+**The frames.** Session 305's three prototype windows are now in the kit (`winLead`, `winShutter`, `winArch`). `winKind(type, tall)` picks one per window:
+- the shuttered timber window (B) for homes, cabins, cellars, towers, watch and guard rooms;
+- the leaded casement (A) for the inn, every shop, the guild halls, the chapel, and the low windows of a church and a keep's hall;
+- the round-headed stone window (C) for a church's and a keep's tall windows.
+
+Each tall pane is now an arch of lit glass cut to the frame, where before it was a rectangle. The frames take the nation's woods: Aurenne's shutters are its blue paint, and the Mark's frames are dark pine. In `buildInteriorFor`, each pane sits on the wall .006 in front of it with the frame over it. A room's low windows are one bake, and a church's or hall's tall ones a second. Hearthwick's rooms (`buildInterior`) get the same. Their three-box frames and blue glass are gone. `_intWindow` is removed, and its light is kept in the loop. There the church's two rows moved from .55/.82 of the ceiling to .45/.78, and the keep's upper row from .80 to .82, so the lower row's head clears the upper row's sill.
+
+**The view.** `windowTexture(tier, nation)` draws the time of day's sky, as before, over two ridges of hills. The ground is tinted to the hour, and houses and towers show lit windows after dusk. The tier comes from the settlement's prosperity:
+- **Under 35:** strip fields, a hedge, round trees and pines, and a cottage one time in two.
+- **35–60:** gabled houses with chimneys round a church tower with a spire, and a track in front.
+- **60 and up:** a crenellated curtain wall with three round towers and a gate, with roofs, a square keep and a spire behind it.
+
+Roofs and walls follow the nation: thatch, slate and whitewash in the Gatelands; dark shingle and timber in the Mark; terracotta and warm stucco in Aurenne. No mullions are painted any more, because the frame carries them. A room with no settlement, such as a cabin in the woods, gets the poor view. Hearthwick's rooms get the middling one. A church's low panes stay plain lit glass.
+
+### Verified (headless Chromium)
+- **`windows`**, new. Homes, cabins and cellars take B. The inn, a weapon shop, a guild hall and a chapel take A. A church and a keep's hall take A below and C above, with 6 and 8 arched panes. Each room's frames bake inside the walls and under the ceiling: 4,320 triangles for a home's four shuttered windows, 9.6–14.4k for four to six leaded ones, and 8.4k and 11.1k for a church's and a hall's arches. The painted view is on every low pane except a church's. Rooms at Colman's Rest (prosperity 20), La Grise (54) and Vieux Marché (61) each show their own tier's view for their nation. The three tiers and a second nation make four different pictures. In Hearthwick's rooms each room has one frame bake, the shop and inn have 4 painted panes, the church 6 arches and the keep 8. The picture is `docs/prototypes/windows-ingame.png`: a home, an inn and a church in a rich town, then the three views by day and by night.
+- **`interiors`**, **`homefurn`**, **`legacyhalls`**, **`legacyshops`**, **`civicfurn`**, **`guildfurn`**, **`oddfurn`**, **`furniture`**, **`chapel`** and **`crime1`** pass.
+
+### Needs eyes
+- Whether the views read at the size of a pane from across a room. Whether the rich tier's wall is too pale against a day sky.
+- Whether a home in a rich city ought to have the leaded window rather than the shutters. The rule is by the room, as chosen, not by the town.
+- The view is still drawn once per time of day at entry. A room you stay in through dusk keeps the day's picture until you next come in, as before.
