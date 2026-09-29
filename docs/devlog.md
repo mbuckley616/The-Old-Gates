@@ -8338,3 +8338,18 @@ New `tests/livepick.test.mjs`, 6 checks, passing, no page errors. Dunmore at 23h
 
 ### Needs eyes
 How it feels to pick a four-pin shop door at night with the torch coming down the street, and whether burglary now costs what it should. That is the G item on the night watch, now answerable. Whether standing still is right, or a player should be able to step away from the lock without Escape.
+
+## v80 — Session 328 — Fortune's crit and Caor Dubh's risk
+Michael's A on #58: build all four promises that had no rule behind them. This session builds the two that are combat numbers. Charisma's extra item and Ashwort's pulse are owed to the next run.
+- *Fortune: +2% crit chance a point.* There was no chance crit, only the bonus for striking a staggered foe. Now `_fortuneCrit()` gives 2% a point, up to a half, that a blow lands for ×1.5. It multiplies in `applyMeleeDamage`, which both the open world's swing and the dungeon's go through, on top of any stagger, riposte, finisher or backstab. It also multiplies at both arrow hits. A lucky melee blow is tagged *(CRIT)* like a staggered one. At Fortune 0 it draws no random number, so nothing that pins the rolls moves.
+- *Caor Dubh: +40% damage for 30s (risky).* The +40% worked and the risk cost nothing. Now, while the fury lasts, `_wardMult()` takes ×1.2, so every blow, arrow, bolt and trap that reaches you through the ward lands a fifth harder. The two constants, `CAOR_RISK` and `FORTUNE_CRIT_PCT`/`FORTUNE_CRIT_MULT`, sit beside `_wardMult`.
+
+### Verified (headless Chromium)
+New `tests/fortunecaor.test.mjs`, 5 checks, passing, no page errors.
+- `applyMeleeDamage` on a 100-point blow with the roll pinned at .01: Fortune 0 gave 100, Fortune 1 gave 150 tagged a crit. At .03, Fortune 1 gave 100. At Fortune 10, a roll of .19 crits and .21 does not. Over 4,000 blows at Fortune 5, about one in ten crit (between .085 and .115).
+- Caor Dubh eaten with its hidden effect known: a 50-point blow landed for 50 bare, 60 under the fury, 50 after it. Your own blows still carry ×1.4.
+- `herbparity`, `attrdmg`, `wardall` and `counters` pass.
+- The arrows' crit is the same multiplier at the two arrow-hit lines and is not driven by the test.
+
+### Needs eyes
+Whether a crit you didn't earn with a parry feels like luck or like noise, and whether the *(CRIT)* tag should say which kind.

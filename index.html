@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s312</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s313</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -15675,7 +15675,7 @@ function tickZoneBalls(dt,sc){
           // avoid widening applyMeleeDamage's signature for one caller.
           const wt = fb.userData.wType || 'pierce';
           const resistMult = (e.resist && typeof e.resist[wt]==='number') ? e.resist[wt] : 1.0;
-          let dmg = Math.max(1, Math.floor(fb.userData.arrowDmg * resistMult));
+          let dmg = Math.max(1, Math.floor(fb.userData.arrowDmg * resistMult * _fortuneCrit()));
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
           e.hp = Math.max(0, e.hp - dmg);
@@ -19114,7 +19114,11 @@ function _hasBuff(type){return ACTIVE_BUFFS.some(b=>b.type===type);}
 // S316 — damage taken, after the buffs: the Warding potion (`dmgReduce`) and the Shield spell or the Boon of Stone
 // (`warding`, which nothing read before) are one kind of protection, so the stronger holds and they don't stack; the
 // Stoneskin kind (`physResist`) multiplies on top, as before.
-function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding',1))*_buffMult('physResist',1);}
+function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding',1))*_buffMult('physResist',1)*(_hasBuff('dmgBurst')?CAOR_RISK:1);}
+// S328 (Michael's A on #58) — Caor Dubh's risk: while its fury lasts you take a fifth more from everything. Fortune's
+// crit: 2% a point that a melee blow or an arrow lands for half again, on top of any stagger, riposte or backstab.
+const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
+function _fortuneCrit(){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&Math.random()<c?FORTUNE_CRIT_MULT:1;}
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
 function _warded(d,src){return d>0?Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1))):d;}
 // S321 — the herbs' hidden effects, read where their text says: Wolf's Bane (`beastResist`, above, from a beast's blow),
@@ -30473,8 +30477,9 @@ function applyMeleeDamage(e, rawDmg){
   // = ×3.0 × ×1.5 = ×4.5, the canonical burst-window combo. See
   // applyBackstab for the trigger rules and exclusion list.
   const backstabMult = applyBackstab(e);
-  const dmg = Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult) - effDef);
-  return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
+  const luckMult = _fortuneCrit();
+  const dmg = Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef);
+  return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0 || luckMult > 1.0, lucky: luckMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
 }
 
 // Execute a dungeon enemy's melee strike AFTER its telegraph has completed. Re-checks range so
@@ -43042,7 +43047,7 @@ function loop(now){
             arrowHit = true;
             const wt = fb.userData.wType || 'pierce';
             const resistMult = (e.resist && typeof e.resist[wt]==='number') ? e.resist[wt] : 1.0;
-            let dmg = Math.max(1, Math.floor(fb.userData.arrowDmg * resistMult));
+            let dmg = Math.max(1, Math.floor(fb.userData.arrowDmg * resistMult * _fortuneCrit()));
             if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
             // Dormant Gargoyle bonus (matches melee path: dormant enemies take 2×).
             if(e.dormant) dmg = Math.floor(dmg * 2);

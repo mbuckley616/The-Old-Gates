@@ -17,6 +17,8 @@ Sessions 320–323 wired up every buff and attribute line whose text said what i
 
 A keeps the card honest and gives Fortune and Charisma something to feel. Every number in A is a proposal.
 
+Michael: **A — build all four** (29 Sep 2026, issue #58; written on auto/producer). Systems builder: Fortune's crit and Caor Dubh's risk built in Session 328 at the numbers above; Charisma's extra item and Ashwort's dungeon pulse are next, then this moves to Answered and #58 closes.
+
 ## Answered
 
 ### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
