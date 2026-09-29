@@ -8285,3 +8285,21 @@ New `tests/lvact.test.mjs`, 5 checks, passing, no page errors.
 
 ### Needs eyes
 Whether Fortitude now grows too readily for a player who blocks everything. Its thresholds are unchanged.
+
+## v80 — Session 325 — Stonecress and a save
+Found while reading how buffs end, for Session 322. Stonecress's hidden effect (*+20% max stamina for 90s*) is the one buff that patches a stat: it multiplied `maxStamina` by 1.2 on eating and divided it back on expiry. Three things went wrong with that.
+- *Saved while it ran, the stamina was yours for good.* The save wrote the patched maximum. The comment at the end of `_applyLoadData` says buffs are "intentionally cleared on load", but no line ever cleared them. Load that save in a fresh tab and nothing was left to divide the stamina back, so the +20% stayed.
+- *An older save loaded while it ran lost a fifth.* The buff survived the load, and when it wore off it divided the loaded maximum by 1.2.
+- *A level taken while it ran came back short.* Dividing (base×1.2 + 10) by 1.2 takes 1.7 off the level's +10: 115 → 138 → 148 → 123, not 125.
+
+**What changed.** The buff now lends a fixed amount (`_stamAdd`, a fifth of the maximum when eaten) and takes exactly that back, on expiry or when a second Stonecress replaces the first. The save writes `_baseMaxStamina()`, the maximum without anything lent, and caps the saved stamina to it. `_applyLoadData` now empties `ACTIVE_BUFFS`, as its own note always said, before it sets the loaded maximum. Spells' own timers (`SPELL_FX`, the light or the water-walking) are untouched by a load, as before. Only the listed buffs are cleared, and with them the Shield's ward.
+
+### Verified (headless Chromium)
+New `tests/stonecress.test.mjs`, 5 checks, passing, no page errors. Stonecress is eaten through `useHerb`:
+- The maximum went 115 → 138. A level taken with the buff running made it 148, and when the buff wore off it came back to 125, a whole +10.
+- Saved while the buff ran (150), the payload carried 125.
+- An older save (100) loaded while the buff ran left no buffs, a maximum of 100, and still 100 after the buff's time had passed. Reloading the first save gave 125.
+- `unequip`, `herbhidden`, `saves` and `export` pass.
+
+### Needs eyes
+Nothing to see. It is a number that no longer drifts.

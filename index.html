@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s309</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s310</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -19082,7 +19082,7 @@ function tickActiveBuffs(dt){
       ACTIVE_BUFFS.splice(i,1);
       showMsg(b.label+' has worn off.','#888888');
       // Reverse any stat patches
-      if(b.type==='maxStamBuff'){maxStamina=Math.round(maxStamina/b.mult);stamina=Math.min(stamina,maxStamina);}
+      if(b.type==='maxStamBuff'){maxStamina-=(b._stamAdd!=null?b._stamAdd:Math.round(maxStamina-maxStamina/b.mult));stamina=Math.min(stamina,maxStamina);} // S325 — take back what it added, so a level taken meanwhile is kept
     }
   }
 }
@@ -19126,6 +19126,8 @@ function _blockBoost(r){return Math.min(.9,r*_buffMult('blockBoost',1));}
 // against every blow and shot; Mist Fern (`staminaCost`) lightens every swing, bash, roll and draw, not only the sprint
 function _armour(){return Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)+(_hasBuff('defBoost')?(_activeBuffs('defBoost')[0].amount||0):0);}
 function _stamCost(c){return c*_buffMult('staminaCost',1);}
+// S325 — max stamina without what an active Stonecress lends (the save keeps this; buffs don't survive a load)
+function _baseMaxStamina(){return maxStamina-ACTIVE_BUFFS.filter(b=>b.type==='maxStamBuff').reduce((a,b)=>a+(b._stamAdd||0),0);}
 // S323 — what the level-up card promises: Resolve +1% magic resist a point (the Faolchú's fire, the dungeon's bolts),
 // Finesse -5% sprint cost a point (to a quarter)
 function _magicResist(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
@@ -19136,12 +19138,12 @@ function _applyBuff(he){
   if(idx>=0){
     const old=ACTIVE_BUFFS[idx];
     // Undo any stat patches from expiring buff
-    if(old.type==='maxStamBuff'){maxStamina=Math.round(maxStamina/old.mult);stamina=Math.min(stamina,maxStamina);}
+    if(old.type==='maxStamBuff'){maxStamina-=(old._stamAdd!=null?old._stamAdd:Math.round(maxStamina-maxStamina/old.mult));stamina=Math.min(stamina,maxStamina);}
     ACTIVE_BUFFS.splice(idx,1);
   }
   const entry={...he,remaining:he.duration};
   // Apply immediate stat patches
-  if(he.type==='maxStamBuff'){maxStamina=Math.round(maxStamina*he.mult);}
+  if(he.type==='maxStamBuff'){entry._stamAdd=Math.round(maxStamina*(he.mult-1));maxStamina+=entry._stamAdd;}
   ACTIVE_BUFFS.push(entry);
   showMsg(he.label+' active!',he.col||'#88cc88');
 }
@@ -29290,7 +29292,7 @@ function _buildSavePayload(){
   return {
     v:SAVE_VERSION, ts:Date.now(),
     xp,level,xpNext,kills,gold,
-    PHP,maxHP,mana,maxMana,stamina,maxStamina,
+    PHP,maxHP,mana,maxMana,stamina:Math.min(stamina,_baseMaxStamina()),maxStamina:_baseMaxStamina(), // S325 — never a herb's borrowed stamina
     ATTRS:{...ATTRS}, lvAct:{...lvAct},
     EQ:Object.fromEntries(Object.entries(EQ).map(([k,v])=>[k,_serItem(v)])),
     BAG:BAG.map(_serItem),
@@ -29334,6 +29336,7 @@ function _applyLoadData(d){
   kills=d.kills||0; gold=d.gold||0;
   maxHP=d.maxHP||100; PHP=Math.min(d.PHP||maxHP,maxHP);
   maxMana=d.maxMana||100; mana=Math.min(d.mana||maxMana,maxMana);
+  ACTIVE_BUFFS.length=0; // S325 — as the note at the end of this function always said: buffs don't survive a load (a Stonecress still running would take its share off the loaded maximum)
   maxStamina=d.maxStamina||100; stamina=Math.min(d.stamina||maxStamina,maxStamina);
   if(d.ATTRS)Object.assign(ATTRS,d.ATTRS);
   if(d.lvAct)Object.assign(lvAct,d.lvAct);
