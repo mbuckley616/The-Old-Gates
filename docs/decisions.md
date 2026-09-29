@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29)
+Magic B (29 Sep) says "the spell list becomes the parchment composing page"; backlog E asks for the spell list legible first. `docs/prototypes/spellmaking/index.html` shows three layouts of that page on the approved parchment kit, 1280×720, with the canon's words and meanings and the design page's numbers: a player at Intelligence 18, an Evoker (four of five forms), 100 mana, seven words of twenty-four, making *Cloch, laid* (a stone pillar 1.5 high for 20 s, 55 mana: 28 × 1.5 laid × 1.30 for Cloch skill 12). Each word shows its tier as three diamonds; a word at Impression has no English yet, and the spell is named from its weakest word. What each word does in each form is working text for the quest writer.
+- **A. The page.** Words by school on the left; the spell written out in the middle as a sentence, with what the chosen word does in each of the five forms and its cost, the second word's riders as chips, and the mana worked out in a line; the book of eight on the number keys on the right.
+- **B. The table.** Every word you know against every form, 35 cells, each with its line and cost; a dash where the word won't take that shape. Choose a cell, add a rider below, the book as eight chips. Everything visible at once; it grows by a row with each word, 24 rows at the end.
+- **C. The ring.** A carved circle: the words round the rim (the seventeen unfound as empty places), the forms on the inner ring, a line drawn between the two words you join. The most like a sigil and the least legible; the book needs a page of its own.
+
+All three feed the same HUD: the book's eight lines as a row of form icons above the vitals, 1–8 readies one, F casts, the spell roundel shows the readied form and the mana bar shades what it will cost.
+
+Recommendation: **A.** It reads as a sentence, which is what the design is (a form and a word), shows every form for the word you are looking at without the 24-row wall B becomes, and keeps the book in view while you write into it. It needs one Opus session after the Fable one that builds words and forms.
+Screens: [A, the page](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/page.png) · [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/compare-page.png) · [B, the table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/table.png) · [C, the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/ring.png) · [the HUD](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/hud.png)
+
 ## Answered
 
 ### Unblock auto/systems — a walls/LOD test failed on one of two CI runs (the producer, 2026-09-29)
