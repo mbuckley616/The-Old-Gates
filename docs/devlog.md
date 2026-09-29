@@ -8274,7 +8274,7 @@ Found by following Session 320's damage paths one step further. At a level-up, e
 - Damage taken was counted on four paths only: the unblocked blow, the Faolchú's fire, a bolt and a drain. An archer's arrow, a blow on a held block, the spike plate, the swinging blade, a dragon's breath, a charge, a heavy blow and a deck volley all hurt you without counting. So a player who blocks well, or who fights archers, grew Fortitude more slowly than one who stood and took it. Each of those paths now adds what it did.
 - Stamina running dry was counted only on the sprint. Now a roll that empties it counts, and so does a block that does: held, on the fire, on a bolt, or on a parry.
 
-Section B's correction for Session 323: Charisma's *merchant access* does have a mechanism. Since v61au the shops filter their stock by an item's `chaReq`. No item carries one, so the filter never holds anything back. #58's text in `docs/decisions.md` now says so. The question stands.
+A correction to Session 323: Charisma's *merchant access* does have a mechanism. Since v61au the shops filter their stock by an item's `chaReq`. No item carries one, so the filter never holds anything back. #58's text in `docs/decisions.md` now says so. The question stands.
 
 ### Verified (headless Chromium)
 New `tests/lvact.test.mjs`, 5 checks, passing, no page errors.
