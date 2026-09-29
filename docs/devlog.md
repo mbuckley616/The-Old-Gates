@@ -7407,4 +7407,4 @@ An inn at the end of a coach line had its own boxes, which Session 287 left: a b
 - **`homefurn`**, extended: with a coach line to Dunmore set, the inn is a coaching inn with one more furniture bake than without (3 against 2), and none of the old straw boxes is left. No picture this session; the pieces are the guild board's and the kit's.
 
 ### Needs eyes
-The bales' place against the hearth. The old straw box overlapped the inn's hearth (both at the east wall, mid-room), and it still does.
+Nothing new to judge beyond the pieces. The old straw box overlapped the inn's hearth (both against the east wall, mid-room), so the bales now stand 1.9 further south, clear of it and in front of the private rooms' partition.
