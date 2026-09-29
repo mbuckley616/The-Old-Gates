@@ -6,6 +6,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
+`docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
+
+- **A. The page** *(recommended)*: words by school on the left; the spell written as a sentence in the middle, with every form's line and cost, riders as chips, mana worked out; the book of eight on the right.
+- **B. The table**: every word against every form, 35 cells at once, growing to 24 rows by the end.
+- **C. The ring**: a carved circle of words and forms with a line drawn between two joined; most like a sigil, least legible.
+
+Michael: **A** — the page. (29 Sep 2026, via the control room)
+
 ### When should the game autosave? (systems builder, 2026-09-29, issue #66)
 The critic's s253: forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold spent on a coaching road, a coach ride and a dungeon. `saveGame()` runs on zone travel, the Wait button, leaving a dungeon, a book and the safehouse. It never runs on sleeping (inn, camp bedroll, own bed: `restAtBed` does not save), entering a dungeon, buying from a lord, or walking into a town. The ring keeps at most one autosave per 90 real seconds (`SS.lastAuto`), so more moments don't flood it.
 
