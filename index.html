@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s302</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s303</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -15611,7 +15611,7 @@ function tickZoneBalls(dt,sc){
       if(ddP < playerHitR && !rollUntouchable(performance.now()/1000)){ // S283 — a roll takes you through the fire
         const baseDmg = fb.userData.dmg || 20;
         const def2 = Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);
-        const dmgReduceMult = _buffMult('dmgReduce',1) * _buffMult('physResist',1);
+        const dmgReduceMult = _wardMult();
         // v61c7 — Magic block path. Distinct from physical block rates:
         //   shield: 40% reduction (down from 65% for physical) — shields
         //          don't fully stop fire/magic, lore-fits the seam-fire
@@ -19110,6 +19110,10 @@ function tickBurnedSmoke(now){
 function _activeBuffs(type){return ACTIVE_BUFFS.filter(b=>b.type===type);}
 function _buffMult(type,def){const b=_activeBuffs(type);return b.length?b[0].mult:def;}
 function _hasBuff(type){return ACTIVE_BUFFS.some(b=>b.type===type);}
+// S316 — damage taken, after the buffs: the Warding potion (`dmgReduce`) and the Shield spell or the Boon of Stone
+// (`warding`, which nothing read before) are one kind of protection, so the stronger holds and they don't stack; the
+// Stoneskin kind (`physResist`) multiplies on top, as before.
+function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding',1))*_buffMult('physResist',1);}
 function _applyBuff(he){
   // Remove existing buff of same type first
   const idx=ACTIVE_BUFFS.findIndex(b=>b.type===he.type);
@@ -30577,7 +30581,7 @@ function executeStrike(e, rawDmg, now){
     if(PHP<=0 && !dead) playerDead();
   } else {
     // Unblocked hit — apply damage reduction buffs
-    const dmgReduceMult = _buffMult('dmgReduce',1) * _buffMult('physResist',1);
+    const dmgReduceMult = _wardMult();
     const finalDmg = Math.max(1, Math.round(rawDmg*dmgReduceMult));
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;
@@ -42069,7 +42073,7 @@ function loop(now){
   }
   const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7:3.83)*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
   const swiftMult=1+(ATTRS.swiftness*0.02);
-  const sprintBuff=_buffMult('sprintSpeed',1);
+  const sprintBuff=_buffMult('sprintSpeed',1)*_buffMult('swiftness',1); // S316 — the Boon of the Road (×1.25), read nowhere before
   // Encumbrance speed penalty: -50% when overloaded. Immobile zeros speed entirely.
   const _encSpeedMult = _encState==='immobile' ? 0 : _encState==='overloaded' ? 0.5 : 1.0;
   // v61f: DEV_SPEED_MUL is a window-scoped playtest knob. Default 1 (no change).

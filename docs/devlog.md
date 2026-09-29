@@ -8155,3 +8155,19 @@ New `tests/coachvoice.test.mjs`, passing, no page errors. Eight coach roads betw
 
 ### Needs eyes
 The Gatelander lines are longer than the old ones; whether they fit the dialogue box at a glance. An Aurennais or Old Blood coaching inn will only be heard once a coach road runs through their lands.
+
+## v80 — Session 316 — The Shield spell, and the Boons of Stone and the Road
+Found by the quest writer (run 2, `docs/quest_drafts.md` on auto/quests, the code note under *The Shrines Remember*): three of the shrine boons' buff types are read nowhere. `warding` is set by the Boon of Stone and also by the Shield spell (Session 199's self spells: *Blows land softer*, ×.7/.6/.5 by tier). `swiftness` is set by the Boon of the Road (×1.25), and `regen` by the Boon of Renewal. Each is applied, shown and timed, and none changes anything. So the Shield spell, which you buy from the Mages' steward and cast for 28 mana, has never softened a blow. These are fixes to make them do what they say, not new rules.
+
+**What changed.** A new `_wardMult()` is the damage-taken multiplier where the Warding potion's was read: the unblocked melee blow and the Faolchú's fire. It takes the stronger of the Warding potion (`dmgReduce`) and `warding`, and multiplies by the Stoneskin kind (`physResist`) as before. The potion and the spell are one kind of protection by name, so I made them hold the stronger rather than stack (a Master potion under a tier-3 Shield would otherwise take a blow to ×.3). The Road's `swiftness` multiplies your speed where the `sprintSpeed` buff already did.
+
+Not in this session. The Boon of Renewal (`regen`) carries a `mult` of 1 and no rate, while every regeneration the game ticks is `hpRegen` with a rate in HP a second, so what Renewal should restore is a number nobody has set. It is left as owed. Arrows, bolts and traps never read the Warding potion either, and that predates this session (the potion was only wired into those two paths). The Shield now works exactly where the potion does.
+
+### Verified (headless Chromium)
+New `tests/wardswift.test.mjs`, 7 checks, passing, no page errors. A real Bandit's 20-point blow through `executeStrike`, unblocked:
+- 20 with nothing on. With the Shield spell cast through `applySpellBuff`: 14, 12, 10 at tiers 1–3. With the Boon of Stone: 15. With Stone and a Mild Warding potion (.85): 15; with Stone and a Master (.6): 12. With the potion alone: 15, as before.
+- The Road, through the game's own `loop` stepped at a fixed 1/60 with W held on the keyboard: 5.745 units in 1.5 s plain (twice), 7.181 with the boon, ×1.250.
+- `counters`, `posture` and `faolchu` pass.
+
+### Needs eyes
+Whether the Shield at ×.5 (tier 3) plus armour makes a fight too easy now that it works. Whether ×1.25 on the Road for half an hour feels like a gift or a nuisance near ledges.
