@@ -7462,3 +7462,13 @@ Found while laying out Hearthwick's church in Session 301. The kit's church (Ses
 
 ### Needs eyes
 A church in play: whether the side aisles between the columns and the walls feel wide enough to walk in the narrowest church (the column solid leaves .5 to the wall).
+
+## v80 — Session 304 — The legacy rooms' rugs on the kit (H.5, #46 A)
+With the furniture on the kit (Sessions 295 and 300–302), the flat rug of the older `buildInterior` was the loudest thing left in its rooms: a lit plane of plain red, or navy in the weapon and armour shops, 4 by 3 in the middle of the floor. It is now the kit's oval rag rug, the one in every generated home, at the same place and size. The church's is a bordered runner from the dais's front (z 4.1) to a unit short of the door. The old plane ran under the dais from z 1.5 and was hidden there. The keep keeps none, because its runner is part of its hall's bake (Session 302). Each rug is a small bake of its own, flagged to be freed with the room but not counted as its furniture.
+
+### Verified (headless Chromium)
+- **`legacyshops`**, extended: in all nine rooms the old builder makes (the four shops, the inn, church, keep, safehouse and home) there is no flat rug plane left. Every room but the keep has one kit rug lying under .03 high, and the church's runner runs z 4.1–15. The picture is `docs/prototypes/legacyrugs-ingame.png`.
+- **`legacyhalls`**, **`oddfurn`**, **`interiors`** and **`homefurn`** pass.
+
+### Needs eyes
+The rag rug's bright rings in a shop, which is the kit's own look. What is left of this builder is its shell: box-frame windows with a pane, and flat walls. The generated rooms' windows are flat lit planes too, so a window on the kit would be a new piece to prototype, not a port.

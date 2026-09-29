@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s273</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s274</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -24968,9 +24968,10 @@ function buildInterior(house){
   const rugW=type==='church'?2:type==='castle'?2.5:Math.min(W-2,4);
   const rugD=type==='church'?D-3:type==='castle'?D-4:3;
   const rugColor=type==='church'?0x6a2020:type==='castle'?0x6a1010:type==='armor'||type==='weapon'?0x203050:0x7a2020;
-  M.rug=new THREE.MeshLambertMaterial({color:rugColor});
-  const rug=new THREE.Mesh(new THREE.PlaneGeometry(rugW,rugD),M.rug);
-  rug.rotation.x=-Math.PI/2;rug.position.set(W/2,.01,type==='church'||type==='castle'?D/2:D/2+.5);if(type!=='castle')interiorScene.add(rug); // S302 — the keep's runner is the kit's
+  // S304 — the rug on the kit (#46 A): the church's a bordered runner from the dais's front (z 4.1) to the door, the other rooms'
+  // an oval rag rug where the flat plane lay; its own small bake, freed with the room's (legacyFurn, not furn); the keep's runner is its bake's
+  if(type!=='castle'){const K=furnKit(),rd=D-5.1,R=type==='church'?K.bake(K.runner(2,rd,rugColor,307)):K.bake(K.rug(rugW/2,rugD/2,'gatelands',type.length*7+300));
+    if(type==='church')R.position.set(W/2,0,4.1+rd/2);else R.position.set(W/2,0,D/2+.5);R.userData.legacyFurn=true;R.userData.rug=true;interiorScene.add(R);}
 
   // Main overhead light
   const lantern=new THREE.PointLight(0xffaa44,2.8,Math.max(W,D)*1.4);lantern.position.set(W/2,ceilH-.3,D/2);interiorScene.add(lantern);
