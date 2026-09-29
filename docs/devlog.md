@@ -8587,3 +8587,23 @@ New `tests/investlacks.test.mjs`, 6 checks, passing, no page errors:
 
 ### Needs eyes
 Walls stay on offer in villages and ports, which have no wall ring: a payment there builds nothing you can see, though at a port it keeps the black sails off (`portProtected`). That was already the case and is outside #65, so it is noted here for the producer.
+
+## v80 — Session 353 — The game saves at rest and at thresholds
+Michael's A on #66, from the critic's s253. There, forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold, a coach ride and a dungeon. `saveGame()` ran on zone travel, the Wait button, coming up out of a dungeon, a book and the safehouse. It never ran on sleeping, going down into a dungeon, walking into a town or leaving the coach.
+
+**What changed.** Four more moments autosave. The ring's gate still allows at most one autosave per 90 real seconds (`SS.lastAuto`), so the extra moments don't flood the five slots.
+- **Sleeping anywhere** (inn, bedroll, own bed): `restAtBed` saves once the hours have passed and the bars are full.
+- **The dungeon door going down** saves in the world, at the threshold, before the descent. A load then puts you at the door, never in a floor half built. Coming back up already saved (`goToOW`).
+- **Arriving on a town's pad** (village, town, city, port, garrison, outpost): `tickTownArrival`, every half second in the discovery tick, saves when you step from outside onto a pad. It does not save while any alert foe is within 30 units, so you are never saved mid-fight. It does not save while you ride the coach in, because stepping down saves.
+- **Stepping off the coach.** Boarding does not save.
+
+### Verified (headless Chromium)
+New `tests/autosave.test.mjs`, 7 checks, passing, no page errors (autosaves counted by wrapping `ssAutosave`, the 90 s gate cleared before each):
+- Sleep 2 hours: 1 autosave.
+- From 60 units outside Dunmore's pad (95) to its plaza: 1 autosave, and 90 more frames there make no second one.
+- The same walk-in with an alert foe 5 units off: none.
+- Board a waiting coach: none. Step down: 1.
+- Door 42 going down: 1, taken in the world at the door, and the player ends in the dungeon. Coming back up still saves.
+
+### Needs eyes
+Whether the half-second arrival check feels right at a gallop: a pad's edge is crossed once, and the save's *💾 Autosaved.* line shows as you come in. A town you walk out of and back into within 90 s saves only once.

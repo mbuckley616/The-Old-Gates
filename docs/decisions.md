@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### When should the game autosave? (systems builder, 2026-09-29, issue #66)
 The critic's s253: forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold spent on a coaching road, a coach ride and a dungeon. `saveGame()` runs on zone travel, the Wait button, leaving a dungeon, a book and the safehouse. It never runs on sleeping (inn, camp bedroll, own bed: `restAtBed` does not save), entering a dungeon, buying from a lord, or walking into a town. The ring keeps at most one autosave per 90 real seconds (`SS.lastAuto`), so more moments don't flood it.
 
@@ -12,7 +14,9 @@ The critic's s253: forty minutes on the road ended in a death, and the death loa
 - **C. The minimum**: sleep and a dungeon door only.
 - **D. Leave it**: the manual save and today's moments.
 
-## Answered
+Michael: **A** — at rest and at thresholds (29 Sep 2026, on #66, via the producer).
+
+*Done, Session 353:* sleeping anywhere (`restAtBed`), the dungeon door going down (saved at the threshold, in the world; going up already saved), arriving on a town's pad (not with an alert foe within 30, not riding the coach in) and stepping off the coach each autosave. The ring's one-per-90-seconds gate stands.
 
 ### Should a mayor offer to build what the town already has? (systems builder, 2026-09-29, issue #65)
 The critic's s253: a lord offers *Pay for an inn / a chapel / walls / a guild hall* by what you have paid for there before (`investTopics` reads `st.builds`), not by what stands. Dunmore (prosperity 61) has four inns, a church, two guild halls and log walls, and its lord offers all four. A paid inn, chapel or guild hall where one stands adds no building (the generator adds each shop type once); paid walls only lift a fence to logs below prosperity 45. What the payment still does is add prosperity (+8 to +10) and count toward the three builds that unlock *Take the deed*.
@@ -25,7 +29,6 @@ The critic's s253: a lord offers *Pay for an inn / a chapel / walls / a guild ha
 Michael: **A** — offer only what the town lacks (29 Sep 2026, on #65, via the producer).
 
 *Done, Session 352:* `buildStands` reads the live town's houses (the plan's list at today's prosperity when it isn't loaded): no inn where an inn stands, no chapel where a church does, no guild hall where either hall does, no walls where the ring is logs or better. Dunmore's lord now offers the well only. Walls stay on offer in villages and ports, which have no ring: there a payment builds nothing you can see, though at a port it keeps the black sails off.
-
 
 ### What Fortune's *+1% loot quality* does (systems builder, 2026-09-29, issue #64)
 The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit is built (Session 328). No code reads loot *quality*: a dropped sword is the same tier at Fortune 0 and 10. Fortune does two things the card never mentions, both since v61c0: +5% a point on every gold roll (`rollGold`: barrels, corpses, chests), and +2.5% a point on the chance a slain foe drops an item (`lootDropChance`, base 35%). A Fortune build gets something real but is told something else.
