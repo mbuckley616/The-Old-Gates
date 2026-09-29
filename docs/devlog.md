@@ -8510,3 +8510,18 @@ New `tests/bedrollprompt.test.mjs`, 4 checks, passing, no page errors. The world
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 348 — The coach says when it leaves
+This is the critic's s253 finding, taken as written. At Dunmore at 17:54 the prompt said *Press 'E' to board the coach (leaves at six)*. Boarding then said *You take a seat. The coach leaves on the hour.*, but the coach left at six the next morning. The schedule has always been the a-end at 06:00 and the b-end at 18:00. The seat's line was never tied to it. The prompt had its own fault: a coach halted mid-road by a broken road is also in `wait`, and its prompt said *six in the evening*, but it goes on when the road clears.
+
+**What changed.** A new `coachWhen(C)` gives one answer for both the prompt and the seat's line. At the a-end it is *leaves at six*. At the b-end it is *leaves at six in the evening*. Stopped between them, it is *goes on when the road is clear*. No time or rule moved.
+
+### Verified (headless Chromium)
+New `tests/coachboard.test.mjs`, 6 checks, passing, no page errors. The test opens a coaching road from the nearest pair of towns, sets its coach waiting at each end and halted at .4, and boards and steps down each time:
+- a-end: *(leaves at six)* and *You take a seat. The coach leaves at six.*
+- b-end: *(leaves at six in the evening)* and the same in the seat's line.
+- halted: *(goes on when the road is clear)* and the same.
+- No line says *on the hour*. `coachseat` and `coachstop` pass.
+
+### Needs eyes
+Nothing.
