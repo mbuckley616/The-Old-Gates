@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Boon of Renewal — how fast should it heal? (systems builder, 2026-09-29, issue #60)
+Praying at a shrine restores you in full and gives one of five boons for 30 minutes of play. Four work: the Road (+25% speed), Stone (blows ×0.75), the Arm (+20% melee), the Mind (spells ×0.7). An Spéir's *Boon of Renewal* (type `regen`, mult 1) has no rate: nothing reads it, so a fifth of shrine prayers, and every prayer at An Spéir's, gives nothing after the restore. For scale, the regeneration tonics give 0.5/1.2/2.5 health a second (Mild/Strong/Master) for 60 s.
+
+- **A. Health, stamina and mana each regenerate 0.5 a second for the 30 minutes** *(recommended)*. It matches a Mild tonic, spread over the whole boon, so it helps between fights and never outheals a blow in one. It's the only boon that touches all three bars, which fits the Sky.
+- **B. Health only, 1 a second for the 30 minutes.** It's simpler, and stronger in the field.
+- **C. Health 2 a second, but only out of combat** (no blow taken or given for 5 s). It reads as rest, not armour.
+- **D. Replace it** with a boon that already has a rule (say, +20% stamina regen).
+
 ## Answered
 
 ### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
