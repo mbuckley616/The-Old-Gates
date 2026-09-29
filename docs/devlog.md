@@ -8555,3 +8555,18 @@ This is a CI fix. PR #22's pull-request run on 7e4b078 (Session 341) failed one 
 
 ### Needs eyes
 Nothing by eye. Also owed from CI: the push run on 976745f (docs only; its pull-request twin passed) failed `mainrun` and `hourhitch` once. Neither is root-caused yet. The next CI-fix session takes them if they come back red.
+
+## v80 — Session 351 — `mainrun` lost its first E to a quest card
+The producer filed this as a blocker from the quest writer: `mainrun` is red on main, not a flake. On `86a7fe9` (main plus docs) it failed every time with the same seven failures. Every quest giver offered only `1. Goodbye.`, so Q1–Q6 were never taken and Q7 stayed locked. It first showed with the systems merge `1445aaf`. Session 350 had also seen it fail once on a docs-only push.
+
+**What was wrong.** The fault is in the test, not the game. Run alone, `mainrun` passed on main's code and on this branch (9 of 9 each). Four copies run side by side, roughly a CI shard's load, failed 4 of 4, and every time the talk to Bram came back `open: false`. With `interact`, `talkNPC` and the key listeners wrapped, the failing runs showed the E reaching the canvas while `#quest-popup` stood open. The keydown handler spends an E on closing that card, so `interact()` was never called. The card is the Q0/Q1 update. `showQuestUpdatePopup` queues a card until the player is free, and on a loaded machine it landed after the test's one fixed 9-second wait and its `g.hide()`. A player dismisses the card with one E and presses again, so the game is doing what it should. Why the failure began with `1445aaf` is not established. That merge brought in some 165 sessions of code, and a slower start would be enough to push the card past the 9 seconds, but I did not bisect it.
+
+**What changed.** Only the test. Before each E, `talk` now empties the quest-card queue and closes a card that is showing. The test is about dialogue, so the cards themselves are not what it checks.
+
+### Verified (headless Chromium)
+- Before: four side by side, 4 of 4 failed, Q1 still *available* after *Q1 taken*. Alone: 1 of 1 passed.
+- Diagnostics: 3 of the 4 loaded runs had `quest-popup: flex` at the E press, and in those `interact` never ran. The 4th had no card up and opened Bram.
+- After: four side by side, 4 of 4 pass, 9 of 9 checks each, Q7 active in every run.
+
+### Needs eyes
+Nothing by eye. `hourhitch`'s single red on 976745f is still not root-caused.
