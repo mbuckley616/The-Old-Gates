@@ -24,6 +24,8 @@ Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backl
 Recommendation: 2. It gives the same kind of variety by wealth that the townsfolk's clothes got (Session 268), and each builder can take a window by the room's type without changing a layout.
 
 
+## Answered
+
 ### The ships' sails trimmed to a wind — should the world have one? (Session 319, issue #57)
 Every ship's sails are baked into the hull and always stand square across it, whatever the heading, and the gaff booms always lie on the centreline. Session 168 left this owed ("the sails swinging with the heading and the wind"). The world has no wind to trim to: the weather has rain, snow and fog but no direction.
 
@@ -42,9 +44,8 @@ Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backl
 4. **Leave the sails as they are.**
 
 Recommendation: 1. It makes a ship at sea read as sailed, and it takes no rule from the systems builder. A wind in the world would also serve smoke, flags and banners later.
-
-
-## Answered
+Michael: **1 — a wind the world keeps, every ship trims to it.** (29 Sep 2026)
+Done, Session 330: the prototype's rig split is in the game. `windDir()` is the world's wind, read off the absolute clock (three slow swells of 9–53 game hours, and a gust of a few seconds in a storm); `tickSailTrim` braces every ship afloat to it and eases the sails round over a second or two. Look only. Picture: `docs/prototypes/sailtrim-ingame.png`.
 
 ### The black sail and the merchantman — which hull each sails (Session 278, issue #50)
 The other ships at sea have had their own looks since Session 168: black sails and a red wale for the pirate, striped sails and a green hull for the merchantman. Both still sail the sloop's hull, 13 long. They were kept small because boarding placed the crew by that length. That no longer binds: the three pirates stand 3 apart along the middle of the deck, which fits any hull, and the deck is laid from the hull's own outline. So which hull each sails is a free choice, and the backlog has it owed. The looks on each hull were drawn in the Session 165 prototype (below).

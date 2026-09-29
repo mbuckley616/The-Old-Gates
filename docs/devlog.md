@@ -7609,3 +7609,21 @@ Section H's items are done or waiting on Michael except one owed since Session 1
 
 ### Needs eyes
 The answer on #57. Whether 35° of bracing reads as enough from the deck. A real ship braces sharper close-hauled, but at more than about 35° the yards would foul the shrouds as the rigging is built.
+
+## v80 — Session 330 — The ships' sails trimmed to the world's wind (H.5b, Michael's 1 on #57)
+Michael answered #57 with 1: a wind the world keeps, and every ship trims to it, as the look only. Session 319's prototype split each ship's rig out of the hull's bake; this session brings that split into the game unchanged and gives the world its wind.
+
+**The rigs.** `shipBake` bakes each square mast's yards and sails, each gaff with its boom and sail, and the sloop's jib into geometries of their own (`r.rigs`), and `buildShipMesh` hangs them on the hull as children that turn on their mast. The sloop has a gaff and a jib, the cog one square rig, the galleon two square masts and a gaff mizzen. That is one to three more draw calls a ship and no more triangles. `shipTrim` is the prototype's rule: square yards brace to split the angle between the wind and the bow, at most 35°; a boom goes to leeward, 72° out running and 15° close-hauled, and its sail and the jib belly to leeward.
+
+**The wind.** `windDir()` gives the way the wind blows in the world. It is read off `worldState.gameTimeAbsMinutes`, so it is the same after a load and needs nothing saved: three slow swells, of 53, 21 and 9 game hours, move it about 3.7 radians over two days and never more than .46 in a game hour (a real minute). In a storm, two gusts of two and four seconds shake it by up to about 35°. Nothing's speed reads it.
+
+**The trim.** `tickSailTrim`, called beside `tickShip` in the world's tick, trims your ship and every other ship afloat to the wind against its own heading. A ship just built (spawned, bought, or its class changed) sets its sails at once; after that they ease round with a time constant of under a second, so a turn or a change of wind takes a second or two.
+
+`ships`' count of a merchantman's meshes is now three (hull, wheel, rig), not two.
+
+### Verified (headless Chromium)
+- **`sailtrim`**, new. The rigs per class are as above. A ship is 4.3–6.6k triangles all told, the rigs 140–712 of them. A merchantman and a black sail at sea, each holding its heading, sit within .02 rad of the rule after two seconds. The yards stay within 35°, and each boom lies on the leeward side of the hull. Seven game hours on, the wind has moved 1.19 rad. A tenth of a second after that, the sails are still easing (up to 2 rad off); four seconds on, they have settled. In a storm the wind moves .64 rad over two seconds; in clear weather it does not move. The picture is `docs/prototypes/sailtrim-ingame.png`.
+- **`ships`** passes.
+
+### Needs eyes
+Whether the wind swinging about 25° a real minute at its fastest reads as weather or as fidgeting; the swells' periods are one number each to lengthen. Whether a storm's gusts (up to about 35°, over two to four seconds) look like a storm or a broken rig. The flag on the black sail's masthead is still in the hull's bake and does not stream with the wind; smoke and banners could read `windDir()` later.
