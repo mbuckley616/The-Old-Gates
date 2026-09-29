@@ -7248,3 +7248,17 @@ Michael chose A: the merchantman on the cog, the black sail staying on the sloop
 
 ### Needs eyes
 Her size against the black sail at sea, and whether she reads as a trader from a distance.
+
+## v80 — Session 286 — A home's furniture on the shape kit (H.5 props, Michael's A on #46)
+The concept artist prototyped furniture for homes and inns on the kit (`docs/prototypes/interiors/` on auto/concept), and Michael chose A: the kit in every interior, one or two rooms a session. This is the first room, the home.
+
+The prototype's `FURN` is lifted whole into the game as `furnBuild` (after `dunMerge`), made once by `furnKit()`. One change: the two materials are made once and shared by every room, where the prototype made new ones each bake. In `buildInteriorFor` the home's boxes are gone: the bed, the hearth (a grey box with a black one in it), the table, the two chairs, the candle, the chest and the two shelves of coloured cubes. `furnKit().home` stands in their places. There is a box bed with turned posts, a planked headboard and a three-band quilt, and a stone hearth with a lintel, a mantel, a pot on a crane and the chimney breast to the ceiling (to the gallery's floor in a two-storey house). There are a planked table with two ladder-back chairs, a candle, a cup and a bowl, an iron-bound chest, two dressed shelves and a braided rug. The wood and cloth come from the nation at the door (`nationAt`), and the seed from the house id.
+
+What the room does is unchanged. The bed is registered where it was, the table is the same foothold, the hearth's light and the Mages' hearth task are where they were, and the strongbox, the roles' extras (loom, net, sacks, barrels) and the resident are untouched. The hearth is now solid (it was walk-through). The flames flicker in `tickInterior`. The last room's baked geometry is freed when the next is built (`furnSwap`). Interiors had never freed anything, and a baked home is 12.7k triangles.
+
+### Verified (headless Chromium)
+- **`homefurn` (new):** a Dunmore home (9 by 8) has one furniture group of two meshes, 12,673 triangles (the prototype counted 43 boxes and 556 triangles for the same furniture). The interior draws 21 meshes in all. The bed is the home's, the table a foothold at .47, the hearth solid, the floor beside the table clear, and the strongbox stands. The flames took 6 different heights in 6 frames. A Gatelands, Mark and Aurenne home differ in mean colour (blue .295, .307, .331). No page errors. The picture, `docs/prototypes/homefurn-ingame.png`, shows two views of the room with the resident.
+- **`interiors`** and **`locks`** pass.
+
+### Needs eyes
+The room in play: the hearth's glow on the new stone, whether the rug and the chest crowd the walk to the bed, and the Mark's and Aurenne's homes (only the Gatelands' was pictured). The inn is next.
