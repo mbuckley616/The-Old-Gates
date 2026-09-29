@@ -7288,3 +7288,27 @@ Session 287 left the beds for a session of their own, because `_intBed` builds e
 
 ### Needs eyes
 The bed's length against the player lying down (sleep has no lying pose, so probably nothing), and the cabin's bunk, which is now a box bed on a ship.
+
+## v80 — Session 289 — The smithy and every shop's counter on the shape kit (H.5 props, Michael's A on #46)
+Michael's A covers the shops "in the same kit" after the homes and inns, and the concept artist named the forge first, so this is the smithy. The prototype has no shop pieces, so they are new, built in its idioms (lathes, rounded boxes, coursed stone, nation's wood) inside `furnBuild`:
+- **The forge:** a coursed-stone base round a rubble core with a coping slab, an iron fire pan with a bed of coals and embers (in the flame mesh, so they flicker), a four-sided sheet hood on two posts, a chimney to the ceiling, and a bellows on a trestle with its nozzle at the fire.
+- **The anvil:** on a barked stump, with a horn, a heel and a waisted body, and a hammer lying on its face.
+- **A quench tub:** staves, hoops and water, with the tongs in it.
+- **Four weapon racks:** on the east wall, holding the weapon kit's own pieces (`wpnBuild`): swords, longsword and claymore point down, and axes, hammers, maces, a flail and a great club head up.
+- **A grindstone:** on a trestle with its trough and crank.
+- **A dagger** lying on the counter.
+
+To bake the weapons into the room, the furniture merge now multiplies a part's own vertex colours (the weapon kit's) into its colour. That leaves the prototype's pieces unchanged, since they have no vertex colours of their own. Every shop's `counter()` is the kit's panelled counter too, bare: the bar with a new `bare` flag that leaves off its tankards and jug. So the armourer, the apothecary and the general goods get it now, and their other boxes are the next sessions.
+
+**Two layout fixes on the way:**
+- **The racks:** they stood at `D-2-k*.9`, which put two of the four inside the back room behind the shop's partition, next to the keeper's bed. They now stand at 4.1–6.95, in front of the partition in every room size.
+- **Solids:** the forge keeps its solid. The anvil and the tub are solid now, footholds at their tops, where the old ones were walk-through.
+
+The furniture bakes a room holds (the room, and now the counter) are freed together when the next room is built (`furnFree`, replacing Session 286's single `FURN_ROOM`).
+
+### Verified (headless Chromium)
+- **`shopfurn` (new):** the smithy near Dunmore (9 by 12) is two bakes, 22,464 + 1,520 triangles, 41 meshes in the room. The counter is a foothold at .65, the forge at .74, the anvil at .62 and the tub at .43. The coals took 6 heights in 6 frames. 5,020 steel-coloured vertices stand in the racks' band of the east wall, in front of the partition. The armourer's, the apothecary's and the general goods' counters are kit bakes and footholds where they were. No page errors. The picture is `docs/prototypes/smithy-ingame.png`.
+- **`theft`**, **`locks`** and **`homefurn`** pass.
+
+### Needs eyes
+These shop pieces had no prototype of their own. They follow Michael's A and the concept artist's list, but the forge's hood and the racks are my reading. The weapons are the kit's person-scale pieces and read small from across the room.
