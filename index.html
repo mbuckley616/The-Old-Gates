@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s301</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s302</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -41349,6 +41349,41 @@ var WORLD=(()=>{
   // S237 — the coaching inn halfway along a coach road (Michael, issue #24: A). A roadside inn: a keeper of the country
   // it stands in, a meal and a drink, one room to let, the coach's board and a tack corner. Built with the line and kept
   // stable by the road's key, so the same inn has the same name and keeper whenever you come back.
+  // S315 — the quest review's Finding 4 (run 2): the coaching inn's keeper, driver and travellers speak in the voice of
+  // the keeper's people (`def.people`); Markish is the fallback, today's text unchanged.
+  const COACH_INN_LINES={
+    gatelander:{
+      greet:["The fire's lit, and there's a chair by it with nobody's name on it.","A full bowl makes a short road. Sit, and it'll come to you.","We don't ask where you've been; a road's its own business. Boots off, though."],
+      place:(n,a,b)=>`${n}, halfway between ${a} and ${b}. A house on a road is only ever half a house; the other half is whoever comes in. The coach stops, we feed them, and the horses drink.`,
+      seatHas:(t,d)=>`The ${t} for ${d}. Your name's on it, and a name given is a name kept. If you're not at the door when it calls, it waits an hour, and not a breath more.`,
+      seatGive:(t,d)=>`The ${t} for ${d}. It's yours, and it'll cost you nothing but being there; the driver knows to wait. An hour, mind. Patience has a bottom to it.`,
+      driver:["The horses first, then me, and then whoever's left.","A quarter hour and we're off, and the road won't shorten for the waiting.","Mind the step when she's in. It's older than it looks, like the rest of us."],
+      road:{trouble:"There's trouble on the road, and trouble doesn't move for a coach. We stand here till it's cleared.",clear:"Clear today, and I'd not promise you tomorrow."},
+      trav:["Waiting on the coach, same as yourself. A watched road never brings it.","Sit, if you like. It'll come no faster for standing.","Would it be six yet, do you think?"]},
+    markman:{
+      greet:["Fire's lit. Take a seat.","Bed's upstairs. Bowl's on the way.","We don't ask where you've been. Boots off, though."],
+      place:(n,a,b)=>`${n}, halfway between ${a} and ${b}. The coach stops, we feed whoever gets off, and the horses drink.`,
+      seatHas:(t,d)=>`The ${t} for ${d}. Your name's on it. If you're not at the door when it calls, it waits — an hour, no more.`,
+      seatGive:(t,d)=>`The ${t} for ${d}. It's yours, and it costs nothing; the driver knows to wait. An hour, no more.`,
+      driver:["Horses first, then me.","Quarter of an hour and we're off.","Mind the step when she's in."],
+      road:{trouble:"There's trouble on the road. We stand here till it's cleared.",clear:"Clear, today."},
+      trav:["Waiting on the coach, same as you.","Sit, if you like. It won't come faster standing.","Is it six yet?"]},
+    aurennais:{
+      greet:["Be welcome, Master. The fire is lit, and the seats by it are free.","A bed upstairs, Master, and the kitchen is open. The terms are at the counter.","We keep no register of travellers, Master; only of accounts."],
+      place:(n,a,b)=>`${n}, Master, halfway between ${a} and ${b}. The coach stops here under the road's contract. We feed its passengers and water its horses, at the posted rates.`,
+      seatHas:(t,d)=>`The ${t} for ${d}, Master. Your name is entered. Should you not be at the door when it calls, it will wait one hour and no longer. That is the term.`,
+      seatGive:(t,d)=>`The ${t} for ${d}, Master. The seat is entered at no charge, and the driver is instructed to wait. One hour, and no longer.`,
+      driver:["The horses are seen to first, Master, and then the passengers.","We depart in a quarter of an hour, Master, on the timetable.","Mind the step when she is in, Master. The company accepts no claims for ankles."],
+      road:{trouble:"The road is obstructed, Master. We are held here until it is cleared.",clear:"Clear today, Master."},
+      trav:["Waiting on the coach, as are you. It is posted for six.","Do sit. Standing will not advance the timetable.","Is it six yet? The notice says six."]},
+    oldblood:{
+      greet:["The fire is lit. Sit.","Bed above. Bread soon.","Boots off. The rest is yours."],
+      place:(n,a,b)=>`${n}. Halfway between ${a} and ${b}. The coach stops. We feed who gets off. The horses drink.`,
+      seatHas:(t,d)=>`The ${t} for ${d}. Your name is on it. It waits an hour.`,
+      seatGive:(t,d)=>`The ${t} for ${d}. Yours, and no charge. It waits an hour, no more.`,
+      driver:["Horses first.","A quarter hour.","Mind the step."],
+      road:{trouble:"Trouble on the road. We wait.",clear:"Clear."},
+      trav:["Waiting.","Sit. It comes when it comes.","Six yet?"]}};
   const COACH_INNS=new Map();
   function coachInnHouse(key,rt,rd,ix,iz,L){
     if(COACH_INNS.has(key))return COACH_INNS.get(key);
@@ -41363,11 +41398,12 @@ var WORLD=(()=>{
     const hm=m=>{const t=((m%1440)+1440)%1440;return `${Math.floor(t/60)}:${String(Math.round(t%60)).padStart(2,'0')}`;};
     const half=Math.round(L/2/COACH_SPEED); // game minutes from either end to the inn
     const board=`The coach for ${B?B.name:'the far end'} leaves ${A?A.name:'the near end'} at six and calls here about ${hm(6*60+half)}. The coach for ${A?A.name:'the near end'} leaves ${B?B.name:'the far end'} at six in the evening and calls here about ${hm(18*60+half)}. A quarter of an hour, then it goes on.`;
+    const CL=COACH_INN_LINES[nationOf(ci,cj).people]||COACH_INN_LINES.markman;
     const def={name:keeper,role:'Innkeeper',ico:'\u{1F37A}',people:nationOf(ci,cj).people,x:0,z:0,bCol:house.bCol,sCol:house.sCol,
-      greeting:["Fire's lit. Take a seat.","Bed's upstairs. Bowl's on the way.","We don't ask where you've been. Boots off, though."],_extra:innTopics(house)};
+      greeting:CL.greet,_extra:innTopics(house)};
     Object.defineProperty(def,'topics',{configurable:true,get(){return [...def._extra,
-      {label:'When does the coach come through?',response:board},seatTopic(key,A,B,half),
-      {label:'What is this place?',response:`${name}, halfway between ${A?A.name:'one town'} and ${B?B.name:'the next'}. The coach stops, we feed whoever gets off, and the horses drink.`},
+      {label:'When does the coach come through?',response:board},seatTopic(key,A,B,half,def.people),
+      {label:'What is this place?',response:CL.place(name,A?A.name:'one town',B?B.name:'the next')},
       {label:'Any news?',get response(){return pick(Math.random,RUMORS[reg]||RUMORS.irish);}},
       {label:'How’s the weather been?',get response(){return weatherLine();}},
       {label:'Farewell.',bye:true}];}});
@@ -41384,12 +41420,12 @@ var WORLD=(()=>{
     const tod=worldState.gameTimeMinutes||0;let best=null; // counted from the clock of the day, which the timetable reads
     for(const [m,dir] of [[6*60+half,1],[18*60+half,-1]]){let dm=((m-tod)%1440+1440)%1440;if(dm===0)dm=1440;if(!best||dm<best.dm)best={dm,dir,m};}
     return best&&{at:now+best.dm,tod:best.m,dir:best.dir};}
-  function seatTopic(key,A,B,half){const hm=m=>{const t=((m%1440)+1440)%1440;return `${Math.floor(t/60)}:${String(Math.round(t%60)).padStart(2,'0')}`;};
+  function seatTopic(key,A,B,half,people){const L=COACH_INN_LINES[people]||COACH_INN_LINES.markman;const hm=m=>{const t=((m%1440)+1440)%1440;return `${Math.floor(t/60)}:${String(Math.round(t%60)).padStart(2,'0')}`;};
     const dest=dir=>{const t=dir>0?B:A;return t?t.name:'the far end';};const S=seatNow();
-    if(S&&S.key===key)return {label:'My seat on the coach?',response:`The ${hm(S.tod)} for ${dest(S.dir)}. Your name's on it. If you're not at the door when it calls, it waits — an hour, no more.`};
+    if(S&&S.key===key)return {label:'My seat on the coach?',response:L.seatHas(hm(S.tod),dest(S.dir))};
     return {label:'A seat on the next coach?',quest:true,fn:()=>{const c=nextCall(key,half);if(!c)return 'No coach calls here now.';
       worldState.coachSeat={key,at:c.at,tod:c.tod,dir:c.dir};if(typeof addLog==='function')addLog('🐎',`A seat held on the ${hm(c.tod)} coach for ${dest(c.dir)}.`);
-      return `The ${hm(c.tod)} for ${dest(c.dir)}. It's yours, and it costs nothing; the driver knows to wait. An hour, no more.`;}};}
+      return L.seatGive(hm(c.tod),dest(c.dir));}};}
   function seatHeldFor(C,key,dir){const S=seatNow();return !!S&&S.key===key&&S.dir===dir&&!C.riding;}
   function seatCatchUp(C,key){const S=seatNow();if(!S||S.key!==key||C.riding)return;const now=worldState.gameTimeAbsMinutes||0;
     if(now>=S.at+SEAT_HOLD){if(!(C.state==='stop'&&C.holdTo)){worldState.coachSeat=null;showMsg('The coach could not wait any longer. Your seat has gone with it.','#c8b880');}return;}
@@ -41404,12 +41440,13 @@ var WORLD=(()=>{
     const hk=String(key).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);const r=rngFor((hk+innDay())%100003,innDay()%7919);
     const [ci,cj]=cellOf(house.doorX,house.doorZ);const P=PEOPLES[nationOf(ci,cj).people]||PEOPLES.gatelander;const bank=NAMES[P.names]||NAMES[house.reg]||NAMES.irish;
     const nm=()=>pick(r,r()<.5?bank.f:bank.m);const used=new Set([house.keeper]);const fresh=()=>{let n=nm();for(let k=0;k<6&&used.has(n);k++)n=nm();used.add(n);return n;};
-    const road=()=>(C&&C.halted)||(A&&B&&roadBroken(A,B))?"There's trouble on the road. We stand here till it's cleared.":"Clear, today.";
-    const folk=[{name:fresh(),role:'Coach Driver',ico:'\u{1F40E}',greeting:["Horses first, then me.","Quarter of an hour and we're off.","Mind the step when she's in."],
+    const L=COACH_INN_LINES[nationOf(ci,cj).people]||COACH_INN_LINES.markman;
+    const road=()=>(C&&C.halted)||(A&&B&&roadBroken(A,B))?L.road.trouble:L.road.clear;
+    const folk=[{name:fresh(),role:'Coach Driver',ico:'\u{1F40E}',greeting:L.driver,
       topics:[{label:'When does the coach leave?',response:house._board||'At six, either end.'},{label:'How’s the road?',get response(){return road();}},{label:'Farewell.',bye:true}]}];
     const n=1+(r()<.5?1:0);
     for(let k=0;k<n;k++){const toB=r()<.5,dest=toB?B:A;const why=pick(r,['Family.','Work, if it’s still there.','A wedding. Not mine.','I’ve a debt to collect.','The same as everyone. Something better.']);
-      folk.push({name:fresh(),role:'Traveller',ico:'\u{1F9F3}',greeting:["Waiting on the coach, same as you.","Sit, if you like. It won't come faster standing.","Is it six yet?"],
+      folk.push({name:fresh(),role:'Traveller',ico:'\u{1F9F3}',greeting:L.trav,
         topics:[{label:'Where are you headed?',response:`${dest?dest.name:'The next town'}. ${why}`},{label:'Farewell.',bye:true}]});}
     folk.forEach((def,k)=>{const g=buildNPCMesh({role:'villager',name:def.name,bCol:k?0x4a4038:0x3a2a20,sCol:pick(r,P.skin)},{nation:nationAt(house.doorX,house.doorZ),key:'coach_'+key});
       let x=W/2,z=D*.7;for(let t=0;t<40;t++){const cx=2.5+r()*(W-5),cz=Math.max(5.5,D*.5)+r()*(D*.5-2.5);if(!intSolidAt(cx,cz,.45,0)&&!INT_NPCS.some(o=>Math.hypot(o.g.position.x-cx,o.g.position.z-cz)<1.2)){x=cx;z=cz;break;}}g.position.set(x,0,z);g.rotation.y=r()*Math.PI*2;sc_.add(g);

@@ -8144,3 +8144,14 @@ A gap left by Session 311. Indoors the game stays in the open world's zone and t
 Nothing new to judge. The drawn guard indoors can now be locked when he's in the room with you. How lock-on feels in a small shop, where the view turns hard at close quarters, is worth a glance during the next indoor fight.
 
 Correction to Sessions 311–314 above: they were pushed as Sessions 308–311. The look branch had pushed its own 308–310 first (auto/backlog), so this branch's four are renumbered 311–314 in the devlog, the backlog, the code's comments and the tests' headers. The commit messages keep the old numbers.
+
+## v80 — Session 315 — The coaching inn in its own voice (register fix, quest review run 2)
+The quest review's run 2 (`docs/quest_review.md` on auto/quests, Finding 4) found the coaching inn speaking Markish on every road. The keeper, the driver and the travellers of Sessions 237–238 and 267 used one set of lines, though the keeper has a people and the driver and travellers are drawn from the same people's names. Register fixes are applied as the review writes them, without a decision, so this is a short session.
+
+**What changed.** The review's `COACH_INN_LINES` table is in the world module word for word (compared byte for byte with the review's block), with rows for the Gatelanders, the Markmen, the Aurennais and the Old Blood. The keeper's greeting, *What is this place?*, both seat lines (*A seat on the next coach?* and *My seat on the coach?*), the driver's greeting and his *How's the road?*, and the travellers' greeting are now chosen by the keeper's people (`def.people`). `seatTopic` takes the people as an argument. With no row, the Markish row is used, which is the old text unchanged. As the review asks, the board, the travellers' reasons, the rumours and the weather stay as they are. So do the innkeeper's room lines, which the review leaves to the author's audit.
+
+### Verified (headless Chromium)
+New `tests/coachvoice.test.mjs`, passing, no page errors. Eight coach roads between the home province's towns were raised, and every inn on them is Gatelander. Each keeper greets with *The fire's lit, and there's a chair by it with nobody's name on it.* and answers *What is this place?* and both seat topics in the Gatelander lines. The driver and one or two travellers are built in the common room at 13h, and they greet in the same voice. The home province raises no inn of the other three peoples, so those rows are checked only against the review's text and the parse. `coachseat` pinned the old wording (*costs nothing*); its check now accepts the Gatelander *cost you nothing*, and the rule it tests is unchanged. `coachseat`, `coachinn` and `register` pass.
+
+### Needs eyes
+The Gatelander lines are longer than the old ones; whether they fit the dialogue box at a glance. An Aurennais or Old Blood coaching inn will only be heard once a coach road runs through their lands.

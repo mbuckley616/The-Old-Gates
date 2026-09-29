@@ -29,7 +29,7 @@ const take = await page.evaluate(() => { forceTime(5); const C = WORLD.coachLine
   const t = _topic(/A seat on the next coach/); const line = t && t.fn(); const s = worldState.coachSeat; const now = worldState.gameTimeAbsMinutes;
   const mine = _topic(/My seat on the coach/); return { offered: !!t, line, dir: s && s.dir, inMin: s && Math.round(s.at - now), mine: mine && mine.response }; });
 console.log(JSON.stringify(take));
-check('the keeper holds a seat for nothing: the next coach to call, the morning one', take.offered && take.dir === 1 && take.inMin > 60 && take.inMin < 60 + 120 && /costs nothing/.test(take.line) && /The 6:\d\d for/.test(take.line) && /Your name/.test(take.mine || ''), take);
+check('the keeper holds a seat for nothing: the next coach to call, the morning one', take.offered && take.dir === 1 && take.inMin > 60 && take.inMin < 60 + 120 && /cost(s| you) nothing/.test(take.line) && /The 6:\d\d for/.test(take.line) && /Your name/.test(take.mine || ''), take);
 
 // 3. it calls and waits past the quarter hour; you board and it goes on
 const held = await page.evaluate(() => { const C = WORLD.coachLines.get(_key); let arrived = null; const g0 = gold;
