@@ -23,7 +23,7 @@ for (const t of ['guild_f', 'guild_m']) {
   check(`a ${t} hall is found`, await enter(t));
   const r = await look(); console.log(JSON.stringify(r));
   // the room's bake, the notice board, and one chest a dormitory pair (4 pairs)
-  check(`${t}: the hall is one bake of 15–90k triangles, with the notice board and four dormitory chests beside it, and no cylinders left`, r.furn === 6 && r.big > 15000 && r.big < 90000 && r.cyl === 0, r);
+  check(`${t}: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left`, r.furn === 7 && r.big > 15000 && r.big < 90000 && r.cyl === 0, r);
   check(`${t}: the steward's desk and the long table are footholds where they were, the dormitories' eight beds (and the gallery's) and the three members there`, r.desk && r.table && r.beds >= 8 && r.npcs === 3, r);
   pics.push(await shoot(['[W/2, 1.6, D*.5-.6, W/2, .7, 1.2]', '[W/2-2.5, 1.3, D*.3+1.8, W-.3, .6, D*.3-1.5]']));
 }

@@ -7356,3 +7356,21 @@ Books are plain boxes rather than the kit's rounded ones. A book's bevel never s
 
 ### Needs eyes
 The desk and board sit under the gallery and read dark. The Fighters' racks are a long way from the door. And the halls are big (181 meshes, mostly the shell, the beds and the doors).
+
+## v80 — Session 293 — The cellar, the cabin, the chapel and the gallery's chest on the shape kit (H.5 props, #46 A)
+The rooms Michael's A reaches after the named ones. Each is one bake.
+- **The cellar:** the kit barrels and crates as before, a wine rack of bottles lying neck out where the shelf of upright cylinders stood, the prototype's iron-bound chest, and a ladder of two rails and round rungs up to the hatch.
+- **The ship's cabin:** the chart table (the prototype's table) with a chart and its ink lines, a log book, brass dividers and a candle, three tied sacks, and two shelves of bottles. The bunk is `_intBed`'s and the stash chest is the game's own interactive one, both as they were.
+- **The chapel:** the seven fallen stones in the gap between its partitions, where the boxes lay; a flagged stone dais with a moulded pillar and a cap where two cylinders stood; six candles in dishes round it; Session 291's pews either side; and a ladder to the hatch.
+- **The gallery's chest:** the upstairs chest in every two-storey home, inn and guild hall is the kit chest.
+
+**Two fixes found on the way:**
+- **`_intCrate` floated every crate.** Every caller passes the crate's centre height (`.25` for a crate .5 across), but the old box put its base there, so every crate stood half its size above the floor. The cellar's stacked crate stood .1 above the ones under it. `_intCrate` now reads `y` as the centre, and the cellar's stacked crate is placed on top of the others.
+- **`FN` was used before it was declared.** `FN` (the room's nation and seed, Session 289) was declared with the shops' counter, after the gallery code. The gallery chest reached it first, and the `interiors` suite caught the error ("Cannot access 'FN' before initialization") before this was pushed. It is now declared at the top of `buildInteriorFor`.
+
+### Verified (headless Chromium)
+- **`oddfurn` (new):** the three rooms, built through `WORLD.buildInteriorFor`. The cellar is one bake of 6,892 triangles with the kit barrels and crates, no cylinders left besides the barrels' lids, three crates at 0 and the stacked one at .5. The cabin is one bake of 5,303 triangles and the chapel one of 5,082, neither with cylinders left. No page errors. The picture is `docs/prototypes/oddrooms-ingame.png`.
+- **`homefurn`**, **`guildfurn`**, **`shopfurn`** and **`interiors`** pass. The first two now count the gallery's chest among a two-storey room's bakes.
+
+### Needs eyes
+The chapel's pillar is a plain moulded column. What stands on that dais is the lore's to say, and I have not guessed.

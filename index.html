@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s265</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s266</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21895,6 +21895,44 @@ function furnBuild(THREE, SK) {
       q(SK.cyl(.03, .03, .3, 10), 0xe0d4b0, .6, .49, .3, 0, .4, Math.PI / 2); p.put(q, W / 2, tz, 0); }
     for (let x = W / 2 - 4; x <= W / 2 + 4; x += 8) for (let z = 6; z < D - 3; z += 5) p.put(column(H, .3, s + 40 + z), x, z, 0);
     return p; }
+  // ── S293: the odd rooms — the cellar, the ship's cabin, the chapel ──
+  // a ladder against the wall (the wall at −z): two rails and round rungs, h tall
+  function ladder(h, n, seed) { const r = rng(seed || 95), p = Parts(), W = WOOD[n] || WOOD.gatelands;
+    for (const s of [-1, 1]) p(SK.rbox(.06, h, .06, .015, 1), jit(W.wood, r, .05), s * .4, h / 2, .1, -.06, 0, 0);
+    for (let y = .3; y < h - .1; y += .4) p(SK.cyl(.018, .018, .8, 6), jit(W.dark, r, .04), 0, y, .1 + y * .06, 0, 0, Math.PI / 2);
+    return p; }
+  // a wine rack along the wall (the wall at −z): three shelves of bottles lying neck out, len long
+  function wineRack(len, n, seed) { const r = rng(seed || 97), p = Parts(), W = WOOD[n] || WOOD.gatelands;
+    const nu = Math.max(2, Math.round(len / .8) + 1); for (let i = 0; i < nu; i++) p(SK.rbox(.05, 1.3, .36, .008, 1), jit(W.dark, r, .04), -len / 2 + len * i / (nu - 1), .65, .18);
+    [.6, .92, 1.24].forEach(y => { p(SK.rbox(len, .03, .36, .008, 1), jit(W.wood, r, .04), 0, y, .18);
+      for (let x = -len / 2 + .08; x < len / 2 - .06; x += .09) if (r() > .12) { const c = [0x2a4a2a, 0x3a1a1a, 0x5a6a3a, 0x2a3a4a, 0x50a0d0, 0xc04040][Math.floor(r() * 6)];
+        p(lathe([[.001, 0], [.035, 0], [.035, .17], [.012, .23], [.012, .29], [.001, .29]], 6), c, x, y + .05, .04, Math.PI / 2, 0, 0); } });
+    return p; }
+  // rubble: a heap of fallen dressed stones, as the old stacked blocks stood
+  function fallen(list, seed) { const r = rng(seed || 99), p = Parts(), ST = 0x6a5a4a;
+    for (const [x, y, z] of list) p(SK.rbox(.45 + (r() - .5) * .1, .22, .3 + (r() - .5) * .08, .04, 1), jit(ST, r, .1), x, y, z, (r() - .5) * .15, (r() - .5) * .5, (r() - .5) * .15);
+    return p; }
+  function cellar(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    p.put(wineRack(3.2, n, s), W - .02, D * .6, -Math.PI / 2);
+    p.put(chest(n, s + 1), W / 2, D - 1.4, Math.PI);
+    p.put(ladder(2.0, n, s + 2), W / 2, .52, 0);
+    return p; }
+  function cabin(W, D, H, n, seed) { const p = Parts(), s = seed || 1, r = rng(s + 7);
+    const tx = W / 2 + .6, tz = D * .45; p.put(table(1.8, 1.1, n, s), tx, tz, 0);
+    { const q = Parts(); q(SK.rbox(.9, .004, .6, .002, 1), 0xe8d8b0, 0, .463, 0); for (let k = 0; k < 6; k++) q(SK.rbox(.3 + r() * .4, .001, .006, .001, 1), 0x6a5a3a, (r() - .5) * .4, .466, (r() - .5) * .45, 0, r() * 3, 0);
+      q(SK.rbox(.3, .025, .22, .005, 1), 0x5a2a1a, -.2, .475, -.12, 0, .3, 0); candle(q, .6, .46, .2); q(SK.cyl(.004, .004, .14, 4), 0xa8843a, .2, .47, .15, 0, .6, Math.PI / 2); p.put(q, tx, tz, 0); }
+    for (let k = 0; k < 3; k++) p.put(sack(s + 3 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), W - 1.0 - k * .7, D - 1.6, k);
+    [.62, .99].forEach((y, i) => p.put(shelf(2.2, n, s + 10 + i, 'bottles'), 1.3, 0, 0, y));
+    return p; }
+  function chapel(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    const L = []; for (let k = 0; k < 7; k++) L.push([W * .38 + .3 + (k % 2) * .4, .124 + Math.floor(k / 2) * .186, D * .55 + (k % 3 - 1) * .25]); p.put(fallen(L, s), 0, 0, 0);
+    p.put(dais(3.2, 2.0, .31, s + 1), W / 2, 2.2, 0);
+    p(lathe([[.001, 0], [.33, 0], [.33, .06], [.28, .1], [.26, .9], [.3, .95], [.34, 1.0], [.001, 1.0]], 12), 0xa8a098, W / 2, .31, 2.2);
+    p(lathe([[.001, 0], [.26, 0], [.28, .05], [.22, .1], [.22, .26], [.001, .31]], 12), 0x98908a, W / 2, 1.31, 2.2);
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, q = Parts(); candle(q, 0, 0, 0); p.put(q, W / 2 + Math.cos(a) * 1.9, 2.2 + Math.sin(a) * 1.2, 0, .31 * (Math.abs(Math.sin(a) * 1.2) < 1 && Math.abs(Math.cos(a) * 1.9) < 1.6 ? 1 : 0)); }
+    for (let z = D * .62, k = 0; z < D - 1; z += 1.4, k++) for (const x of [W * .2, W * .8]) p.put(pew(1.6, n, s + 10 + k * 2 + (x > W / 2 ? 1 : 0)), x, z, 0);
+    p.put(ladder(2.0, n, s + 3), W / 2, D - .78, Math.PI);
+    return p; }
   // the flames flicker: call per frame with the fire mesh and the time
   function flicker(fire, t) { if (!fire) return; const s = 1 + Math.sin(t * 11.3) * .06 + Math.sin(t * 17.1) * .04; fire.scale.set(1, s, 1); }
 
@@ -21936,7 +21974,7 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
-  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM };
+  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
 }
 
 let _FURN = null;
@@ -24671,7 +24709,8 @@ function _intShelf(sc,x,y,z,len,items,itemCols){
   }
 }
 // S290 — the interiors' barrel and crate on the kit: the dungeon's barrel (kitBarrel, S200) at .44 high, and the shops' crate
-// of planks between battens in the room's wood; each size baked once and shared
+// of planks between battens in the room's wood; each size baked once and shared. S293: _intCrate's y is the crate's centre,
+// as every caller passes it (the old box sat its base there, so every crate floated by half its size)
 const INT_KIT_GEO=new Map();
 function _intBarrel(sc,x,z){
   let b=INT_KIT_GEO.get('barrel');if(!b){const B=kitBarrel(.8,0x5a3810);b={body:B.body.geometry,bm:B.body.material,top:B.top.geometry,tm:B.top.material};INT_KIT_GEO.set('barrel',b);}
@@ -24680,7 +24719,7 @@ function _intBarrel(sc,x,z){
 function _intCrate(sc,x,y,z,s=.38){
   const K=furnKit(),n=INT_BED_NATION||'gatelands',key='crate|'+n+'|'+s.toFixed(2);let geo=INT_KIT_GEO.get(key);
   if(!geo){geo=K.bake(K.crate(s,n,Math.round(s*100))).children[0].geometry;INT_KIT_GEO.set(key,geo);}
-  const m=new THREE.Mesh(geo,K.MAT);m.position.set(x,y,z);sc.add(m);return m;
+  const m=new THREE.Mesh(geo,K.MAT);m.position.set(x,Math.max(0,y-s/2),z);sc.add(m);return m;
 }
 function _intPew(sc,x,z,len=2.2){
   // Seat
@@ -38879,6 +38918,8 @@ var WORLD=(()=>{
     const solid=(x,z,hw,hd,top)=>{const t=(top==null?.62:top)*F;SOL.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y0:-.5,y1:t});FOOTHOLDS.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y:t});};
     INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
     const bedOwner=type==='inn'?'inn':type==='home'?'home':(type==='guild_f'||type==='guild_m')?'guild':'free';
+    // S289 — the room's nation (the furniture's wood) and a seed from the house id; S293: declared before the gallery uses it
+    const FN=nationAt(house.doorX,house.doorZ),FSEED=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13)%100000;
     // Partition wall from (x0,z0) to (x1,z1) on a floor at base `by`, height `hh`,
     // with an optional doorway (gap 1.4) at parameter t (0..1). Full-height solid.
     const wallMat=()=>tiled(st==='anglo'?'rubble':(st==='stone'||st==='garrison')?'ashlar':'plaster',reg,2,1);
@@ -38945,13 +38986,12 @@ var WORLD=(()=>{
       const up=o=>{o.position.y+=gy;};
       const lift=n=>sc_.children.slice(-n).forEach(up);
       {const nR=Math.max(1,Math.floor(W/4.5));const many=type==='inn'||type==='guild_f'||type==='guild_m';for(let k=0;k<(many?nR:1);k++){const bx=(k+.5)*W/nR+(k%2?.6:-.6);const k0=sc_.children.length;_intBed(sc_,bx,1.1,'N');sc_.children.slice(k0).forEach(up);bedAt(bx,1.1,gy,type==='inn'?k:null);if(many&&W/nR>4.2){const k1=sc_.children.length;_intBed(sc_,bx+(k%2?-1.6:1.6),1.1,'N');sc_.children.slice(k1).forEach(up);bedAt(bx+(k%2?-1.6:1.6),1.1,gy,type==='inn'?k:null);}}}
-      const k1=sc_.children.length;boxRaw(W/2,.3,.6,.9,.6,.6,0x5a3a1c);sc_.children.slice(k1).forEach(up);
+      {const K=furnKit(),c=K.bake(K.chest(FN,FSEED+3));c.position.set(W/2,gy,.6);c.userData.furn=true;sc_.add(c);furnSwap(c);} // S293 — the gallery's chest on the kit
       const gl=new THREE.PointLight(0xffaa44,.9,gd*1.5);gl.position.set(W/2,gy+1.2,gd/2);sc_.add(gl);
     }
     // ── trade furnishing ────────────────────────────────────────────────
     let npc={x:W/2,z:2.6,maxZ:Math.min(D*.55,4.5),paused:false};
     // S289 — every shop's counter is the kit's panelled counter, bare (the bar without its tankards), its own small bake
-    const FN=nationAt(house.doorX,house.doorZ),FSEED=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13)%100000;
     const counter=()=>{const K=furnKit(),c=K.bake(K.counter(W*.5,FN,FSEED+5,true));c.position.set(W/2,0,3.0);c.userData.furn=true;sc_.add(c);furnSwap(c);solid(W/2,3.0,W*.25+.1,.4,1.05);};
     // A finished table: thick plank top with a lip, aprons, turned legs, and benches if asked.
     const table=(x,z,w,d,benches)=>{
@@ -39079,29 +39119,23 @@ var WORLD=(()=>{
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else if(type==='chapel'){
       partition(0,D*.55,W*.38,D*.55,0,ceil-.3,null);partition(W*.62,D*.55,W,D*.55,0,ceil-.3,null);
-      for(let k=0;k<7;k++)box(W*.38+.3+(k%2)*.4,.2+Math.floor(k/2)*.3,D*.55+(k%3-1)*.25,.45,.22,.3,0x6a5a4a);
-      box(W/2,.25,2.2,3.2,.5,2.0,0xb8b0a0);box(W/2,.55,2.2,2.6,.1,1.6,0xc8c0b0);
-      cyl(W/2,1.55,2.2,.42,.5,1.6,0xa8a098,10);cyl(W/2,2.6,2.2,.36,.36,.5,0xa8a098,12);
-      for(let k=0;k<6;k++){const a=k/6*Math.PI*2;cyl(W/2+Math.cos(a)*1.9,.62,2.2+Math.sin(a)*1.2,.05,.06,.24,0xe8e0d0,6);}
-      for(let z=D*.62;z<D-1;z+=1.4){box(W*.2,.55,z,1.6,.08,.4,0x4a3018);box(W*.8,.55,z,1.6,.08,.4,0x4a3018);}
-      boxRaw(W/2,1.0,D-.7,1.0,2.0,.12,0x4a3018);for(let k=0;k<5;k++)boxRaw(W/2,.3+k*.4,D-.7,.9,.06,.14,0x6a4a2a);
+      // S293 — the chapel on the kit: the fallen stones in the gap as they lay, a stone dais with a moulded pillar and its cap,
+      // six candles round it, pews either side, a ladder to the hatch; one bake
+      {const K=furnKit(),room=K.bake(K.chapel(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       HATCH.x=W/2;HATCH.z=D-1.3;HATCH.y=0;HATCH.active=true;
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else if(type==='cellar'){
-      for(let k=0;k<4;k++){_intBarrel(sc_,1.2+k*1.1,1.2);}for(let k=0;k<3;k++){_intCrate(sc_,W-1.2-k*.9,.3,1.3,.5);}_intCrate(sc_,W-1.65,.9,1.3,.45);
-      [1.0,1.5,2.0].forEach(y=>{box(W-.25,y,D*.6,.4,.06,3.2,0x4a3018);for(let z=D*.6-1.4;z<D*.6+1.4;z+=.45)cyl(W-.25,y+.2,z,.1,.1,.32,[0x50a0d0,0x40c060,0xc04040][(z*7|0)%3],6);});
-      box(W/2,.3,D-1.4,.9,.6,.6,0x5a3a1c);box(W/2,.62,D-1.4,.95,.08,.65,0x4a2810);
-      boxRaw(W/2,1.0,.6,1.0,2.0,.12,0x4a3018);for(let k=0;k<5;k++)boxRaw(W/2,.3+k*.4,.6,.9,.06,.14,0x6a4a2a);
+      // S293 — the cellar on the kit: the barrels and crates (the stacked crate now on the others), a wine rack, a chest, a ladder
+      for(let k=0;k<4;k++){_intBarrel(sc_,1.2+k*1.1,1.2);}for(let k=0;k<3;k++){_intCrate(sc_,W-1.2-k*.9,.25,1.3,.5);}_intCrate(sc_,W-1.65,.5+.225,1.3,.45);
+      {const K=furnKit(),room=K.bake(K.cellar(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       HATCH.x=W/2;HATCH.z=1.2;HATCH.y=0;HATCH.active=true;
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else if(type==='cabin'){
       // the captain's cabin: bunk, chart table, lantern, the hold (stash chest)
       _intBed(sc_,1.3,1.6,'N');bedAt(1.3,1.6,0);intBedPos={x:1.3,z:1.6};
-      table(W/2+.6,D*.45,1.8,1.1,false);box(W/2+.6,.8,D*.45,1.4,.02,.9,0xe8d8b0);box(W/2+.4,.86,D*.45-.2,.5,.04,.35,0xd0a060);
-      cyl(W/2+1.2,.92,D*.45+.3,.08,.08,.22,0xb8a070,6);glow(W/2+1.2,1.05,D*.45+.3,0xffe0a0);
+      // S293 — the cabin on the kit: the chart table (a chart, a log, dividers and a candle), sacks, the shelves of bottles
+      {const K=furnKit(),room=K.bake(K.cabin(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}solid(W/2+.6,D*.45,.9,.55,.76);
       if(typeof _intStashChest==='function'){_intStashChest(sc_,W-1.2,1.2);intStashPos={x:W-1.2,z:1.2};}
-      for(let k=0;k<3;k++)cyl(W-1.0-k*.7,.35,D-1.6,.32,.38,.7,[0xb8a070,0x9a8a60,0xc0b080][k],7);
-      [1.0,1.6].forEach(y=>{box(1.3,y,.25,2.2,.06,.35,0x4a3018);for(let x=.6;x<2.2;x+=.5)cyl(x,y+.2,.25,.09,.09,.3,[0x50a0d0,0x40c060,0xc04040][(x*7|0)%3],6);});
       const port=new THREE.Mesh(new THREE.CircleGeometry(.32,12),new THREE.MeshBasicMaterial({color:0x7ac8ff}));port.position.set(W-.04,1.3,D*.6);port.rotation.y=-Math.PI/2;sc_.add(port);
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else { // home
