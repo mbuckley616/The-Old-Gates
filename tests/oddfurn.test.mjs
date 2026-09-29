@@ -31,6 +31,16 @@ const tw = await page.evaluate(() => { const house = { id: 'test_tower', type: '
 console.log(JSON.stringify(tw));
 check('the tower\'s helix, post, rail and chest are one bake reaching past the top floor (30), a handful of boxes left (the floor slabs), the spiral foothold as before', tw.furn === 1 && tw.top > 31 && tw.boxes < 10 && tw.meshes < 30 && tw.spiral, tw);
 check('the chest\'s glow and the four window glows are up at the top floor, the post solid to 30, the loot where it was', tw.glows.length >= 5 && tw.glows.filter(y => y > 30).length >= 5 && tw.postTop >= 29.9 && tw.loot === 30, tw);
+// the safehouse (Session 295): the legacy builder's room, its side table, bookcase, chair and hearth one bake; the bed and
+// the stash chest where they were
+const sf = await page.evaluate(() => { buildInterior({ type: 'safehouse', name: 'Test', keeper: '' }); const sc = interiorScene; sc.updateMatrixWorld(true);
+  let meshes = 0, boxes = 0; sc.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'BoxGeometry') boxes++; } });
+  const furn = sc.children.filter(o => o.userData.furn);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(62, cv.width / cv.height, .05, 60); cam.position.set(1.5, 1.4, 7.2); cam.lookAt(6, .5, 2); REN.render(sc, cam);
+  const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); window._pics.push(o.toDataURL());
+  return { meshes, boxes, furn: furn.length, tris: furn[0] && furn[0].userData.tris, bed: intBedPos, stash: intStashPos }; });
+console.log(JSON.stringify(sf));
+check('the safehouse\'s furniture is one bake beside the bed and the stash chest, which stand where they were', sf.furn === 1 && sf.tris > 3000 && sf.bed && sf.bed.x === 1 && sf.stash && sf.stash.z === 1, sf);
 const grid = await page.evaluate(() => new Promise(res => { const c = document.createElement('canvas'); let x = null, k = 0; _pics.forEach((p, i) => { const im = new Image(); im.onload = () => { if (!x) { c.width = im.width * _pics.length; c.height = im.height; x = c.getContext('2d'); } x.drawImage(im, i * im.width, 0); if (++k === _pics.length) res(c.toDataURL()); }; im.src = p; }); }));
 fs.writeFileSync('tests/out/oddrooms.png', Buffer.from(grid.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);

@@ -7388,3 +7388,14 @@ The tower's interior was 130 box treads, each its own mesh and draw call, climbi
 
 ### Needs eyes
 The climb itself in play: the treads are the same size and place, but they are rounded stone now. And whether the chest's being visible at last changes how the tower's reward reads.
+
+## v80 — Session 295 — The safehouse on the shape kit (H.5, #46 A)
+The safehouse Caldric grants, and the legacy homes of Hearthwick's old zone that copy its layout, are built by the older `buildInterior`, not `buildInteriorFor`, so the earlier sessions never reached them. Their side table and box lantern, the bookshelf, the chair and the four-box hearth are now one bake (`_legacyRoomKit`) at the places the boxes stood. That is a small kit table with a candle, a bookcase on the east wall, a ladder-back chair facing into the room, and the prototype's stone hearth in the north-east corner. The bed (the kit bed since Session 288), the stash chest, both lights and the rug are unchanged. The rest of `buildInterior` (Hearthwick's legacy shops, inn, church and keep) is still boxes and is owed.
+
+The legacy bake is not freed when you leave (the world module's `furnFree` does not reach this builder). A safehouse visit costs one 7.9k-triangle geometry until the page is closed, which is noted rather than wired across the module boundary this late in a run.
+
+### Verified (headless Chromium)
+- **`oddfurn`**, extended: `buildInterior({type:'safehouse'})` has one furniture bake of 7,857 triangles, 37 meshes in the room (the walls, the stash chest and the doors among them), the bed at (1, 2.6) and the stash at (4, 1) as before. The safehouse is the fifth panel of `docs/prototypes/oddrooms-ingame.png`. The other four rooms pass as in Sessions 293–294.
+
+### Needs eyes
+The safehouse in play, since it is the one room the player owns from the start of the story.
