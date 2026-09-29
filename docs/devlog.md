@@ -8042,3 +8042,29 @@ New `tests/lockon.test.mjs`, 17 checks, passing, no page errors. Pointer lock is
 - How the hold feels: 12 a second on the turn may be too stiff or too loose when a wolf circles you, and whether 14 units is the right reach to lock from.
 - Whether the view's pull on pitch fights you on slopes and stairs, and whether the gold diamond reads against snow and torchlight.
 - Laptops: a trackpad has no middle click. If Michael plays on one, lock-on needs a key as well (Tab is the hub's; a free key such as R or Z would do). That is his call.
+
+## v80 — Session 298 — An opening you earn
+Michael answered the combat question with **B** (`docs/design/combat.md`). One of its Opus sessions is the counters: *a perfect parry drains 40% of the enemy's posture and opens a riposte for 0.8 s: the next hit is ×2.5, unblockable, and cannot be interrupted. A broken posture opens a finisher from the front (×3, a pose of its own, 1.2 s in which you are untouchable) as well as today's ×1.5 window.* The page lists this session after B's Fable session (the attack table, one resolver). The counters, though, are rules on the blow's multiplier and on the parry, and both resolvers already share `applyMeleeDamage` and `executeStrike`. So they are built here as helpers (`riposteOpen`, `finisherOpen`) that the one resolver can call when it comes.
+
+Before this, a perfect parry staggered the foe for 1.2 s and cost it no posture. Every blow on a staggered foe was ×1.5, whether the stagger came from a parry or from a broken posture.
+
+**The riposte.** A perfect parry now drains 40% of the foe's posture before it staggers it. If that empties the posture, the stagger is the full posture break's 1.5 s. The parry opens a riposte for 0.8 s, and the message says so (*Perfect Parry! Bandit staggered — riposte!*). The first swing you begin inside those 0.8 s lands ×2.5 in place of the stagger's ×1.5. I read *the next hit* and *cannot be interrupted* this way: the riposte belongs to the swing begun in the window, so a blade that arrives after 0.8 s still counts. The foe is stunned for the whole window, so nothing it does can cut the swing short. A riposte is unblockable: a Shieldbearer's raised shield doesn't take its share, and a power riposte wounds where a power blow on a shield only breaks the guard.
+
+**The finisher.** When a foe's posture breaks, by your blows, a power blow on a shield or a parry that empties it, a finisher opens for as long as the stagger lasts (1.5 s). The first blow from the foe's front half is ×3 and leaves you untouchable for 1.2 s, through the same gate as the roll (`rollUntouchable`), so every enemy blow, bolt, charge and volley that Session 283 routed through it misses. A blow from behind gets the backstab's rule, not the finisher. After the finisher, the rest of the stagger is ×1.5 as before. If a parry both opens a riposte and breaks the posture, the finisher takes the blow and the riposte closes with it.
+
+The finisher's own pose is the look builder's (section H). Today it is an ordinary swing, and the message tags it *(FINISHER)* or *(RIPOSTE)* where it used to say *(CRIT)*.
+
+### Verified (headless Chromium)
+New `tests/counters.test.mjs`, 15 checks, passing first time, no page errors. It uses real Bandits (13 posture) and a fixed 20-point blow:
+- **The parry.** Posture 13 → 7.8, staggered, a riposte of 0.8 s, and the message.
+- **The riposte.** A swing begun 0.5 s in does 48 (×2.5). The next does 28 (×1.5). A swing begun at 0.85 s does 28.
+- **Through a shield**, via `_resolveZoneStrike` with the dice pinned: a plain blow does 1 against the raised shield, and a riposte does 13. A power riposte does 26, and a power blow without one does 0 (it only breaks the guard).
+- **The finisher.** On a broken posture, from the front, it does 58 (×3). You are untouchable at +1.0 s and not at +1.3 s. A Bandit's 20-point blow at +0.5 s takes nothing, and at +1.4 s it takes 20. The next blow does 28. From behind there is no finisher.
+- **Both at once.** A parry at 30% posture staggers for 1.5 s. The finisher takes the next blow and the riposte is spent.
+- **End to end through `tickZoneEnemies`.** A Bandit's wind-up ends against a block raised 20 ms before: you take no damage, its posture is at 60%, and a riposte is open.
+- **Nothing else moved.** `attrdmg`, `posture`, `roll`, `unequip`, `dungeonfoes` and `faolchu` pass.
+
+### Needs eyes
+- A Bandit has 13 posture, so a parry (5.2) and a couple of blows break it, and a finisher follows most parries. Whether that is too generous is the tuning B's attack table is for.
+- Whether 0.8 s is enough to start a swing after the parry flash, and whether ×2.5 and ×3 feel earned rather than routine against wolves and bandits.
+- The finisher has no pose of its own yet (H). The 1.2 s of safety is invisible, which may read as the foes missing.

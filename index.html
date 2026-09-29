@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s297</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s298</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1359,7 +1359,7 @@ let lastBlockAttemptT=-99;
 // dropped frame changes neither.
 const ROLL_LIGHT={dur:.45,dist:2.6,i0:.08,i1:.30},ROLL_HEAVY={dur:.6,dist:1.8,i0:.08,i1:.24},ROLL_STAM=18,ROLL_HEAVY_AT=.7;
 let ROLL=null;
-function rollUntouchable(nowS){if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
+function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
@@ -1570,6 +1570,19 @@ const POSTURE_DRAIN_NORMAL = 8;     // normal melee swing drains this much postu
 const POSTURE_DRAIN_POWER = 25;     // power attack drains this much (3.1× normal)
 const POSTURE_BREAK_STUN = 1.5;     // stagger duration on posture break (seconds)
 const POSTURE_CRIT_MULT = 1.5;      // damage multiplier when striking a staggered enemy
+// S298 — the counters (combat, Michael's B). A perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s:
+// the first swing begun in it lands ×2.5 and goes through a raised shield, however late its blade arrives. A broken
+// posture opens a finisher from the front for as long as the stagger lasts: the first blow from the foe's front half is
+// ×3 and leaves you untouchable for 1.2 s (rollUntouchable reads it). Other blows on a staggered foe keep today's ×1.5.
+const RIPOSTE_S=.8,RIPOSTE_MULT=2.5,RIPOSTE_POSTURE=.4,FINISHER_MULT=3,FINISHER_SAFE_S=1.2;
+let _swingStartS=-1e9,FINISHER_SAFE_UNTIL=0;
+function riposteOpen(e){return !!e&&typeof e._ripUntil==='number'&&_swingStartS>=e._ripAt&&_swingStartS<=e._ripUntil;}
+function finisherOpen(e,nowS){
+  if(!e||!(e._finUntil>nowS)||!isStaggered(e))return false;
+  if(typeof e.combatYaw!=='number')return true;
+  const dx=px-e.x,dz=pz-e.z,d=Math.hypot(dx,dz)||1;
+  return (Math.sin(e.combatYaw)*dx+Math.cos(e.combatYaw)*dz)/d>=0;
+}
 // v71 — Bash (block-bash). Hold RMB (blocking) + click LMB → a guard-bash that
 // staggers nearby enemies. NO damage — pure control, parallel to the player-side
 // parry → enemy-stagger loop. Two strengths per the v71 design (D):
@@ -2185,6 +2198,7 @@ function applyPostureDamage(target, amount, now){
   target.lastHitAt = now;
   target.posture = Math.max(0, target.posture - amount);
   if(target.posture <= 0){
+    target._finUntil = now + POSTURE_BREAK_STUN;
     // Caller pushes to staggered[] and fires flash. Posture refills automatically
     // when the stagger entry expires (handled in the enemy tick — see tickPostureRegen
     // call site, which detects expired stagger and refills before regenning).
@@ -15878,7 +15892,7 @@ function attackZoneEnemies(isPower, _isDeferred){
   // v69.1 — whoosh at swing start; contact + hit resolution at impact.
   sndWhoosh();
   // v66.1 — defer audio + hit resolution to the swing impact frame.
-  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false };
+  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;
 }
 // v66.1 — Zone melee resolution, extracted from attackZoneEnemies() and fired
 // at the swing impact frame. Impact-gather candidates, audio, cleave/damage.
@@ -15906,7 +15920,7 @@ function _resolveZoneStrike(_isPow){
     _hitsLanded++;
     // v65 — Power-vs-shielded enemy: pure stagger, no damage. Mirrors the
     // dungeon path. See attack() for the design rationale.
-    if(_isPow && e.shieldUp){
+    if(_isPow && e.shieldUp && !riposteOpen(e)){
       if(typeof e.posture==='number' && !isStaggered(e)){
         applyPostureDamage(e, (e.maxPosture||999), performance.now()/1000);
         staggered.push({e, t: POSTURE_BREAK_STUN});
@@ -15930,7 +15944,7 @@ function _resolveZoneStrike(_isPow){
       const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1);
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block (see _resolveDungeonStrike for rationale).
-      const shMult=shieldFrontMult(e);
+      const shMult=riposteOpen(e)?1:shieldFrontMult(e);
       const rawDmg=Math.floor((lo+Math.floor(Math.random()*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*shMult);
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
@@ -15965,14 +15979,14 @@ function _resolveZoneStrike(_isPow){
       // dropped the tag entirely, so a kill-on-backstab read identically to a
       // kill-on-frontal — the player got no reward signal for stealth play.
       const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
-      const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
+      const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
       if(e.hp<=0)killZoneEnemy(e,sc,_killTag);
       else{
         const enc=applyWeaponEnchant(dmg,e);
         if(e.hp<=0){
           killZoneEnemy(e,sc,_killTag);
           if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
+        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
       }
     }
   }
@@ -25947,7 +25961,7 @@ function attack(isPower, _isDeferred){
   // v66.1 — Defer audio + hit resolution to the swing's impact frame instead
   // of firing now. The render loop fires _pendingStrike when progress crosses
   // ANIM_PARAMS.swing.impactPoint. Candidates are gathered AT impact.
-  _pendingStrike = { resolveFn: _resolveDungeonStrike, isPow: _isPow, fired: false };
+  _pendingStrike = { resolveFn: _resolveDungeonStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;
 }
 // v66.1 — Dungeon melee resolution, extracted from attack() and fired at the
 // swing impact frame. Gathers candidates at call time (impact-gather), plays
@@ -25984,7 +25998,7 @@ function _resolveDungeonStrike(_isPow){
     // Forecast: Shieldbearer (Session 5) ships with shieldUp:true and a "guard
     // raised" telegraph — this rule fires for free at that point. shieldUp is
     // currently a no-op canon flag; setting it on any enemy enables the rule.
-    if(_isPow && e.shieldUp){
+    if(_isPow && e.shieldUp && !riposteOpen(e)){
       if(typeof e.posture==='number' && !isStaggered(e)){
         // Force-break by draining max posture; pushes the enemy onto the
         // staggered list with the standard POSTURE_BREAK_STUN window.
@@ -26013,7 +26027,7 @@ function _resolveDungeonStrike(_isPow){
       // v71 — Frontal shield block. A Shieldbearer hit from the front (not the
       // rear cone) takes SHIELDBEARER_FRONT_BLOCK of the damage. shieldFrontMult
       // returns 1.0 for everything else and for flanking hits.
-      const shMult=shieldFrontMult(e);
+      const shMult=riposteOpen(e)?1:shieldFrontMult(e);
       const rawDmg=Math.floor((lo+Math.floor(Math.random()*(hi-lo))+Math.floor(level*1.5))*mightMult*powerMult*shMult);
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
@@ -26048,13 +26062,13 @@ function _resolveDungeonStrike(_isPow){
       // v71 — (GUARDED) appended when a frontal shield reduced the hit, so the
       // player reads WHY the number is small and learns to flank or power-attack.
       const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
-      const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
+      const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
       if(e.hp<=0){killE(e,_killTag);}else{
         const enc=applyWeaponEnchant(dmg,e);
         if(e.hp<=0){
           killE(e,_killTag);
           if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
+        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
       }
     }
   }
@@ -30371,14 +30385,17 @@ function applyMeleeDamage(e, rawDmg){
   // ("a perfect parry costs you nothing and staggers the attacker") has been
   // promising since v61c6. Posture-break triggers the same staggered[] entry, so
   // posture-break also unlocks the crit bonus — both routes feel rewarding.
-  const staggerMult = isStaggered(e) ? POSTURE_CRIT_MULT : 1.0;
+  const _nowS = performance.now()/1000, _fin = finisherOpen(e,_nowS), _rip = !_fin && riposteOpen(e);
+  const staggerMult = _fin ? FINISHER_MULT : _rip ? RIPOSTE_MULT : isStaggered(e) ? POSTURE_CRIT_MULT : 1.0;
+  if(_fin){ e._finUntil = 0; e._ripUntil = -1e9; FINISHER_SAFE_UNTIL = _nowS + FINISHER_SAFE_S; }
+  if(_rip) e._ripUntil = -1e9;
   // v63 — Backstab multiplier (Combat Redesign Session 2). Stacks
   // multiplicatively with staggerMult so dagger + parry-staggered enemy
   // = ×3.0 × ×1.5 = ×4.5, the canonical burst-window combo. See
   // applyBackstab for the trigger rules and exclusion list.
   const backstabMult = applyBackstab(e);
   const dmg = Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult) - effDef);
-  return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0, backstab: backstabMult > 1.0};
+  return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
 }
 
 // Execute a dungeon enemy's melee strike AFTER its telegraph has completed. Re-checks range so
@@ -30444,7 +30461,10 @@ function executeStrike(e, rawDmg, now){
     // PERFECT PARRY — block raised within the timing window before the hit landed
     hurtT = 0;
     sndParry(); blockFlashT = 0.55; blockFlashCol = '#ffd700';
-    staggered.push({e, t:1.2});
+    let _parryBroke = false;
+    if(typeof e.posture==='number' && !isStaggered(e)) _parryBroke = applyPostureDamage(e, (e.maxPosture||0)*RIPOSTE_POSTURE, now/1000);
+    staggered.push({e, t:_parryBroke?POSTURE_BREAK_STUN:1.2});
+    e._ripAt = now/1000; e._ripUntil = now/1000 + RIPOSTE_S;
     e.atkCd = 2.0;
     // v61d1 — Route the stagger flash through enemyBodyMesh(e) instead of
     // mesh.children[0]. Pre-v61d1 this was children[0].material assignment,
@@ -30464,7 +30484,7 @@ function executeStrike(e, rawDmg, now){
       }, 1200);
     }
     sndParry();
-    showMsg(`⚡ Perfect Parry! ${e.name} staggered!`, '#ffd700');
+    showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
     lvAct.parries++;
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
