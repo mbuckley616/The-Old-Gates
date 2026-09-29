@@ -8319,3 +8319,22 @@ Reading the re-entry for the cause, I found a real weakness beside it. `_reenter
 
 ### Needs eyes
 Continue into a saved room on Michael's laptop: whether it lands inside, and how long it takes.
+
+## v80 — Session 327 — A town lock is picked in a running world
+Michael's A on #54. Since Session 142 the lockpick paused the game, as the inventory does. The watch stood still while you worked, the clock did not turn, and whether you were seen was asked once, when the lock gave. The critic's burglaries (Portclare 5 doors, Dunmore 7, seen 0 times) measured where the guards were when you arrived, not the seconds a pick takes.
+
+**What changed.** The four town locks carry `live`: a shop or home door (`doorLockFor`), a strongbox and a home chest (`boxInteract`). When one is open, the main loop no longer returns at the pause. The clock turns, the world ticks, and the watch walks its beat. The player stands still. Held keys are dropped when the lock opens (the loop's key map `K` now also hangs on `window._K`, since it sits inside a block), and the overlay takes every key and click while it is up. Each frame, before the loop's pause test, `lpWatch()` asks the world `pickSeen(house)`. That is the same `witnessOf` the finished pick uses (12 units, halved sneaking, halved at night; indoors, whoever is in the room with a line to you). Seen, it is the lock crime: a record, favour −1, the fine +25, the keeper's refusal. The seen crime's own line (*Gráinne saw you pick the lock.*) is the message, and the pick breaks off with the door still shut. Struck while picking (health below what it was when you began), or halted into a dialogue, you leave the lock (*You leave the lock alone.*, the line Escape already gives). Dungeon doors and chests and the tower hoard's chest keep pausing. A pick you finish is counted as before, once.
+
+The move to the lock's own time is the whole change. Nothing about the pins, the pick's cost or the witness ranges moved.
+
+### Verified (headless Chromium)
+New `tests/livepick.test.mjs`, 6 checks, passing, no page errors. Dunmore at 23h, at a shop door, with every townsperson parked away each frame:
+- 12 frames with the lock open: the clock went 2.00 → 2.60 minutes (before, it stood still). The pick stayed open, no crime was noted, and with W held from before the lock opened the player moved 0.
+- A watchman set three units off with a clear line mid-pick: the pick broke off, one `lock` crime, favour 0 → −1, the fine 0 → 25, the door not picked, *Gráinne saw you pick the lock.*
+- Health down 3 mid-pick: the lock closed.
+- A lock with no town (a dungeon door): 12 frames, the clock did not move.
+- Picked through at once, the door was picked and one `lock` crime noted.
+- `crime1`, `crime2`, `crime3`, `guardsindoor`, `locksight` and `lockpicks` pass.
+
+### Needs eyes
+How it feels to pick a four-pin shop door at night with the torch coming down the street, and whether burglary now costs what it should. That is the G item on the night watch, now answerable. Whether standing still is right, or a player should be able to step away from the lock without Escape.

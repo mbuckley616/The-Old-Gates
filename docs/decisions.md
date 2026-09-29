@@ -4,17 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
-Opening the lockpick pauses the game, as the inventory does (Session 142), so the watch stands still while you work and whether you are seen is decided once, when the lock gives. A pick costs no world time, however long it takes you. The critic found night burglary nearly free (Portclare 5 doors, Dunmore 7, seen 0 times) and put it down to headless picks being instant. In real play they are instant too, as far as the guards can tell.
-
-Measured over 10 minutes of the night watch at 23h, the share of arrival times at which a guard comes within the night sight range (6) of a shop door at some moment of the pick (upper bounds, walls not tested): Dunmore (3 guards, 9 doors) instant 18%, 5 s 24%, 10 s 29%, 20 s 38%; Portclare (1 watchman, 6 doors) instant 10%, 5 s 13%, 10 s 15%, 20 s 19%.
-
-- **A. The world runs while you pick a town lock** (shop and home doors, strongboxes, home chests) *(recommended)*. The watch keeps walking and the clock turns; seen at any moment of the pick, you are seen and the pick breaks off. Dungeon chests and doors keep pausing. One Opus session.
-- **B. The pick stays paused but costs time**: each pin costs a fixed slice of the night (say 3 s); when the lock gives, the watch is run forward that long and you are seen if anyone came within sight. Invisible; it only changes the odds.
-- **C. Leave it.** Burglary odds rest on where the watch is when you arrive.
-
-A makes the watch something you read and time, which is the decision the night watch was built to give.
-
 ### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
 Sessions 320–323 wired up every buff and attribute line whose text said what it does. Four lines are left, because the game has no rule for them to plug into:
 1. *Fortune: +2% crit chance a point.* No hit in the game can crit by chance. The only crit is the bonus for striking a staggered foe.
@@ -29,6 +18,19 @@ Sessions 320–323 wired up every buff and attribute line whose text said what i
 A keeps the card honest and gives Fortune and Charisma something to feel. Every number in A is a proposal.
 
 ## Answered
+
+### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
+Opening the lockpick pauses the game, as the inventory does (Session 142), so the watch stands still while you work and whether you are seen is decided once, when the lock gives. A pick costs no world time, however long it takes you. The critic found night burglary nearly free (Portclare 5 doors, Dunmore 7, seen 0 times) and put it down to headless picks being instant. In real play they are instant too, as far as the guards can tell.
+
+Measured over 10 minutes of the night watch at 23h, the share of arrival times at which a guard comes within the night sight range (6) of a shop door at some moment of the pick (upper bounds, walls not tested): Dunmore (3 guards, 9 doors) instant 18%, 5 s 24%, 10 s 29%, 20 s 38%; Portclare (1 watchman, 6 doors) instant 10%, 5 s 13%, 10 s 15%, 20 s 19%.
+
+- **A. The world runs while you pick a town lock** (shop and home doors, strongboxes, home chests) *(recommended)*. The watch keeps walking and the clock turns; seen at any moment of the pick, you are seen and the pick breaks off. Dungeon chests and doors keep pausing. One Opus session.
+- **B. The pick stays paused but costs time**: each pin costs a fixed slice of the night (say 3 s); when the lock gives, the watch is run forward that long and you are seen if anyone came within sight. Invisible; it only changes the odds.
+- **C. Leave it.** Burglary odds rest on where the watch is when you arrive.
+
+A makes the watch something you read and time, which is the decision the night watch was built to give.
+
+Michael: **A — the world runs while you pick a town lock** (29 Sep 2026, issue #54; written on auto/producer). Moved here by the systems builder: built in Session 327 as A reads. Shop and home doors, strongboxes and home chests; seen at any moment, the lock crime and the pick breaks off; dungeon locks still pause.
 
 ### Enemies by place — which place is how dangerous? (systems builder, 2026-09-28, issue #51)
 Today every enemy grows with your level: health ×(1 + 0.15 a level, to ×3) and damage ×(1 + 0.08 a level, to ×2), in `enemyHpScale`/`enemyDmgScale`. Rare variants also turn up more often as you level. You kept this as the designer's condition when you chose the Morrowind book: enemies should scale by place, not by level, so that friends sharing your world meet one difficulty. The design page says only "a danger tier from the region and the dungeon floor". It does not say which place gets which tier, or what a tier is worth. The skills sessions and the combat tuning both need it settled first.

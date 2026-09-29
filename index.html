@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s311</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s312</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -28825,6 +28825,8 @@ function openLockpick(door){
   const d=lpDifficulty(door);
   LP.door=door;LP.cur=0;LP.phase='idle';LP.pushed=0;LP.dwell=d.dwell;LP.fall=d.fall;LP.broke=0;
   LP.pins=Array.from({length:d.pins},()=>({set:false,y:0}));
+  // S327 (Michael's A on #54) — a town lock is picked in a running world: the watch walks and the clock turns, you stand still
+  LP.live=!!(door&&door.live);LP.hp=PHP;if(LP.live){const KK=window._K;if(KK)for(const k in KK)KK[k]=false;blocking=false;}
   lockOpen=true;_releasePointerLockForMenu();
   const el=document.getElementById('lockpick');el.style.display='flex';
   document.getElementById('lp-title').textContent=(door&&door.lockTitle)?(d.pins>=4?door.lockTitle+' — a good lock':door.lockTitle):(d.pins>=4?'A good lock':'A locked door');
@@ -28832,10 +28834,16 @@ function openLockpick(door){
   if(!LP.raf)LP.raf=requestAnimationFrame(lpTick);
 }
 function closeLockpick(){
-  lockOpen=false;if(LP.raf){cancelAnimationFrame(LP.raf);LP.raf=0;}
+  lockOpen=false;LP.live=false;if(LP.raf){cancelAnimationFrame(LP.raf);LP.raf=0;}
   const el=document.getElementById('lockpick');if(el)el.style.display='none';
   LP.door=null;LP.phase='idle';const G=document.getElementById('g');if(G)G.focus();
 }
+// S327 — each frame of a town pick: seen by anyone, it is the lock crime and the pick breaks off; hurt, halted or dead, you leave it
+function lpWatch(){if(!lockOpen||!LP.live||LP.phase==='done')return;
+  if(dead){closeLockpick();return;}
+  if(dlgOpen||PHP<LP.hp){closeLockpick();showMsg('You leave the lock alone.','#c8b880');return;}
+  const d=LP.door;const w=(d&&d.house&&typeof WORLD!=='undefined'&&WORLD.pickSeen)?WORLD.pickSeen(d.house):null;
+  if(w)closeLockpick();}
 function lpStatus(t,col){const el=document.getElementById('lp-status');if(el){el.textContent=t;el.style.color=col||'#c8b890';}}
 function lpRender(){
   const box=document.getElementById('lp-pins');if(!box)return;
@@ -40200,6 +40208,9 @@ var WORLD=(()=>{
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
     showMsg(`${w.name} saw you ${what}.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you ${what} at ${house.name}${site?'; '+site.name+' will not forget it':''}.`);}
+  // S327 — asked each frame of a town pick (Michael's A on #54): whoever sees you now sees the lock picked
+  function pickSeen(house){const w=witnessOf(house);if(!w)return null;
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'lock',site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});seenCrime('lock',house,w);return w;}
   function noteCrime(kind,house,value,coins){(worldState.crimes||(worldState.crimes=[])).push({kind,site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});
     if(coins>0&&house.siteId){const C=worldState.crime||(worldState.crime={});const c=C[house.siteId]||(C[house.siteId]={bounty:0,debt:0,last:0});c.loot=(c.loot||0)+coins;} // S168 — the gold taken in a town, for the cells to take back
     const w=witnessOf(house);if(w)seenCrime(kind,house,w,value);return !!w;}
@@ -40382,7 +40393,7 @@ var WORLD=(()=>{
     if(best.sched&&(best.sched.type==='guard'||best.sched.type==='watch'||best.sched.type==='constable')){showMsg(`You struck ${name}.`,'#ff6060');guardDraw(best,S);}
     else{best._scared=performance.now()+20000;showMsg(`You struck ${name}. ${site.name} will not forget it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} at ${site.name}.`);}
     return true;}
-  function doorLockFor(house){const home=house.type==='home';return {seed:'door_'+house.id,minPins:lockPins(house),lockBonus:home?-1:0,lockTitle:home?'A locked door':'A shop door, locked for the night',
+  function doorLockFor(house){const home=house.type==='home';return {seed:'door_'+house.id,minPins:lockPins(house),lockBonus:home?-1:0,lockTitle:home?'A locked door':'A shop door, locked for the night',live:true,house,
     onPick:()=>{(worldState.picked||(worldState.picked={}))[house.id]=absMin();noteCrime('lock',house);if(typeof goToInterior==='function')goToInterior(house);}};}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
     return INT_BOX.open?'open':'locked';}
@@ -40390,7 +40401,7 @@ var WORLD=(()=>{
     return st==='empty'?(INT_BOX.kind==='home'?'The chest is empty':'The strongbox is empty'):st==='locked'?`Press 'E' to pick the lock on ${name}`:`Press 'E' to open ${name}`;}
   function boxInteract(){if(!boxPrompt())return false;const st=boxState(),X=INT_BOX;
     if(st==='empty'){showMsg(X.kind==='home'?'Nothing left in it.':'The takings are gone; they will not have refilled it yet.','#c8b880');return true;}
-    if(st==='locked'){if(typeof tryLockpick==='function')tryLockpick({seed:'box_'+X.id,minPins:lockPins(X.house),lockBonus:X.kind==='home'?-1:0,lockTitle:X.kind==='home'?'A small chest':'A strongbox',onPick:()=>{X.open=true;if(X.lid)X.lid.rotation.x=-Math.PI/3;boxInteract();}});return true;}
+    if(st==='locked'){if(typeof tryLockpick==='function')tryLockpick({seed:'box_'+X.id,live:true,house:X.house,minPins:lockPins(X.house),lockBonus:X.kind==='home'?-1:0,lockTitle:X.kind==='home'?'A small chest':'A strongbox',onPick:()=>{X.open=true;if(X.lid)X.lid.rotation.x=-Math.PI/3;boxInteract();}});return true;}
     // open: the takings by the town's prosperity and one thing from the stock; a home's few coins and a keepsake
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
     if(X.kind==='home'){coins=2+Math.floor(Math.random()*11);items.push({name:bpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(Math.random()*22),qty:1,stolen:true});}
@@ -41937,7 +41948,7 @@ var WORLD=(()=>{
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
           spawn,
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
@@ -41950,7 +41961,7 @@ window.devWorld=function(x,z){WORLD.enter(x==null?null:x,z==null?null:z,0,'🌍 
 
 
 let prevT=0,swT=0,atmT=0;
-const K={};
+const K={};window._K=K;
 window.addEventListener('keydown',e=>{if(e.code==='F9'&&started){e.preventDefault();perfToggle();return;}if(e.code==='F8'&&started&&activeZoneId==='world'){e.preventDefault();try{WORLD.devSurvey();}catch(err){console.warn(err);}return;}if(e.code==='KeyV'&&started&&!dead&&!e.repeat){const ae=document.activeElement;if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'))return;tpToggle();}});
 
 // v80 S176 — F9: a frame-rate readout, so a playtest on a real machine can say where a frame goes. Headless
@@ -42009,7 +42020,8 @@ function loop(now){
   // be regening, buffs shouldn't tick down. Mirrors how hub/dialog/shop pause.
   const _qpop = document.getElementById('quest-popup');
   const _qpopOpen = _qpop && _qpop.style.display==='flex';
-  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen)||(typeof sleepOpen!=='undefined'&&sleepOpen))return;
+  if(typeof lockOpen!=='undefined'&&lockOpen&&LP.live)lpWatch(); // S327 — before the pause: a halt's dialogue must close the lock
+  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen))return;
   // v61e6 Session A: clock tick. Placed AFTER the pause bailout so UI-open
   // pauses the clock (consistent with stamina/buffs/cooldowns pausing).
   advanceClock(dt);
