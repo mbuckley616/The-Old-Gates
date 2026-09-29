@@ -8268,3 +8268,20 @@ New `tests/attrpromise.test.mjs`, 4 checks, passing, no page errors.
 
 ### Needs eyes
 Nothing new to look at. These are numbers the card already showed.
+
+## v80 — Session 324 — What counts toward Fortitude and Resolve
+Found by following Session 320's damage paths one step further. At a level-up, each attribute's points are multiplied (×1 to ×5) by how much of its activity you did since the last level (`lvAct`, `getMultiplier`). Fortitude counts damage taken. Resolve counts the times your stamina ran dry. Both were counted in only some of the places they happen.
+- Damage taken was counted on four paths only: the unblocked blow, the Faolchú's fire, a bolt and a drain. An archer's arrow, a blow on a held block, the spike plate, the swinging blade, a dragon's breath, a charge, a heavy blow and a deck volley all hurt you without counting. So a player who blocks well, or who fights archers, grew Fortitude more slowly than one who stood and took it. Each of those paths now adds what it did.
+- Stamina running dry was counted only on the sprint. Now a roll that empties it counts, and so does a block that does: held, on the fire, on a bolt, or on a parry.
+
+Section B's correction for Session 323: Charisma's *merchant access* does have a mechanism. Since v61au the shops filter their stock by an item's `chaReq`. No item carries one, so the filter never holds anything back. #58's text in `docs/decisions.md` now says so. The question stands.
+
+### Verified (headless Chromium)
+New `tests/lvact.test.mjs`, 5 checks, passing, no page errors.
+- An archer's arrow of 29 counted 29, and a blow of 24 on a held block counted 24. Neither counted before.
+- In a dungeon, the spike plate (12) and the blade (11) counted in full.
+- A roll on exactly its 18 stamina counted one depletion.
+- `roll`, `wardall` and `posture` pass.
+
+### Needs eyes
+Whether Fortitude now grows too readily for a player who blocks everything. Its thresholds are unchanged.
