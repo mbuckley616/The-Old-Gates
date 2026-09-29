@@ -7539,3 +7539,22 @@ With this, every room inside a fort is on the kit, and every interior in the gam
 
 ### Needs eyes
 A fort in play, all of it now. Whether a bookshelf's loot prompt still comes up where you look at the new case (it stands .16 from the wall, where the old one stood at .22).
+
+## v80 — Session 309 — The dungeons' shrine, library and barracks on the shape kit (H.7, #46 A)
+Every dungeon, not only the forts, gives some rooms a type by theme (`decorateDungeonRooms`: shrine, library, barracks, flooded, collapsed, ossuary, treasury). Three of them were furniture of boxes. Each is now one bake at the kit's sizes, tagged `dunFurn`:
+- **The shrine:** a flagged stone dais, a dressed plinth with a moulded slab, and four candles in dishes at the dais's corners. Before, it was a box plinth with four wax cylinders standing in the air round it. The light and the urn are as they were.
+- **The library:** the kit's bookcases, .9 long, backs to the north wall. The old boxes stood a unit out from the wall, their backs to the room. The reading table now carries a candle, a closed book and an open one.
+- **The barracks:** each cot of two boxes is the kit's bed, 1.8 by .8, along the west wall. The weapon-rack container is left for the containers' slice.
+
+**One fix:** the third cot of a barracks six cells deep ran through the south wall. The cots were 2.0 long, placed from 1.4 every 2.2. The beds are now placed from the north wall every 2.0, so three fit a room six deep.
+
+The ossuary's niches and bones, the collapsed room's fallen stones, and the three kinds of container (urn, sarcophagus, weapon rack, which are lootable and have lids) are still boxes and are the next slice.
+
+**Numbering:** the systems builder's newest entry on auto/systems is also Session 308, pushed five minutes after mine. This entry is 309, one above both.
+
+### Verified (headless Chromium)
+- **`dunfurn` (new):** across seven dungeons (undead, ruins and haunted), two shrines, seven libraries and a barracks turn up. Each is one bake inside its room and under the ceiling: the shrine 1,164 triangles, the libraries 4.1–5.4k, the barracks 6,600. None of the old boxes, in their colours, is left in any of them. The picture is `docs/prototypes/dunfurn-ingame.png`.
+- **`dungeon`**, **`dungeonfoes`** and **`fortfurn`** pass.
+
+### Needs eyes
+The shrine's plinth is bare stone. What a shrine in a dungeon honours is the lore's to say, and I have not guessed.
