@@ -7205,7 +7205,9 @@ The measuring step now records each town's first gate (tier, place, the town's c
 ### Needs eyes
 Nothing in the game.
 
-## v80 — Session 280 — The walls suite's town was dropped by the player's distance (CI fix, test only; corrects Session 272)
+## v80 — Session 346 — The walls suite's town was dropped by the player's distance (CI fix, test only; corrects Session 272)
+Renumbered from Session 280 on merging main into auto/backlog: the systems builder's own Session 280 landed on main first.
+
 CI failed on shard 6 at the Session 277 push, in `tests/walls.test.mjs`: `far: 2`, the same check that failed at Session 263's push. **Correcting Session 272**, whose guess (a town still building rebakes its clusters) was wrong.
 
 `tickSettlements` drops any settlement more than 580 units from the player, and it checks every half-second of accumulated game time. The suite takes the first walled town it can find, La Porte Grise, about 1,280 from the start, and moves only the eye. Whether the half-second check fell inside the near look depended on how many frames had ticked before it. When it did, the town was dropped after `houseLod` had shown its detail. Both looks then read the dropped town's meshes, which nothing updates any more: `far: 2`.
@@ -7807,3 +7809,1370 @@ The legacy Hearthwick cell builds its houses with the old boxes and has one box 
 
 ### Needs eyes
 - Whether soldiers keep a fire in all day. Barracks follow the homes' hours, so from 9 to 17 they give only a thread.
+## v80 — Session 176 — Where a frame goes: a profile, and F9
+
+Backlog D, *performance on a laptop* (Michael, 27 Sep: choppy). The item says to profile first, then take the cheap wins. This session is the profile. Headless Chromium draws on software GL: it can count exactly what a frame asks for, and time the JavaScript, but it cannot time a GPU. So the session also gives the game a readout that can be read on the laptop itself.
+
+**F9** toggles a small readout at the top of the screen, averaged every half second: frames a second, the frame's length and the worst in the window, the loop's work before the draw (the world's tick, people, weather, AI), the draw call's own time (the shadow pass included), draw calls, triangles, the canvas size, the pixel ratio, and whether shadows are on. Turning it off writes the last reading to the console as `PERF {...}`. It is `PERF`/`perfToggle`/`perfNote` beside the main loop, and costs nothing while off.
+
+**What the profile shows** (new `tests/perf.test.mjs`, 1280×720, pixel ratio 1):
+- *The world's tick is not the problem.* Once the chunks have streamed in, a tick costs 1.4–1.7 ms at rest at the start and 4–6 ms under the profiler in Dunmore. While chunks are still streaming it is 42–45 ms: that is the arrival stutter, not a steady cost. Of the settled tick, terrain height sampling (`fbm`, `regionScalar`, `landH`, `rawH`) is a third of the self time. Nearly all of it comes from `snowRepaintStep` → `recolourChunk`, which repaints every loaded chunk's ground colour, re-sampling heights and slopes at every vertex, each time the snow cover moves by .045. In this harness that happens because the test walks through the legacy Hearthwick cell (x 1130), which reads as the far north and sets a .30 cover that then melts. In play the same repaint runs every few seconds while snow falls or melts: about 7 ms a tick, averaged over a second of it, against 1.5 at rest.
+- *The draw is heavy.* Hearthwick road: 274 draw calls and 241k triangles for the eye, 47 calls and 153k triangles for the sun's shadow. Dunmore square at 13h: 639 calls and 478k triangles for the eye, 29 calls and 50k triangles for the shadow. The F9 readout in Dunmore, over whole frames of the game's own loop: 1,099 calls and 1.06 million triangles a frame. The loop's JavaScript takes 2.7 ms of that and the draw call's CPU side 11.5 ms.
+- *Instancing batches poorly.* Dunmore has 279 instanced meshes holding 1,187 instances, about four each, because scatter (trees, rocks, herbs) is instanced per chunk and per kind. Each is its own draw call, and its own again in the shadow pass.
+- *What casts shadows.* In Dunmore 237 meshes cast, 386k triangles between them: instanced scatter 209k, people 91k (29 skinned townsfolk), everything else 86k. The shadow map is 2048² over a 140-unit square, soft-filtered (`PCFSoftShadowMap`).
+- 24 pooled point lights, 1–7 lit at a time, the same count every frame (`sweepLights`: a changed light count would recompile every shader).
+- The pixel ratio is capped at 1.5. On a laptop with a high-density screen that is 2.25 times the pixels of ratio 1, each through the soft shadow filter.
+
+**The cheap wins, in the order the numbers point**, none taken yet: (1) the pixel ratio capped at 1 on a laptop, likely the largest single saving on a hi-DPI screen, at the cost of a slightly softer image; (2) `PCFShadowMap` for `PCFSoftShadowMap`; (3) scatter instanced across chunks by region rather than per chunk, which would cut something like 200 draw calls from each pass in a town; (4) the snow repaint spread thinner (two chunks a frame) or limited to chunks near the player. The first two change the look. They should be judged with F9 on the laptop, before and after.
+
+**Also.** `theft.test.mjs` failed again in the Session 175 check, this time on a Health Potion. The strongbox's potion is priced 18 (the loot table's), the starting potions 15, and the test valued what was taken by the first bag row with that name. The fine was right: 190 = 50 + 122 + 18. The test now records each thing at its own price as the box hands it over (it wraps `bagAdd` for the moment of the theft). That retires the earlier fix, which made the seeded picks match the stolen pick's price. And a dead line found in passing: the dungeon entry in `goToDungeon` has `// v80 — the lair's master and its hoard` with code after it on the same line, so the code that carries the held torch's light into the dungeon never runs. The main loop moves the light into the active scene every frame, so play is unaffected; the line is owed a split.
+
+### Verified (headless Chromium)
+`tests/perf.test.mjs` takes the profile above (a CPU profile of 120 ticks by the DevTools protocol, self and inclusive time by function; draw calls and triangles for each pass; what is in the scene). F9 shows *0.5 fps · frame 1933.2 ms (worst 1933.2) · loop 2.7 · draw 11.5 / 1099 calls · 1058k tris · 1280×600 at 1× · shadows on* in the harness, and F9 again hides it. `theft.test.mjs` passes with the new count (a seen theft: 182 = 50 + 124 + an 8-gold torch). No page errors.
+
+### Needs eyes
+**F9 on the laptop**, in Dunmore's square by day, on the Hearthwick road and in a forest: the fps, the loop and draw milliseconds, calls and triangles, and the pixel ratio it reports. If the loop is small and fps is low, the GPU is the limit, and the pixel ratio and shadow filter are the first things to try. If the draw number is large, it is draw calls, and the scatter batching is the fix.
+
+## v80 — Session 177 — The snow repaint, spread thinner
+
+Backlog D, the first cheap win from Session 176's profile, and the only one on its list that doesn't change the look. When the snow cover moves by .045 (while snow falls or melts, every few seconds), every loaded chunk's ground colour is repainted, re-sampling the terrain's height and slope at each vertex (`recolourChunk`). The queue was worked six chunks a frame. A chunk costs about a millisecond on this machine, so a repaint was a run of 14 heavy frames. It is now worked two a frame: the same work over 41 frames, done in 0.7 seconds at 60 fps. The colours reach the ground a little later but the same, and no one is watching a far chunk's snow come in by the frame.
+
+**A correction to Session 176.** That entry put the repaint at *about 7 ms a tick*. That was an average over a second in which some ticks repainted and some didn't. Measured tick by tick, as here, a repainting tick at six chunks a frame cost 25 ms against 6 at rest. That is a stutter of a quarter-second's worth of frames every few seconds whenever snow is settling or melting, larger than the average suggested.
+
+**Also.** The owed line split from Session 176: in `goToDungeon`, the code that moves the held torch's light into the dungeon sat after a `//` comment on the same line and never ran. It is on its own line now. Play is unchanged, because the main loop already moves the light into the active scene every frame; the dungeon's first frame now has it too.
+
+### Verified (headless Chromium)
+New `tests/snowrepaint.test.mjs`: in clear weather at the start, the cover pinned at 0 and nothing queued, then the painted cover set .2 away so that one tick queues a full repaint; ticks are timed until the queue is empty. 81 chunks queued. At two a frame: 41 ticks, median 9.0 ms and 90th percentile 14.2, against 6.5 at rest. The same test on the previous build (six a frame): 14 ticks, median 25.1 ms and 90th percentile 33.3, against 6.2 at rest. Total work is about the same (427 ms against 371). No page errors.
+
+### Needs eyes
+Snow settling in real play: whether a far chunk visibly lags its neighbours while a repaint runs (it should not; the whole pass takes under a second). F9 while it snows on the laptop.
+
+## v80 — Session 178 — The coach stops at the inn
+
+Backlog B, coach lines: *a midpoint stop*. Session 100 built the shape agreed in Session 98, a coaching road with milestones, a two-storey coaching inn at the midpoint and a coach that leaves each end at six. It listed as not yet done that *the coach doesn't stop at the midpoint inn*. The coach ran straight past the inn it was built beside.
+
+**What changed.** In `tickCoaches`, a running coach that reaches the halfway point (`u = .5`, where `buildCoachLine` puts the inn) draws up there and waits `COACH_STOP`, 15 seconds, which is a quarter of an hour on the game clock (a game minute to the second). Then it goes on the way it was going. It stops once each way: the mark (`C.stopped`) clears when it reaches either end. While it waits, the prompt reads *Press 'E' to board the coach (it goes on shortly)*, so you can board at the inn as at a station. A passenger stays aboard through the stop, and a coach halted by a broken road keeps the stop it has already made. The quarter of an hour is a first choice and one constant to change.
+
+### Verified (headless Chromium)
+New `tests/coachstop.test.mjs`: a coaching road raised between Ironhaven and Vieux Marché (548 units; camps kept off it for the test), driven by the world's tick. Outbound from u .3: the coach stops at u .500 for 15.0 s and arrives at the far end (u 1, waiting). Homebound from u .7: it stops at .500 for 15.0 s and arrives at the near end. With a passenger aboard, the passenger is still riding at the stop, .3 from the seat. No page errors.
+
+### Needs eyes
+The stop in play: whether a quarter of an hour at the inn reads as a coach stop or as a halt. A 548-unit road now takes 57 seconds end to end instead of 42. The coaching inn itself is still not enterable, which is the other half of this backlog item. What it holds inside (rooms to let, a meal, a stable) is for Michael to say.
+
+## v80 — Session 230 — The caravan on the road: seen, and defensible
+
+Backlog B, trade routes: *the caravan visibly attacked when a route breaks*. Michael answered issue #18 with **B**: bandits fall on it, the merchant runs, an overturned cart stays; driving them off keeps the route that day, and the camp threatens it again tomorrow. Before this, a route broke silently on the day tick when a living bandit camp stood within 500 units of the road's midpoint, and the caravan simply wasn't there any more. (Numbered 230, not 179: the look-and-feel branch has already used 179–221, and a duplicate would be confusing when both merge.)
+
+**What changed.** The day tick (`tickRoutesDay`) no longer breaks a threatened route. It gives the route a *threat* for the day, with the camp's name and an hour on the caravan's outbound leg. The hour is a random point between 4:12 and 7:48, when the caravan is .35–.65 of the way along the road. When that hour comes, `tickCaravans` checks where you are:
+- *By the caravan* (within 150 units): three or four of the camp's bandits spawn around it, alert, with a Bandit Captain leading from level 5. The cart goes over on its side, the mule stands, and the merchant runs 30 units back along the road. If you kill them all, the route holds: the cart is righted, both towns gain a point of favour, the log records it, and the caravan goes on. It is late by as long as the fight took, and it makes that time up by travelling a quarter faster until it is back on its hour, so it doesn't jump along the road. The route pays prosperity at the next day tick as usual, and if the camp still stands, that day tick sets tomorrow's threat.
+- *Walking off* 250 units from the fight, or leaving the open world, with bandits alive breaks the route, with the old message. The bandits stay where they are as ordinary enemies.
+- *Elsewhere at the hour*, or indoors or asleep through it: it breaks as before. If the hour passes unwatched, the next day tick breaks it.
+
+Every break now leaves `rt.wreck`, an overturned cart at the ambush point, shown whenever you are near the road. It stays until the route is reopened, because reopening replaces the route's record. A save made mid-fight loads with the route broken, since the bandits aren't saved. Old saves carry on unchanged; a route broken before this build has no wreck. Constants: `CARAVAN_WATCH` 150, `CARAVAN_LEAVE` 250.
+
+### Verified (headless Chromium)
+New `tests/caravan.test.mjs`, on the Ironhaven–Vieux Marché road (92 road points), with the threats set by hand and every real camp counted as cleared. Defended: at the hour, standing 3 units from the caravan, 4 alert bandits spawned. The cart's up-axis read 0 (on its side), the merchant had run 27.8 units after 12 s, and the route was not broken. After all were killed, the route stood, the cart's up-axis read 1, and the caravan was 9.2 game minutes late. Ten seconds later it had moved 9.6 units and was 6.7 minutes late. At the next day tick the route stood and the threat was cleared. Walked off 300 units mid-fight: broken, by *Test Camp*, the wreck on its side, the caravan gone. Reopened: the wreck gone, the caravan back. 200 units away at the hour: broken unseen, the wreck exactly at the ambush point (0.0 units), no bandits spawned. Asleep through the hour: the next day tick broke it. No page errors.
+
+### Needs eyes
+The fight in play: whether 3–4 bandits (a captain from level 5) is right against a caravan you've paid for, and whether the hour (dawn, 4–8h) is easy enough to be there for. There is no warning, so you have to know when to wait; option C's word from the lord was the answer to that and was not chosen. The overturned cart is today's box cart on its side. The caravan's mule and cart are still boxes, and belong to the look builder (H).
+
+## v80 — Session 231 — Combat music, rewritten
+
+Backlog C. Michael, 27 Sep: *"Update the combat music — it's pretty stale and simplistic."* The old cue was one pattern for every fight. It had a sawtooth ostinato of sixteen notes, square-wave stabs and a drone, all raw oscillators unlike the exploring score. Its notes were timed by `setTimeout` at 135 and 270 ms, so they drifted with every slow frame. At a few frames a second on a laptop, that is an audibly lurching rhythm. When the fight ended, `_clearMusic` stopped every node at once: a hard cut.
+
+**What changed.** `_musicCombat` now plays on the exploring music's orchestra (`VOICES`) through the same hall reverb, with two new voices: `spicc`, short bowed strings, and `taiko`, a low war drum. There are three themes, and a fight never gets the one before it:
+- *Steel*: D minor, 138 bpm.
+- *Ambush*: E phrygian, 146 bpm. The mode was added to `MODES`.
+- *Stand*: C dorian, 128 bpm.
+
+Each opens on a drum, timpani and horn hit, plays two bars of ostinato, then loops an eight-bar A section and an eight-bar B section. The layers follow the fight through `COMBAT.heat`, set each frame in `tickMusic`: each alert foe within 30 units counts one, a boss three.
+- Always: low spiccato ostinato and drums, with a timpani on each fourth bar.
+- From two foes: high spiccato arpeggios and a held string pad.
+- From three: the horn plays the theme.
+- From five, which a boss reaches alone: the choir.
+
+Bars are scheduled against `AX.currentTime` with a 0.6 s lookahead (`combatFill`), so the timing no longer depends on frames. When the fight ends, `combatEnd` (called from `_clearMusic`) lets the scheduled bar finish, closes on the tonic with drum, timpani and strings, and fades over three seconds while the exploring music ramps back in. The voices take an output (`_voiceOut`/`_vOut`), so the cue has its own bus and fading the exploring music never silences it. `window.devMusicHook` lets a test render the cue offline.
+
+The composition is a first draft. The themes are data (`COMBAT_THEMES`: chords per bar in scale degrees, the horn's phrases, the ostinato), so they can be rewritten without touching the scheduler.
+
+### Verified (headless Chromium)
+New `tests/combatmusic.test.mjs`, rendering the cue through an `OfflineAudioContext` at 22 kHz. Fourteen bars all land on the bar grid: the worst drift from `start + n × bar` was 0 s, against the old cue's 135 ms timers. The layers were *ost+drum* at one foe, *ost+drum+high+pad+horn* at three, and the choir added at a boss. The level measured by RMS per second was 0.050 at one foe and 0.104 with a boss; no second of the fight fell below .04. The close: .110, .072, .080, .037, then .0025 at 4 s and .0002 at 5 s, a fade rather than a cut. Six fights in a row never repeated the previous theme. In the game's own audio context, a fight scheduled its bars ahead and `startMusic('road')` then ended it: no bus, no timer, the exploring music playing. No page errors.
+
+### Needs eyes
+**Ears**, really: whether the three themes sound like fights in this game's world, whether the horn at three foes and the choir at a boss are the right thresholds, and whether the mix sits under the combat sounds (the fight's music is about twice the level of a one-foe skirmish at a boss). Whether a three-second fade and the tonic close feel like a fight ending. The old cue's code is gone. If a theme is disliked, it is one entry in `COMBAT_THEMES`.
+
+## v80 — Session 232 — Guild members keep to the floor they stand on
+
+Found while settling section G's interior-doors check, *whether a shut door traps an NPC awkwardly*, by reading the collision code. The doors are fine: a door refuses to shut with someone within 0.8 units of it (Session 143), and a shut door blocks a wanderer like a wall. But every step a wandering indoor NPC takes was tested with `intSolidAt(x, z, .3)`, and `intSolidAt` measures against `jumpY`, **the player's** height. When the player stands on something (a guild hall's footholds reach 2.0 units), every solid whose top is within a step of the player's feet stops counting: tables, racks, shelves and the low partitions. So the members walked straight through them for as long as the player stayed up there. Guild halls are the only interiors with wandering NPCs today.
+
+**What changed.** `intSolidAt` takes an optional fourth argument, the height of whoever is moving; the player's calls leave it out and are unchanged. `tickInterior` passes each member's own height (`n.g.position.y`). Two lines of code.
+
+**On section G.** The interior-doors check stays open for what only eyes can judge: the door's height against the ceiling, its swing against the furniture. The *NPC trapped by a door* half is settled: a door can't be shut on anyone, and nothing walks through a shut one.
+
+### Verified (headless Chromium)
+New `tests/intnpcs.test.mjs`, in Dunmore's guild hall: 3 members, 41 solids (22 with a top below the ceiling), footholds up to 2.0. Each run is 120 s of `tickInterior` at 1/60 with a seeded wander, from the same start, counting member-frames spent inside a solid at floor height. The test does its own collision check, independent of the game's. This build: 0 of 21,600 with the player on the floor, 0 with the player 1.0 up, 0 with the player at 2.0. The previous build: 0, 0, and **3,279 of 21,600 (15%)** at 2.0. `interiors.test.mjs` passes unchanged. No page errors.
+
+### Needs eyes
+Nothing new to judge; the members should simply never be seen inside a rack.
+
+## v80 — Session 233 — The hour-change stall, and the watchman's torch
+
+The critic's s158 run noted, under *Frame cost*, that every `forceTime` in Dunmore (12→18, 18→23, 23→12) was followed three frames later by a single frame of 20–24 *seconds* on software GL. The shader program count stayed at 30, which it read as programs being rebuilt, and it asked for a look at 17:59 → 18:00 on Michael's machine. Section I has nothing open, so this was the next item: backlog D, performance, which is the systems builder's.
+
+**What it is.** Nothing is rebuilt. New `tests/hourhitch.test.mjs` counts every `compileShader` the GL context runs and every program three.js adds, in Dunmore. It waits until the town has stopped compiling at noon, then jumps 12→18→23→12→6→21→12 and crosses 17:59→18:00 and 18:59→19:00 by the clock. The **first dusk** after arriving compiles 8 shaders, 4 programs, once. They are for what night brings into the scene: the night encounter table's enemies (4 health bars, 16 skinned rigs, the Points of their effects), about 250 meshes in all, and the guards' torches. Every later change of hour compiled nothing, and the scene's light count stayed at 27 throughout. Diffing each material's program before and after dusk found none that changed program, so no material is being re-keyed by the time of day. On SwiftShader, with 24 pooled point lights in every lit shader, four programs can plausibly take the critic's 20 s. On a GPU it is a hitch the first time night falls, and the same hitch the first time any new creature kind comes into view. That is arrival, not the hour. `REN.compile(scene, CAM)` after the town settled paid for the torches' two programs ahead of time (r128's `compile` walks invisible objects too), but not the enemies', because they don't exist until night. So I did not add it: prewarming properly means building each creature family once behind the loading fade, which is its own item (owed, D).
+
+**What was wrong along the way.** The first run found one torch lit at noon. The night watchman (the third guard, prosperity ≥ 60) goes indoors at dawn, and `tickNPCs` skips a hidden NPC before the line that puts torches out by the hour. So his torch stayed lit, and its pooled light (intensity 1.1, reach 7) glowed all day at the door he went in by, holding one of the 24 light slots. The hide branch now puts out a hidden NPC's torch, flame and light. One line.
+
+### Verified (headless Chromium)
+`hourhitch.test.mjs`: settled at noon with 0 compiles over four quiet checks and 25 programs. First dusk: +8 shaders, 25 → 29 programs, its worst frame 2.7 s (a quiet noon's worst frame was 4.8 s on this runner). Nine more changes of hour: 0 shaders, 0 programs, no frame over 2.8 s. Lights 27 at every step. Torches lit by step: 2, 3, **0** at noon, 3, 3, **0** at noon, 0 at 17:59, 2 at 18:00, 2, 3 at 19:00. Flame and pooled light agree at every step. Before the fix the noon counts were 1 and 1. `watch.test.mjs` passes unchanged: three torches on the beat at night, the trailing guard at 7.99. No page errors.
+
+### Needs eyes
+On the laptop: F9 at 17:59 → 18:00 on the first evening of a session, and again on the second. The first should show one long frame, the second nothing. How long that one frame is on a real GPU decides whether prewarming the creatures is worth a session.
+
+## v80 — Session 234 — Facing a townsperson who is talking
+
+Found while writing Session 235's test, which kept raising `Cannot read properties of null (reading 'matrixWorld')` from three.js's raycaster. When two townsfolk meet they each say a line in a bubble (`sayBubble`), a **Sprite** on the person's group for 3.2 s. `aimAt`, which decides whether you are looking at someone, casts a ray against the whole group. It never gave the raycaster a camera, and a Sprite's raycast reads the camera, so it threw. The main loop calls `aimAt` for the NPC prompt with nothing to catch it. Standing within reach and facing a townsperson who was mid-sentence threw on every frame, and each throw skipped the rest of that frame's loop: arrows and spells in flight, enemies' AI, footsteps, the music, the HUD, the minimap and the compass. The world's tick and the draw come earlier in the loop, so the picture kept moving while the HUD and any fight around you stood still. E still worked (`talkNPC` goes by distance), and the crosshair's check has its own `try`.
+
+**The fix**: `aimAt` sets `_ray.camera=CAM`. One assignment. The bubble now counts as part of the person, which is right: it hangs over their head.
+
+### Verified (headless Chromium)
+New `tests/aimbubble.test.mjs`, in Dunmore at noon: a villager with a bubble over their head, the player 1.3 units in front and facing them. This build: `aimAt` does not throw, four frames of the game's own loop raise no error, and E opens Niamh's dialogue. The previous build (Session 233's `index.html` through the same test): an error on every frame, dozens in four frames. No other page errors.
+
+### Needs eyes
+Nothing to judge; the HUD should simply never stall beside a chatting townsperson.
+
+## v80 — Session 235 — Shop hours: nothing leans on them, except the harbourmaster
+
+Section G's check from Session 151: *shops shut 18–8 in the open world now; whether any errand or turn-in needs a shop open at dusk.* It can be settled from the code and a test. I read every quest source for anything that needs a shop, a shopkeeper, or a purchase: story quests (`QUEST_DEFS`), town quests (`townQuestFor`), guild tasks (`genTask`), faction services, the town and sea tutorials, and Acts II–III.
+
+**What leans on shop hours.**
+- *Nothing that must be finished.* Town quests, faction services and the town tutorial go through the lord or the keep's steward. Guild tasks go through the always-open hall. Acts II–III go through Corwin, Varek and the Root, who are always present. The four main-quest givers who keep shops (Bram, Edna, Aldwyn, Captain Brynn) stand at their doors at any hour while their quest is live (the quest-giver rule at the top of `scheduleFor`).
+- *The Mages' draught* ("ask the first resident you meet") is the one errand that reaches townsfolk by their house. It is taken by anyone who keeps a house in the town, a home or a shop. Residents are in the street from 7 to 20, so it never needs a shop open.
+- *The sea tutorial's "buy a ship"* is a topic of the shipwright, who is a keeper. You can reach him inside by day and in the street 18–21 and 7–8, not 21–7. The tutorial is optional and the hours are the shop's own, so this is left as it is (owed, below).
+- *The harbourmaster* was wrong. Every port's harbourmaster was spawned with `sched={type:'keeper'}`, the shopkeeper's schedule, but he has no shop. So from 8 to 18 he was "inside" nothing: hidden, with his *Passage…* topics and the ferry gone from the quay all day. The ferry was reachable only 7–8 and 18–21, the reverse of what anyone would expect. Session 79's ferries say every harbourmaster offers passage. He now has a `harbour` schedule: at his post at the landward end of the quay from 7 to 21, and gone at night exactly as before (21–7). So no hour he could be found before is lost.
+
+### Verified (headless Chromium)
+New `tests/shoperrands.test.mjs`. In Dunmore, townsfolk out of doors whose name keeps a house, by hour: 3 at 6h (guards), 50 at 7.5h, 42 at 12h and 17.5h, 43 at 18.3h, 36 at 20h, 3 at 23h. At 18.3h all 7 shops are shut. The draught is handed over by the real E key at noon (Niamh, a villager) and at 18.3h with every shop shut (Lorcan, a keeper on his way to the inn), with the game's own *takes the draught* message. At Portclare, Cúán the harbourmaster is out at 7.5, 12, 15 and 20h with 5 passages in his dialogue, and gone at 6h and 23h. On the previous build's schedule (`keeper`: hidden 8–18) he would have been gone at 12 and 15h. That is read from the code, not run. No page errors (after Session 234's fix).
+
+### Needs eyes
+Take a ferry at midday from a real port. Owed, not checked: in the open world, main quest Q3 and Q7's *talk to Aldwyn* step. Aldwyn keeps The Royal Herald, a shop, and the quest-giver rule covers only a quest's giver, so from 21 to 7 he can't be found. The audit also doubts whether the Ironhaven-zone story NPCs match in the open world at all; that wants its own look. Lords and stewards can't be found from about 20 to 7, which is by their schedules, not a shop's.
+
+## v80 — Session 236 — The main quest in the open world's Ironhaven
+
+This is Session 235's owed check, *talk to Aldwyn* at night, and it turned out to be much larger. The quest-giver rule at the top of `scheduleFor` keeps a main quest's giver at their door at any hour while the quest is live. The person an active quest sends you *to* is left on their own schedule. Aldwyn (the target of Q3 and Q7) keeps The Royal Herald, a shop, so from 21 to 7 he was hidden while the compass pointed at him. Testing that fix found the bigger fault: at *any* hour, the world's Aldwyn had no quest choice at all.
+
+**What was wrong.** The main quest names each step's place as `'ironhaven'` or `'overworld'` (Ashenmoor's legacy zone). The dialogue code (`openDialog`, and `pickDialogChoice` three times) worked out where you are as `activeZoneId==='ironhaven' ? 'ironhaven' : 'overworld'`. That was right while Ironhaven was its own zone, but in the open world `activeZoneId` is `'world'`, so every Ironhaven townsperson counted as Ashenmoor. In the open world, therefore:
+- Q3 *The Merchant Knows* (talk to Aldwyn) could never complete.
+- Aldwyn never offered Q4 or Q6.
+- Captain Brynn never offered Q5 or his relay to Caldric.
+- Q7's last step (the rubbing to Aldwyn) could never complete.
+
+The main quest stalled after Q2. Ashenmoor's steps (zone `'overworld'`) were unaffected, which is presumably why no playtest has met this yet.
+
+**What changed.**
+- `questZoneNow()` answers the question in one place. In the legacy Ironhaven zone it answers `'ironhaven'`, as before. In the open world it answers `'ironhaven'` inside one of Ironhaven's houses (by the house's `siteId`) or within its pad and 40 units, and `'overworld'` everywhere else. The four copies call it.
+- The quest-giver rule also keeps whoever an active quest's *talk to* step names at their door at any hour (Aldwyn, and Q7's Brother Oswin and Edna). They stand where the givers stand, by the same rule, until the quest is done.
+
+### Verified (headless Chromium)
+New `tests/questtargets.test.mjs`, in the world's Ironhaven:
+- **Aldwyn's hours.** With no quest wanting him, he is in his shop at noon and gone at 23h and 3h (his own hours, unchanged). With Q3 active he is at his door at 23h, 3h and noon.
+- **Q3 at 23h.** The real E key finds him. His dialogue offers *📜 Tell him about Edna's sigils*, then *What do you mean, 'failing'?*, and Q3 reads **complete**.
+- **The givers at noon.** Aldwyn offers *📜 The Crypt of Embers* and Captain Brynn *📜 Lord Caldric's Commission*.
+- **The previous build**, run through the same test: Aldwyn out at none of the three hours with Q3 active, E found no one at 23h, and neither quest was offered.
+- `crime3` and `names` pass. No page errors.
+
+### Needs eyes
+The whole main quest in the open world, Q1 to Q7, in one playthrough. This session fixed the step every Ironhaven quest failed on, but nothing has run the chain end to end in the world. The Ironhaven radius (the pad and 40 units) is generous. A townsperson named Aldwyn or Brynn elsewhere can't match, because the zone must be Ironhaven. Standing at their doors at night by the rule is how givers already behave, and may look odd on a dark street.
+
+## v80 — Session 237 — The coaching inn, open
+
+Michael answered issue #24 with **B**: *the roadside inn, and the driver and a passenger or two waiting in the common room, tickets sold here*. This session builds its first half, option A. Since Session 100 the inn halfway along a coaching road has been a shell with a collision box. Since Session 178 the coach stops at it for a quarter of an hour, and there was nothing to get off for.
+
+**What changed.**
+- **An enterable inn.** Each coach line now registers its inn as a world house (`coachInnHouse`) with an inn's interior. The house is built with the line and removed with it, but kept while you are inside it. Its name and keeper are drawn from the road's key, so the same inn has the same name and keeper whenever you come back, including after a load. The keeper is of the country the inn stands in (its people's name bank, skin, genome), and the inn's name comes from the region's inn names.
+- **The door.** The inn mesh was turned half round. `buildingGeo` draws its door on the +z face, which faced away from the road; it now faces the road, and the enterable door is there. Its id begins `g_` so the world's interior generator and its furniture collision build it.
+- **Inside.** The town inn's interior: counter, hearth, tables, the gallery with its rooms upstairs, and the coach's board and tack corner. Those were already built for a town coaching inn and are now built here too (`house.coachInn`).
+- **The keeper's business.** *Something to eat and drink?* and *A bed for the night?* are the town innkeeper's own, lifted out of the town builder into `innTopics(house)` so both inns run the same code. Travellers hold every room but one (`innTaken` → n−1), which gives option A's *one room to let*. Two plain lines are new:
+  - *When does the coach come through?* reads the board's times, worked out from the road: each coach leaves its end at six (morning or evening) and reaches the inn after half the road at 13 units a second, a game minute each.
+  - *What is this place?* is a sentence of what the inn is for.
+  The keeper also has the town inn's greetings, rumours and weather, and nothing about a lord or a town's streets, because the inn has neither.
+
+**Also found (not fixed).** Session 236's owed check, the main quest end to end in the open world, went to a read-only audit. It is written up in backlog A. Q3 can't be taken, because Corwin is never in the world until Q3 is done. Q6's Ironhaven kills never count. Q7 exists only in the legacy zones.
+
+### Verified (headless Chromium)
+New `tests/coachinn.test.mjs`, on the Ironhaven–Vieux Marché coaching road (548 units):
+- **The house.** The inn registers as *Auberge du Pont*, kept by Cathal. Its door is on the road side, 6.2 units from where the coach draws up (the inn's centre is 9.6).
+- **In by the door.** At noon the door's prompt reads *Press 'E' to enter Auberge du Pont*, and E takes you in: a 16 × 12 interior with the board and tack corner, and the keeper there.
+- **The keeper.** His dialogue offers *Something to eat and drink?*, *A bed for the night?* and *When does the coach come through?*. The board reads: *The coach for Ironhaven leaves Vieux Marché at six and calls here about 6:21. The coach for Vieux Marché leaves Ironhaven at six in the evening and calls here about 18:21…*
+- **The room.** *2 guests in tonight. A room is 10 gold — the second on the left…* Yes: 10 gold paid, rented until this hour tomorrow.
+- **Out and back.** Leaving puts you at the door (0.0 units). The line torn down takes the inn with it; rebuilt, the inn is the same name and keeper, registered once.
+- **Regressions.** `interiors` and `coachstop` pass with the shared inn topics. No page errors.
+
+### Needs eyes
+The inn in play:
+- whether its interior (a town inn's, 16 × 12 with a gallery, in a 9 × 6 shell) feels right as a roadside stop;
+- whether the keeper's two new lines sit in the canon's register (the quest writer may want to rewrite them);
+- the door facing the road, and the building turned to match, by eye.
+
+The coach's driver and passengers and the tickets are the next session.
+
+## v80 — Session 238 — The coach's other half
+
+This is the second half of Michael's **B** on issue #24: *the driver and a passenger or two waiting in the common room, tickets sold here*.
+
+**What changed.** While the roadside inn is open (the town inn's hours, 6 to 2), its common room holds the coach's driver and one or two travellers (`coachInnFolk`, called where the interior builder puts up the board). They are drawn from the road's key and the day, so the same people are there all day and different ones tomorrow. Their names come from the inn's country's name bank, never the keeper's own. Each starts on a free spot of floor, tested against the room's own collision, and wanders the common room's half like the guild halls' members, colliding at their own height (Session 232).
+- **The driver** says when the coach leaves (the board's times) and how the road is. The road reads *There's trouble on the road. We stand here till it's cleared* while the line is halted or the route broken, and *Clear, today* otherwise.
+- **A traveller** says which end they are bound for and one short reason.
+
+The lines are few and plain; the quest writer may want them.
+
+**Tickets are not built.** Every coach is free to ride today, and the player paid to raise the road. What a ticket would buy, and what it would cost, changes a rule of play, so it is a question for Michael: issue #31, in docs/decisions.md under Pending. My recommendation there is a free ticket that holds the next coach at the inn.
+
+### Verified (headless Chromium)
+`tests/coachinn.test.mjs`, extended, on the Ironhaven–Vieux Marché road:
+- **At noon.** The common room holds Clodagh (Coach Driver) and Bríd and Eilís (Travellers), none of them standing in a solid. E by the driver opens *When does the coach leave?* and *How's the road?*.
+- **The same day.** Leaving and coming back finds the same three.
+- **At 3h.** The door still opens, and nobody is there: no keeper, no travellers.
+- **Session 237's checks** all pass again: the door, the board, the keeper, the room, and the inn coming back the same. No page errors.
+
+### Needs eyes
+The common room in play: three or four people in a 16 × 12 room with a gallery, and whether the driver's and travellers' lines sit in the canon's register. The travellers don't board the coach when it calls. They are there for the day, which is a simplification.
+
+## v80 — Session 239 — The guard comes in
+
+Michael answered issue #23 with **B**: *"The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player."* Before this, a keeper who saw you rob a shop put the fine on you, and no guard did anything while you stayed inside. The street's halt (*Halt. There's a fine…*) only ran when a guard was within five units of you out of doors, so you could finish and walk out. B was offered as two sessions. This is the first: the guard coming in, the chase, and the halt indoors. The fight indoors is the second.
+
+**What changed.**
+- **Sent.** When a crime indoors is seen and the town has put a fine on you (`seenCrime`), the nearest guard on duty is sent (`dispatchGuard`). A guard already sent to the same house isn't sent twice, so a picked strongbox and its theft make one errand.
+- **The clock.** The world's tick doesn't run indoors, so the errand keeps its own clock, advanced by both the world's tick and `tickInterior` (`tickSent`).
+- **Stay inside.** After half a minute, or after his walk to the door if that is longer (3 units a second), he comes in by the door, walks up and halts you with the street's words. *Pay the fine* clears it and he goes. *Not now* puts him off for the street's minute. *I'll not pay* is answered *Then outside. Walk.*: you are put out and he draws in the street, 1.8 units from the door. That is the street fight as it stands (yield, the cells), used until the next session builds a fight indoors.
+- **Leave first.** He is in the street where his walk had got him, and gives chase at 3 units a second by the town's streets (`townRoute`). If he catches you, the street halt runs as it always has. He gives up when you leave the town's pad, or after a minute and a half. Duck into another house with him within 20 units and he follows you in, in the time it takes him to reach that door.
+
+**A correction to Session 237.** When I turned the coaching inn to face the road, I appended a `//` comment to the middle of its line. That commented out `inn.castShadow=true;g.add(inn);STATIC_SOL.push(…)`, so since s237 the inn's building was neither drawn nor solid; you could walk into its door from nowhere. The test didn't look for the building. It does now, and the building is back. The same slip in this session's `confront` edit swallowed the street halt, and this session's test caught it. CLAUDE.md gains the gotcha: mid-line notes are `/* */`.
+
+### Verified (headless Chromium)
+New `tests/guardsindoor.test.mjs`, in Dunmore at 13h:
+- **A real theft.** A strongbox picked in the keeper's sight in *Clodagh's Goods* (fine 215) sends Róisín, a 33-second walk away. At 29 s she is not in. She comes in by the door, walks up, and the dialogue reads *Halt. There's a fine of 215 gold on you in Dunmore. Pay it, or I draw*, with pay, refuse and not now. Paying clears the fine and ends the errand.
+- **Leaving quickly.** Five seconds after being seen: she is in the street, gives chase, and halts you after 12.0 s standing still.
+- **Escaping.** Running off the pad: *Róisín gives up the chase*, and no halt.
+- **Ducking in.** Into another house with her 6 units behind: she follows you in; the errand is retargeted and she is inside 8 s later.
+- **Refusing indoors.** You are put out and a Town Guard draws in the street.
+- **Session 237's inn.** `coachinn.test.mjs` now checks the building: in the line's group, solid, with its drawn door 0.00 units from the house's door. The previous build had only the milestones in the group.
+- **Regressions.** `crime1`, `crime2`, `crime3`, `watch`, `theft` and `witness` pass. No page errors.
+
+### Needs eyes
+Being robbed and chased in play:
+- whether half a minute is the right grace indoors;
+- whether 3 units a second catches a walking player too easily or a running one never;
+- whether the guard walking up to you in a shop reads right.
+
+The indoor guard is the townsperson's body in the guard's colours. When refused he is not yet a fighter indoors; that is the next session.
+
+## v80 — Session 240 — The main quest past Q2 in the open world
+
+Session 237's read-only audit found the main quest stopped after Q2 in the open world, and Session 236 had fixed only the Ironhaven dialogue step. This session takes the two contained breaks the audit found. Q7 is left for its own piece (below).
+
+**Q3 could not be taken.** Its giver is Corwin (`giverZone:'overworld'`, Ashenmoor), and the journal sends you to Ashenmoor for him (Session 133). But only the legacy village ever put him there, from the authored `NPC_DEF`. In the open world he appears only at the harbours, and only once Q3 is done (`tutSeaOpen`), so no one could hand you Q3.
+
+Now `corwinInAshenmoor()` runs first in `tickCorwin`. While a quest of Corwin's is available, active or awaiting its reward, and the sea line isn't yet open, he stands in the world's Ashenmoor with his authored definition (*Traveling Merchant*, his own greetings and topics). He stands a few units from the centre, on a spot that isn't solid. The quest's offer surfaces through the ordinary giver path. When the quest is done he leaves, and the harbours have him as before.
+
+**Q6's kills never counted.** Its objective is *kill 20 enemies in Ironhaven's dungeons* (`kill_in_zone`, zone `'ironhaven'`). `killE` reported `currentPortal.zone`, which is `'world'` for every world door. A world door now reports the zone of its canonical dungeon in `WORLD_DUNGEONS`, found by seed. Ironhaven's seven dungeons (801–922) are all placed in the world with their seeds. A generated door with no canonical entry still reports `'world'`.
+
+**Still owed: Q7.** It exists only in the legacy zones:
+- *Return to Ashenmoor* fires only from `goToZone`'s burn trigger;
+- the Faolchú spawns only in the legacy overworld;
+- Bram's body is a legacy zone corpse.
+
+In the world it needs Ashenmoor to burn (the ruin variant exists), the Faolchú and Bram's body placed there, and Edna's burned dialogue there. That is a larger piece and is in backlog A.
+
+**Not done this run: the fight indoors** (#23 B's second half). Interiors have no enemies. The world's zone-enemy tick, its heights and its collision all assume world coordinates. A guard who draws indoors needs a small fight loop of his own in `tickInterior`. It is left whole for the next session rather than half built.
+
+### Verified (headless Chromium)
+New `tests/mainquest.test.mjs`, with Q1 and Q2 done and Q3 available:
+- **Corwin in Ashenmoor.** He stands 5.0 units from the world's Ashenmoor centre, as *Traveling Merchant*.
+- **Taking Q3.** E finds him. *📜 The Merchant Knows* opens his three accept lines, and *I'll head out at first light.* makes Q3 **active**.
+- **After Q3.** With Q3 complete, no Corwin is in Ashenmoor. The nearest port, Portclare, is 1,254 units away.
+- **Q6.** Active, entered through the world door of seed 801, three real kills through `killE` move *Kill enemies in Ironhaven dungeons* from 0 to 3.
+- **The previous build**, through the same test: no Corwin anywhere near Ashenmoor (the first check read *null*), and the test could go no further. Q6 on the previous build is read from the code, not run: every world door reported `'world'`.
+- **Regressions.** `questtargets` passes. No page errors.
+
+### Needs eyes
+Taking Q3 from Corwin in Ashenmoor in real play, and whether the chain Q3 → Q6 now carries on in the world as the story expects. Q7 remains legacy-only.
+
+## v80 — Session 241 — The guard draws indoors
+
+This is the second half of Michael's **B** on issue #23. Session 239 left the refusal indoors as *Then outside*: you were put out and he drew in the street. Session 240's entry said the fight indoors was left for another run. It was built in this one, which corrects that entry.
+
+**What changed.**
+- **He draws in the room.** Refuse him indoors and he draws where he stands (`guardFightIndoor`). The guard becomes a Town Guard enemy in the room's scene, with the street's stats. He comes through the same maker as the street's draw (`guardEnemy`, which `guardDraw` now calls).
+- **The fight runs on the zone-enemy code.** It is the same code as every fight in the open world: telegraphs, blocks, posture and strikes. `tickSent` runs `tickZoneEnemies` on him alone while you are in that room. Your swings already went to the world's enemy list indoors (`activeZoneId` stays `'world'` in a house), and he is on it, so they land.
+- **Two helpers now know about rooms.** Indoors, `activeTerrainH` answers 0 (the floor) and `currentZoneSolid` answers the room's own `intSolidAt`. Both used to answer from the world at the room's small coordinates, which is also where an arrow or a spell loosed indoors looked for the ground.
+- **The yield and the cells.** At a fifth of health he offers the yield, as in the street. *The cells* now takes you out of the room first (`toCells` waits for the door), then to the morning as before. *Pay double* stands him down, and the stand-down removes his body from whichever scene holds it.
+- **Running out mid-fight.** If you leave the room mid-fight he follows, and draws in the street 1.8 units from the door with the health he had left.
+- **Killing him** is the street's rule, unchanged (`guardKilled`: −5 favour, the gates shut, the Church notes it).
+
+**Also fixed.** The halt's one-minute cooldown only counted down in the street's crime tick. After any earlier halt, a guard who came indoors would have stood beside you without a word until you left. It counts down indoors now.
+
+### Verified (headless Chromium)
+`tests/guardsindoor.test.mjs`, extended; all twelve checks pass:
+- **Session 239's checks.** The real seen theft, the halt indoors and paying, being caught after 11.9 s, the escape off the pad, and ducking in.
+- **The draw.** Refusing indoors: a Town Guard (48 health) in the room's scene.
+- **His attack.** In 8 s of the room's tick he closes to 0.94 units and takes 39 health. His feet stay at 0, and no frame finds him inside a solid.
+- **Your blows.** A swing faced at him lands (48 → 45).
+- **The yield.** At a fifth of health: *Yield, and it goes easier. 120 gold, or a night in the cells.* *The cells* puts you out of the room, at 7h, the fine cleared, no guard drawn.
+- **Running out.** Refused again in a home and his health set to 24, leaving by the door: one guard drawn in the street, 1.4 units away, with 24 health, and none left in the room's list.
+- **Regressions.** `interiors`, `intnpcs`, `coachinn`, `crime1`, `crime3`, `theft`, `witness`, `locks` and `unequip` pass with the two helpers answering for rooms. No page errors.
+
+### Needs eyes
+The fight in a shop in real play:
+- the Bandit body in the guard's red at close quarters among the furniture;
+- whether a room is too small for the telegraphs to read;
+- the camera in third person indoors.
+
+A guard beaten in a room leaves his body there until you leave.
+
+## v80 — Session 242 — What the load forgot
+
+Section I is clear, and nothing waits on an answer (issues #31 and #32 are still open). So this session took an owed check that a headless test can settle: backlog A's *the Reader's discoveries in real play*. *The map* (fast travel to a place before walking any of its roads) had only been tried in the harness. *The held breath* (a real gap of six hours or more between sessions) wanted a check across a real gap. Session 97 verified the breath by setting the gap directly. This session drove both the way play does: a save, a page reload, and Continue, with the browser's clock moved on seven hours.
+
+**What was wrong.** Neither discovery could ever happen for a player who reloads the page. The save writes the whole of `worldState` (`wS:{...worldState}`), but `_applyLoadData` reads it back key by key from a list, and that list stopped growing some time ago. Twenty keys were saved and never loaded:
+- The Reader's state (`varek`, with the real-time stamp the gap is measured from), `masteries` (which every discovery needs), `roadsWalked` and `chapelAt`. After a reload the gap was measured from the moment the page opened, so it was always 0.
+- **The day count, `gameTimeAbsMinutes`.** Every day-based rule restarted at day 0 on each reload. That covers favour's recovery, the keeper's five days of refusal, the rents' week and the cleared lairs' and roads' dates. A lair killed on day 20 and loaded on day 0 reads as killed in the future. That last point is read from the code, not run.
+- The crime record: `crime`, `crimes`, `refuse`, `boxes` (emptied strongboxes), `picked`, and the Church's `church` notes (a guard's death).
+- The war (`war`, `wars`), `lairDays`, `shrines`, the tower's `towerLoot` and `towerPicked`, `knowing` and `unbound` (the unbound ending), and `_rentWk`.
+
+Continue in the same tab without a reload kept these from memory, which is why no test or playtest saw it. It also meant loading a second character carried the first one's fines.
+
+**What changed.**
+- The load now reads all twenty back. A key the save doesn't have is cleared, so one character's record never carries into another's.
+- The real-time stamp the Reader measures from (`tickRealClock`) ran only in `WORLD.tick`, which stops indoors and underground. Seven hours in a dungeon, a save there and an immediate Continue read as a seven-hour absence. The stamp now runs in the main loop in every zone (CLAUDE.md's first gotcha).
+- CLAUDE.md gains the gotcha that a new `worldState` key must be added to the load's list.
+
+### Verified (headless Chromium)
+New `tests/reader.test.mjs`. The clock is shifted through `localStorage`, which survives the reload, and every step is a real `saveToSlot`, page reload and Continue click:
+- **Straight back.** Gap 0, nothing due. Masteries 1, day 9 and the Church's note all come back.
+- **Seven hours on.** Gap 7.01 h, *the held breath* is due, and Varek stands 5.0 units from the Ashfeld's centre with *Nine days passed for me…*.
+- **Seven hours underground,** then saved and continued at once: gap 0, nothing due.
+- **The map.** A real `fastTravel` to Ironhaven with none of its roads walked sets the short road to *Ironhaven*, *the map* is due, and you arrive 6 units from it.
+- **A walked road.** Standing on the Dunmore–Portclare road logs it, and travelling to Dunmore afterwards names no short road.
+- **The previous build**, through the same test: after the seven-hour reload the gap read 0 and nothing was due. Masteries came back as `undefined`, and Varek never appeared. The underground case read a false 7.01 h once the load was fixed and before the clock moved to the main loop.
+- **Regressions.** `saves`, `export`, `chapel`, `crime1`, `crime4` and `hourhitch` pass. No page errors.
+
+### Needs eyes
+- Varek's three lines in real play: the breath after a real night away, and the map after a first fast travel.
+- Old characters will now load with their real day count. A save made before this build has its true `gameTimeAbsMinutes` in it, so the first load can jump the day forward. Favour recovery and the keepers' refusals then catch up at once. That is correct, but it may surprise.
+
+## v80 — Session 243 — The house that moved
+
+Section I is clear and every open decision is still waiting (#31, #32, #37). This session took backlog F's one owed watch, *a place that fails to regenerate (a house id that changed)*, and settled it headless.
+
+**What was checked first.** A save made inside each kind of place, then a page reload and Continue: a home, a forge, the inn, the inn's cellar, the Fighters' Guild and the church in Dunmore, a POI tower (Cnocmore Spire) and a bought ship's cabin. All eight came back in the same room at the same spot. So nothing fails at a steady prosperity.
+
+**What was wrong.** A house's id was its index among the lots a build used (`g_dunmore_14`). A town rebuilds when its prosperity moves twelve points, a flag changes (war, plague) or a paid building finishes. At another prosperity it keeps a different number of lots, and the guild halls' large lots come and go at 60. That shifted every lot after them. Dunmore at 61 rebuilt at 48 put every one of its 50 ids on another building (49 moved, the 50th changed type), and all 36 homes landed on another lot. Carraig Mór rising from 56 to 69 did the same to all 44 of its ids. Anything keyed by id followed the wrong building:
+- **Your own house.** `worldState.owned` is keyed by id. An owned home in Dunmore, after a fall to 35, stood 97 units across town, and the farthest one owned was gone.
+- **A save made inside a house.** It named an id that could now be another building.
+- **Strongbox, picked-door and refused-trade records.** These are keyed by id too.
+
+**What changed.**
+- **Lots are planned apart from the build.** `genSettlement` now plans its lots in `planLots(P, withBuilds)`, on its own copy of the town's random stream. Each lot remembers the order it was made in.
+- **An id belongs to a lot.** It is the lot's index in the town's layout at its starting prosperity (`baseProsperity`, the value `TS()` gives a new town) with nothing paid for. A lot that only a richer town uses gets an id from 1000 up. At the starting prosperity that is exactly the old id. Across six towns (161 houses) every id, type, name and door is the same as the previous build, so fresh worlds, their interiors, their houses for sale and their prices are unchanged.
+- **Your house is never given away.** It is never handed to a shop when the town grows, and never dropped when it shrinks.
+- **Older saves.** `_reenterPlace` trusts the door a save was made behind over its id when the two disagree.
+
+**Not fixed.** An owned house bought before this build, in a town whose prosperity had already moved from its start, is keyed by an old index that now means its lot at the starting layout. Without the old layout there is nothing to map it back by. Townsfolk's names still change when their town rebuilds at another prosperity: Dunmore 61 → 48 renames 49 of 57 houses, because names are drawn from the same stream after the lots. Keeping them would change every name in existing worlds, so it is left owed rather than done quietly.
+
+### Verified (headless Chromium)
+New `tests/placesave.test.mjs`, eleven checks, all pass:
+- **Prosperity swings.** Dunmore, Carraig Mór, Portclare and Colman's Rest were each rebuilt at their prosperity ±13 and ±26. No id lands on another lot (lot centres to 0.01), and ids stay unique. The only doors that shift (2 to 3.5 units) belong to a lot whose building changed size, such as a guild hall that became a forge, on the same centre.
+- **An owned house.** The Dunmore home nearest the centre, one in the middle and the farthest were each owned in turn, with the town rebuilt at 87, 35 and 16. Each is still *Your House*, a home, 0.00 units from its door. Without ownership the farthest lot isn't used below 61, and the middle one isn't used at 16.
+- **Saves by place.** Saved in the home, the forge, the inn, its cellar, the guild and the church, then reload and Continue: the same id, name and spot for each.
+- **Saving mid-rebuild.** Saved in a home as the town fell 13 behind you: back in the same house, behind the same door.
+- **A save that names the wrong id.** It comes back behind the door it was made behind.
+- **The previous build, through the same checks.** Both swing checks fail there. Dunmore at 48 moved 49 of its 50 ids, and the owned homes moved 97, 29 and 107 units or vanished.
+- **Build time.** Dunmore's median build is 215 ms on both builds.
+- **Regressions.** `saves`, `reader`, `interiors`, `locks`, `crime1`, `crime3`, `names`, `wayfinding`, `shophours`, `coachinn`, `theft`, `intnpcs`, `watch` and `guardsindoor` pass. No page errors.
+
+### Needs eyes
+- A town you own a house in, through a war or a plague. The house should stay where you bought it.
+- The renamed townsfolk after a rebuild, and whether that is worth fixing at the cost of today's names.
+
+## v80 — Session 244 — Names that stay
+
+Session 243 left one thing owed: when a town rebuilt at another prosperity, most of its people changed their names (Dunmore 61 → 48 renamed 49 of 57 houses). The houses now stay on their lots, but the forge on the corner could be Lorcan's before a plague and Ruairí's after. A save made in Maeve's House came back as Niamh's.
+
+**Why.** Every name is drawn from the town's one random stream, in lot order. `makeDef` then re-draws it from the bank of the person's people (Session 172). A rebuild at another prosperity uses a different set of lots, so the stream reaches each lot at a different point and every later draw changes.
+
+**What changed.** The first time a town is built, `makeDef` records each person it makes under a key in the town's state (`worldState.towns[id].nm`, as *name|people*):
+- a resident or a shopkeeper is keyed by the lot's id number;
+- the gate guards by their gate;
+- the night watch and the third night guard by their posts;
+- inns keep their names by lot as well.
+
+A later build of that town takes the name and people from the record. Every draw is still made, so the stream is untouched: a town's first build is exactly what it was, and nothing else drawn after the names moves. A lot that changes from a shop to a home keeps its person, who is now a resident instead of a keeper. A guild hall's master is not a shopkeeper (guild heads are seeded by `guildDef`, Session 172), so a lot that stops being a guild hall gets its recorded keeper, not the guildmaster. The record is saved with the town's state; `towns` was already in the load's list.
+
+**Not done.** Skin and hair are still drawn in the stream's new order, so after such a rebuild and a page reload a person can keep their name and people but come out with different colouring. In the same session the look is held by the genome cache (`name|site`). Holding the colours as well would mean recording each person's look; left owed.
+
+### Verified (headless Chromium)
+`tests/placesave.test.mjs` gains the names check; all twelve checks pass:
+- **Rebuilds.** Dunmore, Carraig Mór, Portclare and Colman's Rest were rebuilt at their prosperity ±13 and ±26. No keeper or resident changes name, apart from the guild-hall lots (two per town at 60, where the guildmaster goes). The guards at each prosperity are a subset of those at the start (the third night guard exists only at 60 and above).
+- **Saved while the town fell.** Saved in a home as the town fell 13 behind you, then reload and Continue: *Maeve's House*, the name it was saved in. On Session 243's build it came back as *Niamh's House*.
+- **The previous build**, through the same check: 43 of 47 shared keepers renamed at Dunmore 48, and 49 at 87.
+- **Fresh worlds.** The first build of six towns (Dunmore, Portclare, Colman's Rest, Carraig Mór, La Grise, Hearthwick) against the build before Session 243: all 357 records identical (houses with keeper, people and skin, townsfolk, residents with people and hair).
+- **Regressions.** `names`, `saves`, `export`, `reader`, `watch`, `intnpcs`, `witness`, `questtargets`, `mainquest` and `crime1` pass. No page errors.
+
+### Needs eyes
+Whether a town's people should keep their colouring as well after a rebuild; nobody may ever notice it.
+
+## v80 — Session 245 — And they look the same
+
+This finishes what Session 244 left owed. After a town rebuilt at another prosperity its people kept their names but not their looks. Skin and hair are drawn in `makeDef` from the town's stream, and so are a resident's clothes and trade (*farmer*, *weaver*, *cooper*). The rebuild reaches each person at a different point in that stream. The genome cache held the old look for the rest of the session. After a reload, Maeve of the same house came back darker-haired, in another colour, and a weaver instead of a farmer.
+
+**What changed.** The town's record of each person (`worldState.towns[id].nm`) now keeps the skin, hair, clothes and trade alongside the name and people. Each field is kept once it is drawn. A Session 244 record, which has only name and people, fills in the rest the next time its town builds. As before, every draw is still made and then overridden, so a town's first build is unchanged. Two things are kept only when the person is again what they were:
+- **Clothes.** A shopkeeper's clothes come from the shop, so a lot that was a home and becomes a shop again takes the shop's colours.
+- **Trade.** A resident's trade is applied only to a resident, so a keeper stays *Smith*.
+
+### Verified (headless Chromium)
+`tests/placesave.test.mjs` gains the look check (skin, hair, clothes, trade), and all thirteen checks pass:
+- **Rebuilds.** Dunmore, Carraig Mór, Portclare and Colman's Rest were each rebuilt at their prosperity ±13 and ±26. Every person whose lot keeps its kind and name keeps all four.
+- **Session 244's build**, through the same check: 33 of 47 shared Dunmore lots came back looking different at 48, 52 of 57 at 87, and 32 of 44 in Carraig Mór at 69.
+- **Fresh worlds.** The first build of six towns against the build before Session 243: all 357 records are identical (names, people, skin, hair, clothes, trades, houses, doors).
+- **Regressions.** `names`, `saves`, `export`, `intnpcs`, `people` and `lod` pass. No page errors.
+
+### Needs eyes
+Nothing new by eye. The three sessions together mean a town you know should keep its houses, people and faces through a war, a plague or a boom. That is worth a look the next time a town you own a house in changes hands.
+
+## v80 — Session 246 — The board over the door
+Section I on main is clear and the three open decisions (#31, #32, #37) are unanswered. The critic's run of 28 Sep (PR #40, not yet merged) confirmed four bugs; this session takes the first, *shop signs name the wrong keeper*.
+
+**What was wrong.** `genSettlement` hangs the trade sign over a shop's door as soon as it has the house's name, and that name uses the keeper's name as first drawn. A few lines later `makeDef` settles the keeper's real name (kept per lot since Session 172, unique in the town) and the house is renamed after them. The board was already painted, so it kept the first name. In Portclare all six keeper-named boards were wrong (*Leofgifu's Stores* over Fionnuala's Stores, *Wulfstan's Shipwright* over Lonán's); in Dunmore all seven were (*Órla's Goods* over Clodagh's, and no Órla in town). Inns, the church and the guild halls were right because their names don't carry a keeper.
+
+**What changed.** The sign's height is noted where the sign used to be built, and the board is painted after the rename, from `house.name`. Each face of a board carries its text in `userData.sign`, so a test can read it.
+
+### Verified (headless Chromium)
+`tests/signs.test.mjs`: every shop, inn, church and guild hall in Portclare (9) and Dunmore (14) has one board within two units of its door, and the board reads the house's name. On the build before this session the same test fails: 13 of 13 keeper-named boards named someone else. `names` (the town rebuilt gives the same houses and keepers) and `wayfinding` still pass. No page errors.
+
+### Needs eyes
+Stand three units from Fionnuala's Stores in Portclare at 11h and read the board.
+
+## v80 — Session 247 — The long way round
+The critic's second bug from 28 Sep (PR #40): *a night guard sticks behind Clodagh's Goods*. In Dunmore at 23h the guard Róisín stood 492 of 600 seconds 4.6 units behind Clodagh's door, with the house between her and the door she should have been watching.
+
+**What was wrong.** Three things in how the Session 166 beat is walked:
+- **Joining the beat.** Each guard joins the loop at his own point (his share of it) and walked there in a straight line from wherever nightfall found him. For Róisín that line ran into the back of Clodagh's house. `npcStep` slides along a wall one axis at a time, and as long as it slides it never counts as stuck, so she never gave up and never went round.
+- **Starting from a corner.** The street grid (`townRoute`) plans from the one-unit cell a guard stands in, then pulls the path straight from where he actually stands. From inside a corner that straight line to the first turn can cut the wall. Freed from the house, Róisín pinned herself at (+26.8, +29.4) this way.
+- **A give-up counted as arriving.** When `npcStep` is blocked outright for 40 frames it reports arrival, and the beat took that as having reached the point: a door's pause, then the next point. In Portclare a wall stands between the watchman Gaspard and the turn before Fionnuala's Stores. He "arrived" at the turn and at the door from four units away, and in ten minutes never came within three units of that door or of Odhrán's (0 passes each, on the build before this one too).
+
+**What changed.**
+- A beat point he gains no half-unit on for two and a half seconds is reached by the street grid.
+- The grid's path keeps the guard's own cell as its first point whenever the line from where he stands to the next turn is blocked. This also serves the Session 239 chase, which uses the same grid.
+- A give-up short of the point is no longer an arrival. He tries once more by the grid, cell by cell (the unpulled path, each cell reached to within 0.2), and only if that fails too does he move on to the next point.
+
+`npcStep` takes an optional arrival distance for that.
+
+### Verified (headless Chromium)
+`tests/beat.test.mjs`, ten minutes of night in two towns, sampled every half second:
+- **Dunmore.** The longest any guard stands still at once is 4 s (Róisín 496.5 s on the previous build). Every guard stands still 70–96 s in all, which is the 2–4 s pause at each of the beat's points. Every shop door is passed by a lantern within 3 units 5–7 times (3–4 before).
+- **Portclare.** Gaspard's longest stand is 4 s (11 s before). All five shop doors are passed 3 times each (4, 0, 3, 3, 0 before).
+- `watch`, `guardsindoor`, `crime3` and `witness` still pass. No page errors.
+
+### Needs eyes
+Dunmore after 23h: follow a lantern round the beat and watch for a guard rounding a corner by little one-unit steps (the cell-by-cell retry) where he used to stop.
+
+## v80 — Session 248 — Two Cathals
+The critic's fourth bug from 28 Sep (PR #40): *keepers and guards still share names*. In Dunmore, Cathal kept the apothecary, stood guard and lived in a house. Róisín kept a shop and was a guard, Ruairí kept the Bramble Hearth and walked the night watch, and Niamh was the Archmage and the mayor. A face is seeded and cached by `name|town`, so each pair was one face.
+
+**What was wrong.**
+- **The bank runs out.** Session 172's `pickFree` keeps names unique while the people's bank lasts: twelve names a sex. Dunmore has 65 townsfolk and the 43 residents are drawn first, so the bank is spent before the keepers, guards and lord are named. From then on a name repeats, and nothing kept the repeats off the people with posts.
+- **The lord comes last.** His name is his own (`lordFor`, per site, kept by `keepName`), and he is made after the guild halls. So the Archmage, drawn first, took Niamh freely.
+- **Found by this session's test: faces by the last town built.** `spawnNPC` keyed a face by `_curSettle`, the last town generated, not the person's own. Residents are spawned lazily, two a tick, as you come near. So a resident met in the street after a neighbouring village had built wore a different face from the one they had at home. In Portclare, Étaín and Cellach did.
+
+**What changed.**
+- **Names.** Someone with a post (keeper, guard, watch, lord, guild head) whose drawn name is taken, with the bank used up, takes the next name that no other post-holder has, a resident's name if it must. The lord's name is reserved when the town's naming starts. `pickFor` makes no extra draws from the town's stream, and a town's kept names (Session 244) still win, so a town already in a save keeps its names.
+- **Faces.** `makeDef` counts each name as it is given out. The second holder of a name carries `_twin: 1`, the third `_twin: 2`, and the face key becomes `name|town#n`. The house carries its keeper's `_twin`, so the keeper behind the counter, the resident at home and the guard who comes in after you (Session 239) all wear the face they have in the street. The first holder of every name keeps the face they had.
+- **The town in the key.** Every def remembers its town (`_siteId`), and `spawnNPC` keys the face by it.
+
+**A correction to a test.** `people`'s walk check took the first visible townsperson with nothing in hand, at the boot's 6h. The only one was Dunmore's lord, and only because he wore the face (and empty hands) of the first Niamh built, a resident. He has his own face now, and it carries a stick. The check now picks its walker at noon. Its assertions are unchanged.
+
+### Verified (headless Chromium)
+`tests/twins.test.mjs`:
+- **Dunmore** (22 in the street, 43 residents, 18 posts). No two post-holders share a name (on the previous build: Niamh the mayor, and Cathal, Róisín and Ruairí as guards). No two people share a face though 40 share a name (over 30 shared faces before). All 55 keepers and residents indoors match the street.
+- **Portclare** (15, 23, 12). The same, and Étaín's and Cellach's houses now match the street; they didn't before.
+- `names` (a rebuilt town has the same houses, names and keepers), `people`, `guardsindoor`, `intnpcs`, `placesave` and `signs` pass. No page errors.
+
+### Needs eyes
+Two townsfolk of the same name in one town should now look like two people. The lord of Dunmore looks different from the last build.
+
+## v80 — Session 249 — Two articles
+A short one from the small items of the critic's 28 Sep run (PR #40): La Grise's church board read *The La Grise Oratory*. A church outside the French register is named *The {town} {Oratory|Chapel}*, and a place whose name already begins with an article got two. Now a name that starts with *La*, *Le*, *Les*, *L'* or *The* drops the church's *The*: *La Grise Oratory*, while Dunmore keeps *The Dunmore Oratory*. Since Session 246 the board takes the house's name, so it reads the same.
+
+What this does not change: the home province's French-named places (La Grise, Vieux Marché, Mur Pierre) sit in the Irish register, so their buildings take Irish nouns (*Oratory*, not *Chapelle*). Whether they should is a question for the lore, not a bug. The critic's other small item, a Wooden Bow and a Wooden GreatClub at 4 gold in the goods shops (half a torch), is a price, so it is Michael's and not touched here.
+
+Also, on the critic's notes from both of its runs, three stale backlog lines: the header's *as of Session 158*, D's *NPC part merging* (done in H.6, Session 153), and A's *Playtest 16 Sep* (both of its items done). Struck or updated, nothing removed.
+
+### Verified (headless Chromium)
+`tests/churchname.test.mjs`: La Grise's church is *La Grise Oratory* and its board says so; Dunmore's is *The Dunmore Oratory*. No page errors.
+
+### Needs eyes
+Nothing beyond reading the board.
+
+## v80 — Session 250 — The same face after the plague
+**A correction to Session 248**, found by reading it back against Session 245. Session 248 gave the second holder of a name a face of their own (`name|town#1`), numbered in the order the town was built. Session 245 had promised that a person keeps their look when the town rebuilds at another prosperity. A rebuild uses other lots in another order, so the numbers shifted. Dunmore rebuilt at 35 gave six people another face: Aoife, Eoin and Sinéad each moved up a number. At 87 the night watchman Cormac went from #2 to #1. The names held; the faces didn't.
+
+**What changed.**
+- **Each person's record keeps the number.** The town's record (`worldState.towns[id].nm`, Sessions 244–245) now holds each person's face number as a seventh field, beside name, people, skin, hair, clothes and trade.
+- **Numbers held by the record are reserved.** When a town builds, every number any record holds is reserved first. A newcomer, someone on a lot the town hasn't used before, takes the lowest number for their name that nobody on the record holds.
+- **The lord and guild heads have records too.** The lord now has a record (`lord`). The guild heads, who come from their own stream, keep theirs as `tw:guild_f` and `tw:guild_m`.
+- **Older records.** A record from before this build has no number. It takes one the next time its town builds, in the same order as Session 248's first build, so nobody's face changes on the way in.
+
+### Verified (headless Chromium)
+New `tests/twinsrebuild.test.mjs`. Dunmore at 61 has 59 people with records, 36 of whom share a name. It is rebuilt at 35 (47 people, 42 of them also in the first build), 87 (67; 59), 16 (38; 33) and back at 61. Everyone present in both builds has the same face number (6 moved at 35, 1 at 87 and 6 at 16 before this session), and in no build do two people share a face. `twins`, `names`, `placesave`, `people` and `intnpcs` pass. No page errors.
+
+### Needs eyes
+Nothing new to see; this keeps Session 248's faces where they were.
+
+## v80 — Session 251 — A new browser
+Backlog G has owed two checks since Sessions 137 and 139: *a slot, an overwrite, an autosave and Continue, in real Chrome on `file://`*, and *export a character on `file://` and import it back*. The existing tests call the save functions directly. This session drove the whole path the way a player does, headless Chromium on `file://`: the menu's own buttons, a real download, the browser's file picker, and full page reloads in between. The round trip works. Along the way it found two ways the title screen fails a player with an empty browser.
+
+**What was wrong.**
+- **No way to import into a new browser.** With no saves, the title hides *Load Game* (and *Continue*). And the Load menu, when it has no characters to list, replaced everything in it with *No saves yet*, including Session 139's *Import a character from a file* button. So a new browser, a new machine or a cleared cache (the very place a kept file is for) could import only after starting a throwaway character and using the in-game menu.
+- **Closing Load Game didn't go back.** *Load Game* on the title steps into the scene before it opens the menu (`_enterGame`: the title hidden, the HUD shown, the keys bound). Closing that menu without loading anything left you in that half-entered game, with no character and no title. `closeSLMenu`'s comment said *Return to title*, and nothing did. This was possible before too, whenever there were saves.
+
+**What changed.**
+- *Load Game* is always on the title. *Continue* still needs a save.
+- With no saves, the Load menu shows *No saves yet* below the Import button, not in place of it.
+- Closing the Load menu opened from the title without loading anything reloads the page, which is the title. Nothing in the half-entered scene is worth keeping.
+
+### Verified (headless Chromium, `file://`)
+New `tests/saveui.test.mjs`, 13 checks, one session of play:
+- **Slots by the menu.** Slot 1 is empty and saves on one click, and the menu closes. The overwrite asks (*Click again to overwrite*), keeps 321 gold on the first click and writes 654 on the second. An autosave (700) is written.
+- **Reload and Continue.** After a page reload the three saves are there, not on the localStorage fallback, and Continue is offered. Continue loads the newest, the autosave: 700 gold, the name and level, and the spot she stood on to the unit. The Load tab arms and then loads the slot (654).
+- **Export, delete, reload.** *Export* downloads `the-old-gates_Traveller_lv4_2026-09-28.json` holding all three saves. *Delete character*, clicked twice, empties the store, and it stays empty after a reload.
+- **The empty title.** With no saves the title shows *Load Game* and not *Continue*. Closing that menu without loading returns to the title.
+- **Import by the picker.** *Import* through the browser's file chooser brings the character back with three saves, listed at once. After another reload, *Load Game* on the title, with the slot armed and clicked, starts the game with 654 gold.
+- `saves` and `export` still pass. No page errors.
+
+### Needs eyes
+The same round trip in Michael's own Chrome with a file kept on disk between two browsers or profiles. That settles G's two lines for good; headless it is settled.
+
+## v80 — Session 252 — Room to swing
+Backlog G has owed a check since Session 143: *open and shut a door in an inn room and a shop's back room: its height against the ceiling, its swing against the furniture*. Both are geometry, so both can be measured. This session measured them and changed no game code, so the tag stays at s251, as Session 149's did.
+
+**How.** Every interior in Dunmore (31 doors) and Portclare (12) was built with `buildInteriorFor`: shops' back rooms, inn rooms and landings, the guild halls. For each door:
+- the leaf, 1.34 long from its hinge, was swept through its whole quarter turn (to 1.62 rad) in steps of 0.05, against every solid in the room between shin and head height;
+- the gap it shuts was measured along the wall line;
+- the door's top (1.48) was set against the room's ceiling (2.0–2.6 by style), and against the tallest head among the 69 townsfolk rigged in Dunmore.
+
+**What it showed.**
+- **The swing.** No door touches anything in its swing: no wall, counter, bed, shelf or barrel.
+- **The gaps** are 1.18, 1.26 and 1.28 against a 1.34 leaf. The shut door tucks 3–8 cm into the wall at each side, inside the wall's thickness, so no light shows round it.
+- **Headroom.** The tallest head bone stands at 1.03 (a villager at scale 1.07; the median is 0.93). With a crown and a hat's 0.3 that is still under the 1.48 door, and every door is at least 0.5 below its ceiling.
+
+At the game's scale (the eye stands at 0.92) the doorway is about a head and a half taller than the tallest townsperson.
+
+### Verified (headless Chromium)
+New `tests/intdoors.test.mjs`, 5 checks, all passing with the numbers above.
+
+### Needs eyes
+Whether 1.48 *looks* right beside a person in real light: a doorway that tall is generous for an old house. That is taste, not fit.
+
+## v80 — Session 253 — From the crypt to the smoke
+Backlog A has owed *a run of the whole main quest in the open world, Q1 to Q7* since Session 236. Q7 waits on issue #32 (Ashenmoor has to burn in the world first). This session played Q0 to Q6 from a new character, headless, the way a player does:
+- **The start.** Character creation, the tutorial crypt, and out of it by the crypt's own exit.
+- **Taking and handing in.** Every quest taken from its giver by walking up and pressing E, then through the giver's own dialogue (the first choice that doesn't back out) until the quest moved. Every hand-in the same way.
+- **Kills.** Every kill made in the dungeon that the quest's world door opens (`killE`, with the door's portal).
+- **Sigils.** Every sigil touched on its floor (`touchSigil`).
+
+**What it showed.** The story holds. Bram gives *First Blood* at his forge in Ashenmoor, and five kills in the Dungeon of Shadows bring it to hand-in. Edna gives *Strange Markings*, and a sigil on the Shadows' second floor closes it. Corwin stands in Ashenmoor with *The Merchant Knows* (Session 240) and sends you to Aldwyn in Ironhaven, found at the Royal Herald by E with *📜 Tell him about Edna's sigils*. Aldwyn gives the Crypt of Embers (a sigil on its second floor). Captain Brynn gives the Vault of the Tide (eight kills on its second floor). Aldwyn gives *The Binding Stone* (twenty kills across Ironhaven's dungeons, Session 240's fix). Handing that in, his *Smoke. From Ashenmoor.* makes Q7 active, and there the world stops, as #32 says.
+
+**What it found.** A Slime killed in a dungeon threw `ReferenceError: buildEnemy is not defined`. `killE` splits a Slime into two Small Slimes with `buildEnemy`, but `buildEnemy` is defined inside `buildDungeon`, where `killE` can't reach it. The split has been there since the first push, so every Slime ever killed threw. No Small Slimes appeared, and the error broke off whatever had called the kill. The run hit it on Q5's floor of the Vault. `buildDungeon` now leaves a handle to its builder (`_dungeonBuildEnemy`), and the split uses it.
+
+The tag is s253: it follows the session number, so it skips s252, which Session 252 didn't use (as s149 was skipped).
+
+**Not a bug, noted for the next test.** The harness's `g.intoWorld()` skips the tutorial crypt, so a character made by it has Q0 still active and Q1 locked. In real play, leaving the crypt closes Q0 and opens Q1. A test of the story has to start the real way, as this one does.
+
+### Verified (headless Chromium)
+New `tests/mainrun.test.mjs`: from a new character, Q0–Q6 each complete by play and Q7 is active after, with no page errors. The state after each step is logged (e.g. *Q5 kills (8) → q5:reward*, *Q6 handed in → q6:complete q7:active*).
+
+New `tests/slimesplit.test.mjs`: a Slime on the Vault of the Tide's lower floor, killed, leaves two Small Slimes at the spot and in the scene, with no error. On the previous build the same kill throws and leaves none.
+
+### Needs eyes
+Kill a Slime in a real dungeon: the split, and the two small ones coming at you.
+
+## v80 — Session 254 — Eight at once
+This run's one CI session. Every `check` run on `auto/systems` today, as far back as the list goes (06:00), ended **cancelled**, never red or green. The headless job ran every suite one after another under `timeout-minutes: 30`. A full local run of the 49 suites takes 65 minutes (from 12 s for `combatmusic` to 324 s for `placesave`), so the job was cut off before it could report. This run's new suites made it longer still (`mainrun` 318 s, `beat` 95 s, `saveui` 110 s), but it was already over.
+
+**What changed.**
+- **Eight shares.** The headless job runs as eight jobs side by side (a matrix, `fail-fast: false`), each with its own 30 minutes, each running `node tests/run.mjs --shard=k/8`.
+- **Dealt by time.** `run.mjs` deals the suites heaviest first to the lightest share, from a small table of the long suites' measured seconds (a suite not in it counts as 60). The shares come to 504–558 s each.
+- **Per-suite cap.** It goes from 10 to 15 minutes, because `mainrun` plays the main quest in five.
+- **Timings.** After a full or shared run, `run.mjs` prints each suite's time. `node tests/run.mjs` and `node tests/run.mjs <name>` work as before.
+
+**A correction to Session 248.** Its test run missed `gait`, which failed in this full run for the same reason `people` did then. The test walked the first visible townsperson with nothing in hand at the boot's 6h, and that was Dunmore's lord only while he wore the first Niamh's face. It now picks its walker at noon; its assertions are unchanged.
+
+No game code changed, so the tag stays s253.
+
+### Verified
+The full suite locally: 48 of 49 passed; the 49th was `gait`, then fixed and passing (6 checks). `--shard=2/8` runs its five suites (`crime2`, `lockpicks`, `mainrun`, `signs`, `wayfinding`) in 8 minutes, all passing. The eight shares together cover all 49 suites, each once. Whether GitHub's runners fit each share in 30 minutes shows on the next push.
+
+### Needs eyes
+The next `check` run on the PR: eight headless jobs, each green or red, not cancelled.
+
+## v80 — Session 265 — Every town in its own voice
+The quest review's first run (docs/quest_review.md, 28 Sep) found three sets of lines that broke the canon's register (§1.5: speech follows the speaker, not the province). Findings are applied as written, without a decision, and this session applies them:
+- **The guild heads** greeted in Markish in every hall. Session 172 gave them a people, a name from that people's bank and that people's body, but not their voice. `GUILD_GREET` now holds two lines for each hall and each of the four peoples. `guildDef` picks the row by the head's people, falling back to the Markish row, which is the old text.
+- **The halt** (`confront`, and `confrontIndoor` from Session 239, which is the same exchange) and **the yield** (`offerYield`) spoke Markish in every town. `HALT_LINES` and `YIELD_LINES` hold the review's lines, and `haltLines(S)`/`yieldLines(S)` pick them by `peopleOfSite(S.site)`, with Markish as the fallback. Every greeting and response goes through them: short of gold, paid, refused, the cells.
+
+Dunmore is Gatelander, so its watch now says *Stand a moment. There’s a fine of 25 gold owed in Dunmore, and it won’t pay itself…*. Two older tests matched the Markish words (*Halt*, *Yield*). They now match what every people's line shares (*fine of N gold*, *cells*). No test was removed.
+
+**Numbering.** This is Session 265, not 254. The look branch (auto/backlog) has already used Sessions 257–264, so a 254 here would have collided with them on merge. The tag is s265.
+
+### Verified (headless Chromium)
+New `tests/register.test.mjs`, 5 checks. All four peoples have both guild lines, and the Markish row is the old text. In Dunmore (Gatelander), by play:
+- the guard halts you with the Gatelander greeting; short of gold he gives the Gatelander *poor* line, and paying he gives *Paid is paid. Walk easy.* (gold 100 → 75);
+- refused, he answers *Then the sword, and Weaver forgive the both of us.*; at a fifth of health the yield is *A bent knee mends faster than a broken head. 50 gold…*;
+- the Fighters' and Mages' heads (Gráinne and Sorcha, both Gatelander) greet with the Gatelander rows.
+
+`crime3` and `guardsindoor` pass with their widened matches. No page errors.
+
+### Needs eyes
+An Aurennais or Markish town's watch, met in play: whether the four voices read as four peoples, and whether *Master* in a guard's mouth sits right.
+
+## v80 — Session 266 — The Compact's tithe
+Michael answered issue #37 with **A**: a town the Compact (Aurenne) occupies pays a tithe of an extra half point of prosperity a game-day, and Aurenne's capital gains the same, capped at 100. The League's duels wait until duels exist.
+
+**What changed.** `tickProsperity` runs once a game-day over the loaded towns. For each town flagged occupied whose occupier is `aurenne`, it now charges the tithe and adds it to the day's total. After the loop, the total goes to the Compact's seat (`FACTIONS.compact.seat`, set by `anchoredPlaces`: Fortargent on this seed). The seat is found with `siteAnywhere`, so it collects even while its island isn't loaded. It collects nothing while it is itself occupied. `setProsperity` holds the cap at 100.
+
+**Why the tithe keeps its own account.** Prosperity is stored in whole points: `setProsperity` rounds. The first build added the half point to the day's other drivers, and the test showed it had no effect at all. A town held ten days by Aurenne and one held by the Mark both lost exactly a point a day, because −0.5 and −1.0 on top of that day's other drivers rounded to the same step.
+
+So the tithe now keeps its own half points (`st.tithe` on the town, the same on the capital) and pays a whole point when one has built up. An occupied town pays a point every second day, and the capital takes a point a day for every two towns. The account lives in `worldState.towns`, so it is saved.
+
+**A finding, not changed.** The same rounding applies to occupation's own half point (Session 129) and to the drift towards a town's home level, which is 1% of the gap a day, under half a point for any gap under 50. Whether each of these moves a town depends on what else happened to it that day. Changing that means carrying fractions for every driver, which would rebalance every town in the world. That is left as a note in backlog B, not done here.
+
+### Verified (headless Chromium)
+New `tests/tithe.test.mjs`, 4 checks. The Compact's seat is Fortargent, a city of Aurenne. Dunmore and Portclare were set at 50 and held ten game-days by Aurenne, then (from the same state) ten days by the Mark:
+- **The towns.** Held by Aurenne they end at 35, held by the Mark at 40: exactly five points more.
+- **The capital.** Fortargent, set at 50, ends at 60 when Aurenne holds them and at 50 when the Mark does: ten points, a point a day for two towns.
+
+Randomness was seeded identically in both runs. No page errors.
+
+### Needs eyes
+Nothing to see on screen: the tithe shows only as prosperity (the keeper's *getting by* against *prosperous*, the walls' tier), and only in a war that Aurenne wins.
+
+## v80 — Session 267 — A seat held
+Michael answered issue #31 with **A**: a ticket costs nothing. Taking one from the keeper makes the next coach wait at the inn until you board, up to an hour, so you can eat or sleep without missing it. Riding stays free.
+
+**What changed.**
+- **The keeper.** The keeper of a coaching inn (Session 237) has a new topic: *A seat on the next coach?* The seat is for the next coach to call at the inn, whichever way it runs, or for the one at the door now. The keeper names its time and where it goes: *The 6:21 for Ironhaven. It's yours, and it costs nothing; the driver knows to wait. An hour, no more.* After that the topic reads *My seat on the coach?* and gives the same.
+- **The seat.** It is stored in `worldState.coachSeat` (the road's key, the call's absolute time and time of day, the direction), so it is saved.
+- **At the door.** The coach draws up for its quarter of an hour as before. If your seat is for it and you aren't aboard, it stays until an hour past its call. Board and the seat is used and it goes on. If the hour runs out it goes without you: *The coach could not wait any longer. Your seat has gone with it.*
+
+**The coach indoors.** `tickCoaches` runs in `WORLD.tick`, which runs only in the open world, so while you eat or sleep in the inn the coach stands wherever it was. Waiting at the door alone would not hold a seat for someone indoors. So `seatCatchUp` settles the seat against the timetable each tick outside. If its call has come and the hour is not up, and the coach has not yet reached the inn on that run (waiting at its departing end, or on the road towards the inn), it is put at the inn's door, held until the hour is up. Out of the inn twenty minutes after the 6:21 was due, the coach is at the door.
+
+**One slip, caught by the test.** The call's time was first counted on the absolute clock, which runs from a different start from the clock of the day that the timetable reads (and `forceTime` moves only the day's). The keeper named a *2:06* coach that was due at 6:21. The call is now counted from the time of day, and its time of day is kept on the seat for the keeper to name.
+
+### Verified (headless Chromium)
+New `tests/coachseat.test.mjs`, 9 checks, on the Ironhaven–Vieux Marché road (Auberge du Pont):
+- **No seat.** The coach stands 15 minutes and goes, as before.
+- **Taking a seat.** At 5:00 the seat is the 6:21 for Ironhaven, 81 minutes off, for nothing.
+- **Held and boarded.** The coach calls and is still at the door 40 minutes on. You board: the seat is used, it goes on, and 0 gold is spent.
+- **Not taken up.** It leaves 60 minutes past its call, and the seat goes with it.
+- **Indoors.** The world is skipped to 20 minutes past the call. At the first tick outside the coach is at the inn (u 0.5, stopped), still there at 50 minutes, gone at 65.
+
+`coachinn` and `coachstop` pass. No page errors.
+
+### Needs eyes
+Take a seat, go in, eat, and come out: the coach at the door is correct, but it appears there rather than being seen arriving.
+
+## v80 — Session 268 — A constable by day
+The critic found it (28 Sep, backlog I): a town without walls, a port like Portclare or any village with streets, has one man of the law, the night watchman, and he sleeps from 6:30 to 19h. Seen twice in Portclare's square at 14h, the critic's favour went 0 → −4 and the fine to 355. Nobody halted them, and nobody followed at −2 or worse, until the watchman got up at 19h. Michael answered issue #41 with **B: a day constable**.
+
+**What changed.**
+- **Who gets one.** Every town that has a night watchman and no gate guards gets one more man: *the constable*. He is made like the watchman (`makeDef` as a Guard, the watch's dark coat, a kept name under the key `c`) and spawned last, so every draw before him (names, barrels, villagers) is what it was.
+- **His hours.** His schedule (`constable`) walks the plaza from corner to corner from 6:30 to 19h. By night he is indoors, which is the watchman's half.
+- **What he does.** `guardsOf` counts him, so he does whatever a guard on duty does. He halts you within five units with a fine (in the town's voice, Session 265). He trails you at favour −2 or worse. He is the one sent in when you are seen indoors (Session 239). Struck, he draws. He is a blue dot on the Local map.
+- **The night beat.** It is dealt out among the night men only, so the watchman's starting point on the beat is the same as before.
+
+In Portclare the pair are Gaspard (the watch) and Cellach (the constable). Portclare's own people read Old Blood today, so Cellach's halt is *Stop. Portclare is owed 355 gold by you. Pay, or I draw.*
+
+### Verified (headless Chromium)
+New `tests/constable.test.mjs`, 6 checks, in Portclare:
+- **Who is there.** One watchman and one constable, no gate guards, two different names.
+- **Their hours.** At 14h only the constable is up; at 23h only the watchman.
+- **The critic's case.** A fine of 355 in the square at 14h: the constable comes by and halts you 6.3 s after you stop.
+- **Following.** At favour −3 by day he follows, 8 units behind you.
+- **Indoors.** Seen indoors by day, he is the one sent.
+
+`watch`, `beat`, `witness`, `crime1`, `crime2`, `names` and `twins` pass. No page errors.
+
+### Needs eyes
+A village by day with a fine on you: whether one man walking the plaza feels like enough law for a village, and whether he should rather keep to the road in.
+
+## v80 — Session 269 — Smoke from Ashenmoor
+Michael answered issue #32 with **A**. When Q6 is handed in, the world's Ashenmoor becomes the ruin variant the war code already has: burnt shells, no market. Edna and Brother Oswin stay; Bram's body lies at the forge; the Faolchú waits on the plaza until killed; and the ruin is permanent, as in the canon. This is the first of A's two sessions: the burning, who comes through it, and Q7's first step.
+
+**Before.** Handing in Q6 set `worldState.ashenmoorPending`, and Q7 went active. Only the legacy zone change read the flag, so in the open world nothing burned. Q7's first objective, *Return to Ashenmoor*, is an `enter_zone` for the legacy overworld, and it could never tick.
+
+**What changed.**
+- **The burning.** `tickAshenmoorStory` runs in the world tick. Once Q6 is in, it flags the world's Ashenmoor `burned`. That flag rebuilds the town as the Session 129 ruin: every lot a black shell, no roof, nobody home, no lord and no lamps. It happens wherever you are, so the ruin is there before you arrive. The 30-day wear-off that lets a burned town rebuild skips Ashenmoor once the story has burned it (`storyRuin`).
+- **The survivors.** Edna's cottage and the oratory (`ASH_SURVIVORS`) are built whole, as the legacy burned zone keeps them. Edna can't walk and Oswin won't leave, so they are inside at every hour (`npcInsideNow`).
+- **Edna's voice.** Her burned dialogue (`SHOP_DIALOG_BURNED.Edna`) was read only in the legacy zone. It is now also read in her world cottage.
+- **The arrival.** Coming onto Ashenmoor's pad outdoors marks the town burned for the story, as entering the legacy zone did. It logs *Ashenmoor has burned.* and fires Q7's `enter_zone`, so *Return to Ashenmoor* ticks and its journal text plays.
+
+**A fix on the way: a ruin kept people in its street.** The ruin variant took the town's people off its list but left their figures in the scene. Worse, the villagers of a village and its night men are drawn after that clearing, so a burned village still had four people walking its plaza: three villagers and Session 268's new constable. The clearing now removes the figures from the scene. It runs again after the last of them is drawn, so the draws before it stay where they were. This affects every burned or abandoned town, not only Ashenmoor.
+
+### Verified (headless Chromium)
+New `tests/ashenburn.test.mjs`, 7 checks:
+- **Before.** The living Ashenmoor has 15 people in the scene.
+- **Q6 handed in 400 units away.** Q6 is complete, Q7 active, and Ashenmoor is flagged burned before you arrive; *Return to Ashenmoor* has not ticked yet.
+- **Arriving at 14h.** The town is dead, with 0 people visible, 0 figures in the scene and no lord. The only houses are Edna's cottage and the oratory. *Return to Ashenmoor* is done (objectives `[1,0,0,0,0,0,0,0]`).
+- **Edna.** In her cottage at 23h she is home and speaks in her burned greeting.
+- **Later.** Forty game-days on, at prosperity 60, the ruin is still a ruin.
+
+`constable` passes. No page errors.
+
+### Needs eyes
+Walking into the burnt village for the first time. The next session puts the Faolchú on the plaza and Bram at his forge; until then Q7 stops at *Drive off the wolf-shape*, which nothing in the world can yet tick.
+
+## v80 — Session 270 — The Rubbing, in the world
+The second half of Michael's A on issue #32. Session 269 burned the world's Ashenmoor and ticked *Return to Ashenmoor*. The rest of Q7 still needed the legacy zone: the Faolchú, Bram's body, and the triage that leads to Edna's rubbing. This session brings all of it into the world, and Q7 now plays from Q6's hand-in to Aldwyn's commission without leaving the open world.
+
+**What changed.**
+- **The Faolchú.** `spawnFaolchu` built the boss by hand for the legacy zone's scene. Its body is now `faolchuAt(scene, x, z, y)`, and the legacy spawn calls it unchanged. In the world, `tickAshenmoorStory` puts one on the plaza, four units from the centre, once Ashenmoor has burned for the story and until it is defeated. It is the same boss: 2,000 health, its phases, its fireballs. `killZoneEnemy` was already generic, so killing it in the world sets `faolchuDefeated`, drops the Mark on its body and ticks *Drive off the wolf-shape*. Taking the Mark ticks the next objective.
+- **The boss's bar and death burst.** Neither was ever ticked in the world, so the main loop's world branch now runs both. In the world the bar shows only a boss that is alert and within 40 units. Otherwise the Faolchú's bar would have hung on the screen from anywhere on the continent. This also brings in the bar the v80 code meant for lair beasts and captains, whose world branch was never reached.
+- **Bram.** His body was built inline in `buildAshenmoorBurned`. It is now `buildBramBody(scene, x, y, z, zone)`, called by the legacy zone as before. The world's ruin records where the forge's shell stands and lays him before its door, with the Forge-Man's Hammer and the goblin's axe, as a world corpse.
+- **Reading Bram.** It fired Q7's `read_corpse` only on the first read, and a one-shot flag kept it from ever firing again. Reading him before the Faolchú was down, which is his objective's prerequisite, stranded the objective for good. The event now fires on every read; the flavour text is still once.
+- **Oswin and Edna.** They are inside their houses (Session 269). Opening their dialogue fires the `talk_to` events, which the world already maps to Ashenmoor's zone. Once both are seen to, Edna's *I saw to them both.* gives the rubbing. Aldwyn in Ironhaven takes it through his Mark branch (*I took it off the seam.*) to *The desk.*, and Q7 is complete.
+
+**Not done.** The Faolchú's lesser wolves, which its phases call in, are still built only for the legacy zone's scene. In the world the fight has no adds. Owed in backlog A.
+
+### Verified (headless Chromium)
+New `tests/q7world.test.mjs`, 7 checks, played in order from Q6's hand-in:
+- **On arrival.** The Faolchú stands 4 units from the plaza's centre at 2,000 health, in the scene. Bram lies 17 units away at the forge, with his hammer.
+- **Bram too soon.** Reading him before the fight ticks nothing, and uses nothing up.
+- **The fight.** Brought to 5 health and struck by swings driven frame by frame, the Faolchú dies. Its bar showed while it was alert, `faolchuDefeated` is set and the Mark is on its body. Objectives go `11000000`.
+- **The Mark and Bram.** The Mark is taken and Bram is read: `11110000`.
+- **Oswin and Edna.** Oswin in the oratory, then Edna in her cottage, whose first topic is *📜 I saw to them both.*: the rubbing is in the bag, `11111110`.
+- **Aldwyn.** In Ironhaven, *Give him Edna's rubbing.* → *I took it off the seam.* → *Edna's rubbing. Here.* → *Is this enough to move on him?* → *The desk.*: Q7 complete, the Royal Mage Commission in the bag.
+
+`ashenburn`, `mainquest`, `questtargets`, `slimesplit` and `mainrun` pass. No page errors.
+
+### Needs eyes
+The fight itself on a real machine. The Faolchú was built for the legacy zone's small flat square, not a world plaza with a well and shells round it; its reach, its fireballs and its bar all need a real hand on the controls.
+
+## v80 — Session 271 — The wolves off its flank
+Owed by Session 270. When the Faolchú crosses into its second and third phases it calls a *Lesser Faolchú* out of its own body (*A second wolf-shape splits from its flank.*). `spawnLesserFaolchu` refused to run outside the legacy overworld zone, so in the world's Ashenmoor the log line came with no wolf behind it and the fight had no adds.
+
+**What changed.** The lesser is spawned in the world as well. It goes into its parent boss's own scene, which in the world is the world's scene, and on the terrain there. It joins the active enemy list, which in the world is the world's. The copy into the legacy zone's enemy list now happens only in that zone. Before, a legacy list left over from an earlier visit would have taken a world wolf as well. The sweep that removes the lessers when the boss dies already worked on the active list, so it needed nothing.
+
+### Verified (headless Chromium)
+`tests/q7world.test.mjs` gains a check and a condition, 8 checks in all, passing:
+- **Phase 2.** The Faolchú, alert and brought to 60% of its health, enters phase 2 and one Lesser Faolchú stands 2.4 units from it, in the same scene.
+- **The kill.** When it dies, no lesser is left alive.
+
+`mainrun` passes on Session 270's build, which confirms that entry's claim; the story it plays stops at Q7, before this change. No page errors.
+
+### Needs eyes
+Three wolf-shapes at once on the world's plaza, against a player at the level Q7 comes at.
+
+## v80 — Session 272 — Half a point is half a point
+Michael answered issue #44 with **B**: carry the fraction for the drivers, not the drift. A town's prosperity is kept in whole points. Once a game-day every driver was added up and the total rounded, so anything under half a point moved a town or not depending on the rest of its day. A town the Mark occupied lost its half point only when something else pushed it over. A town you own never gained its .4. A burned town's .2 did nothing on its own.
+
+**What changed.** The day's drivers now come in two parts. The town's own conditions (occupied −.5, owned +.4, burned or sacked −.2; plague −1 and siege −2 are whole already) go into an account on the town, `pf`, and only the whole points in it are paid out (`driveProsperity`). What is left over waits for the next day. The rest (the roads, the nearest lair or camp, and the drift home) is added up and rounded together, exactly as before. Trade routes' +.8 in `tickRoutesDay` also still rounds, to a point. The account is kept on `worldState.towns`, which the save carries whole, and it is emptied when a town sits at 0 or 100. The tithe's own account (Session 266) is untouched.
+
+**Why not the roads and lairs too.** B's words were "the drivers", and the first build carried every driver. Measured over 120 untended days, it sank all 17 towns of that measure by a mean of 33 points: every one fell by 10 or more, and the worst by 51. On Session 271's build the same towns moved by a mean of 0.8 (the worst by 11). The reason is that an uncleared road's −.15 and a live lair's −.6 were answered by the drift home only when the two rounded together. Carried alone, they are never answered until a town is 50 below home. That is the rebalance B was chosen to avoid ("the towns you have built up don't start sinking"). So this build carries B's own examples, the half-point effects on the town itself, and leaves the rest as it was. The note under #44 in docs/decisions.md says so, for Michael.
+
+### Verified (headless Chromium)
+New `tests/wholepoints.test.mjs`, 6 checks, with Math.random seeded:
+- **The untended world, 120 days.** 52 towns: mean −6.7, least −77, most 0. The same figures were measured on Session 271's build.
+- **Each condition for ten days, from 50, in Dunmore and in Portclare.** The same town with no condition stays at 50. Occupied by the Mark it goes to 45 (a point every second day). Owned, it goes to 54. Burned, it goes to 48.
+- **The account.** It stays under a point and is kept on the town.
+
+`tithe` passes. Its Mark-held towns now lose exactly five points in ten days (50 → 45), and the Aurenne-held ones lose ten, a point a day. `crime4` passes, and so do `caravan` and `coachinn`. No page errors.
+
+### Needs eyes
+A town you own now climbs about a point in two and a half days. From its home level it reaches 100 in two to three months of game time, unless something else holds it back. Occupation now keeps sinking a town until the drift answers at 50 below home. In the measure, Portclare fell 56 in 120 days, where before it stopped at 36. Whether either pace is right is for play. If Michael wants roads and lairs exact as well, their numbers need retuning first.
+
+## v80 — Session 273 — A shipwright at his door
+Owed by Session 235 in section G. The sea tutorial's step *buy a ship* is a topic of the shipwright, and the tutorial's compass marker points at him. He keeps a shop's hours, though: inside from 8 to 18, at his door from 7 to 8, off to the inn from 18, and gone from 21 to 7. So for ten hours a night the marker pointed at a man who couldn't be found. Session 236 set the rule for the main quest: whoever an active quest sends you to is findable at any hour. The tutorial was left out of it because its steps are not `QUEST_DEFS`. That rule is applied here, so this is a fix, not a new rule.
+
+**What changed.** A keeper's schedule now knows the kind of shop (`sched.shop`). Out of shop hours, while the sea tutorial's step is *ship* and you have no ship, the shipwright stands at his door (`scheduleFor`, the `keeper` case). By day he is inside at his counter as before, which is where you can already reach him. Once you have a ship, or the step is past, he keeps his own hours again.
+
+### Verified (headless Chromium)
+New `tests/shipwright.test.mjs`, 8 checks, at Portclare (Lonán):
+- **Without the tutorial.** He is gone at 23h and 3h, and at 19.5h he is 11.5 units from his door, on his way to the inn: his hours, unchanged.
+- **At the step.** He is out at 23h, 3h and 19.5h, 0.8–1.0 units from his door. At 12h he is inside. Past the step (*crossing*) he is gone at 23h again.
+- **Buying at 23h.** E on him opens his dialogue with *Buy a ship (300 gold, with Corwin's note)*. Choosing it gives you the *Mercy* and takes 300 of 1,000 gold.
+
+`shoperrands` and `shophours` pass. No page errors.
+
+### Needs eyes
+The tutorial's marker at night leading to a man standing by a dark shop.
+
+## v80 — Session 274 — Three tests that read the runner's clock
+The producer reported this branch's CI red on 9f6edca: `guardsindoor`, `reader` and `snowrepaint`. The run on Session 273's commit failed `guardsindoor`, `reader` and `placesave`. The game is not at fault in any of them. Each test let wall-clock time decide an outcome, which CLAUDE.md warns against. On a slow or busy runner the outcome flipped.
+
+**`guardsindoor`, *your blows land on him indoors*.** The test swung, waited 700 ms of wall clock, and swung again, six times. A blow lands at the swing's impact point, which the game's own loop reaches frame by frame. On this container 700 ms was about 0.2 s of game time, a third of the swing (`swingT` 0.61 → 0.39), so every swing was restarted before it could land and the guard kept 48 of 48. This has failed since the merge of main at cfb68b9 (measured on that commit). The test now waits until the pending strike has resolved (up to 15 s), and the first swing lands (48 → 45).
+
+**`guardsindoor`, *ducking into another house*.** Entering the house plays a four-second fade in wall clock. Meanwhile the game's own loop runs the interior tick and adds game time to the guard's half-minute. The more frames the runner gave, the later he appeared. At t = 28 plus the fade he was sometimes already inside (t 30.4) when the test looked for him still *coming*. Which guard was sent also varies by run (Séamus in one, Eilís in the next), so the check passed or failed by the runner. The test now holds the loop's interior clock at dt 0 during the fade, so only its own `spinIn` moves time.
+
+**`reader` and `placesave`.** Both crashed in `page.reload()` with Playwright's default 30 s navigation timeout. On the CI runner a reload of the 2.7 MB page went past it. The harness (`tests/lib/game.mjs`) now allows 180 s for any navigation.
+
+`snowrepaint` passed in the later CI run and passes here. Nothing in its failure on 9f6edca is left to act on.
+
+### Verified (headless Chromium)
+`guardsindoor` passes twice in a row. Before the change, it failed on this branch's head, on 7779a6e (the ducking check) and on cfb68b9 (the blows check). `reader` and `placesave` pass. No page errors.
+
+### Needs eyes
+Nothing in play; CI on the next push.
+
+## v80 — Session 280 — A roll, and a blow that has a direction
+Michael answered the combat question with **B**, Elden Ring's shape, built so that A's three pieces come first (`docs/design/combat.md`). This is the first of them: the roll and the arc. Before it there was no dodge. An enemy's blow hit anyone within 1.4 units (1.3 in a dungeon), whichever way the enemy faced, so stepping backwards was the only real defence.
+
+**The roll.** Q rolls you the way you are moving, or straight back if you are standing (nothing bound Q). It covers 2.6 units in 0.45 s and costs 18 stamina. From 0.08 to 0.30 s you are untouchable: a melee blow that lands then strikes empty air, and an enemy's arrow passes through you. If you carry more than 70% of what you can, the roll is heavier: 1.8 units in 0.6 s, untouchable only to 0.24 s. You cannot roll while winded (under 18 stamina, or on the stamina cooldown), while swimming, in the air or while levitating, or when you are too loaded to move. A roll drops your guard, a charging power attack and a lunge. It eases out, fast off the mark and slowing to your feet. The distance and the untouchable window both read `performance.now()`, as CLAUDE.md asks, so a slow frame changes neither. The roll goes through the same collision as walking, so a wall stops it. In first person the eye drops up to .55 through the roll. In third person the body turns once head over heels about its middle, forwards or backwards as you roll. That is a stand-in until the look builder gives it a roll pose.
+
+**The arc.** An enemy's blow now lands in an arc about the way it faced when it began its wind-up (`combatYaw`, which Session v63 already froze there). The arc is 1.6 units and 90° for most enemies and 2.4 units and 140° for a troll's sweep. A boss keeps its own reach where it has one, so the Faolchú keeps 2.0. So you can now beat a blow by stepping round the enemy as well as away from it, and the reach is a little longer straight ahead. The same test (`strikeArc`, `strikeReaches`) serves the world's enemies and the dungeon's.
+
+Not in this session: the tells as poses (A's second piece), player posture and guard break (the third), and the parry window moving from Finesse to the Guard skill, which waits for the skills sessions. Spells and the Faolchú's fire still hit through a roll. Only melee blows and enemy arrows are dodged.
+
+**A catch on the way.** `K`, the held-key map, lives inside the main loop's scope and not at the top level. The first `startRoll` read it from the top level and would have thrown on the first Q. The key handler now passes it in.
+
+### Verified (headless Chromium)
+New `tests/roll.test.mjs`, 15 checks, passing twice in a row, no page errors:
+- **Through the game's own loop.** Standing, a roll moves the player 2.60 units straight back (the dot with the backward direction is 1.00) for 18 stamina. With a load of 89% of capacity it is heavy: 1.80 units, 0.6 s.
+- **Frames don't matter.** The same roll ticked 60 times, 5 times or once covers 2.6 units, and the roll then clears. At 10 stamina there is no roll.
+- **The window.** A 20-point blow 0.15 s or 0.29 s into the roll does nothing. At 0.02 s or 0.35 s it takes 20.
+- **The arc**, against an enemy facing the player's spot: at 1.5 straight ahead it lands and at 1.7 it doesn't. At 1.2, 40° off lands, while 60° off and behind don't. A troll lands at 2.2 and 60° off, but not at 80° off or at 2.6. The Faolchú lands at 1.9 and not at 2.1.
+- **End to end through `tickZoneEnemies`**, with a real Bandit whose wind-up ends on that tick: at 1.5 straight ahead it hits for 9 (before, past 1.4 was a whiff). Stepped 70° round its frozen facing at 1.0, it whiffs (before, it hit). At 1.0, 0.15 s into a roll, it misses.
+- **Nothing else moved.** `guardsindoor`, `mimic`, `q7world`, `theft`, `player`, `crime3` and `register` pass. `crime3` and `register` crashed at setup (a town not yet built) when seven suites ran at once in this container, and passed run alone.
+
+### Needs eyes
+- How the roll feels on Q: 2.6 units against a wolf's lunge, and whether 18 stamina is too cheap to chain.
+- The first-person dip and the third-person tumble, which is a stand-in for a real pose (section H).
+- Whether stepping round a bandit's blow now reads, given that the tells are still 0.24–0.55 s of red glow until the next session.
+
+## v80 — Session 281 — A guard that can be broken
+This is the third of A's pieces under Michael's combat answer (B, A first). Until now nothing could stagger the player. You could hold a block through any number of blows and pay only stamina. `applyPostureDamage`'s own comment expected a player to have posture one day. This session gives the player one, to the numbers in `docs/design/combat.md`.
+
+**What changed.** You now have a posture of 100 plus 2 for each armour point (`playerMaxPosture`, recomputed as you change gear). A blow that lands unblocked drains its damage ×1.5, and a blow taken on a held block drains its damage ×1. A perfect parry and a rolled-under blow drain nothing. "Its damage" means the blow's own roll before your buffs take their share, the `rawDmg` both resolvers already pass to `executeStrike`. When posture empties you are **staggered for 0.8 s, and open**. The guard drops (*Your guard breaks!*, or *You are knocked off balance!* if you weren't blocking). A charging power attack, a pending swing and a bow draw are cancelled. Until it ends you can't swing, raise a block, roll or take a step. A blow that lands during the stagger adds nothing and doesn't lengthen it. You come out of the stagger with a full posture. Otherwise posture refills as an enemy's does: 5 a second, starting 1.5 s after the last blow (`POSTURE_REGEN`, `POSTURE_REGEN_DELAY`). The design page gives no rate of its own, so the player's refill borrows the enemies' existing rule. The stagger reads `performance.now()`.
+
+A thin gold bar under the stamina bar shows it (`#psw`/`#psb`). It stays hidden at full, as Elden Ring hides posture, and turns red while you are staggered. The interface's parchment pass (interface A) will restyle the vitals, and this bar will go with them.
+
+Of A's pieces, the tells as poses are still owed. So is the parry window's move from Finesse to the Guard skill, which comes with the skills sessions.
+
+### Verified (headless Chromium)
+New `tests/posture.test.mjs`, 12 checks, passing twice, no page errors. Times are passed in, so nothing reads the runner's clock.
+- **The numbers.** A new character with 2 armour has a posture of 104. A 20-armour cuirass in place of the 1-armour chest raises it to 142. An unblocked 20 drains 30. A held block of 20 drains 20. A perfect parry drains 0.
+- **The break.** At 10 posture, a blocked 20 empties it. You are staggered, the guard is down, and the message reads *Your guard breaks!* The stagger holds at 0.79 s and is gone at 0.81 s. No roll starts inside it. A second blow at 0.4 s leaves its end at 0.8 s. Out of it, posture is 104 again.
+- **The refill.** At 50, nothing comes back 1.0 s after the blow. At 1.6 s it is 55.
+- **The bar.** At half it shows at 50% width. At full it is hidden.
+- **End to end through `tickZoneEnemies`.** A real Bandit's unblocked blow (a roll of 6, pinned) drains 9.
+- **Nothing else moved.** `roll`, `guardsindoor` (a fight with a guard indoors), `faolchu`, `q7world`, `mimic`, `crime3`, `theft`, `register` and `player` pass.
+
+### Needs eyes
+- Whether 100 is right against a wolf pack. At 8–10 a bite, an unblocked player breaks after about eight bites, a few seconds against three wolves.
+- Whether being frozen in place for 0.8 s reads as a stagger without a pose (none yet; section H), and whether the red bar is enough.
+- The refill at 5 a second takes 20 s from empty to full, though the stagger itself refills you, so that only matters after a near-break.
+
+## v80 — Session 282 — Tells you read from the body
+This is the second of A's pieces under Michael's combat answer (B, A first). An enemy's wind-up lasted 0.24–0.55 s and glowed red the whole time. That is close to a human reaction time, so a parry went by rhythm and not by reading (`docs/design/combat.md`, *Today*). The page asks for 0.45–0.9 s tells read from the body's own wind-up pose, with the glow only in the last 0.15 s.
+
+**What changed.** Every tell in `TELEGRAPH_BY_NAME` is mapped from its old range onto the new one (0.24 → 0.45, 0.55 → 0.90), so the order is kept. The Kobold Thief is still the quickest at 0.45 and the Golem the slowest at 0.90. Trolls take 0.83, a Bandit 0.57 and a Skeleton 0.60. An enemy not in the table takes 0.61, which is where the old default of 0.35 maps. The design page names the range and not the per-enemy numbers, so keeping today's order within it is the least new decision. The Faolchú keeps its 0.6 s and its phases' shortening, floored at 0.45, so its frenzy tell is 0.45 where it was 0.33.
+
+The pose was already there. The shared attack pose (Session 130) reads `e._wind`, and so do the wolves' and spiders' own rigs. In the world and in dungeons the body draws back 0.2 units by it. It now runs through a tell twice as long. The red glow (`telegraphPulse`) is dark until 0.15 s before the blow and then rises to full at the strike (`TELL_GLOW_S`). The wind-up sound at the start is unchanged.
+
+A's three pieces are now in. What is left of B starts with its Fable session: the attack table and one resolver for the dungeon and the world, then commitment and the chain. The parry window still reads Finesse until the Guard skill comes with the skills sessions.
+
+### Verified (headless Chromium)
+New `tests/tells.test.mjs`, 9 checks, passing, no page errors:
+- **The table.** Every tell is 0.45–0.90. The quickest is the Kobold Thief and the slowest the Golem. A Bandit is 0.57 and an unlisted enemy 0.61.
+- **Pose against glow**, on a real Bandit: with 0.40 s left the pose is .30 wound and the glow is 0. With 0.20 s left it is .65 wound and still 0. With 0.075 s left the glow is .375 (half), and at the strike .75 (full).
+- **End to end through `tickZoneEnemies` at 1/60 ticks.** A Bandit a step away starts its wind-up on the first tick. The glow appears 0.15 s before the blow, and the blow lands 0.583 s after the wind-up began (35 ticks for a 0.57 tell), for 9.
+- **Nothing else moved.** `mimic` (its burst still waits on the tell), `faolchu`, `q7world`, `guardsindoor`, `dungeonfoes`, `crime3`, `roll` and `posture` pass.
+
+### Needs eyes
+- Whether the draw-back pose reads at 0.45–0.9 s on every family without the glow. The people's bodies (bandits, goblins, guards) may need a proper raised-arm wind-up from the look branch.
+- With longer tells, stepping back beats more blows. B's commitment (slowed while swinging) is what closes that. Until then fights may feel easier.
+
+## v80 — Session 283 — Untouchable means untouchable
+Owed by Session 280. The design page says a roll leaves you *untouchable* from 0.08 to 0.30 s. Session 280 applied that to melee blows (`executeStrike`) and to world enemies' arrows (`tickZoneArrows`), and noted the other paths as owed. This session makes the rest of the enemies' damage do what that entry says.
+
+**What changed.** Five more places now check `rollUntouchable`:
+- the Faolchú's fireball, which passes through you;
+- a dungeon caster's bolt (Phantom and Wraith);
+- a lair beast's charge, which goes past you instead of bowling you over;
+- a strong foe's half-health heavy blow (the Captain, trolls, the Ogre, the Wight, the Hag, the Bear), which misses;
+- a boarding party's arrow volley, which lands where you were.
+
+Traps (spikes, the swinging blade, the fire jet) are not an enemy's blow and still catch you mid-roll. A Wraith's life-drain is a hold, not a blow, and it still drains.
+
+### Verified (headless Chromium)
+`tests/roll.test.mjs` gains two checks, 17 in all, passing.
+- **The heavy blow.** A Cave Troll at 40% health ends its heavy wind-up 2 units away (`WORLD.tickBehaviours` at 1/60). Standing, it hits for 11. At 0.15 s into a roll, it hits for 0.
+- **The earlier paths.** The melee and arrow paths still carry the check.
+- **Not driven by a test.** The fireball, the bolt, the charge and the volley use the same one-line condition. `faolchu`, `dungeonfoes`, `ships` and `trolls` pass.
+
+### Needs eyes
+Rolling through the Faolchú's fire on the plaza, and through a charging bear.
+
+
+## v80 — Session 297 — A foe held in the view
+Michael answered the combat question with **B** (`docs/design/combat.md`). Its Opus sessions include lock-on: *the middle mouse button toggles it; the camera holds the target in both views; A/D circle it; the roll goes the way you press.* Lock-on does not depend on the attack table, which is B's Fable session and still to come, so it can be built now. Before this there was no lock-on, and in a fight the mouse had to keep the foe in the swing's cone by hand.
+
+**What changed.** A middle click locks the nearest foe you are looking towards: within 14 units and 60° of the view, the nearer and more central the better (distance × (2 − the cosine off the view)). A second middle click lets go. Nothing in range says *Nothing to lock on to.* While locked, the view turns to the foe every frame (yaw eased at 12 a second, pitch at 8 towards a point about three-fifths of the way up its body), and the mouse no longer turns it. It runs before the frame's facing is taken from the view, so the swing's cone, the roll and the movement keys all work from the view that faces the foe. A/D then circle it, because strafing runs across the view and the view keeps turning to the foe. The roll already went the way you press, so it now rolls round the foe or away from it. The camera is the same in both views: first person looks along the view, and third person's shoulder camera sits behind it. A small gold diamond (`#lockmk`) marks the foe on screen.
+
+The lock lets go by itself when the foe dies, when it is no longer among the fight's foes (another zone, another dungeon floor, a disguised mimic), when it is more than 20 units away, or when you die. In the world the pool is the zone's live foes (`ZE`); in a dungeon it is this floor's live, undisguised foes (`ENEMIES`). The distances (14 to lock, 20 to let go) and the 60° are mine: the design page names none. The middle button used to fall through to the left button's handlers and swing on release; it no longer does. The controls line and the start screen list it.
+
+Not in this session: switching between foes while locked (Elden Ring flicks the stick), a line-of-sight test (you can lock a foe behind a dungeon wall if it is within 14 units and ahead), and a lock on townsfolk you have struck. Trackpads have no middle button, so a laptop without a mouse can't lock on. Whether to add a key is Michael's call, noted below.
+
+### Verified (headless Chromium)
+New `tests/lockon.test.mjs`, 17 checks, passing, no page errors. Pointer lock is faked for the mouse checks, since headless Chromium has none.
+- **The pick.** With real Bandits at 6 units 30° off, 16 units ahead, 3 units behind and 4 units 75° off, it locks the one at 6. A second press lets go. Without the one at 6, nothing locks and the message shows.
+- **The hold.** A foe 40° off is 0.05° off after 30 ticks at 1/60 (half a second). Turned 69° away, the view is back on the foe (0.09°) in another 30. Pitch settles at −0.08.
+- **The middle button**, through the game's own mouse handlers: a press and release locks and does not swing. A mouse move of 300 × 100 pixels leaves the view where it was. A second press lets go, and the mouse turns the view again.
+- **Circling**, through the game's own loop and a held D: the player went 35° round a foe 6 units off in 3.65 units of walking. The distance went 6.00 → 6.13, and the view stayed on the foe (2.98° off at the moment of reading). The loop runs a few frames a second on software GL, so the test walks part of the circle, not all of it.
+- **The mark** sits at 49% across and 46% down the screen in first person, and 49% across in third person, where the view also turns to a foe 45° off (0.02° after 8 frames).
+- **Letting go.** It lets go when the foe dies, when it is 30 times as far off, and when the zone's foes change; the mark hides. In a dungeon the pool holds only this floor's live, undisguised foe of four.
+- **Nothing else moved.** `roll`, `posture`, `tells` and `player` pass.
+
+### Needs eyes
+- How the hold feels: 12 a second on the turn may be too stiff or too loose when a wolf circles you, and whether 14 units is the right reach to lock from.
+- Whether the view's pull on pitch fights you on slopes and stairs, and whether the gold diamond reads against snow and torchlight.
+- Laptops: a trackpad has no middle click. If Michael plays on one, lock-on needs a key as well (Tab is the hub's; a free key such as R or Z would do). That is his call.
+
+## v80 — Session 298 — An opening you earn
+Michael answered the combat question with **B** (`docs/design/combat.md`). One of its Opus sessions is the counters: *a perfect parry drains 40% of the enemy's posture and opens a riposte for 0.8 s: the next hit is ×2.5, unblockable, and cannot be interrupted. A broken posture opens a finisher from the front (×3, a pose of its own, 1.2 s in which you are untouchable) as well as today's ×1.5 window.* The page lists this session after B's Fable session (the attack table, one resolver). The counters, though, are rules on the blow's multiplier and on the parry, and both resolvers already share `applyMeleeDamage` and `executeStrike`. So they are built here as helpers (`riposteOpen`, `finisherOpen`) that the one resolver can call when it comes.
+
+Before this, a perfect parry staggered the foe for 1.2 s and cost it no posture. Every blow on a staggered foe was ×1.5, whether the stagger came from a parry or from a broken posture.
+
+**The riposte.** A perfect parry now drains 40% of the foe's posture before it staggers it. If that empties the posture, the stagger is the full posture break's 1.5 s. The parry opens a riposte for 0.8 s, and the message says so (*Perfect Parry! Bandit staggered — riposte!*). The first swing you begin inside those 0.8 s lands ×2.5 in place of the stagger's ×1.5. I read *the next hit* and *cannot be interrupted* this way: the riposte belongs to the swing begun in the window, so a blade that arrives after 0.8 s still counts. The foe is stunned for the whole window, so nothing it does can cut the swing short. A riposte is unblockable: a Shieldbearer's raised shield doesn't take its share, and a power riposte wounds where a power blow on a shield only breaks the guard.
+
+**The finisher.** When a foe's posture breaks, by your blows, a power blow on a shield or a parry that empties it, a finisher opens for as long as the stagger lasts (1.5 s). The first blow from the foe's front half is ×3 and leaves you untouchable for 1.2 s, through the same gate as the roll (`rollUntouchable`), so every enemy blow, bolt, charge and volley that Session 283 routed through it misses. A blow from behind gets the backstab's rule, not the finisher. After the finisher, the rest of the stagger is ×1.5 as before. If a parry both opens a riposte and breaks the posture, the finisher takes the blow and the riposte closes with it.
+
+The finisher's own pose is the look builder's (section H). Today it is an ordinary swing, and the message tags it *(FINISHER)* or *(RIPOSTE)* where it used to say *(CRIT)*.
+
+### Verified (headless Chromium)
+New `tests/counters.test.mjs`, 15 checks, passing first time, no page errors. It uses real Bandits (13 posture) and a fixed 20-point blow:
+- **The parry.** Posture 13 → 7.8, staggered, a riposte of 0.8 s, and the message.
+- **The riposte.** A swing begun 0.5 s in does 48 (×2.5). The next does 28 (×1.5). A swing begun at 0.85 s does 28.
+- **Through a shield**, via `_resolveZoneStrike` with the dice pinned: a plain blow does 1 against the raised shield, and a riposte does 13. A power riposte does 26, and a power blow without one does 0 (it only breaks the guard).
+- **The finisher.** On a broken posture, from the front, it does 58 (×3). You are untouchable at +1.0 s and not at +1.3 s. A Bandit's 20-point blow at +0.5 s takes nothing, and at +1.4 s it takes 20. The next blow does 28. From behind there is no finisher.
+- **Both at once.** A parry at 30% posture staggers for 1.5 s. The finisher takes the next blow and the riposte is spent.
+- **End to end through `tickZoneEnemies`.** A Bandit's wind-up ends against a block raised 20 ms before: you take no damage, its posture is at 60%, and a riposte is open.
+- **Nothing else moved.** `attrdmg`, `posture`, `roll`, `unequip`, `dungeonfoes` and `faolchu` pass.
+
+### Needs eyes
+- A Bandit has 13 posture, so a parry (5.2) and a couple of blows break it, and a finisher follows most parries. Whether that is too generous is the tuning B's attack table is for.
+- Whether 0.8 s is enough to start a swing after the parry flash, and whether ×2.5 and ×3 feel earned rather than routine against wolves and bandits.
+- The finisher has no pose of its own yet (H). The 1.2 s of safety is invisible, which may read as the foes missing.
+
+## v80 — Session 299 — Two red tests, read rather than retried
+PR #22 has been red on every CI run since main was merged into this branch (0c2e160). The same shard failed each time, on `hourhitch` (a shader compiled after the first night) and `snowrepaint` (a repainting tick over its 3 ms budget). The producer read both as runner flake, and Michael was asked whether to merge anyway (A), wait (B) or fix the budgets (C). Neither is a flake, and neither is a fault in the game. This is the run's one CI session.
+
+**hourhitch.** It fails here too, every time. Run against main's own game, it fails the same way. So it came in with main, not with Sessions 280–298: main doesn't carry the test, which is why main is green. A probe of the new program's users found two 24-bone skinned meshes with a material of their own: **wolves**, spawned near Dunmore by night, on the look branch's wolf kit. The first time a wolf comes into view its material is compiled. That is arrival, which the test already sets aside at noon (*a program compiled here is arrival, not the hour*). Which foes spawn after the first night is chance. The townsfolk carry 17 to 20 bones since the cloaks and hair swing, but they all share one program: float vertex textures are on, so three.js r128 gives every skeleton the same 1024-bone program. The test now sets aside programs used only by the zone's foes (`ZE`), two shaders each. Every other compile after the first night still fails it.
+
+**snowrepaint.** Locally a repainting tick is 1.1× one at rest (6.6 against 5.8 ms). On the CI runner it was 2× (16 against 8), so *3 ms over rest* measured the runner's speed. What Session 177 set is two chunks a tick (`n<2` in the repaint), and that can be checked exactly: the queue drains in half its length in ticks. The test now checks that, and bounds the cost relative to the runner (under 2.5× rest). Six chunks a tick, the regression it guards against, made a repainting tick nearly three times the two-chunk one (25 against 9 ms in Session 177's profile). The third test the producer named, `witness`, failed once and passed on the re-run, and it is not touched here.
+
+No game code changed. The build tag stays s298.
+
+### Verified (headless Chromium)
+- `hourhitch`, before: *after the first night* 8 → 10 shaders, 32 → 33 programs, here and against main's game (31 → 32 there). After: the same run passes, with one late program found to be foe-only (`foeLater` 1). The lights, the torches and the frame bound are unchanged and pass.
+- `snowrepaint`: 81 chunks queued, drained in 41 ticks (two a tick); median 6.7 ms against 4.6 at rest (6.6 against 5.8 on an earlier run), passing.
+
+### Needs eyes
+Nothing to play. Whether a wolf pack's first appearance hitches on a real GPU (one compile of its material) is worth a glance at dusk outside a town.
+
+## v80 — Session 311 — A lock you can see
+Session 297 built lock-on and left out a line-of-sight test: a foe within 14 units and 60° of the view could be locked through a dungeon wall or a house, and a locked foe that ran round a corner kept the view pinned to the wall. The backlog carries it as owed from lock-on. This session adds the test; it is lock-on doing what it says (*locks the nearest foe you are looking towards*), not a new rule.
+
+**What changed.** A foe the lock would pick is passed over if something solid stands between you: the same solids the foes' own sight uses (`dSolid` in a dungeon, the camera's solids `WORLD.camSolid` in the open world, so trunks and posts don't hide a foe; houses, walls and big rocks do). The line is stepped every 0.4 units, sparing half a unit at either end so a foe standing against a wall still counts. If nothing clear is ahead the message is the usual *Nothing to lock on to.* While locked, the line is checked every 0.15 s; a foe out of sight for 1.5 s in a row is let go, and one that comes back into view sooner keeps the lock, with the clock starting again. The 1.5 s is mine (Elden Ring drops a hidden lock after a moment); the page names no number. Time is counted from the frame's `dt`, as the hold already is.
+
+### Verified (headless Chromium)
+New `tests/locksight.test.mjs`, 9 checks, passing, no page errors.
+- **Dunmore**, with a real Bandit: 8 units off with a house between (6+ of 40 samples on the line solid), it cannot be locked; 8 units down a clear street, it can.
+- **A goblin dungeon** (seed 5): a foe five cells off with a wall cell between cannot be locked; five cells down a clear corridor can. Moved behind the wall once locked, it is let go after 1.52 s of 1/60 ticks. Hidden 1 s and back in view, the lock holds; hidden another second after that, it still holds (the clock started again).
+- **The test has teeth**: with the sight test stubbed out, 5 of the 9 checks fail.
+- **Nothing else moved**: `lockon` (17 checks), `roll` and `counters` pass.
+
+### Needs eyes
+- Whether 1.5 s is the right grace when a wolf circles a tree stump or a bandit steps behind a cart; too short and the lock flickers off in a cluttered camp.
+- A low wall or a boulder you can see over still blocks the lock in the world (the camera's solids have no height). If that bites in play, the world's check needs heights.
+
+## v80 — Session 312 — Flick to the next foe
+Lock-on's other owed piece (Session 297): switching between foes while locked. Elden Ring does it with a flick of the right stick; here it is a flick of the mouse, since the mouse does nothing else while locked (Session 297 set it aside). No new key: the middle button still locks and lets go.
+
+**What changed.** While locked, a sideways flick (90 pixels of mouse movement one way within 0.2 s) moves the lock to the next foe on that side of the one held: of the lockable foes within 14 units with a clear line (Session 311's test), the one nearest by angle, seen from where you stand. There is no 60° cone for the switch, so a flick can reach a foe beside or behind the one held. With nothing on that side the lock stays. After a switch the mouse is ignored for 0.25 s, so one flick moves the lock once however far the hand travels, and a slow drift never adds up to a flick (the sum restarts after 0.2 s or a change of direction). The view then turns to the new foe as it does on any lock. The flick's timing reads `performance.now()` on each mouse event, not the frame clock. The 90 px, 0.2 s and 0.25 s are mine. The start screen's controls say *lock on (flick the mouse to switch foes)*; the controls line at the bottom is unchanged for length.
+
+### Verified (headless Chromium)
+New `tests/lockswitch.test.mjs`, 10 checks, passing, no page errors. Four real Bandits in a row 7 units off at −40°, −15°, +10°, +35° (screen x −.29, 0, .29, .73 once B is held); mouse moves go through the game's own handler, with pointer lock faked.
+- From B, a flick right (3 × 40 px) takes C; the same hand moving on another 120 px straight after leaves it on C; the next flick takes D; another finds nothing and keeps D; a flick left (2 × 50 px) returns to C.
+- Ten moves of 20 px 0.3 s apart (200 px in all) never switch.
+- A solid on the line to A leaves the lock on B; with the line clear the same switch takes A.
+- A foe 20 units off at 60° is not switched to.
+- After a switch to C the view is on C (0.00°) within 40 ticks.
+- `lockon` (17) and `locksight` (9) pass.
+
+### Needs eyes
+- Whether 90 px in 0.2 s is a flick you make on purpose and never by accident at your mouse's sensitivity; the numbers are one constant each (`LOCK_FLICK`, `LOCK_FLICK_MS`).
+- Trackpads still have no middle click, so none of lock-on reaches a laptop without a mouse; a key for it remains Michael's call.
+
+## v80 — Session 313 — The strongboxes against the furniture (a check settled headless)
+Backlog G has asked since Session 155 whether the strongbox's and the home chest's spots sit well against the furniture. Part of that is measurable, in the way Session 252 measured the interior doors, so this session measures it. No game code changed; the build tag stays s300.
+
+**What was measured.** Every shop and home in Dunmore, Portclare, Ironhaven and Ashenmoor (132 interiors with a box) is built with `buildInteriorFor`. For each chest: its drawn bounds against every other solid across its height; its mesh against every other furniture-sized mesh in the room (floors, walls, ceilings and rugs left out); and a flood fill on a 0.1-unit grid from inside the front door, with a 0.3 body that climbs on nothing, to find how close you can stand to it. The prompt opens it from 1.6 units.
+
+**One near thing, not a fault.** The first form of the test compared the chest's collision box with the others. In all six back-room shops of Dunmore and Portclare (the forge, the armoury, both apothecaries, the shipwright, Amaury's Stores) the strongbox's collision box runs 0.17 into the foot of the back-room bed's. The shop chest is drawn 0.30 × 0.24 but collides as 0.64 × 0.56, and the chest itself stands 0.03–0.04 clear of the bed's foot. So nothing shows or catches, and the test now compares the chest as drawn. Also noted: the chest (0.5 high) is under the 0.62 step-up, so the game lets you step onto it, as it does a bed.
+
+### Verified (headless Chromium)
+New `tests/boxspots.test.mjs`, passing, no page errors. Dunmore 50 boxes, Portclare 29, Ironhaven 45, Ashenmoor 8.
+- No chest stands in another solid, and no chest's mesh passes through a counter, bed, crate, shelf or wall. The nearest solid to any chest is 0.04 away (the homes' chests against the wall, the back-room strongbox at the bed's foot).
+- From the front door, every chest can be walked up to without climbing on anything, to between 0.6 and 1.0 units of its centre, inside the prompt's 1.6.
+
+### Needs eyes
+The rest of G's *Town locks* line is play: whether four pins in a rich town is fair, and the takings against a low-level purse. Whether a strongbox tucked against the bed's foot looks like a place a keeper would keep one is a look call.
+
+## v80 — Session 314 — The lock indoors
+A gap left by Session 311. Indoors the game stays in the open world's zone and the room is drawn at its own coordinates (0 to its width and depth), so the lock's wall test read the world's solids at room coordinates, where there are none. A room's walls never blocked the lock. Since Sessions 239 and 241 a guard can draw on you inside a shop, so a guard behind the shut back-room partition could be locked, and the view would turn to face the wall. Now, in a room, the lock uses the room's own sight line (`intSightLine`, Session 167, the witnesses' line): partition walls and shut doors block it, and counters and tables do not. The 1.5 s grace of Session 311 applies there too.
+
+### Verified (headless Chromium)
+`tests/locksight.test.mjs` gains two checks, 11 in all, passing, no page errors. In a Dunmore shop with a back room, entered through `goToInterior` at 13h with the back-room door shut, you stand in the shop facing the back wall. A real Bandit behind the partition cannot be locked; one in the shop with you can. With the fix taken out, the first check fails (the foe behind the wall locks).
+
+### Needs eyes
+Nothing new to judge. The drawn guard indoors can now be locked when he's in the room with you. How lock-on feels in a small shop, where the view turns hard at close quarters, is worth a glance during the next indoor fight.
+
+Correction to Sessions 311–314 above: they were pushed as Sessions 308–311. The look branch had pushed its own 308–310 first (auto/backlog), so this branch's four are renumbered 311–314 in the devlog, the backlog, the code's comments and the tests' headers. The commit messages keep the old numbers.
+
+## v80 — Session 315 — The coaching inn in its own voice (register fix, quest review run 2)
+The quest review's run 2 (`docs/quest_review.md` on auto/quests, Finding 4) found the coaching inn speaking Markish on every road. The keeper, the driver and the travellers of Sessions 237–238 and 267 used one set of lines, though the keeper has a people and the driver and travellers are drawn from the same people's names. Register fixes are applied as the review writes them, without a decision, so this is a short session.
+
+**What changed.** The review's `COACH_INN_LINES` table is in the world module word for word (compared byte for byte with the review's block), with rows for the Gatelanders, the Markmen, the Aurennais and the Old Blood. The keeper's greeting, *What is this place?*, both seat lines (*A seat on the next coach?* and *My seat on the coach?*), the driver's greeting and his *How's the road?*, and the travellers' greeting are now chosen by the keeper's people (`def.people`). `seatTopic` takes the people as an argument. With no row, the Markish row is used, which is the old text unchanged. As the review asks, the board, the travellers' reasons, the rumours and the weather stay as they are. So do the innkeeper's room lines, which the review leaves to the author's audit.
+
+### Verified (headless Chromium)
+New `tests/coachvoice.test.mjs`, passing, no page errors. Eight coach roads between the home province's towns were raised, and every inn on them is Gatelander. Each keeper greets with *The fire's lit, and there's a chair by it with nobody's name on it.* and answers *What is this place?* and both seat topics in the Gatelander lines. The driver and one or two travellers are built in the common room at 13h, and they greet in the same voice. The home province raises no inn of the other three peoples, so those rows are checked only against the review's text and the parse. `coachseat` pinned the old wording (*costs nothing*); its check now accepts the Gatelander *cost you nothing*, and the rule it tests is unchanged. `coachseat`, `coachinn` and `register` pass.
+
+### Needs eyes
+The Gatelander lines are longer than the old ones; whether they fit the dialogue box at a glance. An Aurennais or Old Blood coaching inn will only be heard once a coach road runs through their lands.
+
+## v80 — Session 316 — The Shield spell, and the Boons of Stone and the Road
+Found by the quest writer (run 2, `docs/quest_drafts.md` on auto/quests, the code note under *The Shrines Remember*): three of the shrine boons' buff types are read nowhere. `warding` is set by the Boon of Stone and also by the Shield spell (Session 85's self spells: *Blows land softer*, ×.7/.6/.5 by tier). `swiftness` is set by the Boon of the Road (×1.25), and `regen` by the Boon of Renewal. Each is applied, shown and timed, and none changes anything. So the Shield spell, which you buy from the Mages' steward and cast for 28 mana, has never softened a blow. These are fixes to make them do what they say, not new rules.
+
+**What changed.** A new `_wardMult()` is the damage-taken multiplier where the Warding potion's was read: the unblocked melee blow and the Faolchú's fire. It takes the stronger of the Warding potion (`dmgReduce`) and `warding`, and multiplies by the Stoneskin kind (`physResist`) as before. The potion and the spell are one kind of protection by name, so I made them hold the stronger rather than stack (a Master potion under a tier-3 Shield would otherwise take a blow to ×.3). The Road's `swiftness` multiplies your speed where the `sprintSpeed` buff already did.
+
+Not in this session. The Boon of Renewal (`regen`) carries a `mult` of 1 and no rate, while every regeneration the game ticks is `hpRegen` with a rate in HP a second, so what Renewal should restore is a number nobody has set. It is left as owed. Arrows, bolts and traps never read the Warding potion either, and that predates this session (the potion was only wired into those two paths). The Shield now works exactly where the potion does.
+
+### Verified (headless Chromium)
+New `tests/wardswift.test.mjs`, 7 checks, passing, no page errors. A real Bandit's 20-point blow through `executeStrike`, unblocked:
+- 20 with nothing on. With the Shield spell cast through `applySpellBuff`: 14, 12, 10 at tiers 1–3. With the Boon of Stone: 15. With Stone and a Mild Warding potion (.85): 15; with Stone and a Master (.6): 12. With the potion alone: 15, as before.
+- The Road, through the game's own `loop` stepped at a fixed 1/60 with W held on the keyboard: 5.745 units in 1.5 s plain (twice), 7.181 with the boon, ×1.250.
+- `counters`, `posture` and `faolchu` pass.
+
+### Needs eyes
+Whether the Shield at ×.5 (tier 3) plus armour makes a fight too easy now that it works. Whether ×1.25 on the Road for half an hour feels like a gift or a nuisance near ledges.
+
+## v80 — Session 317 — The cot by a fort's entrance
+Found by the look builder (Slack, 29 Sep, while moving the fort rooms onto the kit). Session 9 put a cot beside every fort's entrance: rest on it, and take a banked level. The spot was chosen from the cells around the entrance that are room floor (tile 1). A fort's entry is a hallway, though (tile 7, the entry corridor), so no cell ever qualified, `D_BEDS` stayed empty and no fort has had its cot since. Now the search takes floor or hallway. Only that line changed. The cot's mesh, which the look branch has put on the kit, is untouched, so the two branches merge cleanly.
+
+### Verified (headless Chromium)
+New `tests/fortcot.test.mjs`, passing, no page errors. The three fort layouts (`fort_linear`, `fort_tee`, `fort_courtyard`) at seeds 11, 23 and 42, entered with `enterDungeon`:
+- Every one has its cot, and all nine stand at the same cell (31, 59) in the entry hall, on hallway floor.
+- No corner of the cot touches a column of the hall or a prop.
+- Standing beside it, on the far side from the door, the real E key opens the rest panel. The door's own E (leave the fort, within 1.4 of the entrance) is checked first and still wins on the door side.
+
+### Needs eyes
+Whether a cot one cell inside the door reads as a place to rest or as clutter in the entry hall. That is the look builder's to judge once the kit bed is merged.
+
+## v80 — Session 320 — The ward on every blow
+Owed from Session 316. The Warding potion reads *-X% damage taken*, and since 316 the Shield spell (*Blows land softer*) and the Boon of Stone share its multiplier, `_wardMult()`. But it was only ever wired into two paths: the unblocked melee blow and the Faolchú's fire. Everything else that hurts you ignored all three: a blow taken on a held block, an archer's arrow in the open world (blocked or not), the volleys from a ship's deck and the camp archers, a Phantom's or Wraith's bolt, their life drain, a charge, a heavy blow, the spike plate, the swinging blade and a dragon's breath. So a tier-3 Shield halved a bandit's sword and did nothing against his friend's arrow. This makes each do what its own text says; no number is new.
+
+**What changed.** A helper `_warded(d)` (at least 1 when something landed) wraps the damage in each of those paths, after armour and after the block's own share, so the order matches the fire's. On the held block the stamina a block costs is still worked from what the *block* absorbed, not the ward's share, so the Shield doesn't make blocking dearer. Two paths are left alone on purpose: drowning (not a blow) and a spell's own backlash (your own doing). One small fix rode along: the swinging blade's message named the unblocked damage even when a raised guard took .4 of it; it now names what you took.
+
+### Verified (headless Chromium)
+New `tests/wardall.test.mjs`, 7 checks, passing, no page errors. Each path is driven through the game's own code, bare, under a tier-3 Shield (×.5), and (in the open world) under a Master Warding potion (×.6):
+- A 40-point blow on a held block (`executeStrike`, outside the parry window): 24 → 12 Shield, 14 potion.
+- A 30-damage archer's arrow (`fireZoneArrow` + `tickZoneArrows`): 29 → 15, 17; on a raised guard facing the archer 10 → 5, 6.
+- In a dungeon, through the real `loop`: a Phantom's 30-point bolt 30 → 15; the spike plate 8 → 4; the swinging blade 11 → 6.
+- `wardswift`, `counters`, `posture`, `faolchu` and `dungeonfoes` pass.
+
+The deck volleys, the charge, the heavy blow, the drain and the dragon's breath got the same one-word wrap but are not driven by the test (they sit inside the world module's behaviours or a timeout).
+
+### Needs eyes
+Whether a Shield that now also halves arrows and traps makes the tier-3 spell too strong for 28 mana; it lasts as long as it did.
+
+## v80 — Session 321 — The herbs' hidden effects
+Found while finishing Session 320, by listing every buff type the game sets against every one it reads. Eat fifteen of a herb and its hidden effect is revealed: the log names it, the tooltip shows it, and every later mouthful applies it as a timed buff with its own label on screen. For four herbs, nothing read that buff, so the effect did nothing:
+- Thornberry: *+15% block effectiveness for 60s* (`blockBoost` ×1.15)
+- Wolf's Bane: *-40% damage from beasts for 90s* (`beastResist` ×.6)
+- Briarweed: *+10% attack speed for 60s* (`atkSpeed` ×1.1)
+- Duilleog Ghorm: *+25% spell effect duration for 90s* (`spellDuration` ×1.25)
+
+These are fixes to make each do what its own text says. No number is new.
+
+**What changed.**
+- *Thornberry* multiplies the share a raised guard stops, capped at .9. That covers the held block against a blow, the magic block against the Faolchú's fire and the dungeon bolts, and a raised guard against an archer's arrow. The traps' and the deck volleys' fixed "blocking" fractions are left as they are.
+- *Wolf's Bane* needs to know what a beast is, and nothing in the game said so. A new `BEAST_TYPES` names the animals among the open world's foes: Wolf, Dire Wolf, Snow Wolf, Ash Hound, Spider, Cave Bear, Boar, Bog Crawler, Sand Scorpion and Shark. Each foe built from those carries `beast`. The Faolchú, the Dragon, trolls, ogres, wisps and every dungeon creature are left out, as creatures of myth or of the deep rather than beasts. The resistance applies through Session 320's `_warded`, from a beast's blow (held or not) and a boar's charge.
+- *Briarweed* divides `_weaponSwingFactor()`, which sets the swing, its recovery and the swing's pitch together, in both kinds of attack.
+- *Duilleog Ghorm* lengthens a self spell's time in `applySpellBuff`, and with it the Shield's ward.
+
+### Verified (headless Chromium)
+New `tests/herbhidden.test.mjs`, 7 checks, passing, no page errors. Each herb is eaten through `useHerb` with its effect unlocked:
+- Wolf's Bane: a Wolf's or Cave Bear's 20-point blow lands for 12, a Bandit's still for 20. A wolf's 40-point blow on a held block went from 24 to 14.
+- Thornberry: a 40-point blow on a bare-handed held block went from 24 to 22 (a stopped share of .40 → .46).
+- Briarweed: the open-world swing recovery went from 0.555 to 0.505 s, and the swing factor from 1.110 to 1.009 (÷1.1).
+- Duilleog Ghorm: a tier-1 Shield lasted 40 → 50 s, and its ward did too.
+- `wardall`, `wardswift`, `counters`, `posture`, `foes`, `fpweapons` and `attrdmg` pass.
+
+### Needs eyes
+Whether the beast list is the one Michael means (it is a reading of the herb's text, not a rule written anywhere). Whether a swing a tenth quicker is felt at all.
+
+## v80 — Session 322 — The herbs, the same in the open world and underground
+The rest of Session 321's audit. After the four herbs that did nothing, five more worked in only one of the two places you fight. The open world and the dungeons resolve blows through separate code, and each hidden effect had been wired into only one of them:
+- Ferrous Guard (*+8 defense for 60s*) counted only against a dungeon creature's blow. Against an open-world foe's blow, an arrow, the Faolchú's fire, a bolt or a Phantom's drain it did nothing.
+- Mist Fern (*-20% stamina cost for 60s*) lightened only the sprint, not a swing, a bash, a power attack, a roll or a bow's draw and release.
+- Firemoss (*+10% melee damage*) and Caor Dubh (*+40% damage*) applied only to a swing in the open world.
+- Shadowcap (*Enemies lose track of you for 8s*) worked only underground.
+
+**What changed.**
+- `_armour()` is the armour you wear plus Ferrous Guard. Every damage-taken path that read armour now reads it: the open world's melee, arrows and fire, and the dungeon's melee, bolts and drain. Posture and the character sheet still read the gear alone.
+- `_stamCost()` applies Mist Fern to each of the action costs above. The thresholds that say whether you have enough stamina to swing are unchanged.
+- `_resolveDungeonStrike` takes Firemoss and Caor Dubh as the open world's strike does.
+- In `tickZoneEnemies`, the veil clears a foe's alert and the archers' `_agg`, and no foe can see you while it lasts, as underground.
+
+Left owed: Ashwort's *Minimap pulse — reveals nearby enemies for 5s* sets `minimapPulse`, which nothing reads. The open world's minimap already shows every foe in range, and the dungeon's shows none, so what a pulse should add is a question of design and not a wire. Caor Dubh's *(risky)* has no cost anywhere either. That is also left to Michael.
+
+### Verified (headless Chromium)
+New `tests/herbparity.test.mjs`, 8 checks, passing, no page errors.
+- Open world: an archer's 30-point arrow landed for 29 bare and 25 under Ferrous Guard (armour 2 → 10, counted at half).
+- A swing cost 28 stamina, 22.4 under Mist Fern; a roll cost 18, 14.4 under Mist Fern.
+- An alert Bandit eight units off stayed alert 30 of 30 ticks. Under the veil he was alert 0 of 30, and 30 of 30 again after it ended.
+- Dungeon, at level 50 with the rolls pinned: a swing did 123, 135 under Firemoss (×1.10) and 173 under Caor Dubh (×1.41). A Phantom's 30-point bolt did 30 bare and 27 under Ferrous Guard.
+- `roll`, `attrdmg`, `wardall`, `herbhidden`, `dungeonfoes`, `foes`, `counters` and `posture` pass.
+
+### Needs eyes
+Whether the veil in the open world, 8 s in which nothing sees you, is too strong against a camp. Underground it already worked this way.
+
+## v80 — Session 323 — What the level-up card promises
+The same audit, turned on the attributes. The level-up card and the hub list what a point in each attribute gives (`ATTR_DEF[...].gains`, `gainLines`). I checked every line against the code that should read it. Most hold. Two had nothing behind them, and they are fixed here:
+- *Resolve: +1% magic resist a point.* Nothing read Resolve against magic. It already lightened a block's stamina cost (the card's *-5% block cost*), but the Faolchú's fire and the dungeon's Phantom and Wraith bolts landed the same at Resolve 10 as at 0. Now `_magicResist()`, 1% a point with a floor of ×.5, scales both, blocked or not. It applies before armour. On a raised guard, the stamina a block costs is still worked from what the block stopped.
+- *Finesse: -5% sprint cost a point.* The sprint drained 14 a second whatever your Finesse. Now `_finesseSprint()` scales it, with a floor of a quarter.
+
+Two more promises have no rule in the game at all, so there is nothing to wire them to: Fortune's *+2% crit chance* (there is no chance crit, only the staggered-crit bonus) and Charisma's *merchant access*. Together with Session 322's two herb lines (Ashwort's minimap pulse, Caor Dubh's *risky*), they are one question for Michael, #58 in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+New `tests/attrpromise.test.mjs`, 4 checks, passing, no page errors.
+- The sprint, through the game's own loop with Shift and W held on the real keyboard, and the regeneration measured separately and added back: 14.0 a second at Finesse 0, 7.0 at Finesse 10.
+- In a dungeon, a Phantom's 60-point bolt through the real `loop`: 60 at Resolve 0, 54 at Resolve 10. On a raised guard: 51 → 46.
+- `faolchu`, `wardall`, `herbparity` and `wardswift` pass. The Faolchú's fire takes the same multiplier on the line above the dungeon bolt's, and is not driven by the new test.
+
+### Needs eyes
+Nothing new to look at. These are numbers the card already showed.
+
+## v80 — Session 324 — What counts toward Fortitude and Resolve
+Found by following Session 320's damage paths one step further. At a level-up, each attribute's points are multiplied (×1 to ×5) by how much of its activity you did since the last level (`lvAct`, `getMultiplier`). Fortitude counts damage taken. Resolve counts the times your stamina ran dry. Both were counted in only some of the places they happen.
+- Damage taken was counted on four paths only: the unblocked blow, the Faolchú's fire, a bolt and a drain. An archer's arrow, a blow on a held block, the spike plate, the swinging blade, a dragon's breath, a charge, a heavy blow and a deck volley all hurt you without counting. So a player who blocks well, or who fights archers, grew Fortitude more slowly than one who stood and took it. Each of those paths now adds what it did.
+- Stamina running dry was counted only on the sprint. Now a roll that empties it counts, and so does a block that does: held, on the fire, on a bolt, or on a parry.
+
+A correction to Session 323: Charisma's *merchant access* does have a mechanism. Since v61au the shops filter their stock by an item's `chaReq`. No item carries one, so the filter never holds anything back. #58's text in `docs/decisions.md` now says so. The question stands.
+
+### Verified (headless Chromium)
+New `tests/lvact.test.mjs`, 5 checks, passing, no page errors.
+- An archer's arrow of 29 counted 29, and a blow of 24 on a held block counted 24. Neither counted before.
+- In a dungeon, the spike plate (12) and the blade (11) counted in full.
+- A roll on exactly its 18 stamina counted one depletion.
+- `roll`, `wardall` and `posture` pass.
+
+### Needs eyes
+Whether Fortitude now grows too readily for a player who blocks everything. Its thresholds are unchanged.
+
+## v80 — Session 325 — Stonecress and a save
+Found while reading how buffs end, for Session 322. Stonecress's hidden effect (*+20% max stamina for 90s*) is the one buff that patches a stat: it multiplied `maxStamina` by 1.2 on eating and divided it back on expiry. Three things went wrong with that.
+- *Saved while it ran, the stamina was yours for good.* The save wrote the patched maximum. The comment at the end of `_applyLoadData` says buffs are "intentionally cleared on load", but no line ever cleared them. Load that save in a fresh tab and nothing was left to divide the stamina back, so the +20% stayed.
+- *An older save loaded while it ran lost a fifth.* The buff survived the load, and when it wore off it divided the loaded maximum by 1.2.
+- *A level taken while it ran came back short.* Dividing (base×1.2 + 10) by 1.2 takes 1.7 off the level's +10: 115 → 138 → 148 → 123, not 125.
+
+**What changed.** The buff now lends a fixed amount (`_stamAdd`, a fifth of the maximum when eaten) and takes exactly that back, on expiry or when a second Stonecress replaces the first. The save writes `_baseMaxStamina()`, the maximum without anything lent, and caps the saved stamina to it. `_applyLoadData` now empties `ACTIVE_BUFFS`, as its own note always said, before it sets the loaded maximum. Spells' own timers (`SPELL_FX`, the light or the water-walking) are untouched by a load, as before. Only the listed buffs are cleared, and with them the Shield's ward.
+
+### Verified (headless Chromium)
+New `tests/stonecress.test.mjs`, 5 checks, passing, no page errors. Stonecress is eaten through `useHerb`:
+- The maximum went 115 → 138. A level taken with the buff running made it 148, and when the buff wore off it came back to 125, a whole +10.
+- Saved while the buff ran (150), the payload carried 125.
+- An older save (100) loaded while the buff ran left no buffs, a maximum of 100, and still 100 after the buff's time had passed. Reloading the first save gave 125.
+- `unequip`, `herbhidden`, `saves` and `export` pass.
+
+### Needs eyes
+Nothing to see. It is a number that no longer drifts.
+
+## v80 — Session 326 — `placesave` and `lockon` wait for what they need
+Owed first from the end of the last run (backlog I): `placesave` failed 2 of 13 at Session 325's head, the rooms coming back with no id in the open world, and 320–325 were to be bisected against it. They are not the cause. Run alone at 325's head, the suite passed 13 of 13. A single Continue into a saved room took 24–30 s in this container, measured, and the test gave it a fixed 5 s for the reload and 15 s after Continue. A loaded runner goes past that and reads the player still outside. `cont()` now waits for the menu, then for `started` and a room (up to two minutes each), and prints how long it took.
+
+Reading the re-entry for the cause, I found a real weakness beside it. `_reenterPlace` looks for the saved house among the world's houses. If the town is not built yet, it ticked the world and tried again, 60 times at 100 ms, then gave up: *The door you saved behind has moved on. You are outside it.* A town is built by a job in the world's queue, which runs a job or two a frame on a 6 ms budget. On a slow machine, or behind a queue of cells, six seconds may not reach it. At a 3× CPU throttle the old build still got back into the inn, after 60 s. Now, when the house is missing and its town is not built, the re-entry builds the town there and then. The site comes from the save's `site`, or from the house id (`g_<site>_<n>`, a cellar's parent). The retry limit is 30 s of the clock as well as the 60 tries, for houses that are not in a town (the coach inns).
+
+`lockon`'s circle, which the last run also saw fail, failed here run alone: 12.7° round the foe, 1.34 units walked. The walk was 20 s of the clock. The game's loop moves at most 0.05 s a frame, and frames were coming about 1.3 s apart, so 20 s was well under a second of walking. It now counts 400 of the loop's frames, and it reached 46.8° in 26. The last run's *four detail-copy checks (`none: true`)* I could not tie to a suite. `none: true` was `lockon`'s own output line. `bridges`, the one suite with a detail-mesh `none`, passes alone.
+
+### Verified (headless Chromium)
+- `placesave` alone at 325's head (98ebde2), unchanged: 13 of 13, 6m42s.
+- `placesave` now: 14 of 14 through the runner, 7m09s. Each Continue took 24.2–29.8 s. A first run hit the runner's 15-minute cap after the 11th check, with nothing failed; I could not reproduce that, and the two runs after it took 7m.
+- New check: with `WORLD.tick` stubbed to nothing (a queue that never drains) and Dunmore disposed, the re-entry to the inn at 8 s: the old build had said *moved on* and left the player outside (id null, town not built). The new build had built the town and put the player in the inn, with no *moved on*.
+- `lockon` 17 of 17 alone (2m40s); `bridges` 10 of 10 alone.
+
+### Needs eyes
+Continue into a saved room on Michael's laptop: whether it lands inside, and how long it takes.
+
+## v80 — Session 327 — A town lock is picked in a running world
+Michael's A on #54. Since Session 142 the lockpick paused the game, as the inventory does. The watch stood still while you worked, the clock did not turn, and whether you were seen was asked once, when the lock gave. The critic's burglaries (Portclare 5 doors, Dunmore 7, seen 0 times) measured where the guards were when you arrived, not the seconds a pick takes.
+
+**What changed.** The four town locks carry `live`: a shop or home door (`doorLockFor`), a strongbox and a home chest (`boxInteract`). When one is open, the main loop no longer returns at the pause. The clock turns, the world ticks, and the watch walks its beat. The player stands still. Held keys are dropped when the lock opens (the loop's key map `K` now also hangs on `window._K`, since it sits inside a block), and the overlay takes every key and click while it is up. Each frame, before the loop's pause test, `lpWatch()` asks the world `pickSeen(house)`. That is the same `witnessOf` the finished pick uses (12 units, halved sneaking, halved at night; indoors, whoever is in the room with a line to you). Seen, it is the lock crime: a record, favour −1, the fine +25, the keeper's refusal. The seen crime's own line (*Gráinne saw you pick the lock.*) is the message, and the pick breaks off with the door still shut. Struck while picking (health below what it was when you began), or halted into a dialogue, you leave the lock (*You leave the lock alone.*, the line Escape already gives). Dungeon doors and chests and the tower hoard's chest keep pausing. A pick you finish is counted as before, once.
+
+The move to the lock's own time is the whole change. Nothing about the pins, the pick's cost or the witness ranges moved.
+
+### Verified (headless Chromium)
+New `tests/livepick.test.mjs`, 6 checks, passing, no page errors. Dunmore at 23h, at a shop door, with every townsperson parked away each frame:
+- 12 frames with the lock open: the clock went 2.00 → 2.60 minutes (before, it stood still). The pick stayed open, no crime was noted, and with W held from before the lock opened the player moved 0.
+- A watchman set three units off with a clear line mid-pick: the pick broke off, one `lock` crime, favour 0 → −1, the fine 0 → 25, the door not picked, *Gráinne saw you pick the lock.*
+- Health down 3 mid-pick: the lock closed.
+- A lock with no town (a dungeon door): 12 frames, the clock did not move.
+- Picked through at once, the door was picked and one `lock` crime noted.
+- `crime1`, `crime2`, `crime3`, `guardsindoor`, `locksight` and `lockpicks` pass.
+
+### Needs eyes
+How it feels to pick a four-pin shop door at night with the torch coming down the street, and whether burglary now costs what it should. That is the G item on the night watch, now answerable. Whether standing still is right, or a player should be able to step away from the lock without Escape.
+
+## v80 — Session 328 — Fortune's crit and Caor Dubh's risk
+Michael's A on #58: build all four promises that had no rule behind them. This session builds the two that are combat numbers. Charisma's extra item and Ashwort's pulse are owed to the next run.
+- *Fortune: +2% crit chance a point.* There was no chance crit, only the bonus for striking a staggered foe. Now `_fortuneCrit()` gives 2% a point, up to a half, that a blow lands for ×1.5. It multiplies in `applyMeleeDamage`, which both the open world's swing and the dungeon's go through, on top of any stagger, riposte, finisher or backstab. It also multiplies at both arrow hits. A lucky melee blow is tagged *(CRIT)* like a staggered one. At Fortune 0 it draws no random number, so nothing that pins the rolls moves.
+- *Caor Dubh: +40% damage for 30s (risky).* The +40% worked and the risk cost nothing. Now, while the fury lasts, `_wardMult()` takes ×1.2, so every blow, arrow, bolt and trap that reaches you through the ward lands a fifth harder. The two constants, `CAOR_RISK` and `FORTUNE_CRIT_PCT`/`FORTUNE_CRIT_MULT`, sit beside `_wardMult`.
+
+### Verified (headless Chromium)
+New `tests/fortunecaor.test.mjs`, 5 checks, passing, no page errors.
+- `applyMeleeDamage` on a 100-point blow with the roll pinned at .01: Fortune 0 gave 100, Fortune 1 gave 150 tagged a crit. At .03, Fortune 1 gave 100. At Fortune 10, a roll of .19 crits and .21 does not. Over 4,000 blows at Fortune 5, about one in ten crit (between .085 and .115).
+- Caor Dubh eaten with its hidden effect known: a 50-point blow landed for 50 bare, 60 under the fury, 50 after it. Your own blows still carry ×1.4.
+- `herbparity`, `attrdmg`, `wardall` and `counters` pass.
+- The arrows' crit is the same multiplier at the two arrow-hit lines and is not driven by the test.
+
+### Needs eyes
+Whether a crit you didn't earn with a parry feels like luck or like noise, and whether the *(CRIT)* tag should say which kind.
+
+## v80 — Session 329 — Ashwort's pulse
+The third of #58's four (Michael's A). Ashwort's hidden effect, *minimap pulse, reveals nearby enemies for 5s*, went into the buffs as `minimapPulse`, and nothing read it. The open world's minimap already shows every foe in range. Underground, `drawMM` shows a foe only in a cell you have seen (the map reveals 5 units round you as you go). Now, while the pulse lasts, the dungeon's minimap also shows every foe on your floor within 20 units that is not a disguised mimic, seen or not, in the same red. Nothing else changes. The pulse is Ashwort's own 5 s, counted down with the other buffs.
+
+### Verified (headless Chromium)
+New `tests/ashwort.test.mjs`, 3 checks, passing, no page errors. A goblin dungeon (seed 5), the revealed map cleared before every draw, the player 12 units off a foe. Counted in pixels of the foe red on the minimap canvas:
+- Bare: 0, with no foe within the map's own 5-unit reveal.
+- After eating Ashwort (a 5 s `minimapPulse` in the buffs): 68, the 4 foes within 20 units.
+- 400 units from every foe, still under the pulse: 0. After the pulse ended: 0 again.
+
+### Needs eyes
+Whether 5 s is enough to read the minimap in a fight, and whether pulsed foes should show in a paler red than seen ones.
+
+## v80 — Session 333 — Charisma's merchant access
+The last of #58's four (Michael's A). The Charisma card has promised *merchant access* since v61au, and `renderShop` filters its stock by an item's `chaReq`, but no item ever carried one, so nothing was held back and nothing was opened. The rule Michael took: at 5 points each merchant shows one extra item from the next tier up.
+
+**What changed.** `_chaExtraItem(stock, cha)` sits above `renderShop` and adds its one piece to the list after the `chaReq` filter, at Charisma 5 or more (`CHA_MERCHANT_PTS`). For a shop that sells equipment it takes the best piece on the shelf, which is the first of the highest tier, not a torch, not enchanted. It makes the same kind one material up with `makeItem`: Dunmore's smith's Iron Sword gives a Steel Sword, the armourer's Iron Cuirass a Steel Cuirass, Ironhaven's armory's Steel Longsword a Mithril one. For an apothecary it takes the first tonic of the best strength and offers its line one strength up (Mild Regeneration gives Strong). Inns, food and oddments carry nothing tiered and get nothing. Nothing is offered past Cosmic or past Master, nor a piece the shelf already has. The piece is priced, bought and gated like any other: `shopCost` at the town's rate, and the red *locked* row if your Might or Fortitude is short of the material. The attribute is read as `ATTRS.charisma`, as the `chaReq` filter already did.
+
+### Verified (headless Chromium)
+New `tests/chamerchant.test.mjs`, 6 checks, passing, no page errors. Dunmore at 13h, inside the shop:
+- The smith at Charisma 4 lists 6 rows; at 5, 7. The seventh is a Steel Sword (tier 4) over a best of Iron (3). Bought from the row for 66, the price `shopCost` gives, and one lands in the bag.
+- The apothecary at 4 lists 9 rows; at 5, 10. The tenth is *Elixir of Regeneration (Strong)* over a best of Mild, bought for 87.
+- Charisma 4 at the smith's table gives nothing. So does an inn at 10, a Cosmic sword and a Master Warding.
+- `SHOP_STOCK.armor` gives a Steel Cuirass; Ironhaven's weapon table gives a Mithril Longsword (tier 5).
+- `prices`, `lockpicks` and `attrpromise` pass.
+
+### Needs eyes
+Whether one extra piece at 5 is felt at all, or wants a mark on the row saying why it's there (a line of text, so a question for Michael). Whether a Steel Sword in Dunmore at the price of 66 is too early for a Might 10 requirement. Charisma 5 is two level-ups for a bard.
+
+## v80 — Session 334 — The hub's mana regen reads Intelligence
+Found while auditing the attribute card after #58. The Intelligence card promises *+0.2/s mana regen* a point, and the main loop pays it: mana rises at 0.8 + 0.15 a level + 0.2 an Intelligence point. But the hub's Vitals row for mana was written as 0.8 + 0.15 a level + 0.2 a **Resolve** point, so a mage with Intelligence 10 was told 0.8/sec while getting 2.8/sec, and a Resolve build was promised mana it never got. The row now reads Intelligence. The stamina row was right (Resolve, 0.3 a point) and is unchanged. Neither row counts an armour enchant's regen, as before.
+
+Found alongside it, and not fixed: *+1% barter* a Charisma point (and the hub's *Barter Bonus* row, which adds Intelligence too) is read by no price. `shopCost` and `sellPrice` look only at the town's prosperity and your faction. Setting what a point buys at the counter is a price, so it is asked as #61.
+
+### Verified (headless Chromium)
+New `tests/hubregen.test.mjs`, 3 checks, passing, no page errors. At level 1 with the others at 0, Intelligence 10 shows 2.8/sec on the mana row (it showed 0.8), and Resolve 10 shows 0.8/sec on the mana row (it showed 2.8) and 6.0/sec on the stamina row. `attrdmg` passes.
+
+### Needs eyes
+Nothing by eye; it is one number on the character sheet.
+
+## v80 — Session 335 — Fortify enchantments count
+Found in the same audit as Session 334. Five armour enchantments promise an attribute: *of Might*, *of Fortitude*, *of Finesse*, *of Swiftness* and *of Intellect*, at +1 to +4 by the piece's tier. So does the Faolchú's Mark (*of the Sigil-Reader*, +3 Intelligence). The item card lists the bonus, `getArmorEnchantBonuses` sums it, and nothing read the sum: every effect read `ATTRS` directly. A Demonic Amulet of Might was a +0 amulet. The Mark's own comment (v61c8) says it was rebuilt because its Intelligence was inert, and after the rebuild it still was.
+
+**What changed.** `attrEff(k)` is the points you own plus what you wear. Every effect of the five attributes reads it: melee and bow damage, spell power, attack speed, move speed, carry weight, the sprint's cost, the parry window, sneak detection, the lockpick's chance and dwell, and mana regeneration. A worn point of Fortitude adds to max health (10) and max stamina (5), and a worn point of Intelligence to max mana (10), as an owned point does. The hub's derived rows and the mana regen row show the worn numbers. The gates still read the points you own: what you may equip (and the load-time check that unequips what you no longer meet), the spells you may learn and inscribe, and the level-up card's *Current*. Otherwise a ring could lift you into a sword and leave you holding it when you took the ring off. Bram's hammer carries a top-level `mightBonus:2` that nothing sums, and no text shows it; left as it is.
+
+**The worn maximum, everywhere.** Once worn points raise the maxima, every place that fills or caps a bar has to use them. Most used the bare `maxHP`/`maxMana`/`maxStamina`, which was already wrong for *of Vitality*, *of the Mage* and *of Endurance* (their max bonuses have existed since v57). A night's sleep and a shrine filled you to the bare maximum. Health and mana potions, the food and drink effects, a Drain or Soul Tap blow, the priest's blessing, Luibh Uisce and a level-up all capped there. The main loop's regen caps summed only the old max bonuses. A load clamped health, mana and stamina to the bare maximum before the gear was back on, and the save capped stamina at the bare maximum (Session 325's Stonecress guard), so a save made at a worn maximum came back short. All of them now use `effMaxHP/effMaxMana/effMaxStamina`. The load clamps once the gear is restored, and the save caps stamina at the worn maximum less any Stonecress lend.
+
+### Verified (headless Chromium)
+New `tests/fortify.test.mjs`, 10 checks, passing, no page errors. Bare, on a fresh character: carry 50, health 130, stamina 115, mana 100. A tier-9 amulet (+3) of each kind:
+- *of Might*: Might reads 3, carry 65.
+- *of Fortitude*: health 160, stamina 130.
+- *of Finesse*: the sprint costs ×0.85, and the pick chance goes .36 → .57.
+- *of Swiftness*: Swiftness reads 3. *of Intellect*: Intelligence reads 3, mana 130.
+- The hub shows *Spell DMG +3%* and *Max Mana Bonus +30* while the points owned stay 0.
+- With the Might amulet on, an Iron Sword (Might 5) still can't be equipped.
+- With the Fortitude amulet and an *of Intellect* ring worn, from 1 health, 0 mana and 0 stamina, eight hours' sleep fills all three to the worn maximum (160 health, 130 mana, 130 stamina; it stopped at 130/100/115).
+- A save at 140 of 140 health and 120 of 120 stamina with a Bronze Amulet of Fortitude (+1) loads at 140 and 120. Before, it loaded at 130 and 115.
+- `stonecress`, `unequip`, `saves`, `attrpromise`, `attrdmg`, `hubregen`, `counters`, `posture`, `herbparity`, `herbhidden` and `lockpicks` pass.
+
+### Needs eyes
+Whether the gates should count what you wear, as Morrowind's did. That is a rule, so it is left as it was and would be Michael's call. Whether a found fortify amulet now feels worth wearing.
+
+## v80 — Session 338 — The Boon of Renewal heals
+Michael's A on #60. Praying at a shrine restores you and gives one of five boons for 30 minutes (1,800 s of play). An Spéir's *Boon of Renewal* (type `regen`) had no rate, and nothing read it, so every prayer at An Spéir's and a fifth of prayers at the other shrines gave nothing after the restore. Now the boon carries `rate` 0.5 (`RENEWAL_RATE`, beside `CAOR_RISK`). The main loop adds it to health, stamina and mana each second, beside the regen tonics, capped at the worn maximum. It ticks through the stamina cooldown, as the Vigor tonic does. The shrine's `_applyBuff` call passed only the type and multiplier, so it now passes the rate as well.
+
+Found on the way: every prayer threw a page error at its closing chime. `sfxTone(660,.6,.15)` was missing an argument, so the gain came through undefined and `setValueAtTime` refused it. The boon and the log line had already been applied, but the E handler never got its `true`. It is now `sfxTone(660,660,.6,.15)`: the same note held, at the length and gain the call meant.
+
+### Verified (headless Chromium)
+New `tests/renewal.test.mjs`, 7 checks, passing, no page errors. The nearest shrine of An Spéir (c6_8_p1), prayed at through the E handler (`WORLD.shipInteract`):
+- The prayer gives the Boon of Renewal at 0.5 a second with 1,800 s remaining, and fills health to 130 of 130.
+- Over 40 frames (2 s of play at the loop's 0.05 s cap), from 10 of each, with the stamina cooldown held: health +1.00, stamina +1.00, mana +2.60 (its own 0.8 plus the boon's 0.5).
+- Without the boon, the same 40 frames: health +0, stamina +0, mana +1.59.
+- From 0.1 below each maximum, all three stop at the maximum (130, 100, 115).
+
+### Needs eyes
+Whether half a point a second is felt between fights over half an hour, or reads as nothing next to the full restore the prayer already gives.
+
+## v80 — Session 339 — Charisma's barter
+Michael's A on #61. The Charisma card has promised *+1% barter* a point. The hub's *Barter Bonus* row showed Intelligence plus Charisma. No price read either: a bard with Charisma 10 paid and was paid what a brute was.
+
+**What changed.** `barterPct()` is 1% a Charisma point, up to 25% (`BARTER_PCT`, `BARTER_MAX`). `shopCost` takes that share off the town's price, so every counter's list, quantity prompt, charge and message follow it, the Charisma 5 extra piece included. Selling goes through `counterSellPrice`, the item's fixed share plus the same percentage, in the shop's sell list and the quantity prompt. Goldenrod's luck still multiplies on top when the gold is paid. A piece you sold and buy back still costs exactly what you were paid for it, so the two sides can't be played against each other: at 25% off and 25% on, a piece still sells for about half of what it costs. The hub's row now reads Charisma only, capped at 25%. Aldwyn's line that Intelligence "improves how you barter" stays as flavour, as the question proposed. The inventory's *value* column still shows the bare share, since it is not a counter. The rule reads the Charisma you own; no enchantment gives Charisma.
+
+Services are not counter goods and do not move: an inn room, the priest, a coach ticket, a fine.
+
+### Verified (headless Chromium)
+New `tests/barter.test.mjs`, 7 checks, passing, no page errors. Dunmore's smith at 13h (town multiplier .9665), an Iron Sword listed at 35:
+- Bought at Charisma 0 for 35, at 10 for 31, at 40 for 26 (capped at 25% off). Each row showed the price that was charged.
+- The same sword sold for 16 at Charisma 0, 18 at 10 and 20 at 40.
+- The three buy-back rows cost 16, 18 and 20, what was paid, at Charisma 40.
+- The hub's row reads +0% at Intelligence 10, +7% at Charisma 7 and +25% at 40.
+- `prices` (5 checks) and `chamerchant` (6) pass.
+
+### Needs eyes
+Whether 1% a point is felt at the counter before Charisma is well up. At 5 it takes 2 off a 35-gold sword.
+
+## v80 — Session 340 — Charisma's quest gold on every quest
+Found while building Session 339. The Charisma card promises *+2% quest reward gold* a point, and since v61au `completeQuest` has paid it. But `completeQuest` pays only the legacy chain (Q1–Q7). Every other quest pays through its own line, and none of them read Charisma: the world's town quests and the faction services (`qTurnIn`), the guild tasks (`turnIn`) and the two tutorial lines (*A Town Worth Keeping*, *Salt Water*, through `tutFinish`). So most of the gold a character earns from quests ignored the attribute. This fixes the card's own rule where it was missing; the rule is not new.
+
+**What changed.** `questGold(n)` is the sum × (1 + 2% a Charisma point), rounded, and all five payouts use it. `completeQuest` now calls it too, with the same arithmetic as before. The lines that name the sum say what was paid: the town quest's *"N gold."*, the guild head's *"Good work. N gold."*, the tutorials' two speeches and their log lines, and the 🏅 log. The XP each pays is still reckoned on the bare sum, as before. The rule reads the Charisma you own, uncapped, as the legacy chain always has.
+
+### Verified (headless Chromium)
+New `tests/questgold.test.mjs`, 4 checks, passing, no page errors.
+- A world quest of 100 through `qTurnIn`: 100 gold at Charisma 0, 120 at 10. XP was 90 both times.
+- The legacy Q1 (50): 50 at 0, 60 at 10, unchanged from before.
+- Dunmore's Fighters' Guild at 13h, a done task of 80 turned in to the head's *It's done.*: 80 at 0 and 96 at 10. The head says *"Good work. 96 gold."*
+- The tutorials' payout goes through the same `questGold` and is not driven by the test. `crime4` and `shoperrands` pass.
+
+### Needs eyes
+Nothing by eye. With Session 339 this makes Charisma pay at the counter and at the turn-in, which may be the first time a Charisma build feels different to play.
+
+## v80 — Session 341 — A herb no longer ends a shrine boon
+Found while auditing the buffs after Session 338. `_applyBuff` removed any running buff of the same type before adding the new one. Three shrine boons share a type with something shorter and weaker. The Boon of the Arm (melee ×1.2, 30 min) and Firemoss (×1.1, 60 s) are both `meleeDmg`. The Boon of the Mind (spells ×0.7) and Coldmoss (×0.8, 45 s) are both `spellCost`. The Boon of Stone (×0.75) and the Shield spell (×0.5–0.7, short) are both `warding`. So eating one herb, or casting Shield, silently ended a boon the prayer had said you would *carry until tomorrow*. Session 316 set the rule for protections: they don't stack, and the stronger holds. This makes that true within one type as well.
+
+**What changed.** When a buff arrives and one of its type is running, the two are ranked by strength: the rate, else the amount, else the multiplier. For the kinds where lower is better (`spellCost`, `warding`, `dmgReduce`, `detectReduce`, `staminaCost`, `physResist`, `beastResist`), the lower multiplier ranks higher. The stronger is the one that counts. A weaker one that outlasts it is kept underneath (`_under`), counting down all the while, and holds again when the stronger ends. A weaker one that would end sooner adds nothing, and the message says so: *"X is the stronger; Y adds nothing."* The same tonic again still refreshes it, and a stronger tonic still replaces a weaker one. That is v61x's potion rule, whose tier check runs first and is unchanged. Stonecress (`maxStamBuff`) patches the maximum, so it keeps the old replace-and-undo path.
+
+### Verified (headless Chromium)
+New `tests/buffstack.test.mjs`, 7 checks, passing, no page errors. Driven through `_applyBuff` and `tickActiveBuffs`:
+- Arm then Firemoss: melee ×1.2, one entry. 61 s later, still ×1.2, with 1,739 s left.
+- Firemoss then Arm: ×1.2, and 1,739 s left after 61 s.
+- Stone then Shield: ward ×0.5 while the Shield lasts. After 31 s it is ×0.75, the Boon of Stone with 1,769 s left.
+- Mind then Coldmoss: spells ×0.7. Coldmoss is not kept.
+- A Mild tonic taken again at 30 s: one entry, 60 s left. A Strong one replaces it (rate 1.2).
+- After 1,801 s, nothing is left.
+- `stonecress`, `wardall`, `herbparity` and `herbhidden` pass.
+
+### Needs eyes
+The buff strip shows only the one that counts. Whether a boon waiting under a herb should show too is the look builder's call, or Michael's.

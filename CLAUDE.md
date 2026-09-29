@@ -91,7 +91,14 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - The camera looks along `(-sin yaw, -cos yaw)`; NPCs face `(sin ry, cos ry)`.
 - r128's shadow pass tests object layers against the *eye's* camera, not the shadow camera: a shadow-only layer draws nothing.
   To draw something differently in the shadow pass, swap it inside `REN.shadowMap.render` (see the townsfolk's LOD).
+- The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads.
+- The loop's held-key map `K` (and `PERF` and their neighbours) sit inside a top-level block, not on the page's global scope: code
+  outside that block, and a test's `page.evaluate`, reach it as `window._K` (Session 327). `typeof K` there is `undefined`.
 - `tickPeople` drops and disposes any rig whose root has no parent: add a test's rig to the scene (hidden) as soon as it is built.
+- Indoors `activeZoneId` stays `'world'` and the room sits at its own coordinates (0 to its width): a world solid test
+  (`WORLD.camSolid`, `solidAt`) there reads empty ground. Test `isInterior()` first and use `intSightLine`/`intSolidAt`.
+- Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
+  the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 
 ## Roles
 - Michael makes the design calls; Claude flags risks and asks when the design is open.
