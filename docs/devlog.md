@@ -8392,3 +8392,25 @@ New `tests/hubregen.test.mjs`, 3 checks, passing, no page errors. At level 1 wit
 
 ### Needs eyes
 Nothing by eye; it is one number on the character sheet.
+
+## v80 — Session 335 — Fortify enchantments count
+Found in the same audit as Session 334. Five armour enchantments promise an attribute: *of Might*, *of Fortitude*, *of Finesse*, *of Swiftness* and *of Intellect*, at +1 to +4 by the piece's tier. So does the Faolchú's Mark (*of the Sigil-Reader*, +3 Intelligence). The item card lists the bonus, `getArmorEnchantBonuses` sums it, and nothing read the sum: every effect read `ATTRS` directly. A Demonic Amulet of Might was a +0 amulet. The Mark's own comment (v61c8) says it was rebuilt because its Intelligence was inert, and after the rebuild it still was.
+
+**What changed.** `attrEff(k)` is the points you own plus what you wear. Every effect of the five attributes reads it: melee and bow damage, spell power, attack speed, move speed, carry weight, the sprint's cost, the parry window, sneak detection, the lockpick's chance and dwell, and mana regeneration. A worn point of Fortitude adds to max health (10) and max stamina (5), and a worn point of Intelligence to max mana (10), as an owned point does. The hub's derived rows and the mana regen row show the worn numbers. The gates still read the points you own: what you may equip (and the load-time check that unequips what you no longer meet), the spells you may learn and inscribe, and the level-up card's *Current*. Otherwise a ring could lift you into a sword and leave you holding it when you took the ring off. Bram's hammer carries a top-level `mightBonus:2` that nothing sums, and no text shows it; left as it is.
+
+**The worn maximum, everywhere.** Once worn points raise the maxima, every place that fills or caps a bar has to use them. Most used the bare `maxHP`/`maxMana`/`maxStamina`, which was already wrong for *of Vitality*, *of the Mage* and *of Endurance* (their max bonuses have existed since v57). A night's sleep and a shrine filled you to the bare maximum. Health and mana potions, the food and drink effects, a Drain or Soul Tap blow, the priest's blessing, Luibh Uisce and a level-up all capped there. The main loop's regen caps summed only the old max bonuses. A load clamped health, mana and stamina to the bare maximum before the gear was back on, and the save capped stamina at the bare maximum (Session 325's Stonecress guard), so a save made at a worn maximum came back short. All of them now use `effMaxHP/effMaxMana/effMaxStamina`. The load clamps once the gear is restored, and the save caps stamina at the worn maximum less any Stonecress lend.
+
+### Verified (headless Chromium)
+New `tests/fortify.test.mjs`, 10 checks, passing, no page errors. Bare, on a fresh character: carry 50, health 130, stamina 115, mana 100. A tier-9 amulet (+3) of each kind:
+- *of Might*: Might reads 3, carry 65.
+- *of Fortitude*: health 160, stamina 130.
+- *of Finesse*: the sprint costs ×0.85, and the pick chance goes .36 → .57.
+- *of Swiftness*: Swiftness reads 3. *of Intellect*: Intelligence reads 3, mana 130.
+- The hub shows *Spell DMG +3%* and *Max Mana Bonus +30* while the points owned stay 0.
+- With the Might amulet on, an Iron Sword (Might 5) still can't be equipped.
+- With the Fortitude amulet and an *of Intellect* ring worn, from 1 health, 0 mana and 0 stamina, eight hours' sleep fills all three to the worn maximum (160 health, 130 mana, 130 stamina; it stopped at 130/100/115).
+- A save at 140 of 140 health and 120 of 120 stamina with a Bronze Amulet of Fortitude (+1) loads at 140 and 120. Before, it loaded at 130 and 115.
+- `stonecress`, `unequip`, `saves`, `attrpromise`, `attrdmg`, `hubregen`, `counters`, `posture`, `herbparity`, `herbhidden` and `lockpicks` pass.
+
+### Needs eyes
+Whether the gates should count what you wear, as Morrowind's did. That is a rule, so it is left as it was and would be Michael's call. Whether a found fortify amulet now feels worth wearing.
