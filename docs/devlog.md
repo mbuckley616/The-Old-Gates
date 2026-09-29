@@ -8171,3 +8171,15 @@ New `tests/wardswift.test.mjs`, 7 checks, passing, no page errors. A real Bandit
 
 ### Needs eyes
 Whether the Shield at ×.5 (tier 3) plus armour makes a fight too easy now that it works. Whether ×1.25 on the Road for half an hour feels like a gift or a nuisance near ledges.
+
+## v80 — Session 317 — The cot by a fort's entrance
+Found by the look builder (Slack, 29 Sep, while moving the fort rooms onto the kit). Session 9 put a cot beside every fort's entrance: rest on it, and take a banked level. The spot was chosen from the cells around the entrance that are room floor (tile 1). A fort's entry is a hallway, though (tile 7, the entry corridor), so no cell ever qualified, `D_BEDS` stayed empty and no fort has had its cot since. Now the search takes floor or hallway. Only that line changed. The cot's mesh, which the look branch has put on the kit, is untouched, so the two branches merge cleanly.
+
+### Verified (headless Chromium)
+New `tests/fortcot.test.mjs`, passing, no page errors. The three fort layouts (`fort_linear`, `fort_tee`, `fort_courtyard`) at seeds 11, 23 and 42, entered with `enterDungeon`:
+- Every one has its cot, and all nine stand at the same cell (31, 59) in the entry hall, on hallway floor.
+- No corner of the cot touches a column of the hall or a prop.
+- Standing beside it, on the far side from the door, the real E key opens the rest panel. The door's own E (leave the fort, within 1.4 of the entrance) is checked first and still wins on the door side.
+
+### Needs eyes
+Whether a cot one cell inside the door reads as a place to rest or as clutter in the entry hall. That is the look builder's to judge once the kit bed is merged.

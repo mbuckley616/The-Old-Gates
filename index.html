@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s303</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s304</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -23691,7 +23691,7 @@ function buildDungeon(portal){
   FOOTHOLDS=[];DUNGEON_STAIRWELL=false; // v80 S8
   D_BEDS=[]; // v80 S9 — a cot near a fort's entrance: rest, and take a banked level
   if(isFort&&gen.entC!=null){
-    let spot=null;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1]]){const c=gen.entC+dc,r=gen.entR+dr;if(c>=0&&r>=0&&c<dC&&r<dR&&dMap[r][c]===1){spot=[c,r];break;}}
+    let spot=null;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1]]){const c=gen.entC+dc,r=gen.entR+dr;if(c>=0&&r>=0&&c<dC&&r<dR&&(dMap[r][c]===1||dMap[r][c]===7)){spot=[c,r];break;}} // S317 — a fort’s entry is hallway (7), not room floor (1), so the cot never found a cell (the look builder, 29 Sep)
     if(spot){const [c,r]=spot;const cot=new THREE.Mesh(new THREE.BoxGeometry(.6,.14,1.0),new THREE.MeshLambertMaterial({color:0x5a3a1c}));cot.position.set(c,.07,r);dScene.add(cot);
       const bl=new THREE.Mesh(new THREE.BoxGeometry(.54,.08,.92),new THREE.MeshLambertMaterial({color:0x6a5a3a}));bl.position.set(c,.18,r);dScene.add(bl);
       const pw=new THREE.Mesh(new THREE.BoxGeometry(.4,.1,.22),new THREE.MeshLambertMaterial({color:0xb8a880}));pw.position.set(c,.26,r-.35);dScene.add(pw);
