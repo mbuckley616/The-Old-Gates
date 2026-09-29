@@ -39,6 +39,29 @@ check('in Dunmore a house and a clear street were found for the test', world.fou
 check('a Bandit 8 units off behind a house cannot be locked', world.behindHouse, world);
 check('a Bandit 8 units off down a clear street can', world.inTheOpen, world);
 
+// ── indoors (Session 311): a shop's back-room partition, with its door shut ──
+const shopId = await page.evaluate(() => { forceTime(13); const S = WORLD.settle.get('dunmore');
+  for (const h of S.houses) { if (!/weapon|armor|potion|misc/.test(h.type) || !h.keeper) continue; WORLD.buildInteriorFor(h); if (h._backRoom) return h.id; } return null; });
+await page.evaluate((id) => { const h = WORLD.settle.get('dunmore').houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, shopId);
+await page.waitForTimeout(4000); await g.hide();
+const room = await page.evaluate(() => {
+  const out = { inside: isInterior() }; const keep = ZE; lockRelease();
+  const h = currentHouse, W = h.intW, D = h.intD;
+  out.doorsShut = (WORLD.intDoors || []).every(d => !d.open);
+  // you stand in the shop facing the back wall; one foe is in the back room behind the partition, one in the shop
+  px = W * .75; pz = D - 5; jumpY = 0; yaw = Math.PI; // facing +z, towards the back
+  const mk = (x, z) => { const e = buildZoneEnemy(interiorScene, [], x, z, 'Bandit', null); if (!e.mesh.parent) interiorScene.add(e.mesh); e.locked = false; e.alert = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; return e; };
+  const back = mk(W * .75, D - 1.8), front = mk(W * .75, D - 3.9);
+  out.lineBack = WORLD.intSightLine(px, pz, back.x, back.z); out.lineFront = WORLD.intSightLine(px, pz, front.x, front.z);
+  ZE = [back]; out.backLocked = toggleLock() === true; lockRelease();
+  ZE = [front]; out.frontLocked = toggleLock() === true && LOCK.t === front; lockRelease();
+  ZE = keep; [back, front].forEach(e => interiorScene.remove(e.mesh));
+  return out;
+});
+await page.evaluate(() => { exitInterior(); }); await page.waitForTimeout(3000); await g.hide();
+check('indoors: a foe behind the shut back-room partition cannot be locked', room.inside && room.doorsShut && room.lineBack === false && room.backLocked === false, room);
+check('indoors: a foe in the shop with you can', room.lineFront === true && room.frontLocked, room);
+
 // ── a dungeon: a wall between two open cells ──
 await enterDungeon(page, { theme: 'goblin', seed: 5 });
 const dun = await page.evaluate(() => {

@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s300</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s301</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1435,6 +1435,7 @@ function lockSolidFn(){
   return currentZoneSolid;
 }
 function lockSight(e){
+  if(typeof isInterior==='function'&&isInterior()&&typeof WORLD!=='undefined'&&WORLD.intSightLine)return WORLD.intSightLine(px,pz,e.x,e.z); // S311 — in a room, its walls and shut doors (the witnesses' line), not the world's solids at room coordinates
   const sol=lockSolidFn(),dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1.2)return true;
   const n=Math.ceil((d-1)/.4);
   for(let i=0;i<=n;i++){const r=(.5+(d-1)*i/n)/d;if(sol(px+dx*r,pz+dz*r))return false;}

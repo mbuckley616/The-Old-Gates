@@ -8133,3 +8133,12 @@ New `tests/boxspots.test.mjs`, passing, no page errors. Dunmore 50 boxes, Portcl
 
 ### Needs eyes
 The rest of G's *Town locks* line is play: whether four pins in a rich town is fair, and the takings against a low-level purse. Whether a strongbox tucked against the bed's foot looks like a place a keeper would keep one is a look call.
+
+## v80 — Session 311 — The lock indoors
+A gap left by Session 308. Indoors the game stays in the open world's zone and the room is drawn at its own coordinates (0 to its width and depth), so the lock's wall test read the world's solids at room coordinates, where there are none. A room's walls never blocked the lock. Since Sessions 239 and 241 a guard can draw on you inside a shop, so a guard behind the shut back-room partition could be locked, and the view would turn to face the wall. Now, in a room, the lock uses the room's own sight line (`intSightLine`, Session 167, the witnesses' line): partition walls and shut doors block it, and counters and tables do not. The 1.5 s grace of Session 308 applies there too.
+
+### Verified (headless Chromium)
+`tests/locksight.test.mjs` gains two checks, 11 in all, passing, no page errors. In a Dunmore shop with a back room, entered through `goToInterior` at 13h with the back-room door shut, you stand in the shop facing the back wall. A real Bandit behind the partition cannot be locked; one in the shop with you can. With the fix taken out, the first check fails (the foe behind the wall locks).
+
+### Needs eyes
+Nothing new to judge. The drawn guard indoors can now be locked when he's in the room with you. How lock-on feels in a small shop, where the view turns hard at close quarters, is worth a glance during the next indoor fight.
