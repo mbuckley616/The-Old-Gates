@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s260</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s261</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21616,7 +21616,7 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
-  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD };
+  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT };
 }
 
 let _FURN = null;
@@ -24465,34 +24465,15 @@ function _intChandelier(sc, x, z, ceilY){
 // (e.g. interactBed). Optional headFace flag — 'N' (head at low Z) or
 // 'S' (head at high Z); defaults to 'N' for the safehouse layout where
 // the bed runs along the west wall with head pointing north (low Z).
+// S288 — the kit's box bed (the concept artist's, #46 A): turned posts, a planked headboard, a stuffed tick, a three-band
+// quilt and a pillow, 1.5 long, in the nation's wood (INT_BED_NATION, set by buildInteriorFor), three quilts a nation,
+// each baked once and shared by every bed that draws it. Head at low z for 'N', high z for 'S'; the floor at y 0.
+let INT_BED_NATION='gatelands';const INT_BED_GEO=new Map();
 function _intBed(sc,x,z,headFace){
-  const bed=new THREE.Group();
-  bed.position.set(x,0,z);
-  // Frame — dark wood, slightly under the mattress
-  const frameMat=new THREE.MeshLambertMaterial({color:0x4a2808});
-  const fbox=new THREE.Mesh(new THREE.BoxGeometry(.95,.22,1.95),frameMat);
-  fbox.position.set(0,.18,0);bed.add(fbox);
-  // Four short legs at corners
-  [[-.42,-.92],[.42,-.92],[-.42,.92],[.42,.92]].forEach(([lx,lz])=>{
-    const leg=new THREE.Mesh(new THREE.BoxGeometry(.09,.30,.09),frameMat);
-    leg.position.set(lx,.15,lz);bed.add(leg);
-  });
-  // Mattress — warm linen color, slightly wider than frame for overhang
-  const mattMat=new THREE.MeshLambertMaterial({color:0xb89870});
-  const matt=new THREE.Mesh(new THREE.BoxGeometry(.92,.16,1.85),mattMat);
-  matt.position.set(0,.40,0);bed.add(matt);
-  // Blanket — folded across the lower 2/3 of the mattress, deep red
-  const blMat=new THREE.MeshLambertMaterial({color:0x6a2018});
-  const headSign=(headFace==='S')?-1:1; // headFace='N' → blanket at +Z (foot end is -Z when head is at -Z... but logically: head at low Z means foot at high Z, and the blanket should cover the FOOT)
-  const blz=headSign*0.45; // shifts blanket toward foot end
-  const bl=new THREE.Mesh(new THREE.BoxGeometry(.94,.05,.95),blMat);
-  bl.position.set(0,.50,blz);bed.add(bl);
-  // Pillow — at the head end. headFace='N' = head at low z; pillow at -z.
-  const pillMat=new THREE.MeshLambertMaterial({color:0xe8d8b8});
-  const pz=-headSign*0.78;
-  const pill=new THREE.Mesh(new THREE.BoxGeometry(.55,.10,.32),pillMat);
-  pill.position.set(0,.50,pz);bed.add(pill);
-  sc.add(bed);
+  const K=furnKit(),n=INT_BED_NATION||'gatelands',v=Math.abs(Math.round(x*7+z*13))%3,key=n+'|'+v;
+  let geo=INT_BED_GEO.get(key);if(!geo){const G=K.bake(K.bed(n,41+v*17));geo=G.children[0].geometry;INT_BED_GEO.set(key,geo);}
+  const bed=new THREE.Group();bed.position.set(x,0,z);if(headFace==='S')bed.rotation.y=Math.PI;
+  bed.add(new THREE.Mesh(geo,K.MAT));sc.add(bed);
   return bed;
 }
 
@@ -38538,6 +38519,7 @@ var WORLD=(()=>{
   function furnSwap(room){if(FURN_ROOM&&FURN_ROOM!==room)FURN_ROOM.traverse(o=>{if(o.isMesh)o.geometry.dispose();});FURN_ROOM=room;}
   function buildInteriorFor(house){
     const reg=house.reg||'irish',type=house.type||'misc',st=house.style||'irish';
+    INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
     const two=!!house.two;
     // room from footprint (interiors run larger than exteriors, as games do)
     let W=Math.max(8,Math.round((house.w||6)*1.8)),D=Math.max(8,Math.round((house.d||5)*2.0));

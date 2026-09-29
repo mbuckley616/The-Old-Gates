@@ -7276,3 +7276,15 @@ A correction to Session 286: in a two-storey house the hearth's chimney breast s
 
 ### Needs eyes
 The taproom by its own firelight, whether the stools crowd the bar's front, and whether the dresser reads under the gallery's shadow.
+
+## v80 — Session 288 — Every bed on the shape kit (H.5 props, Michael's A on #46)
+Session 287 left the beds for a session of their own, because `_intBed` builds every bed in the game: the inn's rooms, the shops' back rooms, the guild halls' dormitories, the cabin's bunk, the upstairs of a two-storey house and the safehouse. It was seven boxes and seven new materials a bed.
+
+`_intBed` now draws the prototype's box bed from the kit: turned posts with finials, a planked headboard, a stuffed tick, a three-band quilt, a turned-down sheet and a pillow. It is 1.5 long against the old 1.95, the concept artist's size for a 1.18-tall townsperson. The wood and cloth come from the nation, which `buildInteriorFor` sets for the room (`INT_BED_NATION`). There are three quilts a nation, picked by the bed's place, each baked once and shared (`INT_BED_GEO`), with the furniture's shared material, so a bed is one mesh and nothing new is allocated after the first. The head is at low z for `'N'` and turned for `'S'`, as before. The places, the `bedAt` registrations and the solids are the callers' and unchanged; a bed a third shorter sits inside its old solid.
+
+### Verified (headless Chromium)
+- **`homefurn`**, extended: in Dunmore's inn all four registered beds are kit beds (a mesh on one of the shared bed geometries), and none of the old 1.95-long boxes is left. The interior's meshes went from 110 to 82. The picture, `docs/prototypes/bedfurn-ingame.png`, is an upstairs room's two beds.
+- **`interiors`** (renting a room: only your own bed sleeps) and **`locks`** pass.
+
+### Needs eyes
+The bed's length against the player lying down (sleep has no lying pose, so probably nothing), and the cabin's bunk, which is now a box bed on a ship.
