@@ -7574,3 +7574,22 @@ Two more of the dungeon room types from Session 309, into the same per-room bake
 
 ### Needs eyes
 Whether the boulders read as fallen masonry or as field stones. They are rounded, where dressed blocks broken from a vault would be squarer.
+
+## v80 — Session 318 — The dungeons' urns, sarcophagi and weapon racks on the shape kit (H.7, #46 A)
+The last of the dungeon rooms' owed props from Session 310: the three lootable containers `decorateDungeonRooms` places (urns in shrines and treasuries, a sarcophagus in the ossuary, a weapon rack in barracks and treasuries). They were a cylinder with a disc, a box with a slab and a box on it, and a crossbar on three sticks. They are now built once a kind in `_dKit` and shared by every copy, as the barrels are:
+- **The urn:** a lathed burial urn (foot ring, full belly, shoulder, neck, rolled rim), two loop handles at the shoulder and two painted bands; the lid a low dome with a knob, its skirt inside the neck. 1,456 triangles.
+- **The sarcophagus:** a stepped plinth, a chest with corner pilasters and sunk panels on every face, a moulded cornice; the lid a slab with a moulded edge and a lying effigy, head on a cushion, hands folded on the chest. 1,996 triangles.
+- **The weapon rack:** oak uprights on splayed feet, a foot rail and a top rail with pegs, two swords, a spear and an axe leaning in it. 952 triangles.
+
+**Opening.** The urn's lid still pops and tilts the way a barrel's top does (the old code, unchanged). The sarcophagus's lid now slides a third of its width aside and tips onto the chest's edge: a container may carry an `openTop` of its own, which `openLoot` plays once in place of the pop. The rack has no lid; the old one popped its crossbar, which is gone.
+
+**The dice are untouched.** `_dContainer` draws `r()` for the turn and the loot exactly as before and nothing else. With `Math.random` seeded the same for both builds, four of five dungeons put every barrel, crate and container, and every item in them, where the old build did; the fifth differed in the engine's own barrels too, because the frames that run before entry draw from `Math.random` a varying number of times. That is the old behaviour, not this change.
+
+**One fix (Session 310's):** the collapsed room's boulders sat at `.3` of their size with a half-height of `.35`, plus their bumps, so the largest (.8) went up to .07 below the floor, and `dunfurn` failed whenever the dice rolled one. They sit at `.36` now. It showed up only in some runs because which sizes roll depends on where the engine's random barrels took the room's space first.
+
+### Verified (headless Chromium)
+- **`dunconts`**, new: across up to fourteen dungeons, urns (7), weapon racks (6) and a sarcophagus turn up; each is the shared kit bake with no box or cylinder parts, stands at the old size (the urn .71 tall, the sarcophagus .97 by 2.1, the rack 1.9 with the spear), opens in the loot panel under its own name with its loot, and the urn's lid moves .12 and the sarcophagus's .36 on opening. The picture, shut and open, is `docs/prototypes/dunconts-ingame.png`.
+- **`dunfurn`** (run twice after the boulder fix), **`dungeon`**, **`dungeonfoes`** and **`mimic`** pass.
+
+### Needs eyes
+Whether the sarcophagus lid pushed aside reads as opened by a person; whether the urn's clay is too warm under the dungeon's orange light. The rack's weapons stay on it after it is emptied; hiding them would need the loot panel to tell the container when it is empty, a small change for a later session if it bothers.
