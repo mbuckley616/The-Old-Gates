@@ -7763,3 +7763,28 @@ A chimney eases towards its strength over a few seconds, so the smoke thins and 
 - The fill cost of overlapping transparent sprites on a real GPU close to a busy inn, which is not measurable on software GL.
 - Hearthwick (the legacy cell) and the forts' barracks build their houses by other routes, so they have no smoke yet.
 - The tint changes in steps at 5.5, 7, 17.5 and 20.5, not smoothly with the sky.
+
+## v80 — Session 344 — The church and the keep's hall on the kit shell (H.5, after #62)
+In Session 342 the church and the keep's hall kept their old shell. Under #62 they were the next to follow, and Michael's A covers them, so they needed no question of their own. Both are ashlar rooms, so they take the stone variant:
+- the vertex-shaded walls;
+- the boarded ceiling on joists;
+- rounded beams, a wall plate, a plinth course, and stepped corbels under the beams' ends.
+
+Two things differ from a house.
+- **The door.** A church's or a hall's entrance is larger: 1.5 wide by 2.3, of seven planks, in a stone surround. The plinth's gap is widened to 1.1 to take it.
+- **The corbels.** The tall round-headed windows (Session 331) come to within .3 of the beams: the church's at 4.7 under a 5.0 ceiling, the hall's at 5.4 under 5.6. `tallWins` now records each window's z. A corbel is left out within .8 of a tall window as well as a low one, and the beam runs over the window's head to the wall plate.
+
+The tower (31 high) still keeps its old shell.
+
+### Verified (headless Chromium)
+- **`shells`**, extended to 14 rooms.
+  - The church (11 × 16 × 5) and the keep's hall (18 × 22 × 5.6) are stone rooms with the kit shell: 6.6k and 10.0k triangles.
+  - Their door is 1.4k triangles and its head stands at 2.52. No box door or box beams are left.
+  - No shell vertex in the corbels' band, near a wall and within .6 of a tall window's centre, is found in either room (0 and 0).
+  - Every earlier check still holds.
+  - `docs/prototypes/shells-ingame.png` now has two more rows: the church and the hall, looking up the nave and back at the door.
+- **`windows`**, **`civicfurn`**, **`chapel`**, **`interiors`** and **`crime5`** pass.
+
+### Needs eyes
+- A flat joisted ceiling in a church five high reads like a hall, not a church. An open roof with trusses is its own look, and would need its own question.
+- The kit furniture's columns in both rooms stop at the joists, not under a beam.

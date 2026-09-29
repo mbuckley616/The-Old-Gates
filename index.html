@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s285</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s286</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38632,8 +38632,9 @@ var WORLD=(()=>{
     const floorKind=(st==='stone'||st==='garrison'||type==='church'||type==='castle')?'flag':'plank';
     const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),tiled(floorKind,reg,W/2.2,D/2.2));fl.rotation.x=-Math.PI/2;fl.position.set(W/2,0,D/2);sc_.add(fl);
     // S342 (Michael's A on #62) — the generated rooms' shell on the kit: a boarded ceiling over joists, the walls shaded at the foot,
-    // the head and the corners, and (built after the furniture, below) the frame; churches, keep halls and the tower keep today's
-    const kitShell=type!=='church'&&type!=='castle'&&type!=='tower';
+    // the head and the corners, and (built after the furniture, below) the frame; the tower keeps today's (S344: churches and keep
+    // halls now take it too, as stone rooms, with a larger door and the corbels clear of their tall windows)
+    const kitShell=type!=='tower',TALLZ=[];
     const ce=new THREE.Mesh(new THREE.PlaneGeometry(W,D),kitShell?tiled('plank',reg,W/2.2,D/2.2):new THREE.MeshLambertMaterial({color:st==='anglo'?0x2a2420:0x3a2c1e}));if(kitShell)ce.material.color.setHex(0x8a7a68);ce.rotation.x=Math.PI/2;ce.position.set(W/2,H,D/2);sc_.add(ce);
     [[W/2,0,0,W],[W/2,D,Math.PI,W],[0,D/2,Math.PI/2,D],[W,D/2,-Math.PI/2,D]].forEach(([x,z,ry,len])=>{
       const geo=kitShell?new THREE.PlaneGeometry(len,H,Math.max(4,Math.round(len/.5)),Math.max(10,Math.round(H/.2))):new THREE.PlaneGeometry(len,H);
@@ -38652,7 +38653,7 @@ var WORLD=(()=>{
       WP.put(WK.windowFrame(wKind,.9,.95,FN,FSEED+wi++),west?0:W,z,west?Math.PI/2:-Math.PI/2,winY);light(west?.6:W-.6,winY,z,0xc8d0e0,.35,5);});}
     {const G=WK.bake(WP);G.userData.windows=wKind;sc_.add(G);}
     // the tall windows of a church or a keep's hall: a round-headed pane of lit glass in a stone frame (C), one bake for the lot
-    const tallWins=(zs,y,w,h,col)=>{const T=WK.Parts();zs.forEach((z,k)=>[0,W].forEach(x=>{const west=x<1,R=w/2,sh=new THREE.Shape();sh.moveTo(-R,-h/2);sh.lineTo(R,-h/2);sh.lineTo(R,h/2-R);sh.absarc(0,h/2-R,R,0,Math.PI,false);sh.lineTo(-R,-h/2);
+    const tallWins=(zs,y,w,h,col)=>{const T=WK.Parts();TALLZ.push(...zs);zs.forEach((z,k)=>[0,W].forEach(x=>{const west=x<1,R=w/2,sh=new THREE.Shape();sh.moveTo(-R,-h/2);sh.lineTo(R,-h/2);sh.lineTo(R,h/2-R);sh.absarc(0,h/2-R,R,0,Math.PI,false);sh.lineTo(-R,-h/2);
       const g=new THREE.Mesh(new THREE.ShapeGeometry(sh,12),new THREE.MeshBasicMaterial({color:col}));g.position.set(west?.006:W-.006,y,z);g.rotation.y=west?Math.PI/2:-Math.PI/2;sc_.add(g);
       T.put(WK.windowFrame('C',w,h,FN,FSEED+50+k*2+(west?0:1)),x,z,west?Math.PI/2:-Math.PI/2,y);}));const G=WK.bake(T);G.userData.windows='C';sc_.add(G);};
     sc_.add(new THREE.AmbientLight(0xffb070,type==='church'?.32:type==='castle'?.3:.45));
@@ -38916,12 +38917,12 @@ var WORLD=(()=>{
       for(let x=.3;x<W-.1;x+=.5)P(rb(.09,jh,D,.015),jit(T,.07),x,H-jh/2,D/2);
       // plates and plinth along each wall, the south one broken for the entrance
       [[W/2,0,W,0],[0,D/2,D,1],[W,D/2,D,1],[W/2,D,W,0]].forEach(([cx,cz,L,side])=>{const inset=side?(cx<1?.05:-.05):(cz<1?.05:-.05);
-        const segs=cz===D?[[0,W/2-.9],[W/2+.9,W]]:[[0,L]];
+        const gap=type==='church'||type==='castle'?1.1:.9,segs=cz===D?[[0,W/2-gap],[W/2+gap,W]]:[[0,L]];
         for(const [a,b] of segs){const mid=(a+b)/2;
           if(stone){for(let s2=a;s2<b-.05;s2+=.55){const l=Math.min(.55,b-s2)-.02,c=s2+l/2;side?P(rb(.16,.26,l,.03),jit(S,.08),cx+inset*1.6,.13,c):P(rb(l,.26,.16,.03),jit(S,.08),c,.13,cz+inset*1.6);}}
           else side?P(rb(.1,.16,b-a,.015),jit(T),cx+inset,.08,mid):P(rb(b-a,.16,.1,.015),jit(T),mid,.08,cz+inset);}
         side?P(rb(.14,.16,L,.02),jit(T),cx+inset*1.2,H-jh-.08,cz):P(rb(L,.16,.14,.02),jit(T),cx,H-jh-.08,cz+inset*1.2);});
-      const nearWin=(z,d)=>wins.some(wz=>Math.abs(wz-z)<d);
+      const nearWin=(z,d)=>wins.some(wz=>Math.abs(wz-z)<d)||TALLZ.some(wz=>Math.abs(wz-z)<d);
       const hits=(x0,x1,z0,z1)=>SOL.some(q=>q.x0<x1&&q.x1>x0&&q.z0<z1&&q.z1>z0)||FOOTHOLDS.some(q=>q.x0!=null&&(q.x1-q.x0)*(q.z1-q.z0)<12&&q.x0<x1&&q.x1>x0&&q.z0<z1&&q.z1>z0);
       const posts=[];const post=(x,z)=>{if(hits(x-.1,x+.1,z-.1,z+.1))return false;posts.push([x,z]);P(rb(.18,H-jh-.16,.18,.03),jit(T,.05),x,(H-jh-.16)/2,z);return true;};
       if(!stone){for(const [x,z] of [[.09,.09],[W-.09,.09],[.09,D-.09],[W-.09,D-.09]])post(x,z);
@@ -38935,7 +38936,7 @@ var WORLD=(()=>{
       for(const [x,z] of posts)SOL.push({x0:x-.09,x1:x+.09,z0:z-.09,z1:z+.09,y0:-.5,y1:H,post:true});
       const G=K.bake(P);G.userData.shell={posts:posts.length,stone};sc_.add(G);
       // the entrance: plank door with ledges, a brace, strap hinges with nail heads and a ring (local: the wall at z=0, the room +z)
-      const Q=K.Parts(),w=1.0,h=1.5,I=0x2a2624,SS_=0x9a9284,nbd=5;
+      const big=type==='church'||type==='castle',Q=K.Parts(),w=big?1.5:1.0,h=big?2.3:1.5,I=0x2a2624,SS_=0x9a9284,nbd=big?7:5;
       for(let k=0;k<nbd;k++)Q(rb(w/nbd-.008,h,.05,.01),jit(Wd.wood,.08),-w/2+w/nbd*(k+.5),h/2,.03);
       for(const y of [.25,h-.25])Q(rb(w-.1,.09,.035,.01),jit(Wd.dark),0,y,.07);
       Q(rb(.08,Math.hypot(w-.16,h-.6),.03,.01),jit(Wd.dark),0,h/2,.07,0,0,Math.atan2(w-.16,h-.6));
