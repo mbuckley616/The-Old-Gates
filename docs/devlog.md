@@ -8462,3 +8462,21 @@ New `tests/questgold.test.mjs`, 4 checks, passing, no page errors.
 
 ### Needs eyes
 Nothing by eye. With Session 339 this makes Charisma pay at the counter and at the turn-in, which may be the first time a Charisma build feels different to play.
+
+## v80 — Session 341 — A herb no longer ends a shrine boon
+Found while auditing the buffs after Session 338. `_applyBuff` removed any running buff of the same type before adding the new one. Three shrine boons share a type with something shorter and weaker. The Boon of the Arm (melee ×1.2, 30 min) and Firemoss (×1.1, 60 s) are both `meleeDmg`. The Boon of the Mind (spells ×0.7) and Coldmoss (×0.8, 45 s) are both `spellCost`. The Boon of Stone (×0.75) and the Shield spell (×0.5–0.7, short) are both `warding`. So eating one herb, or casting Shield, silently ended a boon the prayer had said you would *carry until tomorrow*. Session 316 set the rule for protections: they don't stack, and the stronger holds. This makes that true within one type as well.
+
+**What changed.** When a buff arrives and one of its type is running, the two are ranked by strength: the rate, else the amount, else the multiplier. For the kinds where lower is better (`spellCost`, `warding`, `dmgReduce`, `detectReduce`, `staminaCost`, `physResist`, `beastResist`), the lower multiplier ranks higher. The stronger is the one that counts. A weaker one that outlasts it is kept underneath (`_under`), counting down all the while, and holds again when the stronger ends. A weaker one that would end sooner adds nothing, and the message says so: *"X is the stronger; Y adds nothing."* The same tonic again still refreshes it, and a stronger tonic still replaces a weaker one. That is v61x's potion rule, whose tier check runs first and is unchanged. Stonecress (`maxStamBuff`) patches the maximum, so it keeps the old replace-and-undo path.
+
+### Verified (headless Chromium)
+New `tests/buffstack.test.mjs`, 7 checks, passing, no page errors. Driven through `_applyBuff` and `tickActiveBuffs`:
+- Arm then Firemoss: melee ×1.2, one entry. 61 s later, still ×1.2, with 1,739 s left.
+- Firemoss then Arm: ×1.2, and 1,739 s left after 61 s.
+- Stone then Shield: ward ×0.5 while the Shield lasts. After 31 s it is ×0.75, the Boon of Stone with 1,769 s left.
+- Mind then Coldmoss: spells ×0.7. Coldmoss is not kept.
+- A Mild tonic taken again at 30 s: one entry, 60 s left. A Strong one replaces it (rate 1.2).
+- After 1,801 s, nothing is left.
+- `stonecress`, `wardall`, `herbparity` and `herbhidden` pass.
+
+### Needs eyes
+The buff strip shows only the one that counts. Whether a boon waiting under a herb should show too is the look builder's call, or Michael's.

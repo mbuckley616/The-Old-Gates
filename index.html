@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s320</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s321</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -19080,7 +19080,10 @@ function tickActiveBuffs(dt){
   for(let i=ACTIVE_BUFFS.length-1;i>=0;i--){
     const b=ACTIVE_BUFFS[i];
     b.remaining-=dt;
+    for(let u=b._under;u;u=u._under)u.remaining-=dt;
     if(b.remaining<=0){
+      let u=b._under;while(u&&u.remaining<=0)u=u._under;
+      if(u){ACTIVE_BUFFS[i]=u;showMsg(b.label+' has worn off.','#888888');continue;}
       ACTIVE_BUFFS.splice(i,1);
       showMsg(b.label+' has worn off.','#888888');
       // Reverse any stat patches
@@ -19139,9 +19142,27 @@ function _baseMaxStamina(){return maxStamina-ACTIVE_BUFFS.filter(b=>b.type==='ma
 // Finesse -5% sprint cost a point (to a quarter)
 function _magicResist(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
 function _finesseSprint(){return Math.max(.25,1-attrEff('finesse')*.05);}
+// S341 — two buffs of one kind don't stack, and neither may cut the other short: the stronger is the one that counts,
+// and a weaker one that outlasts it waits underneath (`_under`, counting down all the while) and holds again when the
+// stronger ends. So Firemoss eaten under the Boon of the Arm no longer ends the boon, and a Shield cast under the Boon
+// of Stone gives the boon back when it lapses. For these kinds a lower multiplier is the stronger.
+const BUFF_LOW_GOOD=new Set(['spellCost','warding','dmgReduce','detectReduce','staminaCost','physResist','beastResist']);
+function _buffStrength(b){if(b.rate!=null)return b.rate;if(b.amount!=null)return b.amount;const m=b.mult!=null?b.mult:1;return BUFF_LOW_GOOD.has(b.type)?1/Math.max(1e-6,m):m;}
+function _stackBuffs(list){
+  const order=list.slice().sort((a,b)=>_buffStrength(b)-_buffStrength(a)||b.remaining-a.remaining);
+  const keep=[];for(const b of order){if(!keep.length||b.remaining>keep[keep.length-1].remaining)keep.push(b);}
+  keep.forEach((b,i)=>{b._under=keep[i+1]||null;});return keep[0];
+}
 function _applyBuff(he){
-  // Remove existing buff of same type first
   const idx=ACTIVE_BUFFS.findIndex(b=>b.type===he.type);
+  if(idx>=0&&he.type!=='maxStamBuff'){
+    const old=ACTIVE_BUFFS[idx];const entry={...he,remaining:he.duration};const chain=[];for(let b=old;b;b=b._under)chain.push(b);
+    const top=_stackBuffs([...chain,entry]);ACTIVE_BUFFS[idx]=top;
+    let kept=false;for(let b=top;b;b=b._under)if(b===entry)kept=true;
+    if(kept)showMsg(he.label+' active!',he.col||'#88cc88');
+    else showMsg(`${top.label} is the stronger; ${he.label} adds nothing.`,'#888888');
+    return;
+  }
   if(idx>=0){
     const old=ACTIVE_BUFFS[idx];
     // Undo any stat patches from expiring buff
