@@ -7558,3 +7558,19 @@ The ossuary's niches and bones, the collapsed room's fallen stones, and the thre
 
 ### Needs eyes
 The shrine's plinth is bare stone. What a shrine in a dungeon honours is the lore's to say, and I have not guessed.
+
+## v80 — Session 310 — The dungeons' ossuary and collapsed room on the shape kit (H.7, #46 A)
+Two more of the dungeon room types from Session 309, into the same per-room bake:
+- **The ossuary:** each niche was a solid box .8 from the north wall. It is now dressed stone against the wall: a back, two sides, a sill, a shelf and a head, with two shelves of three skulls and a long bone each. The twelve box "bones" on the floor are long bones lying at the same places and angles, with a skull by every fourth. The sarcophagus is a container and waits for the containers' slice.
+- **The collapsed room:** the fallen stones are lumpy boulders (one bumped ball, squashed to each old box's size), and the broken slab is a dressed block tipped on its side.
+
+**The room dice are untouched.** The looks' jitter (the stones' shade, the skulls' turn) comes from a generator of its own (`jr`), so every `r()` the room types draw happens in the same order as before. A dungeon of a given seed puts its rooms, containers and traps where it did.
+
+**One fix:** the broken slab was 2.6 long, turned at random, and set at `cx`, which in this pass is half a cell east of the room's middle. In one collapsed room five cells wide it went through the east wall. It is now 2.0 long and centred.
+
+### Verified (headless Chromium)
+- **`dunfurn`**, extended: across up to twelve dungeons (undead, ruins, haunted, elemental, deep), all five types turn up. The ossuary is 2,904 triangles and the collapsed room 360–450 (as many boulders as the room's clear ground allows). Every room is one bake inside its walls and under the ceiling, with none of the old boxes left in their colours. The picture is `docs/prototypes/dunfurn-ingame.png`.
+- **`dungeon`** and **`dungeonfoes`** pass.
+
+### Needs eyes
+Whether the boulders read as fallen masonry or as field stones. They are rounded, where dressed blocks broken from a vault would be squarer.
