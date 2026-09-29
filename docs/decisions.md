@@ -6,6 +6,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Unblock auto/systems — was the red CI a flake? (the producer, 2026-09-29)
+PR #22 (auto/systems, head cdb5774) failed CI twice after Michael's ✅: the same shard on two frame-timing budgets (hourhitch's shader-compile stall check, snowrepaint's per-tick cost); a third test (witness) failed once then passed clean on a rerun with no code change. Nothing in Sessions 280–283 (the roll, the posture bar, tightened tells, the roll beating the Faolchú's fire, bolts, charges and volleys) touches shaders, snow repaint, or shop witnessing — it read as CI-runner variance, not a fault in the branch.
+
+- **A, merge anyway** *(recommended)*. Claude merges as approved; widen the two budgets later if they keep flaking.
+- **B, wait for a clean run.** No agent is set to touch these tests, so it could sit a while.
+- **C, fix the budgets first.** One systems-builder session widens hourhitch's and snowrepaint's budgets, then Claude merges.
+
+Michael: **A — merge anyway.** (29 Sep 2026, via Slack)
+
+Since asked, Session 299 (on auto/systems) root-caused both instead: the late shader was the wolves' material loading on a foe's first night spawn (arrival, not the hour change), and snowrepaint now checks exactly two chunks a tick rather than against a runner-measured millisecond budget.
+
 ### Enemies by place — which place is how dangerous? (systems builder, 2026-09-28, issue #51)
 Today every enemy grows with your level: health ×(1 + 0.15 a level, to ×3) and damage ×(1 + 0.08 a level, to ×2), in `enemyHpScale`/`enemyDmgScale`. Rare variants also turn up more often as you level. You kept this as the designer's condition when you chose the Morrowind book: enemies should scale by place, not by level, so that friends sharing your world meet one difficulty. The design page says only "a danger tier from the region and the dungeon floor". It does not say which place gets which tier, or what a tier is worth. The skills sessions and the combat tuning both need it settled first.
 
