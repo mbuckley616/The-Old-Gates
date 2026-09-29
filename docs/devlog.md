@@ -8084,3 +8084,19 @@ No game code changed. The build tag stays s298.
 
 ### Needs eyes
 Nothing to play. Whether a wolf pack's first appearance hitches on a real GPU (one compile of its material) is worth a glance at dusk outside a town.
+
+## v80 — Session 308 — A lock you can see
+Session 297 built lock-on and left out a line-of-sight test: a foe within 14 units and 60° of the view could be locked through a dungeon wall or a house, and a locked foe that ran round a corner kept the view pinned to the wall. The backlog carries it as owed from lock-on. This session adds the test; it is lock-on doing what it says (*locks the nearest foe you are looking towards*), not a new rule.
+
+**What changed.** A foe the lock would pick is passed over if something solid stands between you: the same solids the foes' own sight uses (`dSolid` in a dungeon, the camera's solids `WORLD.camSolid` in the open world, so trunks and posts don't hide a foe; houses, walls and big rocks do). The line is stepped every 0.4 units, sparing half a unit at either end so a foe standing against a wall still counts. If nothing clear is ahead the message is the usual *Nothing to lock on to.* While locked, the line is checked every 0.15 s; a foe out of sight for 1.5 s in a row is let go, and one that comes back into view sooner keeps the lock, with the clock starting again. The 1.5 s is mine (Elden Ring drops a hidden lock after a moment); the page names no number. Time is counted from the frame's `dt`, as the hold already is.
+
+### Verified (headless Chromium)
+New `tests/locksight.test.mjs`, 9 checks, passing, no page errors.
+- **Dunmore**, with a real Bandit: 8 units off with a house between (6+ of 40 samples on the line solid), it cannot be locked; 8 units down a clear street, it can.
+- **A goblin dungeon** (seed 5): a foe five cells off with a wall cell between cannot be locked; five cells down a clear corridor can. Moved behind the wall once locked, it is let go after 1.52 s of 1/60 ticks. Hidden 1 s and back in view, the lock holds; hidden another second after that, it still holds (the clock started again).
+- **The test has teeth**: with the sight test stubbed out, 5 of the 9 checks fail.
+- **Nothing else moved**: `lockon` (17 checks), `roll` and `counters` pass.
+
+### Needs eyes
+- Whether 1.5 s is the right grace when a wolf circles a tree stump or a bandit steps behind a cart; too short and the lock flickers off in a cluttered camp.
+- A low wall or a boulder you can see over still blocks the lock in the world (the camera's solids have no height). If that bites in play, the world's check needs heights.

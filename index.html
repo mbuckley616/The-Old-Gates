@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s298</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s299</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1424,7 +1424,22 @@ function tickPlayerPosture(dt,nowS){
 // already goes the way you press. It lets go by itself when the foe dies, leaves the fight (another floor, another zone)
 // or is more than 20 units off. A small gold diamond marks the foe.
 const LOCK_RANGE=14,LOCK_CONE=Math.cos(Math.PI/3),LOCK_BREAK=20;
-const LOCK={t:null,h:1};
+const LOCK={t:null,h:1,hid:0,chk:0};
+// S308 — the lock needs a clear line: a foe behind a wall can't be locked, and one that stays behind a wall for
+// LOCK_HIDDEN seconds is let go. The same solids the foes' own sight uses (the dungeon's walls; in the open world the
+// camera's solids, so trunks and posts don't hide a foe), stepped every 0.4 units, sparing the half-unit at either end.
+const LOCK_HIDDEN=1.5,LOCK_CHECK=.15;
+function lockSolidFn(){
+  if(activeZoneId==='dungeon')return dSolid;
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.camSolid)return WORLD.camSolid;
+  return currentZoneSolid;
+}
+function lockSight(e){
+  const sol=lockSolidFn(),dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1.2)return true;
+  const n=Math.ceil((d-1)/.4);
+  for(let i=0;i<=n;i++){const r=(.5+(d-1)*i/n)/d;if(sol(px+dx*r,pz+dz*r))return false;}
+  return true;
+}
 function lockPool(){
   if(activeZoneId==='dungeon')return ENEMIES.filter(e=>!e.dead&&e.hp>0&&e.floor===currentFloor&&!e.disguised&&e.mesh);
   return ZE.filter(e=>!e.dead&&e.hp>0&&!e.locked&&e.mesh);
@@ -1434,12 +1449,12 @@ function lockPick(){
   for(const e of lockPool()){
     const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>LOCK_RANGE||d<1e-3)continue;
     const c=(dx*fx+dz*fz)/d;if(c<LOCK_CONE)continue;
-    const s=d*(2-c);if(s<bs){bs=s;best=e;}
+    const s=d*(2-c);if(s<bs&&lockSight(e)){bs=s;best=e;}
   }
   return best;
 }
 function lockOn(e){
-  LOCK.t=e;LOCK.h=1;
+  LOCK.t=e;LOCK.h=1;LOCK.hid=0;LOCK.chk=0;LOCK.blind=false;
   try{const b=new THREE.Box3().setFromObject(e.mesh);if(isFinite(b.max.y))LOCK.h=Math.max(.3,Math.min(3,(b.max.y-e.mesh.position.y)*.6));}catch(err){}
 }
 function lockRelease(){LOCK.t=null;const m=document.getElementById('lockmk');if(m)m.style.display='none';}
@@ -1460,6 +1475,9 @@ function tickLock(dt){
   if(!LOCK.t)return;
   if(!lockValid(LOCK.t)){lockRelease();return;}
   const e=LOCK.t,dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);
+  LOCK.chk-=dt;
+  if(LOCK.chk<=0){LOCK.chk=LOCK_CHECK;LOCK.blind=!lockSight(e);}
+  if(LOCK.blind){LOCK.hid+=dt;if(LOCK.hid>=LOCK_HIDDEN){lockRelease();return;}}else LOCK.hid=0;
   if(d>.05){let dy=Math.atan2(-dx,-dz)-yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));yaw+=dy*Math.min(1,dt*12);}
   const ty=e.mesh.position.y+LOCK.h,ey=CAM.position.y,hd=Math.hypot(e.x-CAM.position.x,e.z-CAM.position.z)||d||1;
   const wp=Math.max(-.7,Math.min(.5,Math.atan2(ty-ey,hd)-.06));
