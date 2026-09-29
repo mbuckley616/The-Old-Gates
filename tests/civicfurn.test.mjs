@@ -20,8 +20,11 @@ fs.mkdirSync('tests/out', { recursive: true });
 check('a church is found', await enter('church'));
 const ch = await look(); console.log(JSON.stringify(ch));
 check('the church is one bake with the altar\'s candle flames, 10–60k triangles, and none of the old cylinder pillars', ch.furn === 1 && ch.fire && ch.tris[0] > 10000 && ch.tris[0] < 60000 && ch.cyl === 0, ch);
-const cs = await page.evaluate(() => { const W = _S.intW, D = _S.intD; return { altar: intSolidAt(W / 2, 1.6, .1) || FOOTHOLDS.some(f => W / 2 > f.x0 && W / 2 < f.x1 && 1.6 > f.z0 && 1.6 < f.z1), pillar: intSolidAt(W / 2 - 3, 4, .1) }; });
-check('the altar and the columns are solid where they were', cs.altar && cs.pillar, cs);
+const cs = await page.evaluate(() => { const W = _S.intW, D = _S.intD; return { altar: intSolidAt(W / 2, 1.6, .1) || FOOTHOLDS.some(f => W / 2 > f.x0 && W / 2 < f.x1 && 1.6 > f.z0 && 1.6 < f.z1), pillar: intSolidAt(W / 2 - 4.1, 5.5, .1), inPew: intSolidAt(W / 2 - 3, 8, .1) || intSolidAt(W / 2 + 3, 8, .1),
+  cols: INT_SOL.filter(q => q.y1 > 2.5 && q.x1 - q.x0 < 1 && q.z1 - q.z0 < 1).map(q => [+(((q.x0 + q.x1) / 2) - W / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), W, D }; });
+console.log(JSON.stringify(cs));
+check('the altar is solid, and the columns too (Session 303: at W/2 ± 4.1 from z 5.5)', cs.altar && cs.pillar, cs);
+check('no column stands in the pews (they run W/2 ± .9–3.5; Session 291 put the columns at ± 3) or on the dais (to z 4.1)', !cs.inPew && cs.cols.length >= 4 && cs.cols.every(([dx, z]) => Math.abs(dx) - .4 > 3.5 && z > 4.1), cs.cols);
 const churchPic = await shoot(['[W/2, 1.5, D-2.2, W/2, .6, 1.6]', '[W/2+1.2, 1.1, 5.6, W/2-2.2, .5, 1.4]']);
 fs.writeFileSync('tests/out/church.png', Buffer.from(churchPic.split(',')[1], 'base64'));
 check('a keep is found', await enter('castle'));

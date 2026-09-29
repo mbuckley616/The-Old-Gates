@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s272</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s273</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21744,6 +21744,7 @@ function furnBuild(THREE, SK) {
     p.put(scales(s + 11), W / 2 + 1.4, 3.0, 0, .69);
     return p; }
   // ── S291: the church and the keep's hall (Michael's A on #46: "the church, keep and guild halls in the same kit") ──
+  // S303: the church's columns at W/2 ± 4.1 from z 5.5, between the pews' ends (W/2 ± 3.5) and the walls, clear of the dais
   // a pew facing −z: a seat plank, a panelled back with a top rail on the +z side, shaped bench ends and a kneeler
   function pew(len, n, seed) { const r = rng(seed || 73), p = Parts(), W = WOOD[n] || WOOD.gatelands, sh = .28;
     p(SK.rbox(len - .1, .04, .3, .012, 1), jit(W.wood, r), 0, sh, 0);
@@ -21827,7 +21828,7 @@ function furnBuild(THREE, SK) {
     p.put(altar(n, s + 1), W / 2, 1.6, 0, .25);
     for (let z = 5, k = 0; z < D - 2.5; z += 1.5, k++) for (const x of [W / 2 - 2.2, W / 2 + 2.2]) p.put(pew(2.6, n, s + 10 + k * 2 + (x > W / 2 ? 1 : 0)), x, z, 0);
     p.put(pulpit(n, s + 3), W - 2.2, 3.6, 0);
-    for (let x = W / 2 - 3; x <= W / 2 + 3; x += 6) for (let z = 4; z < D - 3; z += 4) p.put(column(H, .3, s + 20 + z), x, z, 0);
+    for (const x of [W / 2 - 4.1, W / 2 + 4.1]) for (let z = 5.5, k = 0; z < D - 3; z += 4, k++) p.put(column(H, .3, s + 20 + k * 4), x, z, 0);
     return p; }
   function hall(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     p.put(dais(W * .55, 3.6, .37, s), W / 2, 3.2, 0);
@@ -38877,7 +38878,7 @@ var WORLD=(()=>{
       {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
       for(let z=3;z<D-2;z+=Math.max(3,D/4)){[.04,W-.04].forEach(x=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,2.6),new THREE.MeshBasicMaterial({color:0xc89050}));p.position.set(x,3.4,z);p.rotation.y=x<1?Math.PI/2:-Math.PI/2;sc_.add(p);});}
-      for(let x=W/2-3;x<=W/2+3;x+=6)for(let z=4;z<D-3;z+=4)solid(x,z,.4,.4,H/F);
+      for(const x of [W/2-4.1,W/2+4.1])for(let z=5.5;z<D-3;z+=4)solid(x,z,.4,.4,H/F); // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){
       // S291 — the keep's hall on the kit (#46 A): a stone dais with a runner and a carved throne, a long runner down the hall,

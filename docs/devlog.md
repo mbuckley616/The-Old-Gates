@@ -7452,3 +7452,13 @@ The last box room of the older `buildInterior`. The keep's hall had a throne of 
 
 ### Needs eyes
 The keep in play: the regent's pacing past the braziers, and whether the throne reads from the door. With this session every room of the legacy builder is on the kit. The shell still isn't: its windows are box frames with a plane of glass, and its walls are flat planes, the look the generated rooms had before their own shell work.
+
+## v80 — Session 303 — The generated church's columns out of its pews (H.5)
+Found while laying out Hearthwick's church in Session 301. The kit's church (Session 291) puts its pews at W/2 ± 2.2, 2.6 long, so they run from .9 to 3.5 either side of the middle, and its columns at W/2 ± 3 every four units from z 4. That is the same place, at any width: in a church 22 deep, the columns at z 8, 12 and 16 stood through a pew, and the first column's base cut into the dais's front edge at z 4. The columns' solids were the same, so the player bumped into columns rising through the pews' backs. The columns now stand at W/2 ± 4.1, between the pews' ends and the walls (.9 from the wall in the narrowest, ten-wide church), every four units from z 5.5, clear of the dais. The solids moved with them. The nave now reads as a central aisle with a colonnade each side.
+
+### Verified (headless Chromium)
+- **`civicfurn`**, amended and extended: in Dunmore's church (11 by 22) the eight column solids stand at W/2 ± 4.1, z 5.5–17.5, and there is no solid inside a pew at W/2 ± 3, z 8. On the old code both checks fail, with the solids at ± 3, z 4–16. The church is one bake of 15,702 triangles and the keep passes as before. The picture is `docs/prototypes/churchcols-ingame.png`.
+- **`interiors`** and **`chapel`** pass.
+
+### Needs eyes
+A church in play: whether the side aisles between the columns and the walls feel wide enough to walk in the narrowest church (the column solid leaves .5 to the wall).
