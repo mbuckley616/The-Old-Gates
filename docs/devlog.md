@@ -7223,3 +7223,17 @@ A scratch copy of the check ticked at .6 s, so the half-second check always fire
 
 ### Needs eyes
 Nothing in the game.
+
+## v80 — Session 284 — The houses' creases shaded, the large parts only (H.1, Michael's B on Session 276)
+Session 276 wired the people's crease shading into the house bake and left it off, because at the people's strength the slates, shingles, turfs and course stones shade each other and whole walls go grey. Michael chose B: the same strength, but only parts at least .35 thick cast it (walls, roof slabs, the chimney, the lean-to, the jetty). The small parts still receive it. So `HAO` is now on with `minR` .35, and nothing else changed: the cull by distance (`cut` 4) Session 276 added stays.
+
+In a town this darkens the undersides of the eaves and the jetties, the window reveals and the angle where a lean-to meets its wall, and leaves open plaster its colour. The distant copies are not shaded; they are the old plain houses and far enough off not to show it.
+
+A correction to Session 276's cost: it measured 3–14 ms a house for a single house shaded three ways in the prototype. In a real town build the whole of Dunmore's 56 detailed houses took 72–85 ms of shading in two runs, about 1.5 ms a house, against 760–1,050 ms for the town's whole build. The town build's own time swings more between runs than the shading adds.
+
+### Verified (headless Chromium)
+- **`houseao` (new):** the shading is on with `minR` .35. Every one of the thirteen styles is shaded, mean darkening .20–.27 (A would be .24–.37), and in every style B leaves more vertices untouched than A (irish 37% against 28%, stone 16% against 12%, aurenne 23% against 14%). Dunmore rebuilt with it off and on: 56 houses through the pass, 0 ms off, 72–85 ms on. No page errors. The picture, `docs/prototypes/houseao-ingame.png`, is Dunmore at 15h before and after; the town is rebuilt between, so one or two houses draw a different variant.
+- **`houses`** passes.
+
+### Needs eyes
+The strength in real light, at dusk and on snow: the eaves' undersides are the most visible change, and a stone or plaster house in full sun should still read as its own colour.

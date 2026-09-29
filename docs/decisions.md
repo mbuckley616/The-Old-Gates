@@ -15,6 +15,8 @@ The other ships at sea have had their own looks since Session 168: black sails a
 
 The picture (Session 165, `docs/prototypes/boats-others.png`) shows today's single hull, then the pirate on the sloop and on the galleon, and the merchantman on the cog and on the galleon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/boats-others.png
 
+## Answered
+
 ### Shading in the houses' creases — the people's strength, or only the large parts (Session 276, issue #49)
 Michael's A on Session 243 was the creases shaded at the people's strength, then the creatures and then the houses. The people and the creatures are done (Sessions 265 and 270). The same pass over a house does something different. A house is built from thousands of small parts: slates, shingles, turfs, course blocks and footing stones. At the people's strength they all shade each other, so whole walls and roofs go grey and muddy rather than just the creases. The plaster and stone houses show it most. So this is a question, not a build. The game is unchanged: the shading is wired into the house bake but switched off.
 
@@ -26,7 +28,8 @@ Michael's A on Session 243 was the creases shaded at the people's strength, then
 
 The picture shows five house styles, each built once and shaded three ways (today, A, B), in the afternoon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houseao-grid.png
 
-## Answered
+Michael: **The large parts only** (B) (28 Sep 2026, via the control room, issue #49)
+Done, Session 284: `HAO` on with `minR` .35; every style's bake darkens 20–27% on the mean against 24–37% under A, with more of each house left its own colour; Dunmore's 56 detailed houses take 72–85 ms of shading between them. `docs/prototypes/houseao-ingame.png`.
 
 ### Prosperity in whole points — should small daily changes count? (systems builder, 2026-09-28, issue #44)
 Found building the Compact's tithe (Session 266). A town's prosperity is kept in whole points: once a game-day every driver is added up (roads, the nearest lair, plague, siege, occupation, the drift back towards the town's home level) and the total is rounded. So a driver worth less than half a point moves a town or not depending on what else happened to it that day. Occupation's half point (Session 129) often does nothing: in the test a town held by the Mark, and the same town also paying the tithe's extra half point, both lost exactly a point a day. The drift home is 1% of the gap a day, under half a point for any gap under 50, so on its own it never moves a town, and a town raised by builds keeps its level for good unless something else pushes it. The tithe now keeps its own account, so it is exact; the rest still round.

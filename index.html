@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s256</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s257</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -9699,7 +9699,7 @@ const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012,shadowLo:true};
 // r²/d², capped at 1), summed, times .75, capped at a darkening of .5. A part never shades itself. Once per bake, in the
 // bind pose, into the colours: no triangles, no shader, nothing per frame. PAO.on turns it off for a comparison.
 const PAO={k:.75,max:.5,on:true};
-const HAO={k:.75,max:.5,on:false,cut:4,minR:0,keep:false,ms:0,n:0}; // S276 — the houses' creases: off until Michael picks (docs/decisions.md); cut and minR as personAO describes
+const HAO={k:.75,max:.5,on:true,cut:4,minR:.35,keep:false,ms:0,n:0}; // S276 — the houses' creases; S284 on, the large parts only (Michael's B, #49): minR and cut as personAO describes
 function personAO(pos,nor,col,PR,O){O=O||PAO;if(!O.on)return;const S=[];
   PR.forEach(([s,c],pi)=>{const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
     const e=[0,1,2].map(k=>(mx[k]-mn[k])/2),ax=e.indexOf(Math.max(e[0],e[1],e[2])),o=[0,1,2].filter(k=>k!==ax),r=Math.max(.004,(e[o[0]]+e[o[1]])/2),n=Math.min(6,Math.max(1,Math.round(e[ax]/r)));
