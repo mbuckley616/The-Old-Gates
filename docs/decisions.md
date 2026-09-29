@@ -6,6 +6,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The interiors' shells on the kit — posts and joists, or only the trim? (the look builder, Session 336, issue #62)
+The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes, a flat dark ceiling, square box beams, a plain brown door, and in Aurenne's rooms square box studs. A prototype builds a kit shell for the generated rooms (homes, shops, inns, halls): walls keep their plaster, rubble or ashlar textures.
+
+- **A — the full frame** *(recommended)*: posts, knee braces, sole/wall plates (a plinth and corbels in stone), a joisted boarded ceiling, a plank door. 4.0–7.8k triangles a room.
+- **B — the trim only**: plates, shading, ceiling and door, without posts or braces. 2.8–6.9k triangles.
+- **C — A in homes/inns/shops, B in guild halls/churches/keep halls**, whose own columns and furniture already carry the room.
+- **D — leave the shells as they are.**
+
+Michael: **A** — the full frame. (29 Sep 2026, via the control room)
+
+### Chimney smoke — should the towns' chimneys smoke, and when? (the look builder, Session 337, issue #63)
+Two in three houses in a town have a chimney and none of them smoke. A prototype draws each town's smoke as one Points object, tinted by the hour and drifting on the world's wind, laid flat in a storm. Dunmore: 33 chimneys, 792 puffs, one draw call.
+
+- **A.** Every chimney smokes, day and night.
+- **B** *(recommended)*: by the hearth's hours — inn/smithy/guild halls all day; homes 6–9 and 17–23; every chimney all day in snow and tundra.
+- **C.** Only the inn and the smithy.
+- **D.** No smoke.
+
+Michael: **B** — by the hearth's hours. (29 Sep 2026, via the control room)
+
 ### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
 The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
 
