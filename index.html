@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s270</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s271</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -24722,6 +24722,17 @@ function _legacyShopKit(type,W,D,ceilH){const K=furnKit(),n='gatelands',s={weapo
   P.put(K.counter(W*.5,n,s+5,true),W/2,3.0,0);
   if(type==='potion')P.put(K.table(1.4,.7,n,s+6),2,D*.65,0);
   const room=K.bake(P);room.userData.furn=true;room.userData.legacyFurn=true;interiorScene.add(room);return room;}
+// S301 — the legacy inn and church on the kit (#46 A): the taproom is the generated inn's (S287) without its two beds, the hearth
+// on the east wall; the church is the kit's pieces laid out for this narrower nave (the kit's own church puts its columns in
+// the pews at W 10): the dais and altar, pulpit, pews either side of a 1.6 aisle, columns by the walls, standing candlesticks
+function _legacyHallKit(type,W,D,ceilH){const K=furnKit(),n='gatelands',s=type==='inn'?263:271;let P;
+  if(type==='inn')P=K.inn(W,D,ceilH,n,s,true);
+  else{P=K.Parts();P.put(K.dais(W-2,3.0,.25,s),W/2,2.6,0);P.put(K.altar(n,s+1),W/2,1.6,0,.25);
+    for(let z=5,k=0;z<D-2.5;z+=1.5,k++)for(const x of [W/2-2,W/2+2])P.put(K.pew(2.4,n,s+10+k*2+(x>W/2?1:0)),x,z,0);
+    P.put(K.pulpit(n,s+3),W-2.4,3.6,0);
+    for(const z of [5.5,9.5,13.5])if(z<D-2)for(const x of [W/2-4,W/2+4])P.put(K.column(ceilH,.24,s+20+z),x,z,0);
+    for(const z of [7.5,11.5])for(const x of [W*.1,W*.9]){const q=K.Parts();q(SK.cyl(.13,.15,.04,12),0x2a2420,0,.02,0);q(SK.cyl(.022,.035,.96,8),0x2a2420,0,.5,0);q(SK.cyl(.08,.05,.03,10),0x2a2420,0,.99,0);K.candle(q,0,1.005,0);P.put(q,x,z,0);}}
+  const room=K.bake(P);room.userData.furn=true;room.userData.legacyFurn=true;interiorScene.add(room);return room;}
 // S290 — the interiors' barrel and crate on the kit: the dungeon's barrel (kitBarrel, S200) at .44 high, and the shops' crate
 // of planks between battens in the room's wood; each size baked once and shared. S293: _intCrate's y is the crate's centre,
 // as every caller passes it (the old box sat its base there, so every crate floated by half its size)
@@ -25007,62 +25018,32 @@ function buildInterior(house){
     intNPCPos={x:W/2,z:2.3};
   }
 
+  // S301 — the inn and the church on the kit, one bake each (_legacyHallKit); the barrels, torches and lights as they were,
+  // the fire's light moved to the kit hearth on the east wall, the altar's lights up to its candlesticks
   else if(type==='inn'){
-    // Tables + chairs
-    [[W*.3,D*.4],[W*.7,D*.4],[W*.3,D*.65],[W*.7,D*.65]].forEach(([tx,tz])=>{
-      _intBox(interiorScene,tx,.72,tz,1.2,.06,.8,0x7a4818); // table top
-      _intBox(interiorScene,tx,.36,tz,.08,.68,.08,0x5a3010); // leg
-      // Two chairs per table
-      [-.75,.75].forEach(cx=>{
-        _intBox(interiorScene,tx+cx,.44,tz,.4,.06,.4,0x6a3a10);
-        _intBox(interiorScene,tx+cx,.72,tz-.22,.4,.55,.05,0x6a3a10);
-      });
-    });
-    // Bar counter along back wall
-    _intBox(interiorScene,W/2,.55,.6,W*.7,.55,.5,0x6a3a10);
-    _intBox(interiorScene,W/2,.58,.55,W*.72,.06,.65,0x8a5020);
+    _legacyHallKit(type,W,D,ceilH);
     _intBarrel(interiorScene,.6,.5);_intBarrel(interiorScene,1.1,.5);
     _intBarrel(interiorScene,W-.6,.5);_intBarrel(interiorScene,W-1.1,.5);
-    // Fireplace on west wall
-    _intBox(interiorScene,.12,1.0,D*.5,.1,1.2,.9,0x706050); // surround
-    const fire=new THREE.PointLight(0xff6600,2.0,6);fire.position.set(.5,0.6,D*.5);interiorScene.add(fire);
+    const fire=new THREE.PointLight(0xff6600,2.0,6);fire.position.set(W-.8,.6,D*.5);interiorScene.add(fire);
     _intTorch(interiorScene,.15,D*.25);_intTorch(interiorScene,W-.15,D*.25);
     _intTorch(interiorScene,.15,D*.75);_intTorch(interiorScene,W-.15,D*.75);
-    intNPCPos={x:W/2,z:1.0};
+    intNPCPos={x:W/2,z:1.2};
   }
 
   else if(type==='church'){
-    // Columns — two rows down the nave
-    [D*.2,D*.45,D*.7].forEach(cz=>{
-      _intColumn(interiorScene,W*.2,cz,ceilH*.9);
-      _intColumn(interiorScene,W*.8,cz,ceilH*.9);
-    });
-    // Pews — two rows with center aisle
-    for(let row=0;row<4;row++){
-      const pz=D*.18+row*(D*.14);
-      _intPew(interiorScene,W*.27,pz);  // left row
-      _intPew(interiorScene,W*.73,pz);  // right row
-    }
-    // Altar
-    _intBox(interiorScene,W/2,.45,D*.1,2.2,.45,.9,0x888070); // altar table
-    _intBox(interiorScene,W/2,.48,D*.1,2.35,.06,1.0,0xa09878); // altar top
-    // Candles on altar
-    [-0.7,0,0.7].forEach(cx=>{
-      _intBox(interiorScene,W/2+cx,.52+.25,D*.1,.045,.5,.045,0xf0e0b0);
-      const flame=new THREE.PointLight(0xff9933,.8,2.5);flame.position.set(W/2+cx,.82,D*.1);interiorScene.add(flame);
+    _legacyHallKit(type,W,D,ceilH);
+    [-0.8,0.8].forEach(cx=>{
+      const flame=new THREE.PointLight(0xff9933,.8,2.5);flame.position.set(W/2+cx,1.35,1.6);interiorScene.add(flame);
     });
     // Sigil on back wall — simple geometric placeholder
     _intBox(interiorScene,W/2,ceilH*.55,.05,.8,.8,.04,0x2a1808); // backing
     _intBox(interiorScene,W/2,ceilH*.55,.03,.08,.6,.05,0xc8a84a); // vertical bar
     _intBox(interiorScene,W/2,ceilH*.55,.03,.6,.08,.05,0xc8a84a); // horizontal bar
-    // Extra candelabras down the nave
-    [D*.3,D*.6].forEach(cz=>{
-      _intBox(interiorScene,W*.1,.7,cz,.04,.7,.04,0x5a3a10);
-      const cf=new THREE.PointLight(0xff9933,.7,3);cf.position.set(W*.1,.75,cz);interiorScene.add(cf);
-      _intBox(interiorScene,W*.9,.7,cz,.04,.7,.04,0x5a3a10);
-      const cf2=new THREE.PointLight(0xff9933,.7,3);cf2.position.set(W*.9,.75,cz);interiorScene.add(cf2);
+    [7.5,11.5].forEach(cz=>{
+      const cf=new THREE.PointLight(0xff9933,.7,3);cf.position.set(W*.1,1.15,cz);interiorScene.add(cf);
+      const cf2=new THREE.PointLight(0xff9933,.7,3);cf2.position.set(W*.9,1.15,cz);interiorScene.add(cf2);
     });
-    intNPCPos={x:W/2,z:D*.08}; // priest at altar
+    intNPCPos={x:W/2,z:.7}; // priest behind the altar (it stood in it at D*.08)
   }
 
   else if(type==='castle'){

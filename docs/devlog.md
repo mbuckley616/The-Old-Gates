@@ -7422,3 +7422,17 @@ The four shops the older `buildInterior` still builds (Hearthwick's weaponsmith,
 
 ### Needs eyes
 Hearthwick's shops in play. The keeper still wanders .6–4.5 deep as the old room let them, which crosses the counter; the generated shops' solids are not in this builder. The floor rug in these rooms is still the flat red or blue plane, now louder beside the kit. The inn, church and keep of this builder are next.
+
+## v80 — Session 301 — Hearthwick's legacy inn and church on the shape kit (H.5, #46 A)
+The next two rooms of the older `buildInterior`. The inn was four one-leg box tables with box chairs, a two-box bar and a single box for a fireplace surround. The church had box pews, a two-box altar with three wax sticks, columns of a box base, a cylinder shaft and a box cap, and a bare stick for each candelabra. Each is now one bake (`_legacyHallKit`):
+- **The inn** is the generated taproom (Session 287) without its two beds, since this room has none: the panelled bar with its rail and stools, the dresser of bottles and plates, two casks on cradles, the stone hearth on the east wall, and four tables with benches. The four barrels along the back wall and the torches stay; the fire's light moved from the old west-wall surround to the kit hearth.
+- **The church** is laid out from the kit's pieces rather than the kit's own church. That church puts its columns at W/2 ± 3, which in this ten-wide nave stands them inside the pews (the old boxes did the same at z 7.2). Here there are pews 2.4 long either side of a 1.6 aisle, the flagged dais and moulded altar with its cloth and candlesticks, the pulpit, the columns by the walls at z 5.5, 9.5 and 13.5 (clear of the dais), and four standing iron candlesticks between them. The altar's lights are up at its candlesticks. The sigil on the back wall is left as it was, because what hangs there is the lore's to say.
+
+**One fix:** the priest stood at z 1.28, inside the altar (it runs from 1.15 to 2.05). He now stands behind it at z .7, facing the pews.
+
+### Verified (headless Chromium)
+- **`legacyhalls` (new):** each room has one bake, inside the walls and under the ceiling (the inn 28,628 triangles, the church 12,146), with no mesh at a non-finite place. The inn has 19 boxes left of 46. The church has 44 left of 97, most of them its twelve windows, and none of its 6 cylinders. The priest is at z .7 and the innkeeper at 1.2, between the dresser and the bar. The picture is `docs/prototypes/legacyhalls-ingame.png`.
+- **`legacyshops`**, **`oddfurn`**, **`interiors`** and **`civicfurn`** pass.
+
+### Needs eyes
+The two rooms in play. The kit's own church (Session 291) has the same columns-in-pews layout whenever a generated church comes out ten wide, its narrowest; that builder is not touched here and is worth a look in a small town's church. The keep is this builder's last box room.
