@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s276</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s277</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -23750,187 +23750,49 @@ function buildDungeon(portal){
       FP.put(FK.chair(FN, FS + 2), cx + 0.7, room.y + 1.85, Math.PI - 0.3); registerProp(cx + 0.7, room.y + 1.85, 0.4, 0.4);
     }
     else if(room.kind === 'library'){
-      // v61ga: library — bookshelves line the long walls; a reading table
-      // + chair sits at room center.
-      // v61gh: bookshelves are now lootable (each shelf unit pushed into
-      // BARRELS with a thin library_shelf loot roll). Chest skipped (see
-      // renderFloor chest pass). Book-spine orientation now respects which
-      // wall the shelf is on — spines always face room center.
-      // Bookshelves are taller and denser than storeroom shelves, with
-      // visible "book spines" — alternating bright/dark vertical slabs
-      // tucked onto each shelf row. Reads as scholarly space, not pantry.
-      const bookSpineColors = [0x6a2018, 0x8a4818, 0x3a4a18, 0x202a4a, 0x6a3868, 0x4a3018];
-      const bookSpineMats = bookSpineColors.map(c => new THREE.MeshLambertMaterial({color: c}));
-      // facingSign: which direction (+1 or -1) the shelf's front face points
-      // along its perpendicular axis. For x-axis shelves (long along x, depth
-      // along z), facingSign is the sign on z. For z-axis shelves (long along
-      // z, depth along x), facingSign is the sign on x.
-      function placeBookshelf(wx, wz, alongAxis, facingSign){
-        const longW = alongAxis === 'x' ? 1.4 : 0.4;
-        const depthD = alongAxis === 'x' ? 0.4 : 1.4;
-        // Main shelf unit body (back board) — dark wood, 2.2 tall
-        const shelfMesh = boxSolid(wx, wz, longW, 2.2, depthD, woodDark);
-        // Three horizontal shelf-board strips, lighter wood, proud 0.02u
-        // of the front face. For X-axis units: front is ±Z (facingSign);
-        // for Z-axis units: front is ±X (facingSign).
-        const shelfYs = [0.55, 1.10, 1.65];
-        for(const sy of shelfYs){
-          if(alongAxis === 'x'){
-            boxAt(wx, sy, wz + 0.21 * facingSign, longW - 0.06, 0.05, 0.18, woodLight);
-          } else {
-            boxAt(wx + 0.21 * facingSign, sy, wz, 0.18, 0.05, depthD - 0.06, woodLight);
-          }
-        }
-        // Books on each shelf — 5-7 thin vertical spines per shelf, sitting
-        // just below the next shelf. Each picks a random color from the pool.
-        for(let s = 0; s < 3; s++){
-          const shelfY = shelfYs[s];
-          const spineCount = 5 + Math.floor(Math.random() * 3);
-          const spineSpan = (alongAxis === 'x' ? longW : depthD) - 0.15;
-          const spineStep = spineSpan / spineCount;
-          for(let k = 0; k < spineCount; k++){
-            const t = -spineSpan/2 + (k + 0.5) * spineStep;
-            const spineH = 0.30 + Math.random() * 0.15;  // 0.30 - 0.45
-            const spineY = shelfY + 0.04 + spineH/2;
-            const spineMat = bookSpineMats[Math.floor(Math.random() * bookSpineMats.length)];
-            // Skip ~10% of spine slots to give a "well-read" look
-            if(Math.random() < 0.10) continue;
-            if(alongAxis === 'x'){
-              const m = new THREE.Mesh(new THREE.BoxGeometry(0.07, spineH, 0.14), spineMat);
-              m.position.set(wx + t, baseY + spineY, wz + 0.20 * facingSign);
-              dScene.add(m);
-            } else {
-              const m = new THREE.Mesh(new THREE.BoxGeometry(0.14, spineH, 0.07), spineMat);
-              m.position.set(wx + 0.20 * facingSign, baseY + spineY, wz + t);
-              dScene.add(m);
-            }
-          }
-        }
-        // v61gh: register this shelf as a lootable container. Thin pool —
-        // most shelves are empty (well-read register). Pulls from the
-        // library_shelf loot pool (subset of library_chest, dialed down).
-        // Floor hardcoded to 1: fort interiors are single-floor (cfg
-        // floors:1) and decorateFortRoom runs outside renderFloor's
-        // floorIdx scope.
+      // S308 — the library on the kit: the kit's bookcases (1.4 long, five shelves of spines, leaning and lying books) with
+      // their backs to the long walls, each still a lootable shelf where it stands; a reading table with a candle, a closed
+      // book and an open one, and a ladder-back chair drawn up to it
+      function placeBookshelf(wall, along, k){
+        let wx, wz, ry;
+        if(wall === 'N'){ wx = along; wz = wallN + 0.16; ry = 0; }
+        else if(wall === 'S'){ wx = along; wz = wallS - 0.16; ry = Math.PI; }
+        else if(wall === 'W'){ wx = room.x - 0.5 + 0.16; wz = along; ry = Math.PI/2; }
+        else { wx = room.x + room.w - 0.5 - 0.16; wz = along; ry = -Math.PI/2; }
+        const back = wall === 'N' ? [wx, wallN + 0.01] : wall === 'S' ? [wx, wallS - 0.01] : wall === 'W' ? [room.x - 0.49, wz] : [room.x + room.w - 0.51, wz];
+        FP.put(FK.bookcase(1.4, FN, FS + 30 + k), back[0], back[1], ry);
+        if(wall === 'N' || wall === 'S') registerProp(wx, wz, 1.4, 0.32); else registerProp(wx, wz, 0.32, 1.4);
         const items = rollContainerLoot('library_shelf', null, null);
-        BARRELS.push({
-          x: wx, z: wz, floor: 1, opened: false, items,
-          displayName: 'Bookshelf',
-          mesh: shelfMesh,
-          // No `top` field — bookshelves have no lid-pop animation.
-        });
+        BARRELS.push({ x: wx, z: wz, floor: 1, opened: false, items, displayName: 'Bookshelf', mesh: null });
       }
       const longAxisIsX = room.w >= room.h;
       const shelfCount = 3;
-      if(longAxisIsX){
-        // Bookshelves on N AND S walls (libraries are dense — books on every wall)
-        // v61gb: bookshelf back face flush with wall (depth 0.4 → inset 0.22u
-        // past room edge to put back-face at room.y - 0.5 + 0.02 margin).
-        const nZ = room.y - 0.28;
-        const sZ = room.y + room.h - 0.72;
-        const xMin = room.x + 2.0;
-        const xMax = room.x + room.w - 2.0;
-        for(let i = 0; i < shelfCount; i++){
-          const t = shelfCount === 1 ? 0.5 : i / (shelfCount - 1);
-          const wx = xMin + t * (xMax - xMin);
-          // North-wall shelves face south (+z); south-wall shelves face north (-z).
-          placeBookshelf(wx, nZ, 'x', +1);
-          placeBookshelf(wx, sZ, 'x', -1);
-        }
-      } else {
-        // v61gb: same flush logic for E/W walls.
-        const wX = room.x - 0.28;
-        const eX = room.x + room.w - 0.72;
-        const zMin = room.y + 2.0;
-        const zMax = room.y + room.h - 2.0;
-        for(let i = 0; i < shelfCount; i++){
-          const t = shelfCount === 1 ? 0.5 : i / (shelfCount - 1);
-          const wz = zMin + t * (zMax - zMin);
-          // West-wall shelves face east (+x); east-wall shelves face west (-x).
-          placeBookshelf(wX, wz, 'z', +1);
-          placeBookshelf(eX, wz, 'z', -1);
-        }
+      for(let i = 0; i < shelfCount; i++){
+        const t = shelfCount === 1 ? 0.5 : i / (shelfCount - 1);
+        if(longAxisIsX){ const wx = room.x + 2.0 + t * (room.w - 4.0); placeBookshelf('N', wx, i); placeBookshelf('S', wx, i + 3); }
+        else { const wz = room.y + 2.0 + t * (room.h - 4.0); placeBookshelf('W', wz, i); placeBookshelf('E', wz, i + 3); }
       }
-      // Reading table + chair at room center — same prep table as armory
-      // but with a candle and an open book on top instead of weapons.
-      boxSolid(cx, cz, 1.2, 0.7, 0.7, woodLight);
-      // Chair — south side of table (player approaches from N door usually)
-      const libChair = boxSolid(cx, cz + 0.85, 0.5, 0.5, 0.5, woodDark);
-      // Mark libChair as used (suppresses unused-var lint, also documents
-      // that the boxSolid return is intentionally captured for clarity)
-      void libChair;
-      // Chair back
-      boxAt(cx, 0.7, cz + 1.05, 0.5, 0.6, 0.07, woodDark);
-      // Candle on the table
-      candle(cx - 0.3, 0.72, cz - 0.1);
-      // An "open book" silhouette — small flat box on the table
-      boxAt(cx + 0.15, 0.72, cz + 0.05, 0.4, 0.04, 0.3, woodLight);
+      FP.put(FK.table(1.2, 0.7, FN, FS + 1), cx, cz, 0); registerProp(cx, cz, 1.2, 0.7);
+      { const q = FK.Parts(); FK.candle(q, -0.35, 0.46, -0.1);
+        q(SK.rbox(0.18, 0.05, 0.24, 0.008, 1), 0x5a2a1a, -0.05, 0.485, 0.12, 0, 0.3, 0);
+        for(const sd of [-1, 1]){ q(SK.rbox(0.16, 0.02, 0.22, 0.004, 1), 0xe8dcc0, 0.25 + sd * 0.08, 0.472, 0.02, 0, 0, sd * -0.08); }
+        FP.put(q, cx, cz, 0); }
+      const cl = new THREE.PointLight(0xffaa66, 0.6, 2.5); cl.position.set(cx - 0.35, baseY + 0.62, cz - 0.1); dScene.add(cl);
+      FP.put(FK.chair(FN, FS + 2), cx, cz + 0.7, Math.PI); registerProp(cx, cz + 0.7, 0.4, 0.4);
     }
     else if(room.kind === 'storeroom'){
-      // v61ga: wooden shelf units along the long walls. The room's loot
-      // identity comes from the corner clusters (still firing via the
-      // KIND_CLUSTER_RULES table — see renderFloor) plus 1-2 chests
-      // (also placed in renderFloor). The shelves are decorative, adding
-      // a "this is a working storeroom" register on top of the cluster
-      // density. Each shelf unit is a tall narrow rectangle against the
-      // wall, with one or two horizontal shelf boards visible across its
-      // face. Three units per long wall, evenly spaced.
-      //
-      // We deliberately use a "long wall" (north OR east, depending on
-      // room aspect) and skip the corners — the corner clusters live
-      // there.
+      // S308 — the storeroom's shelves on the kit: two of the kit's wall shelves of pots and crockery at each old shelf, one
+      // over the other, and a tied sack under each; the crates and chests the room's rules add are placed elsewhere
       const longAxisIsX = room.w >= room.h;
-      // Shelf unit dimensions: 1.2 long × 1.6 tall × 0.35 deep.
-      // Mounted against the wall with the long dimension parallel to it.
       const shelfCount = 3;
-      function placeShelf(wx, wz, alongAxis){
-        // alongAxis: 'x' means the unit's long dimension runs along X.
-        const longW = alongAxis === 'x' ? 1.2 : 0.35;
-        const depthD = alongAxis === 'x' ? 0.35 : 1.2;
-        // Main unit body (back board)
-        boxSolid(wx, wz, longW, 1.6, depthD, woodDark);
-        // Two horizontal shelf-board strips on the front face — visible only
-        // as lighter wood. We position them slightly proud of the unit's
-        // front face so they read as actual shelves, not painted lines.
-        // For a unit mounted on the NORTH wall (long X axis), the front
-        // face is south-facing; shelf boards extend south by 0.02u.
-        // For a unit mounted on the EAST wall (long Z axis), shelf boards
-        // extend west by 0.02u.
-        if(alongAxis === 'x'){
-          // Boards span full unit width, sit at heights 0.55 and 1.0
-          boxAt(wx, 0.55, wz + 0.18, longW - 0.06, 0.06, 0.16, woodLight);
-          boxAt(wx, 1.00, wz + 0.18, longW - 0.06, 0.06, 0.16, woodLight);
-        } else {
-          boxAt(wx - 0.18, 0.55, wz, 0.16, 0.06, depthD - 0.06, woodLight);
-          boxAt(wx - 0.18, 1.00, wz, 0.16, 0.06, depthD - 0.06, woodLight);
-        }
-      }
-      if(longAxisIsX){
-        // North wall — three shelf units along it. Skip the W and E corners
-        // (where NW/NE clusters live).
-        // v61gb: shelf back face flush with wall inside face. Wall inside
-        // face = room.y - 0.5; shelf center = wall - depthD/2 - 0.02 margin
-        // (z-fight). depthD = 0.35 → wallZ = room.y - 0.5 + 0.175 + 0.02 = room.y - 0.305.
-        const wallZ = room.y - 0.305;
-        const xMin = room.x + 2.5;   // leave corner room
-        const xMax = room.x + room.w - 2.5;
-        for(let i = 0; i < shelfCount; i++){
-          const t = shelfCount === 1 ? 0.5 : i / (shelfCount - 1);
-          const wx = xMin + t * (xMax - xMin);
-          placeShelf(wx, wallZ, 'x');
-        }
-      } else {
-        // East wall — three units along it.
-        // v61gb: same logic. Wall inside face = room.x + room.w - 0.5.
-        // depthD = 0.35 → wallX = room.x + room.w - 0.5 - 0.175 - 0.02 = room.x + room.w - 0.695.
-        const wallX = room.x + room.w - 0.695;
-        const zMin = room.y + 2.5;
-        const zMax = room.y + room.h - 2.5;
-        for(let i = 0; i < shelfCount; i++){
-          const t = shelfCount === 1 ? 0.5 : i / (shelfCount - 1);
-          const wz = zMin + t * (zMax - zMin);
-          placeShelf(wallX, wz, 'z');
-        }
+      for(let i = 0; i < shelfCount; i++){
+        const t = shelfCount === 1 ? 0.5 : i / (shelfCount - 1);
+        if(longAxisIsX){ const wx = room.x + 2.5 + t * (room.w - 5.0);
+          for(const [y, k] of [[0.62, 0], [1.05, 1]]) FP.put(FK.shelf(1.2, FN, FS + 40 + i * 2 + k, 'mixed'), wx, wallN + 0.01, 0, y);
+          FP.put(FK.sack(FS + 50 + i, [0xb8a070, 0x9a8a60, 0xc0b080][i]), wx, wallN + 0.3, i * 0.7); registerProp(wx, wallN + 0.2, 1.2, 0.4); }
+        else { const wz = room.y + 2.5 + t * (room.h - 5.0), ex = room.x + room.w - 0.51;
+          for(const [y, k] of [[0.62, 0], [1.05, 1]]) FP.put(FK.shelf(1.2, FN, FS + 40 + i * 2 + k, 'mixed'), ex, wz, -Math.PI/2, y);
+          FP.put(FK.sack(FS + 50 + i, [0xb8a070, 0x9a8a60, 0xc0b080][i]), ex - 0.29, wz, i * 0.7); registerProp(ex - 0.19, wz, 0.4, 1.2); }
       }
     }
     // S307 — every room drawn on the kit above is one bake (nothing to bake for the rooms still on boxes)
@@ -23941,9 +23803,7 @@ function buildDungeon(portal){
   D_BEDS=[]; // v80 S9 — a cot near a fort's entrance: rest, and take a banked level
   if(isFort&&gen.entC!=null){
     let spot=null;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1]]){const c=gen.entC+dc,r=gen.entR+dr;if(c>=0&&r>=0&&c<dC&&r<dR&&dMap[r][c]===1){spot=[c,r];break;}}
-    if(spot){const [c,r]=spot;const cot=new THREE.Mesh(new THREE.BoxGeometry(.6,.14,1.0),new THREE.MeshLambertMaterial({color:0x5a3a1c}));cot.position.set(c,.07,r);dScene.add(cot);
-      const bl=new THREE.Mesh(new THREE.BoxGeometry(.54,.08,.92),new THREE.MeshLambertMaterial({color:0x6a5a3a}));bl.position.set(c,.18,r);dScene.add(bl);
-      const pw=new THREE.Mesh(new THREE.BoxGeometry(.4,.1,.22),new THREE.MeshLambertMaterial({color:0xb8a880}));pw.position.set(c,.26,r-.35);dScene.add(pw);
+    if(spot){const [c,r]=spot;const K=furnKit(),cot=K.bake(K.bed('gatelands',(portal.seed|0)%97+7,1.0,.6));cot.position.set(c,0,r);cot.userData.fortCot=true;dScene.add(cot); // S308 — a narrow kit bed, head north as the old pillow lay
       D_BEDS.push({x:c,z:r,floor:1});}
   }
   renderFloor(dMap,1,thWallMat,thFloorMat,0);

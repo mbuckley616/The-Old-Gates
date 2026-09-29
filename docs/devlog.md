@@ -7522,3 +7522,20 @@ Four more of the fort's room kinds, in the same way as Session 306: the kit's pi
 
 ### Needs eyes
 The barracks' 42.8k triangles in one room is the most of any interior (an inn's taproom is 28.6k). Every bed has its own quilt and grain; if a fort's frame time suffers, the beds can share three bakes. Also, whether the free-standing racks read well from behind, since their backs face the door.
+
+## v80 — Session 308 — The fort's library and storeroom on the shape kit, and the entrance cot (H.5, H.7, #46 A)
+The last two of the fort's ten room kinds, in the manner of Sessions 306–307:
+- **The library:** the six bookshelves (a 2.2-high box each, with box spines coloured at random every visit) are the kit's bookcases, 1.4 long, backs to the long walls at the old places. Each is still a lootable shelf where it stands (`BARRELS`, the same `library_shelf` roll; its `mesh` field was never read, and is now null). The reading table has a candle, a closed book and an open one, and a ladder-back chair is drawn up to it.
+- **The storeroom:** each of the three shelf boxes is two of the kit's wall shelves of pots and crockery, one over the other at .62 and 1.05, with a tied sack under them. The crates and chests the room's rules add elsewhere are as they were.
+- **The entrance cot** (Session 9's place to rest and take a banked level) is a narrow kit bed, 1.0 by .6, head north as the old pillow lay.
+
+With this, every room inside a fort is on the kit, and every interior in the game is furnished from it.
+
+**Found, not fixed (systems):** the entrance cot never spawns. It looks for a floor cell (1) beside a fort's entrance, but the fort layouts floor their rooms with 7. In the tee fort at seed 23 the entrance's neighbours are 7, 7, off the map, and 7, and `D_BEDS` stays empty in all four forts the test enters. Resting there is a game rule, not the look, so it is left to the systems builder and noted in the backlog. The new cot is untested in play for the same reason.
+
+### Verified (headless Chromium)
+- **`fortfurn`**, extended: across the four forts all ten kinds turn up (25 rooms). The library is one bake of 10,555 triangles with 8 footprints and six lootable bookshelves. The storeroom is 7,092 with 3. The other eight rooms are as in Sessions 306–307. No box or cylinder in the old props' materials is left in any room. The picture is `docs/prototypes/fortfurn-ingame.png`, now ten panels.
+- **`dungeon`**, **`dungeonfoes`** and **`locks`** pass.
+
+### Needs eyes
+A fort in play, all of it now. Whether a bookshelf's loot prompt still comes up where you look at the new case (it stands .16 from the wall, where the old one stood at .22).
