@@ -6,6 +6,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
+Opening the lockpick pauses the game, as the inventory does (Session 142), so the watch stands still while you work and whether you are seen is decided once, when the lock gives. A pick costs no world time, however long it takes you. The critic found night burglary nearly free (Portclare 5 doors, Dunmore 7, seen 0 times) and put it down to headless picks being instant. In real play they are instant too, as far as the guards can tell.
+
+Measured over 10 minutes of the night watch at 23h, the share of arrival times at which a guard comes within the night sight range (6) of a shop door at some moment of the pick (upper bounds, walls not tested): Dunmore (3 guards, 9 doors) instant 18%, 5 s 24%, 10 s 29%, 20 s 38%; Portclare (1 watchman, 6 doors) instant 10%, 5 s 13%, 10 s 15%, 20 s 19%.
+
+- **A. The world runs while you pick a town lock** (shop and home doors, strongboxes, home chests) *(recommended)*. The watch keeps walking and the clock turns; seen at any moment of the pick, you are seen and the pick breaks off. Dungeon chests and doors keep pausing. One Opus session.
+- **B. The pick stays paused but costs time**: each pin costs a fixed slice of the night (say 3 s); when the lock gives, the watch is run forward that long and you are seen if anyone came within sight. Invisible; it only changes the odds.
+- **C. Leave it.** Burglary odds rest on where the watch is when you arrive.
+
+A makes the watch something you read and time, which is the decision the night watch was built to give.
+Michael: **A — the world runs while you pick a town lock.** (29 Sep 2026)
+
 ### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)
 Every interior window today is a flat pane on the wall: a painted view of the town at dusk in the generated rooms, the same in a box frame in Hearthwick's old rooms, and a plain lit rectangle in a church. Now that the furniture is on the kit, the windows are the flattest thing left in a room. I prototyped three kit windows. In each, the painted view stays, set back behind the frame. They are not in the game.
 
