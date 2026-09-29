@@ -7653,3 +7653,15 @@ Roofs and walls follow the nation: thatch, slate and whitewash in the Gatelands;
 - Whether the views read at the size of a pane from across a room. Whether the rich tier's wall is too pale against a day sky.
 - Whether a home in a rich city ought to have the leaded window rather than the shutters. The rule is by the room, as chosen, not by the town.
 - The view is still drawn once per time of day at entry. A room you stay in through dusk keeps the day's picture until you next come in, as before.
+
+## v80 — Session 332 — The black sail's flag streams downwind (H.5b, after #57)
+Session 330 left one thing on a ship that ignored the new wind: the pirate's black flag at the masthead. It was in the hull's bake, so it always flew aft, whatever the wind did to the sails below it. It is now a rig of its own on the masthead pole (`type:'flag'`). `shipTrim` points its fly end the way the wind blows. A flag has no bound, unlike a yard or a boom, so it turns the short way round and three times quicker than a sail: about a third of a second. The pole stays in the hull's bake. This adds no triangles and one draw call to a pirate sloop.
+
+This comes under Michael's answer on #57 ("every ship trims to it"), so it did not need a question of its own.
+
+### Verified (headless Chromium)
+- **`sailtrim`**, extended: the black sail's flag sits within .02 rad of the wind's direction after two seconds. Its fly end lies 1.4 downwind of the pole. After the wind swings seven game hours on, it settles with the sails. `docs/prototypes/sailtrim-ingame.png` is re-shot; the flag is in the lower right.
+- **`ships`** passes.
+
+### Needs eyes
+Whether the flag should flutter. It keeps the old baked ripple and does not move within itself.

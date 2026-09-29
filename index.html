@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s282</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s283</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39477,7 +39477,7 @@ var WORLD=(()=>{
       shipLantern(B,-1.6,H.at(-L/2).g+.5,H.zs+.2);shipLantern(B,1.6,H.at(-L/2).g+.5,H.zs+.2);
     }
     if(look==='pirate'){const fl=new THREE.PlaneGeometry(1.4,.9,3,1);const p=fl.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*3)*.08);fl.computeVertexNormals();
-      B.add(fl,[0,mastTop+.9,mastZ-.8],[0,Math.PI/2,0],null,0x111111);B.add(SK.ball(.14,8,6),[.03,mastTop+.95,mastZ-.8],0,[1,1,.6],0xd8d0c0);B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
+      const FB=new ShipBake();FB.add(fl,[0,mastTop+.9,-.8],[0,Math.PI/2,0],null,0x111111);FB.add(SK.ball(.14,8,6),[.03,mastTop+.95,-.8],0,[1,1,.6],0xd8d0c0);rigs.push({geo:FB.bake(),z:mastZ,type:'flag'});/* S332 — the black flag streams downwind */B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
     r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs};SHIP_GEO.set(key,r);return r;}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
@@ -39514,6 +39514,8 @@ var WORLD=(()=>{
   // boom swings to leeward, out to 72 degrees running and in to 15 close-hauled; the gaff sails and the jib belly to leeward
   function shipTrim(mesh,th,dt){const R=mesh&&mesh.userData.rigs;if(!R)return;th=Math.atan2(Math.sin(th),Math.cos(th));const side=Math.sin(th)>=0?1:-1;
     for(const q of R){let t=0;if(q.type==='square')t=Math.max(-.61,Math.min(.61,th/2));else if(q.type==='gaff')t=-side*Math.max(.26,Math.min(1.25,(Math.PI-Math.abs(th))/2));
+      // S332 — a flag has no bound: it points the way the wind goes (its cloth runs aft at 0) and turns the short way round, quicker than a sail
+      if(q.type==='flag'){t=th+Math.PI;const d=Math.atan2(Math.sin(t-q.a),Math.cos(t-q.a));q.a=dt==null?t:q.a+d*Math.min(1,dt*3);q.m.rotation.y=q.a;continue;}
       q.a=dt==null?t:q.a+(t-q.a)*Math.min(1,dt*1.2);q.m.rotation.y=q.a;if(q.type!=='square')q.m.scale.x=side;}}
   // every ship afloat trims to the world's wind; a ship just built sets its sails at once, then eases round through a turn
   function tickSailTrim(dt){const w=windDir();const one=m=>{if(!m||!m.userData.rigs)return;const snap=m.userData.trimSnap;m.userData.trimSnap=false;shipTrim(m,w-m.rotation.y,snap?null:dt);};

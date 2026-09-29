@@ -26,15 +26,18 @@ const sea = await page.evaluate(() => {
 check('found open water for two ships', !!sea, sea);
 const rule = () => page.evaluate(() => { const w = WORLD.windDir(), res = [];
   for (const o of _O) { const m = o.mesh, th0 = w - m.rotation.y, th = Math.atan2(Math.sin(th0), Math.cos(th0)), side = Math.sin(th) >= 0 ? 1 : -1;
-    for (const q of m.userData.rigs) { const want = q.type === 'square' ? Math.max(-.61, Math.min(.61, th / 2)) : q.type === 'gaff' ? -side * Math.max(.26, Math.min(1.25, (Math.PI - Math.abs(th)) / 2)) : 0;
+    for (const q of m.userData.rigs) { const wr = a => Math.atan2(Math.sin(a), Math.cos(a)); const want = q.type === 'square' ? Math.max(-.61, Math.min(.61, th / 2)) : q.type === 'gaff' ? -side * Math.max(.26, Math.min(1.25, (Math.PI - Math.abs(th)) / 2)) : q.type === 'flag' ? wr(th + Math.PI) : 0;
       // the boom's far end in the hull's frame: on the side the wind blows towards (leeward) is positive
       let lee = null; if (q.type === 'gaff') { m.updateMatrixWorld(true); const v = new THREE.Vector3(0, 0, -3); q.m.localToWorld(v); m.worldToLocal(v); lee = +(v.x * Math.sin(th)).toFixed(2); }
-      res.push({ kind: o.kind, type: q.type, want: +want.toFixed(3), got: +q.m.rotation.y.toFixed(3), th: +th.toFixed(2), lee }); } }
+      // a flag's fly end, in the world, along the wind from its pole: downwind is positive
+      let down = null; if (q.type === 'flag') { m.updateMatrixWorld(true); const a = new THREE.Vector3(0, 0, -1.5), b = new THREE.Vector3(0, 0, 0); q.m.localToWorld(a); q.m.localToWorld(b); down = +((a.x - b.x) * Math.sin(w) + (a.z - b.z) * Math.cos(w)).toFixed(2); }
+      res.push({ kind: o.kind, type: q.type, want: +want.toFixed(3), got: +(q.type === 'flag' ? wr(q.m.rotation.y) : q.m.rotation.y).toFixed(3), th: +th.toFixed(2), lee, down }); } }
   return { w: +w.toFixed(3), res }; });
 await g.spin(null, 120);
 const r1 = await rule();
-check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad)', r1.res.every(q => Math.abs(q.want - q.got) < .02), r1);
+check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad)', r1.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < .02), r1);
 check('square yards brace no more than 35°', r1.res.filter(q => q.type === 'square').every(q => Math.abs(q.got) <= .611), r1.res);
+check('the black sail\'s flag streams downwind (its fly end 1.4 along the wind from the pole)', r1.res.some(q => q.type === 'flag') && r1.res.filter(q => q.type === 'flag').every(q => q.down > 1.3), r1.res.filter(q => q.type === 'flag'));
 check('a gaff\'s boom lies to leeward', r1.res.filter(q => q.type === 'gaff').every(q => q.lee > 0 || Math.abs(q.th) > 3.1), r1.res);
 
 // the wind wanders with the clock: seven game hours later it has swung, the sails ease round (not at once) and settle
@@ -45,10 +48,10 @@ const wind = await page.evaluate(() => { const w0 = WORLD.windDir(); worldState.
 check('seven game hours on, the wind has moved (by over 15°); over two days it wanders more than 60°, never more than 40° in an hour', Math.abs(wind.w1 - wind.w0) > .26 && wind.span > 1.05 && wind.maxHourStep < .7, wind);
 await g.spin(null, 6);
 const mid = await rule();
-check('a tenth of a second after the swing, the sails are still easing round', mid.res.some(q => Math.abs(q.want - q.got) > .05), mid.res.map(q => [q.want, q.got]));
+check('a tenth of a second after the swing, the sails are still easing round', mid.res.some(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) > .05), mid.res.map(q => [q.want, q.got]));
 await g.spin(null, 240);
 const r2 = await rule();
-check('four seconds on, they have settled to the new wind', r2.res.every(q => Math.abs(q.want - q.got) < .02), r2.res.map(q => [q.want, q.got]));
+check('four seconds on, they have settled to the new wind', r2.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < .02), r2.res.map(q => [q.want, q.got]));
 
 // a storm gusts: the wind shakes by a few degrees over seconds, in clear weather it does not
 const gust = await page.evaluate(() => { const samp = () => { const a = []; for (let i = 0; i < 40; i++) { worldState.gameTimeAbsMinutes += 1 / 20; WORLD.tick(1 / 20, performance.now()); a.push(WORLD.windDir()); } return +(Math.max(...a) - Math.min(...a)).toFixed(3); };
