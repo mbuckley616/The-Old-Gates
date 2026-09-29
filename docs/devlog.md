@@ -8381,3 +8381,14 @@ New `tests/chamerchant.test.mjs`, 6 checks, passing, no page errors. Dunmore at 
 
 ### Needs eyes
 Whether one extra piece at 5 is felt at all, or wants a mark on the row saying why it's there (a line of text, so a question for Michael). Whether a Steel Sword in Dunmore at the price of 66 is too early for a Might 10 requirement. Charisma 5 is two level-ups for a bard.
+
+## v80 — Session 334 — The hub's mana regen reads Intelligence
+Found while auditing the attribute card after #58. The Intelligence card promises *+0.2/s mana regen* a point, and the main loop pays it: mana rises at 0.8 + 0.15 a level + 0.2 an Intelligence point. But the hub's Vitals row for mana was written as 0.8 + 0.15 a level + 0.2 a **Resolve** point, so a mage with Intelligence 10 was told 0.8/sec while getting 2.8/sec, and a Resolve build was promised mana it never got. The row now reads Intelligence. The stamina row was right (Resolve, 0.3 a point) and is unchanged. Neither row counts an armour enchant's regen, as before.
+
+Found alongside it, and not fixed: *+1% barter* a Charisma point (and the hub's *Barter Bonus* row, which adds Intelligence too) is read by no price. `shopCost` and `sellPrice` look only at the town's prosperity and your faction. Setting what a point buys at the counter is a price, so it is asked as #61.
+
+### Verified (headless Chromium)
+New `tests/hubregen.test.mjs`, 3 checks, passing, no page errors. At level 1 with the others at 0, Intelligence 10 shows 2.8/sec on the mana row (it showed 0.8), and Resolve 10 shows 0.8/sec on the mana row (it showed 2.8) and 6.0/sec on the stamina row. `attrdmg` passes.
+
+### Needs eyes
+Nothing by eye; it is one number on the character sheet.
