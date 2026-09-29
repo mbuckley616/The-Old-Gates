@@ -8252,3 +8252,19 @@ New `tests/herbparity.test.mjs`, 8 checks, passing, no page errors.
 
 ### Needs eyes
 Whether the veil in the open world, 8 s in which nothing sees you, is too strong against a camp. Underground it already worked this way.
+
+## v80 — Session 323 — What the level-up card promises
+The same audit, turned on the attributes. The level-up card and the hub list what a point in each attribute gives (`ATTR_DEF[...].gains`, `gainLines`). I checked every line against the code that should read it. Most hold. Two had nothing behind them, and they are fixed here:
+- *Resolve: +1% magic resist a point.* Nothing read Resolve against magic. It already lightened a block's stamina cost (the card's *-5% block cost*), but the Faolchú's fire and the dungeon's Phantom and Wraith bolts landed the same at Resolve 10 as at 0. Now `_magicResist()`, 1% a point with a floor of ×.5, scales both, blocked or not. It applies before armour. On a raised guard, the stamina a block costs is still worked from what the block stopped.
+- *Finesse: -5% sprint cost a point.* The sprint drained 14 a second whatever your Finesse. Now `_finesseSprint()` scales it, with a floor of a quarter.
+
+Two more promises have no rule in the game at all, so there is nothing to wire them to: Fortune's *+2% crit chance* (there is no chance crit, only the staggered-crit bonus) and Charisma's *merchant access*. Together with Session 322's two herb lines (Ashwort's minimap pulse, Caor Dubh's *risky*), they are one question for Michael, #58 in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+New `tests/attrpromise.test.mjs`, 4 checks, passing, no page errors.
+- The sprint, through the game's own loop with Shift and W held on the real keyboard, and the regeneration measured separately and added back: 14.0 a second at Finesse 0, 7.0 at Finesse 10.
+- In a dungeon, a Phantom's 60-point bolt through the real `loop`: 60 at Resolve 0, 54 at Resolve 10. On a raised guard: 51 → 46.
+- `faolchu`, `wardall`, `herbparity` and `wardswift` pass. The Faolchú's fire takes the same multiplier on the line above the dungeon bolt's, and is not driven by the new test.
+
+### Needs eyes
+Nothing new to look at. These are numbers the card already showed.

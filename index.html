@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s307</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s308</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -15612,7 +15612,7 @@ function tickZoneBalls(dt,sc){
       if(ddP < playerHitR && !rollUntouchable(performance.now()/1000)){ // S283 — a roll takes you through the fire
         const baseDmg = fb.userData.dmg || 20;
         const def2 = _armour();
-        const dmgReduceMult = _wardMult();
+        const dmgReduceMult = _wardMult()*_magicResist();
         // v61c7 — Magic block path. Distinct from physical block rates:
         //   shield: 40% reduction (down from 65% for physical) — shields
         //          don't fully stop fire/magic, lore-fits the seam-fire
@@ -19126,6 +19126,10 @@ function _blockBoost(r){return Math.min(.9,r*_buffMult('blockBoost',1));}
 // against every blow and shot; Mist Fern (`staminaCost`) lightens every swing, bash, roll and draw, not only the sprint
 function _armour(){return Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)+(_hasBuff('defBoost')?(_activeBuffs('defBoost')[0].amount||0):0);}
 function _stamCost(c){return c*_buffMult('staminaCost',1);}
+// S323 — what the level-up card promises: Resolve +1% magic resist a point (the Faolchú's fire, the dungeon's bolts),
+// Finesse -5% sprint cost a point (to a quarter)
+function _magicResist(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
+function _finesseSprint(){return Math.max(.25,1-(ATTRS.finesse||0)*.05);}
 function _applyBuff(he){
   // Remove existing buff of same type first
   const idx=ACTIVE_BUFFS.findIndex(b=>b.type===he.type);
@@ -42222,7 +42226,7 @@ function loop(now){
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1);
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint();
     stamina=Math.max(0,stamina-dt*sprintDrain);
     if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
     lvAct.sprintDist+=spd;
@@ -42985,16 +42989,16 @@ function loop(now){
           let finalDmg;
           if(blocking){
             const magicReduction = _blockBoost(hasShield ? (sh.magicBlock||0.40) : 0.15);
-            const reducedRaw = Math.round(dmg * (1-magicReduction));
+            const reducedRaw = Math.round(dmg * (1-magicReduction) * _magicResist());
             finalDmg = _warded(Math.max(1, reducedRaw - Math.floor(def2*.3)));
-            const absorbed = dmg - reducedRaw;
+            const absorbed = dmg - Math.round(dmg * (1-magicReduction));
             const magicBlockStamCost = Math.max(1, Math.round(absorbed * _resolveMult));
             stamina = Math.max(0, stamina - magicBlockStamCost);
             if(stamina===0) staminaCD = 2;
             sndBlock(); blockFlashT = 0.4; blockFlashCol = '#cc44ff';
             showMsg('🛡 Resisted! Magic bolt hits for '+finalDmg+' (reduced)','#cc88ff');
           } else {
-            finalDmg = _warded(Math.max(1, dmg - Math.floor(def2*.3)));
+            finalDmg = _warded(Math.max(1, Math.round(dmg * _magicResist()) - Math.floor(def2*.3)));
             showMsg('Magic bolt hits you for '+finalDmg+'!','#cc44ff');
             sndPlayerHurt();
           }

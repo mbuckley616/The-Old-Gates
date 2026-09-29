@@ -15,6 +15,19 @@ Measured over 10 minutes of the night watch at 23h, the share of arrival times a
 
 A makes the watch something you read and time, which is the decision the night watch was built to give.
 
+### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
+Sessions 320–323 wired up every buff and attribute line whose text said what it does. Four lines are left, because the game has no rule for them to plug into:
+1. *Fortune: +2% crit chance a point.* No hit in the game can crit by chance. The only crit is the bonus for striking a staggered foe.
+2. *Charisma: merchant access.* Nothing reads it.
+3. *Ashwort: minimap pulse, reveals nearby enemies for 5s.* Nothing reads it. The open world's minimap already shows every foe in range, and the dungeon's shows none.
+4. *Caor Dubh: +40% damage for 30s (risky).* The +40% works. The risk has no cost.
+
+- **A. Build all four** *(recommended)*. Fortune: 2% a point that a melee or bow hit crits for ×1.5. Charisma: at 5 points each merchant shows one extra item from the next tier up. Ashwort: the dungeon minimap shows foes within 20 units for 5 s. Caor Dubh: you take +20% damage while it lasts. One Opus session.
+- **B. Strike the four lines** from the card and the herb text until the skills sessions rework attributes.
+- **C. Leave them.**
+
+A keeps the card honest and gives Fortune and Charisma something to feel. Every number in A is a proposal.
+
 ## Answered
 
 ### Enemies by place — which place is how dangerous? (systems builder, 2026-09-28, issue #51)
