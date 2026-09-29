@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s264</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s265</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21841,6 +21841,60 @@ function furnBuild(THREE, SK) {
     for (let i = 0; i < 6; i++) { const x = W / 2 - 3.3 + i * 1.32, q = Parts(); q(SK.cyl(.1, .09, .012, 14), 0xd8ccb0, 0, .465, .45); q(SK.cyl(.1, .09, .012, 14), 0xd8ccb0, .2, .465, -.45); tankard(q, .3, .46, .5, 0x8a8478); if (i % 2) candle(q, 0, .46, 0); p.put(q, x, tz, 0); }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) p(turned(.43, .03), WOOD[n] ? WOOD[n].dark : WOOD.gatelands.dark, W / 2 + sx * 1.3, 0, tz + sz * .7);
     return p; }
+  // ── S292: the guild halls (Michael's A on #46) ──
+  // a notice board: a framed board of planks with pinned notes, the wall at −z; w × h, centred
+  function noticeBoard(w, h, n, seed) { const r = rng(seed || 89), p = Parts(), W = WOOD[n] || WOOD.gatelands;
+    p(SK.rbox(w - .1, h - .1, .03, .005, 1), 0x8a6a44, 0, 0, .015);
+    for (const s of [-1, 1]) { p(SK.rbox(w, .07, .06, .015, 1), jit(W.dark, r, .03), 0, s * (h / 2 - .035), .03); p(SK.rbox(.07, h, .06, .015, 1), jit(W.dark, r, .03), s * (w / 2 - .035), 0, .03); }
+    for (let k = 0; k < 9; k++) { const x = -w / 2 + .3 + r() * (w - .6), y = -h / 2 + .3 + r() * (h - .6), nw = .18 + r() * .12, nh = .22 + r() * .14;
+      p(SK.rbox(nw, nh, .004, .002, 1), jit(0xe8dcc0, r, .08), x, y, .035, 0, 0, (r() - .5) * .2); p(SK.ball(.012, 6, 4), [0xa02020, 0x2a4a8a, 0xa8843a][k % 3], x, y + nh / 2 - .03, .04); }
+    return p; }
+  // a writing desk: the counter's panelled front, bare, with a ledger, an inkwell and a quill, papers and a candle
+  function desk(len, n, seed) { const r = rng(seed || 91), p = Parts();
+    p.put(counter(len, n, seed, true), 0, 0, 0);
+    p(SK.rbox(.36, .04, .26, .006, 1), 0x5a2a1a, -.4, .71, .05, 0, .15, 0); p(SK.rbox(.34, .012, .24, .004, 1), 0xe8dcc0, -.4, .735, .05, 0, .15, 0);
+    p(lathe([[.001, 0], [.035, 0], [.035, .04], [.012, .05], [.012, .06], [.001, .06]], 8), 0x1e1c24, .3, .69, -.05);
+    p(SK.cyl(.002, .004, .22, 4), 0xe8e4dc, .32, .78, -.05, 0, 0, -.4);
+    for (let k = 0; k < 4; k++) p(SK.rbox(.2, .003, .26, .002, 1), jit(0xe8dcc0, r, .06), len * .25 + (r() - .5) * .1, .692 + k * .004, (r() - .5) * .1, 0, (r() - .5) * .6, 0);
+    candle(p, -len * .35, .69, -.1);
+    return p; }
+  // a bookcase against the wall (the wall at −z): uprights, four shelves of books standing, leaning and lying (plain boxes:
+  // a book's bevel never shows, and there are hundreds)
+  function bookcase(len, n, seed) { const r = rng(seed || 93), p = Parts(), W = WOOD[n] || WOOD.gatelands, Hc = 1.5, d = .3;
+    const nu = Math.max(2, Math.round(len / .9) + 1); for (let i = 0; i < nu; i++) p(SK.rbox(.04, Hc, d, .008, 1), jit(W.wood, r, .04), -len / 2 + len * i / (nu - 1), Hc / 2, d / 2);
+    p(SK.rbox(len + .06, .05, d + .04, .012, 1), W.dark, 0, Hc + .025, d / 2);
+    const BC = [0x7a2a1e, 0x2a3a5a, 0x3a5a2a, 0x6a4a1a, 0x4a2a4a, 0x8a6a3a, 0x2a2a2a];
+    [.04, .42, .8, 1.18].forEach(y => { p(SK.rbox(len, .025, d, .006, 1), jit(W.wood, r, .04), 0, y, d / 2);
+      for (let x = -len / 2 + .05; x < len / 2 - .08;) { if (r() < .08) { x += .1 + r() * .15; continue; } const bh = .2 + r() * .12, bw = .025 + r() * .035, bd = .16 + r() * .08, c = jit(BC[Math.floor(r() * BC.length)], r, .06);
+        if (r() < .1) { p(new THREE.BoxGeometry(bh, bw, bd), c, x + bh / 2, y + .012 + bw / 2, d / 2 + .02); x += bh + .02; }
+        else { const lean = r() < .08 ? .25 : 0; p(new THREE.BoxGeometry(bw, bh, bd), c, x + bw / 2 + lean * .1, y + .012 + bh / 2, d / 2 + .02, 0, 0, -lean); if (r() < .5) p(new THREE.BoxGeometry(bw + .002, .01, bd * .6), 0xa8843a, x + bw / 2 + lean * .1, y + .012 + bh * .75, d / 2 + .02 + bd * .21, 0, 0, -lean); x += bw + .004 + lean * .15; } } });
+    return p; }
+  // an open book on a table, and a rolled scroll
+  function openBook(p, x, y, z, ry, r) { for (const s of [-1, 1]) p(SK.rbox(.16, .02, .22, .004, 1), 0xe8dcc0, x + Math.cos(ry) * s * .08, y + .012, z - Math.sin(ry) * s * .08, 0, ry, s * -.08);
+    p(SK.rbox(.34, .012, .24, .004, 1), 0x5a2a1a, x, y + .006, z, 0, ry, 0); }
+  function guildF(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    p.put(desk(5, n, s), W / 2, 3.4, 0);
+    const R = [['sword', 'longsword', 'claymore'], ['axe', 'greataxe', 'warhammer'], ['mace', 'flail', 'greatclub'], ['cutlass', 'dagger', 'sword'], ['longsword', 'axe', 'mace'], ['claymore', 'warhammer', 'greataxe']];
+    for (let k = 0; k < 6; k++) p.put(rack(n, s + 10 + k, R[k]), W - .1, 4 + k * 1.1, -Math.PI / 2);
+    ['plate', 'leather', 'mail'].forEach((k, i) => p.put(armourStand(k, n, s + 20 + i), 2 + i * 1.6, 5.2, 0));
+    const tz = D * .3; p.put(table(6, 1.3, n, s + 30), W / 2, tz, 0); for (const sd of [-1, 1]) p.put(bench(5.8, n, s + 31 + sd), W / 2, tz + sd * 1.05, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) p(turned(.43, .028), (WOOD[n] || WOOD.gatelands).dark, W / 2 + sx * .9, 0, tz + sz * .52);
+    { const q = Parts(); tankard(q, -1.6, .46, .2, 0x8a8478); tankard(q, .8, .46, -.25, 0x7a6a4a); candle(q, 0, .46, 0); q(bowl(.09), 0x9a7050, 1.8, .46, .1); p.put(q, W / 2, tz, 0); }
+    p.put(grindstone(n, s + 40), 2.6, D * .45, 0);
+    return p; }
+  function guildM(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    p.put(desk(5, n, s), W / 2, 3.4, 0);
+    const off = Math.min(0, D * .52 - .25 - (D * .35 + 3.85));
+    for (let k = 0; k < 2; k++) p.put(bookcase(3.8, n, s + 10 + k), W - .02, D * .35 + off + (k ? 1.95 : -1.95), -Math.PI / 2);
+    const a = 1.0, b = W / 2 - 1.5, c = W / 2 + 1.5, e = W - 1.0;
+    [.62, .99, 1.36].forEach((y, i) => { p.put(shelf(b - a, n, s + 20 + i, 'potions'), (a + b) / 2, 0, 0, y); p.put(shelf(e - c, n, s + 23 + i, 'potions'), (c + e) / 2, 0, 0, y); });
+    p.put(still(n, s + 30), W - 2.4, 2.4, 0);
+    const tz = D * .3; p.put(table(5, 1.2, n, s + 31), W / 2, tz, 0);
+    for (const sx of [-1, 1]) p(turned(.43, .028), (WOOD[n] || WOOD.gatelands).dark, W / 2, 0, tz + sx * .5);
+    { const q = Parts(), r = rng(s + 32); for (let k = 0; k < 4; k++) openBook(q, -2 + k * 1.3, .46, (r() - .5) * .3, (r() - .5) * .5, r); candle(q, -1.35, .46, .35); candle(q, 1.25, .46, -.35);
+      q(SK.cyl(.03, .03, .3, 10), 0xe0d4b0, .6, .49, .3, 0, .4, Math.PI / 2); p.put(q, W / 2, tz, 0); }
+    for (let x = W / 2 - 4; x <= W / 2 + 4; x += 8) for (let z = 6; z < D - 3; z += 5) p.put(column(H, .3, s + 40 + z), x, z, 0);
+    return p; }
   // the flames flicker: call per frame with the fire mesh and the time
   function flicker(fire, t) { if (!fire) return; const s = 1 + Math.sin(t * 11.3) * .06 + Math.sin(t * 17.1) * .04; fire.scale.set(1, s, 1); }
 
@@ -21882,7 +21936,7 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
-  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall };
+  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM };
 }
 
 let _FURN = null;
@@ -38964,21 +39018,16 @@ var WORLD=(()=>{
       npc={x:W/2,z:4.6,maxZ:6.5,paused:false};
     } else if(type==='guild_f'||type==='guild_m'){
       const F_=type==='guild_f';
-      // steward's desk across the hall's head
-      box(W/2,.5,3.4,5,1.0,.7,0x5a3a1c);box(W/2,1.02,3.4,5.2,.06,.8,0x3a2410);solid(W/2,3.4,2.6,.45,1.05);
-      // notice board on the north wall
-      boxRaw(W/2,1.6,.12,2.6,1.4,.08,0x4a3018);for(let k=0;k<5;k++)boxRaw(W/2-1+k*.5,1.6+(k%2)*.25,.17,.34,.4,.02,0xe8dcc0);
-      if(F_){for(let k=0;k<6;k++){box(W-.15,1.5,4+k*1.1,.08,1.6,.6,0x4a3018);box(W-.2,1.5,4+k*1.1,.05,1.2,.08,0xb0b0b8);}
-        for(let k=0;k<3;k++){const x=2+k*1.6;box(x,.9,5.2,.16,1.8,.16,0x4a3018);box(x,1.4,5.2,.7,.9,.45,[0x8a8a94,0x6a4a2a,0x9a9aa4][k]);}
-        table(W/2,D*.3,6,1.3,true);
-        cyl(2.6,.55,D*.62,.5,.5,.14,0x8a8478,10).rotation.z=Math.PI/2;
-      } else {
-        [1.0,1.6,2.2].forEach(y=>{box(W-.25,y,D*.35,.4,.06,8,0x4a3018);for(let z=D*.35-3.6;z<D*.35+3.6;z+=.5)box(W-.25,y+.2,z,.3,.3,.4,[0x8a3a2a,0x2a4a7a,0x5a7a3a,0xc8a040,0x6a4a8a][((z*7)|0+7)%5]);});
-        [1.0,1.6,2.2].forEach(y=>{box(W/2,y,.25,W-1.6,.06,.4,0x4a3018);for(let x=1.0;x<W-1;x+=.55)cyl(x,y+.2,.25,.09,.09,.3,[0x50a0d0,0x40c060,0xc04040,0xd0a030,0x8040c0,0x40c0b0][(x*7|0)%6],6);});
-        cyl(W-2.4,.6,2.4,.55,.45,.8,0x2a2a2e,10);glow(W-2.4,1.05,2.4,0x60ff90);light(W-2.4,1.3,2.4,0x60ff80,1.0,5);
-        table(W/2,D*.3,5,1.2,false);for(let k=0;k<4;k++)box(W/2-2+k*1.3,.86,D*.3,.5,.06,.4,0xd8d0b0);
-        for(let x=W/2-4;x<=W/2+4;x+=8)for(let z=6;z<D-3;z+=5){const m=new THREE.Mesh(new THREE.CylinderGeometry(.3,.34,H,10),new THREE.MeshLambertMaterial({color:0x8a857a}));m.position.set(x,H/2,z);sc_.add(m);solid(x,z,.4,.4,H/F);}
-      }
+      // S292 — the guild halls on the kit (#46 A): the steward's desk (the counter's front with a ledger, inkwell and quill),
+      // the notice board of pinned notes; the Fighters' racks of the weapon kit, armour stands, the long table with benches and
+      // a grindstone (it stood in a dormitory; now in the hall); the Mages' bookcases, potion shelves either side of the board,
+      // the still, a reading table of open books, columns. One bake; the old solids where they were
+      {const K=furnKit(),room=K.bake((F_?K.guildF:K.guildM)(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);
+        const nb=K.bake(K.noticeBoard(2.6,1.4,FN,FSEED+7));nb.position.set(W/2,1.6,.02);nb.userData.furn=true;sc_.add(nb);furnSwap(nb);}
+      solid(W/2,3.4,2.6,.45,1.05);
+      if(F_){for(let k=0;k<3;k++)solid(2+k*1.6,5.2,.25,.25,1.8);{const z=D*.3;solid(W/2,z,3,.65,.76);[-1,1].forEach(sd=>solid(W/2,z+sd*1.05,2.9,.2,.44));}}
+      else{light(W-2.4,1.3,2.4,0x60ff80,1.0,5);solid(W-2.4,2.4,.4,.4,1.0);solid(W/2,D*.3,2.5,.6,.76);
+        for(let x=W/2-4;x<=W/2+4;x+=8)for(let z=6;z<D-3;z+=5)solid(x,z,.4,.4,H/F);}
       // ground floor rooms: the hall (north) holds desk/board/training; a
       // cross wall with a central doorway; south of it a corridor with two
       // dormitory rooms each side (2 beds each) and the front door at the end.
@@ -38998,7 +39047,7 @@ var WORLD=(()=>{
       [lx,rx].forEach(wx=>{partition(wx,hallZ,wx,midZ,0,ceil,.5);partition(wx,midZ,wx,D-2.6,0,ceil,.5);});
       // beds: two per room
       [[1.4,hallZ+1.2],[1.4,midZ+1.2],[W-1.4,hallZ+1.2],[W-1.4,midZ+1.2]].forEach(([bx,bz],k)=>{_intBed(sc_,bx,bz,'N');bedAt(bx,bz,0);const bz2=bz+2.2;_intBed(sc_,bx,bz2,'N');bedAt(bx,bz2,0);
-        const cx_=bx<W/2?bx+2.2:bx-2.2;box(cx_,.3,bz+1.0,.8,.6,.6,0x5a3a1c);});
+        const cx_=bx<W/2?bx+2.2:bx-2.2;{const K=furnKit(),c=K.bake(K.chest(FN,FSEED+k));c.position.set(cx_,0,bz+1.0);c.userData.furn=true;sc_.add(c);furnSwap(c);}}); // S292 — a kit chest by each pair of beds
       intBedPos={x:1.4,z:hallZ+1.2};
       // move the desk/board into the hall's south side facing the cross-wall door
       

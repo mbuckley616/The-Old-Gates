@@ -7342,3 +7342,17 @@ The old solids are kept where they were: the altar, the church's columns, the ha
 
 ### Needs eyes
 The daises (whether to step onto them), the scale of the throne against the steward, and the pews' end boards, which have a shape of my own reading, not a prototype's.
+
+## v80 — Session 292 — The guild halls on the shape kit (H.5 props, Michael's A on #46)
+The Fighters' and the Mages' halls, the last rooms Michael's A names. Each hall is one bake, with the notice board (its own small bake, since it hangs at a raw height) and a kit chest by each pair of dormitory beds (the prototype's iron-bound chest, where a box stood).
+- **Both halls:** the steward's desk is the counter's panelled front, bare, with a ledger, an inkwell and quill, loose papers and a candle. The notice board is a framed board of planks with nine pinned notes.
+- **The Fighters:** six racks of the weapon kit on the east wall, the three armour stands, and the long table with its benches, cups, a candle and middle legs. The grindstone stood in a dormitory (at `D*.62`, past the cross wall at `D*.52`) and is now in the hall.
+- **The Mages:** two bookcases on the east wall, four shelves each of books standing, leaning and lying, some with gilt bands. There are potion shelves either side of the notice board (the old ones ran behind it), the still from the apothecary, a reading table of open books, a scroll and candles, and the columns. The bookcases move north if the hall is too short for them, since the old shelf ran through the cross wall in a 20-deep hall.
+
+Books are plain boxes rather than the kit's rounded ones. A book's bevel never shows and there are hundreds, which took the Mages' hall from 68k triangles to 42k. The old solids are where they were: the desk, the long tables and benches, the Mages' columns. The Fighters' armour stands and the Mages' still are solid now; before they were walk-through.
+
+### Verified (headless Chromium)
+- **`guildfurn` (new):** the Fighters' hall (23 by 22) is a 28,966-triangle bake with the notice board and four chests beside it (6 bakes), 181 meshes in the room, and no cylinders left. The Mages' hall (22 by 20) is 42,045 triangles, 167 meshes. In both, the desk (.65) and the long table (.47) are footholds, every bed is registered (18 and 16 with the gallery's), and the three members stand. No page errors. The picture, `docs/prototypes/guilds-ingame.png`, shows each hall from the cross wall and along the table.
+
+### Needs eyes
+The desk and board sit under the gallery and read dark. The Fighters' racks are a long way from the door. And the halls are big (181 meshes, mostly the shell, the beds and the doors).
