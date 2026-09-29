@@ -7408,3 +7408,17 @@ An inn at the end of a coach line had its own boxes, which Session 287 left: a b
 
 ### Needs eyes
 Nothing new to judge beyond the pieces. The old straw box overlapped the inn's hearth (both against the east wall, mid-room), so the bales now stand 1.9 further south, clear of it and in front of the private rooms' partition.
+
+## v80 — Session 300 — Hearthwick's legacy shops on the shape kit (H.5, #46 A)
+The four shops the older `buildInterior` still builds (Hearthwick's weaponsmith, armourer, apothecary and general goods, the rooms whose ids do not start `g_`) were box props: a rack bar with five sticks for weapons, three posts with a crossbar for armour stands, shelves of coloured blocks, a two-box counter and hanging green boxes for herbs. The kit's shop rooms from Sessions 289–290 use this builder's frame too (x east, z south, the door at z = D, the kit's own furniture heights), so each shop now takes the same room the generated shops have, plus the panelled counter at z 3.0, as one bake (`_legacyShopKit`): the forge with its hood and bellows, the anvil, the quench tub, the racks of the weapon kit and the grindstone; the three armour stands, the wall shields and the bench; the three shelves of potions, the drying herbs, the still and a worktable where the old one stood; the crates, sacks, shelves of crockery and the balance. The barrels, torches and lights stay, a forge glow and a still glow added where the fires are. One east-wall torch in the smithy moved from z 3.5 to z 7, clear of the first rack.
+
+**Two fixes found on the way:**
+- **The crates were nowhere.** The weaponsmith's and armourer's four crates were called `_intCrate(scene, x, D-2)`, the old signature's `y` in the place of `z`, so each stood eight units up at a z of `undefined`. They now stand on the floor by the front wall, where the calls meant them.
+- **The legacy bake is freed now** (Session 295 owed it): `buildInterior` disposes the geometry of the last room's legacy bakes before it builds the next. `INT_BED_NATION` is also set to the Gatelands there, so a crate or bed in Hearthwick no longer takes the wood of the last generated room you left.
+
+### Verified (headless Chromium)
+- **`legacyshops` (new):** each of the four rooms built through `buildInterior` has one furniture bake inside the room (weapon 24,368 triangles, armour 10,008, potion 17,754, goods 17,836), no mesh at a non-finite place, 15–18 boxes left (the door, beams, windows, torch brackets), and every crate at y 0 and z 6.8–8.2. Building a fifth room disposes the fourth room's bake. It fails on the old code. The picture is `docs/prototypes/legacyshops-ingame.png`.
+- **`oddfurn`** (the safehouse), **`interiors`**, **`shopfurn`** and **`homefurn`** pass.
+
+### Needs eyes
+Hearthwick's shops in play. The keeper still wanders .6–4.5 deep as the old room let them, which crosses the counter; the generated shops' solids are not in this builder. The floor rug in these rooms is still the flat red or blue plane, now louder beside the kit. The inn, church and keep of this builder are next.

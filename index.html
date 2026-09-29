@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s269</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s270</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -24714,7 +24714,14 @@ function _legacyRoomKit(W,ceilH){const K=furnKit(),P=K.Parts(),n='gatelands';
   P.put(K.bookcase(2.4,n,6),W,3.0,-Math.PI/2);
   P.put(K.chair(n,7),W-1.4,5.0,-Math.PI/2);
   P.put(K.hearth(1.4,ceilH||2.2,n,8),W,1.0,-Math.PI/2);
-  const room=K.bake(P);room.userData.furn=true;interiorScene.add(room);return room;}
+  const room=K.bake(P);room.userData.furn=true;room.userData.legacyFurn=true;interiorScene.add(room);return room;}
+// S300 — the legacy shops (Hearthwick's weaponsmith, armourer, apothecary and general goods) on the kit's shop rooms (S289–290),
+// which share this builder's frame (x east, z south, the door at z=D); the counter at z 3.0 as in the generated shops; one bake
+function _legacyShopKit(type,W,D,ceilH){const K=furnKit(),n='gatelands',s={weapon:211,armor:223,potion:237,misc:241}[type]||251;
+  const P=type==='weapon'?K.smithy(W,D,ceilH,n,s):type==='armor'?K.armoury(W,D,ceilH,n,s):type==='potion'?K.apothecary(W,D,ceilH,n,s):K.goods(W,D,ceilH,n,s);
+  P.put(K.counter(W*.5,n,s+5,true),W/2,3.0,0);
+  if(type==='potion')P.put(K.table(1.4,.7,n,s+6),2,D*.65,0);
+  const room=K.bake(P);room.userData.furn=true;room.userData.legacyFurn=true;interiorScene.add(room);return room;}
 // S290 — the interiors' barrel and crate on the kit: the dungeon's barrel (kitBarrel, S200) at .44 high, and the shops' crate
 // of planks between battens in the room's wood; each size baked once and shared. S293: _intCrate's y is the crate's centre,
 // as every caller passes it (the old box sat its base there, so every crate floated by half its size)
@@ -24872,6 +24879,8 @@ function _intStashChest(sc,x,z){
 }
 
 function buildInterior(house){
+  if(interiorScene)interiorScene.traverse(o=>{if(o.userData&&o.userData.legacyFurn)o.traverse(m=>{if(m.isMesh)m.geometry.dispose();});}); // S300 — the last legacy bake freed
+  INT_BED_NATION='gatelands';
   if(interiorScene)while(interiorScene.children.length)interiorScene.remove(interiorScene.children[0]);
   interiorScene=new THREE.Scene();
   interiorScene.background=new THREE.Color(0x120a06);
@@ -24962,79 +24971,40 @@ function buildInterior(house){
 
   // ── TYPE-SPECIFIC PROPS ──────────────────────────────────────────────
 
+  // S300 — the four shops on the kit (#46 A): the smithy, the armourer, the apothecary and the general goods with the panelled
+  // counter, one bake (_legacyShopKit); the crates, barrels, torches and lights as they were
   if(type==='weapon'){
-    // Weapon rack on back wall
-    _intBox(interiorScene,W/2,1.0,.15,W*.7,.06,.15,0x6a3a10); // rack bar
-    for(let i=0;i<5;i++){
-      const wx=1.5+i*(W*.6/4);
-      _intBox(interiorScene,wx,.5,.12,.05,.9,.05,0x8a6030); // weapon silhouette
-    }
-    // Counter
-    _intBox(interiorScene,W/2,.5,2.5,W*.55,.5,.5,0x6a3a10);
-    _intBox(interiorScene,W/2,.53,2.45,W*.58,.06,.65,0x8a5020);
-    // Accent light at counter
-    const cgl=new THREE.PointLight(0xff8833,1.2,5);cgl.position.set(W/2,1.5,2.5);interiorScene.add(cgl);
-    // Crates in corner
-    _intCrate(interiorScene,1.2,D-2);_intCrate(interiorScene,W-1.2,D-2,.32);
-    // Wall torches
+    _legacyShopKit(type,W,D,ceilH);
+    const fgl=new THREE.PointLight(0xff6a20,1.6,6);fgl.position.set(1.2,.62,2.0);interiorScene.add(fgl);
+    const cgl=new THREE.PointLight(0xff8833,1.2,5);cgl.position.set(W/2,1.5,3.0);interiorScene.add(cgl);
+    _intCrate(interiorScene,1.2,.19,D-2);_intCrate(interiorScene,W-1.2,.16,D-2,.32);
     _intTorch(interiorScene,.15,D*.35);_intTorch(interiorScene,.15,D*.7);
-    _intTorch(interiorScene,W-.15,D*.35);_intTorch(interiorScene,W-.15,D*.7);
-    // Shelves with items
-    _intShelf(interiorScene,W/2,1.8,.15,W*.5,6,[0x888888,0xa06020,0x6060a0,0xc0a040,0x808080,0xc04040]);
+    _intTorch(interiorScene,W-.15,D*.7);
     intNPCPos={x:W/2,z:1.8};
   }
 
   else if(type==='armor'){
-    // Armor stands — mannequin-like posts
-    [W*.25,W*.5,W*.75].forEach(ax=>{
-      _intBox(interiorScene,ax,.9,.8,.35,.06,.35,0x5a3a10); // shoulder bar
-      _intBox(interiorScene,ax,.5,.8,.12,.8,.12,0x4a2a08); // stand post
-    });
-    _intBox(interiorScene,W/2,.5,2.5,W*.55,.5,.5,0x6a3a10); // counter
-    _intBox(interiorScene,W/2,.53,2.45,W*.58,.06,.65,0x8a5020);
-    const cgl2=new THREE.PointLight(0xff8833,1.2,5);cgl2.position.set(W/2,1.5,2.5);interiorScene.add(cgl2);
-    _intCrate(interiorScene,1,D-1.8);_intCrate(interiorScene,W-1,D-1.8);
+    _legacyShopKit(type,W,D,ceilH);
+    const cgl2=new THREE.PointLight(0xff8833,1.2,5);cgl2.position.set(W/2,1.5,3.0);interiorScene.add(cgl2);
+    _intCrate(interiorScene,1,.19,D-1.8);_intCrate(interiorScene,W-1,.19,D-1.8);
     _intTorch(interiorScene,.15,D*.4);_intTorch(interiorScene,W-.15,D*.4);
-    _intShelf(interiorScene,W/2,1.7,.15,W*.6,5,[0x707070,0x909090,0x505050,0x808090,0x606070]);
-    intNPCPos={x:W/2,z:1.8};
+    intNPCPos={x:W/2,z:2.3};
   }
 
   else if(type==='potion'){
-    // Dense shelves on back wall
-    [.9,1.5,2.1,2.7].forEach((sy,i)=>{
-      _intShelf(interiorScene,W/2,sy,.15,W*.65,7,
-        [0xcc2222,0x22cc44,0x2244cc,0xccaa22,0xaa22cc,0x22aacc,0xcc6622]);
-    });
-    _intBox(interiorScene,W/2,.5,2.8,W*.4,.5,.5,0x6a3a10); // smaller counter
-    _intBox(interiorScene,W/2,.53,2.75,W*.43,.06,.65,0x8a5020);
-    const cgl3=new THREE.PointLight(0x88aaff,1.0,5);cgl3.position.set(W/2,1.5,2.8);interiorScene.add(cgl3);
-    // Hanging herb bundles from ceiling beams
-    for(let i=0;i<4;i++){
-      const hx=1.5+i*((W-3)/3);
-      _intBox(interiorScene,hx,ceilH-.35,D/2,.04,.3,.04,0x4a6a20); // stem
-      _intBox(interiorScene,hx,ceilH-.55,D/2,.18,.1,.18,0x5a8a30); // bundle
-    }
-    // Worktable
-    _intBox(interiorScene,2,0.5,D*.65,1.4,.08,.7,0x7a4818);
-    _intBox(interiorScene,1.4,.25,D*.65-.25,.08,.5,.08,0x5a3010);
-    _intBox(interiorScene,2.6,.25,D*.65-.25,.08,.5,.08,0x5a3010);
-    _intBox(interiorScene,1.4,.25,D*.65+.25,.08,.5,.08,0x5a3010);
-    _intBox(interiorScene,2.6,.25,D*.65+.25,.08,.5,.08,0x5a3010);
-    intNPCPos={x:W/2,z:2.1};
+    _legacyShopKit(type,W,D,ceilH);
+    const cgl3=new THREE.PointLight(0x88aaff,1.0,5);cgl3.position.set(W/2,1.5,3.0);interiorScene.add(cgl3);
+    const sgl=new THREE.PointLight(0x60ff80,1.0,5);sgl.position.set(W-1.6,.8,1.8);interiorScene.add(sgl);
+    intNPCPos={x:W/2,z:2.3};
   }
 
   else if(type==='misc'){
-    // General goods — shelves + barrels + crates
-    _intShelf(interiorScene,W/2,1.0,.15,W*.6,6);
-    _intShelf(interiorScene,W/2,1.7,.15,W*.6,5);
-    _intShelf(interiorScene,W/2,2.3,.15,W*.55,4);
-    _intBox(interiorScene,W/2,.5,2.5,W*.55,.5,.5,0x6a3a10);
-    _intBox(interiorScene,W/2,.53,2.45,W*.58,.06,.65,0x8a5020);
-    const cgl4=new THREE.PointLight(0xff8833,1.2,5);cgl4.position.set(W/2,1.5,2.5);interiorScene.add(cgl4);
+    _legacyShopKit(type,W,D,ceilH);
+    const cgl4=new THREE.PointLight(0xff8833,1.2,5);cgl4.position.set(W/2,1.5,3.0);interiorScene.add(cgl4);
     _intBarrel(interiorScene,1.0,D-1.8);_intBarrel(interiorScene,1.5,D-1.5);
     _intBarrel(interiorScene,W-1.0,D-1.8);
-    _intCrate(interiorScene,W-1.4,0,D-1.6);_intCrate(interiorScene,W-1.0,0,D-2.2,.3);
-    intNPCPos={x:W/2,z:1.8};
+    _intCrate(interiorScene,W-1.4,.19,D-1.6);_intCrate(interiorScene,W-1.0,.15,D-2.2,.3);
+    intNPCPos={x:W/2,z:2.3};
   }
 
   else if(type==='inn'){
