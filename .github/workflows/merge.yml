@@ -6,12 +6,10 @@ name: merge
 # The named commit is merged, not the branch head, so commits the builders add after an approval never ride along.
 # (PR comments were the first try: the Claude GitHub app defangs a comment that starts with a slash command.)
 # A line already on main is skipped quietly; CI still running waits for the next pass; a refusal is said once on the PR.
+# It runs on a timer, from main's copy of this file: a push trigger would run the pushing branch's copy instead.
 on:
-  push:
-    branches: [auto/producer]
-    paths: [docs/merge-queue.md]
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
