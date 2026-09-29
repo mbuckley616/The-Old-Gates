@@ -7680,4 +7680,4 @@ This session changes nothing in `index.html`. The question is on issue #62 and u
 - The pictures are `docs/prototypes/shells-gatelands.png`, `shells-aurenne.png`, `shells-mark.png` and `shells-stone.png`. Each shows today, A and B, looking up the room and back at the door.
 
 ### Needs eyes
-Whether the joists crowd a low cottage ceiling (2.0–2.1): the beams' soffits sit at about 1.8, well over the eye at .92, but the ceiling reads busier. Whether the stone plinth reads as stone or as a skirting board. In the game, the shell would also want its solids checked: the posts stand .18 proud, inside the walls' collision in most places but not at every bed and shelf.
+Whether the joists crowd a low cottage ceiling (2.0–2.1): the beams' soffits sit at about 1.8, well over the eye at .92, but the ceiling reads busier. Whether the stone plinth reads as stone or as a skirting board. The prototype does not check collision: in the game the posts, which stand .18 proud of the wall, would want solids of their own, and a check that none stands in front of a bed, shelf or hearth.
