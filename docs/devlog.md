@@ -7398,4 +7398,4 @@ The legacy bake is not freed when you leave (the world module's `furnFree` does 
 - **`oddfurn`**, extended: `buildInterior({type:'safehouse'})` has one furniture bake of 7,857 triangles, 37 meshes in the room (the walls, the stash chest and the doors among them), the bed at (1, 2.6) and the stash at (4, 1) as before. The safehouse is the fifth panel of `docs/prototypes/oddrooms-ingame.png`. The other four rooms pass as in Sessions 293–294.
 
 ### Needs eyes
-The safehouse in play, since it is the one room the player owns from the start of the story.
+The safehouse in play, since it is the room the story gives the player.
