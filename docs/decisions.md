@@ -6,6 +6,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The ships' sails trimmed to a wind — should the world have one? (Session 319, issue #57)
+Every ship's sails are baked into the hull and always stand square across it, whatever the heading, and the gaff booms always lie on the centreline. Session 168 left this owed ("the sails swinging with the heading and the wind"). The world has no wind to trim to: the weather has rain, snow and fog but no direction.
+
+I prototyped the trim on a side branch (`auto/proto-sails`). It is not in the game. Each mast's yards and sails, each gaff and its boom, and the jib are taken out of the hull's bake as children that pivot on the mast. That adds 1–3 draw calls a ship and no triangles.
+- **Square sails** (the cog, the galleon's fore and main) brace round to split the angle between the wind and the bow, up to 35°.
+- **The gaff booms** (the sloop, the galleon's mizzen) swing out to leeward: 72° when running before the wind, 45° with the wind on the beam, and 15° close-hauled. The gaff sails and the jib belly to leeward.
+
+In the pictures, each row is one ship. The columns are today, then running, broad reach, beam reach and close-hauled. The white arrow is the way the wind blows.
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/sails-plan.png (from overhead, where the trim reads best) and https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/sails-quarter.png (from the stern quarter, as you see a ship at sea; the arrows are misplaced in this one).
+
+**Options**
+1. **A wind the world keeps, and every ship trims to it (recommended).** The wind's direction wanders slowly over the hours and swings harder in a storm. Your ship, the merchantmen and the pirates all brace their sails to it and ease round over a second or two when they turn. It is the look only: speed is unchanged.
+2. **The same, and the wind also sets your speed.** Running and reaching are fast, and close-hauled is slow. That is a sailing rule, so it would go to the systems builder; I would build only the look.
+3. **No wind; the sails swing only as the ship turns.** They lag through a turn and settle back square across the hull.
+4. **Leave the sails as they are.**
+
+Recommendation: 1. It makes a ship at sea read as sailed, and it takes no rule from the systems builder. A wind in the world would also serve smoke, flags and banners later.
+Michael: **1 — a wind the world keeps, every ship trims to it.** (29 Sep 2026)
+
 ### Magic — fixed spells from every sigil, words you combine, or three registers to choose between? (the designer, 2026-09-29)
 Today spells come from seven carvings and from the Mages' Guild's counter (60–1,400 gold, capped at Comprehension), and the world's 368 glowing sigil gates carry no carving; spell damage adds `level × 3` flat. Which loop should magic take, with the six schools as skills under the Morrowind book, no spell sales, and overcasting from health as the shared risk? (Page: `docs/design/magic.md`.)
 - **A.** Sigils and schools: the canon's 38 fixed spells carved across the sigil gates by region, a second gate for the next tier, Leap, Shadow Step and Phase as movement spells. Three Opus sessions.
