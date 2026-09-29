@@ -32,6 +32,11 @@ The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit 
 
 Michael: **A** — make the card say what Fortune does. (29 Sep 2026, via the control room; issue #64) Built in Session 346: the card, the level-up lines and the hub read +2% crit, +5% gold found, +2.5% item drop chance a point.
 
+### Should the game stay one HTML file? (Claude, local session, 2026-09-29)
+The file is 41k lines and every builder edits it: merges conflict (the producer resolved eleven in one merge on 29 Sep) and CI runs every suite on every change. Splitting it into several files helps both. Players reach the game through itch.io (a zip with `index.html` inside) and the Pages link, where several files play the same; the game already needs a connection for three.js.
+
+Michael: **Split it** — the one-file rule was a self-imposed restriction. (29 Sep 2026, in chat with Claude.) Filed as backlog K, a Fable session with a short freeze of the two code builders.
+
 ### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
 The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
 
