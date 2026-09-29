@@ -6,6 +6,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
+The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
+
+- **A. Charisma only: buying 1% cheaper a point, selling 1% dearer, up to 25%** *(recommended)*. It is what the card says. The hub row drops Intelligence, and Aldwyn's line stays as flavour. Charisma 10 takes 7 off a 66-gold Steel Sword.
+- **B. Intelligence + Charisma, as the hub row says**, 1% a point each, both ways, up to 25%.
+- **C. Charisma, buying only** (1% a point, up to 25%). Selling stays at the item's fixed share, so trade loot can't be turned into a gold engine.
+- **D. Strike the barter line** from the card and the hub until skills-by-use gives it a home.
+
+Michael: **A** — Charisma only: buying 1% cheaper a point, selling 1% dearer, up to 25%. (29 Sep 2026, via the control room)
+
+### The Boon of Renewal — how fast should it heal? (systems builder, 2026-09-29, issue #60)
+Praying at a shrine restores you in full and gives one of five boons for 30 minutes of play. Four work: the Road (+25% speed), Stone (blows ×0.75), the Arm (+20% melee), the Mind (spells ×0.7). An Spéir's *Boon of Renewal* (type `regen`, mult 1) has no rate: nothing reads it, so a fifth of shrine prayers, and every prayer at An Spéir's, gives nothing after the restore. For scale, the regeneration tonics give 0.5/1.2/2.5 health a second (Mild/Strong/Master) for 60 s.
+
+- **A. Health, stamina and mana each regenerate 0.5 a second for the 30 minutes** *(recommended)*. It matches a Mild tonic, spread over the whole boon, so it helps between fights and never outheals a blow in one. It's the only boon that touches all three bars, which fits the Sky.
+- **B. Health only, 1 a second for the 30 minutes.** It's simpler, and stronger in the field.
+- **C. Health 2 a second, but only out of combat** (no blow taken or given for 5 s). It reads as rest, not armour.
+- **D. Replace it** with a boon that already has a rule (say, +20% stamina regen).
+
+Michael: **A** — health, stamina and mana each regenerate 0.5 a second for the 30 minutes. (29 Sep 2026, via the control room)
+
 ### The ships' sails trimmed to a wind — should the world have one? (Session 319, issue #57)
 Every ship's sails are baked into the hull and always stand square across it, whatever the heading, and the gaff booms always lie on the centreline. Session 168 left this owed ("the sails swinging with the heading and the wind"). The world has no wind to trim to: the weather has rain, snow and fog but no direction.
 
