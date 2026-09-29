@@ -8018,3 +8018,27 @@ Traps (spikes, the swinging blade, the fire jet) are not an enemy's blow and sti
 ### Needs eyes
 Rolling through the Faolchú's fire on the plaza, and through a charging bear.
 
+
+## v80 — Session 297 — A foe held in the view
+Michael answered the combat question with **B** (`docs/design/combat.md`). Its Opus sessions include lock-on: *the middle mouse button toggles it; the camera holds the target in both views; A/D circle it; the roll goes the way you press.* Lock-on does not depend on the attack table, which is B's Fable session and still to come, so it can be built now. Before this there was no lock-on, and in a fight the mouse had to keep the foe in the swing's cone by hand.
+
+**What changed.** A middle click locks the nearest foe you are looking towards: within 14 units and 60° of the view, the nearer and more central the better (distance × (2 − the cosine off the view)). A second middle click lets go. Nothing in range says *Nothing to lock on to.* While locked, the view turns to the foe every frame (yaw eased at 12 a second, pitch at 8 towards a point about three-fifths of the way up its body), and the mouse no longer turns it. It runs before the frame's facing is taken from the view, so the swing's cone, the roll and the movement keys all work from the view that faces the foe. A/D then circle it, because strafing runs across the view and the view keeps turning to the foe. The roll already went the way you press, so it now rolls round the foe or away from it. The camera is the same in both views: first person looks along the view, and third person's shoulder camera sits behind it. A small gold diamond (`#lockmk`) marks the foe on screen.
+
+The lock lets go by itself when the foe dies, when it is no longer among the fight's foes (another zone, another dungeon floor, a disguised mimic), when it is more than 20 units away, or when you die. In the world the pool is the zone's live foes (`ZE`); in a dungeon it is this floor's live, undisguised foes (`ENEMIES`). The distances (14 to lock, 20 to let go) and the 60° are mine: the design page names none. The middle button used to fall through to the left button's handlers and swing on release; it no longer does. The controls line and the start screen list it.
+
+Not in this session: switching between foes while locked (Elden Ring flicks the stick), a line-of-sight test (you can lock a foe behind a dungeon wall if it is within 14 units and ahead), and a lock on townsfolk you have struck. Trackpads have no middle button, so a laptop without a mouse can't lock on. Whether to add a key is Michael's call, noted below.
+
+### Verified (headless Chromium)
+New `tests/lockon.test.mjs`, 17 checks, passing, no page errors. Pointer lock is faked for the mouse checks, since headless Chromium has none.
+- **The pick.** With real Bandits at 6 units 30° off, 16 units ahead, 3 units behind and 4 units 75° off, it locks the one at 6. A second press lets go. Without the one at 6, nothing locks and the message shows.
+- **The hold.** A foe 40° off is 0.05° off after 30 ticks at 1/60 (half a second). Turned 69° away, the view is back on the foe (0.09°) in another 30. Pitch settles at −0.08.
+- **The middle button**, through the game's own mouse handlers: a press and release locks and does not swing. A mouse move of 300 × 100 pixels leaves the view where it was. A second press lets go, and the mouse turns the view again.
+- **Circling**, through the game's own loop and a held D: the player went 35° round a foe 6 units off in 3.65 units of walking. The distance went 6.00 → 6.13, and the view stayed on the foe (2.98° off at the moment of reading). The loop runs a few frames a second on software GL, so the test walks part of the circle, not all of it.
+- **The mark** sits at 49% across and 46% down the screen in first person, and 49% across in third person, where the view also turns to a foe 45° off (0.02° after 8 frames).
+- **Letting go.** It lets go when the foe dies, when it is 30 times as far off, and when the zone's foes change; the mark hides. In a dungeon the pool holds only this floor's live, undisguised foe of four.
+- **Nothing else moved.** `roll`, `posture`, `tells` and `player` pass.
+
+### Needs eyes
+- How the hold feels: 12 a second on the turn may be too stiff or too loose when a wolf circles you, and whether 14 units is the right reach to lock from.
+- Whether the view's pull on pitch fights you on slopes and stairs, and whether the gold diamond reads against snow and torchlight.
+- Laptops: a trackpad has no middle click. If Michael plays on one, lock-on needs a key as well (Tab is the hub's; a free key such as R or Z would do). That is his call.

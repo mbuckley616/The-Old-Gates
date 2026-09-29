@@ -658,7 +658,7 @@
       <b style="color:#c8e88a">Mouse</b> — look / turn &nbsp;·&nbsp; <b style="color:#c8e88a">Shift</b> — sprint<br>
       <b style="color:#c8e88a">Space</b> — jump &nbsp;·&nbsp; <b style="color:#c8e88a">E</b> — interact &nbsp;·&nbsp; <b style="color:#c8e88a">Left-click</b> — attack (hold for power)<br>
       <b style="color:#c8e88a">Right-click</b> — block/parry &nbsp;·&nbsp; <b style="color:#c8e88a">F</b> — cast magic &nbsp;·&nbsp; <b style="color:#c8e88a">I</b> — inventory<br>
-      <b style="color:#c8e88a">Q</b> — roll &nbsp;·&nbsp; <b style="color:#c8e88a">Ctrl</b> — toggle sneak (reduces detection radius, slower move)<br><br>
+      <b style="color:#c8e88a">Q</b> — roll &nbsp;·&nbsp; <b style="color:#c8e88a">Middle-click</b> — lock on &nbsp;·&nbsp; <b style="color:#c8e88a">Ctrl</b> — toggle sneak (reduces detection radius, slower move)<br><br>
       Press <b style="color:#c8e88a">E</b> near a <span style="color:#a09070">cave entrance</span> to descend into a dungeon.<br>
       Press <b style="color:#c8e88a">E</b> near a <span style="color:#c8b880">door</span> to enter shops &amp; trade.
     </p>
@@ -761,7 +761,8 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s283</span></div>
+  <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s297</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1416,6 +1417,61 @@ function tickPlayerPosture(dt,nowS){
   PPOST.posture=Math.min(PPOST.posture,PPOST.maxPosture);
   const b=document.getElementById('psb'),w=document.getElementById('psw');
   if(b&&w){const f=PPOST.posture/PPOST.maxPosture;b.style.width=(f*100)+'%';b.style.background=playerStaggered(nowS)?'#c04030':'#c8a84a';w.style.opacity=f<.999||playerStaggered(nowS)?'1':'0';}
+}
+// S297 — lock-on (combat, Michael's B). The middle mouse button locks the nearest foe you are looking towards, within
+// 14 units and 60° of your view; pressed again, it lets go. While locked the view turns to hold the foe (yaw and pitch
+// eased, the mouse set aside), in both views; A/D then circle it, since strafing runs across the view, and the roll
+// already goes the way you press. It lets go by itself when the foe dies, leaves the fight (another floor, another zone)
+// or is more than 20 units off. A small gold diamond marks the foe.
+const LOCK_RANGE=14,LOCK_CONE=Math.cos(Math.PI/3),LOCK_BREAK=20;
+const LOCK={t:null,h:1};
+function lockPool(){
+  if(activeZoneId==='dungeon')return ENEMIES.filter(e=>!e.dead&&e.hp>0&&e.floor===currentFloor&&!e.disguised&&e.mesh);
+  return ZE.filter(e=>!e.dead&&e.hp>0&&!e.locked&&e.mesh);
+}
+function lockPick(){
+  const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let best=null,bs=1e9;
+  for(const e of lockPool()){
+    const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>LOCK_RANGE||d<1e-3)continue;
+    const c=(dx*fx+dz*fz)/d;if(c<LOCK_CONE)continue;
+    const s=d*(2-c);if(s<bs){bs=s;best=e;}
+  }
+  return best;
+}
+function lockOn(e){
+  LOCK.t=e;LOCK.h=1;
+  try{const b=new THREE.Box3().setFromObject(e.mesh);if(isFinite(b.max.y))LOCK.h=Math.max(.3,Math.min(3,(b.max.y-e.mesh.position.y)*.6));}catch(err){}
+}
+function lockRelease(){LOCK.t=null;const m=document.getElementById('lockmk');if(m)m.style.display='none';}
+function toggleLock(){
+  if(LOCK.t){lockRelease();return false;}
+  if(dead||!started)return false;
+  const e=lockPick();
+  if(!e){showMsg('Nothing to lock on to.','#aaa');return false;}
+  lockOn(e);return true;
+}
+function lockValid(e){
+  if(!e||e.dead||!(e.hp>0)||!e.mesh||dead)return false;
+  if(lockPool().indexOf(e)<0)return false;
+  return Math.hypot(e.x-px,e.z-pz)<=LOCK_BREAK;
+}
+// turns the view to the foe; run before the frame's facing (fwdX…) is taken from yaw
+function tickLock(dt){
+  if(!LOCK.t)return;
+  if(!lockValid(LOCK.t)){lockRelease();return;}
+  const e=LOCK.t,dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);
+  if(d>.05){let dy=Math.atan2(-dx,-dz)-yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));yaw+=dy*Math.min(1,dt*12);}
+  const ty=e.mesh.position.y+LOCK.h,ey=CAM.position.y,hd=Math.hypot(e.x-CAM.position.x,e.z-CAM.position.z)||d||1;
+  const wp=Math.max(-.7,Math.min(.5,Math.atan2(ty-ey,hd)-.06));
+  pitch+=(wp-pitch)*Math.min(1,dt*8);
+}
+const _lockV=new THREE.Vector3();
+function drawLockMark(){
+  const m=document.getElementById('lockmk');if(!m)return;
+  const e=LOCK.t;if(!e||!e.mesh){m.style.display='none';return;}
+  _lockV.set(e.mesh.position.x,e.mesh.position.y+LOCK.h,e.mesh.position.z).project(CAM);
+  if(_lockV.z>1||_lockV.z<-1){m.style.display='none';return;}
+  m.style.display='block';m.style.left=((_lockV.x+1)/2*100)+'%';m.style.top=((1-_lockV.y)/2*100)+'%';
 }
 let staggered=[];       // enemies currently staggered {e, t}
 let vmShield=null;       // shield viewmodel mesh group
@@ -41894,6 +41950,7 @@ function loop(now){
       document.getElementById('df').style.boxShadow='';
     }
   }
+  tickLock(dt);
   fwdX=-Math.sin(yaw);fwdZ=-Math.cos(yaw);rgtX=Math.cos(yaw);rgtZ=-Math.sin(yaw);
 
   // Sprint — blocked during cooldown AND when overloaded (>=100% cap)
@@ -42174,6 +42231,7 @@ function loop(now){
   CAM.position.set(px,camY,pz);CAM.rotation.y=yaw;CAM.rotation.x=pitch;
   // v80 S126 — third person: the jointed body, its kit and pose, and a camera that walls pull in
   try{tpUpdate(dt,{moving,sprinting,camY,now:performance.now(),roll:_roll});}catch(e){if(!window._tpErr){window._tpErr=1;console.warn('third person',e);}}
+  drawLockMark();
 
   // Viewmodel sword animation
   if(vmSword){
@@ -43601,6 +43659,7 @@ function _enterGame(){
       try{ CV.requestPointerLock(); }catch(_){}
       return;
     }
+    if(e2.button===1){e2.preventDefault();toggleLock();return;}
     if(playerStaggered(performance.now()/1000)&&(e2.button===0||e2.button===2))return; // S281 — staggered, open
     if(e2.button===2){
       // v64 — RMB while drawing a bow cancels the draw (no arrow consumed,
@@ -43661,6 +43720,7 @@ function _enterGame(){
     }
   });
   window.addEventListener('mouseup',e2=>{
+    if(e2.button===1)return;
     if(e2.button===2){blocking=false;return;}
     // v62.1 — No drag check. LMB-up always fires attack() in combat context.
     // Pointer lock means the cursor never moved during the press from the
@@ -43759,6 +43819,7 @@ function _enterGame(){
   window.addEventListener('mousemove',e2=>{
     if(document.pointerLockElement!==CV) return;
     if(invOpen) return;
+    if(LOCK.t) return;
     yaw-=e2.movementX*.004;
     pitch=Math.max(-1.45,Math.min(1.45,pitch-e2.movementY*.004));
   });
