@@ -41,6 +41,8 @@ export async function boot(opts = {}) {
   const browser = await chromium.launch(launch);
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, acceptDownloads: true });
   const page = await ctx.newPage();
+  // a reload of the 2.7 MB page on a busy CI runner can take longer than Playwright's 30 s default (Session 274: reader, placesave)
+  page.setDefaultNavigationTimeout(180000);
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.slice(0, 200)));
   await page.goto('file://' + file);
