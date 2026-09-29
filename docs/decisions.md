@@ -4,6 +4,24 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The interiors' shells on the kit — posts and joists, or only the trim? (Session 336, issue #62)
+The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes that meet the floor and each other with a hard edge, a flat dark ceiling, square box beams, the entrance door a plain brown box, and in Aurenne's rooms square box studs. I prototyped a kit shell for the generated rooms (homes, shops, inns, halls). The walls keep their plaster, rubble or ashlar textures; the furniture, windows and layouts do not move.
+
+- **A — the full frame:** in plastered rooms, posts at the corners and under each beam's ends where no window stands, with knee braces up to the beam and the wall plate, a sole plate along the foot and a wall plate along the head; Aurenne's rooms keep their close studding, a post every 1.6, on the kit. In stone rooms, a plinth course of blocks along the foot and stepped stone corbels under each beam's ends instead of posts. Everywhere: rounded beams carrying joists and a boarded ceiling, the walls darkened at the foot, the head and in the corners (the dungeon shell's shading), and the entrance a plank door with ledges, a brace, strap hinges and a ring, in a timber frame or a stone surround. 4.0–4.4k triangles a plastered room, 7.8k a stone one, two draw calls.
+- **B — the trim only:** the sole plate or plinth, the wall plate, the shading, the joisted ceiling and the door, without posts, braces or corbels; Aurenne's box studs stay as today. 2.8k triangles a plastered room, 6.9k a stone one.
+
+For scale, a room's furniture bake is 10–28k and its window frames 4–14k.
+
+Pictures (each: today, A, B; left looking up the room, right looking back at the door): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-gatelands.png (a Gatelands home), https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-aurenne.png (Aurenne), https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-mark.png (the Mark, rubble), https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-stone.png (a stone house).
+
+**Options**
+1. **A, the full frame (recommended).**
+2. B, the trim only.
+3. A in homes, inns and shops; B in guild halls, churches and keep halls, whose own columns and furniture already carry the room.
+4. Leave the shells as they are.
+
+Recommendation: 1. The posts and braces are what make a Gatelands or Aurenne room read as a timber-framed house rather than a box with a texture, and the cost is a fifth of a room's furniture. Churches, keep halls and Hearthwick's old rooms would follow in later sessions, as the windows did.
+
 ## Answered
 
 ### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)

@@ -7665,3 +7665,19 @@ This comes under Michael's answer on #57 ("every ship trims to it"), so it did n
 
 ### Needs eyes
 Whether the flag should flutter. It keeps the old baked ripple and does not move within itself.
+
+## v80 — Session 336 — The interiors' shells on the kit: a prototype and a question (H.5, issue #62)
+Section H has nothing specified left to build: the playtest s162 list is done, #57 and #53 are built, and no question is pending. The backlog's own note on the interiors says what is still flat: the shell. A generated room is four flat wall planes that meet the floor and each other with a hard edge, a flat dark ceiling, square box beams across it, the entrance door a brown box of .9 by 1.4, and in Aurenne's rooms square box studs. Now that the furniture (Sessions 286–295) and the windows (Session 331) are on the kit, the room around them is the plainest thing in view.
+
+The prototype (`docs/prototypes/shells/proto.mjs`) builds four homes through `WORLD.buildInteriorFor`, one each for the Gatelands' plaster, Aurenne's plaster and studs, the Mark's rubble and a stone house. It hides today's shell pieces and puts a kit shell in their place. The walls keep their textures; the furniture, windows and layout do not move.
+- **A, the full frame.** In plastered rooms, posts at the corners and under each beam's ends where no window stands (within 1.2 of a window a post gives way to a short bracket), knee braces up to the beam and along the wall plate, a sole plate along the foot and a wall plate along the head. Aurenne's close studding stays, a post every 1.6 on the kit. In stone rooms, a plinth course of blocks along the foot and three stepped corbels under each beam's end instead of posts. Everywhere: beams .22 deep with rounded edges, joists every .5 over them, a boarded ceiling in place of the flat dark one, and the walls shaded in their vertex colours, darker at the foot, the head and in the corners, as the dungeon's shell is. The entrance becomes a plank door, a metre wide and 1.5 tall, with ledges, a brace, strap hinges with nail heads and a ring, in a timber frame or a stone surround.
+- **B, the trim only.** The sole plate or plinth, the wall plate, the shading, the joisted ceiling and the door, with no posts, braces or corbels. Aurenne's box studs stay.
+
+This session changes nothing in `index.html`. The question is on issue #62 and under Pending in `docs/decisions.md`: A (recommended), B, A in the smaller rooms with B in halls, or leave the shells alone.
+
+### Verified (headless Chromium)
+- The prototype runs clean with no page errors. A is 4.0k triangles in a Gatelands room, 4.4k in Aurenne's and 7.8k in a stone or rubble room; B is 2.8k and 6.9k. Each is the shell's bake and the door's: two draw calls, where today's shell is ten to twenty-five meshes. For scale, a room's furniture bake is 10–28k and its window frames 4–14k.
+- The pictures are `docs/prototypes/shells-gatelands.png`, `shells-aurenne.png`, `shells-mark.png` and `shells-stone.png`. Each shows today, A and B, looking up the room and back at the door.
+
+### Needs eyes
+Whether the joists crowd a low cottage ceiling (2.0–2.1): the beams' soffits sit at about 1.8, well over the eye at .92, but the ceiling reads busier. Whether the stone plinth reads as stone or as a skirting board. In the game, the shell would also want its solids checked: the posts stand .18 proud, inside the walls' collision in most places but not at every bed and shelf.
