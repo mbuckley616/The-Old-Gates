@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
 The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
 
@@ -12,7 +14,9 @@ The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row sh
 - **C. Charisma, buying only** (1% a point, up to 25%). Selling stays at the item's fixed share, so trade loot can't be turned into a gold engine.
 - **D. Strike the barter line** from the card and the hub until skills-by-use gives it a home.
 
-## Answered
+Michael: **A** — Charisma only: buying 1% cheaper a point, selling 1% dearer, up to 25% (29 Sep 2026, on #61, via the producer)
+
+*Done, Session 339:* `barterPct()` (Charisma × 1%, to 25%) takes its share off `shopCost` and adds it to the counter's sell price (`counterSellPrice`); a bought-back piece keeps the price you were paid. The hub's *Barter Bonus* row reads Charisma only. Aldwyn's line about Intelligence stays as flavour.
 
 ### The Boon of Renewal — how fast should it heal? (systems builder, 2026-09-29, issue #60)
 Praying at a shrine restores you in full and gives one of five boons for 30 minutes of play. Four work: the Road (+25% speed), Stone (blows ×0.75), the Arm (+20% melee), the Mind (spells ×0.7). An Spéir's *Boon of Renewal* (type `regen`, mult 1) has no rate: nothing reads it, so a fifth of shrine prayers, and every prayer at An Spéir's, gives nothing after the restore. For scale, the regeneration tonics give 0.5/1.2/2.5 health a second (Mild/Strong/Master) for 60 s.

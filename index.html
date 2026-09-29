@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s318</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s319</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -25498,7 +25498,7 @@ function openQtyModal(it, side, bagIdx){
   } else {
     // Selling: unit = one piece, priced per piece.
     piecesPerUnit = 1;
-    unitPrice = Math.round(sellPrice(it)*_buffMult('goldFind',1));
+    unitPrice = Math.round(counterSellPrice(it)*_buffMult('goldFind',1));
     maxUnits = it.qty||1;
   }
   _qtyCtx={it, side, bagIdx, unitPrice, piecesPerUnit, maxUnits};
@@ -25754,7 +25754,7 @@ function renderShop(){
     return;
   }
   bagFiltered.forEach(({it,i})=>{
-    const sp=sellPrice(it);
+    const sp=counterSellPrice(it);
     const div=document.createElement('div');div.className='sh-row';
     div.innerHTML=shopRowHTML(it,'sell',sp,true,false,fullStock);
     // v68 — stackables with more than one bundle's worth open the sell prompt;
@@ -25823,7 +25823,13 @@ function itemDesc(it){
 function shopMul(){try{if(typeof WORLD==='undefined')return 1;
   if(typeof isInterior==='function'&&isInterior()){return (typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.siteId)?WORLD.priceMulAt(currentHouse.siteId):1;}
   return activeZoneId==='world'?WORLD.priceMulHere():1;}catch(e){return 1;}}
-function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()));}
+// S339 (Michael's A on #61) — Charisma's barter, as its card says: 1% a point off what you pay and on what you're paid
+// at a counter, up to a quarter. A bought-back item keeps the price you were paid for it, so the two can't be played
+// against each other.
+const BARTER_PCT=.01,BARTER_MAX=.25;
+function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT));}
+function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(1-barterPct())));}
+function counterSellPrice(it){return Math.max(1,Math.round(sellPrice(it)*(1+barterPct())));}
 function buyItem(it){
   const _cost=shopCost(it); // v80 O — prosperity sets the price
   if(gold<_cost){showMsg('Not enough gold!','#cc4444');return;}
@@ -28638,7 +28644,7 @@ function renderHubAttrs(){
   const rows=document.getElementById('attr-rows');rows.innerHTML='';
   Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const mult=getMultiplier(key);const actVal=lvAct[def.actKey]||0;const t=def.thresholds;const curThresh=t[mult-1]||0;const nextThresh=t[mult]||t[t.length-1];const prog=nextThresh>curThresh?Math.min(1,(actVal-curThresh)/(nextThresh-curThresh)):1;const mc=['','lu-mult-1','lu-mult-2','lu-mult-3','lu-mult-4','lu-mult-5'][mult];const row=document.createElement('div');row.className='attr-row';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${ATTRS[key]}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${prog*100}%"></div></div><span class="attr-act-label">${actVal}</span><span class="attr-mult-badge ${mc}">×${mult}</span>`;rows.appendChild(row);});
   const dg=document.getElementById('derived-grid');dg.innerHTML='';
-  [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+attrEff('swiftness')*2+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+(ATTRS.intelligence+ATTRS.charisma)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
+  [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+attrEff('swiftness')*2+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+Math.round(barterPct()*100)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
   // v80 — Standing: who you are to the world
   try{const sb=document.getElementById('standing-body');if(sb&&typeof WORLD!=='undefined'){
     const row=(k,v)=>`<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18)"><span style="color:#8a7a60;min-width:150px">${k}</span><span style="color:#e8dcc0">${v}</span></div>`;

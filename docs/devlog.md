@@ -8429,3 +8429,21 @@ New `tests/renewal.test.mjs`, 7 checks, passing, no page errors. The nearest shr
 
 ### Needs eyes
 Whether half a point a second is felt between fights over half an hour, or reads as nothing next to the full restore the prayer already gives.
+
+## v80 — Session 339 — Charisma's barter
+Michael's A on #61. The Charisma card has promised *+1% barter* a point. The hub's *Barter Bonus* row showed Intelligence plus Charisma. No price read either: a bard with Charisma 10 paid and was paid what a brute was.
+
+**What changed.** `barterPct()` is 1% a Charisma point, up to 25% (`BARTER_PCT`, `BARTER_MAX`). `shopCost` takes that share off the town's price, so every counter's list, quantity prompt, charge and message follow it, the Charisma 5 extra piece included. Selling goes through `counterSellPrice`, the item's fixed share plus the same percentage, in the shop's sell list and the quantity prompt. Goldenrod's luck still multiplies on top when the gold is paid. A piece you sold and buy back still costs exactly what you were paid for it, so the two sides can't be played against each other: at 25% off and 25% on, a piece still sells for about half of what it costs. The hub's row now reads Charisma only, capped at 25%. Aldwyn's line that Intelligence "improves how you barter" stays as flavour, as the question proposed. The inventory's *value* column still shows the bare share, since it is not a counter. The rule reads the Charisma you own; no enchantment gives Charisma.
+
+Services are not counter goods and do not move: an inn room, the priest, a coach ticket, a fine.
+
+### Verified (headless Chromium)
+New `tests/barter.test.mjs`, 7 checks, passing, no page errors. Dunmore's smith at 13h (town multiplier .9665), an Iron Sword listed at 35:
+- Bought at Charisma 0 for 35, at 10 for 31, at 40 for 26 (capped at 25% off). Each row showed the price that was charged.
+- The same sword sold for 16 at Charisma 0, 18 at 10 and 20 at 40.
+- The three buy-back rows cost 16, 18 and 20, what was paid, at Charisma 40.
+- The hub's row reads +0% at Intelligence 10, +7% at Charisma 7 and +25% at 40.
+- `prices` (5 checks) and `chamerchant` (6) pass.
+
+### Needs eyes
+Whether 1% a point is felt at the counter before Charisma is well up. At 5 it takes 2 off a 35-gold sword.
