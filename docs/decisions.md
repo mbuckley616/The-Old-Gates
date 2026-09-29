@@ -4,6 +4,21 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Chimney smoke — should the towns' chimneys smoke, and when? (Session 337, issue #63)
+Two in three houses in a town have a chimney (the detailed houses since Session 194), and none of them smokes; the Hearthwick quest's own journal line says "Chimney smoke ahead — a village". Since Session 330 the world keeps a wind (`windDir()`), which only the ships read. I prototyped smoke on a patched copy of the build: each detailed house records its chimney's top, and a town draws all its smoke as one Points object, two dozen soft puffs a chimney that rise, drift downwind, swell from half a unit to three and fade over ten seconds. It is tinted by the hour, and a storm lays it flat and fast. Dunmore has 33 chimneys: 792 puffs, one draw call, positions kept relative to the town's centre (the float32 rule).
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/smoke-dunmore.png (Dunmore without smoke at noon, then with it at noon, twenty hours later when the wind has turned, at dusk, close by a house, and in a storm).
+
+**Options**
+1. Every chimney smokes, day and night.
+2. **By the hearth's hours (recommended):** the inn, the smithy and the guild halls all day, where they have a chimney; homes in the morning (6–9) and the evening (17–23), with a thin thread between; every chimney all day in snow and in the tundra. The game has no seasons, so there is no winter rule. Nothing from burned or abandoned houses, which have no chimney.
+3. Only the inn and the smithy.
+4. No smoke.
+
+Recommendation: 2. A town that lights its fires for breakfast and supper looks lived in, and the rhythm costs nothing to compute. It also follows the world's wind the way the sails do.
+
+## Answered
+
 ### The interiors' shells on the kit — posts and joists, or only the trim? (Session 336, issue #62)
 The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes that meet the floor and each other with a hard edge, a flat dark ceiling, square box beams, the entrance door a plain brown box, and in Aurenne's rooms square box studs. I prototyped a kit shell for the generated rooms (homes, shops, inns, halls). The walls keep their plaster, rubble or ashlar textures; the furniture, windows and layouts do not move.
 
@@ -21,21 +36,8 @@ Pictures (each: today, A, B; left looking up the room, right looking back at the
 4. Leave the shells as they are.
 
 Recommendation: 1. The posts and braces are what make a Gatelands or Aurenne room read as a timber-framed house rather than a box with a texture, and the cost is a fifth of a room's furniture. Churches, keep halls and Hearthwick's old rooms would follow in later sessions, as the windows did.
-
-### Chimney smoke — should the towns' chimneys smoke, and when? (Session 337, issue #63)
-Two in three houses in a town have a chimney (the detailed houses since Session 194), and none of them smokes; the Hearthwick quest's own journal line says "Chimney smoke ahead — a village". Since Session 330 the world keeps a wind (`windDir()`), which only the ships read. I prototyped smoke on a patched copy of the build: each detailed house records its chimney's top, and a town draws all its smoke as one Points object, two dozen soft puffs a chimney that rise, drift downwind, swell from half a unit to three and fade over ten seconds. It is tinted by the hour, and a storm lays it flat and fast. Dunmore has 33 chimneys: 792 puffs, one draw call, positions kept relative to the town's centre (the float32 rule).
-
-Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/smoke-dunmore.png (Dunmore without smoke at noon, then with it at noon, twenty hours later when the wind has turned, at dusk, close by a house, and in a storm).
-
-**Options**
-1. Every chimney smokes, day and night.
-2. **By the hearth's hours (recommended):** the inn, the smithy and the guild halls all day, where they have a chimney; homes in the morning (6–9) and the evening (17–23), with a thin thread between; every chimney all day in snow and in the tundra. The game has no seasons, so there is no winter rule. Nothing from burned or abandoned houses, which have no chimney.
-3. Only the inn and the smithy.
-4. No smoke.
-
-Recommendation: 2. A town that lights its fires for breakfast and supper looks lived in, and the rhythm costs nothing to compute. It also follows the world's wind the way the sails do.
-
-## Answered
+Michael: **A**, the full frame. (29 Sep 2026)
+Done, Session 342: every generated room but the church, the keep's hall and the tower has the kit shell (`buildInteriorFor`): a boarded ceiling over joists every .5, rounded beams, the walls shaded at the foot, the head and the corners; posts, knee braces (a bracket where a window is within 1.2), a sole plate and a wall plate in plastered rooms, Aurenne's close studding a post every 1.6; a plinth and stepped corbels in stone and rubble rooms; the plank door at the entrance. The frame is built after the furniture, so a post gives way to anything solid against the wall; each post is a solid. `tests/shells.test.mjs`, `docs/prototypes/shells-ingame.png`.
 
 ### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)
 Every interior window today is a flat pane on the wall: a painted view of the town at dusk in the generated rooms, the same in a box frame in Hearthwick's old rooms, and a plain lit rectangle in a church. Now that the furniture is on the kit, the windows are the flattest thing left in a room. I prototyped three kit windows. In each, the painted view stays, set back behind the frame. They are not in the game.

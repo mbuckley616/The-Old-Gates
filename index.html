@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s283</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s284</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -38629,14 +38629,20 @@ var WORLD=(()=>{
     const wallKind=st==='anglo'?'rubble':(st==='stone'||st==='garrison'||type==='church'||type==='castle')?'ashlar':'plaster';
     const floorKind=(st==='stone'||st==='garrison'||type==='church'||type==='castle')?'flag':'plank';
     const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),tiled(floorKind,reg,W/2.2,D/2.2));fl.rotation.x=-Math.PI/2;fl.position.set(W/2,0,D/2);sc_.add(fl);
-    const ce=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshLambertMaterial({color:st==='anglo'?0x2a2420:0x3a2c1e}));ce.rotation.x=Math.PI/2;ce.position.set(W/2,H,D/2);sc_.add(ce);
+    // S342 (Michael's A on #62) — the generated rooms' shell on the kit: a boarded ceiling over joists, the walls shaded at the foot,
+    // the head and the corners, and (built after the furniture, below) the frame; churches, keep halls and the tower keep today's
+    const kitShell=type!=='church'&&type!=='castle'&&type!=='tower';
+    const ce=new THREE.Mesh(new THREE.PlaneGeometry(W,D),kitShell?tiled('plank',reg,W/2.2,D/2.2):new THREE.MeshLambertMaterial({color:st==='anglo'?0x2a2420:0x3a2c1e}));if(kitShell)ce.material.color.setHex(0x8a7a68);ce.rotation.x=Math.PI/2;ce.position.set(W/2,H,D/2);sc_.add(ce);
     [[W/2,0,0,W],[W/2,D,Math.PI,W],[0,D/2,Math.PI/2,D],[W,D/2,-Math.PI/2,D]].forEach(([x,z,ry,len])=>{
-      const wm=new THREE.Mesh(new THREE.PlaneGeometry(len,H),tiled(wallKind,reg,len/2.6,H/2.6));wm.position.set(x,H/2,z);wm.rotation.y=ry;sc_.add(wm);
+      const geo=kitShell?new THREE.PlaneGeometry(len,H,Math.max(4,Math.round(len/.5)),Math.max(10,Math.round(H/.2))):new THREE.PlaneGeometry(len,H);
+      if(kitShell){const P_=geo.attributes.position,col=new Float32Array(P_.count*3);for(let i=0;i<P_.count;i++){const u=P_.getX(i)+len/2,y=P_.getY(i)+H/2,e=Math.min(u,len-u);
+        col[i*3]=col[i*3+1]=col[i*3+2]=Math.max(.45,1-.38*Math.exp(-y/.3)-.3*Math.exp(-(H-y)/.35)-.32*Math.exp(-e/.4));}geo.setAttribute('color',new THREE.BufferAttribute(col,3));}
+      const wm=new THREE.Mesh(geo,tiled(wallKind,reg,len/2.6,H/2.6));if(kitShell){wm.material.vertexColors=true;wm.userData.shaded=true;}wm.position.set(x,H/2,z);wm.rotation.y=ry;sc_.add(wm);
     });
     const beamC=st==='french'||st==='anglo'?0x2c1e12:0x4a3420;
     // timber studs (french) and beams
-    if(st==='french'){for(let x=1.4;x<W-1;x+=1.6){boxRaw(x,H/2,.06,.14,H,.12,beamC);boxRaw(x,H/2,D-.06,.14,H,.12,beamC);}for(let z=1.4;z<D-1;z+=1.6){boxRaw(.06,H/2,z,.12,H,.14,beamC);boxRaw(W-.06,H/2,z,.12,H,.14,beamC);}}
-    const nb=Math.max(2,Math.round(D/3));for(let i=1;i<=nb;i++)boxRaw(W/2,H-.1,D*i/(nb+1),W,.16,.22,beamC);
+    if(st==='french'&&!kitShell){for(let x=1.4;x<W-1;x+=1.6){boxRaw(x,H/2,.06,.14,H,.12,beamC);boxRaw(x,H/2,D-.06,.14,H,.12,beamC);}for(let z=1.4;z<D-1;z+=1.6){boxRaw(.06,H/2,z,.12,H,.14,beamC);boxRaw(W-.06,H/2,z,.12,H,.14,beamC);}}
+    const nb=Math.max(2,Math.round(D/3));if(!kitShell)for(let i=1;i<=nb;i++)boxRaw(W/2,H-.1,D*i/(nb+1),W,.16,.22,beamC);
     // windows: lit panes on both long walls
     // S331 (Michael's 2 on #53) — each pane set back on the wall behind a kit frame chosen by the room (winKind); one bake a room
     const winY=Math.min(H-.6,1.35);const WK=furnKit(),WP=WK.Parts(),wKind=WK.winKind(type,false);let wi=0;
@@ -38650,7 +38656,7 @@ var WORLD=(()=>{
     sc_.add(new THREE.AmbientLight(0xffb070,type==='church'?.32:type==='castle'?.3:.45));
     const lan=new THREE.PointLight(0xffaa44,2.2,Math.max(W,D)*1.3);lan.position.set(W/2,H-.4,D/2);sc_.add(lan);const lc=new THREE.Mesh(new THREE.SphereGeometry(.06,5,5),new THREE.MeshBasicMaterial({color:0xffdd88}));lc.position.copy(lan.position);sc_.add(lc);
     // door on the south wall + the engine's exit disc
-    boxRaw(W/2,.7,D-.05,.9,1.4,.08,0x4a2e14);
+    if(!kitShell)boxRaw(W/2,.7,D-.05,.9,1.4,.08,0x4a2e14);
     const eDisc=new THREE.Mesh(new THREE.CircleGeometry(.5,10),new THREE.MeshBasicMaterial({color:0xc8a84a,transparent:true,opacity:.18,side:THREE.DoubleSide}));eDisc.rotation.x=-Math.PI/2;eDisc.position.set(W/2,.02,D-1.0);sc_.add(eDisc);
     // gallery: mezzanine along the north half, railing, stair on the west wall
     if(gallery){
@@ -38895,6 +38901,47 @@ var WORLD=(()=>{
     if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';const bx=home?1.0:(house._backRoom?W-.9:W-1.0),bz=home?D-1.0:(house._backRoom?D-2.6:D*.55);
       const bg=new THREE.Group();const shell=buildChestShell(bg,home?.45:.6,home?0x6a4a2c:0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=home?Math.PI*.5:Math.PI;sc_.add(bg);solid(bx,bz,.32,.28,.5);
       INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:home?'home':'shop',type,house,open:false};}
+    // S342 (#62 A) — the frame, built last so a post gives way to whatever stands against the wall. Plastered rooms: posts at the
+    // corners and under each beam's ends (a short bracket where a window is within 1.2), knee braces, a sole plate and a wall
+    // plate; Aurenne's close studding a post every 1.6. Stone and rubble rooms: a plinth course and three stepped corbels under
+    // each beam's end. Everywhere: rounded beams .22 deep, joists every .5, and the entrance a plank door in a timber or stone frame.
+    if(kitShell){const K=furnKit(),P=K.Parts(),Wd=K.WOOD[FN]||K.WOOD.gatelands,T=Wd.dark,S=0x6e675e,stone=wallKind!=='plaster',close=st==='french';
+      let sd=FSEED*7+3;const r=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};const jit=(c,a)=>new THREE.Color(c).offsetHSL(0,0,(r()-.5)*(a||.06));
+      const rb=(w,h,d,q)=>SK.rbox(w,h,d,q==null?Math.min(.02,w/3,h/3,d/3):q,1);
+      const beams=[];for(let i=1;i<=nb;i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3))wins.push(z);
+      const bh=.22,bw=.2,jh=.09,yB=H-jh-bh/2;
+      for(const z of beams)P(rb(W,bh,bw,.03),jit(T,.05),W/2,yB,z);
+      for(let x=.3;x<W-.1;x+=.5)P(rb(.09,jh,D,.015),jit(T,.07),x,H-jh/2,D/2);
+      // plates and plinth along each wall, the south one broken for the entrance
+      [[W/2,0,W,0],[0,D/2,D,1],[W,D/2,D,1],[W/2,D,W,0]].forEach(([cx,cz,L,side])=>{const inset=side?(cx<1?.05:-.05):(cz<1?.05:-.05);
+        const segs=cz===D?[[0,W/2-.9],[W/2+.9,W]]:[[0,L]];
+        for(const [a,b] of segs){const mid=(a+b)/2;
+          if(stone){for(let s2=a;s2<b-.05;s2+=.55){const l=Math.min(.55,b-s2)-.02,c=s2+l/2;side?P(rb(.16,.26,l,.03),jit(S,.08),cx+inset*1.6,.13,c):P(rb(l,.26,.16,.03),jit(S,.08),c,.13,cz+inset*1.6);}}
+          else side?P(rb(.1,.16,b-a,.015),jit(T),cx+inset,.08,mid):P(rb(b-a,.16,.1,.015),jit(T),mid,.08,cz+inset);}
+        side?P(rb(.14,.16,L,.02),jit(T),cx+inset*1.2,H-jh-.08,cz):P(rb(L,.16,.14,.02),jit(T),cx,H-jh-.08,cz+inset*1.2);});
+      const nearWin=(z,d)=>wins.some(wz=>Math.abs(wz-z)<d);
+      const hits=(x0,x1,z0,z1)=>SOL.some(q=>q.x0<x1&&q.x1>x0&&q.z0<z1&&q.z1>z0)||FOOTHOLDS.some(q=>q.x0!=null&&(q.x1-q.x0)*(q.z1-q.z0)<12&&q.x0<x1&&q.x1>x0&&q.z0<z1&&q.z1>z0);
+      const posts=[];const post=(x,z)=>{if(hits(x-.1,x+.1,z-.1,z+.1))return false;posts.push([x,z]);P(rb(.18,H-jh-.16,.18,.03),jit(T,.05),x,(H-jh-.16)/2,z);return true;};
+      if(!stone){for(const [x,z] of [[.09,.09],[W-.09,.09],[.09,D-.09],[W-.09,D-.09]])post(x,z);
+        for(const z of beams)for(const sx of [0,1]){const x=sx?W-.09:.09,dir=sx?-1:1;
+          if(!nearWin(z,1.2)&&post(x,z)){const L=.75;for(const dz of [-1,1])P(rb(.1,L,.1,.02),jit(T),x+dir*.02,yB-bh/2-L*.35,z+dz*L*.35,dz*.78,0,0);P(rb(.1,.5,.1,.02),jit(T),x+dir*.24,yB-bh/2-.18,z,0,0,-dir*.8);}
+          else P(rb(.22,.3,.24,.03),jit(T),x+dir*.03,yB-bh/2-.15,z);}
+        const step=close?1.6:2.4;for(let x=step;x<W-.8;x+=step){if(Math.abs(x-W/2)>1.1)post(x,D-.09);post(x,.09);}
+        if(close)for(let z=1.6;z<D-.8;z+=1.6)if(!nearWin(z,1.2)&&!beams.some(b=>Math.abs(b-z)<.5)){post(.09,z);post(W-.09,z);}}
+      else for(const z of beams)if(!nearWin(z,.8))for(const sx of [0,1]){const x=sx?W:0,dir=sx?-1:1;
+        for(let k=0;k<3;k++)P(rb(.16+k*.12,.12,.3,.025),jit(S,.06),x+dir*(.08+k*.06),yB-bh/2-.3+k*.12,z);}
+      for(const [x,z] of posts)SOL.push({x0:x-.09,x1:x+.09,z0:z-.09,z1:z+.09,y0:-.5,y1:H,post:true});
+      const G=K.bake(P);G.userData.shell={posts:posts.length,stone};sc_.add(G);
+      // the entrance: plank door with ledges, a brace, strap hinges with nail heads and a ring (local: the wall at z=0, the room +z)
+      const Q=K.Parts(),w=1.0,h=1.5,I=0x2a2624,SS_=0x9a9284,nbd=5;
+      for(let k=0;k<nbd;k++)Q(rb(w/nbd-.008,h,.05,.01),jit(Wd.wood,.08),-w/2+w/nbd*(k+.5),h/2,.03);
+      for(const y of [.25,h-.25])Q(rb(w-.1,.09,.035,.01),jit(Wd.dark),0,y,.07);
+      Q(rb(.08,Math.hypot(w-.16,h-.6),.03,.01),jit(Wd.dark),0,h/2,.07,0,0,Math.atan2(w-.16,h-.6));
+      for(const y of [.25,h-.25]){Q(rb(w*.7,.045,.012,.005),I,-w*.15,y,.095);for(let k=0;k<4;k++)Q(SK.ball(.012,5,4),I,-w/2+.06+k*w*.19,y,.1);}
+      Q(SK.torus(.05,.008,4,12),I,w*.32,h*.52,.1);Q(SK.ball(.02,6,5),I,w*.32,h*.52+.05,.09);
+      if(stone){for(const sx of [-1,1])for(let k=0,y=0;k<4;k++){const bh2=h/4,bw2=k%2?.16:.24;Q(rb(bw2,bh2-.012,.2),jit(SS_,.07),sx*(w/2+bw2/2),y+bh2/2,.08);y+=bh2;}Q(rb(w+.6,.22,.22),jit(SS_,.05),0,h+.11,.09);}
+      else{for(const sx of [-1,1])Q(rb(.12,h+.1,.14),jit(Wd.dark),sx*(w/2+.06),(h+.1)/2,.06);Q(rb(w+.5,.16,.16),jit(Wd.dark),0,h+.13,.07);}
+      const Dr=K.bake(Q);Dr.position.set(W/2,0,D);Dr.rotation.y=Math.PI;Dr.userData.entrance=true;sc_.add(Dr);}
     // keeper / resident — only if the schedule says they're indoors right now
     // (the same person you see in the street is the one behind the counter).
     if(npcInsideNow(house)){

@@ -7695,3 +7695,38 @@ The prototype (`docs/prototypes/smoke/proto.mjs`) writes a patched copy of the b
 
 ### Needs eyes
 In a storm the puffs separate into beads, because they drift faster than they are made. The building would tie the puffs' rate to the drift. Whether the smoke is too thin from the hill at 70 units, where it reads as wisps. A real GPU's cost for overlapping transparent sprites at close range (fill rate) is not measured here; software GL says nothing useful about it.
+
+## v80 — Session 342 — The interiors' shells on the kit (H.5, Michael's A on #62)
+Michael answered #62 with A, the full frame. Session 336's prototype hid today's shell pieces in a finished room and laid a kit shell over them; this session builds it into `buildInteriorFor` itself, for every generated room except the church, the keep's hall and the tower. Those three have their own tall shells (5.0, 5.6 and 31 high), and the question put them in a later session, as the windows' did.
+
+What changed in a room:
+- **Walls and ceiling.** The four wall planes are subdivided every half unit and shaded in their vertex colours: darker at the foot, the head and the corners, the dungeon shell's rule. The flat dark ceiling is now boards, the plank texture tinted down to 0x8a7a68.
+- **Timbers.** The box beams are gone. In their place are rounded beams .22 deep, joists every .5 across them, and a wall plate along the head of every wall.
+- **Plastered rooms** (the Gatelands and Aurenne) get posts at the corners, under each beam's ends and along the end walls every 2.4, with knee braces up to each beam and along the wall plate, and a sole plate at the foot. Aurenne's box studs are replaced by the kit's close studding, a post every 1.6. Where a window is within 1.2 of a beam's end, a short bracket takes the post's place.
+- **Stone and rubble rooms** (the stone houses, the Mark) get a plinth course of blocks along the foot, and three stepped corbels under each beam's end. A corbel is left out where a window is within .8, because the Mark's rooms are 2.0 high and the corbels come down to the window heads.
+- **The door.** The entrance's brown box is a plank door, a metre by 1.5. It has ledges, a brace, strap hinges with nail heads and a ring, and it stands in a timber frame, or in a stone surround in stone rooms. It sits where the box was, so leaving by the south wall works as before.
+
+Two things differ from the prototype, both from its own Needs eyes.
+- **Posts and furniture.** The frame is built last, after the furniture, the back rooms, the inn's partition, the strongbox and the gallery's stair. A post whose footprint meets any solid, or any foothold smaller than twelve square units (so a stair or a table, but not the gallery's deck), is left out.
+- **Collision.** Each post that stands is a solid of its own (`post:true` in `INT_SOL`), so the player stops at it rather than walking through .18 of timber.
+
+The prototype's stone plinth stood .03 into the wall; it is now flush. Each room is one bake for the shell and one for the door, where it used to be ten to twenty-five meshes.
+
+### Verified (headless Chromium)
+- **`shells`**, new. It checks twelve generated rooms: four homes (the Gatelands, Aurenne, the Mark, stone), an inn, a smithy, an apothecary, a Mark shop, a stone guild hall, a cabin, a cellar and a galleried home.
+  - Every one has the kit shell and the plank door, and none has the box door or box beams.
+  - The church and the keep's hall still have today's shell.
+  - All four walls in each room are vertex-shaded, and the ceilings are boarded.
+  - Plastered rooms stand on 9–15 posts, Aurenne's on 23, and the stone and rubble rooms on none.
+  - No post meets another solid, stands within .6 of a window's centre, or stands in the entrance.
+  - Each shell lies inside its walls and under its ceiling. The door is centred on the south wall, and its head is at 1.71–1.72.
+  - The shell is 2.1–3.4k triangles in a plastered room, 6.2k in a stone one and 11.7k in the guild hall. The door is 1.0k, or 1.3k in stone.
+  - A post blocks the player at the west wall, and the middle of the room is free.
+  - The picture is `docs/prototypes/shells-ingame.png`: the four homes looking up the room and back at the door, then the inn and the smithy.
+- **`windows`**, **`interiors`**, **`homefurn`**, **`oddfurn`**, **`legacyshops`**, **`civicfurn`**, **`guildfurn`**, **`shopfurn`**, **`chapel`**, **`legacyhalls`**, and **`crime1`**–**`crime5`**, **`witness`** and **`locks`** pass.
+
+### Needs eyes
+- Whether the joists crowd a 2.0 Mark ceiling, where the beams' soffits sit at 1.69.
+- Whether the plastered walls are too bright against the dark timber at the lantern's range, as they are in the picture. The shading darkens the edges, not the middle of the wall.
+- In galleried rooms the posts on the north half rise through the deck to the roof. They read as the frame holding the gallery up, but nobody has looked at them from upstairs.
+- Churches, keep halls and Hearthwick's rooms are still owed.
