@@ -8353,3 +8353,15 @@ New `tests/fortunecaor.test.mjs`, 5 checks, passing, no page errors.
 
 ### Needs eyes
 Whether a crit you didn't earn with a parry feels like luck or like noise, and whether the *(CRIT)* tag should say which kind.
+
+## v80 — Session 329 — Ashwort's pulse
+The third of #58's four (Michael's A). Ashwort's hidden effect, *minimap pulse, reveals nearby enemies for 5s*, went into the buffs as `minimapPulse`, and nothing read it. The open world's minimap already shows every foe in range. Underground, `drawMM` shows a foe only in a cell you have seen (the map reveals 5 units round you as you go). Now, while the pulse lasts, the dungeon's minimap also shows every foe on your floor within 20 units that is not a disguised mimic, seen or not, in the same red. Nothing else changes. The pulse is Ashwort's own 5 s, counted down with the other buffs.
+
+### Verified (headless Chromium)
+New `tests/ashwort.test.mjs`, 3 checks, passing, no page errors. A goblin dungeon (seed 5), the revealed map cleared before every draw, the player 12 units off a foe. Counted in pixels of the foe red on the minimap canvas:
+- Bare: 0, with no foe within the map's own 5-unit reveal.
+- After eating Ashwort (a 5 s `minimapPulse` in the buffs): 68, the 4 foes within 20 units.
+- 400 units from every foe, still under the pulse: 0. After the pulse ended: 0 again.
+
+### Needs eyes
+Whether 5 s is enough to read the minimap in a fight, and whether pulsed foes should show in a paler red than seen ones.

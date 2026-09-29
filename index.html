@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s313</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s314</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -26930,7 +26930,9 @@ function drawMM(){
       const mv=curMap[r][c];
       mmC.fillStyle=mv===0?'#1e1a14':mv===5?'#8a4a10':mv===6?'#3a3020':mv===3?'#7a6840':'#4a4438';
       mmC.fillRect(c*sc,r*sc,sc-.5,sc-.5);}
-    ENEMIES.forEach(e=>{if(!e.dead&&e.floor===currentFloor&&mmRev[Math.round(e.z)]?.[Math.round(e.x)]){mmC.fillStyle='#cc3322';mmC.fillRect(e.x*sc-2,e.z*sc-2,5,5);}});
+    // S329 (Michael's A on #58) — Ashwort's pulse: for its 5 s, every undisguised foe on this floor within 20 units shows, seen or not
+    const _pulse=_hasBuff('minimapPulse');
+    ENEMIES.forEach(e=>{if(!e.dead&&e.floor===currentFloor&&(mmRev[Math.round(e.z)]?.[Math.round(e.x)]||(_pulse&&!e.disguised&&Math.hypot(e.x-px,e.z-pz)<20))){mmC.fillStyle='#cc3322';mmC.fillRect(e.x*sc-2,e.z*sc-2,5,5);}});
     KEYS.forEach(k=>{if(!k.collected&&k.floor===currentFloor&&mmRev[Math.round(k.z)]?.[Math.round(k.x)]){mmC.fillStyle='#ffd700';mmC.fillRect(k.x*sc-2,k.z*sc-2,5,5);}});
     // Sigils — gold ✦ glyph on cells that have been revealed.
     (typeof SIGILS!=='undefined'?SIGILS:[]).forEach(s=>{
