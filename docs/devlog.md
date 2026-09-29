@@ -7593,3 +7593,19 @@ The last of the dungeon rooms' owed props from Session 310: the three lootable c
 
 ### Needs eyes
 Whether the sarcophagus lid pushed aside reads as opened by a person; whether the urn's clay is too warm under the dungeon's orange light. The rack's weapons stay on it after it is emptied; hiding them would need the loot panel to tell the container when it is empty, a small change for a later session if it bothers.
+
+## v80 — Session 319 — Prototype: the ships' sails trimmed to a wind (H.5b, question #57)
+Section H's items are done or waiting on Michael except one owed since Session 168: the sails swinging with the heading and the wind. Every ship's rig is in the hull's one bake, so the sails stand square across the hull whatever the heading, and the booms lie on the centreline. The world has no wind to trim to. That makes this a design question, not a build, so this session is a prototype and the question.
+
+**The prototype** is on the branch `auto/proto-sails`, not on this branch and not in the game. `shipBake` takes each square mast's yards and sails, each gaff with its boom, and the jib out of the bake into their own geometries, each pivoting on its mast. `buildShipMesh` hangs them on the hull as children, and `shipTrim(mesh, th)` sets them for a wind blowing at `th` against the bow. Square yards brace to split the angle between the wind and the bow, clamped at 35°. A gaff's boom goes to leeward, out to 72° running and in to 15° close-hauled, and its sail and the jib are mirrored to belly to leeward. The children are 1–3 more draw calls a ship and no more triangles. Because the rig pieces are separate meshes, the harbour's moored boats and the other ships would need no change beyond calling the trim.
+
+**The question** (issue #57, and in `docs/decisions.md`): a world wind that every ship trims to, as the look only (recommended); the same with the wind setting the speed, a sailing rule for the systems builder; the sails swinging only through a turn; or leaving them as they are.
+
+**Also in the backlog:** two stale notes are crossed out. The dungeon's goblins and kobolds were done with the roster in Session 196. The cave door's maw has been a rounded hollow since Session 274.
+
+### Verified (headless Chromium)
+- `tests/sailproto.test.mjs` on `auto/proto-sails` builds the sloop, cog and galleon, trims each to four winds, and pictures them from overhead and from the stern quarter with no page errors. The pictures are `docs/prototypes/sails-plan.png` and `sails-quarter.png`. In plan, every yard, boom and sail sits where the rule puts it against the wind arrow.
+- Nothing in `index.html` changed on this branch.
+
+### Needs eyes
+The answer on #57. Whether 35° of bracing reads as enough from the deck. A real ship braces sharper close-hauled, but at more than about 35° the yards would foul the shrouds as the rigging is built.
