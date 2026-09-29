@@ -6,6 +6,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Magic — fixed spells from every sigil, words you combine, or three registers to choose between? (the designer, 2026-09-29)
+Today spells come from seven carvings and from the Mages' Guild's counter (60–1,400 gold, capped at Comprehension), and the world's 368 glowing sigil gates carry no carving; spell damage adds `level × 3` flat. Which loop should magic take, with the six schools as skills under the Morrowind book, no spell sales, and overcasting from health as the shared risk? (Page: `docs/design/magic.md`.)
+- **A.** Sigils and schools: the canon's 38 fixed spells carved across the sigil gates by region, a second gate for the next tier, Leap, Shadow Step and Phase as movement spells. Three Opus sessions.
+- **B.** Words of the deep tongue: sigils teach words (Caor, Sioc, Cloch, Éan …), the guild teaches five forms by rank (sent, worn, touched, laid, held), and you make a spell of a form and one or two words: a stone pillar to a ledge, an ice floe over a river, fire on a web. One Fable and six Opus sessions.
+- **C.** Three registers: A's spells, each learned for good from a hedge-witch (safe, weaker), the guild (reliable, capped) or the carving (wild, the only Mastery, Varek's attention). Six Opus sessions.
+
+Recommendation: **B**, with A's carvings in every sigil gate built first. A new word multiplies what you can do instead of replacing a spell with a better one, the movement spells are made for the platforming to come, and it reads the canon's registers as they are written: the makers' words, the academies' grammar.
+Michael: **B — words of the deep tongue.** — If we do this, I think I want to have a questline to unlock all of the magic, and it should probably be part of the main quest. I just feel like players would never find the sigils otherwise. (29 Sep 2026)
+
 ### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
 Opening the lockpick pauses the game, as the inventory does (Session 142), so the watch stands still while you work and whether you are seen is decided once, when the lock gives. A pick costs no world time, however long it takes you. The critic found night burglary nearly free (Portclare 5 doors, Dunmore 7, seen 0 times) and put it down to headless picks being instant. In real play they are instant too, as far as the guards can tell.
 
