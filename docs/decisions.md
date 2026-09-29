@@ -22,6 +22,19 @@ Pictures (each: today, A, B; left looking up the room, right looking back at the
 
 Recommendation: 1. The posts and braces are what make a Gatelands or Aurenne room read as a timber-framed house rather than a box with a texture, and the cost is a fifth of a room's furniture. Churches, keep halls and Hearthwick's old rooms would follow in later sessions, as the windows did.
 
+### Chimney smoke — should the towns' chimneys smoke, and when? (Session 337, issue #63)
+Two in three houses in a town have a chimney (the detailed houses since Session 194), and none of them smokes; the Hearthwick quest's own journal line says "Chimney smoke ahead — a village". Since Session 330 the world keeps a wind (`windDir()`), which only the ships read. I prototyped smoke on a patched copy of the build: each detailed house records its chimney's top, and a town draws all its smoke as one Points object, two dozen soft puffs a chimney that rise, drift downwind, swell from half a unit to three and fade over ten seconds. It is tinted by the hour, and a storm lays it flat and fast. Dunmore has 33 chimneys: 792 puffs, one draw call, positions kept relative to the town's centre (the float32 rule).
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/smoke-dunmore.png (Dunmore without smoke at noon, then with it at noon, twenty hours later when the wind has turned, at dusk, close by a house, and in a storm).
+
+**Options**
+1. Every chimney smokes, day and night.
+2. **By the hearth's hours (recommended):** the inn, the smithy and the guild halls all day, where they have a chimney; homes in the morning (6–9) and the evening (17–23), with a thin thread between; every chimney all day in snow and in the tundra. The game has no seasons, so there is no winter rule. Nothing from burned or abandoned houses, which have no chimney.
+3. Only the inn and the smithy.
+4. No smoke.
+
+Recommendation: 2. A town that lights its fires for breakfast and supper looks lived in, and the rhythm costs nothing to compute. It also follows the world's wind the way the sails do.
+
 ## Answered
 
 ### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)

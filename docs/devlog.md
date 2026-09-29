@@ -7681,3 +7681,17 @@ This session changes nothing in `index.html`. The question is on issue #62 and u
 
 ### Needs eyes
 Whether the joists crowd a low cottage ceiling (2.0–2.1): the beams' soffits sit at about 1.8, well over the eye at .92, but the ceiling reads busier. Whether the stone plinth reads as stone or as a skirting board. The prototype does not check collision: in the game the posts, which stand .18 proud of the wall, would want solids of their own, and a check that none stands in front of a bed, shelf or hearth.
+
+## v80 — Session 337 — Chimney smoke on the world's wind: a prototype and a question (H.5, issue #63)
+Two in three town houses have a chimney on the detailed house (Session 194), and not one of them smokes. The Hearthwick quest's journal still says "Chimney smoke ahead — a village". Session 330 gave the world a wind that only the ships read, and its devlog named smoke as the next thing that could read it. This is a visual feature nobody has specified, so it is a prototype and a question, not a build.
+
+The prototype (`docs/prototypes/smoke/proto.mjs`) writes a patched copy of the build to `tests/tmp/smoke-proto.html`. In that copy, `buildingGeoHi` records its chimney's top in `userData.chimney`, and the settlement's `addMesh` turns that into a world position. The script then boots the copy, goes to Dunmore and draws the smoke there. The whole town's smoke is one `THREE.Points` object with a small shader: a soft round sprite, sized by distance, faded by the fog, tinted grey by day, warm at dusk and blue-grey at night. Each chimney has 24 puffs on a ten-second life. A puff rises about .4 a second, drifts downwind along `WORLD.windDir()` (the direction `(sin w, cos w)`, the flag's), swells from .5 to 3.3 across and fades in and out. A storm lays it flatter and three times as fast. The puffs are placed relative to the town's centre, so no world coordinate goes through the float32 path.
+
+`index.html` is unchanged. The question is on issue #63 and under Pending in `docs/decisions.md`. The options are every chimney all the time; by the hearth's hours (recommended); only the inn and the smithy; or none.
+
+### Verified (headless Chromium)
+- The prototype runs clean with no page errors. Dunmore has 33 chimneys within 90 units of its centre, which makes 792 puffs in one draw call. The CPU work each frame is one pass over 792 points.
+- `docs/prototypes/smoke-dunmore.png` shows six views: the town at noon without smoke, then with it; twenty game hours later, when the wind has turned; at dusk; close by a house; and in a storm. The smoke leans the same way from every chimney, and it leans the other way once the wind has moved.
+
+### Needs eyes
+In a storm the puffs separate into beads, because they drift faster than they are made. The building would tie the puffs' rate to the drift. Whether the smoke is too thin from the hill at 70 units, where it reads as wisps. A real GPU's cost for overlapping transparent sprites at close range (fill rate) is not measured here; software GL says nothing useful about it.
