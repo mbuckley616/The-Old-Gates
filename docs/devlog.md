@@ -7486,3 +7486,21 @@ The prototype renders without page errors: `docs/prototypes/windows-home.png` (a
 
 ### Needs eyes
 Michael's choice. Nothing in the game has changed.
+
+## v80 — Session 306 — The fort's great hall, lord's chamber, chapel and courtyard on the shape kit (H.5, H.7, #46 A)
+The rooms inside a fort (`decorateFortRoom`, the named rooms of the fort layouts: Greywatch, the Old Garrison, the Last Post, the Wind Cloister) were the last interiors furnished with boxes: a slab table with slab benches, hutches of four boxes, a bed of two, a box altar with box pews, and a cylinder brazier. Four of the ten room kinds are now one bake each on the kit, with their collision footprints registered as before (`registerProp`, so the player still walks round them):
+- **The great hall:** the kit's long table with a bench either side and three candles, the banner hung on the north wall (the old plane hung .55 off it), and the three hutches as the kit's dresser, backs to the wall, candles on top.
+- **The lord's chamber:** the box bed with its head to the north wall, a small table with a candle beside it, and the chest at its foot.
+- **The chapel:** the kit's altar with its cloth, runner, candlesticks and book, and three pews facing it.
+- **The courtyard hall:** the kit's iron brazier at 1.8 times its size (a unit across, as the old one was), coals and flames in its fire mesh, its light raised to the new flames.
+
+**The scale was wrong before.** The old pieces were sized to a larger figure than the player: a table top at .7 and a hutch 1.8 high against the eye's .92, when the town interiors' tables stand at .46. The kit's pieces are at the town interiors' sizes, so a fort's hall now matches an inn's.
+
+The other six kinds (barracks, kitchen, armoury, guardroom, library, storeroom) and the cot by the entrance are still boxes. They are the next slice.
+
+### Verified (headless Chromium)
+- **`fortfurn` (new):** across four forts (the tee at two seeds, the linear and the courtyard layouts), all four kinds turn up (eleven rooms in all). Each is one bake inside its room and under the 3.2 ceiling: the great hall 9,172 triangles with 6 footprints, the lord's chamber 4,279 with 3, the chapel 2,462 with 4, the courtyard's brazier 522 with 1. No box or cylinder in the old props' materials is left in any of them, and the chapel's candles and the brazier burn in their bakes' fire meshes. The picture is `docs/prototypes/fortfurn-ingame.png`. From above, the lord's chamber shows the bed, table and chest where they belong.
+- **`dungeon`** (a fort's floors on the shell), **`keep`** and **`dungeonfoes`** pass.
+
+### Needs eyes
+A fort in play: whether furniture at the town's scale looks lost in rooms 10 or 16 cells across (the hall's table is up to 9 long, but the bed is 1.5), and whether the brazier at 1.8 times the kit's size reads right beside the people.

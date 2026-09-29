@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s274</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s275</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -23560,108 +23560,62 @@ function buildDungeon(portal){
 
     const cx = room.x + room.w/2 - 0.5;
     const cz = room.y + room.h/2 - 0.5;
+    // S306 — the fort's rooms on the kit (#46 A, and H.7's "rubble and props"): the pieces at the kit's own sizes, which are
+    // the town interiors' (the old boxes stood a table at .7 and a hutch at 1.8 against a .92 eye); one bake a room, the
+    // collision footprints registered as before. The wall's inside face is half a cell out from the room's first cell.
+    const FK = furnKit(), FP = FK.Parts(), FN = 'gatelands', FS = (room.x * 31 + room.y * 17) | 0;
+    const wallN = room.y - 0.5, wallS = room.y + room.h - 0.5;
+    const kitCandle = (wx, wy, wz) => { const q = FK.Parts(); FK.candle(q, 0, 0, 0); FP.put(q, wx, wz, 0, wy);
+      const fl = new THREE.PointLight(0xffaa66, 0.6, 2.5); fl.position.set(wx, baseY + wy + 0.16, wz); dScene.add(fl); };
+    const kitBake = () => { if(!FP.list.length) return; const G = FK.bake(FP); G.position.y = baseY; G.userData.fortFurn = { kind: room.kind, cx, cz, x0: room.x - 0.5, z0: room.y - 0.5, w: room.w, h: room.h }; dScene.add(G); return G; };
 
     if(room.kind === 'great_hall'){
-      // Long banquet table running along the room's long axis (E-W since
-      // great_hall is 16w × 10h). Two bench rows flanking it. Banner on
-      // the north (back) wall — large rectangular cloth, room-aligned.
-      const tableLen = Math.min(room.w - 6, 9);  // leave 3-cell margin each end
-      boxSolid(cx, cz, tableLen, 0.7, 1.0, woodLight);
-      // Bench rows
-      boxSolid(cx, cz - 1.0, tableLen, 0.4, 0.35, woodDark);
-      boxSolid(cx, cz + 1.0, tableLen, 0.4, 0.35, woodDark);
-      // Banner on north wall — hung at ceiling level, hangs down.
-      const bannerMat = new THREE.MeshLambertMaterial({color: 0x8a3320, side: THREE.DoubleSide});
-      const banner = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2), bannerMat);
-      banner.position.set(cx, baseY + 2.0, room.y + 0.05);
-      banner.rotation.y = 0;  // facing south (into the room)
-      dScene.add(banner);
-      // Candles on the table — 3 evenly spaced
+      // the long table with benches and three candles; the banner on the north wall; the hutches are the kit's dresser,
+      // two on the north wall flanking the banner, one on the south wall to the west (the east is the staircase's)
+      const tableLen = Math.min(room.w - 6, 9);
+      FP.put(FK.table(tableLen, 1.0, FN, FS), cx, cz, 0); registerProp(cx, cz, tableLen, 1.0);
+      for(const sd of [-1, 1]){ FP.put(FK.bench(tableLen - .2, FN, FS + 2 + sd), cx, cz + sd * 0.9, 0); registerProp(cx, cz + sd * 0.9, tableLen - .2, 0.32); }
+      FP.put(FK.banner(0x8a3320, FS + 5), cx, wallN + 0.08, 0, 2.95);
       const candleDx = tableLen / 4;
-      for(let i = 1; i <= 3; i++){
-        candle(cx - tableLen/2 + i * candleDx, 0.70, cz);
-      }
-      // v61ga: hutches along the long walls. Two flank the banner on the
-      // north wall; one on the south wall pushed west, so the south-east
-      // quadrant is reserved for the staircase below.
-      // v61gb: hutch back face flush with wall inside face. Hutch depth 0.5
-      // → N: wz = room.y - 0.5 + 0.25 + 0.02 = room.y - 0.23
-      // → S: wz = room.y + room.h - 0.5 - 0.25 - 0.02 = room.y + room.h - 0.77
-      const hutchPositions = [
-        // North wall: two hutches, banner is between them
-        {wx: cx - tableLen/2 - 0.5, wz: room.y - 0.23, facing: 1},
-        {wx: cx + tableLen/2 + 0.5, wz: room.y - 0.23, facing: 1},
-        // South wall: one hutch on the west side; east is staircase territory
-        {wx: cx - tableLen/2 - 0.5, wz: room.y + room.h - 0.77, facing: -1},
-      ];
-      for(const hp of hutchPositions){
-        // Main hutch body — 1.4 wide × 1.8 tall × 0.5 deep
-        boxSolid(hp.wx, hp.wz, 1.4, 1.8, 0.5, woodDark);
-        // Top mantel — slightly wider, lighter wood
-        boxAt(hp.wx, 1.85, hp.wz, 1.5, 0.10, 0.55, woodLight);
-        // Two cabinet-door strips on the front face — lighter wood, proud
-        // of the body by 0.02u. Front face points into the room
-        // (positive or negative Z depending on which wall the hutch sits on).
-        const doorZOffset = hp.facing * 0.27;
-        boxAt(hp.wx - 0.32, 0.45, hp.wz + doorZOffset, 0.55, 0.85, 0.04, woodLight);
-        boxAt(hp.wx + 0.32, 0.45, hp.wz + doorZOffset, 0.55, 0.85, 0.04, woodLight);
-        // Small candle on top of each hutch — light pool for the
-        // wall sides of the room (the banquet table has its own candles)
-        candle(hp.wx, 1.91, hp.wz);
-      }
+      for(let i = 1; i <= 3; i++) kitCandle(cx - tableLen/2 + i * candleDx, 0.46, cz);
+      const hutches = [{wx: cx - tableLen/2 - 0.5, n: true}, {wx: cx + tableLen/2 + 0.5, n: true}, {wx: cx - tableLen/2 - 0.5, n: false}];
+      hutches.forEach((hp, k) => { const wz = hp.n ? wallN + 0.02 : wallS - 0.02;
+        FP.put(FK.dresser(1.4, FN, FS + 10 + k), hp.wx, wz, hp.n ? 0 : Math.PI); registerProp(hp.wx, hp.n ? wz + 0.25 : wz - 0.25, 1.4, 0.5);
+        kitCandle(hp.wx, 1.64, hp.n ? wz + 0.2 : wz - 0.2); });
     }
     else if(room.kind === 'lords_chamber'){
-      // Bed against the north wall — frame + mattress. Chest at the foot.
-      // Side table with a candle next to the bed. Standing chest at SE corner.
-      const bedZ = room.y + 1.2;  // ~1u from north wall
-      // Bed frame (the wood structure)
-      boxSolid(cx, bedZ, 1.8, 0.45, 0.95, woodDark);
-      // Mattress (lighter linen on top) — sits ON the frame, no need for own collision
-      boxAt(cx, 0.46, bedZ, 1.65, 0.10, 0.85, linen);
-      // Side table to the east of the bed
-      const sideX = cx + 1.3;
-      boxSolid(sideX, bedZ, 0.5, 0.6, 0.5, woodLight);
-      candle(sideX, 0.60, bedZ);
-      // Foot chest — south of bed
-      boxSolid(cx, bedZ + 1.0, 1.0, 0.35, 0.5, woodDark);
+      // the kit's box bed, its head to the north wall; a small table with a candle beside it; the chest at its foot
+      const bedZ = wallN + 0.77;
+      FP.put(FK.bed(FN, FS + 1), cx, bedZ, 0); registerProp(cx, bedZ, 0.9, 1.5);
+      const sideX = cx + 0.85;
+      FP.put(FK.table(0.5, 0.5, FN, FS + 2), sideX, wallN + 0.35, 0); registerProp(sideX, wallN + 0.35, 0.5, 0.5);
+      kitCandle(sideX, 0.46, wallN + 0.35);
+      FP.put(FK.chest(FN, FS + 3), cx, bedZ + 1.05, 0); registerProp(cx, bedZ + 1.05, 0.72, 0.42);
     }
     else if(room.kind === 'chapel'){
-      // Stone altar centered against the north wall, two candles on top.
-      // Three pew rows facing the altar (rows run E-W, player faces N).
+      // the kit's altar (cloth, runner, candlesticks and book) against the north wall; three pews facing it
       const altarZ = room.y + 1.3;
-      boxSolid(cx, altarZ, 1.6, 0.9, 0.8, stone);
-      // Two candles on the altar
-      candle(cx - 0.5, 0.92, altarZ);
-      candle(cx + 0.5, 0.92, altarZ);
-      // Three pew rows. Pews are long thin boxes.
+      FP.put(FK.altar(FN, FS + 1), cx, altarZ, 0); registerProp(cx, altarZ, 2.2, 0.9);
+      for(const sx of [-0.8, 0.8]){ const fl = new THREE.PointLight(0xffaa66, 0.6, 2.5); fl.position.set(cx + sx, baseY + 1.28, altarZ); dScene.add(fl); }
       const pewLen = Math.min(room.w - 4, 5);
       const firstPewZ = altarZ + 1.6;
-      const pewSpacing = 1.0;
       for(let i = 0; i < 3; i++){
-        const pz = firstPewZ + i * pewSpacing;
+        const pz = firstPewZ + i * 1.0;
         if(pz >= room.y + room.h - 1) break;
-        // Pew bench
-        boxSolid(cx, pz, pewLen, 0.45, 0.35, woodDark);
-        // v61ga: pew back on SOUTH side of bench so sitters face NORTH (the altar).
-        // Pre-v61ga the back was on the north side, which had sitters facing away
-        // from the altar — wrong register for a chapel.
-        boxAt(cx, 0.55, pz + 0.18, pewLen, 0.6, 0.08, woodDark);
+        FP.put(FK.pew(pewLen, FN, FS + 10 + i), cx, pz, 0); registerProp(cx, pz, pewLen, 0.35);
       }
     }
     else if(room.kind === 'courtyard_hall'){
-      // Central brazier — iron cup on a low pedestal with a glowing ember.
-      // Kept minimal so the courtyard reads as combat space.
-      cylSolid(cx, cz, 0.5, 0.5, iron);
-      cylAt(cx, 0.55, cz, 0.4, 0.15, candleWax);  // ember bed (warm color)
-      // Light from the brazier — bigger and warmer than candles
+      // the kit's iron brazier on its three legs, its coals and flames in the bake's fire mesh; the light as before,
+      // at 1.8 times the kit's size (a unit across, as the old one was), so its own bake, scaled
+      { const B = FK.bake(FK.brazier(FS + 1)); B.scale.setScalar(1.8); B.position.set(cx, baseY, cz); B.userData.fortFurn = { kind: room.kind, cx, cz, x0: room.x - 0.5, z0: room.y - 0.5, w: room.w, h: room.h }; dScene.add(B); }
+      registerProp(cx, cz, 1.0, 1.0);
       const emberLight = new THREE.PointLight(0xff8040, 1.8, 6);
-      emberLight.position.set(cx, baseY + 0.8, cz);
+      emberLight.position.set(cx, baseY + 1.3, cz);
       dScene.add(emberLight);
-      // Faint emissive sphere reads as the ember itself
-      const ember = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 5), new THREE.MeshBasicMaterial({color: 0xff8040}));
-      ember.position.copy(emberLight.position);
-      dScene.add(ember);
     }
+    // the four rooms above bake here; the else-chain goes on below with the rooms still on boxes
+    if(['great_hall', 'lords_chamber', 'chapel', 'courtyard_hall'].includes(room.kind)) kitBake();
     else if(room.kind === 'barracks'){
       // v61gd: cots oriented in proper military-bunk style. Head against
       // the wall, foot pointing into the room. So on the WEST wall, each
