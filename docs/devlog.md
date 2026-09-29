@@ -8480,3 +8480,19 @@ New `tests/buffstack.test.mjs`, 7 checks, passing, no page errors. Driven throug
 
 ### Needs eyes
 The buff strip shows only the one that counts. Whether a boon waiting under a herb should show too is the look builder's call, or Michael's.
+
+## v80 — Session 346 — Fortune's card says what Fortune does
+Michael's A on #64. The Fortune card promised *+2% crit chance, +1% loot quality* a point. Nothing reads loot quality: a dropped sword is the same tier at Fortune 0 and 10. What Fortune does besides the crit (Session 328) has been there since v61c0 and was never on the card: +5% a point on every gold roll (`rollGold`: barrels, corpses, chests) and +2.5 points a point on the chance a slain foe drops an item (`lootDropChance`, base 35%, capped at 85%).
+
+**What changed.** No rule moved; the words did. The card's `gainDesc` reads *+2% crit chance, +5% gold found, +2.5% item drop chance*, and its `gains` carry `goldPct` and `dropPct` in place of `lootPct`, so the level-up lines (`gainLines`) name the same three, doubled for a two-point pick. The hub's derived grid gains *Gold Found* and *Item Drop* rows under *Crit Chance*. Fortune reads the points you own, as before; no enchantment fortifies it.
+
+### Verified (headless Chromium)
+New `tests/fortunecard.test.mjs`, 6 checks, passing, no page errors.
+- The card and the level-up lines read the three effects and no *quality*; a two-point pick reads +4%, +10%, +5%.
+- `rollGold('chest')` with the dice held at their lowest, level 1: 5 gold at Fortune 0, 8 at 10 (×1.5).
+- `lootDropChance` of a 20-health foe: .394 at Fortune 0, .644 at 10.
+- The hub at Fortune 4: *Crit Chance +8%*, *Gold Found +20%*, *Item Drop +10%*.
+- `fortunecaor` passes.
+
+### Needs eyes
+Nothing by eye. *Item Drop* in the hub is added to the base chance (35% plus up to 20% for a tougher foe), not multiplied; the row says *+10%* at 4 points and means ten points more.

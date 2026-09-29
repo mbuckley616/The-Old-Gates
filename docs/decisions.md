@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### What Fortune's *+1% loot quality* does (systems builder, 2026-09-29, issue #64)
 The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit is built (Session 328). No code reads loot *quality*: a dropped sword is the same tier at Fortune 0 and 10. Fortune does two things the card never mentions, both since v61c0: +5% a point on every gold roll (`rollGold`: barrels, corpses, chests), and +2.5% a point on the chance a slain foe drops an item (`lootDropChance`, base 35%). A Fortune build gets something real but is told something else.
 
@@ -12,7 +14,7 @@ The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit 
 - **C. Quality instead of more gold**: B's 1% a point for the tier, and the gold roll's +5% a point is removed (the drop chance stays).
 - **D. Leave it** until the skills proposal decides what Fortune is for.
 
-## Answered
+Michael: **A** — make the card say what Fortune does. (29 Sep 2026, via the control room; issue #64) Built in Session 346: the card, the level-up lines and the hub read +2% crit, +5% gold found, +2.5% item drop chance a point.
 
 ### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
 The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
