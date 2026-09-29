@@ -8200,3 +8200,29 @@ The deck volleys, the charge, the heavy blow, the drain and the dragon's breath 
 
 ### Needs eyes
 Whether a Shield that now also halves arrows and traps makes the tier-3 spell too strong for 28 mana; it lasts as long as it did.
+
+## v80 — Session 321 — The herbs' hidden effects
+Found while finishing Session 320, by listing every buff type the game sets against every one it reads. Eat fifteen of a herb and its hidden effect is revealed: the log names it, the tooltip shows it, and every later mouthful applies it as a timed buff with its own label on screen. For four herbs, nothing read that buff, so the effect did nothing:
+- Thornberry: *+15% block effectiveness for 60s* (`blockBoost` ×1.15)
+- Wolf's Bane: *-40% damage from beasts for 90s* (`beastResist` ×.6)
+- Briarweed: *+10% attack speed for 60s* (`atkSpeed` ×1.1)
+- Duilleog Ghorm: *+25% spell effect duration for 90s* (`spellDuration` ×1.25)
+
+These are fixes to make each do what its own text says. No number is new.
+
+**What changed.**
+- *Thornberry* multiplies the share a raised guard stops, capped at .9. That covers the held block against a blow, the magic block against the Faolchú's fire and the dungeon bolts, and a raised guard against an archer's arrow. The traps' and the deck volleys' fixed "blocking" fractions are left as they are.
+- *Wolf's Bane* needs to know what a beast is, and nothing in the game said so. A new `BEAST_TYPES` names the animals among the open world's foes: Wolf, Dire Wolf, Snow Wolf, Ash Hound, Spider, Cave Bear, Boar, Bog Crawler, Sand Scorpion and Shark. Each foe built from those carries `beast`. The Faolchú, the Dragon, trolls, ogres, wisps and every dungeon creature are left out, as creatures of myth or of the deep rather than beasts. The resistance applies through Session 320's `_warded`, from a beast's blow (held or not) and a boar's charge.
+- *Briarweed* divides `_weaponSwingFactor()`, which sets the swing, its recovery and the swing's pitch together, in both kinds of attack.
+- *Duilleog Ghorm* lengthens a self spell's time in `applySpellBuff`, and with it the Shield's ward.
+
+### Verified (headless Chromium)
+New `tests/herbhidden.test.mjs`, 7 checks, passing, no page errors. Each herb is eaten through `useHerb` with its effect unlocked:
+- Wolf's Bane: a Wolf's or Cave Bear's 20-point blow lands for 12, a Bandit's still for 20. A wolf's 40-point blow on a held block went from 24 to 14.
+- Thornberry: a 40-point blow on a bare-handed held block went from 24 to 22 (a stopped share of .40 → .46).
+- Briarweed: the open-world swing recovery went from 0.555 to 0.505 s, and the swing factor from 1.110 to 1.009 (÷1.1).
+- Duilleog Ghorm: a tier-1 Shield lasted 40 → 50 s, and its ward did too.
+- `wardall`, `wardswift`, `counters`, `posture`, `foes`, `fpweapons` and `attrdmg` pass.
+
+### Needs eyes
+Whether the beast list is the one Michael means (it is a reading of the herb's text, not a rule written anywhere). Whether a swing a tenth quicker is felt at all.
