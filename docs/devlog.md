@@ -7113,6 +7113,702 @@ The first try was a whole half-sphere. At a mouth by the sea its lower half show
 ### Needs eyes
 The maw at night with the torch lit, and whether the small wooden door behind it should come forward into the hollow, where it could be seen. It sat behind the old box too.
 
+## v80 — Session 275 — The town gate itself (H.5)
+Michael chose A on Session 273's prototype: a gateway and open leaves. Where a road crosses a walled town's ring there were two gate towers and nothing between them. Now `townGateGeo` builds the gate there, one mesh with its old-style boxes as the distant copy, as the walls have:
+- **Stone and dressed stone:** an arch of seventeen voussoirs from jamb to jamb, the spandrels filled with coursed blocks, a wall-walk over the crown with a string course and merlons on its outer edge.
+- **Palisade and fence:** two round posts, a doubled timber lintel and two braces. The fence has no towers, so its posts stand 4 from the road's middle; its leaves are field gates, 1.3 high.
+- **In all four,** two plank leaves with iron bands and a brace, hinged by the jambs and standing open into the town. Nothing shuts them; that waits on a system that closes a town.
+
+The jambs and both leaves are solid. The arch leaves the road clear to 3.9 (stone) and 4.8 (dressed stone); the lintels are higher.
+
+**Two things were wrong once the gate stood.**
+- The towers were set along the ring's tangent at the wall segment's middle, not where the road crosses. That is up to 33 degrees askew. And roads cross the ring up to 49 degrees off the radial (Vieux Marché), so an arch along the ring put a jamb on the road. The gate and its towers now stand square to the road where it crosses, and the road runs straight through.
+- At one of Vieux Marché's three crossings a second road joins the first just inside the ring, and a jamb and a leaf fell on it. Where any jamb or leaf would stand on a road, that crossing keeps its open gap and its towers, as before. That was one crossing in the eight tested.
+
+### Verified (headless Chromium)
+New `tests/towngate.test.mjs`:
+- **The gate itself,** in all four tiers: 800 triangles for timber, 1,824 for stone, each with a distant copy and two leaves. The road is clear to at least 3.4. The leaves stand 4–5.3 into the town, and the stone gate's top is 6.7, under its towers.
+- **In La Porte Grise, Vieux Marché and Ironhaven** (all fence tier near the start): every built gate adds its four colliders. No point within 1.5 of the road's middle, 4 either side of the wall, is solid (408 probes). No leaf stands in a house.
+- **Pictures:** `docs/prototypes/towngate-ingame.png` shows Cœur de Vie's stone gate from the road at noon, and `towngate-ingame-timber.png` shows La Porte Grise's fence gate.
+
+`walls` and `townroads` pass. `townroads` failed twice on the way (the askew and the junction cases above) before the two fixes.
+
+### Needs eyes
+- The fence tier's gate: a tall timber frame over a knee-high fence may read as too much. A lower frame, or posts and leaves alone, would be the fallback.
+- The palisade's gate has not been seen in the game yet: none of the towns near the start is palisaded.
+- Whether a crossing left open beside a junction looks like a missing gate.
+
+## v80 — Session 276 — Shading in the houses' creases: a prototype and a question (H.1, waiting on Michael)
+Michael's A on Session 243 shaded the creases at the people's strength, "then the creatures and houses". Sessions 265 and 270 did the people and the creatures. The houses were owed, so I wired the same pass (`personAO`) into the house bake. `mergeParts` takes the options and keeps each part's range of vertices, and `buildingGeoHi` passes `HAO`.
+
+**The first run was too slow.** Each vertex asks every sphere, and a house has thousands of parts, so a stone house took 174 ms to shade against 14 ms to build. Now a part asks only the spheres within four radii of its own box (`O.cut`); past that a sphere darkens by under a sixteenth. That brings it to 3–14 ms a house. The people's pass is unchanged, since it passes no `cut`.
+
+**The picture is why this is a question.** At the people's strength the slates, shingles, turfs, course blocks and footing stones all shade each other. Whole plaster and stone walls go grey instead of just their creases.
+
+With `O.minR`, only parts at least .35 thick cast the shading: walls, roof slabs, the chimney, the lean-to, the jetty. That darkens the window reveals, under the eaves and under a jettied floor, and leaves open walls their colour.
+
+Rather than choose a strength Michael has not seen, I've switched the houses' shading off (`HAO.on=false`, so the game looks as it did) and asked. The options are A (as is), B (large parts only, recommended) or C (not for houses), in `docs/decisions.md` and a DECISION issue.
+
+`docs/prototypes/houseao/shoot.mjs` builds each style once (keeping the unshaded bake behind `HAO.keep`) and shades the same bake three ways. That matters because a house's variant depends on a running counter, so two builds of one seed are not the same house.
+
+### Verified (headless Chromium)
+- **The prototype:** `node docs/prototypes/houseao/shoot.mjs` renders `docs/prototypes/houseao-grid.png` (irish, stone, aurenne, mark, french; today, A, B) with no page errors.
+- **Mean darkening:** .25–.37 under A and .20–.27 under B. As with the people, most of it falls on vertices buried inside other parts, so the picture is the judge.
+- **Other suites:** `peopleao`, `creatureao` and `houses` pass.
+
+### Needs eyes
+The DECISION. If B, the next session switches it on and checks a whole town's build time before and after.
+
+## v80 — Session 277 — The player's own hair swings (H.3, Michael's A on Session 242, the last part)
+Session 267 swung the cloaks and back hair of everyone `tickPeople` poses. The player's third-person body is posed by `tpPose` instead, so it had the bones but hung still. `tpUpdate` now runs the same pendulum (`peopleSwing`) on it after `tpPose`. That covers the braid, the warrior's back plait and the tied tail.
+
+The player never wears a cloak: `tpBuild` sets `cloak:false`, and there is no cloak item. If one comes, it will swing with no further change. The pendulum reads the root's heading from `rotation.y` (yaw + π here), as it does for the townsfolk. A jump in position, from first person back to third or a fast travel, is not taken as a swing, by the 30-units-a-second rule Session 267 set.
+
+### Verified (headless Chromium)
+`tests/secondary.test.mjs` extended: the player with a braid, walked forward at 3.83 a second through `tpUpdate` at 1/60.
+- **Standing:** the hair bone is at 0.
+- **Running:** it peaks at .215.
+- **Stopped:** five seconds after the stop, it has settled to .002.
+- **Without the new line** the same check reads 0 throughout and fails.
+
+`gait`, `player` and `tpswing` pass.
+
+### Needs eyes
+The player's braid in third person at a run and at a sudden turn, which moves the nape sideways faster than any townsperson turns.
+
+## v80 — Session 278 — The black sail and the merchantman's hulls: a question (H.5b, waiting on Michael)
+The boats line has owed this since Session 168: "the black sail and the merchantman on the larger hulls (they stay 13 long because boarding places the crew by that length)". I read `spawnOtherShip` and `crewUp`, and the constraint no longer holds:
+- **The crew:** the three pirates stand 3 apart along the middle of the deck, which fits any hull.
+- **The deck:** the platform comes from `shipPlatBox` with the ship's own length and width.
+
+So the change itself would be small: build the mesh at the class's length and give the ship the class's `L` and `W`. Which hull each ship gets is a look and a fight, though, and Michael approved the looks, not their sizes. The Session 165 prototype already drew both looks on each candidate hull (`docs/prototypes/boats-others.png`), so the question goes with that picture:
+- **A:** the merchantman on the cog, the pirate staying on the sloop (recommended).
+- **B:** the pirate on the galleon as well.
+- **C:** neither.
+
+`index.html` is unchanged.
+
+### Verified (headless Chromium)
+Nothing run: no code changed.
+
+### Needs eyes
+The DECISION.
+
+## v80 — Session 279 — The town gate suite read a town the world had dropped (CI fix, test only)
+CI failed on shard 4 at the Session 276 push, in `tests/towngate.test.mjs`. Every check had passed. Then the picture step asked `WORLD.settlements` for the first town's gate and got nothing: the world had unloaded the town between the two page steps, since it was generated for the test, not needed by the player. It is the Session 272 pattern again, a test holding on to a town across steps.
+
+The measuring step now records each town's first gate (tier, place, the town's centre) while the town is in hand, and the picture step works from that record. The game is unchanged, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`towngate` passes, with both pictures taken. The CI failure did not reproduce here; the change removes the dependence rather than waiting on it.
+
+### Needs eyes
+Nothing in the game.
+
+## v80 — Session 346 — The walls suite's town was dropped by the player's distance (CI fix, test only; corrects Session 272)
+Renumbered from Session 280 on merging main into auto/backlog: the systems builder's own Session 280 landed on main first.
+
+CI failed on shard 6 at the Session 277 push, in `tests/walls.test.mjs`: `far: 2`, the same check that failed at Session 263's push. **Correcting Session 272**, whose guess (a town still building rebakes its clusters) was wrong.
+
+`tickSettlements` drops any settlement more than 580 units from the player, and it checks every half-second of accumulated game time. The suite takes the first walled town it can find, La Porte Grise, about 1,280 from the start, and moves only the eye. Whether the half-second check fell inside the near look depended on how many frames had ticked before it. When it did, the town was dropped after `houseLod` had shown its detail. Both looks then read the dropped town's meshes, which nothing updates any more: `far: 2`.
+
+Session 279's `towngate` failure was the same thing: a town generated far from the player, dropped between steps.
+
+The suite now stands the player at the town while the eye moves, and puts both back after. The game is unchanged; the distance rule is right for play.
+
+### Verified (headless Chromium)
+A scratch copy of the check ticked at .6 s, so the half-second check always fires inside each look:
+- **The old logic:** `near: 2, far: 2`, the CI failure reproduced.
+- **The new logic:** `near: 2, far: 0`.
+
+`walls` passes.
+
+### Needs eyes
+Nothing in the game.
+
+## v80 — Session 284 — The houses' creases shaded, the large parts only (H.1, Michael's B on Session 276)
+Session 276 wired the people's crease shading into the house bake and left it off, because at the people's strength the slates, shingles, turfs and course stones shade each other and whole walls go grey. Michael chose B: the same strength, but only parts at least .35 thick cast it (walls, roof slabs, the chimney, the lean-to, the jetty). The small parts still receive it. So `HAO` is now on with `minR` .35, and nothing else changed: the cull by distance (`cut` 4) Session 276 added stays.
+
+In a town this darkens the undersides of the eaves and the jetties, the window reveals and the angle where a lean-to meets its wall, and leaves open plaster its colour. The distant copies are not shaded; they are the old plain houses and far enough off not to show it.
+
+A correction to Session 276's cost: it measured 3–14 ms a house for a single house shaded three ways in the prototype. In a real town build the whole of Dunmore's 56 detailed houses took 72–85 ms of shading in two runs, about 1.5 ms a house, against 760–1,050 ms for the town's whole build. The town build's own time swings more between runs than the shading adds.
+
+### Verified (headless Chromium)
+- **`houseao` (new):** the shading is on with `minR` .35. Every one of the thirteen styles is shaded, mean darkening .20–.27 (A would be .24–.37), and in every style B leaves more vertices untouched than A (irish 37% against 28%, stone 16% against 12%, aurenne 23% against 14%). Dunmore rebuilt with it off and on: 56 houses through the pass, 0 ms off, 72–85 ms on. No page errors. The picture, `docs/prototypes/houseao-ingame.png`, is Dunmore at 15h before and after; the town is rebuilt between, so one or two houses draw a different variant.
+- **`houses`** passes.
+
+### Needs eyes
+The strength in real light, at dusk and on snow: the eaves' undersides are the most visible change, and a stone or plaster house in full sun should still read as its own colour.
+
+## v80 — Session 285 — The merchantman sails a cog (H.5b, Michael's A on Session 278)
+Michael chose A: the merchantman on the cog, the black sail staying on the sloop. A trader is broad and slow, a raider small and quick, and the galleon stays something only the player buys.
+
+`spawnOtherShip` now takes the hull from `SHIP_CLASSES` by kind: the merchantman is built at the cog's 17 by 5.6 and carries those as its `L` and `W`, the pirate keeps the sloop's 13 by 4.4. Everything downstream already read the ship's own length and beam, so nothing else changed: the deck platform is laid from the cog's hull (`shipPlatBox`), the bow's look-ahead for running aground, the cargo chest's place when you board her, and the hull-against-hull checks. Her speed (4.5) is unchanged; the pirate's crew and Oswy's Kestrel are untouched.
+
+### Verified (headless Chromium)
+- **`ships`**, extended: a spawned merchantman is a cog bake (5,366 triangles, 17 by 5.6) with its wheel, the pirate a sloop (13). Her deck is deck at the middle, 2.5 out beside the rail, and 7.2 fore and aft (past where a sloop's would end), and water 4 out. Boarding her stands you on it (1.0) with the cargo chest on the deck. The sloop's own deck checks now run on the pirate, which is the sloop. The picture, `docs/prototypes/merchantman-ingame.png`, is the three classes above and the merchantman beside the black sail below.
+
+### Needs eyes
+Her size against the black sail at sea, and whether she reads as a trader from a distance.
+
+## v80 — Session 286 — A home's furniture on the shape kit (H.5 props, Michael's A on #46)
+The concept artist prototyped furniture for homes and inns on the kit (`docs/prototypes/interiors/` on auto/concept), and Michael chose A: the kit in every interior, one or two rooms a session. This is the first room, the home.
+
+The prototype's `FURN` is lifted whole into the game as `furnBuild` (after `dunMerge`), made once by `furnKit()`. One change: the two materials are made once and shared by every room, where the prototype made new ones each bake. In `buildInteriorFor` the home's boxes are gone: the bed, the hearth (a grey box with a black one in it), the table, the two chairs, the candle, the chest and the two shelves of coloured cubes. `furnKit().home` stands in their places. There is a box bed with turned posts, a planked headboard and a three-band quilt, and a stone hearth with a lintel, a mantel, a pot on a crane and the chimney breast to the ceiling (to the gallery's floor in a two-storey house). There are a planked table with two ladder-back chairs, a candle, a cup and a bowl, an iron-bound chest, two dressed shelves and a braided rug. The wood and cloth come from the nation at the door (`nationAt`), and the seed from the house id.
+
+What the room does is unchanged. The bed is registered where it was, the table is the same foothold, the hearth's light and the Mages' hearth task are where they were, and the strongbox, the roles' extras (loom, net, sacks, barrels) and the resident are untouched. The hearth is now solid (it was walk-through). The flames flicker in `tickInterior`. The last room's baked geometry is freed when the next is built (`furnSwap`). Interiors had never freed anything, and a baked home is 12.7k triangles.
+
+### Verified (headless Chromium)
+- **`homefurn` (new):** a Dunmore home (9 by 8) has one furniture group of two meshes, 12,673 triangles (the prototype counted 43 boxes and 556 triangles for the same furniture). The interior draws 21 meshes in all. The bed is the home's, the table a foothold at .47, the hearth solid, the floor beside the table clear, and the strongbox stands. The flames took 6 different heights in 6 frames. A Gatelands, Mark and Aurenne home differ in mean colour (blue .295, .307, .331). No page errors. The picture, `docs/prototypes/homefurn-ingame.png`, shows two views of the room with the resident.
+- **`interiors`** and **`locks`** pass.
+
+### Needs eyes
+The room in play: the hearth's glow on the new stone, whether the rug and the chest crowd the walk to the bed, and the Mark's and Aurenne's homes (only the Gatelands' was pictured). The inn is next.
+
+## v80 — Session 287 — The inn's taproom on the shape kit (H.5 props, Michael's A on #46)
+The second room of the concept artist's prototype. In `buildInteriorFor` the inn's boxes are gone: the bar of two boxes, the three shelves of cylinders, the hearth of four boxes, and the four tables with their benches and cups. `furnKit().inn` stands in their places. It builds a panelled bar with a brass foot rail, tankards and a jug, three stools in front of it, and the dresser of bottles, jugs and standing plates against the wall behind. There are two casks on cradles with taps, the big stone hearth on the east wall, and the four tables with benches, cups and candles. The wood comes from the nation at the door, and it bakes to one mesh and the flames as the home does.
+
+What the room does is unchanged. The bar's, tables' and benches' footholds are the old ones at the old places. The hearth is now solid (it was walk-through). The innkeeper, the beds, the private rooms, the coaching board and the tack are untouched. I asked the prototype for no beds (its `gallery` flag), because the inn's beds are `_intBed`'s, registered as rooms, and shared with homes, shops and halls. They are the next piece, done once for every room.
+
+A correction to Session 286: in a two-storey house the hearth's chimney breast stopped at the gallery's floor. In the inn the deck covers only part of the hearth, so the breast ended in mid-air. Both rooms now run it to the ceiling, through the deck as a chimney would.
+
+### Verified (headless Chromium)
+- **`homefurn`**, extended: Dunmore's inn (13 by 12, two storeys) has one furniture group of two meshes, 27,328 triangles, and draws 110 meshes in all. The bar is a foothold at .71, all four tables a foothold at .47 with both benches at .27, the hearth solid, and the four beds registered. The home's checks pass as before. The pictures are `docs/prototypes/innfurn-ingame.png` (two views of the taproom, the prototype's) and the home's again.
+- **`interiors`** (renting a room, the doors) passes.
+
+### Needs eyes
+The taproom by its own firelight, whether the stools crowd the bar's front, and whether the dresser reads under the gallery's shadow.
+
+## v80 — Session 288 — Every bed on the shape kit (H.5 props, Michael's A on #46)
+Session 287 left the beds for a session of their own, because `_intBed` builds every bed in the game: the inn's rooms, the shops' back rooms, the guild halls' dormitories, the cabin's bunk, the upstairs of a two-storey house and the safehouse. It was seven boxes and seven new materials a bed.
+
+`_intBed` now draws the prototype's box bed from the kit: turned posts with finials, a planked headboard, a stuffed tick, a three-band quilt, a turned-down sheet and a pillow. It is 1.5 long against the old 1.95, the concept artist's size for a 1.18-tall townsperson. The wood and cloth come from the nation, which `buildInteriorFor` sets for the room (`INT_BED_NATION`). There are three quilts a nation, picked by the bed's place, each baked once and shared (`INT_BED_GEO`), with the furniture's shared material, so a bed is one mesh and nothing new is allocated after the first. The head is at low z for `'N'` and turned for `'S'`, as before. The places, the `bedAt` registrations and the solids are the callers' and unchanged; a bed a third shorter sits inside its old solid.
+
+### Verified (headless Chromium)
+- **`homefurn`**, extended: in Dunmore's inn all four registered beds are kit beds (a mesh on one of the shared bed geometries), and none of the old 1.95-long boxes is left. The interior's meshes went from 110 to 82. The picture, `docs/prototypes/bedfurn-ingame.png`, is an upstairs room's two beds.
+- **`interiors`** (renting a room: only your own bed sleeps) and **`locks`** pass.
+
+### Needs eyes
+The bed's length against the player lying down (sleep has no lying pose, so probably nothing), and the cabin's bunk, which is now a box bed on a ship.
+
+## v80 — Session 289 — The smithy and every shop's counter on the shape kit (H.5 props, Michael's A on #46)
+Michael's A covers the shops "in the same kit" after the homes and inns, and the concept artist named the forge first, so this is the smithy. The prototype has no shop pieces, so they are new, built in its idioms (lathes, rounded boxes, coursed stone, nation's wood) inside `furnBuild`:
+- **The forge:** a coursed-stone base round a rubble core with a coping slab, an iron fire pan with a bed of coals and embers (in the flame mesh, so they flicker), a four-sided sheet hood on two posts, a chimney to the ceiling, and a bellows on a trestle with its nozzle at the fire.
+- **The anvil:** on a barked stump, with a horn, a heel and a waisted body, and a hammer lying on its face.
+- **A quench tub:** staves, hoops and water, with the tongs in it.
+- **Four weapon racks:** on the east wall, holding the weapon kit's own pieces (`wpnBuild`): swords, longsword and claymore point down, and axes, hammers, maces, a flail and a great club head up.
+- **A grindstone:** on a trestle with its trough and crank.
+- **A dagger** lying on the counter.
+
+To bake the weapons into the room, the furniture merge now multiplies a part's own vertex colours (the weapon kit's) into its colour. That leaves the prototype's pieces unchanged, since they have no vertex colours of their own. Every shop's `counter()` is the kit's panelled counter too, bare: the bar with a new `bare` flag that leaves off its tankards and jug. So the armourer, the apothecary and the general goods get it now, and their other boxes are the next sessions.
+
+**Two layout fixes on the way:**
+- **The racks:** they stood at `D-2-k*.9`, which put two of the four inside the back room behind the shop's partition, next to the keeper's bed. They now stand at 4.1–6.95, in front of the partition in every room size.
+- **Solids:** the forge keeps its solid. The anvil and the tub are solid now, footholds at their tops, where the old ones were walk-through.
+
+The furniture bakes a room holds (the room, and now the counter) are freed together when the next room is built (`furnFree`, replacing Session 286's single `FURN_ROOM`).
+
+### Verified (headless Chromium)
+- **`shopfurn` (new):** the smithy near Dunmore (9 by 12) is two bakes, 22,464 + 1,520 triangles, 41 meshes in the room. The counter is a foothold at .65, the forge at .74, the anvil at .62 and the tub at .43. The coals took 6 heights in 6 frames. 5,020 steel-coloured vertices stand in the racks' band of the east wall, in front of the partition. The armourer's, the apothecary's and the general goods' counters are kit bakes and footholds where they were. No page errors. The picture is `docs/prototypes/smithy-ingame.png`.
+- **`theft`**, **`locks`** and **`homefurn`** pass.
+
+### Needs eyes
+These shop pieces had no prototype of their own. They follow Michael's A and the concept artist's list, but the forge's hood and the racks are my reading. The weapons are the kit's person-scale pieces and read small from across the room.
+
+## v80 — Session 290 — The armourer, the apothecary and the general goods on the shape kit (H.5 props, Michael's A on #46)
+The last three shops, in the idioms of the concept artist's prototype and Session 289's smithy. Each room is one bake beside its counter.
+- **The armourer:** three stands, each a cross-footed post with a shoulder bar. They carry a plate cuirass (lathed, flattened front to back, with two bands), a boiled-leather one with a cap, and a mail shirt (bumpy, with a skirt), each with pauldrons and a helm, the helms with a nasal and a rim. On the east wall hang the weapon kit's round and kite shields in the four old colours (the kit's `face` tint), and there is a bench with rolls of leather, a dish of rivets and a mallet.
+- **The apothecary:** three wall shelves of potion bottles in the old six colours (a `potions` stock for the prototype's shelf) with a few jars. Bundles of herbs hang drying from the ceiling on strings. The still is an iron cauldron on three legs over a small fire in a stone ring, its brew a green surface in the flame mesh, with a copper alembic and receiver beside it. A mortar and pestle stand on the counter.
+- **The general goods:** crates, sacks tied at the neck, the prototype's shelves of jars, bowls, bottles and plates, and a brass balance on the counter.
+
+`_intCrate` and `_intBarrel` are the kit's too, like `_intBed` in Session 288, since they furnish the cellars, the cabin, the inns' back rooms, the coopers' homes and the shops. The barrel is the dungeon's `kitBarrel` at .44 high, and the crate is new: planks between corner battens, in the room's wood. Each size is baked once and shared (`INT_KIT_GEO`).
+
+**The old layout put things in the back room:** the armourer's shields hung at `D-2.2-k*1.1` and the goods' sacks stood at `D-1.6`, so most stood behind the partition by the keeper's bed. The shields now hang at 3.8 + .75k, only as many as fit before the partition, and the sacks stand in front of it. The armour stands, the bench and the still are solid now; before, only the counters were.
+
+### Verified (headless Chromium)
+- **`shopfurn`**, extended. The armourer is 8,296 + 1,520 triangles (33 meshes), the apothecary 20,153 + 1,904 (37), and the goods 20,164 + 1,904 (26). Each counter is a foothold where it was. The first stand stands, the still is a foothold at .62 and its brew is in the flame mesh, and the goods' three barrels are the shared kit barrel. The smithy's checks pass as before. The picture, `docs/prototypes/shops-ingame.png`, shows the three rooms over their counters.
+- **`interiors`**, **`homefurn`** and **`theft`** pass.
+
+### Needs eyes
+These pieces had no prototype; they follow Michael's A and the concept artist's list. The armour stands read small behind the counter, and the plate's pauldrons may look like mushrooms. The herbs and the still were not in the picture's view.
+
+## v80 — Session 291 — The church and the keep's hall on the shape kit (H.5 props, Michael's A on #46)
+The church and the keep, as Michael's A lists them, in the prototype's idioms. Each is one bake.
+- **The church:** a stone dais with a riser and a floor of flags, and a moulded altar with a white cloth, a red runner, two brass candlesticks (their flames in the flame mesh) and a book on a stand. There are pews with shaped bench ends, a panelled back with a top rail, and a kneeler, still facing the altar. There is an eight-sided panelled pulpit on a turned stem with three steps up its back, and the columns have a base, a slight taper and a capital. The old cylinder pillars kept their solids and lost their meshes to the bake.
+- **The keep's hall:** the dais on the same stone, and a carved throne with a pointed crest, gilt finials, scrolled arms and a red cushion, on a bordered runner. A long runner runs down the hall. The columns carry their banners on poles, with a swallowtail, a gilt lozenge and finials, in the old three colours. There are two iron braziers on tripods with coals and flames, and the long table with its benches, a line of plates and tankards and candles, and middle legs for its eight-unit span.
+
+The old solids are kept where they were: the altar, the church's columns, the hall's columns, the table and its benches. The braziers and the throne are solid now; before they were walk-through. The two daises have no foothold, as before: at .25 and .37 high you still walk through their edge rather than onto them, and the steward stands on the keep's dais at floor height, as he did. Changing that touches how the player climbs, so it is left for a session that looks at it.
+
+### Verified (headless Chromium)
+- **`civicfurn` (new).** A church (11 by 22) is one bake of 15,702 triangles with its candle flames, 33 meshes in the room, and no cylinder pillars left. The altar and the columns are solid. A keep's hall (18 by 22) is one bake of 14,597 triangles with the braziers' flames, 80 meshes (the windows and the beams are the shell's), and no cylinders. The long table (.47), both benches (.27) and the braziers (.68) are footholds, and the columns are solid. No page errors. The pictures are in `docs/prototypes/civic-interiors-ingame.png`: the nave from the door and the altar close, then the hall from the foot and the table.
+
+### Needs eyes
+The daises (whether to step onto them), the scale of the throne against the steward, and the pews' end boards, which have a shape of my own reading, not a prototype's.
+
+## v80 — Session 292 — The guild halls on the shape kit (H.5 props, Michael's A on #46)
+The Fighters' and the Mages' halls, the last rooms Michael's A names. Each hall is one bake, with the notice board (its own small bake, since it hangs at a raw height) and a kit chest by each pair of dormitory beds (the prototype's iron-bound chest, where a box stood).
+- **Both halls:** the steward's desk is the counter's panelled front, bare, with a ledger, an inkwell and quill, loose papers and a candle. The notice board is a framed board of planks with nine pinned notes.
+- **The Fighters:** six racks of the weapon kit on the east wall, the three armour stands, and the long table with its benches, cups, a candle and middle legs. The grindstone stood in a dormitory (at `D*.62`, past the cross wall at `D*.52`) and is now in the hall.
+- **The Mages:** two bookcases on the east wall, four shelves each of books standing, leaning and lying, some with gilt bands. There are potion shelves either side of the notice board (the old ones ran behind it), the still from the apothecary, a reading table of open books, a scroll and candles, and the columns. The bookcases move north if the hall is too short for them, since the old shelf ran through the cross wall in a 20-deep hall.
+
+Books are plain boxes rather than the kit's rounded ones. A book's bevel never shows and there are hundreds, which took the Mages' hall from 68k triangles to 42k. The old solids are where they were: the desk, the long tables and benches, the Mages' columns. The Fighters' armour stands and the Mages' still are solid now; before they were walk-through.
+
+### Verified (headless Chromium)
+- **`guildfurn` (new):** the Fighters' hall (23 by 22) is a 28,966-triangle bake with the notice board and four chests beside it (6 bakes), 181 meshes in the room, and no cylinders left. The Mages' hall (22 by 20) is 42,045 triangles, 167 meshes. In both, the desk (.65) and the long table (.47) are footholds, every bed is registered (18 and 16 with the gallery's), and the three members stand. No page errors. The picture, `docs/prototypes/guilds-ingame.png`, shows each hall from the cross wall and along the table.
+
+### Needs eyes
+The desk and board sit under the gallery and read dark. The Fighters' racks are a long way from the door. And the halls are big (181 meshes, mostly the shell, the beds and the doors).
+
+## v80 — Session 293 — The cellar, the cabin, the chapel and the gallery's chest on the shape kit (H.5 props, #46 A)
+The rooms Michael's A reaches after the named ones. Each is one bake.
+- **The cellar:** the kit barrels and crates as before, a wine rack of bottles lying neck out where the shelf of upright cylinders stood, the prototype's iron-bound chest, and a ladder of two rails and round rungs up to the hatch.
+- **The ship's cabin:** the chart table (the prototype's table) with a chart and its ink lines, a log book, brass dividers and a candle, three tied sacks, and two shelves of bottles. The bunk is `_intBed`'s and the stash chest is the game's own interactive one, both as they were.
+- **The chapel:** the seven fallen stones in the gap between its partitions, where the boxes lay; a flagged stone dais with a moulded pillar and a cap where two cylinders stood; six candles in dishes round it; Session 291's pews either side; and a ladder to the hatch.
+- **The gallery's chest:** the upstairs chest in every two-storey home, inn and guild hall is the kit chest.
+
+**Two fixes found on the way:**
+- **`_intCrate` floated every crate.** Every caller passes the crate's centre height (`.25` for a crate .5 across), but the old box put its base there, so every crate stood half its size above the floor. The cellar's stacked crate stood .1 above the ones under it. `_intCrate` now reads `y` as the centre, and the cellar's stacked crate is placed on top of the others.
+- **`FN` was used before it was declared.** `FN` (the room's nation and seed, Session 289) was declared with the shops' counter, after the gallery code. The gallery chest reached it first, and the `interiors` suite caught the error ("Cannot access 'FN' before initialization") before this was pushed. It is now declared at the top of `buildInteriorFor`.
+
+### Verified (headless Chromium)
+- **`oddfurn` (new):** the three rooms, built through `WORLD.buildInteriorFor`. The cellar is one bake of 6,892 triangles with the kit barrels and crates, no cylinders left besides the barrels' lids, three crates at 0 and the stacked one at .5. The cabin is one bake of 5,303 triangles and the chapel one of 5,082, neither with cylinders left. No page errors. The picture is `docs/prototypes/oddrooms-ingame.png`.
+- **`homefurn`**, **`guildfurn`**, **`shopfurn`** and **`interiors`** pass. The first two now count the gallery's chest among a two-storey room's bakes.
+
+### Needs eyes
+The chapel's pillar is a plain moulded column. What stands on that dais is the lore's to say, and I have not guessed.
+
+## v80 — Session 294 — The wizard's tower: one bake for the helix, and its treasure put back on its floor (H.5, #46 A)
+The tower's interior was 130 box treads, each its own mesh and draw call, climbing 30 units round a cylinder. The treads, the post, the far rail and the treasure chest are now one bake on the kit: dressed-stone treads at the same places and turns, the post in drums of coursed stone, the rail of posts with a top rail, and the prototype's chest. The spiral foothold, the roof hatch, the loot's place and the top floor's slabs are unchanged.
+
+**Three things were at the wrong height**, because the room's helpers scale heights by the furniture factor F (.62) and the tower's are raw:
+- **The post:** the cylinder was F-scaled, so it stopped at 18.6 of the 30-unit climb, and the treads above it circled nothing. Its solid stopped there too. Both now reach 30.
+- **The chest and its glow:** they stood at 18.8, inside the shaft under the helix. The loot (`INT_LOOT`) was always at 30, so the chest you opened was invisible. The chest and its glow now stand on the top floor.
+- **The four window glows** were at 19.6 and are now up at the top floor.
+
+### Verified (headless Chromium)
+- **`oddfurn`**, extended: the tower built through `WORLD.buildInteriorFor` draws 25 meshes (about 165 before, 130 of them treads). The bake reaches 31.8, 7 boxes are left (the floor slabs and the door), and the spiral foothold is there. The six glows are at 30.6–31.6, the post's solid is 30 high, and the loot is at 30. The other three rooms pass as in Session 293. The tower is the fourth panel of `docs/prototypes/oddrooms-ingame.png`.
+
+### Needs eyes
+The climb itself in play: the treads are the same size and place, but they are rounded stone now. And whether the chest's being visible at last changes how the tower's reward reads.
+
+## v80 — Session 295 — The safehouse on the shape kit (H.5, #46 A)
+The safehouse Caldric grants, and the legacy homes of Hearthwick's old zone that copy its layout, are built by the older `buildInterior`, not `buildInteriorFor`, so the earlier sessions never reached them. Their side table and box lantern, the bookshelf, the chair and the four-box hearth are now one bake (`_legacyRoomKit`) at the places the boxes stood. That is a small kit table with a candle, a bookcase on the east wall, a ladder-back chair facing into the room, and the prototype's stone hearth in the north-east corner. The bed (the kit bed since Session 288), the stash chest, both lights and the rug are unchanged. The rest of `buildInterior` (Hearthwick's legacy shops, inn, church and keep) is still boxes and is owed.
+
+The legacy bake is not freed when you leave (the world module's `furnFree` does not reach this builder). A safehouse visit costs one 7.9k-triangle geometry until the page is closed, which is noted rather than wired across the module boundary this late in a run.
+
+### Verified (headless Chromium)
+- **`oddfurn`**, extended: `buildInterior({type:'safehouse'})` has one furniture bake of 7,857 triangles, 37 meshes in the room (the walls, the stash chest and the doors among them), the bed at (1, 2.6) and the stash at (4, 1) as before. The safehouse is the fifth panel of `docs/prototypes/oddrooms-ingame.png`. The other four rooms pass as in Sessions 293–294.
+
+### Needs eyes
+The safehouse in play, since it is the room the story gives the player.
+
+## v80 — Session 296 — The coaching inn's board, tack and bales on the shape kit (H.5, #46 A)
+An inn at the end of a coach line had its own boxes, which Session 287 left: a board of four ink strokes, three shelves with three coloured blocks for tack, and two straw-coloured boxes. They are now one more bake. The board is the guild halls' notice board (Session 292) at 1.4 by .9 with its pinned notes. The tack is three pegs on the east wall, each with a coiled rope and a hanging strap. The bales are rounded, lumpy straw with two twine bands each, one stacked on the other, where the boxes stood.
+
+### Verified (headless Chromium)
+- **`homefurn`**, extended: with a coach line to Dunmore set, the inn is a coaching inn with one more furniture bake than without (3 against 2), and none of the old straw boxes is left. No picture this session; the pieces are the guild board's and the kit's.
+
+### Needs eyes
+Nothing new to judge beyond the pieces. The old straw box overlapped the inn's hearth (both against the east wall, mid-room), so the bales now stand 1.9 further south, clear of it and in front of the private rooms' partition.
+
+## v80 — Session 300 — Hearthwick's legacy shops on the shape kit (H.5, #46 A)
+The four shops the older `buildInterior` still builds (Hearthwick's weaponsmith, armourer, apothecary and general goods, the rooms whose ids do not start `g_`) were box props: a rack bar with five sticks for weapons, three posts with a crossbar for armour stands, shelves of coloured blocks, a two-box counter and hanging green boxes for herbs. The kit's shop rooms from Sessions 289–290 use this builder's frame too (x east, z south, the door at z = D, the kit's own furniture heights), so each shop now takes the same room the generated shops have, plus the panelled counter at z 3.0, as one bake (`_legacyShopKit`): the forge with its hood and bellows, the anvil, the quench tub, the racks of the weapon kit and the grindstone; the three armour stands, the wall shields and the bench; the three shelves of potions, the drying herbs, the still and a worktable where the old one stood; the crates, sacks, shelves of crockery and the balance. The barrels, torches and lights stay, a forge glow and a still glow added where the fires are. One east-wall torch in the smithy moved from z 3.5 to z 7, clear of the first rack.
+
+**Two fixes found on the way:**
+- **The crates were nowhere.** The weaponsmith's and armourer's four crates were called `_intCrate(scene, x, D-2)`, the old signature's `y` in the place of `z`, so each stood eight units up at a z of `undefined`. They now stand on the floor by the front wall, where the calls meant them.
+- **The legacy bake is freed now** (Session 295 owed it): `buildInterior` disposes the geometry of the last room's legacy bakes before it builds the next. `INT_BED_NATION` is also set to the Gatelands there, so a crate or bed in Hearthwick no longer takes the wood of the last generated room you left.
+
+### Verified (headless Chromium)
+- **`legacyshops` (new):** each of the four rooms built through `buildInterior` has one furniture bake inside the room (weapon 24,368 triangles, armour 10,008, potion 17,754, goods 17,836), no mesh at a non-finite place, 15–18 boxes left (the door, beams, windows, torch brackets), and every crate at y 0 and z 6.8–8.2. Building a fifth room disposes the fourth room's bake. It fails on the old code. The picture is `docs/prototypes/legacyshops-ingame.png`.
+- **`oddfurn`** (the safehouse), **`interiors`**, **`shopfurn`** and **`homefurn`** pass.
+
+### Needs eyes
+Hearthwick's shops in play. The keeper still wanders .6–4.5 deep as the old room let them, which crosses the counter; the generated shops' solids are not in this builder. The floor rug in these rooms is still the flat red or blue plane, now louder beside the kit. The inn, church and keep of this builder are next.
+
+## v80 — Session 301 — Hearthwick's legacy inn and church on the shape kit (H.5, #46 A)
+The next two rooms of the older `buildInterior`. The inn was four one-leg box tables with box chairs, a two-box bar and a single box for a fireplace surround. The church had box pews, a two-box altar with three wax sticks, columns of a box base, a cylinder shaft and a box cap, and a bare stick for each candelabra. Each is now one bake (`_legacyHallKit`):
+- **The inn** is the generated taproom (Session 287) without its two beds, since this room has none: the panelled bar with its rail and stools, the dresser of bottles and plates, two casks on cradles, the stone hearth on the east wall, and four tables with benches. The four barrels along the back wall and the torches stay; the fire's light moved from the old west-wall surround to the kit hearth.
+- **The church** is laid out from the kit's pieces rather than the kit's own church. That church puts its columns at W/2 ± 3, which in this ten-wide nave stands them inside the pews (the old boxes did the same at z 7.2). Here there are pews 2.4 long either side of a 1.6 aisle, the flagged dais and moulded altar with its cloth and candlesticks, the pulpit, the columns by the walls at z 5.5, 9.5 and 13.5 (clear of the dais), and four standing iron candlesticks between them. The altar's lights are up at its candlesticks. The sigil on the back wall is left as it was, because what hangs there is the lore's to say.
+
+**One fix:** the priest stood at z 1.28, inside the altar (it runs from 1.15 to 2.05). He now stands behind it at z .7, facing the pews.
+
+### Verified (headless Chromium)
+- **`legacyhalls` (new):** each room has one bake, inside the walls and under the ceiling (the inn 28,628 triangles, the church 12,146), with no mesh at a non-finite place. The inn has 19 boxes left of 46. The church has 44 left of 97, most of them its twelve windows, and none of its 6 cylinders. The priest is at z .7 and the innkeeper at 1.2, between the dresser and the bar. The picture is `docs/prototypes/legacyhalls-ingame.png`.
+- **`legacyshops`**, **`oddfurn`**, **`interiors`** and **`civicfurn`** pass.
+
+### Needs eyes
+The two rooms in play. The kit's own church (Session 291) has the same columns-in-pews layout whenever a generated church comes out ten wide, its narrowest; that builder is not touched here and is worth a look in a small town's church. The keep is this builder's last box room.
+
+## v80 — Session 302 — Hearthwick's legacy keep on the shape kit (H.5, #46 A)
+The last box room of the older `buildInterior`. The keep's hall had a throne of boxes with cone spikes and ball finials, a two-box dais, columns of box and cylinder, banners of boxes with a turned box for a device, and six benches of two boxes each. It is now one bake (`_legacyKeepKit`): the kit's flagged dais 3.2 deep with a runner and the carved throne at z 1.0, two braziers before it, a runner 17 long to the door, eight columns at the old places with the kit's banners hung under them towards the aisle, and six petitioners' benches. The benches are moved to W × .3 and × .7 from × .26 and × .74, where they stood through the columns' bases.
+
+**Four things were wrong in the old room:**
+- **The six column torches were at the columns' centres,** inside the shafts. They now hang on each column's face towards the door, half a unit out.
+- **The regent stood on the dais.** He was placed at z 2.8 and paced from z .6, which kept him on a .42 dais without standing on it, sunk to the shins. He now stands at 4.2, in front of the new dais (it ends at 3.3), and paces between 3.7 and 6.
+- **The flat red rug** lay where the kit's runner now runs, and the two would have fought for the same height. The keep no longer draws it.
+- **The two guards** flank the new dais's front corners at z 3.8 (they stood at 2.7, on the old step).
+
+### Verified (headless Chromium)
+- **`legacyhalls`**, extended: the keep is one bake of 11,488 triangles inside the room and under its 5.2 ceiling. It has no cylinders left (8 before) and 63 boxes left of 124, every one of them shell: sixteen three-box windows, six beams, the door and eight torch brackets. The regent is at z 4.2 and there is no flat rug. The inn and church pass as in Session 301. The keep is the third panel of `docs/prototypes/legacyhalls-ingame.png`.
+- **`legacyshops`**, **`oddfurn`**, **`interiors`**, **`civicfurn`** and **`keep`** pass.
+
+### Needs eyes
+The keep in play: the regent's pacing past the braziers, and whether the throne reads from the door. With this session every room of the legacy builder is on the kit. The shell still isn't: its windows are box frames with a plane of glass, and its walls are flat planes, the look the generated rooms had before their own shell work.
+
+## v80 — Session 303 — The generated church's columns out of its pews (H.5)
+Found while laying out Hearthwick's church in Session 301. The kit's church (Session 291) puts its pews at W/2 ± 2.2, 2.6 long, so they run from .9 to 3.5 either side of the middle, and its columns at W/2 ± 3 every four units from z 4. That is the same place, at any width: in a church 22 deep, the columns at z 8, 12 and 16 stood through a pew, and the first column's base cut into the dais's front edge at z 4. The columns' solids were the same, so the player bumped into columns rising through the pews' backs. The columns now stand at W/2 ± 4.1, between the pews' ends and the walls (.9 from the wall in the narrowest, ten-wide church), every four units from z 5.5, clear of the dais. The solids moved with them. The nave now reads as a central aisle with a colonnade each side.
+
+### Verified (headless Chromium)
+- **`civicfurn`**, amended and extended: in Dunmore's church (11 by 22) the eight column solids stand at W/2 ± 4.1, z 5.5–17.5, and there is no solid inside a pew at W/2 ± 3, z 8. On the old code both checks fail, with the solids at ± 3, z 4–16. The church is one bake of 15,702 triangles and the keep passes as before. The picture is `docs/prototypes/churchcols-ingame.png`.
+- **`interiors`** and **`chapel`** pass.
+
+### Needs eyes
+A church in play: whether the side aisles between the columns and the walls feel wide enough to walk in the narrowest church (the column solid leaves .5 to the wall).
+
+## v80 — Session 304 — The legacy rooms' rugs on the kit (H.5, #46 A)
+With the furniture on the kit (Sessions 295 and 300–302), the flat rug of the older `buildInterior` was the loudest thing left in its rooms: a lit plane of plain red, or navy in the weapon and armour shops, 4 by 3 in the middle of the floor. It is now the kit's oval rag rug, the one in every generated home, at the same place and size. The church's is a bordered runner from the dais's front (z 4.1) to a unit short of the door. The old plane ran under the dais from z 1.5 and was hidden there. The keep keeps none, because its runner is part of its hall's bake (Session 302). Each rug is a small bake of its own, flagged to be freed with the room but not counted as its furniture.
+
+### Verified (headless Chromium)
+- **`legacyshops`**, extended: in all nine rooms the old builder makes (the four shops, the inn, church, keep, safehouse and home) there is no flat rug plane left. Every room but the keep has one kit rug lying under .03 high, and the church's runner runs z 4.1–15. The picture is `docs/prototypes/legacyrugs-ingame.png`.
+- **`legacyhalls`**, **`oddfurn`**, **`interiors`** and **`homefurn`** pass.
+
+### Needs eyes
+The rag rug's bright rings in a shop, which is the kit's own look. What is left of this builder is its shell: box-frame windows with a pane, and flat walls. The generated rooms' windows are flat lit planes too, so a window on the kit would be a new piece to prototype, not a port.
+
+## v80 — Session 305 — Prototype: the interiors' windows on the kit (H.5)
+With every room's furniture on the kit, the windows are the flattest thing left inside. A generated room's window is a plane on the wall with a painted view of the town at dusk. The older builder's is the same view in a frame of three boxes. A church's is a plain lit rectangle. The game has no kit window to port, so this is a new look, prototyped rather than built. `docs/prototypes/windows/proto.mjs` boots the game, builds a home and a church through `WORLD.buildInteriorFor`, and puts a kit window over each of their panes, the painted view set back behind the frame. The game is not changed.
+- **A, a leaded casement:** a plastered reveal with splayed jambs and head, a stone sill, an oak frame with a mullion and a transom, and diamond leading clipped to each light. 2,400 triangles.
+- **B, a shuttered timber window:** a lintel beam, four panes behind glazing bars, two plank shutters folded back against the wall on strap hinges, and a plank sill. 1,080 triangles.
+- **C, a round-headed stone window** for the church's tall upper windows: coursed jambs of long and short blocks, nine voussoirs, a moulded sill, and square lead quarries. 1,392 triangles. The church's low windows take A in the picture.
+
+The question is in `docs/decisions.md` and a DECISION issue. It offers A everywhere, windows chosen by room (B in homes, A in trades and halls, C in churches and keeps; recommended), B everywhere, or leaving them as they are. A room's four to eight windows would add about 4–19k triangles to its furniture bake, with no extra draw call.
+
+### Verified (headless Chromium)
+The prototype renders without page errors: `docs/prototypes/windows-home.png` (a home as it is, with A, and with B; the room and a close view) and `docs/prototypes/windows-church.png` (a church as it is, and with C).
+
+### Needs eyes
+Michael's choice. Nothing in the game has changed.
+
+## v80 — Session 306 — The fort's great hall, lord's chamber, chapel and courtyard on the shape kit (H.5, H.7, #46 A)
+The rooms inside a fort (`decorateFortRoom`, the named rooms of the fort layouts: Greywatch, the Old Garrison, the Last Post, the Wind Cloister) were the last interiors furnished with boxes: a slab table with slab benches, hutches of four boxes, a bed of two, a box altar with box pews, and a cylinder brazier. Four of the ten room kinds are now one bake each on the kit, with their collision footprints registered as before (`registerProp`, so the player still walks round them):
+- **The great hall:** the kit's long table with a bench either side and three candles, the banner hung on the north wall (the old plane hung .55 off it), and the three hutches as the kit's dresser, backs to the wall, candles on top.
+- **The lord's chamber:** the box bed with its head to the north wall, a small table with a candle beside it, and the chest at its foot.
+- **The chapel:** the kit's altar with its cloth, runner, candlesticks and book, and three pews facing it.
+- **The courtyard hall:** the kit's iron brazier at 1.8 times its size (a unit across, as the old one was), coals and flames in its fire mesh, its light raised to the new flames.
+
+**The scale was wrong before.** The old pieces were sized to a larger figure than the player: a table top at .7 and a hutch 1.8 high against the eye's .92, when the town interiors' tables stand at .46. The kit's pieces are at the town interiors' sizes, so a fort's hall now matches an inn's.
+
+The other six kinds (barracks, kitchen, armoury, guardroom, library, storeroom) and the cot by the entrance are still boxes. They are the next slice.
+
+### Verified (headless Chromium)
+- **`fortfurn` (new):** across four forts (the tee at two seeds, the linear and the courtyard layouts), all four kinds turn up (eleven rooms in all). Each is one bake inside its room and under the 3.2 ceiling: the great hall 9,172 triangles with 6 footprints, the lord's chamber 4,279 with 3, the chapel 2,462 with 4, the courtyard's brazier 522 with 1. No box or cylinder in the old props' materials is left in any of them, and the chapel's candles and the brazier burn in their bakes' fire meshes. The picture is `docs/prototypes/fortfurn-ingame.png`. From above, the lord's chamber shows the bed, table and chest where they belong.
+- **`dungeon`** (a fort's floors on the shell), **`keep`** and **`dungeonfoes`** pass.
+
+### Needs eyes
+A fort in play: whether furniture at the town's scale looks lost in rooms 10 or 16 cells across (the hall's table is up to 9 long, but the bed is 1.5), and whether the brazier at 1.8 times the kit's size reads right beside the people.
+
+## v80 — Session 307 — The fort's barracks, kitchen, armoury and guardroom on the shape kit (H.5, H.7, #46 A)
+Four more of the fort's room kinds, in the same way as Session 306: the kit's pieces at the town interiors' sizes, one bake a room, the collision footprints registered as before.
+- **The barracks:** each cot of two boxes is a narrow kit bed (1.2 by .55, the bed's own length and width arguments), head to the wall, with the kit's chest at its foot turned along the wall. The rows and the door gaps are the old ones.
+- **The kitchen:** the kit's stone hearth against the north wall, its chimney breast up to the 3.2 ceiling and its fire in the flame mesh. Before, it was a dark box with an orange box for a glow. A work table stands in the middle with a candle and a tankard, and two casks sit by the hearth.
+- **The armoury:** two kit weapon racks side by side on the north wall and two free-standing ones facing north where the old frames stood, all hung with the weapon kit's blades and hafts. The smithy's forge stands by the west wall, turned so its fire faces into the room, with the anvil on its stump before it. The smelter is six coursed drums of stone with a dark mouth, a fire at its foot and a cap. The work table carries a dagger and a whetstone.
+- **The guardroom:** the watch's table with a candle, a tankard and two dice, and a ladder-back chair turned to it.
+
+**Two fixes found on the way:**
+- **The new rooms never baked at first.** Session 306 put the bake call inside the room kinds' else-chain, before the rooms still on boxes. When the next four joined that call's list, the chain stopped there for them and their own branches never ran. The first run of the extended test caught it: none of the four turned up. The bake is now called once, at the end of `decorateFortRoom`, for whatever was put.
+- **The smelter stood through the east wall**, by .05 before and by .13 with the kit's wider base. It now stands 1.2 in from the room's last cell.
+
+### Verified (headless Chromium)
+- **`fortfurn`**, extended: across the same four forts all eight kinds turn up (22 rooms). Each is one bake inside its room, with nothing above 3.25 (the chimneys meet the ceiling). The barracks is 42,784 triangles with 28 footprints (fourteen beds and chests). The armoury is 23,228 with 6, the kitchen 7,041 with 4 and the guardroom 2,327 with 2. The first four rooms are as in Session 306. No box or cylinder in the old props' materials is left, and the armoury's forge and smelter burn in its fire mesh. The picture is `docs/prototypes/fortfurn-ingame.png`, now eight panels.
+- **`dungeon`**, **`dungeonfoes`** and **`keep`** pass.
+
+### Needs eyes
+The barracks' 42.8k triangles in one room is the most of any interior (an inn's taproom is 28.6k). Every bed has its own quilt and grain; if a fort's frame time suffers, the beds can share three bakes. Also, whether the free-standing racks read well from behind, since their backs face the door.
+
+## v80 — Session 308 — The fort's library and storeroom on the shape kit, and the entrance cot (H.5, H.7, #46 A)
+The last two of the fort's ten room kinds, in the manner of Sessions 306–307:
+- **The library:** the six bookshelves (a 2.2-high box each, with box spines coloured at random every visit) are the kit's bookcases, 1.4 long, backs to the long walls at the old places. Each is still a lootable shelf where it stands (`BARRELS`, the same `library_shelf` roll; its `mesh` field was never read, and is now null). The reading table has a candle, a closed book and an open one, and a ladder-back chair is drawn up to it.
+- **The storeroom:** each of the three shelf boxes is two of the kit's wall shelves of pots and crockery, one over the other at .62 and 1.05, with a tied sack under them. The crates and chests the room's rules add elsewhere are as they were.
+- **The entrance cot** (Session 9's place to rest and take a banked level) is a narrow kit bed, 1.0 by .6, head north as the old pillow lay.
+
+With this, every room inside a fort is on the kit, and every interior in the game is furnished from it.
+
+**Found, not fixed (systems):** the entrance cot never spawns. It looks for a floor cell (1) beside a fort's entrance, but the fort layouts floor their rooms with 7. In the tee fort at seed 23 the entrance's neighbours are 7, 7, off the map, and 7, and `D_BEDS` stays empty in all four forts the test enters. Resting there is a game rule, not the look, so it is left to the systems builder, and noted beside the fort rooms in the backlog. The new cot is untested in play for the same reason.
+
+### Verified (headless Chromium)
+- **`fortfurn`**, extended: across the four forts all ten kinds turn up (25 rooms). The library is one bake of 10,555 triangles with 8 footprints and six lootable bookshelves. The storeroom is 7,092 with 3. The other eight rooms are as in Sessions 306–307. No box or cylinder in the old props' materials is left in any room. The picture is `docs/prototypes/fortfurn-ingame.png`, now ten panels.
+- **`dungeon`**, **`dungeonfoes`** and **`locks`** pass.
+
+### Needs eyes
+A fort in play, all of it now. Whether a bookshelf's loot prompt still comes up where you look at the new case (it stands .16 from the wall, where the old one stood at .22).
+
+## v80 — Session 309 — The dungeons' shrine, library and barracks on the shape kit (H.7, #46 A)
+Every dungeon, not only the forts, gives some rooms a type by theme (`decorateDungeonRooms`: shrine, library, barracks, flooded, collapsed, ossuary, treasury). Three of them were furniture of boxes. Each is now one bake at the kit's sizes, tagged `dunFurn`:
+- **The shrine:** a flagged stone dais, a dressed plinth with a moulded slab, and four candles in dishes at the dais's corners. Before, it was a box plinth with four wax cylinders standing in the air round it. The light and the urn are as they were.
+- **The library:** the kit's bookcases, .9 long, backs to the north wall. The old boxes stood a unit out from the wall, their backs to the room. The reading table now carries a candle, a closed book and an open one.
+- **The barracks:** each cot of two boxes is the kit's bed, 1.8 by .8, along the west wall. The weapon-rack container is left for the containers' slice.
+
+**One fix:** the third cot of a barracks six cells deep ran through the south wall. The cots were 2.0 long, placed from 1.4 every 2.2. The beds are now placed from the north wall every 2.0, so three fit a room six deep.
+
+The ossuary's niches and bones, the collapsed room's fallen stones, and the three kinds of container (urn, sarcophagus, weapon rack, which are lootable and have lids) are still boxes and are the next slice.
+
+**Numbering:** the systems builder's newest entry on auto/systems is also Session 308, pushed five minutes after mine. This entry is 309, one above both.
+
+### Verified (headless Chromium)
+- **`dunfurn` (new):** across seven dungeons (undead, ruins and haunted), two shrines, seven libraries and a barracks turn up. Each is one bake inside its room and under the ceiling: the shrine 1,164 triangles, the libraries 4.1–5.4k, the barracks 6,600. None of the old boxes, in their colours, is left in any of them. The picture is `docs/prototypes/dunfurn-ingame.png`.
+- **`dungeon`**, **`dungeonfoes`** and **`fortfurn`** pass.
+
+### Needs eyes
+The shrine's plinth is bare stone. What a shrine in a dungeon honours is the lore's to say, and I have not guessed.
+
+## v80 — Session 310 — The dungeons' ossuary and collapsed room on the shape kit (H.7, #46 A)
+Two more of the dungeon room types from Session 309, into the same per-room bake:
+- **The ossuary:** each niche was a solid box .8 from the north wall. It is now dressed stone against the wall: a back, two sides, a sill, a shelf and a head, with two shelves of three skulls and a long bone each. The twelve box "bones" on the floor are long bones lying at the same places and angles, with a skull by every fourth. The sarcophagus is a container and waits for the containers' slice.
+- **The collapsed room:** the fallen stones are lumpy boulders (one bumped ball, squashed to each old box's size), and the broken slab is a dressed block tipped on its side.
+
+**The room dice are untouched.** The looks' jitter (the stones' shade, the skulls' turn) comes from a generator of its own (`jr`), so every `r()` the room types draw happens in the same order as before. A dungeon of a given seed puts its rooms, containers and traps where it did.
+
+**One fix:** the broken slab was 2.6 long, turned at random, and set at `cx`, which in this pass is half a cell east of the room's middle. In one collapsed room five cells wide it went through the east wall. It is now 2.0 long and centred.
+
+### Verified (headless Chromium)
+- **`dunfurn`**, extended: across up to twelve dungeons (undead, ruins, haunted, elemental, deep), all five types turn up. The ossuary is 2,904 triangles and the collapsed room 360–450 (as many boulders as the room's clear ground allows). Every room is one bake inside its walls and under the ceiling, with none of the old boxes left in their colours. The picture is `docs/prototypes/dunfurn-ingame.png`.
+- **`dungeon`** and **`dungeonfoes`** pass.
+
+### Needs eyes
+Whether the boulders read as fallen masonry or as field stones. They are rounded, where dressed blocks broken from a vault would be squarer.
+
+## v80 — Session 318 — The dungeons' urns, sarcophagi and weapon racks on the shape kit (H.7, #46 A)
+The last of the dungeon rooms' owed props from Session 310: the three lootable containers `decorateDungeonRooms` places (urns in shrines and treasuries, a sarcophagus in the ossuary, a weapon rack in barracks and treasuries). They were a cylinder with a disc, a box with a slab and a box on it, and a crossbar on three sticks. They are now built once a kind in `_dKit` and shared by every copy, as the barrels are:
+- **The urn:** a lathed burial urn (foot ring, full belly, shoulder, neck, rolled rim), two loop handles at the shoulder and two painted bands; the lid a low dome with a knob, its skirt inside the neck. 1,456 triangles.
+- **The sarcophagus:** a stepped plinth, a chest with corner pilasters and sunk panels on every face, a moulded cornice; the lid a slab with a moulded edge and a lying effigy, head on a cushion, hands folded on the chest. 1,996 triangles.
+- **The weapon rack:** oak uprights on splayed feet, a foot rail and a top rail with pegs, two swords, a spear and an axe leaning in it. 952 triangles.
+
+**Opening.** The urn's lid still pops and tilts the way a barrel's top does (the old code, unchanged). The sarcophagus's lid now slides a third of its width aside and tips onto the chest's edge: a container may carry an `openTop` of its own, which `openLoot` plays once in place of the pop. The rack has no lid; the old one popped its crossbar, which is gone.
+
+**The dice are untouched.** `_dContainer` draws `r()` for the turn and the loot exactly as before and nothing else. With `Math.random` seeded the same for both builds, four of five dungeons put every barrel, crate and container, and every item in them, where the old build did; the fifth differed in the engine's own barrels too, because the frames that run before entry draw from `Math.random` a varying number of times. That is the old behaviour, not this change.
+
+**One fix (Session 310's):** the collapsed room's boulders sat at `.3` of their size with a half-height of `.35`, plus their bumps, so the largest (.8) went up to .07 below the floor, and `dunfurn` failed whenever the dice rolled one. They sit at `.36` now. It showed up only in some runs because which sizes roll depends on where the engine's random barrels took the room's space first.
+
+### Verified (headless Chromium)
+- **`dunconts`**, new: across up to fourteen dungeons, urns (7), weapon racks (6) and a sarcophagus turn up; each is the shared kit bake with no box or cylinder parts, stands at the old size (the urn .71 tall, the sarcophagus .97 by 2.1, the rack 1.9 with the spear), opens in the loot panel under its own name with its loot, and the urn's lid moves .12 and the sarcophagus's .36 on opening. The picture, shut and open, is `docs/prototypes/dunconts-ingame.png`.
+- **`dunfurn`** (run twice after the boulder fix), **`dungeon`**, **`dungeonfoes`** and **`mimic`** pass.
+
+### Needs eyes
+Whether the sarcophagus lid pushed aside reads as opened by a person; whether the urn's clay is too warm under the dungeon's orange light. The rack's weapons stay on it after it is emptied; hiding them would need the loot panel to tell the container when it is empty, a small change for a later session if it bothers.
+
+## v80 — Session 319 — Prototype: the ships' sails trimmed to a wind (H.5b, question #57)
+Section H's items are done or waiting on Michael except one owed since Session 168: the sails swinging with the heading and the wind. Every ship's rig is in the hull's one bake, so the sails stand square across the hull whatever the heading, and the booms lie on the centreline. The world has no wind to trim to. That makes this a design question, not a build, so this session is a prototype and the question.
+
+**The prototype** is on the branch `auto/proto-sails`, not on this branch and not in the game. `shipBake` takes each square mast's yards and sails, each gaff with its boom, and the jib out of the bake into their own geometries, each pivoting on its mast. `buildShipMesh` hangs them on the hull as children, and `shipTrim(mesh, th)` sets them for a wind blowing at `th` against the bow. Square yards brace to split the angle between the wind and the bow, clamped at 35°. A gaff's boom goes to leeward, out to 72° running and in to 15° close-hauled, and its sail and the jib are mirrored to belly to leeward. The children are 1–3 more draw calls a ship and no more triangles. Because the rig pieces are separate meshes, the harbour's moored boats and the other ships would need no change beyond calling the trim.
+
+**The question** (issue #57, and in `docs/decisions.md`): a world wind that every ship trims to, as the look only (recommended); the same with the wind setting the speed, a sailing rule for the systems builder; the sails swinging only through a turn; or leaving them as they are.
+
+**Also in the backlog:** two stale notes are crossed out. The dungeon's goblins and kobolds were done with the roster in Session 196. The cave door's maw has been a rounded hollow since Session 274.
+
+### Verified (headless Chromium)
+- `tests/sailproto.test.mjs` on `auto/proto-sails` builds the sloop, cog and galleon, trims each to four winds, and pictures them from overhead and from the stern quarter with no page errors. The pictures are `docs/prototypes/sails-plan.png` and `sails-quarter.png`. In plan, every yard, boom and sail sits where the rule puts it against the wind arrow.
+- Nothing in `index.html` changed on this branch.
+
+### Needs eyes
+The answer on #57. Whether 35° of bracing reads as enough from the deck. A real ship braces sharper close-hauled, but at more than about 35° the yards would foul the shrouds as the rigging is built.
+
+## v80 — Session 330 — The ships' sails trimmed to the world's wind (H.5b, Michael's 1 on #57)
+Michael answered #57 with 1: a wind the world keeps, and every ship trims to it, as the look only. Session 319's prototype split each ship's rig out of the hull's bake; this session brings that split into the game unchanged and gives the world its wind.
+
+**The rigs.** `shipBake` bakes each square mast's yards and sails, each gaff with its boom and sail, and the sloop's jib into geometries of their own (`r.rigs`), and `buildShipMesh` hangs them on the hull as children that turn on their mast. The sloop has a gaff and a jib, the cog one square rig, the galleon two square masts and a gaff mizzen. That is one to three more draw calls a ship and no more triangles. `shipTrim` is the prototype's rule: square yards brace to split the angle between the wind and the bow, at most 35°; a boom goes to leeward, 72° out running and 15° close-hauled, and its sail and the jib belly to leeward.
+
+**The wind.** `windDir()` gives the way the wind blows in the world. It is read off `worldState.gameTimeAbsMinutes`, so it is the same after a load and needs nothing saved: three slow swells, of 53, 21 and 9 game hours, move it about 3.7 radians over two days and never more than .46 in a game hour (a real minute). In a storm, two gusts of two and four seconds shake it by up to about 35°. Nothing's speed reads it.
+
+**The trim.** `tickSailTrim`, called beside `tickShip` in the world's tick, trims your ship and every other ship afloat to the wind against its own heading. A ship just built (spawned, bought, or its class changed) sets its sails at once; after that they ease round with a time constant of under a second, so a turn or a change of wind takes a second or two.
+
+`ships`' count of a merchantman's meshes is now three (hull, wheel, rig), not two.
+
+### Verified (headless Chromium)
+- **`sailtrim`**, new. The rigs per class are as above. A ship is 4.3–6.6k triangles all told, the rigs 140–712 of them. A merchantman and a black sail at sea, each holding its heading, sit within .02 rad of the rule after two seconds. The yards stay within 35°, and each boom lies on the leeward side of the hull. Seven game hours on, the wind has moved 1.19 rad. A tenth of a second after that, the sails are still easing (up to 2 rad off); four seconds on, they have settled. In a storm the wind moves .64 rad over two seconds; in clear weather it does not move. The picture is `docs/prototypes/sailtrim-ingame.png`.
+- **`ships`** passes.
+
+### Needs eyes
+Whether the wind swinging about 25° a real minute at its fastest reads as weather or as fidgeting; the swells' periods are one number each to lengthen. Whether a storm's gusts (up to about 35°, over two to four seconds) look like a storm or a broken rig. The flag on the black sail's masthead is still in the hull's bake and does not stream with the wind; smoke and banners could read `windDir()` later.
+
+## v80 — Session 331 — The interiors' windows on the kit, and a medieval view by the town (H.5, Michael's 2 on #53)
+Michael answered #53 with 2, frames by the room, and added a note on the painted view behind them: it looked modern and metropolitan, and it should look medieval and fit the town. A poor place should show trees and perhaps a house; a rich city should show buildings and walls.
+
+**The frames.** Session 305's three prototype windows are now in the kit (`winLead`, `winShutter`, `winArch`). `winKind(type, tall)` picks one per window:
+- the shuttered timber window (B) for homes, cabins, cellars, towers, watch and guard rooms;
+- the leaded casement (A) for the inn, every shop, the guild halls, the chapel, and the low windows of a church and a keep's hall;
+- the round-headed stone window (C) for a church's and a keep's tall windows.
+
+Each tall pane is now an arch of lit glass cut to the frame, where before it was a rectangle. The frames take the nation's woods: Aurenne's shutters are its blue paint, and the Mark's frames are dark pine. In `buildInteriorFor`, each pane sits on the wall .006 in front of it with the frame over it. A room's low windows are one bake, and a church's or hall's tall ones a second. Hearthwick's rooms (`buildInterior`) get the same. Their three-box frames and blue glass are gone. `_intWindow` is removed, and its light is kept in the loop. There the church's two rows moved from .55/.82 of the ceiling to .45/.78, and the keep's upper row from .80 to .82, so the lower row's head clears the upper row's sill.
+
+**The view.** `windowTexture(tier, nation)` draws the time of day's sky, as before, over two ridges of hills. The ground is tinted to the hour, and houses and towers show lit windows after dusk. The tier comes from the settlement's prosperity:
+- **Under 35:** strip fields, a hedge, round trees and pines, and a cottage one time in two.
+- **35–60:** gabled houses with chimneys round a church tower with a spire, and a track in front.
+- **60 and up:** a crenellated curtain wall with three round towers and a gate, with roofs, a square keep and a spire behind it.
+
+Roofs and walls follow the nation: thatch, slate and whitewash in the Gatelands; dark shingle and timber in the Mark; terracotta and warm stucco in Aurenne. No mullions are painted any more, because the frame carries them. A room with no settlement, such as a cabin in the woods, gets the poor view. Hearthwick's rooms get the middling one. A church's low panes stay plain lit glass.
+
+### Verified (headless Chromium)
+- **`windows`**, new. Homes, cabins and cellars take B. The inn, a weapon shop, a guild hall and a chapel take A. A church and a keep's hall take A below and C above, with 6 and 8 arched panes. Each room's frames bake inside the walls and under the ceiling: 4,320 triangles for a home's four shuttered windows, 9.6–14.4k for four to six leaded ones, and 8.4k and 11.1k for a church's and a hall's arches. The painted view is on every low pane except a church's. Rooms at Colman's Rest (prosperity 20), La Grise (54) and Vieux Marché (61) each show their own tier's view for their nation. The three tiers and a second nation make four different pictures. In Hearthwick's rooms each room has one frame bake, the shop and inn have 4 painted panes, the church 6 arches and the keep 8. The picture is `docs/prototypes/windows-ingame.png`: a home, an inn and a church in a rich town, then the three views by day and by night.
+- **`interiors`**, **`homefurn`**, **`legacyhalls`**, **`legacyshops`**, **`civicfurn`**, **`guildfurn`**, **`oddfurn`**, **`furniture`**, **`chapel`** and **`crime1`** pass.
+
+### Needs eyes
+- Whether the views read at the size of a pane from across a room. Whether the rich tier's wall is too pale against a day sky.
+- Whether a home in a rich city ought to have the leaded window rather than the shutters. The rule is by the room, as chosen, not by the town.
+- The view is still drawn once per time of day at entry. A room you stay in through dusk keeps the day's picture until you next come in, as before.
+
+## v80 — Session 332 — The black sail's flag streams downwind (H.5b, after #57)
+Session 330 left one thing on a ship that ignored the new wind: the pirate's black flag at the masthead. It was in the hull's bake, so it always flew aft, whatever the wind did to the sails below it. It is now a rig of its own on the masthead pole (`type:'flag'`). `shipTrim` points its fly end the way the wind blows. A flag has no bound, unlike a yard or a boom, so it turns the short way round and three times quicker than a sail: about a third of a second. The pole stays in the hull's bake. This adds no triangles and one draw call to a pirate sloop.
+
+This comes under Michael's answer on #57 ("every ship trims to it"), so it did not need a question of its own.
+
+### Verified (headless Chromium)
+- **`sailtrim`**, extended: the black sail's flag sits within .02 rad of the wind's direction after two seconds. Its fly end lies 1.4 downwind of the pole. After the wind swings seven game hours on, it settles with the sails. `docs/prototypes/sailtrim-ingame.png` is re-shot; the flag is in the lower right.
+- **`ships`** passes.
+
+### Needs eyes
+Whether the flag should flutter. It keeps the old baked ripple and does not move within itself.
+
+## v80 — Session 336 — The interiors' shells on the kit: a prototype and a question (H.5, issue #62)
+Section H has nothing specified left to build: the playtest s162 list is done, #57 and #53 are built, and no question is pending. The backlog's own note on the interiors says what is still flat: the shell. A generated room is four flat wall planes that meet the floor and each other with a hard edge, a flat dark ceiling, square box beams across it, the entrance door a brown box of .9 by 1.4, and in Aurenne's rooms square box studs. Now that the furniture (Sessions 286–295) and the windows (Session 331) are on the kit, the room around them is the plainest thing in view.
+
+The prototype (`docs/prototypes/shells/proto.mjs`) builds four homes through `WORLD.buildInteriorFor`, one each for the Gatelands' plaster, Aurenne's plaster and studs, the Mark's rubble and a stone house. It hides today's shell pieces and puts a kit shell in their place. The walls keep their textures; the furniture, windows and layout do not move.
+- **A, the full frame.** In plastered rooms, posts at the corners and under each beam's ends where no window stands (within 1.2 of a window a post gives way to a short bracket), knee braces up to the beam and along the wall plate, a sole plate along the foot and a wall plate along the head. Aurenne's close studding stays, a post every 1.6 on the kit. In stone rooms, a plinth course of blocks along the foot and three stepped corbels under each beam's end instead of posts. Everywhere: beams .22 deep with rounded edges, joists every .5 over them, a boarded ceiling in place of the flat dark one, and the walls shaded in their vertex colours, darker at the foot, the head and in the corners, as the dungeon's shell is. The entrance becomes a plank door, a metre wide and 1.5 tall, with ledges, a brace, strap hinges with nail heads and a ring, in a timber frame or a stone surround.
+- **B, the trim only.** The sole plate or plinth, the wall plate, the shading, the joisted ceiling and the door, with no posts, braces or corbels. Aurenne's box studs stay.
+
+This session changes nothing in `index.html`. The question is on issue #62 and under Pending in `docs/decisions.md`: A (recommended), B, A in the smaller rooms with B in halls, or leave the shells alone.
+
+### Verified (headless Chromium)
+- The prototype runs clean with no page errors. A is 4.0k triangles in a Gatelands room, 4.4k in Aurenne's and 7.8k in a stone or rubble room; B is 2.8k and 6.9k. Each is the shell's bake and the door's: two draw calls, where today's shell is ten to twenty-five meshes. For scale, a room's furniture bake is 10–28k and its window frames 4–14k.
+- The pictures are `docs/prototypes/shells-gatelands.png`, `shells-aurenne.png`, `shells-mark.png` and `shells-stone.png`. Each shows today, A and B, looking up the room and back at the door.
+
+### Needs eyes
+Whether the joists crowd a low cottage ceiling (2.0–2.1): the beams' soffits sit at about 1.8, well over the eye at .92, but the ceiling reads busier. Whether the stone plinth reads as stone or as a skirting board. The prototype does not check collision: in the game the posts, which stand .18 proud of the wall, would want solids of their own, and a check that none stands in front of a bed, shelf or hearth.
+
+## v80 — Session 337 — Chimney smoke on the world's wind: a prototype and a question (H.5, issue #63)
+Two in three town houses have a chimney on the detailed house (Session 194), and not one of them smokes. The Hearthwick quest's journal still says "Chimney smoke ahead — a village". Session 330 gave the world a wind that only the ships read, and its devlog named smoke as the next thing that could read it. This is a visual feature nobody has specified, so it is a prototype and a question, not a build.
+
+The prototype (`docs/prototypes/smoke/proto.mjs`) writes a patched copy of the build to `tests/tmp/smoke-proto.html`. In that copy, `buildingGeoHi` records its chimney's top in `userData.chimney`, and the settlement's `addMesh` turns that into a world position. The script then boots the copy, goes to Dunmore and draws the smoke there. The whole town's smoke is one `THREE.Points` object with a small shader: a soft round sprite, sized by distance, faded by the fog, tinted grey by day, warm at dusk and blue-grey at night. Each chimney has 24 puffs on a ten-second life. A puff rises about .4 a second, drifts downwind along `WORLD.windDir()` (the direction `(sin w, cos w)`, the flag's), swells from .5 to 3.3 across and fades in and out. A storm lays it flatter and three times as fast. The puffs are placed relative to the town's centre, so no world coordinate goes through the float32 path.
+
+`index.html` is unchanged. The question is on issue #63 and under Pending in `docs/decisions.md`. The options are every chimney all the time; by the hearth's hours (recommended); only the inn and the smithy; or none.
+
+### Verified (headless Chromium)
+- The prototype runs clean with no page errors. Dunmore has 33 chimneys within 90 units of its centre, which makes 792 puffs in one draw call. The CPU work each frame is one pass over 792 points.
+- `docs/prototypes/smoke-dunmore.png` shows six views: the town at noon without smoke, then with it; twenty game hours later, when the wind has turned; at dusk; close by a house; and in a storm. The smoke leans the same way from every chimney, and it leans the other way once the wind has moved.
+
+### Needs eyes
+In a storm the puffs separate into beads, because they drift faster than they are made. The building would tie the puffs' rate to the drift. Whether the smoke is too thin from the hill at 70 units, where it reads as wisps. A real GPU's cost for overlapping transparent sprites at close range (fill rate) is not measured here; software GL says nothing useful about it.
+
+## v80 — Session 342 — The interiors' shells on the kit (H.5, Michael's A on #62)
+Michael answered #62 with A, the full frame. Session 336's prototype hid today's shell pieces in a finished room and laid a kit shell over them; this session builds it into `buildInteriorFor` itself, for every generated room except the church, the keep's hall and the tower. Those three have their own tall shells (5.0, 5.6 and 31 high), and the question put them in a later session, as the windows' did.
+
+What changed in a room:
+- **Walls and ceiling.** The four wall planes are subdivided every half unit and shaded in their vertex colours: darker at the foot, the head and the corners, the dungeon shell's rule. The flat dark ceiling is now boards, the plank texture tinted down to 0x8a7a68.
+- **Timbers.** The box beams are gone. In their place are rounded beams .22 deep, joists every .5 across them, and a wall plate along the head of every wall.
+- **Plastered rooms** (the Gatelands and Aurenne) get posts at the corners, under each beam's ends and along the end walls every 2.4, with knee braces up to each beam and along the wall plate, and a sole plate at the foot. Aurenne's box studs are replaced by the kit's close studding, a post every 1.6. Where a window is within 1.2 of a beam's end, a short bracket takes the post's place.
+- **Stone and rubble rooms** (the stone houses, the Mark) get a plinth course of blocks along the foot, and three stepped corbels under each beam's end. A corbel is left out where a window is within .8, because the Mark's rooms are 2.0 high and the corbels come down to the window heads.
+- **The door.** The entrance's brown box is a plank door, a metre by 1.5. It has ledges, a brace, strap hinges with nail heads and a ring, and it stands in a timber frame, or in a stone surround in stone rooms. It sits where the box was, so leaving by the south wall works as before.
+
+Two things differ from the prototype, both from its own Needs eyes.
+- **Posts and furniture.** The frame is built last, after the furniture, the back rooms, the inn's partition, the strongbox and the gallery's stair. A post whose footprint meets any solid, or any foothold smaller than twelve square units (so a stair or a table, but not the gallery's deck), is left out.
+- **Collision.** Each post that stands is a solid of its own (`post:true` in `INT_SOL`), so the player stops at it rather than walking through .18 of timber.
+
+The prototype's stone plinth stood .03 into the wall; it is now flush. Each room is one bake for the shell and one for the door, where it used to be ten to twenty-five meshes.
+
+### Verified (headless Chromium)
+- **`shells`**, new. It checks twelve generated rooms: four homes (the Gatelands, Aurenne, the Mark, stone), an inn, a smithy, an apothecary, a Mark shop, a stone guild hall, a cabin, a cellar and a galleried home.
+  - Every one has the kit shell and the plank door, and none has the box door or box beams.
+  - The church and the keep's hall still have today's shell.
+  - All four walls in each room are vertex-shaded, and the ceilings are boarded.
+  - Plastered rooms stand on 9–15 posts, Aurenne's on 23, and the stone and rubble rooms on none.
+  - No post meets another solid, stands within .6 of a window's centre, or stands in the entrance.
+  - Each shell lies inside its walls and under its ceiling. The door is centred on the south wall, and its head is at 1.71–1.72.
+  - The shell is 2.1–3.4k triangles in a plastered room, 6.2k in a stone one and 11.7k in the guild hall. The door is 1.0k, or 1.3k in stone.
+  - A post blocks the player at the west wall, and the middle of the room is free.
+  - The picture is `docs/prototypes/shells-ingame.png`: the four homes looking up the room and back at the door, then the inn and the smithy.
+- **`windows`**, **`interiors`**, **`homefurn`**, **`oddfurn`**, **`legacyshops`**, **`civicfurn`**, **`guildfurn`**, **`shopfurn`**, **`chapel`**, **`legacyhalls`**, and **`crime1`**–**`crime5`**, **`witness`** and **`locks`** pass.
+
+### Needs eyes
+- Whether the joists crowd a 2.0 Mark ceiling, where the beams' soffits sit at 1.69.
+- Whether the plastered walls are too bright against the dark timber at the lantern's range, as they are in the picture. The shading darkens the edges, not the middle of the wall.
+- In galleried rooms the posts on the north half rise through the deck to the roof. They read as the frame holding the gallery up, but nobody has looked at them from upstairs.
+- Churches, keep halls and Hearthwick's rooms are still owed.
+
+## v80 — Session 343 — Chimney smoke on the world's wind (H.5, Michael's B on #63)
+Michael answered #63 with B, by the hearth's hours. Session 337's prototype patched a copy of the build. This session writes the same smoke into the game.
+
+**The chimneys.** `buildingGeoHi` now keeps its chimney's top in `userData.chimney`, in the house's local frame. When a town lays out its lots, it turns each one into a world position with the building's type (`S.chimneys`). Dunmore has 33: 23 homes, four inns, the two guild halls, the smithy, the apothecary and two general shops. Burned and abandoned shells use the low-detail builder with no chimney, so they have no smoke.
+
+**The smoke.** Once the town is baked, `smokeFor(S)` gives it one `THREE.Points` object in its group, with 24 puffs a chimney. It is placed at the town's centre and holds every puff relative to it, so no world coordinate goes through the float32 path. The material is the prototype's: one shared shader, a soft round sprite sized by distance, and the fog. `tickSmoke` runs in `WORLD.tick`, beside the weather. Each puff lives ten seconds. In that time it rises about .4 a second, drifts downwind along `windDir()` and swells from .5 to 3.3 across. It fades in, then fades out. The whole town's smoke is tinted grey by day, warm at dusk and blue-grey at night. A town more than 300 units from the player hides its smoke and does no work for it. `disposeSettlement` frees the geometry.
+
+**The hours.** `smokeWant` gives each chimney's strength:
+- The inn, the smithy, the armourer and the guild halls: 1 at every hour.
+- Homes and the other shops: 1 from 6 to 9 and from 17 to 23; a thread of .3 from 9 to 17; nothing from 23 to 6. Michael's option named mornings, evenings and a thread "between"; it did not say what happens at night. I read it as the hearth going cold, and that is the open call in Needs eyes.
+- Every chimney at every hour when it is snowing, or when the town stands in the tundra.
+
+A chimney eases towards its strength over a few seconds, so the smoke thins and returns rather than switching. A weak chimney's puffs are smaller as well as fainter.
+
+**The storm.** This fixes the prototype's own Needs eyes. In a storm the puffs drifted faster than they were made, so the plume came apart into beads. Now a storm cuts a puff's life to a third (`L/(1+2·storm)`) while it drifts 3.7 times as fast. The plume stays about as long as a calm one (6.9 against 7.5) and lies lower (a rise of 2.3 against 3.2), and in the picture it is one continuous streak.
+
+### Verified (headless Chromium)
+- **`smoke`**, new.
+  - Dunmore's 33 chimneys all sit 3–12 above the ground, each inside its own lot. The town's smoke is one Points object in the town's group: 792 puffs, placed at the centre. Six towns were loaded, and each has its own smoke.
+  - The rule's values are exact: a home gives 1 at 7 and 19, .3 at 13 and 0 at 2. The inn, the smithy and a guild hall give 1 at 2. A home in snow gives 1 at 2.
+  - The same, live, after 15 seconds of ticks. The homes' mean alpha is .323 at 7, .097 at 13 and 0 at 2, and .324 at 2 in snow. The trades still smoke at 2 (.226).
+  - The mean drift lies along the wind (dot 1.00). When the wind turns from 2.79 to 1.65 rad, the smoke turns with it (dot 1.00).
+  - A storm: rise 2.25 against 3.15, length 6.89 against 7.47.
+  - Past 300 units the smoke is hidden, and it shows again on return.
+  - The picture is `docs/prototypes/smoke-ingame.png`. It shows the town from the hill at noon (homes a thread), at breakfast, at dusk and at 2 a.m. (only the trades), then close by a house, calm and in a storm.
+- **`houses`**, **`houseao`**, **`sailtrim`**, **`weather`**, **`townroads`**, **`lod`**, **`saves`** and **`towngate`** pass.
+
+### Needs eyes
+- Whether homes should keep a banked thread through the night rather than go cold. That is one number in `smokeWant`.
+- The fill cost of overlapping transparent sprites on a real GPU close to a busy inn, which is not measurable on software GL.
+- Hearthwick (the legacy cell) and the forts' barracks build their houses by other routes, so they have no smoke yet.
+- The tint changes in steps at 5.5, 7, 17.5 and 20.5, not smoothly with the sky.
+
+## v80 — Session 344 — The church and the keep's hall on the kit shell (H.5, after #62)
+In Session 342 the church and the keep's hall kept their old shell. Under #62 they were the next to follow, and Michael's A covers them, so they needed no question of their own. Both are ashlar rooms, so they take the stone variant:
+- the vertex-shaded walls;
+- the boarded ceiling on joists;
+- rounded beams, a wall plate, a plinth course, and stepped corbels under the beams' ends.
+
+Two things differ from a house.
+- **The door.** A church's or a hall's entrance is larger: 1.5 wide by 2.3, of seven planks, in a stone surround. The plinth's gap is widened to 1.1 to take it.
+- **The corbels.** The tall round-headed windows (Session 331) come to within .3 of the beams: the church's at 4.7 under a 5.0 ceiling, the hall's at 5.4 under 5.6. `tallWins` now records each window's z. A corbel is left out within .8 of a tall window as well as a low one, and the beam runs over the window's head to the wall plate.
+
+The tower (31 high) still keeps its old shell.
+
+### Verified (headless Chromium)
+- **`shells`**, extended to 14 rooms.
+  - The church (11 × 16 × 5) and the keep's hall (18 × 22 × 5.6) are stone rooms with the kit shell: 6.6k and 10.0k triangles.
+  - Their door is 1.4k triangles and its head stands at 2.52. No box door or box beams are left.
+  - No shell vertex in the corbels' band, near a wall and within .6 of a tall window's centre, is found in either room (0 and 0).
+  - Every earlier check still holds.
+  - `docs/prototypes/shells-ingame.png` now has two more rows: the church and the hall, looking up the nave and back at the door.
+- **`windows`**, **`civicfurn`**, **`chapel`**, **`interiors`** and **`crime5`** pass.
+
+### Needs eyes
+- A flat joisted ceiling in a church five high reads like a hall, not a church. An open roof with trusses is its own look, and would need its own question.
+- The kit furniture's columns in both rooms stop at the joists, not under a beam.
+
+## v80 — Session 345 — Smoke from the forts' barracks and the coaching inns (H.5, after #63)
+Session 343 left two kinds of chimney without smoke: the two barracks in every fort's yard, and the inn at the middle of each coaching road. Both are the detailed house, so both already record their chimney's top. They are built outside `genSettlement`, which is why they had no smoke.
+- **A fort** is already a settlement (`SETTLE`), with a group and a bake. Each barracks now adds its chimney to `S.chimneys` with the type `barracks`, and the fort calls `smokeFor(S)` after its bake, as a town does. Barracks follow the homes' hours.
+- **A coaching inn** belongs to its coach line (`COACHES`), not to a town. The line now keeps a small smoke record, `C.smokeS`, which holds the inn's one chimney, typed `inn` so it smokes at every hour. Its Points object sits in the line's group. `removeCoachLine` frees the geometry, and `tickSmoke` walks the coach lines after the settlements.
+
+The world position of a chimney is now worked out in one place, `chimneyAt(geo, placed, type)`, which the towns use too. The smoke's per-puff seed was taken from the site's grid cell. A fort or a road has none, and every one of a fort's puffs came out NaN. The seed now comes from a hash of the site's id.
+
+The legacy Hearthwick cell builds its houses with the old boxes and has one box chimney, over Bram's forge. It is the one place still owed smoke.
+
+### Verified (headless Chromium)
+- **`smoke`**, extended.
+  - **The fort nearest the start** (seed 332307) has two barracks chimneys and 48 puffs in one Points object in its group, with every position finite. Their mean alpha at 7h is .319.
+  - **A coaching inn** on a road opened from the start has one chimney of type `inn`. It stands 7.6 above the ground, 2.9 from the inn's centre, in the line's group. Its mean alpha at 7h is .322.
+  - Every earlier check still holds.
+- **`coach`**, **`keep`** and **`fortfurn`** pass.
+
+### Needs eyes
+- Whether soldiers keep a fire in all day. Barracks follow the homes' hours, so from 9 to 17 they give only a thread.
 ## v80 — Session 176 — Where a frame goes: a profile, and F9
 
 Backlog D, *performance on a laptop* (Michael, 27 Sep: choppy). The item says to profile first, then take the cheap wins. This session is the profile. Headless Chromium draws on software GL: it can count exactly what a frame asks for, and time the JavaScript, but it cannot time a GPU. So the session also gives the game a readout that can be read on the laptop itself.
