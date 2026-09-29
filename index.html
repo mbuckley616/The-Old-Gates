@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s275</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s276</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -23614,8 +23614,6 @@ function buildDungeon(portal){
       emberLight.position.set(cx, baseY + 1.3, cz);
       dScene.add(emberLight);
     }
-    // the four rooms above bake here; the else-chain goes on below with the rooms still on boxes
-    if(['great_hall', 'lords_chamber', 'chapel', 'courtyard_hall'].includes(room.kind)) kitBake();
     else if(room.kind === 'barracks'){
       // v61gd: cots oriented in proper military-bunk style. Head against
       // the wall, foot pointing into the room. So on the WEST wall, each
@@ -23689,16 +23687,10 @@ function buildDungeon(portal){
           const startZ = segMin + (segLen - totalSpan) / 2;
           for(let i = 0; i < maxBeds; i++){
             const z = startZ + i * bedSpacing;
-            // Cot: width 1.2 (perpendicular to wall), depth 0.55 (along wall)
-            boxSolid(headX, z, 1.2, 0.30, 0.55, woodDark);
-            // Mattress on top (non-solid; covered by frame AABB)
-            boxAt(headX, 0.32, z, 1.05, 0.08, 0.45, linen);
-            // Footlocker at the foot of the cot. For west-wall cot, foot is
-            // east of cot center at headX + 0.6. Locker back face at headX
-            // + 0.62 (0.02u margin from cot foot). Locker center X = back
-            // face + half-width 0.175 = headX + 0.795.
-            const lockerX = faceEast ? headX + 0.795 : headX - 0.795;
-            boxSolid(lockerX, z, 0.35, 0.30, 0.55, woodDark);
+            // S307 — a narrow kit bed (1.2 by .55) head to the wall, the kit's chest at its foot, turned along the wall
+            FP.put(FK.bed(FN, FS + 20 + i + (faceEast ? 0 : 50), 1.2, 0.55), headX, z, faceEast ? Math.PI/2 : -Math.PI/2); registerProp(headX, z, 1.2, 0.55);
+            const lockerX = faceEast ? headX + 0.83 : headX - 0.83;
+            FP.put(FK.chest(FN, FS + 80 + i + (faceEast ? 0 : 50)), lockerX, z, Math.PI/2); registerProp(lockerX, z, 0.42, 0.72);
           }
         }
       }
@@ -23706,110 +23698,56 @@ function buildDungeon(portal){
       placeBunksAlongWall(eastX, false, eastDoorZ);   // east wall — foot points west
     }
     else if(room.kind === 'kitchen'){
-      // Hearth against the north wall — dark stone box with a glowing interior.
-      // Preparation table centered. Note: cluster spawn will still drop a
-      // barrel/crate cluster in the E corner per the kind-aware logic below.
-      const hearthZ = room.y + 0.7;
-      const hearthMat = new THREE.MeshLambertMaterial({color: 0x1e1612});
-      const hearth = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.2, 0.8), hearthMat);
-      hearth.position.set(cx, baseY + 0.6, hearthZ);
-      dScene.add(hearth);
-      // v61g9: hearth blocks the player.
-      registerProp(cx, hearthZ, 1.5, 0.8);
-      // Glowing interior of the hearth — visual only, sits inside hearth AABB
-      const hearthGlow = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.3), new THREE.MeshBasicMaterial({color: 0xff6020}));
-      hearthGlow.position.set(cx, baseY + 0.5, hearthZ + 0.3);
-      dScene.add(hearthGlow);
+      // S307 — the kit's stone hearth against the north wall, its chimney breast to the ceiling, the fire in its flame mesh;
+      // the work table in the middle with a candle and a tankard, and two casks by the hearth
+      FP.put(FK.hearth(1.8, 3.2, FN, FS + 1), cx, wallN, 0); registerProp(cx, wallN + 0.35, 1.8, 0.7);
       const hearthLight = new THREE.PointLight(0xff7030, 1.5, 5);
-      hearthLight.position.set(cx, baseY + 0.6, hearthZ + 0.4);
+      hearthLight.position.set(cx, baseY + 0.45, wallN + 0.75);
       dScene.add(hearthLight);
-      // Preparation table — centered
-      boxSolid(cx, cz, 1.4, 0.7, 0.7, woodLight);
+      FP.put(FK.table(1.4, 0.7, FN, FS + 2), cx, cz, 0); registerProp(cx, cz, 1.4, 0.7);
+      { const q = FK.Parts(); FK.candle(q, -0.35, 0.46, 0.05); FK.tankard(q, 0.3, 0.46, -0.1, 0x7a6a4a); FP.put(q, cx, cz, 0); }
+      for(const k of [0, 1]){ const x = cx + 1.5 + k * 0.5; FP.put(FK.cask(FN, FS + 3 + k), x, wallN + 0.45, 0); registerProp(x, wallN + 0.45, 0.45, 0.55); }
     }
     else if(room.kind === 'armory'){
-      // Two weapon racks against the N and S walls — vertical wood-and-iron
-      // frames with a row of small "weapon" shapes on top.
-      const rackPositions = [
-        {z: room.y + 0.7, facing: 1},   // north rack faces south (into room)
-        {z: room.y + room.h - 1.7, facing: -1},  // south rack faces north
-      ];
-      for(const rp of rackPositions){
-        // v61g9: one unified collision AABB per rack covers base + uprights
-        // + crossbar + weapons. Player can't walk through any part of it.
-        registerProp(cx, rp.z, 1.8, 0.5);
-        // Rack base
-        box(cx, rp.z, 1.8, 0.15, 0.5, woodDark);
-        // Rack uprights (two posts)
-        boxAt(cx - 0.75, 0.15, rp.z, 0.12, 1.4, 0.12, woodDark);
-        boxAt(cx + 0.75, 0.15, rp.z, 0.12, 1.4, 0.12, woodDark);
-        // Cross-bar holding "weapons"
-        boxAt(cx, 1.4, rp.z, 1.6, 0.10, 0.12, woodDark);
-        // Weapon silhouettes — thin vertical boxes (sword shapes)
-        for(let i = 0; i < 3; i++){
-          const wx = cx - 0.6 + i * 0.6;
-          boxAt(wx, 0.85, rp.z + rp.facing * 0.08, 0.08, 1.10, 0.04, iron);
-        }
-      }
-      // v61ga: smithy furnishings. Forge against W wall (top half), anvil
-      // just east of forge (where the smith stands), smelter on E wall
-      // (top half), weapon prep table near room center. The room reads
-      // as a working armory — repairs and small-blade work happen here.
-      // Materials reused: stone, iron, woodLight/Dark. Hot interiors use
-      // the existing hearth color (0xff6020) and a warm PointLight.
-      const forgeMat = new THREE.MeshLambertMaterial({color: 0x2a2018});
-      // FORGE (W wall, north half): stone box with a glowing maw + warm light
-      const forgeX = room.x + 0.7;
-      const forgeZ = room.y + 1.8;
-      const forge = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.1, 1.4), forgeMat);
-      forge.position.set(forgeX, baseY + 0.55, forgeZ);
-      dScene.add(forge);
-      registerProp(forgeX, forgeZ, 1.2, 1.4);
-      // Glowing maw on the east face (where the smith reaches in)
-      const forgeMaw = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.45, 0.5), new THREE.MeshBasicMaterial({color: 0xff6020}));
-      forgeMaw.position.set(forgeX + 0.51, baseY + 0.5, forgeZ);
-      dScene.add(forgeMaw);
+      // S307 — the armoury on the kit: two of the kit's weapon racks side by side on the north wall and two free-standing to
+      // the south facing north (where the old frames stood), the smithy's forge by the west wall with its fire to the east,
+      // the anvil on its stump, a smelter of coursed stone by the east wall, and a work table with a blade and a whetstone
+      const R = [['sword', 'longsword', 'claymore'], ['axe', 'greataxe', 'warhammer'], ['mace', 'flail', 'greatclub'], ['cutlass', 'dagger', 'sword']];
+      for(const sx of [-1, 1]) FP.put(FK.rack(FN, FS + 10 + (sx > 0 ? 1 : 0), R[sx > 0 ? 1 : 0]), cx + sx * 0.45, wallN + 0.02, 0);
+      registerProp(cx, wallN + 0.15, 1.8, 0.3);
+      const southZ = room.y + room.h - 1.7;
+      for(const sx of [-1, 1]) FP.put(FK.rack(FN, FS + 12 + (sx > 0 ? 1 : 0), R[sx > 0 ? 3 : 2]), cx + sx * 0.45, southZ + 0.1, Math.PI);
+      registerProp(cx, southZ, 1.8, 0.5);
+      const forgeX = room.x + 0.35, forgeZ = room.y + 1.8;
+      FP.put(FK.forge(3.2, FN, FS + 1), forgeX, forgeZ, Math.PI/2); registerProp(forgeX, forgeZ, 1.6, 1.8);
       const forgeLight = new THREE.PointLight(0xff7030, 1.4, 4.5);
-      forgeLight.position.set(forgeX + 0.7, baseY + 0.55, forgeZ);
+      forgeLight.position.set(forgeX + 1.0, baseY + 0.55, forgeZ);
       dScene.add(forgeLight);
-      // ANVIL: east of forge, on a wood block. Iron T-shape silhouette.
-      const anvilX = forgeX + 1.6;
-      const anvilZ = forgeZ;
-      // Wood stump base (collidable)
-      boxSolid(anvilX, anvilZ, 0.5, 0.55, 0.5, woodDark);
-      // Iron anvil body — sits on top of stump. Tapered approximate via box stack.
-      boxAt(anvilX, 0.65, anvilZ, 0.4, 0.15, 0.55, iron);  // base
-      boxAt(anvilX, 0.78, anvilZ, 0.55, 0.10, 0.18, iron); // horn (top, longer along x)
-      // SMELTER (E wall, north half): taller stone cylinder with a coal glow at base
-      const smelterX = room.x + room.w - 1.0;
-      const smelterZ = room.y + 1.8;
-      cylSolid(smelterX, smelterZ, 0.55, 1.7, stone);
-      // Coal-glow base
-      const smelterGlow = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), new THREE.MeshBasicMaterial({color: 0xff5020}));
-      smelterGlow.position.set(smelterX, baseY + 0.15, smelterZ);
-      dScene.add(smelterGlow);
+      const anvilX = forgeX + 1.8, anvilZ = forgeZ;
+      FP.put(FK.anvil(FN, FS + 2), anvilX, anvilZ, Math.PI/2); registerProp(anvilX, anvilZ, 0.55, 0.55);
+      const smelterX = room.x + room.w - 1.2, smelterZ = room.y + 1.8;
+      { const q = FK.Parts();
+        for(let k = 0; k < 6; k++){ const r0 = 0.58 - k * 0.013, g = 0.36 + ((FS * 7 + k * 13) % 9) * 0.02; q(SK.bumpy(SK.cyl(r0 - 0.012, r0, 0.25, 14, 2), 0.015, 9, (FS + k) % 7), new THREE.Color(g * 0.95, g * 0.9, g * 0.85), 0, 0.13 + k * 0.265, 0, 0, k * 0.4, 0); }
+        q(SK.cyl(0.52, 0.52, 0.08, 14), 0x4a4440, 0, 1.62, 0);
+        q(SK.cyl(0.36, 0.36, 0.02, 14), 0x1a1210, 0, 1.665, 0);
+        q(SK.rbox(0.34, 0.26, 0.1, 0.03, 1), 0x1a1210, 0, 0.18, -0.52);
+        q.flame(SK.cone(0.08, 0.18, 6), 0xff7a20, -0.06, 0.16, -0.5); q.flame(SK.cone(0.06, 0.14, 6), 0xffa030, 0.07, 0.14, -0.5);
+        FP.put(q, smelterX, smelterZ, 0); }
+      registerProp(smelterX, smelterZ, 1.1, 1.1);
       const smelterLight = new THREE.PointLight(0xff6020, 0.9, 3.5);
-      smelterLight.position.set(smelterX, baseY + 0.2, smelterZ);
+      smelterLight.position.set(smelterX - 0.1, baseY + 0.2, smelterZ - 0.7);
       dScene.add(smelterLight);
-      // PREP TABLE: centered in the room interior (between the two racks).
-      // Carries a few decorative weapon silhouettes laid flat on its top.
-      const prepX = cx;
-      const prepZ = cz;
-      boxSolid(prepX, prepZ, 1.4, 0.75, 0.7, woodLight);
-      // Two small horizontal "blade" silhouettes lying flat
-      boxAt(prepX - 0.3, 0.78, prepZ - 0.15, 0.7, 0.04, 0.06, iron);
-      boxAt(prepX + 0.25, 0.78, prepZ + 0.1, 0.55, 0.04, 0.06, iron);
-      // A small whetstone — short stone cyl on the table
-      cylAt(prepX + 0.45, 0.78, prepZ - 0.2, 0.07, 0.10, stone);
+      FP.put(FK.table(1.4, 0.7, FN, FS + 3), cx, cz, 0); registerProp(cx, cz, 1.4, 0.7);
+      { const q = FK.Parts(); if(typeof wpnBuild === 'function') for(const w of wpnBuild('dagger', false, null)) q(w.geo, 0xffffff, -0.3, 0.47, -0.05, 0, 0.3, Math.PI/2);
+        q(SK.rbox(0.2, 0.04, 0.06, 0.012, 1), 0x7a7470, 0.35, 0.48, 0.1, 0, -0.4, 0); FP.put(q, cx, cz, 0); }
     }
     else if(room.kind === 'guardroom'){
-      // Small table + chair + single barrel-like prop against the N wall.
-      // Sparse — the room reads as "one or two people stationed here briefly."
-      boxSolid(cx, room.y + 1.2, 1.0, 0.65, 0.6, woodLight);
-      // Chair (small box, slight Y rotation) — AABB collision is fine despite rotation
-      const chair = boxSolid(cx + 0.7, room.y + 1.8, 0.4, 0.5, 0.4, woodDark);
-      chair.rotation.y = -0.3;
-      // Chair back (extends upward behind) — non-solid; chair AABB covers it
-      boxAt(cx + 0.7, 0.7, room.y + 2.0, 0.4, 0.5, 0.06, woodDark);
+      // S307 — the watch's table with a candle, a tankard and a pair of dice, and a ladder-back chair turned to it
+      FP.put(FK.table(1.0, 0.6, FN, FS + 1), cx, room.y + 1.2, 0); registerProp(cx, room.y + 1.2, 1.0, 0.6);
+      { const q = FK.Parts(); FK.candle(q, -0.3, 0.46, 0); FK.tankard(q, 0.25, 0.46, 0.1, 0x8a8478);
+        for(const d of [[0.05, -0.1, 0.3], [0.12, -0.05, -0.4]]) q(SK.rbox(0.03, 0.03, 0.03, 0.006, 1), 0xe8dcc0, d[0], 0.475, d[1], 0, d[2], 0);
+        FP.put(q, cx, room.y + 1.2, 0); }
+      FP.put(FK.chair(FN, FS + 2), cx + 0.7, room.y + 1.85, Math.PI - 0.3); registerProp(cx + 0.7, room.y + 1.85, 0.4, 0.4);
     }
     else if(room.kind === 'library'){
       // v61ga: library — bookshelves line the long walls; a reading table
@@ -23995,6 +23933,8 @@ function buildDungeon(portal){
         }
       }
     }
+    // S307 — every room drawn on the kit above is one bake (nothing to bake for the rooms still on boxes)
+    kitBake();
   }
 
   FOOTHOLDS=[];DUNGEON_STAIRWELL=false; // v80 S8

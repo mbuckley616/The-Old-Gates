@@ -7504,3 +7504,21 @@ The other six kinds (barracks, kitchen, armoury, guardroom, library, storeroom) 
 
 ### Needs eyes
 A fort in play: whether furniture at the town's scale looks lost in rooms 10 or 16 cells across (the hall's table is up to 9 long, but the bed is 1.5), and whether the brazier at 1.8 times the kit's size reads right beside the people.
+
+## v80 — Session 307 — The fort's barracks, kitchen, armoury and guardroom on the shape kit (H.5, H.7, #46 A)
+Four more of the fort's room kinds, in the same way as Session 306: the kit's pieces at the town interiors' sizes, one bake a room, the collision footprints registered as before.
+- **The barracks:** each cot of two boxes is a narrow kit bed (1.2 by .55, the bed's own length and width arguments), head to the wall, with the kit's chest at its foot turned along the wall. The rows and the door gaps are the old ones.
+- **The kitchen:** the kit's stone hearth against the north wall, its chimney breast up to the 3.2 ceiling and its fire in the flame mesh. Before, it was a dark box with an orange box for a glow. A work table stands in the middle with a candle and a tankard, and two casks sit by the hearth.
+- **The armoury:** two kit weapon racks side by side on the north wall and two free-standing ones facing north where the old frames stood, all hung with the weapon kit's blades and hafts. The smithy's forge stands by the west wall, turned so its fire faces into the room, with the anvil on its stump before it. The smelter is six coursed drums of stone with a dark mouth, a fire at its foot and a cap. The work table carries a dagger and a whetstone.
+- **The guardroom:** the watch's table with a candle, a tankard and two dice, and a ladder-back chair turned to it.
+
+**Two fixes found on the way:**
+- **The new rooms never baked at first.** Session 306 put the bake call inside the room kinds' else-chain, before the rooms still on boxes. When the next four joined that call's list, the chain stopped there for them and their own branches never ran. The first run of the extended test caught it: none of the four turned up. The bake is now called once, at the end of `decorateFortRoom`, for whatever was put.
+- **The smelter stood through the east wall**, by .05 before and by .13 with the kit's wider base. It now stands 1.2 in from the room's last cell.
+
+### Verified (headless Chromium)
+- **`fortfurn`**, extended: across the same four forts all eight kinds turn up (22 rooms). Each is one bake inside its room, with nothing above 3.25 (the chimneys meet the ceiling). The barracks is 42,784 triangles with 28 footprints (fourteen beds and chests). The armoury is 23,228 with 6, the kitchen 7,041 with 4 and the guardroom 2,327 with 2. The first four rooms are as in Session 306. No box or cylinder in the old props' materials is left, and the armoury's forge and smelter burn in its fire mesh. The picture is `docs/prototypes/fortfurn-ingame.png`, now eight panels.
+- **`dungeon`**, **`dungeonfoes`** and **`keep`** pass.
+
+### Needs eyes
+The barracks' 42.8k triangles in one room is the most of any interior (an inn's taproom is 28.6k). Every bed has its own quilt and grain; if a fort's frame time suffers, the beds can share three bakes. Also, whether the free-standing racks read well from behind, since their backs face the door.
