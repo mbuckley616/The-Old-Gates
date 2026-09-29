@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s263</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s264</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21743,6 +21743,104 @@ function furnBuild(THREE, SK) {
     [.62, 1.05].forEach((y, i) => p.put(shelf(W - 2, n, s + 8 + i, 'mixed'), W / 2, 0, 0, y));
     p.put(scales(s + 11), W / 2 + 1.4, 3.0, 0, .69);
     return p; }
+  // ── S291: the church and the keep's hall (Michael's A on #46: "the church, keep and guild halls in the same kit") ──
+  // a pew facing −z: a seat plank, a panelled back with a top rail on the +z side, shaped bench ends and a kneeler
+  function pew(len, n, seed) { const r = rng(seed || 73), p = Parts(), W = WOOD[n] || WOOD.gatelands, sh = .28;
+    p(SK.rbox(len - .1, .04, .3, .012, 1), jit(W.wood, r), 0, sh, 0);
+    p(SK.rbox(len - .1, .26, .03, .008, 1), jit(W.dark, r, .03), 0, sh + .16, .15);
+    p(SK.rbox(len - .06, .04, .06, .012, 1), jit(W.wood, r), 0, sh + .3, .15);
+    const e = new THREE.Shape(); e.moveTo(-.18, 0); e.lineTo(.2, 0); e.lineTo(.2, sh + .34); e.quadraticCurveTo(.2, sh + .42, .12, sh + .42); e.quadraticCurveTo(.02, sh + .36, -.02, sh + .08); e.lineTo(-.18, sh + .05); e.lineTo(-.18, 0);
+    const eg = new THREE.ExtrudeGeometry(e, { depth: .04, bevelEnabled: true, bevelThickness: .008, bevelSize: .008, bevelSegments: 1, curveSegments: 6 });
+    for (const sx of [-1, 1]) p(eg, jit(W.dark, r, .04), sx * (len / 2 - .02) - .02, 0, 0, 0, -Math.PI / 2, 0);
+    p(SK.rbox(len - .14, .06, .12, .015, 1), jit(W.dark, r, .03), 0, .06, -.32);
+    return p; }
+  // a stone altar with a moulded top and foot, a white cloth and a runner, two candlesticks and a book on a stand
+  function altar(n, seed) { const r = rng(seed || 75), p = Parts(), w = 2.2, d = .9, h = .8, ST = 0xb0aa9c;
+    p(SK.rbox(w + .12, .06, d + .12, .02, 1), jit(ST, r, .04), 0, .03, 0);
+    p(SK.rbox(w - .06, h - .14, d - .06, .02, 1), jit(ST, r, .04), 0, (h - .08) / 2 + .02, 0);
+    for (const x of [-w / 3, 0, w / 3]) p(SK.rbox(w / 3 - .14, h - .3, .02, .03, 1), jit(ST, r, .06).multiplyScalar(.9), x, h / 2, d / 2 - .02);
+    p(SK.rbox(w + .1, .07, d + .1, .025, 2), jit(ST, r, .03), 0, h - .035, 0);
+    p(SK.rbox(w + .02, .012, d + .02, .005, 1), 0xece4d2, 0, h + .006, 0);
+    p(SK.rbox(w * .95, .2, .012, .004, 1), 0xece4d2, 0, h - .09, d / 2 + .055);
+    p(SK.rbox(.4, .012, d + .14, .005, 1), 0x8a2020, 0, h + .013, .0); p(SK.rbox(.4, .3, .012, .004, 1), 0x8a2020, 0, h - .14, d / 2 + .065);
+    for (const sx of [-1, 1]) { p(lathe([[.001, 0], [.08, 0], [.08, .02], [.03, .05], [.02, .22], [.035, .25], [.04, .27], [.001, .27]], 10), 0xa8843a, sx * .8, h + .013, 0);
+      p(SK.cyl(.018, .02, .16, 8), 0xe8e0c8, sx * .8, h + .36, 0); p.flame(SK.cone(.012, .045, 5), 0xffd070, sx * .8, h + .46, 0); }
+    p(SK.rbox(.3, .03, .22, .005, 1), 0x5a2a1a, 0, h + .09, -.1, -.5); p(SK.rbox(.28, .015, .2, .005, 1), 0xe8dcc0, 0, h + .11, -.09, -.5);
+    p(SK.rbox(.04, .08, .04, .01, 1), 0x4a3018, 0, h + .05, -.18);
+    return p; }
+  // a dais of stone: a riser of courses and a floor of flags, w × d, top at h
+  function dais(w, d, h, seed) { const r = rng(seed || 77), p = Parts(), ST = 0x8a8680;
+    p(SK.rbox(w - .04, h - .02, d - .04, .02, 1), jit(ST, r, .03).multiplyScalar(.85), 0, h / 2 - .01, 0);
+    const nx = Math.max(2, Math.round(w / .7)), nz = Math.max(2, Math.round(d / .7));
+    for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) p(SK.rbox(w / nx - .02, .03, d / nz - .02, .01, 1), jit(ST, r, .1), -w / 2 + w / nx * (i + .5), h - .012, -d / 2 + d / nz * (k + .5));
+    p(SK.rbox(w + .04, .05, .1, .02, 1), jit(ST, r, .05), 0, h - .025, d / 2 - .03);
+    return p; }
+  // a pulpit: an eight-sided panelled drum on a turned stem, a book rest, and three steps up the back (towards −x)
+  function pulpit(n, seed) { const r = rng(seed || 79), p = Parts(), W = WOOD[n] || WOOD.gatelands;
+    p(lathe([[.001, 0], [.28, 0], [.28, .04], [.1, .08], [.08, .4], [.12, .45], [.34, .5], [.001, .5]], 8), jit(W.dark, r, .03), 0, 0, 0, 0, Math.PI / 8, 0);
+    p(lathe([[.34, 0], [.36, .52], [.4, .56], [.36, .57], [.32, .56], [.3, .02]], 8), jit(W.wood, r), 0, .5, 0, 0, Math.PI / 8, 0);
+    p(SK.rbox(.34, .02, .24, .005, 1), W.dark, .2, 1.05, 0, 0, 0, -.35);
+    for (let k = 0; k < 3; k++) p(SK.rbox(.26, .04, .5, .01, 1), jit(W.wood, r), -.45 - k * .22, .45 - k * .15, 0);
+    for (const sz of [-1, 1]) p(SK.rbox(.72, .04, .03, .008, 1), W.dark, -.62, .44, sz * .25, 0, 0, -.6);
+    return p; }
+  // a stone column, base and capital: floor to ceiling
+  function column(h, R, seed) { const r = rng(seed || 81), p = Parts(), ST = 0x8a857a;
+    p(lathe([[.001, 0], [R * 1.45, 0], [R * 1.45, .08], [R * 1.25, .12], [R * 1.2, .16], [R * 1.05, .2], [R, .24], [R * .92, h - .3], [R, h - .26], [R * 1.15, h - .2], [R * 1.4, h - .1], [R * 1.4, h], [.001, h]], 14), jit(ST, r, .04), 0, 0, 0);
+    return p; }
+  // a banner hung from a pole under a column's capital: cloth with a fringe and a device
+  function banner(col, seed) { const r = rng(seed || 83), p = Parts();
+    p(SK.cyl(.02, .02, 1.3, 6), 0x3a2a18, 0, 0, 0, 0, 0, Math.PI / 2);
+    p(SK.rbox(1.1, 2.4, .02, .01, 1), jit(col, r, .03), 0, -1.22, 0);
+    const pt = new THREE.Shape(); pt.moveTo(-.55, 0); pt.lineTo(.55, 0); pt.lineTo(0, -.35); pt.lineTo(-.55, 0);
+    p(new THREE.ShapeGeometry(pt), jit(col, r, .03), 0, -2.42, 0); p(new THREE.ShapeGeometry(pt), jit(col, r, .03), 0, -2.42, 0, 0, Math.PI, 0);
+    p(SK.rbox(.5, .5, .025, .01, 1), 0xd8b848, 0, -1.0, 0, 0, 0, Math.PI / 4);
+    for (const sx of [-1, 1]) p(SK.ball(.03, 6, 5), 0xa8843a, sx * .66, 0, 0);
+    return p; }
+  // a throne: carved seat and arms, a tall back with a pointed crest and finials, a red cushion; facing +z
+  function throne(n, seed) { const r = rng(seed || 85), p = Parts(), W = WOOD[n] || WOOD.gatelands, sh = .42, sw = .8;
+    p(SK.rbox(sw, .3, .6, .02, 1), jit(W.dark, r, .03), 0, .15, 0);
+    p(SK.rbox(sw - .04, .06, .56, .02, 2), 0x7a1a1a, 0, sh - .06, .02);
+    p(SK.rbox(sw, 1.1, .08, .02, 1), jit(W.dark, r, .03), 0, .3 + .55, -.26);
+    for (let i = 0; i < 4; i++) p(SK.rbox(.12, .75, .02, .02, 1), jit(W.wood, r, .05), -.27 + i * .18, .72, -.215);
+    const c = new THREE.Shape(); c.moveTo(-sw / 2, 0); c.lineTo(sw / 2, 0); c.quadraticCurveTo(sw / 4, .06, 0, .32); c.quadraticCurveTo(-sw / 4, .06, -sw / 2, 0);
+    p(new THREE.ExtrudeGeometry(c, { depth: .08, bevelEnabled: true, bevelThickness: .01, bevelSize: .01, bevelSegments: 1, curveSegments: 8 }), jit(W.dark, r, .03), 0, 1.4, -.3);
+    p(SK.ball(.04, 8, 6), 0xd8b848, 0, 1.74, -.26);
+    for (const sx of [-1, 1]) { p(SK.rbox(.08, .3, .56, .02, 1), jit(W.dark, r, .03), sx * (sw / 2 + .02), sh + .12, 0);
+      p(SK.torus(.05, .02, 5, 10, Math.PI), W.dark, sx * (sw / 2 + .02), sh + .27, .26, 0, Math.PI / 2, 0);
+      p(lathe([[.03, 0], [.045, .03], [.03, .08], [.04, .12], [.001, .16]], 8), 0xd8b848, sx * (sw / 2 - .02), 1.4, -.26); }
+    return p; }
+  // an iron brazier on a tripod, coals and flames in it
+  function brazier(seed) { const r = rng(seed || 87), p = Parts(), h = .5;
+    p(lathe([[.001, 0], [.12, .01], [.24, .1], [.28, .16], [.26, .17], [.22, .12], [.001, .06]], 12), 0x3a3a40, 0, h, 0);
+    for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; p(SK.cyl(.016, .02, h + .04, 6), 0x3a3a40, Math.sin(a) * .15, h / 2, Math.cos(a) * .15, Math.cos(a) * .25, 0, -Math.sin(a) * .25);
+      p(SK.ball(.03, 6, 5), 0x3a3a40, Math.sin(a) * .21, .02, Math.cos(a) * .21); }
+    p(SK.ball(.22, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0x1a1210, 0, h + .08, 0, 0, 0, 0, 1, .4, 1);
+    for (const [fx, fz, fh, c] of [[0, 0, .3, 0xffa030], [-.08, .05, .2, 0xff7a20], [.09, -.04, .22, 0xff8a28], [.02, .09, .16, 0xffb040]]) p.flame(SK.cone(.07, fh, 6), c, fx, h + .12 + fh / 2, fz);
+    return p; }
+  // a runner rug: a border and a field, flat on the floor, w × d
+  function runner(w, d, col, seed) { const p = Parts();
+    p(SK.rbox(w, .012, d, .004, 1), 0xb89838, 0, .008, 0); p(SK.rbox(w - .2, .014, d - .2, .004, 1), col, 0, .01, 0);
+    p(SK.rbox(w - .34, .016, d - .34, .004, 1), new THREE.Color(col).multiplyScalar(.8), 0, .011, 0);
+    return p; }
+  function church(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    p.put(dais(W - 2, 3.0, .25, s), W / 2, 2.6, 0);
+    p.put(altar(n, s + 1), W / 2, 1.6, 0, .25);
+    for (let z = 5, k = 0; z < D - 2.5; z += 1.5, k++) for (const x of [W / 2 - 2.2, W / 2 + 2.2]) p.put(pew(2.6, n, s + 10 + k * 2 + (x > W / 2 ? 1 : 0)), x, z, 0);
+    p.put(pulpit(n, s + 3), W - 2.2, 3.6, 0);
+    for (let x = W / 2 - 3; x <= W / 2 + 3; x += 6) for (let z = 4; z < D - 3; z += 4) p.put(column(H, .3, s + 20 + z), x, z, 0);
+    return p; }
+  function hall(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    p.put(dais(W * .55, 3.6, .37, s), W / 2, 3.2, 0);
+    p.put(runner(3.2, 1.6, 0x7a2020, s), W / 2, 2.4, 0, .37);
+    p.put(throne(n, s + 1), W / 2, 1.6, 0, .37);
+    p.put(runner(2.6, D - 6, 0x6a1010, s + 2), W / 2, D / 2 + 1.5, 0);
+    for (let z = 6; z < D - 3; z += 4) for (const x of [W / 2 - 5, W / 2 + 5]) { p.put(column(H, .42, s + 30 + z), x, z, 0);
+      p.put(banner([0x7a2020, 0x203a6a, 0x6a5a20][(z / 4 | 0) % 3], s + z), x + (x < W / 2 ? .6 : -.6), z, Math.PI / 2, H * .6 + 1.2); }
+    for (const x of [W / 2 - 3, W / 2 + 3]) p.put(brazier(s + 40 + x), x, 5.2, 0);
+    const tz = D * .3; p.put(table(8, 1.6, n, s + 50), W / 2, tz, 0); for (const sd of [-1, 1]) p.put(bench(7.8, n, s + 51 + sd), W / 2, tz + sd * 1.2, 0);
+    for (let i = 0; i < 6; i++) { const x = W / 2 - 3.3 + i * 1.32, q = Parts(); q(SK.cyl(.1, .09, .012, 14), 0xd8ccb0, 0, .465, .45); q(SK.cyl(.1, .09, .012, 14), 0xd8ccb0, .2, .465, -.45); tankard(q, .3, .46, .5, 0x8a8478); if (i % 2) candle(q, 0, .46, 0); p.put(q, x, tz, 0); }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) p(turned(.43, .03), WOOD[n] ? WOOD[n].dark : WOOD.gatelands.dark, W / 2 + sx * 1.3, 0, tz + sz * .7);
+    return p; }
   // the flames flicker: call per frame with the fire mesh and the time
   function flicker(fire, t) { if (!fire) return; const s = 1 + Math.sin(t * 11.3) * .06 + Math.sin(t * 17.1) * .04; fire.scale.set(1, s, 1); }
 
@@ -21784,7 +21882,7 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
-  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods };
+  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall };
 }
 
 let _FURN = null;
@@ -38847,20 +38945,21 @@ var WORLD=(()=>{
       if(!gallery){_intBed(sc_,1.2,D-2.0,'N');_intBed(sc_,W-1.2,D-2.0,'N');bedAt(1.2,D-2.0,0);bedAt(W-1.2,D-2.0,0);intBedPos={x:1.2,z:D-2.0};}else intBedPos={x:W-1.2,z:1.2};
       npc={x:W/2,z:1.4,maxZ:1.8,paused:false};
     } else if(type==='church'){
-      box(W/2,.2,2.6,W-2,.4,3.0,0x6a665e);box(W/2,.85,1.6,2.2,.9,.9,0x7a746a);solid(W/2,1.6,1.2,.55,1.3);box(W/2,1.34,1.6,2.4,.08,1.0,0xd8c8a0);
-      [-.8,.8].forEach(dx=>{cyl(W/2+dx,1.55,1.6,.04,.04,.35,0xe8e0c0,6);glow(W/2+dx,1.78,1.6,0xffe0a0);});light(W/2,2.2,1.8,0xffc070,1.4,8);
-      for(let z=5;z<D-2.5;z+=1.5){[W/2-2.2,W/2+2.2].forEach(x=>{box(x,.45,z,2.6,.08,.4,0x5a3a1c);box(x,.7,z+.22,2.6,.5,.06,0x5a3a1c);[-1.2,1.2].forEach(dx=>box(x+dx,.22,z,.08,.45,.35,0x4a3018));});}
-      box(W-2.2,.9,3.6,.9,1.8,.9,0x5a3a1c);box(W-2.2,1.85,3.6,1.2,.1,1.0,0x4a3018);
+      // S291 — the church on the kit (#46 A): a flagged stone dais, a moulded altar with its cloth, runner, candlesticks and
+      // book, pews with shaped ends and kneelers, an eight-sided pulpit with steps, columns with bases and capitals; one bake
+      {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
       for(let z=3;z<D-2;z+=Math.max(3,D/4)){[.04,W-.04].forEach(x=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,2.6),new THREE.MeshBasicMaterial({color:0xc89050}));p.position.set(x,3.4,z);p.rotation.y=x<1?Math.PI/2:-Math.PI/2;sc_.add(p);});}
-      for(let x=W/2-3;x<=W/2+3;x+=6)for(let z=4;z<D-3;z+=4){const m=new THREE.Mesh(new THREE.CylinderGeometry(.32,.36,H,10),new THREE.MeshLambertMaterial({color:0x8a857a}));m.position.set(x,H/2,z);sc_.add(m);solid(x,z,.4,.4,H/F);}
+      for(let x=W/2-3;x<=W/2+3;x+=6)for(let z=4;z<D-3;z+=4)solid(x,z,.4,.4,H/F);
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){
-      box(W/2,.3,3.2,W*.55,.6,3.6,0x6a665e);box(W/2,.7,2.4,3.2,.2,1.6,0x7a2020);
-      box(W/2,1.3,1.5,1.2,1.6,.8,0x4a3018);box(W/2,2.3,1.3,1.4,.6,.3,0x4a3018);box(W/2,.95,1.7,1.4,.5,.9,0x7a2020);
-      const rug=new THREE.Mesh(new THREE.PlaneGeometry(2.6,D-6),new THREE.MeshLambertMaterial({color:0x6a1010}));rug.rotation.x=-Math.PI/2;rug.position.set(W/2,.02,D/2+1.5);sc_.add(rug);
-      for(let z=6;z<D-3;z+=4)[W/2-5,W/2+5].forEach(x=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.42,.48,H,10),new THREE.MeshLambertMaterial({color:0x8a857a}));m.position.set(x,H/2,z);sc_.add(m);solid(x,z,.5,.5,H/F);const bn=new THREE.Mesh(new THREE.PlaneGeometry(1.1,2.6),new THREE.MeshLambertMaterial({color:[0x7a2020,0x203a6a,0x6a5a20][(z/4|0)%3],side:THREE.DoubleSide}));bn.position.set(x+(x<W/2?.55:-.55),H*.6,z);bn.rotation.y=Math.PI/2;sc_.add(bn);});
-      [W/2-3,W/2+3].forEach(x=>{cyl(x,.9,5.2,.3,.22,.5,0x4a4a50,8);cyl(x,.4,5.2,.06,.06,.8,0x4a4a50,6);glow(x,1.2,5.2,0xff7a30);light(x,1.4,5.2,0xff6a20,1.3,8);});
-      table(W/2,D*.3,8,1.6,true);
+      // S291 — the keep's hall on the kit (#46 A): a stone dais with a runner and a carved throne, a long runner down the hall,
+      // columns with banners, two braziers, the long table with benches, plates, tankards and candles; one bake
+      {const K=furnKit(),room=K.bake(K.hall(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      solid(W/2,1.6,.5,.4,1.0);
+      for(let z=6;z<D-3;z+=4)[W/2-5,W/2+5].forEach(x=>solid(x,z,.5,.5,H/F));
+      [W/2-3,W/2+3].forEach(x=>{light(x,1.4,5.2,0xff6a20,1.3,8);solid(x,5.2,.3,.3,1.1);});
+      {const z=D*.3;solid(W/2,z,4,.8,.76);[-1,1].forEach(sd=>solid(W/2,z+sd*1.2,3.9,.2,.44));}
       for(let z=4;z<D-3;z+=Math.max(4,D/5)){[.04,W-.04].forEach(x=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(1.0,2.4),new THREE.MeshBasicMaterial({color:0xa8b8c8}));p.position.set(x,4.2,z);p.rotation.y=x<1?Math.PI/2:-Math.PI/2;sc_.add(p);});}
       npc={x:W/2,z:4.6,maxZ:6.5,paused:false};
     } else if(type==='guild_f'||type==='guild_m'){

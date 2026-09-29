@@ -7329,3 +7329,16 @@ The last three shops, in the idioms of the concept artist's prototype and Sessio
 
 ### Needs eyes
 These pieces had no prototype; they follow Michael's A and the concept artist's list. The armour stands read small behind the counter, and the plate's pauldrons may look like mushrooms. The herbs and the still were not in the picture's view.
+
+## v80 — Session 291 — The church and the keep's hall on the shape kit (H.5 props, Michael's A on #46)
+The church and the keep, as Michael's A lists them, in the prototype's idioms. Each is one bake.
+- **The church:** a stone dais with a riser and a floor of flags, and a moulded altar with a white cloth, a red runner, two brass candlesticks (their flames in the flame mesh) and a book on a stand. There are pews with shaped bench ends, a panelled back with a top rail, and a kneeler, still facing the altar. There is an eight-sided panelled pulpit on a turned stem with three steps up its back, and the columns have a base, a slight taper and a capital. The old cylinder pillars kept their solids and lost their meshes to the bake.
+- **The keep's hall:** the dais on the same stone, and a carved throne with a pointed crest, gilt finials, scrolled arms and a red cushion, on a bordered runner. A long runner runs down the hall. The columns carry their banners on poles, with a swallowtail, a gilt lozenge and finials, in the old three colours. There are two iron braziers on tripods with coals and flames, and the long table with its benches, a line of plates and tankards and candles, and middle legs for its eight-unit span.
+
+The old solids are kept where they were: the altar, the church's columns, the hall's columns, the table and its benches. The braziers and the throne are solid now; before they were walk-through. The two daises have no foothold, as before: at .25 and .37 high you still walk through their edge rather than onto them, and the steward stands on the keep's dais at floor height, as he did. Changing that touches how the player climbs, so it is left for a session that looks at it.
+
+### Verified (headless Chromium)
+- **`civicfurn` (new).** A church (11 by 22) is one bake of 15,702 triangles with its candle flames, 33 meshes in the room, and no cylinder pillars left. The altar and the columns are solid. A keep's hall (18 by 22) is one bake of 14,597 triangles with the braziers' flames, 80 meshes (the windows and the beams are the shell's), and no cylinders. The long table (.47), both benches (.27) and the braziers (.68) are footholds, and the columns are solid. No page errors. The pictures are in `docs/prototypes/civic-interiors-ingame.png`: the nave from the door and the altar close, then the hall from the foot and the table.
+
+### Needs eyes
+The daises (whether to step onto them), the scale of the throne against the steward, and the pews' end boards, which have a shape of my own reading, not a prototype's.
