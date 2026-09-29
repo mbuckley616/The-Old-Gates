@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s286</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s287</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -36029,13 +36029,13 @@ var WORLD=(()=>{
     // S256 — the keep, in detail near and its old boxes far, both where the keep stands so they share a bake cluster
     {const K=FORT_KEEP[e.seed];if(K){delete FORT_KEEP[e.seed];for(const [geo,lod] of [[fortKeepGeoHi(11,9,7.2,K.banner,pRng(pHash('fortK|'+e.seed))),'hi'],[mergeParts(K.lo),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(K.x,K.y,K.z);m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;m.userData.keep=true;group.add(m);}}}
     // barracks either side of the yard, doors toward the keep
-    const S={site:{id:'fort_'+e.seed,x:cx,z:cz,pad:R+2,kind:'fort'},group,sol,houses:[],npcs:[],reg:'anglo',residents:[],lamps:[],_gates:[],reach:R+6};
-    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
+    const S={site:{id:'fort_'+e.seed,x:cx,z:cz,pad:R+2,kind:'fort'},group,sol,houses:[],npcs:[],reg:'anglo',residents:[],lamps:[],_gates:[],reach:R+6,chimneys:[]};
+    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;{const ch=chimneyAt(geo,m,'barracks');if(ch)S.chimneys.push(ch);} /* S345 — the barracks' smoke */m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
     // v80 S132 — a paved way from the gate to the keep's steps, so the courtyard reads as a courtyard
     {const z0=cz+R-1,z1=cz-8.5+4.5+2.4;const segs2=Math.max(4,Math.round(Math.abs(z0-z1)/3));for(let i=0;i<segs2;i++){const zz=z0+(z1-z0)*(i+.5)/segs2;const m=new THREE.Mesh(new THREE.BoxGeometry(2.6,.12,Math.abs(z1-z0)/segs2+.1),new THREE.MeshLambertMaterial({color:0x8a8078}));m.position.set(cx,worldH(cx,zz)+.05,zz);group.add(m);}}
     // torches on the gate towers
     towers.slice(4).forEach(a=>{const tx=cx+Math.cos(a)*R*.86,tz=cz+Math.sin(a)*R*.86;const glass=new THREE.Group();const fl=new THREE.Mesh(new THREE.ConeGeometry(.12,.35,6),new THREE.MeshBasicMaterial({color:0xffa030}));glass.add(fl);glass.position.set(tx,y0+5.4,tz);group.add(glass);const l=regLight(0xffb050,0,14,S.site.id);l.position.copy(glass.position);S.lamps.push({glass,light:l});});
-    bakeSettlement(S);sc.add(group);SETTLE.set(S.site.id,S);if(IMPOSTORS['door_'+e.seed])IMPOSTORS['door_'+e.seed].visible=false; // v80 S132 — the fort's stand-in (a 48u grey cylinder) was never hidden: it was the "ring inside the fort"
+    bakeSettlement(S);if(S.chimneys.length)try{smokeFor(S);}catch(err){console.warn('smoke',err);}sc.add(group);SETTLE.set(S.site.id,S);if(IMPOSTORS['door_'+e.seed])IMPOSTORS['door_'+e.seed].visible=false; // v80 S132 — the fort's stand-in (a 48u grey cylinder) was never hidden: it was the "ring inside the fort"
     S.impostorId='door_'+e.seed;return S;
   }
   // Heavy statics (door rocks, fort exteriors, signposts, camps) only for a
@@ -37799,7 +37799,7 @@ var WORLD=(()=>{
       else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?3.2:st.h,rise:type==='inn'?1.9:st.rise});}
       solR=Math.max(lot.w,lot.d)/2*.85;
       const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
-      if(geo.userData&&geo.userData.chimney){const q=geo.userData.chimney,c=Math.cos(m.rotation.y),s=Math.sin(m.rotation.y);S.chimneys.push({x:m.position.x+q[0]*c+q[2]*s,y:m.position.y+q[1],z:m.position.z-q[0]*s+q[2]*c,t:type||'home',k:0});} // S343 — its smoke
+      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);} // S343 — its smoke
       // rotated footprint (settleSolid understands {c,s} rotated rects)
       sol.push({cx:lot.x,cz:lot.z,rx:lot.w/2+.15,rz:lot.d/2+.15,c:Math.cos(lot.ry),s:Math.sin(lot.ry),bt:type||'home',hid:`g_${site.id}_${i}`,sh:lot._shuttered?1:0}); // v80 S138 — the map colours it by type
       // footpath: door → the street/road it faces
@@ -40078,17 +40078,20 @@ var WORLD=(()=>{
       uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{map:{value:new THREE.CanvasTexture(cv)},tint:{value:new THREE.Color(0xb8b4ae)},scale:{value:770}}]),
       vertexShader:'attribute float aSize;attribute float aAlpha;varying float vA;uniform float scale;\n#include <fog_pars_vertex>\nvoid main(){vA=aAlpha;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*scale/max(.1,-mvPosition.z);gl_Position=projectionMatrix*mvPosition;\n#include <fog_vertex>\n}',
       fragmentShader:'uniform sampler2D map;uniform vec3 tint;varying float vA;\n#include <fog_pars_fragment>\nvoid main(){vec4 t=texture2D(map,gl_PointCoord);gl_FragColor=vec4(tint,t.a*vA);\n#include <fog_fragment>\n}'});}
-  function smokeFor(S){const N=S.chimneys.length*SMOKE.K,geo=new THREE.BufferGeometry(),seed=new Float32Array(N);let sd=(S.site.c*131+S.site.r*7+1)%2147483647||1;
+  function smokeFor(S){const N=S.chimneys.length*SMOKE.K,geo=new THREE.BufferGeometry(),seed=new Float32Array(N);let sd=(String(S.site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%2147483646)+1;
     for(let i=0;i<N;i++){sd=(sd*16807)%2147483647;seed[i]=sd/2147483647;}
     geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*3),3));geo.setAttribute('aSize',new THREE.BufferAttribute(new Float32Array(N),1));geo.setAttribute('aAlpha',new THREE.BufferAttribute(new Float32Array(N),1));
     const pts=new THREE.Points(geo,smokeMat());pts.position.set(S.site.x,0,S.site.z);pts.frustumCulled=false;pts.renderOrder=2;pts.userData.seed=seed;pts.userData.smoke=true;pts.visible=false;S.smoke=pts;S.group.add(pts);return pts;}
+  // S345 — a chimney's world position from the placed house (its geometry's chimney top in the house's frame)
+  function chimneyAt(geo,o,t){const q=geo.userData&&geo.userData.chimney;if(!q)return null;const c=Math.cos(o.rotation.y),s=Math.sin(o.rotation.y);return {x:o.position.x+q[0]*c+q[2]*s,y:o.position.y+q[1],z:o.position.z-q[0]*s+q[2]*c,t:t||'home',k:0};}
   // how hard a chimney smokes now, 0–1
   function smokeWant(c,h,cold){if(cold||c.t==='inn'||c.t==='weapon'||c.t==='armor'||c.t==='guild_f'||c.t==='guild_m')return 1;
     return (h>=6&&h<9)||(h>=17&&h<23)?1:(h>=9&&h<17)?.3:0;}
   function tickSmoke(dt){SMOKE.t+=dt;const h=gameHour(),storm=WX.storm||0,snow=WX.type==='snow'||(WX.next==='snow'&&WX.k>.5),w=windDir(),wx=Math.sin(w),wz=Math.cos(w);
     const drift=.45+1.2*storm,L=SMOKE.L/(1+2*storm),K=SMOKE.K,rise=.38/(1+drift*.4),grow=1+.5*storm;
     if(SMOKE.mat)SMOKE.mat.uniforms.tint.value.setHex(h>=20.5||h<5.5?0x4a4c56:h>=17.5?0x9a8a84:h<7?0x8a8a90:0xb8b4ae);
-    for(const S of SETTLE.values()){const P=S.smoke;if(!P)continue;const far=Math.hypot(S.site.x-px,S.site.z-pz)>300;P.visible=!far;if(far)continue;
+    const all=[...SETTLE.values()];for(const C of COACHES.values())if(C.smokeS)all.push(C.smokeS);
+    for(const S of all){const P=S.smoke;if(!P)continue;const far=Math.hypot(S.site.x-px,S.site.z-pz)>300;P.visible=!far;if(far)continue;
       const pos=P.geometry.attributes.position.array,size=P.geometry.attributes.aSize.array,al=P.geometry.attributes.aAlpha.array,seed=P.userData.seed,cold=snow||S.tundra,ox=S.site.x,oz=S.site.z;
       for(let ci=0;ci<S.chimneys.length;ci++){const c=S.chimneys[ci];c.k+=(smokeWant(c,h,cold)-c.k)*Math.min(1,dt*.5);
         for(let k=0;k<K;k++){const i=ci*K+k;if(c.k<.01){al[i]=0;continue;}const a=((SMOKE.t/L+k/K+seed[i]*.05)%1),t=a*SMOKE.L,wob=Math.sin(t*1.3+seed[i]*20)*.12*a,d=drift*Math.pow(a*L,1.25);
@@ -41376,16 +41379,16 @@ var WORLD=(()=>{
     const m=new THREE.Mesh(mergeParts(posts),VC_MAT);g.add(m);
     const mid=roadPoint(rd,.5);const ix=mid.x+Math.cos(mid.ang)*(ROAD_HALF+7),iz=mid.z-Math.sin(mid.ang)*(ROAD_HALF+7);const iy=worldH(ix,iz);
     addStamp({id:'inn_'+key,kind:'site',x:ix,z:iz,r:9,blend:8,y:iy});
-    const innGeo=buildingGeo(9,6,STYLE.stone,Math.random,{chimney:true,twoStory:true,h:3.0,rise:1.4});const inn=new THREE.LOD();{const hi=new THREE.Mesh(innGeo,VC_MAT),lo=new THREE.Mesh(innGeo.userData.lo,VC_MAT);hi.castShadow=lo.castShadow=true;inn.addLevel(hi,0);inn.addLevel(lo,HOUSE_LOD.far);} /* S202 — the roadside inn in detail near, plain past 80 */inn.position.set(ix,iy-.06,iz);inn.rotation.y=mid.ang+Math.PI/2;g.add(inn);STATIC_SOL.push({cx:ix,cz:iz,rx:4.7,rz:3.2,c:Math.cos(inn.rotation.y),s:Math.sin(inn.rotation.y)});
+    const innGeo=buildingGeo(9,6,STYLE.stone,Math.random,{chimney:true,twoStory:true,h:3.0,rise:1.4});const inn=new THREE.LOD();{const hi=new THREE.Mesh(innGeo,VC_MAT),lo=new THREE.Mesh(innGeo.userData.lo,VC_MAT);hi.castShadow=lo.castShadow=true;inn.addLevel(hi,0);inn.addLevel(lo,HOUSE_LOD.far);} /* S202 — the roadside inn in detail near, plain past 80 */inn.position.set(ix,iy-.06,iz);inn.rotation.y=mid.ang+Math.PI/2;g.add(inn);let smokeS=null;{const ch=chimneyAt(innGeo,inn,'inn');if(ch){smokeS={site:{id:'coach_'+key,x:ix,z:iz},chimneys:[ch],group:g};try{smokeFor(smokeS);}catch(err){}}} /* S345 — the inn's smoke */STATIC_SOL.push({cx:ix,cz:iz,rx:4.7,rz:3.2,c:Math.cos(inn.rotation.y),s:Math.sin(inn.rotation.y)});
     const l=regLight(0xffb050,1.4,14,'coach:'+key);l.position.set(mid.x+Math.cos(mid.ang)*(ROAD_HALF+2),iy+3,mid.z-Math.sin(mid.ang)*(ROAD_HALF+2));
     // the coach
     const cart=new THREE.Mesh(coachGeo(),VC_MAT);cart.castShadow=true;sc.add(cart); // S261 — the coach on the kit
     const horse=kind=>{const hg=new THREE.Group();const rg=buildWolf(kind,1.6);hg.add(rg.root);return hg;}; // S262 — the horses on the wolf's bones and gait (tickCreatures walks them by the ground they cover)
     const h1=horse('Horse'),h2=horse(pHash(key)&1?'Grey Horse':'Horse');sc.add(h1);sc.add(h2);
     const plat={x0:0,x1:0,z0:0,z1:0,y:0,coach:key};ZONES.world.platforms.push(plat);
-    sc.add(g);const C={road:rd,rt,group:g,cart,horses:[h1,h2],plat,u:0,dir:1,state:'wait',len:L,riding:false};COACHES.set(key,C);return C;
+    sc.add(g);const C={road:rd,rt,group:g,cart,horses:[h1,h2],plat,u:0,dir:1,state:'wait',len:L,riding:false,smokeS};COACHES.set(key,C);return C;
   }
-  function removeCoachLine(key){const C=COACHES.get(key);if(!C)return;sc.remove(C.group);sc.remove(C.cart);C.horses.forEach(h=>sc.remove(h));const i=ZONES.world.platforms.indexOf(C.plat);if(i>=0)ZONES.world.platforms.splice(i,1);unregLights('coach:'+key);COACHES.delete(key);}
+  function removeCoachLine(key){const C=COACHES.get(key);if(!C)return;sc.remove(C.group);if(C.smokeS&&C.smokeS.smoke)C.smokeS.smoke.geometry.dispose();sc.remove(C.cart);C.horses.forEach(h=>sc.remove(h));const i=ZONES.world.platforms.indexOf(C.plat);if(i>=0)ZONES.world.platforms.splice(i,1);unregLights('coach:'+key);COACHES.delete(key);}
   const COACH_SPEED=13;
   function tickCoaches(dt){
     const Cs=coaches();

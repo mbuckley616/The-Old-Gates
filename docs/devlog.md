@@ -7788,3 +7788,22 @@ The tower (31 high) still keeps its old shell.
 ### Needs eyes
 - A flat joisted ceiling in a church five high reads like a hall, not a church. An open roof with trusses is its own look, and would need its own question.
 - The kit furniture's columns in both rooms stop at the joists, not under a beam.
+
+## v80 — Session 345 — Smoke from the forts' barracks and the coaching inns (H.5, after #63)
+Session 343 left two kinds of chimney without smoke: the two barracks in every fort's yard, and the inn at the middle of each coaching road. Both are the detailed house, so both already record their chimney's top. They are built outside `genSettlement`, which is why they had no smoke.
+- **A fort** is already a settlement (`SETTLE`), with a group and a bake. Each barracks now adds its chimney to `S.chimneys` with the type `barracks`, and the fort calls `smokeFor(S)` after its bake, as a town does. Barracks follow the homes' hours.
+- **A coaching inn** belongs to its coach line (`COACHES`), not to a town. The line now keeps a small smoke record, `C.smokeS`, which holds the inn's one chimney, typed `inn` so it smokes at every hour. Its Points object sits in the line's group. `removeCoachLine` frees the geometry, and `tickSmoke` walks the coach lines after the settlements.
+
+The world position of a chimney is now worked out in one place, `chimneyAt(geo, placed, type)`, which the towns use too. The smoke's per-puff seed was taken from the site's grid cell. A fort or a road has none, and every one of a fort's puffs came out NaN. The seed now comes from a hash of the site's id.
+
+The legacy Hearthwick cell builds its houses with the old boxes and has one box chimney, over Bram's forge. It is the one place still owed smoke.
+
+### Verified (headless Chromium)
+- **`smoke`**, extended.
+  - **The fort nearest the start** (seed 332307) has two barracks chimneys and 48 puffs in one Points object in its group, with every position finite. Their mean alpha at 7h is .319.
+  - **A coaching inn** on a road opened from the start has one chimney of type `inn`. It stands 7.6 above the ground, 2.9 from the inn's centre, in the line's group. Its mean alpha at 7h is .322.
+  - Every earlier check still holds.
+- **`coach`**, **`keep`** and **`fortfurn`** pass.
+
+### Needs eyes
+- Whether soldiers keep a fire in all day. Barracks follow the homes' hours, so from 9 to 17 they give only a thread.

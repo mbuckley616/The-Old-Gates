@@ -59,5 +59,25 @@ const png = await page.evaluate(async () => { const T = WORLD.siteAnywhere('dunm
   WORLD.wx.type = WORLD.wx.next = 'clear'; WORLD.wx.storm = 0;
   const out = document.createElement('canvas'); out.width = 1280; out.height = 1080; const o = out.getContext('2d'); tiles.forEach((c, i) => o.drawImage(c, (i % 2) * 640, Math.floor(i / 2) * 360)); return out.toDataURL(); });
 fs.writeFileSync('tests/out/smoke-ingame.png', Buffer.from(png.split(',')[1], 'base64'));
+
+// Session 345 — the forts' barracks and the coaching inns smoke too (the barracks by the homes' hours, the inn always)
+await page.evaluate(() => forceTime(7));
+const fd = await page.evaluate(() => { const out = []; const [hi, hj] = WORLD.cellOf(px, pz); for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { let c; try { c = WORLD.getCell(hi + di, hj + dj); } catch (e) { continue; } if (c) for (const e of c.doors) if (e.kind === 'fort_door') out.push({ seed: e.seed, x: e.x, z: e.z, d: Math.hypot(e.x - px, e.z - pz) }); } return out.sort((a, b) => a.d - b.d)[0] || null; });
+let fort = null; if (fd) { await page.evaluate(f => goToZone('world', f.x, f.z + 45, 0, 'x'), fd); await page.waitForTimeout(9000); await g.hide();
+  await page.evaluate(seed => { for (let k = 0; k < 900 && !WORLD.settlements.has('fort_' + seed); k++) { WORLD.tick(1 / 60, performance.now()); while (WORLD.jobs.length) { const j = WORLD.jobs.shift(); let more = false; try { more = j.fn(); } catch (e) {} if (more) WORLD.jobs.push(j); } } }, fd.seed);
+  await g.spin(null, 600);
+  fort = await page.evaluate(seed => { const S = WORLD.settlements.get('fort_' + seed); if (!S) return { none: seed }; const P = S.smoke, a = P && P.geometry.attributes.aAlpha.array, p = P && P.geometry.attributes.position.array;
+    let nan = false; if (p) for (let i = 0; i < p.length; i++) if (!isFinite(p[i])) nan = true;
+    return { n: S.chimneys.length, types: S.chimneys.map(c => c.t), count: P && P.geometry.attributes.position.count, alpha: a && +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3), vis: P && P.visible, nan, inGroup: P && P.parent === S.group }; }, fd.seed); }
+console.log(JSON.stringify({ fd, fort }));
+check('a fort\'s two barracks smoke at breakfast, one Points object in its group, every position finite', fort && fort.n === 2 && fort.types.every(t => t === 'barracks') && fort.count === 48 && fort.alpha > .1 && fort.vis && !fort.nan && fort.inGroup, fort);
+const coachKey = await page.evaluate(() => { const T = ['town', 'city', 'port'];
+  const defs = WORLD.ROAD_DEFS.map(d => ({ d, a: WORLD.siteAnywhere(d.a), b: WORLD.siteAnywhere(d.b) })).filter(q => q.a && q.b && T.includes(q.a.kind) && T.includes(q.b.kind)).sort((p, q) => Math.hypot((p.a.x + p.b.x) / 2 - px, (p.a.z + p.b.z) / 2 - pz) - Math.hypot((q.a.x + q.b.x) / 2 - px, (q.a.z + q.b.z) / 2 - pz));
+  for (const { d, a, b } of defs) { const key = d.a < d.b ? d.a + '|' + d.b : d.b + '|' + d.a; worldState.coaches = worldState.coaches || {}; worldState.coaches[key] = { a: d.a, b: d.b, opened: 0 }; px = (a.x + b.x) / 2; pz = (a.z + b.z) / 2; return key; } return null; });
+await page.waitForTimeout(6000); await g.spin(null, 600);
+const inn = await page.evaluate(() => { const C = [...WORLD.coachLines.values()].find(C => C.smokeS); if (!C) return { lines: WORLD.coachLines.size }; const S = C.smokeS, P = S.smoke, a = P.geometry.attributes.aAlpha.array;
+  const ch = S.chimneys[0]; return { n: S.chimneys.length, t: ch.t, above: +(ch.y - WORLD.worldH(ch.x, ch.z)).toFixed(2), off: +Math.hypot(ch.x - S.site.x, ch.z - S.site.z).toFixed(2), inGroup: P.parent === C.group, alpha: +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3), vis: P.visible }; });
+console.log(JSON.stringify({ coachKey, inn }));
+check('a coaching inn smokes from its own chimney (on its roof, within 5 of the inn), always', inn.n === 1 && inn.t === 'inn' && inn.above > 3 && inn.above < 12 && inn.off < 5 && inn.inGroup && inn.alpha > .1 && inn.vis, inn);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
