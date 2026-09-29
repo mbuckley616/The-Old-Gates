@@ -14,9 +14,9 @@ for (const id of ids) {
   await page.waitForTimeout(4500); await g.hide();
   const r = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null;
     px = X.x; pz = X.z + .8; jumpY = 0; const seenHere = !!WORLD.witnessOf(window._h);
-    const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold; const q0 = {}; BAG.forEach(b => { q0[b.name] = (q0[b.name] || 0) + (b.qty || 1); }); WORLD.boxInteract();
+    const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold; const added = [], _ba = window.bagAdd; window.bagAdd = function (it) { added.push({ name: it.name, buyPrice: (it.buyPrice || 0) * (it.qty || 1) }); return _ba.apply(this, arguments); }; WORLD.boxInteract();
     for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
-    await wait(900); const coins = gold - gold0; const q1 = {}; BAG.forEach(b => { q1[b.name] = (q1[b.name] || 0) + (b.qty || 1); }); const taken = BAG.filter((b, i, A) => A.findIndex(x => x.name === b.name) === i && (q1[b.name] || 0) > (q0[b.name] || 0)).map(b => ({ name: b.name, buyPrice: (b.buyPrice || 0) * ((q1[b.name] || 0) - (q0[b.name] || 0)) })); const value = coins + taken.reduce((a, it) => a + (it.buyPrice || 0), 0); // a taken thing may join a stack (a lockpick, Session 170)
+    await wait(900); window.bagAdd = _ba; const coins = gold - gold0; const taken = added; const value = coins + taken.reduce((a, it) => a + (it.buyPrice || 0), 0); // each thing at its own price as the box hands it over: a stolen potion or pick may join a stack priced otherwise (S176)
     const c = (worldState.crime || {}).dunmore || {}; exitInterior();
     return { name: window._h.name, seenHere, coins, items: taken.map(i => i.name + ':' + (i.buyPrice || 0)), value, fine: (c.bounty || 0) - (c0.bounty || 0), loot: (c.loot || 0) - (c0.loot || 0), favour: WORLD.favor('dunmore') }; });
   await page.waitForTimeout(2500); await g.hide();

@@ -9,16 +9,18 @@ jobs:
         with: { node-version: '22' }
       - run: python3 scripts/parsecheck.py
   headless:
+    # Session 254: the suites run in eight shares side by side. One job running all of them had outgrown its 30 minutes,
+    # and every run was cancelled before it could report.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - run: node tests/run.mjs --shard ${{ matrix.shard }}/6
+      - run: node tests/run.mjs --shard=${{ matrix.shard }}/8
