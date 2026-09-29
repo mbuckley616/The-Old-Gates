@@ -8226,3 +8226,29 @@ New `tests/herbhidden.test.mjs`, 7 checks, passing, no page errors. Each herb is
 
 ### Needs eyes
 Whether the beast list is the one Michael means (it is a reading of the herb's text, not a rule written anywhere). Whether a swing a tenth quicker is felt at all.
+
+## v80 — Session 322 — The herbs, the same in the open world and underground
+The rest of Session 321's audit. After the four herbs that did nothing, five more worked in only one of the two places you fight. The open world and the dungeons resolve blows through separate code, and each hidden effect had been wired into only one of them:
+- Ferrous Guard (*+8 defense for 60s*) counted only against a dungeon creature's blow. Against an open-world foe's blow, an arrow, the Faolchú's fire, a bolt or a Phantom's drain it did nothing.
+- Mist Fern (*-20% stamina cost for 60s*) lightened only the sprint, not a swing, a bash, a power attack, a roll or a bow's draw and release.
+- Firemoss (*+10% melee damage*) and Caor Dubh (*+40% damage*) applied only to a swing in the open world.
+- Shadowcap (*Enemies lose track of you for 8s*) worked only underground.
+
+**What changed.**
+- `_armour()` is the armour you wear plus Ferrous Guard. Every damage-taken path that read armour now reads it: the open world's melee, arrows and fire, and the dungeon's melee, bolts and drain. Posture and the character sheet still read the gear alone.
+- `_stamCost()` applies Mist Fern to each of the action costs above. The thresholds that say whether you have enough stamina to swing are unchanged.
+- `_resolveDungeonStrike` takes Firemoss and Caor Dubh as the open world's strike does.
+- In `tickZoneEnemies`, the veil clears a foe's alert and the archers' `_agg`, and no foe can see you while it lasts, as underground.
+
+Left owed: Ashwort's *Minimap pulse — reveals nearby enemies for 5s* sets `minimapPulse`, which nothing reads. The open world's minimap already shows every foe in range, and the dungeon's shows none, so what a pulse should add is a question of design and not a wire. Caor Dubh's *(risky)* has no cost anywhere either. That is also left to Michael.
+
+### Verified (headless Chromium)
+New `tests/herbparity.test.mjs`, 8 checks, passing, no page errors.
+- Open world: an archer's 30-point arrow landed for 29 bare and 25 under Ferrous Guard (armour 2 → 10, counted at half).
+- A swing cost 28 stamina, 22.4 under Mist Fern; a roll cost 18, 14.4 under Mist Fern.
+- An alert Bandit eight units off stayed alert 30 of 30 ticks. Under the veil he was alert 0 of 30, and 30 of 30 again after it ended.
+- Dungeon, at level 50 with the rolls pinned: a swing did 123, 135 under Firemoss (×1.10) and 173 under Caor Dubh (×1.41). A Phantom's 30-point bolt did 30 bare and 27 under Ferrous Guard.
+- `roll`, `attrdmg`, `wardall`, `herbhidden`, `dungeonfoes`, `foes`, `counters` and `posture` pass.
+
+### Needs eyes
+Whether the veil in the open world, 8 s in which nothing sees you, is too strong against a camp. Underground it already worked this way.
