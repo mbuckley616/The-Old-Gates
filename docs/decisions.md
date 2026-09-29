@@ -4,6 +4,93 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### Unblock auto/systems — a walls/LOD test failed on one of two CI runs (the producer, 2026-09-29)
+PR #22 (auto/systems, head 7e4b078) had two CI runs on the identical commit: the push-triggered run passed all 18 suites clean; the pull-request-triggered run failed one — walls.test.mjs's distant-LOD check ("its detailed clusters show near and give way to their plain twins far") — with the other 17 suites green. Session 341, the only change since Michael's last approval, touches buff stacking (a weaker herb or Shield no longer ending a stronger shrine boon); nothing in it touches walls, towers, or LOD. Same pattern as the unblock-auto-systems flake Michael ruled on two days earlier.
+
+- **A, merge anyway** *(recommended)*. Nothing in Session 341's diff touches walls, towers, or LOD, and the identical commit already ran clean on a separate trigger.
+- **B, wait for a clean run.** Leave it blocked until CI happens to pass clean on this exact head on both triggers.
+- **C, re-run once more first.** Trigger a fresh CI run on this head and see if it clears before merging.
+
+Michael: **A — merge anyway.** (29 Sep 2026, via Slack)
+
+Claude merged 7e4b078 onto main as 1445aaf. Session 350 (on auto/systems) root-caused it for real afterwards: the check measured a town the loader had already streamed out, 1,300 units off, in 1 run in 3; it now measures the live town and passes 6 of 6.
+
+### What Fortune's "+1% loot quality" does (the systems builder, 2026-09-29, issue #64)
+The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit is built (Session 328). No code reads loot *quality*: a dropped sword is the same tier at Fortune 0 and 10. Fortune does two things the card never mentions, both since v61c0: +5% a point on every gold roll (`rollGold`: barrels, corpses, chests), and +2.5% a point on the chance a slain foe drops an item (`lootDropChance`, base 35%). A Fortune build gets something real but is told something else.
+
+- **A. Make the card say what Fortune does** *(recommended)*: *+2% crit chance, +5% gold found, +2.5% item drop chance* a point. No rule changes, and it is the truth.
+- **B. Keep both, and add quality**: each point is a 1% chance that a dropped or chest piece of gear comes one material up (Iron → Steel), never past Cosmic.
+- **C. Quality instead of more gold**: B's 1% a point for the tier, and the gold roll's +5% a point is removed (the drop chance stays).
+- **D. Leave it** until the skills proposal decides what Fortune is for.
+
+Michael: **A** — make the card say what Fortune does. (29 Sep 2026, via the control room)
+
+### The interiors' shells on the kit — posts and joists, or only the trim? (the look builder, Session 336, issue #62)
+The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes, a flat dark ceiling, square box beams, a plain brown door, and in Aurenne's rooms square box studs. A prototype builds a kit shell for the generated rooms (homes, shops, inns, halls): walls keep their plaster, rubble or ashlar textures.
+
+- **A — the full frame** *(recommended)*: posts, knee braces, sole/wall plates (a plinth and corbels in stone), a joisted boarded ceiling, a plank door. 4.0–7.8k triangles a room.
+- **B — the trim only**: plates, shading, ceiling and door, without posts or braces. 2.8–6.9k triangles.
+- **C — A in homes/inns/shops, B in guild halls/churches/keep halls**, whose own columns and furniture already carry the room.
+- **D — leave the shells as they are.**
+
+Michael: **A** — the full frame. (29 Sep 2026, via the control room)
+
+### Chimney smoke — should the towns' chimneys smoke, and when? (the look builder, Session 337, issue #63)
+Two in three houses in a town have a chimney and none of them smoke. A prototype draws each town's smoke as one Points object, tinted by the hour and drifting on the world's wind, laid flat in a storm. Dunmore: 33 chimneys, 792 puffs, one draw call.
+
+- **A.** Every chimney smokes, day and night.
+- **B** *(recommended)*: by the hearth's hours — inn/smithy/guild halls all day; homes 6–9 and 17–23; every chimney all day in snow and tundra.
+- **C.** Only the inn and the smithy.
+- **D.** No smoke.
+
+Michael: **B** — by the hearth's hours. (29 Sep 2026, via the control room)
+
+### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
+The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
+
+- **A. Charisma only: buying 1% cheaper a point, selling 1% dearer, up to 25%** *(recommended)*. It is what the card says. The hub row drops Intelligence, and Aldwyn's line stays as flavour. Charisma 10 takes 7 off a 66-gold Steel Sword.
+- **B. Intelligence + Charisma, as the hub row says**, 1% a point each, both ways, up to 25%.
+- **C. Charisma, buying only** (1% a point, up to 25%). Selling stays at the item's fixed share, so trade loot can't be turned into a gold engine.
+- **D. Strike the barter line** from the card and the hub until skills-by-use gives it a home.
+
+Michael: **A** — Charisma only: buying 1% cheaper a point, selling 1% dearer, up to 25%. (29 Sep 2026, via the control room)
+
+*Done, Session 339:* `barterPct()` (Charisma × 1%, to 25%) takes its share off `shopCost` and adds it to the counter's sell price (`counterSellPrice`); a bought-back piece keeps the price you were paid. The hub's *Barter Bonus* row reads Charisma only. Aldwyn's line about Intelligence stays as flavour.
+
+### The Boon of Renewal — how fast should it heal? (systems builder, 2026-09-29, issue #60)
+Praying at a shrine restores you in full and gives one of five boons for 30 minutes of play. Four work: the Road (+25% speed), Stone (blows ×0.75), the Arm (+20% melee), the Mind (spells ×0.7). An Spéir's *Boon of Renewal* (type `regen`, mult 1) has no rate: nothing reads it, so a fifth of shrine prayers, and every prayer at An Spéir's, gives nothing after the restore. For scale, the regeneration tonics give 0.5/1.2/2.5 health a second (Mild/Strong/Master) for 60 s.
+
+- **A. Health, stamina and mana each regenerate 0.5 a second for the 30 minutes** *(recommended)*. It matches a Mild tonic, spread over the whole boon, so it helps between fights and never outheals a blow in one. It's the only boon that touches all three bars, which fits the Sky.
+- **B. Health only, 1 a second for the 30 minutes.** It's simpler, and stronger in the field.
+- **C. Health 2 a second, but only out of combat** (no blow taken or given for 5 s). It reads as rest, not armour.
+- **D. Replace it** with a boon that already has a rule (say, +20% stamina regen).
+
+Michael: **A** — health, stamina and mana each regenerate 0.5 a second for the 30 minutes. (29 Sep 2026, via the control room)
+
+*Done, Session 338:* the boon carries `rate` 0.5 (`RENEWAL_RATE`) and the main loop adds it to all three bars, capped at the worn maximum. Found alongside: every prayer threw a page error at its closing chime (`sfxTone` given three arguments), fixed.
+
+### The ships' sails trimmed to a wind — should the world have one? (Session 319, issue #57)
+Every ship's sails are baked into the hull and always stand square across it, whatever the heading, and the gaff booms always lie on the centreline. Session 168 left this owed ("the sails swinging with the heading and the wind"). The world has no wind to trim to: the weather has rain, snow and fog but no direction.
+
+I prototyped the trim on a side branch (`auto/proto-sails`). It is not in the game. Each mast's yards and sails, each gaff and its boom, and the jib are taken out of the hull's bake as children that pivot on the mast. That adds 1–3 draw calls a ship and no triangles.
+- **Square sails** (the cog, the galleon's fore and main) brace round to split the angle between the wind and the bow, up to 35°.
+- **The gaff booms** (the sloop, the galleon's mizzen) swing out to leeward: 72° when running before the wind, 45° with the wind on the beam, and 15° close-hauled. The gaff sails and the jib belly to leeward.
+
+In the pictures, each row is one ship. The columns are today, then running, broad reach, beam reach and close-hauled. The white arrow is the way the wind blows.
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/sails-plan.png (from overhead, where the trim reads best) and https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/sails-quarter.png (from the stern quarter, as you see a ship at sea; the arrows are misplaced in this one).
+
+**Options**
+1. **A wind the world keeps, and every ship trims to it (recommended).** The wind's direction wanders slowly over the hours and swings harder in a storm. Your ship, the merchantmen and the pirates all brace their sails to it and ease round over a second or two when they turn. It is the look only: speed is unchanged.
+2. **The same, and the wind also sets your speed.** Running and reaching are fast, and close-hauled is slow. That is a sailing rule, so it would go to the systems builder; I would build only the look.
+3. **No wind; the sails swing only as the ship turns.** They lag through a turn and settle back square across the hull.
+4. **Leave the sails as they are.**
+
+Recommendation: 1. It makes a ship at sea read as sailed, and it takes no rule from the systems builder. A wind in the world would also serve smoke, flags and banners later.
+Michael: **1 — a wind the world keeps, every ship trims to it.** (29 Sep 2026)
+
 ### Magic — fixed spells from every sigil, words you combine, or three registers to choose between? (the designer, 2026-09-29)
 Today spells come from seven carvings and from the Mages' Guild's counter (60–1,400 gold, capped at Comprehension), and the world's 368 glowing sigil gates carry no carving; spell damage adds `level × 3` flat. Which loop should magic take, with the six schools as skills under the Morrowind book, no spell sales, and overcasting from health as the shared risk? (Page: `docs/design/magic.md`.)
 - **A.** Sigils and schools: the canon's 38 fixed spells carved across the sigil gates by region, a second gate for the next tier, Leap, Shadow Step and Phase as movement spells. Three Opus sessions.
@@ -11,21 +98,127 @@ Today spells come from seven carvings and from the Mages' Guild's counter (60–
 - **C.** Three registers: A's spells, each learned for good from a hedge-witch (safe, weaker), the guild (reliable, capped) or the carving (wild, the only Mastery, Varek's attention). Six Opus sessions.
 
 Recommendation: **B**, with A's carvings in every sigil gate built first. A new word multiplies what you can do instead of replacing a spell with a better one, the movement spells are made for the platforming to come, and it reads the canon's registers as they are written: the makers' words, the academies' grammar.
+Michael: **B — words of the deep tongue.** — If we do this, I think I want to have a questline to unlock all of the magic, and it should probably be part of the main quest. I just feel like players would never find the sigils otherwise. (29 Sep 2026)
 
-### The town gate itself — an archway and gate leaves between the gate towers (Session 273)
-Where a road crosses a walled town's wall, two gate towers stand either side of it (Session 249 put them on the kit). Between them there is nothing: the wall simply stops, and the road runs through an open gap. Whether a town's gate should be a built thing, and how much of one, is a look call, so this is a prototype. The prototype (`docs/prototypes/towngate/shoot.mjs`) builds it from the game's own wall and tower builders with the gate made from the shape kit; `index.html` is unchanged.
+### Picking a town lock — should the world keep moving while you pick? (systems builder, 2026-09-29, issue #54)
+Opening the lockpick pauses the game, as the inventory does (Session 142), so the watch stands still while you work and whether you are seen is decided once, when the lock gives. A pick costs no world time, however long it takes you. The critic found night burglary nearly free (Portclare 5 doors, Dunmore 7, seen 0 times) and put it down to headless picks being instant. In real play they are instant too, as far as the guards can tell.
 
-- **A, a gateway and open leaves.** For the stone tiers, an arch of voussoirs springs from tower to tower, with a wall-walk and merlons over it. For the palisade, a timber lintel frame on two posts with a braced top rail. In both, two plank gate leaves with iron bands and a brace stand open against the inside of the wall.
-- **B, the leaves alone.** The same two leaves on posts at the towers, open, with the gap open to the sky.
-- **C, not yet.** The gap stays as it is.
+Measured over 10 minutes of the night watch at 23h, the share of arrival times at which a guard comes within the night sight range (6) of a shop door at some moment of the pick (upper bounds, walls not tested): Dunmore (3 guards, 9 doors) instant 18%, 5 s 24%, 10 s 29%, 20 s 38%; Portclare (1 watchman, 6 doors) instant 10%, 5 s 13%, 10 s 15%, 20 s 19%.
 
-**Recommendation: A.** A gate is where a town says what it is from the road, and the arch carries the wall across so the ring reads as closed.
+- **A. The world runs while you pick a town lock** (shop and home doors, strongboxes, home chests) *(recommended)*. The watch keeps walking and the clock turns; seen at any moment of the pick, you are seen and the pick breaks off. Dungeon chests and doors keep pausing. One Opus session.
+- **B. The pick stays paused but costs time**: each pin costs a fixed slice of the night (say 3 s); when the lock gives, the watch is run forward that long and you are seen if anyone came within sight. Invisible; it only changes the odds.
+- **C. Leave it.** Burglary odds rest on where the watch is when you arrive.
 
-The leaves never shut: nothing in the game closes a town's gate yet. A later session could shut them at night, or when the town is hostile, if that becomes a system.
+A makes the watch something you read and time, which is the decision the night watch was built to give.
+Michael: **A — the world runs while you pick a town lock.** (29 Sep 2026)
 
-The picture shows the stone tier (top) and the palisade (bottom), today, A and B, seen from the road outside at noon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/towngate-grid.png
+*Done, Session 327:* shop and home doors, strongboxes and home chests; seen at any moment, the lock crime is set and the pick breaks off; dungeon locks still pause.
 
-## Answered
+### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)
+Every interior window today is a flat pane on the wall: a painted view of the town at dusk in the generated rooms, the same in a box frame in Hearthwick's old rooms, and a plain lit rectangle in a church. Now that the furniture is on the kit, the windows are the flattest thing left in a room. I prototyped three kit windows. In each, the painted view stays, set back behind the frame. They are not in the game.
+
+- **A — leaded casement:** a plastered reveal with splayed jambs and head, a stone sill, an oak frame with a mullion and transom, and diamond leading. 2.4k triangles.
+- **B — shuttered timber window:** a lintel beam, four panes behind glazing bars, two plank shutters folded back on strap hinges, and a plank sill. 1.1k triangles.
+- **C — round-headed stone window (churches and keep halls only):** coursed jambs, a ring of nine voussoirs, a moulded sill, and square lead quarries. 1.4k triangles. In the church's picture its low windows take A.
+
+A room has four to eight windows, so this adds about 4–19k triangles to its furniture bake, with no extra draw calls. For scale, a room's furniture bake is 10–28k.
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/windows-home.png (a home: today, A, B) and https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/windows-church.png (a church: today, C).
+
+**Options**
+1. A in every room, and C for the tall windows of churches and keep halls.
+2. **By the room (recommended):** B in homes, cabins and the poorer rooms; A in shops, inns and guild halls; C in churches and keep halls. The frames then step from rough to fine with the room, and the painted view stays in all of them.
+3. B in every room, and C for churches and keep halls.
+4. Leave the windows as they are.
+
+Recommendation: 2. It gives the same kind of variety by wealth that the townsfolk's clothes got (Session 268), and each builder can take a window by the room's type without changing a layout.
+Michael: **2 — by the room.** — Can we also adjust the flat image on the windows? The image looks very modern metropolitan. It needs to look more medieval, and it should reflect the type of town it's in. If it's a low prosperity town, we should see maybe some trees and possibly a house. If it's a rich city, we should see buildings and walls. (29 Sep 2026)
+
+### Four promised effects with no rule behind them — crit, merchant access, Ashwort's pulse, Caor Dubh's risk (systems builder, 2026-09-29, issue #58)
+Sessions 320–323 wired up every buff and attribute line whose text said what it does. Four lines are left, because the game has no rule for them to plug into:
+1. *Fortune: +2% crit chance a point.* No hit in the game can crit by chance. The only crit is the bonus for striking a staggered foe.
+2. *Charisma: merchant access.* The shops filter their stock by an item's `chaReq` (since v61au), but no item carries one, so nothing is ever held back.
+3. *Ashwort: minimap pulse, reveals nearby enemies for 5s.* Nothing reads it. The open world's minimap already shows every foe in range, and the dungeon's shows none.
+4. *Caor Dubh: +40% damage for 30s (risky).* The +40% works. The risk has no cost.
+
+- **A. Build all four** *(recommended)*. Fortune: 2% a point that a melee or bow hit crits for ×1.5. Charisma: at 5 points each merchant shows one extra item from the next tier up. Ashwort: the dungeon minimap shows foes within 20 units for 5 s. Caor Dubh: you take +20% damage while it lasts. One Opus session.
+- **B. Strike the four lines** from the card and the herb text until the skills sessions rework attributes.
+- **C. Leave them.**
+
+A keeps the card honest and gives Fortune and Charisma something to feel. Every number in A is a proposal.
+Michael: **A — build all four.** (29 Sep 2026)
+
+*Done:* Fortune's crit and Caor Dubh's risk built in Session 328 at the numbers above, Ashwort's dungeon pulse in Session 329, Charisma's extra item in Session 333. #58 closed.
+
+### Unblock auto/systems — was the red CI a flake? (the producer, 2026-09-29)
+PR #22 (auto/systems, head cdb5774) failed CI twice after Michael's ✅: the same shard on two frame-timing budgets (hourhitch's shader-compile stall check, snowrepaint's per-tick cost); a third test (witness) failed once then passed clean on a rerun with no code change. Nothing in Sessions 280–283 (the roll, the posture bar, tightened tells, the roll beating the Faolchú's fire, bolts, charges and volleys) touches shaders, snow repaint, or shop witnessing — it read as CI-runner variance, not a fault in the branch.
+
+- **A, merge anyway** *(recommended)*. Claude merges as approved; widen the two budgets later if they keep flaking.
+- **B, wait for a clean run.** No agent is set to touch these tests, so it could sit a while.
+- **C, fix the budgets first.** One systems-builder session widens hourhitch's and snowrepaint's budgets, then Claude merges.
+
+Michael: **A — merge anyway.** (29 Sep 2026, via Slack)
+
+Since asked, Session 299 (on auto/systems) root-caused both instead: the late shader was the wolves' material loading on a foe's first night spawn (arrival, not the hour change), and snowrepaint now checks exactly two chunks a tick rather than against a runner-measured millisecond budget.
+
+### Enemies by place — which place is how dangerous? (systems builder, 2026-09-28, issue #51)
+Today every enemy grows with your level: health ×(1 + 0.15 a level, to ×3) and damage ×(1 + 0.08 a level, to ×2), in `enemyHpScale`/`enemyDmgScale`. Rare variants also turn up more often as you level. You kept this as the designer's condition when you chose the Morrowind book: enemies should scale by place, not by level, so that friends sharing your world meet one difficulty. The design page says only "a danger tier from the region and the dungeon floor". It does not say which place gets which tier, or what a tier is worth. The skills sessions and the combat tuning both need it settled first.
+
+- **A. A tier for each region, plus the dungeon floor** *(recommended)*. Home's regions are authored: the coast, Ashen, Bealach and Royale are tier 1; Deepwood, the Foothills and Greywood tier 2; the Wastes tier 3. The far continents take a tier from their biome: tundra, swamp and wasteland 3, the rest 2. Each dungeon floor below the first adds one tier, to a cap of 4. A tier is worth what today's curve gives at levels 1, 6, 11 and 16: health ×1 / 1.75 / 2.5 / 3, damage ×1 / 1.4 / 1.8 / 2. Variants read the tier the same way.
+- **B. Rings by distance from Ashenmoor.** Tier 1 near the start, rising one tier every ~600 units, and the far continents at 3–4. It needs no authoring, but it cuts across regions, so a forest could be tier 1 at one edge and tier 2 at the other.
+- **C. Not yet.** Keep level scaling until the skills sessions land.
+
+A keeps a region's danger readable (the Wastes are dangerous, the coast is not) and gives the far continents a sensible default. It is one Opus session.
+
+Issue: https://github.com/mbuckley616/The-Old-Gates/issues/51
+
+Michael: **C — Not yet** — keep level scaling until the skills sessions land. (29 Sep 2026, via Slack)
+
+Moved here by the systems builder, Session 311; nothing built.
+
+### The black sail and the merchantman — which hull each sails (Session 278, issue #50)
+The other ships at sea have had their own looks since Session 168: black sails and a red wale for the pirate, striped sails and a green hull for the merchantman. Both still sail the sloop's hull, 13 long. They were kept small because boarding placed the crew by that length. That no longer binds: the three pirates stand 3 apart along the middle of the deck, which fits any hull, and the deck is laid from the hull's own outline. So which hull each sails is a free choice, and the backlog has it owed. The looks on each hull were drawn in the Session 165 prototype (below).
+
+- **A, the merchantman on the cog (17 long), the pirate on the sloop.** A trader is broad and slow, a raider small and quick. Only the merchantman changes.
+- **B, the merchantman on the cog, the pirate on the galleon (22).** A black-sailed ship becomes something to run from, and boarding it is a bigger fight on a bigger deck, with the same three crew unless that changes too.
+- **C, both stay on the sloop.** Strike the backlog line.
+
+**Recommendation: A.** It matches what each ship is for, and it leaves the galleon as something only the player buys.
+
+The picture (Session 165, `docs/prototypes/boats-others.png`) shows today's single hull, then the pirate on the sloop and on the galleon, and the merchantman on the cog and on the galleon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/boats-others.png
+
+Michael: **The merchantman on the cog, the pirate stays on the sloop** (A) (28 Sep 2026, via the control room)
+
+### Shading in the houses' creases — the people's strength, or only the large parts (Session 276, issue #49)
+Michael's A on Session 243 was the creases shaded at the people's strength, then the creatures and then the houses. The people and the creatures are done (Sessions 265 and 270). The same pass over a house does something different. A house is built from thousands of small parts: slates, shingles, turfs, course blocks and footing stones. At the people's strength they all shade each other, so whole walls and roofs go grey and muddy rather than just the creases. The plaster and stone houses show it most. So this is a question, not a build. The game is unchanged: the shading is wired into the house bake but switched off.
+
+- **A, the people's strength, as it is.** Every part shades every other part it faces. The plaster and stone walls come out a shade or two darker all over.
+- **B, the large parts only.** The same strength, but only parts at least .35 thick cast the shading: walls, roof slabs, the chimney, the lean-to, the jetty. The slates and stones still receive it but don't cast it. This darkens the window reveals, under the eaves, under a jettied floor and inside the lean-to, and leaves open walls their colour. It costs about 3–14 ms per house when a town builds.
+- **C, not for the houses.** Leave them as they are.
+
+**Recommendation: B.** It is what the people's shading does on a body: creases, not the whole surface.
+
+The picture shows five house styles, each built once and shaded three ways (today, A, B), in the afternoon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houseao-grid.png
+
+Michael: **The large parts only** (B) (28 Sep 2026, via the control room)
+
+### Furniture inside homes and inns — on the shape kit (the concept artist, 2026-09-28)
+Backlog H.5 asks for "props" with the buildings. Outside, every house, church, keep, well and stall is on the kit now; inside, the furniture is still boxes. A Dunmore home's furniture is 43 meshes and 556 triangles, each box with its own material; the inn's taproom is 147 meshes and 2,364 triangles. The bed is a box on four box legs, the hearth a grey box with a black one in it, the bottles on the inn's shelves cylinders of one colour. The prototype (`docs/prototypes/interiors/`, `index.html` unchanged) builds the pieces from the kit and bakes a room's furniture into one mesh, plus a small unlit one for the flames:
+- **A home:** a box bed with turned posts, a planked headboard, a stuffed tick, a quilt of three bands and a pillow (2,200 triangles); ladder-back chairs (848); a planked table with breadboard ends and turned legs (1,184); an iron-bound chest with a vaulted lid (856); a stone hearth with a timber lintel, a mantel, logs, flames and a pot on a crane, the chimney breast limewashed to the ceiling (3,842); wall shelves of jars, bowls and plates (768); a braided rag rug. 14,521 triangles in 2 meshes; the view's draw calls fall from 44 to 17.
+- **The inn's taproom:** a panelled bar with a brass foot rail and tankards (1,736), stools, casks on cradles with taps (908), a dresser of bottles, jugs and standing plates (2,784), tables with benches (192 a bench), the bigger hearth. 26,008 triangles in 2 meshes; draw calls 252 to 107.
+- **Sized to the people:** a townsperson is 1.18 tall; a table top stands at .46, a chair seat at .26, the bar at .69. The bed is 1.5 long (today's is 1.95, 1.65 times a person).
+- **By nation:** the Gatelands' oak and a madder, ochre and blue quilt; the Mark's dark pine and grey wool; Aurenne's walnut with the chairs, chests and headboards painted blue.
+
+Options:
+- **A. The kit in every interior.** Homes and inns as shown, then the shops, church, keep and guild halls in the same kit (the forge, armour stands, the apothecary's shelves, pews, the throne), one or two rooms a session, each room one baked mesh. Collision, beds, doors and where people stand are unchanged.
+- **B. Homes and inns only.** The pieces shown; the shops and halls keep their boxes for now.
+- **C. Not yet.**
+
+**Recommendation: A.** The rooms are where you sleep, trade and talk, and at present they are the last place the game looks like boxes. The cost is triangles, not draw calls: an interior draws one room, and the inn's 38,000 triangles in view are a fraction of a town street's.
+
+Pictures: [a home, today left, proposed right, two views](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/home.png) · [the inn's taproom, today and proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/inn.png) · [the home's pieces with a townsperson, front](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-home-front.png) · [three-quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-home-side.png) · [the inn's pieces](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-inn-front.png) · [bed, chair and chest by nation](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/interiors/pieces-nations-side.png)
+
+Michael: **The kit in every interior** (A) (28 Sep 2026, via the control room)
 
 ### Prosperity in whole points — should small daily changes count? (systems builder, 2026-09-28, issue #44)
 Found building the Compact's tithe (Session 266). A town's prosperity is kept in whole points: once a game-day every driver is added up (roads, the nearest lair, plague, siege, occupation, the drift back towards the town's home level) and the total is rounded. So a driver worth less than half a point moves a town or not depending on what else happened to it that day. Occupation's half point (Session 129) often does nothing: in the test a town held by the Mark, and the same town also paying the tithe's extra half point, both lost exactly a point a day. The drift home is 1% of the gap a day, under half a point for any gap under 50, so on its own it never moves a town, and a town raised by builds keeps its level for good unless something else pushes it. The tithe now keeps its own account, so it is exact; the rest still round.
@@ -35,7 +228,9 @@ Found building the Compact's tithe (Session 266). A town's prosperity is kept in
 
 Recommendation: **B**. Every rule then does what its number says, and the towns you have built up don't start sinking on a rule nobody sees. A is the cleanest arithmetic, but it makes investment wear off, which is a design change in itself.
 
-Michael: **Carry the fraction for the drivers, not the drift** (B) (28 Sep 2026, via the control room)
+Michael: **B — carry the fraction for the drivers, not the drift** (28 Sep 2026, via the control room; issue #44)
+
+Done, Session 272. Built as B's own words have it: the half-point effects on the town itself (occupied −.5, owned +.4, burned or sacked −.2) carry their fraction; the drift home rounds as before. Roads (±), the nearest lair (±.6) and trade routes (+.8) also still round with the drift. Carried as well, they sank all 17 towns of the first measure by a mean of 33 points in 120 days (every one by 10 or more), because the drift under half a point no longer answered them. That would be a rebalance B was chosen to avoid. If Michael wants those exact too, their numbers need retuning first.
 
 ### The town gate itself — an archway and gate leaves between the gate towers (Session 273)
 Where a road crosses a walled town's wall, two gate towers stand either side of it (Session 249 put them on the kit). Between them there is nothing: the wall simply stops, and the road runs through an open gap. Whether a town's gate should be a built thing, and how much of one, is a look call, so this is a prototype. The prototype (`docs/prototypes/towngate/shoot.mjs`) builds it from the game's own wall and tower builders with the gate made from the shape kit; `index.html` is unchanged.
@@ -59,8 +254,39 @@ Found by the critic (28 Sep, PR #40). A town without walls, a port like Portclar
 - **C. Leave it.** Villages are lax by day, and the fine waits for the watchman at 19h or for the lord.
 
 Recommendation: **A**. It closes the gap with the man the town already has, adds nobody to villages, and keeps a quiet village quiet until you give it a reason.
+Michael: **A day constable** (B) (28 Sep 2026, via the control room; issue #41)
+Built, Session 268 (systems builder): every town with a night watchman and no gate guards gets a day constable who walks the plaza from 6:30 to 19h and sleeps by night. He halts, follows at −2 or worse, and is sent indoors, as any guard on duty. Issue #41 closed by the producer.
 
-Michael: **A day constable** (B) (28 Sep 2026, via the control room)
+### Occupation's effects from the canon — the League's duels and the Compact's tithe (systems builder, 2026-09-28, issue #37)
+Backlog B, prosperity, owes *occupation effects from the canon (tithe, duels)*. The canon (§ Prosperity, Drivers) says: *an occupied League town loses its duels and gains patrols; the Compact's tithe lowers a port and raises its capital.* What is built today: a town taken in a war is flagged occupied and loses half a point of prosperity a game-day. The occupier's soldiers hold the plaza until you clear them, and the keeper names who holds the town. **Duels don't exist yet** (backlog A owes *a real duel*), so the League's half has nothing to take away. **The tithe is open**: the canon doesn't say when it applies or how much it is.
+- **A. A tithe on the Compact's occupations.** A town the Compact (Aurenne) occupies pays a tithe: an extra half point of prosperity a game-day, and Aurenne's capital (Fortargent) gains the same, capped at 100. Duels wait until duels exist. One short session.
+- **B. The tithe always.** In peace too, every Aurenne port loses a quarter point a game-day to the tithe, and Fortargent gains a quarter point for each such port. The ports sit a little poorer than other nations' ports. One short session.
+- **C. Leave it.** Occupation's half-point loss stands for the tithe. Strike the item.
+
+Recommendation: **A**. It gives occupation by the Compact a visible cost that differs from the Mark's, and it doesn't make Aurenne's peacetime ports poorer on a rule nobody sees.
+Michael: **A tithe on the Compact's occupations** (A) (28 Sep 2026, via the control room)
+Built, Session 266 (systems builder): a town Aurenne occupies pays half a point of prosperity a game-day more (a point every second day, kept in its own account because prosperity is whole points), and the Compact's seat, Fortargent on this seed, gains it unless it is itself occupied. Duels wait until duels exist. Issue #37 closed.
+
+### Q7 “The Rubbing” in the open world — how does Ashenmoor burn? (systems builder, 2026-09-28, issue #32)
+The main quest now runs from Q1 through Q6 in the open world (Sessions 236 and 240). Q7 still exists only in the legacy zones: *Return to Ashenmoor* fires only when the old overworld zone loads, the Faolchú spawns only there, and Bram's body is a legacy corpse. In the world's Ashenmoor, Bram is alive at his forge and nothing burns, so the quest's first step can never happen.
+- **A. Ashenmoor burns in the world.** When Q6 is turned in, the world's Ashenmoor becomes the ruin variant the war code already has (burnt shells, no market). Edna and Brother Oswin stay; Bram's body lies at the forge. The Faolchú waits on the plaza until killed. The ruin is permanent, which is the canon. About two sessions.
+- **B. A burned copy you travel to.** The world's Ashenmoor stays as it is. The quest sends you through a gate to the old Ashenmoor zone, burned, where Q7 plays as it was written. You come back to the world afterwards. One session, but it's a detour out of the open world.
+- **C. The burning happens off-screen.** Ashenmoor becomes the ruin as in A, but there is no Faolchú fight. The quest skips to Bram's body, Oswin, Edna and the rubbing. One session.
+
+Recommendation: **A**. It keeps the story in the world you play, and the canon has Ashenmoor lost for good.
+Michael: **Ashenmoor burns in the world** (A) (28 Sep 2026, via the control room)
+Built, Session 269 (systems builder), the first of A's two sessions: handing in Q6 turns the world's Ashenmoor into the ruin for good (it never wears off). Only Edna's cottage and Brother Oswin's oratory stand, with the two of them inside, and Edna speaks as she does after the burning. Coming onto its pad is Q7's *Return to Ashenmoor*. The Faolchú on the plaza, Bram's body at the forge and the triage are the next session.
+Built, Session 270: A's second half. The Faolchú waits on the world's plaza until killed (the legacy boss, built by the same code, with its bar, its Mark and its death burst). Bram lies at his forge with his hammer, and Oswin and Edna are seen to in their houses. Edna's rubbing goes to Aldwyn in Ironhaven, and Q7 completes in the world. Issue #32 closed.
+
+### Coach tickets — what does a ticket buy, and what does it cost? (systems builder, 2026-09-28, issue #31)
+Michael's answer on #24 (the coaching inn, B) included *tickets sold here*. The inn, the driver and the travellers are built (Sessions 237–238). Tickets are held back, because today every coach is **free to ride**. The player raised the road themselves (600 gold and up), so a ticket needs a rule.
+- **A. A seat held.** A ticket costs nothing. Taking one from the keeper makes the next coach wait at the inn until you board, up to an hour, so you can eat or sleep without missing it. Riding stays free.
+- **B. Fares everywhere.** Every ride costs a fare, about a tenth of the road's length in gold (a 548-unit road is 55 gold). You pay it at the inn or at either end, the driver takes it as you board, and it goes to the road's two towns as prosperity.
+- **C. No tickets.** The coach stays free and the keeper's board is enough.
+
+Recommendation: **A**. It gives the inn a reason to stop, and it doesn't charge you to ride a road you paid to build.
+Michael: **A seat held** (A) (28 Sep 2026, via the control room)
+Built, Session 267 (systems builder): the coaching inn's keeper holds a seat on the next coach to call, either way, for nothing. That coach waits at the door up to an hour past its call and goes on when you board or the hour is up. The coach stands still while you're indoors, so a seat is also settled on coming out: if its call has come and the hour isn't up, it is at the door. Issue #31 closed.
 
 ### Wealth in clothes — poor, middling and well-off townsfolk (Session 246)
 Backlog H.2 has owed wealth in clothes since Session 153. Today a townsperson dresses by their people, nation and role: a lord has a crown and a smith an apron, but a poor fisher and a well-off one dress alike. So do the folk of a failing village and of a thriving town. The prototype (`docs/prototypes/wealth/shoot.mjs`) patches a copy of the game; `index.html` is unchanged. It gives a person a wealth from 0 to 1 and dresses them by it in three steps:
@@ -191,15 +417,6 @@ Recommendation: **B**, with A's three pieces built first. Move sets and commitme
 
 Michael: **Elden Ring's shape** (B) — "I like the idea of moving more towards Elden ring combat, but it’s a pretty fundamental change… as long as this is possible I’m up for it." (28 Sep 2026, via the control room)
 
-### Occupation's effects from the canon — the League's duels and the Compact's tithe (systems builder, 2026-09-28, issue #37)
-Michael: **A tithe on the Compact's occupations** (A) (28 Sep 2026, via the control room)
-
-### Q7 “The Rubbing” in the open world — how does Ashenmoor burn? (systems builder, 2026-09-28, issue #32)
-Michael: **Ashenmoor burns in the world** (A) (28 Sep 2026, via the control room)
-
-### Coach tickets — what does a ticket buy, and what does it cost? (systems builder, 2026-09-28, issue #31)
-Michael: **A seat held** (A) (28 Sep 2026, via the control room)
-
 ### The Bog Crawler's own body — a diving beetle or a giant water bug (Session 225)
 Your answer on the last box creatures (Session 214) was B: the Bog Crawler gets a six-legged crawler's body of its own, a beetle or a giant water bug, prototyped first. It lives in the fen and swamp, at a spider's size or a little over. Both prototypes are built in the game from the shape kit, in the fen's colours with moss on the back (`docs/prototypes/crawler/shoot.mjs`). Each picture has a bandit for scale and a spider for comparison.
 - **A. A great diving beetle**: a glossy olive-black dome split down the back with a bronze rim, a small head with short mandibles and antennae, and hind legs swept back like oars with a fringe of hairs.
@@ -216,10 +433,26 @@ Done, Session 236: the water bug on the spider's kit, its forelegs raised on the
 Michael: **The giant water bug** (B). (28 Sep 2026, via the control room)
 
 ### The coaching inn halfway — what is inside? (systems builder, 2026-09-28, issue #24)
-Michael: **A, plus the coach's other half** (B) — the roadside inn with keeper, meal, a room and the board, and also the driver and a passenger or two waiting in the common room, with tickets sold here. (28 Sep 2026, via the control room)
+Backlog B, coach lines: *enterable coaching inns (what they hold inside is Michael's call)*. Since Session 178 the coach stops for a quarter of an hour at the two-storey inn halfway along a coaching road. The inn is a shell: you can't go in. Town inns already have a keeper, food, rooms to let (Session 141) and rumours, and a coaching inn in town already shows a timetable board and a tack corner.
+- **A. A roadside inn.** The town inn's interior at a smaller size: a keeper from the nation the inn stands in, a meal and drink, one room to let (sleep until the next coach), and the timetable board and tack corner. One session.
+- **B. A, and the coach's other half.** Also the coach's driver and a passenger or two waiting in the common room, and buying a ticket here for the next coach either way. One session more.
+- **C. A waystation only.** One room with the board, a bench and a trough: shelter from weather, no keeper, no trade. Half a session.
+
+Recommendation: **A**. It makes the stop worth getting off for, reuses the town inn's builder and keeper, and needs no new writing beyond what town inns already say.
+Michael: **B — A, plus the coach's other half** (the roadside inn, and the driver and a passenger or two waiting in the common room, tickets sold here). (28 Sep 2026, via the control room; issue #24)
+Built, Session 237 (systems builder): **A** — the inn is enterable from the road: a keeper of the country it stands in, the town inn's meal and room (one to let; travellers hold the rest), the coach's board and tack corner, and the keeper tells when each coach calls. Session 238: the driver and one or two travellers wait in the common room while the inn is open. Tickets are held back as their own question (issue #31): the coach is free today.
 
 ### Guards indoors — what happens when you are seen inside a building? (systems builder, 2026-09-28, issue #23)
-Michael: **The guard comes in** (B) — "The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player" (28 Sep 2026, via the control room)
+The crime system's owed item. Today a keeper who sees you pick a lock or empty a strongbox indoors puts the fine on you at once, but no guard does anything while you stay inside. The confrontation (*Halt. There's a fine…*) only runs in the street, when a guard is within five units of you, so you can finish robbing the house and walk out. Whether a guard comes in after you is a rule of play.
+- **A. The guard waits at the door.** When you are seen indoors, the nearest guard on duty walks to that building's door and waits there. You meet the usual halt as you step out: pay, refuse and fight in the street, or yield. Nothing new indoors. One session.
+- **B. The guard comes in.** Half a minute after you are seen, a guard enters and halts you inside. Paying works as in the street. Refusing, he draws there, which needs a fight indoors (interiors have no enemies today). Two sessions.
+- **C. The keeper shouts, and you are thrown out.** Being seen ends the visit: a fade, you are put out at the door, and the guard is there as in A. The robbery stops at the first thing you are seen doing. One session.
+
+Recommendation: **A**. It closes the gap (you can't walk out unmet), keeps the fight where the fighting code already works, and leaves room to go on robbing the back room at a known price.
+Michael: **B — the guard comes in.** "The guard should come in but we should be mindful of the player leaving quickly, guards should still give chase and confront if they can catch the player." (28 Sep 2026, via the control room; issue #23)
+Built, Session 239 (systems builder): the first of B's two sessions. Seen indoors with a fine, the nearest guard on duty is sent; half a minute on (or his walk, if longer) he comes in by the door and halts you: pay, or refuse — refusing puts you out and he draws in the street for now. Leave before he comes in and he is in the street where his walk had got him and gives chase (3 units a second, by the streets): he halts you if he catches you; off the town's pad or after a minute and a half he gives up; duck into another house within 20 units of him and he follows you in. The fight indoors is the next session.
+Built, Session 241: B's second half — refused indoors, he draws in the room (a Town Guard fought through the zone-enemy code, on the room's floor and solids); the yield at a fifth of health as in the street, the cells taking you out of the room; run out mid-fight and he fights on in the street. Issue #23 closed.
+
 
 ### The last box creatures — Ogre, Cave Bear, slimes, Fire Elemental, Bog Crawler, Sand Scorpion, Shore Wisp (Session 214)
 Seven kinds of creature are still on the old box bodies. None of them is in a family you have approved, so here is how each would look. Each is built in the game from its own kits (`docs/prototypes/creatures3/shoot.mjs`), with a bandit beside it for scale.
@@ -235,6 +468,7 @@ Done in part, Session 221 (auto): the Ogre, as shown (`docs/prototypes/ogre-inga
 
 ### The caravan attacked on the road — can you save it? (the systems builder, issue #18)
 Michael: **B** — defensible: bandits fall on it, the merchant runs, an overturned cart stays; driving them off keeps the route that day, the camp threatens again tomorrow. One session. (27 Sep 2026, via the control room)
+Built, Session 230 (systems builder): as answered. The threat's hour falls on the outbound leg, u .35–.65 of the road; you must be within 150 units of the caravan then; leaving 250 units with bandits alive breaks it. The duplicate entry left under Pending was removed. Issue #18 closed.
 
 ### The weapon kit — swords, axes, maces, bows, staves and shields on the shape kit (Session 220)
 Every weapon in the game is still built from boxes: the player's in third person (`tpWeapon`, which calls itself "a later pass"). The foes carry the people's walking stick for a club, or a spear. This prototype (`docs/prototypes/weapons/shoot.mjs`) builds a kit: blades extruded from an outline with a bevel so they have an edge and a point, wrapped grips, guards and pommels, a bearded axe head, a flanged mace, a spiked war hammer, a gnarled staff with a crystal held in three prongs, a recurve bow on a curve with its string, a planked round shield with a rim and boss, and a kite shield with a boss. (The kite shield's first render had a cross on it; I took it off so it would not read as the Church's sign.)
