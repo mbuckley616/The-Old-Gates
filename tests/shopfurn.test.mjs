@@ -1,5 +1,5 @@
 // The shops' furniture on the shape kit (Session 289, H.5 props, Michael's A on #46): every shop's counter is the kit's
-// panelled counter; the smithy's forge, anvil, quench tub, racks of the weapon kit's pieces and grindstone are one bake.
+// panelled counter; the smithy's forge (and Session 290's armourer, apothecary and general goods), anvil, quench tub, racks of the weapon kit's pieces and grindstone are one bake.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -27,10 +27,20 @@ const shot = await page.evaluate(() => { const sc = interiorScene, W = _S.intW, 
   return c.toDataURL(); });
 fs.mkdirSync('tests/out', { recursive: true });
 fs.writeFileSync('tests/out/smithy.png', Buffer.from(shot.split(',')[1], 'base64'));
-// the other shops: the counter is the kit's, and a foothold where it was
-const others = [];
-for (const t of ['armor', 'potion', 'misc']) { if (!(await enter(t))) continue; const o = await look(); others.push({ type: t, furn: o.furn, counter: o.counter }); }
+// the armourer, the apothecary and the general goods (Session 290): each room one bake beside its counter; the stands,
+// the still and the bench solid; one picture of each
+const others = [], pics = [];
+for (const t of ['armor', 'potion', 'misc']) { if (!(await enter(t))) continue; const o = await look();
+  const x = await page.evaluate(() => { const W = _S.intW, D = _S.intD; let barrels = 0, crates = 0; interiorScene.traverse(m => { if (m.isMesh && INT_KIT_GEO.get('barrel') && m.geometry === INT_KIT_GEO.get('barrel').body) barrels++; });
+    return { stand: intSolidAt(1.6, 1.6, .1) || FOOTHOLDS.some(f => f.y > 1 && 1.6 > f.x0 && 1.6 < f.x1 && 1.6 > f.z0 && 1.6 < f.z1), still: FOOTHOLDS.some(f => f.y > .55 && f.y < .7 && W - 1.6 > f.x0 && W - 1.6 < f.x1 && 1.8 > f.z0 && 1.8 < f.z1), barrels }; });
+  others.push({ type: t, furn: o.furn, tris: o.tris, fire: o.fire, counter: o.counter, meshes: o.meshes, ...x });
+  pics.push(await page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, cv = REN.domElement, cam = new THREE.PerspectiveCamera(62, cv.width / cv.height, .05, 80);
+    cam.position.set(W * .5, 1.75, Math.min(D - 3.5, 4.6)); cam.lookAt(W * .5, .35, 1.3); sc.updateMatrixWorld(true); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); return o.toDataURL(); })); }
 console.log(JSON.stringify(others));
-check('the armourer\'s, the apothecary\'s and the general goods\' counters are the kit\'s, footholds where they were', others.length >= 2 && others.every(o => o.furn >= 1 && o.counter), others);
+const by = t => others.find(o => o.type === t) || {};
+check('the armourer, the apothecary and the general goods are each a room bake and the kit\'s counter, footholds where they were', others.length === 3 && others.every(o => o.furn === 2 && o.counter && o.tris[0] > 3000), others);
+check('the armour stands stand, the apothecary\'s still is a foothold and glows (its brew in the flame mesh), the goods\' barrels are the kit\'s', by('armor').stand && by('potion').still && by('potion').fire && by('misc').barrels === 3, others);
+const grid = await page.evaluate(ps => new Promise(res => { const c = document.createElement('canvas'); let x = null, k = 0; ps.forEach((p, i) => { const im = new Image(); im.onload = () => { if (!x) { c.width = im.width * ps.length; c.height = im.height; x = c.getContext('2d'); } x.drawImage(im, i * im.width, 0); if (++k === ps.length) res(c.toDataURL()); }; im.src = p; }); }), pics);
+fs.writeFileSync('tests/out/shops3.png', Buffer.from(grid.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

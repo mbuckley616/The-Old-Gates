@@ -7312,3 +7312,20 @@ The furniture bakes a room holds (the room, and now the counter) are freed toget
 
 ### Needs eyes
 These shop pieces had no prototype of their own. They follow Michael's A and the concept artist's list, but the forge's hood and the racks are my reading. The weapons are the kit's person-scale pieces and read small from across the room.
+
+## v80 — Session 290 — The armourer, the apothecary and the general goods on the shape kit (H.5 props, Michael's A on #46)
+The last three shops, in the idioms of the concept artist's prototype and Session 289's smithy. Each room is one bake beside its counter.
+- **The armourer:** three stands, each a cross-footed post with a shoulder bar. They carry a plate cuirass (lathed, flattened front to back, with two bands), a boiled-leather one with a cap, and a mail shirt (bumpy, with a skirt), each with pauldrons and a helm, the helms with a nasal and a rim. On the east wall hang the weapon kit's round and kite shields in the four old colours (the kit's `face` tint), and there is a bench with rolls of leather, a dish of rivets and a mallet.
+- **The apothecary:** three wall shelves of potion bottles in the old six colours (a `potions` stock for the prototype's shelf) with a few jars. Bundles of herbs hang drying from the ceiling on strings. The still is an iron cauldron on three legs over a small fire in a stone ring, its brew a green surface in the flame mesh, with a copper alembic and receiver beside it. A mortar and pestle stand on the counter.
+- **The general goods:** crates, sacks tied at the neck, the prototype's shelves of jars, bowls, bottles and plates, and a brass balance on the counter.
+
+`_intCrate` and `_intBarrel` are the kit's too, like `_intBed` in Session 288, since they furnish the cellars, the cabin, the inns' back rooms, the coopers' homes and the shops. The barrel is the dungeon's `kitBarrel` at .44 high, and the crate is new: planks between corner battens, in the room's wood. Each size is baked once and shared (`INT_KIT_GEO`).
+
+**The old layout put things in the back room:** the armourer's shields hung at `D-2.2-k*1.1` and the goods' sacks stood at `D-1.6`, so most stood behind the partition by the keeper's bed. The shields now hang at 3.8 + .75k, only as many as fit before the partition, and the sacks stand in front of it. The armour stands, the bench and the still are solid now; before, only the counters were.
+
+### Verified (headless Chromium)
+- **`shopfurn`**, extended. The armourer is 8,296 + 1,520 triangles (33 meshes), the apothecary 20,153 + 1,904 (37), and the goods 20,164 + 1,904 (26). Each counter is a foothold where it was. The first stand stands, the still is a foothold at .62 and its brew is in the flame mesh, and the goods' three barrels are the shared kit barrel. The smithy's checks pass as before. The picture, `docs/prototypes/shops-ingame.png`, shows the three rooms over their counters.
+- **`interiors`**, **`homefurn`** and **`theft`** pass.
+
+### Needs eyes
+These pieces had no prototype; they follow Michael's A and the concept artist's list. The armour stands read small behind the counter, and the plate's pauldrons may look like mushrooms. The herbs and the still were not in the picture's view.

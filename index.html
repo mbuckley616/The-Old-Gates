@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s262</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s263</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -21501,9 +21501,9 @@ function furnBuild(THREE, SK) {
     for (const s of [-1, 1]) { p(SK.rbox(.03, .16, .03, .008, 1), W.dark, s * (w / 2 - .12), -.08, .015); p(SK.rbox(.03, .03, .19, .008, 1), W.dark, s * (w / 2 - .12), -.025, .11);
       p(SK.rbox(.024, .2, .024, .006, 1), W.dark, s * (w / 2 - .12), -.075, .085, -Math.PI / 4.2); }
     const pots = [0x8a5a3a, 0xa8784a, 0x6a6a5a, 0xc8b89a, 0x4a5a3a, 0x7a3a2a];
-    for (let x = -w / 2 + .12; x < w / 2 - .08;) { if (r() < .22) { x += .12 + r() * .25; continue; } const kind = stock === 'bottles' ? (r() < .75 ? 1 : 0) : Math.floor(r() * 4);
+    for (let x = -w / 2 + .12; x < w / 2 - .08;) { if (r() < .22) { x += .12 + r() * .25; continue; } const kind = stock === 'bottles' ? (r() < .75 ? 1 : 0) : stock === 'potions' ? (r() < .7 ? 1 : 0) : Math.floor(r() * 4);
       if (kind === 0) { const rr = .04 + r() * .025; p(jar(rr, .1 + r() * .08), pots[Math.floor(r() * pots.length)], x + rr, .015, .1 + r() * .03); x += rr * 2 + .03; }
-      else if (kind === 1) { const rr = .028 + r() * .01; p(bottle(rr, .16 + r() * .06), [0x2a4a2a, 0x3a2a1a, 0x5a6a3a, 0x2a3a4a][Math.floor(r() * 4)], x + rr, .015, .11); x += rr * 2 + .025; }
+      else if (kind === 1) { const rr = .028 + r() * .01; p(bottle(rr, .16 + r() * .06), (stock === 'potions' ? [0x50a0d0, 0x40c060, 0xc04040, 0xd0a030, 0x8040c0, 0x40c0b0] : [0x2a4a2a, 0x3a2a1a, 0x5a6a3a, 0x2a3a4a])[Math.floor(r() * (stock === 'potions' ? 6 : 4))], x + rr, .015, .11); x += rr * 2 + .025; }
       else if (kind === 2) { const rr = .06 + r() * .02; p(bowl(rr), jit(0x9a7050, r), x + rr, .015, .11); x += rr * 2 + .02; }
       else { for (let k = 0; k < 4; k++) p(SK.cyl(.075, .06, .012, 12), jit(0xd8ccb0, r, .03), x + .075, .02 + k * .013, .11); x += .17; } }
     return p; }
@@ -21653,6 +21653,96 @@ function furnBuild(THREE, SK) {
     p.put(grindstone(n, s + 4), 2.6, D - 2.4, 0);
     if (typeof wpnBuild === 'function') for (const q of wpnBuild('dagger', false, null)) p(q.geo, 0xffffff, W / 2 - 1.2, .72, 3.0, 0, .3, Math.PI / 2);
     return p; }
+  // ── S290: the armourer, the apothecary and the general goods (the shops' kit, Michael's A on #46) ──
+  // a crate of planks between corner battens, s across (the interiors' _intCrate)
+  function crate(s, n, seed) { const r = rng(seed || 61), p = Parts(), W = WOOD[n] || WOOD.gatelands, k = 3, pw = (s - .06) / k;
+    p(SK.rbox(s - .03, s - .03, s - .03, .01, 1), 0x2a1c10, 0, s / 2, 0);
+    for (const [ax, sg] of [['x', 1], ['x', -1], ['z', 1], ['z', -1]]) for (let i = 0; i < k; i++) { const y = .03 + pw * (i + .5);
+      if (ax === 'x') p(SK.rbox(.02, pw - .008, s - .08, .006, 1), jit(W.pale, r, .08), sg * (s / 2 - .01), y, 0); else p(SK.rbox(s - .08, pw - .008, .02, .006, 1), jit(W.pale, r, .08), 0, y, sg * (s / 2 - .01)); }
+    for (let i = 0; i < k; i++) p(SK.rbox(s - .08, .02, pw - .008, .006, 1), jit(W.pale, r, .08), 0, s - .01, -s / 2 + .03 + pw * (i + .5));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) p(SK.rbox(.05, s, .05, .008, 1), jit(W.wood, r, .05), sx * (s / 2 - .02), s / 2, sz * (s / 2 - .02));
+    return p; }
+  // an armour stand: a cross-footed post, a shoulder bar, and on it a cuirass (plate, leather or mail) with pauldrons and a helm
+  function armourStand(kind, n, seed) { const r = rng(seed || 63), p = Parts(), W = WOOD[n] || WOOD.gatelands, y0 = .5;
+    p(SK.cyl(.025, .03, 1.12, 8), jit(W.dark, r, .04), 0, .56, 0);
+    for (const a of [0, Math.PI / 2]) p(SK.rbox(.5, .05, .07, .015, 1), jit(W.wood, r), 0, .025, 0, 0, a, 0);
+    const col = { plate: 0x8a8a94, leather: 0x6a4a2a, mail: 0x7a7a84 }[kind] || 0x8a8a94, band = kind === 'leather' ? 0x3a2414 : 0x5a5a62;
+    const torso = lathe([[.001, 0], [.16, 0], [.18, .07], [.19, .18], [.205, .3], [.19, .38], [.12, .44], [.07, .46], [.001, .46]], 14);
+    p(kind === 'mail' ? SK.bumpy(torso, .004, 60, 3) : torso, col, 0, y0, 0, 0, 0, 0, 1, 1, .7);
+    if (kind === 'mail') p(SK.cyl(.17, .21, .22, 14, 1, true), col, 0, y0 - .1, 0, 0, 0, 0, 1, 1, .72);
+    else for (const t of [.06, .18]) p(SK.cyl(.185 + t * .08, .18 + t * .08, .025, 14), band, 0, y0 + t, 0, 0, 0, 0, 1, 1, .72);
+    p(SK.rbox(.46, .04, .05, .012, 1), jit(W.dark, r, .04), 0, y0 + .43, 0);
+    for (const sx of [-1, 1]) p(SK.ball(.1, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2), col, sx * .19, y0 + .41, 0, 0, 0, sx * -.5, 1, .8, 1);
+    if (kind === 'leather') { p(SK.ball(.1, 12, 8, 0, Math.PI * 2, 0, Math.PI * .55), col, 0, y0 + .56, 0); p(SK.torus(.098, .01, 4, 16), band, 0, y0 + .57, 0, Math.PI / 2); }
+    else { p(SK.ball(.105, 12, 8, 0, Math.PI * 2, 0, Math.PI * .6), 0x9a9aa4, 0, y0 + .55, 0); p(SK.rbox(.02, .1, .02, .005, 1), 0x9a9aa4, 0, y0 + .52, .1);
+      p(SK.torus(.1, .008, 4, 16), 0x6a6a72, 0, y0 + .52, 0, Math.PI / 2); }
+    return p; }
+  // a shield hung on the wall (the wall at −z): the weapon kit's round, kite or tower shield, faced out, on a peg
+  function wallShield(kind, face, seed) { const p = Parts();
+    if (typeof wpnBuild === 'function') for (const q of wpnBuild(kind, false, { face })) p(q.geo, 0xffffff, 0, 0, .05, 0, -Math.PI / 2, 0, 1.35, 1.35, 1.35);
+    p(SK.cyl(.012, .012, .08, 6), IRON, 0, .2, .03, Math.PI / 2);
+    return p; }
+  // a bench with a roll of leather, rivets in a dish and a mallet
+  function armourBench(n, seed) { const r = rng(seed || 65), p = Parts(), W = WOOD[n] || WOOD.gatelands;
+    p.put(table(1.4, .6, n, seed), 0, 0, 0);
+    for (let k = 0; k < 3; k++) p(SK.cyl(.06, .06, .5, 12), jit([0x6a4a2a, 0x5a3a1c, 0x8a6a3a][k], r, .05), -.35 + k * .2, .52, 0, Math.PI / 2, .2 * (k - 1), 0);
+    p(lathe([[.001, 0], [.07, 0], [.08, .02], [.075, .025], [.001, .01]], 10), 0x7a6a4a, .35, .46, .1);
+    for (let k = 0; k < 6; k++) p(SK.ball(.012, 6, 4), 0x9a9aa4, .33 + (r() - .5) * .08, .475, .1 + (r() - .5) * .08);
+    p(SK.cyl(.012, .012, .26, 6), W.wood, .45, .475, -.12, 0, .4, Math.PI / 2); p(SK.cyl(.035, .035, .1, 8), W.dark, .36, .48, -.17, 0, .4, 0);
+    return p; }
+  // a bundle of herbs hung from the ceiling on a string, drying head down
+  function herbBundle(len, seed) { const r = rng(seed || 67), p = Parts(), g = [0x4a6a2a, 0x5a7a3a, 0x6a6a3a, 0x7a5a3a][Math.floor(r() * 4)];
+    p(SK.cyl(.003, .003, len, 4), 0xc8b89a, 0, -len / 2, 0);
+    p(SK.bumpy(SK.cone(.09, .32, 7, 3), .02, 21, seed % 9), jit(g, r, .08), 0, -len - .16, 0, Math.PI);
+    p(SK.torus(.03, .008, 4, 8), 0xc8b89a, 0, -len, 0, Math.PI / 2);
+    for (let k = 0; k < 5; k++) p(SK.cyl(.004, .004, .12, 4), 0x5a4a2a, (r() - .5) * .04, -len + .05, (r() - .5) * .04);
+    return p; }
+  // the apothecary's still: an iron cauldron on three legs over a small fire, its brew glowing, and a copper alembic beside it
+  function still(n, seed) { const r = rng(seed || 69), p = Parts();
+    p(lathe([[.001, 0], [.2, .02], [.32, .14], [.34, .28], [.3, .38], [.31, .4], [.28, .4], [.27, .37], [.001, .37]], 16), 0x2a2a2e, 0, .22, 0);
+    for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; p(SK.cyl(.02, .015, .28, 6), 0x2a2a2e, Math.sin(a) * .22, .12, Math.cos(a) * .22, Math.cos(a) * .25, 0, -Math.sin(a) * .25); }
+    p(SK.torus(.3, .012, 4, 16, Math.PI), IRON, 0, .62, 0, 0, 0, 0);
+    for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2; p(SK.rbox(.12, .06, .08, .02, 1), jit(STONE, r, .1), Math.sin(a) * .26, .03, Math.cos(a) * .26, 0, a, 0); }
+    p.flame(new THREE.CircleGeometry(.27, 16), 0x60ff90, 0, .585, 0, -Math.PI / 2);
+    p.flame(SK.cone(.08, .14, 6), 0xff8a28, 0, .09, 0); p.flame(SK.cone(.05, .1, 6), 0xffb040, .06, .07, .03);
+    const cx = .62, CU = 0xb8743a;
+    p(lathe([[.001, 0], [.12, .01], [.16, .1], [.15, .2], [.06, .28], [.04, .34], [.001, .34]], 12), CU, cx, 0, 0);
+    p(SK.torus(.2, .018, 6, 14, Math.PI * .6), CU, cx + .02, .32, 0, 0, 0, Math.PI * .1);
+    p(lathe([[.001, 0], [.07, 0], [.08, .2], [.05, .24], [.001, .24]], 10), CU, cx + .38, 0, 0);
+    return p; }
+  // a balance on the counter: a post on a foot, a beam, two pans hung on cords
+  function scales(seed) { const p = Parts(), B = 0xa8843a;
+    p(lathe([[.001, 0], [.07, 0], [.07, .015], [.015, .03], [.012, .3], [.02, .31], [.001, .32]], 10), B, 0, 0, 0);
+    p(SK.cyl(.008, .008, .4, 6), B, 0, .3, 0, 0, 0, Math.PI / 2);
+    for (const s of [-1, 1]) { for (const a of [0, 2.1, 4.2]) p(SK.cyl(.002, .002, .2, 3), 0x3a3020, s * .2 + Math.sin(a) * .03, .2, Math.cos(a) * .03, Math.cos(a) * .15, 0, -Math.sin(a) * .15);
+      p(lathe([[.001, 0], [.06, .005], [.075, .02], [.07, .022], [.001, .008]], 12), B, s * .2, .1, 0); }
+    return p; }
+  // a sack of grain or wool, tied at the neck
+  function sack(seed, col) { const r = rng(seed || 71), p = Parts(), c = jit(col || 0xb8a070, r, .06);
+    p(SK.bumpy(SK.ball(.24, 12, 9), .02, 11, seed % 7), c, 0, .22, 0, 0, r() * 6, 0, 1, 1.05, .9);
+    p(SK.cyl(.06, .09, .1, 8), c, 0, .48, 0); p(SK.torus(.06, .012, 4, 10), 0x6a5a3a, 0, .47, 0, Math.PI / 2);
+    p(SK.bumpy(SK.cone(.1, .1, 8), .01, 13, 2), c, 0, .56, 0);
+    return p; }
+  function armoury(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    ['plate', 'leather', 'mail'].forEach((k, i) => p.put(armourStand(k, n, s + i), 1.6 + i * 1.6, 1.6, 0));
+    const zEnd = D >= 9 ? D - 3.2 : D - 1.2;
+    [0x7a2020, 0x203a6a, 0x6a5a20, 0x2a4a2a].forEach((c, k) => { const z = 3.8 + k * .75; if (z < zEnd - .35) p.put(wallShield(['round', 'kite', 'round', 'kite'][k], c, s + 5 + k), W - .02, z, -Math.PI / 2, 1.0); });
+    p.put(armourBench(n, s + 9), W - 1.6, 1.6, 0);
+    return p; }
+  function apothecary(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    [.62, .99, 1.36].forEach((y, i) => p.put(shelf(W - 1.6, n, s + i, 'potions'), W / 2, 0, 0, y));
+    for (let x = 1.5, k = 0; x < W - 1; x += 1.2, k++) p.put(herbBundle(.3 + (k % 3) * .08, s + 10 + k), x, D * .55, 0, H);
+    p.put(still(n, s + 4), W - 1.6, 1.8, 0);
+    p(lathe([[.001, 0], [.07, 0], [.08, .06], [.07, .1], [.05, .1], [.04, .03], [.001, .03]], 12), 0x8a8478, W / 2 + 1.2, .69, 3.0);
+    p(SK.cyl(.012, .016, .16, 6), 0x9a8a70, W / 2 + 1.22, .79, 3.0, 0, 0, .5);
+    return p; }
+  function goods(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+    for (let k = 0; k < 3; k++) p.put(crate(.5, n, s + k), 1.0 + k * .9, 1.0, (k - 1) * .15);
+    p.put(crate(.45, n, s + 3), 1.45, 1.0, .3, .5);
+    for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), W - 1.0 - k * .8, D - 3.9, k * .7);
+    [.62, 1.05].forEach((y, i) => p.put(shelf(W - 2, n, s + 8 + i, 'mixed'), W / 2, 0, 0, y));
+    p.put(scales(s + 11), W / 2 + 1.4, 3.0, 0, .69);
+    return p; }
   // the flames flicker: call per frame with the fire mesh and the time
   function flicker(fire, t) { if (!fire) return; const s = 1 + Math.sin(t * 11.3) * .06 + Math.sin(t * 17.1) * .04; fire.scale.set(1, s, 1); }
 
@@ -21694,7 +21784,7 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
-  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy };
+  return { Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods };
 }
 
 let _FURN = null;
@@ -24428,16 +24518,17 @@ function _intShelf(sc,x,y,z,len,items,itemCols){
     _intBox(sc,x-len/2+.15+i*(len/items),y+h/2+.04,z,w,h,.13,col);
   }
 }
+// S290 — the interiors' barrel and crate on the kit: the dungeon's barrel (kitBarrel, S200) at .44 high, and the shops' crate
+// of planks between battens in the room's wood; each size baked once and shared
+const INT_KIT_GEO=new Map();
 function _intBarrel(sc,x,z){
-  const b=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.44,8),new THREE.MeshLambertMaterial({color:0x5a3810}));
-  b.position.set(x,.22,z);sc.add(b);
-  // Hoops
-  [.1,.32].forEach(y=>{const h=new THREE.Mesh(new THREE.TorusGeometry(.23,.025,4,8),new THREE.MeshLambertMaterial({color:0x3a2808}));h.position.set(x,y,z);h.rotation.x=Math.PI/2;sc.add(h);});
+  let b=INT_KIT_GEO.get('barrel');if(!b){const B=kitBarrel(.8,0x5a3810);b={body:B.body.geometry,bm:B.body.material,top:B.top.geometry,tm:B.top.material};INT_KIT_GEO.set('barrel',b);}
+  const g=new THREE.Group();g.position.set(x,0,z);g.add(new THREE.Mesh(b.body,b.bm));const t=new THREE.Mesh(b.top,b.tm);t.position.y=.44-.024;g.add(t);sc.add(g);return g;
 }
 function _intCrate(sc,x,y,z,s=.38){
-  _intBox(sc,x,y+s/2,z,s,s,s,0x6a4818);
-  // Slat lines
-  [-1,1].forEach(d=>{const sl=new THREE.Mesh(new THREE.BoxGeometry(s+.01,.03,s+.01),new THREE.MeshLambertMaterial({color:0x4a3010}));sl.position.set(x,y+s*.3+d*.1,z);sc.add(sl);});
+  const K=furnKit(),n=INT_BED_NATION||'gatelands',key='crate|'+n+'|'+s.toFixed(2);let geo=INT_KIT_GEO.get(key);
+  if(!geo){geo=K.bake(K.crate(s,n,Math.round(s*100))).children[0].geometry;INT_KIT_GEO.set(key,geo);}
+  const m=new THREE.Mesh(geo,K.MAT);m.position.set(x,y,z);sc.add(m);return m;
 }
 function _intPew(sc,x,z,len=2.2){
   // Seat
@@ -38726,21 +38817,23 @@ var WORLD=(()=>{
       solid(1.2,1.4,.9,.8,1.2);light(1.2,1.0,2.0,0xff6a20,1.6,6);solid(W-2.0,1.6,.3,.3,1.0);solid(W-1.0,3.2,.3,.3,.7);
       counter();
     } else if(type==='armor'){
-      for(let k=0;k<3;k++){const x=1.6+k*1.6;box(x,.9,1.6,.16,1.8,.16,0x4a3018);box(x,1.4,1.6,.7,.9,.45,[0x8a8a94,0x6a4a2a,0x9a9aa4][k]);const h=new THREE.Mesh(new THREE.SphereGeometry(.22,8,8),new THREE.MeshLambertMaterial({color:0x8a8a94}));h.position.set(x,2.05,1.6);sc_.add(h);}
-      for(let k=0;k<4;k++){const s=new THREE.Mesh(new THREE.CircleGeometry(.42,12),new THREE.MeshLambertMaterial({color:[0x7a2020,0x203a6a,0x6a5a20,0x2a4a2a][k]}));s.position.set(W-.15,1.6,D-2.2-k*1.1);s.rotation.y=-Math.PI/2;sc_.add(s);}
-      box(W-1.6,.45,1.6,2.2,.9,.9,0x5a3a1c);for(let k=0;k<3;k++)cyl(W-2.2+k*.6,1.0,1.6,.12,.12,.5,0x6a4a2a,6).rotation.x=Math.PI/2;
+      // S290 — the armourer on the kit (#46 A): three stands (plate, leather, mail) with helms, the kit's shields on the
+      // east wall in front of the back room, a bench with leather, rivets and a mallet; one bake
+      {const K=furnKit(),room=K.bake(K.armoury(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      for(let k=0;k<3;k++)solid(1.6+k*1.6,1.6,.25,.25,1.8);solid(W-1.6,1.6,.7,.3,.76);
       counter();
     } else if(type==='potion'){
-      [1.0,1.6,2.2].forEach((y,i)=>{box(W/2,y,.25,W-1.6,.06,.4,0x4a3018);for(let x=1.0;x<W-1;x+=.55)cyl(x,y+.2,.25,.09,.09,.3,[0x50a0d0,0x40c060,0xc04040,0xd0a030,0x8040c0,0x40c0b0][(x*7|0)%6],6);});
-      for(let x=1.5;x<W-1;x+=1.2){const hb=new THREE.Mesh(new THREE.ConeGeometry(.16,.6,5),new THREE.MeshLambertMaterial({color:0x4a6a2a}));hb.position.set(x,H-.55,D*.55);hb.rotation.x=Math.PI;sc_.add(hb);}
-      cyl(W-1.6,.6,1.8,.55,.45,.8,0x2a2a2e,10);box(W-1.6,.15,1.8,1.0,.3,1.0,0x3a3a40);const gl=glow(W-1.6,1.05,1.8,0x60ff90);light(W-1.6,1.3,1.8,0x60ff80,1.0,5);
-      counter();cyl(W/2+1.2,1.15,3.0,.16,.12,.2,0x8a8478,8);
+      // S290 — the apothecary on the kit: three shelves of bright potions, herbs hung drying, the still (an iron cauldron
+      // glowing green over a small fire, a copper alembic), a mortar and pestle on the counter; one bake
+      {const K=furnKit(),room=K.bake(K.apothecary(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      light(W-1.6,1.3,1.8,0x60ff80,1.0,5);solid(W-1.6,1.8,.4,.4,1.0);
+      counter();
     } else if(type==='misc'||type==='shipwright'){
-      for(let k=0;k<3;k++){_intCrate(sc_,1.0+k*.9,.3,1.0,.5);}_intCrate(sc_,1.45,.9,1.0,.45);
+      // S290 — the general goods on the kit: crates, sacks tied at the neck, shelves of pots, bowls and plates, a balance on
+      // the counter; the barrels are the interiors' kit barrel. The sacks stood in the back room; now in front of it
+      {const K=furnKit(),room=K.bake(K.goods(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       _intBarrel(sc_,W-1.0,1.2);_intBarrel(sc_,W-1.9,1.1);_intBarrel(sc_,W-1.4,2.0);
-      for(let k=0;k<3;k++)cyl(W-1.0-k*.8,.35,D-1.6,.32,.38,.7,[0xb8a070,0x9a8a60,0xc0b080][k],7);
-      [1.0,1.7].forEach(y=>{box(W/2,y,.2,W-2,.06,.35,0x4a3018);for(let x=1.4;x<W-1.4;x+=.7)box(x,y+.18,.2,.35,.3,.28,[0x8a3a2a,0xd8d0b0,0x5a7a3a,0xc8a040,0x6a4a8a][(x*3|0)%5]);});
-      counter();box(W/2+1.4,1.15,3.0,.5,.06,.3,0x8a8478);box(W/2+1.4,1.3,3.0,.06,.3,.06,0x8a8478);
+      counter();
     } else if(type==='inn'){
       // S287 — the taproom on the kit (#46 A): a panelled bar with a brass rail and stools, the dresser of bottles and plates
       // behind it, two casks on cradles, the big stone hearth, four tables with benches, by the nation's wood, one mesh and
