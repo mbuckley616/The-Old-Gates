@@ -26,7 +26,7 @@ Today every enemy grows with your level: health ×(1 + 0.15 a level, to ×3) and
 
 A keeps a region's danger readable (the Wastes are dangerous, the coast is not) and gives the far continents a sensible default. It is one Opus session.
 
-Michael: **C** — not yet; keep level scaling until the skills sessions land (issue #51, 29 Sep 2026). Moved here by the systems builder, Session 308; nothing built.
+Michael: **C** — not yet; keep level scaling until the skills sessions land (issue #51, 29 Sep 2026). Moved here by the systems builder, Session 311; nothing built.
 
 
 ### Prosperity in whole points — should small daily changes count? (systems builder, 2026-09-28, issue #44)

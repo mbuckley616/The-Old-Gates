@@ -1,4 +1,4 @@
-// Lock-on needs a clear line (Session 308). A foe behind a wall can't be locked; a locked foe that stays behind a
+// Lock-on needs a clear line (Session 311). A foe behind a wall can't be locked; a locked foe that stays behind a
 // wall for 1.5 s is let go, and one that comes back into view within that keeps the lock. Walls are the foes' own
 // sight solids: the dungeon's walls, and in the open world the camera's solids (houses, walls, rocks; not trunks).
 import { boot, check } from './lib/game.mjs';
@@ -39,7 +39,7 @@ check('in Dunmore a house and a clear street were found for the test', world.fou
 check('a Bandit 8 units off behind a house cannot be locked', world.behindHouse, world);
 check('a Bandit 8 units off down a clear street can', world.inTheOpen, world);
 
-// ── indoors (Session 311): a shop's back-room partition, with its door shut ──
+// ── indoors (Session 314): a shop's back-room partition, with its door shut ──
 const shopId = await page.evaluate(() => { forceTime(13); const S = WORLD.settle.get('dunmore');
   for (const h of S.houses) { if (!/weapon|armor|potion|misc/.test(h.type) || !h.keeper) continue; WORLD.buildInteriorFor(h); if (h._backRoom) return h.id; } return null; });
 await page.evaluate((id) => { const h = WORLD.settle.get('dunmore').houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, shopId);

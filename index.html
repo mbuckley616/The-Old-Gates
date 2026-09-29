@@ -1425,7 +1425,7 @@ function tickPlayerPosture(dt,nowS){
 // or is more than 20 units off. A small gold diamond marks the foe.
 const LOCK_RANGE=14,LOCK_CONE=Math.cos(Math.PI/3),LOCK_BREAK=20;
 const LOCK={t:null,h:1,hid:0,chk:0};
-// S308 — the lock needs a clear line: a foe behind a wall can't be locked, and one that stays behind a wall for
+// S311 — the lock needs a clear line: a foe behind a wall can't be locked, and one that stays behind a wall for
 // LOCK_HIDDEN seconds is let go. The same solids the foes' own sight uses (the dungeon's walls; in the open world the
 // camera's solids, so trunks and posts don't hide a foe), stepped every 0.4 units, sparing the half-unit at either end.
 const LOCK_HIDDEN=1.5,LOCK_CHECK=.15;
@@ -1435,7 +1435,7 @@ function lockSolidFn(){
   return currentZoneSolid;
 }
 function lockSight(e){
-  if(typeof isInterior==='function'&&isInterior()&&typeof WORLD!=='undefined'&&WORLD.intSightLine)return WORLD.intSightLine(px,pz,e.x,e.z); // S311 — in a room, its walls and shut doors (the witnesses' line), not the world's solids at room coordinates
+  if(typeof isInterior==='function'&&isInterior()&&typeof WORLD!=='undefined'&&WORLD.intSightLine)return WORLD.intSightLine(px,pz,e.x,e.z); // S314 — in a room, its walls and shut doors (the witnesses' line), not the world's solids at room coordinates
   const sol=lockSolidFn(),dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1.2)return true;
   const n=Math.ceil((d-1)/.4);
   for(let i=0;i<=n;i++){const r=(.5+(d-1)*i/n)/d;if(sol(px+dx*r,pz+dz*r))return false;}
@@ -1466,7 +1466,7 @@ function toggleLock(){
   if(!e){showMsg('Nothing to lock on to.','#aaa');return false;}
   lockOn(e);return true;
 }
-// S309 — switching foes while locked: a sideways flick of the mouse (LOCK_FLICK pixels within LOCK_FLICK_MS) moves the
+// S312 — switching foes while locked: a sideways flick of the mouse (LOCK_FLICK pixels within LOCK_FLICK_MS) moves the
 // lock to the next foe on that side of the one held, the nearest by angle as seen from you; the same reach, cone-free,
 // and the same clear line as a fresh lock. Nothing on that side, the lock stays. After a switch the mouse is ignored
 // for a moment so one flick moves the lock once.

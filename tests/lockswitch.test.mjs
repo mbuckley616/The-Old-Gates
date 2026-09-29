@@ -1,4 +1,4 @@
-// Switching foes while locked (Session 309). A sideways flick of the mouse (90 px within 0.2 s) moves the lock to the
+// Switching foes while locked (Session 312). A sideways flick of the mouse (90 px within 0.2 s) moves the lock to the
 // next foe on that side of the one held, the nearest by angle; nothing on that side, the lock stays. A slow drift of
 // the mouse never switches, and one flick switches once.
 import { boot, check } from './lib/game.mjs';

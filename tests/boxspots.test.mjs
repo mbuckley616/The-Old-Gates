@@ -1,4 +1,4 @@
-// Strongboxes and home chests against the room (Session 310). Backlog G has asked since Session 155 whether the
+// Strongboxes and home chests against the room (Session 313). Backlog G has asked since Session 155 whether the
 // strongbox's and the home chest's spots sit well against the furniture. Measured in every shop and home of four towns:
 // the box's footprint against every other solid, its mesh against every other piece of furniture, and whether you can
 // walk from the front door to a spot close enough to open it (1.6 units from its centre, the prompt's reach).

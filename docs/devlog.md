@@ -8085,7 +8085,7 @@ No game code changed. The build tag stays s298.
 ### Needs eyes
 Nothing to play. Whether a wolf pack's first appearance hitches on a real GPU (one compile of its material) is worth a glance at dusk outside a town.
 
-## v80 — Session 308 — A lock you can see
+## v80 — Session 311 — A lock you can see
 Session 297 built lock-on and left out a line-of-sight test: a foe within 14 units and 60° of the view could be locked through a dungeon wall or a house, and a locked foe that ran round a corner kept the view pinned to the wall. The backlog carries it as owed from lock-on. This session adds the test; it is lock-on doing what it says (*locks the nearest foe you are looking towards*), not a new rule.
 
 **What changed.** A foe the lock would pick is passed over if something solid stands between you: the same solids the foes' own sight uses (`dSolid` in a dungeon, the camera's solids `WORLD.camSolid` in the open world, so trunks and posts don't hide a foe; houses, walls and big rocks do). The line is stepped every 0.4 units, sparing half a unit at either end so a foe standing against a wall still counts. If nothing clear is ahead the message is the usual *Nothing to lock on to.* While locked, the line is checked every 0.15 s; a foe out of sight for 1.5 s in a row is let go, and one that comes back into view sooner keeps the lock, with the clock starting again. The 1.5 s is mine (Elden Ring drops a hidden lock after a moment); the page names no number. Time is counted from the frame's `dt`, as the hold already is.
@@ -8101,10 +8101,10 @@ New `tests/locksight.test.mjs`, 9 checks, passing, no page errors.
 - Whether 1.5 s is the right grace when a wolf circles a tree stump or a bandit steps behind a cart; too short and the lock flickers off in a cluttered camp.
 - A low wall or a boulder you can see over still blocks the lock in the world (the camera's solids have no height). If that bites in play, the world's check needs heights.
 
-## v80 — Session 309 — Flick to the next foe
+## v80 — Session 312 — Flick to the next foe
 Lock-on's other owed piece (Session 297): switching between foes while locked. Elden Ring does it with a flick of the right stick; here it is a flick of the mouse, since the mouse does nothing else while locked (Session 297 set it aside). No new key: the middle button still locks and lets go.
 
-**What changed.** While locked, a sideways flick (90 pixels of mouse movement one way within 0.2 s) moves the lock to the next foe on that side of the one held: of the lockable foes within 14 units with a clear line (Session 308's test), the one nearest by angle, seen from where you stand. There is no 60° cone for the switch, so a flick can reach a foe beside or behind the one held. With nothing on that side the lock stays. After a switch the mouse is ignored for 0.25 s, so one flick moves the lock once however far the hand travels, and a slow drift never adds up to a flick (the sum restarts after 0.2 s or a change of direction). The view then turns to the new foe as it does on any lock. The flick's timing reads `performance.now()` on each mouse event, not the frame clock. The 90 px, 0.2 s and 0.25 s are mine. The start screen's controls say *lock on (flick the mouse to switch foes)*; the controls line at the bottom is unchanged for length.
+**What changed.** While locked, a sideways flick (90 pixels of mouse movement one way within 0.2 s) moves the lock to the next foe on that side of the one held: of the lockable foes within 14 units with a clear line (Session 311's test), the one nearest by angle, seen from where you stand. There is no 60° cone for the switch, so a flick can reach a foe beside or behind the one held. With nothing on that side the lock stays. After a switch the mouse is ignored for 0.25 s, so one flick moves the lock once however far the hand travels, and a slow drift never adds up to a flick (the sum restarts after 0.2 s or a change of direction). The view then turns to the new foe as it does on any lock. The flick's timing reads `performance.now()` on each mouse event, not the frame clock. The 90 px, 0.2 s and 0.25 s are mine. The start screen's controls say *lock on (flick the mouse to switch foes)*; the controls line at the bottom is unchanged for length.
 
 ### Verified (headless Chromium)
 New `tests/lockswitch.test.mjs`, 10 checks, passing, no page errors. Four real Bandits in a row 7 units off at −40°, −15°, +10°, +35° (screen x −.29, 0, .29, .73 once B is held); mouse moves go through the game's own handler, with pointer lock faked.
@@ -8119,7 +8119,7 @@ New `tests/lockswitch.test.mjs`, 10 checks, passing, no page errors. Four real B
 - Whether 90 px in 0.2 s is a flick you make on purpose and never by accident at your mouse's sensitivity; the numbers are one constant each (`LOCK_FLICK`, `LOCK_FLICK_MS`).
 - Trackpads still have no middle click, so none of lock-on reaches a laptop without a mouse; a key for it remains Michael's call.
 
-## v80 — Session 310 — The strongboxes against the furniture (a check settled headless)
+## v80 — Session 313 — The strongboxes against the furniture (a check settled headless)
 Backlog G has asked since Session 155 whether the strongbox's and the home chest's spots sit well against the furniture. Part of that is measurable, in the way Session 252 measured the interior doors, so this session measures it. No game code changed; the build tag stays s300.
 
 **What was measured.** Every shop and home in Dunmore, Portclare, Ironhaven and Ashenmoor (132 interiors with a box) is built with `buildInteriorFor`. For each chest: its drawn bounds against every other solid across its height; its mesh against every other furniture-sized mesh in the room (floors, walls, ceilings and rugs left out); and a flood fill on a 0.1-unit grid from inside the front door, with a 0.3 body that climbs on nothing, to find how close you can stand to it. The prompt opens it from 1.6 units.
@@ -8134,11 +8134,13 @@ New `tests/boxspots.test.mjs`, passing, no page errors. Dunmore 50 boxes, Portcl
 ### Needs eyes
 The rest of G's *Town locks* line is play: whether four pins in a rich town is fair, and the takings against a low-level purse. Whether a strongbox tucked against the bed's foot looks like a place a keeper would keep one is a look call.
 
-## v80 — Session 311 — The lock indoors
-A gap left by Session 308. Indoors the game stays in the open world's zone and the room is drawn at its own coordinates (0 to its width and depth), so the lock's wall test read the world's solids at room coordinates, where there are none. A room's walls never blocked the lock. Since Sessions 239 and 241 a guard can draw on you inside a shop, so a guard behind the shut back-room partition could be locked, and the view would turn to face the wall. Now, in a room, the lock uses the room's own sight line (`intSightLine`, Session 167, the witnesses' line): partition walls and shut doors block it, and counters and tables do not. The 1.5 s grace of Session 308 applies there too.
+## v80 — Session 314 — The lock indoors
+A gap left by Session 311. Indoors the game stays in the open world's zone and the room is drawn at its own coordinates (0 to its width and depth), so the lock's wall test read the world's solids at room coordinates, where there are none. A room's walls never blocked the lock. Since Sessions 239 and 241 a guard can draw on you inside a shop, so a guard behind the shut back-room partition could be locked, and the view would turn to face the wall. Now, in a room, the lock uses the room's own sight line (`intSightLine`, Session 167, the witnesses' line): partition walls and shut doors block it, and counters and tables do not. The 1.5 s grace of Session 311 applies there too.
 
 ### Verified (headless Chromium)
 `tests/locksight.test.mjs` gains two checks, 11 in all, passing, no page errors. In a Dunmore shop with a back room, entered through `goToInterior` at 13h with the back-room door shut, you stand in the shop facing the back wall. A real Bandit behind the partition cannot be locked; one in the shop with you can. With the fix taken out, the first check fails (the foe behind the wall locks).
 
 ### Needs eyes
 Nothing new to judge. The drawn guard indoors can now be locked when he's in the room with you. How lock-on feels in a small shop, where the view turns hard at close quarters, is worth a glance during the next indoor fight.
+
+Correction to Sessions 311–314 above: they were pushed as Sessions 308–311. The look branch had pushed its own 308–310 first (auto/backlog), so this branch's four are renumbered 311–314 in the devlog, the backlog, the code's comments and the tests' headers. The commit messages keep the old numbers.
