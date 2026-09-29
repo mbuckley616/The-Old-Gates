@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s257</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s258</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39521,9 +39521,11 @@ var WORLD=(()=>{
   // ── other ships: pirates and merchants ──
   const OTHER=[]; // {kind,mesh,x,z,yaw,speed,plat,crew:[],chest,boarded,volleyT,dead}
   function spawnOtherShip(kind,x,z){
-    const m=buildShipMesh(13,4.4,kind==='pirate'?'pirate':'merchant'); // S168 — the black sail and the merchantman are looks of their own, not tints
+    // S168 — the black sail and the merchantman are looks of their own, not tints; S285 — the merchantman on the cog, broad and slow (Michael's A, #50)
+    const cls=kind==='pirate'?SHIP_CLASSES.sloop:SHIP_CLASSES.cog;
+    const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant');
     sc.add(m);
-    const o={kind,mesh:m,x,z,yaw:Math.random()*Math.PI*2,speed:0,L:13,W:4.4,plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
+    const o={kind,mesh:m,x,z,yaw:Math.random()*Math.PI*2,speed:0,L:cls.L,W:cls.W,plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
     ZONES.world.platforms.push(o.plat);OTHER.push(o);placeOther(o);
     if(kind==='pirate')crewUp(o,false);
     return o;

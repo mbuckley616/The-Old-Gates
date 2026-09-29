@@ -7237,3 +7237,14 @@ A correction to Session 276's cost: it measured 3–14 ms a house for a single h
 
 ### Needs eyes
 The strength in real light, at dusk and on snow: the eaves' undersides are the most visible change, and a stone or plaster house in full sun should still read as its own colour.
+
+## v80 — Session 285 — The merchantman sails a cog (H.5b, Michael's A on Session 278)
+Michael chose A: the merchantman on the cog, the black sail staying on the sloop. A trader is broad and slow, a raider small and quick, and the galleon stays something only the player buys.
+
+`spawnOtherShip` now takes the hull from `SHIP_CLASSES` by kind: the merchantman is built at the cog's 17 by 5.6 and carries those as its `L` and `W`, the pirate keeps the sloop's 13 by 4.4. Everything downstream already read the ship's own length and beam, so nothing else changed: the deck platform is laid from the cog's hull (`shipPlatBox`), the bow's look-ahead for running aground, the cargo chest's place when you board her, and the hull-against-hull checks. Her speed (4.5) is unchanged; the pirate's crew and Oswy's Kestrel are untouched.
+
+### Verified (headless Chromium)
+- **`ships`**, extended: a spawned merchantman is a cog bake (5,366 triangles, 17 by 5.6) with its wheel, the pirate a sloop (13). Her deck is deck at the middle, 2.5 out beside the rail, and 7.2 fore and aft (past where a sloop's would end), and water 4 out. Boarding her stands you on it (1.0) with the cargo chest on the deck. The sloop's own deck checks now run on the pirate, which is the sloop. The picture, `docs/prototypes/merchantman-ingame.png`, is the three classes above and the merchantman beside the black sail below.
+
+### Needs eyes
+Her size against the black sail at sea, and whether she reads as a trader from a distance.
