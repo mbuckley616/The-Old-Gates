@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s319</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s320</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -5019,6 +5019,9 @@ function checkQuestProgress(event,data){
   });
 }
 
+// S340 — Charisma's +2% quest reward gold a point, on every quest's pay: the world's quests and faction services
+// (`qTurnIn`), the guild tasks and the two tutorial lines, as well as the legacy chain here. Only this one read it.
+function questGold(n){return Math.round((n||0)*(1+(ATTRS.charisma||0)*0.02));}
 function completeQuest(id){
   const qs=QS[id];const q=getQuest(id);
   if(!qs||qs.state!=='reward')return;
@@ -5027,9 +5030,8 @@ function completeQuest(id){
   // point. At Charisma 5 a 50g reward becomes 55g; at maxed Charisma 20+
   // it can roughly double. Forward-compat math: Math.round so partial-gold
   // truncates cleanly and saves never see fractional values.
-  const _goldMult = 1 + (ATTRS.charisma||0) * 0.02;
   const _baseGold = q.rewards.gold||0;
-  const _finalGold = Math.round(_baseGold * _goldMult);
+  const _finalGold = questGold(_baseGold);
   gold += _finalGold;
   xp+=(q.rewards.xp||0);chkLvl();
   (q.rewards.items||[]).forEach(it=>bagAdd({...it,qty:1}));
@@ -39116,8 +39118,8 @@ var WORLD=(()=>{
   }
   function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
   function turnIn(g){const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
-    st.active=null;st.done++;gold+=t.gold;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${t.gold} gold.`);
-    const rk=rankOf(g);return `Good work. ${t.gold} gold. ${st.done%3===0?`You're a ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
+    st.active=null;st.done++;const paid=questGold(t.gold);gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);
+    const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're a ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
   function offer(g,site){const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const t=commissionFor(g,site)||genTask(g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+` Pay is ${t.gold} gold.`;}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
@@ -40697,7 +40699,7 @@ var WORLD=(()=>{
   function qActive(){return QJ().filter(q=>!q.turnedIn);}
   function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
   function qComplete(q){if(q.done)return;q.done=true;showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);}
-  function qTurnIn(q){q.turnedIn=true;gold+=q.reward||0;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+(q.reward||0);xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${q.reward} gold.`);}
+  function qTurnIn(q){q.turnedIn=true;const paid=questGold(q.reward);q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
   // ── town quests ──
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
   function townQuestFor(site,force){
@@ -40717,7 +40719,7 @@ var WORLD=(()=>{
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id))qAdd(q);if(q.done)return `You've done it? Then ${q.reward} gold, with the ${site.kind}'s thanks.`;return q.desc+` (${q.reward} gold.)`;}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${q.reward} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -41693,7 +41695,7 @@ var WORLD=(()=>{
     if(!q){q={id,giver,title,desc,objective,kind:'tut',data:{},reward:reward||0,tut:true,done:!!done};QJ().push(q);if(typeof addLog==='function')addLog('📜',`${title} — ${giver}`);showMsg(`New quest: ${title}`,'#e8d8a0');}
     else{q.desc=desc;q.objective=objective;q.done=!!done;if(reward!=null)q.reward=reward;}
     return q;}
-  function tutFinish(id,gold_){const q=tutQuest(id);if(q){q.done=true;q.turnedIn=true;}gold+=gold_;xp+=Math.round(gold_*.9);(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+gold_;if(typeof chkLvl==='function')chkLvl();updateHUD();}
+  function tutFinish(id,gold_){const q=tutQuest(id);if(q){q.done=true;q.turnedIn=true;}const paid=questGold(gold_);gold+=paid;xp+=Math.round(gold_*.9);(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;if(typeof chkLvl==='function')chkLvl();updateHUD();}
   function lordName(site){const l=lordFor(site);return `${l.title} ${l.name}`;}
   // ── the town line ──
   function tutTownSite(){const T=TUT().town;return T?siteAnywhere(T.site):null;}
@@ -41726,7 +41728,7 @@ var WORLD=(()=>{
     }
     if(T.site!==site.id||T.step==='done')return out;
     if(T.step==='report')out.push({label:`The ${T.build||'build'} is finished.`,quest:true,fn:()=>{
-      const reward=150+level*20;T.step='done';setProsperity(site,prosperity(site)+3);addFavor(site,1);tutFinish('tut_town',reward);
+      const reward=questGold(150+level*20);T.step='done';setProsperity(site,prosperity(site)+3);addFavor(site,1);tutFinish('tut_town',150+level*20);
       tutLog(`A Town Worth Keeping: ${site.name} (${reward} gold).`);
       const S=story();
       const coda=S.act>=2
@@ -41791,7 +41793,7 @@ var WORLD=(()=>{
     if(!E){out.push({label:'Teach me the sea.',quest:true,fn:()=>{TUT().sea={step:'ferry',note:false,from:null,target:null};tutSeaSync();tickTutSea();
       return story().act>=2?"Good — you'll need it before the Mark. Ferry first, then a hull, then your own crossing, then black sails. I'll be at whatever harbour you're at.":"Ferry first, then a hull, then your own crossing, then black sails. In that order, or you'll drown in the wrong one. I'll be at whatever harbour you're at.";}});return out;}
     if(E.step==='report')out.push({label:"I've taken a pirate's deck.",quest:true,fn:()=>{
-      const reward=200+level*20;E.step='done';tutFinish('tut_sea',reward);tutLog(`Salt Water: Corwin (${reward} gold).`);
+      const reward=questGold(200+level*20);E.step='done';tutFinish('tut_sea',200+level*20);tutLog(`Salt Water: Corwin (${reward} gold).`);
       return story().act>=2?`Then the strait's yours as much as anyone's. ${reward} gold — the reeve paid a bounty on that crew and I took the liberty. Go and count the gates; you won't need the ferries.`:`Then you're a sailor, which is to say poorer and harder to kill. ${reward} gold — the reeve's bounty on that crew. When Aldwyn's commission comes through, the other islands stop being a rumour. You'll have a deck under you when they do.`;}});
     else if(E.step!=='done')out.push({label:'About the sea…',get response(){return tutSeaStage().desc.replace(/^Corwin: "/,'').replace(/"$/,'');}});
     return out;

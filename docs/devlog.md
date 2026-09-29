@@ -8447,3 +8447,18 @@ New `tests/barter.test.mjs`, 7 checks, passing, no page errors. Dunmore's smith 
 
 ### Needs eyes
 Whether 1% a point is felt at the counter before Charisma is well up. At 5 it takes 2 off a 35-gold sword.
+
+## v80 — Session 340 — Charisma's quest gold on every quest
+Found while building Session 339. The Charisma card promises *+2% quest reward gold* a point, and since v61au `completeQuest` has paid it. But `completeQuest` pays only the legacy chain (Q1–Q7). Every other quest pays through its own line, and none of them read Charisma: the world's town quests and the faction services (`qTurnIn`), the guild tasks (`turnIn`) and the two tutorial lines (*A Town Worth Keeping*, *Salt Water*, through `tutFinish`). So most of the gold a character earns from quests ignored the attribute. This fixes the card's own rule where it was missing; the rule is not new.
+
+**What changed.** `questGold(n)` is the sum × (1 + 2% a Charisma point), rounded, and all five payouts use it. `completeQuest` now calls it too, with the same arithmetic as before. The lines that name the sum say what was paid: the town quest's *"N gold."*, the guild head's *"Good work. N gold."*, the tutorials' two speeches and their log lines, and the 🏅 log. The XP each pays is still reckoned on the bare sum, as before. The rule reads the Charisma you own, uncapped, as the legacy chain always has.
+
+### Verified (headless Chromium)
+New `tests/questgold.test.mjs`, 4 checks, passing, no page errors.
+- A world quest of 100 through `qTurnIn`: 100 gold at Charisma 0, 120 at 10. XP was 90 both times.
+- The legacy Q1 (50): 50 at 0, 60 at 10, unchanged from before.
+- Dunmore's Fighters' Guild at 13h, a done task of 80 turned in to the head's *It's done.*: 80 at 0 and 96 at 10. The head says *"Good work. 96 gold."*
+- The tutorials' payout goes through the same `questGold` and is not driven by the test. `crime4` and `shoperrands` pass.
+
+### Needs eyes
+Nothing by eye. With Session 339 this makes Charisma pay at the counter and at the turn-in, which may be the first time a Charisma build feels different to play.
