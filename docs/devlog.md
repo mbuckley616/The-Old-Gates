@@ -7399,3 +7399,12 @@ The legacy bake is not freed when you leave (the world module's `furnFree` does 
 
 ### Needs eyes
 The safehouse in play, since it is the room the story gives the player.
+
+## v80 — Session 296 — The coaching inn's board, tack and bales on the shape kit (H.5, #46 A)
+An inn at the end of a coach line had its own boxes, which Session 287 left: a board of four ink strokes, three shelves with three coloured blocks for tack, and two straw-coloured boxes. They are now one more bake. The board is the guild halls' notice board (Session 292) at 1.4 by .9 with its pinned notes. The tack is three pegs on the east wall, each with a coiled rope and a hanging strap. The bales are rounded, lumpy straw with two twine bands each, one stacked on the other, where the boxes stood.
+
+### Verified (headless Chromium)
+- **`homefurn`**, extended: with a coach line to Dunmore set, the inn is a coaching inn with one more furniture bake than without (3 against 2), and none of the old straw boxes is left. No picture this session; the pieces are the guild board's and the kit's.
+
+### Needs eyes
+The bales' place against the hearth. The old straw box overlapped the inn's hearth (both at the east wall, mid-room), and it still does.

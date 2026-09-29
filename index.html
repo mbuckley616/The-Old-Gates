@@ -760,7 +760,7 @@
     <button style="grid-column:2;grid-row:2" id="ps">▼</button>
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s268</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s269</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39127,9 +39127,11 @@ var WORLD=(()=>{
         house._rooms=2;}
         // a coaching inn: a board by the door and a stable corner if a coach line ends here
         let coachHere=false;try{const sid=String(house.id||'').replace(/^g_/,'').replace(/_\d+$/,'');const Cs=coaches();for(const k in Cs){if(Cs[k].a===sid||Cs[k].b===sid)coachHere=true;}}catch(e){}
-        if(coachHere){boxRaw(1.2,1.35,.16,1.4,.9,.06,0x3a2a18);boxRaw(1.2,1.35,.2,1.2,.7,.02,0xd8c8a0);for(let i=0;i<4;i++)boxRaw(1.2,1.6-i*.15,.22,.9-(i%2)*.3,.03,.01,0x3a2a18);
-          for(let i=0;i<3;i++)boxRaw(W-1.0,1.7,2.0+i*.6,.5,.04,.4,0x4a3018);[0x5a3a20,0x3a2a1a,0x6a4a2a].forEach((c,i)=>boxRaw(W-1.0,1.5,2.0+i*.6,.3,.35,.08,c));
-          box(W-1.2,.25,D*.5,1.2,.5,1.0,0xc8a850);box(W-1.6,.55,D*.5+.2,.6,.3,.5,0xb89840);
+        if(coachHere){ // S296 — the coaching board, the tack and the bales on the kit: one bake
+          const K=furnKit(),P=K.Parts();P.put(K.noticeBoard(1.4,.9,FN,FSEED+11),1.2,.14,0,1.35);
+          for(let i=0;i<3;i++){const z=2.0+i*.6;P(SK.cyl(.02,.02,.4,6),0x3a2a18,W-.2,1.7,z,0,0,Math.PI/2);P(SK.torus(.12,.025,6,16),[0x5a3a20,0x3a2a1a,0x6a4a2a][i],W-.36,1.56,z,0,Math.PI/2,0);P(SK.rbox(.05,.3,.18,.01,1),0x4a3018,W-.38,1.48,z+.1);}
+          for(const [x,y,z,w,h,d] of [[W-1.2,0,D*.5,1.2,.31,1.0],[W-1.6,.31,D*.5+.2,.6,.19,.5]]){P(SK.bumpy(SK.rbox(w,h,d,.06,2),.02,31,2),0xc8a850,x,y+h/2,z);for(const t of [-.25,.25])P(SK.rbox(w+.01,.012,.012,.004,1),0x7a5a2a,x,y+h*.5,z+t*d,0,0,0,1,1,1);}
+          const room=K.bake(P);room.userData.furn=true;sc_.add(room);furnSwap(room);
           house._coaching=true;}
       }
     }catch(e){console.warn('interior variety',e);}

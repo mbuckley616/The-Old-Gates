@@ -49,6 +49,13 @@ const shot2 = await page.evaluate(() => { const sc = interiorScene, W = _I.intW,
   [[W * .8, 1.6, D - .8, W * .42, .45, D * .28], [W * .32, 1.3, D * .84, W - .5, .7, D * .48]].forEach((v, i) => { cam.position.set(v[0], v[1], v[2]); cam.lookAt(v[3], v[4], v[5]); sc.updateMatrixWorld(true); REN.render(sc, cam); x.drawImage(cv, 0, 0, CW, CH, i * CW / 2, 0, CW / 2, CH / 2); });
   return c.toDataURL(); });
 fs.writeFileSync('tests/out/innfurn.png', Buffer.from(shot2.split(',')[1], 'base64'));
+// a coaching inn (Session 296): with a coach line ending at Dunmore the inn gets its board, tack and bales, one more bake
+await page.evaluate(() => { try { exitInterior(); } catch (e) {} const rd = WORLD.roads.find(r => (r.def.a === 'dunmore' || r.def.b === 'dunmore') && r.def.via !== 'spur'); if (!rd) return; const a = rd.def.a, b = rd.def.b; const key = a < b ? a + '|' + b : b + '|' + a; (worldState.coaches || (worldState.coaches = {}))[key] = { a, b }; });
+await page.waitForTimeout(2000); await g.hide();
+await page.evaluate(() => { px = _I.exitX; pz = _I.exitZ; goToInterior(_I); });
+await page.waitForTimeout(4000); await g.hide();
+const coach = await page.evaluate(() => ({ coaching: !!_I._coaching, furn: interiorScene.children.filter(o => o.userData.furn).length, boxes: (() => { let n = 0; interiorScene.traverse(o => { if (o.isMesh && o.geometry.type === 'BoxGeometry' && o.material.color && o.material.color.getHex() === 0xc8a850) n++; }); return n; })() }));
+check('the coaching inn\'s board, tack and bales are one more bake, and the old straw boxes are gone', coach.coaching && coach.furn === inn.furn + 1 && coach.boxes === 0, { coach, before: inn.furn });
 // the picture: an inn room's bed upstairs, close
 const shot3 = await page.evaluate(() => { const b = INT_BEDS[0], sc = interiorScene, cv = REN.domElement, cam = new THREE.PerspectiveCamera(55, cv.width / cv.height, .05, 60); const y = b.y || 0;
   cam.position.set(b.x + 1.5, y + 1.2, b.z + 1.9); cam.lookAt(b.x, y + .3, b.z); sc.updateMatrixWorld(true); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); return o.toDataURL(); });
