@@ -1,64 +1,78 @@
 name: merge
 # Michael, 29 Sep 2026: an approval on the control room or in Slack should reach main without a local Claude session.
-# The producer carries the approval here as a PR comment from the owner's account:
-#   /merge <sha>          merges that exact commit once its CI is green (refuses otherwise)
-#   /merge-anyway <sha>   merges that exact commit whatever CI says (Michael's "merge despite the flake" call)
-# The commit is merged, not the branch head, so commits the builders add after an approval never ride along unapproved.
+# The producer carries each approval here as a line in docs/merge-queue.md on its own branch, auto/producer:
+#   auto/backlog 87cc819031625afb2afc1717d63e4f789bae6e1c merge          merges that commit once its CI is green
+#   auto/systems 7e4b078... merge-anyway                                   merges it whatever CI says (Michael's call)
+# The named commit is merged, not the branch head, so commits the builders add after an approval never ride along.
+# (PR comments were the first try: the Claude GitHub app defangs a comment that starts with a slash command.)
+# A line already on main is skipped quietly; CI still running waits for the next pass; a refusal is said once on the PR.
 on:
-  issue_comment:
-    types: [created]
+  push:
+    branches: [auto/producer]
+    paths: [docs/merge-queue.md]
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   checks: read
   pages: write
 concurrency: merge-main
 jobs:
   merge:
-    if: >-
-      github.event.issue.pull_request &&
-      github.event.comment.author_association == 'OWNER' &&
-      (startsWith(github.event.comment.body, '/merge ') || startsWith(github.event.comment.body, '/merge-anyway '))
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      BODY: ${{ github.event.comment.body }}
-      PR: ${{ github.event.issue.number }}
       REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
         with: { ref: main, fetch-depth: 0 }
-      - name: Merge the approved commit
+      - name: Merge the queued commits
+        id: q
         run: |
-          set -euo pipefail
-          say() { gh pr comment "$PR" --repo "$REPO" --body "$1"; }
-          cmd=$(printf '%s' "$BODY" | head -1 | awk '{print $1}')
-          sha=$(printf '%s' "$BODY" | head -1 | awk '{print $2}')
-          if ! [[ "$sha" =~ ^[0-9a-f]{7,40}$ ]]; then say "merge: no commit sha after $cmd — nothing merged."; exit 1; fi
-          branch=$(gh pr view "$PR" --repo "$REPO" --json headRefName -q .headRefName)
-          git fetch -q origin "$branch"
-          full=$(git rev-parse --verify "$sha^{commit}") || { say "merge: $sha is not a commit I can find — nothing merged."; exit 1; }
-          git merge-base --is-ancestor "$full" "origin/$branch" || { say "merge: $sha is not on $branch — nothing merged."; exit 1; }
-          if git merge-base --is-ancestor "$full" HEAD; then say "merge: ${full:0:7} is already on main."; exit 0; fi
-          if [ "$cmd" = "/merge" ]; then
-            runs=$(gh api "repos/$REPO/commits/$full/check-runs?per_page=100" -q '[.check_runs[] | select(.name != "merge")]')
-            total=$(jq length <<<"$runs")
-            bad=$(jq '[.[] | select(.status != "completed" or (.conclusion != "success" and .conclusion != "skipped"))] | length' <<<"$runs")
-            if [ "$total" = 0 ] || [ "$bad" != 0 ]; then
-              say "merge: CI on ${full:0:7} is not green yet ($bad of $total checks not passed) — nothing merged. Comment \`/merge ${full:0:7}\` again once it is, or \`/merge-anyway ${full:0:7}\` if Michael called it."
-              exit 1
-            fi
-          fi
+          set -uo pipefail
           git config user.name "old-gates-merge"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          title=$(gh pr view "$PR" --repo "$REPO" --json title -q .title)
-          if ! git merge --no-ff "$full" -m "Merge $branch at ${full:0:7}: $title ($cmd, approved by Michael)"; then
-            git merge --abort || true
-            say "merge: ${full:0:7} conflicts with main — nothing merged. The branch needs main merged into it first."
-            exit 1
-          fi
-          git push origin HEAD:main
-          say "merge: ${full:0:7} is on main as $(git rev-parse --short HEAD)."
+          git fetch -q origin auto/producer || { echo "no auto/producer branch"; exit 0; }
+          git show origin/auto/producer:docs/merge-queue.md > /tmp/queue.md 2>/dev/null || { echo "no queue"; exit 0; }
+          merged=0
+          say() {
+            local branch="$1" msg="$2" pr
+            pr=$(gh pr list --repo "$REPO" --head "$branch" --state open --json number -q '.[0].number')
+            [ -z "$pr" ] && { echo "$msg"; return; }
+            if gh api "repos/$REPO/issues/$pr/comments?per_page=100" -q '.[].body' | grep -qxF "$msg"; then return; fi
+            gh pr comment "$pr" --repo "$REPO" --body "$msg"
+          }
+          while read -r branch sha kind _; do
+            [[ "$branch" =~ ^auto/[A-Za-z0-9._-]+$ ]] || continue
+            [[ "$sha" =~ ^[0-9a-f]{7,40}$ ]] || continue
+            [[ "$kind" = merge || "$kind" = merge-anyway ]] || continue
+            git fetch -q origin "$branch" || { say "$branch" "merge: $branch not found — ${sha:0:7} not merged."; continue; }
+            full=$(git rev-parse --verify -q "$sha^{commit}") || { say "$branch" "merge: ${sha:0:7} is not a commit on $branch — nothing merged."; continue; }
+            git merge-base --is-ancestor "$full" "origin/$branch" || { say "$branch" "merge: ${full:0:7} is not on $branch — nothing merged."; continue; }
+            git merge-base --is-ancestor "$full" HEAD && continue
+            if [ "$kind" = merge ]; then
+              runs=$(gh api "repos/$REPO/commits/$full/check-runs?per_page=100" -q '[.check_runs[] | select(.name != "merge")]')
+              total=$(jq length <<<"$runs")
+              waiting=$(jq '[.[] | select(.status != "completed")] | length' <<<"$runs")
+              failed=$(jq '[.[] | select(.status == "completed" and .conclusion != "success" and .conclusion != "skipped")] | length' <<<"$runs")
+              if [ "$total" = 0 ] || [ "$waiting" != 0 ]; then echo "${full:0:7}: CI still running ($waiting of $total)"; continue; fi
+              if [ "$failed" != 0 ]; then say "$branch" "merge: CI on ${full:0:7} finished red ($failed of $total checks) — nothing merged."; continue; fi
+            fi
+            title=$(gh pr list --repo "$REPO" --head "$branch" --state open --json title -q '.[0].title')
+            if ! git merge --no-ff "$full" -m "Merge $branch at ${full:0:7}${title:+: $title} ($kind, approved by Michael)"; then
+              git merge --abort || true
+              say "$branch" "merge: ${full:0:7} conflicts with main — nothing merged."
+              continue
+            fi
+            git push -q origin HEAD:main || { git reset -q --hard origin/main; say "$branch" "merge: pushing ${full:0:7} to main failed — nothing merged."; continue; }
+            say "$branch" "merge: ${full:0:7} is on main as $(git rev-parse --short HEAD)."
+            merged=1
+          done < <(grep -E '^auto/' /tmp/queue.md)
+          echo "merged=$merged" >> "$GITHUB_OUTPUT"
       - name: Rebuild the Pages site
+        if: steps.q.outputs.merged == '1'
         continue-on-error: true
         run: gh api -X POST "repos/$REPO/pages/builds"
