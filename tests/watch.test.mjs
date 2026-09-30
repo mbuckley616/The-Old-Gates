@@ -44,5 +44,14 @@ const follow = await page.evaluate(() => { forceTime(12); const S = WORLD.settle
 check('favour −1: no one follows', follow.noneAtMinus1, follow);
 check('favour −2: one guard trails you at six to eight units, and keeps up when you walk on', follow.name && follow.d1 >= 5.9 && follow.d1 <= 8.6 && follow.d2 >= 5.9 && follow.d2 <= 8.6 && follow.same && follow.others === 1, follow);
 check('he stops when favour recovers or you leave the pad', follow.dropped && follow.offPad, follow);
+// Session 357: the trailing guard stood for good 21.5 units off, at a house corner the pulled-straight way missed
+// (npcStep gave up; CI on ed2bce7, and 1 run in 3 locally). From that very spot he now reaches you by the street grid.
+const corner = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); const site = S.site;
+  const tick = n => { for (let i = 0; i < n; i++) WORLD.tick(1 / 60, performance.now()); };
+  px = site.x + 6; pz = site.z - 6; jumpY = 0; worldState.favor[site.id] = -2; tick(2); const f = S._follower; if (!f) return { none: true };
+  f.g.position.set(13536.1, WORLD.worldH(13536.1, 25385.9), 25385.9); f._fw = null; f._fwT = 0; tick(60 * 20);
+  const d = Math.hypot(px - f.g.position.x, pz - f.g.position.z); const same = S._follower === f; worldState.favor[site.id] = 0;
+  return { name: f.def.name, d: +d.toFixed(2), same }; });
+check('from the house corner where he stuck (21.5 units off), the trailing guard reaches six to eight units within 20 s', !corner.none && corner.same && corner.d >= 5.9 && corner.d <= 8.6, corner);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

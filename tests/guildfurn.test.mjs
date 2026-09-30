@@ -4,12 +4,12 @@ import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
-const enter = async type => { await page.evaluate(() => { try { if (interiorScene) exitInterior(); } catch (e) {} }); await page.waitForTimeout(1500); await g.hide();
+const enter = async type => { await page.evaluate(() => { try { if (interiorScene) exitInterior(); } catch (e) {} }); await page.waitForFunction(() => !currentHouse, null, { polling: 100, timeout: 60000 }); await g.hide();
   const ok = await page.evaluate(type => { let h = null; for (const S of WORLD.settle.values()) { h = S.houses.find(x => x.type === type); if (h) break; }
     if (!h) { const c = WORLD.SITES.filter(t => t.pad && ['city', 'town'].includes(t.kind)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
       for (const t of c.slice(0, 30)) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(x => x.type === type); if (h) break; } }
     if (!h) return false; window._S = h; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, type);
-  if (ok) { await page.waitForTimeout(4000); await g.hide(); } return ok; };
+  if (ok) { await page.waitForFunction(() => interiorScene && currentHouse === _S && scene === interiorScene, null, { polling: 100, timeout: 60000 }); await g.frames(5); await g.hide(); } return ok; };
 const look = () => page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, furn = sc.children.filter(o => o.userData.furn); let meshes = 0, cyl = 0; sc.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'CylinderGeometry') cyl++; } });
   const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);
   return { type: _S.type, W, D, furn: furn.length, big: Math.max(...furn.map(f => f.userData.tris)), meshes, cyl, beds: INT_BEDS.length, desk: fh(W / 2, 3.4, .6, .7), table: fh(W / 2, D * .3, .4, .5), npcs: WORLD.intNpcs.length }; });

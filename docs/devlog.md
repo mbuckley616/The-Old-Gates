@@ -9268,6 +9268,40 @@ The fix is in the test only: it draws and reads the minimap four times before co
 ### Needs eyes
 - Nothing to see in play. If `watch` is still red on this PR after main carries Session 357, that is the next CI session.
 
+## v80 — Session 372 — `watch` and `hourhitch` red on the Auto sessions PR: the systems builder's fixes, ported (CI fix)
+Section H has nothing workable left: every item is done or answered, no question is pending in `docs/decisions.md`, and the quest review's Findings 1–4 are already on main. So this run's one session is CI. The Auto sessions PR's run on `7ec445a` (the merge of main at 13:24) failed two suites, `watch` and `hourhitch`. The sixth shard was cancelled after it had passed 20 of 20.
+
+Both are the systems builder's, and both are fixed on auto/systems but not yet on main. Session 360 left `watch` to arrive through main. It has not, so both fixes are ported here word for word. They no-op when main takes auto/systems.
+- **`watch`** (the trailing guard 36–41 units off): Session 358's `trailStep` in the world module. When the guard has gained nothing on you for a second and a half (a house corner the pulled-straight way misses, where `npcStep` gives up), he takes every cell of the street grid. The chasing guard uses the same step. The ported hunk is Session 358's `index.html` change without its build-tag line. auto/systems has not touched those lines since, so the later merge meets the same text on both sides. Its test file is ported verbatim, including the check from the corner where he stuck.
+- **`hourhitch`** (a frame over 8 s after a change of hour): the test file as auto/systems has it after Sessions 358 and 362. The first greeting bubble's program, and a step in which a foe's program first appears, count as a first use, not the hour. That change is in the test only.
+
+### Verified (headless Chromium)
+- `watch` 7/7 with the port. The trailing guard is at 7.99 both times. From the corner he reaches 7.99 within 20 s.
+- `watch` on this branch's code *without* the ported hunk fails the corner check: he stands at 21.49 for the whole 20 s. That is the failure reproduced.
+- `hourhitch` 6/6. This run shows the case CI hit: the step to 21h took 8,922 ms as a foe's skinned material compiled on first draw. It is set aside and named. The judged worst is 4,218 ms against a noon worst of 1,923.
+- `guardsindoor`, `beat` and `constable` (the guards' other paths) pass.
+
+### Needs eyes
+- Nothing to see in play beyond Session 358's own note: a guard trailing you round a house corner should now come round it.
+- `npm install`'s postinstall still exits 1 in the cloud container on this branch. Session 370's fix for that is on auto/systems and reaches here through main. The packages install regardless.
+
+## v80 — Session 377 — `guildfurn` read the hall before it was built (CI fix)
+Section H still has nothing workable: every item is done or answered, `docs/decisions.md` has nothing pending, there are no open DECISION issues, and the quest review's last run had no findings. The Auto sessions PR's run on `51943c2` (Session 372) failed one suite on shard 4: **`guildfurn`**, straight after *a guild_f hall is found*, with `Cannot read properties of null (reading 'children')`. The test found the hall, called `goToInterior`, waited a fixed 4 s and then read `interiorScene`, which was still null.
+
+`goToInterior` builds the room inside `doFade`'s callback, which a 440 ms `setTimeout` runs. On a loaded CI runner the page's main thread is busy with software GL frames and the settlements the test has just generated, so that timer can fire after the 4 s have passed. That is a fixed pause standing in for a state the test can wait on. The fix is in the test only:
+- After asking to leave a room, it waits until `currentHouse` is cleared.
+- After `goToInterior`, it waits until `currentHouse` is the hall, `interiorScene` exists and `scene` is it. The same callback sets all three and builds the room. Then it waits five real frames of the loop.
+- Each wait polls every 100 ms for up to 60 s.
+
+`civicfurn` has the same `enter` helper and fixed pauses. It has not failed on CI, so it is left alone here.
+
+### Verified (headless Chromium)
+- **Reproduced:** with `doFade`'s callback delayed to about 5 s (as a slow runner would), the old test fails exactly as CI did: `TypeError: Cannot read properties of null (reading 'children')` after *a guild_f hall is found*.
+- With the same delay, the new test passes 7/7.
+- Without the delay, the new test passes 7/7 three runs in a row. The counts are unchanged from Session 293: seven furniture objects a hall, the desk and the table footholds, eight or more beds and three members.
+
+### Needs eyes
+- Nothing to see in play. The game is unchanged apart from the build tag.
 ## v80 — Session 368 — The split script (backlog K, step 1: prep, no freeze)
 Michael's 30 Sep answer on `docs/design/split-plan.md` was all seven recommendations, so this session built the tooling for backlog K's first step on `auto/split`, without touching the layout main runs on. Two things are in the branch: one small change to the game's code, and the scripts and harness changes that will cut it up on switch-over day.
 
