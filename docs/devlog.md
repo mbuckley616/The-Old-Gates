@@ -8742,4 +8742,17 @@ Backlog I, the critic's s321 (PR #72, two lines): *arrows are a money loop*, and
 New `tests/buyprice.test.mjs`, 7 checks. All pass on this build, and 5 of them fail on the previous one (which reproduces the critic's 2 → 60 for the dozen). Four Dunmore counters were used (Clodagh's Goods, Lorcan's Forge, Bríd's Armoury, Cathal's Apothecary), and every row was bought and sold back through `buyItem` and `sellItem` at Charisma 0, 10 and 25: 84 rows in all. Every bought copy keeps its price, and nothing sells for more than it cost. The widest case, at Charisma 25, is Greater Potion 29 → 25 and Iron Sword 26 → 20. Every piece sells for exactly what a found copy does. At Charisma 0: Iron Sword 35 → 16, Iron Cuirass 43 → 19, Greater Potion 39 → 20, Elixir of Warding 39 → 16, Wooden Bow 4 → 1. A dozen arrows sells for 0 and all twelve stay in the bag. A found piece sold and then bought back returns to its own price (8, 5, 15, 15), and `_serItem` keeps that price. `barter` (7/7), `counters` and `shoperrands` pass. No page errors.
 
 ### Needs eyes
-Whether arrows should sell at all. A dozen for 2 means a single arrow is worth a sixth of a coin. If Michael wants arrows to sell, the options are selling a dozen at a time or a higher price, and both are his call. Also whether a keeper's resale margin now feels right: at Charisma 0 you get back 40–51% of what you paid.
+Whether arrows should sell at all. A dozen for 2 means a single arrow is worth a sixth of a coin. If Michael wants arrows to sell, the options are selling a dozen at a time or a higher price, and both are his call. Also whether a keeper's resale margin now feels right: at Charisma 0 you get back 40–51% of what you paid for most pieces, and less for the cheapest (a Wooden Bow bought for 4 sells for 1).
+
+## v80 — Session 367 — `wholepoints` measured whatever towns the loader had reached (4a128db's CI red)
+This run's one CI-fix session. On Session 364's head (4a128db), CI failed one check in `wholepoints`, the untended world's 120-day baseline. The runner got mean −6.5 and least −67, where the check pins −6.7 and −77. The check passed here. The producer flagged it as a new failure, not the known flake.
+
+**Cause.** It is the test, not the game. The daily tick runs over `WORLD.SITES`, the towns of the cells loaded so far. That list fills in while the loader works: 17 towns a moment after arrival, 52 once the nine cells round home are in. The test snapshotted `worldState.towns` at whatever moment it reached that line. Any town the world had not yet touched was then created inside the seeded run, so its fate was drawn from a different stream of the same seed. The numbers therefore depended on the runner's speed. Reproduced here: run at once, the "world" is 17 towns (mean −0.9). After a 40 s wait it is 52, with six towns near Carrigowen's Lair abandoned to 0 (−37 to −77).
+
+**The fix (test only).** The test loads the nine home cells itself (`WORLD.loadCell`), and each run starts every town from its own base (`TS()` makes one from its id alone), not from the boot's snapshot. The boot's clock and towns are put back afterwards. The pinned numbers move from −6.7 to **−6.8** (least −77, most 0, 52 towns), because no town now carries a minute of boot-time drift. The check is still what it was: the untended world does not move when Session 272's fractions change. Its four other checks are unchanged. No game code changed.
+
+### Verified (headless Chromium)
+The same numbers (52 towns, mean −6.8, least −77, most 0) in three runs side by side: run at once, after a 60 s wait, and the suite as written. Before the fix, the first two gave 17 towns at −0.9 and 52 at −6.8, and the CI runner gave 52 at −6.5. `wholepoints` passes 6/6.
+
+### Needs eyes
+Nothing.
