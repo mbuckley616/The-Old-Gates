@@ -6,8 +6,15 @@ name: merge
 # The named commit is merged, not the branch head, so commits the builders add after an approval never ride along.
 # (PR comments were the first try: the Claude GitHub app defangs a comment that starts with a slash command.)
 # A line already on main is skipped quietly; CI still running waits for the next pass; a refusal is said once on the PR.
-# It runs on a timer, from main's copy of this file: a push trigger would run the pushing branch's copy instead.
+# It runs from main's copy of this file: a push trigger would run the pushing branch's copy instead.
+# 30 Sep 2026: GitHub fired the 10-minute timer once in six hours, and two approved, green merges sat in the queue.
+# So it also runs whenever a check run finishes (workflow_run always uses main's copy). That covers both moments that
+# matter: the producer writing the queue (its PR's checks finish minutes later) and a queued commit's CI going green.
+# The timer stays as a backstop.
 on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
