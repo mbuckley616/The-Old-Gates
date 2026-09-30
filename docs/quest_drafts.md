@@ -120,3 +120,153 @@ The topic appears at any church once `booksRead.has('seventh_niche')` or the cha
 - *Cill an Aoi.* The book's *"given no face"* agrees with the chapel's *"a statue with no face."*
 - *Where the canon is silent:* whether the old shrines had a seventh niche. The canon says the Guest is *found in defaced niches* and has *no shrine*. I chose the plainer reading: a niche beside each god's altar, struck empty, and no shrine of its own.
 - *Register.* The Aurennais lines use *Master*, terms, clauses and no oath. The Gatelander lines give a proverb, never a bare yes or no, and swear by the Weaver. The Markish lines are short, with *aye* and no honorific. The Old Blood lines are few and put *An tAoi* first.
+
+---
+
+## The Shrines Remember — the third prayer
+
+*Unapproved. Drafted 29 Sep 2026. Backlog A, consequence hooks: shrines remembering (three prayers → the boon permanent). Canon §12: `shrines[id].count`, third prayer at one shrine → that shrine's boon becomes permanent.*
+
+### What the canon fixes, and where it is silent
+
+Canon §4.1 gives six gods a shrine each. Each shrine has a statue and a boon in its god's domain: An Mhuir the Road, An Spéir Renewal, Na Beithígh the Arm, An Chloch Stone, An Teallach the Mind, and An Fíodóir a sigil rubbing. §12 says the third prayer at one shrine makes that shrine's boon permanent. The Irish-register culture worshipped *what the builders were making*, not the builders. The gods are the loom's works, so nothing here makes a god speak.
+
+Where the canon is silent, I chose the plainer thing:
+- **What counts as a prayer.** A prayer counts when it gives a boon, which the build already allows once a game-day per shrine. Three prayers are three days, and they need not be in a row.
+- **The count is per shrine.** Two shrines to An Mhuir keep separate counts.
+- **One keeping per god.** Once one shrine of a god has kept you, a third prayer at another of that god's shrines keeps nothing more, and the altar says so. The five kept boons can all be held at once, one per god. How they stack is a balance question for the systems builder, not a story one, and this draft doesn't answer it.
+- **The Weaver keeps nothing.** Its boon is a rubbing (§4.1). A rubbing can't be kept, so the third prayer there gives only its line, and the rubbing comes each day as before.
+- **What stays.** Every prayer still restores health, mana and stamina.
+- **The Church's view of the six.** The canon names the Church of the Weaver as a later Aurennais institution *that took the name and forgot the price*. It doesn't say what the Church thinks of the other five. I chose the reading that agrees with its line on the Guest (*a mistake of the old culture*): the Church holds that the old people named the Weaver's works as six persons. It calls that an error of emphasis, and it tolerates it.
+
+**Shape.** It isn't a quest-log quest. It is a counter at each shrine, with three states (first prayer, second prayer, kept) and a line at each. The draft also gives one priest topic in four voices, and three rumours.
+
+**Changes.** A kept boon never runs out: it is not in `ACTIVE_BUFFS`, it is not replaced by a potion of the same type, and it survives a load. The character sheet lists it. Nothing else in the world changes.
+
+**Reward.** The god's boon, kept. No gold and no XP.
+
+### 1. The altar, prayer by prayer
+
+The prompt is unchanged: `Press 'E' to pray to An Mhuir, the Sea`.
+
+**First prayer at a shrine** — unchanged:
+> You are restored, and carry the Boon of the Road until tomorrow.
+
+(At the Weaver's shrine, unchanged: *You are restored. The Weaver leaves a rubbing on the altar: {gate}.*)
+
+**Second prayer** is a toast. The god's line goes first, then today's boon clause, which is unchanged:
+
+| God | Line (then *"You are restored, and carry {boon} until tomorrow."*) |
+|---|---|
+| An Mhuir | Salt on the altar, and no sea in sight. |
+| An Spéir | The shadow on the sundial falls a moment late. |
+| Na Beithígh | A hare sits up at the edge of the steps and watches you kneel. |
+| An Chloch | The altar is warm, and the day is not. |
+| An Teallach | The flame steadies when you kneel. |
+| An Fíodóir | The flame leans toward you, then remembers itself. *(then the rubbing clause, unchanged)* |
+
+**Third prayer: kept.** A popup in the register of the Mouth and the keystones: second person, what you see first, then what it means, then the plain fact. The title is the shrine's name. The god's name comes from `S.god.name`.
+
+**Shrine of An Mhuir**
+> The flame leans away from you, the way a candle leans in a draught off open water, though there is no water here and no draught. The hull on the altar is carved keel-up, as the old people carved it: a boat turned over is a boat come home.
+>
+> The old people said the sea owns them twice a day. It owns a little of you now. The Boon of the Road is yours, and does not wear off.
+
+**Shrine of An Spéir**
+> The sundial on the altar throws its shadow where the hour says it should, and then, for a breath, a little further on, as if the day had been told something and was turning it over.
+>
+> The sky does not hurry, and it does not forget. The Boon of Renewal is yours, and does not wear off.
+
+**Shrine of Na Beithígh**
+> The wolf on the altar is worn smooth at the muzzle, where hands have touched it for luck longer than there have been names for luck. Your hand fits the wear.
+>
+> Her children do not know their mother. She knows them, and she knows you now. The Boon of the Arm is yours, and does not wear off.
+
+**Shrine of An Chloch**
+> The gate carved on the altar is shut. It was carved shut; nobody alive has seen it any other way. Under your palm the stone is warm, the way a wall is warm long after the sun has left it.
+>
+> What the stone takes, it holds. The Boon of Stone is yours, and does not wear off.
+
+**Shrine of An Teallach**
+> The lamp on the altar has no wick and never had, and the flame above it burns anyway, low and steady, the way a kitchen fire burns when someone is expected home.
+>
+> The Hearth keeps the names of those who come in off the road. It has yours. The Boon of the Mind is yours, and does not wear off.
+
+**Shrine of An Fíodóir**
+> The shuttle on the altar lies across the stone the way a shuttle lies when the weaver has only set it down. There is a thread caught under it. There is always a thread caught under it; the priests say it is carved, and it is.
+>
+> The Weaver gives no boon to keep. It leaves you a rubbing, as it does. But the flame has turned toward you, and it does not turn back.
+
+**Log line on the third prayer** (not at the Weaver's shrine):
+> ⛩ {Shrine name} keeps you: {boon label}, for good.
+
+At the Weaver's shrine the log line is unchanged: *Prayed at Shrine of An Fíodóir: …*
+
+**Every prayer after the third** at the shrine that kept you. This is a toast, and it replaces today's line:
+> You are restored. The altar knows you.
+
+At the Weaver's shrine, the rubbing clause as today, after *You are restored.*
+
+**A third prayer at a second shrine of a god that has already kept you** (a toast):
+> You are restored. A shrine of {god name} has kept you already, and a god keeps a person once.
+
+**Too soon** — unchanged: *The altar is quiet. Come back tomorrow.*
+
+**Character sheet**, one row per kept boon:
+> Kept at {shrine name}: {boon label}
+
+### 2. The priest — *"Do the old shrines remember?"*
+
+This topic appears at any church once the player has prayed at any shrine (`worldState.shrines` has an entry). It has two states: **before** (nothing kept yet) and **after** (at least one boon kept). The priest's people is `def.people||peopleOfSite(site)`, as in the Guest draft.
+
+**Aurennais priest** (the Church's line):
+- *"Do the old shrines remember?"* → "The Church's position, Master, is that the old people named the Weaver's works as though they were six persons, and knelt to the works. It is an error of emphasis, and a tolerated one. Whether a shrine keeps an account of who kneels at it is not a question the Church has put in writing."
+  - Follow *"And if it does?"* → "Then it keeps better books than the Church allows, and I would not care to be in arrears with it. Three visits, the country people say. I neither advise it nor forbid it."
+- *After* → "You have been three times to one of them, Master, I think. The country people have a word for that. The Church has no form for it, and no fee."
+
+**Gatelander priest:**
+- *"Do the old shrines remember?"* → "My grandmother said a shrine is like a neighbour. Call once and you're a stranger, twice and you're company, and three times you're family, for better and for worse. I never found her wrong about neighbours."
+  - Follow *"For worse?"* → "Family is kept. You don't get to stop being kept because you'd rather not be. Weaver keep you, and the other five as well."
+- *After* → "You've been kept, so. It's done now, and it can't be undone, and my grandmother would tell you that was the point of it."
+
+**Markish priest:**
+- *"Do the old shrines remember?"* → "Aye. Three times at one altar and it keeps you. Don't ask me how. I light the lamps."
+  - Follow *"Is it the Weaver?"* → "Church says it's all the Weaver. The stones don't say. By iron, I've seen it take hold of men who'd laugh at you for asking."
+- *After* → "Kept, are you. Good. Don't waste it."
+
+**Old Blood priest** (sparing; the older word first):
+- *"Do the old shrines remember?"* → "Cuimhne. Memory. The stone does not pray back. It remembers. Three is the old number for it."
+  - Follow *"Why three?"* → "Once is passing. Twice is chance. Three times is a road. The stone keeps roads."
+- *After* → "The stone has you. That is not nothing."
+
+### 3. Rumours
+
+One line added to each register's pool in `RUMORS`. The Aurennais line contradicts its own speaker's Prior, and the Markish line is a captain who would not admit it:
+- `irish`: "Pray three days at the one shrine and it keeps you, they say. My aunt did it at An Chloch's. She's not had a cold since, she tells me, and she tells me often."
+- `anglo`: "A captain up the valley went three days running to the wolf altar. Swings like two men now. Won't say a word about it."
+- `french`: "The country people hold that a shrine keeps an account of its visitors and settles it on the third. The Prior calls it superstition. The Prior has been seen at one. Twice."
+
+### What in the code would carry it
+
+- **worldState.** `worldState.shrines[siteId]` is a number today: the game-minute of the last prayer (`shrineInteract`, grep `The altar is quiet`). It becomes `{t, n}`, where `n` counts the prayers that gave a boon. On load, `ssSanitizeLoaded` turns a bare number into `{t:number, n:1}`. A new `worldState.shrineKept = {godKey: siteId}` holds one entry per god. Both are saved with `worldState`.
+- **The prayer.** In `shrineInteract`, after the too-soon check:
+  - `n += 1`.
+  - `n === 2`: prefix the god's line.
+  - `n === 3`, the god has a boon, and `shrineKept[god.key]` is unset: set it, open the popup (the same popup the Mouth and keystones use), log the line, and skip the timed `_applyBuff`.
+  - `n === 3` at a shrine whose god another shrine has kept: the *keeps a person once* toast.
+  - `n > 3` at the keeping shrine: the *knows you* toast.
+  - The Weaver: `n === 3` opens its popup and the rubbing still drops.
+  - The lines live in a table keyed by `god.key` (`muir, speir, beithigh, cloch, teallach, fiodoir`), next to `GODS`.
+- **The kept boon.** It must not go through `ACTIVE_BUFFS`, which is cleared on load. (Before Session 341, `_applyBuff` also replaced any buff of the same type.) The plainer carrier is a `keptMult(type)` read from `shrineKept` via `GODS`, multiplied into `_buffMult(type, def)`, so every existing reader picks it up.
+- **The boons themselves (correction, after this draft was written).** When I drafted this, three of the five boon types were read nowhere: `swiftness` (the Road), `warding` (Stone, and the Shield spell) and `regen` (Renewal). The systems builder has since fixed all three on main: Session 316 (`tests/wardswift.test.mjs`) made `warding` scale damage taken and `swiftness` scale speed, and Session 338 made Renewal restore 0.5/s. Session 341 also changed stacking: a weaker buff of the same type no longer ends a stronger one. The carrier described above still holds, because `ACTIVE_BUFFS` is cleared on load.
+- **The priest.** Next to `penanceTopics(site)` in the church's `_extraFn` (grep `the priest hears a confession`), add `shrineTopics(site, def)`. It returns `[]` unless `worldState.shrines` has a key. In the before state it is a folder with one follow; in the after state it is a single response. It sits beside the Guest draft's `guestTopics` if that is built.
+- **Rumours.** One string appended to each of `RUMORS.irish`, `RUMORS.anglo` and `RUMORS.french`.
+- **Character sheet.** Next to the People row (grep `row('People'`), one row per `shrineKept` entry.
+
+### Checked against the canon
+
+- *No chosen-one prophecy.* Nothing is said about the player beyond what they did three times. None of the three descriptions appears. The Weaver's *the flame has turned toward you* is the loom noticing, in the register of the tutorial's *something turns its attention toward you*. It is not a calling.
+- *Na Beithígh.* *"Her children do not know their mother"* is §4.1's scripture, and so is An Mhuir's *owns them twice a day*.
+- *The gods are works, not persons.* No god speaks. The altars change, and the priests argue about what that means.
+- *Register.* The Aurennais priest uses *Master*, qualifiers and account metaphors, and no oath. The Gatelander priest speaks in a proverb, gives no bare yes or no, and swears by the Weaver. The Markish priest is short, says *aye*, and swears by iron. The Old Blood priest says little and puts *cuimhne* first.
+- *Slurs and contradictions.* None are used here. The Aurennais rumour contradicts its own Prior, which is the canon's pattern (§2.1).
