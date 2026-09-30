@@ -9615,3 +9615,32 @@ This is G's owed check from Session 157, *whether the Town Guard is too hard at 
 
 ### Needs eyes
 The fight itself: the approach, the blocks and the rolls this race leaves out, and whether 20 swings at a guard feels like a slog or a fight.
+
+## v80 — Session 373 — The Yard at Caer Slige
+Michael's A on #69: Hesket Rowe lives if she yields and is spared. The quest writer's draft, *The Yard at Caer Slige* (`docs/quest_drafts.md`), is built here, its lines word for word. It is also section B's owed *duels wait on a duel existing*. Until now the League's ninth service was a `road` quest with no camp: a Bandit Captain wearing Rowe's name, fought to the death. Winning it cleared a road at the seat, the compass drew it as *the camp*, and the Captain's line after it spoke of her burial.
+
+**What changed.** The service is its own quest kind, `duel`, with `data.state` running `wait` → `fight` → `yielded` → `won`, or `lost` or `murder`. `tickDuel(dt)` in the world's tick does the work:
+- **The yard.** Within 180 units of the spot east of the walls (the same `site.x+pad+14` as before), from 6h to noon, it lays a ring of 12 stakes and a rope, 5 units in radius. Round it stand a yard-sergeant and seven watchers of the garrison, Markmen with names from the Mark's bank, seeded by the quest so they are the same each visit. Rowe waits inside as a person. Her greeting is chosen by the player's people, and she has her two topics. Out of the ring's hours only the sergeant is there, with *Ring's down. It goes up at first light…*. The hour turning over re-lays or clears the yard.
+- **The fight.** The sergeant's *Call it.* puts a Bandit Captain named Hesket Rowe where she stood, with the full combat set, and logs *The duel at Caer Slige*. The watchers call out every 6–9 s, never the same line twice running. They name you by what is in your hand (*Blade*, *Hatchet*, *Hammer*, *Bowstring*, *Stick*, *Pin*, *Fists*), and they call a broken posture on either side.
+- **Her yield.** At a quarter of her health she kneels and holds (`_duelHold`, an early return in `tickZoneEnemies`). The kill path asks first (`WORLD.duelKill`, at the top of `killZoneEnemy`): a blow that would kill her before the yield leaves her at a quarter instead. Three seconds unstruck and she is spared. The ring comes down, she stands as a person with *Good fight…*, the quest completes and `league.rowe = 'alive'`. A blow after the yield kills her. That is `murder`: the sergeant's *She yielded. Every one of us saw it.*, the watchers turn their backs, the League is closed and `league.rowe = 'dead'`.
+- **Your yield.** Below 30% health Rowe offers it as the guard does, and holds while you answer. *I yield.* is a loss. So is stepping more than a unit past the rope once you have been inside. So is a killing blow: `playerDead` asks `WORLD.duelDown` first, and the ring holds you at 1 health, with no death counted. A loss sets `league.rowe = 'captain'` and a rematch day seven days on. The Captain names it once (*Give your arm a week*), then says *Not yet.* until the day comes, and the ring is laid again.
+- **The turn-in.** On `won`, rank 3 and the war as before, with the new line. The rank sentence now opens with a capital (*The Captains' League names you Captain.*), as the draft asked. On `murder`, the Captain turns you out with nothing paid, logs *The Captains' League has closed its gates to you.*, and the seat offers only *Not you. We've a long memory for the yard…* after. The compass marks *the yard* with ⚔ until you lose.
+
+`league.rowe` and `closed` sit inside `worldState.factions`, which the load already reads back. A save taken mid-fight lays the ring again from `wait`.
+
+**Left for the next session.** From the draft: Rowe at the seat afterwards (rank-3 League lines when she lives, *Captain Rowe* until the rematch), the murder rumour, and the occupied League town losing its duels (§12a). Out of the ring's hours Rowe is not yet anywhere to be seen. The draft's §10, the Compact's *cold-eyes* line, is the author's to take, so it is left alone.
+
+### Verified (headless Chromium)
+New `tests/duel.test.mjs`, 17 checks, passing, no page errors. At Caer Slige, with the League at eight services:
+- The service is a `duel`: *Meet Hesket Rowe in the ring east of Caer Slige*, and the brief carries the ring. At 8h, 24 ring parts, the yard-sergeant, 7 watchers and Rowe are there. The ground varies 0.2 units across the ring. The sergeant's topics are the rules, the weapons, *And if she dies?* and *Call it.*. Rowe greeted a Gatelander with *A turf-cutter on the yard…*.
+- *Call it.* gives a Bandit Captain of 62 health named Hesket Rowe. A blow taking her to −5 left her at 15 (a quarter), kneeling and yielded. 200 ticks later she was spared, stood as a person, and the ring was down. At the Captain: *The Captains' League names you Captain. Acclaimed. Rowe says you fought well…*, rank 3, nine services done.
+- A blow of 3 after the yield: dead, `murder`, the League closed, all seven watchers turned through π, and the ring down. At the Captain the murder line with the services left at eight, then *Serve the Captains' League?* → *Not you.*
+- At 20% health Rowe's offer opened and she held. *I yield.* → `lost`, rematch day 7, Rowe the Captain, not dead. The Captain gave the week, then *Not yet.* A week on the ring was laid again. Stepping 6.5 units out in the fight was a loss. `playerDead()` at 0 health in the ring left 1 health, `dead` false, and no death counted.
+- At 14h only the sergeant, with *Ring's down*, and no *Call it.*. At 8h the ring was back.
+
+`caravan`, `crime3`, `crime4`, `prices`, `foes` and `reader` pass.
+
+### Needs eyes
+- The fight itself: whether a Bandit Captain's numbers make Rowe a worthy finale at a Reeve's level, and whether the watchers' calls read above the fight.
+- Rowe's kneel is her body lowered 0.45 units, not a pose. A real kneel is the look builder's.
+- The ring and its people at Caer Slige's yard: whether the spot east of the walls is clear of the town's buildings and road on every world.

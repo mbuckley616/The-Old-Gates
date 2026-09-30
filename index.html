@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s338</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s339</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -15203,6 +15203,7 @@ function tickZoneEnemies(dt,now,sc){
   });
   ZE.forEach(e=>{
     if(e.dead||e.locked)return;
+    if(e._duelHold)return; /* S373 — Rowe holds: talking, or on one knee */
     // v61gj — Defensive lazy init for pre-ship saves (enemies in ZONES[id].enemies
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);
@@ -15803,6 +15804,7 @@ function lootDropChance(e){
 }
 
 function killZoneEnemy(e,sc,tag=''){
+  if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12
   e.dead=true;
   if(e._guard&&typeof WORLD!=='undefined'&&WORLD.guardKilled)try{WORLD.guardKilled(e);}catch(err){} // S157
@@ -29397,6 +29399,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     goToDungeon(p);setTimeout(()=>{try{if(W.floor===2&&typeof FLOOR2_Y!=='undefined'){currentFloor=2;}if(W.x!=null){px=W.x;pz=W.z;}if(W.yaw!=null)yaw=W.yaw;if(W.jumpY!=null)jumpY=W.jumpY;else jumpY=(currentFloor===2?FLOOR2_Y:0);}catch(err){}},900);return;}
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
+  if(typeof WORLD!=='undefined'&&WORLD.duelDown&&WORLD.duelDown())return; /* S373 — the ring holds you at 1 health */
   if(typeof WORLD!=='undefined')WORLD.noteDeath(); // v80 — the reader counts
   if(dead)return;dead=true;
   // v80 S9 — no respawn, no bag wipe, no autosave: a death screen that loads a save.
@@ -41347,7 +41350,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(q.kind==='retrieve'&&!d.got)push(d.x,d.z,GREEN,d.item||'the heirloom','\u25c6');
       else if(q.kind==='find'){if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\ud83d\udc64');else push(d.x,d.z,GREEN,d.who,'\ud83d\udc64');}
       else if(q.kind==='deliver'){const t=siteAnywhere(d.siteId);if(t)push(t.x,t.z,GREEN,d.who);}
-      else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');}
+      else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
+      else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');}
     // guild tasks
     const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t||taskDone(t))continue;const x=t.sx!=null?t.sx:t.x!=null?t.x:(t.siteId?(siteAnywhere(t.siteId)||{}).x:null),z=t.sz!=null?t.sz:t.z!=null?t.z:(t.siteId?(siteAnywhere(t.siteId)||{}).z:null);if(x!=null)push(x,z,t.kind==='clear'?RED:GREEN,t.short,t.kind==='relic'?'\u25c6':(t.kind==='beast'||t.kind==='wizard'||t.kind==='creature'||t.kind==='hunt')?'\u2620':undefined);}
     // the story
@@ -41915,10 +41919,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function factionTopics(site){
     const nk=nationKeyOf(...cellOf(site.x,site.z));const fk=factionOf(nk);const F=FACTIONS[fk];if(F.seat!==site.id)return [];
     const rec=nationRecord(nk);if(rec)return [{label:`Serve ${F.name}?`,response:`Not while ${rec.name} has a fine on you. ${F.name.replace(/^the /,'The ')} does not take on a debtor's quarrels. Settle it.`}]; // S158
-    const st=fstate()[fk];const others=Object.keys(FACTIONS).filter(k=>k!==fk).filter(k=>fstate()[k].rank>=2);
+    const st=fstate()[fk];const _duel=st.active&&st.active.kind==='duel'?st.active:null;
+    if(st.closed&&!(_duel&&_duel.data.state==='murder'))return [{label:`Serve ${F.name}?`,response:"Not you. We've a long memory for the yard, and a short one for excuses."}]; // S373 — Rowe killed after she yielded
+    const others=Object.keys(FACTIONS).filter(k=>k!==fk).filter(k=>fstate()[k].rank>=2);
     if(others.length)return [{label:`Serve ${F.name}?`,response:`${FACTIONS[others[0]].name} has your oath. We don't share.`}];
     const out=[];
-    out.push({label:`Serve ${F.name}.`,quest:true,fn:()=>{if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
+    out.push({label:`Serve ${F.name}.`,quest:true,fn:()=>{const A=st.active;if(A&&A.kind==='duel'){const D=A.data; // S373 — the yard's two other endings
+        if(D.state==='murder'){A.turnedIn=true;A.paid=0;st.active=null;st.closed=true;if(typeof addLog==='function')addLog('🏛',"The Captains' League has closed its gates to you.");return FLINES[fk][A.service].afterMurder;}
+        if(D.state==='lost'&&!D.told){D.told=true;return "Rowe's Captain. The chair's hers till someone takes it off her on the yard, and that's your right now, same as it was hers. Give your arm a week. The ring goes up again in seven days.";}
+        if(D.state==='lost'&&dayNow()<(D.retryDay||0))return "Not yet. A week, I said. Rowe's not going anywhere, and neither's the chair.";}
+      if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
     if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return `It's yours. ${fk==='compact'?'The ship is at the quay under your name.':''}`;}});}
@@ -41953,7 +41963,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {kind:'find',title:'Where Is Rowe?',brief:"Rowe went up the hill road alone. Reeves don't go alone. Find her.",rival:'trouble'},
       {kind:'deliver',title:'The Captains\u2019 Word',brief:"The League has one word for the Crown's surveyors: no. Carry it."},
       {kind:'road',title:'The Free Captains',brief:"The free captains have made a camp on our road. They're ours, and they're still a camp. Clear it, and don't ask whose coin they carry."},
-      {kind:'duel',title:'The Duel at Caer Slige',brief:"A Captain of the League is made by acclamation, and acclamation is won on the yard. Rowe has claimed the challenge. It's her right.",set:true,after:"Acclaimed. She fought well; the League will say so at her burial. You're Captain — and the spire's yours to hold. Something in it pays my sergeants in light, and I've stopped asking what."}
+      {kind:'duel',title:'The Duel at Caer Slige',brief:"A Captain of the League is made by acclamation, and acclamation is won on the yard. Rowe has claimed the challenge. It's her right. The ring's laid east of the walls from first light. Walk in when you're ready. Down or yield, and it's done by noon.",set:true,after:"Acclaimed. Rowe says you fought well, and she doesn't say that of many. You're Captain now, and the spire's yours to hold. Something up there pays my sergeants in light. I've stopped asking what.",afterMurder:"The yard saw it. So did I. There's no acclamation for that, and there's no League for you either. Leave your oath at the gate."}
     ],
     compact:[
       {kind:'deliver',title:'The Tithe Roll',brief:"Every hull that passes is tithed. This roll goes to the Factor; it says which ones haven't paid."},
@@ -41973,7 +41983,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const lord=lordFor(site);const voice=`${lord.title} ${lord.name}`;
     let q;
     if(S.kind==='sail'){q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
-    else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} on the yard east of ${site.name}`,kind:'road',data:{x,z,count:1,have:0,spawned:false,noCamp:true},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
+    else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
     else{q=townQuestFor(site,S.kind);if(qActive().some(a=>a.id===q.id))return q; // the seat's own job is still open
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
@@ -42006,6 +42016,103 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the set-piece kinds the generator doesn't know
   function tickFactionKinds(){for(const q of qActive()){if(q.done)continue;if(q.kind==='sail'&&OTHER.some(o=>o.kind==='pirate'&&o.boarded&&o.crew.length&&o.crew.every(e=>e.dead))){qComplete(q);showMsg('Her deck is yours.','#e8d8a0');}}}
   function factionWantsPirate(){return qActive().some(q=>q.kind==='sail'&&!q.done);}
+  // S373 — the Yard at Caer Slige (Michael's A on #69; the quest writer's draft in docs/quest_drafts.md). The League's
+  // ninth service is a duel in a roped ring east of the seat, laid from first light to noon. Rowe waits in it as a
+  // person; the yard-sergeant's *Call it.* puts a Bandit Captain wearing her name in her place. At a quarter of her
+  // health she kneels and yields (no blow takes her below it before then); three seconds unstruck and she is spared, a
+  // blow after the yield is murder and the League closes. The ring holds you at 1 health: down, yielded or over the
+  // rope, the yard acclaims Rowe, and the ring is laid again in seven days.
+  const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
+  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12;
+  const DUEL_BARKS=["Feet, Rowe! Feet!","Get your guard up, {nick}!","That's blood. Keep at it.","Iron and blood!","Watch her left, {nick}.","Don't dance. Fight.","Hesket! Hesket!","Up, {nick}! Up!","Finish it by noon, the pair of you!"];
+  function duelQuest(){return qActive().find(q=>q.kind==='duel')||null;}
+  function duelRingHours(){const h=hourNow();return h>=DUEL_OPEN&&h<DUEL_CLOSE;}
+  function duelNick(){const it=EQ.weapon;if(!it)return 'Fists';const sh=it.weaponShape||(/bow/i.test(it.name)?'bow':/staff/i.test(it.name)?'staff':/axe/i.test(it.name)?'axe':/mace|hammer|club/i.test(it.name)?'mace':/dagger|knife/i.test(it.name)?'dagger':'sword');
+    return /bow/.test(sh)?'Bowstring':/staff/.test(sh)?'Stick':/axe/.test(sh)?'Hatchet':/mace|club|hammer|flail/.test(sh)?'Hammer':/dagger|knife/.test(sh)?'Pin':'Blade';}
+  function duelLeague(){return fstate().league;}
+  function duelRemoveNpc(n){if(!n)return;sc.remove(n.g);if(n.dot)sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}
+  function duelRemoveRowe(){const e=DUEL.rowe;if(!e)return;if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}DUEL.rowe=null;DUEL.rb=null;}
+  function duelRingDown(){DUEL.parts.forEach(m=>{sc.remove(m);if(m.geometry)m.geometry.dispose();});DUEL.parts=[];}
+  function duelTeardown(){duelRingDown();duelRemoveNpc(DUEL.sgt);DUEL.watchers.forEach(duelRemoveNpc);duelRemoveNpc(DUEL.npc);duelRemoveRowe();
+    Object.assign(DUEL,{q:null,sgt:null,watchers:[],npc:null,inside:false,offered:false,stag:false,pstag:false});}
+  function duelPerson(def,x,z,face){def.x=x;def.z=z;const n=spawnNPC(def,face,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);return n;}
+  function duelSeed(q){let h=0;for(const c of q.id)h=(h*31+c.charCodeAt(0))>>>0;return ()=>{h=(h*1664525+1013904223)>>>0;return h/4294967296;};}
+  function roweSay(text){const e=DUEL.rowe;if(!e||!e.mesh)return;if(DUEL.rb)e.mesh.remove(DUEL.rb);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:bubbleFor(text),transparent:true,depthTest:false}));sp.scale.set(1.6,.4,1);sp.position.set(0,2.1,0);e.mesh.add(sp);DUEL.rb=sp;DUEL.rbT=3.2;}
+  function roweDef(x,z){const pp=playerPeople();
+    const hello={markman:"One of ours. Good. Nobody'll say it wasn't fair.",gatelander:"A turf-cutter on the yard. They say your lot won't leave a wounded man. We'll see if you'll let one up.",aurennais:"Your Church says the yard's for the unlettered. You came anyway. That's the first thing I've liked about you.",oldblood:"Cold-eyes. The sergeant asked me if it's allowed. It's allowed. I'll try to look straight at you. People tell me that's hard."}[pp]||"One of ours. Good. Nobody'll say it wasn't fair.";
+    const def={name:RIVAL.name,role:'',ico:'⚔',authored:true,people:'markman',sCol:0xf0dcc8,hairCol:0xd8c8a0,bodyScale:[1.04,1.06,1.04],bCol:0x2a2a30,x,z,temper:'dry',
+      get greeting(){const s=DUEL.q&&DUEL.q.data.state;return [s==='won'?"Good fight. I was a step slow on the left, and you saw it. Buy me a drink when you've a garrison to buy it in.":hello];},
+      get topics(){const s=DUEL.q&&DUEL.q.data.state;return s==='wait'?[{label:'Why do you want it?',response:"Captain's a garrison and forty mouths. I've fed worse. And somebody ought to ask what the spire pays the sergeants in, because it isn't silver."},{label:"We don't have to do this.",response:"Aye, we do. You're Reeve, I'm Reeve, and there's one Captain's chair at the strait. We settle it by noon and drink after."},{label:'Farewell.',bye:true}]:[{label:'Farewell.',bye:true}];}};
+    return def;}
+  function duelBuild(q){const d=q.data,cx=d.x,cz=d.z;DUEL.q=q;DUEL.open=duelRingHours();const r=duelSeed(q);const bank=NAMES.anglo;const used=new Set();
+    const nm=()=>{let n;for(let k=0;k<20;k++){const L=r()<.5?bank.m:bank.f;n=L[Math.floor(r()*L.length)];if(!used.has(n))break;}used.add(n);return n;};
+    const sn=nm();const sa=-Math.PI/2+.5,sx=cx+Math.cos(sa)*(DUEL_R+.8),sz=cz+Math.sin(sa)*(DUEL_R+.8);
+    const sdef={name:sn,role:'Yard-sergeant',ico:'⚔',authored:true,people:'markman',bCol:0x3a3a40,sCol:0xe8d4bc,x:sx,z:sz,
+      get greeting(){const s=DUEL.q&&DUEL.q.data.state;if(s==='murder')return ["She yielded. Every one of us saw it."];return [DUEL.open?"You're the other one. Rowe's been in there since first light.":"Ring's down. It goes up at first light, and it comes down at noon, fought or not."];},
+      get topics(){const s=DUEL.q&&DUEL.q.data.state;if(s!=='wait'||!DUEL.open)return [{label:'Farewell.',bye:true}];return [
+        {label:'The rules?',response:"Three. Nobody steps in. You go over the rope, you've yielded. Somebody yields, it's over, and you don't touch them after. That last one's the only one anybody remembers."},
+        {label:'What do I fight with?',response:"What you walked in with. Steel, a bow, the old words if you've got them. The yard doesn't care how. It cares that it's you."},
+        {label:'And if she dies?',response:"She won't, before she yields. Rowe's not proud that way. After she yields, it's murder, and the whole Mark will know your name by the week's end."},
+        {label:'Call it.',quest:true,fn:()=>{duelStart(q);return "Rope's up. Iron and blood, the pair of you. Go on.";}},
+        {label:'Farewell.',bye:true}];}};
+    DUEL.sgt=duelPerson(sdef,sx,sz,Math.atan2(cx-sx,cz-sz));
+    if(!DUEL.open)return;
+    const stakeM=new THREE.MeshLambertMaterial({color:0x5a4630}),ropeM=new THREE.MeshLambertMaterial({color:0xb8a27a});const N=12,pts=[];
+    for(let i=0;i<N;i++){const a=i/N*Math.PI*2;const x=cx+Math.cos(a)*DUEL_R,z=cz+Math.sin(a)*DUEL_R;const y=worldH(x,z);pts.push(new THREE.Vector3(x,y+.85,z));const s=new THREE.Mesh(new THREE.CylinderGeometry(.06,.07,1.1,5),stakeM);s.position.set(x,y+.55,z);s.castShadow=true;sc.add(s);DUEL.parts.push(s);}
+    for(let i=0;i<N;i++){const a=pts[i],b=pts[(i+1)%N];const m=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,a.distanceTo(b),4),ropeM);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());sc.add(m);DUEL.parts.push(m);}
+    for(let i=0;i<8;i++){const a=(i+.5)/8*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a-sa),Math.cos(a-sa)))<.35)continue;const x=cx+Math.cos(a)*(DUEL_R+1.6),z=cz+Math.sin(a)*(DUEL_R+1.6);
+      const w=duelPerson({name:nm(),role:'',ico:'⚔',authored:true,people:'markman',bCol:[0x3a3a40,0x4a4038,0x2e3238][i%3],sCol:0xe8d4bc,greeting:['Iron and blood!'],topics:[{label:'Farewell.',bye:true}]},x,z,Math.atan2(cx-x,cz-z));w._duelWatch=true;DUEL.watchers.push(w);}
+    DUEL.npc=duelPerson(roweDef(cx,cz+1.5),cx,cz+1.5,Math.PI);}
+  function duelStart(q){if(q.data.state!=='wait'||!DUEL.npc)return;const d=q.data;const p=DUEL.npc.g.position;const x=p.x,z=p.z;duelRemoveNpc(DUEL.npc);DUEL.npc=null;
+    const e=buildZoneEnemy(sc,STATIC_SOL,x,z,q.enemy||'Bandit Captain',null);e._questTag=q.id;e._duel=true;e.name=e.displayName=RIVAL.name;e.homeX=d.x;e.homeZ=d.z;e.alert=true;e._duelHold=false;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);DUEL.rowe=e;
+    d.state='fight';DUEL.inside=Math.hypot(px-d.x,pz-d.z)<=DUEL_R;DUEL.offered=false;DUEL.bark=3;
+    setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1400);
+    showMsg('The rope is up. Hesket Rowe lifts her blade.','#e8d8a0');if(typeof addLog==='function')addLog('⚔','The duel at Caer Slige: Hesket Rowe.');}
+  function duelBark(line){const W=DUEL.watchers.filter(w=>w.g.visible);if(!W.length)return;sayBubble(W[Math.floor(Math.random()*W.length)],line.split('{nick}').join(duelNick()));}
+  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;if(e.mesh)e.mesh.position.y-=.45;
+    try{if(dlgOpen&&dlgNPC&&dlgNPC.name===RIVAL.name)closeDialog();}catch(err){}
+    showMsg('Hesket Rowe goes down on one knee and lays her blade on the ground.','#e8d8a0');roweSay("Enough. I yield. It's yours.");}
+  function duelWon(q){const e=DUEL.rowe;q.data.state='won';duelLeague().rowe='alive';const x=e.x,z=e.z;duelRemoveRowe();duelRingDown();
+    DUEL.npc=duelPerson(roweDef(x,z),x,z,Math.atan2(px-x,pz-z));
+    const W=DUEL.watchers.slice().sort(()=>Math.random()-.5).slice(0,3);['Captain!','Captain! Captain!','Iron and blood!'].forEach((t,i)=>{if(W[i])sayBubble(W[i],t);});
+    qComplete(q);showMsg('The yard acclaims you Captain.','#e8d8a0');}
+  function duelMurder(q){q.data.state='murder';q.done=true;const L=duelLeague();L.rowe='dead';L.closed=true;duelRingDown();
+    if(DUEL.sgt){sayBubble(DUEL.sgt,'She yielded. Every one of us saw it.');}
+    DUEL.watchers.forEach(w=>{w.g.rotation.y+=Math.PI;w.def.greeting=['…'];if(w._bubble){w.g.remove(w._bubble);w._bubble=null;}});
+    showMsg('Hesket Rowe is dead. The yard is silent.','#c8b880');}
+  function duelLost(q,how){const d=q.data;d.state='lost';d.retryDay=dayNow()+7;d.told=false;duelLeague().rowe='captain';PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();
+    duelRemoveRowe();duelRingDown();try{if(dlgOpen)closeDialog();}catch(err){}
+    showMsg(how==='rope'?'You step over the rope. That is a yield. The yard acclaims Hesket Rowe Captain.':how==='yield'?'You yield. The yard acclaims Hesket Rowe Captain.':'You go down, and stay down. The yard acclaims Hesket Rowe Captain.','#c8b880');}
+  function duelOffer(q){const e=DUEL.rowe;if(e){e._duelHold=true;e.telegraphT=0;}
+    openDialog({name:RIVAL.name,role:'',ico:'⚔',greeting:["You're done. Say it, and it's done."],topics:[
+      {label:'I yield.',quest:true,fn:()=>{setTimeout(()=>{if(q.data.state==='fight')duelLost(q,'yield');},1200);return "Heard. Up you get. You'll want that arm again.";}},
+      {label:'Not yet.',quest:true,fn:()=>{setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1200);return "Your blood, then.";}}]});}
+  function tickDuel(dt){
+    const q=duelQuest();if(DUEL.q&&DUEL.q!==q)duelTeardown();if(!q)return;const d=q.data;const far=Math.hypot(px-d.x,pz-d.z);
+    if(DUEL.rb){DUEL.rbT-=dt;if(DUEL.rbT<=0){if(DUEL.rowe&&DUEL.rowe.mesh)DUEL.rowe.mesh.remove(DUEL.rb);DUEL.rb=null;}}
+    if(!DUEL.q){if(far>180)return;if(d.state==='fight'||d.state==='yielded')d.state='wait'; // a fight left by a load is laid again
+      if(d.state==='lost'&&dayNow()>=(d.retryDay||0))d.state='wait';if(d.state!=='wait')return;duelBuild(q);return;}
+    const ended=d.state==='won'||d.state==='murder'||d.state==='lost';
+    if(ended){if(far>60||(d.state==='lost'&&dayNow()>=(d.retryDay||0)))duelTeardown();return;}
+    if(d.state==='wait'){if(far>240){duelTeardown();return;}if(DUEL.open!==duelRingHours()){duelTeardown();return;}return;}
+    const e=DUEL.rowe;if(!e){duelTeardown();return;}
+    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
+      DUEL.spare-=dt;if(DUEL.spare<=0)duelWon(q);return;}
+    // the fight
+    const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
+    if(far<=DUEL_R)DUEL.inside=true;else if(DUEL.inside&&far>DUEL_R+1){duelLost(q,'rope');return;}
+    if(e.hp<=e.maxHp*.25){duelYield(q);return;}
+    if(!DUEL.offered&&!talking&&PHP<maxHP*.3){DUEL.offered=true;duelOffer(q);return;}
+    const st=typeof isStaggered==='function'&&isStaggered(e);if(st&&!DUEL.stag){duelBark("She's open!");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.stag=st;
+    const ps=PPOST.stagUntil>performance.now()/1000;if(ps&&!DUEL.pstag){duelBark("Rowe's got you, {nick}.");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.pstag=ps;
+    DUEL.bark-=dt;if(DUEL.bark<=0){DUEL.bark=6+Math.random()*3;let line;do{line=DUEL_BARKS[Math.floor(Math.random()*DUEL_BARKS.length)];}while(line===DUEL.last);DUEL.last=line;duelBark(line);}
+  }
+  // the kill path asks first: before the yield no blow takes her below a quarter (she yields instead); after it, a kill is murder
+  function duelKill(e){const q=DUEL.q;if(!q||DUEL.rowe!==e)return false;const s=q.data.state;
+    if(s==='fight'||s==='wait'){if(s==='wait')q.data.state='fight';e.hp=Math.max(1,Math.floor(e.maxHp*.25));duelYield(q);return true;}
+    if(s==='yielded')duelMurder(q);return false;}
+  // the ring holds you at 1 health: going down in it is a yield, not a death
+  function duelDown(){const q=DUEL.q;if(!q||q.data.state!=='fight'||Math.hypot(px-q.data.x,pz-q.data.z)>DUEL_R+2)return false;duelLost(q,'down');return true;}
   // v80 S133 — a guild hunt's ground on the compass until the tally is met
   function guildMarkers(push){try{const G=gstate();for(const k in G){const t=G[k]&&G[k].active;if(t&&t.kind==='hunt'&&!t.done&&t.x!=null&&t.have<t.need)push(t.x,t.z,GREEN,`${t.target}s — ${t.ground||'their ground'}`);}}catch(e){}}
   function factionMarkers(push){const F=FACTIONS;for(const k in F){const st=fstate()[k];if(!st.active||st.active.done){if(st.active&&st.active.done&&F[k].seat){const s=siteAnywhere(F[k].seat);if(s)push(s.x,s.z,GREEN,F[k].name);}continue;}}}
@@ -42556,7 +42663,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     tickNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
     tickChatter(dt);
     ensureTaskWorldObjects();tickPickups();qTick();
-    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickCaravans(dt);tickCoaches(dt);tickStory();tickSiteDeaths();tickVarek(dt);sweepLights();
+    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}tickSiteDeaths();tickVarek(dt);sweepLights();
     tickCleared();
     tickDiscovery(dt);
   }
@@ -42589,7 +42696,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,duelKill,duelDown,get duel(){return DUEL;},tickDuel,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
 
