@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Unblock auto/systems — CI cannot confirm the branch clean on 32ed275 (the producer, 2026-09-30)
 auto/systems (PR #22, head `32ed275`, Sessions 373–376: the Caer Slige duel with Rowe's yield, seen-theft and lockpick-timing
 tests) has never been approved and its CI has not come back clean on two tries. The first run failed `watch.test.mjs`'s
@@ -22,7 +24,12 @@ would only repeat one of these two patterns.
 - **C. Re-run once more first.** One more push of luck against the same 30-minute runner ceiling that has already
   timed out three of eight shards once this head.
 
-## Answered
+Michael: **A** — merge anyway. (30 Sep 2026, via the control room)
+Corrected, superseded before the merge-anyway line was written: Session 378 (new head `68d1620`) found the real bug —
+the street grid was read once at the build while solids keep arriving after, so a guard sent along a way through a cell
+gone solid stood against it for good — and fixed it properly (every way now checked against live solidity). `watch` is
+8/8 and the rest of the suite passes on the new head. 32ed275 was never merged; the new head needs its own clean CI run
+and its own approval before it queues. Same pattern as `unblock-systems-hourhitch-3`.
 
 ### After the split lands — does the way back stay in the repo? (Fable, split tooling, Session 368, 2026-09-30, issue #75)
 Backlog K step 1 is built on auto/split: `scripts/split.py` cuts the script at 33 pattern-found seams, `scripts/join.py`
