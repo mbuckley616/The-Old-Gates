@@ -9543,3 +9543,25 @@ The same numbers (52 towns, mean −6.8, least −77, most 0) in three runs side
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 368 — The keeper sees what they face
+Michael's B on #73. Session 365 measured a one-room shop's strongbox by day and found that it came down to the room's width. Eight of thirteen one-room shops had the box in the keeper's sight 93–100% of an open day, and five had it 0–10%. A keeper indoors saw you in every direction at once, within six units with a clear line.
+
+**What changed.** Indoors a person sees you only within 60° either side of the way they face, `(sin ry, cos ry)`, as well as within six units with a clear line (`intFaces` in `witnessOf`). It applies to the keeper and to the room's other people, the guild members and the coaching inn's travellers. The street's witnesses are unchanged.
+
+**Found on the way, and fixed.** `intAmbleStep`, the keeper's walk, turned back from its bounds with the axes swapped. An x bound flipped the z part of the heading, and a z bound flipped the x part. A keeper who reached a bound kept walking into it, facing it, until the half-second timer ran out and a new heading came up, often into the same bound. The counter side is one of those bounds and the strongbox stands past it. That is why Session 365's keepers were measured so close to the box, and so much of the time turned toward it. A bound now turns back the part of the heading that met it. Keepers walk the whole floor they are allowed: in Session 365's run the farthest a keeper got from the counter was 4.6–8.7 units, and now it is 4.9–14.8. Session 365's numbers were measured with that bug in place. They stand as a record of the build they measured, not of the rule.
+
+No range, fine or crime moved. Four suites that test indoor range, walls and fines turned the keeper to the player before asking: `witness`, `crime5`, `theft` and `guardsindoor`. They test the line, the fine and the guard, and the cone has its own test.
+
+### Verified (headless Chromium)
+New `tests/keepercone.test.mjs`, 9 checks, passing, no page errors. In Dunmore, with the keeper 2.5 units from the player with a clear line, the keeper was turned through 360° in 5° steps:
+- The keeper sees the player at −60° to +60° and nowhere else. Face on they see you, back turned they do not, and seven units off in front they do not.
+- The strongbox emptied with the keeper's back turned 1.5 units away: 40 gold taken, no fine. Refilled and emptied again with the keeper turned to you: fined 104.
+- A guest stood in the room sees you face on, not with their back turned, and not at 70° off.
+- A keeper at an x bound turns back in x and keeps its z heading; at a z bound, the reverse.
+
+`tests/shopsight` (23 shops in four towns at 13h, ten minutes of each keeper's own walk) passes its 7 checks. The one-room shops are now in sight 0–35% of the day, where they were 93–100% for eight of them. The longest stretch unseen runs from 17.6 s (Fionnuala's Stores) to all ten minutes (Odhrán's Stores, where the keeper never comes within 6.4 units). A 6 s pick begun at a random moment is seen 16–85% of the time. Back-room boxes are still never seen through the shut door. `witness`, `crime5`, `theft` and `guardsindoor` pass. `crime1` and `crime2` pass unchanged.
+
+### Needs eyes
+- Whether a keeper turned away reads as a chance to a player standing in the shop. Nothing on screen says which way the keeper looks except the body.
+- The keepers now wander farther across their floor, to the edge of their bounds, where before they stuck against it. How that looks by eye, and whether a keeper now stands in a doorway or against a shelf, is owed.

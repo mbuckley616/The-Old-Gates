@@ -12,17 +12,19 @@ for (const id of shops) {
   await page.waitForTimeout(4500); await g.hide();
   rows.push(await page.evaluate(() => { const h = window._h; const X = WORLD.intBox; const K = intNPCMesh; if (!X || !K) return { name: h.name, none: true };
     const kx = K.position.x, kz = K.position.z; jumpY = 0;
+    // (Session 368: the keeper sees what they face; here they are turned to the spot asked, so what is tested is the range and the line)
+    const W = () => { K.rotation.y = Math.atan2(px - kx, pz - kz); return !!WORLD.witnessOf(h); };
     // at the strongbox, as the critic stood
-    px = X.x; pz = X.z + .8; const dBox = Math.hypot(px - kx, pz - kz); const atBox = !!WORLD.witnessOf(h); const lineBox = WORLD.intSightLine(kx, kz, px, pz);
+    px = X.x; pz = X.z + .8; const dBox = Math.hypot(px - kx, pz - kz); const atBox = W(); const lineBox = WORLD.intSightLine(kx, kz, px, pz);
     // a step from the keeper, in plain view: always seen
-    px = kx + (X.x > kx ? 1.5 : -1.5); pz = kz; const near = !!WORLD.witnessOf(h);
+    px = kx + (X.x > kx ? 1.5 : -1.5); pz = kz; const near = W();
     // beyond the back-room door, a step past it on the line from the keeper: the shut door hides you, the open one does not
     const D = WORLD.intDoors; let door = null;
     if (D.length) { const d = D[0]; const L = Math.hypot(d.x - kx, d.z - kz); const bx = d.x + (d.x - kx) / L * .9, bz = d.z + (d.z - kz) / L * .9;
-      px = bx; pz = bz; const dist = Math.hypot(px - kx, pz - kz); const shutSeen = !!WORLD.witnessOf(h);
-      const s0 = { ...d.sol }; d.sol.x0 = d.sol.x1 = d.sol.z0 = d.sol.z1 = -9e5; const openSeen = !!WORLD.witnessOf(h); const openLine = WORLD.intSightLine(kx, kz, px, pz); Object.assign(d.sol, s0);
+      px = bx; pz = bz; const dist = Math.hypot(px - kx, pz - kz); const shutSeen = W();
+      const s0 = { ...d.sol }; d.sol.x0 = d.sol.x1 = d.sol.z0 = d.sol.z1 = -9e5; const openSeen = W(); const openLine = WORLD.intSightLine(kx, kz, px, pz); Object.assign(d.sol, s0);
       // and the whole room: every spot within six units of the keeper that a wall hides
-      let hid = 0, hidSeen = 0; for (let x = .5; x < 30; x += .5) for (let z = .5; z < 30; z += .5) { if (Math.hypot(x - kx, z - kz) >= 6 || WORLD.intSightLine(kx, kz, x, z)) continue; px = x; pz = z; hid++; if (WORLD.witnessOf(h)) hidSeen++; }
+      let hid = 0, hidSeen = 0; for (let x = .5; x < 30; x += .5) for (let z = .5; z < 30; z += .5) { if (Math.hypot(x - kx, z - kz) >= 6 || WORLD.intSightLine(kx, kz, x, z)) continue; px = x; pz = z; hid++; if (W()) hidSeen++; }
       door = { dist: +dist.toFixed(2), shutSeen, openSeen, openLine, hid, hidSeen }; }
     exitInterior();
     return { name: h.name, dBox: +dBox.toFixed(2), dRaw: dBox, doors: D.length, lineBox, atBox, near, door }; }));

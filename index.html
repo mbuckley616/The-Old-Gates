@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s336</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s337</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -7657,8 +7657,10 @@ let interiorScene=null,currentHouse=null,intNPCMesh=null,intNPCPos={x:4,z:3};
 function intAmbleStep(m,dt){const am=m.userData.amble;
   am.wt-=dt;if(am.wt<=0){am.wa=Math.random()*Math.PI*2;am.wt=1.5+Math.random()*3.5;}
   const nx=m.position.x+Math.sin(am.wa)*am.speed*dt,nz=m.position.z+Math.cos(am.wa)*am.speed*dt;
-  if(nx>am.minX&&nx<am.maxX)m.position.x=nx;else{am.wa=Math.PI-am.wa;am.wt=0.5;}
-  if(nz>am.minZ&&nz<am.maxZ)m.position.z=nz;else{am.wa=-am.wa;am.wt=0.5;}
+  // S368 — a bound turns back the part of the heading that met it: x is sin(wa), so an x bound flips wa to −wa, a z bound to π−wa
+  // (they were swapped, so a keeper at the counter's bound walked on into it, facing the strongbox, until the timer ran out)
+  if(nx>am.minX&&nx<am.maxX)m.position.x=nx;else{am.wa=-am.wa;am.wt=0.5;}
+  if(nz>am.minZ&&nz<am.maxZ)m.position.z=nz;else{am.wa=Math.PI-am.wa;am.wt=0.5;}
   m.rotation.y=Math.atan2(Math.sin(am.wa),Math.cos(am.wa));
   if(m===intNPCMesh){intNPCPos.x=m.position.x;intNPCPos.z=m.position.z;}}
 // v61d4 — Safehouse interior interaction state. Set by buildInterior's
@@ -40763,11 +40765,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const eye=(typeof jumpY==='number'?jumpY:0)+1.1;const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
     const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.1));
     for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
+  // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
+  const INT_FOV=Math.cos(Math.PI/3);
+  function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house){
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=12;if(sneak)R*=.5;if(isNight())R*=.5;
-    if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you and can see you
-      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
-      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
+    if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
+      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
+      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
