@@ -1,5 +1,13 @@
 name: check
-on: [push, pull_request]
+# 29 Sep 2026: every agent push ran the suites twice (push and pull_request) and 29 runs sat queued.
+# Agent branches are tested through their PR only, and a new commit cancels its branch's older run.
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: check-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 jobs:
   parse:
     runs-on: ubuntu-latest
