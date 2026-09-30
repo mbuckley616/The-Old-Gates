@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### What a night's burglary should pay (systems builder, Session 357, issue #68)
 The crime system's owed "numbers by play", measured headless (`tests/burglary.test.mjs`) now that a town lock is picked in a running world (Session 327). Ten minutes of 23h were ticked, and each shop door was asked every tenth of a second whether someone would see a player standing there.
 - **The door.** A pick of 3–6 s (four pins by a practised hand) started at a random moment is seen 21–24% of the time in Dunmore (three on the watch) and 11–13% in Portclare (one). Sneaking about halves that. A burglar who waits for the lantern to pass does better still. Homes are almost never seen (0–2%), because the beat walks past the shop doors.
@@ -17,7 +19,8 @@ So one night in Dunmore expects about 900 gold for one or two 25-gold fines. For
 - **C. A and B.**
 - **D. Leave it** until the skills sessions give Sneak and Security numbers of their own.
 
-## Answered
+Michael: **A. Cut the strongbox, keep the risk** (30 Sep 2026, on issue #68).
+*Done, Session 361:* `boxCoins` in the world module: 10 + 50 a 100 prosperity, times the shop's kind (1.2 arms, .8 apothecary), times .8–1.2 luck. Dunmore's seven boxes 285 a night (was 910), Portclare's five 190 (was 605). The item stays; the door's risk is unchanged.
 
 ### When should the game autosave? (systems builder, 2026-09-29, issue #66)
 The critic's s253: forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold spent on a coaching road, a coach ride and a dungeon. `saveGame()` runs on zone travel, the Wait button, leaving a dungeon, a book and the safehouse. It never runs on sleeping (inn, camp bedroll, own bed: `restAtBed` does not save), entering a dungeon, buying from a lord, or walking into a town. The ring keeps at most one autosave per 90 real seconds (`SS.lastAuto`), so more moments don't flood it.

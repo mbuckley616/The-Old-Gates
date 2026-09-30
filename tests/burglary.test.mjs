@@ -28,9 +28,9 @@ for (const id of ['dunmore', 'portclare']) {
     const chance = (arr, P) => { const w = Math.round(P * 10); let seen = 0, n = 0; for (let s = 0; s + w < arr.length; s++) { n++; for (let t = s; t <= s + w; t++) if (arr[t]) { seen++; break; } } return +(seen / n).toFixed(3); };
     const rows = doors.map((h, k) => ({ name: h.name, kind: h.type === 'home' ? 'home' : 'shop', pins: WORLD.doorLockFor ? (h.type === 'home' ? 2 : (WORLD.prosperity(site) >= 60 ? 4 : 3)) : null,
       walk: PICKS.map(P => chance(rec[k].walk, P)), sneak: PICKS.map(P => chance(rec[k].sneak, P)) }));
-    // what's behind a shop door: the strongbox's mean (the S155 formula at the town's prosperity), and whether anyone is in
+    // what's behind a shop door: the strongbox's mean (the game's own boxCoins at the town's prosperity; S361, Michael's A on #68), and whether anyone is in
     const p = WORLD.prosperity(site);
-    const box = shops.map(h => { const mult = /weapon|armor|armoury|forge/.test(h.type) ? 1.2 : /potion|apothecary/.test(h.type) ? .8 : 1; return Math.round((20 + 180 * Math.max(0, Math.min(100, p)) / 100) * mult); });
+    const box = shops.map(h => Math.round(WORLD.boxCoins(p, h.type)));
     const inside = shops.map(h => WORLD.npcInsideNow(h));
     const guards = WORLD.guardsOf(S).filter(n => n.g.visible).map(n => n.def.name);
     return { prosperity: p, guards, rows, box, inside }; }, [id, PICKS]);
@@ -44,6 +44,9 @@ for (const id of ['dunmore', 'portclare']) {
   console.log(`  mean, homes: walking ${PICKS.map((_, j) => mean('home', j)).join(' ')} | sneaking ${PICKS.map((_, j) => meanS('home', j)).join(' ')}`);
   check(`${id}: at 23h the watch is on duty`, r.guards.length > 0, r.guards);
   check(`${id}: at 23h no keeper is inside a shut shop, so the strongbox behind a picked door is taken unseen`, r.inside.every(x => !x), r.inside);
+  // #68 A: 10 + 50 a 100 prosperity by the shop's kind: at most 72 a box, and a night's boxes no longer outpay a quest many times over
+  check(`${id}: a strongbox holds 10 + 50 a 100 prosperity by the shop's kind (#68 A), a night's boxes under 60 a shop`,
+    r.box.every(b => b >= 8 && b <= 72) && r.box.reduce((a, b) => a + b, 0) <= 60 * r.box.length, r.box);
   check(`${id}: a longer pick is never less likely to be seen, and sneaking never more likely than walking`,
     r.rows.every(w => w.walk.every((v, j) => j === 0 || v >= w.walk[j - 1]) && w.sneak.every((v, j) => v <= w.walk[j] + 1e-9)), r.rows);
 }

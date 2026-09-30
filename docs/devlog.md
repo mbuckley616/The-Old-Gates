@@ -8654,3 +8654,16 @@ Backlog G's owed check on wayfinding (Session 138): ask a few people for directi
 
 ### Needs eyes
 Whether the words *feel* right is still for a person to judge. The compass glyph at real size and the town colours by eye are still owed.
+
+## v80 — Session 361 — The strongbox holds a shop's takings, not a quest's reward
+Michael answered DECISION #68 with A: cut the strongbox and keep the risk. Session 357 measured a night's burglary. A shop door at night is seen 11–24% of the time on a 3–6 s pick. No keeper is inside a shut shop, so the strongbox behind the door is always taken unseen. It held 20 + 180 a 100 prosperity, which came to 910 gold a night in Dunmore against one or two 25-gold fines. That outpaid every quest, and the design brief rules out systems that reduce to *buy more*.
+
+The takings are now one named function in the world module, `boxCoins(p, type)`. It returns 10 + 50 a 100 prosperity, times the shop's kind as before (1.2 at arms, .8 at an apothecary). The box then multiplies it by .8–1.2 for the day's luck, as before. The thing from the shop's stock stays, so most of a thief's money now comes from selling the goods, as Michael's A says. Nothing else moved: the door, the watch, the fines, the home chest's few coins and the five-day refill are all unchanged. `WORLD.boxCoins` is exported so the tests read the game's own formula and do not keep a copy of it.
+
+### Verified (headless Chromium)
+- `burglary` 9/9, no page errors. Its box sums now come from `WORLD.boxCoins`, and a new check per town holds each box between 8 and 72 and the night's total under 60 a shop. **Dunmore** (prosperity 61): 49, 49, 32, 41, 41, 41, 32, **285 a night** (was 910). **Portclare** (56): 46, 30, 38, 38, 38, **190** (was 605). The door's chance of being seen is unchanged: Dunmore's shop mean is 21/24% on a 3/6 s pick walking and 13/16% sneaking.
+- `crime1` 5/5. A strongbox picked by play at Lorcan's Forge gave 53 gold against a mean of 48.6. The check now holds the takings to .8–1.2 of the game's mean (was 16–240).
+- `crime5`, `theft`, `livepick` and `guardsindoor` pass (the fine is still 50 plus what was taken).
+
+### Needs eyes
+Whether 30–50 gold and a thing to fence feels worth a night's risk at level one. A burglar who waits for the lantern to pass still does better than the numbers above, as Session 357 said.
