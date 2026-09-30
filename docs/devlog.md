@@ -9597,3 +9597,21 @@ The critic's s321 report noted this under what it could not play: *`npm install`
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 371 — The Town Guard at level one, by the numbers
+This is G's owed check from Session 157, *whether the Town Guard is too hard at level one*. The feel is Michael's to judge. This session measures it so the judging has numbers. No game code changed, so the build tag is not bumped.
+
+**How.** New `tests/guardlevel1.test.mjs`. A new character (level 1, 130 health, armour 2, the Wooden GreatClub at 4–6, a swing every 0.555 s) swings 3,000 times at each of two foes. Each swing is rolled the way the world's melee code rolls it and passed through `applyMeleeDamage`. Each foe also strikes 3,000 times unblocked, through `executeStrike`, as its tick rolls the blow. The two foes are a drawn Town Guard (the Bandit body with `guardEnemy`'s numbers: 40 + 8 a level health, 6 + 1.2 a level damage, defence 3) and, for scale, the Bandit the world spawns. It is a race of damage against time: toe to toe, with no blocks, rolls or misses.
+
+| | health | defence | your swing does | dead in | its blow does | you fall in |
+|---|---|---|---|---|---|---|
+| Town Guard | 48 | 3 | 2.5 | 20 swings, 11.1 s | 7.5, every 1.91 s | 18 blows, 34.4 s |
+| Bandit | 25 | 2 | 3.5 | 8 swings, 4.4 s | 7.5, every 1.87 s | 18 blows, 33.7 s |
+
+**What it says.** At level one the guard is not deadlier than a Bandit: its blow is the same 7.5, on the same beat. It is 2.5× longer to put down, because it has twice the health and its defence of 3 takes about half of a starting club's 5–6. Standing and trading, a new character wins with about 85 health of 130 left, after about six blows. With the yield at a fifth of health and the guard's own offer to stand down, a level-one fight with the watch is long rather than dangerous. Whether that is too hard, too soft, or the right slog for breaking the law is Michael's call. Nothing is raised as a decision, because nothing here is broken.
+
+### Verified (headless Chromium)
+`tests/guardlevel1.test.mjs`, 4 checks, passing, no page errors. It checks that the character is level 1, that both foes were hit and hit back, and that the guard carries 48 health, 7 damage and defence 3 at level one. The table above is its output.
+
+### Needs eyes
+The fight itself: the approach, the blocks and the rolls this race leaves out, and whether 20 swings at a guard feels like a slog or a fight.
