@@ -4,5 +4,3 @@ Michael's merge approvals, one per line, written by the producer: `<branch> <com
 commit's CI is green) or `<branch> <commit> merge-anyway` (his call to merge despite red CI). The `merge` workflow
 (.github/workflows/merge.yml) reads this file every 10 minutes, merges the named commit
 (never the branch head) onto main, and skips a line already on main. The producer drops a line once it is merged.
-
-auto/producer 362226af5c91ad384eb3fa23435c0126762494d2 merge
