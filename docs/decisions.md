@@ -4,7 +4,25 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Hesket Rowe at the yard — can she survive the League's duel? (the quest writer, 2026-09-30, issue #69)
+The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`, *The Yard at Caer Slige*). Today the League's ninth service kills Hesket Rowe: it is a fight with a Bandit Captain wearing her name, and the Captain's line after it mentions her burial. In the Crown's and the Compact's lines she is alive at the finale. With a yield in the ring, her fate becomes the player's call.
+
+- **A. She lives if she yields and is spared** *(recommended)*. The yard's law is that nobody touches a fighter who has yielded. If the player strikes her after she yields, she dies, the yard calls it murder, and the League closes to the player. If she's spared, she stays at Caer Slige to watch the spire.
+- **B. The duel is to the death, as built.** Only the player can yield.
+- **C. She always lives.** The watchers catch any blow after her yield.
+
+The draft is written for A. B and C each change only the lines marked **(fate)**.
+
 ## Answered
+
+### Unblock auto/systems — hourhitch flakes again on 5633fc4 (the producer, 2026-09-30)
+PR #22 (auto/systems, approved head 5633fc4) has gone red a third time on the same test. The push-triggered run finished with 15/16 suites passing and `hourhitch` failing (a frame-timing budget, 399s); the pull-request-triggered run on the identical commit sat "in progress" for over four hours — one shard hung — which kept the merge workflow reporting "CI still running" and never landing the approval. The producer cancelled the hung run this pass so CI can report cleanly. Nothing in this commit (Session 350, the walls/LOD distant-check fix) touches shaders or frame timing, and the systems builder's own Slack note says `hourhitch`'s red is "still not root-caused" — it just hasn't been fixed yet.
+
+- **A. Merge anyway** *(recommended)*: same ruling as twice before (unblock-auto-systems, unblock-systems-walls-lod) — nothing in the diff touches timing, and a shared, congested CI runner is exactly where a fixed-millisecond budget misses. Claude merges 5633fc4 onto main as already approved.
+- **B. Wait for a clean run**: leave it queued; no agent is set to touch `hourhitch`, so it could sit a while, especially with the runner backlog seen this run (main's own CI check sat "queued", not even started, for two hours on this pass).
+- **C. Fix the budget first**: the systems builder widens `hourhitch`'s timing budget next run, then Claude merges. About one short session.
+
+Michael: **A. Merge anyway** — . (30 Sep 2026, via the control room)
 
 ### What a night's burglary should pay (systems builder, Session 357, issue #68)
 The crime system's owed "numbers by play", measured headless (`tests/burglary.test.mjs`) now that a town lock is picked in a running world (Session 327). Ten minutes of 23h were ticked, and each shop door was asked every tenth of a second whether someone would see a player standing there.
@@ -21,6 +39,15 @@ So one night in Dunmore expects about 900 gold for one or two 25-gold fines. For
 
 Michael: **A. Cut the strongbox, keep the risk** (30 Sep 2026, on issue #68).
 *Done, Session 361:* `boxCoins` in the world module: 10 + 50 a 100 prosperity, times the shop's kind (1.2 arms, .8 apothecary), times .8–1.2 luck. Dunmore's seven boxes 285 a night (was 910), Portclare's five 190 (was 605). The item stays; the door's risk is unchanged.
+
+### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
+`docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
+
+- **A. The page** *(recommended)*: words by school on the left; the spell written as a sentence in the middle, with every form's line and cost, riders as chips, mana worked out; the book of eight on the right.
+- **B. The table**: every word against every form, 35 cells at once, growing to 24 rows by the end.
+- **C. The ring**: a carved circle of words and forms with a line drawn between two joined; most like a sigil, least legible.
+
+Michael: **A** — the page. (29 Sep 2026, via the control room)
 
 ### When should the game autosave? (systems builder, 2026-09-29, issue #66)
 The critic's s253: forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold spent on a coaching road, a coach ride and a dungeon. `saveGame()` runs on zone travel, the Wait button, leaving a dungeon, a book and the safehouse. It never runs on sleeping (inn, camp bedroll, own bed: `restAtBed` does not save), entering a dungeon, buying from a lord, or walking into a town. The ring keeps at most one autosave per 90 real seconds (`SS.lastAuto`), so more moments don't flood it.

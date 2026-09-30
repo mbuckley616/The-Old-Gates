@@ -37,3 +37,23 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Concept artist.** The parchment interface page, nine screens; you chose A.
 
 **Roadmap.** 79 of 120 stories done; this week the look branch put the bridges, walls, harbour, fort, signposts and camps on the kit, and the systems branch made saves and towns survive a rebuild.
+
+## 29 Sep 2026
+
+**Landed on main since yesterday.** Nothing yet — main still sits at build s253 (8c0d74a), unchanged since yesterday's digest; six branches are queued to merge.
+
+**Waiting on you.** One decision: what Fortune's "+1% loot quality" card line actually does (issue #64).
+
+**Waiting to merge.** auto/backlog (Sessions 333–337: interior shells and chimney smoke prototypes, the black sail's flag) is approved and CI green — Claude merges it first. auto/producer, auto/critic, auto/quests, auto/concept and auto/design are all docs-only and green. auto/systems (Sessions 176–341: the Boon of Renewal, Charisma's barter, quest-gold and buff-stacking fixes) just pushed a new head; CI is running.
+
+**Blocked.** Nothing beyond ordinary CI waits.
+
+**Critic.** Five findings from 40 minutes on main: the coach's wrong boarding line, the mayor's stale investment offers, no autosave in the open world, a missed bedroll prompt, and one bug already fixed upstream.
+
+**Designer.** Magic's shape answered (B, words of the deep tongue); folding in Michael's note for a main-quest sigil questline next.
+
+**Quest writer.** Reviewed ~110 new strings; drafted The Shrines Remember (third-prayer boons).
+
+**Concept artist.** Furniture inside homes and inns, built from the kit — draw calls cut by more than half in both.
+
+**Roadmap.** Roughly 116 of 150 stories done, most of them this week. Combat and equipment moved the most (the Boon of Renewal and Charisma's barter both built); look and feel gained two fresh decisions (interior shells, chimney smoke) ready to build.
