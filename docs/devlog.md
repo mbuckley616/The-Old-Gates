@@ -9644,3 +9644,30 @@ New `tests/duel.test.mjs`, 17 checks, passing, no page errors. At Caer Slige, wi
 - The fight itself: whether a Bandit Captain's numbers make Rowe a worthy finale at a Reeve's level, and whether the watchers' calls read above the fight.
 - Rowe's kneel is her body lowered 0.45 units, not a pose. A real kneel is the look builder's.
 - The ring and its people at Caer Slige's yard: whether the spot east of the walls is clear of the town's buildings and road on every world.
+
+## v80 — Session 374 — Rowe after the yard, the rumour, and an occupied seat's duels
+This finishes Session 373's draft, *The Yard at Caer Slige* (Michael's A on #69), with its lines word for word. It also finishes section B's owed occupation effects from the canon. Session 266 built the Compact's tithe. The League's half, *an occupied League town loses its duels* (canon §12a, decision #37), waited on a duel, which now exists.
+
+**What changed.**
+- **Rowe at the seat.** `rivalBeat` left the League out at rank 3, because she used to die. It now reads `league.rowe`:
+   - Spared (`'alive'`): she stands at Caer Slige with the League's rank-3 lines. *Captain. Took me a week to stop favouring the left…*, *What now, Rowe?* (the spire, and a witness who can't be paid in light), and *I'm not, now. Don't get used to it.*
+   - Beaten (`'captain'`, the rematch week, while the duel is `lost`): she is *Captain Rowe, for a week at least*, and *How are you ahead of me?* gets *I was a step slow on the left, and you didn't see it.*
+   - Once the week is out and the ring is laid, she goes back to the yard. The rival's key now carries the beat, so the change swaps her lines.
+   - Killed (`'dead'`): she is at no seat.
+- **The rumour.** After the murder, while the League stays closed, the Mark's towns can give *Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.* among their live rumours (`liveRumours`). No other nation's towns carry it.
+- **An occupied seat lays no ring.** While Caer Slige is occupied, `tickDuel` lays nothing: no ring, no sergeant, no Rowe. A yard already laid and waiting is cleared. Freed, the ring is laid again in its hours. A fight already under way when the town falls is left to finish.
+
+The world module now exports `rival` and `liveRumours` for the test.
+
+### Verified (headless Chromium)
+`tests/duel.test.mjs` has 21 checks now, all passing, with no page errors. The four new ones:
+- Spared and turned in, two world ticks at the seat raise the rival, and her lines are the League's rank-3 set.
+- After the murder, 60 draws of Caer Slige's live rumours include the line and 60 of Dunmore's do not. Rowe is at no seat.
+- In the rematch week she is at the seat as *Captain Rowe*, with the *step slow on the left* answer.
+- With the ring laid (24 parts), flagging Caer Slige occupied clears it: 0 parts, and no sergeant. Clearing the flag lays it again: 24.
+
+`mainquest`, `autosave` and `wholepoints` pass.
+
+### Needs eyes
+- Rowe standing at Caer Slige for good after a win: whether she should one day move on, or be found at the spire when *the spire to hold* is built.
+- The occupied town's other half, *gains patrols*, is not built. The occupier's garrison already holds the plaza, so whether that is enough is Michael's call. It is not raised as a decision, because nothing is broken.

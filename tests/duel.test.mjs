@@ -45,6 +45,12 @@ const t1 = await serveNow();
 console.log('won turn-in', JSON.stringify(t1));
 check('at the Captain: "The Captains\' League names you Captain." with the new line, rank 3', /^The Captains' League names you Captain\. Acclaimed\. Rowe says you fought well/.test(t1.r) && t1.rank === 3 && t1.done === 9, t1);
 
+const seatRowe = () => page.evaluate(() => { const seat = WORLD.siteAnywhere(WORLD.FACTIONS.league.seat); px = seat.x; pz = seat.z; WORLD.tick(1 / 60, performance.now()); WORLD.tick(1 / 60, performance.now());
+  const n = WORLD.rival.npc; return n ? { greet: n.def.greeting[0], topics: n.def.topics.map(t => t.label + ' / ' + (t.response || '')) } : null; });
+const r1 = await seatRowe();
+console.log('rowe at the seat, won', JSON.stringify(r1));
+check('spared, Rowe stands at the seat with the League\'s rank-3 lines', r1 && /^Captain\. Took me a week/.test(r1.greet) && r1.topics.some(t => /^What now, Rowe\? \/ The spire\./.test(t)) && r1.topics.some(t => /I'm not, now/.test(t)), r1);
+
 // 2 — murder
 await fresh(8); await callIt();
 const m = await page.evaluate(() => { const D = WORLD.duel, e = D.rowe; e.hp = Math.floor(e.maxHp * .25); WORLD.tickDuel(1 / 60); const s1 = D.q.data.state; const rot = D.watchers.map(w => w.g.rotation.y);
@@ -54,6 +60,11 @@ check('at a quarter she yields; a blow after it kills her: murder, the League cl
 const t2 = await serveNow(); const t2b = await serveNow();
 console.log('murder turn-in', JSON.stringify(t2), JSON.stringify(t2b));
 check('the Captain turns you out, pays nothing, and the seat has only "Not you." after', /The yard saw it/.test(t2.r) && t2.done === 8 && t2.closed && !t2.active && t2b.label === 'Serve the Captains\' League?' && /^Not you\./.test(t2b.r), { t2, t2b });
+const mr = await page.evaluate(() => { const seat = WORLD.siteAnywhere(WORLD.FACTIONS.league.seat); const home = WORLD.siteAnywhere('dunmore');
+  const inMark = new Set(), inGates = new Set(); for (let k = 0; k < 60; k++) { WORLD.liveRumours(seat).forEach(x => inMark.add(x)); if (home) WORLD.liveRumours(home).forEach(x => inGates.add(x)); }
+  px = seat.x; pz = seat.z; WORLD.tick(1 / 60, performance.now()); WORLD.tick(1 / 60, performance.now());
+  return { mark: [...inMark].some(x => /Hesket Rowe down on the yard/.test(x)), gates: [...inGates].some(x => /Hesket Rowe/.test(x)), home: !!home, rival: !!WORLD.rival.npc }; });
+check('after the murder the Mark talks of it and the Gatelands do not; Rowe is at no seat', mr.mark && mr.home && !mr.gates && !mr.rival, mr);
 
 // 3 — the player's yield offer, the rope, going down, and the week
 await fresh(8); await callIt();
@@ -65,6 +76,8 @@ const l1 = await page.evaluate(() => { const q = WORLD.duel.q || WORLD.quests.fi
 check('*I yield.*: lost, the rematch in seven days, Rowe the Captain, no death', l1.state === 'lost' && l1.retry === l1.day + 7 && l1.rowe === 'captain' && l1.php >= 1 && !l1.dead, l1);
 const t3 = await serveNow(); const t3b = await serveNow();
 check('the Captain names the rematch, then "Not yet." before the week is out; the quest stays open', /Give your arm a week/.test(t3.r) && /^Not yet\./.test(t3b.r) && t3b.active && t3b.done === 8, { t3, t3b });
+const r3 = await seatRowe();
+check('in the rematch week she is at the seat as *Captain Rowe*', r3 && /^Captain Rowe, for a week at least/.test(r3.greet) && r3.topics.some(t => /step slow on the left, and you didn't see it/.test(t)), r3);
 const wk = await page.evaluate(() => { worldState.gameTimeAbsMinutes += 7 * 1440; forceTime(8); const q = WORLD.fstate().league.active; px = q.data.x; pz = q.data.z + 1; WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60); const D = WORLD.duel; return { state: q.data.state, parts: D.parts.length, rowe: D.npc && D.npc.def.name }; });
 check('a week on, the ring is laid again with Rowe in it', wk.state === 'wait' && wk.parts === 24 && wk.rowe === 'Hesket Rowe', wk);
 await callIt();
@@ -81,5 +94,9 @@ const h = await page.evaluate(() => { const q = WORLD.fstate().league.active; wo
   forceTime(8); WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60); out.morning = WORLD.duel.parts.length; return out; });
 check('out of the ring\'s hours only the sergeant is at the yard, with the hours line and no *Call it.*; at 8h the ring is back', h.state === 'wait' && h.parts === 0 && !h.rowe && /Ring's down/.test(h.greet) && !h.topics.includes('Call it.') && h.morning === 24, h);
 
+const occ = await page.evaluate(() => { const q = WORLD.fstate().league.active; worldState.gameTimeAbsMinutes += 7 * 1440; forceTime(8); const seat = WORLD.siteAnywhere(q.giverSite); px = q.data.x; pz = q.data.z;
+  WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60); const before = WORLD.duel.parts.length; WORLD.TS(seat).flags.occupied = 'aurenne'; WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60); const during = { parts: WORLD.duel.parts.length, sgt: !!WORLD.duel.sgt };
+  WORLD.TS(seat).flags.occupied = null; WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60); return { before, during, after: WORLD.duel.parts.length }; });
+check('while Caer Slige is occupied no ring is laid; freed, it is laid again', occ.before === 24 && occ.during.parts === 0 && !occ.during.sgt && occ.after === 24, occ);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

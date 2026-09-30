@@ -25,7 +25,7 @@ The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`
 The draft is written for A. B and C each change only the lines marked **(fate)**.
 
 Michael: **A** — . (30 Sep 2026, via the control room)
-Built, Session 373 (systems builder): the draft's yard, fight, both yields, murder and the turn-ins, word for word, with the ring's hours; `tests/duel` 17/17. Still owed from the draft: Rowe at the seat afterwards, the murder rumour, the occupied town's lost duels.
+Built, Session 373 (systems builder): the draft's yard, fight, both yields, murder and the turn-ins, word for word, with the ring's hours; `tests/duel` 17/17. Session 374 built the rest: Rowe at the seat afterwards (spared, or Captain for the rematch week), the murder rumour in the Mark, and no ring while Caer Slige is occupied; `tests/duel` 21/21.
 
 ### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
 `docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
