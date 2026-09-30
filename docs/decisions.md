@@ -6,6 +6,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
+Today all ten materials have the same armour on the body and only the colour changes: a smooth shell over the tunic, a ball on each shoulder, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm with a brim. `docs/prototypes/armour/` (auto/concept) makes the armour from the people's shape kit, baked into the body so it bends and walks with them. It has four builds. **Wooden** is laced lamellar with a laced skull-cap and a leather curtain at the neck. **Bronze** is a muscle cuirass with a skirt of leather strips and a crested helm open at the face. **Iron** is a mail shirt to mid-thigh with a conical helm, a nose guard and a mail curtain. **Steel** is plate: a ridged breastplate, hooped plates below it, thigh plates, shoulder guards of three plates each, elbow and knee cops, plated shins and feet, and a closed rounded helm with an eye slit. Under the armour the tunic and breeches keep the character's own cloth colour.
+- **A.** The four builds. Mithril to Cosmic wear the Steel plate in their own colour (the weapon kit's rule).
+- **B.** *(recommended)* The four builds, and each rare metal gets a mark of its own: Mithril fluted, Adamant heavy with a crest and rivets, Obsidian cut into flat faces with glowing seams, Draconic scaled with swept-back horns, Demonic spiked with horns curving forward, Cosmic smooth with rings of light and a halo. A rare set changes your silhouette as well as your colour (the brief's progression).
+- **C.** Today's one shape with detail added (rims, straps, plates). All ten materials still share one silhouette.
+
+Cost: the whole player figure is 5,254 triangles today and 8,208–10,544 with a proposed set (Steel and every A-row metal 8,208; the B signatures 8,551–9,936; Wooden 10,544, of which the lacing is about 500 and can be thinned). Open inside the answer: is "Wooden" armour wood (lamellar, as shown) or leather?
+Shots: [lineup, today / B / A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/lineup.png) · [the four builds](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/families.png) · [side and back](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/side.png) · [the rare metals](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/rare.png) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/scale.png)
+
+Michael: **B, the four builds plus a mark for each rare metal**. (2026-09-30)
+
 ### Unblock auto/systems — CI cannot confirm the branch clean on 32ed275 (the producer, 2026-09-30)
 auto/systems (PR #22, head `32ed275`, Sessions 373–376: the Caer Slige duel with Rowe's yield, seen-theft and lockpick-timing
 tests) has never been approved and its CI has not come back clean on two tries. The first run failed `watch.test.mjs`'s
