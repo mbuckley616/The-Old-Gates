@@ -9222,3 +9222,33 @@ It takes the stone variant, with one difference: **no beams, and so no corbels.*
 ### Needs eyes
 - The shaft is still lit by one lantern at the top, so its foot is dim, as before.
 - The top room's floor is still three flat grey slabs, and at 1 high the room is low for a person to stand in. That is the tower's own shape, not the shell's.
+
+## v80 — Session 356 — Hearthwick's old rooms on the kit shell (H.5, after #62)
+This is the last item owed under Michael's A on #62. The legacy builder (`buildInterior`) still builds Hearthwick's rooms the old way: the four shops, the inn, the church, the keep, the homes and the safehouse. Each has a flat dark ceiling, four flat planes in a dark generic wall texture, box beams (2, 4 in the church, 6 in the keep) and a box door. Their furniture and windows have been on the kit since Sessions 295–304 and 331.
+
+**One shell, two builders.** Session 342's shell was written inside `buildInteriorFor`. It is now two functions in the world module, and both builders call them:
+- `shellWalls(sc, W, D, H, wallKind, reg)` builds the boarded ceiling and the four shaded walls.
+- `shellFrame(sc, {...})` builds the frame and the door. It takes the beams' and windows' places and the room's solids, and optionally a `block` test.
+
+The generated rooms pass exactly what they used before. The `shells` suite's 15 rooms give the same triangle counts as before the split.
+
+**The legacy rooms.**
+- Hearthwick is a Gatelands village, so its rooms are plastered with posts, braces and plates. The church and the keep are ashlar with a plinth and corbels, with the larger door.
+- The wall texture is now the kit's for that kind, not the old brown.
+- The beams keep the old count and places.
+- The legacy rooms keep no furniture solids: the player is bounded by the walls and, in a shop, a strip behind the counter. So `shellFrame`'s own test (the room's solids) would find nothing. The legacy builder passes a `block` test instead. A post is left out if any furniture triangle comes within its column between .05 and .3 under the ceiling. Windows, rugs and the walls don't count.
+- Posts stand only at the walls, inside the band the bounds already keep the player out of, so they need no solids of their own.
+
+### Verified (headless Chromium)
+- **New `legacyshells`**, 7 checks passing. Nine legacy room types: weapon, armor, potion, misc, inn, church, castle, safehouse, home.
+  - Every one has the kit shell (1.9–10.2k triangles) and the plank door (1.0k, 1.4k in the church and the keep), with no box door and no box beams.
+  - Four shaded walls and a boarded ceiling in each.
+  - The church and the keep are stone with no posts. The seven Gatelands rooms stand on 6–11 posts.
+  - An independent check of each post (points up its column against every furniture triangle's box) finds none in the furniture.
+  - Each shell is inside its room, the door centred on the south wall.
+  - `docs/prototypes/legacyshells-ingame.png`: the smithy, the inn, the church, the keep, the safehouse and a home.
+- `shells`, `legacyhalls`, `legacyshops`, `oddfurn`, `windows` and `interiors` pass.
+
+### Needs eyes
+- Walls that were a dark brown are now a pale plaster, as in any generated Gatelands room. The legacy rooms are brighter than they were.
+- With this, every interior's shell in the game is on the kit.
