@@ -9252,3 +9252,18 @@ The generated rooms pass exactly what they used before. The `shells` suite's 15 
 ### Needs eyes
 - Walls that were a dark brown are now a pale plaster, as in any generated Gatelands room. The legacy rooms are brighter than they were.
 - With this, every interior's shell in the game is on the kit.
+
+## v80 — Session 360 — The ashwort suite counted pixels across a canvas switch (CI fix)
+The Auto sessions PR's last CI run (01:07 on `0a2c006`) failed two suites. **`watch`** — the trailing guard stood 38 units off — is the one the systems builder has already fixed on auto/systems (Session 357: a house corner where `npcStep` gave up); it is theirs and reaches this branch through main, so it is left alone here. **`ashwort`** failed its second check on `after` 29 against `bare` 31: the same foes, the same position, the same revealed map, drawn twice, and two pixels of foe red fewer the second time.
+
+Nothing in `drawMM` reads the clock or keeps state between draws. A probe that drew the dungeon minimap six times in a row from one spot showed the cause: 32, 32, 29, 29, 29, 29. Chromium moves a 2D canvas off the GPU after a couple of `getImageData` reads, and the foes' five-pixel squares, placed at fractional coordinates, rasterise a few edge pixels differently on the software path. The suite counts exact-colour pixels, so a count taken before the switch and one taken after can differ. Whether a run shows it depends on whether foes are in view at the first two reads, which depends on where they had wandered in the 1.5 s the dungeon settles, so it failed one run in several locally and on CI.
+
+The fix is in the test only: it draws and reads the minimap four times before counting anything, so every counted draw is on the same path. The switch goes one way. The game is unchanged.
+
+### Verified (headless Chromium)
+- The probe, before the warm-up: 32, 32, 29, 29, 29, 29 on one run of three. After it: four runs of six draws, each run constant (48, 32, 32, 16).
+- `ashwort` six runs in a row, all passing, `after` equal to `bare` every time (0/0, 16/16, 16/16, 20/20, 18/18, 0/0), with 3 to 14 foes within 20 units.
+- `watch` passes here twice (the trailing guard at 7.99 and 7.98–8.00); its CI failure is Session 357's on auto/systems.
+
+### Needs eyes
+- Nothing to see in play. If `watch` is still red on this PR after main carries Session 357, that is the next CI session.
