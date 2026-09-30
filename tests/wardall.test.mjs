@@ -16,7 +16,7 @@ const world = await page.evaluate(() => {
   // a blow on a held block, through executeStrike (outside the parry window)
   const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
   e.locked = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0;
-  const held = () => { PHP = maxHP; stamina = 100; PPOST.posture = PPOST.maxPosture; PPOST.stagUntil = 0; blocking = true; lastBlockAttemptT = -1e9;
+  const held = () => { PHP = maxHP; stamina = 100; PPOST.posture = PPOST.maxPosture; PPOST.stagUntil = 0; blocking = true; lastBlockAttemptT = -1e9; lastBlockAttemptG = -1e9;
     executeStrike(e, 40, (performance.now() / 1000 + 100) * 1000); blocking = false; return maxHP - PHP; };
   // an archer's arrow in the open world, fired from four units ahead and ticked until it lands
   const arrow = (block) => { PHP = maxHP; blocking = block; const a = { x: px + fwdX * 4, z: pz + fwdZ * 4, dmg: 30, name: 'Bandit Archer' };

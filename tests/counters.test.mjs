@@ -18,7 +18,7 @@ const r = await page.evaluate(() => {
 
   // the parry: 40% of posture, a riposte for 0.8 s
   const a = mk(); const now = performance.now() / 1000;
-  blocking = true; lastBlockAttemptT = now - .05;
+  blocking = true; lastBlockAttemptT = now - .05; lastBlockAttemptG = playClockS - .05;
   executeStrike(a, 20, now * 1000); blocking = false;
   out.maxP = a.maxPosture; out.postAfter = +a.posture.toFixed(2); out.stag = isStaggered(a);
   out.ripFor = +(a._ripUntil - a._ripAt).toFixed(3);
@@ -28,7 +28,7 @@ const r = await page.evaluate(() => {
   const i2 = applyMeleeDamage(a, 20); out.after = { riposte: i2.riposte, crit: i2.crit, dmg: i2.dmg, want: want(a, 1.5, i2) };
   clean(a);
   // a swing begun after the window: only the stagger's ×1.5
-  const b = mk(); blocking = true; lastBlockAttemptT = now - .05; executeStrike(b, 20, now * 1000); blocking = false;
+  const b = mk(); blocking = true; lastBlockAttemptT = now - .05; lastBlockAttemptG = playClockS - .05; executeStrike(b, 20, now * 1000); blocking = false;
   _swingStartS = now + .85; const i3 = applyMeleeDamage(b, 20); out.late = { riposte: i3.riposte, dmg: i3.dmg, want: want(b, 1.5, i3) };
   clean(b);
 
@@ -54,7 +54,7 @@ const r = await page.evaluate(() => {
   const d = mk(); d.combatYaw += Math.PI; applyPostureDamage(d, d.maxPosture, t); staggered.push({ e: d, t: POSTURE_BREAK_STUN });
   const f3 = applyMeleeDamage(d, 20); out.behind = { finisher: f3.finisher, safe: FINISHER_SAFE_UNTIL > t }; clean(d); FINISHER_SAFE_UNTIL = 0;
   // a parry that empties posture opens both; the finisher takes the blow and closes the riposte
-  const h = mk(); h.posture = h.maxPosture * .3; blocking = true; lastBlockAttemptT = now - .05; executeStrike(h, 20, now * 1000); blocking = false;
+  const h = mk(); h.posture = h.maxPosture * .3; blocking = true; lastBlockAttemptT = now - .05; lastBlockAttemptG = playClockS - .05; executeStrike(h, 20, now * 1000); blocking = false;
   out.both = { stagT: +(staggered.find(s => s.e === h) || {}).t, fin: finisherOpen(h, performance.now() / 1000) };
   _swingStartS = now + .2; const f4 = applyMeleeDamage(h, 20); out.both.hitFin = f4.finisher; out.both.ripLeft = riposteOpen(h);
   clean(h); FINISHER_SAFE_UNTIL = 0;
@@ -80,7 +80,7 @@ const e2e = await page.evaluate(() => {
   const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.0, pz + fwdZ * 1.0, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
   e.locked = false; e.alert = true; e.combatYaw = Math.atan2(px - e.x, pz - e.z); e._yaw0 = e.combatYaw;
   e.telegraphMax = .5; e.telegraphT = .001; e.atkCd = 0; e.spd = 0; if (typeof e.posture !== 'number') initPosture(e);
-  const keep = ZE; ZE = [e]; PHP = maxHP; blocking = true; lastBlockAttemptT = performance.now() / 1000 - .02;
+  const keep = ZE; ZE = [e]; PHP = maxHP; blocking = true; lastBlockAttemptT = performance.now() / 1000 - .02; lastBlockAttemptG = playClockS - .02;
   try { tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); } finally { ZE = keep; blocking = false; }
   const out = { lost: maxHP - PHP, open: typeof e._ripUntil === 'number' && e._ripUntil > performance.now() / 1000, post: +(e.posture / e.maxPosture).toFixed(2) };
   WORLD.scene.remove(e.mesh); staggered = staggered.filter(s => s.e !== e); return out;

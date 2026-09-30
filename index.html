@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s337</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s338</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1353,6 +1353,9 @@ function _releasePointerLockForMenu(){
 // even if the player never raised guard — produced false "Blocked!"
 // messages during multi-attacker fights (boss + lessers).
 let lastBlockAttemptT=-99;
+// S368 — the play clock: seconds of play, the loop's capped dt summed (the clock a foe's wind-up runs on). The parry window
+// is read on it, so a slow frame between the block and the blow cannot close the window (the critic, s321)
+let playClockS=0,lastBlockAttemptG=-99;
 // S275 — the roll (combat, Michael's B: A's first piece). Q rolls you (keys: the held-key map, which lives in the loop's scope) the way you are moving, or back if you are
 // standing. Light: 0.45 s over 2.6 units, untouchable from 0.08 to 0.30 s. Carrying over 70% of what you can: 0.6 s
 // over 1.8 units, untouchable 0.08–0.24 s. 18 stamina either way. Distance and window read performance.now(), so a
@@ -30900,7 +30903,7 @@ function executeStrike(e, rawDmg, now){
   // through to the held-block branch (the previously-named "late block" branch,
   // which has been dead code since v61c6 because the parry branch always ate first).
   const _parryWindow = PARRY_WINDOW_BASE + attrEff('finesse') * PARRY_WINDOW_FINESSE;
-  const _justRaisedBlock = (now/1000 - lastBlockAttemptT) < _parryWindow;
+  const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
   if(blocking && _justRaisedBlock){
     // PERFECT PARRY — block raised within the timing window before the hit landed
     hurtT = 0;
@@ -42668,7 +42671,7 @@ function loop(now){
   // would burn cycles for nothing. The applier is also a no-op for
   // dungeons/interiors and for owBurnedScene (locked).
   applyDayNightLighting(now/1000);
-  swT+=dt;
+  swT+=dt;playClockS+=dt;
   if(atkCd>0)atkCd-=dt;if(spCd>0)spCd-=dt;
   // Single armor bonus lookup per frame (cached, dirty-flagged on equip change)
   const _ab=getArmorEnchantBonuses();
@@ -44435,7 +44438,7 @@ function _enterGame(){
         showMsg('Draw released.','#aaa');
         return;
       }
-      blocking=true;lastBlockAttemptT=performance.now()/1000;
+      blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
       // v62 — Starting a block cancels any in-progress power charge. Block
       // and power-attack are mutually exclusive states; without this, holding
       // LMB then tapping RMB would leave powerCharging true with no LMB held.

@@ -9565,3 +9565,23 @@ New `tests/keepercone.test.mjs`, 9 checks, passing, no page errors. In Dunmore, 
 ### Needs eyes
 - Whether a keeper turned away reads as a chance to a player standing in the shop. Nothing on screen says which way the keeper looks except the body.
 - The keepers now wander farther across their floor, to the edge of their bounds, where before they stuck against it. How that looks by eye, and whether a keeper now stands in a doorway or against a shelf, is owed.
+
+## v80 — Session 369 — The parry reads the clock the blow runs on
+This comes from the critic's s321 report, in its reviewed list rather than a finding: *the parry window reads `performance.now()` (0.2 s of real time) while the foe's wind-up runs in game time … on a machine that hitches below 5 fps mid-fight the window would close between two frames.* CLAUDE.md's rule is that a dropped frame must never change an outcome, and this breaks it, so it is a fix, not a design call.
+
+**What was wrong.** The loop caps its dt at 0.05 s. A foe's wind-up (`telegraphT`) counts down by that dt, while the parry compared the block's press against the blow in real seconds (`now/1000 - lastBlockAttemptT < 0.2`). Above 20 fps the two clocks agree. Below it, game time runs slower than real time, and the gap between them grows with every slow frame. At 5 fps, a block raised two frames before the blow is 0.1 s of wind-up and 0.4 s of real time, so it was never a parry. A player on a laptop that stutters in a fight lost parries they had timed right against what they could see.
+
+**What changed.** There is now a global play clock, `playClockS`: the loop's capped dt summed, the same clock a wind-up runs on. The right button stamps `lastBlockAttemptG` from it, and the parry window (200 ms + 10 ms a Finesse point) is read on it. `lastBlockAttemptT` stays for the late block's half-second grace, which pairs it with `lastHitT` on the real clock. The window's length did not change, and neither did the riposte (0.8 s from the parry, measured to the swing's start, both on the player's side of the fight).
+
+Seven suites that set `lastBlockAttemptT` to stand in for a parry or a held block now set `lastBlockAttemptG` to match: `counters`, `herbhidden`, `lvact`, `posture`, `tells`, `wardall` and `wardswift`.
+
+### Verified (headless Chromium)
+New `tests/parryclock.test.mjs`, 4 checks, passing, no page errors. It runs the game's own loop, not fixed ticks. Headless, that loop draws the world at 0.5–1 fps, which is the slow machine the critic described:
+- A Bandit with 0.1 s of wind-up left, the block raised as the right button raises it: the blow fell 2 frames, 0.1 s of play and 1.92 s of real time later. It was parried: no health lost, and a riposte opened.
+- The same trial with the old real-clock comparison put back: 3.92 s real, 5 health lost, no riposte. The check fails, as the critic predicted.
+- With 0.5 s of wind-up left (11 frames, 0.55 s of play, 21.7 s real), it is a held block, not a parry: no riposte, 8 posture spent.
+
+The seven suites above, `lockon` and `tpswing` pass.
+
+### Needs eyes
+Nothing at 60 fps, where both clocks agree. On the laptop, a fight during a hitch should now parry what the eye timed. A hitch between the press and the blow is counted as at most 0.05 s, so if anything the window is kinder while the game stutters.
