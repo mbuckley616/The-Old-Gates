@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s334</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s335</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -7649,6 +7649,15 @@ function currentZoneSolid(x,z){
 function isOverworldZone(){return activeZoneId==='world'||!!(MAP_NODES[activeZoneId]&&MAP_NODES[activeZoneId].live);}
 // Interior
 let interiorScene=null,currentHouse=null,intNPCMesh=null,intNPCPos={x:4,z:3};
+// S365 — one step of the keeper's amble about the shop floor (was inline in the main loop): a heading held 1.5–5 s,
+// .25 units a second, turned back off the room's bounds.
+function intAmbleStep(m,dt){const am=m.userData.amble;
+  am.wt-=dt;if(am.wt<=0){am.wa=Math.random()*Math.PI*2;am.wt=1.5+Math.random()*3.5;}
+  const nx=m.position.x+Math.sin(am.wa)*am.speed*dt,nz=m.position.z+Math.cos(am.wa)*am.speed*dt;
+  if(nx>am.minX&&nx<am.maxX)m.position.x=nx;else{am.wa=Math.PI-am.wa;am.wt=0.5;}
+  if(nz>am.minZ&&nz<am.maxZ)m.position.z=nz;else{am.wa=-am.wa;am.wt=0.5;}
+  m.rotation.y=Math.atan2(Math.sin(am.wa),Math.cos(am.wa));
+  if(m===intNPCMesh){intNPCPos.x=m.position.x;intNPCPos.z=m.position.z;}}
 // v61d4 — Safehouse interior interaction state. Set by buildInterior's
 // safehouse branch; cleared on exitInterior (so stale positions from a
 // previous safehouse visit don't trigger when the player walks past where
@@ -43018,23 +43027,7 @@ function loop(now){
     if(intNPCMesh){
       const am=intNPCMesh.userData.amble;
       if(am&&!am.paused){
-        // Direction change timer
-        am.wt-=dt;
-        if(am.wt<=0){
-          am.wa=Math.random()*Math.PI*2;
-          am.wt=1.5+Math.random()*3.5;
-        }
-        // Move within bounds
-        const nx=intNPCMesh.position.x+Math.sin(am.wa)*am.speed*dt;
-        const nz=intNPCMesh.position.z+Math.cos(am.wa)*am.speed*dt;
-        if(nx>am.minX&&nx<am.maxX)intNPCMesh.position.x=nx;
-        else{am.wa=Math.PI-am.wa;am.wt=0.5;}
-        if(nz>am.minZ&&nz<am.maxZ)intNPCMesh.position.z=nz;
-        else{am.wa=-am.wa;am.wt=0.5;}
-        intNPCMesh.rotation.y=Math.atan2(Math.sin(am.wa),Math.cos(am.wa));
-        // Update interaction position so prompt tracks them
-        intNPCPos.x=intNPCMesh.position.x;
-        intNPCPos.z=intNPCMesh.position.z;
+        intAmbleStep(intNPCMesh,dt); // S365 — the step lives in intAmbleStep so a test can walk the keeper
       } else if(am&&am.paused){
         // Priest: gentle rotation sway only, stays at altar
         intNPCMesh.rotation.y=0+Math.sin(swT*.4)*.08;

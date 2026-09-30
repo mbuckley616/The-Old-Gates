@@ -8714,3 +8714,21 @@ Backlog G's owed check on chest locks (Session 150): *whether the mimic's borrow
 
 ### Needs eyes
 Whether a mimic in a corner still surprises once a player has learned that treasure chests (gold, larger) are never mimics and that a storeroom's middle chest never is. Both were true before this session. How many mimics a dungeon holds: the roster puts one in every sixth foe, so a big dungeon has six, sometimes more than its real chests on a floor. That is a number for Michael if it feels like too many.
+
+## v80 — Session 365 — A one-room shop's strongbox is not in sight all day: it depends on the room
+Backlog G, Session 167's owed check: *whether one-room shops, where the strongbox sits in the keeper's sight all day, are fair*. Session 167 measured the box against a keeper standing still at the counter. But the keeper walks the shop floor at .25 units a second, turning every 1.5–5 s, and a witness indoors needs six units and a clear line. So "all day" was a guess. This session measures it.
+
+**How.** The keeper's amble step was inline in the main loop. It is now `intAmbleStep(mesh, dt)`, with the same rule and numbers, and the loop calls it. A test can therefore walk the keeper in fixed 1/60 steps. `tests/shopsight` enters every shop with a strongbox in Dunmore, Portclare, Ironhaven and Ashenmoor at 13h, 23 shops in all. It runs the keeper's own amble for ten minutes and asks `witnessOf` every tenth of a second for a player standing at the box. From that record it works out the chance that a pick of 3, 6 or 10 s, begun at a random moment, is seen (a town pick is asked every frame, Session 327).
+
+**What it found.** The ten back-room shops are never seen while the door is shut, as Session 167 built. The thirteen one-room shops split in two, and nothing in between:
+- **Eight are in sight all day, or nearly**: Portclare's Smithy, Physic and Fionnuala's Stores; Ironhaven's Armory, War Supplies and Royal Herald; Ashenmoor's Forge and the Old Cottage. They are seen 93–100% of the time, with a longest unseen stretch of 0–26 s. A 6 s pick is seen 94–100% of the time.
+- **Five are almost never seen**: Dunmore's three Goods shops, Portclare's Odhrán's Stores and Ashenmoor's Apothecary. They are seen 0–10% of the time, and a 6 s pick 0–10%. In these the box stands 5.5–6.6 units from the counter, and the keeper's walk keeps them near the six-unit edge or beyond it.
+
+So in a one-room shop, a daylight theft is either hopeless or free, and which one it is comes from the room's width, not from anything the player does. Session 167's own Dunmore figures (the three one-room boxes seen at 4.2–5.8) were the keeper's starting spot, and it drifts. Whether that is fair, and what should change, is a rule of play. It is raised as a decision (below and in `docs/decisions.md`); nothing in the game's rules changed this session.
+
+### Verified (headless Chromium)
+New `tests/shopsight.test.mjs`, 7 checks, all pass: 23 shops (13 one-room, 10 back-room) in four towns. Every keeper stays inside their bounds and walks 1.9–4.1 units from the counter in ten minutes. A longer pick is never less likely to be seen. No back-room box is seen with its door shut. No page errors. The mean chance of being seen on a 6 s pick is .62 across one-room shops and 0 across back-room shops, but the mean hides the split above. `witness` and `intnpcs` pass on the refactored amble.
+
+### Needs eyes
+Whether a player notices the keeper's walk at all, and whether watching it for a gap would be part of the game if the six units were kept.
+Raised as issue #73: **A** the keeper sees the whole room, **B** the keeper sees what they face, a cone that the walk turns (recommended), or **C** leave it.
