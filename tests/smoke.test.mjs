@@ -79,5 +79,26 @@ const inn = await page.evaluate(() => { const C = [...WORLD.coachLines.values()]
   const ch = S.chimneys[0]; return { n: S.chimneys.length, t: ch.t, above: +(ch.y - WORLD.worldH(ch.x, ch.z)).toFixed(2), off: +Math.hypot(ch.x - S.site.x, ch.z - S.site.z).toFixed(2), inGroup: P.parent === C.group, alpha: +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3), vis: P.visible }; });
 console.log(JSON.stringify({ coachKey, inn }));
 check('a coaching inn smokes from its own chimney (on its roof, within 5 of the inn), always', inn.n === 1 && inn.t === 'inn' && inn.above > 3 && inn.above < 12 && inn.off < 5 && inn.inGroup && inn.alpha > .1 && inn.vis, inn);
+
+// Session 354 — the legacy village (Ashenmoor's old scene, where WORLD.tick does not run): Bram's forge chimney smokes, driven
+// from the main loop, always (a forge), on the same wind
+await page.evaluate(() => { goToZone('overworld', 25.75, 15, 0, 'x'); });
+// g.spin ticks WORLD.tick, which does not run here; the main loop calls WORLD.smokeLegacy, so real frames must move the smoke's clock
+const t0 = await page.evaluate(() => WORLD.smoke.t); await g.frames(6); const loopRan = await page.evaluate(t0 => { const S = scene.userData.smokeS; return !!S && WORLD.smoke.t > t0; }, t0);
+check('in the old village the game\'s own loop drives the smoke (its clock moves over real frames)', loopRan, { t0, loopRan });
+const legSpin = n => page.evaluate(n => { for (let i = 0; i < n; i++) WORLD.smokeLegacy(1 / 60, scene); }, n);
+await page.evaluate(() => forceTime(13)); await legSpin(600);
+const leg = await page.evaluate(() => { const vs = scene, ch = vs.userData.chimneys, S = vs.userData.smokeS; if (!ch || !S) return { zone: activeZoneId, owScene: vs === owScene, ch: !!ch, S: !!S };
+  const P = S.smoke, a = P.geometry.attributes.aAlpha.array, p = P.geometry.attributes.position.array; let nan = false, hi = -1e9, sx = 0, sz = 0, n = 0;
+  for (let i = 0; i < a.length; i++) { if (!isFinite(p[i * 3]) || !isFinite(p[i * 3 + 1])) nan = true; if (a[i] > .01) { hi = Math.max(hi, p[i * 3 + 1]); sx += p[i * 3] - ch[0].x; sz += p[i * 3 + 2] - ch[0].z; n++; } }
+  const w = WORLD.windDir(); return { zone: activeZoneId, owScene: vs === owScene, n: ch.length, t: ch[0].t, top: +ch[0].y.toFixed(2), count: P.geometry.attributes.position.count, inScene: P.parent === vs,
+    alpha: +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3), vis: P.visible, nan, rise: +(hi - ch[0].y).toFixed(2), downwind: +((sx * Math.sin(w) + sz * Math.cos(w)) / Math.max(1, n)).toFixed(2), t0: WORLD.smoke.t }; });
+await page.evaluate(() => forceTime(3)); await legSpin(600);
+const legNight = await page.evaluate(() => { const a = scene.userData.smokeS.smoke.geometry.attributes.aAlpha.array; return +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3); });
+console.log(JSON.stringify({ leg, legNight }));
+check('the old Ashenmoor\'s forge chimney smokes: one Points object of 24 puffs in its scene, rising and drifting downwind, every position finite', leg.owScene && leg.n === 1 && leg.t === 'weapon' && leg.count === 24 && leg.inScene && leg.vis && !leg.nan && leg.alpha > .1 && leg.rise > 2 && leg.downwind > .3, leg);
+check('a forge smokes at every hour (3h as at 13h)', legNight > .1, legNight);
+await page.evaluate(() => { forceTime(13); pitch = .18; yaw = Math.PI; px = 25.75; pz = 13; }); await legSpin(240); await g.frames(3);
+await page.screenshot({ path: 'tests/out/smoke-legacy.png' });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

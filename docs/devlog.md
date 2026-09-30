@@ -9176,3 +9176,25 @@ New `tests/buffstack.test.mjs`, 7 checks, passing, no page errors. Driven throug
 
 ### Needs eyes
 The buff strip shows only the one that counts. Whether a boon waiting under a herb should show too is the look builder's call, or Michael's.
+
+## v80 — Session 354 — Smoke from the old village's forge (H.5, after #63)
+Session 345 left one chimney without smoke and called it Hearthwick's. **A correction:** the one box chimney in the legacy villages is over Bram's forge in the old Ashenmoor (`ASHENMOOR_CONFIG.decorateFn`, the scene `owScene`, zone id `overworld`). Hearthwick has no chimney, and the burned Ashenmoor does not build the forge's. The old village is still reached: a Continue with no save and the title's Load Game both stand you in it.
+
+A legacy village is its own scene, and `WORLD.tick`, which drives the towns' smoke, runs only in the open world. So:
+- The decorator records the chimney's top on its scene (`scene.userData.chimneys`), typed `weapon`, so it smokes at every hour, as a smithy does.
+- `WORLD.smokeLegacy(dt, scene)` makes the scene's smoke record the first time it is called (one Points object at the scene's origin, from the same `smokeFor`) and ticks it through `tickSmoke`, which now takes an optional list.
+- The main loop calls it when the active scene has chimneys and the zone is not the world. The world's own call is unchanged.
+
+**Also, CI.** PR #48's head was red on one shard, `mainrun`. That is the failure main has carried since the Session 341 merge. The systems builder fixed it in Session 351 on auto/systems (a queued quest card took the E meant for Bram), but that fix has not reached main yet. Its test file is ported here verbatim, so the change no-ops once main takes auto/systems. `mainrun` passes 9 of 9 here with it.
+
+### Verified (headless Chromium)
+- **`smoke`**, extended, 14 checks passing:
+  - In the old village, real frames of the game's own loop advance the smoke's clock. `g.spin` ticks only `WORLD.tick`, so the test drives `WORLD.smokeLegacy` at fixed 1/60 ticks for the rest.
+  - One chimney of type `weapon`, its top 1.92 above the ground. Its 24 puffs are one Points object in `owScene`, every position finite. At 13h the mean alpha is .329, the highest puff 3.2 above the top, and the mean drift 3.51 downwind along `windDir()`.
+  - At 3h the mean alpha is .331: a forge keeps its fire.
+  - Every earlier check still holds (Dunmore's 33 chimneys, the hours, the wind, a storm, the fort, the coaching inn).
+- `mainrun` (ported) passes 9 of 9.
+- `docs/prototypes/smoke-legacy.png`: the forge from the lane at 13h.
+
+### Needs eyes
+The old chimney is a box in front of the forge's south wall, only 1.9 high, so the smoke starts below the roof's ridge. That is the old model's height. A proper stack belongs with the legacy village's houses, if they are ever put on the kit.
