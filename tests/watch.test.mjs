@@ -53,6 +53,7 @@ const corner = await page.evaluate(() => { forceTime(12); const S = WORLD.settle
   const d = Math.hypot(px - f.g.position.x, pz - f.g.position.z); const same = S._follower === f; worldState.favor[site.id] = 0;
   return { name: f.def.name, d: +d.toFixed(2), same }; });
 check('from the house corner where he stuck (21.5 units off), the trailing guard reaches six to eight units within 20 s', !corner.none && corner.same && corner.d >= 5.9 && corner.d <= 8.6, corner);
+<<<<<<< HEAD
 // Session 378: CI on 32ed275 (Eilís 38.6 then 36.2 units off, closing on nothing). The street grid was read once, when the
 // town was built, but solids go on arriving after (Dunmore's live solid cells 3,710 at the build, 3,928 six minutes on),
 // and a way through a cell gone solid held the guard against it, asking again for the same way. A box is set down on a
@@ -73,5 +74,7 @@ const stale = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.
   WORLD.STATIC_SOL.splice(WORLD.STATIC_SOL.indexOf(box), 1); worldState.favor[site.id] = 0;
   return { cells: before.length, box: [+(c.x - site.x).toFixed(1), +(c.z - site.z).toFixed(1)], beforeOn, afterOn, afterLen: after.length, againOn, asked, others, name: f.def.name, d: +d.toFixed(2), same }; });
 check('a way the street grid gives keeps off a solid set down after the grid was read, and the guard sent by it still comes to six to eight units', !stale.none && !stale.short && stale.beforeOn > 0 && stale.afterLen > 0 && stale.afterOn === 0 && stale.againOn === 0 && stale.asked >= 10 && stale.others === 0 && stale.same && stale.d >= 5.9 && stale.d <= 8.6, stale);
+=======
+>>>>>>> origin/main
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
