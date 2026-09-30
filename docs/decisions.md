@@ -15,6 +15,59 @@ The draft is written for A. B and C each change only the lines marked **(fate)**
 
 ## Answered
 
+### Unblock auto/systems — hourhitch flakes again on 5633fc4 (the producer, 2026-09-30)
+PR #22 (auto/systems, approved head 5633fc4) has gone red a third time on the same test. The push-triggered run finished with 15/16 suites passing and `hourhitch` failing (a frame-timing budget, 399s); the pull-request-triggered run on the identical commit sat "in progress" for over four hours — one shard hung — which kept the merge workflow reporting "CI still running" and never landing the approval. The producer cancelled the hung run this pass so CI can report cleanly. Nothing in this commit (Session 350, the walls/LOD distant-check fix) touches shaders or frame timing, and the systems builder's own Slack note says `hourhitch`'s red is "still not root-caused" — it just hasn't been fixed yet.
+
+- **A. Merge anyway** *(recommended)*: same ruling as twice before (unblock-auto-systems, unblock-systems-walls-lod) — nothing in the diff touches timing, and a shared, congested CI runner is exactly where a fixed-millisecond budget misses. Claude merges 5633fc4 onto main as already approved.
+- **B. Wait for a clean run**: leave it queued; no agent is set to touch `hourhitch`, so it could sit a while, especially with the runner backlog seen this run (main's own CI check sat "queued", not even started, for two hours on this pass).
+- **C. Fix the budget first**: the systems builder widens `hourhitch`'s timing budget next run, then Claude merges. About one short session.
+
+Michael: **A. Merge anyway** — . (30 Sep 2026, via the control room)
+
+### What a night's burglary should pay (systems builder, Session 357, issue #68)
+The crime system's owed "numbers by play", measured headless (`tests/burglary.test.mjs`) now that a town lock is picked in a running world (Session 327). Ten minutes of 23h were ticked, and each shop door was asked every tenth of a second whether someone would see a player standing there.
+- **The door.** A pick of 3–6 s (four pins by a practised hand) started at a random moment is seen 21–24% of the time in Dunmore (three on the watch) and 11–13% in Portclare (one). Sneaking about halves that. A burglar who waits for the lantern to pass does better still. Homes are almost never seen (0–2%), because the beat walks past the shop doors.
+- **Behind it.** No keeper is in a shut shop at night, so the strongbox is always taken unseen: 20–200 gold by prosperity, plus one item. Dunmore's seven boxes hold **910 gold**, Portclare's five **605**, and they refill every five days.
+- **Seen.** The pick breaks off, and it costs 25 gold and a point of favour. You can try again a minute later.
+
+So one night in Dunmore expects about 900 gold for one or two 25-gold fines. For scale, a Steel Sword costs 66, quest rewards run 50–500, and four picks cost 48. The design brief says: "not systems that reduce to buy more". Theft that outpays every quest makes buying the answer.
+
+- **A. Cut the strongbox, keep the risk** *(recommended)*: 10 + 50 a 100 prosperity, times the shop's kind as now (Dunmore about 40 a box and 280 a night; a village about 20). The item stays, so a thief's money comes from selling the goods, as in Morrowind and Oblivion. One line of code.
+- **B. Keep the takings, raise the risk**: the watchman's lantern sees 10 units at night instead of 6. A door is then seen perhaps twice as often, though the strongbox is still free once you are in. Not yet measured.
+- **C. A and B.**
+- **D. Leave it** until the skills sessions give Sneak and Security numbers of their own.
+
+Michael: **A. Cut the strongbox, keep the risk** — . (30 Sep 2026, via the control room)
+
+### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
+`docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
+
+- **A. The page** *(recommended)*: words by school on the left; the spell written as a sentence in the middle, with every form's line and cost, riders as chips, mana worked out; the book of eight on the right.
+- **B. The table**: every word against every form, 35 cells at once, growing to 24 rows by the end.
+- **C. The ring**: a carved circle of words and forms with a line drawn between two joined; most like a sigil, least legible.
+
+Michael: **A** — the page. (29 Sep 2026, via the control room)
+
+### When should the game autosave? (systems builder, 2026-09-29, issue #66)
+The critic's s253: forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold spent on a coaching road, a coach ride and a dungeon. `saveGame()` runs on zone travel, the Wait button, leaving a dungeon, a book and the safehouse. It never runs on sleeping (inn, camp bedroll, own bed: `restAtBed` does not save), entering a dungeon, buying from a lord, or walking into a town. The ring keeps at most one autosave per 90 real seconds (`SS.lastAuto`), so more moments don't flood it.
+
+- **A. At rest and at thresholds** *(recommended)*: sleeping anywhere, a dungeon door either way, arriving on a town's pad, stepping off the coach. Morrowind's and Oblivion's habit; none of these happen mid-fight.
+- **B. A, and a timer**: every 10 real minutes in the open world while no foe is near.
+- **C. The minimum**: sleep and a dungeon door only.
+- **D. Leave it**: the manual save and today's moments.
+
+Michael: **A** — at rest and at thresholds. (29 Sep 2026, via the control room)
+
+### Should a mayor offer to build what the town already has? (systems builder, 2026-09-29, issue #65)
+The critic's s253: a lord offers *Pay for an inn / a chapel / walls / a guild hall* by what you have paid for there before (`investTopics` reads `st.builds`), not by what stands. Dunmore (prosperity 61) has four inns, a church, two guild halls and log walls, and its lord offers all four. A paid inn, chapel or guild hall where one stands adds no building (the generator adds each shop type once); paid walls only lift a fence to logs below prosperity 45. What the payment still does is add prosperity (+8 to +10) and count toward the three builds that unlock *Take the deed*.
+
+- **A. Offer only what the town lacks** *(recommended)*: no inn where an inn stands, no chapel where a church stands, no guild hall where one stands, no walls where they are logs or better; the well and the harbour as they are. Every payment puts something new in the town. A big town has fewer builds toward the deed (Dunmore: the well only), so see C.
+- **B. Leave the offers, change the words**: *Pay to enlarge the inn* where one stands. Same money, prosperity and deed.
+- **C. A, and a big town's deed asks for favour instead**: where fewer than three builds are possible, the deed needs favour 8 in place of three builds.
+- **D. Leave it.**
+
+Michael: **A** — offer only what the town lacks. (29 Sep 2026, via the control room)
+
 ### Unblock auto/systems — a walls/LOD test failed on one of two CI runs (the producer, 2026-09-29)
 PR #22 (auto/systems, head 7e4b078) had two CI runs on the identical commit: the push-triggered run passed all 18 suites clean; the pull-request-triggered run failed one — walls.test.mjs's distant-LOD check ("its detailed clusters show near and give way to their plain twins far") — with the other 17 suites green. Session 341, the only change since Michael's last approval, touches buff stacking (a weaker herb or Shield no longer ending a stronger shrine boon); nothing in it touches walls, towers, or LOD. Same pattern as the unblock-auto-systems flake Michael ruled on two days earlier.
 
