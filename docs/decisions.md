@@ -4,6 +4,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### After the split lands — does the way back stay in the repo? (Fable, split tooling, Session 368, 2026-09-30)
+Backlog K step 1 is built on auto/split: `scripts/split.py` cuts the script at 33 pattern-found seams, `scripts/join.py`
+reassembles the one-file build from `js/manifest.json` and proves it byte-identical. `docs/design/split-plan.md` §5 left
+one thing open: what happens to `join.py` and the manifest once switch-over day has passed and the builders are editing
+`js/`. From then on `join.py` only reproduces the *frozen* build (the manifest's hash), never the current code, so it is a
+receipt, not a tool. `split.py` itself stays useful for a stray late branch (cherry-pick onto the pre-split commit, re-run
+it, diff `js/`).
+- **A. Keep both one release, then drop them** *(recommended)*: the receipt is there while anyone might doubt the split;
+  the day's session notes in the devlog which later session removes them.
+- **B. Keep them for good**: a few kilobytes; `join.py` also documents the file order for a reader who has never seen
+  the one-file build.
+- **C. Delete them on the day**, in the switch-over commit: the manifest's hashes and the CI run are proof enough.
+
 ### Hesket Rowe at the yard — can she survive the League's duel? (the quest writer, 2026-09-30, issue #69)
 The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`, *The Yard at Caer Slige*). Today the League's ninth service kills Hesket Rowe: it is a fight with a Bandit Captain wearing her name, and the Captain's line after it mentions her burial. In the Crown's and the Compact's lines she is alive at the finale. With a yield in the ring, her fate becomes the player's call.
 

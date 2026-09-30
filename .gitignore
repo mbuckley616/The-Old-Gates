@@ -5,3 +5,6 @@ tests/tmp/
 .DS_Store
 # per-character save exports you don't want in history
 *.ogsave.json
+# the test harness writes this beside the index.html it boots (tests/lib/game.mjs)
+*.local.html
+__pycache__/
