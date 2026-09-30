@@ -9671,3 +9671,33 @@ The world module now exports `rival` and `liveRumours` for the test.
 ### Needs eyes
 - Rowe standing at Caer Slige for good after a win: whether she should one day move on, or be found at the spire when *the spire to hold* is built.
 - The occupied town's other half, *gains patrols*, is not built. The occupier's garrison already holds the plaza, so whether that is enough is Michael's call. It is not raised as a decision, because nothing is broken.
+
+## v80 — Session 375 — A seen theft at level one, by the numbers
+This is G's owed check from Session 168: *a seen strongbox theft now costs 50 + what you took (doubled at a yield); whether that is steep at level one*. The feel is Michael's. This session measures it, the way Session 371 measured the guard. No game code changed, so the build tag is not bumped.
+
+**How.** New `tests/theftlevel1.test.mjs`. A new character straight out of the creator is set against every shop strongbox in Dunmore (prosperity 61) and Portclare (56), read through the game's own numbers:
+- the takings: `boxCoins` at the town's prosperity, which the box rolls at ×0.8–1.2;
+- the one thing from the shop's own stock (`SHOP_STOCK`);
+- the fine if you are seen, 50 + both, and the yield's double of it.
+
+Each town's level-one jobs from `townQuestFor` give the scale.
+
+| | the takings | the thing | seen, fined | at a yield |
+|---|---|---|---|---|
+| a forge or armoury | 46–49 (36–58) | 17–22 (5–44) | 112–121 (91–152) | 224–242 |
+| an apothecary | 30–32 (24–39) | 30 (15–40) | 111–113 (89–129) | 222–226 |
+| a goods shop | 38–41 (30–49) | 9 (2–18) | 97–100 (82–117) | 194–200 |
+
+A level-one job pays 55–97 in Dunmore and 52–87 in Portclare, a median of 66. The new character carries 0 gold.
+
+**What it says.** A seen theft is fined 97–121 (median 111), about 1.7 level-one jobs. A new character has nothing but what they just took, and the takings are 30–49, so they cannot pay the fine on the spot, let alone the yield's 194–242. What is left at level one:
+- **The cells.** They cost no gold: the takings and the thing go back, the fine is cleared, and a night passes.
+- **Walking off with it.** The bounty stands, favour is down 2, and the keeper refuses you for five days.
+
+Paying never profits. A thief seen and paying is always out 50 plus the difference between the thing's price and its resale. So at level one, being seen means a night in the cells or a debt to the town, never a loss of money, because there is none to lose. Whether that is too steep, too soft, or rightly a debt rather than a purse is Michael's call. Nothing is raised as a decision, because nothing here is broken.
+
+### Verified (headless Chromium)
+`tests/theftlevel1.test.mjs`, 4 checks, passing, no page errors. It checks the level, the 12 shops (seven in Dunmore, five in Portclare), the jobs, and that every fine is 50 + the takings + the thing. The table above is its output.
+
+### Needs eyes
+Whether a new character should start with a purse at all. Here it is 0 after the creator; the tutorial's first coins come later. And whether the cells, costing no gold, read as a punishment.
