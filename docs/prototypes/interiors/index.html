@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interiors on the Kit</title>
+<style>
+:root{--bg:#1a1410;--ink:#e8dcc4;--dim:#a89878;--line:#4a3c2c}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#1a1410;--ink:#e8dcc4}}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px Georgia,serif}
+#bar{position:fixed;left:0;right:0;top:0;padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;background:rgba(0,0,0,.55);z-index:2}
+#bar select,#bar button{background:#2a2018;color:var(--ink);border:1px solid var(--line);padding:4px 8px;font:inherit}
+#info{color:var(--dim)}
+canvas{display:block;width:100%;height:100%}
+</style></head><body>
+<div id="bar">
+  <strong>Interiors on the kit</strong>
+  <label>Room <select id="room"><option value="home">a home</option><option value="inn">the inn's taproom</option><option value="pieces">the pieces</option></select></label>
+  <label>Nation <select id="nat"><option>gatelands</option><option>mark</option><option>aurenne</option></select></label>
+  <span id="info"></span>
+</div>
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="sk.js"></script>
+<script src="furniture.js"></script>
+<script>
+// Drag to turn, wheel to come closer. The room is a plain shell (floor, three walls, a ceiling) at the game's sizes:
+// a Dunmore home is 11 x 12 under a 2.1 ceiling, the inn 13 x 12. A townsperson on the game's scale stands in each.
+const cv=document.getElementById('c'),REN=new THREE.WebGLRenderer({canvas:cv,antialias:true});REN.setPixelRatio(Math.min(2,devicePixelRatio));
+const F=FURN(THREE,SK);let sc,cam=new THREE.PerspectiveCamera(58,1,.05,100),yaw=.7,pitch=.35,dist=7,target=new THREE.Vector3(),fire=null;
+function person(){const G=new THREE.Group(),m=c=>new THREE.MeshLambertMaterial({color:c});
+  const body=new THREE.Mesh(SK.lathe([[.001,.5],[.16,.52],[.17,.7],[.14,.82],[.06,.88],[.001,.9]],12),m(0x3a4a5a));G.add(body);
+  const head=new THREE.Mesh(SK.ball(.13,12,9),m(0xe0b898));head.position.y=1.0;G.add(head);
+  for(const s of [-1,1]){const l=new THREE.Mesh(SK.limb(.48,.06,.045),m(0x3a2a1a));l.position.set(s*.07,.52,0);G.add(l);}
+  return G;} // a stand-in at a townsperson's 1.13 (the shots use the game's own)
+function shell(W,D,H){const g=new THREE.Group(),m=c=>new THREE.MeshLambertMaterial({color:c,side:THREE.DoubleSide});
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),m(0x5a3a22));fl.rotation.x=-Math.PI/2;fl.position.set(W/2,0,D/2);g.add(fl);
+  for(const [x,z,ry,L] of [[W/2,0,0,W],[0,D/2,Math.PI/2,D],[W,D/2,-Math.PI/2,D]]){const w=new THREE.Mesh(new THREE.PlaneGeometry(L,H),m(0xc8a878));w.position.set(x,H/2,z);w.rotation.y=ry;g.add(w);}
+  return g;}
+function build(){const room=document.getElementById('room').value,n=document.getElementById('nat').value;
+  sc=new THREE.Scene();sc.background=new THREE.Color(0x120a06);sc.add(new THREE.AmbientLight(0xffb070,.45));
+  let W=11,D=12,H=2.1,obj;
+  if(room==='pieces'){W=12;D=4;const p=F.Parts();let x=.6;for(const [q,h,z] of [[F.bed(n,3),.5,1],[F.chair(n,4),.22,.8],[F.table(1.5,.9,n,5),.8,.8],[F.chest(n,8),.4,.5],[F.hearth(1.8,2.1,n,9),.95,0],[F.counter(2.2,n,11),1.15,.8],[F.cask(n,12),.35,.8]]){x+=h;p.put(q,x,z,0);x+=h+.25;}
+    obj=F.bake(p);target.set(x/2,.5,1);dist=8;}
+  else if(room==='home'){obj=F.bake(F.home(W,D,H,n,7));target.set(W*.5,.4,D*.4);dist=7;}
+  else{W=13;obj=F.bake(F.inn(W,D,H,n,7,true));target.set(W*.5,.5,D*.4);dist=8;}
+  sc.add(shell(W,D,room==='pieces'?3:H));sc.add(obj);fire=obj.userData.fire;
+  const lamp=new THREE.PointLight(0xffaa44,1.6,Math.max(W,D)*1.3);lamp.position.set(W/2,H-.4,D/2);sc.add(lamp);
+  const hl=new THREE.PointLight(0xff6a20,1.4,7);hl.position.set(W-.9,.6,D*(room==='inn'?.5:.4));sc.add(hl);
+  const who=person();who.position.set(target.x+.4,0,target.z+1.2);sc.add(who);
+  document.getElementById('info').textContent=Math.round(obj.userData.tris).toLocaleString()+' triangles in 2 meshes';}
+let drag=null;cv.addEventListener('pointerdown',e=>drag=[e.clientX,e.clientY]);addEventListener('pointerup',()=>drag=null);
+addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag[0])*.006;pitch=Math.max(.05,Math.min(1.3,pitch+(e.clientY-drag[1])*.004));drag=[e.clientX,e.clientY];});
+cv.addEventListener('wheel',e=>{dist=Math.max(1.5,Math.min(16,dist*(1+Math.sign(e.deltaY)*.1)));e.preventDefault();},{passive:false});
+document.getElementById('room').onchange=build;document.getElementById('nat').onchange=build;
+function frame(t){const w=innerWidth,h=innerHeight;if(cv.width!==Math.round(w*REN.getPixelRatio())){REN.setSize(w,h,false);}cam.aspect=w/h;cam.updateProjectionMatrix();
+  cam.position.set(target.x+Math.sin(yaw)*Math.cos(pitch)*dist,target.y+Math.sin(pitch)*dist,target.z+Math.cos(yaw)*Math.cos(pitch)*dist);cam.lookAt(target);
+  F.flicker(fire,t/1000);REN.render(sc,cam);requestAnimationFrame(frame);}
+build();requestAnimationFrame(frame);
+</script></body></html>

@@ -1,0 +1,89 @@
+{
+ "home": {
+  "today": {
+   "meshes": 43,
+   "tris": 556,
+   "frame": {
+    "calls": 44,
+    "tris": 11100
+   }
+  },
+  "proposed": {
+   "meshes": 2,
+   "tris": 14521,
+   "frame": {
+    "calls": 17,
+    "tris": 25245
+   }
+  },
+  "room": {
+   "W": 11,
+   "D": 12,
+   "H": 2.1,
+   "st": "irish",
+   "gallery": false
+  },
+  "house": {
+   "id": "g_dunmore_16",
+   "style": "irish",
+   "two": false,
+   "w": 6,
+   "d": 6
+  }
+ },
+ "inn": {
+  "today": {
+   "meshes": 147,
+   "tris": 2364,
+   "frame": {
+    "calls": 252,
+    "tris": 14536
+   }
+  },
+  "proposed": {
+   "meshes": 2,
+   "tris": 26008,
+   "frame": {
+    "calls": 107,
+    "tris": 38180
+   }
+  },
+  "room": {
+   "W": 13,
+   "D": 12,
+   "H": 3.8850000000000002,
+   "st": "irish",
+   "gallery": true
+  },
+  "house": {
+   "id": "g_dunmore_8",
+   "style": "irish",
+   "two": true,
+   "w": 7,
+   "d": 6
+  }
+ },
+ "pieces": {
+  "bed": 2200,
+  "chair": 848,
+  "table": 1184,
+  "chest": 856,
+  "hearth": 3842,
+  "shelf": 768,
+  "bench": 192,
+  "stool": 232,
+  "counter": 1736,
+  "cask": 908,
+  "dresser": 2784,
+  "gatelands bed": 2200,
+  "gatelands chair": 848,
+  "gatelands chest": 856,
+  "mark bed": 2200,
+  "mark chair": 848,
+  "mark chest": 856,
+  "aurenne bed": 2200,
+  "aurenne chair": 848,
+  "aurenne chest": 856
+ },
+ "personH": 1.177608502022328
+}
