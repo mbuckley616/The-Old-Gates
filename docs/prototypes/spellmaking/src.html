@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Spellmaking Page</title>
+<!-- The Old Gates — the magic tab for "words of the deep tongue" (magic B, Michael 29 Sep 2026). Concept, 29 Sep 2026.
+     Built on the approved parchment kit (docs/prototypes/ui, Michael A, 27 Sep): kit.css and the icon <symbol>s are copied from it
+     (build.py inlines them into index.html). Every .screen is 1280×720; shoot.mjs photographs them.
+     Numbers follow docs/design/magic.md: a word's cost from today's SPELLS/BUFF_SPELLS, × the form (sent 1, worn 1, touched .6,
+     laid 1.5, held .5 a second), × the school skill (1.4 − .8 × skill/100); two words cost their sum + 25%.
+     The player: Intelligence 18, Mages' Guild Evoker, 100 mana, schools Tine 31 · Uisce 18 · Cloch 12 · Gaoth 26 · Solas 22 · Scáth 5.
+     The words and their meanings are the canon's (lore_canon.md, the 16); what each word does in each form is working text for the
+     quest writer to replace. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+/* ───────── spellmaking additions ───────── */
+.ico-form{font-size:18px}
+.lex{display:flex;flex-direction:column}
+.lex .school{margin:8px 0 1px}
+.word{display:grid;grid-template-columns:1fr auto 30px;gap:8px;align-items:baseline;padding:3px 8px;font-size:17px;border-bottom:1px solid rgba(90,65,40,.14)}
+.word .nm{font:500 18px var(--body)}
+.word .gl{font:italic 13px var(--fell);color:var(--ink-faint);margin-left:6px}
+.word.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.word.sel .nm{color:var(--rubric)}
+.word.two{box-shadow:inset 3px 0 var(--gilt);background:linear-gradient(90deg,rgba(154,112,32,.16),rgba(154,112,32,.03))}
+.word.unk{color:var(--ink-faint);font:italic 14px var(--fell);grid-template-columns:1fr auto}
+.tier{display:inline-flex;gap:3px;align-items:center}
+.tier span{width:9px;height:9px;border:1.2px solid var(--ink-soft);transform:rotate(45deg) scale(.8)}
+.tier span.f{background:var(--ink-soft)}
+.tier span.m{background:var(--gilt);border-color:var(--gilt)}
+.forms{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.form{border:1.5px solid var(--ink-soft);border-radius:2px;padding:7px 8px 8px;background:rgba(120,80,30,.06);box-shadow:inset 0 0 0 2px rgba(224,201,148,.75),inset 0 0 0 3px rgba(90,65,40,.25);min-height:118px;display:flex;flex-direction:column;gap:3px}
+.form .fh{display:flex;align-items:center;gap:6px;font:16px var(--display);color:var(--ink)}
+.form .fh .ico{font-size:20px}
+.form .fd{font-size:14.5px;line-height:1.28;color:var(--ink-soft);flex:1}
+.form .fc{font:15px var(--display);text-align:right;color:var(--ink)}
+.form.on{border-color:var(--rubric);background:rgba(122,31,16,.09)}
+.form.on .fh{color:var(--rubric)}
+.form.no{border-style:dashed;opacity:.7}
+.form.no .fd{font:italic 13.5px var(--fell);color:var(--ink-faint)}
+.form.lock{opacity:.5;border-style:dotted}
+.slot2{display:inline-flex;align-items:center;gap:8px;border:1.5px dashed var(--ink-faint);border-radius:2px;padding:3px 12px;font:italic 15px var(--fell);color:var(--ink-faint)}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1.2px solid var(--ink-soft);border-radius:12px;padding:1px 10px 2px;font-size:14.5px;color:var(--ink-soft);background:rgba(120,80,30,.06)}
+.chip b{font-weight:500;color:var(--ink)}
+.chip.on{border-color:var(--gilt);background:rgba(154,112,32,.18)}
+.chip.off{opacity:.45;border-style:dashed}
+.bk{display:grid;grid-template-columns:26px 1fr 34px;gap:8px;align-items:center;padding:5px 6px;border-bottom:1px solid rgba(90,65,40,.16)}
+.bk .k{font:14px var(--display);width:22px;height:22px;display:grid;place-items:center;border-radius:3px;border:1.2px solid var(--ink-soft);color:var(--ink-soft)}
+.bk .t{font:500 16.5px/1.1 var(--body)}
+.bk .s{font:italic 13px var(--fell);color:var(--ink-faint);display:block;margin-top:1px}
+.bk .c{font:15px var(--display);text-align:right}
+.bk.new{background:rgba(122,31,16,.08);box-shadow:inset 3px 0 var(--rubric)}
+.bk.new .t{color:var(--rubric)}
+.bk.empty .t{color:var(--ink-faint);font:italic 14px var(--fell)}
+.warn{color:var(--rubric)}
+.sm{font-size:14px;line-height:1.4}
+/* table (B) */
+.tbl{display:grid;grid-template-columns:150px repeat(5,1fr);border-top:1.5px solid var(--ink-soft)}
+.tbl>div{padding:5px 8px;border-bottom:1px solid rgba(90,65,40,.2);border-right:1px solid rgba(90,65,40,.12);font-size:13.5px;line-height:1.22;color:var(--ink-soft);min-height:44px}
+.tbl .th{font:15px var(--display);color:var(--ink);display:flex;gap:6px;align-items:center;min-height:0;border-bottom:1.5px solid var(--ink-soft)}
+.tbl .th.lock{color:var(--ink-faint)}
+.tbl .wh{font:500 17px var(--body);color:var(--ink);display:flex;flex-direction:column;justify-content:center}
+.tbl .wh i{font:italic 12.5px var(--fell);color:var(--ink-faint)}
+.tbl .c{position:relative;padding-right:34px}
+.tbl .c b{position:absolute;right:7px;top:5px;font:14px var(--display);font-weight:400;color:var(--ink)}
+.tbl .x{font:italic 12.5px var(--fell);color:var(--ink-faint);opacity:.75}
+.tbl .lk{background:rgba(90,65,40,.06);color:var(--ink-faint)}
+.tbl .on{background:rgba(122,31,16,.12);box-shadow:inset 0 0 0 1.5px var(--rubric);color:var(--rubric)}
+/* ring (C) */
+.ring text{font-family:var(--body)}
+/* hud strip */
+.qs{position:absolute;display:flex;gap:6px;z-index:3}
+.qs div{width:40px;height:40px;border-radius:6px;background:radial-gradient(circle at 50% 40%,rgba(58,49,36,.9),rgba(21,17,11,.9));border:2px solid rgba(160,122,56,.75);color:#d8c290;display:grid;place-items:center;font-size:19px;position:relative}
+.qs div i{position:absolute;left:3px;top:0;font:11px var(--display);font-style:normal;color:#b8a070}
+.qs div.on{border-color:var(--bronze-hi);box-shadow:0 0 0 1px #0a0806,0 0 10px rgba(232,176,80,.55);color:#f0d8a0}
+.qs div.e{color:#5a4a34}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- the five forms, in the kit's hand -->
+  <symbol id="f-sent" viewBox="0 0 24 24"><path d="M3 15c4-1 9-4 15-9M18 6l-4.2.3M18 6l-.8 4.1"/><circle cx="19.5" cy="4.5" r="1.4"/><path d="M3 19h4"/></symbol>
+  <symbol id="f-worn" viewBox="0 0 24 24"><circle cx="12" cy="6.5" r="2.8"/><path d="M7.5 20c0-5 2-8 4.5-8s4.5 3 4.5 8"/><ellipse cx="12" cy="13.5" rx="8.5" ry="3.2" stroke-dasharray="2 2"/></symbol>
+  <symbol id="f-touched" viewBox="0 0 24 24"><path d="M8 21v-7l-2.5-3.5c-.6-.9.6-1.9 1.4-1l2.1 2.3V4.5a1.1 1.1 0 0 1 2.2 0V11V9.8a1.1 1.1 0 0 1 2.2 0V11v-.6a1.1 1.1 0 0 1 2.2 0V11v0a1.1 1.1 0 0 1 2.2 0V15c0 3-1.3 5-2 6"/><path d="M19.5 3.5l1 -1M21 6h1.5M17.5 2V.8"/></symbol>
+  <symbol id="f-laid" viewBox="0 0 24 24"><ellipse cx="12" cy="18" rx="9" ry="3"/><path d="M9.5 18V9.5l2.5-2 2.5 2V18"/><path d="M9.5 12.5h5"/></symbol>
+  <symbol id="f-held" viewBox="0 0 24 24"><path d="M3 12l17-7M3 12l17 7M20 5v14"/><path d="M8 12h2M12 10.5l1.5-.4M12 13.5l1.5.4"/></symbol>
+</defs></svg>
+
+<h1 class="page">The Old Gates — making a spell</h1>
+<p class="lede">Backlog E, <i>spell list</i> (“legibility first, pending the magic redesign”), now that Michael chose <b>B, words of the deep tongue</b> (29 Sep). A spell is one form and one or two words; this is the page where you put them together and keep up to eight on the number keys. Three layouts of the same page, then the HUD it feeds. The player throughout: Intelligence 18, an Evoker of the Mages’ Guild, 100 mana, seven words of twenty-four.</p>
+
+<!-- ═════════════ today ═════════════ -->
+<div class="cap">0 · Today <small>the Magic tab lists spells to buy or find; the proposed pages replace it</small></div>
+<section class="screen" id="today" style="background:#000 url(current-hub-magic.png) top center/cover"></section>
+
+<!-- ═════════════ A. The page ═════════════ -->
+<div class="cap">A · The page <small>words on the left, the spell written out as a sentence in the middle, the book of eight on the right</small></div>
+<section class="screen menu" id="page">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab on"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:grid;grid-template-columns:238px 1fr 262px;gap:26px;height:506px">
+      <!-- lexicon -->
+      <div class="lex">
+        <div class="h2" style="margin-bottom:2px">WORDS · 7 OF 24</div>
+        <div class="school"><svg class="ico"><use href="#i-fire"/></svg>TINE <span class="meta" style="margin-left:auto;font-size:12px;letter-spacing:0">31</span></div>
+        <div class="word"><span class="nm">Caor<span class="gl">spark</span></span><span class="tier"><span class="f"></span><span class="f"></span><span></span></span><span class="r num sm">30</span></div>
+        <div class="school"><svg class="ico"><use href="#i-water"/></svg>UISCE <span class="meta" style="margin-left:auto;font-size:12px;letter-spacing:0">18</span></div>
+        <div class="word two"><span class="nm">Sioc<span class="gl">frost</span></span><span class="tier"><span class="f"></span><span class="f"></span><span></span></span><span class="r num sm">20</span></div>
+        <div class="school"><svg class="ico"><use href="#i-stone"/></svg>CLOCH <span class="meta" style="margin-left:auto;font-size:12px;letter-spacing:0">12</span></div>
+        <div class="word sel"><span class="nm">Cloch</span><span class="tier"><span class="f"></span><span></span><span></span></span><span class="r num sm">28</span></div>
+        <div class="school"><svg class="ico"><use href="#i-wind"/></svg>GAOTH <span class="meta" style="margin-left:auto;font-size:12px;letter-spacing:0">26</span></div>
+        <div class="word"><span class="nm">Gaoth<span class="gl">wind</span></span><span class="tier"><span class="f"></span><span class="f"></span><span></span></span><span class="r num sm">22</span></div>
+        <div class="word"><span class="nm">Éan</span><span class="tier"><span class="f"></span><span></span><span></span></span><span class="r num sm">24</span></div>
+        <div class="school"><svg class="ico"><use href="#i-light"/></svg>SOLAS <span class="meta" style="margin-left:auto;font-size:12px;letter-spacing:0">22</span></div>
+        <div class="word"><span class="nm">Slán<span class="gl">wholeness</span></span><span class="tier"><span class="f"></span><span class="f"></span><span></span></span><span class="r num sm">40</span></div>
+        <div class="word"><span class="nm">Solas<span class="gl">light</span></span><span class="tier"><span class="f"></span><span class="f"></span><span></span></span><span class="r num sm">12</span></div>
+        <div class="school"><svg class="ico"><use href="#i-shadow"/></svg>SCÁTH <span class="meta" style="margin-left:auto;font-size:12px;letter-spacing:0">5</span></div>
+        <div class="word unk"><span>no word yet — its stones are cold</span><span></span></div>
+        <div class="meta" style="margin-top:10px;font-size:13px;line-height:1.4">Seventeen more wait in the sigil gates. A word without its English is at Impression. By a school, its skill.</div>
+      </div>
+      <!-- the composing page -->
+      <div style="border-left:1px solid rgba(90,65,40,.3);border-right:1px solid rgba(90,65,40,.3);padding:0 24px;display:flex;flex-direction:column">
+        <div class="h2">THE SPELL</div>
+        <div style="display:flex;align-items:baseline;gap:14px;margin-top:6px">
+          <div class="h" style="font-size:38px">Cloch, laid</div>
+          <div class="meta" style="font-size:15px">the English comes when Cloch does</div>
+        </div>
+        <div style="font:19px/1.35 var(--body);margin:4px 0 0">A stone pillar rises at the crosshair, <span class="num">1.5</span> high, and stands <span class="num">20</span> seconds.</div>
+        <div class="rule"></div>
+        <div class="h2" style="margin:2px 0 8px">FORM <span class="meta" style="letter-spacing:0;margin-left:8px">what Cloch does in each; the guild teaches forms by rank</span></div>
+        <div class="forms">
+          <div class="form"><div class="fh"><svg class="ico"><use href="#f-sent"/></svg>Sent</div><div class="fd">a flung stone, 30 units</div><div class="fc num">37</div></div>
+          <div class="form"><div class="fh"><svg class="ico"><use href="#f-worn"/></svg>Worn</div><div class="fd">stone skin: blows land 30% lighter, 30 s</div><div class="fc num">37</div></div>
+          <div class="form"><div class="fh"><svg class="ico"><use href="#f-touched"/></svg>Touched</div><div class="fd">a door or grate holds shut, 60 s</div><div class="fc num">22</div></div>
+          <div class="form on"><div class="fh"><svg class="ico"><use href="#f-laid"/></svg>Laid</div><div class="fd">a pillar 1.5 high, 20 s, within 12 units</div><div class="fc num">55</div></div>
+          <div class="form lock"><div class="fh"><svg class="ico"><use href="#f-held"/></svg>Held</div><div class="fd" style="font:italic 13.5px var(--fell)">taught at Warlock</div><div class="fc"></div></div>
+        </div>
+        <div class="h2" style="margin:12px 0 6px">A SECOND WORD <span class="meta" style="letter-spacing:0;margin-left:8px">adds only its rider · both words at Comprehension</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+          <span class="chip off"><b>Caor</b> burns</span><span class="chip on"><b>Sioc</b> slows</span><span class="chip off"><b>Gaoth</b> pushes</span><span class="chip off"><b>Slán</b> mends</span><span class="chip off"><b>Solas</b> lights</span>
+        </div>
+        <div class="sm" style="margin-top:6px;color:var(--ink-soft)"><span class="warn">Cloch is only at Impression, so it will not join yet.</span> With Sioc, once it can: the pillar is rimed and slows whoever touches it, <span class="num">116</span> mana, <span class="num">16</span> past your pool, paid from health at ×2 (<span class="num">32</span>).</div>
+        <div style="margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:2px 28px;font-size:16px">
+          <div class="dv" style="grid-column:1/3"><span>Mana</span><span class="num">28 Cloch × 1.5 laid × 1.30 for Cloch skill 12 = <b style="font-weight:500">55</b></span></div>
+          <div class="dv"><span>Wild</span><span class="warn num">30% · may rise 3 high</span></div>
+          <div class="dv"><span>Reach</span><span class="num">12 units, never in a wall</span></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;align-items:center"><span class="btn hot">Write it into the book · 8</span><span class="btn">Clear</span><span class="meta" style="margin-left:auto">Enter writes it · 1–8 chooses the line</span></div>
+      </div>
+      <!-- the book -->
+      <div>
+        <div class="h2" style="margin-bottom:6px">THE BOOK · KEYS 1–8</div>
+        <div class="bk"><span class="k">1</span><span class="t">Caor, sent<span class="s">Spark, sent — a fireball</span></span><span class="c num">35</span></div>
+        <div class="bk"><span class="k">2</span><span class="t">Slán, worn<span class="s">Wholeness, worn — heals 35 over 10 s</span></span><span class="c num">49</span></div>
+        <div class="bk"><span class="k">3</span><span class="t">Sioc, laid<span class="s">Frost, laid — an ice floe 3 across</span></span><span class="c num">38</span></div>
+        <div class="bk"><span class="k">4</span><span class="t">Éan, worn<span class="s">jump +70%, 20 s · wild 30%</span></span><span class="c num">29</span></div>
+        <div class="bk"><span class="k">5</span><span class="t">Caor, touched<span class="s">Spark, touched — lights a brazier</span></span><span class="c num">21</span></div>
+        <div class="bk"><span class="k">6</span><span class="t">Gaoth and Caor, sent<span class="s">Wind and Spark — a burning gust</span></span><span class="c num">76</span></div>
+        <div class="bk"><span class="k">7</span><span class="t">Solas, worn<span class="s">Light, worn — a lamp about you</span></span><span class="c num">15</span></div>
+        <div class="bk new"><span class="k" style="border-color:var(--rubric);color:var(--rubric)">8</span><span class="t">Cloch, laid<span class="s">being written</span></span><span class="c num">55</span></div>
+        <div class="meta" style="margin-top:14px;font-size:13.5px;line-height:1.45">F casts the readied line. A made spell costs nothing to unmake; the words stay yours. The name climbs as its weakest word does: Irish, then English, then the true name.</div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ B. The table ═════════════ -->
+<div class="cap">B · The table <small>every word you know against every form: 35 cells, choose one, add a rider below</small></div>
+<section class="screen menu" id="table">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab on"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="h2">WORDS AND FORMS · 7 OF 24 WORDS · 4 OF 5 FORMS</div><div class="meta">mana after your school skill · a dash: the word won’t take that shape</div></div>
+    <div class="tbl" style="margin-top:8px">
+      <div class="th"></div>
+      <div class="th"><svg class="ico ico-form"><use href="#f-sent"/></svg>Sent</div><div class="th"><svg class="ico ico-form"><use href="#f-worn"/></svg>Worn</div><div class="th"><svg class="ico ico-form"><use href="#f-touched"/></svg>Touched</div><div class="th"><svg class="ico ico-form"><use href="#f-laid"/></svg>Laid</div><div class="th lock"><svg class="ico ico-form"><use href="#f-held"/></svg>Held · Warlock</div>
+
+      <div class="wh">Caor <i>spark · Tine</i></div>
+      <div class="c">a fireball, 30 units<b>35</b></div><div class="c">warm: cold can’t slow you, 60 s<b>35</b></div><div class="c">light a brazier, burn a web<b>21</b></div><div class="c">a patch of fire, 10 s<b>52</b></div><div class="c lk">a jet of flame<b>17/s</b></div>
+
+      <div class="wh">Sioc <i>frost · Uisce</i></div>
+      <div class="c">an ice shard that slows<b>25</b></div><div class="x">—</div><div class="c">a skin of ice on water<b>15</b></div><div class="c">on water, a floe 3 across, 30 s<b>38</b></div><div class="c lk">a cone of frost<b>13/s</b></div>
+
+      <div class="wh">Cloch <i>Impression · Cloch</i></div>
+      <div class="c">a flung stone<b>37</b></div><div class="c">stone skin, blows 30% lighter<b>37</b></div><div class="c">a door holds shut, 60 s<b>22</b></div><div class="c on">a pillar 1.5 high, 20 s<b>55</b></div><div class="x lk">—</div>
+
+      <div class="wh">Gaoth <i>wind · Gaoth</i></div>
+      <div class="c">a gust, pushes 4 units<b>26</b></div><div class="x">—</div><div class="c">snuff a flame<b>16</b></div><div class="c">an updraft, a jump 3 higher<b>39</b></div><div class="c lk">a gale<b>13/s</b></div>
+
+      <div class="wh">Éan <i>Impression · Gaoth</i></div>
+      <div class="x">—</div><div class="c">jump +70%, 20 s<b>29</b></div><div class="x">—</div><div class="x">—</div><div class="x lk">—</div>
+
+      <div class="wh">Slán <i>wholeness · Solas</i></div>
+      <div class="x">—</div><div class="c">heals 35 over 10 s<b>49</b></div><div class="c">mend another: a friend, a horse<b>29</b></div><div class="c">a mending ring, 10 s<b>73</b></div><div class="x lk">—</div>
+
+      <div class="wh">Solas <i>light · Solas</i></div>
+      <div class="c">a mote that stays where it lands<b>15</b></div><div class="c">a lamp about you, 240 s<b>15</b></div><div class="c">read a worn carving<b>9</b></div><div class="c">a light on the ground, 30 s<b>22</b></div><div class="c lk">a glare that dazzles<b>7/s</b></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 470px;gap:28px;margin-top:12px;align-items:start">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:12px"><span class="h" style="font-size:26px">Cloch, laid</span><span class="num" style="font-size:17px">55 mana · wild 30%, may rise 3 high</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:6px"><span class="meta">rider:</span><span class="chip off"><b>Caor</b> burns</span><span class="chip off"><b>Sioc</b> slows</span><span class="chip off"><b>Gaoth</b> pushes</span><span class="chip off"><b>Slán</b> mends</span><span class="chip off"><b>Solas</b> lights</span><span class="meta warn" style="font-size:13px">Cloch must reach Comprehension first</span></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;justify-content:flex-end">
+        <span class="meta" style="margin-right:2px;align-self:center">the book</span>
+        <span class="chip"><b>1</b> Caor·sent</span><span class="chip"><b>2</b> Slán·worn</span><span class="chip"><b>3</b> Sioc·laid</span><span class="chip"><b>4</b> Éan·worn</span>
+        <span class="chip"><b>5</b> Caor·touched</span><span class="chip"><b>6</b> Gaoth+Caor·sent</span><span class="chip"><b>7</b> Solas·worn</span><span class="chip on"><b>8</b> Cloch·laid</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:10px"><span class="btn hot">Write it into the book · 8</span><span class="btn">Clear</span></div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ C. The ring ═════════════ -->
+<div class="cap">C · The ring <small>a carved circle: the form at the centre, the words round the rim, a line drawn between the two you join</small></div>
+<section class="screen menu" id="ring">
+  <div class="tabs">
+    <div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Inventory</div><div class="tab on"><svg class="ico"><use href="#i-star"/></svg>Magic</div><div class="tab"><svg class="ico"><use href="#i-scales"/></svg>Attributes</div><div class="tab"><svg class="ico"><use href="#i-quill"/></svg>Quests</div><div class="tab"><svg class="ico"><use href="#i-person"/></svg>Character</div><div class="tab"><svg class="ico"><use href="#i-map"/></svg>Map</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div style="display:grid;grid-template-columns:560px 1fr;gap:30px;height:530px">
+      <svg class="ring" viewBox="-280 -265 560 530" width="560" height="530" style="color:var(--ink)">
+        <g fill="none" stroke="#5a4128">
+          <circle r="238" stroke-width="1.6"/><circle r="228" stroke-width=".7"/><circle r="150" stroke-width="1.2"/><circle r="72" stroke-width="1.4"/><circle r="66" stroke-width=".6"/>
+        </g>
+        <!-- 24 word places, 7 known -->
+        <g id="rim"></g>
+        <!-- forms on the inner ring -->
+        <g id="forms"></g>
+        <!-- centre -->
+        <use href="#f-laid" x="-30" y="-44" width="60" height="60" style="color:#7a1f10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text y="36" text-anchor="middle" style="font:22px 'IM Fell English SC',serif;fill:#7a1f10">Laid</text>
+      </svg>
+      <div style="padding-top:14px">
+        <div class="h" style="font-size:36px">Cloch, laid</div>
+        <div class="meta" style="font-size:15px;margin-top:2px">Impression · the English comes when Cloch does</div>
+        <div class="rule"></div>
+        <div style="font:20px/1.45 var(--body)">A stone pillar rises at the crosshair, <span class="num">1.5</span> high, and stands <span class="num">20</span> seconds.</div>
+        <div style="margin-top:16px;font-size:16px">
+          <div class="dv"><span>Mana</span><span class="num">55</span></div>
+          <div class="dv"><span>Wild</span><span class="warn num">30% · may rise 3 high</span></div>
+          <div class="dv"><span>Reach</span><span class="num">12 units</span></div>
+          <div class="dv"><span>Rider</span><span class="faint">Cloch must reach Comprehension</span></div>
+        </div>
+        <div class="sm" style="margin-top:14px;color:var(--ink-soft)">Click a word on the rim, then a form on the inner ring; click a second word to draw the line between them. Faded places are words not yet found: seventeen.</div>
+        <div style="display:flex;gap:12px;margin-top:18px"><span class="btn hot">Write it into the book · 8</span><span class="btn">Clear</span></div>
+      </div>
+    </div>
+    <div class="vitals num">
+      <div class="vital"><b style="color:var(--hp)">Health</b><div class="ibar"><i style="width:72%;background:var(--hp)"></i></div><span>94 / 130</span></div>
+      <div class="vital"><b style="color:var(--mp)">Mana</b><div class="ibar"><i style="width:100%;background:var(--mp)"></i></div><span>100 / 100</span></div>
+      <div class="vital"><b style="color:var(--st)">Stamina</b><div class="ibar"><i style="width:100%;background:var(--st)"></i></div><span>115 / 115</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ The HUD ═════════════ -->
+<div class="cap">D · In the world, whichever page <small>the book’s eight lines on the number keys above the vitals, the readied one lit; the spell roundel shows its form</small></div>
+<section class="screen" id="hud">
+  <div class="parch small ribbon" style="left:50%;top:26px;transform:translateX(-50%)">Dunmore</div>
+  <div class="mini" style="right:30px;top:30px"></div><div class="miniring" style="right:24px;top:24px"><b>N</b></div>
+  <div class="xh"></div>
+  <div class="prompt" style="top:392px;flex-direction:column;gap:2px"><span style="font:22px var(--display);color:#f0d8a0">Cloch, laid</span><span style="font-size:14px;opacity:.85">55 mana · 8 on the book</span></div>
+  <div class="qs" style="left:22px;bottom:128px">
+    <div><i>1</i><svg class="ico"><use href="#f-sent"/></svg></div><div><i>2</i><svg class="ico"><use href="#f-worn"/></svg></div><div><i>3</i><svg class="ico"><use href="#f-laid"/></svg></div><div><i>4</i><svg class="ico"><use href="#f-worn"/></svg></div><div><i>5</i><svg class="ico"><use href="#f-touched"/></svg></div><div><i>6</i><svg class="ico"><use href="#f-sent"/></svg></div><div><i>7</i><svg class="ico"><use href="#f-worn"/></svg></div><div class="on"><i>8</i><svg class="ico"><use href="#f-laid"/></svg></div>
+  </div>
+  <div class="plate" style="left:22px;bottom:22px;width:360px;height:96px;padding:14px 16px;display:flex;gap:12px;align-items:center">
+    <div class="roundel"><svg class="ico"><use href="#i-club"/></svg></div>
+    <div class="roundel" style="color:#f0c860"><svg class="ico"><use href="#f-laid"/></svg></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:7px;padding-left:4px">
+      <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--hp-hi);font-size:13px"><use href="#i-heart"/></svg><div class="hbar hp" style="flex:1"><i style="width:72%"></i></div></div>
+      <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--mp-hi);font-size:13px"><use href="#i-star"/></svg><div class="hbar mp" style="flex:1"><i style="width:100%"></i><i style="left:45%;width:55%;background:rgba(255,240,200,.35);border-radius:0 5px 5px 0"></i></div></div>
+      <div style="display:flex;align-items:center;gap:6px"><svg class="ico" style="color:var(--st-hi);font-size:13px"><use href="#i-bolt"/></svg><div class="hbar st" style="flex:1"><i style="width:100%"></i></div></div>
+      <div class="hudtxt num" style="font-size:12px;display:flex;justify-content:space-between;opacity:.85"><span>Level 4</span><span>Cloch 12</span></div>
+    </div>
+  </div>
+  <div class="compass" style="left:450px;bottom:30px">
+    <div class="strip">
+      <span style="left:4%">W</span><span class="tick" style="left:15%"></span><span style="left:27%">NW</span><span class="tick" style="left:38.5%"></span>
+      <span class="n" style="left:50%">N</span><span class="tick" style="left:61.5%"></span><span style="left:73%">NE</span><span class="tick" style="left:85%"></span><span style="left:96%">E</span>
+    </div>
+  </div>
+  <div class="roundel" style="position:absolute;left:846px;bottom:22px;width:48px;height:48px;font-size:24px;color:#f0c860;z-index:3"><svg class="ico"><use href="#i-sun"/></svg></div>
+  <div class="cbar">1–8 ready a spell · F cast · I inventory &nbsp;·&nbsp; <span style="opacity:.6">concept</span></div>
+</section>
+
+<script>
+// the ring's rim: 24 places, the seven known words lettered, the rest faded; and the five forms on the inner ring
+(function(){
+  const NS='http://www.w3.org/2000/svg', rim=document.getElementById('rim'), forms=document.getElementById('forms');
+  const known={0:['Caor','Tine'],3:['Sioc','Uisce'],7:['Cloch','Cloch'],10:['Gaoth','Gaoth'],13:['Éan','Gaoth'],17:['Slán','Solas'],20:['Solas','Solas']};
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||rim).appendChild(e);return e};
+  const pos=(i,r)=>{const a=(i/24)*Math.PI*2-Math.PI/2;return [Math.cos(a)*r,Math.sin(a)*r]};
+  // the line from Cloch to Sioc (the rider it would take), dashed: not yet joinable
+  const [cx,cy]=pos(7,189),[sx,sy]=pos(3,189);
+  el('path',{d:`M${cx} ${cy} Q0 0 ${sx} ${sy}`,fill:'none',stroke:'#9a7020','stroke-width':1.5,'stroke-dasharray':'5 5'});
+  for(let i=0;i<24;i++){
+    const [x,y]=pos(i,189), k=known[i];
+    el('circle',{cx:x,cy:y,r:k?30:14,fill:i===7?'rgba(122,31,16,.14)':k?'rgba(120,80,30,.08)':'none',stroke:i===7?'#7a1f10':'#5a4128','stroke-width':i===7?2:k?1.2:.7,'stroke-dasharray':k?'':'2 3',opacity:k?1:.55});
+    if(k){const t=el('text',{x,y:y+6,'text-anchor':'middle',style:`font:${i===7?500:400} 17px 'EB Garamond',serif;fill:${i===7?'#7a1f10':'#2e1c0c'}`});t.textContent=k[0];}
+    const [ox,oy]=pos(i,233); el('circle',{cx:ox,cy:oy,r:1.6,fill:'#5a4128'});
+  }
+  const F=[['f-sent','Sent'],['f-worn','Worn'],['f-touched','Touched'],['f-laid','Laid'],['f-held','Held']];
+  F.forEach((f,j)=>{
+    const a=(j/5)*Math.PI*2-Math.PI/2+Math.PI/5, x=Math.cos(a)*111, y=Math.sin(a)*111;
+    const on=f[1]==='Laid', lock=f[1]==='Held';
+    const u=el('use',{href:'#'+f[0],x:x-15,y:y-22,width:30,height:30,fill:'none',stroke:on?'#7a1f10':'#5a4128','stroke-width':1.6,opacity:lock?.35:1},forms);
+    const t=el('text',{x,y:y+22,'text-anchor':'middle',style:`font:14px 'IM Fell English SC',serif;fill:${on?'#7a1f10':'#5a4128'};opacity:${lock?.4:1}`},forms); t.textContent=f[1];
+  });
+})();
+</script>
+</body>
+</html>
