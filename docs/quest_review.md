@@ -6,10 +6,28 @@ Every player-readable string added or changed in `index.html`, checked against t
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `8c0d74a` | run 2, from `bd5ca7a` |
-| auto/systems | `7085684` | run 2, from `5c0ab68` (read against main) |
-| auto/backlog | `0ad1044` | run 2, from `133428d` (read against main) |
+| main | `421afdf` | run 3, from `8c0d74a` |
+| auto/systems | `cdeecd7` | run 3, from `7085684` (read against main) |
+| auto/backlog | `0a2c006` | run 3, from `0ad1044` (read against main) |
+| auto/proto-sails | `4e8a5e7` | run 3, first read (against main) |
 | auto/concept, auto/critic, auto/design, auto/producer | — | no `index.html` changes against main |
+
+---
+
+## Run 3 — 30 Sep 2026
+
+About 140 player-readable strings read. All of it is clean, and there are no findings this run.
+
+**main** (`8c0d74a..421afdf`) is almost all the auto/systems merge, sessions 176–341. It carries Findings 1–4 into the build word for word: the guild heads, the halt, the yield and the coaching inn now speak in their people's voice, with Markish as the fallback. The rest is UI: the combat lines, the Fortune card, the coach prompts, *The door you saved behind has moved on*, and *Luibh Uisce — Mana fully restored!*.
+
+**auto/systems** since main (sessions 350–359) adds narration only. *The {build} at {town} is/are standing. {lord} will want to see you.* reads well.
+
+**auto/backlog** (sessions 342–356) and **auto/proto-sails** add no strings a player reads.
+
+**Noted, not findings.** These are older than the baseline, so they go to the author's audit. The quest draft *The Yard at Caer Slige* covers the first two.
+- The Compact's ninth *after* line calls Hesket Rowe, a Markman, *cold-eyes*, which is the word for the Old Blood.
+- The faction rank line opens in lower case: *"the Captains' League names you Captain."*
+- The lord's turn-in lines (*Good.* / *The town won't forget it.* / *There'll be more.*) and *How fares the town?* speak in one voice for every people, as the inn's lines do.
 
 ---
 
