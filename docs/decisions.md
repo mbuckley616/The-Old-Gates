@@ -15,6 +15,14 @@ All three feed the same HUD: the book's eight lines as a row of form icons above
 Recommendation: **A.** It reads as a sentence, which is what the design is (a form and a word), shows every form for the word you are looking at without the 24-row wall B becomes, and keeps the book in view while you write into it. It needs one Opus session after the Fable one that builds words and forms.
 Screens: [A, the page](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/page.png) · [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/compare-page.png) · [B, the table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/table.png) · [C, the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/ring.png) · [the HUD](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/spellmaking/hud.png)
 
+### Survival skills and alchemy — what should mining, woodcutting, cooking and alchemy make? (the designer, 2026-09-30)
+Today herbs are eaten one at a time (a known effect, and one of 21 hidden effects after 15 eats); nothing combines them, food is shop stock, and nothing can be mined or felled. What should the five land skills of the Morrowind book (Alchemy, Cooking, Mining, Woodcutting, Joinery) do, given *not buy more/better* and *not punishing*? (Page: `docs/design/survival-and-alchemy.md`.)
+- **A.** The still and the fire: a tincture from two herbs (one's known effect, the other's hidden one), which turns after 5 game-days as the canon's folk brews do; meals at any fire give one mild *fed* effect; ore goes to the smith's tempering (up to +24%) and logs to campfires and the shipwright; a felled trunk can bridge a gap (Woodcutting 25). No player-made gear, no hunger. Four Opus sessions.
+- **B.** Gather, work, make: A plus Smithing and Joinery, which make weapons and armour tier by tier. Loot and prices retuned across every tier. One Fable and six Opus sessions.
+- **C.** Survival in earnest: A plus hunger, warmth and fatigue. Six Opus sessions.
+
+Recommendation: **A.** Each skill lands in a system that exists or is decided (the buff stack, the fires, the smith, sailing's repairs, the platforming), the brewing shares magic's body-and-rider grammar, and it leaves loot its point; B makes chests pointless and C adds upkeep the brief rules out.
+
 ## Answered
 
 ### Unblock auto/systems — hourhitch flakes again on 5633fc4 (the producer, 2026-09-30)
