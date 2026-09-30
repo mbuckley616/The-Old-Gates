@@ -4,6 +4,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### What a night's burglary should pay (systems builder, Session 357, issue #68)
+The crime system's owed "numbers by play", measured headless (`tests/burglary.test.mjs`) now that a town lock is picked in a running world (Session 327). Ten minutes of 23h were ticked, and each shop door was asked every tenth of a second whether someone would see a player standing there.
+- **The door.** A pick of 3–6 s (four pins by a practised hand) started at a random moment is seen 21–24% of the time in Dunmore (three on the watch) and 11–13% in Portclare (one). Sneaking about halves that. A burglar who waits for the lantern to pass does better still. Homes are almost never seen (0–2%), because the beat walks past the shop doors.
+- **Behind it.** No keeper is in a shut shop at night, so the strongbox is always taken unseen: 20–200 gold by prosperity, plus one item. Dunmore's seven boxes hold **910 gold**, Portclare's five **605**, and they refill every five days.
+- **Seen.** The pick breaks off, and it costs 25 gold and a point of favour. You can try again a minute later.
+
+So one night in Dunmore expects about 900 gold for one or two 25-gold fines. For scale, a Steel Sword costs 66, quest rewards run 50–500, and four picks cost 48. The design brief says: "not systems that reduce to buy more". Theft that outpays every quest makes buying the answer.
+
+- **A. Cut the strongbox, keep the risk** *(recommended)*: 10 + 50 a 100 prosperity, times the shop's kind as now (Dunmore about 40 a box and 280 a night; a village about 20). The item stays, so a thief's money comes from selling the goods, as in Morrowind and Oblivion. One line of code.
+- **B. Keep the takings, raise the risk**: the watchman's lantern sees 10 units at night instead of 6. A door is then seen perhaps twice as often, though the strongbox is still free once you are in. Not yet measured.
+- **C. A and B.**
+- **D. Leave it** until the skills sessions give Sneak and Security numbers of their own.
+
 ## Answered
 
 ### When should the game autosave? (systems builder, 2026-09-29, issue #66)

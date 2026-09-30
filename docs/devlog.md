@@ -8607,3 +8607,18 @@ New `tests/autosave.test.mjs`, 7 checks, passing, no page errors (autosaves coun
 
 ### Needs eyes
 Whether the half-second arrival check feels right at a gallop: a pad's edge is crossed once, and the save's *💾 Autosaved.* line shows as you come in. A town you walk out of and back into within 90 s saves only once.
+
+## v80 — Session 357 — A night's burglary, by the numbers
+The crime system's last owed item in B is "the numbers by play". The critic measured a night's takings twice (s158, s175: 619–882 gold seen zero times) while the lockpick still paused the world. Session 327 made a town pick run in real time, with the watch walking and seen at any moment of it. Nobody had measured the night again since. This session measures it and puts the tuning to Michael. No rule and no number in `index.html` changed.
+
+**How.** A new `tests/burglary.test.mjs` ticks ten minutes of 23h in Dunmore and Portclare. Every tenth of a second it stands a player at each shop door and at eight homes, asks `witnessOf` whether someone would see them, walking and sneaking, and puts them back. From that record it takes the chance that a pick of 0, 3, 6, 10 or 20 seconds, begun at a random moment, is seen at some moment of it. Four pins by a practised hand take about 3–6 s (a pin rises in 0.17 s). The strongbox's worth is the Session 155 formula at the town's prosperity.
+
+**What it found.** The door is a real risk. The shop behind it is not: no keeper is inside a shut shop, so the strongbox is always taken unseen. Being seen at the door costs 25 gold and a point of favour, and the pick breaks off but can be tried again. One night in Dunmore therefore expects about 900 gold for one or two 25-gold fines. Raised as DECISION #68, with A as the recommendation: cut the strongbox to 10 + 50 a 100 prosperity, about 40 a box, and keep the risk as it stands.
+
+### Verified (headless Chromium)
+New `tests/burglary.test.mjs`, 7 checks, passing, no page errors. The checks are the rules the numbers rest on: the watch is on duty at 23h, no keeper is in a shut shop, a longer pick is never less likely to be seen, and sneaking never more likely than walking. The numbers are printed:
+- **Dunmore**, prosperity 61, three on the watch. The chance a shop door is seen, by pick length 0/3/6/10/20 s, is 18/21/24/28/38% walking and 10/13/16/20/30% sneaking. By door it runs from 14% (Clodagh's Goods, 3 s) to 45% (Órla's Apothecary, 20 s). Homes: one of eight (Séamus's) is seen 2–5% of the time, the other seven never. The seven strongboxes hold 910 gold.
+- **Portclare**, prosperity 56, one watchman. Shop doors are seen 10/11/13/15/20% walking and 6/7/9/11/16% sneaking. No home was ever seen. The five strongboxes hold 605 gold.
+
+### Needs eyes
+The chances are for a pick begun at a random moment. A player who watches the lantern go by and starts behind it should do much better. How much better needs hands on the keys, and it bears on B in #68.
