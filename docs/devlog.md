@@ -9585,3 +9585,15 @@ The seven suites above, `lockon` and `tpswing` pass.
 
 ### Needs eyes
 Nothing at 60 fps, where both clocks agree. On the laptop, a fight during a hitch should now parry what the eye timed. A hitch between the press and the blow is counted as at most 0.05 s, so if anything the window is kinder while the game stutters.
+
+## v80 — Session 370 — `npm install` no longer exits 1 in the cloud container
+The critic's s321 report noted this under what it could not play: *`npm install` exits 1 in this container, because its `postinstall` tries `playwright install chromium` and the download is blocked. The tests still find the preinstalled Chromium, so it costs nothing, but a new agent may read the red as a broken harness.* This run's setup hit it too. `scripts/cloud-setup.sh` already falls back to `/opt/pw-browsers/chromium` (it installs with `--ignore-scripts`), but a plain `npm install` did not.
+
+**What changed.** `package.json`'s `postinstall` is now `playwright install chromium || test -x /opt/pw-browsers/chromium`. The download is still tried first everywhere. Only when it fails does the container's own Chromium count as success, and only if it is there. CI runs `npm install` and then its own `npx playwright install --with-deps chromium`, so it is unaffected. No game code changed, so the build tag is not bumped.
+
+### Verified
+- In this container, before the change: `npm install` exited 1 (`command sh -c playwright install chromium`). After it, it exits 0, and every suite this run used found the preinstalled Chromium.
+- Where neither the download nor the fallback exists, `false || test -x /nonexistent/chromium` exits 1, so a real failure still reads as one.
+
+### Needs eyes
+Nothing.
