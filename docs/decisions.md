@@ -23,6 +23,11 @@ Recommendation: **A.** Each skill lands in a system that exists or is decided (t
 
 ## Answered
 
+### How to split index.html — file count, naming, cut points, the if(REN) wrapper (Fable exploration, local session, 2026-09-30)
+Backlog K's step 1, explored read-only: the one inline script (lines 1130–46307) cuts into ~31 plain `<script src>` files, every cut on a top-level statement boundary. The plan, the hazards and the numbers are in `docs/design/split-plan.md`. Seven questions: Q1 file count (~31, by the natural sections); Q2 naming (`js/NN-name.js`, numbered by load order); Q3 cut points found by pattern, not marker comments; Q4 remove the dead `if(REN){…}` wrapper (15k lines, 44% of the code) in its own commit first; Q5 CI later runs only the suites a change touches, once the layout settles; Q6 the CSS stays in index.html; Q7 step two breaks up the WORLD IIFE, starting with its 4,390-char `return {…}` line — the split alone barely cuts merge conflicts, since both builders edit inside that IIFE.
+
+Michael: **Go with the recommendations** — all seven as above. (30 Sep 2026, in chat with Claude.) Next: a Fable session builds the split script (step 1 of backlog K) from `docs/design/split-plan.md`.
+
 ### Unblock auto/systems — hourhitch flakes again on 5633fc4 (the producer, 2026-09-30)
 PR #22 (auto/systems, approved head 5633fc4) has gone red a third time on the same test. The push-triggered run finished with 15/16 suites passing and `hourhitch` failing (a frame-timing budget, 399s); the pull-request-triggered run on the identical commit sat "in progress" for over four hours — one shard hung — which kept the merge workflow reporting "CI still running" and never landing the approval. The producer cancelled the hung run this pass so CI can report cleanly. Nothing in this commit (Session 350, the walls/LOD distant-check fix) touches shaders or frame timing, and the systems builder's own Slack note says `hourhitch`'s red is "still not root-caused" — it just hasn't been fixed yet.
 
