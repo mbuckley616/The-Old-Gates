@@ -25,7 +25,10 @@ const talk = async (name, site) => {
     const n = ZONES.world.npcs.find(n => n.def && n.def.name === name && n.g.visible); if (!n) return null; window._n = n;
     px = n.g.position.x; pz = n.g.position.z + 1.2; jumpY = n.g.position.y; yaw = 0; pitch = 0; return { x: Math.round(n.g.position.x), z: Math.round(n.g.position.z), role: n.def.role }; }, { name, site });
   if (!at) return { found: false };
-  await g.frames(2); await page.evaluate(() => { px = _n.g.position.x; pz = _n.g.position.z + 1.2; jumpY = _n.g.position.y; }); await page.keyboard.press('e'); await g.frames(2);
+  // a quest card waits in a queue until the player is free (`showQuestUpdatePopup`); on a loaded machine it lands after the
+  // one fixed wait above, and then E closes the card instead of talking (Session 351: 4 runs of 4 side by side). Clear it first.
+  await g.frames(2); await page.evaluate(() => { _questPopupQueue.length = 0; if (document.getElementById('quest-popup').style.display === 'flex') closeQuestUpdatePopup(); _questPopupOpen = false; });
+  await page.evaluate(() => { px = _n.g.position.x; pz = _n.g.position.z + 1.2; jumpY = _n.g.position.y; }); await page.keyboard.press('e'); await g.frames(2);
   return { found: true, at, open: await page.evaluate(() => { const d = document.getElementById('dlg'); return !!d && getComputedStyle(d).display !== 'none'; }) };
 };
 const choices = () => page.evaluate(() => [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()));
