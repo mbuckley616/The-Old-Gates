@@ -7,3 +7,4 @@ commit's CI is green) or `<branch> <commit> merge-anyway` (his call to merge des
 
 auto/systems 5633fc48bf61b7a57efab2953f5036ca0602463f merge
 auto/producer 97c2173a748959be4fa0e522e7d69c5867acf3cb merge
+auto/quests 76e00cbd5bc15c5a0d57761ca87165e299bd8ccf merge
