@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s335</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s336</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -7261,7 +7261,7 @@ const TORCH_ITEM={name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:
 // modifier. arrowDmg adds to the bow's atk roll at release time.
 const ARROW_IRON={
   name:'Iron Arrow', ico:'🪶', type:'ammo', slot:'ammo',
-  ammoType:'arrow', qty:12, buyPrice:2, sellMult:.4, weight:.05,
+  ammoType:'arrow', qty:12, bundle:12, buyPrice:2, sellMult:.4, weight:.05, // S366 — buyPrice is the dozen's; a piece sells by the piece
   arrowDmg:[3,6],   // additive to bow's atk roll
   // wType omitted → falls through to bow's wType ('pierce'). Silver and
   // Broadhead arrows will set wType explicitly to override.
@@ -7383,6 +7383,9 @@ function iconHTML(it){if(!it)return '';const name=(it.name||'').toLowerCase();le
   return `<span class="ico-badge" style="display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:5px;background:${col};box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.4);font-size:13px;line-height:1;margin-right:6px"><span style="${neutral?'filter:grayscale(1) brightness(.28) contrast(1.4)':'filter:saturate(.85)'}">${g}</span></span>`;}
 function _typeWord(it){return it.type==='equip'?(it.slot==='weapon'?'Weapon':it.slot==='offhand'?'Shield':it.slot==='ring'?'Ring':it.slot==='amulet'?'Amulet':'Armour — '+(it.slot||'').replace(/^./,c=>c.toUpperCase())):it.type==='potion'?'Potion':it.type==='herb'?'Herb':it.type==='spellbook'?'Spellbook':it.type==='rubbing'?'Rubbing':it.type==='scroll'?'Scroll':it.type==='misc'?'Sundries':(it.type||'—');}
 function sellPrice(it){
+  // S366 — ammo is priced by the bundle it is sold in (a dozen arrows for 2), so one piece is worth a twelfth of that:
+  // under a coin, and nothing at the counter. Was the whole bundle's price a piece (a dozen bought for 2 sold for 12–60).
+  if(it.type==='ammo')return Math.floor((it.buyPrice||2)*(it.sellMult||.4)/(it.bundle||12));
   if(it.buyPrice)return Math.max(1,Math.floor(it.buyPrice*(it.sellMult||.4)));
   if(it.type==='gold')return it.value||5;
   if(it.type==='herb')return Math.max(3,Math.floor((it.buyPrice||8)*(it.sellMult||.8)));
@@ -25490,7 +25493,7 @@ function _pushBuyBack(it, sp){
   const arr=merchantStock[key];
   // Stamp a fresh copy: this is now SHOP stock, so it needs buyPrice (= the
   // sell price the player received) and the _boughtBack tag for display.
-  const entry={...it, _boughtBack:true, buyPrice:Math.max(1,sp)};
+  const entry={...it, _boughtBack:true, buyPrice:Math.max(1,sp), _bagPrice:it.buyPrice}; // S366 — _bagPrice: its own price, restored when bought back
   if(isStackable(it)){
     // Merge into an existing same-name buy-back stack.
     const ex=arr.find(s=>s.name===it.name && s._boughtBack);
@@ -25872,7 +25875,7 @@ function shopMul(){try{if(typeof WORLD==='undefined')return 1;
 const BARTER_PCT=.01,BARTER_MAX=.25;
 function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT));}
 function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(1-barterPct())));}
-function counterSellPrice(it){return Math.max(1,Math.round(sellPrice(it)*(1+barterPct())));}
+function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(1+barterPct())));}
 function buyItem(it){
   const _cost=shopCost(it); // v80 O — prosperity sets the price
   if(gold<_cost){showMsg('Not enough gold!','#cc4444');return;}
@@ -25885,8 +25888,11 @@ function buyItem(it){
   // on weapons/armor.
   const _bundleQty = (isStackable(it) && it.qty && it.qty > 1) ? it.qty : 1;
   const item={...it,qty:_bundleQty};
-  delete item.buyPrice; // don't need shop price in bag
-  delete item._boughtBack; // it's the player's again, not shop overlay
+  // S366 — the copy keeps its price, so it sells at price × sellMult like one found in a chest (the critic's s321: the price
+  // was deleted here, and a sword bought for 35 sold for its type's 5, a potion for 8, arrows for 5 a piece). A bought-back
+  // piece goes back to the price it had before it was sold.
+  if(it._boughtBack){if(it._bagPrice!=null)item.buyPrice=it._bagPrice;else delete item.buyPrice;}
+  delete item._boughtBack;delete item._bagPrice; // it's the player's again, not shop overlay
   bagAdd(item);
   // v68 — if this was a bought-back item, remove it from the merchant overlay.
   if(it._boughtBack) _consumeBuyBack(it, _bundleQty);
@@ -25908,6 +25914,7 @@ function sellItem(i,sp){
     showMsg(`${it.name} cannot be sold.`, '#c8a84a');
     return;
   }
+  if(!(sp>0)){showMsg(`${it.name} is not worth a coin at the counter.`,'#c8a84a');return;} // S366 — a single arrow
   const finalSp=Math.round(sp*_buffMult('goldFind',1));
   gold+=finalSp;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;
   // v68 — buy-back: offer one unit of the sold item back to this merchant at the
@@ -25927,7 +25934,8 @@ function sellItem(i,sp){
 function _buyStackable(it, units, piecesPerUnit, unitPrice){
   let bought=0, spent=0;
   const template={...it};
-  delete template.buyPrice; delete template._boughtBack;
+  if(it._boughtBack){if(it._bagPrice!=null)template.buyPrice=it._bagPrice;else delete template.buyPrice;} // S366 — keep the price, as buyItem
+  delete template._boughtBack; delete template._bagPrice;
   for(let n=0;n<units;n++){
     if(gold-spent < unitPrice) break;
     const piece={...template, qty:piecesPerUnit};
@@ -29180,6 +29188,7 @@ function _serItem(it){
                   'ammoType','qty','sellVal','buyPrice','sellMult','effect','hiddenEffect',
                   'arrowDmg', // v64 — preserve arrow damage range across save/load
                   '_boughtBack', // v68 — buy-back overlay tag
+                  '_bagPrice','bundle', // S366 — a bought-back piece's own price; ammo's bundle size
                   'heal','mana','stam','value','weight',
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
