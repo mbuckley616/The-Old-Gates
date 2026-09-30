@@ -1,6 +1,6 @@
 // The townsperson (Session 153): one skinned mesh per person, a genome per name and place, a gait with planted feet.
 import { boot, check, ROOT } from './lib/game.mjs';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import fs from 'fs'; import path from 'path';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -100,8 +100,11 @@ check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
 
 // the previous build, same town: draw calls and triangles for the whole view
-const old = path.join(ROOT, 'tests', 'tmp', 'old.html'); fs.mkdirSync(path.dirname(old), { recursive: true });
-fs.writeFileSync(old, execSync('git show HEAD:index.html', { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 }));
+// HEAD's index.html, and its js/ once the split has landed (backlog K), unpacked into tests/tmp/old/ so the tags resolve
+const oldDir = path.join(ROOT, 'tests', 'tmp', 'old'); fs.rmSync(oldDir, { recursive: true, force: true }); fs.mkdirSync(oldDir, { recursive: true });
+const hasJs = spawnSync('git', ['cat-file', '-e', 'HEAD:js'], { cwd: ROOT }).status === 0;
+execSync(`git archive HEAD index.html${hasJs ? ' js' : ''} | tar -x -C "${oldDir}"`, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 });
+const old = path.join(oldDir, 'index.html');
 const o = await boot({ src: old }); await o.intoWorld(); await o.settle('dunmore');
 await o.page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); px = S.site.x; pz = S.site.z + 6; }); await o.page.waitForTimeout(2500);
 const before = await o.page.evaluate(() => { REN.render(scene, CAM); const i = REN.info.render; return { calls: i.calls, triangles: i.triangles }; });
