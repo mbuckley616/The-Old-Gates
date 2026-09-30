@@ -53,5 +53,25 @@ const corner = await page.evaluate(() => { forceTime(12); const S = WORLD.settle
   const d = Math.hypot(px - f.g.position.x, pz - f.g.position.z); const same = S._follower === f; worldState.favor[site.id] = 0;
   return { name: f.def.name, d: +d.toFixed(2), same }; });
 check('from the house corner where he stuck (21.5 units off), the trailing guard reaches six to eight units within 20 s', !corner.none && corner.same && corner.d >= 5.9 && corner.d <= 8.6, corner);
+// Session 378: CI on 32ed275 (Eilís 38.6 then 36.2 units off, closing on nothing). The street grid was read once, when the
+// town was built, but solids go on arriving after (Dunmore's live solid cells 3,710 at the build, 3,928 six minutes on),
+// and a way through a cell gone solid held the guard against it, asking again for the same way. A box is set down on a
+// way the grid has already given; every way asked for after must keep off it, and the guard sent that way must still come.
+const stale = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); const site = S.site;
+  const tick = n => { for (let i = 0; i < n; i++) WORLD.tick(1 / 60, performance.now()); };
+  px = site.x + 6; pz = site.z - 6; jumpY = 0; worldState.favor[site.id] = -2; tick(2); const f = S._follower; if (!f || !S._route) return { none: true };
+  const from = { x: 13536.1, z: 25385.9 }, to = { x: px, z: pz };
+  const before = S._route(from, to, true); if (before.length < 12) return { short: before.length };
+  const c = before[Math.floor(before.length / 2)]; const box = { cx: c.x, cz: c.z, rx: 1.2, rz: 1.2 }; WORLD.STATIC_SOL.push(box);
+  const solidOn = p => p.slice(1, -1).filter(q => WORLD.solidAt(q.x, q.z)).length;
+  const after = S._route(from, to, true); const again = S._route(from, to, true); const beforeOn = solidOn(before), afterOn = solidOn(after), againOn = solidOn(again);
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647; let others = 0, asked = 0;
+  for (let k = 0; k < 30; k++) { const a = { x: c.x + (rnd() * 2 - 1) * 30, z: c.z + (rnd() * 2 - 1) * 30 }, b = { x: c.x + (rnd() * 2 - 1) * 30, z: c.z + (rnd() * 2 - 1) * 30 };
+    if (WORLD.solidAt(a.x, a.z) || WORLD.solidAt(b.x, b.z)) continue; asked++; others += solidOn(S._route(a, b, true)); }
+  f.g.position.set(from.x, WORLD.worldH(from.x, from.z), from.z); f._fw = null; f._fwT = 0; f._twRaw = null; f._twBest = null; f._twS = 0; tick(60 * 30);
+  const d = Math.hypot(px - f.g.position.x, pz - f.g.position.z); const same = S._follower === f;
+  WORLD.STATIC_SOL.splice(WORLD.STATIC_SOL.indexOf(box), 1); worldState.favor[site.id] = 0;
+  return { cells: before.length, box: [+(c.x - site.x).toFixed(1), +(c.z - site.z).toFixed(1)], beforeOn, afterOn, afterLen: after.length, againOn, asked, others, name: f.def.name, d: +d.toFixed(2), same }; });
+check('a way the street grid gives keeps off a solid set down after the grid was read, and the guard sent by it still comes to six to eight units', !stale.none && !stale.short && stale.beforeOn > 0 && stale.afterLen > 0 && stale.afterOn === 0 && stale.againOn === 0 && stale.asked >= 10 && stale.others === 0 && stale.same && stale.d >= 5.9 && stale.d <= 8.6, stale);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -9738,3 +9738,22 @@ Whether a Finesse-0 lock should be learnable by rhythm alone, and whether a shak
 
 ### Needs eyes
 Picking a Finesse-0 shop door and a five-pin treasure chest by hand, to see whether the rhythm is found or the lock feels like chance.
+
+## v80 — Session 378 — The street grid goes stale
+CI on 32ed275 (PR #22) failed one check of `watch`: at favour −2 the trailing guard, Eilís, stood 38.56 units off after 30 s and 36.17 after 23 s more, closing on nothing. It passed locally, where the pick fell to another guard, and the producer called it the known flaky trailing-guard check. It is not a flake.
+
+**The cause.** `townRoute` reads the town's walking grid once, from `solidAt`, when the town is first asked for a way (in practice, as it is built). Solids keep arriving after that: the chunks' trees and rocks and the town's later pieces come through the job queue. In Dunmore the live solid cells on the grid's own lattice numbered 3,710 at the build, 3,778 after six minutes of night, and 3,928 back at noon. Ways the cached grid gave then crossed cells that had gone solid: 1, then 2 of 2,083 path cells between 30 random street pairs. A guard following a cell-by-cell way (Session 357's fallback for a man who has gained nothing for 1.5 s) pushes into such a cell and never reaches it. After 1.5 s more he asks again, and the same grid gives the same way, so he stands there for good. How many solids land before the grid is read depends on how fast the job queue runs, so a slow runner meets it and a quick one mostly doesn't. The night beat, the chasing guard and the trailing guard all walk by this grid.
+
+A sweep of 478 start points across Dunmore's pad, and four replays of the test's own night-then-noon sequence with each guard on duty made the follower, did not reproduce it locally. Every guard arrived, some by long detours round the walls. The stale grid was found by counting, not by watching a guard stick.
+
+**What changed.** `townRoute` checks every way it returns against the world as it is now. A cell of the way that has gone solid is marked on the grid and the way is found again, up to twelve times. A search that finds no way at all reads the whole grid afresh, once. A way that is still clear costs one `solidAt` a cell. The grid never unmarks a cell on its own; a full refresh does that when a way is lost.
+
+### Verified (headless Chromium)
+`tests/watch.test.mjs` has a new eighth check. With the grid built, a 2.4-unit box goes down on the middle of the way from the house corner of Session 357 to the player:
+- On the old build the way still runs through the box, 3 of its 21 cells solid, and again when asked a second time. The guard sent from the corner stops 15.94 units off, the CI failure in miniature.
+- On the new build the way keeps off the box (0 solid cells, still 21 long) both times, 26 other ways near it have no solid cell, and the guard reaches 8.00.
+
+`watch` 8/8. `beat`, `constable`, `guardsindoor`, `burglary`, `crime2` and `livepick`, which walk guards by the same grid, all pass. Build tag s341.
+
+### Needs eyes
+Nothing to see in play unless a guard was already caught. A guard trailing you in a town that has just loaded should no longer stand at a tree or a stall that arrived after the town did.

@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s340</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s341</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -37104,13 +37104,23 @@ var WORLD=(()=>{
   // the line is clear or no way is found (he walks the direct line as before).
   function townRoute(S){if(S._route)return S._route;const cx=S.site.x,cz=S.site.z;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
-    for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;
+    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
-    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
+    const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;
         for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;
           if(prev[k]>=0||(sol[k]&&k!==g0))continue;if(di&&dj&&(sol[cj*N+ni]||sol[nj*N+ci]))continue;prev[k]=c;q.push(k);}}
-      if(prev[g0]<0)return [];const cells=[];for(let c=g0;c!==s0;c=prev[c])cells.push({x:cx-R+c%N,z:cz-R+Math.floor(c/N)});cells.push({x:cx-R+ai,z:cz-R+aj});cells.reverse(); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
+      if(prev[g0]<0)return null;const ks=[];for(let c=g0;c!==s0;c=prev[c])ks.push(c);ks.push(s0);return ks.reverse();};
+    // S378 — the grid is read once, but solids go on arriving after the town is built (the chunks' trees and rocks, the
+    // town's own later pieces): 3,710 solid cells at Dunmore's build, 3,928 six minutes on. A way through a cell gone solid
+    // since held a guard against it for good, and asking again gave him the same way. Each way is checked against the
+    // world as it is now: a cell gone solid is marked and the way found again; no way at all reads the whole grid afresh, once.
+    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
+      for(let tries=0;tries<12;tries++){ks=find(s0,g0);
+        if(!ks){if(fresh)break;fill();fresh=true;continue;}
+        let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAt(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}
+        if(!stale)break;ks=null;}
+      if(!ks)return [];const cells=ks.map(c=>({x:cx-R+c%N,z:cz-R+Math.floor(c/N)})); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
       if(raw)return cells; // S247 — every cell of the way, for a man the pulled-straight path has already failed
       const out=[];let from=a;for(let i=0;i<cells.length-1;i++){if(!clearLine(from.x,from.z,cells[i+1].x,cells[i+1].z)){out.push(cells[i]);from=cells[i];}}return out;};
     return S._route;}
