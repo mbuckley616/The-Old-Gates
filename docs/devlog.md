@@ -8622,3 +8622,20 @@ New `tests/burglary.test.mjs`, 7 checks, passing, no page errors. The checks are
 
 ### Needs eyes
 The chances are for a pick begun at a random moment. A player who watches the lantern go by and starts behind it should do much better. How much better needs hands on the keys, and it bears on B in #68.
+
+## v80 — Session 358 — The trailing guard stood for good at a house corner; two CI reds were the tests
+This run's one CI-fix session. CI on the branch head `ed2bce7` (Session 353) was red in three suites: `watch`, `hourhitch` and `saveui`.
+
+**`watch`: a real bug, older than Session 353.** At favour −2 the nearest guard trails you (S166), and his check failed. Three runs side by side with his position logged each second showed what happens. Séamus walked the street route until it came back empty, 21.5 units off. The route is empty when the pulled-straight line to you looks clear, and here it clipped a house corner. He then stepped straight at you, `npcStep` gave up against the wall, and he stood there for the rest of the run. The same test, copied onto Session 352's build, failed there too (Eilís stuck at 38 units), so the autosave was not the cause. Which guard is nearest, and so whether he meets that corner, depends on timing. Session 247 fixed the same fault for the night beat. Now the trailing guard, and the guard sent after you (S239's chase, which walked the same way), share one `trailStep`: if he has gained nothing on you for a second and a half, he walks the street grid cell by cell (`townRoute(…, true)`), then takes the straight way again.
+
+**`hourhitch`: the first greeting bubble.** The new program at 18:59 was a `SpriteMaterial` on two townsfolk. That is the pleasantry bubble, the game's only Sprite, and its program compiles the first time two townsfolk greet. On CI that came after the first night, which the test read as a rebuild on a change of hour. A first use is set aside now, as a newly arrived foe's already was. This is the single `hourhitch` red Session 351 had left unexplained.
+
+**`saveui`: the import expected exactly three saves.** Session 353's arrival autosave can add a fourth (CI: *Traveller:4*). The check now asks that every save the exported file holds comes back.
+
+### Verified (headless Chromium)
+- A new `watch` check puts the follower on the exact spot where Séamus stuck, 21.5 units from you. On Session 352's build he is still 21.49 units off 20 s later. On this build he is at 7.99. `watch` is 7 of 7 in three runs, two of them side by side with four other suites.
+- `saveui` 13/13 (the import brings back 3 of 3 exported). `hourhitch` 6/6.
+- The guard and crime suites run side by side: `guardsindoor` 13/13 (the chase), `crime1`–`5`, `beat`, `theft`, `constable`, `livepick`. All pass, no page errors.
+
+### Needs eyes
+Whether a guard dropping onto the street grid reads as a man cutting round a house, or as a stiff zig-zag, at the distance you would see him.
