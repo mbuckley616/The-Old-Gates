@@ -9198,3 +9198,27 @@ A legacy village is its own scene, and `WORLD.tick`, which drives the towns' smo
 
 ### Needs eyes
 The old chimney is a box in front of the forge's south wall, only 1.9 high, so the smoke starts below the roof's ridge. That is the old model's height. A proper stack belongs with the legacy village's houses, if they are ever put on the kit.
+
+## v80 — Session 355 — The tower on the kit shell (H.5, after #62)
+The tower was the last generated room on the old shell: a flat dark ceiling, four flat wall planes, three box beams and a box door. Michael's A on #62 covers it, so it needed no question of its own. It is 9 × 9 and 31 high, stone, with a helix of 130 treads up a central post to a floor at 30 (Session 294).
+
+It takes the stone variant, with one difference: **no beams, and so no corbels.** The kit's beams hang from 30.58 to 30.8. With the top floor at 30 that is at a person's neck in the treasure room. The old box beams hung there too. It keeps the rest:
+- the joists and the boarded ceiling at 31;
+- the wall plate and the plinth course;
+- the plank door in its stone frame;
+- the shaded walls.
+
+**The tall walls.** A wall takes one row of vertices every .2 of its height, for the shading at the foot and the head. At 31 high that would be 155 rows and about 22k triangles for the four walls. A wall over 12 high is now capped at 60 rows, spaced by a cosine, so they crowd towards the foot and the head where the shading changes. The texture's v is moved with them, so the courses keep their spacing. No other room is over 12 high, the church at 5 and a galleried hall at 4.8 included, so none of them changes.
+
+### Verified (headless Chromium)
+- **`shells`**, extended to 15 rooms, 11 checks passing:
+  - The tower is a stone room with the kit shell. It is 4.2k triangles plus a 1.3k door, with no box door or box beams.
+  - No shell vertex lies between .3 and .9 under the ceiling, the band a beam would take (0).
+  - Its walls have 7 rows of vertices in the bottom unit, and the foot shades to .45, as in a low room.
+  - It is inside its walls, its door centred on the south wall, with no posts (stone).
+  - Every earlier room is unchanged: the same triangle counts as Session 344's run.
+- `docs/prototypes/shells-ingame.png` has a new last row: the tower's foot (the helix, the coursed walls, a leaded window) and its top room.
+
+### Needs eyes
+- The shaft is still lit by one lantern at the top, so its foot is dim, as before.
+- The top room's floor is still three flat grey slabs, and at 1 high the room is low for a person to stand in. That is the tower's own shape, not the shell's.

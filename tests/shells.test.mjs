@@ -1,7 +1,7 @@
 // The interiors' shells on the kit (Session 342, Michael's A on #62): in the generated rooms a boarded ceiling over joists,
 // rounded beams, walls shaded at the foot, the head and the corners; in plastered rooms posts, knee braces, a sole plate and a
 // wall plate (Aurenne's close studding on the kit); in stone and rubble rooms a plinth and stepped corbels; a plank door at
-// the entrance. Churches, keep halls and the tower keep today's shell.
+// the entrance. Churches and keep halls since Session 344 as stone rooms; the tower since Session 355, without beams.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -10,7 +10,7 @@ fs.mkdirSync('tests/out', { recursive: true });
 
 const r = await page.evaluate(() => { const out = {};
   const rooms = [['home', 'irish'], ['home', 'french'], ['home', 'anglo'], ['home', 'stone'], ['inn', 'irish'], ['weapon', 'irish'], ['potion', 'french'], ['misc', 'anglo'],
-    ['guild_f', 'stone'], ['cabin', 'irish'], ['cellar', 'irish'], ['home2', 'irish'], ['church', 'irish'], ['castle', 'stone']];
+    ['guild_f', 'stone'], ['cabin', 'irish'], ['cellar', 'irish'], ['home2', 'irish'], ['church', 'irish'], ['castle', 'stone'], ['tower', 'stone']];
   for (const [t, style] of rooms) { const two = t === 'home2', type = two ? 'home' : t;
     const house = { id: 'shell_' + t + style, type, w: 7, d: 5, two, doorX: px, doorZ: pz, style, reg: style === 'stone' ? 'irish' : style };
     const sc = WORLD.buildInteriorFor(house), W = house.intW, D = house.intD; sc.updateMatrixWorld(true);
@@ -27,13 +27,16 @@ const r = await page.evaluate(() => { const out = {};
     const inWin = posts.filter(p => (p.x0 < 1 || p.x1 > W - 1) && p.z0 > .5 && p.z1 < D - .5 && wins.some(z => Math.abs((p.z0 + p.z1) / 2 - z) < .6)).length;
     const tall = []; sc.traverse(o => { if (o.isMesh && o.geometry.type === 'ShapeGeometry') tall.push(o.position); });
     let corbelClash = 0; if (shell && tall.length) shell.traverse(m => { if (!m.isMesh) return; const pos = m.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); const x = v.x, y = v.y, z = v.z; if ((x < .45 || x > W - .45) && y > H - 1 && y < H - .35 && tall.some(p => Math.abs(p.z - z) < .6)) corbelClash++; } });
+    let beamBand = 0; if (shell && H > 12) shell.traverse(m => { if (!m.isMesh) return; const pos = m.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.y > H - .9 && v.y < H - .3) beamBand++; } });
+    let foot = null; if (H > 12) { const wm = sc.children.find(o => o.userData.shaded), cc = wm.geometry.attributes.color, pp = wm.geometry.attributes.position; let lo = 1, n1 = 0; for (let i = 0; i < pp.count; i++) { const y = pp.getY(i) + H / 2; if (y < 1) n1++; if (y < .05) lo = Math.min(lo, cc.getX(i)); } foot = { rows: n1, lo: +lo.toFixed(2) }; }
     const doorway = posts.filter(p => p.z1 > D - .5 && Math.abs((p.x0 + p.x1) / 2 - W / 2) < 1.0).length;
     out[t + '-' + style] = { W, D, H: +H.toFixed(2), tris: shell && shell.userData.tris, doorTris: door && door.userData.tris, posts: posts.length, corbelClash, stone: shell && shell.userData.shell.stone,
-      clash, inWin, doorway, inside, doorAt, oldDoor, oldBeams, shaded, ceilTex }; }
+      clash, inWin, doorway, inside, doorAt, oldDoor, oldBeams, shaded, ceilTex, beamBand, foot }; }
   return out; });
 console.log(JSON.stringify(r));
 const kit = Object.keys(r);
 check('every generated room has the kit shell and the plank door, and no box door or box beams (the church and the keep\'s hall since Session 344)', kit.every(k => r[k].tris > 0 && r[k].doorTris > 0 && !r[k].oldDoor && r[k].oldBeams === 0), Object.fromEntries(kit.map(k => [k, [r[k].tris, r[k].doorTris, r[k].oldDoor, r[k].oldBeams]])));
+check('the tower (31 high, its top floor at 30) is a stone room with the kit shell but no beam or corbel in its top room, and its tall walls keep the shading at the foot', r['tower-stone'].stone && r['tower-stone'].H > 30 && r['tower-stone'].beamBand === 0 && r['tower-stone'].foot && r['tower-stone'].foot.rows >= 8 && r['tower-stone'].foot.lo < .7, r['tower-stone']);
 check('the church and the keep\'s hall are stone rooms with the larger door (2.3 tall with its head)', ['church-irish', 'castle-stone'].every(k => r[k].stone && r[k].doorAt[2] > 2.4 && r[k].doorAt[2] < 2.7), [r['church-irish'], r['castle-stone']]);
 check('the four walls are shaded in their vertex colours and the ceiling is boarded', kit.every(k => r[k].shaded === 4 && r[k].ceilTex), Object.fromEntries(kit.map(k => [k, [r[k].shaded, r[k].ceilTex]])));
 const plaster = kit.filter(k => !r[k].stone), stone = kit.filter(k => r[k].stone);
@@ -51,14 +54,14 @@ check('a post blocks the player at the wall; the middle of the room is free', wa
 
 // pictures: today's shell beside the kit's is in docs/prototypes/shells-*.png; here the four homes, the inn and the smithy
 const shot = await page.evaluate(() => { const cv = REN.domElement, pics = [];
-  for (const [type, style] of [['home', 'irish'], ['home', 'french'], ['home', 'anglo'], ['home', 'stone'], ['inn', 'irish'], ['weapon', 'irish'], ['church', 'irish'], ['castle', 'stone']]) {
+  for (const [type, style] of [['home', 'irish'], ['home', 'french'], ['home', 'anglo'], ['home', 'stone'], ['inn', 'irish'], ['weapon', 'irish'], ['church', 'irish'], ['castle', 'stone'], ['tower', 'stone']]) {
     const house = { id: 'shellp_' + type + style, type, w: 7, d: 5, doorX: px, doorZ: pz, style, reg: style === 'stone' ? 'irish' : style };
     const sc = WORLD.buildInteriorFor(house), W = house.intW, D = house.intD;
-    const views = type === 'church' || type === 'castle' ? [[[W * .5, 1.6, D - 1.2], [W * .5, 2.6, 0]], [[W * .5, 1.6, D * .3], [W * .5, 1.8, D]]] : type === 'home' ? [[[W * .55, 1.0, D - 1.0], [W * .15, 1.3, D * .2]], [[W * .5, 1.05, D * .35], [W * .5, 1.0, D]]] : [[[W * .85, 1.1, D * .5], [0, 1.5, D * .12]], [[W * .15, 1.1, D * .5], [W, 1.5, D * .12]]];
+    const views = type === 'tower' ? [[[W * .85, 1.6, D * .3], [W * .3, 1.0, D]], [[W * .2, 30.9, D * .8], [W * .8, 30.6, D * .2]]] : type === 'church' || type === 'castle' ? [[[W * .5, 1.6, D - 1.2], [W * .5, 2.6, 0]], [[W * .5, 1.6, D * .3], [W * .5, 1.8, D]]] : type === 'home' ? [[[W * .55, 1.0, D - 1.0], [W * .15, 1.3, D * .2]], [[W * .5, 1.05, D * .35], [W * .5, 1.0, D]]] : [[[W * .85, 1.1, D * .5], [0, 1.5, D * .12]], [[W * .15, 1.1, D * .5], [W, 1.5, D * .12]]];
     for (const [pos, look] of views) {
       const cam = new THREE.PerspectiveCamera(60, cv.width / cv.height, .05, 80); cam.position.set(...pos); cam.lookAt(...look); sc.updateMatrixWorld(true); REN.render(sc, cam);
       const o = document.createElement('canvas'); o.width = 480; o.height = 270; const x = o.getContext('2d'); x.drawImage(cv, 0, 0, 480, 270); x.fillStyle = '#000a'; x.fillRect(0, 0, 150, 24); x.fillStyle = '#fff'; x.font = 'bold 16px serif'; x.fillText(type + ' ' + style, 6, 17); pics.push(o); } }
-  const c = document.createElement('canvas'); c.width = 960; c.height = 270 * 8; const x = c.getContext('2d'); pics.forEach((o, i) => x.drawImage(o, (i % 2) * 480, Math.floor(i / 2) * 270)); return c.toDataURL(); });
+  const c = document.createElement('canvas'); c.width = 960; c.height = 270 * 9; const x = c.getContext('2d'); pics.forEach((o, i) => x.drawImage(o, (i % 2) * 480, Math.floor(i / 2) * 270)); return c.toDataURL(); });
 fs.writeFileSync('tests/out/shells-ingame.png', Buffer.from(shot.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

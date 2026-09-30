@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s322</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s323</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -39038,10 +39038,14 @@ var WORLD=(()=>{
     // S342 (Michael's A on #62) — the generated rooms' shell on the kit: a boarded ceiling over joists, the walls shaded at the foot,
     // the head and the corners, and (built after the furniture, below) the frame; the tower keeps today's (S344: churches and keep
     // halls now take it too, as stone rooms, with a larger door and the corbels clear of their tall windows)
-    const kitShell=type!=='tower',TALLZ=[];
+    // S355 — the tower too, as a stone room without beams: its top floor stands at 30 under a ceiling at 31, and a beam there
+    // would hang at a person's neck; the joists, the plates, the plinth, the shaded walls and the plank door as elsewhere
+    const kitShell=true,tower=type==='tower',TALLZ=[];
     const ce=new THREE.Mesh(new THREE.PlaneGeometry(W,D),kitShell?tiled('plank',reg,W/2.2,D/2.2):new THREE.MeshLambertMaterial({color:st==='anglo'?0x2a2420:0x3a2c1e}));if(kitShell)ce.material.color.setHex(0x8a7a68);ce.rotation.x=Math.PI/2;ce.position.set(W/2,H,D/2);sc_.add(ce);
     [[W/2,0,0,W],[W/2,D,Math.PI,W],[0,D/2,Math.PI/2,D],[W,D/2,-Math.PI/2,D]].forEach(([x,z,ry,len])=>{
-      const geo=kitShell?new THREE.PlaneGeometry(len,H,Math.max(4,Math.round(len/.5)),Math.max(10,Math.round(H/.2))):new THREE.PlaneGeometry(len,H);
+      const geo=kitShell?new THREE.PlaneGeometry(len,H,Math.max(4,Math.round(len/.5)),Math.min(60,Math.max(10,Math.round(H/.2)))):new THREE.PlaneGeometry(len,H);
+      /* S355 — a wall over 12 high (the tower's 31) takes 60 rows packed towards the foot and the head, where the shading changes */
+      if(kitShell&&H>12){const P_=geo.attributes.position,U_=geo.attributes.uv;for(let i=0;i<P_.count;i++){const t=P_.getY(i)/H+.5,t2=.5-.5*Math.cos(Math.PI*t);P_.setY(i,(t2-.5)*H);U_.setY(i,t2);}}
       if(kitShell){const P_=geo.attributes.position,col=new Float32Array(P_.count*3);for(let i=0;i<P_.count;i++){const u=P_.getX(i)+len/2,y=P_.getY(i)+H/2,e=Math.min(u,len-u);
         col[i*3]=col[i*3+1]=col[i*3+2]=Math.max(.45,1-.38*Math.exp(-y/.3)-.3*Math.exp(-(H-y)/.35)-.32*Math.exp(-e/.4));}geo.setAttribute('color',new THREE.BufferAttribute(col,3));}
       const wm=new THREE.Mesh(geo,tiled(wallKind,reg,len/2.6,H/2.6));if(kitShell){wm.material.vertexColors=true;wm.userData.shaded=true;}wm.position.set(x,H/2,z);wm.rotation.y=ry;sc_.add(wm);
@@ -39316,7 +39320,7 @@ var WORLD=(()=>{
     if(kitShell){const K=furnKit(),P=K.Parts(),Wd=K.WOOD[FN]||K.WOOD.gatelands,T=Wd.dark,S=0x6e675e,stone=wallKind!=='plaster',close=st==='french';
       let sd=FSEED*7+3;const r=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};const jit=(c,a)=>new THREE.Color(c).offsetHSL(0,0,(r()-.5)*(a||.06));
       const rb=(w,h,d,q)=>SK.rbox(w,h,d,q==null?Math.min(.02,w/3,h/3,d/3):q,1);
-      const beams=[];for(let i=1;i<=nb;i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3))wins.push(z);
+      const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3))wins.push(z);
       const bh=.22,bw=.2,jh=.09,yB=H-jh-bh/2;
       for(const z of beams)P(rb(W,bh,bw,.03),jit(T,.05),W/2,yB,z);
       for(let x=.3;x<W-.1;x+=.5)P(rb(.09,jh,D,.015),jit(T,.07),x,H-jh/2,D/2);
