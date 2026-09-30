@@ -9267,3 +9267,20 @@ The fix is in the test only: it draws and reads the minimap four times before co
 
 ### Needs eyes
 - Nothing to see in play. If `watch` is still red on this PR after main carries Session 357, that is the next CI session.
+
+## v80 — Session 372 — `watch` and `hourhitch` red on the Auto sessions PR: the systems builder's fixes, ported (CI fix)
+Section H has nothing workable left: every item is done or answered, no question is pending in `docs/decisions.md`, and the quest review's Findings 1–4 are already on main. So this run's one session is CI. The Auto sessions PR's run on `7ec445a` (the merge of main at 13:24) failed two suites, `watch` and `hourhitch`. The sixth shard was cancelled after it had passed 20 of 20.
+
+Both are the systems builder's, and both are fixed on auto/systems but not yet on main. Session 360 left `watch` to arrive through main. It has not, so both fixes are ported here word for word. They no-op when main takes auto/systems.
+- **`watch`** (the trailing guard 36–41 units off): Session 358's `trailStep` in the world module. When the guard has gained nothing on you for a second and a half (a house corner the pulled-straight way misses, where `npcStep` gives up), he takes every cell of the street grid. The chasing guard uses the same step. The ported hunk is Session 358's `index.html` change without its build-tag line. auto/systems has not touched those lines since, so the later merge meets the same text on both sides. Its test file is ported verbatim, including the check from the corner where he stuck.
+- **`hourhitch`** (a frame over 8 s after a change of hour): the test file as auto/systems has it after Sessions 358 and 362. The first greeting bubble's program, and a step in which a foe's program first appears, count as a first use, not the hour. That change is in the test only.
+
+### Verified (headless Chromium)
+- `watch` 7/7 with the port. The trailing guard is at 7.99 both times. From the corner he reaches 7.99 within 20 s.
+- `watch` on this branch's code *without* the ported hunk fails the corner check: he stands at 21.49 for the whole 20 s. That is the failure reproduced.
+- `hourhitch` 6/6. This run shows the case CI hit: the step to 21h took 8,922 ms as a foe's skinned material compiled on first draw. It is set aside and named. The judged worst is 4,218 ms against a noon worst of 1,923.
+- `guardsindoor`, `beat` and `constable` (the guards' other paths) pass.
+
+### Needs eyes
+- Nothing to see in play beyond Session 358's own note: a guard trailing you round a house corner should now come round it.
+- `npm install`'s postinstall still exits 1 in the cloud container on this branch. Session 370's fix for that is on auto/systems and reaches here through main. The packages install regardless.

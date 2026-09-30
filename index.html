@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s325</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s326</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -37150,6 +37150,15 @@ var WORLD=(()=>{
     n._stuck=0;n.g.rotation.y=Math.atan2(dx,dz);
     return false;
   }
+  // S357 — a guard walking you down (trailing you at favour −2, or sent after you): the pulled-straight way by the streets,
+  // and when he has gained nothing on you for a second and a half (a corner the straight line misses, where npcStep gives
+  // up and he stood for good), every cell of the way, as the night beat does (S247)
+  function trailStep(n,spd,dt,every){const gx=n.g.position.x,gz=n.g.position.z,fd=Math.hypot(px-gx,pz-gz);
+    if(n._twBest==null||fd<n._twBest-.5){n._twBest=fd;n._twS=0;}else n._twS+=dt;
+    if(n._twS>1.5){n._twS=0;n._twBest=fd;n._twRaw=townRoute(n._settle)({x:gx,z:gz},{x:px,z:pz},true);}
+    if(n._twRaw&&n._twRaw.length){const w=n._twRaw[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._twRaw.shift();return;}
+    n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=every;const w=townRoute(n._settle)({x:gx,z:gz},{x:px,z:pz});n._fw=w.length?w[0]:null;}
+    const t=n._fw&&Math.hypot(n._fw.x-gx,n._fw.z-gz)>.9?n._fw:{x:px,z:pz};npcStep(n,t.x,t.z,spd,dt);}
   // Filled in by build() from the road geometry; the fallback is the pad edge.
   const spawn={x:ASH_X,z:ASH_Z-62,yaw:0};
   function tickNPCs(dt,now){
@@ -37167,13 +37176,11 @@ var WORLD=(()=>{
       const spd=n.sched&&n.sched.type==='guard'?.95:.7;
       let moving=false;
       if(n._chase){const fd=Math.hypot(px-n.g.position.x,pz-n.g.position.z); // S239 — sent after you: he runs you down by the streets
-        if(fd>1.4){n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=.6;const w=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},{x:px,z:pz});n._fw=w.length?w[0]:null;}
-          const t=n._fw&&Math.hypot(n._fw.x-n.g.position.x,n._fw.z-n.g.position.z)>.9?n._fw:{x:px,z:pz};npcStep(n,t.x,t.z,CHASE_SPD,dt);moving=true;}
-        else n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}
+        if(fd>1.4){trailStep(n,CHASE_SPD,dt,.6);moving=true;}
+        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}}
       else if(n._follow){const fd=Math.hypot(px-n.g.position.x,pz-n.g.position.z); // S166 — trailing you at six to eight units
-        if(fd>8){n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=1;const w=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},{x:px,z:pz});n._fw=w.length?w[0]:null;}
-          const t=n._fw&&Math.hypot(n._fw.x-n.g.position.x,n._fw.z-n.g.position.z)>.9?n._fw:{x:px,z:pz};npcStep(n,t.x,t.z,Math.min(3.4,spd+(fd-8)*.6),dt);moving=true;}
-        else n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}
+        if(fd>8){trailStep(n,Math.min(3.4,spd+(fd-8)*.6),dt,1);moving=true;}
+        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}}
       else if(plan.beat){const B=plan.beat;
         if(n._beatI==null||n._beatI>=B.length){const G=guardsOf(n._settle).filter(g=>g.sched.type!=='constable');const k=Math.max(0,G.indexOf(n));n._beatI=Math.floor(k*B.length/Math.max(1,G.length))%B.length;}
         if(n._beatWait>0){n._beatWait-=dt;}
