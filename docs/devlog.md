@@ -8697,3 +8697,20 @@ Backlog G's owed check on chest locks (Session 150): *a dungeon run's worth of c
 
 ### Needs eyes
 Whether 5–13 picks for a big dungeon is fair for a first-level thief, and whether treasure chests should be locked less often, or dungeons hold more picks. That needs hands on the lock. The tower hoard's lock and the mimic's borrowed lock are still owed.
+
+## v80 — Session 364 — A mimic stood where no chest stands, and the minimap named it
+Backlog G's owed check on chest locks (Session 150): *whether the mimic's borrowed lock reads fairly*, and the tower hoard's lock. The lock itself reads fairly: a mimic shows the prompt a chest in its cell would (`chestLockedAt`, the same rule), and E wakes it without a pick. But a lock is only fair if the chest could be a chest, and a headless survey found two tells that gave the mimic away before the prompt did. Both go against what the mimic's own entries say it is (v61d5: *a tell would defeat the bait*; S198: *a mimic's disguise stays exact*; S329 kept disguised mimics out of Ashwort's pulse), so both are fixed without a decision.
+
+**Where it stood.** A new `tests/mimicspots.test.mjs` enters eight dungeons whose roster carries a Mimic, at level 6 so the roster isn't gated, and classes the cell under each chest and each disguised mimic by its open sides. Ordinary chests are placed in a room's L-shaped corners (Pass 2 in `renderFloor`), or in a fort storeroom's middle; treasure chests stand where the treasure floor is. Mimics were placed like every other foe, on any floor cell more than five from the entrance. On the old build, 4 of 31 mimics stood in a corner (13%), against 65–70% of chests; 8 stood in corridors, where no chest ever stands, and 10 along a room's wall. A chest in a corridor was always a mimic. One mimic stood beside a real chest. Now `spawnFloorEnemies` gives a disguised foe a spot from the same L-corners in a room, never within one cell of a chest and never on another foe; if a floor has none left, it stands where it was drawn.
+
+**The minimap.** The dungeon minimap draws a red dot for every living foe on a revealed cell, and it did not skip a disguised one. Chests are not drawn, so a red dot in a room corner with a chest in it was a mimic. It now skips a disguised mimic, whether its cell is revealed or not; once woken, it shows like any foe. A dormant gargoyle still shows as a dot, since it is a statue, not a disguise, and nothing says it should be hidden.
+
+**The tower hoard.** Its lock (`seed 'tower_'+id, minPins 4`) is always four pins: the floor of 4 is also the most the rule gives a lock with no floor or bonus. At Finesse 0 the top holds 149–188 ms. By Session 363's model a four-pin lock costs 0.48 / 1.24 / 3.04 picks for a hand that misses one press in ten / five / three. Nothing to change.
+
+### Verified (headless Chromium)
+- `mimicspots` 7/7, no page errors. Eight dungeons, 31 disguised mimics. Now: 31 of 31 in a room's L-corner, none in a corridor, none beside a chest; chests 65% in corners, none in corridors. The minimap, with every cell revealed, draws exactly the undisguised foes on the floor in all eight (e.g. Belvert's Pit: 17 dots for 17 foes, 3 mimics hidden). The same test on the old build fails four checks: mimics 4 of 31 in corners, 8 in corridors, one beside a chest, and the minimap drew 1–3 dots more than there were foes in every dungeon (Belvert's Pit 20 for 17).
+- The tower hoard: 300 towers' ids, every lock four pins.
+- `chestpicks`, `dungeon` (3 suites), `locks` (3), `lockpicks`, `ashwort` and `gargoyle` pass.
+
+### Needs eyes
+Whether a mimic in a corner still surprises once a player has learned that treasure chests (gold, larger) are never mimics and that a storeroom's middle chest never is. Both were true before this session. How many mimics a dungeon holds: the roster puts one in every sixth foe, so a big dungeon has six, sometimes more than its real chests on a floor. That is a number for Michael if it feels like too many.
