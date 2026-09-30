@@ -1,10 +1,13 @@
 // Run every *.test.mjs in this folder, one browser each, and report. `node tests/run.mjs saves` runs one.
 // `node tests/run.mjs --shard=2/8` runs the second of eight shares (CI runs the eight side by side, Session 254).
+// `node tests/run.mjs --src=PATH` boots PATH instead of the repo's index.html (a split copy in a scratch folder, Session 368).
 import fs from 'fs'; import path from 'path'; import { spawnSync } from 'child_process'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const shardArg = args.find(a => a.startsWith('--shard='));
 const only = args.find(a => !a.startsWith('--'));
+const srcArg = args.find(a => a.startsWith('--src='));
+if (srcArg) process.env.OG_SRC = path.resolve(srcArg.slice(6));
 let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only || f.startsWith(only))).sort();
 // seconds each took in a full local run (Session 254); a suite not listed counts as 60. Shares are dealt heaviest first to the lightest.
 const SECS = { placesave: 324, mainrun: 318, hourhitch: 288, guardsindoor: 134, reader: 131, lod: 115, saveui: 110, people: 108, perf: 96, beat: 95, questtargets: 91, witness: 90, weather: 87, shoperrands: 81, theft: 76 };
