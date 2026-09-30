@@ -4,7 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### After the split lands — does the way back stay in the repo? (Fable, split tooling, Session 368, 2026-09-30)
+### After the split lands — does the way back stay in the repo? (Fable, split tooling, Session 368, 2026-09-30, issue #75)
 Backlog K step 1 is built on auto/split: `scripts/split.py` cuts the script at 33 pattern-found seams, `scripts/join.py`
 reassembles the one-file build from `js/manifest.json` and proves it byte-identical. `docs/design/split-plan.md` §5 left
 one thing open: what happens to `join.py` and the manifest once switch-over day has passed and the builders are editing
