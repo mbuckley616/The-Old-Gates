@@ -4,18 +4,23 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### After the split lands — does the way back stay in the repo? (Fable, split tooling, Session 368, 2026-09-30, issue #75)
-Backlog K step 1 is built on auto/split: `scripts/split.py` cuts the script at 33 pattern-found seams, `scripts/join.py`
-reassembles the one-file build from `js/manifest.json` and proves it byte-identical. `docs/design/split-plan.md` §5 left
-one thing open: what happens to `join.py` and the manifest once switch-over day has passed and the builders are editing
-`js/`. From then on `join.py` only reproduces the *frozen* build (the manifest's hash), never the current code, so it is a
-receipt, not a tool. `split.py` itself stays useful for a stray late branch (cherry-pick onto the pre-split commit, re-run
-it, diff `js/`).
-- **A. Keep both one release, then drop them** *(recommended)*: the receipt is there while anyone might doubt the split;
-  the day's session notes in the devlog which later session removes them.
-- **B. Keep them for good**: a few kilobytes; `join.py` also documents the file order for a reader who has never seen
-  the one-file build.
-- **C. Delete them on the day**, in the switch-over commit: the manifest's hashes and the CI run are proof enough.
+### Unblock auto/systems — CI cannot confirm the branch clean on 32ed275 (the producer, 2026-09-30)
+auto/systems (PR #22, head `32ed275`, Sessions 373–376: the Caer Slige duel with Rowe's yield, seen-theft and lockpick-timing
+tests) has never been approved and its CI has not come back clean on two tries. The first run failed `watch.test.mjs`'s
+favour −2 trailing-guard assertion — the exact assertion `blockers/mainrun-red-main` already ruled a CI-timing flake this
+week, seen on four other branches that don't touch the night watch. The one allowed re-run (of the failed jobs only) came
+back worse, not better: three of eight shards (3, 5, 8) were killed at the 30-minute job timeout with no assertion failure
+at all, the same shared-runner pattern already ruled a flake and merged anyway four times this week (`unblock-auto-systems`,
+`unblock-systems-walls-lod`, `unblock-systems-hourhitch-3`, `unblock-auto-backlog`). Nothing in Sessions 373–376 touches
+shaders, frame timing, or the night watch's guard-following code. No agent is set to work on CI timing; a third re-run
+would only repeat one of these two patterns.
+- **A. Merge anyway** *(recommended)*: Claude merges 32ed275 onto main now as a `merge-anyway` line; if the watch-test
+  timing keeps flaking, the systems builder widens its tolerance next time it's convenient, the same fix pattern as S362's
+  hourhitch budget.
+- **B. Wait for a clean run.** Leave it blocked; no agent is set to touch shard timing or the watch-test tolerance, so it
+  could sit a while on a busy shared runner.
+- **C. Re-run once more first.** One more push of luck against the same 30-minute runner ceiling that has already
+  timed out three of eight shards once this head.
 
 ## Answered
 
