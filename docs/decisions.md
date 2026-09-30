@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
+A shop with a back room keeps its strongbox behind a shut door, and the keeper never sees it there. A one-room shop keeps the box in the shop itself. A keeper indoors sees you within six units with a clear line, and walks the floor all day. `tests/shopsight` measured 13 one-room shops in four towns at 13h, with ten minutes of the keeper's own walk each, and they split in two. Eight are seen 93–100% of the time. Five are seen 0–10%: Dunmore's three Goods shops, Odhrán's Stores and Mira's Apothecary, where the box stands 5.5–6.6 units from the counter.
+
+- **A. The keeper sees the whole room.** In a one-room shop, a keeper who is inside sees you anywhere in it. The box is taken at night, through the door. One short session.
+- **B. The keeper sees what they face** *(recommended)*. Indoors, sight becomes a cone the way the keeper is facing (about 120°) as well as the six units. Their walk already turns them every 1.5–5 s, so every one-room shop has gaps a player can watch for. One session.
+- **C. Leave it.**
+
+Michael: **B** — . (30 Sep 2026, via the control room)
+
 ### Hesket Rowe at the yard — can she survive the League's duel? (the quest writer, 2026-09-30, issue #69)
 The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`, *The Yard at Caer Slige*). Today the League's ninth service kills Hesket Rowe: it is a fight with a Bandit Captain wearing her name, and the Captain's line after it mentions her burial. In the Crown's and the Compact's lines she is alive at the finale. With a yield in the ring, her fate becomes the player's call.
 
@@ -13,6 +24,17 @@ The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`
 
 The draft is written for A. B and C each change only the lines marked **(fate)**.
 
+Michael: **A** — . (30 Sep 2026, via the control room)
+
+### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
+`docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
+
+- **A. The page** *(recommended)*: words by school on the left; the spell written as a sentence in the middle, with every form's line and cost, riders as chips, mana worked out; the book of eight on the right.
+- **B. The table**: every word against every form, 35 cells at once, growing to 24 rows by the end.
+- **C. The ring**: a carved circle of words and forms with a line drawn between two joined; most like a sigil, least legible.
+
+Michael: **A** — . (30 Sep 2026, via the control room)
+
 ### Survival skills and alchemy — what should mining, woodcutting, cooking and alchemy make? (the designer, 2026-09-30)
 Today herbs are eaten one at a time (a known effect, and one of 21 hidden effects after 15 eats); nothing combines them, food is shop stock, and nothing can be mined or felled. What should the five land skills of the Morrowind book (Alchemy, Cooking, Mining, Woodcutting, Joinery) do, given *not buy more/better* and *not punishing*? (Page: `docs/design/survival-and-alchemy.md`.)
 - **A.** The still and the fire: a tincture from two herbs (one's known effect, the other's hidden one), which turns after 5 game-days as the canon's folk brews do; meals at any fire give one mild *fed* effect; ore goes to the smith's tempering (up to +24%) and logs to campfires and the shipwright; a felled trunk can bridge a gap (Woodcutting 25). No player-made gear, no hunger. Four Opus sessions.
@@ -21,7 +43,11 @@ Today herbs are eaten one at a time (a known effect, and one of 21 hidden effect
 
 Recommendation: **A.** Each skill lands in a system that exists or is decided (the buff stack, the fires, the smith, sailing's repairs, the platforming), the brewing shares magic's body-and-rider grammar, and it leaves loot its point; B makes chests pointless and C adds upkeep the brief rules out.
 
-## Answered
+Michael: **B** — Alchemy should have 3-4 effects per harvestable item / herb, like elder scrolls. Unlocked on successful combinations.
+
+If we are going to have mining we will also need smithing / joinery. Woodcutting also has fletching for bows and arrows.
+
+I am envisioning a player sailing for a long while, and having to stop to cut wood to repair their ship, maybe to collect materials to make arrows / collect herbs and food. (30 Sep 2026, via the control room)
 
 ### How to split index.html — file count, naming, cut points, the if(REN) wrapper (Fable exploration, local session, 2026-09-30)
 Backlog K's step 1, explored read-only: the one inline script (lines 1130–46307) cuts into ~31 plain `<script src>` files, every cut on a top-level statement boundary. The plan, the hazards and the numbers are in `docs/design/split-plan.md`. Seven questions: Q1 file count (~31, by the natural sections); Q2 naming (`js/NN-name.js`, numbered by load order); Q3 cut points found by pattern, not marker comments; Q4 remove the dead `if(REN){…}` wrapper (15k lines, 44% of the code) in its own commit first; Q5 CI later runs only the suites a change touches, once the layout settles; Q6 the CSS stays in index.html; Q7 step two breaks up the WORLD IIFE, starting with its 4,390-char `return {…}` line — the split alone barely cuts merge conflicts, since both builders edit inside that IIFE.
