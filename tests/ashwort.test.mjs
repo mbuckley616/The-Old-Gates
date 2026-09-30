@@ -12,6 +12,9 @@ const r = await page.evaluate(() => {
   const e = live[0]; const x0 = px, z0 = pz;
   // nothing seen: the map's own reveal (5 units round you, each draw) is cleared before every draw, and you stand 12 off
   const M = currentFloor === 2 ? mmRevealed2 : mmRevealed; const draw = () => { for (const row of M) row.fill(0); drawMM(); };
+  // Chromium moves a 2D canvas off the GPU after a couple of reads, and its fractional-edge squares then rasterise a few
+  // pixels differently (CI saw bare 31, after 29 on the same foes): read it past that switch before counting anything
+  for (let i = 0; i < 4; i++) { draw(); red(); }
   ACTIVE_BUFFS.length = 0; px = e.x + 12; pz = e.z; draw(); const bare = red();
   HERB_CONSUME_COUNTS.ashwort = 20; BAG.push(Object.assign({}, HERB_DEF.ashwort.item, { _typeKey: 'ashwort', qty: 1 })); useHerb(BAG.length - 1);
   const buff = ACTIVE_BUFFS.find(b => b.type === 'minimapPulse'); draw(); const pulsed = red();

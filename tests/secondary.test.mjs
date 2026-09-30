@@ -25,5 +25,13 @@ check('a cloaked, braided person has the cloak\'s two bones and the back hair\'s
 check('standing, the cloak hangs at rest (under .05)', Math.abs(r.rest) < .05, r);
 check('running, the cloak streams back (past .3, within its clamp of .85) and the plait swings', r.peak > .3 && r.peak <= .8501 && r.hairPeak > .05, r);
 check('stopped, it swings on, then settles back to rest (under .05) standing', Math.abs(r.settled) < .05 && Math.abs(r.lower) < .05, r);
+// Session 277: the player's own third-person body (tpPose poses it, not tickPeople) swings its back hair too
+const pl = await page.evaluate(() => { thirdPerson = true; EQ.weapon = null; EQ.offhand = null; EQ.head = null; worldState.look = Object.assign({}, worldState.look || {}, { style: 'braid' });
+  const st = m => ({ moving: m, sprinting: false, camY: 1.6, now: performance.now() }); const dt = 1 / 60, step = 3.83 / 60; tpUpdate(dt, st(false)); const R = TP.rig, b = R.rig.B.hairB; if (!b) return { none: true };
+  for (let i = 0; i < 60; i++) tpUpdate(dt, st(false)); const rest = +b.rotation.x.toFixed(3); let peak = 0;
+  for (let i = 0; i < 120; i++) { px += Math.sin(yaw) * -step; pz += Math.cos(yaw) * -step; tpUpdate(dt, st(true)); peak = Math.max(peak, Math.abs(b.rotation.x)); }
+  for (let i = 0; i < 300; i++) tpUpdate(dt, st(false)); const settled = +b.rotation.x.toFixed(3); thirdPerson = false; tpUpdate(dt, st(false)); return { rest, peak: +peak.toFixed(3), settled }; });
+console.log(JSON.stringify(pl));
+check('the player\'s own braid hangs at rest standing, swings running, and settles again (Session 277)', !pl.none && Math.abs(pl.rest) < .05 && pl.peak > .05 && Math.abs(pl.settled) < .05, pl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
