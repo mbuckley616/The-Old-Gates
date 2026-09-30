@@ -8667,3 +8667,17 @@ The takings are now one named function in the world module, `boxCoins(p, type)`.
 
 ### Needs eyes
 Whether 30–50 gold and a thing to fence feels worth a night's risk at level one. A burglar who waits for the lantern to pass still does better than the numbers above, as Session 357 said.
+
+## v80 — Session 362 — `hourhitch`'s frame budget: the one slow frame was a foe's first draw
+This run's one CI-fix session. `hourhitch` failed on 5633fc4's push run (Session 350, which touched nothing in shaders or timing). The producer carried it to Michael, who ruled merge anyway. Session 358 fixed a different check in the same suite (the greeting bubble's compile). This is the frame-budget check, which Session 358 did not look at.
+
+**What the CI log showed.** Every step of the run was slow on that runner: noon's worst frame was 3.3 s, and most hour changes ran 5.0–5.9 s. The check allows 4× noon (13 s) but never more than 8 s. One step broke the 8 s cap: the jump to 6h, at 8.5 s. That is the step whose program list gained a `MeshStandardMaterial` on a skinned mesh used only by the zone's foes (`foeOnly: true`, `foeProgs` 0 → 1). A foe that arrived at dawn compiled its material on its first draw. The suite's two compile checks already set exactly that aside (Session 299: a foe's arrival, not the hour). The frame check did not, so it charged the foe's compile to the change of hour.
+
+**The fix.** A step in which a foe's program or the greeting bubble's first appears (the same `foeProgs` count the compile checks use) is left out of the frame budget and printed by name. The check also asks that no more than two steps are set aside, so it cannot empty itself. No game code changed. Whether a foe's first draw should be pre-compiled is a real question on a slow machine, but it is about foes arriving, not the hour, and nothing in B asks for it.
+
+### Verified (headless Chromium)
+- The CI run's own numbers, run through the old and new rule: the old rule's worst is 8,542 ms (fails the 8 s cap). The new rule sets aside *jump to 6h* and judges 8 steps, worst 5,891 ms (passes).
+- Locally `hourhitch` 6/6. The same foe arrived at 6h (`foeProgs` 0 → 1, the skinned `MeshStandardMaterial`), and that step was again the slowest after the first dusk: 5,444 ms against 3.0–3.9 s for the rest, with noon at 2.6 s. It is set aside and named. The judged worst is 3,908 ms.
+
+### Needs eyes
+Whether a foe's first appearance hitches visibly on Michael's laptop. On software GL it costs about 2 s. On a real GPU it should be a few milliseconds.
