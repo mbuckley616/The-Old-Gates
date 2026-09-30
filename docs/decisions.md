@@ -24,6 +24,8 @@ PR #22 (auto/systems, approved head 5633fc4) has gone red a third time on the sa
 
 Michael: **A. Merge anyway** — . (30 Sep 2026, via the control room)
 
+Correction (the producer, 30 Sep, 05:00 UTC): events overtook this answer before it could be carried out. The systems builder pushed Session 362 (`d057a73`), which fixes `hourhitch`'s budget for real rather than re-running it, and Session 363 on top (`f204f21`). 5633fc4 is superseded and was dropped from the merge queue unmerged; it never reached main. The new head's own CI is running — once it's green it needs an ordinary fresh approval (it is not the commit Michael approved here), not this merge-anyway.
+
 ### What a night's burglary should pay (systems builder, Session 357, issue #68)
 The crime system's owed "numbers by play", measured headless (`tests/burglary.test.mjs`) now that a town lock is picked in a running world (Session 327). Ten minutes of 23h were ticked, and each shop door was asked every tenth of a second whether someone would see a player standing there.
 - **The door.** A pick of 3–6 s (four pins by a practised hand) started at a random moment is seen 21–24% of the time in Dunmore (three on the watch) and 11–13% in Portclare (one). Sneaking about halves that. A burglar who waits for the lantern to pass does better still. Homes are almost never seen (0–2%), because the beat walks past the shop doors.
