@@ -8639,3 +8639,18 @@ This run's one CI-fix session. CI on the branch head `ed2bce7` (Session 353) was
 
 ### Needs eyes
 Whether a guard dropping onto the street grid reads as a man cutting round a house, or as a stiff zig-zag, at the distance you would see him.
+
+## v80 — Session 359 — Do the direction bands match the walk?
+Backlog G's owed check on wayfinding (Session 138): ask a few people for directions and see whether the bands match what the walk feels like. A townsperson picks the words by the straight line to the door: *just … of here* under 14 units, *a short walk* under 55, *on across the town* under 130, *the far side of town* beyond (`wayFar`). The walk goes round houses, so it is always longer. The question was how much longer, and whether that moves the answer into a different band. This can be measured headless. No game code changed.
+
+**How.** A new `tests/waybands.test.mjs` lays a one-unit grid over the town's pad, with solid cells taken from `solidAt` and eight ways of stepping, never cutting a corner (the same grid as the guards' `townRoute`). From each townsperson standing in the street at noon it takes the shortest walk to every door on the pad. It then compares the band that walk would earn with the band the straight line gives. A person or a door off the grid (on a quay) is left out.
+
+**What it found.** The bands hold. The walk is a median 1.07–1.09× the straight line and never more than 1.25×. Between 7% and 10% of answers are one band too near: *a short walk* that is 55–58 units on foot, or *across the town* that is 131–139. All of them are within 15 units past the band's edge, and none is two bands out. The street grid reaches every door from where anyone stands. The one outlier on a first pass was a harbour man standing off the pad on the quay, outside the measured grid, and he is left out as a measuring artefact. Nothing to change.
+
+### Verified (headless Chromium)
+`tests/waybands.test.mjs`, 7 checks, passing, no page errors:
+- **Dunmore:** 3 people × 57 doors. The walk runs 1.07× the line at the median and 1.19× at most. 15 of 171 answers are one band near, the worst 9.1 units past the edge (Eilís to Aoife's House: 126.9 straight, 138.7 walked, told *across the town* where the walk is *the far side*).
+- **Portclare:** 2–6 people in the street (the number varies by run) × 31 doors. The walk is 1.09× at the median and 1.25× at most. 6 of 62 answers are one band near, the worst 4.4 units past the edge.
+
+### Needs eyes
+Whether the words *feel* right is still for a person to judge. The compass glyph at real size and the town colours by eye are still owed.

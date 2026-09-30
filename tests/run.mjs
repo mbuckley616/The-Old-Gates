@@ -7,7 +7,7 @@ const shardArg = args.find(a => a.startsWith('--shard='));
 const only = args.find(a => !a.startsWith('--'));
 let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only || f.startsWith(only))).sort();
 // seconds each took in a full local run (Session 254); a suite not listed counts as 60. Shares are dealt heaviest first to the lightest.
-const SECS = { placesave: 324, mainrun: 318, hourhitch: 288, guardsindoor: 134, reader: 131, lod: 115, saveui: 110, people: 108, perf: 96, beat: 95, questtargets: 91, witness: 90, burglary: 150, weather: 87, shoperrands: 81, theft: 76 };
+const SECS = { placesave: 324, mainrun: 318, hourhitch: 288, guardsindoor: 134, reader: 131, lod: 115, saveui: 110, people: 108, perf: 96, beat: 95, waybands: 120, questtargets: 91, witness: 90, burglary: 150, weather: 87, shoperrands: 81, theft: 76 };
 if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const load = Array(n).fill(0), mine = new Set();
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
   [...files].sort((a, b) => w(b) - w(a) || a.localeCompare(b)).forEach(f => { const j = load.indexOf(Math.min(...load)); load[j] += w(f); if (j === k - 1) mine.add(f); });
