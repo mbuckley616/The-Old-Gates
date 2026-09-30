@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Hesket Rowe at the yard — can she survive the League's duel? (the quest writer, 2026-09-30, issue #69)
+The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`, *The Yard at Caer Slige*). Today the League's ninth service kills Hesket Rowe: it is a fight with a Bandit Captain wearing her name, and the Captain's line after it mentions her burial. In the Crown's and the Compact's lines she is alive at the finale. With a yield in the ring, her fate becomes the player's call.
+
+- **A. She lives if she yields and is spared** *(recommended)*. The yard's law is that nobody touches a fighter who has yielded. If the player strikes her after she yields, she dies, the yard calls it murder, and the League closes to the player. If she's spared, she stays at Caer Slige to watch the spire.
+- **B. The duel is to the death, as built.** Only the player can yield.
+- **C. She always lives.** The watchers catch any blow after her yield.
+
+The draft is written for A. B and C each change only the lines marked **(fate)**.
+
 ## Answered
 
 ### Unblock auto/systems — a walls/LOD test failed on one of two CI runs (the producer, 2026-09-29)
