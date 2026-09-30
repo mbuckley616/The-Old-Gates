@@ -4,7 +4,8 @@ A browser-based open-world RPG in a single self-contained HTML file. Michael des
 Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the whole game. ~41k lines. Deployed as-is (GitHub Pages serves it at the repo URL).
+- `index.html` — the whole game. ~46k lines. Deployed as-is (GitHub Pages serves it at the repo URL). Backlog K splits
+  its script into `js/` on switch-over day; the section "The split layout" below is the rule book for that layout.
 - `docs/devlog.md` — one entry per session, appended at the end of the session. Never rewrite old entries.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
@@ -18,12 +19,68 @@ Claude implements. This file is what Claude reads first in every session.
 2. One feature or bug per session. Ask before building anything whose design is open.
 3. Edit `index.html` with targeted edits. The file has literal Unicode in strings (’ — · 🗝); match it,
    don't assume `\u` escapes. Never put a `//` comment on a line that has code after it.
-4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds.
+4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds (after the split it checks each `js/` file,
+   then their concatenation).
 5. Verify in headless Chromium, not by reading the code: add or extend a test in `tests/`.
    The scene runs at a few fps on software GL, so drive time with `g.spin()` (fixed 1/60 ticks), not timeouts.
 6. `python3 scripts/tag.py bump` — the tag shows in the controls line at the bottom of the screen and is
    how Michael confirms which build he's running.
 7. Append the devlog entry (format below), update the backlog, commit.
+
+## The split layout — `js/` (backlog K; the rules apply from switch-over day on)
+Session 368 built the tooling; a later session runs it on a frozen main. Until then the one inline script is the code.
+Afterwards:
+- `index.html` keeps the markup and the CSS (and the build tag), and holds one `<script src="js/NN-name.js">` tag per file.
+  `js/` holds the code. The tags are plain classic scripts, no modules, no `fetch`: every file shares the one global scope,
+  exactly as the one script did, and a downloaded copy still opens by double-clicking. **Load order is tag order**, and the
+  two-digit prefix is that order and nothing else (gaps of ten leave room). A new file takes the next free number and a tag
+  in that position; `parsecheck.py` fails on a `js/*.js` no tag names and on a tag whose file is missing.
+- **The load-order rule: no code may call into a later file while it loads.** A function declared in a later file does not
+  exist while an earlier file's top-level code runs. A function *body* may name anything (resolved when called), but a call
+  made at load time, a `setTimeout`/`requestAnimationFrame`/`.then` registered at load time, or an event handler that can fire
+  before the page has finished loading, must only reach names from its own file or an earlier one. A microtask runs
+  between two script files, and a frame can too.
+- **Top-level `let`/`const`/`class` are shared by every file**: the same name declared in two files is a SyntaxError in the
+  later one, which `node --check` on one file cannot see. `python3 scripts/parsecheck.py` checks each file and then the
+  concatenation in tag order, which catches it. Two `function` declarations of one name are legal (the last wins, as now).
+- `K`, `PERF`, `AX`, `volLevel`, `EXPLORE`, `PIECES`, `_ccState` and the other 47 constants of the old `if(REN){` block
+  (removed in Session 368) are plain globals; `window._K` still works.
+- `git log --follow` cannot follow one file into 33. History before the split is under `index.html`: `git log -L` and
+  `git blame` on the pre-split commit still work.
+- Tests boot `index.local.html`, written beside the `index.html` under test (gitignored) so `js/` resolves;
+  `node tests/run.mjs --src=PATH` boots another copy. `tests/people.test.mjs` unpacks HEAD's `index.html` and `js/` with
+  `git archive`. `scripts/split.py` made the layout (its anchors are the first line of each file; `--dry-run` shows the
+  table, `--check` proves split-and-join is byte-identical); `scripts/join.py` reassembles the one-file build from
+  `js/manifest.json`. `scripts/tag.py` is unchanged: the tag is markup.
+- **Code map by file** (load order; grep for the names, the numbers drift):
+  - `10-player.js` renderer boot (`REN`, `CAM`, `VM_SCENE`), player state (`px/pz/PHP`…), roll, posture, lock-on, sneak,
+    bow, `ANIM_PARAMS`. `12-character.js` `ATTRS`, `ARCHETYPES`, level-up. `14-items.js` `EQ`, `BAG`, `MATERIALS`,
+    `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons.
+  - `20-quests.js` `mkTex`/`TX`/`MAT`, `showMsg`, `doFade`, the legacy heightmap, `WORLD_DUNGEONS`, `PORTALS`, `QUEST_DEFS`,
+    `QS`, journal, compass, markers. `22-dialogue.js` `NPC_DEF`, `SHOP_DIALOG`, `openDialog`, `talkNPC`, `HOUSES`,
+    `SHOP_STOCK`, `worldState`, `ZONES`, `MAP_NODES`, `activeZoneId`. `24-forts.js` `FORT_EXTERIORS` data.
+  - `30-plants.js` `HERB_DEF`, the plant kit. `32-people.js` `SK`, `personGenome`, `buildPerson`, `buildFoe`, poses,
+    `tickPeople`, the shadow-LOD swap. `34-creatures.js` wolves, spiders, bears, `tickCreatures`.
+  - `40-legacy-zones.js` gates, Ashenmoor, Hearthwick, Bealach. `42-zone-enemies.js` `BOSSES`, `buildZoneEnemy`,
+    `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
+    `ZONE_BUILDERS`, `registerPlaceholderZone`.
+  - `50-travel.js` `goToZone`, fast travel, buffs, herbs, the clock, `forceTime`, day/night, respawn, `interact`.
+    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`.
+    `56-dungeon-build.js` the dungeon shell, `furnBuild`, `buildDungeon`, `goToDungeon`, `goToOW`.
+    `58-interiors-legacy.js` room kits, `buildInterior`, `goToInterior`, `exitInterior`.
+  - `60-shop.js` shop, loot, stash, sleep, buy/sell. `62-actions.js` `doBash`, `attack`, `fireArrow`, `killE`, `castSpell`,
+    potions, `useItem`, `updateHUD`, `drawMM`. `64-spells.js` `SPELLS`, sigils, spell fx. `66-hub.js` book reader, log, hub,
+    inventory. `68-dungeon-misc.js` crosshair, dungeon decoration, traps, portal fx, `LP`/`openLockpick`, lair, `playerDead`.
+    `70-saves.js` `SS`, `ss*`, `_applyLoadData`, the save menu.
+  - `72-audio.js` `AX`, volume, `sfx*`/`snd*`. `74-strikes.js` `applyMeleeDamage`, `executeStrike`, `VARIANTS`.
+    `76-music.js` `sndSpell…`, `EXPLORE`/`PIECES`, the music by place. `78-placeholder-zones.js` `tickFootsteps` and the
+    `registerPlaceholderZone({…})` data.
+  - `80-world.js` the whole `WORLD` IIFE: terrain, `SETTLE`, `makeDef`, `buildInteriorFor`, `drawLocalMap`, `WX`, `FP`,
+    `recolourChunk`, `PEOPLES`, `enter`/`tick` — both builders work here (step 2 of K breaks up its `return {…}` line).
+  - `90-main.js` boot calls, dev helpers, `K`, `PERF`, `loop`, the frame start, `ssMigrate`. `92-creator.js` `_enterGame`,
+    the character creator, title buttons. `94-worldmap.js` `WM`, `renderWorldMapSVG`. `96-animdebug.js` the backtick panel.
+- Roughly: the systems builder lives in 10–14, 42, 50, 60–76 and `80-world.js`; the look builder in 16, 30–34, 40, 44,
+  52–58 and `80-world.js`; the quest writer's text is in 20, 22 and 78.
 
 ## Cloud sessions (the phone)
 Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.

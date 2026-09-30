@@ -1,6 +1,9 @@
-// Shared harness for The Old Gates. Boots the single-file build in headless Chromium with three.js
-// served locally (the CDN is unreachable in CI), starts a character, and gets them into the open
-// world. Every test imports this rather than re-deriving the click path.
+// Shared harness for The Old Gates. Boots the game in headless Chromium with three.js served locally
+// (the CDN is unreachable in CI), starts a character, and gets them into the open world. Every test
+// imports this rather than re-deriving the click path. It works on both layouts (backlog K): the one-file
+// index.html, and index.html plus js/*.js, because the local copy is written BESIDE the file it was made
+// from, so its relative <script src="js/…"> tags still resolve. `node tests/run.mjs --src=PATH` (or
+// OG_SRC=PATH) boots another index.html, e.g. a split copy in a scratch folder.
 //
 //   const g = await boot();          // { page, browser, errs, close }
 //   await g.intoWorld();             // new character -> Hearthwick, overlays dismissed
@@ -16,15 +19,20 @@ import { fileURLToPath } from 'url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, '..', '..');
-const TMP = path.join(here, '..', 'tmp');
 
-export function localBuild(src = path.join(ROOT, 'index.html')) {
-  fs.mkdirSync(TMP, { recursive: true });
-  const out = path.join(TMP, 'index.local.html');
+export const DEFAULT_SRC = process.env.OG_SRC ? path.resolve(process.env.OG_SRC) : path.join(ROOT, 'index.html');
+
+// A copy of `src` with three.js pointed at tests/vendor, written next to `src` as index.local.html (gitignored)
+// so that a split build's js/ folder is found. Written whole then renamed: the shards run side by side and share it.
+export function localBuild(src = DEFAULT_SRC) {
+  const dir = path.dirname(src);
+  const out = path.join(dir, path.basename(src, '.html') + '.local.html');
+  const three = path.relative(dir, path.join(ROOT, 'tests', 'vendor', 'three.min.js')).split(path.sep).join('/');
   const html = fs.readFileSync(src, 'utf8').replace(
     /https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/r128\/three\.min\.js/,
-    '../vendor/three.min.js');
-  fs.writeFileSync(out, html);
+    three);
+  const tmp = out + '.' + process.pid;
+  fs.writeFileSync(tmp, html); fs.renameSync(tmp, out);
   return out;
 }
 
