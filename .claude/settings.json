@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git push origin auto/*)",
+      "Bash(git push -u origin auto/*)",
+      "Bash(git push --set-upstream origin auto/*)",
+      "Bash(git push origin HEAD:auto/*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

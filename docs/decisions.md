@@ -29,6 +29,11 @@ Recommendation: **A.** Each skill lands in a system that exists or is decided (t
 
 ## Answered
 
+### How to split index.html — file count, naming, cut points, the if(REN) wrapper (Fable exploration, local session, 2026-09-30)
+Backlog K's step 1, explored read-only: the one inline script (lines 1130–46307) cuts into ~31 plain `<script src>` files, every cut on a top-level statement boundary. The plan, the hazards and the numbers are in `docs/design/split-plan.md`. Seven questions: Q1 file count (~31, by the natural sections); Q2 naming (`js/NN-name.js`, numbered by load order); Q3 cut points found by pattern, not marker comments; Q4 remove the dead `if(REN){…}` wrapper (15k lines, 44% of the code) in its own commit first; Q5 CI later runs only the suites a change touches, once the layout settles; Q6 the CSS stays in index.html; Q7 step two breaks up the WORLD IIFE, starting with its 4,390-char `return {…}` line — the split alone barely cuts merge conflicts, since both builders edit inside that IIFE.
+
+Michael: **Go with the recommendations** — all seven as above. (30 Sep 2026, in chat with Claude.) Next: a Fable session builds the split script (step 1 of backlog K) from `docs/design/split-plan.md`.
+
 ### Unblock auto/systems — hourhitch flakes again on 5633fc4 (the producer, 2026-09-30)
 PR #22 (auto/systems, approved head 5633fc4) has gone red a third time on the same test. The push-triggered run finished with 15/16 suites passing and `hourhitch` failing (a frame-timing budget, 399s); the pull-request-triggered run on the identical commit sat "in progress" for over four hours — one shard hung — which kept the merge workflow reporting "CI still running" and never landing the approval. The producer cancelled the hung run this pass so CI can report cleanly. Nothing in this commit (Session 350, the walls/LOD distant-check fix) touches shaders or frame timing, and the systems builder's own Slack note says `hourhitch`'s red is "still not root-caused" — it just hasn't been fixed yet.
 
@@ -134,6 +139,111 @@ Michael: **B** — by the hearth's hours. (29 Sep 2026, via the control room)
 The file is 41k lines and every builder edits it: merges conflict (the producer resolved eleven in one merge on 29 Sep) and CI runs every suite on every change. Splitting it into several files helps both. Players reach the game through itch.io (a zip with `index.html` inside) and the Pages link, where several files play the same; the game already needs a connection for three.js.
 
 Michael: **Split it** — the one-file rule was a self-imposed restriction. (29 Sep 2026, in chat with Claude.) Filed as backlog K, a Fable session with a short freeze of the two code builders.
+
+### Chimney smoke — should the towns' chimneys smoke, and when? (Session 337, issue #63)
+Two in three houses in a town have a chimney (the detailed houses since Session 194), and none of them smokes; the Hearthwick quest's own journal line says "Chimney smoke ahead — a village". Since Session 330 the world keeps a wind (`windDir()`), which only the ships read. I prototyped smoke on a patched copy of the build: each detailed house records its chimney's top, and a town draws all its smoke as one Points object, two dozen soft puffs a chimney that rise, drift downwind, swell from half a unit to three and fade over ten seconds. It is tinted by the hour, and a storm lays it flat and fast. Dunmore has 33 chimneys: 792 puffs, one draw call, positions kept relative to the town's centre (the float32 rule).
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/smoke-dunmore.png (Dunmore without smoke at noon, then with it at noon, twenty hours later when the wind has turned, at dusk, close by a house, and in a storm).
+
+**Options**
+1. Every chimney smokes, day and night.
+2. **By the hearth's hours (recommended):** the inn, the smithy and the guild halls all day, where they have a chimney; homes in the morning (6–9) and the evening (17–23), with a thin thread between; every chimney all day in snow and in the tundra. The game has no seasons, so there is no winter rule. Nothing from burned or abandoned houses, which have no chimney.
+3. Only the inn and the smithy.
+4. No smoke.
+
+Recommendation: 2. A town that lights its fires for breakfast and supper looks lived in, and the rhythm costs nothing to compute. It also follows the world's wind the way the sails do.
+Michael: **B** (option 2), by the hearth's hours. (29 Sep 2026)
+Done, Session 343: each detailed house records its chimney's top, and a town's smoke is one Points object (24 puffs a chimney) that rises, drifts along `windDir()` and fades, tinted by the hour. The inn, the smithy, the armourer and the guild halls smoke at every hour; homes and the other shops in full 6–9 and 17–23, a thread (.3) 9–17 and cold 23–6; every chimney at every hour in snow and in the tundra, easing between over a few seconds. A storm shortens the puffs' life so the plume lies flat without beading. `tests/smoke.test.mjs`, `docs/prototypes/smoke-ingame.png`.
+
+### The interiors' shells on the kit — posts and joists, or only the trim? (Session 336, issue #62)
+The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes that meet the floor and each other with a hard edge, a flat dark ceiling, square box beams, the entrance door a plain brown box, and in Aurenne's rooms square box studs. I prototyped a kit shell for the generated rooms (homes, shops, inns, halls). The walls keep their plaster, rubble or ashlar textures; the furniture, windows and layouts do not move.
+
+- **A — the full frame:** in plastered rooms, posts at the corners and under each beam's ends where no window stands, with knee braces up to the beam and the wall plate, a sole plate along the foot and a wall plate along the head; Aurenne's rooms keep their close studding, a post every 1.6, on the kit. In stone rooms, a plinth course of blocks along the foot and stepped stone corbels under each beam's ends instead of posts. Everywhere: rounded beams carrying joists and a boarded ceiling, the walls darkened at the foot, the head and in the corners (the dungeon shell's shading), and the entrance a plank door with ledges, a brace, strap hinges and a ring, in a timber frame or a stone surround. 4.0–4.4k triangles a plastered room, 7.8k a stone one, two draw calls.
+- **B — the trim only:** the sole plate or plinth, the wall plate, the shading, the joisted ceiling and the door, without posts, braces or corbels; Aurenne's box studs stay as today. 2.8k triangles a plastered room, 6.9k a stone one.
+
+For scale, a room's furniture bake is 10–28k and its window frames 4–14k.
+
+Pictures (each: today, A, B; left looking up the room, right looking back at the door): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-gatelands.png (a Gatelands home), https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-aurenne.png (Aurenne), https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-mark.png (the Mark, rubble), https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shells-stone.png (a stone house).
+
+**Options**
+1. **A, the full frame (recommended).**
+2. B, the trim only.
+3. A in homes, inns and shops; B in guild halls, churches and keep halls, whose own columns and furniture already carry the room.
+4. Leave the shells as they are.
+
+Recommendation: 1. The posts and braces are what make a Gatelands or Aurenne room read as a timber-framed house rather than a box with a texture, and the cost is a fifth of a room's furniture. Churches, keep halls and Hearthwick's old rooms would follow in later sessions, as the windows did.
+Michael: **A**, the full frame. (29 Sep 2026)
+Done, Session 342: every generated room but the church, the keep's hall and the tower has the kit shell (`buildInteriorFor`): a boarded ceiling over joists every .5, rounded beams, the walls shaded at the foot, the head and the corners; posts, knee braces (a bracket where a window is within 1.2), a sole plate and a wall plate in plastered rooms, Aurenne's close studding a post every 1.6; a plinth and stepped corbels in stone and rubble rooms; the plank door at the entrance. The frame is built after the furniture, so a post gives way to anything solid against the wall; each post is a solid. `tests/shells.test.mjs`, `docs/prototypes/shells-ingame.png`.
+
+### The interiors' windows on the kit — which frame, in which rooms? (Session 305, issue #53)
+Every interior window today is a flat pane on the wall: a painted view of the town at dusk in the generated rooms, the same in a box frame in Hearthwick's old rooms, and a plain lit rectangle in a church. Now that the furniture is on the kit, the windows are the flattest thing left in a room. I prototyped three kit windows. In each, the painted view stays, set back behind the frame. They are not in the game.
+
+- **A — leaded casement:** a plastered reveal with splayed jambs and head, a stone sill, an oak frame with a mullion and transom, and diamond leading. 2.4k triangles.
+- **B — shuttered timber window:** a lintel beam, four panes behind glazing bars, two plank shutters folded back on strap hinges, and a plank sill. 1.1k triangles.
+- **C — round-headed stone window (churches and keep halls only):** coursed jambs, a ring of nine voussoirs, a moulded sill, and square lead quarries. 1.4k triangles. In the church's picture its low windows take A.
+
+A room has four to eight windows, so this adds about 4–19k triangles to its furniture bake, with no extra draw calls. For scale, a room's furniture bake is 10–28k.
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/windows-home.png (a home: today, A, B) and https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/windows-church.png (a church: today, C).
+
+**Options**
+1. A in every room, and C for the tall windows of churches and keep halls.
+2. **By the room (recommended):** B in homes, cabins and the poorer rooms; A in shops, inns and guild halls; C in churches and keep halls. The frames then step from rough to fine with the room, and the painted view stays in all of them.
+3. B in every room, and C for churches and keep halls.
+4. Leave the windows as they are.
+
+Recommendation: 2. It gives the same kind of variety by wealth that the townsfolk's clothes got (Session 268), and each builder can take a window by the room's type without changing a layout.
+Michael: **2 — by the room.** — Can we also adjust the flat image on the windows? The image looks very modern metropolitan. It needs to look more medieval, and it should reflect the type of town it's in. If it's a low prosperity town, we should see maybe some trees and possibly a house. If it's a rich city, we should see buildings and walls. (29 Sep 2026)
+Done, Session 331: the three kit frames are in every room, chosen by the room's type (`winKind`, one bake a room), in the generated rooms and Hearthwick's. The painted view is redrawn in three tiers by the town's prosperity (under 35: fields, a hedge, trees, a cottage one time in two; 35–60: gabled houses round a church spire; 60 and up: a curtain wall with towers and a gate, roofs, a keep and a spire), with roofs and walls by nation, and no painted mullions. Picture: `docs/prototypes/windows-ingame.png`.
+
+### The ships' sails trimmed to a wind — should the world have one? (Session 319, issue #57)
+Every ship's sails are baked into the hull and always stand square across it, whatever the heading, and the gaff booms always lie on the centreline. Session 168 left this owed ("the sails swinging with the heading and the wind"). The world has no wind to trim to: the weather has rain, snow and fog but no direction.
+
+I prototyped the trim on a side branch (`auto/proto-sails`). It is not in the game. Each mast's yards and sails, each gaff and its boom, and the jib are taken out of the hull's bake as children that pivot on the mast. That adds 1–3 draw calls a ship and no triangles.
+- **Square sails** (the cog, the galleon's fore and main) brace round to split the angle between the wind and the bow, up to 35°.
+- **The gaff booms** (the sloop, the galleon's mizzen) swing out to leeward: 72° when running before the wind, 45° with the wind on the beam, and 15° close-hauled. The gaff sails and the jib belly to leeward.
+
+In the pictures, each row is one ship. The columns are today, then running, broad reach, beam reach and close-hauled. The white arrow is the way the wind blows.
+
+Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/sails-plan.png (from overhead, where the trim reads best) and https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/sails-quarter.png (from the stern quarter, as you see a ship at sea; the arrows are misplaced in this one).
+
+**Options**
+1. **A wind the world keeps, and every ship trims to it (recommended).** The wind's direction wanders slowly over the hours and swings harder in a storm. Your ship, the merchantmen and the pirates all brace their sails to it and ease round over a second or two when they turn. It is the look only: speed is unchanged.
+2. **The same, and the wind also sets your speed.** Running and reaching are fast, and close-hauled is slow. That is a sailing rule, so it would go to the systems builder; I would build only the look.
+3. **No wind; the sails swing only as the ship turns.** They lag through a turn and settle back square across the hull.
+4. **Leave the sails as they are.**
+
+Recommendation: 1. It makes a ship at sea read as sailed, and it takes no rule from the systems builder. A wind in the world would also serve smoke, flags and banners later.
+Michael: **1 — a wind the world keeps, every ship trims to it.** (29 Sep 2026)
+Done, Session 330: the prototype's rig split is in the game. `windDir()` is the world's wind, read off the absolute clock (three slow swells of 9–53 game hours, and a gust of a few seconds in a storm); `tickSailTrim` braces every ship afloat to it and eases the sails round over a second or two. Look only. Picture: `docs/prototypes/sailtrim-ingame.png`.
+
+### The black sail and the merchantman — which hull each sails (Session 278, issue #50)
+The other ships at sea have had their own looks since Session 168: black sails and a red wale for the pirate, striped sails and a green hull for the merchantman. Both still sail the sloop's hull, 13 long. They were kept small because boarding placed the crew by that length. That no longer binds: the three pirates stand 3 apart along the middle of the deck, which fits any hull, and the deck is laid from the hull's own outline. So which hull each sails is a free choice, and the backlog has it owed. The looks on each hull were drawn in the Session 165 prototype (below).
+
+- **A, the merchantman on the cog (17 long), the pirate on the sloop.** A trader is broad and slow, a raider small and quick. Only the merchantman changes.
+- **B, the merchantman on the cog, the pirate on the galleon (22).** A black-sailed ship becomes something to run from, and boarding it is a bigger fight on a bigger deck, with the same three crew unless that changes too.
+- **C, both stay on the sloop.** Strike the backlog line.
+
+**Recommendation: A.** It matches what each ship is for, and it leaves the galleon as something only the player buys.
+
+The picture (Session 165, `docs/prototypes/boats-others.png`) shows today's single hull, then the pirate on the sloop and on the galleon, and the merchantman on the cog and on the galleon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/boats-others.png
+
+Michael: **The merchantman on the cog, the pirate stays on the sloop** (A) (28 Sep 2026, via the control room, issue #50)
+Done, Session 285: `spawnOtherShip` builds the merchantman on the cog (17 by 5.6, its deck laid from the cog's hull, boarding and the cargo chest on it); the black sail stays on the sloop. `docs/prototypes/merchantman-ingame.png`.
+
+### Shading in the houses' creases — the people's strength, or only the large parts (Session 276, issue #49)
+Michael's A on Session 243 was the creases shaded at the people's strength, then the creatures and then the houses. The people and the creatures are done (Sessions 265 and 270). The same pass over a house does something different. A house is built from thousands of small parts: slates, shingles, turfs, course blocks and footing stones. At the people's strength they all shade each other, so whole walls and roofs go grey and muddy rather than just the creases. The plaster and stone houses show it most. So this is a question, not a build. The game is unchanged: the shading is wired into the house bake but switched off.
+
+- **A, the people's strength, as it is.** Every part shades every other part it faces. The plaster and stone walls come out a shade or two darker all over.
+- **B, the large parts only.** The same strength, but only parts at least .35 thick cast the shading: walls, roof slabs, the chimney, the lean-to, the jetty. The slates and stones still receive it but don't cast it. This darkens the window reveals, under the eaves, under a jettied floor and inside the lean-to, and leaves open walls their colour. It costs about 3–14 ms per house when a town builds.
+- **C, not for the houses.** Leave them as they are.
+
+**Recommendation: B.** It is what the people's shading does on a body: creases, not the whole surface.
+
+The picture shows five house styles, each built once and shaded three ways (today, A, B), in the afternoon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/houseao-grid.png
+
+Michael: **The large parts only** (B) (28 Sep 2026, via the control room, issue #49)
+Done, Session 284: `HAO` on with `minR` .35; every style's bake darkens 20–27% on the mean against 24–37% under A, with more of each house left its own colour; Dunmore's 56 detailed houses take 72–85 ms of shading between them. `docs/prototypes/houseao-ingame.png`.
 
 ### What Charisma's barter bonus does at the counter (systems builder, 2026-09-29, issue #61)
 The Charisma card promises *+1% barter* a point. The hub's *Barter Bonus* row shows Intelligence + Charisma, and Aldwyn says Intelligence "improves how you barter". No price reads either one: `shopCost` (what you pay) and `sellPrice` (what you get) look only at the town's prosperity and your faction standing. A bard with Charisma 10 pays and gets what a brute does.
@@ -334,6 +444,7 @@ The leaves never shut: nothing in the game closes a town's gate yet. A later ses
 The picture shows the stone tier (top) and the palisade (bottom), today, A and B, seen from the road outside at noon: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/towngate-grid.png
 
 Michael: **A gateway and open leaves** (A) (28 Sep 2026, via the control room)
+Done, Session 275: `townGateGeo` builds the arch or the timber lintel and the open leaves at every road crossing of a town's wall, for all four tiers, square to the road; the gate towers now stand square to the road too. A crossing where a second road meets the first at the ring stays open (one of eight in the three towns tested). `docs/prototypes/towngate-ingame.png`.
 
 ### An unwalled town by day — who keeps the law? (systems builder, 2026-09-28, issue #41)
 Found by the critic (28 Sep, PR #40). A town without walls, a port like Portclare or any village, has one man of the law: the night watchman. He sleeps from 6:30 to 19h. So by day nothing happens when you are seen: favour drops and a fine is set, but nobody halts you, and at favour −2 or worse nobody follows you, though the crime spec says guards follow. The critic was seen twice in Portclare's square at 14h (favour 0 → −4, fine 355), and the halt came only at 19h. Walled towns have two gate guards by day and aren't affected.
