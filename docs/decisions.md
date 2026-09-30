@@ -13,6 +13,14 @@ The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`
 
 The draft is written for A. B and C each change only the lines marked **(fate)**.
 
+### Survival skills and alchemy — what should mining, woodcutting, cooking and alchemy make? (the designer, 2026-09-30)
+Today herbs are eaten one at a time (a known effect, and one of 21 hidden effects after 15 eats); nothing combines them, food is shop stock, and nothing can be mined or felled. What should the five land skills of the Morrowind book (Alchemy, Cooking, Mining, Woodcutting, Joinery) do, given *not buy more/better* and *not punishing*? (Page: `docs/design/survival-and-alchemy.md`.)
+- **A.** The still and the fire: a tincture from two herbs (one's known effect, the other's hidden one), which turns after 5 game-days as the canon's folk brews do; meals at any fire give one mild *fed* effect; ore goes to the smith's tempering (up to +24%) and logs to campfires and the shipwright; a felled trunk can bridge a gap (Woodcutting 25). No player-made gear, no hunger. Four Opus sessions.
+- **B.** Gather, work, make: A plus Smithing and Joinery, which make weapons and armour tier by tier. Loot and prices retuned across every tier. One Fable and six Opus sessions.
+- **C.** Survival in earnest: A plus hunger, warmth and fatigue. Six Opus sessions.
+
+Recommendation: **A.** Each skill lands in a system that exists or is decided (the buff stack, the fires, the smith, sailing's repairs, the platforming), the brewing shares magic's body-and-rider grammar, and it leaves loot its point; B makes chests pointless and C adds upkeep the brief rules out.
+
 ## Answered
 
 ### Unblock auto/systems — hourhitch flakes again on 5633fc4 (the producer, 2026-09-30)
@@ -23,6 +31,8 @@ PR #22 (auto/systems, approved head 5633fc4) has gone red a third time on the sa
 - **C. Fix the budget first**: the systems builder widens `hourhitch`'s timing budget next run, then Claude merges. About one short session.
 
 Michael: **A. Merge anyway** — . (30 Sep 2026, via the control room)
+
+Correction (the producer, 30 Sep, 05:00 UTC): events overtook this answer before it could be carried out. The systems builder pushed Session 362 (`d057a73`), which fixes `hourhitch`'s budget for real rather than re-running it, and Session 363 on top (`f204f21`). 5633fc4 is superseded and was dropped from the merge queue unmerged; it never reached main. The new head's own CI is running — once it's green it needs an ordinary fresh approval (it is not the commit Michael approved here), not this merge-anyway.
 
 ### What a night's burglary should pay (systems builder, Session 357, issue #68)
 The crime system's owed "numbers by play", measured headless (`tests/burglary.test.mjs`) now that a town lock is picked in a running world (Session 327). Ten minutes of 23h were ticked, and each shop door was asked every tenth of a second whether someone would see a player standing there.
