@@ -9701,3 +9701,40 @@ Paying never profits. A thief seen and paying is always out 50 plus the differen
 
 ### Needs eyes
 Whether a new character should start with a purse at all. Here it is 0 after the creator; the tutorial's first coins come later. And whether the cells, costing no gold, read as a punishment.
+
+## v80 — Session 376 — The lock's timing, by the numbers
+This is G's owed check from Session 142: *pick a dungeon door by feel — whether the hold window is fair, and whether losing a set pin on a snap is too harsh*. The feel is Michael's. This session measures what can be measured, and no game code changed.
+
+**How.** New `tests/lockfair.test.mjs`.
+- It reads every town lock in Dunmore and Portclare through the game's own `lpDifficulty`: 12 shop doors, 12 strongboxes, 66 home doors and 66 home chests. It also reads 200 dungeon chests spread over floors 1–3, half of them treasure. Each is read at Finesse 0 (a new character), 5 and 10.
+- The pin rises for a fixed 170 ms, then holds. The press must land in the hold.
+- The snap is worked out exactly, as a walk up the pins: a press sets one, or snaps a pick and drops the last pin set. That is set beside the same walk with no pin dropped, and checked against 200,000 simulated locks.
+
+| lock | pins | the hold at Finesse 0 | Finesse 5 | Finesse 10 |
+|---|---|---|---|---|
+| shop door | 3–4 (9 of 12 are 4) | 153–188 ms | 263–298 | 373–408 |
+| strongbox | 3–4 | 167–208 | 277–318 | 387–428 |
+| home door, home chest | 2–3 | 177–244 | 287–354 | 397–464 |
+| dungeon chest | 2–4 | 150–242 | 260–352 | 370–462 |
+| treasure chest | 3–5 | 122–216 | 232–326 | 342–436 |
+
+Expected picks snapped to open a lock:
+
+| pins | misses 1 in 10 | 1 in 5 | 1 in 3 |
+|---|---|---|---|
+| 2 | 0.23 (0.22 if a snap kept the pins) | 0.56 (0.50) | 1.25 (1.00) |
+| 3 | 0.36 (0.33) | 0.89 (0.75) | 2.12 (1.50) |
+| 4 | 0.48 (0.44) | 1.22 (1.00) | 3.06 (2.00) |
+| 5 | 0.61 (0.56) | 1.56 (1.25) | 4.03 (2.50) |
+
+**What it says.**
+- **The hold.** At Finesse 0 every hold is 122–244 ms, so the press is due 170 ms after the push and is gone by 292–414 ms. A typical simple reaction to something seen takes 200–250 ms. That is a general human figure, not a measurement here. A press made *in answer to* the pin reaching the top therefore comes at about 370–420 ms, after the hold on almost every lock. At Finesse 0 the lock is a rhythm to learn, not a reaction: the rise is always 170 ms, so the same double press opens every pin. Each Finesse point adds 22 ms. By Finesse 5 the hold runs to 402–524 ms, and a reaction lands in most of them.
+- **The dropped pin.** It hardly matters to a steady hand: 0.48 picks against 0.44 on four pins at 1 in 10. It costs half again to a shaky one: 3.06 against 2.00 on four pins at 1 in 3, and 4.03 against 2.50 on a five-pin treasure chest.
+
+Whether a Finesse-0 lock should be learnable by rhythm alone, and whether a shaky hand should pay half again, are Michael's calls. Nothing is raised as a decision, because nothing here is broken.
+
+### Verified (headless Chromium)
+`tests/lockfair.test.mjs`, 5 checks, passing, no page errors. The character has Finesse 0. 356 locks of six kinds were read at three Finesse levels. No hold is below its 110 ms floor, and Finesse only lengthens it. The exact snap count for four pins at 1 in 3 matches the simulation within 0.05. The tables above are its output.
+
+### Needs eyes
+Picking a Finesse-0 shop door and a five-pin treasure chest by hand, to see whether the rhythm is found or the lock feels like chance.
