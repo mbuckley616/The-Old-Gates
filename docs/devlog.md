@@ -10121,3 +10121,21 @@ Build tag s353.
 - An inconsistency, for Michael if he wants it changed: outdoors a witness sees all round, back turned or not. Indoors a keeper sees only a 120° cone (his B on #73, Session 368). Not asked, because the spec says *within sight* and the street has never been called unfair.
 
 *Correction, the same run: Sessions 398 and 399 above were renumbered 399 and 400. auto/backlog's look builder took Session 398 (Hair through the helm) while this run worked. The commits 1af5a0b and its successor still say 398 and 399 in their messages, because a pushed commit is not rewritten.*
+
+## v80 — Session 401 — `q7world` waits for the swing, not twenty frames
+Session 388 (the look builder) found `q7world` killed at CI's 900 s limit for one suite. Alone it passed in 5 min 6 s there and 3 min 18 s here, and my last run named it as next. A test that runs past its limit fails like a broken game, so this is a fix to the test. The game is unchanged.
+
+**What was wrong.** I timed each phase of the suite, alone and as three copies side by side (a loaded runner). Alone, the Faolchú's fight took 61 s of the 204. Side by side, it took 407–425 s of 669–689. The first swing kills it (the test sets its health to 5), but after every `attack(false)` the loop waited a fixed 20 real frames (`g.frames(20)`). In that fight, on software GL, a frame took 2.3 s alone and up to about 9 s under load: one wait of 20 frames came to 47 s alone. The rest of the suite (two towns built, two rooms entered, Aldwyn's dialogue) scaled with load far less. One solo run here also went past 900 s and was killed with its output lost. Its cause is not established, but it was the same suite on the same machine.
+
+**What changed** (`tests/q7world.test.mjs`, the fight loop). After each swing the test waits in the page until the swing resolves: the Faolchú dead, or the swing finished with no strike pending, at most 40 frames. This is how `fistswing` waits. The checks are unchanged.
+
+### Verified (headless Chromium)
+`q7world` 8/8 on the new test:
+- Alone: 2 min 49 s, down from 3 min 18 s.
+- Three copies side by side: 383, 388 and 394 s, all 8/8, down from 669–689 s.
+
+The checks and their thresholds are as before. Build tag s354.
+
+### Needs eyes
+- Nothing in play.
+- A frame of 2.3 s in the Faolchú's fight on software GL is far slower than any other scene measured. A player on a real GPU won't see it, but if `hourhitch`'s frame budget ever runs there, it will.

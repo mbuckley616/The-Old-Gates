@@ -176,6 +176,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 
 - ~~The yard's watchers take any name, the seat's Reeve's too~~ — **fixed, Session 393** (`tests/duel`): the yard-sergeant and the watchers never take a name the seat's lord, the service's giver or the seat's people use; laid 20 times, 0 clashes (was 4 of 20 with a Wulfstan beside Reeve Wulfstan). (critic 2026-10-01, a note under *Looks*)
 
+- ~~**`q7world` hit CI's 900 s limit for one suite** (the look builder, Session 388's note)~~ — **fixed, Session 401** (test only): the Faolchú's fight waited a fixed 20 real frames after a swing that kills on the first, and a frame of that fight takes 1–9 s on a loaded runner; it now waits until the swing resolves. Three copies side by side: 669–689 s each before (the fight 407–425 s), 383–394 s after.
+
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.
 - **Magic**: today's mix of old Elder Scrolls spell-buying with Skyrim's shout-style dungeon unlocks doesn't convince him. Wanted: a loop that isn't *buy more/better spells* — schools as skills, discovery, crafting or combining, costs and risks, spells that change how you move through the world.
