@@ -10335,3 +10335,14 @@ The pieces draw nothing from the genome's random stream, so a foe's face, hair a
 - A road ambush of Deserters at dusk: whether the mail reads at the distance the copy swaps (17 units).
 - The Ash Wight's rust against the wasteland's ash ground. It may be too dark to read the mail's rings.
 - A Bandit Captain leading a band adds about 5,000 triangles over today. `lod` still holds, but a camp of several captains has not been measured.
+
+## v80 — Session 406 — `tpfists` reads the body's facing inside the stepped run (CI fix)
+CI ran the suite on Session 403's head (`fdb24d9`), and `tpfists` failed on headless (1) with two checks: the fist's travel came out as −.219 and its lead over the shoulder as −.241, and the power punch's longer reach failed the same way. The measured positions were the same as on this machine (the fist at .325 ahead in the body's frame, the shoulder at .084), so the punch was right and only the sign was wrong. The test multiplies every forward distance by `fwdAxis`, the way the head's nose points in the body's frame, and it read that once after the three runs, in its own `page.evaluate`. Between evaluates the page's own frames run with real time, so the body had moved on to whatever pose those frames left it in, and on CI's slower runner that read came out reversed. Here the nose read +.9999.
+
+The test now reads the nose inside the stepped run, at the same frame as the hit it measures, and takes `fwdAxis` from the jab's. A new check asks that the head points squarely along the axis (more than .8), so a sideways head can't flip the sign without failing on its own. The game's code is unchanged.
+
+### Verified (headless Chromium)
+`tpfists` 9/9 here: the nose reads .959 along +z at the hit, the travel is .219, the lead .241 of a .294 arm, the power punch lands at .407 against the jab's .325, and there are no page errors. CI's failure could not be reproduced here, since this machine gave the right sign before the fix too. The CI run on this push is the real test. `parsecheck` is clean.
+
+### Needs eyes
+Nothing in the game. If headless (1) fails again, the new check's number will show whether the head itself faces backwards at the hit.
