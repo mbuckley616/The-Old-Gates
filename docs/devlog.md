@@ -9871,3 +9871,25 @@ The producer has carried this red for most of a day: `wholepoints`' first check,
 
 ### Needs eyes
 - Nothing to see in play. CI should stop going red on this check. If it does go red again, the `built` line in the log says how long the build took.
+
+## v80 — Session 386 — A foe a quest calls is there at any level (the critic's s342 finding)
+The critic found this in the 1 Oct run (PR #90): below level 5 the duel at Caer Slige cannot be fought. Hesket Rowe is built as a Bandit Captain, whose `minLevel` is 5, and `buildZoneEnemy` builds anything above the player's level `locked` (v59): the mesh hidden, skipped by `tickZoneEnemies`, unhittable, until the player grows into it. `duelStart` never cleared that, so at level 1 *Call it.* gave an empty ring, and the only ways out were the rope or *I yield.*, both a loss and a week. The guard's draw already clears it (`e.locked=false;e.minLevel=1`), and so does a lair's beast. The critic guessed the Fighters' *Blooded* commission and the siege leader shared it.
+
+They do, and it goes further. The gate is meant for the wild's own spawns, but every place a quest or the war sets a foe down by name went through it too. The guild commissions: *Blooded*'s captain (5), the Ogre and the Frost Troll (6), the Marsh Hag (5), each announced as *sighted* and never there. And a plain Bandit is `minLevel` 2, so at level 1 everything built from one was latent as well: a siege camp's six soldiers (the camp could never be broken, since it waits for all of them to die), an occupying garrison, a guild raid (*Raiders! 4 of them. Hold Dunmore.*, and nobody came), a faction's road job, and the caravan's attackers of Session 230. This is a fix, not a decision: each of those sessions says the foe is there to be fought.
+
+**What changed.** `unlockFoe(e)` in `js/42-zone-enemies.js`, after `buildZoneEnemy`: it clears the lock, sets `minLevel` to 1 and shows the mesh, as the guard's draw does. The duel, the guild's beast/wizard/wisp commissions, the guild raid, the road job, the caravan attack and the siege or occupation garrison now build through it (`js/80-world.js`, six call sites). The wild's spawns (`tickCells`' packs, sharks) and the dungeons are unchanged: a wild Ogre at level 1 is still latent. The foes' numbers are unchanged, so a level-1 player now meets a Bandit Captain at full strength in the duel and the *Blooded* commission; that is what the quests always asked for.
+
+### Verified (headless Chromium)
+`tests/questfoes.test.mjs` (new), every check at level 1:
+- The duel: *Call it.* puts Rowe in the ring unlocked and shown; the real enemy tick brings her from 4 units to 1.48 in 90 ticks; a swing through the real loop takes her from 62 to 57–60.
+- A commission's Bandit Captain, Ogre, Frost Troll and Marsh Hag: each sighted unlocked and shown.
+- Dunmore besieged by the Mark: six soldiers and the *Markish Captain*, none latent; all six down, the siege breaks.
+- A guild raid of four on Dunmore: four raiders, all shown.
+- A wild Ogre built at level 1 is still latent.
+- The same test on the unfixed build (HEAD's `index.html` and `js/` by `git archive`, `--src`): Rowe locked and unseen, still at 4 units after 90 ticks, 62 of 62 after the swing; all four commission foes locked (minLevel 5, 6, 6, 5); the siege's six latent; the raid's four latent and none shown. 6 of 9 fail.
+- `questfoes` 9/9; `duel`, `caravan`, `guardlevel1`, `camps` and `crime3` pass. Build tag s345.
+
+### Needs eyes
+- The duel at level 1 against a full-strength Bandit Captain (62 health, 13 a blow, a shield up): whether a new character can win it, or whether the League's ninth service should wait for a level. That is Michael's call if it proves too hard; this session only makes the fight happen.
+- A level-1 siege: six soldiers and a captain at once outside a town. Before this they were invisible, so nobody has played it.
+- Not touched: the road job and the caravan were read, not driven in the test (they build through the same helper).
