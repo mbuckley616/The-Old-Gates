@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Worn Armour Kit</title>
+<style>
+:root{--bg:#1a1612;--ink:#e8dcc0;--dim:#a89878;--btn:#2a241e;--on:#6a2a1a}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px Georgia,serif}
+header{padding:10px 16px}h1{font-size:20px;margin:0 0 4px}p{margin:0;color:var(--dim);max-width:900px}
+#bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px}
+#bar button{background:var(--btn);color:var(--ink);border:1px solid #4a3e30;padding:5px 10px;font:14px Georgia,serif;cursor:pointer}
+#bar button.on{background:var(--on)}
+#c{display:block;width:100%;height:70vh;cursor:grab;touch-action:none}
+#info{padding:6px 16px;color:var(--dim)}
+</style></head><body>
+<header><h1>The worn armour kit — today beside the proposed</h1>
+<p>The player in a full set (helmet, cuirass, gauntlets, greaves, boots) of each material, baked by the game's own person builder with <code>armour.js</code> (see <code>shoot.mjs</code>). Left: today's Steel set, the one shape every material wears. Right: the proposed set for the chosen material. Drag to turn.</p></header>
+<div id="bar"></div><canvas id="c"></canvas><div id="info"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="figures.js"></script>
+<script>
+const cv=document.getElementById('c'),R=new THREE.WebGLRenderer({canvas:cv,antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));
+const S=new THREE.Scene();S.background=new THREE.Color(0x3a342e);
+S.add(new THREE.HemisphereLight(0xfff4e0,0x3a3028,.75));const sun=new THREE.DirectionalLight(0xfff0d8,.8);sun.position.set(2,4,5);S.add(sun);
+const fl=new THREE.Mesh(new THREE.CircleGeometry(3,40),new THREE.MeshLambertMaterial({color:0x4a4238}));fl.rotation.x=-Math.PI/2;S.add(fl);
+const cam=new THREE.PerspectiveCamera(28,1,.05,50);
+const MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:0,side:THREE.DoubleSide});
+const un=(s,T)=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new T(u.buffer);};
+const mesh=f=>{const P=un(f.p,Int16Array),N=un(f.n,Int8Array),C=un(f.c,Uint8Array),I=un(f.i,Uint32Array);const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(Float32Array.from(P,v=>v/8000),3));g.setAttribute('normal',new THREE.BufferAttribute(Float32Array.from(N,v=>v/127),3));
+  g.setAttribute('color',new THREE.BufferAttribute(Float32Array.from(C,v=>v/255),3));g.setIndex(new THREE.BufferAttribute(I,1));return new THREE.Mesh(g,MAT);};
+const cache={},get=i=>cache[i]||(cache[i]=mesh(AR_FIG[i]));
+const L=new THREE.Group(),Rt=new THREE.Group();L.position.x=-.42;Rt.position.x=.42;S.add(L,Rt);L.add(get(0));
+let cur=4,yaw=.3;const bar=document.getElementById('bar'),info=document.getElementById('info');
+AR_FIG.forEach((f,i)=>{if(!i)return;const b=document.createElement('button');b.textContent=f.name;b.onclick=()=>pick(i);bar.appendChild(b);});
+function pick(i){cur=i;Rt.clear();Rt.add(get(i));[...bar.children].forEach((b,k)=>b.classList.toggle('on',k+1===i));
+  info.textContent=`${AR_FIG[i].name}: ${AR_FIG[i].tris.toLocaleString()} triangles for the whole figure (today's: ${AR_FIG[0].tris.toLocaleString()}).`;}
+pick(4);
+let drag=null;cv.onpointerdown=e=>{drag=e.clientX;cv.setPointerCapture(e.pointerId);};cv.onpointermove=e=>{if(drag!=null){yaw+=(e.clientX-drag)*.01;drag=e.clientX;}};cv.onpointerup=()=>drag=null;
+function frame(){const w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==Math.round(w*R.getPixelRatio())){R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  cam.position.set(0,.9,3.9);cam.lookAt(0,.74,0);L.rotation.y=Rt.rotation.y=yaw;R.render(S,cam);requestAnimationFrame(frame);}
+frame();
+</script></body></html>
