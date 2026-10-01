@@ -20,7 +20,7 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
-### The cavern master — what does it do besides hit harder? (systems builder, Session 399's run, 2026-10-01, issue #95)
+### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
 - **A. A telegraphed slam.** Every 8–10 s the master winds up for 0.9 s (the tells of Session 282) and strikes the ground in a 3-unit ring that can't be blocked, for twice its blow. A roll through it (the roll's untouchable window) or getting out of the ring avoids it. It is the combat page's shape: read the tell, roll.
 - **B. A second phase at half health.** It roars, calls two of the lair's own kind out of the dark, and swings a fifth faster for the rest of the fight.
@@ -39,7 +39,7 @@ Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by c
 
 Recommendation: **C.** It makes the blockade a real choice (sail through for the price or wait for the sails to pass), and the chest's crates are a reward you can see. One Opus session with a test.
 
-Michael: **B, and their chest carries some of the goods they took off other ships**. (1 Oct 2026) — built in Session 398 (`tests/piratehold`); issue #91 closed.
+Michael: **B, and their chest carries some of the goods they took off other ships**. (1 Oct 2026) — built in Session 399 (`tests/piratehold`); issue #91 closed.
 
 
 ### Cargo trading between ports — what does a hold of goods earn, and how? (systems builder, 2026-10-01, issue #88)

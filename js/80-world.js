@@ -5414,7 +5414,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       items.forEach(it=>{if(it.qty==null)it.qty=1;});
       o.chest={x:cx,z:cz,y:DECK_Y+.3,name:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',displayName:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',items,zone:'world',kind:'chest',g,top:lid,opened:false};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(o.chest);}
   }
-  // S398 (Michael's B on #91, with C's chest) — a pirate's chest above carries one or two crates of one good taken off another
+  // S399 (Michael's B on #91, with C's chest) — a pirate's chest above carries one or two crates of one good taken off another
   // ship. Flee a deck while her crew still holds it, and they take half the crates in your hold (rounded up), the dearest
   // first: leave her deck with any of her crew standing and your ship within 140 units (they cross behind you), or leave
   // your own deck while her boarders stand on it (pirateBoardersHold, below). What they take goes into her chest (a horse
@@ -6158,7 +6158,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // keep boarders aboard
     const p=SHIP.plat;for(let i=BOARDERS.length-1;i>=0;i--){const e=BOARDERS[i];if(e.dead){BOARDERS.splice(i,1);continue;}if(!e._lx){e._lx=SHIP.x;e._lz=SHIP.z;}e.x+=SHIP.x-e._lx;e.z+=SHIP.z-e._lz;e._lx=SHIP.x;e._lz=SHIP.z;e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));e.homeX=SHIP.x;e.homeZ=SHIP.z;}
   }
-  // S398 — leave your own deck while boarders stand on it and they take half the hold, then go back over the rail to their ship
+  // S399 — leave your own deck while boarders stand on it and they take half the hold, then go back over the rail to their ship
   function pirateBoardersHold(){if(PHP<=0||!worldState.ship||!SHIP.plat||deckOff(SHIP.plat)<1.5)return;const live=BOARDERS.filter(e=>!e.dead);if(!live.length)return;
     const took=pirateTake();if(!took.length)return;const o=live[0]._from,home=!!(o&&OTHER.includes(o));
     for(const e of live){BOARDERS.splice(BOARDERS.indexOf(e),1);

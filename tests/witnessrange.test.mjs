@@ -1,4 +1,4 @@
-// The witnesses' ranges (Session 156's spec, settled headless in Session 399, backlog G): outdoors anyone awake within
+// The witnesses' ranges (Session 156's spec, settled headless in Session 400, backlog G): outdoors anyone awake within
 // 12 units with a clear line sees a crime; sneaking halves the range, night halves it again (12 / 6 / 6 / 3). A house
 // between you blocks the line; someone indoors asleep (not in the street) sees nothing.
 import { boot, check } from './lib/game.mjs';

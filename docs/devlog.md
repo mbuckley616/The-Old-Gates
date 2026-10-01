@@ -10074,7 +10074,7 @@ The critic's 1 Oct run noted, under *looks, not findings*, that one watcher at t
 ### Needs eyes
 - Nothing to judge; the seat's townsfolk were not built in the test (it laid the yard from the ring), so only the lord and the giver were in play there.
 
-## v80 — Session 398 — Black sails take from the hold (Michael's B on #91, with C's chest)
+## v80 — Session 399 — Black sails take from the hold (Michael's B on #91, with C's chest)
 Sessions 390–391 put trade goods in your ship's hold, and a blockade pays ×1.8 for foreign goods, but a boarding risked only your health: there was nothing for the black sails to take, so running past them was free. I asked (#91) whether pirates who win take your cargo. Michael answered *B, and their chest carries some of the goods they took off other ships*, which is C as I wrote it.
 
 **What changed** (`js/80-world.js`, beside the boarding code). B says pirates take half the hold *if they win (you fall or flee the deck while they hold it)*. Falling to them is a death, and a death is a reload (the brief), so a cargo taken at death would come back with the save. Fleeing is the one way a boarding is lost, and the rule is built on that:
@@ -10100,7 +10100,7 @@ The messages: *They come over your rail behind you and take 2 × chest of silver
 - Whether half, dearest first, is the right bite against the blockade's ×1.8. A sloop's 40 is five chests of silver, about 280 a crossing; a flight loses three of them.
 - The boarders cross only after twelve seconds within 16 units of your ship, so the second case wants a real fight at sea to judge.
 
-## v80 — Session 399 — The witnesses' ranges, measured (backlog G, Session 156)
+## v80 — Session 400 — The witnesses' ranges, measured (backlog G, Session 156)
 Backlog G owed a check of Session 156's witnesses: *get seen picking a lock in a real town: the ranges by day, night and sneaking*. The spec (the crime system, 26 Sep) says anyone awake within about 12 units with a clear line sees a crime; sneaking halves the range and night halves it again. `crime2` checks a witness at 3 units and one at 9 at night, but nothing tested the edges or the four cases, so I measured them. Nothing in the game changed.
 
 **What was measured** (`witnessOf`, the street branch). In Dunmore, I stood on open ground on the pad with every townsperson out of the street but one, Gráinne, and set her at 2.9, 3.1, 5.9, 6.1, 11.9 and 12.1 units along a line with nothing in the way, under each of the four cases. I also stood her across the Mages' Guild, 10 units off by day, and tested a townsperson out of the street (hidden, as one asleep indoors is) and one who has run off.
@@ -10119,3 +10119,5 @@ Build tag s353.
 ### Needs eyes
 - Whether 12 units by day reads as "in sight" in a real street, and 3 sneaking at night as fair. The numbers are the spec's and they hold.
 - An inconsistency, for Michael if he wants it changed: outdoors a witness sees all round, back turned or not. Indoors a keeper sees only a 120° cone (his B on #73, Session 368). Not asked, because the spec says *within sight* and the street has never been called unfair.
+
+*Correction, the same run: Sessions 398 and 399 above were renumbered 399 and 400. auto/backlog's look builder took Session 398 (Hair through the helm) while this run worked. The commits 1af5a0b and its successor still say 398 and 399 in their messages, because a pushed commit is not rewritten.*

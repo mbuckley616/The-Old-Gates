@@ -1,4 +1,4 @@
-// Pirates and the hold (Session 398; Michael's B on #91, with C's chest). A pirate's chest carries one or two crates of
+// Pirates and the hold (Session 399; Michael's B on #91, with C's chest). A pirate's chest carries one or two crates of
 // one good taken off another ship. Flee a deck while her crew holds it (leave hers with any of them standing and your
 // ship within 140 units, or leave your own while her boarders stand on it) and they take half the crates in your hold,
 // rounded up, the dearest first; the crates go into her chest (a horse stays in her hold) and she sails off.
