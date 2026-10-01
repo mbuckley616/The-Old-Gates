@@ -1,0 +1,34 @@
+{
+ "A Deserter": {
+  "tris": 4922,
+  "trisLo": 2242
+ },
+ "A Bandit Captain": {
+  "tris": 5844,
+  "trisLo": 2619
+ },
+ "A Shieldbearer": {
+  "tris": 4972,
+  "trisLo": 2150
+ },
+ "A Ash Wight": {
+  "tris": 5034,
+  "trisLo": 2181
+ },
+ "B Deserter": {
+  "tris": 8822,
+  "trisLo": 4314
+ },
+ "B Bandit Captain": {
+  "tris": 10568,
+  "trisLo": 5271
+ },
+ "B Shieldbearer": {
+  "tris": 8958,
+  "trisLo": 3755
+ },
+ "B Ash Wight": {
+  "tris": 9706,
+  "trisLo": 4579
+ }
+}
