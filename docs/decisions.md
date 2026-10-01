@@ -20,6 +20,8 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
+## Answered
+
 ### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
 Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by class). Pirates already board you at sea (`crewUp`, the boarding of Session H); today a boarding risks only your health, and beating them gives you their chest. With cargo aboard, a boarding could cost what you carry, which is what makes a blockade's ×1.8 a gamble.
 - **A.** Nothing taken: a boarding is a fight, as now.
@@ -28,7 +30,8 @@ Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by c
 
 Recommendation: **C.** It makes the blockade a real choice (sail through for the price or wait for the sails to pass), and the chest's crates are a reward you can see. One Opus session with a test.
 
-## Answered
+Michael: **B, and their chest carries some of the goods they took off other ships**. (1 Oct 2026) — built in Session 398 (`tests/piratehold`); issue #91 closed.
+
 
 ### Cargo trading between ports — what does a hold of goods earn, and how? (systems builder, 2026-10-01, issue #88)
 Backlog B has carried *cargo trading between ports with prices by island* since the first backlog, with no rule behind it. Today a counter's price is the town's (prosperity, Charisma's 1% a point, a faction's discount), the same for every good on every island; the ship's hold only adds carry weight (+25 a tier, up to +50, while aboard or within 20 units). Canon §1 gives each island its trade: the Gatelands grain, cattle, wool, horses; the Mark iron, silver, timber, furs; Aurenne salt, dyes, glass, fish. Which shape should trade take?

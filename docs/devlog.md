@@ -10073,3 +10073,29 @@ The critic's 1 Oct run noted, under *looks, not findings*, that one watcher at t
 
 ### Needs eyes
 - Nothing to judge; the seat's townsfolk were not built in the test (it laid the yard from the ring), so only the lord and the giver were in play there.
+
+## v80 — Session 398 — Black sails take from the hold (Michael's B on #91, with C's chest)
+Sessions 390–391 put trade goods in your ship's hold, and a blockade pays ×1.8 for foreign goods, but a boarding risked only your health: there was nothing for the black sails to take, so running past them was free. I asked (#91) whether pirates who win take your cargo. Michael answered *B, and their chest carries some of the goods they took off other ships*, which is C as I wrote it.
+
+**What changed** (`js/80-world.js`, beside the boarding code). B says pirates take half the hold *if they win (you fall or flee the deck while they hold it)*. Falling to them is a death, and a death is a reload (the brief), so a cargo taken at death would come back with the save. Fleeing is the one way a boarding is lost, and the rule is built on that:
+- *Their deck.* Board a black sail, then leave her deck (over the side, or back to your own) while any of her crew stands, and if your ship lies within 140 units (the factor's reach for "your ship is here"), they cross behind you and take half the crates in your hold.
+- *Your deck.* Pirates who lie alongside long enough already send two boarders onto your deck (`tickBoarding`). Leave your own deck while one of them stands, and they take half the hold and go back over the rail to their ship.
+- *Half, dearest first.* Half the crates, rounded up, ordered by the goods' worth: of two silver, one iron and two grain, the silver and the iron go and the grain stays. A horse is taken like a crate (110, the dearest) but goes into her hold, not her chest, because a horse can't go in a bag.
+- *Where it goes.* The goods go into her chest, so boarding her again and clearing the deck gets them back. Then she sails away from you and no longer chases or looses volleys. With nothing in the hold, or your ship far off, nothing happens and she stays as before.
+- *C's chest.* Every black sail's chest now carries, besides its loot, one or two crates of one good (never a horse) taken off some other ship. A merchantman's chest is unchanged.
+
+The messages: *They come over your rail behind you and take 2 × chest of silver and a crate of iron from the hold.* and *They hold your deck, take … from the hold and go back over the rail.*
+
+### Verified (headless Chromium)
+`tests/piratehold.test.mjs` (new), 15/15, at open sea with a sloop of five crates (two silver, one iron, two grain):
+- 40 black sails' chests: each held one row of crates, 17 of one and 23 of two, twelve goods seen, no horse. A merchantman's chest had none.
+- On her deck with the crew up, 30 frames: the hold untouched. Six units over the side: the hold is two grain. Her chest went from one timber to timber, silver ×2 and iron ×1. She was 8.2 units off and 61 after ten seconds.
+- Her crew dead, then over the side: nothing taken. Your ship 400 units off: nothing taken. An empty hold: nothing, and she stays boarded.
+- A horse, a wool and a grain: the horse and the wool go (two of three, rounded up). The horse is not in her chest.
+- Two of her crew on your deck: the hold is untouched while you stand there. Step off and the silver and the iron go, both boarders are back in her crew (three), and boarding her after finds them in her chest.
+- `cargo`, `ships`, `sailtrim`, `harbour`, `shipwright` and `ferry` pass. Build tag s352.
+
+### Needs eyes
+- Whether stepping off a deck in the heat of a fight (a roll over the rail, a knock-back) costs a hold too easily. The edge is 1.5 units past the deck's box. A jump straight up doesn't count; a fall into the water does.
+- Whether half, dearest first, is the right bite against the blockade's ×1.8. A sloop's 40 is five chests of silver, about 280 a crossing; a flight loses three of them.
+- The boarders cross only after twelve seconds within 16 units of your ship, so the second case wants a real fight at sea to judge.
