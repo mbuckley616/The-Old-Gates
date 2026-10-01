@@ -27,8 +27,8 @@ const box = await page.evaluate(async () => { const wait = ms => new Promise(r =
   for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
   await wait(900); const got = gold - gold0, items = BAG.length - bag0; const p2 = WORLD.boxPrompt(); WORLD.boxInteract(); const goldAgain = gold - gold0;
   worldState.boxes[X.id].taken -= 10; const p3 = WORLD.boxPrompt();
-  return { p1, title, got, items, p2, goldAgain, p3, theft: (worldState.crimes || []).some(c => c.kind === 'theft'), lidOpen: X.lid.rotation.x < 0 }; });
-check('the strongbox is a lock; picked, it yields the takings and a thing from the stock; then it is empty till it refills', /pick/.test(box.p1) && /strongbox/i.test(box.title) && box.got >= 16 && box.got <= 240 && box.items === 1 && /empty/i.test(box.p2) && box.goldAgain === box.got && /pick/.test(box.p3) && box.theft && box.lidOpen, box);
+  const mean = WORLD.boxCoins(WORLD.prosperity(WORLD.settle.get('dunmore').site), X.type); return { mean, p1, title, got, items, p2, goldAgain, p3, theft: (worldState.crimes || []).some(c => c.kind === 'theft'), lidOpen: X.lid.rotation.x < 0 }; });
+check('the strongbox is a lock; picked, it yields the takings and a thing from the stock; then it is empty till it refills', /pick/.test(box.p1) && /strongbox/i.test(box.title) && box.got >= Math.floor(box.mean * .8) && box.got <= Math.ceil(box.mean * 1.2) && box.mean <= 72 && box.items === 1 && /empty/i.test(box.p2) && box.goldAgain === box.got && /pick/.test(box.p3) && box.theft && box.lidOpen, box);
 
 // a home's chest, and the rules of the lock: yours is never locked, and by day the shop is open
 await page.evaluate(() => exitInterior()); await page.waitForTimeout(3000); await g.hide();

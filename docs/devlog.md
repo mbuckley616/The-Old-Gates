@@ -9177,6 +9177,133 @@ New `tests/buffstack.test.mjs`, 7 checks, passing, no page errors. Driven throug
 ### Needs eyes
 The buff strip shows only the one that counts. Whether a boon waiting under a herb should show too is the look builder's call, or Michael's.
 
+## v80 — Session 346 — Fortune's card says what Fortune does
+Michael's A on #64. The Fortune card promised *+2% crit chance, +1% loot quality* a point. Nothing reads loot quality: a dropped sword is the same tier at Fortune 0 and 10. What Fortune does besides the crit (Session 328) has been there since v61c0 and was never on the card: +5% a point on every gold roll (`rollGold`: barrels, corpses, chests) and +2.5 points a point on the chance a slain foe drops an item (`lootDropChance`, base 35%, capped at 85%).
+
+**What changed.** No rule moved; the words did. The card's `gainDesc` reads *+2% crit chance, +5% gold found, +2.5% item drop chance*, and its `gains` carry `goldPct` and `dropPct` in place of `lootPct`, so the level-up lines (`gainLines`) name the same three, doubled for a two-point pick. The hub's derived grid gains *Gold Found* and *Item Drop* rows under *Crit Chance*. Fortune reads the points you own, as before; no enchantment fortifies it.
+
+### Verified (headless Chromium)
+New `tests/fortunecard.test.mjs`, 6 checks, passing, no page errors.
+- The card and the level-up lines read the three effects and no *quality*; a two-point pick reads +4%, +10%, +5%.
+- `rollGold('chest')` with the dice held at their lowest, level 1: 5 gold at Fortune 0, 8 at 10 (×1.5).
+- `lootDropChance` of a 20-health foe: .394 at Fortune 0, .644 at 10.
+- The hub at Fortune 4: *Crit Chance +8%*, *Gold Found +20%*, *Item Drop +10%*.
+- `fortunecaor` passes.
+
+### Needs eyes
+Nothing by eye. *Item Drop* in the hub is added to the base chance (35% plus up to 20% for a tougher foe), not multiplied; the row says *+10%* at 4 points and means ten points more.
+
+## v80 — Session 347 — The bedroll says so again
+The critic's s253 finding, taken as written. On a camp's bedroll the prompt line read the generic *Press E near a villager to talk…*, never *A bedroll — Press 'E' to rest* (Session 133's line). The bedroll check sat in an `else if` after `if(lid==='overworld')` in `updateHUD`'s prompt chain. In the open world `lid` is always `'overworld'`, so the check could never be reached. E on the roll still opened the sleep dialog; only the words were lost.
+
+**What changed.** The check moved inside the overworld branch, after the ship's prompt and before the generic line, with the same words and the same *and take your level* when a level is owed. The unreachable copy is gone.
+
+### Verified (headless Chromium)
+New `tests/bedrollprompt.test.mjs`, 4 checks, passing, no page errors. The world had 21 bedrolls loaded around the spawn; the test used the first one it found, at (12,990, 25,482):
+- 0.4 units from the roll the line reads *A bedroll — Press 'E' to rest*.
+- Six units off it reads the generic line.
+- Against the build before this session the bedroll check fails, as the critic saw.
+
+### Needs eyes
+Nothing.
+
+## v80 — Session 348 — The coach says when it leaves
+This is the critic's s253 finding, taken as written. At Dunmore at 17:54 the prompt said *Press 'E' to board the coach (leaves at six)*. Boarding then said *You take a seat. The coach leaves on the hour.*, but the coach left at six the next morning. The schedule has always been the a-end at 06:00 and the b-end at 18:00. The seat's line was never tied to it. The prompt had its own fault: a coach halted mid-road by a broken road is also in `wait`, and its prompt said *six in the evening*, but it goes on when the road clears.
+
+**What changed.** A new `coachWhen(C)` gives one answer for both the prompt and the seat's line. At the a-end it is *leaves at six*. At the b-end it is *leaves at six in the evening*. Stopped between them, it is *goes on when the road is clear*. No time or rule moved.
+
+### Verified (headless Chromium)
+New `tests/coachboard.test.mjs`, 6 checks, passing, no page errors. The test opens a coaching road from the nearest pair of towns, sets its coach waiting at each end and halted at .4, and boards and steps down each time:
+- a-end: *(leaves at six)* and *You take a seat. The coach leaves at six.*
+- b-end: *(leaves at six in the evening)* and the same in the seat's line.
+- halted: *(goes on when the road is clear)* and the same.
+- No line says *on the hour*. `coachseat` and `coachstop` pass.
+
+### Needs eyes
+Nothing.
+
+## v80 — Session 349 — *Pay for an inn*, not *a inn*
+The critic's s253 finding, the half that is a fix. The lord's investment topics read *Pay for a inn* and *Pay for a walls*, the refusal *A walls would cost the town…*, the log *Paid for a walls at…*, and three days later *the walls is finished*. Every line built the phrase from `a ${b.name}`.
+
+**What changed.** A new `aBuild(b)` gives *a well*, *an inn*, *a chapel*, *walls*, *a guild hall* or *a harbour*. The label, the short-of-gold line (capitalised) and the log use it. The finished message and the tutorial's *is standing* take *are* for the walls. No price, gate or effect moved.
+
+The other half of the finding is that the lord offers an inn, a chapel, walls and a guild hall to a town that already has them. That touches the deed's three builds, so it is a question for Michael: #65, under Pending in `docs/decisions.md`. For the record: Dunmore at prosperity 61 has four inns, a church, both guild halls and log walls. A paid inn there adds no building, only +10 prosperity and one of the deed's three.
+
+### Verified (headless Chromium)
+New `tests/investwords.test.mjs`, 6 checks, passing, no page errors. Dunmore's lord at prosperity 90, favour 5:
+- The offers read *Pay for a well (174 gold)*, *an inn (580)*, *a chapel (725)*, *walls (1305)* and *a guild hall (1740)*.
+- With no gold: *An inn would cost the town 580 gold.* and *Walls would cost the town 1305 gold.*
+- Paid, the log reads *Paid for walls at Dunmore.* Four days on, the message is *Dunmore: the walls are finished.*
+
+### Needs eyes
+Nothing. #65 waits on Michael.
+
+## v80 — Session 350 — `walls`' distant check measured a town the loader had dropped
+This is a CI fix. PR #22's pull-request run on 7e4b078 (Session 341) failed one check: `walls`' *its detailed clusters show near and give way to their plain twins far*, with near 2 and far 2. The push run on the same commit passed. The producer put this to Michael as a flake. It is not one, and it is not in the game.
+
+**What was wrong.** The check takes the first walled town near the start (La Porte Grise, about 1,300 units from the player) and builds it with `genSettlement` if it isn't loaded. Then it moves the camera over it and 600 units off, and reads `houseLod`'s choice each time. Locally it failed 1 run in 3. With the settlement's state printed at each look, every failing run showed the same thing: `WORLD.settlements.get(id)` was no longer the object measured. The loader had streamed the town out, because the player stood far away. `houseLod` only walks the live settlements, so the dropped copy kept its detailed meshes shown from wherever they were last set. That was the test measuring a corpse. The game does not draw a dropped town.
+
+**What changed.** Only the test. It now puts the player in the town (restored afterwards) and ticks the loader until the town is live with its LOD meshes, as the fort check below it already did. Then it measures the live settlement. It reports `live: true` so a future failure says which case it is.
+
+### Verified (headless Chromium)
+- Before: `walls` alone failed 1 run in 3 (near 2, far 2). The instrumented copy showed `inSettle: false` in the failing run only.
+- After: 6 runs of 6 pass, each with *live: true, near 2, far 0*. The fort checks are unchanged and pass.
+
+### Needs eyes
+Nothing by eye. Also owed from CI: the push run on 976745f (docs only; its pull-request twin passed) failed `mainrun` and `hourhitch` once. Neither is root-caused yet. The next CI-fix session takes them if they come back red.
+
+## v80 — Session 351 — `mainrun` lost its first E to a quest card
+The producer filed this as a blocker from the quest writer: `mainrun` is red on main, not a flake. On `86a7fe9` (main plus docs) it failed every time with the same seven failures. Every quest giver offered only `1. Goodbye.`, so Q1–Q6 were never taken and Q7 stayed locked. It first showed with the systems merge `1445aaf`. Session 350 had also seen it fail once on a docs-only push.
+
+**What was wrong.** The fault is in the test, not the game. Run alone, `mainrun` passed on main's code and on this branch (9 of 9 each). Four copies run side by side, roughly a CI shard's load, failed 4 of 4, and every time the talk to Bram came back `open: false`. With `interact`, `talkNPC` and the key listeners wrapped, the failing runs showed the E reaching the canvas while `#quest-popup` stood open. The keydown handler spends an E on closing that card, so `interact()` was never called. The card is the Q0/Q1 update. `showQuestUpdatePopup` queues a card until the player is free, and on a loaded machine it landed after the test's one fixed 9-second wait and its `g.hide()`. A player dismisses the card with one E and presses again, so the game is doing what it should. Why the failure began with `1445aaf` is not established. That merge brought in some 165 sessions of code, and a slower start would be enough to push the card past the 9 seconds, but I did not bisect it.
+
+**What changed.** Only the test. Before each E, `talk` now empties the quest-card queue and closes a card that is showing. The test is about dialogue, so the cards themselves are not what it checks.
+
+### Verified (headless Chromium)
+- Before: four side by side, 4 of 4 failed, Q1 still *available* after *Q1 taken*. Alone: 1 of 1 passed.
+- Diagnostics: 3 of the 4 loaded runs had `quest-popup: flex` at the E press, and in those `interact` never ran. The 4th had no card up and opened Bram.
+- After: four side by side, 4 of 4 pass, 9 of 9 checks each, Q7 active in every run.
+
+### Needs eyes
+Nothing by eye. `hourhitch`'s single red on 976745f is still not root-caused.
+
+## v80 — Session 352 — A lord offers only what the town lacks
+Michael's A on #65, from the critic's s253. A lord's *Pay for…* topics were chosen by what you had paid for in that town before (`st.builds`), not by what stands there. Dunmore at prosperity 61 has four inns, a church, both guild halls and log walls, and its lord still offered an inn, a chapel, walls and a guild hall. A paid inn, chapel or guild hall where one stood added no building (the generator adds each shop type once). Paid walls lifted only a fence, and walls are offered from prosperity 45, where the ring is logs already.
+
+**What changed.** A new `buildStands(site)` says what stands. It reads the live town's houses when the town is loaded, and when it isn't, the plan's list at today's prosperity (`shopsFor`, as the town's hover card does). The lord no longer offers an inn where an inn stands, a chapel where a church does, or a guild hall where either guild's hall does. Walls are not offered in a walled town whose ring is logs or better, and in practice that is every walled town at 45 and over. The well and the harbour are offered as before. No price, prosperity gain or deed rule moved. As #65 said, a big town now has fewer builds toward the deed's three: Dunmore has the well only.
+
+### Verified (headless Chromium)
+New `tests/investlacks.test.mjs`, 6 checks, passing, no page errors:
+- Dunmore at prosperity 90 (inns, a church, both guild halls, walls) is offered *a well* only. The same town read from its plan while unloaded gives the same answer.
+- The same town with its inn, church and guild halls lifted out of the live houses is offered all three again (walls still stand, so walls are not).
+- Portclare at 90 (an inn, a church, no ring, no guild hall) is offered the well, walls, a guild hall and the harbour.
+- Across all five live towns (La Grise, Dunmore, Hearthwick, Droichead, Portclare), no offer names a building that stands there.
+
+`tests/investwords.test.mjs` read its wording at Dunmore, which now offers only the well. It reads the same six checks at Portclare now, with the inn and church lifted out for the look, and passes.
+
+### Needs eyes
+Walls stay on offer in villages and ports, which have no wall ring: a payment there builds nothing you can see, though at a port it keeps the black sails off (`portProtected`). That was already the case and is outside #65, so it is noted here for the producer.
+
+## v80 — Session 353 — The game saves at rest and at thresholds
+Michael's A on #66, from the critic's s253. There, forty minutes on the road ended in a death, and the death loaded the arrival save, which took back 837 gold, a coach ride and a dungeon. `saveGame()` ran on zone travel, the Wait button, coming up out of a dungeon, a book and the safehouse. It never ran on sleeping, going down into a dungeon, walking into a town or leaving the coach.
+
+**What changed.** Four more moments autosave. The ring's gate still allows at most one autosave per 90 real seconds (`SS.lastAuto`), so the extra moments don't flood the five slots.
+- **Sleeping anywhere** (inn, bedroll, own bed): `restAtBed` saves once the hours have passed and the bars are full.
+- **The dungeon door going down** saves in the world, at the threshold, before the descent. A load then puts you at the door, never in a floor half built. Coming back up already saved (`goToOW`).
+- **Arriving on a town's pad** (village, town, city, port, garrison, outpost): `tickTownArrival`, every half second in the discovery tick, saves when you step from outside onto a pad. It does not save while any alert foe is within 30 units, so you are never saved mid-fight. It does not save while you ride the coach in, because stepping down saves.
+- **Stepping off the coach.** Boarding does not save.
+
+### Verified (headless Chromium)
+New `tests/autosave.test.mjs`, 7 checks, passing, no page errors (autosaves counted by wrapping `ssAutosave`, the 90 s gate cleared before each):
+- Sleep 2 hours: 1 autosave.
+- From 60 units outside Dunmore's pad (95) to its plaza: 1 autosave, and 90 more frames there make no second one.
+- The same walk-in with an alert foe 5 units off: none.
+- Board a waiting coach: none. Step down: 1.
+- Door 42 going down: 1, taken in the world at the door, and the player ends in the dungeon. Coming back up still saves.
+
+### Needs eyes
+Whether the half-second arrival check feels right at a gallop: a pad's edge is crossed once, and the save's *💾 Autosaved.* line shows as you come in. A town you walk out of and back into within 90 s saves only once.
+
 ## v80 — Session 354 — Smoke from the old village's forge (H.5, after #63)
 Session 345 left one chimney without smoke and called it Hearthwick's. **A correction:** the one box chimney in the legacy villages is over Bram's forge in the old Ashenmoor (`ASHENMOOR_CONFIG.decorateFn`, the scene `owScene`, zone id `overworld`). Hearthwick has no chimney, and the burned Ashenmoor does not build the forge's. The old village is still reached: a Continue with no save and the title's Load Game both stand you in it.
 
@@ -9253,6 +9380,53 @@ The generated rooms pass exactly what they used before. The `shells` suite's 15 
 - Walls that were a dark brown are now a pale plaster, as in any generated Gatelands room. The legacy rooms are brighter than they were.
 - With this, every interior's shell in the game is on the kit.
 
+## v80 — Session 357 — A night's burglary, by the numbers
+The crime system's last owed item in B is "the numbers by play". The critic measured a night's takings twice (s158, s175: 619–882 gold seen zero times) while the lockpick still paused the world. Session 327 made a town pick run in real time, with the watch walking and seen at any moment of it. Nobody had measured the night again since. This session measures it and puts the tuning to Michael. No rule and no number in `index.html` changed.
+
+**How.** A new `tests/burglary.test.mjs` ticks ten minutes of 23h in Dunmore and Portclare. Every tenth of a second it stands a player at each shop door and at eight homes, asks `witnessOf` whether someone would see them, walking and sneaking, and puts them back. From that record it takes the chance that a pick of 0, 3, 6, 10 or 20 seconds, begun at a random moment, is seen at some moment of it. Four pins by a practised hand take about 3–6 s (a pin rises in 0.17 s). The strongbox's worth is the Session 155 formula at the town's prosperity.
+
+**What it found.** The door is a real risk. The shop behind it is not: no keeper is inside a shut shop, so the strongbox is always taken unseen. Being seen at the door costs 25 gold and a point of favour, and the pick breaks off but can be tried again. One night in Dunmore therefore expects about 900 gold for one or two 25-gold fines. Raised as DECISION #68, with A as the recommendation: cut the strongbox to 10 + 50 a 100 prosperity, about 40 a box, and keep the risk as it stands.
+
+### Verified (headless Chromium)
+New `tests/burglary.test.mjs`, 7 checks, passing, no page errors. The checks are the rules the numbers rest on: the watch is on duty at 23h, no keeper is in a shut shop, a longer pick is never less likely to be seen, and sneaking never more likely than walking. The numbers are printed:
+- **Dunmore**, prosperity 61, three on the watch. The chance a shop door is seen, by pick length 0/3/6/10/20 s, is 18/21/24/28/38% walking and 10/13/16/20/30% sneaking. By door it runs from 14% (Clodagh's Goods, 3 s) to 45% (Órla's Apothecary, 20 s). Homes: one of eight (Séamus's) is seen 2–5% of the time, the other seven never. The seven strongboxes hold 910 gold.
+- **Portclare**, prosperity 56, one watchman. Shop doors are seen 10/11/13/15/20% walking and 6/7/9/11/16% sneaking. No home was ever seen. The five strongboxes hold 605 gold.
+
+### Needs eyes
+The chances are for a pick begun at a random moment. A player who watches the lantern go by and starts behind it should do much better. How much better needs hands on the keys, and it bears on B in #68.
+
+## v80 — Session 358 — The trailing guard stood for good at a house corner; two CI reds were the tests
+This run's one CI-fix session. CI on the branch head `ed2bce7` (Session 353) was red in three suites: `watch`, `hourhitch` and `saveui`.
+
+**`watch`: a real bug, older than Session 353.** At favour −2 the nearest guard trails you (S166), and his check failed. Three runs side by side with his position logged each second showed what happens. Séamus walked the street route until it came back empty, 21.5 units off. The route is empty when the pulled-straight line to you looks clear, and here it clipped a house corner. He then stepped straight at you, `npcStep` gave up against the wall, and he stood there for the rest of the run. The same test, copied onto Session 352's build, failed there too (Eilís stuck at 38 units), so the autosave was not the cause. Which guard is nearest, and so whether he meets that corner, depends on timing. Session 247 fixed the same fault for the night beat. Now the trailing guard, and the guard sent after you (S239's chase, which walked the same way), share one `trailStep`: if he has gained nothing on you for a second and a half, he walks the street grid cell by cell (`townRoute(…, true)`), then takes the straight way again.
+
+**`hourhitch`: the first greeting bubble.** The new program at 18:59 was a `SpriteMaterial` on two townsfolk. That is the pleasantry bubble, the game's only Sprite, and its program compiles the first time two townsfolk greet. On CI that came after the first night, which the test read as a rebuild on a change of hour. A first use is set aside now, as a newly arrived foe's already was. This is the single `hourhitch` red Session 351 had left unexplained.
+
+**`saveui`: the import expected exactly three saves.** Session 353's arrival autosave can add a fourth (CI: *Traveller:4*). The check now asks that every save the exported file holds comes back.
+
+### Verified (headless Chromium)
+- A new `watch` check puts the follower on the exact spot where Séamus stuck, 21.5 units from you. On Session 352's build he is still 21.49 units off 20 s later. On this build he is at 7.99. `watch` is 7 of 7 in three runs, two of them side by side with four other suites.
+- `saveui` 13/13 (the import brings back 3 of 3 exported). `hourhitch` 6/6.
+- The guard and crime suites run side by side: `guardsindoor` 13/13 (the chase), `crime1`–`5`, `beat`, `theft`, `constable`, `livepick`. All pass, no page errors.
+
+### Needs eyes
+Whether a guard dropping onto the street grid reads as a man cutting round a house, or as a stiff zig-zag, at the distance you would see him.
+
+## v80 — Session 359 — Do the direction bands match the walk?
+Backlog G's owed check on wayfinding (Session 138): ask a few people for directions and see whether the bands match what the walk feels like. A townsperson picks the words by the straight line to the door: *just … of here* under 14 units, *a short walk* under 55, *on across the town* under 130, *the far side of town* beyond (`wayFar`). The walk goes round houses, so it is always longer. The question was how much longer, and whether that moves the answer into a different band. This can be measured headless. No game code changed.
+
+**How.** A new `tests/waybands.test.mjs` lays a one-unit grid over the town's pad, with solid cells taken from `solidAt` and eight ways of stepping, never cutting a corner (the same grid as the guards' `townRoute`). From each townsperson standing in the street at noon it takes the shortest walk to every door on the pad. It then compares the band that walk would earn with the band the straight line gives. A person or a door off the grid (on a quay) is left out.
+
+**What it found.** The bands hold. The walk is a median 1.07–1.09× the straight line and never more than 1.25×. Between 7% and 10% of answers are one band too near: *a short walk* that is 55–58 units on foot, or *across the town* that is 131–139. All of them are within 15 units past the band's edge, and none is two bands out. The street grid reaches every door from where anyone stands. The one outlier on a first pass was a harbour man standing off the pad on the quay, outside the measured grid, and he is left out as a measuring artefact. Nothing to change.
+
+### Verified (headless Chromium)
+`tests/waybands.test.mjs`, 7 checks, passing, no page errors:
+- **Dunmore:** 3 people × 57 doors. The walk runs 1.07× the line at the median and 1.19× at most. 15 of 171 answers are one band near, the worst 9.1 units past the edge (Eilís to Aoife's House: 126.9 straight, 138.7 walked, told *across the town* where the walk is *the far side*).
+- **Portclare:** 2–6 people in the street (the number varies by run) × 31 doors. The walk is 1.09× at the median and 1.25× at most. 6 of 62 answers are one band near, the worst 4.4 units past the edge.
+
+### Needs eyes
+Whether the words *feel* right is still for a person to judge. The compass glyph at real size and the town colours by eye are still owed.
+
 ## v80 — Session 360 — The ashwort suite counted pixels across a canvas switch (CI fix)
 The Auto sessions PR's last CI run (01:07 on `0a2c006`) failed two suites. **`watch`** — the trailing guard stood 38 units off — is the one the systems builder has already fixed on auto/systems (Session 357: a house corner where `npcStep` gave up); it is theirs and reaches this branch through main, so it is left alone here. **`ashwort`** failed its second check on `after` 29 against `bare` 31: the same foes, the same position, the same revealed map, drawn twice, and two pixels of foe red fewer the second time.
 
@@ -9268,6 +9442,355 @@ The fix is in the test only: it draws and reads the minimap four times before co
 ### Needs eyes
 - Nothing to see in play. If `watch` is still red on this PR after main carries Session 357, that is the next CI session.
 
+## v80 — Session 361 — The strongbox holds a shop's takings, not a quest's reward
+Michael answered DECISION #68 with A: cut the strongbox and keep the risk. Session 357 measured a night's burglary. A shop door at night is seen 11–24% of the time on a 3–6 s pick. No keeper is inside a shut shop, so the strongbox behind the door is always taken unseen. It held 20 + 180 a 100 prosperity, which came to 910 gold a night in Dunmore against one or two 25-gold fines. That outpaid every quest, and the design brief rules out systems that reduce to *buy more*.
+
+The takings are now one named function in the world module, `boxCoins(p, type)`. It returns 10 + 50 a 100 prosperity, times the shop's kind as before (1.2 at arms, .8 at an apothecary). The box then multiplies it by .8–1.2 for the day's luck, as before. The thing from the shop's stock stays, so most of a thief's money now comes from selling the goods, as Michael's A says. Nothing else moved: the door, the watch, the fines, the home chest's few coins and the five-day refill are all unchanged. `WORLD.boxCoins` is exported so the tests read the game's own formula and do not keep a copy of it.
+
+### Verified (headless Chromium)
+- `burglary` 9/9, no page errors. Its box sums now come from `WORLD.boxCoins`, and a new check per town holds each box between 8 and 72 and the night's total under 60 a shop. **Dunmore** (prosperity 61): 49, 49, 32, 41, 41, 41, 32, **285 a night** (was 910). **Portclare** (56): 46, 30, 38, 38, 38, **190** (was 605). The door's chance of being seen is unchanged: Dunmore's shop mean is 21/24% on a 3/6 s pick walking and 13/16% sneaking.
+- `crime1` 5/5. A strongbox picked by play at Lorcan's Forge gave 53 gold against a mean of 48.6. The check now holds the takings to .8–1.2 of the game's mean (was 16–240).
+- `crime5`, `theft`, `livepick` and `guardsindoor` pass (the fine is still 50 plus what was taken).
+
+### Needs eyes
+Whether 30–50 gold and a thing to fence feels worth a night's risk at level one. A burglar who waits for the lantern to pass still does better than the numbers above, as Session 357 said.
+
+## v80 — Session 362 — `hourhitch`'s frame budget: the one slow frame was a foe's first draw
+This run's one CI-fix session. `hourhitch` failed on 5633fc4's push run (Session 350, which touched nothing in shaders or timing). The producer carried it to Michael, who ruled merge anyway. Session 358 fixed a different check in the same suite (the greeting bubble's compile). This is the frame-budget check, which Session 358 did not look at.
+
+**What the CI log showed.** Every step of the run was slow on that runner: noon's worst frame was 3.3 s, and most hour changes ran 5.0–5.9 s. The check allows 4× noon (13 s) but never more than 8 s. One step broke the 8 s cap: the jump to 6h, at 8.5 s. That is the step whose program list gained a `MeshStandardMaterial` on a skinned mesh used only by the zone's foes (`foeOnly: true`, `foeProgs` 0 → 1). A foe that arrived at dawn compiled its material on its first draw. The suite's two compile checks already set exactly that aside (Session 299: a foe's arrival, not the hour). The frame check did not, so it charged the foe's compile to the change of hour.
+
+**The fix.** A step in which a foe's program or the greeting bubble's first appears (the same `foeProgs` count the compile checks use) is left out of the frame budget and printed by name. The check also asks that no more than two steps are set aside, so it cannot empty itself. No game code changed. Whether a foe's first draw should be pre-compiled is a real question on a slow machine, but it is about foes arriving, not the hour, and nothing in B asks for it.
+
+### Verified (headless Chromium)
+- The CI run's own numbers, run through the old and new rule: the old rule's worst is 8,542 ms (fails the 8 s cap). The new rule sets aside *jump to 6h* and judges 8 steps, worst 5,891 ms (passes).
+- Locally `hourhitch` 6/6. The same foe arrived at 6h (`foeProgs` 0 → 1, the skinned `MeshStandardMaterial`), and that step was again the slowest after the first dusk: 5,444 ms against 3.0–3.9 s for the rest, with noon at 2.6 s. It is set aside and named. The judged worst is 3,908 ms.
+
+### Needs eyes
+Whether a foe's first appearance hitches visibly on Michael's laptop. On software GL it costs about 2 s. On a real GPU it should be a few milliseconds.
+
+## v80 — Session 363 — What a dungeon's locks cost in picks; a gate outside PORTALS no longer throws on the way up
+Backlog G's owed check on chest locks (Session 150): *a dungeon run's worth of chests — whether the picks it costs feel fair (one test run had 6 of 9 locked)*. The feel is for a person. How many locks there are, how many pins they have, and how many picks a hand of a given steadiness spends on them can all be counted headless, and that is what this session does. No rule changed.
+
+**How.** A new `tests/chestpicks.test.mjs` lists every dungeon door in the world (805), enters eight spread across the list by seed, and counts what a full clear meets. That is every locked chest (treasure always; the rest 1 in 5 on floor 1 and 2 in 5 on floor 2) and every locked door, which are picked now that keys no longer float. Each lock's pins come from `lpDifficulty`, the lock's own rule. It also counts the lockpicks lying in that dungeon's own chests (chest contents are rolled when the dungeon is built). A snap costs one pick and drops the last pin you set (`lpBreak`). So the picks a lock costs are worked out for a hand that mistimes one press in ten, one in five and one in three. The expected cost per lock at those rates is 0.24/0.57/1.21 picks at 2 pins, 0.37/0.89/2.09 at 3, 0.48/1.24/3.04 at 4, and 0.62/1.57/3.98 at 5.
+
+**What it found.** The dungeons' layouts are the same between runs, but the chest count changes (56 and 64 over the same eight). Over two runs, 59% of chests are locked, because treasure chests are common (one to seven a dungeon). A dungeon has 5–6 locks on average, ranging from 1 (Inisbeg Gate) to 14 (Moumfeirey Charnel: 12 of 17 chests and 2 doors, 42 pins). A full clear costs about **2 / 5 / 13 picks** for the three hands. The dungeon's own chests hold **1–2 picks** on average, often none, and some of those are behind the locks. Nobody starts with a pick, and a goods shop sells them at 12. So a steady hand breaks even on a small dungeon and pays 25–60 gold of picks for a big one, and a shaky hand pays 150 or more. Whether that is fair is Michael's to feel. Nothing here is a bug, so no rule is moved and no decision is raised yet. The numbers are in the backlog for the day it is asked.
+
+**Found by the survey, and fixed.** Entering a gate by seed while its cell is not loaded left it out of `PORTALS`. `goToOW` looked up the gate you came down by only there, so going up threw at `'Left '+src.name` halfway through the fade. The throw skipped the world's leave hook (the acts, a cleared gate), the message and the save, and it left you at (15, 20), the old Ashenmoor map's coordinates, off the world's edge. Ordinary play was not seen to reach it: a save made inside a dungeon and continued loads the gate's cell first, so the gate is back in `PORTALS`. The lookup now falls back to the portal you went down (`currentPortal`) when `PORTALS` has no entry for it. A new `tests/dungeonexit.test.mjs` covers the three ways up.
+
+### Verified (headless Chromium)
+- `chestpicks` 6/6 in two runs, no page errors. Every chest follows Session 150's rule. Every lock has 2–5 pins, and a treasure chest never fewer than 3. The two runs' totals: 33 of 56 and 38 of 64 chests locked. Doors: 6 locked across the eight dungeons. Locks a dungeon: 4.9 and 5.5. Picks spent a dungeon: 2.0/5.0/12.0 and 2.2/5.4/12.9. Picks found a dungeon: 0.8 and 1.9.
+- `dungeonexit` 4/4. Down by the door and up: at the gate, *Left The Dungeon of Shadows*, a save. Saved inside, reloaded and continued, then up: the gate is in `PORTALS`, and you come up at it, logged and saved. A far gate not in `PORTALS` (Kilbeg Watch): you come up at (10243.5, 22961.2), beside it, logged and saved. The same test on the build without the fallback fails that case: you stand at (15, 20) and the page throws *Cannot read properties of undefined (reading 'name')*.
+
+### Needs eyes
+Whether 5–13 picks for a big dungeon is fair for a first-level thief, and whether treasure chests should be locked less often, or dungeons hold more picks. That needs hands on the lock. The tower hoard's lock and the mimic's borrowed lock are still owed.
+
+## v80 — Session 364 — A mimic stood where no chest stands, and the minimap named it
+Backlog G's owed check on chest locks (Session 150): *whether the mimic's borrowed lock reads fairly*, and the tower hoard's lock. The lock itself reads fairly: a mimic shows the prompt a chest in its cell would (`chestLockedAt`, the same rule), and E wakes it without a pick. But a lock is only fair if the chest could be a chest, and a headless survey found two tells that gave the mimic away before the prompt did. Both go against what the mimic's own entries say it is (v61d5: *a tell would defeat the bait*; S198: *a mimic's disguise stays exact*; S329 kept disguised mimics out of Ashwort's pulse), so both are fixed without a decision.
+
+**Where it stood.** A new `tests/mimicspots.test.mjs` enters eight dungeons whose roster carries a Mimic, at level 6 so the roster isn't gated, and classes the cell under each chest and each disguised mimic by its open sides. Ordinary chests are placed in a room's L-shaped corners (Pass 2 in `renderFloor`), or in a fort storeroom's middle; treasure chests stand where the treasure floor is. Mimics were placed like every other foe, on any floor cell more than five from the entrance. On the old build, 4 of 31 mimics stood in a corner (13%), against 65–70% of chests; 8 stood in corridors, where no chest ever stands, and 10 along a room's wall. A chest in a corridor was always a mimic. One mimic stood beside a real chest. Now `spawnFloorEnemies` gives a disguised foe a spot from the same L-corners in a room, never within one cell of a chest and never on another foe; if a floor has none left, it stands where it was drawn.
+
+**The minimap.** The dungeon minimap draws a red dot for every living foe on a revealed cell, and it did not skip a disguised one. Chests are not drawn, so a red dot in a room corner with a chest in it was a mimic. It now skips a disguised mimic, whether its cell is revealed or not; once woken, it shows like any foe. A dormant gargoyle still shows as a dot, since it is a statue, not a disguise, and nothing says it should be hidden.
+
+**The tower hoard.** Its lock (`seed 'tower_'+id, minPins 4`) is always four pins: the floor of 4 is also the most the rule gives a lock with no floor or bonus. At Finesse 0 the top holds 149–188 ms. By Session 363's model a four-pin lock costs 0.48 / 1.24 / 3.04 picks for a hand that misses one press in ten / five / three. Nothing to change.
+
+### Verified (headless Chromium)
+- `mimicspots` 7/7, no page errors. Eight dungeons, 31 disguised mimics. Now: 31 of 31 in a room's L-corner, none in a corridor, none beside a chest; chests 65% in corners, none in corridors. The minimap, with every cell revealed, draws exactly the undisguised foes on the floor in all eight (e.g. Belvert's Pit: 17 dots for 17 foes, 3 mimics hidden). The same test on the old build fails four checks: mimics 4 of 31 in corners, 8 in corridors, one beside a chest, and the minimap drew 1–3 dots more than there were foes in every dungeon (Belvert's Pit 20 for 17).
+- The tower hoard: 300 towers' ids, every lock four pins.
+- `chestpicks`, `dungeon` (3 suites), `locks` (3), `lockpicks`, `ashwort` and `gargoyle` pass.
+
+### Needs eyes
+Whether a mimic in a corner still surprises once a player has learned that treasure chests (gold, larger) are never mimics and that a storeroom's middle chest never is. Both were true before this session. How many mimics a dungeon holds: the roster puts one in every sixth foe, so a big dungeon has six, sometimes more than its real chests on a floor. That is a number for Michael if it feels like too many.
+
+## v80 — Session 365 — A one-room shop's strongbox is not in sight all day: it depends on the room
+Backlog G, Session 167's owed check: *whether one-room shops, where the strongbox sits in the keeper's sight all day, are fair*. Session 167 measured the box against a keeper standing still at the counter. But the keeper walks the shop floor at .25 units a second, turning every 1.5–5 s, and a witness indoors needs six units and a clear line. So "all day" was a guess. This session measures it.
+
+**How.** The keeper's amble step was inline in the main loop. It is now `intAmbleStep(mesh, dt)`, with the same rule and numbers, and the loop calls it. A test can therefore walk the keeper in fixed 1/60 steps. `tests/shopsight` enters every shop with a strongbox in Dunmore, Portclare, Ironhaven and Ashenmoor at 13h, 23 shops in all. It runs the keeper's own amble for ten minutes and asks `witnessOf` every tenth of a second for a player standing at the box. From that record it works out the chance that a pick of 3, 6 or 10 s, begun at a random moment, is seen (a town pick is asked every frame, Session 327).
+
+**What it found.** The ten back-room shops are never seen while the door is shut, as Session 167 built. The thirteen one-room shops split in two, and nothing in between:
+- **Eight are in sight all day, or nearly**: Portclare's Smithy, Physic and Fionnuala's Stores; Ironhaven's Armory, War Supplies and Royal Herald; Ashenmoor's Forge and the Old Cottage. They are seen 93–100% of the time, with a longest unseen stretch of 0–26 s. A 6 s pick is seen 94–100% of the time.
+- **Five are almost never seen**: Dunmore's three Goods shops, Portclare's Odhrán's Stores and Ashenmoor's Apothecary. They are seen 0–10% of the time, and a 6 s pick 0–10%. In these the box stands 5.5–6.6 units from the counter, and the keeper's walk keeps them near the six-unit edge or beyond it.
+
+So in a one-room shop, a daylight theft is either hopeless or free, and which one it is comes from the room's width, not from anything the player does. Session 167's own Dunmore figures (the three one-room boxes seen at 4.2–5.8) were the keeper's starting spot, and it drifts. Whether that is fair, and what should change, is a rule of play. It is raised as a decision (below and in `docs/decisions.md`); nothing in the game's rules changed this session.
+
+### Verified (headless Chromium)
+New `tests/shopsight.test.mjs`, 7 checks, all pass: 23 shops (13 one-room, 10 back-room) in four towns. Every keeper stays inside their bounds and walks 1.9–4.1 units from the counter in ten minutes. A longer pick is never less likely to be seen. No back-room box is seen with its door shut. No page errors. The mean chance of being seen on a 6 s pick is .62 across one-room shops and 0 across back-room shops, but the mean hides the split above. `witness` and `intnpcs` pass on the refactored amble.
+
+### Needs eyes
+Whether a player notices the keeper's walk at all, and whether watching it for a gap would be part of the game if the six units were kept.
+Raised as issue #73: **A** the keeper sees the whole room, **B** the keeper sees what they face, a cone that the walk turns (recommended), or **C** leave it.
+
+## v80 — Session 366 — A bought piece keeps its price, and a dozen arrows is no longer a money loop
+Backlog I, the critic's s321 (PR #72, two lines): *arrows are a money loop*, and *a bought item sells for its type's default, not its worth*. Both came from one line in `buyItem`, `delete item.buyPrice; // don't need shop price in bag`. Without a price, `sellPrice` fell through to its by-type defaults: 5 for ammo, 8 for any potion, and `max(5, …)` for tiered gear. The result: a dozen Iron Arrows bought for 2 sold back for 5 a piece (60, 72 with barter), an Iron Sword bought for 35 sold for 5, and a Wooden Bow bought for 4 sold for 5. `_buyStackable` (the bulk buy) did the same.
+
+**The fix.** The bought copy keeps its `buyPrice`, so it sells at price × `sellMult`, exactly as the same piece found in a chest does. A bought-back piece had its price overwritten with what the player was paid for it (Session 339's rule for the counter). It now carries its own price in `_bagPrice`, which the save keeps, and gets that price back when bought. Keeping the price does not close the arrow loop on its own. The arrows' `buyPrice` of 2 is the price of the dozen, but the counter sells ammo one piece at a time, and `sellPrice`'s one-coin floor then pays 1 a piece, 12 for the dozen. So ammo is now priced by its bundle (`bundle: 12` on `ARROW_IRON`, and 12 assumed for arrows in older saves): a piece is worth 2 × .4 / 12 of a coin, which is nothing. The counter shows 0, and selling one says *Iron Arrow is not worth a coin at the counter.* and keeps it. Found arrows sold for 1 a piece before and now sell for nothing too. What an arrow should fetch is a price, so it is left for Michael to change if he wants one.
+
+### Verified (headless Chromium)
+New `tests/buyprice.test.mjs`, 7 checks. All pass on this build, and 5 of them fail on the previous one (which reproduces the critic's 2 → 60 for the dozen). Four Dunmore counters were used (Clodagh's Goods, Lorcan's Forge, Bríd's Armoury, Cathal's Apothecary), and every row was bought and sold back through `buyItem` and `sellItem` at Charisma 0, 10 and 25: 84 rows in all. Every bought copy keeps its price, and nothing sells for more than it cost. The widest case, at Charisma 25, is Greater Potion 29 → 25 and Iron Sword 26 → 20. Every piece sells for exactly what a found copy does. At Charisma 0: Iron Sword 35 → 16, Iron Cuirass 43 → 19, Greater Potion 39 → 20, Elixir of Warding 39 → 16, Wooden Bow 4 → 1. A dozen arrows sells for 0 and all twelve stay in the bag. A found piece sold and then bought back returns to its own price (8, 5, 15, 15), and `_serItem` keeps that price. `barter` (7/7), `counters` and `shoperrands` pass. No page errors.
+
+### Needs eyes
+Whether arrows should sell at all. A dozen for 2 means a single arrow is worth a sixth of a coin. If Michael wants arrows to sell, the options are selling a dozen at a time or a higher price, and both are his call. Also whether a keeper's resale margin now feels right: at Charisma 0 you get back 40–51% of what you paid for most pieces, and less for the cheapest (a Wooden Bow bought for 4 sells for 1).
+
+## v80 — Session 367 — `wholepoints` measured whatever towns the loader had reached (4a128db's CI red)
+This run's one CI-fix session. On Session 364's head (4a128db), CI failed one check in `wholepoints`, the untended world's 120-day baseline. The runner got mean −6.5 and least −67, where the check pins −6.7 and −77. The check passed here. The producer flagged it as a new failure, not the known flake.
+
+**Cause.** It is the test, not the game. The daily tick runs over `WORLD.SITES`, the towns of the cells loaded so far. That list fills in while the loader works: 17 towns a moment after arrival, 52 once the nine cells round home are in. The test snapshotted `worldState.towns` at whatever moment it reached that line. Any town the world had not yet touched was then created inside the seeded run, so its fate was drawn from a different stream of the same seed. The numbers therefore depended on the runner's speed. Reproduced here: run at once, the "world" is 17 towns (mean −0.9). After a 40 s wait it is 52, with six towns near Carrigowen's Lair abandoned to 0 (−37 to −77).
+
+**The fix (test only).** The test loads the nine home cells itself (`WORLD.loadCell`), and each run starts every town from its own base (`TS()` makes one from its id alone), not from the boot's snapshot. The boot's clock and towns are put back afterwards. The pinned numbers move from −6.7 to **−6.8** (least −77, most 0, 52 towns), because no town now carries a minute of boot-time drift. The check is still what it was: the untended world does not move when Session 272's fractions change. Its four other checks are unchanged. No game code changed.
+
+### Verified (headless Chromium)
+The same numbers (52 towns, mean −6.8, least −77, most 0) in three runs side by side: run at once, after a 60 s wait, and the suite as written. Before the fix, the first two gave 17 towns at −0.9 and 52 at −6.8, and the CI runner gave 52 at −6.5. `wholepoints` passes 6/6.
+
+### Needs eyes
+Nothing.
+
+## v80 — Session 368 — The keeper sees what they face
+Michael's B on #73. Session 365 measured a one-room shop's strongbox by day and found that it came down to the room's width. Eight of thirteen one-room shops had the box in the keeper's sight 93–100% of an open day, and five had it 0–10%. A keeper indoors saw you in every direction at once, within six units with a clear line.
+
+**What changed.** Indoors a person sees you only within 60° either side of the way they face, `(sin ry, cos ry)`, as well as within six units with a clear line (`intFaces` in `witnessOf`). It applies to the keeper and to the room's other people, the guild members and the coaching inn's travellers. The street's witnesses are unchanged.
+
+**Found on the way, and fixed.** `intAmbleStep`, the keeper's walk, turned back from its bounds with the axes swapped. An x bound flipped the z part of the heading, and a z bound flipped the x part. A keeper who reached a bound kept walking into it, facing it, until the half-second timer ran out and a new heading came up, often into the same bound. The counter side is one of those bounds and the strongbox stands past it. That is why Session 365's keepers were measured so close to the box, and so much of the time turned toward it. A bound now turns back the part of the heading that met it. Keepers now walk the whole floor they are allowed. Over ten minutes in the one-room shops, the farthest a keeper got from the strongbox was 4.6–8.7 units before the fix and is 4.9–12.2 after, and the nearest was 1.9–5.7 before and is 0.8–6.4 after (the same run with the cone, before and after the bounce was fixed). Session 365's numbers were measured with that bug in place. They stand as a record of the build they measured, not of the rule.
+
+No range, fine or crime moved. Four suites that test indoor range, walls and fines turned the keeper to the player before asking: `witness`, `crime5`, `theft` and `guardsindoor`. They test the line, the fine and the guard, and the cone has its own test.
+
+### Verified (headless Chromium)
+New `tests/keepercone.test.mjs`, 9 checks, passing, no page errors. In Dunmore, with the keeper 2.5 units from the player with a clear line, the keeper was turned through 360° in 5° steps:
+- The keeper sees the player at −60° to +60° and nowhere else. Face on they see you, back turned they do not, and seven units off in front they do not.
+- The strongbox emptied with the keeper's back turned 1.5 units away: 40 gold taken, no fine. Refilled and emptied again with the keeper turned to you: fined 104.
+- A guest stood in the room sees you face on, not with their back turned, and not at 70° off.
+- A keeper at an x bound turns back in x and keeps its z heading; at a z bound, the reverse.
+
+`tests/shopsight` (23 shops in four towns at 13h, ten minutes of each keeper's own walk) passes its 7 checks. The one-room shops are now in sight 0–35% of the day, where they were 93–100% for eight of them. The longest stretch unseen runs from 17.6 s (Fionnuala's Stores) to all ten minutes (Odhrán's Stores, where the keeper never comes within 6.4 units). A 6 s pick begun at a random moment is seen 16–85% of the time. Back-room boxes are still never seen through the shut door. `witness`, `crime5`, `theft` and `guardsindoor` pass. `crime1` and `crime2` pass unchanged.
+
+### Needs eyes
+- Whether a keeper turned away reads as a chance to a player standing in the shop. Nothing on screen says which way the keeper looks except the body.
+- The keepers now wander farther across their floor, to the edge of their bounds, where before they stuck against it. How that looks by eye, and whether a keeper now stands in a doorway or against a shelf, is owed.
+
+## v80 — Session 369 — The parry reads the clock the blow runs on
+This comes from the critic's s321 report, in its reviewed list rather than a finding: *the parry window reads `performance.now()` (0.2 s of real time) while the foe's wind-up runs in game time … on a machine that hitches below 5 fps mid-fight the window would close between two frames.* CLAUDE.md's rule is that a dropped frame must never change an outcome, and this breaks it, so it is a fix, not a design call.
+
+**What was wrong.** The loop caps its dt at 0.05 s. A foe's wind-up (`telegraphT`) counts down by that dt, while the parry compared the block's press against the blow in real seconds (`now/1000 - lastBlockAttemptT < 0.2`). Above 20 fps the two clocks agree. Below it, game time runs slower than real time, and the gap between them grows with every slow frame. At 5 fps, a block raised two frames before the blow is 0.1 s of wind-up and 0.4 s of real time, so it was never a parry. A player on a laptop that stutters in a fight lost parries they had timed right against what they could see.
+
+**What changed.** There is now a global play clock, `playClockS`: the loop's capped dt summed, the same clock a wind-up runs on. The right button stamps `lastBlockAttemptG` from it, and the parry window (200 ms + 10 ms a Finesse point) is read on it. `lastBlockAttemptT` stays for the late block's half-second grace, which pairs it with `lastHitT` on the real clock. The window's length did not change, and neither did the riposte (0.8 s from the parry, measured to the swing's start, both on the player's side of the fight).
+
+Seven suites that set `lastBlockAttemptT` to stand in for a parry or a held block now set `lastBlockAttemptG` to match: `counters`, `herbhidden`, `lvact`, `posture`, `tells`, `wardall` and `wardswift`.
+
+### Verified (headless Chromium)
+New `tests/parryclock.test.mjs`, 4 checks, passing, no page errors. It runs the game's own loop, not fixed ticks. Headless, that loop draws the world at 0.5–1 fps, which is the slow machine the critic described:
+- A Bandit with 0.1 s of wind-up left, the block raised as the right button raises it: the blow fell 2 frames, 0.1 s of play and 1.92 s of real time later. It was parried: no health lost, and a riposte opened.
+- The same trial with the old real-clock comparison put back: 3.92 s real, 5 health lost, no riposte. The check fails, as the critic predicted.
+- With 0.5 s of wind-up left (11 frames, 0.55 s of play, 21.7 s real), it is a held block, not a parry: no riposte, 8 posture spent.
+
+The seven suites above, `lockon` and `tpswing` pass.
+
+### Needs eyes
+Nothing at 60 fps, where both clocks agree. On the laptop, a fight during a hitch should now parry what the eye timed. A hitch between the press and the blow is counted as at most 0.05 s, so if anything the window is kinder while the game stutters.
+
+## v80 — Session 370 — `npm install` no longer exits 1 in the cloud container
+The critic's s321 report noted this under what it could not play: *`npm install` exits 1 in this container, because its `postinstall` tries `playwright install chromium` and the download is blocked. The tests still find the preinstalled Chromium, so it costs nothing, but a new agent may read the red as a broken harness.* This run's setup hit it too. `scripts/cloud-setup.sh` already falls back to `/opt/pw-browsers/chromium` (it installs with `--ignore-scripts`), but a plain `npm install` did not.
+
+**What changed.** `package.json`'s `postinstall` is now `playwright install chromium || test -x /opt/pw-browsers/chromium`. The download is still tried first everywhere. Only when it fails does the container's own Chromium count as success, and only if it is there. CI runs `npm install` and then its own `npx playwright install --with-deps chromium`, so it is unaffected. No game code changed, so the build tag is not bumped.
+
+### Verified
+- In this container, before the change: `npm install` exited 1 (`command sh -c playwright install chromium`). After it, it exits 0, and every suite this run used found the preinstalled Chromium.
+- Where neither the download nor the fallback exists, `false || test -x /nonexistent/chromium` exits 1, so a real failure still reads as one.
+
+### Needs eyes
+Nothing.
+
+## v80 — Session 371 — The Town Guard at level one, by the numbers
+This is G's owed check from Session 157, *whether the Town Guard is too hard at level one*. The feel is Michael's to judge. This session measures it so the judging has numbers. No game code changed, so the build tag is not bumped.
+
+**How.** New `tests/guardlevel1.test.mjs`. A new character (level 1, 130 health, armour 2, the Wooden GreatClub at 4–6, a swing every 0.555 s) swings 3,000 times at each of two foes. Each swing is rolled the way the world's melee code rolls it and passed through `applyMeleeDamage`. Each foe also strikes 3,000 times unblocked, through `executeStrike`, as its tick rolls the blow. The two foes are a drawn Town Guard (the Bandit body with `guardEnemy`'s numbers: 40 + 8 a level health, 6 + 1.2 a level damage, defence 3) and, for scale, the Bandit the world spawns. It is a race of damage against time: toe to toe, with no blocks, rolls or misses.
+
+| | health | defence | your swing does | dead in | its blow does | you fall in |
+|---|---|---|---|---|---|---|
+| Town Guard | 48 | 3 | 2.5 | 20 swings, 11.1 s | 7.5, every 1.91 s | 18 blows, 34.4 s |
+| Bandit | 25 | 2 | 3.5 | 8 swings, 4.4 s | 7.5, every 1.87 s | 18 blows, 33.7 s |
+
+**What it says.** At level one the guard is not deadlier than a Bandit: its blow is the same 7.5, on the same beat. It is 2.5× longer to put down, because it has twice the health and its defence of 3 takes about half of a starting club's 5–6. Standing and trading, a new character wins with about 85 health of 130 left, after about six blows. With the yield at a fifth of health and the guard's own offer to stand down, a level-one fight with the watch is long rather than dangerous. Whether that is too hard, too soft, or the right slog for breaking the law is Michael's call. Nothing is raised as a decision, because nothing here is broken.
+
+### Verified (headless Chromium)
+`tests/guardlevel1.test.mjs`, 4 checks, passing, no page errors. It checks that the character is level 1, that both foes were hit and hit back, and that the guard carries 48 health, 7 damage and defence 3 at level one. The table above is its output.
+
+### Needs eyes
+The fight itself: the approach, the blocks and the rolls this race leaves out, and whether 20 swings at a guard feels like a slog or a fight.
+
+## v80 — Session 373 — The Yard at Caer Slige
+Michael's A on #69: Hesket Rowe lives if she yields and is spared. The quest writer's draft, *The Yard at Caer Slige* (`docs/quest_drafts.md`), is built here, its lines word for word. It is also section B's owed *duels wait on a duel existing*. Until now the League's ninth service was a `road` quest with no camp: a Bandit Captain wearing Rowe's name, fought to the death. Winning it cleared a road at the seat, the compass drew it as *the camp*, and the Captain's line after it spoke of her burial.
+
+**What changed.** The service is its own quest kind, `duel`, with `data.state` running `wait` → `fight` → `yielded` → `won`, or `lost` or `murder`. `tickDuel(dt)` in the world's tick does the work:
+- **The yard.** Within 180 units of the spot east of the walls (the same `site.x+pad+14` as before), from 6h to noon, it lays a ring of 12 stakes and a rope, 5 units in radius. Round it stand a yard-sergeant and seven watchers of the garrison, Markmen with names from the Mark's bank, seeded by the quest so they are the same each visit. Rowe waits inside as a person. Her greeting is chosen by the player's people, and she has her two topics. Out of the ring's hours only the sergeant is there, with *Ring's down. It goes up at first light…*. The hour turning over re-lays or clears the yard.
+- **The fight.** The sergeant's *Call it.* puts a Bandit Captain named Hesket Rowe where she stood, with the full combat set, and logs *The duel at Caer Slige*. The watchers call out every 6–9 s, never the same line twice running. They name you by what is in your hand (*Blade*, *Hatchet*, *Hammer*, *Bowstring*, *Stick*, *Pin*, *Fists*), and they call a broken posture on either side.
+- **Her yield.** At a quarter of her health she kneels and holds (`_duelHold`, an early return in `tickZoneEnemies`). The kill path asks first (`WORLD.duelKill`, at the top of `killZoneEnemy`): a blow that would kill her before the yield leaves her at a quarter instead. Three seconds unstruck and she is spared. The ring comes down, she stands as a person with *Good fight…*, the quest completes and `league.rowe = 'alive'`. A blow after the yield kills her. That is `murder`: the sergeant's *She yielded. Every one of us saw it.*, the watchers turn their backs, the League is closed and `league.rowe = 'dead'`.
+- **Your yield.** Below 30% health Rowe offers it as the guard does, and holds while you answer. *I yield.* is a loss. So is stepping more than a unit past the rope once you have been inside. So is a killing blow: `playerDead` asks `WORLD.duelDown` first, and the ring holds you at 1 health, with no death counted. A loss sets `league.rowe = 'captain'` and a rematch day seven days on. The Captain names it once (*Give your arm a week*), then says *Not yet.* until the day comes, and the ring is laid again.
+- **The turn-in.** On `won`, rank 3 and the war as before, with the new line. The rank sentence now opens with a capital (*The Captains' League names you Captain.*), as the draft asked. On `murder`, the Captain turns you out with nothing paid, logs *The Captains' League has closed its gates to you.*, and the seat offers only *Not you. We've a long memory for the yard…* after. The compass marks *the yard* with ⚔ until you lose.
+
+`league.rowe` and `closed` sit inside `worldState.factions`, which the load already reads back. A save taken mid-fight lays the ring again from `wait`.
+
+**Left for the next session.** From the draft: Rowe at the seat afterwards (rank-3 League lines when she lives, *Captain Rowe* until the rematch), the murder rumour, and the occupied League town losing its duels (§12a). Out of the ring's hours Rowe is not yet anywhere to be seen. The draft's §10, the Compact's *cold-eyes* line, is the author's to take, so it is left alone.
+
+### Verified (headless Chromium)
+New `tests/duel.test.mjs`, 17 checks, passing, no page errors. At Caer Slige, with the League at eight services:
+- The service is a `duel`: *Meet Hesket Rowe in the ring east of Caer Slige*, and the brief carries the ring. At 8h, 24 ring parts, the yard-sergeant, 7 watchers and Rowe are there. The ground varies 0.2 units across the ring. The sergeant's topics are the rules, the weapons, *And if she dies?* and *Call it.*. Rowe greeted a Gatelander with *A turf-cutter on the yard…*.
+- *Call it.* gives a Bandit Captain of 62 health named Hesket Rowe. A blow taking her to −5 left her at 15 (a quarter), kneeling and yielded. 200 ticks later she was spared, stood as a person, and the ring was down. At the Captain: *The Captains' League names you Captain. Acclaimed. Rowe says you fought well…*, rank 3, nine services done.
+- A blow of 3 after the yield: dead, `murder`, the League closed, all seven watchers turned through π, and the ring down. At the Captain the murder line with the services left at eight, then *Serve the Captains' League?* → *Not you.*
+- At 20% health Rowe's offer opened and she held. *I yield.* → `lost`, rematch day 7, Rowe the Captain, not dead. The Captain gave the week, then *Not yet.* A week on the ring was laid again. Stepping 6.5 units out in the fight was a loss. `playerDead()` at 0 health in the ring left 1 health, `dead` false, and no death counted.
+- At 14h only the sergeant, with *Ring's down*, and no *Call it.*. At 8h the ring was back.
+
+`caravan`, `crime3`, `crime4`, `prices`, `foes` and `reader` pass.
+
+### Needs eyes
+- The fight itself: whether a Bandit Captain's numbers make Rowe a worthy finale at a Reeve's level, and whether the watchers' calls read above the fight.
+- Rowe's kneel is her body lowered 0.45 units, not a pose. A real kneel is the look builder's.
+- The ring and its people at Caer Slige's yard: whether the spot east of the walls is clear of the town's buildings and road on every world.
+
+## v80 — Session 374 — Rowe after the yard, the rumour, and an occupied seat's duels
+This finishes Session 373's draft, *The Yard at Caer Slige* (Michael's A on #69), with its lines word for word. It also finishes section B's owed occupation effects from the canon. Session 266 built the Compact's tithe. The League's half, *an occupied League town loses its duels* (canon §12a, decision #37), waited on a duel, which now exists.
+
+**What changed.**
+- **Rowe at the seat.** `rivalBeat` left the League out at rank 3, because she used to die. It now reads `league.rowe`:
+   - Spared (`'alive'`): she stands at Caer Slige with the League's rank-3 lines. *Captain. Took me a week to stop favouring the left…*, *What now, Rowe?* (the spire, and a witness who can't be paid in light), and *I'm not, now. Don't get used to it.*
+   - Beaten (`'captain'`, the rematch week, while the duel is `lost`): she is *Captain Rowe, for a week at least*, and *How are you ahead of me?* gets *I was a step slow on the left, and you didn't see it.*
+   - Once the week is out and the ring is laid, she goes back to the yard. The rival's key now carries the beat, so the change swaps her lines.
+   - Killed (`'dead'`): she is at no seat.
+- **The rumour.** After the murder, while the League stays closed, the Mark's towns can give *Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.* among their live rumours (`liveRumours`). No other nation's towns carry it.
+- **An occupied seat lays no ring.** While Caer Slige is occupied, `tickDuel` lays nothing: no ring, no sergeant, no Rowe. A yard already laid and waiting is cleared. Freed, the ring is laid again in its hours. A fight already under way when the town falls is left to finish.
+
+The world module now exports `rival` and `liveRumours` for the test.
+
+### Verified (headless Chromium)
+`tests/duel.test.mjs` has 21 checks now, all passing, with no page errors. The four new ones:
+- Spared and turned in, two world ticks at the seat raise the rival, and her lines are the League's rank-3 set.
+- After the murder, 60 draws of Caer Slige's live rumours include the line and 60 of Dunmore's do not. Rowe is at no seat.
+- In the rematch week she is at the seat as *Captain Rowe*, with the *step slow on the left* answer.
+- With the ring laid (24 parts), flagging Caer Slige occupied clears it: 0 parts, and no sergeant. Clearing the flag lays it again: 24.
+
+`mainquest`, `autosave` and `wholepoints` pass.
+
+### Needs eyes
+- Rowe standing at Caer Slige for good after a win: whether she should one day move on, or be found at the spire when *the spire to hold* is built.
+- The occupied town's other half, *gains patrols*, is not built. The occupier's garrison already holds the plaza, so whether that is enough is Michael's call. It is not raised as a decision, because nothing is broken.
+
+## v80 — Session 375 — A seen theft at level one, by the numbers
+This is G's owed check from Session 168: *a seen strongbox theft now costs 50 + what you took (doubled at a yield); whether that is steep at level one*. The feel is Michael's. This session measures it, the way Session 371 measured the guard. No game code changed, so the build tag is not bumped.
+
+**How.** New `tests/theftlevel1.test.mjs`. A new character straight out of the creator is set against every shop strongbox in Dunmore (prosperity 61) and Portclare (56), read through the game's own numbers:
+- the takings: `boxCoins` at the town's prosperity, which the box rolls at ×0.8–1.2;
+- the one thing from the shop's own stock (`SHOP_STOCK`);
+- the fine if you are seen, 50 + both, and the yield's double of it.
+
+Each town's level-one jobs from `townQuestFor` give the scale.
+
+| | the takings | the thing | seen, fined | at a yield |
+|---|---|---|---|---|
+| a forge or armoury | 46–49 (36–58) | 17–22 (5–44) | 112–121 (91–152) | 224–242 |
+| an apothecary | 30–32 (24–39) | 30 (15–40) | 111–113 (89–129) | 222–226 |
+| a goods shop | 38–41 (30–49) | 9 (2–18) | 97–100 (82–117) | 194–200 |
+
+A level-one job pays 55–97 in Dunmore and 52–87 in Portclare, a median of 66. The new character carries 0 gold.
+
+**What it says.** A seen theft is fined 97–121 (median 111), about 1.7 level-one jobs. A new character has nothing but what they just took, and the takings are 30–49, so they cannot pay the fine on the spot, let alone the yield's 194–242. What is left at level one:
+- **The cells.** They cost no gold: the takings and the thing go back, the fine is cleared, and a night passes.
+- **Walking off with it.** The bounty stands, favour is down 2, and the keeper refuses you for five days.
+
+Paying never profits. A thief seen and paying is always out 50 plus the difference between the thing's price and its resale. So at level one, being seen means a night in the cells or a debt to the town, never a loss of money, because there is none to lose. Whether that is too steep, too soft, or rightly a debt rather than a purse is Michael's call. Nothing is raised as a decision, because nothing here is broken.
+
+### Verified (headless Chromium)
+`tests/theftlevel1.test.mjs`, 4 checks, passing, no page errors. It checks the level, the 12 shops (seven in Dunmore, five in Portclare), the jobs, and that every fine is 50 + the takings + the thing. The table above is its output.
+
+### Needs eyes
+Whether a new character should start with a purse at all. Here it is 0 after the creator; the tutorial's first coins come later. And whether the cells, costing no gold, read as a punishment.
+
+## v80 — Session 376 — The lock's timing, by the numbers
+This is G's owed check from Session 142: *pick a dungeon door by feel — whether the hold window is fair, and whether losing a set pin on a snap is too harsh*. The feel is Michael's. This session measures what can be measured, and no game code changed.
+
+**How.** New `tests/lockfair.test.mjs`.
+- It reads every town lock in Dunmore and Portclare through the game's own `lpDifficulty`: 12 shop doors, 12 strongboxes, 66 home doors and 66 home chests. It also reads 200 dungeon chests spread over floors 1–3, half of them treasure. Each is read at Finesse 0 (a new character), 5 and 10.
+- The pin rises for a fixed 170 ms, then holds. The press must land in the hold.
+- The snap is worked out exactly, as a walk up the pins: a press sets one, or snaps a pick and drops the last pin set. That is set beside the same walk with no pin dropped, and checked against 200,000 simulated locks.
+
+| lock | pins | the hold at Finesse 0 | Finesse 5 | Finesse 10 |
+|---|---|---|---|---|
+| shop door | 3–4 (9 of 12 are 4) | 153–188 ms | 263–298 | 373–408 |
+| strongbox | 3–4 | 167–208 | 277–318 | 387–428 |
+| home door, home chest | 2–3 | 177–244 | 287–354 | 397–464 |
+| dungeon chest | 2–4 | 150–242 | 260–352 | 370–462 |
+| treasure chest | 3–5 | 122–216 | 232–326 | 342–436 |
+
+Expected picks snapped to open a lock:
+
+| pins | misses 1 in 10 | 1 in 5 | 1 in 3 |
+|---|---|---|---|
+| 2 | 0.23 (0.22 if a snap kept the pins) | 0.56 (0.50) | 1.25 (1.00) |
+| 3 | 0.36 (0.33) | 0.89 (0.75) | 2.12 (1.50) |
+| 4 | 0.48 (0.44) | 1.22 (1.00) | 3.06 (2.00) |
+| 5 | 0.61 (0.56) | 1.56 (1.25) | 4.03 (2.50) |
+
+**What it says.**
+- **The hold.** At Finesse 0 every hold is 122–244 ms, so the press is due 170 ms after the push and is gone by 292–414 ms. A typical simple reaction to something seen takes 200–250 ms. That is a general human figure, not a measurement here. A press made *in answer to* the pin reaching the top therefore comes at about 370–420 ms, after the hold on almost every lock. At Finesse 0 the lock is a rhythm to learn, not a reaction: the rise is always 170 ms, so the same double press opens every pin. Each Finesse point adds 22 ms. By Finesse 5 the hold runs to 402–524 ms, and a reaction lands in most of them.
+- **The dropped pin.** It hardly matters to a steady hand: 0.48 picks against 0.44 on four pins at 1 in 10. It costs half again to a shaky one: 3.06 against 2.00 on four pins at 1 in 3, and 4.03 against 2.50 on a five-pin treasure chest.
+
+Whether a Finesse-0 lock should be learnable by rhythm alone, and whether a shaky hand should pay half again, are Michael's calls. Nothing is raised as a decision, because nothing here is broken.
+
+### Verified (headless Chromium)
+`tests/lockfair.test.mjs`, 5 checks, passing, no page errors. The character has Finesse 0. 356 locks of six kinds were read at three Finesse levels. No hold is below its 110 ms floor, and Finesse only lengthens it. The exact snap count for four pins at 1 in 3 matches the simulation within 0.05. The tables above are its output.
+
+### Needs eyes
+Picking a Finesse-0 shop door and a five-pin treasure chest by hand, to see whether the rhythm is found or the lock feels like chance.
+
+## v80 — Session 378 — The street grid goes stale
+CI on 32ed275 (PR #22) failed one check of `watch`: at favour −2 the trailing guard, Eilís, stood 38.56 units off after 30 s and 36.17 after 23 s more, closing on nothing. It passed locally, where the pick fell to another guard, and the producer called it the known flaky trailing-guard check. It is not a flake.
+
+**The cause.** `townRoute` reads the town's walking grid once, from `solidAt`, when the town is first asked for a way (in practice, as it is built). Solids keep arriving after that: the chunks' trees and rocks and the town's later pieces come through the job queue. In Dunmore the live solid cells on the grid's own lattice numbered 3,710 at the build, 3,778 after six minutes of night, and 3,928 back at noon. Ways the cached grid gave then crossed cells that had gone solid: 1, then 2 of 2,083 path cells between 30 random street pairs. A guard following a cell-by-cell way (Session 357's fallback for a man who has gained nothing for 1.5 s) pushes into such a cell and never reaches it. After 1.5 s more he asks again, and the same grid gives the same way, so he stands there for good. How many solids land before the grid is read depends on how fast the job queue runs, so a slow runner meets it and a quick one mostly doesn't. The night beat, the chasing guard and the trailing guard all walk by this grid.
+
+A sweep of 478 start points across Dunmore's pad, and four replays of the test's own night-then-noon sequence with each guard on duty made the follower, did not reproduce it locally. Every guard arrived, some by long detours round the walls. The stale grid was found by counting, not by watching a guard stick.
+
+**What changed.** `townRoute` checks every way it returns against the world as it is now. A cell of the way that has gone solid is marked on the grid and the way is found again, up to twelve times. A search that finds no way at all reads the whole grid afresh, once. A way that is still clear costs one `solidAt` a cell. The grid never unmarks a cell on its own; a full refresh does that when a way is lost.
+
+### Verified (headless Chromium)
+`tests/watch.test.mjs` has a new eighth check. With the grid built, a 2.4-unit box goes down on the middle of the way from the house corner of Session 357 to the player:
+- On the old build the way still runs through the box, 3 of its 21 cells solid, and again when asked a second time. The guard sent from the corner stops 15.94 units off, the CI failure in miniature.
+- On the new build the way keeps off the box (0 solid cells, still 21 long) both times, 26 other ways near it have no solid cell, and the guard reaches 8.00.
+
+`watch` 8/8. `beat`, `constable`, `guardsindoor`, `burglary`, `crime2` and `livepick`, which walk guards by the same grid, all pass. Build tag s341.
+
+### Needs eyes
+Nothing to see in play unless a guard was already caught. A guard trailing you in a town that has just loaded should no longer stand at a tree or a stall that arrived after the town did.
+## v80 — Session 372 — `watch` and `hourhitch` red on the Auto sessions PR: the systems builder's fixes, ported (CI fix)
+Section H has nothing workable left: every item is done or answered, no question is pending in `docs/decisions.md`, and the quest review's Findings 1–4 are already on main. So this run's one session is CI. The Auto sessions PR's run on `7ec445a` (the merge of main at 13:24) failed two suites, `watch` and `hourhitch`. The sixth shard was cancelled after it had passed 20 of 20.
+
+Both are the systems builder's, and both are fixed on auto/systems but not yet on main. Session 360 left `watch` to arrive through main. It has not, so both fixes are ported here word for word. They no-op when main takes auto/systems.
+- **`watch`** (the trailing guard 36–41 units off): Session 358's `trailStep` in the world module. When the guard has gained nothing on you for a second and a half (a house corner the pulled-straight way misses, where `npcStep` gives up), he takes every cell of the street grid. The chasing guard uses the same step. The ported hunk is Session 358's `index.html` change without its build-tag line. auto/systems has not touched those lines since, so the later merge meets the same text on both sides. Its test file is ported verbatim, including the check from the corner where he stuck.
+- **`hourhitch`** (a frame over 8 s after a change of hour): the test file as auto/systems has it after Sessions 358 and 362. The first greeting bubble's program, and a step in which a foe's program first appears, count as a first use, not the hour. That change is in the test only.
+
+### Verified (headless Chromium)
+- `watch` 7/7 with the port. The trailing guard is at 7.99 both times. From the corner he reaches 7.99 within 20 s.
+- `watch` on this branch's code *without* the ported hunk fails the corner check: he stands at 21.49 for the whole 20 s. That is the failure reproduced.
+- `hourhitch` 6/6. This run shows the case CI hit: the step to 21h took 8,922 ms as a foe's skinned material compiled on first draw. It is set aside and named. The judged worst is 4,218 ms against a noon worst of 1,923.
+- `guardsindoor`, `beat` and `constable` (the guards' other paths) pass.
+
+### Needs eyes
+- Nothing to see in play beyond Session 358's own note: a guard trailing you round a house corner should now come round it.
+- `npm install`'s postinstall still exits 1 in the cloud container on this branch. Session 370's fix for that is on auto/systems and reaches here through main. The packages install regardless.
+
+## v80 — Session 377 — `guildfurn` read the hall before it was built (CI fix)
+Section H still has nothing workable: every item is done or answered, `docs/decisions.md` has nothing pending, there are no open DECISION issues, and the quest review's last run had no findings. The Auto sessions PR's run on `51943c2` (Session 372) failed one suite on shard 4: **`guildfurn`**, straight after *a guild_f hall is found*, with `Cannot read properties of null (reading 'children')`. The test found the hall, called `goToInterior`, waited a fixed 4 s and then read `interiorScene`, which was still null.
+
+`goToInterior` builds the room inside `doFade`'s callback, which a 440 ms `setTimeout` runs. On a loaded CI runner the page's main thread is busy with software GL frames and the settlements the test has just generated, so that timer can fire after the 4 s have passed. That is a fixed pause standing in for a state the test can wait on. The fix is in the test only:
+- After asking to leave a room, it waits until `currentHouse` is cleared.
+- After `goToInterior`, it waits until `currentHouse` is the hall, `interiorScene` exists and `scene` is it. The same callback sets all three and builds the room. Then it waits five real frames of the loop.
+- Each wait polls every 100 ms for up to 60 s.
+
+`civicfurn` has the same `enter` helper and fixed pauses. It has not failed on CI, so it is left alone here.
+
+### Verified (headless Chromium)
+- **Reproduced:** with `doFade`'s callback delayed to about 5 s (as a slow runner would), the old test fails exactly as CI did: `TypeError: Cannot read properties of null (reading 'children')` after *a guild_f hall is found*.
+- With the same delay, the new test passes 7/7.
+- Without the delay, the new test passes 7/7 three runs in a row. The counts are unchanged from Session 293: seven furniture objects a hall, the desk and the table footholds, eight or more beds and three members.
+
+### Needs eyes
+- Nothing to see in play. The game is unchanged apart from the build tag.
 ## v80 — Session 368 — The split script (backlog K, step 1: prep, no freeze)
 Michael's 30 Sep answer on `docs/design/split-plan.md` was all seven recommendations, so this session built the tooling for backlog K's first step on `auto/split`, without touching the layout main runs on. Two things are in the branch: one small change to the game's code, and the scripts and harness changes that will cut it up on switch-over day.
 

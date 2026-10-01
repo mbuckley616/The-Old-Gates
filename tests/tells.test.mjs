@@ -32,7 +32,7 @@ check('half the glow at 0.075 s left, all of it at the strike', Math.abs(r.left0
 const e2e = await page.evaluate(() => {
   const e = buildZoneEnemy(WORLD.scene, [], px + 1, pz, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
   e.locked = false; e.alert = true; e.x = px + 1; e.z = pz; e.telegraphT = 0; e.atkCd = 0; e.spd = 0;
-  PHP = maxHP; blocking = false; ROLL = null; lastHitT = -99; lastBlockAttemptT = -99; PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0;
+  PHP = maxHP; blocking = false; ROLL = null; lastHitT = -99; lastBlockAttemptT = -99; lastBlockAttemptG = -99; PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0;
   const keep = ZE; ZE = [e]; let frames = 0, started = -1, glowFrom = -1;
   try {
     for (let i = 0; i < 90 && PHP === maxHP; i++) {

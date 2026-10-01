@@ -47,6 +47,7 @@ The quest writer has drafted the real duel at Caer Slige (`docs/quest_drafts.md`
 The draft is written for A. B and C each change only the lines marked **(fate)**.
 
 Michael: **A** — . (30 Sep 2026, via the control room)
+Built, Session 373 (systems builder): the draft's yard, fight, both yields, murder and the turn-ins, word for word, with the ring's hours; `tests/duel` 17/17. Session 374 built the rest: Rowe at the seat afterwards (spared, or Captain for the rematch week), the murder rumour in the Mark, and no ring while Caer Slige is occupied; `tests/duel` 21/21.
 
 ### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
 `docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
@@ -70,6 +71,15 @@ Michael: **B** — Alchemy should have 3-4 effects per harvestable item / herb, 
 If we are going to have mining we will also need smithing / joinery. Woodcutting also has fletching for bows and arrows.
 
 I am envisioning a player sailing for a long while, and having to stop to cut wood to repair their ship, maybe to collect materials to make arrows / collect herbs and food. (30 Sep 2026, via the control room)
+
+### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
+A shop with a back room keeps its strongbox behind a shut door, and the keeper never sees it there. A one-room shop keeps the box in the shop itself. A keeper indoors sees you within six units with a clear line, and walks the floor all day. `tests/shopsight` measured 13 one-room shops in four towns at 13h, with ten minutes of the keeper's own walk each, and they split in two. Eight are seen 93–100% of the time. Five are seen 0–10%: Dunmore's three Goods shops, Odhrán's Stores and Mira's Apothecary, where the box stands 5.5–6.6 units from the counter. Whether a daylight theft is possible comes down to how wide the room happens to be.
+- **A. The keeper sees the whole room.** In a one-room shop, a keeper who is inside sees you anywhere in it. The box is taken at night, through the door. One short session.
+- **B. The keeper sees what they face** *(recommended)*. Indoors, sight becomes a cone the way the keeper is facing (about 120°) as well as the six units. Their walk already turns them every 1.5–5 s, so every one-room shop has gaps a player can watch for. One session.
+- **C. Leave it.**
+
+Michael: **B** — the keeper sees what they face (indoor sight becomes a ~120° facing cone plus the six units). (30 Sep 2026, on issue #73)
+Built, Session 368 (systems builder): indoors a keeper or a guest sees you only within 60° either side of the way they face, as well as within six units with a clear line. Found on the way: the keeper's walk bounced off its bounds with the axes swapped, so a keeper who reached the counter side walked on into it, facing the box; fixed. One-room shops are now in sight 0–35% of an open day (were 93–100% for eight of them); a 6 s pick is seen 16–85% of the time. Issue #73 closed.
 
 ### How to split index.html — file count, naming, cut points, the if(REN) wrapper (Fable exploration, local session, 2026-09-30)
 Backlog K's step 1, explored read-only: the one inline script (lines 1130–46307) cuts into ~31 plain `<script src>` files, every cut on a top-level statement boundary. The plan, the hazards and the numbers are in `docs/design/split-plan.md`. Seven questions: Q1 file count (~31, by the natural sections); Q2 naming (`js/NN-name.js`, numbered by load order); Q3 cut points found by pattern, not marker comments; Q4 remove the dead `if(REN){…}` wrapper (15k lines, 44% of the code) in its own commit first; Q5 CI later runs only the suites a change touches, once the layout settles; Q6 the CSS stays in index.html; Q7 step two breaks up the WORLD IIFE, starting with its 4,390-char `return {…}` line — the split alone barely cuts merge conflicts, since both builders edit inside that IIFE.
@@ -100,7 +110,8 @@ So one night in Dunmore expects about 900 gold for one or two 25-gold fines. For
 - **C. A and B.**
 - **D. Leave it** until the skills sessions give Sneak and Security numbers of their own.
 
-Michael: **A. Cut the strongbox, keep the risk** — . (30 Sep 2026, via the control room)
+Michael: **A. Cut the strongbox, keep the risk** (30 Sep 2026, on issue #68).
+*Done, Session 361:* `boxCoins` in the world module: 10 + 50 a 100 prosperity, times the shop's kind (1.2 arms, .8 apothecary), times .8–1.2 luck. Dunmore's seven boxes 285 a night (was 910), Portclare's five 190 (was 605). The item stays; the door's risk is unchanged.
 
 ### Making a spell — the Magic tab for words of the deep tongue (the concept artist, 2026-09-29, issue #67)
 `docs/prototypes/spellmaking/index.html` (auto/concept) shows three layouts of the parchment composing page: a player making Cloch, laid (a stone pillar, 55 mana) from an Evoker's four of five forms and seven known words of twenty-four. What each word does in each form is later text for the quest writer.
@@ -119,7 +130,9 @@ The critic's s253: forty minutes on the road ended in a death, and the death loa
 - **C. The minimum**: sleep and a dungeon door only.
 - **D. Leave it**: the manual save and today's moments.
 
-Michael: **A** — at rest and at thresholds. (29 Sep 2026, via the control room)
+Michael: **A** — at rest and at thresholds (29 Sep 2026, on #66, via the producer).
+
+*Done, Session 353:* sleeping anywhere (`restAtBed`), the dungeon door going down (saved at the threshold, in the world; going up already saved), arriving on a town's pad (not with an alert foe within 30, not riding the coach in) and stepping off the coach each autosave. The ring's one-per-90-seconds gate stands.
 
 ### Should a mayor offer to build what the town already has? (systems builder, 2026-09-29, issue #65)
 The critic's s253: a lord offers *Pay for an inn / a chapel / walls / a guild hall* by what you have paid for there before (`investTopics` reads `st.builds`), not by what stands. Dunmore (prosperity 61) has four inns, a church, two guild halls and log walls, and its lord offers all four. A paid inn, chapel or guild hall where one stands adds no building (the generator adds each shop type once); paid walls only lift a fence to logs below prosperity 45. What the payment still does is add prosperity (+8 to +10) and count toward the three builds that unlock *Take the deed*.
@@ -129,7 +142,9 @@ The critic's s253: a lord offers *Pay for an inn / a chapel / walls / a guild ha
 - **C. A, and a big town's deed asks for favour instead**: where fewer than three builds are possible, the deed needs favour 8 in place of three builds.
 - **D. Leave it.**
 
-Michael: **A** — offer only what the town lacks. (29 Sep 2026, via the control room)
+Michael: **A** — offer only what the town lacks (29 Sep 2026, on #65, via the producer).
+
+*Done, Session 352:* `buildStands` reads the live town's houses (the plan's list at today's prosperity when it isn't loaded): no inn where an inn stands, no chapel where a church does, no guild hall where either hall does, no walls where the ring is logs or better. Dunmore's lord now offers the well only. Walls stay on offer in villages and ports, which have no ring: there a payment builds nothing you can see, though at a port it keeps the black sails off.
 
 ### Unblock auto/systems — a walls/LOD test failed on one of two CI runs (the producer, 2026-09-29)
 PR #22 (auto/systems, head 7e4b078) had two CI runs on the identical commit: the push-triggered run passed all 18 suites clean; the pull-request-triggered run failed one — walls.test.mjs's distant-LOD check ("its detailed clusters show near and give way to their plain twins far") — with the other 17 suites green. Session 341, the only change since Michael's last approval, touches buff stacking (a weaker herb or Shield no longer ending a stronger shrine boon); nothing in it touches walls, towers, or LOD. Same pattern as the unblock-auto-systems flake Michael ruled on two days earlier.
@@ -142,7 +157,7 @@ Michael: **A — merge anyway.** (29 Sep 2026, via Slack)
 
 Claude merged 7e4b078 onto main as 1445aaf. Session 350 (on auto/systems) root-caused it for real afterwards: the check measured a town the loader had already streamed out, 1,300 units off, in 1 run in 3; it now measures the live town and passes 6 of 6.
 
-### What Fortune's "+1% loot quality" does (the systems builder, 2026-09-29, issue #64)
+### What Fortune's *+1% loot quality* does (systems builder, 2026-09-29, issue #64)
 The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit is built (Session 328). No code reads loot *quality*: a dropped sword is the same tier at Fortune 0 and 10. Fortune does two things the card never mentions, both since v61c0: +5% a point on every gold roll (`rollGold`: barrels, corpses, chests), and +2.5% a point on the chance a slain foe drops an item (`lootDropChance`, base 35%). A Fortune build gets something real but is told something else.
 
 - **A. Make the card say what Fortune does** *(recommended)*: *+2% crit chance, +5% gold found, +2.5% item drop chance* a point. No rule changes, and it is the truth.
@@ -150,7 +165,7 @@ The Fortune card promises *+2% crit chance, +1% loot quality* a point. The crit 
 - **C. Quality instead of more gold**: B's 1% a point for the tier, and the gold roll's +5% a point is removed (the drop chance stays).
 - **D. Leave it** until the skills proposal decides what Fortune is for.
 
-Michael: **A** — make the card say what Fortune does. (29 Sep 2026, via the control room)
+Michael: **A** — make the card say what Fortune does. (29 Sep 2026, via the control room; issue #64) Built in Session 346: the card, the level-up lines and the hub read +2% crit, +5% gold found, +2.5% item drop chance a point.
 
 ### The interiors' shells on the kit — posts and joists, or only the trim? (the look builder, Session 336, issue #62)
 The furniture and the windows are on the kit now, and the room around them is the flattest thing left: four flat wall planes, a flat dark ceiling, square box beams, a plain brown door, and in Aurenne's rooms square box studs. A prototype builds a kit shell for the generated rooms (homes, shops, inns, halls): walls keep their plaster, rubble or ashlar textures.

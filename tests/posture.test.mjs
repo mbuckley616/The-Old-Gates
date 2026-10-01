@@ -14,13 +14,13 @@ const r = await page.evaluate(() => {
   const reset = () => { PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0; PPOST.broke = false; PPOST.lastHitAt = 0; ROLL = null; PHP = maxHP; stamina = maxStamina; staminaCD = 0; };
   const T = 5000;
   // unblocked
-  reset(); blocking = false; lastBlockAttemptT = -99; lastHitT = -99; executeStrike(mk(), 20, T * 1000); out.open = +(out.max - PPOST.posture).toFixed(2);
+  reset(); blocking = false; lastBlockAttemptT = -99; lastBlockAttemptG = -99; lastHitT = -99; executeStrike(mk(), 20, T * 1000); out.open = +(out.max - PPOST.posture).toFixed(2);
   // held block (raised long before the blow)
-  reset(); blocking = true; lastBlockAttemptT = T - 5; executeStrike(mk(), 20, T * 1000); out.held = +(out.max - PPOST.posture).toFixed(2); out.heldBlock = blocking;
+  reset(); blocking = true; lastBlockAttemptT = T - 5; lastBlockAttemptG = playClockS - 5; executeStrike(mk(), 20, T * 1000); out.held = +(out.max - PPOST.posture).toFixed(2); out.heldBlock = blocking;
   // perfect parry (raised just now)
-  reset(); blocking = true; lastBlockAttemptT = T - .05; executeStrike(mk(), 20, T * 1000); out.parry = +(out.max - PPOST.posture).toFixed(2);
+  reset(); blocking = true; lastBlockAttemptT = T - .05; lastBlockAttemptG = playClockS - .05; executeStrike(mk(), 20, T * 1000); out.parry = +(out.max - PPOST.posture).toFixed(2);
   // the guard breaks: 10 left, a held block of 20
-  reset(); PPOST.posture = 10; blocking = true; lastBlockAttemptT = T - 5; executeStrike(mk(), 20, T * 1000);
+  reset(); PPOST.posture = 10; blocking = true; lastBlockAttemptT = T - 5; lastBlockAttemptG = playClockS - 5; executeStrike(mk(), 20, T * 1000);
   out.broke = { stag: playerStaggered(T + .01), blocking, msg: document.getElementById('msg') ? document.getElementById('msg').textContent : '', posture: PPOST.posture };
   out.stagAt79 = playerStaggered(T + .79); out.stagAt81 = playerStaggered(T + .81);
   // open: no roll while staggered; a second blow in the stagger drains nothing more and doesn't re-stagger
@@ -36,7 +36,7 @@ const r = await page.evaluate(() => {
   reset(); PPOST.posture = out.max / 2; tickPlayerPosture(0, T); const w = document.getElementById('psw'), b = document.getElementById('psb');
   out.bar = { shown: w && w.style.opacity, width: b && b.style.width };
   reset(); tickPlayerPosture(0, T); out.barFull = w && w.style.opacity;
-  reset(); blocking = false; lastHitT = -99; lastBlockAttemptT = -99;
+  reset(); blocking = false; lastHitT = -99; lastBlockAttemptT = -99; lastBlockAttemptG = -99;
   return out;
 });
 console.log(JSON.stringify(r));
@@ -56,7 +56,7 @@ const e2e = await page.evaluate(() => {
   const e = buildZoneEnemy(WORLD.scene, [], px + 1, pz, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
   e.locked = false; e.alert = true; e.x = px + 1; e.z = pz; e.combatYaw = Math.atan2(px - e.x, pz - e.z);
   e.telegraphMax = .5; e.telegraphT = .001; e.atkCd = 0; e.spd = 0;
-  PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0; PPOST.broke = false; PHP = maxHP; blocking = false; ROLL = null; lastHitT = -99; lastBlockAttemptT = -99;
+  PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0; PPOST.broke = false; PHP = maxHP; blocking = false; ROLL = null; lastHitT = -99; lastBlockAttemptT = -99; lastBlockAttemptG = -99;
   const keep = ZE; ZE = [e]; const rnd = Math.random; Math.random = () => 0;
   const def2 = Object.values(EQ).reduce((a, v) => a + (v && v.def ? v.def : 0), 0), raw = Math.max(1, e.dmg - Math.floor(def2 * .5));
   try { tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); } finally { ZE = keep; Math.random = rnd; }
