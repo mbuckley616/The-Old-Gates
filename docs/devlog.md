@@ -9839,3 +9839,88 @@ Michael gave the go in the split session at 4:40 pm Central on 30 Sep, condition
 - Michael: paste the file list (CLAUDE.md, "The split layout") into the two builders' prompts and re-enable their routines once this PR is on main. The producer merges main into each `auto/*` branch as usual (clean: none carries an `index.html` change).
 - A playtest from GitHub Pages and from a downloaded folder: the page should look and play exactly as s341 did; the only visible change is the tag.
 - Step 2 of K (break up `80-world.js`'s `return {…}` line, then the IIFE) is its own Fable session; decision #75's clean-up (remove `split.py`, `join.py`, the manifest) in a release.
+
+## v80 — Session 380 — A fist on screen: the prototype (H, owed since Session 174)
+Every item in section H is done or answered, so this run looked for look work owed elsewhere. Session 174 made fists the empty hand's weapon and left two things owed to H: a bare body in third person, and a fist on screen in first person. The fist is still missing. `buildViewmodel` returns early without a weapon, so an empty hand draws no fist and no arm, and nothing moves when you punch. This is a visual item that Michael has not described in his own words, so it goes to him as a prototype first.
+
+The prototype is `docs/prototypes/fists/shots.mjs` and changes no game code. It builds one fist from the people's shape kit: a rounded back of the hand, four knuckles, the fingers folded under them, the thumb laid across them and a short wrist, baked into one vertex-coloured mesh. That is 1,980 triangles, or 2,400 wrapped. The fist is posed straight into the view scene with today's sleeve bridges from the shoulder anchors. There are three options, each shot at rest, mid-jab and in guard. A has both fists up: the right throws a straight jab that turns palm-down, and block brings both fists to the face. B is the right fist alone, at the weapon's rest, swinging through the sword arcs. C is A with the hands in linen wraps. A is recommended. The question is DECISION #80 and is pending in `docs/decisions.md`.
+
+**Found on the way: a punch never lands in play.** The loop counts `swingT` down and fires the deferred strike only inside `if(vmSword)`. With no weapon, `vmSword` is null, so the swing sticks and the strike stays pending. Measured in real frames: with the Wooden GreatClub the swing ran to 0 and the strike fired. Bare-handed, `swingT` stayed at 0.429 through 30 frames, `_pendingStrike` stayed set, and a dummy took 0 damage. `tpPose` reads the same timer, so the third-person arm freezes mid-swing as well. Session 174's `unequip` test resolves the strike directly, which is why it never saw this. The loop's timing is combat, the systems builder's, so it is filed as issue #81 with a proposed fix (run the timer and the strike outside the view model block) and left untouched here. Any of A–C would hide it by giving the empty hand a view model, which is one more reason the fix belongs in the loop.
+
+### Verified (headless Chromium)
+The probe of the punch is above: 0.429 s held for 30 frames, the strike pending, 0 damage, against a weapon's swing running out. The prototype script runs clean (no page errors) and writes `docs/prototypes/fists-today.png`, `fists-a.png`, `fists-b.png` and `fists-c.png`. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #80. Unresolved in every option: the sleeve bridge's flat end shows where the arm comes up steeply in the guard pose. The bridge is the weapon view's own, and the in-game build should round it off. The bare body in third person stays owed and has no prototype yet.
+
+## v80 — Session 381 — The empty slots in third person: the prototype (H, owed since Session 174)
+This is the other half of what Session 174 left owed to H. Every slot can be emptied, but the third-person body still wears the tunic, breeches and boots coloured in the creator: `tpBuild` falls back to the look's colours when a slot is empty. So taking off the Tattered Tunic changes nothing you can see. Whether the body should show anything else, and what, is a look question with a register to it, so it goes to Michael as a prototype.
+
+The prototype is `docs/prototypes/barebody/shots.mjs` and changes no game code. It calls `tpBuild` with the look's colours overridden, and for B it wraps `buildPerson` for the one call so that the sleeves take the skin's colour. It builds a man (Aodh) and a woman (Brídín), each from the front and from behind, three ways. Today's figure is the creator's clothes. B is undyed linen underclothes: a shirt with bare arms, braies and bare feet. C is the same with long linen sleeves. B is recommended: it reads at a glance as undressed, and it lets the creator's colours belong to the starting clothes rather than the body. The question is DECISION #83 and is pending in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/barebody-grid.png`. The genome gave a man for Aodh and a woman for Brídín, as intended. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #83. At the prototype's scale and in this light, the skin and undyed linen sit close in tone, so B and C differ less than they would in the game. The bare feet in the shot are boots coloured as skin, and a build owes them a foot. The shirt keeps the tunic's cut and flare for the shot.
+
+## v80 — Session 384 — The worn armour by material (H.2, Michael's B on decision #76)
+Michael answered the concept artist's armour question on 30 Sep with B: four builds, and a mark for each rare metal. No session had built it, and the armour on the third-person body is H's (People, "a kit block for armour", Session 154), so this run took it. Until now every material wore one shape in a different colour: a lathed shell over the tunic, two shoulder balls, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm.
+
+The concept artist wrote the prototype (`docs/prototypes/armour/armour.js` on auto/concept) as a drop-in for `personBakeQ`, and it goes in as drawn. `AR_FAM`, `AR_SIG`, `AR_FROM_EQ` and `ARMOUR_DRESS` now sit in `js/32-people.js` above `personBake`. Wooden is laced lamellar with a skull-cap and a leather curtain. Bronze is a muscle cuirass with pteruges and a crested helm. Iron is a mail hauberk with a nasal helm. Steel is plate: a keeled breastplate, faulds and tassets, three-lame pauldrons, couters, greaves, sabatons and a closed helm. Mithril to Cosmic wear the plate in their own metal with a mark each: fluted, heavy, faceted, scaled with horns, spiked, and inlaid with a halo. Every piece is a shape-kit part on a bone, so it goes through the same bake, occlusion and skinning as the body. The player is still one skinned mesh on 17 bones.
+
+Three changes from the prototype. First, it was switched by `window.AR_ON`; now `tpBuild` always reads the worn pieces. Second, `AR_FROM_EQ` takes a piece only when its material is the MATERIALS entry for its tier. The starting clothes have no material, and the Faolchú's Mark is Sigil-Bone and an amulet, so neither is dressed. Third, the old kit block still covers any slot the new kit has no piece for. So a Steel cuirass over the Worn Breeches gives a plate chest and cloth legs. Under a piece of armour the tunic and breeches are the look's own colours (they used to take the armour's colour). The helm replaces the bowl helm only when the head piece is one the kit knows. Decision #76 left one thing open: whether Wooden armour is wood or leather. It stays lamellar, as in the shot Michael chose.
+
+### Verified (headless Chromium)
+`tests/armourkit.test.mjs`, 10/10 checks:
+- Tiers 1–4 read as lamellar, muscle, mail and plate. Tiers 5–10 read as plate with the six marks in order.
+- The starting clothes and the Sigil-Bone material dress nothing. An Iron Helm over the tunic dresses the head alone.
+- Triangles for a full set, Wooden to Cosmic: 10,576, 8,758, 9,434, 8,240, 9,968, 8,852, 8,583, 9,533, 8,666 and 9,872. Today's cloth figure is 4,242. These are within 32 of the concept's numbers.
+- Each set's metal is in the vertex colours (497–3,814 vertices). The look's tunic and breeches colours show under every set.
+- Still 17 bones. A Steel cuirass alone gives 6,274 triangles. In play, putting on an Iron cuirass and helm makes `tpUpdate` rebuild the body from 4,210 to 8,390 triangles, and it walks 30 frames with no errors.
+- The lineup (`docs/prototypes/armour-ingame.png`) matches the concept's B row.
+- Neighbouring suites pass: `unequip`, `tpweapons`, `tpswing`, `chestpicks`, `people`, `peopleao` and `tpshots`. `creator` failed once on "does not turn by itself at first" (yaw 0.03) while seven suites shared the box, and passed alone (yaw 0).
+- Build tag s345. s343 and s344 are auto/systems' tags.
+
+### Needs eyes
+- How the sets look in play: in motion, in third person, and in the inventory's figure if it shows one.
+- The closed helms' black eye slit is a thin bar that reads wide from the front at this distance, as it does in the concept's shot.
+- The glow on the rare metals is baked into the vertex colours, so it does not glow at night. The concept noted it could move to an unlit child, as with the dead's eyes.
+- The kit dresses only the player. Guards keep the people's helm and coat, and armoured foes keep their own builds. Whether they should wear the kit too is a question for later.
+
+## v80 — Session 385 — Guards in the armour kit: the prototype (H.2, after Session 384)
+Since Session 384 the player's armour is lamellar, a muscle cuirass, mail or plate by material. The town guards still wear what the people's genome gives every guard: a steel bowl helm over a coloured coat. A guard in the street now looks less armoured than a player in Wooden armour. Whether the guards should wear the kit, and which piece, is a look question, so it goes to Michael as a prototype.
+
+The prototype is `docs/prototypes/guardarmour/shots.mjs` and changes no game code. It builds guard genomes the way the towns do (`personGenome` with the role `guard`, or `captain`). For each option it sets `g.eq.armour` and the hat the way `tpBuild` does for the player, then bakes the guards with `buildPerson`, distant copy included. Four guards are shown: a Gatelander man and woman, an Old Blood man from behind, and a captain. A is today. B is every guard in Iron mail with the nasal helm. C sets the armour by the town's wealth, the rule the townsfolk's clothes already follow: Wooden lamellar in a poor town, Iron mail in a middling one, and Steel plate for a captain. C is recommended. The question is DECISION #87 and is pending in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/guardarmour-grid.png` and `guardarmour-stats.json`.
+
+| Guard | Full triangles | Distant copy |
+|---|---|---|
+| Today | 5,080–5,572 | 2,122–2,440 |
+| B | 9,992–10,484 | 4,640–4,958 |
+| C | 8,910–11,626 | 3,737–6,308 |
+
+In C the lamellar is the heaviest, and most of that is its lacing. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #87. The armour hides the guard's coat, which is today's only colour on a guard; a tabard is offered in the question. Armoured foes (bandits, the dead in mail) are a separate question and are not in this one.
+
+## v80 — Session 388 — CI: the snow repaint's cost check, held to the machine's own chunk (H.6)
+Section H has nothing left to build without Michael: the Playtest s162 list, creatures, plants, boats and the world are all done, and the three open look questions (#80 the fist, #83 the empty slots, #87 the guards' armour) wait on his letter. There are no new register findings in `docs/quest_review.md` (run 4 was clean). CI on the Auto sessions PR had already failed on its head (`8ab85e4`) in two shards, so this run's one session is that.
+
+The first red is `snowrepaint`'s third check: "a repainting tick costs under 2.5× one at rest (median)". On the runner a tick at rest took 1.07 ms and a repainting tick 7.5 ms, seven times as much. Here a tick at rest took 12.7–31.5 ms and a repainting tick 12–13 ms, *less* than at rest. The two counts were right on both machines (81 chunks queued, drained in 41 ticks, two a tick). The problem is the baseline. A tick "at rest" is measured once, before the repaint, and it carries whatever chunk streaming is still going on. On a fast runner the world has finished loading and the tick is nearly free, so any real work looks huge beside it. This is the second time the check has failed on the runner's speed alone; Session 299 already moved it from 3 ms over rest to 2.5× rest.
+
+The check now measures its own yardstick. After the drain, the test times three kinds of tick in turn, forty of each: one with nothing queued, one with a single chunk queued, and one with eight queued. The eight-chunk tick repaints as many as the rule allows. Because the three are interleaved, streaming and timer noise fall on all of them alike. The test passes when the eight-chunk tick's cost over an empty tick is under 3.5 one-chunk ticks' cost over an empty tick, plus a millisecond for timer noise. Two chunks a tick give about 2; six a tick, the cost Session 177 removed, give about 6. The count check ("it repaints two chunks a tick, no more") is unchanged. No game code changed, so the build tag is not bumped.
+
+The second red is `q7world`, which hit the runner's 900-second limit for one suite. It is a quest suite (the systems builder's), unchanged on this branch. A `q7world` timeout under load is one of main's two known intermittent reds (Session 379's entry). Here it passed alone in 5 min 6 s, 8 checks, while another suite was running beside it. It is left as it is and noted on the PR.
+
+### Verified (headless Chromium)
+`snowrepaint`, 4/4, three runs. The new numbers from the last run: empty tick 1.6 ms, one chunk 6.7, eight queued 12.2. So a full tick costs 10.6 ms over empty against one chunk's 5.1, a ratio of 2.1.
+- With `snowRepaintStep` patched to six chunks a tick (temporarily, then reverted), the suite fails twice. The count check fails (14 ticks for 81 chunks), and so does the new check: 32.2 ms over empty, against a limit of 22.
+- `q7world` 8/8 here, run alone.
+- `parsecheck` is clean.
+
+### Needs eyes
+Nothing in play. Whether the runner agrees is the next CI run on the PR. If the one-chunk tick there is ever under the timer's resolution, the millisecond allowance is what keeps the check from failing, and it is still well under the six-chunk figure.
