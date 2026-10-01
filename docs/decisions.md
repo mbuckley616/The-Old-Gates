@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Should the helmed foes wear the armour kit too? (the look builder, Session 397, 2026-10-01, issue #94)
+Since Sessions 384 and 395 the player and the town guards wear the armour kit: lamellar, a muscle cuirass, mail or plate by material. The foes who wear armour today still have the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a guard in mail, a bandit captain now looks like a man in a hat. A prototype (look builder, Session 397) dresses all four two ways:
+
+- **A. Today.** The bowl helm over cloth. No cost.
+- **B.** *(recommended)* **Each in the kit as his story dresses him**, a fixed piece list per foe: the Deserter in his old army's Iron mail and nasal helm; the Bandit Captain in looted pieces (a Wooden lamellar cuirass and vambraces under an Iron helm); the Shieldbearer in a Steel plate cuirass and helm over Iron mail sleeves and greaves; the Ash Wight in Iron mail rusted nearly black, as the dead's blades are. The unhelmed foes (bandits, archers, highwaymen, cultists, the risen dead) stay in cloth.
+- **C. B, but the metal by the foe's level**: a level-20 Shieldbearer in Mithril plate, a low one in Iron. It ties what a foe wears to what it can drop, and needs a rule for which levels map to which material (it touches loot, the systems builder's).
+
+Cost: these foes are 4,922–5,844 triangles today and 8,822–10,568 in B (the distant copy 2,150–2,619 today, 3,755–5,271 in B). A camp has one captain; a dungeon floor a few Shieldbearers. Shot: [A / B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/foearmour-grid.png). The script is `docs/prototypes/foearmour/shots.mjs`. Found on the way: a curly-haired Shieldbearer's hair pokes through the closed helm; any build fixes that (the hair under a closed helm should be cut to the skull).
+
 ### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
 Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
 - **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.

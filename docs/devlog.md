@@ -10014,3 +10014,20 @@ The prototype's fist was a rounded box with four balls for knuckles, and it read
 - The power punch's draw turns the fist to show its side, which reads less clearly than the rest pose.
 - At rest the fists sit low and show mostly the knuckles. Michael may want them higher.
 - The third-person body's punch is still the sword's swing played with an empty hand. That is a separate item.
+
+## v80 — Session 397 — Armoured foes in the kit: the prototype (H.2, after Session 395)
+With the guards in the kit (Session 395), the foes who wear armour are the last figures still in the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a town guard in mail, a bandit captain now reads as a man in a hat. Session 385's question about the guards left the foes out on purpose, and the backlog has carried "the kit on armoured foes" since. Which pieces each foe should wear is a look question, so it goes to Michael as a prototype.
+
+The prototype is `docs/prototypes/foearmour/shots.mjs` and changes no game code. It builds each foe with `buildFoe`, as the zones do. For option B it wraps `buildPerson` for that one call to set the worn pieces and take off the bowl helm, the way `tpBuild` does for the player. A is today. B gives each foe a fixed list of pieces that suits him:
+- the Deserter: his old army's Iron mail and nasal helm;
+- the Bandit Captain: looted pieces, a Wooden lamellar cuirass and vambraces under an Iron helm;
+- the Shieldbearer: a Steel plate cuirass and helm over Iron mail sleeves and greaves;
+- the Ash Wight: Iron mail rusted nearly black, as the dead's blades are.
+
+C is B with the metal set by the foe's level, which would tie the look to the loot. B is recommended. The question is DECISION #94 and is pending in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/foearmour-grid.png` and `foearmour-stats.json`. Triangles: 4,922–5,844 today and 8,822–10,568 in B. The distant copy is 2,150–2,619 today and 3,755–5,271 in B. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #94. Found on the way: a curly-haired Shieldbearer's hair pokes through the closed plate helm. The player's own closed helm would do the same with curly hair or an afro. Whichever option Michael chooses, the build should cut the hair to the skull under a closed helm.
