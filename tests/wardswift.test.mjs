@@ -11,7 +11,7 @@ const r = await page.evaluate(() => {
   const out = {}; ACTIVE_BUFFS.length = 0; FINISHER_SAFE_UNTIL = 0; blocking = false;
   const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
   e.locked = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0;
-  const hit = () => { PHP = maxHP; blocking = false; lastBlockAttemptT = -1e9; executeStrike(e, 20, (performance.now() / 1000 + 100) * 1000); return maxHP - PHP; };
+  const hit = () => { PHP = maxHP; blocking = false; lastBlockAttemptT = -1e9; lastBlockAttemptG = -1e9; executeStrike(e, 20, (performance.now() / 1000 + 100) * 1000); return maxHP - PHP; };
   out.bare = hit();
   const sp = SPELLS.find(s => s.id === 'sciath');
   applySpellBuff(sp, 1); out.shield1 = hit();
