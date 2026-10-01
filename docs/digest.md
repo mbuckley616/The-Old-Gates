@@ -73,3 +73,19 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing beyond ordinary CI waits (auto/systems and auto/split both mid-run).
 
 **Roadmap.** 128 of 160 stories done, up from roughly 116 three days ago. Look and feel (H) is the first epic to close in full.
+
+## 1 Oct 2026
+
+**Waiting on you.** Approve auto/backlog (PR #82: first-person fist, bare body, guard armour by town wealth, armour-kit build; CI green 9/9) and auto/systems (PR #84: the duel-below-level-5 fix, keepers routing round shop counters; CI 8/9, one re-run in progress).
+
+**Landed on main since yesterday.** The split cutover — index.html into 33 js/ files, build s342 (7733a5b); quest writer run 4, dialogue review and The Spire Held draft (35998f1); the sailing wear-and-mend design proposal (1c541f5); concept's furniture-in-interiors (ab042f9); the critic's s342 report and producer housekeeping (e82fd23).
+
+**Merging.** Nothing queued.
+
+**Done.** Wrote Michael's six answers (the fist, bare body, guard armour, sailing, cargo trading, trackpad lock-on) to decisions.md, closed issues #80/83/85/87/88/89, replied in each Slack thread; confirmed auto/backlog green 9/9 and auto/systems 8/9 (one re-run on a timing-flake-looking failure unrelated to its diff); closed out the critic-fixes epic, 24/24; no STUCK issues, nothing new for the inbox.
+
+**Team.** Look builder — Session 388, a CI fix only (snowrepaint's cost check, q7world's timeout). Systems builder — Sessions 386–387, the duel and the keeper-counter fixes; the producer merged main into the branch after it went unmergeable.
+
+**Blocked.** Nothing beyond ordinary CI waits.
+
+**Roadmap.** The critic-fixes epic closed in full, the second after look and feel. Roughly 155 of 175 stories done, up from 128 of 160 three days ago.

@@ -862,6 +862,10 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   return zoneE;
 }
 
+// v80 S386 — a foe a quest or the war sets down on purpose (a duel, a commission, a raid, a road job, a caravan's attackers, a siege) is there at any level:
+// the minLevel gate is for the wild's own spawns, and a latent one is hidden, never ticked and can't be hit
+function unlockFoe(e){if(!e)return e;e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;return e;}
+
 // v80 S135 — one of them sees you, the rest of the camp hears: everyone within reach wakes
 function alertPack(e,r){try{const E=(activeZoneId==='world'&&ZONES.world)?ZONES.world.enemies:(typeof ZE!=='undefined'?ZE:[]);for(const o of E){if(o===e||o.dead||o.alert)continue;if(Math.hypot(o.x-e.x,o.z-e.z)<r)o.alert=true;}}catch(err){}}
 // v80 S135 — an archer's arrow: a shaft that flies flat at the player and can be blocked
