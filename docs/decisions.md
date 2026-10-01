@@ -6,6 +6,28 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
+Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
+- **A. A telegraphed slam.** Every 8–10 s the master winds up for 0.9 s (the tells of Session 282) and strikes the ground in a 3-unit ring that can't be blocked, for twice its blow. A roll through it (the roll's untouchable window) or getting out of the ring avoids it. It is the combat page's shape: read the tell, roll.
+- **B. A second phase at half health.** It roars, calls two of the lair's own kind out of the dark, and swings a fifth faster for the rest of the fight.
+- **C. By its kind.** A master borrows its kind's trait, larger: a spider's web slows you for 3 s; a bear or troll charges and dazes itself on a wall like the lair beast; the undead rise once at a quarter health unless finished (the finisher of Session 298).
+- **D. Not yet.** Wait for the attack table (combat B's Fable session), which will rework every foe's blows.
+
+Recommendation: **A.** It is one Opus session with a test, and it asks the skill the combat changes built (the tell, the roll) at the place that should test it most. B and C can layer on later; D leaves the last room of every lair as it is for as long as the Fable session takes.
+
+Michael: **A telegraphed slam**. (1 Oct 2026)
+
+### Should the helmed foes wear the armour kit too? (the look builder, Session 397, 2026-10-01, issue #94)
+Since Sessions 384 and 395 the player and the town guards wear the armour kit: lamellar, a muscle cuirass, mail or plate by material. The foes who wear armour today still have the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a guard in mail, a bandit captain now looks like a man in a hat. A prototype (look builder, Session 397) dresses all four two ways:
+
+- **A. Today.** The bowl helm over cloth. No cost.
+- **B.** *(recommended)* **Each in the kit as his story dresses him**, a fixed piece list per foe: the Deserter in his old army's Iron mail and nasal helm; the Bandit Captain in looted pieces (a Wooden lamellar cuirass and vambraces under an Iron helm); the Shieldbearer in a Steel plate cuirass and helm over Iron mail sleeves and greaves; the Ash Wight in Iron mail rusted nearly black, as the dead's blades are. The unhelmed foes (bandits, archers, highwaymen, cultists, the risen dead) stay in cloth.
+- **C. B, but the metal by the foe's level**: a level-20 Shieldbearer in Mithril plate, a low one in Iron. It ties what a foe wears to what it can drop, and needs a rule for which levels map to which material (it touches loot, the systems builder's).
+
+Cost: these foes are 4,922–5,844 triangles today and 8,822–10,568 in B (the distant copy 2,150–2,619 today, 3,755–5,271 in B). A camp has one captain; a dungeon floor a few Shieldbearers. Shot: [A / B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/foearmour-grid.png). The script is `docs/prototypes/foearmour/shots.mjs`. Found on the way: a curly-haired Shieldbearer's hair poked through the closed helm; that was the kit's bug for the player too, and Session 398 fixed it (the full styles are cut to the skull under any kit helm), so it is not part of this question.
+
+Michael: **Each in the kit as his story dresses him**. (1 Oct 2026)
+
 ### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
 Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by class). Pirates already board you at sea (`crewUp`, the boarding of Session H); today a boarding risks only your health, and beating them gives you their chest. With cargo aboard, a boarding could cost what you carry, which is what makes a blockade's ×1.8 a gamble.
 - **A.** Nothing taken: a boarding is a fight, as now.
