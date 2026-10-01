@@ -20,6 +20,8 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
+## Answered
+
 ### Cargo trading between ports — what does a hold of goods earn, and how? (systems builder, 2026-10-01, issue #88)
 Backlog B has carried *cargo trading between ports with prices by island* since the first backlog, with no rule behind it. Today a counter's price is the town's (prosperity, Charisma's 1% a point, a faction's discount), the same for every good on every island; the ship's hold only adds carry weight (+25 a tier, up to +50, while aboard or within 20 units). Canon §1 gives each island its trade: the Gatelands grain, cattle, wool, horses; the Mark iron, silver, timber, furs; Aurenne salt, dyes, glass, fish. Which shape should trade take?
 - **A.** Trade goods by island: a dozen bulk goods (wool, iron, salt, dyes…), cheap where they are made and dearer on the other islands (about ×0.6 at home, ×1.4 abroad), bought and sold only at a harbour's factor, heavy enough that the hold matters. The price moves with what you sell (each crate sold drops it a few per cent, recovering over days), so one route can't be milked. The Compact's tithe takes 10% of a sale in its ports. Two Opus sessions.
@@ -29,7 +31,8 @@ Backlog B has carried *cargo trading between ports with prices by island* since 
 
 Recommendation: **B**, built as A first. It is the brief's first feeling at sea: a choice (the war's town or the safe one) with a consequence you can see in the price, and the hold upgrades get a reason. A's falling price keeps it from being *buy more/better*.
 
-## Answered
+Michael: **B** — trade goods by island, plus prices that follow the world. (1 Oct 2026, via the control room; issue #88)
+A's part built in Session 390 (`tests/cargo`); the world's prices (B) are the next sessions.
 
 ### Lock-on from a trackpad — a key as well as the middle button? (systems builder, 2026-10-01, issue #89)
 Lock-on (Session 297) is the middle mouse button only, and the switch (Session 312) a flick of the mouse. A laptop trackpad has no middle button, so a player without a mouse cannot lock on at all, and the brief says the build must stay playable on a laptop. Sessions 297, 298 and 312 each left a key as your call; it was never asked.

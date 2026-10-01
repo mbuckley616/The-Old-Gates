@@ -9919,3 +9919,26 @@ Lock-on (Session 297) was the middle mouse button only, and a laptop trackpad ha
 
 ### Needs eyes
 - R on a laptop: whether reaching from WASD to R mid-fight is comfortable, and whether the flick switches foes cleanly on a trackpad. If not, #89's B (Z and X to switch) is the next step.
+
+## v80 — Session 390 — Cargo by the crate: a factor's board in every harbour (Michael's B on #88, A's part)
+Backlog B carried *cargo trading between ports with prices by island* since the first backlog with no rule behind it: a counter's price was the town's for every good on every island, and the ship's hold only added carry weight. Michael answered #88 with B, which I proposed built as A first: a dozen bulk goods, cheap where they are made and dearer abroad, traded only at a harbour's factor, the price falling with what you sell, the Compact's tithe; then (B) prices that follow the war and the sackings. This session is A.
+
+**What changed** (`js/80-world.js`, beside the ferry topics). Twelve goods, four from each island's trade in canon §1: the Gatelands' grain, wool, hides and salt beef; the Mark's iron, silver, timber and furs; Aurenne's salt, dyes, glass and salt fish, each with a worth (20–95) and a weight (4–10). Every harbourmaster has a new topic, *Cargo — the factor's prices*: a board of his prices and one row for each good he sells and each you hold. He sells his own island's four at ×0.6 of their worth and buys any good, his own at ×0.6 and another island's at ×1.4, less a tenth for himself; without the tenth, a chest bought at 57 and sold back after the 4% rise paid 59, so a player could have milked one quay. Each crate sold drops that quay's price for that good 4%, each bought raises it 4%, and the gap closes by 30% a game day, read from the clock when it is next asked, so nothing ticks. In Aurenne's ports a sale pays the Compact a tenth. The prices are kept per quay in `worldState.cargoMkt`, which is in the load's list (the S242 rule).
+
+Where the crates go is my reading of *heavy enough that the hold matters*. The hold already lent 25 or 50 carry within 20 units of the ship, but a harbourmaster stands at the landward end of the quay, out of that reach, so a player buying by the bag would have been overloaded on the walk to her. Instead, with your ship at this harbour (within 140 units, the same reach as the *Fetch her* topic), the crates go into her hold: 40 weight for a sloop, 60 a cog, 90 a galleon, +25 a hold tier (the tiers' old +25 carry stands too). Without her, or with the hold full, they go on your back by weight like anything else. So a ferry passenger can carry a few. A shop counter does not take a crate: it says *A harbour's factor buys trade goods, not a shop.* Charisma and the town's prosperity do not touch the factor's prices; B's sessions decide what does.
+
+The numbers in play: three chests of silver from the Mark (57, 59, 62) sell in the Gatelands for 120, 115 and 111, 168 clear for 24 weight. A sloop's 40 is five chests, about 280 a crossing as the price falls; grain makes 13 a sack. Passage on a ferry is 15–120.
+
+### Verified (headless Chromium)
+`tests/cargo.test.mjs` (new), 18/18, against Portclare (the Gatelands), a Mark port and an Aurenne port:
+- Prices: grain 12 at home, iron 24 in the Mark; iron bought in the Gatelands for 50, grain in the Mark for 25; grain in Aurenne 25 less a tithe of 3, 22 paid; at home the factor's bid (22) is under his ask (24).
+- A run on foot: three silver for 57, 59, 62 (178) into the bag at 24 weight; a Gatelands factor won't sell silver; sold for 120, 115, 111 (346). The price is 106 after the sales, 110 a day later, 120 after ten days.
+- The hold: with a sloop at the harbour four crates of iron go aboard (40 of 40) and the fifth and sixth into the bag. Two hold tiers make 90, a galleon with them 140. A sale comes out of the hold while she's here. With her 400 units off, the board says so and a sale comes out of the bag. A shop counter prices a crate at 0, pays nothing, and names the factor.
+- The save: two wool bought (ask 18 → 19), the market cleared (18), the save loaded (19).
+- Through the harbourmaster's own dialogue in the Mark port at 12h: E, *Cargo — the factor's prices*, the board and *Buy a crate of iron (24 gold)*; *Buy a chest of silver* takes 57 of 300, puts the chest in the bag, and the board stays open with a sell row.
+- `harbour`, `ships`, `shipwright`, `buyprice` and `ferry` pass. Build tag s348.
+
+### Needs eyes
+- Whether a crossing pays enough to be worth the sail, and whether the falling price stops a route too soon or too late. The numbers (×0.6, ×1.4, the tenth, 4%, 30% a day, the hold sizes) are A's proposal as written, with my factor's tenth added; they want a real voyage.
+- The board is one long line of twelve prices in the dialogue box. A panel like the shop's would read better (the look builder's, if wanted).
+- Not built (B, two sessions): a sacked or occupied town paying more for grain and iron, a war raising iron and horses, a blockade doubling the gap, pirates taking from the hold.

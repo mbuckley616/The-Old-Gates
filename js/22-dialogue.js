@@ -1362,6 +1362,7 @@ function sellPrice(it){
   // under a coin, and nothing at the counter. Was the whole bundle's price a piece (a dozen bought for 2 sold for 12–60).
   if(it.type==='ammo')return Math.floor((it.buyPrice||2)*(it.sellMult||.4)/(it.bundle||12));
   if(it.buyPrice)return Math.max(1,Math.floor(it.buyPrice*(it.sellMult||.4)));
+  if(it.type==='cargo')return 0; // S390 — trade goods go to a harbour's factor, not a counter
   if(it.type==='gold')return it.value||5;
   if(it.type==='herb')return Math.max(3,Math.floor((it.buyPrice||8)*(it.sellMult||.8)));
   if(it.type==='potion')return 8;
