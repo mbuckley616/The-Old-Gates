@@ -1,16 +1,29 @@
 # Quest review — the dialogue police
 
-Every player-readable string added or changed in `index.html`, checked against the canon's register (§2) and facts. Findings are applied by the builders **exactly as written**, without a decision. The quest writer never edits `index.html`.
+Every player-readable string added or changed in `index.html` and, since the split (Session 379), `js/*.js`, checked against the canon's register (§2) and facts. Findings are applied by the builders **exactly as written**, without a decision. The quest writer never edits `index.html`.
 
 ## Reviewed to
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `421afdf` | run 3, from `8c0d74a` |
-| auto/systems | `cdeecd7` | run 3, from `7085684` (read against main) |
-| auto/backlog | `0a2c006` | run 3, from `0ad1044` (read against main) |
-| auto/proto-sails | `4e8a5e7` | run 3, first read (against main) |
-| auto/concept, auto/critic, auto/design, auto/producer | — | no `index.html` changes against main |
+| main | `7733a5b` | run 4, from `421afdf`; from here the code is `js/*.js`, so the diff is `-- index.html js/` |
+| auto/systems, auto/backlog, auto/split, auto/critic, auto/design | — | run 4: no commits ahead of main |
+| auto/concept, auto/producer | — | run 4: ahead of main in docs only, no `index.html` or `js/` changes |
+| auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 4 — 1 Oct 2026
+
+About 70 player-readable strings read. All of it is clean, and there are no findings this run.
+
+**How it was read.** Main went from one file to `index.html` plus 33 files in `js/` (Session 379), so a plain diff of `index.html` shows the whole script deleted. The new tree was joined back into one file with `scripts/join.py --out`, and that was diffed by word against `421afdf:index.html`. The joined file differs from the pre-split `e994dbf` only by the build tag.
+
+**main** (`421afdf..7733a5b`) is the systems merge of Sessions 342–378 and the look merge of 275–377, and then the split, which changed no string. Almost every new line is *The Yard at Caer Slige*, built in Sessions 373–374. Every line of that draft's sections 1–9 is in the build word for word: the brief, the sergeant's rules, Rowe's four greetings, the watchers' calls, the yield, the three ways to lose, both turn-ins, Rowe at the seat in both states and the murder rumour. One placeholder was filled: *The ring goes up again on the {weekday or 'seventh day'}* became *in seven days*, which is plain and right. The build also puts *The Captains' League names you Captain.* in capitals, as the draft asked. Section 10, the Compact's *cold-eyes* line, was left for the author, as it should be.
+
+The rest is UI and narration, and it reads well: *A bedroll — Press 'E' to rest and take your level*, *{item} is not worth a coin at the counter.*, the coach's *leaves at six* / *leaves at six in the evening* / *goes on when the road is clear*, and the Fortune card's *+N% gold found*, *+N% item drop chance*.
+
+**Every other branch** is level with main or ahead in docs only.
 
 ---
 
