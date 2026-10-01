@@ -275,6 +275,8 @@ One line added to each register's pool in `RUMORS`. The Aurennais line contradic
 
 ## The Yard at Caer Slige — a real duel, with a ring and a yield
 
+**Built.** Michael's A on #69 (30 Sep 2026); built in Sessions 373–374 with sections 1–9 word for word (quest review, run 4). Section 10 stays with the author. The status line below is the draft's own, kept as written.
+
 *Unapproved. Drafted 30 Sep 2026. Backlog A, the faction line's owed item: "a real duel (a ring, a yield)". It replaces the League's ninth service, **The Duel at Caer Slige** (Session 128), which today is a fight to the death with a Bandit Captain wearing Hesket Rowe's name. Whether Rowe can survive it is Michael's call (decisions.md, Pending: "Hesket Rowe at the yard"). This draft is written for the recommended answer, that she lives if she yields and is spared. The other answers change only the lines marked **(fate)**.*
 
 ### What the canon fixes, and where it is silent
@@ -494,3 +496,175 @@ The Compact's ninth *after* line (grep `Cold-eyes always find their own`) reads:
 - *No chosen one.* Nobody says the player was meant for this. The yard cares *that it's you*, meaning the challenger by right.
 - *Varek's agent.* The Captain is still paid in light and still doesn't ask. Rowe asks, which the canon leaves open, and so does this draft.
 - *Silent, and chosen plainly:* a duel ends at a yield, spells are allowed, and a loss can be fought again. See *What the canon fixes*.
+
+---
+
+## The Spire Held — a night on the roof at Caer Slige
+
+*Unapproved. Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
+
+### What the canon fixes, and where it is silent
+
+- **Fixed.** The spire above Caer Slige holds the second seam (§8.2). The garrison captain at the strait is Varek's *unwitting* agent, paid in sigil-light (§8.2). The Spire of Caer Slige is an anchored place: a tower within 300u of the garrison (§9), built as a POI with a stair inside, a top room and a walkable roof inside a parapet. Sigils are being etched over, stroke by stroke (Act II, Part I). Antibodies form wherever the binding is strained, and they don't know what they are (§3.1, §4.1: *"her children who don't know their mother"*). The League holds gates; its claim is that they belong to whoever holds them (§1.2). Every beat in Acts II–III ends with a direction (§10). Touching is permitted; understanding is not (§3.1).
+- **Silent: what sigil-light pays.** The canon says *paid in light*, not what that buys. This draft takes the plainest reading. Light comes out of the new cuts after dark, and anyone who stands in it comes down warm. In the Mark, warm is worth more than silver, so the night watch asks for the spire, and the Captain posts them gladly and asks nothing about where the warmth comes from. That keeps him unwitting. He is complicit only the way anyone paid is complicit.
+- **Silent: who cuts the strokes.** Nobody is seen. Rowe watches the door all night, and nobody goes up. The cuts were made some other night, by someone with a key or the time. The draft points at Port Blackhand, where Oswy Blackhand keeps his haven and where seam-material moves by sea (§8.2, §9). It commits to nothing more.
+- **Silent: what comes down off it.** *The Watch on the Spire*, the League's fifth service, already culls wolves below it (the seat's cull target, Snow Wolves in the tundra). Here they are seen being made: wolf-shapes that form in the light on the roof. That is the antibody mechanic at its smallest. They are not named antibodies like the Faolchú.
+- **Silent: whether the seam is a sigil to learn from.** This draft doesn't decide. The stone can be looked at and not touched for a spell. Whether a sigil-reader could take Mastery from the second seam belongs to the Act II main quest, so it is left open.
+
+### Shape
+
+- **Giver.** The Captain of Caer Slige (the seat's lord, a Markman), once the player is Captain of the League. At rank 3 Rowe is always alive, because the only road to rank 3 is a spared yield.
+- **Steps.**
+  1. *The spire?* at the seat gives the quest: hold the Spire of Caer Slige from dark to first light.
+  2. At night (20h–6h) a night sergeant stands at the spire's door. With the Captain's word he gives up his watch and goes back to the garrison.
+  3. On the roof at night, the parapet's inner face is cut with old strokes and new ones across them, and light moves in the new cuts. The stone can be looked at.
+  4. **The watch.** It begins when the player first stands on the roof between 20h and 1h. Three waves of wolf-shapes form in the light on the roof: the first a quarter of an hour in, the second two hours later, the third two hours after that. Each wave is two or three, the third is three. The watch holds if the player is still on the roof at 6h with every wave dead.
+  5. At first light the cuts go dark and the stone goes cold. Rowe is at the spire's foot from 6h to 9h that morning.
+  6. Turn in to the Captain of Caer Slige.
+- **States.** `league.spire`: unset → `'given'` → `'held'`. The quest's `data.state`: `'wait'` → `'watch'` → done. Going down the hatch, dying, or being away from the roof for more than ten seconds before 6h puts the quest back to `'wait'`, and the light comes back. It can be tried again the next night, with no limit.
+- **Reward.** 260 + 20 × level gold and the League's regard, as a set piece pays. The spire is held for good. No light comes after dark, no wolf-shapes form, the night sergeant never stands at the door again, and the seat's rumours change.
+- **While Caer Slige is occupied.** The quest cannot be given. If it is active, the watch cannot begin. *An occupied League town loses its duels* (§12a), and it loses its spire with them.
+
+### 1. The Captain of Caer Slige — the brief (Markman)
+
+A new topic at the seat once `league.rank >= 3`, after the existing faction topics.
+
+*The spire?* (unset; the quest is given)
+> "The spire's yours to hold. I said it on the yard and I'll say it sober. My night sergeant stands at the door, and the light does the rest. Go up after dark and stay up till first light. Whatever comes down off it doesn't come down past you. Then we'll both know what my men have been paid in."
+
+*The spire?* (`given`, not yet held)
+> "Still lit at night, is it? Then it's not held. Dark to first light, and not a breath less."
+
+*The spire?* (Caer Slige occupied)
+> "The spire's behind their lines. Take the town back first. The spire after."
+
+Journal objective: `Hold the Spire of Caer Slige from dark to first light`
+Compass label: *the spire*, with the existing tower icon.
+
+### 2. The night sergeant (Markman; role *Sergeant*, a name from the Mark bank, seeded by the spire's id)
+
+He stands at the spire's door from 20h to 6h while `league.spire !== 'held'`.
+
+Greeting (one of these, without the quest):
+> "Night watch. The spire's shut to anyone the Captain didn't send."
+> "Warm up there tonight. Always is."
+> "Stand where you like. Just not between me and the door."
+
+Greeting (with the quest):
+> "So you're the one. Captain says you're to have my watch. Captain says a lot."
+
+Topics:
+- *What's up there?*
+  > "Stair, a top room with a chest somebody emptied before my grandfather, and the roof. And the light, after dark. It runs in the cuts on the parapet like rain down a pane. You don't look at it long. You don't have to."
+- *What does it pay?*
+  > "Silver, same as any watch. And you come down warm. In the Mark that's worth more than the silver. I've not been cold since the spring. Nor has any man who's stood up there. Ask them."
+- *What comes down off it?*
+  > "Wolves, near enough. They come out of the light on the roof, and down the stair after. We kill them at the door, a few every night. Captain calls it the hill's tax."
+- *Let me up.* (without the quest)
+  > "Not without the Captain's word. I don't care whose Captain you are."
+- *Let me up.* (with the quest; he leaves for the garrison, and the door is the player's)
+  > "Aye. Iron and blood, then. It's your watch. I'll be at the garrison, freezing like an honest man."
+
+### 3. The roof, at night (narration)
+
+The player comes up through the hatch with the quest active, between 20h and 6h (`showMsg`):
+> The parapet's inner face is cut with old strokes, and across them new ones, pale in the grey stone. Light moves in the new cuts. It is warm up here.
+
+By day, with the quest active (`showMsg`, once a visit):
+> By day the spire is only stone. The light comes after dark.
+
+Prompt at the parapet: `Press 'E' to look at the stone`
+
+Looking at the stone (`showMsg`; the second sentence is for an Old Blood player only, after the first):
+> An old carving runs round the inside of the parapet, worn soft by fifteen hundred winters. Someone has cut across it: short, straight strokes, with the dust still in them. The light comes out of the new cuts, not the old ones. Where it falls, the stone is as warm as a hand.
+>
+> *(Old Blood)* You could read the old strokes, if you let yourself. You don't.
+
+By day the stone reads the same without the light:
+> An old carving runs round the inside of the parapet, worn soft by fifteen hundred winters. Someone has cut across it: short, straight strokes, with the dust still in them. The stone is cold.
+
+### 4. The watch
+
+`addLog` (🌙) when it begins:
+> The watch on the spire: dark to first light.
+
+The waves (`addLog`, 🌙):
+- First: `Something gathers in the light on the parapet and drops to the roof on four legs.`
+- Second: `The new cuts brighten. Two more shapes come out of them.`
+- Third: `The light pours. Whatever it makes, it makes faster now.`
+
+A wave cleared (`addLog`, 🌙): the first two `The light thins.`, the third `The cuts are dim. The sky to the east is not.`
+
+The HUD's *Wait*, pressed on the roof during the watch (`showMsg`):
+> Not on watch.
+
+Leaving the roof before 6h, by the hatch or by falling (`showMsg`):
+> You leave the roof. Behind you, the light comes back into the cuts.
+
+First light, the watch held (`showMsg`; then `addLog` 🏛 `The Spire of Caer Slige is held.`):
+> First light. The new cuts are only cuts now, pale and dry, and the stone under your hand is cold. The spire is held.
+
+### 5. Hesket Rowe at the spire's foot, that morning (Markman)
+
+From 6h to 9h on the morning the spire is held. After that she goes back to the seat (§7).
+
+Greeting:
+> "Still standing. Good. I stood under it all night. Warm as a hearth, and I didn't want any of it."
+
+Topics:
+- *Did anyone come?*
+  > "Nobody up, nobody down, nobody near the door. I'd swear it on iron. So those cuts weren't made tonight. Whoever made them had a key, or the time, or both."
+- *What was the light?*
+  > "Pay. That's the whole trick, I think. You stand in it, you want it, and you stop asking who's paying. The sergeants never asked. Nor did the garrison."
+- *Where now?*
+  > "Ships come into the strait at night with no lamps. Port Blackhand's the only harbour on this coast that doesn't ask what's in the hold. I'd start there."
+
+(If the world has no Port Blackhand, the anchored place being null, the last line reads: *"Ships come into the strait at night with no lamps. Find the harbour that doesn't ask what's in the hold. I'd start there."*)
+
+### 6. The turn-in — the Captain of Caer Slige (Markman)
+
+*The spire?* (held; quest completes, gold paid; the reward is appended as the faction lines do, `(N gold.)`)
+> "Held, then. The night sergeant's back on the wall, cold as the rest of us, and telling anyone who'll listen. Let him. Somebody cut those strokes, and I never sent a man up to look. That's mine to carry. The spire's yours."
+
+*The spire?* (after)
+> "Held. The men sleep badly now. They'll get used to it. So will I."
+
+### 7. Afterwards
+
+**Rowe at the seat** (`rivalLines`, League, rank 3, once `league.spire === 'held'`; it replaces the rank-3 greeting and *What now, Rowe?* and keeps *How are you ahead of me?*):
+- Greeting: `"Captain. The spire's dark and the sergeants are sulking. That's a good week."`
+- *What now, Rowe?*
+  > "Port Blackhand, when I've the legs for it. Somebody's been crossing the strait at night without lamps, and I'd like to see the hand on the tiller."
+
+(The same fallback as §5 if Port Blackhand is null: *"The strait's ports, when I've the legs for it. …"*)
+
+**Rumours** (`liveRumours`, while `league.spire === 'held'`):
+- Any town of the Mark: `"The spire at Caer Slige has gone dark. The night watch says it's colder for it. The night watch can freeze."`
+- Caer Slige only: `"The new Captain held the spire a whole night. Came down at first light and wouldn't talk about it."`
+
+### What in the code would carry it
+
+- **The topic.** `factionTopics(site)` gains a *The spire?* entry for the League at its seat when `st.rank >= 3`, with `quest:true` and an `fn` that reads `st.spire`, the quest's state and `TS(site).flags.occupied`. The quest is a normal record, `{id:'fq_league_spire',kind:'spire',giver:F.name,giverSite:site.id,title:"The Captains' League: The Spire Held",objective:'Hold the Spire of Caer Slige from dark to first light',data:{state:'wait',wave:0,began:null},reward:260+level*20}`, added with `qAdd` and turned in with `qTurnIn`. It is outside the nine services, so `st.done` and the rank do not move.
+- **The spire.** `anchoredPlaces().spire` is the site. `buildTower` already makes the roof a platform (`ZONES.world.platforms`, `roof:site.id`) with `S.roof.y`. Being on the roof is the test `roofPrompt` makes: `Math.abs(jumpY-S.roof.y)<1.2` inside the parapet's square.
+- **`tickSpire(dt)`** beside `tickDuel(dt)` in the world's tick, within 180u of the spire:
+  - It places the night sergeant at the door (`house.doorX/doorZ` of `g_<site>_tower`) from 20h to 6h while unheld, built like the yard's people (`buildNPCMesh`, Mark names, seeded). Add his rig to the scene at once, because `tickPeople` disposes rigs without a parent. *Let me up.* with the quest despawns him.
+  - It lights and darkens the glow in the cuts: a few emissive strips on the parapet's inner face, lit from 20h to 6h while unheld. The look is the look builder's.
+  - It runs the watch: `began` (game minutes), the three wave times, and the spawns.
+  - It ends the watch on 6h with every wave dead (`held`: `st.spire='held'`, quest done), or resets it to `'wait'` on leaving the roof for more than ten seconds, `PHP<=0`, or the town falling.
+- **The waves.** Each is two or three of the seat's cull target (`Snow Wolf` in the tundra, as *The Watch on the Spire* uses), spawned on the roof platform at `S.roof.y`. **Check first:** whether a world foe can stand and path on a roof platform. If it cannot, the waves come up through the hatch from the top room instead, and wave 1's line becomes `Something comes up through the hatch on four legs, out of the light below.` Either way the foes are tagged to the quest, so a kill counts only on this watch.
+- **The Wait button** reads a `WORLD.onWatch()` that is true in `'watch'`, and shows the line instead.
+- **The stone.** A prompt on the roof within 1.5u of the parapet's inner face, in `shipPrompt`'s chain beside `roofPrompt`. The Old Blood sentence reads the player's people (`playerPeople()==='oldblood'`, the same read Rowe's yard greeting makes). Looking sets `st.spireSeen=true`. That is the hook the Act II main quest can read for the Mark's proof (§8.2, *any qualifying sigil gate on each island counts*). This draft wires nothing to the main quest.
+- **Rowe.** `rivalLines` gains the `spire==='held'` branch above its rank-3 League branch. Rowe at the spire's foot is a one-morning person placed by `tickSpire`, keyed on the day the watch was held (`st.spireDay`).
+- **Rumours.** Two lines in `liveRumours`, beside the yard's murder line.
+- **worldState.** `spire`, `spireSeen` and `spireDay` sit inside `worldState.factions.league`, which the load already reads back. No new key goes on the S242 list.
+
+### Checked against the canon
+
+- *Register.* Every speaker is a Markman: short sentences, *aye*, *iron and blood*, *I'd swear it on iron*, no honorifics. *Captain* is a rank, used as the League uses it. The sergeant's *I don't care whose Captain you are* is the Mark's scorn for titles, said to a player who now holds one. The narration is dry and in the present tense, like the yard's.
+- *Slurs.* None. The sergeant and Rowe speak to a Captain of the League. The nicknames stay with the yard.
+- *No chosen one.* The spire is held because a Captain held it, and the League holds what it holds (§1.2). Nobody says the player was meant to.
+- *Varek's agent.* The Captain stays unwitting and says so: *I never sent a man up to look. That's mine to carry.* He is paid in light, as §8.2 says, and he learns it the way the player does.
+- *The Old Blood.* The one Old Blood sentence keeps the Withdrawal's law (§3.1): the player could read it and doesn't. It doesn't say why.
+- *No new names.* The sergeant takes a name from the Mark's bank, as the yard's people do. Port Blackhand is the canon's own place.
+- *Direction.* The beat ends on a harbour (§10).
+- *Silent, and chosen plainly:* what the light pays (warmth), who cut the strokes (unseen, pointed at the strait), and what comes down (wolf-shapes). See *What the canon fixes*.
