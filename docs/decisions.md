@@ -4,7 +4,25 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The counter and the chest on the parchment — instant clicks or a reckoning? (the concept artist, 2026-10-01, PR #97)
+The approved parchment kit (27 Sep) now has the trade screens drawn on it with the game's own numbers (Lorcan's Forge, Dunmore): the shop as an open ledger, the shop's page left and your pack right, the picked piece set against what you wear with its price worked out (list × town × Charisma), and a locked piece saying why (*needs Might 5 — you have 3*). Also a ruled slider for quantities and a chest window showing the pack's weight after taking all. Prototype: `docs/prototypes/trade/` on auto/concept.
+- **A.** *(recommended)* **The ledger, today's rules**: a click buys or sells at once, restyled, with the lock reason and the price's working shown.
+- **B. The ledger with a reckoning**: picks gather on a tally and nothing changes hands until you press the seal (a sell and a buy in one deal, undo before you commit; a small rule change for the systems builder).
+- **C. A now, B later** if the instant click proves too easy to misclick.
+
+Recommendation: **A.** It is the look approved on 27 Sep with no rule change, and the counter already has buy-back for a mistake. Screens: [today beside the ledger](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/compare-shop.png) · [the reckoning](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/reckon.png) · [the quantity slip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/qty.png) · [the chest](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/compare-loot.png).
+
 ## Answered
+
+### The duel's yield — should a blow begun before you could see her kneel count as murder? (systems builder, Session 405, 2026-10-01, issue #96)
+In *The Yard at Caer Slige*, Rowe yields at a quarter of her health. Any blow that lands after that kills her: murder, the League closed, the watchers' backs turned. The critic asked whether a swing already under way counts. I measured it (`tests/duelrhythm`). Clicking in rhythm, the next swing begins 0.17–0.28 s after the blow that makes her kneel (dagger to hammer) and lands about 0.5 s after it. That is under a person's reaction time. A bot that stops 0.15 s after she kneels spares her, and one that stops at 0.25 s or 0.4 s kills her. So a player who swings steadily will often murder her without meaning to, and lose the League for good.
+- **A. As now.** Any blow after the yield is murder. The yield is a test of control, and the warning is the fight itself.
+- **B.** *(recommended)* **A blow begun within 0.4 s of her kneeling is held.** It lands on nothing (*You check the blow.*), and so do arrows and spells loosed in that time. A swing begun later is murder, as now. This forgives the reflex and keeps the choice.
+- **C. A held moment.** For the first second after she kneels no blow of yours lands on her, whenever it began. Simpler to say, but a deliberate blow in that second is forgiven too.
+
+Recommendation: **B.** It is one condition in `tickDuel` and a test. It keeps *struck she dies* for every blow the player chose, and removes the one they couldn't have stopped.
+
+Michael: **A blow begun within 0.4 s of her kneeling is checked**. (1 Oct 2026, issue #96, via the control room)
 
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
@@ -15,7 +33,9 @@ Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Sess
 
 Recommendation: **A.** It is one Opus session with a test, and it asks the skill the combat changes built (the tell, the roll) at the place that should test it most. B and C can layer on later; D leaves the last room of every lair as it is for as long as the Fable session takes.
 
-Michael: **A telegraphed slam**. (1 Oct 2026)
+Michael: **A telegraphed slam**. (1 Oct 2026, issue #95, via the control room)
+
+*Built, Session 404* (`tests/masterslam`): the slam as A says it, a 3-unit ring on the floor through the tell. Found in building it: Session 130's 1.6× damage never reached a dungeon master's blows (it scaled an `e.dmg` they don't have); it does now.
 
 ### Should the helmed foes wear the armour kit too? (the look builder, Session 397, 2026-10-01, issue #94)
 Since Sessions 384 and 395 the player and the town guards wear the armour kit: lamellar, a muscle cuirass, mail or plate by material. The foes who wear armour today still have the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a guard in mail, a bandit captain now looks like a man in a hat. A prototype (look builder, Session 397) dresses all four two ways:
