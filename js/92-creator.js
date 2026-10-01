@@ -56,7 +56,9 @@ function _enterGame(){
     if(dlgOpen){
       if(e2.code==='Escape'){e2.preventDefault();closeDialog();return;}
       const num=parseInt(e2.key);
-      if(num>=1&&num<=4&&dlgNode){pickDialogChoice(num-1);}
+      // S392 — every numbered choice answers its key, 1–9 and 0 for the tenth (was 1–4 only: a harbourmaster lists ten)
+      const idx=e2.key==='0'?9:num-1;
+      if(!e2.repeat&&idx>=0&&idx<=9&&dlgNode&&dlgNode.choices&&idx<dlgNode.choices.length){pickDialogChoice(idx);}
       return;
     }
     if(hubOpen){
@@ -71,6 +73,8 @@ function _enterGame(){
     if(luOpen)return;
     K[e2.code]=true;if(['KeyW','KeyS','KeyA','KeyD','KeyF','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e2.code))e2.preventDefault();if(e2.code==='KeyF')castSpell();if(e2.code==='KeyI')openHub('inv');if(e2.code==='KeyE'){e2.preventDefault();interact();}
     if(e2.code==='KeyQ'&&!e2.repeat)startRoll(performance.now()/1000,K); // S275 — the roll
+    // S389 — R locks on as the middle button does (Michael's A on #89: a trackpad has no middle button); again, it lets go.
+    if(e2.code==='KeyR'&&!e2.repeat){e2.preventDefault();toggleLock();}
     // v63 — Ctrl toggles sneak. Both ControlLeft and ControlRight handled.
     // !e2.repeat prevents key-held repeat-firing the toggle every frame.
     if((e2.code==='ControlLeft'||e2.code==='ControlRight')&&!e2.repeat){

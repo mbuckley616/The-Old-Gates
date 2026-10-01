@@ -34,6 +34,19 @@ const lay = await page.evaluate(() => { const q = WORLD.duel.q, d = q.data; cons
 console.log('lay', JSON.stringify(lay));
 check('the sergeant greets you in the ring\'s hours and offers the rules and *Call it.*; Rowe greets you by your people', /Rowe's been in there since first light/.test(lay.greet) && lay.topics.includes('The rules?') && lay.topics.includes('Call it.') && /turf-cutter|One of ours|unlettered|Cold-eyes/.test(lay.rg) && lay.rt.includes('Why do you want it?'), lay);
 
+// S393 — the yard's people take no name the seat already uses (the critic's s342: a watcher Wulfstan beside Reeve Wulfstan).
+// The yard's names are seeded by the quest's id, so the yard is laid twenty times under twenty ids.
+const nmz = await page.evaluate(() => { const L = WORLD.fstate().league, q0 = L.active, seat = WORLD.siteAnywhere(q0.giverSite); const first = n => String(n || '').split(/\s+/);
+  const taken = new Set([...first(q0.giver), ...first(WORLD.rival.name)]); let lord = null; try { if (!seat.lordless) { lord = WORLD.lordFor(seat).name; first(lord).forEach(w => taken.add(w)); } } catch (e) {}
+  const S = WORLD.settle.get(seat.id); if (S) S.npcs.forEach(n => first(n.def && n.def.name).forEach(w => taken.add(w)));
+  let builds = 0, clashes = 0; const seen = [];
+  const Q = worldState.quests, qi = Q.indexOf(q0);
+  for (let k = 0; k < 20; k++) { L.active = Q[qi] = { ...q0, id: q0.id + '_n' + k, data: { ...q0.data, state: 'wait' } }; WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60); const D = WORLD.duel;
+    if (!D.sgt) continue; builds++; const yard = [D.sgt.def.name, ...D.watchers.map(w => w.def.name)]; const c = yard.filter(n => taken.has(n)); if (c.length) { clashes++; seen.push(c.join('/')); } }
+  L.active = Q[qi] = q0; WORLD.tickDuel(1 / 60); WORLD.tickDuel(1 / 60);
+  return { lord, seatPeople: S ? S.npcs.length : 0, builds, clashes, seen, back: WORLD.duel.q === q0 && !!WORLD.duel.sgt }; });
+console.log('names', JSON.stringify(nmz));
+check('laid twenty times, no one at the yard shares a name with the seat\'s lord (the Reeve) or its people', nmz.builds === 20 && nmz.clashes === 0 && nmz.back, nmz);
 const c1 = await callIt();
 check('*Call it.* starts the fight: Rowe is the Bandit Captain wearing her name', c1.state === 'fight' && c1.rowe === 'Hesket Rowe' && /Iron and blood/.test(c1.said), c1);
 const y1 = await page.evaluate(() => { const e = WORLD.duel.rowe; e.hp = -5; killZoneEnemy(e, WORLD.scene, ''); return { dead: e.dead, hp: e.hp, max: e.maxHp, state: WORLD.duel.q.data.state, hold: e._duelHold }; });

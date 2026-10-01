@@ -35,6 +35,7 @@ function isStackable(it){
   if(it.type==='potion')return true;
   if(it.type==='herb')return true;
   if(it.type==='ammo')return true;
+  if(it.type==='cargo')return true; // S390 — trade goods stack by kind
   if(it.type==='misc'&&it.name==='Mystic Scroll')return true;
   if(it.type==='misc'&&it.name==='Gold Coins')return true;
   if(it.type==='misc'&&it.name==='Lockpick')return true; // v80 S170 — picks stack, so the count on the lock is the whole bag's

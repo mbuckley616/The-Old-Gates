@@ -7,6 +7,19 @@ await g.intoWorld();
 // towns a moment after arrival, 52 once the nine cells round home are in). Load those nine now, so a slow runner measures
 // the same 52 towns a fast one does.
 await page.evaluate(() => { for (let j = WORLD.HOME_J - 1; j <= WORLD.HOME_J + 1; j++) for (let i = WORLD.HOME_I - 1; i <= WORLD.HOME_I + 1; i++) WORLD.loadCell(i, j); });
+// S383 — then let the world finish building before anything is seeded. The settlements round the player are still being
+// built through the job queue when the cells are in, and that work draws Math.random inside WORLD.tick: about 100,000
+// draws a day for the run's first four days, more or fewer by how far the loader got before this line. The seeded days
+// shared that stream, so a runner's speed moved the untended world (main 7733a5b: least −77 one run, −75 or −64 others).
+// Built first, the days draw only their own few numbers a day, and every run measures the same world.
+const built = await page.evaluate(() => {
+  const R0 = Math.random; let calls = 0; Math.random = () => { calls++; return R0(); };
+  let quiet = 0, n = 0;
+  try { for (; n < 3000 && quiet < 20; n++) { const c0 = calls; WORLD.tick(1 / 60, performance.now()); quiet = (calls - c0 < 50 && WORLD.jobs.length === 0) ? quiet + 1 : 0; } }
+  finally { Math.random = R0; }
+  return { ticks: n, quiet, settled: WORLD.settle.size };
+});
+console.log('built', JSON.stringify(built));
 
 const r = await page.evaluate(() => {
   const snap = JSON.stringify(worldState.towns || {}); const tBoot = worldState.gameTimeAbsMinutes || 0, t0 = 0; const war0 = worldState.war;

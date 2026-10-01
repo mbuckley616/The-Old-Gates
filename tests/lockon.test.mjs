@@ -69,6 +69,19 @@ check('a middle click locks, and does not swing', mb.locked && mb.noSwing, mb);
 check('while locked the mouse does not turn the view', mb.mouseAside, mb);
 check('a second middle click lets go, and the mouse turns the view again', mb.freed && mb.mouseBack, mb);
 
+// S389 — the R key, through the game's own keydown (Michael's A on #89: a trackpad has no middle button)
+await page.evaluate(() => { lockRelease(); G.focus(); });
+await page.keyboard.press('r');
+const rk = await page.evaluate(() => ({ locked: LOCK.t === _foe }));
+await page.keyboard.press('r');
+const rk2 = await page.evaluate(() => ({ freed: LOCK.t === null }));
+await page.evaluate(() => { const keep = ZE; ZE = []; window._keepZE2 = keep; const m = document.getElementById('msg'); if (m) m.textContent = ''; });
+await page.keyboard.press('r');
+const rk3 = await page.evaluate(() => { const out = { none: LOCK.t === null, msg: (document.getElementById('msg') || {}).textContent || '' }; ZE = window._keepZE2; return out; });
+check('R locks the foe as the middle button does', rk.locked, rk);
+check('R again lets go', rk2.freed, rk2);
+check('R with nothing in reach locks nothing and says so', rk3.none && /Nothing to lock/.test(rk3.msg), rk3);
+
 // A/D circle the foe, through the game's own loop and keys
 await page.evaluate(() => { toggleLock(); const e = _foe; window._c0 = { r: Math.hypot(px - e.x, pz - e.z), a: Math.atan2(px - e.x, pz - e.z), x: px, z: pz }; });
 await g.frames(3);
