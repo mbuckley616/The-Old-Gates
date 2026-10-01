@@ -362,7 +362,9 @@ function personBakeQ(g,q){
     part(SK.cone(last[3]*.85,.05,6),col||hair,PB,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
   const shorn=(t)=>{const c=part(SK.ball(R*1.012,14,8,0,Math.PI*2,0,Math.PI*.56),mixC(skin,hair,t||.4),head,0,.125,-.006);c.rotation.x=-.3;c.scale.set(g.jaw,1.06,1.03);return c;};
   const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
-  let cap=null;const st=g.style;
+  // S398 — under a helm of the armour kit the full styles (curls, an afro, a shag, a crest, warrior braids, a bun) are cut to
+  // the skull, or they stood out through the helm (Session 397's prototype); hair that hangs below the helm stays
+  let cap=null;const st=g.eq&&g.eq.armour&&g.eq.armour.head&&/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)?'buzz':g.style;
   if(st==='thin'){const f=part(SK.torus(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
   else if(st==='buzz')cap=shorn(.7);
   else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(SK.cone(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}

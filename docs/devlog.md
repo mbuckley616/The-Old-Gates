@@ -10031,3 +10031,21 @@ The script runs clean (no page errors) and writes `docs/prototypes/foearmour-gri
 
 ### Needs eyes
 Michael's letter on #94. Found on the way: a curly-haired Shieldbearer's hair pokes through the closed plate helm. The player's own closed helm would do the same with curly hair or an afro. Whichever option Michael chooses, the build should cut the hair to the skull under a closed helm.
+
+## v80 — Session 398 — Hair through the helm (H.2, found in Session 397)
+Session 397's prototype showed a curly-haired Shieldbearer's hair standing out through his closed plate helm. This was not a prototype artefact. Since Session 384 the player wears the same helms, and an afro, curls, a shag, a crest, warrior braids or a bun all stood out through every helm of the kit: the lamellar skull-cap, the crested bronze, the nasal mail helm and the closed plate. Session 395's guards would do the same wherever a guard's genome drew one of those styles. The kit's helms sit on the skull at the people's head radius, and those styles are built well outside it.
+
+`personBakeQ` now cuts those six styles to the shorn cap (`buzz`) when the genome wears a helm of the kit. The style is unchanged in the genome and in the look, so taking the helm off brings the hair back. Hair that hangs below a helm (long, a braid, two braids, tied back) is kept, as it is now. The people's own bowl helm (`hat:'helm'`) is unchanged: it sits higher and has never covered a style.
+
+### Verified (headless Chromium)
+`armourkit`, now 11/11:
+- Without a helm, an afro is 4,608 triangles, curls 4,408 and shorn hair 4,098.
+- Under a Steel helm, the afro, the curls and shorn hair are all 5,320 triangles, so the full styles are cut to the skull. Long hair stays (5,324).
+- Rebuilt with this change, the Session 397 grid shows the Shieldbearer's helm clean. The committed grid was left as it was, because the question shows it.
+- `people`, `guardarmour` and `tpshots` pass. `parsecheck` is clean.
+- Build tag s355.
+
+### Needs eyes
+A shorn head under an open helm (lamellar, mail) shows a short dark cap at the temples where a curly head would show curls. Pulling a few curls out under the helm's rim would be a later refinement.
+
+Correction to Session 396: that entry said issue #81's root fix "is still the systems builder's" to make. The systems builder made it in Session 382, on auto/systems (PR #84, not yet on main). There the swing is counted outside `if(vmSword)` when there is no view model. With the fists, the empty hand has a view model, so the old block runs, and 382's branch remains the safety net for any frame without one. `git merge-tree` of the two branches conflicts only in the docs and the tag line, not in `js/`.
