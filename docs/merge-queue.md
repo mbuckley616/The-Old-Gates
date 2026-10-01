@@ -5,3 +5,5 @@ commit's CI is green) or `<branch> <commit> merge-anyway` (his call to merge des
 (.github/workflows/merge.yml) reads this file every 10 minutes, merges the named commit
 (never the branch head) onto main, and skips a line already on main. The producer drops a line once it is merged.
 
+auto/quests f6fe21fb873d8891ce6f5ac6a441461d36f6794e merge
+
