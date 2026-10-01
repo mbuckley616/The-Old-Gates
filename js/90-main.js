@@ -24,6 +24,7 @@ function perfNote(now,tLoop,tDraw0,tDraw1){
   const n=PERF.n,_fps=1000*n/PERF.frame,r={fps:_fps<10?+_fps.toFixed(1):Math.round(_fps),frameMs:+(PERF.frame/n).toFixed(1),worstMs:+PERF.worst.toFixed(1),jsMs:+(PERF.js/n).toFixed(1),drawMs:+(PERF.draw/n).toFixed(1),calls:Math.round(PERF.calls/n),tris:Math.round(PERF.tris/n),px:REN.getPixelRatio(),shadows:!!REN.shadowMap.enabled,w:REN.domElement.width,h:REN.domElement.height};
   PERF.last=r;PERF.el.textContent=`${r.fps} fps · frame ${r.frameMs} ms (worst ${r.worstMs}) · loop ${r.jsMs} · draw ${r.drawMs}\n${r.calls} calls · ${(r.tris/1000).toFixed(0)}k tris · ${r.w}×${r.h} at ${r.px}× · shadows ${r.shadows?'on':'off'}`;
   PERF.n=0;PERF.t0=now;PERF.frame=0;PERF.worst=0;PERF.js=0;PERF.draw=0;PERF.calls=0;PERF.tris=0;}
+let _bareSwingMax=0; // v80 S382 — the length of a swing with no view model, latched on its first frame (issue #81)
 function loop(now){
   const _pfL=PERF.on?performance.now():0;
   requestAnimationFrame(loop);
@@ -769,6 +770,19 @@ function loop(now){
         if(lightTip) lightTip.intensity=0;
       }
     }
+  } else if(swingT>0){
+    // v80 S382 — no view model (an empty hand: buildViewmodel draws nothing for fists), so nothing above counts the
+    // swing down or fires its strike; a punch froze at its start and never landed (issue #81). Same clock, same impact point.
+    if(!_bareSwingMax)_bareSwingMax=swingT;
+    swingT=Math.max(0,swingT-dt);
+    const _bp=1-(swingT/_bareSwingMax);
+    if(_pendingStrike && !_pendingStrike.fired && (_bp>=ANIM_PARAMS.swing.impactPoint || swingT===0)){
+      _pendingStrike.fired=true;
+      const _ps=_pendingStrike;
+      _pendingStrike=null;
+      _ps.resolveFn(_ps.isPow);
+    }
+    if(swingT===0)_bareSwingMax=0;
   }
   if(isInterior()&&typeof WORLD!=='undefined')WORLD.tickInterior(dt,now); // v80 S12
   if(typeof WORLD!=='undefined')WORLD.tickRealClock(); // v80 S242 — the Reader's clock runs in every zone, or an hour underground reads as an hour away

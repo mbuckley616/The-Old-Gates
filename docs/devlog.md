@@ -9839,3 +9839,20 @@ Michael gave the go in the split session at 4:40 pm Central on 30 Sep, condition
 - Michael: paste the file list (CLAUDE.md, "The split layout") into the two builders' prompts and re-enable their routines once this PR is on main. The producer merges main into each `auto/*` branch as usual (clean: none carries an `index.html` change).
 - A playtest from GitHub Pages and from a downloaded folder: the page should look and play exactly as s341 did; the only visible change is the tag.
 - Step 2 of K (break up `80-world.js`'s `return {…}` line, then the IIFE) is its own Fable session; decision #75's clean-up (remove `split.py`, `join.py`, the manifest) in a release.
+
+## v80 — Session 382 — A punch lands (issue #81)
+The look builder found this in Session 380 while prototyping a fist for the empty hand (#80) and filed it for this builder. With the weapon slot empty, `attack(false)` set `swingT` to the punch's 0.429 s and queued `_pendingStrike`, and nothing ever happened after that: the dummy took no damage, the swing never ended and the third-person arm stood frozen mid-swing. The loop counted `swingT` down, and fired the pending strike at the swing's impact point, only inside `if(vmSword){…}` in `js/90-main.js`. `buildViewmodel` returns early with no weapon, so for fists `vmSword` is null. Session 174 made fists a weapon, and its test (`unequip`) calls `_resolveZoneStrike` directly, so it never went through the loop and never saw this. Fists have never landed in play.
+
+This is a fix, not a decision: Session 174 says an empty hand fights for 2–4.
+
+**What changed.** The loop's view-model block gains an `else`: with no view model and a swing running, it counts `swingT` down on the same `dt`, fires the strike when the swing passes `ANIM_PARAMS.swing.impactPoint` (or at the end, the same safety net the view-model path has), and latches the swing's length on its first frame in `_bareSwingMax` (a new top-level `let` in `90-main.js`; the view-model path keeps its own in `vmSword.userData`). The pose maths stays where it was. The swing with a weapon is untouched. If the fist view model of #80 lands, the empty hand gets a `vmSword` and goes through the old path; the strike no longer depends on that mesh existing.
+
+### Verified (headless Chromium)
+`tests/fistswing.test.mjs` (new) drives the real loop with real frames and `attack(false)` on a Bandit held still 1.2 units ahead, with every roll pinned:
+- Starting weapon (the Wooden GreatClub): a 0.611 s swing, the strike fires on frame 7 of 13, 9 damage.
+- Fists, new build: a 0.429 s swing with no view model, the strike fires on frame 5 of 9, `swingT` back to 0, 6 damage. A second punch the same.
+- Fists, old build (the same test with `js/90-main.js` from HEAD): after 61 frames (123 s of real time) `swingT` still 0.429, the strike still pending, 0 damage, both punches. Three checks fail; that is #81 reproduced.
+- `fistswing` 6/6; `unequip`, `fpweapons`, `tpswing` and `parryclock` pass. Build tag s343.
+
+### Needs eyes
+- Take the weapon off and punch something: it should now hurt it, and in third person the arm should go through the swing and come back. In first person there is still nothing on screen until #80 is answered.
