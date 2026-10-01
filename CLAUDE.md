@@ -89,7 +89,8 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026). The rul
 Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.
 `scripts/cloud-setup.sh` (a SessionStart hook in `.claude/settings.json`) installs Playwright and
 Chromium there; locally it does nothing. A cloud session can only push its own branch, not `main`:
-commit there and open a PR for Michael to merge.
+commit there and open a PR; the producer routine merges it through GitHub once Michael approves it on the control room
+(a docs-only PR merges without him).
 Only the producer routine notifies Michael (PushNotification) or writes to the control room; every other session,
 cloud or local, raises questions in `docs/decisions.md` and a `DECISION:` issue and stays silent — the producer
 carries them to him. A second notification for the same question is noise.
