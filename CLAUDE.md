@@ -1,35 +1,37 @@
 # The Old Gates — working conventions
 
-A browser-based open-world RPG in a single self-contained HTML file. Michael designs and playtests;
-Claude implements. This file is what Claude reads first in every session.
+A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 33 plain script
+files that share one global scope (no modules, no bundler; a downloaded folder opens by double-clicking `index.html`).
+Michael designs and playtests; Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the whole game. ~46k lines. Deployed as-is (GitHub Pages serves it at the repo URL). Backlog K splits
-  its script into `js/` on switch-over day; the section "The split layout" below is the rule book for that layout.
+- `index.html` — the markup, the CSS, the build tag and 33 `<script src="js/…">` tags (~1,160 lines). `js/NN-name.js` —
+  the code, one file per area in load order (~46k lines in all; `80-world.js` is the biggest at 7,500). Deployed as-is: GitHub
+  Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379.
 - `docs/devlog.md` — one entry per session, appended at the end of the session. Never rewrite old entries.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
 - `docs/design_brief.md` — Michael's brief: what the game is and the three things it must feel like. Every proposal and
   every design call argues from it. `docs/decisions.md` — questions for Michael and his answers; nothing is a spec without a `Michael:` line.
 - `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all.
-- `scripts/parsecheck.py` — syntax-checks every inline script block. `scripts/tag.py bump` bumps the build tag.
+- `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py bump` bumps the build tag.
+  `scripts/split.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
 
 ## A session
 1. Read the last devlog entry and the backlog before touching code.
 2. One feature or bug per session. Ask before building anything whose design is open.
-3. Edit `index.html` with targeted edits. The file has literal Unicode in strings (’ — · 🗝); match it,
-   don't assume `\u` escapes. Never put a `//` comment on a line that has code after it.
-4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds (after the split it checks each `js/` file,
-   then their concatenation).
+3. Edit the `js/` file the feature lives in (the code map by file, below) with targeted edits. The files have literal
+   Unicode in strings (’ — · 🗝); match it, don't assume `\u` escapes. Never put a `//` comment on a line that has code
+   after it. Markup and CSS changes go in `index.html`.
+4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds: each `js/` file, then their concatenation.
 5. Verify in headless Chromium, not by reading the code: add or extend a test in `tests/`.
    The scene runs at a few fps on software GL, so drive time with `g.spin()` (fixed 1/60 ticks), not timeouts.
 6. `python3 scripts/tag.py bump` — the tag shows in the controls line at the bottom of the screen and is
    how Michael confirms which build he's running.
 7. Append the devlog entry (format below), update the backlog, commit.
 
-## The split layout — `js/` (backlog K; the rules apply from switch-over day on)
-Session 368 built the tooling; a later session runs it on a frozen main. Until then the one inline script is the code.
-Afterwards:
+## The split layout — `js/` (backlog K)
+Session 368 built the tooling and Session 379 cut the file (1 Oct 2026). The rules:
 - `index.html` keeps the markup and the CSS (and the build tag), and holds one `<script src="js/NN-name.js">` tag per file.
   `js/` holds the code. The tags are plain classic scripts, no modules, no `fetch`: every file shares the one global scope,
   exactly as the one script did, and a downloaded copy still opens by double-clicking. **Load order is tag order**, and the
@@ -45,8 +47,9 @@ Afterwards:
   concatenation in tag order, which catches it. Two `function` declarations of one name are legal (the last wins, as now).
 - `K`, `PERF`, `AX`, `volLevel`, `EXPLORE`, `PIECES`, `_ccState` and the other 47 constants of the old `if(REN){` block
   (removed in Session 368) are plain globals; `window._K` still works.
-- `git log --follow` cannot follow one file into 33. History before the split is under `index.html`: `git log -L` and
-  `git blame` on the pre-split commit still work.
+- `git log --follow` cannot follow one file into 33. History before Session 379 is under `index.html`: `git log -L` and
+  `git blame` on the pre-split commit (`e994dbf`, main on 1 Oct 2026) still work. `js/manifest.json` records which
+  `index.html` lines each file came from.
 - Tests boot `index.local.html`, written beside the `index.html` under test (gitignored) so `js/` resolves;
   `node tests/run.mjs --src=PATH` boots another copy. `tests/people.test.mjs` unpacks HEAD's `index.html` and `js/` with
   `git archive`. `scripts/split.py` made the layout (its anchors are the first line of each file; `--dry-run` shows the
