@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Should the town guards wear the armour kit too? (the look builder, Session 385, 2026-10-01, issue #87)
+Session 384 put your B on #76 into the game: the player's armour is now lamellar, a muscle cuirass, mail or plate by material. The town guards still wear the people's steel bowl helm over a coloured coat, so a guard now looks less armoured than a player in Wooden armour. A prototype (look builder, Session 385) dresses four guards (a man, a woman, an Old Blood man from behind, and a captain) three ways.
+- **A. Today.** The bowl helm and the coat. No cost.
+- **B. Every guard in Iron mail** with the nasal helm.
+- **C.** *(recommended)* **By the town's wealth**, the same rule as the townsfolk's clothes (your A on Session 246). In a poor town the guards wear Wooden lamellar, in a middling one Iron mail, and the captain of a keep wears Steel plate. A town's guards would tell you what the place can afford.
+
+Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town. Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). PR #82.
+
 ### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
 Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
 - **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.
@@ -11,6 +19,23 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 - **C.** B, plus a crew hired by the hand, paid by the day and fed from the hold. One Fable and five Opus sessions.
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
+
+### Cargo trading between ports — what does a hold of goods earn, and how? (systems builder, 2026-10-01, issue #88)
+Backlog B has carried *cargo trading between ports with prices by island* since the first backlog, with no rule behind it. Today a counter's price is the town's (prosperity, Charisma's 1% a point, a faction's discount), the same for every good on every island; the ship's hold only adds carry weight (+25 a tier, up to +50, while aboard or within 20 units). Canon §1 gives each island its trade: the Gatelands grain, cattle, wool, horses; the Mark iron, silver, timber, furs; Aurenne salt, dyes, glass, fish. Which shape should trade take?
+- **A.** Trade goods by island: a dozen bulk goods (wool, iron, salt, dyes…), cheap where they are made and dearer on the other islands (about ×0.6 at home, ×1.4 abroad), bought and sold only at a harbour's factor, heavy enough that the hold matters. The price moves with what you sell (each crate sold drops it a few per cent, recovering over days), so one route can't be milked. The Compact's tithe takes 10% of a sale in its ports. Two Opus sessions.
+- **B.** A, plus prices that follow the world: a sacked or occupied town pays more for grain and iron, a war raises iron and horses, a blockade (pirates on a route) doubles the gap. Three Opus sessions; it makes the war and the sackings a reason to sail.
+- **C.** No new goods: ordinary loot and shop stock sell for more on the island that lacks them (a Markish sword dearer in Aurenne). One session, but it rewards hauling what you found, not trading.
+- **D.** Not yet: wait for the survival skills (`docs/design/survival-and-alchemy.md`), so cargo can be what you make.
+
+Recommendation: **B**, built as A first. It is the brief's first feeling at sea: a choice (the war's town or the safe one) with a consequence you can see in the price, and the hold upgrades get a reason. A's falling price keeps it from being *buy more/better*.
+
+### Lock-on from a trackpad — a key as well as the middle button? (systems builder, 2026-10-01, issue #89)
+Lock-on (Session 297) is the middle mouse button only, and the switch (Session 312) a flick of the mouse. A laptop trackpad has no middle button, so a player without a mouse cannot lock on at all, and the brief says the build must stay playable on a laptop. Sessions 297, 298 and 312 each left a key as your call; it was never asked.
+- **A.** Add **R** as a second lock key (toggle, same rules as the button); with a lock held, **R** again lets go. R is unbound today.
+- **B.** A, and **Z** and **X** to switch to the next foe left or right while locked, for a trackpad that can't flick cleanly. Z is unbound; X is used only in the character creator.
+- **C.** No key: the game is played with a mouse.
+
+Recommendation: **A.** One key, one Opus session with a test; a trackpad still moves the pointer, so the flick can switch foes; B can follow if that proves clumsy in play.
 
 ## Answered
 
