@@ -10346,3 +10346,21 @@ The test now reads the nose inside the stepped run, at the same frame as the hit
 
 ### Needs eyes
 Nothing in the game. If headless (1) fails again, the new check's number will show whether the head itself faces backwards at the hit.
+
+## v80 — Session 407 — The unarmed body at rest: the prototype (H.3, from Session 402's open calls)
+Session 402 left two look calls on the unarmed third-person body. First, its hand is a mitten, a squashed ball with a thumb, which reads as a pale point at a distance. Second, it runs with its arms swinging, while the first person always holds both fists up. Nothing else in section H can be worked without Michael: the s162 playtest list is done, the frame-time check wants a real machine, and no decision is waiting on this builder. So this session builds the prototype and asks.
+
+`docs/prototypes/unarmed/grid.mjs` boots the game and builds four rows. It changes nothing in the game. The fist is patched into `personBakeQ`'s source at runtime, and the carried poses are laid over `tpPose`'s result.
+- **A** is today.
+- **B** gives each empty hand a folded fist: a squarer palm, four knuckles across the front, the curled fingers under them and the thumb laid across.
+- **C** is B with the forearms carried forward at the belt.
+- **D** is B with the jab's own guard carried: the right fist by the chin, the left by the face.
+
+C and D drop to the swinging arms while sprinting. Each row is shown standing, mid-stride on the move (the player's own pace is a run, Session 162), with a close look at the right hand, and from ahead-right. The question is DECISION #99 and is under Pending in `docs/decisions.md`. The recommendation is C: it answers the first person's raised fists without the body squaring up to everyone in the street.
+
+### Verified (headless Chromium)
+The grid script ran without page errors. The player's body is 4,210 triangles today and 5,238 with the two fists (+1,028, mostly the eight knuckles). Nobody else's hands change. `docs/prototypes/unarmed-grid.png`.
+
+### Needs eyes
+- Whether B's fist reads as a fist at the camera's usual distance. In the close shot it does.
+- Whether C's forearms look stiff on the move. The prototype holds them still apart from a slight sway, and an answer of C would want them to bob with the stride.
