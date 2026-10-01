@@ -33,7 +33,9 @@ function _gauntletHandColors(){
 const ARM_CLOTH = { sleeve: 0x6a5a44, accent: 0x4a3e30 };  // default tunic
 function _chestArmColors(){
   const c = EQ.chest;
-  if(!c || !c.matCol) return { sleeve: ARM_CLOTH.sleeve, accent: ARM_CLOTH.accent };
+  // S394 — nothing on the chest is the linen shirt cut at the shoulder: a bare arm (Michael's B on #83)
+  if(!c) return { sleeve: HAND_SKIN.palm, accent: HAND_SKIN.cuff };
+  if(!c.matCol) return { sleeve: ARM_CLOTH.sleeve, accent: ARM_CLOTH.accent };
   return { sleeve: c.matCol, accent: c.matGuard || c.matCol };
 }
 // Build a fist gripping at local origin, with a forearm + upper-arm that recede

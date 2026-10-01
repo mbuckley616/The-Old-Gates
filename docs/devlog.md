@@ -9924,3 +9924,29 @@ The second red is `q7world`, which hit the runner's 900-second limit for one sui
 
 ### Needs eyes
 Nothing in play. Whether the runner agrees is the next CI run on the PR. If the one-chunk tick there is ever under the timer's resolution, the millisecond allowance is what keeps the check from failing, and it is still well under the six-chunk figure.
+
+## v80 — Session 394 — Underclothes: what the body wears with the slots empty (H, Michael's B on #83)
+Michael answered decision #83 on 1 Oct with B: underclothes. Until now an empty chest, legs or feet slot changed nothing on the third-person body, because `tpBuild` fell back to the look's tunic, breeches and boots. Taking off the Tattered Tunic showed the same red tunic.
+
+Now `tpBuild` reads each empty slot as the body's own linen. An empty chest gives an undyed linen shirt (`TP_LINEN`, the prototype's colour). Three new genome flags carry it into `buildPerson`. `g.shirt` cuts the hem shorter than a tunic's and drops the trim ring. `g.bareArms` keeps the shoulder's cap in the shirt's linen and makes the upper and lower arm skin, with no cuff. `g.bareFeet` replaces the boot's shaft and toe with a foot of its own: a bare ankle, an instep, a heel and the ball of the toes, standing on the boot's ground line. An empty legs slot shows linen braies, a shade darker than the shirt. The look's colours still dye the starting tunic, breeches and boots, as they did before: those are cloth items with no material colour, so `tpBuild` gives them the look's. The prototype noted that the build owed the feet a shape and the shirt a plainer cut, and both are done here. First person follows: with nothing on the chest, the arm behind the hand is the skin's colour (`_chestArmColors`), not the default tunic's cloth.
+
+The flags are the player's alone. No townsperson's genome sets them, so the towns are unchanged.
+
+### Verified (headless Chromium)
+`tests/underclothes.test.mjs`, 9/9:
+- In the starting kit the tunic, breeches and boots carry the look's colours, and no linen shows.
+- With the chest empty, 105 vertices are linen, none are the tunic's colour, and skin rises from 149 vertices to 221 (the arms).
+- With the legs empty too, the braies replace the breeches (123 vertices, none of the breeches' colour).
+- With the feet empty too, no boot colour shows and skin rises to 409.
+- The bare feet stand on the same ground line as the boots (the lowest point is the same to the millimetre).
+- Triangles: 4,242 in the starting kit, 3,782 with the chest empty, 4,102 with every slot empty.
+- First person: the arm is the skin with nothing on the chest and the cloth with the tunic on.
+- In play, taking the tunic off makes `tpUpdate` rebuild the body (4,450 to 3,990 triangles with the weapon), and it walks 30 frames with no errors.
+- Neighbouring suites pass: `unequip`, `armourkit`, `people`, `tpshots`, `tpweapons`. `parsecheck` is clean.
+- `docs/prototypes/underclothes-ingame.png`: a man and a woman, in the starting kit and with every slot empty, from the front and from behind (`docs/prototypes/underclothes/shots.mjs`).
+- Build tag s352. auto/systems is at s351, so this skips past it rather than sharing a number.
+
+### Needs eyes
+- The feet at play distance and in motion. In the shot they read as feet, but small ones.
+- Under a piece of the armour kit the tunic and sleeves are still the look's colours (Session 384's rule), not the linen. That is consistent with "armour over clothes", but with B the look's colours belong to the tunic item, so an argument exists for linen under armour with no tunic. It is left as it is.
+- Whether townsfolk remark on a player in their underclothes is the quest writer's question, as the decision said.

@@ -111,6 +111,10 @@ Since Session 174 every equipment slot can be emptied, but nothing changes on yo
 
 Shots: [today / B / C, a man and a woman](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barebody-grid.png). The script is `docs/prototypes/barebody/shots.mjs`. In the prototype the feet are only boots in skin colour; the build would give them a foot of their own. The shirt keeps the tunic's cut for the shot, and the build would make it plainer and shorter. Undressing in the street is a register question too: whether townsfolk should remark on it is the quest writer's, not part of this.
 
+Michael: **B** — Underclothes. (1 Oct 2026, via the control room)
+
+Built in Session 394 (look builder): `tpBuild` dresses an empty chest in a linen shirt cut at the shoulder (bare arms, no trim, a shorter hem), empty legs in linen braies and empty feet in bare feet with a foot of their own; first person shows a bare arm. `docs/prototypes/underclothes-ingame.png`, `tests/underclothes.test.mjs`.
+
 ### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
 A shop with a back room keeps its strongbox behind a shut door, and the keeper never sees it there. A one-room shop keeps the box in the shop itself. A keeper indoors sees you within six units with a clear line, and walks the floor all day. `tests/shopsight` measured 13 one-room shops in four towns at 13h, with ten minutes of the keeper's own walk each, and they split in two. Eight are seen 93–100% of the time. Five are seen 0–10%: Dunmore's three Goods shops, Odhrán's Stores and Mira's Apothecary, where the box stands 5.5–6.6 units from the counter.
 
