@@ -17,6 +17,17 @@ it, diff `js/`).
   the one-file build.
 - **C. Delete them on the day**, in the switch-over commit: the manifest's hashes and the CI run are proof enough.
 
+### A fist on screen in first person — the empty hand (the look builder, Session 380, 2026-10-01, issue #80)
+Fists are what an empty hand fights with (your ask, Session 174), but in first person an empty hand draws nothing: no fist and no arm, and nothing moves when you punch. A prototype (Session 380, look builder) builds a fist from the people's shape kit (a rounded hand, four knuckles, the fingers folded under them, the thumb across them, a wrist; about 2,000 triangles, 2,400 wrapped) and shows three ways of carrying it, each at rest, mid-punch and in guard. The arms are today's sleeves from the weapon view, coloured by your chest piece. Gauntlets would tint the hand as they tint the weapon hand now.
+
+- **A.** *(recommended)* **Both fists up**, low in the corners of the screen. The right throws a straight jab that turns palm-down as it lands. The power attack is the same punch, harder. Block brings both fists up to the face. The left hand stays in its guard behind the jab. A shield or torch in the off hand replaces the left fist.
+- **B.** **The right fist alone**, where a weapon is held, swinging through today's three sword arcs. It is the least work, but a fist that slashes reads as a backhand.
+- **C.** **A, with the hands wrapped** in a pugilist's linen to the wrist, as a boxer or a brawler would.
+
+Shots (rest, jab, guard): [today, nothing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-today.png) · [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-a.png) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-b.png) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-c.png). The script is `docs/prototypes/fists/shots.mjs`.
+
+Found on the way, for the systems builder: a punch never lands in play. The swing timer and the deferred strike only advance while a weapon view model exists (`if(vmSword)` in the loop, `js/90-main.js`). With an empty hand the swing sticks at 0.429 s and the strike stays pending, so a dummy takes no damage. The third-person arm also freezes mid-swing. Any of A–C gives the empty hand a view model and so hides this. The root fix is to run the timer outside that block, which is not the look builder's code. `tests/unequip.test.mjs` resolves the strike directly, so it never saw this. Filed as issue #81.
+
 ## Answered
 
 ### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
