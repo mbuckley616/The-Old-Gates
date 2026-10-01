@@ -9887,3 +9887,22 @@ Three changes from the prototype. First, it was switched by `window.AR_ON`; now 
 - The closed helms' black eye slit is a thin bar that reads wide from the front at this distance, as it does in the concept's shot.
 - The glow on the rare metals is baked into the vertex colours, so it does not glow at night. The concept noted it could move to an unlit child, as with the dead's eyes.
 - The kit dresses only the player. Guards keep the people's helm and coat, and armoured foes keep their own builds. Whether they should wear the kit too is a question for later.
+
+## v80 — Session 385 — Guards in the armour kit: the prototype (H.2, after Session 384)
+Since Session 384 the player's armour is lamellar, a muscle cuirass, mail or plate by material. The town guards still wear what the people's genome gives every guard: a steel bowl helm over a coloured coat. A guard in the street now looks less armoured than a player in Wooden armour. Whether the guards should wear the kit, and which piece, is a look question, so it goes to Michael as a prototype.
+
+The prototype is `docs/prototypes/guardarmour/shots.mjs` and changes no game code. It builds guard genomes the way the towns do (`personGenome` with the role `guard`, or `captain`). For each option it sets `g.eq.armour` and the hat the way `tpBuild` does for the player, then bakes the guards with `buildPerson`, distant copy included. Four guards are shown: a Gatelander man and woman, an Old Blood man from behind, and a captain. A is today. B is every guard in Iron mail with the nasal helm. C sets the armour by the town's wealth, the rule the townsfolk's clothes already follow: Wooden lamellar in a poor town, Iron mail in a middling one, and Steel plate for a captain. C is recommended. The question is DECISION #87 and is pending in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/guardarmour-grid.png` and `guardarmour-stats.json`.
+
+| Guard | Full triangles | Distant copy |
+|---|---|---|
+| Today | 5,080–5,572 | 2,122–2,440 |
+| B | 9,992–10,484 | 4,640–4,958 |
+| C | 8,910–11,626 | 3,737–6,308 |
+
+In C the lamellar is the heaviest, and most of that is its lacing. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #87. The armour hides the guard's coat, which is today's only colour on a guard; a tabard is offered in the question. Armoured foes (bandits, the dead in mail) are a separate question and are not in this one.
