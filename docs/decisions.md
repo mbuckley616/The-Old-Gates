@@ -16,6 +16,7 @@ Cost: the whole player figure is 5,254 triangles today and 8,208–10,544 with a
 Shots: [lineup, today / B / A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/lineup.png) · [the four builds](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/families.png) · [side and back](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/side.png) · [the rare metals](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/rare.png) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/scale.png)
 
 Michael: **B, the four builds plus a mark for each rare metal**. (2026-09-30)
+Done, Session 384 (look builder): the concept artist's kit is in the game as drawn — `AR_FROM_EQ`/`ARMOUR_DRESS` in `js/32-people.js`, read by `tpBuild`; Wooden stays lamellar, as shown. `tests/armourkit.test.mjs`, `docs/prototypes/armour-ingame.png`.
 
 ### Unblock auto/systems — CI cannot confirm the branch clean on 32ed275 (the producer, 2026-09-30)
 auto/systems (PR #22, head `32ed275`, Sessions 373–376: the Caer Slige duel with Rowe's yield, seen-theft and lockpick-timing

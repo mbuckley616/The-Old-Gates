@@ -9863,3 +9863,27 @@ The script runs clean (no page errors) and writes `docs/prototypes/barebody-grid
 
 ### Needs eyes
 Michael's letter on #83. At the prototype's scale and in this light, the skin and undyed linen sit close in tone, so B and C differ less than they would in the game. The bare feet in the shot are boots coloured as skin, and a build owes them a foot. The shirt keeps the tunic's cut and flare for the shot.
+
+## v80 — Session 384 — The worn armour by material (H.2, Michael's B on decision #76)
+Michael answered the concept artist's armour question on 30 Sep with B: four builds, and a mark for each rare metal. No session had built it, and the armour on the third-person body is H's (People, "a kit block for armour", Session 154), so this run took it. Until now every material wore one shape in a different colour: a lathed shell over the tunic, two shoulder balls, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm.
+
+The concept artist wrote the prototype (`docs/prototypes/armour/armour.js` on auto/concept) as a drop-in for `personBakeQ`, and it goes in as drawn. `AR_FAM`, `AR_SIG`, `AR_FROM_EQ` and `ARMOUR_DRESS` now sit in `js/32-people.js` above `personBake`. Wooden is laced lamellar with a skull-cap and a leather curtain. Bronze is a muscle cuirass with pteruges and a crested helm. Iron is a mail hauberk with a nasal helm. Steel is plate: a keeled breastplate, faulds and tassets, three-lame pauldrons, couters, greaves, sabatons and a closed helm. Mithril to Cosmic wear the plate in their own metal with a mark each: fluted, heavy, faceted, scaled with horns, spiked, and inlaid with a halo. Every piece is a shape-kit part on a bone, so it goes through the same bake, occlusion and skinning as the body. The player is still one skinned mesh on 17 bones.
+
+Three changes from the prototype. First, it was switched by `window.AR_ON`; now `tpBuild` always reads the worn pieces. Second, `AR_FROM_EQ` takes a piece only when its material is the MATERIALS entry for its tier. The starting clothes have no material, and the Faolchú's Mark is Sigil-Bone and an amulet, so neither is dressed. Third, the old kit block still covers any slot the new kit has no piece for. So a Steel cuirass over the Worn Breeches gives a plate chest and cloth legs. Under a piece of armour the tunic and breeches are the look's own colours (they used to take the armour's colour). The helm replaces the bowl helm only when the head piece is one the kit knows. Decision #76 left one thing open: whether Wooden armour is wood or leather. It stays lamellar, as in the shot Michael chose.
+
+### Verified (headless Chromium)
+`tests/armourkit.test.mjs`, 10/10 checks:
+- Tiers 1–4 read as lamellar, muscle, mail and plate. Tiers 5–10 read as plate with the six marks in order.
+- The starting clothes and the Sigil-Bone material dress nothing. An Iron Helm over the tunic dresses the head alone.
+- Triangles for a full set, Wooden to Cosmic: 10,576, 8,758, 9,434, 8,240, 9,968, 8,852, 8,583, 9,533, 8,666 and 9,872. Today's cloth figure is 4,242. These are within 32 of the concept's numbers.
+- Each set's metal is in the vertex colours (497–3,814 vertices). The look's tunic and breeches colours show under every set.
+- Still 17 bones. A Steel cuirass alone gives 6,274 triangles. In play, putting on an Iron cuirass and helm makes `tpUpdate` rebuild the body from 4,210 to 8,390 triangles, and it walks 30 frames with no errors.
+- The lineup (`docs/prototypes/armour-ingame.png`) matches the concept's B row.
+- Neighbouring suites pass: `unequip`, `tpweapons`, `tpswing`, `chestpicks`, `people`, `peopleao` and `tpshots`. `creator` failed once on "does not turn by itself at first" (yaw 0.03) while seven suites shared the box, and passed alone (yaw 0).
+- Build tag s345. s343 and s344 are auto/systems' tags.
+
+### Needs eyes
+- How the sets look in play: in motion, in third person, and in the inventory's figure if it shows one.
+- The closed helms' black eye slit is a thin bar that reads wide from the front at this distance, as it does in the concept's shot.
+- The glow on the rare metals is baked into the vertex colours, so it does not glow at night. The concept noted it could move to an unlit child, as with the dead's eyes.
+- The kit dresses only the player. Guards keep the people's helm and coat, and armoured foes keep their own builds. Whether they should wear the kit too is a question for later.
