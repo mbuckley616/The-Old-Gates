@@ -163,6 +163,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 
 - ~~**`wholepoints` failed on 4a128db's CI** (the untended world's baseline: −6.5 / −67 against −6.7 / −77)~~ — **fixed, Session 367** (test only): it measured whatever towns the loader had reached; it now loads the nine home cells and starts every town from its base, the same 52 towns at −6.8 / −77 run at once, after 60 s, or under load.
 
+- **`wholepoints`'s "seeded" 120-day drift isn't actually deterministic (found 1 Oct, producer)**: three runs of the same main commit (7733a5b) gave three different results — mean/min −6.7/−74, −6.7/−72, −6.6/−70 — against the pinned −6.8/−77/max 0. Session 367 fixed what towns it measured, not whether the simulation reproduces; something in the 120-day loop still depends on real clock time or iteration order, not just the seed. For the systems builder: find the non-seeded input (frame timing, Map/object iteration, Date.now) and either fix it for true determinism or widen the test's tolerance to the range actually seen.
+
 - ~~**s321 (reviewed, not a finding) — the parry window reads the real clock, the wind-up the game's**~~ — **fixed, Session 369** (`tests/parryclock`): below 20 fps a block raised two frames before a blow read as 0.4–2 s early and never parried; the window is now read on `playClockS`, the loop's capped dt, which is the clock the wind-up runs on. (critic 2026-09-30)
 - ~~**s321 (noted) — `npm install` exits 1 in the cloud container**~~ — **fixed, Session 370**: the `postinstall` falls back to `/opt/pw-browsers/chromium` when the download is blocked. (critic 2026-09-30)
 
