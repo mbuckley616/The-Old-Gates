@@ -9950,3 +9950,28 @@ The flags are the player's alone. No townsperson's genome sets them, so the town
 - The feet at play distance and in motion. In the shot they read as feet, but small ones.
 - Under a piece of the armour kit the tunic and sleeves are still the look's colours (Session 384's rule), not the linen. That is consistent with "armour over clothes", but with B the look's colours belong to the tunic item, so an argument exists for linen under armour with no tunic. It is left as it is.
 - Whether townsfolk remark on a player in their underclothes is the quest writer's question, as the decision said.
+
+## v80 — Session 395 — The town guards in the armour kit, by the town's fortune (H.2, Michael's C on #87)
+Michael answered decision #87 on 1 Oct with C: the guards wear the armour kit by the town's wealth. Until now every guard wore the people's steel bowl helm over a coat in the nation's colour. Since Session 384 that left a guard in the street less armoured than a player in Wooden armour.
+
+The rule sits in `personGenome`, after the townsfolk's wealth, and follows the same pattern: it applies only to a person of a place (`opts.key` resolves to a settlement) whose role is a guard's (`GUARD_ROLE`, the old role pattern plus `constable`). `guardArmourTier` gives the tier. A captain wears Steel plate wherever he serves. Otherwise a town under prosperity 40 puts its guards in Wooden lamellar, and every town at 40 or over in Iron mail. Prosperity runs from 10 to 95. Outposts sit at 25–45 and villages at 35–55, so lamellar is the poor places' armour, and towns, ports and cities wear mail. The guard gets the kit's helm, cuirass, vambraces and greaves, and the bowl helm comes off. He keeps his own boots, and his coat's colour shows at the skirt under the armour. This is the prototype's C as Michael chose it. The rule draws nothing from the seeded random, so a guard's face, hair and build are the same person as before. The genome is cached by name and place, as the townsfolk's clothes are, so a town whose fortune crosses 40 re-dresses its guards when its people are next rebuilt.
+
+The guards in the Fighters' guild hall (role `guard`, keyed to the hall's town) wear it too. The guards of no place are unchanged: the gate zones' legacy guards, and any genome without a settlement key.
+
+### Verified (headless Chromium)
+`tests/guardarmour.test.mjs`, 9/9:
+- At prosperity 30 a guard wears lamellar; at 55 and at 85 he wears mail. A captain wears plate at 30.
+- The kit's helm replaces the bowl helm (`hat` is `none`), and the feet are left to the guard's boots.
+- The night watch is armoured too. A farmer is not, and neither is a guard with no place.
+- With the settlement lookup stubbed out, the same guard comes out the same in style, beard, sex, height, build and phase.
+- Triangles: an unarmoured guard is 5,034 (2,181 distant). In lamellar he is 10,942 (5,722), in mail 9,800 (4,704), and a captain in plate 8,486 (3,645). Still 17 bones.
+- In Dunmore (prosperity 61) all three guards on its rigs wear mail: Séamus, Eilís, and Cormac of the night watch, at 9,768–12,380 triangles with their spears.
+- Two neighbouring suites caught the cost. In `people`, "every townsperson is one skinned mesh" capped every person at 9,000 triangles, and a guard in the kit is up to 13,162. The check now holds an armoured guard to 14,000 and everyone else to 9,000 as before. In `lod`, the distant copy must stay under .55 of the full figure, and the lamellar guard's was .58 (6,254 of 10,942): its lacing cords and hoops do not thin with distance. The distant copy now laces every third slat and rounds the lamellar's hoops in half the segments, which brings it to 5,722 (.53). This changes only the distant copy, the player's own lamellar included; up close nothing changes. `lod` then passed 3/3: across Dunmore's square and road the distant copies save 47k and 80k triangles.
+- `peopleao`, `armourkit`, `underclothes`, `perf`, `wealth` and `guildfurn` pass. `parsecheck` is clean.
+- `docs/prototypes/guardarmour-ingame.png` (`docs/prototypes/guardarmour/ingame.mjs`) shows the same four guards as the prototype, before and as built. It matches the prototype's C row.
+- Build tag s353.
+
+### Needs eyes
+- A walled town has two or three guards, so this adds roughly 15–20k triangles in its street. The distant copies take most of that, but a frame-time check in a poor village on Michael's machine would be worth one look: lamellar's distant copy (5.7k) is still the heaviest in a town.
+- The guard's nation colour now shows only at the skirt and the sleeves under the vambraces. A tabard over the armour would bring it back. That was not in the options, so it is not built.
+- Armoured foes (bandits, the dead in mail) still wear their own builds.

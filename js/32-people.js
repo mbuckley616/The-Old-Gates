@@ -127,6 +127,13 @@ function personGenome(def,opts){
       const w=Math.max(0,Math.min(1,base+(pr-50)/50*.25+(r()-.5)*.2));g.wealth=w;const C=x=>new THREE.Color(x);
       if(w<.3){const u=C(0x7a6c5a);g.cloth=g.cloth.clone().lerp(u,.45);g.sleeve=g.sleeve.clone().lerp(u,.45);g.legs=g.legs.clone().lerp(u,.3);g.trim=g.cloth.clone().multiplyScalar(.8);g.boot=C(0x7a6a52);if(g.hat==='chaperon'||g.hat==='fur')g.hat='none';}
       else if(w>.7){for(const k of ['cloth','sleeve']){const h={};g[k].getHSL(h);g[k]=new THREE.Color().setHSL(h.h,Math.min(1,h.s*1.15+.03),h.l*.82);}g.trim=C(0xc8a040);g.boot=C(0x1a120c);g.legs=g.legs.clone().multiplyScalar(.8);}}}
+  // S395 — a town's guards in the armour kit by its fortune (Michael's C on #87): Wooden lamellar in a poor town (prosperity
+  // under 40: the outposts and the poorer villages), Iron mail anywhere better off, Steel plate for a captain. Helm, cuirass,
+  // vambraces and greaves from the kit; the guard's own boots, and the coat's colour at the skirt and the sleeves under it.
+  // No draw from r(), so every other trait stays as it was.
+  if(opts.key&&GUARD_ROLE.test(role)&&typeof WORLD!=='undefined'&&typeof MATERIALS!=='undefined'){let pr=null;try{const st=WORLD.siteAnywhere(String(opts.key).split('#')[0]);if(st)pr=WORLD.prosperity(st);}catch(e){}
+    if(pr!=null){const t=guardArmourTier(role,pr),m=MATERIALS[t-1],pc=()=>({tier:t,fam:AR_FAM[t],sig:null,metal:m.blade,guard:m.guard,glow:m.glow});
+      g.eq=Object.assign({amulet:false,quiver:false},g.eq||{},{armour:{head:pc(),chest:pc(),hands:pc(),legs:pc(),feet:null}});g.hat='none';g.guardTier=t;}}
   return g;
 }
 // ── the body: rounded parts on bones, baked into one skinned mesh ──
@@ -162,6 +169,8 @@ function personAO(pos,nor,col,PR,O){O=O||PAO;if(!O.on)return;const S=[];
 // `part`, bones and genome. The glow parts are baked vertex colours.
 const AR_FAM=[null,'lamellar','muscle','mail','plate','plate','plate','plate','plate','plate','plate'];
 const AR_SIG=[null,null,null,null,null,'fluted','heavy','faceted','scaled','spiked','inlaid'];
+const GUARD_ROLE=/guard|captain|sergeant|watch|blade|warden|recruit|soldier|constable/;
+function guardArmourTier(role,pr){return /captain/.test(role)?4:pr<40?1:3;}
 function AR_FROM_EQ(EQ,mode){
   const piece=it=>{if(!it||!it.material||!it.tier)return null;const t=Math.max(1,Math.min(10,it.tier)),m=MATERIALS[t-1];if(m.name!==it.material)return null;
     return {tier:t,fam:AR_FAM[t],sig:mode==='A'?null:AR_SIG[t],metal:m.blade,guard:m.guard,glow:m.glow};};
@@ -187,12 +196,14 @@ function ARMOUR_DRESS(X){
   const P=E.chest;
   if(P){const m=MT(P.metal),gd=GD(P.guard),gl=P.glow!=null?C(P.glow):null,S=P.sig,F=S==='faceted'?facet:(x=>x);
     if(P.fam==='lamellar'){
+      // S395 — the distant copy laces every third slat and rounds its hoops in half the segments (a guard's lamellar was
+      // .58 of the full figure there, the heaviest distant copy in a town)
       // five laced hoops of slats from the belt to the chest, each flared over the one below; two more over the hips
       const N=5,y0=0,y1=.34;for(let i=0;i<N;i++){const ya=y0+(y1-y0)*i/N-.004,yb=y0+(y1-y0)*(i+1)/N+.01,ra=rAt(Math.max(.01,ya))*1.1+.016,rb=rAt(yb)*1.08+.004;
-        part(hoop(ya,yb,ra,rb,.01,20),m,B.spine).scale.z=Z;ring(rb,.0045,yb,gd,B.spine);
-        for(let k=0;k<12;k++){const a=k/12*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.004,(ya+yb)/2);}}
-      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb])=>{part(hoop(ya,yb,ra*bw,rb*bw,.01,20),m,B.hips).scale.z=.78;ring(rb*bw,.0045,yb,gd,B.hips,.78);
-        for(let k=0;k<12;k++){const a=k/12*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.004,(ya+yb)/2);}});
+        part(hoop(ya,yb,ra,rb,.01,SK.seg(20,10)),m,B.spine).scale.z=Z;ring(rb,.0045,yb,gd,B.spine);
+        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.004,(ya+yb)/2);}}
+      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb])=>{part(hoop(ya,yb,ra*bw,rb*bw,.01,SK.seg(20,10)),m,B.hips).scale.z=.78;ring(rb*bw,.0045,yb,gd,B.hips,.78);
+        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.004,(ya+yb)/2);}});
       LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;for(let i=0;i<3;i++){const r=.078-.004*i;part(SK.cyl(r,r+.014,.045,12,1,true,c-1.2,2.4),i%2?gd:m,b,s*.01,-.02-i*.036,0).scale.z=1.1;}
         part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),leather,b,s*.012,-.004,0).scale.set(1.1,.7,1.15);});
     } else if(P.fam==='muscle'){
