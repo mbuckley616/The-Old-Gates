@@ -10099,3 +10099,23 @@ The messages: *They come over your rail behind you and take 2 × chest of silver
 - Whether stepping off a deck in the heat of a fight (a roll over the rail, a knock-back) costs a hold too easily. The edge is 1.5 units past the deck's box. A jump straight up doesn't count; a fall into the water does.
 - Whether half, dearest first, is the right bite against the blockade's ×1.8. A sloop's 40 is five chests of silver, about 280 a crossing; a flight loses three of them.
 - The boarders cross only after twelve seconds within 16 units of your ship, so the second case wants a real fight at sea to judge.
+
+## v80 — Session 399 — The witnesses' ranges, measured (backlog G, Session 156)
+Backlog G owed a check of Session 156's witnesses: *get seen picking a lock in a real town: the ranges by day, night and sneaking*. The spec (the crime system, 26 Sep) says anyone awake within about 12 units with a clear line sees a crime; sneaking halves the range and night halves it again. `crime2` checks a witness at 3 units and one at 9 at night, but nothing tested the edges or the four cases, so I measured them. Nothing in the game changed.
+
+**What was measured** (`witnessOf`, the street branch). In Dunmore, I stood on open ground on the pad with every townsperson out of the street but one, Gráinne, and set her at 2.9, 3.1, 5.9, 6.1, 11.9 and 12.1 units along a line with nothing in the way, under each of the four cases. I also stood her across the Mages' Guild, 10 units off by day, and tested a townsperson out of the street (hidden, as one asleep indoors is) and one who has run off.
+
+### Verified (headless Chromium)
+`tests/witnessrange.test.mjs` (new), 7/7:
+- Walking by day: seen at 2.9 through 11.9, not at 12.1.
+- Sneaking by day: seen to 5.9, not at 6.1.
+- Walking at night: seen to 5.9, not at 6.1.
+- Sneaking at night: seen at 2.9, not at 3.1.
+- Across the Mages' Guild, 10 units off by day: not seen.
+- Out of the street (hidden or run off): not seen, even at 2 units.
+
+Build tag s353.
+
+### Needs eyes
+- Whether 12 units by day reads as "in sight" in a real street, and 3 sneaking at night as fair. The numbers are the spec's and they hold.
+- An inconsistency, for Michael if he wants it changed: outdoors a witness sees all round, back turned or not. Indoors a keeper sees only a 120° cone (his B on #73, Session 368). Not asked, because the spec says *within sight* and the street has never been called unfair.
