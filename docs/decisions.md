@@ -20,6 +20,14 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
+### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
+Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by class). Pirates already board you at sea (`crewUp`, the boarding of Session H); today a boarding risks only your health, and beating them gives you their chest. With cargo aboard, a boarding could cost what you carry, which is what makes a blockade's ×1.8 a gamble.
+- **A.** Nothing taken: a boarding is a fight, as now.
+- **B.** If they win (you fall or flee the deck while they hold it), they take half the hold, the dearest goods first. Beat them and nothing is lost.
+- **C.** B, and their chest carries some of the goods they took off other ships (one or two crates of a random good), so beating them can pay in cargo too.
+
+Recommendation: **C.** It makes the blockade a real choice (sail through for the price or wait for the sails to pass), and the chest's crates are a reward you can see. One Opus session with a test.
+
 ## Answered
 
 ### Cargo trading between ports — what does a hold of goods earn, and how? (systems builder, 2026-10-01, issue #88)
