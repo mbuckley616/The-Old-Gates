@@ -6,6 +6,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
+Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by class). Pirates already board you at sea (`crewUp`, the boarding of Session H); today a boarding risks only your health, and beating them gives you their chest. With cargo aboard, a boarding could cost what you carry, which is what makes a blockade's ×1.8 a gamble.
+- **A.** Nothing taken: a boarding is a fight, as now.
+- **B.** If they win (you fall or flee the deck while they hold it), they take half the hold, the dearest goods first. Beat them and nothing is lost.
+- **C.** B, and their chest carries some of the goods they took off other ships (one or two crates of a random good), so beating them can pay in cargo too.
+
+Recommendation: **C.** It makes the blockade a real choice (sail through for the price or wait for the sails to pass), and the chest's crates are a reward you can see. One Opus session with a test.
+
+Michael: **B, and their chest carries some of the goods they took off other ships**. (1 Oct 2026)
+
 ### A fist on screen in first person — the empty hand (the look builder, Session 380, 2026-10-01, issue #80)
 Fists are what an empty hand fights with (your ask, Session 174), but in first person an empty hand draws nothing: no fist and no arm, and nothing moves when you punch. A prototype (Session 380, look builder) builds a fist from the people's shape kit (a rounded hand, four knuckles, the fingers folded under them, the thumb across them, a wrist; about 2,000 triangles, 2,400 wrapped) and shows three ways of carrying it, each at rest, mid-punch and in guard. The arms are today's sleeves from the weapon view, coloured by your chest piece. Gauntlets would tint the hand as they tint the weapon hand now.
 
