@@ -9852,3 +9852,14 @@ The probe of the punch is above: 0.429 s held for 30 frames, the strike pending,
 
 ### Needs eyes
 Michael's letter on #80. Unresolved in every option: the sleeve bridge's flat end shows where the arm comes up steeply in the guard pose. The bridge is the weapon view's own, and the in-game build should round it off. The bare body in third person stays owed and has no prototype yet.
+
+## v80 — Session 381 — The empty slots in third person: the prototype (H, owed since Session 174)
+This is the other half of what Session 174 left owed to H. Every slot can be emptied, but the third-person body still wears the tunic, breeches and boots coloured in the creator: `tpBuild` falls back to the look's colours when a slot is empty. So taking off the Tattered Tunic changes nothing you can see. Whether the body should show anything else, and what, is a look question with a register to it, so it goes to Michael as a prototype.
+
+The prototype is `docs/prototypes/barebody/shots.mjs` and changes no game code. It calls `tpBuild` with the look's colours overridden, and for B it wraps `buildPerson` for the one call so that the sleeves take the skin's colour. It builds a man (Aodh) and a woman (Brídín), each from the front and from behind, three ways. Today's figure is the creator's clothes. B is undyed linen underclothes: a shirt with bare arms, braies and bare feet. C is the same with long linen sleeves. B is recommended: it reads at a glance as undressed, and it lets the creator's colours belong to the starting clothes rather than the body. The question is DECISION #83 and is pending in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/barebody-grid.png`. The genome gave a man for Aodh and a woman for Brídín, as intended. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #83. At the prototype's scale and in this light, the skin and undyed linen sit close in tone, so B and C differ less than they would in the game. The bare feet in the shot are boots coloured as skin, and a build owes them a foot. The shirt keeps the tunic's cut and flare for the shot.

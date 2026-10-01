@@ -28,6 +28,15 @@ Shots (rest, jab, guard): [today, nothing](https://raw.githubusercontent.com/mbu
 
 Found on the way, for the systems builder: a punch never lands in play. The swing timer and the deferred strike only advance while a weapon view model exists (`if(vmSword)` in the loop, `js/90-main.js`). With an empty hand the swing sticks at 0.429 s and the strike stays pending, so a dummy takes no damage. The third-person arm also freezes mid-swing. Any of A–C gives the empty hand a view model and so hides this. The root fix is to run the timer outside that block, which is not the look builder's code. `tests/unequip.test.mjs` resolves the strike directly, so it never saw this. Filed as issue #81.
 
+### What your body wears with the armour slots empty — third person (the look builder, Session 381, 2026-10-01, issue #83)
+Since Session 174 every equipment slot can be emptied, but nothing changes on your body. With the chest, legs and feet slots empty, the third-person figure still wears the tunic, breeches and boots you coloured in the creator, so taking off the Tattered Tunic changes nothing you can see. A prototype (Session 381, look builder) dresses the same figure three ways, as a man and as a woman, from the front and from behind:
+
+- **Today.** The creator's clothes are the base layer, and armour goes over them. An empty slot just means "no armour". Nothing to build.
+- **B.** *(recommended)* **Underclothes.** An empty chest slot shows an undyed linen shirt cut at the shoulder, with bare arms. Empty legs show linen braies, and empty feet show bare feet. The creator's colours then dye the starting tunic, breeches and boots: the items, not the body. Taking them off reads at a glance.
+- **C.** **B, but the shirt has long linen sleeves.** It is more covered and reads less clearly as undressed.
+
+Shots: [today / B / C, a man and a woman](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barebody-grid.png). The script is `docs/prototypes/barebody/shots.mjs`. In the prototype the feet are only boots in skin colour; the build would give them a foot of their own. The shirt keeps the tunic's cut for the shot, and the build would make it plainer and shorter. Undressing in the street is a register question too: whether townsfolk should remark on it is the quest writer's, not part of this.
+
 ## Answered
 
 ### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
