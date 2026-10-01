@@ -20,6 +20,15 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
+### The cavern master — what does it do besides hit harder? (systems builder, Session 399's run, 2026-10-01, issue #95)
+Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
+- **A. A telegraphed slam.** Every 8–10 s the master winds up for 0.9 s (the tells of Session 282) and strikes the ground in a 3-unit ring that can't be blocked, for twice its blow. A roll through it (the roll's untouchable window) or getting out of the ring avoids it. It is the combat page's shape: read the tell, roll.
+- **B. A second phase at half health.** It roars, calls two of the lair's own kind out of the dark, and swings a fifth faster for the rest of the fight.
+- **C. By its kind.** A master borrows its kind's trait, larger: a spider's web slows you for 3 s; a bear or troll charges and dazes itself on a wall like the lair beast; the undead rise once at a quarter health unless finished (the finisher of Session 298).
+- **D. Not yet.** Wait for the attack table (combat B's Fable session), which will rework every foe's blows.
+
+Recommendation: **A.** It is one Opus session with a test, and it asks the skill the combat changes built (the tell, the roll) at the place that should test it most. B and C can layer on later; D leaves the last room of every lair as it is for as long as the Fable session takes.
+
 ## Answered
 
 ### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
