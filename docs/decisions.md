@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Should the town guards wear the armour kit too? (the look builder, Session 385, 2026-10-01, issue #87)
+Session 384 put your B on #76 into the game: the player's armour is now lamellar, a muscle cuirass, mail or plate by material. The town guards still wear the people's steel bowl helm over a coloured coat, so a guard now looks less armoured than a player in Wooden armour. A prototype (look builder, Session 385) dresses four guards (a man, a woman, an Old Blood man from behind, and a captain) three ways.
+- **A. Today.** The bowl helm and the coat. No cost.
+- **B. Every guard in Iron mail** with the nasal helm.
+- **C.** *(recommended)* **By the town's wealth**, the same rule as the townsfolk's clothes (your A on Session 246). In a poor town the guards wear Wooden lamellar, in a middling one Iron mail, and the captain of a keep wears Steel plate. A town's guards would tell you what the place can afford.
+
+Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town. Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). PR #82.
+
 ## Answered
 
 ### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
