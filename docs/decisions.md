@@ -20,6 +20,8 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
+## Answered
+
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
 - **A. A telegraphed slam.** Every 8–10 s the master winds up for 0.9 s (the tells of Session 282) and strikes the ground in a 3-unit ring that can't be blocked, for twice its blow. A roll through it (the roll's untouchable window) or getting out of the ring avoids it. It is the combat page's shape: read the tell, roll.
@@ -29,7 +31,9 @@ Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Sess
 
 Recommendation: **A.** It is one Opus session with a test, and it asks the skill the combat changes built (the tell, the roll) at the place that should test it most. B and C can layer on later; D leaves the last room of every lair as it is for as long as the Fable session takes.
 
-## Answered
+Michael: **A telegraphed slam**. (1 Oct 2026, issue #95, via the control room)
+
+*Built, Session 404* (`tests/masterslam`): the slam as A says it, a 3-unit ring on the floor through the tell. Found in building it: Session 130's 1.6× damage never reached a dungeon master's blows (it scaled an `e.dmg` they don't have); it does now.
 
 ### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
 Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by class). Pirates already board you at sea (`crewUp`, the boarding of Session H); today a boarding risks only your health, and beating them gives you their chest. With cargo aboard, a boarding could cost what you carry, which is what makes a blockade's ×1.8 a gamble.

@@ -264,6 +264,47 @@ function revealMimic(e){
   if(typeof sndTelegraph==='function') sndTelegraph();
 }
 
+// S404 — the cavern master's slam (Michael's A on #95). Every 8–10 s, with you within six units, a lair's master
+// (lairFinish sets e.master) stops, winds up for 0.9 s in the shared tell (the pose from e._wind, the glow in the last
+// .15 s) while a ring of its reach shows on the floor, and strikes the ground. Anyone inside the 3-unit ring takes twice
+// its ordinary blow, and no shield, block or parry takes any of it: be out of the ring, or mid-roll in the roll's
+// untouchable window, when it lands. A staggered master loses its slam. Returns true while the slam is wound up, so the
+// loop holds the master still and starts no other blow.
+const SLAM_TELL=.9,SLAM_R=3,SLAM_NEAR=6,SLAM_EVERY=[8,10];
+function slamEvery(){return SLAM_EVERY[0]+Math.random()*(SLAM_EVERY[1]-SLAM_EVERY[0]);}
+function slamBlow(e){const def2=_armour();return 2*Math.max(1,Math.round((10+Math.floor(Math.random()*11)-Math.floor(def2*.5))*(e.dmgMult||1)));}
+function slamRing(e){
+  if(!e._slamRing){const m=new THREE.Mesh(new THREE.RingGeometry(SLAM_R-.22,SLAM_R,48),new THREE.MeshBasicMaterial({color:0xff5a30,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.visible=false;e._slamRing=m;}
+  const r=e._slamRing;if(r.parent!==dScene)dScene.add(r);r.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+.04,e.z);return r;}
+function slamCancel(e){e._slamT=0;telegraphReset(e);if(e._slamRing)e._slamRing.visible=false;e._slamCd=slamEvery();}
+function tickMasterSlam(e,dt,dist,now){
+  if(!e.master||e.dead)return false;
+  if(e._slamCd==null)e._slamCd=slamEvery();
+  if(e._slamT>0){
+    if(isStaggered(e)){slamCancel(e);return false;}
+    e._slamT-=dt;const p=1-Math.max(0,e._slamT)/SLAM_TELL;
+    e.telegraphMax=SLAM_TELL;telegraphPulse(e,p);
+    const r=slamRing(e);r.visible=true;r.material.opacity=.15+.55*p;
+    if(e._slamT>0)return true;
+    e._slamT=0;telegraphReset(e);r.visible=false;e.atkCd=Math.max(e.atkCd||0,1.2);e._slamCd=slamEvery();e._slams=(e._slams||0)+1;
+    if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.32,220);
+    const d=Math.hypot(px-e.x,pz-e.z);
+    if(d>=SLAM_R){e._slamLast='clear';showMsg('The ground cracks where you stood.','#c8e88a');return false;}
+    if(rollUntouchable(now/1000)){e._slamLast='rolled';showMsg('You roll through the blow.','#c8e88a');return false;}
+    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;e._slamLast=dmg;
+    if(typeof sndPlayerHurt==='function')sndPlayerHurt();updateHUD();
+    showMsg(`${e.name} slams the ground under you: ${dmg}.`,'#ff6060');
+    if(PHP<=0&&!dead)playerDead();
+    return false;}
+  if(!e.alert||e.disguised||e.dormant)return false;
+  e._slamCd-=dt;
+  if(e._slamCd>0||dist>=SLAM_NEAR||e.telegraphT>0||isStaggered(e))return false;
+  e._slamT=SLAM_TELL;e.telegraphMax=SLAM_TELL;e.path=[];
+  if(typeof sndTelegraph==='function')sndTelegraph();
+  showMsg(`${e.name} rears up to strike the ground.`,'#ffb060');
+  slamRing(e).visible=true;
+  return true;}
+
 // Returns a display tag showing notable resist/def interaction, or '' if fully neutral.
 // Priority: defPierced (Smól Mastery) > strong weak/resist > mild weak/resist > neutral.
 function dmgTag(info, e){

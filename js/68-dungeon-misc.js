@@ -412,7 +412,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const pool=ENEMIES.filter(e=>!e.dead);const low=Math.max(...pool.map(e=>e.floor||1));const cand=pool.filter(e=>(e.floor||1)===low).sort((a,b)=>Math.hypot(b.x-ent.x,b.z-ent.z)-Math.hypot(a.x-ent.x,a.z-ent.z));
   const e=cand[0];if(!e)return;
   const dragon=!!L.dragon;e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${L.boss}`;e.boss=true;e.dragon=dragon;
-  e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:1.6)*(1+level*.04));e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
+  e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
   if(dragon)dragonBody(e,2.88); // S219 — the world's dragon's size (its zone scale 1.8 × 1.6)
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);

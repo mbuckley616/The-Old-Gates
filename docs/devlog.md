@@ -10156,3 +10156,28 @@ The checks and their thresholds are as before. Build tag s354.
 ### Needs eyes
 - Nothing in play.
 - A frame of 2.3 s in the Faolchú's fight on software GL is far slower than any other scene measured. A player on a real GPU won't see it, but if `hourhitch`'s frame budget ever runs there, it will.
+## v80 — Session 404 — The cavern master's slam (Michael's A on #95)
+Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130: every lair's cavern ends in a master, the deepest foe made 3× the health, and it fought like the first room. I asked (#95); Michael answered **A, a telegraphed slam**.
+
+**What changed** (`js/74-strikes.js`, `tickMasterSlam`, called from the dungeon foe loop in `js/90-main.js`; `lairFinish` in `js/68-dungeon-misc.js` marks the master `e.master`):
+- Every 8–10 s, with you within six units, the master stops and winds up for 0.9 s. It uses the shared tell of Session 282: the wind-up pose from `e._wind`, the red glow in the last .15 s, the tell's sound. A ring of its reach, 3 units, shows on the floor and brightens through the tell. *Test — Troll King rears up to strike the ground.*
+- It strikes the ground. Inside the ring you take twice its ordinary blow (the dungeon strike's roll, ×2), and a shield, a held block or a perfect parry takes none of it off. Out of the ring when it lands (*The ground cracks where you stood.*) or mid-roll in the roll's untouchable window (*You roll through the blow.*), you take nothing.
+- While wound up the master holds still and starts no other blow, and a ranged master looses nothing. After the slam it waits 1.2 s before its next ordinary blow, which is the opening. A master staggered mid-tell (a parry from an earlier blow, a broken posture) loses the slam and starts its 8–10 s again. A master killed mid-tell takes its ring with it.
+- Seven units off or more, it does not wind up. Only a lair's master slams. The world's lair beast keeps its charge, and the world's bosses keep their second-phase heavy blow.
+
+**A correction to Session 130.** `lairFinish` made the master *1.6× the damage* by scaling `e.dmg`, and a dungeon foe has no `e.dmg`. Its blows come from `e.dmgMult`, so the line made a `NaN` nobody read, and every master since has hit exactly as hard as its kind. Now the same factor, 1.6 × (1 + level × .04) (a wyrm's 2.2), goes onto `dmgMult`, so the master hits as the devlog and the question on #95 said it did. This is a fix, not a new rule, but in play it roughly doubles a master's blow at level 6 (×1.98), and the slam is twice that.
+
+### Verified (headless Chromium)
+`tests/masterslam.test.mjs` (new), 16/16, in a deep lair cavern at level 6 (master: *Test — Troll King*). The loop is paused and the slam driven at fixed 1/60 ticks, then one slam is left to the running game:
+- The deepest foe is the master, and the only one. Its `dmgMult` went from 3.36 to 6.67, ×1.984, which is 1.6 × 1.24.
+- With you at 2 units and its timer spent, it winds up on the first tick, holds 54 ticks (0.9 s), then lands. The pose reaches 0.98 and the ring 0.69 opacity at 3 units. The ring is gone after.
+- Standing in the ring with a block raised at a perfect parry's timing every tick, it took 694 (the range for twice a blow at this armour was 390–824). Nothing was taken off.
+- Stepping from 2 to 4 units at tick 30: 0 taken, *clear*. A roll whose untouchable window covers the landing: 0, *rolled*. A roll whose window had passed: it lands (650).
+- Staggered at tick 20: no slam, the ring and the pose gone, the next one 9.8 s off. Seven units away for a second: no wind-up. An ordinary foe of the cavern, ten seconds beside you: never slams. Killed mid-tell: the ring hides.
+- In the running game (the loop unpaused), the master wound up and landed its slam.
+- `dungeonfoes`, `tells`, `roll`, `posture`, `mimic`, `mimicspots`, `dungeon`, `dungeonexit` and `parryclock` pass. `wyrm`'s cavern check passes (the wyrm master, its body and its health bar); its world check fails with `none: true`, and fails the same way on `origin/main` without this change, so it is older than this session (the three lair sites a probe found all had a pad and no settlement, which is what the test's search wants; not chased further). Build tag s355.
+
+### Needs eyes
+- Whether 0.9 s and a 3-unit ring read in a dark cavern. The ring is a flat orange band on the floor, my own stand-in: the look builder may want a better mark (a crack, dust).
+- The damage. With the Session 130 correction, a master's slam is about four times an ordinary blow of its kind. A level-1 character (130 health) in this test's deep cavern faced a master's ordinary blow of about 60–125 and a slam of twice that. Whether that is a fair last room, or the 1.6 wants retuning now that it bites, is for a real fight to judge.
+- Whether the roll through the ring (towards the master, inside its reach) feels as good as stepping out.

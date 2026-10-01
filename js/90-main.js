@@ -1243,6 +1243,7 @@ function loop(now){
       // First-alert cry
       if(!e.hasCried){e.hasCried=true;sndEnemyCry(e.name);}
       e.atkCd-=dt;e.pathT-=dt;
+      if(e._slamT>0&&isStaggered(e))slamCancel(e); // S404 — a staggered master loses its slam
       // Stagger check
       const stag=staggered.find(s=>s.e===e);if(stag){stag.t-=dt;if(stag.t<=0){staggered=staggered.filter(s=>s.e!==e);reraiseGuard(e);}else{e.mesh.position.set(e.x,e.baseY,e.z);e.mesh.lookAt(px,e.mesh.position.y,pz);e.el.position.set(e.x,.8,e.z);return;}}
       // Dormant state (Gargoyle) — statue-frozen until player comes close. No movement, no attack, no orbit.
@@ -1315,8 +1316,10 @@ function loop(now){
         }
         return;
       }
+      // S404 — a lair's master winds up its slam: it holds still and starts no other blow until it lands
+      const _slam=tickMasterSlam(e,dt,dist,now);
       // Ranged enemies hold at distance 3-5; melee enemies always close
-      const wantsToChase=!e.ranged||(dist>4.5);
+      const wantsToChase=!_slam&&(!e.ranged||(dist>4.5));
       if(wantsToChase){if(e.pathT<=0){e.path=bfs(e.x,e.z,px,pz);e.pathT=1.2;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}}
       // Attack lunge animation
       let lungeFwd=0;
@@ -1370,7 +1373,7 @@ function loop(now){
         }
       }
       // Ranged attack — Phantoms and Wraiths fire magic orbs
-      if(e.ranged&&e.alert){
+      if(e.ranged&&e.alert&&!_slam){
         e.rangedCd-=dt;
         if(dist>2.5&&dist<12&&e.rangedCd<=0){
           e.rangedCd=2.5+Math.random()*1.0;
@@ -1404,7 +1407,7 @@ function loop(now){
           telegraphReset(e);
           executeDungeonStrike(e, now);
         }
-      } else if(dist<.9&&e.atkCd<=0&&!e.ranged){
+      } else if(!_slam&&!(e._slamT>0)&&dist<.9&&e.atkCd<=0&&!e.ranged){
         e.telegraphMax = telegraphDuration(e);
         e.telegraphT = e.telegraphMax;
         // v63 — Stamp combatYaw at windup start (see zone tick for rationale).
