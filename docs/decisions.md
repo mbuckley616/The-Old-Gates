@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Should the town guards wear the armour kit too? (the look builder, Session 385, 2026-10-01, issue #87)
+Session 384 put your B on #76 into the game: the player's armour is now lamellar, a muscle cuirass, mail or plate by material. The town guards still wear the people's steel bowl helm over a coloured coat, so a guard now looks less armoured than a player in Wooden armour. A prototype (look builder, Session 385) dresses four guards (a man, a woman, an Old Blood man from behind, and a captain) three ways.
+- **A. Today.** The bowl helm and the coat. No cost.
+- **B. Every guard in Iron mail** with the nasal helm.
+- **C.** *(recommended)* **By the town's wealth**, the same rule as the townsfolk's clothes (your A on Session 246). In a poor town the guards wear Wooden lamellar, in a middling one Iron mail, and the captain of a keep wears Steel plate. A town's guards would tell you what the place can afford.
+
+Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town. Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). PR #82.
+
 ### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
 Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
 - **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.
@@ -81,6 +89,17 @@ it, diff `js/`).
 - **C. Delete them on the day**, in the switch-over commit: the manifest's hashes and the CI run are proof enough.
 
 Michael: **A. Keep both one release, then drop them** — . (30 Sep 2026, via the control room)
+
+### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
+Today all ten materials have the same armour on the body and only the colour changes: a smooth shell over the tunic, a ball on each shoulder, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm with a brim. `docs/prototypes/armour/` (auto/concept) makes the armour from the people's shape kit, baked into the body so it bends and walks with them. It has four builds. **Wooden** is laced lamellar with a laced skull-cap and a leather curtain at the neck. **Bronze** is a muscle cuirass with a skirt of leather strips and a crested helm open at the face. **Iron** is a mail shirt to mid-thigh with a conical helm, a nose guard and a mail curtain. **Steel** is plate: a ridged breastplate, hooped plates below it, thigh plates, shoulder guards of three plates each, elbow and knee cops, plated shins and feet, and a closed rounded helm with an eye slit. Under the armour the tunic and breeches keep the character's own cloth colour.
+- **A.** The four builds. Mithril to Cosmic wear the Steel plate in their own colour (the weapon kit's rule).
+- **B.** *(recommended)* The four builds, and each rare metal gets a mark of its own: Mithril fluted, Adamant heavy with a crest and rivets, Obsidian cut into flat faces with glowing seams, Draconic scaled with swept-back horns, Demonic spiked with horns curving forward, Cosmic smooth with rings of light and a halo. A rare set changes your silhouette as well as your colour (the brief's progression).
+- **C.** Today's one shape with detail added (rims, straps, plates). All ten materials still share one silhouette.
+
+Cost: the whole player figure is 5,254 triangles today and 8,208–10,544 with a proposed set (Steel and every A-row metal 8,208; the B signatures 8,551–9,936; Wooden 10,544, of which the lacing is about 500 and can be thinned). Open inside the answer: is "Wooden" armour wood (lamellar, as shown) or leather?
+Shots: [lineup, today / B / A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/lineup.png) · [the four builds](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/families.png) · [side and back](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/side.png) · [the rare metals](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/rare.png) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/scale.png)
+
+Michael: **B, the four builds plus a mark for each rare metal**. (2026-09-30)
 
 ### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
 A shop with a back room keeps its strongbox behind a shut door, and the keeper never sees it there. A one-room shop keeps the box in the shop itself. A keeper indoors sees you within six units with a clear line, and walks the floor all day. `tests/shopsight` measured 13 one-room shops in four towns at 13h, with ten minutes of the keeper's own walk each, and they split in two. Eight are seen 93–100% of the time. Five are seen 0–10%: Dunmore's three Goods shops, Odhrán's Stores and Mira's Apothecary, where the box stands 5.5–6.6 units from the counter.
