@@ -4,6 +4,52 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
+Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
+- **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.
+- **B.** A, plus the helm as a 22nd skill, Seamanship (perks: shallows on the minimap, reefed sails, the ram, speed in heavy seas). Five Opus sessions.
+- **C.** B, plus a crew hired by the hand, paid by the day and fed from the hold. One Fable and five Opus sessions.
+
+Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
+
+## Answered
+
+### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
+Today all ten materials have the same armour on the body and only the colour changes: a smooth shell over the tunic, a ball on each shoulder, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm with a brim. `docs/prototypes/armour/` (auto/concept) makes the armour from the people's shape kit, baked into the body so it bends and walks with them. It has four builds. **Wooden** is laced lamellar with a laced skull-cap and a leather curtain at the neck. **Bronze** is a muscle cuirass with a skirt of leather strips and a crested helm open at the face. **Iron** is a mail shirt to mid-thigh with a conical helm, a nose guard and a mail curtain. **Steel** is plate: a ridged breastplate, hooped plates below it, thigh plates, shoulder guards of three plates each, elbow and knee cops, plated shins and feet, and a closed rounded helm with an eye slit. Under the armour the tunic and breeches keep the character's own cloth colour.
+- **A.** The four builds. Mithril to Cosmic wear the Steel plate in their own colour (the weapon kit's rule).
+- **B.** *(recommended)* The four builds, and each rare metal gets a mark of its own: Mithril fluted, Adamant heavy with a crest and rivets, Obsidian cut into flat faces with glowing seams, Draconic scaled with swept-back horns, Demonic spiked with horns curving forward, Cosmic smooth with rings of light and a halo. A rare set changes your silhouette as well as your colour (the brief's progression).
+- **C.** Today's one shape with detail added (rims, straps, plates). All ten materials still share one silhouette.
+
+Cost: the whole player figure is 5,254 triangles today and 8,208–10,544 with a proposed set (Steel and every A-row metal 8,208; the B signatures 8,551–9,936; Wooden 10,544, of which the lacing is about 500 and can be thinned). Open inside the answer: is "Wooden" armour wood (lamellar, as shown) or leather?
+Shots: [lineup, today / B / A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/lineup.png) · [the four builds](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/families.png) · [side and back](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/side.png) · [the rare metals](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/rare.png) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/armour/scale.png)
+
+Michael: **B, the four builds plus a mark for each rare metal**. (2026-09-30)
+
+### Unblock auto/systems — CI cannot confirm the branch clean on 32ed275 (the producer, 2026-09-30)
+auto/systems (PR #22, head `32ed275`, Sessions 373–376: the Caer Slige duel with Rowe's yield, seen-theft and lockpick-timing
+tests) has never been approved and its CI has not come back clean on two tries. The first run failed `watch.test.mjs`'s
+favour −2 trailing-guard assertion — the exact assertion `blockers/mainrun-red-main` already ruled a CI-timing flake this
+week, seen on four other branches that don't touch the night watch. The one allowed re-run (of the failed jobs only) came
+back worse, not better: three of eight shards (3, 5, 8) were killed at the 30-minute job timeout with no assertion failure
+at all, the same shared-runner pattern already ruled a flake and merged anyway four times this week (`unblock-auto-systems`,
+`unblock-systems-walls-lod`, `unblock-systems-hourhitch-3`, `unblock-auto-backlog`). Nothing in Sessions 373–376 touches
+shaders, frame timing, or the night watch's guard-following code. No agent is set to work on CI timing; a third re-run
+would only repeat one of these two patterns.
+- **A. Merge anyway** *(recommended)*: Claude merges 32ed275 onto main now as a `merge-anyway` line; if the watch-test
+  timing keeps flaking, the systems builder widens its tolerance next time it's convenient, the same fix pattern as S362's
+  hourhitch budget.
+- **B. Wait for a clean run.** Leave it blocked; no agent is set to touch shard timing or the watch-test tolerance, so it
+  could sit a while on a busy shared runner.
+- **C. Re-run once more first.** One more push of luck against the same 30-minute runner ceiling that has already
+  timed out three of eight shards once this head.
+
+Michael: **A** — merge anyway. (30 Sep 2026, via the control room)
+Corrected, superseded before the merge-anyway line was written: Session 378 (new head `68d1620`) found the real bug —
+the street grid was read once at the build while solids keep arriving after, so a guard sent along a way through a cell
+gone solid stood against it for good — and fixed it properly (every way now checked against live solidity). `watch` is
+8/8 and the rest of the suite passes on the new head. 32ed275 was never merged; the new head needs its own clean CI run
+and its own approval before it queues. Same pattern as `unblock-systems-hourhitch-3`.
+
 ### After the split lands — does the way back stay in the repo? (Fable, split tooling, Session 368, 2026-09-30, issue #75)
 Backlog K step 1 is built on auto/split: `scripts/split.py` cuts the script at 33 pattern-found seams, `scripts/join.py`
 reassembles the one-file build from `js/manifest.json` and proves it byte-identical. `docs/design/split-plan.md` §5 left
@@ -17,7 +63,7 @@ it, diff `js/`).
   the one-file build.
 - **C. Delete them on the day**, in the switch-over commit: the manifest's hashes and the CI run are proof enough.
 
-## Answered
+Michael: **A. Keep both one release, then drop them** — . (30 Sep 2026, via the control room)
 
 ### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
 A shop with a back room keeps its strongbox behind a shut door, and the keeper never sees it there. A one-room shop keeps the box in the shop itself. A keeper indoors sees you within six units with a clear line, and walks the floor all day. `tests/shopsight` measured 13 one-room shops in four towns at 13h, with ten minutes of the keeper's own walk each, and they split in two. Eight are seen 93–100% of the time. Five are seen 0–10%: Dunmore's three Goods shops, Odhrán's Stores and Mira's Apothecary, where the box stands 5.5–6.6 units from the counter.
