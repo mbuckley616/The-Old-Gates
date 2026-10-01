@@ -9975,3 +9975,42 @@ The guards in the Fighters' guild hall (role `guard`, keyed to the hall's town) 
 - A walled town has two or three guards, so this adds roughly 15–20k triangles in its street. The distant copies take most of that, but a frame-time check in a poor village on Michael's machine would be worth one look: lamellar's distant copy (5.7k) is still the heaviest in a town.
 - The guard's nation colour now shows only at the skirt and the sleeves under the vambraces. A tabard over the armour would bring it back. That was not in the options, so it is not built.
 - Armoured foes (bandits, the dead in mail) still wear their own builds.
+
+## v80 — Session 396 — Fists on screen in first person (H, Michael's A on #80)
+Michael answered decision #80 on 1 Oct with A: both fists up, the right jabs, block brings both to the face. He added two notes: the hands should look more like hands and fists, and in the prototype's guard shot the wrists looked snapped off the arms. Until now an empty weapon slot drew nothing in first person, because `buildViewmodel` returned early with no weapon.
+
+**The fist.** `buildFistMesh` in `js/16-viewmodel.js` is one vertex-coloured mesh built on the people's shape kit (3,108 triangles). It has:
+- the back of the hand, slightly domed, over a palm;
+- four fingers, each folded in two joints: the first segments form the flat front of the fist, the second turn in underneath, and a knuckle sits over each. The fingers run from the index to the little finger, each a little narrower and set back;
+- the thumb, rooted in the ball of the hand, with its last joint laid across the second segments of the first two fingers;
+- a wrist narrower than the hand;
+- the forearm to the elbow, in the same mesh.
+
+The prototype's fist was a rounded box with four balls for knuckles, and it read as a mitten. The snapped wrist was the prototype's arm: a straight tube from a fixed shoulder to the wrist, which the fist could turn away from. Now the forearm is part of the fist, so the wrist cannot leave the arm. The arm bridge (`_fistBridge`) runs from a shoulder below the view to the fist's elbow. The forearm takes the chest piece's sleeve colour and cuff, and it is bare skin with nothing on the chest (Session 394). Gauntlets colour the hand as they do the weapon hand. The view scene's light is bright and warm, so the skin is darkened there to read as skin, as in the prototype.
+
+**The poses.** `vmFistPose` sets the fists from `FIST_POSE`, called from the loop's view-model block in place of the sword's pose (one line in `js/90-main.js`).
+- At rest both fists are low in the corners, thumbs up.
+- The jab draws back briefly and reaches full extension at `impactPoint`, the moment the strike resolves. By then it has turned palm-down. It holds a beat, then comes back.
+- The power punch is the same punch, reaching further. Its charge draws the fist back by the shoulder.
+- Block raises both fists before the face, backs of the hands towards you.
+- The left fist keeps its guard through the jab. `buildShieldViewmodel` builds it when the off hand is empty, and a shield or torch takes its place.
+
+**Issue #81.** The empty hand now has a view model, so the swing timer and the deferred strike in the loop run for fists too: a punch lands in play. This removes the symptom of issue #81 but not its cause. Issue #81's root fix is still the systems builder's: the strike should not depend on a mesh existing.
+
+### Verified (headless Chromium)
+`tests/fists.test.mjs`, 11/11:
+- Armed, there are no fists. With the weapon slot empty there are two fists, each with its arm bridge on its own elbow.
+- A torch takes the left fist and shows the torch. Taking the torch off gives the fist back. Re-arming removes the fists.
+- In the rest, jab, power and guard poses, the bridge's end meets the elbow (a gap of 0).
+- The jab goes from (.18, −.215, −.48) to (.035, −.13, −.74). The left fist doesn't move. The back of the hand is up (1.0) as the jab lands. The power punch reaches to −.81.
+- Guard raises both fists by .14.
+- In play, `attack(false)` with the fists runs its 0.429 s swing out in real frames, and the strike lands for 4 on a dummy in front. Issue #81's repro left the swing stuck at 0.429 with the strike pending.
+- No page errors. `fpweapons`, `player`, `tpswing`, `unequip`, `underclothes` and `creator` pass. `parsecheck` is clean.
+- `docs/prototypes/fists-ingame.png` (`docs/prototypes/fists/ingame.mjs`) shows rest, the jab as it lands, guard and the power punch's draw, and one fist from the front, from the thumb side and from above.
+- Build tag s354.
+
+### Needs eyes
+- How the jab feels at speed: its timing is keyed to the swing's `impactPoint`, and the fist travels about a quarter unit in roughly 0.1 s.
+- The power punch's draw turns the fist to show its side, which reads less clearly than the rest pose.
+- At rest the fists sit low and show mostly the knuckles. Michael may want them higher.
+- The third-person body's punch is still the sword's swing played with an empty hand. That is a separate item.

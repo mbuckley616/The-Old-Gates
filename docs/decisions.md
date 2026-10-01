@@ -106,6 +106,10 @@ Shots (rest, jab, guard): [today, nothing](https://raw.githubusercontent.com/mbu
 
 Found on the way, for the systems builder: a punch never lands in play. The swing timer and the deferred strike only advance while a weapon view model exists (`if(vmSword)` in the loop, `js/90-main.js`). With an empty hand the swing sticks at 0.429 s and the strike stays pending, so a dummy takes no damage. The third-person arm also freezes mid-swing. Any of A–C gives the empty hand a view model and so hides this. The root fix is to run the timer outside that block, which is not the look builder's code. `tests/unequip.test.mjs` resolves the strike directly, so it never saw this. Filed as issue #81.
 
+Michael: **A** — Can we make sure the hands look a bit more like actual hands/fists? Also, in the third example image, the wrists don't appear anchored to the arms, and look like they've snapped off. (1 Oct 2026, via the control room)
+
+Built in Session 396 (look builder): A, with a new fist (four fingers folded in two joints, the knuckles, the thumb across the first two fingers, a tapered wrist) built in one mesh with its forearm to the elbow, so the wrist cannot leave the arm; the arm bridge runs from the shoulder to that elbow. `docs/prototypes/fists-ingame.png`, `tests/fists.test.mjs`.
+
 ### What your body wears with the armour slots empty — third person (the look builder, Session 381, 2026-10-01, issue #83)
 Since Session 174 every equipment slot can be emptied, but nothing changes on your body. With the chest, legs and feet slots empty, the third-person figure still wears the tunic, breeches and boots you coloured in the creator, so taking off the Tattered Tunic changes nothing you can see. A prototype (Session 381, look builder) dresses the same figure three ways, as a man and as a woman, from the front and from behind:
 

@@ -690,6 +690,8 @@ function loop(now){
       _baseRY_eff + swingY + pb*-.25,
       _baseRZ_eff + swingZ + pb*-.35
     );
+    // S396 — the fists keep their own poses: the jab, the guard and the power punch's draw
+    if(vmSword.userData.fists)vmFistPose(gb,pb,walkSway,totalBob+jumpDisp*.04);
     // Animate enchant sparks (orbitPhase children)
     if(EQ.weapon&&EQ.weapon.enchant){
       vmSword.children.forEach(c=>{
