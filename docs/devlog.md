@@ -10049,3 +10049,20 @@ Session 397's prototype showed a curly-haired Shieldbearer's hair standing out t
 A shorn head under an open helm (lamellar, mail) shows a short dark cap at the temples where a curly head would show curls. Pulling a few curls out under the helm's rim would be a later refinement.
 
 Correction to Session 396: that entry said issue #81's root fix "is still the systems builder's" to make. The systems builder made it in Session 382, on auto/systems (PR #84, not yet on main). There the swing is counted outside `if(vmSword)` when there is no view model. With the fists, the empty hand has a view model, so the old block runs, and 382's branch remains the safety net for any frame without one. `git merge-tree` of the two branches conflicts only in the docs and the tag line, not in `js/`.
+
+## v80 — Session 394 — The producer merges through GitHub: the control room desk, the prompt, the queue retired
+A production session, no game code. Michael, 1 Oct: the Airsoft control room's desk (one-tap decisions, a big Approve, an Undo, "In the works") is what he wants for The Old Gates too, and its producer's way of shipping (he approves on the board, the producer merges the PR through GitHub, pinned to the commit the board recorded at the tap) in place of the merge queue. Three things changed, two of them outside the repo.
+
+**The control room** (https://claude.ai/artifact/5JW73WtXPAWDToUkWapngV, version 8) is rebuilt on the Airsoft desk: *Waiting on you* with the ready merges (Approve writes `approved_sha` = the card's `head_sha`) and the pending decisions as tap-to-answer options, a stall decision marked *Unblock*; *Sent to the team* with Undo until the producer acts; the latest build and its tag; *In the works* for the branches not yet ready, with each blocked card's `Unblocks:` line; the blockers, the to-dos, the answered folds, the inbox, the roadmap, the team and the ideas. Same URL, same database, light and dark.
+
+**The producer's prompt** (pasted by Michael into the routine; the text is not in the repo): it merges through the GitHub tools, exactly the approved commit, never later; the PR itself when its head is still that commit, otherwise a `--no-ff` merge of that commit onto auto/producer and the `Producer` PR once green. Merge cards carry `head_sha`, a title of the sessions not yet on main (`Systems sessions 389–393`, never a range that reaches back past the last merge: the board had shown "Sessions 176–387" for twelve sessions of new work), a player-facing summary, and are frozen once approved. Docs-only heads merge themselves. Quiet hours 22:00–07:00 Central, at most one summary every six hours, times in Central. The stall rule (a block only Michael can break becomes an Unblock card with options) and the six agents are unchanged.
+
+**The repo**: `.github/workflows/merge.yml` and `docs/merge-queue.md` are removed. The workflow landed its last two lines (auto/producer 98ae660, auto/concept 7127435) on 1 Oct and the queue is empty; the new prompt ignores both if they linger. This commit should land only after the new prompt is in the routine, so an approval given in between is not lost between the two routes (the old route needed a queue line the new producer no longer writes).
+
+### Verified (headless Chromium)
+- Nothing in the game changed: `python3 scripts/parsecheck.py` OK on all 33 files and the concatenation; no test touched.
+- The page's script parses (`node --check`); a read of the board after the publish: 10 merge cards, 68 decisions; the desk shows one ready merge (auto/systems, CI pending) and one answered decision (pirates and the hold, C) under *Sent to the team*.
+
+### Needs eyes
+- Michael: paste the new producer prompt into the routine "Old Gates — producer (hourly)" and consider its model (the Airsoft producer runs on Opus); approve this PR only after that.
+- The first merge the producer makes through GitHub: watch that the card goes "merged" with `merged_sha` and that Pages rebuilds on its own (the old workflow forced a Pages build; a push to main should trigger one by itself).
