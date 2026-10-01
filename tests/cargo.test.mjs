@@ -69,6 +69,29 @@ check('with her at the harbour a sale comes out of the hold', hold.fromHold === 
 check('with her away the board says so and a sale comes off your back', /not at this harbour/.test(hold.away) && hold.holdAway === 3 && /Sold a crate of iron/.test(hold.sellAway), hold);
 check('a shop counter takes no crate', hold.counterPrice === 0 && hold.counterGold === 0 && /factor/.test(hold.counterMsg), hold);
 
+// S391 — prices that follow the world (B)
+const world = await page.evaluate((ports) => { worldState.cargoMkt = {}; const G = WORLD.siteAnywhere(ports.gatelands), A = WORLD.siteAnywhere(ports.aurenne); const out = {};
+  const st = worldState.towns[G.id]; const keepFlags = { ...st.flags }, keepWar = worldState.war;
+  const row = () => ({ grain: WORLD.cargoAsk(G, 'grain'), wool: WORLD.cargoAsk(G, 'wool'), ironBid: WORLD.cargoBid(G, 'iron').net, horse: WORLD.cargoAsk(G, 'horse'), ironAur: WORLD.cargoBid(A, 'iron').net, silverBid: WORLD.cargoBid(G, 'silver').net });
+  out.calm = row();
+  st.flags.sacked = worldState.gameTimeAbsMinutes || 1; out.sacked = row(); out.sackedBoard = WORLD.cargoBoard(G); delete st.flags.sacked;
+  st.flags.occupied = worldState.gameTimeAbsMinutes || 1; out.occupied = row(); delete st.flags.occupied;
+  worldState.war = { a: 'gatelands', b: 'mark', day: 0, resolved: 0, broken: 0, lost: 0 }; out.war = row(); out.warBoard = WORLD.cargoBoard(G); worldState.war = keepWar;
+  const pir = { kind: 'pirate', x: G.x + 300, z: G.z, dead: false }; WORLD.others.push(pir); out.blockaded = WORLD.cargoBlockaded(G); out.blockade = row(); out.blockBoard = WORLD.cargoBoard(G);
+  pir.x = G.x + 900; out.far = WORLD.cargoBlockaded(G); WORLD.others.splice(WORLD.others.indexOf(pir), 1);
+  st.flags = keepFlags; out.after = row();
+  // a horse goes only in a hold
+  worldState.ship = null; gold = 1000; out.horseNoShip = WORLD.cargoBuy(G, 'horse'); out.horseGold = gold;
+  return out; }, ports);
+console.log(JSON.stringify(world));
+check('in calm a Gatelands port asks 12 for grain and 66 for a horse, and pays 50 for iron and 120 for silver', world.calm.grain === 12 && world.calm.horse === 66 && world.calm.ironBid === 50 && world.calm.silverBid === 120, world.calm);
+check('sacked, it asks half again for grain (18) and pays it for iron (76); wool and silver unchanged; the board says why', world.sacked.grain === 18 && world.sacked.ironBid === 76 && world.sacked.wool === world.calm.wool && world.sacked.silverBid === 120 && /hard used/.test(world.sackedBoard), world);
+check('occupied, the same', world.occupied.grain === 18 && world.occupied.ironBid === 76, world.occupied);
+check('a war of the Gatelands and the Mark puts iron (66) and horses (86) up 30% there, not in Aurenne (45); the board says so', world.war.ironBid === 66 && world.war.horse === 86 && world.war.ironAur === world.calm.ironAur && world.war.grain === 12 && /The war/.test(world.warBoard), world);
+check('black sails 300 units off double the premium on goods from abroad (silver 120 → 154, iron 50 → 65), not on home goods', world.blockaded && world.blockade.silverBid === 154 && world.blockade.ironBid === 65 && world.blockade.grain === 12 && /Black sails/.test(world.blockBoard), world);
+check('at 900 units they are no blockade, and with the world calm again the prices are back', !world.far && JSON.stringify(world.after) === JSON.stringify(world.calm), world);
+check('a horse is not sold to a rider without a ship', /goes in a ship/.test(world.horseNoShip) && world.horseGold === 1000, world);
+
 // the save keeps the market
 const sv = await page.evaluate((ports) => { worldState.cargoMkt = {}; const G = WORLD.siteAnywhere(ports.gatelands); gold = 500; WORLD.cargoBuy(G, 'wool'); WORLD.cargoBuy(G, 'wool');
   const ask = WORLD.cargoAsk(G, 'wool'); const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.cargoMkt = {}; const cleared = WORLD.cargoAsk(G, 'wool');

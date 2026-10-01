@@ -9942,3 +9942,28 @@ The numbers in play: three chests of silver from the Mark (57, 59, 62) sell in t
 - Whether a crossing pays enough to be worth the sail, and whether the falling price stops a route too soon or too late. The numbers (×0.6, ×1.4, the tenth, 4%, 30% a day, the hold sizes) are A's proposal as written, with my factor's tenth added; they want a real voyage.
 - The board is one long line of twelve prices in the dialogue box. A panel like the shop's would read better (the look builder's, if wanted).
 - Not built (B, two sessions): a sacked or occupied town paying more for grain and iron, a war raising iron and horses, a blockade doubling the gap, pirates taking from the hold.
+
+## v80 — Session 391 — The factor's prices follow the world (Michael's B on #88, the rest)
+Session 390 built A's part of #88: goods by island and a factor's board. Michael's B adds *prices that follow the world: a sacked or occupied town pays more for grain and iron, a war raises iron and horses, a blockade (pirates on a route) doubles the gap.* B names the effects but not their sizes, so the numbers below are mine and want a voyage.
+
+**What changed** (`js/80-world.js`, beside 390's code). Three things are read each time a price is asked; nothing is stored:
+- *A hard-used town*: a port flagged sacked, occupied or besieged asks and pays half again (×1.5) for grain and iron. B said sacked or occupied; a siege is the same hunger, so I counted it.
+- *War*: while a war runs (`worldState.war`), iron and horses are 30% dearer at the quays of the two nations in it, and nowhere else.
+- *A blockade*: a black-sailed ship at sea within 600 units of a port. There is no standing "pirates on a route" in the world: a pirate is a ship near you (`OTHER`), and the sackings from the sea are a daily roll. So the blockade is the one you can see. While she's there, another island's goods fetch twice the premium (×1.8 for ×1.4). The port's own goods are unchanged.
+- *Horses*: B names them and A's dozen had none, so the Gatelands sell a horse (worth 110, weight 20), the thirteenth good. A horse goes only in a ship's hold. Without your ship at the harbour the factor says *A horse goes in a ship's hold, and your ship is not here.*
+
+The board says why a price has moved: *Grain and iron are dear here: the town has been hard used.*, *The war has put up iron and horses.*, *Black sails off the coast: goods from abroad are dearer.* The falling price, the healing and the tithe all stack on top as in 390.
+
+### Verified (headless Chromium)
+`tests/cargo.test.mjs`, 25/25 (seven new), at Portclare:
+- Calm: grain 12, a horse 66, iron bought for 50, silver for 120.
+- Sacked: grain 18, iron 76; wool (18) and silver (120) unchanged; the board says why. Occupied: the same.
+- A war of the Gatelands and the Mark: iron 66, a horse 86, grain 12; in Aurenne iron is unchanged (45 after the tithe).
+- A pirate 300 units off: silver 154, iron 65, grain 12, and the board names the black sails. At 900 units, no blockade. With the world calm again, every price is back to the calm row exactly.
+- A horse is refused without a ship, and no gold is taken.
+- 390's eighteen checks all pass again. Build tag s349.
+
+### Needs eyes
+- The sizes: ×1.5, ×1.3, 600 units, ×1.8. Whether a sacked port's grain is worth sailing for, and whether black sails make running past them pay.
+- A blockade is a pirate near *you*. A port far away is never blockaded, so the effect only shows at a quay you can see from the sea.
+- Owed, and a rule of play, so it is Michael's to ask: whether pirates who board you take from the hold.
