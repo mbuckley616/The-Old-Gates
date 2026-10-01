@@ -9908,3 +9908,14 @@ The critic's second finding of the 1 Oct run (PR #90): shop keepers walk through
 
 ### Needs eyes
 - Watch a keeper in Fionnuala's Stores at midday: they should turn at the counter and go round its end, never through it. Whether the turn reads as a person or a bumper car at .25 units a second.
+
+## v80 — Session 389 — R locks on, for a trackpad (Michael's A on #89)
+Lock-on (Session 297) was the middle mouse button only, and a laptop trackpad has none, so a player without a mouse could not lock on at all; the brief says the build must stay playable on a laptop. Michael answered #89 with A: R as a second lock key, a toggle under the same rules as the button. R was bound to nothing (no `KeyR` and no `e.key` test anywhere in `js/`).
+
+**What changed.** The game's keydown (`js/92-creator.js`, beside Q's roll) calls `toggleLock()` on R, not on a key repeat. It is the same function the middle button calls, so the reach (14 units, 60° of the view), the clear line, *Nothing to lock on to.*, and R again letting go are all the button's. Unlike the button, R needs no pointer lock first, since a key cannot be the click that captures the mouse. With the dialogue, the hub or the inventory open, the handler returns before it reaches R, as it does for every game key. The flick that switches foes (Session 312) is unchanged; a trackpad still moves the pointer. The help page and the controls line read *Middle-click or R* and *Middle-click/R*.
+
+### Verified (headless Chromium)
+`tests/lockon.test.mjs`, three new checks through real key presses on the game's own element: R locks the foe the middle click locked, R again lets go, and R with no foe in reach locks nothing and shows *Nothing to lock on to.* (the message cleared first). `lockon` 20/20. The same test on the unfixed build (HEAD's `index.html` and `js/` by `git archive`, `--src`): R locks nothing and says nothing, 2 of the 3 new checks fail. Build tag s347.
+
+### Needs eyes
+- R on a laptop: whether reaching from WASD to R mid-fight is comfortable, and whether the flick switches foes cleanly on a trackpad. If not, #89's B (Z and X to switch) is the next step.
