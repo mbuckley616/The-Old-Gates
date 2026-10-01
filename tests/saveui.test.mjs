@@ -53,7 +53,8 @@ await page.reload(); await W(5000);
 const gone = await page.evaluate(() => ({ chars: ssChars().length, saves: SS.idx.length, db: !!SS.db }));
 check('deleted, the character stays gone after a reload', gone.chars === 0 && gone.saves === 0, gone);
 
-// import through the browser's own picker, from the title's Load Game button (shown even with no saves); reload; Continue
+// import through the browser's own picker (every save the file holds comes back: Session 357, the arrival autosave of
+// Session 353 can add one to the three the test makes, which on CI made it four), from the title's Load Game button (shown even with no saves); reload; Continue
 const lgb = await page.evaluate(() => { const b = document.getElementById('lgb'); const shown = getComputedStyle(b).display !== 'none', cb = getComputedStyle(document.getElementById('cb')).display !== 'none'; b.click(); return { shown, cb }; }); await W(1500);
 check('with no saves the title still offers Load Game (not Continue)', lgb.shown && !lgb.cb, lgb);
 // closing it without loading goes back to the title (Load Game steps into the scene before the menu opens)
@@ -65,7 +66,7 @@ const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 1000
   page.evaluate(() => [...document.querySelectorAll('#sl-slots button')].find(b => /Import/.test(b.textContent)).click())]);
 await fc.setFiles(file); await W(2500);
 const imp = await page.evaluate(() => ({ chars: ssChars().map(c => c.name + ':' + c.saves.length), rows: document.querySelectorAll('#sl-slots .sl-slot').length }));
-check('Import by the picker brings the character back, listed in the menu', imp.chars.length === 1 && /^(Wren|Traveller):3$/.test(imp.chars[0]) && imp.rows >= 2, imp);
+check('Import by the picker brings the character back, listed in the menu', imp.chars.length === 1 && /^(Wren|Traveller):\d+$/.test(imp.chars[0]) && +imp.chars[0].split(':')[1] === doc.saves.length && imp.rows >= 2, { ...imp, exported: doc.saves.length });
 await page.reload(); await W(5000);
 await page.evaluate(() => document.getElementById('lgb').click()); await W(1500);
 const rows = await page.evaluate(() => { return [...document.querySelectorAll('#sl-slots .sl-slot')].map(d => d.textContent.replace(/\s+/g, ' ').slice(0, 40)); });

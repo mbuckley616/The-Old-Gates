@@ -23,8 +23,10 @@ jobs:
   headless:
     # Session 254: the suites run in eight shares side by side. One job running all of them had outgrown its 30 minutes,
     # and every run was cancelled before it could report.
+    # 30 Sep 2026 (the split session): 45, not 30. On a slow shared runner five of eight shards ran past 30 minutes
+    # twice in a row on auto/systems; the limit measured the runner, not the tests.
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

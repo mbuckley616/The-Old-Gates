@@ -14,7 +14,7 @@ const r = await page.evaluate(() => {
     return ACTIVE_BUFFS.map(b => b.type); };
   const foe = (type) => { const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, type, null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.locked = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; return e; };
-  const hit = (e, raw, block) => { PHP = maxHP; stamina = 100; PPOST.posture = PPOST.maxPosture; PPOST.stagUntil = 0; blocking = !!block; lastBlockAttemptT = -1e9;
+  const hit = (e, raw, block) => { PHP = maxHP; stamina = 100; PPOST.posture = PPOST.maxPosture; PPOST.stagUntil = 0; blocking = !!block; lastBlockAttemptT = -1e9; lastBlockAttemptG = -1e9;
     executeStrike(e, raw, (performance.now() / 1000 + 100) * 1000); blocking = false; return maxHP - PHP; };
   const wolf = foe('Wolf'), bear = foe('Cave Bear'), bandit = foe('Bandit');
   out.flags = { wolf: wolf.beast, bear: bear.beast, bandit: bandit.beast };

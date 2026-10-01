@@ -762,7 +762,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s327</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s341</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1353,6 +1353,9 @@ function _releasePointerLockForMenu(){
 // even if the player never raised guard — produced false "Blocked!"
 // messages during multi-attacker fights (boss + lessers).
 let lastBlockAttemptT=-99;
+// S368 — the play clock: seconds of play, the loop's capped dt summed (the clock a foe's wind-up runs on). The parry window
+// is read on it, so a slow frame between the block and the blow cannot close the window (the critic, s321)
+let playClockS=0,lastBlockAttemptG=-99;
 // S275 — the roll (combat, Michael's B: A's first piece). Q rolls you (keys: the held-key map, which lives in the loop's scope) the way you are moving, or back if you are
 // standing. Light: 0.45 s over 2.6 units, untouchable from 0.08 to 0.30 s. Carrying over 70% of what you can: 0.6 s
 // over 1.8 units, untouchable 0.08–0.24 s. 18 stamina either way. Distance and window read performance.now(), so a
@@ -2383,7 +2386,7 @@ const ATTR_DEF={
   resolve:    {label:'Resolve',    icon:'✦',   actKey:'staminaDepleted', thresholds:[0,1,3,5,8],   gainDesc:'+0.3/s stam regen, -5% block cost, +1% magic resist', gains:{staminaRegen:.3,blockCostPct:-5,magicResistPct:1}, desc:'Outlast the long fight. Endure the unseen.'},
   intelligence:{label:'Intelligence',icon:'📖',actKey:'transactions',    thresholds:[0,3,6,10,15], gainDesc:'+10 max mana, +0.2/s mana regen, +1% spell power',  gains:{maxMana:10,manaRegen:.2,spellPct:1},   desc:'Read more. Cast harder. Mana flows.'},
   charisma:   {label:'Charisma',   icon:'💬',  actKey:'npcTalks',        thresholds:[0,2,4,7,10],  gainDesc:'+1% barter, +2% quest reward gold, merchant access',gains:{barterPct:1,questGoldPct:2,merchantTier:1}, desc:'A silver tongue. Better deals all around.'},
-  fortune:    {label:'Fortune',    icon:'🍀',  actKey:'chestsOpened',    thresholds:[0,1,3,5,8],   gainDesc:'+2% crit chance, +1% loot quality',                gains:{critPct:2,lootPct:1},                  desc:'The world favors you. Crits and chests.'},
+  fortune:    {label:'Fortune',    icon:'🍀',  actKey:'chestsOpened',    thresholds:[0,1,3,5,8],   gainDesc:'+2% crit chance, +5% gold found, +2.5% item drop chance', gains:{critPct:2,goldPct:5,dropPct:2.5},                  desc:'The world favors you. Crits and chests.'},
 };
 
 function getMultiplier(attrKey){
@@ -2471,7 +2474,8 @@ function gainLines(key,mult){
   if(g.maxMana)    lines.push(`+${g.maxMana*mult} max mana`);
   if(g.dialogueTier) lines.push(`+${g.dialogueTier*mult} dialogue tier`);
   if(g.critPct)    lines.push(`+${g.critPct*mult}% crit chance`);
-  if(g.lootPct)    lines.push(`+${g.lootPct*mult}% loot quality`);
+  if(g.goldPct)    lines.push(`+${g.goldPct*mult}% gold found`);
+  if(g.dropPct)    lines.push(`+${g.dropPct*mult}% item drop chance`);
   return lines.join(' &nbsp;·&nbsp; ');
 }
 
@@ -7260,7 +7264,7 @@ const TORCH_ITEM={name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:
 // modifier. arrowDmg adds to the bow's atk roll at release time.
 const ARROW_IRON={
   name:'Iron Arrow', ico:'🪶', type:'ammo', slot:'ammo',
-  ammoType:'arrow', qty:12, buyPrice:2, sellMult:.4, weight:.05,
+  ammoType:'arrow', qty:12, bundle:12, buyPrice:2, sellMult:.4, weight:.05, // S366 — buyPrice is the dozen's; a piece sells by the piece
   arrowDmg:[3,6],   // additive to bow's atk roll
   // wType omitted → falls through to bow's wType ('pierce'). Silver and
   // Broadhead arrows will set wType explicitly to override.
@@ -7382,6 +7386,9 @@ function iconHTML(it){if(!it)return '';const name=(it.name||'').toLowerCase();le
   return `<span class="ico-badge" style="display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:5px;background:${col};box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.4);font-size:13px;line-height:1;margin-right:6px"><span style="${neutral?'filter:grayscale(1) brightness(.28) contrast(1.4)':'filter:saturate(.85)'}">${g}</span></span>`;}
 function _typeWord(it){return it.type==='equip'?(it.slot==='weapon'?'Weapon':it.slot==='offhand'?'Shield':it.slot==='ring'?'Ring':it.slot==='amulet'?'Amulet':'Armour — '+(it.slot||'').replace(/^./,c=>c.toUpperCase())):it.type==='potion'?'Potion':it.type==='herb'?'Herb':it.type==='spellbook'?'Spellbook':it.type==='rubbing'?'Rubbing':it.type==='scroll'?'Scroll':it.type==='misc'?'Sundries':(it.type||'—');}
 function sellPrice(it){
+  // S366 — ammo is priced by the bundle it is sold in (a dozen arrows for 2), so one piece is worth a twelfth of that:
+  // under a coin, and nothing at the counter. Was the whole bundle's price a piece (a dozen bought for 2 sold for 12–60).
+  if(it.type==='ammo')return Math.floor((it.buyPrice||2)*(it.sellMult||.4)/(it.bundle||12));
   if(it.buyPrice)return Math.max(1,Math.floor(it.buyPrice*(it.sellMult||.4)));
   if(it.type==='gold')return it.value||5;
   if(it.type==='herb')return Math.max(3,Math.floor((it.buyPrice||8)*(it.sellMult||.8)));
@@ -7648,6 +7655,17 @@ function currentZoneSolid(x,z){
 function isOverworldZone(){return activeZoneId==='world'||!!(MAP_NODES[activeZoneId]&&MAP_NODES[activeZoneId].live);}
 // Interior
 let interiorScene=null,currentHouse=null,intNPCMesh=null,intNPCPos={x:4,z:3};
+// S365 — one step of the keeper's amble about the shop floor (was inline in the main loop): a heading held 1.5–5 s,
+// .25 units a second, turned back off the room's bounds.
+function intAmbleStep(m,dt){const am=m.userData.amble;
+  am.wt-=dt;if(am.wt<=0){am.wa=Math.random()*Math.PI*2;am.wt=1.5+Math.random()*3.5;}
+  const nx=m.position.x+Math.sin(am.wa)*am.speed*dt,nz=m.position.z+Math.cos(am.wa)*am.speed*dt;
+  // S368 — a bound turns back the part of the heading that met it: x is sin(wa), so an x bound flips wa to −wa, a z bound to π−wa
+  // (they were swapped, so a keeper at the counter's bound walked on into it, facing the strongbox, until the timer ran out)
+  if(nx>am.minX&&nx<am.maxX)m.position.x=nx;else{am.wa=-am.wa;am.wt=0.5;}
+  if(nz>am.minZ&&nz<am.maxZ)m.position.z=nz;else{am.wa=Math.PI-am.wa;am.wt=0.5;}
+  m.rotation.y=Math.atan2(Math.sin(am.wa),Math.cos(am.wa));
+  if(m===intNPCMesh){intNPCPos.x=m.position.x;intNPCPos.z=m.position.z;}}
 // v61d4 — Safehouse interior interaction state. Set by buildInterior's
 // safehouse branch; cleared on exitInterior (so stale positions from a
 // previous safehouse visit don't trigger when the player walks past where
@@ -15185,6 +15203,7 @@ function tickZoneEnemies(dt,now,sc){
   });
   ZE.forEach(e=>{
     if(e.dead||e.locked)return;
+    if(e._duelHold)return; /* S373 — Rowe holds: talking, or on one knee */
     // v61gj — Defensive lazy init for pre-ship saves (enemies in ZONES[id].enemies
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);
@@ -15785,6 +15804,7 @@ function lootDropChance(e){
 }
 
 function killZoneEnemy(e,sc,tag=''){
+  if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12
   e.dead=true;
   if(e._guard&&typeof WORLD!=='undefined'&&WORLD.guardKilled)try{WORLD.guardKilled(e);}catch(err){} // S157
@@ -24414,6 +24434,12 @@ function buildDungeon(portal){
     // moment rather than a press of bone.
     const _enemyCap = portal.tutorial ? 3 : gen.cfg.en;
     for(const pos of candidates){if(spawns.length>=_enemyCap)break;if(spawns.every(s=>Math.hypot(s[0]-pos[0],s[1]-pos[1])>=MIN_DIST))spawns.push(pos);}
+    // S364 — a mimic stands where a chest would: an L-corner inside a room, clear of the chests (it stood on any floor
+    // cell like the rest, a third of them in the open or a corridor, where no chest ever stands; a tell that beat the bait)
+    const _mRooms=floorIdx===2?(gen.rooms2||[]):gen.rooms,_mOpen=(c,r)=>(map[r]?.[c]|0)>=1;
+    const mimicSpots=candidates.filter(([c,r])=>{if(!_mRooms.some(rm=>c>=rm.x&&c<rm.x+rm.w&&r>=rm.y&&r<rm.y+rm.h))return false;
+      if(CHESTS.some(ch=>ch.floor===floorIdx&&Math.abs(ch.x-c)+Math.abs(ch.z-r)<=1))return false;
+      const n=_mOpen(c,r-1),so=_mOpen(c,r+1),e=_mOpen(c+1,r),w=_mOpen(c-1,r);return n+so+e+w===2&&!(n&&so)&&!(e&&w);});
     spawns.forEach(([ec,er],i)=>{
       const name=pool[i%pool.length];
       const baseDef=EM[name]||EM.Skeleton;
@@ -24421,6 +24447,7 @@ function buildDungeon(portal){
       const variantKey=pickVariant(name, level, portal.diff);
       const vr=applyVariantToDef(baseDef, name, variantKey);
       const d=vr.def, displayName=vr.displayName;
+      if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];}}
       // v56 rebalance: multiply HP and dmg by level-scaled factors so late-game weapons don't
       // trivialise the early dungeons. Baseline (level 1) remains unscaled.
       const hpLvl=enemyHpScale();
@@ -24594,7 +24621,8 @@ function buildDungeon(portal){
 }
 
 let _preDungeonZone='overworld'; // zone to return to after exiting dungeon
-function goToDungeon(portal){doFade(()=>{
+function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof saveGame==='function')saveGame(); /* S353 — #66 A: the door going down saves you at the threshold (going up already saves in goToOW) */
+  doFade(()=>{
   _preDungeonZone=activeZoneId;
   blocking=false;staggered=[];
   activeZoneId='dungeon';
@@ -24692,7 +24720,8 @@ function goToOW(){
     });
     return;
   }
-  const src=PORTALS.find(p=>p.id===lid);
+  // S363: a gate entered while its cell was not loaded is not in PORTALS; the portal you went down is (was: src.name threw, at (15, 20))
+  const src=PORTALS.find(p=>p.id===lid)||(currentPortal&&currentPortal.id===lid?currentPortal:null);
   const returnZone=_preDungeonZone||'overworld';
   silenceSigilHum();
   doFade(()=>{
@@ -25643,6 +25672,7 @@ function restAtBed(hours){
     if(typeof addLog==='function')addLog('🛏️',`Slept ${hours} hour${hours>1?'s':''}.`);
     showMsg(`You wake after ${hours} hour${hours>1?'s':''}. ${gameDateLine()}`,'#c8b880');
     updateHUD();
+    if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);
   });
 }
@@ -25662,7 +25692,7 @@ function _pushBuyBack(it, sp){
   const arr=merchantStock[key];
   // Stamp a fresh copy: this is now SHOP stock, so it needs buyPrice (= the
   // sell price the player received) and the _boughtBack tag for display.
-  const entry={...it, _boughtBack:true, buyPrice:Math.max(1,sp)};
+  const entry={...it, _boughtBack:true, buyPrice:Math.max(1,sp), _bagPrice:it.buyPrice}; // S366 — _bagPrice: its own price, restored when bought back
   if(isStackable(it)){
     // Merge into an existing same-name buy-back stack.
     const ex=arr.find(s=>s.name===it.name && s._boughtBack);
@@ -26044,7 +26074,7 @@ function shopMul(){try{if(typeof WORLD==='undefined')return 1;
 const BARTER_PCT=.01,BARTER_MAX=.25;
 function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT));}
 function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(1-barterPct())));}
-function counterSellPrice(it){return Math.max(1,Math.round(sellPrice(it)*(1+barterPct())));}
+function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(1+barterPct())));}
 function buyItem(it){
   const _cost=shopCost(it); // v80 O — prosperity sets the price
   if(gold<_cost){showMsg('Not enough gold!','#cc4444');return;}
@@ -26057,8 +26087,11 @@ function buyItem(it){
   // on weapons/armor.
   const _bundleQty = (isStackable(it) && it.qty && it.qty > 1) ? it.qty : 1;
   const item={...it,qty:_bundleQty};
-  delete item.buyPrice; // don't need shop price in bag
-  delete item._boughtBack; // it's the player's again, not shop overlay
+  // S366 — the copy keeps its price, so it sells at price × sellMult like one found in a chest (the critic's s321: the price
+  // was deleted here, and a sword bought for 35 sold for its type's 5, a potion for 8, arrows for 5 a piece). A bought-back
+  // piece goes back to the price it had before it was sold.
+  if(it._boughtBack){if(it._bagPrice!=null)item.buyPrice=it._bagPrice;else delete item.buyPrice;}
+  delete item._boughtBack;delete item._bagPrice; // it's the player's again, not shop overlay
   bagAdd(item);
   // v68 — if this was a bought-back item, remove it from the merchant overlay.
   if(it._boughtBack) _consumeBuyBack(it, _bundleQty);
@@ -26080,6 +26113,7 @@ function sellItem(i,sp){
     showMsg(`${it.name} cannot be sold.`, '#c8a84a');
     return;
   }
+  if(!(sp>0)){showMsg(`${it.name} is not worth a coin at the counter.`,'#c8a84a');return;} // S366 — a single arrow
   const finalSp=Math.round(sp*_buffMult('goldFind',1));
   gold+=finalSp;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;
   // v68 — buy-back: offer one unit of the sold item back to this merchant at the
@@ -26099,7 +26133,8 @@ function sellItem(i,sp){
 function _buyStackable(it, units, piecesPerUnit, unitPrice){
   let bought=0, spent=0;
   const template={...it};
-  delete template.buyPrice; delete template._boughtBack;
+  if(it._boughtBack){if(it._bagPrice!=null)template.buyPrice=it._bagPrice;else delete template.buyPrice;} // S366 — keep the price, as buyItem
+  delete template._boughtBack; delete template._bagPrice;
   for(let n=0;n<units;n++){
     if(gold-spent < unitPrice) break;
     const piece={...template, qty:piecesPerUnit};
@@ -27077,10 +27112,10 @@ function updateHUD(){
   const ob=document.getElementById('ob');if(lid==='overworld'){ob.style.color='#88cc44';
   const _shipHint=(activeZoneId==='world'&&typeof WORLD!=='undefined')?WORLD.shipPrompt():null; // v80 C — the ship comes first
   if(_shipHint){ob.style.color='#c8b880';ob.textContent=_shipHint;}else
+  if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds&&ZONES.world.beds.some(b=>Math.hypot(px-b.x,pz-b.z)<1.5)){ob.style.color='#c8b880';ob.textContent="A bedroll — Press 'E' to rest"+(level<(typeof levelFor==='function'?levelFor(xp):level)?' and take your level':'');}else
   if(activeZoneId==='forest'){const alive=ZE.filter(e=>!e.dead&&!e.locked).length;ob.textContent=alive?`${alive} creature${alive>1?'s':''} nearby · Stay on the path`:'Deep in the Deepwood Forest · E near gate to travel';}
   else if(activeZoneId==='ironhaven'){ob.textContent='Press E near a soldier or gate · Press E near a building to enter';}
   else{ob.textContent='Press E near a villager to talk · Press E near a door or cave to enter';}
-}else if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds&&ZONES.world.beds.some(b=>Math.hypot(px-b.x,pz-b.z)<1.5)){ob.style.color='#c8b880';ob.textContent="A bedroll — Press 'E' to rest"+(level<(typeof levelFor==='function'?levelFor(xp):level)?' and take your level':''); // v80 S133 — the bedroll says so
 }else if(lid==='overworld'&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){ob.style.color='#c8b880';ob.textContent=WORLD.shipPrompt();}else if(lid&&isInterior()){ob.style.color='#c8b880';const _nb=INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9);const _hp=(typeof WORLD!=='undefined')?(WORLD.guestPrompt()||WORLD.hatchPrompt()||WORLD.lootPrompt()||WORLD.boxPrompt()):null;ob.textContent=_hp?_hp:_nb?((typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nb))||"Someone else's bed")+' · Walk south to exit':(intNPCMesh?'Press E near the keeper to talk · Walk south to exit':'No one is in · Walk south to exit');}else{const a=ENEMIES.filter(e=>!e.dead).length;const uk=KEYS.filter(k=>!k.collected).length;const ud=DOORS.filter(d=>!d.open&&d.locked).length;const sh=EQ.offhand&&EQ.offhand.shieldType==='shield';ob.style.color=blocking?'#88aaff':'#c8a84a';ob.textContent=a+' enemies'+(uk?' · '+uk+' key'+(uk>1?'s':'')+(ud?' to find':''):'')+(ud&&!uk?' · '+ud+' locked door'+(ud>1?'s':''):'')+(blocking?' · 🛡 '+(sh?'Blocking':'Guarding'):'');}}
 
 const mmC=document.getElementById('mm').getContext('2d');
@@ -27183,8 +27218,9 @@ function drawMM(){
       mmC.fillStyle=mv===0?'#1e1a14':mv===5?'#8a4a10':mv===6?'#3a3020':mv===3?'#7a6840':'#4a4438';
       mmC.fillRect(c*sc,r*sc,sc-.5,sc-.5);}
     // S329 (Michael's A on #58) — Ashwort's pulse: for its 5 s, every undisguised foe on this floor within 20 units shows, seen or not
+    // S364 — a disguised mimic is never drawn, seen or not: the map drew it as a foe on any revealed cell, beside no chest
     const _pulse=_hasBuff('minimapPulse');
-    ENEMIES.forEach(e=>{if(!e.dead&&e.floor===currentFloor&&(mmRev[Math.round(e.z)]?.[Math.round(e.x)]||(_pulse&&!e.disguised&&Math.hypot(e.x-px,e.z-pz)<20))){mmC.fillStyle='#cc3322';mmC.fillRect(e.x*sc-2,e.z*sc-2,5,5);}});
+    ENEMIES.forEach(e=>{if(!e.dead&&!e.disguised&&e.floor===currentFloor&&(mmRev[Math.round(e.z)]?.[Math.round(e.x)]||(_pulse&&!e.disguised&&Math.hypot(e.x-px,e.z-pz)<20))){mmC.fillStyle='#cc3322';mmC.fillRect(e.x*sc-2,e.z*sc-2,5,5);}});
     KEYS.forEach(k=>{if(!k.collected&&k.floor===currentFloor&&mmRev[Math.round(k.z)]?.[Math.round(k.x)]){mmC.fillStyle='#ffd700';mmC.fillRect(k.x*sc-2,k.z*sc-2,5,5);}});
     // Sigils — gold ✦ glyph on cells that have been revealed.
     (typeof SIGILS!=='undefined'?SIGILS:[]).forEach(s=>{
@@ -28859,7 +28895,7 @@ function renderHubAttrs(){
   const rows=document.getElementById('attr-rows');rows.innerHTML='';
   Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const mult=getMultiplier(key);const actVal=lvAct[def.actKey]||0;const t=def.thresholds;const curThresh=t[mult-1]||0;const nextThresh=t[mult]||t[t.length-1];const prog=nextThresh>curThresh?Math.min(1,(actVal-curThresh)/(nextThresh-curThresh)):1;const mc=['','lu-mult-1','lu-mult-2','lu-mult-3','lu-mult-4','lu-mult-5'][mult];const row=document.createElement('div');row.className='attr-row';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${ATTRS[key]}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${prog*100}%"></div></div><span class="attr-act-label">${actVal}</span><span class="attr-mult-badge ${mc}">×${mult}</span>`;rows.appendChild(row);});
   const dg=document.getElementById('derived-grid');dg.innerHTML='';
-  [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+attrEff('swiftness')*2+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+Math.round(barterPct()*100)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
+  [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+attrEff('swiftness')*2+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Gold Found','+'+(ATTRS.fortune||0)*5+'%'],['Item Drop','+'+(ATTRS.fortune||0)*2.5+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+Math.round(barterPct()*100)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
   // v80 — Standing: who you are to the world
   try{const sb=document.getElementById('standing-body');if(sb&&typeof WORLD!=='undefined'){
     const row=(k,v)=>`<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18)"><span style="color:#8a7a60;min-width:150px">${k}</span><span style="color:#e8dcc0">${v}</span></div>`;
@@ -29363,6 +29399,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     goToDungeon(p);setTimeout(()=>{try{if(W.floor===2&&typeof FLOOR2_Y!=='undefined'){currentFloor=2;}if(W.x!=null){px=W.x;pz=W.z;}if(W.yaw!=null)yaw=W.yaw;if(W.jumpY!=null)jumpY=W.jumpY;else jumpY=(currentFloor===2?FLOOR2_Y:0);}catch(err){}},900);return;}
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
+  if(typeof WORLD!=='undefined'&&WORLD.duelDown&&WORLD.duelDown())return; /* S373 — the ring holds you at 1 health */
   if(typeof WORLD!=='undefined')WORLD.noteDeath(); // v80 — the reader counts
   if(dead)return;dead=true;
   // v80 S9 — no respawn, no bag wipe, no autosave: a death screen that loads a save.
@@ -29424,6 +29461,7 @@ function _serItem(it){
                   'ammoType','qty','sellVal','buyPrice','sellMult','effect','hiddenEffect',
                   'arrowDmg', // v64 — preserve arrow damage range across save/load
                   '_boughtBack', // v68 — buy-back overlay tag
+                  '_bagPrice','bundle', // S366 — a bought-back piece's own price; ammo's bundle size
                   'heal','mana','stam','value','weight',
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
@@ -30867,7 +30905,7 @@ function executeStrike(e, rawDmg, now){
   // through to the held-block branch (the previously-named "late block" branch,
   // which has been dead code since v61c6 because the parry branch always ate first).
   const _parryWindow = PARRY_WINDOW_BASE + attrEff('finesse') * PARRY_WINDOW_FINESSE;
-  const _justRaisedBlock = (now/1000 - lastBlockAttemptT) < _parryWindow;
+  const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
   if(blocking && _justRaisedBlock){
     // PERFECT PARRY — block raised within the timing window before the hit landed
     hurtT = 0;
@@ -37065,13 +37103,23 @@ var WORLD=(()=>{
   // the line is clear or no way is found (he walks the direct line as before).
   function townRoute(S){if(S._route)return S._route;const cx=S.site.x,cz=S.site.z;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
-    for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;
+    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
-    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
+    const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;
         for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;
           if(prev[k]>=0||(sol[k]&&k!==g0))continue;if(di&&dj&&(sol[cj*N+ni]||sol[nj*N+ci]))continue;prev[k]=c;q.push(k);}}
-      if(prev[g0]<0)return [];const cells=[];for(let c=g0;c!==s0;c=prev[c])cells.push({x:cx-R+c%N,z:cz-R+Math.floor(c/N)});cells.push({x:cx-R+ai,z:cz-R+aj});cells.reverse(); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
+      if(prev[g0]<0)return null;const ks=[];for(let c=g0;c!==s0;c=prev[c])ks.push(c);ks.push(s0);return ks.reverse();};
+    // S378 — the grid is read once, but solids go on arriving after the town is built (the chunks' trees and rocks, the
+    // town's own later pieces): 3,710 solid cells at Dunmore's build, 3,928 six minutes on. A way through a cell gone solid
+    // since held a guard against it for good, and asking again gave him the same way. Each way is checked against the
+    // world as it is now: a cell gone solid is marked and the way found again; no way at all reads the whole grid afresh, once.
+    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
+      for(let tries=0;tries<12;tries++){ks=find(s0,g0);
+        if(!ks){if(fresh)break;fill();fresh=true;continue;}
+        let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAt(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}
+        if(!stale)break;ks=null;}
+      if(!ks)return [];const cells=ks.map(c=>({x:cx-R+c%N,z:cz-R+Math.floor(c/N)})); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
       if(raw)return cells; // S247 — every cell of the way, for a man the pulled-straight path has already failed
       const out=[];let from=a;for(let i=0;i<cells.length-1;i++){if(!clearLine(from.x,from.z,cells[i+1].x,cells[i+1].z)){out.push(cells[i]);from=cells[i];}}return out;};
     return S._route;}
@@ -38627,9 +38675,15 @@ var WORLD=(()=>{
     if(typeof sndDiscover==='function')sndDiscover();
     return true;
   }
-  let _discT=0;
+  let _discT=0,_padTown=null;
+  // S353 — #66 A: arriving on a town's pad autosaves, unless a foe is on you (never mid-fight) or you ride the coach in (stepping down saves)
+  function tickTownArrival(){let on=null;for(const t of SITES){if(!(t.kind in BASE_P)||t.pad<0)continue;if(Math.hypot(px-t.x,pz-t.z)<t.pad){on=t;break;}}
+    const id=on?on.id:null;if(id===_padTown)return;_padTown=id;if(!on||(typeof isInterior==='function'&&isInterior()))return;
+    if([...COACHES.values()].some(C=>C.riding))return;
+    if(ZONES.world.enemies.some(e=>!e.dead&&e.alert&&Math.hypot(px-e.mesh.position.x,pz-e.mesh.position.z)<30))return;
+    if(typeof saveGame==='function')saveGame();}
   function tickDiscovery(dt){
-    _discT+=dt;if(_discT<.5)return;_discT=0;
+    _discT+=dt;if(_discT<.5)return;_discT=0;try{tickTownArrival();}catch(e){console.warn('arrival save',e);}
     for(const t of SITES){if(t.pad<0)continue;if(Math.hypot(px-t.x,pz-t.z)<t.pad+30)discover(t.id,t.name);}
     for(const e of DOORS){const p=dungeonWorldPos[e.seed];if(Math.hypot(px-p.x,pz-p.z)<34)discover('door_'+e.seed,e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'));}
     for(const p of PEAKS){if(Math.hypot(px-p.x,pz-p.z)<140)discover(p.id,p.name);}
@@ -40726,11 +40780,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const eye=(typeof jumpY==='number'?jumpY:0)+1.1;const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
     const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.1));
     for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
+  // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
+  const INT_FOV=Math.cos(Math.PI/3);
+  function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house){
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=12;if(sneak)R*=.5;if(isNight())R*=.5;
-    if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you and can see you
-      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
-      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
+    if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
+      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
+      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
@@ -40926,6 +40983,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     return true;}
   function doorLockFor(house){const home=house.type==='home';return {seed:'door_'+house.id,minPins:lockPins(house),lockBonus:home?-1:0,lockTitle:home?'A locked door':'A shop door, locked for the night',live:true,house,
     onPick:()=>{(worldState.picked||(worldState.picked={}))[house.id]=absMin();noteCrime('lock',house);if(typeof goToInterior==='function')goToInterior(house);}};}
+  // a shop's takings before the day's luck (Michael’s A on #68, S361): 10 + 50 a 100 prosperity, by the shop's kind; was 20 + 180 (S155)
+  function boxCoins(p,type){const mult=/weapon|armor|armoury|forge/.test(type)?1.2:/potion|apothecary/.test(type)?.8:1;return (10+50*Math.max(0,Math.min(100,p))/100)*mult;}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
     return INT_BOX.open?'open':'locked';}
   function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>1.6||jumpY>.6)return null;const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
@@ -40936,7 +40995,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // open: the takings by the town's prosperity and one thing from the stock; a home's few coins and a keepsake
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
     if(X.kind==='home'){coins=2+Math.floor(Math.random()*11);items.push({name:bpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(Math.random()*22),qty:1,stolen:true});}
-    else{const mult=/weapon|armor|armoury|forge/.test(X.type)?1.2:/potion|apothecary/.test(X.type)?.8:1;coins=Math.round((20+180*Math.max(0,Math.min(100,p))/100)*mult*(.8+Math.random()*.4));
+    else{coins=Math.round(boxCoins(p,X.type)*(.8+Math.random()*.4));
       try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},bpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
@@ -41138,6 +41197,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(OTHER.some(o=>o.kind==='pirate'&&Math.hypot(o.x-site.x,o.z-site.z)<600))out.push("Black sails off the coast this morning. The fishermen came straight back in.");
     const G=worldState.guild;if(G){for(const g in G){const t=G[g].active;if(t&&t.siteId===site.id)out.push(t.kind==='raid'?"They say bandits are coming for us. The guild sent someone. Maybe you.":t.kind==='beast'?`Something's been at the sheep. ${t.beast||'A beast'}, they say.`:"The guild's got business here. Everyone's on edge.");}}
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
+    {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
     if(c.polity==='wilds')out.push("No lord out here. We settle things ourselves. Mostly with shovels.");
     if(c.polity==='marches')out.push("The forts are full again. Someone's expecting a war.");
@@ -41300,7 +41360,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(q.kind==='retrieve'&&!d.got)push(d.x,d.z,GREEN,d.item||'the heirloom','\u25c6');
       else if(q.kind==='find'){if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\ud83d\udc64');else push(d.x,d.z,GREEN,d.who,'\ud83d\udc64');}
       else if(q.kind==='deliver'){const t=siteAnywhere(d.siteId);if(t)push(t.x,t.z,GREEN,d.who);}
-      else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');}
+      else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
+      else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');}
     // guild tasks
     const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t||taskDone(t))continue;const x=t.sx!=null?t.sx:t.x!=null?t.x:(t.siteId?(siteAnywhere(t.siteId)||{}).x:null),z=t.sz!=null?t.sz:t.z!=null?t.z:(t.siteId?(siteAnywhere(t.siteId)||{}).z:null);if(x!=null)push(x,z,t.kind==='clear'?RED:GREEN,t.short,t.kind==='relic'?'\u25c6':(t.kind==='beast'||t.kind==='wizard'||t.kind==='creature'||t.kind==='hunt')?'\u2620':undefined);}
     // the story
@@ -41646,7 +41707,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // drift home
       const base=BASE_P[t.kind]||45;const drift=(base-st.p)*.01;
       // scaffolds finish
-      st.builds.forEach(b=>{if(!b.done&&day>=b.doneDay){b.done=true;st.p+=b.p;showMsg(`${t.name}: the ${b.name} is finished.`,'#e8d8a0');if(SETTLE.has(t.id))disposeSettlement(t.id);}});
+      st.builds.forEach(b=>{if(!b.done&&day>=b.doneDay){b.done=true;st.p+=b.p;showMsg(`${t.name}: the ${b.name} ${b.key==='walls'?'are':'is'} finished.`,'#e8d8a0');if(SETTLE.has(t.id))disposeSettlement(t.id);}});
       if(st.p<=0&&st.flags.abandoned==null){flag(t,'abandoned',true);}
       if(st.flags.abandoned!=null&&st.p>=20)flag(t,'abandoned',false);
       driveProsperity(t,c,d+drift);
@@ -41738,11 +41799,21 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function roadBroken(a,b){const R=routes();const rt=R[routeKey(a.id,b.id)];if(rt&&rt.broken)return true;const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;return !!SITES.find(t=>t.kind==='bcamp'&&Math.hypot(t.x-mx,t.z-mz)<500&&!(worldState.lairs&&worldState.lairs[t.id]));}
   // ── investment and the deed ──
   const BUILDS=[{key:'well',name:'well',cost:120,p:6,min:0},{key:'inn',name:'inn',cost:400,p:10,min:30},{key:'chapel',name:'chapel',cost:500,p:8,min:35},{key:'walls',name:'walls',cost:900,p:8,min:45},{key:'guild',name:'guild hall',cost:1200,p:10,min:55},{key:'harbour',name:'harbour',cost:1500,p:12,min:50,port:true}];
+  const aBuild=b=>b.key==='walls'?b.name:(/^[aeiou]/.test(b.name)?'an ':'a ')+b.name; // S349 — *an inn*, *walls*, not *a inn*, *a walls*
+  // S352 — Michael’s A on #65: a lord offers only what the town lacks. What stands is read off the live town's houses
+  // (the plan's list at today's prosperity when it isn't loaded): no inn where an inn stands, no chapel where a church
+  // does, no guild hall where either guild's hall does, no walls where the ring is logs or better. The well and the harbour as before.
+  function buildStands(site){const out=new Set();const S=SETTLE.get(site.id);let types;
+    if(S&&S.houses)types=S.houses.map(h=>h.type);
+    else{const plan=KIND_PLAN[site.kind]||KIND_PLAN.village;types=shopsFor(site,[...plan.shops,...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]);}
+    if(types.includes('inn'))out.add('inn');if(types.includes('church'))out.add('chapel');if(types.includes('guild_f')||types.includes('guild_m'))out.add('guild');
+    const plan=KIND_PLAN[site.kind]||KIND_PLAN.village;if(plan.walls&&wallTierFor(site)!=='fence')out.add('walls');
+    return out;}
   function investTopics(site){
     const st=TS(site);const _tw=tutWaivesInvest(site);if((prosperity(site)<40||favor(site)<3)&&!_tw)return [];
-    const out=[];const have=new Set(st.builds.map(b=>b.key));
-    for(const b of BUILDS){if(have.has(b.key)||(prosperity(site)<b.min&&!(_tw&&b.key==='well'))||(b.port&&site.kind!=='port'))continue;const cost=Math.round(b.cost*(1+prosperity(site)/200));
-      out.push({label:`Pay for a ${b.name} (${cost} gold)`,quest:true,fn:()=>{if(gold<cost)return `A ${b.name} would cost the town ${cost} gold.`;gold-=cost;updateHUD();st.builds.push({key:b.key,name:b.name,p:b.p,doneDay:Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+3,done:false});addFavor(site,1);if(SETTLE.has(site.id))disposeSettlement(site.id);if(typeof addLog==='function')addLog('🏗',`Paid for a ${b.name} at ${site.name}.`);return `The masons start tomorrow. Three days, and it's yours as much as ours.`;}});}
+    const out=[];const have=new Set(st.builds.map(b=>b.key));const stands=buildStands(site);
+    for(const b of BUILDS){if(have.has(b.key)||stands.has(b.key)||(prosperity(site)<b.min&&!(_tw&&b.key==='well'))||(b.port&&site.kind!=='port'))continue;const cost=Math.round(b.cost*(1+prosperity(site)/200));
+      out.push({label:`Pay for ${aBuild(b)} (${cost} gold)`,quest:true,fn:()=>{if(gold<cost)return `${aBuild(b).replace(/^./,c=>c.toUpperCase())} would cost the town ${cost} gold.`;gold-=cost;updateHUD();st.builds.push({key:b.key,name:b.name,p:b.p,doneDay:Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+3,done:false});addFavor(site,1);if(SETTLE.has(site.id))disposeSettlement(site.id);if(typeof addLog==='function')addLog('🏗',`Paid for ${aBuild(b)} at ${site.name}.`);return `The masons start tomorrow. Three days, and it's yours as much as ours.`;}});}
     out.push(...refoundTopics(site));
     if(st.builds.filter(b=>b.done).length>=3&&favor(site)>=5&&st.flags.owned==null)out.push({label:`Take the deed to ${site.name}`,quest:true,fn:()=>{flag(site,'owned',true);addFavor(site,2);if(typeof addLog==='function')addLog('📜',`${site.name} is yours.`);return `Then it's yours. The rents come to you on the first of the week. Don't let it burn.`;}});
     return out;
@@ -41858,10 +41929,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function factionTopics(site){
     const nk=nationKeyOf(...cellOf(site.x,site.z));const fk=factionOf(nk);const F=FACTIONS[fk];if(F.seat!==site.id)return [];
     const rec=nationRecord(nk);if(rec)return [{label:`Serve ${F.name}?`,response:`Not while ${rec.name} has a fine on you. ${F.name.replace(/^the /,'The ')} does not take on a debtor's quarrels. Settle it.`}]; // S158
-    const st=fstate()[fk];const others=Object.keys(FACTIONS).filter(k=>k!==fk).filter(k=>fstate()[k].rank>=2);
+    const st=fstate()[fk];const _duel=st.active&&st.active.kind==='duel'?st.active:null;
+    if(st.closed&&!(_duel&&_duel.data.state==='murder'))return [{label:`Serve ${F.name}?`,response:"Not you. We've a long memory for the yard, and a short one for excuses."}]; // S373 — Rowe killed after she yielded
+    const others=Object.keys(FACTIONS).filter(k=>k!==fk).filter(k=>fstate()[k].rank>=2);
     if(others.length)return [{label:`Serve ${F.name}?`,response:`${FACTIONS[others[0]].name} has your oath. We don't share.`}];
     const out=[];
-    out.push({label:`Serve ${F.name}.`,quest:true,fn:()=>{if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
+    out.push({label:`Serve ${F.name}.`,quest:true,fn:()=>{const A=st.active;if(A&&A.kind==='duel'){const D=A.data; // S373 — the yard's two other endings
+        if(D.state==='murder'){A.turnedIn=true;A.paid=0;st.active=null;st.closed=true;if(typeof addLog==='function')addLog('🏛',"The Captains' League has closed its gates to you.");return FLINES[fk][A.service].afterMurder;}
+        if(D.state==='lost'&&!D.told){D.told=true;return "Rowe's Captain. The chair's hers till someone takes it off her on the yard, and that's your right now, same as it was hers. Give your arm a week. The ring goes up again in seven days.";}
+        if(D.state==='lost'&&dayNow()<(D.retryDay||0))return "Not yet. A week, I said. Rowe's not going anywhere, and neither's the chair.";}
+      if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
     if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return `It's yours. ${fk==='compact'?'The ship is at the quay under your name.':''}`;}});}
@@ -41896,7 +41973,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {kind:'find',title:'Where Is Rowe?',brief:"Rowe went up the hill road alone. Reeves don't go alone. Find her.",rival:'trouble'},
       {kind:'deliver',title:'The Captains\u2019 Word',brief:"The League has one word for the Crown's surveyors: no. Carry it."},
       {kind:'road',title:'The Free Captains',brief:"The free captains have made a camp on our road. They're ours, and they're still a camp. Clear it, and don't ask whose coin they carry."},
-      {kind:'duel',title:'The Duel at Caer Slige',brief:"A Captain of the League is made by acclamation, and acclamation is won on the yard. Rowe has claimed the challenge. It's her right.",set:true,after:"Acclaimed. She fought well; the League will say so at her burial. You're Captain — and the spire's yours to hold. Something in it pays my sergeants in light, and I've stopped asking what."}
+      {kind:'duel',title:'The Duel at Caer Slige',brief:"A Captain of the League is made by acclamation, and acclamation is won on the yard. Rowe has claimed the challenge. It's her right. The ring's laid east of the walls from first light. Walk in when you're ready. Down or yield, and it's done by noon.",set:true,after:"Acclaimed. Rowe says you fought well, and she doesn't say that of many. You're Captain now, and the spire's yours to hold. Something up there pays my sergeants in light. I've stopped asking what.",afterMurder:"The yard saw it. So did I. There's no acclamation for that, and there's no League for you either. Leave your oath at the gate."}
     ],
     compact:[
       {kind:'deliver',title:'The Tithe Roll',brief:"Every hull that passes is tithed. This roll goes to the Factor; it says which ones haven't paid."},
@@ -41916,7 +41993,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const lord=lordFor(site);const voice=`${lord.title} ${lord.name}`;
     let q;
     if(S.kind==='sail'){q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
-    else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} on the yard east of ${site.name}`,kind:'road',data:{x,z,count:1,have:0,spawned:false,noCamp:true},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
+    else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
     else{q=townQuestFor(site,S.kind);if(qActive().some(a=>a.id===q.id))return q; // the seat's own job is still open
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
@@ -41926,10 +42003,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function factionAfter(fk,i){const S=FLINES[fk][i];return S&&S.after?' '+S.after:'';}
   // the rival's beats: what she has to say when she stands at the seat
-  function rivalBeat(fk,st){if(fk!=='league'&&st.rank>=3)return 'present';const i=st.done;const S=FLINES[fk][i];if(!S)return null;
+  function rivalBeat(fk,st){if(fk==='league'&&st.rowe==='dead')return null; // S374 — after the yard: she lives (rank 3), or holds the chair until the rematch
+    if(st.rank>=3&&(fk!=='league'||st.rowe==='alive'))return 'present';if(fk==='league'&&duelLostBeat(st))return 'present';const i=st.done;const S=FLINES[fk][i];if(!S)return null;
     if(S.rival==='present')return 'present';
     if(S.rival==='mention'&&st.active)return 'mention';return null;}
+  function duelLostBeat(st){const A=st.active;return st.rowe==='captain'&&A&&A.kind==='duel'&&A.data&&A.data.state==='lost';}
   function rivalLines(fk,st,F){
+    if(fk==='league'&&st.rank>=3)return {greet:"Captain. Took me a week to stop favouring the left. I'm staying on at Caer Slige a while. Somebody ought to watch that spire.",topics:[{label:'What now, Rowe?',response:"The spire. You hold it, and I'll watch what comes down off it at night. If it's the light I think it is, you'll want a witness who can't be paid in it."},{label:'How are you ahead of me?',response:"I'm not, now. Don't get used to it."}]};
+    if(fk==='league'&&duelLostBeat(st))return {greet:"Captain Rowe, for a week at least. The ring's there when you want it. I'd want it back.",topics:[{label:'How are you ahead of me?',response:"I was a step slow on the left, and you didn't see it. Next time you might."},{label:'Where are you from?',response:"The Mark. Half the swords on these islands are. The other half are asking where we're from."}]};
     const r=F.ranks;const yours=st.rank?r[st.rank-1]:'nobody';const hers=r[Math.min(2,st.rank)];
     if(st.rank>=3)return {greet:fk==='crown'?"Knight. I heard about the survey team. I was in one, once — I got out. We'll talk about it when you've a keep to talk in.":"Prior. They tell me you took the black sail. I'd have taken her a day sooner. I'm for the Mark; the League pays in silver and doesn't tithe it.",topics:[{label:'What now, Rowe?',response:fk==='crown'?"The same as you. Someone's etching in the gates on orders nobody gave. I'd like to know whose hand."+"":"North. There's a captain at the strait who pays in light. I want to see it."}]};
     return {greet:`${yours}, is it? I'm ${hers}. ${fk==='crown'?"Try to keep up; the roads don't clear themselves.":fk==='league'?"They gave me the coast road. They gave you the hills. That's the order of things.":"The Church counts in fortnights. Try to be worth one."}`,
@@ -41940,7 +42021,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(!fk){if(RIVAL.npc)removeRival();return;}
     const F=FACTIONS[fk];const seat=F.seat?siteAnywhere(F.seat):null;const beat=seat?rivalBeat(fk,st):null;
     if(!beat||beat==='mention'||Math.hypot(px-seat.x,pz-seat.z)>160){if(RIVAL.npc&&(!beat||Math.hypot(px-RIVAL.npc.g.position.x,pz-RIVAL.npc.g.position.z)>240))removeRival();return;}
-    const key=fk+'|'+st.done+'|'+st.rank;if(RIVAL.npc){if(RIVAL.key!==key)removeRival();else return;}
+    const key=fk+'|'+st.done+'|'+st.rank+'|'+(fk==='league'&&duelLostBeat(st)?'lost':'');if(RIVAL.npc){if(RIVAL.key!==key)removeRival();else return;}
     const L=rivalLines(fk,st,F);const x=seat.x+6,z=seat.z+9;
     const def={name:RIVAL.name,role:'',ico:'⚔',authored:true,people:'markman',sCol:0xf0dcc8,hairCol:0xd8c8a0,bodyScale:[1.04,1.06,1.04],bCol:0x2a2a30,x,z,greeting:[L.greet],topics:[...L.topics,{label:'Farewell.',bye:true}]};def.temper='dry';
     const n=spawnNPC(def,Math.PI,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);RIVAL.npc=n;RIVAL.key=key;
@@ -41949,6 +42030,105 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the set-piece kinds the generator doesn't know
   function tickFactionKinds(){for(const q of qActive()){if(q.done)continue;if(q.kind==='sail'&&OTHER.some(o=>o.kind==='pirate'&&o.boarded&&o.crew.length&&o.crew.every(e=>e.dead))){qComplete(q);showMsg('Her deck is yours.','#e8d8a0');}}}
   function factionWantsPirate(){return qActive().some(q=>q.kind==='sail'&&!q.done);}
+  // S373 — the Yard at Caer Slige (Michael's A on #69; the quest writer's draft in docs/quest_drafts.md). The League's
+  // ninth service is a duel in a roped ring east of the seat, laid from first light to noon. Rowe waits in it as a
+  // person; the yard-sergeant's *Call it.* puts a Bandit Captain wearing her name in her place. At a quarter of her
+  // health she kneels and yields (no blow takes her below it before then); three seconds unstruck and she is spared, a
+  // blow after the yield is murder and the League closes. The ring holds you at 1 health: down, yielded or over the
+  // rope, the yard acclaims Rowe, and the ring is laid again in seven days.
+  const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
+  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12;
+  const DUEL_BARKS=["Feet, Rowe! Feet!","Get your guard up, {nick}!","That's blood. Keep at it.","Iron and blood!","Watch her left, {nick}.","Don't dance. Fight.","Hesket! Hesket!","Up, {nick}! Up!","Finish it by noon, the pair of you!"];
+  function duelQuest(){return qActive().find(q=>q.kind==='duel')||null;}
+  function duelRingHours(){const h=hourNow();return h>=DUEL_OPEN&&h<DUEL_CLOSE;}
+  function duelNick(){const it=EQ.weapon;if(!it)return 'Fists';const sh=it.weaponShape||(/bow/i.test(it.name)?'bow':/staff/i.test(it.name)?'staff':/axe/i.test(it.name)?'axe':/mace|hammer|club/i.test(it.name)?'mace':/dagger|knife/i.test(it.name)?'dagger':'sword');
+    return /bow/.test(sh)?'Bowstring':/staff/.test(sh)?'Stick':/axe/.test(sh)?'Hatchet':/mace|club|hammer|flail/.test(sh)?'Hammer':/dagger|knife/.test(sh)?'Pin':'Blade';}
+  function duelLeague(){return fstate().league;}
+  function duelRemoveNpc(n){if(!n)return;sc.remove(n.g);if(n.dot)sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}
+  function duelRemoveRowe(){const e=DUEL.rowe;if(!e)return;if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}DUEL.rowe=null;DUEL.rb=null;}
+  function duelRingDown(){DUEL.parts.forEach(m=>{sc.remove(m);if(m.geometry)m.geometry.dispose();});DUEL.parts=[];}
+  function duelTeardown(){duelRingDown();duelRemoveNpc(DUEL.sgt);DUEL.watchers.forEach(duelRemoveNpc);duelRemoveNpc(DUEL.npc);duelRemoveRowe();
+    Object.assign(DUEL,{q:null,sgt:null,watchers:[],npc:null,inside:false,offered:false,stag:false,pstag:false});}
+  function duelPerson(def,x,z,face){def.x=x;def.z=z;const n=spawnNPC(def,face,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);return n;}
+  function duelSeed(q){let h=0;for(const c of q.id)h=(h*31+c.charCodeAt(0))>>>0;return ()=>{h=(h*1664525+1013904223)>>>0;return h/4294967296;};}
+  function roweSay(text){const e=DUEL.rowe;if(!e||!e.mesh)return;if(DUEL.rb)e.mesh.remove(DUEL.rb);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:bubbleFor(text),transparent:true,depthTest:false}));sp.scale.set(1.6,.4,1);sp.position.set(0,2.1,0);e.mesh.add(sp);DUEL.rb=sp;DUEL.rbT=3.2;}
+  function roweDef(x,z){const pp=playerPeople();
+    const hello={markman:"One of ours. Good. Nobody'll say it wasn't fair.",gatelander:"A turf-cutter on the yard. They say your lot won't leave a wounded man. We'll see if you'll let one up.",aurennais:"Your Church says the yard's for the unlettered. You came anyway. That's the first thing I've liked about you.",oldblood:"Cold-eyes. The sergeant asked me if it's allowed. It's allowed. I'll try to look straight at you. People tell me that's hard."}[pp]||"One of ours. Good. Nobody'll say it wasn't fair.";
+    const def={name:RIVAL.name,role:'',ico:'⚔',authored:true,people:'markman',sCol:0xf0dcc8,hairCol:0xd8c8a0,bodyScale:[1.04,1.06,1.04],bCol:0x2a2a30,x,z,temper:'dry',
+      get greeting(){const s=DUEL.q&&DUEL.q.data.state;return [s==='won'?"Good fight. I was a step slow on the left, and you saw it. Buy me a drink when you've a garrison to buy it in.":hello];},
+      get topics(){const s=DUEL.q&&DUEL.q.data.state;return s==='wait'?[{label:'Why do you want it?',response:"Captain's a garrison and forty mouths. I've fed worse. And somebody ought to ask what the spire pays the sergeants in, because it isn't silver."},{label:"We don't have to do this.",response:"Aye, we do. You're Reeve, I'm Reeve, and there's one Captain's chair at the strait. We settle it by noon and drink after."},{label:'Farewell.',bye:true}]:[{label:'Farewell.',bye:true}];}};
+    return def;}
+  function duelBuild(q){const d=q.data,cx=d.x,cz=d.z;DUEL.q=q;DUEL.open=duelRingHours();const r=duelSeed(q);const bank=NAMES.anglo;const used=new Set();
+    const nm=()=>{let n;for(let k=0;k<20;k++){const L=r()<.5?bank.m:bank.f;n=L[Math.floor(r()*L.length)];if(!used.has(n))break;}used.add(n);return n;};
+    const sn=nm();const sa=-Math.PI/2+.5,sx=cx+Math.cos(sa)*(DUEL_R+.8),sz=cz+Math.sin(sa)*(DUEL_R+.8);
+    const sdef={name:sn,role:'Yard-sergeant',ico:'⚔',authored:true,people:'markman',bCol:0x3a3a40,sCol:0xe8d4bc,x:sx,z:sz,
+      get greeting(){const s=DUEL.q&&DUEL.q.data.state;if(s==='murder')return ["She yielded. Every one of us saw it."];return [DUEL.open?"You're the other one. Rowe's been in there since first light.":"Ring's down. It goes up at first light, and it comes down at noon, fought or not."];},
+      get topics(){const s=DUEL.q&&DUEL.q.data.state;if(s!=='wait'||!DUEL.open)return [{label:'Farewell.',bye:true}];return [
+        {label:'The rules?',response:"Three. Nobody steps in. You go over the rope, you've yielded. Somebody yields, it's over, and you don't touch them after. That last one's the only one anybody remembers."},
+        {label:'What do I fight with?',response:"What you walked in with. Steel, a bow, the old words if you've got them. The yard doesn't care how. It cares that it's you."},
+        {label:'And if she dies?',response:"She won't, before she yields. Rowe's not proud that way. After she yields, it's murder, and the whole Mark will know your name by the week's end."},
+        {label:'Call it.',quest:true,fn:()=>{duelStart(q);return "Rope's up. Iron and blood, the pair of you. Go on.";}},
+        {label:'Farewell.',bye:true}];}};
+    DUEL.sgt=duelPerson(sdef,sx,sz,Math.atan2(cx-sx,cz-sz));
+    if(!DUEL.open)return;
+    const stakeM=new THREE.MeshLambertMaterial({color:0x5a4630}),ropeM=new THREE.MeshLambertMaterial({color:0xb8a27a});const N=12,pts=[];
+    for(let i=0;i<N;i++){const a=i/N*Math.PI*2;const x=cx+Math.cos(a)*DUEL_R,z=cz+Math.sin(a)*DUEL_R;const y=worldH(x,z);pts.push(new THREE.Vector3(x,y+.85,z));const s=new THREE.Mesh(new THREE.CylinderGeometry(.06,.07,1.1,5),stakeM);s.position.set(x,y+.55,z);s.castShadow=true;sc.add(s);DUEL.parts.push(s);}
+    for(let i=0;i<N;i++){const a=pts[i],b=pts[(i+1)%N];const m=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,a.distanceTo(b),4),ropeM);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());sc.add(m);DUEL.parts.push(m);}
+    for(let i=0;i<8;i++){const a=(i+.5)/8*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a-sa),Math.cos(a-sa)))<.35)continue;const x=cx+Math.cos(a)*(DUEL_R+1.6),z=cz+Math.sin(a)*(DUEL_R+1.6);
+      const w=duelPerson({name:nm(),role:'',ico:'⚔',authored:true,people:'markman',bCol:[0x3a3a40,0x4a4038,0x2e3238][i%3],sCol:0xe8d4bc,greeting:['Iron and blood!'],topics:[{label:'Farewell.',bye:true}]},x,z,Math.atan2(cx-x,cz-z));w._duelWatch=true;DUEL.watchers.push(w);}
+    DUEL.npc=duelPerson(roweDef(cx,cz+1.5),cx,cz+1.5,Math.PI);}
+  function duelStart(q){if(q.data.state!=='wait'||!DUEL.npc)return;const d=q.data;const p=DUEL.npc.g.position;const x=p.x,z=p.z;duelRemoveNpc(DUEL.npc);DUEL.npc=null;
+    const e=buildZoneEnemy(sc,STATIC_SOL,x,z,q.enemy||'Bandit Captain',null);e._questTag=q.id;e._duel=true;e.name=e.displayName=RIVAL.name;e.homeX=d.x;e.homeZ=d.z;e.alert=true;e._duelHold=false;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);DUEL.rowe=e;
+    d.state='fight';DUEL.inside=Math.hypot(px-d.x,pz-d.z)<=DUEL_R;DUEL.offered=false;DUEL.bark=3;
+    setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1400);
+    showMsg('The rope is up. Hesket Rowe lifts her blade.','#e8d8a0');if(typeof addLog==='function')addLog('⚔','The duel at Caer Slige: Hesket Rowe.');}
+  function duelBark(line){const W=DUEL.watchers.filter(w=>w.g.visible);if(!W.length)return;sayBubble(W[Math.floor(Math.random()*W.length)],line.split('{nick}').join(duelNick()));}
+  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;if(e.mesh)e.mesh.position.y-=.45;
+    try{if(dlgOpen&&dlgNPC&&dlgNPC.name===RIVAL.name)closeDialog();}catch(err){}
+    showMsg('Hesket Rowe goes down on one knee and lays her blade on the ground.','#e8d8a0');roweSay("Enough. I yield. It's yours.");}
+  function duelWon(q){const e=DUEL.rowe;q.data.state='won';duelLeague().rowe='alive';const x=e.x,z=e.z;duelRemoveRowe();duelRingDown();
+    DUEL.npc=duelPerson(roweDef(x,z),x,z,Math.atan2(px-x,pz-z));
+    const W=DUEL.watchers.slice().sort(()=>Math.random()-.5).slice(0,3);['Captain!','Captain! Captain!','Iron and blood!'].forEach((t,i)=>{if(W[i])sayBubble(W[i],t);});
+    qComplete(q);showMsg('The yard acclaims you Captain.','#e8d8a0');}
+  function duelMurder(q){q.data.state='murder';q.done=true;const L=duelLeague();L.rowe='dead';L.closed=true;duelRingDown();
+    if(DUEL.sgt){sayBubble(DUEL.sgt,'She yielded. Every one of us saw it.');}
+    DUEL.watchers.forEach(w=>{w.g.rotation.y+=Math.PI;w.def.greeting=['…'];if(w._bubble){w.g.remove(w._bubble);w._bubble=null;}});
+    showMsg('Hesket Rowe is dead. The yard is silent.','#c8b880');}
+  function duelLost(q,how){const d=q.data;d.state='lost';d.retryDay=dayNow()+7;d.told=false;duelLeague().rowe='captain';PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();
+    duelRemoveRowe();duelRingDown();try{if(dlgOpen)closeDialog();}catch(err){}
+    showMsg(how==='rope'?'You step over the rope. That is a yield. The yard acclaims Hesket Rowe Captain.':how==='yield'?'You yield. The yard acclaims Hesket Rowe Captain.':'You go down, and stay down. The yard acclaims Hesket Rowe Captain.','#c8b880');}
+  function duelOffer(q){const e=DUEL.rowe;if(e){e._duelHold=true;e.telegraphT=0;}
+    openDialog({name:RIVAL.name,role:'',ico:'⚔',greeting:["You're done. Say it, and it's done."],topics:[
+      {label:'I yield.',quest:true,fn:()=>{setTimeout(()=>{if(q.data.state==='fight')duelLost(q,'yield');},1200);return "Heard. Up you get. You'll want that arm again.";}},
+      {label:'Not yet.',quest:true,fn:()=>{setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1200);return "Your blood, then.";}}]});}
+  function tickDuel(dt){
+    const q=duelQuest();if(DUEL.q&&DUEL.q!==q)duelTeardown();if(!q)return;const d=q.data;const far=Math.hypot(px-d.x,pz-d.z);
+    if(DUEL.rb){DUEL.rbT-=dt;if(DUEL.rbT<=0){if(DUEL.rowe&&DUEL.rowe.mesh)DUEL.rowe.mesh.remove(DUEL.rb);DUEL.rb=null;}}
+    const _seat=siteAnywhere(q.giverSite);const _occ=!!(_seat&&TS(_seat).flags.occupied!=null); // S374 — an occupied League town loses its duels (canon §12a): no ring
+    if(_occ&&DUEL.q&&d.state==='wait'){duelTeardown();return;}
+    if(!DUEL.q){if(far>180||_occ)return;if(d.state==='fight'||d.state==='yielded')d.state='wait'; // a fight left by a load is laid again
+      if(d.state==='lost'&&dayNow()>=(d.retryDay||0))d.state='wait';if(d.state!=='wait')return;duelBuild(q);return;}
+    const ended=d.state==='won'||d.state==='murder'||d.state==='lost';
+    if(ended){if(far>60||(d.state==='lost'&&dayNow()>=(d.retryDay||0)))duelTeardown();return;}
+    if(d.state==='wait'){if(far>240){duelTeardown();return;}if(DUEL.open!==duelRingHours()){duelTeardown();return;}return;}
+    const e=DUEL.rowe;if(!e){duelTeardown();return;}
+    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
+      DUEL.spare-=dt;if(DUEL.spare<=0)duelWon(q);return;}
+    // the fight
+    const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
+    if(far<=DUEL_R)DUEL.inside=true;else if(DUEL.inside&&far>DUEL_R+1){duelLost(q,'rope');return;}
+    if(e.hp<=e.maxHp*.25){duelYield(q);return;}
+    if(!DUEL.offered&&!talking&&PHP<maxHP*.3){DUEL.offered=true;duelOffer(q);return;}
+    const st=typeof isStaggered==='function'&&isStaggered(e);if(st&&!DUEL.stag){duelBark("She's open!");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.stag=st;
+    const ps=PPOST.stagUntil>performance.now()/1000;if(ps&&!DUEL.pstag){duelBark("Rowe's got you, {nick}.");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.pstag=ps;
+    DUEL.bark-=dt;if(DUEL.bark<=0){DUEL.bark=6+Math.random()*3;let line;do{line=DUEL_BARKS[Math.floor(Math.random()*DUEL_BARKS.length)];}while(line===DUEL.last);DUEL.last=line;duelBark(line);}
+  }
+  // the kill path asks first: before the yield no blow takes her below a quarter (she yields instead); after it, a kill is murder
+  function duelKill(e){const q=DUEL.q;if(!q||DUEL.rowe!==e)return false;const s=q.data.state;
+    if(s==='fight'||s==='wait'){if(s==='wait')q.data.state='fight';e.hp=Math.max(1,Math.floor(e.maxHp*.25));duelYield(q);return true;}
+    if(s==='yielded')duelMurder(q);return false;}
+  // the ring holds you at 1 health: going down in it is a yield, not a death
+  function duelDown(){const q=DUEL.q;if(!q||q.data.state!=='fight'||Math.hypot(px-q.data.x,pz-q.data.z)>DUEL_R+2)return false;duelLost(q,'down');return true;}
   // v80 S133 — a guild hunt's ground on the compass until the tally is met
   function guildMarkers(push){try{const G=gstate();for(const k in G){const t=G[k]&&G[k].active;if(t&&t.kind==='hunt'&&!t.done&&t.x!=null&&t.have<t.need)push(t.x,t.z,GREEN,`${t.target}s — ${t.ground||'their ground'}`);}}catch(e){}}
   function factionMarkers(push){const F=FACTIONS;for(const k in F){const st=fstate()[k];if(!st.active||st.active.done){if(st.active&&st.active.done&&F[k].seat){const s=siteAnywhere(F[k].seat);if(s)push(s.x,s.z,GREEN,F[k].name);}continue;}}}
@@ -42143,8 +42323,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     }
   }
   function coachNear(){for(const C of COACHES.values()){const d=Math.hypot(px-C.cart.position.x,pz-C.cart.position.z);if(d<3.2)return C;}return null;}
-  function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='stop')return "Press 'E' to board the coach (it goes on shortly)";if(C.state==='wait')return `Press 'E' to board the coach (leaves at ${C.u<=0.001?'six':'six in the evening'})`;return "Press 'E' to swing aboard";}
-  function coachInteract(){const C=coachNear();if(!C)return false;if(C.riding){C.riding=false;const ang=C.cart.rotation.y;px=C.cart.position.x+Math.cos(ang)*2.2;pz=C.cart.position.z-Math.sin(ang)*2.2;jumpY=worldH(px,pz);showMsg('You step down.','#c8b880');return true;}C.riding=true;showMsg(C.state==='wait'?'You take a seat. The coach leaves on the hour.':'You swing aboard.','#c8b880');if(typeof addLog==='function')addLog('🐎','Took the coach.');return true;}
+  function coachWhen(C){return (C.u>0.001&&C.u<0.999)?'goes on when the road is clear':C.u<=0.001?'leaves at six':'leaves at six in the evening';} // S348 — the prompt and the seat say the same hour
+  function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='stop')return "Press 'E' to board the coach (it goes on shortly)";if(C.state==='wait')return `Press 'E' to board the coach (${coachWhen(C)})`;return "Press 'E' to swing aboard";}
+  function coachInteract(){const C=coachNear();if(!C)return false;if(C.riding){C.riding=false;const ang=C.cart.rotation.y;px=C.cart.position.x+Math.cos(ang)*2.2;pz=C.cart.position.z-Math.sin(ang)*2.2;jumpY=worldH(px,pz);showMsg('You step down.','#c8b880');if(typeof saveGame==='function')saveGame();return true;} /* S353 — #66 A: stepping off the coach autosaves */C.riding=true;showMsg(C.state==='wait'?`You take a seat. The coach ${coachWhen(C)}.`:'You swing aboard.','#c8b880');if(typeof addLog==='function')addLog('🐎','Took the coach.');return true;}
   function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const T=worldState.towns||{};let sum=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
 
@@ -42296,7 +42477,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const R=worldState.roadsCleared||{};if(Object.keys(R).some(k=>k.split('|').includes(site.id))&&!qActive().some(q=>q.tut==='town'))tutTownAdvance(site,'route',`${site.name}'s road is clean. ${lordName(site)} will want a cart on it.`);}
     if(T.step==='route'){const R=routes();if(Object.values(R).some(rt=>!rt.broken&&(rt.a===site.id||rt.b===site.id)))tutTownAdvance(site,'invest',`A cart on ${site.name}'s road. ${lordName(site)} counts you a friend now — ask what the town needs.`);}
     if(T.step==='invest'){const st=TS(site);const b=st.builds[st.builds.length-1];if(b){T.build=b.name;tutTownAdvance(site,b.done?'report':'building',`The masons are at ${site.name}. Three days.`);}}
-    if(T.step==='building'){const st=TS(site);if(st.builds.some(b=>b.done)){const b=st.builds.find(b=>b.done);T.build=b.name;tutTownAdvance(site,'report',`The ${b.name} at ${site.name} is standing. ${lordName(site)} will want to see you.`);}}
+    if(T.step==='building'){const st=TS(site);if(st.builds.some(b=>b.done)){const b=st.builds.find(b=>b.done);T.build=b.name;tutTownAdvance(site,'report',`The ${b.name} at ${site.name} ${b.key==='walls'?'are':'is'} standing. ${lordName(site)} will want to see you.`);}}
   }
   // gates the lord waives for the line's own town at the step that teaches them
   function tutWaivesRoute(site){const T=TUT().town;return !!T&&T.site===site.id&&T.step==='route';}
@@ -42498,7 +42679,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     tickNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
     tickChatter(dt);
     ensureTaskWorldObjects();tickPickups();qTick();
-    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickCaravans(dt);tickCoaches(dt);tickStory();tickSiteDeaths();tickVarek(dt);sweepLights();
+    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}tickSiteDeaths();tickVarek(dt);sweepLights();
     tickCleared();
     tickDiscovery(dt);
   }
@@ -42531,8 +42712,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
-          spawn,
+  return {SIZE,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();
 
@@ -42614,7 +42794,7 @@ function loop(now){
   // would burn cycles for nothing. The applier is also a no-op for
   // dungeons/interiors and for owBurnedScene (locked).
   applyDayNightLighting(now/1000);
-  swT+=dt;
+  swT+=dt;playClockS+=dt;
   if(atkCd>0)atkCd-=dt;if(spCd>0)spCd-=dt;
   // Single armor bonus lookup per frame (cached, dirty-flagged on equip change)
   const _ab=getArmorEnchantBonuses();
@@ -43494,23 +43674,7 @@ function loop(now){
     if(intNPCMesh){
       const am=intNPCMesh.userData.amble;
       if(am&&!am.paused){
-        // Direction change timer
-        am.wt-=dt;
-        if(am.wt<=0){
-          am.wa=Math.random()*Math.PI*2;
-          am.wt=1.5+Math.random()*3.5;
-        }
-        // Move within bounds
-        const nx=intNPCMesh.position.x+Math.sin(am.wa)*am.speed*dt;
-        const nz=intNPCMesh.position.z+Math.cos(am.wa)*am.speed*dt;
-        if(nx>am.minX&&nx<am.maxX)intNPCMesh.position.x=nx;
-        else{am.wa=Math.PI-am.wa;am.wt=0.5;}
-        if(nz>am.minZ&&nz<am.maxZ)intNPCMesh.position.z=nz;
-        else{am.wa=-am.wa;am.wt=0.5;}
-        intNPCMesh.rotation.y=Math.atan2(Math.sin(am.wa),Math.cos(am.wa));
-        // Update interaction position so prompt tracks them
-        intNPCPos.x=intNPCMesh.position.x;
-        intNPCPos.z=intNPCMesh.position.z;
+        intAmbleStep(intNPCMesh,dt); // S365 — the step lives in intAmbleStep so a test can walk the keeper
       } else if(am&&am.paused){
         // Priest: gentle rotation sway only, stays at altar
         intNPCMesh.rotation.y=0+Math.sin(swT*.4)*.08;
@@ -44397,7 +44561,7 @@ function _enterGame(){
         showMsg('Draw released.','#aaa');
         return;
       }
-      blocking=true;lastBlockAttemptT=performance.now()/1000;
+      blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
       // v62 — Starting a block cancels any in-progress power charge. Block
       // and power-attack are mutually exclusive states; without this, holding
       // LMB then tapping RMB would leave powerCharging true with no LMB held.
