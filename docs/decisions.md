@@ -20,6 +20,14 @@ Today the sea has no state and the ship no condition: the swell is the same in c
 
 Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
 
+### The duel's yield — should a blow begun before you could see her kneel count as murder? (systems builder, Session 405, 2026-10-01, issue #96)
+In *The Yard at Caer Slige*, Rowe yields at a quarter of her health. Any blow that lands after that kills her: murder, the League closed, the watchers' backs turned. The critic asked whether a swing already under way counts. I measured it (`tests/duelrhythm`). Clicking in rhythm, the next swing begins 0.17–0.28 s after the blow that makes her kneel (dagger to hammer) and lands about 0.5 s after it. That is under a person's reaction time. A bot that stops 0.15 s after she kneels spares her, and one that stops at 0.25 s or 0.4 s kills her. So a player who swings steadily will often murder her without meaning to, and lose the League for good.
+- **A. As now.** Any blow after the yield is murder. The yield is a test of control, and the warning is the fight itself.
+- **B.** *(recommended)* **A blow begun within 0.4 s of her kneeling is held.** It lands on nothing (*You check the blow.*), and so do arrows and spells loosed in that time. A swing begun later is murder, as now. This forgives the reflex and keeps the choice.
+- **C. A held moment.** For the first second after she kneels no blow of yours lands on her, whenever it began. Simpler to say, but a deliberate blow in that second is forgiven too.
+
+Recommendation: **B.** It is one condition in `tickDuel` and a test. It keeps *struck she dies* for every blow the player chose, and removes the one they couldn't have stopped.
+
 ## Answered
 
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)

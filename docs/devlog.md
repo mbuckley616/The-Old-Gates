@@ -10181,3 +10181,24 @@ Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Sess
 - Whether 0.9 s and a 3-unit ring read in a dark cavern. The ring is a flat orange band on the floor, my own stand-in: the look builder may want a better mark (a crack, dust).
 - The damage. With the Session 130 correction, a master's slam is about four times an ordinary blow of its kind. A level-1 character (130 health) in this test's deep cavern faced a master's ordinary blow of about 60–125 and a slam of twice that. Whether that is a fair last room, or the 1.6 wants retuning now that it bites, is for a real fight to judge.
 - Whether the roll through the ring (towards the master, inside its reach) feels as good as stepping out.
+
+## v80 — Session 405 — A blow after the yield, measured (the critic's note on the duel)
+The critic's last review (build s342) left one question about *The Yard at Caer Slige* to be played: *whether a swing already in the air when she kneels counts as murder. The spare check is `e.hp<DUEL.hp0`, and a player swinging in rhythm will often have a blow in flight at that moment.* I measured it in the running game. Nothing in the game changed. What the yield should forgive is a rule of the quest, so it is a question for Michael (#96).
+
+**What was measured.** A fresh ninth service, *Call it.*, and Rowe held still with her own blows off. Her health was set one point above a quarter, so the next blow makes her yield. A bot in the page faces her at 1.2 units and swings with the starting Wooden GreatClub on every frame the cooldown allows. It stops clicking a set reaction time after she kneels, on the game's clock. A wrapped `_resolveZoneStrike` logs each blow as it lands.
+
+**What it shows.** With melee there is never a blow *in the air* at the yield: one swing at a time, and the blow that makes her kneel is the one that just landed. The trouble comes just after. The cooldown is 0.5 s × the weapon's swing factor, and the blow lands 0.30 s × the factor into the swing. So a player clicking in rhythm begins the next swing 0.2 s × the factor after the yielding blow, and it lands 0.5 s × the factor after it. Across the weapons, the next swing begins 0.17 s (a dagger, ×0.84) to 0.28 s (the heaviest, ×1.40) after she kneels, and that is under a human's reaction time to seeing it. The bot is the same: stopping 0.15 s after the yield spares her, but a 0.25 s reaction (a fast person) or 0.4 s kills her, by a swing begun 0.2–0.25 s after she knelt that lands 0.55–0.6 s after. The watchers turn their backs and the League closes, for a blow the player could not have held.
+
+### Verified (headless Chromium)
+`tests/duelrhythm.test.mjs` (new), 6/6, the Wooden GreatClub (swing factor 1.11, cooldown 0.555 s):
+- Every run's blows make her yield.
+- Stopping at once: spared after three seconds (*won*), one swing.
+- 0.15 s reaction: spared.
+- 0.25 s: murder. The next swing began 0.25 s after the yield (0.20 in an earlier run) and landed 0.60 s after (0.55).
+- 0.4 s: murder, the same timings.
+
+No page errors. Build tag s356.
+
+### Needs eyes
+- Michael's answer to #96. If he wants the yield to forgive a swing begun within reaction time, it is one condition in `tickDuel`'s yielded branch and a change to this test's expectations.
+- Arrows and spells loosed before she kneels and landing after are the literal *in the air* case. They take the same path (any loss of health after the yield is murder) and were not measured.
