@@ -9856,3 +9856,18 @@ This is a fix, not a decision: Session 174 says an empty hand fights for 2–4.
 
 ### Needs eyes
 - Take the weapon off and punch something: it should now hurt it, and in third person the arm should go through the swing and come back. In first person there is still nothing on screen until #80 is answered.
+
+## v80 — Session 383 — `wholepoints` measured a world still being built (test only)
+The producer has carried this red for most of a day: `wholepoints`' first check, the untended world over 120 days, failed on main's own content with a different least value from run to run (−64, −76, −75 against the pinned −77). Session 367 made every town start from its own base and loaded the nine home cells first. That fixed which towns were measured, but not this.
+
+**The cause.** The test seeds `Math.random` and runs 120 days through `WORLD.tick`. When the nine cells are in, the settlements round the player are still being built through the job queue, and that work draws from `Math.random` inside the same `WORLD.tick`. A probe counted the draws: about 100,000 a day for the seeded run's first four days (96,564, 108,343, 96,894, 117,341), then a few a day. How much building was left when the seeded run began depends on how far the loader got before it, which depends on the runner's speed. So the day systems' few draws came from a different place in the seeded stream each time, and the war, sackings and drift landed differently. Two side-by-side runs of the old test here gave −75 and −77.
+
+**What changed.** The test only. After loading the cells, and before anything is seeded, it ticks the world until it is built: until 20 ticks in a row each draw fewer than 50 random numbers with the job queue empty. That takes 99–113 ticks, with 15 settlements up. From there each seeded day draws only its own few numbers. The pinned numbers stand (52 towns, mean −6.8, least −77, most 0). The game is unchanged apart from the build tag.
+
+### Verified (headless Chromium)
+- The probe: on one page the untended run gave −77 during the build, then −76 and −76 on repeats once built. Two pages side by side gave the same numbers. The draws per day fell from about 100,000 to 0–5.
+- The old test, two runs side by side: least −75 (fail) and −77 (pass).
+- The new test, five runs (two side by side, then three): 52 towns, mean −6.8, least −77, most 0 every time. `wholepoints` 6/6 each run.
+
+### Needs eyes
+- Nothing to see in play. CI should stop going red on this check. If it does go red again, the `built` line in the log says how long the build took.
