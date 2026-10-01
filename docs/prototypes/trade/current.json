@@ -1,0 +1,225 @@
+{
+ "shop": {
+  "title": "Lorcan's Forge",
+  "sub": "Lorcan · \"Steel for the road ahead.\"",
+  "gold": 142,
+  "cha": 6,
+  "barter": 0.06,
+  "mul": 0.9664999999999999,
+  "wt": "20.6 / 65 wt",
+  "eq": {
+   "head": null,
+   "chest": "Tattered Tunic",
+   "hands": null,
+   "legs": "Worn Breeches",
+   "feet": "Leather Boots",
+   "weapon": "Wooden GreatClub",
+   "offhand": null,
+   "ring": null,
+   "amulet": null,
+   "ammo": null
+  },
+  "tabs": [
+   "All",
+   "Weapons",
+   "Armor",
+   "Consumables",
+   "Misc"
+  ],
+  "stock": [
+   {
+    "t": "⚔ | Wooden Sword | ATK 6–7 S ▲+2 | 3.0 | 5🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "⚔ | Bronze Dagger | ATK 6–7 P ▲+2 | 1.5 | 13🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "⚔ | Iron Sword | ATK 10–12 S ▲+6 | 3.0 | 33🪙",
+    "cls": "sh-row sh-row-locked"
+   },
+   {
+    "t": "🔨 | Bronze Mace | ATK 9–12 B ▲+6 | 4.0 | 21🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🛡 | Wooden Buckler | Block 20% · DEF +1 ▲ new | 4.0 | 5🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🧪 | Health Potion | +25 HP | 0.5 | 16🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "⚔ | Steel Sword | ATK 13–15 S ▲+9 | 3.0 | 62🪙",
+    "cls": "sh-row sh-row-locked"
+   }
+  ],
+  "bag": [
+   {
+    "t": "⚔ | Wooden Sword | ATK 6–7 S | 3.0 | 2🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🪖 | Bronze Helmet | DEF +2 | 3.0 | 6🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🧪 | Health Potion | ×2 | +25 HP | 1.0 | 7🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🧪 | Mana Draught | +40 MP | 0.5 | 16🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🗝 | Lockpick | ×2 | — | 0.1 | 4🪙",
+    "cls": "sh-row"
+   },
+   {
+    "t": "🛡 | Torch | Light | 4.0 | 2🪙",
+    "cls": "sh-row"
+   }
+  ],
+  "locks": [
+   [
+    "Wooden Sword",
+    "",
+    null,
+    0,
+    2,
+    5
+   ],
+   [
+    "Bronze Dagger",
+    "",
+    null,
+    0,
+    6,
+    14
+   ],
+   [
+    "Iron Sword",
+    "Requires Might 5 (you have 3)",
+    "might",
+    5,
+    16,
+    36
+   ],
+   [
+    "Bronze Mace",
+    "",
+    null,
+    0,
+    10,
+    23
+   ],
+   [
+    "Wooden Buckler",
+    "",
+    null,
+    0,
+    2,
+    5
+   ]
+  ],
+  "attrs": {
+   "might": 3,
+   "fortitude": 3,
+   "finesse": 0,
+   "swiftness": 0,
+   "resolve": 2,
+   "intelligence": 0,
+   "charisma": 6,
+   "fortune": 0
+  },
+  "level": null,
+  "house": {
+   "name": "Lorcan's Forge",
+   "type": "weapon",
+   "keeper": "Lorcan",
+   "tagline": "\"Steel for the road ahead.\""
+  }
+ },
+ "qty": "Sell Health Potion | 7🪙 each · 2 available | ×1 | ×5 | ×10 | Max | Buy | — | Cancel",
+ "loot": {
+  "title": "Bandit’s Chest",
+  "sub": "Click an item to take just that one",
+  "rows": [
+   "⚔ | Wooden Longsword | ATK 7–8 · Slash · Tier 1 Wooden",
+   "👖 | Wooden Greaves | DEF +1 · Tier 1 Wooden",
+   "📿 | Wooden Amulet | DEF +1 · Tier 1 Wooden",
+   "⚔ | Wooden GreatClub | ATK 4–6 · Blunt · Tier 1 Wooden",
+   "⚔ | Wooden Flail | ATK 8–10 · Blunt · Tier 1 Wooden",
+   "● | Gold Coins | 37 gold"
+  ],
+  "items": [
+   {
+    "name": "Wooden Longsword",
+    "type": "equip",
+    "wt": 4,
+    "sell": 2,
+    "stat": "ATK 7–8 S",
+    "desc": "ATK 7–8 · Slash · Tier 1 Wooden",
+    "tier": 1,
+    "mat": 9133628,
+    "ench": false
+   },
+   {
+    "name": "Wooden Greaves",
+    "type": "equip",
+    "wt": 5,
+    "sell": 2,
+    "stat": "DEF +1",
+    "desc": "DEF +1 · Tier 1 Wooden",
+    "tier": 1,
+    "mat": 9133628,
+    "ench": false
+   },
+   {
+    "name": "Wooden Amulet",
+    "type": "equip",
+    "wt": 0.2,
+    "sell": 2,
+    "stat": "DEF +1",
+    "desc": "DEF +1 · Tier 1 Wooden",
+    "tier": 1,
+    "mat": 9133628,
+    "ench": false
+   },
+   {
+    "name": "Wooden GreatClub",
+    "type": "equip",
+    "wt": 4,
+    "sell": 1,
+    "stat": "ATK 4–6 B",
+    "desc": "ATK 4–6 · Blunt · Tier 1 Wooden",
+    "tier": 1,
+    "mat": 9133628,
+    "ench": false
+   },
+   {
+    "name": "Wooden Flail",
+    "type": "equip",
+    "wt": 5,
+    "sell": 2,
+    "stat": "ATK 8–10 B",
+    "desc": "ATK 8–10 · Blunt · Tier 1 Wooden",
+    "tier": 1,
+    "mat": 9133628,
+    "ench": false
+   },
+   {
+    "name": "Gold Coins",
+    "type": "gold",
+    "value": 37,
+    "wt": 0,
+    "sell": 37,
+    "stat": "",
+    "desc": "37 gold",
+    "ench": false
+   }
+  ]
+ }
+}
