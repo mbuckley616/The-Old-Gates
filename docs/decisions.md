@@ -13,6 +13,14 @@ Session 384 put your B on #76 into the game: the player's armour is now lamellar
 Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town.
 Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). The script is `docs/prototypes/guardarmour/shots.mjs`. In B and C the guard's coat colour is hidden under the armour; a tabard over the mail could show a nation's or town's colour if you want one.
 
+### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
+Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
+- **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.
+- **B.** A, plus the helm as a 22nd skill, Seamanship (perks: shallows on the minimap, reefed sails, the ram, speed in heavy seas). Five Opus sessions.
+- **C.** B, plus a crew hired by the hand, paid by the day and fed from the hold. One Fable and five Opus sessions.
+
+Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
+
 ## Answered
 
 ### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
