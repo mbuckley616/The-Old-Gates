@@ -615,7 +615,7 @@ function _applyLoadData(d){
   // v80 S242 — keys the save always carried (wS is the whole worldState) but the load never read back: the day count,
   // the crime record, the Church's notes, the war, the Reader. Absent from the save, they are cleared, so one
   // character's record never carries into another's.
-  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
   try{ssSanitizeLoaded();}catch(e){console.warn('sanitize',e);}  // v80 S137
   // v61aw: tutorialDone migration. Saves predating v61aw never had this
   // flag, so fall back to TRUE — those characters are already past the

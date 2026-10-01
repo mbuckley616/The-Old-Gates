@@ -91,7 +91,8 @@ Backlog B has carried *cargo trading between ports with prices by island* since 
 
 Recommendation: **B**, built as A first. It is the brief's first feeling at sea: a choice (the war's town or the safe one) with a consequence you can see in the price, and the hold upgrades get a reason. A's falling price keeps it from being *buy more/better*.
 
-Michael: **B** — . (1 Oct 2026, via the control room)
+Michael: **B** — trade goods by island, plus prices that follow the world. (1 Oct 2026, via the control room; issue #88)
+A's part built in Session 390 (`tests/cargo`); the world's prices (B) are the next sessions.
 
 ### Lock-on from a trackpad — a key as well as the middle button? (systems builder, 2026-10-01, issue #89)
 Lock-on (Session 297) is the middle mouse button only, and the switch (Session 312) a flick of the mouse. A laptop trackpad has no middle button, so a player without a mouse cannot lock on at all, and the brief says the build must stay playable on a laptop. Sessions 297, 298 and 312 each left a key as your call; it was never asked.
@@ -101,7 +102,8 @@ Lock-on (Session 297) is the middle mouse button only, and the switch (Session 3
 
 Recommendation: **A.** One key, one Opus session with a test; a trackpad still moves the pointer, so the flick can switch foes; B can follow if that proves clumsy in play.
 
-Michael: **A** — . (1 Oct 2026, via the control room)
+Michael: **A** — add R as a second lock key. (1 Oct 2026, via the control room; issue #89)
+Done, Session 389: R toggles the lock through the game's own keydown, same rules as the middle button; `tests/lockon`.
 
 ### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
 Today all ten materials have the same armour on the body and only the colour changes: a smooth shell over the tunic, a ball on each shoulder, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm with a brim. `docs/prototypes/armour/` (auto/concept) makes the armour from the people's shape kit, baked into the body so it bends and walks with them. It has four builds. **Wooden** is laced lamellar with a laced skull-cap and a leather curtain at the neck. **Bronze** is a muscle cuirass with a skirt of leather strips and a crested helm open at the face. **Iron** is a mail shirt to mid-thigh with a conical helm, a nose guard and a mail curtain. **Steel** is plate: a ridged breastplate, hooped plates below it, thigh plates, shoulder guards of three plates each, elbow and knee cops, plated shins and feet, and a closed rounded helm with an eye slit. Under the armour the tunic and breeches keep the character's own cloth colour.

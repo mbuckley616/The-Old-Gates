@@ -9864,6 +9864,38 @@ The script runs clean (no page errors) and writes `docs/prototypes/barebody-grid
 ### Needs eyes
 Michael's letter on #83. At the prototype's scale and in this light, the skin and undyed linen sit close in tone, so B and C differ less than they would in the game. The bare feet in the shot are boots coloured as skin, and a build owes them a foot. The shirt keeps the tunic's cut and flare for the shot.
 
+## v80 — Session 382 — A punch lands (issue #81)
+The look builder found this in Session 380 while prototyping a fist for the empty hand (#80) and filed it for this builder. With the weapon slot empty, `attack(false)` set `swingT` to the punch's 0.429 s and queued `_pendingStrike`, and nothing ever happened after that: the dummy took no damage, the swing never ended and the third-person arm stood frozen mid-swing. The loop counted `swingT` down, and fired the pending strike at the swing's impact point, only inside `if(vmSword){…}` in `js/90-main.js`. `buildViewmodel` returns early with no weapon, so for fists `vmSword` is null. Session 174 made fists a weapon, and its test (`unequip`) calls `_resolveZoneStrike` directly, so it never went through the loop and never saw this. Fists have never landed in play.
+
+This is a fix, not a decision: Session 174 says an empty hand fights for 2–4.
+
+**What changed.** The loop's view-model block gains an `else`: with no view model and a swing running, it counts `swingT` down on the same `dt`, fires the strike when the swing passes `ANIM_PARAMS.swing.impactPoint` (or at the end, the same safety net the view-model path has), and latches the swing's length on its first frame in `_bareSwingMax` (a new top-level `let` in `90-main.js`; the view-model path keeps its own in `vmSword.userData`). The pose maths stays where it was. The swing with a weapon is untouched. If the fist view model of #80 lands, the empty hand gets a `vmSword` and goes through the old path; the strike no longer depends on that mesh existing.
+
+### Verified (headless Chromium)
+`tests/fistswing.test.mjs` (new) drives the real loop with real frames and `attack(false)` on a Bandit held still 1.2 units ahead, with every roll pinned:
+- Starting weapon (the Wooden GreatClub): a 0.611 s swing, the strike fires on frame 7 of 13, 9 damage.
+- Fists, new build: a 0.429 s swing with no view model, the strike fires on frame 5 of 9, `swingT` back to 0, 6 damage. A second punch the same.
+- Fists, old build (the same test with `js/90-main.js` from HEAD): after 61 frames (123 s of real time) `swingT` still 0.429, the strike still pending, 0 damage, both punches. Three checks fail; that is #81 reproduced.
+- `fistswing` 6/6; `unequip`, `fpweapons`, `tpswing` and `parryclock` pass. Build tag s343.
+
+### Needs eyes
+- Take the weapon off and punch something: it should now hurt it, and in third person the arm should go through the swing and come back. In first person there is still nothing on screen until #80 is answered.
+
+## v80 — Session 383 — `wholepoints` measured a world still being built (test only)
+The producer has carried this red for most of a day: `wholepoints`' first check, the untended world over 120 days, failed on main's own content with a different least value from run to run (−64, −76, −75 against the pinned −77). Session 367 made every town start from its own base and loaded the nine home cells first. That fixed which towns were measured, but not this.
+
+**The cause.** The test seeds `Math.random` and runs 120 days through `WORLD.tick`. When the nine cells are in, the settlements round the player are still being built through the job queue, and that work draws from `Math.random` inside the same `WORLD.tick`. A probe counted the draws: about 100,000 a day for the seeded run's first four days (96,564, 108,343, 96,894, 117,341), then a few a day. How much building was left when the seeded run began depends on how far the loader got before it, which depends on the runner's speed. So the day systems' few draws came from a different place in the seeded stream each time, and the war, sackings and drift landed differently. Two side-by-side runs of the old test here gave −75 and −77.
+
+**What changed.** The test only. After loading the cells, and before anything is seeded, it ticks the world until it is built: until 20 ticks in a row each draw fewer than 50 random numbers with the job queue empty. That takes 99–113 ticks, with 15 settlements up. From there each seeded day draws only its own few numbers. The pinned numbers stand (52 towns, mean −6.8, least −77, most 0). The game is unchanged apart from the build tag.
+
+### Verified (headless Chromium)
+- The probe: on one page the untended run gave −77 during the build, then −76 and −76 on repeats once built. Two pages side by side gave the same numbers. The draws per day fell from about 100,000 to 0–5.
+- The old test, two runs side by side: least −75 (fail) and −77 (pass).
+- The new test, five runs (two side by side, then three): 52 towns, mean −6.8, least −77, most 0 every time. `wholepoints` 6/6 each run.
+
+### Needs eyes
+- Nothing to see in play. CI should stop going red on this check. If it does go red again, the `built` line in the log says how long the build took.
+
 ## v80 — Session 384 — The worn armour by material (H.2, Michael's B on decision #76)
 Michael answered the concept artist's armour question on 30 Sep with B: four builds, and a mark for each rare metal. No session had built it, and the armour on the third-person body is H's (People, "a kit block for armour", Session 154), so this run took it. Until now every material wore one shape in a different colour: a lathed shell over the tunic, two shoulder balls, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm.
 
@@ -9907,6 +9939,43 @@ In C the lamellar is the heaviest, and most of that is its lacing. No game code 
 ### Needs eyes
 Michael's letter on #87. The armour hides the guard's coat, which is today's only colour on a guard; a tabard is offered in the question. Armoured foes (bandits, the dead in mail) are a separate question and are not in this one.
 
+## v80 — Session 386 — A foe a quest calls is there at any level (the critic's s342 finding)
+The critic found this in the 1 Oct run (PR #90): below level 5 the duel at Caer Slige cannot be fought. Hesket Rowe is built as a Bandit Captain, whose `minLevel` is 5, and `buildZoneEnemy` builds anything above the player's level `locked` (v59): the mesh hidden, skipped by `tickZoneEnemies`, unhittable, until the player grows into it. `duelStart` never cleared that, so at level 1 *Call it.* gave an empty ring, and the only ways out were the rope or *I yield.*, both a loss and a week. The guard's draw already clears it (`e.locked=false;e.minLevel=1`), and so does a lair's beast. The critic guessed the Fighters' *Blooded* commission and the siege leader shared it.
+
+They do, and it goes further. The gate is meant for the wild's own spawns, but every place a quest or the war sets a foe down by name went through it too. The guild commissions: *Blooded*'s captain (5), the Ogre and the Frost Troll (6), the Marsh Hag (5), each announced as *sighted* and never there. And a plain Bandit is `minLevel` 2, so at level 1 everything built from one was latent as well: a siege camp's six soldiers (the camp could never be broken, since it waits for all of them to die), an occupying garrison, a guild raid (*Raiders! 4 of them. Hold Dunmore.*, and nobody came), a faction's road job, and the caravan's attackers of Session 230. This is a fix, not a decision: each of those sessions says the foe is there to be fought.
+
+**What changed.** `unlockFoe(e)` in `js/42-zone-enemies.js`, after `buildZoneEnemy`: it clears the lock, sets `minLevel` to 1 and shows the mesh, as the guard's draw does. The duel, the guild's beast/wizard/wisp commissions, the guild raid, the road job, the caravan attack and the siege or occupation garrison now build through it (`js/80-world.js`, six call sites). The wild's spawns (`tickCells`' packs, sharks) and the dungeons are unchanged: a wild Ogre at level 1 is still latent. The foes' numbers are unchanged, so a level-1 player now meets a Bandit Captain at full strength in the duel and the *Blooded* commission; that is what the quests always asked for.
+
+### Verified (headless Chromium)
+`tests/questfoes.test.mjs` (new), every check at level 1:
+- The duel: *Call it.* puts Rowe in the ring unlocked and shown; the real enemy tick brings her from 4 units to 1.48 in 90 ticks; a swing through the real loop takes her from 62 to 57–60.
+- A commission's Bandit Captain, Ogre, Frost Troll and Marsh Hag: each sighted unlocked and shown.
+- Dunmore besieged by the Mark: six soldiers and the *Markish Captain*, none latent; all six down, the siege breaks.
+- A guild raid of four on Dunmore: four raiders, all shown.
+- A wild Ogre built at level 1 is still latent.
+- The same test on the unfixed build (HEAD's `index.html` and `js/` by `git archive`, `--src`): Rowe locked and unseen, still at 4 units after 90 ticks, 62 of 62 after the swing; all four commission foes locked (minLevel 5, 6, 6, 5); the siege's six latent; the raid's four latent and none shown. 6 of 9 fail.
+- `questfoes` 9/9; `duel`, `caravan`, `guardlevel1`, `camps` and `crime3` pass. Build tag s345.
+
+### Needs eyes
+- The duel at level 1 against a full-strength Bandit Captain (62 health, 13 a blow, a shield up): whether a new character can win it, or whether the League's ninth service should wait for a level. That is Michael's call if it proves too hard; this session only makes the fight happen.
+- A level-1 siege: six soldiers and a captain at once outside a town. Before this they were invisible, so nobody has played it.
+- Not touched: the road job and the caravan were read, not driven in the test (they build through the same helper).
+
+## v80 — Session 387 — Keepers walk round their counters, not through them (the critic's s342 finding)
+The critic's second finding of the 1 Oct run (PR #90): shop keepers walk through their counter. The keeper's amble (`intAmbleStep`, Session 365) turned back only off its bounds, x from 0.8 to W−0.8 and z from 0.6 to min(D×.55, 4.5), and tested no furniture. Every counter shop sets its counter's solid at z 2.6–3.4 across the room's middle half, right across those bounds, and the keeper started at z 2.6, on its back edge. So the keeper strolled through the counter to the customer's side and back. Session 368's fix of the bounce (a bound turns back the part of the heading that met it) made it more visible: before it, a keeper stuck at the counter's line. This is a fix: Session 365 describes a keeper walking about the shop floor, not through its fittings.
+
+**What changed.** `intAmbleStep` (`js/22-dialogue.js`) asks `intSolidAt` (the room's own solids, at the floor, a 0.22 margin) before each axis of a step, and a solid turns the heading back exactly as a bound does. A keeper who ever stands inside a solid steps first to the nearest free spot within their bounds (rings of 0.1 to 2.5 units), so the strict step can never hold one there; with the next change none starts inside. The counter shops' keeper starts at z 2.2, behind the counter, not on its edge (`js/80-world.js`, the default `npc`). The bounds are unchanged, so a keeper still walks round the end of the counter onto the floor (0–45% of the day before it, as before); the walk is still .25 a second and heads are still held 1.5–5 s.
+
+### Verified (headless Chromium)
+`tests/keeperwalk.test.mjs` (new): every house with a walking keeper in Portclare and Dunmore (21: eleven counter shops, six inns, the two guild halls, a shipwright and the stores), entered at 13h, the keeper walked for ten minutes of 1/60 steps, sampled every tenth of a second with the game's own `intSolidAt` at the floor.
+- New build: inside a solid 0% for all 21, inside the counter 0%, nobody starts inside one, every keeper still walks 3.9–10.2 units from where they began. 6/6.
+- Old build (HEAD's `index.html` and `js/` by `git archive`, `--src`): the counter shops' keepers inside the counter 5–21% of the day (Róisín's Goods 21%, Olivier's Smithy 16%), inside any solid up to 18%, the inns' 3–5%; eleven keepers start inside the counter's edge. 3 of 6 fail.
+- An earlier draft of the test counted any solid over the point and blamed four keepers for standing in a door's lintel (y 1.6–3.6, a passage they walk under); the test now asks the game's own floor-height test.
+- `shopsight` passes: one-room strongboxes in sight 6–34% of an open day (13 shops in four towns; Session 368 measured 0–35%), back-room boxes 0% with the door shut. `keepercone` and `intnpcs` pass. Build tag s346.
+
+### Needs eyes
+- Watch a keeper in Fionnuala's Stores at midday: they should turn at the counter and go round its end, never through it. Whether the turn reads as a person or a bumper car at .25 units a second.
+
 ## v80 — Session 388 — CI: the snow repaint's cost check, held to the machine's own chunk (H.6)
 Section H has nothing left to build without Michael: the Playtest s162 list, creatures, plants, boats and the world are all done, and the three open look questions (#80 the fist, #83 the empty slots, #87 the guards' armour) wait on his letter. There are no new register findings in `docs/quest_review.md` (run 4 was clean). CI on the Auto sessions PR had already failed on its head (`8ab85e4`) in two shards, so this run's one session is that.
 
@@ -9924,6 +9993,86 @@ The second red is `q7world`, which hit the runner's 900-second limit for one sui
 
 ### Needs eyes
 Nothing in play. Whether the runner agrees is the next CI run on the PR. If the one-chunk tick there is ever under the timer's resolution, the millisecond allowance is what keeps the check from failing, and it is still well under the six-chunk figure.
+## v80 — Session 389 — R locks on, for a trackpad (Michael's A on #89)
+Lock-on (Session 297) was the middle mouse button only, and a laptop trackpad has none, so a player without a mouse could not lock on at all; the brief says the build must stay playable on a laptop. Michael answered #89 with A: R as a second lock key, a toggle under the same rules as the button. R was bound to nothing (no `KeyR` and no `e.key` test anywhere in `js/`).
+
+**What changed.** The game's keydown (`js/92-creator.js`, beside Q's roll) calls `toggleLock()` on R, not on a key repeat. It is the same function the middle button calls, so the reach (14 units, 60° of the view), the clear line, *Nothing to lock on to.*, and R again letting go are all the button's. Unlike the button, R needs no pointer lock first, since a key cannot be the click that captures the mouse. With the dialogue, the hub or the inventory open, the handler returns before it reaches R, as it does for every game key. The flick that switches foes (Session 312) is unchanged; a trackpad still moves the pointer. The help page and the controls line read *Middle-click or R* and *Middle-click/R*.
+
+### Verified (headless Chromium)
+`tests/lockon.test.mjs`, three new checks through real key presses on the game's own element: R locks the foe the middle click locked, R again lets go, and R with no foe in reach locks nothing and shows *Nothing to lock on to.* (the message cleared first). `lockon` 20/20. The same test on the unfixed build (HEAD's `index.html` and `js/` by `git archive`, `--src`): R locks nothing and says nothing, 2 of the 3 new checks fail. Build tag s347.
+
+### Needs eyes
+- R on a laptop: whether reaching from WASD to R mid-fight is comfortable, and whether the flick switches foes cleanly on a trackpad. If not, #89's B (Z and X to switch) is the next step.
+
+## v80 — Session 390 — Cargo by the crate: a factor's board in every harbour (Michael's B on #88, A's part)
+Backlog B carried *cargo trading between ports with prices by island* since the first backlog with no rule behind it: a counter's price was the town's for every good on every island, and the ship's hold only added carry weight. Michael answered #88 with B, which I proposed built as A first: a dozen bulk goods, cheap where they are made and dearer abroad, traded only at a harbour's factor, the price falling with what you sell, the Compact's tithe; then (B) prices that follow the war and the sackings. This session is A.
+
+**What changed** (`js/80-world.js`, beside the ferry topics). Twelve goods, four from each island's trade in canon §1: the Gatelands' grain, wool, hides and salt beef; the Mark's iron, silver, timber and furs; Aurenne's salt, dyes, glass and salt fish, each with a worth (20–95) and a weight (4–10). Every harbourmaster has a new topic, *Cargo — the factor's prices*: a board of his prices and one row for each good he sells and each you hold. He sells his own island's four at ×0.6 of their worth and buys any good, his own at ×0.6 and another island's at ×1.4, less a tenth for himself; without the tenth, a chest bought at 57 and sold back after the 4% rise paid 59, so a player could have milked one quay. Each crate sold drops that quay's price for that good 4%, each bought raises it 4%, and the gap closes by 30% a game day, read from the clock when it is next asked, so nothing ticks. In Aurenne's ports a sale pays the Compact a tenth. The prices are kept per quay in `worldState.cargoMkt`, which is in the load's list (the S242 rule).
+
+Where the crates go is my reading of *heavy enough that the hold matters*. The hold already lent 25 or 50 carry within 20 units of the ship, but a harbourmaster stands at the landward end of the quay, out of that reach, so a player buying by the bag would have been overloaded on the walk to her. Instead, with your ship at this harbour (within 140 units, the same reach as the *Fetch her* topic), the crates go into her hold: 40 weight for a sloop, 60 a cog, 90 a galleon, +25 a hold tier (the tiers' old +25 carry stands too). Without her, or with the hold full, they go on your back by weight like anything else. So a ferry passenger can carry a few. A shop counter does not take a crate: it says *A harbour's factor buys trade goods, not a shop.* Charisma and the town's prosperity do not touch the factor's prices; B's sessions decide what does.
+
+The numbers in play: three chests of silver from the Mark (57, 59, 62) sell in the Gatelands for 120, 115 and 111, 168 clear for 24 weight. A sloop's 40 is five chests, about 280 a crossing as the price falls; grain makes 13 a sack. Passage on a ferry is 15–120.
+
+### Verified (headless Chromium)
+`tests/cargo.test.mjs` (new), 18/18, against Portclare (the Gatelands), a Mark port and an Aurenne port:
+- Prices: grain 12 at home, iron 24 in the Mark; iron bought in the Gatelands for 50, grain in the Mark for 25; grain in Aurenne 25 less a tithe of 3, 22 paid; at home the factor's bid (22) is under his ask (24).
+- A run on foot: three silver for 57, 59, 62 (178) into the bag at 24 weight; a Gatelands factor won't sell silver; sold for 120, 115, 111 (346). The price is 106 after the sales, 110 a day later, 120 after ten days.
+- The hold: with a sloop at the harbour four crates of iron go aboard (40 of 40) and the fifth and sixth into the bag. Two hold tiers make 90, a galleon with them 140. A sale comes out of the hold while she's here. With her 400 units off, the board says so and a sale comes out of the bag. A shop counter prices a crate at 0, pays nothing, and names the factor.
+- The save: two wool bought (ask 18 → 19), the market cleared (18), the save loaded (19).
+- Through the harbourmaster's own dialogue in the Mark port at 12h: E, *Cargo — the factor's prices*, the board and *Buy a crate of iron (24 gold)*; *Buy a chest of silver* takes 57 of 300, puts the chest in the bag, and the board stays open with a sell row.
+- `harbour`, `ships`, `shipwright`, `buyprice` and `ferry` pass. Build tag s348.
+
+### Needs eyes
+- Whether a crossing pays enough to be worth the sail, and whether the falling price stops a route too soon or too late. The numbers (×0.6, ×1.4, the tenth, 4%, 30% a day, the hold sizes) are A's proposal as written, with my factor's tenth added; they want a real voyage.
+- The board is one long line of twelve prices in the dialogue box. A panel like the shop's would read better (the look builder's, if wanted).
+- Not built (B, two sessions): a sacked or occupied town paying more for grain and iron, a war raising iron and horses, a blockade doubling the gap, pirates taking from the hold.
+
+## v80 — Session 391 — The factor's prices follow the world (Michael's B on #88, the rest)
+Session 390 built A's part of #88: goods by island and a factor's board. Michael's B adds *prices that follow the world: a sacked or occupied town pays more for grain and iron, a war raises iron and horses, a blockade (pirates on a route) doubles the gap.* B names the effects but not their sizes, so the numbers below are mine and want a voyage.
+
+**What changed** (`js/80-world.js`, beside 390's code). Three things are read each time a price is asked; nothing is stored:
+- *A hard-used town*: a port flagged sacked, occupied or besieged asks and pays half again (×1.5) for grain and iron. B said sacked or occupied; a siege is the same hunger, so I counted it.
+- *War*: while a war runs (`worldState.war`), iron and horses are 30% dearer at the quays of the two nations in it, and nowhere else.
+- *A blockade*: a black-sailed ship at sea within 600 units of a port. There is no standing "pirates on a route" in the world: a pirate is a ship near you (`OTHER`), and the sackings from the sea are a daily roll. So the blockade is the one you can see. While she's there, another island's goods fetch twice the premium (×1.8 for ×1.4). The port's own goods are unchanged.
+- *Horses*: B names them and A's dozen had none, so the Gatelands sell a horse (worth 110, weight 20), the thirteenth good. A horse goes only in a ship's hold. Without your ship at the harbour the factor says *A horse goes in a ship's hold, and your ship is not here.*
+
+The board says why a price has moved: *Grain and iron are dear here: the town has been hard used.*, *The war has put up iron and horses.*, *Black sails off the coast: goods from abroad are dearer.* The falling price, the healing and the tithe all stack on top as in 390.
+
+### Verified (headless Chromium)
+`tests/cargo.test.mjs`, 25/25 (seven new), at Portclare:
+- Calm: grain 12, a horse 66, iron bought for 50, silver for 120.
+- Sacked: grain 18, iron 76; wool (18) and silver (120) unchanged; the board says why. Occupied: the same.
+- A war of the Gatelands and the Mark: iron 66, a horse 86, grain 12; in Aurenne iron is unchanged (45 after the tithe).
+- A pirate 300 units off: silver 154, iron 65, grain 12, and the board names the black sails. At 900 units, no blockade. With the world calm again, every price is back to the calm row exactly.
+- A horse is refused without a ship, and no gold is taken.
+- 390's eighteen checks all pass again. Build tag s349.
+
+### Needs eyes
+- The sizes: ×1.5, ×1.3, 600 units, ×1.8. Whether a sacked port's grain is worth sailing for, and whether black sails make running past them pay.
+- A blockade is a pirate near *you*. A port far away is never blockaded, so the effect only shows at a quay you can see from the sea.
+- Owed, and a rule of play, so it is Michael's to ask: whether pirates who board you take from the hold.
+
+## v80 — Session 392 — Every numbered dialogue choice answers its key
+Every choice in the dialogue box is drawn with its number. A townsperson with folders lists up to ten: the harbourmaster gives *My name is…*, *Cargo*, *What comes through here?*, *Passage …*, the four folders and *Go on.* But the keydown answered only 1–4 (`num>=1&&num<=4`), from when a talk had four choices. A player at the keyboard pressed 6 for *About this place …* and nothing happened. This is a fix: the numbers on screen promise the keys.
+
+**What changed** (`js/92-creator.js`, the dialogue branch of the game's keydown). Keys 1–9 pick the choice drawn with that number and 0 picks the tenth. A key past the end of the list does nothing, and a held key does not repeat, so holding 1 no longer clicks through a conversation. Nothing else in the dialogue branch changed.
+
+### Verified (headless Chromium)
+`tests/dlgkeys.test.mjs` (new), 6/6: a dialogue of ten (the name topic and nine others, numbered 1–10). Keys 2, 5 and 6 pick Topics 1, 4 and 5; keys 8 and 9 pick Topics 7 and 8; key 0 picks the tenth, Topic 9. On a one-choice answer, 9 does nothing. The same test on the unfixed build (HEAD by `git archive`, `--src`): key 2 works, 5, 6, 8, 9 and 0 do nothing, 3 of 6 fail. Build tag s350.
+
+### Needs eyes
+- Nothing to judge beyond pressing the keys. The pause menu's folders still want keyboard navigation (backlog E).
+
+## v80 — Session 393 — The yard's watchers don't borrow the Reeve's name (the critic's s342 note)
+The critic's 1 Oct run noted, under *looks, not findings*, that one watcher at the Caer Slige yard was *Wulfstan*, the same name as the Reeve who gives the ninth service at the seat. It reads as one man in two places. Session 248's rule (a post-holder never takes another post-holder's name) did not cover the yard, because the yard's people are named in `duelBuild` from the anglo bank, checked only against each other. Session 172 meant names to be unique within a town wherever the bank allows, and the yard is the seat's own ground, so this is a fix and not a decision.
+
+**What changed** (`js/80-world.js`, `duelBuild`). Before the sergeant and the watchers are named, the set of names already used is seeded with every word of the service's giver, Rowe's name, the seat's lord (the Reeve), and the seat's townsfolk if the town is built. The yard then picks round them, as it already did for its own people. The bank has 24 names and the yard takes eight. The names stay seeded by the quest's id, so a yard is the same yard after a load.
+
+### Verified (headless Chromium)
+`tests/duel.test.mjs`, a new check: the yard is laid 20 times under 20 quest ids, with the seat's lord Wulfstan. New build: 20 yards, 0 sharing a name with the lord or the seat. Unfixed build (`git archive`, `--src`): 4 of 20 yards had a watcher Wulfstan, and the check fails. The rest of `duel` passes on the new build. Build tag s351.
+
+### Needs eyes
+- Nothing to judge; the seat's townsfolk were not built in the test (it laid the yard from the ring), so only the lord and the giver were in play there.
 
 ## v80 — Session 394 — The producer merges through GitHub: the control room desk, the prompt, the queue retired
 A production session, no game code. Michael, 1 Oct: the Airsoft control room's desk (one-tap decisions, a big Approve, an Undo, "In the works") is what he wants for The Old Gates too, and its producer's way of shipping (he approves on the board, the producer merges the PR through GitHub, pinned to the commit the board recorded at the tap) in place of the merge queue. Three things changed, two of them outside the repo.
@@ -9941,3 +10090,69 @@ A production session, no game code. Michael, 1 Oct: the Airsoft control room's d
 ### Needs eyes
 - Michael: paste the new producer prompt into the routine "Old Gates — producer (hourly)" and consider its model (the Airsoft producer runs on Opus); approve this PR only after that.
 - The first merge the producer makes through GitHub: watch that the card goes "merged" with `merged_sha` and that Pages rebuilds on its own (the old workflow forced a Pages build; a push to main should trigger one by itself).
+
+## v80 — Session 399 — Black sails take from the hold (Michael's B on #91, with C's chest)
+Sessions 390–391 put trade goods in your ship's hold, and a blockade pays ×1.8 for foreign goods, but a boarding risked only your health: there was nothing for the black sails to take, so running past them was free. I asked (#91) whether pirates who win take your cargo. Michael answered *B, and their chest carries some of the goods they took off other ships*, which is C as I wrote it.
+
+**What changed** (`js/80-world.js`, beside the boarding code). B says pirates take half the hold *if they win (you fall or flee the deck while they hold it)*. Falling to them is a death, and a death is a reload (the brief), so a cargo taken at death would come back with the save. Fleeing is the one way a boarding is lost, and the rule is built on that:
+- *Their deck.* Board a black sail, then leave her deck (over the side, or back to your own) while any of her crew stands, and if your ship lies within 140 units (the factor's reach for "your ship is here"), they cross behind you and take half the crates in your hold.
+- *Your deck.* Pirates who lie alongside long enough already send two boarders onto your deck (`tickBoarding`). Leave your own deck while one of them stands, and they take half the hold and go back over the rail to their ship.
+- *Half, dearest first.* Half the crates, rounded up, ordered by the goods' worth: of two silver, one iron and two grain, the silver and the iron go and the grain stays. A horse is taken like a crate (110, the dearest) but goes into her hold, not her chest, because a horse can't go in a bag.
+- *Where it goes.* The goods go into her chest, so boarding her again and clearing the deck gets them back. Then she sails away from you and no longer chases or looses volleys. With nothing in the hold, or your ship far off, nothing happens and she stays as before.
+- *C's chest.* Every black sail's chest now carries, besides its loot, one or two crates of one good (never a horse) taken off some other ship. A merchantman's chest is unchanged.
+
+The messages: *They come over your rail behind you and take 2 × chest of silver and a crate of iron from the hold.* and *They hold your deck, take … from the hold and go back over the rail.*
+
+### Verified (headless Chromium)
+`tests/piratehold.test.mjs` (new), 15/15, at open sea with a sloop of five crates (two silver, one iron, two grain):
+- 40 black sails' chests: each held one row of crates, 17 of one and 23 of two, twelve goods seen, no horse. A merchantman's chest had none.
+- On her deck with the crew up, 30 frames: the hold untouched. Six units over the side: the hold is two grain. Her chest went from one timber to timber, silver ×2 and iron ×1. She was 8.2 units off and 61 after ten seconds.
+- Her crew dead, then over the side: nothing taken. Your ship 400 units off: nothing taken. An empty hold: nothing, and she stays boarded.
+- A horse, a wool and a grain: the horse and the wool go (two of three, rounded up). The horse is not in her chest.
+- Two of her crew on your deck: the hold is untouched while you stand there. Step off and the silver and the iron go, both boarders are back in her crew (three), and boarding her after finds them in her chest.
+- `cargo`, `ships`, `sailtrim`, `harbour`, `shipwright` and `ferry` pass. Build tag s352.
+
+### Needs eyes
+- Whether stepping off a deck in the heat of a fight (a roll over the rail, a knock-back) costs a hold too easily. The edge is 1.5 units past the deck's box. A jump straight up doesn't count; a fall into the water does.
+- Whether half, dearest first, is the right bite against the blockade's ×1.8. A sloop's 40 is five chests of silver, about 280 a crossing; a flight loses three of them.
+- The boarders cross only after twelve seconds within 16 units of your ship, so the second case wants a real fight at sea to judge.
+
+## v80 — Session 400 — The witnesses' ranges, measured (backlog G, Session 156)
+Backlog G owed a check of Session 156's witnesses: *get seen picking a lock in a real town: the ranges by day, night and sneaking*. The spec (the crime system, 26 Sep) says anyone awake within about 12 units with a clear line sees a crime; sneaking halves the range and night halves it again. `crime2` checks a witness at 3 units and one at 9 at night, but nothing tested the edges or the four cases, so I measured them. Nothing in the game changed.
+
+**What was measured** (`witnessOf`, the street branch). In Dunmore, I stood on open ground on the pad with every townsperson out of the street but one, Gráinne, and set her at 2.9, 3.1, 5.9, 6.1, 11.9 and 12.1 units along a line with nothing in the way, under each of the four cases. I also stood her across the Mages' Guild, 10 units off by day, and tested a townsperson out of the street (hidden, as one asleep indoors is) and one who has run off.
+
+### Verified (headless Chromium)
+`tests/witnessrange.test.mjs` (new), 7/7:
+- Walking by day: seen at 2.9 through 11.9, not at 12.1.
+- Sneaking by day: seen to 5.9, not at 6.1.
+- Walking at night: seen to 5.9, not at 6.1.
+- Sneaking at night: seen at 2.9, not at 3.1.
+- Across the Mages' Guild, 10 units off by day: not seen.
+- Out of the street (hidden or run off): not seen, even at 2 units.
+
+Build tag s353.
+
+### Needs eyes
+- Whether 12 units by day reads as "in sight" in a real street, and 3 sneaking at night as fair. The numbers are the spec's and they hold.
+- An inconsistency, for Michael if he wants it changed: outdoors a witness sees all round, back turned or not. Indoors a keeper sees only a 120° cone (his B on #73, Session 368). Not asked, because the spec says *within sight* and the street has never been called unfair.
+
+*Correction, the same run: Sessions 398 and 399 above were renumbered 399 and 400. auto/backlog's look builder took Session 398 (Hair through the helm) while this run worked. The commits 1af5a0b and its successor still say 398 and 399 in their messages, because a pushed commit is not rewritten.*
+
+## v80 — Session 401 — `q7world` waits for the swing, not twenty frames
+Session 388 (the look builder) found `q7world` killed at CI's 900 s limit for one suite. Alone it passed in 5 min 6 s there and 3 min 18 s here, and my last run named it as next. A test that runs past its limit fails like a broken game, so this is a fix to the test. The game is unchanged.
+
+**What was wrong.** I timed each phase of the suite, alone and as three copies side by side (a loaded runner). Alone, the Faolchú's fight took 61 s of the 204. Side by side, it took 407–425 s of 669–689. The first swing kills it (the test sets its health to 5), but after every `attack(false)` the loop waited a fixed 20 real frames (`g.frames(20)`). In that fight, on software GL, a frame took 2.3 s alone and up to about 9 s under load: one wait of 20 frames came to 47 s alone. The rest of the suite (two towns built, two rooms entered, Aldwyn's dialogue) scaled with load far less. One solo run here also went past 900 s and was killed with its output lost. Its cause is not established, but it was the same suite on the same machine.
+
+**What changed** (`tests/q7world.test.mjs`, the fight loop). After each swing the test waits in the page until the swing resolves: the Faolchú dead, or the swing finished with no strike pending, at most 40 frames. This is how `fistswing` waits. The checks are unchanged.
+
+### Verified (headless Chromium)
+`q7world` 8/8 on the new test:
+- Alone: 2 min 49 s, down from 3 min 18 s.
+- Three copies side by side: 383, 388 and 394 s, all 8/8, down from 669–689 s.
+
+The checks and their thresholds are as before. Build tag s354.
+
+### Needs eyes
+- Nothing in play.
+- A frame of 2.3 s in the Faolchú's fight on software GL is far slower than any other scene measured. A player on a real GPU won't see it, but if `hourhitch`'s frame budget ever runs there, it will.

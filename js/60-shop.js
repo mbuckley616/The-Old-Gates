@@ -737,6 +737,7 @@ function sellItem(i,sp){
     showMsg(`${it.name} cannot be sold.`, '#c8a84a');
     return;
   }
+  if(it.type==='cargo'){showMsg(`A harbour's factor buys trade goods, not a shop.`,'#c8a84a');return;} // S390
   if(!(sp>0)){showMsg(`${it.name} is not worth a coin at the counter.`,'#c8a84a');return;} // S366 — a single arrow
   const finalSp=Math.round(sp*_buffMult('goldFind',1));
   gold+=finalSp;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;
@@ -785,6 +786,7 @@ function _sellStackable(it, bagIdx, units, unitPrice){
   const live=BAG[bagIdx];
   if(!live || live.name!==it.name){ renderShop(); return; }  // bag shifted; bail
   if(live.unique || live.name==="Aldwyn's Seal"){ showMsg(`${live.name} cannot be sold.`,'#c8a84a'); return; }
+  if(live.type==='cargo'){ showMsg(`A harbour's factor buys trade goods, not a shop.`,'#c8a84a'); return; } // S390
   const sellPieces=Math.min(units, live.qty||1);
   if(sellPieces<=0) return;
   const gain=unitPrice*sellPieces;

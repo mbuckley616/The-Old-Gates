@@ -33,7 +33,8 @@ await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && 
 await g.frames(4); await page.evaluate(() => { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; });
 for (let k = 0; k < 12; k++) {
   const done = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead) return true; PHP = maxHP; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); return false; });
-  if (done) break; await g.frames(20);
+  // wait for this swing to resolve, not a fixed count: a frame of this fight can take seconds on a loaded runner (S401)
+  if (done) break; await page.evaluate(() => new Promise(r => { let n = 0; const f = () => { n++; const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead || (n > 2 && swingT === 0 && !_pendingStrike) || n >= 40) r(n); else requestAnimationFrame(f); }; requestAnimationFrame(f); }));
   await page.evaluate(() => { if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } }); }
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu');
   const corpse = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark"));
