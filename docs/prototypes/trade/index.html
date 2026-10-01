@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Trade and Containers</title>
+<!-- The Old Gates — the counter, the quantity slip and the loot window on the approved parchment kit (docs/prototypes/ui,
+     Michael A, 27 Sep 2026). Concept, 1 Oct 2026. kit.css and the icon <symbol>s are copied from it; build.py inlines them.
+     Every .screen is 1280×720; shoot.mjs photographs them. The text and numbers are build s348's, taken by shoot-current.mjs
+     in Lorcan's Forge, Dunmore, at 1 pm (current.json): 142 gold, Charisma 6 (barter 6%), Dunmore's prices ×0.9665,
+     carrying 20.6 of 65. Prices are the game's: shopCost = round(list × 0.9665 × 0.94); the counter pays sellPrice × 1.06. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/* Copied from docs/prototypes/ui/index.html (the approved parchment kit, 27 Sep); asset paths point there. */
+
+:root{
+  /* paper */
+  --paper-hi:#ecdcb2; --paper:#e0c994; --paper-lo:#c9ab6e; --paper-edge:#7a4e1e;
+  /* ink */
+  --ink:#2e1c0c; --ink-soft:#5a4128; --ink-faint:#8a7050; --rubric:#7a1f10; --gilt:#9a7020;
+  /* metal (HUD only) */
+  --iron:#1c1812; --iron-hi:#3a3226; --bronze:#a07a38; --bronze-hi:#d8b46a; --bronze-lo:#5a4018;
+  /* vitals */
+  --hp:#a8281c; --hp-hi:#d8503a; --mp:#2c5aa6; --mp-hi:#5a8ad8; --st:#3c7e2e; --st-hi:#6aac48;
+  --display:'IM Fell English SC',Georgia,serif; --fell:'IM Fell English',Georgia,serif; --body:'EB Garamond',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141008;color:#e8dcc0;font:15px/1.4 var(--body);padding:24px 0}
+h1.page{font:28px var(--display);text-align:center;color:#e0c994;margin:8px 0 2px}
+p.lede{max-width:1100px;margin:0 auto 18px;text-align:center;color:#b8a888}
+.cap{width:1280px;margin:28px auto 8px;font:17px var(--display);color:#e0c994;letter-spacing:.04em}
+.cap small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:10px}
+.screen{width:1280px;height:720px;margin:0 auto;position:relative;overflow:hidden;background:#000 url(../ui/backdrop.png) center/cover;font-family:var(--body)}
+.screen.menu::before{content:"";position:absolute;inset:0;backdrop-filter:blur(3px) brightness(.42) sepia(.35);z-index:0}
+svg.ico{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.15em;flex:none}
+.num{font-variant-numeric:lining-nums tabular-nums}
+
+/* ───────── parchment ───────── */
+.parch{position:absolute;isolation:isolate;color:var(--ink);z-index:2}
+.parch::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:4px;
+  background:
+    radial-gradient(ellipse at 50% 42%,rgba(255,250,230,.35) 0,transparent 45%),
+    radial-gradient(ellipse at 50% 50%,transparent 58%,rgba(110,60,15,.30) 88%,rgba(80,40,8,.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .28  0 0 0 0 .08  0 0 0 -1.6 .9'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .06  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+    linear-gradient(170deg,var(--paper-hi),var(--paper) 55%,var(--paper-lo));
+  filter:url(#deckle) drop-shadow(0 14px 22px rgba(0,0,0,.6));}
+.parch.small::before{filter:url(#deckle-s) drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.rule{height:9px;margin:6px 0 8px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='9' preserveAspectRatio='none'><path d='M0 4.5 Q200 2.5 400 4.5' stroke='%235a4128' stroke-width='1.1' fill='none'/><path d='M40 6.5 Q200 5.2 360 6.5' stroke='%235a4128' stroke-width='.5' fill='none' opacity='.6'/></svg>") center/100% 100% no-repeat}
+.h{font:22px/1 var(--display);color:var(--rubric);letter-spacing:.02em}
+.h2{font:15px/1 var(--display);color:var(--ink-soft);letter-spacing:.08em}
+.meta{font:italic 14px var(--fell);color:var(--ink-soft)}
+.faint{color:var(--ink-faint)}
+.seal{position:absolute;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#f0d8b0;font:20px var(--display);
+  background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 55%,#5a0e08);box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,200,170,.35),0 3px 6px rgba(0,0,0,.5);
+  clip-path:polygon(50% 0,62% 4%,74% 2%,82% 11%,94% 16%,95% 29%,100% 40%,96% 52%,100% 64%,93% 74%,90% 87%,78% 92%,68% 100%,55% 96%,44% 100%,33% 94%,20% 96%,12% 86%,4% 77%,5% 64%,0 52%,4% 40%,2% 27%,10% 17%,20% 10%,32% 3%)}
+
+/* hub sheet and tabs */
+.sheet{left:52px;top:62px;width:1176px;height:620px;padding:22px 34px 0}
+.tabs{position:absolute;left:84px;top:18px;display:flex;gap:6px;z-index:1}
+.tab{position:relative;isolation:isolate;padding:9px 18px 14px;font:17px/1 var(--display);color:var(--ink-soft);display:flex;gap:8px;align-items:center}
+.tab::before{content:"";position:absolute;inset:0 0 -6px;z-index:-1;border-radius:6px 6px 0 0;background:linear-gradient(#c7a86c,#b18f55);filter:url(#deckle-s) drop-shadow(0 -2px 3px rgba(0,0,0,.4))}
+.tab.on{color:var(--rubric);top:-4px;z-index:3}
+.tab.on::before{background:linear-gradient(#ead9ae,#e6d3a6);inset:0 0 -14px}
+.tab .ico{font-size:19px}
+.close{right:-14px;top:-14px}
+.vitals{position:absolute;left:34px;right:34px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;font:15px var(--body)}
+.vital{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.vital b{font:15px var(--display);font-weight:400}
+.ibar{height:10px;border:1px solid var(--ink-soft);border-radius:1px;background:rgba(80,50,20,.12);position:relative;overflow:hidden}
+.ibar i{position:absolute;left:0;top:0;bottom:0;opacity:.85}
+.ibar i::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 3px,rgba(255,240,210,.18) 3px 4px)}
+
+/* lists */
+.cols{display:grid;grid-template-columns:30px 1fr 160px 54px 64px;gap:0 10px;align-items:center}
+.lh{font:13px var(--display);letter-spacing:.1em;color:var(--ink-faint);padding:0 10px 4px}
+.row{padding:6px 10px;font-size:17px;border-bottom:1px solid rgba(90,65,40,.18)}
+.row svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.row.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.04));box-shadow:inset 3px 0 var(--rubric)}
+.row.sel .n{color:var(--rubric)}
+.r{text-align:right}
+.qty{font:italic 14px var(--fell);color:var(--ink-faint);margin-left:6px}
+.subtabs{display:flex;gap:22px;font:16px var(--display);color:var(--ink-faint);margin:2px 0 8px 10px}
+.subtabs .on{color:var(--ink);border-bottom:2px solid var(--rubric)}
+
+/* paper-doll */
+.doll{display:grid;grid-template-columns:repeat(3,66px);grid-auto-rows:60px;gap:6px;justify-content:center}
+.slot{border:1.5px solid var(--ink-soft);border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:10px var(--display);letter-spacing:0;white-space:nowrap;color:var(--ink-faint);background:rgba(120,80,30,.07);box-shadow:inset 0 0 0 3px rgba(224,201,148,.8),inset 0 0 0 4px rgba(90,65,40,.35)}
+.slot svg.ico{width:28px;height:28px;color:var(--ink-faint);opacity:.55}
+.slot.full .ico{color:var(--ink);opacity:1}
+.slot.full{color:var(--ink-soft)}
+.gap{visibility:hidden}
+
+/* ───────── HUD (metal) ───────── */
+.plate{position:absolute;background:linear-gradient(#2c261c,#15110b);border:1px solid var(--bronze-lo);box-shadow:inset 0 0 0 1px rgba(216,180,106,.35),inset 0 1px 0 rgba(255,230,170,.25),0 3px 10px rgba(0,0,0,.6);border-radius:6px;z-index:3}
+.roundel{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:36px;color:#e6cf9a;
+  background:radial-gradient(circle at 50% 40%,#3a3124,#15110b 70%);border:3px solid var(--bronze);box-shadow:inset 0 0 0 1px var(--bronze-lo),inset 0 2px 6px rgba(0,0,0,.8),0 0 0 1px #0a0806,0 2px 6px rgba(0,0,0,.6)}
+.roundel.dim{color:#6a5a40}
+.hbar{position:relative;height:10px;border-radius:5px;background:#0b0906;box-shadow:inset 0 1px 2px #000,0 0 0 1px var(--bronze-lo),0 0 0 2px rgba(216,180,106,.25);overflow:hidden}
+.hbar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.hbar i::after{content:"";position:absolute;left:2px;right:2px;top:1px;height:3px;border-radius:2px;background:rgba(255,255,255,.28)}
+.hp i{background:linear-gradient(var(--hp-hi),var(--hp))} .mp i{background:linear-gradient(var(--mp-hi),var(--mp))} .st i{background:linear-gradient(var(--st-hi),var(--st))}
+.hudtxt{font:13px var(--body);color:#e6d4a8;text-shadow:0 1px 2px #000,0 0 6px #000}
+.compass{position:absolute;height:34px;width:380px;border-radius:17px;overflow:hidden;background:linear-gradient(#1f1a12,#0d0a07);box-shadow:inset 0 1px 4px #000,0 0 0 2px var(--bronze-lo),0 0 0 3px var(--bronze),0 0 0 4px #0a0806,0 3px 10px rgba(0,0,0,.6);z-index:3}
+.compass .strip{position:absolute;inset:0;display:flex;align-items:center;font:15px var(--display);color:#d8c290}
+.compass .strip span{position:absolute;transform:translateX(-50%)}
+.compass .tick{width:1px;height:8px;background:#8a7450;top:13px}
+.compass .n{color:#e8b050;font-size:19px}
+.compass::after{content:"";position:absolute;left:50%;top:0;width:0;height:0;border:6px solid transparent;border-top-color:var(--bronze-hi);transform:translateX(-50%)}
+.mini{position:absolute;width:150px;height:150px;border-radius:50%;background:url(../ui/mini-crop.png) center/115%;filter:sepia(.55) saturate(.8) contrast(1.05);box-shadow:inset 0 0 18px rgba(40,20,5,.7);z-index:3}
+.miniring{position:absolute;width:162px;height:162px;border-radius:50%;box-shadow:0 0 0 5px var(--bronze),0 0 0 6px #0a0806,inset 0 0 0 1px var(--bronze-lo),0 4px 12px rgba(0,0,0,.6);z-index:4}
+.miniring b{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:14px var(--display);color:#f0d8a0;background:radial-gradient(#3a3124,#15110b);border:2px solid var(--bronze);width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.ribbon{position:absolute;padding:6px 34px 7px;font:22px var(--display);color:var(--ink);z-index:3}
+.xh{position:absolute;left:640px;top:360px;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,245,220,.85);box-shadow:0 0 0 1px rgba(0,0,0,.6);z-index:3}
+.prompt{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;font:17px var(--body);color:#f0e2c0;text-shadow:0 1px 3px #000,0 0 8px #000;z-index:3}
+.key{font:14px var(--display);width:26px;height:26px;display:grid;place-items:center;border-radius:4px;color:#2e1c0c;background:linear-gradient(#ecdcb2,#c9ab6e);box-shadow:0 0 0 1px #5a4018,0 2px 3px rgba(0,0,0,.6);text-shadow:none}
+.cbar{position:absolute;right:14px;bottom:8px;font:13px var(--body);color:rgba(240,226,192,.85);text-shadow:0 1px 2px #000,0 0 5px #000;z-index:3}
+.dp{position:absolute;right:22px;bottom:92px;display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:4px;z-index:3}
+.dp div{border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(58,49,36,.85),rgba(21,17,11,.85));border:2px solid rgba(160,122,56,.8);color:#d8c290;display:grid;place-items:center;font-size:14px}
+
+/* dialogue */
+.dlg{left:260px;top:372px;width:760px;height:320px;padding:26px 40px 18px 40px}
+.dlg .who{display:flex;gap:16px;align-items:center}
+.dlg .line{font:20px/1.45 var(--body);margin:4px 0 10px;color:var(--ink)}
+.topics{display:grid;grid-template-columns:1fr 1fr;gap:2px 34px}
+.topic{font:18px/1.2 var(--body);padding:6px 4px;display:flex;gap:10px;border-bottom:1px dotted rgba(90,65,40,.35)}
+.topic i{font:italic 15px var(--fell);color:var(--ink-faint);width:14px;text-align:right}
+.topic.new{color:var(--rubric)}
+.topic.new::after{content:"❧";margin-left:auto;color:var(--gilt);font-size:15px}
+.topic.old{color:var(--ink-faint)}
+.foot{position:absolute;left:40px;right:40px;bottom:14px;font:italic 13px var(--fell);color:var(--ink-faint);display:flex;justify-content:space-between}
+
+/* magic */
+.school{font:14px var(--display);letter-spacing:.1em;color:var(--rubric);margin:10px 0 2px;display:flex;align-items:center;gap:8px}
+.school .ico{font-size:18px}
+.spell{display:grid;grid-template-columns:190px 1fr 70px;gap:10px;align-items:baseline;padding:4px 8px;font-size:16px;border-bottom:1px solid rgba(90,65,40,.14)}
+.spell .nm{font:18px var(--body);font-weight:500}
+.spell .gl{font:italic 13px var(--fell);color:var(--ink-faint);margin-left:6px}
+.spell.lock{color:var(--ink-faint)} .spell.lock .nm{font-weight:400}
+.spell.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.spell.sel .nm{color:var(--rubric)}
+
+/* attributes */
+.attr{display:grid;grid-template-columns:28px 150px 40px 1fr;gap:10px;align-items:center;padding:5px 0;font-size:18px;border-bottom:1px solid rgba(90,65,40,.14)}
+.attr .v{font:22px var(--display);text-align:right;color:var(--ink)}
+.pips{display:flex;gap:4px}
+.pips span{width:13px;height:13px;border:1.2px solid var(--ink-soft);transform:rotate(45deg) scale(.8)}
+.pips span.f{background:var(--ink-soft)}
+.dv{display:flex;justify-content:space-between;font-size:17px;padding:4px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+
+/* style sheet */
+.sw{display:flex;flex-direction:column;align-items:center;gap:4px;font:12px var(--body);color:var(--ink-soft);width:72px;text-align:center}
+.sw i{width:56px;height:30px;border-radius:3px;box-shadow:0 0 0 1px rgba(46,28,12,.5)}
+.iconset{display:grid;grid-template-columns:repeat(9,1fr);gap:8px 6px;font-size:30px;color:var(--ink)}
+.iconset div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.iconset small{font:11px var(--body);color:var(--ink-faint)}
+.btn{display:inline-block;font:16px var(--display);padding:7px 18px;border:1.5px solid var(--ink-soft);border-radius:2px;color:var(--ink);background:rgba(120,80,30,.08);box-shadow:inset 0 0 0 2px rgba(224,201,148,.8),inset 0 0 0 3px rgba(90,65,40,.3)}
+.btn.hot{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.1)}
+.btn.off{color:var(--ink-faint);border-color:var(--ink-faint);opacity:.7}
+
+/* ───────── trade additions ───────── */
+.screen{background-image:url(backdrop-forge.png);background-position:center top;background-size:1280px 720px}
+.screen.street{background-image:url(../ui/backdrop.png)}
+.book{display:grid;grid-template-columns:1fr 1fr;gap:0 46px;position:relative;height:440px}
+.book::after{content:"";position:absolute;left:50%;top:-6px;bottom:-4px;width:20px;margin-left:-10px;background:linear-gradient(90deg,transparent,rgba(90,55,20,.16) 40%,rgba(70,40,10,.28) 50%,rgba(90,55,20,.16) 60%,transparent)}
+.pg{display:flex;flex-direction:column;min-width:0}
+.pghead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.tc{display:grid;grid-template-columns:26px 1fr 152px 38px 50px;gap:0 10px;align-items:center}
+.tc .row,.tc.row{font-size:16.5px}
+.row.tc{padding:5px 8px}
+.row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .st{font-size:14px;color:var(--ink-soft);white-space:nowrap}
+.pr{font:500 17px var(--body);text-align:right;color:var(--ink)}
+.pr .ico{width:14px!important;height:14px!important;color:#7a5410!important;margin-left:2px;vertical-align:-1px}
+.up{color:#3c6a22;font:13px var(--body);margin-left:4px} .dn{color:var(--rubric);font:13px var(--body);margin-left:4px}
+.row.lock{color:var(--ink-faint)} .row.lock .pr{color:var(--ink-faint)} .row.lock svg.ico{color:var(--ink-faint);opacity:.7}
+.why{display:block;font:italic 12.5px var(--fell);color:var(--rubric);opacity:.85;margin-top:-1px}
+.row.dear .pr{color:var(--rubric);text-decoration:line-through;text-decoration-thickness:1px}
+.row.gone{opacity:.42} .row.gone .n{text-decoration:line-through;text-decoration-thickness:1px}
+.mark{font:italic 12px var(--fell);color:var(--gilt);margin-left:6px}
+.detail{position:absolute;left:34px;right:34px;bottom:56px;height:84px;display:grid;grid-template-columns:54px 1fr 250px;gap:16px;align-items:center;border-top:1px solid rgba(90,65,40,.35);padding-top:10px}
+.detail .big{width:54px;height:54px;color:var(--ink)}
+.detail .nm{font:22px var(--display);color:var(--rubric)}
+.detail .ln{font-size:16px;color:var(--ink-soft);line-height:1.35}
+.detail .sum{font-size:15px;line-height:1.45;text-align:right;color:var(--ink-soft)}
+.detail .sum b{font:20px var(--display);font-weight:400;color:var(--ink)}
+.purse{position:absolute;left:34px;right:34px;bottom:16px;display:flex;justify-content:space-between;align-items:center;font:15px var(--body);color:var(--ink-soft)}
+.purse .gold{font:22px var(--display);color:var(--ink);display:flex;gap:8px;align-items:center}
+.purse .gold .ico{color:var(--gilt);width:22px;height:22px}
+.hint{font:italic 14px var(--fell);color:var(--ink-soft)}
+.wt{font:14px var(--body);color:var(--ink-soft)}
+.wbar{display:inline-block;width:90px;height:7px;border:1px solid var(--ink-soft);margin-left:8px;vertical-align:0;position:relative;background:rgba(80,50,20,.1)}
+.wbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-soft);opacity:.55}
+/* the reckoning (B) */
+.reck{position:absolute;left:34px;right:34px;bottom:24px;height:128px;border-top:1px solid rgba(90,65,40,.35);padding-top:10px;display:grid;grid-template-columns:1fr 1fr 290px;gap:28px}
+.reck .col .h2{margin-bottom:5px}
+.reck .li{display:flex;justify-content:space-between;font-size:16px;padding:2px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+.reck .li span:last-child{font:16px var(--display)}
+.tally{display:flex;flex-direction:column;gap:3px;font-size:15.5px;color:var(--ink-soft)}
+.tally div{display:flex;justify-content:space-between}
+.tally .tot{font:21px var(--display);color:var(--rubric);border-top:1px solid var(--ink-soft);padding-top:4px;margin-top:2px}
+.strike{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:4px}
+.seal.static{position:relative;width:52px;height:52px;font-size:13px;line-height:1;text-align:center}
+.row.inq{background:linear-gradient(90deg,rgba(154,112,32,.18),rgba(154,112,32,.04));box-shadow:inset 3px 0 var(--gilt)}
+/* quantity slip */
+.slip{left:420px;top:210px;width:440px;height:300px;padding:24px 34px}
+.dim::after{content:"";position:absolute;inset:0;background:rgba(20,12,4,.35);z-index:2}
+.qtyline{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 2px}
+.slider{position:relative;height:22px;margin:14px 6px 4px}
+.slider::before{content:"";position:absolute;left:0;right:0;top:10px;height:2px;background:var(--ink-soft)}
+.slider .notch{position:absolute;top:5px;width:1px;height:12px;background:var(--ink-soft)}
+.slider .knob{position:absolute;top:1px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 60%,#5a0e08);box-shadow:0 2px 3px rgba(0,0,0,.45)}
+.scale{display:flex;justify-content:space-between;font:13px var(--body);color:var(--ink-faint);margin:0 0 12px}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:8px}
+/* loot slip */
+.loot{left:330px;top:140px;width:620px;height:420px;padding:24px 34px}
+.loot .tc{grid-template-columns:26px 1fr 150px 40px 58px}
+.goldrow{display:flex;align-items:center;gap:10px;font:19px var(--display);color:var(--gilt);padding:6px 8px 8px;border-bottom:1px solid rgba(90,65,40,.35)}
+.goldrow .ico{width:24px;height:24px}
+.lfoot{position:absolute;left:34px;right:34px;bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.inworld{position:absolute;left:640px;top:360px;z-index:1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="deckle" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="4" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="deckle-s" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <!-- ink icon set: 24×24, stroked in currentColor; one <symbol> each, lifted straight into the game -->
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="M19.5 4.5 9 15M19.5 4.5l-.8 3.6M19.5 4.5l-3.6.8M7 12.5l4.5 4.5M9 15l-4.2 4.2"/><circle cx="4.3" cy="19.7" r="1"/></symbol>
+    <symbol id="i-dagger" viewBox="0 0 24 24"><path d="M17.5 6.5 10.5 13.5M17.5 6.5l-.6 2.6M17.5 6.5l-2.6.6M8.5 11.5l4 4M10.5 13.5l-3.2 3.2"/><circle cx="6.8" cy="17.2" r=".9"/></symbol>
+    <symbol id="i-club" viewBox="0 0 24 24"><path d="M5 20l6-6"/><path d="M11 14c-1.2-2.6 2.5-8.4 6-9.4 2-.5 3.3 1.2 2.6 3.2-1.2 3.3-6.2 7.6-8.6 6.2z"/><path d="M14.5 7.5l1.2 1.2M16.5 9.8l1 1"/></symbol>
+    <symbol id="i-helm" viewBox="0 0 24 24"><path d="M5 17c0-7 3-11 7-11s7 4 7 11z"/><path d="M5 17h14M12 6v11M8.5 12h7"/></symbol>
+    <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v4.2C7.6 8.3 6 10.4 6 13.5a6 6 0 0 0 12 0c0-3.1-1.6-5.2-4.5-6.3V3"/><path d="M6.6 13.2c2.2 1 4.6-.8 10.8 0"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="3.5"/><path d="M11 12h9.5M17.5 12v3M20 12v2"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M10 11h4l-1.2 10h-1.6z"/><path d="M12 10c-2.8-1.5-2.4-4.6 0-7 .2 2.4 3 3 2.2 5.6-.3 1-1.2 1.4-2.2 1.4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M12 3v18M5 10.5h14"/></symbol>
+    <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="14.5" r="5.5"/><path d="M10 9.3 12 6l2 3.3M10 6h4"/></symbol>
+    <symbol id="i-amulet" viewBox="0 0 24 24"><path d="M6 3c0 6 3 9.5 6 10.5 3-1 6-4.5 6-10.5"/><circle cx="12" cy="16.5" r="3.2"/><circle cx="12" cy="16.5" r="1" /></symbol>
+    <symbol id="i-tunic" viewBox="0 0 24 24"><path d="M8.5 4 4 7l2 3.3 2.3-1.1V20h7.4V9.2l2.3 1.1L20 7l-4.5-3c-.8 1.8-6.2 1.8-7 0z"/></symbol>
+    <symbol id="i-legs" viewBox="0 0 24 24"><path d="M7 4h10l1 16h-4l-2-10-2 10H6z"/><path d="M7 7h10"/></symbol>
+    <symbol id="i-boot" viewBox="0 0 24 24"><path d="M8 3h5v10.5l5.6 2c1.3.5 1.3 3.5 0 3.5H8z"/><path d="M8 16h11"/></symbol>
+    <symbol id="i-glove" viewBox="0 0 24 24"><path d="M7.5 21v-8.5L5.3 8.8c-.5-1 .9-1.9 1.6-.9l1.6 2.3V5a1 1 0 0 1 2 0v4.5V4a1 1 0 0 1 2 0v5.5V5a1 1 0 0 1 2 0v5.5V7a1 1 0 0 1 2 0v7c0 3.5-1.5 5.5-2 7z"/></symbol>
+    <symbol id="i-arrows" viewBox="0 0 24 24"><path d="M4 20 18 6M18 6l-3.8.6M18 6l-.6 3.8M4 20l.8-2.8M4 20l2.8-.8M8 20 20 8M20 8l-3 .5M20 8l-.5 3"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4.8"/><path d="M12 9.5v5"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 21c-4.5 0-6-4.5-4-8 1 1.8 2.4 2 2.4 0 0-4 1.6-6.2 1.6-10 3 2.8 6 6.6 6 11.5 0 4-2.5 6.5-6 6.5z"/></symbol>
+    <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z"/><path d="M9.2 15.5a3 3 0 0 0 2.6 2.7"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></symbol>
+    <symbol id="i-stone" viewBox="0 0 24 24"><path d="M4 17 8 7l7-2 5 7-3 7H7z"/><path d="M8 7l3 5 4-7M11 12l6 7M11 12l-7 5"/></symbol>
+    <symbol id="i-shadow" viewBox="0 0 24 24"><path d="M15 4a8 8 0 1 0 5 11 6.5 6.5 0 1 1-5-11z"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-1.8z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 13.5h6L10 22l9-12h-6z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5.5 3-8 7-8s7 2.5 7 8"/></symbol>
+    <symbol id="i-quill" viewBox="0 0 24 24"><path d="M20 3C12 4 7 10 5 19l-1 2"/><path d="M5 19c5-2 11-7 15-16M8 14.5h4.5M10 11h4"/></symbol>
+    <symbol id="i-scales" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M5 7.5h14M5 7.5 3 13h4zM19 7.5 17 13h4z"/><circle cx="12" cy="4" r="1"/></symbol>
+    <symbol id="i-pack" viewBox="0 0 24 24"><path d="M7 8c0-3 2-5 5-5s5 2 5 5"/><path d="M5 8h14l-1 13H6z"/><path d="M9 12h6v4H9z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- two new ink icons in the kit's stroke: a flail and a strongbox -->
+  <symbol id="i-flail" viewBox="0 0 24 24"><path d="M4 20l6-6M10 14l1.6-1.6"/><path d="M12.6 11.4c1 .2 1.4 1.4.6 2" stroke-dasharray="1.4 1.2"/><circle cx="16.5" cy="7.5" r="3.2"/><path d="M16.5 2.8v1.5M21.2 7.5h-1.5M16.5 12.2v-1.5M11.8 7.5h1.5"/></symbol>
+  <symbol id="i-chest" viewBox="0 0 24 24"><path d="M3 10h18v9H3zM3 10c0-3 2-5 4-5h10c2 0 4 2 4 5M7 5v5M17 5v5"/><rect x="10.5" y="11.5" width="3" height="3.5" rx=".6"/></symbol>
+</defs></svg>
+
+<h1 class="page">Trade and containers on the parchment</h1>
+<p class="lede">The counter, the quantity slip and a chest's window: the three trade screens the style page (Michael A, 27 Sep) said would “follow the same sheet”, drawn on it with build s348's own text and numbers from Lorcan's Forge in Dunmore.</p>
+
+<!-- ═════════════ A. The counter as a ledger ═════════════ -->
+<div class="cap">A · The counter as an open ledger <small>today's rules: click to buy or sell at once; the shop's page on the left, your pack on the right</small></div>
+<section class="screen menu" id="ledger">
+  <div class="tabs">
+    <div class="tab on"><svg class="ico"><use href="#i-scales"/></svg>All</div><div class="tab"><svg class="ico"><use href="#i-sword"/></svg>Weapons</div><div class="tab"><svg class="ico"><use href="#i-helm"/></svg>Armour</div><div class="tab"><svg class="ico"><use href="#i-potion"/></svg>Consumables</div><div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Oddments</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div class="book">
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Lorcan’s Forge</div><div class="meta">Lorcan · “Steel for the road ahead.”</div></div><div class="h2">FOR SALE</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PRICE</span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="st num">Attack 6–7 · slash<span class="up">▲2</span></span><span class="r num">3.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-dagger"/></svg><span class="n">Bronze Dagger</span><span class="st num">Attack 6–7 · pierce<span class="up">▲2</span></span><span class="r num">1.5</span><span class="pr num">13<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Iron Sword<span class="why">needs Might 5 — you have 3</span></span><span class="st num">Attack 10–12 · slash</span><span class="r num">3.0</span><span class="pr num">33<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc sel"><svg class="ico"><use href="#i-club"/></svg><span class="n">Bronze Mace</span><span class="st num">Attack 9–12 · blunt<span class="up">▲6</span></span><span class="r num">4.0</span><span class="pr num">21<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-shield"/></svg><span class="n">Wooden Buckler</span><span class="st num">Block 20% · armour 1<span class="up">new</span></span><span class="r num">4.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion</span><span class="st num">+25 health</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Steel Sword<span class="why">needs Might 10 — you have 3</span></span><span class="st num">Attack 13–15 · slash</span><span class="r num">3.0</span><span class="pr num">62<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Your Pack</div><div class="wt num">20.6 of 65 weight<span class="wbar"><i style="width:31.7%"></i></span></div></div><div class="h2">LORCAN PAYS</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PAYS</span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="st num">Attack 6–7 · slash</span><span class="r num">3.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-helm"/></svg><span class="n">Bronze Helmet</span><span class="st num">Armour 2</span><span class="r num">3.0</span><span class="pr num">6<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="qty">×2</span></span><span class="st num">+25 health</span><span class="r num">1.0</span><span class="pr num">7<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Mana Draught</span><span class="st num">+40 mana</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-key"/></svg><span class="n">Lockpick<span class="qty">×2</span></span><span class="st">—</span><span class="r num">0.1</span><span class="pr num">4<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-torch"/></svg><span class="n">Torch</span><span class="st">Light</span><span class="r num">4.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+    </div>
+    <div class="detail">
+      <svg class="ico big"><use href="#i-club"/></svg>
+      <div><div class="nm">Bronze Mace</div><div class="ln num">Attack 9–12, blunt · weight 4.0 · one hand<br>Against your Wooden GreatClub (4–6): <span style="color:#3c6a22">+6 a blow on average</span></div></div>
+      <div class="sum num">Lorcan asks 23 · Dunmore’s prices ×0.97<br>your Charisma 6 takes 6% off<br><b>you pay 21</b></div>
+    </div>
+    <div class="purse">
+      <div class="gold num"><svg class="ico"><use href="#i-coin"/></svg>142 gold</div>
+      <div class="hint">Click to buy or sell · a stack asks how many · E or Esc to leave</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ B. The reckoning ═════════════ -->
+<div class="cap">B · The same ledger with a reckoning <small>a rule change: picks gather on a tally and nothing changes hands until you press the seal; a pick clicked again is put back</small></div>
+<section class="screen menu" id="reckon">
+  <div class="tabs">
+    <div class="tab on"><svg class="ico"><use href="#i-scales"/></svg>All</div><div class="tab"><svg class="ico"><use href="#i-sword"/></svg>Weapons</div><div class="tab"><svg class="ico"><use href="#i-helm"/></svg>Armour</div><div class="tab"><svg class="ico"><use href="#i-potion"/></svg>Consumables</div><div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Oddments</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div class="book" style="height:410px">
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Lorcan’s Forge</div><div class="meta">Lorcan · “Steel for the road ahead.”</div></div><div class="h2">FOR SALE</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PRICE</span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="st num">Attack 6–7 · slash<span class="up">▲2</span></span><span class="r num">3.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-dagger"/></svg><span class="n">Bronze Dagger</span><span class="st num">Attack 6–7 · pierce<span class="up">▲2</span></span><span class="r num">1.5</span><span class="pr num">13<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Iron Sword<span class="why">needs Might 5 — you have 3</span></span><span class="st num">Attack 10–12 · slash</span><span class="r num">3.0</span><span class="pr num">33<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-club"/></svg><span class="n">Bronze Mace<span class="mark">on the tally</span></span><span class="st num">Attack 9–12 · blunt<span class="up">▲6</span></span><span class="r num">4.0</span><span class="pr num">21<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-shield"/></svg><span class="n">Wooden Buckler</span><span class="st num">Block 20% · armour 1<span class="up">new</span></span><span class="r num">4.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="mark">on the tally</span></span><span class="st num">+25 health</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Steel Sword<span class="why">needs Might 10 — you have 3</span></span><span class="st num">Attack 13–15 · slash</span><span class="r num">3.0</span><span class="pr num">62<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Your Pack</div><div class="wt num">20.6 → 19.1 of 65 after the deal<span class="wbar"><i style="width:29.4%"></i></span></div></div><div class="h2">LORCAN PAYS</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PAYS</span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword<span class="mark">on the tally</span></span><span class="st num">Attack 6–7 · slash</span><span class="r num">3.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-helm"/></svg><span class="n">Bronze Helmet<span class="mark">on the tally</span></span><span class="st num">Armour 2</span><span class="r num">3.0</span><span class="pr num">6<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="qty">×2</span></span><span class="st num">+25 health</span><span class="r num">1.0</span><span class="pr num">7<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Mana Draught</span><span class="st num">+40 mana</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-key"/></svg><span class="n">Lockpick<span class="qty">×2</span></span><span class="st">—</span><span class="r num">0.1</span><span class="pr num">4<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-torch"/></svg><span class="n">Torch</span><span class="st">Light</span><span class="r num">4.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+    </div>
+    <div class="reck">
+      <div class="col"><div class="h2">YOU TAKE</div>
+        <div class="li"><span>Bronze Mace</span><span class="num">21</span></div><div class="li"><span>Health Potion</span><span class="num">16</span></div></div>
+      <div class="col"><div class="h2">YOU GIVE</div>
+        <div class="li"><span>Wooden Sword</span><span class="num">2</span></div><div class="li"><span>Bronze Helmet</span><span class="num">6</span></div></div>
+      <div>
+        <div class="tally num"><div><span>Your purse</span><span>142</span></div><div><span>37 out, 8 in</span><span>− 29</span></div><div class="tot"><span>Left after</span><span>113 gold</span></div></div>
+        <div class="strike"><span class="hint">press the seal, or Enter</span><div class="seal static">Strike</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ The quantity slip ═════════════ -->
+<div class="cap">The quantity slip <small>over A or B: a ruled line with a red knob in place of ×1 ×5 ×10 Max and a typed box; the confirm reads Sell when you sell (today it always reads “Buy”)</small></div>
+<section class="screen menu dim" id="qty">
+  <div class="parch sheet" style="filter:brightness(.8)">
+    <div class="book"><div class="pg"><div class="h">Lorcan’s Forge</div></div><div class="pg"><div class="h">Your Pack</div></div></div>
+  </div>
+  <div class="parch small slip" style="z-index:3">
+    <div class="h">Sell Health Potion</div>
+    <div class="meta">Lorcan pays 7 each · you carry 2</div>
+    <div class="rule"></div>
+    <div class="qtyline"><span style="font:17px var(--body)">How many</span><span style="font:30px var(--display);color:var(--rubric)" class="num">2</span></div>
+    <div class="slider"><span class="notch" style="left:0"></span><span class="notch" style="left:100%"></span><span class="knob" style="left:100%"></span></div>
+    <div class="scale num"><span>1</span><span>2 · all</span></div>
+    <div class="qtyline"><span class="faint">You receive</span><span style="font:21px var(--display)" class="num">14 gold</span></div>
+    <div class="btns"><span class="btn hot">Sell</span><span class="btn">Cancel</span></div>
+    <div class="hint" style="text-align:center;margin-top:8px">← → or the wheel to count · Enter to sell</div>
+  </div>
+</section>
+
+<!-- ═════════════ The loot slip ═════════════ -->
+<div class="cap">A chest's window <small>a smaller slip, the gold first, every piece's weight and worth, and what your pack weighs after taking all</small></div>
+<section class="screen" id="loot">
+  <div class="parch loot">
+    <div class="seal close">✕</div>
+    <div class="pghead"><div style="display:flex;gap:12px;align-items:center"><svg class="ico" style="width:34px;height:34px;color:var(--ink-soft)"><use href="#i-chest"/></svg><div><div class="h">Bandit’s Chest</div><div class="meta">click a line to take it</div></div></div></div>
+    <div class="rule"></div>
+    <div class="goldrow num"><svg class="ico"><use href="#i-coin"/></svg>37 gold</div>
+    <div class="tc lh" style="margin-top:6px"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">WORTH</span></div>
+    <div class="row tc sel"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Longsword</span><span class="st num">Attack 7–8 · slash<span class="up">▲3</span></span><span class="r num">4.0</span><span class="pr num">2</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-legs"/></svg><span class="n">Wooden Greaves</span><span class="st num">Armour 1<span class="faint" style="margin-left:4px">—</span></span><span class="r num">5.0</span><span class="pr num">2</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-amulet"/></svg><span class="n">Wooden Amulet</span><span class="st num">Armour 1<span class="up">new</span></span><span class="r num">0.2</span><span class="pr num">2</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-club"/></svg><span class="n">Wooden GreatClub</span><span class="st num">Attack 4–6 · blunt</span><span class="r num">4.0</span><span class="pr num">1</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-flail"/></svg><span class="n">Wooden Flail</span><span class="st num">Attack 8–10 · blunt<span class="up">▲4</span></span><span class="r num">5.0</span><span class="pr num">2</span></div>
+    <div class="lfoot">
+      <div class="wt num">your pack 20.6 → 38.8 of 65<span class="wbar"><i style="width:59.7%"></i></span></div>
+      <div style="display:flex;gap:10px;align-items:center"><span class="hint">E</span><span class="btn hot">Take all</span></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
