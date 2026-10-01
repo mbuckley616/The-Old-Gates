@@ -628,21 +628,21 @@ const FOE_DRESS={
   'Bandit':        {cloth:0x4a3a2a,hat:'hood',wpn:['sword','axe'],shield:'round',shieldP:.35}, // S226 — armed from the weapon kit (wpn), a shield at shieldP
   'Bandit Archer': {cloth:0x3a4a2a,hat:'hood',wpn:'bow'},
   'Highwayman':    {cloth:0x2a2a30,hat:'brim',wpn:['sword','axe']},
-  'Deserter':      {cloth:0x5a5a4a,hat:'helm',wpn:['mace','spear'],shield:'kite'},
+  'Deserter':      {cloth:0x5a5a4a,hat:'helm',wpn:['mace','spear'],shield:'kite',kit:{head:3,chest:3}},
   'Cultist':       {cloth:0x3a1414,hat:'hood',wpn:'dagger'},
   'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',wpn:'staff'},
   'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',wpn:'cutlass'},
-  'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword'}, // S175 — the shield on the left shoulder; tickPeople holds the guard
+  'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword',kit:{head:3,chest:1,hands:1}}, // S175 — the shield on the left shoulder; tickPeople holds the guard
   'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
   'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
-  'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear'},
+  'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear',kit:{head:3,chest:3,legs:3},rust:0x4a3e34},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
   'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
-  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
+  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace',kit:{head:4,chest:4,hands:3,legs:3}}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
   'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
   'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
   // S208 — the trolls on the people's body (Michael's answer on Session 201: as shown, a hammer for the cane): heavy, stooped,
@@ -681,6 +681,12 @@ function buildFoe(type,x,z,genome,eyeCol){
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
     if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}
+    // S403 — the helmed foes in the armour kit (Michael's B on #94), each as his story dresses him, by tier (MATERIALS):
+    // the Deserter his old army's Iron mail and nasal helm; the Bandit Captain looted pieces, Wooden lamellar and vambraces
+    // under an Iron helm; the Shieldbearer Steel plate over Iron mail sleeves and greaves; the Ash Wight Iron mail rusted
+    // nearly black, as the dead's blades are. The kit's helm takes the bowl helm's place; the boots stay the foe's own.
+    if(dr.kit&&typeof MATERIALS!=='undefined'){const k=dr.kit,pc=t=>{if(!t)return null;const m=MATERIALS[t-1];return {tier:t,fam:AR_FAM[t],sig:null,metal:dr.rust!=null?dr.rust:m.blade,guard:m.guard,glow:null};};
+      g.eq=Object.assign({amulet:false,quiver:false},g.eq||{},{armour:{head:pc(k.head),chest:pc(k.chest),hands:pc(k.hands),legs:pc(k.legs),feet:null}});g.hat='none';}
     // a wraith: a long robe to the ground under a cloak and hood, the feet lost in it; it glides (tickPeople)
     if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}
     if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}

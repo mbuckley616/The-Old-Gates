@@ -10094,3 +10094,30 @@ Weapons, the bow, spells and block are unchanged; block was already both fists b
 - The jab at speed in real play: the arm eases at dt*50, as the sword's swing does, through a strike of about 60 ms.
 - At rest an unarmed body still walks with its arms swinging rather than holding the first person's low guard. It only comes up to guard for the punch. Whether the body should carry its fists up while unarmed is a look call, not taken here.
 - The bare hand reads as a pale point at a distance; the third-person body has no folded fist like the first person's.
+
+## v80 — Session 403 — The helmed foes in the armour kit (H.2, Michael's B on #94)
+Michael answered decision #94 on 1 Oct with B: each of the four helmed foes in the armour kit as his story dresses him, as Session 397's prototype showed. Until now the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight wore the people's steel bowl helm over cloth, and beside a town guard in mail they read as men in hats.
+
+Each of the four `FOE_DRESS` entries (`js/32-people.js`) now has a `kit`: a tier (1-based index into `MATERIALS`) for each slot it wears. `buildFoe` turns that into the same armour record `tpBuild` and the guards use, and sets the hat to none, so the kit's helm replaces the bowl helm. The boots stay the foe's own, as with the guards. The pieces are the prototype's:
+- the Deserter: Iron mail and the nasal helm;
+- the Bandit Captain: a Wooden lamellar cuirass and vambraces under an Iron helm;
+- the Shieldbearer: a Steel plate cuirass and helm over Iron mail sleeves and greaves;
+- the Ash Wight: Iron mail with greaves, its metal set by `rust` to 0x4a3e34, nearly black, as the dead's blades are.
+
+The pieces draw nothing from the genome's random stream, so a foe's face, hair and weapon are unchanged. Session 398's cut takes the fuller hair styles down to the skull under these helms too. The zones (`buildZoneEnemy`) and the dungeons (`56-dungeon-build.js`) both build these foes through `buildFoe`, so both get the kit. The armour is look only: `def` and the foes' numbers are unchanged.
+
+### Verified (headless Chromium)
+`tests/foearmour.test.mjs` 9/9 (new):
+- Each foe wears exactly the pieces above, and no bowl helm.
+- The Ash Wight's mail is 0x4a3e34. The Deserter's is Iron's own 0xa8b0b8.
+- The four keep their boots and their arms.
+- A Bandit, a Highwayman, a Skeleton and a Ghoul have no kit.
+- Each armoured foe is 9,008–10,410 triangles (5,034–5,844 before) and 3,684–5,082 at a distance, still on 17 bones.
+- A Deserter built on the road by `buildZoneEnemy` wears the mail.
+- No page errors.
+`foes` expected the bowl helm (`hat === 'helm'`) on the Deserter and the Ash Wight. Those two checks now expect the kit's helm, as #94 decided, and the suite passes. `armourkit`, `guardarmour`, `dungeonfoes`, `people`, `lod`, `weapons` and `duel` pass. `parsecheck` is clean. `docs/prototypes/foearmour-ingame.png` (`docs/prototypes/foearmour/ingame.mjs`) shows the four before and as built. The shot matches the prototype's B row, with the Ash Wight's eyes now its own colour. Build tag s357.
+
+### Needs eyes
+- A road ambush of Deserters at dusk: whether the mail reads at the distance the copy swaps (17 units).
+- The Ash Wight's rust against the wasteland's ash ground. It may be too dark to read the mail's rings.
+- A Bandit Captain leading a band adds about 5,000 triangles over today. `lod` still holds, but a camp of several captains has not been measured.
