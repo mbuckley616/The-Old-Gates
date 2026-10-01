@@ -80,7 +80,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 
 ## E. Interface
 - **The look, later**: a barber/tailor in towns to change hair and dyes after the creator (the creator now has the townsfolk's thirteen styles and fourteen beards, Session 154); ~~NPCs could draw from the same tunic dyes by nation~~ (Session 153).
-- **Pause menu**: ~~an equipment summary on the sheet~~ (Session 131); keyboard navigation of folders.
+- **Pause menu**: ~~an equipment summary on the sheet~~ (Session 131); keyboard navigation of folders. (The dialogue's number keys: ~~1–4 only, though a talk lists up to ten~~ — **fixed, Session 392**: 1–9 and 0 for the tenth, `tests/dlgkeys`.)
 - **Map**: ~~a legend toggle~~ (the Key, Session 131); route/coach lines labelled.
 - ~~**Buildings coloured by type**~~ — **done, Session 138**: one `BLD` table drives the Local view, the minimap and the Key. Michael's scheme plus inn orange, smith/armourer charcoal, apothecary green, goods brown, shipwright teal, barracks dark red, tan *Other*. The lord is a gold dot (most towns have no keep); your own house is outlined. *Owed:* the colours judged by eye at night and on snow.
 - ~~**Directions from townsfolk**~~ — **done, Session 138**: a *Where can I find …* folder on every townsperson and guild head — the lord and the nearest of each building — answered from where you stand, marked on the compass with its glyph and ringed on the Local view until you arrive or leave town. *Owed:* whether it should also name places outside the walls.

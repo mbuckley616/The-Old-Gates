@@ -9967,3 +9967,14 @@ The board says why a price has moved: *Grain and iron are dear here: the town ha
 - The sizes: ×1.5, ×1.3, 600 units, ×1.8. Whether a sacked port's grain is worth sailing for, and whether black sails make running past them pay.
 - A blockade is a pirate near *you*. A port far away is never blockaded, so the effect only shows at a quay you can see from the sea.
 - Owed, and a rule of play, so it is Michael's to ask: whether pirates who board you take from the hold.
+
+## v80 — Session 392 — Every numbered dialogue choice answers its key
+Every choice in the dialogue box is drawn with its number. A townsperson with folders lists up to ten: the harbourmaster gives *My name is…*, *Cargo*, *What comes through here?*, *Passage …*, the four folders and *Go on.* But the keydown answered only 1–4 (`num>=1&&num<=4`), from when a talk had four choices. A player at the keyboard pressed 6 for *About this place …* and nothing happened. This is a fix: the numbers on screen promise the keys.
+
+**What changed** (`js/92-creator.js`, the dialogue branch of the game's keydown). Keys 1–9 pick the choice drawn with that number and 0 picks the tenth. A key past the end of the list does nothing, and a held key does not repeat, so holding 1 no longer clicks through a conversation. Nothing else in the dialogue branch changed.
+
+### Verified (headless Chromium)
+`tests/dlgkeys.test.mjs` (new), 6/6: a dialogue of ten (the name topic and nine others, numbered 1–10). Keys 2, 5 and 6 pick Topics 1, 4 and 5; keys 8 and 9 pick Topics 7 and 8; key 0 picks the tenth, Topic 9. On a one-choice answer, 9 does nothing. The same test on the unfixed build (HEAD by `git archive`, `--src`): key 2 works, 5, 6, 8, 9 and 0 do nothing, 3 of 6 fail. Build tag s350.
+
+### Needs eyes
+- Nothing to judge beyond pressing the keys. The pause menu's folders still want keyboard navigation (backlog E).

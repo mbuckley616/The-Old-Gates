@@ -56,7 +56,9 @@ function _enterGame(){
     if(dlgOpen){
       if(e2.code==='Escape'){e2.preventDefault();closeDialog();return;}
       const num=parseInt(e2.key);
-      if(num>=1&&num<=4&&dlgNode){pickDialogChoice(num-1);}
+      // S392 — every numbered choice answers its key, 1–9 and 0 for the tenth (was 1–4 only: a harbourmaster lists ten)
+      const idx=e2.key==='0'?9:num-1;
+      if(!e2.repeat&&idx>=0&&idx<=9&&dlgNode&&dlgNode.choices&&idx<dlgNode.choices.length){pickDialogChoice(idx);}
       return;
     }
     if(hubOpen){
