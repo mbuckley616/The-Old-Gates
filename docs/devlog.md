@@ -10066,3 +10066,31 @@ A production session, no game code. Michael, 1 Oct: the Airsoft control room's d
 ### Needs eyes
 - Michael: paste the new producer prompt into the routine "Old Gates — producer (hourly)" and consider its model (the Airsoft producer runs on Opus); approve this PR only after that.
 - The first merge the producer makes through GitHub: watch that the card goes "merged" with `merged_sha` and that Pages rebuilds on its own (the old workflow forced a Pages build; a push to main should trigger one by itself).
+
+## v80 — Session 402 — The punch in third person (H.3, after Michael's A on #80)
+Session 396 built Michael's A on #80 in first person: both fists up, a straight jab with the right that lands at the strike, the left kept in guard. Its devlog left the third-person body owed. With an empty hand the body still played the sword's three arcs: a forehand, a backhand or an overhead chop with a bare fist. This session builds the same jab on the body, so the two views agree. No new choice is made, so no prototype was asked for.
+
+`tpPose` (`js/54-thirdperson.js`) now checks the view model's fist mark (`vmSword.userData.fists`, set by `buildViewmodel` for an empty hand) when no weapon or bow is held. With that mark it uses the jab in place of the swing variants. The jab uses the same phases as the sword's swing (Session 269: the draw to `antEnd`, the hit at `impactPoint`, the carry, the return), so the body's fist lands when the first person's fist does and the strike resolves:
+- It starts from a guard with the fist by the chin.
+- At the draw the elbow folds further and the shoulders turn back a little.
+- At the hit the arm is straight and at shoulder height, close to the body's middle line, and the shoulders turn through.
+- The fist holds for a beat, then returns to guard.
+- The left fist stays up by the face throughout.
+- The power punch turns the shoulders 1.3 times as far and keeps the swing's bigger step, so it lands further ahead.
+
+Weapons, the bow, spells and block are unchanged; block was already both fists before the face.
+
+### Verified (headless Chromium)
+`tests/tpfists.test.mjs` 8/8 (new), through the game's own loop a frame at a time:
+- At the draw the elbow is at −1.95; as the jab lands it is at −.18.
+- The fist travels .22 forward in the body's frame from the draw to the hit. It ends .24 ahead of the shoulder (the arm is .29 long) and at the shoulder's height (difference 0).
+- It never goes more than .17 to the side of the head. The old path, the sword's forehand with a fist, swept to .35–.36.
+- The left fist is never more than .26 from the head.
+- The power punch lands at .41 ahead of the body's origin, the jab at .33.
+- After the swing the body lets go (`TP.swMax` 0). No page errors.
+`tpswing` (the sword's swings and the two-handed grip), `fists`, `unequip` and `player` pass. `parsecheck` is clean. `docs/prototypes/tpfists-ingame.png` (`docs/prototypes/tpfists/ingame.mjs`): the top row is before, the bottom row is now, at the draw, as the jab lands and as the power punch lands, plus block. Build tag s356.
+
+### Needs eyes
+- The jab at speed in real play: the arm eases at dt*50, as the sword's swing does, through a strike of about 60 ms.
+- At rest an unarmed body still walks with its arms swinging rather than holding the first person's low guard. It only comes up to guard for the punch. Whether the body should carry its fists up while unarmed is a look call, not taken here.
+- The bare hand reads as a pale point at a distance; the third-person body has no folded fist like the first person's.
