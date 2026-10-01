@@ -4,21 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### Should the town guards wear the armour kit too? (the look builder, Session 385, 2026-10-01, issue #87)
-Session 384 put your B on #76 into the game: the player's armour is now lamellar, a muscle cuirass, mail or plate by material. The town guards still wear the people's steel bowl helm over a coloured coat, so a guard now looks less armoured than a player in Wooden armour. A prototype (look builder, Session 385) dresses four guards (a man, a woman, an Old Blood man from behind, and a captain) three ways.
-- **A. Today.** The bowl helm and the coat. No cost.
-- **B. Every guard in Iron mail** with the nasal helm.
-- **C.** *(recommended)* **By the town's wealth**, the same rule as the townsfolk's clothes (your A on Session 246). In a poor town the guards wear Wooden lamellar, in a middling one Iron mail, and the captain of a keep wears Steel plate. A town's guards would tell you what the place can afford.
-
-Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town. Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). PR #82.
-
-### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
-Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
-- **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.
-- **B.** A, plus the helm as a 22nd skill, Seamanship (perks: shallows on the minimap, reefed sails, the ram, speed in heavy seas). Five Opus sessions.
-- **C.** B, plus a crew hired by the hand, paid by the day and fed from the hold. One Fable and five Opus sessions.
-
-Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
+## Answered
 
 ### The duel's yield — should a blow begun before you could see her kneel count as murder? (systems builder, Session 405, 2026-10-01, issue #96)
 In *The Yard at Caer Slige*, Rowe yields at a quarter of her health. Any blow that lands after that kills her: murder, the League closed, the watchers' backs turned. The critic asked whether a swing already under way counts. I measured it (`tests/duelrhythm`). Clicking in rhythm, the next swing begins 0.17–0.28 s after the blow that makes her kneel (dagger to hammer) and lands about 0.5 s after it. That is under a person's reaction time. A bot that stops 0.15 s after she kneels spares her, and one that stops at 0.25 s or 0.4 s kills her. So a player who swings steadily will often murder her without meaning to, and lose the League for good.
@@ -28,7 +14,7 @@ In *The Yard at Caer Slige*, Rowe yields at a quarter of her health. Any blow th
 
 Recommendation: **B.** It is one condition in `tickDuel` and a test. It keeps *struck she dies* for every blow the player chose, and removes the one they couldn't have stopped.
 
-## Answered
+Michael: **A blow begun within 0.4 s of her kneeling is checked**. (1 Oct 2026, issue #96, via the control room)
 
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
@@ -43,6 +29,17 @@ Michael: **A telegraphed slam**. (1 Oct 2026, issue #95, via the control room)
 
 *Built, Session 404* (`tests/masterslam`): the slam as A says it, a 3-unit ring on the floor through the tell. Found in building it: Session 130's 1.6× damage never reached a dungeon master's blows (it scaled an `e.dmg` they don't have); it does now.
 
+### Should the helmed foes wear the armour kit too? (the look builder, Session 397, 2026-10-01, issue #94)
+Since Sessions 384 and 395 the player and the town guards wear the armour kit: lamellar, a muscle cuirass, mail or plate by material. The foes who wear armour today still have the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a guard in mail, a bandit captain now looks like a man in a hat. A prototype (look builder, Session 397) dresses all four two ways:
+
+- **A. Today.** The bowl helm over cloth. No cost.
+- **B.** *(recommended)* **Each in the kit as his story dresses him**, a fixed piece list per foe: the Deserter in his old army's Iron mail and nasal helm; the Bandit Captain in looted pieces (a Wooden lamellar cuirass and vambraces under an Iron helm); the Shieldbearer in a Steel plate cuirass and helm over Iron mail sleeves and greaves; the Ash Wight in Iron mail rusted nearly black, as the dead's blades are. The unhelmed foes (bandits, archers, highwaymen, cultists, the risen dead) stay in cloth.
+- **C. B, but the metal by the foe's level**: a level-20 Shieldbearer in Mithril plate, a low one in Iron. It ties what a foe wears to what it can drop, and needs a rule for which levels map to which material (it touches loot, the systems builder's).
+
+Cost: these foes are 4,922–5,844 triangles today and 8,822–10,568 in B (the distant copy 2,150–2,619 today, 3,755–5,271 in B). A camp has one captain; a dungeon floor a few Shieldbearers. Shot: [A / B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/foearmour-grid.png). The script is `docs/prototypes/foearmour/shots.mjs`. Found on the way: a curly-haired Shieldbearer's hair poked through the closed helm; that was the kit's bug for the player too, and Session 398 fixed it (the full styles are cut to the skull under any kit helm), so it is not part of this question.
+
+Michael: **Each in the kit as his story dresses him**. (1 Oct 2026)
+
 ### Pirates and the hold — do black sails take your cargo? (systems builder, Session 391, 2026-10-01, issue #91)
 Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by class). Pirates already board you at sea (`crewUp`, the boarding of Session H); today a boarding risks only your health, and beating them gives you their chest. With cargo aboard, a boarding could cost what you carry, which is what makes a blockade's ×1.8 a gamble.
 - **A.** Nothing taken: a boarding is a fight, as now.
@@ -51,8 +48,51 @@ Sessions 390–391 put trade goods in your ship's hold (40 / 60 / 90 weight by c
 
 Recommendation: **C.** It makes the blockade a real choice (sail through for the price or wait for the sails to pass), and the chest's crates are a reward you can see. One Opus session with a test.
 
-Michael: **B, and their chest carries some of the goods they took off other ships**. (1 Oct 2026) — built in Session 399 (`tests/piratehold`); issue #91 closed.
+Michael: **B, and their chest carries some of the goods they took off other ships**. (1 Oct 2026)
 
+### A fist on screen in first person — the empty hand (the look builder, Session 380, 2026-10-01, issue #80)
+Fists are what an empty hand fights with (your ask, Session 174), but in first person an empty hand draws nothing: no fist and no arm, and nothing moves when you punch. A prototype (Session 380, look builder) builds a fist from the people's shape kit (a rounded hand, four knuckles, the fingers folded under them, the thumb across them, a wrist; about 2,000 triangles, 2,400 wrapped) and shows three ways of carrying it, each at rest, mid-punch and in guard. The arms are today's sleeves from the weapon view, coloured by your chest piece. Gauntlets would tint the hand as they tint the weapon hand now.
+
+- **A.** *(recommended)* **Both fists up**, low in the corners of the screen. The right throws a straight jab that turns palm-down as it lands. The power attack is the same punch, harder. Block brings both fists up to the face. The left hand stays in its guard behind the jab. A shield or torch in the off hand replaces the left fist.
+- **B.** **The right fist alone**, where a weapon is held, swinging through today's three sword arcs. It is the least work, but a fist that slashes reads as a backhand.
+- **C.** **A, with the hands wrapped** in a pugilist's linen to the wrist, as a boxer or a brawler would.
+
+Shots (rest, jab, guard): [today, nothing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-today.png) · [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-a.png) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-b.png) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fists-c.png). The script is `docs/prototypes/fists/shots.mjs`.
+
+Found on the way, for the systems builder: a punch never lands in play. The swing timer and the deferred strike only advance while a weapon view model exists (`if(vmSword)` in the loop, `js/90-main.js`). With an empty hand the swing sticks at 0.429 s and the strike stays pending, so a dummy takes no damage. The third-person arm also freezes mid-swing. Any of A–C gives the empty hand a view model and so hides this. The root fix is to run the timer outside that block, which is not the look builder's code. `tests/unequip.test.mjs` resolves the strike directly, so it never saw this. Filed as issue #81.
+
+Michael: **A** — Can we make sure the hands look a bit more like actual hands/fists? Also, in the third example image, the wrists don't appear anchored to the arms, and look like they've snapped off. (1 Oct 2026, via the control room)
+
+### What your body wears with the armour slots empty — third person (the look builder, Session 381, 2026-10-01, issue #83)
+Since Session 174 every equipment slot can be emptied, but nothing changes on your body. With the chest, legs and feet slots empty, the third-person figure still wears the tunic, breeches and boots you coloured in the creator, so taking off the Tattered Tunic changes nothing you can see. A prototype (Session 381, look builder) dresses the same figure three ways, as a man and as a woman, from the front and from behind:
+
+- **Today.** The creator's clothes are the base layer, and armour goes over them. An empty slot just means "no armour". Nothing to build.
+- **B.** *(recommended)* **Underclothes.** An empty chest slot shows an undyed linen shirt cut at the shoulder, with bare arms. Empty legs show linen braies, and empty feet show bare feet. The creator's colours then dye the starting tunic, breeches and boots: the items, not the body. Taking them off reads at a glance.
+- **C.** **B, but the shirt has long linen sleeves.** It is more covered and reads less clearly as undressed.
+
+Shots: [today / B / C, a man and a woman](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barebody-grid.png). The script is `docs/prototypes/barebody/shots.mjs`. In the prototype the feet are only boots in skin colour; the build would give them a foot of their own. The shirt keeps the tunic's cut for the shot, and the build would make it plainer and shorter. Undressing in the street is a register question too: whether townsfolk should remark on it is the quest writer's, not part of this.
+
+Michael: **B** — . (1 Oct 2026, via the control room)
+
+### Should the town guards wear the armour kit too? (the look builder, Session 385, 2026-10-01, issue #87)
+Session 384 put your B on #76 into the game: the player's armour is now lamellar, a muscle cuirass, mail or plate by material. The town guards still wear the people's steel bowl helm over a coloured coat, so a guard now looks less armoured than a player in Wooden armour. A prototype (look builder, Session 385) dresses four guards (a man, a woman, an Old Blood man from behind, and a captain) three ways.
+- **A. Today.** The bowl helm and the coat. No cost.
+- **B. Every guard in Iron mail** with the nasal helm.
+- **C.** *(recommended)* **By the town's wealth**, the same rule as the townsfolk's clothes (your A on Session 246). In a poor town the guards wear Wooden lamellar, in a middling one Iron mail, and the captain of a keep wears Steel plate. A town's guards would tell you what the place can afford.
+
+Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town. Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). PR #82.
+
+Michael: **C** — . (1 Oct 2026, via the control room)
+
+### Sailing — should the sea wear the ship, and how is she mended? (the designer, 2026-10-01)
+Today the sea has no state and the ship no condition: the swell is the same in calm and storm, shallows stop her for free, and pirates' volleys hit only you, so a voyage costs nothing but time. Which loop should sailing take, with waves that pitch and roll her by sea state (calm, moderate, rough, storm; open water one rougher) and a hull and rig that can be hurt? (Page: `docs/design/sailing.md`.)
+- **A.** Wear and mend: storms (worst under full sail), rough open water, grounding at speed, rams and pirate volleys wear the hull and rig; you patch at the cabin's bench with planks and pitch (Joinery sets how much and how far, Woodcutting brings the logs), the shipwright mends to full for 4 gold a point, and a ship sunk is raised again for 30% of her cost. Four Opus sessions and one look session.
+- **B.** A, plus the helm as a 22nd skill, Seamanship (perks: shallows on the minimap, reefed sails, the ram, speed in heavy seas). Five Opus sessions.
+- **C.** B, plus a crew hired by the hand, paid by the day and fed from the hold. One Fable and five Opus sessions.
+
+Recommendation: **A.** It is the backlog note item by item, and its numbers make the long voyage of your survival answer: an evening at sea wears her past the planks she carries, so you land and cut wood; Joinery's perks carry the progression without a new skill, and C's crew brings back the upkeep you passed over in survival C.
+
+Michael: **A** — I also don't hate the idea of hiring a crew, but we can ignore that for now. Good thing to revisit eventually. (1 Oct 2026, via the control room)
 
 ### Cargo trading between ports — what does a hold of goods earn, and how? (systems builder, 2026-10-01, issue #88)
 Backlog B has carried *cargo trading between ports with prices by island* since the first backlog, with no rule behind it. Today a counter's price is the town's (prosperity, Charisma's 1% a point, a faction's discount), the same for every good on every island; the ship's hold only adds carry weight (+25 a tier, up to +50, while aboard or within 20 units). Canon §1 gives each island its trade: the Gatelands grain, cattle, wool, horses; the Mark iron, silver, timber, furs; Aurenne salt, dyes, glass, fish. Which shape should trade take?
