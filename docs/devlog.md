@@ -9906,3 +9906,21 @@ In C the lamellar is the heaviest, and most of that is its lacing. No game code 
 
 ### Needs eyes
 Michael's letter on #87. The armour hides the guard's coat, which is today's only colour on a guard; a tabard is offered in the question. Armoured foes (bandits, the dead in mail) are a separate question and are not in this one.
+
+## v80 — Session 388 — CI: the snow repaint's cost check, held to the machine's own chunk (H.6)
+Section H has nothing left to build without Michael: the Playtest s162 list, creatures, plants, boats and the world are all done, and the three open look questions (#80 the fist, #83 the empty slots, #87 the guards' armour) wait on his letter. There are no new register findings in `docs/quest_review.md` (run 4 was clean). CI on the Auto sessions PR had already failed on its head (`8ab85e4`) in two shards, so this run's one session is that.
+
+The first red is `snowrepaint`'s third check: "a repainting tick costs under 2.5× one at rest (median)". On the runner a tick at rest took 1.07 ms and a repainting tick 7.5 ms, seven times as much. Here a tick at rest took 12.7–31.5 ms and a repainting tick 12–13 ms, *less* than at rest. The two counts were right on both machines (81 chunks queued, drained in 41 ticks, two a tick). The problem is the baseline. A tick "at rest" is measured once, before the repaint, and it carries whatever chunk streaming is still going on. On a fast runner the world has finished loading and the tick is nearly free, so any real work looks huge beside it. This is the second time the check has failed on the runner's speed alone; Session 299 already moved it from 3 ms over rest to 2.5× rest.
+
+The check now measures its own yardstick. After the drain, the test times three kinds of tick in turn, forty of each: one with nothing queued, one with a single chunk queued, and one with eight queued. The eight-chunk tick repaints as many as the rule allows. Because the three are interleaved, streaming and timer noise fall on all of them alike. The test passes when the eight-chunk tick's cost over an empty tick is under 3.5 one-chunk ticks' cost over an empty tick, plus a millisecond for timer noise. Two chunks a tick give about 2; six a tick, the cost Session 177 removed, give about 6. The count check ("it repaints two chunks a tick, no more") is unchanged. No game code changed, so the build tag is not bumped.
+
+The second red is `q7world`, which hit the runner's 900-second limit for one suite. It is a quest suite (the systems builder's), unchanged on this branch. A `q7world` timeout under load is one of main's two known intermittent reds (Session 379's entry). Here it passed alone in 5 min 6 s, 8 checks, while another suite was running beside it. It is left as it is and noted on the PR.
+
+### Verified (headless Chromium)
+`snowrepaint`, 4/4, three runs. The new numbers from the last run: empty tick 1.6 ms, one chunk 6.7, eight queued 12.2. So a full tick costs 10.6 ms over empty against one chunk's 5.1, a ratio of 2.1.
+- With `snowRepaintStep` patched to six chunks a tick (temporarily, then reverted), the suite fails twice. The count check fails (14 ticks for 81 chunks), and so does the new check: 32.2 ms over empty, against a limit of 22.
+- `q7world` 8/8 here, run alone.
+- `parsecheck` is clean.
+
+### Needs eyes
+Nothing in play. Whether the runner agrees is the next CI run on the PR. If the one-chunk tick there is ever under the timer's resolution, the millisecond allowance is what keeps the check from failing, and it is still well under the six-chunk figure.
