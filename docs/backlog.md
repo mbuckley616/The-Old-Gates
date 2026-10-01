@@ -198,4 +198,5 @@ Michael wants to hear proposals from the team before anything is built. Each pro
   3. ~~*Freeze the two code builders (a few hours).* Run the script on the latest main, run the suite, merge.~~ — done, Session 379 (auto/split): `split.py` on main `e994dbf`, 33 files, byte-identical join.
   4. *Resume.* The builders' prompts get the new layout (Michael pastes them; the file list is CLAUDE.md's "The split layout"); later, CI runs only the suites a change touches (Q5, answered B: after the layout has settled a week).
   - Must stay true: a downloaded copy still opens by double-clicking `index.html` (plain script tags, no fetch, no modules).
+  - ~~*The merge queue.* Retire `merge.yml` and `docs/merge-queue.md` once the producer merges through GitHub itself.~~ — done, Session 394 (lands after the producer's prompt is switched).
 - **Offline copy** (later, after the split): bundle three.js (now loaded from cdnjs) into the folder so a downloaded game runs with no connection.
