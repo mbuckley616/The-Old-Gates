@@ -7044,6 +7044,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       get topics(){const s=DUEL.q&&DUEL.q.data.state;return s==='wait'?[{label:'Why do you want it?',response:"Captain's a garrison and forty mouths. I've fed worse. And somebody ought to ask what the spire pays the sergeants in, because it isn't silver."},{label:"We don't have to do this.",response:"Aye, we do. You're Reeve, I'm Reeve, and there's one Captain's chair at the strait. We settle it by noon and drink after."},{label:'Farewell.',bye:true}]:[{label:'Farewell.',bye:true}];}};
     return def;}
   function duelBuild(q){const d=q.data,cx=d.x,cz=d.z;DUEL.q=q;DUEL.open=duelRingHours();const r=duelSeed(q);const bank=NAMES.anglo;const used=new Set();
+    // S393 — the yard's people never take a name the seat already uses: the service's giver, the town's lord and its people (the critic's s342: a watcher Wulfstan beside Reeve Wulfstan)
+    {const take=n=>{if(n)String(n).split(/\s+/).forEach(w=>used.add(w));};take(q.giver);take(RIVAL.name);const seat=siteAnywhere(q.giverSite);if(seat){try{if(!seat.lordless)take(lordFor(seat).name);}catch(err){}const S_=SETTLE.get(seat.id);if(S_&&S_.npcs)S_.npcs.forEach(n=>take(n.def&&n.def.name));}}
     const nm=()=>{let n;for(let k=0;k<20;k++){const L=r()<.5?bank.m:bank.f;n=L[Math.floor(r()*L.length)];if(!used.has(n))break;}used.add(n);return n;};
     const sn=nm();const sa=-Math.PI/2+.5,sx=cx+Math.cos(sa)*(DUEL_R+.8),sz=cz+Math.sin(sa)*(DUEL_R+.8);
     const sdef={name:sn,role:'Yard-sergeant',ico:'⚔',authored:true,people:'markman',bCol:0x3a3a40,sCol:0xe8d4bc,x:sx,z:sz,

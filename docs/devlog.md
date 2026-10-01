@@ -9978,3 +9978,14 @@ Every choice in the dialogue box is drawn with its number. A townsperson with fo
 
 ### Needs eyes
 - Nothing to judge beyond pressing the keys. The pause menu's folders still want keyboard navigation (backlog E).
+
+## v80 — Session 393 — The yard's watchers don't borrow the Reeve's name (the critic's s342 note)
+The critic's 1 Oct run noted, under *looks, not findings*, that one watcher at the Caer Slige yard was *Wulfstan*, the same name as the Reeve who gives the ninth service at the seat. It reads as one man in two places. Session 248's rule (a post-holder never takes another post-holder's name) did not cover the yard, because the yard's people are named in `duelBuild` from the anglo bank, checked only against each other. Session 172 meant names to be unique within a town wherever the bank allows, and the yard is the seat's own ground, so this is a fix and not a decision.
+
+**What changed** (`js/80-world.js`, `duelBuild`). Before the sergeant and the watchers are named, the set of names already used is seeded with every word of the service's giver, Rowe's name, the seat's lord (the Reeve), and the seat's townsfolk if the town is built. The yard then picks round them, as it already did for its own people. The bank has 24 names and the yard takes eight. The names stay seeded by the quest's id, so a yard is the same yard after a load.
+
+### Verified (headless Chromium)
+`tests/duel.test.mjs`, a new check: the yard is laid 20 times under 20 quest ids, with the seat's lord Wulfstan. New build: 20 yards, 0 sharing a name with the lord or the seat. Unfixed build (`git archive`, `--src`): 4 of 20 yards had a watcher Wulfstan, and the check fails. The rest of `duel` passes on the new build. Build tag s351.
+
+### Needs eyes
+- Nothing to judge; the seat's townsfolk were not built in the test (it laid the yard from the ring), so only the lord and the giver were in play there.

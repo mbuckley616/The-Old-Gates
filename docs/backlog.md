@@ -174,6 +174,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 
 - ~~**s342 — shop keepers walk through their counter** (critic 2026-10-01)~~ — **fixed, Session 387** (`tests/keeperwalk`): the amble turns back off the room's solids as off its bounds, and the counter shops' keeper starts behind the counter (z 2.2); 21 keepers in Portclare and Dunmore inside a solid 0% of ten minutes (was up to 21% inside the counter). Was: the amble's z bounds (0.6 to `min(D*.55,4.5)`) span the counter's solid (z 2.6–3.4) and the walk tested no furniture; every keeper of both towns stood inside a room solid 14–40% of the time.
 
+- ~~The yard's watchers take any name, the seat's Reeve's too~~ — **fixed, Session 393** (`tests/duel`): the yard-sergeant and the watchers never take a name the seat's lord, the service's giver or the seat's people use; laid 20 times, 0 clashes (was 4 of 20 with a Wulfstan beside Reeve Wulfstan). (critic 2026-10-01, a note under *Looks*)
+
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.
 - **Magic**: today's mix of old Elder Scrolls spell-buying with Skyrim's shout-style dungeon unlocks doesn't convince him. Wanted: a loop that isn't *buy more/better spells* — schools as skills, discovery, crafting or combining, costs and risks, spells that change how you move through the world.
