@@ -1634,8 +1634,13 @@ function intAmbleStep(m,dt){const am=m.userData.amble;
   const nx=m.position.x+Math.sin(am.wa)*am.speed*dt,nz=m.position.z+Math.cos(am.wa)*am.speed*dt;
   // S368 — a bound turns back the part of the heading that met it: x is sin(wa), so an x bound flips wa to −wa, a z bound to π−wa
   // (they were swapped, so a keeper at the counter's bound walked on into it, facing the strongbox, until the timer ran out)
-  if(nx>am.minX&&nx<am.maxX)m.position.x=nx;else{am.wa=-am.wa;am.wt=0.5;}
-  if(nz>am.minZ&&nz<am.maxZ)m.position.z=nz;else{am.wa=Math.PI-am.wa;am.wt=0.5;}
+  // S387 — the room's solids turn them back as the bounds do (the counter ran across the bounds, and a keeper walked through it
+  // 14–40% of the day). One that ever stands in a solid steps to the nearest free spot first, so the strict step can't hold them there.
+  const sol=(x,z)=>typeof intSolidAt==='function'&&typeof INT_SOL!=='undefined'&&intSolidAt(x,z,.22,0);
+  if(sol(m.position.x,m.position.z)){out:for(let r=.1;r<=2.5;r+=.1)for(let k=0;k<16;k++){const ox=m.position.x+Math.sin(k*Math.PI/8)*r,oz=m.position.z+Math.cos(k*Math.PI/8)*r;
+    if(ox>am.minX&&ox<am.maxX&&oz>am.minZ&&oz<am.maxZ&&!sol(ox,oz)){m.position.x=ox;m.position.z=oz;break out;}}}
+  if(nx>am.minX&&nx<am.maxX&&!sol(nx,m.position.z))m.position.x=nx;else{am.wa=-am.wa;am.wt=0.5;}
+  if(nz>am.minZ&&nz<am.maxZ&&!sol(m.position.x,nz))m.position.z=nz;else{am.wa=Math.PI-am.wa;am.wt=0.5;}
   m.rotation.y=Math.atan2(Math.sin(am.wa),Math.cos(am.wa));
   if(m===intNPCMesh){intNPCPos.x=m.position.x;intNPCPos.z=m.position.z;}}
 // v61d4 — Safehouse interior interaction state. Set by buildInterior's

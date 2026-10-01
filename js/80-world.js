@@ -4127,7 +4127,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const gl=new THREE.PointLight(0xffaa44,.9,gd*1.5);gl.position.set(W/2,gy+1.2,gd/2);sc_.add(gl);
     }
     // ── trade furnishing ────────────────────────────────────────────────
-    let npc={x:W/2,z:2.6,maxZ:Math.min(D*.55,4.5),paused:false};
+    let npc={x:W/2,z:2.2,maxZ:Math.min(D*.55,4.5),paused:false}; /* S387 — behind the counter (z 2.6–3.4), not on its edge */
     // S289 — every shop's counter is the kit's panelled counter, bare (the bar without its tankards), its own small bake
     const counter=()=>{const K=furnKit(),c=K.bake(K.counter(W*.5,FN,FSEED+5,true));c.position.set(W/2,0,3.0);c.userData.furn=true;sc_.add(c);furnSwap(c);solid(W/2,3.0,W*.25+.1,.4,1.05);};
     // A finished table: thick plank top with a lip, aprons, turned legs, and benches if asked.

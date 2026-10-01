@@ -9893,3 +9893,18 @@ They do, and it goes further. The gate is meant for the wild's own spawns, but e
 - The duel at level 1 against a full-strength Bandit Captain (62 health, 13 a blow, a shield up): whether a new character can win it, or whether the League's ninth service should wait for a level. That is Michael's call if it proves too hard; this session only makes the fight happen.
 - A level-1 siege: six soldiers and a captain at once outside a town. Before this they were invisible, so nobody has played it.
 - Not touched: the road job and the caravan were read, not driven in the test (they build through the same helper).
+
+## v80 — Session 387 — Keepers walk round their counters, not through them (the critic's s342 finding)
+The critic's second finding of the 1 Oct run (PR #90): shop keepers walk through their counter. The keeper's amble (`intAmbleStep`, Session 365) turned back only off its bounds, x from 0.8 to W−0.8 and z from 0.6 to min(D×.55, 4.5), and tested no furniture. Every counter shop sets its counter's solid at z 2.6–3.4 across the room's middle half, right across those bounds, and the keeper started at z 2.6, on its back edge. So the keeper strolled through the counter to the customer's side and back. Session 368's fix of the bounce (a bound turns back the part of the heading that met it) made it more visible: before it, a keeper stuck at the counter's line. This is a fix: Session 365 describes a keeper walking about the shop floor, not through its fittings.
+
+**What changed.** `intAmbleStep` (`js/22-dialogue.js`) asks `intSolidAt` (the room's own solids, at the floor, a 0.22 margin) before each axis of a step, and a solid turns the heading back exactly as a bound does. A keeper who ever stands inside a solid steps first to the nearest free spot within their bounds (rings of 0.1 to 2.5 units), so the strict step can never hold one there; with the next change none starts inside. The counter shops' keeper starts at z 2.2, behind the counter, not on its edge (`js/80-world.js`, the default `npc`). The bounds are unchanged, so a keeper still walks round the end of the counter onto the floor (0–45% of the day before it, as before); the walk is still .25 a second and heads are still held 1.5–5 s.
+
+### Verified (headless Chromium)
+`tests/keeperwalk.test.mjs` (new): every house with a walking keeper in Portclare and Dunmore (21: eleven counter shops, six inns, the two guild halls, a shipwright and the stores), entered at 13h, the keeper walked for ten minutes of 1/60 steps, sampled every tenth of a second with the game's own `intSolidAt` at the floor.
+- New build: inside a solid 0% for all 21, inside the counter 0%, nobody starts inside one, every keeper still walks 3.9–10.2 units from where they began. 6/6.
+- Old build (HEAD's `index.html` and `js/` by `git archive`, `--src`): the counter shops' keepers inside the counter 5–21% of the day (Róisín's Goods 21%, Olivier's Smithy 16%), inside any solid up to 18%, the inns' 3–5%; eleven keepers start inside the counter's edge. 3 of 6 fail.
+- An earlier draft of the test counted any solid over the point and blamed four keepers for standing in a door's lintel (y 1.6–3.6, a passage they walk under); the test now asks the game's own floor-height test.
+- `shopsight` passes: one-room strongboxes in sight 6–34% of an open day (13 shops in four towns; Session 368 measured 0–35%), back-room boxes 0% with the door shut. `keepercone` and `intnpcs` pass. Build tag s346.
+
+### Needs eyes
+- Watch a keeper in Fionnuala's Stores at midday: they should turn at the counter and go round its end, never through it. Whether the turn reads as a person or a bumper car at .25 units a second.
