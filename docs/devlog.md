@@ -10604,3 +10604,16 @@ Session 411 left the pirate's ram open: the page says *pirates gain a ram when f
 - Whether one ram in two runs (a miss when her turn can't bring her round) reads as a near thing or as a dull pirate; her turn rate is .5 rad/s, a 13-unit circle at 6.5.
 - The swimmer case above: whether a pirate should steer round an empty ship.
 - *The black sail rams you.* is mine, for the quest review.
+
+## v80 — Session 420 — `corpsebody` finds its dungeon gate wherever the stream is (CI fix)
+CI's push run on Session 418's head (b989003) failed one suite of shard 1: `corpsebody`, which Session 417 wrote. Every one of its world checks passed; the script then threw at line 64, *Cannot read properties of undefined (reading 'x')*, before its dungeon check ran. That line went down into a dungeon through the first world gate in `PORTALS`. In the open world `PORTALS` is the live list of the doors in the cells now loaded (`80-world.js`, *mutated in place*), and the test had just spent its time at five corpses thirty units off, so whether a gate was in it depended on how far the runner's stream had got. Here it always was; on the runner it was empty.
+
+**What changed** (`tests/corpsebody.test.mjs` only): the dungeon step opens the fixed gate of seed 42 through `WORLD.doorAnywhere` and `makePortalDef`, at its world position, as `autosave`, `mainquest` and `reader` already do. The game is unchanged.
+
+### Verified (headless Chromium)
+- The failure reproduced: the old line with `PORTALS` emptied first throws CI's exact TypeError.
+- The new line with `PORTALS` emptied first: the dungeon check passes (a Skeleton, its corpse carrying its body, the loot target at its foot, not above), no page errors.
+- `corpsebody` as committed: 19/19, the dungeon check on the same Skeleton. Build tag s365.
+
+### Needs eyes
+- Nothing in play. `dungeonexit` takes its gate from `PORTALS` the same way, but soon after arriving and with a `null` guard; it has not failed, and is left.

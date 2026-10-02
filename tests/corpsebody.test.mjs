@@ -61,7 +61,9 @@ const ui = await page.evaluate(() => { const { e, c } = _C.Bandit; const bones =
 console.log(JSON.stringify(ui));
 check('aimed at a dead bandit’s foot, the crosshair takes it as the loot target (the old spot did not)', ui.target && !ui.oldSpot, ui);
 // in a dungeon (killE's corpses): a foe with a skeleton, killed where it stands, searched at its foot
-await page.evaluate(() => { const p = PORTALS.find(p => p && p.seed != null && p.zone === 'world'); px = p.x; pz = p.z + 3; goToDungeon(p); });
+// a fixed gate (seed 42), found whether or not its cell has streamed in: `PORTALS` holds only the loaded cells' doors,
+// and on a slow runner it was still empty here (CI, b989003)
+await page.evaluate(() => { const p = makePortalDef(WORLD.doorAnywhere(42)); const wp = WORLD.dungeonPos[42]; if (wp) { p.x = wp.x; p.z = wp.z; } p.zone = 'world'; px = p.x; pz = p.z + 3; goToDungeon(p); });
 for (let k = 0; k < 60 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && ENEMIES.length > 0)); k++) await page.waitForTimeout(500);
 const dun = await page.evaluate(() => { const bonesOf = e => { const b = []; e.mesh.traverse(o => { if (o.isBone) b.push(o); }); return b; };
   const e = ENEMIES.find(e => !e.dead && (e.floor == null || e.floor === currentFloor) && bonesOf(e).length); if (!e) return { none: true, n: ENEMIES.length };

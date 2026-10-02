@@ -185,6 +185,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**The sell prompt's typed-amount button reads *Buy*** (the concept artist, drawing the counter, 1 Oct)~~ — **fixed, Session 409** (`tests/qtybutton`): the button names the side, as the prompt's title does.
 
 - ~~**Register fixes, quest review run 5**~~ — **done, Session 416** (`tests/shipwrightvoice`): the shipwright's replies (raise, fetch, mend, refit, canvas, hold) speak in the voice of his harbour's people (`SHIPWRIGHT_LINES`, Finding 5; Markish the fallback); `Aldhelm` and `Ealdred` out of the Mark's men's names for `Eadwulf` and `Wigmund` (Finding 6).
+- ~~**`corpsebody` red on CI (headless (1), b989003)**~~ — **fixed, Session 420** (the test, not the game): its dungeon step took a world gate from `PORTALS`, which holds only the loaded cells' doors and was still empty on the runner; it now opens the fixed gate 42 through `WORLD.doorAnywhere`, as `autosave` and `mainquest` do.
 
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.
