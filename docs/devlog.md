@@ -10773,16 +10773,16 @@ It runs in order. A swing at a villager in the street. Walk up to a guard, refus
 
 ### Verified (headless Chromium)
 `tests/guardplay.test.mjs` (new), 14/14. In Dunmore:
-- A real swing at Cormac in the street: favour −3, a 75-gold fine, three points owed, and he runs.
-- Three units from Séamus with the fine standing, the world's tick halts you: his greeting names the 75 gold, with *Pay the fine (75 gold)* and *I’ll not pay.* Refused: *Then the sword, and Weaver forgive the both of us.* A Town Guard drawn from Séamus stands in, alert, and Séamus leaves the street.
-- A real swing takes him 48 → 46. His blows over 1,411 ticks (23.5 s) bring you from 130 to 30. Séamus offers the yield by name, *Pay double (150 gold)* or *The cells.*, and he holds while you talk.
+- A real swing at Cormac in the street: favour −3, a 75-gold fine, three points owed, and Cormac runs.
+- Three units from Séamus with the fine standing, the world's tick halts you: the greeting names the 75 gold, with *Pay the fine (75 gold)* and *I’ll not pay.* Refused: *Then the sword, and Weaver forgive the both of us.* A Town Guard drawn from Séamus stands in, alert, and Séamus leaves the street.
+- A real swing takes the drawn guard 48 → 46. The guard's blows over 1,411 ticks (23.5 s) bring you from 130 to 30. Séamus offers the yield by name, *Pay double (150 gold)* or *The cells.*, and holds while you talk.
 - *The cells.*: seven in the morning. You are at the town's centre (Dunmore has no keep). The stolen ring and the 40 gold taken in the town are gone (500 → 460), the fine is cleared, you are at half health (65) and Séamus is back on his beat. The favour stays −3 with three points owed.
-- A real swing at Séamus: he draws at once, with no talk; favour −6 and a fine of 75. Killed: favour −11, the fine 200, the gates shut and the Church notes it.
+- A real swing at Séamus: Séamus draws at once, with no talk; favour −6 and a fine of 75. Killed: favour −11, the fine 200, the gates shut and the Church notes it.
 - With the gates shut, Eilís draws on sight, with no halt.
-- The lord (Niamh) takes the 200 and the gates open. Eilís stands down and is back in the street, and in five seconds more nothing strikes you. On the old code (`--src`), she fought on and took 130 → 105 in those five seconds. These two checks are the suite's only failures there.
+- The lord (Niamh) takes the 200 and the gates open. Eilís stands down and is back in the street, and in five seconds more nothing strikes you. On the old code (`--src`), Eilís fought on and took 130 → 105 in those five seconds. These two checks are the suite's only failures there.
 - `crime1`, `crime2`, `crime3`, `crime5`, `guardsindoor` and `penance` pass. No page errors. Build tag s373.
 
 ### Needs eyes
-- The fight by feel: Séamus's blows took 100 health in 23.5 s while you stood, and the yield comes under 30%.
+- The fight by feel: the drawn guard's blows took 100 health in 23.5 s while you stood, and the yield comes under 30%.
 - After *Fight on.* the guard offers no second yield. The offer is made once a fight (`CR.yielded` resets only when no guard is drawn), so turning it down means fighting to a death, his or yours. That is as built in Session 157 and not changed here. If a second offer should come, lower down, that is Michael's call.
 - A stood-down guard sheathes in silence: the drawn figure is gone and he is back where he drew, as at a paid yield. A line for him would be new dialogue, so it is left to the quest writer.
