@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Ragdoll for defeated enemies — how a foe goes down (the look builder, Session 415, 2026-10-02, issue #102)
 Michael asked in the control room (1 Oct): "Is it possible to have ragdoll for defeated enemies? Having them snap to the ground sideways feels stiff." It is possible. The prototype builds three deaths on a Bandit, from the game's own body and ground. The game is unchanged. Rows A–C show each death at 0, .12, .25, .4, .7 and 1.6 s after the blow. Row D is where C leaves six different deaths.
 - **A. As today.** In one frame the figure turns 90° onto its side, is lifted .15 and darkened.
@@ -14,7 +16,8 @@ Either B or C keeps today's darkening and the loot on the body. C also leaves th
 
 Shot: [A / B / C filmstrips, and six deaths under C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/ragdoll-grid.png) (`docs/prototypes/ragdoll/grid.mjs`).
 
-## Answered
+Michael: **A ragdoll: every death different** (C). (2026-10-02)
+Done, Session 419 (the look builder): C as drawn. `ragdollFoe`/`ragdollStart`/`tickRagdolls` in `32-people.js`, one call from `killE` and `killZoneEnemy` for every people-bodied foe but the wraiths; wolves, spiders, bears and the box-built foes keep A. Fixed 1/60 steps, frozen once still (1.2–1.7 s in the test). `tests/ragdoll`, `docs/prototypes/ragdoll-ingame.png`.
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
 Session 402 put the jab on the third-person body, and its devlog left two look calls open. First, with an empty hand the body's hand is a mitten: a squashed ball with a thumb, which reads as a pale point at a distance. Second, the unarmed body walks and runs with its arms swinging. It only comes up to guard for the punch, while the first person always holds both fists up. All four rows are built from the game itself. The fist is patched into the bake at runtime, so the game is unchanged.
