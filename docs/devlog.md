@@ -10617,3 +10617,16 @@ CI's push run on Session 418's head (b989003) failed one suite of shard 1: `corp
 
 ### Needs eyes
 - Nothing in play. `dungeonexit` takes its gate from `PORTALS` the same way, but soon after arriving and with a `null` guard; it has not failed, and is left.
+
+## v80 — Session 423 — `duelrhythm` runs on fixed ticks (CI fix)
+CI's push run on Session 420's head (871258f) failed one suite of shard 7: `duelrhythm`, which Session 405 wrote and 408 extended, was stopped at the runner's 900 s for one suite. Every other suite of the shard passed. Session 417 had already seen it time out once with three browsers side by side and pass alone, so it was not a flake but a budget: the test drove its seven fights (five melee reactions, two arrows) by `requestAnimationFrame`, so every tick of the fight was a real frame of the whole scene drawn on software GL, each up to about a second on a loaded runner, and with the loop's `dt` capped at 0.05 a fight of four game seconds took at least 80 of them. Here, alone, the old version was still running after ten minutes when I stopped it.
+
+**What changed** (`tests/duelrhythm.test.mjs` only; the game is unchanged): a helper in the page, `_drive(step, max)`, holds off the browser's frames and `REN.render` and calls the game's own `loop` with its clock advanced 1/60 s a call, running the bot's step before each, as `tpswing`, `wardswift` and `herbparity` already do. The bot's logic, the reactions, the thresholds and the checks are as Session 408 left them; only the clock is fixed. One thing found on the way: the real loop's frame waiting when the drive ends carries a timestamp from before it, so setting `prevT` to the time then gave that frame a negative `dt` and the game clock ran back about eleven seconds between fights (the checks passed, all being relative to the yield, but it is wrong). `prevT` now goes to 0, and that frame is one capped tick of 0.05 s.
+
+### Verified (headless Chromium)
+- `duelrhythm` as committed: 10/10, 94 s alone. The game clock runs forward through all seven fights (yields at 1.0, 4.5, 7.9, 11.4, 14.7, 16.4, 19.8 s). The numbers are Session 408's: swinging in rhythm the next swing begins 0.217 s after the yielding blow and lands at 0.567; a 0, 0.15, 0.3 or 0.4 s reaction spares her (0.3 and 0.4 with one blow checked), 1 s murders her with the third swing begun at 0.783; an arrow loosed 0.1 s after she kneels is checked, one at 0.6 s is murder.
+- Three copies side by side: 161, 164 and 168 s, 10/10 each.
+- No page errors. Build tag s366.
+
+### Needs eyes
+- Nothing in play. Other suites that drive a fight by real frames (`duel`, `q7world`) have their own waits and have not timed out since Session 401; left as they are.
