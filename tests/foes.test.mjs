@@ -10,12 +10,12 @@ fs.mkdirSync('tests/out', { recursive: true });
 const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._F = {}; const out = {};
   ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Bandit Captain', 'Skeleton', 'Hollowed', 'Ghoul', 'Ash Wight', 'Wraith'].forEach((n, i) => { const x = px + fx * 30 + (i - 4) * 2, z = pz + fz * 30;
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; _F[n] = e; const r = e.limbs && e.limbs.person;
-    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, hat: r.g.hat, gear: r.g.gear, skel: !!r.g.skel, dead: !!r.g.dead, age: r.g.age, tris: r.tris, eyes: r.B.head.children.some(c => c.isMesh && c.material.isMeshBasicMaterial), ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, bar: +e.hpFg.position.y.toFixed(2) } : { person: false }; });
+    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, hat: r.g.hat, kitHelm: !!(r.g.eq && r.g.eq.armour && r.g.eq.armour.head), gear: r.g.gear, skel: !!r.g.skel, dead: !!r.g.dead, age: r.g.age, tris: r.tris, eyes: r.B.head.children.some(c => c.isMesh && c.material.isMeshBasicMaterial), ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, bar: +e.hpFg.position.y.toFixed(2) } : { person: false }; });
   const b2 = buildZoneEnemy(WORLD.scene, [], px + fx * 30, pz + fz * 30 + 3, 'Bandit', null); out.differ = b2.limbs.person.g.seed !== _F.Bandit.limbs.person.g.seed; b2.mesh.parent.remove(b2.mesh);
   return out; });
 const humans = ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate'];
 check('the seven human foes are people, dressed for what they are, each with its own material and its right shoulder as the striking arm',
-  humans.every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR && built[n].bar > 1.2) && built.Bandit.hat === 'hood' && built.Deserter.hat === 'helm' && /spear|kit/.test(built.Deserter.gear) && built.Pirate.hat === 'kerchief' && built.Highwayman.hat === 'brim',
+  humans.every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR && built[n].bar > 1.2) && built.Bandit.hat === 'hood' && built.Deserter.hat === 'none' && built.Deserter.kitHelm && /spear|kit/.test(built.Deserter.gear) && built.Pirate.hat === 'kerchief' && built.Highwayman.hat === 'brim',
   Object.fromEntries(humans.map(n => [n, built[n]])));
 check('two bandits met in different places are different people', built.differ, { differ: built.differ });
 // the captain (Session 175): a person with the shield on its left shoulder; the guard is held while it is up, and the
@@ -27,8 +27,8 @@ const cap = await page.evaluate(() => { const e = _F['Bandit Captain'], L = e.li
 check('the captain is a person with a shield on the left arm, held across the body while the guard is up, lowered when it breaks, raised again', cap.person && cap.onArm && cap.up.x === -1.15 && cap.up.z === -.5 && cap.up.el === -1.1 && cap.down.x !== -1.15 && cap.again === -1.15 && cap.shieldUp, cap);
 check('the skeleton (Session 172) is bones on the people\'s skeleton: no flesh or clothes, burning eyes, a spear or (S226) a rusted sword from the weapon kit', built.Skeleton.person && built.Skeleton.skel && built.Skeleton.eyes && /spear|kit/.test(built.Skeleton.gear) && built.Skeleton.tris > 1500 && built.Skeleton.tris < 6000 && built.Skeleton.ownMat, built.Skeleton);
 
-check('the risen dead (Session 173) are people gone grey and stooped in rags, eyes lit; the wight in a helm with a spear; the wraith (Session 176) robed and hooded',
-  ['Hollowed', 'Ghoul', 'Ash Wight', 'Wraith'].every(n => built[n].person && built[n].dead && built[n].age === 'elder' && built[n].eyes && built[n].ownMat) && built['Ash Wight'].hat === 'helm' && built['Ash Wight'].gear === 'spear' && built.Wraith.hat === 'hood',
+check('the risen dead (Session 173) are people gone grey and stooped in rags, eyes lit; the wight in a helm (the kit’s since Session 403, Michael’s B on #94) with a spear; the wraith (Session 176) robed and hooded',
+  ['Hollowed', 'Ghoul', 'Ash Wight', 'Wraith'].every(n => built[n].person && built[n].dead && built[n].age === 'elder' && built[n].eyes && built[n].ownMat) && built['Ash Wight'].hat === 'none' && built['Ash Wight'].kitHelm && built['Ash Wight'].gear === 'spear' && built.Wraith.hat === 'hood',
   { Hollowed: built.Hollowed, Ghoul: built.Ghoul, 'Ash Wight': built['Ash Wight'], Wraith: built.Wraith });
 
 // the wraith glides: see-through, no shadow, a little off the ground, and however it moves it takes no steps

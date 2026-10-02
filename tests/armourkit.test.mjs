@@ -50,6 +50,14 @@ check('under the armour the tunic and breeches are the look\'s own cloth', body.
 check('still one skinned mesh on the people\'s bones', body.out.every(o => o.bones === body.out[0].bones && o.bones >= 16), body.out.map(o => o.bones));
 check('a Steel cuirass alone over the breeches dresses the chest', body.mixed.metal > 200 && body.mixed.tris > body.today, body.mixed);
 
+// S398 — under a kit helm the full styles are cut to the skull (an afro stood out through a closed helm, Session 397)
+const hair = await page.evaluate(() => { const keep = {}; for (const k in EQ) keep[k] = EQ[k]; const A = (t, n) => makeItem(t, ARMOR_TYPES.find(a => a.type === n), null, true);
+  const tris = st => { const R = tpBuild({ style: st }); const n = R.rig.tris; tpDispose(R); return n; };
+  for (const k of Object.keys(EQ)) EQ[k] = null; const bare = { afro: tris('afro'), curly: tris('curly'), shorn: tris('bald'), long: tris('long') };
+  EQ.head = A(4, 'Helmet'); const helm = { afro: tris('afro'), curly: tris('curly'), shorn: tris('bald'), long: tris('long') };
+  for (const k in keep) EQ[k] = keep[k]; return { bare, helm }; });
+check('under a Steel helm an afro and curls are cut to the skull; long hair still hangs below it', hair.bare.afro > hair.bare.shorn && hair.helm.afro === hair.helm.shorn && hair.helm.curly === hair.helm.shorn && hair.helm.long > hair.helm.shorn, hair);
+
 // in play: tpUpdate rebuilds when a piece goes on, and the rig walks with it on
 const play = await page.evaluate(() => { thirdPerson = true; const A = (t, n) => makeItem(t, ARMOR_TYPES.find(a => a.type === n), null, true);
   const st = { moving: false, sprinting: false, camY: 1.6, now: performance.now() };

@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
+Session 402 put the jab on the third-person body, and its devlog left two look calls open. First, with an empty hand the body's hand is a mitten: a squashed ball with a thumb, which reads as a pale point at a distance. Second, the unarmed body walks and runs with its arms swinging. It only comes up to guard for the punch, while the first person always holds both fists up. All four rows are built from the game itself. The fist is patched into the bake at runtime, so the game is unchanged.
+- **A. As today.** A mitten hand, the arms swinging at rest and on the move.
+- **B. A folded fist on each empty hand** (a squarer palm, four knuckles, the curled fingers, the thumb across), the arms as today. +1,028 triangles on the player's body (4,210 → 5,238); nobody else changes.
+- **C.** *(recommended)* **B, with the fists carried low and ready**: forearms forward at the belt, standing and on the move, dropping to the swinging arms while sprinting. It answers the first person's raised fists without the body looking braced for a fight in the street, and the jab still starts from its own guard.
+- **D. B, with the jab's own guard carried** (the right fist by the chin, the left by the face), standing and on the move. It matches the first person exactly, but it reads as squaring up to everyone in town.
+
+Shot: [A / B / C / D, standing, on the move, the hand close, ahead-right](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/unarmed-grid.png) (`docs/prototypes/unarmed/grid.mjs`). Unarmed only: a weapon, a bow, a shield or a torch keeps today's poses. The townsfolk's hands are not touched.
+
 ## Answered
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
@@ -138,6 +147,32 @@ Recommendation: **A.** One key, one Opus session with a test; a trackpad still m
 Michael: **A** — add R as a second lock key. (1 Oct 2026, via the control room; issue #89)
 Done, Session 389: R toggles the lock through the game's own keydown, same rules as the middle button; `tests/lockon`.
 
+### Should the helmed foes wear the armour kit too? (the look builder, Session 397, 2026-10-01, issue #94)
+Since Sessions 384 and 395 the player and the town guards wear the armour kit: lamellar, a muscle cuirass, mail or plate by material. The foes who wear armour today still have the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a guard in mail, a bandit captain now looks like a man in a hat. A prototype (look builder, Session 397) dresses all four two ways:
+
+- **A. Today.** The bowl helm over cloth. No cost.
+- **B.** *(recommended)* **Each in the kit as his story dresses him**, a fixed piece list per foe: the Deserter in his old army's Iron mail and nasal helm; the Bandit Captain in looted pieces (a Wooden lamellar cuirass and vambraces under an Iron helm); the Shieldbearer in a Steel plate cuirass and helm over Iron mail sleeves and greaves; the Ash Wight in Iron mail rusted nearly black, as the dead's blades are. The unhelmed foes (bandits, archers, highwaymen, cultists, the risen dead) stay in cloth.
+- **C. B, but the metal by the foe's level**: a level-20 Shieldbearer in Mithril plate, a low one in Iron. It ties what a foe wears to what it can drop, and needs a rule for which levels map to which material (it touches loot, the systems builder's).
+
+Cost: these foes are 4,922–5,844 triangles today and 8,822–10,568 in B (the distant copy 2,150–2,619 today, 3,755–5,271 in B). A camp has one captain; a dungeon floor a few Shieldbearers. Shot: [A / B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/foearmour-grid.png). The script is `docs/prototypes/foearmour/shots.mjs`. Found on the way: a curly-haired Shieldbearer's hair poked through the closed helm; that was the kit's bug for the player too, and Session 398 fixed it (the full styles are cut to the skull under any kit helm), so it is not part of this question.
+
+Michael: **B** (1 Oct 2026, via the control room; recorded by the producer on issue #94).
+
+Built in Session 403 (look builder): B as in the prototype. `FOE_DRESS` carries each foe's `kit` (and the Ash Wight's rust) and `buildFoe` dresses it; 9,008–10,410 triangles a foe, 3,684–5,082 at a distance. `docs/prototypes/foearmour-ingame.png`, `tests/foearmour.test.mjs`.
+
+
+### Should the town guards wear the armour kit too? (the look builder, Session 385, 2026-10-01, issue #87)
+Session 384 put your B on #76 into the game: the player's armour is now lamellar, a muscle cuirass, mail or plate by material. The town guards still wear the people's steel bowl helm over a coloured coat, so a guard now looks less armoured than a player in Wooden armour. A prototype (look builder, Session 385) dresses four guards (a man, a woman, an Old Blood man from behind, and a captain) three ways.
+- **A. Today.** The bowl helm and the coat. No cost.
+- **B. Every guard in Iron mail** with the nasal helm.
+- **C.** *(recommended)* **By the town's wealth**, the same rule as the townsfolk's clothes (your A on Session 246). In a poor town the guards wear Wooden lamellar, in a middling one Iron mail, and the captain of a keep wears Steel plate. A town's guards would tell you what the place can afford.
+
+Cost: a guard is 5,080–5,572 triangles today, 9,992–10,484 in B and 8,910–11,626 in C (lamellar is the heaviest, mostly its lacing, which can be thinned). The distant copy past 17 units is 2,122–2,440 today, 4,640–4,958 in B and 3,737–6,308 in C. A town has a handful of guards, so this adds roughly 20–40k triangles in a walled town. Shot: [today / B / C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/guardarmour-grid.png). PR #82.
+
+Michael: **C** — by the town's wealth. (1 Oct 2026, via the control room)
+
+Built in Session 395 (look builder): `personGenome` dresses a guard of a place by its prosperity — Wooden lamellar under 40, Iron mail at 40 and over, Steel plate for a captain — with the kit's helm and the guard's own boots. `docs/prototypes/guardarmour-ingame.png`, `tests/guardarmour.test.mjs`.
+
 ### The worn armour — what each material looks like on the body (the concept artist, 2026-09-30, issue #76)
 Today all ten materials have the same armour on the body and only the colour changes: a smooth shell over the tunic, a ball on each shoulder, a ring at the belt, a cylinder at each knee and forearm, and a bowl helm with a brim. `docs/prototypes/armour/` (auto/concept) makes the armour from the people's shape kit, baked into the body so it bends and walks with them. It has four builds. **Wooden** is laced lamellar with a laced skull-cap and a leather curtain at the neck. **Bronze** is a muscle cuirass with a skirt of leather strips and a crested helm open at the face. **Iron** is a mail shirt to mid-thigh with a conical helm, a nose guard and a mail curtain. **Steel** is plate: a ridged breastplate, hooped plates below it, thigh plates, shoulder guards of three plates each, elbow and knee cops, plated shins and feet, and a closed rounded helm with an eye slit. Under the armour the tunic and breeches keep the character's own cloth colour.
 - **A.** The four builds. Mithril to Cosmic wear the Steel plate in their own colour (the weapon kit's rule).
@@ -201,6 +236,10 @@ Shots (rest, jab, guard): [today, nothing](https://raw.githubusercontent.com/mbu
 
 Found on the way, for the systems builder: a punch never lands in play. The swing timer and the deferred strike only advance while a weapon view model exists (`if(vmSword)` in the loop, `js/90-main.js`). With an empty hand the swing sticks at 0.429 s and the strike stays pending, so a dummy takes no damage. The third-person arm also freezes mid-swing. Any of A–C gives the empty hand a view model and so hides this. The root fix is to run the timer outside that block, which is not the look builder's code. `tests/unequip.test.mjs` resolves the strike directly, so it never saw this. Filed as issue #81.
 
+Michael: **A** — Can we make sure the hands look a bit more like actual hands/fists? Also, in the third example image, the wrists don't appear anchored to the arms, and look like they've snapped off. (1 Oct 2026, via the control room)
+
+Built in Session 396 (look builder): A, with a new fist (four fingers folded in two joints, the knuckles, the thumb across the first two fingers, a tapered wrist) built in one mesh with its forearm to the elbow, so the wrist cannot leave the arm; the arm bridge runs from the shoulder to that elbow. `docs/prototypes/fists-ingame.png`, `tests/fists.test.mjs`.
+
 ### What your body wears with the armour slots empty — third person (the look builder, Session 381, 2026-10-01, issue #83)
 Since Session 174 every equipment slot can be emptied, but nothing changes on your body. With the chest, legs and feet slots empty, the third-person figure still wears the tunic, breeches and boots you coloured in the creator, so taking off the Tattered Tunic changes nothing you can see. A prototype (Session 381, look builder) dresses the same figure three ways, as a man and as a woman, from the front and from behind:
 
@@ -209,6 +248,10 @@ Since Session 174 every equipment slot can be emptied, but nothing changes on yo
 - **C.** **B, but the shirt has long linen sleeves.** It is more covered and reads less clearly as undressed.
 
 Shots: [today / B / C, a man and a woman](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barebody-grid.png). The script is `docs/prototypes/barebody/shots.mjs`. In the prototype the feet are only boots in skin colour; the build would give them a foot of their own. The shirt keeps the tunic's cut for the shot, and the build would make it plainer and shorter. Undressing in the street is a register question too: whether townsfolk should remark on it is the quest writer's, not part of this.
+
+Michael: **B** — Underclothes. (1 Oct 2026, via the control room)
+
+Built in Session 394 (look builder): `tpBuild` dresses an empty chest in a linen shirt cut at the shoulder (bare arms, no trim, a shorter hem), empty legs in linen braies and empty feet in bare feet with a foot of their own; first person shows a bare arm. `docs/prototypes/underclothes-ingame.png`, `tests/underclothes.test.mjs`.
 
 ### A one-room shop's strongbox by day — seen always, never, or when the keeper looks away? (systems builder, Session 365, issue #73)
 A shop with a back room keeps its strongbox behind a shut door, and the keeper never sees it there. A one-room shop keeps the box in the shop itself. A keeper indoors sees you within six units with a clear line, and walks the floor all day. `tests/shopsight` measured 13 one-room shops in four towns at 13h, with ten minutes of the keeper's own walk each, and they split in two. Eight are seen 93–100% of the time. Five are seen 0–10%: Dunmore's three Goods shops, Odhrán's Stores and Mira's Apothecary, where the box stands 5.5–6.6 units from the counter.
