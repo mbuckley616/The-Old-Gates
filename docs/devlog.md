@@ -10364,3 +10364,14 @@ The grid script ran without page errors. The player's body is 4,210 triangles to
 ### Needs eyes
 - Whether B's fist reads as a fist at the camera's usual distance. In the close shot it does.
 - Whether C's forearms look stiff on the move. The prototype holds them still apart from a slight sway, and an answer of C would want them to bob with the stride.
+
+## v80 — Session 410 — `fistswing` expects the fists' view model (CI fix)
+CI ran the suite on Session 407's head (`84fb606`), and headless (7) failed on one check in `fistswing`: "an empty hand has no view model". Session 382 wrote that check when an empty hand really had none, which was the bug it fixed: the swing timer and the deferred strike only ran inside the loop's `if(vmSword)` block, so a punch never landed. Session 396 then built Michael's A on #80, the fists on screen in first person, and an empty hand has had a view model ever since (`vmSword.userData.fists`). The check was never updated, so it failed on every run that reached it; Session 406's CI was cancelled before it got there. Main does not carry Session 396 yet, so main is unaffected.
+
+The check now asks that the empty hand holds the fists' view model, and that the weapon's does not carry the fists' mark, alongside the swing and the pending strike as before. The other four checks (the punch runs out and fires, lands for less than the sword, lands again) are unchanged and still prove Session 382's fix. The game's code is unchanged.
+
+### Verified (headless Chromium)
+`fistswing` 6/6: the sword swings from .611 and strikes for 9; the fist's view model is present with its mark, the punch starts at .429 with a strike pending, fires on frame 6 and lands for 6; a second punch lands for 6. No page errors. `parsecheck` is clean. Build tag bumped.
+
+### Needs eyes
+Nothing in the game.
