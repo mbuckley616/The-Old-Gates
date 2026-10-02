@@ -159,7 +159,7 @@ var WORLD=(()=>{
   function ridged(x,z,scale,seed){const v=fbm(x,z,scale,seed,3);return 1-Math.abs(v*2-1);}
   // Land without water carving — what pads and road beds are measured from.
   function landH(x,z){
-    const amp=regionScalar(x,z,'amp');
+    const amp=RV.routing?0:regionScalar(x,z,'amp'); /* S433 — the routing reads the bare land: no cell's regions, whatever is loaded, so the rivers are the same from any boot */
     const cont=(fbm(x,z,420,SEED+1,3)-.5)*2*11+7;
     const hills=(fbm(x,z,110,SEED+2,3)-.5)*2*amp;
     const rg=(ridged(x,z,60,SEED+7)-.5)*amp*.55;         // ridgelines
@@ -196,7 +196,7 @@ var WORLD=(()=>{
     let h=rawH(x,z);
     const arr=stampsNear(x,z);
     for(let i=0;i<arr.length;i++){
-      const s=arr[i];
+      const s=arr[i];if(s.noFlat)continue; /* S433 — a stamp that only clears the scatter (a river quay's bank) */
       const dx=x-s.x,dz=z-s.z;
       const R=s.r+s.blend;
       if(dx>R||dx<-R||dz>R||dz<-R)continue;
@@ -1134,7 +1134,7 @@ var WORLD=(()=>{
   function seaAt(x,z){
     const [i,j]=cellOf(x,z);const c=getCell(i,j);
     let sea=seaBare(x,z,c.islets);
-    if(sea>0){const arr=stampsNear(x,z);for(let k=0;k<arr.length;k++){const st=arr[k];if(st.kind!=='site')continue;const d=Math.hypot(x-st.x,z-st.z);
+    if(sea>0&&!RV.routing){const arr=stampsNear(x,z);for(let k=0;k<arr.length;k++){const st=arr[k];if(st.kind!=='site')continue;const d=Math.hypot(x-st.x,z-st.z);
       if(st.port){const R=st.r*.95;if(d<R)sea*=sstep(st.r*.7,R,d);} // ports: the water line sits at the quay
       else{const R=st.r+st.blend;if(d<R)sea*=sstep(st.r,R,d);}}}
     return sea;
@@ -1248,6 +1248,12 @@ var WORLD=(()=>{
       const vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1;let t=((x-a[0])*vx+(z-a[1])*vz)/l2;t=t<0?0:t>1?1:t;
       const d=Math.hypot(x-(a[0]+vx*t),z-(a[1]+vz*t));if(d<best){best=d;bw=WS[i]*(1-t)+WS[i+1]*t;}}
     out[0]=best;out[1]=bw;}
+  function rvNearest(rv,x,z){ // the nearest point of a piece's centreline, its half-width and the flow's direction there (not hot: allocates)
+    const P=rv.pts,WS=rv.ws;let best=1e9,out=null;
+    for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1];const vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1;let t=((x-a[0])*vx+(z-a[1])*vz)/l2;t=t<0?0:t>1?1:t;
+      const qx=a[0]+vx*t,qz=a[1]+vz*t;const d=Math.hypot(x-qx,z-qz);if(d<best){best=d;const L=Math.sqrt(l2);out={d,w:WS[i]*(1-t)+WS[i+1]*t,px:qx,pz:qz,tx:vx/L,tz:vz/L};}}
+    return out||{d:1e9,w:0,px:x,pz:z,tx:1,tz:0};
+  }
   function rvChaikin(pts,n){let p=pts;for(let k=0;k<n;k++){if(p.length<3)return p;const o=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];o.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25]);o.push([a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}o.push(p[p.length-1]);p=o;}return p;}
   function routeWorld(){
     if(RV.ready||RV.routing)return;RV.routing=true;const t0=performance.now();
@@ -1332,10 +1338,16 @@ var WORLD=(()=>{
     // ── the carve grid: every piece and lake of every cell, the home's authored ones too ──
     RVG.clear();
     for(const c of cells){for(const rv of c.rivers){if(!rv.ws)rv.ws=rv.pts.map(()=>rv.w);rvgRiver(rv);}for(const lk of c.lakes)rvgLake(lk);}
+    // the bank towns (S433): a settlement within a short walk of navigable water keeps the nearest point of the channel,
+    // the way to it and the flow's direction there, and the settlement builder puts a quay on that bank
+    const navPieces=[];for(const c of cells)for(const rv of c.rivers){if(!rv.nav||rv.arm)continue;let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9;for(const p of rv.pts){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<z0)z0=p[1];if(p[1]>z1)z1=p[1];}navPieces.push({rv,bb:[x0,z0,x1,z1]});}
+    let banks=0;for(const t of sites){t.bank=null;if(t.kind==='port'||!['city','town','village','garrison','outpost'].includes(t.kind))continue;const R=t.pad+220;let best=null;
+      for(const q of navPieces){if(t.x<q.bb[0]-R||t.x>q.bb[2]+R||t.z<q.bb[1]-R||t.z>q.bb[3]+R)continue;const nr=rvNearest(q.rv,t.x,t.z);if(nr.w*2<RV_NAV||nr.d>=R||nr.d-nr.w<t.pad*.8)continue;if(!best||nr.d<best.d)best=nr;}
+      if(best){const dx=best.px-t.x,dz=best.pz-t.z,L=Math.hypot(dx,dz)||1;t.bank={dx:dx/L,dz:dz/L,tx:best.tx,tz:best.tz,w:best.w,d:best.d};banks++;}}
     // a navigable reach: the ship can enter from the sea; the sailable length is the sum of reaches sixteen wide or more
     let navLen=0,navMouths=0;for(const r of reaches){if(r.arm)continue;const w=r.ws[r.ws.length-1];if(w>=RV_NAV){navLen+=r.pts.reduce((s,p,i)=>i?s+Math.hypot(p[0]-r.pts[i-1][0],p[1]-r.pts[i-1][1]):0,0);if(r.end==='sea')navMouths++;}}
     RV.reaches=reaches;RV.great=great;RV.lakes=lakes;RV.N=N;RV.STEP=STEP;
-    RV.stats={ms:Math.round(performance.now()-t0),latticeMs:Math.round(tLat),nodes:N*N,land:Array.from(sea).reduce((s,v)=>s+(v?0:1),0),reaches:reaches.length,mouths:mouths.length,sinks:reaches.filter(r=>r.end==='sink').length,joins:reaches.filter(r=>r.end==='join').length,toLake:reaches.filter(r=>r.end==='lake').length,great:great.length,deltas:great.filter(g=>g.delta&&g.delta.length).length,lakes:lakes.length,navMouths,navLen:Math.round(navLen),pieces,sites:sites.length};
+    RV.stats={ms:Math.round(performance.now()-t0),latticeMs:Math.round(tLat),nodes:N*N,land:Array.from(sea).reduce((s,v)=>s+(v?0:1),0),reaches:reaches.length,mouths:mouths.length,sinks:reaches.filter(r=>r.end==='sink').length,joins:reaches.filter(r=>r.end==='join').length,toLake:reaches.filter(r=>r.end==='lake').length,great:great.length,deltas:great.filter(g=>g.delta&&g.delta.length).length,lakes:lakes.length,navMouths,navLen:Math.round(navLen),pieces,sites:sites.length,banks};
     RV.ready=true;RV.routing=false;
   }
 
@@ -1368,7 +1380,10 @@ var WORLD=(()=>{
            // ports: the shore shelf that meets the quay, stamped now so the chunks are built with it
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head
-             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});},
+             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});
+           // S433 — a bank town's quay spot: the water line below the pad, found now; a stamp there clears the trees and rocks off the bank without flattening it
+           c.sites.forEach(t=>{if(!t.bank||t.kind==='port')return;const B=t.bank;let x=t.x+B.dx*t.pad,z=t.z+B.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;let wx=x,wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx;wz+=B.dz;n++;}if(Math.hypot(wx-x,wz-z)>30)return;
+             t.quaySpot={x:wx,z:wz};const qs=addStamp({id:'rquay_'+t.id,kind:'door',noFlat:true,x:wx-B.dx*5,z:wz-B.dz*5,r:17,blend:2,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(qs);});},
       ()=>{c.roadDefs.forEach(def=>{const rd=buildRoad(def);if(rd){rd.cell=k;L.roads.push(rd);}});try{track(()=>buildBridges(c,k,L));}catch(e){console.warn('bridges',e);}},
       ()=>{solStart=STATIC_SOL.length;c.doors.forEach(e=>{const w=placeDoor(e,k);if(w)L.doorSeeds.push(e.seed);});c.doors.forEach(e=>{if(e.kind==='fort_door'&&dungeonWorldPos[e.seed])addFortSpur(e,k);});L.stamps.push(...STAMPS.filter(s=>s.cell===k&&s.kind==='door'));try{L.cleared=clearScatterUnder(L.stamps);}catch(e){console.warn('clear',e);}},
       ()=>track(()=>buildImpostorsFor(c)),
@@ -3451,7 +3466,7 @@ var WORLD=(()=>{
       let light=null;if(lit){light=regLight(0xffb050,0,16,site.id);light.position.set(hx,hy+.05,hz);}
       sol.push({cx:x,cz:z,rx:.12,rz:.12});S.lamps.push({glass,light});};
     if(plan.rows>0&&(!TST||lampsLit(site))&&!burnedV&&!abandonedV){[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>lampPost(cx+sx*9,cz+sz*9,true,cx,cz));}
-    if(site.kind==='port'){buildHarbour(S,site,r);spawnGulls(S,site);}
+    if(site.kind==='port'){buildHarbour(S,site,r);spawnGulls(S,site);}else if(site.bank){try{buildRiverQuay(S,site,r);}catch(e){console.warn('river quay',e);}} // S433 — a quay on a bank town
     if(plan.rows>0)streets.slice(0,3).forEach(rd=>{const q=rd.pts.find(p=>Math.abs(Math.hypot(p.x-cx,p.z-cz)-(pad-14))<5);if(q){const nx=-(cz-q.z),nz=(cx-q.x);const L2=Math.hypot(nx,nz)||1;lampPost(q.x+nx/L2*3.2,q.z+nz/L2*3.2,true,q.x,q.z);}});
     // Plaza: well + stalls; cairn already stands at the centre.
     if(plan.rows>0){
@@ -4977,6 +4992,40 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const def=makeDef(site,S.reg,r,'Harbourmaster',pick(r,(NAMES[S.reg]||NAMES.irish).m),{x:hx,z:hz,bCol:0x2a3a5a,sCol:0xc09070,topics:[...ferryTopics(site),cargoTopic(site),{label:'What comes through here?',response:'Salt fish, timber, wool, and trouble. Mostly fish.'}]});
     def.role='Harbourmaster';
     const hn=spawnNPC(def,ang+Math.PI,true);hn.sched={type:'harbour',door:{x:hx,z:hz},plaza:{x:site.x,z:site.z}};S.npcs.push(hn); // v80 S235 — on the quay by day (was 'keeper': hidden 8–18 as if behind a counter)
+  }
+
+  // S433 — a quay on a river bank (Michael's C on #112, the towns on the banks): a settlement within a short walk of
+  // navigable water gets a stone quay along the bank on the harbour's kit, narrower (5 across, 20 long), its outer face
+  // a little over the water; bollards on the water side, a boat or two moored to it, crates and a net on the land
+  // side, a lantern at one end. Walkable as four short platforms along it (the platforms are axis-aligned boxes; a
+  // quay at the river's angle would float the player at a long box's corners).
+  function buildRiverQuay(S,site,r){
+    const B=site.bank;if(!B)return;const {group,sol}=S;
+    const QW=5,len=20;
+    let wx,wz;if(site.quaySpot){wx=site.quaySpot.x;wz=site.quaySpot.z;}else{             // the water line below the pad (found at the cell's load, with the scatter stamp; else now)
+      let x=site.x+B.dx*site.pad,z=site.z+B.dz*site.pad,n=0;
+      while(worldH(x,z)>QY+.2&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;
+      wx=x;wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx*1;wz+=B.dz*1;n++;}
+      if(Math.hypot(wx-x,wz-z)>30)return;}                                               // a bank too flat to quay
+    const mx=wx-B.dx*(QW/2-1.2),mz=wz-B.dz*(QW/2-1.2);const ax=B.tx,az=B.tz;const ang=Math.atan2(ax,az);
+    const QY=Math.max(1.1,Math.min(3.0,worldH(mx-B.dx*4,mz-B.dz*4)+.3));             // the deck at the bank's own height (1.1 to 3.0): a high bank gets a high quay, the kit's body reaches 3.2 below it
+    site.quayY=QY;
+    const rq=pRng(pHash(site.id+'|rquay'));{const lo=mergeParts([{geo:new THREE.BoxGeometry(QW,3.2,len),color:new THREE.Color(0x7a746a),y:-1.6,jitter:0},{geo:new THREE.BoxGeometry(QW+.4,.2,len+.4),color:new THREE.Color(0x8a857a),jitter:0}]);
+      for(const [geo,lod] of [[quayGeoHi(len,QW,QY-SEA_Y,rq),'hi'],[lo,'lo']]){const q=new THREE.Mesh(geo,SETTLE_MAT);q.position.set(mx,QY,mz);q.rotation.y=ang;q.receiveShadow=true;q.castShadow=lod==='hi';q.userData.lod=lod;q.userData.quay=true;q.userData.river=true;group.add(q);}}
+    for(let k=0;k<4;k++){const t=-len/2+len*(k+.5)/4;const cx=mx+ax*t,cz=mz+az*t;const ex=Math.abs(ax)*2.5+Math.abs(az)*QW/2,ez=Math.abs(az)*2.5+Math.abs(ax)*QW/2;
+      ZONES.world.platforms.push({x0:cx-ex,x1:cx+ex,z0:cz-ez,z1:cz+ez,y:QY,site:site.id,river:true});}
+    const iron=new THREE.MeshLambertMaterial({color:0x2e2c2a}),bollard=SK.lathe([[.001,0],[.2,0],[.2,.07],[.13,.14],[.11,.42],[.16,.55],[.17,.63],[.1,.7],[.001,.72]],10);
+    for(let t=-len/2+2.5;t<len/2;t+=5){const bx=mx+ax*t+B.dx*(QW/2-.5),bz=mz+az*t+B.dz*(QW/2-.5);const b=new THREE.Mesh(bollard,iron);b.position.set(bx,QY+.08,bz);group.add(b);}
+    const lampX=mx+ax*(len/2-1.2)-B.dx*(QW/2-.6),lampZ=mz+az*(len/2-1.2)-B.dz*(QW/2-.6);const post=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,3.4,6),new THREE.MeshLambertMaterial({color:0x2a2622}));post.position.set(lampX,QY+1.7,lampZ);group.add(post);
+    const glass=new THREE.Group();const pane=new THREE.Mesh(new THREE.BoxGeometry(.24,.3,.24),new THREE.MeshBasicMaterial({color:0xffc860,transparent:true,opacity:.6}));glass.add(pane);glass.position.set(lampX,QY+3.2,lampZ);group.add(glass);
+    const hl=regLight(0xffb050,0,20,site.id);hl.position.copy(glass.position);S.lamps.push({glass,light:hl});
+    const nb=1+Math.floor(r()*2);S.boats=S.boats||[];
+    for(let k=0;k<nb;k++){const t=-len/2+5+k*9;const bx=mx+ax*t+B.dx*(QW/2+2.8),bz=mz+az*t+B.dz*(QW/2+2.8);
+      const bm=new THREE.Mesh(boatBake(Math.floor(r()*4)).geo,SHIP_MAT);bm.position.set(bx,SEA_Y+.05,bz);bm.rotation.y=ang+(r()-.5)*.2;bm.castShadow=true;group.add(bm);S.boats.push(bm);}
+    for(let k=0;k<3;k++){const t=-len/2+3+r()*(len-8);const bx=mx+ax*t-B.dx*(QW/2-1.1),bz=mz+az*t-B.dz*(QW/2-1.1);
+      if(r()<.6){const cr=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),new THREE.MeshLambertMaterial({color:0x7a5a28}));cr.position.set(bx,QY+.5,bz);cr.rotation.y=r();group.add(cr);}
+      else{const net=new THREE.Mesh(netHeapGeo(k),SETTLE_MAT);net.position.set(bx,QY+.1,bz);group.add(net);}}
+    site.quayAt={x:mx,z:mz,ang,len};
   }
 
   // ═══ SHIPS & SWIMMING (Session C) ════════════════════════════════════
