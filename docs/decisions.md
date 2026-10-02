@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Places that share a name (the systems builder, 2026-10-02, DECISION #110)
+The world names its places from each culture's bank: ten first halves and ten second halves, a hundred names at most, drawn at random for every village, town, city, port and outpost. There are 609 of those in the world and only 366 names among them, so 396 places share a name with another place, 59 of them with a place in the same province. Of the 110 ports, 30 share a name, and six harbourmasters offer *Passage to* a port with their own harbour's name (two *Woushstouir*s in the Wiabrou Realm, two *Marnfouey*s, *Godaey*, *Inismore*). A quest, a coach board or a rumour that names one of them can mean either. Home's hand-placed towns (Dunmore, Portclare and the rest) are untouched in every option.
+
+Renaming changes the names of places in every existing save. The saves keep places by id, so nothing breaks; a journal line already written keeps the old name.
+
+- **A. One name per place, world-wide** *(recommended)*: generation draws without repeats, and a culture whose hundred names run out builds longer ones from the same sounds. 243 places get a new name, once (609 less the 366 names kept). As Session 172 did for shops.
+- **B. One name per nation**: repeats allowed only across a border, so fewer places renamed than A. Two nations could still share a *Beaumont*.
+- **C. Keep the names, say which one**: where a name repeats, the ferry, the coach board and the map add the province (*Woushstouir, Wiabrou Realm*). Nothing renamed, but two ports in one province still read the same.
+- **D. Leave it.**
+
 ## Answered
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
