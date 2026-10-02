@@ -195,3 +195,45 @@ Build s342 is main at `7b99266`, the first build since Session 379 cut `index.ht
 - Session 379 left the six `docs/prototypes/*/shoot.mjs` reading an inline script that is gone. No backlog line carries that. If anyone means to run them again, it wants one.
 
 No proposals this run. Both items are bugs. The first needs one line in `duelStart` (as the guard's draw has it) and a test that ticks her. The second needs the amble's bounds to stop at the counter, or the walk to test furniture.
+
+## 2026-10-02 — The factor's trade from Portclare to the Compact, a ship bought at five quays, and a Bandit fought bare-handed in the street (build s360)
+
+Build s360 is main at `311d9a8`. The review covers every devlog entry after last run's Session 379: 380–410. Last run fought the yard and walked the keepers; this one played what Sessions 390, 391 and 399 added at sea, the factor's cargo, as a player trying to make money from it, and then fought with fists (Sessions 382, 394, 396, 402). Six boots, no page errors in any of them. `npm install` exits 0 and `export` passed 1/1.
+
+**What I did.** A new character reaches the world with 0 gold, so I gave her 1,500 and recorded every price paid from there. At Portclare at 11h I bought a ship from the shipwright Lonán by his own dialogue (*Buy a ship (400 gold)*: the *Grey Gull*) and went to the harbourmaster Loïc's *Cargo — the factor's prices*. I bought nine bales of wool (18, 19, 19, 20, 21, 22, 23, 24, 25: 191 in all), opened the map, travelled to Camuros, the nearest Compact port (11,347 units, 49 game hours, 0 gold), and sold them to the factor there for 34 down to 26 after the tithe: 263, 72 clear. I did the same with six bundles of hides (141 bought, 216 sold). Then I bought a ship at ten Gatelands quays in turn and asked each factor whether she was in his harbour. Last, at Carrigshane, where she is, I filled the hold with five bundles of hides, travelled to Aurenne by the map, paid the shipwright there to fetch her, and sold from the hold. For the fists I took off the club, the tunic, the breeches and the boots on the road out of the home province at noon and fought a Bandit (25 health, unlocked as a quest sets one down) with a bot that faced him and punched when the cooldown was down.
+
+**What was wrong.**
+
+1. *At Portclare the factor never sees your ship.* `shipHere` asks for the ship within 140 units of the town's middle. A ship bought at Portclare is moored 224 units from it (the harbourmaster stands 177 from the middle, 47 from her). So straight after the shipwright says *moored off the seaward end of the quay*, the factor's board says *The Grey Gull is not at this harbour; what you buy, you carry.* The shipwright then offers to fetch her to this harbour for 26 gold, though she has not moved. Paying it puts her 196 from the middle, still out of reach. At Portclare the hold can never be filled. The other nine quays I tried put her 127 from the middle and their boards read *hold: 0 of 40*. Portclare is the home province's port, the first quay a player meets. Steps: Portclare, buy a ship, then the harbourmaster's *Cargo*. Screenshot: `critic/2026-10-02-portclare-factor-ship-not-here.png`.
+2. *Crates on your back read "undefined" in the HUD.* The bag line under the health bars prints each of the last two items as `ico + ' ' + name` (`js/62-actions.js`, `updateHUD`). `cargoItem` gives a crate no `ico`, so it reads *undefined Bale of Wool* (in the same screenshot). The bag tooltip in `66-hub.js` builds its name the same way, so I expect it there too, though I did not open the inventory.
+3. *An Aurenne passage costs more than its label.* `ferryTo` charges the Compact's ×1.3 on a passage from an Aurenne port, but `ferryTopics` writes the label without it. At Camuros, *Passage to Grarhuey (17g, south-west)* took 22 gold. The label also caps at 120 where the charge caps at 150, though no five-nearest route I saw reached either cap.
+4. *The dialogue box still says "1–4 to choose".* Session 392 made keys 1–9 and 0 answer, but the hint under the box (`index.html`, `#dlg-hint`) is unchanged. The harbourmaster's list runs to ten.
+
+**A design finding, not a bug: the ship does not carry the trade.** Sessions 390–399 built the hold, the blockade's ×1.8 and black sails who take half of it. In play none of it has to be met.
+- *On your back.* A level-1 character carries 65, and up to 81 before she cannot move. A sloop holds 40. A factor sells to your back when your ship is away, the map's travel crosses the sea to any port you have been to for no gold, and a foreign factor buys from your back. Nine bales of wool made 72 clear with no ship at all.
+- *In the hold.* The shipwright's *Fetch* brings your ship round from anywhere, hold and all, for at most 150 (74 from Carrigshane to Camuros). Five bundles of hides went from Carrigshane to Camuros that way, never at sea, and sold for 216.
+With the hides that leaves 1 gold over the fetch, so the fetch only pays on silver or on a bigger hold. On your back it is free. A player who works this out never sails a cargo, so the pirates who take from the hold never meet one. A proposal follows.
+
+**What worked well.** The factor's board reads plainly: the four home goods, the abroad prices, the tithe and the hold in one paragraph. The rising price is visible as you click, at 4% a crate from 18 to 25. The Compact's tithe is named on every sale (*Sold a bundle of hides for 40 gold (the Compact's tithe, 4).*). The fists are right in first person. Block brings both up before the face, and the hands read as fists (screenshot `critic/2026-10-02-fists-block-dunmore-road.png`). The Bandit closed to one unit and died to nine punches, 2–3 a blow, while stamina ran 115 to 71. Every punch's strike fired, so issue #81 is gone in play. In third person with the slots empty the body wears the linen shirt and braies of Session 394 (screenshot `critic/2026-10-02-underclothes-third-person.png`), and a passing guard wears lamellar (Session 395).
+
+**Looks, not findings.**
+- At rest the first person's fists sit low in the corners showing the fingers' backs, and at a glance they read as cupped hands rather than fists. Raised in block they read at once. Session 396's *Michael may want them higher* stands.
+- The dead Bandit lies as a flat black figure in the third-person shot. If that is the dead's tint it reads as a hole in the ground at noon.
+- Port names repeat across the world. Of 110 ports, 14 names belong to two or three each (*Woushstouir* ×3, *Beaumont* ×3, *Inismore* ×2, *Tullyshane* ×2…), and a port named *Dunmore* (`c3_8_s5`) lies 8,000 units from the home province's Dunmore. A passage list or a log line naming *Inismore* doesn't say which. Some Gatelands island ports carry names out of the Irish register: *Biafaira*, *Fiandbaios*, *Dotriair*. That is the quest writer's ear, not mine.
+- In the Bandit fight he never landed a blow in 99 frames (PHP stayed 130 of 130). I did not run long enough to say whether that is the bot's speed or the Bandit's.
+
+**Needs eyes, reviewed.**
+- *S390, S391 the factor and the prices*: judged in part, above. The numbers do what the entries say, but the route they price can be run without the sea. Whether a crossing *by sail* pays I could not judge: I did not sail one. A straight line from Portclare to any Mark or Aurenne port crosses land, and a sloop's 7.5 a second makes the trip roughly 26 minutes of play, more than a headless run can drive. The board as one long paragraph reads well enough at ten goods. A panel would help at thirteen.
+- *S399 pirates take from the hold*: not met in play, for the reason above. I read the code only.
+- *S382, S396, S402 the punch*: judged in first person (it lands and the strike fires). The third-person jab I shot one frame of, too early to judge the arc.
+- *S394 underclothes*: judged in one shot. They read as linen, and the feet were too small to judge at that distance.
+- *S395, S403 armour on guards and foes*: one guard seen in lamellar on the home road. Frame time in a poor village was not measured.
+- *S387 keepers round the counter*: not replayed. `keeperwalk` covers it.
+- *S386 the duel at level 1*: not replayed.
+- *S389 R for lock-on, S392 the number keys*: R not pressed. The number keys work by the code; the hint lies (item 4).
+- *S380, S381, S384, S385, S397, S398, S407 (prototypes and the kit)*: nothing to play beyond the shots above.
+- *S383, S388, S401, S406, S410 (CI and tests)*: nothing to play.
+
+**Backlog notes** (not changed):
+- K's *Resume* step 4 and the offline copy are still open. Nothing in play bears on them.
+- The six `docs/prototypes/*/shoot.mjs` that read the old inline script (noted last run) still have no line.
