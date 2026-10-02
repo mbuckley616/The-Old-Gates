@@ -2,6 +2,8 @@
 // within six units, a ring of 3 units shows on the floor, and the ground blow lands for twice its ordinary blow, through
 // any block: out of the ring or mid-roll you take nothing. The master's 1.6× damage (Session 130) now reaches its blows.
 // The loop is paused (the inventory flag) and the slam driven at fixed 1/60 ticks; one slam is then left to the real loop.
+// Session 434: the stage stands you at the master's floor height. The live check failed whenever the lair put its master on
+// floor 2, because the loop sets the floor from jumpY and put you back on floor 1; it now runs before the kill check.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -21,7 +23,7 @@ check('the master\'s blows carry 1.6 × (1 + level × .04) of its kind\'s (was a
 // a stage: pause the loop, the player on the master's floor at a distance along +x, the master alert and facing
 await page.evaluate(() => { window._stage = (d) => { const e = window._lairBoss; invOpen = true; currentFloor = e.floor || 1;
   ENEMIES.forEach(x => { if (x !== e) { x.dead = true; if (x.mesh) x.mesh.visible = false; } });
-  px = e.x + d; pz = e.z; PHP = 9999; dead = false; ROLL = null; blocking = false; staggered.length = 0;
+  px = e.x + d; pz = e.z; jumpY = e.floor === 2 ? FLOOR2_Y : 0; /* the loop reads the floor from jumpY: a master on floor 2 with you on 1 is never ticked (S434) */ PHP = 9999; dead = false; ROLL = null; blocking = false; staggered.length = 0;
   e.alert = true; e.dead = false; e.hp = e.maxHp; e.telegraphT = 0; e.atkCd = 0; e._slamT = 0; e._slamCd = 0; e._slamLast = null; return e; };
   // tick until the slam lands (or n ticks); at tick `at` run a hook (to move, roll or stagger mid-tell)
   window._drive = (n, hook) => { const e = window._lairBoss; let t = 0, held = 0, maxWind = 0, ringMax = 0, startedAt = -1; const s0 = e._slams || 0;
@@ -65,14 +67,14 @@ const f = await page.evaluate(() => { const e = window._stage(7); const r = wind
 check('seven units off, the master does not wind up', f.startedAt < 0 && !f.landed && f.held === 0, f);
 check('a foe that is not the master never slams (ten seconds beside it)', f.other && !f.os, f);
 
-// G. killed mid-tell: the ring goes with it
-const gk = await page.evaluate(() => { const e = window._stage(2); window._drive(20); const on = e._slamRing.visible; killE(e); const r = { on, after: e._slamRing.visible }; e.dead = false; return r; });
-check('the master killed mid-tell takes its ring with it', gk.on && !gk.after, gk);
-
 // H. the real loop: the master slams in play
 const s0 = await page.evaluate(() => { const e = window._stage(2); e._slamCd = 0; PHP = 9999; invOpen = false; return e._slams || 0; });
 let live = null;
 for (let k = 0; k < 40; k++) { await g.frames(5); live = await page.evaluate(() => { const e = window._lairBoss; return { slams: e._slams || 0, slamT: +(e._slamT || 0).toFixed(2), dead }; }); if (live.slams > s0) break; }
 check('in the running game the master winds up and lands its slam', live && live.slams > s0, { s0, ...live });
+// G. killed mid-tell: the ring goes with it
+const gk = await page.evaluate(() => { const e = window._stage(2); window._drive(20); const on = e._slamRing.visible; killE(e); const r = { on, after: e._slamRing.visible }; e.dead = false; return r; });
+check('the master killed mid-tell takes its ring with it', gk.on && !gk.after, gk);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

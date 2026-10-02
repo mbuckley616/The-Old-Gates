@@ -10786,3 +10786,17 @@ It runs in order. A swing at a villager in the street. Walk up to a guard, refus
 - The fight by feel: the drawn guard's blows took 100 health in 23.5 s while you stood, and the yield comes under 30%.
 - After *Fight on.* the guard offers no second yield. The offer is made once a fight (`CR.yielded` resets only when no guard is drawn), so turning it down means fighting to a death, his or yours. That is as built in Session 157 and not changed here. If a second offer should come, lower down, that is Michael's call.
 - A stood-down guard sheathes in silence: the drawn figure is gone and he is back where he drew, as at a paid yield. A line for him would be new dialogue, so it is left to the quest writer.
+
+## v80 — Session 434 — masterslam's floor, and shard 3's weights (CI)
+The producer's note of 2 Oct routed two CI faults to this builder: `masterslam`, failing on both code branches, and shard 3, which ran past its 45 minutes on main's 8ca3e23 and on this branch's f71586a.
+
+**masterslam.** The suite's last check leaves one slam to the real loop. Run three copies side by side and it failed every time. Alone, it passed most times. The lair puts its master in its deepest room, on the lowest floor there is, and here that was sometimes floor 2. The suite's `_stage` set `currentFloor` to the master's floor but left `jumpY` at the ground. The loop sets the floor from `jumpY` each frame (`90-main.js`, the stairwell line), so it put the player back on floor 1 at once, and a foe on another floor is not ticked. The stage now stands you at the master's floor height (`FLOOR2_Y`). The live check also moved ahead of the kill check, so the loop never fights a master the suite has killed and raised by hand. The game is unchanged. Earlier in this run, once alone, the suite failed every stepped check too, with the master's timer untouched. That run is not explained, and it did not come back in five runs since.
+
+**Shard 3.** `run.mjs` deals the suites to eight shares, heaviest first, by a table of seconds. Any suite not in it counts as 60. The table was Session 254's, and the heavy suites added since were all counted as 60: `falls` (437 s on CI), `renewal` (275), `shopsight` (249), `smoke` (229), `innrooms` (209), `q7world` (194) and more. Shard 3 drew `innrooms`, `q7world` and `mimicspots` together with `hourhitch`, and ran out. The table now holds every suite CI timed at 82 s or more in its 2 Oct run (f71586a's seven finished shares), plus estimates for this run's two new suites (`guardplay` 150, `placenames` 90). Dealt again, the eight shares weigh 2,013–2,072 s, about 34 minutes against the limit of 45.
+
+### Verified (headless Chromium)
+- `masterslam` 16/16 in three copies run side by side (each had failed the live check before the fix, with the master on floor 2 and the loop on floor 1), and 16/16 alone.
+- The shares dealt by the new table, simulated with `run.mjs`'s own rule over all 198 suites: 2,013, 2,013, 2,013, 2,033, 2,033, 2,033, 2,034 and 2,072 s. Build tag s374.
+
+### Needs eyes
+- Nothing to play. CI's next full run will show whether the shares hold; a suite left at 60 that runs long would show as a share past 40 minutes.
