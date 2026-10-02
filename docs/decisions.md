@@ -15,6 +15,37 @@ Shot: [A / B / C / D, standing, on the move, the hand close, ahead-right](https:
 
 ## Answered
 
+### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
+Session 402 put the jab on the third-person body, and its devlog left two look calls open. First, with an empty hand the body's hand is a mitten: a squashed ball with a thumb, which reads as a pale point at a distance. Second, the unarmed body walks and runs with its arms swinging. It only comes up to guard for the punch, while the first person always holds both fists up. All four rows are built from the game itself. The fist is patched into the bake at runtime, so the game is unchanged.
+- **A. As today.** A mitten hand, the arms swinging at rest and on the move.
+- **B. A folded fist on each empty hand** (a squarer palm, four knuckles, the curled fingers, the thumb across), the arms as today. +1,028 triangles on the player's body (4,210 → 5,238); nobody else changes.
+- **C.** *(recommended)* **B, with the fists carried low and ready**: forearms forward at the belt, standing and on the move, dropping to the swinging arms while sprinting. It answers the first person's raised fists without the body looking braced for a fight in the street, and the jab still starts from its own guard.
+- **D. B, with the jab's own guard carried** (the right fist by the chin, the left by the face), standing and on the move. It matches the first person exactly, but it reads as squaring up to everyone in town.
+
+Shot: [A / B / C / D, standing, on the move, the hand close, ahead-right](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/unarmed-grid.png) (`docs/prototypes/unarmed/grid.mjs`). Unarmed only: a weapon, a bow, a shield or a torch keeps today's poses. The townsfolk's hands are not touched.
+
+Michael: **B, the jab's guard carried**. (1 Oct 2026, issue #99, via the control room)
+
+### The counter and the chest on the parchment — instant clicks or a reckoning? (the concept artist, 2026-10-01, PR #97)
+The approved parchment kit (27 Sep) now has the trade screens drawn on it with the game's own numbers (Lorcan's Forge, Dunmore): the shop as an open ledger, the shop's page left and your pack right, the picked piece set against what you wear with its price worked out (list × town × Charisma), and a locked piece saying why (*needs Might 5 — you have 3*). Also a ruled slider for quantities and a chest window showing the pack's weight after taking all. Prototype: `docs/prototypes/trade/` on auto/concept.
+- **A.** *(recommended)* **The ledger, today's rules**: a click buys or sells at once, restyled, with the lock reason and the price's working shown.
+- **B. The ledger with a reckoning**: picks gather on a tally and nothing changes hands until you press the seal (a sell and a buy in one deal, undo before you commit; a small rule change for the systems builder).
+- **C. A now, B later** if the instant click proves too easy to misclick.
+
+Recommendation: **A.** It is the look approved on 27 Sep with no rule change, and the counter already has buy-back for a mistake. Screens: [today beside the ledger](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/compare-shop.png) · [the reckoning](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/reckon.png) · [the quantity slip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/qty.png) · [the chest](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/trade/compare-loot.png).
+
+Michael: **The ledger, today's rules**. (1 Oct 2026, PR #97, via the control room)
+
+### The duel's yield — should a blow begun before you could see her kneel count as murder? (systems builder, Session 405, 2026-10-01, issue #96)
+In *The Yard at Caer Slige*, Rowe yields at a quarter of her health. Any blow that lands after that kills her: murder, the League closed, the watchers' backs turned. The critic asked whether a swing already under way counts. I measured it (`tests/duelrhythm`). Clicking in rhythm, the next swing begins 0.17–0.28 s after the blow that makes her kneel (dagger to hammer) and lands about 0.5 s after it. That is under a person's reaction time. A bot that stops 0.15 s after she kneels spares her, and one that stops at 0.25 s or 0.4 s kills her. So a player who swings steadily will often murder her without meaning to, and lose the League for good.
+- **A. As now.** Any blow after the yield is murder. The yield is a test of control, and the warning is the fight itself.
+- **B.** *(recommended)* **A blow begun within 0.4 s of her kneeling is held.** It lands on nothing (*You check the blow.*), and so do arrows and spells loosed in that time. A swing begun later is murder, as now. This forgives the reflex and keeps the choice.
+- **C. A held moment.** For the first second after she kneels no blow of yours lands on her, whenever it began. Simpler to say, but a deliberate blow in that second is forgiven too.
+
+Recommendation: **B.** It is one condition in `tickDuel` and a test. It keeps *struck she dies* for every blow the player chose, and removes the one they couldn't have stopped.
+
+Michael: **A blow begun within 0.4 s of her kneeling is checked**. (1 Oct 2026, issue #96, via the control room)
+
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
 - **A. A telegraphed slam.** Every 8–10 s the master winds up for 0.9 s (the tells of Session 282) and strikes the ground in a 3-unit ring that can't be blocked, for twice its blow. A roll through it (the roll's untouchable window) or getting out of the ring avoids it. It is the combat page's shape: read the tell, roll.
@@ -24,7 +55,9 @@ Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Sess
 
 Recommendation: **A.** It is one Opus session with a test, and it asks the skill the combat changes built (the tell, the roll) at the place that should test it most. B and C can layer on later; D leaves the last room of every lair as it is for as long as the Fable session takes.
 
-Michael: **A telegraphed slam**. (1 Oct 2026)
+Michael: **A telegraphed slam**. (1 Oct 2026, issue #95, via the control room)
+
+*Built, Session 404* (`tests/masterslam`): the slam as A says it, a 3-unit ring on the floor through the tell. Found in building it: Session 130's 1.6× damage never reached a dungeon master's blows (it scaled an `e.dmg` they don't have); it does now.
 
 ### Should the helmed foes wear the armour kit too? (the look builder, Session 397, 2026-10-01, issue #94)
 Since Sessions 384 and 395 the player and the town guards wear the armour kit: lamellar, a muscle cuirass, mail or plate by material. The foes who wear armour today still have the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a guard in mail, a bandit captain now looks like a man in a hat. A prototype (look builder, Session 397) dresses all four two ways:
