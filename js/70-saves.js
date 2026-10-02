@@ -426,6 +426,7 @@ function _applyLoadData(d){
     _migrateWeaponAtk(restored);
     _migrateItemValueAndReq(restored);
     _migrateItemWeight(restored);
+    if(restored&&restored.type==='cargo'&&!restored.ico)restored.ico='📦'; /* S426 — a crate saved before it had an icon */
     BAG.push(restored);
   });
   // v61d4 — Restore stash inventory. Same migration chain as BAG.
