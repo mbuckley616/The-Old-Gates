@@ -10074,6 +10074,131 @@ The critic's 1 Oct run noted, under *looks, not findings*, that one watcher at t
 ### Needs eyes
 - Nothing to judge; the seat's townsfolk were not built in the test (it laid the yard from the ring), so only the lord and the giver were in play there.
 
+## v80 — Session 394 — Underclothes: what the body wears with the slots empty (H, Michael's B on #83)
+Michael answered decision #83 on 1 Oct with B: underclothes. Until now an empty chest, legs or feet slot changed nothing on the third-person body, because `tpBuild` fell back to the look's tunic, breeches and boots. Taking off the Tattered Tunic showed the same red tunic.
+
+Now `tpBuild` reads each empty slot as the body's own linen. An empty chest gives an undyed linen shirt (`TP_LINEN`, the prototype's colour). Three new genome flags carry it into `buildPerson`. `g.shirt` cuts the hem shorter than a tunic's and drops the trim ring. `g.bareArms` keeps the shoulder's cap in the shirt's linen and makes the upper and lower arm skin, with no cuff. `g.bareFeet` replaces the boot's shaft and toe with a foot of its own: a bare ankle, an instep, a heel and the ball of the toes, standing on the boot's ground line. An empty legs slot shows linen braies, a shade darker than the shirt. The look's colours still dye the starting tunic, breeches and boots, as they did before: those are cloth items with no material colour, so `tpBuild` gives them the look's. The prototype noted that the build owed the feet a shape and the shirt a plainer cut, and both are done here. First person follows: with nothing on the chest, the arm behind the hand is the skin's colour (`_chestArmColors`), not the default tunic's cloth.
+
+The flags are the player's alone. No townsperson's genome sets them, so the towns are unchanged.
+
+### Verified (headless Chromium)
+`tests/underclothes.test.mjs`, 9/9:
+- In the starting kit the tunic, breeches and boots carry the look's colours, and no linen shows.
+- With the chest empty, 105 vertices are linen, none are the tunic's colour, and skin rises from 149 vertices to 221 (the arms).
+- With the legs empty too, the braies replace the breeches (123 vertices, none of the breeches' colour).
+- With the feet empty too, no boot colour shows and skin rises to 409.
+- The bare feet stand on the same ground line as the boots (the lowest point is the same to the millimetre).
+- Triangles: 4,242 in the starting kit, 3,782 with the chest empty, 4,102 with every slot empty.
+- First person: the arm is the skin with nothing on the chest and the cloth with the tunic on.
+- In play, taking the tunic off makes `tpUpdate` rebuild the body (4,450 to 3,990 triangles with the weapon), and it walks 30 frames with no errors.
+- Neighbouring suites pass: `unequip`, `armourkit`, `people`, `tpshots`, `tpweapons`. `parsecheck` is clean.
+- `docs/prototypes/underclothes-ingame.png`: a man and a woman, in the starting kit and with every slot empty, from the front and from behind (`docs/prototypes/underclothes/shots.mjs`).
+- Build tag s352. auto/systems is at s351, so this skips past it rather than sharing a number.
+
+### Needs eyes
+- The feet at play distance and in motion. In the shot they read as feet, but small ones.
+- Under a piece of the armour kit the tunic and sleeves are still the look's colours (Session 384's rule), not the linen. That is consistent with "armour over clothes", but with B the look's colours belong to the tunic item, so an argument exists for linen under armour with no tunic. It is left as it is.
+- Whether townsfolk remark on a player in their underclothes is the quest writer's question, as the decision said.
+
+## v80 — Session 395 — The town guards in the armour kit, by the town's fortune (H.2, Michael's C on #87)
+Michael answered decision #87 on 1 Oct with C: the guards wear the armour kit by the town's wealth. Until now every guard wore the people's steel bowl helm over a coat in the nation's colour. Since Session 384 that left a guard in the street less armoured than a player in Wooden armour.
+
+The rule sits in `personGenome`, after the townsfolk's wealth, and follows the same pattern: it applies only to a person of a place (`opts.key` resolves to a settlement) whose role is a guard's (`GUARD_ROLE`, the old role pattern plus `constable`). `guardArmourTier` gives the tier. A captain wears Steel plate wherever he serves. Otherwise a town under prosperity 40 puts its guards in Wooden lamellar, and every town at 40 or over in Iron mail. Prosperity runs from 10 to 95. Outposts sit at 25–45 and villages at 35–55, so lamellar is the poor places' armour, and towns, ports and cities wear mail. The guard gets the kit's helm, cuirass, vambraces and greaves, and the bowl helm comes off. He keeps his own boots, and his coat's colour shows at the skirt under the armour. This is the prototype's C as Michael chose it. The rule draws nothing from the seeded random, so a guard's face, hair and build are the same person as before. The genome is cached by name and place, as the townsfolk's clothes are, so a town whose fortune crosses 40 re-dresses its guards when its people are next rebuilt.
+
+The guards in the Fighters' guild hall (role `guard`, keyed to the hall's town) wear it too. The guards of no place are unchanged: the gate zones' legacy guards, and any genome without a settlement key.
+
+### Verified (headless Chromium)
+`tests/guardarmour.test.mjs`, 9/9:
+- At prosperity 30 a guard wears lamellar; at 55 and at 85 he wears mail. A captain wears plate at 30.
+- The kit's helm replaces the bowl helm (`hat` is `none`), and the feet are left to the guard's boots.
+- The night watch is armoured too. A farmer is not, and neither is a guard with no place.
+- With the settlement lookup stubbed out, the same guard comes out the same in style, beard, sex, height, build and phase.
+- Triangles: an unarmoured guard is 5,034 (2,181 distant). In lamellar he is 10,942 (5,722), in mail 9,800 (4,704), and a captain in plate 8,486 (3,645). Still 17 bones.
+- In Dunmore (prosperity 61) all three guards on its rigs wear mail: Séamus, Eilís, and Cormac of the night watch, at 9,768–12,380 triangles with their spears.
+- Two neighbouring suites caught the cost. In `people`, "every townsperson is one skinned mesh" capped every person at 9,000 triangles, and a guard in the kit is up to 13,162. The check now holds an armoured guard to 14,000 and everyone else to 9,000 as before. In `lod`, the distant copy must stay under .55 of the full figure, and the lamellar guard's was .58 (6,254 of 10,942): its lacing cords and hoops do not thin with distance. The distant copy now laces every third slat and rounds the lamellar's hoops in half the segments, which brings it to 5,722 (.53). This changes only the distant copy, the player's own lamellar included; up close nothing changes. `lod` then passed 3/3: across Dunmore's square and road the distant copies save 47k and 80k triangles.
+- `peopleao`, `armourkit`, `underclothes`, `perf`, `wealth` and `guildfurn` pass. `parsecheck` is clean.
+- `docs/prototypes/guardarmour-ingame.png` (`docs/prototypes/guardarmour/ingame.mjs`) shows the same four guards as the prototype, before and as built. It matches the prototype's C row.
+- Build tag s353.
+
+### Needs eyes
+- A walled town has two or three guards, so this adds roughly 15–20k triangles in its street. The distant copies take most of that, but a frame-time check in a poor village on Michael's machine would be worth one look: lamellar's distant copy (5.7k) is still the heaviest in a town.
+- The guard's nation colour now shows only at the skirt and the sleeves under the vambraces. A tabard over the armour would bring it back. That was not in the options, so it is not built.
+- Armoured foes (bandits, the dead in mail) still wear their own builds.
+
+## v80 — Session 396 — Fists on screen in first person (H, Michael's A on #80)
+Michael answered decision #80 on 1 Oct with A: both fists up, the right jabs, block brings both to the face. He added two notes: the hands should look more like hands and fists, and in the prototype's guard shot the wrists looked snapped off the arms. Until now an empty weapon slot drew nothing in first person, because `buildViewmodel` returned early with no weapon.
+
+**The fist.** `buildFistMesh` in `js/16-viewmodel.js` is one vertex-coloured mesh built on the people's shape kit (3,108 triangles). It has:
+- the back of the hand, slightly domed, over a palm;
+- four fingers, each folded in two joints: the first segments form the flat front of the fist, the second turn in underneath, and a knuckle sits over each. The fingers run from the index to the little finger, each a little narrower and set back;
+- the thumb, rooted in the ball of the hand, with its last joint laid across the second segments of the first two fingers;
+- a wrist narrower than the hand;
+- the forearm to the elbow, in the same mesh.
+
+The prototype's fist was a rounded box with four balls for knuckles, and it read as a mitten. The snapped wrist was the prototype's arm: a straight tube from a fixed shoulder to the wrist, which the fist could turn away from. Now the forearm is part of the fist, so the wrist cannot leave the arm. The arm bridge (`_fistBridge`) runs from a shoulder below the view to the fist's elbow. The forearm takes the chest piece's sleeve colour and cuff, and it is bare skin with nothing on the chest (Session 394). Gauntlets colour the hand as they do the weapon hand. The view scene's light is bright and warm, so the skin is darkened there to read as skin, as in the prototype.
+
+**The poses.** `vmFistPose` sets the fists from `FIST_POSE`, called from the loop's view-model block in place of the sword's pose (one line in `js/90-main.js`).
+- At rest both fists are low in the corners, thumbs up.
+- The jab draws back briefly and reaches full extension at `impactPoint`, the moment the strike resolves. By then it has turned palm-down. It holds a beat, then comes back.
+- The power punch is the same punch, reaching further. Its charge draws the fist back by the shoulder.
+- Block raises both fists before the face, backs of the hands towards you.
+- The left fist keeps its guard through the jab. `buildShieldViewmodel` builds it when the off hand is empty, and a shield or torch takes its place.
+
+**Issue #81.** The empty hand now has a view model, so the swing timer and the deferred strike in the loop run for fists too: a punch lands in play. This removes the symptom of issue #81 but not its cause. Issue #81's root fix is still the systems builder's: the strike should not depend on a mesh existing.
+
+### Verified (headless Chromium)
+`tests/fists.test.mjs`, 11/11:
+- Armed, there are no fists. With the weapon slot empty there are two fists, each with its arm bridge on its own elbow.
+- A torch takes the left fist and shows the torch. Taking the torch off gives the fist back. Re-arming removes the fists.
+- In the rest, jab, power and guard poses, the bridge's end meets the elbow (a gap of 0).
+- The jab goes from (.18, −.215, −.48) to (.035, −.13, −.74). The left fist doesn't move. The back of the hand is up (1.0) as the jab lands. The power punch reaches to −.81.
+- Guard raises both fists by .14.
+- In play, `attack(false)` with the fists runs its 0.429 s swing out in real frames, and the strike lands for 4 on a dummy in front. Issue #81's repro left the swing stuck at 0.429 with the strike pending.
+- No page errors. `fpweapons`, `player`, `tpswing`, `unequip`, `underclothes` and `creator` pass. `parsecheck` is clean.
+- `docs/prototypes/fists-ingame.png` (`docs/prototypes/fists/ingame.mjs`) shows rest, the jab as it lands, guard and the power punch's draw, and one fist from the front, from the thumb side and from above.
+- Build tag s354.
+
+### Needs eyes
+- How the jab feels at speed: its timing is keyed to the swing's `impactPoint`, and the fist travels about a quarter unit in roughly 0.1 s.
+- The power punch's draw turns the fist to show its side, which reads less clearly than the rest pose.
+- At rest the fists sit low and show mostly the knuckles. Michael may want them higher.
+- The third-person body's punch is still the sword's swing played with an empty hand. That is a separate item.
+
+## v80 — Session 397 — Armoured foes in the kit: the prototype (H.2, after Session 395)
+With the guards in the kit (Session 395), the foes who wear armour are the last figures still in the people's steel bowl helm over cloth: the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight. Beside a town guard in mail, a bandit captain now reads as a man in a hat. Session 385's question about the guards left the foes out on purpose, and the backlog has carried "the kit on armoured foes" since. Which pieces each foe should wear is a look question, so it goes to Michael as a prototype.
+
+The prototype is `docs/prototypes/foearmour/shots.mjs` and changes no game code. It builds each foe with `buildFoe`, as the zones do. For option B it wraps `buildPerson` for that one call to set the worn pieces and take off the bowl helm, the way `tpBuild` does for the player. A is today. B gives each foe a fixed list of pieces that suits him:
+- the Deserter: his old army's Iron mail and nasal helm;
+- the Bandit Captain: looted pieces, a Wooden lamellar cuirass and vambraces under an Iron helm;
+- the Shieldbearer: a Steel plate cuirass and helm over Iron mail sleeves and greaves;
+- the Ash Wight: Iron mail rusted nearly black, as the dead's blades are.
+
+C is B with the metal set by the foe's level, which would tie the look to the loot. B is recommended. The question is DECISION #94 and is pending in `docs/decisions.md`.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/foearmour-grid.png` and `foearmour-stats.json`. Triangles: 4,922–5,844 today and 8,822–10,568 in B. The distant copy is 2,150–2,619 today and 3,755–5,271 in B. No game code changed, so no suite was re-run and the build tag is not bumped.
+
+### Needs eyes
+Michael's letter on #94. Found on the way: a curly-haired Shieldbearer's hair pokes through the closed plate helm. The player's own closed helm would do the same with curly hair or an afro. Whichever option Michael chooses, the build should cut the hair to the skull under a closed helm.
+
+## v80 — Session 398 — Hair through the helm (H.2, found in Session 397)
+Session 397's prototype showed a curly-haired Shieldbearer's hair standing out through his closed plate helm. This was not a prototype artefact. Since Session 384 the player wears the same helms, and an afro, curls, a shag, a crest, warrior braids or a bun all stood out through every helm of the kit: the lamellar skull-cap, the crested bronze, the nasal mail helm and the closed plate. Session 395's guards would do the same wherever a guard's genome drew one of those styles. The kit's helms sit on the skull at the people's head radius, and those styles are built well outside it.
+
+`personBakeQ` now cuts those six styles to the shorn cap (`buzz`) when the genome wears a helm of the kit. The style is unchanged in the genome and in the look, so taking the helm off brings the hair back. Hair that hangs below a helm (long, a braid, two braids, tied back) is kept, as it is now. The people's own bowl helm (`hat:'helm'`) is unchanged: it sits higher and has never covered a style.
+
+### Verified (headless Chromium)
+`armourkit`, now 11/11:
+- Without a helm, an afro is 4,608 triangles, curls 4,408 and shorn hair 4,098.
+- Under a Steel helm, the afro, the curls and shorn hair are all 5,320 triangles, so the full styles are cut to the skull. Long hair stays (5,324).
+- Rebuilt with this change, the Session 397 grid shows the Shieldbearer's helm clean. The committed grid was left as it was, because the question shows it.
+- `people`, `guardarmour` and `tpshots` pass. `parsecheck` is clean.
+- Build tag s355.
+
+### Needs eyes
+A shorn head under an open helm (lamellar, mail) shows a short dark cap at the temples where a curly head would show curls. Pulling a few curls out under the helm's rim would be a later refinement.
+
+Correction to Session 396: that entry said issue #81's root fix "is still the systems builder's" to make. The systems builder made it in Session 382, on auto/systems (PR #84, not yet on main). There the swing is counted outside `if(vmSword)` when there is no view model. With the fists, the empty hand has a view model, so the old block runs, and 382's branch remains the safety net for any frame without one. `git merge-tree` of the two branches conflicts only in the docs and the tag line, not in `js/`.
+
 ## v80 — Session 394 — The producer merges through GitHub: the control room desk, the prompt, the queue retired
 A production session, no game code. Michael, 1 Oct: the Airsoft control room's desk (one-tap decisions, a big Approve, an Undo, "In the works") is what he wants for The Old Gates too, and its producer's way of shipping (he approves on the board, the producer merges the PR through GitHub, pinned to the commit the board recorded at the tap) in place of the merge queue. Three things changed, two of them outside the repo.
 
@@ -10156,6 +10281,61 @@ The checks and their thresholds are as before. Build tag s354.
 ### Needs eyes
 - Nothing in play.
 - A frame of 2.3 s in the Faolchú's fight on software GL is far slower than any other scene measured. A player on a real GPU won't see it, but if `hourhitch`'s frame budget ever runs there, it will.
+## v80 — Session 402 — The punch in third person (H.3, after Michael's A on #80)
+Session 396 built Michael's A on #80 in first person: both fists up, a straight jab with the right that lands at the strike, the left kept in guard. Its devlog left the third-person body owed. With an empty hand the body still played the sword's three arcs: a forehand, a backhand or an overhead chop with a bare fist. This session builds the same jab on the body, so the two views agree. No new choice is made, so no prototype was asked for.
+
+`tpPose` (`js/54-thirdperson.js`) now checks the view model's fist mark (`vmSword.userData.fists`, set by `buildViewmodel` for an empty hand) when no weapon or bow is held. With that mark it uses the jab in place of the swing variants. The jab uses the same phases as the sword's swing (Session 269: the draw to `antEnd`, the hit at `impactPoint`, the carry, the return), so the body's fist lands when the first person's fist does and the strike resolves:
+- It starts from a guard with the fist by the chin.
+- At the draw the elbow folds further and the shoulders turn back a little.
+- At the hit the arm is straight and at shoulder height, close to the body's middle line, and the shoulders turn through.
+- The fist holds for a beat, then returns to guard.
+- The left fist stays up by the face throughout.
+- The power punch turns the shoulders 1.3 times as far and keeps the swing's bigger step, so it lands further ahead.
+
+Weapons, the bow, spells and block are unchanged; block was already both fists before the face.
+
+### Verified (headless Chromium)
+`tests/tpfists.test.mjs` 8/8 (new), through the game's own loop a frame at a time:
+- At the draw the elbow is at −1.95; as the jab lands it is at −.18.
+- The fist travels .22 forward in the body's frame from the draw to the hit. It ends .24 ahead of the shoulder (the arm is .29 long) and at the shoulder's height (difference 0).
+- It never goes more than .17 to the side of the head. The old path, the sword's forehand with a fist, swept to .35–.36.
+- The left fist is never more than .26 from the head.
+- The power punch lands at .41 ahead of the body's origin, the jab at .33.
+- After the swing the body lets go (`TP.swMax` 0). No page errors.
+`tpswing` (the sword's swings and the two-handed grip), `fists`, `unequip` and `player` pass. `parsecheck` is clean. `docs/prototypes/tpfists-ingame.png` (`docs/prototypes/tpfists/ingame.mjs`): the top row is before, the bottom row is now, at the draw, as the jab lands and as the power punch lands, plus block. Build tag s356.
+
+### Needs eyes
+- The jab at speed in real play: the arm eases at dt*50, as the sword's swing does, through a strike of about 60 ms.
+- At rest an unarmed body still walks with its arms swinging rather than holding the first person's low guard. It only comes up to guard for the punch. Whether the body should carry its fists up while unarmed is a look call, not taken here.
+- The bare hand reads as a pale point at a distance; the third-person body has no folded fist like the first person's.
+
+## v80 — Session 403 — The helmed foes in the armour kit (H.2, Michael's B on #94)
+Michael answered decision #94 on 1 Oct with B: each of the four helmed foes in the armour kit as his story dresses him, as Session 397's prototype showed. Until now the Deserter, the Bandit Captain, the dungeon's Shieldbearer and the Ash Wight wore the people's steel bowl helm over cloth, and beside a town guard in mail they read as men in hats.
+
+Each of the four `FOE_DRESS` entries (`js/32-people.js`) now has a `kit`: a tier (1-based index into `MATERIALS`) for each slot it wears. `buildFoe` turns that into the same armour record `tpBuild` and the guards use, and sets the hat to none, so the kit's helm replaces the bowl helm. The boots stay the foe's own, as with the guards. The pieces are the prototype's:
+- the Deserter: Iron mail and the nasal helm;
+- the Bandit Captain: a Wooden lamellar cuirass and vambraces under an Iron helm;
+- the Shieldbearer: a Steel plate cuirass and helm over Iron mail sleeves and greaves;
+- the Ash Wight: Iron mail with greaves, its metal set by `rust` to 0x4a3e34, nearly black, as the dead's blades are.
+
+The pieces draw nothing from the genome's random stream, so a foe's face, hair and weapon are unchanged. Session 398's cut takes the fuller hair styles down to the skull under these helms too. The zones (`buildZoneEnemy`) and the dungeons (`56-dungeon-build.js`) both build these foes through `buildFoe`, so both get the kit. The armour is look only: `def` and the foes' numbers are unchanged.
+
+### Verified (headless Chromium)
+`tests/foearmour.test.mjs` 9/9 (new):
+- Each foe wears exactly the pieces above, and no bowl helm.
+- The Ash Wight's mail is 0x4a3e34. The Deserter's is Iron's own 0xa8b0b8.
+- The four keep their boots and their arms.
+- A Bandit, a Highwayman, a Skeleton and a Ghoul have no kit.
+- Each armoured foe is 9,008–10,410 triangles (5,034–5,844 before) and 3,684–5,082 at a distance, still on 17 bones.
+- A Deserter built on the road by `buildZoneEnemy` wears the mail.
+- No page errors.
+`foes` expected the bowl helm (`hat === 'helm'`) on the Deserter and the Ash Wight. Those two checks now expect the kit's helm, as #94 decided, and the suite passes. `armourkit`, `guardarmour`, `dungeonfoes`, `people`, `lod`, `weapons` and `duel` pass. `parsecheck` is clean. `docs/prototypes/foearmour-ingame.png` (`docs/prototypes/foearmour/ingame.mjs`) shows the four before and as built. The shot matches the prototype's B row, with the Ash Wight's eyes now its own colour. Build tag s357.
+
+### Needs eyes
+- A road ambush of Deserters at dusk: whether the mail reads at the distance the copy swaps (17 units).
+- The Ash Wight's rust against the wasteland's ash ground. It may be too dark to read the mail's rings.
+- A Bandit Captain leading a band adds about 5,000 triangles over today. `lod` still holds, but a camp of several captains has not been measured.
+
 ## v80 — Session 404 — The cavern master's slam (Michael's A on #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130: every lair's cavern ends in a master, the deepest foe made 3× the health, and it fought like the first room. I asked (#95); Michael answered **A, a telegraphed slam**.
 
@@ -10203,6 +10383,35 @@ No page errors. Build tag s356.
 - Michael's answer to #96. If he wants the yield to forgive a swing begun within reaction time, it is one condition in `tickDuel`'s yielded branch and a change to this test's expectations.
 - Arrows and spells loosed before she kneels and landing after are the literal *in the air* case. They take the same path (any loss of health after the yield is murder) and were not measured.
 
+## v80 — Session 406 — `tpfists` reads the body's facing inside the stepped run (CI fix)
+CI ran the suite on Session 403's head (`fdb24d9`), and `tpfists` failed on headless (1) with two checks: the fist's travel came out as −.219 and its lead over the shoulder as −.241, and the power punch's longer reach failed the same way. The measured positions were the same as on this machine (the fist at .325 ahead in the body's frame, the shoulder at .084), so the punch was right and only the sign was wrong. The test multiplies every forward distance by `fwdAxis`, the way the head's nose points in the body's frame, and it read that once after the three runs, in its own `page.evaluate`. Between evaluates the page's own frames run with real time, so the body had moved on to whatever pose those frames left it in, and on CI's slower runner that read came out reversed. Here the nose read +.9999.
+
+The test now reads the nose inside the stepped run, at the same frame as the hit it measures, and takes `fwdAxis` from the jab's. A new check asks that the head points squarely along the axis (more than .8), so a sideways head can't flip the sign without failing on its own. The game's code is unchanged.
+
+### Verified (headless Chromium)
+`tpfists` 9/9 here: the nose reads .959 along +z at the hit, the travel is .219, the lead .241 of a .294 arm, the power punch lands at .407 against the jab's .325, and there are no page errors. CI's failure could not be reproduced here, since this machine gave the right sign before the fix too. The CI run on this push is the real test. `parsecheck` is clean.
+
+### Needs eyes
+Nothing in the game. If headless (1) fails again, the new check's number will show whether the head itself faces backwards at the hit.
+
+## v80 — Session 407 — The unarmed body at rest: the prototype (H.3, from Session 402's open calls)
+Session 402 left two look calls on the unarmed third-person body. First, its hand is a mitten, a squashed ball with a thumb, which reads as a pale point at a distance. Second, it runs with its arms swinging, while the first person always holds both fists up. Nothing else in section H can be worked without Michael: the s162 playtest list is done, the frame-time check wants a real machine, and no decision is waiting on this builder. So this session builds the prototype and asks.
+
+`docs/prototypes/unarmed/grid.mjs` boots the game and builds four rows. It changes nothing in the game. The fist is patched into `personBakeQ`'s source at runtime, and the carried poses are laid over `tpPose`'s result.
+- **A** is today.
+- **B** gives each empty hand a folded fist: a squarer palm, four knuckles across the front, the curled fingers under them and the thumb laid across.
+- **C** is B with the forearms carried forward at the belt.
+- **D** is B with the jab's own guard carried: the right fist by the chin, the left by the face.
+
+C and D drop to the swinging arms while sprinting. Each row is shown standing, mid-stride on the move (the player's own pace is a run, Session 162), with a close look at the right hand, and from ahead-right. The question is DECISION #99 and is under Pending in `docs/decisions.md`. The recommendation is C: it answers the first person's raised fists without the body squaring up to everyone in the street.
+
+### Verified (headless Chromium)
+The grid script ran without page errors. The player's body is 4,210 triangles today and 5,238 with the two fists (+1,028, mostly the eight knuckles). Nobody else's hands change. `docs/prototypes/unarmed-grid.png`.
+
+### Needs eyes
+- Whether B's fist reads as a fist at the camera's usual distance. In the close shot it does.
+- Whether C's forearms look stiff on the move. The prototype holds them still apart from a slight sway, and an answer of C would want them to bob with the stride.
+
 ## v80 — Session 408 — A blow begun as she kneels is checked (Michael's B on #96)
 Session 405 measured the yield in *The Yard at Caer Slige*: any blow that lands after Rowe kneels is murder, and a player clicking in rhythm begins the next swing 0.17–0.28 s after the yielding blow, which is under a human's reaction time. So a steady fighter often murdered her, closed the League and turned the watchers' backs without choosing to. I asked (#96). Michael answered **B: a blow begun within 0.4 s of her kneeling is checked**.
 
@@ -10244,6 +10453,17 @@ The concept artist, drawing the shop counter on the parchment kit (PR #97, 1 Oct
 
 ### Needs eyes
 - Nothing. The concept artist's ledger may replace this prompt (the counter question with Michael), and the side-named button should carry over to it.
+
+## v80 — Session 410 — `fistswing` expects the fists' view model (CI fix)
+CI ran the suite on Session 407's head (`84fb606`), and headless (7) failed on one check in `fistswing`: "an empty hand has no view model". Session 382 wrote that check when an empty hand really had none, which was the bug it fixed: the swing timer and the deferred strike only ran inside the loop's `if(vmSword)` block, so a punch never landed. Session 396 then built Michael's A on #80, the fists on screen in first person, and an empty hand has had a view model ever since (`vmSword.userData.fists`). The check was never updated, so it failed on every run that reached it; Session 406's CI was cancelled before it got there. Main does not carry Session 396 yet, so main is unaffected.
+
+The check now asks that the empty hand holds the fists' view model, and that the weapon's does not carry the fists' mark, alongside the swing and the pending strike as before. The other four checks (the punch runs out and fires, lands for less than the sword, lands again) are unchanged and still prove Session 382's fix. The game's code is unchanged.
+
+### Verified (headless Chromium)
+`fistswing` 6/6: the sword swings from .611 and strikes for 9; the fist's view model is present with its mark, the punch starts at .429 with a strike pending, fires on frame 6 and lands for 6; a second punch lands for 6. No page errors. `parsecheck` is clean. Build tag bumped.
+
+### Needs eyes
+Nothing in the game.
 
 ## v80 — Session 411 — The ship's hull and rig (Michael's A on #85, its first slice)
 Michael answered the sailing proposal (#85) with **A, wear and mend**: the sea wears the ship, Joinery and the shipwright put her back. The page (`docs/design/sailing.md`) costs it as four Opus sessions. Its parts that need Joinery (planks, pitch, the bench, the patch) wait for the skills build, and the sea state's pitch and roll share the wave with H.5b's water. So this session builds the part that needs neither: the two bars, three of the four damage sources, and the shipwright's mending.

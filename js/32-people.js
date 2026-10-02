@@ -127,6 +127,13 @@ function personGenome(def,opts){
       const w=Math.max(0,Math.min(1,base+(pr-50)/50*.25+(r()-.5)*.2));g.wealth=w;const C=x=>new THREE.Color(x);
       if(w<.3){const u=C(0x7a6c5a);g.cloth=g.cloth.clone().lerp(u,.45);g.sleeve=g.sleeve.clone().lerp(u,.45);g.legs=g.legs.clone().lerp(u,.3);g.trim=g.cloth.clone().multiplyScalar(.8);g.boot=C(0x7a6a52);if(g.hat==='chaperon'||g.hat==='fur')g.hat='none';}
       else if(w>.7){for(const k of ['cloth','sleeve']){const h={};g[k].getHSL(h);g[k]=new THREE.Color().setHSL(h.h,Math.min(1,h.s*1.15+.03),h.l*.82);}g.trim=C(0xc8a040);g.boot=C(0x1a120c);g.legs=g.legs.clone().multiplyScalar(.8);}}}
+  // S395 — a town's guards in the armour kit by its fortune (Michael's C on #87): Wooden lamellar in a poor town (prosperity
+  // under 40: the outposts and the poorer villages), Iron mail anywhere better off, Steel plate for a captain. Helm, cuirass,
+  // vambraces and greaves from the kit; the guard's own boots, and the coat's colour at the skirt and the sleeves under it.
+  // No draw from r(), so every other trait stays as it was.
+  if(opts.key&&GUARD_ROLE.test(role)&&typeof WORLD!=='undefined'&&typeof MATERIALS!=='undefined'){let pr=null;try{const st=WORLD.siteAnywhere(String(opts.key).split('#')[0]);if(st)pr=WORLD.prosperity(st);}catch(e){}
+    if(pr!=null){const t=guardArmourTier(role,pr),m=MATERIALS[t-1],pc=()=>({tier:t,fam:AR_FAM[t],sig:null,metal:m.blade,guard:m.guard,glow:m.glow});
+      g.eq=Object.assign({amulet:false,quiver:false},g.eq||{},{armour:{head:pc(),chest:pc(),hands:pc(),legs:pc(),feet:null}});g.hat='none';g.guardTier=t;}}
   return g;
 }
 // ── the body: rounded parts on bones, baked into one skinned mesh ──
@@ -162,6 +169,8 @@ function personAO(pos,nor,col,PR,O){O=O||PAO;if(!O.on)return;const S=[];
 // `part`, bones and genome. The glow parts are baked vertex colours.
 const AR_FAM=[null,'lamellar','muscle','mail','plate','plate','plate','plate','plate','plate','plate'];
 const AR_SIG=[null,null,null,null,null,'fluted','heavy','faceted','scaled','spiked','inlaid'];
+const GUARD_ROLE=/guard|captain|sergeant|watch|blade|warden|recruit|soldier|constable/;
+function guardArmourTier(role,pr){return /captain/.test(role)?4:pr<40?1:3;}
 function AR_FROM_EQ(EQ,mode){
   const piece=it=>{if(!it||!it.material||!it.tier)return null;const t=Math.max(1,Math.min(10,it.tier)),m=MATERIALS[t-1];if(m.name!==it.material)return null;
     return {tier:t,fam:AR_FAM[t],sig:mode==='A'?null:AR_SIG[t],metal:m.blade,guard:m.guard,glow:m.glow};};
@@ -187,12 +196,14 @@ function ARMOUR_DRESS(X){
   const P=E.chest;
   if(P){const m=MT(P.metal),gd=GD(P.guard),gl=P.glow!=null?C(P.glow):null,S=P.sig,F=S==='faceted'?facet:(x=>x);
     if(P.fam==='lamellar'){
+      // S395 — the distant copy laces every third slat and rounds its hoops in half the segments (a guard's lamellar was
+      // .58 of the full figure there, the heaviest distant copy in a town)
       // five laced hoops of slats from the belt to the chest, each flared over the one below; two more over the hips
       const N=5,y0=0,y1=.34;for(let i=0;i<N;i++){const ya=y0+(y1-y0)*i/N-.004,yb=y0+(y1-y0)*(i+1)/N+.01,ra=rAt(Math.max(.01,ya))*1.1+.016,rb=rAt(yb)*1.08+.004;
-        part(hoop(ya,yb,ra,rb,.01,20),m,B.spine).scale.z=Z;ring(rb,.0045,yb,gd,B.spine);
-        for(let k=0;k<12;k++){const a=k/12*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.004,(ya+yb)/2);}}
-      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb])=>{part(hoop(ya,yb,ra*bw,rb*bw,.01,20),m,B.hips).scale.z=.78;ring(rb*bw,.0045,yb,gd,B.hips,.78);
-        for(let k=0;k<12;k++){const a=k/12*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.004,(ya+yb)/2);}});
+        part(hoop(ya,yb,ra,rb,.01,SK.seg(20,10)),m,B.spine).scale.z=Z;ring(rb,.0045,yb,gd,B.spine);
+        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.004,(ya+yb)/2);}}
+      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb])=>{part(hoop(ya,yb,ra*bw,rb*bw,.01,SK.seg(20,10)),m,B.hips).scale.z=.78;ring(rb*bw,.0045,yb,gd,B.hips,.78);
+        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.004,(ya+yb)/2);}});
       LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;for(let i=0;i<3;i++){const r=.078-.004*i;part(SK.cyl(r,r+.014,.045,12,1,true,c-1.2,2.4),i%2?gd:m,b,s*.01,-.02-i*.036,0).scale.z=1.1;}
         part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),leather,b,s*.012,-.004,0).scale.set(1.1,.7,1.15);});
     } else if(P.fam==='muscle'){
@@ -306,11 +317,13 @@ function personBakeQ(g,q){
   const cloth=C(g.cloth),sleeve=C(g.sleeve),skin=C(g.skin),legs=C(g.legs),hair=C(g.hair),boot=C(g.boot),trim=C(g.trim),dark=C(0x1b1410),steel=C(0x9a9c9e);
   const hips=bone('hips',null,0,PW.HIPS,0);const DL=PW.DL;
   // the tunic's skirt, or a dress to the shin
-  const hem=g.dress?[[0,-.37-DL],[.25,-.37-DL],[.255,-.355-DL],[.215,-.2-DL*.6],[.18,-.05],[.16,.02],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
+  // S394 — g.shirt (the player's empty chest slot, Michael's B on #83): an undyed linen shirt, plainer and shorter than a
+  // tunic, with no trim at the hem
+  const hem=g.dress?[[0,-.37-DL],[.25,-.37-DL],[.255,-.355-DL],[.215,-.2-DL*.6],[.18,-.05],[.16,.02],[0,.045]]:g.shirt?[[0,-.085],[.2,-.085],[.205,-.075],[.19,-.04],[.176,0],[.168,.04],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
   part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
   // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
   // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
-  {const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
+  if(!g.shirt){const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
   const WL=g.wealth==null?.5:g.wealth,gold=C(0xc8a040); /* S268 — wealth in the bake: a rope belt and patches, or a buckle, a chain and a pendant */const belt=part(SK.torus(.172*bw*(fem?.96:1),WL<.3?.016:.02,5,20),WL<.3?C(0x9a8458):dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;if(WL<.3){if(!g.dress)part(SK.ball(.034,7,5),mixC(cloth,0x3a3024,.45),hips,.085*bw,-.075,.136*bw).scale.set(1.1,.9,.28);part(SK.ball(.016,6,5),C(0x9a8458),hips,.06*bw,.0,.128*bw);}if(WL>.7)part(SK.rbox(.042,.034,.012,.005,2),gold,hips,0,.02,.13*bw);
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);
@@ -349,7 +362,9 @@ function personBakeQ(g,q){
     part(SK.cone(last[3]*.85,.05,6),col||hair,PB,last[0],last[1]-.045,last[2]).rotation.x=Math.PI;};
   const shorn=(t)=>{const c=part(SK.ball(R*1.012,14,8,0,Math.PI*2,0,Math.PI*.56),mixC(skin,hair,t||.4),head,0,.125,-.006);c.rotation.x=-.3;c.scale.set(g.jaw,1.06,1.03);return c;};
   const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
-  let cap=null;const st=g.style;
+  // S398 — under a helm of the armour kit the full styles (curls, an afro, a shag, a crest, warrior braids, a bun) are cut to
+  // the skull, or they stood out through the helm (Session 397's prototype); hair that hangs below the helm stays
+  let cap=null;const st=g.eq&&g.eq.armour&&g.eq.armour.head&&/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)?'buzz':g.style;
   if(st==='thin'){const f=part(SK.torus(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
   else if(st==='buzz')cap=shorn(.7);
   else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(SK.cone(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
@@ -406,17 +421,23 @@ function personBakeQ(g,q){
   if(g.hat==='crown'){part(SK.cyl(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(SK.cone(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
   // arms and legs: side 1 is the figure's left (+x), -1 its right
   ['L','R'].forEach((k,i)=>{const s=i===0?1:-1;
-    const sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),sleeve,sh).scale.set(1,.9,.9);
-    part(SK.limb(.155,.05*bw,.044*bw),sleeve,sh);
-    const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),sleeve,el);
-    part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
+    // S394 — g.bareArms: the shirt is cut at the shoulder, so the shoulder's cap is the shirt and the arm below it skin, no cuff
+    const sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),g.bareArms?cloth:sleeve,sh).scale.set(1,.9,.9);
+    part(SK.limb(.155,.05*bw,.044*bw),g.bareArms?skin:sleeve,sh);
+    const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
+    if(!g.bareArms)part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
     if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
     const wr=bone('wr'+k,el,0,-.14,0);const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
     part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
     const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
     const kn=bone('kn'+k,th,0,-PW.L1,0);part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
-    part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);
-    const an=bone('an'+k,kn,0,-PW.L2,0);part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
+    if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
+    const an=bone('an'+k,kn,0,-PW.L2,0);
+    // S394 — g.bareFeet: a foot of its own in place of the boot: a narrower, flatter sole-to-instep, the heel and the ball
+    // of the toes, all on the same ground line as the boot (its underside at -.06)
+    if(g.bareFeet){part(SK.ball(.046,10,7),skin,an,0,-.024,.035).scale.set(.92,.78,1.8);part(SK.ball(.036,8,6),skin,an,0,-.034,-.01).scale.set(1,.72,1);
+      const toe=part(SK.ball(.032,8,6),skin,an,s*-.004,-.042,.1);toe.scale.set(1.3,.56,.85);}
+    else part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
   // S210 — the gargoyle (Michael's answer on Session 201: gargoyle A, with better wings): horns, a tail on its own bone,
   // and bat wings on a bone each at the shoulder blades: a leading edge of arm and forearm, three fingers from the wrist,
@@ -607,21 +628,21 @@ const FOE_DRESS={
   'Bandit':        {cloth:0x4a3a2a,hat:'hood',wpn:['sword','axe'],shield:'round',shieldP:.35}, // S226 — armed from the weapon kit (wpn), a shield at shieldP
   'Bandit Archer': {cloth:0x3a4a2a,hat:'hood',wpn:'bow'},
   'Highwayman':    {cloth:0x2a2a30,hat:'brim',wpn:['sword','axe']},
-  'Deserter':      {cloth:0x5a5a4a,hat:'helm',wpn:['mace','spear'],shield:'kite'},
+  'Deserter':      {cloth:0x5a5a4a,hat:'helm',wpn:['mace','spear'],shield:'kite',kit:{head:3,chest:3}},
   'Cultist':       {cloth:0x3a1414,hat:'hood',wpn:'dagger'},
   'Rogue Mage':    {cloth:0x2a2a5a,hat:'hood',wpn:'staff'},
   'Pirate':        {cloth:0x3a2a2a,hat:'kerchief',wpn:'cutlass'},
-  'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword'}, // S175 — the shield on the left shoulder; tickPeople holds the guard
+  'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword',kit:{head:3,chest:1,hands:1}}, // S175 — the shield on the left shoulder; tickPeople holds the guard
   'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
   'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
-  'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear'},
+  'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear',kit:{head:3,chest:3,legs:3},rust:0x4a3e34},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
   'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
-  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace'}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
+  'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace',kit:{head:4,chest:4,hands:3,legs:3}}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
   'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
   'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
   // S208 — the trolls on the people's body (Michael's answer on Session 201: as shown, a hammer for the cane): heavy, stooped,
@@ -660,6 +681,12 @@ function buildFoe(type,x,z,genome,eyeCol){
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
     if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}
+    // S403 — the helmed foes in the armour kit (Michael's B on #94), each as his story dresses him, by tier (MATERIALS):
+    // the Deserter his old army's Iron mail and nasal helm; the Bandit Captain looted pieces, Wooden lamellar and vambraces
+    // under an Iron helm; the Shieldbearer Steel plate over Iron mail sleeves and greaves; the Ash Wight Iron mail rusted
+    // nearly black, as the dead's blades are. The kit's helm takes the bowl helm's place; the boots stay the foe's own.
+    if(dr.kit&&typeof MATERIALS!=='undefined'){const k=dr.kit,pc=t=>{if(!t)return null;const m=MATERIALS[t-1];return {tier:t,fam:AR_FAM[t],sig:null,metal:dr.rust!=null?dr.rust:m.blade,guard:m.guard,glow:null};};
+      g.eq=Object.assign({amulet:false,quiver:false},g.eq||{},{armour:{head:pc(k.head),chest:pc(k.chest),hands:pc(k.hands),legs:pc(k.legs),feet:null}});g.hat='none';}
     // a wraith: a long robe to the ground under a cloak and hood, the feet lost in it; it glides (tickPeople)
     if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}
     if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}
