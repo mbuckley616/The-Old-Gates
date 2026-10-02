@@ -10358,7 +10358,7 @@ This is not a design change, so no decision: Michael's note is the spec, and the
 - Six units off, aimed at the middle: out of reach.
 - Aimed at a dead bandit's foot from 1.6 units beyond it, `lootTargetNow()` gives that corpse, and the old spot did not.
 - In a dungeon (`killE`): a Skeleton's corpse carries its body, aimed at its foot it is the loot target, and aimed above it is not.
-- No page errors. `q7world` (Bram's body), `aimbubble` and `duel` (see below) were run. Build tag s363.
+- No page errors. `q7world` (Bram's body), `aimbubble`, `duel` and `duelrhythm` pass (`duelrhythm` timed out at 900 s once with three browsers running side by side, and passed alone). Build tag s363.
 
 ### Needs eyes
 - How it feels to loot a body by looking at any part of it, in first and third person. Third person, the spiders, the slimes and the dragon were not in the test; they take the same two paths.
@@ -10378,7 +10378,7 @@ Session 411 left the pirate's ram open: the page says *pirates gain a ram when f
 - Lying still for 75 s: a run at 0 s that lands at 5.2 s, *The black sail rams you. Hull −20.*, with the ram spent. No other hull lost until the next run at 35.2 s, exactly 30 s after the hit. That run was given up at 47.2 s without touching: she circled past the bow twice and could not line up inside her turn. One hull loss in two runs.
 - Making 7.5: no run in 25 s.
 - Swimming 20 units off the empty ship: no run. She still sails at you, and on the way she struck the empty hull for 19 by Session 411's plain collision (*The hulls strike*). That is older than this session and not a ram, but it is worth knowing: an unattended ship near a swimmer is in her path.
-- No page errors. `piratehold`, `ships` and `shiphull` were run after (below). Build tag s364.
+- No page errors. `piratehold`, `ships` and `shiphull` pass. Build tag s364.
 
 ### Needs eyes
 - Whether one ram in two runs (a miss when her turn can't bring her round) reads as a near thing or as a dull pirate; her turn rate is .5 rad/s, a 13-unit circle at 6.5.
