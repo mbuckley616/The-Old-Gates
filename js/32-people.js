@@ -888,11 +888,14 @@ function ragdollStart(rig,push,opts){
 }
 function ragdollStep(R){
   const {P,I,C,O}=R;
-  // the knees bend forward, the elbows back: a joint across its limb's line is reflected back over it
+  // the knees bend forward, the elbows back: a joint across its limb's line is set back onto it (S428: reflected over it,
+  // it flipped to and fro and kept a limb moving; Session 427 found the same in the beasts)
   const hinge=(a,m,c,sign)=>{const f=_rv3.crossVectors(_rv1.subVectors(P[I.thL].p,P[I.thR].p),_rv2.subVectors(P[I.neck].p,P[I.hips].p)).normalize();
     const A=P[I[a]].p,M=P[I[m]].p,d=_rv1.subVectors(P[I[c]].p,A),t=_rv2.subVectors(M,A).dot(d)/Math.max(1e-6,d.lengthSq());
-    const off=_rv2.copy(M).sub(A).addScaledVector(d,-t),k=off.dot(f);if(k*sign<0)M.addScaledVector(f,-2*k);};
-  for(const o of P){const vx=(o.p.x-o.q.x)*.995,vy=(o.p.y-o.q.y)*.995,vz=(o.p.z-o.q.z)*.995;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
+    const off=_rv2.copy(M).sub(A).addScaledVector(d,-t),k=off.dot(f);if(k*sign<0)M.addScaledVector(f,-k);};
+  // once it is down (it is by .4 s) the air drags harder from 1 s, so a raised knee comes to rest, not topples for seconds
+  const dm=R.t<1?.995:.9;
+  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
   for(let it=0;it<10;it++){
     for(const [a,b,len] of C){const pa=P[a].p,pb=P[b].p,d=_rv1.subVectors(pb,pa),l=d.length()||1e-6,k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
     hinge('thL','knL','anL',1);hinge('thR','knR','anR',1);hinge('shL','elL','wrL',-1);hinge('shR','elR','wrR',-1);

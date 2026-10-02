@@ -32,7 +32,8 @@ check('at its second phase a lesser wolf splits from its flank, in the world', a
 await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); e.hp = 5; e.alert = true; window._hud = null; });
 await g.frames(4); await page.evaluate(() => { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; });
 for (let k = 0; k < 12; k++) {
-  const done = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead) return true; PHP = maxHP; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); return false; });
+  const done = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead) return true; PHP = maxHP; px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); return false; });
+  // each swing from beside it: it moves between swings, and on a loaded runner far enough that twelve blows all missed (S428)
   // wait for this swing to resolve, not a fixed count: a frame of this fight can take seconds on a loaded runner (S401)
   if (done) break; await page.evaluate(() => new Promise(r => { let n = 0; const f = () => { n++; const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead || (n > 2 && swingT === 0 && !_pendingStrike) || n >= 40) r(n); else requestAnimationFrame(f); }; requestAnimationFrame(f); }));
   await page.evaluate(() => { if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } }); }
@@ -42,7 +43,7 @@ const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e =
 console.log(JSON.stringify({ early, fight }), await obj());
 check('reading Bram first does nothing yet (his objective waits on the Faolchú)', early === 0, early);
 check('the Faolchú falls to your blows: defeated, its bar shown while it fought, the Mark on its body, its wolves gone', fight.dead && fight.defeated && fight.hud === 'block' && fight.mark && fight.lessers === 0, fight);
-const mark = await page.evaluate(() => { const c = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark")); openLoot(c); takeLootItem(c.items.findIndex(i => i.name === "The Faolchú's Mark")); try { closeLoot(); } catch (e) {} return BAG.some(b => b.name === "The Faolchú's Mark") || (EQ.amulet && EQ.amulet.name === "The Faolchú's Mark"); });
+const mark = await page.evaluate(() => { const c = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark")); if (!c) return false; openLoot(c); takeLootItem(c.items.findIndex(i => i.name === "The Faolchú's Mark")); try { closeLoot(); } catch (e) {} return BAG.some(b => b.name === "The Faolchú's Mark") || (EQ.amulet && EQ.amulet.name === "The Faolchú's Mark"); });
 const bram = await page.evaluate(() => { const b = ZONE_CORPSES.find(c => c.bramBody && c.zone === 'world'); px = b.x + .5; pz = b.z; interact(); try { closeLoot(); } catch (e) {} return QS.q7_the_rubbing.objectives[3].current || 0; });
 const o1 = await obj(); console.log(JSON.stringify({ mark, bram }), o1);
 check('the Mark taken, and Bram seen to (his objective, now the Faolchú is down)', mark && bram === 1 && o1.startsWith('1111'), { mark, bram, o1 });

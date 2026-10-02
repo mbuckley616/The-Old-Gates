@@ -10498,3 +10498,29 @@ The roll drive I tried is not in the code.
 - A beast killed in a dungeon (`killE`, with the floor and `dSolid`) goes through the same call, but this suite tests the open world only.
 - The Faolchú is a Dire Wolf with sigils on its bones. They should ride the fall, but no test kills the boss.
 - The ragdoll's ground is `activeTerrainH`, so a beast killed on a bridge falls to the ground beneath it, as the people do (Session 419's note).
+
+## v80 — Session 428 — Four suites red on CI after Session 427 (CI fix)
+CI on the branch head (`c883e40`, Session 427) failed two shards: `tpfists` and `q7world` on headless (1), `coachinn` and `ragdoll` on headless (5). All four passed here. Main's run, with the same suites, was green. Each was a different fault that a slower machine exposed, and each was found and fixed on its own.
+
+`ragdoll`: the dungeon's Skeleton was still moving at the four-second cap. This is the tail Session 421 measured (0.95–3.48 s) and left in the game. I fixed it in the game this time, with the two fixes Session 427 found for the beasts. First, a knee or elbow bent the wrong way is set back onto its limb's line, not reflected across it. Reflected, it flipped to and fro and kept the limb moving. Second, from one second (the body is down by .37 s) the air drags harder, .9 a step instead of .995, so a raised knee comes to rest instead of toppling over for seconds. Both are in `ragdollStep`. Over 48 deaths (four distances, five offsets, jab, power and arrow) the bodies settled in 0.93–3.07 s before (median 1.65), and in 1.05–1.78 s after (median 1.28). They are down at the same moment (0.30–0.37 s), and every knee ends .04–.06 above the ground.
+
+`tpfists`: two faults, both in the test.
+- The "before" run plays the sword's arc with the fist mark off, and the old path draws one of three arcs at random. About one time in eleven that is the overhead chop. The chop falls on the middle line, so it swept no wider than the jab (.198 against .167). The before run now pins the slash.
+- The test stepped the loop from `performance.now()` and left `prevT` ahead of real time, Session 421's trap (`tpguard`) again. The next real frame's `dt` came out negative, and `swingT = max(0, swingT - dt)` and `TP.hurtT` ran up. It now steps from `prevT` and hands it back.
+
+Fixing the second exposed a correction to Session 402. Its power punch "lands at .41 against the jab's .33", but that reach was a forward lean from the run-up `TP.hurtT` (`tx += .35`): in the passing runs the head stood .34 forward on the power run's first frame, before any punch. With the clock handed back, the power punch lands at .329 against .325. Michael's A on #80 asks for "the same punch, harder", and what Session 402 built is the shoulders turned 1.3 times as far (.459 rad against .353). The check now tests that, and that the reach is no shorter. I tried leaning the body into the power punch (2.6 times the jab's lean). It added only .033 of reach, and a lean big enough to match .41 is a look nobody asked for, so I reverted it. The game's punch is unchanged.
+
+`coachinn`: the inn is torn down when you go 5,000 units away and rebuilt when you come back, and the test gave the rebuild one tick. The cell streamer looks only every .75 s of ticks. On a slow runner the trip away unloaded the cells, so the inn's road was gone and one tick back could not rebuild it. Its night check failed with it, because there was no door to enter. The test now ticks until the inn stands. I reproduced CI's exact failure by forcing that unload (a .8 s tick on the way out): the old test failed both checks with CI's numbers, and the new one rebuilt the inn in 48 ticks.
+
+`q7world`: the fight sets you beside the Faolchú once, then swings twelve times. On CI it moved between the slow swings, and all twelve missed (hp 5 after nine minutes). The test then crashed in `openLoot` on a corpse that did not exist. Each swing now starts from beside it, and the loot step returns false when there is no corpse instead of throwing. I reproduced it by moving the boss 3 units before each swing: the old test stalled in its swing loop until the page closed; the new one kills it.
+
+### Verified (headless Chromium)
+- Each changed suite was run against a reproduction of its failure, as described above.
+- `tpfists` passed four of four runs (three in parallel); the before swing sweeps .362, the power punch's shoulders .459 against the jab's .353.
+- `ragdoll` passes 28/28, and its three Bandits settle in 1.08–1.20 s (1.43–3.50 s on CI's failing run). The dungeon Skeleton settles too. `coachinn` passes 15/15 (the inn back in one tick here), and `q7world` 8/8 (the Faolchú killed, the Mark taken).
+- These also pass: `beastfall` 37, `duel` 22, `fists` 17 (two suites), `foes` 12, `tpguard` 12, `tpswing` 11, `questfoes` 9 and `dungeonfoes` 5.
+- `parsecheck` is clean. Build tag s365.
+
+### Needs eyes
+- The people's ragdolls settle a little sooner, from about a second, with more drag. The fall itself (the first second) is unchanged. Whether the last movements now look damped is a feel call.
+- The power punch reaches no further than the jab (Session 402's note said it did). It is harder only in the shoulders' turn. If it should lean into the blow, that is a look question for Michael, not built.
