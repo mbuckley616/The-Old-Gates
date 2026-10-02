@@ -10273,3 +10273,25 @@ Not built here: the sea state and its wear (rough water and storms), the pirate'
 - The numbers at sea. Grounding at full sail is about a fifth of a sloop's hull. A black sail circling at 28 units rarely touches you, so rams will mostly be your own doing until her ram is built.
 - Whether the panel's place (bottom right, above the controls line) sits clear of the HUD at real sizes, and whether it should be on the parchment kit (the concept artist's).
 - The shipwright's two new lines (*Mend her: …*, *N hours in the yard. She's sound again, hull and rig.*) are mine. They are for the quest review.
+
+## v80 — Session 412 — The sea's state wears her (Michael's A on #85, its second slice)
+Session 411 gave the ship a hull and a rig. This session adds the sea's state and the wear it puts on her, both from `docs/design/sailing.md`. Her pitch and roll on the sea's wave are left out: the page puts them in one function with the water shader's swell, and the water's look by state belongs to H.5b.
+
+**What changed** (`js/80-world.js`):
+- `seaState(x,z)`: 0 calm, 1 moderate, 2 rough, 3 storm. It is the weather (clear and fog 0; overcast, rain and snow 1; a storm 3) plus one in open water, capped at 3. Mid-change, the weather counts once it is more than half turned. The ship reads it once a second while you are aboard.
+- **A correction to the page's number.** It defines open water as *a bed below −8, 150 units from shore*. The sea bed in `rawH` blends to exactly −8 at a full sea cell: 19,694 of 19,800 deep samples across the map read −8.00, and none lower. So *below −8* is never met, and no water would ever count as open. `openWater` takes the sea's own floor (−7.9 or deeper) and no shore at 50, 100 or 150 units on twelve bearings. That is what the page describes.
+- **Wear under sail** (you at the wheel, making more than half a knot): in a rough sea, 1 hull and 1 rig a minute. In a storm with W held, 1 hull every 6 s and 1 rig every 4 s, half that with no key held while she still makes way, and nothing hove to. Fractions carry over between frames, and whole points go through `shipWear`, so the waterlogged warning and the panel follow.
+- The panel's second line names the sea: *Sea: calm / moderate / rough / storm*.
+
+So a sloop held under full sail through a whole storm (150–330 s) loses 25–55 of her 100 hull, as the page reckoned. Without field repairs, a shipwright is the only mend until the skills build.
+
+### Verified (headless Chromium)
+`tests/seawear.test.mjs` (new), 10/10. She is held in place each tick, with no other ship about, at an open-water spot (bed −8) and a coastal one (bed −6.1):
+- Coastal and open: clear 0/1, fog 0/1, overcast 1/2, rain 1/2, snow 1/2, storm 3/3.
+- Rain in open water (rough), two minutes under sail: hull 98, rig 98, and the panel reads *Sea: rough*. A clear day in open water, and rain along the coast (both moderate): nothing.
+- A storm, a minute with W held: hull 90, rig 85, *Sea: storm*. No key held while still making 3: hull 95, rig 93. Hove to: nothing.
+- No page errors. `shiphull`, `piratehold` and `ships` pass. Build tag s360.
+
+### Needs eyes
+- Whether a storm's cost reads at the wheel. The only signs are the panel's numbers and its *Sea: storm*. The water looks the same at every state until H.5b's wave.
+- How often a voyage is in open water. On the map's grid most sea is more than 390 units from any shore, so a crossing is mostly open, and any rain there is rough.
