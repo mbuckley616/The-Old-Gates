@@ -10244,3 +10244,32 @@ The concept artist, drawing the shop counter on the parchment kit (PR #97, 1 Oct
 
 ### Needs eyes
 - Nothing. The concept artist's ledger may replace this prompt (the counter question with Michael), and the side-named button should carry over to it.
+
+## v80 — Session 411 — The ship's hull and rig (Michael's A on #85, its first slice)
+Michael answered the sailing proposal (#85) with **A, wear and mend**: the sea wears the ship, Joinery and the shipwright put her back. The page (`docs/design/sailing.md`) costs it as four Opus sessions. Its parts that need Joinery (planks, pitch, the bench, the patch) wait for the skills build, and the sea state's pitch and roll share the wave with H.5b's water. So this session builds the part that needs neither: the two bars, three of the four damage sources, and the shipwright's mending.
+
+**What changed** (`js/80-world.js`, the Naval II section and the ship's tick):
+- **Two bars**, kept in `worldState.ship` (already saved whole): hull by class, 100 for a sloop, 140 for a cog and 200 for a galleon, and rig 100 on every class. A save from before this starts her sound. A refit to a bigger class is a new hull and starts full.
+- **Speed**: `shipSpeedNow()` is the class's top speed, then ×0.8 under half her hull and ×0.6 under a quarter, then × (0.5 + 0.5 × rig/100). At 0 hull she is waterlogged and makes 2.5 at most. The page says "under 50 hull" for a 100-hull sloop. I read that as half of whatever hull she has, so a galleon ships water at 100, not at 50. *Better sails*' line still quotes the sound top speed.
+- **Grounding**: striking the shallows faster than 2 costs (speed − 2) × 4 hull. Below 2 she just stops, as before.
+- **Rams**: when your hull first touches another ship, you take the closing speed × 3, or half that when your bow is on her and you are under way. It does not count again until the hulls are more than a unit apart. The page's *give double* has nothing to hit yet, because other ships have no hull.
+- **Volleys**: a pirate volley whose arrows come down on your own deck costs her 2 hull and 3 rig, once a volley. The arrows still aim at you as before. A volley at you in the water off her costs her nothing.
+- **The shipwright**: with her within 140 units of his port and anything wanting, he offers *Mend her: hull 55 of 100, rig 80 of 100 (240 gold)*. That is 4 gold a hull point and 3 a rig point. The clock moves an hour for every 20 points, and she comes back full. If you are short of the price, nothing changes hands.
+- **A panel** at the bottom right shows her name and both bars while you are at the wheel or on her deck, and is hidden everywhere else. It is built in script, like the breath bar, and redrawn only when a number changes. The main loop calls it so it hides indoors, where `WORLD.tick` stops (`js/90-main.js`, one line).
+
+Not built here: the sea state and its wear (rough water and storms), the pirate's ram, foundering and the wreck, and the field repairs.
+
+### Verified (headless Chromium)
+`tests/shiphull.test.mjs` (new), 19/19, a sloop off a real shore 864 units from the start:
+- Speed 7.5 sound; 7.5 at hull 60; 6.0 at 45; 4.5 at 20; 5.625 at rig 50; 4.5 at hull 45 and rig 50; 2.5 at hull 0.
+- W held at the shore from 40 units out: she struck at 7.43 and lost 22 (*Aground — she strikes the shallows. Hull −22.*). At a crawl of 1.6, she stopped and lost nothing.
+- Bow-on into a black sail at 7: −11, and no second count while still touching. A merchantman into her beam at 4 while she lay still: −12, and −12 again once it had drawn off and come back.
+- A volley of three arrows on her deck: hull 98, rig 97. One at you in the water 40 units off: nothing.
+- The panel read *The Test Gull, Hull 98 / 100, Rig 97 / 100* at the wheel and was hidden off her.
+- At Portclare: hull 55 and rig 80 cost 240 gold and 195 minutes, and she came back 100/100. Sound, he offers nothing. At 30 gold against a 40-gold bill, nothing changed. 400 units off, no offer. Refitted as a cog, 140 of 140.
+- No page errors. On the old build the suite fails (no ship to launch). `ships`, `shipwright`, `piratehold` and `cargo` pass. Build tag s359.
+
+### Needs eyes
+- The numbers at sea. Grounding at full sail is about a fifth of a sloop's hull. A black sail circling at 28 units rarely touches you, so rams will mostly be your own doing until her ram is built.
+- Whether the panel's place (bottom right, above the controls line) sits clear of the HUD at real sizes, and whether it should be on the parchment kit (the concept artist's).
+- The shipwright's two new lines (*Mend her: …*, *N hours in the yard. She's sound again, hull and rig.*) are mine. They are for the quest review.

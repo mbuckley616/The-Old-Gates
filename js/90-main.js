@@ -785,6 +785,7 @@ function loop(now){
     if(swingT===0)_bareSwingMax=0;
   }
   if(isInterior()&&typeof WORLD!=='undefined')WORLD.tickInterior(dt,now); // v80 S12
+  if(typeof WORLD!=='undefined')try{WORLD.shipBarsUI();}catch(e){} /* S411 — the ship's hull and rig while you are aboard; hidden in every other zone */
   if(typeof WORLD!=='undefined')WORLD.tickRealClock(); // v80 S242 — the Reader's clock runs in every zone, or an hour underground reads as an hour away
   if(lid==='overworld'){
     // v80 — streamed world: chunk streaming + atmosphere. Runs before the zone chain.
