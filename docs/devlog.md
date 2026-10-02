@@ -10228,3 +10228,19 @@ Build tag s357.
 ### Needs eyes
 - Whether *You check the blow.* reads right when the club lands visibly on her and does nothing. There is no pulled-swing animation: the strike resolves as a hit, and only then is it checked.
 - Whether 0.4 s is the right size in play: long enough to forgive the reflex, short enough that a deliberate second blow still murders.
+
+## v80 — Session 409 — The sell prompt's button says Sell
+The concept artist, drawing the shop counter on the parchment kit (PR #97, 1 Oct), found that the quantity prompt's button for a typed amount reads *Buy* when you are selling a stack. The prompt's title already said *Sell …* (`openQtyModal` set it by side), but the button was written once in `index.html` as *Buy* and never changed. A fix to a label, so not a decision.
+
+**What changed** (`js/60-shop.js`, `openQtyModal`): the button's text is set by side with the title, *Buy* or *Sell*. The markup's default is still *Buy*, which is right for the first thing the prompt opens on.
+
+### Verified (headless Chromium)
+`tests/qtybutton.test.mjs` (new), 6/6, at a Dunmore potion counter at 13h:
+- Buying a stocked Health Potion: the title *Buy Health Potion*, the button *Buy*.
+- Selling a stack of 20: the title *Sell Test Draught*, the button *Sell*. On the old build this check fails with the button reading *Buy*, and the other five pass.
+- Typing 5 and pressing the button sells five (20 → 15, 40 gold).
+- Opened again to buy, the button says *Buy* again.
+- `prices` 5/5. Build tag s358.
+
+### Needs eyes
+- Nothing. The concept artist's ledger may replace this prompt (the counter question with Michael), and the side-named button should carry over to it.
