@@ -10657,3 +10657,23 @@ Backlog G owed Session 141's inn rooms to a playtest: rent a room, sleep in it, 
 - Whether *the second door on the left* now matches what you see from the top of the stair. It is the first thing to try.
 - Other guests' doors open to anyone, and their rooms are empty inside. *A bolt on the door* is only words. Locking them, or putting a sleeper in, would be a design call (and a crime, if picked), so it is left.
 - *Not your room* and *An empty room, not the one you took* are mine, for the quest review.
+
+## v80 — Session 425 — The Church and the factions, played through (backlog G, Session 158's check)
+Backlog G owed Session 158's Church and factions to a playtest: confess at a church with a record, try to serve a faction with a fine standing, and the tithe against the fine. `crime4` checks each rule by setting the record and calling the priest's topic function directly. Nothing had played it through the way a player meets it, so this session does that in Dunmore. A shop door is picked at 23h with a townsperson three units off in the street (the staging `crime2` uses). At 10h the priest is found where he is. He keeps the Oratory by day as a keeper keeps a shop, and is not in the street from mid-morning on. E by him opens his dialogue, and the choices are clicked in the page. The Crown's seat is asked. The fine is paid to the lord through her own dialogue.
+
+**What was wrong.** The priest offers *Confess.* while you have any record in the town: favour owed to crime, a fine standing, or the gates shut. A confession takes the 25-gold tithe and buys back a point of favour *if one is owed*. But favour also comes back by itself, a point every three quiet days (`tickCrimeDay`), while the fine stands until it is paid. So a theft left unpaid for a week, or a tithe that had already bought back the last point, left the priest offering a confession that took 25 gold, changed nothing, and told you *The town will come round the sooner for it*. Session 158's entry says the tithe buys back a point of the favour crime cost you. With no point owed, it bought nothing.
+
+**What changed** (`js/80-world.js`, `penanceTopics`): with no favour owed, *Confess.* is not offered, unless a guard's death in the town is still unheard by the Church. That case keeps Session 158's refusal while the town is unpaid and its absolution once paid. A fine alone is the lord's business, as it always was. The tithe, the three days between confessions, the point it buys and the faction's rules are unchanged.
+
+### Verified (headless Chromium)
+`tests/penance.test.mjs` (new), 10/10. In Dunmore:
+- The lock picked under Gráinne's eye: favour −1, a point owed, a 25-gold fine.
+- 10h: Pádraig is in the Oratory, not the street. E by him opens his dialogue with *Confess.* among the topics. *It is heard.* takes 500 → 475 gold; favour −1 → 0, nothing owed, the fine still 25.
+- The Crown's seat, with the fine standing: *Not while Dunmore has a fine on you…*
+- Back at the priest, with only the fine left: no *Confess.*, and gold still 475. On the old code (HEAD's `js/` booted with `--src`), he offers it.
+- Two more points owed and 50 more on the fine, then six quiet days: debt 2 → 0 and favour −2 → 0 on their own, the fine 75. Again no *Confess.* (the old code offers it).
+- The lord (Niamh): *Pay my fine (75 gold)* takes 475 → 400, the record is clean, and the seat's first topic is *Serve the Crown.* again. The priest has nothing to hear.
+- No page errors. `crime4` passes. Build tag s368.
+
+### Needs eyes
+- The tithe against the fine by feel. A point of favour costs 25 either way, by the tithe or by waiting three days, and only the lord clears the fine. Whether paying the Church to hurry the town is worth 25 when the days are free is Michael's call if he wants it changed.

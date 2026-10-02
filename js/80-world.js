@@ -5989,7 +5989,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // gone; a guard's death in its nation costs a service and the rank that went with it.
   function recordAt(site){const c=crimeOf({site});return c&&(c.debt>0||c.bounty>0||c.shut)?c:null;}
   function churchNoteAt(siteId){const N=(worldState.church&&worldState.church.notes)||[];return N.find(n=>n.kind==='guard'&&n.site===siteId&&!n.absolved);}
-  function penanceTopics(site){const c=recordAt(site);if(!c)return [];const note=churchNoteAt(site.id);
+  function penanceTopics(site){const c=recordAt(site);if(!c)return [];const note=churchNoteAt(site.id);if(c.debt<=0&&!note)return []; /* S425 — no favour owed and no guard's death to hear: a fine alone is the lord's, and the tithe bought nothing */
     return [{label:'Confess.',quest:true,fn:()=>{
       if(note&&(c.bounty>0||c.shut))return 'A guard of this town is dead by your hand, and the town is not paid. I will not hear you until it is.';
       const day=dayNow();if(c.confessed!=null&&day-c.confessed<3)return 'You have confessed. Now live it; come back to me in a few days.';
