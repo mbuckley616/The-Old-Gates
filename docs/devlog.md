@@ -10442,3 +10442,22 @@ CI on the branch head (`1a96bbf`, the merge of main after Session 419) failed tw
 
 ### Needs eyes
 - A ragdoll that lands with a knee up. The leg can take a second or two to fall over after the body is down. Whether that reads as a body settling, or whether the knee should go down faster (more damping on a joint off the ground) is a feel call.
+
+## v80 — Session 422 — The creatures' deaths: the prototype (H, after Session 419)
+Session 419 left the beasts on the wolf's bones on the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. `tickCreatures` sets a dead pose (`wgDead`), and `killZoneEnemy` turns the whole figure 90° about z in one frame and lifts it .15. That is the snap Michael called stiff in his question of 1 Oct. Extending his C to four legs is a question about the look, so this session builds the prototype and asks (DECISION #107, under Pending in `docs/decisions.md`). The game is unchanged.
+
+`docs/prototypes/ragdoll/creatures.mjs` builds a Wolf with `buildWolf` four metres ahead of the player, on its standing pose, and strikes it from the player's side. Rows A–C are six frames from 0 to 1.6 s. A is today. B is a canned collapse. The legs fold at the elbow, carpus, stifle and hock over .25 s, and the body rolls a quarter turn about its own long axis over .5 s, easing in, with a small bounce. C is the people's ragdoll moved onto four legs, with 29 points:
+- the hips, spine, neck, head, and a nose point past the head;
+- three tail joints and the tail's end;
+- on each leg, the four bones' joints and an end past the paw.
+
+Each end point is placed half (or more) of its bone's own length beyond it, in that bone's frame, so the same code serves the wolf, the boar and the bear. The torso box (hips, spine, neck root and the four leg roots) is braced rigid, and each paw is braced to its joint above. Two minimum-distance braces keep the head from folding back through the shoulders and the tail from folding onto the back. Each leg joint's hinge takes its sign from which way it juts at rest: the elbow, the carpus and the hock back, the stifle forward. The blow's push grows with height. The hips, spine and neck drop and roll to one side at random, and the lower legs kick the other way, so most deaths end on the flank. The bones follow the points as the people's do: the hips by the torso's frame (thigh to thigh across, hips to neck forward), then each bone turned onto its next point, parent first. Row D is six deaths under C: three Wolves (a bite parried, mid-leap, from the side), a Dire Wolf from a heavy blow, a Cave Bear and a Boar.
+
+### Verified (headless Chromium)
+The grid ran without page errors. After apply at rest, every bone sits on its point (0.0000 off). The six deaths of row D settled (no point moving more than 1.5 mm a step) in 0.62–0.97 s, faster than the people's 0.97–1.47. A thigh, a forearm and the back came out at 0.999–1.001 of their length. The prototype costs about 4 ms a step for one body, because it allocates vectors inside the loops. The people's ragdoll cost the same in its prototype before Session 419 moved it onto scratch vectors, and it runs at about 1 ms. `docs/prototypes/ragdoll-creatures.png`.
+
+### Needs eyes
+- B always rolls the same way. In the grid it rolls the legs towards the camera, which can read as lying on its back from above.
+- In C, one wolf of the six (the parried bite) ends on its back with its legs up. A dead animal can lie that way, but it is rarer than on the flank.
+- The Cave Bear ends in a heap rather than on its side: a short body on short legs, its bulk the same radius as the wolf's scaled.
+- The spiders, the crawler and the scorpion already curl their legs dead, and are turned on their side as well. That is outside this question. The entry proposes only dropping the turn if C is chosen.
