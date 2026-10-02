@@ -5,6 +5,13 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 ## Pending
 
 ## Answered
+### Main's tests went red after the Systems 404–429 merge (the producer, 2026-10-02)
+Main's check failed on 8ca3e23: saveui failed once (a save to an empty slot did not show) and headless shard 3 ran out of its 45 minutes on its last suite. Both had passed on bd9fb74. One re-run of the two jobs: saveui (shard 8) passed; shard 3 timed out again at 45 minutes (run 37053330502, attempt 2). Shard 3 also timed out on auto/systems f71586a.
+- **A. Carry on merging; fix the slow shard** (recommended): approved branches keep merging on their own green CI; the systems builder rebalances the shards or raises the time limit next run.
+- **B. Hold all merges until main is green.**
+
+Michael: **Carry on merging; fix the slow shard** (A). (2026-10-02)
+
 ### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #112)
 Today the ranges are bands laid on cell borders (the Mark's are a grid of boxes), one peak a cell, and the rivers are border crossings rolled at random, one width, with no forks. Session 430 prototyped three rules for laying the ranges, and routed the rivers off them the way the real build would: a coarse height (the distance from the coast, the proposed ranges on top) is flooded and drained, so every channel reaches the sea or a lake, tributaries join, and the width follows the catchment (10u at 1 km², 16u where a ship fits at 3.2 km², 25u at 12 km²). The pictures are the world map as the game draws it, washed pale, with the proposal over it; the old ridge boxes still show through faintly. The home province keeps its authored rivers in every layout (the Dearg, the Westwater, the Ferrous wall along its north edge); the Dearg would widen downstream but stay a ford at Redwater Ford, so it is not a ship's river.
 
