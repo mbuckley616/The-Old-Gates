@@ -7053,8 +7053,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // health she kneels and yields (no blow takes her below it before then); three seconds unstruck and she is spared, a
   // blow after the yield is murder and the League closes. The ring holds you at 1 health: down, yielded or over the
   // rope, the yard acclaims Rowe, and the ring is laid again in seven days.
-  const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
-  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12;
+  const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,yieldS:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
+  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12,DUEL_CHECK=.4;
   const DUEL_BARKS=["Feet, Rowe! Feet!","Get your guard up, {nick}!","That's blood. Keep at it.","Iron and blood!","Watch her left, {nick}.","Don't dance. Fight.","Hesket! Hesket!","Up, {nick}! Up!","Finish it by noon, the pair of you!"];
   function duelQuest(){return qActive().find(q=>q.kind==='duel')||null;}
   function duelRingHours(){const h=hourNow();return h>=DUEL_OPEN&&h<DUEL_CLOSE;}
@@ -7102,7 +7102,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1400);
     showMsg('The rope is up. Hesket Rowe lifts her blade.','#e8d8a0');if(typeof addLog==='function')addLog('⚔','The duel at Caer Slige: Hesket Rowe.');}
   function duelBark(line){const W=DUEL.watchers.filter(w=>w.g.visible);if(!W.length)return;sayBubble(W[Math.floor(Math.random()*W.length)],line.split('{nick}').join(duelNick()));}
-  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;if(e.mesh)e.mesh.position.y-=.45;
+  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;DUEL.yieldS=playClockS;if(e.mesh)e.mesh.position.y-=.45;
     try{if(dlgOpen&&dlgNPC&&dlgNPC.name===RIVAL.name)closeDialog();}catch(err){}
     showMsg('Hesket Rowe goes down on one knee and lays her blade on the ground.','#e8d8a0');roweSay("Enough. I yield. It's yours.");}
   function duelWon(q){const e=DUEL.rowe;q.data.state='won';duelLeague().rowe='alive';const x=e.x,z=e.z;duelRemoveRowe();duelRingDown();
@@ -7131,7 +7131,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(ended){if(far>60||(d.state==='lost'&&dayNow()>=(d.retryDay||0)))duelTeardown();return;}
     if(d.state==='wait'){if(far>240){duelTeardown();return;}if(DUEL.open!==duelRingHours()){duelTeardown();return;}return;}
     const e=DUEL.rowe;if(!e){duelTeardown();return;}
-    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
+    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0&&duelCheck(e))return;if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
       DUEL.spare-=dt;if(DUEL.spare<=0)duelWon(q);return;}
     // the fight
     const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
@@ -7145,7 +7145,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the kill path asks first: before the yield no blow takes her below a quarter (she yields instead); after it, a kill is murder
   function duelKill(e){const q=DUEL.q;if(!q||DUEL.rowe!==e)return false;const s=q.data.state;
     if(s==='fight'||s==='wait'){if(s==='wait')q.data.state='fight';e.hp=Math.max(1,Math.floor(e.maxHp*.25));duelYield(q);return true;}
-    if(s==='yielded')duelMurder(q);return false;}
+    if(s==='yielded'){if(duelCheck(e))return true;duelMurder(q);}return false;}
+  // S408 (Michael's B on #96) — a blow begun within DUEL_CHECK s of her kneeling is held: it lands on nothing. A blow begun later is murder
+  function duelCheck(e){if(!(_offenceS<(DUEL.yieldS||0)+DUEL_CHECK))return false;e.hp=DUEL.hp0;e.dead=false;
+    if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}showMsg('You check the blow.','#e8d8a0');return true;}
   // the ring holds you at 1 health: going down in it is a yield, not a death
   function duelDown(){const q=DUEL.q;if(!q||q.data.state!=='fight'||Math.hypot(px-q.data.x,pz-q.data.z)>DUEL_R+2)return false;duelLost(q,'down');return true;}
   // v80 S133 — a guild hunt's ground on the compass until the tally is met

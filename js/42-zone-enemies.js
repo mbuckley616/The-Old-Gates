@@ -1655,7 +1655,7 @@ function attackZoneEnemies(isPower, _isDeferred){
   // v69.1 — whoosh at swing start; contact + hit resolution at impact.
   sndWhoosh();
   // v66.1 — defer audio + hit resolution to the swing impact frame.
-  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;
+  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;_offenceS=playClockS;
 }
 // v66.1 — Zone melee resolution, extracted from attackZoneEnemies() and fired
 // at the swing impact frame. Impact-gather candidates, audio, cleave/damage.

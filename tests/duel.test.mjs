@@ -67,7 +67,7 @@ check('spared, Rowe stands at the seat with the League\'s rank-3 lines', r1 && /
 // 2 — murder
 await fresh(8); await callIt();
 const m = await page.evaluate(() => { const D = WORLD.duel, e = D.rowe; e.hp = Math.floor(e.maxHp * .25); WORLD.tickDuel(1 / 60); const s1 = D.q.data.state; const rot = D.watchers.map(w => w.g.rotation.y);
-  e.hp -= 3; WORLD.tickDuel(1 / 60); const L = WORLD.fstate().league;
+  _offenceS = D.yieldS + .5; e.hp -= 3; WORLD.tickDuel(1 / 60); const L = WORLD.fstate().league; /* S408: a blow begun 0.5 s after she knelt, past the 0.4 s that is checked */
   return { s1, state: D.q.data.state, dead: e.dead, done: D.q.done, closed: L.closed, rowe: L.rowe, turned: D.watchers.every((w, i) => Math.abs(Math.abs(w.g.rotation.y - rot[i]) - Math.PI) < 1e-6), parts: D.parts.length, sgt: D.sgt.def.greeting[0] }; });
 check('at a quarter she yields; a blow after it kills her: murder, the League closed, the watchers turn their backs', m.s1 === 'yielded' && m.state === 'murder' && m.dead && m.done && m.closed && m.rowe === 'dead' && m.turned && m.parts === 0 && /She yielded/.test(m.sgt), m);
 const t2 = await serveNow(); const t2b = await serveNow();

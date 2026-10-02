@@ -10202,3 +10202,29 @@ No page errors. Build tag s356.
 ### Needs eyes
 - Michael's answer to #96. If he wants the yield to forgive a swing begun within reaction time, it is one condition in `tickDuel`'s yielded branch and a change to this test's expectations.
 - Arrows and spells loosed before she kneels and landing after are the literal *in the air* case. They take the same path (any loss of health after the yield is murder) and were not measured.
+
+## v80 — Session 408 — A blow begun as she kneels is checked (Michael's B on #96)
+Session 405 measured the yield in *The Yard at Caer Slige*: any blow that lands after Rowe kneels is murder, and a player clicking in rhythm begins the next swing 0.17–0.28 s after the yielding blow, which is under a human's reaction time. So a steady fighter often murdered her, closed the League and turned the watchers' backs without choosing to. I asked (#96). Michael answered **B: a blow begun within 0.4 s of her kneeling is checked**.
+
+**What changed.**
+- `_offenceS` (`js/10-player.js`) is the play clock (`playClockS`, the loop's game time) when you last *began* a blow. It is stamped when a swing starts (`attackZoneEnemies`, `attack`), when an arrow is loosed (`fireArrow`) and when a spell is cast (`castSpell`, as the mana is spent).
+- `duelYield` records the yield's time (`DUEL.yieldS`). After it, a loss of health takes two paths, and both now ask `duelCheck` first: `tickDuel`'s yielded branch (any drop below her kneeling health) and `duelKill` (a blow that would kill her). If your last blow began before `yieldS + 0.4` (`DUEL_CHECK`), her health is put back, her bar redrawn, and *You check the blow.* shows; she stays on her knee, and the three seconds to the acclaim run on. A blow begun later is murder, as before.
+- An arrow or a spell already in the air at the yield began before it, so it is checked too. That was the critic's literal case.
+- A burn or other lingering effect from an earlier blow is also checked, since you began nothing new. One edge is not covered: a blow begun inside the window that lands *after* a later blow you began past it (a slow arrow overtaken by a swing) counts by the later one. That needs two attacks in flight at once against a kneeling woman, and it errs towards murder only when you did begin a late blow.
+
+### Verified (headless Chromium)
+`tests/duelrhythm.test.mjs` (extended), 10/10, Wooden GreatClub (cooldown 0.555 s). A bot swings in rhythm and stops a set reaction time after the yield:
+- 0 s and 0.15 s: one swing, spared, as before.
+- 0.3 s (a fast human) and 0.4 s: the next swing began 0.25 s after she knelt and landed 0.6 s after. It was checked once, her health ended where she knelt (15 of 15), and she was spared after three seconds. Session 405 measured 0.25 s and 0.4 s as murder.
+- 1 s: the third swing began 0.85 s after the yield and landed: murder.
+- An arrow loosed from 3 units 0.1 s after she knelt was checked and she was spared. One loosed at 0.6 s was murder.
+- No page errors.
+- The 0.25 s case of Session 405 became 0.3 s: whether the next swing falls before or after a 0.25 s cut-off depends on where in the cooldown the yield lands (0.20–0.25 s in 405, past 0.25 in one run here).
+
+`tests/duel.test.mjs`: its murder check took 3 health off by hand with no blow begun, which is now checked. It now stamps a blow begun 0.5 s after the yield first, which is what the check means. 22/22.
+
+Build tag s357.
+
+### Needs eyes
+- Whether *You check the blow.* reads right when the club lands visibly on her and does nothing. There is no pulled-swing animation: the strike resolves as a hit, and only then is it checked.
+- Whether 0.4 s is the right size in play: long enough to forgive the reflex, short enough that a deliberate second blow still murders.

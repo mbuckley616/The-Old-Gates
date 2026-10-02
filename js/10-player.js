@@ -227,6 +227,8 @@ let lastBlockAttemptT=-99;
 // S368 — the play clock: seconds of play, the loop's capped dt summed (the clock a foe's wind-up runs on). The parry window
 // is read on it, so a slow frame between the block and the blow cannot close the window (the critic, s321)
 let playClockS=0,lastBlockAttemptG=-99;
+// S408 — when the player last began a blow (a swing, an arrow, a cast), on playClockS: the duel's yield checks a blow begun within 0.4 s of it
+let _offenceS=-1e9;
 // S275 — the roll (combat, Michael's B: A's first piece). Q rolls you (keys: the held-key map, which lives in the loop's scope) the way you are moving, or back if you are
 // standing. Light: 0.45 s over 2.6 units, untouchable from 0.08 to 0.30 s. Carrying over 70% of what you can: 0.6 s
 // over 1.8 units, untouchable 0.08–0.24 s. 18 stamina either way. Distance and window read performance.now(), so a

@@ -16,6 +16,8 @@ Recommendation: **B.** It is one condition in `tickDuel` and a test. It keeps *s
 
 Michael: **A blow begun within 0.4 s of her kneeling is checked**. (1 Oct 2026, issue #96, via the control room)
 
+*Built, Session 408* (`tests/duelrhythm`): the game notes when you last began a swing, an arrow or a cast; a blow that lands after she kneels is checked (*You check the blow.*, her health put back) if that was within 0.4 s of the yield, and murder if later. A burn or other effect still running from an earlier blow is checked too, since you began nothing new.
+
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
 - **A. A telegraphed slam.** Every 8–10 s the master winds up for 0.9 s (the tells of Session 282) and strikes the ground in a 3-unit ring that can't be blocked, for twice its blow. A roll through it (the roll's untouchable window) or getting out of the ring avoids it. It is the combat page's shape: read the tell, roll.
