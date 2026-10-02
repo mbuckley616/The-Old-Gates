@@ -4,13 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### Platforming — the jump, the ledge and the places that ask for them (the designer, 2026-10-02)
-Today the world outdoors has no tops: rocks, walls and ruins only block, a fall of any height costs nothing, and no place asks for a jump, so Acrobatics' perks, magic B's movement words and the felled trunk have nothing to open. Which shape should platforming take, built to one table of gaps (2.9 anyone at a sprint, 3.4 at Acrobatics 100, 5 with the double jump) with a mantle for everyone and falls that hurt past 4 units? (Page: `docs/design/platforming.md`.)
-- **A.** The honest jump: heights for the world's solids, the mantle (Catch at Acrobatics 25), fall damage (6% of health a unit past 4, halved by a landing roll), and your three examples built once by hand: Greywatch climbed from outside, a broken gorge bridge on the Bealach, a dungeon pit of pillars. One Fable and two Opus sessions.
-- **B.** A, plus places seeded by the generator, each with more than one way across: broken towers and forts climbed outside, gorge crossings, cliff shelves, and in dungeons the pit of pillars, crumbling floors and timed blade runs; optional caches and views at the end, nothing on the main quest's path gated. One Fable and five Opus sessions.
-- **C.** B, plus climbing on ivy, rough stone and rope against a stamina drain. One Fable, seven Opus and a look session; it undoes the walls the towns, the watch and burglary stand on.
-
-Recommendation: **B**, with A's sessions first. It gives every movement perk, word and the trunk something to open across the whole continent, and the same gap three answers, so a trained skill is a shorter way rather than a gate.
+## Answered
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
@@ -26,7 +20,17 @@ Rows A–C are a wolf struck from your side, at 0 to 1.6 s. Row D is six differe
 
 (Prototype: `docs/prototypes/ragdoll/creatures.mjs`, Session 422.)
 
-## Answered
+Michael: **A ragdoll on the wolf's own joints** (C). (2026-10-02)
+
+### Platforming — the jump, the ledge and the places that ask for them (the designer, 2026-10-02)
+Today the world outdoors has no tops: rocks, walls and ruins only block, a fall of any height costs nothing, and no place asks for a jump, so Acrobatics' perks, magic B's movement words and the felled trunk have nothing to open. Which shape should platforming take, built to one table of gaps (2.9 anyone at a sprint, 3.4 at Acrobatics 100, 5 with the double jump) with a mantle for everyone and falls that hurt past 4 units? (Page: `docs/design/platforming.md`.)
+- **A.** The honest jump: heights for the world's solids, the mantle (Catch at Acrobatics 25), fall damage (6% of health a unit past 4, halved by a landing roll), and your three examples built once by hand: Greywatch climbed from outside, a broken gorge bridge on the Bealach, a dungeon pit of pillars. One Fable and two Opus sessions.
+- **B.** A, plus places seeded by the generator, each with more than one way across: broken towers and forts climbed outside, gorge crossings, cliff shelves, and in dungeons the pit of pillars, crumbling floors and timed blade runs; optional caches and views at the end, nothing on the main quest's path gated. One Fable and five Opus sessions.
+- **C.** B, plus climbing on ivy, rough stone and rope against a stamina drain. One Fable, seven Opus and a look session; it undoes the walls the towns, the watch and burglary stand on.
+
+Recommendation: **B**, with A's sessions first. It gives every movement perk, word and the trunk something to open across the whole continent, and the same gap three answers, so a trained skill is a shorter way rather than a gate.
+
+Michael: **A, plus generated places with several ways across** (B). (2026-10-02)
 
 ### Ragdoll for defeated enemies — how a foe goes down (the look builder, Session 415, 2026-10-02, issue #102)
 Michael asked in the control room (1 Oct): "Is it possible to have ragdoll for defeated enemies? Having them snap to the ground sideways feels stiff." It is possible. The prototype builds three deaths on a Bandit, from the game's own body and ground. The game is unchanged. Rows A–C show each death at 0, .12, .25, .4, .7 and 1.6 s after the blow. Row D is where C leaves six different deaths.
@@ -39,7 +43,6 @@ Either B or C keeps today's darkening and the loot on the body. C also leaves th
 Shot: [A / B / C filmstrips, and six deaths under C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/ragdoll-grid.png) (`docs/prototypes/ragdoll/grid.mjs`).
 
 Michael: **A ragdoll: every death different** (C). (2026-10-02)
-Done, Session 419 (the look builder): C as drawn. `ragdollFoe`/`ragdollStart`/`tickRagdolls` in `32-people.js`, one call from `killE` and `killZoneEnemy` for every people-bodied foe but the wraiths; wolves, spiders, bears and the box-built foes keep A. Fixed 1/60 steps, frozen once still (1.2–1.7 s in the test). `tests/ragdoll`, `docs/prototypes/ragdoll-ingame.png`.
 
 ### The pirate's ram: how hard, how often? (systems builder, 2026-10-02, issue #100)
 Your A on sailing (#85) is built except the parts that wait for the skills build, and one part that needs a number: the pirate's ram. Sessions 411–413 made the hull and rig, the wear from the sea, grounding, rams, volleys and foundering. The page says *pirates gain a ram when faster and within 30 units*, and that a ram costs the closing speed × 3, *bow-on, you take half and give double*. Taken literally, a black sail coming bow-on at her 6.5 costs your sloop 39 of her 100 hull. The page doesn't say how often she may ram, and today she closes to 28 units and circles, shooting, so she would be back on you every few seconds. How should she ram?
@@ -61,7 +64,6 @@ Session 402 put the jab on the third-person body, and its devlog left two look c
 Shot: [A / B / C / D, standing, on the move, the hand close, ahead-right](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/unarmed-grid.png) (`docs/prototypes/unarmed/grid.mjs`). Unarmed only: a weapon, a bow, a shield or a torch keeps today's poses. The townsfolk's hands are not touched.
 
 Michael: **B, the jab's guard carried**. (1 Oct 2026, issue #99, via the control room)
-Done, Session 414 (the look builder): option D as drawn, the label above reads B but the answer on issue #99 is D. Each empty hand is a folded fist (a weapon, bow, torch, tome or shield keeps the mitten on its hand), and with both hands empty the body carries the jab's guard standing and on the move, dropping to the swinging arms for a sprint or a jump. `docs/prototypes/unarmed-built.png`, `tests/tpguard.test.mjs`.
 
 ### The counter and the chest on the parchment — instant clicks or a reckoning? (the concept artist, 2026-10-01, PR #97)
 The approved parchment kit (27 Sep) now has the trade screens drawn on it with the game's own numbers (Lorcan's Forge, Dunmore): the shop as an open ledger, the shop's page left and your pack right, the picked piece set against what you wear with its price worked out (list × town × Charisma), and a locked piece saying why (*needs Might 5 — you have 3*). Also a ruled slider for quantities and a chest window showing the pack's weight after taking all. Prototype: `docs/prototypes/trade/` on auto/concept.
