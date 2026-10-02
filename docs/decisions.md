@@ -4,6 +4,24 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
+Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
+
+![grid](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/ragdoll-creatures.png)
+
+Rows A–C are a wolf struck from your side, at 0 to 1.6 s. Row D is six different deaths under C.
+- **A.** Keep today's snap.
+- **B.** A canned collapse. The legs fold and the body rolls onto its side over half a second, with a small bounce. Every death is the same.
+- **C.** A ragdoll on the wolf's own joints, the people's ragdoll applied to four legs. It has 29 points (the spine, the head and nose, the tail, and four legs with their paws), with the torso held rigid. The elbow and the hock bend back and the stifle forward. Gravity, the blow, the ground and the walls act on it. Each death is different: on its side, sprawled, a heap, or now and then on its back. The prototype settles in 0.6–1.0 s and the bone lengths hold to 0.1%. Built like the people's, it should cost about 1 ms a step per falling body, and nothing once it is still.
+
+**Recommendation: C.** It matches the people's deaths, so a pack of wolves doesn't fall one way and the bandit beside them another. B always rolls the same way. The spiders, the crawler and the scorpion already curl their legs as they die. If you choose C, I would only drop their 90° turn so the curl plays where they stand, and ask you separately if it should be more.
+
+(Prototype: `docs/prototypes/ragdoll/creatures.mjs`, Session 422.)
+
+Michael: **A ragdoll on the wolf's own joints** (C). (2026-10-02)
+
 ### Platforming — the jump, the ledge and the places that ask for them (the designer, 2026-10-02)
 Today the world outdoors has no tops: rocks, walls and ruins only block, a fall of any height costs nothing, and no place asks for a jump, so Acrobatics' perks, magic B's movement words and the felled trunk have nothing to open. Which shape should platforming take, built to one table of gaps (2.9 anyone at a sprint, 3.4 at Acrobatics 100, 5 with the double jump) with a mantle for everyone and falls that hurt past 4 units? (Page: `docs/design/platforming.md`.)
 - **A.** The honest jump: heights for the world's solids, the mantle (Catch at Acrobatics 25), fall damage (6% of health a unit past 4, halved by a landing roll), and your three examples built once by hand: Greywatch climbed from outside, a broken gorge bridge on the Bealach, a dungeon pit of pillars. One Fable and two Opus sessions.
@@ -12,7 +30,7 @@ Today the world outdoors has no tops: rocks, walls and ruins only block, a fall 
 
 Recommendation: **B**, with A's sessions first. It gives every movement perk, word and the trunk something to open across the whole continent, and the same gap three answers, so a trained skill is a shorter way rather than a gate.
 
-## Answered
+Michael: **A, plus generated places with several ways across** (B). (2026-10-02)
 
 ### Ragdoll for defeated enemies — how a foe goes down (the look builder, Session 415, 2026-10-02, issue #102)
 Michael asked in the control room (1 Oct): "Is it possible to have ragdoll for defeated enemies? Having them snap to the ground sideways feels stiff." It is possible. The prototype builds three deaths on a Bandit, from the game's own body and ground. The game is unchanged. Rows A–C show each death at 0, .12, .25, .4, .7 and 1.6 s after the blow. Row D is where C leaves six different deaths.
