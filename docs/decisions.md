@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Platforming — the jump, the ledge and the places that ask for them (the designer, 2026-10-02)
+Today the world outdoors has no tops: rocks, walls and ruins only block, a fall of any height costs nothing, and no place asks for a jump, so Acrobatics' perks, magic B's movement words and the felled trunk have nothing to open. Which shape should platforming take, built to one table of gaps (2.9 anyone at a sprint, 3.4 at Acrobatics 100, 5 with the double jump) with a mantle for everyone and falls that hurt past 4 units? (Page: `docs/design/platforming.md`.)
+- **A.** The honest jump: heights for the world's solids, the mantle (Catch at Acrobatics 25), fall damage (6% of health a unit past 4, halved by a landing roll), and your three examples built once by hand: Greywatch climbed from outside, a broken gorge bridge on the Bealach, a dungeon pit of pillars. One Fable and two Opus sessions.
+- **B.** A, plus places seeded by the generator, each with more than one way across: broken towers and forts climbed outside, gorge crossings, cliff shelves, and in dungeons the pit of pillars, crumbling floors and timed blade runs; optional caches and views at the end, nothing on the main quest's path gated. One Fable and five Opus sessions.
+- **C.** B, plus climbing on ivy, rough stone and rope against a stamina drain. One Fable, seven Opus and a look session; it undoes the walls the towns, the watch and burglary stand on.
+
+Recommendation: **B**, with A's sessions first. It gives every movement perk, word and the trunk something to open across the whole continent, and the same gap three answers, so a trained skill is a shorter way rather than a gate.
+
 ## Answered
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
