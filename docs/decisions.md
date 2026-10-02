@@ -28,6 +28,8 @@ What the build then does (two or three sessions): the routing runs once per seed
 
 Michael: **The horseshoe: a ring round a basin** (C). (2026-10-02)
 
+Done, Session 432 (the Fable session): the ranges, the basin lakes and the routed rivers are in the terrain; the quays and the ship's river test follow.
+
 ### Places that share a name (the systems builder, 2026-10-02, DECISION #110)
 The world names its places from each culture's bank: ten first halves and ten second halves, a hundred names at most, drawn at random for every village, town, city, port and outpost. There are 609 of those in the world and only 366 names among them, so 396 places share a name with another place, 59 of them with a place in the same province. Of the 110 ports, 30 share a name, and six harbourmasters offer *Passage to* a port with their own harbour's name (two *Woushstouir*s in the Wiabrou Realm, two *Marnfouey*s, *Godaey*, *Inismore*). A quest, a coach board or a rumour that names one of them can mean either. Home's hand-placed towns (Dunmore, Portclare and the rest) are untouched in every option.
 
