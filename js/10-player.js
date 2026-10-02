@@ -1172,17 +1172,18 @@ function applyPostureDamage(target, amount, now){
 // has a posture field, hasn't been hit recently, and isn't currently staggered.
 // On stagger expiry, refills posture to max (recovery beat — you got staggered,
 // you recover with a full posture pool, but you took the HP hits along the way).
+// S430 — `now` is the loop's clock in ms (both enemy ticks pass it so); lastHitAt is stamped in seconds. The two were
+// compared raw, so the 1.5 s delay never held: posture regenerated 5/s straight after every hit. A foe out of its
+// stagger now refills at once, whoever is still hitting it (Session 47's rule, and the player's own in tickPlayerPosture).
 function tickPostureRegen(target, dt, now){
   if(!target || typeof target.posture!=='number') return;
   if(isStaggered(target)) return;
-  // If we just came out of stagger (posture is 0 but not in staggered[] anymore),
-  // refill on recovery. The lastHitAt check below also gates this so a freshly-
-  // recovered enemy doesn't insta-regen if the player kept attacking through the stagger.
-  if(target.posture <= 0 && now - (target.lastHitAt||0) >= POSTURE_REGEN_DELAY){
+  // Just out of a stagger (posture 0, no longer in staggered[]): the recovery beat, a full pool.
+  if(target.posture <= 0){
     target.posture = target.maxPosture;
     return;
   }
   if(target.posture >= target.maxPosture) return;
-  if(now - (target.lastHitAt||0) < POSTURE_REGEN_DELAY) return;
+  if(now/1000 - (target.lastHitAt||0) < POSTURE_REGEN_DELAY) return;
   target.posture = Math.min(target.maxPosture, target.posture + POSTURE_REGEN * dt);
 }
