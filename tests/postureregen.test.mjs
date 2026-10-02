@@ -1,5 +1,5 @@
 // A foe's posture comes back 5 a second only after 1.5 s unhit, and full when its stagger ends (Session 47's rule;
-// Session 430's fix). Both enemy ticks pass `tickPostureRegen` the loop's clock in milliseconds, and every strike stamps
+// Session 431's fix). Both enemy ticks pass `tickPostureRegen` the loop's clock in milliseconds, and every strike stamps
 // `lastHitAt` in seconds, so the delay was never met: a foe's posture refilled 5 a second straight after every blow, and a
 // sustained attack needed more swings to break it than Session 47's figures (a 60-posture troll in 8 swings).
 // Checked through the real `tickZoneEnemies`, on a Bandit the world builds beside you.

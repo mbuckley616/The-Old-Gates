@@ -10717,7 +10717,7 @@ The count starts again on a change of place (`lid`, the zone, the room) or a mov
 - The window for the roll by feel: Q up to 0.2 s before landing or 0.2 s after.
 - Owed by the page, not built here: the mantle (after the heights pass, which is a Fable session), Cat's fall, *Wingless*, and the places.
 
-## v80 — Session 430 — A foe's posture came back straight after every blow (backlog C)
+## v80 — Session 431 — A foe's posture came back straight after every blow (backlog C)
 Looking into the critic's note of 2 Oct (*the Bandit never landed a blow in 99 frames*), I traced the fight through the posture code and found a units bug older than the counters. Session 47 set the rule for a foe's posture: *5 a second after a 1.5 s post-hit delay; refills to full on stagger expiry*. Every strike stamps `lastHitAt` in seconds (`performance.now()/1000`). But both enemy ticks, the dungeon's in the loop and `tickZoneEnemies`, pass `tickPostureRegen` the loop's clock in milliseconds, and it compared the two raw. The delay was never met. So a foe's posture came back at 5 a second from the frame after each blow, all through a fight. The refill when a stagger ends happened to work, because the same comparison always passed.
 
 **What changed** (`js/10-player.js`, `tickPostureRegen`): the clock is read as `now/1000`, so the delay holds. A foe whose stagger has ended gets its full pool at once, whoever is still hitting it. That is Session 47's rule, and the player's own posture already works that way (`tickPlayerPosture`, Session 281). The old guard on that refill would have kept a foe at zero under a steady attack, and each next blow would have staggered it again. It was never live, and it would have made a stun-lock. The drains, the regeneration rate, the stagger's length and the families are unchanged. This is the code doing what Session 47 said, not a new number.
@@ -10725,6 +10725,8 @@ Looking into the critic's note of 2 Oct (*the Bandit never landed a blow in 99 f
 In play, a sustained attack now breaks a foe in the swings Session 47 designed for. Against the old code, at a swing every 0.5 s, Session 47's 60-posture troll took 11 swings, not 8. A Bandit of 25 posture took 5, not 4. At a blow every 2 s the troll was never broken at all: each blow's 8 came back before the next. Fast weapons and fists gain the most, and the counters (the finisher on a broken posture, Session 298) open as often as they were meant to.
 
 On the critic's note: at the headless frame rate (about 1.4 s a frame, with dt held to 0.05) 99 frames is about 5 seconds of the game's clock. That is two or three of a Bandit's 1.3 s attacks with their tells, some lost to staggers. In a 40-second run of the real loop beside a punching player, the Bandit wound up and landed (130 → 124). Nothing there is a bug I can show.
+
+Numbered 431: the Fable rivers session on `auto/fable-rivers` took 430 first (its prototype and DECISION #112), and this was committed as 430 before I saw it.
 
 ### Verified (headless Chromium)
 `tests/postureregen.test.mjs` (new), 8/8:

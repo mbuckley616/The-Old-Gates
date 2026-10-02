@@ -1172,7 +1172,7 @@ function applyPostureDamage(target, amount, now){
 // has a posture field, hasn't been hit recently, and isn't currently staggered.
 // On stagger expiry, refills posture to max (recovery beat — you got staggered,
 // you recover with a full posture pool, but you took the HP hits along the way).
-// S430 — `now` is the loop's clock in ms (both enemy ticks pass it so); lastHitAt is stamped in seconds. The two were
+// S431 — `now` is the loop's clock in ms (both enemy ticks pass it so); lastHitAt is stamped in seconds. The two were
 // compared raw, so the 1.5 s delay never held: posture regenerated 5/s straight after every hit. A foe out of its
 // stagger now refills at once, whoever is still hitting it (Session 47's rule, and the player's own in tickPlayerPosture).
 function tickPostureRegen(target, dt, now){
