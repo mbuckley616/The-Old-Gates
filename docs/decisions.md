@@ -4,7 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #ISSUE)
+### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #112)
 Today the ranges are bands laid on cell borders (the Mark's are a grid of boxes), one peak a cell, and the rivers are border crossings rolled at random, one width, with no forks. Session 430 prototyped three rules for laying the ranges, and routed the rivers off them the way the real build would: a coarse height (the distance from the coast, the proposed ranges on top) is flooded and drained, so every channel reaches the sea or a lake, tributaries join, and the width follows the catchment (10u at 1 km², 16u where a ship fits at 3.2 km², 25u at 12 km²). The pictures are the world map as the game draws it, washed pale, with the proposal over it; the old ridge boxes still show through faintly. The home province keeps its authored rivers in every layout (the Dearg, the Westwater, the Ferrous wall along its north edge); the Dearg would widen downstream but stay a ford at Redwater Ford, so it is not a ship's river.
 
 ![today](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/today.jpg)
