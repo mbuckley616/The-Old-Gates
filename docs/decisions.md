@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Platforming — the jump, the ledge and the places that ask for them (the designer, 2026-10-02)
+Today the world outdoors has no tops: rocks, walls and ruins only block, a fall of any height costs nothing, and no place asks for a jump, so Acrobatics' perks, magic B's movement words and the felled trunk have nothing to open. Which shape should platforming take, built to one table of gaps (2.9 anyone at a sprint, 3.4 at Acrobatics 100, 5 with the double jump) with a mantle for everyone and falls that hurt past 4 units? (Page: `docs/design/platforming.md`.)
+- **A.** The honest jump: heights for the world's solids, the mantle (Catch at Acrobatics 25), fall damage (6% of health a unit past 4, halved by a landing roll), and your three examples built once by hand: Greywatch climbed from outside, a broken gorge bridge on the Bealach, a dungeon pit of pillars. One Fable and two Opus sessions.
+- **B.** A, plus places seeded by the generator, each with more than one way across: broken towers and forts climbed outside, gorge crossings, cliff shelves, and in dungeons the pit of pillars, crumbling floors and timed blade runs; optional caches and views at the end, nothing on the main quest's path gated. One Fable and five Opus sessions.
+- **C.** B, plus climbing on ivy, rough stone and rope against a stamina drain. One Fable, seven Opus and a look session; it undoes the walls the towns, the watch and burglary stand on.
+
+Recommendation: **B**, with A's sessions first. It gives every movement perk, word and the trunk something to open across the whole continent, and the same gap three answers, so a trained skill is a shorter way rather than a gate.
+
 ## Answered
 
 ### Ragdoll for defeated enemies — how a foe goes down (the look builder, Session 415, 2026-10-02, issue #102)
@@ -18,6 +26,16 @@ Shot: [A / B / C filmstrips, and six deaths under C](https://raw.githubuserconte
 
 Michael: **A ragdoll: every death different** (C). (2026-10-02)
 Done, Session 419 (the look builder): C as drawn. `ragdollFoe`/`ragdollStart`/`tickRagdolls` in `32-people.js`, one call from `killE` and `killZoneEnemy` for every people-bodied foe but the wraiths; wolves, spiders, bears and the box-built foes keep A. Fixed 1/60 steps, frozen once still (1.2–1.7 s in the test). `tests/ragdoll`, `docs/prototypes/ragdoll-ingame.png`.
+
+### The pirate's ram: how hard, how often? (systems builder, 2026-10-02, issue #100)
+Your A on sailing (#85) is built except the parts that wait for the skills build, and one part that needs a number: the pirate's ram. Sessions 411–413 made the hull and rig, the wear from the sea, grounding, rams, volleys and foundering. The page says *pirates gain a ram when faster and within 30 units*, and that a ram costs the closing speed × 3, *bow-on, you take half and give double*. Taken literally, a black sail coming bow-on at her 6.5 costs your sloop 39 of her 100 hull. The page doesn't say how often she may ram, and today she closes to 28 units and circles, shooting, so she would be back on you every few seconds. How should she ram?
+- **A.** As the page: bow-on she gives double, 39 to a sloop at 6.5, and she rams again whenever she has drawn off and closes. Three rams sink a sound sloop.
+- **B.** She rams once an approach, for the plain × 3 (about 20 to a sloop), then sheers off to her 28-unit circle and shoots as now; she comes again after 30 s if you are still near. Bow-on doubling stays yours alone, when you ram her. *(recommended)*
+- **C.** No ram: the black sail fights with volleys and boarders, as now.
+
+Recommendation: **B.** The page wants her to be *something to turn from, not only to board*, and B does that: a ram costs a fifth of a sloop's hull, with time to answer by turning or making way. A's double makes three passes a sinking, and C leaves her circling harmlessly beyond the volleys.
+
+Michael: **B — once an approach, plain × 3, then back to her circle**. (2 Oct 2026, via the control room)
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
 Session 402 put the jab on the third-person body, and its devlog left two look calls open. First, with an empty hand the body's hand is a mitten: a squashed ball with a thumb, which reads as a pale point at a distance. Second, the unarmed body walks and runs with its arms swinging. It only comes up to guard for the punch, while the first person always holds both fists up. All four rows are built from the game itself. The fist is patched into the bake at runtime, so the game is unchanged.
