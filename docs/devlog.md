@@ -10676,4 +10676,4 @@ Backlog G owed Session 158's Church and factions to a playtest: confess at a chu
 - No page errors. `crime4` passes. Build tag s368.
 
 ### Needs eyes
-- The tithe against the fine by feel. A point of favour costs 25 either way, by the tithe or by waiting three days, and only the lord clears the fine. Whether paying the Church to hurry the town is worth 25 when the days are free is Michael's call if he wants it changed.
+- The tithe against the fine by feel. A point of favour comes back for 25 gold at the priest, at most once in three days, or for nothing after three quiet days, and only the lord clears the fine (25 a point). Whether hurrying the town back is worth 25 gold is for play to say, and Michael's call if he wants it changed.
