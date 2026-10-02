@@ -10336,6 +10336,53 @@ The pieces draw nothing from the genome's random stream, so a foe's face, hair a
 - The Ash Wight's rust against the wasteland's ash ground. It may be too dark to read the mail's rings.
 - A Bandit Captain leading a band adds about 5,000 triangles over today. `lod` still holds, but a camp of several captains has not been measured.
 
+## v80 — Session 404 — The cavern master's slam (Michael's A on #95)
+Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130: every lair's cavern ends in a master, the deepest foe made 3× the health, and it fought like the first room. I asked (#95); Michael answered **A, a telegraphed slam**.
+
+**What changed** (`js/74-strikes.js`, `tickMasterSlam`, called from the dungeon foe loop in `js/90-main.js`; `lairFinish` in `js/68-dungeon-misc.js` marks the master `e.master`):
+- Every 8–10 s, with you within six units, the master stops and winds up for 0.9 s. It uses the shared tell of Session 282: the wind-up pose from `e._wind`, the red glow in the last .15 s, the tell's sound. A ring of its reach, 3 units, shows on the floor and brightens through the tell. *Test — Troll King rears up to strike the ground.*
+- It strikes the ground. Inside the ring you take twice its ordinary blow (the dungeon strike's roll, ×2), and a shield, a held block or a perfect parry takes none of it off. Out of the ring when it lands (*The ground cracks where you stood.*) or mid-roll in the roll's untouchable window (*You roll through the blow.*), you take nothing.
+- While wound up the master holds still and starts no other blow, and a ranged master looses nothing. After the slam it waits 1.2 s before its next ordinary blow, which is the opening. A master staggered mid-tell (a parry from an earlier blow, a broken posture) loses the slam and starts its 8–10 s again. A master killed mid-tell takes its ring with it.
+- Seven units off or more, it does not wind up. Only a lair's master slams. The world's lair beast keeps its charge, and the world's bosses keep their second-phase heavy blow.
+
+**A correction to Session 130.** `lairFinish` made the master *1.6× the damage* by scaling `e.dmg`, and a dungeon foe has no `e.dmg`. Its blows come from `e.dmgMult`, so the line made a `NaN` nobody read, and every master since has hit exactly as hard as its kind. Now the same factor, 1.6 × (1 + level × .04) (a wyrm's 2.2), goes onto `dmgMult`, so the master hits as the devlog and the question on #95 said it did. This is a fix, not a new rule, but in play it roughly doubles a master's blow at level 6 (×1.98), and the slam is twice that.
+
+### Verified (headless Chromium)
+`tests/masterslam.test.mjs` (new), 16/16, in a deep lair cavern at level 6 (master: *Test — Troll King*). The loop is paused and the slam driven at fixed 1/60 ticks, then one slam is left to the running game:
+- The deepest foe is the master, and the only one. Its `dmgMult` went from 3.36 to 6.67, ×1.984, which is 1.6 × 1.24.
+- With you at 2 units and its timer spent, it winds up on the first tick, holds 54 ticks (0.9 s), then lands. The pose reaches 0.98 and the ring 0.69 opacity at 3 units. The ring is gone after.
+- Standing in the ring with a block raised at a perfect parry's timing every tick, it took 694 (the range for twice a blow at this armour was 390–824). Nothing was taken off.
+- Stepping from 2 to 4 units at tick 30: 0 taken, *clear*. A roll whose untouchable window covers the landing: 0, *rolled*. A roll whose window had passed: it lands (650).
+- Staggered at tick 20: no slam, the ring and the pose gone, the next one 9.8 s off. Seven units away for a second: no wind-up. An ordinary foe of the cavern, ten seconds beside you: never slams. Killed mid-tell: the ring hides.
+- In the running game (the loop unpaused), the master wound up and landed its slam.
+- `dungeonfoes`, `tells`, `roll`, `posture`, `mimic`, `mimicspots`, `dungeon`, `dungeonexit` and `parryclock` pass. `wyrm`'s cavern check passes (the wyrm master, its body and its health bar); its world check fails with `none: true`, and fails the same way on `origin/main` without this change, so it is older than this session (the three lair sites a probe found all had a pad and no settlement, which is what the test's search wants; not chased further). Build tag s355.
+
+### Needs eyes
+- Whether 0.9 s and a 3-unit ring read in a dark cavern. The ring is a flat orange band on the floor, my own stand-in: the look builder may want a better mark (a crack, dust).
+- The damage. With the Session 130 correction, a master's slam is about four times an ordinary blow of its kind. A level-1 character (130 health) in this test's deep cavern faced a master's ordinary blow of about 60–125 and a slam of twice that. Whether that is a fair last room, or the 1.6 wants retuning now that it bites, is for a real fight to judge.
+- Whether the roll through the ring (towards the master, inside its reach) feels as good as stepping out.
+
+## v80 — Session 405 — A blow after the yield, measured (the critic's note on the duel)
+The critic's last review (build s342) left one question about *The Yard at Caer Slige* to be played: *whether a swing already in the air when she kneels counts as murder. The spare check is `e.hp<DUEL.hp0`, and a player swinging in rhythm will often have a blow in flight at that moment.* I measured it in the running game. Nothing in the game changed. What the yield should forgive is a rule of the quest, so it is a question for Michael (#96).
+
+**What was measured.** A fresh ninth service, *Call it.*, and Rowe held still with her own blows off. Her health was set one point above a quarter, so the next blow makes her yield. A bot in the page faces her at 1.2 units and swings with the starting Wooden GreatClub on every frame the cooldown allows. It stops clicking a set reaction time after she kneels, on the game's clock. A wrapped `_resolveZoneStrike` logs each blow as it lands.
+
+**What it shows.** With melee there is never a blow *in the air* at the yield: one swing at a time, and the blow that makes her kneel is the one that just landed. The trouble comes just after. The cooldown is 0.5 s × the weapon's swing factor, and the blow lands 0.30 s × the factor into the swing. So a player clicking in rhythm begins the next swing 0.2 s × the factor after the yielding blow, and it lands 0.5 s × the factor after it. Across the weapons, the next swing begins 0.17 s (a dagger, ×0.84) to 0.28 s (the heaviest, ×1.40) after she kneels, and that is under a human's reaction time to seeing it. The bot is the same: stopping 0.15 s after the yield spares her, but a 0.25 s reaction (a fast person) or 0.4 s kills her, by a swing begun 0.2–0.25 s after she knelt that lands 0.55–0.6 s after. The watchers turn their backs and the League closes, for a blow the player could not have held.
+
+### Verified (headless Chromium)
+`tests/duelrhythm.test.mjs` (new), 6/6, the Wooden GreatClub (swing factor 1.11, cooldown 0.555 s):
+- Every run's blows make her yield.
+- Stopping at once: spared after three seconds (*won*), one swing.
+- 0.15 s reaction: spared.
+- 0.25 s: murder. The next swing began 0.25 s after the yield (0.20 in an earlier run) and landed 0.60 s after (0.55).
+- 0.4 s: murder, the same timings.
+
+No page errors. Build tag s356.
+
+### Needs eyes
+- Michael's answer to #96. If he wants the yield to forgive a swing begun within reaction time, it is one condition in `tickDuel`'s yielded branch and a change to this test's expectations.
+- Arrows and spells loosed before she kneels and landing after are the literal *in the air* case. They take the same path (any loss of health after the yield is murder) and were not measured.
+
 ## v80 — Session 406 — `tpfists` reads the body's facing inside the stepped run (CI fix)
 CI ran the suite on Session 403's head (`fdb24d9`), and `tpfists` failed on headless (1) with two checks: the fist's travel came out as −.219 and its lead over the shoulder as −.241, and the power punch's longer reach failed the same way. The measured positions were the same as on this machine (the fist at .325 ahead in the body's frame, the shoulder at .084), so the punch was right and only the sign was wrong. The test multiplies every forward distance by `fwdAxis`, the way the head's nose points in the body's frame, and it read that once after the three runs, in its own `page.evaluate`. Between evaluates the page's own frames run with real time, so the body had moved on to whatever pose those frames left it in, and on CI's slower runner that read came out reversed. Here the nose read +.9999.
 
@@ -10365,6 +10412,48 @@ The grid script ran without page errors. The player's body is 4,210 triangles to
 - Whether B's fist reads as a fist at the camera's usual distance. In the close shot it does.
 - Whether C's forearms look stiff on the move. The prototype holds them still apart from a slight sway, and an answer of C would want them to bob with the stride.
 
+## v80 — Session 408 — A blow begun as she kneels is checked (Michael's B on #96)
+Session 405 measured the yield in *The Yard at Caer Slige*: any blow that lands after Rowe kneels is murder, and a player clicking in rhythm begins the next swing 0.17–0.28 s after the yielding blow, which is under a human's reaction time. So a steady fighter often murdered her, closed the League and turned the watchers' backs without choosing to. I asked (#96). Michael answered **B: a blow begun within 0.4 s of her kneeling is checked**.
+
+**What changed.**
+- `_offenceS` (`js/10-player.js`) is the play clock (`playClockS`, the loop's game time) when you last *began* a blow. It is stamped when a swing starts (`attackZoneEnemies`, `attack`), when an arrow is loosed (`fireArrow`) and when a spell is cast (`castSpell`, as the mana is spent).
+- `duelYield` records the yield's time (`DUEL.yieldS`). After it, a loss of health takes two paths, and both now ask `duelCheck` first: `tickDuel`'s yielded branch (any drop below her kneeling health) and `duelKill` (a blow that would kill her). If your last blow began before `yieldS + 0.4` (`DUEL_CHECK`), her health is put back, her bar redrawn, and *You check the blow.* shows; she stays on her knee, and the three seconds to the acclaim run on. A blow begun later is murder, as before.
+- An arrow or a spell already in the air at the yield began before it, so it is checked too. That was the critic's literal case.
+- A burn or other lingering effect from an earlier blow is also checked, since you began nothing new. One edge is not covered: a blow begun inside the window that lands *after* a later blow you began past it (a slow arrow overtaken by a swing) counts by the later one. That needs two attacks in flight at once against a kneeling woman, and it errs towards murder only when you did begin a late blow.
+
+### Verified (headless Chromium)
+`tests/duelrhythm.test.mjs` (extended), 10/10, Wooden GreatClub (cooldown 0.555 s). A bot swings in rhythm and stops a set reaction time after the yield:
+- 0 s and 0.15 s: one swing, spared, as before.
+- 0.3 s (a fast human) and 0.4 s: the next swing began 0.25 s after she knelt and landed 0.6 s after. It was checked once, her health ended where she knelt (15 of 15), and she was spared after three seconds. Session 405 measured 0.25 s and 0.4 s as murder.
+- 1 s: the third swing began 0.85 s after the yield and landed: murder.
+- An arrow loosed from 3 units 0.1 s after she knelt was checked and she was spared. One loosed at 0.6 s was murder.
+- No page errors.
+- The 0.25 s case of Session 405 became 0.3 s: whether the next swing falls before or after a 0.25 s cut-off depends on where in the cooldown the yield lands (0.20–0.25 s in 405, past 0.25 in one run here).
+
+`tests/duel.test.mjs`: its murder check took 3 health off by hand with no blow begun, which is now checked. It now stamps a blow begun 0.5 s after the yield first, which is what the check means. 22/22.
+
+Build tag s357.
+
+### Needs eyes
+- Whether *You check the blow.* reads right when the club lands visibly on her and does nothing. There is no pulled-swing animation: the strike resolves as a hit, and only then is it checked.
+- Whether 0.4 s is the right size in play: long enough to forgive the reflex, short enough that a deliberate second blow still murders.
+
+## v80 — Session 409 — The sell prompt's button says Sell
+The concept artist, drawing the shop counter on the parchment kit (PR #97, 1 Oct), found that the quantity prompt's button for a typed amount reads *Buy* when you are selling a stack. The prompt's title already said *Sell …* (`openQtyModal` set it by side), but the button was written once in `index.html` as *Buy* and never changed. A fix to a label, so not a decision.
+
+**What changed** (`js/60-shop.js`, `openQtyModal`): the button's text is set by side with the title, *Buy* or *Sell*. The markup's default is still *Buy*, which is right for the first thing the prompt opens on.
+
+### Verified (headless Chromium)
+`tests/qtybutton.test.mjs` (new), 6/6, at a Dunmore potion counter at 13h:
+- Buying a stocked Health Potion: the title *Buy Health Potion*, the button *Buy*.
+- Selling a stack of 20: the title *Sell Test Draught*, the button *Sell*. On the old build this check fails with the button reading *Buy*, and the other five pass.
+- Typing 5 and pressing the button sells five (20 → 15, 40 gold).
+- Opened again to buy, the button says *Buy* again.
+- `prices` 5/5. Build tag s358.
+
+### Needs eyes
+- Nothing. The concept artist's ledger may replace this prompt (the counter question with Michael), and the side-named button should carry over to it.
+
 ## v80 — Session 410 — `fistswing` expects the fists' view model (CI fix)
 CI ran the suite on Session 407's head (`84fb606`), and headless (7) failed on one check in `fistswing`: "an empty hand has no view model". Session 382 wrote that check when an empty hand really had none, which was the bug it fixed: the swing timer and the deferred strike only ran inside the loop's `if(vmSword)` block, so a punch never landed. Session 396 then built Michael's A on #80, the fists on screen in first person, and an empty hand has had a view model ever since (`vmSword.userData.fists`). The check was never updated, so it failed on every run that reached it; Session 406's CI was cancelled before it got there. Main does not carry Session 396 yet, so main is unaffected.
 
@@ -10376,6 +10465,257 @@ The check now asks that the empty hand holds the fists' view model, and that the
 ### Needs eyes
 Nothing in the game.
 
+## v80 — Session 411 — The ship's hull and rig (Michael's A on #85, its first slice)
+Michael answered the sailing proposal (#85) with **A, wear and mend**: the sea wears the ship, Joinery and the shipwright put her back. The page (`docs/design/sailing.md`) costs it as four Opus sessions. Its parts that need Joinery (planks, pitch, the bench, the patch) wait for the skills build, and the sea state's pitch and roll share the wave with H.5b's water. So this session builds the part that needs neither: the two bars, three of the four damage sources, and the shipwright's mending.
+
+**What changed** (`js/80-world.js`, the Naval II section and the ship's tick):
+- **Two bars**, kept in `worldState.ship` (already saved whole): hull by class, 100 for a sloop, 140 for a cog and 200 for a galleon, and rig 100 on every class. A save from before this starts her sound. A refit to a bigger class is a new hull and starts full.
+- **Speed**: `shipSpeedNow()` is the class's top speed, then ×0.8 under half her hull and ×0.6 under a quarter, then × (0.5 + 0.5 × rig/100). At 0 hull she is waterlogged and makes 2.5 at most. The page says "under 50 hull" for a 100-hull sloop. I read that as half of whatever hull she has, so a galleon ships water at 100, not at 50. *Better sails*' line still quotes the sound top speed.
+- **Grounding**: striking the shallows faster than 2 costs (speed − 2) × 4 hull. Below 2 she just stops, as before.
+- **Rams**: when your hull first touches another ship, you take the closing speed × 3, or half that when your bow is on her and you are under way. It does not count again until the hulls are more than a unit apart. The page's *give double* has nothing to hit yet, because other ships have no hull.
+- **Volleys**: a pirate volley whose arrows come down on your own deck costs her 2 hull and 3 rig, once a volley. The arrows still aim at you as before. A volley at you in the water off her costs her nothing.
+- **The shipwright**: with her within 140 units of his port and anything wanting, he offers *Mend her: hull 55 of 100, rig 80 of 100 (240 gold)*. That is 4 gold a hull point and 3 a rig point. The clock moves an hour for every 20 points, and she comes back full. If you are short of the price, nothing changes hands.
+- **A panel** at the bottom right shows her name and both bars while you are at the wheel or on her deck, and is hidden everywhere else. It is built in script, like the breath bar, and redrawn only when a number changes. The main loop calls it so it hides indoors, where `WORLD.tick` stops (`js/90-main.js`, one line).
+
+Not built here: the sea state and its wear (rough water and storms), the pirate's ram, foundering and the wreck, and the field repairs.
+
+### Verified (headless Chromium)
+`tests/shiphull.test.mjs` (new), 19/19, a sloop off a real shore 864 units from the start:
+- Speed 7.5 sound; 7.5 at hull 60; 6.0 at 45; 4.5 at 20; 5.625 at rig 50; 4.5 at hull 45 and rig 50; 2.5 at hull 0.
+- W held at the shore from 40 units out: she struck at 7.43 and lost 22 (*Aground — she strikes the shallows. Hull −22.*). At a crawl of 1.6, she stopped and lost nothing.
+- Bow-on into a black sail at 7: −11, and no second count while still touching. A merchantman into her beam at 4 while she lay still: −12, and −12 again once it had drawn off and come back.
+- A volley of three arrows on her deck: hull 98, rig 97. One at you in the water 40 units off: nothing.
+- The panel read *The Test Gull, Hull 98 / 100, Rig 97 / 100* at the wheel and was hidden off her.
+- At Portclare: hull 55 and rig 80 cost 240 gold and 195 minutes, and she came back 100/100. Sound, he offers nothing. At 30 gold against a 40-gold bill, nothing changed. 400 units off, no offer. Refitted as a cog, 140 of 140.
+- No page errors. On the old build the suite fails (no ship to launch). `ships`, `shipwright`, `piratehold` and `cargo` pass. Build tag s359.
+
+### Needs eyes
+- The numbers at sea. Grounding at full sail is about a fifth of a sloop's hull. A black sail circling at 28 units rarely touches you, so rams will mostly be your own doing until her ram is built.
+- Whether the panel's place (bottom right, above the controls line) sits clear of the HUD at real sizes, and whether it should be on the parchment kit (the concept artist's).
+- The shipwright's two new lines (*Mend her: …*, *N hours in the yard. She's sound again, hull and rig.*) are mine. They are for the quest review.
+
+## v80 — Session 412 — The sea's state wears her (Michael's A on #85, its second slice)
+Session 411 gave the ship a hull and a rig. This session adds the sea's state and the wear it puts on her, both from `docs/design/sailing.md`. Her pitch and roll on the sea's wave are left out: the page puts them in one function with the water shader's swell, and the water's look by state belongs to H.5b.
+
+**What changed** (`js/80-world.js`):
+- `seaState(x,z)`: 0 calm, 1 moderate, 2 rough, 3 storm. It is the weather (clear and fog 0; overcast, rain and snow 1; a storm 3) plus one in open water, capped at 3. Mid-change, the weather counts once it is more than half turned. The ship reads it once a second while you are aboard.
+- **A correction to the page's number.** It defines open water as *a bed below −8, 150 units from shore*. The sea bed in `rawH` blends to exactly −8 at a full sea cell: 19,694 of 19,800 deep samples across the map read −8.00, and none lower. So *below −8* is never met, and no water would ever count as open. `openWater` takes the sea's own floor (−7.9 or deeper) and no shore at 50, 100 or 150 units on twelve bearings. That is what the page describes.
+- **Wear under sail** (you at the wheel, making more than half a knot): in a rough sea, 1 hull and 1 rig a minute. In a storm with W held, 1 hull every 6 s and 1 rig every 4 s, half that with no key held while she still makes way, and nothing hove to. Fractions carry over between frames, and whole points go through `shipWear`, so the waterlogged warning and the panel follow.
+- The panel's second line names the sea: *Sea: calm / moderate / rough / storm*.
+
+So a sloop held under full sail through a whole storm (150–330 s) loses 25–55 of her 100 hull, as the page reckoned. Without field repairs, a shipwright is the only mend until the skills build.
+
+### Verified (headless Chromium)
+`tests/seawear.test.mjs` (new), 10/10. She is held in place each tick, with no other ship about, at an open-water spot (bed −8) and a coastal one (bed −6.1):
+- Coastal and open: clear 0/1, fog 0/1, overcast 1/2, rain 1/2, snow 1/2, storm 3/3.
+- Rain in open water (rough), two minutes under sail: hull 98, rig 98, and the panel reads *Sea: rough*. A clear day in open water, and rain along the coast (both moderate): nothing.
+- A storm, a minute with W held: hull 90, rig 85, *Sea: storm*. No key held while still making 3: hull 95, rig 93. Hove to: nothing.
+- No page errors. `shiphull`, `piratehold` and `ships` pass. Build tag s360.
+
+### Needs eyes
+- Whether a storm's cost reads at the wheel. The only signs are the panel's numbers and its *Sea: storm*. The water looks the same at every state until H.5b's wave.
+- How often a voyage is in open water. On the map's grid most sea is more than 390 units from any shore, so a crossing is mostly open, and any rain there is rough.
+
+## v80 — Session 413 — Foundering, the wreck, and raising her (Michael's A on #85, its third slice)
+Session 411 left a ship at 0 hull waterlogged (2.5 at most) and nothing further. The page goes on: *further damage sinks her, and the wreck lies where she went down, marked on the map. Any shipwright raises her again, class and tiers, for 30% of what they cost, at his quay three game days later. The stash is untouched.* This session builds that.
+
+**What changed** (`js/80-world.js`):
+- `shipWear`: any hull lost while she is at 0 sinks her (`shipSink`). Rig lost does not. Her mesh and deck go. Any boarders on her deck go down with her (they had nothing left to stand on). If you were aboard you are in the water. *The {name} goes down. Any shipwright can raise her.*, and the log notes it. `worldState.ship.sunk` keeps where, and `restoreShip` (the load) leaves a sunk ship on the bottom.
+- **The wreck on the map**: *The wreck of the {name} · Where she went down*, on the world map's entries, with the ship's mark. The minimap does not show it.
+- **Raising her**: sunk, every shipwright offers only *Raise the {name} (N gold)*. N is 30% of what she cost: the 400 hull, any refits to her class (900 to a cog, then 2,200 to a galleon), and her sail and hold tiers. Paid: *Three days, and she'll be lying at the quay here.* Three game days later she lies off his quay, where *Fetch her* puts a ship, sound, with her name and her hold.
+- **Two calls of mine, beyond the page.** (1) Waterlogged, she does not take grounding damage. Run onto the shallows at 2.5, she settles, so the page's *can limp to a shore* is possible (at 2.5 the grounding rule would cost 2, and that would sink her). (2) The hold comes up with her. The page says nothing about cargo, and keeping it is the gentler reading of *a bill and a wait, not a game over*.
+- **A correction to the page's example**: *a full galleon: 1,330 gold* does not follow from its own rule. 30% of 400 + 900 + 2,200 + 1,400 (sails) + 600 (hold) is 1,650, and this charges the rule.
+- **A fix found on the way**: Portclare's hand-laid quay runs 174 units out from the town. So a ship lying off it, where *Fetch her* puts one, was 196 from the town and outside the 140 that `shipHere` counts as in port. The shipwright offered to fetch her again, could not mend her, and the factor could not reach her hold (Session 390). `shipHere` now also counts a ship within 60 of the quay's head, and the fetch and the mend both use it. Every other port's quay is at its pad's edge (80), well inside 140.
+
+### Verified (headless Chromium)
+`tests/shipwreck.test.mjs` (new), 15/15, a sloop (sails 1, hold 1, two grain) off Portclare:
+- 100 hull lost: waterlogged, afloat, 2.5 at most. 5 rig lost after that: still afloat.
+- 1 more hull: she sinks. No mesh, no deck, you swimming, and the message.
+- The map shows *The wreck of the Test Gull · Where she went down* and not the ship. `restoreShip` leaves her down. The hold is kept, and the panel hides.
+- Waterlogged and run at 2.5 onto Portclare's own ground: she stops with *Aground — shallows ahead.* and stays afloat.
+- Sunk, the shipwright offers only *Raise the Test Gull (255 gold)*, which is 30% of 850. Paid, he says three days, offers nothing more, and the purse is 745.
+- Half an hour short of three days she is not there. At three days she lies 25 units off the quay's head, 100/100, same name, two grain, and the wreck is off the map.
+- Lying there at hull 60, he offers *Mend her* and not *Fetch her*.
+- Short of the price, nothing changes hands. A full galleon: 1,650.
+- No page errors. `shiphull`, `seawear`, `cargo`, `piratehold`, `shipwright` and `ships` pass. Build tag s361.
+
+### Needs eyes
+- Whether three days and 30% feel like *a bill and a wait*. A sunk sloop with one tier of each is 255, about two level-one jobs.
+- The wreck has no mark on the sea itself: no mast above the water, no minimap pin. Its look is H's if wanted.
+- The two calls above (a waterlogged ship settles on the shallows; the hold comes up with her) are Michael's to overrule.
+- The shipwright's lines (*Raise the …*, *Three days, and she'll be lying at the quay here.*, *Raising her is N gold.*) and the sinking message are mine, for the quest review.
+
+## v80 — Session 416 — The shipwright in his harbour's voice; two names out of the Mark's bank (register fixes, quest review run 5)
+The quest review's run 5 (2 Oct) left two findings for the builders, applied here exactly as written, without a decision.
+
+**Finding 5** (auto/systems, Sessions 411 and 413): every shipwright answered in Markish (*Lads'll have her alongside…*), whatever his harbour's people. His twelve replies in `upgradeTopics` (raise, fetch, mend, refit, canvas and hold, each short of the price and paid) now come from `SHIPWRIGHT_LINES`, the review's table, picked by `peopleOfSite(site)` with Markish (the old text, unchanged) as the fallback, the same shape as the halt, the yield and the coaching inn (Sessions 265 and 315). The Gatelander turns each price into a proverb, the Aurennais quotes terms and says *Master*, the Old Blood is bare. The two older replies in the same exchange (*That canvas is…*, *The carpentry's…*) changed with it, as the review asked.
+
+**Finding 6** (main, older than the baseline): the Mark's men's names held *Aldhelm* and *Ealdred*, and the canon keeps the Ald- root for Aldwyn and Aldred alone (the critic met an *Aldhelm* as the yard-sergeant at Caer Slige). They are now *Eadwulf* and *Wigmund*. A person already named and saved keeps the name he was given (`_curNM` holds it); the review leaves that to the builder, and renaming a saved person would change someone the player has met, so they stay.
+
+A note on the way: my first pass took the last `js` block in `docs/quest_review.md` as the table, which is Finding 3's `HALT_LINES`, and declared it twice in the world module. Parsecheck did fail on it (`80-world.js: FAIL`, an identifier already declared), but it reports per file and then the concatenation, and I read only its last line, which was a later file's OK. The page would not boot. Caught by the first test run and fixed before commit. Read the whole of parsecheck's output, or its exit code.
+
+### Verified (headless Chromium)
+`tests/shipwrightvoice.test.mjs` (new), 18/18: one port of each people (Markish c1_1_s1, Gatelander c1_1_s3, Aurennais c3_1_s11, Old Blood c2_8_s0), a sunk sloop with one tier of each (raise 255), then one afloat 2,000 units off (fetch 35), mended at hull 60 (160 gold, 2 hours), refit to a cog (900), sails (250, 9.7 knots) and the hold (200, 50 more). Every reply is the review's line for that people, the Markish ones byte-for-byte today's, and none reads `undefined`. The Mark's bank has no name starting Ald- or Eald-. No page errors. `shipwright`, `shipwreck`, `shiphull`, `names` and `duel` pass. Build tag s362.
+
+### Needs eyes
+- The lines in play at a real quay; they are the author's text as the review gave it.
+
+## v80 — Session 417 — Corpses searched over the whole body (backlog C, Michael's note of 1 Oct)
+Michael, 1 Oct, in the control room: *there's still a random sweet spot you have to find on/above every corpse. The entire mesh should be searchable/interactable, not just one small piece. This goes for all creatures, humanoid or otherwise.* What was there: a corpse was a point. `lookingAt` took the kill spot, 0.45 above the ground, and counted the corpse when the crosshair was within about 16° of it (a dot of 0.96) and the player within 3 units. A body lies wherever its death pose puts it, so its head, feet or tail could be under the crosshair and not count.
+
+**What changed.** A corpse now carries its body (`body: e.mesh`, in `killZoneEnemy` and `killE`), and `lookingAt` asks `bodyAimed` (`js/68-dungeon-misc.js`) when the body is still in the scene:
+- A body with a skeleton (the people and the creatures on the wolf's and spider's bones) is a chain of capsules along its bones, in the pose it died in: from each bone to its parent, a radius of 13% of the body's extent (0.2 at least, 1.2 at most; every body measured here came out at 0.2). The crosshair ray counts if it passes within that radius, between the eye and the eye's reach (3.6, plus the camera's distance in third person, as `aimAt`).
+- A body without one (in the world, the box Troll and Golem) is ray-cast part by part, its HP-bar planes left out.
+- Why not three's raycast: r128 skins a hit-test's vertices with the bones' world matrices and then applies the mesh's world matrix again. The people's and creatures' detached binding (CLAUDE.md, *bone matrices are kept local to the mesh*) composes bones from the mesh, so that puts the body at twice its world position and nothing hits it.
+- The old point test remains for a corpse with no body (Bram's, which has its own prompt, and anything whose mesh has gone), and the crates, barrels and chests keep `aimAt` on their own meshes.
+
+This is not a design change, so no decision: Michael's note is the spec, and the reach is the same 3 units as before.
+
+### Verified (headless Chromium)
+`tests/corpsebody.test.mjs` (new), 22/22. In the world, a Bandit, a Wolf, a Cave Bear, a Cave Troll and a Golem are killed by `killZoneEnemy` and left to settle. From 2.2 units off on four sides, eye at 1.6:
+- Aimed at every bone (or, for the box bodies, every part's centre) within reach: 400 of 400 aimed points open the corpse. With the body taken away (the old test), 377 of 400; the misses are the Bandit's head and feet seen end-on (58 of 72) and the bear's ends (87 of 96). At 2.2 units the old 16° cone already spans most of these small bodies (a dead bandit's bones span 1.02 units, a wolf's 0.79), so the old spot mostly failed close up.
+- Aimed 1.4 units past the body along the ground, or 4 units straight up over it: not searchable, for all five. (The first version kept the old cone as a fallback alongside the body, and it accepted the aim past the body on every side, so it went.)
+- Six units off, aimed at the middle: out of reach.
+- Aimed at a dead bandit's foot from 1.6 units beyond it, `lootTargetNow()` gives that corpse, and the old spot did not.
+- In a dungeon (`killE`): a Skeleton's corpse carries its body, aimed at its foot it is the loot target, and aimed above it is not.
+- No page errors. `q7world` (Bram's body), `aimbubble`, `duel` and `duelrhythm` pass (`duelrhythm` timed out at 900 s once with three browsers running side by side, and passed alone). Build tag s363.
+
+### Needs eyes
+- How it feels to loot a body by looking at any part of it, in first and third person. Third person, the spiders, the slimes and the dragon were not in the test; they take the same two paths.
+- If Michael takes the ragdoll (#102, the look builder's prototype), its settled body is what gets searched. The bones follow the pose, so nothing changes here.
+
+## v80 — Session 418 — The pirate's ram (Michael's B on #100, the sailing page's last part before the skills build)
+Session 411 left the pirate's ram open: the page says *pirates gain a ram when faster and within 30 units*, at the closing speed × 3, and nothing about how often. Taken as written, a black sail bow-on at 6.5 cost a sloop 39 of her 100, again every few seconds. I asked (#100), and Michael answered **B**: she rams once an approach for the plain × 3, then sheers off to her 28-unit circle and shoots as now, and comes again after 30 s if you are still near. Bow-on doubling stays yours alone, when you ram her.
+
+**What changed** (`js/80-world.js`, `tickOtherShips` and `tickHullCollisions`; the numbers are `PIRATE_RAM`):
+- A pirate after you, within 30 units, with her ram ready, starts a ram run when you are aboard (at the wheel or on deck) and slower than her top speed of 6.5. While the run lasts she steers at your hull instead of circling. Her turn rate and speed are unchanged.
+- The first touch of the hulls spends it, whatever the speed. The damage is the S411 rule unchanged: the closing speed × 3, half if your own bow is on her. The message is *The black sail rams you. Hull −N.* She then goes back to her circle (she is inside 30, so she circles), and her ram waits 30 s.
+- A run that has not touched in 12 s is given up, and also waits 30 s. Leaving the ship ends it. Her volleys go on through all of it.
+- The page's *faster* is read as her top speed against yours now. A sloop at full sail (7.5) is never rammed, so *something to turn from* has an answer: make way.
+
+### Verified (headless Chromium)
+`tests/pirateram.test.mjs` (new), 8/8, in open sea (bed below −6 within 60 units), your sloop held still at the wheel, a black sail put 29 units off at 6.5, and her volleys held off so only rams cost hull:
+- Lying still for 75 s: a run at 0 s that lands at 5.2 s, *The black sail rams you. Hull −20.*, with the ram spent. No other hull lost until the next run at 35.2 s, exactly 30 s after the hit. That run was given up at 47.2 s without touching: she circled past the bow twice and could not line up inside her turn. One hull loss in two runs.
+- Making 7.5: no run in 25 s.
+- Swimming 20 units off the empty ship: no run. She still sails at you, and on the way she struck the empty hull for 19 by Session 411's plain collision (*The hulls strike*). That is older than this session and not a ram, but it is worth knowing: an unattended ship near a swimmer is in her path.
+- No page errors. `piratehold`, `ships` and `shiphull` pass. Build tag s364.
+
+### Needs eyes
+- Whether one ram in two runs (a miss when her turn can't bring her round) reads as a near thing or as a dull pirate; her turn rate is .5 rad/s, a 13-unit circle at 6.5.
+- The swimmer case above: whether a pirate should steer round an empty ship.
+- *The black sail rams you.* is mine, for the quest review.
+
+## v80 — Session 420 — `corpsebody` finds its dungeon gate wherever the stream is (CI fix)
+CI's push run on Session 418's head (b989003) failed one suite of shard 1: `corpsebody`, which Session 417 wrote. Every one of its world checks passed; the script then threw at line 64, *Cannot read properties of undefined (reading 'x')*, before its dungeon check ran. That line went down into a dungeon through the first world gate in `PORTALS`. In the open world `PORTALS` is the live list of the doors in the cells now loaded (`80-world.js`, *mutated in place*), and the test had just spent its time at five corpses thirty units off, so whether a gate was in it depended on how far the runner's stream had got. Here it always was; on the runner it was empty.
+
+**What changed** (`tests/corpsebody.test.mjs` only): the dungeon step opens the fixed gate of seed 42 through `WORLD.doorAnywhere` and `makePortalDef`, at its world position, as `autosave`, `mainquest` and `reader` already do. The game is unchanged.
+
+### Verified (headless Chromium)
+- The failure reproduced: the old line with `PORTALS` emptied first throws CI's exact TypeError.
+- The new line with `PORTALS` emptied first: the dungeon check passes (a Skeleton, its corpse carrying its body, the loot target at its foot, not above), no page errors.
+- `corpsebody` as committed: 20/20, the dungeon check on the same Skeleton. Build tag s365.
+
+### Needs eyes
+- Nothing in play. `dungeonexit` takes its gate from `PORTALS` the same way, but soon after arriving and with a `null` guard; it has not failed, and is left.
+
+## v80 — Session 423 — `duelrhythm` runs on fixed ticks (CI fix)
+CI's push run on Session 420's head (871258f) failed one suite of shard 7: `duelrhythm`, which Session 405 wrote and 408 extended, was stopped at the runner's 900 s for one suite. Every other suite of the shard passed. Session 417 had already seen it time out once with three browsers side by side and pass alone, so it was not a flake but a budget: the test drove its seven fights (five melee reactions, two arrows) by `requestAnimationFrame`, so every tick of the fight was a real frame of the whole scene drawn on software GL, each up to about a second on a loaded runner, and with the loop's `dt` capped at 0.05 a fight of four game seconds took at least 80 of them. Here, alone, the old version was still running after ten minutes when I stopped it.
+
+**What changed** (`tests/duelrhythm.test.mjs` only; the game is unchanged): a helper in the page, `_drive(step, max)`, holds off the browser's frames and `REN.render` and calls the game's own `loop` with its clock advanced 1/60 s a call, running the bot's step before each, as `tpswing`, `wardswift` and `herbparity` already do. The bot's logic, the reactions, the thresholds and the checks are as Session 408 left them; only the clock is fixed. One thing found on the way: the real loop's frame waiting when the drive ends carries a timestamp from before it, so setting `prevT` to the time then gave that frame a negative `dt` and the game clock ran back about eleven seconds between fights (the checks passed, all being relative to the yield, but it is wrong). `prevT` now goes to 0, and that frame is one capped tick of 0.05 s.
+
+### Verified (headless Chromium)
+- `duelrhythm` as committed: 10/10, 94 s alone. The game clock runs forward through all seven fights (yields at 1.0, 4.5, 7.9, 11.4, 14.7, 16.4, 19.8 s). The numbers are Session 408's: swinging in rhythm the next swing begins 0.217 s after the yielding blow and lands at 0.567; a 0, 0.15, 0.3 or 0.4 s reaction spares her (0.3 and 0.4 with one blow checked), 1 s murders her with the third swing begun at 0.783; an arrow loosed 0.1 s after she kneels is checked, one at 0.6 s is murder.
+- Three copies side by side: 161, 164 and 168 s, 10/10 each.
+- No page errors. Build tag s366.
+
+### Needs eyes
+- Nothing in play. Other suites that drive a fight by real frames (`duel`, `q7world`) have their own waits and have not timed out since Session 401; left as they are.
+
+## v80 — Session 424 — Inn rooms: the keeper's directions and the empty room (backlog G, Session 141's check)
+
+Backlog G owed Session 141's inn rooms to a playtest: rent a room, sleep in it, try another guest's door. Session 141 checked it once, by hand, in one inn, and kept no suite. Most of it could be settled headless, so I measured every inn in Dunmore (4) and Portclare (2) and a coaching inn (the Auberge du Pont, 3 rooms). Each was rented on six nights, and I went in to try every bed in the gallery. The rent, the night's sleep and the expiry all work. Two things did not.
+
+**The keeper's directions were wrong in every inn.** The gallery's rooms stand in one row behind the corridor, room 0 at the west wall, with each door in the middle of its room's front wall. You come up the stair facing those doors (−z, so +x is your right hand), so from a west stair every door is on your right, and from an east stair every door is on your left. `innRoomName` named them as if they alternated sides from room 0: *the first door on the left*, *the first on the right*, *the second on the left*. At a west-stair inn that sent you left for room 0, which is on your right, and called room 1 *first*. At an east-stair inn it called room 0 *first* when it is the far door, and sent you right for room 1. No inn I checked got any name right. The fix (`js/80-world.js`):
+- The names now count the doors from the stair head, on the side they are on: *the first door on the right*, *the second door on the left*, and *the last door on …* for the far end of a row of three or more.
+- The stair's side is one function now, `galleryEast(house)`. The builder reads it to put the stair, and the keeper reads it for the names, so the two cannot drift (it is the same hash of the house's id the builder used).
+
+**An empty room was called another guest's.** The night's guests hold the rooms below the free one, and the rooms above it are empty. But every room not yours refused you with *Another guest's room*, including on the nights the keeper had just said *The house is empty tonight*. An untaken room now prompts *Not your room*, and E there says *An empty room, not the one you took. Yours is …*. Guests' rooms are unchanged. Who has which room, the prices and the rule (never the whole house) are untouched, so this is not a design change. The new line is mine, for the quest review.
+
+### Verified (headless Chromium)
+`tests/innrooms.test.mjs` (new), 9/9 in 218 s.
+- Seven inns: six in the two towns (2 rooms each, three with a west stair and three with an east) and the coaching inn (3 rooms, west stair). Each has a door for every room.
+- 42 nights, six an inn. Each time, the room named in the offer and on the receipt was the one you reach from the stair head: the same side, and the same count from the stair. Against the old code the same check fails on every night, and the parser cannot read the old odd-numbered names at all.
+- The coaching inn lets only its far room (*the last door on the right*), with the travellers in the other two, every night.
+- Inside, on the last night's rent:
+  - your two beds read *Your room* and sleep you;
+  - another guest's beds read *Another guest's room* and turn you away, naming yours;
+  - in the three inns that were empty that night (Bramble Hearth, Wandering Ram, Wayfarer), the other room's beds read *Not your room*, with *An empty room, not the one you took*. The old code called them another guest's.
+- At the Bramble Hearth, E at your bed opens the sleep and *Continue* sleeps 8 hours (481 game minutes with the fade). You wake indoors and the bed is still yours. Past the paid time, its prompt is *Ask the innkeeper for a room (11 gold)* again.
+- `interiors` 5/5 and `coachinn` 15/15 pass; no page errors. Build tag s367.
+
+### Needs eyes
+- Whether *the second door on the left* now matches what you see from the top of the stair. It is the first thing to try.
+- Other guests' doors open to anyone, and their rooms are empty inside. *A bolt on the door* is only words. Locking them, or putting a sleeper in, would be a design call (and a crime, if picked), so it is left.
+- *Not your room* and *An empty room, not the one you took* are mine, for the quest review.
+
+## v80 — Session 425 — The Church and the factions, played through (backlog G, Session 158's check)
+Backlog G owed Session 158's Church and factions to a playtest: confess at a church with a record, try to serve a faction with a fine standing, and the tithe against the fine. `crime4` checks each rule by setting the record and calling the priest's topic function directly. Nothing had played it through the way a player meets it, so this session does that in Dunmore. A shop door is picked at 23h with a townsperson three units off in the street (the staging `crime2` uses). At 10h the priest is found where he is. He keeps the Oratory by day as a keeper keeps a shop, and is not in the street from mid-morning on. E by him opens his dialogue, and the choices are clicked in the page. The Crown's seat is asked. The fine is paid to the lord through her own dialogue.
+
+**What was wrong.** The priest offers *Confess.* while you have any record in the town: favour owed to crime, a fine standing, or the gates shut. A confession takes the 25-gold tithe and buys back a point of favour *if one is owed*. But favour also comes back by itself, a point every three quiet days (`tickCrimeDay`), while the fine stands until it is paid. So a theft left unpaid for a week, or a tithe that had already bought back the last point, left the priest offering a confession that took 25 gold, changed nothing, and told you *The town will come round the sooner for it*. Session 158's entry says the tithe buys back a point of the favour crime cost you. With no point owed, it bought nothing.
+
+**What changed** (`js/80-world.js`, `penanceTopics`): with no favour owed, *Confess.* is not offered, unless a guard's death in the town is still unheard by the Church. That case keeps Session 158's refusal while the town is unpaid and its absolution once paid. A fine alone is the lord's business, as it always was. The tithe, the three days between confessions, the point it buys and the faction's rules are unchanged.
+
+### Verified (headless Chromium)
+`tests/penance.test.mjs` (new), 10/10. In Dunmore:
+- The lock picked under Gráinne's eye: favour −1, a point owed, a 25-gold fine.
+- 10h: Pádraig is in the Oratory, not the street. E by him opens his dialogue with *Confess.* among the topics. *It is heard.* takes 500 → 475 gold; favour −1 → 0, nothing owed, the fine still 25.
+- The Crown's seat, with the fine standing: *Not while Dunmore has a fine on you…*
+- Back at the priest, with only the fine left: no *Confess.*, and gold still 475. On the old code (HEAD's `js/` booted with `--src`), he offers it.
+- Two more points owed and 50 more on the fine, then six quiet days: debt 2 → 0 and favour −2 → 0 on their own, the fine 75. Again no *Confess.* (the old code offers it).
+- The lord (Niamh): *Pay my fine (75 gold)* takes 475 → 400, the record is clean, and the seat's first topic is *Serve the Crown.* again. The priest has nothing to hear.
+- No page errors. `crime4` passes. Build tag s368.
+
+### Needs eyes
+- The tithe against the fine by feel. A point of favour comes back for 25 gold at the priest, at most once in three days, or for nothing after three quiet days, and only the lord clears the fine (25 a point). Whether hurrying the town back is worth 25 gold is for play to say, and Michael's call if he wants it changed.
+
+## v80 — Session 426 — Three of the critic's s360 bugs: the crate's icon, the passage's price, the dialogue's keys (backlog I)
+The critic's 2 Oct playtest (PR #106, on auto/critic) filed four bugs in backlog I. One, Portclare's factor never seeing your ship, is Session 413's fix, already on this branch. The other three are small, and all three are in what this builder owns, so they go together as one session.
+- **A crate on your back read *undefined Bale of Wool*.** `cargoItem` made a crate with no `ico`, and the HUD's bag line (`#bh`), the item tooltip and the *Equipped* line all print `ico + ' ' + name`. A crate now carries 📦. `_applyLoadData` gives one to any crate from a save made before this.
+- **A passage from a Compact port cost more than its label.** `ferryTo` charged (15 + distance/250) × 1.3 in Aurenne (the tithe), capped at 150, and free at rank 2 with the nation's faction. `ferryTopics` labelled 15 + distance/250 capped at 120, with neither the tithe nor the free passage (the critic's Camuros: *17g*, charged 22). Both now read one `ferryPrice(from, to)`.
+- **The dialogue hint said *1–4 to choose*.** Session 392 made 1–9 and 0 pick a choice, and the hint in `index.html` never followed. It now reads *1–9, 0 to choose · Esc to close*.
+
+`cargoItem`, `ferryTopics` and `ferryPrice` are now on `WORLD` for the test.
+
+### Verified (headless Chromium)
+`tests/tradebits.test.mjs` (new), 7/7.
+- Every passage from every port: 550 from 110 ports, 195 of them from the Compact's 39. Each topic's own call was made with a purse one gold short, and every label is the price the ferry then asks. The old label lacked the tithe, so it was wrong on every Compact passage (×1.3 moves the price by at least 4). None reaches 120, so the old lower cap never showed.
+- At rank 2 with the Crown, a Gatelands port's five passages read *0g*, as they cost.
+- A crate pushed into the bag reads *📦 Bale of Wool* in the HUD. Through a save with its icon stripped and loaded back, it reads the same.
+- The dialogue hint reads *1–9, 0 to choose*.
+- No page errors. `ferry` 4/4 and `cargo` 28/28 pass. Build tag s369.
+
+### Needs eyes
+- Whether 📦 is the right mark for a crate beside the bag's other glyphs.
+- Found on the way, not fixed: of the world's 110 ports, 16 share a name with another port (two *Woushstouir*s, more than one *Beaumont*), and some ports list a passage to a port of their own name. Names are generated, so this is the world's naming and not the ferry. It is filed in backlog I, not changed here.
+
+## v80 — Session 429 — Falls hurt, and the landing roll (platforming, Michael's B)
+Michael answered the platforming page on 2 Oct with B: A's honest jump, then generated places. Its first piece is a heights pass over the world's solids, and that is a Fable session. Its rule for falls touches only the jump block and the roll, so it can come first. The rule: *free up to 4 units (four times the apex: nobody is hurt by their own jump), then 6% of your health a unit beyond, so a drop of about 21 units from full is death. A roll begun within 0.2 s of landing halves it.* Before this, a drop of any height ended in `sndLand` and a 0.06 shake.
+
+**What changed.** `js/10-player.js` has a fall tracker (`FALL`, `fallTrack`, `fallLand`, `fallSettle`). While you are in the air it keeps the highest point you reach. When the loop lands you (the dungeon and interior floor clamp, and the open world's terrain), `fallLand` takes the drop from that point. Past 4 units, the blow waits 0.2 s on the loop's own dt, so a dropped frame changes nothing. A roll started in that window (`startRoll`) halves it. A roll can't start in the air, so Q pressed up to 0.2 s before landing is kept and rolls you as you land. That is the window counted on both sides, and it is fair at a few frames a second. The message reads *A hard landing. N damage.* or *You roll with the fall. N damage.* The shake grows with the drop. Death from a fall is `playerDead` as any other: the duel's ring still holds you at 1 health, and a blow still waiting is dropped at death.
+
+The count starts again on a change of place (`lid`, the zone, the room) or a move of more than 3 units in one frame (travel, a boarding). Water is not a landing: `diveTick` sets you on the surface without passing through `fallLand`. While Levitate holds you, the count starts from where you are, so letting go high up is a fall from there. In the open world today the only falls are jumps: you walk down any slope on the ground, and the platforms (bridges, the spire's roof) lift and lower you without leaving the ground. Until the Fable session gives the world's solids tops, the rule bites indoors (galleries, a dungeon's stairwell, 5 units: 6%) and from Levitate. Cat's fall and Éan's *Wingless* wait for the skills build.
+
+### Verified (headless Chromium)
+`tests/falls.test.mjs` (new), 11/11, through the game's own loop, with a new character at 130 health:
+- Outdoors: 3.9 units, nothing; the player's own jump, nothing. 9.96 units: 46 (6% × 5.96 × 130). Q on the first frame on the ground: 23, rolled. Q pressed 1.5 units above the ground: rolled on landing, 23. Q pressed at the top, a second early: 46.
+- Moved 60 units while in the air: the fall counts from where the move left you (8.71 above the new ground; measured 8.35, 34), not from the old peak.
+- In a dungeon (The Dungeon of Shadows): 4.96 units, 7 (6% of 130 for 0.96). 11.96 with a roll, 31. 21.95 from full, 140 against 130: dead.
+- No page errors. `roll` 17/17 and `dungeonexit` 4/4 pass. Build tag s370.
+
+### Needs eyes
+- How it feels to fall from a gallery or down a dungeon's stairwell shaft, and whether the message and the shake read as a hurt.
+- The window for the roll by feel: Q up to 0.2 s before landing or 0.2 s after.
+- Owed by the page, not built here: the mantle (after the heights pass, which is a Fable session), Cat's fall, *Wingless*, and the places.
 ## v80 — Session 430 — Mountains and rivers on the world map: the prototype and the question (Fable, backlog: the world)
 Michael's item of 27 Sep: the ranges are boxes set on cell borders (the Mark is a grid of them), the rivers are border crossings rolled at random, one width, no forks, some ending on dry land; he wants a few great rivers cutting through the continents, forks and deltas, widths that vary, navigable by boat, with ports and towns on the banks. The card says design first: pictures, one decision, then the build. This session is the pictures.
 

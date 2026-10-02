@@ -4,6 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
 ### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #112)
 Today the ranges are bands laid on cell borders (the Mark's are a grid of boxes), one peak a cell, and the rivers are border crossings rolled at random, one width, with no forks. Session 430 prototyped three rules for laying the ranges, and routed the rivers off them the way the real build would: a coarse height (the distance from the coast, the proposed ranges on top) is flooded and drained, so every channel reaches the sea or a lake, tributaries join, and the width follows the catchment (10u at 1 km², 16u where a ship fits at 3.2 km², 25u at 12 km²). The pictures are the world map as the game draws it, washed pale, with the proposal over it; the old ridge boxes still show through faintly. The home province keeps its authored rivers in every layout (the Dearg, the Westwater, the Ferrous wall along its north edge); the Dearg would widen downstream but stay a ford at Redwater Ford, so it is not a ship's river.
 
@@ -25,7 +26,19 @@ What the build then does (two or three sessions): the routing runs once per seed
 
 (Prototype: `docs/prototypes/rivers/layout.js` and `render.mjs`; `node docs/prototypes/rivers/render.mjs` redraws the four pictures in about forty seconds.)
 
-## Answered
+Michael: **The horseshoe: a ring round a basin** (C). (2026-10-02)
+
+### Places that share a name (the systems builder, 2026-10-02, DECISION #110)
+The world names its places from each culture's bank: ten first halves and ten second halves, a hundred names at most, drawn at random for every village, town, city, port and outpost. There are 609 of those in the world and only 366 names among them, so 396 places share a name with another place, 59 of them with a place in the same province. Of the 110 ports, 30 share a name, and six harbourmasters offer *Passage to* a port with their own harbour's name (two *Woushstouir*s in the Wiabrou Realm, two *Marnfouey*s, *Godaey*, *Inismore*). A quest, a coach board or a rumour that names one of them can mean either. Home's hand-placed towns (Dunmore, Portclare and the rest) are untouched in every option.
+
+Renaming changes the names of places in every existing save. The saves keep places by id, so nothing breaks; a journal line already written keeps the old name.
+
+- **A. One name per place, world-wide** *(recommended)*: generation draws without repeats, and a culture whose hundred names run out builds longer ones from the same sounds. 243 places get a new name, once (609 less the 366 names kept). As Session 172 did for shops.
+- **B. One name per nation**: repeats allowed only across a border, so fewer places renamed than A. Two nations could still share a *Beaumont*.
+- **C. Keep the names, say which one**: where a name repeats, the ferry, the coach board and the map add the province (*Woushstouir, Wiabrou Realm*). Nothing renamed, but two ports in one province still read the same.
+- **D. Leave it.**
+
+Michael: **One name per place, world-wide** (A). (2026-10-02)
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
@@ -73,7 +86,9 @@ Your A on sailing (#85) is built except the parts that wait for the skills build
 
 Recommendation: **B.** The page wants her to be *something to turn from, not only to board*, and B does that: a ram costs a fifth of a sloop's hull, with time to answer by turning or making way. A's double makes three passes a sinking, and C leaves her circling harmlessly beyond the volleys.
 
-Michael: **B — once an approach, plain × 3, then back to her circle**. (2 Oct 2026, via the control room)
+Michael: **B** — she rams once an approach for the plain × 3, then back to her circle. (2 Oct 2026, issue #100, via the control room)
+
+*Built, Session 418* (`tests/pirateram`): within 30 units, faster than you (her 6.5) and with you aboard, she steers at your hull; the first touch spends the ram (−20 to a still sloop), she draws off to her circle, and she may come again 30 s later. A run that has not touched in 12 s is given up.
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
 Session 402 put the jab on the third-person body, and its devlog left two look calls open. First, with an empty hand the body's hand is a mitten: a squashed ball with a thumb, which reads as a pale point at a distance. Second, the unarmed body walks and runs with its arms swinging. It only comes up to guard for the punch, while the first person always holds both fists up. All four rows are built from the game itself. The fist is patched into the bake at runtime, so the game is unchanged.
@@ -105,6 +120,8 @@ In *The Yard at Caer Slige*, Rowe yields at a quarter of her health. Any blow th
 Recommendation: **B.** It is one condition in `tickDuel` and a test. It keeps *struck she dies* for every blow the player chose, and removes the one they couldn't have stopped.
 
 Michael: **A blow begun within 0.4 s of her kneeling is checked**. (1 Oct 2026, issue #96, via the control room)
+
+*Built, Session 408* (`tests/duelrhythm`): the game notes when you last began a swing, an arrow or a cast; a blow that lands after she kneels is checked (*You check the blow.*, her health put back) if that was within 0.4 s of the yield, and murder if later. A burn or other effect still running from an earlier blow is checked too, since you began nothing new.
 
 ### The cavern master — what does it do besides hit harder? (systems builder, Session 400's run, 2026-10-01, issue #95)
 Backlog C has owed *a mechanic for the dungeon master beyond numbers* since Session 130. Every lair's cavern ends in a master: the deepest room's foe, made 3× the health (6× a wyrm) and 1.6× the damage, scaled by level (`lairFinish`). Nothing else changes. The lair beast at the mouth dazes itself charging into a wall, and the captains raise a frontal guard, but the master only hits harder. It is the end of a long dungeon and fights like the first room.
