@@ -1,6 +1,7 @@
 // Foundering and the wreck (Session 413; Michael's A on #85, docs/design/sailing.md). At 0 hull she is waterlogged; any
 // hull lost after that sinks her. The wreck is on the map where she went down, and a reload does not bring her back. Any
 // shipwright raises her, class and tiers, for 30% of what they cost, and she lies at his quay three game days later.
+// Session 416: the shipwright's replies follow his harbour's people (`tests/shipwrightvoice` checks the words); here, the sums.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -53,11 +54,11 @@ const raise = await page.evaluate(() => { const S = WORLD.ship, st = worldState.
   st.cls = 'galleon'; st.sails = 3; st.cargo = 2; out.galleon = WORLD.shipRaiseCost(); return out; });
 console.log(JSON.stringify(raise));
 check('sunk, the shipwright offers only "Raise the Test Gull (255 gold)": no refits, no mending', raise.sunk && raise.cost === 255 && raise.labels.length === 1 && raise.labels[0] === 'Raise the Test Gull (255 gold)', raise.labels);
-check('paid, he says three days and offers nothing more', raise.gold === 745 && /Three days, and she'll be lying at the quay here\./.test(raise.reply) && raise.after.length === 0, raise);
+check('paid, he says three days and offers nothing more', raise.gold === 745 && /^Three days\b.*\bquay\b/.test(raise.reply) && raise.after.length === 0, raise);
 check('half an hour short of three days she is not there', !raise.early, raise);
 check('at three days she lies off his quay (where *Fetch her* puts a ship, within 60 of the quay\'s head), sound (100 / 100), the same name and hold; the wreck is off the map', raise.raised && raise.dist < 60 && raise.bars.hull === 100 && raise.bars.rig === 100 && !raise.sunkAfter && raise.name === 'Test Gull' && JSON.stringify(raise.hold) === JSON.stringify({ grain: 2 }) && raise.map === 0, raise);
 check('lying off his quay she is in port: he offers to mend her, not to fetch her', raise.yard.some(l => /^Mend her/.test(l)) && !raise.yard.some(l => /^Fetch/.test(l)), raise.yard);
-check('short of the price, nothing changes hands', /Raising her is 255 gold\./.test(raise.poorCase.r) && raise.poorCase.g2 === 100 && !raise.poorCase.raise, raise.poorCase);
+check('short of the price, nothing changes hands', /\b255 gold\b/.test(raise.poorCase.r) && raise.poorCase.g2 === 100 && !raise.poorCase.raise, raise.poorCase);
 check('a full galleon (sails 3, hold 2): 30% of 400 + 900 + 2,200 + 1,400 + 600 = 1,650', raise.galleon === 1650, raise.galleon);
 
 check('no page errors', g.errs.length === 0, g.errs);

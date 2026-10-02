@@ -184,6 +184,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 
 - ~~**The sell prompt's typed-amount button reads *Buy*** (the concept artist, drawing the counter, 1 Oct)~~ — **fixed, Session 409** (`tests/qtybutton`): the button names the side, as the prompt's title does.
 
+- ~~**Register fixes, quest review run 5**~~ — **done, Session 416** (`tests/shipwrightvoice`): the shipwright's replies (raise, fetch, mend, refit, canvas, hold) speak in the voice of his harbour's people (`SHIPWRIGHT_LINES`, Finding 5; Markish the fallback); `Aldhelm` and `Ealdred` out of the Mark's men's names for `Eadwulf` and `Wigmund` (Finding 6).
+
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.
 - **Magic**: today's mix of old Elder Scrolls spell-buying with Skyrim's shout-style dungeon unlocks doesn't convince him. Wanted: a loop that isn't *buy more/better spells* — schools as skills, discovery, crafting or combining, costs and risks, spells that change how you move through the world.

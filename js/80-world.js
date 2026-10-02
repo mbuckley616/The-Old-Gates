@@ -2403,7 +2403,7 @@ var WORLD=(()=>{
            f:['Aoife','Gráinne','Niamh','Sorcha','Bríd','Órla','Maeve','Clodagh','Róisín','Eilís','Sinéad','Caoimhe']},
     french:{m:['Étienne','Guillaume','Thibault','Renaud','Mathieu','Olivier','Aymeric','Gaspard','Bertrand','Loïc','Rémi','Amaury'],
             f:['Isabeau','Margaux','Aliénor','Ysolde','Clémence','Blanche','Héloïse','Odile','Sabine','Adèle','Mireille','Colette']},
-    anglo:{m:['Wulfstan','Eadric','Godwin','Leofric','Aldhelm','Osric','Cuthbert','Hereward','Beorn','Ealdred','Wilfrid','Dunstan'],
+    anglo:{m:['Wulfstan','Eadric','Godwin','Leofric','Eadwulf','Osric','Cuthbert','Hereward','Beorn','Wigmund','Wilfrid','Dunstan'],
            f:['Æthelflæd','Eadgyth','Hilda','Wynflæd','Mildrith','Godgifu','Ealhswith','Leofgifu','Cynethryth','Eanflæd','Elfrida','Osgyth']},
   };
   const SHOP_NOUN={
@@ -6165,19 +6165,72 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function applyShipClass(){const c=shipClass();SHIP.L=c.L;SHIP.W=c.W;if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=buildShipMesh(SHIP.L,SHIP.W);sc.add(SHIP.mesh);shipUpdatePlacement();}}
   function cargoBonus(){if(!SHIP.mesh)return 0;const t=(worldState.ship&&worldState.ship.cargo)||0;if(!t)return 0;return (Math.hypot(px-SHIP.x,pz-SHIP.z)<20||onDeck())?t*25:0;}
+  const SHIPWRIGHT_LINES={
+    gatelander:{
+      raisePoor:c=>`Raising her is ${c} gold. The sea gives nothing back for less, and it gives grudgingly then.`,
+      raised:`Three days, and she'll be lying at the quay here, Weaver willing. A drowned boat comes up slow, like a man who knows he's in the wrong.`,
+      fetchPoor:f=>`Bringing her round is ${f} gold. A boat on the wrong shore is no boat at all, but a shipwright working for thanks is no shipwright either.`,
+      fetched:`The lads'll have her alongside before your cup's cold. She's at the quay.`,
+      mendPoor:g=>`Putting her right is ${g} gold. A stitch in time, they say, and they never once say it's free.`,
+      mended:hw=>`${hw} in the yard, and she's sound again, hull and rig. Treat her kindly and she'll return it.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold. A bigger boat's a bigger bill, the same as a bigger house.`,
+      refitted:n=>`She's a ${n} now. Longer, broader, and she'll carry more sail. You'll hardly know her, and she'll hardly know you.`,
+      sailsPoor:p=>`That canvas is ${p} gold. Good cloth was never cheap, and cheap cloth was never good.`,
+      sailed:k=>`New canvas. She'll make ${k} knots with a wind, and the wind is the Weaver's business, not mine.`,
+      holdPoor:p=>`The carpentry's ${p} gold. Wood is dear, and the joiner dearer.`,
+      held:n=>`More room below. You'll carry ${n} more aboard her, and you'll find a way to fill it.`},
+    markman:{
+      raisePoor:c=>`Raising her is ${c} gold.`,
+      raised:`Three days, and she'll be lying at the quay here.`,
+      fetchPoor:f=>`Bringing her round is ${f} gold.`,
+      fetched:`Lads'll have her alongside by the time you've finished your drink. She's at the quay.`,
+      mendPoor:g=>`Putting her right is ${g} gold.`,
+      mended:hw=>`${hw} in the yard. She's sound again, hull and rig.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold.`,
+      refitted:n=>`She's a ${n} now. Longer, broader, and she'll carry more sail.`,
+      sailsPoor:p=>`That canvas is ${p} gold.`,
+      sailed:k=>`New canvas. She'll make ${k} knots with a wind.`,
+      holdPoor:p=>`The carpentry's ${p} gold.`,
+      held:n=>`More room below. You'll carry ${n} more aboard her.`},
+    aurennais:{
+      raisePoor:c=>`The raising is ${c} gold, Master, payable before the work.`,
+      raised:`Three days, Master, and she will be lying at the quay here. The yard's receipt is entered.`,
+      fetchPoor:f=>`Bringing her round is ${f} gold, Master. The fee covers the crew and the tow.`,
+      fetched:`The yard's crew has her alongside, Master. She is at the quay, as agreed.`,
+      mendPoor:g=>`The repair is ${g} gold, Master, at the yard's posted rate.`,
+      mended:hw=>`${hw} in the yard, Master. She is sound again, hull and rig, and the work is warranted to the next storm, if not through it.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold, Master. The yard does not extend credit on hulls.`,
+      refitted:n=>`She is a ${n} now, Master: longer, broader, and rated for more sail. The new rating is entered against her name.`,
+      sailsPoor:p=>`That canvas is ${p} gold, Master.`,
+      sailed:k=>`New canvas, Master. Under a fair wind she should make ${k} knots. The yard warrants the cloth, not the wind.`,
+      holdPoor:p=>`The joinery is ${p} gold, Master.`,
+      held:n=>`More room below, Master. She is rated for ${n} more aboard.`},
+    oldblood:{
+      raisePoor:c=>`${c} gold, to raise her.`,
+      raised:`Three days. She will be at the quay.`,
+      fetchPoor:f=>`${f} gold, to bring her round.`,
+      fetched:`She is at the quay.`,
+      mendPoor:g=>`${g} gold.`,
+      mended:hw=>`${hw} in the yard. Sound again, hull and rig.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold.`,
+      refitted:n=>`A ${n} now. Longer. Broader. More sail.`,
+      sailsPoor:p=>`${p} gold, the canvas.`,
+      sailed:k=>`New canvas. ${k} knots, with a wind.`,
+      holdPoor:p=>`${p} gold, the joinery.`,
+      held:n=>`More room below. ${n} more.`}};
   function upgradeTopics(site){
     if(!worldState.ship)return [];
-    const st=shipCfg();const out=[];
-    if(st.sunk){if(st.raise)return out;const rc=shipRaiseCost();out.push({label:`Raise the ${st.name||SHIP.name} (${rc} gold)`,quest:true,fn:()=>{const c=shipRaiseCost();if(gold<c)return `Raising her is ${c} gold.`;gold-=c;updateHUD();
-      st.raise={site:site.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};if(typeof addLog==='function')addLog('⛵',`Paid ${site.name}'s shipwright to raise the ${st.name||SHIP.name}.`);return `Three days, and she'll be lying at the quay here.`;}});return out;}
-    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return `Bringing her round is ${fee} gold.`;gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=Math.atan2(-sd.dz,-sd.dx)+Math.PI/2;SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return `Lads'll have her alongside by the time you've finished your drink. She's at the quay.`;}});}
-    const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return `Putting her right is ${m.gold} gold.`;gold-=m.gold;updateHUD();
+    const st=shipCfg();const out=[];const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman;
+    if(st.sunk){if(st.raise)return out;const rc=shipRaiseCost();out.push({label:`Raise the ${st.name||SHIP.name} (${rc} gold)`,quest:true,fn:()=>{const c=shipRaiseCost();if(gold<c)return L.raisePoor(c);gold-=c;updateHUD();
+      st.raise={site:site.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};if(typeof addLog==='function')addLog('⛵',`Paid ${site.name}'s shipwright to raise the ${st.name||SHIP.name}.`);return L.raised;}});return out;}
+    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return L.fetchPoor(fee);gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=Math.atan2(-sd.dz,-sd.dx)+Math.PI/2;SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return L.fetched;}});}
+    const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
       const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
-      if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return `${h===1?'An hour':h+' hours'} in the yard. She's sound again, hull and rig.`;}});}
+      if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}
     const cls=st.cls||'sloop';const next=cls==='sloop'?'cog':cls==='cog'?'galleon':null;
-    if(next)out.push({label:`Refit her as a ${next} (${SHIP_CLASSES[next].price} gold)`,quest:true,fn:()=>{const p=SHIP_CLASSES[next].price;if(gold<p)return `A ${next} hull is ${p} gold.`;gold-=p;updateHUD();st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);return `She's a ${next} now. Longer, broader, and she'll carry more sail.`;}});
-    const sails=st.sails||0;if(sails<3)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return `That canvas is ${p} gold.`;gold-=p;updateHUD();st.sails=sails+1;return `New canvas. She'll make ${shipTopSpeed().toFixed(1)} knots with a wind.`;}});
-    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return `The carpentry's ${p} gold.`;gold-=p;updateHUD();st.cargo=cargo+1;return `More room below. You'll carry ${25*(cargo+1)} more aboard her.`;}});
+    if(next)out.push({label:`Refit her as a ${next} (${SHIP_CLASSES[next].price} gold)`,quest:true,fn:()=>{const p=SHIP_CLASSES[next].price;if(gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);return L.refitted(next);}});
+    const sails=st.sails||0;if(sails<3)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
+    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
     return out;
   }
   // ── fish ──

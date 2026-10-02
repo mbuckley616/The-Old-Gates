@@ -10324,3 +10324,18 @@ Session 411 left a ship at 0 hull waterlogged (2.5 at most) and nothing further.
 - The wreck has no mark on the sea itself: no mast above the water, no minimap pin. Its look is H's if wanted.
 - The two calls above (a waterlogged ship settles on the shallows; the hold comes up with her) are Michael's to overrule.
 - The shipwright's lines (*Raise the …*, *Three days, and she'll be lying at the quay here.*, *Raising her is N gold.*) and the sinking message are mine, for the quest review.
+
+## v80 — Session 416 — The shipwright in his harbour's voice; two names out of the Mark's bank (register fixes, quest review run 5)
+The quest review's run 5 (2 Oct) left two findings for the builders, applied here exactly as written, without a decision.
+
+**Finding 5** (auto/systems, Sessions 411 and 413): every shipwright answered in Markish (*Lads'll have her alongside…*), whatever his harbour's people. His twelve replies in `upgradeTopics` (raise, fetch, mend, refit, canvas and hold, each short of the price and paid) now come from `SHIPWRIGHT_LINES`, the review's table, picked by `peopleOfSite(site)` with Markish (the old text, unchanged) as the fallback, the same shape as the halt, the yield and the coaching inn (Sessions 265 and 315). The Gatelander turns each price into a proverb, the Aurennais quotes terms and says *Master*, the Old Blood is bare. The two older replies in the same exchange (*That canvas is…*, *The carpentry's…*) changed with it, as the review asked.
+
+**Finding 6** (main, older than the baseline): the Mark's men's names held *Aldhelm* and *Ealdred*, and the canon keeps the Ald- root for Aldwyn and Aldred alone (the critic met an *Aldhelm* as the yard-sergeant at Caer Slige). They are now *Eadwulf* and *Wigmund*. A person already named and saved keeps the name he was given (`_curNM` holds it); the review leaves that to the builder, and renaming a saved person would change someone the player has met, so they stay.
+
+A note on the way: my first pass took the last `js` block in `docs/quest_review.md` as the table, which is Finding 3's `HALT_LINES`, and declared it twice in the world module. Parsecheck did fail on it (`80-world.js: FAIL`, an identifier already declared), but it reports per file and then the concatenation, and I read only its last line, which was a later file's OK. The page would not boot. Caught by the first test run and fixed before commit. Read the whole of parsecheck's output, or its exit code.
+
+### Verified (headless Chromium)
+`tests/shipwrightvoice.test.mjs` (new), 18/18: one port of each people (Markish c1_1_s1, Gatelander c1_1_s3, Aurennais c3_1_s11, Old Blood c2_8_s0), a sunk sloop with one tier of each (raise 255), then one afloat 2,000 units off (fetch 35), mended at hull 60 (160 gold, 2 hours), refit to a cog (900), sails (250, 9.7 knots) and the hold (200, 50 more). Every reply is the review's line for that people, the Markish ones byte-for-byte today's, and none reads `undefined`. The Mark's bank has no name starting Ald- or Eald-. No page errors. `shipwright`, `shipwreck`, `shiphull`, `names` and `duel` pass. Build tag s362.
+
+### Needs eyes
+- The lines in play at a real quay; they are the author's text as the review gave it.

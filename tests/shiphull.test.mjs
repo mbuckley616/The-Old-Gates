@@ -3,6 +3,7 @@
 // under a quarter ×0.6, and the rig sets ×(0.5 + 0.5 × rig/100); at 0 hull she makes 2.5 at most. Grounding faster than
 // 2 costs (speed − 2) × 4; a ram the closing speed × 3, half bow-on; a volley that comes down on her deck 2 hull and 3 rig.
 // The shipwright mends her to full for 4 gold a hull point and 3 a rig point, an hour a 20 points.
+// Session 416: the shipwright's replies follow his harbour's people (`tests/shipwrightvoice` checks the words); here, the sums.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -100,9 +101,9 @@ const yard = await page.evaluate(() => { const s = _port, S = WORLD.ship, st = w
 console.log(port, JSON.stringify(yard));
 check('in port, the shipwright offers "Mend her: hull 55 of 100, rig 80 of 100 (240 gold)"', yard.label === 'Mend her: hull 55 of 100, rig 80 of 100 (240 gold)', yard.label);
 check('mending takes 4 a hull point and 3 a rig point (180 + 60) and an hour a 20 points (65 points, 195 minutes), and she is sound',
-  yard.gold === 760 && yard.mins === 195 && yard.bars.hull === 100 && yard.bars.rig === 100 && /3 hours in the yard\. She's sound again/.test(yard.reply), yard);
+  yard.gold === 760 && yard.mins === 195 && yard.bars.hull === 100 && yard.bars.rig === 100 && /^3 hours in the yard\b.*\bsound again, hull and rig/i.test(yard.reply), yard);
 check('sound, he offers no mending', yard.afterLabels.length === 0, yard.afterLabels);
-check('short of the 40 gold, nothing changes hands and she stays at 90', /Putting her right is 40 gold\./.test(yard.poor) && yard.poorHull === 90 && yard.poorGold === 30, yard);
+check('short of the 40 gold, nothing changes hands and she stays at 90', /\b40 gold\b/.test(yard.poor) && yard.poorHull === 90 && yard.poorGold === 30, yard);
 check('with her 400 units off, he cannot mend her', yard.far === false, yard);
 check('refitted as a cog she is a new hull, 140 of 140', yard.cog.hull === 140 && yard.cog.hullMax === 140, yard.cog);
 
