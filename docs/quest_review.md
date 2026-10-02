@@ -6,10 +6,111 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `7733a5b` | run 4, from `421afdf`; from here the code is `js/*.js`, so the diff is `-- index.html js/` |
-| auto/systems, auto/backlog, auto/split, auto/critic, auto/design | — | run 4: no commits ahead of main |
-| auto/concept, auto/producer | — | run 4: ahead of main in docs only, no `index.html` or `js/` changes |
+| main | `6edf854` | run 5, from `7733a5b`; the diff is `-- index.html js/` |
+| auto/systems | `95830fb` | run 5, Sessions 404–413 against main |
+| auto/backlog | `a39610f` | run 5, Sessions 394–410 against main; no string a player reads |
+| auto/concept, auto/producer | — | run 5: level with main, or ahead in docs only |
+| auto/critic, auto/design, auto/split | — | run 5: level with main |
+| claude/lucid-faraday-6qlft7 | — | run 5: shares no history with main (the cloud-setup commits, folded in long ago); not read |
 | auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 5 — 2 Oct 2026
+
+About 55 player-readable strings read. Two findings: one on auto/systems, and one in the name bank on main that the critic met in play this week.
+
+**main** (`7733a5b..6edf854`) is the systems merge of Sessions 382–401 and the look sessions merged with it. The new strings are cargo trading at the harbourmaster's (*Cargo — the factor’s prices*, *Bought a sack of grain for N gold.*, *Sold a crate of dyes for N gold (the Compact's tithe, N).*, *That is not sold here.*, *A horse goes in a ship's hold, and your ship is not here.*), the pirates at the hold (*They come over your rail behind you and take 2 × crate of iron from the hold.*), *Raiders! N of them. Hold {town}.*, and the controls line's *Middle-click or R — lock on*. All of it is UI or narration, and it reads well. The goods are plain and right by island: grain, wool, hides and horses from the Gatelands, iron, silver, timber and furs from the Mark, salt, dyes, glass and fish from Aurenne (§1.1–1.3).
+
+**auto/backlog** (Sessions 394–410: the armour kit, fists, the helmed foes) adds no string a player reads.
+
+**auto/systems** (Sessions 404–413) adds the cavern master's slam (*{name} rears up to strike the ground.*, *The ground cracks where you stood.*), the checked blow at the yield (*You check the blow.*), and the ship's wear: *Aground — shallows ahead.*, *The {ship} is waterlogged. She will make two knots and a half.*, *The {ship} goes down. Any shipwright can raise her.*, the wreck on the map (*Where she went down*) and the sea bar (*Sea: rough*). The narration is clean. The shipwright's new replies are Finding 5.
+
+**Noted, not findings** (older than the baseline; for the author's audit). Read while drafting this run's *Back to Their Bread*:
+- Varek at the Ashfeld (`tickAshfeld`, grep `They were never a loom`) says the sigils are *a window* and that he has spent two hundred years *pulling the shutters*, and *I'll help you close them* sets the choice to `help`. Canon §3.1 has his heresy as *"they built a cage and called it a loom"*, about the Clearing, and §11 has *help him* mean *unbind*. As written, helping Varek means closing, which is the canon's *stop him*. The Root's three choices (*Break it*, *Seal it*, *Leave it open*) are the canon's and are not tied to the Ashfeld answer, so nothing breaks in play, but the field scene argues the opposite of his canon position.
+
+### Finding 5 — auto/systems — the shipwright speaks Markish in every harbour
+
+**Where.** `upgradeTopics(site)` in the world module (grep `Lads'll have her alongside`), Sessions 411 and 413. The two older replies in the same function (grep `That canvas is` and `The carpentry's`) are older than the baseline. They are the same exchange and should change with it, as Finding 3 did with Finding 2.
+
+**Text.**
+- *Raise the {ship}*: `` `Raising her is ${c} gold.` `` / `` `Three days, and she'll be lying at the quay here.` ``
+- *Fetch the {ship} to this harbour*: `` `Bringing her round is ${fee} gold.` `` / `` `Lads'll have her alongside by the time you've finished your drink. She's at the quay.` ``
+- *Mend her*: `` `Putting her right is ${m.gold} gold.` `` / `` `${h===1?'An hour':h+' hours'} in the yard. She's sound again, hull and rig.` ``
+- *Refit her as a {class}*: `` `A ${next} hull is ${p} gold.` `` / `` `She's a ${next} now. Longer, broader, and she'll carry more sail.` ``
+- *Better sails* (older): `` `That canvas is ${p} gold.` `` / `` `New canvas. She'll make ${k} knots with a wind.` ``
+- *Bigger hold* (older): `` `The carpentry's ${p} gold.` `` / `` `More room below. You'll carry ${n} more aboard her.` ``
+
+**Why.** The shipwright is a townsperson of the harbour's people, with a name from that people's bank. The replies are good Markish (*Lads'll*, short and bare) and wrong in a Gatelands or Compact port. An Aurennais yard quotes terms and says *Master*; a Gatelander turns a price into a proverb. It is the same fault as Findings 1–4, and it has the same fix.
+
+**Replacement.** Pick by `peopleOfSite(site)`. Where there is no row, use `markman`, which is today's text unchanged. `hw` is the hour phrase the code already builds (`h===1?'An hour':h+' hours'`); `k` is `shipTopSpeed().toFixed(1)`; `n` in `held` is `25*(cargo+1)`.
+
+```js
+const SHIPWRIGHT_LINES={
+  gatelander:{
+    raisePoor:c=>`Raising her is ${c} gold. The sea gives nothing back for less, and it gives grudgingly then.`,
+    raised:`Three days, and she'll be lying at the quay here, Weaver willing. A drowned boat comes up slow, like a man who knows he's in the wrong.`,
+    fetchPoor:f=>`Bringing her round is ${f} gold. A boat on the wrong shore is no boat at all, but a shipwright working for thanks is no shipwright either.`,
+    fetched:`The lads'll have her alongside before your cup's cold. She's at the quay.`,
+    mendPoor:g=>`Putting her right is ${g} gold. A stitch in time, they say, and they never once say it's free.`,
+    mended:hw=>`${hw} in the yard, and she's sound again, hull and rig. Treat her kindly and she'll return it.`,
+    refitPoor:(n,p)=>`A ${n} hull is ${p} gold. A bigger boat's a bigger bill, the same as a bigger house.`,
+    refitted:n=>`She's a ${n} now. Longer, broader, and she'll carry more sail. You'll hardly know her, and she'll hardly know you.`,
+    sailsPoor:p=>`That canvas is ${p} gold. Good cloth was never cheap, and cheap cloth was never good.`,
+    sailed:k=>`New canvas. She'll make ${k} knots with a wind, and the wind is the Weaver's business, not mine.`,
+    holdPoor:p=>`The carpentry's ${p} gold. Wood is dear, and the joiner dearer.`,
+    held:n=>`More room below. You'll carry ${n} more aboard her, and you'll find a way to fill it.`},
+  markman:{
+    raisePoor:c=>`Raising her is ${c} gold.`,
+    raised:`Three days, and she'll be lying at the quay here.`,
+    fetchPoor:f=>`Bringing her round is ${f} gold.`,
+    fetched:`Lads'll have her alongside by the time you've finished your drink. She's at the quay.`,
+    mendPoor:g=>`Putting her right is ${g} gold.`,
+    mended:hw=>`${hw} in the yard. She's sound again, hull and rig.`,
+    refitPoor:(n,p)=>`A ${n} hull is ${p} gold.`,
+    refitted:n=>`She's a ${n} now. Longer, broader, and she'll carry more sail.`,
+    sailsPoor:p=>`That canvas is ${p} gold.`,
+    sailed:k=>`New canvas. She'll make ${k} knots with a wind.`,
+    holdPoor:p=>`The carpentry's ${p} gold.`,
+    held:n=>`More room below. You'll carry ${n} more aboard her.`},
+  aurennais:{
+    raisePoor:c=>`The raising is ${c} gold, Master, payable before the work.`,
+    raised:`Three days, Master, and she will be lying at the quay here. The yard's receipt is entered.`,
+    fetchPoor:f=>`Bringing her round is ${f} gold, Master. The fee covers the crew and the tow.`,
+    fetched:`The yard's crew has her alongside, Master. She is at the quay, as agreed.`,
+    mendPoor:g=>`The repair is ${g} gold, Master, at the yard's posted rate.`,
+    mended:hw=>`${hw} in the yard, Master. She is sound again, hull and rig, and the work is warranted to the next storm, if not through it.`,
+    refitPoor:(n,p)=>`A ${n} hull is ${p} gold, Master. The yard does not extend credit on hulls.`,
+    refitted:n=>`She is a ${n} now, Master: longer, broader, and rated for more sail. The new rating is entered against her name.`,
+    sailsPoor:p=>`That canvas is ${p} gold, Master.`,
+    sailed:k=>`New canvas, Master. Under a fair wind she should make ${k} knots. The yard warrants the cloth, not the wind.`,
+    holdPoor:p=>`The joinery is ${p} gold, Master.`,
+    held:n=>`More room below, Master. She is rated for ${n} more aboard.`},
+  oldblood:{
+    raisePoor:c=>`${c} gold, to raise her.`,
+    raised:`Three days. She will be at the quay.`,
+    fetchPoor:f=>`${f} gold, to bring her round.`,
+    fetched:`She is at the quay.`,
+    mendPoor:g=>`${g} gold.`,
+    mended:hw=>`${hw} in the yard. Sound again, hull and rig.`,
+    refitPoor:(n,p)=>`A ${n} hull is ${p} gold.`,
+    refitted:n=>`A ${n} now. Longer. Broader. More sail.`,
+    sailsPoor:p=>`${p} gold, the canvas.`,
+    sailed:k=>`New canvas. ${k} knots, with a wind.`,
+    holdPoor:p=>`${p} gold, the joinery.`,
+    held:n=>`More room below. ${n} more.`}};
+// const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman; each return in upgradeTopics takes its row.
+```
+
+### Finding 6 — main — two names in the Mark's bank break the Ald- rule
+
+**Where.** `NAMES.anglo.m` in the world module (grep `'Wulfstan','Eadric','Godwin'`). It is older than the baseline. It is a finding because it breaks a rule the canon states outright, and the critic met it in play this week: the yard-sergeant at Caer Slige was *Aldhelm* (critic, 1 Oct).
+
+**Text.** `'Aldhelm'` and `'Ealdred'` in the list of men's names.
+
+**Why.** Canon, *Personal-name conventions*: the Ald- root belongs to Aldwyn and to Aldred, Varek's birth name, and *avoid reusing the Ald- prefix for any other character. The rhyme is load-bearing.* Brother Oswin was renamed from *Brother Aldhelm* for exactly this. *Ealdred* is the Old English spelling of *Aldred* itself, so any Markish sergeant or keeper can carry the villain's buried name. The Act II reveal depends on that name being heard nowhere else.
+
+**Replacement.** In `NAMES.anglo.m`, `'Aldhelm'` becomes `'Eadwulf'` and `'Ealdred'` becomes `'Wigmund'`. Neither is a named character, and neither takes the Ald- root. Names already saved on generated people (`_curNM`) keep whatever they were given, and that is the builder's call. The place-name syllable `'Ealdor'` in the town-name parts names places, not people, and stays.
 
 ---
 
