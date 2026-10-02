@@ -4,6 +4,27 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #ISSUE)
+Today the ranges are bands laid on cell borders (the Mark's are a grid of boxes), one peak a cell, and the rivers are border crossings rolled at random, one width, with no forks. Session 430 prototyped three rules for laying the ranges, and routed the rivers off them the way the real build would: a coarse height (the distance from the coast, the proposed ranges on top) is flooded and drained, so every channel reaches the sea or a lake, tributaries join, and the width follows the catchment (10u at 1 km², 16u where a ship fits at 3.2 km², 25u at 12 km²). The pictures are the world map as the game draws it, washed pale, with the proposal over it; the old ridge boxes still show through faintly. The home province keeps its authored rivers in every layout (the Dearg, the Westwater, the Ferrous wall along its north edge); the Dearg would widen downstream but stay a ford at Redwater Ford, so it is not a ship's river.
+
+![today](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/today.jpg)
+![A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/layout-a.jpg)
+![B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/layout-b.jpg)
+![C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/layout-c.jpg)
+
+Close-ups of each island: `docs/prototypes/rivers/layout-a-islands.jpg`, `-b-`, `-c-` (and `today-islands.jpg`). Blue lines are rivers, a light core marks water a ship can enter; faint blue is a brook; the brown band is a range with its peaks; a white ring is a town, city or port within a short walk of navigable water (it would gain a quay); a red ring is a settlement a channel runs through (the river bends round it).
+- **A. The spine.** One long range along each island, wandering, with a shoulder range on the big islands. Rivers run to both coasts, so there are many of a middling size: 75 reach the sea, 12 named, 3 deltas, 20 a ship can enter (97 km of navigable water), 19 lakes. Even and plausible; no river dominates an island.
+- **B. The rim.** The range runs along one coast of each island (the Mark's east, Aurenne's west, the Gatelands' north), with a spur inland. The island drains the other way, so the rivers are long and few: 67 reach the sea, 12 named, 3 deltas, 22 a ship can enter (103 km), 22 lakes; the two biggest catchments are 14 km² (la Dorée) and 13.6 km² (the Blackwater). The short side has torrents off the mountains.
+- **C. The horseshoe.** A ring of ranges round a basin, open on one side; the basin holds a lake and drains through the gap as one great river. 49 reach the sea, 9 named, 3 deltas, 9 a ship can enter (72 km), 16 lakes; the great rivers are huge (the Blackwater 36 km² and 4.8 km long, la Dorée 34 km², An Dubh 24 km² and 7 km long) and everything else is small. Dramatic, but a quarter of each island is the one valley, and the Gatelands' ring sits over the home province's north.
+
+**Recommendation: B.** It gives what the backlog asks for, a few great rivers cutting through each island with forks and a delta, and it keeps the rest of the coast ordinary. A spreads the water evenly and nothing reads as *the* river; C makes one valley the whole island. B also fits the canon as written: the Mark's ranges stand along its strait side, Aurenne's long rivers run down to the coast where its ports are, and the Gatelands' rivers come south off a northern range the way the Dearg comes off the Ferrous.
+
+**Towns and rivers.** In every layout the rivers are routed with the settlements in the way, so a river bends round a town's pad rather than the town moving (40 of 522 settlements sit in a channel's path in B; the river goes round). A town the river passes within a short walk gains a quay on the bank (89 in B). The other way, moving towns onto the banks, would move 40 generated settlements and re-roll their roads; the home province's authored places would not move either way. Say **towns move** with your letter if you want that instead; otherwise the rivers bend.
+
+What the build then does (two or three sessions): the routing runs once per seed at boot in a job (0.6 s on this machine for 230,000 lattice nodes; a 100u lattice would be a quarter of that), its rivers are carved in `rawH` as today's are, with a width that grows downstream and every site stamp after the carve; `ridgeAt` measures from the range's spine instead of the cell border, and the peaks sit along it; a quay prop on a bank town; the ship's aground test already reads the carved depth, so a 16u channel is sailable; the bridges take their length from the river's width; the local and world maps draw the water. Tests: every river reaches the sea or a lake; no settlement pad floods; the ship sails from a port up a great river to its first fork; the terrain build stays inside the hourhitch and snowrepaint budgets.
+
+(Prototype: `docs/prototypes/rivers/layout.js` and `render.mjs`; `node docs/prototypes/rivers/render.mjs` redraws the four pictures in about forty seconds.)
+
 ## Answered
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
