@@ -10630,3 +10630,30 @@ CI's push run on Session 420's head (871258f) failed one suite of shard 7: `duel
 
 ### Needs eyes
 - Nothing in play. Other suites that drive a fight by real frames (`duel`, `q7world`) have their own waits and have not timed out since Session 401; left as they are.
+
+## v80 — Session 424 — Inn rooms: the keeper's directions and the empty room (backlog G, Session 141's check)
+
+Backlog G owed Session 141's inn rooms to a playtest: rent a room, sleep in it, try another guest's door. Session 141 checked it once, by hand, in one inn, and kept no suite. Most of it could be settled headless, so I measured every inn in Dunmore (4) and Portclare (2) and a coaching inn (the Auberge du Pont, 3 rooms). Each was rented on six nights, and I went in to try every bed in the gallery. The rent, the night's sleep and the expiry all work. Two things did not.
+
+**The keeper's directions were wrong in every inn.** The gallery's rooms stand in one row behind the corridor, room 0 at the west wall, with each door in the middle of its room's front wall. You come up the stair facing those doors (−z, so +x is your right hand), so from a west stair every door is on your right, and from an east stair every door is on your left. `innRoomName` named them as if they alternated sides from room 0: *the first door on the left*, *the first on the right*, *the second on the left*. At a west-stair inn that sent you left for room 0, which is on your right, and called room 1 *first*. At an east-stair inn it called room 0 *first* when it is the far door, and sent you right for room 1. No inn I checked got any name right. The fix (`js/80-world.js`):
+- The names now count the doors from the stair head, on the side they are on: *the first door on the right*, *the second door on the left*, and *the last door on …* for the far end of a row of three or more.
+- The stair's side is one function now, `galleryEast(house)`. The builder reads it to put the stair, and the keeper reads it for the names, so the two cannot drift (it is the same hash of the house's id the builder used).
+
+**An empty room was called another guest's.** The night's guests hold the rooms below the free one, and the rooms above it are empty. But every room not yours refused you with *Another guest's room*, including on the nights the keeper had just said *The house is empty tonight*. An untaken room now prompts *Not your room*, and E there says *An empty room, not the one you took. Yours is …*. Guests' rooms are unchanged. Who has which room, the prices and the rule (never the whole house) are untouched, so this is not a design change. The new line is mine, for the quest review.
+
+### Verified (headless Chromium)
+`tests/innrooms.test.mjs` (new), 9/9 in 218 s.
+- Seven inns: six in the two towns (2 rooms each, three with a west stair and three with an east) and the coaching inn (3 rooms, west stair). Each has a door for every room.
+- 42 nights, six an inn. Each time, the room named in the offer and on the receipt was the one you reach from the stair head: the same side, and the same count from the stair. Against the old code the same check fails on every night, and the parser cannot read the old odd-numbered names at all.
+- The coaching inn lets only its far room (*the last door on the right*), with the travellers in the other two, every night.
+- Inside, on the last night's rent:
+  - your two beds read *Your room* and sleep you;
+  - another guest's beds read *Another guest's room* and turn you away, naming yours;
+  - in the three inns that were empty that night (Bramble Hearth, Wandering Ram, Wayfarer), the other room's beds read *Not your room*, with *An empty room, not the one you took*. The old code called them another guest's.
+- At the Bramble Hearth, E at your bed opens the sleep and *Continue* sleeps 8 hours (481 game minutes with the fade). You wake indoors and the bed is still yours. Past the paid time, its prompt is *Ask the innkeeper for a room (11 gold)* again.
+- `interiors` 5/5 and `coachinn` 15/15 pass; no page errors. Build tag s367.
+
+### Needs eyes
+- Whether *the second door on the left* now matches what you see from the top of the stair. It is the first thing to try.
+- Other guests' doors open to anyone, and their rooms are empty inside. *A bolt on the door* is only words. Locking them, or putting a sleeper in, would be a design call (and a crime, if picked), so it is left.
+- *Not your room* and *An empty room, not the one you took* are mine, for the quest review.

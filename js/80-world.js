@@ -4098,8 +4098,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // except at the stair head.
       const guild=type==='guild_f'||type==='guild_m';const gy=ceil-.1,gd=Math.min(D*.45,guild?6:6),run=gy/.62,zs=gd+.6;
       // stair side varies by house: west or east wall
-      const hs=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);
-      const east=guild?false:hs%2===1;const sx0=east?W-1.6:.1,sx1=east?W-.1:1.6,sxc=east?W-.85:.85;
+      const east=guild?false:galleryEast(house); /* S424 — one rule with the innkeeper's directions */const sx0=east?W-1.6:.1,sx1=east?W-.1:1.6,sxc=east?W-.85:.85;
       const deck=new THREE.Mesh(new THREE.BoxGeometry(W,.16,gd),tiled('plank',reg,W/2.2,gd/2.2));deck.position.set(W/2,gy-.08,gd/2);sc_.add(deck);
       FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:gd,y:gy});
       // landing between the deck edge and the top tread — no seam to fall through
@@ -5709,21 +5708,27 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S237 — the innkeeper's own business, a meal and a room (was inline in the town builder; the coaching inn shares it)
   function innTopics(house){return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
-            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
+            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n,house).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
             const others=taken===0?'The house is empty tonight.':taken===1?'One other guest in tonight.':`${taken} guests in tonight.`;
-            return `${others} A room is ${price} gold — ${innRoomName(free,n)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
+            return `${others} A room is ${price} gold — ${innRoomName(free,n,house)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
           get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
             return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return 'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.';
               if(gold<price)return `That’s ${price} gold, and you’ve ${gold}. Come back with it.`;
               gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
-              if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n)} at ${house.name} for ${price} gold.`);
-              return `${price} gold, thank you. ${innRoomName(free,n).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
+              if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
+              return `${price} gold, thank you. ${innRoomName(free,n,house).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
             {label:'Not tonight.',response:'Suit yourself. The fire’s free.'}];}}];}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
-  function innRoomName(k,n){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
-    const names=['the first door on the left','the first on the right','the second on the left','the second on the right','the third on the left','the third on the right'];
-    return names[k]||(k===n-1?'the room at the end':`room ${k+1}`);}
+  // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
+  // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
+  // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
+  function galleryEast(house){return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
+  function innRoomName(k,n,house){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
+    const east=galleryEast(house),i=east?n-1-k:k,side=east?'left':'right';
+    if(i===n-1&&n>2)return `the last door on the ${side}`;
+    return `the ${['first','second','third','fourth','fifth','sixth'][i]||`${i+1}th`} door on the ${side}`;}
+  function innGuestRoom(house,k){return k!=null&&k<innTaken(house);} // S424 — rooms below the night's free one are other guests'; above it, empty
   function innDay(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
   function innTaken(house){const n=innRooms(house);if(n<=1)return 0;if(house.coachInn)return n-1; // S237 — the roadside inn has one room to let; travellers hold the rest
    const h=String(house.id+'|'+innDay()).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return h%n;} // other guests: steady for the night, never the whole house
@@ -5741,7 +5746,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(rentedNow(h.id)){
         const mine=myRoom(h.id); // v80 S141 — an old save rented the whole inn: any bed there
         if(mine==null||bd.room==null||bd.room===mine)return false;
-        showMsg(`Another guest's room. Yours is ${innRoomName(mine,innRooms(h))}.`,'#c8b880');return true;
+        showMsg(`${innGuestRoom(h,bd.room)?"Another guest's room.":'An empty room, not the one you took.'} Yours is ${innRoomName(mine,innRooms(h),h)}.`,'#c8b880');return true;
       }
       showMsg('The innkeeper lets the rooms. Ask at the counter.','#c8b880');return true;
     }
@@ -5749,7 +5754,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function bedPrompt(bd){const h=currentHouse;const owner=bd.owner||'free';
     if(owner==='inn'&&!rentedNow(h.id))return `Ask the innkeeper for a room (${innPrice(h)} gold)`;
-    if(owner==='inn'){const mine=myRoom(h.id);if(mine!=null&&bd.room!=null&&bd.room!==mine)return "Another guest's room";if(mine!=null)return "Your room \u2014 press 'E' to rest";} // v80 S141
+    if(owner==='inn'){const mine=myRoom(h.id);if(mine!=null&&bd.room!=null&&bd.room!==mine)return innGuestRoom(h,bd.room)?"Another guest's room":'Not your room';if(mine!=null)return "Your room \u2014 press 'E' to rest";} // v80 S141
     if(owner==='home'&&!ownedHouse(h.id))return null;if(owner==='guild'&&!guildMember(h.guild))return "Members' beds";return "Press 'E' to rest";}
   // ── buying a house ──
   function housePrice(house){const k=house.siteKind||'village';const base={village:450,town:900,port:800,city:1500,garrison:700}[k]||600;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);return base+((hh%7)*50);}
