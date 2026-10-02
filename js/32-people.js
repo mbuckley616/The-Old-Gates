@@ -919,9 +919,9 @@ function tickRagdolls(dt){
   for(const R of RAGDOLLS){
     if(!R.top.parent||!R.rig.root.parent){RAGDOLLS.delete(R);continue;}
     R.acc=Math.min(R.acc+Math.max(0,dt||0),4*RD_DT);let n=0,mv=0;
-    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;ragdollStep(R);for(const o of R.P){const m=Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z);if(m>mv)mv=m;}}
+    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;(R.step||ragdollStep)(R);for(const o of R.P){const m=Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z);if(m>mv)mv=m;}}
     if(!n)continue;
-    ragdollApply(R);
+    (R.apply||ragdollApply)(R); // S427 — a beast's ragdoll brings its own step and apply (34-creatures.js)
     R.quiet=mv<.0015*R.s?R.quiet+n:0;
     if((R.t>.2&&R.quiet>=15)||R.t>4){R.done=true;RAGDOLLS.delete(R);}
   }
@@ -929,12 +929,14 @@ function tickRagdolls(dt){
 // the kill paths' one call (killE, killZoneEnemy): a people-bodied foe, not a wraith, falls away from you, harder for a power
 // blow or a finisher, softer for an arrow; the group stands at the foe's own spot on the ground. False leaves the old slump.
 function ragdollFoe(e,tag,ground,solid){
-  const rig=e&&e.limbs&&e.limbs.person;if(!rig||!rig.B||(rig.g&&rig.g.wraith)||!e.mesh)return false;
+  const beast=e&&e.limbs&&e.limbs.wolf; // S427 — the beasts on the wolf's bones (Michael's C on #107); the spiders keep their curl, where they stand
+  if(beast&&beast.spider&&e.mesh){e.mesh.position.set(e.x,ground(e.x,e.z),e.z);return true;}
+  const rig=e&&e.limbs&&(e.limbs.person||(beast&&!beast.k.dragon&&!beast.k.horse&&beast));if(!rig||!rig.B||(rig.g&&rig.g.wraith)||!e.mesh)return false;
   tag=tag||'';let dx=e.x-px,dz=e.z-pz;const dl=Math.hypot(dx,dz);if(dl<1e-3){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}else{dx/=dl;dz/=dl;}
   const heavy=/POWER|FINISHER/.test(tag),k=(heavy?3.2:/ARROW/.test(tag)?1.4:1.8)+Math.random()*.8;
   if(typeof isInterior==='function'&&isInterior())solid=(x,z)=>intSolidAt(x,z,.05,0); // indoors the room sits at its own coordinates: the world's test reads empty ground there
   e.mesh.position.set(e.x,ground(e.x,e.z),e.z);e.mesh.updateMatrixWorld(true);
-  return !!ragdollStart(rig,new THREE.Vector3(dx*k,heavy?.6:0,dz*k),{ground,solid});
+  return !!(rig===beast?creatureRagdollStart:ragdollStart)(rig,new THREE.Vector3(dx*k,heavy?.6:0,dz*k),{ground,solid});
 }
 function tickPeople(dt,now){
   if(RAGDOLLS.size)tickRagdolls(dt); // S419 — the fallen

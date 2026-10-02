@@ -10461,3 +10461,40 @@ The grid ran without page errors. After apply at rest, every bone sits on its po
 - In C, one wolf of the six (the parried bite) ends on its back with its legs up. A dead animal can lie that way, but it is rarer than on the flank.
 - The Cave Bear ends in a heap rather than on its side: a short body on short legs, its bulk the same radius as the wolf's scaled.
 - The spiders, the crawler and the scorpion already curl their legs dead, and are turned on their side as well. That is outside this question. The entry proposes only dropping the turn if C is chosen.
+
+## v80 — Session 427 — The beasts fall as ragdolls (H, Michael's C on #107)
+Michael chose C on Session 422's prototype: the wolf family dies on a ragdoll of its own joints, like the people since Session 419. Until now `tickCreatures` set a dead pose and `killZoneEnemy` or `killE` turned the whole figure 90° about z in one frame and lifted it .15. Now the Wolf, the Snow Wolf, the Dire Wolf (the Faolchú too, which is built on it), the Ash Hound, the Boar and the Cave Bear fall as ragdolls. The Dragon and the coach's horses keep the old path. The dragon has wings the ragdoll does not carry, and the horses never die.
+
+The code is in `34-creatures.js`: `creatureRagdollStart`, `creatureRagdollStep` and `creatureRagdollApply`. It runs on the people's loop. The ragdoll joins the same `RAGDOLLS` set, and `tickRagdolls` calls its own step and apply, so it gets the people's fixed 1/60 steps, at most four a frame, and the same freeze when it is still or after four seconds. `ragdollFoe` in `32-people.js` (the kill paths' one call) now hands a beast on the wolf's bones to the creature ragdoll. A spider, the Bog Crawler or the Sand Scorpion is set on the ground where it died, with no turn and no lift, and its curl (`sgDead`) plays there, as the decision entry proposed. `rig.deadPosed` is set when the fall starts, so `tickCreatures` leaves the bones alone. The step allocates nothing.
+
+The prototype's code did not survive the game unchanged. Built as the prototype was (29 equal points, the trunk a line of round spheres), not one of nine wolves ended on its flank. They all lay on their bellies with the legs splayed sideways, the back within 45° of upright. The prototype's grid shows the same if you look closely. That was not what the decision promised ("most deaths end on the flank"), so I tried, in order:
+- A stronger sideways roll, then a twist across the torso box. No change, because the legs swing freely at their roots and only splay.
+- A heavier trunk. Worse: it dropped straight onto its legs.
+- A roll torque for the first .4 s. No change.
+
+What worked was anatomy, in three changes:
+- **A keel.** A chest point under the spine and a belly point under the hips, braced into the torso box. The trunk is now deeper than it is wide, so it cannot rest on its belly.
+- **Smaller leg roots.** The shoulders and hips now have a ground radius of .01, because they sit inside the body. The trunk spheres are .09×bulk, wide enough to cover them, so the roots no longer prop the body up.
+- **Legs that swing in their own plane.** Each leg joint may stray only .3 of its distance from the root out of the leg's plane, so it cannot splay sideways under the body. This holds for the first .8 s only. Held longer, it and the ground nudged the body along for good (about .3–.5 mm a step) and three wolves in nine never came to rest.
+
+Two more fixes came out of that hunt:
+- The hinges now set a joint that bends the wrong way back onto its limb's line instead of mirroring it across. Mirroring flipped a joint to and fro, and one wolf in five was still moving 13 mm a step at three seconds. Clamped, the worst is .8 mm.
+- After .8 s the drag rises from .995 to .9 a step.
+
+The roll drive I tried is not in the code.
+
+### Verified (headless Chromium)
+`beastfall` (new) passes all 37 checks (twice) with no page errors. It kills each kind with the real `killZoneEnemy` on the home province's ground, and steps `tickPeople` and `tickCreatures` at 1/60.
+- **All six kinds** fall as ragdolls with no 90° turn and no lift, and settle by themselves in 1.0–1.6 s. The hips are .07–.16 above the ground and the head .04–.09. No bone is under the ground. The four bone lengths measured (a thigh, a forearm, the back, the neck) are 1.000. They stay within 1.0 of where the beast stood. They darken as before, and frustum culling is off.
+- **Nine wolves** (jabs, power blows, arrows) all fall away from you and settle in 0.97–1.82 s. Every one ends with its back tipped .36–.39 from upright, on the flank with a slight lean onto the belly, either side at random. Before the keel all nine were .66–.99.
+- **The Spider** stays on the ground where it died, with no ragdoll and no turn.
+- **Cost:** a beast's fall costs 1.3–2.2 ms a step alone.
+
+`tests/ragdoll`'s wolf check is updated from "keeps the old slump" to "falls on its own ragdoll, no 90° turn". It is changed, not deleted. That suite failed once in three runs, on its dungeon Skeleton, a people ragdoll this session does not touch (it calls the same `ragdollStep`). It settled past the four-second cap. The suite passed on the unchanged code and then twice more on this build. It is the people ragdoll's random settling, which Session 421 measured at up to 3.48 s, so the check sits close to its edge. `wolves`, `spiders`, `scorpion`, `crawler`, `bear`, `faolchu`, `dungeonfoes`, `foes`, `questfoes` and `duel` all pass. `parsecheck` is clean. Build tag s364. Shot: `docs/prototypes/ragdoll-beasts-ingame.png` (`docs/prototypes/ragdoll/beasts-ingame.mjs`). It shows each kind standing and then dead from both sides, and the spider's curl.
+
+### Needs eyes
+- Every wolf ends at about the same lean, on its flank and tipped a little towards the belly. The deaths differ in where they land and how the legs lie, not in the final roll. A wolf on its back, which the prototype showed once in six, no longer happens.
+- The Cave Bear still ends in more of a heap than a flank (back .47 from upright), because it is short and round.
+- A beast killed in a dungeon (`killE`, with the floor and `dSolid`) goes through the same call, but this suite tests the open world only.
+- The Faolchú is a Dire Wolf with sigils on its bones. They should ride the fall, but no test kills the boss.
+- The ragdoll's ground is `activeTerrainH`, so a beast killed on a bridge falls to the ground beneath it, as the people do (Session 419's note).

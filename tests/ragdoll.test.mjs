@@ -2,7 +2,7 @@
 // ragdollFoe, which puts a point at each of 21 joints and lets gravity, the blow and the ground take it; the bones follow.
 // This kills Bandits in the open world with the real kill path, steps the people's tick at 1/60, and reads where the
 // body lies: on the ground, fallen away from you, the bones their own lengths, settled and frozen, each death its own.
-// A wolf keeps the old slump. Then a dungeon's people-bodied foe falls on its floor and stays out of its walls.
+// A wolf falls as a ragdoll of its own since Session 427 (tests/beastfall.test.mjs reads it). Then a dungeon's people-bodied foe falls on its floor and stays out of its walls.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.frames(30);
@@ -35,7 +35,7 @@ const world = await page.evaluate(() => {
   { const x = px + fwdX * 3 + fwdZ * 5, z = pz + fwdZ * 3 - fwdX * 5, e = buildZoneEnemy(WORLD.scene, [], x, z, 'Bandit', null); e.locked = false; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.mesh.position.set(x, activeTerrainH(x, z), z); e.hp = 0; killZoneEnemy(e, WORLD.scene, ''); const R = [...RAGDOLLS].find(r => r.rig === e.limbs.person);
     const c0 = performance.now(); let n = 0; while (RAGDOLLS.has(R) && n < 60) { tickRagdolls(1 / 60); n++; } out.msPerStep = +((performance.now() - c0) / n).toFixed(3); }
-  // a wolf has no person's body: the old slump
+  // a wolf has no person's body: since Session 427 its own ragdoll (beastfall), still no 90° turn
   { const k = Object.keys(WOLF_KINDS)[0], x = px + fwdX * 6, z = pz + fwdZ * 6, e = buildZoneEnemy(WORLD.scene, [], x, z, k, null); e.locked = false; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     const n0 = RAGDOLLS.size; e.hp = 0; killZoneEnemy(e, WORLD.scene, ''); out.wolf = { kind: k, rotZ: +e.mesh.rotation.z.toFixed(3), ragdolls: RAGDOLLS.size - n0 }; }
   window.requestAnimationFrame = raf; return out;
@@ -56,7 +56,7 @@ for (const k of ['jab', 'power', 'arrow']) {
 const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 check('every death is its own: a power blow carries the body further than a jab', d(world.power.hipsAt, [0, 0]) > d(world.jab.hipsAt, [0, 0]), [world.power.hipsAt, world.jab.hipsAt]);
 check('a fall costs under 15 ms a step for one body (about 1 ms here alone; a loaded runner is slower)', world.msPerStep < 15, world.msPerStep);
-check('a wolf keeps the old slump', world.wolf.ragdolls === 0 && Math.abs(world.wolf.rotZ - Math.PI / 2) < .01, world.wolf);
+check('a wolf falls on its own ragdoll (S427), not the old 90° turn', world.wolf.ragdolls === 1 && Math.abs(world.wolf.rotZ) < .01, world.wolf);
 
 // indoors (a guard killed in a room) the room's own solids stop the body, not the world's: a wall .5 behind the foe
 const room = await page.evaluate(() => {

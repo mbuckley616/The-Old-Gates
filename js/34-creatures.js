@@ -316,6 +316,94 @@ function wgApply(rig,P){const B=rig.B;WG.JOINTS.forEach(j=>{const r=P[j];B[j].ro
   if(rig.hunch){B.spine.rotation.x+=rig.hunch[0];B.neck.rotation.x+=rig.hunch[1];B.head.rotation.x+=rig.hunch[2];} // S211 — the Faolchú's hunch
   // a dragon's wings (S177): folded back along its flanks at rest, beating while it is roused (rig.wing 0..1 blends them)
   if(B.wingL){const w=rig.wing||0,f=rig.flap||0;const z=-.3*(1-w)+(.15+.5*Math.sin(f))*w,y=1.35*(1-w);B.wingL.rotation.set(0,y,z);B.wingR.rotation.set(0,-y,-z);}}
+// S427 — the beasts on the wolf's bones fall as ragdolls too (Michael's C on #107): the wolves, the Snow Wolf, the Dire Wolf
+// (and the Faolchú on it), the Ash Hound, the boar and the Cave Bear. Session 422's prototype made to run every frame, on the
+// people's loop (RAGDOLLS, tickRagdolls in 32-people.js, which calls R.step and R.apply): 31 points (hips, spine, neck, head and
+// a nose past it, three tail joints and the tail's end, four legs of four bones and a paw's end, and a keel of chest and belly
+// below the back); the torso box braced rigid, deeper than it is wide, so the body does not come to rest on its belly;
+// the head may not fold back through the shoulders nor the tail onto the back; each leg joint bends only the way it juts at rest
+// (the elbow and the hock back, the carpus and the stifle forward). The hips, spine and neck drop and roll to one side at random
+// and the lower legs kick the other way, and the deaths end on the flank (Session 427's devlog says how). Prototype: docs/prototypes/ragdoll-creatures.png.
+const _crd1=new THREE.Vector3(),_crd2=new THREE.Vector3(),_crd3=new THREE.Vector3(),_crdq1=new THREE.Quaternion(),_crdq2=new THREE.Quaternion(),_crdm=new THREE.Matrix4();
+function creatureRagdollStart(rig,push,opts){
+  const B=rig&&rig.B;if(!B||!B.hips||!B.phR||!B.tail3||rig.spider||rig.k.dragon||rig.k.horse||!opts||!opts.ground)return null;
+  for(const r of RAGDOLLS)if(r.rig===rig)RAGDOLLS.delete(r);
+  const top=rig.root.parent||rig.root;top.updateMatrixWorld(true);
+  const O=top.getWorldPosition(new THREE.Vector3()),V=(x,y,z)=>new THREE.Vector3(x||0,y||0,z||0),W=b=>b.getWorldPosition(V());
+  const s=rig.root.getWorldScale(V()).y||1;
+  // an end point past a bone with no child: f of its own length on from its parent, in the bone's own frame
+  const endOff=(b,f)=>{const p=W(b),q=W(b.parent);return b.worldToLocal(V().copy(p).addScaledVector(V().subVectors(p,q),f));};
+  // the keel: the chest and the belly hang below the back, so the trunk is deeper than it is wide and does not rest on its belly
+  const bw=rig.k.bulk||1;
+  const J=[['hips',B.hips],['spine',B.spine],['neck',B.neck],['head',B.head],['nose',B.head,endOff(B.head,1.1)],['tail1',B.tail1],['tail2',B.tail2],['tail3',B.tail3],['tailE',B.tail3,endOff(B.tail3,1)],
+    ['chest',B.spine,V(0,-.11*bw,0)],['belly',B.hips,V(0,-.1*bw,.14)]];
+  for(const K of ['L','R'])J.push(['sh'+K,B['sh'+K]],['el'+K,B['el'+K]],['wr'+K,B['wr'+K]],['pf'+K,B['pf'+K]],['pfE'+K,B['pf'+K],endOff(B['pf'+K],.6)],
+    ['th'+K,B['th'+K]],['kn'+K,B['kn'+K]],['hk'+K,B['hk'+K]],['ph'+K,B['ph'+K]],['phE'+K,B['ph'+K],endOff(B['ph'+K],.6)]);
+  const I={},P=J.map(([n,b,off],i)=>{I[n]=i;const w=b.localToWorld(off?off.clone():V()).sub(O);return {p:w,q:w.clone(),b,off,sx:0,sz:0};});
+  const L=(a,b,min)=>min?[I[a],I[b],P[I[a]].p.distanceTo(P[I[b]].p)*min,1]:[I[a],I[b],P[I[a]].p.distanceTo(P[I[b]].p),0];
+  const C=[['spine','neck'],['neck','head'],['head','nose'],['neck','nose'],['hips','tail1'],['tail1','tail2'],['tail2','tail3'],['tail3','tailE']].map(([a,b])=>L(a,b));
+  for(const K of ['L','R'])[['sh','el'],['el','wr'],['wr','pf'],['pf','pfE'],['wr','pfE'],['th','kn'],['kn','hk'],['hk','ph'],['ph','phE'],['hk','phE']].forEach(([a,b])=>C.push(L(a+K,b+K)));
+  const box=['hips','spine','neck','shL','shR','thL','thR','chest','belly'];
+  for(let i=0;i<box.length;i++)for(let j=i+1;j<box.length;j++)C.push(L(box[i],box[j]));
+  C.push(L('spine','head',.75),L('hips','tail2',.7)); // a minimum only: the neck turns, the tail swings
+  const rad=J.map(([n])=>s*(n==='hips'||n==='spine'?.09*bw:n==='chest'||n==='belly'?.05:/^(sh|th)[LR]$/.test(n)?.01:n==='neck'?.08:n==='head'?.06:n==='nose'?.03:/^tail/.test(n)?.025:.028));
+  const R={rig,top,O,P,I,C,rad,s,ground:opts.ground,solid:opts.solid||null,acc:0,t:0,quiet:0,done:false,step:creatureRagdollStep,apply:creatureRagdollApply};
+  const fwd=v=>v.subVectors(P[I.neck].p,P[I.hips].p).normalize();
+  // each leg's joints, below its root (a leg swings in its own plane along the body; R.LEGS limits how far out or in it may stray)
+  R.LEGS=[];for(const K of ['L','R'])for(const [r,...js] of [['sh','el','wr','pf','pfE'],['th','kn','hk','ph','phE']])R.LEGS.push([I[r+K],K==='L'?1:-1,js.map(j=>I[j+K])]);
+  R.H=[];for(const K of ['L','R'])for(const [a,m,c] of [['sh','el','wr'],['el','wr','pf'],['th','kn','hk'],['kn','hk','ph']]){
+    const f=fwd(_crd3),A=P[I[a+K]].p,M=P[I[m+K]].p,d=_crd1.subVectors(P[I[c+K]].p,A),t=_crd2.subVectors(M,A).dot(d)/Math.max(1e-6,d.lengthSq());
+    R.H.push([I[a+K],I[m+K],I[c+K],_crd2.subVectors(M,A).addScaledVector(d,-t).dot(f)>=0?1:-1]);}
+  // the hips' frame: across from the right thigh to the left, forward to the neck
+  R.frame=q=>{const z=fwd(_crd1),x=_crd2.subVectors(P[I.thL].p,P[I.thR].p);x.addScaledVector(z,-x.dot(z)).normalize();
+    return q.setFromRotationMatrix(_crdm.makeBasis(x,_crd3.crossVectors(z,x),z));};
+  R.F0inv=R.frame(new THREE.Quaternion()).invert();R.hipsQ0=B.hips.getWorldQuaternion(new THREE.Quaternion());
+  R.hipsOff=W(B.hips).sub(O).sub(P[I.hips].p);
+  R.AIM=[['spine','neck'],['neck','head'],['head','nose'],['tail1','tail2'],['tail2','tail3'],['tail3','tailE']];
+  for(const K of ['L','R'])R.AIM.push(['sh'+K,'el'+K],['el'+K,'wr'+K],['wr'+K,'pf'+K],['pf'+K,'pfE'+K],['th'+K,'kn'+K],['kn'+K,'hk'+K],['hk'+K,'ph'+K],['ph'+K,'phE'+K]);
+  R.AIM=R.AIM.map(([a,c])=>[I[a],I[c]]);
+  // the blow: the higher the joint the harder (it tips from the feet); the trunk drops and rolls one way, the lower legs kick the other
+  const rnd=Math.random,hi=Math.max(...P.map(o=>o.p.y))||1,lat=V().crossVectors(V(0,1,0),push);if(lat.lengthSq()<1e-6)lat.set(1,0,0);lat.normalize();
+  const roll=rnd()<.5?1:-1;
+  const vel=P.map(o=>V().copy(push).multiplyScalar(.3+.7*Math.max(0,o.p.y/hi)).add(V((rnd()-.5)*.3,(rnd()-.5)*.2,(rnd()-.5)*.3)));
+  for(const n of ['hips','spine','neck']){vel[I[n]].y-=1.0;vel[I[n]].addScaledVector(lat,roll*(1.6+rnd()*.6));}
+  for(const K of ['L','R'])for(const n of ['wr','pf','hk','ph'])vel[I[n+K]].addScaledVector(lat,-roll*(1.1+rnd()*.5));
+  P.forEach((o,i)=>o.q.copy(o.p).addScaledVector(vel[i],-RD_DT));
+  rig.deadPosed=true; // tickCreatures leaves the bones to the fall
+  rig.mesh.frustumCulled=false;
+  RAGDOLLS.add(R);return R;
+}
+function creatureRagdollStep(R){
+  const {P,C,O,H}=R;
+  // once it is down (.8 s) the air drags harder, so the braces' small fights die out and it comes to rest
+  const dm=R.t<.8?.995:.9;
+  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
+  for(let it=0;it<10;it++){
+    for(const [a,b,len,min] of C){const pa=P[a].p,pb=P[b].p,d=_crd1.subVectors(pb,pa),l=d.length()||1e-6;if(min&&l>=len)continue;const k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
+    // a leg joint across its limb's line, the wrong way along the body, is set back onto it
+    const f=_crd3.subVectors(P[R.I.neck].p,P[R.I.hips].p).normalize();
+    for(const [a,m,c,sign] of H){const A=P[a].p,M=P[m].p,d=_crd1.subVectors(P[c].p,A),t=_crd2.subVectors(M,A).dot(d)/Math.max(1e-6,d.lengthSq());
+      const k=_crd2.subVectors(M,A).addScaledVector(d,-t).dot(f);if(k*sign<0)M.addScaledVector(f,-k);}
+    // a leg barely swings out or in at the shoulder or the hip while it falls: without this it splays sideways and props the body
+    // on its belly (once it is down the limit is let go, or it and the ground nudge the body along for ever)
+    const x=_crd1.subVectors(P[R.I.thL].p,P[R.I.thR].p);x.addScaledVector(f,-x.dot(f)).normalize();
+    if(R.t<.8)for(const [r,sd,js] of R.LEGS){const rp=P[r].p;for(const j of js){const p=P[j].p,d=_crd2.subVectors(p,rp),l=d.length(),lat=d.dot(x)*sd,lim=.3*l;
+      if(lat>lim)p.addScaledVector(x,-(lat-lim)*sd);else if(lat<-lim)p.addScaledVector(x,(-lim-lat)*sd);}}
+    for(let i=0;i<P.length;i++){const o=P[i],gy=R.ground(O.x+o.p.x,O.z+o.p.z)-O.y+R.rad[i];
+      if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;}}
+    if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
+  }
+}
+function creatureRagdollApply(R){
+  const {P,O}=R,B=R.rig.B;
+  const d=R.frame(_crdq1).multiply(R.F0inv);
+  const hw=_crd1.copy(R.hipsOff).applyQuaternion(d).add(P[R.I.hips].p).add(O);B.hips.parent.updateMatrixWorld(true);
+  B.hips.position.copy(B.hips.parent.worldToLocal(hw));d.multiply(R.hipsQ0);B.hips.parent.getWorldQuaternion(_crdq2);B.hips.quaternion.copy(_crdq2.invert().multiply(d));B.hips.updateMatrixWorld(true);
+  for(const [a,c] of R.AIM){const o=P[a],t=P[c],b=o.b;b.updateMatrixWorld(true);
+    const from=b.getWorldPosition(_crd1),cur=(t.b===b?b.localToWorld(_crd2.copy(t.off)):t.b.getWorldPosition(_crd2)).sub(from),want=_crd3.copy(t.p).add(O).sub(from);
+    if(cur.lengthSq()<1e-8||want.lengthSq()<1e-8)continue;
+    _crdq1.setFromUnitVectors(cur.normalize(),want.normalize());b.getWorldQuaternion(_crdq2);_crdq1.multiply(_crdq2);b.parent.getWorldQuaternion(_crdq2);b.quaternion.copy(_crdq2.invert().multiply(_crdq1));b.updateMatrixWorld(true);}
+}
 function wgCycle(w){const a=w.trot||0,b=w.gallop||0;return a+b>.001?(a*WG.TROT.cycle+b*WG.GALLOP.cycle)/(a+b):WG.TROT.cycle;}
 // every wolf (and spider, tickSpider) in the active scene, each frame: the stride is driven by how far the creature moved (its logical
 // position, so the lunge's forward lurch does not step the feet), trot below WG.GALLOP.on body-lengths a second
