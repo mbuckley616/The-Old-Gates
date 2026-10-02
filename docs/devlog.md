@@ -10295,3 +10295,32 @@ So a sloop held under full sail through a whole storm (150–330 s) loses 25–5
 ### Needs eyes
 - Whether a storm's cost reads at the wheel. The only signs are the panel's numbers and its *Sea: storm*. The water looks the same at every state until H.5b's wave.
 - How often a voyage is in open water. On the map's grid most sea is more than 390 units from any shore, so a crossing is mostly open, and any rain there is rough.
+
+## v80 — Session 413 — Foundering, the wreck, and raising her (Michael's A on #85, its third slice)
+Session 411 left a ship at 0 hull waterlogged (2.5 at most) and nothing further. The page goes on: *further damage sinks her, and the wreck lies where she went down, marked on the map. Any shipwright raises her again, class and tiers, for 30% of what they cost, at his quay three game days later. The stash is untouched.* This session builds that.
+
+**What changed** (`js/80-world.js`):
+- `shipWear`: any hull lost while she is at 0 sinks her (`shipSink`). Rig lost does not. Her mesh and deck go. Any boarders on her deck go down with her (they had nothing left to stand on). If you were aboard you are in the water. *The {name} goes down. Any shipwright can raise her.*, and the log notes it. `worldState.ship.sunk` keeps where, and `restoreShip` (the load) leaves a sunk ship on the bottom.
+- **The wreck on the map**: *The wreck of the {name} · Where she went down*, on the world map's entries, with the ship's mark. The minimap does not show it.
+- **Raising her**: sunk, every shipwright offers only *Raise the {name} (N gold)*. N is 30% of what she cost: the 400 hull, any refits to her class (900 to a cog, then 2,200 to a galleon), and her sail and hold tiers. Paid: *Three days, and she'll be lying at the quay here.* Three game days later she lies off his quay, where *Fetch her* puts a ship, sound, with her name and her hold.
+- **Two calls of mine, beyond the page.** (1) Waterlogged, she does not take grounding damage. Run onto the shallows at 2.5, she settles, so the page's *can limp to a shore* is possible (at 2.5 the grounding rule would cost 2, and that would sink her). (2) The hold comes up with her. The page says nothing about cargo, and keeping it is the gentler reading of *a bill and a wait, not a game over*.
+- **A correction to the page's example**: *a full galleon: 1,330 gold* does not follow from its own rule. 30% of 400 + 900 + 2,200 + 1,400 (sails) + 600 (hold) is 1,650, and this charges the rule.
+- **A fix found on the way**: Portclare's hand-laid quay runs 174 units out from the town. So a ship lying off it, where *Fetch her* puts one, was 196 from the town and outside the 140 that `shipHere` counts as in port. The shipwright offered to fetch her again, could not mend her, and the factor could not reach her hold (Session 390). `shipHere` now also counts a ship within 60 of the quay's head, and the fetch and the mend both use it. Every other port's quay is at its pad's edge (80), well inside 140.
+
+### Verified (headless Chromium)
+`tests/shipwreck.test.mjs` (new), 15/15, a sloop (sails 1, hold 1, two grain) off Portclare:
+- 100 hull lost: waterlogged, afloat, 2.5 at most. 5 rig lost after that: still afloat.
+- 1 more hull: she sinks. No mesh, no deck, you swimming, and the message.
+- The map shows *The wreck of the Test Gull · Where she went down* and not the ship. `restoreShip` leaves her down. The hold is kept, and the panel hides.
+- Waterlogged and run at 2.5 onto Portclare's own ground: she stops with *Aground — shallows ahead.* and stays afloat.
+- Sunk, the shipwright offers only *Raise the Test Gull (255 gold)*, which is 30% of 850. Paid, he says three days, offers nothing more, and the purse is 745.
+- Half an hour short of three days she is not there. At three days she lies 25 units off the quay's head, 100/100, same name, two grain, and the wreck is off the map.
+- Lying there at hull 60, he offers *Mend her* and not *Fetch her*.
+- Short of the price, nothing changes hands. A full galleon: 1,650.
+- No page errors. `shiphull`, `seawear`, `cargo`, `piratehold`, `shipwright` and `ships` pass. Build tag s361.
+
+### Needs eyes
+- Whether three days and 30% feel like *a bill and a wait*. A sunk sloop with one tier of each is 255, about two level-one jobs.
+- The wreck has no mark on the sea itself: no mast above the water, no minimap pin. Its look is H's if wanted.
+- The two calls above (a waterlogged ship settles on the shallows; the hold comes up with her) are Michael's to overrule.
+- The shipwright's lines (*Raise the …*, *Three days, and she'll be lying at the quay here.*, *Raising her is N gold.*) and the sinking message are mine, for the quest review.
