@@ -10761,3 +10761,28 @@ Saves keep places by id, so a save made before this loads into the same places u
 ### Needs eyes
 - How the longer names read on the map and the coach board. *Woushdiadou* and *Saint-argent-le-Clair* are both in the world now. If a culture's long form reads wrong, the fix is in `nameBanks`, one line per culture.
 - Any place Michael already knows by its old name in a running save now has another one. That is the decision's cost, and it was named in #110.
+
+## v80 — Session 433 — The guards, played through (backlog G, Session 157's check)
+Backlog G owed Session 157's guards to a playtest: get stopped with a fine, refuse, fight, yield; the cells; strike a villager and a guard. `crime3` checks each rule from set-up state. It places the guard, sets the fine and calls the topics' functions directly. This session plays it through in Dunmore at noon the way a player meets it, as Session 425 did for the Church. Every blow the player throws is the game's own `attack()`, resolved when the loop's swing crosses its impact point. The halt and the yield are clicked in the guard's own dialogue. The guard's blows come from his own `tickZoneEnemies`, on fixed 1/60 ticks beside the world's tick, which holds the crime rules.
+
+It runs in order. A swing at a villager in the street. Walk up to a guard, refuse him, land a blow on him and take his until he offers the yield. *The cells.* Then, next morning, a swing at a guard and killing him. Walk up to another guard with the gates shut. Pay the lord.
+
+**What was wrong.** With the gates shut, a guard you come near draws on sight (Session 157), and the lord's fine opens the gates. But a guard already drawn when the fine was paid fought on. In `tickCrime`, a drawn guard stays alert for as long as he lives, and the offer to yield needs a fine standing, so none could come. Paying the lord took you from a fight over 200 gold to a fight over nothing that ended only in a death. Paying double at the yield and the cells already stand the town's drawn guards down (`standDown`). The lord's fine didn't.
+
+**What changed** (`js/80-world.js`, `tickCrime`): a drawn guard stands down once the town has nothing against you, no fine and the gates open. He goes back to the street where he drew, as at a paid yield. The halt, the draw, the yield at 30%, the cells and the killing are unchanged.
+
+### Verified (headless Chromium)
+`tests/guardplay.test.mjs` (new), 14/14. In Dunmore:
+- A real swing at Cormac in the street: favour −3, a 75-gold fine, three points owed, and he runs.
+- Three units from Séamus with the fine standing, the world's tick halts you: his greeting names the 75 gold, with *Pay the fine (75 gold)* and *I’ll not pay.* Refused: *Then the sword, and Weaver forgive the both of us.* A Town Guard drawn from Séamus stands in, alert, and Séamus leaves the street.
+- A real swing takes him 48 → 46. His blows over 1,411 ticks (23.5 s) bring you from 130 to 30. Séamus offers the yield by name, *Pay double (150 gold)* or *The cells.*, and he holds while you talk.
+- *The cells.*: seven in the morning. You are at the town's centre (Dunmore has no keep). The stolen ring and the 40 gold taken in the town are gone (500 → 460), the fine is cleared, you are at half health (65) and Séamus is back on his beat. The favour stays −3 with three points owed.
+- A real swing at Séamus: he draws at once, with no talk; favour −6 and a fine of 75. Killed: favour −11, the fine 200, the gates shut and the Church notes it.
+- With the gates shut, Eilís draws on sight, with no halt.
+- The lord (Niamh) takes the 200 and the gates open. Eilís stands down and is back in the street, and in five seconds more nothing strikes you. On the old code (`--src`), she fought on and took 130 → 105 in those five seconds. These two checks are the suite's only failures there.
+- `crime1`, `crime2`, `crime3`, `crime5`, `guardsindoor` and `penance` pass. No page errors. Build tag s373.
+
+### Needs eyes
+- The fight by feel: Séamus's blows took 100 health in 23.5 s while you stood, and the yield comes under 30%.
+- After *Fight on.* the guard offers no second yield. The offer is made once a fight (`CR.yielded` resets only when no guard is drawn), so turning it down means fighting to a death, his or yours. That is as built in Session 157 and not changed here. If a second offer should come, lower down, that is Michael's call.
+- A stood-down guard sheathes in silence: the drawn figure is gone and he is back where he drew, as at a paid yield. A line for him would be new dialogue, so it is left to the quest writer.
