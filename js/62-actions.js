@@ -96,7 +96,7 @@ function attack(isPower, _isDeferred){
   // v66.1 — Defer audio + hit resolution to the swing's impact frame instead
   // of firing now. The render loop fires _pendingStrike when progress crosses
   // ANIM_PARAMS.swing.impactPoint. Candidates are gathered AT impact.
-  _pendingStrike = { resolveFn: _resolveDungeonStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;
+  _pendingStrike = { resolveFn: _resolveDungeonStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;_offenceS=playClockS;
 }
 // v66.1 — Dungeon melee resolution, extracted from attack() and fired at the
 // swing impact frame. Gathers candidates at call time (impact-gather), plays
@@ -229,6 +229,7 @@ function fireArrow(strength){
   const ammo = EQ.ammo;
   const bow = EQ.weapon;
   if(!ammo || !bow) return; // defensive — caller already checked
+  _offenceS=playClockS; /* S408 */
   // ── Consume one arrow ─────────────────────────────────────────
   ammo.qty = Math.max(0, (ammo.qty||0) - 1);
   const arrowsLeft = ammo.qty;
@@ -329,6 +330,7 @@ function fireArrow(strength){
 function killE(e,tag=''){
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'dungeon');} // v80 S12
   e.dead=true;e.el.intensity=0;
+  if(e._slamRing)e._slamRing.visible=false;
   sndEnemyDeath();kills++;lvAct.kills++;xp+=Math.round(e.maxHp*_buffMult('xpBoost',1));chkLvl();
   // Quest progress — dungeon kill events
   if(currentPortal){
@@ -364,7 +366,7 @@ function killE(e,tag=''){
   const th = currentPortal?currentPortal.theme:null;
   const items = rollContainerLoot('corpse', ds, th, lootDropChance(e));
   const drops = items.length > 0;
-  CORPSES.push({x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name});
+  CORPSES.push({x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});
   if(drops){showMsg(`${e.name} slain!${tag} Press E to loot.`,'#c8a84a');}
   else{showMsg(`${e.name} slain!${tag}`,'#888');lootGl.intensity=0;lootSpark.visible=false;}
   // Slime split — spawns 2 Small Slimes at the kill point. Flag is on the base def and copied via baseType check.
@@ -423,7 +425,7 @@ function castSpell(){
   const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1));
   if(mana<actualCost){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
   if(spCd>0){showMsg('Cooling down...','#6688cc');return;}
-  mana-=actualCost;
+  mana-=actualCost;_offenceS=playClockS; /* S408 */
   spCd=spellCooldown(sp,tier);
 
   const dispName=spellDisplayName(sp,tier);

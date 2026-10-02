@@ -2403,7 +2403,7 @@ var WORLD=(()=>{
            f:['Aoife','Gráinne','Niamh','Sorcha','Bríd','Órla','Maeve','Clodagh','Róisín','Eilís','Sinéad','Caoimhe']},
     french:{m:['Étienne','Guillaume','Thibault','Renaud','Mathieu','Olivier','Aymeric','Gaspard','Bertrand','Loïc','Rémi','Amaury'],
             f:['Isabeau','Margaux','Aliénor','Ysolde','Clémence','Blanche','Héloïse','Odile','Sabine','Adèle','Mireille','Colette']},
-    anglo:{m:['Wulfstan','Eadric','Godwin','Leofric','Aldhelm','Osric','Cuthbert','Hereward','Beorn','Ealdred','Wilfrid','Dunstan'],
+    anglo:{m:['Wulfstan','Eadric','Godwin','Leofric','Eadwulf','Osric','Cuthbert','Hereward','Beorn','Wigmund','Wilfrid','Dunstan'],
            f:['Æthelflæd','Eadgyth','Hilda','Wynflæd','Mildrith','Godgifu','Ealhswith','Leofgifu','Cynethryth','Eanflæd','Elfrida','Osgyth']},
   };
   const SHOP_NOUN={
@@ -3765,6 +3765,7 @@ var WORLD=(()=>{
     c.doors.forEach(e=>{const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`,major:e.kind==='fort_door'});});
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
+    const wk=worldState.ship&&worldState.ship.sunk;if(wk&&wk.x>=c.ox&&wk.x<c.ox+SIZE&&wk.z>=c.oz&&wk.z<c.oz+SIZE)out.push({id:'shipwreck',name:`The wreck of the ${worldState.ship.name||SHIP.name}`,kind:'ship',x:wk.x,z:wk.z,sub:'Where she went down',major:true});
     if(SHIP.mesh&&SHIP.x>=c.ox&&SHIP.x<c.ox+SIZE&&SHIP.z>=c.oz&&SHIP.z<c.oz+SIZE)out.push({id:'ship',name:`The ${SHIP.name}`,kind:'ship',x:SHIP.x,z:SHIP.z,sub:'Your ship',major:true});
     questMarkers(c).forEach(m=>out.push(m));
     return out;
@@ -4097,8 +4098,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // except at the stair head.
       const guild=type==='guild_f'||type==='guild_m';const gy=ceil-.1,gd=Math.min(D*.45,guild?6:6),run=gy/.62,zs=gd+.6;
       // stair side varies by house: west or east wall
-      const hs=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);
-      const east=guild?false:hs%2===1;const sx0=east?W-1.6:.1,sx1=east?W-.1:1.6,sxc=east?W-.85:.85;
+      const east=guild?false:galleryEast(house); /* S424 — one rule with the innkeeper's directions */const sx0=east?W-1.6:.1,sx1=east?W-.1:1.6,sxc=east?W-.85:.85;
       const deck=new THREE.Mesh(new THREE.BoxGeometry(W,.16,gd),tiled('plank',reg,W/2.2,gd/2.2));deck.position.set(W/2,gy-.08,gd/2);sc_.add(deck);
       FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:gd,y:gy});
       // landing between the deck edge and the top tread — no seam to fall through
@@ -4648,8 +4648,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(!cands.length)return null;cands.sort((a,b)=>a[2]-b[2]);return {dx:cands[0][0],dz:cands[0][1]};
   }
   function allPorts(){const out=[];for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='port')out.push(t);});}return out;}
+  // S426 — one price for the label and the charge (the label had no tithe, no free passage and a lower cap)
+  function ferryPrice(from,to){const d=Math.hypot(to.x-from.x,to.z-from.z);const tithe=nationKeyOf(...cellOf(from.x,from.z))==='aurenne'?1.3:1;const free=fstate()[factionOf(nationKeyOf(...cellOf(from.x,from.z)))].rank>=2;return free?0:Math.min(150,Math.round((15+d/250)*tithe));}
   function ferryTo(from,to){
-    const d=Math.hypot(to.x-from.x,to.z-from.z);const tithe=nationKeyOf(...cellOf(from.x,from.z))==='aurenne'?1.3:1;const free=fstate()[factionOf(nationKeyOf(...cellOf(from.x,from.z)))].rank>=2;const price=free?0:Math.min(150,Math.round((15+d/250)*tithe));
+    const d=Math.hypot(to.x-from.x,to.z-from.z);const price=ferryPrice(from,to);
     if(gold<price)return `Passage to ${to.name} is ${price} gold.`;
     gold-=price;updateHUD();TUT().ferries=(TUT().ferries||0)+1;if(!discovered(to.id)){worldState.wdisc[to.id]=true;}
     const hours=Math.max(1,Math.round(d/300));
@@ -4660,7 +4662,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function ferryTopics(site){
     const ports=allPorts().filter(p=>p.id!==site.id).map(p=>({p,d:Math.hypot(p.x-site.x,p.z-site.z)})).sort((a,b)=>a.d-b.d).slice(0,5);
-    return ports.map(({p,d})=>({label:`Passage to ${p.name} (${Math.min(120,Math.round(15+d/250))}g, ${compassWord(p.x-site.x,p.z-site.z)})`,quest:true,fn:()=>ferryTo(site,p)}));
+    return ports.map(({p,d})=>({label:`Passage to ${p.name} (${ferryPrice(site,p)}g, ${compassWord(p.x-site.x,p.z-site.z)})`,quest:true,fn:()=>ferryTo(site,p)}));
   }
   // S390 — cargo by the crate (Michael's B on #88, built as A first). Twelve goods, four from each island's trade (canon
   // §1). A harbour's factor (the harbourmaster's board) sells his own island's goods at ×0.6 of their worth and buys any
@@ -4693,11 +4695,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function cargoPush(site,key,f){const e=cargoPress(site,key);e.p*=f;worldState.cargoMkt[site.id][key]=e;}
   function cargoAsk(site,key){const g=CARGO_GOODS[key];return Math.max(1,Math.round(g.v*(g.home===cargoNation(site)?CARGO_HOME:cargoAbroad(site))*cargoWorld(site,key)*cargoPress(site,key).p));}
   function cargoBid(site,key){const raw=Math.max(1,Math.round(cargoAsk(site,key)*CARGO_CUT));const tithe=cargoNation(site)==='aurenne'?Math.round(raw*CARGO_TITHE):0;return {raw,tithe,net:raw-tithe};}
-  function shipHere(site){return !!(worldState.ship&&SHIP.mesh&&Math.hypot(SHIP.x-site.x,SHIP.z-site.z)<140);}
+  // S413 — in port: within 140 of the town, or within 60 of the quay's head (Portclare's quay runs 174 out, and a ship fetched there lay 196 off)
+  function shipHere(site){if(!(worldState.ship&&SHIP.mesh))return false;if(Math.hypot(SHIP.x-site.x,SHIP.z-site.z)<140)return true;const q=site.quayStart;return !!(q&&Math.hypot(SHIP.x-q.x,SHIP.z-q.z)<60);}
   function holdOf(){const st=shipCfg();return st.hold||(st.hold={});}
   function holdCap(){const st=shipCfg();return (CARGO_HOLD[st.cls||'sloop']||40)+25*(st.cargo||0);}
   function holdUsed(){const h=holdOf();let w=0;for(const k in h)if(CARGO_GOODS[k])w+=h[k]*CARGO_GOODS[k].w;return w;}
-  function cargoItem(key){const g=CARGO_GOODS[key];return {name:g.n,type:'cargo',cargo:key,weight:g.w,qty:1,desc:`Trade goods. A harbour's factor buys them.`};}
+  function cargoItem(key){const g=CARGO_GOODS[key];return {name:g.n,ico:'📦',type:'cargo',cargo:key,weight:g.w,qty:1,desc:`Trade goods. A harbour's factor buys them.`};}
   function cargoHave(key){const b=BAG.find(it=>it.type==='cargo'&&it.cargo===key);return {bag:b?(b.qty||1):0,hold:(worldState.ship&&worldState.ship.hold&&worldState.ship.hold[key])||0};}
   function cargoBuy(site,key){const g=CARGO_GOODS[key];if(!g||g.home!==cargoNation(site))return 'That is not sold here.';const p=cargoAsk(site,key);
     if(gold<p)return `A ${g.n.toLowerCase()} is ${p} gold.`;
@@ -5070,7 +5073,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     SHIP.name=(worldState.ship&&worldState.ship.name)||SHIP_NAMES[Math.floor(Math.random()*SHIP_NAMES.length)];
     Object.assign(worldState.ship||(worldState.ship={}),{x,z,yaw:SHIP.yaw,name:SHIP.name});shipUpdatePlacement();
   }
-  function restoreShip(){if(worldState.ship&&!SHIP.mesh)spawnShip(worldState.ship.x,worldState.ship.z,worldState.ship.yaw);}
+  function restoreShip(){if(worldState.ship&&!worldState.ship.sunk&&!SHIP.mesh)spawnShip(worldState.ship.x,worldState.ship.z,worldState.ship.yaw);}
   // buy at a shipwright: the ship appears off the seaward end of the quay
   function buyShip(site){
     if(worldState.ship)return 'You have a ship already. She\u2019s wherever you left her.';
@@ -5122,17 +5125,20 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function tickShip(dt){
     tickSeaSounds(dt);
+    SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
     if(!SHIP.mesh)return;
+    if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
       const fwd=(KEYS.KeyW?1:0)-(KEYS.KeyS?.5:0),turn=(KEYS.KeyA?1:0)-(KEYS.KeyD?1:0);SHIP.turn=turn;
-      const target=fwd*shipTopSpeed();SHIP.speed+=(target-SHIP.speed)*Math.min(1,dt*.8);
+      const target=fwd*shipSpeedNow();SHIP.speed+=(target-SHIP.speed)*Math.min(1,dt*.8);
       SHIP.yaw+=turn*dt*.55*Math.min(1,Math.abs(SHIP.speed)/3+.3);
       const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw);
       // keep the bow in water
       const probe=Math.sign(SHIP.speed)||1;const bx=SHIP.x+fx*probe*(SHIP.L/2+2),bz=SHIP.z+fz*probe*(SHIP.L/2+2);
       const WMAX=SIZE*GRID;
-      if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20){if(Math.abs(SHIP.speed)>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
+      if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20){const v=Math.abs(SHIP.speed);const w=v>2&&shipBars().hull>0?shipWear((v-2)*4,0):null;if(w&&w.hull)showMsg(`Aground — she strikes the shallows. Hull −${w.hull}.`,'#ff8060');else if(v>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
       SHIP.x+=fx*SHIP.speed*dt;SHIP.z+=fz*SHIP.speed*dt;
+      tickSeaWear(dt,fwd);
       // the player stands at the wheel
       px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=DECK_Y;onGround=true;velY=0;
       Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw,name:SHIP.name});
@@ -5355,6 +5361,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}
   let _seaT=0;
+  const PIRATE_RAM={range:30,top:6.5,wait:30,run:12};
   function tickOtherShips(dt,now){
     _seaT-=dt;
     if(_seaT<=0){_seaT=2;
@@ -5370,7 +5377,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const dP=Math.hypot(px-o.x,pz-o.z);
       let tx,tz;
       if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<300){ // close to ~28u, then hold off and shoot
-        const dx=px-o.x,dz=pz-o.z;if(dP>30){tx=px;tz=pz;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
+        // S418 — her ram (Michael's B on #100): within 30 units, faster than you and with her ram ready, she steers at your
+        // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
+        o.ramWait=(o.ramWait||0)-dt;const aboard=!!SHIP.mesh&&(SHIP.sailing||onDeck());
+        if(o.ramming){o.ramming-=dt;if(o.ramming<=0||!aboard){o.ramming=0;o.ramWait=PIRATE_RAM.wait;}}
+        else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top)o.ramming=PIRATE_RAM.run;
+        const dx=px-o.x,dz=pz-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=px;tz=pz;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
         o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+Math.random();volley(o);}
       } else if(o.sated){tx=o.x+(o.x-px);tz=o.z+(o.z-pz);
       } else {
@@ -5387,15 +5399,17 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // volleys: arrows that fly to where you are; a hit if you're still near when they land
   const ARROWS=[];
   function volley(o){
-    const n=2+Math.floor(Math.random()*2);
+    const n=2+Math.floor(Math.random()*2);const v={hit:false};
     for(let k=0;k<n;k++){const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.9),new THREE.MeshLambertMaterial({color:0x3a2a18}));const sx=o.x+(Math.random()-.5)*3,sz=o.z+(Math.random()-.5)*3;m.position.set(sx,DECK_Y+1.2,sz);sc.add(m);
-      const tx=px+(Math.random()-.5)*4,tz=pz+(Math.random()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:jumpY+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4});}
+      const tx=px+(Math.random()-.5)*4,tz=pz+(Math.random()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:jumpY+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v});}
     if(typeof sfxNoise==='function')sfxNoise(.18,0,0,.08,1800);showMsg('Arrows!','#ff8060');
   }
+  // S411 — a volley whose first arrow comes down on your own deck costs her 2 hull and 3 rig (once a volley)
+  function volleyOnDeck(x,z,y){const p=SHIP.plat;return !!(SHIP.mesh&&worldState.ship&&p&&x>p.x0&&x<p.x1&&z>p.z0&&z<p.z1&&(!p.inside||p.inside(x,z))&&Math.abs(y-.6-p.y)<1.5);}
   function tickArrows(dt){
     for(let i=ARROWS.length-1;i>=0;i--){const a=ARROWS[i];a.t+=dt;const u=Math.min(1,a.t/a.dur);const arc=Math.sin(u*Math.PI)*a.dur*4;
       const x=a.sx+(a.tx-a.sx)*u,z=a.sz+(a.tz-a.sz)*u,y=a.sy+(a.ty-a.sy)*u+arc;a.m.position.set(x,y,z);a.m.lookAt(a.tx,a.ty,a.tz);
-      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
   }
   // boarding: E beside another ship (hulls close, or swimming up to her)
   function nearOther(){let best=null,bd=1e9;for(const o of OTHER){const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));if(d>0&&d<3.5&&d<bd&&jumpY<4){bd=d;best=o;}}return best;}
@@ -5696,21 +5710,27 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S237 — the innkeeper's own business, a meal and a room (was inline in the town builder; the coaching inn shares it)
   function innTopics(house){return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
-            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
+            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n,house).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
             const others=taken===0?'The house is empty tonight.':taken===1?'One other guest in tonight.':`${taken} guests in tonight.`;
-            return `${others} A room is ${price} gold — ${innRoomName(free,n)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
+            return `${others} A room is ${price} gold — ${innRoomName(free,n,house)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
           get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
             return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return 'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.';
               if(gold<price)return `That’s ${price} gold, and you’ve ${gold}. Come back with it.`;
               gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
-              if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n)} at ${house.name} for ${price} gold.`);
-              return `${price} gold, thank you. ${innRoomName(free,n).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
+              if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
+              return `${price} gold, thank you. ${innRoomName(free,n,house).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
             {label:'Not tonight.',response:'Suit yourself. The fire’s free.'}];}}];}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
-  function innRoomName(k,n){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
-    const names=['the first door on the left','the first on the right','the second on the left','the second on the right','the third on the left','the third on the right'];
-    return names[k]||(k===n-1?'the room at the end':`room ${k+1}`);}
+  // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
+  // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
+  // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
+  function galleryEast(house){return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
+  function innRoomName(k,n,house){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
+    const east=galleryEast(house),i=east?n-1-k:k,side=east?'left':'right';
+    if(i===n-1&&n>2)return `the last door on the ${side}`;
+    return `the ${['first','second','third','fourth','fifth','sixth'][i]||`${i+1}th`} door on the ${side}`;}
+  function innGuestRoom(house,k){return k!=null&&k<innTaken(house);} // S424 — rooms below the night's free one are other guests'; above it, empty
   function innDay(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
   function innTaken(house){const n=innRooms(house);if(n<=1)return 0;if(house.coachInn)return n-1; // S237 — the roadside inn has one room to let; travellers hold the rest
    const h=String(house.id+'|'+innDay()).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return h%n;} // other guests: steady for the night, never the whole house
@@ -5728,7 +5748,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(rentedNow(h.id)){
         const mine=myRoom(h.id); // v80 S141 — an old save rented the whole inn: any bed there
         if(mine==null||bd.room==null||bd.room===mine)return false;
-        showMsg(`Another guest's room. Yours is ${innRoomName(mine,innRooms(h))}.`,'#c8b880');return true;
+        showMsg(`${innGuestRoom(h,bd.room)?"Another guest's room.":'An empty room, not the one you took.'} Yours is ${innRoomName(mine,innRooms(h),h)}.`,'#c8b880');return true;
       }
       showMsg('The innkeeper lets the rooms. Ask at the counter.','#c8b880');return true;
     }
@@ -5736,7 +5756,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function bedPrompt(bd){const h=currentHouse;const owner=bd.owner||'free';
     if(owner==='inn'&&!rentedNow(h.id))return `Ask the innkeeper for a room (${innPrice(h)} gold)`;
-    if(owner==='inn'){const mine=myRoom(h.id);if(mine!=null&&bd.room!=null&&bd.room!==mine)return "Another guest's room";if(mine!=null)return "Your room \u2014 press 'E' to rest";} // v80 S141
+    if(owner==='inn'){const mine=myRoom(h.id);if(mine!=null&&bd.room!=null&&bd.room!==mine)return innGuestRoom(h,bd.room)?"Another guest's room":'Not your room';if(mine!=null)return "Your room \u2014 press 'E' to rest";} // v80 S141
     if(owner==='home'&&!ownedHouse(h.id))return null;if(owner==='guild'&&!guildMember(h.guild))return "Members' beds";return "Press 'E' to rest";}
   // ── buying a house ──
   function housePrice(house){const k=house.siteKind||'village';const base={village:450,town:900,port:800,city:1500,garrison:700}[k]||600;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);return base+((hh%7)*50);}
@@ -5971,7 +5991,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // gone; a guard's death in its nation costs a service and the rank that went with it.
   function recordAt(site){const c=crimeOf({site});return c&&(c.debt>0||c.bounty>0||c.shut)?c:null;}
   function churchNoteAt(siteId){const N=(worldState.church&&worldState.church.notes)||[];return N.find(n=>n.kind==='guard'&&n.site===siteId&&!n.absolved);}
-  function penanceTopics(site){const c=recordAt(site);if(!c)return [];const note=churchNoteAt(site.id);
+  function penanceTopics(site){const c=recordAt(site);if(!c)return [];const note=churchNoteAt(site.id);if(c.debt<=0&&!note)return []; /* S425 — no favour owed and no guard's death to hear: a fine alone is the lord's, and the tithe bought nothing */
     return [{label:'Confess.',quest:true,fn:()=>{
       if(note&&(c.bounty>0||c.shut))return 'A guard of this town is dead by your hand, and the town is not paid. I will not hear you until it is.';
       const day=dayNow();if(c.confessed!=null&&day-c.confessed<3)return 'You have confessed. Now live it; come back to me in a few days.';
@@ -6099,22 +6119,131 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // Ship classes and upgrades (speed, cargo, hull size — no hull HP),
   // fish you catch by swimming up to a school, whales in deep water,
   // pirates who board you, and hulls that push each other apart.
-  const SHIP_CLASSES={sloop:{L:13,W:4.4,name:'sloop',price:0,speed:7.5},cog:{L:17,W:5.6,name:'cog',price:900,speed:8.5},galleon:{L:22,W:7.0,name:'galleon',price:2200,speed:9.5}};
+  const SHIP_CLASSES={sloop:{L:13,W:4.4,name:'sloop',price:0,speed:7.5,hull:100},cog:{L:17,W:5.6,name:'cog',price:900,speed:8.5,hull:140},galleon:{L:22,W:7.0,name:'galleon',price:2200,speed:9.5,hull:200}};
   const SAIL_TIERS=[0,250,450,700]; // price to reach tier 1..3, +1.2 u/s each
   const CARGO_TIERS=[0,200,400];    // +25 carry each while aboard or within 20u of her
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
   function shipTopSpeed(){return shipClass().speed+((worldState.ship&&worldState.ship.sails)||0)*1.2;}
+  // S411 — Michael's A on #85 (docs/design/sailing.md): a hull by class and a rig of 100, kept in worldState.ship (saved).
+  // Under half her hull she ships water (speed ×0.8), under a quarter ×0.6; the rig sets ×(0.5 + 0.5 × rig/100);
+  // at 0 hull she is waterlogged and makes 2.5 at most. The shipwright mends 4 gold a hull point, 3 a rig point, an hour a 20.
+  function shipBars(){const st=shipCfg(),mx=shipClass().hull;if(!(st.hull>=0)||st.hull>mx)st.hull=mx;if(!(st.rig>=0)||st.rig>100)st.rig=100;return {hull:st.hull,rig:st.rig,hullMax:mx,rigMax:100};}
+  function shipSpeedMul(){if(!worldState.ship)return 1;const b=shipBars(),f=b.hull/b.hullMax;return (f<.25?.6:f<.5?.8:1)*(.5+.5*b.rig/100);}
+  function shipSpeedNow(){const v=shipTopSpeed()*shipSpeedMul();return worldState.ship&&shipBars().hull<=0?Math.min(2.5,v):v;}
+  function shipWear(hull,rig){if(!worldState.ship)return null;const b=shipBars(),st=shipCfg();hull=Math.max(0,Math.round(hull||0));rig=Math.max(0,Math.round(rig||0));
+    if(b.hull===0&&hull>0&&SHIP.mesh){shipSink();return {hull:0,rig:0,sunk:true};}
+    st.hull=Math.max(0,b.hull-hull);st.rig=Math.max(0,b.rig-rig);if(b.hull>0&&st.hull===0)showMsg(`The ${SHIP.name} is waterlogged. She will make two knots and a half.`,'#ff8060');shipBarsUI();return {hull:b.hull-st.hull,rig:b.rig-st.rig};}
+  // S412 — the sea's state where she is, 0 calm, 1 moderate, 2 rough, 3 storm: the weather (clear and fog 0; overcast, rain and
+  // snow 1; a storm 3) plus one in open water, at most 3. Open water is the sea's own floor (the bed blends to −8 at a full
+  // sea cell, so the page's "below −8" is never met; −7.9 here) with no shore within 150 units. Read once a second.
+  const SEA_WORD=['calm','moderate','rough','storm'];
+  function weatherSea(){const t=(WX.next!==WX.type&&WX.k>=.5)?WX.next:WX.type;return t==='storm'?3:(t==='clear'||t==='fog')?0:1;}
+  function openWater(x,z){if(worldH(x,z)>-7.9)return false;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const r of [50,100,150])if(worldH(x+Math.cos(a)*r,z+Math.sin(a)*r)>SEA_Y-1.4)return false;}return true;}
+  function seaState(x,z){if(x==null){x=SHIP.x;z=SHIP.z;}return Math.min(3,weatherSea()+(openWater(x,z)?1:0));}
+  // under sail in a rough sea she loses 1 hull and 1 rig a minute; in a storm with W held 1 hull every 6 s and 1 rig every 4 s,
+  // half that with no key held while she still makes way, nothing hove to (under half a knot)
+  function tickSeaWear(dt,fwd){
+    const st=SHIP.sea||0,v=Math.abs(SHIP.speed);let h=0,r=0;
+    if(st>=3&&v>.5){const m=fwd>0?1:.5;h=dt/6*m;r=dt/4*m;}else if(st===2&&v>.5){h=dt/60;r=dt/60;}
+    if(!h&&!r)return;SHIP._wh=(SHIP._wh||0)+h;SHIP._wr=(SHIP._wr||0)+r;const H=Math.floor(SHIP._wh),R=Math.floor(SHIP._wr);
+    if(H||R){SHIP._wh-=H;SHIP._wr-=R;shipWear(H,R);}}
+  // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any
+  // shipwright raises her, class and tiers, for 30% of what they cost, and she lies at his quay three game days later. The hold
+  // comes up with her; the stash is the safehouse's, untouched.
+  function shipCostAll(){const st=shipCfg();const cls=st.cls||'sloop';let c=SHIP_PRICE+(cls!=='sloop'?SHIP_CLASSES.cog.price:0)+(cls==='galleon'?SHIP_CLASSES.galleon.price:0);
+    for(let i=1;i<=(st.sails||0);i++)c+=SAIL_TIERS[i];for(let i=1;i<=(st.cargo||0);i++)c+=CARGO_TIERS[i];return c;}
+  function shipRaiseCost(){return Math.round(shipCostAll()*.3);}
+  function shipSink(){const st=shipCfg();const aboard=SHIP.sailing||onDeck();
+    st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
+    for(const e of BOARDERS){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}BOARDERS.length=0;
+    if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=null;}if(SHIP.plat){const j=ZONES.world.platforms.indexOf(SHIP.plat);if(j>=0)ZONES.world.platforms.splice(j,1);SHIP.plat=null;}
+    if(aboard){jumpY=SWIM_Y;velY=0;onGround=false;}splash(true);
+    showMsg(`The ${SHIP.name} goes down. Any shipwright can raise her.`,'#ff6060');if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} sank.`);shipBarsUI();}
+  // once a second: a raised ship due at her quay is put there
+  function tickShipRaise(){const st=worldState.ship;if(!st||!st.sunk||!st.raise||SHIP.mesh)return;if((worldState.gameTimeAbsMinutes||0)<st.raise.due)return;
+    const site=siteAnywhere(st.raise.site);if(!site)return;const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};
+    delete st.sunk;delete st.raise;st.hull=shipClass().hull;st.rig=100;spawnShip(q.x+sd.dx*22,q.z+sd.dz*22+(sd.dx?12:0),Math.atan2(-sd.dz,-sd.dx)+Math.PI/2);
+    if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} is raised and lies at ${site.name}.`);}
+  function shipMendCost(){const b=shipBars();const h=b.hullMax-b.hull,r=100-b.rig;return {hull:h,rig:r,gold:h*4+r*3,mins:Math.round((h+r)*3)};}
+  const SHIPBAR={ui:null};
+  function shipBarsUI(){
+    if(typeof document==='undefined'||!document.body)return;
+    let el=SHIPBAR.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='shipbars';el.style.cssText='position:fixed;right:14px;bottom:150px;width:150px;padding:5px 8px;background:rgba(40,30,18,.82);border:1px solid #a08a5a;border-radius:4px;color:#e8dcc0;font:11px Georgia,serif;display:none;z-index:50';
+      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div><div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
+    const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
+    const b=show?shipBars():null,key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
+    const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
+    q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';
+  }
   function applyShipClass(){const c=shipClass();SHIP.L=c.L;SHIP.W=c.W;if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=buildShipMesh(SHIP.L,SHIP.W);sc.add(SHIP.mesh);shipUpdatePlacement();}}
   function cargoBonus(){if(!SHIP.mesh)return 0;const t=(worldState.ship&&worldState.ship.cargo)||0;if(!t)return 0;return (Math.hypot(px-SHIP.x,pz-SHIP.z)<20||onDeck())?t*25:0;}
+  const SHIPWRIGHT_LINES={
+    gatelander:{
+      raisePoor:c=>`Raising her is ${c} gold. The sea gives nothing back for less, and it gives grudgingly then.`,
+      raised:`Three days, and she'll be lying at the quay here, Weaver willing. A drowned boat comes up slow, like a man who knows he's in the wrong.`,
+      fetchPoor:f=>`Bringing her round is ${f} gold. A boat on the wrong shore is no boat at all, but a shipwright working for thanks is no shipwright either.`,
+      fetched:`The lads'll have her alongside before your cup's cold. She's at the quay.`,
+      mendPoor:g=>`Putting her right is ${g} gold. A stitch in time, they say, and they never once say it's free.`,
+      mended:hw=>`${hw} in the yard, and she's sound again, hull and rig. Treat her kindly and she'll return it.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold. A bigger boat's a bigger bill, the same as a bigger house.`,
+      refitted:n=>`She's a ${n} now. Longer, broader, and she'll carry more sail. You'll hardly know her, and she'll hardly know you.`,
+      sailsPoor:p=>`That canvas is ${p} gold. Good cloth was never cheap, and cheap cloth was never good.`,
+      sailed:k=>`New canvas. She'll make ${k} knots with a wind, and the wind is the Weaver's business, not mine.`,
+      holdPoor:p=>`The carpentry's ${p} gold. Wood is dear, and the joiner dearer.`,
+      held:n=>`More room below. You'll carry ${n} more aboard her, and you'll find a way to fill it.`},
+    markman:{
+      raisePoor:c=>`Raising her is ${c} gold.`,
+      raised:`Three days, and she'll be lying at the quay here.`,
+      fetchPoor:f=>`Bringing her round is ${f} gold.`,
+      fetched:`Lads'll have her alongside by the time you've finished your drink. She's at the quay.`,
+      mendPoor:g=>`Putting her right is ${g} gold.`,
+      mended:hw=>`${hw} in the yard. She's sound again, hull and rig.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold.`,
+      refitted:n=>`She's a ${n} now. Longer, broader, and she'll carry more sail.`,
+      sailsPoor:p=>`That canvas is ${p} gold.`,
+      sailed:k=>`New canvas. She'll make ${k} knots with a wind.`,
+      holdPoor:p=>`The carpentry's ${p} gold.`,
+      held:n=>`More room below. You'll carry ${n} more aboard her.`},
+    aurennais:{
+      raisePoor:c=>`The raising is ${c} gold, Master, payable before the work.`,
+      raised:`Three days, Master, and she will be lying at the quay here. The yard's receipt is entered.`,
+      fetchPoor:f=>`Bringing her round is ${f} gold, Master. The fee covers the crew and the tow.`,
+      fetched:`The yard's crew has her alongside, Master. She is at the quay, as agreed.`,
+      mendPoor:g=>`The repair is ${g} gold, Master, at the yard's posted rate.`,
+      mended:hw=>`${hw} in the yard, Master. She is sound again, hull and rig, and the work is warranted to the next storm, if not through it.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold, Master. The yard does not extend credit on hulls.`,
+      refitted:n=>`She is a ${n} now, Master: longer, broader, and rated for more sail. The new rating is entered against her name.`,
+      sailsPoor:p=>`That canvas is ${p} gold, Master.`,
+      sailed:k=>`New canvas, Master. Under a fair wind she should make ${k} knots. The yard warrants the cloth, not the wind.`,
+      holdPoor:p=>`The joinery is ${p} gold, Master.`,
+      held:n=>`More room below, Master. She is rated for ${n} more aboard.`},
+    oldblood:{
+      raisePoor:c=>`${c} gold, to raise her.`,
+      raised:`Three days. She will be at the quay.`,
+      fetchPoor:f=>`${f} gold, to bring her round.`,
+      fetched:`She is at the quay.`,
+      mendPoor:g=>`${g} gold.`,
+      mended:hw=>`${hw} in the yard. Sound again, hull and rig.`,
+      refitPoor:(n,p)=>`A ${n} hull is ${p} gold.`,
+      refitted:n=>`A ${n} now. Longer. Broader. More sail.`,
+      sailsPoor:p=>`${p} gold, the canvas.`,
+      sailed:k=>`New canvas. ${k} knots, with a wind.`,
+      holdPoor:p=>`${p} gold, the joinery.`,
+      held:n=>`More room below. ${n} more.`}};
   function upgradeTopics(site){
     if(!worldState.ship)return [];
-    const st=shipCfg();const out=[];
-    if(SHIP.mesh&&Math.hypot(SHIP.x-site.x,SHIP.z-site.z)>140){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return `Bringing her round is ${fee} gold.`;gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=Math.atan2(-sd.dz,-sd.dx)+Math.PI/2;SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return `Lads'll have her alongside by the time you've finished your drink. She's at the quay.`;}});}
+    const st=shipCfg();const out=[];const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman;
+    if(st.sunk){if(st.raise)return out;const rc=shipRaiseCost();out.push({label:`Raise the ${st.name||SHIP.name} (${rc} gold)`,quest:true,fn:()=>{const c=shipRaiseCost();if(gold<c)return L.raisePoor(c);gold-=c;updateHUD();
+      st.raise={site:site.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};if(typeof addLog==='function')addLog('⛵',`Paid ${site.name}'s shipwright to raise the ${st.name||SHIP.name}.`);return L.raised;}});return out;}
+    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return L.fetchPoor(fee);gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=Math.atan2(-sd.dz,-sd.dx)+Math.PI/2;SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return L.fetched;}});}
+    const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
+      const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
+      if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}
     const cls=st.cls||'sloop';const next=cls==='sloop'?'cog':cls==='cog'?'galleon':null;
-    if(next)out.push({label:`Refit her as a ${next} (${SHIP_CLASSES[next].price} gold)`,quest:true,fn:()=>{const p=SHIP_CLASSES[next].price;if(gold<p)return `A ${next} hull is ${p} gold.`;gold-=p;updateHUD();st.cls=next;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);return `She's a ${next} now. Longer, broader, and she'll carry more sail.`;}});
-    const sails=st.sails||0;if(sails<3)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return `That canvas is ${p} gold.`;gold-=p;updateHUD();st.sails=sails+1;return `New canvas. She'll make ${shipTopSpeed().toFixed(1)} knots with a wind.`;}});
-    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return `The carpentry's ${p} gold.`;gold-=p;updateHUD();st.cargo=cargo+1;return `More room below. You'll carry ${25*(cargo+1)} more aboard her.`;}});
+    if(next)out.push({label:`Refit her as a ${next} (${SHIP_CLASSES[next].price} gold)`,quest:true,fn:()=>{const p=SHIP_CLASSES[next].price;if(gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);return L.refitted(next);}});
+    const sails=st.sails||0;if(sails<3)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
+    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
     return out;
   }
   // ── fish ──
@@ -6169,6 +6298,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function tickHullCollisions(dt){
     const hulls=[];if(SHIP.mesh)hulls.push({o:SHIP,L:SHIP.L,W:SHIP.W,mine:true});for(const o of OTHER)hulls.push({o,L:o.L||13,W:o.W||4.4});
     for(let i=0;i<hulls.length;i++)for(let j=i+1;j<hulls.length;j++){const a=hulls[i],b=hulls[j];const dx=b.o.x-a.o.x,dz=b.o.z-a.o.z;const d=Math.hypot(dx,dz)||.01;const minD=(a.L+b.L)/2*.62;
+      // S411 — a ram: on first touch your hull takes the closing speed × 3, half if your bow is on her; they part before it counts again
+      if(a.mine){if(d<minD&&!b.o._touch){b.o._touch=true;const ux=dx/d,uz=dz/d,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
+          const close=(fa[0]*(a.o.speed||0)-fb[0]*(b.o.speed||0))*ux+(fa[1]*(a.o.speed||0)-fb[1]*(b.o.speed||0))*uz;const bow=(a.o.speed||0)>.5&&fa[0]*ux+fa[1]*uz>.7;
+          const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;}
+          if(close>.5){const w=shipWear(close*3*(bow?.5:1),0);if(w&&w.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w.hull}.`,'#ff8060');a._bump=performance.now();}}}
+        else if(d>minD+1)b.o._touch=false;}
       if(d<minD){const push=(minD-d)*.5;const ux=dx/d,uz=dz/d;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
   }
 
@@ -7053,8 +7188,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // health she kneels and yields (no blow takes her below it before then); three seconds unstruck and she is spared, a
   // blow after the yield is murder and the League closes. The ring holds you at 1 health: down, yielded or over the
   // rope, the yard acclaims Rowe, and the ring is laid again in seven days.
-  const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
-  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12;
+  const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,yieldS:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
+  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12,DUEL_CHECK=.4;
   const DUEL_BARKS=["Feet, Rowe! Feet!","Get your guard up, {nick}!","That's blood. Keep at it.","Iron and blood!","Watch her left, {nick}.","Don't dance. Fight.","Hesket! Hesket!","Up, {nick}! Up!","Finish it by noon, the pair of you!"];
   function duelQuest(){return qActive().find(q=>q.kind==='duel')||null;}
   function duelRingHours(){const h=hourNow();return h>=DUEL_OPEN&&h<DUEL_CLOSE;}
@@ -7102,7 +7237,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1400);
     showMsg('The rope is up. Hesket Rowe lifts her blade.','#e8d8a0');if(typeof addLog==='function')addLog('⚔','The duel at Caer Slige: Hesket Rowe.');}
   function duelBark(line){const W=DUEL.watchers.filter(w=>w.g.visible);if(!W.length)return;sayBubble(W[Math.floor(Math.random()*W.length)],line.split('{nick}').join(duelNick()));}
-  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;if(e.mesh)e.mesh.position.y-=.45;
+  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;DUEL.yieldS=playClockS;if(e.mesh)e.mesh.position.y-=.45;
     try{if(dlgOpen&&dlgNPC&&dlgNPC.name===RIVAL.name)closeDialog();}catch(err){}
     showMsg('Hesket Rowe goes down on one knee and lays her blade on the ground.','#e8d8a0');roweSay("Enough. I yield. It's yours.");}
   function duelWon(q){const e=DUEL.rowe;q.data.state='won';duelLeague().rowe='alive';const x=e.x,z=e.z;duelRemoveRowe();duelRingDown();
@@ -7131,7 +7266,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(ended){if(far>60||(d.state==='lost'&&dayNow()>=(d.retryDay||0)))duelTeardown();return;}
     if(d.state==='wait'){if(far>240){duelTeardown();return;}if(DUEL.open!==duelRingHours()){duelTeardown();return;}return;}
     const e=DUEL.rowe;if(!e){duelTeardown();return;}
-    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
+    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0&&duelCheck(e))return;if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
       DUEL.spare-=dt;if(DUEL.spare<=0)duelWon(q);return;}
     // the fight
     const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
@@ -7145,7 +7280,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the kill path asks first: before the yield no blow takes her below a quarter (she yields instead); after it, a kill is murder
   function duelKill(e){const q=DUEL.q;if(!q||DUEL.rowe!==e)return false;const s=q.data.state;
     if(s==='fight'||s==='wait'){if(s==='wait')q.data.state='fight';e.hp=Math.max(1,Math.floor(e.maxHp*.25));duelYield(q);return true;}
-    if(s==='yielded')duelMurder(q);return false;}
+    if(s==='yielded'){if(duelCheck(e))return true;duelMurder(q);}return false;}
+  // S408 (Michael's B on #96) — a blow begun within DUEL_CHECK s of her kneeling is held: it lands on nothing. A blow begun later is murder
+  function duelCheck(e){if(!(_offenceS<(DUEL.yieldS||0)+DUEL_CHECK))return false;e.hp=DUEL.hp0;e.dead=false;
+    if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}showMsg('You check the blow.','#e8d8a0');return true;}
   // the ring holds you at 1 health: going down in it is a yield, not a death
   function duelDown(){const q=DUEL.q;if(!q||q.data.state!=='fight'||Math.hypot(px-q.data.x,pz-q.data.z)>DUEL_R+2)return false;duelLost(q,'down');return true;}
   // v80 S133 — a guild hunt's ground on the compass until the tally is met
@@ -7731,6 +7869,6 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CARGO_GOODS,get boarders(){return BOARDERS;},cargoNation,cargoWorld,cargoBlockaded,cargoAsk,cargoBid,cargoBuy,cargoSell,cargoRows,cargoBoard,cargoTopic,holdCap,holdUsed,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},despawnOtherShip,get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,CARGO_GOODS,cargoItem,ferryTopics,ferryPrice,shipRaiseCost,mapEntries,restoreShip,seaState,openWater,spawnShip,shipBarsUI,shipBars,shipWear,shipSpeedNow,shipMendCost,upgradeTopics,tickHullCollisions,volley,get boarders(){return BOARDERS;},cargoNation,cargoWorld,cargoBlockaded,cargoAsk,cargoBid,cargoBuy,cargoSell,cargoRows,cargoBoard,cargoTopic,holdCap,holdUsed,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},despawnOtherShip,get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

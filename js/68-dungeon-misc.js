@@ -18,7 +18,25 @@ function _sweepScenePool(scene){
 const _laDir=new THREE.Vector3(),_laTo=new THREE.Vector3();const _ray=new THREE.Raycaster();
 // aimAt: true when the crosshair ray hits this object's mesh within reach — the interaction is the mesh, not an area
 function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);return hits.length>0;}
-function lookingAt(c,reach){const dx=c.x-px,dz=c.z-pz,dh=Math.hypot(dx,dz);if(dh>(reach||3.0))return false;if(c.mesh||c.g||c.group)return aimAt(c,(reach||3.0)+.6); // the mesh itself when there is one
+// S417 — a corpse is searched anywhere on its body, not at one spot over the kill point (Michael, 1 Oct). The crosshair
+// ray is tested against capsules along the dead body's bones and against any plain meshes it has, within reach of the
+// eye as aimAt. three's own raycast cannot see a skinned body here: it skins with the bones' world matrices and then
+// applies the mesh's world matrix again (the people's and creatures' detached binding), so it misses the body.
+const _baA=new THREE.Vector3(),_baB=new THREE.Vector3(),_baBox=new THREE.Box3();
+function _raySegHit(o,d,a,b,r,near,far){for(let k=0;k<=6;k++){const u=k/6,x=a.x+(b.x-a.x)*u-o.x,y=a.y+(b.y-a.y)*u-o.y,z=a.z+(b.z-a.z)*u-o.z;
+    const t=Math.max(near,Math.min(far,x*d.x+y*d.y+z*d.z)),qx=x-d.x*t,qy=y-d.y*t,qz=z-d.z*t;if(qx*qx+qy*qy+qz*qz<=r*r)return true;}return false;}
+function bodyAimed(c,reach){const m=c.body;reach=reach||3.0;m.updateMatrixWorld(true);
+  if(!c._bones){const bones=[],plain=[];m.traverse(o=>{if(o.isBone)bones.push(o);else if(o.isMesh&&!o.isSkinnedMesh&&o.geometry&&o.geometry.type!=='PlaneGeometry')plain.push(o);});c._bones=bones;c._plain=plain;}
+  if(c._r==null){_baBox.makeEmpty();if(c._bones.length)for(const b of c._bones)_baBox.expandByPoint(b.getWorldPosition(_baA));else _baBox.setFromObject(m);
+    const ext=_baBox.isEmpty()?1:_baBox.getSize(_baA).length();c._ext=ext;c._r=Math.max(.2,Math.min(1.2,ext*.13));}
+  if(Math.hypot(c.x-px,c.z-pz)>reach+c._ext*.6)return false;
+  CAM.getWorldDirection(_laDir);const tpb=thirdPerson?TP.dist:0,far=reach+.6+tpb,near=Math.max(0,tpb-.35),o=CAM.position;
+  for(const b of c._bones){b.getWorldPosition(_baA);if(b.parent&&b.parent.isBone)b.parent.getWorldPosition(_baB);else _baB.copy(_baA);
+    if(_raySegHit(o,_laDir,_baB,_baA,c._r,near,far))return true;}
+  const vis=c._plain.filter(x=>x.visible);if(vis.length){_ray.set(o,_laDir);_ray.camera=CAM;_ray.far=far;_ray.near=near;if(_ray.intersectObjects(vis,false).length)return true;}
+  return false;}
+function lookingAt(c,reach){if(c.body&&c.body.parent)return bodyAimed(c,reach); /* S417 — the whole body, in place of the old spot */
+  const dx=c.x-px,dz=c.z-pz,dh=Math.hypot(dx,dz);if(dh>(reach||3.0))return false;if(c.mesh||c.g||c.group)return aimAt(c,(reach||3.0)+.6); // the mesh itself when there is one
   const floorY=(activeZoneId!=='world')?(currentFloor===2?FLOOR2_Y:0):((typeof WORLD!=='undefined')?WORLD.worldH(c.x,c.z):0);const cy=floorY+(c.y!=null?c.y:0.45);
   CAM.getWorldDirection(_laDir);_laTo.set(c.x-CAM.position.x,cy-CAM.position.y,c.z-CAM.position.z);const len=_laTo.length();if(len<.001)return true;_laTo.multiplyScalar(1/len);return _laTo.dot(_laDir)>0.96;}
 function lootTargetNow(){try{
@@ -412,7 +430,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const pool=ENEMIES.filter(e=>!e.dead);const low=Math.max(...pool.map(e=>e.floor||1));const cand=pool.filter(e=>(e.floor||1)===low).sort((a,b)=>Math.hypot(b.x-ent.x,b.z-ent.z)-Math.hypot(a.x-ent.x,a.z-ent.z));
   const e=cand[0];if(!e)return;
   const dragon=!!L.dragon;e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${L.boss}`;e.boss=true;e.dragon=dragon;
-  e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:1.6)*(1+level*.04));e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
+  e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
   if(dragon)dragonBody(e,2.88); // S219 — the world's dragon's size (its zone scale 1.8 × 1.6)
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
@@ -486,6 +504,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     goToDungeon(p);setTimeout(()=>{try{if(W.floor===2&&typeof FLOOR2_Y!=='undefined'){currentFloor=2;}if(W.x!=null){px=W.x;pz=W.z;}if(W.yaw!=null)yaw=W.yaw;if(W.jumpY!=null)jumpY=W.jumpY;else jumpY=(currentFloor===2?FLOOR2_Y:0);}catch(err){}},900);return;}
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
+  if(typeof FALL!=='undefined')FALL.pend=null; /* S429 — a fall's blow still waiting does not follow you past death */
   if(typeof WORLD!=='undefined'&&WORLD.duelDown&&WORLD.duelDown())return; /* S373 — the ring holds you at 1 health */
   if(typeof WORLD!=='undefined')WORLD.noteDeath(); // v80 — the reader counts
   if(dead)return;dead=true;
