@@ -668,3 +668,81 @@ Topics:
 - *No new names.* The sergeant takes a name from the Mark's bank, as the yard's people do. Port Blackhand is the canon's own place.
 - *Direction.* The beat ends on a harbour (§10).
 - *Silent, and chosen plainly:* what the light pays (warmth), who cut the strokes (unseen, pointed at the strait), and what comes down (wolf-shapes). See *What the canon fixes*.
+
+---
+
+## Back to Their Bread — the open ending's three descriptions
+
+*Unapproved. Drafted 2 Oct 2026. Backlog A, consequence hooks: "someone says one of the three descriptions to you and goes back to their bread" in the open ending. Canon §11, the third path: "once in a long while someone says one of the three descriptions to the player and goes back to their bread; Varek is seen, at a distance, at fields." The build already ends that way (`ending('open')` sets `worldState.knowing`, saved and loaded since Session 242), and the ending screen promises it: "Once in a long while, someone will say one of the three descriptions to you, and go back to their bread." Nothing reads `knowing` yet. This draft is what reads it.*
+
+### What the canon fixes, and where it is silent
+
+- **Fixed.** The three descriptions are *the one who returns; the one who walks the shortest road; the one who dies and does not* (§4.2). They recur in old art and older songs. They are heresy, not prophecy, and nobody applies them to the player until Act III, once, by someone who then goes back to their bread (§4.2). After the third path, the world lives watched, and someone says one now and then (§11). Varek is seen at a distance at fields (§11). He never says *game*, *save*, *player* or *screen* (§6), and nor does anyone else.
+- **The two "once"s.** §4.2's *once* and §11's *once in a long while* agree if the first one comes after the ending, and the rest follow it at long intervals. Before the ending, nobody says them; *The Seventh Niche* only quotes them.
+- **Silent: who says it.** I chose ordinary people: any generated townsperson, of any people, keeper or not. Never a named character, a guard on duty, a faction officer or Varek. The canon's *goes back to their bread* is a person with work in their hands, so every line ends on the speaker's work.
+- **Silent: which one.** I chose to tie it to what the player did, as Varek's discoveries are tied (§6). *The one who dies and does not* needs a death on record (`vstate().deaths >= 1`). *The one who walks the shortest road* needs the short road on record (`vstate().shortRoad`). *The one who returns* is always open, because the player has always come back. The speaker doesn't know why the line came to them. The player does.
+- **Silent: how often.** *Once in a long while*: at most once a game-week. After that, each greeting from an eligible townsperson has a one-in-six chance. A player who spends a game-week in towns hears it about once.
+- **Silent: what it explains.** Nothing. There is no log line, no journal entry and no follow-up topic. The greeting is the description, said in the speaker's voice, and then the speaker's usual topics follow. Varek's notes are *never displayed* (§12), and this is the world's half of the same rule.
+
+### Shape
+
+- **Not a quest.** It is a greeting that replaces the usual one, rarely, after `ending('open')`. A second thing goes with it: Varek at a distance at the fields.
+- **States.** `worldState.knowing` (exists). `vstate().told`, the game minute of the last description, and `vstate().fieldSeen[siteId]`, the game minute Varek was last seen at that field. Both sit inside `worldState.varek`, which the load already reads back, so no new key goes on the S242 list.
+- **Reward.** None.
+- **What it changes.** Nothing but what is heard. Nobody's price, favour or trust moves. It doesn't touch the other two endings: after *unbound* the world is new, and after *sealed* nobody says them.
+
+### 1. The greeting, by people
+
+`{nick}` is the yard's weapon nickname (`duelNick()`: *Blade*, *Hatchet*, *Hammer*, *Bowstring*, *Stick*, *Pin*, *Fists*). Markmen give nicknames (§2), and the Markish lines use it.
+
+**Gatelander** (a proverb where one fits, no bare yes or no, an oath on the Weaver):
+- *the one who returns* → "My grandmother had a song about the one who returns. She'd sing it at the churn and stop before the last verse, every time, and I never thought to ask her why. You put me in mind of it, coming in that door. Well. The butter won't wait on a song."
+- *the one who walks the shortest road* → "There's a line cut on the old stone by the ford: the one who walks the shortest road. I've passed it every day of my life and never once wondered who it meant till now. Weaver keep you. I've bread in the oven."
+- *the one who dies and does not* → "They had a saying in the hills, my mother's people: the one who dies and does not. A word for the stubborn, I always took it. You'd know better than I would, maybe. There now, the dough's risen while I stood talking."
+
+**Markman** (short sentences, *aye*, a nickname, an oath on iron and blood, no honorific):
+- *the one who returns* → "Old word in the valleys. The one who returns. My father said it of men who came back from the strait. Not many. He'd have said it of you, {nick}. Right. That wood won't split itself."
+- *the one who walks the shortest road* → "The one who walks the shortest road. Cut on the cairns up the pass. Nobody knows who for. You've the look of it, {nick}. Aye, well. The forge wants feeding."
+- *the one who dies and does not* → "My grandmother had a saying. The one who dies and does not. She used it on cats. By iron, I'd use it on you. Off you go, {nick}. I've hides to scrape."
+
+**Aurennais** (formal, *Master*, qualifiers, the contract and the ledger, never an oath):
+- *the one who returns* → "Forgive me, Master. There is a phrase in the old songs, the one who returns, and the Church reads it as the dead. I find the Church's reading less persuasive this morning than I did yesterday. I make no claim by it, and I would ask you not to repeat it. Now, if you will excuse me, the ledger closes at noon."
+- *the one who walks the shortest road* → "The old carvings speak of one who walks the shortest road, Master. The Church holds it to be a figure for death, which takes everyone by the shortest road. I have always accepted that reading. I accept it still, with a reservation I would not care to put in writing. Good day. The bread is owed at the Prior's by the bell."
+- *the one who dies and does not* → "Master, the old songs have a line about the one who dies and does not. My tutor at the academy called it an error of transcription. I have no grounds to doubt my tutor. I note only that you put me in mind of it, and that I cannot account for why. The salt will not weigh itself."
+
+**Old Blood** (few words, exact, the older name first):
+- *the one who returns* → "An té a fhilleann. The one who returns. My mother had the words. Not the reason. The fire wants turf."
+- *the one who walks the shortest road* → "An bóthar is giorra. The shortest road. You walked it here. Go on. I have bread rising."
+- *the one who dies and does not* → "An té a fhaigheann bás, agus nach bhfaigheann. The one who dies, and does not. Old words. I do not know who they were for. Sit, if you like. I am busy."
+
+(The Irish is mine, in the deep register the canon uses for the old words. The author may want to correct it, and every line stands without it.)
+
+### 2. Varek at a distance, at the fields
+
+After `ending('open')`, the fields are his again (§11), but he is never close.
+
+- When the player first comes within 420 units of a field (`fieldFor(nation)`, the same test as the discoveries), and Varek hasn't been seen at that field in ten game-days, he stands at the field's far side, about 90 units from the player, facing them. He has no topics. He doesn't move.
+- `showMsg` when he appears:
+  > Far off across the field, someone is standing, looking out.
+- When the player comes within 40 units, he is gone. `showMsg`:
+  > Where he stood, the grass is pressed flat, and springing back.
+- If the player leaves first, he stays until they are out of sight (beyond 420), and then he is gone.
+
+The second line is the whole of it. He is seen; he is not spoken to. The open ending is a world that *lives watched*, and this is what being watched looks like.
+
+### What in the code would carry it
+
+- **The greeting.** One function in the world module, `knowingGreet(npc)`, exported on `WORLD` and called where `openDialog` picks a greeting (`js/22-dialogue.js`, grep `const greet=npc.greeting[Math.floor`): `const greet=(WORLD.knowingGreet&&WORLD.knowingGreet(npc))||npc.greeting[…]`. It returns `null` unless every one of these holds: `worldState.knowing`; the NPC is a generated townsperson (not `authored`, has a `site`, is not a guard drawn or halting, not a faction officer, not Varek); and the last description was more than 7 × 1440 game-minutes ago (`vstate().told`). Then `Math.random()<1/6`. On a hit it picks among the open descriptions (above), takes the line from a `KNOWING_LINES[people][desc]` table next to `VAREK_LINES` (`npc.people||peopleOfSite(npc.site)`, falling back to `gatelander`, since the Gatelands are the home island), replaces `{nick}` with `duelNick()`, sets `vstate().told`, and returns the line. The topics that follow are the NPC's own and are unchanged. The `c.back` greeting rebuild (grep `Rebuild topics fresh`) should not call it again.
+- **Varek at the fields.** In `tickVarek`, a branch that runs only when `worldState.story.ending==='open'`, before `varekDue()`: within 420 units of `fieldFor(nk)`, and with `vstate().fieldSeen[f.id]` more than 10 × 1440 game-minutes old, it places a Varek with no topics (`varekDef`'s look; `topics:[]`, `greeting:[]`) at the point of the field 90 units from the player on the far side, shows the first line, and records `fieldSeen`. Within 40 units it removes him and shows the second line. Beyond 420 it removes him silently. His rig goes into the scene at once (`tickPeople` disposes rigs without a parent). He should not be talkable: `spawnNPC` with no topics, or a flag the E-prompt skips.
+- **worldState.** `told` and `fieldSeen` sit in `worldState.varek` (`vstate()`), on the S242 list already. `knowing` is there too.
+- **Tests.** A headless check would set `knowing`, force `Math.random` low, open a townsperson's dialogue, and read the greeting by people. Then it would open it again at once, and see the usual greeting, because a week hasn't passed.
+
+### Checked against the canon
+
+- *No chosen-one prophecy.* Every speaker takes the words from a song, a carving or a saying, not a foretelling, and applies them only as *you put me in mind of it*. None says the player was meant for anything. The Aurennais speakers keep the Church's reading and add only a reservation, as *The Seventh Niche*'s clerk does.
+- *Goes back to their bread.* Every line ends on the speaker's work: the churn, the oven, the dough, the wood, the forge, the hides, the ledger, the Prior's bread, the salt, the turf, the rising bread, and *I am busy*.
+- *Never game, save, player or screen.* Nobody says any of them. The descriptions are chosen by deaths and the short road, so the player knows why the line came, and the speaker doesn't.
+- *The Clearing is not revealed.* *The one who dies and does not* stays a saying. Nobody says what the gates do to the dead.
+- *Register.* The Gatelander lines turn on a saying (*the butter won't wait on a song*), never give a bare yes or no, and say *Weaver keep you*. The Markish lines are short, with *aye*, *{nick}* and *by iron*, and no honorific. The Aurennais lines use *Master*, qualifiers, *I make no claim*, *a reservation I would not care to put in writing*, and no oath. The Old Blood lines put the old words first and say little else.
+- *Slurs.* None.
+- *Varek.* He is seen, at a distance, and nothing more, as §11 says. The open ending's Varek asked the player to stay; he keeps his distance because the player did.
