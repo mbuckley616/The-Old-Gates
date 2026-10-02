@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Trade and Containers</title>
+<!-- The Old Gates — the counter, the quantity slip and the loot window on the approved parchment kit (docs/prototypes/ui,
+     Michael A, 27 Sep 2026). Concept, 1 Oct 2026. kit.css and the icon <symbol>s are copied from it; build.py inlines them.
+     Every .screen is 1280×720; shoot.mjs photographs them. The text and numbers are build s348's, taken by shoot-current.mjs
+     in Lorcan's Forge, Dunmore, at 1 pm (current.json): 142 gold, Charisma 6 (barter 6%), Dunmore's prices ×0.9665,
+     carrying 20.6 of 65. Prices are the game's: shopCost = round(list × 0.9665 × 0.94); the counter pays sellPrice × 1.06. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+/* ───────── trade additions ───────── */
+.screen{background-image:url(backdrop-forge.png);background-position:center top;background-size:1280px 720px}
+.screen.street{background-image:url(../ui/backdrop.png)}
+.book{display:grid;grid-template-columns:1fr 1fr;gap:0 46px;position:relative;height:440px}
+.book::after{content:"";position:absolute;left:50%;top:-6px;bottom:-4px;width:20px;margin-left:-10px;background:linear-gradient(90deg,transparent,rgba(90,55,20,.16) 40%,rgba(70,40,10,.28) 50%,rgba(90,55,20,.16) 60%,transparent)}
+.pg{display:flex;flex-direction:column;min-width:0}
+.pghead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.tc{display:grid;grid-template-columns:26px 1fr 152px 38px 50px;gap:0 10px;align-items:center}
+.tc .row,.tc.row{font-size:16.5px}
+.row.tc{padding:5px 8px}
+.row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .st{font-size:14px;color:var(--ink-soft);white-space:nowrap}
+.pr{font:500 17px var(--body);text-align:right;color:var(--ink)}
+.pr .ico{width:14px!important;height:14px!important;color:#7a5410!important;margin-left:2px;vertical-align:-1px}
+.up{color:#3c6a22;font:13px var(--body);margin-left:4px} .dn{color:var(--rubric);font:13px var(--body);margin-left:4px}
+.row.lock{color:var(--ink-faint)} .row.lock .pr{color:var(--ink-faint)} .row.lock svg.ico{color:var(--ink-faint);opacity:.7}
+.why{display:block;font:italic 12.5px var(--fell);color:var(--rubric);opacity:.85;margin-top:-1px}
+.row.dear .pr{color:var(--rubric);text-decoration:line-through;text-decoration-thickness:1px}
+.row.gone{opacity:.42} .row.gone .n{text-decoration:line-through;text-decoration-thickness:1px}
+.mark{font:italic 12px var(--fell);color:var(--gilt);margin-left:6px}
+.detail{position:absolute;left:34px;right:34px;bottom:56px;height:84px;display:grid;grid-template-columns:54px 1fr 250px;gap:16px;align-items:center;border-top:1px solid rgba(90,65,40,.35);padding-top:10px}
+.detail .big{width:54px;height:54px;color:var(--ink)}
+.detail .nm{font:22px var(--display);color:var(--rubric)}
+.detail .ln{font-size:16px;color:var(--ink-soft);line-height:1.35}
+.detail .sum{font-size:15px;line-height:1.45;text-align:right;color:var(--ink-soft)}
+.detail .sum b{font:20px var(--display);font-weight:400;color:var(--ink)}
+.purse{position:absolute;left:34px;right:34px;bottom:16px;display:flex;justify-content:space-between;align-items:center;font:15px var(--body);color:var(--ink-soft)}
+.purse .gold{font:22px var(--display);color:var(--ink);display:flex;gap:8px;align-items:center}
+.purse .gold .ico{color:var(--gilt);width:22px;height:22px}
+.hint{font:italic 14px var(--fell);color:var(--ink-soft)}
+.wt{font:14px var(--body);color:var(--ink-soft)}
+.wbar{display:inline-block;width:90px;height:7px;border:1px solid var(--ink-soft);margin-left:8px;vertical-align:0;position:relative;background:rgba(80,50,20,.1)}
+.wbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-soft);opacity:.55}
+/* the reckoning (B) */
+.reck{position:absolute;left:34px;right:34px;bottom:24px;height:128px;border-top:1px solid rgba(90,65,40,.35);padding-top:10px;display:grid;grid-template-columns:1fr 1fr 290px;gap:28px}
+.reck .col .h2{margin-bottom:5px}
+.reck .li{display:flex;justify-content:space-between;font-size:16px;padding:2px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+.reck .li span:last-child{font:16px var(--display)}
+.tally{display:flex;flex-direction:column;gap:3px;font-size:15.5px;color:var(--ink-soft)}
+.tally div{display:flex;justify-content:space-between}
+.tally .tot{font:21px var(--display);color:var(--rubric);border-top:1px solid var(--ink-soft);padding-top:4px;margin-top:2px}
+.strike{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:4px}
+.seal.static{position:relative;width:52px;height:52px;font-size:13px;line-height:1;text-align:center}
+.row.inq{background:linear-gradient(90deg,rgba(154,112,32,.18),rgba(154,112,32,.04));box-shadow:inset 3px 0 var(--gilt)}
+/* quantity slip */
+.slip{left:420px;top:210px;width:440px;height:300px;padding:24px 34px}
+.dim::after{content:"";position:absolute;inset:0;background:rgba(20,12,4,.35);z-index:2}
+.qtyline{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 2px}
+.slider{position:relative;height:22px;margin:14px 6px 4px}
+.slider::before{content:"";position:absolute;left:0;right:0;top:10px;height:2px;background:var(--ink-soft)}
+.slider .notch{position:absolute;top:5px;width:1px;height:12px;background:var(--ink-soft)}
+.slider .knob{position:absolute;top:1px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 60%,#5a0e08);box-shadow:0 2px 3px rgba(0,0,0,.45)}
+.scale{display:flex;justify-content:space-between;font:13px var(--body);color:var(--ink-faint);margin:0 0 12px}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:8px}
+/* loot slip */
+.loot{left:330px;top:140px;width:620px;height:420px;padding:24px 34px}
+.loot .tc{grid-template-columns:26px 1fr 150px 40px 58px}
+.goldrow{display:flex;align-items:center;gap:10px;font:19px var(--display);color:var(--gilt);padding:6px 8px 8px;border-bottom:1px solid rgba(90,65,40,.35)}
+.goldrow .ico{width:24px;height:24px}
+.lfoot{position:absolute;left:34px;right:34px;bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.inworld{position:absolute;left:640px;top:360px;z-index:1}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- two new ink icons in the kit's stroke: a flail and a strongbox -->
+  <symbol id="i-flail" viewBox="0 0 24 24"><path d="M4 20l6-6M10 14l1.6-1.6"/><path d="M12.6 11.4c1 .2 1.4 1.4.6 2" stroke-dasharray="1.4 1.2"/><circle cx="16.5" cy="7.5" r="3.2"/><path d="M16.5 2.8v1.5M21.2 7.5h-1.5M16.5 12.2v-1.5M11.8 7.5h1.5"/></symbol>
+  <symbol id="i-chest" viewBox="0 0 24 24"><path d="M3 10h18v9H3zM3 10c0-3 2-5 4-5h10c2 0 4 2 4 5M7 5v5M17 5v5"/><rect x="10.5" y="11.5" width="3" height="3.5" rx=".6"/></symbol>
+</defs></svg>
+
+<h1 class="page">Trade and containers on the parchment</h1>
+<p class="lede">The counter, the quantity slip and a chest's window: the three trade screens the style page (Michael A, 27 Sep) said would “follow the same sheet”, drawn on it with build s348's own text and numbers from Lorcan's Forge in Dunmore.</p>
+
+<!-- ═════════════ A. The counter as a ledger ═════════════ -->
+<div class="cap">A · The counter as an open ledger <small>today's rules: click to buy or sell at once; the shop's page on the left, your pack on the right</small></div>
+<section class="screen menu" id="ledger">
+  <div class="tabs">
+    <div class="tab on"><svg class="ico"><use href="#i-scales"/></svg>All</div><div class="tab"><svg class="ico"><use href="#i-sword"/></svg>Weapons</div><div class="tab"><svg class="ico"><use href="#i-helm"/></svg>Armour</div><div class="tab"><svg class="ico"><use href="#i-potion"/></svg>Consumables</div><div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Oddments</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div class="book">
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Lorcan’s Forge</div><div class="meta">Lorcan · “Steel for the road ahead.”</div></div><div class="h2">FOR SALE</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PRICE</span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="st num">Attack 6–7 · slash<span class="up">▲2</span></span><span class="r num">3.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-dagger"/></svg><span class="n">Bronze Dagger</span><span class="st num">Attack 6–7 · pierce<span class="up">▲2</span></span><span class="r num">1.5</span><span class="pr num">13<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Iron Sword<span class="why">needs Might 5 — you have 3</span></span><span class="st num">Attack 10–12 · slash</span><span class="r num">3.0</span><span class="pr num">33<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc sel"><svg class="ico"><use href="#i-club"/></svg><span class="n">Bronze Mace</span><span class="st num">Attack 9–12 · blunt<span class="up">▲6</span></span><span class="r num">4.0</span><span class="pr num">21<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-shield"/></svg><span class="n">Wooden Buckler</span><span class="st num">Block 20% · armour 1<span class="up">new</span></span><span class="r num">4.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion</span><span class="st num">+25 health</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Steel Sword<span class="why">needs Might 10 — you have 3</span></span><span class="st num">Attack 13–15 · slash</span><span class="r num">3.0</span><span class="pr num">62<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Your Pack</div><div class="wt num">20.6 of 65 weight<span class="wbar"><i style="width:31.7%"></i></span></div></div><div class="h2">LORCAN PAYS</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PAYS</span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="st num">Attack 6–7 · slash</span><span class="r num">3.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-helm"/></svg><span class="n">Bronze Helmet</span><span class="st num">Armour 2</span><span class="r num">3.0</span><span class="pr num">6<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="qty">×2</span></span><span class="st num">+25 health</span><span class="r num">1.0</span><span class="pr num">7<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Mana Draught</span><span class="st num">+40 mana</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-key"/></svg><span class="n">Lockpick<span class="qty">×2</span></span><span class="st">—</span><span class="r num">0.1</span><span class="pr num">4<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-torch"/></svg><span class="n">Torch</span><span class="st">Light</span><span class="r num">4.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+    </div>
+    <div class="detail">
+      <svg class="ico big"><use href="#i-club"/></svg>
+      <div><div class="nm">Bronze Mace</div><div class="ln num">Attack 9–12, blunt · weight 4.0 · one hand<br>Against your Wooden GreatClub (4–6): <span style="color:#3c6a22">+6 a blow on average</span></div></div>
+      <div class="sum num">Lorcan asks 23 · Dunmore’s prices ×0.97<br>your Charisma 6 takes 6% off<br><b>you pay 21</b></div>
+    </div>
+    <div class="purse">
+      <div class="gold num"><svg class="ico"><use href="#i-coin"/></svg>142 gold</div>
+      <div class="hint">Click to buy or sell · a stack asks how many · E or Esc to leave</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ B. The reckoning ═════════════ -->
+<div class="cap">B · The same ledger with a reckoning <small>a rule change: picks gather on a tally and nothing changes hands until you press the seal; a pick clicked again is put back</small></div>
+<section class="screen menu" id="reckon">
+  <div class="tabs">
+    <div class="tab on"><svg class="ico"><use href="#i-scales"/></svg>All</div><div class="tab"><svg class="ico"><use href="#i-sword"/></svg>Weapons</div><div class="tab"><svg class="ico"><use href="#i-helm"/></svg>Armour</div><div class="tab"><svg class="ico"><use href="#i-potion"/></svg>Consumables</div><div class="tab"><svg class="ico"><use href="#i-pack"/></svg>Oddments</div>
+  </div>
+  <div class="parch sheet">
+    <div class="seal close">✕</div>
+    <div class="book" style="height:410px">
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Lorcan’s Forge</div><div class="meta">Lorcan · “Steel for the road ahead.”</div></div><div class="h2">FOR SALE</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PRICE</span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword</span><span class="st num">Attack 6–7 · slash<span class="up">▲2</span></span><span class="r num">3.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-dagger"/></svg><span class="n">Bronze Dagger</span><span class="st num">Attack 6–7 · pierce<span class="up">▲2</span></span><span class="r num">1.5</span><span class="pr num">13<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Iron Sword<span class="why">needs Might 5 — you have 3</span></span><span class="st num">Attack 10–12 · slash</span><span class="r num">3.0</span><span class="pr num">33<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-club"/></svg><span class="n">Bronze Mace<span class="mark">on the tally</span></span><span class="st num">Attack 9–12 · blunt<span class="up">▲6</span></span><span class="r num">4.0</span><span class="pr num">21<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-shield"/></svg><span class="n">Wooden Buckler</span><span class="st num">Block 20% · armour 1<span class="up">new</span></span><span class="r num">4.0</span><span class="pr num">5<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="mark">on the tally</span></span><span class="st num">+25 health</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc lock"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Steel Sword<span class="why">needs Might 10 — you have 3</span></span><span class="st num">Attack 13–15 · slash</span><span class="r num">3.0</span><span class="pr num">62<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+      <div class="pg">
+        <div class="pghead"><div><div class="h">Your Pack</div><div class="wt num">20.6 → 19.1 of 65 after the deal<span class="wbar"><i style="width:29.4%"></i></span></div></div><div class="h2">LORCAN PAYS</div></div>
+        <div class="rule"></div>
+        <div class="tc lh"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">PAYS</span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Sword<span class="mark">on the tally</span></span><span class="st num">Attack 6–7 · slash</span><span class="r num">3.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc inq"><svg class="ico"><use href="#i-helm"/></svg><span class="n">Bronze Helmet<span class="mark">on the tally</span></span><span class="st num">Armour 2</span><span class="r num">3.0</span><span class="pr num">6<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Health Potion<span class="qty">×2</span></span><span class="st num">+25 health</span><span class="r num">1.0</span><span class="pr num">7<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-potion"/></svg><span class="n">Mana Draught</span><span class="st num">+40 mana</span><span class="r num">0.5</span><span class="pr num">16<svg class="ico"><use href="#i-coin"/></svg></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-key"/></svg><span class="n">Lockpick<span class="qty">×2</span></span><span class="st">—</span><span class="r num">0.1</span><span class="pr num">4<span class="qty">ea</span></span></div>
+        <div class="row tc"><svg class="ico"><use href="#i-torch"/></svg><span class="n">Torch</span><span class="st">Light</span><span class="r num">4.0</span><span class="pr num">2<svg class="ico"><use href="#i-coin"/></svg></span></div>
+      </div>
+    </div>
+    <div class="reck">
+      <div class="col"><div class="h2">YOU TAKE</div>
+        <div class="li"><span>Bronze Mace</span><span class="num">21</span></div><div class="li"><span>Health Potion</span><span class="num">16</span></div></div>
+      <div class="col"><div class="h2">YOU GIVE</div>
+        <div class="li"><span>Wooden Sword</span><span class="num">2</span></div><div class="li"><span>Bronze Helmet</span><span class="num">6</span></div></div>
+      <div>
+        <div class="tally num"><div><span>Your purse</span><span>142</span></div><div><span>37 out, 8 in</span><span>− 29</span></div><div class="tot"><span>Left after</span><span>113 gold</span></div></div>
+        <div class="strike"><span class="hint">press the seal, or Enter</span><div class="seal static">Strike</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ The quantity slip ═════════════ -->
+<div class="cap">The quantity slip <small>over A or B: a ruled line with a red knob in place of ×1 ×5 ×10 Max and a typed box; the confirm reads Sell when you sell (today it always reads “Buy”)</small></div>
+<section class="screen menu dim" id="qty">
+  <div class="parch sheet" style="filter:brightness(.8)">
+    <div class="book"><div class="pg"><div class="h">Lorcan’s Forge</div></div><div class="pg"><div class="h">Your Pack</div></div></div>
+  </div>
+  <div class="parch small slip" style="z-index:3">
+    <div class="h">Sell Health Potion</div>
+    <div class="meta">Lorcan pays 7 each · you carry 2</div>
+    <div class="rule"></div>
+    <div class="qtyline"><span style="font:17px var(--body)">How many</span><span style="font:30px var(--display);color:var(--rubric)" class="num">2</span></div>
+    <div class="slider"><span class="notch" style="left:0"></span><span class="notch" style="left:100%"></span><span class="knob" style="left:100%"></span></div>
+    <div class="scale num"><span>1</span><span>2 · all</span></div>
+    <div class="qtyline"><span class="faint">You receive</span><span style="font:21px var(--display)" class="num">14 gold</span></div>
+    <div class="btns"><span class="btn hot">Sell</span><span class="btn">Cancel</span></div>
+    <div class="hint" style="text-align:center;margin-top:8px">← → or the wheel to count · Enter to sell</div>
+  </div>
+</section>
+
+<!-- ═════════════ The loot slip ═════════════ -->
+<div class="cap">A chest's window <small>a smaller slip, the gold first, every piece's weight and worth, and what your pack weighs after taking all</small></div>
+<section class="screen" id="loot">
+  <div class="parch loot">
+    <div class="seal close">✕</div>
+    <div class="pghead"><div style="display:flex;gap:12px;align-items:center"><svg class="ico" style="width:34px;height:34px;color:var(--ink-soft)"><use href="#i-chest"/></svg><div><div class="h">Bandit’s Chest</div><div class="meta">click a line to take it</div></div></div></div>
+    <div class="rule"></div>
+    <div class="goldrow num"><svg class="ico"><use href="#i-coin"/></svg>37 gold</div>
+    <div class="tc lh" style="margin-top:6px"><span></span><span>ITEM</span><span>USE</span><span class="r">WT</span><span class="r">WORTH</span></div>
+    <div class="row tc sel"><svg class="ico"><use href="#i-sword"/></svg><span class="n">Wooden Longsword</span><span class="st num">Attack 7–8 · slash<span class="up">▲3</span></span><span class="r num">4.0</span><span class="pr num">2</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-legs"/></svg><span class="n">Wooden Greaves</span><span class="st num">Armour 1<span class="faint" style="margin-left:4px">—</span></span><span class="r num">5.0</span><span class="pr num">2</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-amulet"/></svg><span class="n">Wooden Amulet</span><span class="st num">Armour 1<span class="up">new</span></span><span class="r num">0.2</span><span class="pr num">2</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-club"/></svg><span class="n">Wooden GreatClub</span><span class="st num">Attack 4–6 · blunt</span><span class="r num">4.0</span><span class="pr num">1</span></div>
+    <div class="row tc"><svg class="ico"><use href="#i-flail"/></svg><span class="n">Wooden Flail</span><span class="st num">Attack 8–10 · blunt<span class="up">▲4</span></span><span class="r num">5.0</span><span class="pr num">2</span></div>
+    <div class="lfoot">
+      <div class="wt num">your pack 20.6 → 38.8 of 65<span class="wbar"><i style="width:59.7%"></i></span></div>
+      <div style="display:flex;gap:10px;align-items:center"><span class="hint">E</span><span class="btn hot">Take all</span></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
