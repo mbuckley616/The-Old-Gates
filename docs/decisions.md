@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The pirate's ram: how hard, how often? (systems builder, 2026-10-02, issue #100)
+Your A on sailing (#85) is built except the parts that wait for the skills build, and one part that needs a number: the pirate's ram. Sessions 411–413 made the hull and rig, the wear from the sea, grounding, rams, volleys and foundering. The page says *pirates gain a ram when faster and within 30 units*, and that a ram costs the closing speed × 3, *bow-on, you take half and give double*. Taken literally, a black sail coming bow-on at her 6.5 costs your sloop 39 of her 100 hull. The page doesn't say how often she may ram, and today she closes to 28 units and circles, shooting, so she would be back on you every few seconds. How should she ram?
+- **A.** As the page: bow-on she gives double, 39 to a sloop at 6.5, and she rams again whenever she has drawn off and closes. Three rams sink a sound sloop.
+- **B.** She rams once an approach, for the plain × 3 (about 20 to a sloop), then sheers off to her 28-unit circle and shoots as now; she comes again after 30 s if you are still near. Bow-on doubling stays yours alone, when you ram her. *(recommended)*
+- **C.** No ram: the black sail fights with volleys and boarders, as now.
+
+Recommendation: **B.** The page wants her to be *something to turn from, not only to board*, and B does that: a ram costs a fifth of a sloop's hull, with time to answer by turning or making way. A's double makes three passes a sinking, and C leaves her circling harmlessly beyond the volleys.
+
 ## Answered
 
 ### The duel's yield — should a blow begun before you could see her kneel count as murder? (systems builder, Session 405, 2026-10-01, issue #96)
