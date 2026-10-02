@@ -4,15 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
-Session 402 put the jab on the third-person body, and its devlog left two look calls open. First, with an empty hand the body's hand is a mitten: a squashed ball with a thumb, which reads as a pale point at a distance. Second, the unarmed body walks and runs with its arms swinging. It only comes up to guard for the punch, while the first person always holds both fists up. All four rows are built from the game itself. The fist is patched into the bake at runtime, so the game is unchanged.
-- **A. As today.** A mitten hand, the arms swinging at rest and on the move.
-- **B. A folded fist on each empty hand** (a squarer palm, four knuckles, the curled fingers, the thumb across), the arms as today. +1,028 triangles on the player's body (4,210 → 5,238); nobody else changes.
-- **C.** *(recommended)* **B, with the fists carried low and ready**: forearms forward at the belt, standing and on the move, dropping to the swinging arms while sprinting. It answers the first person's raised fists without the body looking braced for a fight in the street, and the jab still starts from its own guard.
-- **D. B, with the jab's own guard carried** (the right fist by the chin, the left by the face), standing and on the move. It matches the first person exactly, but it reads as squaring up to everyone in town.
-
-Shot: [A / B / C / D, standing, on the move, the hand close, ahead-right](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/unarmed-grid.png) (`docs/prototypes/unarmed/grid.mjs`). Unarmed only: a weapon, a bow, a shield or a torch keeps today's poses. The townsfolk's hands are not touched.
-
 ## Answered
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)
@@ -25,6 +16,7 @@ Session 402 put the jab on the third-person body, and its devlog left two look c
 Shot: [A / B / C / D, standing, on the move, the hand close, ahead-right](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/unarmed-grid.png) (`docs/prototypes/unarmed/grid.mjs`). Unarmed only: a weapon, a bow, a shield or a torch keeps today's poses. The townsfolk's hands are not touched.
 
 Michael: **B, the jab's guard carried**. (1 Oct 2026, issue #99, via the control room)
+Done, Session 414 (the look builder): option D as drawn, the label above reads B but the answer on issue #99 is D. Each empty hand is a folded fist (a weapon, bow, torch, tome or shield keeps the mitten on its hand), and with both hands empty the body carries the jab's guard standing and on the move, dropping to the swinging arms for a sprint or a jump. `docs/prototypes/unarmed-built.png`, `tests/tpguard.test.mjs`.
 
 ### The counter and the chest on the parchment — instant clicks or a reckoning? (the concept artist, 2026-10-01, PR #97)
 The approved parchment kit (27 Sep) now has the trade screens drawn on it with the game's own numbers (Lorcan's Forge, Dunmore): the shop as an open ledger, the shop's page left and your pack right, the picked piece set against what you wear with its price worked out (list × town × Charisma), and a locked piece saying why (*needs Might 5 — you have 3*). Also a ruled slider for quantities and a chest window showing the pack's weight after taking all. Prototype: `docs/prototypes/trade/` on auto/concept.

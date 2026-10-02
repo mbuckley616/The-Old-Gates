@@ -427,8 +427,16 @@ function personBakeQ(g,q){
     const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
     if(!g.bareArms)part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
     if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
-    const wr=bone('wr'+k,el,0,-.14,0);const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
-    part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
+    const wr=bone('wr'+k,el,0,-.14,0);
+    // S411 — g.fists[k] (Michael's D on #99, the player's empty hand): a folded fist in place of the mitten, a squarer palm,
+    // four knuckles across the front, the curled fingers under them and the thumb laid across; B['fist'+k] lists its
+    // pieces so a glove or gauntlet colours all of them
+    if(g.fists&&g.fists[k]){const hand=part(SK.rbox(.056,.066,.05,.018,2),skin,wr,0,-.04,.004);B['hand'+k]=hand;const F=[];
+      for(let q=0;q<4;q++){const kn=part(SK.ball(.0105,6,5),skin,wr,0,-.071,-.015+q*.0105);kn.scale.set(1.15,.9,1);F.push(kn);}
+      F.push(part(SK.rbox(.03,.03,.048,.012,2),skin,wr,s*-.016,-.06,.005));
+      const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
+    else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
+      part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);}
     const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
     const kn=bone('kn'+k,th,0,-PW.L1,0);part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
     if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
@@ -513,6 +521,7 @@ function personBakeQ(g,q){
       blk(B['th'+k],.19,PW.L1*.86,.19,0,-PW.L1/2,0);blk(B['kn'+k],.16,PW.L2*.86,.16,0,-PW.L2/2,0);blk(B['an'+k],.18,.08,.26,0,-.03,.04,.86);});
   }
   if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
+  ['L','R'].forEach(k=>{if(B['fist'+k])B['fist'+k].forEach(o=>o.userData.col=B['hand'+k].userData.col);});
   // bake: every part into one geometry, each vertex bound to its bone
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
   hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone

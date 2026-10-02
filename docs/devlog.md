@@ -10375,3 +10375,19 @@ The check now asks that the empty hand holds the fists' view model, and that the
 
 ### Needs eyes
 Nothing in the game.
+
+## v80 — Session 414 — The unarmed body carries the jab's guard (H.3, Michael's D on #99)
+Session 407 drew four ways to put the first person's raised fists on the third-person body, and Michael chose D: a folded fist on each empty hand, and the jab's own guard carried, the right fist by the chin and the left by the face, standing and on the move. The entry in `docs/decisions.md` labels the answer "B", but its words and the answer on issue #99 are D, which is what is built. The duplicate of the question still under Pending is gone.
+
+The fist is in `personBakeQ` behind a per-hand flag, `g.fists[k]`: a squarer palm, four knuckles across the front, the curled fingers under them and the thumb laid across, exactly as the prototype patched it in. Its pieces are listed in `B['fist'+k]` and take the hand's colour at the bake, so a glove or a gauntlet colours the whole fist and not just the palm. Only `tpBuild` sets the flag, so no townsperson or foe changes. A hand is a fist when it is empty: the right one without a weapon, the left one without an off-hand item or a bow. So with a sword the left hand is a fist hanging at the side, and with a torch the right one is.
+
+The guard is in `tpPose`. It is used only when both hands are empty (`R.unarmed`), and it is laid over the locomotion arms before the swing, the block, the bow and the cast, so each of those takes over from it as before. The punch already starts from this same guard, so it now starts where the arms already are. While moving, the guard bobs .06 with the stride, and at rest it moves .015 with the breath. Sprinting or jumping drops it to the swinging arms. The prototype held it through a jump, but the arms out for balance read better in the air.
+
+Two test changes. `armourkit` counts a full set on an unarmed body, so its ceiling rises by the fists' cost (11,500 → 12,600), and its other bounds are unchanged. The new `tpguard` steps the loop with its own clock across three runs. The first draft started each run's clock at `performance.now()`, behind where the last run had left the loop. The page's next real frame then had a negative dt, which ran the death timer up and laid the body down. The test now starts from the loop's `prevT` and hands the real time back at the end. The game is not affected, since its frames never run backwards.
+
+### Verified (headless Chromium)
+`tpguard` 10/10. Unarmed, both hands are fists, and the player's body is 5,238 triangles against 4,724 with a sword (one fist instead of two). Standing, the right fist is .225 from the head and .065 above its shoulder, and the left is .201 from the head. Through a stride neither fist gets further than .232 from the head. Sprinting, the right fist never comes above its shoulder (−.133 at most). With a sword the right hand hangs .092 below its shoulder standing, and with a torch .293 below, so neither carries the guard. `tpfists`, `tpswing`, `tpweapons`, `tpshots`, `fistswing`, `armourkit` (after the ceiling), `foearmour`, `guardarmour`, `people`, `player`, `underclothes`, `creator` and `gait` all pass, with no page errors. `parsecheck` is clean. Build tag s361. Shot: `docs/prototypes/unarmed-built.png` (`docs/prototypes/unarmed/built.mjs`, the grid script against the built game, unarmed above and a sword below). Its unarmed side view caught the camera inside a wall and shows nothing, but the other three tiles show the guard.
+
+### Needs eyes
+- Whether the carried guard looks stiff over a long walk through town. It bobs with the stride, but the elbows hold their angle.
+- The left fist hanging beside a one-handed sword: whether a fist there reads better than the old open hand.

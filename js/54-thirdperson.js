@@ -68,20 +68,22 @@ function tpBuild(lookIn,ppIn){
   if(!ch){g.shirt=true;g.bareArms=true;g.dress=false;g.cloth=new THREE.Color(TP_LINEN);g.sleeve=g.skin.clone();}
   if(!lg)g.legs=new THREE.Color(TP_LINEN).multiplyScalar(.93);
   if(!ft){g.bareFeet=true;g.boot=g.skin.clone();}
+  // S411 — Michael's D on #99: an empty hand is a folded fist; a torch, a tome, a shield's strap or a bow keeps the mitten
+  const w=EQ.weapon,oh=EQ.offhand,bowW=!!(w&&w.weaponShape==='bow');g.fists={R:!w,L:!oh&&!bowW};
   const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig); // tpPose drives this one, not tickPeople
   const B=rig.B;for(const k in B){if(B[k].isBone)B[k].rotation.order='YXZ';}
   rig.mesh.castShadow=false;rig.mesh.userData.tp=true;
   const root=rig.root;root.rotation.order='YXZ';
   const R={root,rig,hips:B.hips,hipsY0:PW.HIPS,thighL:B.thL,thighR:B.thR,kneeL:B.knL,kneeR:B.knR,ankleL:B.anL,ankleR:B.anR,torso:B.spine,head:B.head,shL:B.shL,shR:B.shR,elL:B.elL,elR:B.elR,handL:B.wrL,handR:B.wrR};
   // what the hands hold (the weapon kit itself is a later pass)
-  const w=EQ.weapon;R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow');R.bow=!!(w&&w.weaponShape==='bow');
+  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow');R.bow=bowW;R.unarmed=!w&&!oh;
   const grip=(hand,m)=>{m.position.set(0,-.04,.008);hand.add(m);return m;};
   if(w){const wm=tpWeapon(w);
     // S246: where the left hand goes on a two-handed grip: a hand's width from the right fist towards the pommel (the
     // shorter end of the weapon from the fist), in the weapon's own frame
     if(R.twoH){const bb=new THREE.Box3().setFromObject(wm),dn=Math.abs(bb.min.y)<Math.abs(bb.max.y)?-1:1,end=Math.abs(dn<0?bb.min.y:bb.max.y);R.gripL=new THREE.Vector3(0,dn*Math.max(.05,Math.min(.1,end*.7)),0);}
     if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}}
-  const oh=EQ.offhand;R.shield=null;R.torch=null;
+  R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
     // S227 — the kit's shields: planked and round with a rim and boss, the kite, or (S231) the tower shield; the face is
     // the item's material colour, the rim and boss its guard's
@@ -170,6 +172,11 @@ function tpPose(R,dt,st){
   if(R.twoH&&!air){aR={x:-.9,y:1.1,z:0};eR=-.6;aL={x:-.75,y:-.2,z:0};eL=-.7;wR=.55;if(st.moving){aR.x-=Math.sin(ph)*.08;aL.x-=Math.sin(ph)*.08;}}
   if(R.shield&&!air){eL=Math.min(eL,-.6);}
   if(R.torch){aL.x=Math.min(aL.x,-.3);eL=-1.2;}
+  // S411 — Michael's D on #99: with both hands empty the jab's guard is carried, the right fist by the chin and the left by
+  // the face, standing and on the move (bobbing a little with the stride); a sprint or a jump drops to the swinging arms,
+  // and the punch, the block and the cast take over from it as before
+  if(R.unarmed&&!air&&!st.sprinting){const sw=st.moving?Math.sin(ph)*.06:Math.sin(now*1.6)*.015;
+    aR={x:-1.1+sw,y:.3,z:0};eR=-1.75;aL={x:-1.25-sw,y:-.32,z:0};eL=-1.85;wR=0;}
   // swing — read the viewmodel's own record of the current swing
   const vu=(typeof vmSword!=='undefined'&&vmSword)?vmSword.userData:{};
   // S244: the viewmodel picks a swing's variant and power later in the frame than this runs (and clears them when a
