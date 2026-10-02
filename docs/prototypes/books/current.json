@@ -1,0 +1,85 @@
+{
+ "notice": {
+  "title": "Hearthwick — Wayfarer’s Notice",
+  "text": "Hearthwick: a waypoint on An Bealach Mór, halfway between Ashenmoor to the south and the Thorngate to the north. Twelve permanent residents. One inn. No forge, no healer — carry your own.\n\nNotices for travellers:\n  • The Deepwood has been busier than usual. Hire company if you can, daylight if you can't.\n  • The south bend of the Bealach has a wolf pair. They keep their distance from the road in daylight.\n  • Oda's beds are two coppers. Her stew is worth three. She charges five for both. That is the arithmetic of Hearthwick."
+ },
+ "examine": {
+  "title": "The Keystones",
+  "text": "Set into the bridge's central span, one on either side, are two large keystones. Their faces are carved — not deeply, but carefully, in lines that catch the eye the way the carvings on certain other stones have caught your eye before. The work is not the same. It is older, perhaps. Or simpler. Or made by a hand that knew only part of the pattern.\n\nWhoever cut them did not sign their work. The river runs beneath the bridge. The bridge holds."
+ },
+ "book": {
+  "books": [
+   {
+    "id": "aldrics_third",
+    "name": "The Forge-Man's Third Treatise",
+    "attr": "might",
+    "pages": [
+     "THE FORGE-MAN'S THIRD TREATISE ON THE BLADE\n\nBeing a short accounting of what the first two treatises got wrong, written in the thirty-seventh year at the forge. As is the custom of the forge-men of Ashenmoor, the author's name is not given — only the work.",
+     "A sword is heavier than you think and lighter than you fear. The mistake of the young arm is to swing from the shoulder. The mistake of the old arm is to swing from the hip. A proper strike comes from the foot planted in the earth, travels the spine, and leaves at the wrist. The shoulder is only the path.",
+     "Against a larger man, never meet steel with steel. Let his blow pass. Let the weight of his own swing pull him. He will step where you were, and you will not be there.\n\nAgainst a smaller man, never chase. A smaller man who will not stand is not a smaller man — he is a man you have not yet caught. Plant. Wait. He must come.",
+     "The old argument says the blade is a tool. I have never agreed. A tool does what the hand asks. A blade does what the blade was made for, and the hand is only permitted to hold it for a while.\n\n— the forge-man of Ashenmoor, year thirty-seven."
+    ]
+   },
+   {
+    "id": "stoics_rampart",
+    "name": "The Stoic's Rampart",
+    "attr": "fortitude",
+    "pages": [
+     "THE STOIC'S RAMPART\n\nA soldier's collection. Author unknown. Copied from a garrison manuscript at Mur Pierre in an unremembered year.",
+     "You will be struck. Accept this before you walk the road. The blow is coming; the only question is what shape it arrives in, and what shape you are in when it does.\n\nFear is not the blow. Fear is the arriving. The blow itself is nothing — it is over before you know it has begun.",
+     "The shield does not save you. The shield buys you a breath. A breath is enough to remember your footing. Footing is enough to remember the blade. The blade is enough to answer.\n\nSo: the shield saves you, after all. Just not in the way the young think."
+    ]
+   },
+   {
+    "id": "fletchers_hand",
+    "name": "The Fletcher's Hand",
+    "attr": "finesse",
+    "pages": [
+     "THE FLETCHER'S HAND\n\nNotes on precision work. For the apprentice who has passed the first year and still wishes to continue.",
+     "A crooked arrow is not an arrow. It is a short stick with feathers. Do not loose it — it will embarrass the bow, the fletcher, and the target, in that order.",
+     "The mistake beginners make is to work quickly. The mistake masters make is to work slowly. Neither is precision. Precision is a single correct motion done without pause because the hand has already done it ten thousand times.\n\nWork until the motion thinks for you. Then, and only then, work faster."
+    ]
+   },
+   {
+    "id": "winds_account",
+    "name": "The Wind's Account",
+    "attr": "swiftness",
+    "pages": [
+     "THE WIND'S ACCOUNT\n\nFrom the journals of a courier of the northern roads. The author's name is lost; the route is not.",
+     "The first thing a runner learns is that the road is longer than the map. The map promises a straight line. The road gives you a river to cross, a landowner to argue with, and a hill the cartographer was too polite to draw.\n\nLearn your roads by foot. Maps are for men who sit.",
+     "The second thing a runner learns is that the body will lie to you. It will tell you to stop at mile four. It is wrong. Stop at mile nine, and only if there is water.\n\nThe third thing a runner learns is never tell anyone what the second thing was. Let them find out. They will run faster for having been fooled."
+    ]
+   },
+   {
+    "id": "of_binding_stones",
+    "name": "Of Binding Stones",
+    "attr": "intelligence",
+    "pages": [
+     "OF BINDING STONES\n\nA commentary on the deep carvings. Academic draft — not for circulation outside the Royal Herald's office. Aldwyn of Ironhaven, revised.",
+     "It is a common error to call the sigils decorative. They are not. Decoration is a later language's word for something whose purpose has been forgotten. The sigils had a purpose when they were cut.\n\nThe purpose was to hold something still. The something is not in the stone. The something is the stone — the world itself, at that point, at that moment.",
+     "The three registers are not interchangeable. A sigil carved in the deep tongue binds. The same figure copied in the common tongue is a drawing of a sigil, which is a different object entirely. The academies know this and pretend otherwise.\n\nWhen you see a sigil that has been overwritten in a later hand, you are looking at an act of war.",
+     "I have not yet told Lord Caldric the extent of my findings. I am not yet sure whether that is prudence or cowardice. The two often look the same from inside.\n\n— A., Royal Herald's Office, spring."
+    ]
+   },
+   {
+    "id": "letters_from_ashwold",
+    "name": "Letters from Ashwold",
+    "attr": "resolve",
+    "pages": [
+     "LETTERS FROM ASHWOLD\n\nCorrespondence recovered from a cottage on the southern moor. Written during the Long Winter. The addressee is a young healer; the writer is her teacher.",
+     "My dear girl,\n\nYou asked me how I keep going. I will tell you honestly, because you have asked honestly. I do not keep going. I stop, every evening, and do not believe I will begin again. And every morning, against my better judgment, I begin again.\n\nThis is all there is. The trick is that the stopping is real and the beginning is also real, and the world does not ask you to pretend otherwise. It only asks you to do the beginning part, one more time.",
+     "You will lose patients. You will lose the ones you were sure you could save. You will find yourself at a table after, drinking something you usually don't, and you will think: I am not made for this.\n\nYou are. You are made for this precisely because you thought you weren't. The ones who never doubt themselves are the ones I refuse to teach.",
+     "The winter will end. I know this because it always has, and because I have counted. Seventy-one winters. The last one, I think, will end too, though I will not be there to see it.\n\nKeep writing. The letters help me more than you know.\n\n— M."
+    ]
+   }
+  ],
+  "might": [
+   3,
+   4
+  ],
+  "msg": "📖 You absorb the book's wisdom. +1 Might!",
+  "pag": "Page 1 / 4",
+  "title": "The Forge-Man's Third Treatise"
+ },
+ "hint": ""
+}
