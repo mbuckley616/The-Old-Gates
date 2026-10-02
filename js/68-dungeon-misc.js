@@ -504,6 +504,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     goToDungeon(p);setTimeout(()=>{try{if(W.floor===2&&typeof FLOOR2_Y!=='undefined'){currentFloor=2;}if(W.x!=null){px=W.x;pz=W.z;}if(W.yaw!=null)yaw=W.yaw;if(W.jumpY!=null)jumpY=W.jumpY;else jumpY=(currentFloor===2?FLOOR2_Y:0);}catch(err){}},900);return;}
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
+  if(typeof FALL!=='undefined')FALL.pend=null; /* S429 — a fall's blow still waiting does not follow you past death */
   if(typeof WORLD!=='undefined'&&WORLD.duelDown&&WORLD.duelDown())return; /* S373 — the ring holds you at 1 health */
   if(typeof WORLD!=='undefined')WORLD.noteDeath(); // v80 — the reader counts
   if(dead)return;dead=true;

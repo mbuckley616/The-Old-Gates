@@ -238,6 +238,7 @@ let ROLL=null;
 function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
+  if(!ROLL&&!dead&&started&&!onGround)FALL.qAt=FALL.clock; // S429 — pressed in the air: rolled on landing if it is within FALL_ROLL_WIN
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
   if(typeof spellLevitating==='function'&&spellLevitating())return false;
@@ -254,6 +255,7 @@ function startRoll(nowS,keys){
   blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;
   stamina=Math.max(0,stamina-_stamCost(ROLL_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
   ROLL={t0:nowS,dur:sp.dur,dist:sp.dist,i0:sp.i0,i1:sp.i1,dx:mx,dz:mz,done:0,heavy,fwd:(mx*fwdX+mz*fwdZ)>=-.01?1:-1};
+  if(FALL.pend)fallSettle(true); // S429 — a roll within 0.2 s of landing halves the fall
   try{sndJump();}catch(err){}
   return true;
 }
@@ -264,6 +266,46 @@ function tickRoll(nowS){
   const r={dx:ROLL.dx*step,dz:ROLL.dz*step,p};
   if(p>=1)ROLL=null;
   return r;
+}
+// S429 — falls hurt (platforming, Michael's B on the designer's page, 2 Oct 2026): free up to FALL_FREE units, then
+// FALL_PER of your health a unit beyond, so about 21 units from full is death. The drop is from the highest point of
+// the time in the air to where you land. The blow waits FALL_ROLL_WIN after landing: a roll begun in that window (or
+// pressed in the air that long before) halves it. The clock is the loop's dt, so a dropped frame changes nothing.
+// A change of place (a door, a zone, a dungeon) or a jump of more than 3 units in a frame (travel) starts the count again.
+// Water and Levitate are not landings. Acrobatics' Cat's fall and Éan's Wingless wait for the skills build.
+const FALL_FREE=4,FALL_PER=.06,FALL_ROLL_WIN=.2;
+const FALL={top:null,key:'',x:0,z:0,clock:0,qAt:-9,pend:null,last:null};
+function fallKey(){return lid+'|'+activeZoneId+'|'+(isInterior()&&currentHouse?currentHouse.id:'');}
+// called by the loop once a frame, after the jump physics
+function fallTrack(dt){
+  FALL.clock+=dt;
+  if(FALL.pend){FALL.pend.t-=dt;if(FALL.pend.t<=0)fallSettle(false);}
+  if(onGround||dead){FALL.top=null;return;}
+  const k=fallKey(),lev=typeof spellLevitating==='function'&&spellLevitating();
+  if(FALL.top==null||lev||k!==FALL.key||Math.hypot(px-FALL.x,pz-FALL.z)>3){FALL.top=jumpY;FALL.key=k;}
+  else FALL.top=Math.max(FALL.top,jumpY);
+  FALL.x=px;FALL.z=pz;
+}
+// called where the loop lands you; y is the ground you landed on. Returns the drop.
+function fallLand(y){
+  const top=FALL.top;FALL.top=null;
+  if(top==null||fallKey()!==FALL.key||Math.hypot(px-FALL.x,pz-FALL.z)>3)return 0;
+  const drop=top-y;
+  if(drop>FALL_FREE&&!dead){
+    const dmg=Math.max(1,Math.round(maxHP*FALL_PER*(drop-FALL_FREE)));
+    FALL.pend={dmg,drop,t:FALL_ROLL_WIN};
+    landShake=Math.min(.3,.06+.02*(drop-FALL_FREE));
+    if(FALL.clock-FALL.qAt<=FALL_ROLL_WIN&&typeof window!=='undefined'&&window._K)startRoll(performance.now()/1000,window._K);
+  }
+  return drop;
+}
+function fallSettle(rolled){
+  const p=FALL.pend;FALL.pend=null;if(!p||dead)return;
+  const dmg=rolled?Math.max(1,Math.round(p.dmg/2)):p.dmg;
+  FALL.last={drop:+p.drop.toFixed(2),dmg,rolled};
+  PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();
+  showMsg(rolled?`You roll with the fall. ${dmg} damage.`:`A hard landing. ${dmg} damage.`,'#ff6060');
+  if(PHP<=0&&!dead)playerDead();
 }
 // S281 — the player's posture (combat, Michael's B: A's third piece). 100 + 2 an armour point. An unblocked blow
 // drains its damage ×1.5, one taken on a held block its damage ×1, a perfect parry nothing. Empty, you are staggered

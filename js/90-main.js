@@ -374,7 +374,7 @@ function loop(now){
     velY-=GRAVITY*dt;
     jumpY+=velY*dt;
     // Flat floor clamp for dungeons and interiors (not terrain-following overworld)
-    if((inDungeon||isInterior())&&jumpY<=floorBaseY){jumpY=floorBaseY;velY=0;onGround=true;sndLand();landShake=0.06;}
+    if((inDungeon||isInterior())&&jumpY<=floorBaseY){jumpY=floorBaseY;velY=0;onGround=true;sndLand();landShake=0.06;fallLand(jumpY);}
   }
   if(landShake>0){landShake=Math.max(0,landShake-dt*4);}
   if(typeof tickSpellFx==='function')tickSpellFx(dt); // v80
@@ -391,9 +391,10 @@ function loop(now){
     if(onGround){
       jumpY+=(terrainY-jumpY)*Math.min(1,dt*18);
     } else if(jumpY<=terrainY){
-      jumpY=terrainY;velY=0;onGround=true;sndLand();landShake=0.06;
+      jumpY=terrainY;velY=0;onGround=true;sndLand();landShake=0.06;fallLand(jumpY);
     }
   }
+  fallTrack(dt); // S429 — the height of a fall, and its blow after the roll window (10-player.js)
   // v71 — Jump DISPLACEMENT above the current ground reference, for the
   // viewmodel's jump-bob term. `jumpY` is an ABSOLUTE world Y: 0 on floor 1, but
   // FLOOR2_Y (5.0) on floor 2 — and terrain height in the overworld. Feeding raw

@@ -10697,3 +10697,22 @@ The critic's 2 Oct playtest (PR #106, on auto/critic) filed four bugs in backlog
 ### Needs eyes
 - Whether 📦 is the right mark for a crate beside the bag's other glyphs.
 - Found on the way, not fixed: of the world's 110 ports, 16 share a name with another port (two *Woushstouir*s, more than one *Beaumont*), and some ports list a passage to a port of their own name. Names are generated, so this is the world's naming and not the ferry. It is filed in backlog I, not changed here.
+
+## v80 — Session 429 — Falls hurt, and the landing roll (platforming, Michael's B)
+Michael answered the platforming page on 2 Oct with B: A's honest jump, then generated places. Its first piece is a heights pass over the world's solids, and that is a Fable session. Its rule for falls touches only the jump block and the roll, so it can come first. The rule: *free up to 4 units (four times the apex: nobody is hurt by their own jump), then 6% of your health a unit beyond, so a drop of about 21 units from full is death. A roll begun within 0.2 s of landing halves it.* Before this, a drop of any height ended in `sndLand` and a 0.06 shake.
+
+**What changed.** `js/10-player.js` has a fall tracker (`FALL`, `fallTrack`, `fallLand`, `fallSettle`). While you are in the air it keeps the highest point you reach. When the loop lands you (the dungeon and interior floor clamp, and the open world's terrain), `fallLand` takes the drop from that point. Past 4 units, the blow waits 0.2 s on the loop's own dt, so a dropped frame changes nothing. A roll started in that window (`startRoll`) halves it. A roll can't start in the air, so Q pressed up to 0.2 s before landing is kept and rolls you as you land. That is the window counted on both sides, and it is fair at a few frames a second. The message reads *A hard landing. N damage.* or *You roll with the fall. N damage.* The shake grows with the drop. Death from a fall is `playerDead` as any other: the duel's ring still holds you at 1 health, and a blow still waiting is dropped at death.
+
+The count starts again on a change of place (`lid`, the zone, the room) or a move of more than 3 units in one frame (travel, a boarding). Water is not a landing: `diveTick` sets you on the surface without passing through `fallLand`. While Levitate holds you, the count starts from where you are, so letting go high up is a fall from there. In the open world today the only falls are jumps: you walk down any slope on the ground, and the platforms (bridges, the spire's roof) lift and lower you without leaving the ground. Until the Fable session gives the world's solids tops, the rule bites indoors (galleries, a dungeon's stairwell, 5 units: 6%) and from Levitate. Cat's fall and Éan's *Wingless* wait for the skills build.
+
+### Verified (headless Chromium)
+`tests/falls.test.mjs` (new), 11/11, through the game's own loop, with a new character at 130 health:
+- Outdoors: 3.9 units, nothing; the player's own jump, nothing. 9.96 units: 46 (6% × 5.96 × 130). Q on the first frame on the ground: 23, rolled. Q pressed 1.5 units above the ground: rolled on landing, 23. Q pressed at the top, a second early: 46.
+- Moved 60 units while in the air: the fall counts from where the move left you (8.71 above the new ground; measured 8.35, 34), not from the old peak.
+- In a dungeon (The Dungeon of Shadows): 4.96 units, 7 (6% of 130 for 0.96). 11.96 with a roll, 31. 21.95 from full, 140 against 130: dead.
+- No page errors. `roll` 17/17 and `dungeonexit` 4/4 pass. Build tag s370.
+
+### Needs eyes
+- How it feels to fall from a gallery or down a dungeon's stairwell shaft, and whether the message and the shake read as a hurt.
+- The window for the roll by feel: Q up to 0.2 s before landing or 0.2 s after.
+- Owed by the page, not built here: the mantle (after the heights pass, which is a Fable session), Cat's fall, *Wingless*, and the places.
