@@ -41,6 +41,7 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   const w=buildWeapon(kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
   if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}g.userData.kit=kind;
   return g;}
+const TP_LINEN=0xa89c80;
 function tpBuild(lookIn,ppIn){
   let pp=ppIn||'gatelander',P=null;try{if(!ppIn)pp=WORLD.playerPeople();P=WORLD.PEOPLES[pp];}catch(e){}
   const LK=Object.assign(lookDefault(pp,playerArchetype,playerName),lookIn||lookNow()||{});
@@ -62,6 +63,11 @@ function tpBuild(lookIn,ppIn){
     hat:hd?(tpIsCloth(hd)?'hood':AR&&AR.head?'none':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
     eq:{armour:AR,chest:ch?{col:chestCol,cloth:chestCloth}:null,legs:lg?{col:legCol,cloth:legCloth}:null,hands:gl?{col:tpMatColor(gl,0x5a3a20)}:null,amulet:!!EQ.amulet,quiver:!!(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow'))},
     bodyScale:[P&&P.width||1,P&&P.height||1,P&&P.width||1]});
+  // S394 — an empty slot is the body's own underclothes (Michael's B on #83): an undyed linen shirt cut at the shoulder,
+  // linen braies, bare feet; the look's colours dye the starting tunic, breeches and boots, which are items
+  if(!ch){g.shirt=true;g.bareArms=true;g.dress=false;g.cloth=new THREE.Color(TP_LINEN);g.sleeve=g.skin.clone();}
+  if(!lg)g.legs=new THREE.Color(TP_LINEN).multiplyScalar(.93);
+  if(!ft){g.bareFeet=true;g.boot=g.skin.clone();}
   const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig); // tpPose drives this one, not tickPeople
   const B=rig.B;for(const k in B){if(B[k].isBone)B[k].rotation.order='YXZ';}
   rig.mesh.castShadow=false;rig.mesh.userData.tp=true;
@@ -183,8 +189,17 @@ function tpPose(R,dt,st){
         {sx:[-.22,-2.3,-1.2,-.7],sy:[0,1.05,-.35,-.95],el:[-.5,-1.5,-.12,-.25],wr:[.35,1.0,1.4,1.2],ty:[0,.5,-.3,-.6],tx:[0,-.05,.15,.22]},
         // overhead chop: up behind the head, straight down in front
         {sx:[-.22,-3.0,-1.2,-.8],sy:[0,-.12,-.05,0],el:[-.5,-1.2,-.08,-.2],wr:[.35,1.25,1.15,1.0],ty:[0,-.12,0,.05],tx:[0,-.18,.32,.4]}][TP.swRaw||0];
+      // S402 — the empty hand's punch (Michael's A on #80, the first person's jab): from a guard by the chin, a short draw
+      // with the shoulder turned back, the arm straight out at shoulder height on the body's middle line as the strike
+      // lands, held a beat, back to guard; the left fist keeps its guard by the face throughout. The sword's arcs are not
+      // played with an empty hand.
+      const fist=!!vu.fists&&!R.weapon&&!R.bow;
+      const VF={sx:[-1.1,-1.0,-1.62,-1.58],sy:[.3,.22,.26,.26],el:[-1.75,-1.95,-.04,-.08],ty:[0,-.22,.4,.36],tx:[0,-.04,.1,.1]};
       const mg=TP.swPow?1.25:1;ka=Math.min(1,dt*50);
-      aR={x:L3(...V.sx.map((v,i)=>i?v*(i===1?mg:1):v)),y:L3(...V.sy.map((v,i)=>v*(i?mg:1))),z:0};eR=L3(...V.el);wR=L3(...V.wr);ty=L3(...V.ty.map(v=>v*mg));tx=L3(...V.tx);
+      if(fist){const pv=TP.swPow?1.3:1;aR={x:L3(...VF.sx),y:L3(...VF.sy),z:0};eR=L3(...VF.el);wR=0;ty=L3(...VF.ty.map(v=>v*pv));tx=L3(...VF.tx.map(v=>v*pv));
+        aL={x:-1.25,y:-.32,z:0};eL=-1.85;}
+      else{
+      aR={x:L3(...V.sx.map((v,i)=>i?v*(i===1?mg:1):v)),y:L3(...V.sy.map((v,i)=>v*(i?mg:1))),z:0};eR=L3(...V.el);wR=L3(...V.wr);ty=L3(...V.ty.map(v=>v*mg));tx=L3(...V.tx);}
       // the weight: back onto the right foot through the coil, a step of the left into the hit, held through the carry
       const coil=w*(1-s2),step=s2*(1-r);thL=_tpL(thL,-.5*mg,step)+.12*coil;thR=_tpL(thR,.22,step)-.1*coil;
       tpSet(R.thighL,thL,0,0,kf);tpSet(R.thighR,thR,0,0,kf);tpSet(R.kneeL,.1+.45*step+.2*coil,0,0,kf);tpSet(R.kneeR,.15+.25*step+.3*coil,0,0,kf);

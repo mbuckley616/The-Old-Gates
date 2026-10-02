@@ -33,7 +33,9 @@ function _gauntletHandColors(){
 const ARM_CLOTH = { sleeve: 0x6a5a44, accent: 0x4a3e30 };  // default tunic
 function _chestArmColors(){
   const c = EQ.chest;
-  if(!c || !c.matCol) return { sleeve: ARM_CLOTH.sleeve, accent: ARM_CLOTH.accent };
+  // S394 — nothing on the chest is the linen shirt cut at the shoulder: a bare arm (Michael's B on #83)
+  if(!c) return { sleeve: HAND_SKIN.palm, accent: HAND_SKIN.cuff };
+  if(!c.matCol) return { sleeve: ARM_CLOTH.sleeve, accent: ARM_CLOTH.accent };
   return { sleeve: c.matCol, accent: c.matGuard || c.matCol };
 }
 // Build a fist gripping at local origin, with a forearm + upper-arm that recede
@@ -134,13 +136,80 @@ function _updateArmBridge(bridge){
   bridge.quaternion.copy(_armQuat);
   bridge.scale.set(1, len / (bridge.userData.unitLen||1), 1);
 }
+// S396 — fists on screen (Michael's A on #80: both fists up, the right jabs and turns palm-down as it lands, the power
+// attack the same punch harder, block brings both to the face, the left keeps its guard; a shield or torch takes the left).
+// Each fist is one vertex-coloured mesh on the people's shape kit: the back of the hand over the palm, four fingers folded
+// in two joints (the front face of the fist is their first segments, their second turned in under it), the knuckles,
+// the thumb laid across the first two fingers, a tapered wrist, and the forearm to the elbow in one piece with the hand,
+// so the wrist cannot come away from the arm. The fist faces −z with the back of the hand up; the forearm runs +z to the
+// elbow, where the arm bridge takes it to the shoulder. left mirrors it.
+const FIST_ELBOW=.34;
+function _fpMerge(parts){
+  const gs=parts.map(([geo,col,m])=>{const q=geo.index?geo.toNonIndexed():geo;q.applyMatrix4(m);const n=q.attributes.position.count,c=new Float32Array(n*3),cc=new THREE.Color(col);
+    for(let i=0;i<n;i++){c[i*3]=cc.r;c[i*3+1]=cc.g;c[i*3+2]=cc.b;}q.setAttribute('color',new THREE.BufferAttribute(c,3));return q;});
+  let N=0;gs.forEach(q=>N+=q.attributes.position.count);const P=new Float32Array(N*3),Nm=new Float32Array(N*3),Cl=new Float32Array(N*3);let o=0;
+  gs.forEach(q=>{P.set(q.attributes.position.array,o*3);Nm.set(q.attributes.normal.array,o*3);Cl.set(q.attributes.color.array,o*3);o+=q.attributes.position.count;q.dispose();});
+  const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(P,3));out.setAttribute('normal',new THREE.BufferAttribute(Nm,3));out.setAttribute('color',new THREE.BufferAttribute(Cl,3));return out;}
+function buildFistMesh(left){
+  const sx=left?1:-1,hc=_gauntletHandColors(),ac=_chestArmColors(),parts=[];
+  // the view scene's light is bright and warm: the skin is taken down to read as skin there (as the prototype's)
+  const dim=(h,k)=>new THREE.Color(h).multiplyScalar(k).getHex();
+  const metal=!!hc.metal,skin=dim(hc.palm,metal?.9:.64),shade=dim(hc.palm,metal?.72:.54),cuff=dim(hc.cuff,metal?.85:.6);
+  const bare=ac.sleeve===HAND_SKIN.palm,sleeve=bare?skin:dim(ac.sleeve,.85);
+  const M=(x,y,z,rx,ry,rz,s)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),s?new THREE.Vector3(s[0],s[1],s[2]):new THREE.Vector3(1,1,1));
+  // the back of the hand, domed a little, and the palm under it
+  parts.push([SK.rbox(.08,.032,.066,.013,2),skin,M(0,.016,.008,.06,0,0)]);
+  parts.push([SK.rbox(.074,.034,.054,.014,2),shade,M(0,-.012,.014)]);
+  // the fingers, index (thumb side) to little: their width, length and set-back
+  const F=[[.0195,1,0],[.0195,1.04,-.002],[.0185,.97,.002],[.0165,.86,.008]];
+  F.forEach(([w,L,dz],i)=>{const x=sx*(.029-i*.0195);
+    parts.push([SK.ball(.0115,8,6),skin,M(x,.024,-.03+dz,0,0,0,[1,.8,1])]);
+    parts.push([SK.rbox(w,.05*L,.022,.009,2),skin,M(x,-.004,-.04+dz,-.1,0,0)]);
+    parts.push([SK.rbox(w*.95,.02,.032*L,.0085,2),shade,M(x,-.034,-.026+dz,.1,0,0)]);});
+  // the thumb: its root in the ball of the hand, its last joint across the second segments of the first two fingers
+  parts.push([SK.ball(.022,9,7),shade,M(sx*.034,-.018,.014,0,0,0,[.8,.75,1.1])]);
+  parts.push([SK.rbox(.02,.02,.036,.009,2),skin,M(sx*.036,-.03,-.014,0,sx*-.35,0)]);
+  parts.push([SK.rbox(.036,.019,.02,.009,2),skin,M(sx*.014,-.04,-.05,0,0,sx*.05)]);
+  // the wrist, narrower than the hand, and the forearm to the elbow
+  parts.push([SK.cyl(.03,.027,.05,12),metal?cuff:skin,M(0,.0,.06,Math.PI/2,0,0,[1.2,1,.85])]);
+  parts.push([SK.cyl(.041,.03,FIST_ELBOW-.085,12),bare?skin:sleeve,M(0,.0,.085+(FIST_ELBOW-.085)/2,Math.PI/2,0,0,[1.12,1,.9])]);
+  if(!bare)parts.push([SK.torus(.031,.005,5,14),dim(ac.accent,.85),M(0,.0,.088,0,0,0,[1.12,.9,1])]);
+  parts.push([SK.ball(.043,10,8),bare?skin:sleeve,M(0,.0,FIST_ELBOW,0,0,0,[1.1,.95,1])]);
+  const geo=_fpMerge(parts),mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true}));
+  const g=new THREE.Group();g.add(mesh);g.rotation.order='YXZ';
+  const elbow=new THREE.Object3D();elbow.position.set(0,0,FIST_ELBOW);g.add(elbow);g.userData.elbow=elbow;g.userData.fist=true;g.userData.armCol=bare?skin:sleeve;
+  return g;}
+// the arm from the shoulder to the fist's elbow, in the forearm's own colour
+const FIST_SHOULDER_R=new THREE.Vector3(.3,-.78,-.12),FIST_SHOULDER_L=new THREE.Vector3(-.3,-.78,-.12);
+function _fistBridge(shoulder,fist){const b=buildArmBridge();b.userData.shoulder=shoulder;b.userData.wristHand=fist.userData.elbow;
+  b.traverse(o=>{if(o.isMesh)o.material.color.setHex(fist.userData.armCol);});return b;}
+// the right fist's poses, [x,y,z, pitch,yaw,roll] (YXZ): pitch raises the forearm under the fist, roll turns the palm in.
+// The left mirrors them. rest: low in the corners, thumbs up; jab: out at the middle of the view, palm down; guard: both
+// fists before the face; cock: the power punch's draw, back by the shoulder.
+const FIST_POSE={rest:[.18,-.215,-.48,.85,.2,-.45],jab:[.035,-.13,-.74,.1,.02,0],guard:[.09,-.075,-.4,1.3,.18,-.4],cock:[.24,-.19,-.36,1,.3,-.55]};
+function vmFistPose(gb,pb,sway,bob){
+  const u=vmSword.userData,fL=u.fistL,SP=ANIM_PARAMS.swing,R=FIST_POSE;
+  const ease=t=>(1-Math.cos(Math.max(0,Math.min(1,t))*Math.PI))/2,mix=(A,B,t)=>A.map((v,i)=>v+(B[i]-v)*t);
+  // the jab: a short draw, out to full reach as the strike lands (impactPoint), held a beat, and back
+  const p=u.swingMax>0?1-swingT/u.swingMax:0,ip=Math.max(.2,Math.min(.8,SP.impactPoint||.5)),a=ip*.35;let e=0;
+  if(p>0)e=p<a?-.25*ease(p/a):p<ip?-.25+1.25*ease((p-a)/(ip-a)):p<ip+.1?1:1-ease((p-ip-.1)/(.9-ip));
+  let r=mix(mix(R.rest,R.guard,gb),R.cock,pb);
+  r=e>=0?mix(r,R.jab,e):mix(r,R.cock,-e);
+  if(u.swingIsPower&&e>0){r[1]+=.02*e;r[2]-=.07*e;}
+  vmSword.position.set(r[0]+sway,r[1]+bob,r[2]);vmSword.rotation.set(r[3],r[4],r[5]);
+  if(fL){const l=mix(R.rest,R.guard,gb);fL.position.set(-l[0]+sway,l[1]+bob,l[2]);fL.rotation.set(l[3],-l[4],-l[5]);}}
 function buildViewmodel(){
-  if(vmSword){VM_SCENE.remove(vmSword);vmSword=null;}
+  if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
   // v70.2 — clear the weapon arm bridge; rebuilt at the end with the new hand.
   if(vmArmR){ VM_SCENE.remove(vmArmR); vmArmR=null; }
   const w=EQ.weapon;
-  if(!w){ if(vmArmL){VM_SCENE.remove(vmArmL);vmArmL=null;} return; }
+  // S396 — an empty hand is the fists: the right is the view model the swing drives, the left buildShieldViewmodel's
+  if(!w){ if(vmArmL){VM_SCENE.remove(vmArmL);vmArmL=null;}
+    const f=buildFistMesh(false);f.userData.fists=true;vmSword=f;VM_SCENE.add(f);
+    vmArmR=_fistBridge(FIST_SHOULDER_R,f);VM_SCENE.add(vmArmR);vmFistPose(0,0,0,0);
+    if(typeof buildShieldViewmodel==='function') buildShieldViewmodel();
+    return; }
 
   // Resolve material colours — from new item system or legacy name matching
   let bladeCol=0x8a7060,guardCol=0x6a5040,matGlow=null;
@@ -666,8 +735,12 @@ function buildShieldViewmodel(){
   //   - no offhand but a 2H weapon equipped → bridge to the weapon's 2nd hand
   //   - otherwise (1H, empty offhand) → no left arm (nothing in that hand)
   if(vmArmL){ VM_SCENE.remove(vmArmL); vmArmL=null; }
+  if(vmSword&&vmSword.userData.fistL){VM_SCENE.remove(vmSword.userData.fistL);vmSword.userData.fistL=null;}
   if(!sh){
     const _w = EQ.weapon;
+    // S396 — the empty off hand beside the fists is the left fist, in its guard
+    if(!_w&&vmSword&&vmSword.userData.fists){const fl=buildFistMesh(true);VM_SCENE.add(fl);vmSword.userData.fistL=fl;
+      vmArmL=_fistBridge(FIST_SHOULDER_L,fl);VM_SCENE.add(vmArmL);vmFistPose(0,0,0,0);return;}
     if(_w && _w.twoHand && vmSword && vmSword.userData.handLow){
       vmArmL = buildArmBridge();
       vmArmL.userData.shoulder = SHOULDER_L;
