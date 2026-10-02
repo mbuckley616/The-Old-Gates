@@ -10613,7 +10613,7 @@ CI's push run on Session 418's head (b989003) failed one suite of shard 1: `corp
 ### Verified (headless Chromium)
 - The failure reproduced: the old line with `PORTALS` emptied first throws CI's exact TypeError.
 - The new line with `PORTALS` emptied first: the dungeon check passes (a Skeleton, its corpse carrying its body, the loot target at its foot, not above), no page errors.
-- `corpsebody` as committed: 19/19, the dungeon check on the same Skeleton. Build tag s365.
+- `corpsebody` as committed: 20/20, the dungeon check on the same Skeleton. Build tag s365.
 
 ### Needs eyes
 - Nothing in play. `dungeonexit` takes its gate from `PORTALS` the same way, but soon after arriving and with a `null` guard; it has not failed, and is left.
