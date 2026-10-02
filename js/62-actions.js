@@ -364,7 +364,7 @@ function killE(e,tag=''){
   const th = currentPortal?currentPortal.theme:null;
   const items = rollContainerLoot('corpse', ds, th, lootDropChance(e));
   const drops = items.length > 0;
-  CORPSES.push({x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name});
+  CORPSES.push({x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});
   if(drops){showMsg(`${e.name} slain!${tag} Press E to loot.`,'#c8a84a');}
   else{showMsg(`${e.name} slain!${tag}`,'#888');lootGl.intensity=0;lootSpark.visible=false;}
   // Slime split — spawns 2 Small Slimes at the kill point. Flag is on the base def and copied via baseType check.

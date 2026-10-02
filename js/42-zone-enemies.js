@@ -1626,6 +1626,7 @@ function killZoneEnemy(e,sc,tag=''){
   ZONE_CORPSES.push({
     x:e.x, z:e.z, y:(activeZoneId==='world')?0.45:terrainY, name:e.name, displayName:e.name, // v80 S135 — relative in the world (lookingAt adds the ground)
     items, gl:lootGl, spark:lootSpark, age:0, scene:sc, zone:activeZoneId, looted:false,
+    body:e.mesh, // S417 — searched anywhere on the body (lookingAt)
   });
   // Dim enemy aura light now that it's a corpse (enemy.el keeps existing but dim)
   if(e.el) e.el.intensity = 0;

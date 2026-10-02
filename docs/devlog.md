@@ -10339,3 +10339,27 @@ A note on the way: my first pass took the last `js` block in `docs/quest_review.
 
 ### Needs eyes
 - The lines in play at a real quay; they are the author's text as the review gave it.
+
+## v80 — Session 417 — Corpses searched over the whole body (backlog C, Michael's note of 1 Oct)
+Michael, 1 Oct, in the control room: *there's still a random sweet spot you have to find on/above every corpse. The entire mesh should be searchable/interactable, not just one small piece. This goes for all creatures, humanoid or otherwise.* What was there: a corpse was a point. `lookingAt` took the kill spot, 0.45 above the ground, and counted the corpse when the crosshair was within about 16° of it (a dot of 0.96) and the player within 3 units. A body lies wherever its death pose puts it, so its head, feet or tail could be under the crosshair and not count.
+
+**What changed.** A corpse now carries its body (`body: e.mesh`, in `killZoneEnemy` and `killE`), and `lookingAt` asks `bodyAimed` (`js/68-dungeon-misc.js`) when the body is still in the scene:
+- A body with a skeleton (the people and the creatures on the wolf's and spider's bones) is a chain of capsules along its bones, in the pose it died in: from each bone to its parent, a radius of 13% of the body's extent (0.2 at least, 1.2 at most; every body measured here came out at 0.2). The crosshair ray counts if it passes within that radius, between the eye and the eye's reach (3.6, plus the camera's distance in third person, as `aimAt`).
+- A body without one (in the world, the box Troll and Golem) is ray-cast part by part, its HP-bar planes left out.
+- Why not three's raycast: r128 skins a hit-test's vertices with the bones' world matrices and then applies the mesh's world matrix again. The people's and creatures' detached binding (CLAUDE.md, *bone matrices are kept local to the mesh*) composes bones from the mesh, so that puts the body at twice its world position and nothing hits it.
+- The old point test remains for a corpse with no body (Bram's, which has its own prompt, and anything whose mesh has gone), and the crates, barrels and chests keep `aimAt` on their own meshes.
+
+This is not a design change, so no decision: Michael's note is the spec, and the reach is the same 3 units as before.
+
+### Verified (headless Chromium)
+`tests/corpsebody.test.mjs` (new), 22/22. In the world, a Bandit, a Wolf, a Cave Bear, a Cave Troll and a Golem are killed by `killZoneEnemy` and left to settle. From 2.2 units off on four sides, eye at 1.6:
+- Aimed at every bone (or, for the box bodies, every part's centre) within reach: 400 of 400 aimed points open the corpse. With the body taken away (the old test), 377 of 400; the misses are the Bandit's head and feet seen end-on (58 of 72) and the bear's ends (87 of 96). At 2.2 units the old 16° cone already spans most of these small bodies (a dead bandit's bones span 1.02 units, a wolf's 0.79), so the old spot mostly failed close up.
+- Aimed 1.4 units past the body along the ground, or 4 units straight up over it: not searchable, for all five. (The first version kept the old cone as a fallback alongside the body, and it accepted the aim past the body on every side, so it went.)
+- Six units off, aimed at the middle: out of reach.
+- Aimed at a dead bandit's foot from 1.6 units beyond it, `lootTargetNow()` gives that corpse, and the old spot did not.
+- In a dungeon (`killE`): a Skeleton's corpse carries its body, aimed at its foot it is the loot target, and aimed above it is not.
+- No page errors. `q7world` (Bram's body), `aimbubble` and `duel` (see below) were run. Build tag s363.
+
+### Needs eyes
+- How it feels to loot a body by looking at any part of it, in first and third person. Third person, the spiders, the slimes and the dragon were not in the test; they take the same two paths.
+- If Michael takes the ragdoll (#102, the look builder's prototype), its settled body is what gets searched. The bones follow the pose, so nothing changes here.
