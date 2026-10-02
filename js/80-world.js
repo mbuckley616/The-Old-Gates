@@ -5360,6 +5360,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}
   let _seaT=0;
+  const PIRATE_RAM={range:30,top:6.5,wait:30,run:12};
   function tickOtherShips(dt,now){
     _seaT-=dt;
     if(_seaT<=0){_seaT=2;
@@ -5375,7 +5376,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const dP=Math.hypot(px-o.x,pz-o.z);
       let tx,tz;
       if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<300){ // close to ~28u, then hold off and shoot
-        const dx=px-o.x,dz=pz-o.z;if(dP>30){tx=px;tz=pz;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
+        // S418 — her ram (Michael's B on #100): within 30 units, faster than you and with her ram ready, she steers at your
+        // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
+        o.ramWait=(o.ramWait||0)-dt;const aboard=!!SHIP.mesh&&(SHIP.sailing||onDeck());
+        if(o.ramming){o.ramming-=dt;if(o.ramming<=0||!aboard){o.ramming=0;o.ramWait=PIRATE_RAM.wait;}}
+        else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top)o.ramming=PIRATE_RAM.run;
+        const dx=px-o.x,dz=pz-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=px;tz=pz;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
         o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+Math.random();volley(o);}
       } else if(o.sated){tx=o.x+(o.x-px);tz=o.z+(o.z-pz);
       } else {
@@ -6288,7 +6294,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S411 — a ram: on first touch your hull takes the closing speed × 3, half if your bow is on her; they part before it counts again
       if(a.mine){if(d<minD&&!b.o._touch){b.o._touch=true;const ux=dx/d,uz=dz/d,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
           const close=(fa[0]*(a.o.speed||0)-fb[0]*(b.o.speed||0))*ux+(fa[1]*(a.o.speed||0)-fb[1]*(b.o.speed||0))*uz;const bow=(a.o.speed||0)>.5&&fa[0]*ux+fa[1]*uz>.7;
-          if(close>.5){const w=shipWear(close*3*(bow?.5:1),0);if(w&&w.hull){showMsg(`${bow?'You ram her':'The hulls strike'}. Hull −${w.hull}.`,'#ff8060');a._bump=performance.now();}}}
+          const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;}
+          if(close>.5){const w=shipWear(close*3*(bow?.5:1),0);if(w&&w.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w.hull}.`,'#ff8060');a._bump=performance.now();}}}
         else if(d>minD+1)b.o._touch=false;}
       if(d<minD){const push=(minD-d)*.5;const ux=dx/d,uz=dz/d;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
   }

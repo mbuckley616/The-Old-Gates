@@ -10363,3 +10363,24 @@ This is not a design change, so no decision: Michael's note is the spec, and the
 ### Needs eyes
 - How it feels to loot a body by looking at any part of it, in first and third person. Third person, the spiders, the slimes and the dragon were not in the test; they take the same two paths.
 - If Michael takes the ragdoll (#102, the look builder's prototype), its settled body is what gets searched. The bones follow the pose, so nothing changes here.
+
+## v80 — Session 418 — The pirate's ram (Michael's B on #100, the sailing page's last part before the skills build)
+Session 411 left the pirate's ram open: the page says *pirates gain a ram when faster and within 30 units*, at the closing speed × 3, and nothing about how often. Taken as written, a black sail bow-on at 6.5 cost a sloop 39 of her 100, again every few seconds. I asked (#100), and Michael answered **B**: she rams once an approach for the plain × 3, then sheers off to her 28-unit circle and shoots as now, and comes again after 30 s if you are still near. Bow-on doubling stays yours alone, when you ram her.
+
+**What changed** (`js/80-world.js`, `tickOtherShips` and `tickHullCollisions`; the numbers are `PIRATE_RAM`):
+- A pirate after you, within 30 units, with her ram ready, starts a ram run when you are aboard (at the wheel or on deck) and slower than her top speed of 6.5. While the run lasts she steers at your hull instead of circling. Her turn rate and speed are unchanged.
+- The first touch of the hulls spends it, whatever the speed. The damage is the S411 rule unchanged: the closing speed × 3, half if your own bow is on her. The message is *The black sail rams you. Hull −N.* She then goes back to her circle (she is inside 30, so she circles), and her ram waits 30 s.
+- A run that has not touched in 12 s is given up, and also waits 30 s. Leaving the ship ends it. Her volleys go on through all of it.
+- The page's *faster* is read as her top speed against yours now. A sloop at full sail (7.5) is never rammed, so *something to turn from* has an answer: make way.
+
+### Verified (headless Chromium)
+`tests/pirateram.test.mjs` (new), 8/8, in open sea (bed below −6 within 60 units), your sloop held still at the wheel, a black sail put 29 units off at 6.5, and her volleys held off so only rams cost hull:
+- Lying still for 75 s: a run at 0 s that lands at 5.2 s, *The black sail rams you. Hull −20.*, with the ram spent. No other hull lost until the next run at 35.2 s, exactly 30 s after the hit. That run was given up at 47.2 s without touching: she circled past the bow twice and could not line up inside her turn. One hull loss in two runs.
+- Making 7.5: no run in 25 s.
+- Swimming 20 units off the empty ship: no run. She still sails at you, and on the way she struck the empty hull for 19 by Session 411's plain collision (*The hulls strike*). That is older than this session and not a ram, but it is worth knowing: an unattended ship near a swimmer is in her path.
+- No page errors. `piratehold`, `ships` and `shiphull` were run after (below). Build tag s364.
+
+### Needs eyes
+- Whether one ram in two runs (a miss when her turn can't bring her round) reads as a near thing or as a dull pirate; her turn rate is .5 rad/s, a 13-unit circle at 6.5.
+- The swimmer case above: whether a pirate should steer round an empty ship.
+- *The black sail rams you.* is mine, for the quest review.
