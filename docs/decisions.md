@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Places that share a name (the systems builder, 2026-10-02, DECISION #110)
 The world names its places from each culture's bank: ten first halves and ten second halves, a hundred names at most, drawn at random for every village, town, city, port and outpost. There are 609 of those in the world and only 366 names among them, so 396 places share a name with another place, 59 of them with a place in the same province. Of the 110 ports, 30 share a name, and six harbourmasters offer *Passage to* a port with their own harbour's name (two *Woushstouir*s in the Wiabrou Realm, two *Marnfouey*s, *Godaey*, *Inismore*). A quest, a coach board or a rumour that names one of them can mean either. Home's hand-placed towns (Dunmore, Portclare and the rest) are untouched in every option.
 
@@ -14,7 +16,10 @@ Renaming changes the names of places in every existing save. The saves keep plac
 - **C. Keep the names, say which one**: where a name repeats, the ferry, the coach board and the map add the province (*Woushstouir, Wiabrou Realm*). Nothing renamed, but two ports in one province still read the same.
 - **D. Leave it.**
 
-## Answered
+Michael: **One name per place, world-wide** (A). (2026-10-02)
+
+*Done, Session 432 (systems builder):* a pass over the whole grid, once the cells are made, keeps each place's drawn name unless a place ranked before it holds it (cities, towns, ports, villages, outposts). 251 of the 610 take a free name from their culture's bank, or a longer one from the same sounds where the bank is spent (Irish *-na-*, French *-le-*, the generated cultures three syllables). Home's names are kept and reserved. `tests/placenames`. Issue #110 closed by the producer.
+
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?

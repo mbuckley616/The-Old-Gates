@@ -1002,8 +1002,39 @@ var WORLD=(()=>{
     const key=cellKey(i,j);if(CELLS.has(key))return CELLS.get(key);
     const c=(i===HOME_I&&j===HOME_J)?homeCellData():genCellData(i,j);
     c.sites.forEach(t=>{if(t.kind==='lair'&&!c.doors.some(d=>d.lairDoor&&d.lairSite===t.id)){const e=lairDoorFor(t,c);e.lairSite=t.id;c.doors.push(e);}}); // v80 — lair caverns
-    CELLS.set(key,c);return c;
+    CELLS.set(key,c);
+    if(!_namesDone&&!_namesBusy){_namesBusy=true;for(let jj=0;jj<GRID;jj++)for(let ii=0;ii<GRID;ii++)getCell(ii,jj);uniqueSiteNames();_namesDone=true;_namesBusy=false;}
+    return c;
   }
+  // v80 S432 — one name per place, world-wide (Michael's A on #110). The first cell asked for makes every cell of the grid
+  // (each is a pure function of its coordinates, so the order cannot change one), then this pass runs once. Home's
+  // hand-placed names are kept and reserved. The rest keep the name their cell drew unless a place ranked before them
+  // holds it (cities, then towns, ports, villages, outposts; then by cell and site order). Every keeper is settled first,
+  // so no new name takes one another place drew. A place that lost its name then takes a free one from its culture's bank, starting from a hash of its id, and when the bank's two halves run out,
+  // a longer name from the same sounds. It reads no cell's random draws, so nothing else in a cell moves.
+  let _namesDone=false,_namesBusy=false;
+  const NAME_RANK={city:0,town:1,port:2,village:3,outpost:4};
+  function nameHash(s){let h=2166136261;for(let k=0;k<s.length;k++){h^=s.charCodeAt(k);h=Math.imul(h,16777619);}return h>>>0;}
+  function nameBanks(reg){const s=SYL[reg]||SYL.irish,A=s[0],B=s[1],short=[],long=[];A.forEach(a=>B.forEach(b=>short.push(a+b)));
+    const cap=w=>w.charAt(0).toUpperCase()+w.slice(1);
+    if(reg==='irish')A.forEach(a=>B.forEach(b=>long.push(a+'na'+b)));
+    else if(reg==='french')A.forEach(a=>B.forEach(b=>B.forEach(b2=>{if(b2!==b)long.push(a+b+'-le-'+cap(b2));})));
+    else if(reg==='anglo')A.forEach(a=>B.forEach(b=>long.push(a+'en'+b)));
+    else A.forEach(a=>A.forEach(a2=>{if(a2!==a)B.forEach(b=>long.push(a+a2.toLowerCase()+b));}));
+    return [short,long];}
+  function uniqueSiteNames(){
+    const taken=new Set(['Caer Slige','Port Blackhand']),list=[];
+    for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;const home=i===HOME_I&&j===HOME_J;
+      c.sites.forEach(t=>{if(!home&&t.name&&t.kind in NAME_RANK)list.push(t);else if(t.name)taken.add(t.name);});}
+    list.sort((a,b)=>NAME_RANK[a.kind]-NAME_RANK[b.kind]);
+    const banks={},lost=[];let renamed=0;
+    for(const t of list){if(taken.has(t.name))lost.push(t);else taken.add(t.name);}
+    for(const t of lost){
+      const bk=banks[t.reg]||(banks[t.reg]=nameBanks(t.reg));let got=null;
+      for(const L of bk){const st=nameHash(t.id)%L.length;for(let k=0;k<L.length&&!got;k++){const n=L[(st+k)%L.length];if(!taken.has(n))got=n;}if(got)break;}
+      for(let k=2;!got;k++)if(!taken.has(t.name+' '+k))got=t.name+' '+k;
+      t.drawnName=t.name;t.name=got;taken.add(got);renamed++;}
+    return renamed;}
   function genCellData(i,j){
     const type=maskAt(i,j),ox=i*SIZE,oz=j*SIZE,r=cellRng(i,j,0);
     const reg=cultureOfCell(i,j),climate=climateOfCell(i,j),polity=polityOfCell(i,j);

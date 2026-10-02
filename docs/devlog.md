@@ -10740,3 +10740,24 @@ Numbered 431: the Fable rivers session on `auto/fable-rivers` took 430 first (it
 
 ### Needs eyes
 - Fights against a posture you can now wear down: whether a dagger or bare fists breaking a Bandit in four blows makes the finisher come too easily. If it does, that is a call on the drains, not a reason to bring the bug back.
+
+## v80 — Session 432 — One name per place, world-wide (DECISION #110, Michael's A)
+Session 426 found two ports of one name. Counting for DECISION #110 found the whole world doing it: every village, town, city, port and outpost draws its name from its culture's bank of ten first halves and ten second halves. So 610 places held 368 names. Two *Woushstouir*s sat in the Wiabrou Realm, and six harbourmasters offered *Passage to* a port of their own harbour's name. Michael answered A on 2 Oct: one name per place, world-wide.
+
+**What changed** (`js/80-world.js`, `getCell`, `uniqueSiteNames`, `nameBanks`). The first cell anything asks for now makes every cell of the 12×12 grid, then one pass runs over all of them. Each cell is a pure function of its coordinates (culture, landmass and nation are too), so which cell is asked first cannot change a name. In practice the boot already made them all. The pass doesn't touch the cells' random draws, so nothing else in a cell moves: not a road, a building, a person or a name drawn after it. Home's hand-placed names (Dunmore, Portclare and the rest) are kept and reserved, as are *Caer Slige* and *Port Blackhand*, which `anchoredPlaces` hands out later. Every other place keeps the name its cell drew unless a place ranked before it holds it. Cities rank first, then towns, ports, villages and outposts, then cell order and site order. All keepers are settled first, so a new name never takes one another place drew. A first version that settled them in one go cascaded and renamed 339. A place that lost its name takes a free one from its culture's bank, starting from a hash of its id. Where the bank's hundred are spent (the Irish have 185 places for 144 names, the French 160 for 100, the largest generated culture 126 for 100), it builds a longer name from the same sounds, in each culture's own manner. Irish takes a *-na-* between the halves (*Kilnaderry*), the way Ballynahinch does. French adds a *-le-* and a second half (*Montclair-le-Vert*), and the Mark an *-en-* (*Ashenford*). A generated culture puts a second first half before the second half, three syllables. The old name stays on the site as `drawnName`, for the test and for anyone tracing a save. Camps, ruins, shrines, regions and roads still draw from the same banks and can echo a town's name (*Ruins of X*). The decision was about places you travel to, and those were left alone.
+
+Saves keep places by id, so a save made before this loads into the same places under their new names. A journal line already written keeps the name it was written with, as #110 said it would.
+
+### Verified (headless Chromium)
+`tests/placenames.test.mjs` (new), 9/9:
+- 610 settlements, 610 names (before the pass, 368). 251 were renamed: the 242 that had to lose a name, and nine whose drawn name is one of Home's.
+- 39 Irish places took a *-na-* name and 62 French a *-le-* name. None fell through to a numbered name.
+- Home's eight hand-placed towns are where they were, and no other place carries one of their names.
+- 110 ports with 110 names (94 before). No harbourmaster offers passage to his own harbour's name (six did).
+- A second boot, read before the game is entered, gives every one of the 610 the same name as the first.
+- On the old `js/` (`--src`), the suite fails the five checks the fix is for.
+- `ferry`, `tradebits`, `coachboard`, `cargo`, `harbour` and `shipwreck` pass (69 checks). No page errors. Build tag s372.
+
+### Needs eyes
+- How the longer names read on the map and the coach board. *Woushdiadou* and *Saint-argent-le-Clair* are both in the world now. If a culture's long form reads wrong, the fix is in `nameBanks`, one line per culture.
+- Any place Michael already knows by its old name in a running save now has another one. That is the decision's cost, and it was named in #110.
