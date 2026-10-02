@@ -10677,3 +10677,23 @@ Backlog G owed Session 158's Church and factions to a playtest: confess at a chu
 
 ### Needs eyes
 - The tithe against the fine by feel. A point of favour comes back for 25 gold at the priest, at most once in three days, or for nothing after three quiet days, and only the lord clears the fine (25 a point). Whether hurrying the town back is worth 25 gold is for play to say, and Michael's call if he wants it changed.
+
+## v80 — Session 426 — Three of the critic's s360 bugs: the crate's icon, the passage's price, the dialogue's keys (backlog I)
+The critic's 2 Oct playtest (PR #106, on auto/critic) filed four bugs in backlog I. One, Portclare's factor never seeing your ship, is Session 413's fix, already on this branch. The other three are small, and all three are in what this builder owns, so they go together as one session.
+- **A crate on your back read *undefined Bale of Wool*.** `cargoItem` made a crate with no `ico`, and the HUD's bag line (`#bh`), the item tooltip and the *Equipped* line all print `ico + ' ' + name`. A crate now carries 📦. `_applyLoadData` gives one to any crate from a save made before this.
+- **A passage from a Compact port cost more than its label.** `ferryTo` charged (15 + distance/250) × 1.3 in Aurenne (the tithe), capped at 150, and free at rank 2 with the nation's faction. `ferryTopics` labelled 15 + distance/250 capped at 120, with neither the tithe nor the free passage (the critic's Camuros: *17g*, charged 22). Both now read one `ferryPrice(from, to)`.
+- **The dialogue hint said *1–4 to choose*.** Session 392 made 1–9 and 0 pick a choice, and the hint in `index.html` never followed. It now reads *1–9, 0 to choose · Esc to close*.
+
+`cargoItem`, `ferryTopics` and `ferryPrice` are now on `WORLD` for the test.
+
+### Verified (headless Chromium)
+`tests/tradebits.test.mjs` (new), 7/7.
+- Every passage from every port: 550 from 110 ports, 195 of them from the Compact's 39. Each topic's own call was made with a purse one gold short, and every label is the price the ferry then asks. The old label lacked the tithe, so it was wrong on every Compact passage (×1.3 moves the price by at least 4). None reaches 120, so the old lower cap never showed.
+- At rank 2 with the Crown, a Gatelands port's five passages read *0g*, as they cost.
+- A crate pushed into the bag reads *📦 Bale of Wool* in the HUD. Through a save with its icon stripped and loaded back, it reads the same.
+- The dialogue hint reads *1–9, 0 to choose*.
+- No page errors. `ferry` 4/4 and `cargo` 28/28 pass. Build tag s369.
+
+### Needs eyes
+- Whether 📦 is the right mark for a crate beside the bag's other glyphs.
+- Found on the way, not fixed: of the world's 110 ports, 16 share a name with another port (two *Woushstouir*s, more than one *Beaumont*), and some ports list a passage to a port of their own name. Names are generated, so this is the world's naming and not the ferry. It is filed in backlog I, not changed here.
