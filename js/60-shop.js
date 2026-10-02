@@ -372,6 +372,7 @@ function openQtyModal(it, side, bagIdx){
   }
   _qtyCtx={it, side, bagIdx, unitPrice, piecesPerUnit, maxUnits};
   document.getElementById('qty-title').textContent = (side==='buy'?'Buy ':'Sell ')+it.name;
+  document.getElementById('qty-custom-go').textContent = side==='buy'?'Buy':'Sell'; /* S409 — it read Buy on a sale too (the concept artist, 1 Oct) */
   const each = piecesPerUnit>1 ? `Each = ${piecesPerUnit} pieces · ${unitPrice}🪙` : `${unitPrice}🪙 each · ${maxUnits} available`;
   document.getElementById('qty-sub').textContent = each;
   document.querySelectorAll('#qty-options .qty-opt').forEach(b=>{

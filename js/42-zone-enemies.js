@@ -1626,6 +1626,7 @@ function killZoneEnemy(e,sc,tag=''){
   ZONE_CORPSES.push({
     x:e.x, z:e.z, y:(activeZoneId==='world')?0.45:terrainY, name:e.name, displayName:e.name, // v80 S135 — relative in the world (lookingAt adds the ground)
     items, gl:lootGl, spark:lootSpark, age:0, scene:sc, zone:activeZoneId, looted:false,
+    body:e.mesh, // S417 — searched anywhere on the body (lookingAt)
   });
   // Dim enemy aura light now that it's a corpse (enemy.el keeps existing but dim)
   if(e.el) e.el.intensity = 0;
@@ -1655,7 +1656,7 @@ function attackZoneEnemies(isPower, _isDeferred){
   // v69.1 — whoosh at swing start; contact + hit resolution at impact.
   sndWhoosh();
   // v66.1 — defer audio + hit resolution to the swing impact frame.
-  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;
+  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;_offenceS=playClockS;
 }
 // v66.1 — Zone melee resolution, extracted from attackZoneEnemies() and fired
 // at the swing impact frame. Impact-gather candidates, audio, cleave/damage.
