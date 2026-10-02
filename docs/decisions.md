@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Ragdoll for defeated enemies — how a foe goes down (the look builder, Session 415, 2026-10-02, issue #102)
+Michael asked in the control room (1 Oct): "Is it possible to have ragdoll for defeated enemies? Having them snap to the ground sideways feels stiff." It is possible. The prototype builds three deaths on a Bandit, from the game's own body and ground. The game is unchanged. Rows A–C show each death at 0, .12, .25, .4, .7 and 1.6 s after the blow. Row D is where C leaves six different deaths.
+- **A. As today.** In one frame the figure turns 90° onto its side, is lifted .15 and darkened.
+- **B. A canned fall.** Over about .6 s the body tips back from the feet, away from the blow, with the knees giving, the arms thrown up and a small bounce. It is the same fall every time and lies flat whatever the ground.
+- **C.** *(recommended)* **A ragdoll.** At death a point sits at each of the body's 21 joints. They are held at the bones' lengths, with the torso and head rigid and the knees and elbows bending only their own way. Gravity, the blow's push (its direction and weight), the knees giving, and the ground's own height and friction act on them, and the bones follow the points. Every death is different: a jab, a heavy blow, from the side, from behind (face down), a glancing blow, dropped where he stood. The body settles on the slope in 1–1.5 s and is then frozen, so it costs nothing after that. While falling it costs about 1 ms a frame per body on the test machine's CPU. For the people-shaped foes (bandits, goblins, kobolds, trolls, ogres, the armoured foes) it is a call from the kill path, which is the systems builder's file. The creatures (wolves, bears, spiders) would follow on their own skeletons in a later pass. The old box-built enemies keep A.
+
+Either B or C keeps today's darkening and the loot on the body. C also leaves the body where the whole-body corpse search (backlog C) would read it.
+
+Shot: [A / B / C filmstrips, and six deaths under C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/ragdoll-grid.png) (`docs/prototypes/ragdoll/grid.mjs`).
+
 ## Answered
 
 ### The unarmed body in third person — a fist, and the arms at rest (the look builder, Session 407, 2026-10-01, issue #99)

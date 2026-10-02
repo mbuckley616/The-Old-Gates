@@ -10391,3 +10391,21 @@ Two test changes. `armourkit` counts a full set on an unarmed body, so its ceili
 ### Needs eyes
 - Whether the carried guard looks stiff over a long walk through town. It bobs with the stride, but the elbows hold their angle.
 - The left fist hanging beside a one-handed sword: whether a fist there reads better than the old open hand.
+
+## v80 — Session 415 — Ragdoll for defeated enemies: the prototype (H, Michael's question of 1 Oct)
+Michael asked in the control room: "Is it possible to have ragdoll for defeated enemies? Having them snap to the ground sideways feels stiff." Today `killE` and `killZoneEnemy` turn the whole figure 90° about z in one frame, lift it .15 and darken it. A question about the look is his call, so this session builds the prototype and asks (DECISION #102, under Pending in `docs/decisions.md`). The game is unchanged.
+
+`docs/prototypes/ragdoll/grid.mjs` builds a Bandit with `buildFoe` four metres ahead of the player and strikes it from the player's side. There are three rows of six frames (0 to 1.6 s), and a fourth row of six different deaths.
+- **A** is today.
+- **B** is a canned fall. The body tips back from the feet over .55 s, easing in as a fall does, with the knees giving, the arms up and a small bounce on landing.
+- **C** is a ragdoll. It puts a particle at 21 points (the 17 bones' joints plus the crown, the two hands' ends and the two toes) and moves them by Verlet integration under gravity. Ten passes of distance constraints hold them at the bones' lengths, and the torso box and the head are held rigid by cross braces. A cheap hinge keeps each knee bending forward and each elbow back, by reflecting the joint across the line of its limb when it crosses. The ground is `activeTerrainH`, with friction. The blow pushes harder the higher the joint, the knees are kicked forward and the hips dropped, so the legs give. The bones then follow the particles. The pelvis takes its frame from the hips, neck and thighs, and every other bone is turned onto its next particle, parent first, the way `tpGripL` turns the left arm. The bone positions matched the particles to the centimetre at rest.
+
+One trap is worth keeping. A prototype that freezes the loop straight after `intoWorld` draws the near ground from a coarse chunk that sits up to .6 off `activeTerrainH`, so a body lying on the true ground was hidden under the drawn one. `await g.frames(30)` first, and the two agree.
+
+### Verified (headless Chromium)
+The grid ran without page errors. The ragdoll costs about 0.9–1.3 ms a step for one body (CPU, three runs). Five of the six deaths in row D settled (no joint moving more than 1.5 mm a frame) in 0.97–1.47 s. "From behind" was still sliding at 2.5 s on the slope there; it landed face down. `docs/prototypes/ragdoll-grid.png`.
+
+### Needs eyes
+- Whether C's fall looks heavy enough. The body goes down in about .4 s, close to a real fall from standing.
+- Building C would need a call from the kill path in `62-actions.js` and `42-zone-enemies.js` (the systems builder's files), and a word with that builder first.
+- The hinge does not limit twist, so an arm can roll in its socket. That doesn't show at this distance.
