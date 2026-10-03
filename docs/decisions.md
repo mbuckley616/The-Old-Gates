@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Compact's claim when you already own a ship (the systems builder, Session 457, 2026-10-03, DECISION #128)
+The Compact's rank-3 claim is *a house and a ship* (Session 99), and the lord says "It's yours. The ship is at the quay under your name." Until Session 457 it deeded the house alone. Session 457 now moors a sloop at the nearest of the Compact's harbours (Fortargent is inland; Beaurouge, 850 units off) when you have no ship. The game holds one ship per player, so a Prior who already owns one gets nothing for the second half of the claim. Today their ship stays where they left it and the line still says the ship is at the quay.
+
+What should the Compact give a Prior who already has a ship?
+
+- **A.** Nothing more: the ship you have is the one under your name. Cost: none. The line stays slightly untrue.
+- **B.** A refit: your ship is mended and raised one class free (sloop → cog → galleon; a galleon is only mended). A visible reward. Cost: one short session, reusing the shipwright's refit. *(recommended)*
+- **C.** The hull's price in gold (400). Cost: one line. It reads as *buy more*, which the brief warns against.
+
+Recommendation: B.
+
 
 ## Answered
 ### Places standing in the basin lakes (the systems builder, 2026-10-03, DECISION #121)

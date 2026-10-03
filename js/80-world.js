@@ -5039,6 +5039,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     add(cragGeo(2.9+rr()*.4,Math.floor(rr()*1e4)),new THREE.Color(0x6a665e).multiplyScalar(.9+rr()*.2).getHex(),0,.1,0,rr()*6);
     for(let k=0;k<4;k++){const a=k/4*Math.PI*2+rr(),d=2.2+rr()*1.2,s=1.3+rr()*.9;add(cragGeo(s,Math.floor(rr()*1e4)),new THREE.Color(0x6e6a60).multiplyScalar(.85+rr()*.25).getHex(),Math.cos(a)*d,-.6+rr()*.8,Math.sin(a)*d,rr()*6);}
     return tideLine(mergeParts(P),0);}
+  // the quay's line from the pad edge out past the waterline, from the ground alone (S457: the Compact's ship is moored at a
+  // harbour that may not be loaded)
+  function quayLine(site,sd,QY){
+    let x=site.quayStart?site.quayStart.x:site.x+sd.dx*site.pad,z=site.quayStart?site.quayStart.z:site.z+sd.dz*site.pad,n=0;
+    if(!site.quayStart){while(worldH(x,z)>QY+.2&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}}
+    const startX=x,startZ=z;
+    while(worldH(x,z)>0&&n<120){x+=sd.dx*3;z+=sd.dz*3;n++;}
+    const endX=x+sd.dx*34,endZ=z+sd.dz*34;const len=Math.max(24,Math.hypot(endX-startX,endZ-startZ));
+    return {startX,startZ,endX,endZ,len,mx:(startX+endX)/2,mz:(startZ+endZ)/2};
+  }
   function buildHarbour(S,site,r){
     const sd=shoreDir(site);if(!sd)return;
     const {group,sol}=S;
@@ -5046,12 +5056,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const QW=8,QY=1.1;
     // walk seaward from the pad edge: the quay starts where the ground falls
     // to quay height, and runs 34u past the waterline
-    let x=site.quayStart?site.quayStart.x:site.x+sd.dx*site.pad,z=site.quayStart?site.quayStart.z:site.z+sd.dz*site.pad,n=0;
-    if(!site.quayStart){while(worldH(x,z)>QY+.2&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}}
-    const startX=x,startZ=z;
-    while(worldH(x,z)>0&&n<120){x+=sd.dx*3;z+=sd.dz*3;n++;}
-    const endX=x+sd.dx*34,endZ=z+sd.dz*34;const len=Math.max(24,Math.hypot(endX-startX,endZ-startZ));
-    const mx=(startX+endX)/2,mz=(startZ+endZ)/2;const ang=Math.atan2(sd.dx,sd.dz);
+    const {startX,startZ,endX,endZ,len,mx,mz}=quayLine(site,sd,QY);const ang=Math.atan2(sd.dx,sd.dz);
     const rq=pRng(pHash(site.id+'|quay'));{const lo=mergeParts([{geo:new THREE.BoxGeometry(QW,3.2,len),color:new THREE.Color(0x7a746a),y:-1.6,jitter:0},{geo:new THREE.BoxGeometry(QW+.4,.2,len+.4),color:new THREE.Color(0x8a857a),jitter:0}]); // S250 — the old quay and deck, now the distant copy
       for(const [geo,lod] of [[quayGeoHi(len,QW,QY-SEA_Y,rq),'hi'],[lo,'lo']]){const q=new THREE.Mesh(geo,SETTLE_MAT);q.position.set(mx,QY,mz);q.rotation.y=ang;q.receiveShadow=true;q.castShadow=lod==='hi';q.userData.lod=lod;q.userData.quay=true;group.add(q);}}
     // walkable platform (axis-aligned box covering the quay)
@@ -5403,6 +5408,21 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     gold-=price;updateHUD();spawnShip(bx,bz,Math.atan2(sd.dx,sd.dz));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
     if(typeof addLog==='function')addLog('⛵',`Bought a ship at ${site.name}.`);
     return `She\u2019s the ${SHIP.name}, and she\u2019s yours — moored off the seaward end of the quay, ${compassWord(bx-site.x,bz-site.z)} of here. Walk out, press E beside her to board, E again for the wheel.`;
+  }
+  // S457 — the Compact's claim is *a house and a ship* (Session 99), and its line says "The ship is at the quay under your
+  // name.", but it deeded the house alone. With no ship of your own, a sloop is moored where buyShip would launch one, at
+  // the seat's harbour or (Fortargent is inland) the nearest of the Compact's own; the quay's box from the ground (quayLine)
+  // when that harbour is not loaded.
+  function grantShip(seat){
+    if(worldState.ship)return null;
+    const nk=FACTIONS.compact.nation;const ports=allPorts().filter(p=>nationKeyOf(...cellOf(p.x,p.z))===nk&&shoreDir(p)).sort((a,b)=>Math.hypot(a.x-seat.x,a.z-seat.z)-Math.hypot(b.x-seat.x,b.z-seat.z));
+    const port=(seat.kind==='port'&&shoreDir(seat))?seat:ports[0];if(!port)return null;const sd=shoreDir(port);
+    let plat=ZONES.world.platforms.find(p=>p.site===port.id&&!p.river&&!p.shallow);
+    if(!plat){const L=quayLine(port,sd,1.1),hw=Math.abs(sd.dx)?L.len/2:4,hd=Math.abs(sd.dz)?L.len/2:4;plat={x0:L.mx-hw,x1:L.mx+hw,z0:L.mz-hd,z1:L.mz+hd};}
+    const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
+    const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
+    spawnShip(bx,bz,Math.atan2(sd.dx,sd.dz));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
+    return port;
   }
   // E near the wheel takes / leaves the helm
   function onDeck(){const p=SHIP.plat;return !!p&&px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-DECK_Y)<1;}
@@ -7470,7 +7490,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
-    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return `It's yours. ${fk==='compact'?'The ship is at the quay under your name.':''}`;}});}
+    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(fk==='compact')grantShip(site);if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return `It's yours. ${fk==='compact'?'The ship is at the quay under your name.':''}`;}});}
     return out;
   }
   // perks: shops of your faction's nation discount by rank; ferries free at rank 2
