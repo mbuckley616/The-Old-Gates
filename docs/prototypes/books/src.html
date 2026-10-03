@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Books and Notices</title>
+<!-- The Old Gates — reading on the approved parchment kit (docs/prototypes/ui, Michael A, 27 Sep 2026): the book reader,
+     the notice board and the examine text. Concept, 2 Oct 2026. kit.css and the icon <symbol>s are copied from the kit;
+     build.py inlines them and the game's own texts (current.json, written by shoot-current.mjs from the game's files and
+     a run of the build: every BOOKS entry, Hearthwick's notice board, Droichead's keystones, Might before and after a
+     first read). Every .screen is 1280×720; shoot.mjs photographs them.
+     For the builder: layBook(def) turns a BOOKS entry into leaves with no new data (a first page whose opening paragraph
+     is in capitals becomes a title page; the next page opens on a drop cap; a paragraph opening with "— " is a signature);
+     a book whose id is in HAND is set in the written hand. layNotice(text) puts paragraphs on the board's sheet and each
+     "  • " line on its own pinned slip. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+/* ───────── reading additions ───────── */
+.screen{background-size:1280px 720px;background-position:center top}
+.screen.inn{background-image:url(backdrop-inn.png)}
+.screen.street{background-image:url(backdrop-street.png)}
+.screen.menu::before{backdrop-filter:blur(3px) brightness(.38) sepia(.35)}
+:root{--leaf:
+    radial-gradient(ellipse at 50% 45%,rgba(255,250,230,.30) 0,transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .28  0 0 0 0 .08  0 0 0 -1.6 .75'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .06  0 0 0 .2 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+    linear-gradient(170deg,var(--paper-hi),var(--paper) 55%,var(--paper-lo))}
+
+/* the open book (A): a leather board, a block of pages, two leaves, a gutter */
+.tome{position:absolute;left:96px;top:30px;width:1088px;height:612px;border-radius:12px;z-index:2;
+  background:radial-gradient(ellipse at 50% 40%,#5a3418,#3a1f0c 60%,#24120a);box-shadow:0 18px 40px rgba(0,0,0,.7),inset 0 0 0 3px rgba(160,110,50,.35),inset 0 0 0 5px #24120a,inset 0 0 0 6px rgba(160,110,50,.25)}
+.tome .block{position:absolute;left:14px;right:14px;top:12px;bottom:12px;border-radius:3px;
+  box-shadow:-1px 1px 0 #cbb07a,-2px 2px 0 #8a6a3a,-3px 3px 0 #d6bd88,-4px 4px 0 #8a6a3a,-5px 5px 0 #cbb07a,1px 1px 0 #cbb07a,2px 2px 0 #8a6a3a,3px 3px 0 #d6bd88,4px 4px 0 #8a6a3a,5px 5px 0 #cbb07a}
+.leaf{position:absolute;top:12px;bottom:12px;width:530px;background:var(--leaf);color:var(--ink);padding:44px 56px 40px;overflow:hidden;font:18.5px/1.6 var(--body)}
+.leaf.l{left:14px;border-radius:3px 0 0 3px;padding-right:62px}
+.leaf.r{right:14px;border-radius:0 3px 3px 0;padding-left:62px}
+.leaf.l::after,.leaf.r::after{content:"";position:absolute;top:0;bottom:0;width:70px;pointer-events:none}
+.leaf.l::after{right:0;background:linear-gradient(90deg,transparent,rgba(110,70,25,.12) 55%,rgba(60,35,10,.42))}
+.leaf.r::after{left:0;background:linear-gradient(270deg,transparent,rgba(110,70,25,.12) 55%,rgba(60,35,10,.42))}
+.leaf.l::before,.leaf.r::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 62%,rgba(110,60,15,.18) 100%)}
+.leaf .run{position:absolute;top:18px;left:0;right:0;text-align:center;font:12.5px var(--display);letter-spacing:.16em;color:var(--ink-faint)}
+.leaf .fol{position:absolute;bottom:16px;left:0;right:0;text-align:center;font:italic 15px var(--fell);color:var(--ink-faint)}
+.leaf p{margin:0 0 .7em;text-align:justify;hyphens:auto;text-indent:1.2em}
+.leaf p.first{text-indent:0}
+.leaf p.sig{text-align:right;font:italic 18px var(--fell);color:var(--ink-soft);text-indent:0;margin-top:1em}
+.leaf .dc{float:left;font:74px/.82 var(--display);color:var(--rubric);margin:6px 8px 0 -2px;padding:4px 6px 2px 4px;background:radial-gradient(circle at 50% 50%,rgba(154,112,32,.18),transparent 70%)}
+.leaf .ttl{text-align:center;margin:70px 0 0}
+.leaf .ttl .t{font:34px/1.15 var(--display);color:var(--rubric);letter-spacing:.02em}
+.leaf .ttl .orn{font:22px var(--fell);color:var(--gilt);margin:14px 0}
+.leaf .ttl .col{font:italic 18px/1.55 var(--fell);color:var(--ink-soft);text-align:center;text-indent:0;padding:0 8px}
+.leaf .end{text-align:center;font:22px var(--fell);color:var(--gilt);margin-top:8px}
+.leaf.hand{font:italic 20px/1.55 var(--fell)}
+.leaf.hand p{text-indent:0;text-align:left}
+.leaf.hand p.sal{font-size:21px;margin-bottom:.8em}
+.margin{position:absolute;left:56px;right:62px;bottom:52px;text-align:center;font:italic 16px var(--fell);color:var(--rubric);border-top:1px solid rgba(122,31,16,.3);padding-top:8px}
+.margin b{font:16px var(--display);font-weight:400}
+.ribbon2{position:absolute;left:50%;top:-6px;width:18px;height:628px;margin-left:30px;z-index:4;background:linear-gradient(90deg,#5a0e08,#9a2a1c 45%,#6a140c);clip-path:polygon(0 0,100% 0,100% 100%,50% 97.6%,0 100%);box-shadow:0 2px 4px rgba(0,0,0,.4);opacity:.95}
+.turn{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:34px;align-items:center;z-index:3}
+.turn span{display:flex;gap:9px;align-items:center}
+.dogear{position:absolute;bottom:12px;width:0;height:0;border-style:solid;z-index:3}
+.dogear.r{right:14px;border-width:0 0 34px 34px;border-color:transparent transparent #a88a52 transparent;filter:drop-shadow(-2px -2px 2px rgba(0,0,0,.25))}
+.dogear.l{left:14px;border-width:34px 0 0 34px;border-color:transparent transparent transparent #a88a52;transform:scaleY(-1);filter:drop-shadow(2px -2px 2px rgba(0,0,0,.25))}
+.dogear.off{opacity:0}
+
+/* one leaf (B): the same page alone, a strip of the board at the spine */
+.single{position:absolute;left:350px;top:22px;width:580px;height:628px;z-index:2;border-radius:4px 10px 10px 4px;background:radial-gradient(ellipse at 30% 40%,#5a3418,#2a160a);box-shadow:0 16px 36px rgba(0,0,0,.7)}
+.single .leaf{left:22px;right:10px;top:10px;bottom:10px;width:auto;border-radius:0 3px 3px 0;padding:46px 54px 40px 60px;box-shadow:3px 3px 0 #cbb07a,5px 5px 0 #8a6a3a}
+.single .leaf::after{content:"";position:absolute;top:0;bottom:0;left:0;width:50px;background:linear-gradient(270deg,transparent,rgba(60,35,10,.38))}
+
+/* the notice board: planks under a carved header, a sheet and a slip a notice, each on a nail */
+.board{position:absolute;left:200px;top:34px;width:880px;height:600px;z-index:2;border-radius:4px;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='600'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.012 .5' numOctaves='3' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .1  0 0 0 0 .03  0 0 0 -1.2 .8'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"),
+    repeating-linear-gradient(90deg,#6a4424 0,#7a5230 60px,#6e4828 140px,#5e3c1e 172px,#2a170a 174px,#2a170a 176px),
+    #5a3a1e;
+  box-shadow:0 18px 40px rgba(0,0,0,.7),inset 0 0 40px rgba(20,10,4,.55)}
+.board .beam{position:absolute;left:-18px;right:-18px;top:-14px;height:70px;border-radius:3px;display:grid;place-items:center;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='70'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.008 .4' numOctaves='3' seed='8' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .1  0 0 0 0 .03  0 0 0 -1.2 .8'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"),linear-gradient(#80582f,#5a3818);
+  box-shadow:0 5px 10px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,220,160,.25),inset 0 -2px 0 rgba(0,0,0,.3)}
+.board .beam span{font:28px var(--display);letter-spacing:.06em;color:#2a1608;text-shadow:0 1px 0 rgba(255,214,150,.35),0 -1px 0 rgba(0,0,0,.4)}
+.board .post{position:absolute;bottom:-60px;width:26px;height:90px;background:linear-gradient(90deg,#3a2210,#6a4424,#3a2210);z-index:-1}
+.nail{position:absolute;width:12px;height:12px;border-radius:50%;margin:-6px;z-index:5;background:radial-gradient(circle at 35% 30%,#9a9488,#4a4640 55%,#1a1816);box-shadow:0 1px 2px rgba(0,0,0,.7)}
+.sheetn{padding:26px 28px 22px;font:17.5px/1.55 var(--body)}
+.sheetn p{margin:0 0 .6em}
+.sheetn .h{font-size:21px}
+.slipn{padding:16px 22px 14px;font:17px/1.45 var(--fell)}
+.slipn .who{font:italic 13px var(--fell);color:var(--ink-faint);margin-top:6px;text-align:right}
+
+/* the examine slip: the world stays in view, the slip sits in the lower third */
+.exam{left:200px;top:420px;width:880px;padding:20px 34px 18px}
+.exam .h{font-size:24px}
+.exam p{font:18px/1.5 var(--body);margin:0 0 .5em}
+.exam .foot{position:static;margin-top:4px}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<h1 class="page">Books and Notices</h1>
+<p class="lede">The book reader, the notice board and the examine text on the parchment kit. The words are the game’s: <i>The Forge-Man’s Third Treatise</i> and <i>Letters from Ashwold</i> from <code>BOOKS</code>, Hearthwick’s board, Droichead’s keystones. Nothing here is new text.</p>
+
+<div class="cap">A — The open book <small>two pages a spread, the title page and a drop cap, the first reading in the margin</small></div>
+<section class="screen inn menu" id="spread"></section>
+
+<div class="cap">A — A book of letters <small>the same reader; a book in the HAND list is set in the written hand</small></div>
+<section class="screen inn menu" id="letters"></section>
+
+<div class="cap">B — One leaf <small>a page at a time, as today, on the kit’s paper</small></div>
+<section class="screen inn menu" id="leaf"></section>
+
+<div class="cap">The notice board <small>the town’s record on a sheet, each notice on its own slip</small></div>
+<section class="screen street menu" id="notice"></section>
+
+<div class="cap">Examine <small>the shrine, the keystones, the Mouth: a slip in the lower third, the world still in view</small></div>
+<section class="screen street" id="examine"></section>
+
+<script>
+/*DATA*/
+const HAND=new Set(['letters_from_ashwold']);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const isCaps=s=>s.length>6&&s===s.toUpperCase()&&/[A-Z]/.test(s);
+const ROMAN=['i','ii','iii','iv','v','vi','vii','viii'];
+// one BOOKS page -> the leaf's HTML. Page 0 with a capitals opening is a title page; page 1 opens on a drop cap.
+function layPage(def,i){
+  const paras=def.pages[i].split('\n\n');
+  if(i===0&&isCaps(paras[0])){
+    const t=paras[0].replace(/\b([A-Z])([A-Z']+)/g,(m,a,b)=>a+b.toLowerCase()).replace(/\bOn The\b/,'on the').replace(/\bOf\b/g,'of').replace(/\bThe\b(?!^)/g,(m,o)=>o?'the':m);
+    return `<div class="ttl"><div class="t">${esc(def.name)}</div><div class="orn">❧</div>${paras.slice(1).map(p=>`<p class="col">${esc(p)}</p>`).join('')}<div class="orn">✠</div></div>`;
+  }
+  return paras.map((p,k)=>{
+    if(/^— /.test(p))return `<p class="sig">${esc(p)}</p>`;
+    if(HAND.has(def.id)&&/^My dear/.test(p))return `<p class="sal">${esc(p)}</p>`;
+    if(k===0&&i===1&&!HAND.has(def.id))return `<p class="first"><span class="dc">${esc(p[0])}</span>${esc(p.slice(1))}</p>`;
+    return `<p class="${k===0?'first':''}">${esc(p).replace(/\n/g,'<br>')}</p>`;
+  }).join('')+(i===def.pages.length-1&&!HAND.has(def.id)?'<div class="end">❦</div>':'');
+}
+const keys=(here,of)=>`<div class="turn hudtxt"><span><b class="key">A</b>Turn back</span><span style="font:italic 16px var(--fell);color:#e6d4a8">${here} of ${of}</span><span>Turn on<b class="key">D</b></span><span style="margin-left:24px"><b class="key">E</b>Close</span></div>`;
+function spread(el,def,at,first){
+  const run=def.name.toUpperCase(), n=def.pages.length, h=HAND.has(def.id)?' hand':'';
+  const L=at<n?`<div class="leaf l${h}">${at>0?`<div class="run">${esc(run)}</div>`:''}${layPage(def,at)}<div class="fol">${ROMAN[at]}</div>${first||''}</div>`:'';
+  const R=at+1<n?`<div class="leaf r${h}"><div class="run">${esc(run)}</div>${layPage(def,at+1)}<div class="fol">${ROMAN[at+1]}</div></div>`:'<div class="leaf r"></div>';
+  el.innerHTML=`<div class="tome"><div class="block"></div>${L}${R}<div class="dogear l ${at===0?'off':''}"></div><div class="dogear r ${at+2>=n?'off':''}"></div><div class="ribbon2"></div></div>${keys(`Pages ${at+1}–${Math.min(at+2,n)}`,n)}`;
+}
+const B=id=>DATA.book.books.find(b=>b.id===id);
+const forge=B('aldrics_third'), ash=B('letters_from_ashwold');
+const [m0,m1]=DATA.book.might;
+spread(document.getElementById('spread'),forge,0,`<div class="margin">First reading — <b>Might</b> ${m0} → ${m1}</div>`);
+spread(document.getElementById('letters'),ash,1);
+document.getElementById('leaf').innerHTML=`<div class="single"><div class="leaf"><div class="run">${esc(forge.name.toUpperCase())}</div>${layPage(forge,1)}<div class="fol">ii</div></div></div>${keys('Page 2',forge.pages.length)}`;
+
+// the notice board: paragraphs on the sheet, each bullet on a slip
+function layNotice(n){
+  const lines=n.text.split('\n'), sheet=[], slips=[]; let cur=[];
+  for(const ln of lines){ if(/^\s*•\s/.test(ln))slips.push(ln.replace(/^\s*•\s*/,'')); else if(!ln.trim()){if(cur.length)sheet.push(cur.join(' '));cur=[];} else cur.push(ln); }
+  if(cur.length)sheet.push(cur.join(' '));
+  return {sheet:sheet.filter(p=>!/:$/.test(p)),head:sheet.find(p=>/:$/.test(p)),slips};
+}
+{
+  const N=layNotice(DATA.notice), [town]=DATA.notice.title.split(' — ');
+  const rot=[-2.2,1.6,-1.1,2.4], pos=[[478,112,350],[492,272,340],[470,426,360]];
+  document.getElementById('notice').innerHTML=`<div class="board"><div class="beam"><span>${esc(DATA.notice.title)}</span></div><div class="post" style="left:120px"></div><div class="post" style="right:120px"></div>
+    <div class="parch small sheetn" style="left:44px;top:92px;width:390px;transform:rotate(-1deg)"><div class="h">${esc(town)}</div><div class="rule"></div>${N.sheet.map(p=>`<p>${esc(p)}</p>`).join('')}</div>
+    <i class="nail" style="left:239px;top:106px"></i>${N.head?`<div class="h2" style="position:absolute;left:478px;top:84px;color:#e8cf9a;text-shadow:0 1px 2px #000">${esc(N.head.replace(/:$/,''))}</div>`:''}
+    ${N.slips.map((s,i)=>`<div class="parch small slipn" style="left:${pos[i][0]}px;top:${pos[i][1]}px;width:${pos[i][2]}px;transform:rotate(${rot[i+1]}deg)">${esc(s)}</div><i class="nail" style="left:${pos[i][0]+pos[i][2]/2}px;top:${pos[i][1]+10}px"></i>`).join('')}
+  </div><div class="turn hudtxt" style="bottom:22px"><span><b class="key">E</b>Close</span></div>`;
+}
+document.getElementById('examine').innerHTML=`<i class="xh"></i><div class="parch exam"><div class="h">${esc(DATA.examine.title)}</div><div class="rule"></div>${DATA.examine.text.split('\n\n').map(p=>`<p>${esc(p)}</p>`).join('')}<div class="foot"><span>Droichead</span><span>E — done</span></div></div>`;
+</script>
+</body>
+</html>
