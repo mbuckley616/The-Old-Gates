@@ -5899,6 +5899,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     snowRepaintStep();tickFootprints(dt);
     const inWorld=activeZoneId==='world'&&lid==='overworld';
     // choose / transition
+    // v80 S450 — weather carried into a cell that could never roll it (snow off the Mark's border, or a ship's snow
+    // brought into the Gatelands) is rolled again there, and blends out as any change does. A timer past the roll's
+    // own 330 s is a weather held on purpose (the tests'), and is left alone.
+    if(inWorld){const c=cellOf(px,pz),ck=c[0]+','+c[1];if(ck!==WX.cell){const moved=WX.cell!=null;WX.cell=ck;if(moved&&WX.timer<=330){const w=weatherWeights();if(!(w[WX.type]>0)||!(w[WX.next]>0)){WX.timer=0;WX.rerolls=(WX.rerolls||0)+1;}}}}
     WX.timer-=dt;
     if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=pickWeather();if(WX.next!==WX.type)WX.k=0;}
     if(WX.next!==WX.type){WX.k+=dt/25;if(WX.k>=1){WX.type=WX.next;WX.k=0;}}
