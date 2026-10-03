@@ -10950,3 +10950,23 @@ Backlog G owed Session 130's captain's guard to real play. Session 130's entry s
 ### Needs eyes
 - The feel: whether 1.5 s of stagger after a power attack's slow wind-up is enough to land the follow-ups a player wants, and whether stepping round a captain's wind-up reads in third person.
 - With fists, a captain can only be flanked. Whether that is right for the bare-handed start is Michael's to judge in play.
+
+## v80 — Session 444 — The forts walked: gate, yard, keep door and its prompt (backlog G, the forts in real play)
+Backlog G owed *the forts in real play — one fort per door now: ring, gate, keep, barracks, and the keep door's prompt*. Session 131 found every fort at NaN and put them back. Session 132 removed the second, kit-built fort that sat on each, and left *the E-to-enter prompt on the keep's door* to a screenshot. Neither walked a fort.
+
+This session went to the six forts nearest home (Cnocowen Keep, Inislough Hold, Dunlough Watch, Cluainbeg Keep, Cnocshane Tower, Kilree Tower) where fast travel sets you down, 30 units south of the door and just outside the gate. Each was walked on foot with W held, steering for the keep door, on the loop's own movement and collision at fixed 1/60 ticks. At the door the HUD's prompt was read after real frames, and E was pressed through the page's keyboard. Then three more walks went straight at the ring, from the east, the west and the north, for 6 s each.
+
+**What was found.** No fault in the forts. Every walk went through the gate, between the barracks and up the paved way to the keep door in 7.4 s, never stuck. Every ring walk stopped at 28.1–28.2 from the middle, against a wall at 27. The prompt reads *Press 'E' to enter Cnocowen Keep [Very Easy · ruins · large]*, and E took each one down into its fort and back out to the world.
+
+Two notes from building the suite, neither a fault in the forts:
+- The world holds 237 fort doors, not Session 131's eight. The eight were the hand-placed ones, and the generated cells have added the rest since. A far cell, such as cell (1,1) on another island, takes about a minute to finish loading on the test machine's software GL, so the suite walks the six nearest home and not all of them.
+- A probe of `placeDoor` near home found two generated forts (seeds 565471 and 766071, both in cell (4,9)) whose ground is too low (`worldH` 1.4–1.5), so they are refused and never built. That is by design. But `sigilDoors()` still lists every fort in the cell data, and the seamsight marker, the warm-stone rubbing and Act II's etched gate read from it. That is the next session.
+
+Three names a player will read in the probe's list double a word in a fort's name (*Montmont Tower*). Gate names come from `canonicalGateName`, which draws through `genName`, so Finding 8's capital applies, but a doubled pair is only renamed for settlements. It is noted for the quest review and not changed.
+
+### Verified (headless Chromium)
+`tests/fortwalk.test.mjs` (new), 6/6: six forts built when you come to them; six walks from the fast-travel arrival to within 1.6 of the keep door, 7.4 s each, never stuck; the ring held at 28.1–28.2 (wall at 27) from three sides; six prompts naming the fort; six descents and returns. No page errors. 5 m 21 s alone; added to `run.mjs`'s table at 330. Build tag s383.
+
+### Needs eyes
+- The look Session 132 left to a screenshot: the ring, the gate towers, the keep and the two barracks seen from the road. The interior partitions inside a fort are not part of this check.
+- The approach from the main road along the fort's spur. The walk here starts at the gate, where fast travel sets you, and not at the road.
