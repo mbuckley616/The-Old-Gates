@@ -11261,3 +11261,16 @@ The critic's 3 October run shot Cnoccarra's quay twice in falling snow and asked
 
 ### Needs eyes
 Whether snow thinning over 25 s after a fast travel reads as weather or as a fade. The critic's look also names the bright cyan river (H.5b) and the quay with nobody on it (no schedule sends anyone there); neither is this session's.
+
+## v80 — Session 451 — The Torch on the counter, and why a piece is locked (backlog E, the concept artist's 1 Oct note)
+The concept artist, drawing the counter on the parchment kit, listed three faults in one line of the backlog. The first, the quantity prompt's button reading *Buy* on a sale, was fixed in Session 409 and never struck; it is struck now. The other two were still there.
+
+**The Torch wore a shield.** `iconHTML` draws every piece of equipment by its slot, and every off-hand piece got 🛡, so the Torch (an off-hand item with `torchType`) showed a shield in the bag, at the counter and in the inventory. An off-hand piece with a `torchType` now shows its own glyph (the Torch's item carries 🔦); a shield is unchanged. No glyph was chosen here: the item already named its own.
+
+**A locked piece was only dimmed.** At the counter a piece whose attribute you do not meet is drawn at 60% and still sells to you; the row never said why. It now carries a warning note under the name in `canEquip`'s own words, *Requires Might 5 (you have 0)*, the line the game already shows when you try to wear it. No new text, and nothing about what can be bought changed.
+
+### Verified (headless Chromium)
+`shoprows` 7/7 (new), in a Dunmore weapon shop at 13h with every attribute at 0: the Torch's bag row shows 🔦, a tier-2 shield's 🛡; one of six stock rows is locked and reads *Requires Might 5 (you have 0)*; no wearable row says *Requires*; no page errors. `qtybutton`, `barter`, `buyprice` and `chamerchant`, the other suites that draw the counter, pass. `parsecheck` clean. Build tag s387.
+
+### Needs eyes
+The note is the counter's existing 8 px italic; whether a warning that small is read before the click. 🔦 is an electric torch; if the Torch should show a flame, that is the look builder's or the concept artist's to pick.
