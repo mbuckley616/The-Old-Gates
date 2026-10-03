@@ -50,12 +50,12 @@ for (const [k, u] of Object.entries(r.shots)) fs.writeFileSync(`tests/out/bridge
 delete r.shots; console.log(JSON.stringify(r));
 check('there are bridges in the loaded world', r.n > 0, r.n);
 check('every bridge is one vertex-coloured mesh on the kit, casting shadows', r.each.every(e => !e.none && e.colours && e.vc && e.children === 0 && e.shadow), r.each);
-check('each is the old deck\'s length and width (5.2 across, the cutwaters beyond)', r.each.every(e => Math.abs(e.len - e.wantLen) < .05 && e.w >= 5.2), r.each);
+check('each is the old deck\'s length and width (5.2 across, the cutwaters beyond; a tenth over a routed river\'s 30–60u span, Session 432)', r.each.every(e => Math.abs(e.len - e.wantLen) < .1 && e.w >= 5.2), r.each);
 check('the deck stands where it stood and the rails and their end posts stand about the old rail height (1.1) and no more than 1.95', r.each.every(e => e.deckY === 0 && e.topY > 1.05 && e.topY < 1.95), r.each);
 check('the two rails still collide as before', r.each.every(e => e.rails === 2), r.each);
 check('the deck\'s walking face is the setts, within .05 of the old deck top (.25)', r.deck !== null && Math.abs(r.deck - .25) < .05, r.deck);
 check('a line across just under the deck at mid-span passes through the arch (the vault is open), one at the deck does not', r.through === 0 && r.solid > 0, { through: r.through, solid: r.solid });
-check('a bridge is 2–8k triangles', r.each.every(e => e.tris > 2000 && e.tris < 8000), r.each.map(e => e.tris));
+check('a bridge is 2k triangles and up, by its span: a pier every 9u (Session 432: the routed rivers are 20–60u across, so 6–11k)', r.each.every(e => e.tris > 2000 && e.tris < 2500 + e.len * 160), r.each.map(e => e.tris + '/' + Math.round(e.len)));
 check('a bridge\'s cell unloaded and loaded again builds its bridges again, the same ones in the same places, two rails each (they vanished before)', r.reload && r.reload.gone && r.reload.second.built !== '' && r.reload.second.built === r.reload.first.built && r.reload.second.rails === 2 * r.reload.second.built.split(' ').length, r.reload);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
