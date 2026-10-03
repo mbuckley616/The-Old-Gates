@@ -10800,3 +10800,22 @@ The producer's note of 2 Oct routed two CI faults to this builder: `masterslam`,
 
 ### Needs eyes
 - Nothing to play. CI's next full run will show whether the shares hold; a suite left at 60 that runs long would show as a share past 40 minutes.
+
+## v80 — Session 436 — The Bandit who never struck back (the critic's s360 note, settled headless)
+The critic's run of 2 Oct (build s360) fought a Bandit bare-handed on the home road. A bot faced him and punched whenever the cooldown was down. He died to nine punches and in 99 frames never landed a blow (130 of 130). The critic left it open: *I did not run long enough to say whether that is the bot's speed or the Bandit's.* A Bandit that cannot strike would be a combat bug (section C), so this session settled it in the running game. No game code changed.
+
+**How.** The game's own `loop`, at fixed 1/60 ticks with the scene's draw and the browser's frames held off, as `duelrhythm` does. A Bandit is set down four units off the way a quest sets one (`unlockFoe`), alert, at noon in the world. A bot faces him and calls the game's `attack()` whenever the cooldown is down and he is in reach. The Bandit's tell, his blows and the player's punches are counted where the game makes them (`sndTelegraph`, `executeStrike`, `_resolveZoneStrike`).
+
+**What it showed.** The Bandit strikes. Stood still, he closes, winds up 0.57 s and lands a blow about every 1.9 s (1.3 s of recovery and the tell): 15 blows in 30 s, 130 → 20. Punched with fists, he has 13 posture (half his 25 health, `initPosture`'s rule). The punches break it twice in a fight, and he spends 41% of the fight staggered. He dies in 4.6 s to eight punches, having begun one wind-up, which lands (7–8 damage). With the starting Wooden GreatClub he dies in 3.6 s to four swings and begins one wind-up, which never lands. So the critic's Bandit was the fists' rhythm against his posture. Nine punches at 0.4 s is about 3.6 s, and he spent much of it staggered. That is Session 431's posture regen, working as its entry says.
+
+Found on the way, in the test and not the game: the player's stagger is read on `performance.now()`, while a driven loop's `now` runs ahead of it. A blow that breaks the player's posture in one driven fight leaves a stagger that holds the next fight's `attack()` for as many real seconds as the drive ran ahead. My first run punched 1,706 times into that and hit nothing. The new suite starts each fight with the player's posture full and no stagger standing. In play the two clocks are one (the loop's timestamp is the frame's).
+
+### Verified (headless Chromium)
+`tests/fistfight.test.mjs` (new), 6/6:
+- Stood still: 15 tells, 15 blows, all 15 landing, 130 → 20 in 30 s.
+- Punched bare-handed, five fights: dead every time in 8 punches, all landing; staggered 113–114 of 277 frames; one wind-up and one blow landed each (5 in all, 7–8 damage each).
+- Armed (Wooden GreatClub): dead in 4 swings and 3.6 s; one wind-up, no blow landed.
+- No page errors. 77 s alone; added to `run.mjs`'s table at 120. Build tag s375.
+
+### Needs eyes
+- Whether a Bandit dying in under five seconds with one blow landed is too easy at fists. It is the same question C already owes from Session 431 (*whether breaks now come too easily with fists and daggers*), and it is a feel and a number, Michael's. The numbers to turn are the Bandit's posture (half his health), the fists' drain and the stagger's length.
