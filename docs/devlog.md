@@ -10911,3 +10911,24 @@ Backlog G owed Session 130's *daze* to real play. A lair's beast charges every 7
 
 ### Needs eyes
 - The charge by feel: whether 1.1 s at four times a bear's pace can be read and sidestepped by a player, now that sidestepping it works.
+
+## v80 — Session 442 — The innkeeper in the house's voice; French place names that are French (register fixes, quest review run 6)
+The quest review's run 6 (on `auto/quests`, PR #118, not yet merged) asked the systems builder for two of its findings, applied as written. This is a short session with no design in it.
+
+**Finding 7** (on main, older text that Session 424 brought into the window): the innkeeper let every room in Markish, so a Compact coaching inn greeted with *Be welcome, Master* (Finding 4) and then said *Suit yourself. The fire's free.* `innTopics(house, people)` now takes its lines from `INN_ROOM_LINES` by people, with Markish (the old text, unchanged) as the fallback. The town inn passes its keeper's `def.people`, and the coaching inn passes `nationOf(ci,cj).people`. The player's own labels and the log line are unchanged. One line in the table cannot be heard in play: *every room taken* (`L.full`). `innFreeRoom` never returns null, because a town inn's other guests are `hash % n` rooms and a coaching inn's are `n−1`, so there is always a room to let. It was the same before this session, and the line is kept as the review wrote it.
+
+**Finding 8** (auto/systems, Session 432; the short half is older): `genName` puts a capital after a hyphen (*Saint-Rouge*, was *Saint-rouge*), which changes no draw. `nameBanks` skips a short name that doubles a word and builds the French long form from a short name and one of six qualifiers (*-sur-Mer*, *-le-Vieux*, *-la-Forêt*, *-en-Val*, *-les-Prés*, *-sous-Bois*). `uniqueSiteNames` counts a drawn name whose two halves are the same word as lost, so it is renamed from the bank.
+
+What it moved: of the world's 1,049 named sites, 150 change name. Every French place that held a doubled name or a *-le-* long name changes, and so does every *Saint-* place, by its capital. Irish and generated places that Session 432 had already renamed also take a different bank name, because the banks lost their doubled entries (*Ardard*, …) and each renamed place's start in the bank is a hash into the list. *Cnocbeg* the renamed province town is now *Tullyderry*. Home's hand-placed names and every place that kept its drawn name are untouched. Saves keep places by id, so nothing breaks, but a player's saved world will show some far places under new names, as #110 did once. No test named any of the 150.
+
+`innTopics` is now on `WORLD` for the test.
+
+### Verified (headless Chromium)
+`tests/innvoice.test.mjs` (new), 22/22:
+- For each of the four peoples, asked of Dunmore's inn: the offer, the short purse (1 gold), the room paid and named, the room already yours (named and not), the empty house, and *Not tonight* are the review's lines word for word. No line reads *undefined*. Dunmore's real keeper is a Gatelander and answers *Not tonight* with *The road's long and the night's longer…*.
+- Over all 610 settlements, no name doubles a word (four drawn ones were: *Clairclair*, twice, and *Ardard*, twice), none has a small letter after *Saint-*, and none keeps *-le-* and an ending. 64 French places carry the new long form (*Beauclair-sur-Mer*, *Belmont-en-Val*), and every name is still its own.
+- `placenames` 9/9, with its check on the French long form moved from `-le-[A-Z]` to the six qualifiers. `innrooms` passes, with its guest-count parse made to read *There's one other guest* (the Gatelander's line) as well. `coachinn`, `coachvoice`, `shipwrightvoice` and `ferry` pass. No page errors. Build tag s381.
+
+### Needs eyes
+- The quest writer's ear on the new French long names in the map's labels and the ferry lists. The review gave the form, and these are its first draws.
+- Finding 9 (peaks, lakes and Aurenne's rivers) is on `auto/fable-rivers`, which isn't this branch. It is left to whoever carries that branch.

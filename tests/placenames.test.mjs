@@ -31,7 +31,7 @@ const r = await page.evaluate(([K, H]) => {
   return { n: settled.length, uniq: new Set(names).size, dups: [...new Set(dups)].slice(0, 10), drawnUniq: new Set(drawn).size,
     renamed: renamed.length, sample: renamed.slice(0, 6).map(t => `${t.drawnName} → ${t.name} (${t.reg})`),
     longer: { irish: renamed.filter(t => t.reg === 'irish' && /^(Bally|Kil|Dun|Carrig|Glen|Rath|Cnoc|Inis|Cluain|Lis|Ard|Tully)na/.test(t.name)).length,
-      french: renamed.filter(t => t.reg === 'french' && /-le-[A-Z]/.test(t.name)).length },
+      french: renamed.filter(t => t.reg === 'french' && /-(sur-Mer|le-Vieux|la-Forêt|en-Val|les-Prés|sous-Bois)$/.test(t.name)).length },
     numbered: names.filter(x => / \d+$/.test(x)),
     homeKept: H.filter(h => home.includes(h)), homeElsewhere: settled.filter(t => H.includes(t.name) && !home.includes(t.name)).length,
     ports: ports.length, portUniq: new Set(ports.map(p => p.name)).size, selfPassage,
