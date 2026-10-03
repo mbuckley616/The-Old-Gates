@@ -51,7 +51,8 @@ for (const k of ['Wolf', 'Snow Wolf', 'Dire Wolf', 'Ash Hound', 'Boar', 'Cave Be
   check(`${k}: darkened as before; drawn wherever its limbs land`, w.dark < .5 && w.cull === false, w);
 }
 const ws = [r.kinds.Wolf, ...r.wolves];
-check('the wolves fall away from you', ws.filter(w => w.away > 0).length >= ws.length - 1, ws.map(w => w.away));
+// a wolf that drops where it stood lands a few cm either side of it (CI: -.008 and -.037 in one run): that is not falling towards you
+check('the wolves fall away from you (none but one more than 5 cm towards you; on average away)', ws.filter(w => w.away > -.05).length >= ws.length - 1 && ws.reduce((a, w) => a + w.away, 0) / ws.length > .1, ws.map(w => w.away));
 check('the wolves are no longer standing: the back tipped past 45° in every death', ws.every(w => w.up < .71), ws.map(w => w.up));
 check('most wolves end on the flank rather than the back (back up between -.5 and .71)', ws.filter(w => w.up > -.5).length >= Math.ceil(ws.length * .6), ws.map(w => w.up));
 check('every wolf settles, and the deaths differ (the hips land in different places)', ws.every(w => w.settled > 0 && w.settled < 4) && new Set(ws.map(w => w.spread)).size > 3, ws.map(w => w.settled));

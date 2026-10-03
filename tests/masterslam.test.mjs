@@ -20,9 +20,11 @@ check('the master\'s blows carry 1.6 × (1 + level × .04) of its kind\'s (was a
 
 // a stage: pause the loop, the player on the master's floor at a distance along +x, the master alert and facing
 await page.evaluate(() => { window._stage = (d) => { const e = window._lairBoss; invOpen = true; currentFloor = e.floor || 1;
+  // stand on the master's floor: in a stairwell dungeon the loop reads the floor from your height (jumpY), not from currentFloor
+  jumpY = currentFloor === 2 ? FLOOR2_Y : 0; velY = 0; onGround = true;
   ENEMIES.forEach(x => { if (x !== e) { x.dead = true; if (x.mesh) x.mesh.visible = false; } });
   px = e.x + d; pz = e.z; PHP = 9999; dead = false; ROLL = null; blocking = false; staggered.length = 0;
-  e.alert = true; e.dead = false; e.hp = e.maxHp; e.telegraphT = 0; e.atkCd = 0; e._slamT = 0; e._slamCd = 0; e._slamLast = null; return e; };
+  e.alert = true; e.disguised = false; e.dormant = false; e.dead = false; e.hp = e.maxHp; e.telegraphT = 0; e.atkCd = 0; e._slamT = 0; e._slamCd = 0; e._slamLast = null; return e; };
   // tick until the slam lands (or n ticks); at tick `at` run a hook (to move, roll or stagger mid-tell)
   window._drive = (n, hook) => { const e = window._lairBoss; let t = 0, held = 0, maxWind = 0, ringMax = 0, startedAt = -1; const s0 = e._slams || 0;
     for (; t < n; t++) { const now = performance.now(); if (hook) hook(t, e, now);
