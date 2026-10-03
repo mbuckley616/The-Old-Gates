@@ -6,7 +6,10 @@ import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
-const world = await page.evaluate(() => { const t = WORLD.SITES.find(s => s.anchor === 'salt_mouth') || WORLD.SITES.find(s => s.kind === 'lair' && s.pad > 0 && !WORLD.settlements.get(s.id)); if (!t) return { none: true }; t.dragon = true; // the Salt Mouth has one; any lair would with the dice
+// WORLD.SITES holds only the loaded cells' places, and since the rivers (Session 432) the start loads the home cell alone, which
+// has no lair: take them from the cells around and load the chosen one's cell (Session 453).
+const world = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); const ring = []; for (let i = hi - 2; i <= hi + 2; i++) for (let j = hj - 2; j <= hj + 2; j++) { const c = WORLD.getCell(i, j); if (c && c.sites) ring.push(...c.sites); } ring.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+  const t0 = ring.find(s => s.anchor === 'salt_mouth') || ring.find(s => s.kind === 'lair' && s.pad > 0 && !WORLD.settlements.get(s.id)); if (!t0) return { none: true }; WORLD.loadCell(...WORLD.cellOf(t0.x, t0.z)); const t = WORLD.SITE[t0.id] || t0; t.dragon = true; // the Salt Mouth has one; any lair would with the dice
   let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); const e = S.creatures && S.creatures[0]; if (!e) return { noBeast: true };
   const w = e.limbs && e.limbs.wolf; const boxes = e.mesh.children.filter(c => c.isMesh && c.geometry && c.geometry.type === 'BoxGeometry').length; const persons = e.mesh.children.filter(c => c.userData && c.userData.rig && c.userData.rig.g).length;
   e.mesh.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(w ? w.mesh : e.mesh);

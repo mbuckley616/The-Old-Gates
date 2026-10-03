@@ -128,7 +128,7 @@ Every session, cloud or local, that has the tools:
 Corrections to earlier entries go in the new entry, named as corrections. History is useful.
 
 ## Code map (line numbers drift; grep for the names)
-- Save store: `SS`, `ssWrite/ssLoad/ssPut/ssGet`, `ssStringify` (skips live scene handles), `ssSanitizeLoaded`, export/import `ssExportChar/ssExportWorld/ssImportFiles`. A slot is two rows since S453: the character at `key`, the world at `ssWorldKey(key)`; `ssLoadRows` gives both, `ssLoad` gives them joined (the one-row shape every caller reads).
+- Save store: `SS`, `ssWrite/ssLoad/ssPut/ssGet`, `ssStringify` (skips live scene handles), `ssSanitizeLoaded`, export/import `ssExportChar/ssExportWorld/ssImportFiles`. A slot is two rows since S456: the character at `key`, the world at `ssWorldKey(key)`; `ssLoadRows` gives both, `ssLoad` gives them joined (the one-row shape every caller reads).
 - World module: the big IIFE returning `WORLD` (`return {SIZE,CHUNK,SEA_Y,...`). Settlements in `SETTLE`, roads in cells, weather `WX`, sky `SKY`, snow cover `WX.cover`, footprints `FP`.
 - Terrain: `rawH` → `baseH` (site stamps flatten) → `worldH` (roads). Ranges and rivers (S432): `rvSpines` (the horseshoe per island, the Ferrous), `ridgeAt` from the spine, `basinAt`, `spinePeaks`; `routeWorld` routes the rivers once per seed at the first terrain call and fills the carve grid `RVG` that `rawH` reads (`riverSample`); `WORLD.routed` has the reaches, the great rivers, the lakes and the stats. Colour: `groundColor()`; chunks recoloured by `recolourChunk`.
 - Interiors: `buildInteriorFor`, `partition()` cuts doorways, `intDoorAt` hangs a door, `INT_BEDS/INT_DOORS/INT_NPCS`.
@@ -152,7 +152,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - The camera looks along `(-sin yaw, -cos yaw)`; NPCs face `(sin ry, cos ry)`.
 - r128's shadow pass tests object layers against the *eye's* camera, not the shadow camera: a shadow-only layer draws nothing.
   To draw something differently in the shadow pass, swap it inside `REN.shadowMap.render` (see the townsfolk's LOD).
-- The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads. Since S453 the key also lands in the world row unless it is named in `SS_CHAR_WS` (the character's keys): a key that describes the character, not a place, goes in that list too.
+- The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads. Since S456 the key also lands in the world row unless it is named in `SS_CHAR_WS` (the character's keys): a key that describes the character, not a place, goes in that list too.
 - The loop's held-key map `K` (and `PERF` and their neighbours) sit inside a top-level block, not on the page's global scope: code
   outside that block, and a test's `page.evaluate`, reach it as `window._K` (Session 327). `typeof K` there is `undefined`.
 - `tickPeople` drops and disposes any rig whose root has no parent: add a test's rig to the scene (hidden) as soon as it is built.
@@ -161,7 +161,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 
-## Co-op rules (Session 453 — Michael's A on DECISION #119, `docs/design/online-play.md`)
+## Co-op rules (Session 456 — Michael's A on DECISION #119, `docs/design/online-play.md`)
 Nothing is networked and nothing is built for a second player. These rules keep the door open, so that a later co-op build
 (the host's world, each friend arriving with their own character) does not have to tear up the save or the rules of play.
 Every session follows them in new code; the Opus follow-up in backlog K moves the existing rolls and the foes' targeting over.

@@ -10934,7 +10934,24 @@ CI on the branch head (`c653e1b`, the merge of main into auto/backlog) failed th
 ### Needs eyes
 - Nothing in the game changed. The floor fault is the test's, but the same thing would happen to any code that sets `currentFloor` without moving you in a stairwell dungeon. A save loaded onto floor 2 (`68-dungeon-misc.js`) sets both, so it is fine.
 
-## v80 — Session 453 — Two saves: the character and the world (Fable, Michael's A on #119)
+## v80 — Session 453 — `pois`, `wreck` and `wyrm` red on main: the places they look for are one cell out (tests only)
+H is otherwise empty: every s162 item and parts 4, 5, 5a, 5b and 6 are built or answered, no decision is pending, and the quest review's run-6 findings are already applied on auto/systems (Sessions 442 and 446). In the room on 3 Oct, the systems builder reported that `pois` fails 4 of 5 on main and on its branch. That suite covers the look's POI pieces (Sessions 204, 205 and 215), so it is this builder's to fix.
+
+It failed here too, with every kind reporting `none`. The suite took a tower, shrine, lair, bandit camp and glade from `WORLD.SITES`, but that list holds only the loaded cells' places (`const SITES=[]` in the world module, "live: sites of loaded cells"). A probe at the start found the home cell's kinds in the list: garrison, village, outpost, town, port, city, camp, ruin, poi, portal and bridge. The nearest tower, shrine, glade, lair and bandit camp all sit one cell out, 3,100–4,900 units away. When the suite was written those cells were loaded at the start, and since the rivers (Session 432) they are not. Nothing is missing from the world. The suites were reading a list that no longer reaches them.
+
+The fix is in the tests. `pois` takes the nearest place of each kind from the cells in rings around the player (`WORLD.getCell`, which builds a cell's data without loading it), then loads that cell (`WORLD.loadCell`) and stands the player beside the place, so the near detail is the one shown. A sweep of the suites found two more that read `WORLD.SITES` for a kind the home cell lacks. `wreck` (a lair's or camp's hoard on the kit chest) and `wyrm` (the dragon lair's beast) failed the same way and now take the same route. `locks` waits for a tower to load and passes as it is. No game code changed.
+
+### Verified (headless Chromium)
+- `pois` 5/5, was 1/5. The tower is 4,460 triangles in detail, the shrine 5,968 and the glade 6,023, each paired with its distant copy and shown in detail from near. The bandit camp has 6 ridge tents. The pictures (`tests/out/poi-*.png`) show the tower and the glade's reeds, log and lily pads.
+- `wreck` 6/6, was 5/6. Lair `c6_10_i0`'s hoard is the kit chest (2 meshes, still in the scene), and its lid opens to -1.047.
+- `wyrm` 4/4, was 2/4. The Carrigkeel Wyrm is the skinned dragon, 6.3 long, with no boxes or person left on it. The cave's wyrm is 5.6.
+- `locks` 3/3 unchanged. `parsecheck` is clean. Build tag s373.
+
+### Needs eyes
+- Nothing in the game changed. A test picture taken near a place with the fog turned off shows the sea plane where the next cells' land has not loaded. That flat cyan behind the glade is not a lake: the glade stands at 3.46 in no lake.
+- Any later suite that wants a kind of place the home cell lacks should use `WORLD.getCell` and `loadCell`, not `WORLD.SITES`.
+
+## v80 — Session 456 — Two saves: the character and the world (Fable, Michael's A on #119)
 Michael chose A on the designer's online-play question (DECISION #119, 3 Oct): keep the door open for co-op, build nothing networked. This is the Fable half of that: the save splits into a character row and a world row, and CLAUDE.md gains the rules every later session follows. The Opus half (the seeded rolls, `targetOf`) is filed in backlog K. The card is `fable/co-op-door` on the control room; the branch `auto/fable-co-op-door`.
 
 **Why.** One row held both you and the world: `saveGame` wrote the character, `BAG`, `EQ`, `QS` and all of `worldState` (the clock, the burned town, favour, every looted flag) as one string through `ssPut`, and `_applyLoadData` read it back. A friend joining your world with their own character would have had to carry your clock and your quests in with them, or you theirs. The design page (`docs/design/online-play.md`, rule 1) asks for two saves now, while the game is still one player, so that the co-op build does not have to tear the save up later.

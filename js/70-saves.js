@@ -5,7 +5,7 @@
 // v61ad: bumped to 2 for worldState key. Old saves (v1) still load via the
 // load-path fallback — worldState defaults to all-false, which is the "fresh
 // Act I" state any pre-burn save would correctly inhabit.
-// Session 453: bumped to 3 for the two-row save (character and world, see TWO SAVES below). A v1 or v2 row is
+// Session 456: bumped to 3 for the two-row save (character and world, see TWO SAVES below). A v1 or v2 row is
 // one row holding both; ssMigrate splits it on the first boot and ssLoadRows splits one in memory if it must.
 const SAVE_VERSION=3;
 const SAVE_SLOTS=10;
@@ -128,7 +128,7 @@ function ssActiveKey(){try{return localStorage.getItem(SS_ACTIVE_KEY);}catch(e){
 function ssSetActive(key){try{localStorage.setItem(SS_ACTIVE_KEY,key);}catch(e){}}
 function ssCharId(){if(typeof worldState!=='undefined'&&worldState){if(!worldState.charId)worldState.charId='c'+Date.now().toString(36);return worldState.charId;}return 'legacy';}
 function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${slot}`,charId:d.charId||'legacy',charName:d.pName||'Unnamed',people:(d.wS&&d.wS.people)||'',arch:d.arch||'',kind,slot,level:d.level,gold:d.gold,zone:d.zone,where:d.where,ts:d.ts||Date.now(),size:0};}
-// ═══ TWO SAVES (Session 453 — backlog K, Michael's A on #119, docs/design/online-play.md rule 1) ═══════════
+// ═══ TWO SAVES (Session 456 — backlog K, Michael's A on #119, docs/design/online-play.md rule 1) ═══════════
 // A save is two rows. The CHARACTER row is who you are and what you carry: attributes, level, health, skills,
 // EQ, BAG, the stash, gold, the known words (spells, sigils, books, herbs), the journal, where you stand, and the
 // worldState keys that describe the character (listed in SS_CHAR_WS: their look, their people, their counters,
@@ -164,7 +164,7 @@ function ssStringify(d){SS.cut=[];
 function ssWhy(e){if(!e)return 'unknown error';if(e.name==='QuotaExceededError')return 'the browser refused the space';return ((e.name&&e.name!=='Error')?e.name+': ':'')+String(e.message||e).slice(0,140);}
 function ssWrite(kind,slot,label){let meta,str,wstr;
   return Promise.resolve().then(()=>{const r=_buildSaveRows();str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(r.c,kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
-      return ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str));}) /* Session 453 — the world row first: a v3 character row with no world beside it is the failure the load names */
+      return ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str));}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
     .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.cache[ssWorldKey(meta.key)]=wstr;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
     .catch(e=>{const why=ssWhy(e);SS.lastErr={ts:Date.now(),why,kind};console.error('save',e);try{addLog('⚠',`Save failed (${kind==='auto'?'autosave':'slot '+(slot+1)}): ${why}`);}catch(_){}showMsg('⚠ Save failed — '+why,'#e88a8a');return null;});}
 function saveToSlot(n){return ssWrite('manual',n);}
@@ -174,7 +174,7 @@ function saveGame(force){if(typeof worldState==='undefined'||!worldState)return;
 function ssDelete(key){SS.idx=SS.idx.filter(e=>e.key!==key);ssSaveIndex();if(ssActiveKey()===key){const c=ssChars()[0];const n=c?c.saves.sort((a,b)=>b.ts-a.ts)[0]:null;if(n)ssSetActive(n.key);else{try{localStorage.removeItem(SS_ACTIVE_KEY);}catch(e){}}}return Promise.all([ssDel(key),ssDel(ssWorldKey(key))]).then(r=>r[0]);}
 function ssDeleteChar(charId){const keys=SS.idx.filter(e=>e.charId===charId).map(e=>e.key);return Promise.all(keys.map(ssDelete));}
 // ── reading ──
-// Session 453 — ssLoadRows gives the two rows {c,w}; ssLoad gives them joined, the one-row shape every caller reads.
+// Session 456 — ssLoadRows gives the two rows {c,w}; ssLoad gives them joined, the one-row shape every caller reads.
 // A one-row save (v1, v2) the boot's split has not reached is split in memory and loads the same. A v3 character
 // row with no world row beside it loads alone: the character into a fresh world (the shape a guest's load takes).
 function ssVersionOk(v){return v===SAVE_VERSION||v===2||v===1;}
@@ -200,7 +200,7 @@ function ssSanitizeLoaded(){
 // character when its own id is already here.
 const SS_FILE='the-old-gates/character',SS_FILE_WORLD='the-old-gates/world',SS_FILE_MAX=48*1024*1024,SS_FILE_SAVES=64;
 function ssSlug(t){return String(t||'character').normalize('NFKD').replace(/[^\w-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'character';}
-// Session 453 — two files, one a row: the CHARACTER file (`the-old-gates/character`, v2) holds the character rows alone,
+// Session 456 — two files, one a row: the CHARACTER file (`the-old-gates/character`, v2) holds the character rows alone,
 // no world state in it, and is what a friend would carry into a host's world; the WORLD file (`the-old-gates/world`)
 // holds the world rows of the same slots. ⇱ Export writes the first, ⇱ World the second. Import takes either, or both
 // at once, and pairs them by character id, kind and slot. A v1 file (one-row saves) still imports: each row is split.
@@ -291,7 +291,7 @@ function ssMigrate(){ssLoadIndex();const moves=[];try{for(let n=0;n<10;n++){cons
   }catch(e){}
   return Promise.all(moves).then(()=>{try{const oldActive=localStorage.getItem('DOS_save_active');if(oldActive!==null&&!ssActiveKey()){const m=SS.idx.find(e=>e.charId==='legacy'&&e.kind==='manual'&&e.slot===parseInt(oldActive));if(m)ssSetActive(m.key);}}catch(e){}try{localStorage.removeItem('DOS_save_active');}catch(e){}})
     .then(()=>ssSplitStored().catch(e=>{console.warn('save split',e);return 0;})).then(()=>{SS.ready=true;return SS.idx;});}
-// Session 453 — every one-row save in the store becomes two rows holding the same state (only `v` changes). The world
+// Session 456 — every one-row save in the store becomes two rows holding the same state (only `v` changes). The world
 // row is written first, then the character row over the old one; a row that cannot be read or written is left as it
 // was, and loads through ssLoadRows' in-memory split. Lossless: ssJoinPayload(ssSplitPayload(d)) is d.
 function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!old.length)return Promise.resolve(0);let n=0;
@@ -345,7 +345,7 @@ function _buildSavePayload(){
 
 
 function _applyLoadData(d,w){
-  if(w)d=ssJoinPayload(d,w); /* Session 453 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
+  if(w)d=ssJoinPayload(d,w); /* Session 456 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
   xp=d.xp||0; level=d.level||1; xpNext=d.xpNext||200;
   kills=d.kills||0; gold=d.gold||0;
   maxHP=d.maxHP||100; PHP=d.PHP||maxHP; /* S335 — clamped to the worn maximum once the gear is back, below */
@@ -889,7 +889,7 @@ function renderSLSlots(){
   }
 }
 
-function _slExportBtn(charId){ // v80 S139; Session 453 — two buttons, the character and their world
+function _slExportBtn(charId){ // v80 S139; Session 456 — two buttons, the character and their world
   const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;gap:6px;margin-left:10px';
   const mk=(label,title,world)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className='sl-btn';b.title=title;
     b.onclick=(ev)=>{ev.stopPropagation();b.disabled=true;b.textContent='Exporting\u2026';ssExportChar(charId,world).then(()=>{if(b.isConnected){b.disabled=false;b.textContent=label;}});};return b;};

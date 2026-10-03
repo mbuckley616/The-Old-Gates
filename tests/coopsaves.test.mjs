@@ -1,4 +1,4 @@
-// Two saves (Session 453, backlog K, Michael's A on #119, docs/design/online-play.md rule 1): a slot writes a character row
+// Two saves (Session 456, backlog K, Michael's A on #119, docs/design/online-play.md rule 1): a slot writes a character row
 // and a world row; a load reads both and solo play comes back whole; an old one-row save splits on boot and loads to the
 // same gold, bag, position, quest stages and looted flags; the character export holds no world, the world export holds it;
 // a character row loads into another world (the shape a guest's load takes).
