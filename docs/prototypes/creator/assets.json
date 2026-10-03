@@ -1,0 +1,56 @@
+{
+ "gatelander": {
+  "look": {
+   "skin": 14200976,
+   "hair": 4860948,
+   "style": "short",
+   "beard": false,
+   "tunic": 5909024,
+   "breeches": 3811866,
+   "boots": 2759696
+  },
+  "height": 1.2381450747212122
+ },
+ "markman": {
+  "look": {
+   "skin": 15257784,
+   "hair": 12099696,
+   "style": "short",
+   "beard": false,
+   "tunic": 5909024,
+   "breeches": 3811866,
+   "boots": 2759696
+  },
+  "height": 1.337196680698909
+ },
+ "aurennais": {
+  "look": {
+   "skin": 13674624,
+   "hair": 3811352,
+   "style": "short",
+   "beard": false,
+   "tunic": 5909024,
+   "breeches": 3811866,
+   "boots": 2759696
+  },
+  "height": 1.2133821732267878
+ },
+ "oldblood": {
+  "look": {
+   "skin": 13156540,
+   "hair": 1315346,
+   "style": "short",
+   "beard": false,
+   "tunic": 5909024,
+   "breeches": 3811866,
+   "boots": 2759696
+  },
+  "height": 1.1390934687435152
+ },
+ "save": {
+  "name": "Aoife",
+  "arch": "duelist",
+  "level": null,
+  "loc": "🌍 The open country"
+ }
+}

@@ -3,6 +3,18 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03)
+Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
+
+The title is the same under every option: the world at night behind, *The Old Gates* in the kit's capitals, the menu on one slip (*Continue* with the save's name, beginning, level and place under it; *A New Tale*; *Load a Tale*; *The Keys*), and the controls moved to a card of their own that the pause menu can also open.
+
+- **A. One sheet** *(recommended)*: everything on one 1200 × 672 page in three columns, nothing scrolls. Name and the figure full length (430 px, was 250 and cut at the knees); people, look and beginning; weapon, gifts and the *Begin* seal. Style and beard become one stepper each (‹ Cropped › 1 of 13).
+- **B. The book**: the open book you chose for reading (#116), four chapters turned with A and D: who you are, how you look, how you began, what you are given. The figure and a line of what you have chosen stay on the left leaf. Four turns before you play.
+- **C. Restyle only**: today's column on the paper with the kit's type. It still scrolls.
+
+Recommendation: **A.** Every choice sits in view and changes the figure beside it, and one click reaches anything. Oblivion's race screen works the same way, a figure beside its sliders. B is better as a ceremony but asks four page turns of someone who only wants to play. C keeps the scroll that hides *Begin*.
+
+Screens: [the title, today beside the proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/compare-title.png) · [the keys card](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/keys.png) · [A, today beside the sheet](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/compare-creator.png) · [A, full size](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/sheet.png) · [B, chapter III](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/book-3.png) · [B, chapter IV](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/book-4.png) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/restyle.png).
 
 ## Answered
 ### Places standing in the basin lakes (the systems builder, 2026-10-03, DECISION #121)
