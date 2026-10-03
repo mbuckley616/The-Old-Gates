@@ -10970,3 +10970,20 @@ Three names a player will read in the probe's list double a word in a fort's nam
 ### Needs eyes
 - The look Session 132 left to a screenshot: the ring, the gate towers, the keep and the two barracks seen from the road. The interior partitions inside a fort are not part of this check.
 - The approach from the main road along the fort's spur. The walk here starts at the gate, where fast travel sets you, and not at the road.
+
+## v80 — Session 445 — A gate near the waterline exists or not by load order (found, not fixed; backlog B)
+Session 444's probe of `placeDoor` found two forts near home (seeds 565471 and 766071, cell 4,9) refused for low ground. This session set out to keep refused doors off the list the game names gates from, `sigilDoors()`. That list feeds seamsight's marker, the warm-stone rubbing (60 gold), the townsfolk's rumour, a shrine's boon and *The nearest old gate?*.
+
+**What was found.** The premise was only half right. Those same two forts, Cnocshane Tower and Kilree Tower, are two of the six that Session 444's suite walked to, built and entered. `placeDoor` runs every time a cell loads, and the ground it tests (`worldH` at the door) includes whatever site stamps are loaded at that moment. Fort 565471's spot read 1.5 and was refused in one run (after the player had been to far cells), and read 1.97 and was placed in another (fresh from home). Across the world, 12 of the 400 fort and sigil doors (7 forts, 5 caves) stand at a raw height under 1.5. Each of them may or may not exist on a given visit, and `sigilDoors()` lists them either way. Act II's three etched gates (The Grey Barrow, Reifeirey Gate, Montmont Tower) stand at 5.6–9.1 and are not affected.
+
+**What was tried and reverted.** I tried marking a refused door and judging an unloaded door by its own raw spot, so that `sigilDoors` and *The nearest old gate?* would skip refused doors. A suite run showed it would hide doors that do get built, so it is not in this commit. No game code changed.
+
+**What it needs.** One answer per door for the whole game: the refusal decided on ground that doesn't depend on what is loaded (the terrain before site stamps, say), and `sigilDoors` filtered by the same test. That changes which of the 12 exist in every save, and the test has to agree with the ground the keep is actually built on. It is filed in backlog B for a session that can measure both.
+
+**A correction to Session 444.** Its entry says *two generated forts … are refused and never built*. They are refused only in some load orders, and Session 444's own suite built both. It also says *three names … double a word*. One was seen, *Montmont Tower*, and it is also the Compact's etched gate in Act II, which the quest review may want to know.
+
+### Verified (headless Chromium)
+Probes only, on an instrumented copy of the build under `--src`, not committed: the refusal list over a boot and two far visits, and fort 565471's state over 60 s at its door after a boot from home (placed, `worldH` 1.97). A census of `sigilDoors()` against every cell's doors: 400 doors, 12 under 1.5 raw. No build tag bump (no code changed).
+
+### Needs eyes
+Nothing to play. The fix needs a session of its own.
