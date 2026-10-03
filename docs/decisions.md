@@ -42,6 +42,19 @@ Renaming changes the names of places in every existing save. The saves keep plac
 
 Michael: **One name per place, world-wide** (A). (2026-10-02)
 
+### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
+The six skill books open today on a dark brown box, one page at a time, with web buttons (*◀ Previous*, *Next ▶*, *Close Book*); the notice boards and the examine texts (the Sea-Folk Shrine, the Mouth, the keystones) open as plain text on a black page. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own words and no new data: *The Forge-Man's Third Treatise* and *Letters from Ashwold*, Hearthwick's board, Droichead's keystones. Every page of all six books fits its leaf. Prototype: `docs/prototypes/books/` on auto/concept.
+- **A. The open book** *(recommended)*: two pages a spread in a leather board with a page block, a ribbon, a running head and folios. The first page becomes a title page and the text opens on a red drop cap. The letters are set in a written hand. The first reading's +1 is written at the foot of the title page instead of a toast. A/D turn, E closes.
+- **B. One leaf**: the same paper and type, one page at a time as today.
+- **C. Restyle only**: today's panel in the kit's colours and fonts.
+
+With any of them, the notice board becomes a plank board with the town's record on one nailed sheet and each notice on its own slip. An examine text becomes a slip in the lower third, with the world still in view.
+
+Recommendation: **A.** It is how Oblivion shows a book, and the UI overhaul (27 Sep) asked for Oblivion's design. The six books run to 3 or 4 pages, so a spread shows half a book at once and two turns read it.
+
+Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-book.png) · [A, a book of letters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/letters.png) · [B, one leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/leaf.png) · [the board, today beside the proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-notice.png) · [the examine slip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-examine.png).
+
+
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
 
