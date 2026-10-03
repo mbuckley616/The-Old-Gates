@@ -3,7 +3,7 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03)
+### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
 
 The title is the same under every option: the world at night behind, *The Old Gates* in the kit's capitals, the menu on one slip (*Continue* with the save's name, beginning, level and place under it; *A New Tale*; *Load a Tale*; *The Keys*), and the controls moved to a card of their own that the pause menu can also open.
