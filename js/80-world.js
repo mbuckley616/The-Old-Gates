@@ -113,17 +113,15 @@ var WORLD=(()=>{
   // ── Height ───────────────────────────────────────────────────────────
   // rawH: the land before stamps. worldH: with stamp flattening.
   function rawH(x,z){
+    if(!RV.ready)routeWorld();
     let h=landH(x,z);
-    for(const rv of RIVERS){
-      const d=polyDist(rv.pts,x,z);if(d>=rv.w+rv.blend)continue;
-      const t=d<=rv.w?1:1-(d-rv.w)/rv.blend,e=t*t*(3-2*t);
-      const bed=Math.min(h,rv.depth);h=h*(1-e)+bed*e;
-    }
-    for(const lk of LAKES){
-      const d=Math.hypot(x-lk.x,z-lk.z);if(d>=lk.r+lk.blend)continue;
-      const t=d<=lk.r?1:1-(d-lk.r)/lk.blend,e=t*t*(3-2*t);
-      h=h*(1-e)+lk.depth*e;
-    }
+    // S432 — the routed rivers and lakes, from the carve grid: the same cut whether the cell is loaded or not. A deep cut
+    // (a channel through high ground) widens its blend, so it reads as a valley and not a slot
+    const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));
+    if(bk){for(let q=0;q<bk.length;q++){const e=bk[q];
+      if(e.lk){const lk=e.lk;let d=Math.hypot(x-lk.x,z-lk.z);if(lk.routed)d+=(_smoothNoise(x,z,SEED+63,lk.r*.6)-.5)*lk.r*.5; /* a routed lake's shore wanders: a disc reads as a dish */const bl=Math.max(lk.blend,Math.min(160,(h-lk.depth)*1.2));if(d>=lk.r+bl)continue;const t=d<=lk.r?1:1-(d-lk.r)/bl,ee=t*t*(3-2*t);h=h*(1-ee)+lk.depth*ee;continue;}
+      const rv=e.rv;riverSample(rv,e.i0,e.i1,x,z,_rs);const d=_rs[0],w=_rs[1];const depth=rv.depth!=null?rv.depth:rvDepth(w);let bl=rv.blend!=null?rv.blend:8+w;bl=Math.max(bl,Math.min(60,(h-depth)*.9));if(d>=w+bl)continue;
+      const t=d<=w?1:1-(d-w)/bl,ee=t*t*(3-2*t);const bed=Math.min(h,depth);h=h*(1-ee)+bed*ee;}}
     for(const inl of INLETS){
       const d=polyDist(inl.pts,x,z);if(d>=inl.w+inl.blend)continue;
       const t=d<=inl.w?1:1-(d-inl.w)/inl.blend,e=t*t*(3-2*t);
@@ -146,6 +144,7 @@ var WORLD=(()=>{
   const HOME_LAKES=[{id:'loch_liath',name:'Loch Liath',x:560,z:1250,r:105,depth:-4,blend:70}];
   const HOME_INLETS=[{id:'gilded_bay',pts:[[2420,1140],[2150,1125],[1960,1065]],w:44,depth:-7,blend:36}];
   const PEAKS=[],RIVERS=[],LAKES=[],INLETS=[],DOORS=[]; // live: landmarks/doors of loaded cells
+  const RV={ready:false,routing:false,spines:null,masses:null,peaks:null,reaches:[],great:[],lakes:[],stats:null}; // S432 — the ranges and the routed rivers
   function polyDist(pts,x,z){ // nearest distance to a polyline, with bbox reject
     let best=1e9;
     for(let i=0;i<pts.length-1;i++){
@@ -160,12 +159,13 @@ var WORLD=(()=>{
   function ridged(x,z,scale,seed){const v=fbm(x,z,scale,seed,3);return 1-Math.abs(v*2-1);}
   // Land without water carving — what pads and road beds are measured from.
   function landH(x,z){
-    const amp=regionScalar(x,z,'amp');
+    const amp=RV.routing?0:regionScalar(x,z,'amp'); /* S433 — the routing reads the bare land: no cell's regions, whatever is loaded, so the rivers are the same from any boot */
     const cont=(fbm(x,z,420,SEED+1,3)-.5)*2*11+7;
     const hills=(fbm(x,z,110,SEED+2,3)-.5)*2*amp;
     const rg=(ridged(x,z,60,SEED+7)-.5)*amp*.55;         // ridgelines
     const det=(_smoothNoise(x,z,SEED+3,24)-.5)*1.4+(_smoothNoise(x,z,SEED+4,8)-.5)*.4;
     let h=cont+hills+rg+det;
+    const bf=basinAt(x,z);if(bf<1)h*=bf; // S432 — the horseshoe's basin floor and the valley out through its gap
     const mt=ridgeAt(x,z);
     if(mt>0)h+=mt*mt*(70+fbm(x,z,70,SEED+5,3)*60);
     for(const p of PEAKS){
@@ -196,7 +196,7 @@ var WORLD=(()=>{
     let h=rawH(x,z);
     const arr=stampsNear(x,z);
     for(let i=0;i<arr.length;i++){
-      const s=arr[i];
+      const s=arr[i];if(s.noFlat)continue; /* S433 — a stamp that only clears the scatter (a river quay's bank) */
       const dx=x-s.x,dz=z-s.z;
       const R=s.r+s.blend;
       if(dx>R||dx<-R||dz>R||dz<-R)continue;
@@ -975,11 +975,6 @@ var WORLD=(()=>{
     const k=side==='E'?11:13;const t=.25+cellHash(i,j,k)*.5;
     return side==='E'?{x:(i+1)*SIZE,z:(j+t)*SIZE}:{x:(i+t)*SIZE,z:(j+1)*SIZE};
   }
-  function riverOnEdge(i,j,side){ // symmetric: a river crosses this border
-    if(side==='W')return riverOnEdge(i-1,j,'E');if(side==='N')return riverOnEdge(i,j-1,'S');
-    const ni=side==='E'?i+1:i,nj=side==='S'?j+1:j;if(!isLandCell(i,j)||!isLandCell(ni,nj))return false;
-    if(ridgeOnEdge(i,j,side))return false;return cellHash(i,j,side==='E'?25:27)<.28;
-  }
   function ridgeOnEdge(i,j,side){ // symmetric: both cells agree
     if(side==='W')return ridgeOnEdge(i-1,j,'E');if(side==='N')return ridgeOnEdge(i,j-1,'S');
     const ni=side==='E'?i+1:i,nj=side==='S'?j+1:j;
@@ -1122,17 +1117,8 @@ var WORLD=(()=>{
       if(fort){const ex=EXT[Math.floor(r()*EXT.length)];e.exterior=ex[0];e.interior=ex[1];e.canonicalName=`${genName(r,reg)} ${['Hold','Keep','Watch','Gate','Tower'][Math.floor(r()*5)]}`;}
       c.doors.push(e);
     }
-    // landmarks
-    if(!isIsland&&r()<.55)c.peaks.push({id:`c${i}_${j}_pk`,name:`${['Sliabh','Mont','Ben','Cnoc'][Math.floor(r()*4)]} ${genName(r,reg)}`,x:ox+500+r()*(SIZE-1000),z:oz+500+r()*(SIZE-1000),r:200+r()*120,h:90+r()*70,kind:'peak'});
-    if(r()<.45)c.lakes.push({id:`c${i}_${j}_lk`,name:`${['Loch','Lac','Mere'][['irish','french','anglo'].indexOf(reg)]} ${genName(r,reg)}`,x:ox+450+r()*(SIZE-900),z:oz+450+r()*(SIZE-900),r:70+r()*60,depth:-4,blend:60});
-    // rivers: enter at river borders, leave at another river border or the nearest sea edge
-    const rivEdges=['E','W','S','N'].filter(sd=>riverOnEdge(i,j,sd));
-    const seaSides=['E','W','S','N'].filter(sd=>c.sea[sd]);
-    const edgePt=sd=>{const p=edgePortal(i,j,sd);const o=cellHash(i,j,sd==='E'?31:sd==='W'?33:sd==='S'?35:37)*.5+.25;return sd==='E'?[ox+SIZE+40,oz+o*SIZE]:sd==='W'?[ox-40,oz+o*SIZE]:sd==='S'?[ox+o*SIZE,oz+SIZE+40]:[ox+o*SIZE,oz-40];};
-    const mkRiver=(a,b,w)=>{const pts=[a];for(let k=1;k<6;k++){const t=k/6;pts.push([a[0]+(b[0]-a[0])*t+(r()-.5)*260,a[1]+(b[1]-a[1])*t+(r()-.5)*260]);}pts.push(b);c.rivers.push({id:`c${i}_${j}_rv${c.rivers.length}`,pts,w,depth:-2.4,blend:20});};
-    if(rivEdges.length>=2){for(let k=0;k+1<rivEdges.length;k+=2)mkRiver(edgePt(rivEdges[k]),edgePt(rivEdges[k+1]),4.5);if(rivEdges.length%2&&seaSides.length)mkRiver(edgePt(rivEdges[rivEdges.length-1]),edgePt(seaSides[0]),4);}
-    else if(rivEdges.length===1){const src=edgePt(rivEdges[0]);const dst=seaSides.length?edgePt(seaSides[Math.floor(r()*seaSides.length)]):(c.lakes[0]?[c.lakes[0].x,c.lakes[0].z]:null);if(dst)mkRiver(src,dst,4.5);}
-    else if(seaSides.length&&r()<.45){const sd=seaSides[Math.floor(r()*seaSides.length)];const src=c.peaks[0]?[c.peaks[0].x,c.peaks[0].z]:[ox+600+r()*1200,oz+600+r()*1200];mkRiver(src,edgePt(sd),3.5);}
+    // landmarks (S432): the peaks stand along the ranges' spines, named here; the lakes and rivers are the routing's (routeWorld)
+    if(!isIsland)spinePeaks().forEach(p=>{if(p.i!==i||p.j!==j)return;const rp=cellRng(i,j,9+p.k);c.peaks.push({id:`c${i}_${j}_pk${p.k}`,name:`${['Sliabh','Mont','Ben','Cnoc'][Math.floor(rp()*4)]} ${genName(rp,reg)}`,x:p.x,z:p.z,r:p.r,h:p.h,kind:'peak'});});
     return c;
   }
   function key(i,j){return cellKey(i,j);}
@@ -1183,21 +1169,223 @@ var WORLD=(()=>{
   function seaAt(x,z){
     const [i,j]=cellOf(x,z);const c=getCell(i,j);
     let sea=seaBare(x,z,c.islets);
-    if(sea>0){const arr=stampsNear(x,z);for(let k=0;k<arr.length;k++){const st=arr[k];if(st.kind!=='site')continue;const d=Math.hypot(x-st.x,z-st.z);
+    if(sea>0&&!RV.routing){const arr=stampsNear(x,z);for(let k=0;k<arr.length;k++){const st=arr[k];if(st.kind!=='site')continue;const d=Math.hypot(x-st.x,z-st.z);
       if(st.port){const R=st.r*.95;if(d<R)sea*=sstep(st.r*.7,R,d);} // ports: the water line sits at the quay
       else{const R=st.r+st.blend;if(d<R)sea*=sstep(st.r,R,d);}}}
     return sea;
   }
-  function ridgeAt(x,z){
-    const i=Math.floor(x/SIZE),j=Math.floor(z/SIZE);const lx=x-i*SIZE,lz=z-j*SIZE;let m=0;
-    const wob=(_smoothNoise(x,z,SEED+72,190)-.5)*170;                      // the range wanders ±85u
-    const vary=.5+fbm(x,z,240,SEED+73,2)*1.0;                                // peaks and shoulders along it
-    const pass=sstep(.2,.36,fbm(x,z,320,SEED+74,2));                         // gaps in the range
-    const band=d=>sstep(340,70,d+wob)*vary*pass;
-    if(ridgeOnEdge(i,j,'N'))m=Math.max(m,band(lz));if(ridgeOnEdge(i,j,'S'))m=Math.max(m,band(SIZE-lz));
-    if(ridgeOnEdge(i,j,'W'))m=Math.max(m,band(lx));if(ridgeOnEdge(i,j,'E'))m=Math.max(m,band(SIZE-lx));
+  function ridgeAt(x,z){ // S432 — from the chain's spine (it measured from the cell border, so the ranges were boxes)
+    const sp=rvSpines();let m=0;
+    const wob=(_smoothNoise(x,z,SEED+72,190)-.5)*80;                        // the range wanders ±40u
+    for(let k=0;k<sp.length;k++){const s=sp[k];const bb=s.bb;if(x<bb[0]||z<bb[1]||x>bb[2]||z>bb[3])continue;
+      const d=polyDistM(s.pts,x+wob,z-wob,s.hw+80);if(d>=s.hw)continue;
+      const vary=s.fixed?1:.55+fbm(x,z,240,SEED+73,2)*.9;                      // peaks and shoulders along it
+      const pass=s.fixed?1-sstep(220,60,Math.abs(x-s.notchX)):sstep(.18,.34,fbm(x,z,320,SEED+74,2)); // gaps in the range; the Ferrous has one, at the Border Road
+      const b=sstep(s.hw,s.hw*.18,d)*vary*pass*(s.h/150);if(b>m)m=b;}
     return Math.min(1,m);
   }
+  // ═══ RANGES AND RIVERS (Session 432 — Michael's C on #112: the horseshoe) ═══════════════════════
+  // The ranges are chains, not bands on cell borders: on each landmass a ring of ranges round a basin, open on one
+  // side (the rule Michael chose), and the Ferrous wall along the home province's north; ridgeAt measures from the
+  // chain's spine, the peaks stand along it, and the basin's floor is lowered with a valley out through the gap.
+  // The rivers are not drawn by hand. Once per seed, at the first call for terrain, the real height is sampled on
+  // an 80u lattice, every settlement pad raised so no channel runs through one, the pits flooded (Barnes 2014) so
+  // every node drains to the sea, and the flow accumulated; a channel begins where the catchment passes 1 km², its
+  // width follows the catchment, tributaries join, the basin's lake takes the ring's water and lets it out through
+  // the gap, and each nation's largest river fans into a delta. The result is carved in rawH from a bucket grid
+  // (RVG), so a chunk is cut the same whether its cell is loaded or not; each cell keeps its pieces (c.rivers,
+  // c.lakes) for the bridges, the map and the rumours. The home cell keeps its authored rivers and lakes.
+  const RV_STEP=80,RV_T=1e6/(RV_STEP*RV_STEP);              // the lattice; 156 nodes of catchment (1 km²) make a river
+  const RV_NAV=16;                                             // a ship (13 by 4.4) needs sixteen units of water
+  const rvWidth=a=>2+6.5*Math.log(1+a*RV_STEP*RV_STEP/400000); // catchment (nodes) → wet width: 10u at 1 km², 16u at 3.2 km², 25u at 12 km²
+  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['la Dorée','la Blanche','la Sauvage','la Verte','la Lente','la Claire']};
+  function polyDistM(pts,x,z,m){ // polyDist with its own bbox margin (polyDist rejects beyond 80u; a range reaches 520)
+    let best=1e9;
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];
+      if(x<Math.min(a[0],b[0])-m||x>Math.max(a[0],b[0])+m||z<Math.min(a[1],b[1])-m||z>Math.max(a[1],b[1])+m)continue;
+      const vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1;
+      let t=((x-a[0])*vx+(z-a[1])*vz)/l2;t=t<0?0:t>1?1:t;
+      const d=Math.hypot(x-(a[0]+vx*t),z-(a[1]+vz*t));if(d<best)best=d;
+    }
+    return best;
+  }
+  // ── the landmasses, as the mask gives them: the cells, the centre, the principal axis and the extents along it ──
+  function landMasses(){
+    if(RV.masses)return RV.masses;
+    const seen={},out=[];const land=(i,j)=>i>=0&&j>=0&&i<GRID&&j<GRID&&(MASK[j][i]==='land'||MASK[j][i]==='coast');
+    for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){if(!land(i,j)||seen[i+','+j])continue;const cells=[],st=[[i,j]];seen[i+','+j]=1;
+      while(st.length){const [a,b]=st.pop();cells.push([a,b]);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([di,dj])=>{const x=a+di,y=b+dj;if(land(x,y)&&!seen[x+','+y]){seen[x+','+y]=1;st.push([x,y]);}});}
+      if(cells.length<3)continue;
+      const cx=cells.reduce((s,c)=>s+c[0]+.5,0)/cells.length,cz=cells.reduce((s,c)=>s+c[1]+.5,0)/cells.length;
+      let sxx=0,szz=0,sxz=0;for(const [a,b] of cells){const dx=a+.5-cx,dz=b+.5-cz;sxx+=dx*dx;szz+=dz*dz;sxz+=dx*dz;}
+      const ang=.5*Math.atan2(2*sxz,sxx-szz);const ax=Math.cos(ang),az=Math.sin(ang);
+      let lo=1e9,hi=-1e9,wlo=1e9,whi=-1e9;for(const [a,b] of cells){const t=(a+.5-cx)*ax+(b+.5-cz)*az,u=-(a+.5-cx)*az+(b+.5-cz)*ax;lo=Math.min(lo,t);hi=Math.max(hi,t);wlo=Math.min(wlo,u);whi=Math.max(whi,u);}
+      out.push({cells,cx,cz,ax,az,lo,hi,wlo,whi,nat:nationKeyOf(cells[0][0],cells[0][1]),home:cells.some(c=>c[0]===HOME_I&&c[1]===HOME_J)});}
+    RV.masses=out;return out;
+  }
+  const rvInLand=(m,x,z)=>{const i=Math.floor(x/SIZE),j=Math.floor(z/SIZE);if(i===HOME_I&&j===HOME_J)return false;return m.cells.some(c=>c[0]===i&&c[1]===j);};
+  // a line across a mass, wandered so it reads as a chain of hills; only its longest run inside the land is kept
+  function rvWander(m,pts,seed,amp){
+    const out=[];for(let k=0;k<pts.length;k++){const [x,z]=pts[k];const t=k/(pts.length-1);const w=Math.sin(t*Math.PI)*amp;out.push([x+(_smoothNoise(x,z,seed,1700)-.5)*2*w,z+(_smoothNoise(x+5000,z,seed+1,1700)-.5)*2*w]);}
+    let best=[],cur=[];for(const p of out){if(rvInLand(m,p[0],p[1]))cur.push(p);else{if(cur.length>best.length)best=cur;cur=[];}}if(cur.length>best.length)best=cur;
+    return best;
+  }
+  // C — a horseshoe of ranges round a basin, open on one side: the basin holds a lake and drains through the gap as one great river
+  function rvHorseshoe(m,seed){const open=(seed%4)*Math.PI/2;const R=Math.min(m.hi-m.lo,m.whi-m.wlo)*.34;const pts=[];
+    const cx=m.cx-(m.ax*Math.cos(open)-m.az*Math.sin(open))*R*.25,cz=m.cz-(m.az*Math.cos(open)+m.ax*Math.sin(open))*R*.25;
+    for(let k=0;k<=12;k++){const a=open+Math.PI*(.4+1.2*k/12);const u=Math.cos(a)*R,v=Math.sin(a)*R;pts.push([(cx+m.ax*u-m.az*v)*SIZE,(cz+m.az*u+m.ax*v)*SIZE]);}
+    const ox=m.ax*Math.cos(open)-m.az*Math.sin(open),oz=m.az*Math.cos(open)+m.ax*Math.sin(open);
+    const basin={x:cx*SIZE,z:cz*SIZE,dx:ox,dz:oz,R:R*SIZE};basin.lakeR=Math.max(250,Math.min(650,basin.R*.18));
+    return {pts:rvWander(m,pts,seed,SIZE*.2),h:150,hw:520,basin};}
+  // the Ferrous wall: the home cell's north border in every layout (the canon's impassable northern wall), with one notch where the Border Road crosses
+  function rvFerrous(){const x0=HOME_I*SIZE,z=HOME_J*SIZE;const px_=edgePortal(HOME_I,HOME_J,'N').x;return {pts:[[x0-200,z+40],[x0+SIZE*.5,z-60],[x0+SIZE+200,z+40]],h:150,hw:380,name:'The Ferrous Mountains',fixed:true,notchX:px_};}
+  function rvSpines(){
+    if(RV.spines)return RV.spines;
+    const sp=[];landMasses().forEach((m,k)=>{const s=rvHorseshoe(m,SEED+k*17);if(s.pts.length>=2){s.mass=k;s.nat=m.nat;sp.push(s);}});
+    sp.push(rvFerrous());
+    for(const s of sp){let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9;for(const p of s.pts){x0=Math.min(x0,p[0]);z0=Math.min(z0,p[1]);x1=Math.max(x1,p[0]);z1=Math.max(z1,p[1]);}s.bb=[x0-s.hw-80,z0-s.hw-80,x1+s.hw+80,z1+s.hw+80];}
+    RV.spines=sp;return sp;
+  }
+  // the basin's floor and the valley out through the gap, as a factor on the land's base height (1 = untouched)
+  function basinAt(x,z){
+    const sp=rvSpines();let f=1;
+    for(const s of sp){const B=s.basin;if(!B)continue;const qx=x-B.x,qz=z-B.z;if(Math.abs(qx)>B.R*2.4||Math.abs(qz)>B.R*2.4)continue;
+      const d=Math.hypot(qx,qz);const t=(qx*B.dx+qz*B.dz)/B.R,u=Math.abs(-qx*B.dz+qz*B.dx)/B.R;
+      if(t<0){if(d<B.R*1.3)f*=1-sstep(B.R*1.3,B.R*.6,d)*.5;}
+      else if(t<2.2)f*=1-sstep(1.0,.35,u)*(.5+.15*Math.min(1,t))*(1-sstep(1.6,2.2,t));}
+    if(f<1){const i=Math.floor(x/SIZE),j=Math.floor(z/SIZE);if(i===HOME_I&&j===HOME_J)return 1;}
+    return f;
+  }
+  // the peaks along the spines, one every 600u or so; a cell names those that fall in it (genCellData)
+  function spinePeaks(){
+    if(RV.peaks)return RV.peaks;
+    const out=[];rvSpines().forEach((s,si)=>{let acc=0,next=300,k=0;
+      for(let i=1;i<s.pts.length;i++){const a=s.pts[i-1],b=s.pts[i];const d=Math.hypot(b[0]-a[0],b[1]-a[1]);
+        while(next<=acc+d){const u=(next-acc)/d;const x=a[0]+(b[0]-a[0])*u,z=a[1]+(b[1]-a[1])*u;const ci=Math.floor(x/SIZE),cj=Math.floor(z/SIZE);
+          if(!(ci===HOME_I&&cj===HOME_J)&&isLandCell(ci,cj)&&seaBare(x,z,[])<.3)out.push({x,z,i:ci,j:cj,k:out.length,r:180+cellHash(si,k,77)*80,h:40+cellHash(si,k,78)*45});
+          next+=600;k++;}
+        acc+=d;}});
+    RV.peaks=out;return out;
+  }
+  const RVG=new Map();const RVSG=160;                          // the carve grid: bucket → [{rv,i0,i1}|{lk}]
+  function rvgAdd(x0,z0,x1,z1,fn){for(let gz=Math.floor(z0/RVSG);gz<=Math.floor(z1/RVSG);gz++)for(let gx=Math.floor(x0/RVSG);gx<=Math.floor(x1/RVSG);gx++){const k=sgKey(gx,gz);let a=RVG.get(k);if(!a){a=[];RVG.set(k,a);}fn(a,k);}}
+  function rvgRiver(rv){const P=rv.pts,WS=rv.ws;const seen=new Map();
+    for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1];const reach=Math.max(WS[i],WS[i+1])+64;
+      rvgAdd(Math.min(a[0],b[0])-reach,Math.min(a[1],b[1])-reach,Math.max(a[0],b[0])+reach,Math.max(a[1],b[1])+reach,(arr,k)=>{let e=seen.get(k);if(!e){e={rv,i0:i,i1:i};seen.set(k,e);arr.push(e);}else{if(i<e.i0)e.i0=i;if(i>e.i1)e.i1=i;}});}}
+  function rvgLake(lk){const reach=lk.r+Math.max(lk.blend||60,160);rvgAdd(lk.x-reach,lk.z-reach,lk.x+reach,lk.z+reach,arr=>arr.push({lk}));}
+  const _rs=[0,0];
+  const rvDepth=w=>-(2.2+.18*w);                             // a routed channel's bed by its half-width: −3.1 at 10u wide, −3.6 at 16u, −4.5 at 25u
+  function riverSample(rv,i0,i1,x,z,out){ // the nearest distance to the reach's segments i0..i1, and the half-width there
+    const P=rv.pts,WS=rv.ws;let best=1e9,bw=0;
+    for(let i=i0;i<=i1;i++){const a=P[i],b=P[i+1];
+      if(x<Math.min(a[0],b[0])-90||x>Math.max(a[0],b[0])+90||z<Math.min(a[1],b[1])-90||z>Math.max(a[1],b[1])+90)continue;
+      const vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1;let t=((x-a[0])*vx+(z-a[1])*vz)/l2;t=t<0?0:t>1?1:t;
+      const d=Math.hypot(x-(a[0]+vx*t),z-(a[1]+vz*t));if(d<best){best=d;bw=WS[i]*(1-t)+WS[i+1]*t;}}
+    out[0]=best;out[1]=bw;}
+  function rvNearest(rv,x,z){ // the nearest point of a piece's centreline, its half-width and the flow's direction there (not hot: allocates)
+    const P=rv.pts,WS=rv.ws;let best=1e9,out=null;
+    for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1];const vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1;let t=((x-a[0])*vx+(z-a[1])*vz)/l2;t=t<0?0:t>1?1:t;
+      const qx=a[0]+vx*t,qz=a[1]+vz*t;const d=Math.hypot(x-qx,z-qz);if(d<best){best=d;const L=Math.sqrt(l2);out={d,w:WS[i]*(1-t)+WS[i+1]*t,px:qx,pz:qz,tx:vx/L,tz:vz/L};}}
+    return out||{d:1e9,w:0,px:x,pz:z,tx:1,tz:0};
+  }
+  function rvChaikin(pts,n){let p=pts;for(let k=0;k<n;k++){if(p.length<3)return p;const o=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];o.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25]);o.push([a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}o.push(p[p.length-1]);p=o;}return p;}
+  function routeWorld(){
+    if(RV.ready||RV.routing)return;RV.routing=true;const t0=performance.now();
+    const W=SIZE*GRID,STEP=RV_STEP,N=Math.round(W/STEP);
+    const cells=[];for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)cells.push(getCell(i,j));
+    const lentP=[];for(const c of cells){if(LOADED.has(cellKey(c.i,c.j)))continue;for(const p of c.peaks){PEAKS.push(p);lentP.push(p);}}
+    // ── the lattice: the real height (ranges, peaks, the basin), the sea where it is under half a unit ──
+    const H=new Float32Array(N*N),raw=new Float32Array(N*N),sea=new Uint8Array(N*N),home=new Uint8Array(N*N),lk0=new Uint8Array(N*N);
+    for(let b=0;b<N;b++)for(let a=0;a<N;a++){const n=b*N+a;const x=(a+.5)*STEP,z=(b+.5)*STEP;const i=Math.floor(x/SIZE),j=Math.floor(z/SIZE);home[n]=(i===HOME_I&&j===HOME_J)?1:0;let h=landH(x,z);if(h<.5){sea[n]=1;h=-5;}raw[n]=h;H[n]=h;}
+    for(const p of lentP){const i=PEAKS.indexOf(p);if(i>=0)PEAKS.splice(i,1);}
+    const tLat=performance.now()-t0;
+    const xz=n=>[((n%N)+.5)*STEP,(((n/N)|0)+.5)*STEP];
+    const nodeAt=(x,z)=>{const a=Math.floor(x/STEP),b=Math.floor(z/STEP);return (a<0||b<0||a>=N||b>=N)?-1:b*N+a;};
+    // the basin lakes, authored: a sink the ring drains into, so the great river leaves it through the gap
+    const lakes=[];
+    for(const s of rvSpines()){const B=s.basin;if(!B)continue;const lk={x:B.x,z:B.z,r:B.lakeR,depth:-4,blend:120,basin:true,routed:true};lakes.push(lk);
+      for(let b=Math.floor((B.z-B.lakeR)/STEP);b<=Math.floor((B.z+B.lakeR)/STEP);b++)for(let a=Math.floor((B.x-B.lakeR)/STEP);a<=Math.floor((B.x+B.lakeR)/STEP);a++){if(a<0||b<0||a>=N||b>=N)continue;const n=b*N+a;if(sea[n]||home[n])continue;const [x,z]=xz(n);if(Math.hypot(x-B.x,z-B.z)<B.lakeR){H[n]=-4;raw[n]=-4;lk0[n]=1;}}}
+    // the settlements stand in the way: every pad is raised, so a channel bends round it instead of running through
+    const sites=[];for(const c of cells)for(const t of c.sites){if(t.pad>0&&t.kind!=='portal'&&t.kind!=='bridge')sites.push(t);}
+    for(const t of sites){const R=t.pad+90;for(let b=Math.floor((t.z-R)/STEP);b<=Math.floor((t.z+R)/STEP);b++)for(let a=Math.floor((t.x-R)/STEP);a<=Math.floor((t.x+R)/STEP);a++){if(a<0||b<0||a>=N||b>=N)continue;const n=b*N+a;if(sea[n]||lk0[n])continue;const [x,z]=xz(n);const d=Math.hypot(x-t.x,z-t.z);if(d<R)H[n]+=14*sstep(R,t.pad*.5,d);}}
+    // ── priority flood (Barnes 2014): a surface with no pits, every land node draining to the sea ──
+    const heap=[];const push=(n,h)=>{heap.push([h,n]);let i=heap.length-1;while(i>0){const p=(i-1)>>1;if(heap[p][0]<=heap[i][0])break;[heap[p],heap[i]]=[heap[i],heap[p]];i=p;}};
+    const pop=()=>{const top=heap[0];const last=heap.pop();if(heap.length){heap[0]=last;let i=0;for(;;){const l=2*i+1,r=l+1;let s=i;if(l<heap.length&&heap[l][0]<heap[s][0])s=l;if(r<heap.length&&heap[r][0]<heap[s][0])s=r;if(s===i)break;[heap[s],heap[i]]=[heap[i],heap[s]];i=s;}}return top;};
+    const done=new Uint8Array(N*N);const order=new Int32Array(N*N);let no=0;
+    for(let n=0;n<N*N;n++)if(sea[n]){done[n]=1;push(n,H[n]);}
+    const NB=[-1,1,-N,N,-N-1,-N+1,N-1,N+1];const NA=[-1,1,0,0,-1,1,-1,1],NBb=[0,0,-1,1,-1,-1,1,1];
+    while(heap.length){const [h,n]=pop();order[no++]=n;const a=n%N,b=(n/N)|0;
+      for(let k=0;k<8;k++){const na=a+NA[k],nb=b+NBb[k];if(na<0||nb<0||na>=N||nb>=N)continue;const m=n+NB[k];if(done[m])continue;done[m]=1;if(H[m]<=h)H[m]=h+1e-3;push(m,H[m]);}}
+    // flow direction: steepest descent on the filled surface; accumulation, highest first
+    const down=new Int32Array(N*N).fill(-1);
+    for(let b=0;b<N;b++)for(let a=0;a<N;a++){const n=b*N+a;if(sea[n])continue;let best=-1,bs=0;
+      for(let k=0;k<8;k++){const na=a+NA[k],nb=b+NBb[k];if(na<0||nb<0||na>=N||nb>=N)continue;const m=n+NB[k];const s=(H[n]-H[m])/(k<4?1:1.4142);if(s>bs){bs=s;best=m;}}
+      down[n]=best;}
+    const acc=new Float32Array(N*N).fill(1);
+    for(let k=no-1;k>=0;k--){const n=order[k];if(sea[n]||home[n])continue;const d=down[n];if(d>=0&&!home[d])acc[d]+=acc[n];}
+    // lakes: where the flood raised the ground more than a little (and the authored basin lakes); only a pit a river
+    // flows into is kept as a lake (the rest are ponds the hills' noise makes, 800 of them), decided once the reaches are traced
+    const lake=new Uint8Array(N*N);for(let n=0;n<N*N;n++)if(!sea[n]&&!home[n]&&(lk0[n]||H[n]-raw[n]>2.5))lake[n]=1;
+    const blobOf=new Int32Array(N*N).fill(-1);const blobs=[];
+    {const seen=new Uint8Array(N*N);for(let s=0;s<N*N;s++){if(!lake[s]||seen[s]||lk0[s])continue;let sx=0,sz=0,size=0;const st=[s];seen[s]=1;let touches=false;const id=blobs.length;
+      while(st.length){const m=st.pop();size++;blobOf[m]=id;const [x,z]=xz(m);sx+=x;sz+=z;const a=m%N,b=(m/N)|0;for(let k=0;k<4;k++){const na=a+NA[k],nb=b+NBb[k];if(na<0||nb<0||na>=N||nb>=N)continue;const t=m+NB[k];if(lk0[t])touches=true;if(lake[t]&&!seen[t]){seen[t]=1;st.push(t);}}}
+      blobs.push({x:sx/size,z:sz/size,size,touches,inflow:0});}}
+    // ── channels: a reach from a source or a junction down to the next junction, a lake or the sea ──
+    const chan=new Uint8Array(N*N);for(let n=0;n<N*N;n++)if(!sea[n]&&!home[n]&&acc[n]>=RV_T&&!lake[n])chan[n]=1;
+    const upc=new Uint8Array(N*N);for(let n=0;n<N*N;n++)if(chan[n]&&down[n]>=0&&chan[down[n]])upc[down[n]]++;
+    const reaches=[];
+    for(let n=0;n<N*N;n++){if(!chan[n]||upc[n]===1)continue;
+      let m=n;const pts=[],ws=[];let end=null,endNode=-1;
+      for(let guard=0;guard<6000;guard++){pts.push(xz(m));ws.push(rvWidth(acc[m]));const d=down[m];
+        if(d<0||sea[d]||lake[d]){end=d<0?'sink':sea[d]?'sea':'lake';if(d>=0){pts.push(xz(d));ws.push(rvWidth(acc[m]));endNode=d;}break;}
+        if(!chan[d]){end='sink';pts.push(xz(d));ws.push(rvWidth(acc[m]));break;}
+        m=d;if(upc[m]>=2){pts.push(xz(m));ws.push(ws[ws.length-1]);end='join';break;}} /* a tributary keeps its own width to the junction */
+      reaches.push({pts,ws,acc:acc[m],end,src:n,last:m,endNode});}
+    for(const r of reaches){if(r.end==='lake'&&r.endNode>=0&&blobOf[r.endNode]>=0)blobs[blobOf[r.endNode]].inflow++;}
+    for(const b of blobs){if(b.size<3||b.touches||!b.inflow)continue;const r=Math.max(50,Math.min(900,Math.sqrt(b.size*STEP*STEP/Math.PI)*1.15));lakes.push({x:b.x,z:b.z,r,depth:-4,blend:60,routed:true});}
+    // the great rivers: the mouths with the largest catchment, each nation's four at most, the stem traced upstream by the larger branch
+    const mouths=reaches.filter(r=>r.end==='sea').sort((a,b)=>b.acc-a.acc);
+    const upOf={};for(const r of reaches){(upOf[r.last]=upOf[r.last]||[]).push(r);}
+    const great=[];const perNat={};
+    for(const mo of mouths){if(mo.acc*STEP*STEP<3e6)break;const [si,sj]=cellOf(...xz(mo.src));const nat=nationKeyOf(si,sj);perNat[nat]=(perNat[nat]||0);if(perNat[nat]>=4)continue;
+      const name=(RIVER_NAMES[nat]||RIVER_NAMES.gatelands)[perNat[nat]%6];perNat[nat]++;const stem=[mo];let cur=mo;
+      for(let g=0;g<80;g++){const ups=(upOf[cur.src]||[]).filter(r=>r!==cur&&r.last===cur.src);if(!ups.length)break;ups.sort((a,b)=>b.acc-a.acc);cur=ups[0];stem.push(cur);}
+      for(const r of stem)r.name=name;let len=0;for(const r of stem)len+=r.pts.reduce((s,p,i)=>i?s+Math.hypot(p[0]-r.pts[i-1][0],p[1]-r.pts[i-1][1]):0,0);
+      great.push({name,nat,mouth:mo.pts[mo.pts.length-1],area:mo.acc*STEP*STEP,wMouth:rvWidth(mo.acc),len,reaches:stem.length,forkAt:stem.length>1?stem[0].pts[0]:null,stem});}
+    // a delta for each nation's largest: the last stretch fans into two distributaries
+    const seenNat={};for(const g of great){if(seenNat[g.nat]||g.area<6e6)continue;seenNat[g.nat]=1;const stem=g.stem[0].pts;const n=stem.length;if(n<6)continue;const k=Math.max(0,n-9);const a=stem[k],b=stem[n-1];
+      const dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz)||1;const ux=dx/L,uz=dz/L;g.delta=[];
+      for(const side of [-1,1]){const ang=side*.42;const cx=Math.cos(ang),sx=Math.sin(ang);const vx=ux*cx-uz*sx,vz=ux*sx+uz*cx;const pts=[a];let x=a[0],z=a[1];
+        for(let s=0;s<40;s++){x+=vx*45+(side*uz)*Math.sin(s*.3)*8;z+=vz*45-(side*ux)*Math.sin(s*.3)*8;pts.push([x,z]);const nn=nodeAt(x,z);if(nn<0||sea[nn])break;}
+        if(pts.length>=3){const w=g.wMouth*.55;reaches.push({pts,ws:pts.map(()=>w),acc:0,end:'sea',src:-1,last:-1,endNode:-1,name:g.name,arm:true});g.delta.push(pts);}}}
+    // ── into the cells: each reach smoothed and cut at the cell borders; the pieces carry their width per point ──
+    for(const c of cells){if(!c.home){c.rivers=[];c.lakes=[];}}
+    const halfW=w=>w*.5;
+    let pieces=0;
+    for(const r of reaches){const P=rvChaikin(r.pts,1);const WS=[];for(let i=0;i<P.length;i++){const u=i/(P.length-1)*(r.ws.length-1);const k=Math.min(r.ws.length-2,Math.floor(u)),f=u-k;WS.push(halfW(r.ws[k]*(1-f)+r.ws[k+1]*f));}
+      let start=0;let [ci,cj]=cellOf(P[0][0],P[0][1]);
+      const cut=(i0,i1,i,j)=>{if(i1-i0<1)return;const c=CELLS.get(cellKey(i,j));if(!c||c.home)return;const pts=P.slice(i0,i1+1),ws=WS.slice(i0,i1+1);const wmax=Math.max(...ws);
+        c.rivers.push({id:`c${i}_${j}_rv${c.rivers.length}`,pts,ws,w:wmax,name:r.name||null,nav:wmax*2>=RV_NAV,end:r.end,arm:!!r.arm});pieces++;};
+      for(let i=1;i<P.length;i++){const [ni,nj]=cellOf(P[i][0],P[i][1]);if(ni!==ci||nj!==cj){cut(start,i,ci,cj);start=i;ci=ni;cj=nj;}}
+      cut(start,P.length-1,ci,cj);}
+    for(const lk of lakes){const [i,j]=cellOf(lk.x,lk.z);const c=CELLS.get(cellKey(i,j));if(!c||c.home)continue;const rl=cellRng(i,j,41+c.lakes.length);lk.id=`c${i}_${j}_lk${c.lakes.length}`;lk.name=`${['Loch','Lac','Mere'][Math.max(0,['irish','french','anglo'].indexOf(c.reg))]} ${genName(rl,c.reg)}`;c.lakes.push(lk);}
+    // ── the carve grid: every piece and lake of every cell, the home's authored ones too ──
+    RVG.clear();
+    for(const c of cells){for(const rv of c.rivers){if(!rv.ws)rv.ws=rv.pts.map(()=>rv.w);rvgRiver(rv);}for(const lk of c.lakes)rvgLake(lk);}
+    // the bank towns (S433): a settlement within a short walk of navigable water keeps the nearest point of the channel,
+    // the way to it and the flow's direction there, and the settlement builder puts a quay on that bank
+    const navPieces=[];for(const c of cells)for(const rv of c.rivers){if(!rv.nav||rv.arm)continue;let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9;for(const p of rv.pts){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<z0)z0=p[1];if(p[1]>z1)z1=p[1];}navPieces.push({rv,bb:[x0,z0,x1,z1]});}
+    let banks=0;for(const t of sites){t.bank=null;if(t.kind==='port'||!['city','town','village','garrison','outpost'].includes(t.kind))continue;const R=t.pad+220;let best=null;
+      for(const q of navPieces){if(t.x<q.bb[0]-R||t.x>q.bb[2]+R||t.z<q.bb[1]-R||t.z>q.bb[3]+R)continue;const nr=rvNearest(q.rv,t.x,t.z);if(nr.w*2<RV_NAV||nr.d>=R||nr.d-nr.w<t.pad*.8)continue;if(!best||nr.d<best.d)best=nr;}
+      if(best){const dx=best.px-t.x,dz=best.pz-t.z,L=Math.hypot(dx,dz)||1;t.bank={dx:dx/L,dz:dz/L,tx:best.tx,tz:best.tz,w:best.w,d:best.d};banks++;}}
+    // a navigable reach: the ship can enter from the sea; the sailable length is the sum of reaches sixteen wide or more
+    let navLen=0,navMouths=0;for(const r of reaches){if(r.arm)continue;const w=r.ws[r.ws.length-1];if(w>=RV_NAV){navLen+=r.pts.reduce((s,p,i)=>i?s+Math.hypot(p[0]-r.pts[i-1][0],p[1]-r.pts[i-1][1]):0,0);if(r.end==='sea')navMouths++;}}
+    RV.reaches=reaches;RV.great=great;RV.lakes=lakes;RV.N=N;RV.STEP=STEP;
+    RV.stats={ms:Math.round(performance.now()-t0),latticeMs:Math.round(tLat),nodes:N*N,land:Array.from(sea).reduce((s,v)=>s+(v?0:1),0),reaches:reaches.length,mouths:mouths.length,sinks:reaches.filter(r=>r.end==='sink').length,joins:reaches.filter(r=>r.end==='join').length,toLake:reaches.filter(r=>r.end==='lake').length,great:great.length,deltas:great.filter(g=>g.delta&&g.delta.length).length,lakes:lakes.length,navMouths,navLen:Math.round(navLen),pieces,sites:sites.length,banks};
+    RV.ready=true;RV.routing=false;
+  }
+
 
 
   // ── stamp spatial grid (worldH is called a lot) ──
@@ -1222,12 +1410,15 @@ var WORLD=(()=>{
     const c=getCell(i,j);const L={cell:c,statics:[],stamps:[],roads:[],portals:[],solN:0,doorSeeds:[],pending:true};LOADED.set(k,L);
     let solStart=0;const track=fn=>{const before=sc.children.length;fn();for(let n=before;n<sc.children.length;n++)L.statics.push(sc.children[n]);};
     const steps=[
-      ()=>{c.regions.forEach(r_=>REGIONS.push(r_));c.peaks.forEach(p=>PEAKS.push(p));c.lakes.forEach(l=>LAKES.push(l));c.rivers.forEach(rv=>RIVERS.push(rv));(c.inlets||[]).forEach(inl=>INLETS.push(inl));try{refreshChunksNearWater([...c.rivers,...c.lakes,...(c.inlets||[]),...c.peaks]);}catch(e){console.warn('refresh',e);}
+      ()=>{c.regions.forEach(r_=>REGIONS.push(r_));c.peaks.forEach(p=>PEAKS.push(p));c.lakes.forEach(l=>LAKES.push(l));c.rivers.forEach(rv=>RIVERS.push(rv));(c.inlets||[]).forEach(inl=>INLETS.push(inl));try{refreshChunksNearWater([...(c.inlets||[]),...c.peaks]);}catch(e){console.warn('refresh',e);}
            c.sites.forEach(t=>{SITES.push(t);SITE[t.id]=t;});if(c.home&&SITE.ashenmoor){ASH_X=SITE.ashenmoor.x;ASH_Z=SITE.ashenmoor.z;}c.sites.forEach(t=>{if(t.pad>0){const s=addStamp({id:'site_'+t.id,kind:'site',port:t.kind==='port',x:t.x,z:t.z,r:t.kind==='port'?t.pad*.72:t.pad,blend:t.kind==='port'?t.pad*.3:Math.max(30,t.pad*.7),y:t.kind==='port'?Math.max(SEA_Y+1.3,Math.min(landH(t.x,t.z),3.0)):Math.max(SEA_Y+1.6,landH(t.x,t.z))});L.stamps.push(s);}});
            // ports: the shore shelf that meets the quay, stamped now so the chunks are built with it
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head
-             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});},
+             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});
+           // S433 — a bank town's quay spot: the water line below the pad, found now; a stamp there clears the trees and rocks off the bank without flattening it
+           c.sites.forEach(t=>{if(!t.bank||t.kind==='port')return;const B=t.bank;let x=t.x+B.dx*t.pad,z=t.z+B.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;let wx=x,wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx;wz+=B.dz;n++;}if(Math.hypot(wx-x,wz-z)>30)return;
+             t.quaySpot={x:wx,z:wz};const qs=addStamp({id:'rquay_'+t.id,kind:'door',noFlat:true,x:wx-B.dx*5,z:wz-B.dz*5,r:17,blend:2,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(qs);});},
       ()=>{c.roadDefs.forEach(def=>{const rd=buildRoad(def);if(rd){rd.cell=k;L.roads.push(rd);}});try{track(()=>buildBridges(c,k,L));}catch(e){console.warn('bridges',e);}},
       ()=>{solStart=STATIC_SOL.length;c.doors.forEach(e=>{const w=placeDoor(e,k);if(w)L.doorSeeds.push(e.seed);});c.doors.forEach(e=>{if(e.kind==='fort_door'&&dungeonWorldPos[e.seed])addFortSpur(e,k);});L.stamps.push(...STAMPS.filter(s=>s.cell===k&&s.kind==='door'));try{L.cleared=clearScatterUnder(L.stamps);}catch(e){console.warn('clear',e);}},
       ()=>track(()=>buildImpostorsFor(c)),
@@ -1620,13 +1811,14 @@ var WORLD=(()=>{
     return mergeParts(P);}
   function buildBridges(c,k,L){const rivers=RIVERS.filter(rv=>rv.w);if(!rivers.length)return;const built=new Set();
     for(const rd of L.roads){if(!rd.pts||rd.pts.length<4)continue;
-      for(const rv of rivers){let run=[];const runs=[];for(let i=0;i<rd.pts.length;i++){const p=rd.pts[i];if(polyDist(rv.pts,p.x,p.z)<rv.w+1.5)run.push(i);else if(run.length){runs.push(run);run=[];}}if(run.length)runs.push(run);
-        for(const rn of runs){if(rn.length<2)continue;if(Math.min(...rn.map(i=>rd.pts[i].y))>(rv.depth||-1.5)+5)continue; /* on a bank, not a crossing */ const i0=rn[0],i1=rn[rn.length-1];const a=rd.pts[Math.max(0,i0-1)],b=rd.pts[Math.min(rd.pts.length-1,i1+1)];const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+      for(const rv of rivers){let run=[];const runs=[];for(let i=0;i<rd.pts.length;i++){const p=rd.pts[i];riverSample(rv,0,rv.pts.length-2,p.x,p.z,_rs);if(_rs[0]<_rs[1]+(rv.ws?.4*(8+_rs[1]):0)+1.5)run.push(i);else if(run.length){runs.push(run);run=[];}}if(run.length)runs.push(run);
+        for(const rn of runs){const i0=rn[0],i1=rn[rn.length-1];const a=rd.pts[Math.max(0,i0-1)],b=rd.pts[Math.min(rd.pts.length-1,i1+1)];const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;riverSample(rv,0,rv.pts.length-2,mx,mz,_rs);const bed=rv.depth!=null?rv.depth:rvDepth(_rs[1]); /* S432 — a routed piece's bed follows its width at the crossing */
+        if(rn.length<2)continue;if(Math.min(...rn.map(i=>rd.pts[i].y))>bed+5)continue; /* on a bank, not a crossing */
           // S248 — a crossing already bridged in this pass is skipped; one bridged when the cell last loaded keeps its site
           // (the cell is cached with it) and is built again: the old test skipped it, so a reloaded cell lost its bridges
           const prev=c.sites.find(t=>t.kind==='bridge'&&Math.hypot(t.x-mx,t.z-mz)<40);if(prev&&built.has(prev))continue;
           const len=Math.hypot(b.x-a.x,b.z-a.z)+6;const ang=Math.atan2(b.x-a.x,b.z-a.z);const y=Math.max(a.y,b.y,SEA_Y+.9)+.25;
-          const g=new THREE.Mesh(bridgeGeo(len,y-(rv.depth||-1.5)+.05,Math.round(mx)*31+Math.round(mz)),VC_MAT);g.position.set(mx,y,mz);g.rotation.y=ang;g.castShadow=true;g.receiveShadow=true;g.userData.bridge=true; // S248 — a stone arch bridge on the kit (it was a deck, two rails and piers as boxes)
+          const g=new THREE.Mesh(bridgeGeo(len,y-bed+.05,Math.round(mx)*31+Math.round(mz)),VC_MAT);g.position.set(mx,y,mz);g.rotation.y=ang;g.castShadow=true;g.receiveShadow=true;g.userData.bridge=true; // S248 — a stone arch bridge on the kit (it was a deck, two rails and piers as boxes)
           sc.add(g);const s_=Math.sin(ang),c_=Math.cos(ang);for(const sx of [-1,1]){STATIC_SOL.push({cx:mx+c_*sx*2.45,cz:mz-s_*sx*2.45,rx:.2,rz:len/2,c:Math.cos(ang),s:Math.sin(ang),cell:k});}
           const name=`${(rv.name||rd.def.via||'the river').replace(/^the /,'')} Bridge`;if(prev){built.add(prev);continue;}const site={id:`bridge_${k}_${c.sites.length}`,name,kind:'bridge',x:mx,z:mz,pad:0,cell:k,bridge:{y,len,ang}};c.sites.push(site);SITES.push(site);SITE[site.id]=site;built.add(site);
         }}}}
@@ -3309,7 +3501,7 @@ var WORLD=(()=>{
       let light=null;if(lit){light=regLight(0xffb050,0,16,site.id);light.position.set(hx,hy+.05,hz);}
       sol.push({cx:x,cz:z,rx:.12,rz:.12});S.lamps.push({glass,light});};
     if(plan.rows>0&&(!TST||lampsLit(site))&&!burnedV&&!abandonedV){[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>lampPost(cx+sx*9,cz+sz*9,true,cx,cz));}
-    if(site.kind==='port'){buildHarbour(S,site,r);spawnGulls(S,site);}
+    if(site.kind==='port'){buildHarbour(S,site,r);spawnGulls(S,site);}else if(site.bank){try{buildRiverQuay(S,site,r);}catch(e){console.warn('river quay',e);}} // S433 — a quay on a bank town
     if(plan.rows>0)streets.slice(0,3).forEach(rd=>{const q=rd.pts.find(p=>Math.abs(Math.hypot(p.x-cx,p.z-cz)-(pad-14))<5);if(q){const nx=-(cz-q.z),nz=(cx-q.x);const L2=Math.hypot(nx,nz)||1;lampPost(q.x+nx/L2*3.2,q.z+nz/L2*3.2,true,q.x,q.z);}});
     // Plaza: well + stalls; cairn already stands at the centre.
     if(plan.rows>0){
@@ -4835,6 +5027,40 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const def=makeDef(site,S.reg,r,'Harbourmaster',pick(r,(NAMES[S.reg]||NAMES.irish).m),{x:hx,z:hz,bCol:0x2a3a5a,sCol:0xc09070,topics:[...ferryTopics(site),cargoTopic(site),{label:'What comes through here?',response:'Salt fish, timber, wool, and trouble. Mostly fish.'}]});
     def.role='Harbourmaster';
     const hn=spawnNPC(def,ang+Math.PI,true);hn.sched={type:'harbour',door:{x:hx,z:hz},plaza:{x:site.x,z:site.z}};S.npcs.push(hn); // v80 S235 — on the quay by day (was 'keeper': hidden 8–18 as if behind a counter)
+  }
+
+  // S433 — a quay on a river bank (Michael's C on #112, the towns on the banks): a settlement within a short walk of
+  // navigable water gets a stone quay along the bank on the harbour's kit, narrower (5 across, 20 long), its outer face
+  // a little over the water; bollards on the water side, a boat or two moored to it, crates and a net on the land
+  // side, a lantern at one end. Walkable as four short platforms along it (the platforms are axis-aligned boxes; a
+  // quay at the river's angle would float the player at a long box's corners).
+  function buildRiverQuay(S,site,r){
+    const B=site.bank;if(!B)return;const {group,sol}=S;
+    const QW=5,len=20;
+    let wx,wz;if(site.quaySpot){wx=site.quaySpot.x;wz=site.quaySpot.z;}else{             // the water line below the pad (found at the cell's load, with the scatter stamp; else now)
+      let x=site.x+B.dx*site.pad,z=site.z+B.dz*site.pad,n=0;
+      while(worldH(x,z)>QY+.2&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;
+      wx=x;wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx*1;wz+=B.dz*1;n++;}
+      if(Math.hypot(wx-x,wz-z)>30)return;}                                               // a bank too flat to quay
+    const mx=wx-B.dx*(QW/2-1.2),mz=wz-B.dz*(QW/2-1.2);const ax=B.tx,az=B.tz;const ang=Math.atan2(ax,az);
+    const QY=Math.max(1.1,Math.min(3.0,worldH(mx-B.dx*4,mz-B.dz*4)+.3));             // the deck at the bank's own height (1.1 to 3.0): a high bank gets a high quay, the kit's body reaches 3.2 below it
+    site.quayY=QY;
+    const rq=pRng(pHash(site.id+'|rquay'));{const lo=mergeParts([{geo:new THREE.BoxGeometry(QW,3.2,len),color:new THREE.Color(0x7a746a),y:-1.6,jitter:0},{geo:new THREE.BoxGeometry(QW+.4,.2,len+.4),color:new THREE.Color(0x8a857a),jitter:0}]);
+      for(const [geo,lod] of [[quayGeoHi(len,QW,QY-SEA_Y,rq),'hi'],[lo,'lo']]){const q=new THREE.Mesh(geo,SETTLE_MAT);q.position.set(mx,QY,mz);q.rotation.y=ang;q.receiveShadow=true;q.castShadow=lod==='hi';q.userData.lod=lod;q.userData.quay=true;q.userData.river=true;group.add(q);}}
+    for(let k=0;k<4;k++){const t=-len/2+len*(k+.5)/4;const cx=mx+ax*t,cz=mz+az*t;const ex=Math.abs(ax)*2.5+Math.abs(az)*QW/2,ez=Math.abs(az)*2.5+Math.abs(ax)*QW/2;
+      ZONES.world.platforms.push({x0:cx-ex,x1:cx+ex,z0:cz-ez,z1:cz+ez,y:QY,site:site.id,river:true});}
+    const iron=new THREE.MeshLambertMaterial({color:0x2e2c2a}),bollard=SK.lathe([[.001,0],[.2,0],[.2,.07],[.13,.14],[.11,.42],[.16,.55],[.17,.63],[.1,.7],[.001,.72]],10);
+    for(let t=-len/2+2.5;t<len/2;t+=5){const bx=mx+ax*t+B.dx*(QW/2-.5),bz=mz+az*t+B.dz*(QW/2-.5);const b=new THREE.Mesh(bollard,iron);b.position.set(bx,QY+.08,bz);group.add(b);}
+    const lampX=mx+ax*(len/2-1.2)-B.dx*(QW/2-.6),lampZ=mz+az*(len/2-1.2)-B.dz*(QW/2-.6);const post=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,3.4,6),new THREE.MeshLambertMaterial({color:0x2a2622}));post.position.set(lampX,QY+1.7,lampZ);group.add(post);
+    const glass=new THREE.Group();const pane=new THREE.Mesh(new THREE.BoxGeometry(.24,.3,.24),new THREE.MeshBasicMaterial({color:0xffc860,transparent:true,opacity:.6}));glass.add(pane);glass.position.set(lampX,QY+3.2,lampZ);group.add(glass);
+    const hl=regLight(0xffb050,0,20,site.id);hl.position.copy(glass.position);S.lamps.push({glass,light:hl});
+    const nb=1+Math.floor(r()*2);S.boats=S.boats||[];
+    for(let k=0;k<nb;k++){const t=-len/2+5+k*9;const bx=mx+ax*t+B.dx*(QW/2+2.8),bz=mz+az*t+B.dz*(QW/2+2.8);
+      const bm=new THREE.Mesh(boatBake(Math.floor(r()*4)).geo,SHIP_MAT);bm.position.set(bx,SEA_Y+.05,bz);bm.rotation.y=ang+(r()-.5)*.2;bm.castShadow=true;group.add(bm);S.boats.push(bm);}
+    for(let k=0;k<3;k++){const t=-len/2+3+r()*(len-8);const bx=mx+ax*t-B.dx*(QW/2-1.1),bz=mz+az*t-B.dz*(QW/2-1.1);
+      if(r()<.6){const cr=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),new THREE.MeshLambertMaterial({color:0x7a5a28}));cr.position.set(bx,QY+.5,bz);cr.rotation.y=r();group.add(cr);}
+      else{const net=new THREE.Mesh(netHeapGeo(k),SETTLE_MAT);net.position.set(bx,QY+.1,bz);group.add(net);}}
+    site.quayAt={x:mx,z:mz,ang,len};
   }
 
   // ═══ SHIPS & SWIMMING (Session C) ════════════════════════════════════
@@ -7960,6 +8186,6 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
 
   function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,innTopics,CARGO_GOODS,cargoItem,ferryTopics,ferryPrice,shipRaiseCost,mapEntries,restoreShip,seaState,openWater,spawnShip,shipBarsUI,shipBars,shipWear,shipSpeedNow,shipMendCost,upgradeTopics,tickHullCollisions,volley,get boarders(){return BOARDERS;},cargoNation,cargoWorld,cargoBlockaded,cargoAsk,cargoBid,cargoBuy,cargoSell,cargoRows,cargoBoard,cargoTopic,holdCap,holdUsed,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},despawnOtherShip,get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
+  return {SIZE,innTopics,CARGO_GOODS,startTile,tileStep,withCellData,ridgeAt,routeWorld,get routed(){return RV;},rvSpines,spinePeaks,basinAt,riverSample,cargoItem,ferryTopics,ferryPrice,shipRaiseCost,mapEntries,restoreShip,seaState,openWater,spawnShip,shipBarsUI,shipBars,shipWear,shipSpeedNow,shipMendCost,upgradeTopics,tickHullCollisions,volley,get boarders(){return BOARDERS;},cargoNation,cargoWorld,cargoBlockaded,cargoAsk,cargoBid,cargoBuy,cargoSell,cargoRows,cargoBoard,cargoTopic,holdCap,holdUsed,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},despawnOtherShip,get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

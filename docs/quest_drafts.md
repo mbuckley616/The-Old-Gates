@@ -746,3 +746,189 @@ The second line is the whole of it. He is seen; he is not spoken to. The open en
 - *Register.* The Gatelander lines turn on a saying (*the butter won't wait on a song*), never give a bare yes or no, and say *Weaver keep you*. The Markish lines are short, with *aye*, *{nick}* and *by iron*, and no honorific. The Aurennais lines use *Master*, qualifiers, *I make no claim*, *a reservation I would not care to put in writing*, and no oath. The Old Blood lines put the old words first and say little else.
 - *Slurs.* None.
 - *Varek.* He is seen, at a distance, and nothing more, as §11 says. The open ending's Varek asked the player to stay; he keeps his distance because the player did.
+
+---
+
+## What the Stones Say — the sigil-lore books in the guilds
+
+*Unapproved. Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
+
+### What the canon fixes, and where it is silent
+
+Canon §7: the guilds teach Impression and Comprehension and stop there; *sigils alone grant Mastery*, by a touch at Comprehension with the Intelligence for it. Part I, *What this implies*: the carvers *didn't think of these as weapons*. *Caor* is a spark that starts something larger, *Slán* is the word at parting, *Scáth* is shelter as much as shadow. The ruling class *received fragments … and immediately categorized them as combat abilities. Technically correct. Completely missing the point.* §3.1: the sigils stand over graves. The peoples were told their dead *hold* the world, and *nobody … was lied to about the outcome, only about the mechanism*. The Withdrawal forbade *reading* sigils (touching is permitted). §3.3: readers who ignored it *went strange, then quiet*, and every rubbing-seller who points the player at a gate is Old Blood. §1.3 puts the academy in Aurenne beside the Church, which calls gate-clearing *gate-grubbing*. Bram knows the spell words by sound and not their power.
+
+The canon doesn't say what the guilds keep on their shelves, or what any book says about the sigils. I chose three short books, one for each nation's way of knowing, so the player hears the same stones three ways:
+
+1. ***On the Seals***, the academy's primer, sold at every Mages' Guild. Aurennais institutional prose. It is correct about everything it can examine and blind to the point. It reports Mastery without endorsing it, and it dismisses the fresh strokes on recent rubbings as careless work.
+2. ***The Words on the Stones***, a Gatelander hedge-schoolmaster's glossary of the deep words, from a shelf in the Gatelands' Mages' Guilds. Its voice is proverbs and the old tongue. It gives the told version of why the stones are warm, and lets an Old Blood rubbing-seller say *a thing can be true and still not be the whole of it*.
+3. ***Warm Stones — for New Hands***, a Fighters' Guild sheet in a Markman's short sentences. It says *touch, take, walk on; don't stand and read*, the Withdrawal's law kept by soldiers who don't know it is a law.
+
+Two guild topics carry them, each in the guild head's own people's voice (the head has a people, `gp`, since Session 172).
+
+**Changes.** Nothing in the world state beyond `booksRead`. **Reward.** None. They are lore books (`attr:null`), as *The Seventh Niche* is.
+
+**Not revealed.** The Clearing, the window and Varek. The fresh strokes are mentioned once, as the academy's misreading, and they agree with Q4 (*new strokes cut on top of the original work*) without naming a hand.
+
+### 1. The Mages' Guild head — *"What does the Guild teach of the sigils?"*
+
+Always available at a Mages' Guild. The follow sells the treatise.
+
+**Aurennais head:**
+- *"What does the Guild teach of the sigils?"* → "Impression and Comprehension, Master, and the Guild certifies both. Mastery we do not teach, because it cannot be taught. It comes from the stones alone, and the academy declines to certify what it cannot examine. The Guild's treatise sets out the terms."
+  - Follow *"Is it written down?"* → *Buy* On the Seals *(40 gold)* → "Forty gold, Master, and the copy is yours outright. Read the catalogue before you read the rest; it is the part the examiners ask about."
+  - Short of gold → "The copy is forty gold, Master. The library does not lend."
+
+**Gatelander head:**
+- *"What does the Guild teach of the sigils?"* → "To the second degree, and not a step past it. The last step's on the stone, and you'll not find it in a book, any more than you'd learn to swim from a drawing of the sea."
+  - Follow *"Is it written down?"* → *Buy* On the Seals *(40 gold)* → "Forty gold. It's the academy's book, so take it with salt. They know the names of everything and the use of half."
+  - Short of gold → "Forty gold, and a book's no cheaper for being dry, more's the pity."
+
+**Markish head:**
+- *"What does the Guild teach of the sigils?"* → "Two of the three. The third's the stone's. Can't sell you that."
+  - Follow *"Is it written down?"* → *Buy* On the Seals *(40 gold)* → "Forty gold. Dry as a ledger. Has the names in it, though."
+  - Short of gold → "Forty. Come back with it."
+
+**Old Blood head** (sparing; the older word first):
+- *"What does the Guild teach of the sigils?"* → "Two degrees. The third is the stone's. *Léamh*, my mother called it. Reading. She did not do it."
+  - Follow *"Is it written down?"* → *Buy* On the Seals *(40 gold)* → "Forty gold. The words are in it. The meaning is not."
+  - Short of gold → "Forty gold."
+
+### 2. The book — *On the Seals*
+
+Aurennais institutional register: formal, qualified, terms and clauses, never an oath. The author is unnamed.
+
+**Item name:** On the Seals  **Icon:** 📘  **Description line:** `Lore book` / `Lore book (already read)`
+
+**Pages:**
+
+> ON THE SEALS
+>
+> Being an introduction to the carved seals of the old gates, prepared for licentiates of the academy in the form approved by the Masters.
+>
+> The academy does not send its licentiates into the gates. It purchases rubbings from those who go, and has done so for as long as it has kept a library. What follows is drawn from those rubbings, and from the testimony of the people who sold them, which the academy weighs accordingly.
+
+> OF WHAT A SEAL IS
+>
+> A seal is a figure cut into the stone of an old gate, in a script older than any the academy can read. When a hand is laid on one, the bearer of the hand comes away with a working they did not have before. This is attested beyond reasonable dispute.
+>
+> The academy holds that the seal is an instruction and the touch a reading of it, however imperfect. The Church holds that the seals are the seams of the Weaver's cloth and ought not to be handled at all. The academy notes the Church's position, and observes that the Church has never asked for the workings back.
+
+> OF THE THREE DEGREES
+>
+> A working is received in one of three degrees, which the academy names Impression, Comprehension and Mastery.
+>
+> In Impression the working is held without being understood. It is named only in the carvers' tongue, and it answers unevenly. A licentiate who casts a flame in this degree should expect, on occasion, to be among the things it burns.
+>
+> In Comprehension the working does what it is for, reliably, and it takes a name in the common tongue. The academy teaches to this degree and certifies it. Its copies, its lectures and its examinations all end here.
+
+> OF MASTERY
+>
+> A third degree is reported, chiefly by gate-salvagers and by the descendants of the carvers. In it the working is said to show what it was for before it was a weapon. The academy has not produced this degree by instruction, and does not certify it. It is reported only after a second touch of a seal, by a person already in Comprehension and of sufficient intellect.
+>
+> The academy draws no conclusion from this. It records, without endorsement, that every working so reported was described by its holder as smaller than they had supposed, and that several holders did not wish to discuss it further.
+
+> A SHORT CATALOGUE
+>
+> The workings most often met, with the names the academy has assigned them: Caor, Fireball. Sioc, Frost Bolt. Séideán, Wind Shear. Cloch Ghéar, Stone Spike. Smól, Shade Bolt. Solas-Gheal, Radiant Bolt. Leigheas, Healing Light.
+>
+> The carvers' names are kept in the catalogue as a courtesy to the tradition. Licentiates are advised that the common names are the operative ones, and that the carvers' names, where a translation has been attempted, translate poorly into anything of use. *Caor*, for example, appears to mean a berry.
+
+> A NOTE ON RECENT RUBBINGS
+>
+> A number of rubbings bought in the last two seasons show strokes cut over the original strokes: newer, sharper, and in the same script. The academy attributes these to careless work by the takers of rubbings, who are paid by the sheet and not by the accuracy. A licentiate offered such a rubbing should decline it, or pay less for it.
+
+### 3. The book — *The Words on the Stones*
+
+Gatelander register: proverbs, indirection, the old tongue held as a pride, and the Weaver sworn by. The compiler is unnamed. The rubbing-seller in the fifth page is Old Blood (the marks at her wrists, the warm stone felt across a field). The book never says so.
+
+**Item name:** The Words on the Stones  **Icon:** 📗  **Description line:** `Lore book` / `Lore book (already read)`
+
+**Pages:**
+
+> THE WORDS ON THE STONES
+>
+> Gathered by a hedge-schoolmaster who could read none of them, from people who could say them. A word you can say and can't read is like a coin from a country you'll never see: it spends, and you never know what it bought.
+>
+> The Guild's books give each stone a name in the common tongue, and the names are right as far as they go. These are the other names, the ones our grandmothers had.
+
+> CAOR. The Guild says fireball. My grandmother said it of the rowan's berries, red on the branch at the back end of the year, and of a spark that jumps the hearth. A small red thing, she'd say, that starts a larger one. I never once heard her call it a weapon.
+>
+> SLÁN. Whole, and the word you say at a parting. Be whole, going. You say it at a door to someone leaving, and you say it over a bed when there's nothing else left to say. The old people heard no difference, and I've stopped hearing one.
+
+> SCÁTH. A shadow, and a shelter, and the old people saw no difference there either. You stand in a man's shadow out of the sun, and you stand in it out of harm.
+>
+> CLOCH. Stone. There's no more to it than that, and no less. My father said a field wall would outlast the field, and the stone would outlast the wall.
+>
+> SIOC. Frost. The stillness before the freezing, when the pond hasn't turned yet and you'd swear it was thinking about it.
+
+> LEIGHEAS. A cure, the kind you're given and the kind you work at.
+>
+> ANÁIL. Breath. The Guild sells it to people who want to walk under the water. Weaver forgive me, I'd sooner they sold it to people who want to go on walking above it.
+>
+> SÚIL AN FHÍODÓRA. The Weaver's eye. The Guild says it turns your compass to the warm stones. I'll only say it's a strange thing to want, to have the Weaver look where you're looking.
+
+> WHY THE STONES ARE WARM
+>
+> Every child in the Gatelands knows the stones are warm, and every child is told why. The old gates are built over our dead, and our dead hold the world up from underneath, the way your father held you up to see over a wall. That's what I was told, and it's what I told the children after me.
+>
+> The woman I had most of these words from sold rubbings at the fairs: a small grey woman, with the old marks at her wrists. She could tell a warm stone from across a field, and she'd not touch one for any money. I asked her once whether what we tell the children is true. She said a thing can be true and still not be the whole of it. Then she sold me a rubbing, and I've had no better answer from anyone since.
+>
+> *In the margin, in another ink:* She's in the gate at home now. I'd not have put her there, if it were mine to say. It wasn't. The stone there is warm.
+
+### 4. The Fighters' Guild head — *"Anything I should know about the warm stones?"*
+
+Always available at a Fighters' Guild. The answer hands over the sheet, once (`bagAdd`, unless the bag or `booksRead` already has it).
+
+- **Markish head** → "Aye. Here. Every new hand gets the sheet. Read it twice."
+- **Gatelander head** → "There's a sheet for that, and it's the one piece of paper in this hall worth the reading. Take it. It's shorter than the advice you'd get from me."
+- **Aurennais head** → "The Board issues a sheet to each new member, Master. It is brief and it is not well written, and every word of it is correct. Take it."
+- **Old Blood head** → "There is a sheet. Take it. Do what it says about reading."
+- *Already given* (any head, in the same row): Markish "You've got the sheet. Read it again." · Gatelander "You've had the sheet already. A thing read twice is a thing half learned, so read it a third time." · Aurennais "You have been issued the sheet, Master. The Board issues one." · Old Blood "You have it."
+
+### 5. The sheet — *Warm Stones — for New Hands*
+
+A Markman's writing: short sentences, no honorifics, an oath on iron. Unsigned except by *the Board*.
+
+**Item name:** Warm Stones — for New Hands  **Icon:** 📄  **Description line:** `Lore` / `Lore (already read)`
+
+**Pages:**
+
+> WARM STONES — FOR NEW HANDS
+>
+> Read this or have it read to you. It's short.
+>
+> There are carved stones in the old gates. Some are warm. Put your hand on a warm one and you come away with a spell. That's all there is to it. Don't let a mage tell you different, and don't let a priest tell you not to.
+
+> Touch it. Take what it gives you. Walk on.
+>
+> Don't stand and read it. Don't trace it with a finger. Don't sit down in front of it and try to work out what it says. We've had hands do that. They come back quiet. Then they come back quieter. Then they stop signing on.
+>
+> The cold-eyes know why. Ask one, if you'll sit with one. Most of us won't.
+
+> Some stones have fresh cuts over the old ones: sharp edges, no dust in them. Don't touch those. Mark on the board where you found it.
+>
+> Rubbings sell at the Mages' Guild. Not for much. Enough for a drink.
+>
+> That's the whole of it, on iron.
+>
+> — the Board
+
+### What in the code would carry it
+
+- **The books.** Three `BOOKS` entries with `attr:null`: `{id:'on_the_seals', name:'On the Seals', ico:'📘', attr:null, pages:[…]}`, `{id:'words_on_stones', name:'The Words on the Stones', ico:'📗', attr:null, pages:[…]}`, `{id:'warm_stones', name:'Warm Stones — for New Hands', ico:'📄', attr:null, pages:[…]}`. Each page above is one string, `\n\n` between paragraphs. The italic margin line is plain text that opens with `In the margin, in another ink:`. The `attr:null` branch is the one *The Seventh Niche* needs (grep `BOOKS.find(b=>b.id===it.bookId)` in `60-shop.js` and `66-hub.js`): it grants nothing and labels the item *Lore book*. The sheet labels itself *Lore*. `randomBookItem()` leaves all three out of the skill-book rolls. If the concept artist's book decision (#116) lands first, the sheet reads as one leaf and the two books as books.
+- **The topics.** In `guildDef`'s `topics` getter (grep `spellShopTopics(Math.min(4`), push `sigilLoreTopic(g, gp)` beside `rubbingTopics(site)`. For `guild_m` it returns the teach topic with its buy follow, the lines chosen by `gp` with `markman` as the fallback. The buy is `{label:'Buy On the Seals (40 gold)', quest:true, fn}`, which takes the gold and `bagAdd(makeBookItem(BOOKS.find(b=>b.id==='on_the_seals')))`. For `guild_f` it returns the stones topic, whose `fn` gives the sheet once, decided by `booksRead.has('warm_stones')||BAG.some(b=>b.bookId==='warm_stones')`.
+- **Where the glossary lies.** One copy on a shelf in every Mages' Guild on the Gatelands (`nationOf(...).people==='gatelander'`), the same way *The Seventh Niche* is placed, and a rare roll in `library_chest`. Not for sale: the Guild sells the academy's book, not the schoolmaster's.
+- **worldState.** Nothing new. `booksRead` is saved.
+
+### Checked against the canon
+
+- *Guilds cap at Comprehension; Mastery is the sigils'* (§7). The treatise and all four heads say so. *A second touch … by a person already in Comprehension and of sufficient intellect* is §7's rule in the academy's words.
+- *Technically correct, completely missing the point.* The catalogue gives the build's own common names (`nameEn`), and *Caor appears to mean a berry* puts the miss in one line.
+- *Caor, Slán, Scáth.* The glossary's entries are Part I's: a spark that starts something larger, the word at parting, shelter as much as shadow. *Caor* is also the Irish for a berry, which is where the rowan comes from. *Slán* is in the canon's catalogue and not in the build's `SPELLS`. The glossary gives it as a word, not as a stone's spell.
+- *The Clearing is not revealed* (§3.1). The glossary gives the told version, *our dead hold the world up*. The rubbing-seller's *true and still not the whole of it* is §3.1's *lied to … only about the mechanism*, unstated. The margin line about a burial in the gate says only that the stone is warm.
+- *The Withdrawal and the Cold* (§3.1, §3.3). *Touch it … don't stand and read it* is the law as soldiers keep it. *They come back quiet. Then quieter* is *went strange, then quiet*. The Old Blood head's *léamh* is the older word for the thing (§2), and her mother *did not do it*.
+- *The rubbing-sellers are Old Blood* (§3.3): the grey woman with marks at her wrists, who feels a warm stone across a field. She is not named as Old Blood.
+- *Cold-eyes* (§2): the sheet uses it as everyone does, and *Most of us won't* sit with one agrees with §2.2's *Markmen who won't sit with you*. It is said of a people's way, not their bodies.
+- *The fresh strokes* agree with Q4's readyText and with §8.2's etching, and name no one.
+- *Where the canon is silent:* which books the guilds keep, the treatise's price, and the Fighters' sheet. I chose the plainer thing each time: a primer the academy sells, a glossary nobody sells, and a sheet every recruit is handed.
+- *Register.* Aurennais: *Master*, terms, *declines to certify*, no oath. Gatelander: proverbs (*a drawing of the sea*, *a coin from a country you'll never see*), no bare yes or no, *Weaver forgive me*. Markish: short, *aye*, no honorific, *on iron*. Old Blood: few words, the older one first.
