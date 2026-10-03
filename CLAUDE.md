@@ -130,7 +130,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 ## Code map (line numbers drift; grep for the names)
 - Save store: `SS`, `ssWrite/ssLoad/ssPut/ssGet`, `ssStringify` (skips live scene handles), `ssSanitizeLoaded`, export/import `ssExportChar/ssImportFile`.
 - World module: the big IIFE returning `WORLD` (`return {SIZE,CHUNK,SEA_Y,...`). Settlements in `SETTLE`, roads in cells, weather `WX`, sky `SKY`, snow cover `WX.cover`, footprints `FP`.
-- Terrain: `rawH` → `baseH` (site stamps flatten) → `worldH` (roads). Colour: `groundColor()`; chunks recoloured by `recolourChunk`.
+- Terrain: `rawH` → `baseH` (site stamps flatten) → `worldH` (roads). Ranges and rivers (S432): `rvSpines` (the horseshoe per island, the Ferrous), `ridgeAt` from the spine, `basinAt`, `spinePeaks`; `routeWorld` routes the rivers once per seed at the first terrain call and fills the carve grid `RVG` that `rawH` reads (`riverSample`); `WORLD.routed` has the reaches, the great rivers, the lakes and the stats. Colour: `groundColor()`; chunks recoloured by `recolourChunk`.
 - Interiors: `buildInteriorFor`, `partition()` cuts doorways, `intDoorAt` hangs a door, `INT_BEDS/INT_DOORS/INT_NPCS`.
 - Dialogue: `makeDef` builds a town NPC, `topics` is a getter; folders are `{label, folder:true, follow:[...]}`.
 - Maps: `drawLocalMap` (Local view + minimap), `mapPixel` (world map), `BLD` (building colours), `MAPBIO` (biome tints).
@@ -144,7 +144,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - `WORLD.tick` only runs in the open world: anything that must keep running indoors (weather sound) goes in the main loop.
 - An authored day/night curve rewrites fog density every frame outside the world; the world owns its fog.
 - `ROAD_MAT` is `VC_MAT` — shared with buildings. Tint road *vertex colours*, never the material.
-- Site stamps are applied after rivers are carved: a pad over a river fills it in.
+- Site stamps are applied after rivers are carved: a pad over a river fills it in. The routing keeps the channels out of the pads (S432); the carve is global, so a chunk is cut the same whether its cell is loaded or not.
 - `BAG` is a `const`; mutate it, don't reassign.
 - A dropped animation frame must never change an outcome (lockpicking, doors): read `performance.now()`.
 - The world sits at x, z ≈ 13,000–25,000. Anything that puts world coordinates through a float32 shader path
