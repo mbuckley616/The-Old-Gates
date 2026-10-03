@@ -10932,3 +10932,21 @@ What it moved: of the world's 1,049 named sites, 150 change name. Every French p
 ### Needs eyes
 - The quest writer's ear on the new French long names in the map's labels and the ferry lists. The review gave the form, and these are its first draws.
 - Finding 9 (peaks, lakes and Aurenne's rivers) is on `auto/fable-rivers`, which isn't this branch. It is left to whoever carries that branch.
+
+## v80 — Session 443 — The captain's guard, played: it holds, breaks and comes back as built (backlog G, the creatures in real play)
+Backlog G owed Session 130's captain's guard to real play. Session 130's entry says *the captain's guard against a real power attack — headless can't run the combat loop*. This session played it through the loop at fixed 1/60 ticks, as `dazed` did, with real swings through `attack()` resolved at the swing's impact frame. A Bandit Captain was set down in Dunmore's open street at noon, with the starting Wooden GreatClub in hand.
+
+**What was found.** No fault. The guard does what Sessions 130 and v71 built:
+- From the front, with the guard up, ten swings landed 1–2 a blow against 5–6 open (27%). The rule is 35%, and the blow is floored to whole points, so a weak weapon loses a little more. The guard stayed up through all ten. Twice the swings broke its posture (*staggered!*) without dropping the guard, as built.
+- A bash from the front glances off (*Bash glances off the raised shield.*), and the guard stays up.
+- A power attack from the front broke the guard four times out of four: *guard breaks!*, the shield arm down, a stagger, and no damage from that blow. Three follow-up swings landed in full while it reeled. The guard came back up 1.50 s after the break (`POSTURE_BREAK_STUN`), with the arm raised again and *raises its guard again*.
+- Six times, with the captain winding up its blow, the player stepped round behind it and swung. Each swing counted as from behind and landed in full (98–102% of an open blow) with the guard still up. The facing freezes for the wind-up and recovery (v63), and that is what lets a sidestep round the shield work.
+
+**A correction to Session 130.** Its entry, and the comment over the captain's build in `buildZoneEnemy`, say the guard breaks to *a power attack or a bash*. That was never true. `doBash` has made a raised guard immune to a bash since v71 (*design call G: the shield is exactly the thing a bash can't crack; flank it or power-attack it*), and Session 130 changed nothing there. The play above matches design call G, so the code stays. Only this note corrects the record. A player with fists has no power attack (`_isPow` needs a weapon), so bare-handed the only way past a captain's guard is the flank.
+
+### Verified (headless Chromium)
+`tests/captainguard.test.mjs` (new), 8/8: the guard built up (shield prop, arm at −1.15); front swings at 0.27 of open; the bash glancing off; four power breaks with 0 damage and the arm down; full follow-ups (5–6); the guard back at 1.50 s each time; six flank swings from behind at 1.02 of open. No page errors. No game code changed. Build tag s382.
+
+### Needs eyes
+- The feel: whether 1.5 s of stagger after a power attack's slow wind-up is enough to land the follow-ups a player wants, and whether stepping round a captain's wind-up reads in third person.
+- With fists, a captain can only be flanked. Whether that is right for the bare-handed start is Michael's to judge in play.
