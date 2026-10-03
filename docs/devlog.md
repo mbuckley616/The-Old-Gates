@@ -11059,3 +11059,14 @@ The fix is the one Session 445 asked for. `dryDoors` runs once, at the end of `r
 
 ### Needs eyes
 The 99 gates in their new places, on the world map and on the ground: whether any now sits awkwardly (on a steep slope or a ridge) where it used to stand in a lake. The settlements were not checked the same way: the routing keeps the channels out of the pads (S432), but whether any place's pad lies in a basin lake was not counted here.
+
+## v80 — Session 448 — Places standing in the basin lakes (found, filed as DECISION #121; docs only)
+Session 447's entry left one question open: the routing keeps river channels out of settlement pads (S432), but does any place stand in a lake? A census on the bare land, one and a half pads plus ten units out on sixteen bearings from every generated place that is not a port, says yes. 43 of 919 have water on twelve or more bearings, 36 of them on all sixteen, and 39 of the 43 sit inside a basin lake. They are 20 villages, 4 shrines, 4 glades, 4 towers, 3 ruins, 3 outposts, 2 bandit camps, a camp, 2 lairs and a point of interest. With their cell loaded, the pad's stamp lifts each one out: Diawor (village, cell 1,1) stands at 3.36 across its 45-unit pad, with −1.1 at 1.4 pads and −4 at two. Dogiaen, the one town whose centre the bare land puts under water, stands at 2.42 on the lake's edge with dry ground beyond (8.7 at two pads), so it is not among the 43. No road, coach or walker reaches the 43 without swimming.
+
+Where a village goes, and whether a lake bends round it, is a design call over the Fable's rivers, so nothing was changed. The question is DECISION #121 and under Pending in docs/decisions.md: A, move them to the shore (recommended); B, causeways to island villages; C, bend the lakes round the pads; D, leave it. Filed in backlog B.
+
+### Verified (headless Chromium)
+Probes only, not committed: the census above on one boot (`rawH` with the routing's flag, the same bare land `dryDoors` reads), and cells 1,1 and 2,1 loaded with their job queue drained to read the stamped ground across Diawor's and Dogiaen's pads. No build tag bump (no code changed).
+
+### Needs eyes
+Diawor or Nordou from the shore at a real draw distance: a village on a disc in a lake, whether it reads as a mistake or as a place.
