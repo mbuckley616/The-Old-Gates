@@ -89,3 +89,17 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing beyond ordinary CI waits.
 
 **Roadmap.** The critic-fixes epic closed in full, the second after look and feel. Roughly 155 of 175 stories done, up from 128 of 160 three days ago.
+
+## 2 Oct 2026
+
+**Waiting on you.** Nothing today. Both code branches are green but conflict with main in two docs files; their builders merge main next run, then each card turns ready for your Approve.
+
+**Landed on main since yesterday.** Systems sessions 382–401 (9b6232d): the punch lands, duel and counter fixes and more. Look sessions 394–410 (d7ba1c7). The merge queue retired; the producer now merges through GitHub (a5875da). Concept's counter and chest on the parchment (6edf854). Quest writer run 5 and its draft, Back to Their Bread (f507988). The designer's platforming page (311d9a8). The critic's s360 report (4bbc887). Build s360.
+
+**Answered.** Platforming B (hand-built jump, mantle and falls first, then generated places) and the beasts' deaths C (a ragdoll on the wolf's joints), both written to decisions.md.
+
+**Team.** Systems builder: Sessions 423–426, the duel test on fixed ticks, inn keepers' room directions, the priest's tithe, three of the critic's bugs. Look builder: Sessions 414–422, the unarmed guard, ragdoll deaths, the beasts' prototype.
+
+**Blocked.** Nothing beyond the docs conflicts above.
+
+**Roadmap.** 147 of 193 stories done; five new stories under way on auto/systems (inn rooms, tithe, three critic fixes).

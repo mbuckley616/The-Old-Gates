@@ -12,6 +12,27 @@ Nothing is networked today, and the game assumes one player and one save: foes r
 Recommendation: **A**, aimed at B's shape. It is the "architecture now, the feature later" the note asks for; B now would race the skills and combat reworks, and C builds the "perhaps" before the friend joining your world. Say also whether *downed, not a reload* with friends present is right.
 
 ## Answered
+### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
+The six skill books open today on a dark brown box, one page at a time, with web buttons (*◀ Previous*, *Next ▶*, *Close Book*); the notice boards and the examine texts (the Sea-Folk Shrine, the Mouth, the keystones) open as plain text on a black page. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own words and no new data: *The Forge-Man's Third Treatise* and *Letters from Ashwold*, Hearthwick's board, Droichead's keystones. Every page of all six books fits its leaf. Prototype: `docs/prototypes/books/` on auto/concept.
+- **A. The open book** *(recommended)*: two pages a spread in a leather board with a page block, a ribbon, a running head and folios. The first page becomes a title page and the text opens on a red drop cap. The letters are set in a written hand. The first reading's +1 is written at the foot of the title page instead of a toast. A/D turn, E closes.
+- **B. One leaf**: the same paper and type, one page at a time as today.
+- **C. Restyle only**: today's panel in the kit's colours and fonts.
+
+With any of them, the notice board becomes a plank board with the town's record on one nailed sheet and each notice on its own slip. An examine text becomes a slip in the lower third, with the world still in view.
+
+Recommendation: **A.** It is how Oblivion shows a book, and the UI overhaul (27 Sep) asked for Oblivion's design. The six books run to 3 or 4 pages, so a spread shows half a book at once and two turns read it.
+
+Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-book.png) · [A, a book of letters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/letters.png) · [B, one leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/leaf.png) · [the board, today beside the proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-notice.png) · [the examine slip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-examine.png).
+
+Michael: **A. The open book, two pages a spread** (2 Oct 2026)
+
+### Main's tests went red after the Systems 404–429 merge (the producer, 2026-10-02)
+Main's check failed on 8ca3e23: saveui failed once (a save to an empty slot did not show) and headless shard 3 ran out of its 45 minutes on its last suite. Both had passed on bd9fb74. One re-run of the two jobs: saveui (shard 8) passed; shard 3 timed out again at 45 minutes (run 37053330502, attempt 2). Shard 3 also timed out on auto/systems f71586a.
+- **A. Carry on merging; fix the slow shard** (recommended): approved branches keep merging on their own green CI; the systems builder rebalances the shards or raises the time limit next run.
+- **B. Hold all merges until main is green.**
+
+Michael: **Carry on merging; fix the slow shard** (A). (2026-10-02)
+
 ### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #112)
 Today the ranges are bands laid on cell borders (the Mark's are a grid of boxes), one peak a cell, and the rivers are border crossings rolled at random, one width, with no forks. Session 430 prototyped three rules for laying the ranges, and routed the rivers off them the way the real build would: a coarse height (the distance from the coast, the proposed ranges on top) is flooded and drained, so every channel reaches the sea or a lake, tributaries join, and the width follows the catchment (10u at 1 km², 16u where a ship fits at 3.2 km², 25u at 12 km²). The pictures are the world map as the game draws it, washed pale, with the proposal over it; the old ridge boxes still show through faintly. The home province keeps its authored rivers in every layout (the Dearg, the Westwater, the Ferrous wall along its north edge); the Dearg would widen downstream but stay a ford at Redwater Ford, so it is not a ship's river.
 
@@ -35,8 +56,6 @@ What the build then does (two or three sessions): the routing runs once per seed
 
 Michael: **The horseshoe: a ring round a basin** (C). (2026-10-02)
 
-Done, Sessions 432–433 (the Fable session): the ranges, the basin lakes and the routed rivers are in the terrain; the quays on the banks and the ship's river test too.
-
 ### Places that share a name (the systems builder, 2026-10-02, DECISION #110)
 The world names its places from each culture's bank: ten first halves and ten second halves, a hundred names at most, drawn at random for every village, town, city, port and outpost. There are 609 of those in the world and only 366 names among them, so 396 places share a name with another place, 59 of them with a place in the same province. Of the 110 ports, 30 share a name, and six harbourmasters offer *Passage to* a port with their own harbour's name (two *Woushstouir*s in the Wiabrou Realm, two *Marnfouey*s, *Godaey*, *Inismore*). A quest, a coach board or a rumour that names one of them can mean either. Home's hand-placed towns (Dunmore, Portclare and the rest) are untouched in every option.
 
@@ -48,19 +67,6 @@ Renaming changes the names of places in every existing save. The saves keep plac
 - **D. Leave it.**
 
 Michael: **One name per place, world-wide** (A). (2026-10-02)
-
-### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
-The six skill books open today on a dark brown box, one page at a time, with web buttons (*◀ Previous*, *Next ▶*, *Close Book*); the notice boards and the examine texts (the Sea-Folk Shrine, the Mouth, the keystones) open as plain text on a black page. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own words and no new data: *The Forge-Man's Third Treatise* and *Letters from Ashwold*, Hearthwick's board, Droichead's keystones. Every page of all six books fits its leaf. Prototype: `docs/prototypes/books/` on auto/concept.
-- **A. The open book** *(recommended)*: two pages a spread in a leather board with a page block, a ribbon, a running head and folios. The first page becomes a title page and the text opens on a red drop cap. The letters are set in a written hand. The first reading's +1 is written at the foot of the title page instead of a toast. A/D turn, E closes.
-- **B. One leaf**: the same paper and type, one page at a time as today.
-- **C. Restyle only**: today's panel in the kit's colours and fonts.
-
-With any of them, the notice board becomes a plank board with the town's record on one nailed sheet and each notice on its own slip. An examine text becomes a slip in the lower third, with the world still in view.
-
-Recommendation: **A.** It is how Oblivion shows a book, and the UI overhaul (27 Sep) asked for Oblivion's design. The six books run to 3 or 4 pages, so a spread shows half a book at once and two turns read it.
-
-Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-book.png) · [A, a book of letters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/letters.png) · [B, one leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/leaf.png) · [the board, today beside the proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-notice.png) · [the examine slip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-examine.png).
-
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
