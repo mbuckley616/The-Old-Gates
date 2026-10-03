@@ -3,13 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Online play — which co-op is the door kept open for, and what is built now? (the designer, 2026-10-03)
-Nothing is networked today, and the game assumes one player and one save: foes read `px`/`pz`, the save writes you and the world as one row, panels stop the clock, and loot rolls `Math.random`, so two machines would roll different chests. The page (`docs/design/online-play.md`) sets the co-op it aims at (the host's world, each friend's own character, one shared place with a 400-unit tether, downed for 30 s instead of a reload when friends are present, foes +50% health a friend) and asks what to do now.
-- **A.** Keep the door open only: split the save into character and world, stable ids, seeded outcome rolls, foes target through one function, nothing relies on the pause; nothing networked (1 Fable + 1 Opus).
-- **B.** A, then build summoned co-op now over WebRTC (A + 1 Fable + 6 Opus).
-- **C.** A, then a PvP arena first to prove the wire, co-op after (A + 1 Fable + 2 Opus, then B).
-
-Recommendation: **A**, aimed at B's shape. It is the "architecture now, the feature later" the note asks for; B now would race the skills and combat reworks, and C builds the "perhaps" before the friend joining your world. Say also whether *downed, not a reload* with friends present is right.
 
 ## Answered
 ### Places standing in the basin lakes (the systems builder, 2026-10-03, DECISION #121)
@@ -22,6 +15,16 @@ The rivers build (S432, Michael's C, the horseshoe) put one great lake in each r
 Michael: **A — move them to the shore** (3 Oct 2026, on issue #121, via the producer).
 
 *Done, Session 452 (systems builder):* after the routing, a place with no dry straight line from its pad's edge out to three pads on any of 24 bearings is set down at the nearest spot in its own cell where the pad and a ring 30 beyond stand on dry bare land, clear of the other pads and the gates. 42 move (19 villages, a city, outposts, shrines, glades, spires, ruins, a bandit camp and two lairs, whose cavern doors go with them), 100–580 units each; none is left cut off. `tests/shoreplaces`. Issue #121 closed by the producer.
+
+### Online play — which co-op is the door kept open for, and what is built now? (the designer, 2026-10-03)
+Nothing is networked today, and the game assumes one player and one save: foes read `px`/`pz`, the save writes you and the world as one row, panels stop the clock, and loot rolls `Math.random`, so two machines would roll different chests. The page (`docs/design/online-play.md`) sets the co-op it aims at (the host's world, each friend's own character, one shared place with a 400-unit tether, downed for 30 s instead of a reload when friends are present, foes +50% health a friend) and asks what to do now.
+- **A.** Keep the door open only: split the save into character and world, stable ids, seeded outcome rolls, foes target through one function, nothing relies on the pause; nothing networked (1 Fable + 1 Opus).
+- **B.** A, then build summoned co-op now over WebRTC (A + 1 Fable + 6 Opus).
+- **C.** A, then a PvP arena first to prove the wire, co-op after (A + 1 Fable + 2 Opus, then B).
+
+Recommendation: **A**, aimed at B's shape. It is the "architecture now, the feature later" the note asks for; B now would race the skills and combat reworks, and C builds the "perhaps" before the friend joining your world. Say also whether *downed, not a reload* with friends present is right.
+
+Michael: **Keep the door open only** (A). (2026-10-03)
 
 ### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
 The six skill books open today on a dark brown box, one page at a time, with web buttons (*◀ Previous*, *Next ▶*, *Close Book*); the notice boards and the examine texts (the Sea-Folk Shrine, the Mouth, the keystones) open as plain text on a black page. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own words and no new data: *The Forge-Man's Third Treatise* and *Letters from Ashwold*, Hearthwick's board, Droichead's keystones. Every page of all six books fits its leaf. Prototype: `docs/prototypes/books/` on auto/concept.
