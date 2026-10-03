@@ -6955,7 +6955,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;const kind=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'occupied':null;
       const S=SIEGES.get(t.id);const d=Math.hypot(px-t.x,pz-t.z);
       if(!kind||d>420){if(S&&(d>600||!kind)){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);}continue;}
-      if(S){if(S.kind!==kind){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);continue;}
+      if(S){if(S.kind!==kind){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);continue;} /* S440 — out of the world's foes too: a camp whose town fell left its soldiers unseen and striking */
         if(S.enemies.length&&S.enemies.every(e=>e.dead)){SIEGES.delete(t.id);S.props.forEach(m=>sc.remove(m));if(kind==='siege')breakSiege(t);else liberate(t);}continue;}
       if(d>300)continue;
       const by=kind==='siege'?st.siegeBy:st.occupier;const n=kind==='siege'?6+Math.floor(level/3):5+Math.floor(level/4);const enemies=[],props=[];

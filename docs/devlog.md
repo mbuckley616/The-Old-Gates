@@ -10872,3 +10872,22 @@ Backlog G owed Session 125's sea line to real play: *Corwin at a pre-commission 
 ### Needs eyes
 - Once the line is done, Corwin is gone from the quays until Aldwyn's commission: `tutSeaOpen` closes with it, and the early Corwin stands only while the line is open. `corwinEarly` has a greeting for that time (*The sailor. Go on — the tide won't wait and neither will I.*) that can never be heard. Whether he should stay at the quays after paying, and say it, is the quest writer's and Michael's call. It is left as built.
 - A real crossing at the wheel, and the black sail met at sea rather than set down beside you. The critic found the crossing too long for a headless run.
+
+## v80 — Session 440 — A fallen town's camp left its soldiers behind, unseen (backlog G, the war in real play)
+Backlog G owed the war to real play: *a siege camp on a road, a garrison on a plaza*. No suite covered a siege at all. This session played one at Dunmore, using the town's own state as the war sets it (`besieged` by the Mark, then `occupied` once it falls), with `tickSieges` and the foes' own tick doing the rest.
+
+**What was wrong.** `tickSieges` (`js/80-world.js`) sets the Mark's camp down the road while a town is besieged, and a garrison on the plaza once it is occupied. When the siege became an occupation, the camp gave way, but only halfway. Its soldiers' bodies left the scene, and the soldiers themselves stayed among the world's foes. Six unseen soldiers stood where the camp had been, still ticked by `tickZoneEnemies`, still walking and still striking. A player standing there lost 25 health in five seconds to nothing visible, and a Markish Captain beside a player took 41. A town falls twelve days into a siege, so this happens to any player who is nearby when it does. The branch for leaving the town (600 units off, or the war over) already took the soldiers out of the list. The branch for the camp giving way didn't.
+
+**What changed.** When the camp gives way, its soldiers leave the world's foes along with their bodies, as they do when you walk away. The siege, the fall, the garrison and the liberation are unchanged.
+
+### Verified (headless Chromium)
+`tests/siegeturn.test.mjs` (new), 6/6, at Dunmore:
+- Besieged: the Mark's camp of six (one Markish Captain) stands down the road, 36 units from the plaza.
+- Fallen: no soldier is left unseen (there were 6 before the fix), and the garrison of five, a captain among them, holds the plaza 11 units from the middle.
+- Standing for five seconds where the camp was, nothing strikes you (the old code took 25).
+- The garrison killed, Dunmore is free.
+- On the old `js/` (`--src`), the three checks the fix is for fail. No page errors. Build tag s379.
+
+### Needs eyes
+- A siege by eye: the camp's tents and banner on Dunmore's road, and the garrison on the plaza. Whether six soldiers and a captain read as a camp is the look builder's to judge.
+- The occupied town's colours on the gate, the other half of G's line, were not looked at.
