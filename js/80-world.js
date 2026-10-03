@@ -6838,8 +6838,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function qTurnIn(q){q.turnedIn=true;const paid=questGold(q.reward);q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
   // ── town quests ──
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
-  function townQuestFor(site,force){
-    const active=qActive().find(q=>q.giverSite===site.id);if(active)return active;
+  // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
+  // from this site that is not a service, and a service asks for a fresh one (`fresh`) to dress in its own words
+  function townQuestFor(site,force,fresh){
+    const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
     const lord=lordFor(site);const r=Math.random;const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj);
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
     const id='tq_'+site.id+'_'+Date.now();const giver=`${lord.title} ${lord.name}`;
@@ -6855,7 +6857,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id))qAdd(q);if(q.done)return `You've done it? Then ${q.reward} gold, with the ${site.kind}'s thanks.`;return q.desc+` (${q.reward} gold.)`;}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -6869,7 +6871,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function qOnTalk(def){
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='deliver'&&def.name===q.data.who){q.data.done=true;qComplete(q);showMsg(`${def.name} takes the letter.`,'#e8d8a0');return true;}
-      if(q.kind==='find'&&def.name===q.data.who&&def._lost){q.data.found=true;qComplete(q);showMsg(`${def.name}: "Home? Yes. Yes, all right."`,'#e8d8a0');return true;}
+      if(q.kind==='find'&&def.name===q.data.who&&def._lost){q.data.found=true;qComplete(q);if(q.rival)return false; /* S457 — Rowe is found in her own words (her topic), so her dialogue opens */ showMsg(`${def.name}: "Home? Yes. Yes, all right."`,'#e8d8a0');return true;}
     }
     return false;
   }
@@ -7543,7 +7545,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     let q;
     if(S.kind==='sail'){q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
     else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
-    else{q=townQuestFor(site,S.kind);if(qActive().some(a=>a.id===q.id))return q; // the seat's own job is still open
+    else{q=townQuestFor(site,S.kind,true);
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
     if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}
