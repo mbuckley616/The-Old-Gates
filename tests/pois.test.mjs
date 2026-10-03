@@ -5,8 +5,12 @@ import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
-const r = await page.evaluate(() => { const out = {}; const shots = {};
-  for (const kind of ['tower', 'shrine', 'lair', 'bcamp', 'glade']) { const t = WORLD.SITES.find(s => s.kind === kind && s.pad > 0); if (!t) { out[kind] = { none: true }; continue; }
+// WORLD.SITES holds only the loaded cells' places, and since the rivers (Session 432) the start loads the home cell alone, which
+// has none of these kinds: take the nearest of each from the cells around, by rings, and load its cell (Session 453).
+const r = await page.evaluate(() => { const out = {}; const shots = {}; const [hi, hj] = WORLD.cellOf(px, pz);
+  const nearest = kind => { for (let k = 0; k < 6; k++) { let best = null, bd = 1e9; for (let i = hi - k; i <= hi + k; i++) for (let j = hj - k; j <= hj + k; j++) { if (Math.max(Math.abs(i - hi), Math.abs(j - hj)) !== k) continue; const c = WORLD.getCell(i, j); for (const t of (c && c.sites) || []) { const d = Math.hypot(t.x - px, t.z - pz); if (t.kind === kind && t.pad > 0 && d < bd) { bd = d; best = t; } } } if (best) return best; } return null; };
+  for (const kind of ['tower', 'shrine', 'lair', 'bcamp', 'glade']) { const t0 = nearest(kind); if (!t0) { out[kind] = { none: true }; continue; }
+    WORLD.loadCell(...WORLD.cellOf(t0.x, t0.z)); const t = WORLD.SITE[t0.id] || t0; px = t.x + 40; pz = t.z + 40;
     let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); const L = S.lodMeshes || []; const hi = L.filter(m => m.userData.lod === 'hi');
     out[kind] = Object.assign(out[kind] || {}, { hi: hi.length, paired: hi.every(m => L.some(o => o.userData.lod === 'lo' && o.userData.ckey === m.userData.ckey)), tris: hi.reduce((a, m) => a + m.geometry.attributes.position.count / 3, 0) });
     // a picture from 30 units at noon, the camera close enough that the detailed piece shows
