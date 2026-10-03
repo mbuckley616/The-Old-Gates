@@ -4,6 +4,32 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+### Mountains and rivers on the world map — which layout? (the Fable session, Session 430, 2026-10-02, DECISION #112)
+Today the ranges are bands laid on cell borders (the Mark's are a grid of boxes), one peak a cell, and the rivers are border crossings rolled at random, one width, with no forks. Session 430 prototyped three rules for laying the ranges, and routed the rivers off them the way the real build would: a coarse height (the distance from the coast, the proposed ranges on top) is flooded and drained, so every channel reaches the sea or a lake, tributaries join, and the width follows the catchment (10u at 1 km², 16u where a ship fits at 3.2 km², 25u at 12 km²). The pictures are the world map as the game draws it, washed pale, with the proposal over it; the old ridge boxes still show through faintly. The home province keeps its authored rivers in every layout (the Dearg, the Westwater, the Ferrous wall along its north edge); the Dearg would widen downstream but stay a ford at Redwater Ford, so it is not a ship's river.
+
+![today](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/today.jpg)
+![A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/layout-a.jpg)
+![B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/layout-b.jpg)
+![C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-rivers/docs/prototypes/rivers/layout-c.jpg)
+
+Close-ups of each island: `docs/prototypes/rivers/layout-a-islands.jpg`, `-b-`, `-c-` (and `today-islands.jpg`). Blue lines are rivers, a light core marks water a ship can enter; faint blue is a brook; the brown band is a range with its peaks; a white ring is a town, city or port within a short walk of navigable water (it would gain a quay); a red ring is a settlement a channel runs through (the river bends round it).
+- **A. The spine.** One long range along each island, wandering, with a shoulder range on the big islands. Rivers run to both coasts, so there are many of a middling size: 75 reach the sea, 12 named, 3 deltas, 20 a ship can enter (97 km of navigable water), 19 lakes. Even and plausible; no river dominates an island.
+- **B. The rim.** The range runs along one coast of each island (the Mark's east, Aurenne's west, the Gatelands' north), with a spur inland. The island drains the other way, so the rivers are long and few: 67 reach the sea, 12 named, 3 deltas, 22 a ship can enter (103 km), 22 lakes; the two biggest catchments are 14 km² (la Dorée) and 13.6 km² (the Blackwater). The short side has torrents off the mountains.
+- **C. The horseshoe.** A ring of ranges round a basin, open on one side; the basin holds a lake and drains through the gap as one great river. 49 reach the sea, 9 named, 3 deltas, 9 a ship can enter (72 km), 16 lakes; the great rivers are huge (the Blackwater 36 km² and 4.8 km long, la Dorée 34 km², An Dubh 24 km² and 7 km long) and everything else is small. Dramatic, but a quarter of each island is the one valley, and the Gatelands' ring sits over the home province's north.
+
+**Recommendation: B.** It gives what the backlog asks for, a few great rivers cutting through each island with forks and a delta, and it keeps the rest of the coast ordinary. A spreads the water evenly and nothing reads as *the* river; C makes one valley the whole island. B also fits the canon as written: the Mark's ranges stand along its strait side, Aurenne's long rivers run down to the coast where its ports are, and the Gatelands' rivers come south off a northern range the way the Dearg comes off the Ferrous.
+
+**Towns and rivers.** In every layout the rivers are routed with the settlements in the way, so a river bends round a town's pad rather than the town moving (40 of 522 settlements sit in a channel's path in B; the river goes round). A town the river passes within a short walk gains a quay on the bank (89 in B). The other way, moving towns onto the banks, would move 40 generated settlements and re-roll their roads; the home province's authored places would not move either way. Say **towns move** with your letter if you want that instead; otherwise the rivers bend.
+
+What the build then does (two or three sessions): the routing runs once per seed at boot in a job (0.6 s on this machine for 230,000 lattice nodes; a 100u lattice would be a quarter of that), its rivers are carved in `rawH` as today's are, with a width that grows downstream and every site stamp after the carve; `ridgeAt` measures from the range's spine instead of the cell border, and the peaks sit along it; a quay prop on a bank town; the ship's aground test already reads the carved depth, so a 16u channel is sailable; the bridges take their length from the river's width; the local and world maps draw the water. Tests: every river reaches the sea or a lake; no settlement pad floods; the ship sails from a port up a great river to its first fork; the terrain build stays inside the hourhitch and snowrepaint budgets.
+
+(Prototype: `docs/prototypes/rivers/layout.js` and `render.mjs`; `node docs/prototypes/rivers/render.mjs` redraws the four pictures in about forty seconds.)
+
+Michael: **The horseshoe: a ring round a basin** (C). (2026-10-02)
+
+Done, Sessions 432–433 (the Fable session): the ranges, the basin lakes and the routed rivers are in the terrain; the quays on the banks and the ship's river test too.
+
 ### Places that share a name (the systems builder, 2026-10-02, DECISION #110)
 The world names its places from each culture's bank: ten first halves and ten second halves, a hundred names at most, drawn at random for every village, town, city, port and outpost. There are 609 of those in the world and only 366 names among them, so 396 places share a name with another place, 59 of them with a place in the same province. Of the 110 ports, 30 share a name, and six harbourmasters offer *Passage to* a port with their own harbour's name (two *Woushstouir*s in the Wiabrou Realm, two *Marnfouey*s, *Godaey*, *Inismore*). A quest, a coach board or a rumour that names one of them can mean either. Home's hand-placed towns (Dunmore, Portclare and the rest) are untouched in every option.
 
@@ -13,6 +39,8 @@ Renaming changes the names of places in every existing save. The saves keep plac
 - **B. One name per nation**: repeats allowed only across a border, so fewer places renamed than A. Two nations could still share a *Beaumont*.
 - **C. Keep the names, say which one**: where a name repeats, the ferry, the coach board and the map add the province (*Woushstouir, Wiabrou Realm*). Nothing renamed, but two ports in one province still read the same.
 - **D. Leave it.**
+
+Michael: **One name per place, world-wide** (A). (2026-10-02)
 
 ### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
 The six skill books open today on a dark brown box, one page at a time, with web buttons (*◀ Previous*, *Next ▶*, *Close Book*); the notice boards and the examine texts (the Sea-Folk Shrine, the Mouth, the keystones) open as plain text on a black page. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own words and no new data: *The Forge-Man's Third Treatise* and *Letters from Ashwold*, Hearthwick's board, Droichead's keystones. Every page of all six books fits its leaf. Prototype: `docs/prototypes/books/` on auto/concept.
@@ -26,7 +54,6 @@ Recommendation: **A.** It is how Oblivion shows a book, and the UI overhaul (27 
 
 Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-book.png) · [A, a book of letters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/letters.png) · [B, one leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/leaf.png) · [the board, today beside the proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-notice.png) · [the examine slip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/books/compare-examine.png).
 
-## Answered
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
