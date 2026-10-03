@@ -11070,3 +11070,16 @@ Probes only, not committed: the census above on one boot (`rawH` with the routin
 
 ### Needs eyes
 Diawor or Nordou from the shore at a real draw distance: a village on a disc in a lake, whether it reads as a mistake or as a place.
+
+## v80 — Session 449 — Every room's partitions leave it walkable (backlog G, *the interior partitions*; test only)
+Section I is clear and both pending decisions (#119, #121) are unanswered, so this run took an owed check from backlog G that a headless test can settle: *the interior partitions*, listed under *Saves first* since Session 137 and never walked. The rooms have grown a great deal since: back rooms behind a partition with a hung door (S143), the inn's let rooms, the guild halls' fifteen member rooms, galleries and stairs, the smithy's racks and forge, the posts and furniture that S293 sets last, the cellars and the Guest's chapel. Nothing had checked that every bed, person and strongbox in them can be reached on foot.
+
+`tests/intreach.test.mjs` (new) builds each generated house with `WORLD.buildInteriorFor` and walks it from where `goToInterior` sets you down (the room's middle, 2.2 in from the door) with a flood fill on a tenth-of-a-unit grid that moves as the game does indoors: `intSolidAt` at the player's radius (0.3) and the feet's height refuses a step, the feet then stand on `footholdY` (a stair's step within `STEP_UP`, or a drop), and the walls bound it at the radius. The inner doors are taken as opened; nothing is jumped. A bed counts as reached where E would take it (1.6, within .9 of its height), a person where E would talk (2.2, within 1.2), the strongbox or home chest at 1.6 from the floor, a tower's chest at 1.5 within 1.2. A control walks every room with doors a second time with its doors kept shut, which must hide what is behind them, so a flood that ignored the partitions would fail.
+
+**No fault found.** Every room of every kind is walkable to everything in it. No game code changed. Two backlog notes corrected: *the held breath across a real six-hour gap*, still listed as owed in G, was settled headless by Session 242 (`tests/reader`); it is struck with that session named.
+
+### Verified (headless Chromium)
+`intreach` 10/10, 3.5 minutes. Portclare, Dunmore and the first city of three registers (Trowor, Fortargent, Cluainshane; anglo, irish, garrison, french and stone rooms), then the three nearest towns with a keep and the two nearest towers: 561 rooms (428 homes, 22 inns, 33 cellars, 2 Guest's chapels, 8 churches, 4 and 4 guild halls, 3 keeps, 2 towers, 55 shops), 875 beds, 120 people, 483 strongboxes and chests, 426 inner doors. All reached; nobody set down inside a solid; every two-floor room's upstairs reached by its stair (feet at 1.9–2.5); both towers' hoards on the top floor at 30 and reached by the spiral. The control: with the doors shut, all 191 rooms with inner doors hide something (367 things; a guild hall 13–15, an inn 4). No page errors. `parsecheck` clean. No build tag bump (no game code changed).
+
+### Needs eyes
+Nothing new. The walk proves a path exists at the player's radius, not that it is comfortable: a 1.5-unit doorway beside a bed or a rack may still feel tight with a shield in third person.
