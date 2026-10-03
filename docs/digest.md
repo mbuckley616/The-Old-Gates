@@ -103,3 +103,17 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing beyond the docs conflicts above.
 
 **Roadmap.** 147 of 193 stories done; five new stories under way on auto/systems (inn rooms, tithe, three critic fixes).
+
+## 3 Oct 2026
+
+**Waiting on you.** Start the Fable card "Keep the door open for co-op: two saves and the rules" on the control room (your A on online play). Systems sessions 431–448 return for one more tap after the systems builder merges main this morning.
+
+**Landed on main since yesterday.** Systems sessions 404–429 (8ca3e23): fall damage, the duel and counter fixes, the priest's tithe. The Fable rivers, 430–433 (df59d46): ranges ringed round basin lakes, named rivers, sixteen a ship can sail, quays. Look sessions 414–435 (f823295): the unarmed body in third person, ragdoll deaths for foes, wolves, boars and bears. Docs: the books-and-notices concept, the online-play page, quest writer run 6, the critic's river-quay playtest. Build s372.
+
+**Answered.** Online play A (the door kept open, nothing networked) and the lake-locked places A (moved to the shore); both written to decisions.md.
+
+**Blocked.** Your approval of Systems 431–448 (f73ff2d) no longer merges after the look sessions landed: one test line both builders edited. The systems builder merges main next run.
+
+**Team.** Systems builder: the 43 places to the shore next. Look builder: nothing left in H. Critic: a storm crossing under sail.
+
+**Roadmap.** 165 of 196 stories done (161 yesterday); ragdolls and the unarmed body closed, online play answered, one new story for the lake places.
