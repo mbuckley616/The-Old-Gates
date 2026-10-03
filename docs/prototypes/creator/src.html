@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Title and Creator</title>
+<!-- The Old Gates — the title screen and the character creator on the approved parchment kit (docs/prototypes/ui,
+     Michael A, 27 Sep 2026) and the open book (docs/prototypes/books, Michael A, 2 Oct 2026). Concept, 3 Oct 2026.
+     kit.css and the icon <symbol>s are copied from the kit (six new: i-bow, i-staff, i-rapier, i-enso, i-book, i-speech);
+     build.py inlines them and the game's own data (current.json, written by shoot-current.mjs from a run of the build:
+     ARCHETYPES, STARTER_WEAPONS, ATTR_DEF, the people's lines, the look rows). The figures are the creator's own rig
+     (tpBuild), photographed full length by shoot-assets.mjs. Every .screen is 1280×720; shoot.mjs photographs them.
+     For the builder: no new data. The sheet (A) is plain DOM on .parch.sheet in three columns; .peo, .lk (swatch rows
+     and .step steppers that replace the walls of style and beard buttons), .beg tiles, .wp weapon rows, .gift rows with
+     the kit's diamonds; the Begin seal is the kit's .seal. The figure keeps its own WebGL canvas, now 300×470. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+/*TOME*/
+.screen{background-size:cover;background-position:center}
+.screen.night{background-image:url(backdrop-title.png)}
+.screen.menu::before{backdrop-filter:blur(3px) brightness(.4) sepia(.35)}
+.ico24{width:24px;height:24px}
+
+/* ───────── title ───────── */
+.ttl-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,18,.15),rgba(6,8,18,0) 35%,rgba(10,8,4,.55) 70%,rgba(10,6,2,.85));z-index:1}
+.gametitle{position:absolute;left:0;right:0;top:92px;text-align:center;z-index:2}
+.gametitle .t{font:92px/1 var(--display);color:#ecdcb2;letter-spacing:.03em;text-shadow:0 2px 0 #3a2410,0 0 30px rgba(0,0,0,.7),0 0 4px #000}
+.gametitle .orn{font:26px var(--fell);color:#c89a48;margin-top:10px;text-shadow:0 0 8px #000}
+.gametitle .sub{font:italic 21px var(--fell);color:#d8c79c;margin-top:4px;text-shadow:0 1px 3px #000,0 0 10px #000}
+.menuslip{left:470px;top:372px;width:340px;padding:22px 30px 20px}
+.mi{display:flex;align-items:center;gap:12px;padding:7px 4px;font:24px/1.1 var(--display);color:var(--ink);border-bottom:1px dotted rgba(90,65,40,.35)}
+.mi:last-child{border-bottom:0}
+.mi svg.ico{width:22px;height:22px;color:var(--ink-soft)}
+.mi.hot{color:var(--rubric)} .mi.hot svg.ico{color:var(--rubric)}
+.mi.hot::before{content:"❧";position:absolute;left:8px;font:20px var(--fell);color:var(--gilt)}
+.mi small{display:block;font:italic 14px/1.25 var(--fell);color:var(--ink-faint);margin-top:2px}
+.tag{position:absolute;right:16px;bottom:10px;font:13px var(--body);color:rgba(240,226,192,.55);z-index:3}
+.hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font:italic 15px var(--fell);color:rgba(240,226,192,.7);z-index:3;text-shadow:0 1px 3px #000}
+.keys{left:180px;top:170px;width:920px;height:384px;padding:28px 44px}
+.keys .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 48px;margin-top:6px}
+.kr{display:flex;align-items:center;gap:12px;padding:5px 0;font:18px var(--body);border-bottom:1px dotted rgba(90,65,40,.3)}
+.kr .k{display:flex;gap:4px;min-width:138px;justify-content:flex-end}
+.kr .key{width:auto;min-width:26px;padding:0 7px;font-size:13px}
+.kr>span:nth-child(2){white-space:nowrap} .kr .w{font:italic 15px/1.15 var(--fell);color:var(--ink-faint);margin-left:auto;text-align:right}
+
+/* ───────── creator, A: one sheet ───────── */
+.cc{left:40px;top:24px;width:1200px;height:672px;padding:20px 36px 18px}
+.cc .head{display:flex;align-items:baseline;justify-content:center;gap:16px;margin-bottom:2px}
+.cc .head .h{font-size:28px}
+.cols3{display:grid;grid-template-columns:318px 1fr 362px;gap:0 32px;height:566px}
+.col{display:flex;flex-direction:column;min-width:0}
+.colrule{border-left:1px solid rgba(90,65,40,.28);padding-left:30px;margin-left:-30px}
+.lbl{font:14px var(--display);letter-spacing:.12em;color:var(--ink-soft);margin:9px 0 4px;display:flex;align-items:baseline;gap:10px}
+.lbl:first-child{margin-top:4px}
+.lbl .r{margin-left:auto;font:italic 14px var(--fell);letter-spacing:0;color:var(--ink-faint)}
+.lbl .r b{font:15px var(--display);color:var(--rubric);font-weight:400}
+.namefield{font:30px/1 var(--fell);color:var(--ink);padding:2px 4px 5px;border-bottom:1.5px solid var(--ink-soft);display:flex;align-items:baseline}
+.namefield .caret{width:1.5px;height:26px;background:var(--ink);margin-left:2px;align-self:center}
+.namefield small{margin-left:auto;font:italic 13px var(--fell);color:var(--ink-faint)}
+.niche{position:relative;height:430px;margin-top:12px;border-radius:150px 150px 6px 6px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 38%,rgba(255,248,225,.55),rgba(236,220,178,.15) 55%,rgba(120,80,30,.18) 100%);
+  box-shadow:inset 0 0 0 1.5px var(--ink-soft),inset 0 0 0 5px rgba(224,201,148,.85),inset 0 0 0 6px rgba(90,65,40,.35),inset 0 -40px 50px -30px rgba(90,55,20,.35)}
+.niche img{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);height:410px}
+.niche .floor{position:absolute;left:50%;bottom:8px;width:150px;height:18px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(rgba(60,35,10,.35),transparent 70%)}
+.turnhint{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font:italic 14px var(--fell);color:var(--ink-faint)}
+.turnhint .btn{font-size:14px;padding:4px 12px}
+.peo{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1.5px solid var(--ink-soft);border-radius:2px;box-shadow:inset 0 0 0 2px rgba(224,201,148,.8)}
+.peo span{text-align:center;padding:6px 0 5px;font:17px var(--display);color:var(--ink-soft);border-left:1px solid rgba(90,65,40,.3)}
+.peo span:first-child{border-left:0}
+.peo span.on{color:var(--rubric);background:rgba(122,31,16,.1);box-shadow:inset 0 -2px var(--rubric)}
+.gloss{font:italic 15px/1.25 var(--fell);color:var(--ink-soft);margin-top:4px}
+.lk{display:grid;grid-template-columns:76px 1fr;align-items:center;padding:2px 0;min-height:30px;border-bottom:1px dotted rgba(90,65,40,.28)}
+.lk>span{font:15px var(--body);color:var(--ink-soft)}
+.sws{display:flex;gap:7px;flex-wrap:wrap}
+.sws i{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 2px 3px rgba(255,255,255,.2),inset 0 -2px 3px rgba(0,0,0,.25),0 0 0 1px rgba(46,28,12,.6)}
+.sws i.on{box-shadow:inset 0 2px 3px rgba(255,255,255,.2),inset 0 -2px 3px rgba(0,0,0,.25),0 0 0 1.5px var(--paper-hi),0 0 0 3px var(--rubric)}
+.step{display:flex;align-items:center;gap:10px}
+.step .ar{font:16px var(--display);color:var(--ink-soft);width:24px;height:24px;display:grid;place-items:center;border:1.2px solid var(--ink-soft);border-radius:50%}
+.step b{font:17px var(--body);font-weight:500;color:var(--ink);min-width:150px;text-align:center}
+.step small{font:italic 13px var(--fell);color:var(--ink-faint)}
+.beg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.bt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 0 3px;font:15px var(--display);color:var(--ink-soft);border:1.2px solid rgba(90,65,40,.45);border-radius:2px;background:rgba(120,80,30,.05)}
+.bt svg.ico{width:26px;height:26px}
+.bt.on{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.09);box-shadow:inset 0 0 0 2px rgba(224,201,148,.8),inset 0 0 0 3px rgba(122,31,16,.35)}
+.desc{font:italic 15px/1.28 var(--fell);color:var(--ink);margin-top:6px}
+.prim{font:13.5px var(--body);color:var(--ink-soft);margin-top:4px}
+.prim b{font:13.5px var(--display);color:var(--rubric);font-weight:400;letter-spacing:.04em}
+.wp{display:grid;grid-template-columns:28px 1fr 52px 50px 26px;align-items:center;gap:6px;padding:3px 8px;font:16.5px var(--body);border-bottom:1px solid rgba(90,65,40,.16)}
+.wp svg.ico{width:22px;height:22px;color:var(--ink-soft)}
+.wp .d{font:15px var(--body);text-align:right}
+.wp .ty{font:italic 13.5px var(--fell);color:var(--ink-faint)}
+.wp .h2h{font:11px var(--display);color:var(--gilt);letter-spacing:.06em}
+.wp.on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.wp.on .n{color:var(--rubric)} .wp.on svg.ico{color:var(--rubric)}
+.wdesc{font:italic 14px/1.3 var(--fell);color:var(--ink-soft);margin:5px 8px 0;min-height:36px}
+.gift{display:grid;grid-template-columns:24px 1fr 22px 20px 22px 74px;align-items:center;gap:6px;padding:2px 4px;border-bottom:1px solid rgba(90,65,40,.14);font:16.5px var(--body)}
+.gift svg.ico{width:20px;height:20px;color:var(--ink-soft)}
+.gift .star{color:var(--gilt);font-size:13px;margin-left:4px}
+.gift.pr{background:rgba(154,112,32,.09)}
+.gift .pm{width:20px;height:20px;border:1.2px solid var(--ink-soft);border-radius:50%;display:grid;place-items:center;font:15px/1 var(--body);color:var(--ink)}
+.gift .pm.off{opacity:.3}
+.gift .v{font:19px var(--display);text-align:center}
+.gift .pips{gap:2px;justify-content:flex-end}
+.gift .pips span{width:11px;height:11px}
+.gtip{font:italic 13px var(--fell);color:var(--ink-faint);margin:4px 4px 0}
+.beginrow{margin-top:auto;display:flex;align-items:center;justify-content:flex-end;gap:16px}
+.beginrow .what{font:italic 15px/1.25 var(--fell);color:var(--ink-soft);text-align:right}
+.beginrow .seal{position:relative;width:60px;height:60px;font-size:26px}
+.beginrow .go{font:24px var(--display);color:var(--rubric)}
+.esc{position:absolute;right:46px;top:30px;font:italic 14px var(--fell);color:var(--ink-faint);display:flex;gap:8px;align-items:center}
+
+/* ───────── creator, B: the book ───────── */
+.tome .chap{position:absolute;right:-26px;top:70px;display:flex;flex-direction:column;gap:6px;z-index:1}
+.tome .chap span{width:30px;height:46px;border-radius:0 5px 5px 0;display:grid;place-items:center;font:15px var(--display);color:#e6cf9a;background:linear-gradient(90deg,#4a2a12,#6a3c18);box-shadow:2px 2px 4px rgba(0,0,0,.5)}
+.tome .chap span.on{background:linear-gradient(90deg,#7a1f10,#a83a24);color:#f8e8c8;width:36px}
+.tome .chap span.done{color:#c8a870}
+.leaf .figwrap{position:relative;height:420px;margin:-6px -10px 0}
+.leaf .figwrap img{position:absolute;left:50%;bottom:0;height:420px;transform:translateX(-50%)}
+.leaf .so{font:italic 17px/1.45 var(--fell);color:var(--ink-soft);text-align:center;margin-top:10px}
+.leaf .so b{font:24px var(--display);color:var(--rubric);font-weight:400;display:block;margin-bottom:2px}
+.leaf .chh{font:13px var(--display);letter-spacing:.2em;color:var(--ink-faint);text-align:center}
+.leaf .cht{font:30px/1.1 var(--display);color:var(--rubric);text-align:center;margin:4px 0 2px}
+.leaf .orn{text-align:center;font:18px var(--fell);color:var(--gilt);margin:0 0 10px}
+.leaf.r{text-align:left} .leaf.r .lk{min-height:42px;grid-template-columns:86px 1fr}
+.leaf .beg{gap:5px} .leaf .bt{font-size:14px;padding:6px 0 4px}
+.leaf .gift{font-size:17px;padding:4px 4px}
+.leaf .ask{font:italic 17px/1.4 var(--fell);color:var(--ink-soft);text-align:center;margin-bottom:8px}
+
+/* ───────── creator, C: restyle ───────── */
+.cc1{left:290px;top:26px;width:700px;height:668px;padding:24px 34px 20px;overflow:hidden}
+.cc1 .scrollbar{position:absolute;right:12px;top:30px;width:6px;height:606px;border-radius:3px;background:rgba(90,65,40,.15)}
+.cc1 .scrollbar i{position:absolute;left:0;right:0;top:0;height:300px;border-radius:3px;background:rgba(90,65,40,.5)}
+
+/* comparison frames */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:1280px;padding:18px 16px 18px;background:#141008;position:relative}
+.screen.cmp{height:auto}
+.pair figure{margin:0}
+.pair img{width:616px;display:block;border:1px solid #3a3022}
+.pair figcaption{font:17px var(--display);color:#e0c994;margin-bottom:8px;letter-spacing:.04em}
+.pair figcaption small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:8px}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<h1 class="page">The Title and the Creator — on the parchment</h1>
+<p class="lede">The game's own beginnings, weapons, gifts and look rows. The figures are the creator's rig, full length.</p>
+<div id="out"></div>
+<script>
+/*DATA*/
+const $=s=>document.querySelector(s);
+const IC={might:'i-sword',fortitude:'i-shield',finesse:'i-dagger',swiftness:'i-wind',resolve:'i-star',intelligence:'i-quill',charisma:'i-person',fortune:'i-coin',
+  warrior:'i-sword',sentinel:'i-shield',duelist:'i-rapier',scout:'i-bow',monk:'i-enso',scholar:'i-book',diplomat:'i-speech',vagrant:'i-pack',
+  sword:'i-sword',club:'i-club',dagger:'i-dagger',staff:'i-staff',bow:'i-bow',greatclub:'i-club'};
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${IC[id]||id}"/></svg>`;
+const PEO=['gatelander','markman','aurennais','oldblood'];
+const hex=n=>'#'+n.toString(16).padStart(6,'0');
+// the chosen character: Aoife, a Gatelander duelist, the look the game dealt her
+const ST={name:'Aoife',people:0,arch:'duelist',weapon:'sword',attrs:null,look:ASSETS.gatelander.look};
+function archOf(id){return DATA.archetypes.find(a=>a.id===id);}
+function attrsOf(id){const a=archOf(id);const o={};for(const k in DATA.attrs)o[k]=a.attrs[k]||0;return o;}
+const STYLE_KEYS=['short','long','tied','shorn','braid','braids2','warrior','crest','curly','afro','shaggy','bun','thinning'];
+function lookName(rowLabel,v){const row=DATA.lookRows.find(r=>r[0]===rowLabel);return row[1];}
+
+function namefield(){return `<div class="namefield">${ST.name}<span class="caret"></span><small>up to 20 letters</small></div>`;}
+function niche(pp,view){return `<div class="niche"><div class="floor"></div><img src="fig-${pp}-${view}.png" alt=""></div>`;}
+function peoples(){return `<div class="peo">${DATA.peopleDesc.map((p,i)=>`<span class="${i===ST.people?'on':''}">${p[0]}</span>`).join('')}</div>
+  <div class="gloss">${DATA.peopleDesc[ST.people][1]}</div>`;}
+function swatches(label,on){const row=DATA.lookRows.find(r=>r[0]===label)[1];return `<div class="lk"><span>${label}</span><div class="sws">${row.map(c=>`<i style="background:${c}" class="${c===on?'on':''}"></i>`).join('')}</div></div>`;}
+function stepper(label,i){const row=DATA.lookRows.find(r=>r[0]===label)[1];return `<div class="lk"><span>${label}</span><div class="step"><span class="ar">‹</span><b>${row[i]}</b><span class="ar">›</span><small>${i+1} of ${row.length}</small></div></div>`;}
+function lookRows(){const L=ST.look;return swatches('Skin',hex(L.skin))+swatches('Hair',hex(L.hair))+stepper('Style',Math.max(0,STYLE_KEYS.indexOf(L.style)))+stepper('Beard',0)
+  +swatches('Tunic',hex(L.tunic))+swatches('Breeches',hex(L.breeches))+swatches('Boots',hex(L.boots));}
+function beginnings(){return `<div class="beg">${DATA.archetypes.map(a=>`<div class="bt ${a.id===ST.arch?'on':''}">${ico(a.id)}${a.label}</div>`).join('')}</div>`;}
+function archDesc(){const a=archOf(ST.arch);return `<div class="desc">${a.desc}</div><div class="prim">Gifted in <b>${a.primaries.map(k=>DATA.attrs[k].label).join(' · ')}</b> — one more in each at every level.</div>`;}
+function weapons(){return Object.entries(DATA.weapons).map(([id,w])=>`<div class="wp ${id===ST.weapon?'on':''}">${ico(id)}<span class="n">${w.name.replace('Wooden ','')}</span><span class="d num">${w.atk[0]}–${w.atk[1]}</span><span class="ty">${w.wType}</span><span class="h2h">${w.twoHand?'2H':''}</span></div>`).join('');}
+function wdesc(){return `<div class="wdesc">${DATA.weapons[ST.weapon].desc}</div>`;}
+function pointsLeft(){return DATA.budget-Object.values(ST.attrs).reduce((a,b)=>a+b,0);}
+function gifts(){const pr=new Set(archOf(ST.arch).primaries);const left=pointsLeft();return Object.entries(DATA.attrs).map(([k,d])=>{const v=ST.attrs[k];
+  return `<div class="gift ${pr.has(k)?'pr':''}">${ico(k)}<span>${d.label}${pr.has(k)?'<span class="star">✦</span>':''}</span><span class="pm ${v<=0?'off':''}">−</span><span class="v num">${v}</span><span class="pm ${(v>=DATA.cap||left<=0)?'off':''}">+</span><span class="pips">${[0,1,2].map(i=>`<span class="${i<v?'f':''}"></span>`).join('')}</span></div>`;}).join('');}
+function giftHead(){const l=pointsLeft();return `<span class="r"><b>${l}</b> of ${DATA.budget} to give · ${DATA.cap} at most in one</span>`;}
+function beginRow(){const a=archOf(ST.arch),w=DATA.weapons[ST.weapon];return `<div class="beginrow"><div class="what">${ST.name}, a ${DATA.peopleDesc[ST.people][0]} ${a.label.toLowerCase()},<br>with the ${w.name.replace('Wooden ','').toLowerCase()}</div><span class="seal">✠</span><span class="go">Begin</span></div>`;}
+
+const screens=[];
+function screen(id,cap,cls,html){screens.push(id);$('#out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen ${cls}" id="${id}">${html}</div>`);}
+
+// ── the title
+const save=ASSETS.save;
+screen('title','The title screen <small>the world at night behind; the menu on a slip; the keys on their own card</small>','night',`<div class="ttl-shade"></div>
+ <div class="gametitle"><div class="t">The Old Gates</div><div class="orn">❦</div></div>
+ <div class="parch small menuslip">
+  <div class="mi hot">${ico('i-key')}<div>Continue<small>${save.name}, Duelist, level 1 · the open country</small></div></div>
+  <div class="mi">${ico('i-quill')}<div>A New Tale</div></div>
+  <div class="mi">${ico('i-book')}<div>Load a Tale</div></div>
+  <div class="mi">${ico('i-scales')}<div>The Keys</div></div>
+ </div>
+ <div class="hint">↑ ↓ to choose · Enter to take it</div><div class="tag">build s373</div>`);
+const K=[['W A S D','move and turn',''],['Mouse','look',''],['Shift','sprint',''],['Space','jump',''],['Q','roll',''],['Ctrl','sneak','fewer eyes on you, slower'],
+ ['E','interact','doors, people, caves'],['Left-click','attack','hold for a power blow'],['Right-click','block','a late one parries'],['R','lock on','or the middle button; flick to switch'],['F','cast',''],['I','inventory','']];
+screen('keys','The Keys <small>today\'s six lines of controls, out of the title and onto a card of their own</small>','night menu',`<div class="ttl-shade"></div>
+ <div class="parch keys"><div class="h" style="text-align:center">The Keys</div><div class="rule"></div><div class="grid">${K.map(k=>`<div class="kr"><span class="k">${k[0].split(' ').length>1&&k[0].length<8?k[0].split(' ').map(x=>`<span class="key">${x}</span>`).join(''):`<span class="key">${k[0]}</span>`}</span><span>${k[1]}</span><span class="w">${k[2]}</span></div>`).join('')}</div>
+ <div class="foot"><span>E or Esc to close</span><span>the same card sits in the pause menu</span></div></div>`);
+
+// ── A: one sheet
+ST.attrs=attrsOf(ST.arch);
+screen('sheet','A — One sheet <small>everything on one page, nothing scrolls; the figure full length</small>','night menu',`
+ <div class="parch cc"><div class="head"><span class="h">Begin Your Tale</span></div><div class="rule"></div>
+ <div class="esc"><span class="key" style="width:auto;padding:0 6px">Esc</span> back to the title</div>
+ <div class="cols3">
+  <div class="col"><div class="lbl">Name</div>${namefield()}${niche('gatelander','three')}<div class="turnhint"><span>‹ drag to turn ›</span><span class="btn">Shuffle</span></div></div>
+  <div class="col colrule"><div class="lbl">Your people</div>${peoples()}<div class="lbl">Your look</div>${lookRows()}<div class="lbl">Your beginning</div>${beginnings()}${archDesc()}</div>
+  <div class="col colrule"><div class="lbl">Starting weapon</div>${weapons()}${wdesc()}<div class="lbl">Your gifts ${giftHead()}</div>${gifts()}${beginRow()}</div>
+ </div></div>`);
+
+// ── B: the book, four chapters
+function spread(ch,right){const chs=['I','II','III','IV'].map((c,i)=>`<span class="${i===ch?'on':i<ch?'done':''}">${c}</span>`).join('');
+  const a=archOf(ST.arch),w=DATA.weapons[ST.weapon];
+  return `<div class="tome"><div class="chap">${chs}</div><div class="block"></div>
+  <div class="leaf l"><div class="run">BEGIN YOUR TALE</div><div class="figwrap"><img src="fig-gatelander-three.png"></div>
+   <div class="so"><b>${ST.name}</b>a ${DATA.peopleDesc[ST.people][0]} ${a.label.toLowerCase()}, with the ${w.name.replace('Wooden ','').toLowerCase()}</div><div class="fol">‹ drag to turn ›</div></div>
+  <div class="leaf r"><div class="run">${ST.name.toUpperCase()}</div>${right}<div class="fol">${['i','ii','iii','iv'][ch]}</div></div>
+  <div class="ribbon2"></div></div>
+  <div class="turn hudtxt"><span><span class="key">A</span> back</span><span><span class="key">D</span> ${ch<3?'on':'begin'}</span><span><span class="key" style="width:auto;padding:0 6px">Esc</span> the title</span></div>`;}
+const chHead=(n,t)=>`<div class="chh">CHAPTER ${n}</div><div class="cht">${t}</div><div class="orn">❦</div>`;
+screen('book1','B — The book, chapter I <small>four chapters, turned in order; the figure and what you have chosen stay on the left leaf</small>','night menu',spread(0,
+ chHead('THE FIRST','Who You Are')+`<div class="lbl">Name</div>${namefield()}<div class="lbl" style="margin-top:22px">Your people</div>${peoples()}`));
+screen('book2','B — The book, chapter II','night menu',spread(1,chHead('THE SECOND','How You Look')+lookRows()+`<div class="turnhint" style="justify-content:center"><span class="btn">Shuffle</span></div>`));
+screen('book3','B — The book, chapter III','night menu',spread(2,chHead('THE THIRD','How You Began')+beginnings()+archDesc()+`<div class="lbl" style="margin-top:12px">Starting weapon</div>`+weapons().replace(/class="wp/g,'class="wp sm')));
+screen('book4','B — The book, chapter IV','night menu',spread(3,chHead('THE FOURTH','What You Are Given')+`<div class="lbl">Gifts ${giftHead()}</div>${gifts()}`+beginRow()));
+
+// ── C: today's column, restyled
+screen('restyle','C — Restyle only <small>today\'s one column on the paper; it still scrolls, 1,278 px tall in a 600 px frame</small>','night menu',`
+ <div class="parch cc1"><div class="head" style="display:flex;justify-content:center"><span class="h" style="font-size:28px">Begin Your Tale</span></div><div class="rule"></div>
+ <div class="lbl">Name</div>${namefield()}<div class="lbl">Choose your beginning</div>${beginnings()}${archDesc()}<div class="lbl">Your people</div>${peoples()}
+ <div class="lbl">Your look</div><div style="display:grid;grid-template-columns:180px 1fr;gap:16px"><div class="niche" style="height:230px;margin-top:0;border-radius:90px 90px 4px 4px"><img src="fig-gatelander-front.png" style="height:215px;bottom:6px"></div><div>${lookRows()}</div></div>
+ <div class="scrollbar"><i></i></div></div>`);
+
+// ── comparisons
+screen('cmp-title','Today beside the proposed — the title','cmp',`<div class="pair"><figure><figcaption>Today <small>build s373</small></figcaption><img src="current-title.png"></figure><figure><figcaption>Proposed</figcaption><img id="ct-new" src=""></figure></div>`);
+screen('cmp-creator','Today beside A — the creator','cmp',`<div class="pair"><figure><figcaption>Today <small>the first of 2.1 screens</small></figcaption><img src="current-creator-1.png"></figure><figure><figcaption>A, one sheet</figcaption><img id="cc-new" src=""></figure></div>`);
+window.SCREENS=screens;
+</script>
+</body>
+</html>
