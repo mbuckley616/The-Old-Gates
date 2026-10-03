@@ -1378,6 +1378,7 @@ var WORLD=(()=>{
     // ── the carve grid: every piece and lake of every cell, the home's authored ones too ──
     RVG.clear();
     for(const c of cells){for(const rv of c.rivers){if(!rv.ws)rv.ws=rv.pts.map(()=>rv.w);rvgRiver(rv);}for(const lk of c.lakes)rvgLake(lk);}
+    shoreSites(cells);
     // the bank towns (S433): a settlement within a short walk of navigable water keeps the nearest point of the channel,
     // the way to it and the flow's direction there, and the settlement builder puts a quay on that bank
     const navPieces=[];for(const c of cells)for(const rv of c.rivers){if(!rv.nav||rv.arm)continue;let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9;for(const p of rv.pts){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<z0)z0=p[1];if(p[1]>z1)z1=p[1];}navPieces.push({rv,bb:[x0,z0,x1,z1]});}
@@ -1398,6 +1399,34 @@ var WORLD=(()=>{
   // draw moves) onto ground of 1.8 or more, clear of the pads and the sea as the cell's draw keeps it; with none in 24 tries it is wet
   // and is never built or named. The ground is the bare land (the routing's: no cell's regions), so no load order can change it.
   function doorGround(x,z){const was=RV.routing;RV.routing=true;const h=rawH(x,z);RV.routing=was;return h;}
+  // v80 S452 — a place the lakes were laid over moves to the shore (Michael's A on #121). Its cell drew it before the routing,
+  // and the basin lakes (and a few rivers) took the ground all round it: 42 places stood on their pad's plug with no way out
+  // but swimming. Once the carve is known, a place is cut off when no straight line from its pad's edge out to three pads
+  // stays dry on any of 24 bearings. It is set down at the nearest spot in its own cell where the pad and a ring 30 beyond it
+  // stand on dry bare land (1.5 or more, the centre 1.8), off the sea, clear of every other pad by 40 and of the gates by the
+  // cell's own margins; the search walks out from where it stood, so the first spot is the near shore. Id, name and kind
+  // are kept, and so is everything keyed by id (roads, saves, the town's state); a lair's cavern door moves with it. The
+  // bare land is the routing's (no cell's regions), so every boot moves the same places to the same spots.
+  function shoreCutOff(t){const R0=t.pad*1.2;
+    for(let k=0;k<24;k++){const a=k/24*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);let dry=true;
+      for(let f=0;f<=4&&dry;f++){const r=R0+(t.pad*3-R0)*f/4;if(doorGround(t.x+ca*r,t.z+sa*r)<SEA_Y+.3)dry=false;}if(dry)return false;}
+    return true;}
+  function shoreSpotOk(t,c,x,z){const m=Math.max(150,t.pad+40);
+    if(x<c.ox+m||x>c.ox+SIZE-m||z<c.oz+m||z>c.oz+SIZE-m)return false;
+    if(seaBare(x,z,c.islets)>=.08||doorGround(x,z)<1.8)return false;
+    for(const s of c.sites){if(s===t||!(s.pad>0)||s.kind==='portal')continue;if(Math.hypot(s.x-x,s.z-z)<s.pad+t.pad+40)return false;}
+    for(const e of c.doors){if(e.wet||(e.lairDoor&&e.lairSite===t.id))continue;if(Math.hypot(e.x-x,e.z-z)<t.pad+(e.kind==='fort_door'?110:60))return false;}
+    for(const R of [t.pad*.5,t.pad,t.pad+30])for(let k=0;k<16;k++){const a=k/16*Math.PI*2;if(doorGround(x+Math.cos(a)*R,z+Math.sin(a)*R)<1.5)return false;}
+    return true;}
+  function shoreSites(cells){let moved=0,stuck=0;
+    for(const c of cells){if(c.home||c.type==='sea')continue;
+      for(const t of c.sites){if(!(t.pad>0)||t.islet||t.drawnAt||['port','portal','bridge'].includes(t.kind))continue;if(!shoreCutOff(t))continue;
+        const a0=(nameHash(t.id)%360)*Math.PI/180;let got=null;
+        for(let r=20;r<=1600&&!got;r+=20){const n=Math.max(12,Math.round(r/20));for(let k=0;k<n;k++){const a=a0+k/n*Math.PI*2,x=t.x+Math.cos(a)*r,z=t.z+Math.sin(a)*r;if(shoreSpotOk(t,c,x,z)){got={x,z};break;}}}
+        if(!got){stuck++;t.cutOff=true;continue;}
+        const dx=got.x-t.x,dz=got.z-t.z;t.drawnAt={x:t.x,z:t.z};t.x=got.x;t.z=got.z;moved++;
+        for(const e of c.doors)if(e.lairDoor&&e.lairSite===t.id){e.x+=dx;e.z+=dz;}}}
+    RV.shore={moved,stuck};}
   function dryDoors(){
     for(const c of CELLS.values()){if(c.home||!c.doors)continue;
       c.doors.forEach((e,n)=>{if(e.zone!=='gen'||e.lairDoor||e.cell!==cellKey(c.i,c.j)||e.wet)return;if(doorGround(e.x,e.z)>=1.5)return;

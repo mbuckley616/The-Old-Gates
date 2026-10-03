@@ -11,6 +11,7 @@ Nothing is networked today, and the game assumes one player and one save: foes r
 
 Recommendation: **A**, aimed at B's shape. It is the "architecture now, the feature later" the note asks for; B now would race the skills and combat reworks, and C builds the "perhaps" before the friend joining your world. Say also whether *downed, not a reload* with friends present is right.
 
+## Answered
 ### Places standing in the basin lakes (the systems builder, 2026-10-03, DECISION #121)
 The rivers build (S432, Michael's C, the horseshoe) put one great lake in each range's basin, up to 1 km across (Dotriair Mere is 502 units in radius). The routing keeps river channels out of settlement pads, but the lakes were laid over places their cells had already drawn. Of the 919 generated places that are not ports, 43 now stand on a plug of land with water all round them: 36 with water on all sixteen bearings one and a half pads out, 39 of them in a basin lake. That is 20 villages (Diawor, Villeargent, Nordou, Murtraley, Tullymore, Dunard, Carriglough and thirteen more), plus shrines, glades, towers, ruins, outposts, two camps and two lairs. The pad's stamp lifts each one out of the water, so Diawor stands at 3.4 on a disc 45 units across, with −1.1 a third of a pad beyond its edge and −4 past that. Nobody reaches them without swimming, and no road or coach can. Saves keep places by id; a save made standing in one of them reloads at that spot. (Session 447 handled the gates the same way, as a bug: 99 were redrawn out of the water, and gates have no streets.)
 - **A. Move them to the shore** *(recommended)*: after the routing, each place whose pad is ringed by water is set down on the nearest dry ground beside its lake or river, facing the water, with its id and name kept; its roads re-route as roads do. 43 places move once. A save made standing in one reloads where the place was, now in the water.
@@ -18,7 +19,10 @@ The rivers build (S432, Michael's C, the horseshoe) put one great lake in each r
 - **C. Shrink the lakes**: the routing bends each lake's shore round the pads it would swallow, as it bends the rivers. Most of the 43 then stand on the shore or on a spit. The lakes change shape on the map and get smaller.
 - **D. Leave it.**
 
-## Answered
+Michael: **A — move them to the shore** (3 Oct 2026, on issue #121, via the producer).
+
+*Done, Session 452 (systems builder):* after the routing, a place with no dry straight line from its pad's edge out to three pads on any of 24 bearings is set down at the nearest spot in its own cell where the pad and a ring 30 beyond stand on dry bare land, clear of the other pads and the gates. 42 move (19 villages, a city, outposts, shrines, glades, spires, ruins, a bandit camp and two lairs, whose cavern doors go with them), 100–580 units each; none is left cut off. `tests/shoreplaces`. Issue #121 closed by the producer.
+
 ### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
 The six skill books open today on a dark brown box, one page at a time, with web buttons (*◀ Previous*, *Next ▶*, *Close Book*); the notice boards and the examine texts (the Sea-Folk Shrine, the Mouth, the keystones) open as plain text on a black page. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own words and no new data: *The Forge-Man's Third Treatise* and *Letters from Ashwold*, Hearthwick's board, Droichead's keystones. Every page of all six books fits its leaf. Prototype: `docs/prototypes/books/` on auto/concept.
 - **A. The open book** *(recommended)*: two pages a spread in a leather board with a page block, a ribbon, a running head and folios. The first page becomes a title page and the text opens on a red drop cap. The letters are set in a written hand. The first reading's +1 is written at the foot of the title page instead of a toast. A/D turn, E closes.
