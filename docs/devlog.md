@@ -10891,3 +10891,23 @@ Backlog G owed the war to real play: *a siege camp on a road, a garrison on a pl
 ### Needs eyes
 - A siege by eye: the camp's tents and banner on Dunmore's road, and the garrison on the plaza. Whether six soldiers and a captain read as a camp is the look builder's to judge.
 - The occupied town's colours on the gate, the other half of G's line, were not looked at.
+
+## v80 — Session 441 — The lair beast's charge runs true, and its daze holds it (backlog G, the creatures in real play)
+Backlog G owed Session 130's *daze* to real play. A lair's beast charges every 7 s from 5–16 units, at four times its speed. If the charge meets a wall, the beast *slams into the ground, dazed — now!*: dazed for 2.4 s and taking double damage, *the skill is to sidestep it into something solid*. This session played it in Dunmore, through the game's own loop at fixed 1/60 ticks: a Cave Bear made a lair's beast, a house wall at your back, a sidestep as it comes.
+
+**What was wrong.** The charge and the daze live in `tickBehaviours` (`js/80-world.js`). The beast's ordinary chase and blow live in `tickZoneEnemies` (`js/42-zone-enemies.js`), which knew about neither. During the charge the chase kept walking the beast towards wherever you had stepped to, so the charge bent off its line and slid along the wall instead of meeting it. Sidestepped 4 units, the bear came within 1.7 units of the wall and turned away, never dazed. The skill the entry describes could not be done. And a beast dazed some other way still chased and bit through its daze: dazed beside you, a bear wound up and struck within the 2.4 s.
+
+**What changed.** While a beast is charging or dazed, `tickZoneEnemies` keeps it on the ground and does nothing else: no chase, no wind-up, no blow. The charge moves it, and the daze holds it, swaying, as `tickBehaviours` already did. When the daze ends, it fights as before. The double damage on a dazed beast is unchanged.
+
+### Verified (headless Chromium)
+`tests/dazed.test.mjs` (new), 6/6, in Dunmore at noon:
+- The bear charges and you sidestep 4 units. It runs on into the house wall and *slams into the ground, dazed — now!*
+- The daze lasts 2.42 s. With you kept beside it, it strikes nothing and does not move. When the daze is over it strikes again.
+- Dazed beside you with its blow ready: no wind-up and no blow in 2.4 s.
+- On the old `js/` (`--src`), the charge never reached the wall, so the three daze checks fail. The bear dazed beside you wound up and struck once.
+- `foes`, `counters` and `fistfight` pass, and so does `cowards` after the correction below. No page errors. Build tag s380.
+
+**A correction to Session 438.** Its entry said the coward runs facing away from you, so the zone tick's sight cone never re-alerts it on the way. That is wrong about half the time. Running this session's suites, `cowards` failed one run in two. In the failing runs the coward saw you again 3–4 s into its run, and its cry (`alertPack`, 16 units) raised the friend from 16 units off. With the friend already alert there was no one left to fetch, so the suite's *reached within four units* never came. The game's outcome is the same either way: help is raised and both come for you. So the suite now checks that outcome, with the friend raised in under 10 s, reached or cried to from 16. In six runs, four raised it by the cry (2.3–3.7 s) and two by reaching it (5.2–5.4 s). No game code changed for this.
+
+### Needs eyes
+- The charge by feel: whether 1.1 s at four times a bear's pace can be read and sidestepped by a player, now that sidestepping it works.

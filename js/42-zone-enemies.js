@@ -1088,6 +1088,9 @@ function tickZoneEnemies(dt,now,sc){
         return;
       }
     }
+    // S441 — a lair beast's charge and its daze (tickBehaviours, the world) move and hold it themselves: no chase and no
+    // blow of the ordinary kind meanwhile, or the chase bent the charge off its line and a dazed beast walked after you and bit
+    if(e._charge!=null||e._stun>0){const ety=activeTerrainH(e.x,e.z);e.mesh.position.y=ety;e.el.position.set(e.x,ety+.8,e.z);return;}
     // v63 — Directional detection. Vision cone (forward 150° arc) + hearing
     // radius (1.5u omnidirectional). Sight is modulated by detectReduce buffs
     // and sneak; hearing is not. LOS check (step-cast for walls) added — the
