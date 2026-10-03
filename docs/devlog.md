@@ -10819,3 +10819,22 @@ Found on the way, in the test and not the game: the player's stagger is read on 
 
 ### Needs eyes
 - Whether a Bandit dying in under five seconds with one blow landed is too easy at fists. It is the same question C already owes from Session 431 (*whether breaks now come too easily with fists and daggers*), and it is a feel and a number, Michael's. The numbers to turn are the Bandit's posture (half his health), the fists' drain and the stagger's length.
+
+## v80 — Session 437 — A camp sacks one town in twenty days, the nearest (Session 95's sacking, settled headless)
+Session 95 wrote the rule: *a bandit camp left alive counts days; at 20 the nearest unburned village or town within 700u is sacked* (prosperity 15, half the houses shells, a log line). It left the sacking unverified, because the seed's first camp had no village near it, and the backlog has owed *try it beside a village camp* ever since (G, *Saves first*). This session tried it, and the count was wrong.
+
+**What was wrong.** `tickProsperity` (`js/80-world.js`) runs once a game-day over every town. It finds each town's nearest lair or camp within 700 units and, if that is a live bandit camp, adds one to the camp's count. So a camp counted once a day for every town it threatened, not once a day. The sack then fell on whichever town the loop met as the count crossed 20, not the nearest. In the home province Dunowen Camp is the nearest camp to three towns: Dunderry (326 units), Cnocbeg (601) and Inisnashane (643). It counted three a day and sacked Dunderry on day 7, Cnocbeg on day 14 and Inisnashane on day 20. A sacked town also went on adding to the count. All three were in ruins by the day the first should have fallen.
+
+**What changed.** The day's loop now only notes which towns each live camp threatens, using the same rule as before: the town's nearest lair or camp, within 700. After the loop, each such camp counts one. At 20 it sacks the town it threatens that is nearest the camp and not already sacked or burned, and starts again from nought. If none is left standing, the count holds at 20, and the camp sacks the first town that rebuilds. Rebuilding is unchanged: 30 days after the sack, once the town is back to 30, which cannot happen while the camp's drain stands. The drain on prosperity, the sack itself and its log line are unchanged.
+
+### Verified (headless Chromium)
+`tests/campsack.test.mjs` (new), 7/7, over the nine home cells from a clean world (no war, every town at its base):
+- Dunowen Camp threatens Dunderry, Cnocbeg and Inisnashane, and no other home camp threatens a town.
+- It counts 1, 2, 3 … 19, and on day 20 sacks Dunderry, the nearest, which drops to 15 and stands sacked. It sacks Cnocbeg on day 40 and Inisnashane on day 60, and no other town is sacked by a camp in 65 days.
+- A cleared camp counts nothing and sacks nothing in 25 days.
+- On the old `js/` (`--src`), the sacks fell on days 7, 14 and 20, with the count running 3, 6, 9…, and the three counting checks fail.
+- `wholepoints` still gives the untended world's −6.8 / −77 / 0 over 120 days: all three towns are sacked by then either way. `camps` and `cargo` pass. No page errors. 44 s alone, in `run.mjs`'s table at 70. Build tag s376.
+
+### Needs eyes
+- A sacked Dunderry on the road out of the home province by day 20 of an untended game, by eye: the shells and the log line *Dunderry was sacked by the bandits of Dunowen Camp.*
+- Whether twenty days is the right pace for a camp next to a village. It is Session 95's number, and keeping it was Michael's spec. A player now has twenty days to clear Dunowen Camp before the first town falls, where before it was seven.

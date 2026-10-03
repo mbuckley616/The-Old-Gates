@@ -16,7 +16,7 @@ const SECS = { mainrun: 451, falls: 437, placesave: 436, hourhitch: 288, renewal
   beat: 145, people: 144, perf: 134, lockon: 121, weather: 121, fistfight: 120, boxspots: 119, shoperrands: 112, mimicspots: 111,
   chestpicks: 111, dungeonexit: 109, fortfurn: 109, livepick: 105, chapel: 101, shopfurn: 101, saves: 99, theft: 98,
   coachinn: 97, penance: 97, witness: 93, fistswing: 92, mainquest: 92, constable: 91, aimbubble: 90, signs: 90,
-  placenames: 90, ashenburn: 88, duel: 87, homefurn: 85, civicfurn: 84, fortcot: 84, shophours: 83, dunconts: 82, townroads: 82 };
+  placenames: 90, campsack: 70, ashenburn: 88, duel: 87, homefurn: 85, civicfurn: 84, fortcot: 84, shophours: 83, dunconts: 82, townroads: 82 };
 if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const load = Array(n).fill(0), mine = new Set();
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
   [...files].sort((a, b) => w(b) - w(a) || a.localeCompare(b)).forEach(f => { const j = load.indexOf(Math.min(...load)); load[j] += w(f); if (j === k - 1) mine.add(f); });

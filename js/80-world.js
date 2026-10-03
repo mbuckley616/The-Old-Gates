@@ -6879,13 +6879,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function tickProsperity(){
     const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);if(day===_pDay)return;_pDay=day;
     const cleared=worldState.roadsCleared||{};const camps=worldState.camps||(worldState.camps={});
+    const threat={}; // S437 — the camps that are some town's nearest within 700, and those towns: each camp counts once a day, below
     let tithe=0; // S266 — the Compact's tithe (Michael, #37 A): a town Aurenne occupies pays half a point a day more, and its capital gains it
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=TS(t);let d=0;
       // roads: cleared roads lift; ambush-ridden ones drain
       const rds=ROAD_DEFS.filter(x=>x.a===t.id||x.b===t.id);rds.forEach(x=>{d+=cleared[x.a+'|'+x.b]||cleared[x.b+'|'+x.a]?1:-.15;});
       // the nearest lair or bandit camp
       let near=null,nd=1e9;for(const o of SITES){if((o.kind==='lair'||o.kind==='bcamp')&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
-      if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead){camps[near.id]=(camps[near.id]||0)+1;if(camps[near.id]>=20&&st.flags.sacked==null&&st.flags.burned==null){sack(t,near);camps[near.id]=0;}}}
+      if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead)(threat[near.id]||(threat[near.id]={camp:near,towns:[]})).towns.push(t);}
       // flags
       let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;
       // drift home
@@ -6898,6 +6899,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // prosperity is kept in whole points, so the tithe keeps its own account and is paid a point at a time, every second day
       if(st.flags.occupied!=null&&st.occupier==='aurenne'){st.tithe=(st.tithe||0)+.5;tithe+=.5;const w=Math.floor(st.tithe);if(w){st.tithe-=w;setProsperity(t,st.p-w);}}
     }
+    // S437 — a camp left alive counts days, one a day however many towns it threatens; at 20 it sacks the nearest of them not
+    // already sacked or burned, and starts again (Session 95). It counted once for each town it threatened, so Dunowen Camp,
+    // nearest to three home towns, sacked on day 7 and again a week later, and took whichever town the day's loop met first.
+    for(const id in threat){const T=threat[id],c=T.camp;camps[id]=Math.min(20,(camps[id]||0)+1);if(camps[id]<20)continue;
+      let tg=null,td=1e9;for(const t of T.towns){const f=TS(t).flags;if(f.sacked!=null||f.burned!=null)continue;const d=Math.hypot(t.x-c.x,t.z-c.z);if(d<td){td=d;tg=t;}}
+      if(tg){sack(tg,c);camps[id]=0;}}
     if(tithe>0){anchoredPlaces();const cap=FACTIONS.compact.seat?siteAnywhere(FACTIONS.compact.seat):null;
       if(cap&&TS(cap).flags.occupied==null){const cs=TS(cap);cs.tithe=(cs.tithe||0)+tithe;const w=Math.floor(cs.tithe);if(w){cs.tithe-=w;setProsperity(cap,cs.p+w);}}}
     tickRoutesDay();try{tickWorldSystemsDay();}catch(e){console.warn('systems',e);}
