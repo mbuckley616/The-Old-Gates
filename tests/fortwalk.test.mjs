@@ -29,6 +29,9 @@ for (const f of walkList) {
   for (let k = 0; k < 30 && !ready; k++) {
     await page.evaluate((f) => { const a = WORLD.arrivalFor('door_' + f.seed); const t = a || { x: f.x, z: f.z + 30 }; if (Math.hypot(px - t.x, pz - t.z) > 6) { px = t.x; pz = t.z; } }, f);
     await page.waitForTimeout(2500);
+    /* S447 — since the rivers (S432) a cell's load is heavier: a fort beside home took 60 s of the queue's two jobs a frame
+       on software GL, against the 75 s this loop allowed. Run the game's own queued load jobs here instead of waiting on the clock */
+    await page.evaluate(() => { for (let n = 0; n < 400 && WORLD.jobs.length; n++) { const jb = WORLD.jobs.shift(); let more = false; try { more = jb.fn(); } catch (e) { console.warn('job failed', e); } if (more) WORLD.jobs.push(jb); } });
     ready = await page.evaluate((s) => !!WORLD.settle.get('fort_' + s) && PORTALS.some(p => p.seed === s), f.seed);
   }
   if (!ready) { rows.push({ seed: f.seed, notBuilt: true }); continue; }
