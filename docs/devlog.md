@@ -10851,3 +10851,24 @@ Backlog G owed two of Session W's behaviours to play, under *Saves first*: *kobo
 
 ### Needs eyes
 - The feel, which is what G owed: whether a goblin or kobold bolting at 40% reads as fear or as a bug, and whether a second's wind-up (with the body swelling) is enough of a tell before a 35-point blow. Both numbers are Session W's.
+
+## v80 — Session 439 — Salt Water, played through; Corwin follows you along the coast
+Backlog G owed Session 125's sea line to real play: *Corwin at a pre-commission quay, the discounted hull, a live boarding*. This session played the whole line headless, each step the way a player takes it. Corwin's topics were clicked in his own dialogue. The passage came from the harbourmaster's own list and the hull from the shipwright's own topic. For the crossing, the ship was set down under sail 150 units off the far harbour, since a real crossing is about 26 minutes of sailing, more than a headless run can drive. The boarding was a black sail boarded and her crew cut down by the player's swings, run through the game's own loop at fixed 1/60 ticks.
+
+**What was wrong.** One thing. `tickCorwin` (`js/80-world.js`) places Corwin at the harbour nearest you, and re-places him only when his step changes. Otherwise he was taken down only once no harbour was within 140 units *and* he was more than 220 away. A passage re-enters the world, which places everyone again, so a ferry moved him. But coming to another harbour any other way, on foot, on horseback or at your own wheel, left him at the last one while the step was the same, though he says *I'll be at whatever harbour you're at*. Between two harbours less than about 360 apart, no point on the way is 140 from neither and 220 from him, so he was never taken down. 25 of the world's 110 harbours have another that near. On the home coast, walking the 303 units from Cluainlough to Lisross left him at Cluainlough. The same rule places him in Act II, whose journal says *Find Corwin at any harbour*.
+
+**What changed.** He is placed again when the harbour nearest you is not the one he stands at, as well as when his step changes. That is one condition in `tickCorwin`. The Ashenmoor placing (Session 240) is a separate path and is unchanged.
+
+### Verified (headless Chromium)
+`tests/saltwater.test.mjs` (new), 15/15:
+- Act 1, Q3 done, at Portclare: Corwin stands 6.7 units from the harbour with *You again. Told you we'd cross paths…* and *Teach me the sea.*. Clicked, the journal reads *Take a ferry from any harbour*.
+- The passage to Carrigshane costs 22 gold. The step moves to *ship* with the note in your pocket, and Corwin is at Carrigshane, 6.7 from the harbour.
+- Walked 303 units from Cluainlough to Lisross and back with the step unchanged, Corwin is at each in turn. On the old `js/` (`--src`) he stayed at Cluainlough, 302.7 from Lisross, and this is the suite's one failure there.
+- The shipwright offers *Buy a ship (300 gold, with Corwin's note)* and takes 300. The step moves to *crossing*, targeting Camuros (Aurenne), the nearest harbour of another nation.
+- Under sail 150 off Camuros, the step moves to *board*. Boarded, her three crew fall to 16 of the player's swings, and the step moves to *report* with the quest marked done.
+- Back at a harbour, *You've the look of someone who's been shot at from a deck.* and *I've taken a pirate's deck.* pay 220 at level 1 (200 + 20 a level), and the line is done. After it Corwin leaves the quays until the commission.
+- `mainquest` and `shipwright` pass. No page errors. 163 s alone, in `run.mjs`'s table at 220. Build tag s378.
+
+### Needs eyes
+- Once the line is done, Corwin is gone from the quays until Aldwyn's commission: `tutSeaOpen` closes with it, and the early Corwin stands only while the line is open. `corwinEarly` has a greeting for that time (*The sailor. Go on — the tide won't wait and neither will I.*) that can never be heard. Whether he should stay at the quays after paying, and say it, is the quest writer's and Michael's call. It is left as built.
+- A real crossing at the wheel, and the black sail met at sea rather than set down beside you. The critic found the crossing too long for a headless run.

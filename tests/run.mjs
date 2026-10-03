@@ -12,7 +12,7 @@ let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only |
 // seconds each took on CI (Session 254's local run; refreshed from CI's 2 Oct run on f71586a, Session 434, when shard 3
 // ran past its 45 minutes: falls, renewal, shopsight, smoke and innrooms were counted as 60). A suite not listed counts as 60.
 const SECS = { mainrun: 451, falls: 437, placesave: 436, hourhitch: 288, renewal: 275, shopsight: 249, reader: 247, smoke: 229,
-  innrooms: 209, q7world: 194, guardsindoor: 178, lod: 170, guardplay: 150, burglary: 150, questtargets: 149, saveui: 145,
+  innrooms: 209, q7world: 194, guardsindoor: 178, lod: 170, guardplay: 150, saltwater: 220, burglary: 150, questtargets: 149, saveui: 145,
   beat: 145, people: 144, perf: 134, lockon: 121, weather: 121, fistfight: 120, boxspots: 119, shoperrands: 112, mimicspots: 111,
   chestpicks: 111, dungeonexit: 109, fortfurn: 109, livepick: 105, chapel: 101, shopfurn: 101, saves: 99, theft: 98,
   coachinn: 97, penance: 97, witness: 93, fistswing: 92, mainquest: 92, constable: 91, aimbubble: 90, signs: 90,
