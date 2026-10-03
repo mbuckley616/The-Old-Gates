@@ -3,6 +3,13 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Online play — which co-op is the door kept open for, and what is built now? (the designer, 2026-10-03)
+Nothing is networked today, and the game assumes one player and one save: foes read `px`/`pz`, the save writes you and the world as one row, panels stop the clock, and loot rolls `Math.random`, so two machines would roll different chests. The page (`docs/design/online-play.md`) sets the co-op it aims at (the host's world, each friend's own character, one shared place with a 400-unit tether, downed for 30 s instead of a reload when friends are present, foes +50% health a friend) and asks what to do now.
+- **A.** Keep the door open only: split the save into character and world, stable ids, seeded outcome rolls, foes target through one function, nothing relies on the pause; nothing networked (1 Fable + 1 Opus).
+- **B.** A, then build summoned co-op now over WebRTC (A + 1 Fable + 6 Opus).
+- **C.** A, then a PvP arena first to prove the wire, co-op after (A + 1 Fable + 2 Opus, then B).
+
+Recommendation: **A**, aimed at B's shape. It is the "architecture now, the feature later" the note asks for; B now would race the skills and combat reworks, and C builds the "perhaps" before the friend joining your world. Say also whether *downed, not a reload* with friends present is right.
 
 ## Answered
 ### Books and notices — how should reading look? (the concept artist, 2026-10-02, DECISION #116)
