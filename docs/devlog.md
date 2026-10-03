@@ -10838,3 +10838,16 @@ Session 95 wrote the rule: *a bandit camp left alive counts days; at 20 the near
 ### Needs eyes
 - A sacked Dunderry on the road out of the home province by day 20 of an untended game, by eye: the shells and the log line *Dunderry was sacked by the bandits of Dunowen Camp.*
 - Whether twenty days is the right pace for a camp next to a village. It is Session 95's number, and keeping it was Michael's spec. A player now has twenty days to clear Dunowen Camp before the first town falls, where before it was seven.
+
+## v80 — Session 438 — The cowards and the second phase, played headless (backlog G)
+Backlog G owed two of Session W's behaviours to play, under *Saves first*: *kobold cowards and the boss half-health phase by feel*. Both live in `tickBehaviours` (`js/80-world.js`), layered over the zone foes' own chase and strike. One thing looked likely to break the coward. To send a coward running, `tickBehaviours` takes it out of its alert state, and `tickZoneEnemies` re-alerts any foe that sees you and walks an unalerted one back towards home. The two could have pulled the coward between them. This session played both in the running game to see. The game's own `loop` ran at fixed 1/60 ticks with the scene's draw held off, as in `duelrhythm`. The foes were set down as a quest sets them, at noon.
+
+**What it showed.** Both work as Session W wrote them, and no game code changed. A Goblin (or a Kobold) at 30% health, three units off, turns and runs for a friend 25 units away that has not seen you. It says *The goblin runs for help.* once. It reaches the friend in 5.4 s, 22.8 units from you, and raises it. Six seconds on, both are coming for you, at 11.7 and 15.5 units. The coward runs facing away from you, so the zone tick's sight cone never re-alerts it on the way. An Ogre at 45% roars once and quickens by a third (0.8 → 1.04). Three seconds later it winds up for a full second, and again every six seconds after. Stood in its reach, the heavy blow lands for 35, 2.2× its 16. Stepped 4.5 units clear during the wind-up, *You step clear.* and nothing lands.
+
+`COWARD` names the Kobold and the Goblin, and the world sets down both (the Kobold on the moors and among the wild's encounters). They run the same: the Kobold reached its friend in 5.2 s and the Goblin in 5.6 s on the second run.
+
+### Verified (headless Chromium)
+`tests/cowards.test.mjs` (new), 11/11, with the numbers above (the coward's three checks for each kind). 55 s alone, in `run.mjs`'s table at 90. No page errors. Build tag s377.
+
+### Needs eyes
+- The feel, which is what G owed: whether a goblin or kobold bolting at 40% reads as fear or as a bug, and whether a second's wind-up (with the body swelling) is enough of a tell before a 35-point blow. Both numbers are Session W's.
