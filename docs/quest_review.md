@@ -6,13 +6,148 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `6edf854` | run 5, from `7733a5b`; the diff is `-- index.html js/` |
-| auto/systems | `95830fb` | run 5, Sessions 404–413 against main |
-| auto/backlog | `a39610f` | run 5, Sessions 394–410 against main; no string a player reads |
-| auto/concept, auto/producer | — | run 5: level with main, or ahead in docs only |
-| auto/critic, auto/design, auto/split | — | run 5: level with main |
-| claude/lucid-faraday-6qlft7 | — | run 5: shares no history with main (the cloud-setup commits, folded in long ago); not read |
+| main | `206b697` | run 6, from `6edf854`; the diff is `-- index.html js/` |
+| auto/systems | `4e80d27` | run 6, Sessions 430–441 against main |
+| auto/backlog | `f46664b` | run 6, Sessions 414–435 against main; no string a player reads |
+| auto/fable-rivers | `5504d80` | run 6, Sessions 430–433 against main (the rivers and the ranges) |
+| auto/concept, auto/producer, auto/critic, auto/design, auto/split | — | run 6: level with main, or ahead in docs only |
+| claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 | auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 6 — 3 Oct 2026
+
+About 75 player-readable strings read. Three findings: one on main (older lines that Session 424 touched), one on auto/systems, one on auto/fable-rivers.
+
+**main** (`6edf854..206b697`) is the systems merge of Sessions 404–429. Findings 5 and 6 are in the build word for word: the shipwright speaks in his harbour's people's voice, and *Eadwulf* and *Wigmund* stand in the Mark's bank where *Aldhelm* and *Ealdred* were. The new narration reads well: the fall (*You roll with the fall. N damage.*, *A hard landing. N damage.*), the master's slam (*You roll through the blow.*, *The ground cracks where you stood.*), the ram (*You ram her*, *The black sail rams you*, *The hulls strike. Hull −N.*), the inn's doors (*Another guest's room.*, *An empty room, not the one you took. Yours is the second door on the right.*), and the dialogue hint, *1–9, 0 to choose*. Session 424 changed how the innkeeper names your room, and that brings the innkeeper's room lines into the window. They are Finding 7.
+
+**auto/systems** (Sessions 430–441) adds one rule a player reads: Session 432 gives every place its own name (Michael's A on #110), and when a culture's bank runs out it builds longer names. The Irish and Anglo long forms read as real names (*Ballynamore*, *Oxenford*). The French ones do not. That is Finding 8. Corwin following you along the coast, the guards standing down and the sacked towns change no line.
+
+**auto/backlog** (Sessions 414–435: the jab's guard, the ragdolls) adds no string a player reads.
+
+**auto/fable-rivers** (Sessions 430–433) names the ranges, the rivers and the lakes. The rivers are named by nation and read well: *An Dubh*, *An Bhán* and *An Ghlas* follow *An Dearg*, with the lenition right for a feminine river, and the Mark's *Blackwater* and *Wulfwater* are good Anglo. The peaks and lakes take their word at random or out of order. That is Finding 9.
+
+**Noted, not findings** (older than the baseline; for the producer and the author):
+- *Gatelands places with names from no people.* The critic heard *Biafaira*, *Fiandbaios* and *Dotriair* among the Gatelands ports (2 Oct). They come from the five generated cultures (`makeCulture`, grep `CUL_ONSETS`). `cultureOfCell` gives each province the culture of its nearest culture capital, whatever the island, so a Gatelands province can be named, styled and peopled in rumours from syllables no people speaks, or in French or Anglo. Canon §1.5 says the opposite: *inland provinces are homogeneous: one people, one house style, one dialect, one set of names*, and §2 fixes each people's register. The people in those provinces already take the nation's people (`nationOf(ci,cj).people`), so the person and the place disagree. The plain fix is one line, `cultureOfCell` returning the nation's register (`irish`, `anglo`, `french`) with blends only at ports. But it renames places in every save and changes house styles, as #110 did, so it is Michael's call and not a finding. I have not opened a decision. The producer may want to put it to him beside #110's follow-up.
+- `genName`'s French short names, older than Session 432, print *Saint-rouge* and *Saint-ferrand* with a small letter after the hyphen. Finding 8 corrects that as well, since the two must agree.
+
+### Finding 7 — main — the innkeeper lets the rooms in one voice
+
+**Where.** `innTopics(house)` in the world module (grep `a bed, a bolt on the door`). Session 424 changed `innRoomName`, so these lines are in this window. The text itself is older (v80 S141, noted in run 2). The coaching inn uses the same function (grep `_extra:innTopics(house)`), so its Aurennais keeper greets *Be welcome, Master* from Finding 4 and then lets the room with *Suit yourself. The fire's free.* One person, two voices.
+
+**Text.**
+- `'Your room’s made up already. Upstairs.'` / `` `${Room} — made up already. The key’s in the door.` ``
+- `'The house is empty tonight.'` / `'One other guest in tonight.'` / `` `${taken} guests in tonight.` ``
+- `` `${others} A room is ${price} gold — ${room}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?` ``
+- `'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.'`
+- `` `That’s ${price} gold, and you’ve ${gold}. Come back with it.` ``
+- `` `${price} gold, thank you. ${Room}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.` ``
+- *Not tonight.* → `'Suit yourself. The fire’s free.'`
+
+**Why.** The innkeeper has a people (`def.people`, from `makeDef`), and the coaching inn's keeper has `nationOf(ci,cj).people`. The lines are good Markish and wrong in a Gatelands or Compact house. It is the same fault as Findings 1–5, with the same fix.
+
+**Replacement.** `innTopics(house, people)`. The town inn passes `def.people` (grep `def._extra.unshift(...innTopics(house))`), and the coaching inn passes `nationOf(ci,cj).people`. Where there is no row, use `markman`, which is today's text unchanged. `R` is the room's name with its first letter capitalised, as the code makes it now, and `r` is the room's name as it is. The player's own labels (*A bed for the night?*, *Yes. N gold.*, *Not tonight.*) and the log line stay.
+
+```js
+const INN_ROOM_LINES={
+  gatelander:{
+    made:'Your room’s made up already, and the bed’s getting no warmer for the waiting. Upstairs.',
+    madeNamed:R=>`${R}, made up already. The key’s in the door, where a key does the most good.`,
+    empty:'The house is empty tonight, and an empty house is a cold one, so you’re doubly welcome.',
+    one:'There’s one other guest in tonight.',
+    many:n=>`There’s ${n} guests in tonight.`,
+    offer:(o,p,r)=>`${o} A room is ${p} gold — ${r}, a bed, a bolt on the door, and breakfast if you’re up for it. Will I make it up for you?`,
+    full:'Every room’s taken tonight, and two strangers in the one room never made a friend of either. The fire’s free, and the chair by it.',
+    poor:(p,g)=>`That’s ${p} gold, and you’ve ${g}. A purse is like a well: you’ll not draw from it what isn’t in it. Come back when it’s filled.`,
+    paid:(p,R)=>`${p} gold, and thank you. ${R}, up the stairs, and yours till this time tomorrow. The other doors aren’t mine to open, nor yours either.`,
+    not:'The road’s long and the night’s longer. The fire’s free, if you change your mind.'},
+  markman:{
+    made:'Your room’s made up already. Upstairs.',
+    madeNamed:R=>`${R} — made up already. The key’s in the door.`,
+    empty:'The house is empty tonight.',
+    one:'One other guest in tonight.',
+    many:n=>`${n} guests in tonight.`,
+    offer:(o,p,r)=>`${o} A room is ${p} gold — ${r}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`,
+    full:'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.',
+    poor:(p,g)=>`That’s ${p} gold, and you’ve ${g}. Come back with it.`,
+    paid:(p,R)=>`${p} gold, thank you. ${R}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`,
+    not:'Suit yourself. The fire’s free.'},
+  aurennais:{
+    made:'Your room is made up, Master, as agreed. Upstairs.',
+    madeNamed:R=>`${R}, Master, made up as agreed. The key is in the door.`,
+    empty:'The house has no other guests tonight, Master.',
+    one:'One other guest is entered tonight, Master.',
+    many:n=>`${n} guests are entered tonight, Master.`,
+    offer:(o,p,r)=>`${o} A room is ${p} gold: ${r}, a bed, a bolt on the door, and breakfast at the posted hour. Shall I enter you for it?`,
+    full:'Every room is let tonight, Master, and the house does not lodge two strangers in one room. The fire is free of charge.',
+    poor:(p,g)=>`The room is ${p} gold, Master, and you have ${g}. The house does not extend credit.`,
+    paid:(p,R)=>`${p} gold, received with thanks. ${R}, up the stairs, until this hour tomorrow. The other doors are let to others, and are not mine to open.`,
+    not:'As you wish, Master. The fire is free of charge.'},
+  oldblood:{
+    made:'Your room is ready. Upstairs.',
+    madeNamed:R=>`${R}. Ready. The key is in the door.`,
+    empty:'No one else tonight.',
+    one:'One other tonight.',
+    many:n=>`${n} others tonight.`,
+    offer:(o,p,r)=>`${o} ${p} gold. ${r[0].toUpperCase()+r.slice(1)}, a bed, a bolt, bread in the morning. Shall I make it ready?`,
+    full:'Every room is taken. I do not put strangers together. The fire is free.',
+    poor:(p,g)=>`${p} gold. You have ${g}.`,
+    paid:(p,R)=>`${p} gold. ${R}, up the stairs, until this hour tomorrow. The other doors are not mine to open.`,
+    not:'The fire is free.'}};
+// const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;
+// mine==null ? L.made : L.madeNamed(R); others = taken===0 ? L.empty : taken===1 ? L.one : L.many(taken);
+// response L.offer(others,price,r); full L.full; poor L.poor(price,gold); paid L.paid(price,R); Not tonight L.not.
+```
+
+### Finding 8 — auto/systems — the French long names are not French
+
+**Where.** `nameBanks(reg)` in the world module (grep `'-le-'+cap(b2)`), Session 432. The short-name half of the same fix is `genName` (grep `function genName`), which is older.
+
+**Text.** The long French form is `a+b+'-le-'+cap(b2)`, from `SYL.french`. It gives names like *Saint-ferrand-le-Rouge*, *Montmont-le-Brun*, *Clairclair-le-Vert*, *Beauneuf-le-Argent* and *Valclair-le-Ancy*. The short list it starts from includes *Montmont*, *Clairclair* and *Saint-rouge*, and `genName` draws the same short names for every French place.
+
+**Why.** A French place name puts a whole word after *le*. *-ancy* is an ending, not a word, so *le Ancy* means nothing. *Argent* takes *l'*, not *le*. Two halves that are the same word (*Montmont*, *Clairclair*, and in the Irish bank *Ardard*) read as a stammer. After *Saint-* the name takes a capital. The Aurennais are the people of *ledgers, learning, paper over oaths* (§1.3). Their place names are the ones most likely to be spelled right on a map.
+
+**Replacement.**
+- In `genName`, a first half that ends in a hyphen takes a capital after it. This changes no draw:
+  ```js
+  function genName(r,reg){const s=SYL[reg]||SYL.irish;const a=s[0][Math.floor(r()*s[0].length)],b=s[1][Math.floor(r()*s[1].length)];return a.endsWith('-')?a+b.charAt(0).toUpperCase()+b.slice(1):a+b;}
+  ```
+- In `nameBanks`, the short names are built the same way and skip a doubled pair. The French long form takes a short name and one of six real qualifiers:
+  ```js
+  function nameBanks(reg){const s=SYL[reg]||SYL.irish,A=s[0],B=s[1],short=[],long=[];
+    const cap=w=>w.charAt(0).toUpperCase()+w.slice(1);
+    A.forEach(a=>B.forEach(b=>{if(a.toLowerCase()===b)return;short.push(a.endsWith('-')?a+cap(b):a+b);}));
+    if(reg==='irish')A.forEach(a=>B.forEach(b=>long.push(a+'na'+b)));
+    else if(reg==='french')short.forEach(n=>['-sur-Mer','-le-Vieux','-la-Forêt','-en-Val','-les-Prés','-sous-Bois'].forEach(q=>long.push(n+q)));
+    else if(reg==='anglo')A.forEach(a=>B.forEach(b=>long.push(a+'en'+b)));
+    else A.forEach(a=>A.forEach(a2=>{if(a2!==a)B.forEach(b=>long.push(a+a2.toLowerCase()+b));}));
+    return [short,long];}
+  ```
+- In `uniqueSiteNames`, a drawn name whose two halves are the same word counts as lost, so it is renamed from the bank: `for(const t of list){if(taken.has(t.name)||/^(.+)\1$/i.test(t.name))lost.push(t);else taken.add(t.name);}`.
+
+### Finding 9 — auto/fable-rivers — the peaks and lakes take their word from the wrong tongue
+
+**Where.** The peaks (grep `['Sliabh','Mont','Ben','Cnoc']`), the lakes (grep `['Loch','Lac','Mere']`) and `RIVER_NAMES.aurenne`, Session 432.
+
+**Text.**
+- Peaks: `` `${['Sliabh','Mont','Ben','Cnoc'][Math.floor(rp()*4)]} ${genName(rp,reg)}` `` gives *Mont Ballymore* in the Gatelands, *Sliabh Ashford* in the Mark and *Ben Beaumont* in Aurenne. *Ben* is the Scots word, and no people of the canon speaks Scots.
+- Lakes: `` `${['Loch','Lac','Mere'][…]} ${genName(rl,c.reg)}` `` gives *Mere Ashford* in the Mark. A generated culture falls to *Loch*.
+- Rivers in Aurenne: `'la Dorée','la Blanche','la Sauvage','la Verte','la Lente','la Claire'`, with a small *la* at the start of a name that heads a map label or a line (*la Dorée is in flood* would be wrong).
+
+**Why.** A feature's word is the people's word, as the river names already are (§1.5, §2). The Gatelands say *Sliabh* and *Cnoc*, Aurenne *Mont* and *Pic*. In the Mark's Anglo register the hill word comes after the name, as *mere* does (*Ashford Fell*, *Grimley Mere*).
+
+**Replacement.** The forms are chosen by the place's register. A generated culture takes its nation's people's register. One `rp()` is still drawn for the form before `genName`, so no later draw moves.
+
+```js
+const PEAK_FORM={irish:[n=>`Sliabh ${n}`,n=>`Cnoc ${n}`],french:[n=>`Mont ${n}`,n=>`Pic ${n}`],anglo:[n=>`${n} Fell`,n=>`${n} Tor`]};
+const LAKE_FORM={irish:n=>`Loch ${n}`,french:n=>`Lac ${n}`,anglo:n=>/mere$/.test(n)?`${n} Water`:`${n} Mere`};
+const REG_OF_PEOPLE={gatelander:'irish',markman:'anglo',aurennais:'french',oldblood:'irish'};
+function formReg(reg,i,j){return PEAK_FORM[reg]?reg:REG_OF_PEOPLE[nationOf(i,j).people]||'irish';}
+// peaks: const f=PEAK_FORM[formReg(reg,i,j)][Math.floor(rp()*2)]; … name:f(genName(rp,reg)) …
+// lakes: lk.name=LAKE_FORM[formReg(c.reg,i,j)](genName(rl,c.reg));
+// RIVER_NAMES.aurenne:['La Dorée','La Blanche','La Sauvage','La Verte','La Lente','La Claire']
+```
 
 ---
 
