@@ -21,8 +21,10 @@ console.log(JSON.stringify(r));
 check('a wreck is one vertex-coloured mesh of 1.5–6k triangles', r.colours && r.tris > 1500 && r.tris < 6000, r);
 check('it lies about where the old one did (within ±4 across with the mast, ±7 along) and low (under 3.2), sunk into the floor (below −.3)', r.box[0] > -4 && r.box[1] < 4 && r.box[4] > -7 && r.box[5] < 7 && r.box[3] < 3.2 && r.box[2] < -.3, r.box);
 // a hoard in a lair or a bandit camp near the start: the kit chest survives the site's bake whole and opens on its hinge
-const c = await page.evaluate(() => { const near = WORLD.SITES.filter(t => t.kind === 'lair' || t.kind === 'bcamp').sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
-  for (const t of near.slice(0, 6)) { let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); if (!S || !S.chest) continue; const ch = S.chest;
+// WORLD.SITES holds only the loaded cells' places, and since the rivers (Session 432) the start loads the home cell alone, which
+// has no lair or bandit camp: take them from the cells around and load the chosen one's cell (Session 453).
+const c = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); const ring = []; for (let i = hi - 2; i <= hi + 2; i++) for (let j = hj - 2; j <= hj + 2; j++) { const c = WORLD.getCell(i, j); if (c && c.sites) ring.push(...c.sites); } const near = ring.filter(t => (t.kind === 'lair' || t.kind === 'bcamp') && t.pad > 0).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+  for (const t0 of near.slice(0, 6)) { WORLD.loadCell(...WORLD.cellOf(t0.x, t0.z)); const t = WORLD.SITE[t0.id] || t0; let S = WORLD.settlements.get(t.id); if (!S) S = WORLD.genSettlement(t); if (!S || !S.chest) continue; const ch = S.chest;
     const inScene = !!ch.g.parent, meshes = []; ch.g.traverse(o => { if (o.isMesh) meshes.push(o); }); const before = ch.lid.rotation.x;
     try { openLoot(ch); } catch (e) { return { id: t.id, err: String(e) }; } const after = ch.lid.rotation.x; try { closeLoot(); } catch (e) { }
     ch.g.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(ch.g);
