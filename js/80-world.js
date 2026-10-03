@@ -1118,7 +1118,7 @@ var WORLD=(()=>{
       c.doors.push(e);
     }
     // landmarks (S432): the peaks stand along the ranges' spines, named here; the lakes and rivers are the routing's (routeWorld)
-    if(!isIsland)spinePeaks().forEach(p=>{if(p.i!==i||p.j!==j)return;const rp=cellRng(i,j,9+p.k);c.peaks.push({id:`c${i}_${j}_pk${p.k}`,name:`${['Sliabh','Mont','Ben','Cnoc'][Math.floor(rp()*4)]} ${genName(rp,reg)}`,x:p.x,z:p.z,r:p.r,h:p.h,kind:'peak'});});
+    if(!isIsland)spinePeaks().forEach(p=>{if(p.i!==i||p.j!==j)return;const rp=cellRng(i,j,9+p.k);const f=PEAK_FORM[formReg(reg,i,j)][Math.floor(rp()*2)];c.peaks.push({id:`c${i}_${j}_pk${p.k}`,name:f(genName(rp,reg)),x:p.x,z:p.z,r:p.r,h:p.h,kind:'peak'});});
     return c;
   }
   function key(i,j){return cellKey(i,j);}
@@ -1198,7 +1198,12 @@ var WORLD=(()=>{
   const RV_STEP=80,RV_T=1e6/(RV_STEP*RV_STEP);              // the lattice; 156 nodes of catchment (1 km²) make a river
   const RV_NAV=16;                                             // a ship (13 by 4.4) needs sixteen units of water
   const rvWidth=a=>2+6.5*Math.log(1+a*RV_STEP*RV_STEP/400000); // catchment (nodes) → wet width: 10u at 1 km², 16u at 3.2 km², 25u at 12 km²
-  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['la Dorée','la Blanche','la Sauvage','la Verte','la Lente','la Claire']};
+  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['La Dorée','La Blanche','La Sauvage','La Verte','La Lente','La Claire']};
+  // a feature's word is its people's (quest review, Finding 9): a generated culture takes its nation's people's register
+  const PEAK_FORM={irish:[n=>`Sliabh ${n}`,n=>`Cnoc ${n}`],french:[n=>`Mont ${n}`,n=>`Pic ${n}`],anglo:[n=>`${n} Fell`,n=>`${n} Tor`]};
+  const LAKE_FORM={irish:n=>`Loch ${n}`,french:n=>`Lac ${n}`,anglo:n=>/mere$/.test(n)?`${n} Water`:`${n} Mere`};
+  const REG_OF_PEOPLE={gatelander:'irish',markman:'anglo',aurennais:'french',oldblood:'irish'};
+  function formReg(reg,i,j){return PEAK_FORM[reg]?reg:REG_OF_PEOPLE[nationOf(i,j).people]||'irish';}
   function polyDistM(pts,x,z,m){ // polyDist with its own bbox margin (polyDist rejects beyond 80u; a range reaches 520)
     let best=1e9;
     for(let i=0;i<pts.length-1;i++){
@@ -1369,7 +1374,7 @@ var WORLD=(()=>{
         c.rivers.push({id:`c${i}_${j}_rv${c.rivers.length}`,pts,ws,w:wmax,name:r.name||null,nav:wmax*2>=RV_NAV,end:r.end,arm:!!r.arm});pieces++;};
       for(let i=1;i<P.length;i++){const [ni,nj]=cellOf(P[i][0],P[i][1]);if(ni!==ci||nj!==cj){cut(start,i,ci,cj);start=i;ci=ni;cj=nj;}}
       cut(start,P.length-1,ci,cj);}
-    for(const lk of lakes){const [i,j]=cellOf(lk.x,lk.z);const c=CELLS.get(cellKey(i,j));if(!c||c.home)continue;const rl=cellRng(i,j,41+c.lakes.length);lk.id=`c${i}_${j}_lk${c.lakes.length}`;lk.name=`${['Loch','Lac','Mere'][Math.max(0,['irish','french','anglo'].indexOf(c.reg))]} ${genName(rl,c.reg)}`;c.lakes.push(lk);}
+    for(const lk of lakes){const [i,j]=cellOf(lk.x,lk.z);const c=CELLS.get(cellKey(i,j));if(!c||c.home)continue;const rl=cellRng(i,j,41+c.lakes.length);lk.id=`c${i}_${j}_lk${c.lakes.length}`;lk.name=LAKE_FORM[formReg(c.reg,i,j)](genName(rl,c.reg));c.lakes.push(lk);}
     // ── the carve grid: every piece and lake of every cell, the home's authored ones too ──
     RVG.clear();
     for(const c of cells){for(const rv of c.rivers){if(!rv.ws)rv.ws=rv.pts.map(()=>rv.w);rvgRiver(rv);}for(const lk of c.lakes)rvgLake(lk);}

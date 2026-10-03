@@ -11037,3 +11037,14 @@ Probes only, on an instrumented copy of the build under `--src`, not committed: 
 
 ### Needs eyes
 Nothing to play. The fix needs a session of its own.
+
+## v80 — Session 446 — The peaks and lakes in their own people's word (register fix, quest review run 6, Finding 9)
+The quest review's run 6 filed Finding 9 against auto/fable-rivers: a peak drew *Sliabh*, *Mont*, *Ben* or *Cnoc* at random wherever it stood (*Mont Ballymore* in the Gatelands, *Sliabh Ashford* in the Mark, and *Ben*, the Scots word, which no people of the canon speaks); a lake in the Mark was *Mere Ashford*, with the Anglo word in front where the register puts it after; and Aurenne's great rivers began with a small *la*, wrong at the head of a map label or a line. Session 442 left it to the rivers' owner; that branch has merged into main and nobody had taken it, so it is done here, exactly as the review proposes. `PEAK_FORM`, `LAKE_FORM`, `REG_OF_PEOPLE` and `formReg` sit beside `RIVER_NAMES` in the world module. A peak still draws one `rp()` for its form before `genName`, now from two forms of its register instead of four words, so no later draw moves and every peak keeps the second half of its name. A generated culture takes its nation's people's register, so the Mark's generated provinces read *Tradou Fell* and *Diadaey Mere*. Home's authored landmarks are untouched.
+
+Correction, from the merge of main at the start of this run: main's Fable sessions and this branch both used the numbers 432 and 433 (the horseshoe and the quays there; the place names and the guards here). Both pairs of entries are kept as written, main's first; read them by title.
+
+### Verified (headless Chromium)
+`tests/featurenames.test.mjs` (new), 6/6: 60 drawn peaks and 42 lakes, every one in its people's form and place (21 *Sliabh*/*Cnoc*, 21 *Mont*/*Pic*, 18 *Fell*/*Tor* among peaks and lakes); no *Ben* and no leading *Mere*; the twelve great rivers *An Dubh*, *La Dorée*, *Blackwater*, *La Blanche* … none with a small letter; no page errors. `placenames` 9/9, `riversail` and `riverquay` pass after the change; `rivers` (with `riversail`) 2/2 once its tongue check reads *La* (it asked for the small *la* the review corrects; that one regex is the only test edit). `parsecheck` clean. Build tag s384.
+
+### Needs eyes
+The names on the world map at a real zoom: *Heifialos Fell* and *Lac Beaumont* where *Ben Heifialos* and *Loch Beaumont* stood. Any save that wrote a peak's or a lake's old name into the journal keeps the old words there.
