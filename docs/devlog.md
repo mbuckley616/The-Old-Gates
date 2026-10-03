@@ -11289,3 +11289,16 @@ Everything keyed by id is kept: the name, the kind, the roads (a road is defined
 
 ### Needs eyes
 A moved village from its lake at a real draw distance: whether it reads as a lakeside place or as one set down on the nearest bank. The 42 were not walked to by road; the roads are laid between ids at load, and Diawor's two were counted, not walked.
+
+## v80 — Session 454 — CI's shards outgrew their 45 minutes (CI fix)
+The last CI run on auto/systems (0af251a, Session 452's head) was red: shard 2 was cancelled at 45:19, its job's time limit, halfway through `wolves`, its last suite. Nothing had failed. The other seven shards passed in 33 to 42 minutes, so the run as a whole sat at the edge of the limit, and which shard went over was the luck of the runner.
+
+The cause is the table `tests/run.mjs` balances the shards by. Session 434 refreshed it from CI's 2 Oct run, but any suite not in it counts as 60 s, and the suites added since then were never entered: `keeperwalk` took 605 s on CI, `intreach` 279. The table predicted 2,013–2,072 s a shard; the run measured 1,935 to past 2,691. The table now lists every one of the 219 suites at the time it took in that run (shard 2's from the gaps between its suites' headers, `wolves` at 90 since it was cut off). In all they come to 19,054 s, and the eight shares are 2,377–2,396 s each, about 40 minutes. The install and the browser take three more, so 45 minutes leaves almost no slack on a slow runner. The job's limit is now 60 (Session 379 raised it from 30 to 45 for the same reason, per Michael's A on the 2 Oct red main: rebalance the shards or raise the limit). The lasting fix is step 4 of backlog K, CI running only the suites a change touches, which waits for the layout to settle. No game code changed.
+
+Also merged main (the online-play and lake decisions): `docs/decisions.md` conflicted where both sides had answered #121; it keeps one entry, the branch's, with its done note, and main's `Michael:` line on online play.
+
+### Verified (headless Chromium)
+A simulation of `--shard=k/8` with the new table: 219 suites, 26–29 a shard, 2,377–2,396 s each. `node tests/run.mjs tells` boots and passes 1/1 with the edited runner. `parsecheck` clean. Build tag s389. Whether the eight shards finish under the new limit is CI's to show on this push.
+
+### Needs eyes
+Nothing in play. The run's total, 5.3 hours of suites, keeps growing by a few minutes a session.
