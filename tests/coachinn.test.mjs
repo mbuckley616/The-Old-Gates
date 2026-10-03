@@ -79,8 +79,11 @@ const out = await page.evaluate(() => ({ zone: activeZoneId, nearDoor: +Math.hyp
 const again = await page.evaluate(() => { const key = _key; const L = WORLD.coachLines; const C = L.get(key); WORLD.tick(1 / 60, performance.now());
   const before = ZONES.world.houses.filter(x => x.coachInn === key).length;
   px += 5000; WORLD.tick(1 / 60, performance.now()); const gone = !L.get(key) && !ZONES.world.houses.some(x => x.coachInn === key);
-  px -= 5000; WORLD.tick(1 / 60, performance.now()); const h = ZONES.world.houses.find(x => x.coachInn === key);
-  return { before, gone, back: !!h, same: !!h && h.name === _ci.name && h.keeper === _ci.keeper, count: ZONES.world.houses.filter(x => x.coachInn === key).length }; });
+  // back again, ticked until the inn stands: if the trip away unloaded the cells (the streamer looks every .75 s of ticks,
+  // so on a slow runner it can), its road comes back through the job queue a few steps at a time (S428: one tick was not enough on CI)
+  px -= 5000; let ticks = 0; do { WORLD.tick(1 / 60, performance.now()); } while (++ticks < 3000 && !ZONES.world.houses.some(x => x.coachInn === key));
+  const h = ZONES.world.houses.find(x => x.coachInn === key);
+  return { before, gone, back: !!h, same: !!h && h.name === _ci.name && h.keeper === _ci.keeper, count: ZONES.world.houses.filter(x => x.coachInn === key).length, ticks }; });
 console.log(JSON.stringify({ out, again }));
 await page.evaluate(() => { forceTime(3); const h = _ci; px = h.exitX + (h.doorX - h.exitX) * .7; pz = h.exitZ + (h.doorZ - h.exitZ) * .7; jumpY = WORLD.worldH(px, pz); yaw = h.exitYaw + Math.PI; });
 await g.frames(3); await page.keyboard.press('e'); await page.waitForTimeout(3000); await g.frames(2);

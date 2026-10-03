@@ -10,8 +10,14 @@ await g.intoWorld();
 const run = (pow, old) => page.evaluate(([pow, old]) => {
   thirdPerson = true; EQ.weapon = null; EQ.offhand = null; buildViewmodel(); if (typeof tpBuild === 'function') tpBuild();
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
-  let t = performance.now(); const step = () => { t += 1000 / 60; loop(t); };
+  // stepped from the loop's own last stamp and handed back to it after (as tpguard, Session 421): left ahead of real time, the
+  // next real frame's dt came out negative, swingT = max(0, swingT - dt) started a phantom swing, and its latch kept the
+  // next run's power flag (S428: one run in three on a loaded machine)
+  const T0 = prevT; let t = T0; const step = () => { t += 1000 / 60; loop(t); };
   const fistMark = vmSword && vmSword.userData.fists; if (old && vmSword) vmSword.userData.fists = false;
+  // the old path draws one of the sword's three arcs at random; the overhead chop (one in eleven) falls on the middle line
+  // and failed the comparison on CI (S428), so the before is the slash, UR→LL
+  const lock0 = ANIM_PARAMS.swing.variantLock; if (old) ANIM_PARAMS.swing.variantLock = 0;
   try {
     swingT = 0; _pendingStrike = null; for (let i = 0; i < 6; i++) step();
     const R = TP.rig, I = ANIM_PARAMS.swing.impactPoint, V = () => new THREE.Vector3();
@@ -19,16 +25,16 @@ const run = (pow, old) => page.evaluate(([pow, old]) => {
     const fwd = () => { R.root.updateMatrixWorld(true); const h = R.root.worldToLocal(R.handR.getWorldPosition(V())), s = R.root.worldToLocal(R.shR.getWorldPosition(V())), hl = R.root.worldToLocal(R.handL.getWorldPosition(V())), hd = R.root.worldToLocal(R.head.getWorldPosition(V())), nz = R.root.worldToLocal(R.head.localToWorld(V().set(0, 0, 1))).z - hd.z; return { h, s, hl, hd, nz }; };
     swingT = ANIM_PARAMS.swing.normalDur; _pendingStrike = { resolveFn: () => {}, isPow: pow, fired: false };
     const tr = []; let n = 0;
-    while (swingT > 0 && n++ < 90) { step(); if (TP.swMax > 0) { const p = 1 - swingT / TP.swMax, f = fwd(); tr.push({ p, rx: R.shR.rotation.x, el: R.elR.rotation.x, h: f.h, s: f.s, hl: f.hl, hd: f.hd, nz: f.nz }); } }
+    while (swingT > 0 && n++ < 90) { step(); if (TP.swMax > 0) { const p = 1 - swingT / TP.swMax, f = fwd(); tr.push({ p, ty: R.torso.rotation.y, rx: R.shR.rotation.x, el: R.elR.rotation.x, h: f.h, s: f.s, hl: f.hl, hd: f.hd, nz: f.nz }); } }
     for (let i = 0; i < 4; i++) step();
     const A = ANIM_PARAMS.swing.antEnd, draw = tr.reduce((b, x) => Math.abs(x.p - A) < Math.abs(b.p - A) ? x : b);
     const hit = tr.reduce((b, x) => Math.abs(x.p - (I + 1 / 33)) < Math.abs(b.p - (I + 1 / 33)) ? x : b);
     const r3 = v => [+v.x.toFixed(3), +v.y.toFixed(3), +v.z.toFixed(3)];
-    return { frames: tr.length, I, hit: { p: +hit.p.toFixed(3), el: +hit.el.toFixed(2), rx: +hit.rx.toFixed(2), hand: r3(hit.h), sh: r3(hit.s), handL: r3(hit.hl), head: r3(hit.hd), nose: +hit.nz.toFixed(3) },
+    return { frames: tr.length, I, hit: { p: +hit.p.toFixed(3), ty: +hit.ty.toFixed(3), el: +hit.el.toFixed(2), rx: +hit.rx.toFixed(2), hand: r3(hit.h), sh: r3(hit.s), handL: r3(hit.hl), head: r3(hit.hd), nose: +hit.nz.toFixed(3) },
       arm: +hit.h.distanceTo(hit.s).toFixed(3), drawEl: +draw.el.toFixed(2), drawHand: r3(draw.h), drawSh: r3(draw.s),
       leftWorst: +Math.max(...tr.map(x => x.hl.distanceTo(x.hd))).toFixed(3),
       sideMax: +Math.max(...tr.map(x => Math.abs(x.h.x - x.hd.x))).toFixed(3), after: swingT, cleared: TP.swMax, elAfter: +R.elR.rotation.x.toFixed(2) };
-  } finally { if (vmSword) vmSword.userData.fists = fistMark; window.requestAnimationFrame = raf; REN.render = rr; }
+  } finally { prevT = T0; ANIM_PARAMS.swing.variantLock = lock0; if (vmSword) vmSword.userData.fists = fistMark; window.requestAnimationFrame = raf; REN.render = rr; }
 }, [pow, old]);
 
 const jab = await run(false, false), before = await run(false, true), pow = await run(true, false);
@@ -43,7 +49,10 @@ check('drawn back at the wind-up\'s end the elbow is folded (past -1.6); as the 
 check('the fist travels out (.15 or more ahead in the body\'s frame from the draw to the hit) to most of the arm\'s length ahead of the shoulder, at shoulder height (within .12)', (jab.hit.hand[2] - jab.drawHand[2]) * fwdAxis > .15 && ahead(jab) > .75 * jab.arm && Math.abs(jab.hit.hand[1] - jab.hit.sh[1]) < .12, { travel: (jab.hit.hand[2] - jab.drawHand[2]) * fwdAxis, ahead: ahead(jab), arm: jab.arm, dy: jab.hit.hand[1] - jab.hit.sh[1] });
 check('the jab stays near the body\'s middle line (never more than .3 to the side of the head); the sword\'s arc swept wider', jab.sideMax < .3 && before.sideMax > jab.sideMax + .05, { jab: jab.sideMax, before: before.sideMax });
 check('the left fist stays up by the face through the jab (within .35 of the head)', jab.leftWorst < .35, jab.leftWorst);
-check('the power punch lands further ahead of the body than the jab (the step and the shoulder drive through)', (pow.hit.hand[2] - jab.hit.hand[2]) * fwdAxis > .04, { pow: pow.hit.hand[2], jab: jab.hit.hand[2] });
+// S428, a correction: S402 read the power punch landing at .41 against the jab's .33, but that was a forward lean from TP.hurtT,
+// run up by the negative dt this test's clock left the page (see run); handed back, the power punch lands .004 further out.
+// Michael's A on #80 asks for "the same punch, harder": the shoulders turn 1.3 times as far and the reach is no shorter.
+check('the power punch is the jab, harder: the shoulders turn further into it, the fist reaching no shorter', Math.abs(pow.hit.ty) > Math.abs(jab.hit.ty) * 1.2 && (pow.hit.hand[2] - jab.hit.hand[2]) * fwdAxis > -.01, { pow: [pow.hit.ty, pow.hit.hand[2]], jab: [jab.hit.ty, jab.hit.hand[2]] });
 check('after the punch the body lets go of it', jab.after === 0 && jab.cleared === 0 && pow.cleared === 0, { jab, pow });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

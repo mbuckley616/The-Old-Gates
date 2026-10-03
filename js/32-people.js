@@ -427,8 +427,16 @@ function personBakeQ(g,q){
     const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
     if(!g.bareArms)part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
     if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
-    const wr=bone('wr'+k,el,0,-.14,0);const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
-    part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
+    const wr=bone('wr'+k,el,0,-.14,0);
+    // S411 — g.fists[k] (Michael's D on #99, the player's empty hand): a folded fist in place of the mitten, a squarer palm,
+    // four knuckles across the front, the curled fingers under them and the thumb laid across; B['fist'+k] lists its
+    // pieces so a glove or gauntlet colours all of them
+    if(g.fists&&g.fists[k]){const hand=part(SK.rbox(.056,.066,.05,.018,2),skin,wr,0,-.04,.004);B['hand'+k]=hand;const F=[];
+      for(let q=0;q<4;q++){const kn=part(SK.ball(.0105,6,5),skin,wr,0,-.071,-.015+q*.0105);kn.scale.set(1.15,.9,1);F.push(kn);}
+      F.push(part(SK.rbox(.03,.03,.048,.012,2),skin,wr,s*-.016,-.06,.005));
+      const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
+    else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
+      part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);}
     const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
     const kn=bone('kn'+k,th,0,-PW.L1,0);part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
     if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
@@ -513,6 +521,7 @@ function personBakeQ(g,q){
       blk(B['th'+k],.19,PW.L1*.86,.19,0,-PW.L1/2,0);blk(B['kn'+k],.16,PW.L2*.86,.16,0,-PW.L2/2,0);blk(B['an'+k],.18,.08,.26,0,-.03,.04,.86);});
   }
   if(g.extras.includes('book'))part(new THREE.BoxGeometry(.13,.17,.04),C(0x2a1a50),B.wrL,.03,-.06,.04);
+  ['L','R'].forEach(k=>{if(B['fist'+k])B['fist'+k].forEach(o=>o.userData.col=B['hand'+k].userData.col);});
   // bake: every part into one geometry, each vertex bound to its bone
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
   hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone
@@ -833,7 +842,107 @@ function peopleSwing(rig,dt){if(!(dt>0))return;const sw=rig.sw||(rig.sw={});cons
     st.vr+=(-gy/L*Math.sin(st.r)-as/L*Math.cos(st.r)-P.c*st.vr)*dt;st.r+=st.vr*dt;
     b.parent.getWorldQuaternion(_pq2).premultiply(_pq);_pe.setFromQuaternion(_pq2,'XZY');
     b.rotation.x=Math.max(P.lo,Math.min(P.hi,st.p-_pe.x));b.rotation.z=Math.max(-P.side,Math.min(P.side,st.r-_pe.z));}}
+// S419 — a defeated foe falls as a ragdoll (Michael's C on #102): a point at each of the body's 21 joints (the 17 bones'
+// joints, the crown, the hands' ends, the toes), moved by Verlet integration under gravity and held at the bones' lengths
+// by ten passes of distance constraints; the torso box and the head are braced rigid, the knees bend only forward and the
+// elbows only back (a joint that crosses its limb's line is reflected back across it). The blow pushes harder the higher the
+// joint, so the body tips from the feet; the knees are kicked forward and the hips dropped, so the legs give. The ground is
+// the caller's (the world's height, a dungeon's floor), with friction, and a point may not step into a solid cell. The bones
+// then follow the points: the pelvis by its frame, every other bone turned onto its next point, parent first. A body that has
+// stopped moving is frozen and costs nothing more. Prototype: Session 415, docs/prototypes/ragdoll-grid.png.
+const RAGDOLLS=new Set();
+const RD_DT=1/60,_rv1=new THREE.Vector3(),_rv2=new THREE.Vector3(),_rv3=new THREE.Vector3(),_rq1=new THREE.Quaternion(),_rq2=new THREE.Quaternion(),_rm=new THREE.Matrix4();
+const RD_CHAIN=[['hips','spine'],['spine','neck'],['neck','head'],['head','top'],['shL','elL'],['elL','wrL'],['wrL','hdL'],['elL','hdL'],['shR','elR'],['elR','wrR'],['wrR','hdR'],['elR','hdR'],
+  ['thL','knL'],['knL','anL'],['anL','toL'],['knL','toL'],['thR','knR'],['knR','anR'],['anR','toR'],['knR','toR']];
+const RD_AIM=[['spine','neck'],['neck','head'],['head','top'],['shL','elL'],['elL','wrL'],['wrL','hdL'],['shR','elR'],['elR','wrR'],['wrR','hdR'],['thL','knL'],['knL','anL'],['anL','toL'],['thR','knR'],['knR','anR'],['anR','toR']];
+// ragdollStart(rig, push, opts): push is the blow's velocity (a Vector3, m/s); opts.ground(x,z) is the ground's height under a
+// world point, opts.solid(x,z) (optional) says a point is inside a wall. Returns the ragdoll, or null when the rig has no body.
+function ragdollStart(rig,push,opts){
+  const B=rig&&rig.B;if(!B||!B.hips||!B.anL||!B.wrR||!opts||!opts.ground)return null;
+  for(const r of RAGDOLLS)if(r.rig===rig)RAGDOLLS.delete(r);
+  const top=rig.foe?rig.root.parent:rig.root;top.updateMatrixWorld(true);
+  const O=top.getWorldPosition(new THREE.Vector3()),V=(x,y,z)=>new THREE.Vector3(x||0,y||0,z||0);
+  const s=rig.root.getWorldScale(new THREE.Vector3()).y||1;
+  const J=[['hips',B.hips],['spine',B.spine],['neck',B.neck],['head',B.head],['top',B.head,V(0,.22,.02)],
+    ['shL',B.shL],['elL',B.elL],['wrL',B.wrL],['hdL',B.wrL,V(0,-.08,0)],['shR',B.shR],['elR',B.elR],['wrR',B.wrR],['hdR',B.wrR,V(0,-.08,0)],
+    ['thL',B.thL],['knL',B.knL],['anL',B.anL],['toL',B.anL,V(0,-.05,.1)],['thR',B.thR],['knR',B.knR],['anR',B.anR],['toR',B.anR,V(0,-.05,.1)]];
+  const I={},P=J.map(([n,b,off],i)=>{I[n]=i;const w=b.localToWorld(off?off.clone():V()).sub(O);return {p:w,q:w.clone(),b,off};});
+  const L=(a,b)=>[I[a],I[b],P[I[a]].p.distanceTo(P[I[b]].p)],C=RD_CHAIN.map(([a,b])=>L(a,b));
+  const box=['hips','spine','neck','shL','shR','thL','thR'];
+  for(let i=0;i<box.length;i++)for(let j=i+1;j<box.length;j++)C.push(L(box[i],box[j]));
+  [['head','shL'],['head','shR'],['top','neck'],['top','shL'],['top','shR'],['head','spine']].forEach(([a,b])=>C.push(L(a,b)));
+  const rad=P.map((o,i)=>(i===I.top||i===I.head?.1:i===I.hips||i===I.spine?.09:.045)*s);
+  const R={rig,top,O,P,I,C,rad,s,ground:opts.ground,solid:opts.solid||null,acc:0,t:0,quiet:0,done:false};
+  // the frame the pelvis keeps: across the hips, up the back
+  R.frame=q=>{const y=_rv1.subVectors(P[I.neck].p,P[I.hips].p).normalize(),x=_rv2.subVectors(P[I.thL].p,P[I.thR].p);x.addScaledVector(y,-x.dot(y)).normalize();
+    return q.setFromRotationMatrix(_rm.makeBasis(x,y,_rv3.crossVectors(x,y)));};
+  R.F0inv=R.frame(new THREE.Quaternion()).invert();R.hipsQ0=B.hips.getWorldQuaternion(new THREE.Quaternion());
+  R.hipsOff=B.hips.getWorldPosition(V()).sub(O).sub(P[I.hips].p);
+  // the blow: the higher the joint, the harder it is pushed; the legs give as it lands
+  const rnd=Math.random,hi=P[I.top].p.y||1,face=V().crossVectors(_rv1.subVectors(P[I.thL].p,P[I.thR].p),_rv2.subVectors(P[I.neck].p,P[I.hips].p));face.y=0;face.normalize();
+  const vel=P.map(o=>V().copy(push).multiplyScalar(.25+.75*Math.max(0,o.p.y/hi)).add(V((rnd()-.5)*.3,(rnd()-.5)*.2,(rnd()-.5)*.3)));
+  vel[I.knL].addScaledVector(face,1.1+rnd()*.5);vel[I.knR].addScaledVector(face,.8+rnd()*.5);vel[I.hips].y-=1.2;vel[I.spine].y-=.8;
+  P.forEach((o,i)=>o.q.copy(o.p).addScaledVector(vel[i],-RD_DT));
+  rig.mesh.frustumCulled=false; // the bounds are the standing body's
+  RAGDOLLS.add(R);return R;
+}
+function ragdollStep(R){
+  const {P,I,C,O}=R;
+  // the knees bend forward, the elbows back: a joint across its limb's line is set back onto it (S428: reflected over it,
+  // it flipped to and fro and kept a limb moving; Session 427 found the same in the beasts)
+  const hinge=(a,m,c,sign)=>{const f=_rv3.crossVectors(_rv1.subVectors(P[I.thL].p,P[I.thR].p),_rv2.subVectors(P[I.neck].p,P[I.hips].p)).normalize();
+    const A=P[I[a]].p,M=P[I[m]].p,d=_rv1.subVectors(P[I[c]].p,A),t=_rv2.subVectors(M,A).dot(d)/Math.max(1e-6,d.lengthSq());
+    const off=_rv2.copy(M).sub(A).addScaledVector(d,-t),k=off.dot(f);if(k*sign<0)M.addScaledVector(f,-k);};
+  // once it is down (it is by .4 s) the air drags harder from 1 s, so a raised knee comes to rest, not topples for seconds
+  const dm=R.t<1?.995:.9;
+  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
+  for(let it=0;it<10;it++){
+    for(const [a,b,len] of C){const pa=P[a].p,pb=P[b].p,d=_rv1.subVectors(pb,pa),l=d.length()||1e-6,k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
+    hinge('thL','knL','anL',1);hinge('thR','knR','anR',1);hinge('shL','elL','wrL',-1);hinge('shR','elR','wrR',-1);
+    for(let i=0;i<P.length;i++){const o=P[i],gy=R.ground(O.x+o.p.x,O.z+o.p.z)-O.y+R.rad[i];
+      if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;}}
+    // a wall stops a point where it stood at the step's start, and takes its way across (in the last two passes only: the
+    // world's test reads nine chunks)
+    if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
+  }
+}
+function ragdollApply(R){
+  const {P,I,O}=R,B=R.rig.B;
+  const d=R.frame(_rq1).multiply(R.F0inv);
+  const hw=_rv1.copy(R.hipsOff).applyQuaternion(d).add(P[I.hips].p).add(O);B.hips.parent.updateMatrixWorld(true);
+  B.hips.position.copy(B.hips.parent.worldToLocal(hw));d.multiply(R.hipsQ0);B.hips.parent.getWorldQuaternion(_rq2);B.hips.quaternion.copy(_rq2.invert().multiply(d));B.hips.updateMatrixWorld(true);
+  for(const [a,c] of RD_AIM){const o=P[I[a]],t=P[I[c]],b=o.b;b.updateMatrixWorld(true);
+    const from=b.getWorldPosition(_rv1),cur=(t.b===b?b.localToWorld(_rv2.copy(t.off)):t.b.getWorldPosition(_rv2)).sub(from),want=_rv3.copy(t.p).add(O).sub(from);
+    if(cur.lengthSq()<1e-8||want.lengthSq()<1e-8)continue;
+    _rq1.setFromUnitVectors(cur.normalize(),want.normalize());b.getWorldQuaternion(_rq2);_rq1.multiply(_rq2);b.parent.getWorldQuaternion(_rq2);b.quaternion.copy(_rq2.invert().multiply(_rq1));b.updateMatrixWorld(true);}
+}
+// fixed steps of 1/60 s, at most four a frame (a long frame slows the fall, it never jumps it); a body still for a quarter
+// second, or falling for four, is frozen where it lies
+function tickRagdolls(dt){
+  for(const R of RAGDOLLS){
+    if(!R.top.parent||!R.rig.root.parent){RAGDOLLS.delete(R);continue;}
+    R.acc=Math.min(R.acc+Math.max(0,dt||0),4*RD_DT);let n=0,mv=0;
+    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;(R.step||ragdollStep)(R);for(const o of R.P){const m=Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z);if(m>mv)mv=m;}}
+    if(!n)continue;
+    (R.apply||ragdollApply)(R); // S427 — a beast's ragdoll brings its own step and apply (34-creatures.js)
+    R.quiet=mv<.0015*R.s?R.quiet+n:0;
+    if((R.t>.2&&R.quiet>=15)||R.t>4){R.done=true;RAGDOLLS.delete(R);}
+  }
+}
+// the kill paths' one call (killE, killZoneEnemy): a people-bodied foe, not a wraith, falls away from you, harder for a power
+// blow or a finisher, softer for an arrow; the group stands at the foe's own spot on the ground. False leaves the old slump.
+function ragdollFoe(e,tag,ground,solid){
+  const beast=e&&e.limbs&&e.limbs.wolf; // S427 — the beasts on the wolf's bones (Michael's C on #107); the spiders keep their curl, where they stand
+  if(beast&&beast.spider&&e.mesh){e.mesh.position.set(e.x,ground(e.x,e.z),e.z);return true;}
+  const rig=e&&e.limbs&&(e.limbs.person||(beast&&!beast.k.dragon&&!beast.k.horse&&beast));if(!rig||!rig.B||(rig.g&&rig.g.wraith)||!e.mesh)return false;
+  tag=tag||'';let dx=e.x-px,dz=e.z-pz;const dl=Math.hypot(dx,dz);if(dl<1e-3){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}else{dx/=dl;dz/=dl;}
+  const heavy=/POWER|FINISHER/.test(tag),k=(heavy?3.2:/ARROW/.test(tag)?1.4:1.8)+Math.random()*.8;
+  if(typeof isInterior==='function'&&isInterior())solid=(x,z)=>intSolidAt(x,z,.05,0); // indoors the room sits at its own coordinates: the world's test reads empty ground there
+  e.mesh.position.set(e.x,ground(e.x,e.z),e.z);e.mesh.updateMatrixWorld(true);
+  return !!(rig===beast?creatureRagdollStart:ragdollStart)(rig,new THREE.Vector3(dx*k,heavy?.6:0,dz*k),{ground,solid});
+}
 function tickPeople(dt,now){
+  if(RAGDOLLS.size)tickRagdolls(dt); // S419 — the fallen
   for(const rig of PEOPLE_RIGS){
     const root=rig.root;
     // a foe's body (S171) hangs in its enemy's group: that group is what stands in the scene, and the enemy's own

@@ -43,7 +43,9 @@ const body = await page.evaluate(() => {
   for (const k in keep) EQ[k] = keep[k];
   return { today, out, mixed }; });
 const T = body.out.map(o => o.tris);
-check('every material dresses the body: 7,500–11,500 triangles a full set against today\'s cloth figure', body.out.every(o => o.tris > body.today + 2000 && o.tris >= 7500 && o.tris <= 11500), { today: body.today, T });
+// Session 414: the body here is unarmed, so both hands are fists (Michael's D on #99), about 1,030 triangles over the
+// mittens this ceiling was set against (11,500)
+check('every material dresses the body: 7,500–12,600 triangles a full set against today\'s cloth figure', body.out.every(o => o.tris > body.today + 2000 && o.tris >= 7500 && o.tris <= 12600), { today: body.today, T });
 check('the four builds differ from one another, and each rare metal\'s mark from plain Steel', new Set(T.slice(0, 4)).size === 4 && T.slice(4).every(n => n !== T[3]), T);
 check('each set carries its own metal in the vertex colours', body.out.every(o => o.metal > 200), body.out.map(o => o.metal));
 check('under the armour the tunic and breeches are the look\'s own cloth', body.out.every(o => o.tunic > 30 && o.breeches > 30), body.out.map(o => [o.tunic, o.breeches]));

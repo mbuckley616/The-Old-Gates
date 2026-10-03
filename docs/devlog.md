@@ -10545,6 +10545,40 @@ Session 411 left a ship at 0 hull waterlogged (2.5 at most) and nothing further.
 - The two calls above (a waterlogged ship settles on the shallows; the hold comes up with her) are Michael's to overrule.
 - The shipwright's lines (*Raise the …*, *Three days, and she'll be lying at the quay here.*, *Raising her is N gold.*) and the sinking message are mine, for the quest review.
 
+## v80 — Session 414 — The unarmed body carries the jab's guard (H.3, Michael's D on #99)
+Session 407 drew four ways to put the first person's raised fists on the third-person body, and Michael chose D: a folded fist on each empty hand, and the jab's own guard carried, the right fist by the chin and the left by the face, standing and on the move. The entry in `docs/decisions.md` labels the answer "B", but its words and the answer on issue #99 are D, which is what is built. The duplicate of the question still under Pending is gone.
+
+The fist is in `personBakeQ` behind a per-hand flag, `g.fists[k]`: a squarer palm, four knuckles across the front, the curled fingers under them and the thumb laid across, exactly as the prototype patched it in. Its pieces are listed in `B['fist'+k]` and take the hand's colour at the bake, so a glove or a gauntlet colours the whole fist and not just the palm. Only `tpBuild` sets the flag, so no townsperson or foe changes. A hand is a fist when it is empty: the right one without a weapon, the left one without an off-hand item or a bow. So with a sword the left hand is a fist hanging at the side, and with a torch the right one is.
+
+The guard is in `tpPose`. It is used only when both hands are empty (`R.unarmed`), and it is laid over the locomotion arms before the swing, the block, the bow and the cast, so each of those takes over from it as before. The punch already starts from this same guard, so it now starts where the arms already are. While moving, the guard bobs .06 with the stride, and at rest it moves .015 with the breath. Sprinting or jumping drops it to the swinging arms. The prototype held it through a jump, but the arms out for balance read better in the air.
+
+Two test changes. `armourkit` counts a full set on an unarmed body, so its ceiling rises by the fists' cost (11,500 → 12,600), and its other bounds are unchanged. The new `tpguard` steps the loop with its own clock across three runs. The first draft started each run's clock at `performance.now()`, behind where the last run had left the loop. The page's next real frame then had a negative dt, which ran the death timer up and laid the body down. The test now starts from the loop's `prevT` and hands the real time back at the end. The game is not affected, since its frames never run backwards.
+
+### Verified (headless Chromium)
+`tpguard` 10/10. Unarmed, both hands are fists, and the player's body is 5,238 triangles against 4,724 with a sword (one fist instead of two). Standing, the right fist is .225 from the head and .065 above its shoulder, and the left is .201 from the head. Through a stride neither fist gets further than .232 from the head. Sprinting, the right fist never comes above its shoulder (−.133 at most). With a sword the right hand hangs .092 below its shoulder standing, and with a torch .293 below, so neither carries the guard. `tpfists`, `tpswing`, `tpweapons`, `tpshots`, `fistswing`, `armourkit` (after the ceiling), `foearmour`, `guardarmour`, `people`, `player`, `underclothes`, `creator` and `gait` all pass, with no page errors. `parsecheck` is clean. Build tag s361. Shot: `docs/prototypes/unarmed-built.png` (`docs/prototypes/unarmed/built.mjs`, the grid script against the built game, unarmed above and a sword below). Its unarmed side view caught the camera inside a wall and shows nothing, but the other three tiles show the guard.
+
+### Needs eyes
+- Whether the carried guard looks stiff over a long walk through town. It bobs with the stride, but the elbows hold their angle.
+- The left fist hanging beside a one-handed sword: whether a fist there reads better than the old open hand.
+
+## v80 — Session 415 — Ragdoll for defeated enemies: the prototype (H, Michael's question of 1 Oct)
+Michael asked in the control room: "Is it possible to have ragdoll for defeated enemies? Having them snap to the ground sideways feels stiff." Today `killE` and `killZoneEnemy` turn the whole figure 90° about z in one frame, lift it .15 and darken it. A question about the look is his call, so this session builds the prototype and asks (DECISION #102, under Pending in `docs/decisions.md`). The game is unchanged.
+
+`docs/prototypes/ragdoll/grid.mjs` builds a Bandit with `buildFoe` four metres ahead of the player and strikes it from the player's side. There are three rows of six frames (0 to 1.6 s), and a fourth row of six different deaths.
+- **A** is today.
+- **B** is a canned fall. The body tips back from the feet over .55 s, easing in as a fall does, with the knees giving, the arms up and a small bounce on landing.
+- **C** is a ragdoll. It puts a particle at 21 points (the 17 bones' joints plus the crown, the two hands' ends and the two toes) and moves them by Verlet integration under gravity. Ten passes of distance constraints hold them at the bones' lengths, and the torso box and the head are held rigid by cross braces. A cheap hinge keeps each knee bending forward and each elbow back, by reflecting the joint across the line of its limb when it crosses. The ground is `activeTerrainH`, with friction. The blow pushes harder the higher the joint, the knees are kicked forward and the hips dropped, so the legs give. The bones then follow the particles. The pelvis takes its frame from the hips, neck and thighs, and every other bone is turned onto its next particle, parent first, the way `tpGripL` turns the left arm. The bone positions matched the particles to the centimetre at rest.
+
+One trap is worth keeping. A prototype that freezes the loop straight after `intoWorld` draws the near ground from a coarse chunk that sits up to .6 off `activeTerrainH`, so a body lying on the true ground was hidden under the drawn one. `await g.frames(30)` first, and the two agree.
+
+### Verified (headless Chromium)
+The grid ran without page errors. The ragdoll costs about 0.9–1.3 ms a step for one body (CPU, three runs). Five of the six deaths in row D settled (no joint moving more than 1.5 mm a frame) in 0.97–1.47 s. "From behind" was still sliding at 2.5 s on the slope there; it landed face down. `docs/prototypes/ragdoll-grid.png`.
+
+### Needs eyes
+- Whether C's fall looks heavy enough. The body goes down in about .4 s, close to a real fall from standing.
+- Building C would need a call from the kill path in `62-actions.js` and `42-zone-enemies.js` (the systems builder's files), and a word with that builder first.
+- The hinge does not limit twist, so an arm can roll in its socket. That doesn't show at this distance.
+
 ## v80 — Session 416 — The shipwright in his harbour's voice; two names out of the Mark's bank (register fixes, quest review run 5)
 The quest review's run 5 (2 Oct) left two findings for the builders, applied here exactly as written, without a decision.
 
@@ -10605,6 +10639,26 @@ Session 411 left the pirate's ram open: the page says *pirates gain a ram when f
 - The swimmer case above: whether a pirate should steer round an empty ship.
 - *The black sail rams you.* is mine, for the quest review.
 
+## v80 — Session 419 — Defeated foes fall as ragdolls (H, Michael's C on #102)
+Michael chose C on Session 415's prototype: a ragdoll, every death different. This session builds it in the game. Until now `killE` (the dungeons) and `killZoneEnemy` (the open world and the old zones) turned a dead foe's whole figure 90° about z in one frame, lifted it .15 and darkened it. Now every foe with a person's body falls as a ragdoll: bandits, goblins, kobolds, skeletons, trolls, ogres and the armoured foes. Wraiths keep the old slump, since a robe that glides has nothing to fall on. So do the wolves, bears and spiders, which have skeletons of their own and are a later pass, and the box-built foes.
+
+The code is in `32-people.js`, next to `tickPeople`, and it is the prototype's code made to run every frame. `ragdollStart(rig, push, {ground, solid})` puts a point at each of 21 joints: the 17 bones, the crown, the ends of the two hands and the two toes. It braces them as the prototype did. The bones and the hand and foot spans are held at their lengths, the torso box and the head are braced rigid, and the knees bend forward and the elbows back. The blow's push is stronger the higher the joint is, the knees are kicked forward and the hips dropped. The radii scale with the body, so a troll lies on its own girth. `tickRagdolls` runs at the top of `tickPeople`, so it runs indoors and in dungeons too. It takes fixed steps of 1/60 s, at most four a frame, so a long frame slows the fall but never jumps it. A body that has been still for a quarter of a second, or has fallen for four seconds, is frozen where it lies and leaves the set. From then on it costs nothing, because `tickPeople` already skips a dead foe's rig. The step and the bone-following reuse scratch vectors and allocate nothing per frame.
+
+The kill paths call `ragdollFoe(e, tag, ground, solid)`, and it returns false for anything without a person's body, which then slumps as before. The push points away from the player. Its strength comes from the kill's tag: 3.2–4.0 m/s with a little lift for a power blow or a finisher, 1.4–2.2 for an arrow, and 1.8–2.6 for anything else. The group is set back on the foe's own spot, which undoes the lunge's lurch, and stands on the ground there. `killE` passes the floor's height and `dSolid`. `killZoneEnemy` passes `activeTerrainH`, plus `WORLD.solidAt` in the open world. The wall test runs in the last two of the ten passes, because the world's test reads nine chunks. A point that steps into a solid cell goes back to where it stood at the start of the step, with its velocity across the wall removed. Indoors, where a guard can die in a room, the room's own `intSolidAt` is used instead, because the room sits at its own coordinates and the world's test would read empty ground there. The skinned mesh is drawn without frustum culling, because its bounds are the standing body's and a limb can land outside them. The darkening, the loot glow and the corpse entry are unchanged.
+
+These are two small edits to the systems builder's files, `62-actions.js` and `42-zone-enemies.js`. Each wraps the old two lines in `if(!ragdollFoe(...)){…}`. Their Session 417 adds `body:e.mesh` to the corpse entry a few lines below, so the two should merge cleanly. Their capsule search reads the bones' world positions, so it should find a fallen body where it lies.
+
+### Verified (headless Chromium)
+`ragdoll` (new) passes all 28 checks, with no page errors. Three Bandits were killed through the real `killZoneEnemy` on the home province's slope, with a jab, a power blow and an arrow, and stepped by `tickPeople` at 1/60. All three fell as ragdolls, with no 90° turn. They were frozen after 1.15–1.72 s across three runs. The hips, neck and head end .06–.09 above the ground. The hips land .44–.80 away from the player, and further for the power blow (.65–.80) than for the jab (.43–.52). Four bone lengths (a thigh, a shin, an upper arm, the back) come out at 1.000 of their standing length. No bone ends further than 1.21 from where the foe stood, and there are no NaNs. A fall costs 1.0–1.7 ms a step for one body when the machine is otherwise idle. With a second browser running beside it, one run read 5.5 ms, so the check's bound is 15 ms, a loose sanity bound. A Wolf keeps the old slump (rotation .5π, no ragdoll). Indoors, with `isInterior` true and a room solid .5 behind the foe, a power blow throws the body against it. It reaches .45 and no joint goes through. In the dungeon behind door 845, a Skeleton is set half a cell from a wall with the player on the open side, then killed with `killE` and a power blow. It settles inside 2.5 s, its lowest joint .04 above the floor and none of its 21 joints in the wall.
+
+One fix came out of that dungeon check. The first draft stopped a point at a wall by putting it back on its previous position, but the ground's friction had already pulled that previous position towards the wall. A Skeleton that happened to stand by a wall ended with 3 joints inside it and never came to rest. A point now goes back to where it stood at the start of the step, with its velocity across the wall removed. The test checks the last two of the ten passes against the walls. `questfoes`, `slimesplit`, `crime3`, `caravan`, `people` and `duel` all pass. `parsecheck` is clean. Build tag s362. Shot: `docs/prototypes/ragdoll-ingame.png` (`docs/prototypes/ragdoll/ingame.mjs`). It shows the three deaths standing, at .25 s, at .5 s and settled.
+
+### Needs eyes
+- Several foes killed at once, for example by a fireball into a pack. Each costs about 1 ms a step while it falls, on the test machine.
+- A body against a house wall or a tree in the open world. The wall test there is `WORLD.solidAt`, which is padded .3, so a limb may stop short of a wall rather than touch it.
+- The old zones (Ashenmoor, Hearthwick, Bealach) have no wall test, so a body there can lie through a fence or a wall.
+- A body killed on a ship's deck or a bridge falls to `activeTerrainH`, which may be the water or the riverbed beneath it.
+
 ## v80 — Session 420 — `corpsebody` finds its dungeon gate wherever the stream is (CI fix)
 CI's push run on Session 418's head (b989003) failed one suite of shard 1: `corpsebody`, which Session 417 wrote. Every one of its world checks passed; the script then threw at line 64, *Cannot read properties of undefined (reading 'x')*, before its dungeon check ran. That line went down into a dungeon through the first world gate in `PORTALS`. In the open world `PORTALS` is the live list of the doors in the cells now loaded (`80-world.js`, *mutated in place*), and the test had just spent its time at five corpses thirty units off, so whether a gate was in it depended on how far the runner's stream had got. Here it always was; on the runner it was empty.
 
@@ -10617,6 +10671,38 @@ CI's push run on Session 418's head (b989003) failed one suite of shard 1: `corp
 
 ### Needs eyes
 - Nothing in play. `dungeonexit` takes its gate from `PORTALS` the same way, but soon after arriving and with a `null` guard; it has not failed, and is left.
+
+## v80 — Session 421 — `tpguard` and `ragdoll` on CI (CI fix)
+CI on the branch head (`1a96bbf`, the merge of main after Session 419) failed two shards, one suite each, and both suites are mine: `tpguard` (Session 414) and `ragdoll` (Session 419). The merge changed no code, so both were test faults that a slower machine exposed. Both reproduced here.
+
+`tpguard`: with a torch, the right hand stood .27 above its shoulder where it should hang below. The run's own numbers showed `TP.hurtT` at 6–12 and `TP.deadT` at 25–50 in the second and third runs. Those timers only grow on a negative `dt`. The test steps the loop by hand inside one `page.evaluate`, which takes several seconds. At the end it set `prevT` to `performance.now()`. That was Session 414's fix for this same trap, and it went the wrong way. Chrome stamps the next real frame when it schedules it, near the start of the evaluate, so that frame's `dt` came out at about −7 s (the loop caps `dt` above at .05, not below). The hurt and death timers ran backwards, and the body took a stale pose. The test now starts its clock from the loop's last frame and hands that same frame back at the end, so no real frame can be behind it. Each run also starts from the same spot, so the third run isn't carried 30 units on by the first two. Two checks are new. Every run must read the hurt and death timers at 0, and every run must be on the ground when the standing pose is read. The game is unchanged. Its own frames never run backwards.
+
+`ragdoll`: the arrow's death settled in 2.77 s against a 2.5 s bound. The bound came from Session 419's three samples. A probe of 24 deaths at four distances and three tags settled in 0.95–3.48 s, because the push is random. In the slow ones the hips stop by .75 s. What still moves is a raised knee toppling slowly sideways, 3–10 cm over a second or two, because almost nothing damps a joint in the air. I tried to fix this in the game: stillness judged by each joint's travel over a quarter second, not by a single step. It did not shorten the tail, because the knee really is moving, not buzzing in place, so I reverted it. The check is now that a body comes to rest by itself before the four-second cap freezes it, in the open world and in the dungeon. Whether the knee should fall faster is a question of feel, and it is listed below.
+
+### Verified (headless Chromium)
+`tpguard` 12/12, three runs in parallel with identical numbers. With a torch, standing, the right hand is .292 below its shoulder (the failing run had it .272 above). The timers read [0, 0] in all three runs, and no run was airborne. `ragdoll` passed twice, with settles of 1.27–2.80 s and none timed out. `parsecheck` is clean. Build tag s363.
+
+### Needs eyes
+- A ragdoll that lands with a knee up. The leg can take a second or two to fall over after the body is down. Whether that reads as a body settling, or whether the knee should go down faster (more damping on a joint off the ground) is a feel call.
+
+## v80 — Session 422 — The creatures' deaths: the prototype (H, after Session 419)
+Session 419 left the beasts on the wolf's bones on the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. `tickCreatures` sets a dead pose (`wgDead`), and `killZoneEnemy` turns the whole figure 90° about z in one frame and lifts it .15. That is the snap Michael called stiff in his question of 1 Oct. Extending his C to four legs is a question about the look, so this session builds the prototype and asks (DECISION #107, under Pending in `docs/decisions.md`). The game is unchanged.
+
+`docs/prototypes/ragdoll/creatures.mjs` builds a Wolf with `buildWolf` four metres ahead of the player, on its standing pose, and strikes it from the player's side. Rows A–C are six frames from 0 to 1.6 s. A is today. B is a canned collapse. The legs fold at the elbow, carpus, stifle and hock over .25 s, and the body rolls a quarter turn about its own long axis over .5 s, easing in, with a small bounce. C is the people's ragdoll moved onto four legs, with 29 points:
+- the hips, spine, neck, head, and a nose point past the head;
+- three tail joints and the tail's end;
+- on each leg, the four bones' joints and an end past the paw.
+
+Each end point is placed half (or more) of its bone's own length beyond it, in that bone's frame, so the same code serves the wolf, the boar and the bear. The torso box (hips, spine, neck root and the four leg roots) is braced rigid, and each paw is braced to its joint above. Two minimum-distance braces keep the head from folding back through the shoulders and the tail from folding onto the back. Each leg joint's hinge takes its sign from which way it juts at rest: the elbow, the carpus and the hock back, the stifle forward. The blow's push grows with height. The hips, spine and neck drop and roll to one side at random, and the lower legs kick the other way, so most deaths end on the flank. The bones follow the points as the people's do: the hips by the torso's frame (thigh to thigh across, hips to neck forward), then each bone turned onto its next point, parent first. Row D is six deaths under C: three Wolves (a bite parried, mid-leap, from the side), a Dire Wolf from a heavy blow, a Cave Bear and a Boar.
+
+### Verified (headless Chromium)
+The grid ran without page errors. After apply at rest, every bone sits on its point (0.0000 off). The six deaths of row D settled (no point moving more than 1.5 mm a step) in 0.62–0.97 s, faster than the people's 0.97–1.47. A thigh, a forearm and the back came out at 0.999–1.001 of their length. The prototype costs about 4 ms a step for one body, because it allocates vectors inside the loops. The people's ragdoll cost the same in its prototype before Session 419 moved it onto scratch vectors, and it runs at about 1 ms. `docs/prototypes/ragdoll-creatures.png`.
+
+### Needs eyes
+- B always rolls the same way. In the grid it rolls the legs towards the camera, which can read as lying on its back from above.
+- In C, one wolf of the six (the parried bite) ends on its back with its legs up. A dead animal can lie that way, but it is rarer than on the flank.
+- The Cave Bear ends in a heap rather than on its side: a short body on short legs, its bulk the same radius as the wolf's scaled.
+- The spiders, the crawler and the scorpion already curl their legs dead, and are turned on their side as well. That is outside this question. The entry proposes only dropping the turn if C is chosen.
 
 ## v80 — Session 423 — `duelrhythm` runs on fixed ticks (CI fix)
 CI's push run on Session 420's head (871258f) failed one suite of shard 7: `duelrhythm`, which Session 405 wrote and 408 extended, was stopped at the runner's 900 s for one suite. Every other suite of the shard passed. Session 417 had already seen it time out once with three browsers side by side and pass alone, so it was not a flake but a budget: the test drove its seven fights (five melee reactions, two arrows) by `requestAnimationFrame`, so every tick of the fight was a real frame of the whole scene drawn on software GL, each up to about a second on a loaded runner, and with the loop's `dt` capped at 0.05 a fight of four game seconds took at least 80 of them. Here, alone, the old version was still running after ten minutes when I stopped it.
@@ -10698,6 +10784,69 @@ The critic's 2 Oct playtest (PR #106, on auto/critic) filed four bugs in backlog
 - Whether 📦 is the right mark for a crate beside the bag's other glyphs.
 - Found on the way, not fixed: of the world's 110 ports, 16 share a name with another port (two *Woushstouir*s, more than one *Beaumont*), and some ports list a passage to a port of their own name. Names are generated, so this is the world's naming and not the ferry. It is filed in backlog I, not changed here.
 
+## v80 — Session 427 — The beasts fall as ragdolls (H, Michael's C on #107)
+Michael chose C on Session 422's prototype: the wolf family dies on a ragdoll of its own joints, like the people since Session 419. Until now `tickCreatures` set a dead pose and `killZoneEnemy` or `killE` turned the whole figure 90° about z in one frame and lifted it .15. Now the Wolf, the Snow Wolf, the Dire Wolf (the Faolchú too, which is built on it), the Ash Hound, the Boar and the Cave Bear fall as ragdolls. The Dragon and the coach's horses keep the old path. The dragon has wings the ragdoll does not carry, and the horses never die.
+
+The code is in `34-creatures.js`: `creatureRagdollStart`, `creatureRagdollStep` and `creatureRagdollApply`. It runs on the people's loop. The ragdoll joins the same `RAGDOLLS` set, and `tickRagdolls` calls its own step and apply, so it gets the people's fixed 1/60 steps, at most four a frame, and the same freeze when it is still or after four seconds. `ragdollFoe` in `32-people.js` (the kill paths' one call) now hands a beast on the wolf's bones to the creature ragdoll. A spider, the Bog Crawler or the Sand Scorpion is set on the ground where it died, with no turn and no lift, and its curl (`sgDead`) plays there, as the decision entry proposed. `rig.deadPosed` is set when the fall starts, so `tickCreatures` leaves the bones alone. The step allocates nothing.
+
+The prototype's code did not survive the game unchanged. Built as the prototype was (29 equal points, the trunk a line of round spheres), not one of nine wolves ended on its flank. They all lay on their bellies with the legs splayed sideways, the back within 45° of upright. The prototype's grid shows the same if you look closely. That was not what the decision promised ("most deaths end on the flank"), so I tried, in order:
+- A stronger sideways roll, then a twist across the torso box. No change, because the legs swing freely at their roots and only splay.
+- A heavier trunk. Worse: it dropped straight onto its legs.
+- A roll torque for the first .4 s. No change.
+
+What worked was anatomy, in three changes:
+- **A keel.** A chest point under the spine and a belly point under the hips, braced into the torso box. The trunk is now deeper than it is wide, so it cannot rest on its belly.
+- **Smaller leg roots.** The shoulders and hips now have a ground radius of .01, because they sit inside the body. The trunk spheres are .09×bulk, wide enough to cover them, so the roots no longer prop the body up.
+- **Legs that swing in their own plane.** Each leg joint may stray only .3 of its distance from the root out of the leg's plane, so it cannot splay sideways under the body. This holds for the first .8 s only. Held longer, it and the ground nudged the body along for good (about .3–.5 mm a step) and three wolves in nine never came to rest.
+
+Two more fixes came out of that hunt:
+- The hinges now set a joint that bends the wrong way back onto its limb's line instead of mirroring it across. Mirroring flipped a joint to and fro, and one wolf in five was still moving 13 mm a step at three seconds. Clamped, the worst is .8 mm.
+- After .8 s the drag rises from .995 to .9 a step.
+
+The roll drive I tried is not in the code.
+
+### Verified (headless Chromium)
+`beastfall` (new) passes all 37 checks (twice) with no page errors. It kills each kind with the real `killZoneEnemy` on the home province's ground, and steps `tickPeople` and `tickCreatures` at 1/60.
+- **All six kinds** fall as ragdolls with no 90° turn and no lift, and settle by themselves in 1.0–1.6 s. The hips are .07–.16 above the ground and the head .04–.09. No bone is under the ground. The four bone lengths measured (a thigh, a forearm, the back, the neck) are 1.000. They stay within 1.0 of where the beast stood. They darken as before, and frustum culling is off.
+- **Nine wolves** (jabs, power blows, arrows) all fall away from you and settle in 0.97–1.82 s. Every one ends with its back tipped .36–.39 from upright, on the flank with a slight lean onto the belly, either side at random. Before the keel all nine were .66–.99.
+- **The Spider** stays on the ground where it died, with no ragdoll and no turn.
+- **Cost:** a beast's fall costs 1.3–2.2 ms a step alone.
+
+`tests/ragdoll`'s wolf check is updated from "keeps the old slump" to "falls on its own ragdoll, no 90° turn". It is changed, not deleted. That suite failed once in three runs, on its dungeon Skeleton, a people ragdoll this session does not touch (it calls the same `ragdollStep`). It settled past the four-second cap. The suite passed on the unchanged code and then twice more on this build. It is the people ragdoll's random settling, which Session 421 measured at up to 3.48 s, so the check sits close to its edge. `wolves`, `spiders`, `scorpion`, `crawler`, `bear`, `faolchu`, `dungeonfoes`, `foes`, `questfoes` and `duel` all pass. `parsecheck` is clean. Build tag s364. Shot: `docs/prototypes/ragdoll-beasts-ingame.png` (`docs/prototypes/ragdoll/beasts-ingame.mjs`). It shows each kind standing and then dead from both sides, and the spider's curl.
+
+### Needs eyes
+- Every wolf ends at about the same lean, on its flank and tipped a little towards the belly. The deaths differ in where they land and how the legs lie, not in the final roll. A wolf on its back, which the prototype showed once in six, no longer happens.
+- The Cave Bear still ends in more of a heap than a flank (back .47 from upright), because it is short and round.
+- A beast killed in a dungeon (`killE`, with the floor and `dSolid`) goes through the same call, but this suite tests the open world only.
+- The Faolchú is a Dire Wolf with sigils on its bones. They should ride the fall, but no test kills the boss.
+- The ragdoll's ground is `activeTerrainH`, so a beast killed on a bridge falls to the ground beneath it, as the people do (Session 419's note).
+
+## v80 — Session 428 — Four suites red on CI after Session 427 (CI fix)
+CI on the branch head (`c883e40`, Session 427) failed two shards: `tpfists` and `q7world` on headless (1), `coachinn` and `ragdoll` on headless (5). All four passed here. Main's run, with the same suites, was green. Each was a different fault that a slower machine exposed, and each was found and fixed on its own.
+
+`ragdoll`: the dungeon's Skeleton was still moving at the four-second cap. This is the tail Session 421 measured (0.95–3.48 s) and left in the game. I fixed it in the game this time, with the two fixes Session 427 found for the beasts. First, a knee or elbow bent the wrong way is set back onto its limb's line, not reflected across it. Reflected, it flipped to and fro and kept the limb moving. Second, from one second (the body is down by .37 s) the air drags harder, .9 a step instead of .995, so a raised knee comes to rest instead of toppling over for seconds. Both are in `ragdollStep`. Over 48 deaths (four distances, five offsets, jab, power and arrow) the bodies settled in 0.93–3.07 s before (median 1.65), and in 1.05–1.78 s after (median 1.28). They are down at the same moment (0.30–0.37 s), and every knee ends .04–.06 above the ground.
+
+`tpfists`: two faults, both in the test.
+- The "before" run plays the sword's arc with the fist mark off, and the old path draws one of three arcs at random. About one time in eleven that is the overhead chop. The chop falls on the middle line, so it swept no wider than the jab (.198 against .167). The before run now pins the slash.
+- The test stepped the loop from `performance.now()` and left `prevT` ahead of real time, Session 421's trap (`tpguard`) again. The next real frame's `dt` came out negative, and `swingT = max(0, swingT - dt)` and `TP.hurtT` ran up. It now steps from `prevT` and hands it back.
+
+Fixing the second exposed a correction to Session 402. Its power punch "lands at .41 against the jab's .33", but that reach was a forward lean from the run-up `TP.hurtT` (`tx += .35`): in the passing runs the head stood .34 forward on the power run's first frame, before any punch. With the clock handed back, the power punch lands at .329 against .325. Michael's A on #80 asks for "the same punch, harder", and what Session 402 built is the shoulders turned 1.3 times as far (.459 rad against .353). The check now tests that, and that the reach is no shorter. I tried leaning the body into the power punch (2.6 times the jab's lean). It added only .033 of reach, and a lean big enough to match .41 is a look nobody asked for, so I reverted it. The game's punch is unchanged.
+
+`coachinn`: the inn is torn down when you go 5,000 units away and rebuilt when you come back, and the test gave the rebuild one tick. The cell streamer looks only every .75 s of ticks. On a slow runner the trip away unloaded the cells, so the inn's road was gone and one tick back could not rebuild it. Its night check failed with it, because there was no door to enter. The test now ticks until the inn stands. I reproduced CI's exact failure by forcing that unload (a .8 s tick on the way out): the old test failed both checks with CI's numbers, and the new one rebuilt the inn in 48 ticks.
+
+`q7world`: the fight sets you beside the Faolchú once, then swings twelve times. On CI it moved between the slow swings, and all twelve missed (hp 5 after nine minutes). The test then crashed in `openLoot` on a corpse that did not exist. Each swing now starts from beside it, and the loot step returns false when there is no corpse instead of throwing. I reproduced it by moving the boss 3 units before each swing: the old test stalled in its swing loop until the page closed; the new one kills it.
+
+### Verified (headless Chromium)
+- Each changed suite was run against a reproduction of its failure, as described above.
+- `tpfists` passed four of four runs (three in parallel); the before swing sweeps .362, the power punch's shoulders .459 against the jab's .353.
+- `ragdoll` passes 28/28, and its three Bandits settle in 1.08–1.20 s (1.43–3.50 s on CI's failing run). The dungeon Skeleton settles too. `coachinn` passes 15/15 (the inn back in one tick here), and `q7world` 8/8 (the Faolchú killed, the Mark taken).
+- These also pass: `beastfall` 37, `duel` 22, `fists` 17 (two suites), `foes` 12, `tpguard` 12, `tpswing` 11, `questfoes` 9 and `dungeonfoes` 5.
+- `parsecheck` is clean. Build tag s365.
+
+### Needs eyes
+- The people's ragdolls settle a little sooner, from about a second, with more drag. The fall itself (the first second) is unchanged. Whether the last movements now look damped is a feel call.
+- The power punch reaches no further than the jab (Session 402's note said it did). It is harder only in the shoulders' turn. If it should lean into the blow, that is a look question for Michael, not built.
+
 ## v80 — Session 429 — Falls hurt, and the landing roll (platforming, Michael's B)
 Michael answered the platforming page on 2 Oct with B: A's honest jump, then generated places. Its first piece is a heights pass over the world's solids, and that is a Fable session. Its rule for falls touches only the jump block and the roll, so it can come first. The rule: *free up to 4 units (four times the apex: nobody is hurt by their own jump), then 6% of your health a unit beyond, so a drop of about 21 units from full is death. A roll begun within 0.2 s of landing halves it.* Before this, a drop of any height ended in `sndLand` and a 0.06 shake.
 
@@ -10766,3 +10915,21 @@ Pictures: `docs/prototypes/rivers/built-quay.png` (Cnoccarra's quay from the ban
 
 ### Needs eyes
 The quay's deck at the bank's height: on a 3u bank the kit's body shows 3.2u of stone down to the water, on a low bank it sits as the harbour's does. The bank between the town and the quay is cleared of trees in a 17u round; the walk from the town gate to it is open ground, no path. The boats moored on the water side sit in the channel's edge; a ship at the quay has the channel's far half. Whether the lantern reads at night from the town. The ship steered by a test, not a hand: at the helm the bends of a 16u channel will want slow speed; the ram from a merchant at a river mouth is the sea's traffic pressing into the estuary (merchants and pirates spawn by distance from the player, not by water). Owed still: the Dearg downstream, brooks, a water surface above sea level, a sand bar between the delta's arms.
+
+## v80 — Session 435 — Three suites red on CI after the merge of main (CI fix)
+CI on the branch head (`c653e1b`, the merge of main into auto/backlog) failed three suites: `masterslam` on headless (2), and `beastfall` and `slimes` on headless (3). Here `beastfall` and `slimes` passed and `masterslam` failed about five times in six. Main's run of `masterslam` passed. All three faults were in the tests, and no game code changed.
+
+`masterslam` (the cavern master's slam, Session 404): its last check hands one slam to the real loop, and the slam never came. A debug read showed why. The master stood on floor 2 and the player was back on floor 1, so the loop's enemy pass (`e.floor!==currentFloor`) skipped the master. The test's `_stage` sets `currentFloor` to the master's floor but leaves you at floor 1's height. This lair has a stairwell, and in a stairwell dungeon the loop sets the floor from your height (`jumpY` against half of `FLOOR2_Y`) every frame. The first live frame therefore moved you back up. The driven checks call `tickMasterSlam` directly, so they never saw this. I did not find why it passed one run in six (that run read floor 2 at the end). It also passed on main, which does not have Session 419's ragdoll. Whatever made the difference, the stage was wrong in both. The systems builder fixed the same fault in Session 434 on auto/systems: the stage sets `jumpY` to the master's floor, and check G runs after H. I first wrote my own fix, then took their file as it stands, so the two branches carry the same test and merge clean. A second flake in that test turned up while I re-ran it. The lair's roster is drawn at random, and in two runs of eight the master was a Mimic. A disguised mimic never slams (`tickMasterSlam` returns early), so every check failed. On top of Session 434's file, `_stage` now drops the disguise and the dormancy, on a line of its own so that the two branches still merge clean.
+
+`beastfall` (Session 427): "the wolves fall away from you" allowed one wolf in nine at or below zero. CI's run had two, at -0.008 and -0.037 against the push. Those are wolves that dropped where they stood and rolled a centimetre or three back. That is not a wolf falling towards you, so the check now requires every wolf but one to land no more than 5 cm towards you, and the nine to land away on average (more than .1). CI's run averages .33. The fall itself is unchanged.
+
+`slimes` (Session 222): the quiver is a sine about a scale of 1, and the check read it once after twelve frames. CI read .99909, just inside the 1e-3 threshold near the sine's zero. The test now keeps the widest deviation over the twelve frames.
+
+### Verified (headless Chromium)
+- `masterslam` 16/16 with my version of the fix, three runs at once with two `beastfall` runs and a `slimes` run beside them. I then took Session 434's version (the same `jumpY` fix) and added the mimic line. Session 434's file alone failed the next run on a Mimic master, every check. Before the fix the same suite failed five of six runs, including four of four in parallel, each with `currentFloor` 1 against the master's 2 (or the master a Mimic, once). After it, in the live check, the master winds up at `currentFloor` 2 and lands its slam within about 1.5 s of the loop's time.
+- `beastfall` 37/37 twice. The wolves' away figures are -0.023 to 0.703 (one below zero) and 0.084 to 0.744, and every wolf settles in 0.78–1.92 s.
+- `slimes` and `slimesplit` pass. The widest quiver is .062.
+- `parsecheck` is clean. Build tag s371.
+
+### Needs eyes
+- Nothing in the game changed. The floor fault is the test's, but the same thing would happen to any code that sets `currentFloor` without moving you in a stairwell dungeon. A save loaded onto floor 2 (`68-dungeon-misc.js`) sets both, so it is fine.

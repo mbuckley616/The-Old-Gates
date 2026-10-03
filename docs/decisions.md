@@ -84,6 +84,8 @@ Rows A–C are a wolf struck from your side, at 0 to 1.6 s. Row D is six differe
 
 Michael: **A ragdoll on the wolf's own joints** (C). (2026-10-02)
 
+Done, Session 427 (the look builder): the wolf family falls on its own ragdoll, ending on the flank (a keel was added under the trunk so it does not rest on its belly), and the spiders, the crawler and the scorpion curl where they stand without the 90° turn. `tests/beastfall`, `docs/prototypes/ragdoll-beasts-ingame.png`.
+
 ### Platforming — the jump, the ledge and the places that ask for them (the designer, 2026-10-02)
 Today the world outdoors has no tops: rocks, walls and ruins only block, a fall of any height costs nothing, and no place asks for a jump, so Acrobatics' perks, magic B's movement words and the felled trunk have nothing to open. Which shape should platforming take, built to one table of gaps (2.9 anyone at a sprint, 3.4 at Acrobatics 100, 5 with the double jump) with a mantle for everyone and falls that hurt past 4 units? (Page: `docs/design/platforming.md`.)
 - **A.** The honest jump: heights for the world's solids, the mantle (Catch at Acrobatics 25), fall damage (6% of health a unit past 4, halved by a landing roll), and your three examples built once by hand: Greywatch climbed from outside, a broken gorge bridge on the Bealach, a dungeon pit of pillars. One Fable and two Opus sessions.
