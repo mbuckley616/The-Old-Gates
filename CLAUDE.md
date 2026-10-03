@@ -165,7 +165,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - Michael makes the design calls; Claude flags risks and asks when the design is open.
 - Cross-cutting rewrites (roads, terracing, rivers, skills-by-use, splitting this file) are Fable sessions.
   Contained features and bug hunts are Opus sessions.
-- A Fable session is fired by the producer from a card on the control room (the routine "Old Gates — Fable session (on demand)"):
-  Michael taps Start, the session works on `auto/fable-<id>`, raises its questions as decisions and stops until they are answered,
-  and its PR is approved like any other. While an open issue's title begins `FREEZE:`, the two code builders end their runs at once;
+- A Fable session runs from a card on the control room (the routine "Old Gates — Fable session (hourly pickup)", every hour at :40):
+  Michael taps Start, the next run takes the card, works on `auto/fable-<id>`, raises its questions as decisions and stops until
+  they are answered, and its PR is approved like any other. While an open issue's title begins `FREEZE:`, the two code builders end their runs at once;
   the producer opens it when a Fable item rewrites shared files and closes it when that PR merges.
