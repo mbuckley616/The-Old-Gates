@@ -23,6 +23,7 @@ check('the master\'s blows carry 1.6 × (1 + level × .04) of its kind\'s (was a
 // a stage: pause the loop, the player on the master's floor at a distance along +x, the master alert and facing
 await page.evaluate(() => { window._stage = (d) => { const e = window._lairBoss; invOpen = true; currentFloor = e.floor || 1;
   ENEMIES.forEach(x => { if (x !== e) { x.dead = true; if (x.mesh) x.mesh.visible = false; } });
+  e.disguised = false; e.dormant = false; /* S435: the roster is random, and a Mimic master sits disguised and never slams */
   px = e.x + d; pz = e.z; jumpY = e.floor === 2 ? FLOOR2_Y : 0; /* the loop reads the floor from jumpY: a master on floor 2 with you on 1 is never ticked (S434) */ PHP = 9999; dead = false; ROLL = null; blocking = false; staggered.length = 0;
   e.alert = true; e.dead = false; e.hp = e.maxHp; e.telegraphT = 0; e.atkCd = 0; e._slamT = 0; e._slamCd = 0; e._slamLast = null; return e; };
   // tick until the slam lands (or n ticks); at tick `at` run a hook (to move, roll or stagger mid-tell)

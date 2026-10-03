@@ -237,3 +237,42 @@ With the hides that leaves 1 gold over the fetch, so the fetch only pays on silv
 **Backlog notes** (not changed):
 - K's *Resume* step 4 and the offline copy are still open. Nothing in play bears on them.
 - The six `docs/prototypes/*/shoot.mjs` that read the old inline script (noted last run) still have no line.
+
+## 2026-10-03 — A river town's quay by day and night, a room at the Bramble Hearth, a Bandit searched in third person (build s372)
+
+Build s372 is main at `472f955`. The review covers every devlog entry after last run's Session 410: 411–433 as they stand on main. Systems 436–448 and Look 414–435 are on their branches, not main, and were not played. Five boots, no page errors in any of them. `npm install` exits 0 and `export` passed 1/1.
+
+**What I did.** The rivers are the largest change since the last run, so I went to the nearest river town and walked its quay. Of the 53 bank settlements, the nearest from the home province's start are Ardcarra (an outpost, 4,417 units), Cnoclough and Dunderry (villages), Lisderry, and Cnoccarra, the first town, at 4,778. At Cnoccarra I walked the straight line from the town's middle to its quay, stood on the bank 14 units back from it at 11h and at 22h, then stepped onto the deck. In Dunmore at 21h I asked the Bramble Hearth's keeper for a bed by his own dialogue, paid, went up the stair and stood at its head facing the doors, read each door's prompt and my bed's, then stepped off the gallery to the floor below. At noon I killed a Bandit in Dunmore's street and searched him in third person: I stood 2.4 units off his feet, turned to face them, and lowered the view until the crosshair found him.
+
+**What was wrong.** I found no bug I could confirm, which is the short answer. Two things I looked at hard turned out to be my staging. A third I could not settle.
+- *Not a bug: a third-person search with no prompt.* A second Bandit in an open patch of the square never gave a loot prompt as the view swept down over him from his feet, from pitch 0.1 to −1.2. My script never checked his drop. A corpse with nothing in it is not a loot target (`lootTargetNow` asks for items), so he was most likely empty. The game should then have said *Remains — empty* under the crosshair, but my sweep ran past him before the frame I shot. Not filed.
+- *Not a bug: a camera inside a house.* In the first third-person shot the camera sits under an eave with the apothecary's sign seen from behind. I had set the player down by coordinates, 6 units along the start's facing, and that put him against a house. `tpCamera` pulls in on solids as it should.
+- *Unsettled: a townsperson lying flat at noon.* In the open-square shot, looking almost straight down (`critic/2026-10-03-third-person-bandit-open.png`), a white-haired person in blue lies full length on the sand to the right of the player. Six people stood within 25 units at 12h, 12h30 and 15h, and none was marked as sitting or lying. My height test reads the bones, which are local to the mesh, so it could not tell standing from lying. It may be a walk seen from straight above. Steps if someone wants to look: Dunmore, noon, third person, stand at (13554, 25396) and look down.
+
+**What worked well.**
+- *The quay at Cnoccarra* stands 186 units from the town's middle (pad 95), on the north-east bank of a reach 23 wide. The ground falls gently from the town at 4.2 to the bank at 3.4 with no step over 0.35 in 0.5. Standing mid-quay, the platform takes you at its deck height of 3.0, and the ground below reads 0.9. The stone deck, the lantern post at its end, two crates and a bollard read at once from the bank by day (`critic/2026-10-03-river-quay-day.png`). Straight from the town's middle, the line crosses houses only inside the pad; past the pad it is open.
+- *The lantern is lit.* At 22h the quay's lamp is visible, at 2.4 over 20 units, and it holds a slot in the 24-light pool (the nearest live source to me, 15 units off). On software GL it reads only as a small amber pane at the top of the post, and the deck below it is not visibly lit (`critic/2026-10-03-river-quay-night.png`). Whether it reads on a real GPU is for eyes.
+- *The keeper's directions are right now.* The Bramble Hearth was empty that night. *A room is 11 gold — the first door on the right*, and the receipt said the same. The stair head is at x 0.9, on the west side, and the two gallery doors are at x 3 and 9, both on the right as you come up facing them. Room 0 is the door at 3, the first on the right. The bed beyond it prompts *Your room — press 'E' to rest*. Gold went 300 → 289. Session 424's fix holds in play. Stepping off the gallery is a 2-unit drop and costs nothing, as Session 429's rule says (free to 4).
+- *A body searched by its feet in third person.* The first Bandit carried an Elixir of Regeneration (Strong). From 2.4 units off his feet, the crosshair took him at pitch −0.2 with *Press 'E' to loot Bandit*, and E opened the panel (`critic/2026-10-03-third-person-bandit-feet.png`, `…-loot.png`). Session 417's *Needs eyes* for third person is answered for a Bandit.
+
+**Looks, not findings.**
+- Both quay shots are in falling snow on 3 October, in a lowland town at 4 units above the sea. The weather is the world's roll and I did not set it. If snow is not meant before winter in the Gatelands, it wants a look.
+- By day the river is a flat bright cyan, much brighter than the sea's blue in earlier shots. That belongs to H.5b's water.
+- The dead are tinted to 35% of their colour (`killZoneEnemy`). On sand at noon a Bandit reads as a black cut-out (noted last run). The ragdoll on auto/backlog changes how they lie, not the tint.
+- No one in Cnoccarra was within 30 units of the quay at 11h (0 of 21 townspeople). A quay with a boat moored and nobody on it reads as empty. Nothing schedules anyone there.
+- The inn's stair-head shot is mostly a bright wall at the left edge and a dark door on the right (`critic/2026-10-03-dunmore-inn-stair-head.png`). The doors are not easy to pick out from the stair head on software GL.
+
+**Needs eyes, reviewed.**
+- *S411 hull and rig, S412 sea wear, S413 foundering, S418 the pirate's ram*: not played. I did not sail this run. A storm crossing is still owed, as last run's was.
+- *S416 the shipwright's voices*: not heard at a quay this run.
+- *S417 corpses over the whole body*: judged for a Bandit in third person, above. Spiders, slimes and the dragon were not tried.
+- *S420, S423 (CI and tests)*: nothing to play.
+- *S424 inn rooms*: judged at one inn on one night, above. It is right.
+- *S425 the Church against the fine*: not replayed.
+- *S426 the s360 fixes*: the dialogue hint was not looked at this run. `tradebits` covers it.
+- *S429 falls*: judged only that a 2-unit drop from an inn gallery is free. A fall over 4 units in play needs a height the world does not have yet outdoors, and I did not find a dungeon shaft.
+- *S430, S432, S433 the rivers and the quays*: judged at one bank town, above. The quay's height, the open ground to it and the lantern are as the entry says. The 3.2 units of stone showing on a high bank I could not see from where I stood: the quay at Cnoccarra sits at 3.0 on a 3.4 bank. The ship up a river, the gorges, the lakes and the bridges were not seen.
+
+**Backlog notes** (not changed):
+- I, *Ports share names*: still open on main. Michael answered A on #110 and the systems builder's Session 432 built it, but on auto/systems (PR #115). It is done once that merges.
+- K's *Resume* step 4 and the offline copy are still open. The six `docs/prototypes/*/shoot.mjs` that read the old inline script still have no line (noted on 1 and 2 Oct).

@@ -347,8 +347,10 @@ function killE(e,tag=''){
   // Slump mesh — rotate to lie flat, tint dark
   // Floor base: wraith baseY includes float offset, so use the floor's ground Y
   const floorGroundY=e.floor===2?FLOOR2_Y:0;
+  // S419 — a people-bodied foe falls as a ragdoll on the floor (Michael's C on #102); the rest slump as before
+  if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,()=>floorGroundY,(x,z)=>dSolid(x,z)))){
   e.mesh.rotation.z=Math.PI/2;
-  e.mesh.position.y=floorGroundY+0.15;
+  e.mesh.position.y=floorGroundY+0.15;}
   e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);}});
   // Hide HP bar
   e.hpFg.visible=false;if(e.hpFg.parent)e.hpFg.parent.children.forEach(c=>{if(c.geometry&&c.geometry.type==='PlaneGeometry')c.visible=false;});

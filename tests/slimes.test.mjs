@@ -25,11 +25,12 @@ check('the fire elemental is a figure of additive flame over a glowing core, no 
 const flash = await page.evaluate(() => { const F = _F, m = F.limbs.body.material; telegraphPulse(F, 1); const hot = '#' + m.emissive.getHexString(); telegraphReset(F); const reset = '#' + m.emissive.getHexString(); return { hot, reset }; });
 for (const e of ['_S', '_F']) await page.evaluate(e => { const x = window[e]; x.alert = true; x.hasCried = true; }, e);
 const before = await page.evaluate(() => ({ sy: _S.limbs.body.scale.y, fy: _F.limbs.flames.map(m => m.scale.y) }));
-await g.frames(12);
+// the quiver is a sine about 1: one sample can land near its zero (CI read .99909), so keep the widest of the twelve frames
+let sq = 0; for (let k = 0; k < 12; k++) { await g.frames(1); sq = Math.max(sq, await page.evaluate(() => Math.abs(_S.limbs.body.scale.y - 1))); }
 const after = await page.evaluate(() => ({ sy: _S.limbs.body.scale.y, fy: _F.limbs.flames.map(m => m.scale.y), core: '#' + _F.limbs.body.material.emissive.getHexString(), r: _F.limbs.body.material.emissive.r }));
 const flick = after.fy.filter((y, i) => Math.abs(y - before.fy[i]) > 1e-3).length;
 check('the wind-up flashes the core red and the reset clears it, as for every foe', flash.hot !== '#ff4400' && flash.reset === '#000000', flash);
-check('in play the slime quivers, the flames flicker and the core glows again', Math.abs(after.sy - 1) > 1e-3 && flick > 20 && after.r > .5, { sy: after.sy, flick, core: after.core });
+check('in play the slime quivers, the flames flicker and the core glows again', sq > 1e-3 && flick > 20 && after.r > .5, { sy: after.sy, sq: +sq.toFixed(4), flick, core: after.core });
 
 // the split (killE) calls buildEnemy, which lives inside buildDungeon and is not reachable from killE: a slime's death
 // throws before the small slimes are made. Reported in Session 222 for the systems builder (combat), not fixed here.

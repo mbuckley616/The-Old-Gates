@@ -1504,9 +1504,11 @@ function killZoneEnemy(e,sc,tag=''){
   const firstKill=!seenEnemyTypes.has(e.name);
   if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew a '+e.name);}
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
-  e.mesh.rotation.z=Math.PI/2;
   const terrainY = typeof activeTerrainH==='function' ? activeTerrainH(e.x,e.z) : 0;
-  e.mesh.position.set(e.x, terrainY+0.15, e.z);
+  // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
+  if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,activeTerrainH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
+  e.mesh.rotation.z=Math.PI/2;
+  e.mesh.position.set(e.x, terrainY+0.15, e.z);}
   e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);}});
   // Hide HP bar
   if(e.hpFg){e.hpFg.visible=false;if(e.hpFg.parent)e.hpFg.parent.children.forEach(c=>{if(c.geometry&&c.geometry.type==='PlaneGeometry')c.visible=false;});}
