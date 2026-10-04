@@ -129,6 +129,29 @@ function renderLog(){
 // S488 — the Journal, a tab of its own (DECISION #132, part A): *By day*, the chronicle, newest day first and each day's
 // lines in the order they happened; *By quest*, every quest the journal holds words for, the ones in hand first, its
 // lines in order. Each line carries its time; the date line is gameDateLine's until the quest writer names the days.
+// S490 — the topics you were told (DECISION #132, part C): every answer a person gives to a topic is filed once under its
+// label in worldState.told, a character key. A person with a name of their own (the legacy villages, the quest givers)
+// files by name; the generated townsfolk (they number thousands) file by the town and the words, so a rumour every
+// villager repeats is kept once and a keeper's answer about their own house is kept beside the next one's.
+function journalTold(npc,c){
+  if(!npc||!c||c.folder||!c.label||typeof c.response!=='string'||!c.response.trim())return;
+  const label=String(c.label).replace(/^[📜🗝⚑★☆✦]\s*/u,'').trim();if(!label)return;
+  const T=worldState.told||(worldState.told={});const site=npc._siteId||null;
+  let h=0;if(site)for(let i=0;i<c.response.length;i++)h=(h*31+c.response.charCodeAt(i))|0;
+  const key=label+'|'+(site?'@'+site+':'+(h>>>0).toString(36):(npc.name||'?'));if(T[key])return;
+  let town='';if(site){try{const st=WORLD.siteAnywhere(site);town=(st&&st.name)||'';}catch(e){}}
+  T[key]={l:label,s:npc.name||'',w:town,r:c.response,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440};
+}
+let _jnSearch='';
+function _jnTopicsHTML(){
+  const T=worldState.told||{};const q=_jnSearch.trim().toLowerCase();
+  const all=Object.values(T).filter(e=>e&&e.l&&(!q||[e.l,e.s,e.w,e.r].some(x=>String(x||'').toLowerCase().includes(q))));
+  if(!all.length)return `<div class="jn-empty">${Object.keys(T).length?'Nothing you were told matches.':'Nobody has told you anything worth keeping yet.'}</div>`;
+  const by=new Map();all.forEach(e=>{if(!by.has(e.l))by.set(e.l,[]);by.get(e.l).push(e);});
+  return [...by.keys()].sort((a,b)=>a.localeCompare(b)).map(l=>`<div class="jn-day"><div class="jn-head">${_jnEsc(l)}</div>`+
+    by.get(l).sort((a,b)=>(a.t||0)-(b.t||0)).map(e=>`<div class="jn-told"><div class="jn-time">told by ${_jnEsc(e.s||'someone')}${e.w?' in '+_jnEsc(e.w):''} · ${_jnEsc(gameDateLine(e.t,e.tod))}</div><div class="jn-text">${_jnEsc(e.r)}</div></div>`).join('')+'</div>').join('');
+}
+function journalSearch(v){_jnSearch=String(v||'');const L=document.getElementById('jn-topics');if(L)L.innerHTML=_jnTopicsHTML();}
 let _jnView='day';
 function _jnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function _jnTime(e){return gameDateLine(e.t,e.tod).replace(/^Day \d+ · /,'');}
@@ -136,6 +159,7 @@ function renderJournal(){
   const body=document.getElementById('jn-body');if(!body)return;
   document.querySelectorAll('#jn-views button').forEach(b=>b.classList.toggle('active',b.dataset.v===_jnView));
   const L=GAME_LOG.filter(e=>e&&typeof e.text==='string');
+  if(_jnView==='topics'){body.innerHTML=`<input id="jn-search" type="search" placeholder="Search what you were told" autocomplete="off" oninput="journalSearch(this.value)"><div id="jn-topics"></div>`;const inp=document.getElementById('jn-search');inp.value=_jnSearch;journalSearch(_jnSearch);return;}
   if(!L.length){body.innerHTML='<div class="jn-empty">Nothing written yet.</div>';return;}
   const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||null;
   const line=(e,withQ)=>{const d=e.q&&withQ?qd(e.q):null;
@@ -156,7 +180,7 @@ function renderJournal(){
   }
   body.innerHTML=html;
 }
-function journalView(v){_jnView=v==='quest'?'quest':'day';renderJournal();}
+function journalView(v){_jnView=(v==='quest'||v==='topics')?v:'day';renderJournal();}
 // ── HUB ──────────────────────────────────────────────────────
 let hubOpen=false,dollSelectedSlot=null;
 function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(id);if(b)b.style.width=Math.max(0,Math.min(100,v/m*100))+'%';const t=document.getElementById(n);if(t)t.textContent=Math.floor(v)+' / '+m;};s('hv-hp',PHP,effMaxHP(),'hv-hpn');s('hv-mp',mana,effMaxMana(),'hv-mpn');s('hv-st',stamina,effMaxStamina(),'hv-stn');}catch(e){}}

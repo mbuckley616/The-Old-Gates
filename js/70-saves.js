@@ -140,7 +140,7 @@ function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${sl
 // host's world row (_applyLoadData(c,w)). The index keeps one entry per slot at the character row's key;
 // the world row sits beside it at ssWorldKey(key). Loading joins the two (ssJoinPayload), so a key read from
 // either row still lands: moving a key between the lists is a change to what the next save writes, nothing more.
-const SS_CHAR_WS={charId:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1};
+const SS_CHAR_WS={charId:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1,told:1};
 const SS_WORLD_TOP={QS:1,merchantStock:1}; /* top-level fields of the one-row payload that are the world's; wS is divided by SS_CHAR_WS */
 function ssWorldKey(key){return key+'~w';}
 function ssSplitPayload(d){const c={},w={v:d.v,ts:d.ts,charId:d.charId};
@@ -703,7 +703,7 @@ function _applyLoadData(d,w){
   // v80 S242 — keys the save always carried (wS is the whole worldState) but the load never read back: the day count,
   // the crime record, the Church's notes, the war, the Reader. Absent from the save, they are cleared, so one
   // character's record never carries into another's.
-  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
   journalLoad(d.wS&&d.wS.journal); // S486 — the journal is the character's; a save without one (older than S486) starts it empty
   try{ssSanitizeLoaded();}catch(e){console.warn('sanitize',e);}  // v80 S137
   // v61aw: tutorialDone migration. Saves predating v61aw never had this

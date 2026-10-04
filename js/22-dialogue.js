@@ -1146,6 +1146,7 @@ function pickDialogChoice(i){
     else closeDialog();
     return;
   }
+  try{journalTold(dlgNPC,c);}catch(e){} // S490 — the answer is filed in the journal's topics (DECISION #132, C)
   if(c.follow){
     renderDialogNode(c.response, [...c.follow, {label:'← Back to topics', back:true}]);
   } else {
