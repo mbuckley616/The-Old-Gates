@@ -107,7 +107,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   - `90-main.js` boot calls, dev helpers, `K`, `PERF`, `loop`, the frame start, `ssMigrate`. `92-creator.js` `_enterGame`,
     the character creator, title buttons. `94-worldmap.js` `WM`, `renderWorldMapSVG`. `96-animdebug.js` the backtick panel.
     `97-inspector.js` the mesh inspector (Session 492): `openInspector()` from the console, or `index.html?inspector`; every mesh the
-    game builds, by group, built by the game's own builders, on a stage with its poses and gaits; the control room's Meshes tab embeds it.
+    game builds, in seven groups, built by the game's own builders, on a stage with its poses and gaits, pinned side by side; the control room's Meshes tab embeds it.
 - Roughly: the systems builder lives in 10–14, 42, 50, 60–76 and the world's 86–88; the look builder in 16, 30–34, 40, 44,
   52–58 and the world's 80–85; the quest writer's text is in 20, 22, 78 and 83 (the dialog pools). The generator (83) and the
   ticks (88) are where they still meet.
