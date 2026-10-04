@@ -117,3 +117,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: the 43 places to the shore next. Look builder: nothing left in H. Critic: a storm crossing under sail.
 
 **Roadmap.** 165 of 196 stories done (161 yesterday); ragdolls and the unarmed body closed, online play answered, one new story for the lake places.
+
+## 4 Oct 2026
+
+**Waiting on you.** Three decisions: unblock main (A, the builders make the slow tests wait), an exhausted power attack breaking a guard (A, it doesn't), and the journal and calendar (B, a calendar the world keeps). One Fable card to start: break up 80-world.js. Both builders are waiting on it for the co-op ids.
+
+**Landed on main since yesterday.** Fable 456, the co-op door (6c9e3da): every save is two rows, character and world, with a World export. Look 453 (tests only). Quest writer run 7, the journal-and-calendar page, the creator question. The build is s374.
+
+**Blocked.** Main's CI has been red four runs running on tests that wait a fixed time. Systems 431–475 (93c73b6) carry the fixes, and their CI is running now; if green, the card comes back for one more tap. Your approval of 3f64ae8 no longer merges. Look 466, 469 are red on a third such test, export. The look builder takes it next run.
+
+**Team.** Systems builder: seeded loot rolls, and the critic's three bugs fixed (a bought ship faces the sea, saves name their place). Look builder: nothing left in H. Critic: raise a sunk ship, then the ram.
+
+**Roadmap.** 167 of 197 stories done (165 yesterday). Two stories waiting on you: the calendar and the spent guard break.
