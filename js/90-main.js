@@ -1092,7 +1092,7 @@ function loop(now){
             arrowHit = true;
             const wt = fb.userData.wType || 'pierce';
             const resistMult = (e.resist && typeof e.resist[wt]==='number') ? e.resist[wt] : 1.0;
-            let dmg = Math.max(1, Math.floor(fb.userData.arrowDmg * resistMult * _fortuneCrit()));
+            let dmg = Math.max(1, Math.floor(arrowRawFor(fb.userData, e) * resistMult * _fortuneCrit(e)));
             if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
             // Dormant Gargoyle bonus (matches melee path: dormant enemies take 2×).
             if(e.dormant) dmg = Math.floor(dmg * 2);

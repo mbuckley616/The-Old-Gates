@@ -9,7 +9,7 @@
 // Melee hits use applyMeleeDamage — simpler: buff mults → flat def → floor at 1, no resist (no elemental school).
 
 function applySpellDamage(e, sp, tier){
-  const baseDmg = spellMag(sp,tier) + Math.floor(Math.random()*10) + level*(sp.dmgLvl||3);
+  const baseDmg = spellMag(sp,tier) + Math.floor(foeRand(e)*10) + level*(sp.dmgLvl||3); // S480 — the spread on the struck foe's stream
   const resistMult = (e.resist && e.resist[sp.school] !== undefined) ? e.resist[sp.school] : 1.0;
   // Dormant enemies (Gargoyle statue form) take 2× damage — rewards the player for spotting and attacking first.
   const dormantMult = e.dormant ? 2.0 : 1.0;
@@ -51,7 +51,7 @@ function applyMeleeDamage(e, rawDmg){
   // = ×3.0 × ×1.5 = ×4.5, the canonical burst-window combo. See
   // applyBackstab for the trigger rules and exclusion list.
   const backstabMult = applyBackstab(e);
-  const luckMult = _fortuneCrit();
+  const luckMult = _fortuneCrit(e);
   const dmg = Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef);
   return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0 || luckMult > 1.0, lucky: luckMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
 }

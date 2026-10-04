@@ -225,6 +225,10 @@ function _resolveDungeonStrike(_isPow){
 // Arrow geometry: small elongated box with a sub-cone tip + tail fletching.
 // Built fresh per shot (no template caching yet — defer to Session 4 if perf
 // becomes an issue; arrows are sparse compared to enemy orbs).
+// S480 — an arrow's damage at the hit: a keyed foe (keyFoe) rolls the bow's and the arrow's spread from its own stream, as a
+// swing does; anything else takes the roll made at release
+function arrowRawFor(u,e){const R=u&&u.roll;if(!R||!e||!e.rng)return u.arrowDmg;
+  const b=R.bLo+Math.floor(foeRand(e)*Math.max(1,R.bHi-R.bLo)),a=R.aLo+Math.floor(foeRand(e)*Math.max(1,R.aHi-R.aLo));return Math.max(1,Math.floor((b+a+R.lv)*R.m));}
 function fireArrow(strength){
   const ammo = EQ.ammo;
   const bow = EQ.weapon;
@@ -308,6 +312,9 @@ function fireArrow(strength){
     life: ARROW_LIFE,
     isArrow: true,
     arrowDmg: rawDmg,
+    // S480 — the roll's terms, so the hit rolls the spread on the struck foe's stream (arrowRawFor); arrowDmg is the roll
+    // for a target with no id
+    roll: {bLo: bowLo, bHi: bowHi, aLo, aHi, lv: lvlFloor, m: drawMult * finesseMult},
     wType: wTypeResolved,
     // Carry source-bow ref for hit-message attribution (no need to retain
     // ammo ref — damage was already rolled).

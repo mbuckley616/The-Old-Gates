@@ -11618,3 +11618,17 @@ Left unkeyed, and listed in backlog K: the guard who draws on you, the town-job 
 
 ### Needs eyes
 Nothing by play.
+
+## v80 — Session 480 — Your arrows, spells and lucky blows roll on the foe they strike (backlog K step 1)
+Session 477 put your swing's spread on the struck foe's stream. Three rolls of yours that decide damage were still `Math.random`:
+- **The spell's spread.** `applySpellDamage` rolls 0–9 over the spell's magnitude. That roll is made at the hit with the foe in hand, so it now draws `foeRand(e)`.
+- **The arrow's spread.** The bow's attack range and the arrow's were rolled when you loosed, before anything was struck. The arrow now carries the roll's terms: both ranges, the level floor, and the draw and Finesse multiplier. At the hit, `arrowRawFor(u, e)` rolls the two spreads from the struck foe's stream. Both hit paths use it: the open world's in `42-zone-enemies.js` and the dungeon's in `90-main.js`. A target with no id takes the roll made at release, so nothing changes for one.
+- **Fortune's lucky blow.** `_fortuneCrit()` takes the foe it lands on, `_fortuneCrit(e)`, and draws from its stream. The swing in `applyMeleeDamage` and both arrow paths pass it.
+
+The formulas and their odds are unchanged.
+
+### Verified (headless Chromium)
+`hitseed` 4/4 (new). A test bow (5–30) with iron arrows (2–12) fired three arrows by the loop's own tick at a Bandit four units ahead. Against two Bandits with one id they do 24 36 24 on both, and against another id 29 34 32. Six *caor* on one id do 16 23 19 16 18 17 twice, and on another id 18 16 16 20 15 16. At Fortune 999 (a half chance), twelve lucky-blow rolls fall 101000100100 for both foes with one id and 011101111100 for the other. An unkeyed foe still takes spells. On the old code all three checks fail. `fortunecaor` 5/5, `fortunecard` 6/6, `attrdmg` 6/6, `tpshots` 5/5, `duelrhythm` 10/10, `foeseed` 6/6. `parsecheck` clean. Build tag s411.
+
+### Needs eyes
+Nothing by play.
