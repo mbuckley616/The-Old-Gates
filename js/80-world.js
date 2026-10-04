@@ -1692,10 +1692,12 @@ var WORLD=(()=>{
     const want=[];for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=pi+di,j=pj+dj;if(i<0||j<0||i>=GRID||j>=GRID)continue;if(!LOADED.has(cellKey(i,j)))want.push([i,j,di*di+dj*dj]);}
     want.sort((a,b)=>a[2]-b[2]);
     if(force)want.forEach(([i,j])=>loadCell(i,j));
-    else want.forEach(([i,j])=>{if(!JOBS.some(x=>x.cellKey===cellKey(i,j))){let steps=null;const job={fn:()=>{if(!steps){steps=loadCellSteps(i,j);if(!steps)return false;}const f=steps.shift();if(f)f();return steps.length>0;},prio:5,cellKey:cellKey(i,j)};JOBS.push(job);}});
+    // S458 — a cell unloaded while its job is part-way stops the job: its later steps (doors above all) went on into a cell
+    // no longer listed, and loaded again its doors stood twice in DOORS, so the next unload left one with no position
+    else want.forEach(([i,j])=>{if(!JOBS.some(x=>x.cellKey===cellKey(i,j))){let steps=null,L0=null;const job={fn:()=>{if(!steps){steps=loadCellSteps(i,j);if(!steps)return false;L0=LOADED.get(cellKey(i,j));}if(LOADED.get(cellKey(i,j))!==L0)return false;const f=steps.shift();if(f)f();return steps.length>0;},prio:5,cellKey:cellKey(i,j)};JOBS.push(job);}});
     // statics near the player, dropped when far
     for(const L of LOADED.values()){if(L.pending)continue;const d=cellRectDist(L.cell);
-      if(d<NEAR_STATIC&&!L.staticsBuilt&&!L.staticsPending){L.staticsPending=true;if(force){staticSteps(L).forEach(f=>f());}else{let st=null;JOBS.push({fn:()=>{if(!st)st=staticSteps(L);const f=st.shift();if(f)f();return st.length>0;},prio:6});}}
+      if(d<NEAR_STATIC&&!L.staticsBuilt&&!L.staticsPending){L.staticsPending=true;if(force){staticSteps(L).forEach(f=>f());}else{let st=null;const lk=cellKey(L.cell.i,L.cell.j);JOBS.push({fn:()=>{if(LOADED.get(lk)!==L)return false;if(!st)st=staticSteps(L);const f=st.shift();if(f)f();return st.length>0;},prio:6});}}
       else if(d>FAR_STATIC&&L.staticsBuilt)dropStatics(L);}
   }
 
