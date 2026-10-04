@@ -10460,7 +10460,7 @@ CI ran the suite on Session 407's head (`84fb606`), and headless (7) failed on o
 The check now asks that the empty hand holds the fists' view model, and that the weapon's does not carry the fists' mark, alongside the swing and the pending strike as before. The other four checks (the punch runs out and fires, lands for less than the sword, lands again) are unchanged and still prove Session 382's fix. The game's code is unchanged.
 
 ### Verified (headless Chromium)
-`fistswing` 6/6: the sword swings from .611 and strikes for 9; the fist's view model is present with its mark, the punch starts at .429 with a strike pending, fires on frame 6 and lands for 6; a second punch lands for 6. No page errors. `parsecheck` is clean. Build tag bumped.
+`fistswing` 6/6: the sword swings from .611 and strikes for 9; the fist's view model is present with its mark, the punch starts at .429 with a strike pending, fires on frame 6 and lands for 6; a second punch lands for 6. No page errors. `parsecheck` is clean. Build tag s402.
 
 ### Needs eyes
 Nothing in the game.
@@ -10875,7 +10875,7 @@ The prototype (`docs/prototypes/rivers/layout.js`, loaded into the booted game b
 The one code change: `WORLD` now exports `startTile`, `tileStep`, `withCellData` and `ridgeAt`, so a script can draw the whole map and sample the ranges. Nothing on screen changes.
 
 ### Verified (headless Chromium)
-`render.mjs` boots the game, draws the 144 tiles in 12 s, routes each layout in 0.56–0.68 s and writes the eight pictures without page errors. Today: 36 river pieces, 35 peaks, no forks. A: 75 rivers reach the sea, 12 named, 3 deltas, 20 navigable (96.7 km), 19 lakes, 86 quays, 45 bends. B: 67 rivers, 12 named, 3 deltas, 22 navigable (103.2 km), 22 lakes, 89 quays, 40 bends; the two largest catchments 14 km² and 13.6 km². C: 49 rivers, 9 named, 3 deltas, 9 navigable (72 km), 16 lakes, 50 quays, 29 bends; the largest 36 km². `parsecheck` clean. Build tag bumped.
+`render.mjs` boots the game, draws the 144 tiles in 12 s, routes each layout in 0.56–0.68 s and writes the eight pictures without page errors. Today: 36 river pieces, 35 peaks, no forks. A: 75 rivers reach the sea, 12 named, 3 deltas, 20 navigable (96.7 km), 19 lakes, 86 quays, 45 bends. B: 67 rivers, 12 named, 3 deltas, 22 navigable (103.2 km), 22 lakes, 89 quays, 40 bends; the two largest catchments 14 km² and 13.6 km². C: 49 rivers, 9 named, 3 deltas, 9 navigable (72 km), 16 lakes, 50 quays, 29 bends; the largest 36 km². `parsecheck` clean. Build tag s402.
 
 ### Needs eyes
 Michael's letter. The pictures are a proposal over today's map, so the old ridge boxes show through; the real build replaces them. Owed to the build: the Dearg's width downstream (it stays a ford at Redwater Ford), the bridge length over a 25u river, where the delta's distributaries put their sand, and the frame cost of routing at boot.
@@ -10916,6 +10916,323 @@ Pictures: `docs/prototypes/rivers/built-quay.png` (Cnoccarra's quay from the ban
 ### Needs eyes
 The quay's deck at the bank's height: on a 3u bank the kit's body shows 3.2u of stone down to the water, on a low bank it sits as the harbour's does. The bank between the town and the quay is cleared of trees in a 17u round; the walk from the town gate to it is open ground, no path. The boats moored on the water side sit in the channel's edge; a ship at the quay has the channel's far half. Whether the lantern reads at night from the town. The ship steered by a test, not a hand: at the helm the bends of a 16u channel will want slow speed; the ram from a merchant at a river mouth is the sea's traffic pressing into the estuary (merchants and pirates spawn by distance from the player, not by water). Owed still: the Dearg downstream, brooks, a water surface above sea level, a sand bar between the delta's arms.
 
+## v80 — Session 431 — A foe's posture came back straight after every blow (backlog C)
+Looking into the critic's note of 2 Oct (*the Bandit never landed a blow in 99 frames*), I traced the fight through the posture code and found a units bug older than the counters. Session 47 set the rule for a foe's posture: *5 a second after a 1.5 s post-hit delay; refills to full on stagger expiry*. Every strike stamps `lastHitAt` in seconds (`performance.now()/1000`). But both enemy ticks, the dungeon's in the loop and `tickZoneEnemies`, pass `tickPostureRegen` the loop's clock in milliseconds, and it compared the two raw. The delay was never met. So a foe's posture came back at 5 a second from the frame after each blow, all through a fight. The refill when a stagger ends happened to work, because the same comparison always passed.
+
+**What changed** (`js/10-player.js`, `tickPostureRegen`): the clock is read as `now/1000`, so the delay holds. A foe whose stagger has ended gets its full pool at once, whoever is still hitting it. That is Session 47's rule, and the player's own posture already works that way (`tickPlayerPosture`, Session 281). The old guard on that refill would have kept a foe at zero under a steady attack, and each next blow would have staggered it again. It was never live, and it would have made a stun-lock. The drains, the regeneration rate, the stagger's length and the families are unchanged. This is the code doing what Session 47 said, not a new number.
+
+In play, a sustained attack now breaks a foe in the swings Session 47 designed for. Against the old code, at a swing every 0.5 s, Session 47's 60-posture troll took 11 swings, not 8. A Bandit of 25 posture took 5, not 4. At a blow every 2 s the troll was never broken at all: each blow's 8 came back before the next. Fast weapons and fists gain the most, and the counters (the finisher on a broken posture, Session 298) open as often as they were meant to.
+
+On the critic's note: at the headless frame rate (about 1.4 s a frame, with dt held to 0.05) 99 frames is about 5 seconds of the game's clock. That is two or three of a Bandit's 1.3 s attacks with their tells, some lost to staggers. In a 40-second run of the real loop beside a punching player, the Bandit wound up and landed (130 → 124). Nothing there is a bug I can show.
+
+Numbered 431: the Fable rivers session on `auto/fable-rivers` took 430 first (its prototype and DECISION #112), and this was committed as 430 before I saw it.
+
+### Verified (headless Chromium)
+`tests/postureregen.test.mjs` (new), 8/8:
+- A Bandit made with 50 health has 25 posture, and a blow takes 8.
+- After the blow, 60 ticks of the real `tickZoneEnemies` (4 ms of real time) bring back nothing: 17 stays 17. The old code gave back 5, to 22.
+- With the last blow 2 s ago, 60 ticks bring back 5 (17 → 22).
+- Broken, staggered, and hit again as the stagger ends: it recovers to 25.
+- A swing every 0.5 s on the loop's own clock in ms: the 60-posture troll breaks in 8 swings and the Bandit in 4, Session 47's figures (old code 11 and 5). A blow every 2 s takes the troll 11 (old code: never, within 60).
+- The same suite booted on the old `js/` (`--src`) fails the four checks the fix is for.
+- `posture`, `counters`, `tells`, `parryclock` and `guardlevel1` pass. No page errors. Build tag s371.
+
+### Needs eyes
+- Fights against a posture you can now wear down: whether a dagger or bare fists breaking a Bandit in four blows makes the finisher come too easily. If it does, that is a call on the drains, not a reason to bring the bug back.
+
+## v80 — Session 432 — One name per place, world-wide (DECISION #110, Michael's A)
+Session 426 found two ports of one name. Counting for DECISION #110 found the whole world doing it: every village, town, city, port and outpost draws its name from its culture's bank of ten first halves and ten second halves. So 610 places held 368 names. Two *Woushstouir*s sat in the Wiabrou Realm, and six harbourmasters offered *Passage to* a port of their own harbour's name. Michael answered A on 2 Oct: one name per place, world-wide.
+
+**What changed** (`js/80-world.js`, `getCell`, `uniqueSiteNames`, `nameBanks`). The first cell anything asks for now makes every cell of the 12×12 grid, then one pass runs over all of them. Each cell is a pure function of its coordinates (culture, landmass and nation are too), so which cell is asked first cannot change a name. In practice the boot already made them all. The pass doesn't touch the cells' random draws, so nothing else in a cell moves: not a road, a building, a person or a name drawn after it. Home's hand-placed names (Dunmore, Portclare and the rest) are kept and reserved, as are *Caer Slige* and *Port Blackhand*, which `anchoredPlaces` hands out later. Every other place keeps the name its cell drew unless a place ranked before it holds it. Cities rank first, then towns, ports, villages and outposts, then cell order and site order. All keepers are settled first, so a new name never takes one another place drew. A first version that settled them in one go cascaded and renamed 339. A place that lost its name takes a free one from its culture's bank, starting from a hash of its id. Where the bank's hundred are spent (the Irish have 185 places for 144 names, the French 160 for 100, the largest generated culture 126 for 100), it builds a longer name from the same sounds, in each culture's own manner. Irish takes a *-na-* between the halves (*Kilnaderry*), the way Ballynahinch does. French adds a *-le-* and a second half (*Montclair-le-Vert*), and the Mark an *-en-* (*Ashenford*). A generated culture puts a second first half before the second half, three syllables. The old name stays on the site as `drawnName`, for the test and for anyone tracing a save. Camps, ruins, shrines, regions and roads still draw from the same banks and can echo a town's name (*Ruins of X*). The decision was about places you travel to, and those were left alone.
+
+Saves keep places by id, so a save made before this loads into the same places under their new names. A journal line already written keeps the name it was written with, as #110 said it would.
+
+### Verified (headless Chromium)
+`tests/placenames.test.mjs` (new), 9/9:
+- 610 settlements, 610 names (before the pass, 368). 251 were renamed: the 242 that had to lose a name, and nine whose drawn name is one of Home's.
+- 39 Irish places took a *-na-* name and 62 French a *-le-* name. None fell through to a numbered name.
+- Home's eight hand-placed towns are where they were, and no other place carries one of their names.
+- 110 ports with 110 names (94 before). No harbourmaster offers passage to his own harbour's name (six did).
+- A second boot, read before the game is entered, gives every one of the 610 the same name as the first.
+- On the old `js/` (`--src`), the suite fails the five checks the fix is for.
+- `ferry`, `tradebits`, `coachboard`, `cargo`, `harbour` and `shipwreck` pass (69 checks). No page errors. Build tag s372.
+
+### Needs eyes
+- How the longer names read on the map and the coach board. *Woushdiadou* and *Saint-argent-le-Clair* are both in the world now. If a culture's long form reads wrong, the fix is in `nameBanks`, one line per culture.
+- Any place Michael already knows by its old name in a running save now has another one. That is the decision's cost, and it was named in #110.
+
+## v80 — Session 433 — The guards, played through (backlog G, Session 157's check)
+Backlog G owed Session 157's guards to a playtest: get stopped with a fine, refuse, fight, yield; the cells; strike a villager and a guard. `crime3` checks each rule from set-up state. It places the guard, sets the fine and calls the topics' functions directly. This session plays it through in Dunmore at noon the way a player meets it, as Session 425 did for the Church. Every blow the player throws is the game's own `attack()`, resolved when the loop's swing crosses its impact point. The halt and the yield are clicked in the guard's own dialogue. The guard's blows come from his own `tickZoneEnemies`, on fixed 1/60 ticks beside the world's tick, which holds the crime rules.
+
+It runs in order. A swing at a villager in the street. Walk up to a guard, refuse him, land a blow on him and take his until he offers the yield. *The cells.* Then, next morning, a swing at a guard and killing him. Walk up to another guard with the gates shut. Pay the lord.
+
+**What was wrong.** With the gates shut, a guard you come near draws on sight (Session 157), and the lord's fine opens the gates. But a guard already drawn when the fine was paid fought on. In `tickCrime`, a drawn guard stays alert for as long as he lives, and the offer to yield needs a fine standing, so none could come. Paying the lord took you from a fight over 200 gold to a fight over nothing that ended only in a death. Paying double at the yield and the cells already stand the town's drawn guards down (`standDown`). The lord's fine didn't.
+
+**What changed** (`js/80-world.js`, `tickCrime`): a drawn guard stands down once the town has nothing against you, no fine and the gates open. He goes back to the street where he drew, as at a paid yield. The halt, the draw, the yield at 30%, the cells and the killing are unchanged.
+
+### Verified (headless Chromium)
+`tests/guardplay.test.mjs` (new), 14/14. In Dunmore:
+- A real swing at Cormac in the street: favour −3, a 75-gold fine, three points owed, and Cormac runs.
+- Three units from Séamus with the fine standing, the world's tick halts you: the greeting names the 75 gold, with *Pay the fine (75 gold)* and *I’ll not pay.* Refused: *Then the sword, and Weaver forgive the both of us.* A Town Guard drawn from Séamus stands in, alert, and Séamus leaves the street.
+- A real swing takes the drawn guard 48 → 46. The guard's blows over 1,411 ticks (23.5 s) bring you from 130 to 30. Séamus offers the yield by name, *Pay double (150 gold)* or *The cells.*, and holds while you talk.
+- *The cells.*: seven in the morning. You are at the town's centre (Dunmore has no keep). The stolen ring and the 40 gold taken in the town are gone (500 → 460), the fine is cleared, you are at half health (65) and Séamus is back on his beat. The favour stays −3 with three points owed.
+- A real swing at Séamus: Séamus draws at once, with no talk; favour −6 and a fine of 75. Killed: favour −11, the fine 200, the gates shut and the Church notes it.
+- With the gates shut, Eilís draws on sight, with no halt.
+- The lord (Niamh) takes the 200 and the gates open. Eilís stands down and is back in the street, and in five seconds more nothing strikes you. On the old code (`--src`), Eilís fought on and took 130 → 105 in those five seconds. These two checks are the suite's only failures there.
+- `crime1`, `crime2`, `crime3`, `crime5`, `guardsindoor` and `penance` pass. No page errors. Build tag s373.
+
+### Needs eyes
+- The fight by feel: the drawn guard's blows took 100 health in 23.5 s while you stood, and the yield comes under 30%.
+- After *Fight on.* the guard offers no second yield. The offer is made once a fight (`CR.yielded` resets only when no guard is drawn), so turning it down means fighting to a death, his or yours. That is as built in Session 157 and not changed here. If a second offer should come, lower down, that is Michael's call.
+- A stood-down guard sheathes in silence: the drawn figure is gone and he is back where he drew, as at a paid yield. A line for him would be new dialogue, so it is left to the quest writer.
+
+## v80 — Session 434 — masterslam's floor, and shard 3's weights (CI)
+The producer's note of 2 Oct routed two CI faults to this builder: `masterslam`, failing on both code branches, and shard 3, which ran past its 45 minutes on main's 8ca3e23 and on this branch's f71586a.
+
+**masterslam.** The suite's last check leaves one slam to the real loop. Run three copies side by side and it failed every time. Alone, it passed most times. The lair puts its master in its deepest room, on the lowest floor there is, and here that was sometimes floor 2. The suite's `_stage` set `currentFloor` to the master's floor but left `jumpY` at the ground. The loop sets the floor from `jumpY` each frame (`90-main.js`, the stairwell line), so it put the player back on floor 1 at once, and a foe on another floor is not ticked. The stage now stands you at the master's floor height (`FLOOR2_Y`). The live check also moved ahead of the kill check, so the loop never fights a master the suite has killed and raised by hand. The game is unchanged. Earlier in this run, once alone, the suite failed every stepped check too, with the master's timer untouched. That run is not explained, and it did not come back in five runs since.
+
+**Shard 3.** `run.mjs` deals the suites to eight shares, heaviest first, by a table of seconds. Any suite not in it counts as 60. The table was Session 254's, and the heavy suites added since were all counted as 60: `falls` (437 s on CI), `renewal` (275), `shopsight` (249), `smoke` (229), `innrooms` (209), `q7world` (194) and more. Shard 3 drew `innrooms`, `q7world` and `mimicspots` together with `hourhitch`, and ran out. The table now holds every suite CI timed at 82 s or more in its 2 Oct run (f71586a's seven finished shares), plus estimates for this run's two new suites (`guardplay` 150, `placenames` 90). Dealt again, the eight shares weigh 2,013–2,072 s, about 34 minutes against the limit of 45.
+
+### Verified (headless Chromium)
+- `masterslam` 16/16 in three copies run side by side (each had failed the live check before the fix, with the master on floor 2 and the loop on floor 1), and 16/16 alone.
+- The shares dealt by the new table, simulated with `run.mjs`'s own rule over all 198 suites: 2,013, 2,013, 2,013, 2,033, 2,033, 2,033, 2,034 and 2,072 s. Build tag s374.
+
+### Needs eyes
+- Nothing to play. CI's next full run will show whether the shares hold; a suite left at 60 that runs long would show as a share past 40 minutes.
+
+## v80 — Session 436 — The Bandit who never struck back (the critic's s360 note, settled headless)
+The critic's run of 2 Oct (build s360) fought a Bandit bare-handed on the home road. A bot faced him and punched whenever the cooldown was down. He died to nine punches and in 99 frames never landed a blow (130 of 130). The critic left it open: *I did not run long enough to say whether that is the bot's speed or the Bandit's.* A Bandit that cannot strike would be a combat bug (section C), so this session settled it in the running game. No game code changed.
+
+**How.** The game's own `loop`, at fixed 1/60 ticks with the scene's draw and the browser's frames held off, as `duelrhythm` does. A Bandit is set down four units off the way a quest sets one (`unlockFoe`), alert, at noon in the world. A bot faces him and calls the game's `attack()` whenever the cooldown is down and he is in reach. The Bandit's tell, his blows and the player's punches are counted where the game makes them (`sndTelegraph`, `executeStrike`, `_resolveZoneStrike`).
+
+**What it showed.** The Bandit strikes. Stood still, he closes, winds up 0.57 s and lands a blow about every 1.9 s (1.3 s of recovery and the tell): 15 blows in 30 s, 130 → 20. Punched with fists, he has 13 posture (half his 25 health, `initPosture`'s rule). The punches break it twice in a fight, and he spends 41% of the fight staggered. He dies in 4.6 s to eight punches, having begun one wind-up, which lands (7–8 damage). With the starting Wooden GreatClub he dies in 3.6 s to four swings and begins one wind-up, which never lands. So the critic's Bandit was the fists' rhythm against his posture. Nine punches at 0.4 s is about 3.6 s, and he spent much of it staggered. That is Session 431's posture regen, working as its entry says.
+
+Found on the way, in the test and not the game: the player's stagger is read on `performance.now()`, while a driven loop's `now` runs ahead of it. A blow that breaks the player's posture in one driven fight leaves a stagger that holds the next fight's `attack()` for as many real seconds as the drive ran ahead. My first run punched 1,706 times into that and hit nothing. The new suite starts each fight with the player's posture full and no stagger standing. In play the two clocks are one (the loop's timestamp is the frame's).
+
+### Verified (headless Chromium)
+`tests/fistfight.test.mjs` (new), 6/6:
+- Stood still: 15 tells, 15 blows, all 15 landing, 130 → 20 in 30 s.
+- Punched bare-handed, five fights: dead every time in 8 punches, all landing; staggered 113–114 of 277 frames; one wind-up and one blow landed each (5 in all, 7–8 damage each).
+- Armed (Wooden GreatClub): dead in 4 swings and 3.6 s; one wind-up, no blow landed.
+- No page errors. 77 s alone; added to `run.mjs`'s table at 120. Build tag s375.
+
+### Needs eyes
+- Whether a Bandit dying in under five seconds with one blow landed is too easy at fists. It is the same question C already owes from Session 431 (*whether breaks now come too easily with fists and daggers*), and it is a feel and a number, Michael's. The numbers to turn are the Bandit's posture (half his health), the fists' drain and the stagger's length.
+
+## v80 — Session 437 — A camp sacks one town in twenty days, the nearest (Session 95's sacking, settled headless)
+Session 95 wrote the rule: *a bandit camp left alive counts days; at 20 the nearest unburned village or town within 700u is sacked* (prosperity 15, half the houses shells, a log line). It left the sacking unverified, because the seed's first camp had no village near it, and the backlog has owed *try it beside a village camp* ever since (G, *Saves first*). This session tried it, and the count was wrong.
+
+**What was wrong.** `tickProsperity` (`js/80-world.js`) runs once a game-day over every town. It finds each town's nearest lair or camp within 700 units and, if that is a live bandit camp, adds one to the camp's count. So a camp counted once a day for every town it threatened, not once a day. The sack then fell on whichever town the loop met as the count crossed 20, not the nearest. In the home province Dunowen Camp is the nearest camp to three towns: Dunderry (326 units), Cnocbeg (601) and Inisnashane (643). It counted three a day and sacked Dunderry on day 7, Cnocbeg on day 14 and Inisnashane on day 20. A sacked town also went on adding to the count. All three were in ruins by the day the first should have fallen.
+
+**What changed.** The day's loop now only notes which towns each live camp threatens, using the same rule as before: the town's nearest lair or camp, within 700. After the loop, each such camp counts one. At 20 it sacks the town it threatens that is nearest the camp and not already sacked or burned, and starts again from nought. If none is left standing, the count holds at 20, and the camp sacks the first town that rebuilds. Rebuilding is unchanged: 30 days after the sack, once the town is back to 30, which cannot happen while the camp's drain stands. The drain on prosperity, the sack itself and its log line are unchanged.
+
+### Verified (headless Chromium)
+`tests/campsack.test.mjs` (new), 7/7, over the nine home cells from a clean world (no war, every town at its base):
+- Dunowen Camp threatens Dunderry, Cnocbeg and Inisnashane, and no other home camp threatens a town.
+- It counts 1, 2, 3 … 19, and on day 20 sacks Dunderry, the nearest, which drops to 15 and stands sacked. It sacks Cnocbeg on day 40 and Inisnashane on day 60, and no other town is sacked by a camp in 65 days.
+- A cleared camp counts nothing and sacks nothing in 25 days.
+- On the old `js/` (`--src`), the sacks fell on days 7, 14 and 20, with the count running 3, 6, 9…, and the three counting checks fail.
+- `wholepoints` still gives the untended world's −6.8 / −77 / 0 over 120 days: all three towns are sacked by then either way. `camps` and `cargo` pass. No page errors. 44 s alone, in `run.mjs`'s table at 70. Build tag s376.
+
+### Needs eyes
+- A sacked Dunderry on the road out of the home province by day 20 of an untended game, by eye: the shells and the log line *Dunderry was sacked by the bandits of Dunowen Camp.*
+- Whether twenty days is the right pace for a camp next to a village. It is Session 95's number, and keeping it was Michael's spec. A player now has twenty days to clear Dunowen Camp before the first town falls, where before it was seven.
+
+## v80 — Session 438 — The cowards and the second phase, played headless (backlog G)
+Backlog G owed two of Session W's behaviours to play, under *Saves first*: *kobold cowards and the boss half-health phase by feel*. Both live in `tickBehaviours` (`js/80-world.js`), layered over the zone foes' own chase and strike. One thing looked likely to break the coward. To send a coward running, `tickBehaviours` takes it out of its alert state, and `tickZoneEnemies` re-alerts any foe that sees you and walks an unalerted one back towards home. The two could have pulled the coward between them. This session played both in the running game to see. The game's own `loop` ran at fixed 1/60 ticks with the scene's draw held off, as in `duelrhythm`. The foes were set down as a quest sets them, at noon.
+
+**What it showed.** Both work as Session W wrote them, and no game code changed. A Goblin (or a Kobold) at 30% health, three units off, turns and runs for a friend 25 units away that has not seen you. It says *The goblin runs for help.* once. It reaches the friend in 5.4 s, 22.8 units from you, and raises it. Six seconds on, both are coming for you, at 11.7 and 15.5 units. The coward runs facing away from you, so the zone tick's sight cone never re-alerts it on the way. An Ogre at 45% roars once and quickens by a third (0.8 → 1.04). Three seconds later it winds up for a full second, and again every six seconds after. Stood in its reach, the heavy blow lands for 35, 2.2× its 16. Stepped 4.5 units clear during the wind-up, *You step clear.* and nothing lands.
+
+`COWARD` names the Kobold and the Goblin, and the world sets down both (the Kobold on the moors and among the wild's encounters). They run the same: the Kobold reached its friend in 5.2 s and the Goblin in 5.6 s on the second run.
+
+### Verified (headless Chromium)
+`tests/cowards.test.mjs` (new), 11/11, with the numbers above (the coward's three checks for each kind). 55 s alone, in `run.mjs`'s table at 90. No page errors. Build tag s377.
+
+### Needs eyes
+- The feel, which is what G owed: whether a goblin or kobold bolting at 40% reads as fear or as a bug, and whether a second's wind-up (with the body swelling) is enough of a tell before a 35-point blow. Both numbers are Session W's.
+
+## v80 — Session 439 — Salt Water, played through; Corwin follows you along the coast
+Backlog G owed Session 125's sea line to real play: *Corwin at a pre-commission quay, the discounted hull, a live boarding*. This session played the whole line headless, each step the way a player takes it. Corwin's topics were clicked in his own dialogue. The passage came from the harbourmaster's own list and the hull from the shipwright's own topic. For the crossing, the ship was set down under sail 150 units off the far harbour, since a real crossing is about 26 minutes of sailing, more than a headless run can drive. The boarding was a black sail boarded and her crew cut down by the player's swings, run through the game's own loop at fixed 1/60 ticks.
+
+**What was wrong.** One thing. `tickCorwin` (`js/80-world.js`) places Corwin at the harbour nearest you, and re-places him only when his step changes. Otherwise he was taken down only once no harbour was within 140 units *and* he was more than 220 away. A passage re-enters the world, which places everyone again, so a ferry moved him. But coming to another harbour any other way, on foot, on horseback or at your own wheel, left him at the last one while the step was the same, though he says *I'll be at whatever harbour you're at*. Between two harbours less than about 360 apart, no point on the way is 140 from neither and 220 from him, so he was never taken down. 25 of the world's 110 harbours have another that near. On the home coast, walking the 303 units from Cluainlough to Lisross left him at Cluainlough. The same rule places him in Act II, whose journal says *Find Corwin at any harbour*.
+
+**What changed.** He is placed again when the harbour nearest you is not the one he stands at, as well as when his step changes. That is one condition in `tickCorwin`. The Ashenmoor placing (Session 240) is a separate path and is unchanged.
+
+### Verified (headless Chromium)
+`tests/saltwater.test.mjs` (new), 15/15:
+- Act 1, Q3 done, at Portclare: Corwin stands 6.7 units from the harbour with *You again. Told you we'd cross paths…* and *Teach me the sea.*. Clicked, the journal reads *Take a ferry from any harbour*.
+- The passage to Carrigshane costs 22 gold. The step moves to *ship* with the note in your pocket, and Corwin is at Carrigshane, 6.7 from the harbour.
+- Walked 303 units from Cluainlough to Lisross and back with the step unchanged, Corwin is at each in turn. On the old `js/` (`--src`) he stayed at Cluainlough, 302.7 from Lisross, and this is the suite's one failure there.
+- The shipwright offers *Buy a ship (300 gold, with Corwin's note)* and takes 300. The step moves to *crossing*, targeting Camuros (Aurenne), the nearest harbour of another nation.
+- Under sail 150 off Camuros, the step moves to *board*. Boarded, her three crew fall to 16 of the player's swings, and the step moves to *report* with the quest marked done.
+- Back at a harbour, *You've the look of someone who's been shot at from a deck.* and *I've taken a pirate's deck.* pay 220 at level 1 (200 + 20 a level), and the line is done. After it Corwin leaves the quays until the commission.
+- `mainquest` and `shipwright` pass. No page errors. 163 s alone, in `run.mjs`'s table at 220. Build tag s378.
+
+### Needs eyes
+- Once the line is done, Corwin is gone from the quays until Aldwyn's commission: `tutSeaOpen` closes with it, and the early Corwin stands only while the line is open. `corwinEarly` has a greeting for that time (*The sailor. Go on — the tide won't wait and neither will I.*) that can never be heard. Whether he should stay at the quays after paying, and say it, is the quest writer's and Michael's call. It is left as built.
+- A real crossing at the wheel, and the black sail met at sea rather than set down beside you. The critic found the crossing too long for a headless run.
+
+## v80 — Session 440 — A fallen town's camp left its soldiers behind, unseen (backlog G, the war in real play)
+Backlog G owed the war to real play: *a siege camp on a road, a garrison on a plaza*. No suite covered a siege at all. This session played one at Dunmore, using the town's own state as the war sets it (`besieged` by the Mark, then `occupied` once it falls), with `tickSieges` and the foes' own tick doing the rest.
+
+**What was wrong.** `tickSieges` (`js/80-world.js`) sets the Mark's camp down the road while a town is besieged, and a garrison on the plaza once it is occupied. When the siege became an occupation, the camp gave way, but only halfway. Its soldiers' bodies left the scene, and the soldiers themselves stayed among the world's foes. Six unseen soldiers stood where the camp had been, still ticked by `tickZoneEnemies`, still walking and still striking. A player standing there lost 25 health in five seconds to nothing visible, and a Markish Captain beside a player took 41. A town falls twelve days into a siege, so this happens to any player who is nearby when it does. The branch for leaving the town (600 units off, or the war over) already took the soldiers out of the list. The branch for the camp giving way didn't.
+
+**What changed.** When the camp gives way, its soldiers leave the world's foes along with their bodies, as they do when you walk away. The siege, the fall, the garrison and the liberation are unchanged.
+
+### Verified (headless Chromium)
+`tests/siegeturn.test.mjs` (new), 6/6, at Dunmore:
+- Besieged: the Mark's camp of six (one Markish Captain) stands down the road, 36 units from the plaza.
+- Fallen: no soldier is left unseen (there were 6 before the fix), and the garrison of five, a captain among them, holds the plaza 11 units from the middle.
+- Standing for five seconds where the camp was, nothing strikes you (the old code took 25).
+- The garrison killed, Dunmore is free.
+- On the old `js/` (`--src`), the three checks the fix is for fail. No page errors. Build tag s379.
+
+### Needs eyes
+- A siege by eye: the camp's tents and banner on Dunmore's road, and the garrison on the plaza. Whether six soldiers and a captain read as a camp is the look builder's to judge.
+- The occupied town's colours on the gate, the other half of G's line, were not looked at.
+
+## v80 — Session 441 — The lair beast's charge runs true, and its daze holds it (backlog G, the creatures in real play)
+Backlog G owed Session 130's *daze* to real play. A lair's beast charges every 7 s from 5–16 units, at four times its speed. If the charge meets a wall, the beast *slams into the ground, dazed — now!*: dazed for 2.4 s and taking double damage, *the skill is to sidestep it into something solid*. This session played it in Dunmore, through the game's own loop at fixed 1/60 ticks: a Cave Bear made a lair's beast, a house wall at your back, a sidestep as it comes.
+
+**What was wrong.** The charge and the daze live in `tickBehaviours` (`js/80-world.js`). The beast's ordinary chase and blow live in `tickZoneEnemies` (`js/42-zone-enemies.js`), which knew about neither. During the charge the chase kept walking the beast towards wherever you had stepped to, so the charge bent off its line and slid along the wall instead of meeting it. Sidestepped 4 units, the bear came within 1.7 units of the wall and turned away, never dazed. The skill the entry describes could not be done. And a beast dazed some other way still chased and bit through its daze: dazed beside you, a bear wound up and struck within the 2.4 s.
+
+**What changed.** While a beast is charging or dazed, `tickZoneEnemies` keeps it on the ground and does nothing else: no chase, no wind-up, no blow. The charge moves it, and the daze holds it, swaying, as `tickBehaviours` already did. When the daze ends, it fights as before. The double damage on a dazed beast is unchanged.
+
+### Verified (headless Chromium)
+`tests/dazed.test.mjs` (new), 6/6, in Dunmore at noon:
+- The bear charges and you sidestep 4 units. It runs on into the house wall and *slams into the ground, dazed — now!*
+- The daze lasts 2.42 s. With you kept beside it, it strikes nothing and does not move. When the daze is over it strikes again.
+- Dazed beside you with its blow ready: no wind-up and no blow in 2.4 s.
+- On the old `js/` (`--src`), the charge never reached the wall, so the three daze checks fail. The bear dazed beside you wound up and struck once.
+- `foes`, `counters` and `fistfight` pass, and so does `cowards` after the correction below. No page errors. Build tag s380.
+
+**A correction to Session 438.** Its entry said the coward runs facing away from you, so the zone tick's sight cone never re-alerts it on the way. That is wrong about half the time. Running this session's suites, `cowards` failed one run in two. In the failing runs the coward saw you again 3–4 s into its run, and its cry (`alertPack`, 16 units) raised the friend from 16 units off. With the friend already alert there was no one left to fetch, so the suite's *reached within four units* never came. The game's outcome is the same either way: help is raised and both come for you. So the suite now checks that outcome, with the friend raised in under 10 s, reached or cried to from 16. In six runs, four raised it by the cry (2.3–3.7 s) and two by reaching it (5.2–5.4 s). No game code changed for this.
+
+### Needs eyes
+- The charge by feel: whether 1.1 s at four times a bear's pace can be read and sidestepped by a player, now that sidestepping it works.
+
+## v80 — Session 442 — The innkeeper in the house's voice; French place names that are French (register fixes, quest review run 6)
+The quest review's run 6 (on `auto/quests`, PR #118, not yet merged) asked the systems builder for two of its findings, applied as written. This is a short session with no design in it.
+
+**Finding 7** (on main, older text that Session 424 brought into the window): the innkeeper let every room in Markish, so a Compact coaching inn greeted with *Be welcome, Master* (Finding 4) and then said *Suit yourself. The fire's free.* `innTopics(house, people)` now takes its lines from `INN_ROOM_LINES` by people, with Markish (the old text, unchanged) as the fallback. The town inn passes its keeper's `def.people`, and the coaching inn passes `nationOf(ci,cj).people`. The player's own labels and the log line are unchanged. One line in the table cannot be heard in play: *every room taken* (`L.full`). `innFreeRoom` never returns null, because a town inn's other guests are `hash % n` rooms and a coaching inn's are `n−1`, so there is always a room to let. It was the same before this session, and the line is kept as the review wrote it.
+
+**Finding 8** (auto/systems, Session 432; the short half is older): `genName` puts a capital after a hyphen (*Saint-Rouge*, was *Saint-rouge*), which changes no draw. `nameBanks` skips a short name that doubles a word and builds the French long form from a short name and one of six qualifiers (*-sur-Mer*, *-le-Vieux*, *-la-Forêt*, *-en-Val*, *-les-Prés*, *-sous-Bois*). `uniqueSiteNames` counts a drawn name whose two halves are the same word as lost, so it is renamed from the bank.
+
+What it moved: of the world's 1,049 named sites, 150 change name. Every French place that held a doubled name or a *-le-* long name changes, and so does every *Saint-* place, by its capital. Irish and generated places that Session 432 had already renamed also take a different bank name, because the banks lost their doubled entries (*Ardard*, …) and each renamed place's start in the bank is a hash into the list. *Cnocbeg* the renamed province town is now *Tullyderry*. Home's hand-placed names and every place that kept its drawn name are untouched. Saves keep places by id, so nothing breaks, but a player's saved world will show some far places under new names, as #110 did once. No test named any of the 150.
+
+`innTopics` is now on `WORLD` for the test.
+
+### Verified (headless Chromium)
+`tests/innvoice.test.mjs` (new), 22/22:
+- For each of the four peoples, asked of Dunmore's inn: the offer, the short purse (1 gold), the room paid and named, the room already yours (named and not), the empty house, and *Not tonight* are the review's lines word for word. No line reads *undefined*. Dunmore's real keeper is a Gatelander and answers *Not tonight* with *The road's long and the night's longer…*.
+- Over all 610 settlements, no name doubles a word (four drawn ones were: *Clairclair*, twice, and *Ardard*, twice), none has a small letter after *Saint-*, and none keeps *-le-* and an ending. 64 French places carry the new long form (*Beauclair-sur-Mer*, *Belmont-en-Val*), and every name is still its own.
+- `placenames` 9/9, with its check on the French long form moved from `-le-[A-Z]` to the six qualifiers. `innrooms` passes, with its guest-count parse made to read *There's one other guest* (the Gatelander's line) as well. `coachinn`, `coachvoice`, `shipwrightvoice` and `ferry` pass. No page errors. Build tag s381.
+
+### Needs eyes
+- The quest writer's ear on the new French long names in the map's labels and the ferry lists. The review gave the form, and these are its first draws.
+- Finding 9 (peaks, lakes and Aurenne's rivers) is on `auto/fable-rivers`, which isn't this branch. It is left to whoever carries that branch.
+
+## v80 — Session 443 — The captain's guard, played: it holds, breaks and comes back as built (backlog G, the creatures in real play)
+Backlog G owed Session 130's captain's guard to real play. Session 130's entry says *the captain's guard against a real power attack — headless can't run the combat loop*. This session played it through the loop at fixed 1/60 ticks, as `dazed` did, with real swings through `attack()` resolved at the swing's impact frame. A Bandit Captain was set down in Dunmore's open street at noon, with the starting Wooden GreatClub in hand.
+
+**What was found.** No fault. The guard does what Sessions 130 and v71 built:
+- From the front, with the guard up, ten swings landed 1–2 a blow against 5–6 open (27%). The rule is 35%, and the blow is floored to whole points, so a weak weapon loses a little more. The guard stayed up through all ten. Twice the swings broke its posture (*staggered!*) without dropping the guard, as built.
+- A bash from the front glances off (*Bash glances off the raised shield.*), and the guard stays up.
+- A power attack from the front broke the guard four times out of four: *guard breaks!*, the shield arm down, a stagger, and no damage from that blow. Three follow-up swings landed in full while it reeled. The guard came back up 1.50 s after the break (`POSTURE_BREAK_STUN`), with the arm raised again and *raises its guard again*.
+- Six times, with the captain winding up its blow, the player stepped round behind it and swung. Each swing counted as from behind and landed in full (98–102% of an open blow) with the guard still up. The facing freezes for the wind-up and recovery (v63), and that is what lets a sidestep round the shield work.
+
+**A correction to Session 130.** Its entry, and the comment over the captain's build in `buildZoneEnemy`, say the guard breaks to *a power attack or a bash*. That was never true. `doBash` has made a raised guard immune to a bash since v71 (*design call G: the shield is exactly the thing a bash can't crack; flank it or power-attack it*), and Session 130 changed nothing there. The play above matches design call G, so the code stays. Only this note corrects the record. A player with fists has no power attack (`_isPow` needs a weapon), so bare-handed the only way past a captain's guard is the flank.
+
+### Verified (headless Chromium)
+`tests/captainguard.test.mjs` (new), 8/8: the guard built up (shield prop, arm at −1.15); front swings at 0.27 of open; the bash glancing off; four power breaks with 0 damage and the arm down; full follow-ups (5–6); the guard back at 1.50 s each time; six flank swings from behind at 1.02 of open. No page errors. No game code changed. Build tag s382.
+
+### Needs eyes
+- The feel: whether 1.5 s of stagger after a power attack's slow wind-up is enough to land the follow-ups a player wants, and whether stepping round a captain's wind-up reads in third person.
+- With fists, a captain can only be flanked. Whether that is right for the bare-handed start is Michael's to judge in play.
+
+## v80 — Session 444 — The forts walked: gate, yard, keep door and its prompt (backlog G, the forts in real play)
+Backlog G owed *the forts in real play — one fort per door now: ring, gate, keep, barracks, and the keep door's prompt*. Session 131 found every fort at NaN and put them back. Session 132 removed the second, kit-built fort that sat on each, and left *the E-to-enter prompt on the keep's door* to a screenshot. Neither walked a fort.
+
+This session went to the six forts nearest home (Cnocowen Keep, Inislough Hold, Dunlough Watch, Cluainbeg Keep, Cnocshane Tower, Kilree Tower) where fast travel sets you down, 30 units south of the door and just outside the gate. Each was walked on foot with W held, steering for the keep door, on the loop's own movement and collision at fixed 1/60 ticks. At the door the HUD's prompt was read after real frames, and E was pressed through the page's keyboard. Then three more walks went straight at the ring, from the east, the west and the north, for 6 s each.
+
+**What was found.** No fault in the forts. Every walk went through the gate, between the barracks and up the paved way to the keep door in 7.4 s, never stuck. Every ring walk stopped at 28.1–28.2 from the middle, against a wall at 27. The prompt reads *Press 'E' to enter Cnocowen Keep [Very Easy · ruins · large]*, and E took each one down into its fort and back out to the world.
+
+Two notes from building the suite, neither a fault in the forts:
+- The world holds 237 fort doors, not Session 131's eight. The eight were the hand-placed ones, and the generated cells have added the rest since. A far cell, such as cell (1,1) on another island, takes about a minute to finish loading on the test machine's software GL, so the suite walks the six nearest home and not all of them.
+- A probe of `placeDoor` near home found two generated forts (seeds 565471 and 766071, both in cell (4,9)) whose ground is too low (`worldH` 1.4–1.5), so they are refused and never built. That is by design. But `sigilDoors()` still lists every fort in the cell data, and the seamsight marker, the warm-stone rubbing and Act II's etched gate read from it. That is the next session.
+
+Three names a player will read in the probe's list double a word in a fort's name (*Montmont Tower*). Gate names come from `canonicalGateName`, which draws through `genName`, so Finding 8's capital applies, but a doubled pair is only renamed for settlements. It is noted for the quest review and not changed.
+
+### Verified (headless Chromium)
+`tests/fortwalk.test.mjs` (new), 6/6: six forts built when you come to them; six walks from the fast-travel arrival to within 1.6 of the keep door, 7.4 s each, never stuck; the ring held at 28.1–28.2 (wall at 27) from three sides; six prompts naming the fort; six descents and returns. No page errors. 5 m 21 s alone; added to `run.mjs`'s table at 330. Build tag s383.
+
+### Needs eyes
+- The look Session 132 left to a screenshot: the ring, the gate towers, the keep and the two barracks seen from the road. The interior partitions inside a fort are not part of this check.
+- The approach from the main road along the fort's spur. The walk here starts at the gate, where fast travel sets you, and not at the road.
+
+## v80 — Session 445 — A gate near the waterline exists or not by load order (found, not fixed; backlog B)
+Session 444's probe of `placeDoor` found two forts near home (seeds 565471 and 766071, cell 4,9) refused for low ground. This session set out to keep refused doors off the list the game names gates from, `sigilDoors()`. That list feeds seamsight's marker, the warm-stone rubbing (60 gold), the townsfolk's rumour, a shrine's boon and *The nearest old gate?*.
+
+**What was found.** The premise was only half right. Those same two forts, Cnocshane Tower and Kilree Tower, are two of the six that Session 444's suite walked to, built and entered. `placeDoor` runs every time a cell loads, and the ground it tests (`worldH` at the door) includes whatever site stamps are loaded at that moment. Fort 565471's spot read 1.5 and was refused in one run (after the player had been to far cells), and read 1.97 and was placed in another (fresh from home). Across the world, 12 of the 400 fort and sigil doors (7 forts, 5 caves) stand at a raw height under 1.5. Each of them may or may not exist on a given visit, and `sigilDoors()` lists them either way. Act II's three etched gates (The Grey Barrow, Reifeirey Gate, Montmont Tower) stand at 5.6–9.1 and are not affected.
+
+**What was tried and reverted.** I tried marking a refused door and judging an unloaded door by its own raw spot, so that `sigilDoors` and *The nearest old gate?* would skip refused doors. A suite run showed it would hide doors that do get built, so it is not in this commit. No game code changed.
+
+**What it needs.** One answer per door for the whole game: the refusal decided on ground that doesn't depend on what is loaded (the terrain before site stamps, say), and `sigilDoors` filtered by the same test. That changes which of the 12 exist in every save, and the test has to agree with the ground the keep is actually built on. It is filed in backlog B for a session that can measure both.
+
+**A correction to Session 444.** Its entry says *two generated forts … are refused and never built*. They are refused only in some load orders, and Session 444's own suite built both. It also says *three names … double a word*. One was seen, *Montmont Tower*, and it is also the Compact's etched gate in Act II, which the quest review may want to know.
+
+### Verified (headless Chromium)
+Probes only, on an instrumented copy of the build under `--src`, not committed: the refusal list over a boot and two far visits, and fort 565471's state over 60 s at its door after a boot from home (placed, `worldH` 1.97). A census of `sigilDoors()` against every cell's doors: 400 doors, 12 under 1.5 raw. No build tag bump (no code changed).
+
+### Needs eyes
+Nothing to play. The fix needs a session of its own.
+
+## v80 — Session 446 — The peaks and lakes in their own people's word (register fix, quest review run 6, Finding 9)
+The quest review's run 6 filed Finding 9 against auto/fable-rivers: a peak drew *Sliabh*, *Mont*, *Ben* or *Cnoc* at random wherever it stood (*Mont Ballymore* in the Gatelands, *Sliabh Ashford* in the Mark, and *Ben*, the Scots word, which no people of the canon speaks); a lake in the Mark was *Mere Ashford*, with the Anglo word in front where the register puts it after; and Aurenne's great rivers began with a small *la*, wrong at the head of a map label or a line. Session 442 left it to the rivers' owner; that branch has merged into main and nobody had taken it, so it is done here, exactly as the review proposes. `PEAK_FORM`, `LAKE_FORM`, `REG_OF_PEOPLE` and `formReg` sit beside `RIVER_NAMES` in the world module. A peak still draws one `rp()` for its form before `genName`, now from two forms of its register instead of four words, so no later draw moves and every peak keeps the second half of its name. A generated culture takes its nation's people's register, so the Mark's generated provinces read *Tradou Fell* and *Diadaey Mere*. Home's authored landmarks are untouched.
+
+Correction, from the merge of main at the start of this run: main's Fable sessions and this branch both used the numbers 432 and 433 (the horseshoe and the quays there; the place names and the guards here). Both pairs of entries are kept as written, main's first; read them by title.
+
+### Verified (headless Chromium)
+`tests/featurenames.test.mjs` (new), 6/6: 60 drawn peaks and 42 lakes, every one in its people's form and place (21 *Sliabh*/*Cnoc*, 21 *Mont*/*Pic*, 18 *Fell*/*Tor* among peaks and lakes); no *Ben* and no leading *Mere*; the twelve great rivers *An Dubh*, *La Dorée*, *Blackwater*, *La Blanche* … none with a small letter; no page errors. `placenames` 9/9, `riversail` and `riverquay` pass after the change; `rivers` (with `riversail`) 2/2 once its tongue check reads *La* (it asked for the small *la* the review corrects; that one regex is the only test edit). `parsecheck` clean. Build tag s384.
+
+### Needs eyes
+The names on the world map at a real zoom: *Heifialos Fell* and *Lac Beaumont* where *Ben Heifialos* and *Loch Beaumont* stood. Any save that wrote a peak's or a lake's old name into the journal keeps the old words there.
+
+## v80 — Session 447 — A gate is never drawn into the water, and stands or not by one answer (backlog B, Session 445's find)
+Session 445 found that a gate near the waterline existed or not by load order: `placeDoor` refused a generated gate whose ground read under 1.5, and read it each time the cell loaded, against whatever cells and stamps were loaded (the terrain's amplitude is a blend of the loaded cells' regions, and a neighbour's pad bends the ground). It counted 12 of 400 gates at risk. Since this run merged the rivers, the count is far worse: a cell draws its gates before the rivers and lakes are routed, and nothing kept them out of the water, so 48 of the 392 sigil and fort gates (99 of the 777 generated gates of every kind) stood on ground under 1.5, and 63 of those under water, in the basin lakes and the channels. `sigilDoors` named them all, so seamsight, the warm-stone rubbing, the rumour, a shrine's boon and *The nearest old gate?* could send you to a gate at the bottom of a lake, and the map marked them there.
+
+The fix is the one Session 445 asked for. `dryDoors` runs once, at the end of `routeWorld`, when the carve is known. It reads the bare land (`doorGround`: `rawH` with the routing's flag, so no cell's regions and no stamp count, the same from any boot). A generated gate on ground under 1.5 is drawn again in its own cell, inside the same margins the cell's own draw uses, clear of the pads by the same distances and off the sea by `seaBare`, onto ground of 1.8 or more. It draws from a stream of its own (`cellRng(i,j,300+n)`), so no other draw in the cell moves: 678 gates keep their spots to the unit. A gate with no dry spot in 24 tries is marked `wet`: never built, not in `sigilDoors`, not on the map, not unlocked by `devUnlockAll`. Today none is wet. `placeDoor` now refuses a generated gate by that flag alone. Its two load-time tests (under 1.5, and under 1.2 or in the surf) are gone. The gate's seed, name and dungeon are unchanged; only where 99 of them stand. A save keeps gates by seed, so a gate already cleared stays cleared, in its new place. Fort 565471 (Cnocshane Tower), Session 445's example, moved 490 units, from 1.5 to 3.13.
+
+### Verified (headless Chromium)
+`tests/drydoors.test.mjs` (new), 10/10: 777 generated gates, 99 drawn again (51 sigil or fort, 63 from under water), every new spot 1.8 or more on the bare land, in its own cell and clear of every pad by 60; none left under 1.5; none wet, and `sigilDoors` lists every gate that stands. Then two boots: home, then cells 4,9, 1,1, 2,1, 9,1 and 10,1; and a boot that first loads three far cells and then the same five in reverse. The same 62 gates are built both times, Session 445's forts 565471 and 766071 among them (3.13 and 6.11 both times), each on ground of 1.2 or more where it is built. On the old code the first checks fail by construction (63 gates under water). Run here after the change: `keep`, `walls`, `mainquest`, `autosave`, `shipwreck`, `dungeonexit`, `corpsebody`, `mainrun`, `placesave`, `riversail` and `renewal` pass (`renewal` failed once with three suites side by side, waiting 60 s for a shrine to build, and passed alone). `fortwalk` (Session 444's) failed, and failed the same way on this branch's commit before the change (a git-archive copy under `--src`): the merge of the rivers made a cell's load heavier, and fort 332307 beside home took 60 s of the job queue's two jobs a frame on software GL against the 75 s its loop waited (measured: 22 tries of 2.5 s). The walk now runs the game's own queued load jobs after each set-down instead of waiting on the clock; `fortwalk` passes. No game code changed for it. `parsecheck` clean. Build tag s385.
+
+### Needs eyes
+The 99 gates in their new places, on the world map and on the ground: whether any now sits awkwardly (on a steep slope or a ridge) where it used to stand in a lake. The settlements were not checked the same way: the routing keeps the channels out of the pads (S432), but whether any place's pad lies in a basin lake was not counted here.
+
+## v80 — Session 448 — Places standing in the basin lakes (found, filed as DECISION #121; docs only)
+Session 447's entry left one question open: the routing keeps river channels out of settlement pads (S432), but does any place stand in a lake? A census on the bare land, one and a half pads plus ten units out on sixteen bearings from every generated place that is not a port, says yes. 43 of 919 have water on twelve or more bearings, 36 of them on all sixteen, and 39 of the 43 sit inside a basin lake. They are 20 villages, 4 shrines, 4 glades, 4 towers, 3 ruins, 3 outposts, 2 bandit camps, a camp, 2 lairs and a point of interest. With their cell loaded, the pad's stamp lifts each one out: Diawor (village, cell 1,1) stands at 3.36 across its 45-unit pad, with −1.1 at 1.4 pads and −4 at two. Dogiaen, the one town whose centre the bare land puts under water, stands at 2.42 on the lake's edge with dry ground beyond (8.7 at two pads), so it is not among the 43. No road, coach or walker reaches the 43 without swimming.
+
+Where a village goes, and whether a lake bends round it, is a design call over the Fable's rivers, so nothing was changed. The question is DECISION #121 and under Pending in docs/decisions.md: A, move them to the shore (recommended); B, causeways to island villages; C, bend the lakes round the pads; D, leave it. Filed in backlog B.
+
+### Verified (headless Chromium)
+Probes only, not committed: the census above on one boot (`rawH` with the routing's flag, the same bare land `dryDoors` reads), and cells 1,1 and 2,1 loaded with their job queue drained to read the stamped ground across Diawor's and Dogiaen's pads. No build tag bump (no code changed).
+
+### Needs eyes
+Diawor or Nordou from the shore at a real draw distance: a village on a disc in a lake, whether it reads as a mistake or as a place.
+
+## v80 — Session 449 — Every room's partitions leave it walkable (backlog G, *the interior partitions*; test only)
+Section I is clear and both pending decisions (#119, #121) are unanswered, so this run took an owed check from backlog G that a headless test can settle: *the interior partitions*, listed under *Saves first* since Session 137 and never walked. The rooms have grown a great deal since: back rooms behind a partition with a hung door (S143), the inn's let rooms, the guild halls' fifteen member rooms, galleries and stairs, the smithy's racks and forge, the posts and furniture that S293 sets last, the cellars and the Guest's chapel. Nothing had checked that every bed, person and strongbox in them can be reached on foot.
+
+`tests/intreach.test.mjs` (new) builds each generated house with `WORLD.buildInteriorFor` and walks it from where `goToInterior` sets you down (the room's middle, 2.2 in from the door) with a flood fill on a tenth-of-a-unit grid that moves as the game does indoors: `intSolidAt` at the player's radius (0.3) and the feet's height refuses a step, the feet then stand on `footholdY` (a stair's step within `STEP_UP`, or a drop), and the walls bound it at the radius. The inner doors are taken as opened; nothing is jumped. A bed counts as reached where E would take it (1.6, within .9 of its height), a person where E would talk (2.2, within 1.2), the strongbox or home chest at 1.6 from the floor, a tower's chest at 1.5 within 1.2. A control walks every room with doors a second time with its doors kept shut, which must hide what is behind them, so a flood that ignored the partitions would fail.
+
+**No fault found.** Every room of every kind is walkable to everything in it. No game code changed. Two backlog notes corrected: *the held breath across a real six-hour gap*, still listed as owed in G, was settled headless by Session 242 (`tests/reader`); it is struck with that session named.
+
+### Verified (headless Chromium)
+`intreach` 10/10, 3.5 minutes. Portclare, Dunmore and the first city of three registers (Trowor, Fortargent, Cluainshane; anglo, irish, garrison, french and stone rooms), then the three nearest towns with a keep and the two nearest towers: 561 rooms (428 homes, 22 inns, 33 cellars, 2 Guest's chapels, 8 churches, 4 and 4 guild halls, 3 keeps, 2 towers, 55 shops), 875 beds, 120 people, 483 strongboxes and chests, 426 inner doors. All reached; nobody set down inside a solid; every two-floor room's upstairs reached by its stair (feet at 1.9–2.5); both towers' hoards on the top floor at 30 and reached by the spiral. The control: with the doors shut, all 191 rooms with inner doors hide something (367 things; a guild hall 13–15, an inn 4). No page errors. `parsecheck` clean. No build tag bump (no game code changed).
+
+### Needs eyes
+Nothing new. The walk proves a path exists at the player's radius, not that it is comfortable: a 1.5-unit doorway beside a bed or a rack may still feel tight with a shield in third person.
+
 ## v80 — Session 435 — Three suites red on CI after the merge of main (CI fix)
 CI on the branch head (`c653e1b`, the merge of main into auto/backlog) failed three suites: `masterslam` on headless (2), and `beastfall` and `slimes` on headless (3). Here `beastfall` and `slimes` passed and `masterslam` failed about five times in six. Main's run of `masterslam` passed. All three faults were in the tests, and no game code changed.
 
@@ -10934,6 +11251,57 @@ CI on the branch head (`c653e1b`, the merge of main into auto/backlog) failed th
 ### Needs eyes
 - Nothing in the game changed. The floor fault is the test's, but the same thing would happen to any code that sets `currentFloor` without moving you in a stairwell dungeon. A save loaded onto floor 2 (`68-dungeon-misc.js`) sets both, so it is fine.
 
+## v80 — Session 450 — Snow carried into a place that never rolls it (the critic's s372 look, settled headless)
+The critic's 3 October run shot Cnoccarra's quay twice in falling snow and asked whether snow belongs in a lowland town before winter. It does not, by the weather's own rule: `weatherWeights` gives snow a weight only in the cold climate (the Mark) and on tundra, and Cnoccarra is temperate forest in the Gatelands, as is the start. A probe rolled the weather 400 times at each: overcast, fog, rain, storm and clear, no snow. So the snow was carried there, not rolled. The weather is picked where you stand when its timer runs out (every 150–330 s) and then holds wherever you go, so snow picked in the Mark rides a fast travel, a ship or a walk over the border into a country where it cannot fall, for up to five and a half minutes. Session 146 made weather belong to its place; this was the gap in it. The critic's own snow most likely came from its harness, which can set a weather and did not say so; the game's path to the same picture is the carried one, and that is what is fixed.
+
+`tickWeather` now notes the world cell you stand in. On entering a new one, if the current or the coming weather has no weight there, the timer is run out and the weather rolled again for the new place; the change blends over the usual 25 s, so snow thins out after you arrive rather than stopping on a frame. Snow carried into the Mark, where it can fall, stays. Clear weather is never rolled again by a move. A timer past the roll's own 330 s is a weather held on purpose (the suites that hold one set 1e9) and is left alone; `devWeather` sets 240, so dev snow at the start still falls until you travel. Indoors and in dungeons nothing is checked (room coordinates are not a cell).
+
+### Verified (headless Chromium)
+`wxplace` 8/8 (new). The start is cell 5,10 and Cnoccarra 5,8, both temperate; the Mark's Trostouir is 1,0. 400 rolls at the start: clear 205, overcast 92, rain 62, fog 29, storm 12; at Cnoccarra: clear 210, overcast 74, rain 59, fog 34, storm 23; snow 0 at both. Snow set at the start holds for 120 ticks in place. Carried to Cnoccarra, it is rolled again on the first tick (to storm in this run, timer 256) and is gone 26 s later. Carried into the Mark it stays, with no reroll; a move in clear weather rolls nothing; a held snow (timer 1e9) stays at Cnoccarra. `weather` 9/9, `smoke`, `seawear` and `sailtrim`, the suites that set weather, pass. `parsecheck` clean. Build tag s386.
+
+### Needs eyes
+Whether snow thinning over 25 s after a fast travel reads as weather or as a fade. The critic's look also names the bright cyan river (H.5b) and the quay with nobody on it (no schedule sends anyone there); neither is this session's.
+
+## v80 — Session 451 — The Torch on the counter, and why a piece is locked (backlog E, the concept artist's 1 Oct note)
+The concept artist, drawing the counter on the parchment kit, listed three faults in one line of the backlog. The first, the quantity prompt's button reading *Buy* on a sale, was fixed in Session 409 and never struck; it is struck now. The other two were still there.
+
+**The Torch wore a shield.** `iconHTML` draws every piece of equipment by its slot, and every off-hand piece got 🛡, so the Torch (an off-hand item with `torchType`) showed a shield in the bag, at the counter and in the inventory. An off-hand piece with a `torchType` now shows its own glyph (the Torch's item carries 🔦); a shield is unchanged. No glyph was chosen here: the item already named its own.
+
+**A locked piece was only dimmed.** At the counter a piece whose attribute you do not meet is drawn at 60% and still sells to you; the row never said why. It now carries a warning note under the name in `canEquip`'s own words, *Requires Might 5 (you have 0)*, the line the game already shows when you try to wear it. No new text, and nothing about what can be bought changed.
+
+### Verified (headless Chromium)
+`shoprows` 7/7 (new), in a Dunmore weapon shop at 13h with every attribute at 0: the Torch's bag row shows 🔦, a tier-2 shield's 🛡; one of six stock rows is locked and reads *Requires Might 5 (you have 0)*; no wearable row says *Requires*; no page errors. `qtybutton`, `barter`, `buyprice` and `chamerchant`, the other suites that draw the counter, pass. `parsecheck` clean. Build tag s387.
+
+### Needs eyes
+The note is the counter's existing 8 px italic; whether a warning that small is read before the click. 🔦 is an electric torch; if the Torch should show a flame, that is the look builder's or the concept artist's to pick.
+
+## v80 — Session 452 — The places the lakes were laid over move to the shore (DECISION #121, Michael's A)
+Session 448 found that the rivers build had laid its basin lakes over places their cells had already drawn: 43 places that are not ports stood on their pad's plug with water all round, reachable only by swimming. Michael answered A on #121: move them to the shore.
+
+**What counts as cut off.** Session 448's census asked for water on twelve or more of sixteen bearings one and a half pads out. That catches a city on a headland with a dry neck (Pontancy, 12 of 16). The rule here asks the question the decision is about: is there a way out on foot? A place is cut off when no straight line from its pad's edge (1.2 pads) out to three pads stays dry (0.3 above the sea) on any of 24 bearings. By that rule 42 places are cut off: 19 villages, Woushnaen (a city), 4 outposts, 4 shrines, 3 glades, 4 spires, 3 ruins, a bandit camp, a point of interest and 2 lairs. Pontancy keeps its neck and stays.
+
+**Where they go.** `shoreSites` runs inside `routeWorld`, after the carve grid is filled and before the bank towns and `dryDoors`. For each cut-off place it walks out from where the place stood, ring by ring (20 units apart, a point every 20 units round each ring, starting from a bearing hashed from the id), and takes the first spot that is in the place's own cell (150, or the pad and 40, from its edges), off the sea, 1.8 or more at the centre, 1.5 or more on sixteen bearings at half the pad, the pad, and 30 beyond it, clear of every other pad by 40 and of the gates by the cell's own margins (60, a fort 110). The first such spot is the near shore, so each place stands beside the water that cut it off. It reads the routing's bare land (`doorGround`, as Session 447's gates do), so every boot moves the same places to the same spots, whatever is loaded. Because it runs before the bank towns, a moved village beside a navigable reach gets its quay like any other. Because it runs before `dryDoors`, a gate redrawn there keeps clear of the new pad.
+
+Everything keyed by id is kept: the name, the kind, the roads (a road is defined between two ids and laid at load), the town's state in `worldState`, the save's discoveries. A lair's cavern door is placed from the lair when the cell is made, so it is moved by the same offset. A place keeps `drawnAt`, where its cell first put it. A save made standing in one of the 42 reloads at the old spot, which is now open water. The decision said so, and it is left so.
+
+### Verified (headless Chromium)
+`shoreplaces` 9/9 (new). 42 moved, none without a spot. 100–580 units each, median 260. Of 841 inland places, none is cut off now, and none has water on all sixteen bearings at 1.5 pads (was 36). Every moved place stands in its own cell on bare land of 1.8 at the centre and 1.5 or more on its pad and ring, clear of every other pad. Cuma's and Glenree's lairs keep their cavern doors 6 units off. Diawor, Session 448's example, was loaded: it builds at (4079, 4279), 220 units from where it stood. The stamped ground there is 7.13 and dry on all sixteen bearings 1.5 pads out (it was water on all sixteen), and two roads name it. The routing took 623 ms with the move, which costs one pass over the inland places plus a ring search for the 42. Run after the change: `drydoors`, `placenames`, `riversail`, `rivers` (2/2), `bridges`, `riverquay` (48 bank settlements, Cnoccarra's quay as before; it failed once with four suites side by side, when Cnoccarra did not finish loading in `g.settle`'s 60 s, and passed alone), `featurenames` and `campsack`. `pois` (Session 204's, the look builder's) fails four of five: it looks for a tower, a shrine, a bandit camp and a glade in `WORLD.SITES`, which holds only the home province's and the loaded places, and finds none. It fails the same way on the commit before this session (a `git archive` copy under `--src`), so it is not this change; noted for the look builder. `parsecheck` clean. Build tag s388.
+
+### Needs eyes
+A moved village from its lake at a real draw distance: whether it reads as a lakeside place or as one set down on the nearest bank. The 42 were not walked to by road; the roads are laid between ids at load, and Diawor's two were counted, not walked.
+
+## v80 — Session 454 — CI's shards outgrew their 45 minutes (CI fix)
+The last CI run on auto/systems (0af251a, Session 452's head) was red: shard 2 was cancelled at 45:19, its job's time limit, halfway through `wolves`, its last suite. Nothing had failed. The other seven shards passed in 33 to 42 minutes, so the run as a whole sat at the edge of the limit, and which shard went over was the luck of the runner.
+
+The cause is the table `tests/run.mjs` balances the shards by. Session 434 refreshed it from CI's 2 Oct run, but any suite not in it counts as 60 s, and the suites added since then were never entered: `keeperwalk` took 605 s on CI, `intreach` 279. The table predicted 2,013–2,072 s a shard; the run measured 1,935 to past 2,691. The table now lists every one of the 219 suites at the time it took in that run (shard 2's from the gaps between its suites' headers, `wolves` at 90 since it was cut off). In all they come to 19,054 s, and the eight shares are 2,377–2,396 s each, about 40 minutes. The install and the browser take three more, so 45 minutes leaves almost no slack on a slow runner. The job's limit is now 60 (Session 379 raised it from 30 to 45 for the same reason, per Michael's A on the 2 Oct red main: rebalance the shards or raise the limit). The lasting fix is step 4 of backlog K, CI running only the suites a change touches, which waits for the layout to settle. No game code changed.
+
+Also merged main (the online-play and lake decisions): `docs/decisions.md` conflicted where both sides had answered #121; it keeps one entry, the branch's, with its done note, and main's `Michael:` line on online play.
+
+### Verified (headless Chromium)
+A simulation of `--shard=k/8` with the new table: 219 suites, 26–29 a shard, 2,377–2,396 s each. `node tests/run.mjs tells` boots and passes 1/1 with the edited runner. `parsecheck` clean. Build tag s389. Whether the eight shards finish under the new limit is CI's to show on this push.
+
+### Needs eyes
+Nothing in play. The run's total, 5.3 hours of suites, keeps growing by a few minutes a session.
 ## v80 — Session 453 — `pois`, `wreck` and `wyrm` red on main: the places they look for are one cell out (tests only)
 H is otherwise empty: every s162 item and parts 4, 5, 5a, 5b and 6 are built or answered, no decision is pending, and the quest review's run-6 findings are already applied on auto/systems (Sessions 442 and 446). In the room on 3 Oct, the systems builder reported that `pois` fails 4 of 5 on main and on its branch. That suite covers the look's POI pieces (Sessions 204, 205 and 215), so it is this builder's to fix.
 
@@ -10951,6 +11319,125 @@ The fix is in the tests. `pois` takes the nearest place of each kind from the ce
 - Nothing in the game changed. A test picture taken near a place with the fog turned off shows the sea plane where the next cells' land has not loaded. That flat cyan behind the glade is not a lake: the glade stands at 3.46 in no lake.
 - Any later suite that wants a kind of place the home cell lacks should use `WORLD.getCell` and `loadCell`, not `WORLD.SITES`.
 
+## v80 — Session 455 — A save made in a place the lakes were laid over comes back with the place (backlog B, owed by Session 452)
+Session 452 moved the 42 places the basin lakes had been laid over to the nearest dry ground in their own cell (Michael's A on #121), and left one thing owed: a save made standing in one of them, before the move, reloads at the old spot, which is now open water. The decision's option said so, and 452 left it so. It is a consequence of a move, not a rule of play, so this session carries the save with the place and changes nothing else.
+
+What happened before, measured: the load already distrusts a position in the sea (`worldH` under 0.5) and falls back to the last outdoor position, and then to wherever the player stands, which on a load is the save's own `px`/`pz`. So the fallback handed back the same spot, and you loaded in the lake at −4 where Diawor's street had been, 220 units from Diawor. A save made behind one of its doors came back outside a door that is no longer there before the room was rebuilt.
+
+The routing now keeps a list of what it moved (`WORLD.routed.shore.list`: the id, where it was drawn, the offset, the pad), and `WORLD.movedPlaceAt(x,z)` answers whether a spot lies within 1.5 pads of where a moved place was drawn and reads as water. `_applyLoadData` asks it before its sea test, for the world position or, for a save in a house or a dungeon, for the door you would come out of. On a hit the spot is carried by the place's own offset, so you stand where you stood in its street, or outside the same door, and the room is entered from there as before. A dry spot is never moved, and nothing outside the 42 old pads is looked at, so every other save loads exactly as it did. The list is built in the same routing pass as the move, so it is the same on every boot.
+
+### Verified (headless Chromium)
+`shoresave` 9/9 (new). The list holds the 42 moved places. Diawor's old street, 10 and −6 from its old centre, reads −4 and the lookup knows it; a world save there reloads at 10 and −6 from the new centre, on ground at 7.13, with the village built round you. A save in its house `g_c1_1_s9_5`, with the door written back to where the village was drawn, puts you outside that house's door in the new village, then back in the same room. A save on dry ground at the start, and a spot in the lake 900 units from any old pad, are untouched. On the code before this session (a `git archive` copy under `--src`) the suite fails the three checks the fix is for: the world save loads at the old spot in the lake, and the house save puts you down away from the door. `saves`, `placesave`, `shoreplaces` and `autosave` pass. `parsecheck` clean. The shard table lists `shoresave` at 150 s. Build tag s390.
+
+### Needs eyes
+Nothing new to see unless you hold a save made inside one of the 42 places before Session 452: it should now open on the village's own street. A lair's cavern save is carried the same way (its door moved with the lair) but was not loaded in the test.
+
+## v80 — Session 457 — The Black Sail, played through; the Compact's claim gives its ship (backlog G)
+Backlog G still owed one of the faction lines in real play, *the black sail*. That is the Compact's ninth service, built in Session 128 and never covered by a suite. This session plays it the way a player would. With the Compact at eight services, the service is asked in the Fortargent lord's own dialogue (Prior Bertrand, on the plaza). Your own ship is put out to sea 800 units off the seat. A black sail comes up, and E from alongside her hull boards her. Her crew is cut down by the player's swings, with the game's own loop at fixed 1/60 ticks and the draw held off, as `saltwater` does. The service is turned in at the seat, Rowe is met there, and the rank-3 claim is taken.
+
+All of it works as Session 128 says except the last step. The claim is *a house and a ship* (Session 99), and the lord answers *It's yours. The ship is at the quay under your name.* It deeded the house and nothing else: no line of the game ever set `worldState.ship` for it. Fortargent is inland, with no quay and no shipwright. `grantShip` now runs from the Compact's claim when you have no ship. It moors a sloop where a shipwright would launch one, using `buyShip`'s berth off the seaward end of the quay. The harbour is the seat's own if the seat is a port, else the nearest of the Compact's own harbours (for Fortargent, Beaurouge at 850 units). That harbour is usually not loaded. The quay's line is therefore now its own function, `quayLine`, which `buildHarbour` calls. It walks the ground the same way, so the berth computed from the ground and the one computed from the built quay are the same. A log line records it: *The Compact deeded you a ship at Beaurouge.* The game holds one ship per player. When you already own one, the claim leaves her where she is and the line overstates it. What the Compact should give then is a design call, filed as DECISION #128 (A nothing more, B a free refit one class up (recommended), C the hull's 400 in gold).
+
+### Verified (headless Chromium)
+`blacksail` 15/15 (new), passed three times. Bertrand offers *Serve the Compact.*. The service is *The Black Sail* in his voice, 240 gold at level 1 (220 + 20 a level), in the journal. Asked again, he says what is still owed. At sea the black sail comes up within 56–59 ticks (the open service makes her certain on the first two-second check) and 347–356 units off. E beside her hull boards her, with a crew of 3. 16–18 swings clear the deck in 529–597 frames, *Her deck is yours.* shows, and the quest is done. At the seat: *The Compact names you Prior.* with the after-line, rank 3, nine services, +240 gold. Rowe stands 11 units off with *Prior. They tell me you took the black sail.* and *What now, Rowe?*. The claim deeds the house. With no ship, a sloop (the *Kestrel* or the *Lantern*, by the name roll) lies afloat at −4.2, 130 units from Beaurouge's centre, with Beaurouge not loaded. Walked to Beaurouge and built, she lies 2.0 from the quay's edge, and E from the quay puts you on her deck. With a ship already yours, the claim leaves her at the same spot. On the code before this session (a `git archive` copy under `--src`), the suite fails the ship check: the claim leaves `worldState.ship` empty. `harbour`, `saltwater`, `ships`, `duel` (2/2) and `riverquay` pass after the `quayLine` change. The shard table lists `blacksail` at 180 s. `parsecheck` is clean. Build tag s391.
+
+### Needs eyes
+The sea fight itself at a real frame rate: whether three pirates on a sloop's deck are a finale at a Factor's level (16 swings at level 1 with the starting weapon). For the quest writer, not changed here: the turn-in reads *…the house and the ship are yours. … There's a house and a ship in it, when you want it.*, the after-line and the rank-up's offer saying the same thing twice in one breath.
+
+## v80 — Session 458 — Rowe at the seat, played through: the lord's job and the faction's service kept apart (backlog G)
+The second of G's owed faction lines: *Rowe at the seat*. Session 128 says Hesket Rowe runs one rank ahead of you along each line. She is mentioned at the second service, present at the seat before the fourth, found sitting out on the land at the sixth (*Markish, her own lines*), and at the seat after the finale. Session 457 met her after the Compact's. This session walks the Crown's line at Coeur de Vie as a player does. The services are asked and turned in through Lord Tadhg's own dialogue, Rowe is spoken to with E in front of her, and the land is walked to where the journal sends you.
+
+The beats at the seat hold. Three faults sat where the lord's own work and the faction's service meet, since both are quests with the seat as their giver:
+- **Finding Rowe swallowed her dialogue.** `qOnTalk` completes a find on E and, for a villager, shows *"Home? Yes. Yes, all right."* in place of a conversation. It did the same for Rowe. Her own topic, *The seat sent me for you.* (*…Tell them Rowe's coming — and tell them who found her.*), could never be reached. The find still completes on E, and for the rival her dialogue now opens instead of the stock line.
+- **A finished service was paid twice.** *It's done.* turns in the lord's own job, and it took the first open quest from the site, which can be the faction's service. In the run before the fix it paid the sixth service's 52 gold as a town job (favour +1). *Serve the Crown.* then found the same quest done and paid it again with the rank. *It's done.* now looks only at the lord's own jobs, and says *You've nothing from me to finish.* when the open quest is a service.
+- **The lord's own job became the service.** `factionQuestFor` dresses a fresh town quest in the service's words, but `townQuestFor` first returns any job open from that site. Asked for the sixth service with the lord's own job in hand (*My mother's ring*, *The road out of Coeur de Vie*), the lord handed that job back as the service, unflavoured, with no faction. Turning it in counted a service, so *Where Is Warden Rowe?* was skipped for good. The same lookup is why *I'm looking for work.* could hand you the faction's service. `townQuestFor` now takes the job in hand only from quests that are not a faction's, and a service asks for a fresh one.
+
+No line was added or changed. Every word the player now sees was already written for that moment.
+
+### Verified (headless Chromium)
+`rowebeats` 15/15 (new). Before the fourth service, Rowe stands at Coeur de Vie: *Commissioner, is it? I'm Warden of Roads.* She stays while *The Old Survey* is open and is gone before the sixth. The sixth is *Where Is Warden Rowe?* (*Rowe rode out three days ago…*). Walked west to the spot, she is there, and E opens her dialogue. *The seat sent me for you.* gives her line, and the service is done. *It's done.* pays 0 and leaves the service open. *Serve* names you Warden of Roads and pays once (62). The ninth is *The Silent Survey*: walked onto the marker, it is taken. Turned in, you are Knight of the Gates with *They were etching, Knight.*, and Rowe is at the seat with *Knight. I heard about the survey team.* and *What now, Rowe?*. With the lord's road job open, *Serve* still gives *Where Is Warden Rowe?* as service 5 of the Crown, and the road job stays open beside it. On the code before Session 457 (a `git archive` copy under `--src`) the suite fails the four checks the fixes are for. Found: E opened no dialogue. *It's done.* paid 52 and turned the service in. The lord's job *My mother's ring* came back as the service. `crime4`, `duel` (2/2), `duelrhythm`, `penance`, `questfoes`, `questgold`, `theftlevel1` and `blacksail` pass. `parsecheck` is clean. Build tag s392.
+
+### Needs eyes
+Rowe found on the land greets you with the townsfolk's stock *Good to see a new face. Truly.* before you ask her anything (her body is Markish, her greeting is not hers). It is the quest writer's to give her one; nothing is changed here. The League's line (Caer Slige) shares this code. Its sixth service, *Where Is Rowe?*, was not walked.
+
+## v80 — Session 459 — A cell unloaded part-way through its load left a door with no position
+Pushed with Session 458, `blacksail` failed twice in five runs. At Beaurouge the quay never built, and one error repeated every frame: *Cannot read properties of undefined (reading 'x')*, in `drawLocalMap` (the minimap). A door in `DOORS` had no entry in `dungeonWorldPos`. The throw cut the frame short every frame, so the town's load jobs never ran. A sweep found one seed shared by two doors (797152, cells 2,2 and 7,7). Neither cell is near Fortargent, so that was not it.
+
+The cause is the job queue. `tickCells` loads the 3×3 cells round you as one job per cell, a step at a time, two jobs a frame. When you leave in one step (a ferry, fast travel, or the tests' moves), the next cell tick unloads the cells left behind, whether or not their jobs have finished. `unloadCell` cleans up what the cell has recorded so far, but the job stayed in the queue and ran its remaining steps into the dropped record. Those steps place the cell's doors in `DOORS` with positions, where nothing listed would ever remove them. Loaded again, the cell placed them a second time. The next unload deleted the shared position and one of the two entries, and the other stayed in `DOORS` with no position. From then on, everything that walks `DOORS` reads `.x` of nothing: the minimap, and `tickDiscovery` inside `WORLD.tick`. Each load job now keeps the record it started. If the cell has been unloaded, or loaded again under a new record, the job stops. The statics job does the same.
+
+### Verified (headless Chromium)
+`cellrace` 6/6 (new). A far cell (1,1, 11 doors) is caught three times listed, its job begun, none of its doors placed (after 9–23 frames). It is unloaded there and then, as a cell tick would after a ferry, and you go home. Its job places none of its doors after that. Loaded again in full, each door is in `DOORS` once. Unloaded again, none is left behind, and the minimap draws there and at home without an error. On the code before Session 457 the suite stops on the first run: `WORLD.tick` throws in `tickDiscovery` reading `.x` of an undefined position, the same error as at Beaurouge. Run together after the change: `blacksail`, `cellrace`, `drydoors` and `rowebeats` pass. `parsecheck` is clean. The shard table lists `cellrace` at 90 s. Build tag s393.
+
+### Needs eyes
+In play this showed as a world that stops building after a ferry or a fast travel taken soon after another: towns not appearing and the minimap frozen. Michael may have seen it without a way to name it. Whether it comes back after this fix is for play to show. `blacksail` failed two of five runs before the fix, so CI will show it too.
+
+## v80 — Session 460 — Rowe along the League's and the Compact's lines, played through (backlog G)
+Session 458 walked Rowe's beats along the Crown's line and fixed three faults where the lord's own work and the faction's service meet. It left the other two lines owed: *The League's line (Caer Slige) shares this code. Its sixth service, Where Is Rowe?, was not walked.* This session walks both, the League at Caer Slige (a Mark town promoted to the seat, Reeve Wulfstan) and the Compact at Fortargent (Prior Bertrand), the way Session 458 walked the Crown's. The services are asked and turned in through the lord's own dialogue, Rowe is spoken to with E in front of her, and the land is walked to where the journal sends you.
+
+Both lines hold. Before the fourth service Rowe stands at the seat a rank above you, in her line's words (*Sworn, is it? I'm Reeve. They gave me the coast road…*; *Clerk, is it? I'm Factor. The Church counts in fortnights…*). The fourth service is the authored one, and she stays while it is open. Before the sixth she is gone, and the lord gives the authored brief as a find for her. Walked out, E opens her dialogue, *The seat sent me for you.* gives her line, and the find is done. *It's done.* leaves the service alone, and *Serve* turns it in once and names the second rank. With the lord's own job in hand, *Serve* still gives the sixth service and leaves the job open beside it. No game code was changed; the new suite stands guard over Session 458's fixes on the two lines that had no test.
+
+### Verified (headless Chromium)
+`rowelines` 13/13 (new). League: Rowe greets a Sworn as Reeve; *The Reeve's Seal* given (82 gold); before the sixth she is not at the seat; *Where Is Rowe?* sends you north of Caer Slige (55 gold); found there with E; *It's done.* says *You've nothing from me to finish.* and pays 0; *Serve* names you Reeve and pays 55 once; with the lord's *The reeve's seal* open, *Serve* gives *Where Is Rowe?* as service 5. Compact: the same beats at Fortargent, *What the Sea Gave Back* (60 gold), *Where Is Factor Rowe?* south-west (40 gold), Factor paid 40 once, and *Serve* gives the sixth beside the lord's letter for Elder Amaury. No page errors. `parsecheck` is clean. The shard table lists `rowelines` at 240 s. Build tag s394.
+
+### Needs eyes
+For the quest writer, nothing changed here. Rowe found on the land greets you with a townsperson's stock line (*You're not from the Mark. Fine.* in the Mark, *You. Good.* in Aurenne), carries the townsfolk's folders (*Where can I find …*, *About this place …*), and says goodbye with a stock *Come back and tell me how it went.* (Session 458 noted the greeting for the Crown). The Compact's brief says Rowe *went to a gate the Church had sealed … don't touch the seal*, and the generator's half that follows sends you to *a camp out that way* on open ground: there is no gate and no seal where she sits. The League's *went up the hill road* sits beside *went out north*, which reads fine. The fourth service's target can be a doubled fort name (*Montmont Tower*), already raised by Session 445.
+
+## v80 — Session 461 — Rowe found on the land, her three briefs and the Prior's turn-in, in their own words (register fix, quest review run 7, Findings 10–12)
+The quest review's run 7 (on `auto/quests`, PR #129) filed four findings against this branch, raised from Sessions 445, 458 and 460's notes. This session applies the first three as written, all in the faction lines in the world module. Finding 13 (the doubled names) is the next session.
+
+- **Finding 10.** Rowe found on the land was made as a *Villager* from the seat's site, so she greeted with the Villager pool (*Fine day for it.*), carried the townsperson's topics and folders (*What is this place?* answered with the blurb of a seat three days off), and showed *Villager* under her name. She now shows her rank (*Warden*, *Reeve* or *Factor* by the line), greets with *Aye. Thought it'd be you. Sit, if you're stopping — I'm not getting up yet.*, and offers only *The seat sent me for you.* (unchanged) and *Farewell.*. The greeting and the topics are getters made by `dialogFor`, so both are redefined on her def after it is made. The engine's own first-meeting line (*My name is …*) still shows, as it does for everyone.
+- **Finding 11.** `factionQuestFor` appended the town find's own words to the authored brief, so each *Where is Rowe?* said *three days* or *Find her* twice, and the Compact's sent you to a sealed gate whose seal was not there. A rival find's description is now the brief alone, with the compass word from the seat to her spot. The three briefs are the review's text.
+- **Finding 12.** The Black Sail's after-line handed over the house and the ship, called Rowe *cold-eyes* (the word for the Old Blood; she is a Markman) and hedged *they say*. It is now the review's Aurennais line, and the Compact's claim answers *Entered in your name, Prior: the house, and the ship at the quay.* The Crown's and the League's stay *It's yours.*
+
+### Verified (headless Chromium)
+`rowelines` 17/17 (two new checks), `rowebeats` 14/14 (one new), `blacksail` 15/15 (two expectations moved to the new text). The briefs, as the lords say them: *Rowe rode out west three days ago on Crown business…* (Coeur de Vie, objective *west of Coeur de Vie*), *Rowe took the hill road north, alone…* (Caer Slige, *north*), *Factor Rowe went south-west to look at a gate the Church had sealed…* (Fortargent, *south-west*); each says *three days* at most once and none says *Find her*. Found on each line, E opens her dialogue under *Warden*, *Reeve* and *Factor*, with the new greeting and her one topic and *Farewell.*; the find completes on E as before. The Prior's turn-in reads the new after-line, and the claim the new answer, with and without a ship. No page errors. `parsecheck` clean. Build tag s395.
+
+### Needs eyes
+For the quest writer, outside the findings and not changed: the rank-up still ends *There's a house and a ship in it, when you want it.* straight after the new after-line says the same; and Rowe standing at a seat shows no role under her name. Found while testing, for a later session: a Rowe found on the land is never taken away, so after the League's find a second Rowe still sits north of Caer Slige when you are sent for her by the Compact, and E on the old one completes the new find (the test now meets the Rowe of the open quest).
+
+## v80 — Session 462 — Forts, peaks, lakes and gates no longer say a word twice (register fix, quest review run 7, Finding 13)
+Finding 8 (Session 442) renamed a place whose two halves were the same word, but nothing renamed the other names `genName` gives: a fort (*Montmont Tower*, *Ardard Watch*), a peak (*Mont Montmont*), a lake. The generated gates' names, from `dungeonName`, doubled the same way: *The Lost Chasm of the Lost*, *The Deep Depths of the Deep*, *The Ruined Ruin of Ash*. Session 445 raised it, and the quest review's run 7 filed it as Finding 13 with the code. It is applied as written. `genName` steps to the next second half when the first would repeat it. `dungeonName` steps to the next noun when it begins as the prefix does (*Depths* counts as *deep*), and to the next suffix while a word of it repeats one already said. Neither draws anything new, so a name that did not double is unchanged. A save keeps its ids, and an etched gate already in `worldState.story.gates` keeps the name it was given.
+
+### Verified (headless Chromium)
+`doublenames` 5/5 (new). Over gate seeds 0–4,999 in all six themes (30,000 names), the old namer, copied into the test from the build before the session, doubles a word in 552. The new one doubles none. Exactly those 552 change, and none that read well before (*The Lost Chasm of the Lost* → *of Silence*, *The Deep Depths of the Deep* → *The Deep Abyss of Ash*, *The Ruined Ruin of Ash* → *The Ruined Remnant of Ash*). Across every generated cell of the 12 × 12 grid (home's authored cell left out), 229 forts, 60 peaks and 42 lakes hold no doubled word. On the code before this session (a `git archive` copy under `--src`) the suite fails three checks: 552 doubled gate names, and *Montmont Tower* twice among the forts. `placenames` (610 places, all unique), `featurenames` and `innvoice` pass. `parsecheck` clean. The shard table lists `doublenames` at 60 s. Build tag s396.
+
+### Needs eyes
+Nothing to see unless a save holds one of the renamed forts or gates: its name on the map and in the journal reads the new form. A peak can still begin with its people's word and a name that starts the same (*Mont Montclair*). It is not a doubled half, and the finding does not ask for it.
+
+## v80 — Session 463 — A Rowe found on the land is no longer left sitting there
+Found while testing Session 461. Session 128 has Hesket Rowe found out on the land at the sixth service and back at the seat a rank ahead of you afterwards. The find spawns her by the camp, and nothing ever took her away. Once the service was turned in she sat on where she was found for as long as the cell stayed loaded. In `rowelines`, where one character serves the League and then the Compact, the League's Rowe was still sitting north of Caer Slige when the Compact sent you after her. The test's walk to *a Rowe on the land* reached the old one, and E on her completed the Compact's find, because `qOnTalk` matches a find by name. She was also at the seat by then, so the world held two of her. `qTurnIn` now takes a rival find's Rowe out of the scene when the find is turned in at the seat, far from where she sat, as the other story people are taken (`duelRemoveNpc`). A save made between finding and turning in keeps the found flag, so she does not come back. A villager's find is not changed.
+
+### Verified (headless Chromium)
+`rowelines` 19/19 (two new checks). After each line's sixth is turned in, no Rowe is left where she was found. The Compact's find is met with the same plain search for *a Rowe on the land* that Session 460 used (Session 461 had narrowed it to the open quest's Rowe), and it meets the Factor. On the code before this session (a `git archive` copy under `--src`) it fails the three checks the fix is for. The League's Rowe still sits at (10750, 6294) after her turn-in. The Compact's find meets her, under *Reeve*. After the Compact's turn-in two Rowes are left. `rowebeats` 14/14, `blacksail` 15/15 and `questgold` pass. `parsecheck` clean. Build tag s397.
+
+### Needs eyes
+Nothing to see in a single faction's run, unless you walk back to where you found her: she is gone once you have reported. A lost villager found for a town job also stays sitting where you found them (*Home? Yes. Yes, all right.*); that is older and was not touched.
+
+## v80 — Session 464 — The duel on the yard at Caer Slige, played through (backlog G)
+The last faction beat G still owed in real play: *the duel on the yard*. Session 373 built it. `duel` checks its endings by calling the sergeant's topics and setting Rowe's health, and `duelrhythm` measures the yield with Rowe held still. Neither fights her. This session plays the League's ninth service the way a player does. *The Duel at Caer Slige* is asked through Reeve Wulfstan's own dialogue. The ring is walked to at eight. Rowe and the yard-sergeant are spoken to with E, and *Call it.* is clicked in his dialogue. The fight runs on the game's own loop at fixed 1/60 ticks with the draw held off, and Rowe strikes back by her own tick. The player's bot stands its ground at arm's length and steps in when she is out of reach. It power-attacks her raised guard and swings at an open one, says *Not yet.* when she offers the yield, and stops when she kneels. A new character fights on its own stamina. A week on, the rematch is at level 8 with an iron sword, the stamina kept full (a stand-in for the blocks and rolls a bot does not make).
+
+Every beat holds on both endings, and no game code was changed. Down in the ring at 1 health, the yard acclaims Rowe. The lord says the ring goes up again in seven days, then *Not yet. A week, I said.*, and Rowe holds the chair at the seat for the week. A week on, the ring is laid again. Won, she kneels, is spared, stands with *Good fight. I was a step slow on the left…*, and the lord names you Captain with the after-line. Rowe is at the seat with the Captain's line.
+
+Two things the fight showed:
+- **A bot that re-placed itself at arm's length every frame was never struck.** In the first runs, 67 s and then 240 s passed with no blow from Rowe. Standing still in front of her, she strikes every two seconds for 13–15. The bot's endless step back kept her chasing, and she never wound up. A player walking backwards at that pace is not a fair test, so the bot now stands its ground. Her AI is not at fault.
+- **An exhausted power attack still breaks a guard.** The same first run mashed the power attack on an empty bar and won without being hit. Since v80 S9 an exhausted swing lands at 45%, but the Shieldbearer's guard break (v65) does not look at it. Standing still and mashing, a level-1 character beats Rowe in about 45 s and takes 4 blows (54 of 130), with 39 of 42 swings exhausted. Fighting on its stamina, the same character lands 3 swings in 21 s and goes down. Whether that should stand is a rule of combat, so it is filed as DECISION #131 (A an exhausted power attack does not break the guard (recommended), B the stagger halved, C leave it). The same rule holds for every Bandit Captain and siege captain.
+
+### Verified (headless Chromium)
+`yardplay` 15/15 (new). Wulfstan gives the duel through his own dialogue (*The ring's laid east of the walls from first light*). At eight the ring stands: 24 stakes and rope lengths, a yard-sergeant (*Rowe's been in there since first light*, *The rules?*, *Call it.*), 7 watchers, and Rowe with her greeting by your people. *Call it.* gives *Rope's up.*, and she is a Bandit Captain under her own name, 62 health, guard up. The level-1 fight on its own stamina: 3 swings, 2 landing (62 → 47), 10 blows taken, the yield offered and refused, down at 1 health after 21.4 s. The ending is *lost*, Rowe is *captain*, and you are not dead. The lord's two lines come in order, and Rowe sits at the seat for the week. Seven days on, the ring is laid and the sergeant will call it. The level-8 rematch (260 health, Iron Sword, Rowe scaled to 127): the guard breaks, the finisher takes her to 31, and she yields at 1.7 s. Spared for three seconds, the fight is *won*, and Rowe is *alive* with her line. Turned in: *The Captains' League names you Captain. Acclaimed. Rowe says you fought well…*, nine services, rank 3, 240 gold. Rowe is at the seat with *Captain. Took me a week to stop favouring the left.* and *What now, Rowe?*. No page errors. The probe for #131 is the same setup with the player standing still and the power attack mashed: 130 → 76 health in 40 s, the fight over by 45 s. `parsecheck` clean. The shard table lists `yardplay` at 330 s. Build tag s398.
+
+### Needs eyes
+The fight itself at a real frame rate. Whether a level-1 character going down in 21 s, landing 3 swings, is the ninth service's weight (a player at the ninth service is rarely level 1, and Rowe scales with you: 62 health at level 1, 127 at level 8). The tells, blocks and rolls a player has, which the bot does not use. #131.
+
+## v80 — Session 465 — CI on 0fbebd9: two suites waited on the real clock, and the ragdoll's throw is a draw
+CI on the branch's head before this run (0fbebd9, Session 460) failed three shards, one suite each. All three passed here, even run side by side, so each was read for what it waits on.
+- **`fortwalk`** (shard 4): the sixth fort, Carrigbeg Watch, went down but read *dungeon* after the way back up. The suite pressed E and then waited a fixed 3.5 s of real time, called `goToOW` and waited a fixed 4 s, then read `activeZoneId`. The fade and the build behind it run on frames, and on a loaded runner they ran past the fixed wait. Both steps now wait for the zone itself to change (`waitForFunction`, up to 60 s).
+- **`q7world`** (shard 5): the Faolchú was left at 5 health, and the Mark, Bram, Edna and Aldwyn checks after it failed with it. The fight swung on real frames. On the runner a frame of this fight takes seconds, and the beast moves between the swing and its blow, so twelve swings all missed. Session 401 and Session 428 each widened the same wait; the frames were still the clock. The swings are now driven by the game's own loop at fixed 1/60 ticks with the draw held off, as `duelrhythm` has done since Session 423, up to 30 s of game time.
+- **`ragdoll`** (shard 2): a dungeon Skeleton thrown at a wall had not settled by itself before the four-second cap. The physics steps on `dt` alone and is not the clock's. But `ragdollFoe` draws the throw's strength at random (1.8–2.6, 3.2–4.0 for a power blow). Killed at that wall ten times, the bodies come to rest after 1.28–3.52 s, and two came within half a second of the cap. An unlucky draw passes it and freezes there, which is the designed fallback, and the check counts that as a failure. That code and suite are the look builder's (section H, Sessions 414–435), so they are not changed here. Proposed for them: the suite seeds `Math.random` for the dungeon kill, or the check accepts a body frozen at the cap with its joints already still.
+
+### Verified (headless Chromium)
+`fortwalk` 3/3 (all six forts down and back out), `q7world` passes (the Faolchú *dead*, *defeated*, its bar shown, the Mark on its body, its wolves gone, then the Mark, Bram, Edna and Aldwyn). The ragdoll probe: 10 of 10 settled in 1.28–3.52 s at the suite's wall (10, 2), with no game code changed. `parsecheck` clean. Build tag s399.
+
+### Needs eyes
+Nothing in the game changed. CI on this run's head will show whether the two suites hold on the runner. The ragdoll's tail is for the look builder.
 ## v80 — Session 456 — Two saves: the character and the world (Fable, Michael's A on #119)
 Michael chose A on the designer's online-play question (DECISION #119, 3 Oct): keep the door open for co-op, build nothing networked. This is the Fable half of that: the save splits into a character row and a world row, and CLAUDE.md gains the rules every later session follows. The Opus half (the seeded rolls, `targetOf`) is filed in backlog K. The card is `fable/co-op-door` on the control room; the branch `auto/fable-co-op-door`.
 
@@ -10979,6 +11466,183 @@ Existing suites run here, all green: `saves`, `export`, `saveui`, `autosave`, `d
 - Which side standing, crime, favour and the Church's notes belong to in a shared world (they went with the character here, houses and the ship with the world) is the designer's to settle before the co-op build; moving a key is a list change.
 - A character file imported without its world starts in a fresh world. The message says so twice. Whether that is a trap for someone moving machines, or the right shape, is a playtest question.
 
+## v80 — Session 467 — The Compact refits a Prior's own ship (Michael's B on #128)
+The Compact's rank-3 claim is *a house and a ship*, and the lord says *the house, and the ship at the quay*. Session 457 made it moor a sloop for a Prior with no ship. The game holds one ship per player, so a Prior who already owned one got nothing for the ship half, and DECISION #128 asked what they should get. Michael chose B, a free refit: the ship is mended and raised one class.
+
+`grantShip` now hands a Prior who has a ship to `compactRefit` (`80-world.js`). A sloop becomes a cog and a cog a galleon, with hull and rig full at the new class. The hull mesh is rebuilt at the new size where the ship lies, through the same `applyShipClass` the shipwright's paid refit uses. She is not moved: the decision's option was a refit, not a fetch, and moving a ship a player left somewhere would lose it for them. A galleon is only mended. The sails and hold tiers are kept. The log says *The Compact refitted the* SHIP *as a cog, mended.* or *The Compact mended the* SHIP*.* No gold changes hands.
+
+The decision did not cover a sunk ship, so I followed the rule's own words: mended means made whole. A sunk ship is raised free by the shipwright nearest her wreck, on the paid raise's terms (three days, then she lies at his quay), and comes up a class up. A ship already being raised comes up a class up as well. The log says *The Compact is raising the* SHIP *and refitting her as a cog.* The lord's line is unchanged. It is still not quite true when the ship lies elsewhere, and a new line would be the quest writer's.
+
+### Verified (headless Chromium)
+`compactrefit` 11/11 (new). At Fortargent the claim is clicked in the lord's own dialogue. A sloop at hull 40 and rig 55, moored 420 units off, becomes a cog at hull 140/140 and rig 100. The mesh goes from 13×4.4 to 17×5.6 at the same spot, and gold stays at 500. The claim again (the flag reset by hand) turns a cog at hull 10 into a galleon (22×7, hull 200). A galleon at hull 77 and rig 3 stays a galleon and is mended. Sunk at sea, she is raised at Beaurouge, the nearest harbour to the wreck, due in exactly 4,320 minutes, as a cog. Three game days on she lies at its quay as a cog with hull 140. With no ship at all, the claim still moors a sloop. No page errors. `blacksail` passes (its *your ship stays where she is* check still holds), and so do `shipwright` and `shipwrightvoice`. `parsecheck` clean. Build tag s400.
+
+**Renumbered.** This entry was first pushed as Session 466 (commit message included). The look builder's Session 466 on auto/backlog came 35 minutes earlier, so this one is 467.
+
+### Needs eyes
+The refit happens off-screen. A Prior whose ship lies at another harbour gets only the log line, and the lord still says *the ship at the quay*. Whether the line should change for this case (for example *your ship is refitted under your name*) is for the quest writer or the review.
+
+## v80 — Session 468 — Foes pick their target through `targetOf(e)` (backlog K, the co-op door's Opus half, step 2)
+CLAUDE.md's co-op rules (Michael's A on #119, Session 456) say a foe picks its target through one function, `targetOf(e)`, and not by reading `px`/`pz`. Then a co-op build can return the nearest of the party in one place and every foe follows. The rule was written for new code, and backlog K left moving the existing ticks over to an Opus session. This is that move for the two foe ticks. Nothing in play changes.
+
+`targetOf(e)` is in `10-player.js`, beside `px`/`pz`. Solo it returns `PLAYER_TARGET`, an object whose `x` and `z` are getters on `px` and `pz`. The tick reads your position live, as before, and no object is made per foe per frame. The open world's `tickZoneEnemies` (`42-zone-enemies.js`) takes `const T=targetOf(e)` at the top of each foe's turn and reads `T.x`/`T.z` wherever it read `px`/`pz`, ten lines in all: the distance, the boss's charge and its leap, the line of sight, the chase, the pack's flank, the facing, and the stamped yaw at the wind-up. An archer's `fireZoneArrow` aims at `targetOf(e)`. The dungeon's foe pass in the loop (`90-main.js`) does the same on twelve lines: the distance, the line of sight, the stagger's facing, the backing away, the path, the lunge, the drain, the push and the wind-up's yaw. Neither range assigns `px` or `pz`, which was checked before the replace, and no `T` is declared anywhere inside them.
+
+Some reads were left as they are because they are the player's side, not a foe's choice. `62-actions.js`'s twelve (named in K as foe targeting) are your own bash, your swing's arc, your arrow's spawn point and the minimap. The hit tests of a foe's arrow, fireball and slam against you belong to whoever is hit, and so does the boss bar. `canSeePlayer` takes the distance it is given. The 195 reads in `80-world.js` (the trailing guard, boarders, town creatures) were not audited. A guard drawn on you is a zone foe and goes through the tick above. All of this is noted in K.
+
+### Verified (headless Chromium)
+`targetof` 7/7 (new). Solo, `targetOf` is you, read live: moved by 3 and −2, it reads the same as `px`/`pz`, and every foe gets the same object. In the open world a Bandit set six units north of you, alert, closes from 6 to 2.95 in 120 ticks and faces you. With `targetOf` pointed at a decoy six units beyond him, he goes to it, 6 to 2.95, and you are left at 9.05 with his back to you (facing error 3.14). An archer's arrow at a decoy south-east flies along (0.71, 0.71) where at you it would fly due south. In a dungeon a Skeleton four units from you closes to 2.46 in 90 ticks, and pointed at a decoy on its other side, it goes there (4 to 2.46) and away from you (5.54). No page errors. `fistfight` 6/6, `masterslam` 16/16, `cowards` 11/11 and `duelrhythm` 10/10 pass unchanged. `parsecheck` clean. Build tag s401.
+
+### Needs eyes
+Nothing: fights should be exactly as before. If a foe ever ignores you or swings at empty air, this is the first place to look.
+
+## v80 — Session 470 — CI on 8a61fea: `rowelines` read Fortargent before it was built, and `coopsaves` waited a fixed pause (CI fix, tests only)
+CI on the Systems sessions PR (head `8a61fea`) went red in two shards. In shard 5 `rowelines` played the League's line at Caer Slige through, then threw at the Compact's first step: `Cannot read properties of undefined (reading 'lordNpc')`. Its `home()` calls `g.settle(seat.id)` and then reads `WORLD.settle.get(id)`. `g.settle` waits at most 24 × 2.5 s for the place to build and then carries on whether it has or not. Fortargent is a city at the far side of the continent from Caer Slige, and on that runner it was not built within the minute. Here the suite passes as it was. The test now waits for the place itself after `g.settle` (up to three minutes) before it reads it, so a slow build is waited out and a place that never builds fails on the wait, not on a property read. `g.settle` is unchanged, because every suite shares it.
+
+In shard 2 `coopsaves` failed. That is the fixed 1.5 s pause after `saveToSlot`, which the look builder's Session 469 (auto/backlog, `ce6c905`) fixed by awaiting the write itself. The same change was ported here, along with that session's `duel` fix (a wait on the yield's state instead of 1.6 s). Both no-op once auto/backlog's merge carries them. No game code changed.
+
+### Verified (headless Chromium)
+`rowelines` 19/19 (twice), `coopsaves`, `duel` and `duelrhythm` pass. `parsecheck` clean. Build tag s402.
+
+### Needs eyes
+Nothing. If `rowelines` times out on its new wait, Fortargent is not building at all, which would be a real fault.
+
+## v80 — Session 471 — Loot rolls on a seeded stream keyed by place and id (backlog K, the co-op door's Opus half, step 1: `14-items.js`)
+CLAUDE.md's co-op rules (Michael's A on #119) say a roll that decides an outcome comes from a seeded stream keyed by place and id, so that a host and a guest who agree on the key roll the same chest. Backlog K's first step counted 20 `Math.random` calls in `14-items.js`, all outcomes: the book, the herb, the gold, the loot's kind, tier, slot and enchant, the spellbook's 7%, and the container counts. This session moves all of them (22 calls; some lines hold two) onto one stream. It does not touch the foes' rolls in `42-zone-enemies.js` or the dungeon's placement, which are the rest of the step.
+
+`14-items.js` now has `seededRng(place, id)`, a string hash into a 32-bit generator, and every loot roll draws from `lootRand()`. That is `Math.random` unless a stream is set. `rollContainerLoot` takes a fifth argument, `key`, and with one it runs the whole roll on `seededRng('loot', key)` and clears the stream after, so a nested roll and any later unkeyed one are unaffected. A caller with no key gets exactly the old behaviour. Keys follow the rule's shape (place and index), given only where the container already has a place:
+- a town's barrels and crates: `<site>:barrel:<i>:<day>`, with `i` the order the site's own seeded builder lays them;
+- a wreck's sea chest: `wreck:<chunk>:<day>`;
+- a lair's hoard and a bandit camp's takings: `<site>:chest:<day>`;
+- a tower's hoard: `tower:<house id>`.
+
+The first three are not saved as opened and refill whenever their place is built again, as before. The game day in the key (`lootDay()`, from the world's clock, which is in the world row) keeps that refill. Rebuilt within one day, a place now holds what it held that morning, where before it was re-rolled on every rebuild. That is the rule working: a reload is no longer a re-roll. The tower's hoard is saved as taken, so it needs no day. Corpses, the dungeon's chests, barrels and shelves, and a ship's chest have no id yet (step 3), so they stay on `Math.random` through the same code, unkeyed.
+
+Found while testing, and left for its own session: the world's containers pass a number (1, 1.4, 1.8, 2.4) where `rollLoot` reads `diffScale.hp`. The result is NaN, so every roll takes the equipment branch at tier 1. A town barrel, which keeps only everyday goods, then always falls back to the town's own candle-and-rope list, and a hoard holds nothing but tier-1 arms. The test saw it: Portclare's two barrels were rolled on their keys, but every item they rolled was equipment.
+
+### Verified (headless Chromium)
+`lootseed` 7/7 (new). `seededRng` gives the same draws for the same key and others for another, all in [0, 1). A treasure chest keyed 40 ways rolls the same contents twice for every key (40/40), 34 different hoards in all, and leaves no stream set. Unkeyed, 40 of 40 pairs differ. The odds are unchanged over 3,000 chests each way: 1.47 items a chest keyed against 1.50 random, empty 9.9% against 8.1%, gold 0.19 against 0.19, equipment 0.47 against 0.49. In Portclare, built after a spy was set on `rollContainerLoot`, both barrels were rolled on `portclare:barrel:0:0` and `…:1:0` in order, each key rolls the same contents again, and the next day's key rolls other contents for one of the two. No page errors. The suites that open these containers pass unchanged: `foearmour` 9, `locks` (three suites) 29, `oddfurn` 7, `piratehold` 16, `theft` (two) 9, `wreck` 6. `parsecheck` clean. Build tag s403.
+
+### Needs eyes
+Nothing in play, bar a town's barrels holding the same things if you leave and come back the same day.
+
+## v80 — Session 472 — The world's barrels, wrecks and hoards rolled tier-1 arms and nothing else
+Found in Session 471's test. The world's containers call `rollContainerLoot` with a number for the difficulty: 1 for a town's barrels and crates, 1.4 for a wreck's sea chest, 1.2 and 1.8 for a merchantman's and a black sail's chest, 2.4 for a tower's hoard, and 2.2 and 1.6 for a lair's hoard and a camp's takings. `rollLoot` reads `diffScale.hp`, and a number has none. The chance of arms came out NaN, so every roll took the arms branch (`roll > NaN` is false). The tier cap came out NaN too, every material's weight was zero, and the tier fell through to 1. So a town barrel, which keeps only everyday goods, threw every roll away and always fell back to the town's own list (the candle, the rope, the salt). A wreck's chest or a lair's hoard held tier-1 arms and the odd spellbook, never gold or a potion, whatever your level. The numbers were plainly meant as the difficulty: the wreck's entry (`rollContainerLoot('chest',1.4)`) and the hoards' multipliers rise with the danger of the place. `rollLoot` now reads a number as `{hp: number}`. A dungeon passes its own `{hp}` object and is unchanged.
+
+### Verified (headless Chromium)
+`worldloot` 5/5 (new), over 1,500 keyed rolls of each kind at level 5. On the old code it fails all four checks: a town barrel's 710 items were 100% arms (0 goods, 0 gold), a wreck's 2,177 were 96% arms, a hoard's 2,529 96%, all tier 1. Now a 1.4 chest rolls exactly what a `{hp: 1.4}` chest rolls, key for key. A town barrel's 720 items are 388 goods, 40 of them gold. A wreck's chest holds 42% arms up to tier 4, and a hoard 51% up to tier 5, beside a dungeon chest's 40% up to tier 4. `lootseed`, `piratehold`, `wreck` and `oddfurn` pass. `parsecheck` clean. Build tag s404.
+
+### Needs eyes
+Whether a town's barrels now give too much: 1,500 barrels now hold 388 potions, herbs, torches and purses between them, where before they held only the town's own fallback goods. Hoards and wrecks now pay in gold and potions as well as arms, and their arms rise with your level.
+
+## v80 — Session 473 — A ship moored at a quay lies bow to the sea (backlog I, the critic's 4 Oct playtest)
+The critic bought a ship from Lonán at Portclare, took the wheel and held W. She struck the quay's shallows in three seconds: *Hull −22*. A ship's forward is (−sin yaw, −cos yaw). `buyShip` turned her to `atan2(sd.dx, sd.dz)`, where `sd` is the shore direction from the site to its sea edge, so her bow pointed at the land. The Compact's grant of a sloop (Session 457) copied the same line. *Fetch her to this harbour* and the shipwright's raise used `atan2(−sd.dz, −sd.dx) + π/2`. That is seaward on an east or west shore but faces the land on a north or south one. All four now take one helper, `seawardYaw(sd)` = `atan2(−sd.dx, −sd.dz)`. Where she lies is unchanged, beside the quay's seaward end. A ship already moored in a save keeps the heading it was saved with.
+
+The critic filed this on auto/critic (PR #135), not yet on main. The struck line in section I here carries the same title, so the two merge side by side.
+
+**Correction.** Session 467's entry says `compactrefit` 11/11. The suite has ten checks, and all ten pass.
+
+### Verified (headless Chromium)
+`shipmoor` 3/3 (new). Bought at Portclare, her bow points to deeper water: −8 at 15 and 30 units ahead, −6.3 and −4.0 astern. The old code had those the other way round. With the wheel taken and W held for fifteen seconds of the game's tick, she sails 103 units out at 7.5 with her hull at 100. On the old code she stops after 30 units with *Aground — she strikes the shallows. Hull −22.*, the critic's report to the point. `shipwreck` 16/16 (the raise at Portclare), `compactrefit` 10/10 (the grant and the refit), `shipwright` 27/27. `parsecheck` clean. Build tag s405.
+
+### Needs eyes
+The look of her bow-out berth beside the quay, and whether a raised or fetched ship at a north or south harbour now sits where it reads well.
+
+## v80 — Session 474 — A character loaded alone kept the running game's quests (backlog I, the critic's 4 Oct playtest)
+The critic moved the Hearthwick chain on in one game, imported a character file alone (no world row), and loaded it from the in-game save menu. The loaded character had the first game's `q0`/`q1` states. `_applyLoadData` lays the saved quests over the live ones (`Object.assign(QS, d.QS)`), and the fresh shape under them comes from `qsInit()`, which ran only when the page loaded. From the title nothing had been played, so a load looked fresh. From a running game, a character row has no `QS`, so every quest stayed as that game had it. The same was true of any quest a world row lacked (the code's own comment, *qsInit has already put them in QS*, assumed a fresh page). `_applyLoadData` now calls `qsInit()` before laying the saved quests on. The pre-v61aw migration further down marked Q0 complete whenever the save had no Q0, which a character row never has. It now applies only to a save that carries quests and lacks Q0, the case its comment describes. A character arriving in a fresh world starts the tutorial quest as a new game does, and it ticks on the first zone entry.
+
+### Verified (headless Chromium)
+`qsfresh` 4/4 (new). From a save made at the start (Q0 active, Q1 locked), play moves Q0 to complete and Q1 to active. The character row alone, loaded in that game, gives Q0 active and Q1 locked with no progress. The old code left them complete and active. With its world row, the saved quests come back. A world row lacking Q1 gives Q1 locked, as a new game has it; the old code left it complete. The old code fails both checks for the fix. `saves` 6/6 (its legacy migration included), `coopsaves` 21/21, `export` 6/6, `autosave` 7/7, `saveui` 13/13. `parsecheck` clean. Build tag s406.
+
+### Needs eyes
+Nothing in solo play: a save with both rows loads as before.
+
+## v80 — Session 475 — A save is labelled with its place, not "the open country" (backlog I, the critic's 4 Oct playtest)
+The critic saved in Dunmore's street, and the slot read *Lv1 · the open country*, as every open-world save did. The slot list's `zoneOf` read only the zone, and the whole continent is one zone, `world`. The save's `where` has coordinates, a house id or a gate's seed, but no name. A save now carries `placeName`, set when it is written by `ssPlaceName()` (`70-saves.js`):
+- In the open, it is the nearest loaded place: its name inside the place's pad and 40 beyond, *near* it within 1,500, and nothing past that.
+- Indoors, it is the house and its town. Indoors `activeZoneId` stays `world` and `px`/`pz` are the room's, so the house's `siteId` names the town.
+- Underground, it is the gate's name.
+
+The index entry keeps it as `place`. The slot list and the death screen's *Last save* line show it, and an old save without one keeps the old label. These are labels in the menu's own voice, built from names the world already gives. The critic's small note is fixed too: the export file's `build` was the literal `'s373'`, and it now reads the running tag from the controls line.
+
+### Verified (headless Chromium)
+`savelabel` 6/6 (new). A save in Dunmore's street reads *Lv1 · Dunmore* in the slot list. One 355 units from its middle reads *Lv1 · near Dunmore*. Indoors the place is *The Bramble Hearth, Dunmore*, and underground *The Lost Chasm of Silence*. An old entry with no place still reads *the open country*. `ssBuildTag()` is the controls line's tag (s406 at the time of the run). `saveui` 13/13, `export` 6/6, `coopsaves` 21/21, `autosave` 7/7, `saves` 6/6. `parsecheck` clean. Build tag s407.
+
+### Needs eyes
+Whether *near X* at up to 1,500 units reads right on a long road, where the nearest loaded place may be a shrine or a camp rather than a town.
+
+## v80 — Session 477 — A zone foe rolls its fight from its own stream (backlog K step 1, `42-zone-enemies.js`)
+Backlog K's step 1 moves every roll that decides an outcome onto a seeded stream keyed by place and id (CLAUDE.md's co-op rules, Michael's A on #119). Session 471 did `14-items.js`. This session does the open world's foes in `42-zone-enemies.js`. `keyFoe(e, id)` gives a foe an id and its own stream, `seededRng('foe', id)`. `foeRand(e)` draws from that stream, or from `Math.random` for a foe with no id. The draws moved onto it are the foe's blow (its 0–3 over its damage), its arrow's sting (the arrow carries its archer) and its next arrow's wait, the Faolchú's orb cooldown and the spot where its lessers appear, the pack's flank side and angle, and the spread of your swing on it. The phase offsets and the death burst stay `Math.random`, because they are cosmetic.
+
+Ids come from the place, never the position. A world chunk's foe is `<cx,cz>:<epoch>:<index>`, where the epoch is the chunk's 48-hour respawn epoch that `spawnChunkEncounters` already hashes its group, count and spots by. A shark is `<cx,cz>:<epoch>:shark`. The chunk's variant roll (veteran, champion…) was the one `Math.random` left in that spawn. It now draws from `seededRng('variant', id)` (`pickVariant` takes an optional stream), so the whole spawn is the same on two machines. The Faolchú is `ashenmoor:faolchu`, and its spawn spot is drawn from `seededRng('faolchu','spawn')`. The other spawners have no id to give yet, so they still roll `Math.random`: the town guard, camp, raid and siege bands, guild hunts, road ambushes, boarders, the duel's rival, the legacy zones and every dungeon foe. They are listed in backlog K. The edit in `80-world.js` is the two spawn lines in `spawnChunkEncounters`. The rest of that function is unchanged, so it should merge clean with the 80-world break-up.
+
+The odds are unchanged. A stream is uniform as `Math.random` is, and each draw sits where the old one did.
+
+### Verified (headless Chromium)
+`foeseed` 6/6 (new). After 30 frames at 1 a.m. near the start, 30 chunk foes stand in 13 chunks. Each has an id of its own chunk, epoch and index (30 ids for 30 foes) and a stream. 300 ids pick the same variant twice in 300, and 80 of them pick one at level 14. Two machines are stood in for by two Bandits built one after the other with one id. Five swings through `_resolveZoneStrike` with a 5–40 blade roll 13 37 7 16 21 on both. Another id rolls 19 29 17 32 17. Six blows of a keyed Bandit, by the loop's own tick, are 6 9 6 7 7 8 on both, and 9 7 7 7 8 7 for another id. A foe with no id still takes swings (15 16 19 38 10). An archer's arrow carries its archer. On the old code the suite fails at the ids (none of 33 foes had one) and the variant (192 of 300 alike), then throws.
+The fight suites pass unchanged: `faolchu` (green), `fistfight` 6/6, `posture` 20/20 (two suites), `postureregen` 8/8, `targetof` 7/7, `shark` 5/5, `lootseed` 7/7.
+`parsecheck` clean. Build tag s408.
+
+### Needs eyes
+Nothing in solo play. Fights roll from the same odds as before.
+
+## v80 — Session 478 — One gate's floor is the same on two machines (backlog K step 1, the dungeon)
+This continues Session 477 into the dungeons. A gate's floor was laid by `Math.random` in four places: the corner clusters of barrels and crates, the 8% L-corner chests, the storeroom chests and their shuffle, and the foes' spots. The foes' spots were a `sort(()=>Math.random()-.5)`, which is a biased shuffle and different on every entry. So one seed built different floors on two machines, and on two visits.
+
+`renderFloor` now draws every placement roll from `seededRng('dplace', dKeyOf(portal, floor))`. `dKeyOf` is the gate's seed and the floor; a hand-made dungeon with no seed uses its id or name. `spawnFloorEnemies` shuffles its candidate cells with a Fisher–Yates on `seededRng('dfoes', …)`. Each foe is keyed `<seed>:<floor>:<index>` through Session 477's `keyFoe`. Its variant comes from `seededRng('variant', id)`, and its first ranged wait and its patrol (wander or scan) from `seededRng('dspawn', id)`. Containers are keyed by place, index on the floor and the day, as the world's are (Session 471): `<seed>:<floor>:barrel:<n>:<day>`, `…:chest:<n>:<day>` and the fort library's `…:shelf:<n>:<day>`.
+
+The fight's rolls follow the foe. The dungeon foe's blow (`executeDungeonStrike`), the master's slam and its 8–10 s wait (`slamBlow`, `slamEvery(e)`, Session 404), and your swing's spread on a dungeon foe (`62-actions.js`) draw from `foeRand(e)`. A keyed foe's corpse, in the open or underground, rolls its loot on `<id>:corpse:<day>`.
+
+Cosmetic rolls stay `Math.random`: a barrel's turn, the rubble, torch flicker, the foes' faces and phase offsets. Still unkeyed: the spell and bow damage (rolled before a target is known), a slime's split, a black sail's chest, and the open world's spawners that give no id (the guard, camps, raids, hunts, ambushes, boarders, the duel). They are listed in backlog K.
+
+The odds are unchanged, except that the foes' shuffle is now unbiased. The old comparator sort favoured some cells; the spread is the same in kind.
+
+`56-dungeon-build.js` is in the look builder's area by the code map. The edits are the placement draws and the spawn's few lines, not meshes, and auto/backlog has none pending in that file.
+
+### Verified (headless Chromium)
+`dunseed` 8/8 (new). Two gates were each entered twice, with 137 `Math.random` draws stirred in between: Dowor Keep (goblin fort, seed 519737: 8 barrels and crates, 5 chests, 38 foes on two floors) and Iniskeel Gate (deep fort, seed 785107: 11, 5, 30). Both builds of each gate are the same: every container in place, with the same goods; every chest locked alike, with the same loot; every foe at the same spawn spot, of the same kind and variant, with the same patrol and ranged wait. Every foe has its own `<seed>:<floor>:<index>` id. Two dungeon foes with one id strike 19 10 10 19 16 18 and slam 22/32/22/28 at 8.0–9.0 s waits, the same on both. Another id rolls 10 16 18 15 15 9. A keyed Bandit killed twice leaves a Stamina Draught both times, and three other ids leave nothing, Gold Coins and a Bronze Buckler. On the old code all six of those checks fail: 9 against 18 barrels, 6 against 3 chests, and 38 against 31 foes on two entries. The neighbour suites pass: `chestpicks` 5/5, `mimicspots` 7/7, `masterslam` 16/16, `lootseed` 7/7, `foeseed` 6/6, `targetof` 7/7, `dungeonexit` 4/4. `parsecheck` clean. Build tag s409.
+
+### Needs eyes
+Nothing new by play. A gate entered twice in one day now gives the same chests, which it re-rolled before; their contents are as rich as before.
+
+## v80 — Session 479 — The foes that belong to a place are keyed by it (backlog K steps 1 and 3)
+This continues Sessions 477 and 478 to the open world's spawners that have a place to key by, all in `80-world.js` and each one line:
+- **`siteCreatures`**, a site's own foes: the lair's beast and its wolves, the beast lair's pack and the bandit camp's band. Each is `<site>:foe:<index>`, its index in that site's list, and its variant comes from `seededRng('variant', id)`.
+- **A siege camp's soldiers and a garrison's** are `<town>:siege:<k>` and `<town>:occupied:<k>`.
+- **A caravan ambush** is `caravan:<route>:<day>:<k>`. Its size, 3 or 4, was a `Math.random` coin. It is now `seededRng('ambush', <route>:<day>)`, because the size of a band is an outcome.
+
+Each foe is keyed through `keyFoe`, so its blows, flank, arrows and corpse roll on its stream (Sessions 477–478).
+
+Left unkeyed, and listed in backlog K: the guard who draws on you, the town-job raids, the guild hunts, the road quest's band, the boarders and the duel's rival. Each is tied to a job or quest whose id is a `Date.now()`, which is step 3's work. The legacy zones' foes are also unkeyed.
+
+### Verified (headless Chromium)
+`sitefoes` 4/4 (new). Dunmore was besieged by the Mark: the camp's six soldiers are `dunmore:siege:0`–`5`, each with a stream. The town fell: the garrison's five are `dunmore:occupied:0`–`4`. Carrigkeel's Lair, 1,548 units out and loaded by walking to its edge, has three creatures: `c6_10_i0:foe:0` (Carrigkeel the Ogre) and `:1`–`:2` (Dire Wolves). The old code fails all three checks; none of them had an id. The caravan ambush was not staged: it fires inside the world's caravan tick only when a camp breaks a route. Its edit is the same `keyFoe` call as the siege's. `siegeturn` 6/6, `dazed` 6/6, `campsack` 7/7. `parsecheck` clean. Build tag s410.
+
+### Needs eyes
+Nothing by play.
+
+## v80 — Session 480 — Your arrows, spells and lucky blows roll on the foe they strike (backlog K step 1)
+Session 477 put your swing's spread on the struck foe's stream. Three rolls of yours that decide damage were still `Math.random`:
+- **The spell's spread.** `applySpellDamage` rolls 0–9 over the spell's magnitude. That roll is made at the hit with the foe in hand, so it now draws `foeRand(e)`.
+- **The arrow's spread.** The bow's attack range and the arrow's were rolled when you loosed, before anything was struck. The arrow now carries the roll's terms: both ranges, the level floor, and the draw and Finesse multiplier. At the hit, `arrowRawFor(u, e)` rolls the two spreads from the struck foe's stream. Both hit paths use it: the open world's in `42-zone-enemies.js` and the dungeon's in `90-main.js`. A target with no id takes the roll made at release, so nothing changes for one.
+- **Fortune's lucky blow.** `_fortuneCrit()` takes the foe it lands on, `_fortuneCrit(e)`, and draws from its stream. The swing in `applyMeleeDamage` and both arrow paths pass it.
+
+The formulas and their odds are unchanged.
+
+### Verified (headless Chromium)
+`hitseed` 4/4 (new). A test bow (5–30) with iron arrows (2–12) fired three arrows by the loop's own tick at a Bandit four units ahead. Against two Bandits with one id they do 24 36 24 on both, and against another id 29 34 32. Six *caor* on one id do 16 23 19 16 18 17 twice, and on another id 18 16 16 20 15 16. At Fortune 999 (a half chance), twelve lucky-blow rolls fall 101000100100 for both foes with one id and 011101111100 for the other. An unkeyed foe still takes spells. On the old code all three checks fail. `fortunecaor` 5/5, `fortunecard` 6/6, `attrdmg` 6/6, `tpshots` 5/5, `duelrhythm` 10/10, `foeseed` 6/6. `parsecheck` clean. Build tag s411.
+
+### Needs eyes
+Nothing by play.
+
+## v80 — Session 481 — A slain slime splits the same way on two machines (backlog K step 1)
+When a Slime dies, `killE` drops two Small Slimes within 0.6 units of the body. Their spots were `Math.random`, and they had no id, so the split and every roll of their fight differed between machines. The spots now come from the slain slime's own stream, `foeRand(e)`. Each Small Slime is keyed `<slime's id>:s0` and `:s1`, so its blows and corpse roll on its stream (Sessions 477–478). An unkeyed slime still splits on `Math.random`.
+
+Black sails and merchantmen stay as they are. They are random encounters, spawned at random bearings 260–460 units from you while you sail, so nothing about them has a place to key by. Their chest and crew want an encounter id, which is step 3's work. Backlog K says so.
+
+### Verified (headless Chromium)
+`slimeseed` 4/4 (new). In Dowor Keep (seed 519737), the slime `519737:1:3` was killed twice, on two entries with 211 `Math.random` draws stirred in between. Both times it split to 27.321,19.062 and 27.263,19.315, as `519737:1:3:s0` and `:s1`, each with a stream. On the old code the two splits fell at 26.834,19.170 / 27.529,19.116 and 27.361,19.209 / 27.397,19.193, with no ids; both checks for the fix fail. `slimes` and `slimesplit` pass, 13 checks with `slimeseed`. `parsecheck` clean. Build tag s412.
+
+### Needs eyes
+Nothing by play.
 ## v80 — Session 466 — A body slumped against a dungeon wall slid for seconds: the wall and the floor grip
 The systems builder's note (Session 465, `ragdoll` red on CI shard 2): a dungeon Skeleton killed by a power blow beside a wall had not come to rest by itself before the four-second cap, and they proposed seeding the throw or accepting a body frozen at the cap. I measured first. Killed at that wall eighty times from one pose and facing, on seeded throws, the bodies came to rest after a median 3.25 s and 66 of 80 took longer than 2.5 s; in the open, the same eighty settled in 0.85–1.65 s (median 1.25). So the throw's draw was not the fault: the wall was. Seeding the test would have hidden a body that crawls on in the game.
 
@@ -11047,3 +11711,32 @@ Section H has nothing open: every item is struck through, nothing of the look wa
 
 ### Needs eyes
 Nothing in the game changed. Whether CI on this push is green is the check.
+
+## v80 — Session 484 — The world module dissolved into nine files (backlog K, step 2)
+Michael asked on 4 Oct for the whole split and rearchitecture to land today and approved, in chat, everything the local session needed: the `guardplay` fix on auto/systems (Session 483), the merges of #134 and #115 to main, and the cut here rather than through the hourly Fable card, with FREEZE #138 kept open until this PR merges. The plan is `docs/design/split-plan.md` §6, option B, which Michael chose on 30 Sep (Q7, "A soon after the split, B as its own Fable session"); A, breaking the `return {…}` line alone, is subsumed, since the return line is gone.
+
+**What was wrong.** After Session 379 the game was 33 files, but `80-world.js` was still one 8,100-line, 879 KB arrow IIFE: 1,143 names private to it, 288 exports on one 4,985-character `return {…}` line, and both builders inside it every session. The look builder's hunks fell in the generator, the forts and the interiors; the systems builder's in crime, quests and investment; and both on the return line.
+
+**What changed.** `scripts/split_world.py` (new) parses the world file with acorn and writes the IIFE's body, in order, as the top level of nine files: `80-world-terrain.js` (912 lines: regions, noise, height, colour, geometry, chunks, sky), `81-world-cells.js` (482: solids, the mask, cell data, landmasses, cell load), `82-world-structures.js` (1,684: forts, buildings, walls), `83-world-generator.js` (1,650: dialog pools, the settlement generator, the maps, rooms), `84-world-interiors.js` (315: interior extras, doors inside buildings, ports), `85-world-sea.js` (713: ships, wrecks, wildlife, other ships), `86-world-crime.js` (742: footprints, houses, the crime system, windows, fish, whales), `87-world-quests.js` (1,300: boarding, town quests, guilds, sigils, nations, the war, investment, the chapel) and `88-world-ticks.js` (303: the town and sea lines, ticks, `var WORLD={…}`). Each is an exact line range of the source, so nothing is re-indented; the `var WORLD=(()=>{` and `})();` lines go, and `  return {…};` becomes `var WORLD={…};` at the foot of the last file: the same object literal, getters and all, built at the same moment. Every classic script shares one global scope, so the body's names are reached by the same bare names as before; what the IIFE used to hide is now a global, which matters only where a name collides with one another file declares. Four did, found by the parser against the other 32 files' top-level names: `DOORS` and `KEYS` (`52-dungeon-gen.js` has the dungeon's), `SG` (`34-creatures.js`), `tickNPCs` (`50-travel.js`, the legacy zones'). The script renames them inside the world's code by identifier reference only (`CELL_DOORS`, `HELD_KEYS`, `STAMP_G`, `tickTownNPCs`; the export stays `WORLD.DOORS`, written `DOORS:CELL_DOORS`). Unrenamed, `tickNPCs` would have been the worst kind of bug: a later file's function declaration silently replaces an earlier one, so `90-main.js`'s call into the legacy zones would have ticked the townsfolk instead.
+
+Function hoisting is the one semantic the cut could break: inside the IIFE a load-time statement could call a function declared anywhere in the body; across files it can reach only an earlier one. The script computes each non-function statement's synchronous reach (direct calls, the functions those call, and callbacks passed as call arguments, transitively) and refuses a layout where any call lands in a later file. On this layout there are none. It also checks the body's names against the browser's own global object (none of the 1,143 is a non-configurable window property such as `location`, which would throw at the top level), and `parsecheck.py`'s concatenation check stands guard over duplicate `let`/`const` from here on.
+
+`--check` runs the cut on a temp copy, rebuilds `80-world.js` from the pieces (wrapper back, renames reversed by the same parser pass) and compares sha256: byte-identical. `scripts/join.py` learned to rebuild through it, so the step-1 proof still holds: the joined one-file script from the dissolved copy equals today's 33 files concatenated. `js/world-manifest.json` records the cut; `js/manifest.json` (step 1) is unchanged. Two things bit on the way: acorn's offsets are UTF-16 code units and the file holds emoji, so the first rename edit cut a newline; and this Windows checkout holds CRLF in the working copy (autocrlf), which the scripts now normalise. Both are in CLAUDE.md.
+
+**Also in this session.** Session 483 (on auto/systems): `guardplay` was red on CI three runs running and reproduced here; the swing struck Clodagh, standing 0.69 units from the Sorcha the test aimed at (two townsfolk stopped for a word). The test now aims at a villager with nobody within 4 units. PR #134 (Look 466–482) merged to main at f8551e4 and #115 (Systems 431–483) after its CI went green. CLAUDE.md: the file count, the world's nine files in the code map, the renames, the new global-name rule, the CRLF and UTF-16 notes. Backlog K: step 2 struck.
+
+### Verified (headless Chromium)
+- `split_world.py --check` on main: 9 files, 871,621 bytes; rebuild sha256 equal to the source; parsecheck OK on all 41 files and their concatenation (3,332,426 chars).
+- `join.py` on the dissolved copy: the joined one-file script equals the 33-file concatenation, 3,293,834 chars.
+- Against the dissolved copy (`node tests/run.mjs <suite> --src=…`): crime1 to crime5, watch, constable, saves, placesave (alone, 14 checks), wayfinding, questtargets, saveui (alone; under three browsers at once it fails timing checks, on main too), walls, towngate, townroads, harbour, ships, interiors, intdoors, intnpcs, smoke (the chimneys), weather, snowrepaint, signposts, pois, wreck, wyrm, keep, keepercone, keeperwalk, chapel, tithe, caravan, sailtrim, hubregen, export, coopsaves, peopleao and people (its 16 checks; its old-build step then fails on this machine's GNU tar, which reads the `C:` of the path as a host, on main the same): all green. `lod` fails before and after alike, on main's own layout too (35 distant copies on the road view against 36 in the square, where the check wants more): the look builder's, not the cut's.
+- CI on the PR's amended head (2a2f442): all eight shards green, 239 suites, 239 passed; the first head's three reds are described above.
+- After the cut in place on main: `parsecheck` OK; `smoke` crime1, towngate, guardplay, walls and intdoors green on the branch (the cut run on main at d8ad150, after the two merges; the anchors held, the rebuild byte-identical again, 891,460 bytes). CI on the PR runs all 219 suites in eight shards; its numbers go in the next entry.
+
+**What CI found before the merge.** The PR's first run was red on `locks` and `cellrace`, both crashing on `WORLD.DOORS.some` (undefined), and both passed here on plain main. The export of `DOORS` is a shorthand property in the return object, and acorn-walk visits only its value (a copy of the key), so the renamer's one edit wrote `CELL_DOORS` over it: the object exported `WORLD.CELL_DOORS` and `WORLD.DOORS` was gone. The rebuild check is symmetric and so still passed, which is a lesson about proofs that use the same code both ways. A shorthand property now becomes `DOORS:CELL_DOORS` (the export keeps its name), the reverse pass folds it back, and none of the ~45 suites run here had read `WORLD.DOORS`; `locks`, `cellrace` and `sailtrim` were rerun on the corrected cut before the second push. The third red of that run, `sailtrim`, passed here on the dissolved copy both times; main's own run that afternoon was red on `hourhitch`, `shiphull` and `shoperrands`.
+
+Two references that other files had guarded with `typeof` because the name was private now resolve, and both do what their author meant: the third-person wheel handler (`54-thirdperson.js`) now leaves the camera alone while the continent map is open (`MAP.mode==='map'`), and `talkTargetNow` (`68-dungeon-misc.js`) finds a townsperson in a generated interior through `INT_NPCS`, so the crosshair shows the talk prompt there. Nothing else outside the world names a private world name (the scope pass over every other file found those two and the four renames).
+
+### Needs eyes
+- A playtest from GitHub Pages and from a downloaded folder: the page should look and play as the previous build did; the only visible change is the tag.
+- Michael: paste the new file list (CLAUDE.md, "Code map by file") into the two builders' prompts; the producer closes FREEZE #138 when this PR is on main. The systems builder's K steps 1 and 3 (ids for foes and chests) were waiting on this cut.
+- Decision #75's clean-up (remove `split.py`, `split_world.py`, `join.py` and the two manifests) in a release.

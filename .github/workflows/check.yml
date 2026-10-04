@@ -25,8 +25,10 @@ jobs:
     # and every run was cancelled before it could report.
     # 30 Sep 2026 (the split session): 45, not 30. On a slow shared runner five of eight shards ran past 30 minutes
     # twice in a row on auto/systems; the limit measured the runner, not the tests.
+    # 3 Oct 2026 (Session 454): 60, not 45. The suites now add up to 19,054 s on CI, about 40 minutes a shard before
+    # the install, so 45 left three minutes of slack; shard 2 was cancelled at 45:19 on 0af251a.
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

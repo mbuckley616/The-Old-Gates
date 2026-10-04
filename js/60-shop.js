@@ -521,6 +521,8 @@ function shopRowHTML(it, side, priceVal, affordable, locked, fullStock){
   if(side==='buy'){
     stat += _shopCompareBadge(it);
     note  = _shopAffordanceNote(it, fullStock);
+    /* v80 S451 — a piece you can't wear was only dimmed; the row now says why (canEquip's own words) */
+    if(locked){ const req=canEquip(it); if(!req.ok&&req.msg) note += `<span class="sh-note warn">${req.msg}</span>`; }
   }
   const wt    = itemWeight(it);
   const priceCol = side==='buy' && !affordable ? '#6a5230' : (side==='sell' ? '#6ed36e' : '#c8a84a');

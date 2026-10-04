@@ -395,13 +395,24 @@ const BOOKS=[
 // Runtime Set of book ids the player has read. Persisted in saves.
 const booksRead=new Set();
 
+// v80 S470 — co-op rules (Michael's A on #119): a roll that decides an outcome comes from a seeded stream keyed by place
+// and id. Every loot roll below draws from lootRand(): Math.random unless a stream is set, which rollContainerLoot does when
+// its caller gives the container a key, so two machines that agree on the key and the clock roll the same contents.
+function seededRng(place,id){let h=2166136261>>>0;const s=String(place)+'|'+String(id);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}let a=h||1;
+  return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+let LOOT_RNG=null;
+function lootRand(){return LOOT_RNG?LOOT_RNG():Math.random();}
+function withLootRng(rng,fn){const was=LOOT_RNG;LOOT_RNG=rng;try{return fn();}finally{LOOT_RNG=was;}}
+// the day of the world's clock, for a container that refills: the same key rolls the same contents within one game day
+function lootDay(){return Math.floor(((typeof worldState!=='undefined'&&worldState&&worldState.gameTimeAbsMinutes)||0)/1440);}
+
 function makeBookItem(def){
   // Build a bag-ready copy. weight: 0.5, worth small sell value (books are for reading, not selling).
   return {name:def.name, ico:def.ico, type:'book', bookId:def.id, weight:0.5,
           buyPrice:0, sellMult:0.1};
 }
 function randomBookItem(){
-  return makeBookItem(BOOKS[Math.floor(Math.random()*BOOKS.length)]);
+  return makeBookItem(BOOKS[Math.floor(lootRand()*BOOKS.length)]);
 }
 
 // Pick a random herb suitable for loot drops. Strategy: pick from all herbs whose zone isn't
@@ -411,7 +422,7 @@ function randomLootHerb(){
   if(!keys.length)return null;
   // Filter out any dungeon-only herbs so adventurers/barrels don't cough up rare underground flora.
   const pool=keys.filter(k=>HERB_DEF[k].zone!=='dungeon');
-  const k=pool.length?pool[Math.floor(Math.random()*pool.length)]:keys[Math.floor(Math.random()*keys.length)];
+  const k=pool.length?pool[Math.floor(lootRand()*pool.length)]:keys[Math.floor(lootRand()*keys.length)];
   return {...HERB_DEF[k].item, qty:1};
 }
 
@@ -583,7 +594,7 @@ function rollGold(tier){
           : (tier==='chest') ? {min:4, max:12, lvBonus:1.0}
           : (tier==='corpse') ? {min:2, max:8, lvBonus:0.7}
           : {min:1, max:6, lvBonus:0.5};
-  const base = Math.floor(Math.random()*(t.max - t.min + 1)) + t.min;
+  const base = Math.floor(lootRand()*(t.max - t.min + 1)) + t.min;
   const lv = (typeof level==='number') ? level : 1;
   const fortune = (typeof ATTRS!=='undefined' && ATTRS && ATTRS.fortune) ? ATTRS.fortune : 0;
   const lvAdd = Math.floor(lv * t.lvBonus);
@@ -664,15 +675,17 @@ const LOOT_POOLS={
 function rollConsumable(kind){
   const pool=LOOT_POOLS[kind]||LOOT_POOLS.corpse;
   const total=pool.reduce((a,p)=>a+p.w,0);
-  let r=Math.random()*total;
+  let r=lootRand()*total;
   for(const p of pool){r-=p.w; if(r<=0)return p.roll();}
   return pool[0].roll();
 }
 
 function rollLoot(diffScale, theme, kind){
+  // v80 S472 — the world's containers pass the difficulty as a number (1 a town barrel, 1.4 a wreck, 2.4 a hoard); read it as {hp}
+  if(typeof diffScale==='number')diffScale={hp:diffScale};
   // Chance of getting an equip vs consumable/gold — scales up with difficulty
   const equipChance=0.28+(diffScale?diffScale.hp*0.08:0);
-  const roll=Math.random();
+  const roll=lootRand();
   if(roll>equipChance){
     // Consumable path — use kind-aware pool (defaults to corpse table if kind is missing)
     return rollConsumable(kind||'corpse');
@@ -686,21 +699,21 @@ function rollLoot(diffScale, theme, kind){
   const maxTier = Math.min(10, Math.max(1, Math.floor(1 + playerLv*0.4 + diffFactor*1.2)));
   const weights=MATERIALS.map(m=>m.dropW*(m.tier<=maxTier?1:0));
   const totalW=weights.reduce((a,b)=>a+b,0);
-  let r2=Math.random()*totalW,t=1;
+  let r2=lootRand()*totalW,t=1;
   for(let i=0;i<weights.length;i++){r2-=weights[i];if(r2<=0){t=i+1;break;}}
-  const isWeapon=Math.random()<0.45;
-  const typeObj=isWeapon?WEAPON_TYPES[Math.floor(Math.random()*WEAPON_TYPES.length)]
-                        :ARMOR_TYPES[Math.floor(Math.random()*ARMOR_TYPES.length)];
+  const isWeapon=lootRand()<0.45;
+  const typeObj=isWeapon?WEAPON_TYPES[Math.floor(lootRand()*WEAPON_TYPES.length)]
+                        :ARMOR_TYPES[Math.floor(lootRand()*ARMOR_TYPES.length)];
   // Enchantment — rare, scales with tier
   const enchChance=Math.min(0.55,(t-1)*0.065);
   let enchant=null;
-  if(Math.random()<enchChance){
+  if(lootRand()<enchChance){
     // v61c8 — Filter out _unique enchants (boss-drop signatures) so they
     // can't roll on procedurally-generated loot. Unique enchants must
     // exist in the table for save/load id-lookup, but should never
     // attach to anything outside their authored drop site.
     const pool=(isWeapon?WEAPON_ENCHANTS:ARMOR_ENCHANTS).filter(e=>!e._unique);
-    enchant=pool[Math.floor(Math.random()*pool.length)];
+    enchant=pool[Math.floor(lootRand()*pool.length)];
   }
   return makeItem(t,typeObj,enchant,!isWeapon);
 }
@@ -712,14 +725,15 @@ function rollLoot(diffScale, theme, kind){
 //   treasure — same as chest but first roll 100% (never empty) and gold is tripled.
 //   barrel   — up to 2 items. First 40%, second 20% of that. P(empty) = 60%.
 //   corpse   — up to 2 items. First uses passed baseChance (existing fortune+difficulty roll); second 25% bonus.
-function rollContainerLoot(kind, diffScale, theme, baseChance){
+function rollContainerLoot(kind, diffScale, theme, baseChance, key){
+  if(key!=null&&!LOOT_RNG)return withLootRng(seededRng('loot',key),()=>rollContainerLoot(kind, diffScale, theme, baseChance));
   const items=[];
-  if((kind==='chest'||kind==='treasure')&&typeof spellbookItem==='function'&&Math.random()<.07){const rare=['suil_oiche','eitilt','sciath','siul_uisce'];items.push(spellbookItem(rare[Math.floor(Math.random()*rare.length)],1));} // v80 — rare spells live in chests
+  if((kind==='chest'||kind==='treasure')&&typeof spellbookItem==='function'&&lootRand()<.07){const rare=['suil_oiche','eitilt','sciath','siul_uisce'];items.push(spellbookItem(rare[Math.floor(lootRand()*rare.length)],1));} // v80 — rare spells live in chests
   if(kind==='chest' || kind==='treasure'){
     const maxItems=5;
     let p = kind==='treasure' ? 1.0 : 0.9;
     for(let i=0;i<maxItems;i++){
-      if(Math.random() >= p) break;
+      if(lootRand() >= p) break;
       // v61c1: pass 'treasure' through so the gold roll fires `rollGold('treasure')`
       // (its own tier with higher base + level scaling), not `rollGold('chest')`
       // multiplied by 3. The flat ×3 made treasure feel oversized in the new
@@ -737,7 +751,7 @@ function rollContainerLoot(kind, diffScale, theme, baseChance){
     // P(2) ≈ 30%, P(3) ≈ 15%, P(4) ≈ 5% (capped).
     let p = 0.95;
     for(let i = 0; i < 4; i++){
-      if(Math.random() >= p) break;
+      if(lootRand() >= p) break;
       items.push(rollConsumable('library_chest'));
       p *= 0.55;
     }
@@ -748,16 +762,16 @@ function rollContainerLoot(kind, diffScale, theme, baseChance){
     // library_chest item pool. Math: P(any loot) = 0.17; given any,
     // P(2nd item) = 0.25. Expected items per shelf ≈ 0.21. Expected items
     // per library across 6 shelves ≈ 1.3 (canon "scholarly, picked over").
-    if(Math.random() < 0.17){
+    if(lootRand() < 0.17){
       items.push(rollConsumable('library_chest'));
-      if(Math.random() < 0.25) items.push(rollConsumable('library_chest'));
+      if(lootRand() < 0.25) items.push(rollConsumable('library_chest'));
     }
   } else if(kind==='barrel'){
-    if(Math.random() < 0.40) items.push(rollLoot(diffScale, theme, 'barrel'));
-    if(items.length && Math.random() < 0.20) items.push(rollLoot(diffScale, theme, 'barrel'));
+    if(lootRand() < 0.40) items.push(rollLoot(diffScale, theme, 'barrel'));
+    if(items.length && lootRand() < 0.20) items.push(rollLoot(diffScale, theme, 'barrel'));
   } else if(kind==='corpse'){
-    if(Math.random() < (baseChance!=null?baseChance:0.5)) items.push(rollLoot(diffScale, theme, 'corpse'));
-    if(items.length && Math.random() < 0.25) items.push(rollLoot(diffScale, theme, 'corpse'));
+    if(lootRand() < (baseChance!=null?baseChance:0.5)) items.push(rollLoot(diffScale, theme, 'corpse'));
+    if(items.length && lootRand() < 0.25) items.push(rollLoot(diffScale, theme, 'corpse'));
   }
   return items;
 }
