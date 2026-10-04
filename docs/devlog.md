@@ -11782,3 +11782,14 @@ Not yet: names in an entry as links to their topic, notes of your own and on the
 ### Needs eyes
 - How full the index gets in an evening's play, and whether *by town and words* is the right grain: two villagers whose rumours differ by one word are two entries.
 - The search field in play: click into it, type, Escape out, and the game's keys come back.
+
+## v80 — Session 491 — A line of your own in the Journal (DECISION #132, part C, second slice)
+Part C: *You may write your own lines, and pin a note to the map … Notes up to 500 characters.* This session is the lines; the map pin is the map's (the world map and the local map are drawn in `94-worldmap.js` and the world module) and is left for after the world-file cut.
+
+The Journal's *By day* view opens on a box, *Write a line of your own (Enter writes it)*, with a *Write it* button; Shift+Enter breaks the line. `journalNote` (`66-hub.js`) writes the text as a journal line like any other (`addLog`, so it has its date and is saved with the character, Session 486), marked `note` and drawn in the page's lighter ink. Spaces are folded, an empty line is not written, and a line is cut at 500 characters. The box empties and keeps the focus for the next line. Long unbroken text now wraps in every journal line (`.jn-text`, `overflow-wrap: anywhere`), where before a 500-letter word ran off the page.
+
+### Verified (headless Chromium)
+`journal` 18/18 (2 new). *Edna knows more than she says. Ask her about the Shadows, and wait.* typed into the box and written with Enter at minute 22,000 lands as a note stamped 22,000, at the top of *Day 16* at 6:40 am, and the box is empty again. 700 letters are kept as 500; three spaces write nothing. The note is in the saved character row. `told`, `coopsaves` and `export` pass. `parsecheck` clean. Build tag s420.
+
+### Needs eyes
+- The box in play: Enter writes, Shift+Enter breaks a line, Escape leaves it. The hand the notes are drawn in falls back to the page's serif where the machine has no script face.

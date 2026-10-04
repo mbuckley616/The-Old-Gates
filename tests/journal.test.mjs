@@ -60,6 +60,17 @@ check('the Journal tab sits beside Quests, and by day shows the quest\'s lines u
 check('by quest, First Blood heads its three lines in order, each with its full date', (() => { const i = q.qtext.indexOf(q.title), a = q.qtext.indexOf(q.ready), b = q.qtext.indexOf(q.complete); return i >= 0 && a > i && b > a && /Day 14 · 9:20 pm/.test(q.qtext) && /complete/.test(q.qtext); })(), q.qtext.slice(0, 600));
 check('the Character tab keeps Renown and no longer carries the journal', /RENOWN/i.test(q.ltext) && !q.ltext.includes(q.complete) && !/JOURNAL/.test(q.ltext), q.ltext.slice(-200));
 
+// 5. a line of your own (Session 491): typed into the By day view and written with Enter, kept with its date, saved
+await page.evaluate(() => { worldState.gameTimeAbsMinutes = 22000; worldState.gameTimeMinutes = 22000 % 1440; openHub('journal'); journalView('day'); });
+await page.focus('#jn-note'); await page.keyboard.type('Edna knows more than she says. Ask her about the Shadows, and wait.'); await page.keyboard.press('Enter');
+const n = await page.evaluate(async () => { const e = GAME_LOG[GAME_LOG.length - 1]; const txt = document.getElementById('jn-body').innerText; const box = document.getElementById('jn-note');
+  const long = journalNote('x'.repeat(700)) && GAME_LOG[GAME_LOG.length - 1].text.length; const blank = journalNote('   ');
+  closeHub(); await saveToSlot(0); const m = SS.idx.find(x => x.kind === 'manual' && x.slot === 0); const c = JSON.parse(await ssGet(m.key));
+  return { e: { text: e.text, note: e.note, t: e.t }, txt: txt.slice(0, 300), cleared: box ? box.value : null, focused: document.activeElement && document.activeElement.id, long, blank, saved: c.wS.journal.some(x => x.note && /^Edna knows more/.test(x.text)) }; });
+console.log(JSON.stringify(n));
+check('a line of your own is written with Enter, under today with its time, and the box is ready for the next', n.e.note && n.e.text === 'Edna knows more than she says. Ask her about the Shadows, and wait.' && n.e.t === 22000 && /Day 16\s+\S+ \w\w\s+✎ Edna knows more/.test(n.txt) && n.cleared === '', n);
+check('a line is at most 500 characters, an empty one is not written, and it is saved with the character', n.long === 500 && n.blank === false && n.saved, n);
+
 // a picture of the tab, by day, for the devlog
 await page.evaluate(() => { openHub('journal'); journalView('day'); });
 await g.frames(2); (await import('fs')).mkdirSync('tests/out', { recursive: true }); await page.screenshot({ path: 'tests/out/journal-byday.png' });

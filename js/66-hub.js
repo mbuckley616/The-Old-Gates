@@ -151,6 +151,10 @@ function _jnTopicsHTML(){
   return [...by.keys()].sort((a,b)=>a.localeCompare(b)).map(l=>`<div class="jn-day"><div class="jn-head">${_jnEsc(l)}</div>`+
     by.get(l).sort((a,b)=>(a.t||0)-(b.t||0)).map(e=>`<div class="jn-told"><div class="jn-time">told by ${_jnEsc(e.s||'someone')}${e.w?' in '+_jnEsc(e.w):''} · ${_jnEsc(gameDateLine(e.t,e.tod))}</div><div class="jn-text">${_jnEsc(e.r)}</div></div>`).join('')+'</div>').join('');
 }
+// S491 — a line of your own (DECISION #132, part C): written from the Journal's By day view, up to 500 characters, kept
+// as a journal line of kind 'note' with its date like any other
+function journalNote(text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t)return false;addLog('✎',t);GAME_LOG[GAME_LOG.length-1].note=true;return true;}
+function journalNoteSubmit(){const el=document.getElementById('jn-note');if(!el)return;if(journalNote(el.value)){el.value='';renderJournal();const n=document.getElementById('jn-note');if(n)n.focus();}}
 function journalSearch(v){_jnSearch=String(v||'');const L=document.getElementById('jn-topics');if(L)L.innerHTML=_jnTopicsHTML();}
 let _jnView='day';
 function _jnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -160,10 +164,11 @@ function renderJournal(){
   document.querySelectorAll('#jn-views button').forEach(b=>b.classList.toggle('active',b.dataset.v===_jnView));
   const L=GAME_LOG.filter(e=>e&&typeof e.text==='string');
   if(_jnView==='topics'){body.innerHTML=`<input id="jn-search" type="search" placeholder="Search what you were told" autocomplete="off" oninput="journalSearch(this.value)"><div id="jn-topics"></div>`;const inp=document.getElementById('jn-search');inp.value=_jnSearch;journalSearch(_jnSearch);return;}
-  if(!L.length){body.innerHTML='<div class="jn-empty">Nothing written yet.</div>';return;}
+  const noteBox=_jnView==='day'?'<div id="jn-write"><textarea id="jn-note" maxlength="500" rows="2" placeholder="Write a line of your own (Enter writes it)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();journalNoteSubmit();}"></textarea><button type="button" onclick="journalNoteSubmit()">Write it</button></div>':'';
+  if(!L.length){body.innerHTML=noteBox+'<div class="jn-empty">Nothing written yet.</div>';return;}
   const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||null;
   const line=(e,withQ)=>{const d=e.q&&withQ?qd(e.q):null;
-    return `<div class="jn-line${e.q?' jn-q':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnEsc(e.text)}</span></div>`;};
+    return `<div class="jn-line${e.q?' jn-q':''}${e.note?' jn-note':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnEsc(e.text)}</span></div>`;};
   let html='';
   if(_jnView==='quest'){
     const ids=[];L.forEach(e=>{if(e.q&&ids.indexOf(e.q)<0)ids.push(e.q);});
@@ -178,7 +183,7 @@ function renderJournal(){
     [...days.keys()].sort((a,b)=>b-a).forEach(k=>{
       html+=`<div class="jn-day"><div class="jn-head">${k<0?'Undated':'Day '+(k+1)}</div>`+days.get(k).map(e=>line(e,true)).join('')+'</div>';});
   }
-  body.innerHTML=html;
+  body.innerHTML=noteBox+html;
 }
 function journalView(v){_jnView=(v==='quest'||v==='topics')?v:'day';renderJournal();}
 // ── HUB ──────────────────────────────────────────────────────
