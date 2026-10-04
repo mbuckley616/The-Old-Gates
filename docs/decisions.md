@@ -3,6 +3,29 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+
+## Answered
+### Unblock main: CI red after the co-op merge (the producer, 2026-10-04)
+Main's CI on 6c9e3da (the co-op door merge) failed coopsaves, hourhitch and sailtrim, and stayed red four runs running: coopsaves waits a fixed 1.5 s for a save on a slow runner. No agent owned the co-op tests once the Fable session was done.
+- **A.** The builders make the slow tests wait on the game, export too (Look 469 and Systems 470 already fixed coopsaves and duel; the fixes ride their next merges). *(recommended)*
+- **B.** Treat it as a flake and re-run.
+- **C.** Hand it to Claude (local).
+
+Michael: **Builders make the slow tests wait, export too** (option A). (2026-10-04)
+
+### An exhausted power attack still breaks a guard (the systems builder, Session 464, 2026-10-04, DECISION #131)
+Played through the duel at Caer Slige (Session 464). Rowe fights as a Bandit Captain with the Shieldbearer's guard: a hit from the front lands at 35%, and a power attack breaks the guard (1.5 s stagger, the next blow full). Since v80 S9 a swing with too little stamina goes anyway but weakly: it lands at 45% and its cooldown is 30% longer. The guard break ignores that. A power attack on an empty bar breaks the guard as fully as a fresh one.
+
+What it does in play, measured headless at level 1 with the starting club against Rowe: standing still and mashing the power attack on an empty bar (39 of 42 swings exhausted), you beat her in about 45 s and she lands 4 blows (54 of your 130). Fighting on your stamina, waiting for three-quarters of the bar before a power attack, you land 3 swings in 21 s and go down. The careful player loses, and the masher wins. The same holds against every Bandit Captain and siege captain.
+
+- **A.** An exhausted power attack does not break the guard. It lands as a guarded hit (35% of the exhausted 45%), with the message *Too spent to break the guard.* Cost: one line in each strike path (open world and dungeon), and a test. *(recommended)*
+- **B.** It breaks the guard, but the stagger is halved (0.75 s), so she answers before your follow-up. Cost: the same.
+- **C.** Leave it. Mashing is a choice, and the stamina bar already punishes it elsewhere.
+
+Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
+
+Michael: **No: a spent power attack lands as a guarded hit** (option A). (2026-10-04)
+
 ### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
 Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
 - **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
@@ -11,7 +34,8 @@ Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GA
 
 Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
 
-## Answered
+Michael: **B, and Morrowind's whole book** (option C). (2026-10-04)
+
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
 
