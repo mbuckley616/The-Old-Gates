@@ -3,6 +3,11 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Unblock Systems: the freeze stops the fix it waits on (the producer, 2026-10-04)
+The world-file Fable session (FREEZE #138) waits for auto/systems and auto/backlog to land, and the freeze stops both builders until it starts. Systems' CI on 2859d5c is red on one test, guardplay (shard 8; the branch changed it), so only the systems builder can fix it, and the freeze stops it.
+- **A.** Lift the freeze until both branches land; the Fable routine opens a new one when it takes the card. *(recommended)*
+- **B.** Merge Systems 2859d5c anyway, guardplay red on main; the fix waits until after the cut.
+- **C.** Start the cut now; Systems merges the rewritten world file after.
 
 ## Answered
 ### Unblock main: CI red after the co-op merge (the producer, 2026-10-04)
