@@ -11568,3 +11568,18 @@ The index entry keeps it as `place`. The slot list and the death screen's *Last 
 
 ### Needs eyes
 Whether *near X* at up to 1,500 units reads right on a long road, where the nearest loaded place may be a shrine or a camp rather than a town.
+
+## v80 — Session 477 — A zone foe rolls its fight from its own stream (backlog K step 1, `42-zone-enemies.js`)
+Backlog K's step 1 moves every roll that decides an outcome onto a seeded stream keyed by place and id (CLAUDE.md's co-op rules, Michael's A on #119). Session 471 did `14-items.js`. This session does the open world's foes in `42-zone-enemies.js`. `keyFoe(e, id)` gives a foe an id and its own stream, `seededRng('foe', id)`. `foeRand(e)` draws from that stream, or from `Math.random` for a foe with no id. The draws moved onto it are the foe's blow (its 0–3 over its damage), its arrow's sting (the arrow carries its archer) and its next arrow's wait, the Faolchú's orb cooldown and the spot where its lessers appear, the pack's flank side and angle, and the spread of your swing on it. The phase offsets and the death burst stay `Math.random`, because they are cosmetic.
+
+Ids come from the place, never the position. A world chunk's foe is `<cx,cz>:<epoch>:<index>`, where the epoch is the chunk's 48-hour respawn epoch that `spawnChunkEncounters` already hashes its group, count and spots by. A shark is `<cx,cz>:<epoch>:shark`. The chunk's variant roll (veteran, champion…) was the one `Math.random` left in that spawn. It now draws from `seededRng('variant', id)` (`pickVariant` takes an optional stream), so the whole spawn is the same on two machines. The Faolchú is `ashenmoor:faolchu`, and its spawn spot is drawn from `seededRng('faolchu','spawn')`. The other spawners have no id to give yet, so they still roll `Math.random`: the town guard, camp, raid and siege bands, guild hunts, road ambushes, boarders, the duel's rival, the legacy zones and every dungeon foe. They are listed in backlog K. The edit in `80-world.js` is the two spawn lines in `spawnChunkEncounters`. The rest of that function is unchanged, so it should merge clean with the 80-world break-up.
+
+The odds are unchanged. A stream is uniform as `Math.random` is, and each draw sits where the old one did.
+
+### Verified (headless Chromium)
+`foeseed` 6/6 (new). After 30 frames at 1 a.m. near the start, 30 chunk foes stand in 13 chunks. Each has an id of its own chunk, epoch and index (30 ids for 30 foes) and a stream. 300 ids pick the same variant twice in 300, and 80 of them pick one at level 14. Two machines are stood in for by two Bandits built one after the other with one id. Five swings through `_resolveZoneStrike` with a 5–40 blade roll 13 37 7 16 21 on both. Another id rolls 19 29 17 32 17. Six blows of a keyed Bandit, by the loop's own tick, are 6 9 6 7 7 8 on both, and 9 7 7 7 8 7 for another id. A foe with no id still takes swings (15 16 19 38 10). An archer's arrow carries its archer. On the old code the suite fails at the ids (none of 33 foes had one) and the variant (192 of 300 alike), then throws.
+The fight suites pass unchanged: `faolchu` (green), `fistfight` 6/6, `posture` 20/20 (two suites), `postureregen` 8/8, `targetof` 7/7, `shark` 5/5, `lootseed` 7/7.
+`parsecheck` clean. Build tag s408.
+
+### Needs eyes
+Nothing in solo play. Fights roll from the same odds as before.

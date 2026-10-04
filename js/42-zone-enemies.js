@@ -9,6 +9,12 @@
 // Wolf/spider/troll enemy builders for overworld combat
 // Monster Overhaul Session 1: each enemy gains `def` (flat damage reduction) and `resist` (per-school multiplier map).
 // Resist keys match SPELLS[i].school (tine/uisce/gaoth/cloch/scath/solas). Missing keys default to 1.0 (neutral).
+// v80 S477 — co-op rules (Michael's A on #119): a foe with an id (its place and index, never a position) carries its own
+// stream, e.rng = seededRng('foe', id), and every roll that decides its fight (its blows, its arrows' sting and timing, its
+// flank, your swing's spread on it) draws from foeRand(e), so two machines that agree on the id roll the same fight.
+// A foe with no id yet (camps, raids, quest spawns) rolls Math.random, as before.
+function keyFoe(e,id){if(e){e.id=String(id);e.rng=seededRng('foe',e.id);}return e;}
+function foeRand(e){return e&&e.rng?e.rng():Math.random();}
 // ── BOSSES (module-top) ────────────────────────────────────────────
 // v61c2 (Faolchú): boss enemies are scripted spawns, not procedural pool
 // roster entries. They mount onto ZE alongside regular zone enemies, share
@@ -307,15 +313,16 @@ function spawnFaolchu(){
   // Spawn position — village square, north of Bram's forge. Slight
   // randomization within ~0.5u so the boss isn't on the exact same patrol
   // tile every reload (visual variety only; doesn't affect fight).
-  const sx = 32 + (Math.random()-0.5)*0.6;
-  const sz = 32 + (Math.random()-0.5)*0.6;
+  const fr = seededRng('faolchu','spawn');
+  const sx = 32 + (fr()-0.5)*0.6;
+  const sz = 32 + (fr()-0.5)*0.6;
   const ey = (typeof activeTerrainH==='function') ? activeTerrainH(sx,sz) : 0;
   // Add to the active overworld scene. After the burn fires,
   // ZONE_BUILDERS.overworld.sceneGet returns owBurnedScene; before, owScene.
   const sc = (typeof owBurnedScene!=='undefined' && owBurnedScene)
              ? owBurnedScene
              : owScene;
-  const e = faolchuAt(sc, sx, sz, ey);
+  const e = keyFoe(faolchuAt(sc, sx, sz, ey), 'ashenmoor:faolchu');
   ZE.push(e);
   // Also push into ZONES.overworld.enemies so a zone re-entry that re-reads
   // the array doesn't lose the reference. ZE is a reference to that array
@@ -369,8 +376,8 @@ function spawnLesserFaolchu(parentBoss){
   // add doesn't materialize on top of the player or the boss.
   const baseX = parentBoss ? parentBoss.x : 32;
   const baseZ = parentBoss ? parentBoss.z : 32;
-  const ang = Math.random() * Math.PI * 2;
-  const dist = 2.5 + Math.random() * 1.0;
+  const ang = foeRand(parentBoss) * Math.PI * 2;
+  const dist = 2.5 + foeRand(parentBoss) * 1.0;
   const sx = baseX + Math.cos(ang) * dist;
   const sz = baseZ + Math.sin(ang) * dist;
   // Lesser stat block — quarter HP, half damage, slightly slower than boss.
@@ -875,7 +882,7 @@ function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.h
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
-    if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
+    if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(foeRand(a.from)*4));
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
       if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${hitD}!`,'#ff6060');}
@@ -1049,7 +1056,7 @@ function tickZoneEnemies(dt,now,sc){
           sc.add(orb);
           ZB.push(orb);
           // Reset cooldown — 8-12s spread for next shot
-          e.caorCd = 8 + Math.random() * 4;
+          e.caorCd = 8 + foeRand(e) * 4;
           if(typeof sndFaolchuRoar==='function'){
             // Brief wet-fire crackle as the orb leaves
             sfxNoise(0.20, 1, 1, 0.30, 1400);
@@ -1133,10 +1140,10 @@ function tickZoneEnemies(dt,now,sc){
       let want=0;if(d<6)want=-1;else if(d>13)want=1;
       if(want!==0){const step=e.spd*dt*(want<0?1.2:1);const nx=e.x+dx2/d*step*want,nz=e.z+dz2/d*step*want;if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}}
       if(e.alert&&d>=3&&d<=17&&e.arrowCd<=0&&e.telegraphT<=0){let los=true;const _ls=(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid;for(let t=.1;t<.95;t+=.15){if(_ls(e.x+dx2*t,e.z+dz2*t)){los=false;break;}}
-        if(los){e.arrowCd=2.2+Math.random()*.8;fireZoneArrow(e,sc);}}
+        if(los){e.arrowCd=2.2+foeRand(e)*.8;fireZoneArrow(e,sc);}}
     } else if(e.alert&&!e.isBoss){ // v80 S135 — a pack spreads: each takes an angle around you instead of queueing on one line
       const packN=ZE.filter(o=>!o.dead&&o.alert&&o!==e&&Math.hypot(o.x-e.x,o.z-e.z)<14).length;
-      if(packN>0){if(e._flank==null)e._flank=(Math.random()<.5?-1:1)*(.5+Math.random()*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
+      if(packN>0){if(e._flank==null)e._flank=(foeRand(e)<.5?-1:1)*(.5+foeRand(e)*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
     }
     if(!_archer&&d>_stopDist){
       const step=e.spd*dt*(e.alert&&!e.isBoss?1.25:1); // alert, they come at a run
@@ -1185,7 +1192,7 @@ function tickZoneEnemies(dt,now,sc){
         }
         if(strikeReaches(e)){
           const def2=_armour();
-          const rawDmg=Math.max(1,e.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
+          const rawDmg=Math.max(1,e.dmg-Math.floor(def2*.5)+Math.floor(foeRand(e)*4));
           executeStrike(e, rawDmg, now);
         } else {
           sndSwing();
@@ -1715,7 +1722,7 @@ function _resolveZoneStrike(_isPow){
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block (see _resolveDungeonStrike for rationale).
       const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const rawDmg=Math.floor((lo+Math.floor(Math.random()*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*shMult);
+      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*shMult);
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
       e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg));e.alert=true;hit=true;alertPack(e,16);

@@ -384,7 +384,7 @@ function enemyDmgScale(){
 // v56: effective spawn chance now scales with player level above the variant's minLevel. At level 15,
 // Greater (minLevel 5) chance is 10% × (1 + 10×0.15) = 25%, up from 10%. Capped at 50% to preserve
 // occasional "clean" encounters. This is the "variant density ramp" piece of the balance hybrid.
-function pickVariant(baseName, playerLevel, difficultyKey){
+function pickVariant(baseName, playerLevel, difficultyKey, rnd){
   const candidates = [];
   for(const [key, v] of Object.entries(VARIANTS)){
     if(playerLevel < v.minLevel) continue;
@@ -396,7 +396,7 @@ function pickVariant(baseName, playerLevel, difficultyKey){
   }
   candidates.sort((a,b) => (b.v.minLevel||0) - (a.v.minLevel||0));
   for(const c of candidates){
-    if(Math.random() < c.effChance) return c.key;
+    if((rnd?rnd():Math.random()) < c.effChance) return c.key;
   }
   return null;
 }

@@ -2597,7 +2597,7 @@ var WORLD=(()=>{
     const dom=dominantRegion(cxw,czw);
     if(worldH(cxw,czw)<-3){ // open water: sharks, occasionally
       if(hash01(ch.cx,ch.cz,170)>.06)return;const ex=cxw+(hash01(ch.cx,ch.cz,171)-.5)*20,ez=czw+(hash01(ch.cz,ch.cx,172)-.5)*20;
-      const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Shark',null);e._chunk=key;e.homeX=ex;e.homeZ=ez;ZONES.world.enemies.push(e);ch.enemies.push(e);return;}
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Shark',null),key+':'+Math.floor(nowHours()/RESPAWN_H)+':shark');e._chunk=key;e.homeX=ex;e.homeZ=ez;ZONES.world.enemies.push(e);ch.enemies.push(e);return;}
     if(worldH(cxw,czw)<1.5)return;
     // Deterministic per chunk per "spawn epoch" so re-entering doesn't reroll every time.
     const epoch=Math.floor(nowHours()/RESPAWN_H);
@@ -2639,8 +2639,9 @@ var WORLD=(()=>{
         if(worldH(ex,ez)>1.5&&slopeNormalY(ex,ez)>.6&&!solidAt(ex,ez)&&!(stampAt(ex,ez)&&stampAt(ex,ez).kind==='site')){ok=true;break;}
       }
       if(!ok)continue;
-      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,typeof level!=='undefined'?level:1,'normal'):null;
-      const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,(i===0&&leader)?leader:grp.name,variant);
+      const fid=key+':'+epoch+':'+i; // S477 — a chunk's foe is its chunk, its spawn epoch and its index (co-op rules)
+      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,typeof level!=='undefined'?level:1,'normal',seededRng('variant',fid)):null;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,(i===0&&leader)?leader:grp.name,variant),fid);
       e._chunk=key;
       ZONES.world.enemies.push(e);ch.enemies.push(e);
     }
