@@ -8,15 +8,39 @@ fs.mkdirSync('tests/out', { recursive: true }); fs.mkdirSync('docs/prototypes', 
 
 const opened = await page.evaluate(() => { openInspector(); return { open: INSPECTOR.open, groups: INSPECTOR.groups, n: INSPECTOR.entries.length, ov: document.getElementById('ov').style.display, canvasIn: REN.domElement.parentNode.id }; });
 console.log(JSON.stringify(opened));
-check('the inspector opens from the title screen with five groups and the renderer\'s canvas on its stage', opened.open && opened.groups.length === 5 && opened.n > 100 && opened.ov === 'none' && opened.canvasIn === 'insp-stage', opened);
+check('the inspector opens from the title screen with seven groups and the renderer\'s canvas on its stage', opened.open && opened.groups.length === 7 && opened.n > 380 && opened.ov === 'none' && opened.canvasIn === 'insp-stage', opened);
 
 const all = await page.evaluate(() => INSPECTOR.buildAll());
 const failed = all.filter(e => e.err), empty = all.filter(e => !e.err && e.tris === 0);
 const byGroup = {}; for (const e of all) { const k = e.group; byGroup[k] = byGroup[k] || { n: 0, tris: 0, failed: 0 }; byGroup[k].n++; byGroup[k].tris += e.tris; if (e.err) byGroup[k].failed++; }
 console.log(JSON.stringify(byGroup)); if (failed.length) console.log('failed:', JSON.stringify(failed.map(e => [e.group, e.sub, e.name, e.err])));
 check('every entry builds with the game\'s own builder and has triangles', failed.length === 0 && empty.length === 0, { failed: failed.map(e => e.name + ': ' + e.err), empty: empty.map(e => e.name) });
-check('the five groups each hold their pieces: people by role and nation, the foes, both kits, the houses by style, the ships by class and look, the herbs, trees and rocks',
-  byGroup['People'].n >= 60 && byGroup['Creatures'].n >= 14 && byGroup['Buildings'].n >= 12 && byGroup['Ships'].n >= 12 && byGroup['Plants, trees, rocks'].n >= 40, byGroup);
+check('the seven groups each hold their pieces: people by role and nation, the foes, both kits, the houses by style, the ships by class and look, the herbs, trees and rocks, the furniture kit and the town props, the weapon kit, the viewmodels and the armoured body',
+  byGroup['People'].n >= 60 && byGroup['Creatures'].n >= 14 && byGroup['Buildings'].n >= 12 && byGroup['Ships'].n >= 12 && byGroup['Plants, trees, rocks'].n >= 40 && byGroup['Props and furniture'].n >= 140 && byGroup['Weapons and armour'].n >= 30, byGroup);
+
+// the furniture kit is listed once per nation, every piece; the catalogue is written for the control room's Meshes tab
+const cat = await page.evaluate(() => INSPECTOR.catalogue());
+const furnByNation = {}; for (const c of cat) if (/^The furniture kit: /.test(c.sub)) furnByNation[c.sub] = (furnByNation[c.sub] || 0) + 1;
+const keys = new Set(cat.map(c => c.key));
+check('every furniture piece is listed in each nation\'s wood, and every entry has a stable key of its own', Object.keys(furnByNation).length === 3 && Object.values(furnByNation).every(n => n === 38) && keys.size === cat.length && cat.every(c => /^[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/.test(c.key)), furnByNation);
+fs.writeFileSync('docs/inspector-catalogue.json', JSON.stringify({ at: new Date().toISOString(), entries: cat }, null, 0) + '\n');
+
+// the tree folds: groups closed until opened, a selected piece opens its group and section
+const folds = await page.evaluate(() => { INSPECTOR.unpinAll(); const tree = document.querySelector('#insp-tree'); const openBefore = tree.querySelectorAll('.gbox[style*="display: block"]').length;
+  INSPECTOR.select('creatures/on-the-wolf-kit/dire-wolf'); const openAfter = [...tree.querySelectorAll('.grp.open')].map(x => x.textContent); const subOpen = [...tree.querySelectorAll('.sub.open')].map(x => x.textContent);
+  const on = tree.querySelector('.ent.on'); return { openBefore, openAfter, subOpen, on: on && on.textContent, name: INSPECTOR.sel && INSPECTOR.sel.name }; });
+check('the tree starts folded and opens the group and section of the piece picked by its key', folds.openAfter.join() === 'Creatures' && folds.subOpen.join() === 'On the wolf kit' && folds.on === 'Dire Wolf' && folds.name === 'Dire Wolf', folds);
+
+// building the first-person pieces swaps the equipment and puts it back, and rebuilds the player's own viewmodel
+const eq = await page.evaluate(() => { const before = { w: EQ.weapon, c: EQ.chest, o: EQ.offhand }; const e = INSPECTOR.entries.find(x => x.sub === 'First person, in hand' && x.name === 'Sword'); const r = INSPECTOR.built.get(e.id);
+  return { same: EQ.weapon === before.w && EQ.chest === before.c && EQ.offhand === before.o, vmBack: !!vmSword && vmSword.parent === VM_SCENE && vmSword !== r.obj.children[0], tris: r.tris }; });
+check('a first-person piece leaves the equipment and the player\'s own viewmodel as they were', eq.same && eq.vmBack, eq);
+
+// side by side: two pinned pieces and a third selected stand in a row on the stage, and unpinning clears them
+const pins = await page.evaluate(() => { INSPECTOR.unpinAll(); INSPECTOR.pin('Wolf'); INSPECTOR.pin('Cave Bear'); INSPECTOR.select('Dragon');
+  const xs = INSPECTOR.shown.map(e => INSPECTOR.built.get(e.id).obj.position.x); const onStage = INSPECTOR.shown.every(e => INSPECTOR.built.get(e.id).obj.parent === INSPECTOR.stage);
+  const names = INSPECTOR.shown.map(e => e.name); const chips = document.querySelectorAll('#insp-pins .chip').length; INSPECTOR.unpinAll(); const after = INSPECTOR.shown.map(e => e.name); return { names, xs, onStage, after, chips, chipsAfter: document.querySelectorAll('#insp-pins .chip').length }; });
+check('pinning puts the pieces side by side in a row, left to right, and unpinning leaves the selected one', pins.names.join() === 'Wolf,Cave Bear,Dragon' && pins.onStage && pins.xs[0] < pins.xs[1] && pins.xs[1] < pins.xs[2] && pins.chips === 2 && pins.after.join() === 'Dragon' && pins.chipsAfter === 0, pins);
 
 // the animated ones move: a walking villager's thigh turns, a trotting wolf's, a ship's yard braces
 const moved = await page.evaluate(() => {

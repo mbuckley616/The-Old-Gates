@@ -11694,6 +11694,24 @@ The tests: `beastfall` gains the 60 seeded deaths (the median must rest within 1
 - A dead wolf, boar or bear now stops a little sooner on the ground rather than creeping the last centimetres. It should not be visible.
 - Falling below 30% in the first moments of the duel now keeps Rowe's offer on screen until you answer it.
 
+## v80 — Session 483 — `hourhitch`, `shiphull` and `shoperrands` red on CI on main's merge of Sessions 466–482 (CI fix, tests only)
+Section H has nothing open: every item is struck through, nothing of the look waits on a decision, and the four open findings in `docs/quest_review.md` are all on auto/systems. So this run's one session is the CI failure already on the branch. auto/backlog was level with main after the producer's merge (`f8551e4`), and the check on that commit failed shards 3, 5 and 7 on one check each. All three suites passed locally on the same code. Each failure was the test reading a moment it did not hold still, not the game.
+
+`shiphull`, *bow-on into her at 7*: the ram took 6 off the hull, not 11. 6 is 4.2 × 3 × ½, and 4.2 is 7 × .6, which is what `tickHullCollisions` does to both speeds when two hulls overlap. The test cleared the world's ships before each launch but not before the rams step, and real frames run between the two. The world had sailed its own ships in by then (two of them locally, logged now as `cleared`). On CI one of them lay against the sloop, and it came first in the loop, so its push slowed her before the black sail's touch was judged. *Still touching* failed with it, because it compares against 89. The step now clears the world's ships first, as `launch` does.
+
+`shoperrands`, *the draught is handed over at noon*: the test picked Niamh, pinned the player beside her, then pressed E in a separate call. E is handled in the keydown handler, so the nearest person at that instant takes the draught. On a slow runner a frame ran between the pin and the key, and Cormac walked nearer. The stand beside her is now taken again by a one-shot capture-phase keydown listener, which runs before the game's own handler in the same event. The real keypress is kept.
+
+`hourhitch`, *never over 8 s*: on that runner every frame took 4.5–5.9 s, and noon's worst was 5.2 s. The 18:59 step took 8.6 s with nothing compiled: the shader and program counts were unchanged and nothing was added. That is a slow machine against a fixed 8 s, not the stall the suite hunts, which was 20–24 s. The cap is now 8 s or twice noon's worst frame, whichever is more. The 4×-noon check stays as it was. Locally noon's worst is 2.1 s, so the cap stays at 8 s.
+
+### Verified (headless Chromium)
+- `shiphull` 20/20: the rams step cleared 2 of the world's ships before spawning the black sail. The bow ram took −11 to 89, still touching stayed at 89, the beam −12 to 88, then 76.
+- `shoperrands` 6/6: at noon Niamh is picked and Niamh takes the draught; at dusk Lorcan, the keeper.
+- `hourhitch` 6/6: noon's worst 2,078 ms, cap 8,000 ms, worst judged 2,672 ms. *Jump to 21h* (8,671 ms) is set aside as before, because a foe's skinned program compiled on its first draw.
+- `parsecheck` clean. Build tag s379.
+
+### Needs eyes
+Nothing in the game changed. Whether CI on this push is green is the check.
+
 ## v80 — Session 484 — The world module dissolved into nine files (backlog K, step 2)
 Michael asked on 4 Oct for the whole split and rearchitecture to land today and approved, in chat, everything the local session needed: the `guardplay` fix on auto/systems (Session 483), the merges of #134 and #115 to main, and the cut here rather than through the hourly Fable card, with FREEZE #138 kept open until this PR merges. The plan is `docs/design/split-plan.md` §6, option B, which Michael chose on 30 Sep (Q7, "A soon after the split, B as its own Fable session"); A, breaking the `return {…}` line alone, is subsumed, since the return line is gone.
 
@@ -11738,3 +11756,37 @@ Michael asked for a tab on the control room that lists every mesh the game build
 ### Needs eyes
 - Michael, on the control room's Meshes tab: whether the frame loads there (claude.ai may refuse the iframe; the tab's link opens it full screen either way), and whether the five groups are the right first cut. Props and furniture, weapons and armour, and pinning two entries side by side are the second pass, listed in backlog K.
 - The lighting on the stage is its own, not the world's: a piece may read warmer or flatter than in play. The hour slider helps; the world's own fog and sky are not there.
+
+## v80 — Session 493 — The mesh inspector's second pass: props, weapons and armour, side by side
+Michael's go on the three things Session 492 left: props and furniture, weapons and armour, and pinning two pieces side by side. The inspector now holds 322 entries in seven groups.
+
+**Props and furniture.** The furniture kit (`furnKit()` in `56-dungeon-build.js`) is what every room is dressed from, dungeon and house alike, so its 38 pieces are listed one by one, each built by its own function and baked (`K.bake(K.table(1.4,.8,'gatelands',3))`): table, bench, chair, stool, bed, chest, shelf, dresser, counter, hearth, cask, crate, sack, rug, the smithy's forge, anvil, tub, rack and grindstone, the armoury's stand, wall shield and bench, the apothecary's herb bundle, still and scales, the church's pew, altar, dais and pulpit, column, banner, throne, brazier, notice board, desk, bookcase, ladder and wine rack; a bed in each nation's wood; the dungeon's chest (`buildChestShell`) and barrel (`kitBarrel`); the sixteen sigil stones (`buildSigilMesh`); and the town's lamp post, signpost, eight trade signs with their painted boards, the three camp tents, the coach's cart and a quay. The kit's signatures are not uniform (a bench takes a width first, a rug its two sizes, a sack only a seed), and the first run showed it: a bench, a shelf and a counter drew wrong or not at all until each call matched its function.
+
+**Weapons and armour.** The weapon kit (`buildWeapon` in `32-people.js`): fourteen pieces from the dagger to the bare bow, three of them rusted as the bandits carry them, and the round, kite and tower shields. The first-person viewmodel of each of the seven weapon types, the fists and the shield, built by `buildViewmodel` and `buildShieldViewmodel` themselves: the inspector swaps the equipment for a made item, builds, takes the hand and weapon off `VM_SCENE`, puts the equipment back and rebuilds the player's own viewmodel, so the game is left as it was (the test checks it). And your own body through `tpBuild`, in a full kit of each material from wooden to demonic, and as equipped now.
+
+**Side by side.** A Pin button on the bar keeps the piece on the stage; the next piece selected stands beside it, the row centred and the camera fitted to the whole, with a chip per pinned piece to unpin and the bandit at the row's left end. Every piece in the row keeps animating by its own mode. A piece alone still shows its distant copy. Flat pieces (a rug, a dais) are now looked at from above in the grid.
+
+### Verified (headless Chromium)
+`tests/inspector.test.mjs`, 9/9: seven groups, 322 entries, every one builds with triangles and none fail (Props and furniture 74 entries, 83,268 triangles; Weapons and armour 41, 119,278; the five earlier groups unchanged); building a first-person piece leaves `EQ` and the player's viewmodel as they were; pinning the Wolf and the Cave Bear and selecting the Dragon puts the three on the stage in that order, left to right, with two chips, and unpinning leaves the Dragon alone; the earlier checks (the walking villager, the trotting wolf, the trimming sails, 322 thumbnails, the close) hold. Grids in `docs/prototypes/inspector-props-and-furniture.png` and `inspector-weapons-and-armour.png`. `parsecheck` clean. Build tag s416.
+
+### Needs eyes
+- The furniture is shown in the gatelands wood only (and the bed in each nation's); a kind that the room sets paint by nation (the chair, the dresser) reads one way here. Say if you want every piece by nation.
+- The armour stand is shown with the mail kind, the wall shield with the round; the kit has more kinds than the inspector lists.
+
+## v80 — Session 494 — The inspector by nation, folded, keyed, and tied to the ideas board
+Michael's three asks after the second pass, and a fault he found: every furniture piece by nation; a way to fold the list; and a way to critique a mesh from the control room. The fault: the control room's Meshes tab showed a blank white frame. claude.ai does not let an artifact frame another site, so the frame could never have worked; it only looked like it might. The tab is now something better.
+
+**By nation.** The furniture kit's 38 pieces are listed once in each nation's wood (gatelands, mark, aurenne): 114 entries, 395 in all. Each call passes the nation where its function takes one.
+
+**Folds.** The tree starts with every group closed; a group opens on its header (and shows its grid), a section on its own, with a caret that turns. The find box opens whatever it finds. Picking a piece, from the grid or by its key, opens its group and section and scrolls to it. The grid's sections fold too.
+
+**Keys and the deep link.** Every entry has a stable key, `group/section/name` slugged (`creatures/on-the-wolf-kit/dire-wolf`), and `index.html?inspector=<key>` opens the inspector at that piece. `INSPECTOR.select` takes a key, a name or an id. The test writes `docs/inspector-catalogue.json` (key, group, section, name, file, triangles) each run.
+
+**The critique loop.** The control room's Meshes tab is now the catalogue itself, embedded at publish from that file (and refreshed from Pages when the viewer's browser allows the fetch), folded by group and section with a find box, and on every piece a *View in 3D* link (the deep link) and a *Note* button. A note writes to the ideas board, the `notes` collection the producer already files from, as "Mesh inspector · group › section › name: …" with the piece's key, so the producer carries it to the backlog like any other idea and the look builder can find the piece by its key. Notes already left on a piece show under it, and in the Ideas tab as before. The other way round, *Note for the team* on the inspector's bar opens the control room at `#meshes=<key>`: the tab opens, the piece's group and section unfold, it scrolls into view and its note box opens.
+
+### Verified (headless Chromium)
+`tests/inspector.test.mjs`, 11/11: seven groups, 395 entries, none fail; the furniture kit is listed in three nations with 38 pieces each; every key is unique and of the slug form; the tree starts folded and picking Dire Wolf by key opens Creatures and On the wolf kit with that entry marked; the earlier checks (animation, equipment restore, pinning, thumbnails, the close) hold. The control room republished with the 395-entry catalogue (version 11). `parsecheck` clean. Build tag s417.
+
+### Needs eyes
+- Michael: the note loop end to end, which I cannot drive from here (the control room needs a signed-in claude.ai): a note on a piece should appear under it at once and on the Ideas tab, and the producer should file it within the hour.
+- The producer files mesh notes as ideas; if they should go straight to the look builder's section H, that is one line in the producer's prompt.
