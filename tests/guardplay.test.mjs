@@ -32,7 +32,9 @@ await page.evaluate(() => { forceTime(12); worldState.crime = {}; worldState.chu
   const S = WORLD.settle.get('dunmore'); return S.npcs.map(n => (n.sched && n.sched.type) + ':' + (n.g.visible && !n._retreated)).join(' '); }).then(x => console.log('street', x));
 
 // 1. a villager struck in the street, with a real swing
-const v = await face(`S.npcs.find(n => n.g.visible && !n._retreated && n.sched && !['guard','watch','constable'].includes(n.sched.type) && !(n.def && n.def._lord))`);
+// a villager with nobody else within 4 units: the strike lands on the nearest townsperson in front of you, and two who
+// have stopped for a word stand 0.7 apart (Session 483: the swing struck Clodagh, who stood beside the Sorcha it was aimed at)
+const v = await face(`S.npcs.find(n => n.g.visible && !n._retreated && n.sched && !['guard','watch','constable'].includes(n.sched.type) && !(n.def && n.def._lord) && !S.npcs.some(m => m !== n && m.g.visible && !m._retreated && Math.hypot(m.g.position.x - n.g.position.x, m.g.position.z - n.g.position.z) < 4))`);
 const sw1 = await swing(); const s1 = await state(); const v1 = await page.evaluate(() => ({ scared: (window._n._scared || 0) > performance.now(), crimes: worldState.crimes.map(c => c.kind) }));
 console.log('villager', JSON.stringify(v), sw1, JSON.stringify(s1), JSON.stringify(v1));
 check('a swing at a townsperson in the street is assault: favour −3, a 75-gold fine, three points owed, and they run', sw1 && s1.favor === -3 && s1.bounty === 75 && s1.debt === 3 && v1.scared && v1.crimes.includes('assault'), { v, s1, v1 });
