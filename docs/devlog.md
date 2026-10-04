@@ -11583,3 +11583,22 @@ The fight suites pass unchanged: `faolchu` (green), `fistfight` 6/6, `posture` 2
 
 ### Needs eyes
 Nothing in solo play. Fights roll from the same odds as before.
+
+## v80 — Session 478 — One gate's floor is the same on two machines (backlog K step 1, the dungeon)
+This continues Session 477 into the dungeons. A gate's floor was laid by `Math.random` in four places: the corner clusters of barrels and crates, the 8% L-corner chests, the storeroom chests and their shuffle, and the foes' spots. The foes' spots were a `sort(()=>Math.random()-.5)`, which is a biased shuffle and different on every entry. So one seed built different floors on two machines, and on two visits.
+
+`renderFloor` now draws every placement roll from `seededRng('dplace', dKeyOf(portal, floor))`. `dKeyOf` is the gate's seed and the floor; a hand-made dungeon with no seed uses its id or name. `spawnFloorEnemies` shuffles its candidate cells with a Fisher–Yates on `seededRng('dfoes', …)`. Each foe is keyed `<seed>:<floor>:<index>` through Session 477's `keyFoe`. Its variant comes from `seededRng('variant', id)`, and its first ranged wait and its patrol (wander or scan) from `seededRng('dspawn', id)`. Containers are keyed by place, index on the floor and the day, as the world's are (Session 471): `<seed>:<floor>:barrel:<n>:<day>`, `…:chest:<n>:<day>` and the fort library's `…:shelf:<n>:<day>`.
+
+The fight's rolls follow the foe. The dungeon foe's blow (`executeDungeonStrike`), the master's slam and its 8–10 s wait (`slamBlow`, `slamEvery(e)`, Session 404), and your swing's spread on a dungeon foe (`62-actions.js`) draw from `foeRand(e)`. A keyed foe's corpse, in the open or underground, rolls its loot on `<id>:corpse:<day>`.
+
+Cosmetic rolls stay `Math.random`: a barrel's turn, the rubble, torch flicker, the foes' faces and phase offsets. Still unkeyed: the spell and bow damage (rolled before a target is known), a slime's split, a black sail's chest, and the open world's spawners that give no id (the guard, camps, raids, hunts, ambushes, boarders, the duel). They are listed in backlog K.
+
+The odds are unchanged, except that the foes' shuffle is now unbiased. The old comparator sort favoured some cells; the spread is the same in kind.
+
+`56-dungeon-build.js` is in the look builder's area by the code map. The edits are the placement draws and the spawn's few lines, not meshes, and auto/backlog has none pending in that file.
+
+### Verified (headless Chromium)
+`dunseed` 8/8 (new). Two gates were each entered twice, with 137 `Math.random` draws stirred in between: Dowor Keep (goblin fort, seed 519737: 8 barrels and crates, 5 chests, 38 foes on two floors) and Iniskeel Gate (deep fort, seed 785107: 11, 5, 30). Both builds of each gate are the same: every container in place, with the same goods; every chest locked alike, with the same loot; every foe at the same spawn spot, of the same kind and variant, with the same patrol and ranged wait. Every foe has its own `<seed>:<floor>:<index>` id. Two dungeon foes with one id strike 19 10 10 19 16 18 and slam 22/32/22/28 at 8.0–9.0 s waits, the same on both. Another id rolls 10 16 18 15 15 9. A keyed Bandit killed twice leaves a Stamina Draught both times, and three other ids leave nothing, Gold Coins and a Bronze Buckler. On the old code all six of those checks fail: 9 against 18 barrels, 6 against 3 chests, and 38 against 31 foes on two entries. The neighbour suites pass: `chestpicks` 5/5, `mimicspots` 7/7, `masterslam` 16/16, `lootseed` 7/7, `foeseed` 6/6, `targetof` 7/7, `dungeonexit` 4/4. `parsecheck` clean. Build tag s409.
+
+### Needs eyes
+Nothing new by play. A gate entered twice in one day now gives the same chests, which it re-rolled before; their contents are as rich as before.

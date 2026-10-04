@@ -226,7 +226,7 @@ function executeDungeonStrike(e, now){
     return;
   }
   const def2 = _armour();
-  const rawDmg = Math.max(1, Math.round((10 + Math.floor(Math.random()*11) - Math.floor(def2*.5)) * (e.dmgMult||1.0)));
+  const rawDmg = Math.max(1, Math.round((10 + Math.floor(foeRand(e)*11) - Math.floor(def2*.5)) * (e.dmgMult||1.0)));
   executeStrike(e, rawDmg, now);
 }
 
@@ -271,22 +271,22 @@ function revealMimic(e){
 // untouchable window, when it lands. A staggered master loses its slam. Returns true while the slam is wound up, so the
 // loop holds the master still and starts no other blow.
 const SLAM_TELL=.9,SLAM_R=3,SLAM_NEAR=6,SLAM_EVERY=[8,10];
-function slamEvery(){return SLAM_EVERY[0]+Math.random()*(SLAM_EVERY[1]-SLAM_EVERY[0]);}
-function slamBlow(e){const def2=_armour();return 2*Math.max(1,Math.round((10+Math.floor(Math.random()*11)-Math.floor(def2*.5))*(e.dmgMult||1)));}
+function slamEvery(e){return SLAM_EVERY[0]+foeRand(e)*(SLAM_EVERY[1]-SLAM_EVERY[0]);}
+function slamBlow(e){const def2=_armour();return 2*Math.max(1,Math.round((10+Math.floor(foeRand(e)*11)-Math.floor(def2*.5))*(e.dmgMult||1)));}
 function slamRing(e){
   if(!e._slamRing){const m=new THREE.Mesh(new THREE.RingGeometry(SLAM_R-.22,SLAM_R,48),new THREE.MeshBasicMaterial({color:0xff5a30,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.visible=false;e._slamRing=m;}
   const r=e._slamRing;if(r.parent!==dScene)dScene.add(r);r.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+.04,e.z);return r;}
-function slamCancel(e){e._slamT=0;telegraphReset(e);if(e._slamRing)e._slamRing.visible=false;e._slamCd=slamEvery();}
+function slamCancel(e){e._slamT=0;telegraphReset(e);if(e._slamRing)e._slamRing.visible=false;e._slamCd=slamEvery(e);}
 function tickMasterSlam(e,dt,dist,now){
   if(!e.master||e.dead)return false;
-  if(e._slamCd==null)e._slamCd=slamEvery();
+  if(e._slamCd==null)e._slamCd=slamEvery(e);
   if(e._slamT>0){
     if(isStaggered(e)){slamCancel(e);return false;}
     e._slamT-=dt;const p=1-Math.max(0,e._slamT)/SLAM_TELL;
     e.telegraphMax=SLAM_TELL;telegraphPulse(e,p);
     const r=slamRing(e);r.visible=true;r.material.opacity=.15+.55*p;
     if(e._slamT>0)return true;
-    e._slamT=0;telegraphReset(e);r.visible=false;e.atkCd=Math.max(e.atkCd||0,1.2);e._slamCd=slamEvery();e._slams=(e._slams||0)+1;
+    e._slamT=0;telegraphReset(e);r.visible=false;e.atkCd=Math.max(e.atkCd||0,1.2);e._slamCd=slamEvery(e);e._slams=(e._slams||0)+1;
     if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.32,220);
     const d=Math.hypot(px-e.x,pz-e.z);
     if(d>=SLAM_R){e._slamLast='clear';showMsg('The ground cracks where you stood.','#c8e88a');return false;}

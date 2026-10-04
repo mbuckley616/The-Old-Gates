@@ -163,7 +163,7 @@ function _resolveDungeonStrike(_isPow){
       // rear cone) takes SHIELDBEARER_FRONT_BLOCK of the damage. shieldFrontMult
       // returns 1.0 for everything else and for flanking hits.
       const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const rawDmg=Math.floor((lo+Math.floor(Math.random()*(hi-lo))+Math.floor(level*1.5))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
+      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
       e.hp=Math.max(0,e.hp-dmg);
@@ -364,7 +364,7 @@ function killE(e,tag=''){
   // Items array (possibly empty) — panel displays and the prompt hides once items.length===0.
   const ds = currentPortal?currentPortal.diffScale:null;
   const th = currentPortal?currentPortal.theme:null;
-  const items = rollContainerLoot('corpse', ds, th, lootDropChance(e));
+  const items = rollContainerLoot('corpse', ds, th, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
   const drops = items.length > 0;
   CORPSES.push({x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});
   if(drops){showMsg(`${e.name} slain!${tag} Press E to loot.`,'#c8a84a');}

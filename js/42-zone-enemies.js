@@ -1540,7 +1540,7 @@ function killZoneEnemy(e,sc,tag=''){
   lootSpark.position.set(e.x, lootY, e.z);
   sc.add(lootSpark);
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
-  const items = rollContainerLoot('corpse', null, null, lootDropChance(e));
+  const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
   // v61c2 — Boss death hooks. The Faolchú gets:
   //   - guaranteed unique drop (The Faolchú's Mark amulet) prepended to
   //     the loot items array, so the corpse always carries it
