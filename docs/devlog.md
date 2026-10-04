@@ -11003,3 +11003,10 @@ CI on 77f0d9a (Session 466) failed shards 3 and 6, one suite each, neither touch
 `duel` (with `duelrhythm`) 32/32, `coopsaves` 21/21 twice, all three runs at once on one machine. The yield now reads `state:"lost"`, rematch day 7, Rowe Captain, 26 health.
 ### Needs eyes
 Nothing in the game. CI's next run on this branch is the proof.
+
+## v80 — Session 476 — `export` red on CI: an autosave that landed after the delete brought the character back (CI fix, tests only)
+CI on ce6c905 (Session 469) failed shard 7, one check in one suite: `export`'s *second import is a second character*. It passed here. The test saved slot 1, fired an autosave with `saveGame(true)` (which returns nothing to wait on), slept 800 ms after each, exported, deleted the character, slept a second, and imported the file twice. On a slow runner the autosave was still writing when the character was deleted; it landed afterwards under the deleted character's id, so that character came back with one save, the first import took a fresh id beside it, and the second made three characters instead of two. I proved the order rather than guessing it: with the autosave's write held until just after the delete, the old test fails the same way (three characters, `…:1`, `…:2`, `…:2`). The test now awaits `saveToSlot(0)`, waits for an autosave entry stamped at or after the call to reach the index (up to 20 s), and drops the pause after the delete, which `ssDeleteChar` already resolves when done. The check also prints the characters and their save counts, so a future failure says which way it went. No game code changed. The suite is the saves' (the systems builder's area); the edit is one block of the test and should merge clean.
+### Verified (headless Chromium)
+`export` 6/6 twice (two characters of three saves each). The old test with the autosave held past the delete: FAIL, three characters. The new test with every save write slowed by 2.5 s: 6/6, two characters. `parsecheck` clean. Build tag s377.
+### Needs eyes
+Nothing in the game. CI's next run on this branch is the proof.
