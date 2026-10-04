@@ -18,7 +18,7 @@ const SECS = { keeperwalk: 605, mainrun: 462, falls: 449, fortwalk: 381, placesa
   boxspots: 133, dungeonexit: 132, q7world: 132, lockon: 131, fortfurn: 124, bedrollprompt: 123, weather: 121,
   shoperrands: 119, dunfurn: 117, shipwright: 115, mimicspots: 113, livepick: 112, witness: 112, towngate: 108,
   chestpicks: 107, penance: 106, autosave: 105, fistswing: 105, theft: 104, shopfurn: 103, drydoors: 102, coachinn: 96,
-  ragdoll: 94, riverquay: 94, watch: 92, wxplace: 91, duel: 90, wolves: 90, ashenburn: 89, saves: 89, shoreplaces: 88, shoresave: 150, blacksail: 180, compactrefit: 150, rowebeats: 150, cellrace: 90, rowelines: 240,
+  ragdoll: 94, riverquay: 94, watch: 92, wxplace: 91, duel: 90, wolves: 90, ashenburn: 89, saves: 89, shoreplaces: 88, shoresave: 150, blacksail: 180, compactrefit: 150, targetof: 120, rowebeats: 150, cellrace: 90, rowelines: 240,
   civicfurn: 87, harbour: 85, dunconts: 84, constable: 83, foes: 83, shophours: 82, locks: 81, buyprice: 80, cargo: 80,
   coachseat: 80, plants: 80, townroads: 80, walls: 80, homefurn: 77, intdoors: 77, lockfair: 77, mainquest: 76,
   seawear: 76, signs: 76, coach: 75, cowards: 74, dungeon: 74, houses: 74, investwords: 74, captainguard: 73, chapel: 73,

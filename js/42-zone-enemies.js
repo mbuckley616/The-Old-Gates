@@ -870,7 +870,7 @@ function unlockFoe(e){if(!e)return e;e.locked=false;e.minLevel=1;if(e.mesh)e.mes
 function alertPack(e,r){try{const E=(activeZoneId==='world'&&ZONES.world)?ZONES.world.enemies:(typeof ZE!=='undefined'?ZE:[]);for(const o of E){if(o===e||o.dead||o.alert)continue;if(Math.hypot(o.x-e.x,o.z-e.z)<r)o.alert=true;}}catch(err){}}
 // v80 S135 — an archer's arrow: a shaft that flies flat at the player and can be blocked
 const ZARROWS=[];
-function fireZoneArrow(e,sc){const ax=px-e.x,az=pz-e.z,ad=Math.hypot(ax,az)||1;
+function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.hypot(ax,az)||1;
   const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.7),new THREE.MeshLambertMaterial({color:0x9a7a4a}));const y=activeTerrainH(e.x,e.z)+1.0;m.position.set(e.x,y,e.z);m.rotation.y=Math.atan2(ax,az);sc.add(m);
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
@@ -897,7 +897,8 @@ function tickZoneEnemies(dt,now,sc){
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);
     tickPostureRegen(e, dt, now);
-    const dist=Math.hypot(px-e.x,pz-e.z);
+    const T=targetOf(e); /* S468 — co-op rule: the foe's target, never px/pz */
+    const dist=Math.hypot(T.x-e.x,T.z-e.z);
     // v61c2 — Boss-specific tick block. Runs alongside the standard enemy
     // tick path so the boss inherits chase/AI/HP-bar updates. Adds:
     //   (1) sigil-trace pulse — emissive red on the seams, breathing in/out
@@ -988,7 +989,7 @@ function tickZoneEnemies(dt,now,sc){
       // it coming and dodge by sprinting laterally. Fires from the snout
       // at the player's position (locked at telegraph end, so a moving
       // player can sidestep).
-      const _bossDist = Math.hypot(px-e.x, pz-e.z);
+      const _bossDist = Math.hypot(T.x-e.x, T.z-e.z);
       if(e.alert && e.caorChargeT>0){
         // Currently winding up — advance charge timer, pulse sigils
         e.caorChargeT -= dt;
@@ -1002,7 +1003,7 @@ function tickZoneEnemies(dt,now,sc){
           // player's CURRENT position (locked at fire time, not telegraph
           // start, so the player must keep moving to dodge consistently).
           e.caorChargeT = 0;
-          const dxF = px - e.x, dzF = pz - e.z;
+          const dxF = T.x - e.x, dzF = T.z - e.z;
           const ddF = Math.hypot(dxF, dzF) || 1;
           // Snout origin — boss's body center plus forward offset based
           // on current facing (boss mesh.lookAt's the player each tick,
@@ -1083,7 +1084,7 @@ function tickZoneEnemies(dt,now,sc){
       } else {
         const ety=activeTerrainH(e.x,e.z);
         e.mesh.position.set(e.x,ety,e.z);
-        e.mesh.lookAt(px,ety,pz);
+        e.mesh.lookAt(T.x,ety,T.z);
         e.el.position.set(e.x,ety+.8,e.z);
         return;
       }
@@ -1100,7 +1101,7 @@ function tickZoneEnemies(dt,now,sc){
     if(!e.alert && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?15:9)){ // v80 S135 — the open country sees further
       let los = true;const _losSolid=(_inWorld&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid; // trunks and posts don't hide you
       for(let t = 0.15; t < 0.9; t += 0.15){
-        const tx = e.x + (px - e.x) * t, tz = e.z + (pz - e.z) * t;
+        const tx = e.x + (T.x - e.x) * t, tz = e.z + (T.z - e.z) * t;
         if(_losSolid(tx, tz)){ los = false; break; }
       }
       if(los){ e.alert = true; alertPack(e, _inWorld?16:10); }
@@ -1124,7 +1125,7 @@ function tickZoneEnemies(dt,now,sc){
       return;
     }
     // Chase player
-    let dx2=px-e.x,dz2=pz-e.z,d=Math.hypot(dx2,dz2)||1;
+    let dx2=T.x-e.x,dz2=T.z-e.z,d=Math.hypot(dx2,dz2)||1;
     const _stopDist = e.isBoss ? Math.max(1.5, (e.bossDef.biteRange||2.0)-1.0) : 1.0;
     const _archer=/Archer|Slinger/.test(e.name||'');
     if(_archer){ // v80 S135 — archers keep 6–13u, back off when you close, and shoot
@@ -1135,7 +1136,7 @@ function tickZoneEnemies(dt,now,sc){
         if(los){e.arrowCd=2.2+Math.random()*.8;fireZoneArrow(e,sc);}}
     } else if(e.alert&&!e.isBoss){ // v80 S135 — a pack spreads: each takes an angle around you instead of queueing on one line
       const packN=ZE.filter(o=>!o.dead&&o.alert&&o!==e&&Math.hypot(o.x-e.x,o.z-e.z)<14).length;
-      if(packN>0){if(e._flank==null)e._flank=(Math.random()<.5?-1:1)*(.5+Math.random()*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=px-Math.cos(base+e._flank)*r,tz=pz-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
+      if(packN>0){if(e._flank==null)e._flank=(Math.random()<.5?-1:1)*(.5+Math.random()*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
     }
     if(!_archer&&d>_stopDist){
       const step=e.spd*dt*(e.alert&&!e.isBoss?1.25:1); // alert, they come at a run
@@ -1143,14 +1144,14 @@ function tickZoneEnemies(dt,now,sc){
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
     }
     e.mesh.position.set(e.x,activeTerrainH(e.x,e.z),e.z);
-    e.mesh.lookAt(px,activeTerrainH(e.x,e.z),pz);
+    e.mesh.lookAt(T.x,activeTerrainH(e.x,e.z),T.z);
     // v63 — Live-update combatYaw only when NOT mid-attack. The visual mesh
     // turret tracks the player every frame, but combat facing freezes during
     // windup (telegraphT > 0) and recovery (atkCd > 0) — the player can
     // sidestep their swing and circle into the back arc during those windows.
     // Idle alert state keeps facing live: no back available to attack head-on.
     if(e.telegraphT <= 0 && e.atkCd <= 0){
-      e.combatYaw = Math.atan2(px - e.x, pz - e.z);
+      e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
     }
     e.el.position.set(e.x,activeTerrainH(e.x,e.z)+.8,e.z);
     e.hpFg.scale.x=e.hp/e.maxHp;
@@ -1208,7 +1209,7 @@ function tickZoneEnemies(dt,now,sc){
       // at the moment of commitment. Backstab tests against this stored
       // value, giving the player a window to sidestep the swing and
       // strike from the flank/rear during windup + recovery.
-      e.combatYaw = Math.atan2(px - e.x, pz - e.z);
+      e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
       // v61c3 — Boss-specific telegraph sound. The Faolchú gets a
       // descending growl-scream replacing the generic chirp; signals to
       // the player that this is not a regular enemy wind-up.

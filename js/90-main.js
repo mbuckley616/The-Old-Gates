@@ -1162,7 +1162,7 @@ function loop(now){
           showMsg(`✨ Morning's-First-Word — +${healAmt} HP`,'#aaffaa');
         }
         if(e.hp<=0)killE(e,dmgTag(info,e));else showMsg(sp.ico+' '+spellDisplayName(sp,tier)+' hits '+e.name+' for '+dmg+'!'+dmgTag(info,e),'#88ccff');dScene.remove(fb);BALLS.splice(i,1);}});}
-    ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;const dist=Math.hypot(px-e.x,pz-e.z);
+    ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;const T=targetOf(e);const dist=Math.hypot(T.x-e.x,T.z-e.z);
       // S222 — a slime quivers, faster as it creeps; a fire elemental's flames flicker and its core eases back to its glow
       if(e.limbs&&e.limbs.slime&&e.limbs.body){const q=Math.sin(swT*(e.alert?7:3)+(e.ph||0))*.05;e.limbs.body.scale.set(1+q,1-q*1.4,1+q);}
       if(e.limbs&&e.limbs.flames){const L=e.limbs.flames;for(let i=0;i<L.length;i++){const m=L[i],f=1+.18*Math.sin(swT*9+i*1.7+(e.ph||0))+.08*Math.sin(swT*23+i);m.scale.set(m.userData.s0.x,m.userData.s0.y*f,m.userData.s0.z);}
@@ -1179,7 +1179,7 @@ function loop(now){
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
-          const tx=e.x+(px-e.x)*t,tz=e.z+(pz-e.z)*t;
+          const tx=e.x+(T.x-e.x)*t,tz=e.z+(T.z-e.z)*t;
           if(dSolid(tx,tz)){los=false;break;}
         }
         if(los)e.alert=true;
@@ -1249,7 +1249,7 @@ function loop(now){
       e.atkCd-=dt;e.pathT-=dt;
       if(e._slamT>0&&isStaggered(e))slamCancel(e); // S404 — a staggered master loses its slam
       // Stagger check
-      const stag=staggered.find(s=>s.e===e);if(stag){stag.t-=dt;if(stag.t<=0){staggered=staggered.filter(s=>s.e!==e);reraiseGuard(e);}else{e.mesh.position.set(e.x,e.baseY,e.z);e.mesh.lookAt(px,e.mesh.position.y,pz);e.el.position.set(e.x,.8,e.z);return;}}
+      const stag=staggered.find(s=>s.e===e);if(stag){stag.t-=dt;if(stag.t<=0){staggered=staggered.filter(s=>s.e!==e);reraiseGuard(e);}else{e.mesh.position.set(e.x,e.baseY,e.z);e.mesh.lookAt(T.x,e.mesh.position.y,T.z);e.el.position.set(e.x,.8,e.z);return;}}
       // Dormant state (Gargoyle) — statue-frozen until player comes close. No movement, no attack, no orbit.
       // Activation happens when player within 4u: flash + cry + clears dormant flag.
       if(e.dormant){
@@ -1302,12 +1302,12 @@ function loop(now){
       if(e.fleeT > 0){
         e.fleeT -= dt;
         // Run away from player
-        const dx = e.x - px, dz = e.z - pz, dd = Math.hypot(dx, dz) || 1;
+        const dx = e.x - T.x, dz = e.z - T.z, dd = Math.hypot(dx, dz) || 1;
         const step = e.spd * 1.1 * dt; // slightly faster when panicked
         const [nx, nz] = dSlide(e.x, e.z, (dx/dd) * step, (dz/dd) * step);
         e.x = nx; e.z = nz;
         e.mesh.position.set(e.x, e.baseY, e.z);
-        e.mesh.lookAt(px, e.baseY, pz); // still faces player while backing away
+        e.mesh.lookAt(T.x, e.baseY, T.z); // still faces player while backing away
         e.el.position.set(e.x, .8, e.z);
         // Limb walk while fleeing
         if(e.limbs && !e.isWraith){
@@ -1324,17 +1324,17 @@ function loop(now){
       const _slam=tickMasterSlam(e,dt,dist,now);
       // Ranged enemies hold at distance 3-5; melee enemies always close
       const wantsToChase=!_slam&&(!e.ranged||(dist>4.5));
-      if(wantsToChase){if(e.pathT<=0){e.path=bfs(e.x,e.z,px,pz);e.pathT=1.2;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}}
+      if(wantsToChase){if(e.pathT<=0){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}}
       // Attack lunge animation
       let lungeFwd=0;
       if(e.atkAnim>0){e.atkAnim=Math.max(0,e.atkAnim-dt);const p=e.atkAnim/.35;lungeFwd=Math.sin(p*Math.PI)*.28;}
       const hoverY=e.isWraith?Math.sin(swT*1.4+e.ph)*.12:0;
-      const _wb=(e._wind||0)*.2,_wd=Math.hypot(px-e.x,pz-e.z)||1,_wx=(px-e.x)/_wd,_wz=(pz-e.z)/_wd;
+      const _wb=(e._wind||0)*.2,_wd=Math.hypot(T.x-e.x,T.z-e.z)||1,_wx=(T.x-e.x)/_wd,_wz=(T.z-e.z)/_wd;
       e.mesh.position.set(e.x+e.atkDir.x*lungeFwd-_wx*_wb,e.baseY+hoverY,e.z+e.atkDir.z*lungeFwd-_wz*_wb);
-      e.mesh.lookAt(px,e.mesh.position.y,pz);e.el.position.set(e.x,.8,e.z);try{attackPose(e,true);}catch(err){}
+      e.mesh.lookAt(T.x,e.mesh.position.y,T.z);e.el.position.set(e.x,.8,e.z);try{attackPose(e,true);}catch(err){}
       // v63 — Live-update combatYaw only when NOT mid-attack (see zone tick).
       if(e.telegraphT <= 0 && e.atkCd <= 0){
-        e.combatYaw = Math.atan2(px - e.x, pz - e.z);
+        e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
       }
       // Limb walk animation — only for humanoid/brute when alert and moving
       if(e.limbs&&!e.isWraith){
@@ -1368,7 +1368,7 @@ function loop(now){
           e.hp = Math.min(e.maxHp, e.hp + healAmt);
           e.hpFg.scale.x = e.hp/e.maxHp;
           e.hpFg.position.x = (e.hp/e.maxHp - 1)*.275;
-          spawnDrainFX(dScene, px, pz, e.x, e.z);
+          spawnDrainFX(dScene, T.x, T.z, e.x, e.z);
           sndDrain();
           showMsg(`${e.name} drains ${finalDrain} HP (heals ${healAmt})`, '#aa44cc');
           lvAct.damageTaken += finalDrain;
@@ -1382,7 +1382,7 @@ function loop(now){
         if(dist>2.5&&dist<12&&e.rangedCd<=0){
           e.rangedCd=2.5+Math.random()*1.0;
           // Fire orb toward player
-          const dx2=px-e.x,dz3=pz-e.z,dd=Math.hypot(dx2,dz3)||1;
+          const dx2=T.x-e.x,dz3=T.z-e.z,dd=Math.hypot(dx2,dz3)||1;
           const orbType=e.baseType==='Wraith'?'enemy_wraith':'enemy_phantom';
           const orbGlow=e.baseType==='Wraith'?0xdd0088:0x6666ff;
           const tmpl=SPELL_ORB_TEMPLATES[orbType];
@@ -1415,7 +1415,7 @@ function loop(now){
         e.telegraphMax = telegraphDuration(e);
         e.telegraphT = e.telegraphMax;
         // v63 — Stamp combatYaw at windup start (see zone tick for rationale).
-        e.combatYaw = Math.atan2(px - e.x, pz - e.z);
+        e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
         sndTelegraph();
       }});
     CHESTS.forEach(ch=>{if(ch.floor===currentFloor&&lookingAt(ch)&&(!ch.opened||ch.items.length>0)){ch._near=true;}else{ch._near=false;}}); // v80 — look-at

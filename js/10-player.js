@@ -89,6 +89,11 @@ function showZoneName(text){
 }
 let lid='overworld',scene=null;
 let px=15,pz=20,yaw=0,pitch=0;
+// S468 — co-op rule (CLAUDE.md): a foe picks its target through targetOf(e), never by reading px/pz. Solo it is you.
+// PLAYER_TARGET reads the live position through getters, so a call allocates nothing; a co-op build returns the nearest
+// of the party here, and every foe tick follows.
+const PLAYER_TARGET={get x(){return px;},get z(){return pz;},player:true};
+function targetOf(e){return PLAYER_TARGET;}
 let velY=0,onGround=true,jumpY=0,landShake=0; // jump physics
 let fwdX=0,fwdZ=-1,rgtX=1,rgtZ=0;
 let PHP=100,maxHP=100,mana=100,maxMana=100,stamina=100,maxStamina=100,staminaCD=0;
