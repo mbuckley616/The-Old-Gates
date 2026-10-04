@@ -1,0 +1,601 @@
+{
+ "title": {
+  "h2": "⚔ The Old Gates",
+  "h3": "Village of Ashenmoor",
+  "p": "W / S — forward / back  ·  A / D — strafe\nMouse — look / turn  ·  Shift — sprint\nSpace — jump  ·  E — interact  ·  Left-click — attack (hold for power)\nRight-click — block/parry  ·  F — cast magic  ·  I — inventory\nQ — roll  ·  Middle-click or R — lock on (flick the mouse to switch foes)  ·  Ctrl — toggle sneak (reduces detection radius, slower move)\n\nPress E near a cave entrance to descend into a dungeon.\nPress E near a door to enter shops & trade.",
+  "buttons": [
+   [
+    "sb",
+    "▶ Start New Adventure",
+    "block"
+   ],
+   [
+    "cb",
+    "↩ Continue Adventure",
+    "none"
+   ],
+   [
+    "lgb",
+    "📂 Load Game",
+    "block"
+   ]
+  ]
+ },
+ "archetypes": [
+  {
+   "id": "warrior",
+   "label": "Warrior",
+   "icon": "⚔",
+   "desc": "A born fighter. Steel arms. Steady ground. You take a hit and stay standing.",
+   "primaries": [
+    "might",
+    "fortitude",
+    "resolve"
+   ],
+   "attrs": {
+    "might": 3,
+    "fortitude": 3,
+    "resolve": 2
+   },
+   "defaultWeapon": "greatclub"
+  },
+  {
+   "id": "sentinel",
+   "label": "Sentinel",
+   "icon": "🛡",
+   "desc": "A patient defender. You don't strike first, but you outlast everyone who does.",
+   "primaries": [
+    "fortitude",
+    "resolve",
+    "might"
+   ],
+   "attrs": {
+    "fortitude": 3,
+    "resolve": 3,
+    "might": 2
+   },
+   "defaultWeapon": "club"
+  },
+  {
+   "id": "duelist",
+   "label": "Duelist",
+   "icon": "🤺",
+   "desc": "Quick blade and sharper instincts. Footwork wins fights you didn't think you could.",
+   "primaries": [
+    "finesse",
+    "swiftness",
+    "might"
+   ],
+   "attrs": {
+    "finesse": 3,
+    "swiftness": 3,
+    "might": 2
+   },
+   "defaultWeapon": "sword"
+  },
+  {
+   "id": "scout",
+   "label": "Scout",
+   "icon": "🏹",
+   "desc": "Light feet, sharp eyes. The road raised you. Luck keeps you on it.",
+   "primaries": [
+    "swiftness",
+    "fortune",
+    "finesse"
+   ],
+   "attrs": {
+    "swiftness": 3,
+    "fortune": 3,
+    "finesse": 2
+   },
+   "defaultWeapon": "bow"
+  },
+  {
+   "id": "monk",
+   "label": "Monk",
+   "icon": "☸",
+   "desc": "A disciplined soul. Where others tire, you find the breath in front of the next breath.",
+   "primaries": [
+    "resolve",
+    "intelligence",
+    "fortitude"
+   ],
+   "attrs": {
+    "resolve": 3,
+    "intelligence": 3,
+    "fortitude": 2
+   },
+   "defaultWeapon": "staff"
+  },
+  {
+   "id": "scholar",
+   "label": "Scholar",
+   "icon": "📖",
+   "desc": "Books before blades. You understood the world before you learned to navigate it.",
+   "primaries": [
+    "intelligence",
+    "charisma",
+    "resolve"
+   ],
+   "attrs": {
+    "intelligence": 3,
+    "charisma": 3,
+    "resolve": 2
+   },
+   "defaultWeapon": "staff"
+  },
+  {
+   "id": "diplomat",
+   "label": "Diplomat",
+   "icon": "💬",
+   "desc": "A silver tongue. Most problems are conversations the rest haven't had yet.",
+   "primaries": [
+    "charisma",
+    "intelligence",
+    "finesse"
+   ],
+   "attrs": {
+    "charisma": 3,
+    "intelligence": 3,
+    "finesse": 2
+   },
+   "defaultWeapon": "sword"
+  },
+  {
+   "id": "vagrant",
+   "label": "Vagrant",
+   "icon": "🍀",
+   "desc": "A drifter and a survivor. You've never owned a debt. Or a home.",
+   "primaries": [
+    "fortune",
+    "swiftness",
+    "charisma"
+   ],
+   "attrs": {
+    "fortune": 3,
+    "swiftness": 3,
+    "charisma": 2
+   },
+   "defaultWeapon": "dagger"
+  }
+ ],
+ "weapons": {
+  "sword": {
+   "name": "Wooden Sword",
+   "ico": "⚔️",
+   "atk": [
+    5,
+    9
+   ],
+   "wType": "slash",
+   "twoHand": false,
+   "weight": 3,
+   "desc": "Balanced edge. The honest first sword."
+  },
+  "club": {
+   "name": "Wooden Club",
+   "ico": "🏏",
+   "atk": [
+    6,
+    10
+   ],
+   "wType": "blunt",
+   "twoHand": false,
+   "weight": 4,
+   "desc": "Slow swing, heavy hit. Good against bone and stone."
+  },
+  "dagger": {
+   "name": "Wooden Dagger",
+   "ico": "🗡️",
+   "atk": [
+    4,
+    7
+   ],
+   "wType": "pierce",
+   "twoHand": false,
+   "weight": 1.5,
+   "desc": "Quick, light, lethal in close."
+  },
+  "staff": {
+   "name": "Wooden Staff",
+   "ico": "🥢",
+   "atk": [
+    4,
+    7
+   ],
+   "wType": "blunt",
+   "twoHand": false,
+   "weight": 2.5,
+   "desc": "A walking-staff. Channels mana well — small spell-power passive while wielded."
+  },
+  "bow": {
+   "name": "Wooden Bow",
+   "ico": "🏹",
+   "atk": [
+    6,
+    10
+   ],
+   "wType": "pierce",
+   "twoHand": true,
+   "weight": 3,
+   "desc": "Strike from range. Draw to charge — a fuller pull hits harder and flies straighter. Comes with a quiver of iron arrows."
+  },
+  "greatclub": {
+   "name": "Wooden Great Club",
+   "ico": "🏏",
+   "atk": [
+    8,
+    13
+   ],
+   "wType": "blunt",
+   "twoHand": true,
+   "weight": 4,
+   "desc": "A heavy two-handed stick. Slow, brutal, single-target. Hold to commit a crushing power blow; can haft-parry without a shield."
+  }
+ },
+ "attrs": {
+  "might": {
+   "label": "Might",
+   "icon": "⚔",
+   "desc": "Strike harder. Carry more."
+  },
+  "fortitude": {
+   "label": "Fortitude",
+   "icon": "🛡",
+   "desc": "Take more punishment. Bleed slower."
+  },
+  "finesse": {
+   "label": "Finesse",
+   "icon": "🌀",
+   "desc": "Parry tighter. Strike from afar. Move unseen."
+  },
+  "swiftness": {
+   "label": "Swiftness",
+   "icon": "💨",
+   "desc": "Run farther. Hit faster."
+  },
+  "resolve": {
+   "label": "Resolve",
+   "icon": "✦",
+   "desc": "Outlast the long fight. Endure the unseen."
+  },
+  "intelligence": {
+   "label": "Intelligence",
+   "icon": "📖",
+   "desc": "Read more. Cast harder. Mana flows."
+  },
+  "charisma": {
+   "label": "Charisma",
+   "icon": "💬",
+   "desc": "A silver tongue. Better deals all around."
+  },
+  "fortune": {
+   "label": "Fortune",
+   "icon": "🍀",
+   "desc": "The world favors you. Crits and chests."
+  }
+ },
+ "budget": 8,
+ "cap": 3,
+ "styles": [
+  [
+   "short",
+   "Cropped"
+  ],
+  [
+   "long",
+   "Long"
+  ],
+  [
+   "tied",
+   "Tied back"
+  ],
+  [
+   "bald",
+   "Shorn"
+  ],
+  [
+   "braid",
+   "A braid"
+  ],
+  [
+   "twin",
+   "Two braids"
+  ],
+  [
+   "warrior",
+   "Warrior braids"
+  ],
+  [
+   "mohawk",
+   "A crest"
+  ],
+  [
+   "curly",
+   "Curly"
+  ],
+  [
+   "afro",
+   "An afro"
+  ],
+  [
+   "shaggy",
+   "Shaggy"
+  ],
+  [
+   "bun",
+   "A bun"
+  ],
+  [
+   "thin",
+   "Thinning"
+  ]
+ ],
+ "beards": [
+  [
+   "no",
+   "None"
+  ],
+  [
+   "full",
+   "Full"
+  ],
+  [
+   "short",
+   "Trimmed"
+  ],
+  [
+   "long",
+   "Long"
+  ],
+  [
+   "braided",
+   "Braided"
+  ],
+  [
+   "forked",
+   "Forked"
+  ],
+  [
+   "goatee",
+   "Goatee"
+  ],
+  [
+   "vandyke",
+   "Goatee and moustache"
+  ],
+  [
+   "walrus",
+   "Walrus"
+  ],
+  [
+   "handlebar",
+   "Handlebar"
+  ],
+  [
+   "pencil",
+   "Pencil"
+  ],
+  [
+   "horseshoe",
+   "Horseshoe"
+  ],
+  [
+   "mutton",
+   "Mutton chops"
+  ],
+  [
+   "chinstrap",
+   "Chinstrap"
+  ],
+  [
+   "stubble",
+   "Stubble"
+  ]
+ ],
+ "tunics": [
+  6969924,
+  5909024,
+  2767466,
+  3820074,
+  6965786,
+  2763306,
+  8022618,
+  4860490
+ ],
+ "breeches": [
+  3811866,
+  4866096,
+  2763322,
+  5913130,
+  1710618
+ ],
+ "boots": [
+  2759696,
+  4861976,
+  1710618,
+  5917242
+ ],
+ "peoples": {
+  "gatelander": {
+   "skin": [
+    15255720,
+    15782064,
+    14727320,
+    14200976
+   ],
+   "hair": [
+    2759184,
+    4860948,
+    9058842,
+    10504736,
+    3811866
+   ]
+  },
+  "markman": {
+   "skin": [
+    15785160,
+    15520960,
+    16048336,
+    15257784
+   ],
+   "hair": [
+    14207136,
+    12099696,
+    9079424,
+    15260864,
+    5917242
+   ]
+  },
+  "aurennais": {
+   "skin": [
+    13148280,
+    12093536,
+    11040848,
+    13674624
+   ],
+   "hair": [
+    1708560,
+    2759184,
+    3811352,
+    1710618
+   ]
+  },
+  "oldblood": {
+   "skin": [
+    14209228,
+    13617348,
+    14735572,
+    13156540
+   ],
+   "hair": [
+    920588,
+    1315346,
+    1709590
+   ]
+  }
+ },
+ "peopleDesc": [
+  [
+   "Gatelander",
+   "Fair, wiry, freckled. The home island's people; at ease anywhere the old tongue is spoken."
+  ],
+  [
+   "Markman",
+   "Tall, broad, pale. The Mark's people; warmer welcomes in the north, colder in the Compact's churches."
+  ],
+  [
+   "Aurennais",
+   "Olive, lean, quick. Aurenne's people; honoured in the ports, mistrusted where the gates are dug."
+  ],
+  [
+   "Old Blood",
+   "Grey-pale, black-haired, marked at the wrists. The makers' remnant. Nobody quite agrees what you look like."
+  ]
+ ],
+ "lookRows": [
+  [
+   "Skin",
+   [
+    "#e8c8a8",
+    "#f0d0b0",
+    "#e0b898",
+    "#d8b090"
+   ]
+  ],
+  [
+   "Hair",
+   [
+    "#2a1a10",
+    "#4a2c14",
+    "#8a3a1a",
+    "#a04a20",
+    "#3a2a1a"
+   ]
+  ],
+  [
+   "Style",
+   [
+    "Cropped",
+    "Long",
+    "Tied back",
+    "Shorn",
+    "A braid",
+    "Two braids",
+    "Warrior braids",
+    "A crest",
+    "Curly",
+    "An afro",
+    "Shaggy",
+    "A bun",
+    "Thinning"
+   ]
+  ],
+  [
+   "Beard",
+   [
+    "None",
+    "Full",
+    "Trimmed",
+    "Long",
+    "Braided",
+    "Forked",
+    "Goatee",
+    "Goatee and moustache",
+    "Walrus",
+    "Handlebar",
+    "Pencil",
+    "Horseshoe",
+    "Mutton chops",
+    "Chinstrap",
+    "Stubble"
+   ]
+  ],
+  [
+   "Tunic",
+   [
+    "#6a5a44",
+    "#5a2a20",
+    "#2a3a6a",
+    "#3a4a2a",
+    "#6a4a1a",
+    "#2a2a2a",
+    "#7a6a5a",
+    "#4a2a4a"
+   ]
+  ],
+  [
+   "Breeches",
+   [
+    "#3a2a1a",
+    "#4a4030",
+    "#2a2a3a",
+    "#5a3a2a",
+    "#1a1a1a"
+   ]
+  ],
+  [
+   "Boots",
+   [
+    "#2a1c10",
+    "#4a3018",
+    "#1a1a1a",
+    "#5a4a3a"
+   ]
+  ]
+ ],
+ "look": {
+  "skin": 14200976,
+  "hair": 4860948,
+  "style": "short",
+  "beard": false,
+  "tunic": 5909024,
+  "breeches": 3811866,
+  "boots": 2759696
+ },
+ "modalHeight": [
+  1278,
+  600
+ ],
+ "figure": 2718
+}

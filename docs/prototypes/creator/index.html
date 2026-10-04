@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Title and Creator</title>
+<!-- The Old Gates — the title screen and the character creator on the approved parchment kit (docs/prototypes/ui,
+     Michael A, 27 Sep 2026) and the open book (docs/prototypes/books, Michael A, 2 Oct 2026). Concept, 3 Oct 2026.
+     kit.css and the icon <symbol>s are copied from the kit (six new: i-bow, i-staff, i-rapier, i-enso, i-book, i-speech);
+     build.py inlines them and the game's own data (current.json, written by shoot-current.mjs from a run of the build:
+     ARCHETYPES, STARTER_WEAPONS, ATTR_DEF, the people's lines, the look rows). The figures are the creator's own rig
+     (tpBuild), photographed full length by shoot-assets.mjs. Every .screen is 1280×720; shoot.mjs photographs them.
+     For the builder: no new data. The sheet (A) is plain DOM on .parch.sheet in three columns; .peo, .lk (swatch rows
+     and .step steppers that replace the walls of style and beard buttons), .beg tiles, .wp weapon rows, .gift rows with
+     the kit's diamonds; the Begin seal is the kit's .seal. The figure keeps its own WebGL canvas, now 300×470. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/* Copied from docs/prototypes/ui/index.html (the approved parchment kit, 27 Sep) via books; asset paths point there. */
+
+:root{
+  /* paper */
+  --paper-hi:#ecdcb2; --paper:#e0c994; --paper-lo:#c9ab6e; --paper-edge:#7a4e1e;
+  /* ink */
+  --ink:#2e1c0c; --ink-soft:#5a4128; --ink-faint:#8a7050; --rubric:#7a1f10; --gilt:#9a7020;
+  /* metal (HUD only) */
+  --iron:#1c1812; --iron-hi:#3a3226; --bronze:#a07a38; --bronze-hi:#d8b46a; --bronze-lo:#5a4018;
+  /* vitals */
+  --hp:#a8281c; --hp-hi:#d8503a; --mp:#2c5aa6; --mp-hi:#5a8ad8; --st:#3c7e2e; --st-hi:#6aac48;
+  --display:'IM Fell English SC',Georgia,serif; --fell:'IM Fell English',Georgia,serif; --body:'EB Garamond',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141008;color:#e8dcc0;font:15px/1.4 var(--body);padding:24px 0}
+h1.page{font:28px var(--display);text-align:center;color:#e0c994;margin:8px 0 2px}
+p.lede{max-width:1100px;margin:0 auto 18px;text-align:center;color:#b8a888}
+.cap{width:1280px;margin:28px auto 8px;font:17px var(--display);color:#e0c994;letter-spacing:.04em}
+.cap small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:10px}
+.screen{width:1280px;height:720px;margin:0 auto;position:relative;overflow:hidden;background:#000 url(../ui/backdrop.png) center/cover;font-family:var(--body)}
+.screen.menu::before{content:"";position:absolute;inset:0;backdrop-filter:blur(3px) brightness(.42) sepia(.35);z-index:0}
+svg.ico{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.15em;flex:none}
+.num{font-variant-numeric:lining-nums tabular-nums}
+
+/* ───────── parchment ───────── */
+.parch{position:absolute;isolation:isolate;color:var(--ink);z-index:2}
+.parch::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:4px;
+  background:
+    radial-gradient(ellipse at 50% 42%,rgba(255,250,230,.35) 0,transparent 45%),
+    radial-gradient(ellipse at 50% 50%,transparent 58%,rgba(110,60,15,.30) 88%,rgba(80,40,8,.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .28  0 0 0 0 .08  0 0 0 -1.6 .9'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .06  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+    linear-gradient(170deg,var(--paper-hi),var(--paper) 55%,var(--paper-lo));
+  filter:url(#deckle) drop-shadow(0 14px 22px rgba(0,0,0,.6));}
+.parch.small::before{filter:url(#deckle-s) drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.rule{height:9px;margin:6px 0 8px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='9' preserveAspectRatio='none'><path d='M0 4.5 Q200 2.5 400 4.5' stroke='%235a4128' stroke-width='1.1' fill='none'/><path d='M40 6.5 Q200 5.2 360 6.5' stroke='%235a4128' stroke-width='.5' fill='none' opacity='.6'/></svg>") center/100% 100% no-repeat}
+.h{font:22px/1 var(--display);color:var(--rubric);letter-spacing:.02em}
+.h2{font:15px/1 var(--display);color:var(--ink-soft);letter-spacing:.08em}
+.meta{font:italic 14px var(--fell);color:var(--ink-soft)}
+.faint{color:var(--ink-faint)}
+.seal{position:absolute;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#f0d8b0;font:20px var(--display);
+  background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 55%,#5a0e08);box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,200,170,.35),0 3px 6px rgba(0,0,0,.5);
+  clip-path:polygon(50% 0,62% 4%,74% 2%,82% 11%,94% 16%,95% 29%,100% 40%,96% 52%,100% 64%,93% 74%,90% 87%,78% 92%,68% 100%,55% 96%,44% 100%,33% 94%,20% 96%,12% 86%,4% 77%,5% 64%,0 52%,4% 40%,2% 27%,10% 17%,20% 10%,32% 3%)}
+
+/* hub sheet and tabs */
+.sheet{left:52px;top:62px;width:1176px;height:620px;padding:22px 34px 0}
+.tabs{position:absolute;left:84px;top:18px;display:flex;gap:6px;z-index:1}
+.tab{position:relative;isolation:isolate;padding:9px 18px 14px;font:17px/1 var(--display);color:var(--ink-soft);display:flex;gap:8px;align-items:center}
+.tab::before{content:"";position:absolute;inset:0 0 -6px;z-index:-1;border-radius:6px 6px 0 0;background:linear-gradient(#c7a86c,#b18f55);filter:url(#deckle-s) drop-shadow(0 -2px 3px rgba(0,0,0,.4))}
+.tab.on{color:var(--rubric);top:-4px;z-index:3}
+.tab.on::before{background:linear-gradient(#ead9ae,#e6d3a6);inset:0 0 -14px}
+.tab .ico{font-size:19px}
+.close{right:-14px;top:-14px}
+.vitals{position:absolute;left:34px;right:34px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;font:15px var(--body)}
+.vital{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.vital b{font:15px var(--display);font-weight:400}
+.ibar{height:10px;border:1px solid var(--ink-soft);border-radius:1px;background:rgba(80,50,20,.12);position:relative;overflow:hidden}
+.ibar i{position:absolute;left:0;top:0;bottom:0;opacity:.85}
+.ibar i::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 3px,rgba(255,240,210,.18) 3px 4px)}
+
+/* lists */
+.cols{display:grid;grid-template-columns:30px 1fr 160px 54px 64px;gap:0 10px;align-items:center}
+.lh{font:13px var(--display);letter-spacing:.1em;color:var(--ink-faint);padding:0 10px 4px}
+.row{padding:6px 10px;font-size:17px;border-bottom:1px solid rgba(90,65,40,.18)}
+.row svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.row.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.04));box-shadow:inset 3px 0 var(--rubric)}
+.row.sel .n{color:var(--rubric)}
+.r{text-align:right}
+.qty{font:italic 14px var(--fell);color:var(--ink-faint);margin-left:6px}
+.subtabs{display:flex;gap:22px;font:16px var(--display);color:var(--ink-faint);margin:2px 0 8px 10px}
+.subtabs .on{color:var(--ink);border-bottom:2px solid var(--rubric)}
+
+/* paper-doll */
+.doll{display:grid;grid-template-columns:repeat(3,66px);grid-auto-rows:60px;gap:6px;justify-content:center}
+.slot{border:1.5px solid var(--ink-soft);border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:10px var(--display);letter-spacing:0;white-space:nowrap;color:var(--ink-faint);background:rgba(120,80,30,.07);box-shadow:inset 0 0 0 3px rgba(224,201,148,.8),inset 0 0 0 4px rgba(90,65,40,.35)}
+.slot svg.ico{width:28px;height:28px;color:var(--ink-faint);opacity:.55}
+.slot.full .ico{color:var(--ink);opacity:1}
+.slot.full{color:var(--ink-soft)}
+.gap{visibility:hidden}
+
+/* ───────── HUD (metal) ───────── */
+.plate{position:absolute;background:linear-gradient(#2c261c,#15110b);border:1px solid var(--bronze-lo);box-shadow:inset 0 0 0 1px rgba(216,180,106,.35),inset 0 1px 0 rgba(255,230,170,.25),0 3px 10px rgba(0,0,0,.6);border-radius:6px;z-index:3}
+.roundel{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:36px;color:#e6cf9a;
+  background:radial-gradient(circle at 50% 40%,#3a3124,#15110b 70%);border:3px solid var(--bronze);box-shadow:inset 0 0 0 1px var(--bronze-lo),inset 0 2px 6px rgba(0,0,0,.8),0 0 0 1px #0a0806,0 2px 6px rgba(0,0,0,.6)}
+.roundel.dim{color:#6a5a40}
+.hbar{position:relative;height:10px;border-radius:5px;background:#0b0906;box-shadow:inset 0 1px 2px #000,0 0 0 1px var(--bronze-lo),0 0 0 2px rgba(216,180,106,.25);overflow:hidden}
+.hbar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.hbar i::after{content:"";position:absolute;left:2px;right:2px;top:1px;height:3px;border-radius:2px;background:rgba(255,255,255,.28)}
+.hp i{background:linear-gradient(var(--hp-hi),var(--hp))} .mp i{background:linear-gradient(var(--mp-hi),var(--mp))} .st i{background:linear-gradient(var(--st-hi),var(--st))}
+.hudtxt{font:13px var(--body);color:#e6d4a8;text-shadow:0 1px 2px #000,0 0 6px #000}
+.compass{position:absolute;height:34px;width:380px;border-radius:17px;overflow:hidden;background:linear-gradient(#1f1a12,#0d0a07);box-shadow:inset 0 1px 4px #000,0 0 0 2px var(--bronze-lo),0 0 0 3px var(--bronze),0 0 0 4px #0a0806,0 3px 10px rgba(0,0,0,.6);z-index:3}
+.compass .strip{position:absolute;inset:0;display:flex;align-items:center;font:15px var(--display);color:#d8c290}
+.compass .strip span{position:absolute;transform:translateX(-50%)}
+.compass .tick{width:1px;height:8px;background:#8a7450;top:13px}
+.compass .n{color:#e8b050;font-size:19px}
+.compass::after{content:"";position:absolute;left:50%;top:0;width:0;height:0;border:6px solid transparent;border-top-color:var(--bronze-hi);transform:translateX(-50%)}
+.mini{position:absolute;width:150px;height:150px;border-radius:50%;background:url(../ui/mini-crop.png) center/115%;filter:sepia(.55) saturate(.8) contrast(1.05);box-shadow:inset 0 0 18px rgba(40,20,5,.7);z-index:3}
+.miniring{position:absolute;width:162px;height:162px;border-radius:50%;box-shadow:0 0 0 5px var(--bronze),0 0 0 6px #0a0806,inset 0 0 0 1px var(--bronze-lo),0 4px 12px rgba(0,0,0,.6);z-index:4}
+.miniring b{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:14px var(--display);color:#f0d8a0;background:radial-gradient(#3a3124,#15110b);border:2px solid var(--bronze);width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.ribbon{position:absolute;padding:6px 34px 7px;font:22px var(--display);color:var(--ink);z-index:3}
+.xh{position:absolute;left:640px;top:360px;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,245,220,.85);box-shadow:0 0 0 1px rgba(0,0,0,.6);z-index:3}
+.prompt{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;font:17px var(--body);color:#f0e2c0;text-shadow:0 1px 3px #000,0 0 8px #000;z-index:3}
+.key{font:14px var(--display);width:26px;height:26px;display:grid;place-items:center;border-radius:4px;color:#2e1c0c;background:linear-gradient(#ecdcb2,#c9ab6e);box-shadow:0 0 0 1px #5a4018,0 2px 3px rgba(0,0,0,.6);text-shadow:none}
+.cbar{position:absolute;right:14px;bottom:8px;font:13px var(--body);color:rgba(240,226,192,.85);text-shadow:0 1px 2px #000,0 0 5px #000;z-index:3}
+.dp{position:absolute;right:22px;bottom:92px;display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:4px;z-index:3}
+.dp div{border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(58,49,36,.85),rgba(21,17,11,.85));border:2px solid rgba(160,122,56,.8);color:#d8c290;display:grid;place-items:center;font-size:14px}
+
+/* dialogue */
+.dlg{left:260px;top:372px;width:760px;height:320px;padding:26px 40px 18px 40px}
+.dlg .who{display:flex;gap:16px;align-items:center}
+.dlg .line{font:20px/1.45 var(--body);margin:4px 0 10px;color:var(--ink)}
+.topics{display:grid;grid-template-columns:1fr 1fr;gap:2px 34px}
+.topic{font:18px/1.2 var(--body);padding:6px 4px;display:flex;gap:10px;border-bottom:1px dotted rgba(90,65,40,.35)}
+.topic i{font:italic 15px var(--fell);color:var(--ink-faint);width:14px;text-align:right}
+.topic.new{color:var(--rubric)}
+.topic.new::after{content:"❧";margin-left:auto;color:var(--gilt);font-size:15px}
+.topic.old{color:var(--ink-faint)}
+.foot{position:absolute;left:40px;right:40px;bottom:14px;font:italic 13px var(--fell);color:var(--ink-faint);display:flex;justify-content:space-between}
+
+/* magic */
+.school{font:14px var(--display);letter-spacing:.1em;color:var(--rubric);margin:10px 0 2px;display:flex;align-items:center;gap:8px}
+.school .ico{font-size:18px}
+.spell{display:grid;grid-template-columns:190px 1fr 70px;gap:10px;align-items:baseline;padding:4px 8px;font-size:16px;border-bottom:1px solid rgba(90,65,40,.14)}
+.spell .nm{font:18px var(--body);font-weight:500}
+.spell .gl{font:italic 13px var(--fell);color:var(--ink-faint);margin-left:6px}
+.spell.lock{color:var(--ink-faint)} .spell.lock .nm{font-weight:400}
+.spell.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.spell.sel .nm{color:var(--rubric)}
+
+/* attributes */
+.attr{display:grid;grid-template-columns:28px 150px 40px 1fr;gap:10px;align-items:center;padding:5px 0;font-size:18px;border-bottom:1px solid rgba(90,65,40,.14)}
+.attr .v{font:22px var(--display);text-align:right;color:var(--ink)}
+.pips{display:flex;gap:4px}
+.pips span{width:13px;height:13px;border:1.2px solid var(--ink-soft);transform:rotate(45deg) scale(.8)}
+.pips span.f{background:var(--ink-soft)}
+.dv{display:flex;justify-content:space-between;font-size:17px;padding:4px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+
+/* style sheet */
+.sw{display:flex;flex-direction:column;align-items:center;gap:4px;font:12px var(--body);color:var(--ink-soft);width:72px;text-align:center}
+.sw i{width:56px;height:30px;border-radius:3px;box-shadow:0 0 0 1px rgba(46,28,12,.5)}
+.iconset{display:grid;grid-template-columns:repeat(9,1fr);gap:8px 6px;font-size:30px;color:var(--ink)}
+.iconset div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.iconset small{font:11px var(--body);color:var(--ink-faint)}
+.btn{display:inline-block;font:16px var(--display);padding:7px 18px;border:1.5px solid var(--ink-soft);border-radius:2px;color:var(--ink);background:rgba(120,80,30,.08);box-shadow:inset 0 0 0 2px rgba(224,201,148,.8),inset 0 0 0 3px rgba(90,65,40,.3)}
+.btn.hot{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.1)}
+.btn.off{color:var(--ink-faint);border-color:var(--ink-faint);opacity:.7}
+
+:root{--leaf:
+    radial-gradient(ellipse at 50% 45%,rgba(255,250,230,.30) 0,transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .28  0 0 0 0 .08  0 0 0 -1.6 .75'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .06  0 0 0 .2 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+    linear-gradient(170deg,var(--paper-hi),var(--paper) 55%,var(--paper-lo))}
+
+/* the open book (A): a leather board, a block of pages, two leaves, a gutter */
+.tome{position:absolute;left:96px;top:30px;width:1088px;height:612px;border-radius:12px;z-index:2;
+  background:radial-gradient(ellipse at 50% 40%,#5a3418,#3a1f0c 60%,#24120a);box-shadow:0 18px 40px rgba(0,0,0,.7),inset 0 0 0 3px rgba(160,110,50,.35),inset 0 0 0 5px #24120a,inset 0 0 0 6px rgba(160,110,50,.25)}
+.tome .block{position:absolute;left:14px;right:14px;top:12px;bottom:12px;border-radius:3px;
+  box-shadow:-1px 1px 0 #cbb07a,-2px 2px 0 #8a6a3a,-3px 3px 0 #d6bd88,-4px 4px 0 #8a6a3a,-5px 5px 0 #cbb07a,1px 1px 0 #cbb07a,2px 2px 0 #8a6a3a,3px 3px 0 #d6bd88,4px 4px 0 #8a6a3a,5px 5px 0 #cbb07a}
+.leaf{position:absolute;top:12px;bottom:12px;width:530px;background:var(--leaf);color:var(--ink);padding:44px 56px 40px;overflow:hidden;font:18.5px/1.6 var(--body)}
+.leaf.l{left:14px;border-radius:3px 0 0 3px;padding-right:62px}
+.leaf.r{right:14px;border-radius:0 3px 3px 0;padding-left:62px}
+.leaf.l::after,.leaf.r::after{content:"";position:absolute;top:0;bottom:0;width:70px;pointer-events:none}
+.leaf.l::after{right:0;background:linear-gradient(90deg,transparent,rgba(110,70,25,.12) 55%,rgba(60,35,10,.42))}
+.leaf.r::after{left:0;background:linear-gradient(270deg,transparent,rgba(110,70,25,.12) 55%,rgba(60,35,10,.42))}
+.leaf.l::before,.leaf.r::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 62%,rgba(110,60,15,.18) 100%)}
+.leaf .run{position:absolute;top:18px;left:0;right:0;text-align:center;font:12.5px var(--display);letter-spacing:.16em;color:var(--ink-faint)}
+.leaf .fol{position:absolute;bottom:16px;left:0;right:0;text-align:center;font:italic 15px var(--fell);color:var(--ink-faint)}
+.leaf p{margin:0 0 .7em;text-align:justify;hyphens:auto;text-indent:1.2em}
+.leaf p.first{text-indent:0}
+.leaf p.sig{text-align:right;font:italic 18px var(--fell);color:var(--ink-soft);text-indent:0;margin-top:1em}
+.leaf .dc{float:left;font:74px/.82 var(--display);color:var(--rubric);margin:6px 8px 0 -2px;padding:4px 6px 2px 4px;background:radial-gradient(circle at 50% 50%,rgba(154,112,32,.18),transparent 70%)}
+.leaf .ttl{text-align:center;margin:70px 0 0}
+.leaf .ttl .t{font:34px/1.15 var(--display);color:var(--rubric);letter-spacing:.02em}
+.leaf .ttl .orn{font:22px var(--fell);color:var(--gilt);margin:14px 0}
+.leaf .ttl .col{font:italic 18px/1.55 var(--fell);color:var(--ink-soft);text-align:center;text-indent:0;padding:0 8px}
+.leaf .end{text-align:center;font:22px var(--fell);color:var(--gilt);margin-top:8px}
+.leaf.hand{font:italic 20px/1.55 var(--fell)}
+.leaf.hand p{text-indent:0;text-align:left}
+.leaf.hand p.sal{font-size:21px;margin-bottom:.8em}
+.margin{position:absolute;left:56px;right:62px;bottom:52px;text-align:center;font:italic 16px var(--fell);color:var(--rubric);border-top:1px solid rgba(122,31,16,.3);padding-top:8px}
+.margin b{font:16px var(--display);font-weight:400}
+.ribbon2{position:absolute;left:50%;top:-6px;width:18px;height:628px;margin-left:30px;z-index:4;background:linear-gradient(90deg,#5a0e08,#9a2a1c 45%,#6a140c);clip-path:polygon(0 0,100% 0,100% 100%,50% 97.6%,0 100%);box-shadow:0 2px 4px rgba(0,0,0,.4);opacity:.95}
+.turn{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:34px;align-items:center;z-index:3}
+.turn span{display:flex;gap:9px;align-items:center}
+.screen{background-size:cover;background-position:center}
+.screen.night{background-image:url(backdrop-title.png)}
+.screen.menu::before{backdrop-filter:blur(3px) brightness(.4) sepia(.35)}
+.ico24{width:24px;height:24px}
+
+/* ───────── title ───────── */
+.ttl-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,18,.15),rgba(6,8,18,0) 35%,rgba(10,8,4,.55) 70%,rgba(10,6,2,.85));z-index:1}
+.gametitle{position:absolute;left:0;right:0;top:92px;text-align:center;z-index:2}
+.gametitle .t{font:92px/1 var(--display);color:#ecdcb2;letter-spacing:.03em;text-shadow:0 2px 0 #3a2410,0 0 30px rgba(0,0,0,.7),0 0 4px #000}
+.gametitle .orn{font:26px var(--fell);color:#c89a48;margin-top:10px;text-shadow:0 0 8px #000}
+.gametitle .sub{font:italic 21px var(--fell);color:#d8c79c;margin-top:4px;text-shadow:0 1px 3px #000,0 0 10px #000}
+.menuslip{left:470px;top:372px;width:340px;padding:22px 30px 20px}
+.mi{display:flex;align-items:center;gap:12px;padding:7px 4px;font:24px/1.1 var(--display);color:var(--ink);border-bottom:1px dotted rgba(90,65,40,.35)}
+.mi:last-child{border-bottom:0}
+.mi svg.ico{width:22px;height:22px;color:var(--ink-soft)}
+.mi.hot{color:var(--rubric)} .mi.hot svg.ico{color:var(--rubric)}
+.mi.hot::before{content:"❧";position:absolute;left:8px;font:20px var(--fell);color:var(--gilt)}
+.mi small{display:block;font:italic 14px/1.25 var(--fell);color:var(--ink-faint);margin-top:2px}
+.tag{position:absolute;right:16px;bottom:10px;font:13px var(--body);color:rgba(240,226,192,.55);z-index:3}
+.hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font:italic 15px var(--fell);color:rgba(240,226,192,.7);z-index:3;text-shadow:0 1px 3px #000}
+.keys{left:180px;top:170px;width:920px;height:384px;padding:28px 44px}
+.keys .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 48px;margin-top:6px}
+.kr{display:flex;align-items:center;gap:12px;padding:5px 0;font:18px var(--body);border-bottom:1px dotted rgba(90,65,40,.3)}
+.kr .k{display:flex;gap:4px;min-width:138px;justify-content:flex-end}
+.kr .key{width:auto;min-width:26px;padding:0 7px;font-size:13px}
+.kr>span:nth-child(2){white-space:nowrap} .kr .w{font:italic 15px/1.15 var(--fell);color:var(--ink-faint);margin-left:auto;text-align:right}
+
+/* ───────── creator, A: one sheet ───────── */
+.cc{left:40px;top:24px;width:1200px;height:672px;padding:20px 36px 18px}
+.cc .head{display:flex;align-items:baseline;justify-content:center;gap:16px;margin-bottom:2px}
+.cc .head .h{font-size:28px}
+.cols3{display:grid;grid-template-columns:318px 1fr 362px;gap:0 32px;height:566px}
+.col{display:flex;flex-direction:column;min-width:0}
+.colrule{border-left:1px solid rgba(90,65,40,.28);padding-left:30px;margin-left:-30px}
+.lbl{font:14px var(--display);letter-spacing:.12em;color:var(--ink-soft);margin:9px 0 4px;display:flex;align-items:baseline;gap:10px}
+.lbl:first-child{margin-top:4px}
+.lbl .r{margin-left:auto;font:italic 14px var(--fell);letter-spacing:0;color:var(--ink-faint)}
+.lbl .r b{font:15px var(--display);color:var(--rubric);font-weight:400}
+.namefield{font:30px/1 var(--fell);color:var(--ink);padding:2px 4px 5px;border-bottom:1.5px solid var(--ink-soft);display:flex;align-items:baseline}
+.namefield .caret{width:1.5px;height:26px;background:var(--ink);margin-left:2px;align-self:center}
+.namefield small{margin-left:auto;font:italic 13px var(--fell);color:var(--ink-faint)}
+.niche{position:relative;height:430px;margin-top:12px;border-radius:150px 150px 6px 6px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 38%,rgba(255,248,225,.55),rgba(236,220,178,.15) 55%,rgba(120,80,30,.18) 100%);
+  box-shadow:inset 0 0 0 1.5px var(--ink-soft),inset 0 0 0 5px rgba(224,201,148,.85),inset 0 0 0 6px rgba(90,65,40,.35),inset 0 -40px 50px -30px rgba(90,55,20,.35)}
+.niche img{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);height:410px}
+.niche .floor{position:absolute;left:50%;bottom:8px;width:150px;height:18px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(rgba(60,35,10,.35),transparent 70%)}
+.turnhint{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font:italic 14px var(--fell);color:var(--ink-faint)}
+.turnhint .btn{font-size:14px;padding:4px 12px}
+.peo{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1.5px solid var(--ink-soft);border-radius:2px;box-shadow:inset 0 0 0 2px rgba(224,201,148,.8)}
+.peo span{text-align:center;padding:6px 0 5px;font:17px var(--display);color:var(--ink-soft);border-left:1px solid rgba(90,65,40,.3)}
+.peo span:first-child{border-left:0}
+.peo span.on{color:var(--rubric);background:rgba(122,31,16,.1);box-shadow:inset 0 -2px var(--rubric)}
+.gloss{font:italic 15px/1.25 var(--fell);color:var(--ink-soft);margin-top:4px}
+.lk{display:grid;grid-template-columns:76px 1fr;align-items:center;padding:2px 0;min-height:30px;border-bottom:1px dotted rgba(90,65,40,.28)}
+.lk>span{font:15px var(--body);color:var(--ink-soft)}
+.sws{display:flex;gap:7px;flex-wrap:wrap}
+.sws i{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 2px 3px rgba(255,255,255,.2),inset 0 -2px 3px rgba(0,0,0,.25),0 0 0 1px rgba(46,28,12,.6)}
+.sws i.on{box-shadow:inset 0 2px 3px rgba(255,255,255,.2),inset 0 -2px 3px rgba(0,0,0,.25),0 0 0 1.5px var(--paper-hi),0 0 0 3px var(--rubric)}
+.step{display:flex;align-items:center;gap:10px}
+.step .ar{font:16px var(--display);color:var(--ink-soft);width:24px;height:24px;display:grid;place-items:center;border:1.2px solid var(--ink-soft);border-radius:50%}
+.step b{font:17px var(--body);font-weight:500;color:var(--ink);min-width:150px;text-align:center}
+.step small{font:italic 13px var(--fell);color:var(--ink-faint)}
+.beg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.bt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 0 3px;font:15px var(--display);color:var(--ink-soft);border:1.2px solid rgba(90,65,40,.45);border-radius:2px;background:rgba(120,80,30,.05)}
+.bt svg.ico{width:26px;height:26px}
+.bt.on{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.09);box-shadow:inset 0 0 0 2px rgba(224,201,148,.8),inset 0 0 0 3px rgba(122,31,16,.35)}
+.desc{font:italic 15px/1.28 var(--fell);color:var(--ink);margin-top:6px}
+.prim{font:13.5px var(--body);color:var(--ink-soft);margin-top:4px}
+.prim b{font:13.5px var(--display);color:var(--rubric);font-weight:400;letter-spacing:.04em}
+.wp{display:grid;grid-template-columns:28px 1fr 52px 50px 26px;align-items:center;gap:6px;padding:3px 8px;font:16.5px var(--body);border-bottom:1px solid rgba(90,65,40,.16)}
+.wp svg.ico{width:22px;height:22px;color:var(--ink-soft)}
+.wp .d{font:15px var(--body);text-align:right}
+.wp .ty{font:italic 13.5px var(--fell);color:var(--ink-faint)}
+.wp .h2h{font:11px var(--display);color:var(--gilt);letter-spacing:.06em}
+.wp.on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.wp.on .n{color:var(--rubric)} .wp.on svg.ico{color:var(--rubric)}
+.wdesc{font:italic 14px/1.3 var(--fell);color:var(--ink-soft);margin:5px 8px 0;min-height:36px}
+.gift{display:grid;grid-template-columns:24px 1fr 22px 20px 22px 74px;align-items:center;gap:6px;padding:2px 4px;border-bottom:1px solid rgba(90,65,40,.14);font:16.5px var(--body)}
+.gift svg.ico{width:20px;height:20px;color:var(--ink-soft)}
+.gift .star{color:var(--gilt);font-size:13px;margin-left:4px}
+.gift.pr{background:rgba(154,112,32,.09)}
+.gift .pm{width:20px;height:20px;border:1.2px solid var(--ink-soft);border-radius:50%;display:grid;place-items:center;font:15px/1 var(--body);color:var(--ink)}
+.gift .pm.off{opacity:.3}
+.gift .v{font:19px var(--display);text-align:center}
+.gift .pips{gap:2px;justify-content:flex-end}
+.gift .pips span{width:11px;height:11px}
+.gtip{font:italic 13px var(--fell);color:var(--ink-faint);margin:4px 4px 0}
+.beginrow{margin-top:auto;display:flex;align-items:center;justify-content:flex-end;gap:16px}
+.beginrow .what{font:italic 15px/1.25 var(--fell);color:var(--ink-soft);text-align:right}
+.beginrow .seal{position:relative;width:60px;height:60px;font-size:26px}
+.beginrow .go{font:24px var(--display);color:var(--rubric)}
+.esc{position:absolute;right:46px;top:30px;font:italic 14px var(--fell);color:var(--ink-faint);display:flex;gap:8px;align-items:center}
+
+/* ───────── creator, B: the book ───────── */
+.tome .chap{position:absolute;right:-26px;top:70px;display:flex;flex-direction:column;gap:6px;z-index:1}
+.tome .chap span{width:30px;height:46px;border-radius:0 5px 5px 0;display:grid;place-items:center;font:15px var(--display);color:#e6cf9a;background:linear-gradient(90deg,#4a2a12,#6a3c18);box-shadow:2px 2px 4px rgba(0,0,0,.5)}
+.tome .chap span.on{background:linear-gradient(90deg,#7a1f10,#a83a24);color:#f8e8c8;width:36px}
+.tome .chap span.done{color:#c8a870}
+.leaf .figwrap{position:relative;height:420px;margin:-6px -10px 0}
+.leaf .figwrap img{position:absolute;left:50%;bottom:0;height:420px;transform:translateX(-50%)}
+.leaf .so{font:italic 17px/1.45 var(--fell);color:var(--ink-soft);text-align:center;margin-top:10px}
+.leaf .so b{font:24px var(--display);color:var(--rubric);font-weight:400;display:block;margin-bottom:2px}
+.leaf .chh{font:13px var(--display);letter-spacing:.2em;color:var(--ink-faint);text-align:center}
+.leaf .cht{font:30px/1.1 var(--display);color:var(--rubric);text-align:center;margin:4px 0 2px}
+.leaf .orn{text-align:center;font:18px var(--fell);color:var(--gilt);margin:0 0 10px}
+.leaf.r{text-align:left} .leaf.r .lk{min-height:42px;grid-template-columns:86px 1fr}
+.leaf .beg{gap:5px} .leaf .bt{font-size:14px;padding:6px 0 4px}
+.leaf .gift{font-size:17px;padding:4px 4px}
+.leaf .ask{font:italic 17px/1.4 var(--fell);color:var(--ink-soft);text-align:center;margin-bottom:8px}
+
+/* ───────── creator, C: restyle ───────── */
+.cc1{left:290px;top:26px;width:700px;height:668px;padding:24px 34px 20px;overflow:hidden}
+.cc1 .scrollbar{position:absolute;right:12px;top:30px;width:6px;height:606px;border-radius:3px;background:rgba(90,65,40,.15)}
+.cc1 .scrollbar i{position:absolute;left:0;right:0;top:0;height:300px;border-radius:3px;background:rgba(90,65,40,.5)}
+
+/* comparison frames */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:1280px;padding:18px 16px 18px;background:#141008;position:relative}
+.screen.cmp{height:auto}
+.pair figure{margin:0}
+.pair img{width:616px;display:block;border:1px solid #3a3022}
+.pair figcaption{font:17px var(--display);color:#e0c994;margin-bottom:8px;letter-spacing:.04em}
+.pair figcaption small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:8px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="deckle" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="4" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="deckle-s" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <!-- ink icon set: 24×24, stroked in currentColor; one <symbol> each, lifted straight into the game -->
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="M19.5 4.5 9 15M19.5 4.5l-.8 3.6M19.5 4.5l-3.6.8M7 12.5l4.5 4.5M9 15l-4.2 4.2"/><circle cx="4.3" cy="19.7" r="1"/></symbol>
+    <symbol id="i-dagger" viewBox="0 0 24 24"><path d="M17.5 6.5 10.5 13.5M17.5 6.5l-.6 2.6M17.5 6.5l-2.6.6M8.5 11.5l4 4M10.5 13.5l-3.2 3.2"/><circle cx="6.8" cy="17.2" r=".9"/></symbol>
+    <symbol id="i-club" viewBox="0 0 24 24"><path d="M5 20l6-6"/><path d="M11 14c-1.2-2.6 2.5-8.4 6-9.4 2-.5 3.3 1.2 2.6 3.2-1.2 3.3-6.2 7.6-8.6 6.2z"/><path d="M14.5 7.5l1.2 1.2M16.5 9.8l1 1"/></symbol>
+    <symbol id="i-helm" viewBox="0 0 24 24"><path d="M5 17c0-7 3-11 7-11s7 4 7 11z"/><path d="M5 17h14M12 6v11M8.5 12h7"/></symbol>
+    <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v4.2C7.6 8.3 6 10.4 6 13.5a6 6 0 0 0 12 0c0-3.1-1.6-5.2-4.5-6.3V3"/><path d="M6.6 13.2c2.2 1 4.6-.8 10.8 0"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="3.5"/><path d="M11 12h9.5M17.5 12v3M20 12v2"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M10 11h4l-1.2 10h-1.6z"/><path d="M12 10c-2.8-1.5-2.4-4.6 0-7 .2 2.4 3 3 2.2 5.6-.3 1-1.2 1.4-2.2 1.4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M12 3v18M5 10.5h14"/></symbol>
+    <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="14.5" r="5.5"/><path d="M10 9.3 12 6l2 3.3M10 6h4"/></symbol>
+    <symbol id="i-amulet" viewBox="0 0 24 24"><path d="M6 3c0 6 3 9.5 6 10.5 3-1 6-4.5 6-10.5"/><circle cx="12" cy="16.5" r="3.2"/><circle cx="12" cy="16.5" r="1" /></symbol>
+    <symbol id="i-tunic" viewBox="0 0 24 24"><path d="M8.5 4 4 7l2 3.3 2.3-1.1V20h7.4V9.2l2.3 1.1L20 7l-4.5-3c-.8 1.8-6.2 1.8-7 0z"/></symbol>
+    <symbol id="i-legs" viewBox="0 0 24 24"><path d="M7 4h10l1 16h-4l-2-10-2 10H6z"/><path d="M7 7h10"/></symbol>
+    <symbol id="i-boot" viewBox="0 0 24 24"><path d="M8 3h5v10.5l5.6 2c1.3.5 1.3 3.5 0 3.5H8z"/><path d="M8 16h11"/></symbol>
+    <symbol id="i-glove" viewBox="0 0 24 24"><path d="M7.5 21v-8.5L5.3 8.8c-.5-1 .9-1.9 1.6-.9l1.6 2.3V5a1 1 0 0 1 2 0v4.5V4a1 1 0 0 1 2 0v5.5V5a1 1 0 0 1 2 0v5.5V7a1 1 0 0 1 2 0v7c0 3.5-1.5 5.5-2 7z"/></symbol>
+    <symbol id="i-arrows" viewBox="0 0 24 24"><path d="M4 20 18 6M18 6l-3.8.6M18 6l-.6 3.8M4 20l.8-2.8M4 20l2.8-.8M8 20 20 8M20 8l-3 .5M20 8l-.5 3"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4.8"/><path d="M12 9.5v5"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 21c-4.5 0-6-4.5-4-8 1 1.8 2.4 2 2.4 0 0-4 1.6-6.2 1.6-10 3 2.8 6 6.6 6 11.5 0 4-2.5 6.5-6 6.5z"/></symbol>
+    <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z"/><path d="M9.2 15.5a3 3 0 0 0 2.6 2.7"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></symbol>
+    <symbol id="i-stone" viewBox="0 0 24 24"><path d="M4 17 8 7l7-2 5 7-3 7H7z"/><path d="M8 7l3 5 4-7M11 12l6 7M11 12l-7 5"/></symbol>
+    <symbol id="i-shadow" viewBox="0 0 24 24"><path d="M15 4a8 8 0 1 0 5 11 6.5 6.5 0 1 1-5-11z"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-1.8z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 13.5h6L10 22l9-12h-6z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5.5 3-8 7-8s7 2.5 7 8"/></symbol>
+    <symbol id="i-quill" viewBox="0 0 24 24"><path d="M20 3C12 4 7 10 5 19l-1 2"/><path d="M5 19c5-2 11-7 15-16M8 14.5h4.5M10 11h4"/></symbol>
+    <symbol id="i-scales" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M5 7.5h14M5 7.5 3 13h4zM19 7.5 17 13h4z"/><circle cx="12" cy="4" r="1"/></symbol>
+    <symbol id="i-pack" viewBox="0 0 24 24"><path d="M7 8c0-3 2-5 5-5s5 2 5 5"/><path d="M5 8h14l-1 13H6z"/><path d="M9 12h6v4H9z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+    <!-- creator additions (concept, 3 Oct 2026): six 24×24 ink icons in the kit's stroke -->
+    <symbol id="i-bow" viewBox="0 0 24 24"><path d="M6 3c7 2 11 8 13 15"/><path d="M6 3 19 18"/><path d="M4 12.5l9-.5M13 12l-2.4-1.8M13 12l-2.2 2"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><path d="M6 21 17.5 6.5"/><path d="M17.5 6.5c-.3-1.8.8-3.3 2.5-3.5.2 1.7-.9 3.2-2.5 3.5zM15.8 8.6c-1.6-.2-2.6-1.3-2.6-2.8 1.5 0 2.6 1.2 2.6 2.8z"/></symbol>
+    <symbol id="i-rapier" viewBox="0 0 24 24"><path d="M20.5 3.5 9.5 14.5"/><path d="M7.2 12.2c-1.4 1.6-1.2 3.6.2 4.6 1 1.4 3 1.6 4.6.2"/><path d="M9.5 14.5 5 19"/><circle cx="4.4" cy="19.6" r=".9"/></symbol>
+    <symbol id="i-enso" viewBox="0 0 24 24"><path d="M15.5 4.6A8 8 0 1 0 20 12c0-1.2-.3-2.3-.8-3.3"/><path d="M15.5 4.6c.6.3 1.2.6 1.7 1"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C9.5 4.8 6.5 4.5 3.5 5v13c3-.5 6-.2 8.5 1.5 2.5-1.7 5.5-2 8.5-1.5V5c-3-.5-6-.2-8.5 1.5z"/><path d="M12 6.5v13"/></symbol>
+    <symbol id="i-speech" viewBox="0 0 24 24"><path d="M4 6.5C4 5 5 4 6.5 4h11C19 4 20 5 20 6.5v7c0 1.5-1 2.5-2.5 2.5H11l-4.5 4v-4h0C5 16 4 15 4 13.5z"/><path d="M8 9h8M8 12h5"/></symbol>
+  </defs>
+</svg>
+<h1 class="page">The Title and the Creator — on the parchment</h1>
+<p class="lede">The game's own beginnings, weapons, gifts and look rows. The figures are the creator's rig, full length.</p>
+<div id="out"></div>
+<script>
+const DATA={"title": {"h2": "⚔ The Old Gates", "h3": "Village of Ashenmoor", "p": "W / S — forward / back  ·  A / D — strafe\nMouse — look / turn  ·  Shift — sprint\nSpace — jump  ·  E — interact  ·  Left-click — attack (hold for power)\nRight-click — block/parry  ·  F — cast magic  ·  I — inventory\nQ — roll  ·  Middle-click or R — lock on (flick the mouse to switch foes)  ·  Ctrl — toggle sneak (reduces detection radius, slower move)\n\nPress E near a cave entrance to descend into a dungeon.\nPress E near a door to enter shops & trade.", "buttons": [["sb", "▶ Start New Adventure", "block"], ["cb", "↩ Continue Adventure", "none"], ["lgb", "📂 Load Game", "block"]]}, "archetypes": [{"id": "warrior", "label": "Warrior", "icon": "⚔", "desc": "A born fighter. Steel arms. Steady ground. You take a hit and stay standing.", "primaries": ["might", "fortitude", "resolve"], "attrs": {"might": 3, "fortitude": 3, "resolve": 2}, "defaultWeapon": "greatclub"}, {"id": "sentinel", "label": "Sentinel", "icon": "🛡", "desc": "A patient defender. You don't strike first, but you outlast everyone who does.", "primaries": ["fortitude", "resolve", "might"], "attrs": {"fortitude": 3, "resolve": 3, "might": 2}, "defaultWeapon": "club"}, {"id": "duelist", "label": "Duelist", "icon": "🤺", "desc": "Quick blade and sharper instincts. Footwork wins fights you didn't think you could.", "primaries": ["finesse", "swiftness", "might"], "attrs": {"finesse": 3, "swiftness": 3, "might": 2}, "defaultWeapon": "sword"}, {"id": "scout", "label": "Scout", "icon": "🏹", "desc": "Light feet, sharp eyes. The road raised you. Luck keeps you on it.", "primaries": ["swiftness", "fortune", "finesse"], "attrs": {"swiftness": 3, "fortune": 3, "finesse": 2}, "defaultWeapon": "bow"}, {"id": "monk", "label": "Monk", "icon": "☸", "desc": "A disciplined soul. Where others tire, you find the breath in front of the next breath.", "primaries": ["resolve", "intelligence", "fortitude"], "attrs": {"resolve": 3, "intelligence": 3, "fortitude": 2}, "defaultWeapon": "staff"}, {"id": "scholar", "label": "Scholar", "icon": "📖", "desc": "Books before blades. You understood the world before you learned to navigate it.", "primaries": ["intelligence", "charisma", "resolve"], "attrs": {"intelligence": 3, "charisma": 3, "resolve": 2}, "defaultWeapon": "staff"}, {"id": "diplomat", "label": "Diplomat", "icon": "💬", "desc": "A silver tongue. Most problems are conversations the rest haven't had yet.", "primaries": ["charisma", "intelligence", "finesse"], "attrs": {"charisma": 3, "intelligence": 3, "finesse": 2}, "defaultWeapon": "sword"}, {"id": "vagrant", "label": "Vagrant", "icon": "🍀", "desc": "A drifter and a survivor. You've never owned a debt. Or a home.", "primaries": ["fortune", "swiftness", "charisma"], "attrs": {"fortune": 3, "swiftness": 3, "charisma": 2}, "defaultWeapon": "dagger"}], "weapons": {"sword": {"name": "Wooden Sword", "ico": "⚔️", "atk": [5, 9], "wType": "slash", "twoHand": false, "weight": 3, "desc": "Balanced edge. The honest first sword."}, "club": {"name": "Wooden Club", "ico": "🏏", "atk": [6, 10], "wType": "blunt", "twoHand": false, "weight": 4, "desc": "Slow swing, heavy hit. Good against bone and stone."}, "dagger": {"name": "Wooden Dagger", "ico": "🗡️", "atk": [4, 7], "wType": "pierce", "twoHand": false, "weight": 1.5, "desc": "Quick, light, lethal in close."}, "staff": {"name": "Wooden Staff", "ico": "🥢", "atk": [4, 7], "wType": "blunt", "twoHand": false, "weight": 2.5, "desc": "A walking-staff. Channels mana well — small spell-power passive while wielded."}, "bow": {"name": "Wooden Bow", "ico": "🏹", "atk": [6, 10], "wType": "pierce", "twoHand": true, "weight": 3, "desc": "Strike from range. Draw to charge — a fuller pull hits harder and flies straighter. Comes with a quiver of iron arrows."}, "greatclub": {"name": "Wooden Great Club", "ico": "🏏", "atk": [8, 13], "wType": "blunt", "twoHand": true, "weight": 4, "desc": "A heavy two-handed stick. Slow, brutal, single-target. Hold to commit a crushing power blow; can haft-parry without a shield."}}, "attrs": {"might": {"label": "Might", "icon": "⚔", "desc": "Strike harder. Carry more."}, "fortitude": {"label": "Fortitude", "icon": "🛡", "desc": "Take more punishment. Bleed slower."}, "finesse": {"label": "Finesse", "icon": "🌀", "desc": "Parry tighter. Strike from afar. Move unseen."}, "swiftness": {"label": "Swiftness", "icon": "💨", "desc": "Run farther. Hit faster."}, "resolve": {"label": "Resolve", "icon": "✦", "desc": "Outlast the long fight. Endure the unseen."}, "intelligence": {"label": "Intelligence", "icon": "📖", "desc": "Read more. Cast harder. Mana flows."}, "charisma": {"label": "Charisma", "icon": "💬", "desc": "A silver tongue. Better deals all around."}, "fortune": {"label": "Fortune", "icon": "🍀", "desc": "The world favors you. Crits and chests."}}, "budget": 8, "cap": 3, "styles": [["short", "Cropped"], ["long", "Long"], ["tied", "Tied back"], ["bald", "Shorn"], ["braid", "A braid"], ["twin", "Two braids"], ["warrior", "Warrior braids"], ["mohawk", "A crest"], ["curly", "Curly"], ["afro", "An afro"], ["shaggy", "Shaggy"], ["bun", "A bun"], ["thin", "Thinning"]], "beards": [["no", "None"], ["full", "Full"], ["short", "Trimmed"], ["long", "Long"], ["braided", "Braided"], ["forked", "Forked"], ["goatee", "Goatee"], ["vandyke", "Goatee and moustache"], ["walrus", "Walrus"], ["handlebar", "Handlebar"], ["pencil", "Pencil"], ["horseshoe", "Horseshoe"], ["mutton", "Mutton chops"], ["chinstrap", "Chinstrap"], ["stubble", "Stubble"]], "tunics": [6969924, 5909024, 2767466, 3820074, 6965786, 2763306, 8022618, 4860490], "breeches": [3811866, 4866096, 2763322, 5913130, 1710618], "boots": [2759696, 4861976, 1710618, 5917242], "peoples": {"gatelander": {"skin": [15255720, 15782064, 14727320, 14200976], "hair": [2759184, 4860948, 9058842, 10504736, 3811866]}, "markman": {"skin": [15785160, 15520960, 16048336, 15257784], "hair": [14207136, 12099696, 9079424, 15260864, 5917242]}, "aurennais": {"skin": [13148280, 12093536, 11040848, 13674624], "hair": [1708560, 2759184, 3811352, 1710618]}, "oldblood": {"skin": [14209228, 13617348, 14735572, 13156540], "hair": [920588, 1315346, 1709590]}}, "peopleDesc": [["Gatelander", "Fair, wiry, freckled. The home island's people; at ease anywhere the old tongue is spoken."], ["Markman", "Tall, broad, pale. The Mark's people; warmer welcomes in the north, colder in the Compact's churches."], ["Aurennais", "Olive, lean, quick. Aurenne's people; honoured in the ports, mistrusted where the gates are dug."], ["Old Blood", "Grey-pale, black-haired, marked at the wrists. The makers' remnant. Nobody quite agrees what you look like."]], "lookRows": [["Skin", ["#e8c8a8", "#f0d0b0", "#e0b898", "#d8b090"]], ["Hair", ["#2a1a10", "#4a2c14", "#8a3a1a", "#a04a20", "#3a2a1a"]], ["Style", ["Cropped", "Long", "Tied back", "Shorn", "A braid", "Two braids", "Warrior braids", "A crest", "Curly", "An afro", "Shaggy", "A bun", "Thinning"]], ["Beard", ["None", "Full", "Trimmed", "Long", "Braided", "Forked", "Goatee", "Goatee and moustache", "Walrus", "Handlebar", "Pencil", "Horseshoe", "Mutton chops", "Chinstrap", "Stubble"]], ["Tunic", ["#6a5a44", "#5a2a20", "#2a3a6a", "#3a4a2a", "#6a4a1a", "#2a2a2a", "#7a6a5a", "#4a2a4a"]], ["Breeches", ["#3a2a1a", "#4a4030", "#2a2a3a", "#5a3a2a", "#1a1a1a"]], ["Boots", ["#2a1c10", "#4a3018", "#1a1a1a", "#5a4a3a"]]], "look": {"skin": 14200976, "hair": 4860948, "style": "short", "beard": false, "tunic": 5909024, "breeches": 3811866, "boots": 2759696}, "modalHeight": [1278, 600], "figure": 2718};
+const ASSETS={"gatelander": {"look": {"skin": 14200976, "hair": 4860948, "style": "short", "beard": false, "tunic": 5909024, "breeches": 3811866, "boots": 2759696}, "height": 1.2381450747212122}, "markman": {"look": {"skin": 15257784, "hair": 12099696, "style": "short", "beard": false, "tunic": 5909024, "breeches": 3811866, "boots": 2759696}, "height": 1.337196680698909}, "aurennais": {"look": {"skin": 13674624, "hair": 3811352, "style": "short", "beard": false, "tunic": 5909024, "breeches": 3811866, "boots": 2759696}, "height": 1.2133821732267878}, "oldblood": {"look": {"skin": 13156540, "hair": 1315346, "style": "short", "beard": false, "tunic": 5909024, "breeches": 3811866, "boots": 2759696}, "height": 1.1390934687435152}, "save": {"name": "Aoife", "arch": "duelist", "level": null, "loc": "🌍 The open country"}};
+const $=s=>document.querySelector(s);
+const IC={might:'i-sword',fortitude:'i-shield',finesse:'i-dagger',swiftness:'i-wind',resolve:'i-star',intelligence:'i-quill',charisma:'i-person',fortune:'i-coin',
+  warrior:'i-sword',sentinel:'i-shield',duelist:'i-rapier',scout:'i-bow',monk:'i-enso',scholar:'i-book',diplomat:'i-speech',vagrant:'i-pack',
+  sword:'i-sword',club:'i-club',dagger:'i-dagger',staff:'i-staff',bow:'i-bow',greatclub:'i-club'};
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${IC[id]||id}"/></svg>`;
+const PEO=['gatelander','markman','aurennais','oldblood'];
+const hex=n=>'#'+n.toString(16).padStart(6,'0');
+// the chosen character: Aoife, a Gatelander duelist, the look the game dealt her
+const ST={name:'Aoife',people:0,arch:'duelist',weapon:'sword',attrs:null,look:ASSETS.gatelander.look};
+function archOf(id){return DATA.archetypes.find(a=>a.id===id);}
+function attrsOf(id){const a=archOf(id);const o={};for(const k in DATA.attrs)o[k]=a.attrs[k]||0;return o;}
+const STYLE_KEYS=['short','long','tied','shorn','braid','braids2','warrior','crest','curly','afro','shaggy','bun','thinning'];
+function lookName(rowLabel,v){const row=DATA.lookRows.find(r=>r[0]===rowLabel);return row[1];}
+
+function namefield(){return `<div class="namefield">${ST.name}<span class="caret"></span><small>up to 20 letters</small></div>`;}
+function niche(pp,view){return `<div class="niche"><div class="floor"></div><img src="fig-${pp}-${view}.png" alt=""></div>`;}
+function peoples(){return `<div class="peo">${DATA.peopleDesc.map((p,i)=>`<span class="${i===ST.people?'on':''}">${p[0]}</span>`).join('')}</div>
+  <div class="gloss">${DATA.peopleDesc[ST.people][1]}</div>`;}
+function swatches(label,on){const row=DATA.lookRows.find(r=>r[0]===label)[1];return `<div class="lk"><span>${label}</span><div class="sws">${row.map(c=>`<i style="background:${c}" class="${c===on?'on':''}"></i>`).join('')}</div></div>`;}
+function stepper(label,i){const row=DATA.lookRows.find(r=>r[0]===label)[1];return `<div class="lk"><span>${label}</span><div class="step"><span class="ar">‹</span><b>${row[i]}</b><span class="ar">›</span><small>${i+1} of ${row.length}</small></div></div>`;}
+function lookRows(){const L=ST.look;return swatches('Skin',hex(L.skin))+swatches('Hair',hex(L.hair))+stepper('Style',Math.max(0,STYLE_KEYS.indexOf(L.style)))+stepper('Beard',0)
+  +swatches('Tunic',hex(L.tunic))+swatches('Breeches',hex(L.breeches))+swatches('Boots',hex(L.boots));}
+function beginnings(){return `<div class="beg">${DATA.archetypes.map(a=>`<div class="bt ${a.id===ST.arch?'on':''}">${ico(a.id)}${a.label}</div>`).join('')}</div>`;}
+function archDesc(){const a=archOf(ST.arch);return `<div class="desc">${a.desc}</div><div class="prim">Gifted in <b>${a.primaries.map(k=>DATA.attrs[k].label).join(' · ')}</b> — one more in each at every level.</div>`;}
+function weapons(){return Object.entries(DATA.weapons).map(([id,w])=>`<div class="wp ${id===ST.weapon?'on':''}">${ico(id)}<span class="n">${w.name.replace('Wooden ','')}</span><span class="d num">${w.atk[0]}–${w.atk[1]}</span><span class="ty">${w.wType}</span><span class="h2h">${w.twoHand?'2H':''}</span></div>`).join('');}
+function wdesc(){return `<div class="wdesc">${DATA.weapons[ST.weapon].desc}</div>`;}
+function pointsLeft(){return DATA.budget-Object.values(ST.attrs).reduce((a,b)=>a+b,0);}
+function gifts(){const pr=new Set(archOf(ST.arch).primaries);const left=pointsLeft();return Object.entries(DATA.attrs).map(([k,d])=>{const v=ST.attrs[k];
+  return `<div class="gift ${pr.has(k)?'pr':''}">${ico(k)}<span>${d.label}${pr.has(k)?'<span class="star">✦</span>':''}</span><span class="pm ${v<=0?'off':''}">−</span><span class="v num">${v}</span><span class="pm ${(v>=DATA.cap||left<=0)?'off':''}">+</span><span class="pips">${[0,1,2].map(i=>`<span class="${i<v?'f':''}"></span>`).join('')}</span></div>`;}).join('');}
+function giftHead(){const l=pointsLeft();return `<span class="r"><b>${l}</b> of ${DATA.budget} to give · ${DATA.cap} at most in one</span>`;}
+function beginRow(){const a=archOf(ST.arch),w=DATA.weapons[ST.weapon];return `<div class="beginrow"><div class="what">${ST.name}, a ${DATA.peopleDesc[ST.people][0]} ${a.label.toLowerCase()},<br>with the ${w.name.replace('Wooden ','').toLowerCase()}</div><span class="seal">✠</span><span class="go">Begin</span></div>`;}
+
+const screens=[];
+function screen(id,cap,cls,html){screens.push(id);$('#out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen ${cls}" id="${id}">${html}</div>`);}
+
+// ── the title
+const save=ASSETS.save;
+screen('title','The title screen <small>the world at night behind; the menu on a slip; the keys on their own card</small>','night',`<div class="ttl-shade"></div>
+ <div class="gametitle"><div class="t">The Old Gates</div><div class="orn">❦</div></div>
+ <div class="parch small menuslip">
+  <div class="mi hot">${ico('i-key')}<div>Continue<small>${save.name}, Duelist, level 1 · the open country</small></div></div>
+  <div class="mi">${ico('i-quill')}<div>A New Tale</div></div>
+  <div class="mi">${ico('i-book')}<div>Load a Tale</div></div>
+  <div class="mi">${ico('i-scales')}<div>The Keys</div></div>
+ </div>
+ <div class="hint">↑ ↓ to choose · Enter to take it</div><div class="tag">build s373</div>`);
+const K=[['W A S D','move and turn',''],['Mouse','look',''],['Shift','sprint',''],['Space','jump',''],['Q','roll',''],['Ctrl','sneak','fewer eyes on you, slower'],
+ ['E','interact','doors, people, caves'],['Left-click','attack','hold for a power blow'],['Right-click','block','a late one parries'],['R','lock on','or the middle button; flick to switch'],['F','cast',''],['I','inventory','']];
+screen('keys','The Keys <small>today\'s six lines of controls, out of the title and onto a card of their own</small>','night menu',`<div class="ttl-shade"></div>
+ <div class="parch keys"><div class="h" style="text-align:center">The Keys</div><div class="rule"></div><div class="grid">${K.map(k=>`<div class="kr"><span class="k">${k[0].split(' ').length>1&&k[0].length<8?k[0].split(' ').map(x=>`<span class="key">${x}</span>`).join(''):`<span class="key">${k[0]}</span>`}</span><span>${k[1]}</span><span class="w">${k[2]}</span></div>`).join('')}</div>
+ <div class="foot"><span>E or Esc to close</span><span>the same card sits in the pause menu</span></div></div>`);
+
+// ── A: one sheet
+ST.attrs=attrsOf(ST.arch);
+screen('sheet','A — One sheet <small>everything on one page, nothing scrolls; the figure full length</small>','night menu',`
+ <div class="parch cc"><div class="head"><span class="h">Begin Your Tale</span></div><div class="rule"></div>
+ <div class="esc"><span class="key" style="width:auto;padding:0 6px">Esc</span> back to the title</div>
+ <div class="cols3">
+  <div class="col"><div class="lbl">Name</div>${namefield()}${niche('gatelander','three')}<div class="turnhint"><span>‹ drag to turn ›</span><span class="btn">Shuffle</span></div></div>
+  <div class="col colrule"><div class="lbl">Your people</div>${peoples()}<div class="lbl">Your look</div>${lookRows()}<div class="lbl">Your beginning</div>${beginnings()}${archDesc()}</div>
+  <div class="col colrule"><div class="lbl">Starting weapon</div>${weapons()}${wdesc()}<div class="lbl">Your gifts ${giftHead()}</div>${gifts()}${beginRow()}</div>
+ </div></div>`);
+
+// ── B: the book, four chapters
+function spread(ch,right){const chs=['I','II','III','IV'].map((c,i)=>`<span class="${i===ch?'on':i<ch?'done':''}">${c}</span>`).join('');
+  const a=archOf(ST.arch),w=DATA.weapons[ST.weapon];
+  return `<div class="tome"><div class="chap">${chs}</div><div class="block"></div>
+  <div class="leaf l"><div class="run">BEGIN YOUR TALE</div><div class="figwrap"><img src="fig-gatelander-three.png"></div>
+   <div class="so"><b>${ST.name}</b>a ${DATA.peopleDesc[ST.people][0]} ${a.label.toLowerCase()}, with the ${w.name.replace('Wooden ','').toLowerCase()}</div><div class="fol">‹ drag to turn ›</div></div>
+  <div class="leaf r"><div class="run">${ST.name.toUpperCase()}</div>${right}<div class="fol">${['i','ii','iii','iv'][ch]}</div></div>
+  <div class="ribbon2"></div></div>
+  <div class="turn hudtxt"><span><span class="key">A</span> back</span><span><span class="key">D</span> ${ch<3?'on':'begin'}</span><span><span class="key" style="width:auto;padding:0 6px">Esc</span> the title</span></div>`;}
+const chHead=(n,t)=>`<div class="chh">CHAPTER ${n}</div><div class="cht">${t}</div><div class="orn">❦</div>`;
+screen('book1','B — The book, chapter I <small>four chapters, turned in order; the figure and what you have chosen stay on the left leaf</small>','night menu',spread(0,
+ chHead('THE FIRST','Who You Are')+`<div class="lbl">Name</div>${namefield()}<div class="lbl" style="margin-top:22px">Your people</div>${peoples()}`));
+screen('book2','B — The book, chapter II','night menu',spread(1,chHead('THE SECOND','How You Look')+lookRows()+`<div class="turnhint" style="justify-content:center"><span class="btn">Shuffle</span></div>`));
+screen('book3','B — The book, chapter III','night menu',spread(2,chHead('THE THIRD','How You Began')+beginnings()+archDesc()+`<div class="lbl" style="margin-top:12px">Starting weapon</div>`+weapons().replace(/class="wp/g,'class="wp sm')));
+screen('book4','B — The book, chapter IV','night menu',spread(3,chHead('THE FOURTH','What You Are Given')+`<div class="lbl">Gifts ${giftHead()}</div>${gifts()}`+beginRow()));
+
+// ── C: today's column, restyled
+screen('restyle','C — Restyle only <small>today\'s one column on the paper; it still scrolls, 1,278 px tall in a 600 px frame</small>','night menu',`
+ <div class="parch cc1"><div class="head" style="display:flex;justify-content:center"><span class="h" style="font-size:28px">Begin Your Tale</span></div><div class="rule"></div>
+ <div class="lbl">Name</div>${namefield()}<div class="lbl">Choose your beginning</div>${beginnings()}${archDesc()}<div class="lbl">Your people</div>${peoples()}
+ <div class="lbl">Your look</div><div style="display:grid;grid-template-columns:180px 1fr;gap:16px"><div class="niche" style="height:230px;margin-top:0;border-radius:90px 90px 4px 4px"><img src="fig-gatelander-front.png" style="height:215px;bottom:6px"></div><div>${lookRows()}</div></div>
+ <div class="scrollbar"><i></i></div></div>`);
+
+// ── comparisons
+screen('cmp-title','Today beside the proposed — the title','cmp',`<div class="pair"><figure><figcaption>Today <small>build s373</small></figcaption><img src="current-title.png"></figure><figure><figcaption>Proposed</figcaption><img id="ct-new" src=""></figure></div>`);
+screen('cmp-creator','Today beside A — the creator','cmp',`<div class="pair"><figure><figcaption>Today <small>the first of 2.1 screens</small></figcaption><img src="current-creator-1.png"></figure><figure><figcaption>A, one sheet</figcaption><img id="cc-new" src=""></figure></div>`);
+window.SCREENS=screens;
+</script>
+</body>
+</html>
