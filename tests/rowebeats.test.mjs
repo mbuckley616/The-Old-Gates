@@ -27,7 +27,7 @@ const meet = async (getter, re) => { const ok = await page.evaluate((src) => { c
   if (!ok) return null; await g.frames(2);
   await page.evaluate(() => { const n = window._n; const dx = Math.sin(n.g.rotation.y), dz = Math.cos(n.g.rotation.y); px = n.g.position.x + dx * 1.3; pz = n.g.position.z + dz * 1.3; yaw = Math.atan2(dx, dz); });
   await page.keyboard.press('e'); await g.frames(2);
-  const r = await page.evaluate(() => ({ open: !!dlgOpen, name: (document.getElementById('dlg-name') || {}).textContent, greet: (document.getElementById('dlg-text') || {}).textContent, labels: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, '')), msg: (document.getElementById('msg') || {}).textContent || '' }));
+  const r = await page.evaluate(() => ({ open: !!dlgOpen, name: (document.getElementById('dlg-name') || {}).textContent, role: (document.getElementById('dlg-role') || {}).textContent, greet: (document.getElementById('dlg-text') || {}).textContent, labels: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, '')), msg: (document.getElementById('msg') || {}).textContent || '' }));
   if (re) { await page.evaluate((src) => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => new RegExp(src).test(x.textContent.trim())); if (b) b.click(); }, re.source); await g.frames(2);
     r.said = await page.evaluate(() => (document.getElementById('dlg-text') || {}).textContent || ''); }
   await page.evaluate(() => { try { if (dlgOpen) closeDialog(); } catch (e) {} }); return r; };
@@ -50,12 +50,13 @@ const r2a = await page.evaluate(() => !!WORLD.rival.npc);
 const t2 = await serve();
 const q2 = await page.evaluate(() => { const q = WORLD.fstate().crown.active; return q && { title: q.title, objective: q.objective, who: q.data.who, x: Math.round(q.data.x), z: Math.round(q.data.z), kind: q.kind }; });
 console.log('sixth', JSON.stringify(t2.said), JSON.stringify(q2), 'at seat', r2a);
-check('before the sixth she is not at the seat; the lord\'s brief: *Rowe rode out three days ago…*, a find for Hesket Rowe', !r2a && q2 && q2.kind === 'find' && q2.who === 'Hesket Rowe' && /Rowe rode out three days ago/.test(t2.said) && /Hesket Rowe/.test(q2.objective), { r2a, t2, q2 });
+check('before the sixth she is not at the seat; the lord\'s brief, said once: *Rowe rode out (dir) three days ago…*, a find for Hesket Rowe', !r2a && q2 && q2.kind === 'find' && q2.who === 'Hesket Rowe' && /Rowe rode out (north|south|east|west|north-east|north-west|south-east|south-west) three days ago/.test(t2.said) && (t2.said.match(/three days/g) || []).length === 1 && !/Find her/.test(t2.said) && /Hesket Rowe/.test(q2.objective), { r2a, t2, q2 });
 await at(q2.x + 30, q2.z); await tick(30);
 const m2 = await meet(`ZONES.world.npcs.find(n => n.def && n.def.name === 'Hesket Rowe' && n.def._lost && n.g.parent)`, /The seat sent me for you\./);
 const s2 = await page.evaluate(() => { const q = WORLD.fstate().crown.active; return { done: !!(q && q.done), found: !!(q && q.data.found) }; });
 console.log('found', JSON.stringify(m2), JSON.stringify(s2));
 check(`walked out to where the journal says (${q2.objective}), Rowe is there, and E finds her`, m2 && m2.open && m2.name === 'Hesket Rowe' && s2.done && s2.found, { m2, s2 });
+check('found on the land she is the Warden, greets in her own words, and offers only her own topic (quest review Finding 10)', m2 && m2.role === 'Warden' && /^Aye\. Thought it'd be you\. Sit, if you're stopping/.test(m2.greet || '') && JSON.stringify(m2.labels.filter(l => !/^My name is /.test(l))) === JSON.stringify(['The seat sent me for you.', 'Farewell.']), m2);
 check('she has her own line: *Tell them Rowe\'s coming — and tell them who found her.*', m2 && /Tell them Rowe's coming/.test(m2.said || ''), m2);
 await page.evaluate(([x, z]) => { px = x; pz = z; }, [seat.x, seat.z]); await g.settle(seat.id); await lordDef();
 const g2 = await page.evaluate(() => gold);

@@ -78,7 +78,7 @@ const g0 = await page.evaluate(() => gold);
 const t3 = await ask(/^Serve the Compact\.$/);
 const s3 = await svc(); const g3 = await page.evaluate(() => gold);
 console.log('turn-in', JSON.stringify(t3), JSON.stringify(s3), g0, g3);
-check('turned in: *The Compact names you Prior.*, the after-line, rank 3, nine services', /^The Compact names you Prior\. The strait's quieter\. Prior — and the house and the ship are yours\./.test(t3.said) && s3.rank === 3 && s3.done === 9, { t3, s3 });
+check('turned in: *The Compact names you Prior.*, the after-line, rank 3, nine services', /^The Compact names you Prior\. The strait is quieter, and the Compact is in your debt, Prior, .*Factor Rowe has gone north to the League, I am told\. Their ledgers are shorter\./.test(t3.said) && s3.rank === 3 && s3.done === 9, { t3, s3 });
 check(`paid at least the service's 220 + 20 a level`, g3 - g0 >= 220 + 20 * seat.lvl, { g0, g3 });
 const rowe = await page.evaluate(() => { for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now()); const n = WORLD.rival.npc;
   return n ? { name: n.def.name, greet: n.def.greeting[0], topics: n.def.topics.map(t => t.label), d: Math.round(Math.hypot(n.g.position.x - px, n.g.position.z - pz)) } : null; });
@@ -95,7 +95,7 @@ const s4 = await page.evaluate((id) => { const own = worldState.owned || {}; con
     port: P && { id: P.id, name: P.name, nk: WORLD.nationKeyOf(...WORLD.cellOf(P.x, P.z)), fromSeat: Math.round(Math.hypot(P.x - seat.x, P.z - seat.z)), fromPort: Math.round(Math.hypot(P.x - sh.x, P.z - sh.z)), loaded: !!WORLD.settle.get(P.id) },
     log: (worldState.log || []).slice(-3).map(e => e.text || e.t || JSON.stringify(e)).join(' | ') }; }, seat.id);
 console.log('claim', JSON.stringify(t4), JSON.stringify(s4));
-check('*Claim a house and a ship.* deeds a house at the seat', t4.clicked && /The ship is at the quay under your name/.test(t4.said) && s4.house && s4.owned >= 1, { t4, s4 });
+check('*Claim a house and a ship.* deeds a house at the seat', t4.clicked && /^Entered in your name, Prior: the house, and the ship at the quay\.$/.test(t4.said) && s4.house && s4.owned >= 1, { t4, s4 });
 check(`and a ship: the ${s4.ship && s4.ship.name}, afloat off ${s4.port && s4.port.name} (the Compact's, ${s4.port && s4.port.fromSeat} from the seat, not loaded)`, !!s4.ship && s4.mesh && s4.ship.h < 0 && s4.port && s4.port.nk === 'aurenne' && !s4.port.loaded && s4.port.fromPort < 150, s4);
 // go to that harbour: the ship lies beside the quay as built, and E from the quay's end boards her
 const atq = await page.evaluate((pid) => { const P = WORLD.siteAnywhere(pid); px = P.x; pz = P.z; jumpY = 0; return P.name; }, s4.port.id);

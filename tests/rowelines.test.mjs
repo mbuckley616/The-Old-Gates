@@ -10,9 +10,9 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 
 const LINES = {
-  league: { serve: /^Serve the Captains' League\.$/, fourth: /The Reeve's Seal/, sixth: /^Where Is Rowe\?$/, brief: /Rowe went up the hill road alone/,
+  league: { serve: /^Serve the Captains' League\.$/, fourth: /The Reeve's Seal/, sixth: /^Where Is Rowe\?$/, brief: /^Rowe took the hill road (north|south|east|west|north-east|north-west|south-east|south-west), alone\. Reeves don't go alone\. There's a camp out that way\. Bring her back\.$/, rank: 'Reeve',
     greet: /^Sworn, is it\? I'm Reeve\. They gave me the coast road\./, rank2: /names you Reeve\./ },
-  compact: { serve: /^Serve the Compact\.$/, fourth: /What the Sea Gave Back/, sixth: /^Where Is Factor Rowe\?$/, brief: /Rowe went to a gate the Church had sealed/,
+  compact: { serve: /^Serve the Compact\.$/, fourth: /What the Sea Gave Back/, sixth: /^Where Is Factor Rowe\?$/, brief: /^Factor Rowe went (north|south|east|west|north-east|north-west|south-east|south-west) to look at a gate the Church had sealed, .*Kindly bring her back to her ledgers\.$/, rank: 'Factor',
     greet: /^Clerk, is it\? I'm Factor\. The Church counts in fortnights\./, rank2: /names you Factor\./ },
 };
 const at = async (x, z) => { await page.evaluate(([x, z]) => { const x0 = px, z0 = pz, L = Math.hypot(x - x0, z - z0), n = Math.max(1, Math.ceil(L / 20));
@@ -30,7 +30,7 @@ const meet = async (getter, re) => { const ok = await page.evaluate((src) => { c
   if (!ok) return null; await g.frames(2);
   await page.evaluate(() => { const n = window._n; const dx = Math.sin(n.g.rotation.y), dz = Math.cos(n.g.rotation.y); px = n.g.position.x + dx * 1.3; pz = n.g.position.z + dz * 1.3; yaw = Math.atan2(dx, dz); });
   await page.keyboard.press('e'); await g.frames(2);
-  const r = await page.evaluate(() => ({ open: !!dlgOpen, name: (document.getElementById('dlg-name') || {}).textContent, greet: (document.getElementById('dlg-text') || {}).textContent, labels: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, '')), msg: (document.getElementById('msg') || {}).textContent || '' }));
+  const r = await page.evaluate(() => ({ open: !!dlgOpen, name: (document.getElementById('dlg-name') || {}).textContent, role: (document.getElementById('dlg-role') || {}).textContent, greet: (document.getElementById('dlg-text') || {}).textContent, labels: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, '')), msg: (document.getElementById('msg') || {}).textContent || '' }));
   if (re) { await page.evaluate((src) => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => new RegExp(src).test(x.textContent.trim())); if (b) b.click(); }, re.source); await g.frames(2);
     r.said = await page.evaluate(() => (document.getElementById('dlg-text') || {}).textContent || ''); }
   await page.evaluate(() => { try { if (dlgOpen) closeDialog(); } catch (e) {} }); return r; };
@@ -59,12 +59,13 @@ for (const fk of ['league', 'compact']) {
   const t2 = await serve();
   const q2 = await page.evaluate((fk) => { const q = WORLD.fstate()[fk].active; return q && { title: q.title, objective: q.objective, who: q.data.who, x: Math.round(q.data.x), z: Math.round(q.data.z), kind: q.kind, service: q.service }; }, fk);
   console.log('sixth', JSON.stringify(t2.said), JSON.stringify(q2), 'at seat', r2a);
-  check(`${fk}: before the sixth she is gone from the seat; the lord's brief is the authored one, a find for Hesket Rowe`, !r2a && q2 && q2.kind === 'find' && q2.who === 'Hesket Rowe' && q2.service === 5 && L.brief.test(t2.said) && L.sixth.test(q2.title.replace(/^[^:]+: /, '')), { r2a, t2, q2 });
+  check(`${fk}: before the sixth she is gone from the seat; the lord's brief is the authored one, a find for Hesket Rowe`, !r2a && q2 && q2.kind === 'find' && q2.who === 'Hesket Rowe' && q2.service === 5 && L.brief.test(t2.said.replace(/^[^:]+: "/, '').replace(/" \(\d+ gold.*$/, '')) && L.sixth.test(q2.title.replace(/^[^:]+: /, '')), { r2a, t2, q2 });
   await at(q2.x + 30, q2.z); await tick(30);
-  const m2 = await meet(`ZONES.world.npcs.find(n => n.def && n.def.name === 'Hesket Rowe' && n.def._lost && n.g.parent)`, /The seat sent me for you\./);
+  const m2 = await meet(`(WORLD.fstate()['${fk}'].active || {})._npc`, /The seat sent me for you\./);
   const s2 = await page.evaluate((fk) => { const q = WORLD.fstate()[fk].active; return { done: !!(q && q.done), found: !!(q && q.data.found) }; }, fk);
   console.log('found', JSON.stringify(m2), JSON.stringify(s2));
   check(`${fk}: walked out (${q2 && q2.objective}), Rowe is there, E opens her dialogue and finds her, with her own line`, m2 && m2.open && m2.name === 'Hesket Rowe' && s2.done && s2.found && /Tell them Rowe's coming/.test(m2.said || ''), { m2, s2 });
+  check(`${fk}: found on the land she is the ${L.rank}, greets in her own words, and offers only her own topic (quest review Finding 10)`, m2 && m2.role === L.rank && /^Aye\. Thought it'd be you\. Sit, if you're stopping/.test(m2.greet || '') && JSON.stringify(m2.labels.filter(l => !/^My name is /.test(l))) === JSON.stringify(['The seat sent me for you.', 'Farewell.']), m2);
   await home();
   const g2 = await page.evaluate(() => gold);
   const d2 = await say(true, /^It.s done\.$/);
