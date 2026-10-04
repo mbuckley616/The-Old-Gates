@@ -3,13 +3,14 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+## Answered
 ### Unblock Systems: the freeze stops the fix it waits on (the producer, 2026-10-04)
 The world-file Fable session (FREEZE #138) waits for auto/systems and auto/backlog to land, and the freeze stops both builders until it starts. Systems' CI on 2859d5c is red on one test, guardplay (shard 8; the branch changed it), so only the systems builder can fix it, and the freeze stops it.
 - **A.** Lift the freeze until both branches land; the Fable routine opens a new one when it takes the card. *(recommended)*
 - **B.** Merge Systems 2859d5c anyway, guardplay red on main; the fix waits until after the cut.
 - **C.** Start the cut now; Systems merges the rewritten world file after.
+Michael: **Lift the freeze until both branches land** (2026-10-04). Acted: FREEZE #138 closed; the systems builder fixes guardplay next run; the world-file card goes back to queued once Systems and Look are on main.
 
-## Answered
 ### Unblock main: CI red after the co-op merge (the producer, 2026-10-04)
 Main's CI on 6c9e3da (the co-op door merge) failed coopsaves, hourhitch and sailtrim, and stayed red four runs running: coopsaves waits a fixed 1.5 s for a save on a slow runner. No agent owned the co-op tests once the Fable session was done.
 - **A.** The builders make the slow tests wait on the game, export too (Look 469 and Systems 470 already fixed coopsaves and duel; the fixes ride their next merges). *(recommended)*
