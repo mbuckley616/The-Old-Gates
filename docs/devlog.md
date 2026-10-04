@@ -11504,3 +11504,22 @@ In shard 2 `coopsaves` failed. That is the fixed 1.5 s pause after `saveToSlot`,
 
 ### Needs eyes
 Nothing. If `rowelines` times out on its new wait, Fortargent is not building at all, which would be a real fault.
+
+## v80 — Session 471 — Loot rolls on a seeded stream keyed by place and id (backlog K, the co-op door's Opus half, step 1: `14-items.js`)
+CLAUDE.md's co-op rules (Michael's A on #119) say a roll that decides an outcome comes from a seeded stream keyed by place and id, so that a host and a guest who agree on the key roll the same chest. Backlog K's first step counted 20 `Math.random` calls in `14-items.js`, all outcomes: the book, the herb, the gold, the loot's kind, tier, slot and enchant, the spellbook's 7%, and the container counts. This session moves all of them (22 calls; some lines hold two) onto one stream. It does not touch the foes' rolls in `42-zone-enemies.js` or the dungeon's placement, which are the rest of the step.
+
+`14-items.js` now has `seededRng(place, id)`, a string hash into a 32-bit generator, and every loot roll draws from `lootRand()`. That is `Math.random` unless a stream is set. `rollContainerLoot` takes a fifth argument, `key`, and with one it runs the whole roll on `seededRng('loot', key)` and clears the stream after, so a nested roll and any later unkeyed one are unaffected. A caller with no key gets exactly the old behaviour. Keys follow the rule's shape (place and index), given only where the container already has a place:
+- a town's barrels and crates: `<site>:barrel:<i>:<day>`, with `i` the order the site's own seeded builder lays them;
+- a wreck's sea chest: `wreck:<chunk>:<day>`;
+- a lair's hoard and a bandit camp's takings: `<site>:chest:<day>`;
+- a tower's hoard: `tower:<house id>`.
+
+The first three are not saved as opened and refill whenever their place is built again, as before. The game day in the key (`lootDay()`, from the world's clock, which is in the world row) keeps that refill. Rebuilt within one day, a place now holds what it held that morning, where before it was re-rolled on every rebuild. That is the rule working: a reload is no longer a re-roll. The tower's hoard is saved as taken, so it needs no day. Corpses, the dungeon's chests, barrels and shelves, and a ship's chest have no id yet (step 3), so they stay on `Math.random` through the same code, unkeyed.
+
+Found while testing, and left for its own session: the world's containers pass a number (1, 1.4, 1.8, 2.4) where `rollLoot` reads `diffScale.hp`. The result is NaN, so every roll takes the equipment branch at tier 1. A town barrel, which keeps only everyday goods, then always falls back to the town's own candle-and-rope list, and a hoard holds nothing but tier-1 arms. The test saw it: Portclare's two barrels were rolled on their keys, but every item they rolled was equipment.
+
+### Verified (headless Chromium)
+`lootseed` 7/7 (new). `seededRng` gives the same draws for the same key and others for another, all in [0, 1). A treasure chest keyed 40 ways rolls the same contents twice for every key (40/40), 34 different hoards in all, and leaves no stream set. Unkeyed, 40 of 40 pairs differ. The odds are unchanged over 3,000 chests each way: 1.47 items a chest keyed against 1.50 random, empty 9.9% against 8.1%, gold 0.19 against 0.19, equipment 0.47 against 0.49. In Portclare, built after a spy was set on `rollContainerLoot`, both barrels were rolled on `portclare:barrel:0:0` and `…:1:0` in order, each key rolls the same contents again, and the next day's key rolls other contents for one of the two. No page errors. The suites that open these containers pass unchanged: `foearmour` 9, `locks` (three suites) 29, `oddfurn` 7, `piratehold` 16, `theft` (two) 9, `wreck` 6. `parsecheck` clean. Build tag s403.
+
+### Needs eyes
+Nothing in play, bar a town's barrels holding the same things if you leave and come back the same day.
