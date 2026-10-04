@@ -851,6 +851,9 @@ function peopleSwing(rig,dt){if(!(dt>0))return;const sw=rig.sw||(rig.sw={});cons
 // then follow the points: the pelvis by its frame, every other bone turned onto its next point, parent first. A body that has
 // stopped moving is frozen and costs nothing more. Prototype: Session 415, docs/prototypes/ragdoll-grid.png.
 const RAGDOLLS=new Set();
+// S466 — static friction: a point on the floor or against a wall moving slower than this a step (in m at scale 1) is held
+// where the step began; without it a body slumped against a wall slid on, driven by its own lean, for seconds
+const RD_GRIP={floor:.002,wall:.006};
 const RD_DT=1/60,_rv1=new THREE.Vector3(),_rv2=new THREE.Vector3(),_rv3=new THREE.Vector3(),_rq1=new THREE.Quaternion(),_rq2=new THREE.Quaternion(),_rm=new THREE.Matrix4();
 const RD_CHAIN=[['hips','spine'],['spine','neck'],['neck','head'],['head','top'],['shL','elL'],['elL','wrL'],['wrL','hdL'],['elL','hdL'],['shR','elR'],['elR','wrR'],['wrR','hdR'],['elR','hdR'],
   ['thL','knL'],['knL','anL'],['anL','toL'],['knL','toL'],['thR','knR'],['knR','anR'],['anR','toR'],['knR','toR']];
@@ -895,15 +898,20 @@ function ragdollStep(R){
     const off=_rv2.copy(M).sub(A).addScaledVector(d,-t),k=off.dot(f);if(k*sign<0)M.addScaledVector(f,-k);};
   // once it is down (it is by .4 s) the air drags harder from 1 s, so a raised knee comes to rest, not topples for seconds
   const dm=R.t<1?.995:.9;
-  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
+  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.sy=o.p.y;o.w0=o.w;o.w=false;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
   for(let it=0;it<10;it++){
     for(const [a,b,len] of C){const pa=P[a].p,pb=P[b].p,d=_rv1.subVectors(pb,pa),l=d.length()||1e-6,k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
     hinge('thL','knL','anL',1);hinge('thR','knR','anR',1);hinge('shL','elL','wrL',-1);hinge('shR','elR','wrR',-1);
     for(let i=0;i<P.length;i++){const o=P[i],gy=R.ground(O.x+o.p.x,O.z+o.p.z)-O.y+R.rad[i];
-      if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;}}
-    // a wall stops a point where it stood at the step's start, and takes its way across (in the last two passes only: the
-    // world's test reads nine chunks)
-    if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
+      if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;
+        // S466: and a point on the ground creeping slower than RD_GRIP.floor a step is held where the step began
+        if(Math.abs(o.p.x-o.sx)+Math.abs(o.p.z-o.sz)<RD_GRIP.floor*R.s){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}}}
+    // a wall stops a point where it stood at the step's start, and takes its way across (every point in the last two passes
+    // only: the world's test reads nine chunks). S466: a point the wall stopped last step is held in every pass, so the wall
+    // pushes back on the body through the bones; held in the last two only, the passes before drove a leaning head into the
+    // wall and shoved the rest of the body off it, step after step, and a body slumped against a dungeon wall crept for 2–4 s
+    if(R.solid)for(const o of P)if((it>=8||o.w0)&&R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;o.w=true;
+      const vy=o.p.y-o.sy;if(Math.abs(vy)<RD_GRIP.wall*R.s)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
   }
 }
 function ragdollApply(R){

@@ -2,7 +2,8 @@
 // ragdollFoe, which puts a point at each of 21 joints and lets gravity, the blow and the ground take it; the bones follow.
 // This kills Bandits in the open world with the real kill path, steps the people's tick at 1/60, and reads where the
 // body lies: on the ground, fallen away from you, the bones their own lengths, settled and frozen, each death its own.
-// A wolf falls as a ragdoll of its own since Session 427 (tests/beastfall.test.mjs reads it). Then a dungeon's people-bodied foe falls on its floor and stays out of its walls.
+// A wolf falls as a ragdoll of its own since Session 427 (tests/beastfall.test.mjs reads it). Then a dungeon's people-bodied foe falls on its floor and stays out of its walls,
+// and (S466) comes to rest against a wall about as soon as in the open: the floor and the walls grip a slow point.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.frames(30);
@@ -91,19 +92,41 @@ const dun = await page.evaluate(() => {
   let spot = null; for (let r = 1; r < dR - 1 && !spot; r++) for (let c = 2; c < dC - 1 && !spot; c++) if (dSolid(c + 1, r) && !dSolid(c, r) && !dSolid(c - 1, r) && !dSolid(c - 2, r) && !dSolid(c, r - 1) && !dSolid(c, r + 1)) spot = [c, r];
   if (!spot) { window.requestAnimationFrame = raf; return { found: false, kinds, why: 'no spot by a wall' }; }
   e.x = spot[0]; e.z = spot[1]; px = e.x - 1.2; pz = e.z;
-  e.hp = 0; killE(e, ' (POWER)'); const R = [...RAGDOLLS].find(r => r.rig === e.limbs.person);
+  const rig = e.limbs.person;
+  e.hp = 0; killE(e, ' (POWER)'); const R = [...RAGDOLLS].find(r => r.rig === rig);
   for (let i = 0; i < 300 && R && RAGDOLLS.has(R); i++) tickPeople(1 / 60, performance.now());
-  const V = () => new THREE.Vector3(), B = e.limbs.person.B, pts = R ? R.P.map(o => [o.p.x + R.O.x, o.p.y + R.O.y, o.p.z + R.O.z]) : [];
-  window.requestAnimationFrame = raf;
-  return { found: true, name: e.name, spot, started: !!R, settled: R && !RAGDOLLS.has(R) && R.t < 4, rotZ: e.mesh.rotation.z,
+  const V = () => new THREE.Vector3(), B = rig.B, pts = R ? R.P.map(o => [o.p.x + R.O.x, o.p.y + R.O.y, o.p.z + R.O.z]) : [];
+  // how fast its fastest joint still moved when it was frozen (a body the four-second cap freezes is the designed fallback)
+  const last = R ? +Math.max(...R.P.map(o => Math.abs(o.p.x - o.q.x) + Math.abs(o.p.y - o.q.y) + Math.abs(o.p.z - o.q.z))).toFixed(4) : 1;
+  const one = { found: true, name: e.name, spot, started: !!R, settled: R && !RAGDOLLS.has(R) && R.t < 4, t: R && +R.t.toFixed(2), last, rotZ: e.mesh.rotation.z,
     hipsUp: +(B.hips.getWorldPosition(V()).y).toFixed(3), lowest: +Math.min(...pts.map(p => p[1])).toFixed(3),
     inWall: pts.filter(p => dSolid(p[0], p[2])).length, kinds };
+  // S466: the same body thrown at that wall 24 times on seeded draws, from its bind pose, facing you, a jab or a power
+  // blow, a little nearer or further from the wall: before S466 the median came to rest after 3.55 s and 7 met the cap
+  const bones = Object.values(rig.B).filter(b => b && b.isBone); rig.mesh.skeleton.pose(); const pose0 = bones.map(b => [b.position.clone(), b.quaternion.clone()]);
+  const mr = Math.random, ts = []; let worstIn = 0, worstLow = 9;
+  for (let n = 0; n < 24; n++) {
+    bones.forEach((b, i) => { b.position.copy(pose0[i][0]); b.quaternion.copy(pose0[i][1]); }); e.mesh.rotation.set(0, -Math.PI / 2, 0);
+    let sd = (n * 2654435761 + 12345) >>> 0; Math.random = () => { sd = (sd * 1664525 + 1013904223) >>> 0; return sd / 4294967296; };
+    e.x = spot[0] - (n % 4) * .1; e.z = spot[1] + ((n >> 2) % 3 - 1) * .2; px = e.x - 1.2; pz = e.z;
+    try { ragdollFoe(e, n % 2 ? ' (POWER)' : '', () => 0, (x, z) => dSolid(x, z)); } finally { Math.random = mr; }
+    const Q = [...RAGDOLLS].find(r => r.rig === rig); if (!Q) { ts.push(9); continue; }
+    for (let i = 0; i < 300 && RAGDOLLS.has(Q); i++) tickRagdolls(1 / 60);
+    ts.push(+Q.t.toFixed(2)); const qp = Q.P.map(o => [o.p.x + Q.O.x, o.p.y + Q.O.y, o.p.z + Q.O.z]);
+    worstIn = Math.max(worstIn, qp.filter(p => dSolid(p[0], p[2])).length); worstLow = Math.min(worstLow, ...qp.map(p => p[1]));
+  }
+  window.requestAnimationFrame = raf; ts.sort((a, b) => a - b);
+  return { ...one, many: { ts, median: ts[ts.length >> 1], capped: ts.filter(t => t > 4).length, worstIn, worstLow: +worstLow.toFixed(3) } };
 });
 stop();
 console.log('dungeon', JSON.stringify(dun));
 check('the dungeon has a people-bodied foe on its first floor', dun.found, dun.kinds);
 if (dun.found) {
-  check('killed, it falls as a ragdoll and settles by itself before the four-second cap', dun.started && dun.settled && dun.rotZ === 0, dun);
+  // the throw's strength and the standing pose are a draw, and about one fall in eighty against a wall still meets the cap
+  // (S465's CI failure); the cap freezing a body whose joints are nearly still is the designed fallback, a body mid-fall is not
+  check('killed, it falls as a ragdoll and comes to rest: by itself, or at the four-second cap already nearly still', dun.started && dun.rotZ === 0 && (dun.settled || dun.last < .006), dun);
+  check('thrown at that wall 24 times, the median body is at rest within 2 s and at most two meet the cap (S466: was 3.55 s, 7 capped)', dun.many.median < 2 && dun.many.capped <= 2, dun.many);
+  check('none of the 24 ends in the wall or under the floor', dun.many.worstIn === 0 && dun.many.worstLow >= -.01, dun.many);
   check('it lies on the floor (y 0), not under it', dun.lowest >= -.01 && dun.hipsUp < .4, dun);
   check('thrown at a wall half a cell away, no joint ends inside it', dun.inWall === 0, dun.inWall);
 }
