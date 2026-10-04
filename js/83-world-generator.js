@@ -1612,6 +1612,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     }
     return {id:'x'+Date.now(),g,kind:'hunt',target:'Wolf',need:4,have:0,gold,desc:'Wolves. Four of them.',short:'Hunt 4 Wolves'};
   }
+  // S500 — dated guild work (DECISION #132, part B, as the lords' jobs in S499): one generated task in three (not the
+  // rank commissions) carries a date 7 to 14 days out, from a stream keyed by the guild, the hall's town and the day; done
+  // by then (t.doneAt, stamped by the hooks below when it is first done) it pays a quarter more; past it, undone, the guild
+  // takes it back (gLapse, from tickDatedWork).
+  function gDated(t,g,site){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);const r=seededRng('dated:'+g+':'+site.id,day);if(r()<1/3)t.due=(day+7+Math.floor(r()*8)+1)*1440;return t;}
+  function gStamp(t){if(t&&t.doneAt==null&&taskDone(t))t.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);}
+  function gDatedPay(t){return t.due&&t.doneAt!=null&&t.doneAt<t.due?Math.round((t.gold||0)*1.25):(t.gold||0);}
+  function gLapse(){const G=worldState.guild;if(!G)return;const now=worldState.gameTimeAbsMinutes||0;for(const g in G){const st=G[g],t=st&&st.active;if(!t||!t.due||now<t.due)continue;gStamp(t);if(t.doneAt!=null)continue;
+    st.active=null;if(t.kind==='raid'){const S=SETTLE.get(t.siteId);if(S)S.raid=false;}if(t._obj){try{sc.remove(t._obj.m);unregLight(t._obj.l);}catch(e){}const i=pickups.findIndex(p=>p.task===t);if(i>=0)pickups.splice(i,1);}
+    if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. The date passed, and the guild has given it to someone else.`);showMsg(`${GUILD_DEF[g].name}: the date has passed. The task is taken back.`,'#c8b880');}}
   function taskDone(t){
     switch(t.kind){case 'clear':case 'hunt':case 'gather':return t.have>=t.need;case 'raid':return t.spawned&&t.have>=t.count;case 'beast':case 'wizard':case 'creature':return !!t.done;case 'relic':return !!t.got;case 'deliver':return !!t.done;case 'hearth':return !!t.done;}return false;
   }
@@ -1628,16 +1638,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(t.kind==='hunt'&&ctx==='zone'&&e.name===t.target)t.have++;
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&e._guildTag===t.id)t.done=true;
       if(t.kind==='raid'&&e._guildTag===t.id){t.have++;if(t.have>=t.count){const S=SETTLE.get(t.siteId);if(S)S.raid=false;showMsg('The raiders are down. The town is safe.','#e8d8a0');}}
-      if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: task complete — report back.`,'#e8d8a0');}
+      gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: task complete — report back.`,'#e8d8a0');}
     }
   }
-  function onHarvest(h){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='gather'&&h.type===t.herb){t.have++;if(taskDone(t)&&!t._told){t._told=true;showMsg("Mages' Guild: that's enough — report back.",'#e8d8a0');}}}}
+  function onHarvest(h){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='gather'&&h.type===t.herb){t.have++;gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg("Mages' Guild: that's enough — report back.",'#e8d8a0');}}}}
   function onTalk(def){if(def&&def.name==='Varek'){varekTalked();return false;}if(qOnTalk(def))return true;const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='deliver'||t.done)return false;
     const S=SETTLE.get(t.siteId);if(!S||!S.houses.some(h=>h.keeper===def.name))return false;
-    if(!t.who){t.who=def.name;showMsg(`${def.name} takes the draught. "Bless you." Report back.`,'#e8d8a0');t.done=true;return true;}return false;}
+    if(!t.who){t.who=def.name;showMsg(`${def.name} takes the draught. "Bless you." Report back.`,'#e8d8a0');t.done=true;gStamp(t);return true;}return false;}
   function onEnterInterior(house){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done)return;if(house.type!=='home')return;const S=SETTLE.get(t.siteId);if(!S||!S.houses.includes(house))return;t.house=house.id;showMsg('This is the cold hearth. Stand by it and cast a flame (F).','#c8b880');}
   function onCast(){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done||!t.house)return;if(typeof currentHouse==='undefined'||!currentHouse||currentHouse.id!==t.house)return;
-    const W=currentHouse._roomW||10,D=currentHouse._roomD||10;if(Math.hypot(px-(W-.4),pz-D*.4)<2.6){t.done=true;showMsg('The hearth catches. Report back.','#e8d8a0');}}
+    const W=currentHouse._roomW||10,D=currentHouse._roomD||10;if(Math.hypot(px-(W-.4),pz-D*.4)<2.6){t.done=true;gStamp(t);showMsg('The hearth catches. Report back.','#e8d8a0');}}
   // world pickups (relics)
   const pickups=[];
   function ensureTaskWorldObjects(){
@@ -1651,11 +1661,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(t.kind==='raid'&&!t.spawned){const S=SETTLE.get(t.siteId);if(S&&Math.hypot(px-S.site.x,pz-S.site.z)<150){t.spawned=true;S.raid=true;const site=S.site;for(let i=0;i<t.count;i++){const ang=Math.random()*Math.PI*2;const ex=site.x+Math.cos(ang)*(site.pad+8),ez=site.z+Math.sin(ang)*(site.pad+8);const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Bandit',null));e._guildTag=t.id;e.alert=true;ZONES.world.enemies.push(e);}showMsg(`Raiders! ${t.count} of them. Hold ${site.name}.`,'#ff8060');}}
     }
   }
-  function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
-  function turnIn(g){const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
-    st.active=null;st.done++;const paid=questGold(t.gold);gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);
+  function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;gStamp(p.task);sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
+  function turnIn(g){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
+    st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);
     const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're a ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
-  function offer(g,site){const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const t=commissionFor(g,site)||genTask(g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+` Pay is ${t.gold} gold.`;}
+  function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
     guild_f:{

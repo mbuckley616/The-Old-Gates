@@ -179,7 +179,7 @@
   function datedPay(q){return q.due&&q.doneAt!=null&&q.doneAt<q.due?Math.round((q.reward||0)*1.25):(q.reward||0);}
   function datedLapse(q){if(!q||!q.due||q.done||q.turnedIn||(worldState.gameTimeAbsMinutes||0)<q.due)return false;q.turnedIn=true;q.lapsed=true;if(typeof addLog==='function')addLog('📜',`${q.title}: the date passed, and ${q.giver} has given the work to someone else.`);showMsg(`${q.title}: the date has passed. The work is taken back.`,'#c8b880');return true;}
   let _datedAt=0;
-  function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(datedLapse);}
+  function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(datedLapse);gLapse();}
   function qComplete(q){if(q.done||q.lapsed)return;if(datedLapse(q))return;q.done=true;q.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);}
   function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(datedPay(q));q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
   // ── town quests ──
@@ -1251,6 +1251,7 @@
     const T=worldState.towns||{};for(const id in T){const st=T[id];if(!st||!st.builds)continue;const t=siteAnywhere(id);st.builds.forEach(b=>{if(!b.done&&b.doneDay!=null)out.push({at:b.doneDay*1440,icon:'🧱',text:`The ${b.name} at ${t?t.name:'the town'} finished.`});});}
     const rn=worldState.rented;if(rn&&rn.until>now){out.push({at:rn.until,icon:'🛏',text:'The room you let is the innkeeper’s again.'});}
     const cs=worldState.coachSeat;if(cs&&typeof cs.at==='number'){const m=((cs.tod%1440)+1440)%1440;out.push({at:cs.at,icon:'🐎',text:`Your seat on the ${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')} coach.`});}
+    const GG=worldState.guild;if(GG)for(const g in GG){const t=GG[g]&&GG[g].active;if(t&&t.due&&t.doneAt==null&&!taskDone(t))out.push({at:t.due-1,icon:'📜',text:`${t.short} — for the ${GUILD_DEF[g].name}: ${Math.round((t.gold||0)*1.25)} gold if it is done by then; after it, the task is taken back.`});}
     qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }
