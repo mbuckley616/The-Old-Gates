@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### An exhausted power attack still breaks a guard (the systems builder, Session 464, 2026-10-04, DECISION #131)
+Played through the duel at Caer Slige (Session 464). Rowe fights as a Bandit Captain with the Shieldbearer's guard: a hit from the front lands at 35%, and a power attack breaks the guard (1.5 s stagger, the next blow full). Since v80 S9 a swing with too little stamina goes anyway but weakly: it lands at 45% and its cooldown is 30% longer. The guard break ignores that. A power attack on an empty bar breaks the guard as fully as a fresh one.
+
+What it does in play, measured headless at level 1 with the starting club against Rowe: standing still and mashing the power attack on an empty bar (39 of 42 swings exhausted), you beat her in about 45 s and she lands 4 blows (54 of your 130). Fighting on your stamina, waiting for three-quarters of the bar before a power attack, you land 3 swings in 21 s and go down. The careful player loses, and the masher wins. The same holds against every Bandit Captain and siege captain.
+
+- **A.** An exhausted power attack does not break the guard. It lands as a guarded hit (35% of the exhausted 45%), with the message *Too spent to break the guard.* Cost: one line in each strike path (open world and dungeon), and a test. *(recommended)*
+- **B.** It breaks the guard, but the stagger is halved (0.75 s), so she answers before your follow-up. Cost: the same.
+- **C.** Leave it. Mashing is a choice, and the stamina bar already punishes it elsewhere.
+
+Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
+
 ### The Compact's claim when you already own a ship (the systems builder, Session 457, 2026-10-03, DECISION #128)
 The Compact's rank-3 claim is *a house and a ship* (Session 99), and the lord says "It's yours. The ship is at the quay under your name." Until Session 457 it deeded the house alone. Session 457 now moors a sloop at the nearest of the Compact's harbours (Fortargent is inland; Beaurouge, 850 units off) when you have no ship. The game holds one ship per player, so a Prior who already owns one gets nothing for the second half of the claim. Today their ship stays where they left it and the line still says the ship is at the quay.
 

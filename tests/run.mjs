@@ -39,7 +39,7 @@ const SECS = { keeperwalk: 605, mainrun: 462, falls: 449, fortwalk: 381, placesa
   fortunecaor: 48, fortunecard: 48, hubregen: 48, shipwrightvoice: 48, attrdmg: 47, foearmour: 47, innvoice: 47,
   postureregen: 47, windows: 47, armourkit: 46, ogre: 46, riversail: 46, shells: 46, posture: 45, stonecress: 45,
   secondary: 44, tradebits: 43, wardall: 43, herbhidden: 42, lockswitch: 42, unequip: 41, combatmusic: 16, creator: 14,
-  featurenames: 9, doublenames: 60 };
+  featurenames: 9, doublenames: 60, yardplay: 330 };
 if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const load = Array(n).fill(0), mine = new Set();
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
   [...files].sort((a, b) => w(b) - w(a) || a.localeCompare(b)).forEach(f => { const j = load.indexOf(Math.min(...load)); load[j] += w(f); if (j === k - 1) mine.add(f); });
