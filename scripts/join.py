@@ -25,7 +25,7 @@ def sha(b):
 
 def read(path):
     with open(path, 'rb') as f:
-        return f.read().decode('utf-8')
+        return f.read().decode('utf-8').replace('\r\n', '\n')  # a Windows checkout with autocrlf: the index holds LF
 
 
 def join(index_path):
@@ -41,7 +41,7 @@ def join(index_path):
     if not os.path.exists(mpath):
         fail('no js/manifest.json beside ' + index_path)
     manifest = json.load(open(mpath, encoding='utf-8'))
-    names = [m.group(1)[3:] for m in tags]
+    names, texts = join_names(index_path, html, tags)
     listed = [f['name'] for f in manifest['files']]
     if names != listed:
         fail(f'the tag order {names} is not the manifest\'s {listed}')
@@ -50,10 +50,32 @@ def join(index_path):
         if between != '\n':
             fail(f'unexpected text between the {names[i - 1]} and {names[i]} tags: {between!r}')
     on_disk = sorted(f for f in os.listdir(os.path.join(base, 'js')) if f.endswith('.js'))
-    if on_disk != sorted(names):
-        fail(f'js/ holds {on_disk}, the tags name {sorted(names)}')
-    body = ''.join(read(os.path.join(base, 'js', n)) for n in names)
+    tagged = sorted(m.group(1)[3:] for m in tags)
+    if on_disk != tagged:
+        fail(f'js/ holds {on_disk}, the tags name {tagged}')
+    body = ''.join(texts[n] for n in names)
     return html[:tags[0].start()] + manifest['script_open'] + body + manifest['script_close'] + html[tags[-1].end():]
+
+
+def join_names(index_path, html, tags):
+    """The tag names as the step-1 manifest lists them, with the text of each. After step 2 (scripts/split_world.py)
+    the world's files are rebuilt into the one 80-world.js text they came from, renames reversed, before the join."""
+    base = os.path.dirname(os.path.abspath(index_path))
+    names = [m.group(1)[3:] for m in tags]
+    texts = {}
+    sys.path.insert(0, HERE)
+    import split_world
+    wm, rebuilt = split_world.rebuild(index_path)
+    if wm:
+        wnames = [f['name'] for f in wm['files']]
+        i = names.index(wnames[0])
+        world = os.path.basename(wm['source'])
+        names = names[:i] + [world] + names[i + len(wnames):]
+        texts[world] = rebuilt
+    for n in names:
+        if n not in texts:
+            texts[n] = read(os.path.join(base, 'js', n))
+    return names, texts
 
 
 def main():

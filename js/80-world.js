@@ -988,7 +988,8 @@ var WORLD=(()=>{
     french:[['Saint-','Mont','Ville','Château','Pont','Val','Beau','Fort','Bel','Clair'],['ferrand','rouge','clair','neuf','ancy','argent','brun','vert','mont','lac']],
     anglo:[['Ash','Wulf','Ealdor','Grim','Stan','Wood','Hag','Black','Ox','Bran'],['ford','ham','wick','thorpe','burgh','mere','stead','ley','worth','den']],
   };
-  function genName(r,reg){const s=SYL[reg]||SYL.irish;return s[0][Math.floor(r()*s[0].length)]+s[1][Math.floor(r()*s[1].length)];}
+  // v80 S442 — after a hyphen the name takes a capital (Saint-Rouge); no draw changes (quest review run 6, Finding 8)
+  function genName(r,reg){const s=SYL[reg]||SYL.irish;const a=s[0][Math.floor(r()*s[0].length)];let k=Math.floor(r()*s[1].length);if(a.replace('-','').toLowerCase()===s[1][k])k=(k+1)%s[1].length;const b=s[1][k];return a.endsWith('-')?a+b.charAt(0).toUpperCase()+b.slice(1):a+b;}
   const REGION_NAMES={forest:['Wood','Weald','Holt','Shaw'],plains:['Vale','Downs','Reach','March'],coast:['Strand','Shore','Coast','Haven'],wastes:['Waste','Barrens','Scar','Heath'],tundra:['Tundra','Snows','Whites','Frost'],fen:['Fen','Marsh','Mire','Carr'],moor:['Moor','Heath','Tops','Rise'],autumn:['Rust','Amber Wood','Gold Weald','Fall'],dunes:['Dunes','Sands','Shingle','Wash'],swamp:['Swamp','Bog','Sump','Drowned Wood'],wasteland:['Cinders','Blight','Ash','Burn']};
   // ── cell data ──
   const CELLS=new Map();
@@ -997,8 +998,42 @@ var WORLD=(()=>{
     const key=cellKey(i,j);if(CELLS.has(key))return CELLS.get(key);
     const c=(i===HOME_I&&j===HOME_J)?homeCellData():genCellData(i,j);
     c.sites.forEach(t=>{if(t.kind==='lair'&&!c.doors.some(d=>d.lairDoor&&d.lairSite===t.id)){const e=lairDoorFor(t,c);e.lairSite=t.id;c.doors.push(e);}}); // v80 — lair caverns
-    CELLS.set(key,c);return c;
+    CELLS.set(key,c);
+    if(!_namesDone&&!_namesBusy){_namesBusy=true;for(let jj=0;jj<GRID;jj++)for(let ii=0;ii<GRID;ii++)getCell(ii,jj);uniqueSiteNames();_namesDone=true;_namesBusy=false;}
+    return c;
   }
+  // v80 S432 — one name per place, world-wide (Michael's A on #110). The first cell asked for makes every cell of the grid
+  // (each is a pure function of its coordinates, so the order cannot change one), then this pass runs once. Home's
+  // hand-placed names are kept and reserved. The rest keep the name their cell drew unless a place ranked before them
+  // holds it (cities, then towns, ports, villages, outposts; then by cell and site order). Every keeper is settled first,
+  // so no new name takes one another place drew. A place that lost its name then takes a free one from its culture's bank, starting from a hash of its id, and when the bank's two halves run out,
+  // a longer name from the same sounds. It reads no cell's random draws, so nothing else in a cell moves.
+  let _namesDone=false,_namesBusy=false;
+  const NAME_RANK={city:0,town:1,port:2,village:3,outpost:4};
+  function nameHash(s){let h=2166136261;for(let k=0;k<s.length;k++){h^=s.charCodeAt(k);h=Math.imul(h,16777619);}return h>>>0;}
+  // v80 S442 — a short name never doubles a word (Montmont, Ardard) and capitalises after a hyphen; the French long form is
+  // a short name and a real qualifier (was -le- and a second ending: Valclair-le-Ancy) (quest review run 6, Finding 8)
+  function nameBanks(reg){const s=SYL[reg]||SYL.irish,A=s[0],B=s[1],short=[],long=[];
+    const cap=w=>w.charAt(0).toUpperCase()+w.slice(1);
+    A.forEach(a=>B.forEach(b=>{if(a.toLowerCase()===b)return;short.push(a.endsWith('-')?a+cap(b):a+b);}));
+    if(reg==='irish')A.forEach(a=>B.forEach(b=>long.push(a+'na'+b)));
+    else if(reg==='french')short.forEach(n=>['-sur-Mer','-le-Vieux','-la-Forêt','-en-Val','-les-Prés','-sous-Bois'].forEach(q=>long.push(n+q)));
+    else if(reg==='anglo')A.forEach(a=>B.forEach(b=>long.push(a+'en'+b)));
+    else A.forEach(a=>A.forEach(a2=>{if(a2!==a)B.forEach(b=>long.push(a+a2.toLowerCase()+b));}));
+    return [short,long];}
+  function uniqueSiteNames(){
+    const taken=new Set(['Caer Slige','Port Blackhand']),list=[];
+    for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;const home=i===HOME_I&&j===HOME_J;
+      c.sites.forEach(t=>{if(!home&&t.name&&t.kind in NAME_RANK)list.push(t);else if(t.name)taken.add(t.name);});}
+    list.sort((a,b)=>NAME_RANK[a.kind]-NAME_RANK[b.kind]);
+    const banks={},lost=[];let renamed=0;
+    for(const t of list){if(taken.has(t.name)||/^(.+)\1$/i.test(t.name))lost.push(t);else taken.add(t.name);}
+    for(const t of lost){
+      const bk=banks[t.reg]||(banks[t.reg]=nameBanks(t.reg));let got=null;
+      for(const L of bk){const st=nameHash(t.id)%L.length;for(let k=0;k<L.length&&!got;k++){const n=L[(st+k)%L.length];if(!taken.has(n))got=n;}if(got)break;}
+      for(let k=2;!got;k++)if(!taken.has(t.name+' '+k))got=t.name+' '+k;
+      t.drawnName=t.name;t.name=got;taken.add(got);renamed++;}
+    return renamed;}
   function genCellData(i,j){
     const type=maskAt(i,j),ox=i*SIZE,oz=j*SIZE,r=cellRng(i,j,0);
     const reg=cultureOfCell(i,j),climate=climateOfCell(i,j),polity=polityOfCell(i,j);
@@ -1083,7 +1118,7 @@ var WORLD=(()=>{
       c.doors.push(e);
     }
     // landmarks (S432): the peaks stand along the ranges' spines, named here; the lakes and rivers are the routing's (routeWorld)
-    if(!isIsland)spinePeaks().forEach(p=>{if(p.i!==i||p.j!==j)return;const rp=cellRng(i,j,9+p.k);c.peaks.push({id:`c${i}_${j}_pk${p.k}`,name:`${['Sliabh','Mont','Ben','Cnoc'][Math.floor(rp()*4)]} ${genName(rp,reg)}`,x:p.x,z:p.z,r:p.r,h:p.h,kind:'peak'});});
+    if(!isIsland)spinePeaks().forEach(p=>{if(p.i!==i||p.j!==j)return;const rp=cellRng(i,j,9+p.k);const f=PEAK_FORM[formReg(reg,i,j)][Math.floor(rp()*2)];c.peaks.push({id:`c${i}_${j}_pk${p.k}`,name:f(genName(rp,reg)),x:p.x,z:p.z,r:p.r,h:p.h,kind:'peak'});});
     return c;
   }
   function key(i,j){return cellKey(i,j);}
@@ -1163,7 +1198,12 @@ var WORLD=(()=>{
   const RV_STEP=80,RV_T=1e6/(RV_STEP*RV_STEP);              // the lattice; 156 nodes of catchment (1 km²) make a river
   const RV_NAV=16;                                             // a ship (13 by 4.4) needs sixteen units of water
   const rvWidth=a=>2+6.5*Math.log(1+a*RV_STEP*RV_STEP/400000); // catchment (nodes) → wet width: 10u at 1 km², 16u at 3.2 km², 25u at 12 km²
-  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['la Dorée','la Blanche','la Sauvage','la Verte','la Lente','la Claire']};
+  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['La Dorée','La Blanche','La Sauvage','La Verte','La Lente','La Claire']};
+  // a feature's word is its people's (quest review, Finding 9): a generated culture takes its nation's people's register
+  const PEAK_FORM={irish:[n=>`Sliabh ${n}`,n=>`Cnoc ${n}`],french:[n=>`Mont ${n}`,n=>`Pic ${n}`],anglo:[n=>`${n} Fell`,n=>`${n} Tor`]};
+  const LAKE_FORM={irish:n=>`Loch ${n}`,french:n=>`Lac ${n}`,anglo:n=>/mere$/.test(n)?`${n} Water`:`${n} Mere`};
+  const REG_OF_PEOPLE={gatelander:'irish',markman:'anglo',aurennais:'french',oldblood:'irish'};
+  function formReg(reg,i,j){return PEAK_FORM[reg]?reg:REG_OF_PEOPLE[nationOf(i,j).people]||'irish';}
   function polyDistM(pts,x,z,m){ // polyDist with its own bbox margin (polyDist rejects beyond 80u; a range reaches 520)
     let best=1e9;
     for(let i=0;i<pts.length-1;i++){
@@ -1334,10 +1374,11 @@ var WORLD=(()=>{
         c.rivers.push({id:`c${i}_${j}_rv${c.rivers.length}`,pts,ws,w:wmax,name:r.name||null,nav:wmax*2>=RV_NAV,end:r.end,arm:!!r.arm});pieces++;};
       for(let i=1;i<P.length;i++){const [ni,nj]=cellOf(P[i][0],P[i][1]);if(ni!==ci||nj!==cj){cut(start,i,ci,cj);start=i;ci=ni;cj=nj;}}
       cut(start,P.length-1,ci,cj);}
-    for(const lk of lakes){const [i,j]=cellOf(lk.x,lk.z);const c=CELLS.get(cellKey(i,j));if(!c||c.home)continue;const rl=cellRng(i,j,41+c.lakes.length);lk.id=`c${i}_${j}_lk${c.lakes.length}`;lk.name=`${['Loch','Lac','Mere'][Math.max(0,['irish','french','anglo'].indexOf(c.reg))]} ${genName(rl,c.reg)}`;c.lakes.push(lk);}
+    for(const lk of lakes){const [i,j]=cellOf(lk.x,lk.z);const c=CELLS.get(cellKey(i,j));if(!c||c.home)continue;const rl=cellRng(i,j,41+c.lakes.length);lk.id=`c${i}_${j}_lk${c.lakes.length}`;lk.name=LAKE_FORM[formReg(c.reg,i,j)](genName(rl,c.reg));c.lakes.push(lk);}
     // ── the carve grid: every piece and lake of every cell, the home's authored ones too ──
     RVG.clear();
     for(const c of cells){for(const rv of c.rivers){if(!rv.ws)rv.ws=rv.pts.map(()=>rv.w);rvgRiver(rv);}for(const lk of c.lakes)rvgLake(lk);}
+    shoreSites(cells);
     // the bank towns (S433): a settlement within a short walk of navigable water keeps the nearest point of the channel,
     // the way to it and the flow's direction there, and the settlement builder puts a quay on that bank
     const navPieces=[];for(const c of cells)for(const rv of c.rivers){if(!rv.nav||rv.arm)continue;let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9;for(const p of rv.pts){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<z0)z0=p[1];if(p[1]>z1)z1=p[1];}navPieces.push({rv,bb:[x0,z0,x1,z1]});}
@@ -1349,6 +1390,57 @@ var WORLD=(()=>{
     RV.reaches=reaches;RV.great=great;RV.lakes=lakes;RV.N=N;RV.STEP=STEP;
     RV.stats={ms:Math.round(performance.now()-t0),latticeMs:Math.round(tLat),nodes:N*N,land:Array.from(sea).reduce((s,v)=>s+(v?0:1),0),reaches:reaches.length,mouths:mouths.length,sinks:reaches.filter(r=>r.end==='sink').length,joins:reaches.filter(r=>r.end==='join').length,toLake:reaches.filter(r=>r.end==='lake').length,great:great.length,deltas:great.filter(g=>g.delta&&g.delta.length).length,lakes:lakes.length,navMouths,navLen:Math.round(navLen),pieces,sites:sites.length,banks};
     RV.ready=true;RV.routing=false;
+    dryDoors();
+  }
+  // v80 S447 — a generated gate is never drawn into a lake, a river or the surf, and whether it stands is one answer for the
+  // whole game. Its cell drew it before the rivers were routed, so 48 of 392 gates stood under 1.5 (33 under water) and
+  // placeDoor refused them by the ground it read at load, which moved with whatever cells and stamps were loaded (Session 445).
+  // Once the carve is known, a gate on ground under 1.5 is drawn again in its own cell from a stream of its own (no other
+  // draw moves) onto ground of 1.8 or more, clear of the pads and the sea as the cell's draw keeps it; with none in 24 tries it is wet
+  // and is never built or named. The ground is the bare land (the routing's: no cell's regions), so no load order can change it.
+  function doorGround(x,z){const was=RV.routing;RV.routing=true;const h=rawH(x,z);RV.routing=was;return h;}
+  // v80 S452 — a place the lakes were laid over moves to the shore (Michael's A on #121). Its cell drew it before the routing,
+  // and the basin lakes (and a few rivers) took the ground all round it: 42 places stood on their pad's plug with no way out
+  // but swimming. Once the carve is known, a place is cut off when no straight line from its pad's edge out to three pads
+  // stays dry on any of 24 bearings. It is set down at the nearest spot in its own cell where the pad and a ring 30 beyond it
+  // stand on dry bare land (1.5 or more, the centre 1.8), off the sea, clear of every other pad by 40 and of the gates by the
+  // cell's own margins; the search walks out from where it stood, so the first spot is the near shore. Id, name and kind
+  // are kept, and so is everything keyed by id (roads, saves, the town's state); a lair's cavern door moves with it. The
+  // bare land is the routing's (no cell's regions), so every boot moves the same places to the same spots.
+  function shoreCutOff(t){const R0=t.pad*1.2;
+    for(let k=0;k<24;k++){const a=k/24*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);let dry=true;
+      for(let f=0;f<=4&&dry;f++){const r=R0+(t.pad*3-R0)*f/4;if(doorGround(t.x+ca*r,t.z+sa*r)<SEA_Y+.3)dry=false;}if(dry)return false;}
+    return true;}
+  function shoreSpotOk(t,c,x,z){const m=Math.max(150,t.pad+40);
+    if(x<c.ox+m||x>c.ox+SIZE-m||z<c.oz+m||z>c.oz+SIZE-m)return false;
+    if(seaBare(x,z,c.islets)>=.08||doorGround(x,z)<1.8)return false;
+    for(const s of c.sites){if(s===t||!(s.pad>0)||s.kind==='portal')continue;if(Math.hypot(s.x-x,s.z-z)<s.pad+t.pad+40)return false;}
+    for(const e of c.doors){if(e.wet||(e.lairDoor&&e.lairSite===t.id))continue;if(Math.hypot(e.x-x,e.z-z)<t.pad+(e.kind==='fort_door'?110:60))return false;}
+    for(const R of [t.pad*.5,t.pad,t.pad+30])for(let k=0;k<16;k++){const a=k/16*Math.PI*2;if(doorGround(x+Math.cos(a)*R,z+Math.sin(a)*R)<1.5)return false;}
+    return true;}
+  function shoreSites(cells){let moved=0,stuck=0;const list=[];
+    for(const c of cells){if(c.home||c.type==='sea')continue;
+      for(const t of c.sites){if(!(t.pad>0)||t.islet||t.drawnAt||['port','portal','bridge'].includes(t.kind))continue;if(!shoreCutOff(t))continue;
+        const a0=(nameHash(t.id)%360)*Math.PI/180;let got=null;
+        for(let r=20;r<=1600&&!got;r+=20){const n=Math.max(12,Math.round(r/20));for(let k=0;k<n;k++){const a=a0+k/n*Math.PI*2,x=t.x+Math.cos(a)*r,z=t.z+Math.sin(a)*r;if(shoreSpotOk(t,c,x,z)){got={x,z};break;}}}
+        if(!got){stuck++;t.cutOff=true;continue;}
+        const dx=got.x-t.x,dz=got.z-t.z;t.drawnAt={x:t.x,z:t.z};t.x=got.x;t.z=got.z;moved++;list.push({id:t.id,from:t.drawnAt,dx,dz,pad:t.pad});
+        for(const e of c.doors)if(e.lairDoor&&e.lairSite===t.id){e.x+=dx;e.z+=dz;}}}
+    RV.shore={moved,stuck,list};}
+  // S455 — a save made standing in a place the routing moved (on its pad, at its gate, or behind one of its doors) reads
+  // ground that is now open water. The place moved whole, so the spot moves with it: within 1.5 pads of where the place
+  // was drawn, a position in the water is carried by the place's own offset. Anywhere else, or on dry ground, null.
+  function movedPlaceAt(x,z){if(!RV.ready)routeWorld();const L=RV.shore&&RV.shore.list;if(!L)return null;
+    for(const m of L){if(Math.hypot(x-m.from.x,z-m.from.z)>m.pad*1.5)continue;if(worldH(x,z)>=.5)return null;return m;}
+    return null;}
+  function dryDoors(){
+    for(const c of CELLS.values()){if(c.home||!c.doors)continue;
+      c.doors.forEach((e,n)=>{if(e.zone!=='gen'||e.lairDoor||e.cell!==cellKey(c.i,c.j)||e.wet)return;if(doorGround(e.x,e.z)>=1.5)return;
+        const fort=e.kind==='fort_door',r=cellRng(c.i,c.j,300+n);
+        for(let t=0;t<24;t++){const x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
+          if(c.sites.some(s=>s.pad>0&&Math.hypot(s.x-x,s.z-z)<s.pad+(fort?110:60))||seaBare(x,z,c.islets)>=.1||doorGround(x,z)<1.8)continue;
+          e.drawnAt={x:e.x,z:e.z};e.x=x;e.z=z;return;}
+        e.wet=true;});}
   }
 
 
@@ -1600,10 +1692,12 @@ var WORLD=(()=>{
     const want=[];for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=pi+di,j=pj+dj;if(i<0||j<0||i>=GRID||j>=GRID)continue;if(!LOADED.has(cellKey(i,j)))want.push([i,j,di*di+dj*dj]);}
     want.sort((a,b)=>a[2]-b[2]);
     if(force)want.forEach(([i,j])=>loadCell(i,j));
-    else want.forEach(([i,j])=>{if(!JOBS.some(x=>x.cellKey===cellKey(i,j))){let steps=null;const job={fn:()=>{if(!steps){steps=loadCellSteps(i,j);if(!steps)return false;}const f=steps.shift();if(f)f();return steps.length>0;},prio:5,cellKey:cellKey(i,j)};JOBS.push(job);}});
+    // S458 — a cell unloaded while its job is part-way stops the job: its later steps (doors above all) went on into a cell
+    // no longer listed, and loaded again its doors stood twice in DOORS, so the next unload left one with no position
+    else want.forEach(([i,j])=>{if(!JOBS.some(x=>x.cellKey===cellKey(i,j))){let steps=null,L0=null;const job={fn:()=>{if(!steps){steps=loadCellSteps(i,j);if(!steps)return false;L0=LOADED.get(cellKey(i,j));}if(LOADED.get(cellKey(i,j))!==L0)return false;const f=steps.shift();if(f)f();return steps.length>0;},prio:5,cellKey:cellKey(i,j)};JOBS.push(job);}});
     // statics near the player, dropped when far
     for(const L of LOADED.values()){if(L.pending)continue;const d=cellRectDist(L.cell);
-      if(d<NEAR_STATIC&&!L.staticsBuilt&&!L.staticsPending){L.staticsPending=true;if(force){staticSteps(L).forEach(f=>f());}else{let st=null;JOBS.push({fn:()=>{if(!st)st=staticSteps(L);const f=st.shift();if(f)f();return st.length>0;},prio:6});}}
+      if(d<NEAR_STATIC&&!L.staticsBuilt&&!L.staticsPending){L.staticsPending=true;if(force){staticSteps(L).forEach(f=>f());}else{let st=null;const lk=cellKey(L.cell.i,L.cell.j);JOBS.push({fn:()=>{if(LOADED.get(lk)!==L)return false;if(!st)st=staticSteps(L);const f=st.shift();if(f)f();return st.length>0;},prio:6});}}
       else if(d>FAR_STATIC&&L.staticsBuilt)dropStatics(L);}
   }
 
@@ -1911,7 +2005,7 @@ var WORLD=(()=>{
           let near=null,nd=1e9;for(const o of stampsNear(wx,wz)){if(o.kind!=='door')continue;const d=Math.hypot(wx-o.x,wz-o.z);if(d<nd){nd=d;near=o;}}
           const minD=near&&near.r>10?near.r+22:30;if(near&&nd<minD){const dx=wx-near.x,dz=wz-near.z,L=Math.hypot(dx,dz)||1e-3;const ang=L<1?hash01(e.seed,k,78)*Math.PI*2:Math.atan2(dz,dx);wx=near.x+Math.cos(ang)*(minD+2);wz=near.z+Math.sin(ang)*(minD+2);continue;}
           break;}
-        if(worldH(wx,wz)<1.5)return null;
+        if(e.wet)return null; /* S447 — one answer per gate, decided once on the bare land (dryDoors), not on what is loaded */
       } else {
         const an=ZONE_ANCHOR[e.zone]||ZONE_ANCHOR.overworld;
         wx=an.x()+(e.x-an.local)*an.scale;wz=an.z()+(e.z-an.local)*an.scale;
@@ -1942,7 +2036,6 @@ var WORLD=(()=>{
           break;
         }
       }
-      if(e.zone==='gen'&&(worldH(wx,wz)<1.2||seaAt(wx,wz)>.05))return null; // never in the surf
       dungeonWorldPos[e.seed]={x:wx,z:wz};DOORS.push(e);
       const isFort=e.kind==='fort_door';
       addStamp({id:'door_'+e.seed,kind:'door',x:wx,z:wz,r:isFort?46:7,blend:isFort?34:12,cell:cellK});
@@ -2504,7 +2597,7 @@ var WORLD=(()=>{
     const dom=dominantRegion(cxw,czw);
     if(worldH(cxw,czw)<-3){ // open water: sharks, occasionally
       if(hash01(ch.cx,ch.cz,170)>.06)return;const ex=cxw+(hash01(ch.cx,ch.cz,171)-.5)*20,ez=czw+(hash01(ch.cz,ch.cx,172)-.5)*20;
-      const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Shark',null);e._chunk=key;e.homeX=ex;e.homeZ=ez;ZONES.world.enemies.push(e);ch.enemies.push(e);return;}
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Shark',null),key+':'+Math.floor(nowHours()/RESPAWN_H)+':shark');e._chunk=key;e.homeX=ex;e.homeZ=ez;ZONES.world.enemies.push(e);ch.enemies.push(e);return;}
     if(worldH(cxw,czw)<1.5)return;
     // Deterministic per chunk per "spawn epoch" so re-entering doesn't reroll every time.
     const epoch=Math.floor(nowHours()/RESPAWN_H);
@@ -2546,8 +2639,9 @@ var WORLD=(()=>{
         if(worldH(ex,ez)>1.5&&slopeNormalY(ex,ez)>.6&&!solidAt(ex,ez)&&!(stampAt(ex,ez)&&stampAt(ex,ez).kind==='site')){ok=true;break;}
       }
       if(!ok)continue;
-      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,typeof level!=='undefined'?level:1,'normal'):null;
-      const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,(i===0&&leader)?leader:grp.name,variant);
+      const fid=key+':'+epoch+':'+i; // S477 — a chunk's foe is its chunk, its spawn epoch and its index (co-op rules)
+      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,typeof level!=='undefined'?level:1,'normal',seededRng('variant',fid)):null;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,(i===0&&leader)?leader:grp.name,variant),fid);
       e._chunk=key;
       ZONES.world.enemies.push(e);ch.enemies.push(e);
     }
@@ -3437,7 +3531,7 @@ var WORLD=(()=>{
       if(signY!==null)buildTradeSign(group,type,house.name,doorX,doorZ,lot.tx,lot.tz,lot.ry,signY);
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[...upgradeTopics(site),...rest]:[buy,...rest];}});}
       if(house.guild||type==='shipwright'||type==='inn')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
-      if(type==='inn')def._extra.unshift(...innTopics(house)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
+      if(type==='inn')def._extra.unshift(...innTopics(house,def.people)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
       if(type==='church'){def._extraFn=()=>[...penanceTopics(site)];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
       const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz},shop:type};snpcs.push(kn);
@@ -3589,7 +3683,7 @@ var WORLD=(()=>{
         if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
         else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}
         g.castShadow=true;group.add(g);group.add(top);
-        let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9):[])||[];
+        let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9,site.id+':barrel:'+made+':'+lootDay()):[])||[];
         items=items.filter(it=>it&&it.dmg==null&&it.def==null&&!it.slot&&it.type!=='weapon'&&it.type!=='armor');
         if(!items.length)items.push(pick(r,[{name:'Tallow Candle',ico:'🕯️',type:'misc',weight:.2,sellMult:.3,buyPrice:4},{name:'Coil of Rope',ico:'🪢',type:'misc',weight:1,sellMult:.3,buyPrice:9},{name:'Salt Sack',ico:'🧂',type:'misc',weight:.6,sellMult:.3,buyPrice:6},{name:'Hard Bread',ico:'🍞',type:'potion',heal:6,weight:.3,sellMult:.2,buyPrice:3},{name:'Wax-sealed Letter',ico:'✉️',type:'misc',weight:.05,sellMult:.5,buyPrice:12},{name:'Tin Cup',ico:'🥛',type:'misc',weight:.3,sellMult:.3,buyPrice:3}]));
         items.forEach(it=>{if(it.qty==null)it.qty=1;});
@@ -3954,7 +4048,7 @@ var WORLD=(()=>{
     const out=[];const c=cell;if(!c)return out;
     const SUB={glade:'Glade',shrine:'Shrine',lair:'Lair',tower:'Spire',bcamp:'Bandit camp',bridge:'Bridge'};
     c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
-    c.doors.forEach(e=>{const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`,major:e.kind==='fort_door'});});
+    c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`,major:e.kind==='fort_door'});});
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
     const wk=worldState.ship&&worldState.ship.sunk;if(wk&&wk.x>=c.ox&&wk.x<c.ox+SIZE&&wk.z>=c.oz&&wk.z<c.oz+SIZE)out.push({id:'shipwreck',name:`The wreck of the ${worldState.ship.name||SHIP.name}`,kind:'ship',x:wk.x,z:wk.z,sub:'Where she went down',major:true});
@@ -4948,6 +5042,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     add(cragGeo(2.9+rr()*.4,Math.floor(rr()*1e4)),new THREE.Color(0x6a665e).multiplyScalar(.9+rr()*.2).getHex(),0,.1,0,rr()*6);
     for(let k=0;k<4;k++){const a=k/4*Math.PI*2+rr(),d=2.2+rr()*1.2,s=1.3+rr()*.9;add(cragGeo(s,Math.floor(rr()*1e4)),new THREE.Color(0x6e6a60).multiplyScalar(.85+rr()*.25).getHex(),Math.cos(a)*d,-.6+rr()*.8,Math.sin(a)*d,rr()*6);}
     return tideLine(mergeParts(P),0);}
+  // the quay's line from the pad edge out past the waterline, from the ground alone (S457: the Compact's ship is moored at a
+  // harbour that may not be loaded)
+  function quayLine(site,sd,QY){
+    let x=site.quayStart?site.quayStart.x:site.x+sd.dx*site.pad,z=site.quayStart?site.quayStart.z:site.z+sd.dz*site.pad,n=0;
+    if(!site.quayStart){while(worldH(x,z)>QY+.2&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}}
+    const startX=x,startZ=z;
+    while(worldH(x,z)>0&&n<120){x+=sd.dx*3;z+=sd.dz*3;n++;}
+    const endX=x+sd.dx*34,endZ=z+sd.dz*34;const len=Math.max(24,Math.hypot(endX-startX,endZ-startZ));
+    return {startX,startZ,endX,endZ,len,mx:(startX+endX)/2,mz:(startZ+endZ)/2};
+  }
   function buildHarbour(S,site,r){
     const sd=shoreDir(site);if(!sd)return;
     const {group,sol}=S;
@@ -4955,12 +5059,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const QW=8,QY=1.1;
     // walk seaward from the pad edge: the quay starts where the ground falls
     // to quay height, and runs 34u past the waterline
-    let x=site.quayStart?site.quayStart.x:site.x+sd.dx*site.pad,z=site.quayStart?site.quayStart.z:site.z+sd.dz*site.pad,n=0;
-    if(!site.quayStart){while(worldH(x,z)>QY+.2&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}}
-    const startX=x,startZ=z;
-    while(worldH(x,z)>0&&n<120){x+=sd.dx*3;z+=sd.dz*3;n++;}
-    const endX=x+sd.dx*34,endZ=z+sd.dz*34;const len=Math.max(24,Math.hypot(endX-startX,endZ-startZ));
-    const mx=(startX+endX)/2,mz=(startZ+endZ)/2;const ang=Math.atan2(sd.dx,sd.dz);
+    const {startX,startZ,endX,endZ,len,mx,mz}=quayLine(site,sd,QY);const ang=Math.atan2(sd.dx,sd.dz);
     const rq=pRng(pHash(site.id+'|quay'));{const lo=mergeParts([{geo:new THREE.BoxGeometry(QW,3.2,len),color:new THREE.Color(0x7a746a),y:-1.6,jitter:0},{geo:new THREE.BoxGeometry(QW+.4,.2,len+.4),color:new THREE.Color(0x8a857a),jitter:0}]); // S250 — the old quay and deck, now the distant copy
       for(const [geo,lod] of [[quayGeoHi(len,QW,QY-SEA_Y,rq),'hi'],[lo,'lo']]){const q=new THREE.Mesh(geo,SETTLE_MAT);q.position.set(mx,QY,mz);q.rotation.y=ang;q.receiveShadow=true;q.castShadow=lod==='hi';q.userData.lod=lod;q.userData.quay=true;group.add(q);}}
     // walkable platform (axis-aligned box covering the quay)
@@ -5301,6 +5400,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function restoreShip(){if(worldState.ship&&!worldState.ship.sunk&&!SHIP.mesh)spawnShip(worldState.ship.x,worldState.ship.z,worldState.ship.yaw);}
   // buy at a shipwright: the ship appears off the seaward end of the quay
+  // S473 — a ship moored at a quay lies with her bow to the sea: her forward is (−sin yaw, −cos yaw), so the yaw that points
+  // her along the shore direction sd is atan2(−sd.dx, −sd.dz). Buying and the Compact's grant used atan2(sd.dx, sd.dz), the
+  // bow at the quay (the critic, 4 Oct: the first W cost Hull −22); fetching and raising faced the land on a north or south shore.
+  function seawardYaw(sd){return Math.atan2(-sd.dx,-sd.dz);}
   function buyShip(site){
     if(worldState.ship)return 'You have a ship already. She\u2019s wherever you left her.';
     const price=shipPriceNow();
@@ -5309,9 +5412,37 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(!plat||!sd)return 'No berth here to launch from.';
     const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
     const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
-    gold-=price;updateHUD();spawnShip(bx,bz,Math.atan2(sd.dx,sd.dz));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
+    gold-=price;updateHUD();spawnShip(bx,bz,seawardYaw(sd));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
     if(typeof addLog==='function')addLog('⛵',`Bought a ship at ${site.name}.`);
     return `She\u2019s the ${SHIP.name}, and she\u2019s yours — moored off the seaward end of the quay, ${compassWord(bx-site.x,bz-site.z)} of here. Walk out, press E beside her to board, E again for the wheel.`;
+  }
+  // S457 — the Compact's claim is *a house and a ship* (Session 99), and its line says "The ship is at the quay under your
+  // name.", but it deeded the house alone. With no ship of your own, a sloop is moored where buyShip would launch one, at
+  // the seat's harbour or (Fortargent is inland) the nearest of the Compact's own; the quay's box from the ground (quayLine)
+  // when that harbour is not loaded.
+  // S467 — a Prior who already owns a ship is given a refit instead (Michael's B on #128): she is mended and raised one class
+  // free (sloop → cog → galleon; a galleon is only mended), where she lies. A sunk ship is raised free by the shipwright
+  // nearest her wreck (three days, as a paid raise) a class up; one already being raised comes up a class up.
+  function compactRefit(){
+    const st=shipCfg();const cls=st.cls||'sloop';const next=cls==='sloop'?'cog':cls==='cog'?'galleon':null;if(next)st.cls=next;
+    const nm=st.name||SHIP.name;
+    if(st.sunk){if(!st.raise){const port=allPorts().filter(p=>shoreDir(p)).sort((a,b)=>Math.hypot(a.x-st.sunk.x,a.z-st.sunk.z)-Math.hypot(b.x-st.sunk.x,b.z-st.sunk.z))[0];
+        if(port)st.raise={site:port.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};}
+      if(typeof addLog==='function')addLog('⛵',next?`The Compact is raising the ${nm} and refitting her as a ${next}.`:`The Compact is raising the ${nm}.`);return st.raise||null;}
+    st.hull=shipClass().hull;st.rig=100;if(next)applyShipClass();shipBarsUI();
+    if(typeof addLog==='function')addLog('⛵',next?`The Compact refitted the ${nm} as a ${next}, mended.`:`The Compact mended the ${nm}.`);
+    return {cls:st.cls||'sloop'};
+  }
+  function grantShip(seat){
+    if(worldState.ship)return compactRefit();
+    const nk=FACTIONS.compact.nation;const ports=allPorts().filter(p=>nationKeyOf(...cellOf(p.x,p.z))===nk&&shoreDir(p)).sort((a,b)=>Math.hypot(a.x-seat.x,a.z-seat.z)-Math.hypot(b.x-seat.x,b.z-seat.z));
+    const port=(seat.kind==='port'&&shoreDir(seat))?seat:ports[0];if(!port)return null;const sd=shoreDir(port);
+    let plat=ZONES.world.platforms.find(p=>p.site===port.id&&!p.river&&!p.shallow);
+    if(!plat){const L=quayLine(port,sd,1.1),hw=Math.abs(sd.dx)?L.len/2:4,hd=Math.abs(sd.dz)?L.len/2:4;plat={x0:L.mx-hw,x1:L.mx+hw,z0:L.mz-hd,z1:L.mz+hd};}
+    const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
+    const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
+    spawnShip(bx,bz,seawardYaw(sd));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
+    return port;
   }
   // E near the wheel takes / leaves the helm
   function onDeck(){const p=SHIP.plat;return !!p&&px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-DECK_Y)<1;}
@@ -5459,7 +5590,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const m=new THREE.Mesh(wreckGeo(pRng(pHash('wreck|'+ch.cx+'|'+ch.cz))),VC_MAT);m.position.set(x,y,z);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;ch.group.add(m); // S259 — a broken hull on the kit
     // S259 — the sea chest on the kit (S198's chest, the old box's size), its lid on the hinge
     const chest=new THREE.Group();chest.position.set(x+Math.cos(ry)*2.2,worldH(x+Math.cos(ry)*2.2,z+Math.sin(ry)*2.2),z+Math.sin(ry)*2.2);chest.rotation.set(.08,ry+2.2,-.06);const {lid}=buildChestShell(chest,1.8,0x5a3a1c);ch.group.add(chest);
-    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1):[])||[];
+    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1,'wreck:'+chunkKey(ch.cx,ch.cz)+':'+lootDay()):[])||[];
     if(!items.length)items.push({name:'Sea-worn Coins',ico:'🪙',type:'misc',weight:.4,sellMult:1,buyPrice:60});
     items.forEach(it=>{if(it.qty==null)it.qty=1;});
     const cobj={x:chest.position.x,z:chest.position.z,y:chest.position.y+.3,name:'Sea Chest',displayName:'Sea Chest',items,zone:'world',kind:'chest',g:chest,lid,opened:false,_chunk:chunkKey(ch.cx,ch.cz)};
@@ -5843,6 +5974,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     snowRepaintStep();tickFootprints(dt);
     const inWorld=activeZoneId==='world'&&lid==='overworld';
     // choose / transition
+    // v80 S450 — weather carried into a cell that could never roll it (snow off the Mark's border, or a ship's snow
+    // brought into the Gatelands) is rolled again there, and blends out as any change does. A timer past the roll's
+    // own 330 s is a weather held on purpose (the tests'), and is left alone.
+    if(inWorld){const c=cellOf(px,pz),ck=c[0]+','+c[1];if(ck!==WX.cell){const moved=WX.cell!=null;WX.cell=ck;if(moved&&WX.timer<=330){const w=weatherWeights();if(!(w[WX.type]>0)||!(w[WX.next]>0)){WX.timer=0;WX.rerolls=(WX.rerolls||0)+1;}}}}
     WX.timer-=dt;
     if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=pickWeather();if(WX.next!==WX.type)WX.k=0;}
     if(WX.next!==WX.type){WX.k+=dt/25;if(WX.k>=1){WX.type=WX.next;WX.k=0;}}
@@ -5934,19 +6069,67 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S141 — you rent a room, not the inn. The interior's width comes from the footprint, so the
   // room count is known without going in; the other doors belong to other people.
   // v80 S237 — the innkeeper's own business, a meal and a room (was inline in the town builder; the coaching inn shares it)
-  function innTopics(house){return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
+  // v80 S442 — the innkeeper lets the rooms in the house's people's voice (quest review run 6, Finding 7, as written);
+  // no row is the Markish text unchanged
+  const INN_ROOM_LINES={
+    gatelander:{
+      made:'Your room’s made up already, and the bed’s getting no warmer for the waiting. Upstairs.',
+      madeNamed:R=>`${R}, made up already. The key’s in the door, where a key does the most good.`,
+      empty:'The house is empty tonight, and an empty house is a cold one, so you’re doubly welcome.',
+      one:'There’s one other guest in tonight.',
+      many:n=>`There’s ${n} guests in tonight.`,
+      offer:(o,p,r)=>`${o} A room is ${p} gold — ${r}, a bed, a bolt on the door, and breakfast if you’re up for it. Will I make it up for you?`,
+      full:'Every room’s taken tonight, and two strangers in the one room never made a friend of either. The fire’s free, and the chair by it.',
+      poor:(p,g)=>`That’s ${p} gold, and you’ve ${g}. A purse is like a well: you’ll not draw from it what isn’t in it. Come back when it’s filled.`,
+      paid:(p,R)=>`${p} gold, and thank you. ${R}, up the stairs, and yours till this time tomorrow. The other doors aren’t mine to open, nor yours either.`,
+      not:'The road’s long and the night’s longer. The fire’s free, if you change your mind.'},
+    markman:{
+      made:'Your room’s made up already. Upstairs.',
+      madeNamed:R=>`${R} — made up already. The key’s in the door.`,
+      empty:'The house is empty tonight.',
+      one:'One other guest in tonight.',
+      many:n=>`${n} guests in tonight.`,
+      offer:(o,p,r)=>`${o} A room is ${p} gold — ${r}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`,
+      full:'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.',
+      poor:(p,g)=>`That’s ${p} gold, and you’ve ${g}. Come back with it.`,
+      paid:(p,R)=>`${p} gold, thank you. ${R}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`,
+      not:'Suit yourself. The fire’s free.'},
+    aurennais:{
+      made:'Your room is made up, Master, as agreed. Upstairs.',
+      madeNamed:R=>`${R}, Master, made up as agreed. The key is in the door.`,
+      empty:'The house has no other guests tonight, Master.',
+      one:'One other guest is entered tonight, Master.',
+      many:n=>`${n} guests are entered tonight, Master.`,
+      offer:(o,p,r)=>`${o} A room is ${p} gold: ${r}, a bed, a bolt on the door, and breakfast at the posted hour. Shall I enter you for it?`,
+      full:'Every room is let tonight, Master, and the house does not lodge two strangers in one room. The fire is free of charge.',
+      poor:(p,g)=>`The room is ${p} gold, Master, and you have ${g}. The house does not extend credit.`,
+      paid:(p,R)=>`${p} gold, received with thanks. ${R}, up the stairs, until this hour tomorrow. The other doors are let to others, and are not mine to open.`,
+      not:'As you wish, Master. The fire is free of charge.'},
+    oldblood:{
+      made:'Your room is ready. Upstairs.',
+      madeNamed:R=>`${R}. Ready. The key is in the door.`,
+      empty:'No one else tonight.',
+      one:'One other tonight.',
+      many:n=>`${n} others tonight.`,
+      offer:(o,p,r)=>`${o} ${p} gold. ${r[0].toUpperCase()+r.slice(1)}, a bed, a bolt, bread in the morning. Shall I make it ready?`,
+      full:'Every room is taken. I do not put strangers together. The fire is free.',
+      poor:(p,g)=>`${p} gold. You have ${g}.`,
+      paid:(p,R)=>`${p} gold. ${R}, up the stairs, until this hour tomorrow. The other doors are not mine to open.`,
+      not:'The fire is free.'}};
+  function innTopics(house,people){const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;const cap=t=>t.replace(/^./,c=>c.toUpperCase());
+    return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
-            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?'Your room’s made up already. Upstairs.':`${innRoomName(mine,n,house).replace(/^./,c=>c.toUpperCase())} — made up already. The key’s in the door.`;}
-            const others=taken===0?'The house is empty tonight.':taken===1?'One other guest in tonight.':`${taken} guests in tonight.`;
-            return `${others} A room is ${price} gold — ${innRoomName(free,n,house)}, a bed, a bolt on the door, and breakfast if you’re up for it. Shall I make it up?`;},
+            if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?L.made:L.madeNamed(cap(innRoomName(mine,n,house)));}
+            const others=taken===0?L.empty:taken===1?L.one:L.many(taken);
+            return L.offer(others,price,innRoomName(free,n,house));},
           get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
             return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
-              if(free==null)return 'Every room’s taken tonight, and I’ll not put two strangers in one. The fire’s free.';
-              if(gold<price)return `That’s ${price} gold, and you’ve ${gold}. Come back with it.`;
+              if(free==null)return L.full;
+              if(gold<price)return L.poor(price,gold);
               gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
-              return `${price} gold, thank you. ${innRoomName(free,n,house).replace(/^./,c=>c.toUpperCase())}, up the stairs — yours till this time tomorrow. The other doors aren’t mine to open.`;}},
-            {label:'Not tonight.',response:'Suit yourself. The fire’s free.'}];}}];}
+              return L.paid(price,cap(innRoomName(free,n,house)));}},
+            {label:'Not tonight.',response:L.not}];}}];}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
@@ -6076,6 +6259,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     CR.cool=Math.max(0,CR.cool-dt);try{tickSent(dt,false);}catch(e){}const S=nearSite();if(!S)return;const c=crimeOf(S);const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;
     const drawn=drawnAt(S);
     if(drawn.length){ // the fight: they hold while you talk; at low health, the offer to yield
+      if(!c||(c.bounty<=0&&!c.shut)){standDown(S);return;} // S433 — the fine paid to the lord mid-fight: nothing left to fight over (he fought on, and no yield could come)
       if(talking){drawn.forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);});return;}
       drawn.forEach(e=>{e.alert=true;});
       if(!CR.yielded&&PHP<maxHP*.3&&c&&c.bounty>0){CR.yielded=true;offerYield(S,c);}
@@ -6260,7 +6444,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock
   function lootInteract(){if(!lootPrompt())return false;
     if(towerLocked()){const id=INT_LOOT.id;if(typeof tryLockpick==='function')tryLockpick({seed:'tower_'+id,minPins:4,lockTitle:'A locked chest',onPick:()=>{(worldState.towerPicked||(worldState.towerPicked={}))[id]=true;lootInteract();}});return true;}
-    const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
+    const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1,'tower:'+INT_LOOT.id):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
   function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9)return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
   function hatchInteract(){if(!hatchPrompt())return false;const h=currentHouse;
     if(HATCH.roof){const S=SETTLE.get((h.siteId)||'');const site=siteAnywhere(h.siteId);const roof=(S&&S.roof)||(site?roofFor(site):null);if(!roof)return false;const hh=h;if(typeof exitInterior==='function'){window._pendingWorldPos={x:roof.x,z:roof.z+1.2,yaw:Math.PI,jumpY:roof.y};exitInterior();}showMsg('Wind. The whole country, from up here.','#c8b880');return true;}
@@ -6389,7 +6573,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // once a second: a raised ship due at her quay is put there
   function tickShipRaise(){const st=worldState.ship;if(!st||!st.sunk||!st.raise||SHIP.mesh)return;if((worldState.gameTimeAbsMinutes||0)<st.raise.due)return;
     const site=siteAnywhere(st.raise.site);if(!site)return;const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};
-    delete st.sunk;delete st.raise;st.hull=shipClass().hull;st.rig=100;spawnShip(q.x+sd.dx*22,q.z+sd.dz*22+(sd.dx?12:0),Math.atan2(-sd.dz,-sd.dx)+Math.PI/2);
+    delete st.sunk;delete st.raise;st.hull=shipClass().hull;st.rig=100;spawnShip(q.x+sd.dx*22,q.z+sd.dz*22+(sd.dx?12:0),seawardYaw(sd));
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} is raised and lies at ${site.name}.`);}
   function shipMendCost(){const b=shipBars();const h=b.hullMax-b.hull,r=100-b.rig;return {hull:h,rig:r,gold:h*4+r*3,mins:Math.round((h+r)*3)};}
   const SHIPBAR={ui:null};
@@ -6462,7 +6646,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const st=shipCfg();const out=[];const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman;
     if(st.sunk){if(st.raise)return out;const rc=shipRaiseCost();out.push({label:`Raise the ${st.name||SHIP.name} (${rc} gold)`,quest:true,fn:()=>{const c=shipRaiseCost();if(gold<c)return L.raisePoor(c);gold-=c;updateHUD();
       st.raise={site:site.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};if(typeof addLog==='function')addLog('⛵',`Paid ${site.name}'s shipwright to raise the ${st.name||SHIP.name}.`);return L.raised;}});return out;}
-    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return L.fetchPoor(fee);gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=Math.atan2(-sd.dz,-sd.dx)+Math.PI/2;SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return L.fetched;}});}
+    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return L.fetchPoor(fee);gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=seawardYaw(sd);SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return L.fetched;}});}
     const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
       const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
       if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}
@@ -6671,11 +6855,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function qActive(){return QJ().filter(q=>!q.turnedIn);}
   function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
   function qComplete(q){if(q.done)return;q.done=true;showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);}
-  function qTurnIn(q){q.turnedIn=true;const paid=questGold(q.reward);q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
+  function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(q.reward);q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
   // ── town quests ──
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
-  function townQuestFor(site,force){
-    const active=qActive().find(q=>q.giverSite===site.id);if(active)return active;
+  // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
+  // from this site that is not a service, and a service asks for a fresh one (`fresh`) to dress in its own words
+  function townQuestFor(site,force,fresh){
+    const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
     const lord=lordFor(site);const r=Math.random;const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj);
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
     const id='tq_'+site.id+'_'+Date.now();const giver=`${lord.title} ${lord.name}`;
@@ -6691,7 +6877,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id))qAdd(q);if(q.done)return `You've done it? Then ${q.reward} gold, with the ${site.kind}'s thanks.`;return q.desc+` (${q.reward} gold.)`;}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -6705,14 +6891,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function qOnTalk(def){
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='deliver'&&def.name===q.data.who){q.data.done=true;qComplete(q);showMsg(`${def.name} takes the letter.`,'#e8d8a0');return true;}
-      if(q.kind==='find'&&def.name===q.data.who&&def._lost){q.data.found=true;qComplete(q);showMsg(`${def.name}: "Home? Yes. Yes, all right."`,'#e8d8a0');return true;}
+      if(q.kind==='find'&&def.name===q.data.who&&def._lost){q.data.found=true;qComplete(q);if(q.rival)return false; /* S457 — Rowe is found in her own words (her topic), so her dialogue opens */ showMsg(`${def.name}: "Home? Yes. Yes, all right."`,'#e8d8a0');return true;}
     }
     return false;
   }
   function qTick(){
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({x:q.data.x,z:q.data.z,quest:q});}
-      if(q.kind==='find'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<200){q.data.spawned=true;const site=siteAnywhere(q.giverSite);const def=makeDef(site,site.reg||'irish',Math.random,'Villager',q.data.who,{x:q.data.x+1.5,z:q.data.z,bCol:0x4a3a2a,sCol:0xd4a878,keepName:true,topics:q.data.topics||[{label:'People are looking for you.',response:"Are they. I only meant to sit a while."}]});def._lost=true;if(q.rival){def.people='markman';def.sCol=0xf0dcc8;def.hairCol=0xd8c8a0;def.bCol=0x2a2a30;}const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(q.data.x+1.5,worldH(q.data.x+1.5,q.data.z),q.data.z);q._npc=n;}
+      if(q.kind==='find'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<200){q.data.spawned=true;const site=siteAnywhere(q.giverSite);const def=makeDef(site,site.reg||'irish',Math.random,'Villager',q.data.who,{x:q.data.x+1.5,z:q.data.z,bCol:0x4a3a2a,sCol:0xd4a878,keepName:true,topics:q.data.topics||[{label:'People are looking for you.',response:"Are they. I only meant to sit a while."}]});def._lost=true;if(q.rival){def.people='markman';def.sCol=0xf0dcc8;def.hairCol=0xd8c8a0;def.bCol=0x2a2a30;def.role=({crown:'Warden',league:'Reeve',compact:'Factor'})[q.faction]||def.role;Object.defineProperty(def,'greeting',{configurable:true,value:["Aye. Thought it'd be you. Sit, if you're stopping — I'm not getting up yet."]});Object.defineProperty(def,'topics',{configurable:true,get(){return [...(q.data.topics||[]),{label:'Farewell.',bye:true}];}});} /* S461 — Finding 10: her rank, her own greeting, her own topic */const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(q.data.x+1.5,worldH(q.data.x+1.5,q.data.z),q.data.z);q._npc=n;}
       if(q.kind==='road'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<180){q.data.spawned=true;for(let k=0;k<q.data.count;k++){const a=Math.random()*Math.PI*2;const ex=q.data.x+Math.cos(a)*8,ez=q.data.z+Math.sin(a)*8;const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,q.enemy||(k===0&&level>=5?'Bandit Captain':'Bandit'),null));e._questTag=q.id;if(q.enemyName){e.name=q.enemyName;e.displayName=q.enemyName;}e.alert=false;e.homeX=q.data.x;e.homeZ=q.data.z;ZONES.world.enemies.push(e);}
         // a camp to go with them
         if(q.data.noCamp){showMsg(`${q.enemyName||'Someone'} is waiting.`,'#e8d8a0');continue;}
@@ -6790,7 +6976,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     return {zone:'gen',x:site.x,z:site.z-6,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
   // ── finding sigils: rubbings, rumours, the Weaver's Eye ──
-  function sigilDoors(){const out=[];for(const c of CELLS.values()){if(!c.doors)continue;c.doors.forEach(e=>{if(e.sigil||e.kind==='fort_door')out.push(e);});}return out;}
+  function sigilDoors(){const out=[];for(const c of CELLS.values()){if(!c.doors)continue;c.doors.forEach(e=>{if(!e.wet&&(e.sigil||e.kind==='fort_door'))out.push(e);});}return out;}
   function nearestSigilDoor(){let best=null,bd=1e9;const read=worldState.sigilsRead||{};for(const e of sigilDoors()){if(read[e.seed])continue;const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const d=Math.hypot(p.x-px,p.z-pz);if(d<bd){bd=d;best={x:p.x,z:p.z,name:e.canonicalName||'an old gate',seed:e.seed};}}return best;}
   function onMasteryTouch(spellId){const seed=(typeof activePortal!=='undefined'&&activePortal&&activePortal.seed)||(typeof curPortal!=='undefined'&&curPortal&&curPortal.seed)||(typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||null;if(seed!=null)(worldState.sigilsRead||(worldState.sigilsRead={}))[seed]=spellId;worldState.masteries=(worldState.masteries||0)+1;}
   function rubbingTopics(site){const d=nearestSigilDoorFrom(site);if(!d)return [];const price=60;return [{label:`Buy a rubbing of a warm stone (${price} gold)`,quest:true,fn:()=>{if(gold<price)return `A rubbing is ${price} gold. We have to send someone to take it.`;gold-=price;updateHUD();if(typeof bagAdd==='function')bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:price,qty:1});return `Taken from ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. Read it and your map will remember where.`;}}];}
@@ -6799,10 +6985,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   const GATE_WORDS={ruins:['Barrow','Hollow','Tomb','Crypt','Vault'],goblin:['Warren','Den','Burrow','Hole','Nest'],haunted:['Crypt','Sepulchre','Mound','Silence','Deep'],cave:['Cave','Hollow','Mouth','Cleft','Undercroft'],fort:['Hold','Keep','Bastion','Watch','Gate'],elemental:['Furnace','Well','Cistern','Forge','Kiln'],undead:['Ossuary','Charnel','Grave','Barrow','Catacomb'],forest:['Root','Hollow','Bower','Warren','Nest'],deep:['Wound','Scar','Pit','Silence','Seam']};
   function canonicalGateName(e,cell){const words=GATE_WORDS[e.theme]||GATE_WORDS.cave;const rr=cellRng(e.seed%9973,e.seed%7919,3);const w=words[Math.floor(rr()*words.length)];const n=genName(rr,cell.reg||'irish');const q=rr();return q<.35?`${n} ${w}`:q<.6?`The ${w} of ${n}`:q<.8?`${n}'s ${w}`:`The ${['Old','Cold','Black','Broken','Sunken','Grey'][Math.floor(rr()*6)]} ${w}`;}
   function siteCreatures(S,list){ // zone enemies that belong to a site; removed with it
-    S.creatures=S.creatures||[];for(const [name,x,z,alert] of list){const e=buildZoneEnemy(sc,STATIC_SOL,x,z,name,typeof pickVariant==='function'?pickVariant(name,level,'normal'):null);if(e.locked){e.locked=false;if(e.mesh)e.mesh.visible=true;} /* v80 — a lair's beast is there whatever your level */ e.alert=!!alert;e.homeX=x;e.homeZ=z;e._site=S.site.id;ZONES.world.enemies.push(e);S.creatures.push(e);}
+    S.creatures=S.creatures||[];for(const [name,x,z,alert] of list){const fid=S.site.id+':foe:'+S.creatures.length; /* S479 — a site's foe is its site and index (co-op rules) */ const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,name,typeof pickVariant==='function'?pickVariant(name,level,'normal',seededRng('variant',fid)):null),fid);if(e.locked){e.locked=false;if(e.mesh)e.mesh.visible=true;} /* v80 — a lair's beast is there whatever your level */ e.alert=!!alert;e.homeX=x;e.homeZ=z;e._site=S.site.id;ZONES.world.enemies.push(e);S.creatures.push(e);}
   }
   function siteChest(S,x,z,mult,name){const y=worldH(x,z);const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(S.site.x-x,S.site.z-z);const {lid}=buildChestShell(g,1.8,0x4a3018);S.group.add(g); // S259 — the kit's chest (S198), the old box's size, its lid on the hinge; a group, so the bake leaves it whole
-    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});
+    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});
     const ch={x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:false,_site:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
   function buildGlade(S,site,r){
     const {group,sol}=S;const cx=site.x,cz=site.z;const pad=site.pad;const y=worldH(cx,cz);
@@ -7073,13 +7259,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function tickProsperity(){
     const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);if(day===_pDay)return;_pDay=day;
     const cleared=worldState.roadsCleared||{};const camps=worldState.camps||(worldState.camps={});
+    const threat={}; // S437 — the camps that are some town's nearest within 700, and those towns: each camp counts once a day, below
     let tithe=0; // S266 — the Compact's tithe (Michael, #37 A): a town Aurenne occupies pays half a point a day more, and its capital gains it
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=TS(t);let d=0;
       // roads: cleared roads lift; ambush-ridden ones drain
       const rds=ROAD_DEFS.filter(x=>x.a===t.id||x.b===t.id);rds.forEach(x=>{d+=cleared[x.a+'|'+x.b]||cleared[x.b+'|'+x.a]?1:-.15;});
       // the nearest lair or bandit camp
       let near=null,nd=1e9;for(const o of SITES){if((o.kind==='lair'||o.kind==='bcamp')&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
-      if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead){camps[near.id]=(camps[near.id]||0)+1;if(camps[near.id]>=20&&st.flags.sacked==null&&st.flags.burned==null){sack(t,near);camps[near.id]=0;}}}
+      if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead)(threat[near.id]||(threat[near.id]={camp:near,towns:[]})).towns.push(t);}
       // flags
       let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;
       // drift home
@@ -7092,6 +7279,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // prosperity is kept in whole points, so the tithe keeps its own account and is paid a point at a time, every second day
       if(st.flags.occupied!=null&&st.occupier==='aurenne'){st.tithe=(st.tithe||0)+.5;tithe+=.5;const w=Math.floor(st.tithe);if(w){st.tithe-=w;setProsperity(t,st.p-w);}}
     }
+    // S437 — a camp left alive counts days, one a day however many towns it threatens; at 20 it sacks the nearest of them not
+    // already sacked or burned, and starts again (Session 95). It counted once for each town it threatened, so Dunowen Camp,
+    // nearest to three home towns, sacked on day 7 and again a week later, and took whichever town the day's loop met first.
+    for(const id in threat){const T=threat[id],c=T.camp;camps[id]=Math.min(20,(camps[id]||0)+1);if(camps[id]<20)continue;
+      let tg=null,td=1e9;for(const t of T.towns){const f=TS(t).flags;if(f.sacked!=null||f.burned!=null)continue;const d=Math.hypot(t.x-c.x,t.z-c.z);if(d<td){td=d;tg=t;}}
+      if(tg){sack(tg,c);camps[id]=0;}}
     if(tithe>0){anchoredPlaces();const cap=FACTIONS.compact.seat?siteAnywhere(FACTIONS.compact.seat):null;
       if(cap&&TS(cap).flags.occupied==null){const cs=TS(cap);cs.tithe=(cs.tithe||0)+tithe;const w=Math.floor(cs.tithe);if(w){cs.tithe-=w;setProsperity(cap,cs.p+w);}}}
     tickRoutesDay();try{tickWorldSystemsDay();}catch(e){console.warn('systems',e);}
@@ -7142,12 +7335,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;const kind=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'occupied':null;
       const S=SIEGES.get(t.id);const d=Math.hypot(px-t.x,pz-t.z);
       if(!kind||d>420){if(S&&(d>600||!kind)){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);}continue;}
-      if(S){if(S.kind!==kind){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);continue;}
+      if(S){if(S.kind!==kind){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);continue;} /* S440 — out of the world's foes too: a camp whose town fell left its soldiers unseen and striking */
         if(S.enemies.length&&S.enemies.every(e=>e.dead)){SIEGES.delete(t.id);S.props.forEach(m=>sc.remove(m));if(kind==='siege')breakSiege(t);else liberate(t);}continue;}
       if(d>300)continue;
       const by=kind==='siege'?st.siegeBy:st.occupier;const n=kind==='siege'?6+Math.floor(level/3):5+Math.floor(level/4);const enemies=[],props=[];
       let cx,cz;if(kind==='siege'){const rd=ROADS.find(r=>r.def.a===t.id||r.def.b===t.id);const q=rd?rd.pts[rd.def.a===t.id?Math.min(rd.pts.length-1,8):Math.max(0,rd.pts.length-9)]:{x:t.x+(t.pad||30)+30,z:t.z};cx=q.x;cz=q.z;}else{cx=t.x+8;cz=t.z+8;}
-      for(let k=0;k<n;k++){const a=k/n*Math.PI*2;const ex=cx+Math.cos(a)*(kind==='siege'?7:5),ez=cz+Math.sin(a)*(kind==='siege'?7:5);const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0?'Bandit Captain':'Bandit',null));e.name=k===0?`${soldierName(by).replace(/Soldier|Man-at-arms/,'Captain')}`:soldierName(by);e.displayName=e.name;e.alert=false;e.homeX=cx;e.homeZ=cz;e._siege=t.id;ZONES.world.enemies.push(e);enemies.push(e);}
+      for(let k=0;k<n;k++){const a=k/n*Math.PI*2;const ex=cx+Math.cos(a)*(kind==='siege'?7:5),ez=cz+Math.sin(a)*(kind==='siege'?7:5);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0?'Bandit Captain':'Bandit',null)),t.id+':'+kind+':'+k);e.name=k===0?`${soldierName(by).replace(/Soldier|Man-at-arms/,'Captain')}`:soldierName(by);e.displayName=e.name;e.alert=false;e.homeX=cx;e.homeZ=cz;e._siege=t.id;ZONES.world.enemies.push(e);enemies.push(e);}
       if(kind==='siege'){const tentMat=new THREE.MeshLambertMaterial({color:by==='mark'?0x2a2a30:by==='aurenne'?0x2a3a6a:0x6a2a2a,side:THREE.DoubleSide});[[-4,-2],[4,-3],[0,5]].forEach(([ox,oz])=>{const m=new THREE.Mesh(new THREE.ConeGeometry(2,2.4,5,1,true),tentMat);m.position.set(cx+ox,worldH(cx+ox,cz+oz)+1.2,cz+oz);sc.add(m);props.push(m);});
         const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,4,5),new THREE.MeshLambertMaterial({color:0x3a2a1a}));pole.position.set(cx,worldH(cx,cz)+2,cz);sc.add(pole);props.push(pole);const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.8),new THREE.MeshLambertMaterial({color:NATIONS[by]?NATIONS[by].banner:0x444444,side:THREE.DoubleSide}));ban.position.set(cx+.6,worldH(cx,cz)+3.6,cz);sc.add(ban);props.push(ban);
         showMsg(`${nationName(by)}'s camp outside ${t.name}.`,'#ff8060');}
@@ -7235,8 +7428,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(!rt.wreck){const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key);if(rd){const u=rt.threat?Math.min(1,rt.threat.f*2):.5;const p=roadAt(rd.pts,u);rt.wreck={x:p.x,z:p.z,ang:p.ang};}}
     delete rt.threat;const C=CARAVANS.get(key);if(C&&C.attack)C.attack.enemies.forEach(e=>{e._caravan=null;});removeCaravan(key);
     if(a&&b){showMsg(`The ${a.name}–${b.name} caravan was taken by the bandits of ${campName}.`,'#ff8060');if(typeof addLog==='function')addLog('🐴',`Trade route ${a.name}–${b.name} broken by ${campName}.`);}}
-  function springAmbush(key,rt,C,a,b){const cx=C.npc.g.position.x,cz=C.npc.g.position.z,ang=C.npc.g.rotation.y;const n=3+(Math.random()<.5?1:0);const enemies=[];
-    for(let k=0;k<n;k++){const t=(k/n)*Math.PI*2+ang;const ex=cx+Math.sin(t)*6,ez=cz+Math.cos(t)*6;const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0&&level>=5?'Bandit Captain':'Bandit',null));e.alert=true;e.homeX=cx;e.homeZ=cz;e._caravan=key;ZONES.world.enemies.push(e);enemies.push(e);}
+  function springAmbush(key,rt,C,a,b){const cx=C.npc.g.position.x,cz=C.npc.g.position.z,ang=C.npc.g.rotation.y;const day=lootDay(),n=3+(seededRng('ambush',key+':'+day)()<.5?1:0);const enemies=[]; /* S479 — the band's size and its foes keyed by the route and the day */
+    for(let k=0;k<n;k++){const t=(k/n)*Math.PI*2+ang;const ex=cx+Math.sin(t)*6,ez=cz+Math.cos(t)*6;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0&&level>=5?'Bandit Captain':'Bandit',null)),'caravan:'+key+':'+day+':'+k);e.alert=true;e.homeX=cx;e.homeZ=cz;e._caravan=key;ZONES.world.enemies.push(e);enemies.push(e);}
     rt.threat.started=true;C.attack={enemies,x:cx,z:cz,ang,fled:0};overturn(C.cart,C.cart.position.x,C.cart.position.z,ang);
     showMsg(`Bandits of ${rt.threat.camp} fall on the ${a.name}–${b.name} caravan!`,'#ff8060');}
   function tickCaravans(dt){
@@ -7319,7 +7512,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
-    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return `It's yours. ${fk==='compact'?'The ship is at the quay under your name.':''}`;}});}
+    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(fk==='compact')grantShip(site);if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return fk==='compact'?'Entered in your name, Prior: the house, and the ship at the quay.':"It's yours.";}});}
     return out;
   }
   // perks: shops of your faction's nation discount by rank; ferries free at rank 2
@@ -7337,7 +7530,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {kind:'deliver',title:'Under Seal',brief:"This goes under the Crown's seal. If it's opened before it's read, I'll know by the wax."},
       {kind:'retrieve',title:'The Old Survey',brief:"The survey teams map the gates for the Crown. One of their books was taken.",rival:'present',item:'the old survey'},
       {kind:'cull',title:"The Warden's Tally",brief:"A Warden keeps the roads. A road with wolves on it isn't kept."},
-      {kind:'find',title:'Where Is Warden Rowe?',brief:"Rowe rode out three days ago on Crown business and hasn't sent word. That isn't like her.",rival:'trouble'},
+      {kind:'find',title:'Where Is Warden Rowe?',brief:"Rowe rode out {dir} three days ago on Crown business and hasn't sent word, and a Warden who sends no word is a letter you'd rather not open. There's a camp out that way. Bring her back to us.",rival:'trouble'},
       {kind:'deliver',title:'Word to the Lords',brief:"Every lord on this island is to know the Crown's survey teams are not to be hindered. Say it plainly."},
       {kind:'road',title:'The Last Camp',brief:"There's one camp left on the royal roads. A Knight of the Gates clears it in person."},
       {kind:'retrieve',title:'The Silent Survey',brief:"A survey team went into a gate under the Crown's writ and has stopped answering. Bring back their marker so we know what they found.",set:true,item:"the survey team's marker",after:"They were etching, Knight. Not clearing — etching. The orders came under Aldwyn's seal, and Aldwyn swears he never sent them. Keep that under your helm."}
@@ -7348,7 +7541,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {kind:'deliver',title:"A Reeve's Letter",brief:"The free towns don't take orders. They take letters, if the hand that brings them looks like it could hold a sword."},
       {kind:'retrieve',title:"The Reeve's Seal",brief:"A seal was taken off a dead reeve. Whoever has it can sign the Mark's name.",rival:'present',item:"the reeve's seal"},
       {kind:'cull',title:'The Watch on the Spire',brief:"Something's been coming down off the spire at night. Kill what you find below it."},
-      {kind:'find',title:'Where Is Rowe?',brief:"Rowe went up the hill road alone. Reeves don't go alone. Find her.",rival:'trouble'},
+      {kind:'find',title:'Where Is Rowe?',brief:"Rowe took the hill road {dir}, alone. Reeves don't go alone. There's a camp out that way. Bring her back.",rival:'trouble'},
       {kind:'deliver',title:'The Captains\u2019 Word',brief:"The League has one word for the Crown's surveyors: no. Carry it."},
       {kind:'road',title:'The Free Captains',brief:"The free captains have made a camp on our road. They're ours, and they're still a camp. Clear it, and don't ask whose coin they carry."},
       {kind:'duel',title:'The Duel at Caer Slige',brief:"A Captain of the League is made by acclamation, and acclamation is won on the yard. Rowe has claimed the challenge. It's her right. The ring's laid east of the walls from first light. Walk in when you're ready. Down or yield, and it's done by noon.",set:true,after:"Acclaimed. Rowe says you fought well, and she doesn't say that of many. You're Captain now, and the spire's yours to hold. Something up there pays my sergeants in light. I've stopped asking what.",afterMurder:"The yard saw it. So did I. There's no acclamation for that, and there's no League for you either. Leave your oath at the gate."}
@@ -7359,10 +7552,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {kind:'road',title:'The Pilgrim Road',brief:"Rowe cleared the pilgrim road east of here before the Church asked. Clerk to Factor in a fortnight. Yours is the west.",rival:'mention'},
       {kind:'retrieve',title:'What the Sea Gave Back',brief:"A relic was taken from a sealed gate — sealed by us, at cost. It must not be sold.",rival:'present',item:'the reliquary'},
       {kind:'deliver',title:'A Prior\u2019s Letter',brief:"To the Factor at the port. The tithe is going up; the port won't like it; you will stand there while it's read."},
-      {kind:'find',title:'Where Is Factor Rowe?',brief:"Rowe went to a gate the Church had sealed. She should not have. Find her — and don't touch the seal.",rival:'trouble'},
+      {kind:'find',title:'Where Is Factor Rowe?',brief:"Factor Rowe went {dir} to look at a gate the Church had sealed, without the Compact's leave, and has not reported since. The seal is whole, I am told, and she is not at it. There is a camp in that country. Kindly bring her back to her ledgers.",rival:'trouble'},
       {kind:'cull',title:'The Uncleared',brief:"The dead are the uncleared. The Church blesses them; you bury them."},
       {kind:'road',title:'The Tithe Road',brief:"Bandits on the tithe road means bandits in the Church's purse."},
-      {kind:'sail',title:'The Black Sail',brief:"A black-sailed hull has been taking tithe-ships in the strait. The Church has a ship; a Prior has a ship's captain. Board her and clear her deck.",set:true,after:"The strait's quieter. Prior — and the house and the ship are yours. Rowe's gone north with the League, they say. Cold-eyes always find their own."}
+      {kind:'sail',title:'The Black Sail',brief:"A black-sailed hull has been taking tithe-ships in the strait. The Church has a ship; a Prior has a ship's captain. Board her and clear her deck.",set:true,after:"The strait is quieter, and the Compact is in your debt, Prior, which it does not admit to many. A house and a ship are entered in your name; claim them when you please. Factor Rowe has gone north to the League, I am told. Their ledgers are shorter."}
     ]
   };
   function factionService(fk,i){const L=FLINES[fk];return L[Math.min(i,L.length-1)];}
@@ -7372,10 +7565,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     let q;
     if(S.kind==='sail'){q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
     else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
-    else{q=townQuestFor(site,S.kind);if(qActive().some(a=>a.id===q.id))return q; // the seat's own job is still open
+    else{q=townQuestFor(site,S.kind,true);
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
-    if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}
+    if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=S.kind==='find'&&S.rival?`${voice}: "${S.brief.replace('{dir}',compassWord(q.data.x-site.x,q.data.z-site.z))}"`:`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}
     else q.title=`${F.name}: ${q.title}`;
     q.giver=F.name;q.faction=fk;q.service=i;return q;
   }
@@ -7585,7 +7778,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const board=`The coach for ${B?B.name:'the far end'} leaves ${A?A.name:'the near end'} at six and calls here about ${hm(6*60+half)}. The coach for ${A?A.name:'the near end'} leaves ${B?B.name:'the far end'} at six in the evening and calls here about ${hm(18*60+half)}. A quarter of an hour, then it goes on.`;
     const CL=COACH_INN_LINES[nationOf(ci,cj).people]||COACH_INN_LINES.markman;
     const def={name:keeper,role:'Innkeeper',ico:'\u{1F37A}',people:nationOf(ci,cj).people,x:0,z:0,bCol:house.bCol,sCol:house.sCol,
-      greeting:CL.greet,_extra:innTopics(house)};
+      greeting:CL.greet,_extra:innTopics(house,nationOf(ci,cj).people)};
     Object.defineProperty(def,'topics',{configurable:true,get(){return [...def._extra,
       {label:'When does the coach come through?',response:board},seatTopic(key,A,B,half,def.people),
       {label:'What is this place?',response:CL.place(name,A?A.name:'one town',B?B.name:'the next')},
@@ -7947,7 +8140,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the nearest port within reach
     let best=null,bd=1e9;for(const t of SITES){if(t.kind!=='port')continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
     if(!best||bd>140){if(CORWIN.npc&&Math.hypot(px-CORWIN.npc.g.position.x,pz-CORWIN.npc.g.position.z)>220)removeCorwin();return;}
-    const ckey=(early?'early':S.step)+'|'+seaKey;if(CORWIN.npc){if(CORWIN.step!==ckey){removeCorwin();}else return;}
+    const ckey=(early?'early':S.step)+'|'+seaKey;if(CORWIN.npc){if(CORWIN.step!==ckey||CORWIN.site!==best){removeCorwin();}else return;} // S439 — and at the harbour you are at: a passage to another kept him at the last one
     const q={x:best.x+3,z:best.z+3};const L=early?corwinEarly():corwinLines(S.step,S); // v80 S133 — on the plaza, not under the quay
     const def={name:'Corwin',role:'',ico:'📜',authored:true,people:'gatelander',sCol:0xe0b898,hairCol:0x3a2a1a,bodyScale:[1,1,1],bCol:0x3a4a5a,x:q.x-6,z:q.z+3,greeting:[L.greet],topics:[...L.topics,...tutCorwinTopics(),{label:'Farewell.',bye:true}]};def.temper='weary';
     const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CORWIN.npc=n;CORWIN.site=best;CORWIN.step=ckey;}
@@ -8095,7 +8288,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     return out;
   }
 
-  function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
-  return {SIZE,CARGO_GOODS,startTile,tileStep,withCellData,ridgeAt,routeWorld,get routed(){return RV;},rvSpines,spinePeaks,basinAt,riverSample,cargoItem,ferryTopics,ferryPrice,shipRaiseCost,mapEntries,restoreShip,seaState,openWater,spawnShip,shipBarsUI,shipBars,shipWear,shipSpeedNow,shipMendCost,upgradeTopics,tickHullCollisions,volley,get boarders(){return BOARDERS;},cargoNation,cargoWorld,cargoBlockaded,cargoAsk,cargoBid,cargoBuy,cargoSell,cargoRows,cargoBoard,cargoTopic,holdCap,holdUsed,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},despawnOtherShip,get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
+  function devUnlockAll(){if(!worldState.wdisc)worldState.wdisc={};let n=0;for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const c=getCell(i,j);c.sites.forEach(t=>{if(t.kind==='portal'||t.pad<0)return;if(!discovered(t.id)){worldState.wdisc[t.id]=true;n++;}});c.doors.forEach(e=>{if(!e.wet&&!discovered('door_'+e.seed)){worldState.wdisc['door_'+e.seed]=true;n++;}});c.peaks.forEach(p=>{if(!discovered(p.id)){worldState.wdisc[p.id]=true;n++;}});c.lakes.forEach(l=>{if(!discovered(l.id)){worldState.wdisc[l.id]=true;n++;}});}if(typeof showMsg==='function')showMsg(`Unlocked ${n} places across the continent.`,'#e8d8a0');return n;}
+  return {SIZE,innTopics,CARGO_GOODS,startTile,tileStep,withCellData,ridgeAt,routeWorld,get routed(){return RV;},movedPlaceAt,rvSpines,spinePeaks,basinAt,riverSample,cargoItem,ferryTopics,ferryPrice,shipRaiseCost,compactRefit,mapEntries,restoreShip,seaState,openWater,spawnShip,shipBarsUI,shipBars,shipWear,shipSpeedNow,shipMendCost,upgradeTopics,tickHullCollisions,volley,get boarders(){return BOARDERS;},cargoNation,cargoWorld,cargoBlockaded,cargoAsk,cargoBid,cargoBuy,cargoSell,cargoRows,cargoBoard,cargoTopic,holdCap,holdUsed,duelKill,duelDown,get duel(){return DUEL;},tickDuel,get rival(){return RIVAL;},liveRumours,shipTrim,windDir,smokeWant,smokeLegacy,shellWalls,shellFrame,get smoke(){return SMOKE;},windowView:windowTexture,townGateGeo,CHUNK,SEA_Y,GRID,MASK,wxAudio,get sky(){return SKY;},footprint:fpWalk,get footprints(){return FP;},get wx(){return WX;},chunkList(){return [...chunks.values()];},dominant(){return dominantRegion(px,pz).r.biome;},get scene(){return sc;},intDoorInteract,intDoorPrompt,get intDoors(){return INT_DOORS;},get intNpcs(){return INT_NPCS;},drawLocalMap,BLD,directionTopics,compassWord,get way(){return WAY;},set way(v){WAY=v;},get settle(){return SETTLE;},devUnlockAll,tutLeads,camSolid,devSurvey,get tut(){return TUT();},siteAnywhere,get jobs(){return JOBS;},CULTURES,shipInteract,shipPrompt,isSwimming,buyShip,get ship(){return SHIP;},diveTick,get dive(){return DIVE;},get others(){return OTHER;},despawnOtherShip,get STATIC_SOL(){return STATIC_SOL;},rainIndoor(m){WX.indoorMul=m;if(WX.rainG&&activeZoneId!=='world'){WX.rainG.gain.value+=(0-WX.rainG.gain.value)*.08;}},compassPlaces,cellarFor,doorAnywhere,doorAnywhere,spawnOtherShip,boardOther,allPorts,ferryTo,lordFor,nationOf,nationKeyOf,PEOPLES,NATIONS,NAMES,peopleOfSite,haltLines,yieldLines,guildGreet:GUILD_GREET,playerPeople,TS,prosperity,favor,addFavor,setProsperity,flag,stateLine,townCard,routes,coaches,coachInteract,compassMarkers,tickBehaviours,get arrows(){return ARROWS;},story,beginActII,onEnterPortal,onLeavePortal,etchedGateFor,canonicalGateName,get coachLines(){return COACHES;},FACTIONS,fstate,anchoredPlaces,get caravans(){return CARAVANS;},get wrecks(){return WRECKS;},nearestSigilDoor,onMasteryTouch,sigilDoors,GODS,priceMulAt(id){const t=SITE[id];return t&&(t.kind in BASE_P)?priceMul(t)*factionPriceMul(t):1;},priceMulHere(){let best=null,bd=1e9;for(const t of SITES){if(!(t.kind in BASE_P))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}return best?priceMul(best)*factionPriceMul(best):1;},mirrorLight,regLight,unregLight,sweepLights,seaBare,nearNpcName,get lightSources(){return LSRC;},get quests(){return QJ();},townQuestFor,qTurnIn,cargoBonus,catchFish,get whales(){return WHALES;},get boarders(){return BOARDERS;},get fish(){return LIFE.fish;},get herbLod(){return {list:HERB_IMS,lod:HERB_LOD};},treeProtos(){return PROTO;},houseProto(key,w,d,seed,opts){const r=pRng(seed>>>0);const st=STYLE[key];opts=Object.assign({chimney:true,twoStory:null},opts||{});const hi=buildingGeo(w,d,st,r,opts);return {hi,lo:hi.userData.lo,variant:hi.userData.variant,winTop:hi.userData.winTop,eaveLow:hi.userData.eaveLow,thatch:hi.userData.thatch};},houseStyles(){return Object.keys(STYLE);},poiGeo(k){return k==='tower'?towerGeoHi(38,4.6):k==='shrine'?shrineGeoHi():cragGeo(2,1);},furnProto(k,seed){const r=pRng(seed>>>0);const f={well:()=>wellGeo(),stall:()=>stallGeo(r),tent:()=>tentGeo(r),ruin:()=>ruinGeo(r),stone:()=>standingStoneGeo(r)}[k];const hi=f();return {hi,lo:hi.userData.lo};},civicProto(kind,w,d){const f=kind==='church'?churchGeo:keepGeo;const hi=f(w,d,STYLE.stone,Math.random);return {hi,lo:hi.userData.lo};},treeMix(){return TREE_MIX;},shipBake,boatBake,SHIP_MAT,boatBake,buildShipMesh,bedInteract,bedPrompt,hatchPrompt,hatchInteract,lootPrompt,lootInteract,get intLoot(){return INT_LOOT;},boxPrompt,boxInteract,boxCoins,get intBox(){return INT_BOX;},doorLockNow,doorLockFor,doorPicked,refusesTrade,bountyAt,tickCrimeDay,witnessOf,intSightLine,intClearLine,tickCrime,strikeNpc,guardKilled,guardsOf,guardDraw,dispatchGuard,get guardSent(){return CR.sent;},penanceTopics,nationRecord,factionTopics,guestPrompt,guestInteract,guestChapelHouse,noteDeath,noteSessionGap,tickRealClock,get varek(){return vstate();},fieldFor,varekDue,HOME_I,HOME_J,getCell,cellOf,LOADED,DOORS,REGIONS,SITES,SITE,ROAD_DEFS,STAMPS,PEAKS,LAKES,RIVERS,buildInteriorFor,shopClosedNow,npcInsideNow,drawMinimap,drawLocalMap,tickInterior,interiorTalk,guild:{onKill,onHarvest,onTalk,onEnterInterior,onCast,state:gstate,rankOf,GUILD_DEF},worldH,rawH,baseH,landH,roadInfo,bridgeGeo,buildSiteGeo,fortKeepGeoHi,wreckGeo,coachGeo,rockProto,lampPostGeo,doorLanternGeo,tradeSignGeo,signpostGeo,nameBoardGeo,loadCell,unloadCell,wallSegHi,gateTowerHi,quayGeoHi,breakwaterHeap,netHeapGeo,openMap,closeMap,fastTravel,discover,discovered,arrivalFor,regionWeights,dominantRegion,addStamp,build,enter,restore,tick,solidAt,setRadius,gazetteer,genSettlement,pickSeen,disposeSettlement,get settlements(){return SETTLE;},
           get scene(){return sc;},get chunks(){return chunks;},get portals(){return portals;},get cleared(){return cleared;},get roads(){return ROADS;},get dungeonPos(){return dungeonWorldPos;}};
 })();

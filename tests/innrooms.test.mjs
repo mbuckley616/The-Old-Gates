@@ -60,7 +60,7 @@ for (const sel of sels) {
   for (let day = 1; day <= 6; day++) {
     const r = await ask(sel, day, true); const k = r.rented && r.rented.room;
     const sn = seen(L, k), nmOffer = named(r.offer), nmPaid = named(r.paid);
-    const guests = /empty tonight/.test(r.offer) ? 0 : /One other guest/.test(r.offer) ? 1 : +((/(\d+) guests in/.exec(r.offer) || [])[1] || -1);
+    const guests = /empty tonight/.test(r.offer) ? 0 : /one other guest|one other tonight/i.test(r.offer) ? 1 : +((/(\d+) (?:guests (?:in|are entered)|others) tonight/.exec(r.offer) || [])[1] || -1);
     rows.push({ inn, day, n, room: k, guests, seen: sn, offer: nmOffer, paid: nmPaid, ok: agrees(nmOffer, sn) && agrees(nmPaid, sn), cost: 500 - r.gold, coach: !!sel.key });
   }
   // the last night's rent: inside, every bed of the gallery, then a night's sleep in your own

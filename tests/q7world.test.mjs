@@ -31,12 +31,19 @@ console.log(JSON.stringify({ adds }));
 check('at its second phase a lesser wolf splits from its flank, in the world', adds.phase === 2 && adds.n === 1 && adds.d[0] < 4 && adds.sameScene, adds);
 await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); e.hp = 5; e.alert = true; window._hud = null; });
 await g.frames(4); await page.evaluate(() => { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; });
-for (let k = 0; k < 12; k++) {
-  const done = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead) return true; PHP = maxHP; px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); return false; });
-  // each swing from beside it: it moves between swings, and on a loaded runner far enough that twelve blows all missed (S428)
-  // wait for this swing to resolve, not a fixed count: a frame of this fight can take seconds on a loaded runner (S401)
-  if (done) break; await page.evaluate(() => new Promise(r => { let n = 0; const f = () => { n++; const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); if (e.dead || (n > 2 && swingT === 0 && !_pendingStrike) || n >= 40) r(n); else requestAnimationFrame(f); }; requestAnimationFrame(f); }));
-  await page.evaluate(() => { if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } }); }
+// the swings are driven by the game's own loop at fixed 1/60 ticks with the draw and the browser's frames held off (as
+// `duelrhythm` does, S423): on real frames a frame of this fight took seconds on a loaded runner and the Faolchú moved
+// far enough between the swing and its blow that twelve swings all missed (S401, S428, and again on 0fbebd9; S465)
+await page.evaluate(() => {
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); let t = performance.now();
+  try { for (let n = 0; n < 60 * 30 && !e.dead; n++) {
+    PHP = maxHP; px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; stamina = 100;
+    if (atkCd <= 0 && !_pendingStrike && swingT === 0) attack(false);
+    t += 1000 / 60; loop(t);
+    if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } } }
+  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; } });
+await g.frames(2);
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu');
   const corpse = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark"));
   return { hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse, lessers: ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).length }; });
