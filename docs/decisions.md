@@ -14,17 +14,6 @@ What it does in play, measured headless at level 1 with the starting club agains
 
 Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
 
-### The Compact's claim when you already own a ship (the systems builder, Session 457, 2026-10-03, DECISION #128)
-The Compact's rank-3 claim is *a house and a ship* (Session 99), and the lord says "It's yours. The ship is at the quay under your name." Until Session 457 it deeded the house alone. Session 457 now moors a sloop at the nearest of the Compact's harbours (Fortargent is inland; Beaurouge, 850 units off) when you have no ship. The game holds one ship per player, so a Prior who already owns one gets nothing for the second half of the claim. Today their ship stays where they left it and the line still says the ship is at the quay.
-
-What should the Compact give a Prior who already has a ship?
-
-- **A.** Nothing more: the ship you have is the one under your name. Cost: none. The line stays slightly untrue.
-- **B.** A refit: your ship is mended and raised one class free (sloop → cog → galleon; a galleon is only mended). A visible reward. Cost: one short session, reusing the shipwright's refit. *(recommended)*
-- **C.** The hull's price in gold (400). Cost: one line. It reads as *buy more*, which the brief warns against.
-
-Recommendation: B.
-
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
 
@@ -47,6 +36,19 @@ Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GA
 Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
 
 ## Answered
+### The Compact's claim when you already own a ship (the systems builder, Session 457, 2026-10-03, DECISION #128)
+The Compact's rank-3 claim is *a house and a ship* (Session 99), and the lord says "It's yours. The ship is at the quay under your name." Until Session 457 it deeded the house alone. Session 457 now moors a sloop at the nearest of the Compact's harbours (Fortargent is inland; Beaurouge, 850 units off) when you have no ship. The game holds one ship per player, so a Prior who already owns one gets nothing for the second half of the claim. Today their ship stays where they left it and the line still says the ship is at the quay.
+
+What should the Compact give a Prior who already has a ship?
+
+- **A.** Nothing more: the ship you have is the one under your name. Cost: none. The line stays slightly untrue.
+- **B.** A refit: your ship is mended and raised one class free (sloop → cog → galleon; a galleon is only mended). A visible reward. Cost: one short session, reusing the shipwright's refit. *(recommended)*
+- **C.** The hull's price in gold (400). Cost: one line. It reads as *buy more*, which the brief warns against.
+
+Recommendation: B.
+Michael: **A free refit: mended and raised one class** (B). (4 Oct 2026, via the control room)
+*Built in Session 466* (`tests/compactrefit`): the claim refits the ship where she lies (sloop → cog → galleon, hull and rig full; a galleon is mended); a sunk ship is raised free by the shipwright nearest her wreck in three days, a class up. Issue #128 was closed by the producer.
+
 ### Places standing in the basin lakes (the systems builder, 2026-10-03, DECISION #121)
 The rivers build (S432, Michael's C, the horseshoe) put one great lake in each range's basin, up to 1 km across (Dotriair Mere is 502 units in radius). The routing keeps river channels out of settlement pads, but the lakes were laid over places their cells had already drawn. Of the 919 generated places that are not ports, 43 now stand on a plug of land with water all round them: 36 with water on all sixteen bearings one and a half pads out, 39 of them in a basin lake. That is 20 villages (Diawor, Villeargent, Nordou, Murtraley, Tullymore, Dunard, Carriglough and thirteen more), plus shrines, glades, towers, ruins, outposts, two camps and two lairs. The pad's stamp lifts each one out of the water, so Diawor stands at 3.4 on a disc 45 units across, with −1.1 a third of a pad beyond its edge and −4 past that. Nobody reaches them without swimming, and no road or coach can. Saves keep places by id; a save made standing in one of them reloads at that spot. (Session 447 handled the gates the same way, as a bug: 99 were redrawn out of the water, and gates have no streets.)
 - **A. Move them to the shore** *(recommended)*: after the routing, each place whose pad is ringed by water is set down on the nearest dry ground beside its lake or river, facing the water, with its id and name kept; its roads re-route as roads do. 43 places move once. A save made standing in one reloads where the place was, now in the water.
