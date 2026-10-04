@@ -5,7 +5,9 @@
 // v61ad: bumped to 2 for worldState key. Old saves (v1) still load via the
 // load-path fallback — worldState defaults to all-false, which is the "fresh
 // Act I" state any pre-burn save would correctly inhabit.
-const SAVE_VERSION=2;
+// Session 456: bumped to 3 for the two-row save (character and world, see TWO SAVES below). A v1 or v2 row is
+// one row holding both; ssMigrate splits it on the first boot and ssLoadRows splits one in memory if it must.
+const SAVE_VERSION=3;
 const SAVE_SLOTS=10;
 // Serialize one item (no function refs — enchants stored by id)
 function _serItem(it){
@@ -126,6 +128,27 @@ function ssActiveKey(){try{return localStorage.getItem(SS_ACTIVE_KEY);}catch(e){
 function ssSetActive(key){try{localStorage.setItem(SS_ACTIVE_KEY,key);}catch(e){}}
 function ssCharId(){if(typeof worldState!=='undefined'&&worldState){if(!worldState.charId)worldState.charId='c'+Date.now().toString(36);return worldState.charId;}return 'legacy';}
 function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${slot}`,charId:d.charId||'legacy',charName:d.pName||'Unnamed',people:(d.wS&&d.wS.people)||'',arch:d.arch||'',kind,slot,level:d.level,gold:d.gold,zone:d.zone,where:d.where,ts:d.ts||Date.now(),size:0};}
+// ═══ TWO SAVES (Session 456 — backlog K, Michael's A on #119, docs/design/online-play.md rule 1) ═══════════
+// A save is two rows. The CHARACTER row is who you are and what you carry: attributes, level, health, skills,
+// EQ, BAG, the stash, gold, the known words (spells, sigils, books, herbs), the journal, where you stand, and the
+// worldState keys that describe the character (listed in SS_CHAR_WS: their look, their people, their counters,
+// the tutorial's lines, who they have met, their standing and record, their rented room and coach seat). The
+// WORLD row is the state of the places and things: QS and the quests' stages, the shops' buy-back stock, and
+// every other worldState key — the clock, the towns, the story's flags, doors picked, boxes taken, lairs
+// cleared, ships, routes, wars, markets — including any key added later and not named here. Solo play writes
+// and reads both, exactly as the one row did; a later co-op build loads a guest's character row into the
+// host's world row (_applyLoadData(c,w)). The index keeps one entry per slot at the character row's key;
+// the world row sits beside it at ssWorldKey(key). Loading joins the two (ssJoinPayload), so a key read from
+// either row still lands: moving a key between the lists is a change to what the next save writes, nothing more.
+const SS_CHAR_WS={charId:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1};
+const SS_WORLD_TOP={QS:1,merchantStock:1}; /* top-level fields of the one-row payload that are the world's; wS is divided by SS_CHAR_WS */
+function ssWorldKey(key){return key+'~w';}
+function ssSplitPayload(d){const c={},w={v:d.v,ts:d.ts,charId:d.charId};
+  for(const k in d){if(k==='wS')continue;if(SS_WORLD_TOP[k])w[k]=d[k];else c[k]=d[k];}
+  if(d.wS&&typeof d.wS==='object'){c.wS={};w.wS={};for(const k in d.wS){(SS_CHAR_WS[k]?c.wS:w.wS)[k]=d.wS[k];}}
+  return {c,w};}
+function ssJoinPayload(c,w){if(!w)return c;const d=Object.assign({},w,c);if(c.wS||w.wS)d.wS=Object.assign({},w.wS||{},c.wS||{});return d;}
+function _buildSaveRows(){const d=_buildSavePayload();d.charId=ssCharId();d.ts=Date.now();return ssSplitPayload(d);}
 // ── writing ──
 // v80 S137 — the payload is data, never the scene. Quests and guild tasks park live handles on themselves
 // (a lost person's NPC, a relic's mesh and light); three.js objects stringify through toJSON into whole
@@ -139,19 +162,28 @@ function ssStringify(d){SS.cut=[];
     const s=JSON.stringify(d,function(k,v){v=base.call(this,k,v);if(v&&typeof v==='object'){if(seen.has(v)){SS.cut.push('cycle:'+k);return undefined;}seen.add(v);}return v;});
     console.warn('save: cut circular references at',SS.cut);return s;}}
 function ssWhy(e){if(!e)return 'unknown error';if(e.name==='QuotaExceededError')return 'the browser refused the space';return ((e.name&&e.name!=='Error')?e.name+': ':'')+String(e.message||e).slice(0,140);}
-function ssWrite(kind,slot,label){let meta,str;
-  return Promise.resolve().then(()=>{const d=_buildSavePayload();d.charId=ssCharId();d.ts=Date.now();str=ssStringify(d);meta=ssMetaFrom(d,kind,slot);meta.size=str.length;return ssPut(meta.key,str);})
-    .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
+function ssWrite(kind,slot,label){let meta,str,wstr;
+  return Promise.resolve().then(()=>{const r=_buildSaveRows();str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(r.c,kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
+      return ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str));}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
+    .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.cache[ssWorldKey(meta.key)]=wstr;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
     .catch(e=>{const why=ssWhy(e);SS.lastErr={ts:Date.now(),why,kind};console.error('save',e);try{addLog('⚠',`Save failed (${kind==='auto'?'autosave':'slot '+(slot+1)}): ${why}`);}catch(_){}showMsg('⚠ Save failed — '+why,'#e88a8a');return null;});}
 function saveToSlot(n){return ssWrite('manual',n);}
 function ssAutosave(){const cid=ssCharId();const autos=SS.idx.filter(e=>e.charId===cid&&e.kind==='auto').sort((a,b)=>a.ts-b.ts);let slot=0;const used=new Set(autos.map(a=>a.slot));for(let i=0;i<SS_AUTO;i++){if(!used.has(i)){slot=i;break;}if(i===SS_AUTO-1)slot=autos[0].slot;}
   return ssWrite('auto',slot,'💾 Autosaved.');}
 function saveGame(force){if(typeof worldState==='undefined'||!worldState)return;const now=Date.now();if(!force&&SS.lastAuto&&now-SS.lastAuto<90000)return; /* the ring holds distinct moments, not five saves from one minute */ SS.lastAuto=now;ssAutosave();}
-function ssDelete(key){SS.idx=SS.idx.filter(e=>e.key!==key);ssSaveIndex();if(ssActiveKey()===key){const c=ssChars()[0];const n=c?c.saves.sort((a,b)=>b.ts-a.ts)[0]:null;if(n)ssSetActive(n.key);else{try{localStorage.removeItem(SS_ACTIVE_KEY);}catch(e){}}}return ssDel(key);}
+function ssDelete(key){SS.idx=SS.idx.filter(e=>e.key!==key);ssSaveIndex();if(ssActiveKey()===key){const c=ssChars()[0];const n=c?c.saves.sort((a,b)=>b.ts-a.ts)[0]:null;if(n)ssSetActive(n.key);else{try{localStorage.removeItem(SS_ACTIVE_KEY);}catch(e){}}}return Promise.all([ssDel(key),ssDel(ssWorldKey(key))]).then(r=>r[0]);}
 function ssDeleteChar(charId){const keys=SS.idx.filter(e=>e.charId===charId).map(e=>e.key);return Promise.all(keys.map(ssDelete));}
 // ── reading ──
-function ssLoad(key){return ssGet(key).catch(e=>{console.error('load',e);showMsg('⚠ Could not read that save — '+ssWhy(e),'#e88a8a');return undefined;}).then(raw=>{if(raw===undefined)return null;if(!raw){showMsg('⚠ That save is missing.','#e88a8a');return null;}let d;try{d=JSON.parse(raw);}catch(e){showMsg('⚠ Save data corrupted.','#e88a8a');return null;}
-  if(!d||(d.v!==SAVE_VERSION&&d.v!==1)){showMsg('⚠ Save version mismatch.','#e8c88a');return null;}return d;});}
+// Session 456 — ssLoadRows gives the two rows {c,w}; ssLoad gives them joined, the one-row shape every caller reads.
+// A one-row save (v1, v2) the boot's split has not reached is split in memory and loads the same. A v3 character
+// row with no world row beside it loads alone: the character into a fresh world (the shape a guest's load takes).
+function ssVersionOk(v){return v===SAVE_VERSION||v===2||v===1;}
+function ssLoadRows(key){return ssGet(key).catch(e=>{console.error('load',e);showMsg('⚠ Could not read that save — '+ssWhy(e),'#e88a8a');return undefined;}).then(raw=>{if(raw===undefined)return null;if(!raw){showMsg('⚠ That save is missing.','#e88a8a');return null;}let d;try{d=JSON.parse(raw);}catch(e){showMsg('⚠ Save data corrupted.','#e88a8a');return null;}
+  if(!d||!ssVersionOk(d.v)){showMsg('⚠ Save version mismatch.','#e8c88a');return null;}
+  if(d.v<3)return ssSplitPayload(d);
+  return ssGet(ssWorldKey(key)).catch(()=>null).then(wraw=>{let w=null;if(wraw){try{w=JSON.parse(wraw);}catch(e){w=null;}}
+    if(!w){console.warn('load: no world row beside',key);showMsg('⚠ No world was saved with this character — the world starts fresh.','#e8c88a');}return {c:d,w:w||null};});});}
+function ssLoad(key){return ssLoadRows(key).then(r=>r&&ssJoinPayload(r.c,r.w));}
 // v80 S137 — saves from before S137 carry scene-graph dumps where live handles were, and 'spawned'
 // flags whose NPC, pickup or camp no longer exists after a load: the quest could never finish.
 function ssSanitizeLoaded(){
@@ -166,55 +198,86 @@ function ssSanitizeLoaded(){
 // One file holds a character's saves as they are stored, so it survives a cleared profile, a new
 // machine, or a browser that loses its IndexedDB. Import never overwrites: it lands as a new
 // character when its own id is already here.
-const SS_FILE='the-old-gates/character',SS_FILE_MAX=48*1024*1024,SS_FILE_SAVES=64;
+const SS_FILE='the-old-gates/character',SS_FILE_WORLD='the-old-gates/world',SS_FILE_MAX=48*1024*1024,SS_FILE_SAVES=64;
 function ssSlug(t){return String(t||'character').normalize('NFKD').replace(/[^\w-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'character';}
-function ssExportChar(charId){
+// Session 456 — two files, one a row: the CHARACTER file (`the-old-gates/character`, v2) holds the character rows alone,
+// no world state in it, and is what a friend would carry into a host's world; the WORLD file (`the-old-gates/world`)
+// holds the world rows of the same slots. ⇱ Export writes the first, ⇱ World the second. Import takes either, or both
+// at once, and pairs them by character id, kind and slot. A v1 file (one-row saves) still imports: each row is split.
+function ssReadRowsQuiet(key){return ssGet(key).then(raw=>{if(!raw)return null;let d;try{d=JSON.parse(raw);}catch(e){return null;}if(!d||typeof d!=='object'||!ssVersionOk(d.v))return null;
+  if(d.v<3){d.v=SAVE_VERSION;return ssSplitPayload(d);}
+  return ssGet(ssWorldKey(key)).catch(()=>null).then(wraw=>{let w=null;if(wraw){try{w=JSON.parse(wraw);}catch(e){w=null;}}return {c:d,w};});}).catch(()=>null);}
+function ssDownload(str,name){const url=URL.createObjectURL(new Blob([str],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>{try{URL.revokeObjectURL(url);}catch(e){}},8000);}
+function ssExportChar(charId,world){
   const c=ssChars().find(x=>x.id===charId);if(!c)return Promise.resolve(false);
   const rows=c.saves.slice().sort((a,b)=>a.ts-b.ts);
-  return Promise.all(rows.map(e=>ssGet(e.key).then(raw=>raw?{kind:e.kind,slot:e.slot,ts:e.ts,level:e.level,gold:e.gold,zone:e.zone,data:raw}:null).catch(()=>null)))
+  return Promise.all(rows.map(e=>ssReadRowsQuiet(e.key).then(r=>{if(!r)return null;const row=world?r.w:r.c;if(!row)return null;return {kind:e.kind,slot:e.slot,ts:e.ts,level:e.level,gold:e.gold,zone:e.zone,data:ssStringify(row)};})))
     .then(got=>{const keep=got.filter(Boolean);
-      if(!keep.length)throw new Error('those saves could not be read');
-      const doc={format:SS_FILE,v:1,build:'s139',exported:Date.now(),char:{id:c.id,name:c.name,people:c.people||'',arch:c.arch||'',level:c.level},saves:keep};
-      const str=JSON.stringify(doc);const url=URL.createObjectURL(new Blob([str],{type:'application/json'}));
-      const a=document.createElement('a');a.href=url;a.download=`the-old-gates_${ssSlug(c.name)}_lv${c.level||1}_${new Date().toISOString().slice(0,10)}.json`;
-      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>{try{URL.revokeObjectURL(url);}catch(e){}},8000);
-      showMsg(`\uD83D\uDCBE ${c.name} exported \u2014 ${keep.length} save${keep.length===1?'':'s'}, ${(str.length/1024).toFixed(0)} KB.`,'#c8e88a');
-      try{addLog('\uD83D\uDCBE',`${c.name} exported to a file (${keep.length} saves).`);}catch(e){}
+      if(!keep.length)throw new Error(world?'no world was saved with those saves':'those saves could not be read');
+      const doc={format:world?SS_FILE_WORLD:SS_FILE,v:world?1:2,build:'s373',exported:Date.now(),char:{id:c.id,name:c.name,people:c.people||'',arch:c.arch||'',level:c.level},saves:keep};
+      const str=JSON.stringify(doc);
+      ssDownload(str,`the-old-gates_${ssSlug(c.name)}_${world?'world':'lv'+(c.level||1)}_${new Date().toISOString().slice(0,10)}.json`);
+      const what=world?`${c.name}'s world`:c.name;
+      showMsg(`💾 ${what} exported — ${keep.length} save${keep.length===1?'':'s'}, ${(str.length/1024).toFixed(0)} KB.${world?'':' The world is its own file (⤱ World).'}`,'#c8e88a');
+      try{addLog('💾',`${what} exported to a file (${keep.length} saves).`);}catch(e){}
       return true;})
-    .catch(e=>{console.error('export',e);showMsg('\u26a0 Export failed \u2014 '+(e&&e.message||ssWhy(e)),'#e88a8a');return false;});
+    .catch(e=>{console.error('export',e);showMsg('⚠ Export failed — '+(e&&e.message||ssWhy(e)),'#e88a8a');return false;});
 }
-function ssImportFile(file){
-  if(!file)return Promise.resolve(null);
-  if(file.size>SS_FILE_MAX){showMsg('\u26a0 Import failed \u2014 that file is far too large to be a character.','#e88a8a');return Promise.resolve(null);}
-  return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result||''));fr.onerror=()=>rej(fr.error||new Error('the file could not be read'));fr.readAsText(file);})
-    .then(text=>{let doc;try{doc=JSON.parse(text);}catch(e){throw new Error('that file is not a character export');}
-      if(!doc||doc.format!==SS_FILE||!Array.isArray(doc.saves))throw new Error('that file is not a character export');
-      const rows=doc.saves.filter(r=>r&&typeof r.data==='string').slice(0,SS_FILE_SAVES);
-      if(!rows.length)throw new Error('there are no saves in that file');
-      const taken=new Set(SS.idx.map(e=>e.charId));
-      let cid=(doc.char&&doc.char.id)||('c'+Date.now().toString(36)),fresh=false;
-      if(taken.has(cid)){cid='c'+Date.now().toString(36)+Math.floor(Math.random()*90+10);fresh=true;} // already here: a second character, not an overwrite
-      const name=((doc.char&&doc.char.name)||'Imported')+(fresh?' (imported)':'');
-      let auto=0,manual=0,skipped=0;const metas=[];
-      return rows.reduce((chain,r)=>chain.then(()=>{
-        let d;try{d=JSON.parse(r.data);}catch(e){skipped++;return;}
-        if(!d||typeof d!=='object'||(d.v!==SAVE_VERSION&&d.v!==1)){skipped++;return;}
-        const kind=r.kind==='auto'?'auto':'manual';const slot=kind==='auto'?auto++:manual++;
-        if(kind==='auto'?slot>=SS_AUTO:slot>=SS_MANUAL){skipped++;return;}
-        d.charId=cid;if(d.wS&&typeof d.wS==='object')d.wS.charId=cid;
-        const str=ssStringify(d);const meta=ssMetaFrom(d,kind,slot);meta.charName=name;meta.size=str.length;
-        return ssPut(meta.key,str).then(()=>{SS.cache[meta.key]=str;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);metas.push(meta);});
-      }),Promise.resolve())
-      .then(()=>{if(!metas.length)throw new Error('none of those saves could be read');
+function ssExportWorld(charId){return ssExportChar(charId,true);}
+function ssReadFileText(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result||''));fr.onerror=()=>rej(fr.error||new Error('the file could not be read'));fr.readAsText(file);});}
+function ssImportFile(file){return ssImportFiles(file?[file]:[]);}
+function ssImportFiles(files){
+  files=Array.from(files||[]).filter(Boolean);if(!files.length)return Promise.resolve(null);
+  const big=files.find(f=>f.size>SS_FILE_MAX);if(big){showMsg('⚠ Import failed — that file is far too large to be a character.','#e88a8a');return Promise.resolve(null);}
+  return Promise.all(files.map(ssReadFileText))
+    .then(texts=>{const docs=texts.map(text=>{let doc;try{doc=JSON.parse(text);}catch(e){throw new Error('that file is not a character export');}
+        if(!doc||(doc.format!==SS_FILE&&doc.format!==SS_FILE_WORLD)||!Array.isArray(doc.saves))throw new Error('that file is not a character export');return doc;});
+      const chars=docs.filter(d=>d.format===SS_FILE),worlds=docs.filter(d=>d.format===SS_FILE_WORLD);
+      const taken=new Set(SS.idx.map(e=>e.charId));const idMap={},nameOf={};let skipped=0;const metas=[];const written=new Set();
+      const cidFor=(doc)=>{const src=(doc.char&&doc.char.id)||null;if(src&&idMap[src])return idMap[src];let cid=src||('c'+Date.now().toString(36)),fresh=false;
+        if(taken.has(cid)){cid='c'+Date.now().toString(36)+Math.floor(Math.random()*90+10);fresh=true;} /* already here: a second character, not an overwrite */
+        taken.add(cid);if(src)idMap[src]=cid;idMap[cid]=cid;nameOf[cid]=((doc.char&&doc.char.name)||'Imported')+(fresh?' (imported)':'');return cid;};
+      const slotFree=(cid,kind,slot)=>!SS.idx.some(e=>e.charId===cid&&e.kind===kind&&e.slot===slot)&&!written.has(cid+'_'+kind+'_'+slot);
+      const pick=(cid,kind,want)=>{const max=kind==='auto'?SS_AUTO:SS_MANUAL;if(want>=0&&want<max&&slotFree(cid,kind,want))return want;for(let i=0;i<max;i++)if(slotFree(cid,kind,i))return i;return -1;};
+      // the character files first: each row a character (v3) or a one-row save (v1, v2) that is split here
+      let chain=Promise.resolve();
+      for(const doc of chars){const cid=cidFor(doc),name=nameOf[cid];
+        for(const r of doc.saves.filter(r=>r&&typeof r.data==='string').slice(0,SS_FILE_SAVES)){chain=chain.then(()=>{
+          let d;try{d=JSON.parse(r.data);}catch(e){skipped++;return;}
+          if(!d||typeof d!=='object'||!ssVersionOk(d.v)){skipped++;return;}
+          const kind=r.kind==='auto'?'auto':'manual';const slot=pick(cid,kind,r.slot|0);if(slot<0){skipped++;return;}
+          let c=d,w=null;if(d.v<3){d.v=SAVE_VERSION;const sp=ssSplitPayload(d);c=sp.c;w=sp.w;}
+          c.charId=cid;if(c.wS&&typeof c.wS==='object')c.wS.charId=cid;if(w)w.charId=cid;
+          const str=ssStringify(c);const meta=ssMetaFrom(c,kind,slot);meta.charName=name;meta.v=SAVE_VERSION;meta.size=str.length;written.add(cid+'_'+kind+'_'+slot);
+          const wk=ssWorldKey(meta.key);const putW=w?ssStringify(w):null;
+          return (putW?ssPut(wk,putW).then(()=>{SS.cache[wk]=putW;meta.size+=putW.length;}):Promise.resolve()).then(()=>ssPut(meta.key,str)).then(()=>{SS.cache[meta.key]=str;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);metas.push(meta);});});}}
+      // then the world files: each row beside the character row of the same id, kind and slot (an id renamed above follows the rename)
+      let wrows=0;const orphan=[];
+      for(const doc of worlds){const src=(doc.char&&doc.char.id)||null;const cid=(src&&idMap[src])||src;if(!cid){skipped++;continue;}
+        for(const r of doc.saves.filter(r=>r&&typeof r.data==='string').slice(0,SS_FILE_SAVES)){chain=chain.then(()=>{
+          let w;try{w=JSON.parse(r.data);}catch(e){skipped++;return;}
+          if(!w||typeof w!=='object'||!ssVersionOk(w.v)){skipped++;return;}
+          const kind=r.kind==='auto'?'auto':'manual';const key=`${cid}_${kind}_${r.slot|0}`;const meta=ssEntry(key);
+          if(!meta)orphan.push(key);
+          w.charId=cid;w.v=SAVE_VERSION;const str=ssStringify(w);const wk=ssWorldKey(key);
+          return ssPut(wk,str).then(()=>{SS.cache[wk]=str;wrows++;if(meta){meta.v=SAVE_VERSION;meta.size=(meta.size||0)+str.length;}});});}}
+      return chain.then(()=>{if(!metas.length&&!wrows)throw new Error('none of those saves could be read');
         ssSaveIndex();
-        showMsg(`\uD83D\uDCC2 ${name} imported \u2014 ${metas.length} save${metas.length===1?'':'s'}${skipped?`, ${skipped} skipped`:''}. Load from this menu.`,'#c8e88a');
-        try{addLog('\uD83D\uDCC2',`${name} imported from a file (${metas.length} saves${skipped?', '+skipped+' skipped':''}).`);}catch(e){}
-        return metas;});})
-    .catch(e=>{console.error('import',e);showMsg('\u26a0 Import failed \u2014 '+(e&&e.message||ssWhy(e)),'#e88a8a');return null;});
+        // a character row with no world row beside it loads into a fresh world: say so, once
+        return Promise.all(metas.map(m=>ssGet(ssWorldKey(m.key)).catch(()=>null))).then(ws=>{const noWorld=ws.filter(x=>!x).length;
+          const names=[...new Set(chars.map(d=>nameOf[idMap[(d.char&&d.char.id)||'']]).filter(Boolean))];const who=names.join(', ')||(worlds[0]&&worlds[0].char&&worlds[0].char.name)||'World';
+          let msg=`📂 ${who} imported — ${metas.length?metas.length+' save'+(metas.length===1?'':'s'):''}${metas.length&&wrows?', ':''}${wrows?wrows+' world row'+(wrows===1?'':'s'):''}${skipped?`, ${skipped} skipped`:''}.`;
+          if(noWorld)msg+=` ${noWorld===metas.length?'No world came with them':noWorld+' of them have no world'} — import the world file too (⤱ World), or they start in a fresh one.`;
+          if(orphan.length&&!metas.length)msg+=` ${orphan.length} world row${orphan.length===1?' has':'s have'} no character here yet; import the character file.`;
+          msg+=' Load from this menu.';showMsg(msg,'#c8e88a');
+          try{addLog('📂',`${who} imported from a file (${metas.length} saves${wrows?', '+wrows+' world rows':''}${skipped?', '+skipped+' skipped':''}).`);}catch(e){}
+          return metas;});});})
+    .catch(e=>{console.error('import',e);showMsg('⚠ Import failed — '+(e&&e.message||ssWhy(e)),'#e88a8a');return null;});
 }
-function ssPickImport(){ // the browser's own picker; nothing is read until a file is chosen
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.style.display='none';
-  inp.onchange=()=>{const f=inp.files&&inp.files[0];inp.remove();if(f)ssImportFile(f).then(()=>renderSLSlots());};
+function ssPickImport(){ /* the browser's own picker; nothing is read until a file is chosen. Several at once: a character file and its world file */
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.multiple=true;inp.style.display='none';
+  inp.onchange=()=>{const fs=inp.files?Array.from(inp.files):[];inp.remove();if(fs.length)ssImportFiles(fs).then(()=>renderSLSlots());};
   document.body.appendChild(inp);inp.click();
 }
 function hasAnySave(){return SS.idx.length>0;}
@@ -226,7 +289,17 @@ function loadFromSlot(key){return ssLoad(key);} // async now: a Promise of the p
 function ssMigrate(){ssLoadIndex();const moves=[];try{for(let n=0;n<10;n++){const raw=localStorage.getItem('DOS_save_'+n);if(!raw)continue;let d;try{d=JSON.parse(raw);}catch(e){continue;}d.charId=d.charId||'legacy';const meta=ssMetaFrom(d,'manual',n);meta.charName=d.pName||'Earlier saves';meta.size=raw.length;
       moves.push(ssPut(meta.key,JSON.stringify(d)).then(()=>{SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();localStorage.removeItem('DOS_save_'+n);}).catch(()=>{}));}
   }catch(e){}
-  return Promise.all(moves).then(()=>{try{const oldActive=localStorage.getItem('DOS_save_active');if(oldActive!==null&&!ssActiveKey()){const m=SS.idx.find(e=>e.charId==='legacy'&&e.kind==='manual'&&e.slot===parseInt(oldActive));if(m)ssSetActive(m.key);}}catch(e){}SS.ready=true;try{localStorage.removeItem('DOS_save_active');}catch(e){}return SS.idx;});}
+  return Promise.all(moves).then(()=>{try{const oldActive=localStorage.getItem('DOS_save_active');if(oldActive!==null&&!ssActiveKey()){const m=SS.idx.find(e=>e.charId==='legacy'&&e.kind==='manual'&&e.slot===parseInt(oldActive));if(m)ssSetActive(m.key);}}catch(e){}try{localStorage.removeItem('DOS_save_active');}catch(e){}})
+    .then(()=>ssSplitStored().catch(e=>{console.warn('save split',e);return 0;})).then(()=>{SS.ready=true;return SS.idx;});}
+// Session 456 — every one-row save in the store becomes two rows holding the same state (only `v` changes). The world
+// row is written first, then the character row over the old one; a row that cannot be read or written is left as it
+// was, and loads through ssLoadRows' in-memory split. Lossless: ssJoinPayload(ssSplitPayload(d)) is d.
+function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!old.length)return Promise.resolve(0);let n=0;
+  return old.reduce((chain,e)=>chain.then(()=>ssGet(e.key).then(raw=>{if(!raw)return;let d;try{d=JSON.parse(raw);}catch(_){return;}if(!d||typeof d!=='object'||!ssVersionOk(d.v))return;
+      if(d.v>=SAVE_VERSION){e.v=d.v;return;}
+      d.v=SAVE_VERSION;const r=ssSplitPayload(d);const cs=ssStringify(r.c),ws=ssStringify(r.w);
+      return ssPut(ssWorldKey(e.key),ws).then(()=>ssPut(e.key,cs)).then(()=>{delete SS.cache[e.key];delete SS.cache[ssWorldKey(e.key)];e.v=SAVE_VERSION;e.size=cs.length+ws.length;n++;});}).catch(err=>console.warn('save split',e.key,err))),Promise.resolve())
+    .then(()=>{ssSaveIndex();if(n)console.log('saves: split '+n+' one-row save'+(n===1?'':'s')+' into character and world');return n;});}
 
 function _buildSavePayload(){
   return {
@@ -271,7 +344,8 @@ function _buildSavePayload(){
 
 
 
-function _applyLoadData(d){
+function _applyLoadData(d,w){
+  if(w)d=ssJoinPayload(d,w); /* Session 456 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
   xp=d.xp||0; level=d.level||1; xpNext=d.xpNext||200;
   kills=d.kills||0; gold=d.gold||0;
   maxHP=d.maxHP||100; PHP=d.PHP||maxHP; /* S335 — clamped to the worn maximum once the gear is back, below */
@@ -815,11 +889,13 @@ function renderSLSlots(){
   }
 }
 
-function _slExportBtn(charId){ // v80 S139
-  const b=document.createElement('button');b.type='button';b.textContent='\u2912 Export';b.className='sl-btn';b.title='Save this character to a file you can keep';
-  b.style.marginLeft='10px';
-  b.onclick=(ev)=>{ev.stopPropagation();b.disabled=true;b.textContent='Exporting\u2026';ssExportChar(charId).then(()=>{if(b.isConnected){b.disabled=false;b.textContent='\u2912 Export';}});};
-  return b;
+function _slExportBtn(charId){ // v80 S139; Session 456 — two buttons, the character and their world
+  const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;gap:6px;margin-left:10px';
+  const mk=(label,title,world)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className='sl-btn';b.title=title;
+    b.onclick=(ev)=>{ev.stopPropagation();b.disabled=true;b.textContent='Exporting\u2026';ssExportChar(charId,world).then(()=>{if(b.isConnected){b.disabled=false;b.textContent=label;}});};return b;};
+  wrap.appendChild(mk('\u2912 Export','Save this character to a file you can keep: who they are and what they carry, no world in it',false));
+  wrap.appendChild(mk('\u2931 World','Save their world to a second file: the clock, the towns, the quests\u2019 stages, everything the places remember',true));
+  return wrap;
 }
 function _fmtTime(ts){
   if(!ts)return '';

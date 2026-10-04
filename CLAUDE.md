@@ -74,7 +74,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026). The rul
   - `60-shop.js` shop, loot, stash, sleep, buy/sell. `62-actions.js` `doBash`, `attack`, `fireArrow`, `killE`, `castSpell`,
     potions, `useItem`, `updateHUD`, `drawMM`. `64-spells.js` `SPELLS`, sigils, spell fx. `66-hub.js` book reader, log, hub,
     inventory. `68-dungeon-misc.js` crosshair, dungeon decoration, traps, portal fx, `LP`/`openLockpick`, lair, `playerDead`.
-    `70-saves.js` `SS`, `ss*`, `_applyLoadData`, the save menu.
+    `70-saves.js` `SS`, `ss*`, the two-row save (`SS_CHAR_WS`, `ssSplitPayload`/`ssJoinPayload`), `_applyLoadData(c,w)`, export and import, the save menu.
   - `72-audio.js` `AX`, volume, `sfx*`/`snd*`. `74-strikes.js` `applyMeleeDamage`, `executeStrike`, `VARIANTS`.
     `76-music.js` `sndSpell…`, `EXPLORE`/`PIECES`, the music by place. `78-placeholder-zones.js` `tickFootsteps` and the
     `registerPlaceholderZone({…})` data.
@@ -128,7 +128,7 @@ Every session, cloud or local, that has the tools:
 Corrections to earlier entries go in the new entry, named as corrections. History is useful.
 
 ## Code map (line numbers drift; grep for the names)
-- Save store: `SS`, `ssWrite/ssLoad/ssPut/ssGet`, `ssStringify` (skips live scene handles), `ssSanitizeLoaded`, export/import `ssExportChar/ssImportFile`.
+- Save store: `SS`, `ssWrite/ssLoad/ssPut/ssGet`, `ssStringify` (skips live scene handles), `ssSanitizeLoaded`, export/import `ssExportChar/ssExportWorld/ssImportFiles`. A slot is two rows since S456: the character at `key`, the world at `ssWorldKey(key)`; `ssLoadRows` gives both, `ssLoad` gives them joined (the one-row shape every caller reads).
 - World module: the big IIFE returning `WORLD` (`return {SIZE,CHUNK,SEA_Y,...`). Settlements in `SETTLE`, roads in cells, weather `WX`, sky `SKY`, snow cover `WX.cover`, footprints `FP`.
 - Terrain: `rawH` → `baseH` (site stamps flatten) → `worldH` (roads). Ranges and rivers (S432): `rvSpines` (the horseshoe per island, the Ferrous), `ridgeAt` from the spine, `basinAt`, `spinePeaks`; `routeWorld` routes the rivers once per seed at the first terrain call and fills the carve grid `RVG` that `rawH` reads (`riverSample`); `WORLD.routed` has the reaches, the great rivers, the lakes and the stats. Colour: `groundColor()`; chunks recoloured by `recolourChunk`.
 - Interiors: `buildInteriorFor`, `partition()` cuts doorways, `intDoorAt` hangs a door, `INT_BEDS/INT_DOORS/INT_NPCS`.
@@ -152,7 +152,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - The camera looks along `(-sin yaw, -cos yaw)`; NPCs face `(sin ry, cos ry)`.
 - r128's shadow pass tests object layers against the *eye's* camera, not the shadow camera: a shadow-only layer draws nothing.
   To draw something differently in the shadow pass, swap it inside `REN.shadowMap.render` (see the townsfolk's LOD).
-- The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads.
+- The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads. Since S456 the key also lands in the world row unless it is named in `SS_CHAR_WS` (the character's keys): a key that describes the character, not a place, goes in that list too.
 - The loop's held-key map `K` (and `PERF` and their neighbours) sit inside a top-level block, not on the page's global scope: code
   outside that block, and a test's `page.evaluate`, reach it as `window._K` (Session 327). `typeof K` there is `undefined`.
 - `tickPeople` drops and disposes any rig whose root has no parent: add a test's rig to the scene (hidden) as soon as it is built.
@@ -160,6 +160,29 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
   (`WORLD.camSolid`, `solidAt`) there reads empty ground. Test `isInterior()` first and use `intSightLine`/`intSolidAt`.
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
+
+## Co-op rules (Session 456 — Michael's A on DECISION #119, `docs/design/online-play.md`)
+Nothing is networked and nothing is built for a second player. These rules keep the door open, so that a later co-op build
+(the host's world, each friend arriving with their own character) does not have to tear up the save or the rules of play.
+Every session follows them in new code; the Opus follow-up in backlog K moves the existing rolls and the foes' targeting over.
+- **Two saves.** A slot is a character row and a world row (`ssSplitPayload`/`ssJoinPayload`, `70-saves.js`). The character
+  row is who you are, what you carry and what you know, with the `worldState` keys named in `SS_CHAR_WS` (look, people, stats,
+  the tutorial's lines, who you have met, the journal and guild tasks, standing, crime and the Church's notes, the rented room,
+  the coach seat); `QS`, the buy-back stock and every other `worldState` key are the world's. `_applyLoadData(c,w)` reads both;
+  solo play loads both as before; `ssExportChar` writes the character alone and `ssExportWorld` the world. A new `worldState`
+  key is the world's unless it describes the character, in which case it is added to `SS_CHAR_WS` (and to the S242 list either way).
+- **Things in the world have ids that survive a reload.** Houses (`g_<site>_<lot>`), sites, chunks (`cx,cz`), dungeons (seed and
+  floor), sigil doors (seed) have them, and a saved flag is keyed by them. Foes, chests, barrels, corpses, interior and dungeon
+  doors and keys, wreck chests, herbs and quest pickups have none yet: the first code that saves anything about one gives it a
+  key of place and index (`<site or seed>:<floor>:<index>`), never a position or a `Date.now()`.
+- **A roll that decides an outcome comes from a seeded stream keyed by place and id** (a chest's loot, a spawn, a dungeon's foes
+  and their places, a hit's damage). Cosmetic rolls (sparks, fidgets, ragdolls, particles, phase offsets) may stay `Math.random`.
+- **Shared state changes through a named action** (`openDoor`, `takeItem`, `damageFoe`, `setStage`, `advanceClock`), never by
+  assigning into `worldState` from a builder or a tick. One function per change is what a host can apply and send on.
+- **A foe picks its target through one function, `targetOf(e)`**, not by reading `px`/`pz`. Solo it returns you.
+- **Correctness never relies on the pause.** A system may freeze its own view while a panel is open, never its outcome (the
+  dropped-frame rule, extended: read the clock, not the frame count).
+- **No timing window under 150 ms** (the combat page), so a 60–100 ms connection keeps a parry fair.
 
 ## Roles
 - Michael makes the design calls; Claude flags risks and asks when the design is open.
