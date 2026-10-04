@@ -11873,3 +11873,15 @@ Part C's last owed piece: *pin a note to the map*, notes up to 500 characters. O
 ### Needs eyes
 - The pin's look at every zoom, and whether the flag reads among the place marks. A pin pinned while zoomed out sits where the click was, about ten world units to a pixel.
 - With part C done, DECISION #132's owed work is B: god's days, market days, rent day, feasts, dated work, seasons in the weather, the *Due* view, which wait on the quest writer's names (or placeholders).
+
+## v80 — Session 496 — The calendar's week, and a shrine's boon twice as long on its god's day (DECISION #132, part B, first slice)
+Part B of Michael's C: a calendar the world keeps. This session lays its arithmetic and the first rule that reads it. `calDay(abs)` (`60-shop.js`, beside `gameDateLine`) gives the day's place in the calendar the design page fixed: a week of seven days, a day to each god in the order of the shrines' table (the Sea, the Sky, the Beasts, the Stone, the Hearth, the Weaver) and the Guest's last; months of 28 days, so a weekday keeps its dates; twelve months in four seasons of three; the tale begun on the first day of the first autumn month (month 6 of 0–11), year 1, the year turning with the first month of spring. Every name (*the Sea’s day* … *the Guest’s day*) is a placeholder in the one table `CAL`, to be swapped for the quest writer's; the order of the days is theirs to change too. The date line the player reads is unchanged (*Day 12 · 7:40 am*) until the names come, so no test or slot line moves.
+
+The rule: on its god's own day a shrine's boon lasts twice as long (3,600 s of buff, two game days, against 1,800), and the altar says so, *It is the Beasts’ day. You are restored, and carry the Boon of the Arm two days.* The once-a-day stays. The Weaver's shrine gives a rubbing, not a boon, and its day doubles nothing. Today's weeks already start on day 1, 8, 15…, so the weekly rent (`tickRents`) already falls on the first day of the week; the next slice names it in the *Due* view.
+
+### Verified (headless Chromium)
+`calendar` 10/10 (new). Day 1 is the Sea's day, the 1st, autumn, year 1; day 7 the Guest's, day 8 the Sea's again; the 28th and then the 1st of the next month, still the Sea's day; 84 days on is winter, the year turns at day 169 (month 0, spring), and 336 days on is the same date and weekday a year later. At the Shrine of Na Beithígh (cell 4,10) on the Beasts' day the Boon of the Arm holds 3,600 and the line names the day; prayed again the same day the altar is quiet; on the next day it holds 1,800, *until tomorrow*. `parsecheck` clean. Build tag s423.
+
+### Needs eyes
+- The names and the order of the days are placeholders for the quest writer.
+- Owed under B: the *Due* view (rent day, the ship, the masons, the next market and feast), market days and their stall, the four feasts, dated work, the seasons in the weather.

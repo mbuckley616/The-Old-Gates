@@ -256,6 +256,19 @@ function gameDateLine(at,tod){ /* S486 — at, tod: a journal line's stamp; none
   const h12=((hh+11)%12)+1,ap=hh<12?'am':'pm';
   return `Day ${day} · ${h12}:${String(mm).padStart(2,'0')} ${ap}`;
 }
+// S496 — the calendar the world keeps (Michael's C on DECISION #132, part B; docs/design/journal-and-calendar.md): a week of
+// seven days, a day to each god (the six with shrines, then the Guest's), months of 28 days so a weekday keeps its dates,
+// twelve months in four seasons of three (the year turns with the first month, spring), a tale begun on the first day of
+// the first autumn month. Every name here is a
+// placeholder for the quest writer's; they live in this one table and nothing else spells them.
+const CAL={days:[{god:'muir',name:'the Sea’s day'},{god:'speir',name:'the Sky’s day'},{god:'beithigh',name:'the Beasts’ day'},{god:'cloch',name:'the Stone’s day'},{god:'teallach',name:'the Hearth’s day'},{god:'fiodoir',name:'the Weaver’s day'},{god:'guest',name:'the Guest’s day'}],
+  monthLen:28,months:12,seasons:['spring','summer','autumn','winter'],startMonth:6,startYear:1};
+function calDay(at){
+  const abs=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0);const n=Math.floor(Math.max(0,abs)/1440);
+  const wd=n%CAL.days.length,mAbs=CAL.startMonth+Math.floor(n/CAL.monthLen),month=mAbs%CAL.months;
+  return {n,weekday:wd,day:CAL.days[wd],god:CAL.days[wd].god,dom:n%CAL.monthLen+1,month,season:CAL.seasons[Math.floor(month/3)],year:CAL.startYear+Math.floor(mAbs/CAL.months)};
+}
+function isGodsDay(god,at){return !!god&&calDay(at).god===god;}
 function openSleepUI(){
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   let ov=document.getElementById('sleepui');
