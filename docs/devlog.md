@@ -11632,3 +11632,14 @@ The formulas and their odds are unchanged.
 
 ### Needs eyes
 Nothing by play.
+
+## v80 — Session 481 — A slain slime splits the same way on two machines (backlog K step 1)
+When a Slime dies, `killE` drops two Small Slimes within 0.6 units of the body. Their spots were `Math.random`, and they had no id, so the split and every roll of their fight differed between machines. The spots now come from the slain slime's own stream, `foeRand(e)`. Each Small Slime is keyed `<slime's id>:s0` and `:s1`, so its blows and corpse roll on its stream (Sessions 477–478). An unkeyed slime still splits on `Math.random`.
+
+Black sails and merchantmen stay as they are. They are random encounters, spawned at random bearings 260–460 units from you while you sail, so nothing about them has a place to key by. Their chest and crew want an encounter id, which is step 3's work. Backlog K says so.
+
+### Verified (headless Chromium)
+`slimeseed` 4/4 (new). In Dowor Keep (seed 519737), the slime `519737:1:3` was killed twice, on two entries with 211 `Math.random` draws stirred in between. Both times it split to 27.321,19.062 and 27.263,19.315, as `519737:1:3:s0` and `:s1`, each with a stream. On the old code the two splits fell at 26.834,19.170 / 27.529,19.116 and 27.361,19.209 / 27.397,19.193, with no ids; both checks for the fix fail. `slimes` and `slimesplit` pass, 13 checks with `slimeseed`. `parsecheck` clean. Build tag s412.
+
+### Needs eyes
+Nothing by play.

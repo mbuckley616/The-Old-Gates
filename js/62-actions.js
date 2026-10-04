@@ -382,8 +382,9 @@ function killE(e,tag=''){
     // Skip if this is already a Small Slime that got here somehow
     const smallDef = {col:0x5fd85f,hp:10,spd:0.75,scale:0.42,buildFn:'slime',dmgMult:1.2,ranged:false,eyeCol:0xffdd44,light:0x44ff44,def:0,resist:{cloch:1.35,tine:1.5,uisce:0.7}};
     for(let s=0; s<2&&_dungeonBuildEnemy; s++){
-      const offX = (Math.random()-0.5) * 1.2;
-      const offZ = (Math.random()-0.5) * 1.2;
+      // S481 — where the two fall is the slain slime's own roll, and each is keyed by it: <slime's id>:s<k> (co-op rules)
+      const offX = (foeRand(e)-0.5) * 1.2;
+      const offZ = (foeRand(e)-0.5) * 1.2;
       const sx = e.x + offX, sz = e.z + offZ;
       const nb = _dungeonBuildEnemy(smallDef);
       const byE = (0)+floorGroundY; // slimes sit on floor
@@ -397,6 +398,7 @@ function killE(e,tag=''){
         floor:e.floor, def:smallDef.def, resist:smallDef.resist, baseType:'Slime', variant:'small',
         drainCd:0, disguised:false, dormant:false, fleeT:0, telegraphT:0, telegraphMax:0,
         buildFn:'slime', combatYaw:Math.random()*Math.PI*2});
+      if(e.id)keyFoe(ENEMIES[ENEMIES.length-1],e.id+':s'+s);
       // v61gj — Posture init for split-spawned Small Slime
       initPosture(ENEMIES[ENEMIES.length-1]);
     }
