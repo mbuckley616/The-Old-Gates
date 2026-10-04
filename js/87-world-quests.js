@@ -172,8 +172,16 @@
   function qFind(id){return QJ().find(q=>q.id===id);}
   function qActive(){return QJ().filter(q=>!q.turnedIn);}
   function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
-  function qComplete(q){if(q.done)return;q.done=true;showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);}
-  function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(q.reward);q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
+  // S499 — dated work (Michael's C on DECISION #132, part B): a lord's job may carry a date, q.due (the first minute after
+  // its last day). Done by then it pays a quarter more; past it, undone, the lord takes it back. One job in three is dated,
+  // 7 to 14 days out, rolled from a stream keyed by the town and the day it was given (the co-op rule on seeded rolls).
+  function datedWork(q,site){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);const r=seededRng('dated:'+site.id,day);if(r()>=1/3)return q;q.due=(day+7+Math.floor(r()*8)+1)*1440;return q;}
+  function datedPay(q){return q.due&&q.doneAt!=null&&q.doneAt<q.due?Math.round((q.reward||0)*1.25):(q.reward||0);}
+  function datedLapse(q){if(!q||!q.due||q.done||q.turnedIn||(worldState.gameTimeAbsMinutes||0)<q.due)return false;q.turnedIn=true;q.lapsed=true;if(typeof addLog==='function')addLog('📜',`${q.title}: the date passed, and ${q.giver} has given the work to someone else.`);showMsg(`${q.title}: the date has passed. The work is taken back.`,'#c8b880');return true;}
+  let _datedAt=0;
+  function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(datedLapse);}
+  function qComplete(q){if(q.done||q.lapsed)return;if(datedLapse(q))return;q.done=true;q.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);}
+  function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(datedPay(q));q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
   // ── town quests ──
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
   // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
@@ -194,8 +202,8 @@
   function lordTopics(site){
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
-    return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id))qAdd(q);if(q.done)return `You've done it? Then ${q.reward} gold, with the ${site.kind}'s thanks.`;return q.desc+` (${q.reward} gold.)`;}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+    return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
+            {label:'It\u2019s done.',quest:true,fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -1243,6 +1251,7 @@
     const T=worldState.towns||{};for(const id in T){const st=T[id];if(!st||!st.builds)continue;const t=siteAnywhere(id);st.builds.forEach(b=>{if(!b.done&&b.doneDay!=null)out.push({at:b.doneDay*1440,icon:'🧱',text:`The ${b.name} at ${t?t.name:'the town'} finished.`});});}
     const rn=worldState.rented;if(rn&&rn.until>now){out.push({at:rn.until,icon:'🛏',text:'The room you let is the innkeeper’s again.'});}
     const cs=worldState.coachSeat;if(cs&&typeof cs.at==='number'){const m=((cs.tod%1440)+1440)%1440;out.push({at:cs.at,icon:'🐎',text:`Your seat on the ${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')} coach.`});}
+    qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
