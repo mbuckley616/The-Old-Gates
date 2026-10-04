@@ -158,6 +158,24 @@ function journalNoteSubmit(){const el=document.getElementById('jn-note');if(!el)
 function journalSearch(v){_jnSearch=String(v||'');const L=document.getElementById('jn-topics');if(L)L.innerHTML=_jnTopicsHTML();}
 let _jnView='day';
 function _jnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// S494 — names in an entry are links to their topic (DECISION #132, part C): a name the Topics view knows (who told you,
+// the town they told you in, or a capitalised name in a topic's label past its first word, *Tell me about Ashenmoor.*)
+// is a link wherever a journal line says it, whole word and case as written; a click opens Topics searched for it
+function journalNames(){
+  const T=worldState.told||{},N=new Set();
+  Object.values(T).forEach(e=>{if(!e)return;[e.s,e.w].forEach(x=>{x=String(x||'').trim();if(x.length>=3)N.add(x);});
+    const w=String(e.l||'').replace(/[?.!,;:—]/g,' ').split(/\s+/).filter(Boolean);let run=[];
+    const flush=()=>{if(run.length){const n=run.join(' ');if(n.length>=3)N.add(n);}run=[];};
+    for(let i=1;i<w.length;i++){if(/^[A-Z][a-z’']+$/.test(w[i]))run.push(w[i]);else flush();}flush();});
+  return [...N].sort((a,b)=>b.length-a.length);
+}
+function _jnLinked(text,names){
+  text=String(text);if(!names||!names.length)return _jnEsc(text);
+  const re=new RegExp('(^|[^\\p{L}\\p{N}])('+names.map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![\\p{L}\\p{N}])','gu');
+  let out='',at=0;text.replace(re,(m,pre,name,off)=>{const i=off+pre.length;out+=_jnEsc(text.slice(at,i))+`<a class="jn-link" href="#" data-n="${_jnEsc(name).replace(/"/g,'&quot;')}" onclick="journalLink(this.dataset.n);return false">${_jnEsc(name)}</a>`;at=i+name.length;return m;});
+  return out+_jnEsc(text.slice(at));
+}
+function journalLink(name){_jnSearch=String(name||'');journalView('topics');}
 function _jnTime(e){return gameDateLine(e.t,e.tod).replace(/^Day \d+ · /,'');}
 function renderJournal(){
   const body=document.getElementById('jn-body');if(!body)return;
@@ -167,8 +185,9 @@ function renderJournal(){
   const noteBox=_jnView==='day'?'<div id="jn-write"><textarea id="jn-note" maxlength="500" rows="2" placeholder="Write a line of your own (Enter writes it)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();journalNoteSubmit();}"></textarea><button type="button" onclick="journalNoteSubmit()">Write it</button></div>':'';
   if(!L.length){body.innerHTML=noteBox+'<div class="jn-empty">Nothing written yet.</div>';return;}
   const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||null;
+  const names=journalNames();
   const line=(e,withQ)=>{const d=e.q&&withQ?qd(e.q):null;
-    return `<div class="jn-line${e.q?' jn-q':''}${e.note?' jn-note':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnEsc(e.text)}</span></div>`;};
+    return `<div class="jn-line${e.q?' jn-q':''}${e.note?' jn-note':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnLinked(e.text,names)}</span></div>`;};
   let html='';
   if(_jnView==='quest'){
     const ids=[];L.forEach(e=>{if(e.q&&ids.indexOf(e.q)<0)ids.push(e.q);});
@@ -177,7 +196,7 @@ function renderJournal(){
     if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
     ids.forEach(id=>{const d=qd(id),s=st(id);
       html+=`<div class="jn-day"><div class="jn-head">${_jnEsc(d?d.title:id)}<span class="jn-state">${s==='complete'?'complete':inHand(id)?'in hand':''}</span></div>`+
-        L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod)):''}</span><span class="jn-text">${_jnEsc(e.text)}</span></div>`).join('')+'</div>';});
+        L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod)):''}</span><span class="jn-text">${_jnLinked(e.text,names)}</span></div>`).join('')+'</div>';});
   } else {
     const days=new Map();L.forEach(e=>{const k=typeof e.t==='number'?Math.floor(e.t/1440):-1;if(!days.has(k))days.set(k,[]);days.get(k).push(e);});
     [...days.keys()].sort((a,b)=>b-a).forEach(k=>{

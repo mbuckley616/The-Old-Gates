@@ -11853,3 +11853,13 @@ The Journal's *By day* view opens on a box, *Write a line of your own (Enter wri
 
 ### Needs eyes
 - The box in play: Enter writes, Shift+Enter breaks a line, Escape leaves it. The hand the notes are drawn in falls back to the page's serif where the machine has no script face.
+
+## v80 — Session 494 — Names in an entry are links to their topic (DECISION #132, part C, third slice)
+Part C's page: *names in an entry are links to their topic.* The topic labels are questions (*Tell me about Ashenmoor.*, *What is this place?*), not names, so the names are taken from what the Topics view already holds: who told you (`s`), the town they told you in (`w`), and any run of capitalised words in a label past its first word (*Ashenmoor*, *Enchanted Ring*, *Bram*; an all-capitals word like *GET* is skipped). `journalNames` (`66-hub.js`) gathers them, longest first so *Old Tadhg* wins over a shorter name inside it, and `_jnLinked` writes each one a journal line says, whole word and in the case written, as a link; the rest of the line is escaped as before. A click (`journalLink`) opens the Topics view with the search set to that name, which already matches the teller, the town, the label and the answer. The links are drawn in the By day and By quest views, your own notes included; a name nobody has told you about stays plain text, so the links grow as you ask.
+
+### Verified (headless Chromium)
+`jnlinks` 6/6 (new). With three topics told (by *Old Tadhg* about Ashenmoor and the Enchanted Ring, by *Brona Keane* in Dunmore), the names are those five and never a label's first word; a line naming four of them gets four links, a note naming two gets two, and *Ashenmoorish*, lower-case *tadhg* and a literal `<b>` in a line stay text (6 links in all). A click on *Ashenmoor* opens Topics searched for it, showing *Tell me about Ashenmoor.* and not Dunmore's answer; a click on *Brona Keane* shows hers alone. `journal` and `told` pass. `parsecheck` clean. Build tag s421.
+
+### Needs eyes
+- The links' gold dotted underline on the page. A town's generated person with a name that is also a word (a *Wren*, a *Rose*) will link that word wherever it is capitalised.
+- Owed under part C: notes pinned to the map.
