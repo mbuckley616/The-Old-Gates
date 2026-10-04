@@ -11925,3 +11925,12 @@ Session 499 dated the lords' jobs; the design page says *a guild or town task ma
 ### Needs eyes
 - As Session 499: whether a quarter more is worth racing for.
 - Owed under B: market days and their stall, the four feasts (both want the quest writer's names and lines, and the stall a prop).
+
+## v80 — Session 501 — `shoperrands` handed the draught to whoever had walked nearest (tests only)
+Found in Session 500's run: at noon the Mages' draught went to *Cathal*, not the test's *Niamh*. The test places the player 1.2 units from the chosen townsperson, lets two frames pass, places again and presses E; E talks to the nearest person in reach, and in those frames another of Dunmore's people can walk nearer. The game did as it should. The test now sets anyone else within 3 units of the spot 6 units off before pressing E. No game code changed; no build tag.
+
+### Verified (headless Chromium)
+`shoperrands` passes: the draught taken by Niamh at noon and Lorcan at dusk, as the test means.
+
+### Needs eyes
+Nothing.

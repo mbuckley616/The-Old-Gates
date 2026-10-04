@@ -1,7 +1,7 @@
 // Section G, shop hours (Session 151): does any errand or turn-in need a shop open at dusk? (Session 235)
 // The one errand that reaches a townsperson by their house is the Mages' draught: "ask the first resident you meet",
 // taken by anyone who keeps a house in the town (a home or a shop). This counts, by the hour, who in Dunmore would
-// take it, and hands it over at noon and at dusk.
+// take it, and hands it over at noon and at dusk. Session 501: anyone else near the spot is moved off before E (a race).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -22,7 +22,9 @@ const hand = async (hour) => {
     n._scared = performance.now() + 1; window._n = n; px = n.g.position.x; pz = n.g.position.z + 1.2; jumpY = n.g.position.y; yaw = 0; pitch = 0;
     return { name: n.def.name, type: n.sched.type }; }, hour);
   if (!who) return { hour, who: null };
-  await g.frames(2); await page.evaluate(() => { px = _n.g.position.x; pz = _n.g.position.z + 1.2; jumpY = _n.g.position.y; });
+  await g.frames(2); await page.evaluate(() => { px = _n.g.position.x; pz = _n.g.position.z + 1.2; jumpY = _n.g.position.y;
+    /* S501 — anyone else who has walked within 3 units of the spot is set 6 units off, so E reaches the one chosen (at noon Cathal once came nearer than Niamh) */
+    for (const m of WORLD.settle.get('dunmore').npcs) { if (m === _n) continue; const dx = m.g.position.x - px, dz = m.g.position.z - pz, d = Math.hypot(dx, dz); if (d < 3) { const k = 6 / Math.max(d, .01); m.g.position.x = px + (d > .01 ? dx : 1) * k; m.g.position.z = pz + (d > .01 ? dz : 0) * k; } } });
   await page.keyboard.press('e'); await g.frames(2);
   return page.evaluate(([hour, who]) => { const G = WORLD.guild.state(); const t = G.guild_m.active; const r = { hour, who: who.name, sched: who.type, done: !!t.done, took: t.who, msg: (document.getElementById('msg') || {}).textContent };
     G.guild_m.active = null; try { closeDialog(); } catch (e) {} return r; }, [hour, who]); };
