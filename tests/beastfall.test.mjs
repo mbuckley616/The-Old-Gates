@@ -34,6 +34,16 @@ const r = await page.evaluate(() => {
   };
   for (const k of ['Wolf', 'Snow Wolf', 'Dire Wolf', 'Ash Hound', 'Boar', 'Cave Bear', 'Spider']) out.kinds[k] = kill(k, k === 'Dire Wolf' ? ' (POWER)' : '');
   for (let i = 0; i < 8; i++) out.wolves.push(kill('Wolf', i % 3 === 1 ? ' (POWER)' : i % 3 === 2 ? ' (ARROW)' : ''));
+  // S482: sixty wolf deaths at four spots on seeded draws, each stepped to rest (CI: one wolf crept on a raised foreleg past the cap;
+  // 1 in 80 here, before the beasts had the people's floor grip)
+  { const rr = Math.random, px0 = px, pz0 = pz; out.seeded = [];
+    for (let s = 1; s <= 60; s++) { let a = s * 9301 + 49297; Math.random = () => { a = (a * 1103515245 + 12345) % 2147483648; return a / 2147483648; };
+      const ang = (s % 4) * 1.1, dist = 4 + (s % 3) * 1.5, x = px0 + Math.sin(ang) * dist, z = pz0 + Math.cos(ang) * dist;
+      const e = buildZoneEnemy(WORLD.scene, [], x, z, 'Wolf', null); e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
+      e.mesh.position.set(x, activeTerrainH(x, z), z); e.mesh.updateMatrixWorld(true); e.hp = 0; killZoneEnemy(e, WORLD.scene, s % 3 === 1 ? ' (POWER)' : s % 3 === 2 ? ' (ARROW)' : '');
+      const R = [...RAGDOLLS].find(q => q.rig === e.limbs.wolf); let i = 0; while (R && RAGDOLLS.has(R) && i < 300) { tickRagdolls(1 / 60); i++; }
+      out.seeded.push(R && R.t <= 4 ? +R.t.toFixed(2) : 9); WORLD.scene.remove(e.mesh); }
+    Math.random = rr; }
   // the cost: one wolf's fall stepped by itself
   { const x = px + fwdX * 3 + fwdZ * 5, z = pz + fwdZ * 3 - fwdX * 5, e = buildZoneEnemy(WORLD.scene, [], x, z, 'Wolf', null); e.locked = false; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.mesh.position.set(x, activeTerrainH(x, z), z); e.hp = 0; killZoneEnemy(e, WORLD.scene, ''); const R = [...RAGDOLLS].find(q => q.rig === e.limbs.wolf);
@@ -56,6 +66,8 @@ check('the wolves fall away from you (none but one more than 5 cm towards you; o
 check('the wolves are no longer standing: the back tipped past 45° in every death', ws.every(w => w.up < .71), ws.map(w => w.up));
 check('most wolves end on the flank rather than the back (back up between -.5 and .71)', ws.filter(w => w.up > -.5).length >= Math.ceil(ws.length * .6), ws.map(w => w.up));
 check('every wolf settles, and the deaths differ (the hips land in different places)', ws.every(w => w.settled > 0 && w.settled < 4) && new Set(ws.map(w => w.spread)).size > 3, ws.map(w => w.settled));
+{ const st = [...r.seeded].sort((a, b) => a - b); console.log('seeded wolves: median', st[30], 'slowest', st[59], 'over 2.5 s', st.filter(x => x > 2.5).length);
+  check('sixty seeded wolf deaths: the median rests within 1.6 s, none meets the cap, at most one takes over 2.5 s', st.length === 60 && st[30] < 1.6 && st[59] < 4 && st.filter(x => x > 2.5).length <= 1, { median: st[30], slowest: st.slice(-3) }); }
 const sp = r.kinds.Spider;
 check('a spider keeps its curl where it stands: no ragdoll, no 90° turn, on the ground', sp.rig && !sp.ragdoll && sp.rotZ === 0 && Math.abs(sp.lift) < .01, sp);
 check('a beast\'s fall costs under 15 ms a step (about 1 ms alone; a loaded runner is slower)', r.msPerStep > 0 && r.msPerStep < 15, r.msPerStep);
