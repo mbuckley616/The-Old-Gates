@@ -526,7 +526,7 @@ function playerDead(){
     ov.querySelector('#died-menu').onclick=()=>{location.reload();};
   }
   const _k=(typeof ssActiveKey==='function')?ssActiveKey():null;const d=_k?ssEntry(_k):null;
-  ov.querySelector('#died-sub').textContent=d?`Last save: ${d.kind==='auto'?'autosave':'slot '+(d.slot+1)} — ${d.zone==='world'?'the open country':d.zone||'…'}, level ${d.level||'?'}`:'No save found.';
+  ov.querySelector('#died-sub').textContent=d?`Last save: ${d.kind==='auto'?'autosave':'slot '+(d.slot+1)} — ${d.place||(d.zone==='world'?'the open country':d.zone||'…')}, level ${d.level||'?'}`:'No save found.';
   ov.style.display='flex';
 }
 // Reload the active slot in place (used by the death screen).

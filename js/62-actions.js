@@ -163,7 +163,7 @@ function _resolveDungeonStrike(_isPow){
       // rear cone) takes SHIELDBEARER_FRONT_BLOCK of the damage. shieldFrontMult
       // returns 1.0 for everything else and for flanking hits.
       const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const rawDmg=Math.floor((lo+Math.floor(Math.random()*(hi-lo))+Math.floor(level*1.5))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
+      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
       e.hp=Math.max(0,e.hp-dmg);
@@ -225,6 +225,10 @@ function _resolveDungeonStrike(_isPow){
 // Arrow geometry: small elongated box with a sub-cone tip + tail fletching.
 // Built fresh per shot (no template caching yet — defer to Session 4 if perf
 // becomes an issue; arrows are sparse compared to enemy orbs).
+// S480 — an arrow's damage at the hit: a keyed foe (keyFoe) rolls the bow's and the arrow's spread from its own stream, as a
+// swing does; anything else takes the roll made at release
+function arrowRawFor(u,e){const R=u&&u.roll;if(!R||!e||!e.rng)return u.arrowDmg;
+  const b=R.bLo+Math.floor(foeRand(e)*Math.max(1,R.bHi-R.bLo)),a=R.aLo+Math.floor(foeRand(e)*Math.max(1,R.aHi-R.aLo));return Math.max(1,Math.floor((b+a+R.lv)*R.m));}
 function fireArrow(strength){
   const ammo = EQ.ammo;
   const bow = EQ.weapon;
@@ -308,6 +312,9 @@ function fireArrow(strength){
     life: ARROW_LIFE,
     isArrow: true,
     arrowDmg: rawDmg,
+    // S480 — the roll's terms, so the hit rolls the spread on the struck foe's stream (arrowRawFor); arrowDmg is the roll
+    // for a target with no id
+    roll: {bLo: bowLo, bHi: bowHi, aLo, aHi, lv: lvlFloor, m: drawMult * finesseMult},
     wType: wTypeResolved,
     // Carry source-bow ref for hit-message attribution (no need to retain
     // ammo ref — damage was already rolled).
@@ -364,7 +371,7 @@ function killE(e,tag=''){
   // Items array (possibly empty) — panel displays and the prompt hides once items.length===0.
   const ds = currentPortal?currentPortal.diffScale:null;
   const th = currentPortal?currentPortal.theme:null;
-  const items = rollContainerLoot('corpse', ds, th, lootDropChance(e));
+  const items = rollContainerLoot('corpse', ds, th, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
   const drops = items.length > 0;
   CORPSES.push({x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});
   if(drops){showMsg(`${e.name} slain!${tag} Press E to loot.`,'#c8a84a');}
@@ -375,8 +382,9 @@ function killE(e,tag=''){
     // Skip if this is already a Small Slime that got here somehow
     const smallDef = {col:0x5fd85f,hp:10,spd:0.75,scale:0.42,buildFn:'slime',dmgMult:1.2,ranged:false,eyeCol:0xffdd44,light:0x44ff44,def:0,resist:{cloch:1.35,tine:1.5,uisce:0.7}};
     for(let s=0; s<2&&_dungeonBuildEnemy; s++){
-      const offX = (Math.random()-0.5) * 1.2;
-      const offZ = (Math.random()-0.5) * 1.2;
+      // S481 — where the two fall is the slain slime's own roll, and each is keyed by it: <slime's id>:s<k> (co-op rules)
+      const offX = (foeRand(e)-0.5) * 1.2;
+      const offZ = (foeRand(e)-0.5) * 1.2;
       const sx = e.x + offX, sz = e.z + offZ;
       const nb = _dungeonBuildEnemy(smallDef);
       const byE = (0)+floorGroundY; // slimes sit on floor
@@ -390,6 +398,7 @@ function killE(e,tag=''){
         floor:e.floor, def:smallDef.def, resist:smallDef.resist, baseType:'Slime', variant:'small',
         drainCd:0, disguised:false, dormant:false, fleeT:0, telegraphT:0, telegraphMax:0,
         buildFn:'slime', combatYaw:Math.random()*Math.PI*2});
+      if(e.id)keyFoe(ENEMIES[ENEMIES.length-1],e.id+':s'+s);
       // v61gj — Posture init for split-spawned Small Slime
       initPosture(ENEMIES[ENEMIES.length-1]);
     }

@@ -9,6 +9,12 @@
 // Wolf/spider/troll enemy builders for overworld combat
 // Monster Overhaul Session 1: each enemy gains `def` (flat damage reduction) and `resist` (per-school multiplier map).
 // Resist keys match SPELLS[i].school (tine/uisce/gaoth/cloch/scath/solas). Missing keys default to 1.0 (neutral).
+// v80 S477 — co-op rules (Michael's A on #119): a foe with an id (its place and index, never a position) carries its own
+// stream, e.rng = seededRng('foe', id), and every roll that decides its fight (its blows, its arrows' sting and timing, its
+// flank, your swing's spread on it) draws from foeRand(e), so two machines that agree on the id roll the same fight.
+// A foe with no id yet (camps, raids, quest spawns) rolls Math.random, as before.
+function keyFoe(e,id){if(e){e.id=String(id);e.rng=seededRng('foe',e.id);}return e;}
+function foeRand(e){return e&&e.rng?e.rng():Math.random();}
 // ── BOSSES (module-top) ────────────────────────────────────────────
 // v61c2 (Faolchú): boss enemies are scripted spawns, not procedural pool
 // roster entries. They mount onto ZE alongside regular zone enemies, share
@@ -307,15 +313,16 @@ function spawnFaolchu(){
   // Spawn position — village square, north of Bram's forge. Slight
   // randomization within ~0.5u so the boss isn't on the exact same patrol
   // tile every reload (visual variety only; doesn't affect fight).
-  const sx = 32 + (Math.random()-0.5)*0.6;
-  const sz = 32 + (Math.random()-0.5)*0.6;
+  const fr = seededRng('faolchu','spawn');
+  const sx = 32 + (fr()-0.5)*0.6;
+  const sz = 32 + (fr()-0.5)*0.6;
   const ey = (typeof activeTerrainH==='function') ? activeTerrainH(sx,sz) : 0;
   // Add to the active overworld scene. After the burn fires,
   // ZONE_BUILDERS.overworld.sceneGet returns owBurnedScene; before, owScene.
   const sc = (typeof owBurnedScene!=='undefined' && owBurnedScene)
              ? owBurnedScene
              : owScene;
-  const e = faolchuAt(sc, sx, sz, ey);
+  const e = keyFoe(faolchuAt(sc, sx, sz, ey), 'ashenmoor:faolchu');
   ZE.push(e);
   // Also push into ZONES.overworld.enemies so a zone re-entry that re-reads
   // the array doesn't lose the reference. ZE is a reference to that array
@@ -369,8 +376,8 @@ function spawnLesserFaolchu(parentBoss){
   // add doesn't materialize on top of the player or the boss.
   const baseX = parentBoss ? parentBoss.x : 32;
   const baseZ = parentBoss ? parentBoss.z : 32;
-  const ang = Math.random() * Math.PI * 2;
-  const dist = 2.5 + Math.random() * 1.0;
+  const ang = foeRand(parentBoss) * Math.PI * 2;
+  const dist = 2.5 + foeRand(parentBoss) * 1.0;
   const sx = baseX + Math.cos(ang) * dist;
   const sz = baseZ + Math.sin(ang) * dist;
   // Lesser stat block — quarter HP, half damage, slightly slower than boss.
@@ -870,12 +877,12 @@ function unlockFoe(e){if(!e)return e;e.locked=false;e.minLevel=1;if(e.mesh)e.mes
 function alertPack(e,r){try{const E=(activeZoneId==='world'&&ZONES.world)?ZONES.world.enemies:(typeof ZE!=='undefined'?ZE:[]);for(const o of E){if(o===e||o.dead||o.alert)continue;if(Math.hypot(o.x-e.x,o.z-e.z)<r)o.alert=true;}}catch(err){}}
 // v80 S135 — an archer's arrow: a shaft that flies flat at the player and can be blocked
 const ZARROWS=[];
-function fireZoneArrow(e,sc){const ax=px-e.x,az=pz-e.z,ad=Math.hypot(ax,az)||1;
+function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.hypot(ax,az)||1;
   const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.7),new THREE.MeshLambertMaterial({color:0x9a7a4a}));const y=activeTerrainH(e.x,e.z)+1.0;m.position.set(e.x,y,e.z);m.rotation.y=Math.atan2(ax,az);sc.add(m);
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
-    if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
+    if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(foeRand(a.from)*4));
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
       if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${hitD}!`,'#ff6060');}
@@ -897,7 +904,8 @@ function tickZoneEnemies(dt,now,sc){
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);
     tickPostureRegen(e, dt, now);
-    const dist=Math.hypot(px-e.x,pz-e.z);
+    const T=targetOf(e); /* S468 — co-op rule: the foe's target, never px/pz */
+    const dist=Math.hypot(T.x-e.x,T.z-e.z);
     // v61c2 — Boss-specific tick block. Runs alongside the standard enemy
     // tick path so the boss inherits chase/AI/HP-bar updates. Adds:
     //   (1) sigil-trace pulse — emissive red on the seams, breathing in/out
@@ -988,7 +996,7 @@ function tickZoneEnemies(dt,now,sc){
       // it coming and dodge by sprinting laterally. Fires from the snout
       // at the player's position (locked at telegraph end, so a moving
       // player can sidestep).
-      const _bossDist = Math.hypot(px-e.x, pz-e.z);
+      const _bossDist = Math.hypot(T.x-e.x, T.z-e.z);
       if(e.alert && e.caorChargeT>0){
         // Currently winding up — advance charge timer, pulse sigils
         e.caorChargeT -= dt;
@@ -1002,7 +1010,7 @@ function tickZoneEnemies(dt,now,sc){
           // player's CURRENT position (locked at fire time, not telegraph
           // start, so the player must keep moving to dodge consistently).
           e.caorChargeT = 0;
-          const dxF = px - e.x, dzF = pz - e.z;
+          const dxF = T.x - e.x, dzF = T.z - e.z;
           const ddF = Math.hypot(dxF, dzF) || 1;
           // Snout origin — boss's body center plus forward offset based
           // on current facing (boss mesh.lookAt's the player each tick,
@@ -1048,7 +1056,7 @@ function tickZoneEnemies(dt,now,sc){
           sc.add(orb);
           ZB.push(orb);
           // Reset cooldown — 8-12s spread for next shot
-          e.caorCd = 8 + Math.random() * 4;
+          e.caorCd = 8 + foeRand(e) * 4;
           if(typeof sndFaolchuRoar==='function'){
             // Brief wet-fire crackle as the orb leaves
             sfxNoise(0.20, 1, 1, 0.30, 1400);
@@ -1083,11 +1091,14 @@ function tickZoneEnemies(dt,now,sc){
       } else {
         const ety=activeTerrainH(e.x,e.z);
         e.mesh.position.set(e.x,ety,e.z);
-        e.mesh.lookAt(px,ety,pz);
+        e.mesh.lookAt(T.x,ety,T.z);
         e.el.position.set(e.x,ety+.8,e.z);
         return;
       }
     }
+    // S441 — a lair beast's charge and its daze (tickBehaviours, the world) move and hold it themselves: no chase and no
+    // blow of the ordinary kind meanwhile, or the chase bent the charge off its line and a dazed beast walked after you and bit
+    if(e._charge!=null||e._stun>0){const ety=activeTerrainH(e.x,e.z);e.mesh.position.y=ety;e.el.position.set(e.x,ety+.8,e.z);return;}
     // v63 — Directional detection. Vision cone (forward 150° arc) + hearing
     // radius (1.5u omnidirectional). Sight is modulated by detectReduce buffs
     // and sneak; hearing is not. LOS check (step-cast for walls) added — the
@@ -1097,7 +1108,7 @@ function tickZoneEnemies(dt,now,sc){
     if(!e.alert && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?15:9)){ // v80 S135 — the open country sees further
       let los = true;const _losSolid=(_inWorld&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid; // trunks and posts don't hide you
       for(let t = 0.15; t < 0.9; t += 0.15){
-        const tx = e.x + (px - e.x) * t, tz = e.z + (pz - e.z) * t;
+        const tx = e.x + (T.x - e.x) * t, tz = e.z + (T.z - e.z) * t;
         if(_losSolid(tx, tz)){ los = false; break; }
       }
       if(los){ e.alert = true; alertPack(e, _inWorld?16:10); }
@@ -1121,7 +1132,7 @@ function tickZoneEnemies(dt,now,sc){
       return;
     }
     // Chase player
-    let dx2=px-e.x,dz2=pz-e.z,d=Math.hypot(dx2,dz2)||1;
+    let dx2=T.x-e.x,dz2=T.z-e.z,d=Math.hypot(dx2,dz2)||1;
     const _stopDist = e.isBoss ? Math.max(1.5, (e.bossDef.biteRange||2.0)-1.0) : 1.0;
     const _archer=/Archer|Slinger/.test(e.name||'');
     if(_archer){ // v80 S135 — archers keep 6–13u, back off when you close, and shoot
@@ -1129,10 +1140,10 @@ function tickZoneEnemies(dt,now,sc){
       let want=0;if(d<6)want=-1;else if(d>13)want=1;
       if(want!==0){const step=e.spd*dt*(want<0?1.2:1);const nx=e.x+dx2/d*step*want,nz=e.z+dz2/d*step*want;if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}}
       if(e.alert&&d>=3&&d<=17&&e.arrowCd<=0&&e.telegraphT<=0){let los=true;const _ls=(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid;for(let t=.1;t<.95;t+=.15){if(_ls(e.x+dx2*t,e.z+dz2*t)){los=false;break;}}
-        if(los){e.arrowCd=2.2+Math.random()*.8;fireZoneArrow(e,sc);}}
+        if(los){e.arrowCd=2.2+foeRand(e)*.8;fireZoneArrow(e,sc);}}
     } else if(e.alert&&!e.isBoss){ // v80 S135 — a pack spreads: each takes an angle around you instead of queueing on one line
       const packN=ZE.filter(o=>!o.dead&&o.alert&&o!==e&&Math.hypot(o.x-e.x,o.z-e.z)<14).length;
-      if(packN>0){if(e._flank==null)e._flank=(Math.random()<.5?-1:1)*(.5+Math.random()*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=px-Math.cos(base+e._flank)*r,tz=pz-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
+      if(packN>0){if(e._flank==null)e._flank=(foeRand(e)<.5?-1:1)*(.5+foeRand(e)*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
     }
     if(!_archer&&d>_stopDist){
       const step=e.spd*dt*(e.alert&&!e.isBoss?1.25:1); // alert, they come at a run
@@ -1140,14 +1151,14 @@ function tickZoneEnemies(dt,now,sc){
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
     }
     e.mesh.position.set(e.x,activeTerrainH(e.x,e.z),e.z);
-    e.mesh.lookAt(px,activeTerrainH(e.x,e.z),pz);
+    e.mesh.lookAt(T.x,activeTerrainH(e.x,e.z),T.z);
     // v63 — Live-update combatYaw only when NOT mid-attack. The visual mesh
     // turret tracks the player every frame, but combat facing freezes during
     // windup (telegraphT > 0) and recovery (atkCd > 0) — the player can
     // sidestep their swing and circle into the back arc during those windows.
     // Idle alert state keeps facing live: no back available to attack head-on.
     if(e.telegraphT <= 0 && e.atkCd <= 0){
-      e.combatYaw = Math.atan2(px - e.x, pz - e.z);
+      e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
     }
     e.el.position.set(e.x,activeTerrainH(e.x,e.z)+.8,e.z);
     e.hpFg.scale.x=e.hp/e.maxHp;
@@ -1181,7 +1192,7 @@ function tickZoneEnemies(dt,now,sc){
         }
         if(strikeReaches(e)){
           const def2=_armour();
-          const rawDmg=Math.max(1,e.dmg-Math.floor(def2*.5)+Math.floor(Math.random()*4));
+          const rawDmg=Math.max(1,e.dmg-Math.floor(def2*.5)+Math.floor(foeRand(e)*4));
           executeStrike(e, rawDmg, now);
         } else {
           sndSwing();
@@ -1205,7 +1216,7 @@ function tickZoneEnemies(dt,now,sc){
       // at the moment of commitment. Backstab tests against this stored
       // value, giving the player a window to sidestep the swing and
       // strike from the flank/rear during windup + recovery.
-      e.combatYaw = Math.atan2(px - e.x, pz - e.z);
+      e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
       // v61c3 — Boss-specific telegraph sound. The Faolchú gets a
       // descending growl-scream replacing the generic chirp; signals to
       // the player that this is not a regular enemy wind-up.
@@ -1392,7 +1403,7 @@ function tickZoneBalls(dt,sc){
           // avoid widening applyMeleeDamage's signature for one caller.
           const wt = fb.userData.wType || 'pierce';
           const resistMult = (e.resist && typeof e.resist[wt]==='number') ? e.resist[wt] : 1.0;
-          let dmg = Math.max(1, Math.floor(fb.userData.arrowDmg * resistMult * _fortuneCrit()));
+          let dmg = Math.max(1, Math.floor(arrowRawFor(fb.userData, e) * resistMult * _fortuneCrit(e)));
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
           e.hp = Math.max(0, e.hp - dmg);
@@ -1529,7 +1540,7 @@ function killZoneEnemy(e,sc,tag=''){
   lootSpark.position.set(e.x, lootY, e.z);
   sc.add(lootSpark);
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
-  const items = rollContainerLoot('corpse', null, null, lootDropChance(e));
+  const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
   // v61c2 — Boss death hooks. The Faolchú gets:
   //   - guaranteed unique drop (The Faolchú's Mark amulet) prepended to
   //     the loot items array, so the corpse always carries it
@@ -1711,7 +1722,7 @@ function _resolveZoneStrike(_isPow){
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block (see _resolveDungeonStrike for rationale).
       const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const rawDmg=Math.floor((lo+Math.floor(Math.random()*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*shMult);
+      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*shMult);
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
       e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg));e.alert=true;hit=true;alertPack(e,16);

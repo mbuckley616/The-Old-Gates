@@ -22,7 +22,10 @@ const hand = async (hour) => {
     n._scared = performance.now() + 1; window._n = n; px = n.g.position.x; pz = n.g.position.z + 1.2; jumpY = n.g.position.y; yaw = 0; pitch = 0;
     return { name: n.def.name, type: n.sched.type }; }, hour);
   if (!who) return { hour, who: null };
-  await g.frames(2); await page.evaluate(() => { px = _n.g.position.x; pz = _n.g.position.z + 1.2; jumpY = _n.g.position.y; });
+  // the stand beside them is taken again as the key goes down (a capture listener runs before the game's own): on a slow
+  // runner a frame passes between a separate evaluate and the key, and a walker who steps nearer took the draught (S483)
+  await g.frames(2); await page.evaluate(() => { const pin = () => { px = _n.g.position.x; pz = _n.g.position.z + 1.2; jumpY = _n.g.position.y; };
+    pin(); window.addEventListener('keydown', pin, { capture: true, once: true }); });
   await page.keyboard.press('e'); await g.frames(2);
   return page.evaluate(([hour, who]) => { const G = WORLD.guild.state(); const t = G.guild_m.active; const r = { hour, who: who.name, sched: who.type, done: !!t.done, took: t.who, msg: (document.getElementById('msg') || {}).textContent };
     G.guild_m.active = null; try { closeDialog(); } catch (e) {} return r; }, [hour, who]); };

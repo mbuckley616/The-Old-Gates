@@ -290,7 +290,7 @@ function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding
 // crit: 2% a point that a melee blow or an arrow lands for half again, on top of any stagger, riposte or backstab.
 const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
 const RENEWAL_RATE=.5;
-function _fortuneCrit(){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&Math.random()<c?FORTUNE_CRIT_MULT:1;}
+function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
 function _warded(d,src){return d>0?Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1))):d;}
 // S321 — the herbs' hidden effects, read where their text says: Wolf's Bane (`beastResist`, above, from a beast's blow),
