@@ -11754,3 +11754,21 @@ Michael's go on the three things Session 492 left: props and furniture, weapons 
 ### Needs eyes
 - The furniture is shown in the gatelands wood only (and the bed in each nation's); a kind that the room sets paint by nation (the chair, the dresser) reads one way here. Say if you want every piece by nation.
 - The armour stand is shown with the mail kind, the wall shield with the round; the kit has more kinds than the inspector lists.
+
+## v80 — Session 494 — The inspector by nation, folded, keyed, and tied to the ideas board
+Michael's three asks after the second pass, and a fault he found: every furniture piece by nation; a way to fold the list; and a way to critique a mesh from the control room. The fault: the control room's Meshes tab showed a blank white frame. claude.ai does not let an artifact frame another site, so the frame could never have worked; it only looked like it might. The tab is now something better.
+
+**By nation.** The furniture kit's 38 pieces are listed once in each nation's wood (gatelands, mark, aurenne): 114 entries, 395 in all. Each call passes the nation where its function takes one.
+
+**Folds.** The tree starts with every group closed; a group opens on its header (and shows its grid), a section on its own, with a caret that turns. The find box opens whatever it finds. Picking a piece, from the grid or by its key, opens its group and section and scrolls to it. The grid's sections fold too.
+
+**Keys and the deep link.** Every entry has a stable key, `group/section/name` slugged (`creatures/on-the-wolf-kit/dire-wolf`), and `index.html?inspector=<key>` opens the inspector at that piece. `INSPECTOR.select` takes a key, a name or an id. The test writes `docs/inspector-catalogue.json` (key, group, section, name, file, triangles) each run.
+
+**The critique loop.** The control room's Meshes tab is now the catalogue itself, embedded at publish from that file (and refreshed from Pages when the viewer's browser allows the fetch), folded by group and section with a find box, and on every piece a *View in 3D* link (the deep link) and a *Note* button. A note writes to the ideas board, the `notes` collection the producer already files from, as "Mesh inspector · group › section › name: …" with the piece's key, so the producer carries it to the backlog like any other idea and the look builder can find the piece by its key. Notes already left on a piece show under it, and in the Ideas tab as before. The other way round, *Note for the team* on the inspector's bar opens the control room at `#meshes=<key>`: the tab opens, the piece's group and section unfold, it scrolls into view and its note box opens.
+
+### Verified (headless Chromium)
+`tests/inspector.test.mjs`, 11/11: seven groups, 395 entries, none fail; the furniture kit is listed in three nations with 38 pieces each; every key is unique and of the slug form; the tree starts folded and picking Dire Wolf by key opens Creatures and On the wolf kit with that entry marked; the earlier checks (animation, equipment restore, pinning, thumbnails, the close) hold. The control room republished with the 395-entry catalogue (version 11). `parsecheck` clean. Build tag s417.
+
+### Needs eyes
+- Michael: the note loop end to end, which I cannot drive from here (the control room needs a signed-in claude.ai): a note on a piece should appear under it at once and on the Ideas tab, and the producer should file it within the hour.
+- The producer files mesh notes as ideas; if they should go straight to the look builder's section H, that is one line in the producer's prompt.

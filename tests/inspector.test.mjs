@@ -8,7 +8,7 @@ fs.mkdirSync('tests/out', { recursive: true }); fs.mkdirSync('docs/prototypes', 
 
 const opened = await page.evaluate(() => { openInspector(); return { open: INSPECTOR.open, groups: INSPECTOR.groups, n: INSPECTOR.entries.length, ov: document.getElementById('ov').style.display, canvasIn: REN.domElement.parentNode.id }; });
 console.log(JSON.stringify(opened));
-check('the inspector opens from the title screen with seven groups and the renderer\'s canvas on its stage', opened.open && opened.groups.length === 7 && opened.n > 250 && opened.ov === 'none' && opened.canvasIn === 'insp-stage', opened);
+check('the inspector opens from the title screen with seven groups and the renderer\'s canvas on its stage', opened.open && opened.groups.length === 7 && opened.n > 380 && opened.ov === 'none' && opened.canvasIn === 'insp-stage', opened);
 
 const all = await page.evaluate(() => INSPECTOR.buildAll());
 const failed = all.filter(e => e.err), empty = all.filter(e => !e.err && e.tris === 0);
@@ -16,7 +16,20 @@ const byGroup = {}; for (const e of all) { const k = e.group; byGroup[k] = byGro
 console.log(JSON.stringify(byGroup)); if (failed.length) console.log('failed:', JSON.stringify(failed.map(e => [e.group, e.sub, e.name, e.err])));
 check('every entry builds with the game\'s own builder and has triangles', failed.length === 0 && empty.length === 0, { failed: failed.map(e => e.name + ': ' + e.err), empty: empty.map(e => e.name) });
 check('the seven groups each hold their pieces: people by role and nation, the foes, both kits, the houses by style, the ships by class and look, the herbs, trees and rocks, the furniture kit and the town props, the weapon kit, the viewmodels and the armoured body',
-  byGroup['People'].n >= 60 && byGroup['Creatures'].n >= 14 && byGroup['Buildings'].n >= 12 && byGroup['Ships'].n >= 12 && byGroup['Plants, trees, rocks'].n >= 40 && byGroup['Props and furniture'].n >= 50 && byGroup['Weapons and armour'].n >= 30, byGroup);
+  byGroup['People'].n >= 60 && byGroup['Creatures'].n >= 14 && byGroup['Buildings'].n >= 12 && byGroup['Ships'].n >= 12 && byGroup['Plants, trees, rocks'].n >= 40 && byGroup['Props and furniture'].n >= 140 && byGroup['Weapons and armour'].n >= 30, byGroup);
+
+// the furniture kit is listed once per nation, every piece; the catalogue is written for the control room's Meshes tab
+const cat = await page.evaluate(() => INSPECTOR.catalogue());
+const furnByNation = {}; for (const c of cat) if (/^The furniture kit: /.test(c.sub)) furnByNation[c.sub] = (furnByNation[c.sub] || 0) + 1;
+const keys = new Set(cat.map(c => c.key));
+check('every furniture piece is listed in each nation\'s wood, and every entry has a stable key of its own', Object.keys(furnByNation).length === 3 && Object.values(furnByNation).every(n => n === 38) && keys.size === cat.length && cat.every(c => /^[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/.test(c.key)), furnByNation);
+fs.writeFileSync('docs/inspector-catalogue.json', JSON.stringify({ at: new Date().toISOString(), entries: cat }, null, 0) + '\n');
+
+// the tree folds: groups closed until opened, a selected piece opens its group and section
+const folds = await page.evaluate(() => { INSPECTOR.unpinAll(); const tree = document.querySelector('#insp-tree'); const openBefore = tree.querySelectorAll('.gbox[style*="display: block"]').length;
+  INSPECTOR.select('creatures/on-the-wolf-kit/dire-wolf'); const openAfter = [...tree.querySelectorAll('.grp.open')].map(x => x.textContent); const subOpen = [...tree.querySelectorAll('.sub.open')].map(x => x.textContent);
+  const on = tree.querySelector('.ent.on'); return { openBefore, openAfter, subOpen, on: on && on.textContent, name: INSPECTOR.sel && INSPECTOR.sel.name }; });
+check('the tree starts folded and opens the group and section of the piece picked by its key', folds.openAfter.join() === 'Creatures' && folds.subOpen.join() === 'On the wolf kit' && folds.on === 'Dire Wolf' && folds.name === 'Dire Wolf', folds);
 
 // building the first-person pieces swaps the equipment and puts it back, and rebuilds the player's own viewmodel
 const eq = await page.evaluate(() => { const before = { w: EQ.weapon, c: EQ.chest, o: EQ.offhand }; const e = INSPECTOR.entries.find(x => x.sub === 'First person, in hand' && x.name === 'Sword'); const r = INSPECTOR.built.get(e.id);
