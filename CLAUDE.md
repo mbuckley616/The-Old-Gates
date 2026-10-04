@@ -1,13 +1,14 @@
 # The Old Gates — working conventions
 
-A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 33 plain script
+A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 41 plain script
 files that share one global scope (no modules, no bundler; a downloaded folder opens by double-clicking `index.html`).
 Michael designs and playtests; Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the markup, the CSS, the build tag and 33 `<script src="js/…">` tags (~1,160 lines). `js/NN-name.js` —
-  the code, one file per area in load order (~46k lines in all; `80-world.js` is the biggest at 7,500). Deployed as-is: GitHub
-  Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379.
+- `index.html` — the markup, the CSS, the build tag and 41 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
+  the code, one file per area in load order (~46k lines in all; the biggest, `40-legacy-zones.js`, is 3,300). Deployed as-is: GitHub
+  Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379,
+  and the world was one 8,100-line IIFE until Session 484.
 - `docs/devlog.md` — one entry per session, appended at the end of the session. Never rewrite old entries.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
@@ -15,7 +16,7 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
   every design call argues from it. `docs/decisions.md` — questions for Michael and his answers; nothing is a spec without a `Michael:` line.
 - `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all.
 - `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py bump` bumps the build tag.
-  `scripts/split.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
+  `scripts/split.py`, `scripts/split_world.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
 
 ## A session
 1. Read the last devlog entry and the backlog before touching code.
@@ -31,7 +32,8 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
 7. Append the devlog entry (format below), update the backlog, commit.
 
 ## The split layout — `js/` (backlog K)
-Session 368 built the tooling and Session 379 cut the file (1 Oct 2026). The rules:
+Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session 484 dissolved the world module into nine files
+(4 Oct 2026). The rules:
 - `index.html` keeps the markup and the CSS (and the build tag), and holds one `<script src="js/NN-name.js">` tag per file.
   `js/` holds the code. The tags are plain classic scripts, no modules, no `fetch`: every file shares the one global scope,
   exactly as the one script did, and a downloaded copy still opens by double-clicking. **Load order is tag order**, and the
@@ -47,7 +49,20 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026). The rul
   concatenation in tag order, which catches it. Two `function` declarations of one name are legal (the last wins, as now).
 - `K`, `PERF`, `AX`, `volLevel`, `EXPLORE`, `PIECES`, `_ccState` and the other 47 constants of the old `if(REN){` block
   (removed in Session 368) are plain globals; `window._K` still works.
-- `git log --follow` cannot follow one file into 33. History before Session 379 is under `index.html`: `git log -L` and
+- **The world files (`80-world-terrain.js` to `88-world-ticks.js`) are the old `WORLD` IIFE's body, in order, at the top level.**
+  Every name the IIFE kept private (1,143 of them: `SETTLE`, `rawH`, `makeDef`, `WX`, `FP`, …) is a global now, used by its bare
+  name inside the world files as before, and `var WORLD={…}` at the foot of `88-world-ticks.js` is the same object the rest of the
+  game reads (`WORLD.enter`, `WORLD.tick`, the getters). Four names were renamed because another file declares them at the top
+  level: `DOORS`→`CELL_DOORS` and `KEYS`→`HELD_KEYS` (the dungeon's own `DOORS`/`KEYS` live in `52-dungeon-gen.js`), `SG`→`STAMP_G`
+  (the stamp grid's cell size; `34-creatures.js` has the shape-kit `SG`), `tickNPCs`→`tickTownNPCs` (`50-travel.js` has the legacy
+  zones' `tickNPCs`); the export `WORLD.DOORS` keeps its name. So: a new top-level name in any file must not reuse one of the
+  world's. parsecheck's concatenation catches a `let`/`const`/`class`; a duplicate `function` is legal and the later file wins
+  silently, so grep `js/` before naming a new top-level function. The load-order rule holds inside the world too: a load-time
+  statement in `80-world-terrain.js` cannot call a function declared in `87-world-quests.js` (`split_world.py` refused any cut
+  where that happened; there were none). `js/world-manifest.json` records the cut and the renames; `scripts/split_world.py --check`
+  on the pre-cut layout proves the rebuild byte-identical, and `join.py` rebuilds the one-file script through it.
+- `git log --follow` cannot follow one file into 41. History of the world before Session 484 is under `js/80-world.js`, and before
+  Session 379 under `index.html`. History before Session 379 is under `index.html`: `git log -L` and
   `git blame` on the pre-split commit (`e994dbf`, main on 1 Oct 2026) still work. `js/manifest.json` records which
   `index.html` lines each file came from.
 - Tests boot `index.local.html`, written beside the `index.html` under test (gitignored) so `js/` resolves;
@@ -78,12 +93,24 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026). The rul
   - `72-audio.js` `AX`, volume, `sfx*`/`snd*`. `74-strikes.js` `applyMeleeDamage`, `executeStrike`, `VARIANTS`.
     `76-music.js` `sndSpell…`, `EXPLORE`/`PIECES`, the music by place. `78-placeholder-zones.js` `tickFootsteps` and the
     `registerPlaceholderZone({…})` data.
-  - `80-world.js` the whole `WORLD` IIFE: terrain, `SETTLE`, `makeDef`, `buildInteriorFor`, `drawLocalMap`, `WX`, `FP`,
-    `recolourChunk`, `PEOPLES`, `enter`/`tick` — both builders work here (step 2 of K breaks up its `return {…}` line).
+  - The world, nine files, one scope (Session 484): `80-world-terrain.js` regions, noise, `rawH`/`baseH`/`worldH`, `groundColor`,
+    prototype geometry, the chunk scatter and terrain, the far terrain, sky, water, sun, `WX`, `SKY`, the atmosphere. `81-world-cells.js`
+    solids, the land mask, cell data, the landmasses, the stamp grid, the job budget, cell load and unload. `82-world-structures.js`
+    fort compounds, the detailed houses, churches, keeps, the town's furniture, walls and gate towers. `83-world-generator.js` dialog
+    pools, the settlement generator (`genSettlement`, `makeDef`, `SETTLE`, `PEOPLES`, cultures, guild halls), the hover card, the
+    search, the maps (`drawLocalMap`, the continent map), rooms for generated buildings (`buildInteriorFor`). `84-world-interiors.js`
+    interior extras, doors inside buildings (`intDoorAt`, `INT_DOORS`), ports. `85-world-sea.js` ships, the helm, sea sounds,
+    sea-floor herbs, wrecks, whitecaps, wildlife, other ships. `86-world-crime.js` footprints (`FP`), buying a house, cellars, the
+    crime system (locks, witnesses, guards, the Church), painted windows, fish, whales. `87-world-quests.js` boarding, town quests,
+    guild commissions, sigils, nations, the drivers, the war, plague, investment and the deed, the Guest's chapel.
+    `88-world-ticks.js` the town line, the sea line, ticks, markers, leads, `enter`/`tick`, the dev helpers and `var WORLD={…}`.
   - `90-main.js` boot calls, dev helpers, `K`, `PERF`, `loop`, the frame start, `ssMigrate`. `92-creator.js` `_enterGame`,
     the character creator, title buttons. `94-worldmap.js` `WM`, `renderWorldMapSVG`. `96-animdebug.js` the backtick panel.
-- Roughly: the systems builder lives in 10–14, 42, 50, 60–76 and `80-world.js`; the look builder in 16, 30–34, 40, 44,
-  52–58 and `80-world.js`; the quest writer's text is in 20, 22 and 78.
+    `97-inspector.js` the mesh inspector (Session 492): `openInspector()` from the console, or `index.html?inspector`; every mesh the
+    game builds, in seven groups, built by the game's own builders, on a stage with its poses and gaits, pinned side by side; the control room's Meshes tab embeds it.
+- Roughly: the systems builder lives in 10–14, 42, 50, 60–76 and the world's 86–88; the look builder in 16, 30–34, 40, 44,
+  52–58 and the world's 80–85; the quest writer's text is in 20, 22, 78 and 83 (the dialog pools). The generator (83) and the
+  ticks (88) are where they still meet.
 
 ## Cloud sessions (the phone)
 Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.
@@ -129,7 +156,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 
 ## Code map (line numbers drift; grep for the names)
 - Save store: `SS`, `ssWrite/ssLoad/ssPut/ssGet`, `ssStringify` (skips live scene handles), `ssSanitizeLoaded`, export/import `ssExportChar/ssExportWorld/ssImportFiles`. A slot is two rows since S456: the character at `key`, the world at `ssWorldKey(key)`; `ssLoadRows` gives both, `ssLoad` gives them joined (the one-row shape every caller reads).
-- World module: the big IIFE returning `WORLD` (`return {SIZE,CHUNK,SEA_Y,...`). Settlements in `SETTLE`, roads in cells, weather `WX`, sky `SKY`, snow cover `WX.cover`, footprints `FP`.
+- World module: `js/80-world-terrain.js` to `88-world-ticks.js`, one scope, `var WORLD={SIZE,CHUNK,SEA_Y,...}` at the foot of the last. Settlements in `SETTLE`, roads in cells, weather `WX`, sky `SKY`, snow cover `WX.cover`, footprints `FP`. Everything in the world files is global: reach it by its bare name from a test's `page.evaluate`, not only through `WORLD.`.
 - Terrain: `rawH` → `baseH` (site stamps flatten) → `worldH` (roads). Ranges and rivers (S432): `rvSpines` (the horseshoe per island, the Ferrous), `ridgeAt` from the spine, `basinAt`, `spinePeaks`; `routeWorld` routes the rivers once per seed at the first terrain call and fills the carve grid `RVG` that `rawH` reads (`riverSample`); `WORLD.routed` has the reaches, the great rivers, the lakes and the stats. Colour: `groundColor()`; chunks recoloured by `recolourChunk`.
 - Interiors: `buildInteriorFor`, `partition()` cuts doorways, `intDoorAt` hangs a door, `INT_BEDS/INT_DOORS/INT_NPCS`.
 - Dialogue: `makeDef` builds a town NPC, `topics` is a getter; folders are `{label, folder:true, follow:[...]}`.
@@ -138,7 +165,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - People (S153): `SK` shape kit, `personGenome(def,{nation,key})` → `buildPerson(g)` (one SkinnedMesh, 17 bones,
   `PEOPLE_MAT`), `buildNPCMesh` caches genomes by `name|site`, `PEOPLE_RIGS`, poses `pwIdle/pwWalk/pwWave`,
   `tickPeople` in the main loop. Bone matrices are kept local to the mesh (see the comment in `buildPerson`).
-- Console helpers for testing: `devWeather('rain')`, `forceTime(h)`, `WORLD.devUnlockAll()`.
+- Console helpers for testing: `devWeather('rain')`, `forceTime(h)`, `WORLD.devUnlockAll()`. `openInspector()` opens the mesh inspector (`97-inspector.js`); while it is open the main loop hands it the frame and nothing else ticks; `closeInspector()` hands the canvas back.
 
 ## Things that have bitten us
 - `WORLD.tick` only runs in the open world: anything that must keep running indoors (weather sound) goes in the main loop.
@@ -153,11 +180,14 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - r128's shadow pass tests object layers against the *eye's* camera, not the shadow camera: a shadow-only layer draws nothing.
   To draw something differently in the shadow pass, swap it inside `REN.shadowMap.render` (see the townsfolk's LOD).
 - The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads. Since S456 the key also lands in the world row unless it is named in `SS_CHAR_WS` (the character's keys): a key that describes the character, not a place, goes in that list too.
-- The loop's held-key map `K` (and `PERF` and their neighbours) sit inside a top-level block, not on the page's global scope: code
-  outside that block, and a test's `page.evaluate`, reach it as `window._K` (Session 327). `typeof K` there is `undefined`.
+- The loop's held-key map `K` (and `PERF` and their neighbours) sat inside a top-level block until Session 368 and were reached as
+  `window._K` (Session 327); they are plain globals now and `window._K` still works. The world's own key map is `HELD_KEYS` (ships, swimming).
 - `tickPeople` drops and disposes any rig whose root has no parent: add a test's rig to the scene (hidden) as soon as it is built.
 - Indoors `activeZoneId` stays `'world'` and the room sits at its own coordinates (0 to its width): a world solid test
   (`WORLD.camSolid`, `solidAt`) there reads empty ground. Test `isInterior()` first and use `intSightLine`/`intSolidAt`.
+- A Windows checkout with `core.autocrlf` holds CRLF in the working copy while the index holds LF: a script that compares bytes or
+  counts offsets reads with CRLF normalised (`split_world.py` and `join.py` do; `split.py` refuses a CR). Acorn's offsets are UTF-16
+  code units and the files hold emoji, so an edit by acorn offset is applied on the UTF-16 form, never on Python's string.
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 
