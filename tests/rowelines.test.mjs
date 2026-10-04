@@ -39,6 +39,7 @@ for (const fk of ['league', 'compact']) {
   const L = LINES[fk];
   const seat = await page.evaluate((fk) => { WORLD.anchoredPlaces(); const s = WORLD.siteAnywhere(WORLD.FACTIONS[fk].seat); return { id: s.id, name: s.name, kind: s.kind, x: s.x, z: s.z }; }, fk);
   const home = async () => { await page.evaluate(([x, z]) => { px = x; pz = z; }, [seat.x, seat.z]); await g.settle(seat.id);
+    await page.waitForFunction((id) => !!WORLD.settle.get(id), seat.id, { timeout: 180000 }); /* a city far from the start can take longer than g.settle's minute to build on a slow CI runner (CI on 8a61fea) */
     return page.evaluate((id) => { const S = WORLD.settle.get(id); const d = S.lordNpc ? S.lordNpc.def : (S.houses.find(h => h.type === 'castle') || {}).dlg; window._lord = d; return d ? d.name : null; }, seat.id); };
   const serve = () => say(true, L.serve);
   console.log(`\n-- ${fk} at ${seat.name} (${seat.kind})`);

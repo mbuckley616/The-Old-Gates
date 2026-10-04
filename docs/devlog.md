@@ -10460,7 +10460,7 @@ CI ran the suite on Session 407's head (`84fb606`), and headless (7) failed on o
 The check now asks that the empty hand holds the fists' view model, and that the weapon's does not carry the fists' mark, alongside the swing and the pending strike as before. The other four checks (the punch runs out and fires, lands for less than the sword, lands again) are unchanged and still prove Session 382's fix. The game's code is unchanged.
 
 ### Verified (headless Chromium)
-`fistswing` 6/6: the sword swings from .611 and strikes for 9; the fist's view model is present with its mark, the punch starts at .429 with a strike pending, fires on frame 6 and lands for 6; a second punch lands for 6. No page errors. `parsecheck` is clean. Build tag bumped.
+`fistswing` 6/6: the sword swings from .611 and strikes for 9; the fist's view model is present with its mark, the punch starts at .429 with a strike pending, fires on frame 6 and lands for 6; a second punch lands for 6. No page errors. `parsecheck` is clean. Build tag s402.
 
 ### Needs eyes
 Nothing in the game.
@@ -10875,7 +10875,7 @@ The prototype (`docs/prototypes/rivers/layout.js`, loaded into the booted game b
 The one code change: `WORLD` now exports `startTile`, `tileStep`, `withCellData` and `ridgeAt`, so a script can draw the whole map and sample the ranges. Nothing on screen changes.
 
 ### Verified (headless Chromium)
-`render.mjs` boots the game, draws the 144 tiles in 12 s, routes each layout in 0.56–0.68 s and writes the eight pictures without page errors. Today: 36 river pieces, 35 peaks, no forks. A: 75 rivers reach the sea, 12 named, 3 deltas, 20 navigable (96.7 km), 19 lakes, 86 quays, 45 bends. B: 67 rivers, 12 named, 3 deltas, 22 navigable (103.2 km), 22 lakes, 89 quays, 40 bends; the two largest catchments 14 km² and 13.6 km². C: 49 rivers, 9 named, 3 deltas, 9 navigable (72 km), 16 lakes, 50 quays, 29 bends; the largest 36 km². `parsecheck` clean. Build tag bumped.
+`render.mjs` boots the game, draws the 144 tiles in 12 s, routes each layout in 0.56–0.68 s and writes the eight pictures without page errors. Today: 36 river pieces, 35 peaks, no forks. A: 75 rivers reach the sea, 12 named, 3 deltas, 20 navigable (96.7 km), 19 lakes, 86 quays, 45 bends. B: 67 rivers, 12 named, 3 deltas, 22 navigable (103.2 km), 22 lakes, 89 quays, 40 bends; the two largest catchments 14 km² and 13.6 km². C: 49 rivers, 9 named, 3 deltas, 9 navigable (72 km), 16 lakes, 50 quays, 29 bends; the largest 36 km². `parsecheck` clean. Build tag s402.
 
 ### Needs eyes
 Michael's letter. The pictures are a proposal over today's map, so the old ridge boxes show through; the real build replaces them. Owed to the build: the Dearg's width downstream (it stays a ford at Redwater Ford), the bridge length over a 25u river, where the delta's distributaries put their sand, and the frame cost of routing at boot.
@@ -11493,3 +11493,14 @@ Some reads were left as they are because they are the player's side, not a foe's
 
 ### Needs eyes
 Nothing: fights should be exactly as before. If a foe ever ignores you or swings at empty air, this is the first place to look.
+
+## v80 — Session 470 — CI on 8a61fea: `rowelines` read Fortargent before it was built, and `coopsaves` waited a fixed pause (CI fix, tests only)
+CI on the Systems sessions PR (head `8a61fea`) went red in two shards. In shard 5 `rowelines` played the League's line at Caer Slige through, then threw at the Compact's first step: `Cannot read properties of undefined (reading 'lordNpc')`. Its `home()` calls `g.settle(seat.id)` and then reads `WORLD.settle.get(id)`. `g.settle` waits at most 24 × 2.5 s for the place to build and then carries on whether it has or not. Fortargent is a city at the far side of the continent from Caer Slige, and on that runner it was not built within the minute. Here the suite passes as it was. The test now waits for the place itself after `g.settle` (up to three minutes) before it reads it, so a slow build is waited out and a place that never builds fails on the wait, not on a property read. `g.settle` is unchanged, because every suite shares it.
+
+In shard 2 `coopsaves` failed. That is the fixed 1.5 s pause after `saveToSlot`, which the look builder's Session 469 (auto/backlog, `ce6c905`) fixed by awaiting the write itself. The same change was ported here, along with that session's `duel` fix (a wait on the yield's state instead of 1.6 s). Both no-op once auto/backlog's merge carries them. No game code changed.
+
+### Verified (headless Chromium)
+`rowelines` 19/19 (twice), `coopsaves`, `duel` and `duelrhythm` pass. `parsecheck` clean. Build tag s402.
+
+### Needs eyes
+Nothing. If `rowelines` times out on its new wait, Fortargent is not building at all, which would be a real fault.
