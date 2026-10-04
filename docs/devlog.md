@@ -11029,3 +11029,21 @@ The tests: `beastfall` gains the 60 seeded deaths (the median must rest within 1
 ### Needs eyes
 - A dead wolf, boar or bear now stops a little sooner on the ground rather than creeping the last centimetres. It should not be visible.
 - Falling below 30% in the first moments of the duel now keeps Rowe's offer on screen until you answer it.
+
+## v80 — Session 483 — `hourhitch`, `shiphull` and `shoperrands` red on CI on main's merge of Sessions 466–482 (CI fix, tests only)
+Section H has nothing open: every item is struck through, nothing of the look waits on a decision, and the four open findings in `docs/quest_review.md` are all on auto/systems. So this run's one session is the CI failure already on the branch. auto/backlog was level with main after the producer's merge (`f8551e4`), and the check on that commit failed shards 3, 5 and 7 on one check each. All three suites passed locally on the same code. Each failure was the test reading a moment it did not hold still, not the game.
+
+`shiphull`, *bow-on into her at 7*: the ram took 6 off the hull, not 11. 6 is 4.2 × 3 × ½, and 4.2 is 7 × .6, which is what `tickHullCollisions` does to both speeds when two hulls overlap. The test cleared the world's ships before each launch but not before the rams step, and real frames run between the two. The world had sailed its own ships in by then (two of them locally, logged now as `cleared`). On CI one of them lay against the sloop, and it came first in the loop, so its push slowed her before the black sail's touch was judged. *Still touching* failed with it, because it compares against 89. The step now clears the world's ships first, as `launch` does.
+
+`shoperrands`, *the draught is handed over at noon*: the test picked Niamh, pinned the player beside her, then pressed E in a separate call. E is handled in the keydown handler, so the nearest person at that instant takes the draught. On a slow runner a frame ran between the pin and the key, and Cormac walked nearer. The stand beside her is now taken again by a one-shot capture-phase keydown listener, which runs before the game's own handler in the same event. The real keypress is kept.
+
+`hourhitch`, *never over 8 s*: on that runner every frame took 4.5–5.9 s, and noon's worst was 5.2 s. The 18:59 step took 8.6 s with nothing compiled: the shader and program counts were unchanged and nothing was added. That is a slow machine against a fixed 8 s, not the stall the suite hunts, which was 20–24 s. The cap is now 8 s or twice noon's worst frame, whichever is more. The 4×-noon check stays as it was. Locally noon's worst is 2.1 s, so the cap stays at 8 s.
+
+### Verified (headless Chromium)
+- `shiphull` 20/20: the rams step cleared 2 of the world's ships before spawning the black sail. The bow ram took −11 to 89, still touching stayed at 89, the beam −12 to 88, then 76.
+- `shoperrands` 6/6: at noon Niamh is picked and Niamh takes the draught; at dusk Lorcan, the keeper.
+- `hourhitch` 6/6: noon's worst 2,078 ms, cap 8,000 ms, worst judged 2,672 ms. *Jump to 21h* (8,671 ms) is set aside as before, because a foe's skinned program compiled on its first draw.
+- `parsecheck` clean. Build tag s379.
+
+### Needs eyes
+Nothing in the game changed. Whether CI on this push is green is the check.

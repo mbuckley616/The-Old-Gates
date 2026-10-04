@@ -55,6 +55,10 @@ const firstUse = rows.map((r, i) => i > 0 && r.foeProgs > rows[i - 1].foeProgs);
 const judged = rows.slice(1).filter((r, i) => !firstUse[i + 1]);
 const worst = Math.max(...judged.map(r => r.worst));
 console.log('the first dusk, compiling: worst frame', rows[0].worst, 'ms; set aside for a first use:', rows.filter((r, i) => firstUse[i]).map(r => `${r.label} ${r.worst} ms`).join(', ') || 'none');
-check('after the first dusk, no frame after a change of hour over 4× the worst noon frame (and never over 8 s), a first use aside', judged.length >= rows.length - 3 && worst <= Math.max(4 * noon, 2000) && worst < 8000, { worst, noon, judged: judged.length, setAside: rows.filter((r, i) => firstUse[i]).map(r => [r.label, r.worst]) });
+// Session 483: on CI (f8551e4) every frame was 4.5–5.9 s, noon's worst 5.2 s, and 18:59 took 8.6 s with nothing compiled
+// (the shader count unchanged): a runner that slow outruns a fixed 8 s. The cap is 8 s or twice noon's worst, whichever
+// is more; the stall this hunts was 20–24 s, five times an ordinary frame or more.
+const cap = Math.max(8000, 2 * noon);
+check('after the first dusk, no frame after a change of hour over 4× the worst noon frame (and never over 8 s, or 2× noon on a slow runner), a first use aside', judged.length >= rows.length - 3 && worst <= Math.max(4 * noon, 2000) && worst < cap, { worst, noon, cap, judged: judged.length, setAside: rows.filter((r, i) => firstUse[i]).map(r => [r.label, r.worst]) });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
