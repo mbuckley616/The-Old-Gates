@@ -4,7 +4,7 @@
 // Rowe stands there a rank ahead of you; the fourth is given and she stays while it is open; before the sixth she is
 // gone and the lord sends you to find her; walked out to the spot, E opens her dialogue and finds her; *It's done.* does
 // not take the service; *Serve* turns it in once and names the second rank; and with the lord's own job in hand, *Serve*
-// still gives the sixth service. Each step is taken as a player takes it: the lord's own dialogue, E in front of Rowe.
+// still gives the sixth service; and once it is turned in no Rowe is left sitting on the land (Session 463). Each step is taken as a player takes it: the lord's own dialogue, E in front of Rowe.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -61,7 +61,7 @@ for (const fk of ['league', 'compact']) {
   console.log('sixth', JSON.stringify(t2.said), JSON.stringify(q2), 'at seat', r2a);
   check(`${fk}: before the sixth she is gone from the seat; the lord's brief is the authored one, a find for Hesket Rowe`, !r2a && q2 && q2.kind === 'find' && q2.who === 'Hesket Rowe' && q2.service === 5 && L.brief.test(t2.said.replace(/^[^:]+: "/, '').replace(/" \(\d+ gold.*$/, '')) && L.sixth.test(q2.title.replace(/^[^:]+: /, '')), { r2a, t2, q2 });
   await at(q2.x + 30, q2.z); await tick(30);
-  const m2 = await meet(`(WORLD.fstate()['${fk}'].active || {})._npc`, /The seat sent me for you\./);
+  const m2 = await meet(`ZONES.world.npcs.find(n => n.def && n.def.name === 'Hesket Rowe' && n.def._lost && n.g.parent)`, /The seat sent me for you\./);
   const s2 = await page.evaluate((fk) => { const q = WORLD.fstate()[fk].active; return { done: !!(q && q.done), found: !!(q && q.data.found) }; }, fk);
   console.log('found', JSON.stringify(m2), JSON.stringify(s2));
   check(`${fk}: walked out (${q2 && q2.objective}), Rowe is there, E opens her dialogue and finds her, with her own line`, m2 && m2.open && m2.name === 'Hesket Rowe' && s2.done && s2.found && /Tell them Rowe's coming/.test(m2.said || ''), { m2, s2 });
@@ -75,6 +75,8 @@ for (const fk of ['league', 'compact']) {
   const t2b = await serve(); const s2b = await page.evaluate((fk) => { const C = WORLD.fstate()[fk]; return { done: C.done, rank: C.rank, gold }; }, fk);
   console.log('turned in', JSON.stringify(t2b.said), JSON.stringify(s2b));
   check(`${fk}: turned in at the seat: six services, the second rank, paid once`, s2b.done === 6 && s2b.rank === 2 && L.rank2.test(t2b.said) && s2b.gold - g2 > 0, { t2b, s2b, g2 });
+  const left = await page.evaluate(() => ZONES.world.npcs.filter(n => n.def && n.def.name === 'Hesket Rowe' && n.def._lost).map(n => ({ x: Math.round(n.g.position.x), z: Math.round(n.g.position.z), parent: !!n.g.parent })));
+  check(`${fk}: turned in, she has ridden back: no Rowe is left sitting where she was found (Session 463)`, left.length === 0, left);
 
   // 3. the lord's own job in hand, then *Serve* with the sixth next: the service, not the job
   await setLine(fk, 5, 1);

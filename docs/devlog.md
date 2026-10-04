@@ -11402,3 +11402,12 @@ Finding 8 (Session 442) renamed a place whose two halves were the same word, but
 
 ### Needs eyes
 Nothing to see unless a save holds one of the renamed forts or gates: its name on the map and in the journal reads the new form. A peak can still begin with its people's word and a name that starts the same (*Mont Montclair*). It is not a doubled half, and the finding does not ask for it.
+
+## v80 — Session 463 — A Rowe found on the land is no longer left sitting there
+Found while testing Session 461. Session 128 has Hesket Rowe found out on the land at the sixth service and back at the seat a rank ahead of you afterwards. The find spawns her by the camp, and nothing ever took her away. Once the service was turned in she sat on where she was found for as long as the cell stayed loaded. In `rowelines`, where one character serves the League and then the Compact, the League's Rowe was still sitting north of Caer Slige when the Compact sent you after her. The test's walk to *a Rowe on the land* reached the old one, and E on her completed the Compact's find, because `qOnTalk` matches a find by name. She was also at the seat by then, so the world held two of her. `qTurnIn` now takes a rival find's Rowe out of the scene when the find is turned in at the seat, far from where she sat, as the other story people are taken (`duelRemoveNpc`). A save made between finding and turning in keeps the found flag, so she does not come back. A villager's find is not changed.
+
+### Verified (headless Chromium)
+`rowelines` 19/19 (two new checks). After each line's sixth is turned in, no Rowe is left where she was found. The Compact's find is met with the same plain search for *a Rowe on the land* that Session 460 used (Session 461 had narrowed it to the open quest's Rowe), and it meets the Factor. On the code before this session (a `git archive` copy under `--src`) it fails the three checks the fix is for. The League's Rowe still sits at (10750, 6294) after her turn-in. The Compact's find meets her, under *Reeve*. After the Compact's turn-in two Rowes are left. `rowebeats` 14/14, `blacksail` 15/15 and `questgold` pass. `parsecheck` clean. Build tag s397.
+
+### Needs eyes
+Nothing to see in a single faction's run, unless you walk back to where you found her: she is gone once you have reported. A lost villager found for a town job also stays sitting where you found them (*Home? Yes. Yes, all right.*); that is older and was not touched.
