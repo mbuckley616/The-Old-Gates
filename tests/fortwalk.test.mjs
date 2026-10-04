@@ -60,9 +60,9 @@ for (const f of walkList) {
   }, f.seed);
   await g.frames(3);
   r.prompt = await page.evaluate(() => { const e = document.getElementById('ipr'); return e && e.style.display !== 'none' && e.style.opacity !== '0' ? e.textContent : null; });
-  await page.keyboard.press('KeyE'); await page.waitForTimeout(3500);
+  await page.keyboard.press('KeyE'); await page.waitForFunction(() => activeZoneId === 'dungeon', null, { timeout: 60000 }).catch(() => {});
   r.entered = await page.evaluate(() => activeZoneId);
-  if (r.entered === 'dungeon') { await page.evaluate(() => goToOW()); await page.waitForTimeout(4000); await g.hide(); r.back = await page.evaluate(() => activeZoneId); }
+  if (r.entered === 'dungeon') { await page.evaluate(() => goToOW()); await page.waitForFunction(() => activeZoneId === 'world', null, { timeout: 60000 }).catch(() => {}); await g.hide(); r.back = await page.evaluate(() => activeZoneId); }
   rows.push(r);
   console.log(JSON.stringify(r));
 }

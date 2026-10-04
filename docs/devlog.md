@@ -11426,3 +11426,15 @@ Two things the fight showed:
 
 ### Needs eyes
 The fight itself at a real frame rate. Whether a level-1 character going down in 21 s, landing 3 swings, is the ninth service's weight (a player at the ninth service is rarely level 1, and Rowe scales with you: 62 health at level 1, 127 at level 8). The tells, blocks and rolls a player has, which the bot does not use. #131.
+
+## v80 — Session 465 — CI on 0fbebd9: two suites waited on the real clock, and the ragdoll's throw is a draw
+CI on the branch's head before this run (0fbebd9, Session 460) failed three shards, one suite each. All three passed here, even run side by side, so each was read for what it waits on.
+- **`fortwalk`** (shard 4): the sixth fort, Carrigbeg Watch, went down but read *dungeon* after the way back up. The suite pressed E and then waited a fixed 3.5 s of real time, called `goToOW` and waited a fixed 4 s, then read `activeZoneId`. The fade and the build behind it run on frames, and on a loaded runner they ran past the fixed wait. Both steps now wait for the zone itself to change (`waitForFunction`, up to 60 s).
+- **`q7world`** (shard 5): the Faolchú was left at 5 health, and the Mark, Bram, Edna and Aldwyn checks after it failed with it. The fight swung on real frames. On the runner a frame of this fight takes seconds, and the beast moves between the swing and its blow, so twelve swings all missed. Session 401 and Session 428 each widened the same wait; the frames were still the clock. The swings are now driven by the game's own loop at fixed 1/60 ticks with the draw held off, as `duelrhythm` has done since Session 423, up to 30 s of game time.
+- **`ragdoll`** (shard 2): a dungeon Skeleton thrown at a wall had not settled by itself before the four-second cap. The physics steps on `dt` alone and is not the clock's. But `ragdollFoe` draws the throw's strength at random (1.8–2.6, 3.2–4.0 for a power blow). Killed at that wall ten times, the bodies come to rest after 1.28–3.52 s, and two came within half a second of the cap. An unlucky draw passes it and freezes there, which is the designed fallback, and the check counts that as a failure. That code and suite are the look builder's (section H, Sessions 414–435), so they are not changed here. Proposed for them: the suite seeds `Math.random` for the dungeon kill, or the check accepts a body frozen at the cap with its joints already still.
+
+### Verified (headless Chromium)
+`fortwalk` 3/3 (all six forts down and back out), `q7world` passes (the Faolchú *dead*, *defeated*, its bar shown, the Mark on its body, its wolves gone, then the Mark, Bram, Edna and Aldwyn). The ragdoll probe: 10 of 10 settled in 1.28–3.52 s at the suite's wall (10, 2), with no game code changed. `parsecheck` clean. Build tag s399.
+
+### Needs eyes
+Nothing in the game changed. CI on this run's head will show whether the two suites hold on the runner. The ragdoll's tail is for the look builder.
