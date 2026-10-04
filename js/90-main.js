@@ -28,6 +28,7 @@ let _bareSwingMax=0; // v80 S382 — the length of a swing with no view model, l
 function loop(now){
   const _pfL=PERF.on?performance.now():0;
   requestAnimationFrame(loop);
+  if(typeof INSPECTOR!=='undefined'&&INSPECTOR.open){INSPECTOR.frame(now);return;} /* S492 — the mesh inspector (97-inspector.js) owns the frame while it is open */
   const dt=Math.min((now-prevT)/1000,.05);prevT=now;
   // Main scene render
   REN.autoClear=true;
