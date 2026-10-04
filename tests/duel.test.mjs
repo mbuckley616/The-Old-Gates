@@ -80,9 +80,13 @@ const mr = await page.evaluate(() => { const seat = WORLD.siteAnywhere(WORLD.FAC
 check('after the murder the Mark talks of it and the Gatelands do not; Rowe is at no seat', mr.mark && mr.home && !mr.gates && !mr.rival, mr);
 
 // 3 — the player's yield offer, the rope, going down, and the week
-await fresh(8); await callIt();
-const o = await page.evaluate(() => { PHP = Math.floor(maxHP * .2); WORLD.tickDuel(1 / 60); return { open: dlgOpen, who: dlgNPC && dlgNPC.name, hold: WORLD.duel.rowe._duelHold }; });
+await fresh(8); const t0 = await page.evaluate(() => performance.now()); await callIt();
+const o = await page.evaluate((t0) => { PHP = Math.floor(maxHP * .2); WORLD.tickDuel(1 / 60); return { t0, open: dlgOpen, who: dlgNPC && dlgNPC.name, hold: WORLD.duel.rowe._duelHold }; }, t0);
 check('below 30% health Rowe offers the yield, and holds while you answer', o.open && o.who === 'Hesket Rowe' && o.hold, o);
+/* S482: the call's 1.4 s timer closed any dialogue still open, Rowe's offer too when a slow runner reached here inside it (CI: dlgNPC null) */
+await page.waitForFunction((t0) => performance.now() - t0 > 1700, o.t0, { timeout: 20000 });
+const o2 = await page.evaluate(() => ({ open: dlgOpen, who: dlgNPC && dlgNPC.name }));
+check('the call\'s timer (1.4 s) leaves Rowe\'s yield offer open', o2.open && o2.who === 'Hesket Rowe', o2);
 await page.evaluate(() => { const t = dlgNPC.topics.find(x => x.label === 'I yield.'); t.fn(); });
 await page.waitForFunction(() => { const q = WORLD.duel.q || WORLD.quests.find(q => q.kind === 'duel' && !q.turnedIn); return q && q.data.state !== 'fight'; }, null, { timeout: 20000 }).catch(() => {}); /* the yield lands on a 1.2 s timer, which a busy CI runner can run late */
 const l1 = await page.evaluate(() => { const q = WORLD.duel.q || WORLD.quests.find(q => q.kind === 'duel' && !q.turnedIn); return { state: q.data.state, retry: q.data.retryDay, day: Math.floor((worldState.gameTimeAbsMinutes || 0) / 1440), rowe: WORLD.fstate().league.rowe, php: PHP, dead }; });

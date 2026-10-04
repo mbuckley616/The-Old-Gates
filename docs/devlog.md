@@ -11010,3 +11010,22 @@ CI on ce6c905 (Session 469) failed shard 7, one check in one suite: `export`'s *
 `export` 6/6 twice (two characters of three saves each). The old test with the autosave held past the delete: FAIL, three characters. The new test with every save write slowed by 2.5 s: 6/6, two characters. `parsecheck` clean. Build tag s377.
 ### Needs eyes
 Nothing in the game. CI's next run on this branch is the proof.
+
+## v80 — Session 482 — `beastfall` and `duel` red on CI: a wolf creeping on a raised foreleg, and a timer that closed Rowe's offer (CI fix)
+CI on 9b41645 (Session 476) failed shards 3 and 6, one suite each. Both passed here, but neither failure was the runner's fault: each was a rare case in the game that a test happened to meet.
+
+`beastfall`: the first wolf killed did not come to rest by the four-second cap (4.02 s; the eight after it rested in 1.1–1.3 s). I killed a wolf 80 times at the test's four spots on seeded draws. The median was 1.25 s, but two took over 2.5 s and one met the cap, so the throw's draw was not to blame: about one fall in eighty creeps. Traced, the slow ones are a wolf lying on its flank with the left foreleg raised 4 cm off the ground. The elbow moves .0011–.0016 a step for two seconds, just over the still line at a wolf's scale (.0015 × .75). The motion is a steady drift, not a jitter (net 2.3 cm a half-second against a path of 2.4), with the paws on the ground sliding under it. Session 466 cured the same creep in the people's step with a floor grip (`RD_GRIP.floor`), but the beasts keep their own step (`creatureRagdollStep`, `34-creatures.js`) and never got it. They now have the same line: a point on the ground moving under .002 a step at scale 1 is held where its step began. The fall itself is unchanged.
+
+`duel`: the test crashed reading `dlgNPC.topics` after the check that Rowe's yield offer was open had passed. *Call it.* (`duelStart`, `80-world.js`) sets a 1.4-second timer that closes whatever dialogue is open, meant for the sergeant's. The test drops your health below 30% straight after the call, which opens Rowe's offer. On a slow runner the timer fired between the two evaluates and closed the offer. A player can meet this too, by falling below 30% inside 1.4 s of the call: the offer would vanish unanswered. The timer now leaves Rowe's dialogue open and closes any other. This is the systems builder's quest code; the change is one condition, made here because it was red on this branch.
+
+The tests: `beastfall` gains the 60 seeded deaths (the median must rest within 1.6 s, none may meet the cap, at most one may take over 2.5 s). `duel` now waits until the call's timer has certainly fired (1.7 s of the page's clock) and checks that the offer is still open, so the race is the same on every machine.
+
+### Verified (headless Chromium)
+- The probe, 80 seeded wolf deaths: before, median 1.25 s, two over 2.5 s, one capped (4.02 s); after, median 1.22 s, none over 2.5 s, the slowest 1.87 s.
+- `beastfall` passes; its 60 seeded deaths rest at a median of 1.22 s, slowest 1.87 s. With the old `js/`: median 1.25 s, two over 2.5 s, one capped, FAIL.
+- `duel` and `duelrhythm` pass; the offer is open after the timer, and *I yield.* reads `lost`, rematch day 7. With the old `js/`: the new check FAILs (`open:false`), then the CI TypeError.
+- `parsecheck` clean. Build tag s378.
+
+### Needs eyes
+- A dead wolf, boar or bear now stops a little sooner on the ground rather than creeping the last centimetres. It should not be visible.
+- Falling below 30% in the first moments of the duel now keeps Rowe's offer on screen until you answer it.
