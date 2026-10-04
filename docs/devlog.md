@@ -11863,3 +11863,13 @@ Part C's page: *names in an entry are links to their topic.* The topic labels ar
 ### Needs eyes
 - The links' gold dotted underline on the page. A town's generated person with a name that is also a word (a *Wren*, a *Rose*) will link that word wherever it is capitalised.
 - Owed under part C: notes pinned to the map.
+
+## v80 — Session 495 — Notes pinned to the map (DECISION #132, part C, last slice)
+Part C's last owed piece: *pin a note to the map*, notes up to 500 characters. On the world map's bar a *✎ Note* button (beside *Key*) arms the next click: the cursor turns to a crosshair and the panel says *Click the map where the note should go.* The click opens a box in the panel (Enter or *Pin it* pins, Shift+Enter breaks a line, Escape or *Cancel* drops it; the keys stay in the box). `pinMapNote` (`83-world-generator.js`, where the map lives) keeps the note in `worldState.mapNotes`, a list of `{x, z, text, t, tod}`: the world spot to a tenth, the words folded and cut at 500, and the minute it was pinned. The list is the character's, so it is in `SS_CHAR_WS` and the S242 load list (the gotcha in CLAUDE.md). A pin, a small paper flag on a post, is drawn over the places; hovering it shows the words and the date in the town card's place, and a click opens it in the panel with its distance and *Take it down* (`unpinMapNote`). A drag still pans; a click that is not armed and not on a pin picks a place as before. The Local view draws no pins.
+
+### Verified (headless Chromium)
+`mapnotes` 11/11 (new). *✎ Note* arms (crosshair, the panel's line); a mouse click on the map opens the box with the focus in it and disarms; typed words and Enter pin a note at the clicked world spot (within a tenth) stamped 7,800 and 10:00 am, and the panel shows *Your note · Day 6 · 10:00 am*. The pin is drawn where it was put; the mouse over it shows its words and date, and a click opens it. *Pin it* and *Cancel* are where a real click lands on them. Cancel and a blank note pin nothing; 600 letters are kept as 500. Saved, the two notes are in the character row and not the world row, and come back after a reload and Continue; *Take it down* removes one and its pin. `coopsaves` and `export` pass. `parsecheck` clean. Build tag s422.
+
+### Needs eyes
+- The pin's look at every zoom, and whether the flag reads among the place marks. A pin pinned while zoomed out sits where the click was, about ten world units to a pixel.
+- With part C done, DECISION #132's owed work is B: god's days, market days, rent day, feasts, dated work, seasons in the weather, the *Due* view, which wait on the quest writer's names (or placeholders).

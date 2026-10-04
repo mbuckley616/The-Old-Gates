@@ -782,7 +782,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s421</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s422</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1059,12 +1059,13 @@
             <label class="wm-leg" style="cursor:pointer"><input type="checkbox" class="wm-filt" value="gates" checked style="margin:0 4px 0 0"/>Gates</label>
             <label class="wm-leg" style="cursor:pointer"><input type="checkbox" class="wm-filt" value="pois" checked style="margin:0 4px 0 0"/>Places</label>
             <label class="wm-leg" style="cursor:pointer"><input type="checkbox" class="wm-filt" value="quests" checked style="margin:0 4px 0 0"/>Quests</label>
+            <button type="button" id="wm-pin" title="Pin a note of your own to the map: click this, then the spot" style="background:#0c1008;color:#c8b880;border:1px solid #3a4a2a;border-radius:3px;padding:3px 8px;font:12px Georgia,serif;cursor:pointer">✎ Note</button>
             <button type="button" id="wm-key" title="What the marks mean" style="background:#0c1008;color:#c8b880;border:1px solid #3a4a2a;border-radius:3px;padding:3px 8px;font:12px Georgia,serif;cursor:pointer">Key</button>
             <div id="wm-keybox" style="position:absolute;right:10px;bottom:34px;background:rgba(10,14,8,.97);border:1px solid #3a4a2a;border-radius:4px;display:none;min-width:220px;z-index:30;padding:8px 10px;font:12px Georgia,serif;color:#d8ccb0;line-height:1.5">
               <div style="color:#e8d8a0;margin-bottom:4px">The marks</div>
               <div>▣ city &nbsp; ▤ town, port, garrison &nbsp; ⌂ village &nbsp; ▮ outpost</div>
               <div>▦ fort &nbsp; ∩ cave / gate &nbsp; ▲ camp &nbsp; ▟ ruin &nbsp; ✦ shrine &nbsp; ✚ tower</div>
-              <div>★ a quest &nbsp; ◆ a discovery &nbsp; ⚔ a siege</div>
+              <div>★ a quest &nbsp; ◆ a discovery &nbsp; ⚔ a siege &nbsp; ⚑ your note</div>
               <div style="margin-top:4px">— road &nbsp; <span style="color:#b0703a">— trade route</span> &nbsp; <span style="color:#8a8ab0">— coach line</span> &nbsp; ⋯ ferry</div>
               <div style="margin-top:4px;color:#8a9a70">Search finds any place you've heard of. Filters hide the marks you don't want.</div>
             </div>
