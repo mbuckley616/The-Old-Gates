@@ -262,12 +262,16 @@ function gameDateLine(at,tod){ /* S486 — at, tod: a journal line's stamp; none
 // the first autumn month. Every name here is a
 // placeholder for the quest writer's; they live in this one table and nothing else spells them.
 const CAL={days:[{god:'muir',name:'the Sea’s day'},{god:'speir',name:'the Sky’s day'},{god:'beithigh',name:'the Beasts’ day'},{god:'cloch',name:'the Stone’s day'},{god:'teallach',name:'the Hearth’s day'},{god:'fiodoir',name:'the Weaver’s day'},{god:'guest',name:'the Guest’s day'}],
+  monthNames:['the first month','the second month','the third month','the fourth month','the fifth month','the sixth month','the seventh month','the eighth month','the ninth month','the tenth month','the eleventh month','the twelfth month'],
   monthLen:28,months:12,seasons:['spring','summer','autumn','winter'],startMonth:6,startYear:1};
 function calDay(at){
   const abs=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0);const n=Math.floor(Math.max(0,abs)/1440);
   const wd=n%CAL.days.length,mAbs=CAL.startMonth+Math.floor(n/CAL.monthLen),month=mAbs%CAL.months;
   return {n,weekday:wd,day:CAL.days[wd],god:CAL.days[wd].god,dom:n%CAL.monthLen+1,month,season:CAL.seasons[Math.floor(month/3)],year:CAL.startYear+Math.floor(mAbs/CAL.months)};
 }
+// S497 — the calendar's own date, *the Sea’s day, the 8th of the seventh month* (the Due view; the date line everywhere
+// waits for the writer's names)
+function calDateLine(at){const c=calDay(at);const d=c.dom,sfx=(d%10===1&&d!==11)?'st':(d%10===2&&d!==12)?'nd':(d%10===3&&d!==13)?'rd':'th';return `${c.day.name}, the ${d}${sfx} of ${CAL.monthNames[c.month]}`;}
 function isGodsDay(god,at){return !!god&&calDay(at).god===god;}
 function openSleepUI(){
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();

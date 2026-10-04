@@ -11885,3 +11885,13 @@ The rule: on its god's own day a shrine's boon lasts twice as long (3,600 s of b
 ### Needs eyes
 - The names and the order of the days are placeholders for the quest writer.
 - Owed under B: the *Due* view (rent day, the ship, the masons, the next market and feast), market days and their stall, the four feasts, dated work, the seasons in the weather.
+
+## v80 — Session 497 — The Journal's *Due* view: what the calendar owes you (DECISION #132, part B, second slice)
+The design page: *The Due view is built from things that already have a date: the rent, the ship being raised, the masons, a dated task, the next market where you stand, the next feast.* Markets, feasts and dated tasks are not built yet, so this view is made from the five dated things the game already keeps. `calendarDue()` (`87-world-quests.js`) lists them as `{at, icon, text}`, soonest first, from the absolute clock alone: the rent from the towns you own, at the start of the next week (the first day, which `tickRents` already keeps; its sum is now `rentSum()`, shared by both, so the figure the view names is the figure paid); the ship on a shipwright's slip (`ship.raise.due`); each mason's work not yet finished (`doneDay`); the room you have let (`rented.until`); the coach seat held. The Journal gains a fourth view, *Due* (after *Topics*), headed *Today is the Beasts’ day, the 10th of the seventh month*, each line with *today*, *tomorrow* or *in N days* and its calendar date; with nothing dated, *Nothing falls due.* `calDateLine` (`60-shop.js`) writes that date from `CAL`, whose month names are placeholders too (*the seventh month*). The date line elsewhere is unchanged until the writer's names come.
+
+### Verified (headless Chromium)
+`due` 6/6 (new). Day 1 reads *the Sea’s day, the 1st of the seventh month*, day 10 *the Beasts’ day, the 10th*, day 22 *the 22nd*. With nothing dated the view says so under today's date. With Dunmore owned, a well due on day 12, the *Gull* on the slip, a room let and a coach seat, the five come soonest first (the seat today at 11:40, the ship and the room tomorrow, the well in 2 days on the Hearth's day the 12th, the rent in 5 days on the Sea's day the 15th), and the rent named, 118 gold, is what `tickRents` pays that day. `journal`, `duel` and `duelrhythm` pass. `parsecheck` clean. Build tag s424.
+
+### Needs eyes
+- The view in play, and whether a line for the coach seat already taken should drop as soon as you board (it does when the seat is cleared).
+- Owed under B: market days and their stall, the four feasts, dated work (+25%), the seasons in the weather; each adds its lines to *Due*.

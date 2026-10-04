@@ -1222,7 +1222,21 @@
   function coachWhen(C){return (C.u>0.001&&C.u<0.999)?'goes on when the road is clear':C.u<=0.001?'leaves at six':'leaves at six in the evening';} // S348 — the prompt and the seat say the same hour
   function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='stop')return "Press 'E' to board the coach (it goes on shortly)";if(C.state==='wait')return `Press 'E' to board the coach (${coachWhen(C)})`;return "Press 'E' to swing aboard";}
   function coachInteract(){const C=coachNear();if(!C)return false;if(C.riding){C.riding=false;const ang=C.cart.rotation.y;px=C.cart.position.x+Math.cos(ang)*2.2;pz=C.cart.position.z-Math.sin(ang)*2.2;jumpY=worldH(px,pz);showMsg('You step down.','#c8b880');if(typeof saveGame==='function')saveGame();return true;} /* S353 — #66 A: stepping off the coach autosaves */C.riding=true;showMsg(C.state==='wait'?`You take a seat. The coach ${coachWhen(C)}.`:'You swing aboard.','#c8b880');if(typeof addLog==='function')addLog('🐎','Took the coach.');return true;}
-  function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const T=worldState.towns||{};let sum=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
+  function rentSum(){const T=worldState.towns||{};let sum=0,n=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;n++;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}return {sum,n};}
+  // S497 — the weeks start on day 1, so the rent falls on the first day of the week (calDay), the day the Due view names
+  function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const sum=rentSum().sum;if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
+  // S497 — what the calendar owes you (DECISION #132, part B; the Journal's Due view): every dated thing already kept,
+  // as {at, icon, text}, soonest first. The rent from the towns you own, the ship on the shipwright's slip, the masons at
+  // a town, the room you have let, the coach seat held. Read from the absolute clock alone.
+  function calendarDue(){
+    const now=worldState.gameTimeAbsMinutes||0,out=[];
+    const r=rentSum();if(r.n)out.push({at:(Math.floor(now/(1440*7))+1)*1440*7,icon:'🪙',text:`Rent from ${r.n===1?'your town':`your ${r.n} towns`}, about ${r.sum} gold at today’s prosperity.`});
+    const sh=worldState.ship;if(sh&&sh.sunk&&sh.raise){const t=siteAnywhere(sh.raise.site);out.push({at:sh.raise.due,icon:'⛵',text:`The ${sh.name||'ship'} raised and lying at ${t?t.name:'the yard'}.`});}
+    const T=worldState.towns||{};for(const id in T){const st=T[id];if(!st||!st.builds)continue;const t=siteAnywhere(id);st.builds.forEach(b=>{if(!b.done&&b.doneDay!=null)out.push({at:b.doneDay*1440,icon:'🧱',text:`The ${b.name} at ${t?t.name:'the town'} finished.`});});}
+    const rn=worldState.rented;if(rn&&rn.until>now){out.push({at:rn.until,icon:'🛏',text:'The room you let is the innkeeper’s again.'});}
+    const cs=worldState.coachSeat;if(cs&&typeof cs.at==='number'){const m=((cs.tod%1440)+1440)%1440;out.push({at:cs.at,icon:'🐎',text:`Your seat on the ${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')} coach.`});}
+    return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
+  }
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══

@@ -181,6 +181,9 @@ function renderJournal(){
   const body=document.getElementById('jn-body');if(!body)return;
   document.querySelectorAll('#jn-views button').forEach(b=>b.classList.toggle('active',b.dataset.v===_jnView));
   const L=GAME_LOG.filter(e=>e&&typeof e.text==='string');
+  if(_jnView==='due'){const now=worldState.gameTimeAbsMinutes||0,D=(typeof calendarDue==='function'?calendarDue():[]);
+    const when=at=>{const dd=Math.floor(at/1440)-Math.floor(now/1440);return dd<=0?'today':dd===1?'tomorrow':`in ${dd} days`;};
+    body.innerHTML=`<div class="jn-head" style="margin-bottom:8px">Today is ${_jnEsc(calDateLine(now))}</div>`+(D.length?D.map(e=>`<div class="jn-line jn-due"><span class="jn-time">${when(e.at)}</span><span class="jn-text">${_jnEsc(e.icon)} ${_jnEsc(e.text)} <span class="jn-state">${_jnEsc(calDateLine(e.at))}</span></span></div>`).join(''):'<div class="jn-empty">Nothing falls due.</div>');return;}
   if(_jnView==='topics'){body.innerHTML=`<input id="jn-search" type="search" placeholder="Search what you were told" autocomplete="off" oninput="journalSearch(this.value)"><div id="jn-topics"></div>`;const inp=document.getElementById('jn-search');inp.value=_jnSearch;journalSearch(_jnSearch);return;}
   const noteBox=_jnView==='day'?'<div id="jn-write"><textarea id="jn-note" maxlength="500" rows="2" placeholder="Write a line of your own (Enter writes it)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();journalNoteSubmit();}"></textarea><button type="button" onclick="journalNoteSubmit()">Write it</button></div>':'';
   if(!L.length){body.innerHTML=noteBox+'<div class="jn-empty">Nothing written yet.</div>';return;}
@@ -204,7 +207,7 @@ function renderJournal(){
   }
   body.innerHTML=noteBox+html;
 }
-function journalView(v){_jnView=(v==='quest'||v==='topics')?v:'day';renderJournal();}
+function journalView(v){_jnView=(v==='quest'||v==='topics'||v==='due')?v:'day';renderJournal();}
 // ── HUB ──────────────────────────────────────────────────────
 let hubOpen=false,dollSelectedSlot=null;
 function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(id);if(b)b.style.width=Math.max(0,Math.min(100,v/m*100))+'%';const t=document.getElementById(n);if(t)t.textContent=Math.floor(v)+' / '+m;};s('hv-hp',PHP,effMaxHP(),'hv-hpn');s('hv-mp',mana,effMaxMana(),'hv-mpn');s('hv-st',stamina,effMaxStamina(),'hv-stn');}catch(e){}}
