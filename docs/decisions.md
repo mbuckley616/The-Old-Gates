@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
+Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
+- **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
+- **B.** A, and a calendar the world keeps: a god's day doubles its shrine's boon, each town a market day with a travelling stall, rent on a named day, four feasts a year, some tasks dated (+25% by the day, taken back after), seasons in the weather odds, and a *Due* page (A + 2 Opus).
+- **C.** B, and Morrowind's whole book: every topic you were told filed by name with a search, links in entries, notes of your own and on the map (B + 2 Opus).
+
+Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
+
+## Answered
 ### An exhausted power attack still breaks a guard (the systems builder, Session 464, 2026-10-04, DECISION #131)
 Played through the duel at Caer Slige (Session 464). Rowe fights as a Bandit Captain with the Shieldbearer's guard: a hit from the front lands at 35%, and a power attack breaks the guard (1.5 s stagger, the next blow full). Since v80 S9 a swing with too little stamina goes anyway but weakly: it lands at 45% and its cooldown is 30% longer. The guard break ignores that. A power attack on an empty bar breaks the guard as fully as a fresh one.
 
@@ -14,15 +23,8 @@ What it does in play, measured headless at level 1 with the starting club agains
 
 Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
 
-### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
-Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
-- **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
-- **B.** A, and a calendar the world keeps: a god's day doubles its shrine's boon, each town a market day with a travelling stall, rent on a named day, four feasts a year, some tasks dated (+25% by the day, taken back after), seasons in the weather odds, and a *Due* page (A + 2 Opus).
-- **C.** B, and Morrowind's whole book: every topic you were told filed by name with a search, links in entries, notes of your own and on the map (B + 2 Opus).
+Michael: **A — an exhausted power attack lands as a guarded hit** (2026-10-04, on #131). Acted, Session 485: both strike paths (the open world's and the dungeon's) let a spent power attack fall through to the guarded hit (the front block .35 on the spent 45%), with a normal swing's posture drain rather than the power attack's, and the hit's line ends *· Too spent to break the guard.* `tests/spentguard`. #131 closed.
 
-Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
-
-## Answered
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
 

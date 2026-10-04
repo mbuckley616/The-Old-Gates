@@ -1697,7 +1697,10 @@ function _resolveZoneStrike(_isPow){
     _hitsLanded++;
     // v65 — Power-vs-shielded enemy: pure stagger, no damage. Mirrors the
     // dungeon path. See attack() for the design rationale.
-    if(_isPow && e.shieldUp && !riposteOpen(e)){
+    // S485 — a power attack swung on too little stamina (_exhaustedStrike) does not break the guard (Michael's A on #131):
+    // it falls through and lands as a guarded hit, 35% of the exhausted 45%, saying so
+    const _spent=_isPow&&e.shieldUp&&!riposteOpen(e)&&_exhaustedStrike;
+    if(_isPow && e.shieldUp && !riposteOpen(e) && !_spent){
       if(typeof e.posture==='number' && !isStaggered(e)){
         applyPostureDamage(e, (e.maxPosture||999), performance.now()/1000);
         staggered.push({e, t: POSTURE_BREAK_STUN});
@@ -1732,7 +1735,7 @@ function _resolveZoneStrike(_isPow){
       // POSTURE_DRAIN_POWER (25) vs normal POSTURE_DRAIN_NORMAL (8).
       // v65: postureMult from WEAPON_TYPES scales the drain on top.
       if(e.hp>0 && typeof e.posture==='number' && !isStaggered(e)){
-        const drain = (_isPow ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult;
+        const drain = (_isPow&&!_spent ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult; // S485 — a spent power attack on a guard drains as the guarded hit it is
         const broke = applyPostureDamage(e, drain, performance.now()/1000);
         if(broke){
           staggered.push({e, t: POSTURE_BREAK_STUN});
@@ -1763,7 +1766,7 @@ function _resolveZoneStrike(_isPow){
         if(e.hp<=0){
           killZoneEnemy(e,sc,_killTag);
           if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
+        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}${_spent?' · Too spent to break the guard.':''}`,'#ff9944');
       }
     }
   }

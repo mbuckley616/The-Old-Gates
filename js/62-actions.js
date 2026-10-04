@@ -133,7 +133,10 @@ function _resolveDungeonStrike(_isPow){
     // Forecast: Shieldbearer (Session 5) ships with shieldUp:true and a "guard
     // raised" telegraph — this rule fires for free at that point. shieldUp is
     // currently a no-op canon flag; setting it on any enemy enables the rule.
-    if(_isPow && e.shieldUp && !riposteOpen(e)){
+    // S485 — a power attack swung on too little stamina (_exhaustedStrike) does not break the guard (Michael's A on #131):
+    // it falls through and lands as a guarded hit, 35% of the exhausted 45%, saying so
+    const _spent=_isPow&&e.shieldUp&&!riposteOpen(e)&&_exhaustedStrike;
+    if(_isPow && e.shieldUp && !riposteOpen(e) && !_spent){
       if(typeof e.posture==='number' && !isStaggered(e)){
         // Force-break by draining max posture; pushes the enemy onto the
         // staggered list with the standard POSTURE_BREAK_STUN window.
@@ -178,7 +181,7 @@ function _resolveDungeonStrike(_isPow){
       // v65: postureMult from WEAPON_TYPES (2H weapons) scales the drain on top.
       // War hammers (2.25×) break a normal enemy in one power hit; brutes in two.
       if(e.hp>0 && typeof e.posture==='number' && !isStaggered(e)){
-        const drain = (_isPow ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult;
+        const drain = (_isPow&&!_spent ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult; // S485 — a spent power attack on a guard drains as the guarded hit it is
         const broke = applyPostureDamage(e, drain, performance.now()/1000);
         if(broke){
           staggered.push({e, t: POSTURE_BREAK_STUN});
@@ -203,7 +206,7 @@ function _resolveDungeonStrike(_isPow){
         if(e.hp<=0){
           killE(e,_killTag);
           if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
+        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}${_spent?' · Too spent to break the guard.':''}`,'#ff9944');
       }
     }
   }

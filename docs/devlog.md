@@ -11693,3 +11693,20 @@ The tests: `beastfall` gains the 60 seeded deaths (the median must rest within 1
 ### Needs eyes
 - A dead wolf, boar or bear now stops a little sooner on the ground rather than creeping the last centimetres. It should not be visible.
 - Falling below 30% in the first moments of the duel now keeps Rowe's offer on screen until you answer it.
+
+## v80 — Session 485 — A spent power attack no longer breaks a guard (Michael's A on DECISION #131)
+Session 464 played the duel at Caer Slige and found that the captain's guard (Session 130: a hit from the front lands at 35% until a power attack breaks it) broke as fully for a power attack swung on an empty bar as for a fresh one. Since v80 S9 a swing on too little stamina goes anyway but weakly (45% of its damage, a 30% longer cooldown), and the guard break ignored that, so standing still and mashing the power attack beat Rowe while the careful player lost. Michael chose A: a spent power attack lands as a guarded hit, 35% of the spent 45%, with the message *Too spent to break the guard.*
+
+Both strike paths have the guard-break branch, the open world's (`_resolveZoneStrike`, `42-zone-enemies.js`) and the dungeon's (`_resolveDungeonStrike`, `62-actions.js`). In each, a power attack on a raised guard that was flagged `_exhaustedStrike` when it was swung (`_spent`) now skips the break and falls through to the ordinary hit: the front block (`shieldFrontMult`) and the spent 45% in `applyMeleeDamage`, as the decision says. The hit's line ends *· Too spent to break the guard.* (the hit message would overwrite a toast of its own on the same frame). One reading beyond the letter of the option, and the reason for it: the fall-through first drained a power attack's posture (25) from the guard. Mashed, that staggered the captain every second spent swing, and a stagger opens the riposte, which goes round the shield, so the masher won by another door. A guarded hit drains a normal swing's posture (8), so a spent power attack on a guard now does too. Against an open foe a spent power attack is unchanged. A spent power attack from behind goes round the shield as any hit from behind does, at the spent 45% and without breaking the guard; inside a riposte nothing changes.
+
+### Verified (headless Chromium)
+`spentguard` 9/9 (new), on the game's own loop at fixed 1/60 ticks:
+- A Bandit Captain in Dunmore, seven power attacks from the front on an empty bar: the guard holds through all seven, each takes the front block .35 on raws of 5–7 and lands for 1, and each line reads *Hit Bandit Captain for 1! (POWER) (GUARDED) · Too spent to break the guard.*, never *guard breaks*. One of the seven staggered it by posture (was every second one before the drain was read as a guarded hit). A power attack with the stamina for it still breaks the guard, staggers, and does no damage.
+- In a dungeon (ruins, seed 11), a Skeleton with its guard raised: three spent power attacks leave the guard up and land guarded with the line; a fresh one breaks it for no damage.
+- The masher's fight, as #131 measured it: level 1, a club (3–7), a Bandit Captain (62 health) fighting back, the power attack swung whenever the cooldown allows. On the old code: 12 swings, 9 spent, the guard broken 4 times by spent swings, the captain dead in 12.6 s and you down 27 of 130. Now: 24 swings, 21 spent, none breaks the guard, and you go down in 13.7 s with the captain at 14 of 62.
+- On the old `js/`, six of the nine checks fail.
+- `captainguard`, `posture`, `duel`, `duelrhythm`, `yardplay`, `foes`, `weapons`, `fistfight` pass. `parsecheck` clean. Build tag s414.
+
+### Needs eyes
+- Whether *Too spent to break the guard.* on the end of the hit line reads in a fight, or wants its own toast after it.
+- The careful player's side of #131 (waiting for three-quarters of the bar before a power attack, 3 swings in 21 s and down) is unchanged by this: the masher no longer wins, but whether the careful fight against Rowe at level 1 is now winnable is a feel call for the duel's tuning, not this rule.
