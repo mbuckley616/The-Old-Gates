@@ -390,7 +390,10 @@ function creatureRagdollStep(R){
     if(R.t<.8)for(const [r,sd,js] of R.LEGS){const rp=P[r].p;for(const j of js){const p=P[j].p,d=_crd2.subVectors(p,rp),l=d.length(),lat=d.dot(x)*sd,lim=.3*l;
       if(lat>lim)p.addScaledVector(x,-(lat-lim)*sd);else if(lat<-lim)p.addScaledVector(x,(-lim-lat)*sd);}}
     for(let i=0;i<P.length;i++){const o=P[i],gy=R.ground(O.x+o.p.x,O.z+o.p.z)-O.y+R.rad[i];
-      if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;}}
+      if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;
+        // S482: the people's floor grip (S466): a point on the ground creeping slower than RD_GRIP.floor a step is held where
+        // the step began; without it one wolf death in eighty crept sideways on its raised foreleg past the four-second cap
+        if(Math.abs(o.p.x-o.sx)+Math.abs(o.p.z-o.sz)<RD_GRIP.floor*R.s){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}}}
     if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
   }
 }
