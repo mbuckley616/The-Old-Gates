@@ -38,5 +38,23 @@ check('and new lines are written into the saved list', b.same && b.n1 === b.n0 +
 const c = await page.evaluate(() => { const d = JSON.parse(ssStringify(_buildSavePayload())); delete d.wS.journal; const before = GAME_LOG.length; _applyLoadData(d);
   return { before, after: GAME_LOG.length, same: worldState.journal === GAME_LOG }; });
 check('an older save without a journal loads with none, and the list is still the one GAME_LOG reads', c.before > 0 && c.after === 0 && c.same, c);
+// 4. a quest's own words (Session 487): taken, done and turned in, each line goes into the journal under the quest,
+// at the moment it happens, and the Quests tab shows them under the quest's card with their dates
+const q = await page.evaluate(() => { const id = 'q1_first_blood', d = QUEST_DEFS.find(x => x.id === id);
+  QS[id].state = 'available'; worldState.gameTimeAbsMinutes = 20000; worldState.gameTimeMinutes = 20000 % 1440; acceptQuest(id);
+  worldState.gameTimeAbsMinutes = 20600; worldState.gameTimeMinutes = 20600 % 1440; for (let k = 0; k < 5; k++) checkQuestProgress('kill_in_dungeon', { seed: 42 });
+  worldState.gameTimeAbsMinutes = 21000; worldState.gameTimeMinutes = 21000 % 1440; completeQuest(id);
+  const L = journalOf(id).map(e => ({ t: e.t, k: e.qk, text: e.text }));
+  openHub('quests'); const card = [...document.querySelectorAll('#qlog-body .qlog-quest')].find(el => el.textContent.includes(d.title)); const ctext = card ? card.innerText : ''; closeHub();
+  openHub('log'); const jtext = document.getElementById('log-body').innerText; closeHub();
+  return { L, accept: d.acceptText || null, ready: d.readyText, complete: d.completeText, ctext, jtext, title: d.title }; });
+console.log(JSON.stringify(q).slice(0, 1500));
+const acc = q.L.find(e => e.k === 'accept'), rdy = q.L.find(e => e.k === 'ready'), com = q.L.find(e => e.k === 'complete');
+check('taking a quest writes its words into the journal under the quest, stamped when it was taken', acc && acc.t === 20000 && (q.accept ? acc.text === q.accept : acc.text.length > 0), q.L);
+check('finishing the work writes its ready words', rdy && rdy.t === 20600 && rdy.text === q.ready, q.L);
+check('turning it in writes its closing words, stamped then', com && com.t === 21000 && com.text === q.complete, q.L);
+check('the Quests tab shows those lines under the quest, each with its date', q.ctext.includes(q.complete) && /Day 14 · /.test(q.ctext) && /Day 15 · /.test(q.ctext), q.ctext.slice(-600));
+check('and the Journal shows them under the quest\'s name', q.jtext.includes(q.title + ' — ' + q.complete), q.jtext.slice(-500));
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

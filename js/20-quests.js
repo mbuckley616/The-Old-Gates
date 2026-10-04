@@ -1193,10 +1193,15 @@ function renderQuestLog(){
       const descBlock = (state==='active'||state==='reward') && qDef.description
         ? `<div class="qlog-desc">${qDef.description}</div>`
         : '';
+      // S487 — what the journal holds of this quest, in order, each line under its date
+      const _esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const _jl=(typeof journalOf==='function')?journalOf(qDef.id):[];
+      const jBlock=_jl.length?`<div class="qlog-journal" style="margin:6px 0 4px;padding-left:8px;border-left:2px solid rgba(138,122,90,.35)">${_jl.map(e=>`<div style="margin:3px 0;font-size:11px;line-height:1.4"><span style="color:#8a7a5a;font-size:10px">${_esc(gameDateLine(e.t,e.tod))}</span><br><i>${_esc(e.text)}</i></div>`).join('')}</div>`:'';
       div.innerHTML=`${pin}<div class="qlog-title"><span class="qlog-title-text">${qDef.title}</span>${badge}</div>
         ${giverLine}
         ${descBlock}
         ${objHtml}
+        ${jBlock}
         ${rewardStr?`<div class="qlog-reward">Reward: ${rewardStr}</div>`:''}`;
       body.appendChild(div);
     });

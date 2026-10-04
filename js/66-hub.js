@@ -101,6 +101,9 @@ const GAME_LOG=[];
 worldState.journal=GAME_LOG;
 let logCollapsed={};
 function addLog(icon,text){if(worldState.journal!==GAME_LOG)worldState.journal=GAME_LOG;GAME_LOG.push({level,icon,text,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});}
+// S487 — a quest's own words (the card's: acceptText, an objective's completionText, readyText, completeText), kept under its id
+function journalQuest(kind,qDef,text){if(!qDef||!qDef.id||!text)return;addLog(kind==='complete'?'✅':'📜',String(text));const e=GAME_LOG[GAME_LOG.length-1];e.q=qDef.id;e.qk=kind;}
+function journalOf(id){return GAME_LOG.filter(e=>e&&e.q===id);}
 function journalLoad(list){GAME_LOG.length=0;if(Array.isArray(list))list.forEach(e=>{if(e&&typeof e.text==='string')GAME_LOG.push(e);});worldState.journal=GAME_LOG;}
 function renderLog(){
   const byLevel={};GAME_LOG.forEach(e=>{if(!byLevel[e.level])byLevel[e.level]=[];byLevel[e.level].push(e);});
@@ -135,7 +138,7 @@ function renderLog(){
     hdr.appendChild(chev);hdr.appendChild(document.createTextNode(' Level '+lv));
     hdr.onclick=()=>{logCollapsed[lv]=!logCollapsed[lv];renderLog();};block.appendChild(hdr);
     if(!collapsed){const entries=document.createElement('div');entries.className='log-entries';
-      byLevel[lv].forEach(e=>{const div=document.createElement('div');div.className='log-entry'+(e.icon==='↑'?' log-levelup':e.icon==='💀'?' log-death':'');if(typeof e.t==='number'){const dt=document.createElement('div');dt.className='log-date';dt.style.cssText='font-size:10px;color:#8a7a60;letter-spacing:.04em';dt.textContent=gameDateLine(e.t,e.tod);div.appendChild(dt);}div.appendChild(document.createTextNode(e.icon+' '+e.text));entries.appendChild(div);});block.appendChild(entries);}
+      byLevel[lv].forEach(e=>{const div=document.createElement('div');div.className='log-entry'+(e.icon==='↑'?' log-levelup':e.icon==='💀'?' log-death':'');if(typeof e.t==='number'){const dt=document.createElement('div');dt.className='log-date';dt.style.cssText='font-size:10px;color:#8a7a60;letter-spacing:.04em';dt.textContent=gameDateLine(e.t,e.tod);div.appendChild(dt);}if(e.q){const qd=(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===e.q))||null;const tt=document.createElement('span');tt.style.cssText='font-style:italic';tt.textContent=e.icon+' '+(qd?qd.title+' — ':'')+e.text;div.appendChild(tt);}else div.appendChild(document.createTextNode(e.icon+' '+e.text));entries.appendChild(div);});block.appendChild(entries);}
     body_.appendChild(block);
   });
 }
