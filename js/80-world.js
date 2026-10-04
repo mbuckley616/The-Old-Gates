@@ -5399,6 +5399,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function restoreShip(){if(worldState.ship&&!worldState.ship.sunk&&!SHIP.mesh)spawnShip(worldState.ship.x,worldState.ship.z,worldState.ship.yaw);}
   // buy at a shipwright: the ship appears off the seaward end of the quay
+  // S473 — a ship moored at a quay lies with her bow to the sea: her forward is (−sin yaw, −cos yaw), so the yaw that points
+  // her along the shore direction sd is atan2(−sd.dx, −sd.dz). Buying and the Compact's grant used atan2(sd.dx, sd.dz), the
+  // bow at the quay (the critic, 4 Oct: the first W cost Hull −22); fetching and raising faced the land on a north or south shore.
+  function seawardYaw(sd){return Math.atan2(-sd.dx,-sd.dz);}
   function buyShip(site){
     if(worldState.ship)return 'You have a ship already. She\u2019s wherever you left her.';
     const price=shipPriceNow();
@@ -5407,7 +5411,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(!plat||!sd)return 'No berth here to launch from.';
     const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
     const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
-    gold-=price;updateHUD();spawnShip(bx,bz,Math.atan2(sd.dx,sd.dz));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
+    gold-=price;updateHUD();spawnShip(bx,bz,seawardYaw(sd));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
     if(typeof addLog==='function')addLog('⛵',`Bought a ship at ${site.name}.`);
     return `She\u2019s the ${SHIP.name}, and she\u2019s yours — moored off the seaward end of the quay, ${compassWord(bx-site.x,bz-site.z)} of here. Walk out, press E beside her to board, E again for the wheel.`;
   }
@@ -5436,7 +5440,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(!plat){const L=quayLine(port,sd,1.1),hw=Math.abs(sd.dx)?L.len/2:4,hd=Math.abs(sd.dz)?L.len/2:4;plat={x0:L.mx-hw,x1:L.mx+hw,z0:L.mz-hd,z1:L.mz+hd};}
     const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
     const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
-    spawnShip(bx,bz,Math.atan2(sd.dx,sd.dz));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
+    spawnShip(bx,bz,seawardYaw(sd));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
     return port;
   }
   // E near the wheel takes / leaves the helm
@@ -6568,7 +6572,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // once a second: a raised ship due at her quay is put there
   function tickShipRaise(){const st=worldState.ship;if(!st||!st.sunk||!st.raise||SHIP.mesh)return;if((worldState.gameTimeAbsMinutes||0)<st.raise.due)return;
     const site=siteAnywhere(st.raise.site);if(!site)return;const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};
-    delete st.sunk;delete st.raise;st.hull=shipClass().hull;st.rig=100;spawnShip(q.x+sd.dx*22,q.z+sd.dz*22+(sd.dx?12:0),Math.atan2(-sd.dz,-sd.dx)+Math.PI/2);
+    delete st.sunk;delete st.raise;st.hull=shipClass().hull;st.rig=100;spawnShip(q.x+sd.dx*22,q.z+sd.dz*22+(sd.dx?12:0),seawardYaw(sd));
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} is raised and lies at ${site.name}.`);}
   function shipMendCost(){const b=shipBars();const h=b.hullMax-b.hull,r=100-b.rig;return {hull:h,rig:r,gold:h*4+r*3,mins:Math.round((h+r)*3)};}
   const SHIPBAR={ui:null};
@@ -6641,7 +6645,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const st=shipCfg();const out=[];const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman;
     if(st.sunk){if(st.raise)return out;const rc=shipRaiseCost();out.push({label:`Raise the ${st.name||SHIP.name} (${rc} gold)`,quest:true,fn:()=>{const c=shipRaiseCost();if(gold<c)return L.raisePoor(c);gold-=c;updateHUD();
       st.raise={site:site.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};if(typeof addLog==='function')addLog('⛵',`Paid ${site.name}'s shipwright to raise the ${st.name||SHIP.name}.`);return L.raised;}});return out;}
-    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return L.fetchPoor(fee);gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=Math.atan2(-sd.dz,-sd.dx)+Math.PI/2;SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return L.fetched;}});}
+    if(SHIP.mesh&&!shipHere(site)){const fee=Math.min(150,Math.round(25+Math.hypot(SHIP.x-site.x,SHIP.z-site.z)/200));out.push({label:`Fetch the ${SHIP.name} to this harbour (${fee} gold)`,quest:true,fn:()=>{if(gold<fee)return L.fetchPoor(fee);gold-=fee;updateHUD();const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};SHIP.x=q.x+sd.dx*22;SHIP.z=q.z+sd.dz*22+ (sd.dx?12:0);SHIP.yaw=seawardYaw(sd);SHIP.speed=0;SHIP.sailing=false;shipUpdatePlacement();Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} brought round to ${site.name}.`);return L.fetched;}});}
     const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
       const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
       if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}

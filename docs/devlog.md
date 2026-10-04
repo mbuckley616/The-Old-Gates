@@ -11532,3 +11532,16 @@ Found in Session 471's test. The world's containers call `rollContainerLoot` wit
 
 ### Needs eyes
 Whether a town's barrels now give too much: 1,500 barrels now hold 388 potions, herbs, torches and purses between them, where before they held only the town's own fallback goods. Hoards and wrecks now pay in gold and potions as well as arms, and their arms rise with your level.
+
+## v80 — Session 473 — A ship moored at a quay lies bow to the sea (backlog I, the critic's 4 Oct playtest)
+The critic bought a ship from Lonán at Portclare, took the wheel and held W. She struck the quay's shallows in three seconds: *Hull −22*. A ship's forward is (−sin yaw, −cos yaw). `buyShip` turned her to `atan2(sd.dx, sd.dz)`, where `sd` is the shore direction from the site to its sea edge, so her bow pointed at the land. The Compact's grant of a sloop (Session 457) copied the same line. *Fetch her to this harbour* and the shipwright's raise used `atan2(−sd.dz, −sd.dx) + π/2`. That is seaward on an east or west shore but faces the land on a north or south one. All four now take one helper, `seawardYaw(sd)` = `atan2(−sd.dx, −sd.dz)`. Where she lies is unchanged, beside the quay's seaward end. A ship already moored in a save keeps the heading it was saved with.
+
+The critic filed this on auto/critic (PR #135), not yet on main. The struck line in section I here carries the same title, so the two merge side by side.
+
+**Correction.** Session 467's entry says `compactrefit` 11/11. The suite has ten checks, and all ten pass.
+
+### Verified (headless Chromium)
+`shipmoor` 3/3 (new). Bought at Portclare, her bow points to deeper water: −8 at 15 and 30 units ahead, −6.3 and −4.0 astern. The old code had those the other way round. With the wheel taken and W held for fifteen seconds of the game's tick, she sails 103 units out at 7.5 with her hull at 100. On the old code she stops after 30 units with *Aground — she strikes the shallows. Hull −22.*, the critic's report to the point. `shipwreck` 16/16 (the raise at Portclare), `compactrefit` 10/10 (the grant and the refit), `shipwright` 27/27. `parsecheck` clean. Build tag s405.
+
+### Needs eyes
+The look of her bow-out berth beside the quay, and whether a raised or fetched ship at a north or south harbour now sits where it reads well.
