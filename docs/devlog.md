@@ -11752,3 +11752,17 @@ The Character tab keeps who you are, what you wear, Renown and Standing, and los
 ### Needs eyes
 - The tab in play: whether the chronicle's lines read as a journal or as a log. Most lines are still the log's short ones (*Traveled to Dunmore*, *Harvested Firemoss*); the story's quest lines are the ones in your own voice, and the world's quests join after the world-file cut.
 - Seven tabs now share the hub's top bar; at a narrow window the labels are tight.
+
+## v80 — Session 489 — The date line in the wait menu and on each save slot (DECISION #132, the shared shape)
+The journal page's shared shape (the rules under every option Michael could have picked) says *one function writes the date line everywhere: the sundial's tooltip, the wait menu, the sleep panel, the save slot's line and each journal entry.* `gameDateLine` already wrote the sleep panel's and, since Session 486, each journal line's. This session gives it the wait menu and the save slots, so that the quest writer's names for the days and months, when Michael picks them, change one function and show everywhere.
+
+- **The wait menu** (`openWaitMenu`, `50-travel.js`) opens on the date: *Day 12 · 7:40 am · Choose how long to wait*.
+- **A save slot** keeps the game's date when it was saved. The slot's index entry is built from the character row, which carries no clock since the save became two rows (S456); it is now built from the two rows joined (`ssMetaFrom(ssJoinPayload(r.c, r.w))`), and keeps `at` and `tod`. The slot list shows *Day 12 · 7:40 am · 0🪙 · just now*. A slot saved before this build has no date and shows none; an imported character's slots, written from the character row alone, show none either.
+- **The sundial** is not done. It has `pointer-events: none`, and in play the mouse is locked to the view, so a tooltip on it would never show. Where the date should sit in play (a line under the sundial, or on the compass) is a look question, left in the backlog.
+
+### Verified (headless Chromium)
+`dateline` 5/5 (new): at minute 16,300 (7:40 am) the wait menu reads *Day 12 · 7:40 am · Choose how long to wait*; slot 1's entry keeps `at` 16,300 and `tod` 460 and its line reads *Day 12 · 7:40 am · 0🪙 · just now · 7 KB*; the same entry without the date reads *0🪙 · just now · 7 KB*. `coopsaves`, `savelabel`, `export` and `autosave` pass. `parsecheck` clean. Build tag s418.
+
+### Needs eyes
+- The date on the slot list and in the wait menu, read in the game's own menus.
+- The sundial's date (see above): a look call.

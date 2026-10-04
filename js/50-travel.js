@@ -859,6 +859,7 @@ function openWaitMenu(){
   }
   _releasePointerLockForMenu();
   const el = document.getElementById('wait-modal');
+  const sub = document.getElementById('wait-sub'); if(sub) sub.textContent = `${gameDateLine()} · Choose how long to wait`; // S489 — the date line
   if(el) el.style.display = 'flex';
 }
 function closeWaitMenu(){
