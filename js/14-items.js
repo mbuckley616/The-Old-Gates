@@ -681,6 +681,8 @@ function rollConsumable(kind){
 }
 
 function rollLoot(diffScale, theme, kind){
+  // v80 S472 — the world's containers pass the difficulty as a number (1 a town barrel, 1.4 a wreck, 2.4 a hoard); read it as {hp}
+  if(typeof diffScale==='number')diffScale={hp:diffScale};
   // Chance of getting an equip vs consumable/gold — scales up with difficulty
   const equipChance=0.28+(diffScale?diffScale.hp*0.08:0);
   const roll=lootRand();

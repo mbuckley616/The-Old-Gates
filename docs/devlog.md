@@ -11523,3 +11523,12 @@ Found while testing, and left for its own session: the world's containers pass a
 
 ### Needs eyes
 Nothing in play, bar a town's barrels holding the same things if you leave and come back the same day.
+
+## v80 — Session 472 — The world's barrels, wrecks and hoards rolled tier-1 arms and nothing else
+Found in Session 471's test. The world's containers call `rollContainerLoot` with a number for the difficulty: 1 for a town's barrels and crates, 1.4 for a wreck's sea chest, 1.2 and 1.8 for a merchantman's and a black sail's chest, 2.4 for a tower's hoard, and 2.2 and 1.6 for a lair's hoard and a camp's takings. `rollLoot` reads `diffScale.hp`, and a number has none. The chance of arms came out NaN, so every roll took the arms branch (`roll > NaN` is false). The tier cap came out NaN too, every material's weight was zero, and the tier fell through to 1. So a town barrel, which keeps only everyday goods, threw every roll away and always fell back to the town's own list (the candle, the rope, the salt). A wreck's chest or a lair's hoard held tier-1 arms and the odd spellbook, never gold or a potion, whatever your level. The numbers were plainly meant as the difficulty: the wreck's entry (`rollContainerLoot('chest',1.4)`) and the hoards' multipliers rise with the danger of the place. `rollLoot` now reads a number as `{hp: number}`. A dungeon passes its own `{hp}` object and is unchanged.
+
+### Verified (headless Chromium)
+`worldloot` 5/5 (new), over 1,500 keyed rolls of each kind at level 5. On the old code it fails all four checks: a town barrel's 710 items were 100% arms (0 goods, 0 gold), a wreck's 2,177 were 96% arms, a hoard's 2,529 96%, all tier 1. Now a 1.4 chest rolls exactly what a `{hp: 1.4}` chest rolls, key for key. A town barrel's 720 items are 388 goods, 40 of them gold. A wreck's chest holds 42% arms up to tier 4, and a hoard 51% up to tier 5, beside a dungeon chest's 40% up to tier 4. `lootseed`, `piratehold`, `wreck` and `oddfurn` pass. `parsecheck` clean. Build tag s404.
+
+### Needs eyes
+Whether a town's barrels now give too much: 1,500 barrels now hold 388 potions, herbs, torches and purses between them, where before they held only the town's own fallback goods. Hoards and wrecks now pay in gold and potions as well as arms, and their arms rise with your level.
