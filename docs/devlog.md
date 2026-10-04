@@ -11554,3 +11554,17 @@ The critic moved the Hearthwick chain on in one game, imported a character file 
 
 ### Needs eyes
 Nothing in solo play: a save with both rows loads as before.
+
+## v80 — Session 475 — A save is labelled with its place, not "the open country" (backlog I, the critic's 4 Oct playtest)
+The critic saved in Dunmore's street, and the slot read *Lv1 · the open country*, as every open-world save did. The slot list's `zoneOf` read only the zone, and the whole continent is one zone, `world`. The save's `where` has coordinates, a house id or a gate's seed, but no name. A save now carries `placeName`, set when it is written by `ssPlaceName()` (`70-saves.js`):
+- In the open, it is the nearest loaded place: its name inside the place's pad and 40 beyond, *near* it within 1,500, and nothing past that.
+- Indoors, it is the house and its town. Indoors `activeZoneId` stays `world` and `px`/`pz` are the room's, so the house's `siteId` names the town.
+- Underground, it is the gate's name.
+
+The index entry keeps it as `place`. The slot list and the death screen's *Last save* line show it, and an old save without one keeps the old label. These are labels in the menu's own voice, built from names the world already gives. The critic's small note is fixed too: the export file's `build` was the literal `'s373'`, and it now reads the running tag from the controls line.
+
+### Verified (headless Chromium)
+`savelabel` 6/6 (new). A save in Dunmore's street reads *Lv1 · Dunmore* in the slot list. One 355 units from its middle reads *Lv1 · near Dunmore*. Indoors the place is *The Bramble Hearth, Dunmore*, and underground *The Lost Chasm of Silence*. An old entry with no place still reads *the open country*. `ssBuildTag()` is the controls line's tag (s406 at the time of the run). `saveui` 13/13, `export` 6/6, `coopsaves` 21/21, `autosave` 7/7, `saves` 6/6. `parsecheck` clean. Build tag s407.
+
+### Needs eyes
+Whether *near X* at up to 1,500 units reads right on a long road, where the nearest loaded place may be a shrine or a camp rather than a town.

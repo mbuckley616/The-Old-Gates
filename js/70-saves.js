@@ -127,7 +127,7 @@ function ssChars(){const m={};for(const e of SS.idx){const c=m[e.charId]||(m[e.c
 function ssActiveKey(){try{return localStorage.getItem(SS_ACTIVE_KEY);}catch(e){return null;}}
 function ssSetActive(key){try{localStorage.setItem(SS_ACTIVE_KEY,key);}catch(e){}}
 function ssCharId(){if(typeof worldState!=='undefined'&&worldState){if(!worldState.charId)worldState.charId='c'+Date.now().toString(36);return worldState.charId;}return 'legacy';}
-function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${slot}`,charId:d.charId||'legacy',charName:d.pName||'Unnamed',people:(d.wS&&d.wS.people)||'',arch:d.arch||'',kind,slot,level:d.level,gold:d.gold,zone:d.zone,where:d.where,ts:d.ts||Date.now(),size:0};}
+function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${slot}`,charId:d.charId||'legacy',charName:d.pName||'Unnamed',people:(d.wS&&d.wS.people)||'',arch:d.arch||'',kind,slot,level:d.level,gold:d.gold,zone:d.zone,where:d.where,place:d.placeName||'',ts:d.ts||Date.now(),size:0};}
 // ═══ TWO SAVES (Session 456 — backlog K, Michael's A on #119, docs/design/online-play.md rule 1) ═══════════
 // A save is two rows. The CHARACTER row is who you are and what you carry: attributes, level, health, skills,
 // EQ, BAG, the stash, gold, the known words (spells, sigils, books, herbs), the journal, where you stand, and the
@@ -215,7 +215,7 @@ function ssExportChar(charId,world){
   return Promise.all(rows.map(e=>ssReadRowsQuiet(e.key).then(r=>{if(!r)return null;const row=world?r.w:r.c;if(!row)return null;return {kind:e.kind,slot:e.slot,ts:e.ts,level:e.level,gold:e.gold,zone:e.zone,data:ssStringify(row)};})))
     .then(got=>{const keep=got.filter(Boolean);
       if(!keep.length)throw new Error(world?'no world was saved with those saves':'those saves could not be read');
-      const doc={format:world?SS_FILE_WORLD:SS_FILE,v:world?1:2,build:'s373',exported:Date.now(),char:{id:c.id,name:c.name,people:c.people||'',arch:c.arch||'',level:c.level},saves:keep};
+      const doc={format:world?SS_FILE_WORLD:SS_FILE,v:world?1:2,build:ssBuildTag(),exported:Date.now(),char:{id:c.id,name:c.name,people:c.people||'',arch:c.arch||'',level:c.level},saves:keep};
       const str=JSON.stringify(doc);
       ssDownload(str,`the-old-gates_${ssSlug(c.name)}_${world?'world':'lv'+(c.level||1)}_${new Date().toISOString().slice(0,10)}.json`);
       const what=world?`${c.name}'s world`:c.name;
@@ -301,6 +301,17 @@ function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!ol
       return ssPut(ssWorldKey(e.key),ws).then(()=>ssPut(e.key,cs)).then(()=>{delete SS.cache[e.key];delete SS.cache[ssWorldKey(e.key)];e.v=SAVE_VERSION;e.size=cs.length+ws.length;n++;});}).catch(err=>console.warn('save split',e.key,err))),Promise.resolve())
     .then(()=>{ssSaveIndex();if(n)console.log('saves: split '+n+' one-row save'+(n===1?'':'s')+' into character and world');return n;});}
 
+// S475 — a save's place, for the slot list (the critic, 4 Oct: every open-world save read "the open country"). Indoors
+// activeZoneId stays 'world' and px/pz are the room's, so a house names its site; outdoors the nearest loaded place, by
+// name inside its pad, "near" it within 1,500; underground the gate's name. '' falls back to the zone's label.
+function ssPlaceName(){try{
+  if(activeZoneId==='dungeon')return (currentPortal&&currentPortal.name)||'';
+  if(activeZoneId!=='world'||typeof WORLD==='undefined')return '';
+  if(currentHouse){const t=currentHouse.siteId&&WORLD.siteAnywhere(currentHouse.siteId);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
+  let best=null,bd=1e9;for(const t of WORLD.SITES){if(!t||!t.name)continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
+  if(!best)return '';return bd<(best.pad||40)+40?best.name:bd<1500?'near '+best.name:'';
+}catch(e){return '';}}
+function ssBuildTag(){const m=/build (s\d+)/.exec((document.getElementById('cbar')||{}).textContent||'');return m?m[1]:'';}
 function _buildSavePayload(){
   return {
     v:SAVE_VERSION, ts:Date.now(),
@@ -339,6 +350,7 @@ function _buildSavePayload(){
       if(activeZoneId==='world')return {kind:'world',x:px,z:pz,yaw};
       if(typeof WORLD!=='undefined'&&WORLD.lastWorldPos)return Object.assign({kind:'world'},WORLD.lastWorldPos);
     }catch(e){}return null;})(),
+    placeName:ssPlaceName(), /* S475 — the slot list's label: the town, near one, a house in one, or the gate */
   };
 }
 
@@ -860,7 +872,7 @@ function setSLTab(mode){
 function renderSLSlots(){
   const container=document.getElementById('sl-slots');container.innerHTML='';
   const fmtT=ts=>{const d=Math.floor((Date.now()-ts)/60000);return d<1?'just now':d<60?`${d} min ago`:d<1440?`${Math.floor(d/60)} h ago`:`${Math.floor(d/1440)} d ago`;};
-  const zoneOf=m=>m.zone==='world'?'the open country':(ZONE_LABEL&&ZONE_LABEL[m.zone])||m.zone||'…';
+  const zoneOf=m=>m.place?m.place:m.zone==='world'?'the open country':(ZONE_LABEL&&ZONE_LABEL[m.zone])||m.zone||'…';
   const active=ssActiveKey();const curId=(typeof worldState!=='undefined'&&worldState&&worldState.charId)||null;
   const row=(m,kind,slot,charId)=>{const div=document.createElement('div');div.className='sl-slot'+(m&&m.key===active?' active-slot':'')+(m?'':' sl-slot-empty');div.dataset.key=m?m.key:'';
     div.innerHTML=`<span class="sl-slot-num">${kind==='auto'?'A'+(slot+1):slot+1}</span><span class="sl-slot-ico">${m?(kind==='auto'?'⟳':'💾'):'·'}</span><span class="sl-slot-info"><div class="sl-slot-name">${m?`Lv${m.level} · ${zoneOf(m)}`:'— Empty —'}</div>${m?`<div class="sl-slot-detail">${m.gold}🪙 · ${fmtT(m.ts)}${m.size?` · ${(m.size/1024).toFixed(0)} KB`:''}</div>`:''}</span>${m?`<button type="button" class="sl-del" title="Delete this save" style="background:none;border:1px solid rgba(255,255,255,.12);color:#a08070;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">🗑</button>`:''}`;
