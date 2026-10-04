@@ -11736,3 +11736,19 @@ The world's quests (the lords', the guilds', the factions') show their own lines
 ### Needs eyes
 - A completed quest's card in the Quests tab now carries every line the story said about it, which makes a long story long to scroll. Whether completed quests should fold their lines away until clicked (the page's *read in order when you click its title*; a click on a card today pins it to the compass) is for the tab of its own.
 - A quest with no `acceptText` writes its default (*"…" has been added to my journal.*), as its card already said.
+
+## v80 — Session 488 — The Journal, a tab of its own: by day and by quest (DECISION #132, part A, third slice)
+Part A's last piece that needs no names: *the tab has two views: By day (the chronicle) and By quest. The character tab keeps Renown and loses the footnote.* Until now the journal was a section at the foot of the Character tab, in level blocks, under the worn gear, Renown and Standing.
+
+The hub has a seventh tab, *📖 Journal*, between Quests and Character (`index.html`: the button, the panel `hpanel-journal` with its two view buttons, and the `.jn-*` styles; `hubTab`'s list in the same order). `renderJournal` (`66-hub.js`) draws one of two views from the saved journal (Sessions 486–487):
+- **By day**, the chronicle: one heading a day (*Day 15*), the newest day first, and that day's lines in the order they happened, each with its time (*7:20 am*). A quest's line reads in italics after the quest's name in bold.
+- **By quest**: each quest the journal holds words for, under its title, the quests in hand (active, or ready to turn in) first, and *complete* beside a finished one; its lines in order, each with its full date.
+
+The Character tab keeps who you are, what you wear, Renown and Standing, and loses the journal and its level blocks (`renderLog`; `logCollapsed` went with them). The view chosen stays while the page is open. The tab is in the hub's present dress. The open book Michael chose for reading (#116, *two pages a spread*) has not been built for the books yet; when it is, the Journal should take it too, and that is a look session's work.
+
+### Verified (headless Chromium)
+`journal` 16/16 (3 new, 2 rewritten for the tab). By day: *Day 6 · 5:55 pm · ⚔ The second line…* above *Day 4 · 4:40 pm · 📜 The first line…*; after *First Blood*, Day 15 holds its ready line at 7:20 am and its closing line at 2:00 pm under the quest's name. By quest: *First Blood*, *complete*, then its three lines in order under *Day 14 · 9:20 pm*, *Day 15 · 7:20 am* and *Day 15 · 2:00 pm*. The tabs read *⚔ Inventory, ✦ Magic, 📊 Attributes, 📜 Quests, 📖 Journal, 👤 Character, 🗺 Map*, and the Journal's is the one lit. The Character tab still shows Renown and no journal. Pictures in `tests/out/journal-byday.png` and `journal-byquest.png` (not committed). `fortunecard`, `mainrun` and `hubregen` pass. `parsecheck` clean. Build tag s417.
+
+### Needs eyes
+- The tab in play: whether the chronicle's lines read as a journal or as a log. Most lines are still the log's short ones (*Traveled to Dunmore*, *Harvested Firemoss*); the story's quest lines are the ones in your own voice, and the world's quests join after the world-file cut.
+- Seven tabs now share the hub's top bar; at a narrow window the labels are tight.

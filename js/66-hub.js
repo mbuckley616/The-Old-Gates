@@ -99,16 +99,14 @@ const GAME_LOG=[];
 // absolute clock; tod, the time of day) and the list is worldState.journal, a character key, so it is saved in the
 // character row. GAME_LOG and worldState.journal are one array: a load refills it in place (_applyLoadData).
 worldState.journal=GAME_LOG;
-let logCollapsed={};
 function addLog(icon,text){if(worldState.journal!==GAME_LOG)worldState.journal=GAME_LOG;GAME_LOG.push({level,icon,text,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});}
 // S487 — a quest's own words (the card's: acceptText, an objective's completionText, readyText, completeText), kept under its id
 function journalQuest(kind,qDef,text){if(!qDef||!qDef.id||!text)return;addLog(kind==='complete'?'✅':'📜',String(text));const e=GAME_LOG[GAME_LOG.length-1];e.q=qDef.id;e.qk=kind;}
 function journalOf(id){return GAME_LOG.filter(e=>e&&e.q===id);}
 function journalLoad(list){GAME_LOG.length=0;if(Array.isArray(list))list.forEach(e=>{if(e&&typeof e.text==='string')GAME_LOG.push(e);});worldState.journal=GAME_LOG;}
 function renderLog(){
-  const byLevel={};GAME_LOG.forEach(e=>{if(!byLevel[e.level])byLevel[e.level]=[];byLevel[e.level].push(e);});
   const body=document.getElementById('log-body');body.innerHTML='';
-  // v80 — Character: who you are, what you've done, then the journal
+  // v80 — Character: who you are and what you've done (S488: the journal has its own tab, renderJournal)
   try{if(typeof WORLD!=='undefined'){
     const st=worldState.stats||(worldState.stats={});const days=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
     const qDone=(WORLD.quests||[]).filter(q=>q.turnedIn).length+QUEST_DEFS.filter(q=>qState(q.id)==='complete').length;
@@ -119,7 +117,6 @@ function renderLog(){
     const grid=(pairs)=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;font-size:13px;line-height:1.5">${pairs.map(([k,v])=>row(k,v)).join('')}</div>`;
     let html=`<div class="attr-section"><h3>Renown</h3>${grid([['Fame',`<b style="color:#e8d8a0">${fame}</b>`],['Infamy',`<b style="color:#e07060">${infamy}</b>`],['Days passed',days],['Quests complete',qDone],['Monsters killed',st.kills||0],['Gold acquired',st.goldIn||0],['Items sold',st.sold||0],['Sigils read at Mastery',worldState.masteries||0],['Deaths',(worldState.varek&&worldState.varek.deaths)||0],['Lairs cleared',lairs]])}</div>`;
     const sb=document.getElementById('standing-body');if(sb){html+=`<div class="attr-section"><h3>Standing</h3><div style="font-size:13px;line-height:1.5">${sb.innerHTML||''}</div></div>`;}
-    html+='<div class="attr-section"><h3>Journal</h3><div id="log-journal"></div></div>';
     body.innerHTML=html;}}catch(e){}
   // v80 S131 — what you're wearing, at a glance
   try{const slots=[['weapon','Weapon'],['offhand','Off-hand'],['head','Head'],['chest','Chest'],['hands','Hands'],['legs','Legs'],['feet','Feet'],['amulet','Amulet'],['ammo','Ammo']];
@@ -127,22 +124,39 @@ function renderLog(){
     const eq=document.createElement('div');eq.style.cssText='margin:0 0 12px;padding:8px 10px;background:rgba(40,40,40,.3);border-left:3px solid #8a7a60;border-radius:3px;font-size:12px;color:#c8b898';
     eq.innerHTML=`<div style="font:600 13px Georgia,serif;color:#e8d8a0;margin-bottom:6px;letter-spacing:.05em">WORN &nbsp;<span style="font-weight:400;color:#8a7a60;letter-spacing:0">attack ${atk} · armour ${def} · ${wt.toFixed(1)} weight</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px 12px">${slots.map(([k,l])=>`<div><span style="color:#8a7a60">${l}</span> ${EQ[k]?(EQ[k].name||'?'):'<span style="color:#5a5040">—</span>'}</div>`).join('')}</div>`;
     body.insertBefore(eq,body.firstChild);}catch(e){}
-  const _jb=document.getElementById('log-journal');const body0=body;const body_=_jb||body;
-  const levels=Object.keys(byLevel).map(Number).sort((a,b)=>b-a);
-  if(!levels.length){body_.innerHTML='<div style="color:#3a3020;font-size:11px;padding:10px">No notable events yet.</div>';return;}
-  levels.forEach(lv=>{
-    const collapsed=logCollapsed[lv]!==undefined?logCollapsed[lv]:(lv<level);
-    const block=document.createElement('div');block.className='log-level-block';
-    const hdr=document.createElement('div');hdr.className='log-level-hdr';
-    const chev=document.createElement('span');chev.className='log-chevron';chev.textContent=collapsed?'▶':'▼';
-    hdr.appendChild(chev);hdr.appendChild(document.createTextNode(' Level '+lv));
-    hdr.onclick=()=>{logCollapsed[lv]=!logCollapsed[lv];renderLog();};block.appendChild(hdr);
-    if(!collapsed){const entries=document.createElement('div');entries.className='log-entries';
-      byLevel[lv].forEach(e=>{const div=document.createElement('div');div.className='log-entry'+(e.icon==='↑'?' log-levelup':e.icon==='💀'?' log-death':'');if(typeof e.t==='number'){const dt=document.createElement('div');dt.className='log-date';dt.style.cssText='font-size:10px;color:#8a7a60;letter-spacing:.04em';dt.textContent=gameDateLine(e.t,e.tod);div.appendChild(dt);}if(e.q){const qd=(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===e.q))||null;const tt=document.createElement('span');tt.style.cssText='font-style:italic';tt.textContent=e.icon+' '+(qd?qd.title+' — ':'')+e.text;div.appendChild(tt);}else div.appendChild(document.createTextNode(e.icon+' '+e.text));entries.appendChild(div);});block.appendChild(entries);}
-    body_.appendChild(block);
-  });
 }
 
+// S488 — the Journal, a tab of its own (DECISION #132, part A): *By day*, the chronicle, newest day first and each day's
+// lines in the order they happened; *By quest*, every quest the journal holds words for, the ones in hand first, its
+// lines in order. Each line carries its time; the date line is gameDateLine's until the quest writer names the days.
+let _jnView='day';
+function _jnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _jnTime(e){return gameDateLine(e.t,e.tod).replace(/^Day \d+ · /,'');}
+function renderJournal(){
+  const body=document.getElementById('jn-body');if(!body)return;
+  document.querySelectorAll('#jn-views button').forEach(b=>b.classList.toggle('active',b.dataset.v===_jnView));
+  const L=GAME_LOG.filter(e=>e&&typeof e.text==='string');
+  if(!L.length){body.innerHTML='<div class="jn-empty">Nothing written yet.</div>';return;}
+  const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||null;
+  const line=(e,withQ)=>{const d=e.q&&withQ?qd(e.q):null;
+    return `<div class="jn-line${e.q?' jn-q':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnEsc(e.text)}</span></div>`;};
+  let html='';
+  if(_jnView==='quest'){
+    const ids=[];L.forEach(e=>{if(e.q&&ids.indexOf(e.q)<0)ids.push(e.q);});
+    const st=id=>(typeof qState==='function'?qState(id):'');const inHand=id=>st(id)==='active'||st(id)==='reward';
+    ids.sort((a,b)=>(inHand(b)?1:0)-(inHand(a)?1:0));
+    if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
+    ids.forEach(id=>{const d=qd(id),s=st(id);
+      html+=`<div class="jn-day"><div class="jn-head">${_jnEsc(d?d.title:id)}<span class="jn-state">${s==='complete'?'complete':inHand(id)?'in hand':''}</span></div>`+
+        L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod)):''}</span><span class="jn-text">${_jnEsc(e.text)}</span></div>`).join('')+'</div>';});
+  } else {
+    const days=new Map();L.forEach(e=>{const k=typeof e.t==='number'?Math.floor(e.t/1440):-1;if(!days.has(k))days.set(k,[]);days.get(k).push(e);});
+    [...days.keys()].sort((a,b)=>b-a).forEach(k=>{
+      html+=`<div class="jn-day"><div class="jn-head">${k<0?'Undated':'Day '+(k+1)}</div>`+days.get(k).map(e=>line(e,true)).join('')+'</div>';});
+  }
+  body.innerHTML=html;
+}
+function journalView(v){_jnView=v==='quest'?'quest':'day';renderJournal();}
 // ── HUB ──────────────────────────────────────────────────────
 let hubOpen=false,dollSelectedSlot=null;
 function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(id);if(b)b.style.width=Math.max(0,Math.min(100,v/m*100))+'%';const t=document.getElementById(n);if(t)t.textContent=Math.floor(v)+' / '+m;};s('hv-hp',PHP,effMaxHP(),'hv-hpn');s('hv-mp',mana,effMaxMana(),'hv-mpn');s('hv-st',stamina,effMaxStamina(),'hv-stn');}catch(e){}}
@@ -150,12 +164,12 @@ let _hubVitalsT=null;
 function openHub(tab){_hubVitals();if(!_hubVitalsT)_hubVitalsT=setInterval(()=>{if(!hubOpen){clearInterval(_hubVitalsT);_hubVitalsT=null;return;}_hubVitals();},200);_releasePointerLockForMenu();hubOpen=true;blocking=false;document.getElementById('hub').style.display='flex';hubTab(tab||'inv');}
 function closeHub(){hubOpen=false;document.getElementById('hub').style.display='none';hideBagTooltip();setQuickDestroy(false);G.focus();}
 function hubTab(name){sndTabSwitch();
-  const tabs=['inv','magic','attrs','quests','log','map'];
+  const tabs=['inv','magic','attrs','quests','journal','log','map'];
   document.querySelectorAll('.hub-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.hub-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('hpanel-'+name).classList.add('active');
   if(name==='inv')renderHubInv();if(name==='magic')renderHubMagic();
-  if(name==='attrs')renderHubAttrs();if(name==='quests')renderQuestLog();if(name==='log')renderLog();
+  if(name==='attrs')renderHubAttrs();if(name==='quests')renderQuestLog();if(name==='journal')renderJournal();if(name==='log')renderLog();
   if(name==='map'){wmInit();wmSyncZone();if(typeof WORLD!=='undefined'){if(activeZoneId==='world')WORLD.openMap();else WORLD.closeMap();}} // v80 — world map takes over the pane in the streamed world
 }
 function slotTierColor(it){

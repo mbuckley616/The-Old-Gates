@@ -537,6 +537,16 @@
 .log-entry{color:#7a6840;font-size:10px;padding:2px 0;line-height:1.5}
 .log-entry.log-levelup{color:#c8a84a}
 .log-entry.log-death{color:#a03030}
+#jn-views{display:flex;gap:6px;margin:0 0 12px}
+#jn-views button{font:600 12px Georgia,serif;letter-spacing:.04em;padding:5px 14px;background:transparent;color:#a89878;border:1px solid rgba(200,168,74,.25);border-radius:3px;cursor:pointer}
+#jn-views button.active{color:#f0e2c0;border-color:#c8a040;background:rgba(200,160,64,.12)}
+.jn-day{margin:0 0 14px}
+.jn-head{font:600 13px Georgia,serif;color:#e8d8a0;letter-spacing:.05em;padding:0 0 4px;margin:0 0 4px;border-bottom:1px solid rgba(120,100,70,.25);display:flex;justify-content:space-between}
+.jn-state{font-weight:400;font-size:11px;color:#8a7a60}
+.jn-line{display:flex;gap:10px;padding:3px 0;font-size:12px;line-height:1.5;color:#c8b898}
+.jn-time{flex:0 0 auto;min-width:64px;color:#8a7a60;font-size:11px}
+.jn-q .jn-text{font-style:italic;color:#e0d2b0}
+.jn-empty{color:#8a7a60;font-size:12px;padding:10px}
 /* ── DIALOG SYSTEM ───────────────────────────────────────── */
 #dlg{display:none;position:absolute;bottom:54px;left:20%;transform:none;width:min(480px,44%);max-height:52vh;overflow:auto;background:linear-gradient(160deg,#1a1208,#0e0c06);border:1px solid rgba(200,168,74,.35);border-radius:10px;padding:14px 16px 12px;z-index:48;box-shadow:0 4px 24px rgba(0,0,0,.7)}
 #dlg-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -762,7 +772,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s416</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s417</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -912,6 +922,7 @@
       <button class="hub-tab" onclick="hubTab('magic')">✦ Magic</button>
       <button class="hub-tab" onclick="hubTab('attrs')">📊 Attributes</button>
       <button class="hub-tab" onclick="hubTab('quests')">📜 Quests</button>
+      <button class="hub-tab" onclick="hubTab('journal')">📖 Journal</button>
       <button class="hub-tab" onclick="hubTab('log')">👤 Character</button>
       <button class="hub-tab" onclick="hubTab('map')">🗺 Map</button>
       <button id="hub-close" onclick="closeHub()">✕</button>
@@ -1010,6 +1021,10 @@
       </div>
       <div class="hub-panel" id="hpanel-quests">
         <div id="qlog-body"></div>
+      </div>
+      <div class="hub-panel" id="hpanel-journal">
+        <div id="jn-views"><button data-v="day" class="active" onclick="journalView('day')">By day</button><button data-v="quest" onclick="journalView('quest')">By quest</button></div>
+        <div id="jn-body"></div>
       </div>
       <div class="hub-panel" id="hpanel-log">
         <div id="log-body"></div>
