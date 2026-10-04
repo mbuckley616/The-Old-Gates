@@ -1225,6 +1225,14 @@
   function rentSum(){const T=worldState.towns||{};let sum=0,n=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;n++;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}return {sum,n};}
   // S497 — the weeks start on day 1, so the rent falls on the first day of the week (calDay), the day the Due view names
   function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const sum=rentSum().sum;if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
+  // S498 — the seasons in the weather (DECISION #132, part B; the design page: *the Gatelands' winter brings snow on the
+  // low ground and rain in autumn rises from today's weight by half; the Mark is colder in each; Aurenne's summer is
+  // drier*). Called by weatherWeights on the climate's odds, before the biome's; the season is calDay's. Day length stays.
+  function seasonWx(w,cl,at){const se=calDay(at).season;
+    if(cl==='temperate'){if(se==='autumn')w.rain*=1.5;else if(se==='winter'){w.snow+=.12;w.rain*=.7;}}
+    else if(cl==='cold'){if(se==='winter'){w.snow*=1.5;w.rain*=.5;}else if(se==='autumn'){w.rain*=1.5;w.snow*=1.2;}else if(se==='summer')w.snow*=.5;}
+    else if(cl==='warm'){if(se==='summer'){w.rain*=.5;w.storm*=.5;}}
+    return w;}
   // S497 — what the calendar owes you (DECISION #132, part B; the Journal's Due view): every dated thing already kept,
   // as {at, icon, text}, soonest first. The rent from the towns you own, the ship on the shipwright's slip, the masons at
   // a town, the room you have let, the coach seat held. Read from the absolute clock alone.

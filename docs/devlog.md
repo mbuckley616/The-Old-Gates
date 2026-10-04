@@ -11895,3 +11895,13 @@ The design page: *The Due view is built from things that already have a date: th
 ### Needs eyes
 - The view in play, and whether a line for the coach seat already taken should drop as soon as you board (it does when the seat is cleared).
 - Owed under B: market days and their stall, the four feasts, dated work (+25%), the seasons in the weather; each adds its lines to *Due*.
+
+## v80 — Session 498 — The seasons in the weather (DECISION #132, part B, third slice)
+The design page: *Seasons in B are weather, not paint: weatherWeights reads the season, so the Gatelands' winter brings snow on the low ground and rain in autumn rises from today's weight by half; the Mark is colder in each; Aurenne's summer is drier. Day length stays fixed.* `seasonWx(w, climate)` (`87-world-quests.js`) moves the climate's odds by `calDay`'s season, and `weatherWeights` (`85-world-sea.js`, one line, the only touch in the look builder's file) calls it after choosing the climate's odds and before the biome's, so a fen still adds its fog and a wasteland still never snows. The numbers: the Gatelands' autumn rain ×1.5 (the page's figure), its winter snow 0.12 with rain ×0.7; the Mark's winter snow ×1.5 and rain ×0.5, autumn rain ×1.5 and snow ×1.2, summer snow ×0.5; Aurenne's summer rain and storm ×0.5. Spring is as before everywhere, and so are the Gatelands' spring and summer. The tale opens on the first day of autumn and a season is 84 days, so a player first meets the Gatelands' winter on day 85; until then the only change is the wetter autumn. Session 450's rule (weather carried into a cell that cannot roll it is rolled again) reads the same odds, so snow walked into the Gatelands in autumn still melts away, and in winter it stays.
+
+### Verified (headless Chromium)
+`seasonwx` 6/6 (new). On the base odds of each climate: the Gatelands' autumn rain 0.15 → 0.225, winter snow 0 → 0.12; the Mark's snow 0.28 → 0.42 in winter, 0.336 in autumn, 0.14 in summer; Aurenne's summer rain 0.1 → 0.05 and storm 0.1 → 0.05, and no snow in any season. On the road by Hearthwick, 400 rolls each: no snow in autumn or spring, 46 in winter. `wxplace` passes. `parsecheck` clean. Build tag s425.
+
+### Needs eyes
+- The numbers past the page's one figure (the winter snow in the Gatelands, how much colder the Mark is) are mine and want a winter played. Snow cover settles on the Gatelands' low ground in winter for the first time, so its look on the towns there is new.
+- Owed under B: market days and their stall, the four feasts, dated work.

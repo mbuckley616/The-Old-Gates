@@ -681,6 +681,7 @@
     let w={clear:.5,overcast:.2,fog:.08,rain:.15,storm:.05,snow:0};
     if(cl==='cold'){w={clear:.35,overcast:.22,fog:.08,rain:.05,storm:.02,snow:.28};}
     else if(cl==='warm'){w={clear:.6,overcast:.14,fog:.03,rain:.1,storm:.1,snow:0};}
+    if(typeof seasonWx==='function')seasonWx(w,cl);
     if(b==='fen'||b==='swamp'){w.fog+=.2;w.rain+=.1;w.clear*=.5;}
     if(b==='coast'||b==='dunes'){w.overcast+=.08;w.storm+=.04;}
     if(b==='tundra'){w.snow+=.15;w.clear*=.7;}
