@@ -11602,3 +11602,19 @@ The odds are unchanged, except that the foes' shuffle is now unbiased. The old c
 
 ### Needs eyes
 Nothing new by play. A gate entered twice in one day now gives the same chests, which it re-rolled before; their contents are as rich as before.
+
+## v80 — Session 479 — The foes that belong to a place are keyed by it (backlog K steps 1 and 3)
+This continues Sessions 477 and 478 to the open world's spawners that have a place to key by, all in `80-world.js` and each one line:
+- **`siteCreatures`**, a site's own foes: the lair's beast and its wolves, the beast lair's pack and the bandit camp's band. Each is `<site>:foe:<index>`, its index in that site's list, and its variant comes from `seededRng('variant', id)`.
+- **A siege camp's soldiers and a garrison's** are `<town>:siege:<k>` and `<town>:occupied:<k>`.
+- **A caravan ambush** is `caravan:<route>:<day>:<k>`. Its size, 3 or 4, was a `Math.random` coin. It is now `seededRng('ambush', <route>:<day>)`, because the size of a band is an outcome.
+
+Each foe is keyed through `keyFoe`, so its blows, flank, arrows and corpse roll on its stream (Sessions 477–478).
+
+Left unkeyed, and listed in backlog K: the guard who draws on you, the town-job raids, the guild hunts, the road quest's band, the boarders and the duel's rival. Each is tied to a job or quest whose id is a `Date.now()`, which is step 3's work. The legacy zones' foes are also unkeyed.
+
+### Verified (headless Chromium)
+`sitefoes` 4/4 (new). Dunmore was besieged by the Mark: the camp's six soldiers are `dunmore:siege:0`–`5`, each with a stream. The town fell: the garrison's five are `dunmore:occupied:0`–`4`. Carrigkeel's Lair, 1,548 units out and loaded by walking to its edge, has three creatures: `c6_10_i0:foe:0` (Carrigkeel the Ogre) and `:1`–`:2` (Dire Wolves). The old code fails all three checks; none of them had an id. The caravan ambush was not staged: it fires inside the world's caravan tick only when a camp breaks a route. Its edit is the same `keyFoe` call as the siege's. `siegeturn` 6/6, `dazed` 6/6, `campsack` 7/7. `parsecheck` clean. Build tag s410.
+
+### Needs eyes
+Nothing by play.
