@@ -932,3 +932,137 @@ A Markman's writing: short sentences, no honorifics, an oath on iron. Unsigned e
 - *The fresh strokes* agree with Q4's readyText and with §8.2's etching, and name no one.
 - *Where the canon is silent:* which books the guilds keep, the treatise's price, and the Fighters' sheet. I chose the plainer thing each time: a primer the academy sells, a glossary nobody sells, and a sheet every recruit is handed.
 - *Register.* Aurennais: *Master*, terms, *declines to certify*, no oath. Gatelander: proverbs (*a drawing of the sea*, *a coin from a country you'll never see*), no bare yes or no, *Weaver forgive me*. Markish: short, *aye*, no honorific, *on iron*. Old Blood: few words, the older one first.
+
+---
+
+## The Last Entry — Varek's list in the first gate, after the unbound ending
+
+*Unapproved. Drafted 4 Oct 2026. Backlog A, consequence hooks: Varek's list found in the first gate after the unbound ending (canon §11).*
+
+### What the canon fixes, and where it is silent
+
+- **§11, *Help him — unbind*:** the game remakes itself on a new seed, the player's name, people and one carried item persist, and *Varek's list is found in the first gate.* The code already does the first half: `ending('unbound')` writes `og_carry` (name, people, look, `BAG[0]`, a seed) and the creator reads it back (grep `_ogCarry`). Nothing lays the list.
+- **The first gate** is the Crypt of First Light. Every new game wakes there, in the open sarcophagus (`TUTORIAL_PORTAL`, `portal._tutorialSpawn`), and the crypt can never be entered again. Part I's note on the crypt already leans this way: *the crypt is where Varek leaves them.* Varek's own line at the Root, in the build, promises it: *I'll be in the first gate, waiting to be found.*
+- **The list itself** (Part I, *His emotional truth* and *The list*; `quest_writing.md`, *The List — discovery prose*): names, dates, causes; thousands of entries over 250 years; *a script nobody uses anymore*; the top neat and careful, the bottom barely legible, *not from age, from the weight of writing the same kind of entry over and over*; the last entry Ashenmoor, *and he left space below it*; and *a new section at the back* where the player is, not by name, *in a different category that he hasn't named yet*.
+- **How it is found** (`quest_writing.md`): *No music cue. … The player picks it up. There is no quest update. There is no journal entry. The list is just there, and the player closes the inventory item and the moment is over.*
+- **Varek's notes** (§12): *never displayed; returned as a sentence, once.* The back section is that once, for a player who unbound the world, since there is no other meeting left in which he could say it.
+- **His arc** (Part I, phases 1–5): the wolves turned from villages, the drought ended, the lord who taxed a village into starvation, *the power vacuum fills with something crueler*, *tells himself each time it's the last time*. The early entries are those phases, as the deaths they cost.
+- **Silent:** how he dates the entries, the names in them, what the unbinding did to the people of the old world, and whether the Varek of the new world remembers the old one. I chose the plainer thing each time: he counts years from *the stone* (the glimpse, Phase 2); the names are invented, in each people's register, and none is a named character; the space below Ashenmoor stays empty, so the list says nothing about the old world's end; and the draft claims nothing about the new Varek. The list was written in the old world and carried, like the player's one item.
+- **Part I against Part II.** Part I has the list found *late Act II, in the place where he has been staying.* Part II puts it in the first gate after the unbound ending. They need not disagree (the Act II find is not built), and this draft is only the second.
+
+### Shape
+
+No giver, no steps, no turn-in, no reward. One object in one room, once.
+
+- **Condition.** The new game was begun from `og_carry` after `ending('unbound')`. A game begun any other way never has it.
+- **Where.** On the floor of the crypt at the foot of the open sarcophagus, on the side the player faces when they wake (`_tutorialSpawn.yaw`), one cell out, so the first look of the new world falls on it. A folded paper, the size of a hand, weighted with a stone.
+- **The take.** The standard pickup, with its prompt and its *took* line. No `addLog`, no `showMsg` of its own, no sound beyond the pickup's, no quest, no journal.
+- **The reading.** It opens in the book reader (the open book, Michael's A on #116), with no title page, no running head and no first-reading toast, because it is not a book and teaches nothing. The pages are the folds of one long sheet.
+- **Left behind.** If the player walks out without it, it stays in the crypt, and the crypt is never entered again. That is the canon's *just there*, and it is not chased.
+- **What it changes.** Nothing. It weighs 0.1, sells for nothing, and nobody remarks on it.
+
+### 1. The object
+
+- **Pickup label:** `Worn paper`
+- **Item name:** `Worn Paper` (never *Varek's List*: the canon's find is *not a dramatic reveal*, and the player names it themselves)
+- **Item icon:** 📜
+
+### 2. The pages — Varek (Old Blood, raised Gatelander), in his hand
+
+Eight folds. The reader sets each page in a hand that worsens (see the code note). `{blot}` is a name the reader draws as an ink stroke that cannot be read; the text fallback is an em dash. Blank lines are the page's own spacing.
+
+**Fold 1 — the neat hand**
+
+> First year after the stone, at the hay.
+> Donncha Mac Giolla Phádraig, of Baile na hAbhann, a herd, forty years or about it. I turned three wolves from the children at the ford. They went up the hill to his shieling. I did not ask where they would go.
+>
+> Third year after the stone, the long frost.
+> Sorcha and Eithne Ní Laoire, of Cill Rónáin, sisters, both grown. I ended the drought at Gort Mór. The water did not stop at Gort Mór.
+>
+> Seventh year, at the turn of the year.
+> Fiach Ó Cuinn, of Gort Mór, a boy of twelve. He followed me into the gate under the hill because he had seen me come out of it. I went back for him. Not quickly enough.
+
+**Fold 2 — the neat hand**
+
+> Twenty-sixth year, in the hungry months.
+> At Ráth Dubh. Lord Thibaut de Sauveterre took the seed corn for his due. I put him out of his keep and the corn back in the barns.
+> His brother came at the harvest with forty men. These are his dead, and they are mine:
+> Mairéad Ní Bhriain. Colm, her son. Tomás the miller. Peig Ní Shé, and Seosamh her husband, whose name I did not know that day and have known every day since. Cormac Ó Ceallaigh. Úna, a child of six. Brigid, her grandmother.
+>
+> This is the last of these.
+
+**Fold 3 — the hand closing**
+
+> Thirty-first year. Ráth Bán. The same, and the same.
+> Nuala Ní Dhubhda. Lughaidh. Oisín the thatcher and his two boys. Gormlaith. Ciarán Ó Floinn. Treasa. Eoghan, who had the bees. Máire Bhán. Seán Rua. Neasa. Lorcán Beag. Siobhán. Fionnuala. Pádraig the carter. Clíodhna. Ruairí. Saoirse. Íde.
+> The last.
+>
+> Forty-fourth year. Achadh Fada. Eleven.
+> The last.
+>
+> Sixty-second year. Cnoc na Gaoithe. Thirty.
+> The last.
+
+**Fold 4 — small and quick; the other islands begin**
+
+> 90. Wulfstow, on the Mark. Hild Osricsdaughter. Leofwine. Cuthred the reeve. Godgifu. The road I closed.
+> 103. Sainte-Aude, in Aurenne. Prior Anselme. Brother Gautier. Isabeau Marchal, who swept the nave. The roof.
+> 117. Glennagh. Nine. The gate.
+> 131. Gort na Claise. Twenty-two. Fever out of the gate.
+> 140. Stanholt. Beorn. Eadgyth. Wulfric. Osgar. Seven more. Wolves.
+> 152. Port-Lévrier. Margot Daviel. Raoul. The ship.
+
+**Fold 5 — names only, crowded**
+
+> Nóra. Diarmuid. {blot}. Ealhswith. Bertrand. Caoimhe. {blot}. {blot}. Ferchar. Muirgheal. Godric. Ysolde. {blot}. Tadhgán. Cyneburh. {blot}. Aoife. Renaud. {blot}. Éibhear. Oslac. {blot}. {blot}. Gráinne. Hereward. Clémence. {blot}. Dubhaltach. {blot}. {blot}. Wynflæd. Sabine. {blot}.
+
+**Fold 6 — barely legible**
+
+> {blot} {blot} Beorhtric {blot} {blot} {blot} Áed {blot} {blot} — Caer {blot} — {blot} {blot} Manon {blot} {blot} {blot} {blot} Odo {blot} {blot} {blot} Cass {blot} {blot} {blot} {blot} {blot} {blot} {blot}
+
+**Fold 7 — the worst hand, and the last entry**
+
+> Ashenmoor.
+> Bram, the smith. Wat Atherton. Hilde Atherton. Ned Atherton. Rob Glenn. Annis Glenn. Kit Glenn. Joan Glenn. Mag, Humphrey’s widow. On the south road, two travellers: Ciara Ní Mhurchú, and Lucien Adret, of Aurenne. {blot}. {blot}. {blot}.
+
+Then nothing. The rest of the fold is empty paper, about two-thirds of the page.
+
+**Fold 8 — the back; the steady hand again, one line in the middle of the page**
+
+By the player's death count `n` (`vstate().deaths` in the old world, carried):
+
+- `n = 0`: *Has not died. I would have known.*
+- `n = 1`: *Died once. Stood up once. Where do you go?*
+- `n ≥ 2`: *Died {n} times. Stood up {n} times. Where do you go?* (`n` in words to twenty, *twenty-one* and on in words to ninety-nine, digits after that)
+
+No heading above it. That is the category he has not named.
+
+### 3. Why these lines
+
+- **The causes are his phases, not new history.** The wolves turned from a village (*They went up the hill … I did not ask where they would go*), the drought ended (*The water did not stop at Gort Mór*), the lord put out and the crueler brother after him: Part I's Phases 3 and 4, told as their dead. No entry names a canon place or a canon event. The Hollowed Wastes and Caer Uaigneach are not his and are not on it.
+- ***This is the last of these.*** Part I: *Tells himself each time it's the last time. He is lying to himself.* The phrase shrinks to *The last.* over three entries and then stops being written at all, so the reader watches the lie wear out before the hand does.
+- ***Whose name I did not know that day and have known every day since.*** *Remembers everyone's name* (*His voice*), and the one line in the list that sounds like the man who healed three children in Ashenmoor.
+- **Ashenmoor's two travellers.** Edna's board says *two travelers whose names we did not record*. He recorded them. The rest of the Ashenmoor entry follows the board's dead (Bram; three Atherton children; four of the Glenns; old Humphrey's widow) with first names the canon left open, and no number, so it does not take a side between the board's forty-one and his forty-three (run 7 of the review).
+- **The space below.** Canon: *He left space below it.* The fold's empty two-thirds is that space. It also leaves open whether he counted the world he let go. The draft does not answer that.
+- **The back.** *Returned as a sentence, once* (§12), and Discovery 2's question, *I want to know where you go*, written down where he can no longer hear the answer. It starts as a note in the third person and turns at the end to *you*, because he knew who would find it. It never says *game*, *save*, *player* or *screen* (§6).
+- **Register.** He is Old Blood raised a Gatelander: sparing and exact, no oath, no proverb, no flourish. The names are in each people's register: Irish for the Gatelands, older Irish forms for the Old Blood among them (*Ferchar*, *Muirgheal*, *Dubhaltach*), Anglo for the Mark, Norman for Aurenne. None begins *Ald-* (the rhyme with Aldred is load-bearing), and none is a named character.
+
+### What in the code would carry it
+
+- **The carry.** `ending('unbound')` (grep `localStorage.setItem('og_carry'`) adds `deaths:vstate().deaths` and `list:true` to the object it writes. The creator's carry block (grep `if(window._ogCarry){try{`) sets `worldState.varekList={n:c.deaths|0,state:'laid'}` when `c.list` is set.
+- **worldState.** `varekList` is a new key: add it to `_applyLoadData`'s list (grep `'knowing','unbound','cargoMkt'`), or it lives only until the page reloads.
+- **The object.** In `buildDungeon`'s tutorial block (grep `if(portal.tutorial){`), when `worldState.varekList&&worldState.varekList.state==='laid'`, lay a small folded-paper mesh with a stone on it one cell from `_tutorialSpawn` along its yaw, as a pickup whose item is `{name:'Worn Paper',ico:'📜',type:'book',bookId:'worn_paper',weight:.1,buyPrice:0,sellMult:0,n:worldState.varekList.n}`. Taking it sets `state:'taken'`. No `addLog` and no `showMsg` beyond the pickup's own line.
+- **The book.** One `BOOKS` entry, `{id:'worn_paper',name:'Worn Paper',ico:'📜',attr:null,quiet:true,bare:true,hands:[0,0,.25,.45,.65,.85,1,0],pages:[…the eight folds…]}`. `openBookReader` skips both its first-read and its re-read messages when `def.quiet` is set (today a book with `attr:null` still says *You have already absorbed this book* on a second reading). `bare` drops the title page, the running head and the folios from the open book. `hands[k]` is how worn fold k's hand is, from 0 to 1, for the reader to loosen the letters with (letter spacing, a slant, a small random baseline jitter). The back fold is 0 because he wrote it later, and steadily. `renderBookPage` replaces `{n}` and `{n-word}` from the item's `n` and draws `{blot}` as an ink stroke, with an em dash where it cannot.
+- **Tests.** One headless case: set `og_carry` with `list:true, deaths:3`, begin a game, find the pickup in the crypt, take it, open it, and read *Died three times.* on the last fold, with no new log line. A second case without `list` finds no pickup.
+
+### Checked against the canon
+
+- *Found in the first gate, after unbinding* (§11), in the crypt where the new game begins and where Part I says Varek leaves them.
+- *Names, dates, causes; thousands of entries; the hand neat at the top and barely legible at the bottom, from the weight of the writing* (Part I). Eight folds show it by sample, and the fifth and sixth folds stand for the thousands. The reader's worsening hand carries what the words cannot.
+- *The last entry is Ashenmoor. He left space below it.* Fold 7.
+- *A new section at the back; the player's name is not in it; a category he hasn't named yet.* Fold 8, with no name and no heading.
+- *No music cue, no quest update, no journal entry; the list is just there* (`quest_writing.md`). No log line, no message, no quest.
+- *Returned as a sentence, once* (§12). The back fold's one line.
+- *He never says game, save, player or screen* (§6). He does not.
+- *No chosen-one prophecies.* None. The three descriptions are not used.
+- *Where the canon is silent:* his reckoning of years, every name, and what the unbinding did to the old world's people. I chose the plainer thing: years from the stone, names in each people's register, and an empty space where the canon leaves one.

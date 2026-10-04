@@ -3,6 +3,13 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
+Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
+- **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
+- **B.** A, and a calendar the world keeps: a god's day doubles its shrine's boon, each town a market day with a travelling stall, rent on a named day, four feasts a year, some tasks dated (+25% by the day, taken back after), seasons in the weather odds, and a *Due* page (A + 2 Opus).
+- **C.** B, and Morrowind's whole book: every topic you were told filed by name with a search, links in entries, notes of your own and on the map (B + 2 Opus).
+
+Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
 
 ## Answered
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)

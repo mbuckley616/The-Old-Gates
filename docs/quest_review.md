@@ -6,13 +6,95 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `206b697` | run 6, from `6edf854`; the diff is `-- index.html js/` |
-| auto/systems | `4e80d27` | run 6, Sessions 430–441 against main |
-| auto/backlog | `f46664b` | run 6, Sessions 414–435 against main; no string a player reads |
-| auto/fable-rivers | `5504d80` | run 6, Sessions 430–433 against main (the rivers and the ranges) |
-| auto/concept, auto/producer, auto/critic, auto/design, auto/split | — | run 6: level with main, or ahead in docs only |
+| main | `551e9ec` | run 7, from `206b697`; the diff is `-- index.html js/` |
+| auto/systems | `0fbebd9` | run 7, Sessions 442–460 against main |
+| auto/fable-co-op-door | `79f6d64` | run 7, Session 453/456 (two saves) against main; first read |
+| auto/backlog | `551e9ec` | run 7: level with main (Sessions 414–435 merged, read in run 6) |
+| auto/fable-rivers | `5504d80` | run 7: merged into main; nothing ahead |
+| auto/concept, auto/producer, auto/critic, auto/design, auto/split | — | run 7: level with main, or ahead in docs only |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 | auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 7 — 4 Oct 2026
+
+About 60 player-readable strings read, and four findings, all on auto/systems. Each was raised by the systems builder in #old-gates (Sessions 445, 458 and 460) and checked here against the code.
+
+**main** (`206b697..551e9ec`) is the merge of the rivers (Sessions 430–433) and the look sessions 414–435, both read in run 6, plus Session 453 (tests only) and the build tag. Finding 9's peaks and lakes are as run 6 left them on main; the fix is on auto/systems and arrives with its merge.
+
+**auto/systems** (Sessions 442–460). Findings 7, 8 and 9 are in the code word for word: `INN_ROOM_LINES` carries the four voices as written, the coaching inn passes its nation's people, the French long names read as French, and the peaks and lakes take their people's word (*Sliabh*/*Cnoc*, *Mont*/*Pic*, *Fell*/*Tor*, *Loch*/*Lac*/*Mere*, and *La* for Aurenne's rivers). The new lines read well: the log's *The Compact deeded you a ship at* PORT is plain narration, and Rowe found in her own words (Session 457) takes the generic *Home? Yes. Yes, all right.* off her. Sessions 451 (the Torch at the counter) and 455–460 add no other new string, but walking Rowe's three lines brought older lines into view: Findings 10–12. Finding 13 is the doubled names the builder found in forts and gates after Finding 8.
+
+**auto/fable-co-op-door** (the two saves, character and world; Michael's A on #119) adds menu and toast text: *No world was saved with this character — the world starts fresh.*, the export and import toasts, and the buttons *⤒ Export* and *⤱ World* with their tooltips. All of it is out-of-world chrome in the game's plain menu voice, and none of it breaks a register.
+
+### Finding 10 — auto/systems — Rowe, found on the land, speaks as a stranger to the place
+
+**Where.** The `find` spawn in the world tick (grep `if(q.kind==='find'&&!q.data.spawned`). Rowe is built by `makeDef(site,…,'Villager',…)` from the seat's site, then made a Markman.
+
+**Text.** Her greeting comes from the Villager pool (*Fine day for it.*, *You're not from here. That's all right.*, *Keep to the road after dark.*, *Haven't seen a traveller in a week.*). Her topics are the townsperson's: *What is this place?* answered with the seat's blurb, though she sits on open ground three days out; *Where do the roads go?*; *Anything dangerous nearby?*; and *Any news?* from the seat's region's rumours. Her role shows as *Villager*.
+
+**Why.** She is the rival of three faction lines, a Markman (§2: short sentences, *aye*), and one rank above the player. A Villager's stock line, and a description of a town she is not standing in, make her a stranger in her own scene.
+
+**Replacement.** When `q.rival` is set:
+- `role` is her rank: `Warden` (crown), `Reeve` (league), `Factor` (compact).
+- `greeting` is `["Aye. Thought it'd be you. Sit, if you're stopping — I'm not getting up yet."]`
+- Her topics are only `q.data.topics` (*The seat sent me for you.*, unchanged) and *Farewell.*. No place, roads, dangers, news or folders.
+
+### Finding 11 — auto/systems — the three *Where is Rowe?* briefs say it twice, and the Compact's sends you to the wrong place
+
+**Where.** `FLINES` (grep `title:'Where Is`) and `factionQuestFor`, which appends the town quest's own words to an authored brief (grep `const mech=q.desc.replace`).
+
+**Text.** The journal reads, for each faction:
+- Crown: *Rowe rode out three days ago on Crown business and hasn't sent word. That isn't like her. Rowe went out north three days ago and hasn't come back. Find her — there's a camp out that way — and bring her back.*
+- League: *Rowe went up the hill road alone. Reeves don't go alone. Find her. Rowe went out north three days ago and hasn't come back. Find her — there's a camp out that way — and bring her back.*
+- Compact: *Rowe went to a gate the Church had sealed. She should not have. Find her — and don't touch the seal. Rowe went out north …*
+
+**Why.** Each brief says *three days* or *Find her* twice. The Compact's sends you to a sealed gate and tells you not to touch its seal, but she sits by a camp on open ground and there is no seal to touch. The Compact's lord is Aurennais and gives the order with no honorific or qualifier.
+
+**Replacement.** For a rival `find`, the description is the brief alone, with `{dir}` the compass word from the seat to her spot (`compassWord(q.data.x-site.x,q.data.z-site.z)`). Do not append the town quest's words:
+- crown: `"Rowe rode out {dir} three days ago on Crown business and hasn't sent word, and a Warden who sends no word is a letter you'd rather not open. There's a camp out that way. Bring her back to us."`
+- league: `"Rowe took the hill road {dir}, alone. Reeves don't go alone. There's a camp out that way. Bring her back."`
+- compact: `"Factor Rowe went {dir} to look at a gate the Church had sealed, without the Compact's leave, and has not reported since. The seal is whole, I am told, and she is not at it. There is a camp in that country. Kindly bring her back to her ledgers."`
+
+### Finding 12 — auto/systems — the Prior is given the house and the ship twice, and Rowe is called *cold-eyes*
+
+**Where.** The Black Sail's `after` in `FLINES.compact` (grep `The strait's quieter`), and the rank-3 claim (grep `` `Claim ${F.house}.` ``).
+
+**Text.** After *The Black Sail*: *The strait's quieter. Prior — and the house and the ship are yours. Rowe's gone north with the League, they say. Cold-eyes always find their own.* Then the topic *Claim a house and a ship.* answers *It's yours. The ship is at the quay under your name.*
+
+**Why.** The turn-in hands over the house and ship, and the next topic hands them over again. *Cold-eyes* is the word for the Old Blood (§2), and Rowe is a Markman. Run 3 noted this, and the *Yard* draft owed it. The speaker is Aurennais, so the lines want an honorific and a qualifier, and *they say* is a Gatelander's hedge, not a Factor's.
+
+**Replacement.**
+- after: `"The strait is quieter, and the Compact is in your debt, Prior, which it does not admit to many. A house and a ship are entered in your name; claim them when you please. Factor Rowe has gone north to the League, I am told. Their ledgers are shorter."`
+- the claim's response, for `compact` only: `"Entered in your name, Prior: the house, and the ship at the quay."` The Crown's and the League's stay *It's yours.*
+
+### Finding 13 — auto/systems — forts, peaks, lakes and gates still double a word
+
+**Where.** `genName` in the world module (grep `function genName`), which names forts (`… Hold/Keep/Watch/Gate/Tower`), peaks and lakes. `uniqueSiteNames` already renames a doubled *place*, but nothing renames these. And `dungeonName` in `20-quests.js`, which names the generated gates, including the Act II etched gates.
+
+**Text.** *Montmont Tower*, *Clairclair Keep*, *Ardard Watch*, *Mont Montmont*; and *The Lost Chasm of the Lost*, *The Deep Depths of the Deep*, *The Whispering Manse of Whispers*, *The Ruined Ruin of Ash*.
+
+**Why.** It is Finding 8's fault in the names Finding 8 did not reach. A name that says its word twice reads as a stammer in every people's register.
+
+**Replacement.** Both changes draw nothing new from the RNG, so only names that doubled change: 552 of 30,000 gate names (seeds 0–4,999, six themes), for example *The Lost Chasm of Silence*, *The Deep Abyss of Ash*, *The Ruined Remnant of Ash*. A save keeps its ids, and an etched gate already in `worldState.story.gates` keeps its old name.
+
+```js
+function genName(r,reg){const s=SYL[reg]||SYL.irish;const a=s[0][Math.floor(r()*s[0].length)];let k=Math.floor(r()*s[1].length);if(a.replace('-','').toLowerCase()===s[1][k])k=(k+1)%s[1].length;const b=s[1][k];return a.endsWith('-')?a+b.charAt(0).toUpperCase()+b.slice(1):a+b;}
+```
+
+In `dungeonName`, replace the last four lines with:
+
+```js
+  const pre=pick(PREFIXES[theme]||PREFIXES.ruins,1);
+  const NL=NOUNS[theme]||NOUNS.ruins,lc=w=>{w=w.toLowerCase();return w==='depths'?'deep':w;},same=(a,b)=>{a=lc(a);b=lc(b);const n=Math.min(4,a.length,b.length);return a.slice(0,n)===b.slice(0,n);};
+  let ni=h(seed*37+2)%NL.length;if(same(NL[ni],pre))ni=(ni+1)%NL.length;const noun=NL[ni];
+  const said=[pre,...noun.split(' ')];let si=h(seed*37+3)%SUFFIXES.length;
+  while(SUFFIXES[si].split(' ').filter(w=>w!=='of'&&w!=='the').some(w=>said.some(x=>same(x,w))))si=(si+1)%SUFFIXES.length;
+  return `The ${pre} ${noun} ${SUFFIXES[si]}`;
+```
+
+**Noted, not findings** (canon against canon; for the author):
+- *How many died at Ashenmoor.* Varek's verbatim line (`quest_writing.md`, his strongest line) says *Forty-three people died in Ashenmoor when the binding broke.* Edna's board in the legacy village (grep `FORTY-ONE souls at dawn`) counts forty-one at dawn and fourteen at dusk, and names eleven dead and two travellers *whose names we did not record*; the others fled east. The two can stand together only if the dead include the fled who died on the road. The draft *The Last Entry* (below, in `quest_drafts.md`) gives Ashenmoor's names without a number, so it takes neither side.
 
 ---
 
