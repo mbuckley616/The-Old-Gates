@@ -9,17 +9,16 @@ const W = ms => page.waitForTimeout(ms);
 const sk = `(function sk(v) { return Array.isArray(v) ? v.map(sk) : (v && typeof v === 'object') ? Object.keys(v).sort().reduce((o, k) => (o[k] = sk(v[k]), o), {}) : v; })`;
 
 // 1. change the character and the world, save a slot
-const set = await page.evaluate(() => {
+const set = await page.evaluate(async () => {
   playerName = 'Traveller'; gold = 777; level = 7; ATTRS.might = (ATTRS.might || 10) + 3;
   BAG.push({ name: 'Blue Stone', ico: '💎', type: 'misc', weight: .1, sellMult: 1, buyPrice: 9, qty: 2 });
   worldState.gameTimeMinutes = 1000; worldState.gameTimeAbsMinutes = 5000;
   worldState.boxes = { g_test_3: { taken: 2 } }; worldState.picked = { g_test_3: 4400 };
   const qid = Object.keys(QS)[1]; QS[qid].state = 'active'; QS[qid].objectives[0].current = 1;
   worldState.stats = Object.assign(worldState.stats || {}, { sold: 11 }); worldState.favor = { dunmore: 3 };
-  saveToSlot(0);
+  await saveToSlot(0); /* the write resolves once both rows and the index entry are in (CI's slow disk took longer than a fixed 1.5 s) */
   return { qid, might: ATTRS.might, px, pz };
 });
-await W(1500);
 const rows = await page.evaluate(async () => { const m = SS.idx.find(e => e.kind === 'manual' && e.slot === 0); const cs = await ssGet(m.key), ws = await ssGet(ssWorldKey(m.key)); return { meta: m, c: JSON.parse(cs), w: JSON.parse(ws), sizes: [cs.length, ws.length] }; });
 check('one index entry per slot, v3, sized for both rows', rows.meta.v === 3 && rows.meta.size === rows.sizes[0] + rows.sizes[1] && rows.meta.gold === 777, { v: rows.meta.v, size: rows.meta.size, sizes: rows.sizes });
 check('the character row carries the character', rows.c.v === 3 && rows.c.gold === 777 && rows.c.level === 7 && rows.c.ATTRS.might === set.might && rows.c.BAG.some(it => it && it.name === 'Blue Stone')

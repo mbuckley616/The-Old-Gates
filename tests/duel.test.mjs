@@ -84,7 +84,7 @@ await fresh(8); await callIt();
 const o = await page.evaluate(() => { PHP = Math.floor(maxHP * .2); WORLD.tickDuel(1 / 60); return { open: dlgOpen, who: dlgNPC && dlgNPC.name, hold: WORLD.duel.rowe._duelHold }; });
 check('below 30% health Rowe offers the yield, and holds while you answer', o.open && o.who === 'Hesket Rowe' && o.hold, o);
 await page.evaluate(() => { const t = dlgNPC.topics.find(x => x.label === 'I yield.'); t.fn(); });
-await page.waitForTimeout(1600);
+await page.waitForFunction(() => { const q = WORLD.duel.q || WORLD.quests.find(q => q.kind === 'duel' && !q.turnedIn); return q && q.data.state !== 'fight'; }, null, { timeout: 20000 }).catch(() => {}); /* the yield lands on a 1.2 s timer, which a busy CI runner can run late */
 const l1 = await page.evaluate(() => { const q = WORLD.duel.q || WORLD.quests.find(q => q.kind === 'duel' && !q.turnedIn); return { state: q.data.state, retry: q.data.retryDay, day: Math.floor((worldState.gameTimeAbsMinutes || 0) / 1440), rowe: WORLD.fstate().league.rowe, php: PHP, dead }; });
 check('*I yield.*: lost, the rematch in seven days, Rowe the Captain, no death', l1.state === 'lost' && l1.retry === l1.day + 7 && l1.rowe === 'captain' && l1.php >= 1 && !l1.dead, l1);
 const t3 = await serveNow(); const t3b = await serveNow();

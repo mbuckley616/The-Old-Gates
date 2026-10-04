@@ -10996,3 +10996,10 @@ The test: the real kill (`killE`) now passes if the body settles by itself, or i
 ### Needs eyes
 - A body slumped against a wall now stops where it lands, propped up, rather than slowly sliding down it; on open ground the last centimetres of slide are gone a little sooner. Whether a body left sitting against a dungeon wall looks right, or should always end lying down, is a feel call.
 - About one fall in eighty at a wall may still meet the cap, nearly still (a body toppling slowly over from sitting). The cap freezes it where it is.
+
+## v80 — Session 469 — `duel` and `coopsaves` red on CI: two fixed pauses that a slow runner outran (CI fix, tests only)
+CI on 77f0d9a (Session 466) failed shards 3 and 6, one suite each, neither touched by that session. Both passed here, and main has been failing one or two shards at random on the same code (7d37119 and cc921f6 red on 2 and 3, 1a30364 green on all eight), so the code was not the fault; the tests were waiting a fixed time for something that takes longer on a busy runner. `duel`: *I yield.* lands on a 1.2-second `setTimeout`, and the test read the result after a fixed 1.6 s; on CI it read `state:"fight"`, the timer not yet run. It now waits until the duel's state leaves `fight` (up to 20 s). `coopsaves`: the test saved a slot without waiting for the write and then waited 1.5 s; on CI the index had no slot-0 entry yet, and `m.key` threw on `undefined`. It now awaits `saveToSlot(0)`, which resolves once both rows and the index entry are written. No game code changed. These suites are the systems builder's and the co-op card's; the edits are one line each and should merge clean against either branch.
+### Verified (headless Chromium)
+`duel` (with `duelrhythm`) 32/32, `coopsaves` 21/21 twice, all three runs at once on one machine. The yield now reads `state:"lost"`, rematch day 7, Rowe Captain, 26 health.
+### Needs eyes
+Nothing in the game. CI's next run on this branch is the proof.
