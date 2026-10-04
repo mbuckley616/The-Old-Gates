@@ -6,13 +6,29 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `206b697` | run 6, from `6edf854`; the diff is `-- index.html js/` |
-| auto/systems | `4e80d27` | run 6, Sessions 430–441 against main |
-| auto/backlog | `f46664b` | run 6, Sessions 414–435 against main; no string a player reads |
-| auto/fable-rivers | `5504d80` | run 6, Sessions 430–433 against main (the rivers and the ranges) |
-| auto/concept, auto/producer, auto/critic, auto/design, auto/split | — | run 6: level with main, or ahead in docs only |
+| main | `551e9ec` | run 7, from `206b697`; the diff is `-- index.html js/` |
+| auto/systems | `0fbebd9` | run 7, Sessions 442–460 against main |
+| auto/fable-co-op-door | `79f6d64` | run 7, Session 453/456 (two saves) against main; first read |
+| auto/backlog | `551e9ec` | run 7: level with main (Sessions 414–435 merged, read in run 6) |
+| auto/fable-rivers | `5504d80` | run 7: merged into main; nothing ahead |
+| auto/concept, auto/producer, auto/critic, auto/design, auto/split | — | run 7: level with main, or ahead in docs only |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 | auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 7 — 4 Oct 2026
+
+About 60 player-readable strings read. No findings.
+
+**main** (`206b697..551e9ec`) is the merge of the rivers (Sessions 430–433) and the look sessions 414–435, both read in run 6, plus Session 453 (tests only) and the build tag. Finding 9's peaks and lakes are as run 6 left them on main; the fix is on auto/systems and arrives with its merge.
+
+**auto/systems** (Sessions 442–460). Findings 7, 8 and 9 are in the code word for word: `INN_ROOM_LINES` carries the four voices as written, the coaching inn passes its nation's people, the French long names read as French, and the peaks and lakes take their people's word (*Sliabh*/*Cnoc*, *Mont*/*Pic*, *Fell*/*Tor*, *Loch*/*Lac*/*Mere*, and *La* for Aurenne's rivers). The new lines read well: the log's *The Compact deeded you a ship at* PORT is plain narration, and Rowe found in her own words (Session 457) takes the generic *Home? Yes. Yes, all right.* off her. Sessions 451 (the Torch at the counter) and 455–460 add no other string a player reads.
+
+**auto/fable-co-op-door** (the two saves, character and world; Michael's A on #119) adds menu and toast text: *No world was saved with this character — the world starts fresh.*, the export and import toasts, and the buttons *⤒ Export* and *⤱ World* with their tooltips. All of it is out-of-world chrome in the game's plain menu voice, and none of it breaks a register.
+
+**Noted, not findings** (canon against canon; for the author):
+- *How many died at Ashenmoor.* Varek's verbatim line (`quest_writing.md`, his strongest line) says *Forty-three people died in Ashenmoor when the binding broke.* Edna's board in the legacy village (grep `FORTY-ONE souls at dawn`) counts forty-one at dawn and fourteen at dusk, and names eleven dead and two travellers *whose names we did not record*; the others fled east. The two can stand together only if the dead include the fled who died on the road. The draft *The Last Entry* (below, in `quest_drafts.md`) gives Ashenmoor's names without a number, so it takes neither side.
 
 ---
 
