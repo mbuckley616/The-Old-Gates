@@ -109,7 +109,7 @@ await g.frames(2); await page.keyboard.press('e'); await g.frames(3);
 const on5 = await page.evaluate(() => { const S = WORLD.ship; const p = S.plat; return { onDeck: px > p.x0 && px < p.x1 && pz > p.z0 && pz < p.z1 && Math.abs(jumpY - p.y) < 1 }; });
 console.log('at', atq, JSON.stringify(q5), JSON.stringify(on5));
 check(`at ${atq}, built, she lies alongside the quay (${q5.gap} from its edge), and E from the quay boards her`, q5.plat && q5.gap < 3.5 && on5.onDeck, { q5, on5 });
-// with a ship already yours, the claim leaves her where she is (and refits her, Session 466, Michael's B on #128: tests/compactrefit)
+// with a ship already yours, the claim leaves her where she is (and refits her, Session 467, Michael's B on #128: tests/compactrefit)
 const keep = await page.evaluate(() => { const C = WORLD.fstate().compact; C.house = false; const S = WORLD.ship; const before = { x: Math.round(S.x), z: Math.round(S.z), name: S.name };
   const s = WORLD.siteAnywhere(WORLD.FACTIONS.compact.seat); const px0 = px, pz0 = pz; px = s.x; pz = s.z; const t = WORLD.factionTopics(s).find(x => /^Claim /.test(x.label)); const said = t.fn(); px = px0; pz = pz0;
   return { said, before, after: { x: Math.round(S.x), z: Math.round(S.z), name: S.name } }; });

@@ -1,4 +1,4 @@
-// Session 466: the Compact's rank-3 claim is *a house and a ship*. A Prior who already owns a ship is given a refit
+// Session 467: the Compact's rank-3 claim is *a house and a ship*. A Prior who already owns a ship is given a refit
 // (Michael's B on #128): she is mended and raised one class free, sloop → cog → galleon, where she lies; a galleon is only
 // mended. A sunk ship is raised free by the shipwright nearest her wreck, a class up. The claim is clicked in the lord's
 // own dialogue at the seat, as `blacksail` does it.

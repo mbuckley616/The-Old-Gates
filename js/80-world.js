@@ -5415,7 +5415,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // name.", but it deeded the house alone. With no ship of your own, a sloop is moored where buyShip would launch one, at
   // the seat's harbour or (Fortargent is inland) the nearest of the Compact's own; the quay's box from the ground (quayLine)
   // when that harbour is not loaded.
-  // S466 — a Prior who already owns a ship is given a refit instead (Michael's B on #128): she is mended and raised one class
+  // S467 — a Prior who already owns a ship is given a refit instead (Michael's B on #128): she is mended and raised one class
   // free (sloop → cog → galleon; a galleon is only mended), where she lies. A sunk ship is raised free by the shipwright
   // nearest her wreck (three days, as a paid raise) a class up; one already being raised comes up a class up.
   function compactRefit(){
