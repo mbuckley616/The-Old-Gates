@@ -11466,7 +11466,6 @@ Existing suites run here, all green: `saves`, `export`, `saveui`, `autosave`, `d
 - Which side standing, crime, favour and the Church's notes belong to in a shared world (they went with the character here, houses and the ship with the world) is the designer's to settle before the co-op build; moving a key is a list change.
 - A character file imported without its world starts in a fresh world. The message says so twice. Whether that is a trap for someone moving machines, or the right shape, is a playtest question.
 
-<<<<<<< HEAD
 ## v80 — Session 467 — The Compact refits a Prior's own ship (Michael's B on #128)
 The Compact's rank-3 claim is *a house and a ship*, and the lord says *the house, and the ship at the quay*. Session 457 made it moor a sloop for a Prior with no ship. The game holds one ship per player, so a Prior who already owned one got nothing for the ship half, and DECISION #128 asked what they should get. Michael chose B, a free refit: the ship is mended and raised one class.
 
@@ -11644,7 +11643,6 @@ Black sails and merchantmen stay as they are. They are random encounters, spawne
 
 ### Needs eyes
 Nothing by play.
-=======
 ## v80 — Session 466 — A body slumped against a dungeon wall slid for seconds: the wall and the floor grip
 The systems builder's note (Session 465, `ragdoll` red on CI shard 2): a dungeon Skeleton killed by a power blow beside a wall had not come to rest by itself before the four-second cap, and they proposed seeding the throw or accepting a body frozen at the cap. I measured first. Killed at that wall eighty times from one pose and facing, on seeded throws, the bodies came to rest after a median 3.25 s and 66 of 80 took longer than 2.5 s; in the open, the same eighty settled in 0.85–1.65 s (median 1.25). So the throw's draw was not the fault: the wall was. Seeding the test would have hidden a body that crawls on in the game.
 
@@ -11695,4 +11693,3 @@ The tests: `beastfall` gains the 60 seeded deaths (the median must rest within 1
 ### Needs eyes
 - A dead wolf, boar or bear now stops a little sooner on the ground rather than creeping the last centimetres. It should not be visible.
 - Falling below 30% in the first moments of the duel now keeps Rowe's offer on screen until you answer it.
->>>>>>> main
