@@ -1,0 +1,25 @@
+{
+ "what": "80-world.js's WORLD IIFE dissolved into these files, in load order; scripts/split_world.py rebuild() reverses it",
+ "source": "js/80-world.js",
+ "source_sha256": "9b972db066b8e470a66e35560e4736e9fa08dda048e33034e50611e9277e4a14",
+ "source_lines": 8294,
+ "open_line": 22,
+ "return_line_in_pieces": 8291,
+ "renames": {
+  "DOORS": "CELL_DOORS",
+  "KEYS": "HELD_KEYS",
+  "SG": "STAMP_G",
+  "tickNPCs": "tickTownNPCs"
+ },
+ "files": [
+  {"name": "80-world-terrain.js", "lines": [1, 912], "bytes": 64052, "sha256": "6f6591b0bb75a11f81f4bc10e224b55427c8c06e6b3a59246a4d686d54f81a86"},
+  {"name": "81-world-cells.js", "lines": [913, 1486], "bytes": 55979, "sha256": "588229f4889678b8100fefdfc443e584d3cb8f0a217a7222f75c49fef6555918"},
+  {"name": "82-world-structures.js", "lines": [1487, 3172], "bytes": 162069, "sha256": "3cd1f43a8dc92f2325bf55dfa3562797bbb6cdc89e8724ff02c387ace30cd58a"},
+  {"name": "83-world-generator.js", "lines": [3173, 4822], "bytes": 179163, "sha256": "8d85e0d5948eab74e497a3c95bda52e86d7238b6ab65f6b4b5080ebafa00c8bf"},
+  {"name": "84-world-interiors.js", "lines": [4823, 5142], "bytes": 33526, "sha256": "9f5b3c7147c2df2c37fa0c7cbd07009b87daf4008c787269d1d132d87de4d806"},
+  {"name": "85-world-sea.js", "lines": [5143, 5887], "bytes": 77781, "sha256": "71334125befee32b1d17a806bbd93507c5e60c8850239784d26b7bf9714281c5"},
+  {"name": "86-world-crime.js", "lines": [5888, 6682], "bytes": 86116, "sha256": "f97463402b935f669e2e022cd609a954e1835489e72ff7d3d2281ab285f1dc9b"},
+  {"name": "87-world-quests.js", "lines": [6683, 7991], "bytes": 190691, "sha256": "fa167bbd50dd9f6c8bfc2c48298fd3d3a15b9eb40191f97ec6c1f8c92833e9c6"},
+  {"name": "88-world-ticks.js", "lines": [7992, 8294], "bytes": 42089, "sha256": "6743cf29b6b42735dc9b1978296d9c2670d79d15bb9d611e729e84cb81ddda2a"}
+ ]
+}
