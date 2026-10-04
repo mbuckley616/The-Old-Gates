@@ -989,7 +989,7 @@ var WORLD=(()=>{
     anglo:[['Ash','Wulf','Ealdor','Grim','Stan','Wood','Hag','Black','Ox','Bran'],['ford','ham','wick','thorpe','burgh','mere','stead','ley','worth','den']],
   };
   // v80 S442 — after a hyphen the name takes a capital (Saint-Rouge); no draw changes (quest review run 6, Finding 8)
-  function genName(r,reg){const s=SYL[reg]||SYL.irish;const a=s[0][Math.floor(r()*s[0].length)],b=s[1][Math.floor(r()*s[1].length)];return a.endsWith('-')?a+b.charAt(0).toUpperCase()+b.slice(1):a+b;}
+  function genName(r,reg){const s=SYL[reg]||SYL.irish;const a=s[0][Math.floor(r()*s[0].length)];let k=Math.floor(r()*s[1].length);if(a.replace('-','').toLowerCase()===s[1][k])k=(k+1)%s[1].length;const b=s[1][k];return a.endsWith('-')?a+b.charAt(0).toUpperCase()+b.slice(1):a+b;}
   const REGION_NAMES={forest:['Wood','Weald','Holt','Shaw'],plains:['Vale','Downs','Reach','March'],coast:['Strand','Shore','Coast','Haven'],wastes:['Waste','Barrens','Scar','Heath'],tundra:['Tundra','Snows','Whites','Frost'],fen:['Fen','Marsh','Mire','Carr'],moor:['Moor','Heath','Tops','Rise'],autumn:['Rust','Amber Wood','Gold Weald','Fall'],dunes:['Dunes','Sands','Shingle','Wash'],swamp:['Swamp','Bog','Sump','Drowned Wood'],wasteland:['Cinders','Blight','Ash','Burn']};
   // ── cell data ──
   const CELLS=new Map();

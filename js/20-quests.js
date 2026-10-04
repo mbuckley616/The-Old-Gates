@@ -313,9 +313,11 @@ function dungeonName(seed,theme){
     'of Ash','of Bone','of the Void','of Whispers','of the Forsaken',
   ];
   const pre=pick(PREFIXES[theme]||PREFIXES.ruins,1);
-  const noun=pick(NOUNS[theme]||NOUNS.ruins,2);
-  const suf=pick(SUFFIXES,3);
-  return `The ${pre} ${noun} ${suf}`;
+  const NL=NOUNS[theme]||NOUNS.ruins,lc=w=>{w=w.toLowerCase();return w==='depths'?'deep':w;},same=(a,b)=>{a=lc(a);b=lc(b);const n=Math.min(4,a.length,b.length);return a.slice(0,n)===b.slice(0,n);};
+  let ni=h(seed*37+2)%NL.length;if(same(NL[ni],pre))ni=(ni+1)%NL.length;const noun=NL[ni];
+  const said=[pre,...noun.split(' ')];let si=h(seed*37+3)%SUFFIXES.length;
+  while(SUFFIXES[si].split(' ').filter(w=>w!=='of'&&w!=='the').some(w=>said.some(x=>same(x,w))))si=(si+1)%SUFFIXES.length;
+  return `The ${pre} ${noun} ${SUFFIXES[si]}`;
 }
 
 function dungeonKeyBase(seed){
