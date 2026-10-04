@@ -3,6 +3,8 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+
+## Answered
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
 
@@ -16,7 +18,8 @@ Recommendation: **A.** Every choice sits in view and changes the figure beside i
 
 Screens: [the title, today beside the proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/compare-title.png) · [the keys card](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/keys.png) · [A, today beside the sheet](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/compare-creator.png) · [A, full size](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/sheet.png) · [B, chapter III](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/book-3.png) · [B, chapter IV](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/book-4.png) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/creator/restyle.png).
 
-## Answered
+Michael: **One sheet, nothing scrolls** (4 Oct 2026)
+
 ### The Compact's claim when you already own a ship (the systems builder, Session 457, 2026-10-03, DECISION #128)
 The Compact's rank-3 claim is *a house and a ship* (Session 99), and the lord says "It's yours. The ship is at the quay under your name." Until Session 457 it deeded the house alone. Session 457 now moors a sloop at the nearest of the Compact's harbours (Fortargent is inland; Beaurouge, 850 units off) when you have no ship. The game holds one ship per player, so a Prior who already owns one gets nothing for the second half of the claim. Today their ship stays where they left it and the line still says the ship is at the quay.
 
