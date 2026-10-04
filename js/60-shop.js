@@ -250,9 +250,9 @@ function _stashAdd(item){
 // v80 S11 — "How long would you like to sleep?" Slider 1–24h, then the
 // fade, the clock advance, restore scaled by hours (full at 6+), and any
 // banked level taken after waking.
-function gameDateLine(){
-  const abs=(worldState&&worldState.gameTimeAbsMinutes)||0;const day=Math.floor(abs/1440)+1;
-  const m=((worldState&&worldState.gameTimeMinutes)||0)%1440;const hh=Math.floor(m/60),mm=Math.floor(m%60);
+function gameDateLine(at,tod){ /* S486 — at, tod: a journal line's stamp; none, now */
+  const abs=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0);const day=Math.floor(abs/1440)+1;
+  const m=(tod!=null?tod:at!=null?at:((worldState&&worldState.gameTimeMinutes)||0))%1440;const hh=Math.floor(m/60),mm=Math.floor(m%60);
   const h12=((hh+11)%12)+1,ap=hh<12?'am':'pm';
   return `Day ${day} · ${h12}:${String(mm).padStart(2,'0')} ${ap}`;
 }

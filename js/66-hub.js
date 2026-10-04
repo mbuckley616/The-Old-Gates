@@ -95,8 +95,13 @@ function isBookOpen(){
 
 // ── GAME LOG ─────────────────────────────────────────────────
 const GAME_LOG=[];
+// S486 — the journal kept (Michael's C on #132, part A): every line is stamped with the minute it was written (t, the
+// absolute clock; tod, the time of day) and the list is worldState.journal, a character key, so it is saved in the
+// character row. GAME_LOG and worldState.journal are one array: a load refills it in place (_applyLoadData).
+worldState.journal=GAME_LOG;
 let logCollapsed={};
-function addLog(icon,text){GAME_LOG.push({level,icon,text});}
+function addLog(icon,text){if(worldState.journal!==GAME_LOG)worldState.journal=GAME_LOG;GAME_LOG.push({level,icon,text,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});}
+function journalLoad(list){GAME_LOG.length=0;if(Array.isArray(list))list.forEach(e=>{if(e&&typeof e.text==='string')GAME_LOG.push(e);});worldState.journal=GAME_LOG;}
 function renderLog(){
   const byLevel={};GAME_LOG.forEach(e=>{if(!byLevel[e.level])byLevel[e.level]=[];byLevel[e.level].push(e);});
   const body=document.getElementById('log-body');body.innerHTML='';
@@ -130,7 +135,7 @@ function renderLog(){
     hdr.appendChild(chev);hdr.appendChild(document.createTextNode(' Level '+lv));
     hdr.onclick=()=>{logCollapsed[lv]=!logCollapsed[lv];renderLog();};block.appendChild(hdr);
     if(!collapsed){const entries=document.createElement('div');entries.className='log-entries';
-      byLevel[lv].forEach(e=>{const div=document.createElement('div');div.className='log-entry'+(e.icon==='↑'?' log-levelup':e.icon==='💀'?' log-death':'');div.textContent=e.icon+' '+e.text;entries.appendChild(div);});block.appendChild(entries);}
+      byLevel[lv].forEach(e=>{const div=document.createElement('div');div.className='log-entry'+(e.icon==='↑'?' log-levelup':e.icon==='💀'?' log-death':'');if(typeof e.t==='number'){const dt=document.createElement('div');dt.className='log-date';dt.style.cssText='font-size:10px;color:#8a7a60;letter-spacing:.04em';dt.textContent=gameDateLine(e.t,e.tod);div.appendChild(dt);}div.appendChild(document.createTextNode(e.icon+' '+e.text));entries.appendChild(div);});block.appendChild(entries);}
     body_.appendChild(block);
   });
 }
