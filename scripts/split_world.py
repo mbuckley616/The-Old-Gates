@@ -87,6 +87,9 @@ const ident = (n, _s, anc) => {
   const p = anc[anc.length - 2];
   if (newNames.has(n.name)) out.collisions.push({ name: n.name, line: n.loc.start.line });
   if (!(n.name in renames)) return;
+  // a shorthand property `{DOORS}`: acorn-walk visits only its value (a copy of the key), so that one visit writes
+  // `DOORS:CELL_DOORS` over the range, keeping the property's name (the export) and renaming the reference
+  if (p && p.type === 'Property' && p.shorthand) { out.edits.push({ start: n.start, end: n.end, text: n.name + ':' + renames[n.name] }); return; }
   if (p && p.type === 'MemberExpression' && p.property === n && !p.computed) return;
   if (p && (p.type === 'Property' || p.type === 'PropertyDefinition' || p.type === 'MethodDefinition') && p.key === n && !p.computed) {
     if (p.type === 'Property' && p.shorthand) out.edits.push({ start: n.start, end: n.end, text: n.name + ':' + renames[n.name] });
@@ -96,6 +99,8 @@ const ident = (n, _s, anc) => {
 };
 walk.ancestor(ast, { Identifier: ident, VariablePattern: ident });
 // when reversing, `KEY:OLD` written by the forward pass goes back to the shorthand `KEY`
+// never two edits on one range (the check above should make this a no-op)
+{ const seen = new Set(); out.edits = out.edits.filter(e => { const k = e.start + ':' + e.end; if (seen.has(k)) return false; seen.add(k); return true; }); }
 if (mode === 'reverse') {
   walk.simple(ast, { Property(p) {
     if (!p.shorthand && !p.computed && p.key.type === 'Identifier' && p.value.type === 'Identifier' && (p.value.name in renames) && renames[p.value.name] === p.key.name)
