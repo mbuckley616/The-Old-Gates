@@ -11545,3 +11545,12 @@ The critic filed this on auto/critic (PR #135), not yet on main. The struck line
 
 ### Needs eyes
 The look of her bow-out berth beside the quay, and whether a raised or fetched ship at a north or south harbour now sits where it reads well.
+
+## v80 — Session 474 — A character loaded alone kept the running game's quests (backlog I, the critic's 4 Oct playtest)
+The critic moved the Hearthwick chain on in one game, imported a character file alone (no world row), and loaded it from the in-game save menu. The loaded character had the first game's `q0`/`q1` states. `_applyLoadData` lays the saved quests over the live ones (`Object.assign(QS, d.QS)`), and the fresh shape under them comes from `qsInit()`, which ran only when the page loaded. From the title nothing had been played, so a load looked fresh. From a running game, a character row has no `QS`, so every quest stayed as that game had it. The same was true of any quest a world row lacked (the code's own comment, *qsInit has already put them in QS*, assumed a fresh page). `_applyLoadData` now calls `qsInit()` before laying the saved quests on. The pre-v61aw migration further down marked Q0 complete whenever the save had no Q0, which a character row never has. It now applies only to a save that carries quests and lacks Q0, the case its comment describes. A character arriving in a fresh world starts the tutorial quest as a new game does, and it ticks on the first zone entry.
+
+### Verified (headless Chromium)
+`qsfresh` 4/4 (new). From a save made at the start (Q0 active, Q1 locked), play moves Q0 to complete and Q1 to active. The character row alone, loaded in that game, gives Q0 active and Q1 locked with no progress. The old code left them complete and active. With its world row, the saved quests come back. A world row lacking Q1 gives Q1 locked, as a new game has it; the old code left it complete. The old code fails both checks for the fix. `saves` 6/6 (its legacy migration included), `coopsaves` 21/21, `export` 6/6, `autosave` 7/7, `saveui` 13/13. `parsecheck` clean. Build tag s406.
+
+### Needs eyes
+Nothing in solo play: a save with both rows loads as before.

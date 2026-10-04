@@ -592,6 +592,7 @@ function _applyLoadData(d,w){
     const first=Object.keys(knownSpells)[0];
     if(first)activeSpellId=first;
   }
+  qsInit(); /* S474 — the quests start fresh before the saved ones are laid over them: qsInit ran only at page load, so a load from the in-game menu kept the running game's QS where the save had none (a character row alone) or lacked a quest */
   if(d.QS)Object.assign(QS,d.QS);
   // v61af: quest-shape migration. When a quest gets new objectives added in a
   // later version (Q7 went from 1 to 4 in v61ae), old saves still contain the
@@ -736,7 +737,7 @@ function _applyLoadData(d,w){
   } else {
     worldState.gameTimeMinutes = 360;
   }
-  if(QS && (!d.QS || !d.QS.q0_arrival)){
+  if(QS && d.QS && !d.QS.q0_arrival){ /* S474 — a save with quests but no Q0; a character row alone has no QS and keeps the fresh world's */
     // Saved data has no Q0 entry → pre-v61aw character. Mark Q0 complete
     // so the quest log doesn't show a stale "active" tutorial quest, and
     // so Q1 unlock logic stays consistent (Q1 was 'available' for a
