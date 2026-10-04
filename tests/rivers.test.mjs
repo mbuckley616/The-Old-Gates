@@ -46,7 +46,7 @@ check('rivers reach the sea on every island: 20 or more mouths, 9 or more named,
 check('tributaries join: forks and lake inflows', st.joins >= 20 && st.toLake >= 3, `${st.joins} joins, ${st.toLake} to a lake`);
 check('a ship can enter six or more rivers from the sea; 30 km or more sixteen wide or more', st.navMouths >= 6 && st.navLen >= 30000, `${st.navMouths}, ${st.navLen}u`);
 check('every great river is wider at the mouth than at its source', r.great.every(g => g.w1 > g.w0 && g.w1 >= 8), r.great.map(g => `${g.name} ${g.w0}→${g.w1}`).join(', '));
-check('each nation names its rivers in its own tongue', r.great.every(g => (g.nat === 'mark' && /water$/.test(g.name)) || (g.nat === 'aurenne' && /^la /.test(g.name)) || (g.nat === 'gatelands' && /^An /.test(g.name))), r.great.map(g => g.nat + ':' + g.name).join(', '));
+check('each nation names its rivers in its own tongue', r.great.every(g => (g.nat === 'mark' && /water$/.test(g.name)) || (g.nat === 'aurenne' && /^La /.test(g.name)) || (g.nat === 'gatelands' && /^An /.test(g.name))), r.great.map(g => g.nat + ':' + g.name).join(', '));
 check('no channel runs through a settlement pad (a port at the shore aside: two at most)', r.bends === 0 && r.portBends <= 2, `${r.bends} inland, ${r.portBends} ports of ${r.sites}`);
 check('towns within a short walk of navigable water, for the quays to come: 15 or more', r.quays >= 15, r.quays);
 check('the three largest rivers\u2019 last reach is water a ship floats in (worldH below \u22121.4) along 95% of its line, with dry banks beside where the reach is over a kilometre', r.wet.every(w => w.wet >= w.n * .95 && (w.n < 50 || w.bank >= w.n * .8)), JSON.stringify(r.wet));

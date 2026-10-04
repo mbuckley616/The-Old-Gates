@@ -785,6 +785,8 @@ function dunSmoothNormals(g){g.computeVertexNormals();const p=g.attributes.posit
   const key=i=>Math.round(p.getX(i)*500)+','+Math.round(p.getY(i)*500)+','+Math.round(p.getZ(i)*500);
   for(let i=0;i<p.count;i++){const k=key(i);const a=acc.get(k)||[0,0,0];a[0]+=n.getX(i);a[1]+=n.getY(i);a[2]+=n.getZ(i);acc.set(k,a);}
   for(let i=0;i<p.count;i++){const a=acc.get(key(i));const l=Math.hypot(a[0],a[1],a[2])||1;n.setXYZ(i,a[0]/l,a[1]/l,a[2]/l);}n.needsUpdate=true;}
+// S478 — a dungeon floor's key for its seeded streams: the gate's seed (a hand-made dungeon has none: its id or name) and the floor
+function dKeyOf(portal,floorIdx){const p=portal||{};return String(p.seed!=null?p.seed:(p.id||p.name||'dungeon'))+':'+floorIdx;}
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
@@ -1006,6 +1008,10 @@ function buildDungeon(portal){
     DUNGEON_STAIRWELL=true;
   }
   function renderFloor(map,floorIdx,wallMat,floorMat,baseY){
+    // v80 S478 — co-op rules: where the barrels, crates and chests stand is drawn from the dungeon's own stream, keyed by
+    // its seed and floor, so one seed's floor is the same on two machines; each container's loot is keyed by its place and
+    // index on the floor and the day (dKeyOf, dPlace). Cosmetic rolls (a barrel's turn, the rubble, the torches) stay Math.random.
+    const dKey=dKeyOf(portal,floorIdx),dPlace=seededRng('dplace',dKey);let _nBarrel=0,_nChest=0;
     // Room containment check — chests and barrels should only spawn INSIDE rooms, never in corridors.
     // Each room is a bounding rectangle {x,y,w,h}. A cell is "in a room" if it falls inside any of these.
     // Floor 1 uses gen.rooms; floor 2 uses gen.rooms2 (may be null for single-floor dungeons).
@@ -1310,7 +1316,7 @@ function buildDungeon(portal){
       const th2 = currentPortal ? currentPortal.theme : null;
       // Loot table identical — both use 'barrel' rolls. Crates aren't a
       // separate loot tier; they're a sibling prop with the same payout.
-      const items = rollContainerLoot('barrel', ds, th2);
+      const items = rollContainerLoot('barrel', ds, th2, undefined, `${dKey}:barrel:${_nBarrel++}:${lootDay()}`);
       BARRELS.push({
         x: wx, z: wz, floor: floorIdx, opened: false, items,
         displayName: isCrate ? 'Crate' : 'Barrel',
@@ -1378,13 +1384,13 @@ function buildDungeon(portal){
           cornersToFill = rule.corners;          // storeroom — all listed corners
         } else {
           // Pick one corner from the allowed list at random.
-          cornersToFill = [rule.corners[Math.floor(Math.random() * rule.corners.length)]];
+          cornersToFill = [rule.corners[Math.floor(dPlace() * rule.corners.length)]];
         }
       } else {
         // Untagged room (cave) — original 50% chance, any corner.
-        if(Math.random() > 0.5) continue;
+        if(dPlace() > 0.5) continue;
         const allCorners = ['NW','NE','SW','SE'];
-        cornersToFill = [allCorners[Math.floor(Math.random() * 4)]];
+        cornersToFill = [allCorners[Math.floor(dPlace() * 4)]];
       }
       // Spawn cluster at each designated corner.
       for(const cornerName of cornersToFill){
@@ -1393,14 +1399,14 @@ function buildDungeon(portal){
         // total stays consistent with single-cluster rooms. Other kinds
         // get the standard 2-4.
         const count = rule && rule.forceAll
-          ? (2 + Math.floor(Math.random() * 2))
-          : (2 + Math.floor(Math.random() * 3));
+          ? (2 + Math.floor(dPlace() * 2))
+          : (2 + Math.floor(dPlace() * 3));
         let placed = 0, attempts = 0;
         const maxAttempts = count * 4;
         while(placed < count && attempts < maxAttempts){
           attempts++;
-          const jx = (Math.random() - 0.5) * 1.2;
-          const jz = (Math.random() - 0.5) * 1.2;
+          const jx = (dPlace() - 0.5) * 1.2;
+          const jz = (dPlace() - 0.5) * 1.2;
           const wx = anchor.x + jx;
           const wz = anchor.z + jz;
           const cellCol = Math.floor(wx + 0.5), cellRow = Math.floor(wz + 0.5);
@@ -1415,7 +1421,7 @@ function buildDungeon(portal){
             if(Math.hypot(b.x - wx, b.z - wz) < 0.70){ tooClose = true; break; }
           }
           if(tooClose) continue;
-          const isCrate = Math.random() < 0.5;
+          const isCrate = dPlace() < 0.5;
           spawnContainer(wx, wz, isCrate);
           placed++;
         }
@@ -1440,7 +1446,7 @@ function buildDungeon(portal){
       // (e.g. 'library_chest') without changing the visible chest mesh.
       // Default behavior unchanged — treasure → 'treasure' pool, else 'chest'.
       const poolKind = lootKind || (treasure?'treasure':'chest');
-      const items = rollContainerLoot(poolKind, ds, th2);
+      const items = rollContainerLoot(poolKind, ds, th2, undefined, `${dKey}:chest:${_nChest++}:${lootDay()}`);
       const chObj={x:c,z:r,opened:false,lid,treasure,floor:floorIdx,mesh:group,items,displayName:treasure?'Treasure Chest':'Chest'};
       if(treasure||chestLockedAt(c,r,floorIdx))lockChest(chObj); // S150
       CHESTS.push(chObj);
@@ -1464,7 +1470,7 @@ function buildDungeon(portal){
       const openDirs=[[0,1],[0,-1],[1,0],[-1,0]].filter(([dc,dr])=>{const vv=map[r+dr]?.[c+dc];return vv>=1;});
       const isOpposite = openDirs.length===2 && (openDirs[0][0]+openDirs[1][0]===0 && openDirs[0][1]+openDirs[1][1]===0);
       if(isOpposite) continue; // straight corridor — not a corner
-      if(Math.random() < 0.08 && !chestAtCell(c,r)) spawnChest(c, r, false);
+      if(dPlace() < 0.08 && !chestAtCell(c,r)) spawnChest(c, r, false);
     }
     if(isFort){
       // v61ga: storeroom + library chests. Each storeroom gets 1-2 chests
@@ -1476,7 +1482,7 @@ function buildDungeon(portal){
       // against it via the new library_shelf container kind.
       for(const room of gen.rooms){
         if(room.kind !== 'storeroom') continue;
-        const chestCount = Math.random() < 0.6 ? 1 : 2;
+        const chestCount = dPlace() < 0.6 ? 1 : 2;
         // Candidate cells: interior of room, excluding the 1-cell ring at
         // the perimeter (where corner clusters live), excluding any cell
         // adjacent to another chest, and excluding cells too close to the
@@ -1491,7 +1497,7 @@ function buildDungeon(portal){
         }
         // Shuffle candidates, pick up to chestCount
         for(let i = candidates.length - 1; i > 0; i--){
-          const j = Math.floor(Math.random() * (i + 1));
+          const j = Math.floor(dPlace() * (i + 1));
           [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
         }
         let placed = 0;
@@ -2557,7 +2563,7 @@ function buildDungeon(portal){
         const back = wall === 'N' ? [wx, wallN + 0.01] : wall === 'S' ? [wx, wallS - 0.01] : wall === 'W' ? [room.x - 0.49, wz] : [room.x + room.w - 0.51, wz];
         FP.put(FK.bookcase(1.4, FN, FS + 30 + k), back[0], back[1], ry);
         if(wall === 'N' || wall === 'S') registerProp(wx, wz, 1.4, 0.32); else registerProp(wx, wz, 0.32, 1.4);
-        const items = rollContainerLoot('library_shelf', null, null);
+        const items = rollContainerLoot('library_shelf', null, null, undefined, `${dKeyOf(portal,1)}:shelf:${BARRELS.filter(b=>b.displayName==='Bookshelf').length}:${lootDay()}`);
         BARRELS.push({ x: wx, z: wz, floor: 1, opened: false, items, displayName: 'Bookshelf', mesh: null });
       }
       const longAxisIsX = room.w >= room.h;
@@ -2840,6 +2846,9 @@ function buildDungeon(portal){
     return{g,hpFg,limbs};
   }
   function spawnFloorEnemies(map,floorIdx,baseY,dmgMult){
+    // v80 S478 — the foes' spots, kinds and variants come from the floor's stream; each foe is keyed <dungeon>:<floor>:<index>
+    // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
+    const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);
     const themeEnemies=(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies;
     // v59: filter the theme roster to enemies the player has unlocked. Preserves order + repeats
     // so theme weighting (e.g. Skeleton appearing 3× in undead) still applies. If every entry is
@@ -2876,7 +2885,8 @@ function buildDungeon(portal){
       // fact. Forts only — caves have no props or columns to hit.
       if(dPropHit(c, r) || dColumnHit(c, r)) return false;
       return true;
-    }).sort(()=>Math.random()-.5);
+    });
+    for(let i=candidates.length-1;i>0;i--){const j=Math.floor(dFoes()*(i+1));const t=candidates[i];candidates[i]=candidates[j];candidates[j]=t;}
     const spawns=[];const MIN_DIST=4;
     // v61b1: tutorial enemy cap. The procedural generator picks `gen.cfg.en`
     // enemies based on dungeon size — for 'small' that's 6+, which feels
@@ -2895,7 +2905,8 @@ function buildDungeon(portal){
       const name=pool[i%pool.length];
       const baseDef=EM[name]||EM.Skeleton;
       // Variant roll — gated by player level + dungeon difficulty. `portal.diff` is 'veryeasy'..'veryhard'.
-      const variantKey=pickVariant(name, level, portal.diff);
+      const fid=`${dKey}:${i}`,fr=seededRng('dspawn',fid);
+      const variantKey=pickVariant(name, level, portal.diff, seededRng('variant',fid));
       const vr=applyVariantToDef(baseDef, name, variantKey);
       const d=vr.def, displayName=vr.displayName;
       if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];}}
@@ -2926,7 +2937,7 @@ function buildDungeon(portal){
       ENEMIES.push({x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
-        walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+Math.random()*1.5,
+        walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
         dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,
         def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,baseType:name,
         drainCd:0,disguised:!!d.disguise,dormant:!!d.dormant,fleeT:0,telegraphT:0,telegraphMax:0,
@@ -2941,9 +2952,10 @@ function buildDungeon(portal){
         // move in lockstep. homeX/homeZ anchor the wander radius.
         buildFn:d.buildFn,combatYaw:Math.random()*Math.PI*2,
         homeX:ec, homeZ:er,
-        patrolType: Math.random() < 0.5 ? 'wander' : 'scan',
+        patrolType: fr() < 0.5 ? 'wander' : 'scan',
         patrolPhase: Math.random() * Math.PI * 2,
         scanT: 0});
+      keyFoe(ENEMIES[ENEMIES.length-1],fid);
       if(limbs.person)limbs.person.e=ENEMIES[ENEMIES.length-1]; // S196 — tickPeople walks the body by the enemy's own position
       // v61gj — Posture init. Family resolves from buildFn (stamped above) so the
       // family lookup doesn't have to fall back to name-matching for dungeon enemies.

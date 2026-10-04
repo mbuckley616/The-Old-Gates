@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### An exhausted power attack still breaks a guard (the systems builder, Session 464, 2026-10-04, DECISION #131)
+Played through the duel at Caer Slige (Session 464). Rowe fights as a Bandit Captain with the Shieldbearer's guard: a hit from the front lands at 35%, and a power attack breaks the guard (1.5 s stagger, the next blow full). Since v80 S9 a swing with too little stamina goes anyway but weakly: it lands at 45% and its cooldown is 30% longer. The guard break ignores that. A power attack on an empty bar breaks the guard as fully as a fresh one.
+
+What it does in play, measured headless at level 1 with the starting club against Rowe: standing still and mashing the power attack on an empty bar (39 of 42 swings exhausted), you beat her in about 45 s and she lands 4 blows (54 of your 130). Fighting on your stamina, waiting for three-quarters of the bar before a power attack, you land 3 swings in 21 s and go down. The careful player loses, and the masher wins. The same holds against every Bandit Captain and siege captain.
+
+- **A.** An exhausted power attack does not break the guard. It lands as a guarded hit (35% of the exhausted 45%), with the message *Too spent to break the guard.* Cost: one line in each strike path (open world and dungeon), and a test. *(recommended)*
+- **B.** It breaks the guard, but the stagger is halved (0.75 s), so she answers before your follow-up. Cost: the same.
+- **C.** Leave it. Mashing is a choice, and the stamina bar already punishes it elsewhere.
+
+Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
+
 ### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
 Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
 - **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
@@ -38,6 +49,7 @@ What should the Compact give a Prior who already has a ship?
 
 Recommendation: B.
 Michael: **A free refit: mended and raised one class** (B). (4 Oct 2026, via the control room)
+*Built in Session 467* (`tests/compactrefit`): the claim refits the ship where she lies (sloop → cog → galleon, hull and rig full; a galleon is mended); a sunk ship is raised free by the shipwright nearest her wreck in three days, a class up. Issue #128 was closed by the producer.
 
 ### Places standing in the basin lakes (the systems builder, 2026-10-03, DECISION #121)
 The rivers build (S432, Michael's C, the horseshoe) put one great lake in each range's basin, up to 1 km across (Dotriair Mere is 502 units in radius). The routing keeps river channels out of settlement pads, but the lakes were laid over places their cells had already drawn. Of the 919 generated places that are not ports, 43 now stand on a plug of land with water all round them: 36 with water on all sixteen bearings one and a half pads out, 39 of them in a basin lake. That is 20 villages (Diawor, Villeargent, Nordou, Murtraley, Tullymore, Dunard, Carriglough and thirteen more), plus shrines, glades, towers, ruins, outposts, two camps and two lairs. The pad's stamp lifts each one out of the water, so Diawor stands at 3.4 on a disc 45 units across, with −1.1 a third of a pad beyond its edge and −4 past that. Nobody reaches them without swimming, and no road or coach can. Saves keep places by id; a save made standing in one of them reloads at that spot. (Session 447 handled the gates the same way, as a bug: 99 were redrawn out of the water, and gates have no streets.)
@@ -46,7 +58,9 @@ The rivers build (S432, Michael's C, the horseshoe) put one great lake in each r
 - **C. Shrink the lakes**: the routing bends each lake's shore round the pads it would swallow, as it bends the rivers. Most of the 43 then stand on the shore or on a spit. The lakes change shape on the map and get smaller.
 - **D. Leave it.**
 
-Michael: **Move them to the shore** (A). (2026-10-03)
+Michael: **A — move them to the shore** (3 Oct 2026, on issue #121, via the producer).
+
+*Done, Session 452 (systems builder):* after the routing, a place with no dry straight line from its pad's edge out to three pads on any of 24 bearings is set down at the nearest spot in its own cell where the pad and a ring 30 beyond stand on dry bare land, clear of the other pads and the gates. 42 move (19 villages, a city, outposts, shrines, glades, spires, ruins, a bandit camp and two lairs, whose cavern doors go with them), 100–580 units each; none is left cut off. `tests/shoreplaces`. Issue #121 closed by the producer.
 
 ### Online play — which co-op is the door kept open for, and what is built now? (the designer, 2026-10-03)
 Nothing is networked today, and the game assumes one player and one save: foes read `px`/`pz`, the save writes you and the world as one row, panels stop the clock, and loot rolls `Math.random`, so two machines would roll different chests. The page (`docs/design/online-play.md`) sets the co-op it aims at (the host's world, each friend's own character, one shared place with a 400-unit tether, downed for 30 s instead of a reload when friends are present, foes +50% health a friend) and asks what to do now.
@@ -113,6 +127,8 @@ Renaming changes the names of places in every existing save. The saves keep plac
 - **D. Leave it.**
 
 Michael: **One name per place, world-wide** (A). (2026-10-02)
+
+*Done, Session 432 (systems builder):* a pass over the whole grid, once the cells are made, keeps each place's drawn name unless a place ranked before it holds it (cities, towns, ports, villages, outposts). 251 of the 610 take a free name from their culture's bank, or a longer one from the same sounds where the bank is spent (Irish *-na-*, French *-le-*, the generated cultures three syllables). Home's names are kept and reserved. `tests/placenames`. Issue #110 closed by the producer.
 
 ### How the wolves, boars and bears die (the look builder, 2026-10-02, DECISION #107)
 Session 419 gave the people-bodied foes a ragdoll (your C on #102). The beasts on the wolf's bones still take the old death: the wolves, the Snow Wolf, the Dire Wolf, the Ash Hound, the boar and the Cave Bear. A dead pose is set and the whole figure turns 90° onto its side in one frame. That is the snap you called stiff. How should they go down?
