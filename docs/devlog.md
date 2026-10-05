@@ -11846,3 +11846,15 @@ CI on the fix push (`fbb7063`) failed `chamerchant` on shard 3. Its second shop 
 - The room is large (rooms run 1.8× the footprint) and the barber's things gather at the back wall. Is the middle of the floor too empty?
 - The basins read olive rather than brass in the grey daylight of the shot. A warmer brass may be wanted.
 - **Owed.** Slice 2 is the look page from the barber's chair: the creator's style, beard and colour rows, with the body rebuilt. The fee is the systems builder's. The quest writer owes a tagline, the barber's greeting and topics, and the *A barber?* line in `WAY_ASK`.
+
+## v80 — Session 519 — The dead tree's limbs grow from the trunk (backlog H, Michael's inspector note)
+Michael, from the inspector: the dead tree's "branches do not look connected to the trunk mesh - one is floating unconnected". He was right, and it was worse than one. The prototype (`PROTO.dead`, the wastes' and the wasteland's main tree, and a tenth of the fen's and the tundra's) was a trunk and three cylinders each placed by its middle and then turned. The top limb's wide end came out at (.77, 8.03, .09): above the trunk's flat cut at 8.0 and beside it, so it hung in the air. The other two crossed the trunk and stuck out the far side as stubs.
+
+A limb is now laid from the point it grows out of. `limbPart(rTop, rBot, h, seg, base, rx, rz, colour)` (`80-world-terrain.js`) turns the cylinder's axis by mergeParts' own Euler order and puts its middle half a length along it from `base`, so the wide end sits where it was asked to be: on the trunk's axis, or on a limb laid before it. Each call logs its base and tip, kept on the geometry as `userData.limbs` for the test. The tree is a slightly shorter trunk (7.4, seven sides) ending in a narrow broken stub, a big limb at 5.7 that forks at 7.0, two more at 4.6 and 6.6 on other sides, and a snag low down at 3.2. 140 triangles against 72; it is a scatter prototype, instanced once a chunk, so the cost is in the hundreds of triangles a chunk at most.
+
+### Verified (headless Chromium)
+`tests/deadtree.test.mjs` (new), 4/4: five limbs logged; four bases inside the trunk at their height and the fork's base on the first limb (distance to its axis under its radius); 140 triangles, 8.5 tall; no page errors. The old prototype logged no limbs, and by the same arithmetic its top limb started .77 off the axis above the trunk's top. `trees` passes. Pictures: `docs/prototypes/deadtree-before.png`, `deadtree-after.png` (the inspector, with the bandit for scale). `tests/lib/inspshot.mjs` is a small helper that photographs inspector pieces by key, for the before and after of the other inspector notes. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The snag at 3.2 runs towards the viewer in the inspector's default view and can read as a stub pointing down.
+- The tint still darkens the whole tree as one; the bark is a single brown with no lichen or bleaching.

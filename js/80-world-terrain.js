@@ -354,6 +354,14 @@
   // S192 — the species that grow among each biome's main tree, and how often (the rest is the main tree)
   const TREE_MIX={conifer:[['spruce',.2],['broadleaf',.1],['pine',.1],['birch',.06]],broadleaf:[['oak',.25],['birch',.14],['conifer',.08]],
     autumn:[['birch',.14],['oak',.12],['conifer',.12]],snowpine:[['spruce',.16],['dead',.08]],willow:[['birch',.25],['dead',.1]]};
+  // S519 — a limb from the point it grows out of: a tapered cylinder turned by rx then rz (mergeParts' Euler order),
+  // placed so its wide end sits at `base` (on the trunk's axis, or on a parent limb). Each call logs its base and tip.
+  const LIMB_LOG=[];
+  function limbPart(rTop,rBot,h,seg,base,rx,rz,color){
+    const d=new THREE.Vector3(0,1,0).applyEuler(new THREE.Euler(rx,0,rz));
+    const c=new THREE.Vector3(...base).addScaledVector(d,h/2);LIMB_LOG.push({base:base.slice(),tip:[c.x+d.x*h/2,c.y+d.y*h/2,c.z+d.z*h/2],r:rBot});
+    return {geo:new THREE.CylinderGeometry(rTop,rBot,h,seg),color,x:c.x,y:c.y,z:c.z,rx,rz,jitter:.06};
+  }
   function buildProtos(){
     const bark=new THREE.Color(0x4a3220),barkDk=new THREE.Color(0x3a2618);
     // Conifer: tapered trunk + three stacked cones, each slightly offset.
@@ -374,13 +382,18 @@
       {geo:new THREE.IcosahedronGeometry(2.6,1),color:new THREE.Color(0x45803a),y:9.4,x:-2.0,z:-1.0,jitter:.14},
       {geo:new THREE.IcosahedronGeometry(2.2,1),color:new THREE.Color(0x559040),y:11.4,x:.3,z:.3,jitter:.14},
     ]);
-    // Dead tree: bare trunk + two bent limbs.
-    PROTO.dead=mergeParts([
-      {geo:new THREE.CylinderGeometry(.22,.55,8.0,6),color:new THREE.Color(0x3a3028),y:4.0},
-      {geo:new THREE.CylinderGeometry(.09,.22,4.0,4),color:new THREE.Color(0x3a3028),y:7.2,x:1.2,rz:-.9},
-      {geo:new THREE.CylinderGeometry(.08,.2,3.2,4),color:new THREE.Color(0x342a22),y:5.6,x:-1.0,z:.4,rz:.95,rx:.3},
-      {geo:new THREE.CylinderGeometry(.06,.14,2.4,4),color:new THREE.Color(0x342a22),y:8.8,x:.3,z:-.7,rz:.4,rx:-.8},
-    ]);
+    // Dead tree: a bare trunk that forks and ends in a broken stub, its limbs rooted on the trunk (S519 — Michael, the
+    // inspector: "one is floating unconnected"; the old top limb began above the trunk's cut and the others poked through).
+    {const bk=new THREE.Color(0x3a3028),bk2=new THREE.Color(0x342a22),bk3=new THREE.Color(0x2e261e);
+      PROTO.dead=mergeParts([
+        {geo:new THREE.CylinderGeometry(.2,.58,7.4,7),color:bk,y:3.7},
+        {geo:new THREE.CylinderGeometry(.04,.2,1.1,6),color:bk3,y:7.9,x:.05,rz:-.12,jitter:.1},
+        limbPart(.08,.22,4.2,5,[0,5.7,0],0,-.95,bk),
+        limbPart(.05,.11,1.6,4,[1.85,7.0,0],.3,-.25,bk2),
+        limbPart(.07,.2,3.4,5,[0,4.6,0],.32,.95,bk2),
+        limbPart(.05,.14,2.6,4,[0,6.6,0],-.85,.35,bk2),
+        limbPart(.04,.09,1.3,4,[-.05,3.2,0],.9,-.5,bk3)]);
+      PROTO.dead.userData.limbs=LIMB_LOG.splice(0);}
     // Coastal scrub: one squat wind-stunted blob.
     // autumn broadleaf (tinted per instance), snow-capped pine, mushroom, willow
     const c=x=>new THREE.Color(x);
