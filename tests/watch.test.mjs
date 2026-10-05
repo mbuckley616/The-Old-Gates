@@ -73,5 +73,17 @@ const stale = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.
   WORLD.STATIC_SOL.splice(WORLD.STATIC_SOL.indexOf(box), 1); worldState.favor[site.id] = 0;
   return { cells: before.length, box: [+(c.x - site.x).toFixed(1), +(c.z - site.z).toFixed(1)], beforeOn, afterOn, afterLen: after.length, againOn, asked, others, name: f.def.name, d: +d.toFixed(2), same }; });
 check('a way the street grid gives keeps off a solid set down after the grid was read, and the guard sent by it still comes to six to eight units', !stale.none && !stale.short && stale.beforeOn > 0 && stale.afterLen > 0 && stale.afterOn === 0 && stale.againOn === 0 && stale.asked >= 10 && stale.others === 0 && stale.same && stale.d >= 5.9 && stale.d <= 8.6, stale);
+// Session 513: CI on 178e96f and 115b20c (Eilís 38.57 then 36.17 units off, not moving at all). On a slow runner her noon patrol
+// left her at (19.47, 30.14) from the centre, in a corner with solids to her −x and −z. The way the street grid gave her began
+// with her own cell, (19, 30), whose centre is inside the solid; she pushed at it for good, and every new way began there again.
+const pocket = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); const site = S.site;
+  const tick = n => { for (let i = 0; i < n; i++) WORLD.tick(1 / 60, performance.now()); };
+  px = site.x + 6; pz = site.z - 6; jumpY = 0; worldState.favor[site.id] = -2; tick(2); const f = S._follower; if (!f) return { none: true };
+  const x = site.x + 19.47, z = site.z + 30.14; const cellSolid = WORLD.solidAt(site.x + 19, site.z + 30), free = !WORLD.solidAt(x, z);
+  const way = S._route({ x, z }, { x: px, z: pz }, true); const first = way[0] ? [+(way[0].x - site.x).toFixed(1), +(way[0].z - site.z).toFixed(1)] : null;
+  f.g.position.set(x, WORLD.worldH(x, z), z); f._fw = null; f._fwT = 0; f._twRaw = null; f._twBest = null; f._twS = 0; tick(60 * 30);
+  const d = Math.hypot(px - f.g.position.x, pz - f.g.position.z); const same = S._follower === f; worldState.favor[site.id] = 0;
+  return { name: f.def.name, cellSolid, free, first, firstSolid: way[0] ? WORLD.solidAt(way[0].x, way[0].z) : null, d: +d.toFixed(2), same }; });
+check('from the corner where CI held her (her own cell\'s centre inside a solid), the way starts from a cell she can walk to and the trailing guard comes to six to eight units', !pocket.none && pocket.free && pocket.firstSolid === false && pocket.same && pocket.d >= 5.9 && pocket.d <= 8.6, pocket);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

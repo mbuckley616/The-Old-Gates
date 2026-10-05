@@ -831,7 +831,14 @@
     // town's own later pieces): 3,710 solid cells at Dunmore's build, 3,928 six minutes on. A way through a cell gone solid
     // since held a guard against it for good, and asking again gave him the same way. Each way is checked against the
     // world as it is now: a cell gone solid is marked and the way found again; no way at all reads the whole grid afresh, once.
-    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
+    // S513 — his own cell is the nearest by rounding, unless he stands clear and its centre is inside a solid (at its edge, in a corner:
+    // CI held a guard so at 38.57 units for good); then the corner of the lattice round him nearest that he can walk to straight.
+    const startCel=p=>{const c0=cel(p);if(!solidAt(cx-R+c0[0],cz-R+c0[1])||solidAt(p.x,p.z))return c0;const fi=Math.floor(p.x-cx+R),fj=Math.floor(p.z-cz+R);let best=null,bd=1e9;
+      for(const [i,j] of [[fi,fj],[fi+1,fj],[fi,fj+1],[fi+1,fj+1]]){if(i<0||j<0||i>=N||j>=N)continue;const x=cx-R+i,z=cz-R+j;let ok=true;
+        for(let t=1;t<=6&&ok;t++)if(solidAt(p.x+(x-p.x)*t/6,p.z+(z-p.z)*t/6))ok=false;
+        const d=Math.hypot(x-p.x,z-p.z);if(ok&&d<bd){bd=d;best=[i,j];}}
+      return best||cel(p);};
+    S._route=(a,b,raw)=>{const [ai,aj]=startCel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
       for(let tries=0;tries<12;tries++){ks=find(s0,g0);
         if(!ks){if(fresh)break;fill();fresh=true;continue;}
         let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAt(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}

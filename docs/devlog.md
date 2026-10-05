@@ -12074,3 +12074,16 @@ Because a handed-in task leaves the save, the Journal could not find its title a
 
 ### Needs eyes
 As Session 510: two lines an event in *By day*, the log's short one and the task's own.
+
+## v80 — Session 513 — The trailing guard held in a corner (backlog I, `watch` red on CI)
+Main's CI (178e96f) and this branch's (115b20c) failed one check of `watch` on and off: at favour −2 the trailing guard, Eilís, stood 38.57 units off after 30 s and 36.17 after the player had walked on. These are the numbers Session 378 fixed with its stale-grid check, and the cause is new. Locally the check passed every time. It failed one run in six with the world's job budget cut to almost nothing (`JOB_BUDGET_MS`, so one job a frame, as on a slow runner) and six copies running side by side. Then it gave CI's numbers to the hundredth.
+
+**The cause.** Her noon patrol ends at different spots depending on how fast the town's pieces arrived. On a slow runner it left her at (19.47, 30.14) from Dunmore's centre, standing clear in a corner with a solid at her −x and her −z. `townRoute` starts every way at the guard's own cell, the nearest lattice point by rounding (Session 247 put it first so the line to the first turn cannot cut a wall). Here that cell is (19, 30), and its centre lies inside the solid. Session 378's check of each way skips the first cell. So she walked into the wall, `npcStep` gave up, and 1.5 s later she asked again and got the same way. She never moved. Taking only that cell off the way did not help: the next cell, (18, 30), is behind the same corner.
+
+**What changed** (`82-world-structures.js`, `townRoute`). When the guard stands clear and his rounded cell's centre is inside a solid, the way starts from the nearest of the four lattice points round him that he can walk to in a straight line (six samples along it). Otherwise the start is the rounded cell, as before. The exception matters: Session 357's house corner puts the guard inside a solid, and there the rounded cell is what gets him out. A first version that always took the walkable corner held him there at 21.49.
+
+### Verified (headless Chromium)
+`watch` 9/9, with a new ninth check. The guard is set down at (19.47, 30.14), where cell (19, 30) is solid and the spot itself is clear. On the old build her way begins at (19, 30) and she stays 38.56 units off. On the new build it begins at (19, 31), and she comes to 7.99. Six copies of `watch` side by side with the job budget at 0.001 ms all passed 9/9 (before the fix, one in six failed the favour −2 check at 38.57/36.17). `beat`, `constable`, `guardsindoor`, `burglary`, `crime2`, `livepick`, `guardplay`, `crime3` and `theft` also walk guards by the street grid, and all pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see unless a guard was already caught: a guard trailing you should no longer stand for good against a corner.
