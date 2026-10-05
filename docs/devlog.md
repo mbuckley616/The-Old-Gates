@@ -11994,3 +11994,15 @@ The first-person shield is now the same kit piece, chosen the way `tpBuild` choo
 - In play, the shield's placement against the camera when blocking: it is centred where the old face was, but the kit's round shield is a disc, not a portrait box.
 - A tier-3 buckler's face is its steel, so it reads near white under the viewmodel's light. The third person tints it the same.
 - The hand behind the shield is still the old blocky hand. That is the next note in the list (hands on every held weapon).
+
+## v80 — Session 529 — The ghoul's face blotched and blemished (backlog H, Michael's inspector note, first part)
+Michael, from the inspector: the ghoul needs "more facial blemishes/discoloration. Their walk should probably have a limp as well / be more zombie-like." This session does the face. The limp is a change to the gait in `tickPeople` and is left for its own session.
+
+The ghoul was the risen dead's genome with a greener skin and nothing else: the same face as the Hollowed. `FOE_DRESS.Ghoul` now carries `ghoul:true`, and `buildFoe` passes it to the genome. In `personBakeQ` a ghoul's face takes fourteen patches, laid flat on the face's own surface (`zs`, as the freckles are): rot-green, bruise-purple, black and jaundiced yellow, mixed from the ghoul's own skin, .013–.033 across, from the chin to the brow. Every sixth is a small raised sore. Each ghoul's patches are placed from its own seed, so no two match and the same ghoul has the same face on every visit. The first try used thick faceted lumps, which read as stones stuck on the face. They are now flattened to a tenth of their depth and smooth-shaded. A ghoul costs 896 triangles more. No other foe is touched.
+
+### Verified (headless Chromium)
+`tests/ghoulface.test.mjs` (new), 3/3. Three ghouls are marked as ghouls, and a Hollowed, an Ash Wight and a bandit are not. Each ghoul's genome baked as it is has 896 triangles more than the same genome with the mark taken off. There are no page errors. On the old code no ghoul is marked and the difference is 0. `foes` passes. Pictures: `docs/prototypes/ghoul-before.png` and `-after.png`, the face close in the inspector. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At play distance, whether the patches read as rot or as a rash. Their size and darkness are three numbers in one line.
+- **Owed.** The ghoul's limp and its more zombie-like walk: a dragged leg and a lurch in the gait for ghouls alone.

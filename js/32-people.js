@@ -362,6 +362,10 @@ function personBakeQ(g,q){
     if(g.extras.includes('spectacles'))part(SK.torus(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
   });
   if(g.freckles){const fr=pRng(g.seed+99);const fc=mixC(skin,0x7a4a2a,.45);for(let i=0;i<12;i++){const x=(fr()<.5?-1:1)*(.02+fr()*.07),y=.09+fr()*.04;part(SK.ball(.0045,5,4),fc,head,x,y,zs(x,y));}}
+  // S529 — a ghoul's face blotched and blemished (Michael, the inspector: "more facial blemishes/discoloration"): patches of
+  // rot-green, bruise-purple, black and jaundiced yellow laid flat on the face, a few raised sores among them, seeded per ghoul
+  if(g.ghoul){const br=pRng(g.seed+131),bc=[mixC(skin,0x34442a,.55),mixC(skin,0x5a3448,.5),mixC(skin,0x1e1e18,.5),mixC(skin,0x9a9248,.4)];
+    for(let i=0;i<14;i++){const x=(br()-.5)*.19,y=.035+br()*.14,r=.013+br()*.02,sore=i%6===0;const b=part(SK.ball(sore?r*.45:r,8,5),bc[i%4],head,x,y,zs(x,y)-(sore?0:r*.1));b.scale.set(1,.7+br()*.5,sore?.6:.1);}}
   // hair: a bumped sphere for texture, a chain of offset lobes with a tie for a plait
   const plait=(pts,r,col,pb)=>{const n=pts.length-1,per=4;let last=null;const PB=pb||head;if(pb)pts=pts.map(p=>[p[0]-pb.position.x,p[1]-pb.position.y,p[2]-pb.position.z]);
     for(let i=0;i<n*per;i++){const u=i/(n*per),seg=Math.floor(u*n),f=u*n-seg,a=pts[seg],b=pts[seg+1];
@@ -668,7 +672,7 @@ const FOE_DRESS={
   'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword',kit:{head:3,chest:1,hands:1}}, // S175 — the shield on the left shoulder; tickPeople holds the guard
   'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
-  'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
+  'Ghoul':         {dead:true,ghoul:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
   'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear',kit:{head:3,chest:3,legs:3},rust:0x4a3e34},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
@@ -712,7 +716,7 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.golem){g.golem=true;g.skin=new THREE.Color(dr.skin);g.build=1.5;g.height=1;g.gear=null;g.hat='none';g.female=false;g.rune=dr.rune;}
     if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
-    if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
+    if(dr.dead){g.dead=true;if(dr.ghoul)g.ghoul=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}
     // S403 — the helmed foes in the armour kit (Michael's B on #94), each as his story dresses him, by tier (MATERIALS):
     // the Deserter his old army's Iron mail and nasal helm; the Bandit Captain looted pieces, Wooden lamellar and vambraces
