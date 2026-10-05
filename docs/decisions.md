@@ -3,27 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The wraith — a hollow hood, claws, and a hunting stance? (the look builder, Session 548, 2026-10-05) — DECISION #158
-Michael's inspector note on the wraith and the phantom: "Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening." Session 527 took the legs and feet away and tore the robe's hem; it floats. From the front it still reads as a pale woman in a dress, with a person's face, arms and mitten hands seen through the robe.
-
-The prototype (built with the game's own people kit, then taken out again) tries three things:
-- **A hollow hood.** Under a deeper hood is darkness instead of a face: an unlit mesh of its own, so the see-through body cannot show a face behind it. In the dark are two narrow slits of light (the wraith's eye colour, with a faint halo).
-- **Claws.** The arms are a quarter longer and end in four long bone-white claws.
-- **A hunting stance (B only).** It hunches, its head is low and thrust forward, and both clawed arms reach out at chest height, in its idle and its glide. Hanging arms are kept for a corpse.
-
-The picture shows today's wraith on the left, A in the middle and B on the right, with a Gatelands woman for scale.
-
-- **A. The hollow hood and the claws**, standing as now. About 220 more triangles (3,870, was 3,652).
-- **B. A, with the hunting stance** *(recommended)*. The pose is the look builder's (`tickPeople` already flies the wraith on its own line); its blows and reach do not change.
-- **C. As it is.**
-
-Recommendation: **B.** The darkness and the eyes do most of the work: they take the person out of the figure, which is the note's complaint. The reaching arms make it a thing that comes at you rather than one that stands, which is what a ghost in Morrowind's tombs or Oblivion's Ayleid ruins does. The phantom (the bare-headed lesser ghost) would take the claws and the stance but keep its face, so the two stay apart: one the drowned dead, one the thing in the hood.
-
-Pictures:
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wraith-proto-lineup.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wraith-proto-faces.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wraith-proto-side.png
-
 ### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
 Michael's inspector note on the armour kits asked: "are there armour sets for ranged and magic yet?"
 
@@ -58,6 +37,8 @@ Main's own check is red on its last two runs with only docs changes between them
 The question is in full on auto/backlog (prototype pictures under docs/prototypes/wraith-proto-*.png): Michael's inspector note said the wraith reads as the human mesh. A the hollow hood (darkness, two slits of light for eyes) and longer arms with bone claws, standing as now; B A plus a hunched stance, head low and forward, both clawed arms reaching at chest height in idle and glide (recommended; blows and reach unchanged; the phantom takes the claws and stance but keeps its face); C leave it.
 
 Michael: **A, plus the hunched, reaching stance**. (2026-10-05)
+
+Done, Session 555 (the look builder): built as B. Under the wraith's hood there is no head, only an unlit darkness with two slanted slits of its eye colour; the wraith and the phantom have arms a quarter longer ending in four bone claws and a thumb, and stand hunched with both arms reaching at chest height. The phantom keeps its face. A wraith's blow lifts the claw over its head and rakes it down from that rest; its timing, reach and damage are unchanged. `tests/wraithhood`; pictures `docs/prototypes/wraith-hood-*.png`, `phantom-claws.png`.
 
 ### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
 The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.

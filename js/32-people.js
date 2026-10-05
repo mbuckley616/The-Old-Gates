@@ -389,6 +389,9 @@ function personBakeQ(g,q){
   if(g.ogre)part(SK.ball(.12*bw,12,9),skin,spine,0,.1,.085*bw).scale.set(1.1,.85,.9); // S221 — an ogre's belly, bare below the jerkin
   const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);
   const head=bone('head',neck,0,.07,0);
+  // S555 — a hollow-hooded wraith (Michael's B on #158) has no head, face or hair: the darkness under its hood is its own unlit
+  // mesh (buildFoe), and anything of a face behind it showed through the see-through body. The bones stay; nothing is hung on them.
+  if(g.hollow)bodyOpen=false;
   part(SK.ball(.13*hs,14,10),skin,head,0,.12,0).scale.set(g.jaw,fem?1.05:1.08,1.02);
   if(g.troll)part(SK.ball(.12*hs,12,8),skin,head,0,.06,.03).scale.set(1.1,.6,1); // S208 — the troll's heavy jaw
   // every feature sits on the head's own surface: zs(x,y) is how far forward the skin is at that point
@@ -476,12 +479,16 @@ function personBakeQ(g,q){
     if(Bd==='horseshoe'){tache('bar');[-1,1].forEach(sd=>lump(.012,sd*.04,.045,zs(sd*.04,.045)+.002,1,3.2,.8,0));}
     if(Bd==='mutton'){tache('walrus');[-1,1].forEach(sd=>{const x=sd*.1*g.jaw;lump(.04,x,.075,zs(x,.075)-.012,.55,1.6,.9,.008).rotation.z=sd*.25;});}
   }
+  if(g.hollow)bodyOpen=true;
   // hats
   if(g.hat==='coif'&&cap){cap.userData.col=C(0xd8d0c0);cap.scale.set(g.jaw*1.05,1.1,1.08);}
   if(g.hat==='kerchief'&&cap){cap.userData.col=mixC(cloth,0xffffff,.2);cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),mixC(cloth,0xffffff,.2),head,0,.06,-.13);}
   if(g.hat==='flatcap')part(SK.lathe([[0,0],[.15,0],[.155,.02],[.14,.05],[0,.06]],16),mixC(sleeve,0x000000,.2),head,0,.21,.01).rotation.x=-.2;
   if(g.hat==='fur'){part(SK.cyl(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(SK.torus(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
-  if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
+  // S555 — the wraith's hood is deeper, its opening turned to the front and a little down, with a peak at the back of the crown
+  if(g.hat==='hood'&&g.hollow){const hc=mixC(cloth,0x000000,.2),h=part(SK.ball(.18*hs,18,10,0,Math.PI*2,0,Math.PI*.72),hc,head,0,.125,0);h.rotation.x=-1.27;h.scale.set(g.jaw*1.03,1.08,1.08);
+    const pk=part(SK.cone(.04,.1,6),hc,head,0,.29,-.1);pk.rotation.x=-.6;}
+  else   if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
   if(g.hat==='chaperon'){part(SK.torus(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
   if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(SK.torus(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
   // S520 — the brim hat at a hat's size (Michael, the inspector, of the highwayman: "comically large"): a brim of .2 (was .245, twice
@@ -507,6 +514,10 @@ function personBakeQ(g,q){
       for(let q=0;q<4;q++){const kn=part(SK.ball(.0105,6,5),skin,wr,0,-.071,-.015+q*.0105);kn.scale.set(1.15,.9,1);F.push(kn);}
       F.push(part(SK.rbox(.03,.03,.048,.012,2),skin,wr,s*-.016,-.06,.005));
       const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
+    // S555 — a wraith's hand (Michael's B on #158): a narrow palm and four long bone-white claws, splayed and hooked
+    else if(g.wraith){const hand=part(SK.ball(.034,8,6),skin,wr,0,-.03,.004);hand.scale.set(.8,1.2,.55);B['hand'+k]=hand;
+      for(let q=0;q<4;q++){const cl=part(SK.cone(.0075,.12,5),C(0xd8d2bc),wr,s*(q-1.5)*.012,-.1,.012-Math.abs(q-1.5)*.004);cl.rotation.set(Math.PI-.3,0,s*(q-1.5)*.12);}
+      const th=part(SK.cone(.007,.07,5),C(0xd8d2bc),wr,s*-.03,-.06,.022);th.rotation.set(Math.PI-.6,0,s*-.5);}
     else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
       part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
       // S535 — a goblin's hand ends in three hooked claws, yellowed
@@ -783,7 +794,8 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.kit&&typeof MATERIALS!=='undefined'){const k=dr.kit,pc=t=>{if(!t)return null;const m=MATERIALS[t-1];return {tier:t,fam:AR_FAM[t],sig:null,metal:dr.rust!=null?dr.rust:m.blade,guard:m.guard,glow:null};};
       g.eq=Object.assign({amulet:false,quiver:false},g.eq||{},{armour:{head:pc(k.head),chest:pc(k.chest),hands:pc(k.hands),legs:pc(k.legs),feet:null}});g.hat='none';}
     // a wraith: a long robe to the ground under a cloak and hood, the feet lost in it; it glides (tickPeople)
-    if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}
+    if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);
+      g.armK=1.25;g.hollow=!dr.phantom;} // S555 — arms a quarter longer for the claws' reach; the wraith's hood is hollow, the phantom keeps its face
     if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}
     // S226 — a weapon from the kit by what the foe is (a spear stays the gear kit's); a skeleton's club becomes a rusted sword
     if(dr.wpn){const r=pRng(g.seed+23);const w=Array.isArray(dr.wpn)?dr.wpn[Math.floor(r()*dr.wpn.length)]:dr.wpn;
@@ -803,7 +815,17 @@ function buildFoe(type,x,z,genome,eyeCol){
     rig.runes=[hang(rig.B.head,.15,.026,0,.11,.126),hang(rig.B.spine,.022,.3,0,.2,.175,.6),hang(rig.B.spine,.022,.3,0,.2,.175,-.6)];}
   // a skeleton's eyes burn in its sockets (the enemy's eye colour), one small unlit mesh on the head
   if(g.gargoyle){rig.w.idle=0;rig.w.crouch=1;rig.fold=1;eyeCol=0xff5020;}
-  if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+  // S555 — the darkness under a wraith's hood (Michael's B on #158): an unlit, opaque mesh of its own on the head bone, filling the
+  // hood (a dark part baked into the see-through body let the head show through it), and in it two narrow slanted slits of the
+  // wraith's eye colour with a faint halo. rig.hollow is the three meshes.
+  if(g.hollow){const hs=g.head,ec=eyeCol!=null?eyeCol:0xa0e0ff,hb=rig.B.head;
+    const dk=new THREE.Mesh(new THREE.SphereGeometry(.16*hs,16,12),new THREE.MeshBasicMaterial({color:0x06070b}));dk.position.set(0,.12,-.005);dk.scale.set(g.jaw,1.05,1);hb.add(dk);
+    const sg=new THREE.BufferGeometry(),P=[],I=[];[-1,1].forEach(sd=>{const g1=new THREE.SphereGeometry(.013,8,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3,cz=Math.cos(sd*.3),sz=Math.sin(sd*.3);
+      for(let i=0;i<a.length;i+=3){const x=a[i]*1.7,y=a[i+1]*.32,z=a[i+2]*.5;P.push(sd*.036*hs+x*cz-y*sz,.128+x*sz+y*cz,.156*hs+z);}for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();});
+    sg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));sg.setIndex(I);const sl=new THREE.Mesh(sg,new THREE.MeshBasicMaterial({color:ec}));hb.add(sl);
+    const ha=new THREE.Mesh(new THREE.SphereGeometry(.055*hs,10,6),new THREE.MeshBasicMaterial({color:ec,transparent:true,opacity:.1,depthWrite:false,blending:THREE.AdditiveBlending}));ha.position.set(0,.128,.16*hs);ha.scale.set(1.35,.42,.3);hb.add(ha);
+    rig.hollow=[dk,sl,ha];}
+  if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null&&!g.hollow){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
   return rig;
 }
@@ -838,6 +860,7 @@ function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),
   if(o.goblin){p.thL=[-.62,0,.16+.02*w];p.thR=[-.62,0,-.16+.02*w];p.knL=[1.2+.05*Math.max(0,w),0,0];p.knR=[1.2+.05*Math.max(0,-w),0,0];p.anL=[-.58,0,-.16];p.anR=[-.58,0,.16];}
   p.hipsY=Math.max(pwReach(p.thL[0],p.knL[0]),pwReach(p.thR[0],p.knR[0]))+PW.HIPJ;
   if(o.goblin)pwGoblin(p,b*.05);
+  if(o.wraith)pwWraith(p,t);
   if(o.holds)pwHold(p,.02*b,o.gear);return p;}
 // A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
 // forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
@@ -867,11 +890,17 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
   if(lim)pwShamble(p,c,s,lim,bs);
   if(o.goblin){pwGoblin(p,.3*c);p.thL[2]+=.1;p.thR[2]-=.1;p.anL[2]-=.1;p.anR[2]+=.1;}
+  if(o.wraith)pwWraith(p,ph*6.28); // the game never walks a wraith (tickPeople); the inspector's walk shows it reaching as it glides
   if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
 // S535 — a goblin (Michael, the inspector: "Looks a bit too friendly/humanoid", distort and contort it): crouched and hunched,
 // the head thrust forward on the neck so the face stays up, the long arms hanging wide and swinging (sw)
 function pwGoblin(p,sw){p.spine[0]+=.38;p.neck[0]-=.32;p.head[0]-=.06;
   p.shL=[-.18+sw,0,.22];p.shR=[-.18-sw,0,-.22];p.elL=[-.4,0,0];p.elR=[-.4,0,0];p.wrL=[.2,0,.1];p.wrR=[.2,0,-.1];}
+// S555 — a wraith's hunting stance (Michael's B on #158): hunched, the head low and thrust forward with the hood's dark turned up
+// at you, both clawed arms reaching out at chest height, the elbows a little bent, the claws flexing. It is its idle, and a
+// wraith takes no other (tickPeople). A blow (attackPose) swings the right arm from here; rig.wraithArm is its rest.
+function pwWraith(p,t){const b=Math.sin(t*1.3),f=Math.sin(t*2.1);p.spine=[.42+.03*b,0,p.spine[2]];p.neck=[.22,0,0];p.head=[-.42+.03*b,0,0];
+  p.shL=[-1.8+.07*b,0,.08];p.shR=[-1.74-.07*b,0,-.08];p.elL=[-.3,0,.04];p.elR=[-.3,0,-.04];p.wrL=[.28+.12*f,0,0];p.wrR=[.28-.12*f,0,0];}
 // the ghoul's trunk and arms over its limp: hunched forward, lurching over the bad leg as it takes the weight, the head
 // lolling to that side, the arms hanging forward and swinging little, the bad side's lower and slacker
 function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.neck=[.12,-.03*c,-lim*.12];p.head=[.1,0,-lim*(.14+.06*bs)];
@@ -908,7 +937,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin};}
+function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1094,7 +1123,7 @@ function tickPeople(dt,now){
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
     const t=now/1000*rig.g.tempo+rig.g.phase;
-    pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig)));
+    {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod)peopleSwing(rig,dt); // S267
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways

@@ -12293,3 +12293,35 @@ Prototype only: no game code is changed and no test was added. In the prototype,
 ### Needs eyes
 - Michael's choice on #158. The phantom would take the claws and the stance but keep its face (the recommendation).
 - **Still open, from the armour note.** Clothing through the armour. I built a measure like Session 547's: the Wooden, Bronze, Iron, Steel and Demonic kits through eight phases of the walk, every cloth colour green and every armour colour magenta, plus false-colour pictures mid-stride. Cloth shows only in the kits' own gaps: the thighs under the bronze strips, the sleeve between pauldron and bracer, and the knees and elbows as they bend. It does not show through a plate. With no defect found, no fix was built. A note from Michael on the inspector key of the piece he saw would point to it.
+
+## v80 — Session 555 — The wraith's hollow hood, claws and hunting stance (backlog H, Michael's B on #158)
+Session 548 put a prototype to Michael for his note on the wraith and the phantom ("Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening"), and took it out again. He answered B: the hollow hood and the claws, with the hunched, reaching stance. This session builds it in the people kit (`32-people.js`), from the prototype's pictures, since its code was not kept.
+
+**The hood.** The wraith (not the phantom) has a new flag in its genome, `hollow`. Under it the bake hangs nothing on the head bone: no skull, face, ears or hair. That had to go too, because the body is see-through and anything behind the darkness showed through it. The hood is deeper, its opening turned to the front and a little down, with a short peak at the back of the crown. In it `buildFoe` hangs three meshes of their own on the head bone (`rig.hollow`). The first is an unlit near-black ball that fills the hood. The second is two narrow slits of the wraith's eye colour, slanted down to the middle. The third is a faint additive glow behind them. The dot eyes the dead are given are not added under the hood.
+
+**The claws.** The wraith and the phantom have arms a quarter longer (`armK` 1.25, the goblin's mechanism). Each hand is a narrower palm with four bone-white claws 12 cm long, splayed and hooked, and a thumb claw.
+
+**The stance.** `pwWraith` in the pose kit is the wraith's idle, and a wraith takes no other (tickPeople already held it to idle). The trunk is hunched forward by .42 and the head pushed out, the face tipped back up so the hood's dark looks at you. Both arms reach forward at chest height with the elbows a little bent, and the claws flex slowly. The inspector's walk shows the same reach. In the test the wrists stand .9 to .96 up and .48 in front of the figure, and the head is .19 forward of the hips.
+
+**The blow.** `attackPose` (`42-zone-enemies.js`, the systems builder's file, one expression) set the right shoulder to a wind and strike measured from the arm hanging. A reaching wraith dropped its arm to its side for every frame of a fight. For a wraith it now swings from the reaching rest that `tickPeople` leaves (`rig.wraithArm`). The wind lifts the claw a radian over its head, and the strike rakes it 1.3 down past the rest. The timing, reach and damage are unchanged, and every other foe's blow is as it was.
+
+The wraith is 3,202 triangles with its three new meshes, against 3,652 before (the face it lost was 450). It is four draw calls, against one.
+
+### Verified (headless Chromium)
+`tests/wraithhood.test.mjs` (new), 13/13:
+- **No face.** No body vertex lies in front of the wraith's skull. The phantom keeps its face (442 vertices there), and the bandit his (719).
+- **The darkness.** The darkness and the slits are unlit meshes on the head bone, coloured 0x06070b and the eye colour 0xa0e0ff.
+- **The eyes.** There are no dot eyes under the hood. The phantom keeps its glow.
+- **The arms.** Both have arms 1.25× a bandit's (upper arm .194 against .155). Their claws reach .157 from the wrist, against a bandit's mitten at .081.
+- **The stance.** After 90 ticks of `tickPeople`, both wrists are at chest height (.89 to .96) and .48 to .5 in front. A bandit's free hand stays at his side (.03).
+- **The blow.** The wraith's wind lifts its arm to 1.0 over the rest, and its strike carries it 1.3 past. A bandit's is 1.4 and −1.3, as before.
+- **Triangles.** 3,202, at or under the old 3,652.
+- **Errors.** No page errors.
+
+`wraithfloat`, `foes`, `dungeonfoes`, `ragdoll`, `wardall`, `weapons` and `inspector` pass. Pictures: `docs/prototypes/wraith-hood-front.png`, `wraith-hood-side.png`, `wraith-hood-face.png` and `phantom-claws.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **In a crypt's dark.** The hood's darkness is unlit, so in a torch-lit room it stays black while the robe around it lights. That is meant, but whether the slits read at ten paces is not something the stage can show.
+- **From the side.** The see-through hood shows the dark ball through it, so the head reads as a dark sphere inside a pale shell. The prototype did the same.
+- **The blow.** The claw rakes down from over the head. Whether that reads as a swipe at a running player is a playtest question.
+- **For the systems builder:** `attackPose` now reads `limbs.person.wraithArm` for a wraith. Any later change to the shared pose should keep that rest.
