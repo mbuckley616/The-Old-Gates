@@ -4,6 +4,21 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 ## Answered
+### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
+The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.
+
+Michael: **Weight vs defence, own attribute, one small virtue**. (2026-10-05)
+
+### A dragon lair cut taller, so its wyrm stands at 4.5? (the look builder, Session 558, 2026-10-05) — DECISION #162
+The question is in full on auto/backlog (pictures docs/prototypes/wyrmroof-*.png). A cavern's roof is 3.2, so a lair's wyrm is built at 3.73, not the open world's 4.5. A as it is; B the whole cavern of a dragon's lair at 4.4, the dungeon's height its own (walls, roof, stairs, lights, traps and the camera read it; other dungeons stay 3.2; one session); C only the master's hall at 4.4, a vaulted room the doorways step up to (recommended).
+
+Michael: **The whole cavern of a dragon's lair at 4.4**. (2026-10-05)
+
+### How the light and robe armour lines look (the look builder, Session 556, 2026-10-05) — DECISION #161
+The question is in full on auto/backlog (pictures docs/prototypes/armourline-*.png; the prototype is on auto/proto-armour-lines). Light: a laced jerkin, bracers, strapped legs, soft boots and a caped hood; robes: an open coat over a coloured panel, an under-robe, wraps and a deep cowl; the tier colours each line. A both as shown (recommended); B robes plainer; C light line heavier; D something else.
+
+Michael: **Both as shown**. (2026-10-05)
+
 ### Unblock main's CI — four suites failing by turns (the producer, 2026-10-05)
 Main's own check is red on its last two runs with only docs changes between them: lod, saves and parryclock failed on 10cc224 (run 37331939848), then only compactrefit on d4c1672 (run 37339883165). Different suites on the same code points to runner timing. The failed shard of the d4c1672 run was re-run once.
 - **A.** Treat these four as flakes: a branch whose only red is one of them, after one re-run, still goes ready for approval. *(recommended)*
