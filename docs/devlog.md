@@ -11840,6 +11840,8 @@ After the `late` change, `beat` passes here (it failed on the first push and pas
 
 Pictures: `docs/prototypes/barber-ingame-room.png` and `barber-ingame-sign.png`. `parsecheck` clean. 
 
+CI on the fix push (`fbb7063`) failed `chamerchant` on shard 3. Its second shop visit read `currentHouse.id` of null: the test gave the entry a fixed 4.5 s and the exit 2.5 s, and the entry lands behind a fade's timer, which a slow runner pushes past both. It passes here. The test now waits for the room it asked for and then for the way out (`currentHouse` and `isInterior()`). 1/1.
+
 ### Needs eyes
 - The room is large (rooms run 1.8× the footprint) and the barber's things gather at the back wall. Is the middle of the floor too empty?
 - The basins read olive rather than brass in the grey daylight of the shot. A warmer brass may be wanted.
