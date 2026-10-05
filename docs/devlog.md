@@ -12207,3 +12207,23 @@ The distant copy has no backing and eight boards a ring. `guardarmour` holds a p
 - At play distance the boards may read as stripes. The gaps are about a twelfth of each board's width.
 - **Still open, from the same note.** Hair and clothing breaking through the armour sets, across all of them.
 - **Still open, from the same note.** "Are there armour sets for ranged and magic yet?" There are not: every kit is a material's lamellar, cuirass, mail or plate, and a robe is cloth. Archer's and mage's sets are a design question for Michael, raised through the producer.
+
+## v80 — Session 541 — The inspector's dungeons, and what the crag is (backlog H, Michael's inspector note)
+Michael, from the inspector, of `buildings/places/poi-crag`: "Not even sure what this is meant to be honestly." He added that there was no dungeon mesh in the inspector either, "and maybe a few others that should probably be in this list."
+
+The crag was never a place. `WORLD.poiGeo('crag')` is `cragGeo(2,1)`: one lumpy boulder, an icosahedron with its corners pushed in and out. Lairs heap it into their rock piles and cave mouths, a bandit camp rings its fire with it, and interiors use it for rubble. The inspector listed it beside the tower and the shrine as if it were one of them. It is now under *Plants, trees, rocks* › *Rocks* as **crag boulder (lairs, camps, rock piles)**, key `plants-trees-rocks/rocks/crag-boulder-lairs-camps-rock-piles`. The old key is gone, so a note left on it no longer finds its piece.
+
+The inspector now has a *Dungeons* section under *Buildings*, with one floor of each theme in `THEME_DEF`: undead, goblin, elemental, deep, haunted and ruins. Each is a tiny dungeon laid out by the game's own `makeDungeon` from a seed of the theme's name. It is dressed by `buildDunShell` (Session 189's shell) in that theme's wall and floor colours and damp, with walls, floor and beams. The ceiling is left off so the stage looks in. Each is 4,700–6,300 triangles. The first try added the new entries in the middle of the list, which split *Buildings* and *Plants, trees, rocks* into two runs each. They are now added inside their own groups.
+
+### Verified (headless Chromium)
+`tests/inspdungeons.test.mjs` (new), 4/4:
+- **Every theme has a floor.** Each of the six is three meshes and 4,700–6,260 triangles.
+- **The crag.** It is listed once, under the rocks, and `buildings/places/poi-crag` is gone.
+- **No split groups.** No group of the list is split in two.
+- **Errors.** No page errors.
+
+`inspector` passes (409 entries). `docs/inspector-catalogue.json` is refreshed with the seven new keys and without the old one. The control room's Meshes tab needs republishing from it (the producer's job). Pictures: `docs/prototypes/inspector-dungeon-ruins.png` and `-goblin.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The dungeon floors show the shell only. A floor's props, doors, chests and furniture are built by `buildDungeon` straight into the dungeon's scene, and are already in the inspector as pieces under *Props and furniture*.
+- **Still open.** "A few others": the lair, the glade and the bandit camp. Their builders (`87-world-quests.js`, the systems builder's file) build the place, its creatures, its chest, its lights and its ground stamps in one go. Showing them in the inspector needs a geometry-only builder split out first, as the tower and the shrine have (`towerGeoHi`, `shrineGeoHi`). That is a change to a shared file for a later session, agreed with the systems builder.

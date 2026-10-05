@@ -62,9 +62,14 @@ function inspRegistry(){
   add('Buildings','Walls and gates','wall segment','82-world-structures.js',()=>({obj:inspMesh(wallSegHi(1.2,12,4.5,0,new THREE.Color(0x8a8478),new THREE.Color(0x6e695f),0,0,pRng(11),false))}));
   add('Buildings','Walls and gates','gate tower','82-world-structures.js',()=>({obj:inspMesh(gateTowerHi(1.2,6.5,new THREE.Color(0x6e695f),new THREE.Color(0x5a3a2a),pRng(13)))}));
   add('Buildings','Walls and gates','bridge','82-world-structures.js',()=>({obj:inspMesh(bridgeGeo(24,2,7))}));
-  for(const k of ['tower','shrine','crag'])add('Buildings','Places','poi '+k,'87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo(k))}));
+  for(const k of ['tower','shrine'])add('Buildings','Places','poi '+k,'87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo(k))}));
   for(const k of ['well','stall','tent','ruin','stone'])add('Buildings','Town furniture',k,'82-world-structures.js',()=>{
     const r=WORLD.furnProto(k,pHash('insp|'+k));return {obj:inspMesh(r.hi),lo:r.lo&&inspMesh(r.lo)};});
+  // S541 — the dungeons (Michael: "No dungeon mesh in the inspector either"): one small floor of each theme, laid out by the game's
+  // makeDungeon and dressed by its buildDunShell in the theme's colours and damp, without its ceiling so the stage looks in
+  for(const theme of Object.keys(THEME_DEF))add('Buildings','Dungeons',theme+' floor','56-dungeon-build.js',()=>{const th=THEME_DEF[theme],seed=pHash('insp|'+theme)%1e5+1,gen=makeDungeon('tiny',seed),map=gen.map;
+    const sh=buildDunShell(map,0,th.wallCol,th.floorCol,{seed,damp:DUN_DAMP[theme]||DUN_DAMP.ruins,rooms:gen.rooms||[]}),g=new THREE.Group();
+    [sh.walls,sh.floor,sh.beams].forEach(m=>{if(m)g.add(m);});if(sh.ceil){sh.ceil.geometry.dispose();}g.position.set(-map[0].length/2,0,-map.length/2);const o=new THREE.Group();o.add(g);return {obj:o};});
   // 4. Ships — each class in each look with its rig, the sails trimming to a wind that walks round; the harbour boats
   for(const [kind,L,W] of [['sloop',13,4.4],['cog',17,5.6],['galleon',22,7]])for(const look of ['player','pirate','merchant'])
     add('Ships',kind,look,'85-world-sea.js',()=>{const m=WORLD.buildShipMesh(L,W,look);let th=0;
@@ -80,6 +85,9 @@ function inspRegistry(){
     add('Plants, trees, rocks','Mushrooms',n,'80-world-terrain.js',()=>{if(!PROTO.oak)buildProtos();return {obj:inspMesh(PROTO[k])};});
   for(const dress of Object.keys(ROCK_DRESS))for(const kind of ['boulder','outcrop','cluster'])add('Plants, trees, rocks','Rocks: '+dress,kind,'80-world-terrain.js',()=>{
     const key=rockProto(dress,kind);return {obj:inspMesh(PROTO[key])};});
+  // S541 — the "poi crag" was not a place (Michael: "Not even sure what this is meant to be"): it is the lumpy boulder that lairs,
+  // bandit camps' fire rings and rock piles are laid from (cragGeo). It is listed with the rocks now, by what it is.
+  add('Plants, trees, rocks','Rocks','crag boulder (lairs, camps, rock piles)','87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo('crag'))}));
   // 6. Props and furniture: the furniture kit every room is dressed from, the dungeon's chest and barrel, the sigil stones,
   //    and the town's lamp, signpost, trade signs, camp tents, the coach's cart and a quay
   const FURN=[['table',(K,N)=>K.table(1.4,.8,N,3)],['bench',(K,N)=>K.bench(1.6,N,5)],['chair',(K,N)=>K.chair(N,7)],['stool',(K,N)=>K.stool(N,9)],
