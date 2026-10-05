@@ -416,7 +416,10 @@ function personBakeQ(g,q){
   if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
   if(g.hat==='chaperon'){part(SK.torus(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
   if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(SK.torus(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
-  if(g.hat==='brim'){part(SK.lathe([[0,0],[.24,0],[.245,.02],[.15,.03],[.14,.19],[.12,.21],[0,.22]],20),C(0x3a2808),head,0,.2,-.01).rotation.x=-.1;}
+  // S520 — the brim hat at a hat's size (Michael, the inspector, of the highwayman: "comically large"): a brim of .2 (was .245, twice
+  // the head) curling at its lip, a crown of .12 (was a .19 stovepipe) sized to the hair as the other hats are, a darker band
+  if(g.hat==='brim'){const hc=C(0x3a2808);part(SK.lathe([[0,0],[.19,-.004],[.2,.008],[.192,.014],[.14*hs,.018],[.132*hs,.1],[.118*hs,.118],[0,.122]],20),hc,head,0,.2,-.01).rotation.x=-.1;
+    part(SK.torus(.136*hs,.009,5,20),mixC(hc,0x000000,.45),head,0,.228,-.007).rotation.x=Math.PI/2-.1;}
   if(g.hat==='helm')part(SK.lathe([[0,0],[.19,0],[.195,.01],[.15,.022],[.143,.07],[.125,.12],[.07,.155],[0,.163]],20),g.helmCol!=null?C(g.helmCol):steel,head,0,.155,0);
   if(g.hat==='crown'){part(SK.cyl(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(SK.cone(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
   // arms and legs: side 1 is the figure's left (+x), -1 its right
@@ -706,7 +709,10 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(g.skel&&g.gear==='stick'){g.gear='kit';g.wpn='sword';}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
   // S226 — the kit's weapon in the fist (the bow in the left hand), a shield on the left forearm; the dead's are rusted
-  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);rig.B.wrL.add(w);}else rig.B.gear.add(w);rig.weapon=w;}
+  // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
+  // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
+  // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
+  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones

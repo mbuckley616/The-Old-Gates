@@ -11858,3 +11858,18 @@ A limb is now laid from the point it grows out of. `limbPart(rTop, rBot, h, seg,
 ### Needs eyes
 - The snag at 3.2 runs towards the viewer in the inspector's default view and can read as a stub pointing down.
 - The tint still darkens the whole tree as one; the bark is a single brown with no lichen or bleaching.
+
+## v80 — Session 520 — Foes hold their weapons edge forward; the brim hat at a hat's size (backlog H, Michael's inspector notes)
+Two of Michael's inspector notes on the foes. The bandit's axe "is turned the wrong direction, the cultist's sword is held sideways ('we should rotate the weapon 90 degrees'); equipped weapons across the foes, bows included, should face the way they attack." And the highwayman's "hat is comically large / goofy".
+
+**The weapons.** The weapon kit (`wpnBuild`) draws every blade with its edge along x, and an axe's bit towards −x. `buildFoe` hung the kit on the fist's gear bone as built, and the bone faces the way the foe faces (+z), so every sword, dagger, cutlass, mace and axe showed its flat to its target and its edge to the side. Measured: the kit's edge axis against the foe's facing, a dot product of 0 for all thirty-odd. A quarter turn about the shaft (`rotation.y = π/2`) puts the edge, and the axe's bit, forward (dot 1.0), the shaft still upright. The bow was hung from the left wrist with its belly forward and its string away from the archer (dot −1). A half turn puts its back to the front and the string on the archer's side, as the player's own bow in third person has had since Session 227. The player's third-person weapons are built by `tpWeapon` on the hand's own frame and are untouched.
+
+**The hat.** The `brim` hat was a lathe with a brim of .245 (twice the head's width) and a .19 stovepipe crown, the one hat not sized to the head (`hs`). It is now a brim of .2 that curls at its lip, a crown of .12 at `.132·hs` with a slight crease, and a darker band. At the highwayman's scale the widest point of the top of the figure is .200 against .233, and the top of the hat is 9 cm lower (1.441 against 1.533). The merchants and traders in the towns wear the same hat, and it shrinks for them too.
+
+### Verified (headless Chromium)
+`tests/foeweapons.test.mjs` (new), 4/4: forty foes of ten kinds built (bandits, highwaymen, cultists, pirates, deserters, captains, shieldbearers, rogue mages, skeletons, archers): every kit weapon's edge axis along the facing (dot 1.0) with the shaft upright (1.0); every archer's bow back forward (1.0); six highwaymen's brims .200 from the head's middle (limit .21); no page errors. On the old code all three checks fail (dot 0, bow −1, brim .233). `foearmour` passes. Pictures from the side, where an edge held forward shows the blade's whole profile: `docs/prototypes/foeweapon-bandit-before.png`/`-after.png`, `foeweapon-cultist-before.png`/`-after.png`, `highwayman-before.png`/`-after.png`; and the archer from the front, `foeweapon-archer-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The swings. The strike poses were authored with the old grip; an overhead chop now lands with the edge, but a sideways slash may now lead with the flat. That would want the slash's wrist turned, not the grip.
+- A bandit archer drawing on you: the draw is the foe's attack pose, which this session did not open.
+- Whether the smaller brim hat still reads as a merchant's at street distance.
