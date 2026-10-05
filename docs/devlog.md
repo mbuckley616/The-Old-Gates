@@ -12039,3 +12039,14 @@ A ship is now given an id when she is raised: where and when she came up, `sea:<
 
 ### Needs eyes
 Nothing to see: the same ships, met as often.
+
+## v80 — Session 509 — The guard who draws on you is keyed (backlog K, the co-op door, step 3)
+After Session 508 the town guard who draws (refuse the fine, strike a guard, or come back to a town whose gates are shut to you) was the last foe the open world raises with no id: `guardEnemy` built the Bandit body and named it, and every blow it rolled through `foeRand` fell back to `Math.random`. He is now keyed by `keyFoe` as `<site>:guard:<index>:<minute>`: his town, his place in the town's people (`S.npcs`, which the generator builds in the same order every time), and the world clock's minute when he drew. One guard can draw more than once in a day (paid off, stood down, struck again), so the minute and not the day. The street and the room (Session 241's guard indoors) go through the same `guardEnemy`, so both are keyed; his corpse, if it comes to that, now rolls on `<id>:corpse:<day>` like every keyed foe's.
+
+With this every foe the open world raises has an id. Step 3's list still holds the things that are not foes: whether a dungeon's chest or barrel was opened, wreck chests, corpses, interior and dungeon doors and keys, herbs and quest pickups.
+
+### Verified (headless Chromium)
+`guardseed` 4/4 (new): in Dunmore a guard drawn at minute 9000 is `dunmore:guard:15:9000` with a stream; stood down and drawn again in the same minute he rolls the same eight draws (0.449996, 0.940966, …); drawn at minute 9017 he is another id and rolls another. The crime suites that draw a guard (crime3, guardplay, guardsindoor, theft, foes) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
