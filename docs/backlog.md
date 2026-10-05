@@ -106,6 +106,9 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **Highwayman** (`people/foes-on-the-body/highwayman`): "Hat is comically large / goofy".
   - **Legs through skirts and tunics** (`people/gatelanders/villager-f`, and "basically all tunics/garments that cover the legs"): "the legs punch right through the fabric while walking. It looks awkward and is immersion-breaking."
   - **Armour kits** (`weapons-and-armour/your-body-in-a-full-kit/wooden`): the wooden kit is the best of them but reads as leather, not wood; hair and clothing break through many of the armour sets; and are there armour sets for ranged and magic yet?
+  - **Bronze kit's helmet** (`weapons-and-armour/your-body-in-a-full-kit/bronze`): "Great other than the helmet. It splits right down the middle" at the forehead and brow ridge; expected more like a classic hoplite helmet. Long hair and clothing cut right through it.
+  - **Demonic kit** (`weapons-and-armour/your-body-in-a-full-kit/demonic`): more detail and colour, red carved designs across the armour, "similar to Daedric armor in Oblivion/Skyrim"; purple stays dominant. Separately: enchanted items should carry "some very very light particle effect" to show they are magical.
+  - **Weapons held the wrong way** (`people/foes-on-the-body/bandit`, `…/cultist`): the bandit's axe is turned the wrong direction, the cultist's sword is held sideways ("we should rotate the weapon 90 degrees"); equipped weapons across the foes, bows included, should face the way they attack.
 
 ## E. Interface
 - **The look, later**: a barber/tailor in towns to change hair and dyes after the creator (the creator now has the townsfolk's thirteen styles and fourteen beards, Session 154); ~~NPCs could draw from the same tunic dyes by nation~~ (Session 153).
