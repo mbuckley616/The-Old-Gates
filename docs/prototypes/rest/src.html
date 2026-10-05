@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Rest and Rising</title>
+<!-- The Old Gates — sleeping, waiting and the level taken on waking, on the approved parchment kit (docs/prototypes/ui,
+     Michael A, 27 Sep 2026), the open book (docs/prototypes/books, A, 2 Oct) and the creator's one sheet (A, 4 Oct).
+     Concept, 4 Oct 2026. build.py inlines kit.css, the icon symbols (defs.html) and the game's own data (current.json,
+     written by shoot-current.mjs from a run of the build: ATTR_DEF, ATTRS, lvAct, the multipliers, the Duelist, the date).
+     Every .screen is 1280×720; shoot.mjs photographs them.
+     For the builder: plain DOM. The rest slip is one .parch.small.rest for both sleeping and waiting: .dial is an inline SVG
+     of the day (night washed in ink, the hour marks, a NOW tick and a rubric arc to the hour you rise), .slip the trade
+     prototype's ruled slider (1–24 hours), .mk the five hour marks (Dawn, Morning, Noon, Dusk, Night) that set the slider,
+     .out the lines of what the rest gives. The level sheet (A) is .parch.lvl, a table of .ar rows (icon, name, the value
+     now and after, the multiplier as five .pips, what earned it in words, what it gives) with .on for a chosen row. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+/*TOME*/
+.screen{background-size:cover;background-position:center}
+.screen.night{background-image:url(backdrop-night.png)}
+.screen.dawn{background-image:url(backdrop-dawn.png)}
+.screen.menu::before{backdrop-filter:blur(2px) brightness(.5) sepia(.3)}
+.screen.dim::before{content:"";position:absolute;inset:0;background:rgba(8,6,3,.38);z-index:0}
+
+/* ───────── the rest slip ───────── */
+.rest{left:330px;top:150px;width:620px;padding:24px 36px 20px}
+.rest .top{display:flex;align-items:baseline;gap:14px}
+.rest .top .h{font-size:28px}
+.rest .top .meta{margin-left:auto;font-size:15px}
+.rest .ask{font:italic 18px var(--fell);color:var(--ink-soft);margin:2px 0 6px}
+.dial{display:block;width:548px;height:92px;margin:2px 0 0}
+.mks{display:flex;justify-content:center;gap:8px;margin:2px 0 4px}
+.mk{font:14px var(--display);letter-spacing:.06em;color:var(--ink-soft);padding:1px 6px;border:1px solid rgba(90,65,40,.35);border-radius:2px;background:rgba(120,80,30,.06);white-space:nowrap}
+.mk i{font:italic 12px var(--fell);color:var(--ink-faint);margin-right:5px}
+.mk small{font:italic 12px var(--fell);letter-spacing:0;color:var(--ink-faint)}
+.mk.on{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.09)}
+.slip{display:grid;grid-template-columns:26px 1fr 26px 112px;gap:10px;align-items:center;margin:8px 0 6px}
+.slip .pm{width:24px;height:24px;border:1.2px solid var(--ink-soft);border-radius:50%;display:grid;place-items:center;font:16px/1 var(--body);color:var(--ink)}
+.track{position:relative;height:20px}
+.track::before{content:"";position:absolute;left:0;right:0;top:9px;height:2px;background:var(--ink-soft)}
+.track i{position:absolute;top:4px;width:1px;height:12px;background:rgba(90,65,40,.5)}
+.track i.l{top:1px;height:18px;background:var(--ink-soft)}
+.track .fill{position:absolute;left:0;top:8px;height:4px;background:var(--rubric);opacity:.75}
+.track .knob{position:absolute;top:-1px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 60%,#5a0e08);box-shadow:0 2px 3px rgba(0,0,0,.45),inset 0 1px 2px rgba(255,200,170,.4)}
+.slip .v{font:26px var(--display);color:var(--rubric);text-align:right;white-space:nowrap}
+.slip .v small{font:italic 15px var(--fell);color:var(--ink-soft)}
+.out{border-top:1px solid rgba(90,65,40,.3);margin-top:8px;padding-top:8px}
+.ol{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:baseline;font:17px/1.35 var(--body);padding:2px 0}
+.ol svg.ico{width:20px;height:20px;color:var(--ink-soft);align-self:center}
+.ol .r{font:italic 15px var(--fell);color:var(--ink-faint)}
+.ol b{font-weight:500}
+.ol.ready{color:var(--rubric)} .ol.ready svg.ico{color:var(--gilt)}
+.ol.no{color:var(--ink-faint)}
+.vit{display:inline-flex;gap:5px;align-items:baseline;margin-right:16px}
+.vit em{font-style:normal;font:13px var(--display);letter-spacing:.06em}
+.vit .a{color:var(--ink-faint);text-decoration:line-through;text-decoration-thickness:1px}
+.restfoot{display:flex;align-items:center;gap:16px;margin-top:12px}
+.restfoot .seal{position:relative;width:52px;height:52px;font-size:22px}
+.restfoot .go{font:24px var(--display);color:var(--rubric)}
+.restfoot .esc{margin-left:auto;font:italic 14px var(--fell);color:var(--ink-faint);display:flex;gap:8px;align-items:center}
+.restfoot .key{width:auto;padding:0 6px}
+
+/* ───────── level, A: one sheet ───────── */
+.lvl{left:70px;top:44px;width:1140px;height:632px;padding:22px 40px 18px}
+.lvl .head{display:flex;align-items:flex-end;gap:20px}
+.lvl .head .h{font-size:40px;line-height:1}
+.lvl .head .sub{font:italic 19px var(--fell);color:var(--ink-soft);padding-bottom:3px}
+.lvl .head .cnt{margin-left:auto;display:flex;align-items:center;gap:10px;font:15px var(--display);letter-spacing:.08em;color:var(--ink-soft);padding-bottom:4px}
+.lvl .head .cnt .pips span{width:15px;height:15px}
+.lvl .head .cnt .pips span.f{background:var(--rubric);border-color:var(--rubric)}
+.ah,.ar{display:grid;grid-template-columns:30px 132px 112px 112px 1fr 290px;gap:0 14px;align-items:center}
+.ah{font:12.5px var(--display);letter-spacing:.12em;color:var(--ink-faint);padding:2px 12px 4px}
+.ar{padding:7px 12px;border-bottom:1px solid rgba(90,65,40,.18);font:17px var(--body);min-height:55px}
+.ar svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.ar .n{font:19px var(--body);font-weight:500}
+.ar .n .star{color:var(--gilt);font-size:13px;margin-left:5px}
+.ar .val{font:22px var(--display);white-space:nowrap}
+.ar .val .to{font:16px var(--body);color:var(--ink-faint);margin:0 4px}
+.ar .val .aft{color:var(--ink-faint)}
+.ar .mul{display:flex;align-items:center;gap:8px}
+.ar .mul b{font:21px var(--display);font-weight:400;min-width:28px}
+.ar .mul .pips{gap:2px} .ar .mul .pips span{width:11px;height:11px}
+.ar .why{font:italic 15.5px/1.25 var(--fell);color:var(--ink-soft)}
+.ar .why small{display:block;font:13.5px var(--body);font-style:normal;color:var(--ink-faint)}
+.ar .gv{font:15.5px/1.3 var(--body);color:var(--ink)}
+.ar.m4 .mul b,.ar.m5 .mul b{color:var(--gilt)}
+.ar.on{background:linear-gradient(90deg,rgba(122,31,16,.15),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.ar.on .n,.ar.on svg.ico,.ar.on .val .aft{color:var(--rubric)}
+.ar.on .val .aft{font-size:24px}
+.ar.on .gv{color:var(--rubric)}
+.ar.dim{opacity:.62}
+.lvfoot{position:absolute;left:40px;right:40px;bottom:18px;display:flex;align-items:center;gap:18px}
+.lvfoot .gift{font:16px/1.35 var(--body);color:var(--ink-soft)}
+.lvfoot .gift b{font:15px var(--display);font-weight:400;color:var(--rubric);letter-spacing:.04em}
+.lvfoot .gift .star{color:var(--gilt)}
+.lvfoot .seal{position:relative;width:60px;height:60px;font-size:26px;margin-left:auto}
+.lvfoot .go{font:26px var(--display);color:var(--rubric)}
+
+/* ───────── level, B: the book ───────── */
+.leaf .chh{font:13px var(--display);letter-spacing:.2em;color:var(--ink-faint);text-align:center}
+.leaf .cht{font:30px/1.1 var(--display);color:var(--rubric);text-align:center;margin:4px 0 2px}
+.leaf .orn{text-align:center;font:18px var(--fell);color:var(--gilt);margin:0 0 8px}
+.taught{font:17px/1.42 var(--body);color:var(--ink)}
+.taught p{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;padding:3px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+.taught p span{font-style:italic;font-family:var(--fell)}
+.taught p b{font:17px var(--display);font-weight:400;color:var(--ink-soft);white-space:nowrap}
+.taught p.hi b{color:var(--gilt)}
+.br{display:grid;grid-template-columns:22px 1fr 50px 38px;gap:8px;align-items:center;padding:5px 4px;border-bottom:1px solid rgba(90,65,40,.16);font:17px var(--body)}
+.br svg.ico{width:20px;height:20px;color:var(--ink-soft)}
+.br .mx{font:17px var(--display);text-align:right}
+.br .vv{font:17px var(--display);text-align:right;color:var(--ink-faint)}
+.br small{grid-column:2/5;font:13.5px/1.2 var(--body);color:var(--ink-faint);margin-top:-3px}
+.leaf.r .br{text-align:left}
+.br.on{background:linear-gradient(90deg,rgba(122,31,16,.15),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.br.on span.n,.br.on svg.ico,.br.on .vv{color:var(--rubric)} .br.on small{color:var(--rubric);opacity:.85}
+.leaf .rise{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}
+.leaf .rise .seal{position:relative;width:48px;height:48px;font-size:21px}
+.leaf .rise .go{font:22px var(--display);color:var(--rubric)}
+.leaf .gl{font:italic 14.5px/1.3 var(--fell);color:var(--ink-soft);margin-top:8px}
+
+/* ───────── level, C: restyle ───────── */
+.lv1{left:350px;top:48px;width:580px;height:624px;padding:20px 26px 16px}
+.lv1 .t{text-align:center;font:26px var(--display);color:var(--rubric)}
+.lv1 .s{text-align:center;font:italic 15px var(--fell);color:var(--ink-soft);margin-bottom:8px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.card{border:1.2px solid rgba(90,65,40,.45);border-radius:2px;padding:6px 9px;background:rgba(120,80,30,.05);min-height:84px}
+.card .tp{display:flex;justify-content:space-between;font:16px var(--display);color:var(--ink)}
+.card .tp b{font-weight:400;color:var(--ink-soft)}
+.card .g{font:13.5px/1.3 var(--body);color:var(--ink-soft)}
+.card .c{font:12px var(--body);color:var(--ink-faint);margin-top:2px}
+.card.on{border-color:var(--rubric);background:rgba(122,31,16,.09)} .card.on .tp{color:var(--rubric)}
+
+/* comparison frames */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:1280px;padding:18px 16px 18px;background:#141008;position:relative}
+.screen.cmp{height:auto}
+.pair figure{margin:0}
+.pair img{width:616px;display:block;border:1px solid #3a3022}
+.pair .two{display:grid;gap:8px}
+.pair .two img{width:616px}
+.pair figcaption{font:17px var(--display);color:#e0c994;margin-bottom:8px;letter-spacing:.04em}
+.pair figcaption small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:8px}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<h1 class="page">Rest and Rising — sleeping, waiting, and the level taken on waking</h1>
+<p class="lede">A Duelist on Day 4 at 9:40 pm in Dunmore, hurt (74 of 130), ready to advance. Every number is the game's: the rest's restore rule, the eight attributes, the activity since the last level and the multipliers it earned.</p>
+<div id="out"></div>
+<script>
+/*DATA*/
+const $=s=>document.querySelector(s);
+const IC={might:'i-sword',fortitude:'i-shield',finesse:'i-rapier',swiftness:'i-wind',resolve:'i-star',intelligence:'i-quill',charisma:'i-speech',fortune:'i-coin'};
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${IC[id]||id}"/></svg>`;
+const ORDER=Object.keys(DATA.attrs);
+const PICK=['finesse','fortitude','charisma'];
+const ARCH=DATA.arch, PRIM=new Set(ARCH.primaries);
+const B=DATA.before;
+const HURT={hp:74,mp:40,mh:B.maxHP,mm:B.maxMana,ms:B.maxStamina};
+const NOW=21+40/60, DAY=4;
+
+// ── the clock, in the game's words
+const hm=h=>{h=((h%24)+24)%24;const hh=Math.floor(h),mm=Math.round((h-hh)*60);return `${((hh+11)%12)+1}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;};
+const dayAt=h=>DAY+Math.floor(h/24);
+// restAtBed: k = min(1, hours/6); a share of what is missing, everything at six hours or more; stamina always full
+function rest(hours){const k=Math.min(1,hours/6);return {hp:Math.min(HURT.mh,HURT.hp+Math.ceil((HURT.mh-HURT.hp)*k)+(k>=1?HURT.mh:0)),mp:Math.min(HURT.mm,HURT.mp+Math.ceil((HURT.mm-HURT.mp)*k)+(k>=1?HURT.mm:0))};}
+
+// the dial: 24 hours from noon to noon, so a night sits whole in the middle
+function dial(hours,mode){
+  const W=548,H=92,x0=14,x1=W-14,top=26,bot=58,X=h=>x0+((((h-12)%24)+24)%24)/24*(x1-x0);
+  let s=`<svg class="dial" viewBox="0 0 ${W} ${H}">
+   <defs><linearGradient id="nt" x1="0" x2="1"><stop offset="0" stop-color="#2e1c0c" stop-opacity=".05"/><stop offset=".17" stop-color="#2e1c0c" stop-opacity=".34"/><stop offset=".5" stop-color="#2e1c0c" stop-opacity=".42"/><stop offset=".83" stop-color="#2e1c0c" stop-opacity=".34"/><stop offset="1" stop-color="#2e1c0c" stop-opacity=".05"/></linearGradient></defs>
+   <rect x="${x0}" y="${top}" width="${x1-x0}" height="${bot-top}" fill="rgba(255,248,225,.25)" stroke="#5a4128" stroke-width="1.1"/>
+   <rect x="${X(18)}" y="${top}" width="${X(6)-X(18)}" height="${bot-top}" fill="url(#nt)"/>`;
+  for(let h=0;h<24;h++){const hh=(12+h)%24,x=X(hh),l=hh%6===0;s+=`<line x1="${x}" x2="${x}" y1="${bot}" y2="${bot-(l?10:5)}" stroke="#5a4128" stroke-width="${l?1.2:.7}"/>`;}
+  [[12,'noon'],[18,'six'],[0,'midnight'],[6,'six']].forEach(([h,t])=>{s+=`<text x="${X(h)}" y="${bot+14}" text-anchor="middle" font-family="IM Fell English" font-style="italic" font-size="12" fill="#8a7050">${t}</text>`;});
+  // sun and moon
+  s+=`<g transform="translate(${X(13.6)},${top+16})" stroke="#9a7020" fill="none" stroke-width="1.2"><circle r="5"/>${[0,45,90,135,180,225,270,315].map(a=>`<line x1="${Math.cos(a*Math.PI/180)*7.5}" y1="${Math.sin(a*Math.PI/180)*7.5}" x2="${Math.cos(a*Math.PI/180)*10}" y2="${Math.sin(a*Math.PI/180)*10}"/>`).join('')}</g>
+   <path transform="translate(${X(0)-34},${top+16})" d="M3 -7 A7.5 7.5 0 1 0 3 7 A6 6 0 1 1 3 -7Z" fill="#ecdcb2" stroke="#5a4128" stroke-width="1" opacity=".9"/>`;
+  const a=X(NOW),end=NOW+hours,b=X(end%24);
+  const wrap=b<a;
+  // the span rested, an arc of rubric over the band
+  if(!wrap){s+=`<rect x="${a}" y="${top+4}" width="${b-a}" height="${bot-top-8}" fill="#7a1f10" opacity=".16"/>
+    <path d="M${a} ${top-2} Q${(a+b)/2} ${top-18} ${b} ${top-2}" fill="none" stroke="#7a1f10" stroke-width="1.6"/>
+    <text x="${(a+b)/2}" y="${top-11}" text-anchor="middle" font-family="IM Fell English SC" font-size="13" fill="#7a1f10" letter-spacing="1">${hours} HOURS</text>`;}
+  else{s+=`<rect x="${a}" y="${top+4}" width="${x1-a}" height="${bot-top-8}" fill="#7a1f10" opacity=".16"/><rect x="${x0}" y="${top+4}" width="${b-x0}" height="${bot-top-8}" fill="#7a1f10" opacity=".16"/>`;}
+  s+=`<g><line x1="${a}" x2="${a}" y1="${top-4}" y2="${bot+2}" stroke="#2e1c0c" stroke-width="1.6"/><path d="M${a-5} ${bot+8} L${a+5} ${bot+8} L${a} ${bot+2}Z" fill="#2e1c0c"/>
+    <text x="${a+6}" y="${bot+28}" text-anchor="end" font-family="IM Fell English SC" font-size="13" fill="#2e1c0c">now · ${hm(NOW)}</text></g>
+   <g><line x1="${b}" x2="${b}" y1="${top-4}" y2="${bot+2}" stroke="#7a1f10" stroke-width="2"/><circle cx="${b}" cy="${top-4}" r="3.2" fill="#7a1f10"/>
+    <text x="${b-6}" y="${bot+28}" text-anchor="start" font-family="IM Fell English SC" font-size="13" fill="#7a1f10">${mode==='sleep'?'you wake':'you rise'} · ${hm(end)}</text></g></svg>`;
+  return s;
+}
+const MARKS=[[6,'Dawn'],[8,'Morning'],[12,'Noon'],[18,'Dusk'],[20,'Night']];
+function marks(hours){const to=h=>{let d=h-NOW;if(d<=0)d+=24;return Math.round(d);};
+  // today's five buttons, now marks that set the slider to the hours until that hour
+  return `<div class="mks">${MARKS.map(([h,t],i)=>`<span class="mk ${to(h)===hours?'on':''}"><i>${i+1}</i>${t} <small>${hm(h).replace(':00','')}</small></span>`).join('')}</div>`;}
+function slider(hours){let t='';for(let i=1;i<=24;i++)t+=`<i class="${i%6===0?'l':''}" style="left:${(i-1)/23*100}%"></i>`;const p=(hours-1)/23*100;
+  return `<div class="slip"><span class="pm">−</span><div class="track">${t}<div class="fill" style="width:${p}%"></div><div class="knob" style="left:${p}%"></div></div><span class="pm">+</span><span class="v">${hours} <small>hours</small></span></div>`;}
+function vit(lbl,a,b,max){return a===b?`<span class="vit"><em>${lbl}</em> full</span>`:`<span class="vit"><em>${lbl}</em><span class="a">${a}</span> ${b} <span class="faint">of ${max}</span></span>`;}
+function restSlip(mode,hours){
+  const end=NOW+hours,r=rest(hours);
+  const lines=mode==='sleep'?
+   `<div class="ol">${ico('i-sun')}<span>You wake at <b>${hm(end)}</b>, Day ${dayAt(end)}.</span><span class="r">${hours>=6?'a full night':'a short sleep'}</span></div>
+    <div class="ol">${ico('i-heart')}<span>${vit('Health',HURT.hp,r.hp,HURT.mh)}${vit('Magicka',HURT.mp,r.mp,HURT.mm)}${vit('Stamina',1,1)}</span><span class="r">all, at six hours</span></div>
+    <div class="ol ready">${ico('i-star')}<span>You are ready to advance: you wake at <b>level ${B.level+1}</b>.</span><span class="r"></span></div>`
+  :`<div class="ol">${ico('i-sun')}<span>You rise at <b>${hm(end)}</b>, Day ${dayAt(end)}.</span><span class="r"></span></div>
+    <div class="ol no">${ico('i-heart')}<span>Waiting restores nothing; a bed does.</span><span class="r"></span></div>
+    <div class="ol no">${ico('i-star')}<span>You are ready to advance, but only sleep takes the level.</span><span class="r"></span></div>`;
+  return `<div class="parch small rest"><div class="top"><span class="h">${mode==='sleep'?'Sleep':'Wait'}</span><span class="meta">${DATA.date.replace(' · ',', ')} · Dunmore</span></div>
+   <div class="rule"></div><div class="ask">${mode==='sleep'?'How long will you sleep?':'How long will you wait?'}</div>
+   ${dial(hours,mode)}${slider(hours)}${marks(hours)}<div class="out">${lines}</div>
+   <div class="restfoot"><span class="seal">${mode==='sleep'?'☾':'⧗'}</span><span class="go">${mode==='sleep'?'Sleep':'Wait'}</span><span class="esc"><span class="key">Esc</span> as you were · <span class="key">←</span><span class="key">→</span> an hour · <span class="key">1</span>–<span class="key">5</span> a mark</span></div></div>`;
+}
+
+// ── the level, in words
+const ACT={kills:['foes felled','foe felled'],damageTaken:['wounds taken','wound taken'],parries:['blows parried','blow parried'],sprintDist:['paces at a sprint','pace at a sprint'],
+  staminaDepleted:['times out of breath','time out of breath'],transactions:['trades made','trade made'],npcTalks:['people talked with','person talked with'],chestsOpened:['chests opened','chest opened']};
+const WORDS=['none','one','two','three','four','five','six','seven','eight','nine','ten'];
+const cap=t=>t[0].toUpperCase()+t.slice(1);
+const say=(n,w)=>n===2&&/^times/.test(w||'')?'twice':n<=10?WORDS[n]:String(n);
+function why(k){const a=DATA.attrs[k],v=DATA.lvAct[a.actKey]||0,m=a.mult,t=a.thresholds;const w=ACT[a.actKey][v===1?1:0];
+  const next=m<5?`${t[m]} for ×${m+1}`:'the most there is';return `${cap(say(v,w))} ${w.replace(/^times? /,'')}<small>${next}</small>`;}
+// what it gives at this multiplier: every gain ATTR_DEF names (the game's gainLines leaves out Charisma's quest gold and merchant access)
+function gives(k){const g=DATA.attrs[k].gains,m=DATA.attrs[k].mult,o=[];
+  if(g.meleePct)o.push(`+${g.meleePct*m}% melee damage`);if(g.carry)o.push(`+${g.carry*m} carry`);
+  if(g.maxHP)o.push(`+${g.maxHP*m} health`);if(g.maxStamina)o.push(`+${g.maxStamina*m} stamina`);
+  if(g.parryMs)o.push(`+${g.parryMs*m} ms to parry`);if(g.sprintCostPct)o.push(`${g.sprintCostPct*m}% sprint cost`);if(g.rangedPct)o.push(`+${g.rangedPct*m}% ranged`);if(g.sneakDetectPct)o.push(`${g.sneakDetectPct*m}% seen sneaking`);
+  if(g.movePct)o.push(`+${g.movePct*m}% speed`);if(g.atkSpdPct)o.push(`+${g.atkSpdPct*m}% swing speed`);
+  if(g.staminaRegen)o.push(`+${(g.staminaRegen*m).toFixed(1)}/s stamina back`);if(g.blockCostPct)o.push(`${g.blockCostPct*m}% block cost`);if(g.magicResistPct)o.push(`+${g.magicResistPct*m}% resist magic`);
+  if(g.maxMana)o.push(`+${g.maxMana*m} magicka`);if(g.manaRegen)o.push(`+${(g.manaRegen*m).toFixed(1)}/s magicka back`);if(g.spellPct)o.push(`+${g.spellPct*m}% spell power`);
+  if(g.barterPct)o.push(`+${g.barterPct*m}% at the counter`);if(g.questGoldPct)o.push(`+${g.questGoldPct*m}% reward gold`);if(g.merchantTier)o.push(`finer stock`);
+  if(g.critPct)o.push(`+${g.critPct*m}% crits`);if(g.goldPct)o.push(`+${g.goldPct*m}% gold found`);if(g.dropPct)o.push(`+${g.dropPct*m}% drops`);
+  return o.join(' · ');}
+const pips=(n,max=5,cls='')=>`<span class="pips ${cls}">${Array.from({length:max},(_,i)=>`<span class="${i<n?'f':''}"></span>`).join('')}</span>`;
+function after(k){const a=DATA.attrs[k];return a.cur+(PICK.includes(k)?a.mult:0)+(PRIM.has(k)?1:0);}
+function giftLine(){return `<span class="star">✦</span> Whatever you choose, the <b>${ARCH.label}</b> grows: +1 ${ARCH.primaries.map(k=>DATA.attrs[k].label).join(', +1 ')}; and every level, +10 health and +10 stamina.`;}
+
+const screens=[];
+function screen(id,cap,cls,html){screens.push(id);$('#out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen ${cls}" id="${id}">${html}</div>`);}
+
+// ── the rest slip (under every option)
+screen('sleep','The rest slip, sleeping <small>one slip for a bed and for waiting; the day drawn, the hour you wake, what it gives</small>','night dim',restSlip('sleep',8));
+screen('sleep3','The rest slip, a short sleep <small>three hours: a share of what is missing, as restAtBed gives it</small>','night dim',restSlip('sleep',3));
+screen('wait','The rest slip, waiting <small>the same slip; the marks are today\'s five buttons, any hour between them works too</small>','night dim',restSlip('wait',8));
+
+// ── A: the level on one sheet
+const rowsA=ORDER.map(k=>{const a=DATA.attrs[k],on=PICK.includes(k);return `<div class="ar m${a.mult} ${on?'on':''}">${ico(k)}<span class="n">${a.label}${PRIM.has(k)?'<span class="star">✦</span>':''}</span>
+  <span class="val num">${a.cur}<span class="to">→</span><span class="aft">${after(k)}</span></span><span class="mul"><b>×${a.mult}</b>${pips(a.mult)}</span><span class="why">${why(k)}</span><span class="gv">${gives(k)}</span></div>`;}).join('');
+screen('sheet','A — One sheet <small>eight rows, what each would give and what earned it; three chosen; the Duelist\'s growth stated before you choose</small>','dawn menu',`
+ <div class="parch lvl"><div class="head"><span class="h">Level ${B.level+1}</span><span class="sub">You wake stronger. Choose three to raise.</span><span class="cnt">Chosen ${pips(PICK.length,3)}</span></div><div class="rule"></div>
+ <div class="ah"><span></span><span>ATTRIBUTE</span><span>NOW → AFTER</span><span>MULTIPLIER</span><span>EARNED SINCE LEVEL ${B.level}</span><span>RAISING IT GIVES</span></div>${rowsA}
+ <div class="lvfoot"><span class="gift">${giftLine()}</span><span class="seal">✠</span><span class="go">Rise</span></div></div>`);
+
+// ── B: the book
+const taught=ORDER.map(k=>{const a=DATA.attrs[k],v=DATA.lvAct[a.actKey]||0;return `<p class="${a.mult>=4?'hi':''}"><span>${cap(say(v,ACT[a.actKey][v===1?1:0]))} ${ACT[a.actKey][v===1?1:0].replace(/^times? /,'')}</span><b>${a.label} ×${a.mult}</b></p>`;}).join('');
+const rowsB=ORDER.map(k=>{const a=DATA.attrs[k],on=PICK.includes(k);return `<div class="br ${on?'on':''}">${ico(k)}<span class="n">${a.label}${PRIM.has(k)?' <span style="color:var(--gilt);font-size:12px">✦</span>':''}</span><span class="mx">×${a.mult}</span><span class="vv num">${after(k)}</span><small>${gives(k)}</small></div>`;}).join('');
+screen('book','B — The book <small>the left leaf tells what the days since level 1 taught you; the right is the choice</small>','dawn menu',`<div class="tome"><div class="block"></div>
+  <div class="leaf l"><div class="run">THE FOURTH DAY · DUNMORE</div><div class="chh">LEVEL ${['','I','II','III'][B.level+1]}</div><div class="cht">What the Days Taught</div><div class="orn">❦</div>
+   <div class="taught">${taught}</div><div class="gl">${giftLine()}</div><div class="fol">i</div></div>
+  <div class="leaf r"><div class="run">CHOOSE THREE</div>${rowsB}<div class="rise"><span class="meta">${PICK.map(k=>DATA.attrs[k].label).join(', ')}</span><span class="seal">✠</span><span class="go">Rise</span></div><div class="fol">ii</div></div>
+  <div class="ribbon2"></div></div>
+  <div class="turn hudtxt"><span><span class="key">1</span>–<span class="key">8</span> choose</span><span><span class="key">E</span> rise</span></div>`);
+
+// ── C: today's cards, restyled
+const cards=ORDER.map(k=>{const a=DATA.attrs[k];return `<div class="card ${PICK.includes(k)?'on':''}"><div class="tp"><span>${a.label}</span><b>×${a.mult}</b></div><div class="g">${a.gainLine}</div><div class="c">Current: ${a.cur} pts · Activity: ${DATA.lvAct[a.actKey]||0}</div></div>`;}).join('');
+screen('restyle','C — Restyle only <small>today\'s panel on the paper: the same cards, the same words</small>','dawn menu',`<div class="parch lv1"><div class="t">Level Up</div><div class="s">Level ${B.level+1} — choose 3 attributes to increase</div><div class="rule"></div>
+ <div class="cards">${cards}</div><div class="s" style="margin-top:10px">Selected: 3 / 3</div><div class="s">✦ ${ARCH.label} bonus: +1 to ${ARCH.primaries.map(k=>DATA.attrs[k].label).join(' · ')}</div>
+ <div style="text-align:center;margin-top:4px"><span class="btn hot">Confirm</span></div></div>`);
+
+// ── comparisons
+screen('cmp-rest','Today beside the proposed — sleeping and waiting','cmp',`<div class="pair"><figure><figcaption>Today <small>the sleep slip and, separately, the ⏳ menu</small></figcaption><div class="two"><img src="current-sleep.png"><img src="current-wait.png"></div></figure><figure><figcaption>Proposed <small>one slip, sleeping and waiting</small></figcaption><div class="two"><img id="cr-a" src=""><img id="cr-b" src=""></div></figure></div>`);
+screen('cmp-level','Today beside A — the level','cmp',`<div class="pair"><figure><figcaption>Today <small>the panel as it opens on waking</small></figcaption><img src="current-levelup.png"></figure><figure><figcaption>A, one sheet</figcaption><img id="cl-a" src=""></figure></div>`);
+window.SCREENS=screens;
+</script>
+</body>
+</html>
