@@ -12060,3 +12060,32 @@ With the game's .72 its head stands at .5–.6 of a bandit's. In `97-inspector.j
 - The knife's rust reads pinkish under the noon light in the inspector.
 - The goblin's attack poses are unchanged: the swing comes from the hunched trunk.
 - The inspector entry's key is unchanged and its size changed. The control room's Meshes tab carries the old triangle count until it is republished from `docs/inspector-catalogue.json`.
+
+## v80 — Session 536 — The hands on every held weapon are the fists' hand (backlog H, Michael's inspector note)
+Michael, from the inspector: "the fist/hand mesh is very dated and ugly. We need to update across the board so that it is at least in sync with the 'fists' weapon mesh for the player. Hands need to look like hands, especially in first person." In first person, every weapon, shield and torch was held by `buildHandMesh` (`16-viewmodel.js`), four boxes: a block for the fist, a bar of knuckles, a thumb and a cuff, 48 triangles. The empty hand has been a real one since Session 396 (`buildFistMesh`): the back of the hand over the palm, four fingers folded in two joints, the knuckles, the thumb laid across, the wrist and the forearm, in one vertex-coloured mesh.
+
+`buildHandMesh` now builds that same fist, closed round the haft:
+- **The grip.** The haft runs through the curl of the fingers, with the index finger uppermost and the back of the hand outward. The hand is tipped .32 so the haft crosses the palm on a slant, as a held grip does.
+- **The forearm.** `buildFistMesh` takes the forearm's length (default .34, the fists' own as before). A grip's forearm is .2 (`GRIP_FOREARM`) and runs back towards you, a little down and out to its own side.
+- **The arm.** The arm bridge now reaches from the shoulder to the forearm's end (`userData.elbow`) rather than to the hand.
+- **The left hand.** The torch's and the shield's hands had no arm and floated. Each now has a left arm from the left shoulder. The shield's hand is moved in to its strap.
+- **What it costs.** Each hand is 3,108 triangles, the fists' own count. With two in view that is about six thousand in the view model, as the fists already are.
+- **Unchanged.** The fists themselves, third person and the townsfolk's hands.
+
+### Verified (headless Chromium)
+`tests/fphands.test.mjs` (new), 8/8. It equips five sets: a sword and kite shield, an axe, a staff, a bow, and a dagger and torch.
+- **Nine hands.** Five main hands, the staff's and the bow's second hands, the shield's and the torch's.
+- **The fists' hand.** Each is the vertex-coloured fist, 3,108 triangles, with no box in it. Before: 48 triangles, four boxes.
+- **Round the haft.** The grip point lies inside each hand, with hand on both sides of it across and along the view.
+- **The forearm.** Each forearm's end is .09–.18 back towards you and .04–.10 below the grip.
+- **The arms.** The right arm reaches the forearm's end on all five weapons. A left arm reaches the staff's and the bow's second hands, the shield's and the torch's. The one-handed axe has none.
+- **The fists.** The fists' forearm is still .34.
+- **Errors.** No page errors.
+
+`fpshield`, `fpweapons` and `fists` pass. Picture: `docs/prototypes/fphands-before.png` (the old boxes, as seen in play) and `fphands-after.png`. The top row is as you see it in play. The bottom row is the view model from its camera lowered .2 and drawn back .12, so the hands are in frame. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At rest, the grips sit at the bottom edge of the view, as the boxes did, so in play you mostly see the fingers and the knuckles. Raising the resting weapon is a framing call, not part of this note.
+- The shield's hand sits at the lower edge of the face in the close view. It is below the frame in play.
+- The staff's second arm, and the arm to the torch, cross the lower view nearly level from the left shoulder. The bridge is one straight limb.
+- Gauntlets and gloves colour the hand as before (the fists' colouring). A gauntlet's own shape is not modelled.
