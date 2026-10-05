@@ -663,7 +663,7 @@ function _chaExtraItem(stock, cha){
   stock.forEach(it=>{if(it.type==='equip'&&it.tier&&!it.enchant&&!it.torchType&&(!best||it.tier>best.tier))best=it;});
   if(best&&best.tier<MATERIALS.length){
     const typeName=best.weaponType||best.name.slice(best.material.length+1);
-    const w=WEAPON_TYPES.find(t=>t.type===typeName), a=!w&&ARMOR_TYPES.find(t=>t.type===typeName);
+    const w=WEAPON_TYPES.find(t=>t.type===typeName), a=!w&&(best.line?lineType(best.line,best.slot):ARMOR_TYPES.find(t=>t.type===typeName));
     if(w||a){const x=makeItem(best.tier+1,w||a,null,!w);if(!has(x.name))return Object.assign(x,{_chaExtra:true});}
     return null;
   }
@@ -694,6 +694,7 @@ function renderShop(){
     if(extra.length) stock=[...stock, ...extra];
   }
   if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
+  {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];} // S564 — the light line at the armourer, robes at a goods shop
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
   stock = stock.filter(it => !it.chaReq || _cha >= it.chaReq);
@@ -828,6 +829,10 @@ function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const
     if(t.kind==='town'||t.kind==='city')out.push('hood');if(t.kind==='port')out.push('oilskin');if(nk==='mark')out.push('fur');if(nk==='aurenne')out.push('cape');
     if(S&&S.houses&&S.houses.some(x=>x.type==='church'))out.push('pilgrim');}}catch(e){}
   return out.map(k=>makeCloak(k));}
+// S564 — the light and robe lines at a counter (#163): the armourer sells the light line beside the heavy, at the heavy stock's
+// tiers (the jerkin a tier up, as the cuirass is); a goods shop sells robes. The Mages' Guild keeps no counter yet.
+function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':h.type==='misc'?'robe':null);if(!ln)return [];
+  return ARMOR_LINE_TYPES.filter(t=>t.line===ln).map(t=>makeItem(t.slot==='chest'?3:2,t,null,true));}
 // S552 — the Aurennais cape: +2% at a counter in Aurenne, the nation whose cut it is (#148)
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
 // S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
@@ -951,6 +956,7 @@ function getArmorEnchantBonuses(){
            mightBonus:0,fortitudeBonus:0,finesseBonus:0,swiftnessBonus:0,intBonus:0};
   Object.values(EQ).forEach(it=>{
     if(it&&it.enchantStats){for(const[k,v] of Object.entries(it.enchantStats))if(b[k]!==undefined)b[k]+=v;}
+    if(it&&it.line==='robe')b.maxManaBonus+=3*(it.tier||1); /* S564 — a robe piece: 3 max mana a tier */
   });
   _armorBonusCache=b;_armorBonusDirty=false;
   return b;

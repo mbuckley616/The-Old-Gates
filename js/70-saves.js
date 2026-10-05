@@ -26,7 +26,7 @@ function _serItem(it){
                   'heal','mana','stam','value','weight',
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
-                  'bookId','virtue','cloak']){ // S552 — a cloak's kind
+                  'bookId','virtue','cloak','line']){ // S552 — a cloak's kind; S564 — an armour piece's line (light, robe)
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){
@@ -426,19 +426,13 @@ function _applyLoadData(d,w){
       return;
     }
     // Armor/shield/accessory path
-    if(it.slot && it.slot!=='weapon'){
-      let typeObj=null;
-      if(it.shieldType==='shield') typeObj=ARMOR_TYPES.find(t=>t.type==='Buckler');
-      else typeObj=ARMOR_TYPES.find(t=>t.slot===it.slot);
+    if(it.slot && it.slot!=='weapon' && !it.cloak){ // S564 — a cloak keeps its own price and needs nothing
+      const typeObj=armorTypeOf(it); /* S564 — a light or robe piece by its line, not as the heavy piece of its slot */
       if(typeObj && typeof TIER_VALUE!=='undefined'){
-        it.buyPrice=Math.max(5, Math.round(TIER_VALUE[tier]*(0.5 + (typeObj.defMult||0.3)*0.3)));
+        it.buyPrice=armorPrice(tier,typeObj);
       }
-      // Fortitude req from table — only T3+
-      if(tier>=3 && typeof ARMOR_FORT_REQ!=='undefined'){
-        it.reqAttr='fortitude'; it.reqVal=ARMOR_FORT_REQ[tier]||0;
-      } else {
-        it.reqAttr=null; it.reqVal=0;
-      }
+      // Fortitude req from table — only T3+ (Finesse for the light line, Intelligence for robes)
+      Object.assign(it,armorReq(tier,typeObj));
     }
   }
   // v61v migration: weight table scaled up. _serItem bakes `weight` into every save,
@@ -463,10 +457,8 @@ function _applyLoadData(d,w){
       if(typeObj && typeObj.weight!==undefined){ it.weight=typeObj.weight; return; }
     }
     // 3. Crafted armor/accessories — by slot (or shieldType for shields)
-    if(it.slot){
-      let typeObj=null;
-      if(it.shieldType==='shield') typeObj=ARMOR_TYPES.find(t=>t.type==='Buckler');
-      else typeObj=ARMOR_TYPES.find(t=>t.slot===it.slot);
+    if(it.slot && !it.cloak){
+      const typeObj=armorTypeOf(it); /* S564 — by its line */
       if(typeObj && typeObj.armorW!==undefined){ it.weight=typeObj.armorW; return; }
     }
   }

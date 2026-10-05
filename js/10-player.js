@@ -749,7 +749,7 @@ function _sneakDetectMult(){
   if(!_sneaking) return 1.0;
   const fin = attrEff('finesse');
   const mult = SNEAK_DETECT_BASE - SNEAK_DETECT_PER_FINESSE * fin;
-  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1); // S552 — the dark hood
+  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1)*(1-.03*(typeof linePieces==='function'?linePieces('light'):0)); // S552 — the dark hood; S564 — 3% a light piece worn
 }
 // Toggle sneak. Called from the Ctrl keydown handler. No-ops if a modal
 // is open (handler-level guard handles that, but defensive here too).

@@ -341,6 +341,25 @@ const ARMOR_TYPES=[
   {type:'Greaves',   slot:'legs',   defMult:0.9, armorW:5},
   {type:'Boots',     slot:'feet',   defMult:0.5, armorW:2},
 ];
+// S564 — the light and robe lines (Michael's A on DECISION #163; the look is #161, read from `item.line`). Each piece is the
+// heavy piece of its slot scaled: light at 60% of its defence and 40% of its weight (a set of five weighs 8), gated by
+// Finesse; robes at 25% and a quarter (cowl, robe, wraps, under-robe; no boots), gated by Intelligence; both on the heavy
+// line's curve (ARMOR_FORT_REQ). One small virtue each, read where the thing is decided: a light piece worn makes you 3%
+// harder to notice while sneaking (_sneakDetectMult), a robe piece adds 3 max mana a tier (getArmorEnchantBonuses).
+// Priced at 90% (light) and 100% (robes) of the heavy piece.
+const ARMOR_LINES={
+  light:{def:.6,w:.4,price:.9,req:'finesse',     names:{head:'Hood',chest:'Jerkin',hands:'Bracers',legs:'Leggings',feet:'Soft Boots'}},
+  robe: {def:.25,w:.25,price:1,req:'intelligence',names:{head:'Cowl',chest:'Robe',hands:'Wraps',legs:'Under-robe'}}};
+const ARMOR_LINE_TYPES=[];
+for(const ln in ARMOR_LINES){const L=ARMOR_LINES[ln];for(const slot in L.names){const H=ARMOR_TYPES.find(t=>t.slot===slot);
+  ARMOR_LINE_TYPES.push({type:L.names[slot],slot,line:ln,defMult:H.defMult*L.def,armorW:Math.round(H.armorW*L.w*100)/100,priceDefMult:H.defMult,priceMult:L.price});}}
+function lineType(line,slot){return ARMOR_LINE_TYPES.find(t=>t.line===line&&t.slot===slot)||null;}
+// the type an armour item was made from: its line's piece, or the heavy piece of its slot (shields by shieldType)
+function armorTypeOf(it){if(!it||!it.slot)return null;if(it.line)return lineType(it.line,it.slot);
+  if(it.shieldType==='shield')return ARMOR_TYPES.find(t=>t.type==='Buckler');return ARMOR_TYPES.find(t=>t.slot===it.slot)||null;}
+function armorPrice(t,typeObj){return Math.max(5,Math.round(TIER_VALUE[t]*(0.5+((typeObj.priceDefMult||typeObj.defMult)||0.3)*0.3)*(typeObj.priceMult||1)));}
+function armorReq(t,typeObj){return t>=3?{reqAttr:(typeObj&&typeObj.line&&ARMOR_LINES[typeObj.line].req)||'fortitude',reqVal:ARMOR_FORT_REQ[t]||0}:{reqAttr:null,reqVal:0};}
+function linePieces(line){let n=0;for(const k in EQ){const it=EQ[k];if(it&&it.line===line)n++;}return n;}
 
 // ── BOOKS ────────────────────────────────────────────────────────
 // Read-once skill books (Oblivion model). First read: +1 to the attribute + book is consumed.
@@ -558,7 +577,8 @@ function makeItem(matTier, typeObj, enchant, isArmor){
     const isShield=typeObj.shieldType==='shield';
     const isAccessory=typeObj.defMult<0.2&&!isShield; // rings/amulets — very low defMult but still nonzero now
     item.name=`${mat.name} ${typeObj.type}`;
-    item.ico=typeObj.slot==='head'?'🪖':typeObj.slot==='amulet'?'📿':
+    if(typeObj.line)item.line=typeObj.line;
+    item.ico=typeObj.line==='robe'&&typeObj.slot==='chest'?'👘':typeObj.slot==='head'?'🪖':typeObj.slot==='amulet'?'📿':
              typeObj.slot==='chest'?'🛡':typeObj.slot==='offhand'?'🛡':
              typeObj.slot==='ring'?'💍':typeObj.slot==='hands'?'🧤':
              typeObj.slot==='legs'?'👖':'👢';
@@ -574,10 +594,9 @@ function makeItem(matTier, typeObj, enchant, isArmor){
       item.enchantStats=enchant.apply(item);
     }
     // v57 armor gating: fortitude reqs mirror the weapon might curve (0, 0, 5, 10, 16, 24, 32, 40, 48, 56).
-    item.reqAttr=t>=3?'fortitude':null;
-    item.reqVal=t>=3?ARMOR_FORT_REQ[t]:0;
-    // v57 pricing: TIER_VALUE × (0.5 + defMult*0.3). Cuirasses more expensive than rings.
-    item.buyPrice=Math.max(5, Math.round(TIER_VALUE[t]*(0.5 + (typeObj.defMult||0.3)*0.3)));
+    Object.assign(item,armorReq(t,typeObj)); /* S564 — Finesse for the light line, Intelligence for robes */
+    // v57 pricing: TIER_VALUE × (0.5 + defMult*0.3). Cuirasses more expensive than rings. S564: a line piece at its share of the heavy piece's
+    item.buyPrice=armorPrice(t,typeObj);
     item.sellMult=0.45;
   }
   return item;
@@ -726,6 +745,8 @@ function rollLoot(diffScale, theme, kind){
   const typeObj=isWeapon?WEAPON_TYPES[Math.floor(lootRand()*WEAPON_TYPES.length)]
                         :ARMOR_TYPES[Math.floor(lootRand()*ARMOR_TYPES.length)];
   if(!isWeapon&&t>=4&&lootRand()<1/12){const ks=Object.keys(CLOAK_KINDS);return makeCloak(ks[Math.floor(lootRand()*ks.length)],t,CLOAK_ENCHANTS[Math.floor(lootRand()*CLOAK_ENCHANTS.length)]);} /* S552 — a magical cloak */
+  let armorObj=typeObj;
+  if(!isWeapon&&ARMOR_LINES.light.names[typeObj.slot]){const lr=lootRand();if(lr>=.5){const ln=(lr<.75||typeObj.slot==='feet')?'light':'robe';armorObj=lineType(ln,typeObj.slot);}} /* S564 — a body piece: heavy half the time, light a quarter, robes a quarter (no robe boots: light) */
   // Enchantment — rare, scales with tier
   const enchChance=Math.min(0.55,(t-1)*0.065);
   let enchant=null;
@@ -737,7 +758,7 @@ function rollLoot(diffScale, theme, kind){
     const pool=(isWeapon?WEAPON_ENCHANTS:ARMOR_ENCHANTS).filter(e=>!e._unique);
     enchant=pool[Math.floor(lootRand()*pool.length)];
   }
-  return makeItem(t,typeObj,enchant,!isWeapon);
+  return makeItem(t,isWeapon?typeObj:armorObj,enchant,!isWeapon);
 }
 
 // Roll a pre-filled loot array for a container. Called at spawn so contents are fixed per seed/run.
