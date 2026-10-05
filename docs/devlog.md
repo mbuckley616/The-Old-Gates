@@ -12213,3 +12213,12 @@ All of them now read `targetOf(n)` or `targetOf(o)`. Solo it is you, so nothing 
 
 ### Needs eyes
 Nothing: solo, every one of these still returns you.
+
+## v80 — Session 543 — The legacy zones' foes and the Faolchú's lessers have ids (backlog K, the co-op door, step 1)
+Step 1 of the co-op door's Opus half (outcome rolls on a stream keyed by place and id) had one line left: *the legacy zones' foes*. The hand-built zones (Bealach South and the placeholder zones of `78-placeholder-zones.js`) spawn their foes in two places that mirror each other: the wilderness builder (`44-legacy-towns.js`) and `respawnZoneEnemies` (`50-travel.js`). Neither gave a foe an id, the extra spots that a spawn density over 1 adds were jittered by `Math.random`, and the variant was drawn by `Math.random` as well. So two machines building one zone put its extra wolves in different places and made different ones of them veterans. Both now name each foe `<zone>:foe:<group>:<i>` through one helper, `legacyFoeId` (`42-zone-enemies.js`). The group is its index in the zone's config, not in the list the time-of-day filter or the respawn's `respawn:false` cut leaves, so those filters move no other foe's id. The extra spot comes from `seededRng('place', id)`, the variant from `seededRng('variant', id)` (as the world's site foes since Session 479), and `keyFoe` gives each its own stream. A foe raised again by a respawn is the same foe in the same place, as a dungeon floor's are. Found on the way: the Faolchú's lessers (`spawnLesserFaolchu`) had no id either, though their spawn spot already came from the boss's stream (Session 477); each is now the boss's id and its count, `ashenmoor:faolchu:lesser:<n>`. Nothing about them is saved, so no save changes.
+
+### Verified (headless Chromium)
+`legacyfoes` 5/5 (new). Bealach South's 9 foes (four wolves and two bandits at the density's 1.5 a spot, so three on extra spots) are `bealach_south:foe:0:0` … `bealach_south:foe:1:2`, every id unique, each with its own stream. Respawned twice, once with `Math.random` fixed at 0.1 and once at 0.9, it gives the same ids, spots and kinds. Two lessers of the Faolchú are `ashenmoor:faolchu:lesser:1` and `:2`, with streams. On the code before this session four of the five checks fail. foeseed, sitefoes, slimeseed, hitseed, faolchu and ashenburn pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing: the zones play as before; only which of their extra foes stand where, and which are veterans, is fixed now.

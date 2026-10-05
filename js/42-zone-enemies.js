@@ -14,6 +14,8 @@
 // flank, your swing's spread on it) draws from foeRand(e), so two machines that agree on the id roll the same fight.
 // A foe with no id yet (camps, raids, quest spawns) rolls Math.random, as before.
 function keyFoe(e,id){if(e){e.id=String(id);e.rng=seededRng('foe',e.id);}return e;}
+// S543 — a legacy zone's foe: the zone, the group's index in its config's enemies (not in a filtered list), and its count
+function legacyFoeId(zone,groups,group,i){const k=(groups||[]).indexOf(group);return `${zone||'zone'}:foe:${k<0?0:k}:${i}`;}
 function foeRand(e){return e&&e.rng?e.rng():Math.random();}
 // ── BOSSES (module-top) ────────────────────────────────────────────
 // v61c2 (Faolchú): boss enemies are scripted spawns, not procedural pool
@@ -445,6 +447,7 @@ function spawnLesserFaolchu(parentBoss){
   if(limbs.wolf)limbs.wolf.e=e;
   e.shape = 'wolf';
   initPosture(e);
+  if(parentBoss && parentBoss.id){parentBoss._lessers=(parentBoss._lessers||0)+1;keyFoe(e,parentBoss.id+':lesser:'+parentBoss._lessers);} // S543 — the boss's id and the add's count
   ZE.push(e);
   if(activeZoneId==='overworld' && typeof ZONES!=='undefined' && ZONES.overworld && ZONES.overworld.enemies && ZONES.overworld.enemies !== ZE){
     ZONES.overworld.enemies.push(e);

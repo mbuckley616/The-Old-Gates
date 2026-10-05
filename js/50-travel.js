@@ -1025,16 +1025,17 @@ function respawnZoneEnemies(zoneId){
     const basePos = group.pos || [];
     const targetCount = (typeof _scaleSpawnCount === 'function') ? _scaleSpawnCount(basePos.length) : basePos.length;
     for(let i=0; i<targetCount; i++){
+      const fid = legacyFoeId(zoneId, cfg.enemies, group, i); // S543 — the same id, spot and variant as the first build gave it
       let ex, ez;
       if(i < basePos.length){
         [ex, ez] = basePos[i];
       } else {
-        const [bx, bz] = basePos[i % basePos.length];
-        ex = bx + (Math.random()*2-1)*4;
-        ez = bz + (Math.random()*2-1)*4;
+        const [bx, bz] = basePos[i % basePos.length], pr = seededRng('place', fid);
+        ex = bx + (pr()*2-1)*4;
+        ez = bz + (pr()*2-1)*4;
       }
       if(typeof buildZoneEnemy === 'function'){
-        const e = buildZoneEnemy(zScene, sol, ex, ez, group.name, pickVariant(group.name, level, 'normal'));
+        const e = keyFoe(buildZoneEnemy(zScene, sol, ex, ez, group.name, pickVariant(group.name, level, 'normal', seededRng('variant', fid))), fid);
         if(group.respawn === false && e) e._noRespawn = true;
         z.enemies.push(e);
       }
