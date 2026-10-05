@@ -353,7 +353,7 @@
   const PROTO={};
   // S192 — the species that grow among each biome's main tree, and how often (the rest is the main tree)
   const TREE_MIX={conifer:[['spruce',.2],['broadleaf',.1],['pine',.1],['birch',.06]],broadleaf:[['oak',.25],['birch',.14],['conifer',.08]],
-    autumn:[['birch',.14],['oak',.12],['conifer',.12]],snowpine:[['spruce',.16],['dead',.08]],willow:[['birch',.25],['dead',.1]]};
+    autumn:[['autumnRed',.2],['autumnGold',.18],['birchAutumn',.14],['oakAutumn',.12],['conifer',.1]],snowpine:[['spruce',.16],['dead',.08]],willow:[['birch',.25],['dead',.1]]};
   // S519 — a limb from the point it grows out of: a tapered cylinder turned by rx then rz (mergeParts' Euler order),
   // placed so its wide end sits at `base` (on the trunk's axis, or on a parent limb). Each call logs its base and tip.
   const LIMB_LOG=[];
@@ -362,6 +362,7 @@
     const c=new THREE.Vector3(...base).addScaledVector(d,h/2);LIMB_LOG.push({base:base.slice(),tip:[c.x+d.x*h/2,c.y+d.y*h/2,c.z+d.z*h/2],r:rBot});
     return {geo:new THREE.CylinderGeometry(rTop,rBot,h,seg),color,x:c.x,y:c.y,z:c.z,rx,rz,jitter:.06};
   }
+  const AUTUMN_KINDS=['autumn','autumnRed','autumnGold','birchAutumn','oakAutumn'];
   function buildProtos(){
     const bark=new THREE.Color(0x4a3220),barkDk=new THREE.Color(0x3a2618);
     // Conifer: tapered trunk + three stacked cones, each slightly offset.
@@ -372,16 +373,17 @@
       {geo:new THREE.ConeGeometry(2.7,5.0,8),color:new THREE.Color(0x357a30),y:10.0,ry:.9,x:.15},
       {geo:new THREE.ConeGeometry(1.9,4.6,8),color:new THREE.Color(0x3e8a38),y:12.6,ry:1.5,z:.1},
     ]);
-    // Broadleaf: trunk + three low-poly blobs.
-    PROTO.broadleaf=mergeParts([
+    // Broadleaf: trunk + three low-poly blobs. S521: the leaves' four colours are a parameter, for the autumn variants
+    const broadleafParts=L=>[
       {geo:new THREE.CylinderGeometry(.38,.7,6.0,7),color:barkDk,y:3.0},
       {geo:new THREE.CylinderGeometry(.12,.22,3.2,5),color:barkDk,y:6.6,x:1.2,rz:-.7,jitter:.05},
       {geo:new THREE.CylinderGeometry(.12,.22,3.0,5),color:barkDk,y:6.4,x:-1.1,z:.4,rz:.75,jitter:.05},
-      {geo:new THREE.IcosahedronGeometry(3.6,1),color:new THREE.Color(0x4f8a34),y:8.6,jitter:.14},
-      {geo:new THREE.IcosahedronGeometry(2.8,1),color:new THREE.Color(0x5a9a3a),y:9.6,x:2.2,z:.8,jitter:.14},
-      {geo:new THREE.IcosahedronGeometry(2.6,1),color:new THREE.Color(0x45803a),y:9.4,x:-2.0,z:-1.0,jitter:.14},
-      {geo:new THREE.IcosahedronGeometry(2.2,1),color:new THREE.Color(0x559040),y:11.4,x:.3,z:.3,jitter:.14},
-    ]);
+      {geo:new THREE.IcosahedronGeometry(3.6,1),color:new THREE.Color(L[0]),y:8.6,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(2.8,1),color:new THREE.Color(L[1]),y:9.6,x:2.2,z:.8,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(2.6,1),color:new THREE.Color(L[2]),y:9.4,x:-2.0,z:-1.0,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(2.2,1),color:new THREE.Color(L[3]),y:11.4,x:.3,z:.3,jitter:.14},
+    ];
+    PROTO.broadleaf=mergeParts(broadleafParts([0x4f8a34,0x5a9a3a,0x45803a,0x559040]));
     // Dead tree: a bare trunk that forks and ends in a broken stub, its limbs rooted on the trunk (S519 — Michael, the
     // inspector: "one is floating unconnected"; the old top limb began above the trunk's cut and the others poked through).
     {const bk=new THREE.Color(0x3a3028),bk2=new THREE.Color(0x342a22),bk3=new THREE.Color(0x2e261e);
@@ -397,7 +399,12 @@
     // Coastal scrub: one squat wind-stunted blob.
     // autumn broadleaf (tinted per instance), snow-capped pine, mushroom, willow
     const c=x=>new THREE.Color(x);
-    PROTO.autumn=PROTO.broadleaf;
+    // S521 — autumn's trees in autumn's colours (Michael, the inspector: "Leaves of this tree are still green ... variants of the
+    // current trees with red, yellow, orange and mixed leaves"). The autumn tree was the broadleaf itself, and the instance tint,
+    // a multiplier near white, only browned its green. Each is now the broadleaf, oak or birch with the leaves coloured.
+    PROTO.autumn=mergeParts(broadleafParts([0xb8421e,0xd8862a,0xd6aa30,0x9a3a1c]));       // mixed: red, orange, gold
+    PROTO.autumnRed=mergeParts(broadleafParts([0xa8321c,0xbe4422,0x922a18,0xc85a26]));
+    PROTO.autumnGold=mergeParts(broadleafParts([0xd8a42a,0xe6bc3a,0xc89026,0xeccb52]));
     PROTO.snowpine=mergeParts([
       {geo:new THREE.CylinderGeometry(.22,.4,6.5,7),color:c(0x4a3018),y:3.25},
       {geo:new THREE.ConeGeometry(3.4,4.2,8),color:c(0x2a4a2c),y:6.6},{geo:new THREE.ConeGeometry(2.7,3.9,8),color:c(0x2e5030),y:9.0},{geo:new THREE.ConeGeometry(1.8,3.6,8),color:c(0x325434),y:11.2},
@@ -412,23 +419,27 @@
       {geo:new THREE.ConeGeometry(2.2,3.5,9),color:c(0x6a8a44),y:7.6,rx:Math.PI}]);
     // S192 — more species (Michael, playtest s162: variety, not density): birch, oak, spruce, Scots pine
     const birchBark=c(0xdcd8cc),mark=c(0x2a2622);
-    PROTO.birch=mergeParts([
+    const birchParts=L=>[
       {geo:new THREE.CylinderGeometry(.14,.26,7.6,7),color:birchBark,y:3.8,jitter:.05},
       ...[[1.1,.3],[2.0,2.1],[2.9,4.0],[3.8,1.2],[4.9,3.3],[5.9,.6]].map(([y,a])=>({geo:new THREE.CylinderGeometry(.262-.0155*y,.262-.0155*y,.09,7,1,true,a,1.1),color:mark,y,jitter:.02})),
       {geo:new THREE.CylinderGeometry(.05,.09,2.6,4),color:birchBark,y:6.2,x:.7,rz:-.6,jitter:.05},
       {geo:new THREE.CylinderGeometry(.05,.08,2.2,4),color:birchBark,y:5.8,x:-.6,z:.3,rz:.65,jitter:.05},
-      {geo:new THREE.IcosahedronGeometry(1.7,1),color:c(0x7aa84a),y:7.2,x:1.3,sy:1.2,jitter:.16},
-      {geo:new THREE.IcosahedronGeometry(1.5,1),color:c(0x86b050),y:6.6,x:-1.2,z:.4,sy:1.2,jitter:.16},
-      {geo:new THREE.IcosahedronGeometry(1.6,1),color:c(0x72a044),y:8.6,z:-.2,sy:1.3,jitter:.16}]);
-    PROTO.oak=mergeParts([
+      {geo:new THREE.IcosahedronGeometry(1.7,1),color:c(L[0]),y:7.2,x:1.3,sy:1.2,jitter:.16},
+      {geo:new THREE.IcosahedronGeometry(1.5,1),color:c(L[1]),y:6.6,x:-1.2,z:.4,sy:1.2,jitter:.16},
+      {geo:new THREE.IcosahedronGeometry(1.6,1),color:c(L[2]),y:8.6,z:-.2,sy:1.3,jitter:.16}];
+    PROTO.birch=mergeParts(birchParts([0x7aa84a,0x86b050,0x72a044]));
+    PROTO.birchAutumn=mergeParts(birchParts([0xe0b432,0xeec848,0xd29a28]));  // S521 — a birch turns butter-yellow
+    const oakParts=L=>[
       {geo:new THREE.CylinderGeometry(.6,1.0,4.4,8),color:c(0x3a2a1a),y:2.2,jitter:.1},
       {geo:new THREE.CylinderGeometry(.22,.42,3.6,6),color:c(0x3a2a1a),y:4.9,x:1.3,rz:-.85,jitter:.08},
       {geo:new THREE.CylinderGeometry(.2,.4,3.4,6),color:c(0x362618),y:4.8,x:-1.2,z:.5,rz:.8,rx:.2,jitter:.08},
       {geo:new THREE.CylinderGeometry(.18,.34,3.0,6),color:c(0x362618),y:5.2,z:-1.1,rx:-.8,jitter:.08},
-      {geo:new THREE.IcosahedronGeometry(3.3,1),color:c(0x3f6f2a),y:7.0,x:2.4,z:.4,sy:.78,jitter:.14},
-      {geo:new THREE.IcosahedronGeometry(3.1,1),color:c(0x467a30),y:6.9,x:-2.3,z:.9,sy:.78,jitter:.14},
-      {geo:new THREE.IcosahedronGeometry(3.0,1),color:c(0x3a6a28),y:7.1,z:-2.2,sy:.78,jitter:.14},
-      {geo:new THREE.IcosahedronGeometry(3.4,1),color:c(0x4a7e34),y:8.4,x:.2,z:.2,sy:.72,jitter:.14}]);
+      {geo:new THREE.IcosahedronGeometry(3.3,1),color:c(L[0]),y:7.0,x:2.4,z:.4,sy:.78,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(3.1,1),color:c(L[1]),y:6.9,x:-2.3,z:.9,sy:.78,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(3.0,1),color:c(L[2]),y:7.1,z:-2.2,sy:.78,jitter:.14},
+      {geo:new THREE.IcosahedronGeometry(3.4,1),color:c(L[3]),y:8.4,x:.2,z:.2,sy:.72,jitter:.14}];
+    PROTO.oak=mergeParts(oakParts([0x3f6f2a,0x467a30,0x3a6a28,0x4a7e34]));
+    PROTO.oakAutumn=mergeParts(oakParts([0xa8561e,0x8e4418,0xb86a26,0x7a3a16]));  // S521 — an oak goes russet and copper
     PROTO.spruce=mergeParts([
       {geo:new THREE.CylinderGeometry(.2,.42,8,6),color:c(0x3a2818),y:4},
       {geo:new THREE.ConeGeometry(2.6,3.4,8),color:c(0x1f4430),y:4.4,ry:.2},{geo:new THREE.ConeGeometry(2.2,3.2,8),color:c(0x234a32),y:6.4,ry:.7},
@@ -579,14 +590,14 @@
         if(sp==='oak'){hue=t.au?.05+t.t*.07:.25+(t.t-.5)*.08;sat=t.au?.7:.3+t.t*.2;lig=.44+(t.t-.5)*.12;}
         if(sp==='spruce'){hue=.37+(t.t-.5)*.05;sat=.3;lig=.42+(t.t-.5)*.1;}
         if(sp==='pine'){hue=.28+(t.t-.5)*.06;sat=.35;lig=.47+(t.t-.5)*.1;}
-        if(sp==='autumn'){hue=.02+t.t*.10;sat=.75;lig=.5+(t.t-.5)*.1;}   // reds through oranges to gold
+        if(AUTUMN_KINDS.includes(sp)){const k=.9+(t.t-.5)*.22;c.setRGB(k,k*(.97+t.t*.06),k*.94);return;} // S521 — the colour is in the leaves; the tint only lights it
         if(sp==='mushroom'){hue=.02+t.t*.08;sat=.35;lig=.55;}
         if(sp==='willow'){hue=.22+t.t*.05;sat=.3;lig=.42;}
         c.setHSL(hue,sat,lig);
         // Vertex colour already carries the base; the tint is a multiplier
         // around white, so normalise toward 1.
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
-      },true,sp==='scrub'?0:({oak:.85,birch:.35,spruce:.45,pine:.45}[sp]||.5));
+      },true,sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5));
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
     place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);},false,0);
@@ -706,7 +717,8 @@
       // Forested regions read as canopy from afar — darken/green the far
       // mesh by tree density so the treeline pop-in is less abrupt.
       const dens=regionScalar(x,z,'density');
-      if(h>1.6&&h<30){_tmpC2.setRGB(.22,.36,.18);c.lerp(_tmpC2,Math.min(.75,dens*.9));}
+      // S521 — the autumn wood's canopy russet from afar, as its trees are near
+      if(h>1.6&&h<30){if(dominantRegion(x,z).r.biome==='autumn')_tmpC2.setRGB(.5,.26,.1);else _tmpC2.setRGB(.22,.36,.18);c.lerp(_tmpC2,Math.min(.75,dens*.9));}
       c.multiplyScalar(.72); // match the near tiles, whose detail texture averages ~0.72
       colArr[i*3]=c.r;colArr[i*3+1]=c.g;colArr[i*3+2]=c.b;
     }

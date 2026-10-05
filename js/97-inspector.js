@@ -73,7 +73,7 @@ function inspRegistry(){
   // 5. Plants, trees and rocks — every herb whole and picked, the tree and scrub prototypes, the rocks of each biome
   for(const key of Object.keys(HERB_DEF))add('Plants, trees, rocks','Herbs',HERB_DEF[key].name||key,'30-plants.js',()=>{
     const g=plantGeo(key,false),p=plantGeo(key,true);return {obj:new THREE.Mesh(g,PLANT_MAT),lo:p&&new THREE.Mesh(p,PLANT_MAT),loLabel:'picked'};});
-  const TREES=['oak','birch','broadleaf','conifer','pine','spruce','snowpine','willow','autumn','dead','bush','scrub','mushroom','ember'];
+  const TREES=['oak','birch','broadleaf','conifer','pine','spruce','snowpine','willow','autumn','autumnRed','autumnGold','oakAutumn','birchAutumn','dead','bush','scrub','mushroom','ember'];
   for(const k of TREES)add('Plants, trees, rocks','Trees and scrub',k,'80-world-terrain.js',()=>{if(!PROTO.oak)buildProtos();const g=PROTO[k];if(!g)throw new Error('no prototype '+k);return {obj:inspMesh(g)};});
   for(const dress of Object.keys(ROCK_DRESS))for(const kind of ['boulder','outcrop','cluster'])add('Plants, trees, rocks','Rocks: '+dress,kind,'80-world-terrain.js',()=>{
     const key=rockProto(dress,kind);return {obj:inspMesh(PROTO[key])};});
