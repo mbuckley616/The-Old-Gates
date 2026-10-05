@@ -11805,3 +11805,15 @@ CI on this branch then failed `shoperrands` (shard 6): at noon Cathal took Niamh
 ### Needs eyes
 - Michael: DECISION #144. The pictures are on a plain stage (a plastered corner and a plank floor), not in a generated room's shell and light.
 - No seated pose exists, so the customer is not shown in the chair; a built barber would need one, or the customer stands.
+
+## v80 — Session 506 — `beastfall` red on CI: a dead wolf left standing (CI fix)
+PR #145 carried only Session 505's prototype, and CI still failed two shards on it. Shard 6 was `shoperrands`, the bystander race, fixed under Session 505 by porting the systems builder's Session 501. Shard 2 was `beastfall`: *the wolves are no longer standing*, with one of the eight unseeded wolf deaths ending with its back up .97 against the .71 limit. That one is mine, and it is a fault in the game, not only the test: a dead wolf left standing on its legs.
+
+Measured headless over 600 seeded wolf deaths (plain, power and arrow kills, as the test kills them), 9 came to rest upright, back up .97–1.0. That is 1.5% a death, so a run of eight fails about one time in nine. A trace of the cases shows the body never tips at all. The start gives the hips, spine and neck their sideways roll and the lower legs a kick the other way. In these falls the legs fold straight under, and while the fall's first .8 s holds each leg close to its own plane, they make a stand the trunk settles onto. A single extra shove at .35 s did not tip it (2 in 300 still stood), and a steady sideways push only slid the body along on its legs. What works is a twist. From .35 s to 1.2 s, while the back is still more than .8 upright, the back (hips, spine, neck) is pushed each step towards the side the body was to roll, and the keel (chest and belly) the other way, at 1.2 × the body's scale a second per step (`creatureRagdollStep`, `R.lat`/`R.roll` kept from the start). A fall that tips on its own never reaches the condition, and its result is unchanged.
+
+### Verified (headless Chromium)
+Before, 9 of 600 seeded deaths ended upright. After, 0 of 600, and 0 of another 300 on a different seed family. The settle median is 1.22 s in both, and two falls in the 600 reach the four-second cap both before and after (unchanged, not this fix). `beastfall` passes: the nine backs are .35–.37, the 60 seeded deaths settle at a median 1.23 s, slowest 1.62 s, none over 2.5 s, at 1.09 ms a step. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- A wolf that dropped straight onto folded legs now rolls over a beat later than one knocked sideways (the twist starts at .35 s). Whether that reads as a second, separate movement at real speed.
+- The two four-second cap-outs in 600 deaths predate this session; `beastfall`'s sixty seeded deaths do not include either.
