@@ -11790,3 +11790,17 @@ Michael's three asks after the second pass, and a fault he found: every furnitur
 ### Needs eyes
 - Michael: the note loop end to end, which I cannot drive from here (the control room needs a signed-in claude.ai): a note on a piece should appear under it at once and on the Ideas tab, and the producer should file it within the hour.
 - The producer files mesh notes as ideas; if they should go straight to the look builder's section H, that is one line in the producer's prompt.
+
+## v80 — Session 505 — A barber and dyer for the towns: prototype and a question (backlog H)
+Every numbered item in section H is done or waiting on Michael, and the register findings in `docs/quest_review.md` that touch the builders' files are applied on main (Finding 13's `genName` and `dungeonName` among them). One item was left: *the look, later*, a barber or tailor in towns to change the hair and the dyes after the creator. Today the creator's look rows (style, beard, the tunic's, breeches' and boots' colours) are fixed once you begin. A trade that reopens them is a new person, a room, a sign and a fee, so it is a question before it is a build.
+
+The prototype (`docs/prototypes/barber/proto.mjs`) boots the game and builds the pieces with the furniture kit and the people builder, at the kit's own scale (a man stands 1.28): a barber's chair, high-backed, padded in red with a headrest on a stem and a footrest bar (632 triangles); a three-legged washstand with a brass basin, a ewer and a towel (984); a polished-steel mirror in a carved oval frame (624); the kit's table as the bench with razors, shears, folded towels, a jar of leeches and a strop on a peg (1,616). The sign is three brass basins hung from an iron arm, the barber-surgeon's sign before the striped pole (1,320). Beside it is a dyer's corner: a vat over a ring of bricks with a paddle, hanks of dyed wool on a pole, and folded bolts on a table (3,072). The last picture is one Gatelands man three ways through `personGenome`: as he walks in (shaggy, long beard), cut and shaved (cropped, a vandyke), and with his coat dyed blue under gilt trim. Nothing is wired to the game.
+
+DECISION #144 asks Michael to choose between A (two trades, a barber and a dyer), B (one barber and dyer, one room, one fee; recommended), C (a mirror at a rented room or your own house, free) and D (later). The fee and any lines are the systems builder's and the quest writer's once he chooses. No game code changed, so the build tag stays.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/barber-room.png`, `barber-room2.png`, `barber-sign-dyer.png` and `barber-three-ways.png`; the triangle counts above are the bakes' own (`userData.tris`).
+
+### Needs eyes
+- Michael: DECISION #144. The pictures are on a plain stage (a plastered corner and a plank floor), not in a generated room's shell and light.
+- No seated pose exists, so the customer is not shown in the chair; a built barber would need one, or the customer stands.
