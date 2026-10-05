@@ -303,6 +303,9 @@ function ARMOUR_DRESS(X){
       if(gl&&S==='inlaid'){const ha=part(SK.torus(.13*hs,.007,4,28),gl,hd,0,.2,-.16);ha.rotation.x=-.2;ring(R*1.02,.004,.19,gl,hd,1.08).scale.x=jaw*1.02;}
       if(gl&&(S==='faceted'||S==='fluted'))ring(R*1.03,.004,.2,gl,hd,1.08).scale.x=jaw*1.02;}}
 }
+// S525 — the drape of what hangs from the hips: top, how far below the hip joint it starts to follow the thighs; d, the depth
+// over which it comes to follow them fully; k, how much (1 would be the thigh's own swing).
+const SK_DRAPE={top:.015,d:.1,k:.5};
 function personBake(g,q){SK.q=q;try{return personBakeQ(g,q);}finally{SK.q=1;}}
 function personBakeQ(g,q){
   const bones=[],B={};
@@ -320,10 +323,16 @@ function personBakeQ(g,q){
   // S394 — g.shirt (the player's empty chest slot, Michael's B on #83): an undyed linen shirt, plainer and shorter than a
   // tunic, with no trim at the hem
   const hem=g.dress?[[0,-.37-DL],[.25,-.37-DL],[.255,-.355-DL],[.215,-.2-DL*.6],[.18,-.05],[.16,.02],[0,.045]]:g.shirt?[[0,-.085],[.2,-.085],[.205,-.075],[.19,-.04],[.176,0],[.168,.04],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
-  part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
+  // S527 — a wraith's robe (Michael, the inspector: "No legs or feet: they hover and float"): longer than a dress, flaring, its
+  // hem torn into ragged tongues that hang to different lengths, with nothing under it
+  if(g.wraith){const W=[[0,-.44-DL],[.27,-.44-DL],[.272,-.41-DL],[.225,-.22-DL*.6],[.185,-.05],[.16,.02],[0,.045]];const rg=SK.lathe(W.map(q=>[q[0]*bw,q[1]]),20),rp=rg.attributes.position;
+    for(let i=0;i<rp.count;i++){const y=rp.getY(i);if(y>-.38-DL)continue;const a=Math.atan2(rp.getX(i),rp.getZ(i)),k=Math.min(1,(-.38-DL-y)/.06);
+      rp.setY(i,y-k*(.03+.11*Math.pow(.5+.5*Math.sin(a*6+Math.sin(a*2.3)*1.7),2)));rp.setX(i,rp.getX(i)*(1-.1*k));rp.setZ(i,rp.getZ(i)*(1-.1*k));}
+    rg.computeVertexNormals();part(rg,cloth,hips).scale.z=.8;}
+  else part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
   // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
   // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
-  if(!g.shirt){const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
+  if(!g.shirt&&!g.wraith){const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
   const WL=g.wealth==null?.5:g.wealth,gold=C(0xc8a040); /* S268 — wealth in the bake: a rope belt and patches, or a buckle, a chain and a pendant */const belt=part(SK.torus(.172*bw*(fem?.96:1),WL<.3?.016:.02,5,20),WL<.3?C(0x9a8458):dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;if(WL<.3){if(!g.dress)part(SK.ball(.034,7,5),mixC(cloth,0x3a3024,.45),hips,.085*bw,-.075,.136*bw).scale.set(1.1,.9,.28);part(SK.ball(.016,6,5),C(0x9a8458),hips,.06*bw,.0,.128*bw);}if(WL>.7)part(SK.rbox(.042,.034,.012,.005,2),gold,hips,0,.02,.13*bw);
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);
@@ -353,6 +362,10 @@ function personBakeQ(g,q){
     if(g.extras.includes('spectacles'))part(SK.torus(.024,.004,4,12),C(0x888860),head,ex,.135,ez+.012);
   });
   if(g.freckles){const fr=pRng(g.seed+99);const fc=mixC(skin,0x7a4a2a,.45);for(let i=0;i<12;i++){const x=(fr()<.5?-1:1)*(.02+fr()*.07),y=.09+fr()*.04;part(SK.ball(.0045,5,4),fc,head,x,y,zs(x,y));}}
+  // S529 — a ghoul's face blotched and blemished (Michael, the inspector: "more facial blemishes/discoloration"): patches of
+  // rot-green, bruise-purple, black and jaundiced yellow laid flat on the face, a few raised sores among them, seeded per ghoul
+  if(g.ghoul){const br=pRng(g.seed+131),bc=[mixC(skin,0x34442a,.55),mixC(skin,0x5a3448,.5),mixC(skin,0x1e1e18,.5),mixC(skin,0x9a9248,.4)];
+    for(let i=0;i<14;i++){const x=(br()-.5)*.19,y=.035+br()*.14,r=.013+br()*.02,sore=i%6===0;const b=part(SK.ball(sore?r*.45:r,8,5),bc[i%4],head,x,y,zs(x,y)-(sore?0:r*.1));b.scale.set(1,.7+br()*.5,sore?.6:.1);}}
   // hair: a bumped sphere for texture, a chain of offset lobes with a tie for a plait
   const plait=(pts,r,col,pb)=>{const n=pts.length-1,per=4;let last=null;const PB=pb||head;if(pb)pts=pts.map(p=>[p[0]-pb.position.x,p[1]-pb.position.y,p[2]-pb.position.z]);
     for(let i=0;i<n*per;i++){const u=i/(n*per),seg=Math.floor(u*n),f=u*n-seg,a=pts[seg],b=pts[seg+1];
@@ -416,7 +429,10 @@ function personBakeQ(g,q){
   if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
   if(g.hat==='chaperon'){part(SK.torus(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
   if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(SK.torus(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
-  if(g.hat==='brim'){part(SK.lathe([[0,0],[.24,0],[.245,.02],[.15,.03],[.14,.19],[.12,.21],[0,.22]],20),C(0x3a2808),head,0,.2,-.01).rotation.x=-.1;}
+  // S520 — the brim hat at a hat's size (Michael, the inspector, of the highwayman: "comically large"): a brim of .2 (was .245, twice
+  // the head) curling at its lip, a crown of .12 (was a .19 stovepipe) sized to the hair as the other hats are, a darker band
+  if(g.hat==='brim'){const hc=C(0x3a2808);part(SK.lathe([[0,0],[.19,-.004],[.2,.008],[.192,.014],[.14*hs,.018],[.132*hs,.1],[.118*hs,.118],[0,.122]],20),hc,head,0,.2,-.01).rotation.x=-.1;
+    part(SK.torus(.136*hs,.009,5,20),mixC(hc,0x000000,.45),head,0,.228,-.007).rotation.x=Math.PI/2-.1;}
   if(g.hat==='helm')part(SK.lathe([[0,0],[.19,0],[.195,.01],[.15,.022],[.143,.07],[.125,.12],[.07,.155],[0,.163]],20),g.helmCol!=null?C(g.helmCol):steel,head,0,.155,0);
   if(g.hat==='crown'){part(SK.cyl(.125*hs,.13*hs,.07,12,1,true),C(0xd4a020),head,0,.25,0);for(let ci=0;ci<5;ci++){const a=ci*Math.PI*2/5;part(SK.cone(.02,.07,4),C(0xd4a020),head,Math.sin(a)*.12*hs,.31,Math.cos(a)*.12*hs);}}
   // arms and legs: side 1 is the figure's left (+x), -1 its right
@@ -437,13 +453,14 @@ function personBakeQ(g,q){
       const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
     else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
       part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);}
-    const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
-    const kn=bone('kn'+k,th,0,-PW.L1,0);part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
-    if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
+    // S527 — a wraith has the leg bones (its ragdoll and poses read them) but no legs or feet hung on them
+    const th=bone('th'+k,hips,s*.085*bw,-.02,0);if(!g.wraith)part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
+    const kn=bone('kn'+k,th,0,-PW.L1,0);if(!g.wraith)part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
+    if(g.wraith){}else if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
     const an=bone('an'+k,kn,0,-PW.L2,0);
     // S394 — g.bareFeet: a foot of its own in place of the boot: a narrower, flatter sole-to-instep, the heel and the ball
     // of the toes, all on the same ground line as the boot (its underside at -.06)
-    if(g.bareFeet){part(SK.ball(.046,10,7),skin,an,0,-.024,.035).scale.set(.92,.78,1.8);part(SK.ball(.036,8,6),skin,an,0,-.034,-.01).scale.set(1,.72,1);
+    if(g.wraith){}else if(g.bareFeet){part(SK.ball(.046,10,7),skin,an,0,-.024,.035).scale.set(.92,.78,1.8);part(SK.ball(.036,8,6),skin,an,0,-.034,-.01).scale.set(1,.72,1);
       const toe=part(SK.ball(.032,8,6),skin,an,s*-.004,-.042,.1);toe.scale.set(1.3,.56,.85);}
     else part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
@@ -525,10 +542,21 @@ function personBakeQ(g,q){
   // bake: every part into one geometry, each vertex bound to its bone
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
   hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone
+  // S525 — what hangs from the hips over the legs follows them (Michael, the inspector: "the legs punch right through the fabric
+  // while walking"): a vertex of a part on the hips bone that lies below the hip joints is weighted towards the thigh on its side,
+  // more the further out it lies (none at the middle, where two thighs swinging opposite ways would pinch it), fully from SK_DRAPE.d
+  // below the joint, so a skirt, a dress, an apron or an armour's skirt swings
+  // with the stride instead of standing still while the thigh passes through it. Stone and bone bodies stay rigid.
+  const drape=!g.golem&&!g.skel&&B.thL&&B.thR,thY=drape?new THREE.Vector3().setFromMatrixPosition(B.thL.matrixWorld).y:0,
+    thX=drape?Math.abs(B.thL.matrixWorld.elements[12]-hips.matrixWorld.elements[12])||.085:.085,hx=hips.matrixWorld.elements[12],
+    iH=hips.userData.i,iL=drape?B.thL.userData.i:0,iR=drape?B.thR.userData.i:0;
   for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
     if(q<1){if(!geo.boundingSphere)geo.computeBoundingSphere();if(geo.boundingSphere.radius*o.scale.x<PEOPLE_LOD.tiny){o.parent.remove(o);geo.dispose();continue;}}
     for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(n.x,n.y,n.z);
-      const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);si.push(bi,0,0,0);sw.push(1,0,0,0);}
+      const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);
+      const d=drape&&bi===iH?thY-SK_DRAPE.top-v.y:0;
+      if(d>0){const a=Math.min(1,Math.abs(v.x-hx)/thX),w=SK_DRAPE.k*Math.min(1,d/SK_DRAPE.d)*a*a*(3-2*a);si.push(iH,v.x>hx?iL:iR,0,0);sw.push(1-w,w,0,0);}
+      else{si.push(bi,0,0,0);sw.push(1,0,0,0);}}
     if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
     PR.push([base,pa.count]);base+=pa.count;o.parent.remove(o);geo.dispose();}
   personAO(pos,nor,col,PR);
@@ -644,7 +672,7 @@ const FOE_DRESS={
   'Bandit Captain':{cloth:0x3a2418,hat:'helm',wpn:'sword',kit:{head:3,chest:1,hands:1}}, // S175 — the shield on the left shoulder; tickPeople holds the guard
   'Skeleton':      {skel:true}, // S172 — the bones on the people's own skeleton: it walks, runs and strikes as they do
   'Hollowed':      {dead:true,skin:0x8a8478,cloth:0x46423a,hat:'none',gear:null}, // S173 — the risen dead
-  'Ghoul':         {dead:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
+  'Ghoul':         {dead:true,ghoul:true,skin:0x6a7a5a,cloth:0x34362a,hat:'none',gear:null},
   'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear',kit:{head:3,chest:3,legs:3},rust:0x4a3e34},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
@@ -688,7 +716,7 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.golem){g.golem=true;g.skin=new THREE.Color(dr.skin);g.build=1.5;g.height=1;g.gear=null;g.hat='none';g.female=false;g.rune=dr.rune;}
     if(dr.skel){g.skel=true;g.skin=new THREE.Color(0xd8d0b8);g.gear=(g.seed&1)?'spear':'stick';g.build=1;g.height*=.98;}
     // the risen dead (S173): the living genome gone grey, in rags, stooped (the elder's stoop), the eyes lit
-    if(dr.dead){g.dead=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
+    if(dr.dead){g.dead=true;if(dr.ghoul)g.ghoul=true;g.skin.lerp(new THREE.Color(dr.skin),.75);g.hair.lerp(new THREE.Color(0x5a5a52),.55);g.age='elder';g.ruddy=false;g.freckles=false;
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.75);g.boot=new THREE.Color(0x1e1a16);if(eyeCol!=null)g.eye=new THREE.Color(eyeCol);}
     // S403 — the helmed foes in the armour kit (Michael's B on #94), each as his story dresses him, by tier (MATERIALS):
     // the Deserter his old army's Iron mail and nasal helm; the Bandit Captain looted pieces, Wooden lamellar and vambraces
@@ -706,7 +734,10 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(g.skel&&g.gear==='stick'){g.gear='kit';g.wpn='sword';}}
   const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
   // S226 — the kit's weapon in the fist (the bow in the left hand), a shield on the left forearm; the dead's are rusted
-  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);rig.B.wrL.add(w);}else rig.B.gear.add(w);rig.weapon=w;}
+  // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
+  // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
+  // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
+  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones

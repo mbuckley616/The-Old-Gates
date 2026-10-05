@@ -494,6 +494,73 @@ function furnBuild(THREE, SK) {
     [.62, 1.05].forEach((y, i) => p.put(shelf(W - 2, n, s + 8 + i, 'mixed'), W / 2, 0, 0, y));
     p.put(scales(s + 11), W / 2 + 1.4, 3.0, 0, .69);
     return p; }
+  // ── S512: the barber and dyer (Michael's B on #144), from the Session 505 prototype ──
+  const BRASS = 0xc8a048, LINEN = 0xe4dccb, STEEL = 0xb8c0c4, PLUSH = 0x6a2a1e;
+  const basin = (R, d) => lathe([[.001, -d], [R * .55, -d], [R * .8, -d * .55], [R * .95, -.004], [R * 1.12, 0], [R * 1.12, .006], [R * .93, .002], [R * .78, -d * .5], [R * .5, -d + .006], [.001, -d + .006]], 16);
+  // the barber's chair: a high-backed armchair padded in red, a headrest on an iron stem, a footrest bar (the back at −z)
+  function barberChair(n, seed) { const r = rng(seed || 75), p = Parts(), W = WOOD[n] || WOOD.gatelands, sh = .3, sw = .4, sd = .36;
+    const rb = (w, h, d, q) => SK.rbox(w, h, d, q == null ? Math.min(.012, w / 3, h / 3, d / 3) : q, 1);
+    p(rb(sw, .05, sd, .015), PLUSH, 0, sh, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) p(SK.cyl(.022, .026, sh, 8), jit(W.wood, r), sx * (sw / 2 - .03), sh / 2, sz * (sd / 2 - .03));
+    for (const sx of [-1, 1]) { p(rb(.05, .03, sd + .04), jit(W.dark, r), sx * (sw / 2 - .01), sh + .2, .01); p(SK.cyl(.016, .016, .2, 6), jit(W.wood, r), sx * (sw / 2 - .02), sh + .1, sd / 2 - .04); }
+    p(rb(sw, .5, .04, .015), jit(W.wood, r), 0, sh + .25, -sd / 2 + .02, -.18, 0, 0);
+    p(rb(sw - .08, .36, .03, .012), PLUSH, 0, sh + .26, -sd / 2 + .055, -.18, 0, 0);
+    p(SK.cyl(.012, .012, .2, 6), IRON, 0, sh + .58, -sd / 2 - .03, -.18, 0, 0);
+    p(rb(.2, .08, .05, .02), PLUSH, 0, sh + .68, -sd / 2 - .045, -.18, 0, 0);
+    p(rb(sw - .04, .025, .07), jit(W.dark, r), 0, .08, sd / 2 + .1); for (const sx of [-1, 1]) p(rb(.025, .025, .14), jit(W.dark, r), sx * (sw / 2 - .04), .08, sd / 2 + .04);
+    return p; }
+  // the washstand: three turned legs, two rings, a brass basin, a ewer and a towel
+  function washstand(n, seed) { const r = rng(seed || 77), p = Parts(), W = WOOD[n] || WOOD.gatelands, h = .42;
+    for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; p(SK.cyl(.012, .015, h, 6), jit(W.wood, r), Math.cos(a) * .12, h / 2, Math.sin(a) * .12, Math.sin(a) * .08, 0, -Math.cos(a) * .08); }
+    p(SK.torus(.13, .012, 6, 20), jit(W.dark, r), 0, h, 0, Math.PI / 2, 0, 0); p(SK.torus(.1, .008, 6, 16), jit(W.dark, r), 0, .12, 0, Math.PI / 2, 0, 0);
+    p(basin(.13, .06), BRASS, 0, h + .01, 0);
+    p(lathe([[.001, 0], [.04, 0], [.05, .05], [.035, .1], [.025, .14], [.032, .17], [.001, .17]], 12), 0xb0a080, 0, .13, 0);
+    p(SK.rbox(.02, .12, .1, .006, 1), LINEN, .145, h - .05, 0);
+    return p; }
+  // the mirror: polished steel in a carved oval frame (the wall at z 0, the glass facing +z, its middle at y 0)
+  function barberMirror(n, seed) { const r = rng(seed || 79), p = Parts(), W = WOOD[n] || WOOD.gatelands;
+    p(SK.cyl(.16, .16, .01, 24), STEEL, 0, 0, .02, Math.PI / 2, 0, 0, 1, 1, 1.35);
+    p(SK.torus(.17, .02, 8, 28), jit(W.dark, r), 0, 0, .025, 0, 0, 0, 1, 1.35, 1);
+    p(SK.ball(.025, 8, 6), BRASS, 0, .26, .03); return p; }
+  // the barber-surgeon's bench (the wall at −z): razors, shears, folded towels, a jar of leeches, a strop on a peg
+  function barberBench(n, seed) { const r = rng(seed || 81), p = Parts(), W = WOOD[n] || WOOD.gatelands; p.put(table(.9, .4, n, seed), 0, 0, 0);
+    p(SK.rbox(.07, .015, .02, .005, 1), STEEL, -.25, .475, .05); p(SK.rbox(.08, .012, .025, .005, 1), 0x3a2a1a, -.17, .475, .04, 0, .4, 0);
+    for (const sx of [-1, 1]) p(SK.rbox(.1, .008, .012, .003, 1), STEEL, sx * .01, .472, -.05, 0, sx * .25, 0);
+    for (let k = 0; k < 3; k++) p(SK.rbox(.14, .025, .1, .01, 1), k % 2 ? LINEN : 0xd8d0b8, .25, .47 + k * .026, .02);
+    p(lathe([[.001, 0], [.04, 0], [.045, .08], [.035, .1], [.04, .11], [.001, .11]], 12), 0x8aa0a0, .38, .465, -.08);
+    p(SK.rbox(.05, .4, .006, .002, 1), 0x5a3a20, -.4, .8, -.2); p(SK.cyl(.01, .01, .05, 6), W.dark, -.4, 1.0, -.2, Math.PI / 2, 0, 0);
+    return p; }
+  // the sign: three brass basins hung from an iron arm (the trade's sign before the striped pole); the wall at x 0, the arm out along +x
+  function basinSign(seed) { const p = Parts(), L = .8;
+    p(SK.rbox(L, .03, .03, .008, 1), IRON, L / 2, 0, 0); p(SK.rbox(.03, .3, .03, .008, 1), IRON, 0, -.1, 0);
+    { const a = Math.atan2(.25, L * .7), len = Math.hypot(.25, L * .7); p(SK.rbox(len, .02, .02, .006, 1), IRON, L * .35, -.125, 0, 0, 0, a); }
+    p(SK.torus(.05, .008, 6, 14, Math.PI * 1.5), IRON, L + .03, .03, 0);
+    [.22, .44, .66].forEach((x, i) => { const y = -.12 - (i % 2) * .05; p(SK.rbox(.006, -y - .02, .006, .002, 1), 0x4a4440, x, y / 2, 0); p(basin(.11, .04), BRASS, x, y - .01, 0, Math.PI / 2 - .12, 0, 0); });
+    return p; }
+  // the dyer's corner: a vat on a ring of bricks with its paddle, hanks of dyed wool on a pole, folded bolts on a table
+  function dyerCorner(n, seed) { const r = rng(seed || 83), p = Parts(), W = WOOD[n] || WOOD.gatelands, D = [0x7a2a1e, 0x3a4a6a, 0xb08a3a, 0x3a5a3a, 0x5a2a4a];
+    for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; p(SK.rbox(.12, .12, .06, .01, 1), jit(0x8a4a30, r, .1), Math.cos(a) * .26, .06, Math.sin(a) * .26, 0, -a, 0); }
+    p(lathe([[.001, .12], [.2, .12], [.26, .2], [.27, .42], [.29, .44], [.26, .44], [.25, .22], [.001, .22]], 18), 0x4a4440, 0, 0, 0);
+    p(SK.cyl(.25, .25, .01, 18), 0x3a4a7a, 0, .41, 0); p(SK.rbox(.025, .6, .04, .008, 1), jit(W.pale, r), .12, .55, .02, 0, 0, -.5);
+    p(SK.cyl(.012, .012, 1.3, 6), jit(W.dark, r), .75, .78, 0, 0, 0, Math.PI / 2); for (const x of [.15, 1.35]) p(SK.cyl(.015, .02, .78, 6), jit(W.wood, r), x, .39, 0);
+    D.forEach((c, i) => { const x = .3 + i * .22; p(SK.cyl(.035, .03, .3, 8, 3), c, x, .62, 0); p(SK.torus(.03, .01, 5, 10), c, x, .78, 0); });
+    p.put(table(1.1, .45, n, (seed || 83) + 1), 1.95, -.2, 0);
+    D.forEach((c, i) => p(SK.rbox(.18, .07, .26, .02, 1), c, 1.6 + (i % 3) * .24, .5 + (i > 2 ? .07 : 0), -.2 + (i > 2 ? .02 : 0)));
+    return p; }
+  // the room (the back wall at z 0, the door at z D): the chair facing the mirror on the back wall, the washstand at its
+  // right hand, a stool and a bench by the west wall for those waiting, the barber-surgeon's bench, a shelf of jars beside the
+  // mirror, the dyer's corner along the back wall to the east
+  function barber(W, D, H, n, seed) { const p = Parts(), s = seed || 1, cx = W * .36;
+    p.put(rug(.95, .75, n, s + 1), cx, 1.45, 0);
+    p.put(barberChair(n, s + 2), cx, 1.35, Math.PI);
+    p.put(barberMirror(n, s + 3), cx, 0, 0, .95);
+    p.put(washstand(n, s + 4), cx + .75, .7, 0);
+    p.put(stool(n, s + 5), cx - .9, 2.4, 0);
+    p.put(barberBench(n, s + 6), .3, 2.6, Math.PI / 2);
+    p.put(dyerCorner(n, s + 7), W - 3.0, 1.0, 0);
+    p.put(shelf(1.4, n, s + 8, 'potions'), cx - 1.45, 0, 0, 1.05);
+    p.put(bench(1.6, n, s + 9), .35, D * .6, Math.PI / 2);
+    return p; }
   // ── S291: the church and the keep's hall (Michael's A on #46: "the church, keep and guild halls in the same kit") ──
   // S303: the church's columns at W/2 ± 4.1 from z 5.5, between the pews' ends (W/2 ± 3.5) and the walls, clear of the dais
   // a pew facing −z: a seat plank, a panelled back with a top rail on the +z side, shaped bench ends and a kneeler
@@ -767,10 +834,10 @@ function furnBuild(THREE, SK) {
     return p; }
   // the frame a room takes: C for the tall windows of churches and keep halls, A for the trades, inns, guilds and chapels,
   // B for homes, cabins and the poorer rooms
-  const WIN_LEAD = { inn: 1, weapon: 1, armor: 1, potion: 1, misc: 1, shipwright: 1, guild_f: 1, guild_m: 1, chapel: 1, church: 1, castle: 1 };
+  const WIN_LEAD = { inn: 1, barber: 1, weapon: 1, armor: 1, potion: 1, misc: 1, shipwright: 1, guild_f: 1, guild_m: 1, chapel: 1, church: 1, castle: 1 };
   function winKind(type, tall) { return tall && (type === 'church' || type === 'castle') ? 'C' : WIN_LEAD[type] ? 'A' : 'B'; }
   function windowFrame(kind, w, h, n, seed) { return kind === 'C' ? winArch(w, h, seed) : kind === 'A' ? winLead(w, h, n, seed) : winShutter(w, h, n, seed); }
-  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
+  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
 }
 
 let _FURN = null;
