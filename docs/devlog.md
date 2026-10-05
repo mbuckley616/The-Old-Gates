@@ -12227,3 +12227,29 @@ The inspector now has a *Dungeons* section under *Buildings*, with one floor of 
 ### Needs eyes
 - The dungeon floors show the shell only. A floor's props, doors, chests and furniture are built by `buildDungeon` straight into the dungeon's scene, and are already in the inspector as pieces under *Props and furniture*.
 - **Still open.** "A few others": the lair, the glade and the bandit camp. Their builders (`87-world-quests.js`, the systems builder's file) build the place, its creatures, its chest, its lights and its ground stamps in one go. Showing them in the inspector needs a geometry-only builder split out first, as the tower and the shrine have (`towerGeoHi`, `shrineGeoHi`). That is a change to a shared file for a later session, agreed with the systems builder.
+
+## v80 — Session 546 — The dragon at twice the size it was (backlog H, Michael's B on #153)
+Michael's inspector note on the dragon said it was far too small beside the bandit. Session 524 found that every dragon in play is built at 2.88, and asked how large it should be. Michael answered B: 4.5.
+
+`WOLF_KINDS.Dragon.world` is now 4.5, and the two places that build a dragon read it instead of their own constants. The open world's dragon (`buildZoneEnemy`, which built it at the zone scale × 1.6) is built at 4.5: 3.68 tall and 8.8 long, wings 6.5 across. Its health bar moved up with it, to 4.36. The inspector shows the same size, because it reads the same number.
+
+A lair's wyrm (`lairFinish` → `dragonBody`) could not simply take 4.5. A cavern's ceiling is `FLOOR_HEIGHT`, 3.2 over its floor, and a 4.5 dragon's crest stands at 3.68: its head would be through the rock. `dragonBody` now builds the wyrm at the kind's size, measures it, and when it stands taller than the ceiling less .15 it builds it again at the largest that clears. In the test's cavern that is 3.73, 3.05 tall. That is still a third larger than the 2.88 it was, but it is not Michael's 4.5, and I have not raised the cavern's roof for it. That is in Needs eyes.
+
+A correction to Session 524's question: it compared the dragon with "a man of 1.7". That is the player's height in the world's units. A bandit as the world builds him (the people kit, at the bandit's zone scale) stands 1.24. So the 4.5 dragon stands about three bandits tall, not two. The pictures Michael chose from showed the bandit beside each size, so the size he saw is the size built.
+
+Reach, the width a blow must find, and the breath's range are the systems builder's numbers. None of them reads the dragon's scale, so none changed. A dragon half as big again with the same reach may strike from inside its own body's length.
+
+### Verified (headless Chromium)
+`tests/dragonsize.test.mjs`, extended, 7/7:
+- **The kind.** The inspector builds the dragon at 4.5, and `WOLF_KINDS.Dragon.world` is 4.5.
+- **The open world.** A dragon built by `buildZoneEnemy` stands 3.68, against a world-built bandit's 1.24 (2.97×). The inspector's dragon is the same height.
+- **The bar.** Its health bar is at 4.36, above its body.
+- **A lair.** A dragon lair's cavern (theme deep, seed 4021) gives its master the dragon's body, one rig, at 3.73, standing 3.05 under the 3.2 ceiling.
+- **Errors.** No page errors.
+
+`inspector`, `wolves`, `wyrm` and `masterslam` pass. Picture: `docs/prototypes/dragon-4.5-inspector.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The open world's dragon among trees and over a road, and whether three bandits tall reads as Michael meant "twice a man".
+- **The lair's wyrm is 3.73, not 4.5.** Raising the master's room ceiling (or the cavern's) to about 4 would let it stand at 4.5. That is the dungeon shell's height for one room, and a question for Michael through the producer.
+- **For the systems builder:** reach and hit width at the new size (`42-zone-enemies.js`), and the breath's 11-unit range (`dragonBreath`).

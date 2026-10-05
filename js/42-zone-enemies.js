@@ -764,7 +764,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   const limbs={}; // v80 S130 — the world's creatures register their pivots
   let wolfRig=null,personRig=null;
   if(type==='Dragon'&&WOLF_KINDS.Dragon){ // v80 S177 — the dragon on the shape kit: the wolf's bones and gait, its own neck, tail and wings
-    wolfRig=buildWolf(type,sc2*1.6);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
+    wolfRig=buildWolf(type,sc2/1.8*WOLF_KINDS.Dragon.world);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
   else if((d.shape==='wolf'||type==='Cave Bear')&&WOLF_KINDS[type]){ // v80 S166 (S223: and the Cave Bear, still a brute) — the wolf family on the shape kit: one skinned mesh, planted paws
@@ -861,7 +861,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*sc2;} // the bar over a person's head
-  if(wolfRig&&wolfRig.k.dragon){hpBg.position.y=hpFg.position.y=1.55*sc2;}
+  if(wolfRig&&wolfRig.k.dragon){hpBg.position.y=hpFg.position.y=1.55*sc2*WOLF_KINDS.Dragon.world/2.88;} /* S546 — over its head at any size */
   // v80 S130 — captains hold a frontal guard (the Shieldbearer's mechanic: a power attack or a bash breaks it); the world's dragon breathes
   if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,limbs.person?1:sc2,'round');zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=limbs.person?-.5:.5;reraiseGuard(zoneE);}catch(err){}} // a person's left arm is on its +x side: across the body is -z
   if(type==='Dragon'){zoneE.dragon=true;zoneE._dragonBuilt=true;}

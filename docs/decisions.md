@@ -67,6 +67,7 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 The inspector at the world's size: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-inspector-after.png
 
 Michael: **4.5: about twice a man's height**. (2026-10-05)
+Done, Session 546 (the look builder): the open world's dragon at 4.5 (3.68 tall); a lair's wyrm at the largest that clears the cavern's 3.2 ceiling (3.73). The "man of 1.7" above was the player's height in world units; a world-built bandit is 1.24, so the dragon stands about three bandits tall, as the pictures showed.
 
 ### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05) — DECISION #151
 Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).

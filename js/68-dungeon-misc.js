@@ -432,7 +432,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const dragon=!!L.dragon;e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${L.boss}`;e.boss=true;e.dragon=dragon;
   e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
-  if(dragon)dragonBody(e,2.88); // S219 — the world's dragon's size (its zone scale 1.8 × 1.6)
+  if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88); // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
   // the hoard beside it
   const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(e.x+1.2,(e.floor===2?FLOOR2_Y:0),e.z+.6);dScene.add(group);
@@ -450,7 +450,11 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
 // health bar planes and the lights stay. rs is the dragon's scale in the world's own units, whatever the group's scale.
 function dragonBody(e,rs){if(!e||!e.mesh||!WOLF_KINDS.Dragon)return;const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{};
   g.children.slice().forEach(c=>{if(c===L.hpBg||c===e.hpFg||c===e.hpBg||c.isLight)return;g.remove(c);});
-  const w=buildWolf('Dragon',rs/(g.scale.x||1));g.add(w.root);w.e=e;
+  let w=buildWolf('Dragon',rs/(g.scale.x||1));g.add(w.root);
+  // S546 — a cavern's ceiling is FLOOR_HEIGHT over its floor: a wyrm taller than that is built again at the largest that clears it
+  {g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(w.root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;
+  if(h>room){g.remove(w.root);w=buildWolf('Dragon',rs*room/h/(g.scale.x||1));g.add(w.root);}}
+  w.e=e;e._wyrmScale=w.root.scale.x*(g.scale.x||1);
   e.limbs={torso:w.mesh,wolf:w,hpBg:L.hpBg};e._dragonBuilt=true;e._detailed=true;return w;}
 // dragon: wings, a long neck and head, a tail, horns — grown on the creature's base mesh
 function detailDragon(e){if(!e.mesh||!e.mesh.isGroup||e._dragonBuilt)return;if(e.limbs&&e.limbs.wolf){e._dragonBuilt=true;return;}e._dragonBuilt=true;const g=e.mesh;const s=1/(g.scale.x||1); // parts are in local units; the group is scaled
