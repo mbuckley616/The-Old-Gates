@@ -12164,3 +12164,21 @@ Correction: Session 530 was first committed as 527. The look builder's 527–529
 
 ### Needs eyes
 Nothing to see; the look builder's sheet will carry these lines.
+
+## v80 — Session 532 — The rest slip: one slip for a bed and for waiting (DECISION #142, Michael's A)
+Michael's A on #142 gave this builder the slip and the waiting rule, and the look builder the level sheet. Before this, a bed opened a cream slip with a bare 1–24 hour slider and the date. The ⏳ button opened a separate dark panel of five buttons, and you could wait only to dawn, morning, noon, dusk or night. Now both open one slip, built from the concept artist's prototype (`docs/prototypes/rest/` on auto/concept) with the game's own numbers (`openRestSlip`, `60-shop.js`). The slip has:
+- The title (*Sleep* or *Wait*), with the date and the place (`ssPlaceName`).
+- The day drawn as a band from noon to noon, night washed in ink, with a sun and a moon. NOW is marked on it, and an arc in rubric runs to the hour you wake or rise. The arc is labelled with its length.
+- A slider of 1 to 24 hours with − and + beside it. Today's five times are marks (*Dawn 6 am* … *Night 8 pm*), keys 1–5.
+- What the rest gives before you take it. Sleeping: *You wake at 5:40 am, Day 5*, *a full night* or *a short sleep*; health and mana before and after by restAtBed's rule, now one function (`restPreview`) that both the slip and the bed use; stamina full; and *you wake at level N* if you are ready. Waiting: *Waiting restores nothing; a bed does.*, and if you are ready, *only sleep takes the level*.
+- A red seal that does it. Esc leaves you as you were, ← → move an hour, 1–5 set a mark, and Enter or E does it.
+
+The waiting rule is the one rule change: you can wait any number of hours, through `passTimeMinutes` (`50-travel.js`). `passTimeToHour` is kept as a way in to it, and waiting still stops for nearby foes and in dungeons, as before. A mark sets the slider to that hour **exactly** (Dawn from 9:40 pm is 8 hours 20 minutes, ending at 6:00). The prototype rounded to whole hours (5:40). Rounding would have broken today's *wait until morning* for a shop that opens at eight, so a mark keeps the old buttons' exact hour, and the slider and ← → go back to whole hours. Sleep takes a mark's minutes too, and the log and wake message say *8 hours 20 minutes* when it is not whole.
+
+Changed from the prototype: the prototype says *Magicka*, and the game calls it Mana everywhere, so the slip says Mana. The fonts are Georgia, as the slip had before, because the game loads no web fonts and a downloaded copy must run as it is. The parchment texture and torn edge wait for the UI overhaul (backlog E), so the slip keeps the cream paper and double border it had. The old wait panel's markup is gone from `index.html` (its CSS stays, unused). The slip counts as a menu for the pointer lock (`_isMenuOpen`). `tests/dateline` read the old panel's subtitle and now reads the slip's date.
+
+### Verified (headless Chromium)
+`restslip` 10/10 (new). At 9:40 pm on Day 4, half hurt and ready to level, a bed opens *Sleep*, dated *Day 4 · 9:40 pm*, at 8 hours. The band reads *NOW · 9:40 pm* and *YOU WAKE · 5:40 am* under *8 HOURS*. The slip says *You wake at 5:40 am, Day 5.*, *a full night*, *Health 65 130 of 130*, *Mana 40 100 of 100* and *level 2*. Five ← make it 3 hours: *12:40 am*, *a short sleep*, health 98 and mana 70, as `restPreview(3)` gives. Key 1 sets *8 hours 20 minutes* to *6:00 am*. Key 3 then sleeps to noon: the clock moved 860 minutes, health was full and the level was taken (1 → 2). The ⏳ opens the same slip as *Wait*, set to dawn (18 hours), with both waiting lines. The slider at 5 reads *You rise at 5:00 pm, Day 5.*, and Enter waits 300 minutes with health and level unchanged. Esc closes the slip and the clock does not move. Screenshots of both slips were checked by eye against the prototype's. dateline, fortcot, autosave, fortify, bedrollprompt and innrooms pass. `parsecheck` clean.
+
+### Needs eyes
+The slip at the real screen size and in real play: whether the band reads at a glance, and whether a mark's exact hour (*8 hours 20 minutes*) is clearer than the prototype's whole hours.

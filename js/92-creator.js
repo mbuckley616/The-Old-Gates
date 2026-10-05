@@ -112,7 +112,7 @@ function _enterGame(){
     // DOM-flagged modals — checked via display style. Catches sigil overlay,
     // book reader, wait menu, save/load menu, character creator, title overlay.
     // Each id is gated on existence because the DOM is built lazily.
-    const ids=['sigil-overlay','book-overlay','wait-modal','slmenu','cc-modal','ov','quest-popup','lockpick'];
+    const ids=['sigil-overlay','book-overlay','sleepui','slmenu','cc-modal','ov','quest-popup','lockpick'];
     for(const id of ids){
       const el=document.getElementById(id);
       if(el && el.style.display && el.style.display!=='none') return true;

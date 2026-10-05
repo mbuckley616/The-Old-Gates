@@ -273,45 +273,108 @@ function calDay(at){
 // waits for the writer's names)
 function calDateLine(at){const c=calDay(at);const d=c.dom,sfx=(d%10===1&&d!==11)?'st':(d%10===2&&d!==12)?'nd':(d%10===3&&d!==13)?'rd':'th';return `${c.day.name}, the ${d}${sfx} of ${CAL.monthNames[c.month]}`;}
 function isGodsDay(god,at){return !!god&&calDay(at).god===god;}
-function openSleepUI(){
+// S532 — the rest slip (Michael's A on #142): one slip for a bed and for waiting. The day is drawn as a band from noon to
+// noon, NOW and the hour you wake marked on it; a slider of 1–24 hours and today's five times as marks (keys 1–5) that set
+// it to that hour exactly; what the rest gives, by restAtBed's rule, before you take it. Waiting goes by any number of
+// hours (it went only to the five times); it restores nothing, and only sleep takes the level.
+const REST_MARKS=[[6,'Dawn'],[8,'Morning'],[12,'Noon'],[18,'Dusk'],[20,'Night']];
+let restSlip={mode:'sleep',min:480};
+function restPreview(hours){const k=Math.min(1,hours/6),mh=effMaxHP(),mm=effMaxMana();
+  return {hp:Math.min(mh,PHP+Math.ceil((mh-PHP)*k)+(k>=1?mh:0)),mp:Math.min(mm,mana+Math.ceil((mm-mana)*k)+(k>=1?mm:0)),mh,mm};}
+function restClock(h){h=((h%24)+24)%24;const hh=Math.floor(h),mm=Math.round((h-hh)*60)%60;return `${((hh+11)%12)+1}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;}
+function restDur(min){min=Math.round(min);const h=Math.floor(min/60),m=Math.round(min%60);return (h?`${h} hour${h===1?'':'s'}`:'')+(h&&m?' ':'')+(m?`${m} minute${m===1?'':'s'}`:'');}
+function restMarkMin(h){const now=(worldState.gameTimeMinutes||0);let d=h*60-now;if(d<=0)d+=1440;return Math.round(d);}
+function restDial(min,mode){
+  const W=548,H=92,x0=14,x1=W-14,top=26,bot=58,X=h=>x0+((((h-12)%24)+24)%24)/24*(x1-x0);const ink='#3a2c18',rub='#7a1f10',faint='#8a7050';
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"><defs><linearGradient id="rs-nt" x1="0" x2="1"><stop offset="0" stop-color="#2e1c0c" stop-opacity=".05"/><stop offset=".17" stop-color="#2e1c0c" stop-opacity=".34"/><stop offset=".5" stop-color="#2e1c0c" stop-opacity=".42"/><stop offset=".83" stop-color="#2e1c0c" stop-opacity=".34"/><stop offset="1" stop-color="#2e1c0c" stop-opacity=".05"/></linearGradient></defs>`+
+    `<rect x="${x0}" y="${top}" width="${x1-x0}" height="${bot-top}" fill="rgba(255,248,225,.25)" stroke="#5a4128" stroke-width="1.1"/><rect x="${X(18)}" y="${top}" width="${X(6)-X(18)}" height="${bot-top}" fill="url(#rs-nt)"/>`;
+  for(let h=0;h<24;h++){const hh=(12+h)%24,x=X(hh),l=hh%6===0;s+=`<line x1="${x}" x2="${x}" y1="${bot}" y2="${bot-(l?10:5)}" stroke="#5a4128" stroke-width="${l?1.2:.7}"/>`;}
+  [[12,'noon'],[18,'six'],[0,'midnight'],[6,'six']].forEach(([h,t])=>{s+=`<text x="${X(h)}" y="${bot+14}" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="12" fill="${faint}">${t}</text>`;});
+  s+=`<g transform="translate(${X(13.6)},${top+16})" stroke="#9a7020" fill="none" stroke-width="1.2"><circle r="5"/>${[0,45,90,135,180,225,270,315].map(a=>`<line x1="${Math.cos(a*Math.PI/180)*7.5}" y1="${Math.sin(a*Math.PI/180)*7.5}" x2="${Math.cos(a*Math.PI/180)*10}" y2="${Math.sin(a*Math.PI/180)*10}"/>`).join('')}</g>`+
+    `<path transform="translate(${X(0)-34},${top+16})" d="M3 -7 A7.5 7.5 0 1 0 3 7 A6 6 0 1 1 3 -7Z" fill="#ecdcb2" stroke="#5a4128" stroke-width="1" opacity=".9"/>`;
+  const now=(worldState.gameTimeMinutes||0)/60,end=now+min/60,a=X(now),b=X(end%24),wrap=min>=1440||b<a;
+  if(!wrap)s+=`<rect x="${a}" y="${top+4}" width="${b-a}" height="${bot-top-8}" fill="${rub}" opacity=".16"/><path d="M${a} ${top-2} Q${(a+b)/2} ${top-18} ${b} ${top-2}" fill="none" stroke="${rub}" stroke-width="1.6"/>`;
+  else s+=`<rect x="${a}" y="${top+4}" width="${x1-a}" height="${bot-top-8}" fill="${rub}" opacity=".16"/><rect x="${x0}" y="${top+4}" width="${Math.max(0,(min>=1440?a:b)-x0)}" height="${bot-top-8}" fill="${rub}" opacity=".16"/>`;
+  s+=`<text x="${wrap?(x0+x1)/2:(a+b)/2}" y="${top-11}" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="${rub}" letter-spacing="1">${restDur(min).toUpperCase()}</text>`;
+  const right=b>W*.7;
+  s+=`<line x1="${a}" x2="${a}" y1="${top-4}" y2="${bot+2}" stroke="#2e1c0c" stroke-width="1.6"/><path d="M${a-5} ${bot+8} L${a+5} ${bot+8} L${a} ${bot+2}Z" fill="#2e1c0c"/>`+
+    `<text x="${a+6}" y="${bot+28}" text-anchor="end" font-family="Georgia,serif" font-size="11" fill="${ink}" letter-spacing=".5">NOW · ${restClock(now)}</text>`+
+    `<line x1="${b}" x2="${b}" y1="${top-4}" y2="${bot+2}" stroke="${rub}" stroke-width="2"/><circle cx="${b}" cy="${top-4}" r="3.2" fill="${rub}"/>`+
+    `<text x="${right?b+6:b-6}" y="${bot+28}" text-anchor="${right?'end':'start'}" font-family="Georgia,serif" font-size="11" fill="${rub}" letter-spacing=".5">${mode==='sleep'?'YOU WAKE':'YOU RISE'} · ${restClock(end)}</text></svg>`;
+  return s;
+}
+function openRestSlip(mode,min){
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   let ov=document.getElementById('sleepui');
   if(!ov){
     ov=document.createElement('div');ov.id='sleepui';
     ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
-    ov.innerHTML='<div style="width:420px;padding:26px 30px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;text-align:center;box-shadow:0 10px 40px #000a">'+
-      '<div style="font-size:20px;letter-spacing:.04em">How long would you like to sleep?</div>'+
-      '<div id="sleep-hrs" style="font-size:22px;margin:14px 0 6px">8 Hours</div>'+
-      '<input id="sleep-range" type="range" min="1" max="24" value="8" style="width:88%;accent-color:#8a6a2a">'+
-      '<div id="sleep-date" style="margin:12px 0 18px;font-size:14px;color:#6a5a3a"></div>'+
-      '<div style="display:flex;justify-content:space-around;border-top:1px solid #a89060;padding-top:12px">'+
-      '<button type="button" id="sleep-go" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer;letter-spacing:.05em">Continue</button>'+
-      '<button type="button" id="sleep-no" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer;letter-spacing:.05em">Cancel</button></div></div>';
+    const btn='background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px';
+    ov.innerHTML='<div id="rs-paper" style="width:560px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:20px 28px 18px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span id="rs-title" style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps"></span><span id="sleep-date" style="font-style:italic;font-size:13px;color:#5a4128"></span></div>'+
+      '<div id="rs-ask" style="font-style:italic;font-size:16px;margin:10px 0 2px"></div>'+
+      '<div id="rs-dial"></div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin:2px 0 8px"><button type="button" id="rs-minus" style="'+btn+';border-radius:50%;width:24px;height:24px;padding:0">−</button>'+
+      '<input id="sleep-range" type="range" min="1" max="24" step="1" value="8" style="flex:1;accent-color:#7a1f10">'+
+      '<button type="button" id="rs-plus" style="'+btn+';border-radius:50%;width:24px;height:24px;padding:0">+</button><span id="sleep-hrs" style="min-width:120px;text-align:right;color:#7a1f10;font-size:17px"></span></div>'+
+      '<div id="rs-marks" style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px"></div>'+
+      '<div id="rs-out" style="border-top:1px solid #a89060;padding-top:8px;font-size:14px;line-height:1.75"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:10px">'+
+      '<button type="button" id="sleep-go" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:0;font:20px Georgia,serif;color:#7a1f10;font-variant:small-caps;letter-spacing:.05em"><span id="rs-seal" style="width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#c0392b,#7a1f10);color:#f3e2c0;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 6px #0006"></span><span id="rs-go"></span></button>'+
+      '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="sleep-no" style="'+btn+'">Esc</button> as you were · ← → an hour · 1–5 a mark</span></div></div>';
     document.body.appendChild(ov);
     const rng=ov.querySelector('#sleep-range');
-    rng.oninput=()=>{ov.querySelector('#sleep-hrs').textContent=rng.value+(rng.value==='1'?' Hour':' Hours');};
-    ov.querySelector('#sleep-no').onclick=()=>{ov.style.display='none';sleepOpen=false;};
-    ov.querySelector('#sleep-go').onclick=()=>{ov.style.display='none';sleepOpen=false;restAtBed(+rng.value);};
+    rng.oninput=()=>{restSlip.min=(+rng.value)*60;restSlipDraw();};
+    ov.querySelector('#rs-minus').onclick=()=>restSlipStep(-1);
+    ov.querySelector('#rs-plus').onclick=()=>restSlipStep(1);
+    ov.querySelector('#sleep-no').onclick=()=>closeSleepUI();
+    ov.querySelector('#sleep-go').onclick=()=>restSlipGo();
   }
-  ov.querySelector('#sleep-date').textContent=gameDateLine()+(xp>=xpNext?' · You are ready to advance':'');
-  ov.style.display='flex';sleepOpen=true;
+  restSlip={mode:mode==='wait'?'wait':'sleep',min:Math.max(60,Math.min(1440,min||480))};
+  ov.style.display='flex';sleepOpen=true;restSlipDraw();
 }
+function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)return;const {mode,min}=restSlip,sleep=mode==='sleep';
+  const q=id=>ov.querySelector(id);
+  q('#rs-title').textContent=sleep?'Sleep':'Wait';q('#rs-go').textContent=sleep?'Sleep':'Wait';q('#rs-seal').textContent=sleep?'☾':'⧗';
+  q('#rs-ask').textContent=sleep?'How long will you sleep?':'How long will you wait?';
+  let place='';try{place=typeof ssPlaceName==='function'?ssPlaceName():'';}catch(e){}
+  q('#sleep-date').textContent=gameDateLine()+(place?' · '+place:'');
+  q('#rs-dial').innerHTML=restDial(min,mode);
+  const rng=q('#sleep-range');rng.value=String(Math.max(1,Math.min(24,Math.round(min/60))));
+  q('#sleep-hrs').textContent=restDur(min);
+  q('#rs-marks').innerHTML=REST_MARKS.map(([h,t],i)=>{const on=restMarkMin(h)===min;return `<button type="button" data-h="${h}" style="background:${on?'rgba(122,31,16,.1)':'none'};border:1px solid ${on?'#7a1f10':'#a89060'};border-radius:2px;font:13px Georgia,serif;color:${on?'#7a1f10':'#3a2c18'};cursor:pointer;padding:2px 8px;font-variant:small-caps"><span style="font-size:10px;color:#8a7050">${i+1}</span> ${t} <small style="font-style:italic;color:#8a7050">${restClock(h).replace(':00','')}</small></button>`;}).join('');
+  q('#rs-marks').querySelectorAll('button').forEach(b=>b.onclick=()=>{restSlip.min=restMarkMin(+b.dataset.h);restSlipDraw();});
+  const nowM=worldState.gameTimeMinutes||0,abs=worldState.gameTimeAbsMinutes||0,endTod=(nowM+min)%1440,endDay=gameDateLine(abs+min,endTod).split(' · ')[0];
+  const at=`<b>${restClock(endTod/60)}</b>, ${endDay}`,ready=xp>=xpNext,row=(ic,txt,r,col)=>`<div style="display:flex;gap:10px;align-items:baseline${col?';color:'+col:''}"><span style="width:16px;text-align:center;color:#9a7020">${ic}</span><span style="flex:1">${txt}</span><span style="font-style:italic;font-size:12px;color:#8a7050">${r||''}</span></div>`;
+  let out='';
+  if(sleep){const p=restPreview(min/60),v=(l,a,b,m)=>a>=b&&a>=m?`<span style="font-variant:small-caps">${l}</span> full`:`<span style="font-variant:small-caps">${l}</span> <s style="color:#8a7050">${Math.round(a)}</s> ${Math.round(b)} <span style="color:#8a7050">of ${Math.round(m)}</span>`;
+    out=row('☀',`You wake at ${at}.`,min>=360?'a full night':'a short sleep')+
+      row('♥',`${v('Health',PHP,p.hp,p.mh)} &nbsp; ${v('Mana',mana,p.mp,p.mm)} &nbsp; <span style="font-variant:small-caps">Stamina</span> full`,'all, at six hours')+
+      (ready?row('✦',`You are ready to advance: you wake at <b>level ${level+1}</b>.`,'','#7a1f10'):'');}
+  else out=row('☀',`You rise at ${at}.`)+row('♥','Waiting restores nothing; a bed does.','','#8a7050')+(ready?row('✦','You are ready to advance, but only sleep takes the level.','','#8a7050'):'');
+  q('#rs-out').innerHTML=out;
+}
+function restSlipStep(d){const h=Math.round(restSlip.min/60)+d;restSlip.min=Math.max(1,Math.min(24,h))*60;restSlipDraw();}
+function restSlipGo(){const {mode,min}=restSlip;closeSleepUI();if(mode==='sleep')restAtBed(min/60);else if(typeof passTimeMinutes==='function')passTimeMinutes(min);}
+function closeSleepUI(){const ov=document.getElementById('sleepui');if(ov)ov.style.display='none';sleepOpen=false;}
+function openSleepUI(){openRestSlip('sleep',480);}
+window.addEventListener('keydown',e=>{if(!sleepOpen)return;const c=e.code;let hit=true;
+  if(c==='Escape')closeSleepUI();else if(c==='ArrowLeft')restSlipStep(-1);else if(c==='ArrowRight')restSlipStep(1);
+  else if(/^Digit[1-5]$/.test(c)){restSlip.min=restMarkMin(REST_MARKS[+c.slice(5)-1][0]);restSlipDraw();}
+  else if(c==='Enter'||c==='KeyE'){if(!e.repeat)restSlipGo();}else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
 let sleepOpen=false;
 function restAtBed(hours){
   if(typeof doFade!=='function'){return;}
   hours=Math.max(1,Math.min(24,hours||8));
-  const k=Math.min(1,hours/6);
   doFade(()=>{
-    {const mh=effMaxHP(),mm=effMaxMana();
-    PHP=Math.min(mh,PHP+Math.ceil((mh-PHP)*k)+(k>=1?mh:0));
-    mana=Math.min(mm,mana+Math.ceil((mm-mana)*k)+(k>=1?mm:0));
-    stamina=effMaxStamina();}
+    {const p=restPreview(hours);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
       worldState.gameTimeMinutes = (worldState.gameTimeMinutes + hours*60) % 1440;
       worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes||0) + hours*60;
     }
-    if(typeof addLog==='function')addLog('🛏️',`Slept ${hours} hour${hours>1?'s':''}.`);
-    showMsg(`You wake after ${hours} hour${hours>1?'s':''}. ${gameDateLine()}`,'#c8b880');
+    if(typeof addLog==='function')addLog('🛏️',`Slept ${restDur(hours*60)}.`);
+    showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`,'#c8b880');
     updateHUD();
     if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);

@@ -857,14 +857,10 @@ function openWaitMenu(){
     if(can.reason) showMsg(can.reason, '#a89060');
     return;
   }
-  _releasePointerLockForMenu();
-  const el = document.getElementById('wait-modal');
-  const sub = document.getElementById('wait-sub'); if(sub) sub.textContent = `${gameDateLine()} · Choose how long to wait`; // S489 — the date line
-  if(el) el.style.display = 'flex';
+  openRestSlip('wait', restMarkMin(6)); // S532 — the rest slip (#142 A): waiting by any number of hours, the five times as marks
 }
 function closeWaitMenu(){
-  const el = document.getElementById('wait-modal');
-  if(el) el.style.display = 'none';
+  if(typeof sleepOpen!=='undefined' && sleepOpen && restSlip.mode==='wait') closeSleepUI();
 }
 
 // Pass time to a target hour. Wraps day if target < current.
@@ -872,17 +868,22 @@ function closeWaitMenu(){
 // stamina — that's safehouse-sleep's privilege. Also advances the
 // absolute clock counter so respawn checks see the elapsed time.
 function passTimeToHour(targetHour){
+  const curHour = (worldState.gameTimeMinutes || 0) / 60;
+  let elapsedHours = targetHour - curHour;
+  if(elapsedHours <= 0) elapsedHours += 24; // wrap to next day
+  passTimeMinutes(Math.round(elapsedHours * 60));
+}
+// S532 — pass any number of minutes (the rest slip's waiting); passTimeToHour is the five marks' old way in
+function passTimeMinutes(elapsedMins){
   closeWaitMenu();
   const can = _canWait();
   if(!can.ok){
     if(can.reason) showMsg(can.reason, '#a89060');
     return;
   }
+  elapsedMins = Math.max(1, Math.min(1440, Math.round(elapsedMins)));
   const curMins = worldState.gameTimeMinutes || 0;
-  const curHour = curMins / 60;
-  let elapsedHours = targetHour - curHour;
-  if(elapsedHours <= 0) elapsedHours += 24; // wrap to next day
-  const elapsedMins = Math.round(elapsedHours * 60);
+  const targetHour = ((curMins + elapsedMins) % 1440) / 60;
   if(typeof doFade !== 'function'){
     // Fallback path — direct apply. Should never be reached in practice.
     worldState.gameTimeMinutes = (curMins + elapsedMins) % 1440;
@@ -903,7 +904,7 @@ function _hourLabel(h){
   if(h===12) return 'noon';
   if(h===18) return 'dusk';
   if(h===20) return 'night';
-  return `${h}:00`;
+  return restClock(h); // S532 — any minute now, not only the five times
 }
 
 // ── NPC retreat ──────────────────────────────────────────────────────

@@ -782,7 +782,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s442</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s443</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1090,20 +1090,6 @@
   <canvas id="compass" width="200" height="38"></canvas>
   <canvas id="sundial" width="32" height="32"></canvas>
   <button id="wait-btn" onclick="openWaitMenu()" title="Pass time">⏳</button>
-  <div id="wait-modal">
-    <div id="wait-panel">
-      <div id="wait-title">⏳ Pass Time</div>
-      <div id="wait-sub">Choose how long to wait</div>
-      <div id="wait-options">
-        <button class="wait-opt" onclick="passTimeToHour(6)">🌅 Until Dawn (6:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(8)">☀️ Until Morning (8:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(12)">☀️ Until Noon (12:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(18)">🌆 Until Dusk (18:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(20)">🌙 Until Night (20:00)</button>
-      </div>
-      <button id="wait-cancel" onclick="closeWaitMenu()">Cancel</button>
-    </div>
-  </div>
   <!-- v68 — STACKABLE BUY/SELL QUANTITY PROMPT -->
   <div id="qty-modal">
     <div id="qty-panel">
