@@ -384,7 +384,13 @@ function personBakeQ(g,q){
   const spine=bone('spine',hips,0,.03,0);
   const chestPts=fem?[[0,-.01],[.155,-.01],[.15,.06],[.17,.15],[.172,.22],[.15,.3],[.095,.36],[.052,.39],[0,.4]]:[[0,-.01],[.165,-.01],[.172,.05],[.19,.17],[.188,.25],[.16,.32],[.1,.37],[.055,.395],[0,.4]];
   part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;if(WL<.3)part(SK.ball(.036,7,5),mixC(cloth,0x3a3024,.4),spine,-.07*bw,.13,.124*bw).scale.set(1,1.1,.26);if(WL>.7){const ch=part(SK.torus(.085*bw,.005,4,18),gold,spine,0,.35,.035);ch.rotation.x=Math.PI/2-.55;part(SK.ball(.018,8,6),gold,spine,0,.285,.13*bw).scale.z=.5;}
-  if(g.cloak){const cb=bone('cloak',spine,0,.33,-.1),cb2=bone('cloak2',cb,0,-.31,-.08),cc=mixC(cloth,0x000000,.3); /* S267 — the cloak hangs from its own bone at the shoulders, in two halves hinged at the middle of the back (peopleSwing) */part(SK.cyl(.17*bw,.225*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb,0,-.17,.095).scale.z=.8;part(SK.cyl(.215*bw,.27*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb2,0,-.14,.175).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
+  // S560 — your cloak (Michael's B on #148, the look half; docs/design/capes-and-cloaks.md): g.cloakCol dyes it, g.cloakCut 'short'
+  // drops the lower half (a cape to the waist, trimmed at the hem in g.cloakTrim), g.cloakHood lays a hood down on the shoulders,
+  // g.cloakFur rings them with a fur collar. A townsperson's cloak is as it was.
+  if(g.cloak){const cb=bone('cloak',spine,0,.33,-.1),cb2=bone('cloak2',cb,0,-.31,-.08),cc=g.cloakCol!=null?C(g.cloakCol):mixC(cloth,0x000000,.3); /* S267 — the cloak hangs from its own bone at the shoulders, in two halves hinged at the middle of the back (peopleSwing) */part(SK.cyl(.17*bw,.225*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb,0,-.17,.095).scale.z=.8;if(g.cloakCut!=='short')part(SK.cyl(.215*bw,.27*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb2,0,-.14,.175).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);
+    if(g.cloakCut==='short'&&g.cloakTrim!=null)part(SK.cyl(.228*bw,.228*bw,.022,14,1,true,Math.PI/2+.25,Math.PI-.5),C(g.cloakTrim),cb,0,-.33,.095).scale.z=.8;
+    if(g.cloakHood){const h=part(SK.ball(.12*bw,14,7,0,Math.PI*2,0,Math.PI*.55),mixC(cc,0x000000,.12),cb,0,.03,-.01);h.rotation.x=1.15;h.scale.set(1.05,.8,.75);}
+    if(g.cloakFur!=null){const f=part(SK.bumpy(SK.torus(.135*bw,.04,7,20),.012,23,3),C(g.cloakFur),spine,0,.345,-.005);f.rotation.x=Math.PI/2;f.scale.y=.82;}}
   if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
   if(g.ogre)part(SK.ball(.12*bw,12,9),skin,spine,0,.1,.085*bw).scale.set(1.1,.85,.9); // S221 — an ogre's belly, bare below the jerkin
   const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);

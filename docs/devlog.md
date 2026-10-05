@@ -12407,3 +12407,40 @@ The producer's note in the room asked for the `goblins` suite to be fixed. It fa
 
 ### Needs eyes
 Nothing in the game changed.
+
+## v80 — Session 560 — Your cloak on your body (backlog H; Michael's B on #148, the look half)
+Michael answered B on #148, capes and cloaks: a back slot and six kinds, each with one small virtue. The systems builder built the slot, the kinds and the virtues on auto/systems in Session 552 (`EQ.back`, an item whose `cloak` is the kind). Its post asked for the look builder's half: the cloak on your body. The design page gives it as three cuts on the two-half cloak the townsfolk already wear (Session 267): the long cloak, a short cape to the waist, and a hood or a fur collar at the shoulders. That half is this session.
+
+**What it reads.** `tpBuild` (`54-thirdperson.js`) reads `EQ.back.cloak` through a table, `TP_CLOAK`:
+- **The plain wool:** a long cloak in a brown-grey.
+- **The dark hood:** a long cloak in near-black, with a hood laid down on the shoulders.
+- **Oilskin:** a long cloak in a waxed olive.
+- **The Markish fur-lined:** a long cloak in a dark brown, with a fur collar.
+- **The Aurennais short cape:** blue, cut to the waist, with a gold hem.
+- **The pilgrim's grey:** a long cloak in grey, with a hood.
+
+A cloak with its own `col` (what the dyer will set, in barber slice 2) takes that colour. `tpSig` now includes the back slot and its colour, so putting a cloak on, taking it off or dyeing it rebuilds the body. The swing is Session 277's (`peopleSwing` on your rig).
+
+**The bake.** In the people kit the cloak reads `g.cloakCol`, `g.cloakCut`, `g.cloakHood`, `g.cloakFur` and `g.cloakTrim`. A townsperson sets none of them, so every townsperson's cloak is unchanged. The short cut leaves the lower half off, so its hinge bone carries nothing.
+
+**On this branch.** `EQ.back` is not on main or auto/backlog yet, so nothing here changes until the systems builder's slot merges.
+
+**The inspector.** A new section, *Your body in a cloak*, shows your body in each of the six, turned to show the back.
+
+### Verified (headless Chromium)
+`tests/cloakbody.test.mjs` (new), 13/13:
+- **Nothing in the slot.** No cloak and no cloak bone (4,724 triangles).
+- **Each kind.** Each of the six puts a cloak on its own bones in its own colour, within a couple of bytes after the bake's shading. It adds 164 to 472 triangles: the wool and oilskin 192, the hooded two 374, the fur-lined 472, the cape 164.
+- **The cuts.** The five long cuts hang a lower half (45 vertices on the lower bone). The cape has none, and has its hem.
+- **Hood and collar.** The hooded two have the hood, and the fur-lined its collar.
+- **Dyeing.** A dyed cloak (0x8a1c1c) shows its dye.
+- **Rebuilding.** Putting a cloak on, or dyeing it, changes the body's signature.
+- **The inspector.** It lists all six (5,904 to 6,212 triangles with the weapon), and leaves the back slot as it found it.
+- **Errors.** No page errors.
+
+`tpshots`, `inspector`, `armourkit` and `helmhair` pass. Pictures: `docs/prototypes/cloak-fur.png`, `cloak-cape.png` and `cloak-hood.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **The hood** reads as a soft rim at the shoulders from behind. It is a hood lying down, and the picture does not make that obvious. A raised hood (the design's C, the hood as a face) was not chosen.
+- **A cloak over armour.** The cloak hangs at the radius the townsfolk's does, so plate pauldrons and the light line's capelet may show through it. That has not been measured.
+- **The colours** are mine. The design page names the kinds, not their dyes.

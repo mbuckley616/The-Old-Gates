@@ -127,6 +127,9 @@ function inspRegistry(){
   for(const tier of [1,2,3,4,5,7,9])add('Weapons and armour','Your body in a full kit',MATERIALS[tier-1].name,'54-thirdperson.js',()=>withEQ(()=>{
       for(const t of ['Cuirass','Greaves','Helmet','Gauntlets','Boots'])EQ[ARMOR_TYPES.find(a=>a.type===t).slot]=armorOf(tier,t);EQ.weapon=makeItem(tier,WEAPON_TYPES.find(w=>w.type==='Sword'),null,false);EQ.offhand=armorOf(tier,'Buckler');},
     ()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);return {obj:R.root};}));
+  // S560 — your body in each of the six cloaks (Michael's B on #148), over the starting clothes; the back slot is EQ.back
+  for(const k of Object.keys(TP_CLOAK))add('Weapons and armour','Your body in a cloak',k,'54-thirdperson.js',()=>withEQ(()=>{EQ.back={slot:'back',cloak:k,name:'cloak '+k};},
+    ()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);R.root.rotation.y=Math.PI+.25;return {obj:R.root};})); /* turned to show the back */
   add('Weapons and armour','Your body in a full kit','as equipped now','54-thirdperson.js',()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);return {obj:R.root};});
   return E;
 }

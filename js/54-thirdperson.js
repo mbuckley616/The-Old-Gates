@@ -19,6 +19,10 @@ try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=pa
 const LOOK_TUNICS=[0x6a5a44,0x5a2a20,0x2a3a6a,0x3a4a2a,0x6a4a1a,0x2a2a2a,0x7a6a5a,0x4a2a4a];
 const LOOK_BREECHES=[0x3a2a1a,0x4a4030,0x2a2a3a,0x5a3a2a,0x1a1a1a];
 const LOOK_BOOTS=[0x2a1c10,0x4a3018,0x1a1a1a,0x5a4a3a];
+// S560 — the six cloaks' cuts and colours (docs/design/capes-and-cloaks.md): the plain wool, the dark hood, oilskin, the Markish
+// fur-lined, the Aurennais short cape to the waist with a gold hem, the pilgrim's grey with its hood
+const TP_CLOAK={wool:{col:0x6a5a46,cut:'long'},hood:{col:0x24242a,cut:'long',hood:true},oilskin:{col:0x4e4a2e,cut:'long'},
+  fur:{col:0x4a382a,cut:'long',fur:0x9a8a70},cape:{col:0x2a3a7a,cut:'short',trim:0xc8a040},pilgrim:{col:0x8a8880,cut:'long',hood:true}};
 const LOOK_STYLES=[['short','Cropped'],['long','Long'],['tied','Tied back'],['bald','Shorn'],['braid','A braid'],['twin','Two braids'],['warrior','Warrior braids'],['mohawk','A crest'],['curly','Curly'],['afro','An afro'],['shaggy','Shaggy'],['bun','A bun'],['thin','Thinning']];
 const LOOK_BEARDS=[['no','None'],['full','Full'],['short','Trimmed'],['long','Long'],['braided','Braided'],['forked','Forked'],['goatee','Goatee'],['vandyke','Goatee and moustache'],['walrus','Walrus'],['handlebar','Handlebar'],['pencil','Pencil'],['horseshoe','Horseshoe'],['mutton','Mutton chops'],['chinstrap','Chinstrap'],['stubble','Stubble']];
 function lookDefault(pp,arch,name){let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const h=[...(name||'you')].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
@@ -29,7 +33,7 @@ function tpHex(s,def){if(typeof s==='number')return s;if(typeof s==='string'&&s[
 function tpMatColor(it,def){if(!it)return def;if(it.matCol!=null)return it.matCol;const name=(it.name||'').toLowerCase();for(const k in ICO_MAT){if((it.material||'').toLowerCase()===k||name.startsWith(k+' ')||name.includes(' '+k+' '))return tpHex(ICO_MAT[k],def);}
   if(/leather|hide|hood|cap\b|boots|breeches|gloves/.test(name))return 0x6a4a2e;if(/tunic|robe|cloth|shirt|trousers/.test(name))return 0x6a5a44;if(/iron|rusty/.test(name))return 0x8a8f98;if(/steel|plate|chain|mail/.test(name))return 0xb8bcc4;return def;}
 function tpIsCloth(it){if(!it)return true;const n=(it.name||'').toLowerCase();return /tunic|robe|cloth|breeches|trousers|shirt|hood|cap\b|leather|hide|worn|tattered|boots|gloves/.test(n)&&!/cuirass|plate|mail|helm|greaves|gauntlet|sabaton/.test(n);}
-function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo'].map(s=>EQ[s]?(EQ[s].name||'?'):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
+function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
 function tpBox(w,h,d,col,parent,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));m.position.set(x||0,y||0,z||0);parent.add(m);return m;}
 function tpGroup(parent,x,y,z){const g=new THREE.Group();g.position.set(x||0,y||0,z||0);g.rotation.order='YXZ';parent.add(g);return g;}
 // ── weapons: built along +y from the grip (the hand's local "up" once the forearm is raised) ──
@@ -63,6 +67,10 @@ function tpBuild(lookIn,ppIn){
     hat:hd?(tpIsCloth(hd)?'hood':AR&&AR.head?'none':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
     eq:{armour:AR,chest:ch?{col:chestCol,cloth:chestCloth}:null,legs:lg?{col:legCol,cloth:legCloth}:null,hands:gl?{col:tpMatColor(gl,0x5a3a20)}:null,amulet:!!EQ.amulet,quiver:!!(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow'))},
     bodyScale:[P&&P.width||1,P&&P.height||1,P&&P.width||1]});
+  // S560 — the cloak in the back slot (Michael's B on #148; the slot and the six kinds are the systems builder's, EQ.back.cloak):
+  // its cut and colour by kind (TP_CLOAK), a dyed one by its own colour (EQ.back.col, the dyer's)
+  {const bk=EQ.back,K=bk&&bk.cloak?(TP_CLOAK[bk.cloak]||TP_CLOAK.wool):null;
+    if(K)Object.assign(g,{cloak:true,cloakCol:bk.col!=null?bk.col:K.col,cloakCut:K.cut,cloakHood:!!K.hood,cloakFur:K.fur!=null?K.fur:null,cloakTrim:K.trim!=null?K.trim:null});}
   // S394 — an empty slot is the body's own underclothes (Michael's B on #83): an undyed linen shirt cut at the shoulder,
   // linen braies, bare feet; the look's colours dye the starting tunic, breeches and boots, which are items
   if(!ch){g.shirt=true;g.bareArms=true;g.dress=false;g.cloth=new THREE.Color(TP_LINEN);g.sleeve=g.skin.clone();}
