@@ -11992,3 +11992,30 @@ Nothing to see: the same foes, on the same kinds of spot.
 ### Corrections
 - Merging main (63d2245) brought the Fable session's own Session 494 (the inspector by nation), so this run's Sessions 494–503 are renumbered 495–504 here, in the backlog, the code comments and the new tests' headers. The commits keep the numbers they were made with (494–503).
 - Session 502 (`shoperrands`) is superseded: the look builder's Session 483 fixed the same race on main with a capture listener that re-pins the player in the E key's own event, and the merge keeps theirs. Session 502's entry stays as history.
+
+## v80 — Session 505 — A barber and dyer for the towns: prototype and a question (backlog H)
+Every numbered item in section H is done or waiting on Michael, and the register findings in `docs/quest_review.md` that touch the builders' files are applied on main (Finding 13's `genName` and `dungeonName` among them). One item was left: *the look, later*, a barber or tailor in towns to change the hair and the dyes after the creator. Today the creator's look rows (style, beard, the tunic's, breeches' and boots' colours) are fixed once you begin. A trade that reopens them is a new person, a room, a sign and a fee, so it is a question before it is a build.
+
+The prototype (`docs/prototypes/barber/proto.mjs`) boots the game and builds the pieces with the furniture kit and the people builder, at the kit's own scale (a man stands 1.28): a barber's chair, high-backed, padded in red with a headrest on a stem and a footrest bar (632 triangles); a three-legged washstand with a brass basin, a ewer and a towel (984); a polished-steel mirror in a carved oval frame (624); the kit's table as the bench with razors, shears, folded towels, a jar of leeches and a strop on a peg (1,616). The sign is three brass basins hung from an iron arm, the barber-surgeon's sign before the striped pole (1,320). Beside it is a dyer's corner: a vat over a ring of bricks with a paddle, hanks of dyed wool on a pole, and folded bolts on a table (3,072). The last picture is one Gatelands man three ways through `personGenome`: as he walks in (shaggy, long beard), cut and shaved (cropped, a vandyke), and with his coat dyed blue under gilt trim. Nothing is wired to the game.
+
+DECISION #144 asks Michael to choose between A (two trades, a barber and a dyer), B (one barber and dyer, one room, one fee; recommended), C (a mirror at a rented room or your own house, free) and D (later). The fee and any lines are the systems builder's and the quest writer's once he chooses. No game code changed, so the build tag stays.
+
+### Verified (headless Chromium)
+The script runs clean (no page errors) and writes `docs/prototypes/barber-room.png`, `barber-room2.png`, `barber-sign-dyer.png` and `barber-three-ways.png`; the triangle counts above are the bakes' own (`userData.tris`).
+CI on this branch then failed `shoperrands` (shard 6): at noon Cathal took Niamh's draught, the race Session 483 narrowed and the systems builder's Session 501 closed on auto/systems by setting anyone within 3 units of the stand 6 units off before E. That change is ported here into main's capture-listener pin (S483), so both hold; it no-ops once #141 merges. `shoperrands` 6/6.
+
+### Needs eyes
+- Michael: DECISION #144. The pictures are on a plain stage (a plastered corner and a plank floor), not in a generated room's shell and light.
+- No seated pose exists, so the customer is not shown in the chair; a built barber would need one, or the customer stands.
+
+## v80 — Session 506 — `beastfall` red on CI: a dead wolf left standing (CI fix)
+PR #145 carried only Session 505's prototype, and CI still failed two shards on it. Shard 6 was `shoperrands`, the bystander race, fixed under Session 505 by porting the systems builder's Session 501. Shard 2 was `beastfall`: *the wolves are no longer standing*, with one of the eight unseeded wolf deaths ending with its back up .97 against the .71 limit. That one is mine, and it is a fault in the game, not only the test: a dead wolf left standing on its legs.
+
+Measured headless over 600 seeded wolf deaths (plain, power and arrow kills, as the test kills them), 9 came to rest upright, back up .97–1.0. That is 1.5% a death, so a run of eight fails about one time in nine. A trace of the cases shows the body never tips at all. The start gives the hips, spine and neck their sideways roll and the lower legs a kick the other way. In these falls the legs fold straight under, and while the fall's first .8 s holds each leg close to its own plane, they make a stand the trunk settles onto. A single extra shove at .35 s did not tip it (2 in 300 still stood), and a steady sideways push only slid the body along on its legs. What works is a twist. From .35 s to 1.2 s, while the back is still more than .8 upright, the back (hips, spine, neck) is pushed each step towards the side the body was to roll, and the keel (chest and belly) the other way, at 1.2 × the body's scale a second per step (`creatureRagdollStep`, `R.lat`/`R.roll` kept from the start). A fall that tips on its own never reaches the condition, and its result is unchanged.
+
+### Verified (headless Chromium)
+Before, 9 of 600 seeded deaths ended upright. After, 0 of 600, and 0 of another 300 on a different seed family. The settle median is 1.22 s in both, and two falls in the 600 reach the four-second cap both before and after (unchanged, not this fix). `beastfall` passes: the nine backs are .35–.37, the 60 seeded deaths settle at a median 1.23 s, slowest 1.62 s, none over 2.5 s, at 1.09 ms a step. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- A wolf that dropped straight onto folded legs now rolls over a beat later than one knocked sideways (the twist starts at .35 s). Whether that reads as a second, separate movement at real speed.
+- The two four-second cap-outs in 600 deaths predate this session; `beastfall`'s sixty seeded deaths do not include either.
