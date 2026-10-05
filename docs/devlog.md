@@ -12109,3 +12109,14 @@ So a herb's id is the placing try that put it, not its place in the list: `<cx,c
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 516 — Corpses and the open world's chests carry their ids (backlog K, the co-op door, step 3)
+Step 1 keyed the loot of the open world's containers and of keyed foes' corpses by place and id, but the object itself kept no id: the key was built into the loot roll's string and dropped. Whether one was opened or searched is never saved, and a later save of that, or a co-op host telling a guest that a chest is empty, needs the id on the thing. Each now carries `id`, the same string its loot is keyed by, less the day. A keyed foe's corpse is `<foe id>:corpse`, both in the open world (`killZoneEnemy`, `42-zone-enemies.js`) and in a dungeon (`killE`, `62-actions.js`). A town's barrel or crate is `<site>:barrel:<n>` (`83-world-generator.js`). A lair's or camp's hoard is `<site>:chest` (`siteChest`, `87-world-quests.js`). A wreck's sea chest is `wreck:<chunk>`, and a black sail's or merchantman's chest is `<ship id>:chest` (`85-world-sea.js`). A foe with no id (the legacy zones') leaves a corpse whose id is null. Bram keeps his `corpseId`. No loot changes.
+
+Left in step 3 after this: interior and dungeon doors and keys, and quest pickups.
+
+### Verified (headless Chromium)
+`containerids` 7/7 (new). A Bandit keyed *300,400:2:0* and killed leaves a corpse *300,400:2:0:corpse*, and an unkeyed one leaves a corpse with no id. The first chunk out from the start that the hash gives a wreck, built on a stand-in chunk, holds a *Sea Chest* with id *wreck:196,395*. A black sail raised as *sea:test:1:pirate* and boarded has the chest *sea:test:1:pirate:chest*. Dunmore's seven barrels and crates are *dunmore:barrel:0* to *6*. No lair or camp had been built by then, so a hoard built on a stand-in camp is checked instead: *test_camp:chest*. The loot and sea suites (foeseed, seaseed, worldloot, shipwreck, dunseed, piratehold) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.

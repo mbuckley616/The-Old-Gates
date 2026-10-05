@@ -451,7 +451,7 @@
     let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1,'wreck:'+chunkKey(ch.cx,ch.cz)+':'+lootDay()):[])||[];
     if(!items.length)items.push({name:'Sea-worn Coins',ico:'🪙',type:'misc',weight:.4,sellMult:1,buyPrice:60});
     items.forEach(it=>{if(it.qty==null)it.qty=1;});
-    const cobj={x:chest.position.x,z:chest.position.z,y:chest.position.y+.3,name:'Sea Chest',displayName:'Sea Chest',items,zone:'world',kind:'chest',g:chest,lid,opened:false,_chunk:chunkKey(ch.cx,ch.cz)};
+    const cobj={id:'wreck:'+chunkKey(ch.cx,ch.cz),x:chest.position.x,z:chest.position.z,y:chest.position.y+.3,name:'Sea Chest',displayName:'Sea Chest',items,zone:'world',kind:'chest',g:chest,lid,opened:false,_chunk:chunkKey(ch.cx,ch.cz)};
     if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(cobj);ch.loot=ch.loot||[];ch.loot.push(cobj);
     ch.sol.push({cx:x,cz:z,rx:2.2,rz:3.6});
   }
@@ -646,7 +646,7 @@
       if(o.kind==='pirate'){const cr=o.id?seededRng('loot',`${o.id}:cargo`):Math.random;const ks=Object.keys(CARGO_GOODS).filter(k=>!CARGO_GOODS[k].hold);items.push({...cargoItem(ks[Math.floor(cr()*ks.length)]),qty:1+(cr()<.5?1:0)});}
       if(o.loot){items.push(...o.loot);o.loot=null;}
       items.forEach(it=>{if(it.qty==null)it.qty=1;});
-      o.chest={x:cx,z:cz,y:DECK_Y+.3,name:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',displayName:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',items,zone:'world',kind:'chest',g,top:lid,opened:false};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(o.chest);}
+      o.chest={id:o.id?`${o.id}:chest`:null,x:cx,z:cz,y:DECK_Y+.3,name:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',displayName:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',items,zone:'world',kind:'chest',g,top:lid,opened:false};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(o.chest);}
   }
   // S399 (Michael's B on #91, with C's chest) — a pirate's chest above carries one or two crates of one good taken off another
   // ship. Flee a deck while her crew still holds it, and they take half the crates in your hold (rounded up), the dearest

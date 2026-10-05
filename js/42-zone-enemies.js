@@ -1639,6 +1639,7 @@ function killZoneEnemy(e,sc,tag=''){
   ZONE_CORPSES.push({
     x:e.x, z:e.z, y:(activeZoneId==='world')?0.45:terrainY, name:e.name, displayName:e.name, // v80 S135 — relative in the world (lookingAt adds the ground)
     items, gl:lootGl, spark:lootSpark, age:0, scene:sc, zone:activeZoneId, looted:false,
+    id:e.id?`${e.id}:corpse`:null, // S516 — a keyed foe's corpse is <foe id>:corpse (co-op rules); its loot rolls on that and the day
     body:e.mesh, // S417 — searched anywhere on the body (lookingAt)
   });
   // Dim enemy aura light now that it's a corpse (enemy.el keeps existing but dim)
