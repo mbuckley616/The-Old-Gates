@@ -15,9 +15,9 @@ const r = await page.evaluate(async () => {
   try { closeSLMenu(); } catch (e) { document.getElementById('sl-overlay') && (document.getElementById('sl-overlay').style.display = 'none'); }
   return { wait, at: m.at, tod: m.tod, slotText, oldText, now: gameDateLine() }; });
 console.log(JSON.stringify(r));
-check('the wait menu opens on the date: Day 12 · 7:40 am', r.wait.shown === 'flex' && r.wait.sub === 'Day 12 · 7:40 am', r.wait);
+check('the wait menu opens on the date in full: Skyday, the 12th of Reaping, in the 27th year of the Peace · 7:40 am', r.wait.shown === 'flex' && r.wait.sub === 'Skyday, the 12th of Reaping, in the 27th year of the Peace · 7:40 am', r.wait);
 check('a slot keeps the game\'s date when it was saved', r.at === 1440 * 11 + 460 && r.tod === 460, { at: r.at, tod: r.tod });
-check('and the slot list shows it', /Day 12 · 7:40 am · \d+🪙/.test(r.slotText), r.slotText);
-check('a slot saved before this build shows no date and nothing else changes', r.oldText && !/Day 12/.test(r.oldText) && /\d+🪙/.test(r.oldText), r.oldText);
+check('and the slot list shows it', /Skyday 12 Reaping · 7:40 am · \d+🪙/.test(r.slotText), r.slotText);
+check('a slot saved before this build shows no date and nothing else changes', r.oldText && !/Skyday/.test(r.oldText) && /\d+🪙/.test(r.oldText), r.oldText);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

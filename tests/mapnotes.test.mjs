@@ -25,7 +25,7 @@ check('✎ Note arms the map: a crosshair, and the panel says to click the spot'
 check('the click opens the note box with the focus in it, and disarms', opened.ta && opened.focus === 'wm-note' && !opened.armed, opened);
 const n = pinned.L && pinned.L[0];
 check('Enter pins the note at the world spot clicked, with its date', hub0 && pinned.L && pinned.L.length === 1 && n.text === 'The ferryman here owes me a crossing. Ask for Daithi.' && Math.abs(n.x - spot[0]) < 0.2 && Math.abs(n.z - spot[1]) < 0.2 && n.t === 1440 * 5 + 600 && n.tod === 600, n);
-check('the panel then shows the note, its date and Take it down', /Your note/.test(pinned.panel) && /Day 6 · 10:00 am/.test(pinned.panel) && /owes me a crossing/.test(pinned.panel) && /Take it down/.test(pinned.panel), pinned.panel);
+check('the panel then shows the note, its date and Take it down', /Your note/.test(pinned.panel) && /Weaverday, the 6th of Reaping/.test(pinned.panel) && /owes me a crossing/.test(pinned.panel) && /Take it down/.test(pinned.panel), pinned.panel);
 
 // 2. the pin is drawn, read on hover, opened on a click; Cancel pins nothing; an empty note pins nothing
 await page.evaluate(() => { mapPanel(null); MAP.sel = null; MAP.dirty = true; mapDraw(); });
@@ -34,7 +34,7 @@ await page.mouse.move(pin.x - 30, pin.y - 30); await page.mouse.move(pin.x, pin.
 const hover = await page.evaluate(() => { const el = document.getElementById('wm-hover'); return { shown: el && el.style.display, text: el && el.innerText, hover: MAP.hover }; });
 await page.mouse.down(); await page.mouse.up();
 const clicked = await page.evaluate(() => ({ sel: MAP.sel, panel: document.getElementById('wm-panel-body').innerText }));
-check('the pin is drawn where the note was pinned, and its words show on hover', pin && hover.shown === 'block' && /owes me a crossing/.test(hover.text) && /Day 6/.test(hover.text) && hover.hover === 'note:0', { pin, hover });
+check('the pin is drawn where the note was pinned, and its words show on hover', pin && hover.shown === 'block' && /owes me a crossing/.test(hover.text) && /Weaverday, the 6th of Reaping/.test(hover.text) && hover.hover === 'note:0', { pin, hover });
 check('a click on the pin opens it', clicked.sel === 'note:0' && /Take it down/.test(clicked.panel), clicked);
 await page.click('#wm-pin'); await page.mouse.move(cx - 150, cy - 90); await page.mouse.down(); await page.mouse.up();
 await page.keyboard.type('never kept'); const reach = await page.evaluate(() => ['wm-note-pin', 'wm-note-cancel'].map(id => { const b = document.getElementById(id).getBoundingClientRect(); const at = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return { id, top: Math.round(b.top), h: Math.round(b.height), hit: at && at.id, vh: innerHeight }; })); check('Pin it and Cancel sit on screen where a click lands on them', reach.every(r => r.hit === r.id && r.top > 0 && r.top + r.h < r.vh), reach);

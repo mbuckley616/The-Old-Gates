@@ -128,7 +128,7 @@ function renderLog(){
 
 // S488 — the Journal, a tab of its own (DECISION #132, part A): *By day*, the chronicle, newest day first and each day's
 // lines in the order they happened; *By quest*, every quest the journal holds words for, the ones in hand first, its
-// lines in order. Each line carries its time; the date line is gameDateLine's until the quest writer names the days.
+// lines in order. Each line carries its time; the date line is gameDateLine's (S549: the quest writer's names).
 // S490 — the topics you were told (DECISION #132, part C): every answer a person gives to a topic is filed once under its
 // label in worldState.told, a character key. A person with a name of their own (the legacy villages, the quest givers)
 // files by name; the generated townsfolk (they number thousands) file by the town and the words, so a rumour every
@@ -149,7 +149,7 @@ function _jnTopicsHTML(){
   if(!all.length)return `<div class="jn-empty">${Object.keys(T).length?'Nothing you were told matches.':'Nobody has told you anything worth keeping yet.'}</div>`;
   const by=new Map();all.forEach(e=>{if(!by.has(e.l))by.set(e.l,[]);by.get(e.l).push(e);});
   return [...by.keys()].sort((a,b)=>a.localeCompare(b)).map(l=>`<div class="jn-day"><div class="jn-head">${_jnEsc(l)}</div>`+
-    by.get(l).sort((a,b)=>(a.t||0)-(b.t||0)).map(e=>`<div class="jn-told"><div class="jn-time">told by ${_jnEsc(e.s||'someone')}${e.w?' in '+_jnEsc(e.w):''} · ${_jnEsc(gameDateLine(e.t,e.tod))}</div><div class="jn-text">${_jnEsc(e.r)}</div></div>`).join('')+'</div>').join('');
+    by.get(l).sort((a,b)=>(a.t||0)-(b.t||0)).map(e=>`<div class="jn-told"><div class="jn-time">told by ${_jnEsc(e.s||'someone')}${e.w?' in '+_jnEsc(e.w):''} · ${_jnEsc(gameDateLine(e.t,e.tod,'short'))}</div><div class="jn-text">${_jnEsc(e.r)}</div></div>`).join('')+'</div>').join('');
 }
 // S491 — a line of your own (DECISION #132, part C): written from the Journal's By day view, up to 500 characters, kept
 // as a journal line of kind 'note' with its date like any other
@@ -176,7 +176,7 @@ function _jnLinked(text,names){
   return out+_jnEsc(text.slice(at));
 }
 function journalLink(name){_jnSearch=String(name||'');journalView('topics');}
-function _jnTime(e){return gameDateLine(e.t,e.tod).replace(/^Day \d+ · /,'');}
+function _jnTime(e){return gameDateLine(e.t,e.tod,'time');}
 function renderJournal(){
   const body=document.getElementById('jn-body');if(!body)return;
   document.querySelectorAll('#jn-views button').forEach(b=>b.classList.toggle('active',b.dataset.v===_jnView));
@@ -201,11 +201,11 @@ function renderJournal(){
     if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
     ids.forEach(id=>{const d=qd(id)||{title:(L.find(e=>e.q===id&&e.qt)||{}).qt||id},s=st(id);
       html+=`<div class="jn-day"><div class="jn-head">${_jnEsc(d?d.title:id)}<span class="jn-state">${s==='complete'?'complete':inHand(id)?'in hand':''}</span></div>`+
-        L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod)):''}</span><span class="jn-text">${_jnLinked(e.text,names)}</span></div>`).join('')+'</div>';});
+        L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod,'short')):''}</span><span class="jn-text">${_jnLinked(e.text,names)}</span></div>`).join('')+'</div>';});
   } else {
     const days=new Map();L.forEach(e=>{const k=typeof e.t==='number'?Math.floor(e.t/1440):-1;if(!days.has(k))days.set(k,[]);days.get(k).push(e);});
     [...days.keys()].sort((a,b)=>b-a).forEach(k=>{
-      html+=`<div class="jn-day"><div class="jn-head">${k<0?'Undated':'Day '+(k+1)}</div>`+days.get(k).map(e=>line(e,true)).join('')+'</div>';});
+      html+=`<div class="jn-day"><div class="jn-head">${k<0?'Undated':_jnEsc(gameDateLine(k*1440,0,'date'))}</div>`+days.get(k).map(e=>line(e,true)).join('')+'</div>';});
   }
   body.innerHTML=noteBox+html;
 }

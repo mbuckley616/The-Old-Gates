@@ -22,7 +22,7 @@ const a = await page.evaluate(async () => {
 console.log(JSON.stringify(a));
 check('each line carries the minute it was written and the time of day', a.L.length === 2 && a.L[0].t === 5000 && a.L[0].tod === 1000 && a.L[1].t === 7955 && a.L[1].tod === 1075, a.L);
 check('the journal is a character key in worldState, the same list GAME_LOG reads', a.same, a.same);
-check('the Journal tab, by day, puts each line under its day with its time, the newest day first (Day 6 at 5:55 pm above Day 4 at 4:40 pm)', /Day 6\s+5:55 pm\s+⚔ The second line of the test\./.test(a.txt) && /Day 4\s+4:40 pm\s+📜 The first line of the test\./.test(a.txt) && a.txt.indexOf('Day 6') < a.txt.indexOf('Day 4'), a.txt.slice(0, 400));
+check('the Journal tab, by day, puts each line under its day with its time, the newest day first (Weaverday the 6th at 5:55 pm above Seaday the 4th at 4:40 pm)', /Weaverday, the 6th of Reaping, in the 27th year of the Peace\s+5:55 pm\s+⚔ The second line of the test\./.test(a.txt) && /Seaday, the 4th of Reaping, in the 27th year of the Peace\s+4:40 pm\s+📜 The first line of the test\./.test(a.txt) && a.txt.indexOf('Weaverday') < a.txt.indexOf('Seaday'), a.txt.slice(0, 400));
 check('the character row carries the journal; the world row does not', Array.isArray(a.cJ) && a.cJ.length === 2 && a.cJ[1].text === 'The second line of the test.' && a.wJ === undefined, { c: a.cJ && a.cJ.length, w: a.wJ });
 
 // 2. reload the page and Continue: the lines come back, and a new one joins them
@@ -55,9 +55,9 @@ const acc = q.L.find(e => e.k === 'accept'), rdy = q.L.find(e => e.k === 'ready'
 check('taking a quest writes its words into the journal under the quest, stamped when it was taken', acc && acc.t === 20000 && (q.accept ? acc.text === q.accept : acc.text.length > 0), q.L);
 check('finishing the work writes its ready words', rdy && rdy.t === 20600 && rdy.text === q.ready, q.L);
 check('turning it in writes its closing words, stamped then', com && com.t === 21000 && com.text === q.complete, q.L);
-check('the Quests tab shows those lines under the quest, each with its date', q.ctext.includes(q.complete) && /Day 14 · /.test(q.ctext) && /Day 15 · /.test(q.ctext), q.ctext.slice(-600));
+check('the Quests tab shows those lines under the quest, each with its date', q.ctext.includes(q.complete) && /Guestday 14 Reaping · /.test(q.ctext) && /Hearthday 15 Reaping · /.test(q.ctext), q.ctext.slice(-600));
 check('the Journal tab sits beside Quests, and by day shows the quest\'s lines under its name', q.tabs.indexOf('📖 Journal') === q.tabs.indexOf('📜 Quests') + 1 && q.active === '📖 Journal' && q.jtext.includes(q.title + ' — ' + q.complete), { tabs: q.tabs, active: q.active, j: q.jtext.slice(0, 300) });
-check('by quest, First Blood heads its three lines in order, each with its full date', (() => { const i = q.qtext.indexOf(q.title), a = q.qtext.indexOf(q.ready), b = q.qtext.indexOf(q.complete); return i >= 0 && a > i && b > a && /Day 14 · 9:20 pm/.test(q.qtext) && /complete/.test(q.qtext); })(), q.qtext.slice(0, 600));
+check('by quest, First Blood heads its three lines in order, each with its full date', (() => { const i = q.qtext.indexOf(q.title), a = q.qtext.indexOf(q.ready), b = q.qtext.indexOf(q.complete); return i >= 0 && a > i && b > a && /Guestday 14 Reaping · 9:20 pm/.test(q.qtext) && /complete/.test(q.qtext); })(), q.qtext.slice(0, 600));
 check('the Character tab keeps Renown and no longer carries the journal', /RENOWN/i.test(q.ltext) && !q.ltext.includes(q.complete) && !/JOURNAL/.test(q.ltext), q.ltext.slice(-200));
 
 // 5. a line of your own (Session 491): typed into the By day view and written with Enter, kept with its date, saved
@@ -68,7 +68,7 @@ const n = await page.evaluate(async () => { const e = GAME_LOG[GAME_LOG.length -
   closeHub(); await saveToSlot(0); const m = SS.idx.find(x => x.kind === 'manual' && x.slot === 0); const c = JSON.parse(await ssGet(m.key));
   return { e: { text: e.text, note: e.note, t: e.t }, txt: txt.slice(0, 300), cleared: box ? box.value : null, focused: document.activeElement && document.activeElement.id, long, blank, saved: c.wS.journal.some(x => x.note && /^Edna knows more/.test(x.text)) }; });
 console.log(JSON.stringify(n));
-check('a line of your own is written with Enter, under today with its time, and the box is ready for the next', n.e.note && n.e.text === 'Edna knows more than she says. Ask her about the Shadows, and wait.' && n.e.t === 22000 && /Day 16\s+\S+ \w\w\s+✎ Edna knows more/.test(n.txt) && n.cleared === '', n);
+check('a line of your own is written with Enter, under today with its time, and the box is ready for the next', n.e.note && n.e.text === 'Edna knows more than she says. Ask her about the Shadows, and wait.' && n.e.t === 22000 && /Stoneday, the 16th of Reaping, in the 27th year of the Peace\s+\S+ \w\w\s+✎ Edna knows more/.test(n.txt) && n.cleared === '', n);
 check('a line is at most 500 characters, an empty one is not written, and it is saved with the character', n.long === 500 && n.blank === false && n.saved, n);
 
 // a picture of the tab, by day, for the devlog. Only a picture, no check: on a loaded runner a screenshot can wait out its 30 s

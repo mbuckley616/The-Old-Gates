@@ -20,6 +20,8 @@ Recommendation: **A.** Every ledger on three islands had to date by the treaty, 
 
 Michael: **The drafted set, years of the Peace**. (2026-10-05)
 
+Done, Session 549 (the systems builder, auto/systems): the names in `CAL`, the era and the date line's four lengths; the feasts follow.
+
 ### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05) — DECISION #151
 Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).
 - **A. One fee for the visit, an inn room's price in that place** *(recommended)*: about 12 in a town, 20 in a city; the look page opens and anything on it can change for that one fee; leaving without a change costs nothing. The shop keeps a strongbox at the general goods rate, like every other keeper.

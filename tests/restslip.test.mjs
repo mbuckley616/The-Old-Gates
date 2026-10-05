@@ -17,13 +17,13 @@ await page.evaluate(() => { ZE.forEach(e => { if (e && !e.dead) e.locked = true;
 const s8 = await slip();
 const want = await page.evaluate(() => ({ p8: restPreview(8), p3: restPreview(3), mh: effMaxHP(), mm: effMaxMana(), hp: PHP, mp: mana, lv: level }));
 console.log('sleep 8', JSON.stringify(s8));
-check(`a bed opens the slip: Sleep, ${s8.date}, 8 hours`, s8.open && s8.shown === 'flex' && s8.title === 'Sleep' && /^Day 4 · 9:40 pm/.test(s8.date) && s8.hrs === '8 hours' && s8.range === '8', s8);
+check(`a bed opens the slip: Sleep, ${s8.date}, 8 hours`, s8.open && s8.shown === 'flex' && s8.title === 'Sleep' && /^Seaday, the 4th of Reaping, in the 27th year of the Peace · 9:40 pm/.test(s8.date) && s8.hrs === '8 hours' && s8.range === '8', s8);
 check('the band marks now and the hour you wake', /NOW · 9:40 pm/.test(s8.dial) && /YOU WAKE · 5:40 am/.test(s8.dial) && /8 HOURS/.test(s8.dial), s8.dial);
-check(`it says what eight hours give: wake 5:40 am, Day 5; health ${want.hp} → ${want.p8.hp}, mana ${want.mp} → ${want.p8.mp}; level ${want.lv + 1}`,
-  /You wake at 5:40 am, Day 5\./.test(s8.out) && /a full night/.test(s8.out) && new RegExp(`Health ${want.hp} ${want.p8.hp} of ${want.mh}`).test(s8.out) && new RegExp(`Mana ${want.mp} ${want.p8.mp} of ${want.mm}`).test(s8.out) && new RegExp(`level ${want.lv + 1}`).test(s8.out), { out: s8.out, want });
+check(`it says what eight hours give: wake 5:40 am, Skyday, the 5th of Reaping; health ${want.hp} → ${want.p8.hp}, mana ${want.mp} → ${want.p8.mp}; level ${want.lv + 1}`,
+  /You wake at 5:40 am, Skyday, the 5th of Reaping\./.test(s8.out) && /a full night/.test(s8.out) && new RegExp(`Health ${want.hp} ${want.p8.hp} of ${want.mh}`).test(s8.out) && new RegExp(`Mana ${want.mp} ${want.p8.mp} of ${want.mm}`).test(s8.out) && new RegExp(`level ${want.lv + 1}`).test(s8.out), { out: s8.out, want });
 await key('ArrowLeft'); for (let i = 0; i < 4; i++) await key('ArrowLeft');
 const s3 = await slip();
-check(`five ← make it 3 hours, a short sleep: health ${want.p3.hp}, mana ${want.p3.mp}, as restAtBed gives`, s3.hrs === '3 hours' && /You wake at 12:40 am, Day 5\./.test(s3.out) && /a short sleep/.test(s3.out) && new RegExp(`Health ${want.hp} ${want.p3.hp} `).test(s3.out) && new RegExp(`Mana ${want.mp} ${want.p3.mp} `).test(s3.out), s3.out);
+check(`five ← make it 3 hours, a short sleep: health ${want.p3.hp}, mana ${want.p3.mp}, as restAtBed gives`, s3.hrs === '3 hours' && /You wake at 12:40 am, Skyday, the 5th of Reaping\./.test(s3.out) && /a short sleep/.test(s3.out) && new RegExp(`Health ${want.hp} ${want.p3.hp} `).test(s3.out) && new RegExp(`Mana ${want.mp} ${want.p3.mp} `).test(s3.out), s3.out);
 await key('Digit1');
 const sd = await slip();
 check(`key 1 sets dawn exactly (${sd.hrs})`, sd.min === 500 && sd.hrs === '8 hours 20 minutes' && /YOU WAKE · 6:00 am/.test(sd.dial) && /Dawn/.test(sd.marks[0]), sd);
@@ -42,7 +42,7 @@ console.log('wait', JSON.stringify(w));
 check(`the ⏳ opens the same slip, Wait, set to dawn (${w.hrs})`, w.open && w.title === 'Wait' && w.min === 18 * 60 && /YOU RISE · 6:00 am/.test(w.dial) && /Waiting restores nothing; a bed does\./.test(w.out) && /only sleep takes the level/.test(w.out), w);
 await page.evaluate(() => { const r = document.getElementById('sleep-range'); r.value = '5'; r.dispatchEvent(new Event('input')); });
 const w5 = await slip();
-check('the slider waits by any hour: 5 hours, you rise at 5:00 pm', w5.hrs === '5 hours' && /You rise at 5:00 pm, Day 5\./.test(w5.out), w5.out);
+check('the slider waits by any hour: 5 hours, you rise at 5:00 pm', w5.hrs === '5 hours' && /You rise at 5:00 pm, Skyday, the 5th of Reaping\./.test(w5.out), w5.out);
 const wb = await page.evaluate(() => ({ abs: worldState.gameTimeAbsMinutes, hp: PHP, lv: level }));
 await key('Enter');
 await page.waitForFunction((a) => worldState.gameTimeAbsMinutes - a >= 300, wb.abs, { timeout: 30000 }); await page.waitForTimeout(500);

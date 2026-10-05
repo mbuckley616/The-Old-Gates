@@ -250,28 +250,36 @@ function _stashAdd(item){
 // v80 S11 — "How long would you like to sleep?" Slider 1–24h, then the
 // fade, the clock advance, restore scaled by hours (full at 6+), and any
 // banked level taken after waking.
-function gameDateLine(at,tod){ /* S486 — at, tod: a journal line's stamp; none, now */
-  const abs=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0);const day=Math.floor(abs/1440)+1;
-  const m=(tod!=null?tod:at!=null?at:((worldState&&worldState.gameTimeMinutes)||0))%1440;const hh=Math.floor(m/60),mm=Math.floor(m%60);
-  const h12=((hh+11)%12)+1,ap=hh<12?'am':'pm';
-  return `Day ${day} · ${h12}:${String(mm).padStart(2,'0')} ${ap}`;
-}
 // S497 — the calendar the world keeps (Michael's C on DECISION #132, part B; docs/design/journal-and-calendar.md): a week of
-// seven days, a day to each god (the six with shrines, then the Guest's), months of 28 days so a weekday keeps its dates,
-// twelve months in four seasons of three (the year turns with the first month, spring), a tale begun on the first day of
-// the first autumn month. Every name here is a
-// placeholder for the quest writer's; they live in this one table and nothing else spells them.
-const CAL={days:[{god:'muir',name:'the Sea’s day'},{god:'speir',name:'the Sky’s day'},{god:'beithigh',name:'the Beasts’ day'},{god:'cloch',name:'the Stone’s day'},{god:'teallach',name:'the Hearth’s day'},{god:'fiodoir',name:'the Weaver’s day'},{god:'guest',name:'the Guest’s day'}],
-  monthNames:['the first month','the second month','the third month','the fourth month','the fifth month','the sixth month','the seventh month','the eighth month','the ninth month','the tenth month','the eleventh month','the twelfth month'],
-  monthLen:28,months:12,seasons:['spring','summer','autumn','winter'],startMonth:6,startYear:1};
+// seven days, a day to each god, months of 28 days so a weekday keeps its dates, twelve months in four seasons of three (the
+// year turns with the first month, spring), a tale begun on the first day of the first autumn month.
+// S549 — the names are the quest writer's (docs/quest_drafts.md, *The Year's Names*; Michael's A on DECISION #146): the
+// week runs out from the hearth to the Guest, so the rent on the week's first day falls on Hearthday; each day keeps its
+// deep (Irish) and institutional (Church, Crown) forms, the date line speaks the common one; the months are named for the
+// year's work; the years are counted from the Peace, the 27th at a tale's start. They live in this one table.
+const CAL={days:[{god:'teallach',name:'Hearthday',deep:'Lá an Teallaigh',inst:'le jour de l’Âtre'},{god:'cloch',name:'Stoneday',deep:'Lá na Cloiche',inst:'le jour de la Pierre'},{god:'beithigh',name:'Beastday',deep:'Lá na mBeithíoch',inst:'le jour des Bêtes'},{god:'muir',name:'Seaday',deep:'Lá na Mara',inst:'le jour de la Mer'},{god:'speir',name:'Skyday',deep:'Lá na Spéire',inst:'le jour du Ciel'},{god:'fiodoir',name:'Weaverday',deep:'Lá an Fhíodóra',inst:'le jour du Tisserand'},{god:'guest',name:'Guestday',deep:'Lá an Aoi',inst:'le Jour Clos'}],
+  monthNames:['Thaw','Lambing','Sowing','Shearing','Haysel','Highsun','Reaping','Leaffall','Culling','Longnight','Wolfmonth','Lean'],
+  monthLen:28,months:12,seasons:['spring','summer','autumn','winter'],startMonth:6,startYear:27,era:'the Peace'};
 function calDay(at){
   const abs=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0);const n=Math.floor(Math.max(0,abs)/1440);
   const wd=n%CAL.days.length,mAbs=CAL.startMonth+Math.floor(n/CAL.monthLen),month=mAbs%CAL.months;
   return {n,weekday:wd,day:CAL.days[wd],god:CAL.days[wd].god,dom:n%CAL.monthLen+1,month,season:CAL.seasons[Math.floor(month/3)],year:CAL.startYear+Math.floor(mAbs/CAL.months)};
 }
-// S498 — the calendar's own date, *the Sea’s day, the 8th of the seventh month* (the Due view; the date line everywhere
-// waits for the writer's names)
-function calDateLine(at){const c=calDay(at);const d=c.dom,sfx=(d%10===1&&d!==11)?'st':(d%10===2&&d!==12)?'nd':(d%10===3&&d!==13)?'rd':'th';return `${c.day.name}, the ${d}${sfx} of ${CAL.monthNames[c.month]}`;}
+function calOrd(d){return d+((d%10===1&&d%100!==11)?'st':(d%10===2&&d%100!==12)?'nd':(d%10===3&&d%100!==13)?'rd':'th');}
+// S498 — the calendar's own date, *Seaday, the 4th of Reaping* (the Due view, a map note, the hour you wake on the rest slip)
+function calDateLine(at){const c=calDay(at);return `${c.day.name}, the ${calOrd(c.dom)} of ${CAL.monthNames[c.month]}`;}
+// S486/S549 — the one date line (docs/quest_drafts.md §4). at, tod: a stamp's minute and time of day; none, now. form:
+// 'full' (the default: the sleep panel, the waking line) *Hearthday, the 1st of Reaping, in the 27th year of the Peace · 7:40 am*;
+// 'date', the same with no time (the journal's day heading); 'day', calDateLine's; 'short' (a save slot, a journal line's
+// stamp) *Hearthday 1 Reaping · 7:40 am*; 'time', the time alone.
+function gameDateLine(at,tod,form){
+  const abs=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0);
+  const m=(tod!=null?tod:at!=null?at:((worldState&&worldState.gameTimeMinutes)||0))%1440;const hh=Math.floor(m/60),mm=Math.floor(m%60);
+  const time=`${((hh+11)%12)+1}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;if(form==='time')return time;
+  const c=calDay(abs);if(form==='day')return calDateLine(abs);
+  if(form==='short')return `${c.day.name} ${c.dom} ${CAL.monthNames[c.month]} · ${time}`;
+  const date=`${calDateLine(abs)}, in the ${calOrd(c.year)} year of ${CAL.era}`;return form==='date'?date:`${date} · ${time}`;
+}
 function isGodsDay(god,at){return !!god&&calDay(at).god===god;}
 // S532 — the rest slip (Michael's A on #142): one slip for a bed and for waiting. The day is drawn as a band from noon to
 // noon, NOW and the hour you wake marked on it; a slider of 1–24 hours and today's five times as marks (keys 1–5) that set
@@ -344,7 +352,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
   q('#sleep-hrs').textContent=restDur(min);
   q('#rs-marks').innerHTML=REST_MARKS.map(([h,t],i)=>{const on=restMarkMin(h)===min;return `<button type="button" data-h="${h}" style="background:${on?'rgba(122,31,16,.1)':'none'};border:1px solid ${on?'#7a1f10':'#a89060'};border-radius:2px;font:13px Georgia,serif;color:${on?'#7a1f10':'#3a2c18'};cursor:pointer;padding:2px 8px;font-variant:small-caps"><span style="font-size:10px;color:#8a7050">${i+1}</span> ${t} <small style="font-style:italic;color:#8a7050">${restClock(h).replace(':00','')}</small></button>`;}).join('');
   q('#rs-marks').querySelectorAll('button').forEach(b=>b.onclick=()=>{restSlip.min=restMarkMin(+b.dataset.h);restSlipDraw();});
-  const nowM=worldState.gameTimeMinutes||0,abs=worldState.gameTimeAbsMinutes||0,endTod=(nowM+min)%1440,endDay=gameDateLine(abs+min,endTod).split(' · ')[0];
+  const nowM=worldState.gameTimeMinutes||0,abs=worldState.gameTimeAbsMinutes||0,endTod=(nowM+min)%1440,endDay=gameDateLine(abs+min,endTod,'day');
   const at=`<b>${restClock(endTod/60)}</b>, ${endDay}`,ready=xp>=xpNext,row=(ic,txt,r,col)=>`<div style="display:flex;gap:10px;align-items:baseline${col?';color:'+col:''}"><span style="width:16px;text-align:center;color:#9a7020">${ic}</span><span style="flex:1">${txt}</span><span style="font-style:italic;font-size:12px;color:#8a7050">${r||''}</span></div>`;
   let out='';
   if(sleep){const p=restPreview(min/60),v=(l,a,b,m)=>a>=b&&a>=m?`<span style="font-variant:small-caps">${l}</span> full`:`<span style="font-variant:small-caps">${l}</span> <s style="color:#8a7050">${Math.round(a)}</s> ${Math.round(b)} <span style="color:#8a7050">of ${Math.round(m)}</span>`;

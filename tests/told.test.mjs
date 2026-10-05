@@ -42,7 +42,7 @@ const v = await page.evaluate(() => { openHub('journal'); journalView('topics');
   inp.value = 'bones'; inp.dispatchEvent(new Event('input')); const found = document.getElementById('jn-topics').innerText;
   inp.value = 'nothing like this'; inp.dispatchEvent(new Event('input')); const none = document.getElementById('jn-topics').innerText; inp.value = ''; inp.dispatchEvent(new Event('input')); return { all, found, none }; });
 console.log(JSON.stringify(v).slice(0, 900));
-check('the Topics view lists what you were told by its topic, the teller and the date', /What is under the hill\?/.test(v.all) && /told by Old Tadhg · Day 4 · 10:00 am/.test(v.all) && /Bones, and the gate/.test(v.all), v.all.slice(0, 400));
+check('the Topics view lists what you were told by its topic, the teller and the date', /What is under the hill\?/.test(v.all) && /told by Old Tadhg · Seaday 4 Reaping · 10:00 am/.test(v.all) && /Bones, and the gate/.test(v.all), v.all.slice(0, 400));
 check('the search finds by any word of it and says so when nothing matches', /What is under the hill\?/.test(v.found) && /Whose bones\?/.test(v.found) && !/What is this place/.test(v.found) && /Nothing you were told matches\./.test(v.none), { found: v.found.slice(0, 200), none: v.none });
 // typing in the search: X does not arm quick-destroy, Tab does not close the hub
 await page.focus('#jn-search'); await page.keyboard.type('xw'); await page.keyboard.press('Tab');
