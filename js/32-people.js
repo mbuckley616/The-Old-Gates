@@ -781,24 +781,37 @@ function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),
   if(o.holds)pwHold(p,.02*b,o.gear);return p;}
 // A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
 // forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
+// S534 — a ghoul's limp (Michael, the inspector: "Their walk should probably have a limp as well / be more zombie-like"):
+// o.limp is the bad leg's side (1 the left, -1 the right). That leg swings stiff and low, its toe scuffing the ground, the
+// hip on its side hitched to clear it; standing on it the knee gives and the body drops and lurches over it.
 function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
   p.hipsY=PW.FOOT+PW.HIPJ+(.352-.01*Math.cos(2*a))*PW.LEGK; // the hip joint's height over the foot, scaled with the leg
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.07*c,.025*s];
+  const lim=o.limp||0,fb=lim>0?phL:phR,bs=fb<D?Math.sin(Math.PI*fb/D):0,bw=fb<D?0:Math.sin(Math.PI*(fb-D)/(1-D));
+  if(lim){p.hipsY-=.045*PW.LEGK*bs;p.hips[2]+=lim*(.07*bw-.03*bs);}
   // the pelvis turns and tips as it walks, which carries each hip joint fore and aft: the leg aims from where
   // the joint actually is, so the planted foot stays put and the joint moves around it
   const foot=(f,sd)=>{let z,lift=0,toe=0;
-    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*PW.LEGK*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));}
+    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*PW.LEGK*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));
+      if(sd===lim){lift=.008*PW.LEGK*Math.sin(Math.PI*u);toe=-.3*Math.sin(Math.PI*u);}} // the bad leg drags, its toe down
     const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
   const L=foot(phL,1),Rr=foot(phR,-1);
   // the pelvis sways and tips sideways over the standing foot; the thighs aim across so the feet stay put
-  p.sway=.014*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
+  p.sway=.014*s+(lim?lim*.022*bs:0);const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
   p.thL=[L[0],-p.hips[1],.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],-p.hips[1],-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
   p.spine=[.07,.11*c,-.02*s];p.neck=[-.05,-.04*c,0];p.head=[-.02,0,-.01*s];
   p.shL=[.32*c,0,.09];p.shR=[-.32*c,0,-.09];
   p.elL=[-.24-.2*Math.max(0,-Math.cos(a-.6)),0,0];p.elR=[-.24-.2*Math.max(0,Math.cos(a-.6)),0,0];
   p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
+  if(lim)pwShamble(p,c,s,lim,bs);
   if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+// the ghoul's trunk and arms over its limp: hunched forward, lurching over the bad leg as it takes the weight, the head
+// lolling to that side, the arms hanging forward and swinging little, the bad side's lower and slacker
+function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.neck=[.12,-.03*c,-lim*.12];p.head=[.1,0,-lim*(.14+.06*bs)];
+  const q=lim>0?['shL','elL','wrL','shR','elR','wrR']:['shR','elR','wrR','shL','elL','wrL'],sg=lim>0?1:-1;
+  p[q[0]]=[-.2+.08*c*sg,0,.05*sg];p[q[1]]=[-.1,0,0];p[q[2]]=[.15,0,.05*sg];
+  p[q[3]]=[-.45-.1*c*sg,0,-.08*sg];p[q[4]]=[-.5,0,0];p[q[5]]=[.25,0,-.05*sg];}
 // A run (S162): each foot is down for only a third of the stride, so both are off the ground between steps. The
 // body sits lowest over the standing foot and rises through the flight; the heel kicks up behind as the leg swings
 // through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
@@ -827,6 +840,8 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   if(o.holds){p.shL=[-.25,0,2.35];p.elL=[0,.2,.55-.42*w];p.wrL=[0,0,-.25*w];p.neck=[0,.18,0];p.head=[.04,0,.08];p.spine=[p.spine[0],.06,-.03];}
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
+// the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
+function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1009,9 +1024,10 @@ function tickPeople(dt,now){
     rig.lastNear=near;
     let mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
+    if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
     const t=now/1000*rig.g.tempo+rig.g.phase;
-    pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+    pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig)));
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod)peopleSwing(rig,dt); // S267
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways

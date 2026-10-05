@@ -12006,3 +12006,26 @@ The ghoul was the risen dead's genome with a greener skin and nothing else: the 
 ### Needs eyes
 - At play distance, whether the patches read as rot or as a rash. Their size and darkness are three numbers in one line.
 - **Owed.** The ghoul's limp and its more zombie-like walk: a dragged leg and a lurch in the gait for ghouls alone.
+
+## v80 — Session 534 — The ghoul limps (backlog H, Michael's inspector note, second part)
+Michael, from the inspector, of the ghoul: "Their walk should probably have a limp as well / be more zombie-like." Session 529 did the face and left the walk owed. The ghoul walked on the townsfolk's gait, upright and even, and broke into the same run as a bandit when it chased you.
+
+`pwWalk` (`32-people.js`) takes a new option, `limp`, the bad leg's side. That leg's swing barely lifts (.008 of the leg against .055) and points its toe down, so the foot drags and scuffs forward. The hip on its side hitches up through the swing to clear it. While the bad leg stands, the hips drop by up to .045 of the leg, so its knee gives, and the pelvis sways further over it. A new `pwShamble` sets the trunk and arms over the limp: the spine leans forward .3 to .36 (a walker's .07), lurching more and tipping towards the bad side as it takes the weight; the head hangs forward and lolls to that side; the arms hang forward and swing little, the bad side's lower and slacker. A ghoul's mode is never `run`: chasing you, it hobbles faster on the same gait, the phase still driven by the ground covered so the feet stay planted. Which leg is bad comes from the ghoul's seed, so the same ghoul limps on the same leg every visit. The options a rig walks with are now built in one place, `pwOpts(rig)`, which `tickPeople` and the inspector's walk both call, so the inspector shows the limp. Nothing changes for any other body: the option is 0 and the code paths are skipped.
+
+### Verified (headless Chromium)
+`tests/ghoulwalk.test.mjs` (new), 8/8, from the bones over a 48-step walk cycle:
+- **One bad leg.** Four ghouls limp, three on the left and one on the right. A bandit, a Hollowed and an Ash Wight do not.
+- **The drag.** The bad ankle rises .009 over the cycle against the good one's .060–.065.
+- **The knee gives.** The hips' lowest point over the bad leg is 3.6–3.9 cm under their lowest over the good.
+- **Hunched.** The spine leans .30–.36 forward. A bandit's is .07.
+- **No foot sinks.** The lowest ankle is .054–.058, against a bandit's .060.
+- **The others are unchanged.** Their two legs lift alike (.064–.066).
+- **No run.** In `tickPeople`, moved at 4 a second for 90 frames, a bandit is all run and a ghoul all walk.
+- **Errors.** No page errors.
+
+On the old code the suite fails at once (`pwOpts` is not defined). `foes`, `ghoulface`, `inspector`, `skirtlegs` and `wraithfloat` pass. Pictures: `docs/prototypes/ghoulwalk-before-a.png`/`-b.png` and `ghoulwalk-after-a.png`/`-b.png`, the walk at two points of the stride from the side. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- In play, at a ghoul's chase pace, whether the hobble reads as a limp or as a stumble. The drag, the dip and the lean are each one number.
+- The idle is the elder's stoop, not the shamble's hunch: a ghoul that stops straightens a little over a third of a second.
+- The ghoul's attack poses are unchanged.
