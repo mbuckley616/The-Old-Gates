@@ -12222,3 +12222,12 @@ Step 1 of the co-op door's Opus half (outcome rolls on a stream keyed by place a
 
 ### Needs eyes
 Nothing: the zones play as before; only which of their extra foes stand where, and which are veterans, is fixed now.
+
+## v80 — Session 544 — A settled ragdoll is searched where it lies (backlog C, Session 417's owed check)
+Session 417 made a corpse searchable over its whole body, and left one thing owed: *if the ragdoll (#102) is built, its settled body is what is searched, unchanged.* The ragdoll was built in Sessions 419 (people) and 427 (beasts), and nobody had checked. Settled headless here, with no fault found. `bodyAimed` (`68-dungeon-misc.js`) reads the body's bones where they are on each call, so it follows the fall. What it caches is the capsule radius and the body's extent, worked out from wherever the bones were at the first look. It does not change with the pose: a lying Bandit spans about as much as a standing one. Its reach gate is measured from the kill point (`c.x`, `c.z`) plus 0.6 of the extent, about 4.2 units for a Bandit, and the ragdoll keeps every bone within 2.2 of where the foe stood (`tests/ragdoll`). So a body is searched from anywhere within the eye's reach of it. Nothing in the game changed, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`ragdollsearch` 10/10 (new). Two Bandits and a wolf killed by a power blow through `killZoneEnemy`, looked at once while they stood (so the cache is taken from the upright pose), then stepped at 1/60 until each ragdoll froze (58–77 steps). The Bandits' bodies came to rest 0.74–0.79 units from where they stood, a bone up to 1.2 off; the wolf's 0.4. Aimed at every bone from 2.2 units off on four sides: 65/65, 66/66 and 94/94 searchable. From 2.2 past each bone, on the side away from where it stood: 17/17, 17/17 and 24/24. Aimed across the throw at an upright chest's height over the spot where it stood, nothing. Six units off, out of reach. `lootTargetNow` finds each. `parsecheck` clean.
+
+### Needs eyes
+Nothing beyond Session 417's: whether the crosshair on a fallen body feels right at speed.
