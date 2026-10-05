@@ -12118,3 +12118,30 @@ The lathe has vertices only at its profile's rows, so the counts are small (2 at
 - The cheek guards' inner edges are straight. A real Corinthian curves them in towards the chin, which would take a profile of its own for the guards.
 - The crest is still the old hoop of red, not a horsehair brush.
 - "Clothing cut right through it" is not this session's. The armour-kits note covers clothing through the armour across the sets.
+
+## v80 — Session 538 — The Demonic kit carved in red (backlog H, Michael's inspector note, first part)
+Michael, from the inspector, of the Demonic kit: "more detail and colour, red carved designs across the armour, similar to Daedric armor in Oblivion/Skyrim", with the purple staying dominant. The Demonic tier (9) wears the plate with the `spiked` signature: horns on the helm, spikes on the pauldrons and the breastplate, all of it one purple with the guard's darker purple on the spikes.
+
+`ARMOUR_DRESS` (`32-people.js`) now lays thin lines of red (`CARVE`, 0xc41c1c) into the spiked plate:
+- **The cuirass.** The lower edge of each of the three fauld lames and of the breastplate. A ridge down the breastplate's keel, with three chevrons either side of it. A long slash on each flank.
+- **The pauldrons.** The lower edge of each of their three lames.
+- **The helm.** A line over the crown from brow to nape, beside the horns. A ring at the brow, sized to the shell at that height. Two cuts slanting back from the forehead.
+- **The vambraces.** A ring at each end and a chevron between them.
+- **The greaves.** A ring at the knee and at the ankle, a chevron down the shin, and one on the thigh plate.
+
+The lines are 3 to 5 mm across and laid on the plate's own surface, so they read as carving rather than as added pieces. They come to 5.9% of the plate's surface, so the purple stays dominant. Only the `spiked` signature carries them. The first pass put the set at 12,982 triangles, over the 12,600 budget that `armourkit` holds every full set to. The carvings' rings now take fewer segments, which a line that thin does not need, and the set is 12,082 (10,546 → 12,934 in the inspector entry, with the sword and buckler).
+
+### Verified (headless Chromium)
+`tests/demonickit.test.mjs` (new), 5/5, from the bake of your body in each plate tier's full kit, measured by surface:
+- **The signature.** The Demonic kit is the `spiked` plate.
+- **Where the red is.** Red carving on the breastplate (101 cm²), the pauldrons (55), the helm (36), the greaves (34) and the vambraces (8).
+- **Purple dominant.** The carvings are 234 cm² against the plate's 3,943 (5.9%; under a tenth is the check).
+- **The other tiers.** Steel, Mithril, Obsidian and Draconic carry none.
+- **Errors.** No page errors.
+
+`armourkit`, `foearmour`, `guardarmour`, `bronzehelm` and `inspector` pass. `docs/inspector-catalogue.json` is refreshed. Pictures: `docs/prototypes/demonic-before-front.png`/`-chest.png`/`-back.png` and `demonic-after-*.png`, the full figure, the chest close and the back. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The red is a flat colour, not lit from within. Daedric's seams glow at night. A glow would take a material of its own, or the enchantment's light.
+- **Owed.** The second half of the note: "some very very light particle effect" on enchanted items. It is a separate item in the backlog line.
+- Long hair still shows through the Demonic helm's sides, as on the other closed helms. That belongs to the armour-kits note.

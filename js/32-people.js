@@ -181,6 +181,9 @@ function ARMOUR_DRESS(X){
   const {part,B,C,SK,THREE,bw,chestPts,E,g}=X;const PI=Math.PI,L1=PW.L1,L2=PW.L2;
   const hs=g.head||1,jaw=g.jaw||1,Z=.78,LR=[['L',1],['R',-1]];
   const leather=C(0x4a3020),dark=C(0x120e0c),MT=h=>C(h).clone().multiplyScalar(.72),GD=h=>C(h).clone().multiplyScalar(.85);
+  // S538 — the Demonic plate's carvings (Michael, the inspector: "red carved designs across the armour, similar to Daedric armor",
+  // purple dominant): thin lines of red laid in the plate along its edges and in chevrons, the 'spiked' signature's alone
+  const CARVE=C(0xc41c1c),cut=(geo,b,x,y,z)=>part(geo,CARVE,b,x,y,z);
   const cp=chestPts.map(q=>[q[0]*bw,q[1]]);
   const rAt=y=>{for(let i=1;i<cp.length;i++){const a=cp[i-1],b=cp[i];if(a[1]!==b[1]&&(y-a[1])*(y-b[1])<=0)return a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1]);}return cp[1][0];};
   // shapes: a thick flared hoop (a lame), a profile made dense for the mail's rings, a front keel, facets
@@ -238,6 +241,7 @@ function ARMOUR_DRESS(X){
         if(S==='heavy')part(SK.rbox(.02,.075,.15,.006,1),m,b,s*.03,.055,0);
         if(S==='fluted')for(let i=-1;i<=1;i++)part(SK.cyl(.004,.004,.1,4),m,b,s*.03+i*.028*s*.3,.03,i*.04).rotation.z=s*.9;
         if(S==='spiked')for(let i=0;i<3;i++){const sp=part(SK.cone(.024,.15-.03*i,6),gd,b,s*(.06+.02*i),.05-.02*i,-.04+.04*i);sp.rotation.z=-s*(.7+.3*i);}
+        if(S==='spiked')for(let i=0;i<3;i++){const r=(.084-.005*i)*ps+.0125,o=cut(SK.cyl(r,r,.005,9,1,true,c-1.35,2.7),b,s*.014,-.052-i*.034,0);o.scale.z=1.15;}
         if(S==='scaled')for(let i=0;i<9;i++){const c2=c-1.1+i%3*1.1,y=-.005-Math.floor(i/3)*.035;const sc=part(SK.ball(.024,4,3),gd,b,Math.sin(c2)*.096+s*.014,y,Math.cos(c2)*.1);sc.rotation.set(.35,c2,0);sc.scale.set(1,1.25,.4);}
         if(gl&&(S==='faceted'||S==='inlaid'||S==='fluted'))ring(.086*ps,.004,-.06,gl,b,1.15);});
       // tassets hang from the faulds over the front of each thigh, on the thigh's own bone so a stride carries them
@@ -246,6 +250,13 @@ function ARMOUR_DRESS(X){
       if(S==='heavy')for(let i=0;i<10;i++){const a=(i-4.5)*.3;onBody(B.spine,SK.ball(.009,5,4),gd,a,rAt(.1)*1.12+.02,.098);}
       if(S==='scaled')for(let r=0;r<5;r++)for(let i=0;i<9;i++){const a=(i-4+(r%2)*.5)*.19,y=.3-r*.045;const sc=onBody(B.spine,SK.ball(.026,4,3),gd,a,rAt(y)*1.12+.016+.02*Math.pow(Math.cos(a),8),y);sc.rotation.x=.35;sc.scale.set(1,1.3,.42);}
       if(S==='spiked')[-1,1].forEach(sd=>{const sp=onBody(B.spine,SK.cone(.013,.07,6),gd,sd*.5,rAt(.26)*1.12+.02,.26);sp.rotation.x=PI/2;});
+      if(S==='spiked'){const sr=(y,a)=>rAt(y)*1.12+.008+.024*Math.pow(Math.max(0,Math.cos(a)),6)+.003;
+        // the edge of each lame of the faulds, a ridge down the breastplate's keel, and three chevrons either side of it
+        for(let i=0;i<3;i++){const ya=.1-i*.042-.05;ring(rAt(Math.max(0,ya))*1.12+.017+i*.006,.0032,ya+.003,CARVE,B.spine,Z,14);}
+        ring(rAt(.1)*1.12+.016,.0032,.098,CARVE,B.spine,Z,14);
+        onBody(B.spine,SK.cyl(.0035,.0035,.2,4),CARVE,0,sr(.21,0),.21);
+        [.29,.22,.15].forEach((y,j)=>[-1,1].forEach(sd=>{const a=sd*(.2+.03*j),o=onBody(B.spine,SK.rbox(.0055,.075-.008*j,.004,.002,1),CARVE,a,sr(y,a),y);o.rotation.z=sd*.95;}));
+        [-1,1].forEach(sd=>{const a=sd*.62,o=onBody(B.spine,SK.rbox(.005,.11,.004,.002,1),CARVE,a,sr(.24,a)-.002,.24);o.rotation.z=-sd*.25;});}
       if(gl&&S==='inlaid')[.14,.24,.32].forEach(y=>ring(rAt(y)*1.12+.013+.004,.004,y,gl,B.spine));
       if(gl&&S==='faceted')[.096,.058,.016].forEach(y=>ring(rAt(y)*1.12+.02,.0035,y,gl,B.spine));
       if(gl&&S==='fluted'){ring(rAt(.1)*1.12+.02,.004,.095,gl,B.spine);ring(.08,.004,.064,gl,B.neck,1);}
@@ -260,7 +271,9 @@ function ARMOUR_DRESS(X){
       else if(H.fam==='mail'){part(mailTex(SK.cyl(.05*bw,.045*bw,.12,16,3,true)),m,el,0,-.075,0);part(SK.cyl(.054,.044,.045,12,1,true),GD(H.guard),wr,0,.0,0);}
       else{part(F(SK.cyl(.049*bw,.043*bw,.12,12,1,true)),m,el,0,-.075,0);part(F(SK.cyl(.058,.044,.055,12,1,true)),m,wr,0,-.004,0);
         part(F(SK.rbox(.052,.016,.04,.006,1)),m,wr,0,-.052,.014);
-        if(H.sig==='spiked')part(SK.cone(.012,.06,6),GD(H.guard),el,s*.03,.0,-.04).rotation.set(-1.2,0,s*.5);}});}
+        if(H.sig==='spiked'){part(SK.cone(.012,.06,6),GD(H.guard),el,s*.03,.0,-.04).rotation.set(-1.2,0,s*.5);
+          [-.03,-.125].forEach(y=>cut(SK.torus(.047*bw,.003,3,12),el,0,y,0).rotation.x=PI/2);
+          [-1,1].forEach(sd=>{const o=cut(SK.rbox(.004,.05,.004,.002,1),el,sd*.012,-.078,.046*bw);o.rotation.z=sd*.5;});}}});}
   // ── the legs' piece ──
   const Lg=E.legs;
   if(Lg){const m=MT(Lg.metal),gd=GD(Lg.guard),F=Lg.sig==='faceted'?facet:(x=>x);
@@ -272,7 +285,10 @@ function ARMOUR_DRESS(X){
         part(SK.ball(.046,10,7,0,PI*2,0,PI*.6),m,kn,0,.0,.03).rotation.x=PI/2-.2;}
       else{part(F(SK.cyl(.078*bw,.066*bw,L1*.62,12,1,true)),m,th,0,-L1*.55,0);part(F(SK.cyl(.062*bw,.05*bw,L2*.74,12,1,true)),m,kn,0,-L2*.52,0);
         part(F(SK.ball(.052,10,7)),m,kn,0,.0,.024).scale.set(1,.92,.85);part(F(SK.cyl(.034,.034,.008,12)),m,kn,s*.052,0,.01).rotation.z=PI/2;
-        if(Lg.sig==='spiked'){const sp=part(SK.cone(.013,.07,6),gd,kn,0,.01,.07);sp.rotation.x=PI/2;}
+        if(Lg.sig==='spiked'){const sp=part(SK.cone(.013,.07,6),gd,kn,0,.01,.07);sp.rotation.x=PI/2;
+          [-L2*.17,-L2*.88].forEach(y=>cut(SK.torus((.062-.012*(-y/L2))*bw+.002,.0032,3,12),kn,0,y,0).rotation.x=PI/2);
+          [-1,1].forEach(sd=>{const o=cut(SK.rbox(.005,.08,.004,.002,1),kn,sd*.016,-L2*.45,.058*bw);o.rotation.z=sd*.45;});
+          [-1,1].forEach(sd=>{const o=cut(SK.rbox(.005,.06,.004,.002,1),th,sd*.018,-L1*.5,.074*bw);o.rotation.z=-sd*.4;});}
         if(Lg.glow!=null&&(Lg.sig==='inlaid'||Lg.sig==='faceted'))ring(.058*bw,.0035,-L2*.3,C(Lg.glow),kn,1);}});}
   // ── the feet: sabatons for plate (the boots take the metal's colour already) ──
   const Ft=E.feet;
@@ -309,7 +325,10 @@ function ARMOUR_DRESS(X){
           p.addScaledVector(d,len*.96);r*=.74;d.applyAxisAngle(new THREE.Vector3(0,0,1),-sd*.32);d.applyAxisAngle(new THREE.Vector3(1,0,0),fwd?.35:-.25);d.normalize();}
         const tip=part(SK.cone(r,.05,7),gd,hd,p.x+d.x*.025,p.y+d.y*.025,p.z+d.z*.025);tip.quaternion.setFromUnitVectors(up,d);};
       if(S==='scaled'){[-1,1].forEach(sd=>horn(sd,false));for(let i=0;i<5;i++){const sp=part(SK.cone(.014,.045,5),gd,hd,0,.28-i*.045,-.06-i*.03);sp.rotation.x=-.6-i*.25;}}
-      if(S==='spiked')[-1,1].forEach(sd=>horn(sd,true));
+      if(S==='spiked'){[-1,1].forEach(sd=>horn(sd,true));
+        const cr=part(SK.torus(R*1.05,.0035,3,12,PI*.95),CARVE,hd,0,.12,.004);cr.rotation.set(0,PI/2,PI*.03);cr.scale.set(1,1.06,1.08);
+        ring(Math.sqrt(R*R-(.055/1.06)**2)+.004,.0032,.175,CARVE,hd,1.08,14).scale.x=jaw*1.02; /* the shell's own radius at that height */
+        [-1,1].forEach(sd=>{const o=part(SK.rbox(.005,.05,.004,.002,1),CARVE,hd,sd*.07*jaw,.21,R*.82);o.rotation.set(-.6,sd*.4,sd*.7);});}
       if(gl&&S==='inlaid'){const ha=part(SK.torus(.13*hs,.007,4,28),gl,hd,0,.2,-.16);ha.rotation.x=-.2;ring(R*1.02,.004,.19,gl,hd,1.08).scale.x=jaw*1.02;}
       if(gl&&(S==='faceted'||S==='fluted'))ring(R*1.03,.004,.2,gl,hd,1.08).scale.x=jaw*1.02;}}
 }
