@@ -594,7 +594,7 @@
     }
     for(const o of OTHER){
       if(o.boarded){placeOther(o);pirateFled(o);continue;}
-      const dP=Math.hypot(px-o.x,pz-o.z);
+      const T=targetOf(o),dP=Math.hypot(T.x-o.x,T.z-o.z); /* S542 — co-op rule: whom a black sail hunts is targetOf's */
       let tx,tz;
       if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<300){ // close to ~28u, then hold off and shoot
         // S418 — her ram (Michael's B on #100): within 30 units, faster than you and with her ram ready, she steers at your
@@ -602,9 +602,9 @@
         o.ramWait=(o.ramWait||0)-dt;const aboard=!!SHIP.mesh&&(SHIP.sailing||onDeck());
         if(o.ramming){o.ramming-=dt;if(o.ramming<=0||!aboard){o.ramming=0;o.ramWait=PIRATE_RAM.wait;}}
         else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top)o.ramming=PIRATE_RAM.run;
-        const dx=px-o.x,dz=pz-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=px;tz=pz;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
+        const dx=T.x-o.x,dz=T.z-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=T.x;tz=T.z;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
         o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+(o.rng?o.rng():Math.random());volley(o);}
-      } else if(o.sated){tx=o.x+(o.x-px);tz=o.z+(o.z-pz);
+      } else if(o.sated){tx=o.x+(o.x-T.x);tz=o.z+(o.z-T.z);
       } else {
         if(!o.wp||Math.hypot(o.wp.x-o.x,o.wp.z-o.z)<20){for(let k=0;k<10;k++){const a=Math.random()*Math.PI*2,d=150+Math.random()*250;const x=o.x+Math.cos(a)*d,z=o.z+Math.sin(a)*d;if(worldH(x,z)<-4){o.wp={x,z};break;}}}
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}
@@ -619,9 +619,9 @@
   // volleys: arrows that fly to where you are; a hit if you're still near when they land
   const ARROWS=[];
   function volley(o){
-    const R=o.rng||Math.random;const n=2+Math.floor(R()*2);const v={hit:false};
+    const R=o.rng||Math.random,T=targetOf(o);const n=2+Math.floor(R()*2);const v={hit:false};
     for(let k=0;k<n;k++){const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.9),new THREE.MeshLambertMaterial({color:0x3a2a18}));const sx=o.x+(Math.random()-.5)*3,sz=o.z+(Math.random()-.5)*3;m.position.set(sx,DECK_Y+1.2,sz);sc.add(m);
-      const tx=px+(R()-.5)*4,tz=pz+(R()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:jumpY+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v});}
+      const tx=T.x+(R()-.5)*4,tz=T.z+(R()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:T.y+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v});}
     if(typeof sfxNoise==='function')sfxNoise(.18,0,0,.08,1800);showMsg('Arrows!','#ff8060');
   }
   // S411 — a volley whose first arrow comes down on your own deck costs her 2 hull and 3 rig (once a volley)

@@ -12199,3 +12199,17 @@ Now *under a tree* is worked out by `herbTreeNear` from the scatter's own roll i
 
 ### Needs eyes
 Nothing: herbs by a tree or a house may be another kind than before, which only a botanist would notice.
+
+## v80 — Session 542 — The world's hunters ask targetOf whom to hunt (backlog K, the co-op door, step 2)
+Session 468 put the two foe ticks (the open world's zone foes and the dungeon's) behind `targetOf(e)`, the one function a co-op build will teach to pick among the party, and left *the 195 reads in `80-world.js`* unaudited. That file is nine now. Read through, about 470 reads of `px`/`pz` in them: almost all are the player's own side (streaming cells and chunks, the maps, prompts, discovery, spawn distances, the weather cell, footprints) or a hit test against you, which the rule leaves alone. Three choosers are hostile, and each read you straight:
+- **A guard who trails you** at favour −2 (`pickFollowers`, the town tick's `_follow`, `82-world-structures.js`): which guard is nearest, where he walks, which way he faces.
+- **A guard sent after a fine** (`_chase` in the town tick and `trailStep`, which routes him by the streets; `tickSent`, `86-world-crime.js`): the distance he keeps, the clear line he is judged by, whether his quarry has left the pad, and indoors the walk across the room to halt you.
+- **A black sail** (`85-world-sea.js`): her course while she closes, her flight once sated, and where her volleys come down (with your height, so `PLAYER_TARGET` now has `y`, read live from `jumpY` like the other two).
+
+All of them now read `targetOf(n)` or `targetOf(o)`. Solo it is you, so nothing plays differently. Left as they are, and why: a struck townsperson running from you (fear, not a target); the townsfolk turning to face you; the witness and halt checks (detection, which a co-op build makes per player, as Session 468 left `canSeePlayer`); the volley's hit test; her ram, which steers at your ship's hull (`SHIP`), a thing and not a person; and the spawn and despawn distances for ships, town jobs and quest bands, which follow whoever streams the world. The drawn guard, boarders, the duel's rival and the sea's crews are zone foes and already went through `tickZoneEnemies`.
+
+### Verified (headless Chromium)
+`worldtarget` 11/11 (new). Each hostile chooser is run once as built and once with `targetOf` pointed at a decoy on the far side, you standing still. In Dunmore at favour −2, Séamus starts 20 units from you and 20 from the decoy: as built he closes to 8 from you; with the decoy he is 8 from it and 32 from you. Sent after you (`_chase`): 20 → 1.4 from you; with the decoy 1.4 from it, 38.6 from you. A sent guard whose target is 2,000 units off gives up the chase (*Séamus gives up the chase.*) though you stand on the pad. A black sail 150 units east of your still sloop: as built she is 31 from you after 20 s; with the decoy 150 beyond her, 56 from it and 244.7 from you. Her volley with the decoy at 80 units comes down 1.1–1.2 from it, at its height + 0.6. On the code before this session six of the eleven checks fail. targetof, watch, pirateram, piratehold, guardplay, crime3, guardsindoor, seaseed and guardseed pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing: solo, every one of these still returns you.

@@ -417,7 +417,7 @@
         const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',_twin:n.def&&n.def._twin,bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
         g.position.set(W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
-      if(s.phase==='inside'&&s.mesh){const g=s.mesh,dx=px-g.position.x,dz=pz-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
+      if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
         if(d>1.5&&!talking){const st=Math.min(d-1.4,1.8*dt),nx=g.position.x+dx/d*st,nz=g.position.z+dz/d*st;
           if(!intSolidAt(nx,nz,.3,0)){g.position.x=nx;g.position.z=nz;}else if(!intSolidAt(nx,g.position.z,.3,0))g.position.x=nx;else if(!intSolidAt(g.position.x,nz,.3,0))g.position.z=nz;}
         else if(d<=1.5&&!talking&&CR.cool<=0&&Math.abs(jumpY)<1.2)confrontIndoor(s,S,c);}
@@ -431,8 +431,8 @@
       n.g.position.set(x,worldH(x,z),z);n.g.visible=true;n._retreated=false;if(n.dot)n.dot.visible=true;
       if(s.drawOnExit){const ol=Math.hypot(s.out.x,s.out.z)||1,gx=s.door.x+s.out.x/ol*1.8,gz=s.door.z+s.out.z/ol*1.8;n.g.position.set(gx,worldH(gx,gz),gz);endSent();CR.cool=0;guardDraw(n,S);return;}
       s.phase='chase';s.ct=0;n._chase=true;n._follow=false;CR.cool=0;}
-    if(s.phase==='chase'){s.ct+=dt;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);s.last={d,clear:clearLine(px,pz,n.g.position.x,n.g.position.z)};
-      const onPad=Math.hypot(px-S.site.x,pz-S.site.z)<(S.site.pad||40)+40;
+    if(s.phase==='chase'){s.ct+=dt;const T=targetOf(n),d=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z);s.last={d,clear:clearLine(T.x,T.z,n.g.position.x,n.g.position.z)};
+      const onPad=Math.hypot(T.x-S.site.x,T.z-S.site.z)<(S.site.pad||40)+40;
       if(!onPad||s.ct>CHASE_MAX){showMsg(`${(n.def&&n.def.name)||'The guard'} gives up the chase.`,'#c8b880');endSent();}}
   }
   // S241 — refused indoors, the guard draws where he stands: a Town Guard in the room, fought through the zone-enemy code

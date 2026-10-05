@@ -862,7 +862,7 @@
       if(out&&favor(S.site)<=-2&&Math.hypot(px-S.site.x,pz-S.site.z)<(S.site.pad||40)){
         const ok=n=>n.g.visible&&!n._drawn&&!(n._scared&&now<n._scared)&&!scheduleFor(n,h).hide;
         if(S._follower&&G.includes(S._follower)&&ok(S._follower))f=S._follower;
-        else{let bd=1e9;for(const n of G){if(!ok(n))continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d<bd){bd=d;f=n;}}}}
+        else{let bd=1e9;for(const n of G){if(!ok(n))continue;const T=targetOf(n),d=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z);if(d<bd){bd=d;f=n;}}}}
       S._follower=f;for(const n of G)n._follow=(n===f);}}
   // Guards carry a torch after dark: stick + flame + a small point light.
   function ensureTorch(n){
@@ -924,12 +924,12 @@
   // S357 — a guard walking you down (trailing you at favour −2, or sent after you): the pulled-straight way by the streets,
   // and when he has gained nothing on you for a second and a half (a corner the straight line misses, where npcStep gives
   // up and he stood for good), every cell of the way, as the night beat does (S247)
-  function trailStep(n,spd,dt,every){const gx=n.g.position.x,gz=n.g.position.z,fd=Math.hypot(px-gx,pz-gz);
+  function trailStep(n,spd,dt,every){const T=targetOf(n),tx=T.x,tz=T.z,gx=n.g.position.x,gz=n.g.position.z,fd=Math.hypot(tx-gx,tz-gz); /* S542 — co-op rule: whom he runs down is targetOf's */
     if(n._twBest==null||fd<n._twBest-.5){n._twBest=fd;n._twS=0;}else n._twS+=dt;
-    if(n._twS>1.5){n._twS=0;n._twBest=fd;n._twRaw=townRoute(n._settle)({x:gx,z:gz},{x:px,z:pz},true);}
+    if(n._twS>1.5){n._twS=0;n._twBest=fd;n._twRaw=townRoute(n._settle)({x:gx,z:gz},{x:tx,z:tz},true);}
     if(n._twRaw&&n._twRaw.length){const w=n._twRaw[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._twRaw.shift();return;}
-    n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=every;const w=townRoute(n._settle)({x:gx,z:gz},{x:px,z:pz});n._fw=w.length?w[0]:null;}
-    const t=n._fw&&Math.hypot(n._fw.x-gx,n._fw.z-gz)>.9?n._fw:{x:px,z:pz};npcStep(n,t.x,t.z,spd,dt);}
+    n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=every;const w=townRoute(n._settle)({x:gx,z:gz},{x:tx,z:tz});n._fw=w.length?w[0]:null;}
+    const t=n._fw&&Math.hypot(n._fw.x-gx,n._fw.z-gz)>.9?n._fw:{x:tx,z:tz};npcStep(n,t.x,t.z,spd,dt);}
   // Filled in by build() from the road geometry; the fallback is the pad edge.
   const spawn={x:ASH_X,z:ASH_Z-62,yaw:0};
   function tickTownNPCs(dt,now){
@@ -946,12 +946,12 @@
       if(n._scared&&now<n._scared){const a=Math.atan2(n.g.position.x-px,n.g.position.z-pz);npcStep(n,n.g.position.x+Math.sin(a)*6,n.g.position.z+Math.cos(a)*6,1.3,dt);n.g.position.y=worldH(n.g.position.x,n.g.position.z);n.dot.position.set(n.g.position.x,n.g.position.y+1.52,n.g.position.z);continue;} // S157 — struck: runs
       const spd=n.sched&&n.sched.type==='guard'?.95:.7;
       let moving=false;
-      if(n._chase){const fd=Math.hypot(px-n.g.position.x,pz-n.g.position.z); // S239 — sent after you: he runs you down by the streets
+      if(n._chase){const T=targetOf(n),fd=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z); // S239 — sent after you: he runs you down by the streets
         if(fd>1.4){trailStep(n,CHASE_SPD,dt,.6);moving=true;}
-        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}}
-      else if(n._follow){const fd=Math.hypot(px-n.g.position.x,pz-n.g.position.z); // S166 — trailing you at six to eight units
+        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(T.x-n.g.position.x,T.z-n.g.position.z);}}
+      else if(n._follow){const T=targetOf(n),fd=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z); // S166 — trailing you at six to eight units
         if(fd>8){trailStep(n,Math.min(3.4,spd+(fd-8)*.6),dt,1);moving=true;}
-        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}}
+        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(T.x-n.g.position.x,T.z-n.g.position.z);}}
       else if(plan.beat){const B=plan.beat;
         if(n._beatI==null||n._beatI>=B.length){const G=guardsOf(n._settle).filter(g=>g.sched.type!=='constable');const k=Math.max(0,G.indexOf(n));n._beatI=Math.floor(k*B.length/Math.max(1,G.length))%B.length;}
         if(n._beatWait>0){n._beatWait-=dt;}
