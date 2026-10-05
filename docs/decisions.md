@@ -4,6 +4,11 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 ## Answered
+### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
+The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.
+
+Michael: **Two more lines: light and robes**. (2026-10-05)
+
 ### The calendar's names — take the drafted set, and which era? (the quest writer, 2026-10-05) — DECISION #146
 The calendar is built on auto/systems (Sessions 496–500) with placeholder names in one table, `CAL`, and backlog D says the names are proposed by the quest writer and picked by Michael. `docs/quest_drafts.md`, *The Year's Names*, drafts the whole set from the canon. The days are named for the gods, running outward from the hearth: **Hearthday, Stoneday, Beastday, Seaday, Skyday, Weaverday, Guestday**. The Church calls the seventh *the Closed Day*. The months are named for the year's work: **Thaw, Lambing, Sowing, Shearing, Haysel, Highsun, Reaping, Leaffall, Culling, Longnight, Wolfmonth, Lean**. A new tale opens on the 1st of Reaping. The four feasts are **the Kindling** (1st of Thaw), **the Long Light** (19th of Highsun), **the Giving** (23rd of Reaping, when the year's dead are named at the old gate) and **the Empty Chair** (28th of Longnight, a place set for the Guest). The canon names no monarch and dates nothing, so the era is the one call the draft cannot make alone.
 - **A.** The drafted set, with the era **of the Peace**: the treaty after the war on the Hollowed Wastes, one generation ago (§1.4). A tale opens in the 27th year. The Markmen count the same years as *winters since the Wastes*. *(recommended)*
