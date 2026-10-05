@@ -63,6 +63,10 @@ function inspRegistry(){
   add('Buildings','Walls and gates','gate tower','82-world-structures.js',()=>({obj:inspMesh(gateTowerHi(1.2,6.5,new THREE.Color(0x6e695f),new THREE.Color(0x5a3a2a),pRng(13)))}));
   add('Buildings','Walls and gates','bridge','82-world-structures.js',()=>({obj:inspMesh(bridgeGeo(24,2,7))}));
   for(const k of ['tower','shrine'])add('Buildings','Places','poi '+k,'87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo(k))}));
+  // S557 — the lair, the glade and the bandit camp (Michael's note, S541: "maybe a few others that should probably be in this list"),
+  // on the systems builder's geometry-only previews (S545, WORLD.poiPreview, seed 7): the look alone, with no stamp, foe, chest or light.
+  // From the title screen the world's tree prototypes are not built yet; the glade's ring of trees needs them, as the trees' own entries do
+  if(typeof WORLD!=='undefined'&&WORLD.poiPreview)for(const [k,n] of [['glade','poi glade'],['lair','poi lair'],['bcamp','poi bandit camp']])add('Buildings','Places',n,'87-world-quests.js',()=>{if(!PROTO.oak)buildProtos();return {obj:WORLD.poiPreview(k,7)};}); /* the glade's trees are the world's prototypes, built at world entry */
   for(const k of ['well','stall','tent','ruin','stone'])add('Buildings','Town furniture',k,'82-world-structures.js',()=>{
     const r=WORLD.furnProto(k,pHash('insp|'+k));return {obj:inspMesh(r.hi),lo:r.lo&&inspMesh(r.lo)};});
   // S541 — the dungeons (Michael: "No dungeon mesh in the inspector either"): one small floor of each theme, laid out by the game's
@@ -131,7 +135,11 @@ function inspMesh(geo){const m=new THREE.Mesh(geo,VC_MAT);m.castShadow=true;m.re
 // ── stats of a built thing ──
 function inspStats(obj){let tris=0,calls=0;obj.updateMatrixWorld(true);obj.traverse(o=>{if(!o.isMesh||!o.visible)return;const g=o.geometry;if(!g)return;
   const n=(g.index?g.index.count:g.attributes.position?g.attributes.position.count:0)/3;tris+=n*(o.isInstancedMesh?o.count:1);calls++;});return {tris:Math.round(tris),calls};}
-function inspBox(obj){obj.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(obj);if(b.isEmpty())b.set(new THREE.Vector3(-.5,0,-.5),new THREE.Vector3(.5,1,.5));return b;}
+// S557 — an instanced mesh counts each instance where it stands (Box3 reads only its geometry, at the mesh's own place): the glade's
+// ring of trees framed from inside it
+function inspBox(obj){obj.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(obj);
+  obj.traverse(o=>{if(!o.isInstancedMesh||!o.geometry.attributes.position)return;if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();const m=new THREE.Matrix4(),q=new THREE.Box3();
+    for(let i=0;i<o.count;i++){o.getMatrixAt(i,m);b.union(q.copy(o.geometry.boundingBox).applyMatrix4(m.premultiply(o.matrixWorld)));}});if(b.isEmpty())b.set(new THREE.Vector3(-.5,0,-.5),new THREE.Vector3(.5,1,.5));return b;}
 
 // ── building and showing ──
 function inspBuild(e){if(INSPECTOR.built.has(e.id))return INSPECTOR.built.get(e.id);

@@ -12357,3 +12357,28 @@ Prototype only: nothing on auto/backlog's game code changes, and no test was add
 - **Michael's choice on #161.** A both as shown (recommended), B plainer closed robes, C a heavier studded leather coat for the archer, D marked changes.
 - **Rough edges, owed in the build, not in the question.** The thigh straps stand a little off the leg. The tunic's shoulder cap shows through the mantle from the side. Long straight hair hangs out of the light hood, which may be wanted.
 - **For the systems builder:** an armour item has to say its line (the look reads `line` on each worn piece). The two lines' boots should take their leather or cloth colour, not the metal's (`tpBuild`'s `bootCol`).
+
+## v80 — Session 557 — The lair, the glade and the bandit camp in the inspector (backlog H, Michael's inspector note via Session 541)
+Session 541 left one part of Michael's inspector note open: "maybe a few others that should probably be in this list". They were the lair, the glade and the bandit camp. Their builders make the place in one go: stamp, footholds, foes, chest and light with the look. So each needed a builder of its look alone, as the tower and the shrine have. The systems builder made those in Session 545 on auto/systems (`gladeGeoParts`, `lairGeoParts`, `campGeoParts`, and `WORLD.poiPreview(kind, seed)`, which builds one at the origin and touches nothing in the world). The entries were left to me.
+
+**The entries.** `97-inspector.js` lists `poi glade`, `poi lair` and `poi bandit camp` under Buildings › Places, at seed 7. Their keys are `buildings/places/poi-glade`, `…/poi-lair` and `…/poi-bandit-camp`. `WORLD.poiPreview` is not on auto/backlog or main yet. The entries are added only when it exists, so this branch alone lists nothing new and breaks nothing. Once both branches are merged the three appear. The control room's Meshes tab takes them from `docs/inspector-catalogue.json` at the next inspector run after the merge. Republishing the control room is the producer's.
+
+**Two faults found on the way, both fixed in the inspector.**
+- **The glade had no trees.** Its ten trees are the world's `PROTO.broadleaf`, and the world builds its tree prototypes on entry. Opened from the title screen, the glade's tree ring was an instanced mesh of nothing. The entry now builds the prototypes first, as the inspector's own tree entries do.
+- **The camera stood inside the trees.** `inspBox` framed every piece by `Box3.setFromObject`, which reads an instanced mesh's geometry only at the mesh's own place. It now adds each instance where it stands. Nothing else in the inspector is instanced, and `inspector` and `inspdungeons` pass as before.
+
+### Verified (headless Chromium)
+`tests/inspplaces.test.mjs` (new). It checks whichever case it finds:
+- **On auto/backlog alone** (no `WORLD.poiPreview`), 2/2: the three are not listed, and there are no page errors.
+- **In a scratch worktree with origin/auto/systems merged in**, 5/5:
+  - The glade builds: 9,560 triangles, 3 draw calls.
+  - The lair builds: 1,308 triangles, 9 draw calls.
+  - The camp builds: 6,626 triangles, 7 draw calls.
+  - The glade's ten trees are built from the title screen, before the world is entered.
+  - No page errors.
+
+The merge in the worktree had conflicts only in the docs and the build tag. Pictures, from that worktree: `docs/prototypes/inspector-poi-glade.png`, `-lair.png` and `-bandit-camp.png`. `inspector` and `inspdungeons` pass. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **The three at seed 7, against the places in the world.** The preview builds the camp on flat ground and the glade on a bowl like its pond's, so a real place on a slope will differ from the stage.
+- **The lair's bones** are separate plain boxes, as in the world.
