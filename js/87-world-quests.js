@@ -836,10 +836,10 @@
         if(D.state==='murder'){A.turnedIn=true;A.paid=0;st.active=null;st.closed=true;if(typeof addLog==='function')addLog('🏛',"The Captains' League has closed its gates to you.");return FLINES[fk][A.service].afterMurder;}
         if(D.state==='lost'&&!D.told){D.told=true;return "Rowe's Captain. The chair's hers till someone takes it off her on the yard, and that's your right now, same as it was hers. Give your arm a week. The ring goes up again in seven days.";}
         if(D.state==='lost'&&dayNow()<(D.retryDay||0))return "Not yet. A week, I said. Rowe's not going anywhere, and neither's the chair.";}
-      if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
+      if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft}${st.rank!==3?'':fk==='compact'?(_aft?'':' A house and a ship are entered in your name, Prior; claim them when you please.'):fk==='crown'?" There's a keep goes with it. A roof's only a roof till someone sleeps under it, so come and claim it when you will.":` There's ${F.house} in it, when you want it.`}`;}return `Good. ${F.name} keeps count.${_aft}`;}
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
-    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(fk==='compact')grantShip(site);if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return fk==='compact'?'Entered in your name, Prior: the house, and the ship at the quay.':"It's yours.";}});}
+    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}const g=fk==='compact'?grantShip(site):null;if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return fk==='compact'?compactClaimLine(g,site):"It's yours.";}});}
     return out;
   }
   // perks: shops of your faction's nation discount by rank; ferries free at rank 2
@@ -899,6 +899,15 @@
     if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=S.kind==='find'&&S.rival?`${voice}: "${S.brief.replace('{dir}',compassWord(q.data.x-site.x,q.data.z-site.z))}"`:`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}
     else q.title=`${F.name}: ${q.title}`;
     q.giver=F.name;q.faction=fk;q.service=i;return q;
+  }
+  // S507 — the claim answers from what grantShip did (quest review run 8, Finding 15): a new ship at the seat or at another
+  // of the Compact's quays, a refit where she lies, a raise from the bottom, or no berth found.
+  function compactClaimLine(g,seat){
+    if(!g)return "Entered in your name, Prior: the house. The ship is entered also; the Compact will name her berth when it has one.";
+    if(g.due!=null)return `Entered in your name, Prior: the house. Your ship lies on the bottom; the shipwright at ${(siteAnywhere(g.site)||{}).name||'the nearest quay'} has the Compact's order to raise her, a class better, and three days to do it.`;
+    if(g.cls)return g.up?`Entered in your name, Prior: the house. You keep a ship already, so the Compact has seen to her where she lies: mended, and refitted as a ${g.cls}, at its own charge.`:"Entered in your name, Prior: the house. You keep a ship already, so the Compact has seen to her where she lies: mended, at its own charge. There is no larger hull to enter.";
+    if(g.id===seat.id)return "Entered in your name, Prior: the house, and the ship at the quay.";
+    return `Entered in your name, Prior: the house here, and the ship at the quay at ${g.name}.`;
   }
   function factionAfter(fk,i){const S=FLINES[fk][i];return S&&S.after?' '+S.after:'';}
   // the rival's beats: what she has to say when she stands at the seat

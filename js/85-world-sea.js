@@ -288,8 +288,8 @@
         if(port)st.raise={site:port.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};}
       if(typeof addLog==='function')addLog('⛵',next?`The Compact is raising the ${nm} and refitting her as a ${next}.`:`The Compact is raising the ${nm}.`);return st.raise||null;}
     st.hull=shipClass().hull;st.rig=100;if(next)applyShipClass();shipBarsUI();
-    if(typeof addLog==='function')addLog('⛵',next?`The Compact refitted the ${nm} as a ${next}, mended.`:`The Compact mended the ${nm}.`);
-    return {cls:st.cls||'sloop'};
+    if(typeof addLog==='function')addLog('⛵',next?`The Compact mended the ${nm} and refitted her as a ${next}.`:`The Compact mended the ${nm}.`);
+    return {cls:st.cls||'sloop',up:!!next};
   }
   function grantShip(seat){
     if(worldState.ship)return compactRefit();

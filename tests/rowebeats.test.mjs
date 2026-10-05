@@ -83,7 +83,7 @@ const t3b = await serve(); await tick(120);
 const s3 = await page.evaluate(() => { const C = WORLD.fstate().crown; return { done: C.done, rank: C.rank }; });
 const m3 = await meet(rowe, /What now, Rowe\?/);
 console.log('knight', JSON.stringify(t3b.said), JSON.stringify(s3), JSON.stringify(m3));
-check('turned in: Knight of the Gates, with the after-line (*They were etching, Knight.*)', s3.rank === 3 && s3.done === 9 && /names you Knight of the Gates\. They were etching, Knight\./.test(t3b.said), { t3b, s3 });
+check('turned in: Knight of the Gates, with the after-line (*They were etching, Knight.*)', s3.rank === 3 && s3.done === 9 && /names you Knight of the Gates\. They were etching, Knight\..* There's a keep goes with it\. A roof's only a roof till someone sleeps under it, so come and claim it when you will\.$/.test(t3b.said), { t3b, s3 });
 check('and Rowe is at the seat with the Knight\'s line and *What now, Rowe?*', m3 && m3.name === 'Hesket Rowe' && /^Knight\. I heard about the survey team\./.test(m3.greet) && /etching in the gates/.test(m3.said || ''), m3);
 // 4. the lord's own job open at the seat (*I'm looking for work.*), then *Serve the Crown.* with the sixth service next
 await setLine(5, 1);
