@@ -1249,6 +1249,7 @@ function interact(){
       if(typeof WORLD!=='undefined'&&WORLD.lootInteract())return; // v80 — tower chest
       if(typeof WORLD!=='undefined'&&WORLD.guestInteract())return; // v80 — Cill an Aoi
       if(typeof WORLD!=='undefined'&&WORLD.intDoorInteract())return; // v80 S143 — the door in the doorway
+      if(nearBarberChair()){openBarberChair(INT_CHAIR.house);return;} // S561 — the barber's chair
       const bd=INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9);
       if(bd){if(typeof WORLD!=='undefined'&&WORLD.bedInteract(bd))return;openSleepUI();return;}
     }

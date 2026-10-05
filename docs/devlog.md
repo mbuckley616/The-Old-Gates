@@ -12444,3 +12444,36 @@ A cloak with its own `col` (what the dyer will set, in barber slice 2) takes tha
 - **The hood** reads as a soft rim at the shoulders from behind. It is a hood lying down, and the picture does not make that obvious. A raised hood (the design's C, the hood as a face) was not chosen.
 - **A cloak over armour.** The cloak hangs at the radius the townsfolk's does, so plate pauldrons and the light line's capelet may show through it. That has not been measured.
 - **The colours** are mine. The design page names the kinds, not their dyes.
+
+## v80 — Session 561 — The barber's chair (backlog H, barber slice 2; Michael's B on #144 and A on #151)
+Slice 1 (Session 512) put a barber and dyer in every town and city, with a chair that did nothing until the fee was decided. Michael answered A on #151 (one fee for the visit, an inn room's price). The systems builder built it on auto/systems in Session 551 as `barberPay(house, changed)`: 'free' when nothing changed, 'poor' when the purse is short and nothing is taken, 'paid' otherwise. Its post asked the look builder to call it from the chair. This is slice 2.
+
+**The chair.** `buildInteriorFor`'s barber room records its chair (`INT_CHAIR`: where it stands, and the house). Within 1.5 of the chair the prompt reads *Press 'E' to sit in the barber's chair*, and E opens the slip (`interact`). The barber stands 0.8 from the chair. Standing between them, you could be 0.87 from the chair and 1.08 from him, and the first build took the E that `tests/barber` gives him. Now, within 1.2 of the barber, E is his. One function, `nearBarberChair`, decides for both the prompt and the key.
+
+**The slip.** It is the creator's look panel (Session 127) on a parchment slip like the sleep slip, with the shop's name at its head. The panel's functions now draw where `CCL.ui` points: the creator's canvas and rows, or the slip's. On the slip:
+- **The rows.** Hair, style, beard, the dyes of your own tunic, breeches and boots, and a Cloak row of the tunic dyes when you wear one (`EQ.back`, Session 560). There is no Skin row: the skin is not the barber's.
+- **The preview.** A live preview of you, turned by dragging.
+- **The fee.** When `barberFee` exists, a line gives it and says that nothing changed costs nothing.
+- **Rise** asks `barberPay` whether anything changed. On 'poor' you stay in the chair, with the fee line saying so. Otherwise the look is yours (`worldState.look`, and the cloak's `col`), `applyLook` and the first-person hands follow, and your body rebuilds on its signature.
+- **Leave as you came** changes nothing.
+
+While the slip is open the game's input is held, as it is for the sleep slip.
+
+**On this branch.** `barberPay` and `barberFee` are on auto/systems, not here yet. Without them Rise applies the change with no fee. Once both are merged the fee is charged.
+
+### Verified (headless Chromium)
+`tests/barberchair.test.mjs` (new), 15/15, in Séamus's Barber near Dunmore, with a stand-in `barberPay` charging 10:
+- **The chair.** The chair is in the room with its house. Within 1.2 of the barber the chair does not take E. Next to the chair the prompt asks you to sit.
+- **The slip.** E opens it with a live preview. Its rows are Hair, Style, Beard, Tunic, Breeches, Boots and Cloak, with no Skin. It gives the fee.
+- **A short purse.** With 3 gold you stay seated, and nothing is taken or changed.
+- **Paying.** With 50 gold the new style ('short' → 'long') and the dyed cloak are yours, 10 gold is paid and the slip closes. Your body's signature moved, and `barberPay` was told *changed* both times.
+- **Free and leaving.** Rising with nothing changed is free. *Leave as you came* keeps your look and your gold.
+- **Afterwards.** The look panel points at the creator's again.
+- **Errors.** No page errors.
+
+`barber` 11/11 (it failed on this session's first build, as said above), `creator` and `bedrollprompt` pass. Picture: `docs/prototypes/barber-chair-slip.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **The slip's looks.** The creator's dark buttons sit on the parchment, and the rows are long (fourteen beards). The UI overhaul (backlog E) will restyle both.
+- **The words.** *Rise*, *Leave as you came*, *You rise from the chair, changed.* and the fee line are new player-readable text, for the quest writer's next review.
+- **For the systems builder:** the chair calls `barberPay(house, changed)` and reads `barberFee(house)` for the line. A cloak's dye is changed by setting `EQ.back.col`, which the save keeps with the item.

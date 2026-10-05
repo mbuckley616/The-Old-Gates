@@ -31,7 +31,9 @@ function footholdY(x,z,py,base){
   }
   return best;
 }
-let INT_BEDS=[];let INT_DOORS=[]; // v80 S143 — doors inside buildings
+let INT_BEDS=[];let INT_DOORS=[];let INT_CHAIR=null; /* S561 — the barber's chair in a generated room: {x, z, house} */
+// S561 — within reach of the barber's chair and nearer it than the barber who stands beside it; within 1.2 of him, E talks to him
+function nearBarberChair(){if(!INT_CHAIR)return false;const d=Math.hypot(px-INT_CHAIR.x,pz-INT_CHAIR.z);if(d>=1.5)return false;const k=typeof intNPCPos!=='undefined'&&intNPCPos&&intNPCMesh?Math.hypot(px-intNPCPos.x,pz-intNPCPos.z):1e9;return k>=1.2&&d<k;} // v80 S143 — doors inside buildings
 // v80 S11 — solids carry a height band {y0,y1}. An object whose top is
 // within a step of your feet doesn't block (you step onto it — it's also a
 // foothold); an object entirely above your head doesn't block (you walk
