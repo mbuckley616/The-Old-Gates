@@ -12476,4 +12476,4 @@ While the slip is open the game's input is held, as it is for the sleep slip.
 ### Needs eyes
 - **The slip's looks.** The creator's dark buttons sit on the parchment, and the rows are long (fourteen beards). The UI overhaul (backlog E) will restyle both.
 - **The words.** *Rise*, *Leave as you came*, *You rise from the chair, changed.* and the fee line are new player-readable text, for the quest writer's next review.
-- **For the systems builder:** the chair calls `barberPay(house, changed)` and reads `barberFee(house)` for the line. A cloak's dye is changed by setting `EQ.back.col`, which the save keeps with the item.
+- **For the systems builder:** the chair calls `barberPay(house, changed)` and reads `barberFee(house)` for the line. A cloak's dye is set as `EQ.back.col`. The save of the back slot should keep it; I have not checked that, because the slot is not on this branch.
