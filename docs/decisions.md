@@ -4,6 +4,29 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 ## Answered
+### A barber and dyer in towns (the look builder, Session 505, 2026-10-05, DECISION #144)
+Backlog H has one look item left that is not done or waiting: *a barber/tailor in towns to change hair and dyes after the creator*. Today the look you choose in the creator (hair, beard, tunic, breeches and boots colours) is fixed for good. A trade in town would reopen those rows. It touches a new person, a room, a sign and a fee, so it is yours before anyone builds it.
+
+The prototype is built from the furniture kit and the game's own people builder, at the kit's scale (a man 1.28 tall): a barber's room with a high-backed chair, padded and with a headrest (632 triangles), a brass basin on a three-legged washstand with a ewer (984), a polished-steel mirror in a carved frame (624), and a bench with razors, shears, towels and a jar of leeches (the barber was also the surgeon), with the strop on a peg. The sign over the door is three brass basins on an iron arm, which was the trade's sign before the striped pole. Beside it is a dyer's corner: a vat over a brick fire, a paddle, hanks of dyed wool on a pole, and folded bolts on a table. The last picture is one Gatelands man as he walks in, cut and shaved, and with his coat dyed blue with gilt trim.
+
+- **A. Two trades.** A barber (hair, beard, hair colour) in every town and village, and a dyer (the colours of your tunic, breeches and boots) in towns. Each has a room on the kit and a sign; talking to them opens the creator's look rows. The fee would be set by the town's prosperity (the systems builder's numbers, yours to approve).
+- **B. One shop, the barber and dyer** *(recommended)*: one room with the chair and the vat, the three-basins sign, in towns and up; it opens the creator's whole look page; one fee. Half the new rooms and people of A, and the look rows are already one page in the creator.
+- **C. No trade, a mirror.** A mirror in a rented room or your own house opens the look page, free. It is the smallest build, but it adds nothing to a town.
+- **D. Later.** Leave it in the backlog.
+
+Recommendation: **B.** One trade covers the whole look page the creator already has. Oblivion's precedent is the other way (no barber at all, the face fixed), but Skyrim's later barbers and Daggerfall's tailors show a town trade can carry it without making a menu of it. The fee and any dialogue lines are the systems builder's and the quest writer's once you choose.
+
+Screens: [the room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-room.png) · [the room, other side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-room2.png) · [the sign and the dyer's corner](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-sign-dyer.png) · [one man three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-three-ways.png). Script: `docs/prototypes/barber/proto.mjs`.
+
+Michael: **One shop, the barber and dyer**. (2026-10-05)
+
+### Unblock main: the watch test fails half the time (the producer, 2026-10-04)
+Main's own CI was red on 178e96f, a docs-only merge: one check in the watch test (a guard trailing you at favour −2 stays 38 units off) fails on and off, the same fault Session 378 fixed. The critic's docs-only playtest (PR #135) failed it twice.
+- **A. Merge the docs PRs anyway; systems fixes watch** *(recommended)*: the critic's playtest (PR #135, b68c988) and the producer's docs merge past the red watch shard; the systems builder makes the favour −2 guard robust next run. Code branches still need green.
+- **B. Hold everything until watch is fixed.**
+
+Michael: **Merge the docs PRs anyway; systems fixes watch**. (2026-10-05) Done: PR #135 merged at b68c988; the systems builder owns the watch fix (backlog I).
+
 ### Rest and rising — the sleep and wait slip, and the level page (the concept artist, 2026-10-04, DECISION #142)
 Today sleeping and waiting are two unrelated panels: a bed opens a cream Georgia slip with a bare 1–24 hour slider (*Day 4 · 9:40 pm · You are ready to advance*), and the ⏳ button opens a dark web panel of five emoji buttons (*Until Dawn (6:00)* … *Until Night (20:00)*). The level is taken on waking, on a third look again: eight dark cards in two columns, each with a ×1–×5 multiplier, a line of gains, and *Current: 0 pts · Activity: 310*, a raw number with no unit and no word on what the next multiplier needs. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own numbers: a Duelist on Day 4 at 9:40 pm in Dunmore, 74 of 130 health, ready for level 2, with the activity a first level's play gives (5 foes, 140 wounds, 3 parries, 310 paces sprinted, 9 people talked with…). Prototype: `docs/prototypes/rest/` on auto/concept.
 
