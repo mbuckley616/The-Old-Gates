@@ -12292,4 +12292,4 @@ Prototype only: no game code is changed and no test was added. In the prototype,
 
 ### Needs eyes
 - Michael's choice on #158. The phantom would take the claws and the stance but keep its face (the recommendation).
-- **Still open, from the armour note.** Clothing through the armour. Static and mid-stride views of the wooden, bronze, iron, steel, mithril and demonic kits showed nothing through, so I have not built a fix. A measure like Session 547's, for the cloth under the cuirass and greaves across a walk cycle, would find it if it is there.
+- **Still open, from the armour note.** Clothing through the armour. I built a measure like Session 547's: the Wooden, Bronze, Iron, Steel and Demonic kits through eight phases of the walk, every cloth colour green and every armour colour magenta, plus false-colour pictures mid-stride. Cloth shows only in the kits' own gaps: the thighs under the bronze strips, the sleeve between pauldron and bracer, and the knees and elbows as they bend. It does not show through a plate. With no defect found, no fix was built. A note from Michael on the inspector key of the piece he saw would point to it.
