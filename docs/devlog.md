@@ -12398,3 +12398,12 @@ Prototype only: no game code changes and no test was added. On the scratch branc
 ### Needs eyes
 - **Michael's choice on #162.**
 - **Whichever he picks,** the systems builder's reach and breath (Session 546's note) still do not read the wyrm's size.
+
+## v80 — Session 559 — The goblins suite caught up with the goblin's knife (backlog H, tests only; the producer's note)
+The producer's note in the room asked for the `goblins` suite to be fixed. It failed one check: *the goblin is … with a club*. In Session 535, on Michael's inspector note ("probably not be holding a cane"), the goblin's club became a rusted knife from the weapon kit (`gear` 'kit', `wpn` 'dagger'). That session ran its own new suite (`goblinbody`), which checks the knife, but not this older one from Session 184, which still asked for `gear === 'stick'`. The game is right and the check was stale. It now asks for the kit's dagger. Its other conditions (green, big-headed, bare-headed, beardless; the slinger empty-handed) are unchanged.
+
+### Verified (headless Chromium)
+`goblins` 7/7, and it fails on the old check: the goblin's gear is 'kit' and its weapon 'dagger'. `goblinbody` 9/9. Build tag bumped.
+
+### Needs eyes
+Nothing in the game changed.
