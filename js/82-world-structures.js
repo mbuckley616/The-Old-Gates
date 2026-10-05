@@ -792,6 +792,8 @@
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel')return false;return !npcInsideNow(house);}
+  function feastNow(){return typeof feastOn==='function'&&!!feastOn();}
+  function feastR(r){return feastNow()?Math.min(r,18):r;}
   function scheduleFor(n,h){
     try{if(typeof QUEST_DEFS!=='undefined'&&n.def&&QUEST_DEFS.some(q=>q.giver===n.def.name&&(qState(q.id)==='available'||qState(q.id)==='active'||qState(q.id)==='reward')||qState(q.id)==='active'&&(q.objectives||[]).some(o=>o.type==='talk_to'&&o.npc===n.def.name)))return {go:(n.sched&&n.sched.door)||{x:n.def.x,z:n.def.z},idle:true};}catch(e){} // v80 — a quest giver is always findable (S236: and whoever an active quest sends you to)
     const sc_=n.sched;if(!sc_)return {idle:true};
@@ -806,13 +808,15 @@
         return {go:sc_.door,idle:true}; // dawn: at the door before opening
       case 'innkeeper': return {hide:true};
       case 'harbour': return night?{hide:true}:{go:sc_.door,idle:true}; // v80 S235 — at his post on the quay from 7 to 21
+      // S554 — a feast day fills the square (DECISION #132's rule): residents and villagers keep to it, within 18 of
+      // its middle (a resident's reach is the whole pad, 50–90), from morning until night, where on any other day the evening takes them home or to the inn
       case 'resident':
         if(night)return {hide:true};
-        if(eve)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
-        return {wander:sc_.plaza,r:sc_.padR||14};
+        if(eve&&!feastNow())return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
+        return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
       case 'villager':
-        if(night||eve&&h>=20)return {hide:true};
-        return {wander:sc_.plaza,r:sc_.padR||14};
+        if(night||eve&&h>=20&&!feastNow())return {hide:true};
+        return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
       case 'guard': {const B=(h>=19||h<6.5)&&beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};} // v80 S166 — the lantern beat after dark
       case 'constable': return (h>=19||h<6.5)?{hide:true}:{patrol:[sc_.a,sc_.b]}; // S268 — the day constable, the watchman's other half
       case 'watch': {if(!(h>=19||h<6.5))return {hide:true};const B=beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};}

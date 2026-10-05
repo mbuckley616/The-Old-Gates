@@ -12505,3 +12505,12 @@ The cloak page gives the oilskin a second virtue: *at the helm in rain or storm 
 
 ### Needs eyes
 Whether *clearing ahead* is read at all in the ship's small panel.
+
+## v80 — Session 554 — A feast day fills the square (DECISION #132's rule, owed by Session 550)
+Session 550 built the four feasts and left one of #132's rules owed: *the square is full*. No new people are spawned; the town's own people are kept in the square. In `scheduleFor` (`82-world-structures.js`), on a feast day (`feastOn`), residents and villagers wander within 18 units of the square's middle, where a resident's reach is otherwise the whole pad (73 in Dunmore). The evening no longer sends them home: a resident stays in the square from 18h where she would go to her door or the inn, and a villager stays out past 20h. Night (21h) still sends everyone in. Keepers, guards, the watch and the lord keep their own hours. The town feels fuller around the well on the day and empties at night as usual.
+
+### Verified (headless Chromium)
+`feastsquare` 7/7 (new). In Dunmore, a resident at noon wanders 73 on day 22 of the tale and 18 on the Giving (day 23). At 19h she goes to the inn on the ordinary day and wanders the square on the feast. At 20:30 a villager has gone in on the ordinary day and is still out on the feast. At 22h everyone hides either way. In the street, after a minute of the town's ticks from 18:36: of those still out, 9 of 19 were within 22 of the square on the ordinary evening and 11 of 15 on the feast. feasts, watch, guardplay and people pass. `parsecheck` clean.
+
+### Needs eyes
+Whether eighteen units reads as a crowded square or a loose ring of people, in a city above all.
