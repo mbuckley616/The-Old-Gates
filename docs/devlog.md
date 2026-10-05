@@ -12527,3 +12527,12 @@ The run also raised DECISION #163: the numbers for the light and robe armour lin
 
 ### Needs eyes
 Nothing in play. Whether the next CI run on the branch is green.
+
+## v80 — Session 563 — The dark hood's witness reach, tested (owed by Session 552; tests only)
+Session 552 gave the Dark Hood two virtues and tested one. The other, a witness's reach of 11 instead of 12 (`witnessOf`, `86-world-crime.js`), was left with "not covered by a test", and the producer routed it here. `witnessrange` now repeats its own measurement with a cloak on the back. It uses the same open ground on Dunmore's pad, the same witness on one clear heading and the same edge distances. The game code is unchanged.
+
+### Verified (headless Chromium)
+`witnessrange` 9/9 (two checks new). In the hood, by day, the witness sees you at 10.9 and not at 11.1. Sneaking, at 5.4 and not at 5.6. Sneaking at night, at 2.6 and not at 2.9 (2.75). In the traveller's cloak the reach stays 12: seen at 11.9. The old rows are unchanged: 12, 6, 6 and 3 bare. The two new checks fail with the hood's 11 put back to 12, because 11.1 and 11.9 are then seen. `parsecheck` clean.
+
+### Needs eyes
+Nothing new; one unit of reach is not a thing a player sees, which is the cloak page's point.

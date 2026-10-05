@@ -16,6 +16,11 @@ const r = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); con
   const ds = [2.9, 3.1, 5.9, 6.1, 11.9, 12.1]; const out = { rows: {} };
   for (const [label, hour, sn] of [['day', 13, false], ['day, sneaking', 13, true], ['night', 23, false], ['night, sneaking', 23, true]]) {
     forceTime(hour); _sneaking = sn; out.rows[label] = ds.filter(d => { put(d); return !!WORLD.witnessOf(h); }); }
+  // Session 563: the dark hood (S552) brings a witness's reach from 12 to 11, and halves as before; the traveller's cloak does not
+  const ds2 = [5.4, 5.6, 10.9, 11.1, 11.9]; out.hood = {};
+  for (const [label, kind, hour, sn] of [['hood, day', 'hood', 13, false], ['hood, day, sneaking', 'hood', 13, true], ['hood, night, sneaking', 'hood', 23, true], ['wool, day', 'wool', 13, false]]) {
+    EQ.back = makeCloak(kind); forceTime(hour); _sneaking = sn; out.hood[label] = ds2.concat([2.6, 2.9]).filter(d => { put(d); return !!WORLD.witnessOf(h); }).sort((a, b) => a - b); }
+  EQ.back = null;
   _sneaking = false; forceTime(13);
   // a house between: a witness under 12 units off across a building's solid, by day
   let across = null; for (const o of S.houses) { if (o.exitX == null) continue; const L = Math.hypot(o.exitX - o.doorX, o.exitZ - o.doorZ) || 1; const cx = o.doorX - (o.exitX - o.doorX) / L * 2.5, cz = o.doorZ - (o.exitZ - o.doorZ) / L * 2.5;
@@ -32,6 +37,8 @@ check('by day, walking: seen to 12 units (11.9 yes, 12.1 no)', JSON.stringify(r.
 check('by day, sneaking: seen to 6', JSON.stringify(r.rows['day, sneaking']) === JSON.stringify([2.9, 3.1, 5.9]), r.rows);
 check('at night, walking: seen to 6', JSON.stringify(r.rows['night']) === JSON.stringify([2.9, 3.1, 5.9]), r.rows);
 check('at night, sneaking: seen to 3', JSON.stringify(r.rows['night, sneaking']) === JSON.stringify([2.9]), r.rows);
+check('in the dark hood a witness sees to 11 by day (10.9 yes, 11.1 no), 5.5 sneaking, 2.75 sneaking at night', JSON.stringify(r.hood['hood, day']) === JSON.stringify([2.6, 2.9, 5.4, 5.6, 10.9]) && JSON.stringify(r.hood['hood, day, sneaking']) === JSON.stringify([2.6, 2.9, 5.4]) && JSON.stringify(r.hood['hood, night, sneaking']) === JSON.stringify([2.6]), r.hood);
+check('in the traveller\'s cloak the reach stays 12', JSON.stringify(r.hood['wool, day']) === JSON.stringify([2.6, 2.9, 5.4, 5.6, 10.9, 11.1, 11.9]), r.hood);
 check('a house between hides you, though the witness is in range by day', r.blocked === true && r.acrossD < 12, r);
 check('someone out of the street (asleep indoors, or run off) sees nothing, even at 2 units', r.near && r.hidden && r.retreated, r);
 await g.close();
