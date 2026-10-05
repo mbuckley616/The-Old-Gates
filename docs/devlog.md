@@ -12382,3 +12382,19 @@ The merge in the worktree had conflicts only in the docs and the build tag. Pict
 ### Needs eyes
 - **The three at seed 7, against the places in the world.** The preview builds the camp on flat ground and the glade on a bowl like its pond's, so a real place on a slope will differ from the stage.
 - **The lair's bones** are separate plain boxes, as in the world.
+
+## v80 — Session 558 — A dragon lair's roof, a question (backlog H, the wyrm at Michael's 4.5; DECISION #162)
+Session 546 built the open world's dragon at Michael's 4.5 (#153). It left a lair's wyrm at 3.73, the largest that clears a cavern's 3.2 roof, and called a taller room his call. That question was never put to him. This session puts it, with pictures. The game is unchanged.
+
+**The pictures.** The first try was the lair itself. On a scratch branch, `FLOOR_HEIGHT` was made a `let` and raised to 4.4 before the dungeon was built. The wyrm then built at 4.5 (3.68 tall, scale 1.73, against 3.05 and 1.43 under the 3.2 roof). That confirms `dragonBody`'s fit reads the roof, as Session 546 meant. But the master stands on the lair's lower floor, in a cramped room with a skeleton in front of it, and both pictures were too dark and too blocked to judge size by. The branch was dropped.
+
+The pictures in the question are on the inspector's stage instead. The wyrm at 3.73 stands under a slab at 3.2, and the wyrm at 4.5 under a slab at 4.4, each beside a figure scaled to your height of 1.7.
+
+**The options.** A as it is. B, a dragon lair's whole cavern at 4.4, with the dungeon's height made per-dungeon. C, recommended, only the master's hall at 4.4: a vaulted room the shell has never had, its walls stepping up at the doorways. The question is in `docs/decisions.md` and issue #162.
+
+### Verified (headless Chromium)
+Prototype only: no game code changes and no test was added. On the scratch branch, the lair (theme deep, seed 4021) built its wyrm at 3.05 tall under the 3.2 roof and 3.68 tall under 4.4. There were no page errors.
+
+### Needs eyes
+- **Michael's choice on #162.**
+- **Whichever he picks,** the systems builder's reach and breath (Session 546's note) still do not read the wyrm's size.

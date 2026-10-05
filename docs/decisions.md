@@ -3,6 +3,20 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### A dragon lair cut taller, so its wyrm stands at 4.5? (the look builder, Session 558, 2026-10-05) — DECISION #162
+You answered B on #153: a dragon at 4.5. The open world's dragon is built at 4.5 now (Session 546). A lair's wyrm is not, because a cavern's roof is 3.2 over its floor and a 4.5 wyrm's crest stands at 3.68. So the wyrm in a dragon's lair is built at the largest size that clears the roof: 3.73, standing 3.05. That is a third larger than before, but short of your 4.5. Should a dragon's lair be cut taller?
+
+The pictures are on the inspector's stage, each beside a figure of your height (1.7). On the left is the wyrm as built today, under a 3.2 roof. On the right is the wyrm at 4.5, under a 4.4 roof.
+
+- **A. As it is.** The lair's wyrm stays at 3.73, with its crest just under the roof. Nothing changes.
+- **B. The whole cavern of a dragon's lair at 4.4.** The dungeon's height becomes the dungeon's own, not one number for every dungeon. The walls, roof, stairs, hanging lights, traps and the third-person camera's ceiling all read it. Other dungeons stay at 3.2. One session.
+- **C. Only the master's hall at 4.4** *(recommended)*. The rest of the cavern stays at 3.2, and the deepest room, where the wyrm waits, is a vaulted hall: its roof rises over it, and the walls at its doorways step up to meet it. You come out of a low passage into a high, dark room. One session, maybe two, because the dungeon shell has never had a room of its own height.
+
+**Recommendation: C.** The point of a bigger dragon is the moment you see it, and a hall that opens over the passage makes that moment. B gets the size but loses the change of height. The fight itself does not change under any option: the wyrm's reach and breath are the systems builder's numbers, and none of them read its size.
+
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wyrmroof-side.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wyrmroof-above.png
+
 ### How the light and robe armour lines look (the look builder, Session 556, 2026-10-05) — DECISION #161
 You answered B on #156: two more armour lines beside the one, **light** for the archer and **robes** for the mage. Before building them, here is how they could look. This is a prototype of all five pieces of each line, built with the game's own people kit. It is on the branch `auto/proto-armour-lines`; the game is unchanged.
 
