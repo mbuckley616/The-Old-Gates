@@ -11963,3 +11963,21 @@ They stand 5.4 to 9 tall and cost 118 to 398 triangles (the broadleaf is 388). T
 ### Needs eyes
 - The purple bell's cap is open beneath (a cone without a base, with the gill ring under it). From very low it may show its inside.
 - The parasol's cap reads pale in strong sun.
+
+## v80 — Session 527 — Wraiths and phantoms have no legs and float (backlog H, Michael's inspector note, first part)
+Michael, from the inspector: the wraith and the phantom are "Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening." No legs or feet: they hover and float. They already glide .24 ± .05 off the ground and take no steps (S176), but the body was a whole person under a robe to the shin. The robe is see-through (opacity .68, the phantom's .5), so a person's legs and boots showed inside it and below it.
+
+`personBakeQ` (`32-people.js`) now hangs no thigh, shin, boot or foot on a wraith's leg bones. The bones stay, because the poses and the bake's skeleton read them. The dress is replaced by a robe of the wraith's own: longer, with a flare, and its hem torn into tongues. Below the robe's lower edge each ring vertex drops by .03 to .14 by a wave round the robe and is drawn in a tenth, so the hem hangs in ragged points of different lengths. The hem's trim ring is gone. At the bottom of its glide's bob the lowest tongue is 9 cm off the ground. A wraith is 3,652 triangles (was 4,736), and a phantom 3,350.
+
+### Verified (headless Chromium)
+`tests/wraithfloat.test.mjs` (new), 8/8:
+- **No legs or feet.** For the Wraith and the Phantom, no vertex is bound to a leg bone. A bandit keeps his 700.
+- **A torn hem.** The hem's lowest points round the robe differ by 11 cm.
+- **Clear of the ground.** At the bottom of the glide's bob (.19, the hover `tickPeople` applies) the lowest point is .093 and .095 above the ground.
+- **Errors.** No page errors.
+
+The suite measures the bind pose against that hover, because `tickPeople` will not move a foe's body without its enemy behind it. `dungeonfoes` and `foes` pass. Pictures: `docs/prototypes/wraith-before.png`/`-after.png`, `phantom-before.png`/`-after.png`. The inspector does not apply the glide's hover, so there the hem touches its ground disc. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- "More ghostly & frightening" is only half done. The torso, arms and face inside the see-through robe are still a person's. Thinner, longer hands, a darker hollow face or a trailing wisp are look choices for a prototype, and that part stays open in the backlog.
+- The ragdoll already skips the wraiths: they have no fall.

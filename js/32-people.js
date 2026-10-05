@@ -323,10 +323,16 @@ function personBakeQ(g,q){
   // S394 — g.shirt (the player's empty chest slot, Michael's B on #83): an undyed linen shirt, plainer and shorter than a
   // tunic, with no trim at the hem
   const hem=g.dress?[[0,-.37-DL],[.25,-.37-DL],[.255,-.355-DL],[.215,-.2-DL*.6],[.18,-.05],[.16,.02],[0,.045]]:g.shirt?[[0,-.085],[.2,-.085],[.205,-.075],[.19,-.04],[.176,0],[.168,.04],[0,.045]]:[[0,-.13],[.215,-.13],[.222,-.115],[.2,-.06],[.178,0],[.168,.04],[0,.045]];
-  part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
+  // S527 — a wraith's robe (Michael, the inspector: "No legs or feet: they hover and float"): longer than a dress, flaring, its
+  // hem torn into ragged tongues that hang to different lengths, with nothing under it
+  if(g.wraith){const W=[[0,-.44-DL],[.27,-.44-DL],[.272,-.41-DL],[.225,-.22-DL*.6],[.185,-.05],[.16,.02],[0,.045]];const rg=SK.lathe(W.map(q=>[q[0]*bw,q[1]]),20),rp=rg.attributes.position;
+    for(let i=0;i<rp.count;i++){const y=rp.getY(i);if(y>-.38-DL)continue;const a=Math.atan2(rp.getX(i),rp.getZ(i)),k=Math.min(1,(-.38-DL-y)/.06);
+      rp.setY(i,y-k*(.03+.11*Math.pow(.5+.5*Math.sin(a*6+Math.sin(a*2.3)*1.7),2)));rp.setX(i,rp.getX(i)*(1-.1*k));rp.setZ(i,rp.getZ(i)*(1-.1*k));}
+    rg.computeVertexNormals();part(rg,cloth,hips).scale.z=.8;}
+  else part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
   // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
   // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
-  if(!g.shirt){const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
+  if(!g.shirt&&!g.wraith){const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
   const WL=g.wealth==null?.5:g.wealth,gold=C(0xc8a040); /* S268 — wealth in the bake: a rope belt and patches, or a buckle, a chain and a pendant */const belt=part(SK.torus(.172*bw*(fem?.96:1),WL<.3?.016:.02,5,20),WL<.3?C(0x9a8458):dark,hips,0,.02,0);belt.rotation.x=Math.PI/2;belt.scale.y=.74;if(WL<.3){if(!g.dress)part(SK.ball(.034,7,5),mixC(cloth,0x3a3024,.45),hips,.085*bw,-.075,.136*bw).scale.set(1.1,.9,.28);part(SK.ball(.016,6,5),C(0x9a8458),hips,.06*bw,.0,.128*bw);}if(WL>.7)part(SK.rbox(.042,.034,.012,.005,2),gold,hips,0,.02,.13*bw);
   if(g.apron)part(SK.lathe([[0,-.3],[.12,-.3],[.13,-.02],[0,0]],8),C(g.apron),hips,0,0,.11).scale.set(1,1,.12);
   const spine=bone('spine',hips,0,.03,0);
@@ -443,13 +449,14 @@ function personBakeQ(g,q){
       const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
     else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
       part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);}
-    const th=bone('th'+k,hips,s*.085*bw,-.02,0);part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
-    const kn=bone('kn'+k,th,0,-PW.L1,0);part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
-    if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
+    // S527 — a wraith has the leg bones (its ragdoll and poses read them) but no legs or feet hung on them
+    const th=bone('th'+k,hips,s*.085*bw,-.02,0);if(!g.wraith)part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
+    const kn=bone('kn'+k,th,0,-PW.L1,0);if(!g.wraith)part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
+    if(g.wraith){}else if(!g.bareFeet)part(SK.cyl(.05*bw,.046*bw,.1,10),boot,kn,0,.04-PW.L2,0);else part(SK.cyl(.043*bw,.04*bw,.07,10),skin,kn,0,.025-PW.L2,0);
     const an=bone('an'+k,kn,0,-PW.L2,0);
     // S394 — g.bareFeet: a foot of its own in place of the boot: a narrower, flatter sole-to-instep, the heel and the ball
     // of the toes, all on the same ground line as the boot (its underside at -.06)
-    if(g.bareFeet){part(SK.ball(.046,10,7),skin,an,0,-.024,.035).scale.set(.92,.78,1.8);part(SK.ball(.036,8,6),skin,an,0,-.034,-.01).scale.set(1,.72,1);
+    if(g.wraith){}else if(g.bareFeet){part(SK.ball(.046,10,7),skin,an,0,-.024,.035).scale.set(.92,.78,1.8);part(SK.ball(.036,8,6),skin,an,0,-.034,-.01).scale.set(1,.72,1);
       const toe=part(SK.ball(.032,8,6),skin,an,s*-.004,-.042,.1);toe.scale.set(1.3,.56,.85);}
     else part(SK.ball(.05,10,7),boot,an,0,-.02,.035).scale.set(1.02,.8,1.85);
   });
