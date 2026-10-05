@@ -12087,3 +12087,14 @@ Main's CI (178e96f) and this branch's (115b20c) failed one check of `watch` on a
 
 ### Needs eyes
 Nothing to see unless a guard was already caught: a guard trailing you should no longer stand for good against a corner.
+
+## v80 — Session 514 — The dungeon's chests and barrels are keyed, and the master's hoard rolls on its own (backlog K, the co-op door, step 3)
+Step 3 of the co-op door wants every thing in the world that may one day be saved to carry an id of place and index first (CLAUDE.md's co-op rules). After Session 509 every foe has one. The dungeon's containers did not, though Session 478 put their places and their loot on the gate's streams: the loot was keyed by a counter built into the key string and thrown away. Each now carries `id`, `<seed>:<floor>:<kind>:<n>`: barrels and crates `…:barrel:<n>` and chests `…:chest:<n>` (`56-dungeon-build.js`), the library's shelves `…:shelf:<n>`, and the room kit's urns, sarcophagi and weapon racks `…:urn|sarcophagus|rack:<n>`, counted by floor and kind (`68-dungeon-misc.js`). Each container's loot is rolled on `<id>:<day>`, the same key strings as before, so no container's goods change.
+
+On the way: the lair master's hoard (`lairFinish`) was the one dungeon outcome still rolled on `Math.random`: its metal, its tier, sword or cuirass, and a dragon's scales. The hoard is now `<seed>:<floor>:hoard`, and those draws come from `seededRng('loot', <id>:<day>)`. The gold and the two potions were fixed numbers already. Nothing about a container is saved yet (whether it was opened is still lost when you leave the gate); this gives the first code that saves it a key to save under.
+
+### Verified (headless Chromium)
+`dunseed` 10/10 (2 new). Two gates, each entered twice with `Math.random` stirred between: every container has an id of the right shape and floor, one id each (13 in the first, barrels, shelves and chests; 16 in the second, with a sarcophagus), and the two builds give the same ids to the same things (*519737:1:barrel:0*, *519737:1:chest:0*, …). A master raised twice in gate 519737, with 91 draws of `Math.random` between, leaves the same hoard, *519737:2:hoard*: *Gold Coins 153, Silver Sword, Greater Potion ×2*. A dragon raised twice leaves *Gold Coins 255, Mithril Sword, Dragon Scale ×2, Greater Potion ×2* both times. The suites that build or open dungeon containers (dunconts, fortfurn, masterslam, chestpicks, dungeon, lootseed) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
