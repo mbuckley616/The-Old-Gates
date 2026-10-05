@@ -3,20 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
-You answered B on #156: two more armour lines, light for the archer and robes for the mage, each in every tier with its own stats. The question said the numbers would come later from the systems builder. The look is #161; this is the numbers, so the items can be built while the bodies are.
-
-Today one line: five pieces (helmet, cuirass, gauntlets, greaves, boots). A full set is about 4.8 × the tier's base defence (15 at Iron, 34 at Mithril) and weighs 20; from Iron up it needs Fortitude (5, 10, 16 … 56).
-
-- **A. Weight against defence, gated by the line's attribute, one small virtue each.** *(recommended)*
-  - Light (hood, jerkin, bracers, legs, boots): 60% of the heavy piece's defence at 40% of its weight (a set weighs 8). Needs Finesse instead of Fortitude, on the same curve. Each piece worn makes you 3% harder to notice while sneaking (15% for the five).
-  - Robes (cowl, coat, under-robe, wraps; no boots, so the feet take another line's): 25% of the defence at a quarter of the weight. Needs Intelligence. Each piece adds 3 max mana a tier (a set of four at Mithril, +60; one *of the Mage* enchant on one piece gives 50).
-  - The heavy line is unchanged. Prices: light at 90% of the heavy piece, robes at 100%.
-  - Loot: an armour drop is heavy half the time, light a quarter, robes a quarter (a robe has no boots, so a robe roll on the feet is light). The armourer sells heavy and light; robes are sold at goods shops and the Mages' Guild.
-- **B. Weight and defence only.** As A without the two virtues: light is the lighter set, robes the lightest, and nothing else differs.
-- **C. A, and a cost on the heavy line.** Each heavy piece also makes you 4% easier to notice while sneaking and slows mana regen by 5% (Morrowind's and Oblivion's trade). It changes what every player wearing armour today has.
-
-**Recommendation: A.** It gives each line a reason beyond its weight, small enough that an enchant still matters more, and leaves the armour already worn as it is. Every number here is a first guess to tune in play.
 
 ## Answered
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
