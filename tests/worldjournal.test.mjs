@@ -46,5 +46,25 @@ const lp = await page.evaluate(() => { const q = { id: 'tq:test:lapse', title: '
   return { lapsed: !!q.lapsed, L: GAME_LOG.filter(e => e.q === q.id).map(e => e.qk + ':' + e.text) }; });
 check('a dated job taken back writes its lapse under its id', lp.lapsed && lp.L.length === 1 && lp.L[0] === 'lapsed:The date passed, and Lord Test has given the work to someone else.', lp);
 
+// Session 511: a guild's task, offered, done and handed in at the hall, writes the same lines under its id, and keeps its
+// title on them (a handed-in task is gone from the save, so the Journal reads the title from its lines)
+const gt = await page.evaluate(() => { worldState.gameTimeAbsMinutes = 32000; const S = WORLD.settle.get('dunmore');
+  const said = offer('guild_m', S.site); const t = worldState.guild.guild_m.active;
+  const out = { id: t.id, short: t.short, title: t.title || null, desc: t.desc, said };
+  worldState.gameTimeAbsMinutes = 32300; t.have = t.need || t.count || 0; t.spawned = true; t.done = true; t.got = true; gStamp(t);
+  openHub('journal'); journalView('quest'); out.inHand = document.getElementById('jn-body').innerText; closeHub();
+  worldState.gameTimeAbsMinutes = 32400; out.back = turnIn('guild_m');
+  out.L = GAME_LOG.filter(e => e.q === t.id).map(e => ({ qk: e.qk, qt: e.qt, text: e.text, t: e.t }));
+  openHub('journal'); journalView('quest'); out.qt = document.getElementById('jn-body').innerText; journalView('day'); out.dt = document.getElementById('jn-body').innerText; closeHub();
+  return out; });
+console.log('guild', JSON.stringify(gt).slice(0, 900));
+const gtt = gt.title || gt.short;
+check(`a Mages' Guild task (${gt.id}, ${gtt}) writes its ask, *Done — report to the Mages' Guild.* and *Turned in to the Mages' Guild: N gold.* under its id, with its title`,
+  gt.L.length === 3 && gt.L.map(e => e.qk).join() === 'accept,ready,complete' && gt.L[0].text === gt.desc && gt.L[1].text === "Done — report to the Mages' Guild." && gt.L[1].t === 32300 &&
+  /^Turned in to the Mages' Guild: \d+ gold\.$/.test(gt.L[2].text) && gt.L.every(e => e.qt === gtt), gt.L);
+check('By quest: in hand while it is open, then under its title, *complete*, when it is handed in and gone from the save',
+  new RegExp(gtt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*in hand').test(gt.inHand) && new RegExp(gtt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*complete').test(gt.qt), { inHand: gt.inHand.slice(0, 300), qt: gt.qt.slice(0, 300) });
+check('By day: the guild\'s line reads after the task\'s name', gt.dt.includes(`${gtt} — Turned in to the Mages' Guild`), gt.dt.slice(0, 500));
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -1617,11 +1617,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // by then (t.doneAt, stamped by the hooks below when it is first done) it pays a quarter more; past it, undone, the guild
   // takes it back (gLapse, from tickDatedWork).
   function gDated(t,g,site){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);const r=seededRng('dated:'+g+':'+site.id,day);if(r()<1/3)t.due=(day+7+Math.floor(r()*8)+1)*1440;return t;}
-  function gStamp(t){if(t&&t.doneAt==null&&taskDone(t))t.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);}
+  function gStamp(t){if(t&&t.doneAt==null&&taskDone(t)){t.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);qJournal(t,'ready',`Done — report to the ${(GUILD_DEF[t.g]||{name:'guild'}).name}.`);}} /* S511 — the journal's line under the task's id, as the world's quests (S510) */
   function gDatedPay(t){return t.due&&t.doneAt!=null&&t.doneAt<t.due?Math.round((t.gold||0)*1.25):(t.gold||0);}
   function gLapse(){const G=worldState.guild;if(!G)return;const now=worldState.gameTimeAbsMinutes||0;for(const g in G){const st=G[g],t=st&&st.active;if(!t||!t.due||now<t.due)continue;gStamp(t);if(t.doneAt!=null)continue;
     st.active=null;if(t.kind==='raid'){const S=SETTLE.get(t.siteId);if(S)S.raid=false;}if(t._obj){try{sc.remove(t._obj.m);unregLight(t._obj.l);}catch(e){}const i=pickups.findIndex(p=>p.task===t);if(i>=0)pickups.splice(i,1);}
-    if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. The date passed, and the guild has given it to someone else.`);showMsg(`${GUILD_DEF[g].name}: the date has passed. The task is taken back.`,'#c8b880');}}
+    if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. The date passed, and the guild has given it to someone else.`);qJournal(t,'lapsed','The date passed, and the guild has given it to someone else.');showMsg(`${GUILD_DEF[g].name}: the date has passed. The task is taken back.`,'#c8b880');}}
   function taskDone(t){
     switch(t.kind){case 'clear':case 'hunt':case 'gather':return t.have>=t.need;case 'raid':return t.spawned&&t.have>=t.count;case 'beast':case 'wizard':case 'creature':return !!t.done;case 'relic':return !!t.got;case 'deliver':return !!t.done;case 'hearth':return !!t.done;}return false;
   }
@@ -1663,9 +1663,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;gStamp(p.task);sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
   function turnIn(g){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
-    st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);
+    st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);qJournal(t,'complete',`Turned in to the ${GUILD_DEF[g].name}: ${paid} gold.`);
     const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're a ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
-  function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
+  function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
     guild_f:{

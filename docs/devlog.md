@@ -12063,3 +12063,14 @@ The guilds' tasks are not in `worldState.quests` (they live in `worldState.guild
 
 ### Needs eyes
 - By day now has the short line and the quest's line side by side for each event (*✅ My mother's ring: objective complete.* above *📜 My mother's ring — Done — report to Mayor Niamh.*), as the story's quests have since Session 487. Whether the short lines should drop out of the Journal (kept in the data for the level blocks) is a call for the Journal's book look.
+
+## v80 — Session 511 — The guilds' tasks write into the journal too (DECISION #132)
+Session 510 left the guilds' tasks out: they are not in `worldState.quests` but in `worldState.guild`, one active task a guild, and the task is dropped from the save when it is handed in. They now write the same lines as the world's quests, under the task's id (`<guild>:<site>:<n>` or `<guild>:c<rank>`, Session 503), from the guild's own functions in `83-world-generator.js`: the task's words when the hall gives it (`offer`), *Done — report to the Mages' Guild.* when it is first done (`gStamp`, the stamp the dated work already makes from every hook), *Turned in to the Mages' Guild: <pay> gold.* at the hall (`turnIn`), and *The date passed, and the guild has given it to someone else.* when a dated task lapses (`gLapse`).
+
+Because a handed-in task leaves the save, the Journal could not find its title afterwards. `journalQuest` now keeps a world quest's or task's title on the line itself (`qt`; the story's quests have theirs in `QUEST_DEFS` and are left as they were), and *By quest* and *By day* read it from there. A task's state is *in hand* while it is the guild's active task and *complete* once a line says it was handed in.
+
+### Verified (headless Chromium)
+`worldjournal` 10/10 (3 new): in Dunmore the Mages' Guild gives *Gather Duilleog Ghorm* (`guild_m:dunmore:1`); its ask is written at minute 32,000, *Done — report to the Mages' Guild.* at 32,300 and *Turned in to the Mages' Guild: 76 gold.* at the hall, each carrying the title; *By quest* shows it *in hand* while it is open and *complete* under its title after it is handed in and gone from the save; *By day* reads *Gather Duilleog Ghorm — Turned in to the Mages' Guild: 76 gold.* The suites that read the journal or the guilds (datedguild, datedwork, due, jnlinks, jobids, journal, questfoes, questgold, shoperrands, told, placesave) pass. `parsecheck` clean.
+
+### Needs eyes
+As Session 510: two lines an event in *By day*, the log's short one and the task's own.

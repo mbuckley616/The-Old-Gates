@@ -101,7 +101,7 @@ const GAME_LOG=[];
 worldState.journal=GAME_LOG;
 function addLog(icon,text){if(worldState.journal!==GAME_LOG)worldState.journal=GAME_LOG;GAME_LOG.push({level,icon,text,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});}
 // S487 — a quest's own words (the card's: acceptText, an objective's completionText, readyText, completeText), kept under its id
-function journalQuest(kind,qDef,text){if(!qDef||!qDef.id||!text)return;addLog(kind==='complete'?'✅':'📜',String(text));const e=GAME_LOG[GAME_LOG.length-1];e.q=qDef.id;e.qk=kind;}
+function journalQuest(kind,qDef,text){if(!qDef||!qDef.id||!text)return;addLog(kind==='complete'?'✅':'📜',String(text));const e=GAME_LOG[GAME_LOG.length-1];e.q=qDef.id;e.qk=kind;const tt=qDef.title||qDef.short;if(tt&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===qDef.id)))e.qt=String(tt);} // S511 — a world quest or guild task keeps its title on the line: a task is gone from the save once handed in
 function journalOf(id){return GAME_LOG.filter(e=>e&&e.q===id);}
 function journalLoad(list){GAME_LOG.length=0;if(Array.isArray(list))list.forEach(e=>{if(e&&typeof e.text==='string')GAME_LOG.push(e);});worldState.journal=GAME_LOG;}
 function renderLog(){
@@ -189,16 +189,17 @@ function renderJournal(){
   if(!L.length){body.innerHTML=noteBox+'<div class="jn-empty">Nothing written yet.</div>';return;}
   const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||(worldState.quests||[]).find(x=>x&&x.id===id)||null; // S510 — or one of the world's
   const names=journalNames();
-  const line=(e,withQ)=>{const d=e.q&&withQ?qd(e.q):null;
+  const line=(e,withQ)=>{const d=e.q&&withQ?(qd(e.q)||(e.qt?{title:e.qt}:null)):null;
     return `<div class="jn-line${e.q?' jn-q':''}${e.note?' jn-note':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnLinked(e.text,names)}</span></div>`;};
   let html='';
   if(_jnView==='quest'){
     const ids=[];L.forEach(e=>{if(e.q&&ids.indexOf(e.q)<0)ids.push(e.q);});
     const wq=id=>(worldState.quests||[]).find(x=>x&&x.id===id);
-    const st=id=>{const w=wq(id);if(w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return w.turnedIn?(w.lapsed?'':'complete'):w.done?'reward':'active';return typeof qState==='function'?qState(id):'';};const inHand=id=>st(id)==='active'||st(id)==='reward';
+    const gact=id=>{const G=worldState.guild||{};for(const k in G){const t=G[k]&&G[k].active;if(t&&t.id===id)return t;}return null;};
+    const st=id=>{const ga=gact(id);if(ga)return ga.doneAt!=null?'reward':'active';const w=wq(id);if(!w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return L.some(e=>e.q===id&&e.qk==='complete')?'complete':'';if(w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return w.turnedIn?(w.lapsed?'':'complete'):w.done?'reward':'active';return typeof qState==='function'?qState(id):'';};const inHand=id=>st(id)==='active'||st(id)==='reward';
     ids.sort((a,b)=>(inHand(b)?1:0)-(inHand(a)?1:0));
     if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
-    ids.forEach(id=>{const d=qd(id),s=st(id);
+    ids.forEach(id=>{const d=qd(id)||{title:(L.find(e=>e.q===id&&e.qt)||{}).qt||id},s=st(id);
       html+=`<div class="jn-day"><div class="jn-head">${_jnEsc(d?d.title:id)}<span class="jn-state">${s==='complete'?'complete':inHand(id)?'in hand':''}</span></div>`+
         L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod)):''}</span><span class="jn-text">${_jnLinked(e.text,names)}</span></div>`).join('')+'</div>';});
   } else {
