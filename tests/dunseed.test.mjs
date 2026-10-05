@@ -18,6 +18,7 @@ const build = (seed, stir) => page.evaluate(async ([seed, stir]) => { const wait
   return { seed, name: p.name, theme: p.theme, interior: p.interior, zone: activeZoneId,
     barrels: BARRELS.map(b => [b.floor, r2(b.x), r2(b.z), b.displayName, names(b), b.id]),
     chests: CHESTS.map(c => [c.floor, c.x, c.z, !!c.treasure, !!c.locked, names(c), c.id]),
+    doors: DOORS.map(d => [d.floor, d.x, d.z, !!d.locked, d.id]),
     foes: ENEMIES.map(f => [f.floor, r2(f.homeX), r2(f.homeZ), f.name, f.variant || '', f.id || null, f.patrolType, r2(f.rangedCd), typeof f.rng === 'function']) }; }, [seed, stir]);
 const leave = async () => { await page.evaluate(() => goToOW()); await page.waitForTimeout(4000); await g.hide(); };
 
@@ -39,6 +40,8 @@ const cids = runs.map(([a]) => { const all = a.barrels.map(b => b[5]).concat(a.c
   const floorOk = a.barrels.every(b => b[5].split(':')[1] === String(b[0])) && a.chests.every(c => c[6].split(':')[1] === String(c[0]));
   return { n: all.length, unique: new Set(all).size === all.length, shaped, floorOk, kinds: [...new Set(all.map(id => id.split(':')[2]))], sample: all.slice(0, 3) }; });
 console.log('container ids', JSON.stringify(cids));
+const dids = runs.map(([a, b]) => ({ n: a.doors.length, same: JSON.stringify(a.doors) === JSON.stringify(b.doors), named: a.doors.every((d, i) => d[4] === `${a.seed}:1:door:${i}`), ids: a.doors.map(d => d[4]) }));
+check(`the gates' doors (Session 517) are <seed>:1:door:<n>, the same on both builds (${dids.map(d => d.n + (d.n ? ': ' + d.ids.slice(0, 2).join(' ') : '')).join('; ')})`, dids.every(d => d.same && d.named), dids);
 check(`every container in both gates has an id <seed>:<floor>:<kind>:<n>, one each (${cids.map(c => c.n + ' — ' + c.kinds.join('/')).join('; ')})`, cids.every(c => c.n > 0 && c.unique && c.shaped && c.floorOk), cids);
 
 // the lair master's hoard is <seed>:<floor>:hoard and its goods roll on its stream: two masters of one lair, Math.random stirred between, leave the same hoard

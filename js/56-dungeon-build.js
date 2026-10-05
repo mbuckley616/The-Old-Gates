@@ -2673,7 +2673,8 @@ function buildDungeon(portal){
     const keyName = isLocked
       ? (portal.keyBase+' Key'+(lockedDoors.length>1?' '+(lockedSeen+1):''))
       : null;
-    DOORS.push({x:td.x,z:td.z,isEW:td.isEW,open:false,keyName,mesh:dg,hinge,floor:1,locked:isLocked});
+    DOORS.push({id:`${dKeyOf(portal,1)}:door:${DOORS.length}`,x:td.x,z:td.z,isEW:td.isEW,open:false,keyName, // S517 — its id, <seed>:1:door:<n>
+      mesh:dg,hinge,floor:1,locked:isLocked});
     if(isLocked){
       const kl=gen.keyLocations[lockedSeen]||gen.keyLocations[0];
       if(kl){

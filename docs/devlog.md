@@ -12120,3 +12120,14 @@ Left in step 3 after this: interior and dungeon doors and keys, and quest pickup
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 517 — Doors have ids (backlog K, the co-op door, step 3)
+Doors were next on step 3's list. A door inside a building (`INT_DOORS`, hung by `intDoorAt` in `84-world-interiors.js`) is rebuilt every time you enter. It is now `<house id>:door:<n>`, in the order the room hangs its doors. The room is built the same way every time, so the order holds. `buildInteriorFor` names the house on the fresh `INT_DOORS` array (`INT_DOORS.house`), so no new global is needed. A gate's treasure doors (`DOORS`, `56-dungeon-build.js`) are `<seed>:1:door:<n>`. The dungeon's keys need nothing: since the locks became picked, no key is placed (`KEYS` stays empty and the key mesh is removed as soon as it is made). Nothing about a door is saved yet, and a door shut again when you leave a room is unchanged.
+
+Left in step 3: quest pickups.
+
+### Verified (headless Chromium)
+`doorids` 3/3 (new). Every room in Dunmore was built twice: 31 doors in 10 buildings, each *<house id>:door:<n>* (*g_dunmore_0:door:0* …). No two share an id, and the second build gives each door the same id at the same spot. `dunseed` 11/11 (1 new check): both gates have 5 doors, *519737:1:door:0–4* and *785107:1:door:0–4*, the same on both builds. The suites that build or open doors (intdoors, innrooms, interiors, intreach, locks, dungeon) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.

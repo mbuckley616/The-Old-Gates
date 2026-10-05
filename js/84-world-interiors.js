@@ -15,7 +15,8 @@
     const kn=new THREE.Mesh(new THREE.SphereGeometry(.05,7,6),new THREE.MeshLambertMaterial({color:0x6a5a2a}));kn.position.set(.08,h/2,w*.86);g.add(kn);
     const sol={x0:x-Math.abs(ux)*w/2-.07,x1:x+Math.abs(ux)*w/2+.07,z0:z-Math.abs(uz)*w/2-.07,z1:z+Math.abs(uz)*w/2+.07,y0:by,y1:by+h};
     SOL.push(sol);
-    INT_DOORS.push({x,z,y:by,g,ang,dir,open:false,a:0,from:0,want:0,t0:0,sol,box:{x0:sol.x0,x1:sol.x1,z0:sol.z0,z1:sol.z1}});
+    // S517 — its id, <house id>:door:<n> in the order the room hangs them (co-op rules); buildInteriorFor names the house
+    INT_DOORS.push({id:(INT_DOORS.house||'room')+':door:'+INT_DOORS.length,x,z,y:by,g,ang,dir,open:false,a:0,from:0,want:0,t0:0,sol,box:{x0:sol.x0,x1:sol.x1,z0:sol.z0,z1:sol.z1}});
     return INT_DOORS[INT_DOORS.length-1];
   }
   function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<1.5&&Math.abs(jumpY-d.y)<1.3)||null;}
