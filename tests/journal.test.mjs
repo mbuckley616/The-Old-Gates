@@ -71,10 +71,12 @@ console.log(JSON.stringify(n));
 check('a line of your own is written with Enter, under today with its time, and the box is ready for the next', n.e.note && n.e.text === 'Edna knows more than she says. Ask her about the Shadows, and wait.' && n.e.t === 22000 && /Day 16\s+\S+ \w\w\s+✎ Edna knows more/.test(n.txt) && n.cleared === '', n);
 check('a line is at most 500 characters, an empty one is not written, and it is saved with the character', n.long === 500 && n.blank === false && n.saved, n);
 
-// a picture of the tab, by day, for the devlog
+// a picture of the tab, by day, for the devlog. Only a picture, no check: on a loaded runner a screenshot can wait out its 30 s
+// (CI on 72cb422, after every check had passed), so a picture that times out is noted and the suite goes on (S533)
+const shot = (path) => page.screenshot({ path, timeout: 60000 }).catch(e => console.log('picture skipped', path, String(e.message || e).split('\n')[0]));
 await page.evaluate(() => { openHub('journal'); journalView('day'); });
-await g.frames(2); (await import('fs')).mkdirSync('tests/out', { recursive: true }); await page.screenshot({ path: 'tests/out/journal-byday.png' });
-await page.evaluate(() => { journalView('quest'); }); await g.frames(2); await page.screenshot({ path: 'tests/out/journal-byquest.png' });
+await g.frames(2); (await import('fs')).mkdirSync('tests/out', { recursive: true }); await shot('tests/out/journal-byday.png');
+await page.evaluate(() => { journalView('quest'); }); await g.frames(2); await shot('tests/out/journal-byquest.png');
 await page.evaluate(() => closeHub());
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

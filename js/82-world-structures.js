@@ -998,14 +998,28 @@
     fearnog:{ctx:['tree'],biomes:['forest','autumn']},shadowcap:{ctx:['tree'],biomes:['forest','swamp','fen']},caorthann:{ctx:['tree','open'],biomes:['forest','autumn','plains']},deepmoss:{ctx:['tree','rock'],biomes:['forest','swamp']},briarweed:{ctx:['open','house'],biomes:['forest','plains','moor']},luibhuisce:{ctx:['water'],biomes:['forest','fen','swamp','coast']},
     ferrousweed:{ctx:['rock'],biomes:['moor','wastes','wasteland','tundra']},graywort:{ctx:['rock','open'],biomes:['moor','wastes','tundra']},caordubh:{ctx:['tree','rock'],biomes:['wastes','wasteland','swamp']},mistfern:{ctx:['water','tree'],biomes:['fen','swamp','forest']},stonecress:{ctx:['rock'],biomes:['moor','tundra','plains']},veilwort:{ctx:['house','open'],biomes:['plains','coast','autumn']},credearg:{ctx:['rock','open'],biomes:['wasteland','wastes','dunes']},duilleogghorm:{ctx:['water','sand'],biomes:['coast','dunes','fen']},
   };
+  // S533 — a tree within 4 units, by the scatter's own roll in this chunk (scatterChunk's lattice and tree test), without
+  // the stamps and roads it also skips: those arrive as cells load, so ch.treePts held trees on one machine that another
+  // never planted, and a herb's kind went with them (herbids red on CI: 11 of 28 herbs another kind)
+  function herbTreeNear(ch,x,z){const STEP=6,ox=ch.cx*CHUNK,oz=ch.cz*CHUNK,n=CHUNK/STEP;
+    const i0=Math.max(0,Math.floor((x-ox-4)/STEP)-1),i1=Math.min(Math.ceil(n)-1,Math.floor((x-ox+4)/STEP)+1),j0=Math.max(0,Math.floor((z-oz-4)/STEP)-1),j1=Math.min(Math.ceil(n)-1,Math.floor((z-oz+4)/STEP)+1);
+    for(let iz=j0;iz<=j1;iz++)for(let ix=i0;ix<=i1;ix++){
+      const gx=ch.cx*n+ix,gz=ch.cz*n+iz,tx=ox+(ix+.15+hash01(gx,gz,1)*.7)*STEP,tz=oz+(iz+.15+hash01(gx,gz,2)*.7)*STEP;
+      if(Math.abs(tx-x)>=4||Math.abs(tz-z)>=4)continue;if(tx<2||tz<2||tx>SIZE*GRID-2||tz>SIZE*GRID-2||worldH(tx,tz)<1.6)continue;
+      const h=meshH(tx,tz)-.04,ny=slopeNormalY(tx,tz),p=regionScalar(tx,tz,'density')*(.5+fbm(tx,tz,60,SEED+21,2)*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
+      if(hash01(gx,gz,3)<p)return true;}
+    return false;}
   function placeCtx(x,z,h,ch){
     if(h<-1.2)return 'sea';
     const ny=slopeNormalY(x,z);if(ny<.84)return 'rock';
     if(h<2.6){const sea=seaAt(x,z);if(sea>.02||h<1.6)return h<2.0?'sand':'water';}
     // near water: a river or lake within a short walk (bed below 0 within 6u)
     for(const [dx,dz] of [[6,0],[-6,0],[0,6],[0,-6]])if(worldH(x+dx,z+dz)<0)return 'water';
-    if(ch.treePts)for(let i=0;i<ch.treePts.length;i+=2){if(Math.abs(ch.treePts[i]-x)<4&&Math.abs(ch.treePts[i+1]-z)<4)return 'tree';}
-    for(const S of SETTLE.values()){if(Math.abs(S.site.x-x)>S.site.pad+30||Math.abs(S.site.z-z)>S.site.pad+30)continue;for(const hh of S.houses){if(Math.hypot(hh.doorX-x,hh.doorZ-z)<11)return 'house';}}
+    if(herbTreeNear(ch,x,z))return 'tree';
+    // S533 — near the houses is the place's own ground, read from the sites and not from the towns built so far: a herb's
+    // kind must not hang on whether its town had loaded (co-op rules; herbids was red on CI when it had not)
+    {const [ci,cj]=cellOf(x,z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const c=getCell(ci+di,cj+dj);if(!c||!c.sites)continue;
+      for(const t of c.sites){if(!(t.pad>0)||Math.abs(t.x-x)>t.pad+11||Math.abs(t.z-z)>t.pad+11)continue;if(Math.hypot(t.x-x,t.z-z)<t.pad+11)return 'house';}}}
     return 'open';
   }
   function herbCandidates(biome,ctx){const out=[];for(const k in HERB_PLACE){const p=HERB_PLACE[k];if(!HERB_DEF[k])continue;if(!p.biomes.includes(biome))continue;const w=p.ctx.indexOf(ctx);if(w<0)continue;out.push([k,w===0?3:1]);}return out;}

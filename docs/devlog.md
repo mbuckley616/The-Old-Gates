@@ -12182,3 +12182,20 @@ Changed from the prototype: the prototype says *Magicka*, and the game calls it 
 
 ### Needs eyes
 The slip at the real screen size and in real play: whether the band reads at a glance, and whether a mark's exact hour (*8 hours 20 minutes*) is clearer than the prototype's whole hours.
+
+## v80 — Session 533 — A herb's kind no longer hangs on what had loaded (CI fix: herbids and journal red on 72cb422)
+CI on this branch's head before the run (72cb422, Session 518) had two suites red. Neither failed here, so the logs were read through the GitHub tools.
+
+**`herbids`** (Session 515's test) placed chunk 205,395's herbs again and found 11 of 28 of another kind than the live world had: same ids, same spots, other herbs. That is a real fault, and it is exactly what the co-op rules forbid: two machines must agree on what grows at an id. A herb's kind comes from its context (`placeCtx`, `82-world-structures.js`), and two of the contexts read what had loaded so far:
+- *Under a tree* read the chunk's `treePts`. The scatter plants no tree under a site stamp or on a road, but stamps and roads arrive as cells load, so a chunk built before Dunmore's stamp had trees where one built after had none. The trees trimmed later did not change the herbs already placed. On CI the chunk got its trees first, and here it never did.
+- *By the houses* read `SETTLE`, the towns built so far.
+
+Now *under a tree* is worked out by `herbTreeNear` from the scatter's own roll in that chunk (its lattice, its density, clumping, slope and height test), without the stamp and road filters. *By the houses* reads the sites of the cell and its neighbours from `getCell`, as `siteAnywhere` does: within the place's pad and 11 more. Herbs still never stand on a road or in a site's core (`okSpot`, unchanged). Some herbs now take another kind than before, the same on every machine. Nothing about a herb is saved, so no save changes.
+
+**`journal`** passed every check and then timed out taking a picture for the devlog (`page.screenshot`, 30 s, "waiting for fonts"). The picture is not a check. It now has 60 s, and a picture that still times out is logged and skipped instead of failing the suite. No check was removed.
+
+### Verified (headless Chromium)
+`herbids` 6/6 (2 new checks). Chunk 205,395 placed by a stand-in with a tree on every 2-unit spot gives all 29 herbs the same kind as with none (the code before this session: 7 of 29). Placed with all 15 built towns taken out of `SETTLE`, every herb placed both times has the same spot and kind (28 of 28; one try is crowded out because a house's solid is gone, as Session 515's design allows). The live world's herbs match a fresh placing 29 of 29. `journal` passes. The herb suites (herbstub, plants, herbhidden, herbparity, pois, stonecress, ashwort) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing: herbs by a tree or a house may be another kind than before, which only a botanist would notice.
