@@ -369,6 +369,7 @@ function creatureRagdollStart(rig,push,opts){
   for(const n of ['hips','spine','neck']){vel[I[n]].y-=1.0;vel[I[n]].addScaledVector(lat,roll*(1.6+rnd()*.6));}
   for(const K of ['L','R'])for(const n of ['wr','pf','hk','ph'])vel[I[n+K]].addScaledVector(lat,-roll*(1.1+rnd()*.5));
   P.forEach((o,i)=>o.q.copy(o.p).addScaledVector(vel[i],-RD_DT));
+  R.lat=lat;R.roll=roll;
   rig.deadPosed=true; // tickCreatures leaves the bones to the fall
   rig.mesh.frustumCulled=false;
   RAGDOLLS.add(R);return R;
@@ -377,6 +378,11 @@ function creatureRagdollStep(R){
   const {P,C,O,H}=R;
   // once it is down (.8 s) the air drags harder, so the braces' small fights die out and it comes to rest
   const dm=R.t<.8?.995:.9;
+  // S505 — a body still upright from .35 s to 1.2 s is turned on over the side it rolls, a little each step (the back one way, the keel
+  // the other): in about one fall in a hundred and fifty the
+  // trunk's roll was spent against the legs folding under, and the wolf came to rest standing on them (CI's beastfall, up .97)
+  if(R.t>.35&&R.t<1.2){const z=_crd1.subVectors(P[R.I.neck].p,P[R.I.hips].p).normalize(),x=_crd2.subVectors(P[R.I.thL].p,P[R.I.thR].p);x.addScaledVector(z,-x.dot(z)).normalize();
+    if(_crd3.crossVectors(z,x).y>.8){R.tipped=(R.tipped||0)+1;for(const n of ['hips','spine','neck','chest','belly'])P[R.I[n]].q.addScaledVector(R.lat,(n==='chest'||n==='belly'?1:-1)*R.roll*R.s*1.2*RD_DT);}}
   for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
   for(let it=0;it<10;it++){
     for(const [a,b,len,min] of C){const pa=P[a].p,pb=P[b].p,d=_crd1.subVectors(pb,pa),l=d.length()||1e-6;if(min&&l>=len)continue;const k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
