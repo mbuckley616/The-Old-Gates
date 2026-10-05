@@ -11981,3 +11981,16 @@ The suite measures the bind pose against that hover, because `tickPeople` will n
 ### Needs eyes
 - "More ghostly & frightening" is only half done. The torso, arms and face inside the see-through robe are still a person's. Thinner, longer hands, a darker hollow face or a trailing wisp are look choices for a prototype, and that part stays open in the backlog.
 - The ragdoll already skips the wraiths: they have no fall.
+
+## v80 — Session 528 — The shield in first person is the kit's (backlog H, Michael's inspector note)
+Michael, from the inspector: the first-person shield "looks like the legacy shield still / does not match with the 3 shield types we have." It was the old viewmodel: a flat box face of .38 × .48 with four box rims and a sphere boss (`buildShieldViewmodel`, `16-viewmodel.js`). Your body in third person has carried the kit's shields since Sessions 227 and 231: a planked round shield with a rim and boss, the kite, and the tower.
+
+The first-person shield is now the same kit piece, chosen the way `tpBuild` chooses it. A buckler or round shield is the round one, a tower shield the tower, and any other the kite. The face takes the item's material colour and the rim and boss its guard, read by the third person's own `tpHex`. The kit is drawn at a person's scale facing +x. Here it is turned to face away from you, scaled to a height by kind (.42 for a buckler, .52 for a round shield, .51 for a kite, .64 for a tower), and centred where the box was, so the hand behind it, the block pose and the impact shake are unchanged. The glow light of an enchanted shield is kept. 156 → 804 triangles in the inspector entry.
+
+### Verified (headless Chromium)
+`tests/fpshield.test.mjs` (new), 4/4. With an Iron Buckler, Round Shield, Kite Shield and Tower Shield in the off hand, the first-person shield is the kit's round, round, kite and tower. None keeps the legacy .48 box face. They stand .42, .52, .51 and .64 tall. There are no page errors. `fists` and `inspector` pass. Pictures: `docs/prototypes/fpshield-before.png` and `-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- In play, the shield's placement against the camera when blocking: it is centred where the old face was, but the kit's round shield is a disc, not a portrait box.
+- A tier-3 buckler's face is its steel, so it reads near white under the viewmodel's light. The third person tints it the same.
+- The hand behind the shield is still the old blocky hand. That is the next note in the list (hands on every held weapon).

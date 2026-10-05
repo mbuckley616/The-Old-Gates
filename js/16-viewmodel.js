@@ -794,12 +794,16 @@ function buildShieldViewmodel(){
     const col=sh.matCol||(sh.name.includes('Tower')?0x6070a0:sh.name.includes('Steel')?0x8090a8:0x8a6030);
     const rimCol=sh.matGuard||(sh.name.includes('Tower')?0x4a5878:sh.name.includes('Steel')?0x606878:0x6a4a18);
     const g=new THREE.Group();
-    const face=new THREE.Mesh(new THREE.BoxGeometry(.38,.48,.05),new THREE.MeshLambertMaterial({color:col}));g.add(face);
-    const rimMat=new THREE.MeshLambertMaterial({color:rimCol});
-    [[0,.25,.38,.04,.06],[0,-.25,.38,.04,.06],[-.20,0,.04,.48,.06],[.20,0,.04,.48,.06]].forEach(([x,y,bx,by,bz])=>{
-      const r=new THREE.Mesh(new THREE.BoxGeometry(bx,by,bz),rimMat);r.position.set(x,y,.01);g.add(r);
-    });
-    const boss=new THREE.Mesh(new THREE.SphereGeometry(.05,6,5),new THREE.MeshLambertMaterial({color:rimCol}));boss.position.set(0,0,.06);g.add(boss);
+    // S528 — the kit's shield, as your body carries it in third person (S227/S231): round for a buckler or round shield, the tower,
+    // or the kite, the face the item's material and the rim and boss its guard (Michael, the inspector: "This looks like the legacy
+    // shield still / does not match with the 3 shield types we have"). The kit is drawn at a person's scale facing +x: turned to
+    // face away from you, sized to the old face's height (a buckler smaller, a tower taller) and centred where the box was.
+    const nm=sh.name||'',big=/tower|kite/i.test(nm),round=/buckler|round/i.test(nm),kk=round?'round':big&&!/kite/i.test(nm)?'tower':'kite';
+    const fc=typeof tpHex==='function'?tpHex(sh.matCol,col):col,rc=typeof tpHex==='function'?tpHex(sh.matGuard,0x4a3418):rimCol; /* the third person's own colour reading */
+    const k=buildWeapon(kk,{tint:{face:fc,guard:rc,metal:rc}});k.rotation.y=Math.PI/2;k.updateMatrixWorld(true);
+    {const bb=new THREE.Box3().setFromObject(k),hgt=(bb.max.y-bb.min.y)||1;k.scale.setScalar((round&&/buckler/i.test(nm)?.4:kk==='tower'?.62:.5)/hgt);
+      k.updateMatrixWorld(true);bb.setFromObject(k);const ctr=bb.getCenter(new THREE.Vector3());k.position.sub(ctr);}
+    g.add(k);g.userData.kit=kk;
     if(sh.matGlow||sh.enchant){
       const gc=sh.enchant?sh.enchant.col:sh.matGlow;
       if(gc){const gl=new THREE.PointLight(gc,.7,1.0);gl.position.set(0,0,.08);g.add(gl);}
