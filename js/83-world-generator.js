@@ -232,7 +232,7 @@
       lots.sort((a,b)=>Math.hypot(a.x-cx,a.z-cz)-Math.hypot(b.x-cx,b.z-cz));
       // Shops: nearest lots to the centre get the shops; hero rosters override.
       const hero=heroShops(site);
-      let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5)]; // hero towns get guild halls too
+      let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5),...(plan.late||[])]; // hero towns get guild halls too
       if(TST&&!hero)shopTypes=shopsFor(site,shopTypes,P);
       if(TST&&withBuilds){TST.builds.forEach(b=>{if(!b.done)return;if(b.key==='inn'&&!shopTypes.includes('inn'))shopTypes.push('inn');if(b.key==='chapel'&&!shopTypes.includes('church'))shopTypes.push('church');if(b.key==='guild'&&!shopTypes.includes('guild_f'))shopTypes.push('guild_f');});}
       // Size shop lots by type first, then drop any later lot that overlaps an
@@ -358,7 +358,7 @@
       house.keeper=def.name;house._twin=def._twin;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
       if(signY!==null)buildTradeSign(group,type,house.name,doorX,doorZ,lot.tx,lot.tz,lot.ry,signY);
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[...upgradeTopics(site),...rest]:[buy,...rest];}});}
-      if(house.guild||type==='shipwright'||type==='inn')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
+      if(house.guild||type==='shipwright'||type==='inn'||type==='barber')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
       if(type==='inn')def._extra.unshift(...innTopics(house,def.people)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
       if(type==='church'){def._extraFn=()=>[...penanceTopics(site)];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
@@ -937,12 +937,12 @@
     MAP.dirty=MAP.jobs.length>0;
   }
   // ── hover card for settlements: prosperity, services, guilds, issues, culture, people ──
-  const SHOP_WORD={forge:'smith',goods:'goods',inn:'inn',apothecary:'apothecary',church:'church',armoury:'armoury',shipwright:'shipwright',guild_f:"Fighters' Guild",guild_m:"Mages' Guild",keep:'keep',castle:'keep',weapon:'smith',armor:'armoury',potion:'apothecary',misc:'goods'};
+  const SHOP_WORD={forge:'smith',goods:'goods',inn:'inn',apothecary:'apothecary',church:'church',armoury:'armoury',shipwright:'shipwright',guild_f:"Fighters' Guild",guild_m:"Mages' Guild",barber:'barber',keep:'keep',castle:'keep',weapon:'smith',armor:'armoury',potion:'apothecary',misc:'goods'};
   function townCard(t){
     const [i,j]=cellOf(t.x,t.z);const nat=nationOf(i,j);const st=TS(t);const S=SETTLE.get(t.id);
     let services,guilds;
     if(S){const types=S.houses.map(h=>h.type);services=[...new Set(types.filter(x=>x!=='home'&&x!=='guild_f'&&x!=='guild_m').map(x=>SHOP_WORD[x]||x))];guilds=[...new Set(types.filter(x=>x==='guild_f'||x==='guild_m').map(x=>SHOP_WORD[x]))];}
-    else{const plan=KIND_PLAN[t.kind]||KIND_PLAN.village;const list=[...plan.shops,...((t.kind==='town'||t.kind==='city')?['guild_f','guild_m']:[])];const open=shopsFor(t,list);services=[...new Set(open.filter(x=>x!=='guild_f'&&x!=='guild_m').map(x=>SHOP_WORD[x]||x))];guilds=open.filter(x=>x==='guild_f'||x==='guild_m').map(x=>SHOP_WORD[x]);}
+    else{const plan=KIND_PLAN[t.kind]||KIND_PLAN.village;const list=[...plan.shops,...(plan.late||[]),...((t.kind==='town'||t.kind==='city')?['guild_f','guild_m']:[])];const open=shopsFor(t,list);services=[...new Set(open.filter(x=>x!=='guild_f'&&x!=='guild_m').map(x=>SHOP_WORD[x]||x))];guilds=open.filter(x=>x==='guild_f'||x==='guild_m').map(x=>SHOP_WORD[x]);}
     st.builds.forEach(b=>{if(b.done){if(b.key==='guild'&&!guilds.includes("Fighters' Guild"))guilds.push("Fighters' Guild");if(b.key==='inn'&&!services.includes('inn'))services.push('inn');if(b.key==='chapel'&&!services.includes('church'))services.push('church');if(b.key==='harbour')services.push('harbour');}});
     // issues
     const issues=[];for(const f in st.flags)issues.push(f==='scaffold'?'building':f);
@@ -1008,7 +1008,7 @@
       root.addEventListener('mouseleave',()=>showTownCard(null,0,0));
       window.addEventListener('mouseup',ev=>{if(!MAP.drag)return;const moved=MAP.drag.moved;MAP.drag=null;if(moved||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);MAP.sel=e?e.id:null;mapPanel(e);MAP.dirty=true;});
       (function(){const kb=document.getElementById('wm-key'),bx=document.getElementById('wm-keybox');if(kb&&bx){kb.onclick=()=>{bx.style.display=bx.style.display==='none'?'block':'none';};
-        if(!document.getElementById('wm-key-bld')){const seen=new Set(),rows=[];for(const k of ['home','castle','guild_f','guild_m','church','inn','weapon','potion','misc','shipwright','barracks','other']){const B=BLD[k];if(seen.has(B.label))continue;seen.add(B.label);rows.push(`<span style="white-space:nowrap;margin-right:8px"><span style="display:inline-block;width:10px;height:10px;background:${B.col};border:1px solid ${B.line};vertical-align:-1px;margin-right:3px"></span>${B.label}</span>`);}
+        if(!document.getElementById('wm-key-bld')){const seen=new Set(),rows=[];for(const k of ['home','castle','guild_f','guild_m','church','inn','weapon','potion','misc','shipwright','barber','barracks','other']){const B=BLD[k];if(seen.has(B.label))continue;seen.add(B.label);rows.push(`<span style="white-space:nowrap;margin-right:8px"><span style="display:inline-block;width:10px;height:10px;background:${B.col};border:1px solid ${B.line};vertical-align:-1px;margin-right:3px"></span>${B.label}</span>`);}
           const d=document.createElement('div');d.id='wm-key-bld';d.style.cssText='margin-top:6px';d.innerHTML=`<div style="color:#e8d8a0;margin-bottom:2px">In town <span style="color:#8a9a70;font-size:11px">(Local view \u00b7 minimap)</span></div><div>${rows.join(' ')}</div><div style="margin-top:2px"><span style="color:${BLD.castle.col}">\u25cf</span> the lord &nbsp; <span style="color:#f6d860">\u25ce</span> where you were directed &nbsp; <span style="color:#f6e27a">\u25a1</span> your house</div>`;
           const tip=bx.lastElementChild;bx.insertBefore(d,tip);}
         if(!document.getElementById('wm-key-bio')){const seen=new Set(),rows=[];
@@ -1349,6 +1349,15 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});const x=4+k*(W-8)/2,z=D*.4+(k%2)*2;g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
         INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:2,x1:W-2,z0:5,z1:D-4}});}
       npc={x:W/2,z:2.2,maxZ:2.6,paused:false};
+    } else if(type==='barber'){
+      // S512 — the barber and dyer (Michael's B on #144): the chair facing the mirror on the back wall, the washstand, a stool,
+      // the bench of razors and towels on the west wall, the dyer's vat and hanks of wool along the back wall; no counter,
+      // the barber stands at the chair. One bake, the Session 505 prototype's pieces
+      {const K=furnKit(),room=K.bake(K.barber(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      const cx=W*.36;solid(cx,1.35,.24,.26,1.2);solid(cx+.75,.7,.17,.17,.75);solid(.3,2.6,.22,.47,.76);
+      solid(W-3.0,1.0,.33,.33,.75);solid(W-1.05,.8,.57,.25,.76);solid(.35,D*.6,.14,.82,.44);
+      light(cx,1.9,1.6,0xffc880,1.1,6);light(W-2.2,1.6,1.4,0xffb070,.7,5);
+      npc={x:cx-.8,z:1.3,maxZ:1.6,paused:true};
     } else if(type==='tower'){
       // a stone post, a helix of treads to a landing 30u up, a chest in the treasure room
       const TOP=30,turns=5,r0=1.1,r1=3.9;const cx_=W/2,cz_=D/2;
@@ -1483,6 +1492,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     potion:{col:'#56b04c',line:'#1e4a18',label:'Apothecary',glyph:'\ud83c\udf3f'},
     misc:{col:'#b88a50',line:'#4a3418',label:'Goods',glyph:'\ud83d\udce6'},
     shipwright:{col:'#2fa39a',line:'#0e4440',label:'Shipwright',glyph:'\u26f5'},
+    barber:{col:'#c0605a',line:'#4a1a16',label:'Barber \u00b7 dyer',glyph:'\u2702'}, // S512
     barracks:{col:'#8a4a40',line:'#3a1a14',label:'Barracks'},
     other:{col:'#d8c8a0',line:'#6a5a3a',label:'Other'},
     wall:{col:'#8a857a',line:'#5a5650',label:'Wall'},

@@ -8,7 +8,8 @@ const houses = await page.evaluate(() => WORLD.settle.get('dunmore').houses.filt
 const shopAt = async (type) => {
   await page.evaluate((type) => { forceTime(13); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === type && x.keeper);
     window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, type);
-  await page.waitForTimeout(4500); await g.hide();
+  // S512 — wait for the room itself (the entry lands behind a fade's timer, which a slow runner can push past a fixed pause)
+  await page.waitForFunction(() => currentHouse === window._h && !!interiorScene, null, { timeout: 60000 }); await page.waitForTimeout(500); await g.hide();
   const r = await page.evaluate(() => { forceTime(13); const rows = () => [...document.querySelectorAll('#sh-stock .sh-row')].map(r => r.textContent.replace(/\s+/g, ' ').trim());
     const tbl = currentHouse.id && currentHouse.id.startsWith('ih') ? IH_SHOP_STOCK : SHOP_STOCK; const base = tbl[currentHouse.type] || tbl.misc;
     ATTRS.charisma = 4; openShop(); gold = 99999; renderShop(); const at4 = rows();
@@ -18,7 +19,7 @@ const shopAt = async (type) => {
     closeShop(); ATTRS.charisma = 0;
     const tiers = base.filter(i => i.type === 'equip' && i.tier && !i.torchType).map(i => i.tier); const ptiers = base.filter(i => i._tier).map(i => i._tier);
     return { type: currentHouse.type, n4: at4.length, n5: at5.length, extra: extra && { name: extra.name, tier: extra.tier, _tier: extra._tier }, top: tiers.length ? Math.max(...tiers) : 0, ptop: ptiers.length ? Math.max(...ptiers) : 0, bought }; });
-  await page.evaluate(async () => { exitInterior(); await new Promise(r => setTimeout(r, 2500)); });
+  await page.evaluate(() => exitInterior()); await page.waitForFunction(() => !currentHouse && !isInterior(), null, { timeout: 60000 }); await page.waitForTimeout(500);
   return r;
 };
 
