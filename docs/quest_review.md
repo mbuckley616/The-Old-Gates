@@ -6,14 +6,64 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `551e9ec` | run 7, from `206b697`; the diff is `-- index.html js/` |
-| auto/systems | `0fbebd9` | run 7, Sessions 442–460 against main |
-| auto/fable-co-op-door | `79f6d64` | run 7, Session 453/456 (two saves) against main; first read |
-| auto/backlog | `551e9ec` | run 7: level with main (Sessions 414–435 merged, read in run 6) |
-| auto/fable-rivers | `5504d80` | run 7: merged into main; nothing ahead |
-| auto/concept, auto/producer, auto/critic, auto/design, auto/split | — | run 7: level with main, or ahead in docs only |
+| main | `178e96f` | run 8, from `551e9ec`; strings compared as sets, since the world file is nine files now (S484) |
+| auto/systems | `20726f9` | run 8, Sessions 485–503 against main |
+| auto/backlog | `c475d28` | run 8: S505, the ragdoll and the tag; no string |
+| auto/producer, auto/critic | — | run 8: ahead in docs only |
+| auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/concept, auto/design, auto/split | — | run 8: merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 | auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 8 — 5 Oct 2026
+
+About 140 new strings on main and 60 on auto/systems, three findings, all on main and all in the Compact's claim. Since Session 484 split the world file into nine, a line diff shows every world string as new; this run compared the sets of string literals at `551e9ec`, `0fbebd9` (run 7's systems head) and each branch head instead, and read what was new.
+
+**main** (`551e9ec..178e96f`) carries Sessions 461–484 from auto/systems and the look sessions to 483. Findings 10–13 are in the code as written: Rowe found on the land greets you *Aye. Thought it'd be you.*; the Prior's after and claim lines are Aurennais; the doubled names are gone. The co-op door's menu text was read in run 7. New: the Compact's refit (Session 467, Michael's B on #128), which brings Findings 14–16. The mesh inspector (Sessions 492–494) is a developer's tool opened from the console; its labels are not read.
+
+**auto/systems** (Sessions 485–503). *Too spent to break the guard.* is plain combat chrome. The dated work lines (*the date has passed. The work is taken back.*, *Pay is 40 gold; 50 if it is done by …*) are the game's plain terms and break no register. The Journal's chrome (*Nothing falls due.*, *Nobody has told you anything worth keeping yet.*, *Write a line of your own*) is in the menu voice. The shrine's *It is the Sea’s day. You are restored, and carry the Road two days.* reads right, and will read *It is Seaday.* with the names drafted this run (*The Year's Names*, `docs/quest_drafts.md`; the era is DECISION #146). The day and month placeholders in `CAL` are the subject of that draft, not findings.
+
+**auto/backlog** (S505) adds no string.
+
+### Finding 14 — main — the Prior is promised the house and the ship twice at the rank-up
+
+**Where.** The faction's *Serve* turn-in, `87-world-quests.js` (grep `` There's ${F.house} in it, when you want it. ``).
+
+**Text.** On the rank to Prior after *The Black Sail*: *The Compact names you Prior. The strait is quieter, and the Compact is in your debt, Prior, which it does not admit to many. A house and a ship are entered in your name; claim them when you please. Factor Rowe has gone north to the League, I am told. Their ledgers are shorter. There's a house and a ship in it, when you want it.* (The systems builder noted it in #old-gates, 4 Oct.)
+
+**Why.** Finding 12's after already hands over the claim, and the tail says it again in a Markman's plain words (*There's … in it*) from an Aurennais mouth. The Crown's tail is a Gatelander lord's and wants his turn of phrase; the League's is a Markman's and is right as it stands.
+
+**Replacement.** The tail, by faction, when `st.rank===3`:
+- `compact`: nothing when `_aft` is not empty; otherwise `" A house and a ship are entered in your name, Prior; claim them when you please."`
+- `crown`: `" There's a keep goes with it. A roof's only a roof till someone sleeps under it, so come and claim it when you will."`
+- `league`: unchanged, `" There's a garrison in it, when you want it."`
+
+### Finding 15 — main — the claim says *the ship at the quay* when the ship is elsewhere, on the bottom, or the one you had
+
+**Where.** The rank-3 claim, `87-world-quests.js` (grep `` Entered in your name, Prior: the house, and the ship at the quay. ``), and what `grantShip` returns (`85-world-sea.js`).
+
+**Text.** *Entered in your name, Prior: the house, and the ship at the quay.* — said in every case.
+
+**Why.** Since Session 457 a Prior with no ship gets a sloop at the nearest Compact quay (Beaurouge, when the seat is inland Fortargent), and since Session 467 a Prior with a ship gets her refitted where she lies, or raised by the shipwright nearest her wreck. The line is true only when the seat is itself the port. The systems builder raised it on 4 Oct.
+
+**Replacement.** `compactRefit` returns `{cls, up:!!next}` instead of `{cls}`, and the claim keeps `grantShip`'s result `g` and answers from it (`siteAnywhere` gives the shipwright's town):
+- a new ship, at the seat (`g.id===site.id`): `"Entered in your name, Prior: the house, and the ship at the quay."`
+- a new ship, at another port (`g.id` set and not the seat's): `` `Entered in your name, Prior: the house here, and the ship at the quay at ${g.name}.` ``
+- refitted afloat, a class up: `` `Entered in your name, Prior: the house. You keep a ship already, so the Compact has seen to her where she lies: mended, and refitted as a ${g.cls}, at its own charge.` ``
+- refitted afloat, already a galleon: `"Entered in your name, Prior: the house. You keep a ship already, so the Compact has seen to her where she lies: mended, at its own charge. There is no larger hull to enter."`
+- sunk, being raised (`g.due!=null`): `` `Entered in your name, Prior: the house. Your ship lies on the bottom; the shipwright at ${(siteAnywhere(g.site)||{}).name||'the nearest quay'} has the Compact's order to raise her, a class better, and three days to do it.` ``
+- no port found (`g` is null): `"Entered in your name, Prior: the house. The ship is entered also; the Compact will name her berth when it has one."`
+
+### Finding 16 — main — the refit's log line puts *mended* last
+
+**Where.** `compactRefit`, `85-world-sea.js` (grep `` refitted the ${nm} as a ${next}, mended. ``).
+
+**Text.** *The Compact refitted the Kestrel as a cog, mended.*
+
+**Why.** Narration, so no register to keep, but the trailing *mended* reads as a slip.
+
+**Replacement.** `` `The Compact mended the ${nm} and refitted her as a ${next}.` `` The other three refit lines stand.
 
 ---
 
