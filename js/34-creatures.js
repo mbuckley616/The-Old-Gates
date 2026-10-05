@@ -20,7 +20,7 @@ const WOLF_KINDS={
   'Horse':     {coat:0x6a4428,saddle:0x24160c,belly:0x8a6444,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
   'Grey Horse':{coat:0xb4aea4,saddle:0x5a5650,belly:0xd4cec4,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
   // the world's dragon (S177): the wolf's legs and gait under a long neck, a long tail, horns and two wings of its own
-  'Dragon':    {coat:0x5a2a1a,saddle:0x3a160c,belly:0xa87a48,eye:0xff8020,dragon:true,bulk:1.28,neck:-.15,eyePos:[.05,.04,.104]}
+  'Dragon':    {coat:0x5a2a1a,saddle:0x3a160c,belly:0xa87a48,eye:0xff8020,dragon:true,bulk:1.28,neck:-.15,eyePos:[.05,.04,.104],world:2.88} // S524 — world: the scale every dragon is built at in play (the zone's 1.8 × 1.6, the lair's 2.88); the inspector shows it so
 };
 const WOLF_RIGS=new Set();
 const WOLF_GEO=new Map();

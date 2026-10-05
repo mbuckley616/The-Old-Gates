@@ -11,6 +11,23 @@ The calendar is built on auto/systems (Sessions 496–500) with placeholder name
 - **D.** Other names: Michael writes them, or marks the ones to change.
 
 Recommendation: **A.** Every ledger on three islands had to date by the treaty, the number is short, and if the cold peace breaks in play the date line keeps calling it the Peace, which is the point of it.
+### How large is a dragon? (the look builder, Session 524, 2026-10-05) — DECISION #153
+Michael's inspector note on the dragon: "Design looks fine, but the scale seems far too small compared to the bandit for scale. Dragons should be pretty large."
+
+Part of that was the inspector. It built every wolf-kit creature at scale 1, but every dragon in play is built at 2.88: the open world's at its zone scale 1.8 × 1.6, and a lair's master at the same 2.88. The inspector now shows it at 2.88 (Session 524). At that size it stands 2.35 tall and 6.9 long, against a man of 1.7. How large should it be?
+
+- **A.** As the game has it: 2.88, 2.35 tall and 6.9 long, about one and a half times a man's height. Nothing changes but the inspector.
+- **B.** 4.5: 3.7 tall and 10.7 long, about twice a man's height, with its head above a cottage's eaves. *(recommended)*
+- **C.** 6: 4.9 tall and 14.3 long, a boss's size. A cave lair's rooms may be too low for it.
+- **D.** By place: the open world's dragon at 4.5 and a lair's master at 6.
+
+Recommendation: **B.** It reads as a dragon beside a person without outgrowing the lairs. The size is the look builder's change in the builders (`WOLF_KINDS.Dragon.world`). How far it reaches and how wide it is to hit grow with the scale in `42-zone-enemies.js` and the lair's `dragonBody` (`68-dungeon-misc.js`), so the systems builder would check reach, collision and the lair rooms in the same change.
+
+Pictures (the bandit, then dragons at 1, 2.88, 4.5 and 6):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-sizes.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-sizes-near.png
+The inspector at the world's size: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-inspector-after.png
+
 ## Answered
 ### A barber and dyer in towns (the look builder, Session 505, 2026-10-05, DECISION #144)
 Backlog H has one look item left that is not done or waiting: *a barber/tailor in towns to change hair and dyes after the creator*. Today the look you choose in the creator (hair, beard, tunic, breeches and boots colours) is fixed for good. A trade in town would reopen those rows. It touches a new person, a room, a sign and a fee, so it is yours before anyone builds it.

@@ -11910,3 +11910,16 @@ Michael, from the inspector: "Horse legs are far too small/lean. They should be 
 ### Needs eyes
 - The jaw has no test. Whether it reads as heavy enough is for the eye: compare the two pictures.
 - The stand pose raises a hind hoof backwards (the wolf's idle on the horse's legs), and with the thicker leg it shows more. That is the pose, not this change.
+
+## v80 — Session 524 — The dragon's size: the inspector shows the world's, and a question (backlog H, Michael's inspector note)
+Michael, from the inspector: the dragon's "scale seems far too small compared to the bandit for scale. Dragons should be pretty large." Part of this was the inspector. It built every wolf-kit creature with `buildWolf(name, 1)`, while every dragon in play is built at 2.88: the open world's at its zone scale 1.8 × 1.6 (`42-zone-enemies.js`), and a lair's master at the same 2.88 by `dragonBody` (`68-dungeon-misc.js`, S219). So the inspector showed a dragon 0.82 tall that no player meets. The real one stands 2.35 tall and 6.9 long, against a man of 1.7.
+
+`WOLF_KINDS.Dragon.world = 2.88` (`34-creatures.js`) records that scale, and the inspector builds a wolf-kit kind at its `world` scale when it has one. The other kinds have none, and the game's own builders keep their own numbers.
+
+Whether 2.88 is large enough is Michael's call: the size also sets how far the dragon reaches and how wide it is to hit, in the systems builder's combat code. The prototype (`docs/prototypes/dragon/proto.mjs`) stands the bandit beside dragons at 1, 2.88, 4.5 and 6 in the open world at noon. DECISION #153 asks: A as the game has it, B 4.5 (3.7 tall, 10.7 long; recommended), C 6 (4.9 tall, 14.3 long), D by place (the open world's at 4.5, a lair's at 6). Nothing in play changes until he answers.
+
+### Verified (headless Chromium)
+`tests/dragonsize.test.mjs` (new), 3/3. The inspector's dragon is built at 2.88 and stands 2.35 tall. A dragon built for the open world by `buildZoneEnemy` stands 2.35 too, measured on its body without the health bar. There are no page errors. The prototype runs clean and measured the four sizes at 0.82, 2.35, 3.68 and 4.90 tall (2.4, 6.9, 10.7 and 14.3 long). Pictures: `docs/prototypes/dragon-sizes.png`, `dragon-sizes-near.png`, and the inspector at the world's size in `dragon-inspector-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- Michael: DECISION #153. Seen at its real size in the inspector, the dragon may already be closer to what he wants.
