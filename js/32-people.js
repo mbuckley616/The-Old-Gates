@@ -177,8 +177,92 @@ function AR_FROM_EQ(EQ,mode){
   const o={head:piece(EQ.head),chest:piece(EQ.chest),hands:piece(EQ.hands),legs:piece(EQ.legs),feet:piece(EQ.feet)};
   return (o.head||o.chest||o.hands||o.legs||o.feet)?o:null;}
 
+// PROTOTYPE (Michael's B on #156: two more armour lines beside the one): a piece with `line` 'light' (the archer's: a jerkin,
+// bracers, soft boots, a hood) or 'robe' (the mage's: an open coat, an under-robe, bell sleeves, a mantle, a cowl) is dressed
+// here, and ARMOUR_DRESS gets the rest. The tier colours the line: the light line's leather darkens and takes the material's
+// colour from Mithril up, its rivets and buckles are the metal; the robe's cloth is a dye per tier, its trim gold or the metal.
+const LINE_ROBE=[null,0x7a6e5a,0x8a5a2a,0x2e3e5e,0x4a4e5a,0x2a3a7a,0x1e5030,0x241c30,0x7a1812,0x40125a,0xd8e4ee];
+const LINE_LEA=[null,0x7a5634,0x6a4628,0x5a3a22,0x4a3020];
+function ARMOUR_LINE(X,E){
+  const {part,B,C,SK,THREE,bw,chestPts,g}=X;const PI=Math.PI,L1=PW.L1,L2=PW.L2,DL=PW.DL,hs=g.head||1,Z=.78,LR=[['L',1],['R',-1]];
+  const cp=chestPts.map(q=>[q[0]*bw,q[1]]);
+  const rAt=y=>{for(let i=1;i<cp.length;i++){const a=cp[i-1],b=cp[i];if(a[1]!==b[1]&&(y-a[1])*(y-b[1])<=0)return a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1]);}return cp[1][0];};
+  const ring=(r,t,y,col,b,sz,seg)=>{const o=part(SK.torus(r,t,4,seg||22),col,b,0,y,0);o.rotation.x=PI/2;o.scale.y=sz||Z;return o;};
+  const onBody=(b,geo,col,a,r,y,z)=>{const o=part(geo,col,b,Math.sin(a)*r,y,Math.cos(a)*r*(z||Z));o.rotation.order='YXZ';o.rotation.y=a;return o;};
+  const openLathe=(pts,seg,gap)=>new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]),q[1])),SK.seg(seg,8),gap/2,PI*2-gap);
+  const O=Object.assign({},E);
+  const LT=P=>{const t=P.tier,m=MATERIALS[t-1];const lea=t<=4?C(LINE_LEA[t]):C(LINE_LEA[4]).clone().lerp(C(m.guard),.45);
+    return {t,lea,dk:lea.clone().multiplyScalar(.62),hi:lea.clone().lerp(C(0xd8c098),.3),met:C(m.blade).clone().multiplyScalar(.8),gl:m.glow!=null?C(m.glow):null};};
+  const RT=P=>{const t=P.tier,m=MATERIALS[t-1],main=C(LINE_ROBE[t]);const inner=t===10?main.clone().lerp(C(0x4a90b0),.45):main.clone().lerp(C(0x000000),.35);
+    const trim=t<=2?main.clone().lerp(C(0xffffff),.28):t<=4?C(0xb8963e):C(m.blade).clone().lerp(C(0xffffff),.2);
+    return {t,main,inner,trim,dk:main.clone().multiplyScalar(.7),gl:m.glow!=null?C(m.glow):null};};
+  // ── the chest ──
+  const P=E.chest;
+  if(P&&P.line==='light'){O.chest=null;const T=LT(P);
+    part(SK.lathe(cp.filter(q=>q[1]>=-.01).map(q=>[q[0]*1.07+.008,q[1]]),22),T.lea,B.spine).scale.z=Z;
+    part(SK.cyl(.062,.07,.05,14,1,true),T.lea,B.neck,0,.005,0);
+    onBody(B.spine,SK.rbox(.014,.3,.006,.003,1),T.dk,0,rAt(.2)*1.07+.012,.2);
+    for(let i=0;i<6;i++){const y=.08+i*.05;onBody(B.spine,SK.rbox(.03,.005,.004,.002,1),T.hi,0,rAt(y)*1.07+.016,y).rotation.z=i%2?.6:-.6;}
+    if(T.t>=3)for(const y of [.1,.17,.24])for(let k=-4;k<=4;k++){if(!k)continue;const a=k*.24;onBody(B.spine,SK.ball(.0065,4,3),T.met,a,rAt(y)*1.07+.011,y);}
+    [.42,-.42,PI-.48,PI+.48].forEach(a=>{const f=onBody(B.hips,SK.rbox(.14*bw,.17,.012,.005,1),T.lea,a,.205*bw,-.09,.8);f.rotation.x=-.12;});
+    ring(.19*bw,.016,.02,T.dk,B.hips,.76);part(SK.rbox(.034,.03,.012,.004,1),T.met,B.hips,0,.02,.19*bw*.76+.012);
+    onBody(B.spine,SK.rbox(.034,.42,.008,.003,1),T.dk,0,rAt(.2)*1.07+.014,.2).rotation.z=.62;
+    onBody(B.spine,SK.rbox(.034,.42,.008,.003,1),T.dk,PI,rAt(.2)*1.07+.014,.2).rotation.z=-.62;
+    LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),T.lea,b,s*.012,-.004,0).scale.set(1.1,.72,1.15);
+      part(SK.cyl(.07,.078,.04,10,1,true,c-1,2),T.dk,b,s*.008,-.035,0).scale.z=1.05;
+      if(T.t>=3)part(SK.ball(.009,5,4),T.met,b,s*.075,.01,0);});
+    if(T.gl)ring(rAt(.36)*1.07+.012,.004,.355,T.gl,B.spine);}
+  if(P&&P.line==='robe'){O.chest=null;const T=RT(P);
+    part(SK.lathe(cp.filter(q=>q[1]>=-.01).map(q=>[q[0]*1.06+.006,q[1]]),22),T.main,B.spine).scale.z=Z;
+    part(SK.lathe([[.235*bw,-.36],[.232*bw,-.2],[.226*bw,-.12],[.205*bw,-.05],[.18*bw,.02],[.17*bw,.045]],20),T.inner,B.hips).scale.z=.8;
+    part(openLathe([[.275*bw,-.36],[.282*bw,-.345],[.25*bw,-.2],[.235*bw,-.12],[.21*bw,-.05],[.19*bw,.02],[.18*bw,.045]],22,.5),T.main,B.hips).scale.z=.8;
+    [-1,1].forEach(sd=>{onBody(B.hips,SK.rbox(.024,.38,.008,.003,1),T.trim,sd*.26,.24*bw,-.16,.8).rotation.x=-.17;
+      const l=onBody(B.spine,SK.rbox(.026,.3,.008,.003,1),T.trim,sd*.13,rAt(.2)*1.06+.01,.2);l.rotation.z=-sd*.22;});
+    ring(.182*bw,.024,.02,T.trim,B.hips,.76);const tl=part(SK.rbox(.04,.2,.008,.003,1),T.trim,B.hips,-.08*bw,-.09,.14*bw);tl.rotation.z=.08;
+    part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),T.dk,B.spine,0,.3,0).scale.z=.8;ring(.275*bw,.008,.245,T.trim,B.spine,.8);
+    LR.forEach(([k,s])=>{part(SK.cyl(.06*bw,.064*bw,.155,12,1,true),T.main,B['sh'+k],0,-.08,0);
+      part(SK.cyl(.052*bw,.1*bw,.15,14,1,true),T.main,B['el'+k],0,-.07,0);ring(.1*bw,.007,-.145,T.trim,B['el'+k],1,16);
+      if(T.gl)ring(.1*bw,.004,-.13,T.gl,B['el'+k],1,16);});
+    if(T.gl)ring(.28*bw,.004,.257,T.gl,B.spine,.8);}
+  // ── the hands ──
+  const H=E.hands;
+  if(H&&H.line==='light'){O.hands=null;const T=LT(H);B.handL.userData.col=B.handR.userData.col=T.lea;
+    LR.forEach(([k,s])=>{const el=B['el'+k],bow=k==='L';part(SK.cyl(.052*bw*(bow?1.06:1),.046*bw,bow?.13:.11,12,1,true),T.lea,el,0,-.08,0);
+      [-.035,-.08,-.125].forEach(y=>ring(.05*bw,.003,y,T.hi,el,1,12));
+      if(T.t>=3)for(let i=-1;i<=1;i++)part(SK.rbox(.01,.1,.006,.003,1),T.met,el,s*.044*Math.cos(i*.4),-.08,.044*Math.sin(i*.4)).rotation.y=s*PI/2-i*.4;
+      if(bow)part(SK.rbox(.05,.08,.01,.004,1),T.dk,el,0,-.08,.05);});}
+  if(H&&H.line==='robe'){O.hands=null;const T=RT(H);
+    LR.forEach(([k,s])=>{const el=B['el'+k];part(SK.cyl(.046*bw,.04*bw,.07,12,1,true),T.inner,el,0,-.11,0);ring(.042,.006,-.142,T.trim,el,1,14);
+      if(T.gl)ring(.044,.0035,-.128,T.gl,el,1,14);});}
+  // ── the legs ──
+  const Lg=E.legs;
+  if(Lg&&Lg.line==='light'){O.legs=null;const T=LT(Lg);
+    LR.forEach(([k,s])=>{const th=B['th'+k],kn=B['kn'+k];ring(.072*bw,.008,-L1*.35,T.dk,th,1,14);ring(.068*bw,.008,-L1*.75,T.dk,th,1,14);
+      part(SK.ball(.05,10,7,0,PI*2,0,PI*.6),T.lea,kn,0,.0,.03).rotation.x=PI/2-.2;if(T.t>=3)part(SK.ball(.012,6,4),T.met,kn,0,.0,.075);});}
+  if(Lg&&Lg.line==='robe'){O.legs=null;const T=RT(Lg);
+    part(SK.lathe([[0,-.44-DL],[.25*bw,-.44-DL],[.256*bw,-.425-DL],[.215*bw,-.22-DL*.6],[.18*bw,-.05],[.165*bw,.02],[0,.045]],20),T.inner,B.hips).scale.z=.76;
+    ring(.252*bw,.008,-.43-DL,T.trim,B.hips,.76);}
+  // ── the feet: soft boots for the light line, slippers in the under-robe's colour for the robe ──
+  const Ft=E.feet;
+  if(Ft&&Ft.line==='light'){O.feet=null;const T=LT(Ft);
+    LR.forEach(([k])=>{const kn=B['kn'+k];part(SK.cyl(.058*bw,.05*bw,L2*.72,12,1,true),T.lea,kn,0,-L2*.62,0);
+      const cf=part(SK.torus(.06*bw,.012,5,14),T.dk,kn,0,-L2*.27,0);cf.rotation.x=PI/2;ring(.054*bw,.005,-L2*.6,T.dk,kn,1,12);});}
+  if(Ft&&Ft.line==='robe'){O.feet=null;}
+  // ── the head: a hood and a short cape at the shoulders (light), a deep cowl draped at the neck (robe) ──
+  const Hd=E.head;
+  if(Hd&&Hd.line==='light'){O.head=null;const T=LT(Hd),hc=T.lea.clone().lerp(C(0x2a3424),.5);
+    const h=part(SK.ball(.168*hs,18,9,0,PI*2,0,PI*.62),hc,B.head,0,.125,-.045);h.rotation.x=-.8;h.scale.set(g.jaw||1,1.05,1.1);
+    part(SK.lathe([[.27*bw,.215],[.285*bw,.225],[.2*bw,.34],[.1,.4],[.07,.41]],18),hc,B.spine).scale.z=.82;
+    const tp=part(SK.cone(.035,.12,6),hc,B.head,0,.2,-.16);tp.rotation.x=-2.2;}
+  if(Hd&&Hd.line==='robe'){O.head=null;const T=RT(Hd);
+    const h=part(SK.ball(.176*hs,18,10,0,PI*2,0,PI*.64),T.main,B.head,0,.12,-.05);h.rotation.x=-.88;h.scale.set((g.jaw||1)*1.02,1.06,1.12);
+    const cw=part(SK.torus(.105,.04,6,18),T.main,B.neck,0,.0,-.01);cw.rotation.x=PI/2;cw.scale.y=.9;
+    
+    if(T.gl){const c=part(SK.ball(.012,8,6),T.gl,B.head,0,.24,.13*hs);c.scale.set(1,1.3,.6);}}
+  return O;}
+
 function ARMOUR_DRESS(X){
-  const {part,B,C,SK,THREE,bw,chestPts,E,g}=X;const PI=Math.PI,L1=PW.L1,L2=PW.L2;
+  const {part,B,C,SK,THREE,bw,chestPts,g}=X;const E=ARMOUR_LINE(X,X.E);const PI=Math.PI,L1=PW.L1,L2=PW.L2;
   const hs=g.head||1,jaw=g.jaw||1,Z=.78,LR=[['L',1],['R',-1]];
   const leather=C(0x4a3020),dark=C(0x120e0c),MT=h=>C(h).clone().multiplyScalar(.72),GD=h=>C(h).clone().multiplyScalar(.85);
   // S538 — the Demonic plate's carvings (Michael, the inspector: "red carved designs across the armour, similar to Daedric armor",
@@ -435,7 +519,7 @@ function personBakeQ(g,q){
   // its back and sides (191, 311 and 9 hair vertices, up to 12 cm out), or, pulled under its rim, through the gorget below it.
   // The bronze, mail and wooden helms are open below and keep them.
   const HD=g.eq&&g.eq.armour&&g.eq.armour.head;
-  let cap=null;const st=HD&&(/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)||(/^(braid|twin|tied)$/.test(g.style)&&!/^(muscle|mail|lamellar)$/.test(HD.fam)))?'buzz':g.style;
+  let cap=null;const st=HD&&(/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)||(/^(braid|twin|tied)$/.test(g.style)&&!/^(muscle|mail|lamellar|light|robe)$/.test(HD.fam)))?'buzz':g.style;
   if(st==='thin'){const f=part(SK.torus(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
   else if(st==='buzz')cap=shorn(.7);
   else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(SK.cone(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
