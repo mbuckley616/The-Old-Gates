@@ -140,24 +140,28 @@ function wolfBakeQ(k,q){
     part(SK.bumpy(SK.ball(.035,8,6),.008,17,9),sad,B.head,0,.03,.03).scale.set(.6,1,1.4);
     // the head: a skull, the long face tapering down to the muzzle, nostrils, pricked ears, a bridle
     const head=B.head;part(SK.ball(.068,12,9),coat,head,0,0,0,true).scale.set(.9,.95,1.1);
-    const face=part(zlathe([[0,0],[.058,0],[.062,.06],[.052,.15],[.046,.22],[.042,.26],[0,.275]],12),coat,head,0,-.01,.02,true);face.rotation.x=.75;face.scale.set(.85,1,1);
+    // S523 — the face fuller to the muzzle, a deep jowl and a heavier jaw (Michael, the inspector: "Same with the mouth/jaw")
+    const face=part(zlathe([[0,0],[.064,0],[.07,.06],[.064,.15],[.06,.22],[.056,.26],[.032,.282],[0,.288]],12),coat,head,0,-.01,.02,true);face.rotation.x=.75;face.scale.set(.86,1,1);
+    part(SK.ball(.062,10,8),coat,head,0,-.05,-.005,true).scale.set(.95,.85,1.1);
     for(const s of [1,-1]){part(SK.ball(.012,6,4),dark,head,s*.022,-.2,.19);const e=part(SK.cone(.022,.075,6),coat,head,s*.035,.075,-.02,true);e.rotation.set(-.2,0,-s*.2);e.scale.set(1,1,.55);}
     part(SK.torus(.056,.008,4,12),tack,head,0,-.1,.1).rotation.x=.75;part(SK.torus(.07,.008,4,12),tack,head,0,-.01,.03).rotation.x=Math.PI/2+.4;
-    part(zlathe([[0,0],[.035,0],[.03,.1],[0,.12]],8),coat,B.jaw,0,-.06,.03,true).rotation.x=.8;
+    {const jw=part(zlathe([[0,0],[.05,0],[.052,.06],[.045,.12],[.026,.145],[0,.15]],10),coat,B.jaw,0,-.06,.03,true);jw.rotation.x=.8;jw.scale.set(.82,1,1);}
     // the harness: a collar round the neck's base, a pad over the back with its girth
     const col_=part(SK.torus(.12,.035,6,14),tack,B.spine,0,.1,.19);col_.rotation.x=-.9;col_.scale.set(.85,1.15,1);
     part(SK.rbox(.2,.04,.16,.015,1),tack,B.spine,0,.19,-.05);{const gt=part(SK.torus(.17,.012,4,14),tack,B.spine,0,-.02,-.05);gt.rotation.y=Math.PI/2;gt.scale.set(.8,1.1,1);}
     part(SK.ball(.018,6,4),brass,B.spine,0,.14,.29);
-    // legs: slim, a forearm and a gaskin with some muscle, knobbed knees and hocks, cannons to a fetlock and a dark hoof
+    // legs: a muscled forearm and gaskin, knobbed knees and hocks, cannons to a fetlock and a dark hoof. S523 — half as thick
+    // again (Michael, the inspector: "Horse legs are far too small/lean. They should be considerably thicker"): a cannon .034
+    // (was .022) under a barrel of .19, the joints and hooves to match; a draught horse's feathering at the fetlock
     ['L','R'].forEach((K,i)=>{const s=i===0?1:-1;
-      part(SK.ball(.08*bw,10,8),coat,B['sh'+K],-s*.012,.03,0,true).scale.set(.55,1.5,1);
-      seg(B['sh'+K],F.a,.058*bw,.034,.012);part(SK.ball(.03,7,5),coat,B['el'+K],0,0,0,true);
-      seg(B['el'+K],F.b,.028,.022,.004);part(SK.ball(.026,7,5),coat,B['wr'+K],0,0,0,true);
-      seg(B['wr'+K],F.c,.022,.02,0,sad);part(SK.cyl(.028,.034,.045,10),hoof,B['pf'+K],0,-.002,.008);
-      part(SK.ball(.1*bw,11,8),coat,B['th'+K],-s*.014,-.01,.01,true).scale.set(.55,1.25,1.1);
-      seg(B['th'+K],H.a,.07*bw,.036,.014);part(SK.ball(.032,7,5),coat,B['kn'+K],0,0,0,true);
-      seg(B['kn'+K],H.b,.03,.022,.005);part(SK.ball(.026,7,5),coat,B['hk'+K],0,0,-.01,true).scale.set(.9,1.1,1.3);
-      seg(B['hk'+K],H.c,.022,.02,0,sad);part(SK.cyl(.028,.034,.045,10),hoof,B['ph'+K],0,-.002,.008);});
+      part(SK.ball(.095*bw,10,8),coat,B['sh'+K],-s*.014,.03,0,true).scale.set(.6,1.5,1.05);
+      seg(B['sh'+K],F.a,.084*bw,.052,.016);part(SK.ball(.046,8,6),coat,B['el'+K],0,0,0,true).scale.set(.9,1,1.1);
+      seg(B['el'+K],F.b,.04,.034,.005);part(SK.ball(.04,8,6),coat,B['wr'+K],0,0,0,true);
+      seg(B['wr'+K],F.c,.034,.032,0,sad);part(SK.bumpy(SK.ball(.046,8,6),.008,17,i),sad,B['pf'+K],0,.035,.004).scale.set(1,.8,1);part(SK.cyl(.04,.05,.055,10),hoof,B['pf'+K],0,-.004,.01);
+      part(SK.ball(.115*bw,11,8),coat,B['th'+K],-s*.016,-.01,.01,true).scale.set(.6,1.25,1.12);
+      seg(B['th'+K],H.a,.096*bw,.056,.018);part(SK.ball(.048,8,6),coat,B['kn'+K],0,0,0,true);
+      seg(B['kn'+K],H.b,.044,.034,.006);part(SK.ball(.04,8,6),coat,B['hk'+K],0,0,-.01,true).scale.set(.9,1.1,1.3);
+      seg(B['hk'+K],H.c,.034,.032,0,sad);part(SK.bumpy(SK.ball(.046,8,6),.008,17,i+2),sad,B['ph'+K],0,.035,.004).scale.set(1,.8,1);part(SK.cyl(.04,.05,.055,10),hoof,B['ph'+K],0,-.004,.01);});
     // the tail: a dock, then long hair hanging to the hocks
     const tl=(b,dy,dz,r0,r1,kk)=>{const L=Math.hypot(dy,dz);const o=part(SK.bumpy(SK.limb(L,r0,r1),.01,21,kk),sad,b,0,0,0);o.rotation.x=Math.atan2(-dz,-dy);o.scale.set(.8,1,.9);return o;};
     tl(B.tail1,-.06,-.08,.03,.04,1);tl(B.tail2,-.14,-.04,.045,.05,2);tl(B.tail3,-.2,-.02,.05,.03,3);

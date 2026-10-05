@@ -11898,3 +11898,15 @@ The old snow was three flat cones, each as wide as its tier's foot (3.45, 2.75, 
 ### Needs eyes
 - From below the tiers' flat green undersides show, as before.
 - Whether Michael would rather have the white blanket after all. That is a small change in the same block: the green tiers coloured snow and a darker fringe.
+
+## v80 — Session 523 — The coach horse's legs and jaw (backlog H, Michael's inspector note)
+Michael, from the inspector: "Horse legs are far too small/lean. They should be considerably thicker. Same with the mouth/jaw." The horse (S262, the coach's pair, on the wolf's bones with legs 1.8 as long) had a cannon .022 in radius under a barrel of .19. In the bind pose a slice through the leg at the cannon was .042 across, which is a deer's leg on a draught horse.
+
+`34-creatures.js`, the `k.horse` body. Every leg segment is about half as thick again. The forearm runs .084 → .052 (was .058 → .034), and the gaskin .096 → .056 (was .07 → .036). The cannons and pasterns are .034 (was .022), the knees, hocks and fetlocks .04–.048 (was .026–.032), and the shoulder and haunch muscles are a little fuller. The hooves are wider (.04–.05, was .028–.034), and each fetlock has a ring of feathering in the dark stocking colour, as a coach horse has. The face is fuller down to the muzzle (.056 at the nose, was .042), with a round jowl under the cheek, and the jaw is a heavier lathe (.052 wide, was .035). The horse stands 1.2 as before, and its legs keep their lengths, so the gait's stride and the hoof plants are unchanged. Triangles 6,180 → 6,836.
+
+### Verified (headless Chromium)
+`tests/horselegs.test.mjs` (new), 5/5, for the bay and the grey. The six `coach*` suites pass. All four legs are .066 across at the cannon (it was .042 on the old code, which fails the .06 check). Each horse stands 1.2 tall at 6,836 triangles, and there are no page errors. Picture: `docs/prototypes/horse-before.png` and `-after.png`, side on, in the inspector with the bandit for scale. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The jaw has no test. Whether it reads as heavy enough is for the eye: compare the two pictures.
+- The stand pose raises a hind hoof backwards (the wolf's idle on the horse's legs), and with the thicker leg it shows more. That is the pose, not this change.
