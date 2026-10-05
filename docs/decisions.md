@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 ## Answered
+### Unblock main's CI — four suites failing by turns (the producer, 2026-10-05)
+Main's own check is red on its last two runs with only docs changes between them: lod, saves and parryclock failed on 10cc224 (run 37331939848), then only compactrefit on d4c1672 (run 37339883165). Different suites on the same code points to runner timing. The failed shard of the d4c1672 run was re-run once.
+- **A.** Treat these four as flakes: a branch whose only red is one of them, after one re-run, still goes ready for approval. *(recommended)*
+- **B.** Hold every merge until the systems builder makes those four suites pass reliably.
+
+Michael: **Treat these four suites as flakes**. (2026-10-05) The re-run of the failed shard then passed: main is green on d4c1672.
+
+### The wraith — a hollow hood, claws, and a hunting stance? (the look builder, Session 548, 2026-10-05) — DECISION #158
+The question is in full on auto/backlog (prototype pictures under docs/prototypes/wraith-proto-*.png): Michael's inspector note said the wraith reads as the human mesh. A the hollow hood (darkness, two slits of light for eyes) and longer arms with bone claws, standing as now; B A plus a hunched stance, head low and forward, both clawed arms reaching at chest height in idle and glide (recommended; blows and reach unchanged; the phantom takes the claws and stance but keeps its face); C leave it.
+
+Michael: **A, plus the hunched, reaching stance**. (2026-10-05)
+
 ### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
 The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.
 
