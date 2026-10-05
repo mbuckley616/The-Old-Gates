@@ -11,7 +11,7 @@ The calendar is built on auto/systems (Sessions 496–500) with placeholder name
 - **D.** Other names: Michael writes them, or marks the ones to change.
 
 Recommendation: **A.** Every ledger on three islands had to date by the treaty, the number is short, and if the cold peace breaks in play the date line keeps calling it the Peace, which is the point of it.
-### Capes and cloaks — a slot and a look, a small virtue per kind, or the hood as a face? (the designer, 2026-10-05)
+### Capes and cloaks — a slot and a look, a small virtue per kind, or the hood as a face? (the designer, 2026-10-05) — DECISION #148
 You asked for capes and cloaks as an item slot with minimal bonuses unless rare or magical; today townsfolk wear cloaks that swing (S267) and your own body has the bones but can never wear one. The page (`docs/design/capes-and-cloaks.md`) fixes the shape under every option (a `back` slot, three cuts on your body, the dyer recolours it, no warmth bar, seeded drops; magical cloaks from tier 4 loot) and asks what a mundane cloak should do.
 - **A.** A slot and a look: six kinds, def 1 each, differing only in cut and colour; looted ones roll the armour enchants (1 Opus + 1 Opus look).
 - **B.** Each kind one small virtue in its place: the dark hood ×.95 detection while sneaking, oilskin no swim drag and a weather hint at the helm, Markish fur +10% stamina regen in snow, the Aurennais cape +2% barter in its nation, pilgrim's grey +25% on shrine boons; wet wool slows a swim to ×.9 (same cost as A).
