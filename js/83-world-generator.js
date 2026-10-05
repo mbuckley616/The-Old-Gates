@@ -927,7 +927,7 @@
       drawIcon(ctx,e.kind,isc,true);
       if(cellPx>=260||e.kind==='city'||MAP.hover===e.id){ctx.font=`${Math.round(11*isc)}px Georgia, serif`;ctx.fillStyle='#2a1c10';ctx.strokeStyle='rgba(240,228,200,.8)';ctx.lineWidth=3;ctx.strokeText(e.name,0,14*isc+4);ctx.fillText(e.name,0,14*isc+4);}
       ctx.restore();}
-    // S495 — your notes pinned to the map (DECISION #132, part C)
+    // S496 — your notes pinned to the map (DECISION #132, part C)
     MAP._notes=[];(worldState.mapNotes||[]).forEach((n,i)=>{if(!n)return;const [sx,sy]=mapToScreen(n.x,n.z);if(sx<-20||sy<-20||sx>cw+20||sy>ch+20)return;MAP._notes.push({i,sx,sy});const on=MAP.hover==='note:'+i||MAP.sel==='note:'+i;
       ctx.save();ctx.translate(sx,sy);if(on){ctx.beginPath();ctx.arc(0,-7*isc,11*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
       ctx.strokeStyle='#2a1c10';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-12*isc);ctx.stroke();ctx.fillStyle='#f0e4c4';ctx.fillRect(0,-12*isc,8*isc,6*isc);ctx.strokeRect(0,-12*isc,8*isc,6*isc);ctx.restore();});
@@ -974,7 +974,7 @@
     if(!e||!(e.kind in BASE_P)){el.style.display='none';return;}const t=siteAnywhere(e.id);if(!t){el.style.display='none';return;}
     el.innerHTML=townCard(t);el.style.display='block';const r=MAP.cv.getBoundingClientRect();const px_=sx+16,py_=sy+16;el.style.left=Math.min(px_,r.width-310)+'px';el.style.top=Math.min(py_,r.height-el.offsetHeight-10)+'px';}
   function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
-  // S495 — notes pinned to the map (Michael's C on DECISION #132, part C): *✎ Note* arms the next click on the map, which
+  // S496 — notes pinned to the map (Michael's C on DECISION #132, part C): *✎ Note* arms the next click on the map, which
   // opens a box in the panel for up to 500 characters; *Pin it* keeps it in worldState.mapNotes, a character key ({x,z,
   // text,t,tod}, the world spot and the minute). A pin shows its words on hover; a click opens it, with *Take it down*.
   function pinMapNote(x,z,text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t||!isFinite(x)||!isFinite(z))return -1;const L=worldState.mapNotes||(worldState.mapNotes=[]);L.push({x:Math.round(x*10)/10,z:Math.round(z*10)/10,text:t,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});MAP.dirty=true;return L.length-1;}
@@ -1591,7 +1591,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S133 — the nearest region whose encounter table carries the creature: a name and a point for the compass
   function huntGround(site,creature){let best=null,bd=1e9;for(const c of CELLS.values()){if(c.type==='sea'||!c.regions)continue;for(const rg of c.regions){const tbl=ENC[rg.id]||ENC_BIOME[rg.biome];if(!tbl||!tbl.some(g=>g.name===creature))continue;const d=Math.hypot(rg.x-site.x,rg.z-site.z);if(d<bd){bd=d;best={x:rg.x,z:rg.z,name:rg.name||rg.id};}}}return best;}
   function genTask(g,site){
-    const st=gstate()[g];const r=Math.random;const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S502 — an id of place and index (the co-op rules), not a Date.now() */const tier=Math.floor(st.done/3);
+    const st=gstate()[g];const r=Math.random;const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S503 — an id of place and index (the co-op rules), not a Date.now() */const tier=Math.floor(st.done/3);
     const gold=60+tier*50+Math.floor(r()*40);
     const doors=nearDoors(site,900,false),sites=nearSites(site,700);
     const pickDoor=()=>doors[Math.floor(r()*Math.min(doors.length,6))];
@@ -1612,7 +1612,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     }
     return {id:tid,g,kind:'hunt',target:'Wolf',need:4,have:0,gold,desc:'Wolves. Four of them.',short:'Hunt 4 Wolves'};
   }
-  // S500 — dated guild work (DECISION #132, part B, as the lords' jobs in S499): one generated task in three (not the
+  // S501 — dated guild work (DECISION #132, part B, as the lords' jobs in S500): one generated task in three (not the
   // rank commissions) carries a date 7 to 14 days out, from a stream keyed by the guild, the hall's town and the day; done
   // by then (t.doneAt, stamped by the hooks below when it is first done) it pays a quarter more; past it, undone, the guild
   // takes it back (gLapse, from tickDatedWork).
@@ -1656,7 +1656,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(t.kind==='relic'&&!t.got&&!t._obj){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),new THREE.MeshBasicMaterial({color:0x9ad0ff}));m.position.set(t.x,worldH(t.x,t.z)+.5,t.z);sc.add(m);const l=regLight(0x80c0ff,1.2,6,'task');l.position.copy(m.position);t._obj={m,l};pickups.push({x:t.x,z:t.z,task:t});}
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&!t.spawned&&!t.done&&Math.hypot(px-t.sx,pz-t.sz)<220){
         const name=t.kind==='beast'?t.beast:t.kind==='wizard'?'Rogue Mage':'Shore Wisp';
-        const fid=t.id+':foe:0'; /* S503 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,level,'hard',seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
+        const fid=t.id+':foe:0'; /* S504 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,level,'hard',seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
       }
       if(t.kind==='raid'&&!t.spawned){const S=SETTLE.get(t.siteId);if(S&&Math.hypot(px-S.site.x,pz-S.site.z)<150){t.spawned=true;S.raid=true;const site=S.site;const pr=seededRng('place',t.id);for(let i=0;i<t.count;i++){const ang=pr()*Math.PI*2;const ex=site.x+Math.cos(ang)*(site.pad+8),ez=site.z+Math.sin(ang)*(site.pad+8);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Bandit',null)),t.id+':foe:'+i);e._guildTag=t.id;e.alert=true;ZONES.world.enemies.push(e);}showMsg(`Raiders! ${t.count} of them. Hold ${site.name}.`,'#ff8060');}}
     }

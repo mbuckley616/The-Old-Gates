@@ -1,4 +1,4 @@
-// Names in an entry are links to their topic (Session 494, Michael's C on DECISION #132, part C): a name the Journal's
+// Names in an entry are links to their topic (Session 495, Michael's C on DECISION #132, part C): a name the Journal's
 // Topics view knows (who told you, the town they told you in, a capitalised name in a topic's label past its first word)
 // is a link wherever a journal line says it, whole word; a click opens Topics searched for that name.
 import { boot, check } from './lib/game.mjs';

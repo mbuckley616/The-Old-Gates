@@ -1,4 +1,4 @@
-// The calendar the world keeps (Session 496, Michael's C on DECISION #132, part B; docs/design/journal-and-calendar.md):
+// The calendar the world keeps (Session 497, Michael's C on DECISION #132, part B; docs/design/journal-and-calendar.md):
 // a seven-day week with a day to each god, 28-day months, twelve months in four seasons, begun on the first day of the
 // first autumn month (calDay, the placeholder names in CAL). First rule on it: on its god's own day a shrine's boon
 // lasts twice as long, two days; on any other day one, and the altar still answers once a day.

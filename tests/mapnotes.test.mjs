@@ -1,4 +1,4 @@
-// Notes pinned to the map (Session 495, Michael's C on DECISION #132, part C): *✎ Note* on the world map arms the next
+// Notes pinned to the map (Session 496, Michael's C on DECISION #132, part C): *✎ Note* on the world map arms the next
 // click, which opens a box for up to 500 characters; the note is kept in worldState.mapNotes (a character key) with its
 // world spot and date, drawn as a pin, read on hover and on a click, and taken down from its panel.
 import { boot, check } from './lib/game.mjs';

@@ -11694,6 +11694,24 @@ The tests: `beastfall` gains the 60 seeded deaths (the median must rest within 1
 - A dead wolf, boar or bear now stops a little sooner on the ground rather than creeping the last centimetres. It should not be visible.
 - Falling below 30% in the first moments of the duel now keeps Rowe's offer on screen until you answer it.
 
+## v80 — Session 483 — `hourhitch`, `shiphull` and `shoperrands` red on CI on main's merge of Sessions 466–482 (CI fix, tests only)
+Section H has nothing open: every item is struck through, nothing of the look waits on a decision, and the four open findings in `docs/quest_review.md` are all on auto/systems. So this run's one session is the CI failure already on the branch. auto/backlog was level with main after the producer's merge (`f8551e4`), and the check on that commit failed shards 3, 5 and 7 on one check each. All three suites passed locally on the same code. Each failure was the test reading a moment it did not hold still, not the game.
+
+`shiphull`, *bow-on into her at 7*: the ram took 6 off the hull, not 11. 6 is 4.2 × 3 × ½, and 4.2 is 7 × .6, which is what `tickHullCollisions` does to both speeds when two hulls overlap. The test cleared the world's ships before each launch but not before the rams step, and real frames run between the two. The world had sailed its own ships in by then (two of them locally, logged now as `cleared`). On CI one of them lay against the sloop, and it came first in the loop, so its push slowed her before the black sail's touch was judged. *Still touching* failed with it, because it compares against 89. The step now clears the world's ships first, as `launch` does.
+
+`shoperrands`, *the draught is handed over at noon*: the test picked Niamh, pinned the player beside her, then pressed E in a separate call. E is handled in the keydown handler, so the nearest person at that instant takes the draught. On a slow runner a frame ran between the pin and the key, and Cormac walked nearer. The stand beside her is now taken again by a one-shot capture-phase keydown listener, which runs before the game's own handler in the same event. The real keypress is kept.
+
+`hourhitch`, *never over 8 s*: on that runner every frame took 4.5–5.9 s, and noon's worst was 5.2 s. The 18:59 step took 8.6 s with nothing compiled: the shader and program counts were unchanged and nothing was added. That is a slow machine against a fixed 8 s, not the stall the suite hunts, which was 20–24 s. The cap is now 8 s or twice noon's worst frame, whichever is more. The 4×-noon check stays as it was. Locally noon's worst is 2.1 s, so the cap stays at 8 s.
+
+### Verified (headless Chromium)
+- `shiphull` 20/20: the rams step cleared 2 of the world's ships before spawning the black sail. The bow ram took −11 to 89, still touching stayed at 89, the beam −12 to 88, then 76.
+- `shoperrands` 6/6: at noon Niamh is picked and Niamh takes the draught; at dusk Lorcan, the keeper.
+- `hourhitch` 6/6: noon's worst 2,078 ms, cap 8,000 ms, worst judged 2,672 ms. *Jump to 21h* (8,671 ms) is set aside as before, because a foe's skinned program compiled on its first draw.
+- `parsecheck` clean. Build tag s379.
+
+### Needs eyes
+Nothing in the game changed. Whether CI on this push is green is the check.
+
 ## v80 — Session 484 — The world module dissolved into nine files (backlog K, step 2)
 Michael asked on 4 Oct for the whole split and rearchitecture to land today and approved, in chat, everything the local session needed: the `guardplay` fix on auto/systems (Session 483), the merges of #134 and #115 to main, and the cut here rather than through the hourly Fable card, with FREEZE #138 kept open until this PR merges. The plan is `docs/design/split-plan.md` §6, option B, which Michael chose on 30 Sep (Q7, "A soon after the split, B as its own Fable session"); A, breaking the `return {…}` line alone, is subsumed, since the return line is gone.
 
@@ -11754,6 +11772,24 @@ Michael's go on the three things Session 492 left: props and furniture, weapons 
 ### Needs eyes
 - The furniture is shown in the gatelands wood only (and the bed in each nation's); a kind that the room sets paint by nation (the chair, the dresser) reads one way here. Say if you want every piece by nation.
 - The armour stand is shown with the mail kind, the wall shield with the round; the kit has more kinds than the inspector lists.
+
+## v80 — Session 494 — The inspector by nation, folded, keyed, and tied to the ideas board
+Michael's three asks after the second pass, and a fault he found: every furniture piece by nation; a way to fold the list; and a way to critique a mesh from the control room. The fault: the control room's Meshes tab showed a blank white frame. claude.ai does not let an artifact frame another site, so the frame could never have worked; it only looked like it might. The tab is now something better.
+
+**By nation.** The furniture kit's 38 pieces are listed once in each nation's wood (gatelands, mark, aurenne): 114 entries, 395 in all. Each call passes the nation where its function takes one.
+
+**Folds.** The tree starts with every group closed; a group opens on its header (and shows its grid), a section on its own, with a caret that turns. The find box opens whatever it finds. Picking a piece, from the grid or by its key, opens its group and section and scrolls to it. The grid's sections fold too.
+
+**Keys and the deep link.** Every entry has a stable key, `group/section/name` slugged (`creatures/on-the-wolf-kit/dire-wolf`), and `index.html?inspector=<key>` opens the inspector at that piece. `INSPECTOR.select` takes a key, a name or an id. The test writes `docs/inspector-catalogue.json` (key, group, section, name, file, triangles) each run.
+
+**The critique loop.** The control room's Meshes tab is now the catalogue itself, embedded at publish from that file (and refreshed from Pages when the viewer's browser allows the fetch), folded by group and section with a find box, and on every piece a *View in 3D* link (the deep link) and a *Note* button. A note writes to the ideas board, the `notes` collection the producer already files from, as "Mesh inspector · group › section › name: …" with the piece's key, so the producer carries it to the backlog like any other idea and the look builder can find the piece by its key. Notes already left on a piece show under it, and in the Ideas tab as before. The other way round, *Note for the team* on the inspector's bar opens the control room at `#meshes=<key>`: the tab opens, the piece's group and section unfold, it scrolls into view and its note box opens.
+
+### Verified (headless Chromium)
+`tests/inspector.test.mjs`, 11/11: seven groups, 395 entries, none fail; the furniture kit is listed in three nations with 38 pieces each; every key is unique and of the slug form; the tree starts folded and picking Dire Wolf by key opens Creatures and On the wolf kit with that entry marked; the earlier checks (animation, equipment restore, pinning, thumbnails, the close) hold. The control room republished with the 395-entry catalogue (version 11). `parsecheck` clean. Build tag s417.
+
+### Needs eyes
+- Michael: the note loop end to end, which I cannot drive from here (the control room needs a signed-in claude.ai): a note on a piece should appear under it at once and on the Ideas tab, and the producer should file it within the hour.
+- The producer files mesh notes as ideas; if they should go straight to the look builder's section H, that is one line in the producer's prompt.
 ## v80 — Session 485 — A spent power attack no longer breaks a guard (Michael's A on DECISION #131)
 Session 464 played the duel at Caer Slige and found that the captain's guard (Session 130: a hit from the front lands at 35% until a power attack breaks it) broke as fully for a power attack swung on an empty bar as for a fresh one. Since v80 S9 a swing on too little stamina goes anyway but weakly (45% of its damage, a 30% longer cooldown), and the guard break ignored that, so standing still and mashing the power attack beat Rowe while the careful player lost. Michael chose A: a spent power attack lands as a guarded hit, 35% of the spent 45%, with the message *Too spent to break the guard.*
 
@@ -11854,7 +11890,7 @@ The Journal's *By day* view opens on a box, *Write a line of your own (Enter wri
 ### Needs eyes
 - The box in play: Enter writes, Shift+Enter breaks a line, Escape leaves it. The hand the notes are drawn in falls back to the page's serif where the machine has no script face.
 
-## v80 — Session 494 — Names in an entry are links to their topic (DECISION #132, part C, third slice)
+## v80 — Session 495 — Names in an entry are links to their topic (DECISION #132, part C, third slice)
 Part C's page: *names in an entry are links to their topic.* The topic labels are questions (*Tell me about Ashenmoor.*, *What is this place?*), not names, so the names are taken from what the Topics view already holds: who told you (`s`), the town they told you in (`w`), and any run of capitalised words in a label past its first word (*Ashenmoor*, *Enchanted Ring*, *Bram*; an all-capitals word like *GET* is skipped). `journalNames` (`66-hub.js`) gathers them, longest first so *Old Tadhg* wins over a shorter name inside it, and `_jnLinked` writes each one a journal line says, whole word and in the case written, as a link; the rest of the line is escaped as before. A click (`journalLink`) opens the Topics view with the search set to that name, which already matches the teller, the town, the label and the answer. The links are drawn in the By day and By quest views, your own notes included; a name nobody has told you about stays plain text, so the links grow as you ask.
 
 ### Verified (headless Chromium)
@@ -11864,7 +11900,7 @@ Part C's page: *names in an entry are links to their topic.* The topic labels ar
 - The links' gold dotted underline on the page. A town's generated person with a name that is also a word (a *Wren*, a *Rose*) will link that word wherever it is capitalised.
 - Owed under part C: notes pinned to the map.
 
-## v80 — Session 495 — Notes pinned to the map (DECISION #132, part C, last slice)
+## v80 — Session 496 — Notes pinned to the map (DECISION #132, part C, last slice)
 Part C's last owed piece: *pin a note to the map*, notes up to 500 characters. On the world map's bar a *✎ Note* button (beside *Key*) arms the next click: the cursor turns to a crosshair and the panel says *Click the map where the note should go.* The click opens a box in the panel (Enter or *Pin it* pins, Shift+Enter breaks a line, Escape or *Cancel* drops it; the keys stay in the box). `pinMapNote` (`83-world-generator.js`, where the map lives) keeps the note in `worldState.mapNotes`, a list of `{x, z, text, t, tod}`: the world spot to a tenth, the words folded and cut at 500, and the minute it was pinned. The list is the character's, so it is in `SS_CHAR_WS` and the S242 load list (the gotcha in CLAUDE.md). A pin, a small paper flag on a post, is drawn over the places; hovering it shows the words and the date in the town card's place, and a click opens it in the panel with its distance and *Take it down* (`unpinMapNote`). A drag still pans; a click that is not armed and not on a pin picks a place as before. The Local view draws no pins.
 
 ### Verified (headless Chromium)
@@ -11874,7 +11910,7 @@ Part C's last owed piece: *pin a note to the map*, notes up to 500 characters. O
 - The pin's look at every zoom, and whether the flag reads among the place marks. A pin pinned while zoomed out sits where the click was, about ten world units to a pixel.
 - With part C done, DECISION #132's owed work is B: god's days, market days, rent day, feasts, dated work, seasons in the weather, the *Due* view, which wait on the quest writer's names (or placeholders).
 
-## v80 — Session 496 — The calendar's week, and a shrine's boon twice as long on its god's day (DECISION #132, part B, first slice)
+## v80 — Session 497 — The calendar's week, and a shrine's boon twice as long on its god's day (DECISION #132, part B, first slice)
 Part B of Michael's C: a calendar the world keeps. This session lays its arithmetic and the first rule that reads it. `calDay(abs)` (`60-shop.js`, beside `gameDateLine`) gives the day's place in the calendar the design page fixed: a week of seven days, a day to each god in the order of the shrines' table (the Sea, the Sky, the Beasts, the Stone, the Hearth, the Weaver) and the Guest's last; months of 28 days, so a weekday keeps its dates; twelve months in four seasons of three; the tale begun on the first day of the first autumn month (month 6 of 0–11), year 1, the year turning with the first month of spring. Every name (*the Sea’s day* … *the Guest’s day*) is a placeholder in the one table `CAL`, to be swapped for the quest writer's; the order of the days is theirs to change too. The date line the player reads is unchanged (*Day 12 · 7:40 am*) until the names come, so no test or slot line moves.
 
 The rule: on its god's own day a shrine's boon lasts twice as long (3,600 s of buff, two game days, against 1,800), and the altar says so, *It is the Beasts’ day. You are restored, and carry the Boon of the Arm two days.* The once-a-day stays. The Weaver's shrine gives a rubbing, not a boon, and its day doubles nothing. Today's weeks already start on day 1, 8, 15…, so the weekly rent (`tickRents`) already falls on the first day of the week; the next slice names it in the *Due* view.
@@ -11886,7 +11922,7 @@ The rule: on its god's own day a shrine's boon lasts twice as long (3,600 s of b
 - The names and the order of the days are placeholders for the quest writer.
 - Owed under B: the *Due* view (rent day, the ship, the masons, the next market and feast), market days and their stall, the four feasts, dated work, the seasons in the weather.
 
-## v80 — Session 497 — The Journal's *Due* view: what the calendar owes you (DECISION #132, part B, second slice)
+## v80 — Session 498 — The Journal's *Due* view: what the calendar owes you (DECISION #132, part B, second slice)
 The design page: *The Due view is built from things that already have a date: the rent, the ship being raised, the masons, a dated task, the next market where you stand, the next feast.* Markets, feasts and dated tasks are not built yet, so this view is made from the five dated things the game already keeps. `calendarDue()` (`87-world-quests.js`) lists them as `{at, icon, text}`, soonest first, from the absolute clock alone: the rent from the towns you own, at the start of the next week (the first day, which `tickRents` already keeps; its sum is now `rentSum()`, shared by both, so the figure the view names is the figure paid); the ship on a shipwright's slip (`ship.raise.due`); each mason's work not yet finished (`doneDay`); the room you have let (`rented.until`); the coach seat held. The Journal gains a fourth view, *Due* (after *Topics*), headed *Today is the Beasts’ day, the 10th of the seventh month*, each line with *today*, *tomorrow* or *in N days* and its calendar date; with nothing dated, *Nothing falls due.* `calDateLine` (`60-shop.js`) writes that date from `CAL`, whose month names are placeholders too (*the seventh month*). The date line elsewhere is unchanged until the writer's names come.
 
 ### Verified (headless Chromium)
@@ -11896,7 +11932,7 @@ The design page: *The Due view is built from things that already have a date: th
 - The view in play, and whether a line for the coach seat already taken should drop as soon as you board (it does when the seat is cleared).
 - Owed under B: market days and their stall, the four feasts, dated work (+25%), the seasons in the weather; each adds its lines to *Due*.
 
-## v80 — Session 498 — The seasons in the weather (DECISION #132, part B, third slice)
+## v80 — Session 499 — The seasons in the weather (DECISION #132, part B, third slice)
 The design page: *Seasons in B are weather, not paint: weatherWeights reads the season, so the Gatelands' winter brings snow on the low ground and rain in autumn rises from today's weight by half; the Mark is colder in each; Aurenne's summer is drier. Day length stays fixed.* `seasonWx(w, climate)` (`87-world-quests.js`) moves the climate's odds by `calDay`'s season, and `weatherWeights` (`85-world-sea.js`, one line, the only touch in the look builder's file) calls it after choosing the climate's odds and before the biome's, so a fen still adds its fog and a wasteland still never snows. The numbers: the Gatelands' autumn rain ×1.5 (the page's figure), its winter snow 0.12 with rain ×0.7; the Mark's winter snow ×1.5 and rain ×0.5, autumn rain ×1.5 and snow ×1.2, summer snow ×0.5; Aurenne's summer rain and storm ×0.5. Spring is as before everywhere, and so are the Gatelands' spring and summer. The tale opens on the first day of autumn and a season is 84 days, so a player first meets the Gatelands' winter on day 85; until then the only change is the wetter autumn. Session 450's rule (weather carried into a cell that cannot roll it is rolled again) reads the same odds, so snow walked into the Gatelands in autumn still melts away, and in winter it stays.
 
 ### Verified (headless Chromium)
@@ -11906,7 +11942,7 @@ The design page: *Seasons in B are weather, not paint: weatherWeights reads the 
 - The numbers past the page's one figure (the winter snow in the Gatelands, how much colder the Mark is) are mine and want a winter played. Snow cover settles on the Gatelands' low ground in winter for the first time, so its look on the towns there is new.
 - Owed under B: market days and their stall, the four feasts, dated work.
 
-## v80 — Session 499 — Dated work: a lord's job with a date, a quarter more by it (DECISION #132, part B, fourth slice)
+## v80 — Session 500 — Dated work: a lord's job with a date, a quarter more by it (DECISION #132, part B, fourth slice)
 The design page: *a guild or town task may carry a date; done by then it pays +25%; after it the giver takes it back. At most one in three tasks dated, 7 to 14 days out.* This session dates the lords' town work; the guilds' tasks are a separate system (`worldState.guild`) and follow. When a lord gives a new job, `datedWork` (`87-world-quests.js`) rolls from `seededRng('dated:'+site, day)`, a stream keyed by the town and the day it was given (the co-op rule on seeded rolls): one in three is dated, 7 to 14 days out, `q.due` being the first minute after its last day. The lord's answer adds the date in the same bracket as the pay, *(58 gold; 73 if it is done by the Hearth’s day, the 12th of the eighth month. After that, the work goes to someone else.)* `qComplete` stamps `doneAt`; `qTurnIn` pays a quarter more (before Charisma's share, as any reward) when it was done before the date, turned in whenever. Past the date and undone, `datedLapse` takes the work back: it leaves the journal's active list with a log line, *… the date passed, and Mayor Niamh has given the work to someone else.*, and finishing it after counts for nothing. The lapse is checked hourly in the world's tick and at the lord's own topics, from the absolute clock, so a night indoors or a long sleep cannot skip it. The *Due* view lists each dated job with its sum and date. An undated job is exactly as before.
 
 ### Verified (headless Chromium)
@@ -11916,18 +11952,18 @@ The design page: *a guild or town task may carry a date; done by then it pays +2
 - Whether the bracket after the lord's words reads well, and whether a quarter more is worth racing for.
 - Owed under B: dated guild tasks, market days and their stall, the four feasts.
 
-## v80 — Session 500 — Dated guild work (DECISION #132, part B, fifth slice)
-Session 499 dated the lords' jobs; the design page says *a guild or town task may carry a date*, so this does the guilds the same way. In `offer` (`83-world-generator.js`), a generated task (never a rank commission, which is authored) is dated one time in three by `gDated`, from `seededRng('dated:'+guild+':'+site, day)`, 7 to 14 days out, and the head names it after the pay: *Pay is 104 gold; 130 if it is done by the Guest’s day, the 28th of the eighth month. After that, the guild gives it to someone else.* A guild task's progress is counted by the guild's own hooks and was never stamped, so `gStamp` records `doneAt` the moment it is first done, at each hook that moves it (a kill, a herb, a delivery, the hearth, a binding-stone picked up). `turnIn` pays a quarter more (`gDatedPay`) when it was done before the date, whenever it is turned in. Past the date and undone, `gLapse` takes it back: the active task is cleared (a raid's town stands down, a binding-stone left in the world is lifted), with a journal line, *… The date passed, and the guild has given it to someone else.* Guild halls are indoors, where the world's tick does not run, so `gLapse` runs at the head's offer and turn-in as well as in `tickDatedWork`. The *Due* view lists an undone dated guild task.
+## v80 — Session 501 — Dated guild work (DECISION #132, part B, fifth slice)
+Session 500 dated the lords' jobs; the design page says *a guild or town task may carry a date*, so this does the guilds the same way. In `offer` (`83-world-generator.js`), a generated task (never a rank commission, which is authored) is dated one time in three by `gDated`, from `seededRng('dated:'+guild+':'+site, day)`, 7 to 14 days out, and the head names it after the pay: *Pay is 104 gold; 130 if it is done by the Guest’s day, the 28th of the eighth month. After that, the guild gives it to someone else.* A guild task's progress is counted by the guild's own hooks and was never stamped, so `gStamp` records `doneAt` the moment it is first done, at each hook that moves it (a kill, a herb, a delivery, the hearth, a binding-stone picked up). `turnIn` pays a quarter more (`gDatedPay`) when it was done before the date, whenever it is turned in. Past the date and undone, `gLapse` takes it back: the active task is cleared (a raid's town stands down, a binding-stone left in the world is lifted), with a journal line, *… The date passed, and the guild has given it to someone else.* Guild halls are indoors, where the world's tick does not run, so `gLapse` runs at the head's offer and turn-in as well as in `tickDatedWork`. The *Due* view lists an undone dated guild task.
 
 ### Verified (headless Chromium)
 `datedguild` 7/7 (new). Over 600 days the Fighters' hall at Dunmore dates 215 tasks (one in three). A dated task names 104 and 130 gold and its date; finished a day before the date (the stamp set by the kill hook to that minute) and turned in after it, it pays 130. A second, undone, is in *Due*; a minute before its date the head says *Not yet.*; five minutes after, *You've no task from us.*, with the journal line. An undated task pays 91 as written. `questfoes`, `questgold` and `register` pass. `shoperrands` failed once and passed on the rerun: at noon the draught went to *Cathal*, who had walked nearer than the test's *Niamh* in the two frames between placing the player and pressing E. The handover itself worked (this session only stamps the time after it); the test's race is owed a fix (hold the other townsfolk still for those frames). `parsecheck` clean. Build tag s427.
 
 ### Needs eyes
-- As Session 499: whether a quarter more is worth racing for.
+- As Session 500: whether a quarter more is worth racing for.
 - Owed under B: market days and their stall, the four feasts (both want the quest writer's names and lines, and the stall a prop).
 
-## v80 — Session 501 — `shoperrands` handed the draught to whoever had walked nearest (tests only)
-Found in Session 500's run: at noon the Mages' draught went to *Cathal*, not the test's *Niamh*. The test places the player 1.2 units from the chosen townsperson, lets two frames pass, places again and presses E; E talks to the nearest person in reach, and in those frames another of Dunmore's people can walk nearer. The game did as it should. The test now sets anyone else within 3 units of the spot 6 units off before pressing E. No game code changed; no build tag.
+## v80 — Session 502 — `shoperrands` handed the draught to whoever had walked nearest (tests only)
+Found in Session 501's run: at noon the Mages' draught went to *Cathal*, not the test's *Niamh*. The test places the player 1.2 units from the chosen townsperson, lets two frames pass, places again and presses E; E talks to the nearest person in reach, and in those frames another of Dunmore's people can walk nearer. The game did as it should. The test now sets anyone else within 3 units of the spot 6 units off before pressing E. No game code changed; no build tag.
 
 ### Verified (headless Chromium)
 `shoperrands` passes: the draught taken by Niamh at noon and Lorcan at dusk, as the test means.
@@ -11935,8 +11971,8 @@ Found in Session 500's run: at noon the Mages' draught went to *Cathal*, not the
 ### Needs eyes
 Nothing.
 
-## v80 — Session 502 — Jobs and guild tasks keyed by place and index (backlog K, the co-op door, step 3)
-CLAUDE.md's co-op rules: *the first code that saves anything about one gives it a key of place and index, never a position or a `Date.now()`.* The jobs and guild tasks were the last saved things keyed by the clock (Session 456's survey: *guild and quest tasks keyed by `'m'+Date.now()`*), and the foes they raise (the town-job raids, guild hunts, the road quest's band, boarders, the duel's rival) wait on those ids before they can be keyed themselves (step 1's list). Now: a lord's job is `tq:<site>:<k>`, `k` the number of jobs that town has given (the journal keeps every one, so it only grows); a faction's service is `fq:<faction>:<step>:<k>`; a guild task is `<guild>:<site>:<n>`, `n` a count kept in the guild's saved state (`worldState.guild[g].n`), so a task taken back by Session 500's lapse and a new one the same day do not share an id; a rank commission, given once, is `<guild>:c<rank>`. Ids are opaque everywhere they are read (`qFind`, `_guildTag`, the duel's and boarders' records), so a save with old ids plays on unchanged. The Varek real-clock reads stay: they measure real time between sessions, which is their point.
+## v80 — Session 503 — Jobs and guild tasks keyed by place and index (backlog K, the co-op door, step 3)
+CLAUDE.md's co-op rules: *the first code that saves anything about one gives it a key of place and index, never a position or a `Date.now()`.* The jobs and guild tasks were the last saved things keyed by the clock (Session 456's survey: *guild and quest tasks keyed by `'m'+Date.now()`*), and the foes they raise (the town-job raids, guild hunts, the road quest's band, boarders, the duel's rival) wait on those ids before they can be keyed themselves (step 1's list). Now: a lord's job is `tq:<site>:<k>`, `k` the number of jobs that town has given (the journal keeps every one, so it only grows); a faction's service is `fq:<faction>:<step>:<k>`; a guild task is `<guild>:<site>:<n>`, `n` a count kept in the guild's saved state (`worldState.guild[g].n`), so a task taken back by Session 501's lapse and a new one the same day do not share an id; a rank commission, given once, is `<guild>:c<rank>`. Ids are opaque everywhere they are read (`qFind`, `_guildTag`, the duel's and boarders' records), so a save with old ids plays on unchanged. The Varek real-clock reads stay: they measure real time between sessions, which is their point.
 
 ### Verified (headless Chromium)
 `jobids` 5/5 (new): Dunmore's lord gives `tq:dunmore:0` and then `tq:dunmore:1`; the Fighters' hall `guild_f:dunmore:1` and `guild_f:dunmore:2` (its count 2); the rank-2 commission `guild_f:c2`; no id holds a clock time. `rowelines`, `duel`, `duelrhythm`, `questtargets`, `questfoes`, `datedwork`, `datedguild` and `blacksail` pass. `parsecheck` clean. Build tag s428.
@@ -11944,11 +11980,15 @@ CLAUDE.md's co-op rules: *the first code that saves anything about one gives it 
 ### Needs eyes
 Nothing to see. Next in step 1, with these ids: key the foes raised for a job (`<job id>:foe:<k>`).
 
-## v80 — Session 503 — The foes a job raises, keyed by the job (backlog K, the co-op door, step 1)
-With Session 502's ids, the foes raised for a job can be keyed as the co-op rules ask (*a spawn, a hit's damage … from a seeded stream keyed by place and id*). `keyFoe` (Session 477) now gives each its id and stream: a road job's band is `<job>:foe:<k>`, standing where the job's own stream (`seededRng('place', job)`) puts them round the camp, where `Math.random` did; a guild raid's bandits are `<task>:foe:<i>`, their ring round the town from the task's stream; a guild's beast, rogue mage or shore wisp is `<task>:foe:0`, its variant from `seededRng('variant', id)` as a site's foes have it (Session 479); the duel's rival is `<job>:rival:<day>`, a stream of her own each day the ring is laid. Their blows, their arrows and your swing's spread on them now draw from their streams (`foeRand`). Still unkeyed (step 1's list): the town guard who draws, and the boarders and the black sails' crews, which are encounters with no place yet.
+## v80 — Session 504 — The foes a job raises, keyed by the job (backlog K, the co-op door, step 1)
+With Session 503's ids, the foes raised for a job can be keyed as the co-op rules ask (*a spawn, a hit's damage … from a seeded stream keyed by place and id*). `keyFoe` (Session 477) now gives each its id and stream: a road job's band is `<job>:foe:<k>`, standing where the job's own stream (`seededRng('place', job)`) puts them round the camp, where `Math.random` did; a guild raid's bandits are `<task>:foe:<i>`, their ring round the town from the task's stream; a guild's beast, rogue mage or shore wisp is `<task>:foe:0`, its variant from `seededRng('variant', id)` as a site's foes have it (Session 479); the duel's rival is `<job>:rival:<day>`, a stream of her own each day the ring is laid. Their blows, their arrows and your swing's spread on them now draw from their streams (`foeRand`). Still unkeyed (step 1's list): the town guard who draws, and the boarders and the black sails' crews, which are encounters with no place yet.
 
 ### Verified (headless Chromium)
 `jobids` 8/8 (3 new): a road job's three bandits are `tq:dunmore:7:foe:0…2`, each with a stream, and raised twice they stand on the same spots to the hundredth; a guild's Ogre is `guild_f:dunmore:9:foe:0`. `duel`, `duelrhythm`, `questfoes` and `foeseed` pass. `parsecheck` clean. Build tag s429.
 
 ### Needs eyes
 Nothing to see: the same foes, on the same kinds of spot.
+
+### Corrections
+- Merging main (63d2245) brought the Fable session's own Session 494 (the inspector by nation), so this run's Sessions 494–503 are renumbered 495–504 here, in the backlog, the code comments and the new tests' headers. The commits keep the numbers they were made with (494–503).
+- Session 502 (`shoperrands`) is superseded: the look builder's Session 483 fixed the same race on main with a capture listener that re-pins the player in the E key's own event, and the merge keeps theirs. Session 502's entry stays as history.

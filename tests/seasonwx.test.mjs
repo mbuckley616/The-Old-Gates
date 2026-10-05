@@ -1,4 +1,4 @@
-// The seasons in the weather (Session 498, Michael's C on DECISION #132, part B): the climate's odds are moved by the
+// The seasons in the weather (Session 499, Michael's C on DECISION #132, part B): the climate's odds are moved by the
 // calendar's season (seasonWx, read by weatherWeights before the biome's). The Gatelands: autumn rain ×1.5, snow on the
 // low ground in winter. The Mark: colder in each. Aurenne: a drier summer. Out of season, the odds are as before.
 import { boot, check } from './lib/game.mjs';

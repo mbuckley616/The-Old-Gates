@@ -1,4 +1,4 @@
-// Dated guild work (Session 500, Michael's C on DECISION #132, part B, as the lords' jobs in Session 499): one generated
+// Dated guild work (Session 501, Michael's C on DECISION #132, part B, as the lords' jobs in Session 500): one generated
 // guild task in three carries a date 7 to 14 days out (a stream keyed by the guild, the hall's town and the day); done by
 // then (stamped by the guild's hooks) it pays a quarter more; past it, undone, the guild takes it back, checked at the
 // hall itself (indoors, where the world's tick does not run) as well as hourly outdoors.

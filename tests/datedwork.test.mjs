@@ -1,4 +1,4 @@
-// Dated work (Session 499, Michael's C on DECISION #132, part B): one lord's job in three carries a date 7 to 14 days out,
+// Dated work (Session 500, Michael's C on DECISION #132, part B): one lord's job in three carries a date 7 to 14 days out,
 // rolled from a stream keyed by the town and the day; done by then it pays a quarter more, and past it, undone, the lord
 // takes the work back. The Due view names it.
 import { boot, check } from './lib/game.mjs';

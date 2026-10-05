@@ -256,7 +256,7 @@ function gameDateLine(at,tod){ /* S486 — at, tod: a journal line's stamp; none
   const h12=((hh+11)%12)+1,ap=hh<12?'am':'pm';
   return `Day ${day} · ${h12}:${String(mm).padStart(2,'0')} ${ap}`;
 }
-// S496 — the calendar the world keeps (Michael's C on DECISION #132, part B; docs/design/journal-and-calendar.md): a week of
+// S497 — the calendar the world keeps (Michael's C on DECISION #132, part B; docs/design/journal-and-calendar.md): a week of
 // seven days, a day to each god (the six with shrines, then the Guest's), months of 28 days so a weekday keeps its dates,
 // twelve months in four seasons of three (the year turns with the first month, spring), a tale begun on the first day of
 // the first autumn month. Every name here is a
@@ -269,7 +269,7 @@ function calDay(at){
   const wd=n%CAL.days.length,mAbs=CAL.startMonth+Math.floor(n/CAL.monthLen),month=mAbs%CAL.months;
   return {n,weekday:wd,day:CAL.days[wd],god:CAL.days[wd].god,dom:n%CAL.monthLen+1,month,season:CAL.seasons[Math.floor(month/3)],year:CAL.startYear+Math.floor(mAbs/CAL.months)};
 }
-// S497 — the calendar's own date, *the Sea’s day, the 8th of the seventh month* (the Due view; the date line everywhere
+// S498 — the calendar's own date, *the Sea’s day, the 8th of the seventh month* (the Due view; the date line everywhere
 // waits for the writer's names)
 function calDateLine(at){const c=calDay(at);const d=c.dom,sfx=(d%10===1&&d!==11)?'st':(d%10===2&&d!==12)?'nd':(d%10===3&&d!==13)?'rd':'th';return `${c.day.name}, the ${d}${sfx} of ${CAL.monthNames[c.month]}`;}
 function isGodsDay(god,at){return !!god&&calDay(at).god===god;}

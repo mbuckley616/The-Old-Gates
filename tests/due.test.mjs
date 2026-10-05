@@ -1,4 +1,4 @@
-// The Journal's Due view (Session 497, Michael's C on DECISION #132, part B): what the calendar owes you, from things that
+// The Journal's Due view (Session 498, Michael's C on DECISION #132, part B): what the calendar owes you, from things that
 // already carry a date (calendarDue): the rent from the towns you own on the first day of the week, the ship on the
 // shipwright's slip, the masons at a town, the room you have let, the coach seat held; soonest first, each with the
 // calendar's date (calDateLine, placeholder names) and how far off.

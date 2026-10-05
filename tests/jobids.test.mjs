@@ -1,4 +1,4 @@
-// Jobs keyed by place and index (Session 502, backlog K step 3, the co-op rules): a lord's job is `tq:<site>:<k>` (the
+// Jobs keyed by place and index (Session 503, backlog K step 3, the co-op rules): a lord's job is `tq:<site>:<k>` (the
 // count of jobs that town has given), a faction's service `fq:<faction>:<step>:<k>`, a guild task `<guild>:<site>:<n>` (a
 // count kept in the guild's saved state), a rank commission `<guild>:c<rank>`. Never a Date.now().
 import { boot, check } from './lib/game.mjs';
@@ -17,7 +17,7 @@ const r = await page.evaluate(() => {
   return { all, n, digits: all.some(id => /\d{12,}/.test(String(id))) };
 });
 console.log(JSON.stringify(r));
-// Session 503 — the foes a job raises carry the job's id and index; their spots come from the job's own stream
+// Session 504 — the foes a job raises carry the job's id and index; their spots come from the job's own stream
 const f = await page.evaluate(() => {
   const spawnRoad = () => { const q = { id: 'tq:dunmore:7', giver: 'x', giverSite: 'dunmore', title: 't', desc: '', objective: 'o', kind: 'road', data: { x: px + 40, z: pz + 40, count: 3, have: 0, spawned: false }, reward: 1 };
     worldState.quests = [q]; const before = ZONES.world.enemies.length; const ox = px, oz = pz; px = q.data.x + 10; pz = q.data.z; qTick(); px = ox; pz = oz;

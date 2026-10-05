@@ -51,8 +51,11 @@ const soft = await page.evaluate(() => { const S = WORLD.ship; let n = 0, v = 0;
 console.log(JSON.stringify(soft));
 check('below 2 she only stops, as before: no hull lost', soft.v > 0 && soft.v < 2 && soft.hull === 100, soft);
 
-// rams: a black sail dead ahead of your bow, you at 7 into her; then a merchantman driven into your beam while you lie still
+// rams: a black sail dead ahead of your bow, you at 7 into her; then a merchantman driven into your beam while you lie still.
+// The world's own ships go first, as in launch: on a slow runner one sailed in between the steps, and its touch (speed × .6)
+// came before hers, so the ram counted 4.2, not 7 (S483)
 const rams = await page.evaluate(() => { const S = WORLD.ship, out = {}; const fx = -Math.sin(S.yaw), fz = -Math.cos(S.yaw);
+  out.cleared = WORLD.others.length; for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
   worldState.ship.hull = 100; S.x = _coast.x0 + _coast.cx * 400; S.z = _coast.z0 + _coast.cz * 400; S.sailing = false;
   const o = WORLD.spawnOtherShip('pirate', S.x + fx * 7.5, S.z + fz * 7.5); o.speed = 0; o.yaw = S.yaw + Math.PI / 2;
   S.speed = 7; WORLD.tickHullCollisions(1 / 60); out.bow = { hull: WORLD.shipBars().hull, msg: document.getElementById('msg').textContent };

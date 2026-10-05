@@ -158,7 +158,7 @@ function journalNoteSubmit(){const el=document.getElementById('jn-note');if(!el)
 function journalSearch(v){_jnSearch=String(v||'');const L=document.getElementById('jn-topics');if(L)L.innerHTML=_jnTopicsHTML();}
 let _jnView='day';
 function _jnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-// S494 — names in an entry are links to their topic (DECISION #132, part C): a name the Topics view knows (who told you,
+// S495 — names in an entry are links to their topic (DECISION #132, part C): a name the Topics view knows (who told you,
 // the town they told you in, or a capitalised name in a topic's label past its first word, *Tell me about Ashenmoor.*)
 // is a link wherever a journal line says it, whole word and case as written; a click opens Topics searched for it
 function journalNames(){

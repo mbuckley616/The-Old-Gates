@@ -172,7 +172,7 @@
   function qFind(id){return QJ().find(q=>q.id===id);}
   function qActive(){return QJ().filter(q=>!q.turnedIn);}
   function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
-  // S499 — dated work (Michael's C on DECISION #132, part B): a lord's job may carry a date, q.due (the first minute after
+  // S500 — dated work (Michael's C on DECISION #132, part B): a lord's job may carry a date, q.due (the first minute after
   // its last day). Done by then it pays a quarter more; past it, undone, the lord takes it back. One job in three is dated,
   // 7 to 14 days out, rolled from a stream keyed by the town and the day it was given (the co-op rule on seeded rolls).
   function datedWork(q,site){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);const r=seededRng('dated:'+site.id,day);if(r()>=1/3)return q;q.due=(day+7+Math.floor(r()*8)+1)*1440;return q;}
@@ -190,7 +190,7 @@
     const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
     const lord=lordFor(site);const r=Math.random;const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj);
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
-    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S502 — the town and the count of jobs it has given, not a Date.now() */const giver=`${lord.title} ${lord.name}`;
+    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */const giver=`${lord.title} ${lord.name}`;
     const biome=dominantRegion(site.x,site.z).r.biome;
     if(kind==='cull'){const t=({tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'}[biome])||'Wolf';const n=4+tier;return {id,giver,giverSite:site.id,title:`${plural(2,t)} at ${site.name}`,desc:`${lord.name}: "${plural(2,t)} have been at the flocks. Kill ${n} of them within sight of the walls and the ${site.kind} will pay."`,objective:`Kill ${n} ${plural(n,t)} near ${site.name}`,kind,data:{target:t,need:n,have:0,x:site.x,z:site.z,radius:520},reward};}
     if(kind==='retrieve'){const doors=nearDoors(site,700,false);const e=doors[Math.floor(r()*Math.min(3,doors.length))];if(e){const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item},reward:reward+20};}}
@@ -225,7 +225,7 @@
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({x:q.data.x,z:q.data.z,quest:q});}
       if(q.kind==='find'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<200){q.data.spawned=true;const site=siteAnywhere(q.giverSite);const def=makeDef(site,site.reg||'irish',Math.random,'Villager',q.data.who,{x:q.data.x+1.5,z:q.data.z,bCol:0x4a3a2a,sCol:0xd4a878,keepName:true,topics:q.data.topics||[{label:'People are looking for you.',response:"Are they. I only meant to sit a while."}]});def._lost=true;if(q.rival){def.people='markman';def.sCol=0xf0dcc8;def.hairCol=0xd8c8a0;def.bCol=0x2a2a30;def.role=({crown:'Warden',league:'Reeve',compact:'Factor'})[q.faction]||def.role;Object.defineProperty(def,'greeting',{configurable:true,value:["Aye. Thought it'd be you. Sit, if you're stopping — I'm not getting up yet."]});Object.defineProperty(def,'topics',{configurable:true,get(){return [...(q.data.topics||[]),{label:'Farewell.',bye:true}];}});} /* S461 — Finding 10: her rank, her own greeting, her own topic */const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(q.data.x+1.5,worldH(q.data.x+1.5,q.data.z),q.data.z);q._npc=n;}
-      if(q.kind==='road'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<180){q.data.spawned=true;const pr=seededRng('place',q.id);for(let k=0;k<q.data.count;k++){const a=pr()*Math.PI*2;const ex=q.data.x+Math.cos(a)*8,ez=q.data.z+Math.sin(a)*8;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,q.enemy||(k===0&&level>=5?'Bandit Captain':'Bandit'),null)),q.id+':foe:'+k); /* S503 — keyed by the job (co-op rules) */e._questTag=q.id;if(q.enemyName){e.name=q.enemyName;e.displayName=q.enemyName;}e.alert=false;e.homeX=q.data.x;e.homeZ=q.data.z;ZONES.world.enemies.push(e);}
+      if(q.kind==='road'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<180){q.data.spawned=true;const pr=seededRng('place',q.id);for(let k=0;k<q.data.count;k++){const a=pr()*Math.PI*2;const ex=q.data.x+Math.cos(a)*8,ez=q.data.z+Math.sin(a)*8;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,q.enemy||(k===0&&level>=5?'Bandit Captain':'Bandit'),null)),q.id+':foe:'+k); /* S504 — keyed by the job (co-op rules) */e._questTag=q.id;if(q.enemyName){e.name=q.enemyName;e.displayName=q.enemyName;}e.alert=false;e.homeX=q.data.x;e.homeZ=q.data.z;ZONES.world.enemies.push(e);}
         // a camp to go with them
         if(q.data.noCamp){showMsg(`${q.enemyName||'Someone'} is waiting.`,'#e8d8a0');continue;}
         const tentMat=new THREE.MeshLambertMaterial({color:0x6a5a44,side:THREE.DoubleSide});[[-3,-1],[3,-2]].forEach(([ox,oz])=>{const t=new THREE.Mesh(new THREE.ConeGeometry(1.8,2.2,5,1,true),tentMat);t.position.set(q.data.x+ox,worldH(q.data.x+ox,q.data.z+oz)+1.1,q.data.z+oz);sc.add(t);});const em=new THREE.Mesh(new THREE.SphereGeometry(.22,6,6),new THREE.MeshBasicMaterial({color:0xff7a22}));em.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(em);showMsg('A bandit camp.','#ffb060');}
@@ -374,7 +374,7 @@
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
   function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
-  // S496 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
+  // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
   function shrineInteract(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
@@ -1232,9 +1232,9 @@
   function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='stop')return "Press 'E' to board the coach (it goes on shortly)";if(C.state==='wait')return `Press 'E' to board the coach (${coachWhen(C)})`;return "Press 'E' to swing aboard";}
   function coachInteract(){const C=coachNear();if(!C)return false;if(C.riding){C.riding=false;const ang=C.cart.rotation.y;px=C.cart.position.x+Math.cos(ang)*2.2;pz=C.cart.position.z-Math.sin(ang)*2.2;jumpY=worldH(px,pz);showMsg('You step down.','#c8b880');if(typeof saveGame==='function')saveGame();return true;} /* S353 — #66 A: stepping off the coach autosaves */C.riding=true;showMsg(C.state==='wait'?`You take a seat. The coach ${coachWhen(C)}.`:'You swing aboard.','#c8b880');if(typeof addLog==='function')addLog('🐎','Took the coach.');return true;}
   function rentSum(){const T=worldState.towns||{};let sum=0,n=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;n++;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}return {sum,n};}
-  // S497 — the weeks start on day 1, so the rent falls on the first day of the week (calDay), the day the Due view names
+  // S498 — the weeks start on day 1, so the rent falls on the first day of the week (calDay), the day the Due view names
   function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const sum=rentSum().sum;if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
-  // S498 — the seasons in the weather (DECISION #132, part B; the design page: *the Gatelands' winter brings snow on the
+  // S499 — the seasons in the weather (DECISION #132, part B; the design page: *the Gatelands' winter brings snow on the
   // low ground and rain in autumn rises from today's weight by half; the Mark is colder in each; Aurenne's summer is
   // drier*). Called by weatherWeights on the climate's odds, before the biome's; the season is calDay's. Day length stays.
   function seasonWx(w,cl,at){const se=calDay(at).season;
@@ -1242,7 +1242,7 @@
     else if(cl==='cold'){if(se==='winter'){w.snow*=1.5;w.rain*=.5;}else if(se==='autumn'){w.rain*=1.5;w.snow*=1.2;}else if(se==='summer')w.snow*=.5;}
     else if(cl==='warm'){if(se==='summer'){w.rain*=.5;w.storm*=.5;}}
     return w;}
-  // S497 — what the calendar owes you (DECISION #132, part B; the Journal's Due view): every dated thing already kept,
+  // S498 — what the calendar owes you (DECISION #132, part B; the Journal's Due view): every dated thing already kept,
   // as {at, icon, text}, soonest first. The rent from the towns you own, the ship on the shipwright's slip, the masons at
   // a town, the room you have let, the coach seat held. Read from the absolute clock alone.
   function calendarDue(){
