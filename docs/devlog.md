@@ -11936,3 +11936,30 @@ The bake now weights what hangs from the hips over the legs. A vertex of a part 
 - At real speed, whether a dress moving half with each leg reads as cloth or as trousers. The share is one number (`SK_DRAPE.k`).
 - Long dresses still let the shin show behind the hem of the leading leg at full stride, since the shin bends at the knee and the dress follows only the thigh. The remaining 4–8 vertices a frame are there.
 - The armour kit's skirts (lamellar, mail, pteruges) take the same rule and were not measured on their own.
+
+## v80 — Session 526 — The swamp's mushrooms in five kinds (backlog H, Michael's inspector note)
+Michael, from the inspector, of the swamp's giant mushroom: "This is cool, but we need more variants": red, brown, purple, blue, varying shapes and sizes, and "maybe its own subcategory". The swamp grew one prototype, a red dome on a cream stem, tinted per tree by a multiplier near white.
+
+`80-world-terrain.js` now builds mushrooms from two helpers, `cap` (a dome, an open bell or a flat parasol, with a gill ring beneath and optional pale warts laid on the cap's own curve) and `stem` (with an optional ring). The smaller caps and stems take fewer sides. There are five kinds:
+- **`mushroom`**: the red one, now warted like a fly agaric.
+- **`mushroomBrown`**: a fat penny bun, low and broad.
+- **`mushroomPurple`**: a tall slender bell.
+- **`mushroomTan`**: a parasol with a ring on its long stem and a few scales.
+- **`mushroomBlue`**: a clump of three, leaning apart.
+
+They stand 5.4 to 9 tall and cost 118 to 398 triangles (the broadleaf is 388). The swamp's mix (`TREE_MIX.mushroom`, keyed by the main tree as the others are) is brown 20%, purple 15%, tan 12% and blue 15%, with the red for the rest. Like Session 521's autumn trees, they take a tint that only lights them (`MUSH_KINDS`), so the colour is the cap's own. The inspector lists them in a section of their own, *Mushrooms*, under Plants, trees, rocks. The old entry's key `plants-trees-rocks/trees-and-scrub/mushroom` is now `plants-trees-rocks/mushrooms/red`, and `docs/inspector-catalogue.json` is refreshed. The control room's Meshes tab needs republishing from it (the producer's job), and a note left on the old key no longer finds its piece.
+
+### Verified (headless Chromium)
+`tests/mushrooms.test.mjs` (new), 7/7:
+- **Five kinds.** All are built at no more than a broadleaf's triangles plus a tenth.
+- **Cap hues.** Red .02, brown .08, tan .09, blue .60 and purple .77.
+- **Heights.** 5.4 to 9.0, so the tallest is 1.7 times the shortest.
+- **A real swamp chunk.** Travelling to the nearest swamp (20200, 12857) loads its cell, and its chunk scattered as the world scatters it grows all five: 19 red, 18 brown, 10 tan, 9 blue and 7 purple. Every one has a grey tint.
+- **The inspector.** It lists the five under *Mushrooms*.
+- **Errors.** No page errors.
+
+`trees` and `inspector` pass. The first swamp check found only red ones: the mix had been keyed by the biome's name, `swamp`, where the scatter looks it up by the main tree's, `mushroom`. Picture: `docs/prototypes/mushrooms-lineup.png`, the five at noon with a bandit for scale. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The purple bell's cap is open beneath (a cone without a base, with the gill ring under it). From very low it may show its inside.
+- The parasol's cap reads pale in strong sun.

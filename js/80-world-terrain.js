@@ -353,7 +353,8 @@
   const PROTO={};
   // S192 — the species that grow among each biome's main tree, and how often (the rest is the main tree)
   const TREE_MIX={conifer:[['spruce',.2],['broadleaf',.1],['pine',.1],['birch',.06]],broadleaf:[['oak',.25],['birch',.14],['conifer',.08]],
-    autumn:[['autumnRed',.2],['autumnGold',.18],['birchAutumn',.14],['oakAutumn',.12],['conifer',.1]],snowpine:[['spruce',.16],['dead',.08]],willow:[['birch',.25],['dead',.1]]};
+    autumn:[['autumnRed',.2],['autumnGold',.18],['birchAutumn',.14],['oakAutumn',.12],['conifer',.1]],snowpine:[['spruce',.16],['dead',.08]],willow:[['birch',.25],['dead',.1]],
+    mushroom:[['mushroomBrown',.2],['mushroomPurple',.15],['mushroomTan',.12],['mushroomBlue',.15]]}; // S526 — the swamp's mushrooms in kinds; the red the rest
   // S519 — a limb from the point it grows out of: a tapered cylinder turned by rx then rz (mergeParts' Euler order),
   // placed so its wide end sits at `base` (on the trunk's axis, or on a parent limb). Each call logs its base and tip.
   const LIMB_LOG=[];
@@ -362,7 +363,7 @@
     const c=new THREE.Vector3(...base).addScaledVector(d,h/2);LIMB_LOG.push({base:base.slice(),tip:[c.x+d.x*h/2,c.y+d.y*h/2,c.z+d.z*h/2],r:rBot});
     return {geo:new THREE.CylinderGeometry(rTop,rBot,h,seg),color,x:c.x,y:c.y,z:c.z,rx,rz,jitter:.06};
   }
-  const AUTUMN_KINDS=['autumn','autumnRed','autumnGold','birchAutumn','oakAutumn'];
+  const AUTUMN_KINDS=['autumn','autumnRed','autumnGold','birchAutumn','oakAutumn'],MUSH_KINDS=['mushroom','mushroomBrown','mushroomPurple','mushroomTan','mushroomBlue'];
   function buildProtos(){
     const bark=new THREE.Color(0x4a3220),barkDk=new THREE.Color(0x3a2618);
     // Conifer: tapered trunk + three stacked cones, each slightly offset.
@@ -413,10 +414,26 @@
       for(const [R,H,y,col,f,ry] of TIERS){parts.push({geo:new THREE.ConeGeometry(R,H,8),color:c(col),y,ry});
         const h=H*f,apex=y+H/2+.04;parts.push({geo:new THREE.ConeGeometry(R*f*1.045,h,8),color:c(0xf0f2f4),y:apex-h/2,ry,jitter:.05});}
       PROTO.snowpine=mergeParts(parts);PROTO.snowpine.userData.tiers=TIERS;}
-    PROTO.mushroom=mergeParts([
-      {geo:new THREE.CylinderGeometry(.9,1.3,5.2,8),color:c(0xd8cfa8),y:2.6},
-      {geo:new THREE.SphereGeometry(3.6,10,6,0,Math.PI*2,0,Math.PI/2),color:c(0x9a3a2a),y:5.0},
-      {geo:new THREE.CylinderGeometry(3.6,3.2,.5,10),color:c(0xe8dcc0),y:4.85}]);
+    // S526 — the swamp's giant mushrooms in kinds (Michael, the inspector: "we need more variants — red, brown, purple, blue,
+    // varying shapes and sizes"). One cap on a stem: a dome, a bell, a flat parasol; the red the old one with the fly agaric's
+    // pale warts; a blue clump of three; each its own colours in the vertex colours (the tint only lights them, MUSH_KINDS).
+    const cap=(R,H,y,col,o)=>{o=o||{};const sh=o.shape||'dome',parts=[],n=R>=2.5?12:8; /* the smaller caps in fewer sides */
+      if(sh==='dome')parts.push({geo:new THREE.SphereGeometry(R,n,n>8?6:4,0,Math.PI*2,0,Math.PI/2),color:c(col),y,sy:H/R,x:o.x||0,z:o.z||0,rz:o.tilt||0,jitter:.1});
+      if(sh==='bell')parts.push({geo:new THREE.ConeGeometry(R,H,n,1,true),color:c(col),y:y+H/2,x:o.x||0,z:o.z||0,rz:o.tilt||0,jitter:.1},{geo:new THREE.SphereGeometry(R*.32,8,4,0,Math.PI*2,0,Math.PI/2),color:c(col),y:y+H*.92,x:o.x||0,z:o.z||0,jitter:.1});
+      if(sh==='flat')parts.push({geo:new THREE.CylinderGeometry(R*.55,R,H,n+2),color:c(col),y:y+H/2,x:o.x||0,z:o.z||0,jitter:.1},{geo:new THREE.SphereGeometry(R*.3,8,4,0,Math.PI*2,0,Math.PI/2),color:c(col),y:y+H*.9,sy:.6,x:o.x||0,z:o.z||0,jitter:.1});
+      parts.push({geo:new THREE.CylinderGeometry(R*.98,R*.86,.22*Math.min(1,R/2),n),color:c(o.gill||0xe8dcc0),y:y-.06,x:o.x||0,z:o.z||0,rz:o.tilt||0,jitter:.06});
+      if(o.spots)for(let i=0;i<o.spots;i++){const a=i*2.39996,t=.25+.6*((i*.618)%1),rr=R*Math.sin(t*1.3),hh=H*Math.cos(t*1.3);
+        parts.push({geo:new THREE.SphereGeometry(R*.09,5,3),color:c(0xf2ecdc),x:(o.x||0)+Math.sin(a)*rr,y:y+hh,z:(o.z||0)+Math.cos(a)*rr,sy:.45,jitter:.04});}
+      return parts;};
+    const stem=(r0,r1,h,col,o)=>{o=o||{};return [{geo:new THREE.CylinderGeometry(r0,r1,h,r0>.45?9:7,1,true),color:c(col),y:h/2,x:o.x||0,z:o.z||0,rz:o.tilt||0,jitter:.08},
+      ...(o.ring?[{geo:new THREE.CylinderGeometry(r0*1.7,r0*1.05,.18,10),color:c(col),y:h*o.ring,x:o.x||0,z:o.z||0,jitter:.05}]:[])];};
+    PROTO.mushroom=mergeParts([...stem(.9,1.3,5.2,0xd8cfa8),...cap(3.6,2.6,5.0,0xa8301e,{spots:10})]);                        // red, warted
+    PROTO.mushroomBrown=mergeParts([...stem(1.25,1.6,3.4,0xd8ccae),...cap(3.0,2.1,3.3,0x7a5230,{gill:0xc8b890})]);                // a fat penny bun
+    PROTO.mushroomPurple=mergeParts([...stem(.42,.6,6.2,0xcfc4d4),...cap(1.9,2.6,6.0,0x6a3a86,{shape:'bell',gill:0xb8a8c4})]);  // a tall bell
+    PROTO.mushroomTan=mergeParts([...stem(.32,.5,6.8,0xe0d4b8,{ring:.72}),...cap(3.2,.7,6.7,0xa8865a,{shape:'flat',spots:6,gill:0xece0c8})]); // a parasol
+    PROTO.mushroomBlue=mergeParts([...stem(.5,.75,4.2,0xc8d4dc),...cap(1.9,1.3,4.1,0x2e5aa0,{gill:0xa8c0d8}),                     // a clump of three
+      ...stem(.34,.5,2.6,0xc8d4dc,{x:1.5,z:.6,tilt:-.18}),...cap(1.25,.9,2.5,0x3a6ab0,{x:1.95,z:.6,tilt:-.18,gill:0xa8c0d8}),
+      ...stem(.26,.4,1.7,0xc8d4dc,{x:-1.1,z:-.9,tilt:.22}),...cap(.95,.7,1.6,0x2a5096,{x:-1.45,z:-.9,tilt:.22,gill:0xa8c0d8})]);
     PROTO.willow=mergeParts([
       {geo:new THREE.CylinderGeometry(.3,.55,4.4,7),color:c(0x4a3a24),y:2.2},
       {geo:new THREE.ConeGeometry(3.2,5.0,9),color:c(0x5a7a3a),y:5.5,rx:Math.PI},
@@ -594,8 +611,7 @@
         if(sp==='oak'){hue=t.au?.05+t.t*.07:.25+(t.t-.5)*.08;sat=t.au?.7:.3+t.t*.2;lig=.44+(t.t-.5)*.12;}
         if(sp==='spruce'){hue=.37+(t.t-.5)*.05;sat=.3;lig=.42+(t.t-.5)*.1;}
         if(sp==='pine'){hue=.28+(t.t-.5)*.06;sat=.35;lig=.47+(t.t-.5)*.1;}
-        if(AUTUMN_KINDS.includes(sp)){const k=.9+(t.t-.5)*.22;c.setRGB(k,k*(.97+t.t*.06),k*.94);return;} // S521 — the colour is in the leaves; the tint only lights it
-        if(sp==='mushroom'){hue=.02+t.t*.08;sat=.35;lig=.55;}
+        if(AUTUMN_KINDS.includes(sp)||MUSH_KINDS.includes(sp)){const k=.9+(t.t-.5)*.22;c.setRGB(k,k*(.97+t.t*.06),k*.94);return;} // S521 — the colour is in the leaves; the tint only lights it
         if(sp==='willow'){hue=.22+t.t*.05;sat=.3;lig=.42;}
         c.setHSL(hue,sat,lig);
         // Vertex colour already carries the base; the tint is a multiplier
