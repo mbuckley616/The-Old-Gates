@@ -693,6 +693,7 @@ function renderShop(){
     });
     if(extra.length) stock=[...stock, ...extra];
   }
+  if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
   stock = stock.filter(it => !it.chaReq || _cha >= it.chaReq);
@@ -819,7 +820,18 @@ function shopMul(){try{if(typeof WORLD==='undefined')return 1;
 // at a counter, up to a quarter. A bought-back item keeps the price you were paid for it, so the two can't be played
 // against each other.
 const BARTER_PCT=.01,BARTER_MAX=.25;
-function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT));}
+function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT))+(capeCounter()?.02:0);}
+// S552 — which cloaks a counter sells (#148 B): the traveller's at any armourer or goods shop; the dark hood in towns and
+// cities; oilskin in ports; fur in the Mark; the short cape in Aurenne; the pilgrim's grey where the town has a church
+function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const out=['wool'];
+  try{const t=h.siteId&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));const S=WORLD.settle&&WORLD.settle.get(t.id);
+    if(t.kind==='town'||t.kind==='city')out.push('hood');if(t.kind==='port')out.push('oilskin');if(nk==='mark')out.push('fur');if(nk==='aurenne')out.push('cape');
+    if(S&&S.houses&&S.houses.some(x=>x.type==='church'))out.push('pilgrim');}}catch(e){}
+  return out.map(k=>makeCloak(k));}
+// S552 — the Aurennais cape: +2% at a counter in Aurenne, the nation whose cut it is (#148)
+function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
+// S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
+function furWarm(){if(typeof cloakOn!=='function'||!cloakOn('fur')||activeZoneId!=='world')return false;try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
 function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(1-barterPct())));}
 function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(1+barterPct())));}
 function buyItem(it){

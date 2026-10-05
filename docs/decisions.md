@@ -32,6 +32,8 @@ Recommendation: **B.** The virtue is small and depends on where you are going (t
 
 Michael: **Each kind one small virtue in its place**. (2026-10-05)
 
+Done (the systems half), Session 552 (the systems builder, auto/systems): the slot, the six kinds and their virtues, the stock and the loot. The look half (the cuts on your body) is the look builder's.
+
 ### How large is a dragon? (the look builder, Session 524, 2026-10-05) — DECISION #153
 Michael's inspector note on the dragon: "Design looks fine, but the scale seems far too small compared to the bandit for scale. Dragons should be pretty large."
 

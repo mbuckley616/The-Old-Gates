@@ -91,7 +91,7 @@ function loop(now){
   const _encState = encumbranceState();
   const _stRegenMult = (_encState==='burdened' || _encState==='overloaded' || _encState==='immobile') ? 0.8 : 1.0;
   if(staminaCD>0){staminaCD=Math.max(0,staminaCD-dt);}
-  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult);}
+  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1));}
   mana=Math.min(_emMana,mana+dt*(0.8+(level-1)*0.15+attrEff('intelligence')*0.2+_ab.mpRegen));
   // HP regen from armor enchants
   if(PHP<_emHP&&_ab.hpRegen>0){PHP=Math.min(_emHP,PHP+dt*_ab.hpRegen);}
@@ -155,7 +155,7 @@ function loop(now){
       showMsg('Too heavy to run!','#dd8844');
     }
   }
-  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7:3.83)*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
+  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7*cloakSwimMult():3.83)*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
   const swiftMult=1+(attrEff('swiftness')*0.02);
   const sprintBuff=_buffMult('sprintSpeed',1)*_buffMult('swiftness',1); // S316 — the Boon of the Road (×1.25), read nowhere before
   // Encumbrance speed penalty: -50% when overloaded. Immobile zeros speed entirely.

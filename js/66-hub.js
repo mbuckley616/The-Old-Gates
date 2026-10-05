@@ -239,6 +239,7 @@ function slotTierColor(it){
 // All equipment slots in layout order
 const EQ_SLOTS=[
   {key:'head',   lbl:'Head',     ico:'🪖', def:null},
+  {key:'back',   lbl:'Back',     ico:'🧥', def:null}, // S552 — a cloak (#148)
   {key:'amulet', lbl:'Amulet',   ico:'📿', def:null},
   {key:'offhand',lbl:'Off-hand', ico:'🛡', def:null},
   {key:'chest',  lbl:'Chest',    ico:'👕', def:{name:'Tattered Tunic',ico:'👕',def:1}},
@@ -633,6 +634,7 @@ function showBagTooltip(idx,ev){
   // For equippable items show comparison
   if(it.type==='equip'&&it.slot){
     const cur=EQ[it.slot];
+    if(it.virtue&&typeof CLOAK_KINDS!=='undefined'&&CLOAK_KINDS[it.virtue])html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Cloak · ${CLOAK_KINDS[it.virtue].virtue}${CLOAK_KINDS[it.virtue].swim<1?' · slower in the water':''}</div>`; // S552
     // Tier/material badge
     if(it.material){
       const mat=MATERIALS.find(m=>m.name===it.material);

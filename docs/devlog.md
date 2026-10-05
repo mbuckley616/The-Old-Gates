@@ -12477,3 +12477,22 @@ Session 512 put a barber and dyer in every generated town and city. The fee was 
 
 ### Needs eyes
 Nothing until slice 2 opens the look page from the chair.
+
+## v80 — Session 552 — Capes and cloaks: the back slot and six kinds (DECISION #148, Michael's B; the systems half)
+Michael asked for cloaks as an item slot with minimal bonuses unless rare or magical, and took the designer's B on #148: each kind one small virtue in its place (`docs/design/capes-and-cloaks.md`). This is the page's systems session. `EQ` has a `back` slot, shown after the head in the inventory (`EQ_SLOTS`). An old save loads it empty, because the load walks `EQ`'s own keys. Six kinds live in `CLOAK_KINDS` (`14-items.js`), all def 1 with no tier, and `makeCloak(kind, tier, enchant)` makes one:
+- **Traveller's Cloak** (12 gold, 1.5 weight): the plain one.
+- **Dark Hood** (25, 1.5): `_sneakDetectMult` × .95 while sneaking, and a witness's reach (`witnessOf`) 12 → 11.
+- **Oilskin Cloak** (30, 2): no drag in the water.
+- **Fur-lined Cloak** (45, 3): stamina regen × 1.1 while `furWarm()` holds, which is snow falling, or night above the snowline, in the open world and not indoors.
+- **Aurennais Short Cape** (60, .5): `barterPct` + 2% at a counter in Aurenne (`capeCounter`), on top of Charisma's capped share.
+- **Pilgrim's Grey** (20, 1): a shrine's boon lasts × 1.25.
+
+Every cloth cloak but oilskin slows a swim to × .9, and the fur to × .85 (`cloakSwimMult`, in the main loop's swim speed). `cloaksFor(house)` adds them to an armourer's or a goods shop's stock by place: the traveller's everywhere, the hood in towns and cities, oilskin in ports, fur in the Mark, the cape in Aurenne, and the pilgrim's grey where the town has a church (the page's *shrines' villages* is left to that). An armour drop at tier 4 and up is a cloak one time in twelve, of a random kind, on the same `lootRand` stream, so a keyed container still rolls the same cloak. It always carries one of five cloak enchants (`cloak_endurance`, `_vigor`, `_clarity`, `_mending`, `_swiftness`). These are the ring's at 0.6 strength, with a whole-number bonus never under 1. They live in `ARMOR_ENCHANTS` flagged `_unique`, so armour never rolls them and a save finds them by id. The save keeps a cloak's `virtue` and `cloak` fields (`_serItem`'s list). The bag's tooltip shows the virtue and whether it slows a swim; that line is mechanical and the quest writer may want to word it.
+
+The extra draw for the cloak is taken only for an armour drop at tier 4 and up. So a seeded container's loot changes only where such a drop was rolled. Not built here: the cloak on your body (the look builder's three cuts, read from `EQ.back.cloak`), the oilskin's hint of the next weather at the helm, and the dyer's cloak row, which rides the barber's slice 2.
+
+### Verified (headless Chromium)
+`cloaks` 11/11 (new). The slots are head, back, amulet…. Sneaking at 0.7 detection, the hood makes it 0.665 and the traveller's leaves 0.7. Swim × 1 bare and in oilskin, × .85 fur, × .9 the other four. Barter at an Aurennais town's counter is 0 → 0.02 with the cape, 0 in Dunmore with it, 0 with wool. Stock: Dunmore wool, hood and pilgrim's (it has a church); an Aurennais town wool, hood and cape; a Markish town wool, hood and fur; a port wool and oilskin; a smith none; Dunmore's armourer 3. Over 20,000 seeded rolls at level 30, 971 armour drops at tier 4 and up, 68 of them cloaks (7.0%; one in twelve is 8.3%, 1.5 standard deviations off), every one magical, def 1, on the back (*Fur-lined Cloak of Clarity*, tier 5, 0.3 mana regen). A cloak of Vigor at tier 6 gives 0.43 to the ring's 0.72. A Fur-lined Cloak of Vigor survives `_serItem` and `_restoreEnchant` with its kind, its enchant and 0.43. `furWarm` is true in snow with the fur, false under a clear noon and false without it. The regen it multiplies runs in the main loop, which `g.spin` does not tick, so the × 1.1 is checked where it is decided and not over time. The pilgrim's grey: a boon of 1800 becomes 2250. Not covered by a test: the witness reach 12 → 11 (one line in `witnessOf`). saves, witness, buyprice, shopfurn, armourkit, barter, chamerchant, lockpicks, lootseed, prices, qtybutton, shoprows, underclothes, worldloot, coopsaves and inspector pass. `parsecheck` clean.
+
+### Needs eyes
+The Back slot in the inventory grid: an eleventh slot moves the grid's cells. And whether a 60-gold cape for 2% is worth buying, which is the page's point: it should not be.

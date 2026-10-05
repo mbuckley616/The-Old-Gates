@@ -26,7 +26,7 @@ function _serItem(it){
                   'heal','mana','stam','value','weight',
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
-                  'bookId']){
+                  'bookId','virtue','cloak']){ // S552 — a cloak's kind
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){
