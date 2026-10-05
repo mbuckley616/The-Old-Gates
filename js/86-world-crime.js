@@ -250,6 +250,13 @@
     if(M.day!==dayNow()){for(const k in M)delete M[k];M.day=dayNow();}if(M[key])return false;
     const st=(SHOP_STOCK.inn||[]).find(i=>i.name==='Hot Stew');if(!st)return false;M[key]=1;bagAdd({...st,qty:1});
     if(typeof updateHUD==='function')updateHUD();showMsg(`🥣 Hot Stew — ${f.name}’s meal, on the house.`,'#e8c890');return true;}
+  // S551 — the barber's fee (Michael's A on DECISION #151): one fee for the visit, an inn room's price in that place (a town
+  // 9–17, a city 17–25, by house); anything on the look page may change for it, and leaving with nothing changed costs
+  // nothing. barberPay(house, changed) is what the chair's look page (slice 2) calls when you rise: 'free' when nothing
+  // changed, 'poor' when the purse is short (nothing taken), else 'paid'.
+  function barberFee(house){return innPrice(house);}
+  function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
+    if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
@@ -315,7 +322,8 @@
   const HATCH={x:0,z:0,y:0,active:false};
   // ── S155: town locks and strongboxes (the crime system, part 1 of 4 — the design is in the backlog) ──
   let INT_BOX=null;
-  const BOX_KINDS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury'];
+  // S551 — the barber keeps one too, at the general goods rate (Michael's A on DECISION #151)
+  const BOX_KINDS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury','barber'];
   const bpick=a=>a[Math.floor(Math.random()*a.length)];
   function absMin(){return worldState.gameTimeAbsMinutes||0;}
   function houseSite(house){return (house&&house.siteId&&SITE[house.siteId])||null;}

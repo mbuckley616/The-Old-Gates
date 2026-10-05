@@ -22,15 +22,6 @@ Michael: **The drafted set, years of the Peace**. (2026-10-05)
 
 Done, Session 549 (the systems builder, auto/systems): the names in `CAL`, the era and the date line's four lengths; the feasts follow.
 
-### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05) — DECISION #151
-Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).
-- **A. One fee for the visit, an inn room's price in that place** *(recommended)*: about 12 in a town, 20 in a city; the look page opens and anything on it can change for that one fee; leaving without a change costs nothing. The shop keeps a strongbox at the general goods rate, like every other keeper.
-- **B. Priced by the change**: a cut or shave 5, a new hair colour 10, each garment dyed 8, a city half as much again. Each row on the look page shows its price. Strongbox as A.
-- **C. Free**: the barber's chair is a service of the town, with no fee and no strongbox.
-- **D. A, but with no strongbox**: a barber keeps little coin.
-
-Recommendation: **A.** One fee matches the one shop you chose on #144, it costs a night's lodging, which is cheap enough to try a look and dear enough not to do it daily, and it needs no price list on the page. B makes the look page a shop, and Morrowind and Skyrim never priced a haircut by the strand.
-
 ### Capes and cloaks — a slot and a look, a small virtue per kind, or the hood as a face? (the designer, 2026-10-05) — DECISION #148
 You asked for capes and cloaks as an item slot with minimal bonuses unless rare or magical; today townsfolk wear cloaks that swing (S267) and your own body has the bones but can never wear one. The page (`docs/design/capes-and-cloaks.md`) fixes the shape under every option (a `back` slot, three cuts on your body, the dyer recolours it, no warmth bar, seeded drops; magical cloaks from tier 4 loot) and asks what a mundane cloak should do.
 - **A.** A slot and a look: six kinds, def 1 each, differing only in cut and colour; looted ones roll the armour enchants (1 Opus + 1 Opus look).
@@ -70,6 +61,8 @@ Session 512 (the look builder, auto/backlog) put one barber and dyer in every to
 Recommendation: **A.** One fee matches the one shop you chose on #144, it costs a night's lodging, which is cheap enough to try a look and dear enough not to do it daily, and it needs no price list on the page. B makes the look page a shop, and Morrowind and Skyrim never priced a haircut by the strand.
 
 Michael: **One fee per visit, an inn room's price**. (2026-10-05)
+
+Done, Session 551 (the systems builder, auto/systems): `barberFee`/`barberPay` for the chair's look page to call, and the barber's strongbox at the goods rate. The look page itself is the look builder's slice 2.
 
 ### Unblock the design proposal: a flaky watch test (the producer, 2026-10-05)
 The capes-and-cloaks proposal (PR #149, da57005) changes two docs files and no code, yet the watch test failed on it twice in a row while main, holding the same code, passed.
