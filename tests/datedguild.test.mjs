@@ -29,7 +29,7 @@ const r = await page.evaluate(() => {
 });
 console.log(JSON.stringify(r).slice(0, 2200));
 check('about one guild task in three is dated over 600 days', r.n >= 170 && r.n <= 230, r.n);
-check('the hall names the date and the quarter more', r.due1 > r.d1 * 1440 + 7 * 1440 && r.due1 <= (r.d1 + 15) * 1440 && new RegExp(`Pay is ${r.gold1} gold; ${Math.round(r.gold1 * 1.25)} if it is done by the .+ month\\. After that, the guild gives it to someone else\\.$`).test(r.said), r.said.slice(-160));
+check('the hall names the date and the quarter more', r.due1 > r.d1 * 1440 + 7 * 1440 && r.due1 <= (r.d1 + 15) * 1440 && new RegExp(`Pay is ${r.gold1} gold; ${Math.round(r.gold1 * 1.25)} if it is done by \\w+, the \\d+(st|nd|rd|th) of \\w+\\. After that, the guild gives it to someone else\\.$`).test(r.said), r.said.slice(-160));
 check('done a day before the date (stamped by the hook) and turned in after it, it pays a quarter more', r.stamped === r.due1 - 1440 && r.D1 === 0 && r.paid1 === r.want1, { stamped: r.stamped, paid: r.paid1, want: r.want1, said: r.said1 });
 check('an undone dated task is in the Due view', r.D2.length === 1 && /gold if it is done by then; after it, the task is taken back\./.test(r.D2[0]), r.D2);
 check('a minute before its date it stands; past it, at the hall, the guild has taken it back and says so in the journal', /^Not yet\./.test(r.still) && r.gone === "You've no task from us." && !r.active && r.log.some(t => /The date passed, and the guild has given it to someone else\./.test(t)), { still: r.still, gone: r.gone, log: r.log });

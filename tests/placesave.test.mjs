@@ -16,7 +16,9 @@ const cont = async () => { const t0 = Date.now();
   return page.evaluate(() => ({ started, id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
 };
 const here = () => page.evaluate(() => ({ id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
-const out = async () => { await page.evaluate(() => { if (currentHouse) exitInterior(); }); await page.waitForTimeout(3000); await g.hide(); };
+// Session 562: the doors' fades run on a 440 ms timer that a loaded runner fires late; wait for the room (or the street), not for 3 s
+const inRoom = (id) => page.waitForFunction((id) => !!currentHouse && (id == null || currentHouse.id === id), id, { timeout: 60000, polling: 250 });
+const out = async () => { await page.evaluate(() => { if (currentHouse) exitInterior(); }); await page.waitForFunction(() => !currentHouse, null, { timeout: 60000, polling: 250 }); await page.waitForTimeout(1500); await g.hide(); };
 
 // 1. ids follow their lots through prosperity swings
 const swing = [];
@@ -63,8 +65,8 @@ const kinds = ['home', 'weapon', 'inn', 'guild_f', 'church', 'cellar'];
 const places = [];
 for (const t of kinds) {
   if (!(await page.evaluate(() => !!WORLD.settle.get('dunmore')))) await g.settle('dunmore');
-  await page.evaluate((t) => { const S = WORLD.settle.get('dunmore'); let h = S.houses.find(h => h.type === (t === 'cellar' ? 'inn' : t)); if (t === 'cellar') h = WORLD.cellarFor(h); goToInterior(h); }, t);
-  await page.waitForTimeout(3000); await g.hide();
+  await page.evaluate((t) => { const S = WORLD.settle.get('dunmore'); let h = S.houses.find(h => h.type === (t === 'cellar' ? 'inn' : t)); if (t === 'cellar') h = WORLD.cellarFor(h); goToInterior(h); return h.id; }, t).then(inRoom);
+  await page.waitForTimeout(1500); await g.hide();
   const at = await here(); const back = await cont();
   places.push({ t, at, back }); console.log(t, JSON.stringify({ at, back })); await out();
 }
@@ -73,7 +75,7 @@ for (const r of places) check(`saved in the ${r.t}, continued in the same room a
 // 4. saved in a home while the town's prosperity fell 13 (the town rebuilt behind you): back in that home
 await g.settle('dunmore');
 const fell = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.filter(h => h.type === 'home')[5]; goToInterior(h); return { id: h.id, name: h.name, exitX: h.exitX, exitZ: h.exitZ }; });
-await page.waitForTimeout(3000); await g.hide();
+await inRoom(fell.id); await page.waitForTimeout(1500); await g.hide();
 await page.evaluate(() => { const s = WORLD.siteAnywhere('dunmore'); WORLD.setProsperity(s, WORLD.prosperity(s) - 13); });
 const back4 = await cont();
 const exit4 = await page.evaluate(() => currentHouse && { x: currentHouse.exitX, z: currentHouse.exitZ });
@@ -84,7 +86,7 @@ await out();
 // 5. a save that names another building (as one from before this build can): the door it was saved behind decides
 await g.settle('dunmore');
 const real = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.filter(h => h.type === 'home')[3]; goToInterior(h); return h.id; });
-await page.waitForTimeout(3000); await g.hide();
+await inRoom(real); await page.waitForTimeout(1500); await g.hide();
 await page.evaluate(() => { currentHouse = Object.assign(Object.create(Object.getPrototypeOf(currentHouse)), currentHouse, { id: 'g_dunmore_2' }); });
 const back5 = await cont();
 console.log('legacy', JSON.stringify({ real, back5 }));
@@ -96,7 +98,7 @@ await out();
 // outright, drop the town, and ask for the inn: the re-entry must build the town itself.
 await g.settle('dunmore');
 await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(h => h.type === 'inn'); goToInterior(h); });
-await page.waitForTimeout(3000); await g.hide();
+await inRoom(); await page.waitForTimeout(1500); await g.hide();
 const W6 = await page.evaluate(() => { const h = currentHouse; return { kind: 'house', id: h.id, parent: null, site: h.siteId, x: px, z: pz, yaw, jumpY, door: { x: h.exitX, z: h.exitZ, yaw: h.exitYaw || 0 } }; });
 await out();
 const starved = await page.evaluate(async (W) => {

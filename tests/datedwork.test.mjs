@@ -33,7 +33,7 @@ const r = await page.evaluate(() => {
 console.log(JSON.stringify(r).slice(0, 2500));
 check('about one job in three is dated (over 600 days), 7 to 14 days out', r.dated >= 170 && r.dated <= 230 && JSON.stringify(r.spans) === '[7,8,9,10,11,12,13,14]', { dated: r.dated, spans: r.spans });
 check('the roll is the town\'s and the day\'s: the same day gives the same answer at any hour', JSON.stringify(r.again) === JSON.stringify(r.same), { again: r.again, same: r.same });
-check('the lord names the date and the quarter more', r.due1 > r.d1 * 1440 && new RegExp(`\\(${r.reward1} gold; ${Math.round(r.reward1 * 1.25)} if it is done by the .+ of the .+ month\\. After that, the work goes to someone else\\.\\)$`).test(r.said), r.said);
+check('the lord names the date and the quarter more', r.due1 > r.d1 * 1440 && new RegExp(`\\(${r.reward1} gold; ${Math.round(r.reward1 * 1.25)} if it is done by \\w+, the \\d+(st|nd|rd|th) of \\w+\\. After that, the work goes to someone else\\.\\)$`).test(r.said), r.said);
 check('done two hours before the date, it pays a quarter more', r.paid1 === r.want1 && r.paid1 > 0, { paid: r.paid1, want: r.want1, said: r.doneSaid });
 check('the Due view names a dated job, its sum and its date', r.D.length === 1 && /gold if it is done by then; after it, the work is taken back\./.test(r.dueTxt), { D: r.D, txt: r.dueTxt.slice(0, 300) });
 check('a minute before the date it stands; past it, undone, the lord takes it back, and the journal says so', !r.before.lapsed && r.before.active && r.after.lapsed && !r.after.active && r.after.log.some(t => /the date passed, and .+ has given the work to someone else/.test(t)), { before: r.before, after: r.after });

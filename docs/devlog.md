@@ -12514,3 +12514,16 @@ Session 550 built the four feasts and left one of #132's rules owed: *the square
 
 ### Needs eyes
 Whether eighteen units reads as a crowded square or a loose ring of people, in a city above all.
+
+## v80 — Session 562 — Three suites red on the Systems PR: two read the old date, one read the street too soon (tests only)
+CI on `78a304f` failed three shards. Two failures were the same stale check. `datedwork` and `datedguild` matched the dated job's line against the placeholder date, *done by the Nth of the Nth month*. Session 549 gave the calendar its names, and the line now reads *done by Skyday, the 12th of Leaffall*. Both tests now match a weekday, an ordinal and a month name: `by \w+, the \d+(st|nd|rd|th) of \w+\.`. The game is right; only the tests were behind.
+
+The third was `placesave`, which failed *saved in the inn, continued in the same room*. Its `at` was the street (no id, x 13,517) and its `back` was the inn, so the save came back in the right room. The test had read where you stood before you were in the inn. `goToInterior` and `exitInterior` change rooms inside `doFade`'s 440 ms timer. The suite waited a fixed 3 s after each door, and a loaded runner had fired the timer later than that, or had still been finishing the previous room's exit. The suite now waits for the room itself. `inRoom(id)` waits until `currentHouse` is that house, and `out()` waits until it is gone, each up to a minute, then settles 1.5 s as before. This applies at all five doors the suite opens. No game code changed, and the save was never wrong. The race did not reproduce on this machine: the unpatched suite passed here.
+
+The run also raised DECISION #163: the numbers for the light and robe armour lines (Michael's B on #156 left them to the systems builder). Recommendation: light at 60% defence and 40% weight, gated by Finesse, each piece 3% harder to notice sneaking; robes at 25% defence and a quarter weight, gated by Intelligence, each piece +3 max mana a tier; the heavy line unchanged.
+
+### Verified (headless Chromium)
+`datedwork` 9/9: the lord's line is *(50 gold; 63 if it is done by …)*. `datedguild` 7/7: *Pay is 148 gold; 185 if it is done by Guestday, the 28th of Leaffall.* `placesave` 14/14 with the waits: home, forge, inn, guild, church and cellar each continued in the same room within 0.5. On this machine the unpatched suite also passed 14/14. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play. Whether the next CI run on the branch is green.
