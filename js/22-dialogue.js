@@ -467,6 +467,8 @@ function questZoneNow(){
   }catch(e){}}
   return 'overworld';
 }
+// S550 — a feast day's greeting (FEASTS, 60-shop.js) replaces the stock one for anyone who lives in a generated town
+function dlgGreeting(n){const G=n.greeting,f=typeof feastGreeting==='function'?feastGreeting(n):null;if(f)return f;return G[Math.floor(Math.random()*G.length)];}
 function openDialog(npc){
   _releasePointerLockForMenu();
   try{
@@ -530,7 +532,7 @@ function openDialog(npc){
     // NPC name, only triggers for the matching NPC). Q7 uses the multi-NPC
     // form to keep Oswin's/Edna's talk_to events firing normally while only
     // Aldwyn triggers the custom dialog.
-    const greet=npc.greeting[Math.floor(Math.random()*npc.greeting.length)];
+    const greet=dlgGreeting(npc);
     const npcZone=questZoneNow();
     // v61ae: use the hoisted resolver so prereqIndices are respected here too.
     // hasCustomDialog should ONLY block talk_to auto-fire if the custom dialog
@@ -1039,7 +1041,7 @@ function pickDialogChoice(i){
     const npcZone=questZoneNow();
     const questTopics=buildQuestTopicsForNPC(dlgNPC.name,npcZone);
     const allTopics=[...questTopics,...(dlgNPC.topics||[])];
-    renderDialogNode(dlgNPC.greeting[Math.floor(Math.random()*dlgNPC.greeting.length)], allTopics);
+    renderDialogNode(dlgGreeting(dlgNPC), allTopics);
     return;
   }
   // Quest state transitions — if the choice has a response, render it with a closer
@@ -1096,7 +1098,7 @@ function pickDialogChoice(i){
     else if(_sameNPC){
       const questTopics=buildQuestTopicsForNPC(dlgNPC.name,_npcZoneNow);
       const allTopics=[...questTopics,...(dlgNPC.topics||[])];
-      renderDialogNode(dlgNPC.greeting[Math.floor(Math.random()*dlgNPC.greeting.length)], allTopics);
+      renderDialogNode(dlgGreeting(dlgNPC), allTopics);
     }
     else closeDialog();
     return;
@@ -1141,11 +1143,12 @@ function pickDialogChoice(i){
     else if(_sameNPC2){
       const questTopics=buildQuestTopicsForNPC(dlgNPC.name,_npcZoneNow2);
       const allTopics=[...questTopics,...(dlgNPC.topics||[])];
-      renderDialogNode(dlgNPC.greeting[Math.floor(Math.random()*dlgNPC.greeting.length)], allTopics);
+      renderDialogNode(dlgGreeting(dlgNPC), allTopics);
     }
     else closeDialog();
     return;
   }
+  try{journalTold(dlgNPC,c);}catch(e){} // S490 — the answer is filed in the journal's topics (DECISION #132, C)
   if(c.follow){
     renderDialogNode(c.response, [...c.follow, {label:'← Back to topics', back:true}]);
   } else {

@@ -11790,6 +11790,208 @@ Michael's three asks after the second pass, and a fault he found: every furnitur
 ### Needs eyes
 - Michael: the note loop end to end, which I cannot drive from here (the control room needs a signed-in claude.ai): a note on a piece should appear under it at once and on the Ideas tab, and the producer should file it within the hour.
 - The producer files mesh notes as ideas; if they should go straight to the look builder's section H, that is one line in the producer's prompt.
+## v80 — Session 485 — A spent power attack no longer breaks a guard (Michael's A on DECISION #131)
+Session 464 played the duel at Caer Slige and found that the captain's guard (Session 130: a hit from the front lands at 35% until a power attack breaks it) broke as fully for a power attack swung on an empty bar as for a fresh one. Since v80 S9 a swing on too little stamina goes anyway but weakly (45% of its damage, a 30% longer cooldown), and the guard break ignored that, so standing still and mashing the power attack beat Rowe while the careful player lost. Michael chose A: a spent power attack lands as a guarded hit, 35% of the spent 45%, with the message *Too spent to break the guard.*
+
+Both strike paths have the guard-break branch, the open world's (`_resolveZoneStrike`, `42-zone-enemies.js`) and the dungeon's (`_resolveDungeonStrike`, `62-actions.js`). In each, a power attack on a raised guard that was flagged `_exhaustedStrike` when it was swung (`_spent`) now skips the break and falls through to the ordinary hit: the front block (`shieldFrontMult`) and the spent 45% in `applyMeleeDamage`, as the decision says. The hit's line ends *· Too spent to break the guard.* (the hit message would overwrite a toast of its own on the same frame). One reading beyond the letter of the option, and the reason for it: the fall-through first drained a power attack's posture (25) from the guard. Mashed, that staggered the captain every second spent swing, and a stagger opens the riposte, which goes round the shield, so the masher won by another door. A guarded hit drains a normal swing's posture (8), so a spent power attack on a guard now does too. Against an open foe a spent power attack is unchanged. A spent power attack from behind goes round the shield as any hit from behind does, at the spent 45% and without breaking the guard; inside a riposte nothing changes.
+
+### Verified (headless Chromium)
+`spentguard` 9/9 (new), on the game's own loop at fixed 1/60 ticks:
+- A Bandit Captain in Dunmore, seven power attacks from the front on an empty bar: the guard holds through all seven, each takes the front block .35 on raws of 5–7 and lands for 1, and each line reads *Hit Bandit Captain for 1! (POWER) (GUARDED) · Too spent to break the guard.*, never *guard breaks*. One of the seven staggered it by posture (was every second one before the drain was read as a guarded hit). A power attack with the stamina for it still breaks the guard, staggers, and does no damage.
+- In a dungeon (ruins, seed 11), a Skeleton with its guard raised: three spent power attacks leave the guard up and land guarded with the line; a fresh one breaks it for no damage.
+- The masher's fight, as #131 measured it: level 1, a club (3–7), a Bandit Captain (62 health) fighting back, the power attack swung whenever the cooldown allows. On the old code: 12 swings, 9 spent, the guard broken 4 times by spent swings, the captain dead in 12.6 s and you down 27 of 130. Now: 24 swings, 21 spent, none breaks the guard, and you go down in 13.7 s with the captain at 14 of 62.
+- On the old `js/`, six of the nine checks fail.
+- `captainguard`, `posture`, `duel`, `duelrhythm`, `yardplay`, `foes`, `weapons`, `fistfight` pass. `parsecheck` clean. Build tag s414.
+
+### Needs eyes
+- Whether *Too spent to break the guard.* on the end of the hit line reads in a fight, or wants its own toast after it.
+- The careful player's side of #131 (waiting for three-quarters of the bar before a power attack, 3 swings in 21 s and down) is unchanged by this: the masher no longer wins, but whether the careful fight against Rowe at level 1 is now winnable is a feel call for the duel's tuning, not this rule.
+
+## v80 — Session 486 — The journal is kept: every line saved with its date (Michael's C on DECISION #132, part A, first slice)
+Michael chose C on the journal and calendar: the dated journal, a calendar the world keeps, and Morrowind's topic index. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option, and the first rule of it is the one Michael wrote on 27 September: *Persistence failed before — entries must live in the save store `SS`, never on live objects.* Today the journal is `GAME_LOG`, a list on the page that no save ever wrote, so every line was lost on reload, and a character loaded into a running game showed the lines of the one before it. This session is that rule and nothing more. The names of days, months and eras are the quest writer's and none are written yet, so the date reads as the sleep panel's does.
+
+`addLog` (`66-hub.js`) now stamps each line with `t`, the absolute minute (`gameTimeAbsMinutes`), and `tod`, the time of day, beside the level, icon and text it already kept. The list is `worldState.journal`, which is the same array as `GAME_LOG`, so every `addLog` call and every test that reads `GAME_LOG` are unchanged. `journal` is in `SS_CHAR_WS`, so it is saved in the character row, as the page says (the journal is the character's; in co-op a friend's lines would carry the host's dates). `_applyLoadData` refills the array in place with `journalLoad`, after the S242 list: a save without a journal, older than this session, loads with an empty one rather than the running character's. The Journal section of the Character tab shows each line's date above it, from `gameDateLine(t, tod)`, which now takes a stamp and still gives the present moment without one.
+
+### Verified (headless Chromium)
+`journal` 8/8 (new): two lines written at minute 5,000 (16:40) and 7,955 (17:55) carry those stamps, and the Journal shows *Day 4 · 4:40 pm* and *Day 6 · 5:55 pm* above them. The slot's character row holds both lines and the world row none. After a page reload and Continue the lines come back in order with their stamps, and a new line joins the saved list. A save with its journal removed loads with none. On the old `js/` four checks fail. `coopsaves`, `export`, `autosave`, `crime2`, `theft` and `investwords` (which read `GAME_LOG`) pass. `parsecheck` clean. Build tag s415.
+
+### Needs eyes
+- Nothing you can see changes but the date above each line in the Journal, and that the lines are still there after a reload. A character saved before this build has an empty journal on its first load: those lines were never saved.
+- Owed under #132, in backlog E and D: the Journal as a tab of its own with *By day* and *By quest* (the quest lines from `acceptText`, objectives and `completeText`) on the book look (#116), the date line everywhere with the quest writer's names, then B and C, which touch the world module and follow its break-up.
+
+## v80 — Session 487 — The story's own words go into the journal, under their quest (DECISION #132, part A, second slice)
+Part A of the journal says *every `acceptText`, objective tick and `completeText` writes an entry*, and *a quest's entries read in order* under it. Those words existed only on the card that pops up (*Quest Started*, *Quest Updated*, *Quest Complete*); once the card was closed they were gone, and the journal held only *Quest: First Blood* and *Completed quest: First Blood*.
+
+Every card goes through one door, `showQuestUpdatePopup(kind, qDef, opts)` (`64-spells.js`). Its words were worked out where the card is drawn; that is now `questPopupBody`, used by the card and by the journal alike, so the two cannot disagree. When an event is queued, `journalQuest` (`66-hub.js`) writes the card's words as a journal line keyed to the quest (`q`, its id; `qk`, accept, update, ready or complete), stamped with the moment it happened rather than the moment the card is read: a card waits in its queue until you are free, and a reload before it shows used to lose it. The Quests tab shows under each quest's card the lines the journal holds for it, in order, each under its date. In the Journal's chronicle a quest's line reads in italics after the quest's name (*First Blood — Five down in the Shadows…*). The short *Quest:* and *Completed quest:* lines stay; they are what the tests and the level blocks read.
+
+The world's quests (the lords', the guilds', the factions') show their own lines from the world module, which is about to be cut into nine files; their words join the journal after the cut. The tab of its own with the two views, and the book look (#116), are still owed.
+
+### Verified (headless Chromium)
+`journal` 13/13 (5 new). *First Blood* taken at minute 20,000, its five kills at 20,600 and turned in at 21,000: three lines under `q1_first_blood`, stamped 20,000, 20,600 and 21,000, carrying the card's words (its default *"First Blood" has been added to my journal.*, its `readyText` and its `completeText`). The quest's card in the Quests tab shows the three under *Day 14 · 9:20 pm*, *Day 15 · 7:20 am* and *Day 15 · 2:00 pm*, and the Journal shows *First Blood — Iron Sword from Bram…*. `campsack`, `compactrefit`, `crime5`, `dungeonexit` and `mainquest` pass. `chapel` passes alone; run beside five other browsers, one check found Aurenne's capital without its chapel yet (`chapel: null`), a town still building, nothing the journal touches. `parsecheck` clean. Build tag s416.
+
+### Needs eyes
+- A completed quest's card in the Quests tab now carries every line the story said about it, which makes a long story long to scroll. Whether completed quests should fold their lines away until clicked (the page's *read in order when you click its title*; a click on a card today pins it to the compass) is for the tab of its own.
+- A quest with no `acceptText` writes its default (*"…" has been added to my journal.*), as its card already said.
+
+## v80 — Session 488 — The Journal, a tab of its own: by day and by quest (DECISION #132, part A, third slice)
+Part A's last piece that needs no names: *the tab has two views: By day (the chronicle) and By quest. The character tab keeps Renown and loses the footnote.* Until now the journal was a section at the foot of the Character tab, in level blocks, under the worn gear, Renown and Standing.
+
+The hub has a seventh tab, *📖 Journal*, between Quests and Character (`index.html`: the button, the panel `hpanel-journal` with its two view buttons, and the `.jn-*` styles; `hubTab`'s list in the same order). `renderJournal` (`66-hub.js`) draws one of two views from the saved journal (Sessions 486–487):
+- **By day**, the chronicle: one heading a day (*Day 15*), the newest day first, and that day's lines in the order they happened, each with its time (*7:20 am*). A quest's line reads in italics after the quest's name in bold.
+- **By quest**: each quest the journal holds words for, under its title, the quests in hand (active, or ready to turn in) first, and *complete* beside a finished one; its lines in order, each with its full date.
+
+The Character tab keeps who you are, what you wear, Renown and Standing, and loses the journal and its level blocks (`renderLog`; `logCollapsed` went with them). The view chosen stays while the page is open. The tab is in the hub's present dress. The open book Michael chose for reading (#116, *two pages a spread*) has not been built for the books yet; when it is, the Journal should take it too, and that is a look session's work.
+
+### Verified (headless Chromium)
+`journal` 16/16 (3 new, 2 rewritten for the tab). By day: *Day 6 · 5:55 pm · ⚔ The second line…* above *Day 4 · 4:40 pm · 📜 The first line…*; after *First Blood*, Day 15 holds its ready line at 7:20 am and its closing line at 2:00 pm under the quest's name. By quest: *First Blood*, *complete*, then its three lines in order under *Day 14 · 9:20 pm*, *Day 15 · 7:20 am* and *Day 15 · 2:00 pm*. The tabs read *⚔ Inventory, ✦ Magic, 📊 Attributes, 📜 Quests, 📖 Journal, 👤 Character, 🗺 Map*, and the Journal's is the one lit. The Character tab still shows Renown and no journal. Pictures in `tests/out/journal-byday.png` and `journal-byquest.png` (not committed). `fortunecard`, `mainrun` and `hubregen` pass. `parsecheck` clean. Build tag s417.
+
+### Needs eyes
+- The tab in play: whether the chronicle's lines read as a journal or as a log. Most lines are still the log's short ones (*Traveled to Dunmore*, *Harvested Firemoss*); the story's quest lines are the ones in your own voice, and the world's quests join after the world-file cut.
+- Seven tabs now share the hub's top bar; at a narrow window the labels are tight.
+
+## v80 — Session 489 — The date line in the wait menu and on each save slot (DECISION #132, the shared shape)
+The journal page's shared shape (the rules under every option Michael could have picked) says *one function writes the date line everywhere: the sundial's tooltip, the wait menu, the sleep panel, the save slot's line and each journal entry.* `gameDateLine` already wrote the sleep panel's and, since Session 486, each journal line's. This session gives it the wait menu and the save slots, so that the quest writer's names for the days and months, when Michael picks them, change one function and show everywhere.
+
+- **The wait menu** (`openWaitMenu`, `50-travel.js`) opens on the date: *Day 12 · 7:40 am · Choose how long to wait*.
+- **A save slot** keeps the game's date when it was saved. The slot's index entry is built from the character row, which carries no clock since the save became two rows (S456); it is now built from the two rows joined (`ssMetaFrom(ssJoinPayload(r.c, r.w))`), and keeps `at` and `tod`. The slot list shows *Day 12 · 7:40 am · 0🪙 · just now*. A slot saved before this build has no date and shows none; an imported character's slots, written from the character row alone, show none either.
+- **The sundial** is not done. It has `pointer-events: none`, and in play the mouse is locked to the view, so a tooltip on it would never show. Where the date should sit in play (a line under the sundial, or on the compass) is a look question, left in the backlog.
+
+### Verified (headless Chromium)
+`dateline` 5/5 (new): at minute 16,300 (7:40 am) the wait menu reads *Day 12 · 7:40 am · Choose how long to wait*; slot 1's entry keeps `at` 16,300 and `tod` 460 and its line reads *Day 12 · 7:40 am · 0🪙 · just now · 7 KB*; the same entry without the date reads *0🪙 · just now · 7 KB*. `coopsaves`, `savelabel`, `export` and `autosave` pass. `parsecheck` clean. Build tag s418.
+
+### Needs eyes
+- The date on the slot list and in the wait menu, read in the game's own menus.
+- The sundial's date (see above): a look call.
+
+## v80 — Session 490 — What you were told: the Journal's topic index, with a search (DECISION #132, part C, first slice)
+Michael chose C, which adds Morrowind's book to the journal: *each dialogue topic you heard is filed by its name with the speaker and the date, with a search box.* The page's rule: *every answer `openDialog` shows from a named NPC or a quest topic is filed once under its label; generated rumours file by town (the generated townsfolk hold thousands).* B (the calendar the world keeps) comes before C in the page's order, but it lives in the world module, which is about to be cut into nine files; the index lives in the dialogue path and the hub, so it goes first.
+
+**Filing.** Every topic answer reaches the player through one line of `pickDialogChoice` (`22-dialogue.js`, the plain answer, with or without follow-ups). There `journalTold(dlgNPC, c)` (`66-hub.js`) files it in `worldState.told` under its label, with the teller, the town, the words and the moment (`t`, `tod`). A person of their own (the legacy villages' people, a quest's) files by name: one entry per topic and person. The generated townsfolk file by town *and words*: the page said by town, but in Dunmore *What is this place?* asked of the Fighters' head is the Fighters' Guild and asked of the Mages' head is the Mages', while any villager says the town's own blurb, so filing by town alone would keep the first and lose the rest. Keyed by the town and a hash of the answer, a rumour every villager repeats is kept once and each different answer is kept beside it. A topic asked again is not filed again; the first telling stays. A folder (*About this place …*) is a menu, not an answer, and is not filed. `told` is the character's (what you know), so it is in `SS_CHAR_WS` and the S242 list.
+
+**Reading.** The Journal tab has a third view, *Topics*: every label you were told, A to Z, each telling under it (*told by Gráinne in Dunmore · Day 4 · 3:00 pm*, then the words). A search box above filters by any word of the label, the teller, the town or the answer, and says *Nothing you were told matches.* when nothing does. Typing in it is typing: the game's key handler (`92-creator.js`) now leaves the hub's keys alone while the focus is in a text field (before, X would have armed quick-destroy and Tab closed the hub), and Escape leaves the field.
+
+Not yet: names in an entry as links to their topic, notes of your own and on the map (C's second slice), and quest topics' own answers (the accept and turn-in exchanges are filed through the quest's journal lines, Session 487, not here).
+
+### Verified (headless Chromium)
+`told` 10/10 (new). A person of their own (*Old Tadhg*, built in the test): *What is under the hill?* and its follow-up *Whose bones?* filed as two topics, with his name and *Day 4 · 10:00 am*; asked again five hours later, still one entry with the first time. In Dunmore, the Fighters' head (Gráinne) and the Mages' head (Sorcha) asked *What is this place?*: two entries, both *in Dunmore*, the Fighters' Guild and the Mages' Guild; a villager (Eilís) and a twin of hers saying the same words: one entry, Eilís's; *About this place …* not filed. The Topics view lists them by label with teller and date; *bones* finds the two of Tadhg's and not Dunmore's; a nonsense search says so. Typing *xw* and Tab in the search leaves the letters in it, the hub open and quick-destroy off. Saved, the five entries are in the character row and not the world row, and come back after a reload. `journal`, `yardplay`, `rowelines`, `dlgkeys` and `coopsaves` pass. `parsecheck` clean. Build tag s419.
+
+### Needs eyes
+- How full the index gets in an evening's play, and whether *by town and words* is the right grain: two villagers whose rumours differ by one word are two entries.
+- The search field in play: click into it, type, Escape out, and the game's keys come back.
+
+## v80 — Session 491 — A line of your own in the Journal (DECISION #132, part C, second slice)
+Part C: *You may write your own lines, and pin a note to the map … Notes up to 500 characters.* This session is the lines; the map pin is the map's (the world map and the local map are drawn in `94-worldmap.js` and the world module) and is left for after the world-file cut.
+
+The Journal's *By day* view opens on a box, *Write a line of your own (Enter writes it)*, with a *Write it* button; Shift+Enter breaks the line. `journalNote` (`66-hub.js`) writes the text as a journal line like any other (`addLog`, so it has its date and is saved with the character, Session 486), marked `note` and drawn in the page's lighter ink. Spaces are folded, an empty line is not written, and a line is cut at 500 characters. The box empties and keeps the focus for the next line. Long unbroken text now wraps in every journal line (`.jn-text`, `overflow-wrap: anywhere`), where before a 500-letter word ran off the page.
+
+### Verified (headless Chromium)
+`journal` 18/18 (2 new). *Edna knows more than she says. Ask her about the Shadows, and wait.* typed into the box and written with Enter at minute 22,000 lands as a note stamped 22,000, at the top of *Day 16* at 6:40 am, and the box is empty again. 700 letters are kept as 500; three spaces write nothing. The note is in the saved character row. `told`, `coopsaves` and `export` pass. `parsecheck` clean. Build tag s420.
+
+### Needs eyes
+- The box in play: Enter writes, Shift+Enter breaks a line, Escape leaves it. The hand the notes are drawn in falls back to the page's serif where the machine has no script face.
+
+## v80 — Session 495 — Names in an entry are links to their topic (DECISION #132, part C, third slice)
+Part C's page: *names in an entry are links to their topic.* The topic labels are questions (*Tell me about Ashenmoor.*, *What is this place?*), not names, so the names are taken from what the Topics view already holds: who told you (`s`), the town they told you in (`w`), and any run of capitalised words in a label past its first word (*Ashenmoor*, *Enchanted Ring*, *Bram*; an all-capitals word like *GET* is skipped). `journalNames` (`66-hub.js`) gathers them, longest first so *Old Tadhg* wins over a shorter name inside it, and `_jnLinked` writes each one a journal line says, whole word and in the case written, as a link; the rest of the line is escaped as before. A click (`journalLink`) opens the Topics view with the search set to that name, which already matches the teller, the town, the label and the answer. The links are drawn in the By day and By quest views, your own notes included; a name nobody has told you about stays plain text, so the links grow as you ask.
+
+### Verified (headless Chromium)
+`jnlinks` 6/6 (new). With three topics told (by *Old Tadhg* about Ashenmoor and the Enchanted Ring, by *Brona Keane* in Dunmore), the names are those five and never a label's first word; a line naming four of them gets four links, a note naming two gets two, and *Ashenmoorish*, lower-case *tadhg* and a literal `<b>` in a line stay text (6 links in all). A click on *Ashenmoor* opens Topics searched for it, showing *Tell me about Ashenmoor.* and not Dunmore's answer; a click on *Brona Keane* shows hers alone. `journal` and `told` pass. `parsecheck` clean. Build tag s421.
+
+### Needs eyes
+- The links' gold dotted underline on the page. A town's generated person with a name that is also a word (a *Wren*, a *Rose*) will link that word wherever it is capitalised.
+- Owed under part C: notes pinned to the map.
+
+## v80 — Session 496 — Notes pinned to the map (DECISION #132, part C, last slice)
+Part C's last owed piece: *pin a note to the map*, notes up to 500 characters. On the world map's bar a *✎ Note* button (beside *Key*) arms the next click: the cursor turns to a crosshair and the panel says *Click the map where the note should go.* The click opens a box in the panel (Enter or *Pin it* pins, Shift+Enter breaks a line, Escape or *Cancel* drops it; the keys stay in the box). `pinMapNote` (`83-world-generator.js`, where the map lives) keeps the note in `worldState.mapNotes`, a list of `{x, z, text, t, tod}`: the world spot to a tenth, the words folded and cut at 500, and the minute it was pinned. The list is the character's, so it is in `SS_CHAR_WS` and the S242 load list (the gotcha in CLAUDE.md). A pin, a small paper flag on a post, is drawn over the places; hovering it shows the words and the date in the town card's place, and a click opens it in the panel with its distance and *Take it down* (`unpinMapNote`). A drag still pans; a click that is not armed and not on a pin picks a place as before. The Local view draws no pins.
+
+### Verified (headless Chromium)
+`mapnotes` 11/11 (new). *✎ Note* arms (crosshair, the panel's line); a mouse click on the map opens the box with the focus in it and disarms; typed words and Enter pin a note at the clicked world spot (within a tenth) stamped 7,800 and 10:00 am, and the panel shows *Your note · Day 6 · 10:00 am*. The pin is drawn where it was put; the mouse over it shows its words and date, and a click opens it. *Pin it* and *Cancel* are where a real click lands on them. Cancel and a blank note pin nothing; 600 letters are kept as 500. Saved, the two notes are in the character row and not the world row, and come back after a reload and Continue; *Take it down* removes one and its pin. `coopsaves` and `export` pass. `parsecheck` clean. Build tag s422.
+
+### Needs eyes
+- The pin's look at every zoom, and whether the flag reads among the place marks. A pin pinned while zoomed out sits where the click was, about ten world units to a pixel.
+- With part C done, DECISION #132's owed work is B: god's days, market days, rent day, feasts, dated work, seasons in the weather, the *Due* view, which wait on the quest writer's names (or placeholders).
+
+## v80 — Session 497 — The calendar's week, and a shrine's boon twice as long on its god's day (DECISION #132, part B, first slice)
+Part B of Michael's C: a calendar the world keeps. This session lays its arithmetic and the first rule that reads it. `calDay(abs)` (`60-shop.js`, beside `gameDateLine`) gives the day's place in the calendar the design page fixed: a week of seven days, a day to each god in the order of the shrines' table (the Sea, the Sky, the Beasts, the Stone, the Hearth, the Weaver) and the Guest's last; months of 28 days, so a weekday keeps its dates; twelve months in four seasons of three; the tale begun on the first day of the first autumn month (month 6 of 0–11), year 1, the year turning with the first month of spring. Every name (*the Sea’s day* … *the Guest’s day*) is a placeholder in the one table `CAL`, to be swapped for the quest writer's; the order of the days is theirs to change too. The date line the player reads is unchanged (*Day 12 · 7:40 am*) until the names come, so no test or slot line moves.
+
+The rule: on its god's own day a shrine's boon lasts twice as long (3,600 s of buff, two game days, against 1,800), and the altar says so, *It is the Beasts’ day. You are restored, and carry the Boon of the Arm two days.* The once-a-day stays. The Weaver's shrine gives a rubbing, not a boon, and its day doubles nothing. Today's weeks already start on day 1, 8, 15…, so the weekly rent (`tickRents`) already falls on the first day of the week; the next slice names it in the *Due* view.
+
+### Verified (headless Chromium)
+`calendar` 10/10 (new). Day 1 is the Sea's day, the 1st, autumn, year 1; day 7 the Guest's, day 8 the Sea's again; the 28th and then the 1st of the next month, still the Sea's day; 84 days on is winter, the year turns at day 169 (month 0, spring), and 336 days on is the same date and weekday a year later. At the Shrine of Na Beithígh (cell 4,10) on the Beasts' day the Boon of the Arm holds 3,600 and the line names the day; prayed again the same day the altar is quiet; on the next day it holds 1,800, *until tomorrow*. `parsecheck` clean. Build tag s423.
+
+### Needs eyes
+- The names and the order of the days are placeholders for the quest writer.
+- Owed under B: the *Due* view (rent day, the ship, the masons, the next market and feast), market days and their stall, the four feasts, dated work, the seasons in the weather.
+
+## v80 — Session 498 — The Journal's *Due* view: what the calendar owes you (DECISION #132, part B, second slice)
+The design page: *The Due view is built from things that already have a date: the rent, the ship being raised, the masons, a dated task, the next market where you stand, the next feast.* Markets, feasts and dated tasks are not built yet, so this view is made from the five dated things the game already keeps. `calendarDue()` (`87-world-quests.js`) lists them as `{at, icon, text}`, soonest first, from the absolute clock alone: the rent from the towns you own, at the start of the next week (the first day, which `tickRents` already keeps; its sum is now `rentSum()`, shared by both, so the figure the view names is the figure paid); the ship on a shipwright's slip (`ship.raise.due`); each mason's work not yet finished (`doneDay`); the room you have let (`rented.until`); the coach seat held. The Journal gains a fourth view, *Due* (after *Topics*), headed *Today is the Beasts’ day, the 10th of the seventh month*, each line with *today*, *tomorrow* or *in N days* and its calendar date; with nothing dated, *Nothing falls due.* `calDateLine` (`60-shop.js`) writes that date from `CAL`, whose month names are placeholders too (*the seventh month*). The date line elsewhere is unchanged until the writer's names come.
+
+### Verified (headless Chromium)
+`due` 6/6 (new). Day 1 reads *the Sea’s day, the 1st of the seventh month*, day 10 *the Beasts’ day, the 10th*, day 22 *the 22nd*. With nothing dated the view says so under today's date. With Dunmore owned, a well due on day 12, the *Gull* on the slip, a room let and a coach seat, the five come soonest first (the seat today at 11:40, the ship and the room tomorrow, the well in 2 days on the Hearth's day the 12th, the rent in 5 days on the Sea's day the 15th), and the rent named, 118 gold, is what `tickRents` pays that day. `journal`, `duel` and `duelrhythm` pass. `parsecheck` clean. Build tag s424.
+
+### Needs eyes
+- The view in play, and whether a line for the coach seat already taken should drop as soon as you board (it does when the seat is cleared).
+- Owed under B: market days and their stall, the four feasts, dated work (+25%), the seasons in the weather; each adds its lines to *Due*.
+
+## v80 — Session 499 — The seasons in the weather (DECISION #132, part B, third slice)
+The design page: *Seasons in B are weather, not paint: weatherWeights reads the season, so the Gatelands' winter brings snow on the low ground and rain in autumn rises from today's weight by half; the Mark is colder in each; Aurenne's summer is drier. Day length stays fixed.* `seasonWx(w, climate)` (`87-world-quests.js`) moves the climate's odds by `calDay`'s season, and `weatherWeights` (`85-world-sea.js`, one line, the only touch in the look builder's file) calls it after choosing the climate's odds and before the biome's, so a fen still adds its fog and a wasteland still never snows. The numbers: the Gatelands' autumn rain ×1.5 (the page's figure), its winter snow 0.12 with rain ×0.7; the Mark's winter snow ×1.5 and rain ×0.5, autumn rain ×1.5 and snow ×1.2, summer snow ×0.5; Aurenne's summer rain and storm ×0.5. Spring is as before everywhere, and so are the Gatelands' spring and summer. The tale opens on the first day of autumn and a season is 84 days, so a player first meets the Gatelands' winter on day 85; until then the only change is the wetter autumn. Session 450's rule (weather carried into a cell that cannot roll it is rolled again) reads the same odds, so snow walked into the Gatelands in autumn still melts away, and in winter it stays.
+
+### Verified (headless Chromium)
+`seasonwx` 6/6 (new). On the base odds of each climate: the Gatelands' autumn rain 0.15 → 0.225, winter snow 0 → 0.12; the Mark's snow 0.28 → 0.42 in winter, 0.336 in autumn, 0.14 in summer; Aurenne's summer rain 0.1 → 0.05 and storm 0.1 → 0.05, and no snow in any season. On the road by Hearthwick, 400 rolls each: no snow in autumn or spring, 46 in winter. `wxplace` passes. `parsecheck` clean. Build tag s425.
+
+### Needs eyes
+- The numbers past the page's one figure (the winter snow in the Gatelands, how much colder the Mark is) are mine and want a winter played. Snow cover settles on the Gatelands' low ground in winter for the first time, so its look on the towns there is new.
+- Owed under B: market days and their stall, the four feasts, dated work.
+
+## v80 — Session 500 — Dated work: a lord's job with a date, a quarter more by it (DECISION #132, part B, fourth slice)
+The design page: *a guild or town task may carry a date; done by then it pays +25%; after it the giver takes it back. At most one in three tasks dated, 7 to 14 days out.* This session dates the lords' town work; the guilds' tasks are a separate system (`worldState.guild`) and follow. When a lord gives a new job, `datedWork` (`87-world-quests.js`) rolls from `seededRng('dated:'+site, day)`, a stream keyed by the town and the day it was given (the co-op rule on seeded rolls): one in three is dated, 7 to 14 days out, `q.due` being the first minute after its last day. The lord's answer adds the date in the same bracket as the pay, *(58 gold; 73 if it is done by the Hearth’s day, the 12th of the eighth month. After that, the work goes to someone else.)* `qComplete` stamps `doneAt`; `qTurnIn` pays a quarter more (before Charisma's share, as any reward) when it was done before the date, turned in whenever. Past the date and undone, `datedLapse` takes the work back: it leaves the journal's active list with a log line, *… the date passed, and Mayor Niamh has given the work to someone else.*, and finishing it after counts for nothing. The lapse is checked hourly in the world's tick and at the lord's own topics, from the absolute clock, so a night indoors or a long sleep cannot skip it. The *Due* view lists each dated job with its sum and date. An undated job is exactly as before.
+
+### Verified (headless Chromium)
+`datedwork` 9/9 (new). Over 600 days at Dunmore, 199 jobs dated (one in three), spans 7 to 14 days exactly; the same day gives the same answer at any hour. A dated job from Mayor Niamh names its 58 and 73 gold and its date; done two hours before the date it pays 73. The *Due* view lists the next one in 14 days with its sum. A minute before its date it stands; 30 minutes after, it is taken back with the log line; completing it then does nothing. An undated job pays 84 as written and names no date. `questgold`, `theftlevel1` and `rowebeats` pass. `parsecheck` clean. Build tag s426.
+
+### Needs eyes
+- Whether the bracket after the lord's words reads well, and whether a quarter more is worth racing for.
+- Owed under B: dated guild tasks, market days and their stall, the four feasts.
+
+## v80 — Session 501 — Dated guild work (DECISION #132, part B, fifth slice)
+Session 500 dated the lords' jobs; the design page says *a guild or town task may carry a date*, so this does the guilds the same way. In `offer` (`83-world-generator.js`), a generated task (never a rank commission, which is authored) is dated one time in three by `gDated`, from `seededRng('dated:'+guild+':'+site, day)`, 7 to 14 days out, and the head names it after the pay: *Pay is 104 gold; 130 if it is done by the Guest’s day, the 28th of the eighth month. After that, the guild gives it to someone else.* A guild task's progress is counted by the guild's own hooks and was never stamped, so `gStamp` records `doneAt` the moment it is first done, at each hook that moves it (a kill, a herb, a delivery, the hearth, a binding-stone picked up). `turnIn` pays a quarter more (`gDatedPay`) when it was done before the date, whenever it is turned in. Past the date and undone, `gLapse` takes it back: the active task is cleared (a raid's town stands down, a binding-stone left in the world is lifted), with a journal line, *… The date passed, and the guild has given it to someone else.* Guild halls are indoors, where the world's tick does not run, so `gLapse` runs at the head's offer and turn-in as well as in `tickDatedWork`. The *Due* view lists an undone dated guild task.
+
+### Verified (headless Chromium)
+`datedguild` 7/7 (new). Over 600 days the Fighters' hall at Dunmore dates 215 tasks (one in three). A dated task names 104 and 130 gold and its date; finished a day before the date (the stamp set by the kill hook to that minute) and turned in after it, it pays 130. A second, undone, is in *Due*; a minute before its date the head says *Not yet.*; five minutes after, *You've no task from us.*, with the journal line. An undated task pays 91 as written. `questfoes`, `questgold` and `register` pass. `shoperrands` failed once and passed on the rerun: at noon the draught went to *Cathal*, who had walked nearer than the test's *Niamh* in the two frames between placing the player and pressing E. The handover itself worked (this session only stamps the time after it); the test's race is owed a fix (hold the other townsfolk still for those frames). `parsecheck` clean. Build tag s427.
+
+### Needs eyes
+- As Session 500: whether a quarter more is worth racing for.
+- Owed under B: market days and their stall, the four feasts (both want the quest writer's names and lines, and the stall a prop).
+
+## v80 — Session 502 — `shoperrands` handed the draught to whoever had walked nearest (tests only)
+Found in Session 501's run: at noon the Mages' draught went to *Cathal*, not the test's *Niamh*. The test places the player 1.2 units from the chosen townsperson, lets two frames pass, places again and presses E; E talks to the nearest person in reach, and in those frames another of Dunmore's people can walk nearer. The game did as it should. The test now sets anyone else within 3 units of the spot 6 units off before pressing E. No game code changed; no build tag.
+
+### Verified (headless Chromium)
+`shoperrands` passes: the draught taken by Niamh at noon and Lorcan at dusk, as the test means.
+
+### Needs eyes
+Nothing.
+
+## v80 — Session 503 — Jobs and guild tasks keyed by place and index (backlog K, the co-op door, step 3)
+CLAUDE.md's co-op rules: *the first code that saves anything about one gives it a key of place and index, never a position or a `Date.now()`.* The jobs and guild tasks were the last saved things keyed by the clock (Session 456's survey: *guild and quest tasks keyed by `'m'+Date.now()`*), and the foes they raise (the town-job raids, guild hunts, the road quest's band, boarders, the duel's rival) wait on those ids before they can be keyed themselves (step 1's list). Now: a lord's job is `tq:<site>:<k>`, `k` the number of jobs that town has given (the journal keeps every one, so it only grows); a faction's service is `fq:<faction>:<step>:<k>`; a guild task is `<guild>:<site>:<n>`, `n` a count kept in the guild's saved state (`worldState.guild[g].n`), so a task taken back by Session 501's lapse and a new one the same day do not share an id; a rank commission, given once, is `<guild>:c<rank>`. Ids are opaque everywhere they are read (`qFind`, `_guildTag`, the duel's and boarders' records), so a save with old ids plays on unchanged. The Varek real-clock reads stay: they measure real time between sessions, which is their point.
+
+### Verified (headless Chromium)
+`jobids` 5/5 (new): Dunmore's lord gives `tq:dunmore:0` and then `tq:dunmore:1`; the Fighters' hall `guild_f:dunmore:1` and `guild_f:dunmore:2` (its count 2); the rank-2 commission `guild_f:c2`; no id holds a clock time. `rowelines`, `duel`, `duelrhythm`, `questtargets`, `questfoes`, `datedwork`, `datedguild` and `blacksail` pass. `parsecheck` clean. Build tag s428.
+
+### Needs eyes
+Nothing to see. Next in step 1, with these ids: key the foes raised for a job (`<job id>:foe:<k>`).
+
+## v80 — Session 504 — The foes a job raises, keyed by the job (backlog K, the co-op door, step 1)
+With Session 503's ids, the foes raised for a job can be keyed as the co-op rules ask (*a spawn, a hit's damage … from a seeded stream keyed by place and id*). `keyFoe` (Session 477) now gives each its id and stream: a road job's band is `<job>:foe:<k>`, standing where the job's own stream (`seededRng('place', job)`) puts them round the camp, where `Math.random` did; a guild raid's bandits are `<task>:foe:<i>`, their ring round the town from the task's stream; a guild's beast, rogue mage or shore wisp is `<task>:foe:0`, its variant from `seededRng('variant', id)` as a site's foes have it (Session 479); the duel's rival is `<job>:rival:<day>`, a stream of her own each day the ring is laid. Their blows, their arrows and your swing's spread on them now draw from their streams (`foeRand`). Still unkeyed (step 1's list): the town guard who draws, and the boarders and the black sails' crews, which are encounters with no place yet.
+
+### Verified (headless Chromium)
+`jobids` 8/8 (3 new): a road job's three bandits are `tq:dunmore:7:foe:0…2`, each with a stream, and raised twice they stand on the same spots to the hundredth; a guild's Ogre is `guild_f:dunmore:9:foe:0`. `duel`, `duelrhythm`, `questfoes` and `foeseed` pass. `parsecheck` clean. Build tag s429.
+
+### Needs eyes
+Nothing to see: the same foes, on the same kinds of spot.
+
+### Corrections
+- Merging main (63d2245) brought the Fable session's own Session 494 (the inspector by nation), so this run's Sessions 494–503 are renumbered 495–504 here, in the backlog, the code comments and the new tests' headers. The commits keep the numbers they were made with (494–503).
+- Session 502 (`shoperrands`) is superseded: the look builder's Session 483 fixed the same race on main with a capture listener that re-pins the player in the E key's own event, and the merge keeps theirs. Session 502's entry stays as history.
 
 ## v80 — Session 505 — A barber and dyer for the towns: prototype and a question (backlog H)
 Every numbered item in section H is done or waiting on Michael, and the register findings in `docs/quest_review.md` that touch the builders' files are applied on main (Finding 13's `genName` and `dungeonName` among them). One item was left: *the look, later*, a barber or tailor in towns to change the hair and the dyes after the creator. Today the creator's look rows (style, beard, the tunic's, breeches' and boots' colours) are fixed once you begin. A trade that reopens them is a new person, a room, a sign and a fee, so it is a question before it is a build.
@@ -11817,6 +12019,61 @@ Before, 9 of 600 seeded deaths ended upright. After, 0 of 600, and 0 of another 
 ### Needs eyes
 - A wolf that dropped straight onto folded legs now rolls over a beat later than one knocked sideways (the twist starts at .35 s). Whether that reads as a second, separate movement at real speed.
 - The two four-second cap-outs in 600 deaths predate this session; `beastfall`'s sixty seeded deaths do not include either.
+
+## v80 — Session 507 — The Compact's claim says where the ship is (quest review run 8, Findings 14–16)
+Run 8 of the quest review found three lines on main in the Compact's claim, all applied here as written. **Finding 14**: at the rank to Prior the after-line already hands over the house and the ship, and the rank-up tail said it again in a Markman's words (*There's a house and a ship in it*) from an Aurennais mouth. The tail is now by faction at rank 3: the Compact says nothing more when the after-line is there (and *A house and a ship are entered in your name, Prior; claim them when you please.* when it is not); the Crown's is a Gatelander lord's (*There's a keep goes with it. A roof's only a roof till someone sleeps under it, so come and claim it when you will.*); the League's stands. **Finding 15**: the claim said *the ship at the quay* in every case, though since Session 457 a Prior whose seat is inland gets the sloop at another of the Compact's quays, and since Session 467 a Prior with a ship gets her refitted where she lies or raised from the bottom. `compactRefit` now returns whether the class went up, the claim keeps what `grantShip` returned, and a new `compactClaimLine(g,seat)` (`87-world-quests.js`) answers with the review's six lines: at the seat, at another port by name, refitted a class up, mended only (a galleon), raised by the named shipwright, or no berth found. **Finding 16**: the refit's log line reads *The Compact mended the Kestrel and refitted her as a cog.*
+
+### Verified (headless Chromium)
+`compactrefit` 9/9: the claim with a sloop says *…mended, and refitted as a cog, at its own charge.*, with a galleon *…There is no larger hull to enter.*, sunk *…the shipwright at Beaurouge has the Compact's order to raise her…* (the raise's own site), and the log line in the new order. `blacksail` 15/15: the Prior's rank-up now ends at the after-line (*…Their ledgers are shorter.* and nothing after), and the claim at inland Fortargent says *the house here, and the ship at the quay at Beaurouge.*, where the ship is. `rowebeats` 13/13: the Knight's rank-up ends with the Crown's new tail. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+Nothing beyond reading: the lines are the review's.
+
+## v80 — Session 508 — A ship met at sea is the same ship on two machines (backlog K, the co-op door, steps 1 and 3)
+The co-op rules want every roll that decides an outcome on a seeded stream keyed by place and id. The sea's encounters were the last thing in step 1 with no id to key by: the black sail and the merchantman are raised at a random bearing round you every two seconds while you are at sea, and her heading, her three crew's variants, every volley's count and where each arrow comes down, and her chest's loot and crate of cargo were all `Math.random`. Step 3's list named them too.
+
+A ship is now given an id when she is raised: where and when she came up, `sea:<chunk>:<minute>:<kind>` (the chunk of her spawn point and the world clock's minute), and Oswy Blackhand's Kestrel `story:oswy` (`spawnOtherShip` takes the id; `85-world-sea.js`, `88-world-ticks.js`). She carries a stream `seededRng('ship', id)` that rolls her heading, her volleys' timing, count and spread; her crew are keyed foes `<id>:crew:<k>` with their variants from their ids (so their blows and corpses roll on their own, as the chunk foes do since Session 477); her chest rolls `rollContainerLoot` on `<id>:chest` and the pirate's crate of cargo on `seededRng('loot', <id>:cargo)`. The roll that raises her (whether one comes, then the bearing and range tried) draws from `seededRng('sea', <your chunk>:<minute>:<kind>)`, so the same place and minute raise the same ships. The odds are unchanged (a black sail one tick in two, a merchantman three in five, a sure black sail when the tutorial or a service wants one). The merchant's wandering course stays `Math.random`: it decides where she sails, not what happens.
+
+### Verified (headless Chromium)
+`seaseed` 10/10 (new): a black sail met at minute 5000 is `sea:214,406:5000:pirate` with a stream, her crew `…:crew:0–2`, each keyed; met again under the same id from the same state she has the same heading (4.699946), the same crew, the same four volleys (3+2+3+3 arrows, each to the same spot to four places) and the same chest (*Wooden Mace, Wooden Ring, Barrel of Salt Fish ×2*); another id gives another heading; the merchantman is keyed too. At the wheel of your own ship in open water, twelve minutes each rolled twice raise the same ships both times (12/12), 17 ships in all, so the odds still leave minutes with one ship or none. The sea's suites pass (blacksail, pirateram, seawear, ships, shipwreck, lvact, saltwater, cargo, sailtrim, shiphull, shipmoor, shipwrightvoice). `piratehold` failed first, and rightly: it raised forty black sails from one spot in one minute to count the goods in their chests, and those are now one ship forty times (forty crates of glass). It now gives each its own id (`sea:test:<i>:pirate`, forty minutes standing in), and passes 15/15 with twelve goods among the forty, as before. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see: the same ships, met as often.
+
+## v80 — Session 509 — The guard who draws on you is keyed (backlog K, the co-op door, step 3)
+After Session 508 the town guard who draws (refuse the fine, strike a guard, or come back to a town whose gates are shut to you) was the last foe the open world raises with no id: `guardEnemy` built the Bandit body and named it, and every blow it rolled through `foeRand` fell back to `Math.random`. He is now keyed by `keyFoe` as `<site>:guard:<index>:<minute>`: his town, his place in the town's people (`S.npcs`, which the generator builds in the same order every time), and the world clock's minute when he drew. One guard can draw more than once in a day (paid off, stood down, struck again), so the minute and not the day. The street and the room (Session 241's guard indoors) go through the same `guardEnemy`, so both are keyed; his corpse, if it comes to that, now rolls on `<id>:corpse:<day>` like every keyed foe's.
+
+With this every foe the open world raises has an id. Step 3's list still holds the things that are not foes: whether a dungeon's chest or barrel was opened, wreck chests, corpses, interior and dungeon doors and keys, herbs and quest pickups.
+
+### Verified (headless Chromium)
+`guardseed` 4/4 (new): in Dunmore a guard drawn at minute 9000 is `dunmore:guard:15:9000` with a stream; stood down and drawn again in the same minute he rolls the same eight draws (0.449996, 0.940966, …); drawn at minute 9017 he is another id and rolls another. The crime suites that draw a guard (crime3, guardplay, guardsindoor, theft, foes) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
+
+## v80 — Session 510 — The world's quests write into the journal (DECISION #132, owed since Session 487)
+Session 487 put the story's quests into the journal in their own words, under their id, and left the world's quests (a lord's job, a faction's service, the story's world steps such as *The Courier*) for after the world file was cut. Those wrote only the log's short lines (*My mother's ring — Mayor Niamh*, *…: objective complete.*, *…: 86 gold.*), which the journal shows under the day but cannot file under the quest, so the Journal's *By quest* view and the Quests tab knew nothing of them.
+
+`qJournal(q, kind, text)` (`87-world-quests.js`) writes through the story's own door, `journalQuest`, keyed to the quest's id (stable since Session 503): the ask when the job is taken (`q.desc`, the giver's words, as the card already shows them), *Done — report to <giver>.* when the work is done, *Turned in to <giver>: <pay> gold.* when it is handed in (the pay the dated work actually gave), and *The date passed, and <giver> has given the work to someone else.* when a dated job lapses (the log's own line without the title). These are the game's plain terms, the same words the toasts and log already use. The short lines stay, as the story's did, because the level blocks and the tests read them. The Journal's *By quest* finds a world quest's title in `worldState.quests` and its state (in hand, complete; nothing for one taken back), and a world quest's card in the Quests tab shows what the journal holds of it under each date, as the story's cards do since Session 487, leaving out the ask the card already prints.
+
+The guilds' tasks are not in `worldState.quests` (they live in `worldState.guild`, one active task a guild) and still write only the log's lines; they are the next slice of the same thing.
+
+### Verified (headless Chromium)
+`worldjournal` 7/7 (new): in Dunmore at 10 am, *I'm looking for work.* in Mayor Niamh's dialogue gives *My mother's ring* (`tq:dunmore:0`) and writes her ask under its id at minute 30,000; done at 30,600 it writes *Done — report to Mayor Niamh.*, and its card in the Quests tab shows the line under *Day 22 · 10:00 am* without repeating the ask; *It's done.* pays 86 (the job was dated, a quarter more) and writes *Turned in to Mayor Niamh: 86 gold.* By quest shows the job under its title, *complete*, the three lines in order; By day reads *My mother's ring — Turned in to Mayor Niamh: 86 gold.* A dated job past its date writes its lapse under its id. The suites that read the journal or the world's quests pass (journal, jnlinks, datedwork, datedguild, due, jobids, questgold, told, investwords, crime2, crime5, chapel, dungeonexit). `parsecheck` clean.
+
+### Needs eyes
+- By day now has the short line and the quest's line side by side for each event (*✅ My mother's ring: objective complete.* above *📜 My mother's ring — Done — report to Mayor Niamh.*), as the story's quests have since Session 487. Whether the short lines should drop out of the Journal (kept in the data for the level blocks) is a call for the Journal's book look.
+
+## v80 — Session 511 — The guilds' tasks write into the journal too (DECISION #132)
+Session 510 left the guilds' tasks out: they are not in `worldState.quests` but in `worldState.guild`, one active task a guild, and the task is dropped from the save when it is handed in. They now write the same lines as the world's quests, under the task's id (`<guild>:<site>:<n>` or `<guild>:c<rank>`, Session 503), from the guild's own functions in `83-world-generator.js`: the task's words when the hall gives it (`offer`), *Done — report to the Mages' Guild.* when it is first done (`gStamp`, the stamp the dated work already makes from every hook), *Turned in to the Mages' Guild: <pay> gold.* at the hall (`turnIn`), and *The date passed, and the guild has given it to someone else.* when a dated task lapses (`gLapse`).
+
+Because a handed-in task leaves the save, the Journal could not find its title afterwards. `journalQuest` now keeps a world quest's or task's title on the line itself (`qt`; the story's quests have theirs in `QUEST_DEFS` and are left as they were), and *By quest* and *By day* read it from there. A task's state is *in hand* while it is the guild's active task and *complete* once a line says it was handed in.
+
+### Verified (headless Chromium)
+`worldjournal` 10/10 (3 new): in Dunmore the Mages' Guild gives *Gather Duilleog Ghorm* (`guild_m:dunmore:1`); its ask is written at minute 32,000, *Done — report to the Mages' Guild.* at 32,300 and *Turned in to the Mages' Guild: 76 gold.* at the hall, each carrying the title; *By quest* shows it *in hand* while it is open and *complete* under its title after it is handed in and gone from the save; *By day* reads *Gather Duilleog Ghorm — Turned in to the Mages' Guild: 76 gold.* The suites that read the journal or the guilds (datedguild, datedwork, due, jnlinks, jobids, journal, questfoes, questgold, shoperrands, told, placesave) pass. `parsecheck` clean.
+
+### Needs eyes
+As Session 510: two lines an event in *By day*, the log's short one and the task's own.
 
 ## v80 — Session 512 — The barber and dyer in the towns, slice 1: the shop, its sign and its room (backlog E/H, Michael's B on #144)
 Michael chose B on DECISION #144: one barber and dyer, one room, one fee, in towns and up. This session builds the shop and stops short of the look page, which is the second slice. The fee is the systems builder's, and the barber's lines are the quest writer's.
@@ -11846,6 +12103,74 @@ CI on the fix push (`fbb7063`) failed `chamerchant` on shard 3. Its second shop 
 - The room is large (rooms run 1.8× the footprint) and the barber's things gather at the back wall. Is the middle of the floor too empty?
 - The basins read olive rather than brass in the grey daylight of the shot. A warmer brass may be wanted.
 - **Owed.** Slice 2 is the look page from the barber's chair: the creator's style, beard and colour rows, with the body rebuilt. The fee is the systems builder's. The quest writer owes a tagline, the barber's greeting and topics, and the *A barber?* line in `WAY_ASK`.
+
+## v80 — Session 513 — The trailing guard held in a corner (backlog I, `watch` red on CI)
+Main's CI (178e96f) and this branch's (115b20c) failed one check of `watch` on and off: at favour −2 the trailing guard, Eilís, stood 38.57 units off after 30 s and 36.17 after the player had walked on. These are the numbers Session 378 fixed with its stale-grid check, and the cause is new. Locally the check passed every time. It failed one run in six with the world's job budget cut to almost nothing (`JOB_BUDGET_MS`, so one job a frame, as on a slow runner) and six copies running side by side. Then it gave CI's numbers to the hundredth.
+
+**The cause.** Her noon patrol ends at different spots depending on how fast the town's pieces arrived. On a slow runner it left her at (19.47, 30.14) from Dunmore's centre, standing clear in a corner with a solid at her −x and her −z. `townRoute` starts every way at the guard's own cell, the nearest lattice point by rounding (Session 247 put it first so the line to the first turn cannot cut a wall). Here that cell is (19, 30), and its centre lies inside the solid. Session 378's check of each way skips the first cell. So she walked into the wall, `npcStep` gave up, and 1.5 s later she asked again and got the same way. She never moved. Taking only that cell off the way did not help: the next cell, (18, 30), is behind the same corner.
+
+**What changed** (`82-world-structures.js`, `townRoute`). When the guard stands clear and his rounded cell's centre is inside a solid, the way starts from the nearest of the four lattice points round him that he can walk to in a straight line (six samples along it). Otherwise the start is the rounded cell, as before. The exception matters: Session 357's house corner puts the guard inside a solid, and there the rounded cell is what gets him out. A first version that always took the walkable corner held him there at 21.49.
+
+### Verified (headless Chromium)
+`watch` 9/9, with a new ninth check. The guard is set down at (19.47, 30.14), where cell (19, 30) is solid and the spot itself is clear. On the old build her way begins at (19, 30) and she stays 38.56 units off. On the new build it begins at (19, 31), and she comes to 7.99. Six copies of `watch` side by side with the job budget at 0.001 ms all passed 9/9 (before the fix, one in six failed the favour −2 check at 38.57/36.17). `beat`, `constable`, `guardsindoor`, `burglary`, `crime2`, `livepick`, `guardplay`, `crime3` and `theft` also walk guards by the street grid, and all pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see unless a guard was already caught: a guard trailing you should no longer stand for good against a corner.
+
+## v80 — Session 514 — The dungeon's chests and barrels are keyed, and the master's hoard rolls on its own (backlog K, the co-op door, step 3)
+Step 3 of the co-op door wants every thing in the world that may one day be saved to carry an id of place and index first (CLAUDE.md's co-op rules). After Session 509 every foe has one. The dungeon's containers did not, though Session 478 put their places and their loot on the gate's streams: the loot was keyed by a counter built into the key string and thrown away. Each now carries `id`, `<seed>:<floor>:<kind>:<n>`: barrels and crates `…:barrel:<n>` and chests `…:chest:<n>` (`56-dungeon-build.js`), the library's shelves `…:shelf:<n>`, and the room kit's urns, sarcophagi and weapon racks `…:urn|sarcophagus|rack:<n>`, counted by floor and kind (`68-dungeon-misc.js`). Each container's loot is rolled on `<id>:<day>`, the same key strings as before, so no container's goods change.
+
+On the way: the lair master's hoard (`lairFinish`) was the one dungeon outcome still rolled on `Math.random`: its metal, its tier, sword or cuirass, and a dragon's scales. The hoard is now `<seed>:<floor>:hoard`, and those draws come from `seededRng('loot', <id>:<day>)`. The gold and the two potions were fixed numbers already. Nothing about a container is saved yet (whether it was opened is still lost when you leave the gate); this gives the first code that saves it a key to save under.
+
+### Verified (headless Chromium)
+`dunseed` 10/10 (2 new). Two gates, each entered twice with `Math.random` stirred between: every container has an id of the right shape and floor, one id each (13 in the first, barrels, shelves and chests; 16 in the second, with a sarcophagus), and the two builds give the same ids to the same things (*519737:1:barrel:0*, *519737:1:chest:0*, …). A master raised twice in gate 519737, with 91 draws of `Math.random` between, leaves the same hoard, *519737:2:hoard*: *Gold Coins 153, Silver Sword, Greater Potion ×2*. A dragon raised twice leaves *Gold Coins 255, Mithril Sword, Dragon Scale ×2, Greater Potion ×2* both times. The suites that build or open dungeon containers (dunconts, fortfurn, masterslam, chestpicks, dungeon, lootseed) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
+
+## v80 — Session 515 — Every herb in the world has an id (backlog K, the co-op door, step 3)
+The next thing on step 3's list with no id: herbs. A herb picked is `harvested` on the object and nothing is saved, but a co-op host and guest must agree on which plant was picked, and so must a later save of picked herbs. The world's herbs are placed from the chunk's hash (`spawnChunkHerbs`, `82-world-structures.js`), so they stand in the same spots on every machine. Their order in the chunk's list does not hold, though: whether a spot is taken reads the solids and the roads loaded at that moment. A tree that arrived first on one machine refuses a herb that another machine places, and a running count would then give every later herb a different id.
+
+So a herb's id is the placing try that put it, not its place in the list: `<cx,cz>:herb:<i>` for the chunk's scatter, `<cx,cz>:verge:<i>` along the roads, `<cx,cz>:hot:<i>` for a hotspot's cluster. Sea-bed herbs (`spawnSeaHerbs`, `85-world-sea.js`) are `<cx,cz>:seabed:<i>`, and a glade's ring of eighteen (`87-world-quests.js`) is `<site>:herb:<i>`. The legacy zones' herbs (Ashenmoor, Hearthwick and the rest) are left without ids; they belong to the old zones and to no co-op world. Nothing about a herb is saved yet.
+
+### Verified (headless Chromium)
+`herbids` 4/4 (new). Near the start, 1,148 herbs are loaded, every one with an id of the right shape, 1,148 distinct (the kinds herb, verge, hot and seabed all appear). Chunk 205,395's herbs, placed again by the game's own spawner, come back as the same 29 ids, each at the spot and of the kind the world has. Placed a third time with a box over *205,395:herb:0*, that herb is refused and the other 28 keep their ids, spots and kinds. The chunk's next try then fills the count under its own id, *205,395:herb:18*. No glade was loaded in the test, so the glade's ids are read in the code, not seen. The herb suites (herbstub, plants, herbhidden, herbparity, pois, stonecress, ashwort) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
+
+## v80 — Session 516 — Corpses and the open world's chests carry their ids (backlog K, the co-op door, step 3)
+Step 1 keyed the loot of the open world's containers and of keyed foes' corpses by place and id, but the object itself kept no id: the key was built into the loot roll's string and dropped. Whether one was opened or searched is never saved, and a later save of that, or a co-op host telling a guest that a chest is empty, needs the id on the thing. Each now carries `id`, the same string its loot is keyed by, less the day. A keyed foe's corpse is `<foe id>:corpse`, both in the open world (`killZoneEnemy`, `42-zone-enemies.js`) and in a dungeon (`killE`, `62-actions.js`). A town's barrel or crate is `<site>:barrel:<n>` (`83-world-generator.js`). A lair's or camp's hoard is `<site>:chest` (`siteChest`, `87-world-quests.js`). A wreck's sea chest is `wreck:<chunk>`, and a black sail's or merchantman's chest is `<ship id>:chest` (`85-world-sea.js`). A foe with no id (the legacy zones') leaves a corpse whose id is null. Bram keeps his `corpseId`. No loot changes.
+
+Left in step 3 after this: interior and dungeon doors and keys, and quest pickups.
+
+### Verified (headless Chromium)
+`containerids` 7/7 (new). A Bandit keyed *300,400:2:0* and killed leaves a corpse *300,400:2:0:corpse*, and an unkeyed one leaves a corpse with no id. The first chunk out from the start that the hash gives a wreck, built on a stand-in chunk, holds a *Sea Chest* with id *wreck:196,395*. A black sail raised as *sea:test:1:pirate* and boarded has the chest *sea:test:1:pirate:chest*. Dunmore's seven barrels and crates are *dunmore:barrel:0* to *6*. No lair or camp had been built by then, so a hoard built on a stand-in camp is checked instead: *test_camp:chest*. The loot and sea suites (foeseed, seaseed, worldloot, shipwreck, dunseed, piratehold) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
+
+## v80 — Session 517 — Doors have ids (backlog K, the co-op door, step 3)
+Doors were next on step 3's list. A door inside a building (`INT_DOORS`, hung by `intDoorAt` in `84-world-interiors.js`) is rebuilt every time you enter. It is now `<house id>:door:<n>`, in the order the room hangs its doors. The room is built the same way every time, so the order holds. `buildInteriorFor` names the house on the fresh `INT_DOORS` array (`INT_DOORS.house`), so no new global is needed. A gate's treasure doors (`DOORS`, `56-dungeon-build.js`) are `<seed>:1:door:<n>`. The dungeon's keys need nothing: since the locks became picked, no key is placed (`KEYS` stays empty and the key mesh is removed as soon as it is made). Nothing about a door is saved yet, and a door shut again when you leave a room is unchanged.
+
+Left in step 3: quest pickups.
+
+### Verified (headless Chromium)
+`doorids` 3/3 (new). Every room in Dunmore was built twice: 31 doors in 10 buildings, each *<house id>:door:<n>* (*g_dunmore_0:door:0* …). No two share an id, and the second build gives each door the same id at the same spot. `dunseed` 11/11 (1 new check): both gates have 5 doors, *519737:1:door:0–4* and *785107:1:door:0–4*, the same on both builds. The suites that build or open doors (intdoors, innrooms, interiors, intreach, locks, dungeon) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
+
+## v80 — Session 518 — Quest pickups have ids, and step 3 is done (backlog K, the co-op door)
+The last item on Session 456's list of things with no id: quest pickups. A lord's *retrieve* job puts a box on the ground (`qTick`, `87-world-quests.js`), and a guild's relic task puts a crystal there (`ensureTaskWorldObjects`, `83-world-generator.js`). Both go into `pickups`, which is rebuilt from the quest each load. Each pickup is now `<quest id>:pickup` or `<task id>:pickup`, built on the quest and task ids that have been stable since Session 503. Whether it was taken is already saved, as the quest's `data.got` or the task's `got`.
+
+That finishes step 3. Every foe the world raises, every container, corpse, herb and door, and every pickup now has an id of place and index that two machines agree on. Nothing new is saved by it: the first code that saves a thing's state (a chest opened, a door left open, a herb picked) keys it by these ids. Steps 1 and 2 were done before, so what the co-op door's Opus half asked for is in place.
+
+### Verified (headless Chromium)
+`pickupids` 3/3 (new). A retrieve job *tq:testsite:4*, raised by the world's tick, puts down *tq:testsite:4:pickup*. Walking onto it sets the job's `got` and takes the pickup away. A Mages' Guild relic task *guild_m:testsite:2* puts down *guild_m:testsite:2:pickup*, and walking onto it does the same. The suites that give and finish jobs and tasks (jobids, worldjournal, datedguild, questgold) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
 
 ## v80 — Session 519 — The dead tree's limbs grow from the trunk (backlog H, Michael's inspector note)
 Michael, from the inspector: the dead tree's "branches do not look connected to the trunk mesh - one is floating unconnected". He was right, and it was worse than one. The prototype (`PROTO.dead`, the wastes' and the wasteland's main tree, and a tenth of the fen's and the tundra's) was a trunk and three cylinders each placed by its middle and then turned. The top limb's wide end came out at (.77, 8.03, .09): above the trunk's flat cut at 8.0 and beside it, so it hung in the air. The other two crossed the trunk and stuck out the far side as stubs.
@@ -12006,3 +12331,208 @@ The ghoul was the risen dead's genome with a greener skin and nothing else: the 
 ### Needs eyes
 - At play distance, whether the patches read as rot or as a rash. Their size and darkness are three numbers in one line.
 - **Owed.** The ghoul's limp and its more zombie-like walk: a dragged leg and a lurch in the gait for ghouls alone.
+
+## v80 — Session 530 — A house is sold once, and its seller moves out (the critic, 5 Oct, s418)
+The critic bought Órla's House in Carraig Mór and found three things wrong, all filed on auto/critic. **The seller kept selling the house.** Two seconds after the sale she offered *Buy this house (900 gold)* again, and each click took 900 more: `buyHouse` (`86-world-crime.js`) never asked whether the house was yours, and the topic sat on her `_extra` from the town's build. Now `buyHouse` charges nothing for a house you own, and the sale takes the topic off her (it carries the house's id, `_house`, so it can be found). **She stood at your door day and night.** `buyHouse` hid her and gave her the schedule `gone`, which `scheduleFor` has no case for, so the town tick showed her again at her home spot. The town's resident stream would also have spawned her again whenever you walked 95 units off and came back, and after a reload the generator made her the house's resident once more. Now the sale takes her out of the town's residents and out of the scene, as the stream does when you walk away, and `genSettlement` (`83-world-generator.js`) makes no resident for a house you own. Session 82, which built buying, said the resident moves out for good; now she does. **A save in your cellar named no town** (*Your House — cellar*). The cellar's record has no `siteId`, so `ssPlaceName` (`70-saves.js`) now reads its parent's. All three come from one walk through buying a house, so they are one session.
+
+The critic's fourth note, two *Séamus's House* in one town, is about names and is left alone: Session 172 let ordinary townsfolk repeat, and whether a house for sale must not is a question for another day.
+
+### Verified (headless Chromium)
+`housebuy` 8/8 (new). In Dunmore, Fionn's House (1,200) is for sale, and after 120 ticks at 11h Fionn is spawned and offers it. The topic takes 1,200 once (5,000 → 3,800); clicking the stale topic again and calling `buyHouse` again take nothing (3,800). The topic is gone from her, and she is in neither the town's residents nor `npcs`. After 240 ticks at 11h and 120 more at 23h, nobody of her name stands within 6 units of Your House's door. Dunmore disposed and built again: *Your House*, no resident for it, nothing for sale, 42 other residents. A save in the cellar reads *Your House — cellar, Dunmore*, and upstairs *Your House, Dunmore*. On the code before this session, 5 of the 8 checks fail. The suites that touch houses, cellars and saves (savelabel, houses, burglary, crime1, interiors, placesave, chapel) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see beyond the critic's own walk: buy a house, talk to nobody at its door, walk off and come back.
+
+## v80 — Session 531 — The level panel says what the level gives (DECISION #142, the "also fix")
+Michael's A on #142 sets the level page as one sheet, which the look builder draws. The concept artist found two wrong lines in today's panel on the way, and the answer gives them to this builder. **The health line was static.** It always read *❤ +10 HP restored*. A level adds 10 to the maximum and fills the same 10, and Fortitude adds 10 a point on top, from the picks and from an archetype's +1. The line is now worked out by `luHPGain` (`12-character.js`) the way `confirmLevelUp` gives it, *❤ +N max HP*, and it is redrawn on every pick. **The cards left gains out.** `gainLines` named sixteen kinds of gain but not the seven others `ATTR_DEF` grants, all of which the game does read: Might's carry weight (`maxCarry`), Finesse's ranged damage, Resolve's block cost and magic resist (`_magicResist`), Intelligence's spell damage, and Charisma's quest gold (`questGold`) and better stock (`_chaExtraItem`, at 5 points). Charisma ×4 used to show only *+4% barter prices*. The better-stock line shows only on the raise that reaches 5 points, since it is a threshold and not a gain per point. The lines use the card's existing wording (*+N% … damage*, *max HP*).
+
+Correction: Session 530 was first committed as 527. The look builder's 527–529 had landed on auto/backlog while it ran, so it was renumbered in its own commit (4ebb618).
+
+### Verified (headless Chromium)
+`levelpanel` 9/9 (new). Might ×2 reads *+2% melee damage · +10 carry weight*. Finesse adds *+1% ranged damage*. Resolve ×3 reads *−15% block cost · +3% magic resist*. Intelligence adds *+1% spell damage*. Charisma ×4 reads *+4% barter prices · +8% quest reward gold*, and from 2 points it also reads *merchants show a piece from the tier above*, from 0 it does not. The panel opens at *❤ +10 max HP*. Picking Fortitude at ×3 makes it *+40*, unpicking makes it *+10* again, and confirming Fortitude, Might and Finesse raised the maximum by exactly 40. A Warrior, whose +1 is Fortitude, opens at *+20*, and confirming gives 20. fortunecard and attrdmg pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see; the look builder's sheet will carry these lines.
+
+## v80 — Session 532 — The rest slip: one slip for a bed and for waiting (DECISION #142, Michael's A)
+Michael's A on #142 gave this builder the slip and the waiting rule, and the look builder the level sheet. Before this, a bed opened a cream slip with a bare 1–24 hour slider and the date. The ⏳ button opened a separate dark panel of five buttons, and you could wait only to dawn, morning, noon, dusk or night. Now both open one slip, built from the concept artist's prototype (`docs/prototypes/rest/` on auto/concept) with the game's own numbers (`openRestSlip`, `60-shop.js`). The slip has:
+- The title (*Sleep* or *Wait*), with the date and the place (`ssPlaceName`).
+- The day drawn as a band from noon to noon, night washed in ink, with a sun and a moon. NOW is marked on it, and an arc in rubric runs to the hour you wake or rise. The arc is labelled with its length.
+- A slider of 1 to 24 hours with − and + beside it. Today's five times are marks (*Dawn 6 am* … *Night 8 pm*), keys 1–5.
+- What the rest gives before you take it. Sleeping: *You wake at 5:40 am, Day 5*, *a full night* or *a short sleep*; health and mana before and after by restAtBed's rule, now one function (`restPreview`) that both the slip and the bed use; stamina full; and *you wake at level N* if you are ready. Waiting: *Waiting restores nothing; a bed does.*, and if you are ready, *only sleep takes the level*.
+- A red seal that does it. Esc leaves you as you were, ← → move an hour, 1–5 set a mark, and Enter or E does it.
+
+The waiting rule is the one rule change: you can wait any number of hours, through `passTimeMinutes` (`50-travel.js`). `passTimeToHour` is kept as a way in to it, and waiting still stops for nearby foes and in dungeons, as before. A mark sets the slider to that hour **exactly** (Dawn from 9:40 pm is 8 hours 20 minutes, ending at 6:00). The prototype rounded to whole hours (5:40). Rounding would have broken today's *wait until morning* for a shop that opens at eight, so a mark keeps the old buttons' exact hour, and the slider and ← → go back to whole hours. Sleep takes a mark's minutes too, and the log and wake message say *8 hours 20 minutes* when it is not whole.
+
+Changed from the prototype: the prototype says *Magicka*, and the game calls it Mana everywhere, so the slip says Mana. The fonts are Georgia, as the slip had before, because the game loads no web fonts and a downloaded copy must run as it is. The parchment texture and torn edge wait for the UI overhaul (backlog E), so the slip keeps the cream paper and double border it had. The old wait panel's markup is gone from `index.html` (its CSS stays, unused). The slip counts as a menu for the pointer lock (`_isMenuOpen`). `tests/dateline` read the old panel's subtitle and now reads the slip's date.
+
+### Verified (headless Chromium)
+`restslip` 10/10 (new). At 9:40 pm on Day 4, half hurt and ready to level, a bed opens *Sleep*, dated *Day 4 · 9:40 pm*, at 8 hours. The band reads *NOW · 9:40 pm* and *YOU WAKE · 5:40 am* under *8 HOURS*. The slip says *You wake at 5:40 am, Day 5.*, *a full night*, *Health 65 130 of 130*, *Mana 40 100 of 100* and *level 2*. Five ← make it 3 hours: *12:40 am*, *a short sleep*, health 98 and mana 70, as `restPreview(3)` gives. Key 1 sets *8 hours 20 minutes* to *6:00 am*. Key 3 then sleeps to noon: the clock moved 860 minutes, health was full and the level was taken (1 → 2). The ⏳ opens the same slip as *Wait*, set to dawn (18 hours), with both waiting lines. The slider at 5 reads *You rise at 5:00 pm, Day 5.*, and Enter waits 300 minutes with health and level unchanged. Esc closes the slip and the clock does not move. Screenshots of both slips were checked by eye against the prototype's. dateline, fortcot, autosave, fortify, bedrollprompt and innrooms pass. `parsecheck` clean.
+
+### Needs eyes
+The slip at the real screen size and in real play: whether the band reads at a glance, and whether a mark's exact hour (*8 hours 20 minutes*) is clearer than the prototype's whole hours.
+
+## v80 — Session 533 — A herb's kind no longer hangs on what had loaded (CI fix: herbids and journal red on 72cb422)
+CI on this branch's head before the run (72cb422, Session 518) had two suites red. Neither failed here, so the logs were read through the GitHub tools.
+
+**`herbids`** (Session 515's test) placed chunk 205,395's herbs again and found 11 of 28 of another kind than the live world had: same ids, same spots, other herbs. That is a real fault, and it is exactly what the co-op rules forbid: two machines must agree on what grows at an id. A herb's kind comes from its context (`placeCtx`, `82-world-structures.js`), and two of the contexts read what had loaded so far:
+- *Under a tree* read the chunk's `treePts`. The scatter plants no tree under a site stamp or on a road, but stamps and roads arrive as cells load, so a chunk built before Dunmore's stamp had trees where one built after had none. The trees trimmed later did not change the herbs already placed. On CI the chunk got its trees first, and here it never did.
+- *By the houses* read `SETTLE`, the towns built so far.
+
+Now *under a tree* is worked out by `herbTreeNear` from the scatter's own roll in that chunk (its lattice, its density, clumping, slope and height test), without the stamp and road filters. *By the houses* reads the sites of the cell and its neighbours from `getCell`, as `siteAnywhere` does: within the place's pad and 11 more. Herbs still never stand on a road or in a site's core (`okSpot`, unchanged). Some herbs now take another kind than before, the same on every machine. Nothing about a herb is saved, so no save changes.
+
+**`journal`** passed every check and then timed out taking a picture for the devlog (`page.screenshot`, 30 s, "waiting for fonts"). The picture is not a check. It now has 60 s, and a picture that still times out is logged and skipped instead of failing the suite. No check was removed.
+
+### Verified (headless Chromium)
+`herbids` 6/6 (2 new checks). Chunk 205,395 placed by a stand-in with a tree on every 2-unit spot gives all 29 herbs the same kind as with none (the code before this session: 7 of 29). Placed with all 15 built towns taken out of `SETTLE`, every herb placed both times has the same spot and kind (28 of 28; one try is crowded out because a house's solid is gone, as Session 515's design allows). The live world's herbs match a fresh placing 29 of 29. `journal` passes. The herb suites (herbstub, plants, herbhidden, herbparity, pois, stonecress, ashwort) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing: herbs by a tree or a house may be another kind than before, which only a botanist would notice.
+
+## v80 — Session 542 — The world's hunters ask targetOf whom to hunt (backlog K, the co-op door, step 2)
+Session 468 put the two foe ticks (the open world's zone foes and the dungeon's) behind `targetOf(e)`, the one function a co-op build will teach to pick among the party, and left *the 195 reads in `80-world.js`* unaudited. That file is nine now. Read through, about 470 reads of `px`/`pz` in them: almost all are the player's own side (streaming cells and chunks, the maps, prompts, discovery, spawn distances, the weather cell, footprints) or a hit test against you, which the rule leaves alone. Three choosers are hostile, and each read you straight:
+- **A guard who trails you** at favour −2 (`pickFollowers`, the town tick's `_follow`, `82-world-structures.js`): which guard is nearest, where he walks, which way he faces.
+- **A guard sent after a fine** (`_chase` in the town tick and `trailStep`, which routes him by the streets; `tickSent`, `86-world-crime.js`): the distance he keeps, the clear line he is judged by, whether his quarry has left the pad, and indoors the walk across the room to halt you.
+- **A black sail** (`85-world-sea.js`): her course while she closes, her flight once sated, and where her volleys come down (with your height, so `PLAYER_TARGET` now has `y`, read live from `jumpY` like the other two).
+
+All of them now read `targetOf(n)` or `targetOf(o)`. Solo it is you, so nothing plays differently. Left as they are, and why: a struck townsperson running from you (fear, not a target); the townsfolk turning to face you; the witness and halt checks (detection, which a co-op build makes per player, as Session 468 left `canSeePlayer`); the volley's hit test; her ram, which steers at your ship's hull (`SHIP`), a thing and not a person; and the spawn and despawn distances for ships, town jobs and quest bands, which follow whoever streams the world. The drawn guard, boarders, the duel's rival and the sea's crews are zone foes and already went through `tickZoneEnemies`.
+
+### Verified (headless Chromium)
+`worldtarget` 11/11 (new). Each hostile chooser is run once as built and once with `targetOf` pointed at a decoy on the far side, you standing still. In Dunmore at favour −2, Séamus starts 20 units from you and 20 from the decoy: as built he closes to 8 from you; with the decoy he is 8 from it and 32 from you. Sent after you (`_chase`): 20 → 1.4 from you; with the decoy 1.4 from it, 38.6 from you. A sent guard whose target is 2,000 units off gives up the chase (*Séamus gives up the chase.*) though you stand on the pad. A black sail 150 units east of your still sloop: as built she is 31 from you after 20 s; with the decoy 150 beyond her, 56 from it and 244.7 from you. Her volley with the decoy at 80 units comes down 1.1–1.2 from it, at its height + 0.6. On the code before this session six of the eleven checks fail. targetof, watch, pirateram, piratehold, guardplay, crime3, guardsindoor, seaseed and guardseed pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing: solo, every one of these still returns you.
+
+## v80 — Session 543 — The legacy zones' foes and the Faolchú's lessers have ids (backlog K, the co-op door, step 1)
+Step 1 of the co-op door's Opus half (outcome rolls on a stream keyed by place and id) had one line left: *the legacy zones' foes*. The hand-built zones (Bealach South and the placeholder zones of `78-placeholder-zones.js`) spawn their foes in two places that mirror each other: the wilderness builder (`44-legacy-towns.js`) and `respawnZoneEnemies` (`50-travel.js`). Neither gave a foe an id, the extra spots that a spawn density over 1 adds were jittered by `Math.random`, and the variant was drawn by `Math.random` as well. So two machines building one zone put its extra wolves in different places and made different ones of them veterans. Both now name each foe `<zone>:foe:<group>:<i>` through one helper, `legacyFoeId` (`42-zone-enemies.js`). The group is its index in the zone's config, not in the list the time-of-day filter or the respawn's `respawn:false` cut leaves, so those filters move no other foe's id. The extra spot comes from `seededRng('place', id)`, the variant from `seededRng('variant', id)` (as the world's site foes since Session 479), and `keyFoe` gives each its own stream. A foe raised again by a respawn is the same foe in the same place, as a dungeon floor's are. Found on the way: the Faolchú's lessers (`spawnLesserFaolchu`) had no id either, though their spawn spot already came from the boss's stream (Session 477); each is now the boss's id and its count, `ashenmoor:faolchu:lesser:<n>`. Nothing about them is saved, so no save changes.
+
+### Verified (headless Chromium)
+`legacyfoes` 5/5 (new). Bealach South's 9 foes (four wolves and two bandits at the density's 1.5 a spot, so three on extra spots) are `bealach_south:foe:0:0` … `bealach_south:foe:1:2`, every id unique, each with its own stream. Respawned twice, once with `Math.random` fixed at 0.1 and once at 0.9, it gives the same ids, spots and kinds. Two lessers of the Faolchú are `ashenmoor:faolchu:lesser:1` and `:2`, with streams. On the code before this session four of the five checks fail. foeseed, sitefoes, slimeseed, hitseed, faolchu and ashenburn pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing: the zones play as before; only which of their extra foes stand where, and which are veterans, is fixed now.
+
+## v80 — Session 544 — A settled ragdoll is searched where it lies (backlog C, Session 417's owed check)
+Session 417 made a corpse searchable over its whole body, and left one thing owed: *if the ragdoll (#102) is built, its settled body is what is searched, unchanged.* The ragdoll was built in Sessions 419 (people) and 427 (beasts), and nobody had checked. Settled headless here, with no fault found. `bodyAimed` (`68-dungeon-misc.js`) reads the body's bones where they are on each call, so it follows the fall. What it caches is the capsule radius and the body's extent, worked out from wherever the bones were at the first look. It does not change with the pose: a lying Bandit spans about as much as a standing one. Its reach gate is measured from the kill point (`c.x`, `c.z`) plus 0.6 of the extent, about 4.2 units for a Bandit, and the ragdoll keeps every bone within 2.2 of where the foe stood (`tests/ragdoll`). So a body is searched from anywhere within the eye's reach of it. Nothing in the game changed, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`ragdollsearch` 10/10 (new). Two Bandits and a wolf killed by a power blow through `killZoneEnemy`, looked at once while they stood (so the cache is taken from the upright pose), then stepped at 1/60 until each ragdoll froze (58–77 steps). The Bandits' bodies came to rest 0.74–0.79 units from where they stood, a bone up to 1.2 off; the wolf's 0.4. Aimed at every bone from 2.2 units off on four sides: 65/65, 66/66 and 94/94 searchable. From 2.2 past each bone, on the side away from where it stood: 17/17, 17/17 and 24/24. Aimed across the throw at an upright chest's height over the spot where it stood, nothing. Six units off, out of reach. `lootTargetNow` finds each. `parsecheck` clean.
+
+### Needs eyes
+Nothing beyond Session 417's: whether the crosshair on a fallen body feels right at speed.
+
+## v80 — Session 545 — The lair, the glade and the camp have their look apart (the look builder's ask, Session 541)
+The look builder's Session 541 left one of Michael's inspector notes open: *a few others* missing from the mesh inspector, which are the lair, the glade and the bandit camp. Their builders (`buildLair`, `buildGlade`, `buildBanditCamp`, `87-world-quests.js`, this builder's file) build the place in one go: the look together with its ground stamp, footholds, solids, light, herbs, chest and creatures. So the inspector could not show one without putting it into the world. The tower and the shrine already had a geometry function (`towerGeoHi`, `shrineGeoHi`), and the look builder asked for the same here.
+
+Each place's look is now a function of its own:
+- `gladeGeoParts` gives the reeds and cattails, the fallen log and the lily pads, with their distant copy and the ten trees.
+- `lairGeoParts` gives the rock heap with its cave mouth, and the bones.
+- `campGeoParts` gives the tents and the kit: the fire ring, the tripod, crates and barrels, bones and the stakes.
+
+Each takes the builder's stream and the ground (`H`), draws in exactly the order the builder did, and returns geometry and placements. The builders place the result and keep everything else: the stamp, footholds, solids, the fire and its light, the banner, herbs, chest and creatures.
+
+The order matters because the herbs, creatures and the boss's kind are drawn after the look from the same stream, so one draw out of place would change them all. The glade still rolls its pond's size and stamps the bowl before its look, because the reeds and the log stand in the bowl's blend. The tent's geometry is built inside the tent loop, as before. That is because three.js draws `Math.random` for every object's id, and the colour jitter in `mergeParts` draws from the same stream. The camp's unused `tentMat` is gone, so its jitter draws differ from before. That is cosmetic, and it already varied with every load.
+
+`WORLD.poiPreview(kind, seed)` builds one of the three at the origin on a fixed roll: the camp on flat ground, the glade on a bowl like its pond's. It touches nothing in the world. Adding the entries to `97-inspector.js` is the look builder's job.
+
+### Verified (headless Chromium)
+Measured once with a fingerprint probe, not kept as a suite. Seven real places near the start, three glades, three lairs and a camp, were built with `Math.random` seeded the same way, before and after. They give the same meshes (14, 10, 10, 3, 4, 3, 11), the same vertex positions and matrices, and the same solids, footholds, herbs (ids, kinds, spots), foes (ids, names, spots, health) and chest. A colour-blind fingerprint was needed: with colours in, the camp's tents and kit differed, by the uuid draws above.
+
+`poipreview` 11/11 (new). Each preview builds: the glade 3 meshes and 9,560 triangles, the lair 9 and 1,308, the camp 7 and 6,626, each about the origin. Seed 7 twice gives the same place and seed 8 another. A tower or a town gives null. Building all three moves nothing in the world: stamps 155, platforms, herbs 117, foes, chests, lights 53, places 8 and solids 458 are unchanged. A real lair, camp and glade, built with the bake held off, carry exactly what their geometry function gives on their own stream: the lair's rock and its eight bones, the camp's kit and its tents, and the glade's reeds and log, their distant copy and its ten trees. pois, sitefoes, wyrm, inspector, herbids, campsack, foes and coopsaves pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play changes. The look builder adds the three entries to the inspector.
+
+## v80 — Session 549 — The days, the months and the years of the Peace (DECISION #146, Michael's A)
+The calendar (Sessions 496–500) has carried placeholder names in one table, `CAL` (`60-shop.js`): *the Sea’s day*, *the seventh month*, year one. Michael took the quest writer's drafted set (`docs/quest_drafts.md`, *The Year's Names*) with the era *of the Peace*. The table now holds them. The week runs outward from the hearth: Hearthday, Stoneday, Beastday, Seaday, Skyday, Weaverday, Guestday, each day keeping its deep and institutional forms beside the common one (`deep`, `inst`; nothing speaks them yet). The order changes which god owns which weekday: the week's first day, when the rent falls (Session 498), is now Hearthday, the merchants' god's, as the draft wants. The months are Thaw to Lean, a tale opens on the 1st of Reaping, and the years count from 27.
+
+The date line had one length, `Day 12 · 7:40 am`, and its callers cut it up by string. `gameDateLine(at, tod, form)` now gives the draft's lengths by name: *full* (the sleep panel and the waking line: *Skyday, the 12th of Reaping, in the 27th year of the Peace · 7:40 am*), *date* (the same with no time, the journal's day heading), *day* (`calDateLine`'s: the Due view, a map note, the hour you wake on the rest slip), *short* (a save slot, a journal line's stamp, a told topic, the quest log: *Skyday 12 Reaping · 7:40 am*) and *time*. The ordinal suffix is one helper, `calOrd`, which the year needed too. The shrine's line (*It is Seaday. You are restored…*) reads the table and needed nothing. The four feasts are the next session: their rules are Michael's C on #132 and their names and lines are in the drafted set.
+
+### Verified (headless Chromium)
+`calendar` 8/8 (one new check): day one is Hearthday, the 1st of Reaping, autumn, year 27; day 168 is the 1st of Thaw in the 28th year; the four lengths come out as the draft writes them (*Hearthday, the 1st of Reaping, in the 27th year of the Peace · 10:00 am*; the same without the time; *Guestday 14 Reaping · 9:40 pm*; *9:40 pm*); the Hearth's day is day 1 and day 8 (`isGodsDay` over the whole day); the nearest shrine still doubles its boon on its god's day, which has moved in the week. The suites that read the date line were given the names in place of `Day N`, and pass: due 3/3 (the rent on Hearthday the 15th), dateline (the wait menu in full, the slot short), told, journal (the day headings *Weaverday, the 6th of Reaping, in the 27th year of the Peace* above *Seaday, the 4th…*), restslip (*You wake at 5:40 am, Skyday, the 5th of Reaping.*), mapnotes, seasonwx. `parsecheck` clean.
+
+### Needs eyes
+Whether the full line fits the sleep panel with a place name after it: *Seaday, the 4th of Reaping, in the 27th year of the Peace · 9:40 pm · Dunmore* is the longest it gets.
+
+## v80 — Session 550 — The four feasts (DECISION #132's rules, #146's names)
+The design page's calendar (Michael's C on #132) promised four feasts a year, one a season and each a day long: *the square is full, the inn's meal is free, the guards look the other way for petty crime*, at *crime fines ×0.5 that day*. Their names, dates and lines waited for the quest writer, and Michael took the drafted set on #146 (Session 549 wired its days and months). They are now one table, `FEASTS` (`60-shop.js`), beside `CAL`: the Kindling on the 1st of Thaw (a Hearthday), the Long Light on the 19th of Highsun (a Skyday), the Giving on the 23rd of Reaping (a Stoneday; the first a new tale meets, its 23rd day) and the Empty Chair on the 28th of Longnight (a Guestday). `feastOn(at)` names the day's feast and `nextFeast(at)` the next one. Each feast does four things:
+- **A townsperson's greeting.** Anyone who lives in a generated town greets with the feast's line in their people's voice instead of the stock one, shopkeepers and guards included. The pick moved into one function, `dlgGreeting` (`22-dialogue.js`), used by all four places that chose a greeting. It still reads the stock greeting first, so the townsfolk's getter notes you as met as before.
+- **The inn.** The innkeeper's feast line comes before the room offer (*There’s no charge for the meal today. A feast you pay for is only a dinner.*). Asking *Something to eat and drink?* puts a Hot Stew, the inn's own, in your pack once a feast at each inn, with *🥣 Hot Stew — The Giving’s meal, on the house.*; the shop then opens as on any day. Which inns have fed you is `worldState.feastMeals`, a character key (`SS_CHAR_WS` and the S242 list), cleared on the next feast.
+- **The fine.** A lock picked or a theft seen on a feast is fined half (`seenCrime`): a theft of goods worth 10 is 30, not 60. A struck townsperson or a guard killed is not petty and is fined in full. The day is kept on the record (`c.feast`), so a guard who halts you that day ends his halt with his people's line (*It’s a feast, so it’s half. Don’t make me sorry I said it.*); the Old Blood keep no watch, so the Gatelander line stands for them, as the draft says.
+- **The Due view** lists the next feast with the draft's line and its date (*🪨 The Giving — the year’s dead named at the old gate.*), today's on its own day. There is always one, so the view no longer says *Nothing falls due* when nothing else is dated.
+
+The draft's asterisks (*tine úr*, *Oíche an Aoi*) are dropped in the strings: dialogue does not render emphasis. Not built: *the square is full*. More people about the well on a feast day is a spawn count in the generator's town people, and it is left owed.
+
+### Verified (headless Chromium)
+`feasts` 12/12 (new). Day 23 is the Giving and a Stoneday, the days either side no feast; day 112 the Empty Chair (Guestday), day 169 the Kindling (Hearthday), day 327 the Long Light (Skyday). From day 10 the next feast is day 23's, on day 23 itself still day 23's, after it the Empty Chair, then the Kindling. In Dunmore six townsfolk (a smith and a goods keeper among them) greet with the Giving's line on the day and none the day before. The innkeeper's line comes before the room offer on the feast and not the day before. One Hot Stew on the feast, none the day before, none on asking twice; `feastMeals` is a character key. A theft worth 10 is fined 60 on day 22 and 30 on the Giving; the halt that day ends with the feast's line and the next day's does not. The Due view on day 10: *in 13 days 🪨 The Giving — the year’s dead named at the old gate. Stoneday, the 23rd of Reaping*. `due` 3/3 (its view now lists the Giving after the five dated things, and with nothing else dated the Giving alone). innvoice, innrooms, dlgkeys, crime1–3, theft, witness, guardplay, coachinn, coopsaves, saves and calendar pass. `parsecheck` clean.
+
+### Needs eyes
+Whether a feast is noticed at all when it is only words: nothing in the square changes yet. And whether a free stew is a meal worth the name; the draft's other customs (a brand from the square, the race, the stone at the gate, the chair) are words only.
+
+## v80 — Session 551 — The barber's fee, and the barber's strongbox (DECISION #151, Michael's A)
+Session 512 put a barber and dyer in every generated town and city. The fee was left open, and Michael answered A on #151: one fee for the visit, an inn room's price in that place, nothing if you leave with nothing changed; the shop keeps a strongbox at the general goods rate like every keeper. The look page from the chair is the look builder's slice 2 and is not built yet, so this session gives it the rule to call. `barberFee(house)` is `innPrice` on the barber's own house: a town's base 12 and a city's 20, −3 to +5 by the house, so 9–17 in a town and 17–25 in a city. The design entry's *±4* was loose. `barberPay(house, changed)` (`86-world-crime.js`) returns `'free'` when nothing changed, `'poor'` (taking nothing) when the purse is short, and otherwise takes the fee, writes *Paid 10 gold at Séamus's Barber.* in the log and returns `'paid'`. Slice 2 speaks its own line for each. The barber is now in `BOX_KINDS`, so its room gets a strongbox on the east wall like a goods shop's, worth `boxCoins` at the goods rate (10 + 50 per 100 prosperity, about 40 in Dunmore). Picking it is a theft like any other. Having no stock table of its own, it yields one thing from the goods stock, as an unlisted keeper's box always has.
+
+### Verified (headless Chromium)
+`barberfee` 8/8 (new). Across the nearest twelve towns and cities, every barber's fee is that place's inn room price for its house (towns of 9, 10 and 11, cities of 22 and 24 among them). With 100 gold: rising with nothing changed leaves 100; with a change, 90 and the log line; with 9 gold against a fee of 10, still 9 and `'poor'`. Inside Séamus's Barber at noon (9 × 8), the strongbox stands at (8, 4.4), no foothold under it but its own lid, the spot before it clear. It prompts *Press 'E' to pick the lock on the strongbox*, takes 4 pins, and holds 40.5 on average, the goods rate exactly. barber, crime1, boxspots, burglary and shopfurn pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing until slice 2 opens the look page from the chair.
+
+## v80 — Session 552 — Capes and cloaks: the back slot and six kinds (DECISION #148, Michael's B; the systems half)
+Michael asked for cloaks as an item slot with minimal bonuses unless rare or magical, and took the designer's B on #148: each kind one small virtue in its place (`docs/design/capes-and-cloaks.md`). This is the page's systems session. `EQ` has a `back` slot, shown after the head in the inventory (`EQ_SLOTS`). An old save loads it empty, because the load walks `EQ`'s own keys. Six kinds live in `CLOAK_KINDS` (`14-items.js`), all def 1 with no tier, and `makeCloak(kind, tier, enchant)` makes one:
+- **Traveller's Cloak** (12 gold, 1.5 weight): the plain one.
+- **Dark Hood** (25, 1.5): `_sneakDetectMult` × .95 while sneaking, and a witness's reach (`witnessOf`) 12 → 11.
+- **Oilskin Cloak** (30, 2): no drag in the water.
+- **Fur-lined Cloak** (45, 3): stamina regen × 1.1 while `furWarm()` holds, which is snow falling, or night above the snowline, in the open world and not indoors.
+- **Aurennais Short Cape** (60, .5): `barterPct` + 2% at a counter in Aurenne (`capeCounter`), on top of Charisma's capped share.
+- **Pilgrim's Grey** (20, 1): a shrine's boon lasts × 1.25.
+
+Every cloth cloak but oilskin slows a swim to × .9, and the fur to × .85 (`cloakSwimMult`, in the main loop's swim speed). `cloaksFor(house)` adds them to an armourer's or a goods shop's stock by place: the traveller's everywhere, the hood in towns and cities, oilskin in ports, fur in the Mark, the cape in Aurenne, and the pilgrim's grey where the town has a church (the page's *shrines' villages* is left to that). An armour drop at tier 4 and up is a cloak one time in twelve, of a random kind, on the same `lootRand` stream, so a keyed container still rolls the same cloak. It always carries one of five cloak enchants (`cloak_endurance`, `_vigor`, `_clarity`, `_mending`, `_swiftness`). These are the ring's at 0.6 strength, with a whole-number bonus never under 1. They live in `ARMOR_ENCHANTS` flagged `_unique`, so armour never rolls them and a save finds them by id. The save keeps a cloak's `virtue` and `cloak` fields (`_serItem`'s list). The bag's tooltip shows the virtue and whether it slows a swim; that line is mechanical and the quest writer may want to word it.
+
+The extra draw for the cloak is taken only for an armour drop at tier 4 and up. So a seeded container's loot changes only where such a drop was rolled. Not built here: the cloak on your body (the look builder's three cuts, read from `EQ.back.cloak`), the oilskin's hint of the next weather at the helm, and the dyer's cloak row, which rides the barber's slice 2.
+
+### Verified (headless Chromium)
+`cloaks` 11/11 (new). The slots are head, back, amulet…. Sneaking at 0.7 detection, the hood makes it 0.665 and the traveller's leaves 0.7. Swim × 1 bare and in oilskin, × .85 fur, × .9 the other four. Barter at an Aurennais town's counter is 0 → 0.02 with the cape, 0 in Dunmore with it, 0 with wool. Stock: Dunmore wool, hood and pilgrim's (it has a church); an Aurennais town wool, hood and cape; a Markish town wool, hood and fur; a port wool and oilskin; a smith none; Dunmore's armourer 3. Over 20,000 seeded rolls at level 30, 971 armour drops at tier 4 and up, 68 of them cloaks (7.0%; one in twelve is 8.3%, 1.5 standard deviations off), every one magical, def 1, on the back (*Fur-lined Cloak of Clarity*, tier 5, 0.3 mana regen). A cloak of Vigor at tier 6 gives 0.43 to the ring's 0.72. A Fur-lined Cloak of Vigor survives `_serItem` and `_restoreEnchant` with its kind, its enchant and 0.43. `furWarm` is true in snow with the fur, false under a clear noon and false without it. The regen it multiplies runs in the main loop, which `g.spin` does not tick, so the × 1.1 is checked where it is decided and not over time. The pilgrim's grey: a boon of 1800 becomes 2250. Not covered by a test: the witness reach 12 → 11 (one line in `witnessOf`). saves, witness, buyprice, shopfurn, armourkit, barter, chamerchant, lockpicks, lootseed, prices, qtybutton, shoprows, underclothes, worldloot, coopsaves and inspector pass. `parsecheck` clean.
+
+### Needs eyes
+The Back slot in the inventory grid: an eleventh slot moves the grid's cells. And whether a 60-gold cape for 2% is worth buying, which is the page's point: it should not be.
+
+## v80 — Session 553 — The oilskin foretells the weather at sea (DECISION #148, the hint owed by Session 552)
+The cloak page gives the oilskin a second virtue: *at the helm in rain or storm the sea-state hint shows the next shift of weather*. The weather had no next shift to show, because it rolled the next weather only at the moment it came (`pickWeather` when `WX.timer` ran out, `86-world-crime.js`). Now the sea line asks for it. Wearing the oilskin at sea in rain or a storm, `seaHint()` rolls the next weather into `WX.ahead` the first time it is shown, and the line reads *Sea: rough · clearing ahead* (or *rain*, *a storm*, *fog*, *snow*, *clouding over*). When the timer runs out the shift takes `WX.ahead` if there is one, and clears it, so what was foretold is what comes. With no hint shown, nothing is rolled early and the weather comes as before. A shift to the same weather says nothing. The ship's panel redraws when the hint changes (it is part of the panel's key). The hint's words are mechanical, and the quest writer may want them.
+
+### Verified (headless Chromium)
+`seahint` 5/5 (new). The sloop sailing in open water. In rain with the oilskin and *clear* ahead: *Sea: rough · clearing ahead*. In a storm with rain ahead: *Sea: rough · rain ahead*. No hint with rain ahead of rain, in a traveller's cloak, bare, or under a clear sky. With nothing ahead, showing the line rolled one (*clear*). With *storm* foretold and the timer run out, the next weather is the storm, and `WX.ahead` is cleared. seawear, weather, wxplace, sailtrim and cloaks pass. `parsecheck` clean.
+
+### Needs eyes
+Whether *clearing ahead* is read at all in the ship's small panel.
+
+## v80 — Session 554 — A feast day fills the square (DECISION #132's rule, owed by Session 550)
+Session 550 built the four feasts and left one of #132's rules owed: *the square is full*. No new people are spawned; the town's own people are kept in the square. In `scheduleFor` (`82-world-structures.js`), on a feast day (`feastOn`), residents and villagers wander within 18 units of the square's middle, where a resident's reach is otherwise the whole pad (73 in Dunmore). The evening no longer sends them home: a resident stays in the square from 18h where she would go to her door or the inn, and a villager stays out past 20h. Night (21h) still sends everyone in. Keepers, guards, the watch and the lord keep their own hours. The town feels fuller around the well on the day and empties at night as usual.
+
+### Verified (headless Chromium)
+`feastsquare` 7/7 (new). In Dunmore, a resident at noon wanders 73 on day 22 of the tale and 18 on the Giving (day 23). At 19h she goes to the inn on the ordinary day and wanders the square on the feast. At 20:30 a villager has gone in on the ordinary day and is still out on the feast. At 22h everyone hides either way. In the street, after a minute of the town's ticks from 18:36: of those still out, 9 of 19 were within 22 of the square on the ordinary evening and 11 of 15 on the feast. feasts, watch, guardplay and people pass. `parsecheck` clean.
+
+### Needs eyes
+Whether eighteen units reads as a crowded square or a loose ring of people, in a city above all.
+
+## v80 — Session 562 — Three suites red on the Systems PR: two read the old date, one read the street too soon (tests only)
+CI on `78a304f` failed three shards. Two failures were the same stale check. `datedwork` and `datedguild` matched the dated job's line against the placeholder date, *done by the Nth of the Nth month*. Session 549 gave the calendar its names, and the line now reads *done by Skyday, the 12th of Leaffall*. Both tests now match a weekday, an ordinal and a month name: `by \w+, the \d+(st|nd|rd|th) of \w+\.`. The game is right; only the tests were behind.
+
+The third was `placesave`, which failed *saved in the inn, continued in the same room*. Its `at` was the street (no id, x 13,517) and its `back` was the inn, so the save came back in the right room. The test had read where you stood before you were in the inn. `goToInterior` and `exitInterior` change rooms inside `doFade`'s 440 ms timer. The suite waited a fixed 3 s after each door, and a loaded runner had fired the timer later than that, or had still been finishing the previous room's exit. The suite now waits for the room itself. `inRoom(id)` waits until `currentHouse` is that house, and `out()` waits until it is gone, each up to a minute, then settles 1.5 s as before. This applies at all five doors the suite opens. No game code changed, and the save was never wrong. The race did not reproduce on this machine: the unpatched suite passed here.
+
+The run also raised DECISION #163: the numbers for the light and robe armour lines (Michael's B on #156 left them to the systems builder). Recommendation: light at 60% defence and 40% weight, gated by Finesse, each piece 3% harder to notice sneaking; robes at 25% defence and a quarter weight, gated by Intelligence, each piece +3 max mana a tier; the heavy line unchanged.
+
+### Verified (headless Chromium)
+`datedwork` 9/9: the lord's line is *(50 gold; 63 if it is done by …)*. `datedguild` 7/7: *Pay is 148 gold; 185 if it is done by Guestday, the 28th of Leaffall.* `placesave` 14/14 with the waits: home, forge, inn, guild, church and cellar each continued in the same room within 0.5. On this machine the unpatched suite also passed 14/14. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play. Whether the next CI run on the branch is green.
+
+## v80 — Session 563 — The dark hood's witness reach, tested (owed by Session 552; tests only)
+Session 552 gave the Dark Hood two virtues and tested one. The other, a witness's reach of 11 instead of 12 (`witnessOf`, `86-world-crime.js`), was left with "not covered by a test", and the producer routed it here. `witnessrange` now repeats its own measurement with a cloak on the back. It uses the same open ground on Dunmore's pad, the same witness on one clear heading and the same edge distances. The game code is unchanged.
+
+### Verified (headless Chromium)
+`witnessrange` 9/9 (two checks new). In the hood, by day, the witness sees you at 10.9 and not at 11.1. Sneaking, at 5.4 and not at 5.6. Sneaking at night, at 2.6 and not at 2.9 (2.75). In the traveller's cloak the reach stays 12: seen at 11.9. The old rows are unchanged: 12, 6, 6 and 3 bare. With the hood's 11 put back to 12, the hood check fails (11.1 and 11.9 are seen); the cloak check passes either way, as it should. `parsecheck` clean.
+
+### Needs eyes
+Nothing new; one unit of reach is not a thing a player sees, which is the cloak page's point.

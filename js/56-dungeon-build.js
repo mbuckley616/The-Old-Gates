@@ -1383,9 +1383,10 @@ function buildDungeon(portal){
       const th2 = currentPortal ? currentPortal.theme : null;
       // Loot table identical — both use 'barrel' rolls. Crates aren't a
       // separate loot tier; they're a sibling prop with the same payout.
-      const items = rollContainerLoot('barrel', ds, th2, undefined, `${dKey}:barrel:${_nBarrel++}:${lootDay()}`);
+      const id = `${dKey}:barrel:${_nBarrel++}`; // S514 — its id, <seed>:<floor>:barrel:<n> (co-op rules); the loot adds the day
+      const items = rollContainerLoot('barrel', ds, th2, undefined, `${id}:${lootDay()}`);
       BARRELS.push({
-        x: wx, z: wz, floor: floorIdx, opened: false, items,
+        id, x: wx, z: wz, floor: floorIdx, opened: false, items,
         displayName: isCrate ? 'Crate' : 'Barrel',
         mesh: group, top,
       });
@@ -1513,8 +1514,9 @@ function buildDungeon(portal){
       // (e.g. 'library_chest') without changing the visible chest mesh.
       // Default behavior unchanged — treasure → 'treasure' pool, else 'chest'.
       const poolKind = lootKind || (treasure?'treasure':'chest');
-      const items = rollContainerLoot(poolKind, ds, th2, undefined, `${dKey}:chest:${_nChest++}:${lootDay()}`);
-      const chObj={x:c,z:r,opened:false,lid,treasure,floor:floorIdx,mesh:group,items,displayName:treasure?'Treasure Chest':'Chest'};
+      const id=`${dKey}:chest:${_nChest++}`; // S514 — its id, <seed>:<floor>:chest:<n>
+      const items = rollContainerLoot(poolKind, ds, th2, undefined, `${id}:${lootDay()}`);
+      const chObj={id,x:c,z:r,opened:false,lid,treasure,floor:floorIdx,mesh:group,items,displayName:treasure?'Treasure Chest':'Chest'};
       if(treasure||chestLockedAt(c,r,floorIdx))lockChest(chObj); // S150
       CHESTS.push(chObj);
     };
@@ -2630,8 +2632,9 @@ function buildDungeon(portal){
         const back = wall === 'N' ? [wx, wallN + 0.01] : wall === 'S' ? [wx, wallS - 0.01] : wall === 'W' ? [room.x - 0.49, wz] : [room.x + room.w - 0.51, wz];
         FP.put(FK.bookcase(1.4, FN, FS + 30 + k), back[0], back[1], ry);
         if(wall === 'N' || wall === 'S') registerProp(wx, wz, 1.4, 0.32); else registerProp(wx, wz, 0.32, 1.4);
-        const items = rollContainerLoot('library_shelf', null, null, undefined, `${dKeyOf(portal,1)}:shelf:${BARRELS.filter(b=>b.displayName==='Bookshelf').length}:${lootDay()}`);
-        BARRELS.push({ x: wx, z: wz, floor: 1, opened: false, items, displayName: 'Bookshelf', mesh: null });
+        const id = `${dKeyOf(portal,1)}:shelf:${BARRELS.filter(b=>b.displayName==='Bookshelf').length}`; // S514 — its id
+        const items = rollContainerLoot('library_shelf', null, null, undefined, `${id}:${lootDay()}`);
+        BARRELS.push({ id, x: wx, z: wz, floor: 1, opened: false, items, displayName: 'Bookshelf', mesh: null });
       }
       const longAxisIsX = room.w >= room.h;
       const shelfCount = 3;
@@ -2737,7 +2740,8 @@ function buildDungeon(portal){
     const keyName = isLocked
       ? (portal.keyBase+' Key'+(lockedDoors.length>1?' '+(lockedSeen+1):''))
       : null;
-    DOORS.push({x:td.x,z:td.z,isEW:td.isEW,open:false,keyName,mesh:dg,hinge,floor:1,locked:isLocked});
+    DOORS.push({id:`${dKeyOf(portal,1)}:door:${DOORS.length}`,x:td.x,z:td.z,isEW:td.isEW,open:false,keyName, // S517 — its id, <seed>:1:door:<n>
+      mesh:dg,hinge,floor:1,locked:isLocked});
     if(isLocked){
       const kl=gen.keyLocations[lockedSeen]||gen.keyLocations[0];
       if(kl){

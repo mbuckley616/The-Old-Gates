@@ -1098,7 +1098,9 @@ function renderWorldJournal(body){
       const giverLine=q.giver?`<div class="qlog-giver">Given by ${q.giver}</div>`:'';const desc=q.desc?`<div class="qlog-desc">${q.desc}</div>`:'';
       const obj=`<div class="qlog-obj${q.done?' done':''}"><span class="qobj-check">${q.done?'✓':'○'}</span>${q.done?`Report to ${q.giver}`:(q.objective||'')}</div>`;
       const rw=q.reward?`<div class="qlog-reward">Reward: ${q.reward}🪙${q.tut&&!q.turnedIn?' on completion':''}</div>`:'';
-      return `<div class="qlog-card qactive"><span class="qlog-pin">·</span><div class="qlog-title"><span class="qlog-title-text">${q.title}</span>${badge}</div>${giverLine}${desc}${obj}${rw}</div>`;};
+      const _esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');const _jl=(typeof journalOf==='function'&&q.id)?journalOf(q.id).filter(e=>e.qk!=='accept'):[]; /* S510 — what the journal holds of it, as the story's cards show (S487); the ask is the card's own text */
+      const jBlock=_jl.length?`<div class="qlog-journal" style="margin:6px 0 4px;padding-left:8px;border-left:2px solid rgba(138,122,90,.35)">${_jl.map(e=>`<div style="margin:3px 0;font-size:11px;line-height:1.4"><span style="color:#8a7a5a;font-size:10px">${_esc(gameDateLine(e.t,e.tod,'short'))}</span><br><i>${_esc(e.text)}</i></div>`).join('')}</div>`:'';
+      return `<div class="qlog-card qactive"><span class="qlog-pin">·</span><div class="qlog-title"><span class="qlog-title-text">${q.title}</span>${badge}</div>${giverLine}${desc}${obj}${jBlock}${rw}</div>`;};
     const header=(t,sub)=>{const h=document.createElement('div');h.className='qlog-section';h.style.cssText='color:#8a7a5a;font-size:10px;letter-spacing:.22em;text-transform:uppercase;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #3a2f1f';h.innerHTML=t+(sub?` <span style="letter-spacing:0;text-transform:none;color:#6a5a40">— ${sub}</span>`:'');body.appendChild(h);};
     if(act.length){header('In the world','towns, guilds, the factions');const wrap=document.createElement('div');wrap.innerHTML=act.map(card).join('');while(wrap.firstChild)body.appendChild(wrap.firstChild);}
     const leads=WORLD.tutLeads();if(leads.length){header('Leads','optional');const wrap=document.createElement('div');wrap.innerHTML=leads.map(l=>`<div class="qlog-card"><span class="qlog-pin">·</span><div class="qlog-title"><span class="qlog-title-text">${l.title}</span><span class="qlog-badge qbadge-locked">Lead</span></div><div class="qlog-desc">${l.text}</div></div>`).join('');while(wrap.firstChild)body.appendChild(wrap.firstChild);}
@@ -1193,10 +1195,15 @@ function renderQuestLog(){
       const descBlock = (state==='active'||state==='reward') && qDef.description
         ? `<div class="qlog-desc">${qDef.description}</div>`
         : '';
+      // S487 — what the journal holds of this quest, in order, each line under its date
+      const _esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const _jl=(typeof journalOf==='function')?journalOf(qDef.id):[];
+      const jBlock=_jl.length?`<div class="qlog-journal" style="margin:6px 0 4px;padding-left:8px;border-left:2px solid rgba(138,122,90,.35)">${_jl.map(e=>`<div style="margin:3px 0;font-size:11px;line-height:1.4"><span style="color:#8a7a5a;font-size:10px">${_esc(gameDateLine(e.t,e.tod,'short'))}</span><br><i>${_esc(e.text)}</i></div>`).join('')}</div>`:'';
       div.innerHTML=`${pin}<div class="qlog-title"><span class="qlog-title-text">${qDef.title}</span>${badge}</div>
         ${giverLine}
         ${descBlock}
         ${objHtml}
+        ${jBlock}
         ${rewardStr?`<div class="qlog-reward">Reward: ${rewardStr}</div>`:''}`;
       body.appendChild(div);
     });

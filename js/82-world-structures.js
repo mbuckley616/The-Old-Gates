@@ -792,6 +792,8 @@
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel')return false;return !npcInsideNow(house);}
+  function feastNow(){return typeof feastOn==='function'&&!!feastOn();}
+  function feastR(r){return feastNow()?Math.min(r,18):r;}
   function scheduleFor(n,h){
     try{if(typeof QUEST_DEFS!=='undefined'&&n.def&&QUEST_DEFS.some(q=>q.giver===n.def.name&&(qState(q.id)==='available'||qState(q.id)==='active'||qState(q.id)==='reward')||qState(q.id)==='active'&&(q.objectives||[]).some(o=>o.type==='talk_to'&&o.npc===n.def.name)))return {go:(n.sched&&n.sched.door)||{x:n.def.x,z:n.def.z},idle:true};}catch(e){} // v80 — a quest giver is always findable (S236: and whoever an active quest sends you to)
     const sc_=n.sched;if(!sc_)return {idle:true};
@@ -806,13 +808,15 @@
         return {go:sc_.door,idle:true}; // dawn: at the door before opening
       case 'innkeeper': return {hide:true};
       case 'harbour': return night?{hide:true}:{go:sc_.door,idle:true}; // v80 S235 — at his post on the quay from 7 to 21
+      // S554 — a feast day fills the square (DECISION #132's rule): residents and villagers keep to it, within 18 of
+      // its middle (a resident's reach is the whole pad, 50–90), from morning until night, where on any other day the evening takes them home or to the inn
       case 'resident':
         if(night)return {hide:true};
-        if(eve)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
-        return {wander:sc_.plaza,r:sc_.padR||14};
+        if(eve&&!feastNow())return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
+        return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
       case 'villager':
-        if(night||eve&&h>=20)return {hide:true};
-        return {wander:sc_.plaza,r:sc_.padR||14};
+        if(night||eve&&h>=20&&!feastNow())return {hide:true};
+        return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
       case 'guard': {const B=(h>=19||h<6.5)&&beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};} // v80 S166 — the lantern beat after dark
       case 'constable': return (h>=19||h<6.5)?{hide:true}:{patrol:[sc_.a,sc_.b]}; // S268 — the day constable, the watchman's other half
       case 'watch': {if(!(h>=19||h<6.5))return {hide:true};const B=beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};}
@@ -836,7 +840,14 @@
     // town's own later pieces): 3,710 solid cells at Dunmore's build, 3,928 six minutes on. A way through a cell gone solid
     // since held a guard against it for good, and asking again gave him the same way. Each way is checked against the
     // world as it is now: a cell gone solid is marked and the way found again; no way at all reads the whole grid afresh, once.
-    S._route=(a,b,raw)=>{const [ai,aj]=cel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
+    // S513 — his own cell is the nearest by rounding, unless he stands clear and its centre is inside a solid (at its edge, in a corner:
+    // CI held a guard so at 38.57 units for good); then the corner of the lattice round him nearest that he can walk to straight.
+    const startCel=p=>{const c0=cel(p);if(!solidAt(cx-R+c0[0],cz-R+c0[1])||solidAt(p.x,p.z))return c0;const fi=Math.floor(p.x-cx+R),fj=Math.floor(p.z-cz+R);let best=null,bd=1e9;
+      for(const [i,j] of [[fi,fj],[fi+1,fj],[fi,fj+1],[fi+1,fj+1]]){if(i<0||j<0||i>=N||j>=N)continue;const x=cx-R+i,z=cz-R+j;let ok=true;
+        for(let t=1;t<=6&&ok;t++)if(solidAt(p.x+(x-p.x)*t/6,p.z+(z-p.z)*t/6))ok=false;
+        const d=Math.hypot(x-p.x,z-p.z);if(ok&&d<bd){bd=d;best=[i,j];}}
+      return best||cel(p);};
+    S._route=(a,b,raw)=>{const [ai,aj]=startCel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
       for(let tries=0;tries<12;tries++){ks=find(s0,g0);
         if(!ks){if(fresh)break;fill();fresh=true;continue;}
         let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAt(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}
@@ -860,7 +871,7 @@
       if(out&&favor(S.site)<=-2&&Math.hypot(px-S.site.x,pz-S.site.z)<(S.site.pad||40)){
         const ok=n=>n.g.visible&&!n._drawn&&!(n._scared&&now<n._scared)&&!scheduleFor(n,h).hide;
         if(S._follower&&G.includes(S._follower)&&ok(S._follower))f=S._follower;
-        else{let bd=1e9;for(const n of G){if(!ok(n))continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d<bd){bd=d;f=n;}}}}
+        else{let bd=1e9;for(const n of G){if(!ok(n))continue;const T=targetOf(n),d=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z);if(d<bd){bd=d;f=n;}}}}
       S._follower=f;for(const n of G)n._follow=(n===f);}}
   // Guards carry a torch after dark: stick + flame + a small point light.
   function ensureTorch(n){
@@ -922,12 +933,12 @@
   // S357 — a guard walking you down (trailing you at favour −2, or sent after you): the pulled-straight way by the streets,
   // and when he has gained nothing on you for a second and a half (a corner the straight line misses, where npcStep gives
   // up and he stood for good), every cell of the way, as the night beat does (S247)
-  function trailStep(n,spd,dt,every){const gx=n.g.position.x,gz=n.g.position.z,fd=Math.hypot(px-gx,pz-gz);
+  function trailStep(n,spd,dt,every){const T=targetOf(n),tx=T.x,tz=T.z,gx=n.g.position.x,gz=n.g.position.z,fd=Math.hypot(tx-gx,tz-gz); /* S542 — co-op rule: whom he runs down is targetOf's */
     if(n._twBest==null||fd<n._twBest-.5){n._twBest=fd;n._twS=0;}else n._twS+=dt;
-    if(n._twS>1.5){n._twS=0;n._twBest=fd;n._twRaw=townRoute(n._settle)({x:gx,z:gz},{x:px,z:pz},true);}
+    if(n._twS>1.5){n._twS=0;n._twBest=fd;n._twRaw=townRoute(n._settle)({x:gx,z:gz},{x:tx,z:tz},true);}
     if(n._twRaw&&n._twRaw.length){const w=n._twRaw[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._twRaw.shift();return;}
-    n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=every;const w=townRoute(n._settle)({x:gx,z:gz},{x:px,z:pz});n._fw=w.length?w[0]:null;}
-    const t=n._fw&&Math.hypot(n._fw.x-gx,n._fw.z-gz)>.9?n._fw:{x:px,z:pz};npcStep(n,t.x,t.z,spd,dt);}
+    n._fwT=(n._fwT||0)-dt;if(n._fwT<=0){n._fwT=every;const w=townRoute(n._settle)({x:gx,z:gz},{x:tx,z:tz});n._fw=w.length?w[0]:null;}
+    const t=n._fw&&Math.hypot(n._fw.x-gx,n._fw.z-gz)>.9?n._fw:{x:tx,z:tz};npcStep(n,t.x,t.z,spd,dt);}
   // Filled in by build() from the road geometry; the fallback is the pad edge.
   const spawn={x:ASH_X,z:ASH_Z-62,yaw:0};
   function tickTownNPCs(dt,now){
@@ -944,12 +955,12 @@
       if(n._scared&&now<n._scared){const a=Math.atan2(n.g.position.x-px,n.g.position.z-pz);npcStep(n,n.g.position.x+Math.sin(a)*6,n.g.position.z+Math.cos(a)*6,1.3,dt);n.g.position.y=worldH(n.g.position.x,n.g.position.z);n.dot.position.set(n.g.position.x,n.g.position.y+1.52,n.g.position.z);continue;} // S157 — struck: runs
       const spd=n.sched&&n.sched.type==='guard'?.95:.7;
       let moving=false;
-      if(n._chase){const fd=Math.hypot(px-n.g.position.x,pz-n.g.position.z); // S239 — sent after you: he runs you down by the streets
+      if(n._chase){const T=targetOf(n),fd=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z); // S239 — sent after you: he runs you down by the streets
         if(fd>1.4){trailStep(n,CHASE_SPD,dt,.6);moving=true;}
-        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}}
-      else if(n._follow){const fd=Math.hypot(px-n.g.position.x,pz-n.g.position.z); // S166 — trailing you at six to eight units
+        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(T.x-n.g.position.x,T.z-n.g.position.z);}}
+      else if(n._follow){const T=targetOf(n),fd=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z); // S166 — trailing you at six to eight units
         if(fd>8){trailStep(n,Math.min(3.4,spd+(fd-8)*.6),dt,1);moving=true;}
-        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);}}
+        else{n._twBest=null;n._twRaw=null;n.g.rotation.y=Math.atan2(T.x-n.g.position.x,T.z-n.g.position.z);}}
       else if(plan.beat){const B=plan.beat;
         if(n._beatI==null||n._beatI>=B.length){const G=guardsOf(n._settle).filter(g=>g.sched.type!=='constable');const k=Math.max(0,G.indexOf(n));n._beatI=Math.floor(k*B.length/Math.max(1,G.length))%B.length;}
         if(n._beatWait>0){n._beatWait-=dt;}
@@ -996,14 +1007,28 @@
     fearnog:{ctx:['tree'],biomes:['forest','autumn']},shadowcap:{ctx:['tree'],biomes:['forest','swamp','fen']},caorthann:{ctx:['tree','open'],biomes:['forest','autumn','plains']},deepmoss:{ctx:['tree','rock'],biomes:['forest','swamp']},briarweed:{ctx:['open','house'],biomes:['forest','plains','moor']},luibhuisce:{ctx:['water'],biomes:['forest','fen','swamp','coast']},
     ferrousweed:{ctx:['rock'],biomes:['moor','wastes','wasteland','tundra']},graywort:{ctx:['rock','open'],biomes:['moor','wastes','tundra']},caordubh:{ctx:['tree','rock'],biomes:['wastes','wasteland','swamp']},mistfern:{ctx:['water','tree'],biomes:['fen','swamp','forest']},stonecress:{ctx:['rock'],biomes:['moor','tundra','plains']},veilwort:{ctx:['house','open'],biomes:['plains','coast','autumn']},credearg:{ctx:['rock','open'],biomes:['wasteland','wastes','dunes']},duilleogghorm:{ctx:['water','sand'],biomes:['coast','dunes','fen']},
   };
+  // S533 — a tree within 4 units, by the scatter's own roll in this chunk (scatterChunk's lattice and tree test), without
+  // the stamps and roads it also skips: those arrive as cells load, so ch.treePts held trees on one machine that another
+  // never planted, and a herb's kind went with them (herbids red on CI: 11 of 28 herbs another kind)
+  function herbTreeNear(ch,x,z){const STEP=6,ox=ch.cx*CHUNK,oz=ch.cz*CHUNK,n=CHUNK/STEP;
+    const i0=Math.max(0,Math.floor((x-ox-4)/STEP)-1),i1=Math.min(Math.ceil(n)-1,Math.floor((x-ox+4)/STEP)+1),j0=Math.max(0,Math.floor((z-oz-4)/STEP)-1),j1=Math.min(Math.ceil(n)-1,Math.floor((z-oz+4)/STEP)+1);
+    for(let iz=j0;iz<=j1;iz++)for(let ix=i0;ix<=i1;ix++){
+      const gx=ch.cx*n+ix,gz=ch.cz*n+iz,tx=ox+(ix+.15+hash01(gx,gz,1)*.7)*STEP,tz=oz+(iz+.15+hash01(gx,gz,2)*.7)*STEP;
+      if(Math.abs(tx-x)>=4||Math.abs(tz-z)>=4)continue;if(tx<2||tz<2||tx>SIZE*GRID-2||tz>SIZE*GRID-2||worldH(tx,tz)<1.6)continue;
+      const h=meshH(tx,tz)-.04,ny=slopeNormalY(tx,tz),p=regionScalar(tx,tz,'density')*(.5+fbm(tx,tz,60,SEED+21,2)*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
+      if(hash01(gx,gz,3)<p)return true;}
+    return false;}
   function placeCtx(x,z,h,ch){
     if(h<-1.2)return 'sea';
     const ny=slopeNormalY(x,z);if(ny<.84)return 'rock';
     if(h<2.6){const sea=seaAt(x,z);if(sea>.02||h<1.6)return h<2.0?'sand':'water';}
     // near water: a river or lake within a short walk (bed below 0 within 6u)
     for(const [dx,dz] of [[6,0],[-6,0],[0,6],[0,-6]])if(worldH(x+dx,z+dz)<0)return 'water';
-    if(ch.treePts)for(let i=0;i<ch.treePts.length;i+=2){if(Math.abs(ch.treePts[i]-x)<4&&Math.abs(ch.treePts[i+1]-z)<4)return 'tree';}
-    for(const S of SETTLE.values()){if(Math.abs(S.site.x-x)>S.site.pad+30||Math.abs(S.site.z-z)>S.site.pad+30)continue;for(const hh of S.houses){if(Math.hypot(hh.doorX-x,hh.doorZ-z)<11)return 'house';}}
+    if(herbTreeNear(ch,x,z))return 'tree';
+    // S533 — near the houses is the place's own ground, read from the sites and not from the towns built so far: a herb's
+    // kind must not hang on whether its town had loaded (co-op rules; herbids was red on CI when it had not)
+    {const [ci,cj]=cellOf(x,z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const c=getCell(ci+di,cj+dj);if(!c||!c.sites)continue;
+      for(const t of c.sites){if(!(t.pad>0)||Math.abs(t.x-x)>t.pad+11||Math.abs(t.z-z)>t.pad+11)continue;if(Math.hypot(t.x-x,t.z-z)<t.pad+11)return 'house';}}}
     return 'open';
   }
   function herbCandidates(biome,ctx){const out=[];for(const k in HERB_PLACE){const p=HERB_PLACE[k];if(!HERB_DEF[k])continue;if(!p.biomes.includes(biome))continue;const w=p.ctx.indexOf(ctx);if(w<0)continue;out.push([k,w===0?3:1]);}return out;}
@@ -1051,7 +1076,8 @@
     // a hotspot: one herb, many of it, clustered
     const hot=hash01(ch.cx,ch.cz,124)<.14;
     let n=Math.floor((8+hash01(ch.cx,ch.cz,120)*8)*dens); // v80 — denser: 8–16 a chunk before the biome factor
-    const put=(hx,hz,type)=>{const def=HERB_DEF[type];if(!def)return false;const g=new THREE.Group();g.position.set(hx,worldH(hx,hz),hz);const gl={intensity:0,parent:null};const h={x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2};ZONES.world.herbs.push(h);ch.herbs.push(h);return true;};
+    // S514 — each herb is <chunk>:herb|verge|hot:<i>, the placing try that put it (co-op rules), so a spot refused on one machine moves no other's id
+    const put=(hx,hz,type,k)=>{const def=HERB_DEF[type];if(!def)return false;const g=new THREE.Group();g.position.set(hx,worldH(hx,hz),hz);const gl={intensity:0,parent:null};const h={id:ch.cx+','+ch.cz+':'+k,x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2};ZONES.world.herbs.push(h);ch.herbs.push(h);return true;};
     const okSpot=(hx,hz)=>{if(solidAt(hx,hz))return false;const ri=roadInfo(hx,hz);if(ri&&ri.d<ROAD_HALF+1.2)return false;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r-6)return false;return true;};
     let placed=0;
     for(let i=0;i<n*3&&placed<n;i++){
@@ -1060,16 +1086,16 @@
       const ctx=placeCtx(hx,hz,h,ch);if(ctx==='sea')continue;
       const cands=herbCandidates(biome,ctx);if(!cands.length)continue;
       let tw=0;cands.forEach(c=>tw+=c[1]);let pk=hash01(ch.cx,ch.cz,123+i)*tw,type=cands[0][0];for(const c of cands){pk-=c[1];if(pk<=0){type=c[0];break;}}
-      if(put(hx,hz,type))placed++;
+      if(put(hx,hz,type,'herb:'+i))placed++;
     }
     // v80 — the verge: herbs grow along the sides of roads, just off the surface
-    {let vp=0;for(let i=0;i<40&&vp<6;i++){const hx=ch.cx*CHUNK+1+hash01(ch.cx+i,ch.cz+7,131)*(CHUNK-2),hz=ch.cz*CHUNK+1+hash01(ch.cz+i,ch.cx+3,132)*(CHUNK-2);const ri=roadInfo(hx,hz);if(!ri||ri.d<ROAD_HALF+1.0||ri.d>ROAD_HALF+3.2)continue;const h=worldH(hx,hz);if(h<1.0||solidAt(hx,hz))continue;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r)continue;const cands=herbCandidates(biome,'open');if(!cands.length)continue;const type=cands[Math.floor(hash01(ch.cx+i,ch.cz,133)*cands.length)][0];if(put(hx,hz,type))vp++;}
+    {let vp=0;for(let i=0;i<40&&vp<6;i++){const hx=ch.cx*CHUNK+1+hash01(ch.cx+i,ch.cz+7,131)*(CHUNK-2),hz=ch.cz*CHUNK+1+hash01(ch.cz+i,ch.cx+3,132)*(CHUNK-2);const ri=roadInfo(hx,hz);if(!ri||ri.d<ROAD_HALF+1.0||ri.d>ROAD_HALF+3.2)continue;const h=worldH(hx,hz);if(h<1.0||solidAt(hx,hz))continue;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r)continue;const cands=herbCandidates(biome,'open');if(!cands.length)continue;const type=cands[Math.floor(hash01(ch.cx+i,ch.cz,133)*cands.length)][0];if(put(hx,hz,type,'verge:'+i))vp++;}
     }
     if(hot){
       const hx0=ch.cx*CHUNK+10+hash01(ch.cx,ch.cz,125)*(CHUNK-20),hz0=ch.cz*CHUNK+10+hash01(ch.cz,ch.cx,126)*(CHUNK-20);const h0=worldH(hx0,hz0);if(h0<1)return;
       const ctx=placeCtx(hx0,hz0,h0,ch);const cands=herbCandidates(biome,ctx==='sea'?'open':ctx);if(!cands.length)return;
       const type=cands[Math.floor(hash01(ch.cx,ch.cz,127)*cands.length)][0];const m=8+Math.floor(hash01(ch.cx,ch.cz,128)*9);
-      for(let i=0;i<m;i++){const a=hash01(ch.cx+i,ch.cz,129)*Math.PI*2,rr=1.5+hash01(ch.cz+i,ch.cx,130)*7;const hx=hx0+Math.cos(a)*rr,hz=hz0+Math.sin(a)*rr;if(worldH(hx,hz)<1||!okSpot(hx,hz))continue;put(hx,hz,type);}
+      for(let i=0;i<m;i++){const a=hash01(ch.cx+i,ch.cz,129)*Math.PI*2,rr=1.5+hash01(ch.cz+i,ch.cx,130)*7;const hx=hx0+Math.cos(a)*rr,hz=hz0+Math.sin(a)*rr;if(worldH(hx,hz)<1||!okSpot(hx,hz))continue;put(hx,hz,type,'hot:'+i);}
     }
     herbInstances(ch);
   }

@@ -98,13 +98,13 @@ function _dKit(kind){let k=D_KIT.get(kind);if(k)return k;const A=[],B=[],p=(L,..
     {const L=[];p(L,SK.cyl(.02,.022,1.0,6),W,0,.5,0);p(L,SK.rbox(.02,.16,.18,.008,1),Ir,0,.9,.1);p(L,SK.cone(.02,.1,4),Ir,0,.93,-.03,Math.PI/2,0,0,1,1,.3);const m=new THREE.Matrix4().compose(new THREE.Vector3(.39,.3,.08),new THREE.Quaternion().setFromEuler(new THREE.Euler(-.1,0,0)),new THREE.Vector3(1,1,1));for(const q of L){q[2].premultiply(m);A.push(q);}}
     k={body:dunMerge(A,'rack').geometry,lid:null,lidY:0};}
   k.mat=new THREE.MeshLambertMaterial({vertexColors:true});D_KIT.set(kind,k);return k;}
-function _dContainer(kind,wx,wz,floorIdx,baseY,r){const g=new THREE.Group();let top=null,openTop=null;const K=_dKit(kind);
+function _dContainer(kind,wx,wz,floorIdx,baseY,r,id){const g=new THREE.Group();let top=null,openTop=null;const K=_dKit(kind);
   const body=new THREE.Mesh(K.body,K.mat);body.userData.dunCont=kind;g.add(body);
   if(K.lid){top=new THREE.Mesh(K.lid,K.mat);top.position.y=K.lidY;g.add(top);
     // the sarcophagus's lid is pushed a third aside and tips onto the chest's edge; the urn's pops and sits askew as a barrel's does
     if(kind==='sarcophagus')openTop=()=>{top.position.x+=.34;top.position.z+=.12;top.rotation.z=-.1;top.rotation.y=.12;};}
   g.position.set(wx,baseY,wz);g.rotation.y=r()*Math.PI*2;dScene.add(g);
-  BARRELS.push({x:wx,z:wz,floor:floorIdx,opened:false,items:_dLoot(kind,r),displayName:kind==='urn'?'Urn':kind==='sarcophagus'?'Sarcophagus':'Weapon Rack',mesh:g,top,openTop});}
+  BARRELS.push({id:id||null,x:wx,z:wz,floor:floorIdx,opened:false,items:_dLoot(kind,r),displayName:kind==='urn'?'Urn':kind==='sarcophagus'?'Sarcophagus':'Weapon Rack',mesh:g,top,openTop});}
 function decorateDungeonRooms(gen,portal){
   D_TRAPS.length=0;if(!gen||!gen.rooms)return;window._lastGen=gen;const r=_dRng((portal&&portal.seed)||1);const theme=(portal&&portal.theme)||'ruins';
   const floors=[[gen.rooms,1,0],[gen.rooms2||[],2,FLOOR2_Y]];
@@ -113,7 +113,8 @@ function decorateDungeonRooms(gen,portal){
   const occ=[];const seed=(BARRELS||[]).map(b=>({x:b.x,z:b.z,r:.7,f:b.floor})).concat((CHESTS||[]).map(c=>({x:c.x,z:c.z,r:.9,f:c.floor})));occ.push(...seed);
   const free=(x,z,rad,fi)=>!occ.some(o=>o.f===fi&&Math.hypot(o.x-x,o.z-z)<rad+o.r);const take=(x,z,rad,fi)=>{occ.push({x,z,r:rad,f:fi});};
   const _dBoxF=(w,hh,d,col,x,y,z,ry,fi)=>{if(!free(x,z,Math.max(w,d)/2,fi))return null;take(x,z,Math.max(w,d)/2,fi);return _dBox(w,hh,d,col,x,y,z,ry);};
-  const _dContainerF=(kind,wx,wz,fi,baseY,rr)=>{if(!free(wx,wz,.6,fi))return;take(wx,wz,.6,fi);_dContainer(kind,wx,wz,fi,baseY,rr);};
+  const _dcN={};const _dContainerF=(kind,wx,wz,fi,baseY,rr)=>{if(!free(wx,wz,.6,fi))return;take(wx,wz,.6,fi);const ck=fi+':'+kind;_dcN[ck]=(_dcN[ck]||0)+1; // S514 — its id, <seed>:<floor>:<kind>:<n>
+    _dContainer(kind,wx,wz,fi,baseY,rr,`${dKeyOf(portal,fi)}:${kind}:${_dcN[ck]-1}`);};
   for(const [rooms,fi,baseY] of floors){for(const rm of rooms){if(rm.kind)continue;if(rm.w<5||rm.h<5)continue;if(r()<.45)continue;const type=list[Math.floor(r()*list.length)];
       const cx=rm.x+rm.w/2,cz=rm.y+rm.h/2;
       // not the stairwell's room, and not one the engine has filled with chests
@@ -436,12 +437,14 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
   // the hoard beside it
   const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(e.x+1.2,(e.floor===2?FLOOR2_Y:0),e.z+.6);dScene.add(group);
+  // S514 — the hoard is <seed>:<floor>:hoard, and its goods roll on its stream and the day, not Math.random (co-op rules)
+  const hid=`${dKeyOf(portal,e.floor||1)}:hoard`,hr=seededRng('loot',hid+':'+lootDay());
   const items=[];const gv=Math.round((60+level*25)*(dragon?3:1.8));items.push({name:'Gold Coins',ico:'●',type:'gold',value:gv,qty:1});
-  const MATS=dragon?['Silver','Gold','Mithril']:['Iron','Steel','Silver'];const mt=MATS[Math.floor(Math.random()*MATS.length)];const tier=dragon?5+Math.floor(Math.random()*2):3+Math.floor(Math.random()*2);
-  items.push(Math.random()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
-  if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(Math.random()*2)});
+  const MATS=dragon?['Silver','Gold','Mithril']:['Iron','Steel','Silver'];const mt=MATS[Math.floor(hr()*MATS.length)];const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);
+  items.push(hr()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
+  if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});
   items.push({name:'Greater Potion',ico:'🧪',type:'potion',heal:60,buyPrice:45,sellMult:.4,qty:2});
-  CHESTS.push({x:e.x+1.2,z:e.z+.6,opened:false,lid,treasure:true,floor:e.floor||1,mesh:group,items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});
+  CHESTS.push({id:hid,x:e.x+1.2,z:e.z+.6,opened:false,lid,treasure:true,floor:e.floor||1,mesh:group,items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});
   showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');
   window._lairBoss=e;}catch(err){console.warn('lairFinish',err);}}
 // S219 — a lair's wyrm on the dragon's own body (S177, the wolf's bones with a neck, a tail and wings): the master keeps

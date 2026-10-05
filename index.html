@@ -537,6 +537,26 @@
 .log-entry{color:#7a6840;font-size:10px;padding:2px 0;line-height:1.5}
 .log-entry.log-levelup{color:#c8a84a}
 .log-entry.log-death{color:#a03030}
+#jn-views{display:flex;gap:6px;margin:0 0 12px}
+#jn-views button{font:600 12px Georgia,serif;letter-spacing:.04em;padding:5px 14px;background:transparent;color:#a89878;border:1px solid rgba(200,168,74,.25);border-radius:3px;cursor:pointer}
+#jn-views button.active{color:#f0e2c0;border-color:#c8a040;background:rgba(200,160,64,.12)}
+.jn-day{margin:0 0 14px}
+.jn-head{font:600 13px Georgia,serif;color:#e8d8a0;letter-spacing:.05em;padding:0 0 4px;margin:0 0 4px;border-bottom:1px solid rgba(120,100,70,.25);display:flex;justify-content:space-between}
+.jn-state{font-weight:400;font-size:11px;color:#8a7a60}
+.jn-line{display:flex;gap:10px;padding:3px 0;font-size:12px;line-height:1.5;color:#c8b898}
+.jn-time{flex:0 0 auto;min-width:64px;color:#8a7a60;font-size:11px}
+.jn-text{min-width:0;overflow-wrap:anywhere}
+.jn-q .jn-text{font-style:italic;color:#e0d2b0}
+.jn-empty{color:#8a7a60;font-size:12px;padding:10px}
+#jn-search{width:100%;box-sizing:border-box;margin:0 0 12px;padding:6px 10px;font:13px Georgia,serif;color:#e8dcc0;background:rgba(0,0,0,.35);border:1px solid rgba(200,168,74,.3);border-radius:3px}
+.jn-told{padding:3px 0 6px;font-size:12px;line-height:1.5}
+.jn-told .jn-text{color:#e0d2b0}
+#jn-write{display:flex;gap:8px;margin:0 0 14px;align-items:stretch}
+#jn-note{flex:1;resize:vertical;padding:6px 10px;font:13px Georgia,serif;color:#e8dcc0;background:rgba(0,0,0,.35);border:1px solid rgba(200,168,74,.3);border-radius:3px}
+#jn-write button{font:600 12px Georgia,serif;padding:0 14px;color:#f0e2c0;background:rgba(200,160,64,.12);border:1px solid #c8a040;border-radius:3px;cursor:pointer}
+.jn-link{color:#e8c870;text-decoration:none;border-bottom:1px dotted rgba(232,200,112,.55);cursor:pointer}
+.jn-link:hover{color:#f6dc90;border-bottom-style:solid}
+.jn-note .jn-text{color:#f0e6cc;font-family:'Segoe Script','Bradley Hand',cursive,Georgia,serif}
 /* ── DIALOG SYSTEM ───────────────────────────────────────── */
 #dlg{display:none;position:absolute;bottom:54px;left:20%;transform:none;width:min(480px,44%);max-height:52vh;overflow:auto;background:linear-gradient(160deg,#1a1208,#0e0c06);border:1px solid rgba(200,168,74,.35);border-radius:10px;padding:14px 16px 12px;z-index:48;box-shadow:0 4px 24px rgba(0,0,0,.7)}
 #dlg-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -762,7 +782,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s430</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s455</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -912,6 +932,7 @@
       <button class="hub-tab" onclick="hubTab('magic')">✦ Magic</button>
       <button class="hub-tab" onclick="hubTab('attrs')">📊 Attributes</button>
       <button class="hub-tab" onclick="hubTab('quests')">📜 Quests</button>
+      <button class="hub-tab" onclick="hubTab('journal')">📖 Journal</button>
       <button class="hub-tab" onclick="hubTab('log')">👤 Character</button>
       <button class="hub-tab" onclick="hubTab('map')">🗺 Map</button>
       <button id="hub-close" onclick="closeHub()">✕</button>
@@ -1011,6 +1032,10 @@
       <div class="hub-panel" id="hpanel-quests">
         <div id="qlog-body"></div>
       </div>
+      <div class="hub-panel" id="hpanel-journal">
+        <div id="jn-views"><button data-v="day" class="active" onclick="journalView('day')">By day</button><button data-v="quest" onclick="journalView('quest')">By quest</button><button data-v="topics" onclick="journalView('topics')">Topics</button><button data-v="due" onclick="journalView('due')">Due</button></div>
+        <div id="jn-body"></div>
+      </div>
       <div class="hub-panel" id="hpanel-log">
         <div id="log-body"></div>
       </div>
@@ -1034,12 +1059,13 @@
             <label class="wm-leg" style="cursor:pointer"><input type="checkbox" class="wm-filt" value="gates" checked style="margin:0 4px 0 0"/>Gates</label>
             <label class="wm-leg" style="cursor:pointer"><input type="checkbox" class="wm-filt" value="pois" checked style="margin:0 4px 0 0"/>Places</label>
             <label class="wm-leg" style="cursor:pointer"><input type="checkbox" class="wm-filt" value="quests" checked style="margin:0 4px 0 0"/>Quests</label>
+            <button type="button" id="wm-pin" title="Pin a note of your own to the map: click this, then the spot" style="background:#0c1008;color:#c8b880;border:1px solid #3a4a2a;border-radius:3px;padding:3px 8px;font:12px Georgia,serif;cursor:pointer">✎ Note</button>
             <button type="button" id="wm-key" title="What the marks mean" style="background:#0c1008;color:#c8b880;border:1px solid #3a4a2a;border-radius:3px;padding:3px 8px;font:12px Georgia,serif;cursor:pointer">Key</button>
             <div id="wm-keybox" style="position:absolute;right:10px;bottom:34px;background:rgba(10,14,8,.97);border:1px solid #3a4a2a;border-radius:4px;display:none;min-width:220px;z-index:30;padding:8px 10px;font:12px Georgia,serif;color:#d8ccb0;line-height:1.5">
               <div style="color:#e8d8a0;margin-bottom:4px">The marks</div>
               <div>▣ city &nbsp; ▤ town, port, garrison &nbsp; ⌂ village &nbsp; ▮ outpost</div>
               <div>▦ fort &nbsp; ∩ cave / gate &nbsp; ▲ camp &nbsp; ▟ ruin &nbsp; ✦ shrine &nbsp; ✚ tower</div>
-              <div>★ a quest &nbsp; ◆ a discovery &nbsp; ⚔ a siege</div>
+              <div>★ a quest &nbsp; ◆ a discovery &nbsp; ⚔ a siege &nbsp; ⚑ your note</div>
               <div style="margin-top:4px">— road &nbsp; <span style="color:#b0703a">— trade route</span> &nbsp; <span style="color:#8a8ab0">— coach line</span> &nbsp; ⋯ ferry</div>
               <div style="margin-top:4px;color:#8a9a70">Search finds any place you've heard of. Filters hide the marks you don't want.</div>
             </div>
@@ -1064,20 +1090,6 @@
   <canvas id="compass" width="200" height="38"></canvas>
   <canvas id="sundial" width="32" height="32"></canvas>
   <button id="wait-btn" onclick="openWaitMenu()" title="Pass time">⏳</button>
-  <div id="wait-modal">
-    <div id="wait-panel">
-      <div id="wait-title">⏳ Pass Time</div>
-      <div id="wait-sub">Choose how long to wait</div>
-      <div id="wait-options">
-        <button class="wait-opt" onclick="passTimeToHour(6)">🌅 Until Dawn (6:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(8)">☀️ Until Morning (8:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(12)">☀️ Until Noon (12:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(18)">🌆 Until Dusk (18:00)</button>
-        <button class="wait-opt" onclick="passTimeToHour(20)">🌙 Until Night (20:00)</button>
-      </div>
-      <button id="wait-cancel" onclick="closeWaitMenu()">Cancel</button>
-    </div>
-  </div>
   <!-- v68 — STACKABLE BUY/SELL QUANTITY PROMPT -->
   <div id="qty-modal">
     <div id="qty-panel">

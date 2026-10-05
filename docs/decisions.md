@@ -3,6 +3,21 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
+You answered B on #156: two more armour lines, light for the archer and robes for the mage, each in every tier with its own stats. The question said the numbers would come later from the systems builder. The look is #161; this is the numbers, so the items can be built while the bodies are.
+
+Today one line: five pieces (helmet, cuirass, gauntlets, greaves, boots). A full set is about 4.8 × the tier's base defence (15 at Iron, 34 at Mithril) and weighs 20; from Iron up it needs Fortitude (5, 10, 16 … 56).
+
+- **A. Weight against defence, gated by the line's attribute, one small virtue each.** *(recommended)*
+  - Light (hood, jerkin, bracers, legs, boots): 60% of the heavy piece's defence at 40% of its weight (a set weighs 8). Needs Finesse instead of Fortitude, on the same curve. Each piece worn makes you 3% harder to notice while sneaking (15% for the five).
+  - Robes (cowl, coat, under-robe, wraps; no boots, so the feet take another line's): 25% of the defence at a quarter of the weight. Needs Intelligence. Each piece adds 3 max mana a tier (a set of four at Mithril, +60; one *of the Mage* enchant on one piece gives 50).
+  - The heavy line is unchanged. Prices: light at 90% of the heavy piece, robes at 100%.
+  - Loot: an armour drop is heavy half the time, light a quarter, robes a quarter (a robe has no boots, so a robe roll on the feet is light). The armourer sells heavy and light; robes are sold at goods shops and the Mages' Guild.
+- **B. Weight and defence only.** As A without the two virtues: light is the lighter set, robes the lightest, and nothing else differs.
+- **C. A, and a cost on the heavy line.** Each heavy piece also makes you 4% easier to notice while sneaking and slows mana regen by 5% (Morrowind's and Oblivion's trade). It changes what every player wearing armour today has.
+
+**Recommendation: A.** It gives each line a reason beyond its weight, small enough that an enchant still matters more, and leaves the armour already worn as it is. Every number here is a first guess to tune in play.
+
 ## Answered
 ### Unblock main's CI — four suites failing by turns (the producer, 2026-10-05)
 Main's own check is red on its last two runs with only docs changes between them: lod, saves and parryclock failed on 10cc224 (run 37331939848), then only compactrefit on d4c1672 (run 37339883165). Different suites on the same code points to runner timing. The failed shard of the d4c1672 run was re-run once.
@@ -32,6 +47,8 @@ Recommendation: **A.** Every ledger on three islands had to date by the treaty, 
 
 Michael: **The drafted set, years of the Peace**. (2026-10-05)
 
+Done, Session 549 (the systems builder, auto/systems): the names in `CAL`, the era and the date line's four lengths; the feasts follow.
+
 ### Capes and cloaks — a slot and a look, a small virtue per kind, or the hood as a face? (the designer, 2026-10-05) — DECISION #148
 You asked for capes and cloaks as an item slot with minimal bonuses unless rare or magical; today townsfolk wear cloaks that swing (S267) and your own body has the bones but can never wear one. The page (`docs/design/capes-and-cloaks.md`) fixes the shape under every option (a `back` slot, three cuts on your body, the dyer recolours it, no warmth bar, seeded drops; magical cloaks from tier 4 loot) and asks what a mundane cloak should do.
 - **A.** A slot and a look: six kinds, def 1 each, differing only in cut and colour; looted ones roll the armour enchants (1 Opus + 1 Opus look).
@@ -41,6 +58,8 @@ You asked for capes and cloaks as an item slot with minimal bonuses unless rare 
 Recommendation: **B.** The virtue is small and depends on where you are going (the best cloak at sea is the worst in the snow), so the slot has a decision in it without becoming *buy more*; every virtue reads a system already built. C rewrites the crime system's prices for a disguise nobody asked for; it can follow B later.
 
 Michael: **Each kind one small virtue in its place**. (2026-10-05)
+
+Done (the systems half), Session 552 (the systems builder, auto/systems): the slot, the six kinds and their virtues, the stock and the loot. The look half (the cuts on your body) is the look builder's.
 
 ### How large is a dragon? (the look builder, Session 524, 2026-10-05) — DECISION #153
 Michael's inspector note on the dragon: "Design looks fine, but the scale seems far too small compared to the bandit for scale. Dragons should be pretty large."
@@ -71,6 +90,8 @@ Session 512 (the look builder, auto/backlog) put one barber and dyer in every to
 Recommendation: **A.** One fee matches the one shop you chose on #144, it costs a night's lodging, which is cheap enough to try a look and dear enough not to do it daily, and it needs no price list on the page. B makes the look page a shop, and Morrowind and Skyrim never priced a haircut by the strand.
 
 Michael: **One fee per visit, an inn room's price**. (2026-10-05)
+
+Done, Session 551 (the systems builder, auto/systems): `barberFee`/`barberPay` for the chair's look page to call, and the barber's strongbox at the goods rate. The look page itself is the look builder's slice 2.
 
 ### Unblock the design proposal: a flaky watch test (the producer, 2026-10-05)
 The capes-and-cloaks proposal (PR #149, da57005) changes two docs files and no code, yet the watch test failed on it twice in a row while main, holding the same code, passed.
@@ -144,7 +165,7 @@ What it does in play, measured headless at level 1 with the starting club agains
 
 Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
 
-Michael: **No: a spent power attack lands as a guarded hit** (option A). (2026-10-04)
+Michael: **A — an exhausted power attack lands as a guarded hit** (2026-10-04, on #131). Acted, Session 485: both strike paths (the open world's and the dungeon's) let a spent power attack fall through to the guarded hit (the front block .35 on the spent 45%), with a normal swing's posture drain rather than the power attack's, and the hit's line ends *· Too spent to break the guard.* `tests/spentguard`. #131 closed.
 
 ### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
 Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
@@ -154,7 +175,7 @@ Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GA
 
 Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
 
-Michael: **B, and Morrowind's whole book** (option C). (2026-10-04)
+Michael: **C — B, and Morrowind's whole book** (2026-10-04, on #132: the dated journal, a calendar the world keeps, and the topic index). Acted, Session 486: part A's first slice, the journal saved in the character row with each line's date (`tests/journal`). The rest is in backlog E and D: the Journal tab's two views and the date line everywhere wait on the quest writer's names; B and C touch the world module and follow its break-up. #132 closed by the producer.
 
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.

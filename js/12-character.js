@@ -160,6 +160,7 @@ function openLevelUp(){
     }
   }
   // Build attr cards
+  luHPGain();
   const container=document.getElementById('lu-attrs');
   container.innerHTML='';
   Object.keys(ATTR_DEF).forEach(key=>{
@@ -203,6 +204,14 @@ function gainLines(key,mult){
   if(g.critPct)    lines.push(`+${g.critPct*mult}% crit chance`);
   if(g.goldPct)    lines.push(`+${g.goldPct*mult}% gold found`);
   if(g.dropPct)    lines.push(`+${g.dropPct*mult}% item drop chance`);
+  // S531 — the gains ATTR_DEF grants that the card left out (the concept artist, #142)
+  if(g.carry)      lines.push(`+${g.carry*mult} carry weight`);
+  if(g.rangedPct)  lines.push(`+${g.rangedPct*mult}% ranged damage`);
+  if(g.blockCostPct) lines.push(`${g.blockCostPct*mult}% block cost`);
+  if(g.magicResistPct) lines.push(`+${g.magicResistPct*mult}% magic resist`);
+  if(g.spellPct)   lines.push(`+${g.spellPct*mult}% spell damage`);
+  if(g.questGoldPct) lines.push(`+${g.questGoldPct*mult}% quest reward gold`);
+  if(g.merchantTier&&(ATTRS[key]||0)<CHA_MERCHANT_PTS&&(ATTRS[key]||0)+mult>=CHA_MERCHANT_PTS) lines.push(`merchants show a piece from the tier above`);
   return lines.join(' &nbsp;·&nbsp; ');
 }
 
@@ -221,7 +230,14 @@ function toggleAttr(key){
   });
   document.getElementById('lu-count').textContent=luSelected.length;
   document.getElementById('lu-confirm').disabled=luSelected.length<3;
+  luHPGain();
 }
+// S531 — the health the level gives, as confirmLevelUp gives it: 10 every level, and Fortitude's 10 a point from the
+// picks and the archetype's +1 (was a static "+10 HP restored")
+function luHPGain(){const el=document.getElementById('lu-hpgain');if(!el)return;
+  const hp=ATTR_DEF.fortitude.gains.maxHP,arch=ARCHETYPES.find(a=>a.id===playerArchetype);
+  const n=10+(luSelected.includes('fortitude')?hp*getMultiplier('fortitude'):0)+(arch&&arch.primaries&&arch.primaries.includes('fortitude')?hp:0);
+  el.textContent=`❤ +${n} max HP`;}
 
 function confirmLevelUp(){
   luSelected.forEach(key=>{

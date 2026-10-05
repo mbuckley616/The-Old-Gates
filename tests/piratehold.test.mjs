@@ -14,7 +14,7 @@ check('found open water', sea);
 
 // the chest: one or two crates of one good, never a horse, over 40 black sails
 const chests = await page.evaluate(() => { const [sx, sz] = _sea; const out = { goods: {}, qty: {}, n: 0, horse: 0, noCrate: 0, cargoRows: [] };
-  for (let i = 0; i < 40; i++) { const o = WORLD.spawnOtherShip('pirate', sx, sz); WORLD.boardOther(o);
+  for (let i = 0; i < 40; i++) { const o = WORLD.spawnOtherShip('pirate', sx, sz, `sea:test:${i}:pirate`); /* S508 — a ship is keyed by place and minute, so forty from one spot and minute are one ship: forty minutes stand in */ WORLD.boardOther(o);
     const c = o.chest.items.filter(it => it.type === 'cargo'); if (c.length !== 1) out.noCrate++; else { out.goods[c[0].cargo] = (out.goods[c[0].cargo] || 0) + 1; out.qty[c[0].qty] = (out.qty[c[0].qty] || 0) + 1; if (c[0].cargo === 'horse') out.horse++; if (i === 0) out.cargoRows.push(c[0]); }
     out.n++; WORLD.despawnOtherShip(o); }
   const m = WORLD.spawnOtherShip('merchant', sx, sz); WORLD.boardOther(m); out.merchantCrates = m.chest.items.filter(it => it.type === 'cargo').length; WORLD.despawnOtherShip(m);
