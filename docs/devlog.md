@@ -12564,3 +12564,12 @@ The flash now tints a copy of the body's own material (yellow, with the same emi
 
 ### Needs eyes
 A parry in real play: the yellow flash on a skinned body (vertex colours under a yellow tint) reads as a different yellow from the old flat one. And whether the riposte's window reads with a moving body, where before it read with a frozen one.
+
+## v80 — Session 566 — Robes at the Mages' Guild (DECISION #163's last part)
+Michael's A on #163 said robes are sold *at goods shops and the Mages' Guild*. Session 564 built the goods shops' robes and left the guild, because its hall had no counter. Its head offers work, standing, directions, spells and rubbings, but no trade. That was read too narrowly. The answer already decided where robes are sold, and the guild's counter is the means, not a new rule. The Mages' Guild head now offers the standard *Browse your wares.* (the label every keeper's trade topic uses, so no new line), after the directions. It opens a counter holding the four robes at the goods shops' tiers and nothing else: `renderShop` gives a `guild_m` house an empty table where any unknown type used to fall back to a goods shop's stock (torches, maps, lockpicks), and `armorLinesFor` adds the robes. Selling to the guild works as at any counter. The Fighters' Guild is unchanged.
+
+### Verified (headless Chromium)
+`armourlines` 14/14 (one check new, one changed). In Dunmore's Mages' Guild, with the hall entered by `goToInterior`, the head's dialogue lists *Browse your wares.* between *Where can I find …* and the spells. Clicking it opens the shop, and the stock column holds *Bronze Cowl, Iron Robe, Bronze Wraps, Bronze Under-robe* and nothing else. guildfurn, register, shoperrands, smoke, told, questgold, shoprows, cloaks and chamerchant pass. `parsecheck` clean.
+
+### Needs eyes
+Whether a guild that sells only four robes reads as a counter or as an afterthought. A guild's own stock (reagents, scrolls) would be a design question, and this session didn't ask it.

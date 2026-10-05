@@ -680,7 +680,7 @@ function renderShop(){
   document.getElementById('sh-gold-val').textContent=gold;
   // Stock list
   const stockTable=currentHouse.id&&currentHouse.id.startsWith('ih')?IH_SHOP_STOCK:SHOP_STOCK;
-  let stock=stockTable[currentHouse.type]||stockTable.misc||SHOP_STOCK.misc;
+  let stock=stockTable[currentHouse.type]||(currentHouse.type==='guild_m'?[]:(stockTable.misc||SHOP_STOCK.misc)); // S566 — the Mages' Guild sells its robes and nothing of a goods shop's
   // v61ad: post-Q7, Dagna ("War Supplies", Ironhaven ih2) opens her back-room
   // stock to commissioned players — the full Master tier lineup beyond what
   // she normally keeps front-of-house. Spread into a new array so we don't
@@ -830,8 +830,8 @@ function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const
     if(S&&S.houses&&S.houses.some(x=>x.type==='church'))out.push('pilgrim');}}catch(e){}
   return out.map(k=>makeCloak(k));}
 // S564 — the light and robe lines at a counter (#163): the armourer sells the light line beside the heavy, at the heavy stock's
-// tiers (the jerkin a tier up, as the cuirass is); a goods shop sells robes. The Mages' Guild keeps no counter yet.
-function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':h.type==='misc'?'robe':null);if(!ln)return [];
+// tiers (the jerkin a tier up, as the cuirass is); a goods shop and the Mages' Guild (S566, its head's *Browse your wares.*) sell robes.
+function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':(h.type==='misc'||h.type==='guild_m')?'robe':null);if(!ln)return [];
   return ARMOR_LINE_TYPES.filter(t=>t.line===ln).map(t=>makeItem(t.slot==='chest'?3:2,t,null,true));}
 // S552 — the Aurennais cape: +2% at a counter in Aurenne, the nation whose cut it is (#148)
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}

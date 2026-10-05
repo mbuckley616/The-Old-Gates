@@ -58,7 +58,7 @@ const tot = r.cnt.heavy + r.cnt.light + r.cnt.robe;
 check('loot: a body piece is heavy about half the time, light and robes a quarter each less the robe boots, never a robe boot',
   tot > 2000 && Math.abs(r.cnt.heavy / tot - .5) < .04 && Math.abs(r.cnt.light / tot - .3) < .04 && Math.abs(r.cnt.robe / tot - .2) < .04 && r.cnt.robeFeet === 0, { ...r.cnt, tot });
 check('a keyed container still rolls the same', r.same, r.k1);
-check('the armourer sells the light line, a goods shop robes; the smith and the Mages\' Guild none', r.arm.length === 5 && r.arm.includes('Iron Jerkin') && r.goods.length === 4 && r.goods.includes('Iron Robe') && r.smith === 0 && r.guild === 0, { arm: r.arm, goods: r.goods });
+check('the armourer sells the light line, a goods shop and the Mages\' Guild robes; the smith none', r.arm.length === 5 && r.arm.includes('Iron Jerkin') && r.goods.length === 4 && r.goods.includes('Iron Robe') && r.smith === 0 && r.guild === 4, { arm: r.arm, goods: r.goods, guild: r.guild });
 check('serialised and restored, a piece keeps its line, weight, defence and price', r.back.every((b, i) => b.line === r.pieces[i].line && b.weight === r.pieces[i].weight && b.def === r.pieces[i].def && b.buyPrice === r.pieces[i].buyPrice), r.back.map(b => [b.name, b.line, b.weight, b.def, b.buyPrice]));
 // 2. a real save and load through the slot: the migrations used to read every piece as heavy plate of its slot
 const L = await page.evaluate(async () => {
@@ -75,5 +75,18 @@ const L = await page.evaluate(async () => {
 }).catch(e => ({ err: String(e) }));
 console.log(JSON.stringify(L));
 check('through a save slot: light, robe, an enchanted cloak and a bagged piece keep weight, price and gate', !L.err && JSON.stringify(L.before) === JSON.stringify(L.after), L);
+// 3. the Mages' Guild's counter (S566): in the hall, the head's *Browse your wares.* opens a counter of the four robes alone
+await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); goToInterior(S.houses.find(h => h.type === 'guild_m')); });
+await page.waitForFunction(() => typeof currentHouse !== 'undefined' && currentHouse && currentHouse.type === 'guild_m', null, { timeout: 60000 });
+await page.waitForTimeout(1500);
+const G = await page.evaluate(async () => {
+  openDialog(currentHouse.dlg); const labels = [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, ''));
+  const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /Browse your wares/.test(x.textContent)); if (b) b.click();
+  await new Promise(r => setTimeout(r, 400));
+  const rows = [...document.querySelectorAll('#sh-stock .sh-name-text')].map(x => x.textContent);
+  const open = shopOpen; if (shopOpen) closeShop(); return { labels, open, rows };
+});
+console.log(JSON.stringify(G));
+check('the Mages\' Guild: its head offers Browse your wares., and the counter holds the four robes and nothing of a goods shop\'s', G.labels.includes('Browse your wares.') && G.open && G.rows.length === 4 && G.rows.every(n => / (Cowl|Robe|Wraps|Under-robe)$/.test(n)), G);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

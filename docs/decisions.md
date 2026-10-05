@@ -10,7 +10,7 @@ The question is in full on auto/systems. Today one armour line (a set about 4.8 
 
 Michael: **Weight vs defence, own attribute, one small virtue**. (2026-10-05)
 
-*Done, Session 564 (the systems builder, `tests/armourlines`):* A as asked: light 60% defence at 40% weight, Finesse, 3% harder to notice sneaking a piece; robes 25% at a quarter, Intelligence, +3 max mana a tier a piece; 90% and 100% of the heavy price; drops half heavy, a quarter each; the light line at the armourer, robes at goods shops. The Mages' Guild has no counter to sell robes from; that is left to route.
+*Done, Session 564 (the systems builder, `tests/armourlines`):* A as asked: light 60% defence at 40% weight, Finesse, 3% harder to notice sneaking a piece; robes 25% at a quarter, Intelligence, +3 max mana a tier a piece; 90% and 100% of the heavy price; drops half heavy, a quarter each; the light line at the armourer, robes at goods shops. The Mages' Guild's robes followed in Session 566: its head's *Browse your wares.* opens a counter of the four.
 
 ### A dragon lair cut taller, so its wyrm stands at 4.5? (the look builder, Session 558, 2026-10-05) — DECISION #162
 The question is in full on auto/backlog (pictures docs/prototypes/wyrmroof-*.png). A cavern's roof is 3.2, so a lair's wyrm is built at 3.73, not the open world's 4.5. A as it is; B the whole cavern of a dragon's lair at 4.4, the dungeon's height its own (walls, roof, stairs, lights, traps and the camera read it; other dungeons stay 3.2; one session); C only the master's hall at 4.4, a vaulted room the doorways step up to (recommended).
