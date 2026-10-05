@@ -92,7 +92,7 @@
     // own 330 s is a weather held on purpose (the tests'), and is left alone.
     if(inWorld){const c=cellOf(px,pz),ck=c[0]+','+c[1];if(ck!==WX.cell){const moved=WX.cell!=null;WX.cell=ck;if(moved&&WX.timer<=330){const w=weatherWeights();if(!(w[WX.type]>0)||!(w[WX.next]>0)){WX.timer=0;WX.rerolls=(WX.rerolls||0)+1;}}}}
     WX.timer-=dt;
-    if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=pickWeather();if(WX.next!==WX.type)WX.k=0;}
+    if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=WX.ahead||pickWeather();WX.ahead=null;if(WX.next!==WX.type)WX.k=0;} /* S553 — a shift the oilskin foretold comes as foretold */
     if(WX.next!==WX.type){WX.k+=dt/25;if(WX.k>=1){WX.type=WX.next;WX.k=0;}}
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?WX.k:0;
     const inten=t=>t==='rain'?.7:t==='storm'?1:t==='snow'?.8:t==='fog'?.6:t==='overcast'?.35:0;
@@ -684,6 +684,12 @@
   // snow 1; a storm 3) plus one in open water, at most 3. Open water is the sea's own floor (the bed blends to −8 at a full
   // sea cell, so the page's "below −8" is never met; −7.9 here) with no shore within 150 units. Read once a second.
   const SEA_WORD=['calm','moderate','rough','storm'];
+  // S553 — the oilskin's hint (Michael's B on #148): at sea in rain or storm, the sea line says the next shift of weather. It
+  // is rolled when first shown (WX.ahead) and the next shift takes it, so the hint never lies; with no hint shown the weather
+  // is rolled when it comes, as before
+  const AHEAD_WORD={clear:'clearing',overcast:'clouding over',rain:'rain',storm:'a storm',fog:'fog',snow:'snow'};
+  function seaHint(){if(typeof cloakOn!=='function'||!cloakOn('oilskin')||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
+    return WX.ahead===WX.type?'':` · ${AHEAD_WORD[WX.ahead]||WX.ahead} ahead`;}
   function weatherSea(){const t=(WX.next!==WX.type&&WX.k>=.5)?WX.next:WX.type;return t==='storm'?3:(t==='clear'||t==='fog')?0:1;}
   function openWater(x,z){if(worldH(x,z)>-7.9)return false;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const r of [50,100,150])if(worldH(x+Math.cos(a)*r,z+Math.sin(a)*r)>SEA_Y-1.4)return false;}return true;}
   function seaState(x,z){if(x==null){x=SHIP.x;z=SHIP.z;}return Math.min(3,weatherSea()+(openWater(x,z)?1:0));}
@@ -718,8 +724,8 @@
     let el=SHIPBAR.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='shipbars';el.style.cssText='position:fixed;right:14px;bottom:150px;width:150px;padding:5px 8px;background:rgba(40,30,18,.82);border:1px solid #a08a5a;border-radius:4px;color:#e8dcc0;font:11px Georgia,serif;display:none;z-index:50';
       el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div><div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
     const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
-    const b=show?shipBars():null,key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
-    const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
+    const b=show?shipBars():null,hint=show?seaHint():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
+    const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
     q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';
   }
   function applyShipClass(){const c=shipClass();SHIP.L=c.L;SHIP.W=c.W;if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=buildShipMesh(SHIP.L,SHIP.W);sc.add(SHIP.mesh);shipUpdatePlacement();}}

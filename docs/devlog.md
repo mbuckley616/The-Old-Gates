@@ -12496,3 +12496,12 @@ The extra draw for the cloak is taken only for an armour drop at tier 4 and up. 
 
 ### Needs eyes
 The Back slot in the inventory grid: an eleventh slot moves the grid's cells. And whether a 60-gold cape for 2% is worth buying, which is the page's point: it should not be.
+
+## v80 — Session 553 — The oilskin foretells the weather at sea (DECISION #148, the hint owed by Session 552)
+The cloak page gives the oilskin a second virtue: *at the helm in rain or storm the sea-state hint shows the next shift of weather*. The weather had no next shift to show, because it rolled the next weather only at the moment it came (`pickWeather` when `WX.timer` ran out, `86-world-crime.js`). Now the sea line asks for it. Wearing the oilskin at sea in rain or a storm, `seaHint()` rolls the next weather into `WX.ahead` the first time it is shown, and the line reads *Sea: rough · clearing ahead* (or *rain*, *a storm*, *fog*, *snow*, *clouding over*). When the timer runs out the shift takes `WX.ahead` if there is one, and clears it, so what was foretold is what comes. With no hint shown, nothing is rolled early and the weather comes as before. A shift to the same weather says nothing. The ship's panel redraws when the hint changes (it is part of the panel's key). The hint's words are mechanical, and the quest writer may want them.
+
+### Verified (headless Chromium)
+`seahint` 5/5 (new). The sloop sailing in open water. In rain with the oilskin and *clear* ahead: *Sea: rough · clearing ahead*. In a storm with rain ahead: *Sea: rough · rain ahead*. No hint with rain ahead of rain, in a traveller's cloak, bare, or under a clear sky. With nothing ahead, showing the line rolled one (*clear*). With *storm* foretold and the timer run out, the next weather is the storm, and `WX.ahead` is cleared. seawear, weather, wxplace, sailtrim and cloaks pass. `parsecheck` clean.
+
+### Needs eyes
+Whether *clearing ahead* is read at all in the ship's small panel.
