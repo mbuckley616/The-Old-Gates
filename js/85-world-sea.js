@@ -559,12 +559,16 @@
 
   // ── other ships: pirates and merchants ──
   const OTHER=[]; // {kind,mesh,x,z,yaw,speed,plat,crew:[],chest,boarded,volleyT,dead}
-  function spawnOtherShip(kind,x,z){
+  // S508 — a ship met at sea is keyed (co-op rules): her id is where and when she came up, `sea:<chunk>:<minute>:<kind>`
+  // (Oswy's Kestrel is `story:oswy`), and her heading, crew, volleys and chest roll on streams of that id.
+  function spawnOtherShip(kind,x,z,id){
     // S168 — the black sail and the merchantman are looks of their own, not tints; S285 — the merchantman on the cog, broad and slow (Michael's A, #50)
     const cls=kind==='pirate'?SHIP_CLASSES.sloop:SHIP_CLASSES.cog;
     const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant');
     sc.add(m);
-    const o={kind,mesh:m,x,z,yaw:Math.random()*Math.PI*2,speed:0,L:cls.L,W:cls.W,plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
+    if(id==null)id=`sea:${chunkKey(Math.floor(x/CHUNK),Math.floor(z/CHUNK))}:${Math.floor(worldState.gameTimeAbsMinutes||0)}:${kind}`;
+    const rng=seededRng('ship',id);
+    const o={id,rng,kind,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
     ZONES.world.platforms.push(o.plat);OTHER.push(o);placeOther(o);
     if(kind==='pirate')crewUp(o,false);
     return o;
@@ -583,8 +587,9 @@
       // keep one pirate and one merchant near a player at sea; drop them when far
       for(let i=OTHER.length-1;i>=0;i--){const o=OTHER[i];if(Math.hypot(o.x-px,o.z-pz)>700)despawnOtherShip(o);}
       if(atSea()){
-        for(const kind of ['pirate','merchant']){if(OTHER.some(o=>o.kind===kind))continue;if(Math.random()>(kind==='pirate'?((tutWantsPirate()||factionWantsPirate())?1:.5):.6))continue;
-          for(let k=0;k<12;k++){const a=Math.random()*Math.PI*2,d=260+Math.random()*200;const x=px+Math.cos(a)*d,z=pz+Math.sin(a)*d;if(worldH(x,z)<-4&&!SITES.some(t=>Math.hypot(t.x-x,t.z-z)<t.pad+80)){spawnOtherShip(kind,x,z);if(kind==='pirate')showMsg('Black sails on the horizon.','#ffb060');break;}}}
+        const pk=chunkKey(Math.floor(px/CHUNK),Math.floor(pz/CHUNK)),mn=Math.floor(worldState.gameTimeAbsMinutes||0);
+        for(const kind of ['pirate','merchant']){if(OTHER.some(o=>o.kind===kind))continue;const sr=seededRng('sea',`${pk}:${mn}:${kind}`); /* S508 — the sea's roll is keyed by where you are and the minute */ if(sr()>(kind==='pirate'?((tutWantsPirate()||factionWantsPirate())?1:.5):.6))continue;
+          for(let k=0;k<12;k++){const a=sr()*Math.PI*2,d=260+sr()*200;const x=px+Math.cos(a)*d,z=pz+Math.sin(a)*d;if(worldH(x,z)<-4&&!SITES.some(t=>Math.hypot(t.x-x,t.z-z)<t.pad+80)){spawnOtherShip(kind,x,z);if(kind==='pirate')showMsg('Black sails on the horizon.','#ffb060');break;}}}
       }
     }
     for(const o of OTHER){
@@ -598,7 +603,7 @@
         if(o.ramming){o.ramming-=dt;if(o.ramming<=0||!aboard){o.ramming=0;o.ramWait=PIRATE_RAM.wait;}}
         else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top)o.ramming=PIRATE_RAM.run;
         const dx=px-o.x,dz=pz-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=px;tz=pz;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
-        o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+Math.random();volley(o);}
+        o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+(o.rng?o.rng():Math.random());volley(o);}
       } else if(o.sated){tx=o.x+(o.x-px);tz=o.z+(o.z-pz);
       } else {
         if(!o.wp||Math.hypot(o.wp.x-o.x,o.wp.z-o.z)<20){for(let k=0;k<10;k++){const a=Math.random()*Math.PI*2,d=150+Math.random()*250;const x=o.x+Math.cos(a)*d,z=o.z+Math.sin(a)*d;if(worldH(x,z)<-4){o.wp={x,z};break;}}}
@@ -614,9 +619,9 @@
   // volleys: arrows that fly to where you are; a hit if you're still near when they land
   const ARROWS=[];
   function volley(o){
-    const n=2+Math.floor(Math.random()*2);const v={hit:false};
+    const R=o.rng||Math.random;const n=2+Math.floor(R()*2);const v={hit:false};
     for(let k=0;k<n;k++){const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.9),new THREE.MeshLambertMaterial({color:0x3a2a18}));const sx=o.x+(Math.random()-.5)*3,sz=o.z+(Math.random()-.5)*3;m.position.set(sx,DECK_Y+1.2,sz);sc.add(m);
-      const tx=px+(Math.random()-.5)*4,tz=pz+(Math.random()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:jumpY+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v});}
+      const tx=px+(R()-.5)*4,tz=pz+(R()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:jumpY+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v});}
     if(typeof sfxNoise==='function')sfxNoise(.18,0,0,.08,1800);showMsg('Arrows!','#ff8060');
   }
   // S411 — a volley whose first arrow comes down on your own deck costs her 2 hull and 3 rig (once a volley)
@@ -630,15 +635,15 @@
   function nearOther(){let best=null,bd=1e9;for(const o of OTHER){const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));if(d>0&&d<3.5&&d<bd&&jumpY<4){bd=d;best=o;}}return best;}
   function crewUp(o,alert){
     if(o.crew.length)return;
-    for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',level,'normal'):null);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
+    for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const fid=o.id?`${o.id}:crew:${k}`:null;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',level,'normal',fid?seededRng('variant',fid):undefined):null);if(fid)keyFoe(e,fid);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
   }
   function boardOther(o){
     o.boarded=true;o.speed=0;o._fled=false;
     px=o.x;pz=o.z;jumpY=DECK_Y;onGround=true;velY=0;
     if(o.kind==='pirate'){crewUp(o,true);o.crew.forEach(e=>{if(!e.dead)e.alert=true;});showMsg('You board her. The crew turns.','#ff8060');} else if(o.kind==='merchant'){showMsg('A merchantman. Her crew keep their heads down.','#c8b880');}
     if(!o.chest){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const cx=o.x+fwd[0]*(-o.L/2+3.2),cz=o.z+fwd[1]*(-o.L/2+3.2);const g=new THREE.Mesh(new THREE.BoxGeometry(.9,.6,.6),new THREE.MeshLambertMaterial({color:0x4a3018}));g.position.set(cx,DECK_Y+.3,cz);sc.add(g);const lid=new THREE.Mesh(new THREE.BoxGeometry(.92,.12,.62),new THREE.MeshLambertMaterial({color:0x7a5a2a}));lid.position.set(cx,DECK_Y+.65,cz);sc.add(lid);
-      let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',o.kind==='pirate'?1.8:1.2,null,1):[])||[];if(!items.length)items.push({name:'Pirate Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120});
-      if(o.kind==='pirate'){const ks=Object.keys(CARGO_GOODS).filter(k=>!CARGO_GOODS[k].hold);items.push({...cargoItem(ks[Math.floor(Math.random()*ks.length)]),qty:1+(Math.random()<.5?1:0)});}
+      let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',o.kind==='pirate'?1.8:1.2,null,1,o.id?`${o.id}:chest`:undefined):[])||[];if(!items.length)items.push({name:'Pirate Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120});
+      if(o.kind==='pirate'){const cr=o.id?seededRng('loot',`${o.id}:cargo`):Math.random;const ks=Object.keys(CARGO_GOODS).filter(k=>!CARGO_GOODS[k].hold);items.push({...cargoItem(ks[Math.floor(cr()*ks.length)]),qty:1+(cr()<.5?1:0)});}
       if(o.loot){items.push(...o.loot);o.loot=null;}
       items.forEach(it=>{if(it.qty==null)it.qty=1;});
       o.chest={x:cx,z:cz,y:DECK_Y+.3,name:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',displayName:o.kind==='pirate'?"Captain's Chest":'Cargo Chest',items,zone:'world',kind:'chest',g,top:lid,opened:false};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(o.chest);}
