@@ -11934,3 +11934,12 @@ Found in Session 500's run: at noon the Mages' draught went to *Cathal*, not the
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 502 — Jobs and guild tasks keyed by place and index (backlog K, the co-op door, step 3)
+CLAUDE.md's co-op rules: *the first code that saves anything about one gives it a key of place and index, never a position or a `Date.now()`.* The jobs and guild tasks were the last saved things keyed by the clock (Session 456's survey: *guild and quest tasks keyed by `'m'+Date.now()`*), and the foes they raise (the town-job raids, guild hunts, the road quest's band, boarders, the duel's rival) wait on those ids before they can be keyed themselves (step 1's list). Now: a lord's job is `tq:<site>:<k>`, `k` the number of jobs that town has given (the journal keeps every one, so it only grows); a faction's service is `fq:<faction>:<step>:<k>`; a guild task is `<guild>:<site>:<n>`, `n` a count kept in the guild's saved state (`worldState.guild[g].n`), so a task taken back by Session 500's lapse and a new one the same day do not share an id; a rank commission, given once, is `<guild>:c<rank>`. Ids are opaque everywhere they are read (`qFind`, `_guildTag`, the duel's and boarders' records), so a save with old ids plays on unchanged. The Varek real-clock reads stay: they measure real time between sessions, which is their point.
+
+### Verified (headless Chromium)
+`jobids` 5/5 (new): Dunmore's lord gives `tq:dunmore:0` and then `tq:dunmore:1`; the Fighters' hall `guild_f:dunmore:1` and `guild_f:dunmore:2` (its count 2); the rank-2 commission `guild_f:c2`; no id holds a clock time. `rowelines`, `duel`, `duelrhythm`, `questtargets`, `questfoes`, `datedwork`, `datedguild` and `blacksail` pass. `parsecheck` clean. Build tag s428.
+
+### Needs eyes
+Nothing to see. Next in step 1, with these ids: key the foes raised for a job (`<job id>:foe:<k>`).
