@@ -12231,3 +12231,25 @@ Session 417 made a corpse searchable over its whole body, and left one thing owe
 
 ### Needs eyes
 Nothing beyond Session 417's: whether the crosshair on a fallen body feels right at speed.
+
+## v80 — Session 545 — The lair, the glade and the camp have their look apart (the look builder's ask, Session 541)
+The look builder's Session 541 left one of Michael's inspector notes open: *a few others* missing from the mesh inspector, which are the lair, the glade and the bandit camp. Their builders (`buildLair`, `buildGlade`, `buildBanditCamp`, `87-world-quests.js`, this builder's file) build the place in one go: the look together with its ground stamp, footholds, solids, light, herbs, chest and creatures. So the inspector could not show one without putting it into the world. The tower and the shrine already had a geometry function (`towerGeoHi`, `shrineGeoHi`), and the look builder asked for the same here.
+
+Each place's look is now a function of its own:
+- `gladeGeoParts` gives the reeds and cattails, the fallen log and the lily pads, with their distant copy and the ten trees.
+- `lairGeoParts` gives the rock heap with its cave mouth, and the bones.
+- `campGeoParts` gives the tents and the kit: the fire ring, the tripod, crates and barrels, bones and the stakes.
+
+Each takes the builder's stream and the ground (`H`), draws in exactly the order the builder did, and returns geometry and placements. The builders place the result and keep everything else: the stamp, footholds, solids, the fire and its light, the banner, herbs, chest and creatures.
+
+The order matters because the herbs, creatures and the boss's kind are drawn after the look from the same stream, so one draw out of place would change them all. The glade still rolls its pond's size and stamps the bowl before its look, because the reeds and the log stand in the bowl's blend. The tent's geometry is built inside the tent loop, as before. That is because three.js draws `Math.random` for every object's id, and the colour jitter in `mergeParts` draws from the same stream. The camp's unused `tentMat` is gone, so its jitter draws differ from before. That is cosmetic, and it already varied with every load.
+
+`WORLD.poiPreview(kind, seed)` builds one of the three at the origin on a fixed roll: the camp on flat ground, the glade on a bowl like its pond's. It touches nothing in the world. Adding the entries to `97-inspector.js` is the look builder's job.
+
+### Verified (headless Chromium)
+Measured once with a fingerprint probe, not kept as a suite. Seven real places near the start, three glades, three lairs and a camp, were built with `Math.random` seeded the same way, before and after. They give the same meshes (14, 10, 10, 3, 4, 3, 11), the same vertex positions and matrices, and the same solids, footholds, herbs (ids, kinds, spots), foes (ids, names, spots, health) and chest. A colour-blind fingerprint was needed: with colours in, the camp's tents and kit differed, by the uuid draws above.
+
+`poipreview` 11/11 (new). Each preview builds: the glade 3 meshes and 9,560 triangles, the lair 9 and 1,308, the camp 7 and 6,626, each about the origin. Seed 7 twice gives the same place and seed 8 another. A tower or a town gives null. Building all three moves nothing in the world: stamps 155, platforms, herbs 117, foes, chests, lights 53, places 8 and solids 458 are unchanged. A real lair, camp and glade, built with the bake held off, carry exactly what their geometry function gives on their own stream: the lair's rock and its eight bones, the camp's kit and its tents, and the glade's reeds and log, their distant copy and its ten trees. pois, sitefoes, wyrm, inspector, herbids, campsack, foes and coopsaves pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play changes. The look builder adds the three entries to the inspector.

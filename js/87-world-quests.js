@@ -319,23 +319,20 @@
   function siteChest(S,x,z,mult,name){const y=worldH(x,z);const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(S.site.x-x,S.site.z-z);const {lid}=buildChestShell(g,1.8,0x4a3018);S.group.add(g); // S259 — the kit's chest (S198), the old box's size, its lid on the hinge; a group, so the bake leaves it whole
     let items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});
     const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:false,_site:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
-  function buildGlade(S,site,r){
-    const {group,sol}=S;const cx=site.x,cz=site.z;const pad=site.pad;const y=worldH(cx,cz);
-    // the pond: a bowl stamp under a water disc
-    const pr=11+r()*4;addStamp({id:'pond_'+site.id,kind:'pond',x:cx,z:cz,r:pr,blend:7,y:y-2.0});
-    const water=new THREE.Mesh(new THREE.CircleGeometry(pr+2,28),new THREE.MeshLambertMaterial({color:0x4a8ab0,transparent:true,opacity:.75}));water.rotation.x=-Math.PI/2;water.position.set(cx,y-.75,cz);water.userData.noBake=true;group.add(water);
-    ZONES.world.platforms.push({x0:cx-pr,x1:cx+pr,z0:cz-pr,z1:cz+pr,y:y-.85,site:site.id,shallow:true});
-    // reeds, a fallen log, big trees at the edge. S215 — in detail (H.5, Michael's A): clumps of reed blades and cattails,
+  // S545 — the glade's look alone, on the builder's own rolls in its order (pr is rolled and the pond stamped first, so the
+  // reeds and the log stand on the bowl): H(x,z) is the ground. buildGlade places it in the world, poiPreview on a stage.
+  function gladeGeoParts(r,cx,cz,y,pr,pad,H){
+  // reeds, a fallen log, big trees at the edge. S215 — in detail (H.5, Michael's A): clumps of reed blades and cattails,
     // a barked log with cut ends, stubs, moss and mushrooms, lily pads on the water; the old cones and cylinder the distant copy
-    {const hi=[],lo=[],C=x=>new THREE.Color(x),add=(A,geo,col,x,yy,z,rx,ry,rz,sx,sy,sz)=>A.push({geo,color:C(col),x,y:yy,z,rx,ry,rz,sx,sy,sz});
-      for(let i=0;i<14;i++){const a=r()*Math.PI*2,rr=pr+1+r()*3;const x=Math.cos(a)*rr,z=Math.sin(a)*rr,hy=worldH(cx+x,cz+z)-y,h=1.6+r()*.8;
+    const hi=[],lo=[],C=x=>new THREE.Color(x),add=(A,geo,col,x,yy,z,rx,ry,rz,sx,sy,sz)=>A.push({geo,color:C(col),x,y:yy,z,rx,ry,rz,sx,sy,sz});
+      for(let i=0;i<14;i++){const a=r()*Math.PI*2,rr=pr+1+r()*3;const x=Math.cos(a)*rr,z=Math.sin(a)*rr,hy=H(cx+x,cz+z)-y,h=1.6+r()*.8;
         add(lo,new THREE.ConeGeometry(.12,h,4),0x6a8a3a,x,hy+.7,z);
         const nb=13+Math.floor(r()*7);for(let k=0;k<nb;k++){const ba=r()*Math.PI*2,bl=h*(.55+r()*.5),lean=.08+r()*.22,g0=C(0x5a7a30).lerp(C(0x9aa04a),r());
           add(hi,SK.cone(.045,bl,3),g0.getHex(),x+Math.cos(ba)*.2,hy+bl/2-.05,z+Math.sin(ba)*.12,Math.sin(ba)*lean,ba,-Math.cos(ba)*lean,1,1,.35);}
         const nc=1+Math.floor(r()*3);for(let k=0;k<nc;k++){const ox=(r()-.5)*.25,oz=(r()-.5)*.25,sh=h*(.8+r()*.35);add(hi,SK.cyl(.012,.014,sh,5),0x7a8a40,x+ox,hy+sh/2-.05,z+oz);
           add(hi,SK.cyl(.05,.05,.24,8),0x5a381c,x+ox,hy+sh-.12,z+oz);add(hi,SK.cyl(.004,.008,.12,4),0x8a7a50,x+ox,hy+sh+.06,z+oz);}}
       // the fallen log, built along x and turned where it lies
-      const ly=r()*3,lx=pr+5,lh=worldH(cx+lx,cz)-y;
+      const ly=r()*3,lx=pr+5,lh=H(cx+lx,cz)-y;
       const lg=(geo,col,x,yy,z,rx,ry,rz,sx,sy,sz)=>{geo.scale(sx||1,sy||1,sz||1);geo.rotateZ(rz||0);geo.rotateY(ry||0);geo.rotateX(rx||0);geo.translate(x,yy,z);geo.rotateY(ly);geo.translate(lx,lh+.4,0);hi.push({geo,color:C(col)});};
       lg(SK.bumpy(SK.cyl(.4,.5,5,14,6),.035,17,9),0x4a3018,0,0,0,0,0,Math.PI/2);
       for(const sd of [1,-1]){lg(SK.cyl(sd>0?.37:.47,sd>0?.37:.47,.02,14),0xa8844e,sd*2.505,0,0,0,0,Math.PI/2);for(let k=1;k<4;k++)lg(SK.torus((sd>0?.37:.47)*k/4,.012,3,14),0x7a5a30,sd*2.52,0,0,0,Math.PI/2,0);}
@@ -346,9 +343,18 @@
       // lily pads and a few flowers near the bank
       for(let i=0;i<9;i++){const a=r()*Math.PI*2,rr=pr*(.45+r()*.45);const ps=.35+r()*.3;add(hi,new THREE.CylinderGeometry(ps,ps,.02,12,1,false,.3,Math.PI*2-.6),C(0x3a6a2a).lerp(C(0x5a8a3a),r()).getHex(),Math.cos(a)*rr,-.73,Math.sin(a)*rr,0,r()*6.28,0);
         if(r()<.35)add(hi,SK.cone(.09,.1,6),0xf0e0e8,Math.cos(a)*rr+.1,-.66,Math.sin(a)*rr);}
-      poiLod(group,mergeParts(hi),mergeParts(lo),cx,y,cz);}
+      const hiG=mergeParts(hi),loG=mergeParts(lo);
+    const trees=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2+r()*.4,rr=pad-9+r()*5;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;trees.push({x,z,h:H(x,z),ry:r()*6.28});}
+    return {hi:hiG,lo:loG,trees};}
+  function buildGlade(S,site,r){
+    const {group,sol}=S;const cx=site.x,cz=site.z;const pad=site.pad;const y=worldH(cx,cz);
+    // the pond: a bowl stamp under a water disc
+    const pr=11+r()*4;addStamp({id:'pond_'+site.id,kind:'pond',x:cx,z:cz,r:pr,blend:7,y:y-2.0});
+    const water=new THREE.Mesh(new THREE.CircleGeometry(pr+2,28),new THREE.MeshLambertMaterial({color:0x4a8ab0,transparent:true,opacity:.75}));water.rotation.x=-Math.PI/2;water.position.set(cx,y-.75,cz);water.userData.noBake=true;group.add(water);
+    ZONES.world.platforms.push({x0:cx-pr,x1:cx+pr,z0:cz-pr,z1:cz+pr,y:y-.85,site:site.id,shallow:true});
+    const gp=gladeGeoParts(r,cx,cz,y,pr,pad,worldH);poiLod(group,gp.hi,gp.lo,cx,y,cz); /* S545 — the look, split out for the inspector */
     sol.push({cx:cx+pr+5,cz,rx:2.5,rz:.5});
-    const trees=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,10);const mm=new THREE.Matrix4();for(let i=0;i<10;i++){const a=i/10*Math.PI*2+r()*.4,rr=pad-9+r()*5;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;mm.compose(new THREE.Vector3(x,worldH(x,z),z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),r()*6.28),new THREE.Vector3(1.4,1.5,1.4));trees.setMatrixAt(i,mm);trees.setColorAt(i,new THREE.Color(.9,1,.9));sol.push({cx:x,cz:z,rx:.5,rz:.5});}trees.instanceMatrix.needsUpdate=true;trees.userData.noBake=true;group.add(trees);
+    const trees=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,10);const mm=new THREE.Matrix4();for(let i=0;i<10;i++){const T=gp.trees[i];mm.compose(new THREE.Vector3(T.x,T.h,T.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),T.ry),new THREE.Vector3(1.4,1.5,1.4));trees.setMatrixAt(i,mm);trees.setColorAt(i,new THREE.Color(.9,1,.9));sol.push({cx:T.x,cz:T.z,rx:.5,rz:.5});}trees.instanceMatrix.needsUpdate=true;trees.userData.noBake=true;group.add(trees);
     // herbs: a hotspot ring of 18 around the water
     if(typeof HERB_DEF!=='undefined'){const biome=dominantRegion(cx,cz).r.biome;const cands=herbCandidates(biome,'water').concat(herbCandidates(biome,'tree'));if(cands.length){for(let i=0;i<18;i++){const a=r()*Math.PI*2,rr=pr+2.5+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(r()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={id:S.site.id+':herb:'+i,x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:r()*6.28};ZONES.world.herbs.push(h);(S.herbs=S.herbs||[]).push(h); /* S514 — its id */}
       // instance them onto a chunk-less mesh owned by the settlement
@@ -384,15 +390,19 @@
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(Math.random()*SHRINE_BOONS.length)];if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
     else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:own?3600:1800,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
-  function buildLair(S,site,r){
-    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);const c=x=>new THREE.Color(x);const parts=[];
-    // S204 — lumpy boulders (they were dodecahedra), on the same rolls in the same order
+  // S545 — the lair's look alone (the rock heap with its cave mouth, and the bones), on the builder's rolls in its order
+  function lairGeoParts(r,cx,cz,H){const c=x=>new THREE.Color(x);const parts=[];
     const stone=c(0x5a5650);for(let i=0;i<14;i++){const a=Math.PI*.15+r()*Math.PI*1.7,rr=3+r()*4;const bs=1.4+r()*1.6;parts.push({geo:cragGeo(bs,i),color:stone,x:Math.cos(a)*rr,z:Math.sin(a)*rr-2,y:.6+r()*1.2,rx:r()*3,ry:r()*3,sy:.8,jitter:.08});}
     parts.push({geo:cragGeo(4.2,99),color:stone,z:-4.5,y:3.2,jitter:.08},{geo:new THREE.BoxGeometry(3.2,2.8,1.2),color:c(0x0a0806),z:-1.2,y:1.4});
-    const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
+    const bones=[];for(let i=0;i<8;i++){const a=r()*Math.PI*2,rr=3+r()*7;const len=.7+r()*.6;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr+3;bones.push({len,x,z,h:H(x,z),ry:r()*3});}
+    return {rock:mergeParts(parts),bones};}
+  function buildLair(S,site,r){
+    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
+    const lp=lairGeoParts(r,cx,cz,worldH); /* S545 — the look, split out for the inspector */
+    const m=new THREE.Mesh(lp.rock,VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
     sol.push({cx,cz:cz-4.5,rx:5,rz:3.5},{cx:cx-5,cz:cz-2,rx:2.2,rz:2.2},{cx:cx+5,cz:cz-2,rx:2.2,rz:2.2});
     // bones and a kill
-    for(let i=0;i<8;i++){const a=r()*Math.PI*2,rr=3+r()*7;const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,.7+r()*.6),new THREE.MeshLambertMaterial({color:0xe8e0d0}));const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr+3;b.position.set(x,worldH(x,z)+.05,z);b.rotation.y=r()*3;group.add(b);}
+    for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;group.add(b);}
     const biome=dominantRegion(cx,cz).r.biome;const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':r()<.5?'Cave Bear':'Ogre';
     siteCreatures(S,[[boss,cx,cz+3,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx-4,cz+5,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx+4,cz+6,false]]);
     if(S.creatures[0]){const e=S.creatures[0];const dragon=!!site.dragon;e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:4)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:2)*(1+level*.04));e.spd=(e.spd||1.4)*1.5;e.lair=site.id;if(e.mesh)e.mesh.scale.multiplyScalar(dragon?2.4:1.5);if(dragon)dragonBody(e,3.2);e.name=dragon?`${site.name.replace("'s Lair",'')} Wyrm`:`${site.name.replace("'s Lair",'')} the ${boss}`;e.boss=true;e.dragon=dragon;}
@@ -412,13 +422,11 @@
     const house={id:'g_'+site.id+'_tower',doorX:cx,doorZ:cz+R*.95+.4,doorFace:'S',exitX:cx,exitZ:cz+R*.95+2.2,exitYaw:0,name:site.name,keeper:'',type:'tower',tagline:'',w:8,d:8,two:false,reg:site.reg||'irish',style:'stone',dlg:null,siteKind:site.kind,siteId:site.id};houses.push(house);
     const lantern=new THREE.Mesh(new THREE.ConeGeometry(.14,.4,6),new THREE.MeshBasicMaterial({color:0xffd080}));lantern.position.set(cx,y+3.1,cz+R*.98);lantern.userData.noBake=true;group.add(lantern);const l=regLight(0xffb050,1.0,9,site.id);l.position.copy(lantern.position);
   }
-  function buildBanditCamp(S,site,r){
-    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
-    const tentMat=new THREE.MeshLambertMaterial({color:0x6a5a44,side:THREE.DoubleSide});const n=5+Math.floor(r()*4);
-    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.5,rr=7+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const t=new THREE.Mesh(campTentGeo(i),VC_MAT);t.position.set(x,worldH(x,z),z);t.rotation.y=r()*6;t.castShadow=true;t.userData.noBake=true;group.add(t);sol.push({cx:x,cz:z,rx:1.6,rz:1.6});} // S205 — a ridge tent of canvas on poles (it was an open cone)
-    // fire, cooking frame, crates, barrels, bones, a stockade of stakes
-    const fire=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));fire.position.set(cx,y+.28,cz);fire.userData.noBake=true;group.add(fire);const fl=regLight(0xff8a30,1.5,13,site.id);fl.position.set(cx,y+1.0,cz);
-    // S205 — on the kit, on the same dice in the same order: a ring of fire stones with logs and a cooking tripod, crates
+  // S545 — the camp's look alone (its tents and its kit: the fire ring, the tripod, crates and barrels, bones, the stakes), on
+  // the builder's rolls in its order; the fire, the banner and the light stay the builder's
+  function campGeoParts(r,cx,cz,pad,H){const n=5+Math.floor(r()*4);const tents=[];
+    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.5,rr=7+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;tents.push({k:i,x,z,geo:campTentGeo(i),h:H(x,z),ry:r()*6});} /* the tent's geometry here, in its old place among the draws */
+  // S205 — on the kit, on the same dice in the same order: a ring of fire stones with logs and a cooking tripod, crates
     // and bellied barrels, bones that are bones, pointed stakes
     const c=x=>new THREE.Color(x);const parts=[];for(let i=0;i<9;i++){const a=i/9*Math.PI*2;parts.push({geo:cragGeo(.26,i+3),color:c(0x5a5650).multiplyScalar(.85+(i%3)*.12),x:Math.cos(a)*.95,z:Math.sin(a)*.95,y:.12,ry:-a,jitter:.06});}
     for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.4;parts.push({geo:SK.cyl(.08,.1,1.1,6),color:c(0x3a2818),x:Math.cos(a)*.25,z:Math.sin(a)*.25,y:.2,rx:Math.PI/2-.35,ry:-a+Math.PI/2,jitter:.08});}
@@ -428,8 +436,15 @@
       if(i%2){parts.push({geo:SK.lathe([0,.125,.25,.375,.5,.625,.75,.875,1].map(u=>[.4*(.86+.14*Math.sin(Math.PI*u)),.9*u]),12),color:c(0x8a6a3a),x:X,z:Z,y:0});for(const u of [.15,.85])parts.push({geo:new THREE.TorusGeometry(.4*(.86+.14*Math.sin(Math.PI*u))+.01,.02,4,14),color:c(0x2a241e),x:X,z:Z,y:.9*u,rx:Math.PI/2});}
       else parts.push({geo:SK.rbox(.9,.8,.9,.05,2),color:c(0x7a5a30),x:X,z:Z,y:.4});}
     for(let i=0;i<12;i++){const a=r()*6.28,rr=2+r()*14;const L=.4+r()*.5;parts.push({geo:SK.limb(L,.05,.04),color:c(0xe8e0d0),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:.05,rx:Math.PI/2,ry:r()*3});}
-    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const rr=site.pad-6;const rx=(r()-.5)*.3,rz=(r()-.5)*.3;parts.push({geo:SK.cyl(.1,.14,2.0,6),color:c(0x4a3018),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:1.0,rx,rz,jitter:.08},{geo:SK.cone(.1,.45,6),color:c(0x6a4a28),x:Math.cos(a)*rr+Math.sin(rz)*-1.1,z:Math.sin(a)*rr+Math.sin(rx)*1.1,y:2.2,rx,rz});}
-    const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
+    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const rr=pad-6;const rx=(r()-.5)*.3,rz=(r()-.5)*.3;parts.push({geo:SK.cyl(.1,.14,2.0,6),color:c(0x4a3018),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:1.0,rx,rz,jitter:.08},{geo:SK.cone(.1,.45,6),color:c(0x6a4a28),x:Math.cos(a)*rr+Math.sin(rz)*-1.1,z:Math.sin(a)*rr+Math.sin(rx)*1.1,y:2.2,rx,rz});}
+    return {tents,kit:mergeParts(parts)};}
+  function buildBanditCamp(S,site,r){
+    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
+    const cp=campGeoParts(r,cx,cz,site.pad,worldH); /* S545 — the look, split out for the inspector */
+    for(const T of cp.tents){const t=new THREE.Mesh(T.geo,VC_MAT);t.position.set(T.x,T.h,T.z);t.rotation.y=T.ry;t.castShadow=true;t.userData.noBake=true;group.add(t);sol.push({cx:T.x,cz:T.z,rx:1.6,rz:1.6});} // S205 — a ridge tent of canvas on poles (it was an open cone)
+    // fire, cooking frame, crates, barrels, bones, a stockade of stakes
+    const fire=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));fire.position.set(cx,y+.28,cz);fire.userData.noBake=true;group.add(fire);const fl=regLight(0xff8a30,1.5,13,site.id);fl.position.set(cx,y+1.0,cz);
+    const m=new THREE.Mesh(cp.kit,VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
     // a banner and the loot
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,4,6),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(cx+3,y+2,cz-3);group.add(pole);const cloth=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.9),new THREE.MeshLambertMaterial({color:0x2a2020,side:THREE.DoubleSide}));cloth.position.set(cx+3.6,y+3.5,cz-3);group.add(cloth);
     siteChest(S,cx-3,cz+2,1.6,"Bandits' Takings");
@@ -476,6 +491,16 @@
     for(const s of [1,-1])for(const z of [-L/2+.3,L/2-.3]){const x0=s*W/2,x1=s*(W/2+.9);const gl=SK.cyl(.012,.012,Math.hypot(.9,H*.6),4);const ang=Math.atan2(.9,H*.6);add(gl,0xb09a70,(x0+x1)/2,H*.3,z,0,0,s*ang,0);add(SK.cyl(.025,.02,.25,4),0x5a4028,x1,.08,z);}
     return mergeParts(P);}
   function buildPoi(S,site,r){const k=site.kind;if(k==='glade')buildGlade(S,site,r);else if(k==='shrine')buildShrine(S,site,r);else if(k==='lair')buildLair(S,site,r);else if(k==='tower')buildTower(S,site,r);else if(k==='bcamp')buildBanditCamp(S,site,r);}
+  // S545 — a place's look on a stage, for the mesh inspector: the glade, the lair or the bandit camp built by its own
+  // geometry function at the origin on flat ground (the glade on its pond's bowl), on a fixed roll; no stamp, solid, light,
+  // herb, chest or creature reaches the world. The tower and the shrine have poiGeo already.
+  function poiPreview(kind,seed){const r=pRng(seed==null?7:seed),g=new THREE.Group(),V=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,VC_MAT);m.position.set(x||0,y||0,z||0);m.rotation.y=ry||0;m.castShadow=true;m.receiveShadow=true;g.add(m);return m;};
+    if(kind==='glade'){const pr=11+r()*4,pad=34,bowl=(x,z)=>{const d=Math.hypot(x,z);return d<pr?-2:d<pr+7?-2*(1-(d-pr)/7):0;};const gp=gladeGeoParts(r,0,0,0,pr,pad,bowl);V(gp.hi);
+      const w=new THREE.Mesh(new THREE.CircleGeometry(pr+2,28),new THREE.MeshLambertMaterial({color:0x4a8ab0,transparent:true,opacity:.75}));w.rotation.x=-Math.PI/2;w.position.y=-.75;g.add(w);
+      const t=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,gp.trees.length),mm=new THREE.Matrix4();gp.trees.forEach((T,i)=>{mm.compose(new THREE.Vector3(T.x,T.h,T.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),T.ry),new THREE.Vector3(1.4,1.5,1.4));t.setMatrixAt(i,mm);});t.instanceMatrix.needsUpdate=true;g.add(t);}
+    else if(kind==='lair'){const lp=lairGeoParts(r,0,0,()=>0);V(lp.rock);for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;g.add(b);}}
+    else if(kind==='bcamp'){const cp=campGeoParts(r,0,0,30,()=>0);for(const T of cp.tents)V(T.geo,T.x,T.h,T.z,T.ry);V(cp.kit);const f=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));f.position.y=.28;g.add(f);}
+    else return null;return g;}
 
   // ═══ PEOPLES AND NATIONS (Session N) ═════════════════════════════════
   // Three islands, three nations, four peoples. A province belongs to the
