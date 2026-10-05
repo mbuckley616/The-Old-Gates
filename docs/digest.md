@@ -129,3 +129,17 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: seeded loot rolls, and the critic's three bugs fixed (a bought ship faces the sea, saves name their place). Look builder: nothing left in H. Critic: raise a sunk ship, then the ram.
 
 **Roadmap.** 167 of 197 stories done (165 yesterday). Two stories waiting on you: the calendar and the spent guard break.
+
+## 5 Oct 2026
+
+**Waiting on you.** Five decisions: the calendar's era (A, years of the Peace), capes and cloaks (B, one small virtue each), the barber's fee (A, an inn room's price), the dragon's size (B, 4.5), and unblocking the design proposal (A, merge it). Two merges: Look sessions 512–529 and Systems sessions 485–511.
+
+**Landed on main since yesterday.** Systems 431–483 (d8ad150). Look 466–483. The Fable world-file split, 484 (3c0d9f1): the world in nine files. The mesh inspector, 492–494. Look 505–506, the barber prototype (ad6cd24). The rest-and-rising concept, quest writer run 8, two critic playtests. Build s418.
+
+**Answered.** Rest and rising A, the barber and dyer B, unblock main A.
+
+**Blocked.** Main's CI is red on 7835cfd, a docs-only merge, on one test (sailtrim); its one re-run is going. The newer Systems head (513–533) is still in CI.
+
+**Team.** Systems builder: waits on the calendar's names and the fee. Look builder: the ghoul's limp, hands on held weapons, the goblin. Critic: the town barrels, raising a sunk ship.
+
+**Roadmap.** 174 of 215 stories done (167 yesterday); your inspector notes and the spent guard break are under way; four stories wait on you.
