@@ -11,7 +11,7 @@ The calendar is built on auto/systems (Sessions 496–500) with placeholder name
 - **D.** Other names: Michael writes them, or marks the ones to change.
 
 Recommendation: **A.** Every ledger on three islands had to date by the treaty, the number is short, and if the cold peace breaks in play the date line keeps calling it the Peace, which is the point of it.
-
+## Answered
 ### A barber and dyer in towns (the look builder, Session 505, 2026-10-05, DECISION #144)
 Backlog H has one look item left that is not done or waiting: *a barber/tailor in towns to change hair and dyes after the creator*. Today the look you choose in the creator (hair, beard, tunic, breeches and boots colours) is fixed for good. A trade in town would reopen those rows. It touches a new person, a room, a sign and a fee, so it is yours before anyone builds it.
 
@@ -26,8 +26,15 @@ Recommendation: **B.** One trade covers the whole look page the creator already 
 
 Screens: [the room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-room.png) · [the room, other side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-room2.png) · [the sign and the dyer's corner](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-sign-dyer.png) · [one man three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/barber-three-ways.png). Script: `docs/prototypes/barber/proto.mjs`.
 
+Michael: **One shop, the barber and dyer**. (2026-10-05)
 
-## Answered
+### Unblock main: the watch test fails half the time (the producer, 2026-10-04)
+Main's own CI was red on 178e96f, a docs-only merge: one check in the watch test (a guard trailing you at favour −2 stays 38 units off) fails on and off, the same fault Session 378 fixed. The critic's docs-only playtest (PR #135) failed it twice.
+- **A. Merge the docs PRs anyway; systems fixes watch** *(recommended)*: the critic's playtest (PR #135, b68c988) and the producer's docs merge past the red watch shard; the systems builder makes the favour −2 guard robust next run. Code branches still need green.
+- **B. Hold everything until watch is fixed.**
+
+Michael: **Merge the docs PRs anyway; systems fixes watch**. (2026-10-05) Done: PR #135 merged at b68c988; the systems builder owns the watch fix (backlog I).
+
 ### Rest and rising — the sleep and wait slip, and the level page (the concept artist, 2026-10-04, DECISION #142)
 Today sleeping and waiting are two unrelated panels: a bed opens a cream Georgia slip with a bare 1–24 hour slider (*Day 4 · 9:40 pm · You are ready to advance*), and the ⏳ button opens a dark web panel of five emoji buttons (*Until Dawn (6:00)* … *Until Night (20:00)*). The level is taken on waking, on a third look again: eight dark cards in two columns, each with a ×1–×5 multiplier, a line of gains, and *Current: 0 pts · Activity: 310*, a raw number with no unit and no word on what the next multiplier needs. The prototype puts all three on the approved parchment kit (27 Sep) with the game's own numbers: a Duelist on Day 4 at 9:40 pm in Dunmore, 74 of 130 health, ready for level 2, with the activity a first level's play gives (5 foes, 140 wounds, 3 parries, 310 paces sprinted, 9 people talked with…). Prototype: `docs/prototypes/rest/` on auto/concept.
 
@@ -44,15 +51,20 @@ Screens: [the slip, sleeping 8 hours](https://raw.githubusercontent.com/mbuckley
 Found on the way (today's build): the level panel always reads *❤ +10 HP restored* (`#lu-hpgain`, static; the level adds 10 to the maximum); `gainLines` leaves out gains `ATTR_DEF` grants — Might's carry, Finesse's ranged damage, Resolve's block cost and magic resist, Intelligence's spell power, Charisma's quest gold and merchant access — so Charisma ×4 shows only *+4% barter prices*.
 Michael: **The level on one sheet** (2026-10-04). Acted: written here; the systems builder (the slip and the waiting rule) and the look builder (the sheet on the parchment kit) take it from the backlog.
 
-### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
-Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
-- **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
-- **B.** A, and a calendar the world keeps: a god's day doubles its shrine's boon, each town a market day with a travelling stall, rent on a named day, four feasts a year, some tasks dated (+25% by the day, taken back after), seasons in the weather odds, and a *Due* page (A + 2 Opus).
-- **C.** B, and Morrowind's whole book: every topic you were told filed by name with a search, links in entries, notes of your own and on the map (B + 2 Opus).
+### Unblock Systems: the freeze stops the fix it waits on (the producer, 2026-10-04)
+The world-file Fable session (FREEZE #138) waits for auto/systems and auto/backlog to land, and the freeze stops both builders until it starts. Systems' CI on 2859d5c is red on one test, guardplay (shard 8; the branch changed it), so only the systems builder can fix it, and the freeze stops it.
+- **A.** Lift the freeze until both branches land; the Fable routine opens a new one when it takes the card. *(recommended)*
+- **B.** Merge Systems 2859d5c anyway, guardplay red on main; the fix waits until after the cut.
+- **C.** Start the cut now; Systems merges the rewritten world file after.
+Michael: **Lift the freeze until both branches land** (2026-10-04). Acted: FREEZE #138 closed; the systems builder fixes guardplay next run; the world-file card goes back to queued once Systems and Look are on main.
 
-Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
+### Unblock main: CI red after the co-op merge (the producer, 2026-10-04)
+Main's CI on 6c9e3da (the co-op door merge) failed coopsaves, hourhitch and sailtrim, and stayed red four runs running: coopsaves waits a fixed 1.5 s for a save on a slow runner. No agent owned the co-op tests once the Fable session was done.
+- **A.** The builders make the slow tests wait on the game, export too (Look 469 and Systems 470 already fixed coopsaves and duel; the fixes ride their next merges). *(recommended)*
+- **B.** Treat it as a flake and re-run.
+- **C.** Hand it to Claude (local).
 
-Michael: **C — B, and Morrowind's whole book** (2026-10-04, on #132: the dated journal, a calendar the world keeps, and the topic index). Acted, Session 486: part A's first slice, the journal saved in the character row with each line's date (`tests/journal`). The rest is in backlog E and D: the Journal tab's two views and the date line everywhere wait on the quest writer's names; B and C touch the world module and follow its break-up. #132 closed by the producer.
+Michael: **Builders make the slow tests wait, export too** (option A). (2026-10-04)
 
 ### An exhausted power attack still breaks a guard (the systems builder, Session 464, 2026-10-04, DECISION #131)
 Played through the duel at Caer Slige (Session 464). Rowe fights as a Bandit Captain with the Shieldbearer's guard: a hit from the front lands at 35%, and a power attack breaks the guard (1.5 s stagger, the next blow full). Since v80 S9 a swing with too little stamina goes anyway but weakly: it lands at 45% and its cooldown is 30% longer. The guard break ignores that. A power attack on an empty bar breaks the guard as fully as a fresh one.
@@ -66,6 +78,16 @@ What it does in play, measured headless at level 1 with the starting club agains
 Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
 
 Michael: **A — an exhausted power attack lands as a guarded hit** (2026-10-04, on #131). Acted, Session 485: both strike paths (the open world's and the dungeon's) let a spent power attack fall through to the guarded hit (the front block .35 on the spent 45%), with a normal swing's posture drain rather than the power attack's, and the hit's line ends *· Too spent to break the guard.* `tests/spentguard`. #131 closed.
+
+### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
+Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
+- **A.** The dated journal: your entries in your own voice under their dates, by day and by quest, on the open book; the date line everywhere. Nothing in play changes (1 Opus).
+- **B.** A, and a calendar the world keeps: a god's day doubles its shrine's boon, each town a market day with a travelling stall, rent on a named day, four feasts a year, some tasks dated (+25% by the day, taken back after), seasons in the weather odds, and a *Due* page (A + 2 Opus).
+- **C.** B, and Morrowind's whole book: every topic you were told filed by name with a search, links in entries, notes of your own and on the map (B + 2 Opus).
+
+Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
+
+Michael: **C — B, and Morrowind's whole book** (2026-10-04, on #132: the dated journal, a calendar the world keeps, and the topic index). Acted, Session 486: part A's first slice, the journal saved in the character row with each line's date (`tests/journal`). The rest is in backlog E and D: the Journal tab's two views and the date line everywhere wait on the quest writer's names; B and C touch the world module and follow its break-up. #132 closed by the producer.
 
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.
