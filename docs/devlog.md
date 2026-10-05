@@ -11800,6 +11800,7 @@ DECISION #144 asks Michael to choose between A (two trades, a barber and a dyer)
 
 ### Verified (headless Chromium)
 The script runs clean (no page errors) and writes `docs/prototypes/barber-room.png`, `barber-room2.png`, `barber-sign-dyer.png` and `barber-three-ways.png`; the triangle counts above are the bakes' own (`userData.tris`).
+CI on this branch then failed `shoperrands` (shard 6): at noon Cathal took Niamh's draught, the race Session 483 narrowed and the systems builder's Session 501 closed on auto/systems by setting anyone within 3 units of the stand 6 units off before E. That change is ported here into main's capture-listener pin (S483), so both hold; it no-ops once #141 merges. `shoperrands` 6/6.
 
 ### Needs eyes
 - Michael: DECISION #144. The pictures are on a plain stage (a plastered corner and a plank floor), not in a generated room's shell and light.
