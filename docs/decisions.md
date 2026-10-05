@@ -11,6 +11,15 @@ The calendar is built on auto/systems (Sessions 496–500) with placeholder name
 - **D.** Other names: Michael writes them, or marks the ones to change.
 
 Recommendation: **A.** Every ledger on three islands had to date by the treaty, the number is short, and if the cold peace breaks in play the date line keeps calling it the Peace, which is the point of it.
+### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05)
+Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).
+- **A. One fee for the visit, an inn room's price in that place** *(recommended)*: about 12 in a town, 20 in a city; the look page opens and anything on it can change for that one fee; leaving without a change costs nothing. The shop keeps a strongbox at the general goods rate, like every other keeper.
+- **B. Priced by the change**: a cut or shave 5, a new hair colour 10, each garment dyed 8, a city half as much again. Each row on the look page shows its price. Strongbox as A.
+- **C. Free**: the barber's chair is a service of the town, with no fee and no strongbox.
+- **D. A, but with no strongbox**: a barber keeps little coin.
+
+Recommendation: **A.** One fee matches the one shop you chose on #144, it costs a night's lodging, which is cheap enough to try a look and dear enough not to do it daily, and it needs no price list on the page. B makes the look page a shop, and Morrowind and Skyrim never priced a haircut by the strand.
+
 ## Answered
 ### A barber and dyer in towns (the look builder, Session 505, 2026-10-05, DECISION #144)
 Backlog H has one look item left that is not done or waiting: *a barber/tailor in towns to change hair and dyes after the creator*. Today the look you choose in the creator (hair, beard, tunic, breeches and boots colours) is fixed for good. A trade in town would reopen those rows. It touches a new person, a room, a sign and a fee, so it is yours before anyone builds it.
