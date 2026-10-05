@@ -81,6 +81,8 @@ function strikeReaches(e,arc){
   if(typeof e.combatYaw!=='number'||d<.35)return true;
   return (dx*Math.sin(e.combatYaw)+dz*Math.cos(e.combatYaw))/d>=Math.cos(arc.deg*Math.PI/360);
 }
+// S564 — undo a perfect parry's flash: the body's own material back (see executeStrike)
+function parryFlashEnd(e){const P=e&&e._parryFlash;if(!P)return;e._parryFlash=null;if(P.body.material===P.fl)P.body.material=P.orig;try{P.fl.dispose();}catch(_){}}
 function executeStrike(e, rawDmg, now){
   // S275 — mid-roll you are not there to be hit
   if(rollUntouchable(now/1000)){sndSwing();e._lunge=.3;showMsg(`${e.name} strikes empty air.`,'#c8b880');return;}
@@ -131,15 +133,18 @@ function executeStrike(e, rawDmg, now){
     // renders on the torso of every enemy shape — goblins, trolls, the
     // Faolchú, the lessers — bringing the visual into parity with the
     // sndParry audio cue that had been carrying the feedback alone.
+    // S564 — the flash is a tinted copy of the body's own material, and the undo puts that material back, alive or dead.
+    // It was a new plain Lambert: on a skinned body (the people-bodied foes, the skeleton among them) that draws the bind
+    // pose, the undo made another plain one, and a foe killed inside the 1.2 s kept the yellow one over its ragdoll,
+    // standing (Michael, 5 Oct). killE and killZoneEnemy end it before they darken the corpse.
     const _staggerBody = enemyBodyMesh(e);
-    if(_staggerBody){
-      const staggerMat = new THREE.MeshLambertMaterial({color:0xffdd44, emissive:0x664400});
-      _staggerBody.material = staggerMat;
-      setTimeout(()=>{
-        if(e.dead) return;
-        const _restoreBody = enemyBodyMesh(e);
-        if(_restoreBody) _restoreBody.material = new THREE.MeshLambertMaterial({color:e._origCol||0x909090});
-      }, 1200);
+    if(_staggerBody && _staggerBody.material){
+      parryFlashEnd(e);
+      const orig = _staggerBody.material, fl = orig.clone();
+      if(fl.color) fl.color.setHex(0xffdd44);
+      if(fl.emissive) fl.emissive.setHex(0x664400);
+      _staggerBody.material = fl; e._parryFlash = {body:_staggerBody, orig, fl};
+      setTimeout(()=>parryFlashEnd(e), 1200);
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');

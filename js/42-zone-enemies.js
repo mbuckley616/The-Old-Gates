@@ -1517,6 +1517,7 @@ function killZoneEnemy(e,sc,tag=''){
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
   const terrainY = typeof activeTerrainH==='function' ? activeTerrainH(e.x,e.z) : 0;
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
+  if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
   if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,activeTerrainH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.set(e.x, terrainY+0.15, e.z);}
