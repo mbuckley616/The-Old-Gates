@@ -12153,3 +12153,14 @@ The critic's fourth note, two *Séamus's House* in one town, is about names and 
 
 ### Needs eyes
 Nothing to see beyond the critic's own walk: buy a house, talk to nobody at its door, walk off and come back.
+
+## v80 — Session 531 — The level panel says what the level gives (DECISION #142, the "also fix")
+Michael's A on #142 sets the level page as one sheet, which the look builder draws. The concept artist found two wrong lines in today's panel on the way, and the answer gives them to this builder. **The health line was static.** It always read *❤ +10 HP restored*. A level adds 10 to the maximum and fills the same 10, and Fortitude adds 10 a point on top, from the picks and from an archetype's +1. The line is now worked out by `luHPGain` (`12-character.js`) the way `confirmLevelUp` gives it, *❤ +N max HP*, and it is redrawn on every pick. **The cards left gains out.** `gainLines` named sixteen kinds of gain but not the seven others `ATTR_DEF` grants, all of which the game does read: Might's carry weight (`maxCarry`), Finesse's ranged damage, Resolve's block cost and magic resist (`_magicResist`), Intelligence's spell damage, and Charisma's quest gold (`questGold`) and better stock (`_chaExtraItem`, at 5 points). Charisma ×4 used to show only *+4% barter prices*. The better-stock line shows only on the raise that reaches 5 points, since it is a threshold and not a gain per point. The lines use the card's existing wording (*+N% … damage*, *max HP*).
+
+Correction: Session 530 was first committed as 527. The look builder's 527–529 had landed on auto/backlog while it ran, so it was renumbered in its own commit (4ebb618).
+
+### Verified (headless Chromium)
+`levelpanel` 9/9 (new). Might ×2 reads *+2% melee damage · +10 carry weight*. Finesse adds *+1% ranged damage*. Resolve ×3 reads *−15% block cost · +3% magic resist*. Intelligence adds *+1% spell damage*. Charisma ×4 reads *+4% barter prices · +8% quest reward gold*, and from 2 points it also reads *merchants show a piece from the tier above*, from 0 it does not. The panel opens at *❤ +10 max HP*. Picking Fortitude at ×3 makes it *+40*, unpicking makes it *+10* again, and confirming Fortitude, Might and Finesse raised the maximum by exactly 40. A Warrior, whose +1 is Fortitude, opens at *+20*, and confirming gives 20. fortunecard and attrdmg pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see; the look builder's sheet will carry these lines.
