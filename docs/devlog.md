@@ -12131,3 +12131,14 @@ Left in step 3: quest pickups.
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 518 — Quest pickups have ids, and step 3 is done (backlog K, the co-op door)
+The last item on Session 456's list of things with no id: quest pickups. A lord's *retrieve* job puts a box on the ground (`qTick`, `87-world-quests.js`), and a guild's relic task puts a crystal there (`ensureTaskWorldObjects`, `83-world-generator.js`). Both go into `pickups`, which is rebuilt from the quest each load. Each pickup is now `<quest id>:pickup` or `<task id>:pickup`, built on the quest and task ids that have been stable since Session 503. Whether it was taken is already saved, as the quest's `data.got` or the task's `got`.
+
+That finishes step 3. Every foe the world raises, every container, corpse, herb and door, and every pickup now has an id of place and index that two machines agree on. Nothing new is saved by it: the first code that saves a thing's state (a chest opened, a door left open, a herb picked) keys it by these ids. Steps 1 and 2 were done before, so what the co-op door's Opus half asked for is in place.
+
+### Verified (headless Chromium)
+`pickupids` 3/3 (new). A retrieve job *tq:testsite:4*, raised by the world's tick, puts down *tq:testsite:4:pickup*. Walking onto it sets the job's `got` and takes the pickup away. A Mages' Guild relic task *guild_m:testsite:2* puts down *guild_m:testsite:2:pickup*, and walking onto it does the same. The suites that give and finish jobs and tasks (jobids, worldjournal, datedguild, questgold) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
