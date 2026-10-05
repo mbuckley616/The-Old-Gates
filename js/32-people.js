@@ -286,8 +286,18 @@ function ARMOUR_DRESS(X){
     if(Hd.fam==='lamellar'){bowl([[.158,.02],[.156,.06],[.138,.12],[.1,.165],[.05,.19],[.012,.2],[0,.2]],-.3);
       ring(.16*hs,.009,.14,gd,hd,1.02).rotation.x=PI/2-.3;ring(.15*hs,.006,.19,gd,hd,1.02).rotation.x=PI/2-.3;
       part(SK.cone(.018,.05,6),gd,hd,0,.33,-.06).rotation.x=-.3;aventail(leather,false);}
-    else if(Hd.fam==='muscle'){const g2=SK.ball(R,20,12,PI/2+.5,PI*2-1,0,PI*.74);const o=part(g2,m,hd,0,.12,.0);o.scale.set(jaw*1.02,1.06,1.1);o.rotation.x=-.08;
-      const cg=SK.torus(.19*hs,.03,6,18,PI*.7);cg.rotateZ(PI*.12);const cr=part(cg,C(0x8a2016),hd,0,.12,-.02);cr.rotation.y=PI/2;cr.scale.set(1,1,.45);}
+    // S536 — the bronze helm is a Corinthian (Michael, the inspector: "It splits right down the middle" at the forehead — the old
+    // shell was a sphere with its face gap running up to the crown — "expected more like a classic hoplite helmet"; long hair cut
+    // through it). Three bands of one lathed profile (BRONZE_HELM, r and y on the head bone): the crown closed over the brow, the eye
+    // band open across the face, and the cheek and neck guards down to a flared rim with only the mouth's slit between them; a
+    // nasal down from the brow, a raised brow ridge, and the red crest front to back. The guards stand clear of the hair beneath.
+    else if(Hd.fam==='muscle'){const band=(y0,y1,w)=>{const pts=BRONZE_HELM.filter(q=>q[1]<=y0+1e-6&&q[1]>=y1-1e-6).reverse(); /* bottom to top, so the faces look out */
+        const geo=new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]*hs),.12+(q[1]-.12)*hs)),SK.seg(24,12),w,PI*2-2*w);const o=part(geo,m,hd,0,0,.004);o.scale.x=jaw;return o;};
+      band(1,BRONZE_HELM_EYE[0],0);band(BRONZE_HELM_EYE[0],BRONZE_HELM_EYE[1],.62);band(BRONZE_HELM_EYE[1],-1,.15);
+      const yb=.12+(BRONZE_HELM_EYE[0]-.12)*hs,rb=.172*hs;
+      const br=part(SK.torus(rb,.006,4,20,1.5),gd,hd,0,yb,.004);br.rotation.set(PI/2,0,PI/2-.75);br.scale.y=jaw;
+      const na=part(SK.rbox(.022,.06*hs,.01,.004,1),m,hd,0,yb-.026*hs,.172*hs+.008);na.rotation.x=-.08;
+      const cg=SK.torus(.2*hs,.03,6,18,PI*.7);cg.rotateZ(PI*.12);const cr=part(cg,C(0x8a2016),hd,0,.12,-.02);cr.rotation.y=PI/2;cr.scale.set(1,1,.45);}
     else if(Hd.fam==='mail'){bowl([[.16,.02],[.159,.05],[.14,.12],[.095,.18],[.04,.22],[.008,.235],[0,.236]],-.28);ring(.162*hs,.011,.13,gd,hd,1.02).rotation.x=PI/2-.28;
       part(SK.rbox(.02,.085,.012,.004,1),m,hd,0,.14,.162).rotation.x=-.12;aventail(m,true);}
     else{const g2=keel(SK.ball(R,S==='faceted'?9:22,S==='faceted'?7:14,0,PI*2,0,PI*.8),.045,5);const o=part(F(g2),m,hd,0,.12,.004);o.scale.set(jaw*1.02,1.06,1.08);
@@ -303,6 +313,10 @@ function ARMOUR_DRESS(X){
       if(gl&&S==='inlaid'){const ha=part(SK.torus(.13*hs,.007,4,28),gl,hd,0,.2,-.16);ha.rotation.x=-.2;ring(R*1.02,.004,.19,gl,hd,1.08).scale.x=jaw*1.02;}
       if(gl&&(S==='faceted'||S==='fluted'))ring(R*1.03,.004,.2,gl,hd,1.08).scale.x=jaw*1.02;}}
 }
+// S536 — the Corinthian helm's profile, [radius, height] on the head bone (the head's ball is .13 about .12): the crown, the eye
+// band between BRONZE_HELM_EYE's two heights, then the cheek and neck guards flaring to the rim below the jaw
+const BRONZE_HELM=[[0,.292],[.06,.287],[.11,.268],[.146,.236],[.166,.198],[.173,.165],[.174,.15],[.174,.115],[.174,.08],[.174,.04],[.177,.01],[.185,-.02],[.198,-.045]];
+const BRONZE_HELM_EYE=[.15,.115];
 // S525 — the drape of what hangs from the hips: top, how far below the hip joint it starts to follow the thighs; d, the depth
 // over which it comes to follow them fully; k, how much (1 would be the thigh's own swing).
 const SK_DRAPE={top:.015,d:.1,k:.5};

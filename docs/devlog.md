@@ -12089,3 +12089,32 @@ Michael, from the inspector: "the fist/hand mesh is very dated and ugly. We need
 - The shield's hand sits at the lower edge of the face in the close view. It is below the frame in play.
 - The staff's second arm, and the arm to the torch, cross the lower view nearly level from the left shoulder. The bridge is one straight limb.
 - Gauntlets and gloves colour the hand as before (the fists' colouring). A gauntlet's own shape is not modelled.
+
+## v80 — Session 537 — The bronze helm is a Corinthian (backlog H, Michael's inspector note)
+Michael, from the inspector, of the bronze kit: "Great other than the helmet. It splits right down the middle" at the forehead and the brow ridge. He expected "more like a classic hoplite helmet", and "Long hair and clothing cut right through it." The bronze ("muscle") helm was one sphere (`SK.ball`) with a one-radian gap for the face. A sphere's gap runs the full height from its pole, so the face's opening ran on up over the forehead to the crown, and the crest stood over the cleft. Under it, long straight hair was wider than the shell at the sides and hung out through it.
+
+The helm (`ARMOUR_DRESS`, `32-people.js`) is now a Corinthian, lathed from one profile, `BRONZE_HELM` (radius and height on the head bone). It is cut in three bands at the heights in `BRONZE_HELM_EYE`:
+- **The crown.** Closed all round, down to the brow line just above the eyes.
+- **The eye band.** Open across the face, .62 radians either side of the front.
+- **The cheek and neck guards.** Down past the jaw, with only the mouth's slit (.15 either side) between them, and flaring out at the rim behind the neck.
+
+A raised brow ridge in the guard colour runs along the top of the eye opening. A nasal hangs from it between the eyes. The red crest stays, front to back. The profile keeps the guards clear of the hair beneath them: straight, braided and twinned hair now stays inside the helm and comes out below the rim. The profile first ran top to bottom, which turned the lathe's faces inward and shaded it dark; it runs bottom to top now. The full bronze kit is 10,962 triangles in the inspector (was 10,638).
+
+`docs/inspector-catalogue.json` is refreshed. It also carries Session 536's first-person entries, now that their hands are the fists' hand: a one-handed weapon about 4,200 triangles, a two-handed one about 7,300 and the shield 3,896.
+
+### Verified (headless Chromium)
+`tests/bronzehelm.test.mjs` (new), 7/7, from the bind pose of your body in the bronze kit, read in the head bone's frame:
+- **The family.** The helm is still the crested `muscle` family.
+- **Closed over the forehead.** It has helm vertices in front between the brow and the crown. The old shell had none there.
+- **Open across the eyes.** There is no helm either side of the nasal at the eyes' height.
+- **Closed down the cheeks.** It has helm vertices on the cheeks.
+- **No hair outside the helm.** With straight, braided or twinned hair, none of the 45–48 hair vertices between the crown and the rim stands outside the profile. The braid poked 6–8 mm through the nape until the neck was eased out.
+- **The iron kit.** It keeps its mail helm.
+- **Errors.** No page errors.
+
+The lathe has vertices only at its profile's rows, so the counts are small (2 at the forehead, 8–9 on the cheeks); they are counted where the old shell had none. `armourkit`, `foearmour`, `guardarmour` and `inspector` pass. Pictures: `docs/prototypes/bronzehelm-before-front.png`/`-back.png` and `bronzehelm-after-front.png`/`-back.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The cheek guards' inner edges are straight. A real Corinthian curves them in towards the chin, which would take a profile of its own for the guards.
+- The crest is still the old hoop of red, not a horsehair brush.
+- "Clothing cut right through it" is not this session's. The armour-kits note covers clothing through the armour across the sets.
