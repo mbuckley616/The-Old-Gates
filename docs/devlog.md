@@ -11943,3 +11943,12 @@ CLAUDE.md's co-op rules: *the first code that saves anything about one gives it 
 
 ### Needs eyes
 Nothing to see. Next in step 1, with these ids: key the foes raised for a job (`<job id>:foe:<k>`).
+
+## v80 — Session 503 — The foes a job raises, keyed by the job (backlog K, the co-op door, step 1)
+With Session 502's ids, the foes raised for a job can be keyed as the co-op rules ask (*a spawn, a hit's damage … from a seeded stream keyed by place and id*). `keyFoe` (Session 477) now gives each its id and stream: a road job's band is `<job>:foe:<k>`, standing where the job's own stream (`seededRng('place', job)`) puts them round the camp, where `Math.random` did; a guild raid's bandits are `<task>:foe:<i>`, their ring round the town from the task's stream; a guild's beast, rogue mage or shore wisp is `<task>:foe:0`, its variant from `seededRng('variant', id)` as a site's foes have it (Session 479); the duel's rival is `<job>:rival:<day>`, a stream of her own each day the ring is laid. Their blows, their arrows and your swing's spread on them now draw from their streams (`foeRand`). Still unkeyed (step 1's list): the town guard who draws, and the boarders and the black sails' crews, which are encounters with no place yet.
+
+### Verified (headless Chromium)
+`jobids` 8/8 (3 new): a road job's three bandits are `tq:dunmore:7:foe:0…2`, each with a stream, and raised twice they stand on the same spots to the hundredth; a guild's Ogre is `guild_f:dunmore:9:foe:0`. `duel`, `duelrhythm`, `questfoes` and `foeseed` pass. `parsecheck` clean. Build tag s429.
+
+### Needs eyes
+Nothing to see: the same foes, on the same kinds of spot.
