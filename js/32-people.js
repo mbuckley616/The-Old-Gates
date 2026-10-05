@@ -303,6 +303,9 @@ function ARMOUR_DRESS(X){
       if(gl&&S==='inlaid'){const ha=part(SK.torus(.13*hs,.007,4,28),gl,hd,0,.2,-.16);ha.rotation.x=-.2;ring(R*1.02,.004,.19,gl,hd,1.08).scale.x=jaw*1.02;}
       if(gl&&(S==='faceted'||S==='fluted'))ring(R*1.03,.004,.2,gl,hd,1.08).scale.x=jaw*1.02;}}
 }
+// S525 — the drape of what hangs from the hips: top, how far below the hip joint it starts to follow the thighs; d, the depth
+// over which it comes to follow them fully; k, how much (1 would be the thigh's own swing).
+const SK_DRAPE={top:.015,d:.1,k:.5};
 function personBake(g,q){SK.q=q;try{return personBakeQ(g,q);}finally{SK.q=1;}}
 function personBakeQ(g,q){
   const bones=[],B={};
@@ -528,10 +531,21 @@ function personBakeQ(g,q){
   // bake: every part into one geometry, each vertex bound to its bone
   const pos=[],nor=[],col=[],idx=[],si=[],sw=[],PR=[];const m=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3(),n=new THREE.Vector3();let base=0;const jr=pRng(g.seed+5);
   hips.updateMatrixWorld(true); // the bind pose: each part is baked in the figure's space, through its bone
+  // S525 — what hangs from the hips over the legs follows them (Michael, the inspector: "the legs punch right through the fabric
+  // while walking"): a vertex of a part on the hips bone that lies below the hip joints is weighted towards the thigh on its side,
+  // more the further out it lies (none at the middle, where two thighs swinging opposite ways would pinch it), fully from SK_DRAPE.d
+  // below the joint, so a skirt, a dress, an apron or an armour's skirt swings
+  // with the stride instead of standing still while the thigh passes through it. Stone and bone bodies stay rigid.
+  const drape=!g.golem&&!g.skel&&B.thL&&B.thR,thY=drape?new THREE.Vector3().setFromMatrixPosition(B.thL.matrixWorld).y:0,
+    thX=drape?Math.abs(B.thL.matrixWorld.elements[12]-hips.matrixWorld.elements[12])||.085:.085,hx=hips.matrixWorld.elements[12],
+    iH=hips.userData.i,iL=drape?B.thL.userData.i:0,iR=drape?B.thR.userData.i:0;
   for(const o of parts){o.updateMatrix();m.multiplyMatrices(o.parent.matrixWorld,o.matrix);nm.getNormalMatrix(m);const geo=o.userData.geo,c=o.userData.col,bi=o.parent.userData.i;const pa=geo.attributes.position,na=geo.attributes.normal;
     if(q<1){if(!geo.boundingSphere)geo.computeBoundingSphere();if(geo.boundingSphere.radius*o.scale.x<PEOPLE_LOD.tiny){o.parent.remove(o);geo.dispose();continue;}}
     for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pos.push(v.x,v.y,v.z);n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();nor.push(n.x,n.y,n.z);
-      const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);si.push(bi,0,0,0);sw.push(1,0,0,0);}
+      const j=1+(jr()-.5)*.05;col.push(c.r*j,c.g*j,c.b*j);
+      const d=drape&&bi===iH?thY-SK_DRAPE.top-v.y:0;
+      if(d>0){const a=Math.min(1,Math.abs(v.x-hx)/thX),w=SK_DRAPE.k*Math.min(1,d/SK_DRAPE.d)*a*a*(3-2*a);si.push(iH,v.x>hx?iL:iR,0,0);sw.push(1-w,w,0,0);}
+      else{si.push(bi,0,0,0);sw.push(1,0,0,0);}}
     if(geo.index){const ia=geo.index;for(let i=0;i<ia.count;i++)idx.push(ia.getX(i)+base);}else for(let i=0;i<pa.count;i++)idx.push(i+base);
     PR.push([base,pa.count]);base+=pa.count;o.parent.remove(o);geo.dispose();}
   personAO(pos,nor,col,PR);

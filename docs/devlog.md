@@ -11923,3 +11923,16 @@ Whether 2.88 is large enough is Michael's call: the size also sets how far the d
 
 ### Needs eyes
 - Michael: DECISION #153. Seen at its real size in the inspector, the dragon may already be closer to what he wants.
+
+## v80 — Session 525 — Skirts and dresses swing with the legs (backlog H, Michael's inspector note)
+Michael, from the inspector, of the Gatelands villager woman "and basically all tunics/garments that cover the legs": "the legs punch right through the fabric while walking. It looks awkward and is immersion-breaking." The person is one skinned mesh in which every part is bound wholly to one bone (`personBakeQ`). The tunic's skirt, a dress, its hem trim, an apron and an armour's skirt all hang from the hips bone, so they stood still while the thighs swung through them. Over a walk cycle, 17–21 leg vertices a frame stood outside a woman's dress, up to 6.7–7.8 cm out.
+
+The bake now weights what hangs from the hips over the legs. A vertex of a part on the hips bone that lies below the hip joints (`SK_DRAPE.top`, 1.5 cm) is bound partly to the thigh on its side. The share grows over `SK_DRAPE.d` (10 cm) to `SK_DRAPE.k`, and with a smoothstep from nothing at the middle line to full at the thigh's own line and beyond. The first try split the middle between the two thighs. Because they swing opposite ways, linear blending pinched the middle of the dress inwards and the worst poke grew to 23 cm. Sweeping the share: 0 (rigid) gives 17–21 a frame and 6.7–7.8 cm; .5 gives 4–8 and 4.0–4.8 cm; .7 gives 6–7 and 7–9 cm; 1 gives 5–6 and 5–6 cm. It is set at .5, so the cloth follows the leg half way. The rule is general: every part on the hips takes it (skirts, dresses, trims, aprons, the mail and lamellar skirts of the armour kit, a satchel at the side). The golem's stone and the skeleton's bones stay rigid. Nothing else in the bake changes, and the distant copy is baked by the same loop.
+
+### Verified (headless Chromium)
+`tests/skirtlegs.test.mjs` (new), 3/3, on four townsfolk (the Gatelands, Markish and Aurennais villager women and the Gatelands villager man). Over 24 frames of the walk the figure is CPU-skinned (`boneTransform`), and each thigh or knee vertex is compared with the skirt's own posed surface at the same height and bearing round the hips. Against the outer wall of the skirt (2 cm by 15° bins), 4.2, 7.1 and 8.1 vertices a frame poke out, at worst 4.0, 4.5 and 4.8 cm. The rigid build gives 16.6, 18.6 and 20.8, at worst 6.7, 7.5 and 7.8 cm, and fails the check. The man's short tunic gives 0 in both. Pictures: `docs/prototypes/skirtlegs-before.png` and `-after.png`, an Aurennais woman mid-stride: before, the leading knee comes out through the front of her dress; after, the dress swings forward with it. `armourkit`, `foes`, `lod`, `people`, `peopleao` and `ragdoll` pass. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At real speed, whether a dress moving half with each leg reads as cloth or as trousers. The share is one number (`SK_DRAPE.k`).
+- Long dresses still let the shin show behind the hem of the leading leg at full stride, since the shin bends at the knee and the dress follows only the thigh. The remaining 4–8 vertices a frame are there.
+- The armour kit's skirts (lamellar, mail, pteruges) take the same rule and were not measured on their own.
