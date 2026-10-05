@@ -12098,3 +12098,14 @@ On the way: the lair master's hoard (`lairFinish`) was the one dungeon outcome s
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 515 — Every herb in the world has an id (backlog K, the co-op door, step 3)
+The next thing on step 3's list with no id: herbs. A herb picked is `harvested` on the object and nothing is saved, but a co-op host and guest must agree on which plant was picked, and so must a later save of picked herbs. The world's herbs are placed from the chunk's hash (`spawnChunkHerbs`, `82-world-structures.js`), so they stand in the same spots on every machine. Their order in the chunk's list does not hold, though: whether a spot is taken reads the solids and the roads loaded at that moment. A tree that arrived first on one machine refuses a herb that another machine places, and a running count would then give every later herb a different id.
+
+So a herb's id is the placing try that put it, not its place in the list: `<cx,cz>:herb:<i>` for the chunk's scatter, `<cx,cz>:verge:<i>` along the roads, `<cx,cz>:hot:<i>` for a hotspot's cluster. Sea-bed herbs (`spawnSeaHerbs`, `85-world-sea.js`) are `<cx,cz>:seabed:<i>`, and a glade's ring of eighteen (`87-world-quests.js`) is `<site>:herb:<i>`. The legacy zones' herbs (Ashenmoor, Hearthwick and the rest) are left without ids; they belong to the old zones and to no co-op world. Nothing about a herb is saved yet.
+
+### Verified (headless Chromium)
+`herbids` 4/4 (new). Near the start, 1,148 herbs are loaded, every one with an id of the right shape, 1,148 distinct (the kinds herb, verge, hot and seabed all appear). Chunk 205,395's herbs, placed again by the game's own spawner, come back as the same 29 ids, each at the spot and of the kind the world has. Placed a third time with a box over *205,395:herb:0*, that herb is refused and the other 28 keep their ids, spots and kinds. The chunk's next try then fills the count under its own id, *205,395:herb:18*. No glade was loaded in the test, so the glade's ids are read in the code, not seen. The herb suites (herbstub, plants, herbhidden, herbparity, pois, stonecress, ashwort) pass. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.

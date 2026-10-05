@@ -1053,7 +1053,8 @@
     // a hotspot: one herb, many of it, clustered
     const hot=hash01(ch.cx,ch.cz,124)<.14;
     let n=Math.floor((8+hash01(ch.cx,ch.cz,120)*8)*dens); // v80 — denser: 8–16 a chunk before the biome factor
-    const put=(hx,hz,type)=>{const def=HERB_DEF[type];if(!def)return false;const g=new THREE.Group();g.position.set(hx,worldH(hx,hz),hz);const gl={intensity:0,parent:null};const h={x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2};ZONES.world.herbs.push(h);ch.herbs.push(h);return true;};
+    // S514 — each herb is <chunk>:herb|verge|hot:<i>, the placing try that put it (co-op rules), so a spot refused on one machine moves no other's id
+    const put=(hx,hz,type,k)=>{const def=HERB_DEF[type];if(!def)return false;const g=new THREE.Group();g.position.set(hx,worldH(hx,hz),hz);const gl={intensity:0,parent:null};const h={id:ch.cx+','+ch.cz+':'+k,x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2};ZONES.world.herbs.push(h);ch.herbs.push(h);return true;};
     const okSpot=(hx,hz)=>{if(solidAt(hx,hz))return false;const ri=roadInfo(hx,hz);if(ri&&ri.d<ROAD_HALF+1.2)return false;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r-6)return false;return true;};
     let placed=0;
     for(let i=0;i<n*3&&placed<n;i++){
@@ -1062,16 +1063,16 @@
       const ctx=placeCtx(hx,hz,h,ch);if(ctx==='sea')continue;
       const cands=herbCandidates(biome,ctx);if(!cands.length)continue;
       let tw=0;cands.forEach(c=>tw+=c[1]);let pk=hash01(ch.cx,ch.cz,123+i)*tw,type=cands[0][0];for(const c of cands){pk-=c[1];if(pk<=0){type=c[0];break;}}
-      if(put(hx,hz,type))placed++;
+      if(put(hx,hz,type,'herb:'+i))placed++;
     }
     // v80 — the verge: herbs grow along the sides of roads, just off the surface
-    {let vp=0;for(let i=0;i<40&&vp<6;i++){const hx=ch.cx*CHUNK+1+hash01(ch.cx+i,ch.cz+7,131)*(CHUNK-2),hz=ch.cz*CHUNK+1+hash01(ch.cz+i,ch.cx+3,132)*(CHUNK-2);const ri=roadInfo(hx,hz);if(!ri||ri.d<ROAD_HALF+1.0||ri.d>ROAD_HALF+3.2)continue;const h=worldH(hx,hz);if(h<1.0||solidAt(hx,hz))continue;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r)continue;const cands=herbCandidates(biome,'open');if(!cands.length)continue;const type=cands[Math.floor(hash01(ch.cx+i,ch.cz,133)*cands.length)][0];if(put(hx,hz,type))vp++;}
+    {let vp=0;for(let i=0;i<40&&vp<6;i++){const hx=ch.cx*CHUNK+1+hash01(ch.cx+i,ch.cz+7,131)*(CHUNK-2),hz=ch.cz*CHUNK+1+hash01(ch.cz+i,ch.cx+3,132)*(CHUNK-2);const ri=roadInfo(hx,hz);if(!ri||ri.d<ROAD_HALF+1.0||ri.d>ROAD_HALF+3.2)continue;const h=worldH(hx,hz);if(h<1.0||solidAt(hx,hz))continue;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r)continue;const cands=herbCandidates(biome,'open');if(!cands.length)continue;const type=cands[Math.floor(hash01(ch.cx+i,ch.cz,133)*cands.length)][0];if(put(hx,hz,type,'verge:'+i))vp++;}
     }
     if(hot){
       const hx0=ch.cx*CHUNK+10+hash01(ch.cx,ch.cz,125)*(CHUNK-20),hz0=ch.cz*CHUNK+10+hash01(ch.cz,ch.cx,126)*(CHUNK-20);const h0=worldH(hx0,hz0);if(h0<1)return;
       const ctx=placeCtx(hx0,hz0,h0,ch);const cands=herbCandidates(biome,ctx==='sea'?'open':ctx);if(!cands.length)return;
       const type=cands[Math.floor(hash01(ch.cx,ch.cz,127)*cands.length)][0];const m=8+Math.floor(hash01(ch.cx,ch.cz,128)*9);
-      for(let i=0;i<m;i++){const a=hash01(ch.cx+i,ch.cz,129)*Math.PI*2,rr=1.5+hash01(ch.cz+i,ch.cx,130)*7;const hx=hx0+Math.cos(a)*rr,hz=hz0+Math.sin(a)*rr;if(worldH(hx,hz)<1||!okSpot(hx,hz))continue;put(hx,hz,type);}
+      for(let i=0;i<m;i++){const a=hash01(ch.cx+i,ch.cz,129)*Math.PI*2,rr=1.5+hash01(ch.cz+i,ch.cx,130)*7;const hx=hx0+Math.cos(a)*rr,hz=hz0+Math.sin(a)*rr;if(worldH(hx,hz)<1||!okSpot(hx,hz))continue;put(hx,hz,type,'hot:'+i);}
     }
     herbInstances(ch);
   }

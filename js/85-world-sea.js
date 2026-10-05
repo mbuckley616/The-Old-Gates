@@ -413,7 +413,7 @@
       const bed=worldH(hx,hz);if(bed>-1.2||bed<-9)continue; // shallows and reefs, not the abyss
       const type=['kelp','kelp','sealily','pearlweed'][Math.floor(hash01(ch.cx,ch.cz,143+i)*4)];const def=HERB_DEF[type];
       const {g,gl}=mkHerbMesh(hx,hz,def,sc);if(gl&&gl.parent)gl.parent.remove(gl);g.position.y=bed;
-      const h={x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2,bed:true};
+      const h={id:ch.cx+','+ch.cz+':seabed:'+i,x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2,bed:true}; // S514 — its id
       ZONES.world.herbs.push(h);ch.herbs.push(h);
     }
   }
