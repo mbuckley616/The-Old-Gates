@@ -28,6 +28,30 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-sizes-near.png
 The inspector at the world's size: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-inspector-after.png
 
+### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
+Michael's inspector note on the armour kits asked: "are there armour sets for ranged and magic yet?"
+
+**Not yet.** There is one armour line. Every armour item is one of five types (Helmet, Cuirass, Gauntlets, Greaves, Boots), and its material's tier decides how it looks:
+- Wooden: lamellar
+- Bronze: a muscle cuirass
+- Iron: mail
+- Steel and above: plate
+
+Nothing is cut for a bow or for casting. A robe exists only as cloth clothing, picked out by its name. Should there be armour for archers and mages?
+
+- **A.** Not yet. Keep the one line until skills-by-use decides what an archer or a mage is.
+- **B.** Two more lines beside it, chosen by weight:
+  - **Light**, for the archer: a hide or brigandine jerkin, a hood, bracers and soft boots.
+  - **Robes**, for the mage: a layered robe, a mantle and a cowl.
+
+  Each comes in the material tiers and has its own stats. Light armour is lighter, with less defence. Robes add mana or spell power. The look builder builds the bodies; the systems builder builds the items, stats and loot. *(recommended)*
+- **C.** The light line only. Mages keep cloth.
+- **D.** Robes only.
+
+**Recommendation: B.** It is Oblivion's light/heavy split with Morrowind's robes. It gives a build choice that serves the brief's second feeling (progression), and the look already has one family per tier to grow from. The stat numbers would be a later question for the systems builder.
+
+There is no picture yet: this is a question of scope. A prototype of each line follows the answer.
+
 ## Answered
 ### A barber and dyer in towns (the look builder, Session 505, 2026-10-05, DECISION #144)
 Backlog H has one look item left that is not done or waiting: *a barber/tailor in towns to change hair and dyes after the creator*. Today the look you choose in the creator (hair, beard, tunic, breeches and boots colours) is fixed for good. A trade in town would reopen those rows. It touches a new person, a room, a sign and a fee, so it is yours before anyone builds it.
