@@ -1235,11 +1235,12 @@
     barber:[''], // S512 — no tagline until the quest writer gives the barber one
     church:['"The door is always open."','"Come in out of the dark."','"Rest a moment. It costs nothing."'],
   };
-  // Per-kind plan: building count, shop set, extras.
+  // Per-kind plan: building count, shop set, extras. S512: `late` shops come after the optional ones, so a new trade takes
+  // the first home's lot and no shop that stood before moves (the barber and dyer, Michael's B on #144)
   const KIND_PLAN={
     village: {n:[10,14], shops:['weapon','potion','misc','inn'],   optional:['church'], rows:1, walls:false, stalls:0},
-    town:    {n:[60,85], shops:['guild_f','guild_m','weapon','armor','potion','misc','misc','misc','inn','inn','inn','church','barber'], optional:['weapon','potion','inn'], rows:2, walls:true, stalls:4},
-    city:    {n:[150,190],shops:['castle','guild_f','guild_m','church','church','weapon','weapon','weapon','armor','armor','potion','potion','potion','misc','misc','misc','misc','misc','inn','inn','inn','inn','inn','barber'], optional:['inn','misc','armor'], rows:2, walls:true, stalls:8},
+    town:    {n:[60,85], shops:['guild_f','guild_m','weapon','armor','potion','misc','misc','misc','inn','inn','inn','church'], optional:['weapon','potion','inn'], late:['barber'], rows:2, walls:true, stalls:4},
+    city:    {n:[150,190],shops:['castle','guild_f','guild_m','church','church','weapon','weapon','weapon','armor','armor','potion','potion','potion','misc','misc','misc','misc','misc','inn','inn','inn','inn','inn'], optional:['inn','misc','armor'], late:['barber'], rows:2, walls:true, stalls:8},
     garrison:{n:[24,32], shops:['weapon','armor','potion','inn','inn','misc'],  optional:[], rows:1, walls:true, stalls:0},
     outpost: {n:[3,4],  shops:['misc','inn'],                     optional:[], rows:1, walls:'palisade', stalls:0},
     port:    {n:[30,45], shops:['shipwright','weapon','potion','misc','misc','inn','inn','church'], optional:['misc'], rows:2, walls:false, stalls:3},

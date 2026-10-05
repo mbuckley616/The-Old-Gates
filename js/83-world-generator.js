@@ -232,7 +232,7 @@
       lots.sort((a,b)=>Math.hypot(a.x-cx,a.z-cz)-Math.hypot(b.x-cx,b.z-cz));
       // Shops: nearest lots to the centre get the shops; hero rosters override.
       const hero=heroShops(site);
-      let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5)]; // hero towns get guild halls too
+      let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5),...(plan.late||[])]; // hero towns get guild halls too
       if(TST&&!hero)shopTypes=shopsFor(site,shopTypes,P);
       if(TST&&withBuilds){TST.builds.forEach(b=>{if(!b.done)return;if(b.key==='inn'&&!shopTypes.includes('inn'))shopTypes.push('inn');if(b.key==='chapel'&&!shopTypes.includes('church'))shopTypes.push('church');if(b.key==='guild'&&!shopTypes.includes('guild_f'))shopTypes.push('guild_f');});}
       // Size shop lots by type first, then drop any later lot that overlaps an
@@ -942,7 +942,7 @@
     const [i,j]=cellOf(t.x,t.z);const nat=nationOf(i,j);const st=TS(t);const S=SETTLE.get(t.id);
     let services,guilds;
     if(S){const types=S.houses.map(h=>h.type);services=[...new Set(types.filter(x=>x!=='home'&&x!=='guild_f'&&x!=='guild_m').map(x=>SHOP_WORD[x]||x))];guilds=[...new Set(types.filter(x=>x==='guild_f'||x==='guild_m').map(x=>SHOP_WORD[x]))];}
-    else{const plan=KIND_PLAN[t.kind]||KIND_PLAN.village;const list=[...plan.shops,...((t.kind==='town'||t.kind==='city')?['guild_f','guild_m']:[])];const open=shopsFor(t,list);services=[...new Set(open.filter(x=>x!=='guild_f'&&x!=='guild_m').map(x=>SHOP_WORD[x]||x))];guilds=open.filter(x=>x==='guild_f'||x==='guild_m').map(x=>SHOP_WORD[x]);}
+    else{const plan=KIND_PLAN[t.kind]||KIND_PLAN.village;const list=[...plan.shops,...(plan.late||[]),...((t.kind==='town'||t.kind==='city')?['guild_f','guild_m']:[])];const open=shopsFor(t,list);services=[...new Set(open.filter(x=>x!=='guild_f'&&x!=='guild_m').map(x=>SHOP_WORD[x]||x))];guilds=open.filter(x=>x==='guild_f'||x==='guild_m').map(x=>SHOP_WORD[x]);}
     st.builds.forEach(b=>{if(b.done){if(b.key==='guild'&&!guilds.includes("Fighters' Guild"))guilds.push("Fighters' Guild");if(b.key==='inn'&&!services.includes('inn'))services.push('inn');if(b.key==='chapel'&&!services.includes('church'))services.push('church');if(b.key==='harbour')services.push('harbour');}});
     // issues
     const issues=[];for(const f in st.flags)issues.push(f==='scaffold'?'building':f);

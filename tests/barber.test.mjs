@@ -4,11 +4,7 @@
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
-await g.intoWorld();
-// the settlement's bake merges the sign into the town's batches, so the sign is seen as it is built
-await page.evaluate(() => { window._basins = []; const f = buildBasinSign; buildBasinSign = function (group, doorX, doorZ, tx, tz, y) { const n = group.children.length; f.apply(this, arguments); const m = group.children[n];
-  window._basins.push({ x: doorX, z: doorZ, tris: m && m.geometry.index ? m.geometry.index.count / 3 : 0, up: m ? +(m.position.y - y).toFixed(2) : null, ry: m ? m.rotation.y : null, tx, tz }); }; });
-await g.settle('dunmore');
+await g.intoWorld(); await g.settle('dunmore');
 // every town and city near the start has one barber; villages, ports and garrisons have none
 const census = await page.evaluate(() => { const out = [];
   const c = WORLD.SITES.filter(t => t.pad && ['city', 'town', 'village', 'port', 'garrison'].includes(t.kind)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
@@ -25,14 +21,18 @@ const shop = await page.evaluate(() => { let h = null, S0 = null;
   if (!h) { const c = WORLD.SITES.filter(t => t.pad && ['city', 'town'].includes(t.kind)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
     for (const t of c) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(x => x.type === 'barber'); if (h) { S0 = S; break; } } }
   if (!h) return null; window._S = h;
-  const b = _basins.find(q => Math.hypot(q.x - h.doorX, q.z - h.doorZ) < .01), board = []; sc.traverse(o => { if (o.userData && o.userData.sign === h.name) board.push(o); });
+  // the settlement's bake merges the sign into the town's batches (and the town may be built before the test can watch),
+  // so the shop's sign is built again here, by the same call, from the shop's own door
+  const fx = h.exitX - h.doorX, fz = h.exitZ - h.doorZ, L = Math.hypot(fx, fz) || 1, tx = fx / L, tz = fz / L, y0 = worldH(h.doorX, h.doorZ), G = new THREE.Group();
+  buildTradeSign(G, h.type, h.name, h.doorX, h.doorZ, tx, tz, Math.atan2(tx, tz), y0); const m = G.children.find(o => o.userData.sign === 'barber');
+  const b = m ? { tris: m.geometry.index.count / 3, up: +(m.position.y - y0).toFixed(2), ry: m.rotation.y, tx, tz, faces: G.children.length } : null, board = []; sc.traverse(o => { if (o.userData && o.userData.sign === h.name) board.push(o); });
   const out = b ? new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), b.ry) : null;
-  return { name: h.name, keeper: h.keeper, role: h.dlg && h.dlg.role, talks: !!h.dlg, sign: !!b, signTris: b ? b.tris : 0, signY: b ? b.up : null, outward: out ? +(out.x * b.tx + out.z * b.tz).toFixed(3) : null, boards: board.length, built: _basins.length,
+  return { name: h.name, keeper: h.keeper, role: h.dlg && h.dlg.role, talks: !!h.dlg, sign: !!b, signTris: b ? b.tris : 0, signY: b ? b.up : null, outward: out ? +(out.x * b.tx + out.z * b.tz).toFixed(3) : null, boards: board.length, parts: b ? b.faces : 0,
     map: bldOf('barber').label }; });
 console.log(JSON.stringify(shop));
 check('a barber is found in a town', !!shop);
 check('the shop is named for its keeper, who is a Barber and talks (no shop panel)', /'s Barb(er|ier)$/.test(shop.name) && shop.role === 'Barber' && shop.talks, shop);
-check('its sign is the three basins on an iron arm over the door, the arm out from the wall, and no painted board', shop.sign && shop.signTris > 500 && shop.signY > 2 && shop.signY < 3 && shop.outward > .99 && shop.boards === 0, shop);
+check('its sign is the three basins on an iron arm over the door, the arm out from the wall, and no painted board', shop.sign && shop.signTris > 500 && shop.signY > 2 && shop.signY < 3 && shop.outward > .99 && shop.boards === 0 && shop.parts === 1, shop);
 check('the map has its own colour for it', shop.map === 'Barber · dyer', shop.map);
 // outside: the door and the sign
 const outside = await page.evaluate(() => { const h = _S, cv = REN.domElement, cam = new THREE.PerspectiveCamera(50, cv.width / cv.height, .1, 400);
