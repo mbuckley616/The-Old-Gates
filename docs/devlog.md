@@ -11817,3 +11817,29 @@ Before, 9 of 600 seeded deaths ended upright. After, 0 of 600, and 0 of another 
 ### Needs eyes
 - A wolf that dropped straight onto folded legs now rolls over a beat later than one knocked sideways (the twist starts at .35 s). Whether that reads as a second, separate movement at real speed.
 - The two four-second cap-outs in 600 deaths predate this session; `beastfall`'s sixty seeded deaths do not include either.
+
+## v80 — Session 512 — The barber and dyer in the towns, slice 1: the shop, its sign and its room (backlog E/H, Michael's B on #144)
+Michael chose B on DECISION #144: one barber and dyer, one room, one fee, in towns and up. This session builds the shop and stops short of the look page, which is the second slice. The fee is the systems builder's, and the barber's lines are the quest writer's.
+
+**In the towns.** `barber` is the last entry in the shop lists for the town and the city in `KIND_PLAN`, so each generated town and city has one. Villages, ports, garrisons and outposts have none. It comes after every shop that was already in those lists, so those shops keep their lots, and the barber takes the lot that went to the first optional shop or the first home. The optional shops each move down one lot. The random stream is drawn exactly as before (the optional filter makes the same draws). The authored towns (Ironhaven, and Hearthwick's and Ashenmoor's rosters) keep their own lists and have no barber. The shop is named for its keeper, in the region's word (*Órla's Barber*, *… Barbier*), and the keeper's role is `Barber`. `house.dlg` is set, so pressing E on the keeper indoors opens the conversation rather than an empty shop panel, as for the innkeeper and the shipwright. The tagline is blank until the quest writer gives it one. The map has a colour and a glyph for it (`Barber · dyer`, ✂). The hover card's services list it.
+
+**The sign** is the prototype's three brass basins on an iron arm, the barber-surgeon's sign from before the striped pole, with no painted board. `buildTradeSign` passes a barber's door to `buildBasinSign` (`82-world-structures.js`). That builds the kit's `basinSign` as one vertex-coloured mesh on `VC_MAT`, 1,320 triangles, at 1.9× the kit's scale (the kit is drawn at the rooms' scale, where a man stands 1.28). Its arm points out from the wall at 2.32 over the door. The first try at 2.6 put the wall plate through the eave of a Gatelands house. The settlement's bake merges it into the town's batches like the other ironwork.
+
+**The room** is `furnKit().barber(W,D,H,n,seed)` in `56-dungeon-build.js`, one bake of 7,832 triangles in a 13 × 12 room, and the prototype's pieces are now kit functions: `barberChair`, `washstand`, `barberMirror`, `barberBench`, `basinSign` and `dyerCorner`. The chair faces the steel mirror on the back wall, on a rug, with the washstand at its right hand. Along the west wall are a stool and a bench for those waiting, and the barber-surgeon's bench of razors, towels and the leech jar. A shelf of jars hangs beside the mirror, and the dyer's vat, the pole of dyed hanks and the table of bolts run along the back wall to the east. The room has no counter. The barber stands at the chair's left (`npc` at W·.36 − .8, z 1.3, still). The shop's windows are leaded, like the other shops' (`WIN_LEAD.barber`). Footholds sit at the chair, the washstand, the vat, the dyer's table and the two benches. The barber's room has no back room and no strongbox, since it is not in `SHOPS` or `BOX_KINDS`. Whether it should have a strongbox is the systems builder's call (the crime system).
+
+### Verified (headless Chromium)
+`tests/barber.test.mjs` (new), 11/11:
+- **The towns.** Of the 16 settlements nearest the start, the four generated towns and the city (Dunmore, Vieux Marché, Carraig Mór, Coeur de Vie) have one barber each. The nine villages, the port, the garrison and the authored Ironhaven, Hearthwick and Ashenmoor have none.
+- **The shop.** Dunmore's is *Órla's Barber*, its keeper a Barber who talks.
+- **The sign.** It was built at the door (1,320 triangles, 2.32 up), its arm out from the wall (dot product 1.0 with the door's outward direction), with no painted board.
+- **The map.** It has its own key.
+- **The room.** One bake with no flames, 7,832 triangles. The chair, the vat and the bench are footholds, the barber stands beside the chair at noon, and the way from the door to the middle of the room is clear.
+- **The keeper.** E at the barber opens a conversation with Órla, and no shop panel.
+- **Errors.** No page errors.
+
+Pictures: `docs/prototypes/barber-ingame-room.png` and `barber-ingame-sign.png`. `parsecheck` clean. The 75 other suites that read towns, houses or the furniture kit were run as well (results below).
+
+### Needs eyes
+- The room is large (rooms run 1.8× the footprint) and the barber's things gather at the back wall. Is the middle of the floor too empty?
+- The basins read olive rather than brass in the grey daylight of the shot. A warmer brass may be wanted.
+- **Owed.** Slice 2 is the look page from the barber's chair: the creator's style, beard and colour rows, with the body rebuilt. The fee is the systems builder's. The quest writer owes a tagline, the barber's greeting and topics, and the *A barber?* line in `WAY_ASK`.
