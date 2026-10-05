@@ -12029,3 +12029,34 @@ On the old code the suite fails at once (`pwOpts` is not defined). `foes`, `ghou
 - In play, at a ghoul's chase pace, whether the hobble reads as a limp or as a stumble. The drag, the dip and the lean are each one number.
 - The idle is the elder's stoop, not the shamble's hunch: a ghoul that stops straightens a little over a third of a second.
 - The ghoul's attack poses are unchanged.
+
+## v80 — Session 535 — The goblin crouched, long-armed and meaner, with a knife (backlog H, Michael's inspector note)
+Michael, from the inspector, of the goblin: "Looks a bit too friendly/humanoid." Distort and contort the body, make them smaller, and they should "probably not be holding a cane". The goblin was a person's body with a big green head and long ears. It stood upright, as tall as a bandit in the inspector, with an old man's walking stick. The inspector showed it at 1, while the game builds every goblin at .72 in the open world and in dungeons.
+
+What changed, in `32-people.js`:
+- **The posture.** `pwOpts` passes `goblin`. Standing, its thighs come forward .62 and its knees bend 1.2, spread and bowed, so its hips sit at .85 of a bandit's. Walking, the hips drop .075 of the leg and the gait's IK bends the knees to match. Running, the knees bow and the trunk leans further in. A new `pwGoblin` hunches the spine .38 forward and tips the neck back against it, so the face is thrust forward and still looks ahead. It also hangs the arms wide from the shoulders, bent a little and swinging.
+- **The body.** A new genome field, `g.armK`, lengthens the upper arm and forearm. A goblin's is 1.22, so its hands reach its knees. Each hand ends in three yellowed claws. Its height is .88 of what its genome drew.
+- **The face.** The brows are heavier and angled into a scowl. It has a long hooked nose, and a wide dark mouth with two fangs up from the lower lip.
+- **The weapon.** The goblin is armed from the kit with a rusted knife (`wpn:'dagger'`) in place of the stick. The slinger still holds nothing.
+
+With the game's .72 its head stands at .5–.6 of a bandit's. In `97-inspector.js` the goblin's entry is built at that .72, as Session 524 did for the dragon, so the inspector shows the size you meet. The idle there now also reads its options from `pwOpts`. A goblin costs about a thousand triangles more (5,018 → 6,036 in the inspector entry).
+
+### Verified (headless Chromium)
+`tests/goblinbody.test.mjs` (new), 9/9, from the bones of four goblins against three bandits at the game's sizes:
+- **No cane.** Each goblin holds the kit's dagger, and the slinger holds no stick.
+- **Smaller.** A goblin's head stands at .51–.60 of the tallest bandit's. By its .72 scale alone it would be .72.
+- **Crouched.** In its own units the hips are at .54 standing and .49 walking, against a bandit's .64 and .60.
+- **Hunched.** The spine leans .37 standing. A bandit's is −.01.
+- **Long arms.** Shoulder to wrist is .36, against a bandit's .295.
+- **No foot sinks.** In the crouched walk the lowest ankle is .071, against a bandit's .070.
+- **The others are untouched.** A bandit, a ghoul, a kobold and a cultist have no crouch and their arms are unchanged.
+- **The inspector.** It builds the goblin at .54, which is .72 of its genome's height.
+- **Errors.** No page errors.
+
+`foes`, `foeweapons`, `inspector`, `dungeonfoes`, `ragdoll` and `ghoulwalk` pass. Pictures: `docs/prototypes/goblin-before-front.png`/`-side.png`/`-face.png` and `goblin-after-front.png`/`-side.png`/`-face.png`, standing beside a bandit, mid-stride from the side, and the face close. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At play distance, whether the crouch and the arms read as goblin or as a crouching child. The crouch, the hunch and the arms' length are each one number.
+- The knife's rust reads pinkish under the noon light in the inspector.
+- The goblin's attack poses are unchanged: the swing comes from the hunched trunk.
+- The inspector entry's key is unchanged and its size changed. The control room's Meshes tab carries the old triangle count until it is republished from `docs/inspector-catalogue.json`.

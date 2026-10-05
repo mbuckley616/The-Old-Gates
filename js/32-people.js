@@ -349,6 +349,10 @@ function personBakeQ(g,q){
   const R=.13*hs,zs=(x,y)=>R*1.02*Math.sqrt(Math.max(0,1-(x/(R*g.jaw))**2-((y-.12)/(R*(fem?1.05:1.08)))**2));
   part(SK.ball(.017,8,6),skin,head,0,.102,zs(0,.102)+.002).scale.set(g.nose[0]*.9,g.nose[1]*1.25,1);
   part(SK.cyl(.005,.005,.036,5),mixC(skin,0x7a3a30,.45),head,0,.066,zs(0,.066)+.001).rotation.z=Math.PI/2;
+  // S535 — a goblin's face: a long hooked nose, a wide dark mouth with two fangs up from the lower lip
+  if(g.goblin){const n=part(SK.cone(.018,.095,6),skin,head,0,.097,zs(0,.1)+.03);n.rotation.set(Math.PI/2+.35,0,0);
+    part(SK.cyl(.007,.007,.085,6),C(0x1e1410),head,0,.064,zs(0,.064)+.001).rotation.z=Math.PI/2;
+    [-1,1].forEach(s=>part(SK.cone(.008,.03,5),C(0xe0d8a8),head,s*.026,.071,zs(s*.026,.071)+.005).rotation.set(-.2,0,s*.15));}
   [-1,1].forEach(s=>{const ex=s*.046*g.jaw,ez=zs(ex,.135);
     part(SK.ball(.0165,8,6),C(0xf0ece4),head,ex,.135,ez-.002).scale.set(1,.78,.45);
     part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);eyes.push([ex,.135,ez+.006]);
@@ -438,12 +442,13 @@ function personBakeQ(g,q){
   // arms and legs: side 1 is the figure's left (+x), -1 its right
   ['L','R'].forEach((k,i)=>{const s=i===0?1:-1;
     // S394 — g.bareArms: the shirt is cut at the shoulder, so the shoulder's cap is the shirt and the arm below it skin, no cuff
-    const sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),g.bareArms?cloth:sleeve,sh).scale.set(1,.9,.9);
-    part(SK.limb(.155,.05*bw,.044*bw),g.bareArms?skin:sleeve,sh);
-    const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
+    // S535 — g.armK lengthens the upper arm and forearm (a goblin's reach to its knees)
+    const ak=g.armK||1,sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),g.bareArms?cloth:sleeve,sh).scale.set(1,.9,.9);
+    part(SK.limb(.155*ak,.05*bw,.044*bw),g.bareArms?skin:sleeve,sh);
+    const el=bone('el'+k,sh,0,-.155*ak,0);part(SK.limb(.13*ak,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
     if(!g.bareArms)part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
     if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
-    const wr=bone('wr'+k,el,0,-.14,0);
+    const wr=bone('wr'+k,el,0,-.14*ak,0);
     // S411 — g.fists[k] (Michael's D on #99, the player's empty hand): a folded fist in place of the mitten, a squarer palm,
     // four knuckles across the front, the curled fingers under them and the thumb laid across; B['fist'+k] lists its
     // pieces so a glove or gauntlet colours all of them
@@ -452,7 +457,9 @@ function personBakeQ(g,q){
       F.push(part(SK.rbox(.03,.03,.048,.012,2),skin,wr,s*-.016,-.06,.005));
       const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
     else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
-      part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);}
+      part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
+      // S535 — a goblin's hand ends in three hooked claws, yellowed
+      if(g.goblin)for(let q=0;q<3;q++){const cl=part(SK.cone(.008,.045,5),C(0xc8b880),wr,s*(q-1)*.012,-.085,.012);cl.rotation.set(Math.PI-.35,0,0);}}
     // S527 — a wraith has the leg bones (its ragdoll and poses read them) but no legs or feet hung on them
     const th=bone('th'+k,hips,s*.085*bw,-.02,0);if(!g.wraith)part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
     const kn=bone('kn'+k,th,0,-PW.L1,0);if(!g.wraith)part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
@@ -676,7 +683,7 @@ const FOE_DRESS={
   'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear',kit:{head:3,chest:3,legs:3},rust:0x4a3e34},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
-  'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
+  'Goblin':        {goblin:true,cloth:0x5a4a32,wpn:'dagger'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide; S535 — a rusted knife, not a cane
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
   'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace',kit:{head:4,chest:4,hands:3,legs:3}}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
@@ -698,7 +705,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
     g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
     g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth||0x3a3a3a).multiplyScalar(.8);
-    if(dr.goblin){const r=pRng(g.seed+7);g.goblin=true;g.skin=new THREE.Color(0x7a9a4a).lerp(new THREE.Color(0x5a7a3a),r());g.head=1.32;g.build=.92;g.nose=[1.7,1.5];g.beard='none';g.age='adult';g.ruddy=false;g.freckles=false;
+    if(dr.goblin){const r=pRng(g.seed+7);g.goblin=true;g.skin=new THREE.Color(0x7a9a4a).lerp(new THREE.Color(0x5a7a3a),r());g.head=1.32;g.build=.92;g.height*=.88;g.armK=1.22;g.brow=[1.5,.35];g.nose=[1.7,1.5];g.beard='none';g.age='adult';g.ruddy=false;g.freckles=false;
       g.style=r()<.5?'shaggy':'buzz';g.hair=new THREE.Color(0x2a2016);g.eye=new THREE.Color(0xd8b030);g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);g.legs=new THREE.Color(0x3a2e20);g.boot=new THREE.Color(0x2a2016);}
     if(dr.kobold){g.style='buzz';g.head=1.25;g.build=1.05;g.age='elder';g.beard='long';g.hair=new THREE.Color(0x8a8a82);g.skin=new THREE.Color(0xb08a6a);g.nose=[1.5,1.4];g.height=Math.min(g.height,.86);
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.85);g.legs=new THREE.Color(0x3a3028);}
@@ -737,7 +744,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
   // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
   // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
-  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
+  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
@@ -777,7 +784,9 @@ function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),
   p.shL=[.02*b,0,.07+.01*b];p.shR=[.02*b,0,-.07-.01*b];p.elL=[-.12,0,0];p.elR=[-.12,0,0];p.wrL=[0,0,.05];p.wrR=[0,0,-.05];
   p.thL=[-.03,0,.02*w+.02];p.thR=[.03,0,.02*w-.02];p.knL=[.06+.04*Math.max(0,w)+.06*old,0,0];p.knR=[.06+.04*Math.max(0,-w)+.06*old,0,0];
   p.anL=[-.03,0,-.02];p.anR=[-.03,0,.02];p.sway=.012*w;
+  if(o.goblin){p.thL=[-.62,0,.16+.02*w];p.thR=[-.62,0,-.16+.02*w];p.knL=[1.2+.05*Math.max(0,w),0,0];p.knR=[1.2+.05*Math.max(0,-w),0,0];p.anL=[-.58,0,-.16];p.anR=[-.58,0,.16];}
   p.hipsY=Math.max(pwReach(p.thL[0],p.knL[0]),pwReach(p.thR[0],p.knR[0]))+PW.HIPJ;
+  if(o.goblin)pwGoblin(p,b*.05);
   if(o.holds)pwHold(p,.02*b,o.gear);return p;}
 // A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
 // forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
@@ -788,6 +797,7 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   p.hipsY=PW.FOOT+PW.HIPJ+(.352-.01*Math.cos(2*a))*PW.LEGK; // the hip joint's height over the foot, scaled with the leg
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.07*c,.025*s];
+  if(o.goblin)p.hipsY-=.075*PW.LEGK; // S535 — a goblin walks crouched, the knees well bent
   const lim=o.limp||0,fb=lim>0?phL:phR,bs=fb<D?Math.sin(Math.PI*fb/D):0,bw=fb<D?0:Math.sin(Math.PI*(fb-D)/(1-D));
   if(lim){p.hipsY-=.045*PW.LEGK*bs;p.hips[2]+=lim*(.07*bw-.03*bs);}
   // the pelvis turns and tips as it walks, which carries each hip joint fore and aft: the leg aims from where
@@ -805,7 +815,12 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   p.elL=[-.24-.2*Math.max(0,-Math.cos(a-.6)),0,0];p.elR=[-.24-.2*Math.max(0,Math.cos(a-.6)),0,0];
   p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
   if(lim)pwShamble(p,c,s,lim,bs);
+  if(o.goblin){pwGoblin(p,.3*c);p.thL[2]+=.1;p.thR[2]-=.1;p.anL[2]-=.1;p.anR[2]+=.1;}
   if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+// S535 — a goblin (Michael, the inspector: "Looks a bit too friendly/humanoid", distort and contort it): crouched and hunched,
+// the head thrust forward on the neck so the face stays up, the long arms hanging wide and swinging (sw)
+function pwGoblin(p,sw){p.spine[0]+=.38;p.neck[0]-=.32;p.head[0]-=.06;
+  p.shL=[-.18+sw,0,.22];p.shR=[-.18-sw,0,-.22];p.elL=[-.4,0,0];p.elR=[-.4,0,0];p.wrL=[.2,0,.1];p.wrR=[.2,0,-.1];}
 // the ghoul's trunk and arms over its limp: hunched forward, lurching over the bad leg as it takes the weight, the head
 // lolling to that side, the arms hanging forward and swinging little, the bad side's lower and slacker
 function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.neck=[.12,-.03*c,-lim*.12];p.head=[.1,0,-lim*(.14+.06*bs)];
@@ -819,7 +834,7 @@ function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.ne
 PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*PW.LEGK,LIFT:.15*PW.LEGK,on:1.4,off:1.15};
 PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
-  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2));
+  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2))-(o.goblin?.06*PW.LEGK:0);
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.09*c,.02*s];
   const foot=(f,sd)=>{let z,lift=0,toe=0;
@@ -833,6 +848,7 @@ function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%
   p.shL=[.6*c,0,.12];p.shR=[-.6*c,0,-.12];
   p.elL=[-1.2-.3*Math.max(0,-Math.cos(a-.4)),0,0];p.elR=[-1.2-.3*Math.max(0,Math.cos(a-.4)),0,0];
   p.wrL=[-.1,0,.1];p.wrR=[-.1,0,-.1];
+  if(o.goblin){p.spine[0]+=.25;p.neck[0]-=.25;p.thL[2]+=.08;p.thR[2]-=.08;}
   if(o.holds)pwHold(p,-.15*c,o.gear);return p;}
 // the ground one stride cycle covers, for a mix of walk and run
 function pwCycle(w){const a=w.walk||0,b=w.run||0;return a+b>.001?(a*PW.cycle+b*PW.RUN.cycle)/(a+b):PW.cycle;}
@@ -841,7 +857,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0};}
+function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);

@@ -16,7 +16,7 @@ const INSPECTOR={open:false,entries:[],groups:[],built:new Map(),sel:null,pins:[
 function inspRegistry(){
   const E=[];const slug=x=>String(x).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   const add=(group,sub,name,file,build)=>E.push({id:E.length,key:slug(group)+'/'+slug(sub)+'/'+slug(name),group,sub,name,file,build});
-  const idlePerson=rig=>(t)=>pwApply(rig,pwIdle(t,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+  const idlePerson=rig=>(t)=>pwApply(rig,pwIdle(t,pwOpts(rig)));
   const personAnim=rig=>{let ph=0;return (t,dt,mode)=>{if(mode==='walk'){ph=(ph+dt*1.4)%1;pwApply(rig,pwWalk(ph,pwOpts(rig)));}
     else if(mode==='wave')pwApply(rig,pwWave(t,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));else idlePerson(rig)(t);};};
   // 1. People — the townsfolk of each people in their nation's dress, by role, then the foes on the people's body
@@ -28,7 +28,7 @@ function inspRegistry(){
       const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig);const anim=personAnim(rig);anim(0,0,'idle');
       return {obj:rig.root,anim,modes:['idle','walk','wave']};});}
   for(const type of Object.keys(FOE_DRESS))add('People','Foes on the body',type,'32-people.js',()=>{
-    const rig=buildFoe(type,0,0);PEOPLE_RIGS.delete(rig);const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
+    const rig=buildFoe(type,0,0);PEOPLE_RIGS.delete(rig);if(FOE_DRESS[type].goblin)rig.root.scale.multiplyScalar(.72); /* S535 — at the size the game builds a goblin */const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
   // 2. Creatures — the wolf kit's kinds, the spider kit's, then the zone and dungeon foes that have a body of their own
   for(const name of Object.keys(WOLF_KINDS))add('Creatures','On the wolf kit',name,'34-creatures.js',()=>{
     const rig=buildWolf(name,WOLF_KINDS[name].world||1);WOLF_RIGS.delete(rig);let ph=0; /* S524 — at the size the game builds it (the dragon's 2.88) */
