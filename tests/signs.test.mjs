@@ -8,7 +8,7 @@ for (const id of ['portclare', 'dunmore']) {
   await g.settle(id);
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id);
     const faces = []; S.group.traverse(o => { if (o.userData && o.userData.sign) { const p = new THREE.Vector3(); o.getWorldPosition(p); faces.push({ sign: o.userData.sign, x: p.x, z: p.z }); } });
-    const out = S.houses.filter(h => h.type !== 'home' && h.type !== 'castle').map(h => {
+    const out = S.houses.filter(h => h.type !== 'home' && h.type !== 'castle' && h.type !== 'barber').map(h => { // S512 — the barber's sign is the basins, no board (tests/barber)
       const near = faces.filter(f => Math.hypot(f.x - h.doorX, f.z - h.doorZ) < 2);
       return { name: h.name, keeper: h.keeper, type: h.type, signs: [...new Set(near.map(f => f.sign))] }; });
     return { faces: faces.length, out }; }, id);

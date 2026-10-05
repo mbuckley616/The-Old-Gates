@@ -12075,6 +12075,35 @@ Because a handed-in task leaves the save, the Journal could not find its title a
 ### Needs eyes
 As Session 510: two lines an event in *By day*, the log's short one and the task's own.
 
+## v80 — Session 512 — The barber and dyer in the towns, slice 1: the shop, its sign and its room (backlog E/H, Michael's B on #144)
+Michael chose B on DECISION #144: one barber and dyer, one room, one fee, in towns and up. This session builds the shop and stops short of the look page, which is the second slice. The fee is the systems builder's, and the barber's lines are the quest writer's.
+
+**In the towns.** `KIND_PLAN` has a new list, `late: ['barber']`, for the town and the city, drawn after the optional shops, so each generated town and city has one barber. Villages, ports, garrisons and outposts have none. No shop that stood before moves: the barber takes the lot that was the first home. The first push put `barber` at the end of `plan.shops` instead. That moved every optional shop one lot along, so Dunmore's night beat ran a new loop of shop doors and walked all three guards into a stuck corner for six minutes (`beat` red on CI shard 8, and here; main green). The authored towns (Ironhaven, and Hearthwick's and Ashenmoor's rosters) keep their own lists and have no barber. The shop is named for its keeper, in the region's word (*Órla's Barber*, *… Barbier*), and the keeper's role is `Barber`. `house.dlg` is set, so pressing E on the keeper indoors opens the conversation rather than an empty shop panel, as for the innkeeper and the shipwright. The tagline is blank until the quest writer gives it one. The map has a colour and a glyph for it (`Barber · dyer`, ✂). The hover card's services list it.
+
+**The sign** is the prototype's three brass basins on an iron arm, the barber-surgeon's sign from before the striped pole, with no painted board. `buildTradeSign` passes a barber's door to `buildBasinSign` (`82-world-structures.js`). That builds the kit's `basinSign` as one vertex-coloured mesh on `VC_MAT`, 1,320 triangles, at 1.9× the kit's scale (the kit is drawn at the rooms' scale, where a man stands 1.28). Its arm points out from the wall at 2.32 over the door. The first try at 2.6 put the wall plate through the eave of a Gatelands house. The settlement's bake merges it into the town's batches like the other ironwork.
+
+**The room** is `furnKit().barber(W,D,H,n,seed)` in `56-dungeon-build.js`, one bake of 7,832 triangles in a 13 × 12 room, and the prototype's pieces are now kit functions: `barberChair`, `washstand`, `barberMirror`, `barberBench`, `basinSign` and `dyerCorner`. The chair faces the steel mirror on the back wall, on a rug, with the washstand at its right hand. Along the west wall are a stool and a bench for those waiting, and the barber-surgeon's bench of razors, towels and the leech jar. A shelf of jars hangs beside the mirror, and the dyer's vat, the pole of dyed hanks and the table of bolts run along the back wall to the east. The room has no counter. The barber stands at the chair's left (`npc` at W·.36 − .8, z 1.3, still). The shop's windows are leaded, like the other shops' (`WIN_LEAD.barber`). Footholds sit at the chair, the washstand, the vat, the dyer's table and the two benches. The barber's room has no back room and no strongbox, since it is not in `SHOPS` or `BOX_KINDS`. Whether it should have a strongbox is the systems builder's call (the crime system).
+
+### Verified (headless Chromium)
+After the `late` change, `beat` passes here (it failed on the first push and passes on main). `signs` passes too: it now leaves the barber out of *one board reading its name*, since the barber's sign is the basins. `barber`'s sign check now builds the sign by the same call from the shop's door. On CI the town was built before the test's watcher was set, and the check found nothing. Of 11 neighbouring suites (`boxspots`, `doublenames`, `furniture`, `shopfurn`, `shoprows`, `shopsight`, `keeperwalk`, `interiors`, `townroads`, `ashenburn`, `barter`), 9 pass. `townroads` fails on main too (it finds 15 settlements, not 25). `interiors`' lock-pick timing failed only with three suites at once, and passes on main alone. CI's `parryclock` failed on a runner at 9.4 fps.
+`tests/barber.test.mjs` (new), 11/11:
+- **The towns.** Of the 16 settlements nearest the start, the four generated towns and the city (Dunmore, Vieux Marché, Carraig Mór, Coeur de Vie) have one barber each. The nine villages, the port, the garrison and the authored Ironhaven, Hearthwick and Ashenmoor have none.
+- **The shop.** Dunmore's is *Órla's Barber*, its keeper a Barber who talks.
+- **The sign.** It was built at the door (1,320 triangles, 2.32 up), its arm out from the wall (dot product 1.0 with the door's outward direction), with no painted board.
+- **The map.** It has its own key.
+- **The room.** One bake with no flames, 7,832 triangles. The chair, the vat and the bench are footholds, the barber stands beside the chair at noon, and the way from the door to the middle of the room is clear.
+- **The keeper.** E at the barber opens a conversation with Órla, and no shop panel.
+- **Errors.** No page errors.
+
+Pictures: `docs/prototypes/barber-ingame-room.png` and `barber-ingame-sign.png`. `parsecheck` clean. 
+
+CI on the fix push (`fbb7063`) failed `chamerchant` on shard 3. Its second shop visit read `currentHouse.id` of null: the test gave the entry a fixed 4.5 s and the exit 2.5 s, and the entry lands behind a fade's timer, which a slow runner pushes past both. It passes here. The test now waits for the room it asked for and then for the way out (`currentHouse` and `isInterior()`). 1/1.
+
+### Needs eyes
+- The room is large (rooms run 1.8× the footprint) and the barber's things gather at the back wall. Is the middle of the floor too empty?
+- The basins read olive rather than brass in the grey daylight of the shot. A warmer brass may be wanted.
+- **Owed.** Slice 2 is the look page from the barber's chair: the creator's style, beard and colour rows, with the body rebuilt. The fee is the systems builder's. The quest writer owes a tagline, the barber's greeting and topics, and the *A barber?* line in `WAY_ASK`.
+
 ## v80 — Session 513 — The trailing guard held in a corner (backlog I, `watch` red on CI)
 Main's CI (178e96f) and this branch's (115b20c) failed one check of `watch` on and off: at favour −2 the trailing guard, Eilís, stood 38.57 units off after 30 s and 36.17 after the player had walked on. These are the numbers Session 378 fixed with its stale-grid check, and the cause is new. Locally the check passed every time. It failed one run in six with the world's job budget cut to almost nothing (`JOB_BUDGET_MS`, so one job a frame, as on a slow runner) and six copies running side by side. Then it gave CI's numbers to the hundredth.
 
@@ -12142,6 +12171,166 @@ That finishes step 3. Every foe the world raises, every container, corpse, herb 
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 519 — The dead tree's limbs grow from the trunk (backlog H, Michael's inspector note)
+Michael, from the inspector: the dead tree's "branches do not look connected to the trunk mesh - one is floating unconnected". He was right, and it was worse than one. The prototype (`PROTO.dead`, the wastes' and the wasteland's main tree, and a tenth of the fen's and the tundra's) was a trunk and three cylinders each placed by its middle and then turned. The top limb's wide end came out at (.77, 8.03, .09): above the trunk's flat cut at 8.0 and beside it, so it hung in the air. The other two crossed the trunk and stuck out the far side as stubs.
+
+A limb is now laid from the point it grows out of. `limbPart(rTop, rBot, h, seg, base, rx, rz, colour)` (`80-world-terrain.js`) turns the cylinder's axis by mergeParts' own Euler order and puts its middle half a length along it from `base`, so the wide end sits where it was asked to be: on the trunk's axis, or on a limb laid before it. Each call logs its base and tip, kept on the geometry as `userData.limbs` for the test. The tree is a slightly shorter trunk (7.4, seven sides) ending in a narrow broken stub, a big limb at 5.7 that forks at 7.0, two more at 4.6 and 6.6 on other sides, and a snag low down at 3.2. 140 triangles against 72; it is a scatter prototype, instanced once a chunk, so the cost is in the hundreds of triangles a chunk at most.
+
+### Verified (headless Chromium)
+`tests/deadtree.test.mjs` (new), 4/4: five limbs logged; four bases inside the trunk at their height and the fork's base on the first limb (distance to its axis under its radius); 140 triangles, 8.5 tall; no page errors. The old prototype logged no limbs, and by the same arithmetic its top limb started .77 off the axis above the trunk's top. `trees` passes. Pictures: `docs/prototypes/deadtree-before.png`, `deadtree-after.png` (the inspector, with the bandit for scale). `tests/lib/inspshot.mjs` is a small helper that photographs inspector pieces by key, for the before and after of the other inspector notes. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The snag at 3.2 runs towards the viewer in the inspector's default view and can read as a stub pointing down.
+- The tint still darkens the whole tree as one; the bark is a single brown with no lichen or bleaching.
+
+## v80 — Session 520 — Foes hold their weapons edge forward; the brim hat at a hat's size (backlog H, Michael's inspector notes)
+Two of Michael's inspector notes on the foes. The bandit's axe "is turned the wrong direction, the cultist's sword is held sideways ('we should rotate the weapon 90 degrees'); equipped weapons across the foes, bows included, should face the way they attack." And the highwayman's "hat is comically large / goofy".
+
+**The weapons.** The weapon kit (`wpnBuild`) draws every blade with its edge along x, and an axe's bit towards −x. `buildFoe` hung the kit on the fist's gear bone as built, and the bone faces the way the foe faces (+z), so every sword, dagger, cutlass, mace and axe showed its flat to its target and its edge to the side. Measured: the kit's edge axis against the foe's facing, a dot product of 0 for all thirty-odd. A quarter turn about the shaft (`rotation.y = π/2`) puts the edge, and the axe's bit, forward (dot 1.0), the shaft still upright. The bow was hung from the left wrist with its belly forward and its string away from the archer (dot −1). A half turn puts its back to the front and the string on the archer's side, as the player's own bow in third person has had since Session 227. The player's third-person weapons are built by `tpWeapon` on the hand's own frame and are untouched.
+
+**The hat.** The `brim` hat was a lathe with a brim of .245 (twice the head's width) and a .19 stovepipe crown, the one hat not sized to the head (`hs`). It is now a brim of .2 that curls at its lip, a crown of .12 at `.132·hs` with a slight crease, and a darker band. At the highwayman's scale the widest point of the top of the figure is .200 against .233, and the top of the hat is 9 cm lower (1.441 against 1.533). The merchants and traders in the towns wear the same hat, and it shrinks for them too.
+
+### Verified (headless Chromium)
+`tests/foeweapons.test.mjs` (new), 4/4: forty foes of ten kinds built (bandits, highwaymen, cultists, pirates, deserters, captains, shieldbearers, rogue mages, skeletons, archers): every kit weapon's edge axis along the facing (dot 1.0) with the shaft upright (1.0); every archer's bow back forward (1.0); six highwaymen's brims .200 from the head's middle (limit .21); no page errors. On the old code all three checks fail (dot 0, bow −1, brim .233). `foearmour` passes. Pictures from the side, where an edge held forward shows the blade's whole profile: `docs/prototypes/foeweapon-bandit-before.png`/`-after.png`, `foeweapon-cultist-before.png`/`-after.png`, `highwayman-before.png`/`-after.png`; and the archer from the front, `foeweapon-archer-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The swings. The strike poses were authored with the old grip; an overhead chop now lands with the edge, but a sideways slash may now lead with the flat. That would want the slash's wrist turned, not the grip.
+- A bandit archer drawing on you: the draw is the foe's attack pose, which this session did not open.
+- Whether the smaller brim hat still reads as a merchant's at street distance.
+
+## v80 — Session 521 — Autumn's trees in autumn's colours (backlog H, Michael's inspector note)
+Michael, from the inspector: the autumn tree's "Leaves of this tree are still green." Better as "variants of the current trees with red, yellow, orange and mixed leaves." It was worse in the world than on the inspector's stage. `PROTO.autumn` was the broadleaf itself, green leaves and all, and the autumn wood's colour came from the instance tint alone. That tint is a multiplier squeezed towards white (`.72 + c·.5`), so its reddest setting turned the leaf green 0x4f8a34 into an olive (.35, .44, .16), still green. The oaks and birches among them took the same weak tint and stayed green too. A playtester walking the autumn wood saw a slightly brown summer.
+
+The broadleaf, the oak and the birch are now functions of their leaf colours (`broadleafParts`, `oakParts`, `birchParts`, `80-world-terrain.js`), and autumn has five variants of them, with the colour in the leaves: `autumn`, a broadleaf in mixed red, orange and gold; `autumnRed`; `autumnGold`; `oakAutumn`, russet and copper; and `birchAutumn`, butter-yellow. Each has the same triangles as its green tree. The autumn wood's mix (`TREE_MIX.autumn`) is now red 20%, gold 18%, birch 14%, oak 12% and conifer 10%, with the mixed tree for the rest. The five take a tint that only lights them (.79–1.01 grey, a touch warm), so the colour stays theirs. The far terrain's canopy, which greens wooded ground on the horizon, is russet over the autumn wood. The inspector lists the four new kinds. `docs/inspector-catalogue.json` is refreshed, and the control room's Meshes tab needs republishing from it, which is the producer's job.
+
+### Verified (headless Chromium)
+`tests/autumn.test.mjs` (new), 6/6. All five kinds are built at their green tree's triangles (388, 388, 388, 424, 384). The leaves' hue is .04 for the red, .08 for the mixed, .07 for the oak, .12 for the gold and the birch, against the broadleaf's .28. In a real autumn chunk (the first autumn region in the cells, at 13974, 15616), scattered as the world scatters it, there are 20 mixed, 11 red, 15 gold, 10 birch and 7 oak, and all 63 are still warm under their tint (hue under .2), beside 7 conifers. The mix keeps the conifers and the main tree's share. There are no page errors. On the old code the autumn kinds do not exist, and the chunk's 'autumn' trees are green under the tint. `trees` passes. Picture: `docs/prototypes/autumn-ingame.png`, standing in that wood at 13:00, and `autumn-after.png` in the inspector. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The balance of red against gold. Today the wood is roughly a third red, a third gold and a third mixed or russet.
+- The autumn wood's ground is pale sand under the trees in the shot. It may want leaf litter, which is the ground colour's job (`groundColor` has a lit-leaf blend at .35).
+- The birch's and oak's old autumn tint (`t.au`) no longer fires, because the autumn wood grows `birchAutumn` and `oakAutumn` instead. It is left in place. Birches and oaks elsewhere are unchanged.
+
+## v80 — Session 522 — The snowpine's snow lies on the needles (backlog H, Michael's inspector note)
+Michael, from the inspector: "Snow does not really 'sit' on the tree / leaves. it billows out like a skirt." He offered two ways: snow flush with the leaves, or the leaves themselves white under a full blanket. This session takes the first. It is the cheaper change and keeps the tree's green, which reads at a distance on a white tundra.
+
+The old snow was three flat cones, each as wide as its tier's foot (3.45, 2.75, 1.85), set high up each tier where the needles had narrowed. At 7.9 the bottom tier's needles are 2.1 from the trunk and its snow reached 3.45, so each snow cone stood out as a ring. Measured: 120 of the 216 snow vertices lay up to 1.32 outside the needles. Each tier's snow is now that tier's own cone, cut at the same apex and 4.5% wider, so it rests on the needles. It covers the upper 80%, 84% and 76% of the three tiers, which is most of each tier's slope that shows below the one above it. Under that the green fringe shows, as under a real fall. The triangle count is unchanged at 172. The tiers are kept on the geometry (`userData.tiers`).
+
+### Verified (headless Chromium)
+`tests/snowpine.test.mjs` (new), 4/4: there are 216 snow vertices and none is more than 7% outside its tier's radius at its height (the worst is 0). The tree costs 172 triangles, and there are no page errors. On the old code the same check fails: 120 vertices out, the worst 1.32. `trees` passes. Pictures: `docs/prototypes/snowpine-before.png` and `-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- From below the tiers' flat green undersides show, as before.
+- Whether Michael would rather have the white blanket after all. That is a small change in the same block: the green tiers coloured snow and a darker fringe.
+
+## v80 — Session 523 — The coach horse's legs and jaw (backlog H, Michael's inspector note)
+Michael, from the inspector: "Horse legs are far too small/lean. They should be considerably thicker. Same with the mouth/jaw." The horse (S262, the coach's pair, on the wolf's bones with legs 1.8 as long) had a cannon .022 in radius under a barrel of .19. In the bind pose a slice through the leg at the cannon was .042 across, which is a deer's leg on a draught horse.
+
+`34-creatures.js`, the `k.horse` body. Every leg segment is about half as thick again. The forearm runs .084 → .052 (was .058 → .034), and the gaskin .096 → .056 (was .07 → .036). The cannons and pasterns are .034 (was .022), the knees, hocks and fetlocks .04–.048 (was .026–.032), and the shoulder and haunch muscles are a little fuller. The hooves are wider (.04–.05, was .028–.034), and each fetlock has a ring of feathering in the dark stocking colour, as a coach horse has. The face is fuller down to the muzzle (.056 at the nose, was .042), with a round jowl under the cheek, and the jaw is a heavier lathe (.052 wide, was .035). The horse stands 1.2 as before, and its legs keep their lengths, so the gait's stride and the hoof plants are unchanged. Triangles 6,180 → 6,836.
+
+### Verified (headless Chromium)
+`tests/horselegs.test.mjs` (new), 5/5, for the bay and the grey. The six `coach*` suites pass. All four legs are .066 across at the cannon (it was .042 on the old code, which fails the .06 check). Each horse stands 1.2 tall at 6,836 triangles, and there are no page errors. Picture: `docs/prototypes/horse-before.png` and `-after.png`, side on, in the inspector with the bandit for scale. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The jaw has no test. Whether it reads as heavy enough is for the eye: compare the two pictures.
+- The stand pose raises a hind hoof backwards (the wolf's idle on the horse's legs), and with the thicker leg it shows more. That is the pose, not this change.
+
+## v80 — Session 524 — The dragon's size: the inspector shows the world's, and a question (backlog H, Michael's inspector note)
+Michael, from the inspector: the dragon's "scale seems far too small compared to the bandit for scale. Dragons should be pretty large." Part of this was the inspector. It built every wolf-kit creature with `buildWolf(name, 1)`, while every dragon in play is built at 2.88: the open world's at its zone scale 1.8 × 1.6 (`42-zone-enemies.js`), and a lair's master at the same 2.88 by `dragonBody` (`68-dungeon-misc.js`, S219). So the inspector showed a dragon 0.82 tall that no player meets. The real one stands 2.35 tall and 6.9 long, against a man of 1.7.
+
+`WOLF_KINDS.Dragon.world = 2.88` (`34-creatures.js`) records that scale, and the inspector builds a wolf-kit kind at its `world` scale when it has one. The other kinds have none, and the game's own builders keep their own numbers.
+
+Whether 2.88 is large enough is Michael's call: the size also sets how far the dragon reaches and how wide it is to hit, in the systems builder's combat code. The prototype (`docs/prototypes/dragon/proto.mjs`) stands the bandit beside dragons at 1, 2.88, 4.5 and 6 in the open world at noon. DECISION #153 asks: A as the game has it, B 4.5 (3.7 tall, 10.7 long; recommended), C 6 (4.9 tall, 14.3 long), D by place (the open world's at 4.5, a lair's at 6). Nothing in play changes until he answers.
+
+### Verified (headless Chromium)
+`tests/dragonsize.test.mjs` (new), 3/3. The inspector's dragon is built at 2.88 and stands 2.35 tall. A dragon built for the open world by `buildZoneEnemy` stands 2.35 too, measured on its body without the health bar. There are no page errors. The prototype runs clean and measured the four sizes at 0.82, 2.35, 3.68 and 4.90 tall (2.4, 6.9, 10.7 and 14.3 long). Pictures: `docs/prototypes/dragon-sizes.png`, `dragon-sizes-near.png`, and the inspector at the world's size in `dragon-inspector-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- Michael: DECISION #153. Seen at its real size in the inspector, the dragon may already be closer to what he wants.
+
+## v80 — Session 525 — Skirts and dresses swing with the legs (backlog H, Michael's inspector note)
+Michael, from the inspector, of the Gatelands villager woman "and basically all tunics/garments that cover the legs": "the legs punch right through the fabric while walking. It looks awkward and is immersion-breaking." The person is one skinned mesh in which every part is bound wholly to one bone (`personBakeQ`). The tunic's skirt, a dress, its hem trim, an apron and an armour's skirt all hang from the hips bone, so they stood still while the thighs swung through them. Over a walk cycle, 17–21 leg vertices a frame stood outside a woman's dress, up to 6.7–7.8 cm out.
+
+The bake now weights what hangs from the hips over the legs. A vertex of a part on the hips bone that lies below the hip joints (`SK_DRAPE.top`, 1.5 cm) is bound partly to the thigh on its side. The share grows over `SK_DRAPE.d` (10 cm) to `SK_DRAPE.k`, and with a smoothstep from nothing at the middle line to full at the thigh's own line and beyond. The first try split the middle between the two thighs. Because they swing opposite ways, linear blending pinched the middle of the dress inwards and the worst poke grew to 23 cm. Sweeping the share: 0 (rigid) gives 17–21 a frame and 6.7–7.8 cm; .5 gives 4–8 and 4.0–4.8 cm; .7 gives 6–7 and 7–9 cm; 1 gives 5–6 and 5–6 cm. It is set at .5, so the cloth follows the leg half way. The rule is general: every part on the hips takes it (skirts, dresses, trims, aprons, the mail and lamellar skirts of the armour kit, a satchel at the side). The golem's stone and the skeleton's bones stay rigid. Nothing else in the bake changes, and the distant copy is baked by the same loop.
+
+### Verified (headless Chromium)
+`tests/skirtlegs.test.mjs` (new), 3/3, on four townsfolk (the Gatelands, Markish and Aurennais villager women and the Gatelands villager man). Over 24 frames of the walk the figure is CPU-skinned (`boneTransform`), and each thigh or knee vertex is compared with the skirt's own posed surface at the same height and bearing round the hips. Against the outer wall of the skirt (2 cm by 15° bins), 4.2, 7.1 and 8.1 vertices a frame poke out, at worst 4.0, 4.5 and 4.8 cm. The rigid build gives 16.6, 18.6 and 20.8, at worst 6.7, 7.5 and 7.8 cm, and fails the check. The man's short tunic gives 0 in both. Pictures: `docs/prototypes/skirtlegs-before.png` and `-after.png`, an Aurennais woman mid-stride: before, the leading knee comes out through the front of her dress; after, the dress swings forward with it. `armourkit`, `foes`, `lod`, `people`, `peopleao` and `ragdoll` pass. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At real speed, whether a dress moving half with each leg reads as cloth or as trousers. The share is one number (`SK_DRAPE.k`).
+- Long dresses still let the shin show behind the hem of the leading leg at full stride, since the shin bends at the knee and the dress follows only the thigh. The remaining 4–8 vertices a frame are there.
+- The armour kit's skirts (lamellar, mail, pteruges) take the same rule and were not measured on their own.
+
+## v80 — Session 526 — The swamp's mushrooms in five kinds (backlog H, Michael's inspector note)
+Michael, from the inspector, of the swamp's giant mushroom: "This is cool, but we need more variants": red, brown, purple, blue, varying shapes and sizes, and "maybe its own subcategory". The swamp grew one prototype, a red dome on a cream stem, tinted per tree by a multiplier near white.
+
+`80-world-terrain.js` now builds mushrooms from two helpers, `cap` (a dome, an open bell or a flat parasol, with a gill ring beneath and optional pale warts laid on the cap's own curve) and `stem` (with an optional ring). The smaller caps and stems take fewer sides. There are five kinds:
+- **`mushroom`**: the red one, now warted like a fly agaric.
+- **`mushroomBrown`**: a fat penny bun, low and broad.
+- **`mushroomPurple`**: a tall slender bell.
+- **`mushroomTan`**: a parasol with a ring on its long stem and a few scales.
+- **`mushroomBlue`**: a clump of three, leaning apart.
+
+They stand 5.4 to 9 tall and cost 118 to 398 triangles (the broadleaf is 388). The swamp's mix (`TREE_MIX.mushroom`, keyed by the main tree as the others are) is brown 20%, purple 15%, tan 12% and blue 15%, with the red for the rest. Like Session 521's autumn trees, they take a tint that only lights them (`MUSH_KINDS`), so the colour is the cap's own. The inspector lists them in a section of their own, *Mushrooms*, under Plants, trees, rocks. The old entry's key `plants-trees-rocks/trees-and-scrub/mushroom` is now `plants-trees-rocks/mushrooms/red`, and `docs/inspector-catalogue.json` is refreshed. The control room's Meshes tab needs republishing from it (the producer's job), and a note left on the old key no longer finds its piece.
+
+### Verified (headless Chromium)
+`tests/mushrooms.test.mjs` (new), 7/7:
+- **Five kinds.** All are built at no more than a broadleaf's triangles plus a tenth.
+- **Cap hues.** Red .02, brown .08, tan .09, blue .60 and purple .77.
+- **Heights.** 5.4 to 9.0, so the tallest is 1.7 times the shortest.
+- **A real swamp chunk.** Travelling to the nearest swamp (20200, 12857) loads its cell, and its chunk scattered as the world scatters it grows all five: 19 red, 18 brown, 10 tan, 9 blue and 7 purple. Every one has a grey tint.
+- **The inspector.** It lists the five under *Mushrooms*.
+- **Errors.** No page errors.
+
+`trees` and `inspector` pass. The first swamp check found only red ones: the mix had been keyed by the biome's name, `swamp`, where the scatter looks it up by the main tree's, `mushroom`. Picture: `docs/prototypes/mushrooms-lineup.png`, the five at noon with a bandit for scale. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The purple bell's cap is open beneath (a cone without a base, with the gill ring under it). From very low it may show its inside.
+- The parasol's cap reads pale in strong sun.
+
+## v80 — Session 527 — Wraiths and phantoms have no legs and float (backlog H, Michael's inspector note, first part)
+Michael, from the inspector: the wraith and the phantom are "Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening." No legs or feet: they hover and float. They already glide .24 ± .05 off the ground and take no steps (S176), but the body was a whole person under a robe to the shin. The robe is see-through (opacity .68, the phantom's .5), so a person's legs and boots showed inside it and below it.
+
+`personBakeQ` (`32-people.js`) now hangs no thigh, shin, boot or foot on a wraith's leg bones. The bones stay, because the poses and the bake's skeleton read them. The dress is replaced by a robe of the wraith's own: longer, with a flare, and its hem torn into tongues. Below the robe's lower edge each ring vertex drops by .03 to .14 by a wave round the robe and is drawn in a tenth, so the hem hangs in ragged points of different lengths. The hem's trim ring is gone. At the bottom of its glide's bob the lowest tongue is 9 cm off the ground. A wraith is 3,652 triangles (was 4,736), and a phantom 3,350.
+
+### Verified (headless Chromium)
+`tests/wraithfloat.test.mjs` (new), 8/8:
+- **No legs or feet.** For the Wraith and the Phantom, no vertex is bound to a leg bone. A bandit keeps his 700.
+- **A torn hem.** The hem's lowest points round the robe differ by 11 cm.
+- **Clear of the ground.** At the bottom of the glide's bob (.19, the hover `tickPeople` applies) the lowest point is .093 and .095 above the ground.
+- **Errors.** No page errors.
+
+The suite measures the bind pose against that hover, because `tickPeople` will not move a foe's body without its enemy behind it. `dungeonfoes` and `foes` pass. Pictures: `docs/prototypes/wraith-before.png`/`-after.png`, `phantom-before.png`/`-after.png`. The inspector does not apply the glide's hover, so there the hem touches its ground disc. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- "More ghostly & frightening" is only half done. The torso, arms and face inside the see-through robe are still a person's. Thinner, longer hands, a darker hollow face or a trailing wisp are look choices for a prototype, and that part stays open in the backlog.
+- The ragdoll already skips the wraiths: they have no fall.
+
+## v80 — Session 528 — The shield in first person is the kit's (backlog H, Michael's inspector note)
+Michael, from the inspector: the first-person shield "looks like the legacy shield still / does not match with the 3 shield types we have." It was the old viewmodel: a flat box face of .38 × .48 with four box rims and a sphere boss (`buildShieldViewmodel`, `16-viewmodel.js`). Your body in third person has carried the kit's shields since Sessions 227 and 231: a planked round shield with a rim and boss, the kite, and the tower.
+
+The first-person shield is now the same kit piece, chosen the way `tpBuild` chooses it. A buckler or round shield is the round one, a tower shield the tower, and any other the kite. The face takes the item's material colour and the rim and boss its guard, read by the third person's own `tpHex`. The kit is drawn at a person's scale facing +x. Here it is turned to face away from you, scaled to a height by kind (.42 for a buckler, .52 for a round shield, .51 for a kite, .64 for a tower), and centred where the box was, so the hand behind it, the block pose and the impact shake are unchanged. The glow light of an enchanted shield is kept. 156 → 804 triangles in the inspector entry.
+
+### Verified (headless Chromium)
+`tests/fpshield.test.mjs` (new), 4/4. With an Iron Buckler, Round Shield, Kite Shield and Tower Shield in the off hand, the first-person shield is the kit's round, round, kite and tower. None keeps the legacy .48 box face. They stand .42, .52, .51 and .64 tall. There are no page errors. `fists` and `inspector` pass. Pictures: `docs/prototypes/fpshield-before.png` and `-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- In play, the shield's placement against the camera when blocking: it is centred where the old face was, but the kit's round shield is a disc, not a portrait box.
+- A tier-3 buckler's face is its steel, so it reads near white under the viewmodel's light. The third person tints it the same.
+- The hand behind the shield is still the old blocky hand. That is the next note in the list (hands on every held weapon).
+
+## v80 — Session 529 — The ghoul's face blotched and blemished (backlog H, Michael's inspector note, first part)
+Michael, from the inspector: the ghoul needs "more facial blemishes/discoloration. Their walk should probably have a limp as well / be more zombie-like." This session does the face. The limp is a change to the gait in `tickPeople` and is left for its own session.
+
+The ghoul was the risen dead's genome with a greener skin and nothing else: the same face as the Hollowed. `FOE_DRESS.Ghoul` now carries `ghoul:true`, and `buildFoe` passes it to the genome. In `personBakeQ` a ghoul's face takes fourteen patches, laid flat on the face's own surface (`zs`, as the freckles are): rot-green, bruise-purple, black and jaundiced yellow, mixed from the ghoul's own skin, .013–.033 across, from the chin to the brow. Every sixth is a small raised sore. Each ghoul's patches are placed from its own seed, so no two match and the same ghoul has the same face on every visit. The first try used thick faceted lumps, which read as stones stuck on the face. They are now flattened to a tenth of their depth and smooth-shaded. A ghoul costs 896 triangles more. No other foe is touched.
+
+### Verified (headless Chromium)
+`tests/ghoulface.test.mjs` (new), 3/3. Three ghouls are marked as ghouls, and a Hollowed, an Ash Wight and a bandit are not. Each ghoul's genome baked as it is has 896 triangles more than the same genome with the mark taken off. There are no page errors. On the old code no ghoul is marked and the difference is 0. `foes` passes. Pictures: `docs/prototypes/ghoul-before.png` and `-after.png`, the face close in the inspector. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At play distance, whether the patches read as rot or as a rash. Their size and darkness are three numbers in one line.
+- **Owed.** The ghoul's limp and its more zombie-like walk: a dragged leg and a lurch in the gait for ghouls alone.
 
 ## v80 — Session 530 — A house is sold once, and its seller moves out (the critic, 5 Oct, s418)
 The critic bought Órla's House in Carraig Mór and found three things wrong, all filed on auto/critic. **The seller kept selling the house.** Two seconds after the sale she offered *Buy this house (900 gold)* again, and each click took 900 more: `buyHouse` (`86-world-crime.js`) never asked whether the house was yours, and the topic sat on her `_extra` from the town's build. Now `buyHouse` charges nothing for a house you own, and the sale takes the topic off her (it carries the house's id, `_house`, so it can be found). **She stood at your door day and night.** `buyHouse` hid her and gave her the schedule `gone`, which `scheduleFor` has no case for, so the town tick showed her again at her home spot. The town's resident stream would also have spawned her again whenever you walked 95 units off and came back, and after a reload the generator made her the house's resident once more. Now the sale takes her out of the town's residents and out of the scene, as the stream does when you walk away, and `genSettlement` (`83-world-generator.js`) makes no resident for a house you own. Session 82, which built buying, said the resident moves out for good; now she does. **A save in your cellar named no town** (*Your House — cellar*). The cellar's record has no `siteId`, so `ssPlaceName` (`70-saves.js`) now reads its parent's. All three come from one walk through buying a house, so they are one session.

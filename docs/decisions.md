@@ -3,6 +3,12 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+## Answered
+### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
+The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.
+
+Michael: **Two more lines: light and robes**. (2026-10-05)
+
 ### The calendar's names — take the drafted set, and which era? (the quest writer, 2026-10-05) — DECISION #146
 The calendar is built on auto/systems (Sessions 496–500) with placeholder names in one table, `CAL`, and backlog D says the names are proposed by the quest writer and picked by Michael. `docs/quest_drafts.md`, *The Year's Names*, drafts the whole set from the canon. The days are named for the gods, running outward from the hearth: **Hearthday, Stoneday, Beastday, Seaday, Skyday, Weaverday, Guestday**. The Church calls the seventh *the Closed Day*. The months are named for the year's work: **Thaw, Lambing, Sowing, Shearing, Haysel, Highsun, Reaping, Leaffall, Culling, Longnight, Wolfmonth, Lean**. A new tale opens on the 1st of Reaping. The four feasts are **the Kindling** (1st of Thaw), **the Long Light** (19th of Highsun), **the Giving** (23rd of Reaping, when the year's dead are named at the old gate) and **the Empty Chair** (28th of Longnight, a place set for the Guest). The canon names no monarch and dates nothing, so the era is the one call the draft cannot make alone.
 - **A.** The drafted set, with the era **of the Peace**: the treaty after the war on the Hollowed Wastes, one generation ago (§1.4). A tale opens in the 27th year. The Markmen count the same years as *winters since the Wastes*. *(recommended)*
@@ -11,6 +17,9 @@ The calendar is built on auto/systems (Sessions 496–500) with placeholder name
 - **D.** Other names: Michael writes them, or marks the ones to change.
 
 Recommendation: **A.** Every ledger on three islands had to date by the treaty, the number is short, and if the cold peace breaks in play the date line keeps calling it the Peace, which is the point of it.
+
+Michael: **The drafted set, years of the Peace**. (2026-10-05)
+
 ### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05) — DECISION #151
 Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).
 - **A. One fee for the visit, an inn room's price in that place** *(recommended)*: about 12 in a town, 20 in a city; the look page opens and anything on it can change for that one fee; leaving without a change costs nothing. The shop keeps a strongbox at the general goods rate, like every other keeper.
@@ -27,7 +36,46 @@ You asked for capes and cloaks as an item slot with minimal bonuses unless rare 
 - **C.** B, and the hood raised hides your face: crimes go on *a hooded stranger's* account, guards stop the hooded, unmasked it becomes yours doubled (B + 2 Opus).
 
 Recommendation: **B.** The virtue is small and depends on where you are going (the best cloak at sea is the worst in the snow), so the slot has a decision in it without becoming *buy more*; every virtue reads a system already built. C rewrites the crime system's prices for a disguise nobody asked for; it can follow B later.
-## Answered
+
+Michael: **Each kind one small virtue in its place**. (2026-10-05)
+
+### How large is a dragon? (the look builder, Session 524, 2026-10-05) — DECISION #153
+Michael's inspector note on the dragon: "Design looks fine, but the scale seems far too small compared to the bandit for scale. Dragons should be pretty large."
+
+Part of that was the inspector. It built every wolf-kit creature at scale 1, but every dragon in play is built at 2.88: the open world's at its zone scale 1.8 × 1.6, and a lair's master at the same 2.88. The inspector now shows it at 2.88 (Session 524). At that size it stands 2.35 tall and 6.9 long, against a man of 1.7. How large should it be?
+
+- **A.** As the game has it: 2.88, 2.35 tall and 6.9 long, about one and a half times a man's height. Nothing changes but the inspector.
+- **B.** 4.5: 3.7 tall and 10.7 long, about twice a man's height, with its head above a cottage's eaves. *(recommended)*
+- **C.** 6: 4.9 tall and 14.3 long, a boss's size. A cave lair's rooms may be too low for it.
+- **D.** By place: the open world's dragon at 4.5 and a lair's master at 6.
+
+Recommendation: **B.** It reads as a dragon beside a person without outgrowing the lairs. The size is the look builder's change in the builders (`WOLF_KINDS.Dragon.world`). How far it reaches and how wide it is to hit grow with the scale in `42-zone-enemies.js` and the lair's `dragonBody` (`68-dungeon-misc.js`), so the systems builder would check reach, collision and the lair rooms in the same change.
+
+Pictures (the bandit, then dragons at 1, 2.88, 4.5 and 6):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-sizes.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-sizes-near.png
+The inspector at the world's size: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-inspector-after.png
+
+Michael: **4.5: about twice a man's height**. (2026-10-05)
+
+### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05) — DECISION #151
+Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).
+- **A. One fee for the visit, an inn room's price in that place** *(recommended)*: about 12 in a town, 20 in a city; the look page opens and anything on it can change for that one fee; leaving without a change costs nothing. The shop keeps a strongbox at the general goods rate, like every other keeper.
+- **B. Priced by the change**: a cut or shave 5, a new hair colour 10, each garment dyed 8, a city half as much again. Each row on the look page shows its price. Strongbox as A.
+- **C. Free**: the barber's chair is a service of the town, with no fee and no strongbox.
+- **D. A, but with no strongbox**: a barber keeps little coin.
+
+Recommendation: **A.** One fee matches the one shop you chose on #144, it costs a night's lodging, which is cheap enough to try a look and dear enough not to do it daily, and it needs no price list on the page. B makes the look page a shop, and Morrowind and Skyrim never priced a haircut by the strand.
+
+Michael: **One fee per visit, an inn room's price**. (2026-10-05)
+
+### Unblock the design proposal: a flaky watch test (the producer, 2026-10-05)
+The capes-and-cloaks proposal (PR #149, da57005) changes two docs files and no code, yet the watch test failed on it twice in a row while main, holding the same code, passed.
+- **A. Merge it anyway** *(recommended)*: the producer merges da57005 (docs only) now; the watch test is filed as a bug for the systems builder.
+- **B. Wait for the watch test to be fixed.**
+
+Michael: **Merge it anyway**. (2026-10-05) Merged as 262663c.
+
 ### A barber and dyer in towns (the look builder, Session 505, 2026-10-05, DECISION #144)
 Backlog H has one look item left that is not done or waiting: *a barber/tailor in towns to change hair and dyes after the creator*. Today the look you choose in the creator (hair, beard, tunic, breeches and boots colours) is fixed for good. A trade in town would reopen those rows. It touches a new person, a room, a sign and a fee, so it is yours before anyone builds it.
 

@@ -636,6 +636,7 @@
     for(const [w,h,y,dz] of [[1.12,.06,2.63,0],[1.12,.06,1.57,0],[.06,1.12,2.1,-.53],[.06,1.12,2.1,.53]])add(SK.rbox(.078,h,w===1.12?1.12:.06,.012,1),0x3a2a1a,0,y,1.15+dz,0,0,0,.06);
     return mergeParts(P);}
   function buildTradeSign(group,type,name,doorX,doorZ,tx,tz,ry,y){
+    if(type==='barber'){buildBasinSign(group,doorX,doorZ,tx,tz,y);return;}
     const armLen=1.3;const bx=doorX+tx*(armLen-.15),bz=doorZ+tz*(armLen-.15);
     {const m=new THREE.Mesh(tradeSignGeo(),VC_MAT);m.position.set(doorX,y,doorZ);m.rotation.y=ry;m.castShadow=true;group.add(m);} // S258 — the arm, brace, chains and framed board on the kit
     const tex=signTexture(type,name);
@@ -643,6 +644,10 @@
       // board faces along the wall: normal = wall tangent
       f.position.set(bx+(-tz)*sd*.035,y+2.1,bz+(tx)*sd*.035);f.rotation.y=ry-Math.PI/2*sd;f.userData.sign=name;group.add(f);}); // front of each face points away from the board
   }
+  // S512 — the barber's sign: the furniture kit's three brass basins on an iron arm (no painted board), at the world's scale
+  // (the kit is drawn at the rooms' scale, a man 1.28 tall), the arm out from the wall over the door
+  function buildBasinSign(group,doorX,doorZ,tx,tz,y){const K=furnKit(),P=K.basinSign(1),m=new THREE.Mesh(K.merge(P.list,true),VC_MAT);
+    m.scale.setScalar(1.9);m.position.set(doorX,y+2.32,doorZ);m.rotation.y=Math.atan2(-tz,tx);m.castShadow=true;m.userData.sign='barber';group.add(m);}
   const _txtCache={};
   function textPlane(str,w,h,fg,bg){
     const key=str+'|'+w+'|'+h;
@@ -1235,26 +1240,29 @@
     misc:{irish:'Goods',french:'Comptoir',anglo:'Stores'},
     shipwright:{irish:'Boatyard',french:'Chantier',anglo:'Shipwright'},
     church:{irish:'Oratory',french:'Chapelle',anglo:'Chapel'},
+    barber:{irish:'Barber',french:'Barbier',anglo:'Barber'}, // S512 — the barber and dyer (Michael's B on #144)
   };
   const INN_NAMES={
     irish:['The Grey Heron','The Salt Hound','The Wandering Ram','The Broken Oar','The Rowan Cup','The Bramble Hearth'],
     french:['Auberge du Cerf','Le Coq Doré','Auberge de la Grise','La Lanterne','Le Vieux Pressoir','Auberge du Pont'],
     anglo:['The Ash and Bone','The Hollow Lamp','The Crooked Gate','The Last Ember','The Black Ram','The Wayfarer'],
   };
-  const SHOP_ROLE={weapon:'Smith',armor:'Armourer',potion:'Apothecary',misc:'Merchant',inn:'Innkeeper',church:'Priest',castle:'Steward',guild_f:'Guildmaster',guild_m:'Archmage',shipwright:'Shipwright'};
+  const SHOP_ROLE={weapon:'Smith',armor:'Armourer',potion:'Apothecary',misc:'Merchant',inn:'Innkeeper',church:'Priest',castle:'Steward',guild_f:'Guildmaster',guild_m:'Archmage',shipwright:'Shipwright',barber:'Barber'};
   const TAGLINES={
     weapon:['"Edges kept keen, prices kept fair."','"Steel for the road ahead."','"If it bends, I did not make it."'],
     armor:['"Padding first, then plate."','"Walk out heavier, walk back at all."','"Nothing fancy. Everything tested."'],
     potion:['"Roots, tinctures, and honest advice."','"Bitter cures for bitter roads."','"Ask before you drink."'],
     misc:['"Odds, ends, and things that fell off carts."','"Rope, salt, candles, and questions."','"I buy what you carry."'],
     inn:['"A bed, a bowl, and no questions."','"Fire\'s lit. Door\'s open."','"Travellers welcome. Trouble isn\'t."'],
+    barber:[''], // S512 — no tagline until the quest writer gives the barber one
     church:['"The door is always open."','"Come in out of the dark."','"Rest a moment. It costs nothing."'],
   };
-  // Per-kind plan: building count, shop set, extras.
+  // Per-kind plan: building count, shop set, extras. S512: `late` shops come after the optional ones, so a new trade takes
+  // the first home's lot and no shop that stood before moves (the barber and dyer, Michael's B on #144)
   const KIND_PLAN={
     village: {n:[10,14], shops:['weapon','potion','misc','inn'],   optional:['church'], rows:1, walls:false, stalls:0},
-    town:    {n:[60,85], shops:['guild_f','guild_m','weapon','armor','potion','misc','misc','misc','inn','inn','inn','church'], optional:['weapon','potion','inn'], rows:2, walls:true, stalls:4},
-    city:    {n:[150,190],shops:['castle','guild_f','guild_m','church','church','weapon','weapon','weapon','armor','armor','potion','potion','potion','misc','misc','misc','misc','misc','inn','inn','inn','inn','inn'], optional:['inn','misc','armor'], rows:2, walls:true, stalls:8},
+    town:    {n:[60,85], shops:['guild_f','guild_m','weapon','armor','potion','misc','misc','misc','inn','inn','inn','church'], optional:['weapon','potion','inn'], late:['barber'], rows:2, walls:true, stalls:4},
+    city:    {n:[150,190],shops:['castle','guild_f','guild_m','church','church','weapon','weapon','weapon','armor','armor','potion','potion','potion','misc','misc','misc','misc','misc','inn','inn','inn','inn','inn'], optional:['inn','misc','armor'], late:['barber'], rows:2, walls:true, stalls:8},
     garrison:{n:[24,32], shops:['weapon','armor','potion','inn','inn','misc'],  optional:[], rows:1, walls:true, stalls:0},
     outpost: {n:[3,4],  shops:['misc','inn'],                     optional:[], rows:1, walls:'palisade', stalls:0},
     port:    {n:[30,45], shops:['shipwright','weapon','potion','misc','misc','inn','inn','church'], optional:['misc'], rows:2, walls:false, stalls:3},
