@@ -1066,3 +1066,184 @@ No heading above it. That is the category he has not named.
 - *He never says game, save, player or screen* (§6). He does not.
 - *No chosen-one prophecies.* None. The three descriptions are not used.
 - *Where the canon is silent:* his reckoning of years, every name, and what the unbinding did to the old world's people. I chose the plainer thing: years from the stone, names in each people's register, and an empty space where the canon leaves one.
+
+---
+
+## The Year's Names — days, months, seasons, the era and the four feasts
+
+*Unapproved. Drafted 5 Oct 2026. Backlog D, *Calendar*: "the names are the author's (the quest writer proposes from the canon; Michael picks)"; backlog E, *Journal*; J, *Journal and calendar*. The systems builder built the calendar's shape on auto/systems (Sessions 496–500: `CAL`, `calDay`, `calDateLine`, `isGodsDay` in `60-shop.js`) with placeholder names in one table, and the date line everywhere waits for this. The era is raised as DECISION #146 (`docs/decisions.md`, Pending); the draft carries a recommendation for it.*
+
+### What the canon fixes, and where it is silent
+
+- **Seven gods, six with temples** (§4.1): An Mhuir the Sea, An Spéir the Sky, Na Beithígh the Beasts, An Chloch the Stone, An Teallach the Hearth (*towns, roads, names; the merchants' god*), An Fíodóir the Weaver, and An tAoi the Guest, *the one the loom was strung for*, with no shrine. The week of seven, a day each, is the designer's shape (`docs/design/journal-and-calendar.md`), and it reads straight off the canon.
+- **The Guest** (§4.2): *the Church's line: the Guest is a mistake of the old culture.* The Church bricked up its chapel. Folk keep it in defaced niches and older songs. *Heresy, not prophecy*: no one applies the three descriptions to the player before Act III.
+- **The three registers** (Part I): deep is Irish (true names), common is Anglo-Saxon (how people speak), institutional is Norman-French (the Crown, the Church, the Compact). A calendar is spoken in all three, so every name has its three forms; the date line, which is the player's own journal, takes the common one, as *the old gates* is everyone's default.
+- **The land** (§1): the Gatelands are grain, cattle, wool, horses, and *the only island with autumn woods*; the Mark is cold, iron and timber; Aurenne is the sea, salt and the Church. The months are named for the work of the year, which all three islands share.
+- **The dead and the gates** (§3.1): *Nobody who gave a grandmother to a gate was lied to about the outcome, only about the mechanism.* *The Church blesses the dead into the gates without knowing what happens there.* That is a feast already, and the canon gives it.
+- **The war** (§1.4, §14): *one generation ago*, the Crown won, the Mark remembers, the Hollowed Wastes was its field. The canon names no monarch.
+- **Silent:** every name, the era and its year, the feasts. I chose the plainer thing each time: days by their god in the common tongue, months by the year's work, feasts from customs the canon already implies, and an era the canon already dates.
+
+### 1. The week
+
+The week runs outward from the hearth to the one outside the world: the house, the ground under it, what lives on the ground, the sea around it, the sky over it, the loom that holds it all, and last the Guest it was strung for. A Gatelander can say the order as a proverb (below), and a player who learns it can work out the day.
+
+| # | `god` key | Common (the date line) | Deep (Gatelanders at prayer, the Old Blood) | Institutional (the Church, the Compact, the Crown's clerks) |
+|---|---|---|---|---|
+| 0 | `teallach` | **Hearthday** | *Lá an Teallaigh* | *le jour de l'Âtre* |
+| 1 | `cloch` | **Stoneday** | *Lá na Cloiche* | *le jour de la Pierre* |
+| 2 | `beithigh` | **Beastday** | *Lá na mBeithíoch* | *le jour des Bêtes* |
+| 3 | `muir` | **Seaday** | *Lá na Mara* | *le jour de la Mer* |
+| 4 | `speir` | **Skyday** | *Lá na Spéire* | *le jour du Ciel* |
+| 5 | `fiodoir` | **Weaverday** | *Lá an Fhíodóra* | *le jour du Tisserand* |
+| 6 | `guest` | **Guestday** | *Lá an Aoi* | ***le Jour Clos*** — the Closed Day |
+
+- **Hearthday first.** The Hearth is the merchants' god and the god of towns and names: the week's accounts open on it, so the rent the systems builder already puts on the week's first day (Session 498) falls on Hearthday, and a ledger reads right.
+- **Guestday last, and the week's rest.** By custom no one is turned from a door on Guestday and no work is asked that can wait. A custom, not a rule: nothing in the draft shuts a shop. The Church does not keep it: it calls the seventh day *the Closed Day*, rests on it, and sets no place.
+- **The design note, never said.** Part I's *"a Sunday afternoon"* is the seventh day of a week, and here the seventh day is the Guest's. Nobody in the game remarks on it.
+
+### 2. The months and seasons
+
+Twelve months of 28 days; the year turns with spring; a new tale begins on the 1st of Reaping, the first month of autumn (`startMonth:6`). Seasons keep their plain names.
+
+| # | Season | Month (common) | What it is named for |
+|---|---|---|---|
+| 0 | spring | **Thaw** | the ground giving |
+| 1 | spring | **Lambing** | |
+| 2 | spring | **Sowing** | |
+| 3 | summer | **Shearing** | the wool, the Gatelands' pride |
+| 4 | summer | **Haysel** | the hay harvest (an old word: hay-season) |
+| 5 | summer | **Highsun** | |
+| 6 | autumn | **Reaping** | the grain; a new tale opens here |
+| 7 | autumn | **Leaffall** | the autumn woods, the Gatelands' alone |
+| 8 | autumn | **Culling** | the beasts killed before winter |
+| 9 | winter | **Longnight** | |
+| 10 | winter | **Wolfmonth** | Na Beithígh's children at the fold |
+| 11 | winter | **Lean** | the hungry end of winter |
+
+The months are the same on all three islands; the work comes at different weights (the Mark shears late and culls early, Aurenne has no Lambing worth the name), and nobody remarks on it. The Church's clerks write the months in the common form; only the days have Church names.
+
+### 3. The era
+
+**Recommended: *of the Peace*, the year 27 at a new tale's start.** The Peace is the treaty after the war the Crown won on the Hollowed Wastes, one generation ago (§1.4). Everyone dates by it because every ledger had to: the Crown's clerks write *l'an XXVII de la Paix*, the Compact copies them, and the date line reads *the 27th year of the Peace*. The Mark counts the same years and will not say the word: a Markman says *twenty-seven winters since the Wastes*. If the cold peace breaks in play (`warFromFaction`), the year keeps its name; that is the point of it.
+
+The alternatives, and why not: *the Year of the Loom* (the Church counting from the Weaving, about fifteen centuries; a Church that *forgot the price* would date from it with false precision, which is good, but it makes the date line Aurennais in a game that starts under the Crown); a regnal year (the canon names no monarch, and naming one is Michael's). Raised as DECISION.
+
+### 4. The date line
+
+One function writes it (`gameDateLine`, with `calDay` under it). Three lengths:
+
+- **Full** (the sleep panel, the wait menu, the journal's day heading, the waking line): `Hearthday, the 1st of Reaping, in the 27th year of the Peace` — and the time after a ` · ` where the panel shows a time today: `… · 7:40 am`.
+- **Day** (the Due view, a dated task's terms, the shrine, the map note): `Hearthday, the 1st of Reaping` (today's `calDateLine`, unchanged in shape).
+- **Short** (a save slot, a journal line's stamp): `Hearthday 1 Reaping · 7:40 am`.
+
+The waking line (`You wake after ${hours} hours. ${gameDateLine()}`) keeps its shape: *You wake after 8 hours. Skyday, the 12th of Reaping, in the 27th year of the Peace · 5:40 am.* The shrine's god's-day line already reads right with the common names: *It is Seaday. You are restored, and carry the Road two days.*
+
+### 5. The four feasts
+
+One a season, each a day long, fixed to a date and so always to the same weekday (28-day months). The systems builder's rules stand (the square full, the inn's meal free, petty fines halved); these are the names, the dates, the customs and the lines.
+
+| Feast | Date | Weekday | The custom |
+|---|---|---|---|
+| **The Kindling** | 1st of Thaw (the year's first day) | Hearthday | every hearth is let die the night before and lit at dawn from one fire in the square, carried house to house; the houses of the Compact close their books |
+| **The Long Light** | 19th of Highsun | Skyday | folk stay up to see the sun down and up again; horses race in the Gatelands, the yard is open to all in the Mark, the Compact seals the year's charters at noon |
+| **The Giving** | 23rd of Reaping | Stoneday | the year's dead are named at the nearest old gate, a stone set at its mouth for each; the Church blesses them into it; the last sheaf of the harvest is left there |
+| **The Empty Chair** | 28th of Longnight | Guestday | a place set at every table and the door off the latch till dawn; no one turned from a door; old songs. The Church forbids it; Aurenne keeps it behind shutters, or not at all |
+
+The Giving is the first a new tale meets: day 23, the fourth evening or so. It is the Clearing kept as a custom by people who do not know it (§3.1), and the draft never says so: nobody explains what a gate does with a name.
+
+#### 5.1 A townsperson's greeting on the day (replaces the stock greeting for that day only)
+
+**The Kindling**
+- *Gatelander:* "A good Kindling to you. Take a brand from the square before you go — a house that's cold on the year's first day stays cold till the next."
+- *Markman:* "Kindling. Fire's in the square. Take some, it's free."
+- *Aurennais:* "A fair Kindling to you, if you'll have it. The houses close their books today; what is owed is struck or carried over, and either way it is written."
+- *Old Blood:* "The Kindling. We said *tine úr*. New fire. The old one is let die first. People forget that half."
+
+**The Long Light**
+- *Gatelander:* "It's the Long Light, and a day that long is wasted on work. The horses run at noon. You'll know the winner by who's buying."
+- *Markman:* "Long Light. Yard's open to anyone. Mind you walk off it."
+- *Aurennais:* "The Long Light, Master. The houses seal the year's charters at noon. After that, I am told, nobody is bound to anything until dark."
+- *Old Blood:* "An Spéir's feast. We watched it go down, and stayed to see it come back. That was the whole of it."
+
+**The Giving**
+- *Gatelander:* "It's the Giving. Whoever we lost this year, we walk out to the old gate and say their names to it. A long road for a short word, but the dead were never in a hurry."
+- *Markman:* "Giving day. Names said at the gate. Mine are said. Yours?"
+- *Aurennais:* "The Giving, Master. The Church commits the year's dead to the gates this morning, and the gates, we are taught, hold them in trust."
+- *Old Blood:* "The Giving. My grandmother would not go. She said the old word for it once, and then she would not say what it meant."
+
+**The Empty Chair**
+- *Gatelander:* "The Empty Chair tonight. There's a place set and the door's off the latch. Nobody's ever sat in it, mind. That was never the point of a chair."
+- *Markman:* "Empty Chair. No door's shut tonight. Not even to you."
+- *Aurennais:* "The Church does not keep tonight, Master, and so neither does this house. What a house does behind its own shutters is, I am given to understand, its own affair."
+- *Old Blood:* "*Oíche an Aoi.* The Guest's night. Set the chair. Don't wait up."
+
+#### 5.2 The innkeeper, on a feast day (a line before the room offer; the meal is free)
+
+- *Gatelander:* "There's no charge for the meal today. A feast you pay for is only a dinner."
+- *Markman:* "Meal's free. Feast day. Sit."
+- *Aurennais:* "The meal is the house's today, Master, by custom. The room, regrettably, is not."
+- *Old Blood:* "Eat. There's no price on it today."
+
+#### 5.3 The guard, fining petty crime on a feast day (after the fine's own line; the fine is halved)
+
+- *Gatelander:* "It's a feast, so it's half. Don't make me sorry I said it."
+- *Markman:* "Feast day. Half. Once."
+- *Aurennais:* "A feast-day remission: half the fine. It is entered nonetheless."
+- *Old Blood* (none on the watch; the Gatelander line stands).
+
+#### 5.4 The Due view (one line a feast, with its date in the Day form)
+
+- 🔥 *The Kindling — every hearth lit from the square's fire, and the year turns.*
+- ☀ *The Long Light — the races, the yard, and the charters at noon.*
+- 🪨 *The Giving — the year's dead named at the old gate.*
+- 🪑 *The Empty Chair — a place set, and the door off the latch till dawn.*
+
+#### 5.5 The first time you enter a settlement on a feast day (the log, plain narration)
+
+- `🕯 ${feast.name} at ${site.name}.` — e.g. *The Giving at Dunmore.*
+
+### 6. The Guest's day in the mouth
+
+Two topics, one each side of the Church's line. Neither applies a description to the player, and neither explains the Guest.
+
+**A Gatelander townsperson, on any Guestday** — topic *"Why is the door left open?"*
+> "It's Guestday. You don't shut a door on a Guestday, in case. In case of what, my grandmother said, is the Guest's business and none of ours. The week goes hearth, stone, beast, sea, sky, loom — and then whoever's at the door. That's how you count it on your fingers, and you'll not lose a day again."
+
+**An Aurennais priest of the Church, on any Guestday** — topic *"Why does the Church call it the Closed Day?"*
+> "Because the old culture kept the seventh day for a guest who was never coming, Master, and the Church, in its mercy, has closed that account. One rests on the Closed Day. One does not set a place. The Gatelanders still do, I am told; the Church considers it a debt they insist on paying to no one."
+
+**A Markman, on any Guestday** — topic *"Is Guestday kept in the Mark?"*
+> "Aye. Door's open, fire's banked, nobody works who doesn't have to. Who it's for, I couldn't tell you. Don't need to know who's coming to leave the door open."
+
+**The Old Blood**, if asked the Gatelander's question, answer it with the older name and no more:
+> "*Lá an Aoi.* It was always the last day. It was always kept."
+
+### 7. Where the names go — the `CAL` table, final
+
+```js
+const CAL={days:[{god:'teallach',name:'Hearthday',deep:'Lá an Teallaigh',church:'le jour de l’Âtre'},{god:'cloch',name:'Stoneday',deep:'Lá na Cloiche',church:'le jour de la Pierre'},{god:'beithigh',name:'Beastday',deep:'Lá na mBeithíoch',church:'le jour des Bêtes'},{god:'muir',name:'Seaday',deep:'Lá na Mara',church:'le jour de la Mer'},{god:'speir',name:'Skyday',deep:'Lá na Spéire',church:'le jour du Ciel'},{god:'fiodoir',name:'Weaverday',deep:'Lá an Fhíodóra',church:'le jour du Tisserand'},{god:'guest',name:'Guestday',deep:'Lá an Aoi',church:'le Jour Clos'}],
+  monthNames:['Thaw','Lambing','Sowing','Shearing','Haysel','Highsun','Reaping','Leaffall','Culling','Longnight','Wolfmonth','Lean'],
+  monthLen:28,months:12,seasons:['spring','summer','autumn','winter'],startMonth:6,startYear:27,era:'the Peace',
+  feasts:[{id:'kindling',name:'The Kindling',month:0,dom:1},{id:'longlight',name:'The Long Light',month:5,dom:19},{id:'giving',name:'The Giving',month:6,dom:23},{id:'emptychair',name:'The Empty Chair',month:9,dom:28}]};
+```
+
+Each feast's weekday follows from `dom` (`(dom-1)%7`, because a tale's first day is the 1st of a month and a Hearthday): the 1st is Hearthday, the 19th Skyday, the 23rd Stoneday, the 28th Guestday.
+
+### What in the code would carry it
+
+- **`CAL`** (`60-shop.js`, auto/systems): the table above replaces the placeholders. The day order moves: the systems builder's has the Sea first; this has the Hearth first. Anything that names a weekday by index (the rent on the week's first day, Session 498; `shrineboon`-style tests asserting a god by `weekday`) reads `CAL.days[i].god`, not a number.
+- **`gameDateLine(at,tod,len)`**: the three lengths of §4. Today's `Day N · 7:40 am` becomes the Short form; `_jnTime` in `66-hub.js` strips the date with `/^Day \d+ · /` and wants the Short form's `/^\S+ \d+ \S+ · /`; the journal's day heading (`'Day '+(k+1)`) becomes the Full form without the time.
+- **Feasts**: `CAL.feasts` and a `feastOn(at)` beside `isGodsDay`. The greetings of §5.1 go in a table keyed by feast id then people (`gatelander`, `markman`, `aurennais`, `oldblood`) and replace `def.greeting` in `makeDef` (`83-world-generator.js`) for townsfolk on that day only; lords, guards on duty and the named cast keep their own. The innkeeper's line of §5.2 joins `INN_ROOM_LINES` (`86-world-crime.js`) as a `feast` key per people. The guard's line of §5.3 follows the fine's message in the crime system (`86-world-crime.js`). The Due lines of §5.4 go where the Due view builds its list (`66-hub.js`). The log line of §5.5 is written once per site per feast: `worldState.feastSeen` keyed `<feast>:<year>:<site>` (a world key, so the S242 list, not `SS_CHAR_WS`).
+- **The Guestday topics** (§6): pushed onto a townsperson's topics when `calDay().god==='guest'`, by the speaker's people; the priest's on a Church priest's def in Aurenne. None needs a saved key.
+- **No new outcome rolls.** Nothing here draws from the RNG.
+
+### Checked against the canon
+
+- *Seven gods, six with temples, the Guest without one* (§4.1): seven days, the Guest's last and kept without a shrine.
+- *The Church's line: the Guest is a mistake of the old culture* (§4.2): *the Closed Day*; the priest's *closed that account*.
+- *No chosen-one prophecies; the three descriptions said to the player once, in Act III* (§4.2): none of the three appears; no line applies the Guest to the player.
+- *Gatelanders speak in proverbs and indirection and never a bare yes or no; Markmen short, *aye*, no honorifics; Aurennais formal, honorifics, qualifiers, contracts, never an oath; the Old Blood sparing, with the older word* (§2): each line was written to its row. No line swears.
+- *The Church blesses the dead into the gates without knowing what happens there* (§3.1): the Giving, with nobody saying what happens.
+- *The war one generation ago; the Mark remembers* (§1.4): *the Peace*, and the Markman's *since the Wastes*.
+- *The Gatelands the only island with autumn woods* (§1.1): a tale begins in Reaping, and Leaffall is theirs.
+- *Silent, and chosen plainly:* every name, the era's number (27, raised as DECISION), the order of the week, the feasts' customs.
