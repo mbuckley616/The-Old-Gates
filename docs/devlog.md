@@ -12050,3 +12050,16 @@ With this every foe the open world raises has an id. Step 3's list still holds t
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 510 — The world's quests write into the journal (DECISION #132, owed since Session 487)
+Session 487 put the story's quests into the journal in their own words, under their id, and left the world's quests (a lord's job, a faction's service, the story's world steps such as *The Courier*) for after the world file was cut. Those wrote only the log's short lines (*My mother's ring — Mayor Niamh*, *…: objective complete.*, *…: 86 gold.*), which the journal shows under the day but cannot file under the quest, so the Journal's *By quest* view and the Quests tab knew nothing of them.
+
+`qJournal(q, kind, text)` (`87-world-quests.js`) writes through the story's own door, `journalQuest`, keyed to the quest's id (stable since Session 503): the ask when the job is taken (`q.desc`, the giver's words, as the card already shows them), *Done — report to <giver>.* when the work is done, *Turned in to <giver>: <pay> gold.* when it is handed in (the pay the dated work actually gave), and *The date passed, and <giver> has given the work to someone else.* when a dated job lapses (the log's own line without the title). These are the game's plain terms, the same words the toasts and log already use. The short lines stay, as the story's did, because the level blocks and the tests read them. The Journal's *By quest* finds a world quest's title in `worldState.quests` and its state (in hand, complete; nothing for one taken back), and a world quest's card in the Quests tab shows what the journal holds of it under each date, as the story's cards do since Session 487, leaving out the ask the card already prints.
+
+The guilds' tasks are not in `worldState.quests` (they live in `worldState.guild`, one active task a guild) and still write only the log's lines; they are the next slice of the same thing.
+
+### Verified (headless Chromium)
+`worldjournal` 7/7 (new): in Dunmore at 10 am, *I'm looking for work.* in Mayor Niamh's dialogue gives *My mother's ring* (`tq:dunmore:0`) and writes her ask under its id at minute 30,000; done at 30,600 it writes *Done — report to Mayor Niamh.*, and its card in the Quests tab shows the line under *Day 22 · 10:00 am* without repeating the ask; *It's done.* pays 86 (the job was dated, a quarter more) and writes *Turned in to Mayor Niamh: 86 gold.* By quest shows the job under its title, *complete*, the three lines in order; By day reads *My mother's ring — Turned in to Mayor Niamh: 86 gold.* A dated job past its date writes its lapse under its id. The suites that read the journal or the world's quests pass (journal, jnlinks, datedwork, datedguild, due, jobids, questgold, told, investwords, crime2, crime5, chapel, dungeonexit). `parsecheck` clean.
+
+### Needs eyes
+- By day now has the short line and the quest's line side by side for each event (*✅ My mother's ring: objective complete.* above *📜 My mother's ring — Done — report to Mayor Niamh.*), as the story's quests have since Session 487. Whether the short lines should drop out of the Journal (kept in the data for the level blocks) is a call for the Journal's book look.

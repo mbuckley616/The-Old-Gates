@@ -187,14 +187,15 @@ function renderJournal(){
   if(_jnView==='topics'){body.innerHTML=`<input id="jn-search" type="search" placeholder="Search what you were told" autocomplete="off" oninput="journalSearch(this.value)"><div id="jn-topics"></div>`;const inp=document.getElementById('jn-search');inp.value=_jnSearch;journalSearch(_jnSearch);return;}
   const noteBox=_jnView==='day'?'<div id="jn-write"><textarea id="jn-note" maxlength="500" rows="2" placeholder="Write a line of your own (Enter writes it)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();journalNoteSubmit();}"></textarea><button type="button" onclick="journalNoteSubmit()">Write it</button></div>':'';
   if(!L.length){body.innerHTML=noteBox+'<div class="jn-empty">Nothing written yet.</div>';return;}
-  const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||null;
+  const qd=id=>(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.find(x=>x.id===id))||(worldState.quests||[]).find(x=>x&&x.id===id)||null; // S510 — or one of the world's
   const names=journalNames();
   const line=(e,withQ)=>{const d=e.q&&withQ?qd(e.q):null;
     return `<div class="jn-line${e.q?' jn-q':''}${e.note?' jn-note':''}"><span class="jn-time">${typeof e.t==='number'?_jnEsc(_jnTime(e)):''}</span><span class="jn-text">${_jnEsc(e.icon||'')} ${d?`<b>${_jnEsc(d.title)}</b> — `:''}${_jnLinked(e.text,names)}</span></div>`;};
   let html='';
   if(_jnView==='quest'){
     const ids=[];L.forEach(e=>{if(e.q&&ids.indexOf(e.q)<0)ids.push(e.q);});
-    const st=id=>(typeof qState==='function'?qState(id):'');const inHand=id=>st(id)==='active'||st(id)==='reward';
+    const wq=id=>(worldState.quests||[]).find(x=>x&&x.id===id);
+    const st=id=>{const w=wq(id);if(w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return w.turnedIn?(w.lapsed?'':'complete'):w.done?'reward':'active';return typeof qState==='function'?qState(id):'';};const inHand=id=>st(id)==='active'||st(id)==='reward';
     ids.sort((a,b)=>(inHand(b)?1:0)-(inHand(a)?1:0));
     if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
     ids.forEach(id=>{const d=qd(id),s=st(id);
