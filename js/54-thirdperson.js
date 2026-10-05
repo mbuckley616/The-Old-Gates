@@ -82,18 +82,44 @@ function tpBuild(lookIn,ppIn){
     // S246: where the left hand goes on a two-handed grip: a hand's width from the right fist towards the pommel (the
     // shorter end of the weapon from the fist), in the weapon's own frame
     if(R.twoH){const bb=new THREE.Box3().setFromObject(wm),dn=Math.abs(bb.min.y)<Math.abs(bb.max.y)?-1:1,end=Math.abs(dn<0?bb.min.y:bb.max.y);R.gripL=new THREE.Vector3(0,dn*Math.max(.05,Math.min(.1,end*.7)),0);}
-    if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}}
+    const wb=w.enchant&&w.enchant.col!=null?new THREE.Box3().setFromObject(wm):null;
+    if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}
+    if(wb&&!wb.isEmpty())tpMotes(R,wm,w.enchant.col,wb);}
   R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
     // S227 — the kit's shields: planked and round with a rim and boss, the kite, or (S231) the tower shield; the face is
     // the item's material colour, the rim and boss its guard's
     const kk=round?'round':big&&!/kite/i.test(oh.name||'')?'tower':'kite';const k=buildWeapon(kk,{tint:{face:c,guard:rim,metal:rim}});if(round&&/buckler/i.test(oh.name||''))k.scale.setScalar(.8);sg.add(k);sg.userData.kit=kk; // S231 — a tower shield its own shape
-    sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;}
+    sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;
+    if(oh.enchant){const sb=new THREE.Box3().setFromObject(k);if(!sb.isEmpty())tpMotes(R,sg,oh.enchant.col!=null?oh.enchant.col:tpHex(oh.matGlow,TP_MOTE.armour),sb);}}
   else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
+  // the worn pieces: a box about the bone each hangs on, in that bone's frame
+  const BX=(x0,y0,z0,x1,y1,z1)=>new THREE.Box3(new THREE.Vector3(x0,y0,z0),new THREE.Vector3(x1,y1,z1));
+  [[hd,B.head,BX(-.19,.04,-.19,.19,.32,.19)],[ch,B.spine,BX(-.24,-.02,-.2,.24,.36,.2)],[gl,B.elR,BX(-.07,-.2,-.07,.07,0,.07)],[gl,B.elL,BX(-.07,-.2,-.07,.07,0,.07)],
+    [lg,B.knL,BX(-.085,-.3,-.085,.085,0,.085)],[lg,B.knR,BX(-.085,-.3,-.085,.085,0,.085)],[ft,B.anL,BX(-.07,-.06,-.07,.07,.04,.12)]].forEach(([it,b,bx])=>{
+    if(it&&it.enchant&&b)tpMotes(R,b,it.enchant.col!=null?it.enchant.col:tpHex(it.matGlow,TP_MOTE.armour),bx,true);});
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.userData.tp=true;}});
   return R;}
-function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
+// S539 — an enchanted piece shows it with "some very very light particle effect" (Michael, the inspector, with the Demonic kit's
+// note): a few faint motes in the enchantment's colour (an armour enchantment has none: the material's glow, else a pale blue)
+// drifting up through the piece and round again, additive, a few millimetres each. One Points object per enchanted piece, on the
+// bone or in the hand that carries it; tpMotesTick moves them in tpPose. TP_MOTE is how many and how faint.
+const TP_MOTE={n:7,size:.045,opacity:.55,rise:.07,armour:0xb8d0ff,map:null};
+// a soft round glint, made once: white at the heart fading out, which the material's colour tints
+function tpMoteMap(){if(TP_MOTE.map)return TP_MOTE.map;const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d'),gr=x.createRadialGradient(16,16,0,16,16,16);
+  gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,32,32);return TP_MOTE.map=new THREE.CanvasTexture(c);}
+function tpMotes(R,parent,col,box,shell){const n=TP_MOTE.n,P=new Float32Array(n*3),seed=[],cx=(box.min.x+box.max.x)/2,cz=(box.min.z+box.max.z)/2,hx=(box.max.x-box.min.x)/2,hz=(box.max.z-box.min.z)/2;
+  // in a held piece's bounds; round a worn piece, on the ring of its box (shell), so they drift just outside the plate
+  for(let i=0;i<n;i++){const u=(i*.618+.13)%1,v=(i*.382+.71)%1,a=u*Math.PI*2;
+    seed.push([shell?cx+hx*Math.sin(a):box.min.x+2*hx*u,shell?cz+hz*Math.cos(a):box.min.z+2*hz*v,(i/n),.6+((i*.53)%1)*.8]);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:col,size:TP_MOTE.size,map:tpMoteMap(),transparent:true,opacity:TP_MOTE.opacity,blending:THREE.AdditiveBlending,depthWrite:false}));
+  pts.userData={box,seed,motes:true};pts.frustumCulled=false;parent.add(pts);(R.motes||(R.motes=[])).push(pts);tpMotesTick(R,0);return pts;}
+function tpMotesTick(R,t){if(!R||!R.motes)return;for(const m of R.motes){const {box,seed}=m.userData,a=m.geometry.attributes.position,h=box.max.y-box.min.y||.1;
+  for(let i=0;i<seed.length;i++){const [x,z,ph,sp]=seed[i],f=(ph+t*TP_MOTE.rise*sp/h)%1;a.setXYZ(i,x+.012*Math.sin(t*1.3+i*2.1),box.min.y+f*h,z+.012*Math.cos(t*1.1+i*1.7));}
+  a.needsUpdate=true;}}
+function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
 function tpSet(g,x,y,z,k){g.rotation.x=_tpL(g.rotation.x,x,k);g.rotation.y=_tpL(g.rotation.y,y||0,k);g.rotation.z=_tpL(g.rotation.z,z||0,k);}
 // ── camera collision ──
@@ -133,6 +159,7 @@ const TP_SWING_NEW=true;
 function tpPose(R,dt,st){
   const k=Math.min(1,dt*14),kf=Math.min(1,dt*22);
   const now=st.now/1000;
+  if(R.motes)tpMotesTick(R,now); // S539
   // hurt / death
   if(TP.lastHP!=null&&PHP<TP.lastHP-.5)TP.hurtT=.28;TP.lastHP=PHP;TP.hurtT=Math.max(0,TP.hurtT-dt);
   if(dead){TP.deadT=Math.min(1,TP.deadT+dt*2.2);}else TP.deadT=Math.max(0,TP.deadT-dt*4);

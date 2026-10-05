@@ -12145,3 +12145,32 @@ The lines are 3 to 5 mm across and laid on the plate's own surface, so they read
 - The red is a flat colour, not lit from within. Daedric's seams glow at night. A glow would take a material of its own, or the enchantment's light.
 - **Owed.** The second half of the note: "some very very light particle effect" on enchanted items. It is a separate item in the backlog line.
 - Long hair still shows through the Demonic helm's sides, as on the other closed helms. That belongs to the armour-kits note.
+
+## v80 — Session 539 — Enchanted pieces glint (backlog H, Michael's inspector note, second part)
+Michael, from the inspector, with the Demonic kit's note: enchanted items should carry "some very very light particle effect" to show they are magical. In first person an enchanted weapon already had a light and three orbiting sparks (v61), and so does a shield's light. Your body in third person showed nothing: an enchanted sword looked like any other.
+
+`tpBuild` (`54-thirdperson.js`) now gives each enchanted piece on your body a few motes (`tpMotes`):
+- **Where.** The weapon, the shield, the helm, the cuirass, the gauntlets, the greaves and the boots.
+- **How many and how faint.** One `THREE.Points` of seven motes per piece, additive, at opacity .55. A soft round glint, white at the heart and fading out, made once on a canvas and tinted by the material.
+- **Their colour.** A weapon's motes take the enchantment's own colour (Flames orange, Frost blue, and so on). Armour enchantments have no colour, so their motes take the material's glow, or a pale blue where it has none.
+- **How they move.** A held piece's motes rise through its bounds. A worn piece's rise round a ring just outside the plate, since inside it they are hidden. Each drifts a centimetre side to side and comes round again at the bottom. They rise at .07 a second, give or take, and `tpPose` moves them (`tpMotesTick`), so they keep time with the clock, not the frame count.
+- **Disposal.** `tpDispose` now disposes Points as well as meshes, so rebuilding the body on an equipment change lets them go.
+
+The numbers are in `TP_MOTE`. Townsfolk and foes are untouched, as no foe carries an enchanted item.
+
+### Verified (headless Chromium)
+`tests/enchantmotes.test.mjs` (new), 8/8. On your body with a Steel sword, cuirass and buckler:
+- **Plain pieces.** Unenchanted, they carry no motes.
+- **Enchanted pieces.** With the sword of Flames and a cuirass and buckler of Vitality, each carries one set: three in all.
+- **Faint.** Seven motes each, additive, opacity .55.
+- **Colour.** The sword's are the enchantment's ff4400. The Steel armour, which has no glow, gives b8d0ff.
+- **Placement.** Every mote lies within its piece's bounds.
+- **Movement.** All three sets move between two ticks half a second apart.
+- **Disposal.** Disposing the body disposes all three.
+- **Errors.** No page errors.
+
+`armourkit`, `tpweapons`, `tpguard`, `tpshots` and `tpswing` pass. Picture: `docs/prototypes/enchantmotes.png`, the body alone on a dusk stage, close, front and three-quarters. The first try's glints were hard squares 2–4 pixels across and mostly hidden inside the cuirass. They are now soft and ring the plate. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- Whether the glints read at play distance (three to four metres behind you), where each is a few pixels, and whether they read in daylight. Size, opacity and count are three numbers in `TP_MOTE`.
+- The amulet and the ring are enchanted too, but are too small on the body to carry motes.
