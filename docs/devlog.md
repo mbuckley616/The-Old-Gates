@@ -12253,3 +12253,26 @@ Reach, the width a blow must find, and the breath's range are the systems builde
 - The open world's dragon among trees and over a road, and whether three bandits tall reads as Michael meant "twice a man".
 - **The lair's wyrm is 3.73, not 4.5.** Raising the master's room ceiling (or the cavern's) to about 4 would let it stand at 4.5. That is the dungeon shell's height for one room, and a question for Michael through the producer.
 - **For the systems builder:** reach and hit width at the new size (`42-zone-enemies.js`), and the breath's 11-unit range (`dragonBreath`).
+
+## v80 — Session 547 — Long hair tucked under the plate helms (backlog H, Michael's inspector note on the armour kits)
+Michael's note on the armour kits said that "hair and clothing break through many of the armour sets". This session takes the hair under the helms. Clothing under the body armour is the next part.
+
+To find where hair goes through, I baked your body in each material's full kit with each of the thirteen hair styles: 130 bodies. Each was read in the head bone's frame, with the helm coloured pure magenta and the hair pure green. A hair vertex breaks through when the line from the head's centre to it crosses the helm and nothing of the helm lies beyond it.
+
+Only the plate helms (Steel to Cosmic) had a fault. Their shell is a sphere closed to .8π from the crown, so it comes down over the nape and the sides of the neck. A braid left it through the back (191 vertices, up to 11.9 cm out), two braids through the sides (311, up to 11.4 cm) and a tied tail through the back (9, up to 7.9 cm). The bronze Corinthian (Session 537), the mail helm and the wooden helm are open below, and had nothing through them.
+
+My first fix kept the plaits and pulled them in under the shell until they cleared its rim. That brought the plate helms to nothing through. But it took the braid from under the rim straight into the steel gorget, which is only 7 cm from the neck's axis there, and it came out through the gorget in flecks of brown. Session 398 had already ruled that the full styles (curls, an afro, a shag, a crest, warrior braids, a bun) are cut to the skull under any helm. So under a closed plate helm a braid, two braids and a tied tail are now cut to the skull too, as the shorn cap. Under the wooden, bronze and iron helms they still hang as before. The rule is one test in `buildPerson`'s hair (`32-people.js`), on the helm's family. A guard or foe in a plate kit takes the same rule, because they are built by the same code.
+
+### Verified (headless Chromium)
+`tests/helmhair.test.mjs` (new), 5/5, over the ten kits × thirteen styles:
+- **Coverage.** All 130 have a helm and hair.
+- **Nothing through.** No hair stands more than 6 mm out through any helm. The worst is 5 mm: a thinning fringe against the faceted helm's flat facets (Obsidian). Before, it was 11.9 cm under every plate helm.
+- **Plate helms.** Under a plate helm, a braid, two braids and a tied tail have the buzz's 203 hair vertices.
+- **The open helms.** Under the wooden, bronze and iron helms they keep their 887, 1,250 and 223 vertices.
+- **Errors.** No page errors.
+
+`bronzehelm`, `armourkit`, `woodenkit`, `guardarmour`, `foearmour` and `inspector` pass. Pictures (the helm from behind, the hair tucked away): `docs/prototypes/helmhair-steel-braid-after.png` and `helmhair-mithril-twin-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **Whether a plait should show at all in full plate.** Skyrim and Oblivion hide hair under a closed helm, as this does. A plait could instead come out of a slot at the nape and lie over the backplate. That would need the backplate's shape at the hair's height, which the hair does not know when it is built (the armour is laid on after it).
+- **Still open, from the same note.** Clothing through the armour: a tunic's skirt or a dress under the cuirass and greaves, measured the same way, next.

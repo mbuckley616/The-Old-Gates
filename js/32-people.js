@@ -427,7 +427,12 @@ function personBakeQ(g,q){
   const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
   // S398 — under a helm of the armour kit the full styles (curls, an afro, a shag, a crest, warrior braids, a bun) are cut to
   // the skull, or they stood out through the helm (Session 397's prototype); hair that hangs below the helm stays
-  let cap=null;const st=g.eq&&g.eq.armour&&g.eq.armour.head&&/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)?'buzz':g.style;
+  // S547 — and under a closed plate helm (Steel and up; Michael, the inspector: "hair and clothing break through many of the armour
+  // sets") a braid, two braids or a tied tail are tucked away too: the shell closes to .8π from the crown, and they went out through
+  // its back and sides (191, 311 and 9 hair vertices, up to 12 cm out), or, pulled under its rim, through the gorget below it.
+  // The bronze, mail and wooden helms are open below and keep them.
+  const HD=g.eq&&g.eq.armour&&g.eq.armour.head;
+  let cap=null;const st=HD&&(/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)||(/^(braid|twin|tied)$/.test(g.style)&&!/^(muscle|mail|lamellar)$/.test(HD.fam)))?'buzz':g.style;
   if(st==='thin'){const f=part(SK.torus(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
   else if(st==='buzz')cap=shorn(.7);
   else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(SK.cone(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
