@@ -12174,3 +12174,36 @@ The numbers are in `TP_MOTE`. Townsfolk and foes are untouched, as no foe carrie
 ### Needs eyes
 - Whether the glints read at play distance (three to four metres behind you), where each is a few pixels, and whether they read in daylight. Size, opacity and count are three numbers in `TP_MOTE`.
 - The amulet and the ring are enchanted too, but are too small on the body to carry motes.
+
+## v80 — Session 540 — The wooden kit reads as wood (backlog H, Michael's inspector note on the armour kits, first part)
+Michael, from the inspector: "the wooden kit is the best of them but reads as leather, not wood." The Wooden tier's lamellar (`ARMOUR_DRESS`, `32-people.js`) was five smooth hoops on the trunk and two over the hips, each one continuous lathe in the material's brown taken down to .72. That is a hide brown, laced with dark cords: exactly how leather lamellar looks.
+
+Each hoop is now a ring of separate boards:
+- **The boards.** Sixteen a ring, each an open sector of the hoop's old shape (four triangles), with a gap either side.
+- **The wood.** Three tones, the material's brown taken a third of the way to a pale oak and varied board to board. Its lightness is .44 against the old .28.
+- **The backing.** A dark leather hoop sits behind the boards and shows in the gaps.
+- **The lacing.** It runs through every other board.
+- **The pauldrons.** Their three rows are six boards each over the same backing.
+- **The rest of the kit.** The helm's bowl, and the vambraces' and greaves' slats, take the wood's tone.
+
+The boards of one tone in a ring are joined into one part. As sixteen separate parts, `personAO` read each board as an occluder pressed on the tunic beneath and darkened it. `armourkit` caught that: its count of the look's own tunic colour under the armour fell from 35 to 4. Joined, a ring shades as the hoop did, and the count is 56.
+
+The distant copy has no backing and eight boards a ring. `guardarmour` holds a poorly paid guard's distant copy under 6,500 triangles; it is 5,994 (was 5,722), and the full copy 11,090 (was 10,942). The full Wooden set on your body is 11,752 triangles (was 11,604).
+
+### Verified (headless Chromium)
+`tests/woodenkit.test.mjs` (new), 8/8, from the bake of your body in the Wooden and the Bronze full kits, measured by surface:
+- **The family.** The Wooden kit is the lamellar.
+- **The boards.** The cuirass's three wood tones cover 358, 642 and 187 cm².
+- **The backing.** The dark backing shows between them.
+- **The old brown.** Of the old hide brown, 31 cm² remains on the trunk, against 3,625 before.
+- **Lighter.** The wood is lighter: .44 against .28.
+- **The rest of the kit.** The helm (1,589 cm²), the greaves (47) and the vambraces (11) are in the wood's tones.
+- **Bronze.** The Bronze kit has no boards.
+- **Errors.** No page errors.
+
+`armourkit`, `guardarmour`, `foearmour` and `inspector` pass. `docs/inspector-catalogue.json` is refreshed: the Wooden kit is 12,604 and the bandit captain 12,726. Pictures: `docs/prototypes/wooden-before-*.png` and `wooden-after-*.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At play distance the boards may read as stripes. The gaps are about a twelfth of each board's width.
+- **Still open, from the same note.** Hair and clothing breaking through the armour sets, across all of them.
+- **Still open, from the same note.** "Are there armour sets for ranged and magic yet?" There are not: every kit is a material's lamellar, cuirass, mail or plate, and a robe is cloth. Archer's and mage's sets are a design question for Michael, raised through the producer.

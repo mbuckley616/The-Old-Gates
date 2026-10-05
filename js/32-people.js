@@ -202,12 +202,25 @@ function ARMOUR_DRESS(X){
       // S395 — the distant copy laces every third slat and rounds its hoops in half the segments (a guard's lamellar was
       // .58 of the full figure there, the heaviest distant copy in a town)
       // five laced hoops of slats from the belt to the chest, each flared over the one below; two more over the hips
-      const N=5,y0=0,y1=.34;for(let i=0;i<N;i++){const ya=y0+(y1-y0)*i/N-.004,yb=y0+(y1-y0)*(i+1)/N+.01,ra=rAt(Math.max(.01,ya))*1.1+.016,rb=rAt(yb)*1.08+.004;
-        part(hoop(ya,yb,ra,rb,.01,SK.seg(20,10)),m,B.spine).scale.z=Z;ring(rb,.0045,yb,gd,B.spine);
-        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.004,(ya+yb)/2);}}
-      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb])=>{part(hoop(ya,yb,ra*bw,rb*bw,.01,SK.seg(20,10)),m,B.hips).scale.z=.78;ring(rb*bw,.0045,yb,gd,B.hips,.78);
-        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.004,(ya+yb)/2);}});
-      LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;for(let i=0;i<3;i++){const r=.078-.004*i;part(SK.cyl(r,r+.014,.045,12,1,true,c-1.2,2.4),i%2?gd:m,b,s*.01,-.02-i*.036,0).scale.z=1.1;}
+      // S540 — wooden boards, not a leather hoop (Michael, the inspector: the wooden kit "reads as leather, not wood"): each hoop is
+      // a ring of separate boards in three tones of the wood, lighter than the old hide brown, a gap between each onto a dark
+      // leather backing (the distant copy has none, and eight boards a ring), and the lacing through every other board. A board is
+      // an open sector of the hoop: four triangles.
+      const WB=[.98,.86,1.1].map((k,i)=>C(P.metal).clone().lerp(C(0xc89a62),.28+.1*i).multiplyScalar(k)),backing=C(0x2a1a10);
+      // a ring's boards of one tone are one part (their sectors share the ring's centre, so they simply join): one part per tone
+      // keeps the ring one occluder to personAO, as the hoop was, instead of sixteen small ones pressed on the tunic beneath
+      const joinG=gs=>{const P=[],Nn=[];gs.forEach(q=>{const u=q.index?q.toNonIndexed():q;P.push(...u.attributes.position.array);Nn.push(...u.attributes.normal.array);u.dispose();q.dispose();});
+        const o=new THREE.BufferGeometry();o.setAttribute('position',new THREE.Float32BufferAttribute(P,3));o.setAttribute('normal',new THREE.Float32BufferAttribute(Nn,3));return o;};
+      const boards=(b,ya,yb,ra,rb,n,a0,len,sz,x,ti)=>{const w=len/n,by=[[],[],[]];for(let k=0;k<n;k++)by[(k*7+ti*5)%3].push(SK.cyl(rb,ra,yb-ya,2,1,true,a0+k*w+w*.06,w*.88));
+        by.forEach((gs,t)=>{if(gs.length){const o=part(joinG(gs),WB[t],b,x||0,(ya+yb)/2,0);o.scale.z=sz;}});};
+      const N=5,y0=0,y1=.34,nb=SK.q<1?8:16;for(let i=0;i<N;i++){const ya=y0+(y1-y0)*i/N-.004,yb=y0+(y1-y0)*(i+1)/N+.01,ra=rAt(Math.max(.01,ya))*1.1+.016,rb=rAt(yb)*1.08+.004;
+        if(SK.q>=1)part(hoop(ya,yb,ra-.004,rb-.004,.008,SK.seg(14,8)),backing,B.spine).scale.z=Z;boards(B.spine,ya,yb,ra,rb,nb,0,PI*2,Z,0,i);ring(rb,.0045,yb,gd,B.spine);
+        for(let k=0;k<nb;k+=SK.q<1?3:2){const a=(k+.5)/nb*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.003,(ya+yb)/2);}}
+      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb],j)=>{if(SK.q>=1)part(hoop(ya,yb,(ra-.004)*bw,(rb-.004)*bw,.008,SK.seg(14,8)),backing,B.hips).scale.z=.78;
+        boards(B.hips,ya,yb,ra*bw,rb*bw,nb,0,PI*2,.78,0,j+N);ring(rb*bw,.0045,yb,gd,B.hips,.78);
+        for(let k=0;k<nb;k+=SK.q<1?3:2){const a=(k+.5)/nb*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.003,(ya+yb)/2);}});
+      LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;for(let i=0;i<3;i++){const r=.078-.004*i;if(SK.q>=1)part(SK.cyl(r-.003,r+.011,.045,10,1,true,c-1.2,2.4),backing,b,s*.01,-.02-i*.036,0).scale.z=1.1;
+          boards(b,-.0425-i*.036,.0025-i*.036,r+.014,r,6,c-1.2,2.4,1.1,s*.01,i+7);}
         part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),leather,b,s*.012,-.004,0).scale.set(1.1,.7,1.15);});
     } else if(P.fam==='muscle'){
       // a cuirass modelled on the body: pectorals and belly in the bronze, rolled rims, leather strips (pteruges) over the hips
@@ -266,7 +279,7 @@ function ARMOUR_DRESS(X){
   const H=E.hands;
   if(H){const m=MT(H.metal),F=H.sig==='faceted'?facet:(x=>x);B.handL.userData.col=B.handR.userData.col=H.fam==='lamellar'||H.fam==='muscle'?leather:m;
     LR.forEach(([k,s])=>{const el=B['el'+k],wr=B['wr'+k];
-      if(H.fam==='lamellar'){for(let i=0;i<4;i++){const a=i/4*PI*2+.4;part(SK.rbox(.02,.1,.008,.003,1),m,el,Math.sin(a)*.047,-.085,Math.cos(a)*.047).rotation.y=a;}ring(.047,.004,-.05,GD(H.guard),el,1);ring(.045,.004,-.12,GD(H.guard),el,1);}
+      if(H.fam==='lamellar'){for(let i=0;i<4;i++){const a=i/4*PI*2+.4;part(SK.rbox(.02,.1,.008,.003,1),C(H.metal).clone().lerp(C(0xc89a62),.28+.1*(i%3)),el,Math.sin(a)*.047,-.085,Math.cos(a)*.047).rotation.y=a;}ring(.047,.004,-.05,GD(H.guard),el,1);ring(.045,.004,-.12,GD(H.guard),el,1);}
       else if(H.fam==='muscle')part(SK.cyl(.052*bw,.044*bw,.11,14,1,true),m,el,0,-.08,0);
       else if(H.fam==='mail'){part(mailTex(SK.cyl(.05*bw,.045*bw,.12,16,3,true)),m,el,0,-.075,0);part(SK.cyl(.054,.044,.045,12,1,true),GD(H.guard),wr,0,.0,0);}
       else{part(F(SK.cyl(.049*bw,.043*bw,.12,12,1,true)),m,el,0,-.075,0);part(F(SK.cyl(.058,.044,.055,12,1,true)),m,wr,0,-.004,0);
@@ -278,7 +291,7 @@ function ARMOUR_DRESS(X){
   const Lg=E.legs;
   if(Lg){const m=MT(Lg.metal),gd=GD(Lg.guard),F=Lg.sig==='faceted'?facet:(x=>x);
     LR.forEach(([k,s])=>{const th=B['th'+k],kn=B['kn'+k];
-      if(Lg.fam==='lamellar'){for(let i=0;i<5;i++){const a=(i-2)*.42;part(SK.rbox(.022,L2*.62,.01,.004,1),m,kn,Math.sin(a)*.058*bw,-L2*.48,Math.cos(a)*.058*bw).rotation.y=a;}
+      if(Lg.fam==='lamellar'){for(let i=0;i<5;i++){const a=(i-2)*.42;part(SK.rbox(.022,L2*.62,.01,.004,1),C(Lg.metal).clone().lerp(C(0xc89a62),.28+.1*(i%3)),kn,Math.sin(a)*.058*bw,-L2*.48,Math.cos(a)*.058*bw).rotation.y=a;}
         ring(.06*bw,.005,-L2*.25,gd,kn,1);ring(.056*bw,.005,-L2*.7,gd,kn,1);}
       else if(Lg.fam==='muscle'){part(SK.cyl(.062*bw,.052*bw,L2*.72,14,2,true,-1.9,3.8),m,kn,0,-L2*.5,0);part(SK.ball(.036,10,7),m,kn,0,-.01,.05).scale.set(1,1.1,.6);}
       else if(Lg.fam==='mail'){part(mailTex(SK.cyl(.074*bw,.062*bw,L1*.8,16,4,true)),m,th,0,-L1*.52,0);part(mailTex(SK.cyl(.06*bw,.05*bw,L2*.7,16,4,true)),m,kn,0,-L2*.5,0);
@@ -299,7 +312,7 @@ function ARMOUR_DRESS(X){
     const bowl=(pts,tilt,col,seg)=>{const o=part(SK.lathe(pts.map(q=>[q[0]*hs,q[1]*hs]),seg||20),col||m,hd,0,.12,-.004);o.rotation.x=tilt;o.scale.x=jaw;return o;};
     const aventail=(col,tex)=>{const geo=new THREE.LatheGeometry(dense([[.19,-.16],[.168,-.08],[.157,-.01],[.152,.03]],3).map(q=>new THREE.Vector2(q[0]*hs,q[1])),26,.75,PI*2-1.5);
       part(tex?mailTex(geo):geo,col,hd,0,.12,-.004).scale.x=jaw;};
-    if(Hd.fam==='lamellar'){bowl([[.158,.02],[.156,.06],[.138,.12],[.1,.165],[.05,.19],[.012,.2],[0,.2]],-.3);
+    if(Hd.fam==='lamellar'){bowl([[.158,.02],[.156,.06],[.138,.12],[.1,.165],[.05,.19],[.012,.2],[0,.2]],-.3,C(Hd.metal).clone().lerp(C(0xc89a62),.33)); /* S540 — the wood's own tone, as the boards */
       ring(.16*hs,.009,.14,gd,hd,1.02).rotation.x=PI/2-.3;ring(.15*hs,.006,.19,gd,hd,1.02).rotation.x=PI/2-.3;
       part(SK.cone(.018,.05,6),gd,hd,0,.33,-.06).rotation.x=-.3;aventail(leather,false);}
     // S536 — the bronze helm is a Corinthian (Michael, the inspector: "It splits right down the middle" at the forehead — the old
