@@ -1,9 +1,9 @@
-// Sessions 527–528 (the critic, 5 Oct, s418): buying a house. The seller went on offering the house after the sale and
+// Session 530 (the critic, 5 Oct, s418): buying a house. The seller went on offering the house after the sale and
 // took the price each time (`buyHouse` had no owned check, and the topic stayed on her from the town's build); she stood
 // at the door of Your House day and night (her `gone` schedule fell to idle), came back when the town streamed her in
 // again, and after a reload was the house's resident again. Now the sale is once, the topic comes off her, she leaves
 // the town's residents for good and a rebuilt town makes no resident for an owned house. A save in the cellar names
-// its town (S528).
+// its town.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');

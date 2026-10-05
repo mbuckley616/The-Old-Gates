@@ -284,13 +284,13 @@
   function housePrice(house){const k=house.siteKind||'village';const base={village:450,town:900,port:800,city:1500,garrison:700}[k]||600;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);return base+((hh%7)*50);}
   function forSale(house){if(house.type!=='home'||ownedHouse(house.id))return false;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,11);return (hh%100)<28;}
   function buyHouse(house){
-    if(ownedHouse(house.id)){if(typeof closeDialog==='function')closeDialog();return false;} // S527 — bought once; a stale topic charges nothing
+    if(ownedHouse(house.id)){if(typeof closeDialog==='function')closeDialog();return false;} // S530 — bought once; a stale topic charges nothing
     const price=housePrice(house);if(gold<price)return `She'd take ${price} gold for it. Not a coin less.`;
     gold-=price;updateHUD();(worldState.owned||(worldState.owned={}))[house.id]={name:house.name,site:house.siteId};
     house.name='Your House';house.ownedByPlayer=true;
     if(typeof addLog==='function')addLog('🏠',`Bought a house for ${price} gold.`);
     // the former resident moves out: hide their street self for good
-    // S527 — the topic comes off her, and she leaves the town's residents, so the stream never brings her back
+    // S530 — the topic comes off her, and she leaves the town's residents, so the stream never brings her back
     if(house.dlg&&house.dlg._extra){const i=house.dlg._extra.findIndex(t=>t&&t._house===house.id);if(i>=0)house.dlg._extra.splice(i,1);}
     if(typeof closeDialog==='function')closeDialog();
     const S=SETTLE.get(house.siteId),ri=S?S.residents.findIndex(r=>r.def===house.dlg):-1;
