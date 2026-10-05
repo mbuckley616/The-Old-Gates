@@ -284,16 +284,21 @@
   function housePrice(house){const k=house.siteKind||'village';const base={village:450,town:900,port:800,city:1500,garrison:700}[k]||600;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);return base+((hh%7)*50);}
   function forSale(house){if(house.type!=='home'||ownedHouse(house.id))return false;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,11);return (hh%100)<28;}
   function buyHouse(house){
+    if(ownedHouse(house.id)){if(typeof closeDialog==='function')closeDialog();return false;} // S527 — bought once; a stale topic charges nothing
     const price=housePrice(house);if(gold<price)return `She'd take ${price} gold for it. Not a coin less.`;
     gold-=price;updateHUD();(worldState.owned||(worldState.owned={}))[house.id]={name:house.name,site:house.siteId};
     house.name='Your House';house.ownedByPlayer=true;
     if(typeof addLog==='function')addLog('🏠',`Bought a house for ${price} gold.`);
     // the former resident moves out: hide their street self for good
-    const n=npcs.find(n=>n.def&&n.def.name===house.keeper&&n.sched&&n.sched.type==='resident');if(n){n.g.visible=false;n.dot.visible=false;n._retreated=true;n.sched={type:'gone'};}
+    // S527 — the topic comes off her, and she leaves the town's residents, so the stream never brings her back
+    if(house.dlg&&house.dlg._extra){const i=house.dlg._extra.findIndex(t=>t&&t._house===house.id);if(i>=0)house.dlg._extra.splice(i,1);}
     if(typeof closeDialog==='function')closeDialog();
+    const S=SETTLE.get(house.siteId),ri=S?S.residents.findIndex(r=>r.def===house.dlg):-1;
+    if(ri>=0){const res=S.residents[ri];S.residents.splice(ri,1);const n=res.n;
+      if(n){if(n._torch&&n._torch.userData.light)unregLight(n._torch.userData.light);sc.remove(n.g);sc.remove(n.dot);let i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);i=S.npcs.indexOf(n);if(i>=0)S.npcs.splice(i,1);res.n=null;}}
     return false;
   }
-  function houseTopics(house){return forSale(house)?[{label:`Buy this house (${housePrice(house)} gold)`,quest:true,fn:()=>buyHouse(house)}]:[];}
+  function houseTopics(house){return forSale(house)?[{label:`Buy this house (${housePrice(house)} gold)`,quest:true,_house:house.id,fn:()=>buyHouse(house)}]:[];}
   // ── cellars ──
   function cellarFor(house){
     if(!house._cellar){const chapel=isGuestCathedral(house);house._cellar={id:house.id+(chapel?'_chapel':'_cellar'),type:chapel?'chapel':'cellar',name:chapel?'Cill an Aoi':`${house.name} — cellar`,keeper:'',parent:house,reg:house.reg,style:house.style,w:house.w,d:house.d,two:false,doorX:house.doorX,doorZ:house.doorZ,exitX:house.exitX,exitZ:house.exitZ,exitYaw:house.exitYaw,siteKind:house.siteKind,guild:house.guild};}

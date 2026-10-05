@@ -307,7 +307,7 @@ function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!ol
 function ssPlaceName(){try{
   if(activeZoneId==='dungeon')return (currentPortal&&currentPortal.name)||'';
   if(activeZoneId!=='world'||typeof WORLD==='undefined')return '';
-  if(currentHouse){const t=currentHouse.siteId&&WORLD.siteAnywhere(currentHouse.siteId);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
+  if(currentHouse){const sid=currentHouse.siteId||(currentHouse.parent&&currentHouse.parent.siteId),t=sid&&WORLD.siteAnywhere(sid);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
   let best=null,bd=1e9;for(const t of WORLD.SITES){if(!t||!t.name)continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
   if(!best)return '';return bd<(best.pad||40)+40?best.name:bd<1500?'near '+best.name:'';
 }catch(e){return '';}}

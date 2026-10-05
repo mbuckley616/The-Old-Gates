@@ -311,7 +311,7 @@
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
         // residents stream in by distance (a city has 150+ of them)
-        S.residents.push({def:rdef,ry:lot.ry+Math.PI,n:null,door:{x:exX,z:exZ}});
+        if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:lot.ry+Math.PI,n:null,door:{x:exX,z:exZ}}); // S527 — the seller moved out
         return;
       }
       const heroH=hero&&hero[i];
