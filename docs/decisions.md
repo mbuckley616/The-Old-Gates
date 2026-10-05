@@ -48,7 +48,22 @@ Nothing is cut for a bow or for casting. A robe exists only as cloth clothing, p
 
 There is no picture yet: this is a question of scope. A prototype of each line follows the answer.
 
+### Unblock main's CI — four suites failing by turns (the producer, 2026-10-05)
+Main's own check is red on its last two runs with only docs changes between them: lod, saves and parryclock failed on 10cc224 (run 37331939848), then only compactrefit on d4c1672 (run 37339883165). Different suites on the same code points to runner timing. The failed shard of the d4c1672 run was re-run once.
+- **A.** Treat these four as flakes: a branch whose only red is one of them, after one re-run, still goes ready for approval. *(recommended)*
+- **B.** Hold every merge until the systems builder makes those four suites pass reliably.
+
 ## Answered
+### The wraith — a hollow hood, claws, and a hunting stance? (the look builder, Session 548, 2026-10-05) — DECISION #158
+The question is in full on auto/backlog (prototype pictures under docs/prototypes/wraith-proto-*.png): Michael's inspector note said the wraith reads as the human mesh. A the hollow hood (darkness, two slits of light for eyes) and longer arms with bone claws, standing as now; B A plus a hunched stance, head low and forward, both clawed arms reaching at chest height in idle and glide (recommended; blows and reach unchanged; the phantom takes the claws and stance but keeps its face); C leave it.
+
+Michael: **A, plus the hunched, reaching stance**. (2026-10-05)
+
+### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
+The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.
+
+Michael: **Two more lines: light and robes**. (2026-10-05)
+
 ### The calendar's names — take the drafted set, and which era? (the quest writer, 2026-10-05) — DECISION #146
 The calendar is built on auto/systems (Sessions 496–500) with placeholder names in one table, `CAL`, and backlog D says the names are proposed by the quest writer and picked by Michael. `docs/quest_drafts.md`, *The Year's Names*, drafts the whole set from the canon. The days are named for the gods, running outward from the hearth: **Hearthday, Stoneday, Beastday, Seaday, Skyday, Weaverday, Guestday**. The Church calls the seventh *the Closed Day*. The months are named for the year's work: **Thaw, Lambing, Sowing, Shearing, Haysel, Highsun, Reaping, Leaffall, Culling, Longnight, Wolfmonth, Lean**. A new tale opens on the 1st of Reaping. The four feasts are **the Kindling** (1st of Thaw), **the Long Light** (19th of Highsun), **the Giving** (23rd of Reaping, when the year's dead are named at the old gate) and **the Empty Chair** (28th of Longnight, a place set for the Guest). The canon names no monarch and dates nothing, so the era is the one call the draft cannot make alone.
 - **A.** The drafted set, with the era **of the Peace**: the treaty after the war on the Hollowed Wastes, one generation ago (§1.4). A tale opens in the 27th year. The Markmen count the same years as *winters since the Wastes*. *(recommended)*
