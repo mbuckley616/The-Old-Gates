@@ -230,11 +230,11 @@
       paid:(p,R)=>`${p} gold. ${R}, up the stairs, until this hour tomorrow. The other doors are not mine to open.`,
       not:'The fire is free.'}};
   function innTopics(house,people){const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;const cap=t=>t.replace(/^./,c=>c.toUpperCase());
-    return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
+    return [{label:'Something to eat and drink?',trade:true,fn:()=>{feastMeal(house);}},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
             if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?L.made:L.madeNamed(cap(innRoomName(mine,n,house)));}
             const others=taken===0?L.empty:taken===1?L.one:L.many(taken);
-            return L.offer(others,price,innRoomName(free,n,house));},
+            const fl=feastInnLine(people);return (fl?fl+' ':'')+L.offer(others,price,innRoomName(free,n,house));},
           get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
             return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return L.full;
@@ -243,6 +243,13 @@
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
               return L.paid(price,cap(innRoomName(free,n,house)));}},
             {label:'Not tonight.',response:L.not}];}}];}
+  // S550 — a feast day: the innkeeper's line comes before the room offer, and the meal (a Hot Stew) is the house's, once
+  // a feast at each inn, put in your pack when you ask for something to eat; the shop opens as on any day
+  function feastInnLine(people){const f=typeof feastOn==='function'&&feastOn(absMin());return f?(FEAST_INN[people]||FEAST_INN.gatelander):'';}
+  function feastMeal(house){const f=typeof feastOn==='function'&&feastOn(absMin());if(!f||!house)return false;const key=house.id+'@'+dayNow(),M=worldState.feastMeals||(worldState.feastMeals={});
+    if(M.day!==dayNow()){for(const k in M)delete M[k];M.day=dayNow();}if(M[key])return false;
+    const st=(SHOP_STOCK.inn||[]).find(i=>i.name==='Hot Stew');if(!st)return false;M[key]=1;bagAdd({...st,qty:1});
+    if(typeof updateHUD==='function')updateHUD();showMsg(`🥣 Hot Stew — ${f.name}’s meal, on the house.`,'#e8c890');return true;}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
@@ -346,7 +353,7 @@
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
-    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=25*pts+Math.max(0,Math.round(value||0));c.debt+=pts;c.last=dayNow();} // S168 — a theft's fine is 50 and the goods' value (the spec)
+    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
@@ -474,15 +481,17 @@
       poor:'You have not got it. The cells, or the blade.',
       pay:'It is paid. Go.',
       cells:'Come. The cells are quiet.'}};
+  // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
+  function feastFineLine(S,c){if(!c||c.feast!==dayNow()||typeof FEAST_FINE==='undefined')return '';return ' '+(FEAST_FINE[peopleOfSite(S.site)]||FEAST_FINE.gatelander);}
   function haltLines(S){return HALT_LINES[peopleOfSite(S.site)]||HALT_LINES.markman;}
   function yieldLines(S){return YIELD_LINES[peopleOfSite(S.site)]||YIELD_LINES.markman;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}

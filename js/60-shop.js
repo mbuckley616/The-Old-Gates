@@ -265,6 +265,38 @@ function calDay(at){
   const wd=n%CAL.days.length,mAbs=CAL.startMonth+Math.floor(n/CAL.monthLen),month=mAbs%CAL.months;
   return {n,weekday:wd,day:CAL.days[wd],god:CAL.days[wd].god,dom:n%CAL.monthLen+1,month,season:CAL.seasons[Math.floor(month/3)],year:CAL.startYear+Math.floor(mAbs/CAL.months)};
 }
+// S550 — the four feasts, one a season, each a day long (the rules are Michael's C on DECISION #132: the inn's meal is
+// free and a petty crime's fine is halved that day; the names, dates and lines are the quest writer's drafted set, Michael's
+// A on #146). Fixed to a date, so always to the same weekday. greet replaces a townsperson's stock greeting that day; inn
+// comes before the innkeeper's room offer; fine follows a guard's halt when the fine was halved (the Old Blood keep no watch).
+const FEASTS=[
+  {key:'kindling',name:'The Kindling',month:0,dom:1,ico:'🔥',due:'every hearth lit from the square’s fire, and the year turns.',
+    greet:{gatelander:'A good Kindling to you. Take a brand from the square before you go — a house that’s cold on the year’s first day stays cold till the next.',
+      markman:'Kindling. Fire’s in the square. Take some, it’s free.',
+      aurennais:'A fair Kindling to you, if you’ll have it. The houses close their books today; what is owed is struck or carried over, and either way it is written.',
+      oldblood:'The Kindling. We said tine úr. New fire. The old one is let die first. People forget that half.'}},
+  {key:'longlight',name:'The Long Light',month:5,dom:19,ico:'☀',due:'the races, the yard, and the charters at noon.',
+    greet:{gatelander:'It’s the Long Light, and a day that long is wasted on work. The horses run at noon. You’ll know the winner by who’s buying.',
+      markman:'Long Light. Yard’s open to anyone. Mind you walk off it.',
+      aurennais:'The Long Light, Master. The houses seal the year’s charters at noon. After that, I am told, nobody is bound to anything until dark.',
+      oldblood:'An Spéir’s feast. We watched it go down, and stayed to see it come back. That was the whole of it.'}},
+  {key:'giving',name:'The Giving',month:6,dom:23,ico:'🪨',due:'the year’s dead named at the old gate.',
+    greet:{gatelander:'It’s the Giving. Whoever we lost this year, we walk out to the old gate and say their names to it. A long road for a short word, but the dead were never in a hurry.',
+      markman:'Giving day. Names said at the gate. Mine are said. Yours?',
+      aurennais:'The Giving, Master. The Church commits the year’s dead to the gates this morning, and the gates, we are taught, hold them in trust.',
+      oldblood:'The Giving. My grandmother would not go. She said the old word for it once, and then she would not say what it meant.'}},
+  {key:'emptychair',name:'The Empty Chair',month:9,dom:28,ico:'🪑',due:'a place set, and the door off the latch till dawn.',
+    greet:{gatelander:'The Empty Chair tonight. There’s a place set and the door’s off the latch. Nobody’s ever sat in it, mind. That was never the point of a chair.',
+      markman:'Empty Chair. No door’s shut tonight. Not even to you.',
+      aurennais:'The Church does not keep tonight, Master, and so neither does this house. What a house does behind its own shutters is, I am given to understand, its own affair.',
+      oldblood:'Oíche an Aoi. The Guest’s night. Set the chair. Don’t wait up.'}}];
+const FEAST_INN={gatelander:'There’s no charge for the meal today. A feast you pay for is only a dinner.',markman:'Meal’s free. Feast day. Sit.',
+  aurennais:'The meal is the house’s today, Master, by custom. The room, regrettably, is not.',oldblood:'Eat. There’s no price on it today.'};
+const FEAST_FINE={gatelander:'It’s a feast, so it’s half. Don’t make me sorry I said it.',markman:'Feast day. Half. Once.',aurennais:'A feast-day remission: half the fine. It is entered nonetheless.'};
+function feastOn(at){const c=calDay(at);return FEASTS.find(f=>f.month===c.month&&f.dom===c.dom)||null;}
+function nextFeast(at){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440);
+  for(let d=d0;d<d0+CAL.monthLen*CAL.months;d++){const f=feastOn(d*1440);if(f)return {f,at:d*1440};}return null;}
+function feastGreeting(def){if(!def||!def._siteId)return null;const f=feastOn();return f?(f.greet[def.people]||f.greet.gatelander):null;}
 function calOrd(d){return d+((d%10===1&&d%100!==11)?'st':(d%10===2&&d%100!==12)?'nd':(d%10===3&&d%100!==13)?'rd':'th');}
 // S498 — the calendar's own date, *Seaday, the 4th of Reaping* (the Due view, a map note, the hour you wake on the rest slip)
 function calDateLine(at){const c=calDay(at);return `${c.day.name}, the ${calOrd(c.dom)} of ${CAL.monthNames[c.month]}`;}
