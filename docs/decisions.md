@@ -3,29 +3,42 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
-Michael's inspector note on the armour kits asked: "are there armour sets for ranged and magic yet?"
+### How the light and robe armour lines look (the look builder, Session 556, 2026-10-05) — DECISION #161
+You answered B on #156: two more armour lines beside the one, **light** for the archer and **robes** for the mage. Before building them, here is how they could look. This is a prototype of all five pieces of each line, built with the game's own people kit. It is on the branch `auto/proto-armour-lines`; the game is unchanged.
 
-**Not yet.** There is one armour line. Every armour item is one of five types (Helmet, Cuirass, Gauntlets, Greaves, Boots), and its material's tier decides how it looks:
-- Wooden: lamellar
-- Bronze: a muscle cuirass
-- Iron: mail
-- Steel and above: plate
+**Light, the archer's line:**
+- **Jerkin.** A fitted leather body, laced up the front, with a quiver strap across it and four split flaps over the hips. From Iron up it is a brigandine, with rows of rivets in the metal.
+- **Bracers.** Laced leather on both forearms, and a longer guard on the bow arm. From Iron up they have metal splints. The hands are in leather gloves.
+- **Legs.** Strapped thighs and hardened leather at the knees.
+- **Boots.** Soft boots to below the knee, with a turned-down cuff.
+- **Hood.** A hood with a short cape over the shoulders.
 
-Nothing is cut for a bow or for casting. A robe exists only as cloth clothing, picked out by its name. Should there be armour for archers and mages?
+**Robes, the mage's line:**
+- **Coat.** A coat to the knee, open at the front over a coloured panel, with a sash, a mantle at the shoulders and wide bell sleeves.
+- **Under-robe.** The legs' piece: a robe to the ankle in the coat's darker shade.
+- **Wraps.** Cloth at the wrists, with a bracelet.
+- **Cowl.** A deep hood draped at the neck.
 
-- **A.** Not yet. Keep the one line until skills-by-use decides what an archer or a mage is.
-- **B.** Two more lines beside it, chosen by weight:
-  - **Light**, for the archer: a hide or brigandine jerkin, a hood, bracers and soft boots.
-  - **Robes**, for the mage: a layered robe, a mantle and a cowl.
+**The tiers.** The tier colours each line. The leather darkens from Wooden to Steel; from Mithril up it takes the material's colour, and its rivets and buckles are the metal. Each tier of robe has its own dye: undyed, ochre, blue, slate, mithril blue, green, black-violet, red, purple and white. The trim is plain on the first two tiers, gold on Iron and Steel, and the metal from Mithril up. From Mithril up, the glow runs in the trim and a stone sits on the brow.
 
-  Each comes in the material tiers and has its own stats. Light armour is lighter, with less defence. Robes add mana or spell power. The look builder builds the bodies; the systems builder builds the items, stats and loot. *(recommended)*
-- **C.** The light line only. Mages keep cloth.
-- **D.** Robes only.
+**The cost.** 7,500 to 10,200 triangles a body, against 10,100 to 12,900 for the plate and mail kits (theirs include a sword and shield).
 
-**Recommendation: B.** It is Oblivion's light/heavy split with Morrowind's robes. It gives a build choice that serves the brief's second feeling (progression), and the look already has one family per tier to grow from. The stat numbers would be a later question for the systems builder.
+Pictures (Wooden, Iron, Mithril, Obsidian and Cosmic; then Iron and Mithril close up, from behind, and walking):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-light-tiers.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-robe-tiers.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-light-close.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-robe-close.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-light-back.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-robe-walk.png
 
-There is no picture yet: this is a question of scope. A prototype of each line follows the answer.
+- **A. Both as shown** *(recommended)*. I build them into the kit, and the systems builder gives the items a line and their stats.
+- **B. The light line as shown, the robes plainer:** one closed robe to the ankle with a sash and the mantle, and no open coat. That is closer to Oblivion's mage robes.
+- **C. The robes as shown, the light line heavier:** a studded or scaled leather coat to mid-thigh in place of the jerkin and flaps, nearer Skyrim's leather armour.
+- **D. Something else:** mark what to change on the pictures.
+
+**Recommendation: A.** Each line reads as its own at a distance, the archer's lean and strapped, the mage's long. That is the build choice your answer asked for. The tiers keep the plate line's idea that the material shows, so a Mithril archer and a Mithril knight still look like one world.
+
+**Two things for the systems builder whatever you choose.** An armour item needs to say which line it is (the look reads `line` on each piece). Boots of the two lines should take their leather or cloth colour, not the metal's.
 
 ### Unblock main's CI — four suites failing by turns (the producer, 2026-10-05)
 Main's own check is red on its last two runs with only docs changes between them: lod, saves and parryclock failed on 10cc224 (run 37331939848), then only compactrefit on d4c1672 (run 37339883165). Different suites on the same code points to runner timing. The failed shard of the d4c1672 run was re-run once.
@@ -44,6 +57,8 @@ Done, Session 555 (the look builder): built as B. Under the wraith's hood there 
 The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.
 
 Michael: **Two more lines: light and robes**. (2026-10-05)
+
+Acted on, Session 556 (the look builder): a prototype of both lines, all five pieces at five tiers, on `auto/proto-armour-lines`; how they look is DECISION #161. The items, their line and stats are the systems builder's.
 
 ### The calendar's names — take the drafted set, and which era? (the quest writer, 2026-10-05) — DECISION #146
 The calendar is built on auto/systems (Sessions 496–500) with placeholder names in one table, `CAL`, and backlog D says the names are proposed by the quest writer and picked by Michael. `docs/quest_drafts.md`, *The Year's Names*, drafts the whole set from the canon. The days are named for the gods, running outward from the hearth: **Hearthday, Stoneday, Beastday, Seaday, Skyday, Weaverday, Guestday**. The Church calls the seventh *the Closed Day*. The months are named for the year's work: **Thaw, Lambing, Sowing, Shearing, Haysel, Highsun, Reaping, Leaffall, Culling, Longnight, Wolfmonth, Lean**. A new tale opens on the 1st of Reaping. The four feasts are **the Kindling** (1st of Thaw), **the Long Light** (19th of Highsun), **the Giving** (23rd of Reaping, when the year's dead are named at the old gate) and **the Empty Chair** (28th of Longnight, a place set for the Guest). The canon names no monarch and dates nothing, so the era is the one call the draft cannot make alone.

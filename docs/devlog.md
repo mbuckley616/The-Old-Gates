@@ -12325,3 +12325,35 @@ The wraith is 3,202 triangles with its three new meshes, against 3,652 before (t
 - **From the side.** The see-through hood shows the dark ball through it, so the head reads as a dark sphere inside a pale shell. The prototype did the same.
 - **The blow.** The claw rakes down from over the head. Whether that reads as a swipe at a running player is a playtest question.
 - **For the systems builder:** `attackPose` now reads `limbs.person.wraithArm` for a wraith. Any later change to the shared pose should keep that rest.
+
+## v80 — Session 556 — The light and robe armour lines, a prototype (backlog H, Michael's B on #156; DECISION #161)
+Michael answered B on #156: two more armour lines beside the one, light for the archer and robes for the mage, each in every tier. The question had promised a prototype of each line once it was answered, and how they look is a design call. So this session is a prototype and a question, and the game is unchanged.
+
+The prototype is a function of its own, `ARMOUR_LINE`, called at the head of `ARMOUR_DRESS`. It dresses any worn piece whose `line` is 'light' or 'robe' and hands the rest to the old kit. It is on the branch `auto/proto-armour-lines`, so the next session can take it as it is once Michael answers, rather than rebuild it from pictures as Session 555 had to.
+
+**Light.**
+- **Jerkin.** A fitted leather jerkin laced up the front, with a quiver strap across it and four split flaps over the hips. Two leather lames at each shoulder. Rows of rivets in the metal from Iron up.
+- **Hands.** Laced bracers, the bow arm's longer, with metal splints from Iron up, and leather gloves.
+- **Legs.** Thigh straps and hardened leather at the knee.
+- **Boots.** Soft boots to below the knee, with a turned cuff.
+- **Hood.** A hood with a short cape over the shoulders.
+
+**Robes.**
+- **Coat.** A coat to the knee, open at the front over a panel of the darker shade, with trim down its front edges and in a V at the chest. A sash with a hanging tail, a mantle, and bell sleeves with trimmed mouths.
+- **Legs.** The legs' piece is an under-robe to the ankle.
+- **Hands.** Cloth wraps at the wrist with a bracelet.
+- **Cowl.** A deep hood with a cowl at the neck.
+
+**The tiers.** The leather darkens from Wooden to Steel, and from Mithril up it is lerped .45 toward the material's guard colour. Each tier of robe has its own dye (`LINE_ROBE`). The trim is the cloth lightened on tiers 1 and 2, gold on Iron and Steel, and the metal from Mithril up. From Mithril up the glow runs in a ring of the trim, and the cowl has a stone at the brow.
+
+**Two first tries were wrong and are fixed in the prototype.** The hoods sat down over the eyes; they are turned up and set back, so the face shows. The robe's open front showed the tunic's brown skirt; a panel under the coat now fills it.
+
+The bodies are 7,500 to 10,200 triangles (the light line the heavier, for its rivets), against 10,100 to 12,900 for the plate and mail kits in the inspector (theirs with a sword and shield).
+
+### Verified (headless Chromium)
+Prototype only: nothing on auto/backlog's game code changes, and no test was added. On the prototype branch `tests/armourlineproto` builds ten bodies of each line, five tiers × two sexes, idle and mid-stride, with no page errors. That is how the pictures were made.
+
+### Needs eyes
+- **Michael's choice on #161.** A both as shown (recommended), B plainer closed robes, C a heavier studded leather coat for the archer, D marked changes.
+- **Rough edges, owed in the build, not in the question.** The thigh straps stand a little off the leg. The tunic's shoulder cap shows through the mantle from the side. Long straight hair hangs out of the light hood, which may be wanted.
+- **For the systems builder:** an armour item has to say its line (the look reads `line` on each worn piece). The two lines' boots should take their leather or cloth colour, not the metal's (`tpBuild`'s `bootCol`).
