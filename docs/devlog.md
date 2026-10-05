@@ -11886,3 +11886,15 @@ The broadleaf, the oak and the birch are now functions of their leaf colours (`b
 - The balance of red against gold. Today the wood is roughly a third red, a third gold and a third mixed or russet.
 - The autumn wood's ground is pale sand under the trees in the shot. It may want leaf litter, which is the ground colour's job (`groundColor` has a lit-leaf blend at .35).
 - The birch's and oak's old autumn tint (`t.au`) no longer fires, because the autumn wood grows `birchAutumn` and `oakAutumn` instead. It is left in place. Birches and oaks elsewhere are unchanged.
+
+## v80 — Session 522 — The snowpine's snow lies on the needles (backlog H, Michael's inspector note)
+Michael, from the inspector: "Snow does not really 'sit' on the tree / leaves. it billows out like a skirt." He offered two ways: snow flush with the leaves, or the leaves themselves white under a full blanket. This session takes the first. It is the cheaper change and keeps the tree's green, which reads at a distance on a white tundra.
+
+The old snow was three flat cones, each as wide as its tier's foot (3.45, 2.75, 1.85), set high up each tier where the needles had narrowed. At 7.9 the bottom tier's needles are 2.1 from the trunk and its snow reached 3.45, so each snow cone stood out as a ring. Measured: 120 of the 216 snow vertices lay up to 1.32 outside the needles. Each tier's snow is now that tier's own cone, cut at the same apex and 4.5% wider, so it rests on the needles. It covers the upper 80%, 84% and 76% of the three tiers, which is most of each tier's slope that shows below the one above it. Under that the green fringe shows, as under a real fall. The triangle count is unchanged at 172. The tiers are kept on the geometry (`userData.tiers`).
+
+### Verified (headless Chromium)
+`tests/snowpine.test.mjs` (new), 4/4: there are 216 snow vertices and none is more than 7% outside its tier's radius at its height (the worst is 0). The tree costs 172 triangles, and there are no page errors. On the old code the same check fails: 120 vertices out, the worst 1.32. `trees` passes. Pictures: `docs/prototypes/snowpine-before.png` and `-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- From below the tiers' flat green undersides show, as before.
+- Whether Michael would rather have the white blanket after all. That is a small change in the same block: the green tiers coloured snow and a darker fringe.

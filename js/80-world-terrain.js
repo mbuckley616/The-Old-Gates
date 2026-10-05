@@ -405,10 +405,14 @@
     PROTO.autumn=mergeParts(broadleafParts([0xb8421e,0xd8862a,0xd6aa30,0x9a3a1c]));       // mixed: red, orange, gold
     PROTO.autumnRed=mergeParts(broadleafParts([0xa8321c,0xbe4422,0x922a18,0xc85a26]));
     PROTO.autumnGold=mergeParts(broadleafParts([0xd8a42a,0xe6bc3a,0xc89026,0xeccb52]));
-    PROTO.snowpine=mergeParts([
-      {geo:new THREE.CylinderGeometry(.22,.4,6.5,7),color:c(0x4a3018),y:3.25},
-      {geo:new THREE.ConeGeometry(3.4,4.2,8),color:c(0x2a4a2c),y:6.6},{geo:new THREE.ConeGeometry(2.7,3.9,8),color:c(0x2e5030),y:9.0},{geo:new THREE.ConeGeometry(1.8,3.6,8),color:c(0x325434),y:11.2},
-      {geo:new THREE.ConeGeometry(3.45,.9,8),color:c(0xf0f2f4),y:8.35},{geo:new THREE.ConeGeometry(2.75,.8,8),color:c(0xf0f2f4),y:10.6},{geo:new THREE.ConeGeometry(1.85,1.2,8),color:c(0xf4f6f8),y:12.6}]);
+    // S522 — the snow lies on each tier's upper slope (Michael, the inspector: "Snow does not really 'sit' on the tree / leaves. it
+    // billows out like a skirt"): the old snow was three flat cones as wide as the tiers' feet, set high up each tier where the
+    // needles had narrowed to a point, so they stood out as rings. Each cap is now its tier's own cone cut at the same apex,
+    // a hair wider so it rests on the needles, covering the upper part; below it the tier's green shows, as under a real fall.
+    {const TIERS=[[3.4,4.2,6.6,0x2a4a2c,.8,0],[2.7,3.9,9.0,0x2e5030,.84,.4],[1.8,3.6,11.2,0x325434,.76,.8]],parts=[{geo:new THREE.CylinderGeometry(.22,.4,6.5,7),color:c(0x4a3018),y:3.25}];
+      for(const [R,H,y,col,f,ry] of TIERS){parts.push({geo:new THREE.ConeGeometry(R,H,8),color:c(col),y,ry});
+        const h=H*f,apex=y+H/2+.04;parts.push({geo:new THREE.ConeGeometry(R*f*1.045,h,8),color:c(0xf0f2f4),y:apex-h/2,ry,jitter:.05});}
+      PROTO.snowpine=mergeParts(parts);PROTO.snowpine.userData.tiers=TIERS;}
     PROTO.mushroom=mergeParts([
       {geo:new THREE.CylinderGeometry(.9,1.3,5.2,8),color:c(0xd8cfa8),y:2.6},
       {geo:new THREE.SphereGeometry(3.6,10,6,0,Math.PI*2,0,Math.PI/2),color:c(0x9a3a2a),y:5.0},
