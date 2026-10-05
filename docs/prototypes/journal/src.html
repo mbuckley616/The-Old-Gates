@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The Journal</title>
+<!-- The Old Gates — the Journal (Michael's C on DECISION #132: the chronicle, the quests, what you were told, what is due)
+     on the approved parchment kit (docs/prototypes/ui, A, 27 Sep 2026) and the open book (docs/prototypes/books, A, 2 Oct).
+     Concept, 5 Oct 2026. build.py inlines kit.css, the icon symbols (defs.html), the book's CSS and the game's own journal
+     (current.json, written by shoot-current.mjs from four days of play on auto/systems: GAME_LOG with every stamp,
+     worldState.told, calendarDue(), journalNames(), CAL and FEASTS, every date line made by gameDateLine/calDateLine).
+     Every .screen is 1280×720; shoot.mjs photographs them.
+     For the builder: plain DOM on the books prototype's .tome. Four chapters on .chap2 ribbons at the fore-edge. Each leaf is
+     filled by flow(): blocks are appended in order and a block that would cross the foot starts the next leaf, so the
+     Chronicle opens on its last spread with the line you write at the foot of the last leaf. .je is a line (.tm the time in
+     the margin, .tx the words; .q a quest's own words with its .qt title in rubric capitals; .note your own line, in a
+     second ink); .nm a name that opens its page in Told. Quests: .qi index rows (.on the open one) and the quest's page.
+     Told (A): one page a person or a place (.ti rows, .ta answers). Due: .cal, the month as four weeks of seven named days,
+     and .du rows. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+/*TOME*/
+.screen{background-size:cover;background-position:center;background-image:url(backdrop-street.png)}
+.screen.menu::before{backdrop-filter:blur(2px) brightness(.45) sepia(.3)}
+.tome{top:62px}
+.tome .leaf{font:16px/1.38 var(--fell);padding:44px 50px 46px 54px}
+.tome .leaf.l{padding-right:60px}
+.tome .leaf.r{padding-left:62px;text-align:left} /* the kit's .r right-aligns a row's last cell */
+/* the four chapters, ribbons at the fore-edge */
+.chap2{position:absolute;right:-30px;top:44px;display:flex;flex-direction:column;gap:8px;z-index:1}
+.chap2 span{width:32px;height:112px;border-radius:0 6px 6px 0;display:grid;place-items:center;writing-mode:vertical-rl;font:15px var(--display);letter-spacing:.12em;color:#e6cf9a;background:linear-gradient(90deg,#3e2210,#6a3c18);box-shadow:2px 2px 4px rgba(0,0,0,.5)}
+.chap2 span.on{background:linear-gradient(90deg,#6a170c,#a83a24);color:#f8e8c8;width:40px}
+/* the chronicle */
+.dh{margin:2px 0 6px}
+.dh .d{font:19px/1.1 var(--display);color:var(--rubric);letter-spacing:.02em}
+.dh .y{font:italic 13.5px var(--fell);color:var(--ink-faint)}
+.dh.cont .d::after{content:" (continued)";font:italic 13px var(--fell);color:var(--ink-faint);letter-spacing:0}
+.je{display:grid;grid-template-columns:62px 1fr;gap:10px;padding:2px 0 4px;align-items:baseline}
+.je .tm{font:12px var(--display);letter-spacing:.04em;color:var(--ink-faint);text-align:right;white-space:nowrap}
+.je .tx{color:var(--ink)}
+.je.q .tx{font-style:italic}
+.je .qt{font:14.5px var(--display);font-style:normal;color:var(--rubric);letter-spacing:.03em;margin-right:4px}
+.je.note .tx{color:#22304e;font-style:italic;font-size:16.5px}
+.je.note .tm{color:#4a5878}
+.je.note .tm::before{content:"✎ ";font-family:var(--body)}
+.nm{border-bottom:1px dotted rgba(122,31,16,.75);color:inherit}
+.gap1{height:10px}
+.write{display:grid;grid-template-columns:62px 1fr;gap:10px;margin-top:10px;align-items:end}
+.write .tm{text-align:right;color:#4a5878;font:12px var(--display)}
+.write .ln{border-bottom:1.2px solid rgba(34,48,78,.55);font:italic 16px var(--fell);color:rgba(34,48,78,.5);padding:0 0 2px;position:relative}
+.write .ln::after{content:"";position:absolute;right:0;bottom:-20px;font:12px var(--body)}
+.write small{grid-column:2;font:italic 12.5px var(--fell);color:var(--ink-faint)}
+.caret{display:inline-block;width:1.5px;height:17px;background:#22304e;vertical-align:-3px;margin-right:4px}
+/* quests */
+.lh2{font:13px var(--display);letter-spacing:.12em;color:var(--ink-faint);margin:10px 0 2px;border-bottom:1px solid rgba(90,65,40,.25);padding-bottom:2px}
+.qi{display:grid;grid-template-columns:20px 1fr auto;gap:8px;padding:5px 6px 5px 4px;align-items:baseline;border-bottom:1px solid rgba(90,65,40,.12)}
+.qi .mk{font:15px var(--body);color:var(--ink-soft);text-align:center}
+.qi .t{font:17px/1.2 var(--fell);color:var(--ink)}
+.qi .g{display:block;font:italic 13px var(--fell);color:var(--ink-faint)}
+.qi .w{font:12px var(--display);color:var(--ink-faint);white-space:nowrap}
+.qi .w.due{color:var(--rubric)}
+.qi.done .t{color:var(--ink-soft)}
+.qi.done .mk{color:var(--gilt)}
+.qi.on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.qi.on .t{color:var(--rubric)}
+.qh{font:27px/1.15 var(--display);color:var(--rubric);margin:6px 0 2px}
+.qs{font:italic 14.5px var(--fell);color:var(--ink-soft);margin-bottom:8px}
+.stamp{position:absolute;right:58px;top:96px;transform:rotate(-9deg);font:20px var(--display);letter-spacing:.2em;color:rgba(122,31,16,.8);border:2px solid rgba(122,31,16,.7);border-radius:4px;padding:2px 10px 0;opacity:.85}
+/* told */
+.srch{display:flex;gap:8px;align-items:center;border-bottom:1.2px solid var(--ink-soft);padding:0 0 3px;margin:2px 0 8px;font:italic 15px var(--fell);color:var(--ink-faint)}
+.srch svg.ico{width:16px;height:16px;color:var(--ink-soft)}
+.ti{display:grid;grid-template-columns:18px 1fr auto;gap:8px;padding:4px 6px 4px 4px;align-items:baseline;border-bottom:1px solid rgba(90,65,40,.12)}
+.ti .mk{font:13px var(--display);color:var(--ink-faint);text-align:center}
+.ti .t{font:17px/1.2 var(--fell)}
+.ti .t i{font-size:14px;color:var(--ink-faint)}
+.ti .n{font:12px var(--display);color:var(--ink-faint)}
+.ti.on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.ti.on .t{color:var(--rubric)}
+.ta{margin:0 0 8px}
+.ta .k{display:flex;justify-content:space-between;gap:10px;font:13px var(--display);letter-spacing:.06em;color:var(--ink-soft);border-bottom:1px solid rgba(90,65,40,.15);padding-bottom:1px;margin-bottom:2px}
+.ta .k small{font:italic 12.5px var(--fell);letter-spacing:0;color:var(--ink-faint);white-space:nowrap}
+.ta .ans{font:16.5px/1.38 var(--body);color:var(--ink)}
+.ta .ans::before{content:"“"} .ta .ans::after{content:"”"}
+/* due */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid rgba(90,65,40,.35);border-top:1px solid rgba(90,65,40,.35);margin:6px 0 4px}
+.cal > div{border-right:1px solid rgba(90,65,40,.35);border-bottom:1px solid rgba(90,65,40,.35);height:52px;padding:2px 4px;position:relative;font:15px var(--fell)}
+.cal > div.hd{height:auto;font:10.5px var(--display);letter-spacing:.04em;color:var(--ink-soft);text-align:center;padding:3px 0;background:rgba(120,80,30,.08)}
+.cal > div.past{color:var(--ink-faint);background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(90,65,40,.07) 6px 7px)}
+.cal > div.today{box-shadow:inset 0 0 0 2px var(--rubric);color:var(--rubric)}
+.cal .dot{position:absolute;left:5px;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--ink-soft)}
+.cal .m{position:absolute;right:3px;bottom:2px;font:15px var(--body);color:var(--rubric)}
+.cal .m.f{color:var(--gilt)}
+.calk{display:flex;flex-wrap:wrap;gap:4px 14px;font:italic 13px var(--fell);color:var(--ink-faint);margin:4px 0 8px}
+.calk b{font-style:normal;font-weight:400;color:var(--rubric);font-family:var(--body)}
+.fe{display:grid;grid-template-columns:22px 1fr auto;gap:6px;font:15px/1.3 var(--fell);padding:2px 0}
+.fe .w{font:12px var(--display);color:var(--ink-faint)}
+.fe.next .t{color:var(--rubric)}
+.du{display:grid;grid-template-columns:78px 1fr;gap:12px;padding:6px 0 8px;border-bottom:1px solid rgba(90,65,40,.15)}
+.du .w{font:14px var(--display);color:var(--rubric);text-align:right;line-height:1.25}
+.du .w small{display:block;font:italic 12px var(--fell);color:var(--ink-faint)}
+.du .t{font:17px/1.35 var(--fell)}
+.du .t small{display:block;font:italic 13.5px var(--fell);color:var(--ink-faint)}
+.lede2{font:italic 15px var(--fell);color:var(--ink-soft);margin:0 0 8px}
+.turn{bottom:12px}
+/* C: one sheet */
+.sheet .cc{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;height:500px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 88%,transparent);mask-image:linear-gradient(#000 88%,transparent)}
+.sheet .je{font:16px/1.38 var(--body)}
+.sheet .wbox{border:1px solid rgba(90,65,40,.4);border-radius:3px;padding:6px 10px;font:italic 15px var(--fell);color:var(--ink-faint);margin:0 0 10px;background:rgba(255,248,225,.25)}
+/* comparisons */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:1280px;padding:18px 16px 18px;background:#141008;position:relative}
+.screen.cmp{height:auto}
+.pair figure{margin:0}
+.pair img{width:616px;display:block;border:1px solid #3a3022}
+.pair figcaption{font:17px var(--display);color:#e0c994;margin-bottom:8px;letter-spacing:.04em}
+.pair figcaption small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:8px}
+#measure{position:absolute;left:-3000px;top:0}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<h1 class="page">The Journal</h1>
+<p class="lede">The chronicle, the quests, what you were told and what is due, written into the open book. Four days of real play on auto/systems: every line, name and date below is the game's own.</p>
+<div id="out"></div>
+<div id="measure"></div>
+<script>
+/*DATA*/
+(async()=>{
+// the leaves are measured, so the fonts must be in before the first block is laid
+await Promise.all(['17px "IM Fell English"','italic 17px "IM Fell English"','15px "IM Fell English SC"','16px "EB Garamond"','italic 16px "EB Garamond"'].map(f=>document.fonts.load(f)));
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${id}"/></svg>`;
+
+// ── the lines, one per event. Where a quest writes its own words, the bare log line of the same minute that repeats its
+// title (Quest: X · X — giver · X: objective complete. · X: 56 gold. · Completed quest: X) is not shown. "Traveled to x" is
+// the test harness's own jump and is dropped.
+const RAW=DATA.L;
+const qLines=RAW.filter(e=>e.q);
+const GIVER={};RAW.forEach(e=>{if(!e.q){const m=e.text.match(/^(.+?) — (.+)$/);if(m&&qLines.some(q=>q.qt===m[1]))GIVER[m[1]]=m[2];}});
+const L=RAW.filter(e=>{if(e.text==='Traveled to x')return false;if(e.q)return true;
+  return !qLines.some(q=>Math.abs(q.t-e.t)<=1&&q.qt&&e.text.includes(q.qt));});
+const NAMES=DATA.names.filter(n=>n!=='Dunmore');
+function linked(t){t=String(t);if(!NAMES.length)return esc(t);
+  const re=new RegExp('(^|[^\\p{L}])('+NAMES.map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![\\p{L}])','gu');
+  let out='',at=0;t.replace(re,(m,pre,name,off)=>{const i=off+pre.length;out+=esc(t.slice(at,i))+`<span class="nm">${esc(name)}</span>`;at=i+name.length;return m;});
+  return out+esc(t.slice(at));}
+const dshort=s=>s.replace(/ · .*$/,'');   // "Stoneday 2 Reaping"
+const yearLine=`in the ${DATA.cal.year}th year of ${DATA.cal.era}`;
+
+// ── flow: blocks into leaves of the book's size; a block that would cross the foot starts the next leaf
+function flow(blocks,opts={}){
+  const M=$('#measure');M.innerHTML=`<div class="tome" style="position:relative;left:0;top:0"><div class="leaf l" id="ml"></div></div>`;
+  const leaf=$('#ml');const leaves=[];let cur=[];
+  const inner=()=>leaf.clientHeight-46-(opts.reserve||0);
+  for(const b of blocks){leaf.insertAdjacentHTML('beforeend',b.html);
+    let over=leaf.scrollHeight>leaf.clientHeight||[...leaf.children].some(c=>c.getBoundingClientRect().bottom>leaf.getBoundingClientRect().bottom-46);
+    if(over&&cur.length){leaves.push(cur);cur=[];leaf.innerHTML=(b.cont?b.cont():'' )+b.html;if(b.cont)cur.push(b.cont());}
+    cur.push(b.html);}
+  if(cur.length)leaves.push(cur);M.innerHTML='';return leaves.map(x=>x.join(''));
+}
+const screens=[];
+function screen(id,cap,cls,html){screens.push(id);$('#out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen ${cls}" id="${id}">${html}</div>`);}
+const CH=['Chronicle','Quests','Told','Due'];
+function tome(chap,left,right,runL,runR,fol){
+  return `<div class="tome"><div class="block"></div>
+   <div class="leaf l"><div class="run">${runL}</div>${left}<div class="fol">${fol||''}</div></div>
+   <div class="leaf r"><div class="run">${runR}</div>${right}<div class="fol">${fol+1}</div></div>
+   <div class="dogear l"></div><div class="ribbon2"></div>
+   <div class="chap2">${CH.map((c,i)=>`<span class="${i===chap?'on':''}">${c}</span>`).join('')}</div></div>
+   <div class="turn hudtxt"><span><span class="key">A</span><span class="key">D</span> turn a leaf</span><span><span class="key">1</span>–<span class="key">4</span> a chapter</span><span><span class="key" style="width:auto;padding:0 6px">Esc</span> close</span></div>`;}
+
+// ── I. the chronicle, oldest first, the book open at its last spread
+function chronicleBlocks(){
+  const days=new Map();L.forEach(e=>{if(!days.has(e.day))days.set(e.day,[]);days.get(e.day).push(e);});
+  const out=[];
+  [...days.keys()].sort((a,b)=>a-b).forEach((k,di)=>{const es=days.get(k);const dl=es[0].date.replace(/, in the .*$/,'');
+    const head=(cont)=>`<div class="dh${cont?' cont':''}"><div class="d">${esc(dl)}</div>${cont?'':`<div class="y">${esc(yearLine)}</div>`}</div>`;
+    if(di)out.push({html:'<div class="gap1"></div>'});
+    const line=e=>`<div class="je${e.q?' q':''}${e.note?' note':''}"><span class="tm">${esc(e.time)}</span><span class="tx">${e.q?`<span class="qt">${esc(e.qt)}</span>`:''}${linked(e.text)}</span></div>`;
+    out.push({html:head(false)+line(es[0])});   // a day's head never sits alone at the foot of a leaf
+    es.slice(1).forEach(e=>out.push({cont:()=>head(true),html:line(e)}));});
+  out.push({html:`<div class="write"><span class="tm">9:36 pm</span><span class="ln"><span class="caret"></span>a line of your own</span><small>Enter writes it under today, with the hour. Up to 500 letters.</small></div>`});
+  return out;
+}
+const CHRON=flow(chronicleBlocks());
+// page 1 is a recto: the first spread is the endpaper and leaf 1, and the book opens at the spread holding the last leaf
+const P=['',...CHRON];if(P.length%2)P.push('');const nS=P.length/2;
+const nC=CHRON.length;const last=[P[P.length-2],P[P.length-1]];
+const lastDay=L[L.length-1].date.replace(/, in the .*$/,'').toUpperCase();
+const folC=P.length-2;
+screen('a-chronicle','A — I. The Chronicle <small>the book opens at its last written page; a line for each thing done, its hour in the margin; your own lines in a second ink</small>','menu',
+  tome(0,last[0],last[1],'THE CHRONICLE',lastDay,folC));
+window.NC=nC;
+// the spread before it, to show the pages turn back to the first day
+const prev=[P[P.length-4]||'',P[P.length-3]||''];
+screen('a-chronicle-1','A — I. The Chronicle, a leaf back <small>A turns back a spread: the first days, the tutorial\'s own words</small>','menu',tome(0,prev[0],prev[1],'THE CHRONICLE','THE CHRONICLE',Math.max(0,folC-2)));
+
+// ── II. quests
+const qids=[];qLines.forEach(e=>{if(qids.indexOf(e.q)<0)qids.push(e.q);});
+const qstate=id=>{const ls=qLines.filter(e=>e.q===id);return ls.some(e=>e.qk==='complete')?'done':'hand';};
+const dueOf=t=>DATA.D.find(d=>t&&d.text.startsWith(t));
+function qRow(id,on){const ls=qLines.filter(e=>e.q===id),t=ls[0].qt,s=qstate(id),du=dueOf(t),g=GIVER[t];
+  return `<div class="qi ${s==='done'?'done':''} ${on?'on':''}"><span class="mk">${s==='done'?'✓':'○'}</span><span class="t">${esc(t)}${g?`<span class="g">for ${esc(g)}</span>`:''}</span>${du?`<span class="w due">by ${esc(du.day.replace(/^\w+, the /,'').replace(' of Reaping',''))}</span>`:`<span class="w">${esc(dshort(ls[ls.length-1].short).replace(' Reaping',''))}</span>`}</div>`;}
+const SELQ=qids.find(id=>qLines.find(e=>e.q===id).qt==='First Blood')||qids[0];
+const qLeft=`<div class="h">Quests</div><div class="rule"></div><div class="lh2">IN HAND</div>${qids.filter(id=>qstate(id)==='hand').map(id=>qRow(id,id===SELQ)).join('')}
+  <div class="lh2">DONE</div>${qids.filter(id=>qstate(id)==='done').map(id=>qRow(id,id===SELQ)).join('')}`;
+function qPage(id){const ls=qLines.filter(e=>e.q===id),t=ls[0].qt,s=qstate(id),g=GIVER[t];
+  return `${s==='done'?'<div class="stamp">DONE</div>':''}<div class="qh">${esc(t)}</div><div class="qs">${g?'for '+esc(g)+' · ':''}taken ${esc(dshort(ls[0].short))}${s==='done'?' · done '+esc(dshort(ls[ls.length-1].short)):''}</div><div class="rule"></div>`+
+   ls.map(e=>`<div class="je q"><span class="tm">${esc(dshort(e.short).replace(' Reaping',''))}<br>${esc(e.time)}</span><span class="tx">${linked(e.text)}</span></div>`).join('');}
+screen('a-quests','A — II. Quests <small>the ones in hand first, a dated one with its day in rubric; the open quest\'s own words in order on the right</small>','menu',tome(1,qLeft,qPage(SELQ),'QUESTS',esc(qLines.find(e=>e.q===SELQ).qt.toUpperCase()),9));
+
+// ── III. told. A: one page a person or a place. A person's own answers file under their name; what a place is, under the
+// place; an answer that opens or closes a quest (I'm looking for work, It's done) is the quest's, and a sale's yes is the
+// chronicle's (Rented the second door…), not a topic.
+const T=DATA.T.slice().sort((a,b)=>a.t-b.t);
+const QUESTTALK=/^(I.m looking for work\.|It.s done\.)$|\d+ gold\.?$/;   // quest talk, and a sale's yes (Yes. 11 gold.)
+const trade=s=>{const e=T.find(x=>x.s===s&&/I.m an? [a-z]+/.test(x.r));return e?e.r.match(/I.m an? ([a-z]+)/)[1]:'';};
+const pages=new Map();
+T.forEach(e=>{if(QUESTTALK.test(e.l))return;let key,kind,sub;
+  if(/^What is this place\?$/.test(e.l)){key=e.r.split(/\.\s/)[0].replace(/\.$/,'');kind='place';sub=`told by ${e.s}`;}
+  else{key=e.s;kind='person';sub=trade(e.s);}
+  if(!pages.has(key))pages.set(key,{key,kind,sub,town:e.w,first:e.short,items:[]});pages.get(key).items.push(e);});
+const SELP='Ruairí';
+const pRows=[...pages.values()];
+const tLeftA=`<div class="h">Told</div><div class="rule"></div><div class="srch">${ico('i-quill')}search what you were told</div>
+  <div class="lh2">DUNMORE · PEOPLE</div>${pRows.filter(p=>p.kind==='person').sort((a,b)=>a.key.localeCompare(b.key)).map(p=>`<div class="ti ${p.key===SELP?'on':''}"><span class="mk">${ico('i-person')}</span><span class="t">${esc(p.key)}${p.sub?` <i>${esc(p.sub)}</i>`:''}</span><span class="n">${p.items.length}</span></div>`).join('')}
+  <div class="lh2">DUNMORE · PLACES</div>${pRows.filter(p=>p.kind==='place').map(p=>`<div class="ti"><span class="mk">${ico('i-map')}</span><span class="t">${esc(p.key)} <i>${esc(p.sub)}</i></span><span class="n">${p.items.length}</span></div>`).join('')}`;
+function personPage(k){const p=pages.get(k);
+  return `<div class="qh">${esc(p.key)}</div><div class="qs">${p.sub?esc(p.sub)+' · ':''}${esc(p.town)} · first met ${esc(dshort(p.first))}</div><div class="rule"></div>`+
+   p.items.map(e=>`<div class="ta"><div class="k"><span>${esc(e.l.toUpperCase())}</span><small>${esc(e.short.replace(' Reaping',''))}</small></div><div class="ans">${esc(e.r)}</div></div>`).join('');}
+screen('a-told','A — III. Told, by who and where <small>a page a person and a page a place; quest talk stays on the quest\'s page</small>','menu',tome(2,tLeftA,personPage(SELP),'TOLD',SELP.toUpperCase()+' OF DUNMORE',13));
+
+// B: today's filing, by the question asked
+const byQ=new Map();T.forEach(e=>{if(!byQ.has(e.l))byQ.set(e.l,[]);byQ.get(e.l).push(e);});
+const SELQ2='Who are you?';
+const tLeftB=`<div class="h">Told</div><div class="rule"></div><div class="srch">${ico('i-quill')}search what you were told</div><div class="lh2">BY THE QUESTION ASKED</div>`+
+  [...byQ.keys()].sort((a,b)=>a.localeCompare(b)).map(l=>`<div class="ti ${l===SELQ2?'on':''}"><span class="mk">${ico('i-speech')}</span><span class="t">${esc(l)}</span><span class="n">${byQ.get(l).length}</span></div>`).join('');
+const tRightB=flow([{html:`<div class="qh">${esc(SELQ2)}</div><div class="qs">asked of ${byQ.get(SELQ2).length} people in Dunmore</div><div class="rule"></div>`},
+  ...byQ.get(SELQ2).map(e=>({html:`<div class="ta"><div class="k"><span>${esc(e.s.toUpperCase())}</span><small>${esc(e.short.replace(' Reaping',''))}</small></div><div class="ans">${esc(e.r)}</div></div>`}))])[0];
+screen('b-told','B — III. Told, by the question asked (as built) <small>the same book; the topics filed under their labels, as journalTold keys them today</small>','menu',tome(2,tLeftB,tRightB,'TOLD','WHO ARE YOU?',13));
+
+// ── IV. due: the month, and what it owes you
+const C=DATA.cal;const DAYS=C.days.map(d=>d.name);
+const dom=s=>{const m=s.match(/the (\d+)\w\w of/);return m?+m[1]:0;};
+const marks={};DATA.D.forEach(d=>{const n=dom(d.day);(marks[n]=marks[n]||[]).push(d);});
+const wrote=new Set(L.map(e=>e.day+1));
+let grid=DAYS.map(d=>`<div class="hd">${d.replace(/day$/,'').toUpperCase()}</div>`).join('');
+for(let n=1;n<=28;n++){const m=marks[n]||[];grid+=`<div class="${n<C.dom?'past':''} ${n===C.dom?'today':''}">${n}${wrote.has(n)?'<span class="dot"></span>':''}${m.map(d=>`<span class="m ${d.feast?'f':''}">${d.feast?'✦':d.icon==='🛏'?'⌂':'◆'}</span>`).join('')}</div>`;}
+const feasts=C.feasts.map(f=>{const next=DATA.D.find(d=>d.feast&&d.text.startsWith(f.name));return `<div class="fe ${next?'next':''}"><span style="color:var(--gilt)">✦</span><span class="t">${esc(f.name)}</span><span class="w">${f.dom} ${esc(C.months[f.month]).toUpperCase()}</span></div>`;}).join('');
+const dueLeft=`<div class="h">${esc(C.month)}</div><div class="qs" style="margin:2px 0 0">an ${esc(C.season)} month · ${esc(yearLine)}</div><div class="rule"></div>
+  <div class="cal">${grid}</div><div class="calk"><span><b>●</b> a day written in</span><span><b>◆</b> a date owed</span><span><b>⌂</b> the room</span><span><b style="color:var(--gilt)">✦</b> a feast</span></div>
+  <div class="lh2">THE YEAR'S FEASTS</div>${feasts}`;
+const when=dd=>dd<=0?'today':dd===1?'tomorrow':`in ${dd} days`;
+const dueRight=`<div class="qh">Due</div><div class="qs">Today is ${esc(DATA.todayDay)}</div><div class="rule"></div>`+
+  DATA.D.map(d=>{const m=d.text.match(/^(.+?) — (.+)$/);return `<div class="du"><span class="w">${when(d.dd)}<small>${esc(d.day.replace(/, the /,' ').replace(/ of Reaping/,''))}</small></span><span class="t">${m?`<span class="qt" style="font:14.5px var(--display);color:var(--rubric)">${esc(m[1])}</span><small>${esc(m[2])}</small>`:esc(d.text)}</span></div>`;}).join('');
+screen('a-due','A — IV. Due <small>the month as four weeks of seven named days (a weekday keeps its dates), and what the calendar owes you</small>','menu',tome(3,dueLeft,dueRight,'DUE',esc(C.month.toUpperCase()),17));
+
+// ── C: one sheet in the hub, the chronicle newest first, two columns
+const tabs=`<div class="tabs"><div class="tab">${ico('i-pack')}Inventory</div><div class="tab">${ico('i-star')}Magic</div><div class="tab">${ico('i-scales')}Attributes</div><div class="tab">${ico('i-quill')}Quests</div><div class="tab on">${ico('i-book')}Journal</div><div class="tab">${ico('i-person')}Character</div><div class="tab">${ico('i-map')}Map</div></div>`;
+const days2=new Map();L.forEach(e=>{if(!days2.has(e.day))days2.set(e.day,[]);days2.get(e.day).push(e);});
+const colHtml=[...days2.keys()].sort((a,b)=>b-a).map(k=>{const es=days2.get(k);return `<div class="dh"><div class="d">${esc(es[0].date.replace(/, in the .*$/,''))}</div></div>`+es.map(e=>`<div class="je${e.q?' q':''}${e.note?' note':''}"><span class="tm">${esc(e.time)}</span><span class="tx">${e.q?`<span class="qt">${esc(e.qt)}</span>`:''}${linked(e.text)}</span></div>`).join('')+'<div class="gap1"></div>';}).join('');
+screen('c-sheet','C — One sheet in the hub <small>the Journal tab on the kit\'s sheet: the four views as sub-tabs, two columns, newest day first</small>','menu',
+  `${tabs}<div class="parch sheet"><div class="seal close">✕</div><div class="subtabs"><span class="on">Chronicle</span><span>Quests</span><span>Told</span><span>Due</span></div><div class="rule"></div>
+   <div class="wbox">✎ a line of your own — Enter writes it</div><div class="cc" style="column-count:2;column-gap:40px;display:block">${colHtml}</div></div>`);
+
+// ── comparisons
+screen('cmp-chronicle','Today beside A — the chronicle','cmp',`<div class="pair"><figure><figcaption>Today <small>By day, on auto/systems</small></figcaption><img src="current-day.png"></figure><figure><figcaption>A, the open book</figcaption><img id="cc-a" src=""></figure></div>`);
+screen('cmp-told','Today beside A — what you were told','cmp',`<div class="pair"><figure><figcaption>Today <small>Topics, filed by the question</small></figcaption><img src="current-topics.png"></figure><figure><figcaption>A, a page a person</figcaption><img id="ct-a" src=""></figure></div>`);
+window.SCREENS=screens;
+})();
+</script>
+</body>
+</html>
