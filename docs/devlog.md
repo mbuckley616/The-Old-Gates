@@ -12276,3 +12276,20 @@ My first fix kept the plaits and pulled them in under the shell until they clear
 ### Needs eyes
 - **Whether a plait should show at all in full plate.** Skyrim and Oblivion hide hair under a closed helm, as this does. A plait could instead come out of a slot at the nape and lie over the backplate. That would need the backplate's shape at the hair's height, which the hair does not know when it is built (the armour is laid on after it).
 - **Still open, from the same note.** Clothing through the armour: a tunic's skirt or a dress under the cuirass and greaves, measured the same way, next.
+
+## v80 — Session 548 — The wraith, a prototype (backlog H, Michael's inspector note; DECISION #158)
+Session 527 answered half of Michael's note on the wraith and the phantom ("Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening"): no legs or feet, a torn hem, a glide. From the front it still reads as a pale woman in a dress. The body is one see-through mesh, so the face, the arms and the mitten hands of a person all show through the robe. How to make it frightening is a design call, so this session is a prototype and a question, and the game is unchanged.
+
+The prototype was built in the people kit behind flags no foe set, rendered on the inspector's stage, and taken out again:
+- **A hollow hood.** A deeper hood, and under it darkness in place of the face. The darkness is an unlit mesh of its own on the head bone, as the dead's eye glow already is. It had to be: a dark part baked into the see-through body let the head show through it, which was my first try. Two narrow slits of the wraith's eye colour sit in the dark with a faint halo.
+- **Claws.** Arms a quarter longer, ending in four long bone-white claws.
+- **A hunting stance.** Hunched, the head low and thrust forward, both clawed arms reaching at chest height.
+
+A is the hood and the claws, B adds the stance (recommended), C leaves it as it is. A and B are 3,870 triangles against 3,652. The question is in `docs/decisions.md` and issue #158. Pictures: `docs/prototypes/wraith-proto-lineup.png` (today's, A, B, with a Gatelands woman for scale), `wraith-proto-faces.png` and `wraith-proto-side.png`.
+
+### Verified (headless Chromium)
+Prototype only: no game code is changed and no test was added. In the prototype, B's left wrist stood at 0.97 high and 0.4 in front of its body, so the reach holds on the stage. The first attempt's stance never showed, and was not checked; this one was.
+
+### Needs eyes
+- Michael's choice on #158. The phantom would take the claws and the stance but keep its face (the recommendation).
+- **Still open, from the armour note.** Clothing through the armour. Static and mid-stride views of the wooden, bronze, iron, steel, mithril and demonic kits showed nothing through, so I have not built a fix. A measure like Session 547's, for the cloth under the cuirass and greaves across a walk cycle, would find it if it is there.
