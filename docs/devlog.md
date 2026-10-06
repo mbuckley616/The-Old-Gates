@@ -13136,3 +13136,18 @@ What it found, and what changed (`ARMOUR_LINE`, `32-people.js`):
 ### Needs eyes
 - The cape's new curve over the shoulder, and the flatter lames, in motion: the measure is in bind pose, and an arm raised to draw a bow lifts the lame under the cape.
 - Long straight hair still hangs out of the light hood, as Session 569 noted; that may be wanted.
+
+## v80 — Session 576 — The dungeon's stairs, a prototype (backlog H, Michael's control-room note of 5 Oct, the stairs; DECISION #173)
+Michael's note of 5 Oct said the dungeon's staircases "are ugly and don't match the style at all". The spiral down to the second floor (`buildStairwell`, `56-dungeon-build.js`) is plain three.js boxes: a pale plank tread (.8 × .09 × .36, 0x6a5e48) and a board riser for each of 31 steps, a smooth .2 cylinder post, a post every third step and a rail, and a shaft of four flat near-black planes. That is 117 meshes. Everything else in a dungeon is now the shell's coursed, worn stone (Session 189 on), so the stair is the one thing in the room that looks like another game.
+
+The prototype (`tests/stairproto.test.mjs` on `auto/proto-dungeon-stairs`, built over a real ruins dungeon, seed 4021, with today's stair hidden) is a stone newel stair in the shell's stone, the theme's wall colour ×2.6 as the shell's props use. Each tread is an extruded annular wedge from the newel (.2) to the wall (1.0), .2 thick, so from below the underside steps down the helix, with a bevelled nosing and its own shade within ±8%. The newel is a drum per step, alternate drums .008 proud, so it reads as courses. The four shaft walls are planes cut into .4 × .32 blocks, each block its own shade, alternate courses offset. A rope handrail runs at .9 on an iron bracket and eye every third step, and the landing is a chamfered slab. The helix, its two turns, its start and its landing are today's, so the climb is unchanged. 91 meshes and about 10,800 triangles as built; for the game it would be one merged mesh like the shell's props.
+
+Asked as DECISION #173 (issue and `docs/decisions.md`): A, the stone newel stair as shown (recommended, with the forts' straight staircase following in stone); B, stone with today's post rail; C, today's wooden stair tidied, in dark timber with stone shaft walls; D, something else, such as a straight flight, which would change the layout.
+
+### Verified (headless Chromium)
+Pictures only: from the room above at 3.2 out, and from the floor below looking up, today against the prototype in the same places (`docs/prototypes/dungeon-stair-today-above.png`, `-proto-above.png`, `-today-up.png`, `-proto-up.png`). No page errors.
+
+### Needs eyes
+- **Michael's choice on #173.**
+- From above, the shaft is a dark hole either way; the difference shows from the floor below and on the way down.
+- Wider passages, the last part of the note, are still to be prototyped.

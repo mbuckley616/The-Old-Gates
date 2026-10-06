@@ -59,6 +59,28 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-mid.png
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-swing.png
 
+### The dungeon's stairs (the look builder, Session 576, 2026-10-06) — DECISION #173
+On 5 Oct you said the dungeon's "staircases are ugly and don't match the style at all". Here is why, and one way to fix it.
+
+**What is wrong.** The spiral stair down to the second floor is built from plain boxes. It has pale plank treads and a thin board riser under each one, round a smooth wooden post, with thin rail posts and a rail. The shaft round it is four flat, near-black planes. Everything else in a dungeon is the shell's stone: walls laid in courses, a cove at the foot, worn floors. The stair is the one thing in the room that looks like a different game (pictures one and three). It is also 117 separate meshes.
+
+**The prototype** (pictures two and four, the same stair from the same places). It is a stone newel stair, as in a castle tower, in the dungeon's own stone. Each tread is a wedge of stone running from a central column to the wall, with a bevelled nosing. Each is thick enough that the underside steps down the spiral, which is what you see from below. The column is a stack of stone drums, one per step. The shaft walls are laid in courses of the shell's stone instead of black planes. A rope handrail runs round the wall on iron brackets, and the landing is a stone slab. The stair's shape, its two turns and where it lands do not change, so climbing it does not change. The prototype is on the branch auto/proto-dungeon-stairs; nothing in the game has changed. Built for the game, it would be one merged mesh like the shell, about 10,800 triangles.
+
+- **A. The stone newel stair, as shown** *(recommended)*. The forts' straight staircase would follow in the same stone, in a second session.
+- **B. Stone, with today's open rail of posts** in place of the rope at the wall.
+- **C. Keep the wooden stair, tidied.** Dark heavy timber in the theme's colour, the treads joined into one flight, stone shaft walls. Less of a change; still wood in a stone place.
+- **D. Something else.** For example, a straight stone flight down along one wall instead of a spiral, which changes the layout and so is a larger job.
+
+**Recommendation: A.** The brief asks for a world that feels made, and every other surface in a dungeon is now the same worked stone. A stone spiral round a newel is how a real tower or undercroft goes down, and from the floor below it reads as solid masonry instead of a stack of planks.
+
+This is another part of your 5 Oct note. The railings were fixed in Session 572, and the traps are DECISION #170. Wider passages is the last part, and its question comes next.
+
+Pictures (today and the prototype, from the room above, then from the floor below looking up):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-today-above.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-proto-above.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-today-up.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-proto-up.png
+
 ## Answered
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
 The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.
