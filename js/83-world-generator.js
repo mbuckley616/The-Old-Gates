@@ -263,6 +263,13 @@
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
+    // S579 — a home's name points at one door (Michael's A on #171): the first of a name keeps *Séamus's House*; a second takes
+    // the resident's trade (*Séamus the Cooper's House*, *Old Úna's House*); a plain resident, or a trade that repeats too, its
+    // end of the town (*Séamus's House at the north end*). Lots are named in their own order, so the same house keeps its name.
+    const homeNames=new Set();
+    function homeName(nm,tag,end){const tr={farmer:'Farmer',weaver:'Weaver',cooper:'Cooper',fisher:'Fisher'}[tag];
+      const c=[`${nm}'s House`,tr?`${nm} the ${tr}'s House`:tag==='old woman'?`Old ${nm}'s House`:null,`${nm}'s House at the ${end} end`,tr?`${nm} the ${tr}'s House at the ${end} end`:tag==='old woman'?`Old ${nm}'s House at the ${end} end`:null].filter(Boolean);
+      let n=c.find(x=>!homeNames.has(x));for(let k=2;!n;k++){const x=`${c[c.length-1]} (${k})`;if(!homeNames.has(x))n=x;}homeNames.add(n);return n;}
     // v80 S244 — a person, once drawn for a lot (or a gate's post), is the town's for good: a rebuild at another prosperity
     // draws the stream in another order and used to rename most of the town. makeDef keeps the name and people under
     // extra.nameKey in the town's state (TST.nm) and still makes every draw, so the stream and all else drawn from it is
@@ -306,8 +313,9 @@
         const exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
         const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:lot.n,x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
         rdef.roleTag=rdef.role;rdef.role='Villager';
-        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:`${rdef.name}'s House`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
-        if(lot._shuttered){hh.shuttered=true;hh.name=`${rdef.name}'s House (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
+        const hName=homeName(rdef.name,rdef.roleTag,compassWord(lot.x-site.x,lot.z-site.z));
+        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
+        if(lot._shuttered){hh.shuttered=true;hh.name=`${hName} (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
         // residents stream in by distance (a city has 150+ of them)
