@@ -12779,3 +12779,16 @@ All three now take `aOrAn(w)`, declared beside `rankOf` in `83-world-generator.j
 
 ### Needs eyes
 None: this is text. The quest writer may want to know that `aOrAn` exists for new lines that put an article before a variable word.
+
+## v80 — Session 603 — Two red suites on the Systems PR: `talkaim` compared people by name, `innrooms` read the room before the fade
+CI on #167's head (35d81fa) went red in two shards, each on a test, neither on the game.
+
+`talkaim` (Session 596's own suite) failed its *looking at nobody* check: E answered *Niamh* where it should have answered Eilís, the guard placed 0.91 off. Dunmore has two people called Niamh: the mayor the test stands in front of, and a villager whose home is five units from her. The test compared the answer by name, and between one evaluate and the next the loop runs, so a wandering villager can come within reach and E's nearest-person fallback picks them. That is the fallback doing its job. The test now parks everyone but its two people more than ten units out, 25 units off, before each check, and compares E's answer and the cue by the person (the def), not the name.
+
+`innrooms` threw in the page: `bedPrompt` read `currentHouse.id` with no house. The test entered an inn and waited a fixed 4 s (2.5 s to leave). The fade's callback is a 440 ms `setTimeout`, and a busy software-GL page can run it late. A late exit callback can also null `currentHouse` after the next entry. The test now waits for the state itself: the house current and its beds laid on entry, no house on leaving (60 s ceiling). Nothing in the game changed.
+
+### Verified (headless Chromium)
+`talkaim` 7/7 and `innrooms` 9/9 locally. The probe that found the cause listed Dunmore's first twelve people at noon: two Niamhs (the mayor at her plaza, a villager homed 5 units off) and two Eilíses, a guard and a resident. `parsecheck` clean.
+
+### Needs eyes
+None.

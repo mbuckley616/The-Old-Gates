@@ -30,8 +30,11 @@ const seen = (L, k) => { const n = L.rooms.length, xa = k * L.W / n, xb = (k + 1
 const named = (text) => { const m = /the (first|second|third|fourth|fifth|sixth|last) door on the (left|right)/i.exec(text || ''); return m ? { ord: m[1].toLowerCase(), side: m[2].toLowerCase() } : null; };
 const agrees = (nm, sn) => !!nm && !!sn && nm.side === sn.side && (nm.ord === 'last' ? sn.ord === sn.n - 1 : ORD.indexOf(nm.ord) === sn.ord);
 const enter = async (sel) => { await page.evaluate((sel) => { const h = sel.key ? ZONES.world.houses.find(x => x.coachInn === sel.key) : WORLD.settle.get(sel.town).houses.find(x => x.id === sel.id);
-  px = h.exitX; pz = h.exitZ; goToInterior(h); }, sel); await page.waitForTimeout(4000); await g.hide(); };
-const leave = async () => { await page.evaluate(() => exitInterior()); await page.waitForTimeout(2500); await g.hide(); };
+  window._innIn = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, sel);
+  // the fade's callback is a 440 ms timer that a busy page can run late (CI, 6 Oct: the beds were read with no house), so
+  // wait for the room itself, its house current and its beds laid, not for a fixed time
+  await page.waitForFunction(() => currentHouse === window._innIn && INT_BEDS.length > 0, null, { timeout: 60000 }); await g.frames(2); await g.hide(); };
+const leave = async () => { await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000 }); await g.frames(2); await g.hide(); };
 // in the page, inside: each gallery bed's prompt and what E does there (sleeps, or the message it turns you away with)
 const tryBeds = () => page.evaluate(() => { const out = []; const _m = showMsg; let said = null; showMsg = (t) => { said = t; };
   try { for (const b of INT_BEDS.filter(b => b.room != null)) { px = b.x; pz = b.z; jumpY = b.y || 0; said = null;

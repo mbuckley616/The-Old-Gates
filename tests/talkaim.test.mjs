@@ -11,19 +11,27 @@ const pick = await page.evaluate(() => { forceTime(12); for (let i = 0; i < 300;
   window._A = L[0]; window._B = L.find(n => n.def.name !== L[0].def.name);
   return { A: _A && _A.def.name, B: _B && _B.def.name, n: L.length }; });
 console.log(JSON.stringify(pick));
+// Dunmore has two of some names (a second Niamh lives five units from the mayor), and villagers wander between one
+// evaluate and the next, so a bystander could be the nearest when E falls back to it (CI, 6 Oct: *away* answered by a
+// Niamh). Everyone but A and B within ten units is parked 25 off before each check, and E's answer is compared by person.
+await page.evaluate(() => { window._park = () => { const A = _A; for (const n of ((ZONES.world && ZONES.world.npcs) || [])) {
+  if (n === _A || n === _B || !n.g) continue; const dx = n.g.position.x - A.g.position.x, dz = n.g.position.z - A.g.position.z;
+  if (Math.hypot(dx, dz) < 10) { const d = Math.hypot(dx, dz) || 1; n.g.position.x = A.g.position.x + dx / d * 25; n.g.position.z = A.g.position.z + dz / d * 25; n.g.updateMatrixWorld(true); } } };
+  window._who = d => d == null ? null : d === _A.def ? _A.def.name : d === _B.def ? _B.def.name : 'other:' + d.name; });
 check('two townsfolk of different names to stand among', pick.A && pick.B, pick);
 // place A in front (1.3 along the view), B by the case, the camera at the eye; then ask who E and the cue choose,
 // in one evaluate so no frame moves anyone between
 const ask = (bx, bz, look) => page.evaluate(([bx, bz, look]) => {
   const A = _A, B = _B, ax = A.g.position.x, az = A.g.position.z, y = A.g.position.y;
   for (const n of [A, B]) { n._scared = performance.now() + 1e6; }
+  _park();
   px = ax; pz = az + 1.3; jumpY = y; yaw = look; pitch = -.05;
   B.g.position.set(px + bx, y, pz + bz);
   CAM.position.set(px, y + EYE_STAND, pz); CAM.rotation.set(pitch, yaw, 0); CAM.updateMatrixWorld(true); A.g.updateMatrixWorld(true); B.g.updateMatrixWorld(true);
   try { closeDialog(); } catch (e) {}
   const cue = talkTargetNow(); let opened = null; const _o = openDialog; openDialog = function (d) { opened = d; };
   try { talkNPC(); } finally { openDialog = _o; }
-  return { cue: cue && cue.def.name, e: opened && opened.name, dA: 1.3, dB: +Math.hypot(bx, bz).toFixed(2) };
+  return { cue: cue && _who(cue.def), e: _who(opened), dA: 1.3, dB: +Math.hypot(bx, bz).toFixed(2) };
 }, [bx, bz, look]);
 // the camera looks along (-sin yaw, -cos yaw): yaw 0 looks to -z, at A
 const side = await ask(0.85, 0.2, 0);
@@ -37,7 +45,7 @@ console.log('away', JSON.stringify(away));
 check('looking at nobody: no cue, and E still answers with the nearest, as before', away.cue === null && away.e === pick.B, away);
 // and through the key, as a player presses it
 const place = () => page.evaluate(() => { const A = _A, B = _B, y = A.g.position.y; px = A.g.position.x; pz = A.g.position.z + 1.3; jumpY = y; yaw = 0; pitch = -.05;
-  B.g.position.set(px + .85, y, pz + .2); CAM.position.set(px, y + EYE_STAND, pz); CAM.rotation.set(pitch, yaw, 0); CAM.updateMatrixWorld(true); });
+  B.g.position.set(px + .85, y, pz + .2); _park(); CAM.position.set(px, y + EYE_STAND, pz); CAM.rotation.set(pitch, yaw, 0); CAM.updateMatrixWorld(true); });
 await place(); await g.frames(2); await place();
 await page.keyboard.press('e'); await g.frames(2);
 const k = await page.evaluate(() => ({ open: !!dlgOpen, name: (document.getElementById('dlg-name') || {}).textContent }));
