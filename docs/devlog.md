@@ -13208,7 +13208,7 @@ In `fortKeepGeoHi` (`82-world-structures.js`) the two leaves now meet in the mid
 `tests/keep` had a check that "the doorway is open to the dark at its back". It now checks the reverse. Rays into the doorway at mid-height, under the arch and out by the jamb meet the leaves at .805 in, and what they meet is oak.
 
 ### Verified (headless Chromium)
-`keep` 9/9. The three rays meet the door within .03 of its face, and the three colours sampled are brown, with red over green over blue. The other checks are unchanged: 4–13k triangles, the footprint, the collider, and the near and far copies. `keepercone` and `keeperwalk` ran alongside and pass. Pictures of the fort nearest the start, before and after by day, and after at night: `docs/prototypes/fortdoor-before-day.png`, `fortdoor-after-day.png`, `fortdoor-after-night.png`. No page errors.
+`keep` 10/10. The three rays meet the door within .03 of its face, and the three colours sampled are brown, with red over green over blue. The other checks are unchanged: 4–13k triangles, the footprint, the collider, and the near and far copies. `keepercone` and `keeperwalk` ran alongside and pass. Pictures of the fort nearest the start, before and after by day, and after at night: `docs/prototypes/fortdoor-before-day.png`, `fortdoor-after-day.png`, `fortdoor-after-night.png`. No page errors.
 
 ### Needs eyes
 - Whether the line of light under the door is enough to find the keep's door from the compound gate at night, now the doorway itself no longer glows.
