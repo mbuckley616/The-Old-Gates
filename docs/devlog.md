@@ -12792,3 +12792,20 @@ CI on #167's head (35d81fa) went red in two shards, each on a test, neither on t
 
 ### Needs eyes
 None.
+
+## v80 — Session 604 — A strongbox's takings roll on the box's own stream (backlog K, the co-op door's step 1)
+CLAUDE.md's co-op rules say a roll that decides an outcome comes from a seeded stream keyed by place and id. Session 471 moved the barrels, wrecks and hoards onto `seededRng('loot', key)`, and the backlog has called step 1 done since Session 543. The town's strongbox and the home chest (Session 155, `boxInteract` in `86-world-crime.js`) were missed. They still drew everything from `Math.random`: the coins (a shop's `boxCoins` × 0.8–1.2, a home's 2–12), the thing from the shop's stock, and the keepsake with its price. A reload, or a second player, opening the same box on the same day got different takings.
+
+They now draw from `seededRng('loot', '<house id>:box:<day>')`, with `lootDay()` as the barrels use. The box already had an id, its house's (`g_<site>_<lot>`), which keys `worldState.boxes`. The draws are the same in number and order, the bands are unchanged, and the box refills after five days as before, with a new roll each day. Nothing is saved that was not saved before.
+
+Found on the way and left: a fish's kind (`catchFish`, line 807: half the time a cold or warm water's fish) also rolls on `Math.random`. It is an outcome, and it wants a key of its own, which means a key for the cast.
+
+### Verified (headless Chromium)
+`boxseed` 7/7 (new), in Dunmore, a shop (`g_dunmore_2`) and a home (`g_dunmore_15`):
+- Day 40 with `Math.random` pinned at .1, .9 and .5 gives the same takings each time: the strongbox 58 gold and a Bronze Mace, the home chest 2 gold and *A carved bird* at 25.
+- Days 41–48 give the strongbox 39–55 gold, all inside its band of 39–58, with six different things. The chest gives 2–11 gold and five different keepsakes.
+
+On the old code four checks fail. The pinned values gave 41 against 56 gold on one day, and 41 gold and a Wooden Sword on every one of eight days. `theft`, `theftlevel1` and `barberbox` pass. `parsecheck` clean.
+
+### Needs eyes
+None. The takings are the same sizes as before.

@@ -567,10 +567,12 @@
     if(st==='empty'){showMsg(X.kind==='home'?'Nothing left in it.':'The takings are gone; they will not have refilled it yet.','#c8b880');return true;}
     if(st==='locked'){if(typeof tryLockpick==='function')tryLockpick({seed:'box_'+X.id,live:true,house:X.house,minPins:lockPins(X.house),lockBonus:X.kind==='home'?-1:0,lockTitle:X.kind==='home'?'A small chest':'A strongbox',onPick:()=>{X.open=true;if(X.lid)X.lid.rotation.x=-Math.PI/3;boxInteract();}});return true;}
     // open: the takings by the town's prosperity and one thing from the stock; a home's few coins and a keepsake
+    // S604 — the takings roll on the box's own stream, `<house id>:box:<day>` (CLAUDE.md's co-op rules), as the barrels do (S471)
+    const R=seededRng('loot',X.id+':box:'+lootDay()),rpick=a=>a[Math.floor(R()*a.length)];
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
-    if(X.kind==='home'){coins=2+Math.floor(Math.random()*11);items.push({name:bpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(Math.random()*22),qty:1,stolen:true});}
-    else{coins=Math.round(boxCoins(p,X.type)*(.8+Math.random()*.4));
-      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},bpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
+    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true});}
+    else{coins=Math.round(boxCoins(p,X.type)*(.8+R()*.4));
+      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
