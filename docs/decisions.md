@@ -3,20 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
-You answered B on #156: two more armour lines, light for the archer and robes for the mage, each in every tier with its own stats. The question said the numbers would come later from the systems builder. The look is #161; this is the numbers, so the items can be built while the bodies are.
-
-Today one line: five pieces (helmet, cuirass, gauntlets, greaves, boots). A full set is about 4.8 × the tier's base defence (15 at Iron, 34 at Mithril) and weighs 20; from Iron up it needs Fortitude (5, 10, 16 … 56).
-
-- **A. Weight against defence, gated by the line's attribute, one small virtue each.** *(recommended)*
-  - Light (hood, jerkin, bracers, legs, boots): 60% of the heavy piece's defence at 40% of its weight (a set weighs 8). Needs Finesse instead of Fortitude, on the same curve. Each piece worn makes you 3% harder to notice while sneaking (15% for the five).
-  - Robes (cowl, coat, under-robe, wraps; no boots, so the feet take another line's): 25% of the defence at a quarter of the weight. Needs Intelligence. Each piece adds 3 max mana a tier (a set of four at Mithril, +60; one *of the Mage* enchant on one piece gives 50).
-  - The heavy line is unchanged. Prices: light at 90% of the heavy piece, robes at 100%.
-  - Loot: an armour drop is heavy half the time, light a quarter, robes a quarter (a robe has no boots, so a robe roll on the feet is light). The armourer sells heavy and light; robes are sold at goods shops and the Mages' Guild.
-- **B. Weight and defence only.** As A without the two virtues: light is the lighter set, robes the lightest, and nothing else differs.
-- **C. A, and a cost on the heavy line.** Each heavy piece also makes you 4% easier to notice while sneaking and slows mana regen by 5% (Morrowind's and Oblivion's trade). It changes what every player wearing armour today has.
-
-**Recommendation: A.** It gives each line a reason beyond its weight, small enough that an enchant still matters more, and leaves the armour already worn as it is. Every number here is a first guess to tune in play.
 
 ### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
 You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
@@ -104,6 +90,62 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-mouth.png
 
 ## Answered
+### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
+You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
+
+**Why they look jumbled.** Every cave-type gate is built the same way. Three rough boulders lean together, with a capstone laid over them. A small plank door stands in the gap, under a lintel thinner than the boulders. Then a few things are dropped around it by the gate's seed: a broken column, a dead tree, hanging chains, rocks. Nothing lines up with anything else, so the door reads as a crate wedged into a rock pile (first picture). The forts (Greywatch, the Old Garrison and their kind) are built separately, and this question does not touch them.
+
+**The prototype.** One shared form for every old gate. A dressed-stone doorway is cut into a turf mound. Two jambs and a heavy lintel frame it, with a capstone stepped over the lintel. Wing walls step down to hold the mound back, and worn steps lead down into the dark. The binding marks are cut down both jambs and in a ring on the lintel, and they glow in the gate's theme colour: ember orange for the Crypt, green for a haunted gate. A ring of marker stones stands about nine units out, each with one mark facing the door. Put together, it says *something is held here* before you read a word, which is what the canon says the gates are: anchor places with binding inscriptions. The prototype is on the branch auto/proto-old-gates. It is about 70 boxes, and none of it is in the game yet.
+
+- **A. One shared form, as shown** *(recommended)*. Every cave-type gate gets this doorway, with the theme's colour on the marks and the seed varying the details: the mound's size, which marker stones have fallen, moss, how worn the steps are. The current random clutter goes.
+- **B. One form per theme.** The crypt gets a mausoleum front, a haunted gate a barrow with a sunken door, a deep gate a cave mouth with a carved frame, an elemental gate a scorched stone portal. This gives more variety, but the gates stop reading as one family, and it is four builds instead of one.
+- **C. Keep today's dolmens and tidy them.** The boulders stop overlapping, the door is set properly into the gap, and the random clutter is placed apart from the door. This is the smallest change. It is still a rock pile with a door.
+- **D. Something else.** Mark what to change on the pictures.
+
+**Recommendation: A.** The gates are the game's name and its story's spine. A single, recognisable form lets a player spot one across a field and know what it is, and the theme colour and the seed's details keep two gates from looking the same.
+
+Pictures (today's Crypt of Embers; the prototype in the Crypt's colour, in a haunted gate's green, and at night):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-today.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-ember.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-haunted.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-night.png
+
+Michael: **One shared form, as shown** — Yeah this looks better, but the doorway itself doesn’t look like a door - the mesh from the grassy hillock that’s part of it is bursting through the doorway. (2026-10-05)
+
+### The dungeon's swinging blades (the look builder, Session 573, 2026-10-06) — DECISION #170
+On 5 Oct you said the dungeon's traps are "awkward and rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player whatsoever." Here is what is wrong, and one way to fix it.
+
+**What is wrong.** A swinging blade hangs from the roof in the middle of a corridor cell and swings *along* the corridor. Its flat side faces the walls. Walking up the corridor towards one, you see it edge-on: a thin line moving towards you and away (first picture, mid-swing, where the blade is nearly invisible). Its lowest point is 1.3 above the floor, and it hurts you whenever you stand within 0.7 of its cell near the bottom of the swing, wherever the blade actually is. So it neither looks like it will hit you nor hits you where it looks.
+
+**The prototype** (pictures two and three, the same corridor). A crescent blade on a longer arm swings *across* the passage, edge first. The bottom of its arc is at the waist (0.95), and it passes into the walls at each side, as if through slots cut for it. You watch it cross in front of you and time your run between swings, as in Prince of Persia or Tomb Raider. The prototype is on the branch auto/proto-dungeon-traps. Nothing in the game has changed.
+
+- **A. Across the passage, as shown** *(recommended)*. The blade swings across, lower, and it only hurts you when it actually reaches your spot in the corridor: the systems builder's hit rule follows the blade's arc, so you can slip through between swings. Spike plates stay as they are.
+- **B. Across the passage, the hit as today.** Only the look changes, which is quicker but still unfair: you could be cut while the blade is clearly away to one side.
+- **C. Along the corridor, but lower and on the hit's beat.** Today's direction, with the blade at the waist and a hit that follows it. You would still see it edge-on as you come at it.
+- **D. Something else**, such as scything blades from the wall, or no swinging traps at all.
+
+**Recommendation: A.** A trap is a timing test, and the brief asks for fluid movement and weighty timing. A blade you can see crossing your path, and slip past, is the fair version of that test.
+
+This is one part of your 5 Oct note. The jumbled railings were a bug, fixed in Session 572. The stairs' style and wider passages are their own questions, to come.
+
+Pictures (today, mid-swing; the prototype mid-swing and at the side of its swing):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-today-swing.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-mid.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-swing.png
+
+Michael: **Across the passage, as shown**. (2026-10-05)
+
+### Two houses of one name in a town — must a house's name be its own? (the systems builder, 2026-10-06) — DECISION #171
+A home is named for its resident (*Séamus's House*), and residents' first names are unique in a town only while the bank lasts: twelve a sex for each people, so a town of more than about two dozen homes repeats them (Session 172 kept repeats for ordinary townsfolk, and Session 248 gave the second of a name another face). The critic found two *Séamus's House* in Carraig Mór (lots 10 and 44), both for sale, at 1,150 and 1,100: on the map, in the log, in a save's label and in a townsperson's directions the two read the same. A house is what the player buys, so the question is whether its name must point at one door. Shops, inns and guild heads are already unique (Sessions 172 and 248); nothing else changes in any option.
+- **A. The second takes the resident's trade** *(recommended)*: where a house's name is already in the town, it reads *Séamus the Cooper's House* (the trade every resident already carries: farmer, weaver, cooper, fisher; an old woman *Old Úna's House*); a plain resident, or a trade that repeats too, reads by its street end (*Séamus's House by the north gate*). No new words beyond what the game holds; the first house keeps its name, so a save that owns one keeps it.
+- **B. Residents' first names unique in the town**: the bank grows (or a family name is added) so no two homes share a name. Cleaner, but it is new names, the quest writer's, and it renames people in existing saves.
+- **C. Keep the names, say which one**: the map's card, the log and the directions add the street end (*by the north gate*) only where the name repeats; the house's own name stays.
+- **D. Leave it.**
+
+Recommendation: **A.** It reads like a village talking (*the cooper Séamus*), it needs nothing the generator does not already know, and it is one change in the generator (`83-world-generator.js`) with a test over the nearest towns.
+
+Michael: **The second takes the resident's trade**. (2026-10-05)
+
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
 The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.
 
