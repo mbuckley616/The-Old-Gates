@@ -13045,3 +13045,16 @@ The inspector has two new sections under Weapons and armour, *Your body in light
 ### Needs eyes
 - **Session 556's rough edges are still there.** The thigh straps stand a little off the leg, and the tunic's shoulder cap shows through the mantle from the side. Under the light jerkin's flaps your own tunic shows, in your look's colour (red in the picture, tan in the prototype's). Long straight hair hangs out of the light hood, which may be wanted.
 - **No light or robe item exists on auto/backlog** until the systems branch merges. Until then the bodies are only in the inspector and the test. After it merges, a dropped Jerkin on your body is the check.
+
+## v80 — Session 570 — A swinging blade under a lair's taller roof (backlog H; a correction to Session 568)
+Session 568 made a dragon's lair 4.4 tall and said everything that stands a cavern up reads `FLOOR_HEIGHT`. The swinging blade does read it, but only for its pivot, which hangs at the roof. Its arm was a fixed 1.4 long and its blade a fixed 1.55 below the pivot. So in a lair the blade swung 1.2 higher than anywhere else: its centre was 2.75 over the floor, above your head. The trap still hurt you by distance (within .7 of its cell, at the bottom of the swing). In a lair, then, a blade that visibly passed over you would have cut you. I found it while looking at a trap for Michael's dungeon note, and this session corrects it.
+
+The arm is now 1.4 plus the roof's extra height, and the blade hangs that much lower, so it swings at 1.55 above the floor under any roof. Under 3.2 nothing changes. The blade carries `userData.trapBlade` so a test can find it.
+
+Michael's note on the traps (*rarely oriented properly … doesn't look like it would touch the player*) is still open, along with the stairs and the cramped passages in the same note. I took a picture of a blade trap today (ruins, seed 777): it swings along its corridor, edge-on to you as you walk at it. Whether it should swing across the passage, and how the hit should follow the blade, is part of that pass. It needs a prototype and a question, and the trap code is in `68-dungeon-misc.js`, the systems builder's range. That is for a later run.
+
+### Verified (headless Chromium)
+`tests/dragonsize` passes 11 of 11 with a new check. Two blades in each of a dragon's lair and a plain cave (ruins, seeds from 5000), at rest, have their blade centres at 1.55 above the floor in both (`FLOOR_HEIGHT` 4.4 and 3.2). Before this fix the lair's blades would have been at 2.75. `lvact` and `wardall`, the two suites that spring a trap, pass.
+
+### Needs eyes
+- Nothing new beyond Session 568's. A blade's arm in a lair is 2.6 long.

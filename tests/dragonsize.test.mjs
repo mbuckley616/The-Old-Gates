@@ -44,5 +44,13 @@ const O = await page.evaluate(() => { const out = {}; for (const [k, lair] of [[
   out[k] = { h: FLOOR_HEIGHT, roof: +y1.toFixed(2) }; } return out; });
 console.log(JSON.stringify(O));
 check('a lair without a dragon, and a plain cave, stay at 3.2', O.beast.h === 3.2 && O.cave.h === 3.2 && O.cave.roof >= 3.15 && O.cave.roof <= 3.32 && O.beast.roof >= 3.15 && O.beast.roof <= 3.32, O);
+// S570 — a swinging blade hangs from the roof: under a lair's 4.4 roof its arm is longer, so the blade swings at the height it does under 3.2
+const T = await page.evaluate(() => { const out = {};
+  for (const [k, lair] of [['lair', { place: 'Test', boss: 'Wyrm', dragon: true }], ['cave', null]]) { const ys = [];
+    for (let seed = 5000; seed < 5040 && ys.length < 2; seed++) { const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair }); buildDungeon(p);
+      for (const t of D_TRAPS) if (t.kind === 'blade') { t.pivot.rotation.z = 0; t.pivot.updateMatrixWorld(true); const b = t.pivot.children.find(c => c.userData && c.userData.trapBlade); const v = new THREE.Vector3(); b.getWorldPosition(v); ys.push(+v.y.toFixed(2)); } }
+    out[k] = { h: FLOOR_HEIGHT, ys }; } return out; });
+console.log(JSON.stringify(T));
+check('a swinging blade hangs at the same height, 1.55 above the floor, under a lair\'s 4.4 roof and a cave\'s 3.2', T.lair.ys.length > 0 && T.cave.ys.length > 0 && T.lair.h === 4.4 && T.cave.h === 3.2 && [...T.lair.ys, ...T.cave.ys].every(y => Math.abs(y - 1.55) < .01), T);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
