@@ -51,6 +51,6 @@ const T = await page.evaluate(() => { const out = {};
       for (const t of D_TRAPS) if (t.kind === 'blade') { t.pivot.rotation.z = 0; t.pivot.updateMatrixWorld(true); const b = t.pivot.children.find(c => c.userData && c.userData.trapBlade); const v = new THREE.Vector3(); b.getWorldPosition(v); ys.push(+v.y.toFixed(2)); } }
     out[k] = { h: FLOOR_HEIGHT, ys }; } return out; });
 console.log(JSON.stringify(T));
-check('a swinging blade hangs at the same height, 1.55 above the floor, under a lair\'s 4.4 roof and a cave\'s 3.2', T.lair.ys.length > 0 && T.cave.ys.length > 0 && T.lair.h === 4.4 && T.cave.h === 3.2 && [...T.lair.ys, ...T.cave.ys].every(y => Math.abs(y - 1.55) < .01), T);
+check('a swinging blade hangs at the same height under a lair\'s 4.4 roof and a cave\'s 3.2: its steel\'s centre 1.26 above the floor, its edge at the waist (Session 582, Michael\'s A on #170; was 1.55)', T.lair.ys.length > 0 && T.cave.ys.length > 0 && T.lair.h === 4.4 && T.cave.h === 3.2 && [...T.lair.ys, ...T.cave.ys].every(y => Math.abs(y - 1.26) < .01), T);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

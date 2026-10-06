@@ -170,10 +170,28 @@ function decorateDungeonRooms(gen,portal){
   const run=corridor.filter(([c,rr,dir])=>dir==='h'?(isFloor(c-2,rr)&&isFloor(c+2,rr)&&!isFloor(c,rr-1)&&!isFloor(c,rr+1)):(isFloor(c,rr-2)&&isFloor(c,rr+2)&&!isFloor(c-1,rr)&&!isFloor(c+1,rr)));
   corridor.length=0;corridor.push(...run);
   const nTraps=Math.min(corridor.length,2+Math.floor(r()*4));
-  for(let k=0;k<nTraps;k++){const [c,rr,dir]=corridor[Math.floor(r()*corridor.length)];const x=c+.5,z=rr+.5;if(D_TRAPS.some(t=>Math.hypot(t.x-x,t.z-z)<3))continue;
+  for(let k=0;k<nTraps;k++){const [c,rr,dir]=corridor[Math.floor(r()*corridor.length)];const x=c,z=rr; /* S582 — a cell is centred on its integer (c−½ to c+½): at c+.5 every trap stood on its cell's corner, a blade in the wall's line */if(D_TRAPS.some(t=>Math.hypot(t.x-x,t.z-z)<3))continue;
     if(r()<.6){const plate=_dBox(.62,.04,.62,0x3a3630,x,.02,z);const spikes=new THREE.Group();for(let i=0;i<9;i++){const s=new THREE.Mesh(new THREE.ConeGeometry(.04,.34,5),new THREE.MeshLambertMaterial({color:0x9a9ea6}));s.position.set(-.18+(i%3)*.18,.17,-.18+Math.floor(i/3)*.18);spikes.add(s);}spikes.position.set(x,-.4,z);dScene.add(spikes);D_TRAPS.push({kind:'spike',x,z,floor:1,plate,spikes,t:0,armed:true});}
-    else{const xl=FLOOR_HEIGHT-3.2,pivot=new THREE.Group();pivot.position.set(x,FLOOR_HEIGHT-.1,z);const arm=_dBox(.06,1.4+xl,.06,0x3a2e22,0,-.7-xl/2,0);dScene.remove(arm);pivot.add(arm);const blade=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.04),new THREE.MeshLambertMaterial({color:0xb8bcc4}));blade.position.set(0,-1.55-xl,0);blade.userData.trapBlade=true; /* S570 — the arm reaches down from a taller roof (a dragon's lair, 4.4), so the blade swings at the height it always has */pivot.add(blade);pivot.rotation.y=dir==='h'?0:Math.PI/2;dScene.add(pivot);D_TRAPS.push({kind:'blade',x,z,floor:1,pivot,ph:r()*Math.PI*2,hitT:0});}}
+    else{D_TRAPS.push(buildSwingBlade(x,z,dir,r));}}
 }
+// S582 — the swinging blade across the passage (Michael's A on DECISION #170, the Session 573 prototype): a crescent of steel on an
+// iron arm hung from a bracket in the roof, its flat face to you as you come up the corridor, swinging from wall to wall with the
+// bottom of its arc at the waist (.95) and into a dark slot cut in each wall. The arm is as long as the roof is high (a lair's 4.4).
+// The pivot swings about its own z (tickDungeonTraps), so it is turned to put that swing across the corridor: a corridor along x
+// ('h') swings in z. t.blade is the steel, for the hit.
+function buildSwingBlade(x,z,dir,r){const top=FLOOR_HEIGHT-.1,low=.95,L=top-low,pivot=new THREE.Group();pivot.position.set(x,top,z);pivot.rotation.y=dir==='h'?Math.PI/2:0;
+  const iron=new THREE.MeshLambertMaterial({color:0x3a3a3c}),steel=new THREE.MeshLambertMaterial({color:0xc8ccd4,side:THREE.DoubleSide}),slotM=new THREE.MeshBasicMaterial({color:0x050403,side:THREE.DoubleSide});
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.07,L-.25,.07),iron);arm.position.y=-(L-.25)/2;pivot.add(arm);
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.22,10),iron);hub.rotation.x=Math.PI/2;pivot.add(hub);
+  const sh=new THREE.Shape();sh.absarc(0,0,.55,Math.PI*1.15,Math.PI*1.85,false);sh.absarc(0,.32,.45,Math.PI*1.8,Math.PI*1.2,true);
+  const bg=new THREE.ExtrudeGeometry(sh,{depth:.03,bevelEnabled:true,bevelSize:.012,bevelThickness:.01,bevelSegments:1});bg.computeBoundingBox();const bc=new THREE.Vector3();bg.boundingBox.getCenter(bc);bg.translate(-bc.x,-bc.y,-bc.z); /* the steel's own centre is the mesh's origin, so its position is where the blade is */
+  const blade=new THREE.Mesh(bg,steel);blade.position.set(bc.x,-L+.55+bc.y,0);blade.userData.trapBlade=true;pivot.add(blade);
+  dScene.add(pivot);
+  // the bracket in the roof: a bar across the passage the hub turns on
+  const br=new THREE.Mesh(new THREE.BoxGeometry(dir==='h'?.12:1.0,.1,dir==='h'?1.0:.12),iron);br.position.set(x,top+.04,z);dScene.add(br);
+  // the slots the blade passes into, one in each wall in the plane of its swing
+  for(const s of[-1,1]){const sl=new THREE.Mesh(new THREE.PlaneGeometry(.12,1.3),slotM);if(dir==='h'){sl.position.set(x,1.35,z+s*.49);}else{sl.position.set(x+s*.49,1.35,z);sl.rotation.y=Math.PI/2;}dScene.add(sl);}
+  return {kind:'blade',x,z,floor:1,pivot,blade,ph:r()*Math.PI*2,hitT:0};}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
     if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(Math.random()*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}

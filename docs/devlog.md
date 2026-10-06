@@ -13180,3 +13180,22 @@ The build (`buildOldGateFront`, `24-forts.js`) replaces the whole cave-door bran
 - The gate on a slope: the door's stamp flattens a radius of 7, but the marker stones at nine stand on the blend and may sit low on one side.
 - The headwall's ends at three either side, where the turf eases forward round them, seen from a sharp angle.
 - The legacy zones' cave doors (outside the open world) use the same builder. Their pictures were not taken.
+
+## v80 — Session 582 — The swinging blade across the passage (backlog H, Michael's A on DECISION #170, the look)
+Michael chose the Session 573 prototype: a crescent blade that swings across the passage, edge first, the bottom of its arc at the waist, into the walls. The hit that follows the blade is the systems builder's (Session 580, `bladeTouches`, on auto/systems). This session is the blade itself.
+
+Building it turned up the cause of half of Michael's note ("swinging axes scrape along the same wall"). `decorateDungeonRooms` put every trap at `c+.5, r+.5`. But a dungeon cell is centred on its integer, running c−½ to c+½ (`dSolid` floors `x+.5`), which Session 577 found while taking pictures. So every trap stood on its cell's corner. A blade in a corridor along x hung on the line of one wall and swung along it, and a spike plate was half under a wall. Traps now stand at the cell's centre (`x=c, z=r`). The draw from the seed is unchanged, so each dungeon has the same traps in the same cells.
+
+The blade (`buildSwingBlade`, `68-dungeon-misc.js`, replacing the inline box blade) is the prototype's. A crescent of steel (an outer arc of .55, cut by an inner arc of .45) on an iron arm from a hub, hung on a bar across the roof. The pivot turns so the swing goes across the corridor, and the blade's flat face looks up it, so you see it cross in front of you. The arm is the roof's height less .95, so the edge passes at .95 under a cave's 3.2 roof and a lair's 4.4 alike (Session 570's rule kept). At the ends of its .42 swing the steel's centre is .75 to the side and its tip passes .84 into the wall, where a dark slot .12 wide and 1.3 tall is cut in each wall in the plane of the swing. The steel's own centre is its mesh's origin, and the trap carries it as `t.blade`, which is what `bladeTouches` reads first.
+
+`tests/dragonsize`'s Session 570 check pinned the old box blade's centre at 1.55. It now reads the crescent's, 1.26 (its edge at .95), under both roofs.
+
+**For the systems builder.** `bladehit` (auto/systems, not on this branch) was run here against this blade, with `bladeTouches` patched in, in a scratch copy. Four of its checks pass: under the blade you are always cut, the side rule holds, the end-of-swing timing holds, and the damage and cooldown are unchanged. Two fail on assumptions about today's blade, not on the rule. "None cut with the blade more than 0.75 away" measures from the blade's centre, but the crescent is .98 wide, so a body .3 round is cut up to about .8 from it, where the blade really is. "Turned across the passage" turns the pivot a quarter turn to put the blade across, and the pivot is already across, so the turn puts it along.
+
+### Verified (headless Chromium)
+`swingblade` 9/9 (seed 11: three blades and a spike plate). Every trap is at a cell's centre on corridor floor. Each blade hangs with a wall .6 to either side and the corridor open along it. At the ends of its swing the steel's centre is .75 to each side and 0 along. Its face normal lies along the corridor (dot 1.0). The lowest point at mid-swing is .94. The tip reaches 1.34 to each side, into the walls, and each blade has two slots. `dragonsize`, `lvact` and `wardall` pass. Picture: `docs/prototypes/dungeon-trap-built-swing.png`, from three cells up the corridor with the blade near the side of its swing. No page errors.
+
+### Needs eyes
+- The swing's speed: unchanged at 2.2 radians of phase a second, about 2.9 seconds a full swing, now that you time a run across it.
+- The slots are flat dark planes on the wall's face, with no depth to them.
+- `bladehit`, as above, when auto/systems and this branch meet on main.
