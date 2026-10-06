@@ -13641,3 +13641,20 @@ Now each arrow is loosed by a living hand of her crew who is standing on her dec
 
 ### Needs eyes
 Whether 3 hands make a fair volley at sea now that killing them stops it, and the rest of the playtest's list (hull overlap, deck props walked through, bodies over the sea, the helm's reach, the port's road), which is still open in backlog I.
+
+## v80 — Session 613 — The dead ride where they fell (backlog I, Michael's sailing playtest)
+Michael's sailing playtest found killed pirates' bodies "hover above the sea where the ship was when they died". He asked that they stay on the boat, or roll off into the water and float until they are cleared away. The cause: `tickCrew` carried only the living crew with a moving black sail. A body was left at the spot where it fell, at deck height, and the deck sailed out from under it. The same held on your own deck. A boarder killed there was dropped from `BOARDERS` and stayed where you had been. Nothing ever cleared these bodies: `despawnOtherShip` removed only the living crew, so a black sail's dead stayed in the scene, in the searches and in the world's foes for the rest of the visit.
+
+Now the dead ride where they fell (`carryDead`, `85-world-sea.js`). Each tick, a body on a deck is moved by the ship's own move and turned about her middle by her own turn. That covers the body, a ragdoll still settling (its origin moves with the ship), the corpse's search spot and its glow and spark. This applies to a black sail's dead on her deck and to boarders killed on yours (`DECK_DEAD`, `87-world-quests.js`). A falling body treats the sea as a floor, so a body that goes over the side ends on the water. A body found off the deck once it is still is marked afloat. It is set with its hips at the surface and left floating where it fell. A black sail's dead on her deck go when she does: out of the scene, the searches and the world's foes. A floating body goes when you are 700 units from it, the distance at which ships go. A body on your own deck goes then too, or when your ship is gone. The bodies are not saved. They never were.
+
+### Verified (headless Chromium)
+`shipdead` 8/8 (new):
+- A hand killed on a black sail's deck is still on her deck at deck height (hips 1.08) after she sails 107 units and turns 2.54 rad. That is 110 units from where he fell. His search spot and glow are 0.00 off his body.
+- A body put 6 units off her beam is afloat at −0.10. It has not moved after 10 s of her sailing; she is 67 units off.
+- When she is despawned, the body on her deck leaves the scene, the searches and the foes. The floating body stays, and goes at 720 units.
+- A boarder killed on your deck is still on it, with his search, after 20 s at the wheel: 132 units sailed and 2.13 rad turned.
+
+`shiparchers`, piratehold, ragdollsearch, ships, shiphull, worldtarget and corpsebody 1/1 each. `parsecheck` clean.
+
+### Needs eyes
+The overboard case in the test puts the body off her side by hand. A real power blow at the rail that throws a pirate over, falling onto the water, is what play would show. A body turns with the deck only once its ragdoll has settled; while it falls (under a second) it is moved but not turned. Floating bodies do not bob.

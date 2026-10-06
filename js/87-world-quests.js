@@ -13,8 +13,14 @@
     }
     pirateBoardersHold();
     // keep boarders aboard
-    const p=SHIP.plat;for(let i=BOARDERS.length-1;i>=0;i--){const e=BOARDERS[i];if(e.dead){BOARDERS.splice(i,1);continue;}if(!e._lx){e._lx=SHIP.x;e._lz=SHIP.z;}e.x+=SHIP.x-e._lx;e.z+=SHIP.z-e._lz;e._lx=SHIP.x;e._lz=SHIP.z;e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));e.homeX=SHIP.x;e.homeZ=SHIP.z;}
+    const p=SHIP.plat;for(let i=BOARDERS.length-1;i>=0;i--){const e=BOARDERS[i];if(e.dead){BOARDERS.splice(i,1);DECK_DEAD.push(e);continue;}if(!e._lx){e._lx=SHIP.x;e._lz=SHIP.z;}e.x+=SHIP.x-e._lx;e.z+=SHIP.z-e._lz;e._lx=SHIP.x;e._lz=SHIP.z;e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));e.homeX=SHIP.x;e.homeZ=SHIP.z;}
   }
+  // S613 — a boarder killed on your deck lies there and sails with her (carryDead, 85-world-sea.js) until you are 700 units off
+  const DECK_DEAD=[];let _deckPose=null;
+  function tickDeckDead(){if(!DECK_DEAD.length){_deckPose=null;return;}
+    if(!SHIP.mesh||!SHIP.plat){for(const e of DECK_DEAD.splice(0))if(!e._afloat)purgeBody(e);_deckPose=null;return;}
+    if(_deckPose)carryDead(DECK_DEAD,SHIP.plat,SHIP.x,SHIP.z,SHIP.yaw,_deckPose.x,_deckPose.z,_deckPose.yaw);_deckPose={x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw};
+    for(let i=DECK_DEAD.length-1;i>=0;i--){const e=DECK_DEAD[i];if(e._afloat){DECK_DEAD.splice(i,1);continue;}if(Math.hypot(e.x-px,e.z-pz)>BODY_FAR){DECK_DEAD.splice(i,1);purgeBody(e);}}}
   // S399 — leave your own deck while boarders stand on it and they take half the hold, then go back over the rail to their ship
   function pirateBoardersHold(){if(PHP<=0||!worldState.ship||!SHIP.plat||deckOff(SHIP.plat)<1.5)return;const live=BOARDERS.filter(e=>!e.dead);if(!live.length)return;
     const took=pirateTake();if(!took.length)return;const o=live[0]._from,home=!!(o&&OTHER.includes(o));

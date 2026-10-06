@@ -573,7 +573,7 @@
     if(kind==='pirate')crewUp(o,false);
     return o;
   }
-  function despawnOtherShip(o){sc.remove(o.mesh);const i=ZONES.world.platforms.indexOf(o.plat);if(i>=0)ZONES.world.platforms.splice(i,1);o.crew.forEach(e=>{if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);}});if(o.chest&&typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(o.chest);if(k>=0)ZONE_CORPSES.splice(k,1);}const j=OTHER.indexOf(o);if(j>=0)OTHER.splice(j,1);}
+  function despawnOtherShip(o){sc.remove(o.mesh);const i=ZONES.world.platforms.indexOf(o.plat);if(i>=0)ZONES.world.platforms.splice(i,1);o.crew.forEach(e=>{if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);}else if(!e._afloat)purgeBody(e);});if(o.chest&&typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(o.chest);if(k>=0)ZONE_CORPSES.splice(k,1);}const j=OTHER.indexOf(o);if(j>=0)OTHER.splice(j,1);}
   function placeOther(o){
     o.mesh.position.set(o.x,SEA_Y+Math.sin(performance.now()*.0011+o.x)*.05,o.z);o.mesh.rotation.y=o.yaw+Math.PI;
     shipPlatBox(o.plat,o.mesh,o.x,o.z,o.yaw,o.L,o.W);
@@ -677,8 +677,36 @@
     showMsg(`They come over your rail behind you and take ${pirateStow(o,took)} from the hold.`,'#ff8060');}
   function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to board ${o.name}`:null;}
   function otherInteract(){const o=nearOther();if(o&&!o.boarded){boardOther(o);return true;}return false;}
+  // S613 (Michael's sailing playtest, 6 Oct) — the dead ride where they fell. A hand killed on her deck (or a boarder on
+  // yours) is carried with the ship, turned with her as she turns, ragdoll, body, search and glow alike; the sea is a floor
+  // to a falling body, so one that goes over the side comes to rest on the water and floats where it fell. A body on a
+  // black sail goes when she does; one in the water, or on your deck, when you are 700 units from it.
+  const BODY_FAR=700,FLOATING=[];
+  function bodyRig(e){if(!e.mesh||typeof RAGDOLLS==='undefined')return null;for(const R of RAGDOLLS)if(R.top===e.mesh)return R;return null;}
+  function bodyCorpse(e){if(!e._corpse&&typeof ZONE_CORPSES!=='undefined')e._corpse=ZONE_CORPSES.find(c=>c.body&&c.body===e.mesh)||null;return e._corpse;}
+  function moveBody(e,x,z,dr){const dx=x-e.x,dz=z-e.z;e.x=x;e.z=z;
+    if(e.mesh){e.mesh.position.x+=dx;e.mesh.position.z+=dz;}
+    const R=bodyRig(e);if(R){R.O.x+=dx;R.O.z+=dz;}else if(dr&&e.mesh)e.mesh.rotation.y+=dr;
+    const c=bodyCorpse(e);if(c){c.x+=dx;c.z+=dz;for(const m of [c.gl,c.spark])if(m){m.position.x+=dx;m.position.z+=dz;}}}
+  function bodyOnDeck(p,x,z){return x>=p.x0&&x<=p.x1&&z>=p.z0&&z<=p.z1&&(!p.inside||p.inside(x,z));}
+  function seaFloor(R){if(R&&!R._sea){const g=R.ground;R.ground=(x,z)=>Math.max(g(x,z),SEA_Y-.25);R._sea=true;}}
+  // the dead in `list` ride a deck whose pose went from (lx,lz,lyaw) to (x,z,yaw); one off the deck once still goes to the water
+  function carryDead(list,plat,x,z,yaw,lx,lz,lyaw){const dr=yaw-lyaw,c=Math.cos(dr),s=Math.sin(dr);
+    for(let i=list.length-1;i>=0;i--){const e=list[i];if(!e.dead||e._afloat)continue;const R=bodyRig(e);seaFloor(R);
+      if(!R&&!bodyOnDeck(plat,e.x,e.z)){e._afloat=true;floatBody(e);continue;}
+      const rx=e.x-lx,rz=e.z-lz;moveBody(e,x+rx*c+rz*s,z-rx*s+rz*c,dr);}}
+  function floatBody(e){if(!FLOATING.includes(e))FLOATING.push(e);if(!e.mesh)return;
+    const h=e.limbs&&e.limbs.person&&e.limbs.person.B&&e.limbs.person.B.hips;let dy=SEA_Y-.1-e.mesh.position.y;
+    if(h){const y=h.getWorldPosition(new THREE.Vector3()).y;dy=Math.abs(y-SEA_Y)>.3?SEA_Y-.1-y:0;}
+    e.mesh.position.y+=dy;const c=bodyCorpse(e);if(c)for(const m of [c.gl,c.spark])if(m)m.position.y=SEA_Y+.55;}
+  function purgeBody(e){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const c=bodyCorpse(e);
+    if(c){for(const m of [c.gl,c.spark])if(m&&m.parent)m.parent.remove(m);if(typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(c);if(k>=0)ZONE_CORPSES.splice(k,1);}}
+    const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);const f=FLOATING.indexOf(e);if(f>=0)FLOATING.splice(f,1);}
+  function tickFloating(){for(let i=FLOATING.length-1;i>=0;i--){const e=FLOATING[i];if(Math.hypot(e.x-px,e.z-pz)>BODY_FAR)purgeBody(e);}}
   // keep crew on their deck
-  function tickCrew(){for(const o of OTHER){if(o._lx!=null&&!o.boarded){const dx=o.x-o._lx,dz=o.z-o._lz;for(const e of o.crew){if(!e.dead){e.x+=dx;e.z+=dz;e.homeX=o.x;e.homeZ=o.z;}}}o._lx=o.x;o._lz=o.z;}for(const o of OTHER)for(const e of o.crew){if(e.dead)continue;const p=o.plat;if(e.x<p.x0+.5||e.x>p.x1-.5||e.z<p.z0+.5||e.z>p.z1-.5){e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));}}}
+  function tickCrew(){for(const o of OTHER){if(o._lx!=null&&!o.boarded){const dx=o.x-o._lx,dz=o.z-o._lz;for(const e of o.crew){if(!e.dead){e.x+=dx;e.z+=dz;e.homeX=o.x;e.homeZ=o.z;}}}
+      if(o._lx!=null)carryDead(o.crew,o.plat,o.x,o.z,o.yaw,o._lx,o._lz,o._lyaw);o._lx=o.x;o._lz=o.z;o._lyaw=o.yaw;}
+    if(typeof tickDeckDead==='function')tickDeckDead();tickFloating();for(const o of OTHER)for(const e of o.crew){if(e.dead)continue;const p=o.plat;if(e.x<p.x0+.5||e.x>p.x1-.5||e.z<p.z0+.5||e.z>p.z1-.5){e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));}}}
 
   // ═══ WEATHER (Session F) ═════════════════════════════════════════════
   // Visual and sound. A weather state per stay: clear, overcast, fog,
