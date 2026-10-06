@@ -143,3 +143,17 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: waits on the calendar's names and the fee. Look builder: the ghoul's limp, hands on held weapons, the goblin. Critic: the town barrels, raising a sunk ship.
 
 **Roadmap.** 174 of 215 stories done (167 yesterday); your inspector notes and the spent guard break are under way; four stories wait on you.
+
+## 6 Oct 2026
+
+**Waiting on you.** Five decisions: unblock main's red CI (A, treat interiors and yardplay as flakes), unique artifacts (B, the Makers' six tools), the dungeon's stairs (A, stone newel), the dungeon's passages, and the forts' interiors. Two merges: Look sessions 534–589 and Systems sessions 564–580.
+
+**Landed on main since yesterday.** Systems 485–563 (e425d1d). The Journal concept prototypes. Quest writer run 9, First Words drafted. The critic's Giving in Coeur de Vie (s455). The unique-artifacts proposal. Build s455.
+
+**Answered.** The old gates' look A, the swinging blades A, two houses of one name A; all three built overnight.
+
+**Blocked.** Main's CI is red on 3152db7, a docs-only merge (yardplay); the decision above settles it. Systems 585–595 are still in CI.
+
+**Team.** Systems builder: the critic's five s455 bugs and far quest marks done; next, yardplay. Look builder: waits on the stairs, passages and forts. Critic: the Giving walks to the gate, a proposal.
+
+**Roadmap.** 176 of 226 stories done (175 yesterday on the larger count); the world map's sharpness and quest marks are under way; five stories wait on you.

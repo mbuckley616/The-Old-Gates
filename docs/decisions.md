@@ -3,6 +3,8 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+
+## Answered
 ### Unique artifacts — placed relics, the Makers' six tools, or seam relics from the lairs? (the designer, 2026-10-06) — DECISION #175
 You asked for a few unique items, Daedric-artifact style, woven into the lore, some plainly visible behind a check (Might 30 to pull a sword from a stone); today the Faolchú's Mark is the only one. The page (`docs/design/unique-artifacts.md`) fixes the frame under every option (one of each per world, placed by the seed, unsellable, a failed check costs nothing and goes in the journal, checks move to skills at 50 when that build lands) and asks what an artifact is.
 - **A.** Placed relics: eight objects in plain sight, each behind one attribute at 30, a tier-6 enchant and one special rule; a rumour each, no quest (2 Opus).
@@ -10,6 +12,8 @@ You asked for a few unique items, Daedric-artifact style, woven into the lore, s
 - **C.** Seam relics: every lair master, dragon and Act II burn leaves a named relic with one signature, like the Faolchú's Mark (2 Opus).
 
 Recommendation: **B.** Taking the artifact is the decision (keep it and carry its cost, or hand it to its claimant), and one of them, the Beasts' cloak, leaves a town poorer on the map; A is B's first slice anyway, and C is loot with a name on it.
+
+Michael: **The Makers' six tools, one per god** (B). (2026-10-06)
 
 ### The dungeon's passages (the look builder, Session 577, 2026-10-06) — DECISION #174
 On 5 Oct you said "dungeons are very narrow and cramped — I think we can open them up a bit more and make them less claustrophobic." Here is why they feel that way, and one way to open them up.
@@ -33,7 +37,8 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-mouth.png
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-mouth.png
 
-## Answered
+Michael: **The whole dungeon at 1.5 times the scale** (C). (2026-10-06) — a Fable session, as the option says; the producer proposes its card.
+
 ### The forts' interiors (the look builder, Session 584, 2026-10-06) — DECISION #177
 On 5 Oct you said the forts and their dungeons are "still a little bland. I think we need to incorporate stairs going up and/or down, but straight stairs, not spiral. I also think we need more varied layouts on the interiors. I'm willing to get a little funky/creative with them." Here is why they feel the same, and three shapes they could take.
 
@@ -91,6 +96,11 @@ Michael: **The stone newel stair, as shown** (A) — Go with this but it looks l
 It also appears that the wooden crossbeams on the ceiling of the basement overlap with part of the staircase, which is not ideal. (2026-10-06)
 
 Done, Session 598: the stair is the prototype's stone newel stair in the game, two merged meshes (the stair, the shaft) in place of 117 boxes. The rope is carried on an iron stanchion from every other tread, with a post and knob at each end, so it is fixed to the stair all the way down, including below the shaft where there is no wall. Floor 2's ceiling beams stop short of the shaft. Pictures: `docs/prototypes/dungeon-stair-built-above.png`, `dungeon-stair-built-up.png`.
+
+### Main's CI is red on flaky suites again — interiors and yardplay (the producer, 2026-10-06)
+Main's check went red twice with only docs merged since the last green run: interiors on d7ee735, yardplay on 3152db7 (the test talked to Osric instead of Captain Rowe). A: treat interiors and yardplay as flakes (a branch whose only red is one of these, after one re-run, still goes ready), and the systems builder hardens yardplay by picking Rowe by name. B: hold merges until main is green.
+
+Michael: **Treat interiors and yardplay as flakes** (A). (2026-10-06)
 
 ### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
 You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
