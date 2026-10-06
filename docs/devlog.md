@@ -12667,3 +12667,12 @@ The before figures are the old tiles at the same sizes. At 64 the cell is 2,315 
 
 ### Needs eyes
 How long a deep zoom takes to sharpen on a real laptop. At 64× a screen needs about 30–45 squares, about 0.45 s each headless (the cost is the terrain's height function on the CPU, likely several times faster on a laptop), spread over frames. While they come in, the 128 px tile shows beneath. And whether the map at a ratio of 2 now looks as sharp as the rest of the page.
+
+## v80 — Session 590 — The cloak's cell on the paper doll (the critic, 6 Oct)
+The critic, 6 Oct, in Coeur de Vie (backlog I): a Dark Hood bought and clicked in the bag says *Equipped Dark Hood!* and leaves the bag, and then it is nowhere. Session 552 gave `EQ_SLOTS` a `back` slot, but the inventory's paper doll is markup in `index.html`, and it had no `ds-back` cell, so `renderHubInv` found no element for it and skipped it. A worn cloak could not be seen, hovered or taken off; only another cloak swapped it. `cloaks` read `EQ_SLOTS`, not the page, so it never saw the gap. The doll now has a Back cell in its second row, beside the Amulet, where an empty cell stood. The render, the tooltip and the click to unequip are the ones every other slot uses; no code changed.
+
+### Verified (headless Chromium)
+`backslot` 5/5 (new). Every key of `EQ_SLOTS` has its cell, eleven in all. A Dark Hood used from the bag is worn and leaves the bag. Opened, the inventory's Back cell is lit and visible, its tooltip reads *🧥 Dark Hood* and *Click to unequip*. One click takes it off into the bag. No page errors. On the old markup the first check fails (`back` has no cell). `parsecheck` clean.
+
+### Needs eyes
+Whether the Back cell in the doll's right column, level with the Amulet, reads as the cloak's place.
