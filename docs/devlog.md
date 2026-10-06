@@ -12822,3 +12822,18 @@ On the old code three checks fail. The same minute gave a Fine Herring, a Macker
 
 ### Needs eyes
 None. The odds are as they were.
+
+## v80 — Session 606 — A spike plate's hit rolls on the trap's own stream (backlog K, the co-op door's step 1)
+The audit after Session 605 went through the systems files' remaining `Math.random` calls. Most are cosmetic: wander headings, barks, sparks, which rumour or greeting a townsperson picks. Three decide an outcome. A spike plate's damage (`tickDungeonTraps`, `68-dungeon-misc.js`) is a hit's damage, which the co-op rules name: 8–15 plus level × 0.8, from `Math.random`. The swinging blade's hit has no roll. The second is the old lockpick roll in `tryLockpick`, which is dead code after the `return` that opens the minigame, so it was left. The third, the black sails' sack, is Session 607.
+
+A trap had no id. The dungeon's seed places its traps, so the list comes out the same on every visit, and a trap's place in it is stable. `trapRand(t)` gives a trap the id `<seed>:<floor>:trap:<n>` the first time it is sprung and draws its hits in turn from `seededRng('trap', id)`, as `foeRand(e)` draws a foe's blows. The id is given in the tick, not where the traps are placed, because the look builder's blade work (Sessions 580–582) sits on the placement lines.
+
+### Verified (headless Chromium)
+`trapseed` 5/5 (new). In seed 11's ruins (four traps, the plate second), at level 1:
+- The plate's id is `11:1:trap:1`.
+- Six springs from a fresh stream give 15, 12, 11, 9, 10, 11 with `Math.random` pinned at .05, and the same six at .95. All are in the band 8–15, and they vary.
+
+On the old code three checks fail: the pinned values gave 8 six times and 15 six times. `bladehit` and `wardall` pass. `parsecheck` clean.
+
+### Needs eyes
+None.

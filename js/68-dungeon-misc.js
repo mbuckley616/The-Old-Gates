@@ -195,9 +195,12 @@ function bladeTouches(t){let b=t.blade||t._bl;if(!b){for(const c of t.pivot.chil
   for(let k=0;k<=8;k++){_bladeV.set(px,jumpY+k*.215,pz);b.worldToLocal(_bladeV);
     if(_bladeV.x>bb.min.x-R&&_bladeV.x<bb.max.x+R&&_bladeV.y>bb.min.y-R&&_bladeV.y<bb.max.y+R&&_bladeV.z>bb.min.z-R&&_bladeV.z<bb.max.z+R)return true;}
   return false;}
+// S606 — a trap's hit rolls on its own stream (co-op rules): its id is the dungeon's seed, the floor and its place in the list
+// the seeded placement made, `<seed>:<floor>:trap:<n>`, given the first time it is sprung, as a foe's is (`keyFoe`)
+function trapRand(t){if(!t.rng){t.id=t.id||(((typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||1)+':'+(t.floor||1)+':trap:'+D_TRAPS.indexOf(t));t.rng=seededRng('trap',t.id);}return t.rng();}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
-    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(Math.random()*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
+    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(trapRand(t)*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
     else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
