@@ -55,7 +55,7 @@ function tpBuild(lookIn,ppIn){
   const own=it=>it&&it.matCol==null&&tpIsCloth(it);
   const chestCol=!ch?LK.tunic:own(ch)?LK.tunic:tpMatColor(ch,archCol),chestCloth=tpIsCloth(ch);
   const legCol=!lg?LK.breeches:own(lg)?LK.breeches:tpMatColor(lg,0x3a2a1a),legCloth=tpIsCloth(lg);
-  const bootCol=!ft?LK.boots:own(ft)?LK.boots:tpMatColor(ft,0x2a1c10);
+  const bootCol=!ft?LK.boots:ft.line==='light'&&ft.tier?armourLineLeather(ft.tier):own(ft)?LK.boots:tpMatColor(ft,0x2a1c10); /* S569 — soft boots are leather, not the metal */
   // the genome: the look's choices over the people's build, never re-rolled
   const styleMap={short:'crop',long:'straight',bald:'buzz'};
   // S384 — the worn armour kit: under a piece of it the tunic and breeches are your own cloth, and its helm replaces the bowl
@@ -63,8 +63,8 @@ function tpBuild(lookIn,ppIn){
   const g=personGenome({name:playerName||'you',role:'',people:pp,sCol:LK.skin,hairCol:LK.hair,bCol:chestCol},{key:'player'});
   Object.assign(g,{skin:new THREE.Color(LK.skin),hair:new THREE.Color(LK.hair),style:styleMap[LK.style]||LK.style||'crop',beard:LK.beard===true?'full':LK.beard||'none',
     cloth:new THREE.Color(clothCol),sleeve:new THREE.Color(clothCol).multiplyScalar(.9),legs:new THREE.Color(legsCol),boot:new THREE.Color(bootCol),
-    dress:!!(ch&&/robe/i.test(ch.name||'')),cloak:false,apron:null,gear:null,extras:[],freckles:false,ruddy:false,age:'adult',child:false,height:1,build:1,
-    hat:hd?(tpIsCloth(hd)?'hood':AR&&AR.head?'none':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
+    dress:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),cloak:false,apron:null,gear:null,extras:[],freckles:false,ruddy:false,age:'adult',child:false,height:1,build:1,
+    hat:hd?(hd.line&&AR&&AR.head?'none':tpIsCloth(hd)?'hood':AR&&AR.head?'none':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
     eq:{armour:AR,chest:ch?{col:chestCol,cloth:chestCloth}:null,legs:lg?{col:legCol,cloth:legCloth}:null,hands:gl?{col:tpMatColor(gl,0x5a3a20)}:null,amulet:!!EQ.amulet,quiver:!!(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow'))},
     bodyScale:[P&&P.width||1,P&&P.height||1,P&&P.width||1]});
   // S560 — the cloak in the back slot (Michael's B on #148; the slot and the six kinds are the systems builder's, EQ.back.cloak):

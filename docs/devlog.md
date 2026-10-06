@@ -13018,3 +13018,30 @@ So `FLOOR_HEIGHT` (`52-dungeon-gen.js`) is a `let` now, and `buildDungeon` sets 
 ### Needs eyes
 - **The moment you meet it.** A 4.4 cavern is 1.2 taller everywhere in the lair, which is what Michael chose over the vaulted hall (C). Whether the torches, set at their old heights, light a taller roof enough is a playtest call.
 - **The systems builder's reach and breath** still do not read the wyrm's size (Session 546's note). That is more pressing now that the lair's wyrm is 20% larger.
+
+## v80 — Session 569 — The light and robe armour lines on your body (backlog H, Michael's A on #161)
+Michael answered A on #161: both lines as Session 556's prototype showed them. The systems builder has already given the items their `line` on auto/systems (their Session 564, after Michael's A on #163). A Hood, Jerkin, Bracers, Leggings or Soft Boots carries 'light', and a Cowl, Robe, Wraps or Under-robe carries 'robe'. So this session takes the prototype into the game as it was, and wires it to what the items say.
+
+`ARMOUR_LINE` comes over from `auto/proto-armour-lines` unchanged except for its header comment and a stray blank line. It runs at the head of `ARMOUR_DRESS`. It dresses each worn piece of the two lines and hands every other piece to the heavy kit, so plate, mail, lamellar and the bronze are untouched. `AR_FROM_EQ` now passes an item's `line` on. A line's piece has the line as its family and no plate mark, so the heavy kit's `fam` tests never see it. Three things on your body (`tpBuild`) were wrong for the lines, and they were found by building the bodies:
+- A chest named "… Robe" made the genome a dress, which would have stood a skirt under the coat. A robe with a `line` is no longer the dress.
+- A "… Hood" read as cloth, so the old cloth hood would have been drawn inside the line's hood. The line's head now sets the hat to none, as a helm of the kit does.
+- Soft boots took the metal's colour from the material's name, which made Iron boots grey. They take the line's leather now, through a new `armourLineLeather(tier)`: the leather of tiers 1 to 4, and from Mithril up the leather lerped .45 toward the material's guard colour, as the jerkin is.
+
+The robe line has no boots, so under a robe your own boots show.
+
+The inspector has two new sections under Weapons and armour, *Your body in light armour* and *Your body in robes*, at Wooden, Iron, Mithril, Obsidian and Cosmic. Each is your body as `tpBuild` makes it, the light line with a bow. `docs/inspector-catalogue.json` is regenerated with the ten entries. The control room's Meshes tab carries that file, so it wants republishing; the producer does that.
+
+### Verified (headless Chromium)
+`tests/armourlines`, new, passes 9 of 9:
+- `AR_FROM_EQ` reads a light set as `light`, with no mark and with feet; a robe set has no feet; a heavy Mithril set is `plate`/`fluted` as before.
+- On your body, the light line is 9,138 to 10,118 triangles and the robes 8,396 to 9,132, against 4,778 bare and 9,579 to 11,720 for the heavy kit at the same tiers.
+- Each tier's robe dye is on its body (344 to 486 vertices of it), and the light leather is on every light body (344 to 618).
+- No line body is a dress or wears the old hood.
+- The soft boots are leather: 0x7a5634 at Wooden, darkening to 0x2e2017 at Obsidian.
+- The ten inspector entries build, and there were no page errors.
+
+`inspector`, `armourkit`, `bronzehelm`, `cloakbody`, `demonickit`, `helmhair`, `underclothes` and `woodenkit` pass. `cloakbody` first failed on one check, and the cause was not this session. Main's Session 552 (the systems builder) gave `EQ` a `back: null` slot, and my Session 560 test expected the slot to be missing after the inspector put it back. The test now accepts either. This is a correction to Session 560's test. The two pictures, Iron and Mithril of each line on your own body, are `docs/prototypes/armourline-ingame-light.png` and `-robe.png`.
+
+### Needs eyes
+- **Session 556's rough edges are still there.** The thigh straps stand a little off the leg, and the tunic's shoulder cap shows through the mantle from the side. Under the light jerkin's flaps your own tunic shows, in your look's colour (red in the picture, tan in the prototype's). Long straight hair hangs out of the light hood, which may be wanted.
+- **No light or robe item exists on auto/backlog** until the systems branch merges. Until then the bodies are only in the inspector and the test. After it merges, a dropped Jerkin on your body is the check.
