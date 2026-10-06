@@ -92,7 +92,7 @@ let px=15,pz=20,yaw=0,pitch=0;
 // S468 — co-op rule (CLAUDE.md): a foe picks its target through targetOf(e), never by reading px/pz. Solo it is you.
 // PLAYER_TARGET reads the live position through getters, so a call allocates nothing; a co-op build returns the nearest
 // of the party here, and every foe tick follows.
-const PLAYER_TARGET={get x(){return px;},get z(){return pz;},player:true};
+const PLAYER_TARGET={get x(){return px;},get z(){return pz;},get y(){return jumpY;},player:true};
 function targetOf(e){return PLAYER_TARGET;}
 let velY=0,onGround=true,jumpY=0,landShake=0; // jump physics
 let fwdX=0,fwdZ=-1,rgtX=1,rgtZ=0;
@@ -749,7 +749,7 @@ function _sneakDetectMult(){
   if(!_sneaking) return 1.0;
   const fin = attrEff('finesse');
   const mult = SNEAK_DETECT_BASE - SNEAK_DETECT_PER_FINESSE * fin;
-  return Math.max(0.25, mult);
+  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1); // S552 — the dark hood
 }
 // Toggle sneak. Called from the Ctrl keydown handler. No-ops if a modal
 // is open (handler-level guard handles that, but defensive here too).

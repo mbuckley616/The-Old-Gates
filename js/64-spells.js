@@ -545,12 +545,22 @@ function sndQuestChime(){
 // v61ag: public entry point. Always queues — never fires synchronously. The
 // poll drains as soon as the player is free. Callers never need to worry
 // about whether the dialog is open; the queue handles it.
+// S487 — the card's words for a quest event, also written into the journal (journalQuest)
+function questPopupBody(kind, qDef, opts){
+  return (opts && opts.bodyText) ? opts.bodyText
+    : kind==='complete'
+      ? (qDef.completeText || `"${qDef.title}" is done. The work was worth doing.`)
+    : kind==='accept'
+      ? (qDef.acceptText || `"${qDef.title}" has been added to my journal.`)
+    : (qDef.readyText || `"${qDef.title}" is ready. Return to ${qDef.giver || 'the giver'} to turn it in.`);
+}
 function showQuestUpdatePopup(kind, qDef, opts){
   // v61ak: optional opts object — currently supports {bodyText} to override
   // the default lookup of qDef.acceptText / readyText / completeText. Used by
   // per-objective completionText popups which want to show the objective's
   // flavor text instead of the quest-level strings. qDef is still passed so
   // the popup title matches the quest's name.
+  try{journalQuest(kind,qDef,questPopupBody(kind,qDef,opts));}catch(e){} // S487 — the line goes in the journal when it happens, not when the card is read
   _questPopupQueue.push({kind, qDef, opts:opts||null});
   _ensureQuestPopupDrainPoll();
 }
@@ -608,12 +618,7 @@ function _renderQuestUpdatePopup(kind, qDef, opts){
   // opts.bodyText (v61ak) — override when a per-objective completionText wants
   // its own reflective text instead of the quest-level strings. Falls back to
   // quest-level strings if opts.bodyText isn't passed.
-  const bodyText = (opts && opts.bodyText) ? opts.bodyText
-    : kind==='complete'
-      ? (qDef.completeText || `"${qDef.title}" is done. The work was worth doing.`)
-    : kind==='accept'
-      ? (qDef.acceptText || `"${qDef.title}" has been added to my journal.`)
-    : (qDef.readyText || `"${qDef.title}" is ready. Return to ${qDef.giver || 'the giver'} to turn it in.`);
+  const bodyText = questPopupBody(kind, qDef, opts);
 
   // v61ah: rewards section — only on completion popups, only when there's
   // something to show. Renders XP, gold, and item drops on a separate styled

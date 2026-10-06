@@ -92,7 +92,7 @@
     // own 330 s is a weather held on purpose (the tests'), and is left alone.
     if(inWorld){const c=cellOf(px,pz),ck=c[0]+','+c[1];if(ck!==WX.cell){const moved=WX.cell!=null;WX.cell=ck;if(moved&&WX.timer<=330){const w=weatherWeights();if(!(w[WX.type]>0)||!(w[WX.next]>0)){WX.timer=0;WX.rerolls=(WX.rerolls||0)+1;}}}}
     WX.timer-=dt;
-    if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=pickWeather();if(WX.next!==WX.type)WX.k=0;}
+    if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=WX.ahead||pickWeather();WX.ahead=null;if(WX.next!==WX.type)WX.k=0;} /* S553 — a shift the oilskin foretold comes as foretold */
     if(WX.next!==WX.type){WX.k+=dt/25;if(WX.k>=1){WX.type=WX.next;WX.k=0;}}
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?WX.k:0;
     const inten=t=>t==='rain'?.7:t==='storm'?1:t==='snow'?.8:t==='fog'?.6:t==='overcast'?.35:0;
@@ -230,11 +230,11 @@
       paid:(p,R)=>`${p} gold. ${R}, up the stairs, until this hour tomorrow. The other doors are not mine to open.`,
       not:'The fire is free.'}};
   function innTopics(house,people){const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;const cap=t=>t.replace(/^./,c=>c.toUpperCase());
-    return [{label:'Something to eat and drink?',trade:true},{label:'A bed for the night?',
+    return [{label:'Something to eat and drink?',trade:true,fn:()=>{feastMeal(house);}},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
             if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?L.made:L.madeNamed(cap(innRoomName(mine,n,house)));}
             const others=taken===0?L.empty:taken===1?L.one:L.many(taken);
-            return L.offer(others,price,innRoomName(free,n,house));},
+            const fl=feastInnLine(people);return (fl?fl+' ':'')+L.offer(others,price,innRoomName(free,n,house));},
           get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
             return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return L.full;
@@ -243,6 +243,20 @@
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
               return L.paid(price,cap(innRoomName(free,n,house)));}},
             {label:'Not tonight.',response:L.not}];}}];}
+  // S550 — a feast day: the innkeeper's line comes before the room offer, and the meal (a Hot Stew) is the house's, once
+  // a feast at each inn, put in your pack when you ask for something to eat; the shop opens as on any day
+  function feastInnLine(people){const f=typeof feastOn==='function'&&feastOn(absMin());return f?(FEAST_INN[people]||FEAST_INN.gatelander):'';}
+  function feastMeal(house){const f=typeof feastOn==='function'&&feastOn(absMin());if(!f||!house)return false;const key=house.id+'@'+dayNow(),M=worldState.feastMeals||(worldState.feastMeals={});
+    if(M.day!==dayNow()){for(const k in M)delete M[k];M.day=dayNow();}if(M[key])return false;
+    const st=(SHOP_STOCK.inn||[]).find(i=>i.name==='Hot Stew');if(!st)return false;M[key]=1;bagAdd({...st,qty:1});
+    if(typeof updateHUD==='function')updateHUD();showMsg(`🥣 Hot Stew — ${f.name}’s meal, on the house.`,'#e8c890');return true;}
+  // S551 — the barber's fee (Michael's A on DECISION #151): one fee for the visit, an inn room's price in that place (a town
+  // 9–17, a city 17–25, by house); anything on the look page may change for it, and leaving with nothing changed costs
+  // nothing. barberPay(house, changed) is what the chair's look page (slice 2) calls when you rise: 'free' when nothing
+  // changed, 'poor' when the purse is short (nothing taken), else 'paid'.
+  function barberFee(house){return innPrice(house);}
+  function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
+    if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
   function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
@@ -284,16 +298,21 @@
   function housePrice(house){const k=house.siteKind||'village';const base={village:450,town:900,port:800,city:1500,garrison:700}[k]||600;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3);return base+((hh%7)*50);}
   function forSale(house){if(house.type!=='home'||ownedHouse(house.id))return false;const hh=String(house.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,11);return (hh%100)<28;}
   function buyHouse(house){
+    if(ownedHouse(house.id)){if(typeof closeDialog==='function')closeDialog();return false;} // S530 — bought once; a stale topic charges nothing
     const price=housePrice(house);if(gold<price)return `She'd take ${price} gold for it. Not a coin less.`;
     gold-=price;updateHUD();(worldState.owned||(worldState.owned={}))[house.id]={name:house.name,site:house.siteId};
     house.name='Your House';house.ownedByPlayer=true;
     if(typeof addLog==='function')addLog('🏠',`Bought a house for ${price} gold.`);
     // the former resident moves out: hide their street self for good
-    const n=npcs.find(n=>n.def&&n.def.name===house.keeper&&n.sched&&n.sched.type==='resident');if(n){n.g.visible=false;n.dot.visible=false;n._retreated=true;n.sched={type:'gone'};}
+    // S530 — the topic comes off her, and she leaves the town's residents, so the stream never brings her back
+    if(house.dlg&&house.dlg._extra){const i=house.dlg._extra.findIndex(t=>t&&t._house===house.id);if(i>=0)house.dlg._extra.splice(i,1);}
     if(typeof closeDialog==='function')closeDialog();
+    const S=SETTLE.get(house.siteId),ri=S?S.residents.findIndex(r=>r.def===house.dlg):-1;
+    if(ri>=0){const res=S.residents[ri];S.residents.splice(ri,1);const n=res.n;
+      if(n){if(n._torch&&n._torch.userData.light)unregLight(n._torch.userData.light);sc.remove(n.g);sc.remove(n.dot);let i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);i=S.npcs.indexOf(n);if(i>=0)S.npcs.splice(i,1);res.n=null;}}
     return false;
   }
-  function houseTopics(house){return forSale(house)?[{label:`Buy this house (${housePrice(house)} gold)`,quest:true,fn:()=>buyHouse(house)}]:[];}
+  function houseTopics(house){return forSale(house)?[{label:`Buy this house (${housePrice(house)} gold)`,quest:true,_house:house.id,fn:()=>buyHouse(house)}]:[];}
   // ── cellars ──
   function cellarFor(house){
     if(!house._cellar){const chapel=isGuestCathedral(house);house._cellar={id:house.id+(chapel?'_chapel':'_cellar'),type:chapel?'chapel':'cellar',name:chapel?'Cill an Aoi':`${house.name} — cellar`,keeper:'',parent:house,reg:house.reg,style:house.style,w:house.w,d:house.d,two:false,doorX:house.doorX,doorZ:house.doorZ,exitX:house.exitX,exitZ:house.exitZ,exitYaw:house.exitYaw,siteKind:house.siteKind,guild:house.guild};}
@@ -303,7 +322,8 @@
   const HATCH={x:0,z:0,y:0,active:false};
   // ── S155: town locks and strongboxes (the crime system, part 1 of 4 — the design is in the backlog) ──
   let INT_BOX=null;
-  const BOX_KINDS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury'];
+  // S551 — the barber keeps one too, at the general goods rate (Michael's A on DECISION #151)
+  const BOX_KINDS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury','barber'];
   const bpick=a=>a[Math.floor(Math.random()*a.length)];
   function absMin(){return worldState.gameTimeAbsMinutes||0;}
   function houseSite(house){return (house&&house.siteId&&SITE[house.siteId])||null;}
@@ -334,14 +354,14 @@
   const INT_FOV=Math.cos(Math.PI/3);
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house){
-    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=12;if(sneak)R*=.5;if(isNight())R*=.5;
+    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5; /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
       if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
       const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
-    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=25*pts+Math.max(0,Math.round(value||0));c.debt+=pts;c.last=dayNow();} // S168 — a theft's fine is 50 and the goods' value (the spec)
+    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
@@ -412,7 +432,7 @@
         const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',_twin:n.def&&n.def._twin,bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
         g.position.set(W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
-      if(s.phase==='inside'&&s.mesh){const g=s.mesh,dx=px-g.position.x,dz=pz-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
+      if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
         if(d>1.5&&!talking){const st=Math.min(d-1.4,1.8*dt),nx=g.position.x+dx/d*st,nz=g.position.z+dz/d*st;
           if(!intSolidAt(nx,nz,.3,0)){g.position.x=nx;g.position.z=nz;}else if(!intSolidAt(nx,g.position.z,.3,0))g.position.x=nx;else if(!intSolidAt(g.position.x,nz,.3,0))g.position.z=nz;}
         else if(d<=1.5&&!talking&&CR.cool<=0&&Math.abs(jumpY)<1.2)confrontIndoor(s,S,c);}
@@ -426,8 +446,8 @@
       n.g.position.set(x,worldH(x,z),z);n.g.visible=true;n._retreated=false;if(n.dot)n.dot.visible=true;
       if(s.drawOnExit){const ol=Math.hypot(s.out.x,s.out.z)||1,gx=s.door.x+s.out.x/ol*1.8,gz=s.door.z+s.out.z/ol*1.8;n.g.position.set(gx,worldH(gx,gz),gz);endSent();CR.cool=0;guardDraw(n,S);return;}
       s.phase='chase';s.ct=0;n._chase=true;n._follow=false;CR.cool=0;}
-    if(s.phase==='chase'){s.ct+=dt;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);s.last={d,clear:clearLine(px,pz,n.g.position.x,n.g.position.z)};
-      const onPad=Math.hypot(px-S.site.x,pz-S.site.z)<(S.site.pad||40)+40;
+    if(s.phase==='chase'){s.ct+=dt;const T=targetOf(n),d=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z);s.last={d,clear:clearLine(T.x,T.z,n.g.position.x,n.g.position.z)};
+      const onPad=Math.hypot(T.x-S.site.x,T.z-S.site.z)<(S.site.pad||40)+40;
       if(!onPad||s.ct>CHASE_MAX){showMsg(`${(n.def&&n.def.name)||'The guard'} gives up the chase.`,'#c8b880');endSent();}}
   }
   // S241 — refused indoors, the guard draws where he stands: a Town Guard in the room, fought through the zone-enemy code
@@ -469,22 +489,25 @@
       poor:'You have not got it. The cells, or the blade.',
       pay:'It is paid. Go.',
       cells:'Come. The cells are quiet.'}};
+  // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
+  function feastFineLine(S,c){if(!c||c.feast!==dayNow()||typeof FEAST_FINE==='undefined')return '';return ' '+(FEAST_FINE[peopleOfSite(S.site)]||FEAST_FINE.gatelander);}
   function haltLines(S){return HALT_LINES[peopleOfSite(S.site)]||HALT_LINES.markman;}
   function yieldLines(S){return YIELD_LINES[peopleOfSite(S.site)]||YIELD_LINES.markman;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
     let gen=null;n.g.traverse(o=>{if(!gen&&o.userData&&o.userData.rig&&o.userData.rig.g)gen=o.userData.rig.g;}); // S171 — the guard who draws is the guard you spoke to
-    const e=buildZoneEnemy(scn,sol,x,z,'Bandit',null,{genome:gen});e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
+    // S509 — the guard who draws is keyed (co-op rules): his town, his place among its people, and the minute he drew
+    const ni=(S.npcs||[]).indexOf(n);const e=keyFoe(buildZoneEnemy(scn,sol,x,z,'Bandit',null,{genome:gen}),`${S.site.id}:guard:${ni>=0?ni:((n.def&&n.def.name)||'guard')}:${Math.floor(worldState.gameTimeAbsMinutes||0)}`);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
     e.hp=e.maxHp=Math.round(40+level*8);e.dmg=Math.round(6+level*1.2);e.spd=1.4;e.xpVal=0;e.def=3;e._guard={site:S.site.id,npc:n};e.alert=true;
     try{const body=enemyBodyMesh(e);if(!(e.limbs&&e.limbs.person)&&body&&body.material&&body.material.color)body.material.color.setHex(0x6a2a2a);}catch(err){}
     ZONES.world.enemies.push(e);showMsg(`${(n.def&&n.def.name)||'The guard'} draws.`,'#ff8060');return e;}
@@ -661,6 +684,12 @@
   // snow 1; a storm 3) plus one in open water, at most 3. Open water is the sea's own floor (the bed blends to −8 at a full
   // sea cell, so the page's "below −8" is never met; −7.9 here) with no shore within 150 units. Read once a second.
   const SEA_WORD=['calm','moderate','rough','storm'];
+  // S553 — the oilskin's hint (Michael's B on #148): at sea in rain or storm, the sea line says the next shift of weather. It
+  // is rolled when first shown (WX.ahead) and the next shift takes it, so the hint never lies; with no hint shown the weather
+  // is rolled when it comes, as before
+  const AHEAD_WORD={clear:'clearing',overcast:'clouding over',rain:'rain',storm:'a storm',fog:'fog',snow:'snow'};
+  function seaHint(){if(typeof cloakOn!=='function'||!cloakOn('oilskin')||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
+    return WX.ahead===WX.type?'':` · ${AHEAD_WORD[WX.ahead]||WX.ahead} ahead`;}
   function weatherSea(){const t=(WX.next!==WX.type&&WX.k>=.5)?WX.next:WX.type;return t==='storm'?3:(t==='clear'||t==='fog')?0:1;}
   function openWater(x,z){if(worldH(x,z)>-7.9)return false;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const r of [50,100,150])if(worldH(x+Math.cos(a)*r,z+Math.sin(a)*r)>SEA_Y-1.4)return false;}return true;}
   function seaState(x,z){if(x==null){x=SHIP.x;z=SHIP.z;}return Math.min(3,weatherSea()+(openWater(x,z)?1:0));}
@@ -695,8 +724,8 @@
     let el=SHIPBAR.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='shipbars';el.style.cssText='position:fixed;right:14px;bottom:150px;width:150px;padding:5px 8px;background:rgba(40,30,18,.82);border:1px solid #a08a5a;border-radius:4px;color:#e8dcc0;font:11px Georgia,serif;display:none;z-index:50';
       el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div><div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
     const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
-    const b=show?shipBars():null,key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
-    const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
+    const b=show?shipBars():null,hint=show?seaHint():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
+    const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
     q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';
   }
   function applyShipClass(){const c=shipClass();SHIP.L=c.L;SHIP.W=c.W;if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=buildShipMesh(SHIP.L,SHIP.W);sc.add(SHIP.mesh);shipUpdatePlacement();}}

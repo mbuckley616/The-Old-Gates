@@ -311,7 +311,7 @@
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
         // residents stream in by distance (a city has 150+ of them)
-        S.residents.push({def:rdef,ry:lot.ry+Math.PI,n:null,door:{x:exX,z:exZ}});
+        if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:lot.ry+Math.PI,n:null,door:{x:exX,z:exZ}}); // S530 — the seller moved out
         return;
       }
       const heroH=hero&&hero[i];
@@ -515,7 +515,7 @@
         items=items.filter(it=>it&&it.dmg==null&&it.def==null&&!it.slot&&it.type!=='weapon'&&it.type!=='armor');
         if(!items.length)items.push(pick(r,[{name:'Tallow Candle',ico:'🕯️',type:'misc',weight:.2,sellMult:.3,buyPrice:4},{name:'Coil of Rope',ico:'🪢',type:'misc',weight:1,sellMult:.3,buyPrice:9},{name:'Salt Sack',ico:'🧂',type:'misc',weight:.6,sellMult:.3,buyPrice:6},{name:'Hard Bread',ico:'🍞',type:'potion',heal:6,weight:.3,sellMult:.2,buyPrice:3},{name:'Wax-sealed Letter',ico:'✉️',type:'misc',weight:.05,sellMult:.5,buyPrice:12},{name:'Tin Cup',ico:'🥛',type:'misc',weight:.3,sellMult:.3,buyPrice:3}]));
         items.forEach(it=>{if(it.qty==null)it.qty=1;});
-        const c={x:sx,z:sz,y,name:kind==='barrel'?'Barrel':'Crate',displayName:kind==='barrel'?'Barrel':'Crate',items,zone:'world',kind,g,top,opened:false,_settle:site.id};
+        const c={id:site.id+':barrel:'+made,x:sx,z:sz,y,name:kind==='barrel'?'Barrel':'Crate',displayName:kind==='barrel'?'Barrel':'Crate',items,zone:'world',kind,g,top,opened:false,_settle:site.id};
         if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(c);S.loot=S.loot||[];S.loot.push(c);
         sol.push({cx:sx,cz:sz,rx:.5,rz:.5});made++;
       }
@@ -927,6 +927,11 @@
       drawIcon(ctx,e.kind,isc,true);
       if(cellPx>=260||e.kind==='city'||MAP.hover===e.id){ctx.font=`${Math.round(11*isc)}px Georgia, serif`;ctx.fillStyle='#2a1c10';ctx.strokeStyle='rgba(240,228,200,.8)';ctx.lineWidth=3;ctx.strokeText(e.name,0,14*isc+4);ctx.fillText(e.name,0,14*isc+4);}
       ctx.restore();}
+    // S496 — your notes pinned to the map (DECISION #132, part C)
+    MAP._notes=[];(worldState.mapNotes||[]).forEach((n,i)=>{if(!n)return;const [sx,sy]=mapToScreen(n.x,n.z);if(sx<-20||sy<-20||sx>cw+20||sy>ch+20)return;MAP._notes.push({i,sx,sy});const on=MAP.hover==='note:'+i||MAP.sel==='note:'+i;
+      ctx.save();ctx.translate(sx,sy);if(on){ctx.beginPath();ctx.arc(0,-7*isc,11*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
+      ctx.strokeStyle='#2a1c10';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-12*isc);ctx.stroke();ctx.fillStyle='#f0e4c4';ctx.fillRect(0,-12*isc,8*isc,6*isc);ctx.strokeRect(0,-12*isc,8*isc,6*isc);ctx.restore();});
+    if(MAP.noteAt){const [sx,sy]=mapToScreen(MAP.noteAt.x,MAP.noteAt.z);ctx.strokeStyle='#8a2a22';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,6*isc,0,Math.PI*2);ctx.stroke();}
     // other ships, player
     for(const o of OTHER){const [sx,sy]=mapToScreen(o.x,o.z);ctx.fillStyle=o.kind==='pirate'?'#b02020':'#8a8a8a';ctx.beginPath();ctx.arc(sx,sy,Math.max(2,3*isc),0,Math.PI*2);ctx.fill();}
     const _mp=(activeZoneId==='world')?{x:px,z:pz}:(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.exitX!=null)?{x:currentHouse.exitX,z:currentHouse.exitZ}:(typeof currentPortal!=='undefined'&&currentPortal&&dungeonWorldPos[currentPortal.seed])?dungeonWorldPos[currentPortal.seed]:{x:px,z:pz};
@@ -969,6 +974,28 @@
     if(!e||!(e.kind in BASE_P)){el.style.display='none';return;}const t=siteAnywhere(e.id);if(!t){el.style.display='none';return;}
     el.innerHTML=townCard(t);el.style.display='block';const r=MAP.cv.getBoundingClientRect();const px_=sx+16,py_=sy+16;el.style.left=Math.min(px_,r.width-310)+'px';el.style.top=Math.min(py_,r.height-el.offsetHeight-10)+'px';}
   function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
+  // S496 — notes pinned to the map (Michael's C on DECISION #132, part C): *✎ Note* arms the next click on the map, which
+  // opens a box in the panel for up to 500 characters; *Pin it* keeps it in worldState.mapNotes, a character key ({x,z,
+  // text,t,tod}, the world spot and the minute). A pin shows its words on hover; a click opens it, with *Take it down*.
+  function pinMapNote(x,z,text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t||!isFinite(x)||!isFinite(z))return -1;const L=worldState.mapNotes||(worldState.mapNotes=[]);L.push({x:Math.round(x*10)/10,z:Math.round(z*10)/10,text:t,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});MAP.dirty=true;return L.length-1;}
+  function unpinMapNote(i){const L=worldState.mapNotes;if(!L||!L[i])return false;L.splice(i,1);if(!L.length)delete worldState.mapNotes;MAP.sel=null;MAP.hover=null;MAP.dirty=true;return true;}
+  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
+  function _mnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function showNoteCard(i,sx,sy){showTownCard(null,0,0);const n=(worldState.mapNotes||[])[i];const el=document.getElementById('wm-hover');if(!n||!el)return;el.innerHTML=`<div style="font:italic 13px Georgia,serif;color:#f0e6cc">${_mnEsc(n.text)}</div><div style="color:#8a7a60;font-size:11px;margin-top:4px">${_mnEsc(typeof gameDateLine==='function'?gameDateLine(n.t,n.tod,'day'):'')}</div>`;el.style.display='block';const r=MAP.cv.getBoundingClientRect();el.style.left=Math.min(sx+16,r.width-310)+'px';el.style.top=Math.min(sy+16,r.height-el.offsetHeight-10)+'px';}
+  function mapNoteArm(on){MAP.pinArmed=on===undefined?!MAP.pinArmed:!!on;const b=document.getElementById('wm-pin');if(b){b.style.background=MAP.pinArmed?'#3a2a16':'#0c1008';b.style.color=MAP.pinArmed?'#f0e2c0':'#c8b880';}if(MAP.cv)MAP.cv.style.cursor=MAP.pinArmed?'crosshair':'grab';
+    if(MAP.pinArmed){const body=document.getElementById('wm-panel-body');if(body&&!MAP.noteAt)body.innerHTML='<div class="wm-placeholder">Click the map where the note should go.</div>';}}
+  function mapNoteClick(sx,sy){
+    const ni=mapPickNote(sx,sy);if(ni!=null&&!MAP.pinArmed){MAP.sel='note:'+ni;MAP.noteAt=null;mapNotePanel(ni);MAP.dirty=true;return true;}
+    if(!MAP.pinArmed)return false;const [x,z]=screenToMap(sx,sy);if(x<0||z<0||x>SIZE*GRID||z>SIZE*GRID)return true;
+    MAP.noteAt={x,z};MAP.sel=null;mapNoteArm(false);MAP.dirty=true;
+    const body=document.getElementById('wm-panel-body');if(!body)return true;
+    body.innerHTML='<div style="font:600 15px Georgia,serif;color:#e8d8a0;margin-bottom:6px">A note on the map</div><textarea id="wm-note" maxlength="500" rows="4" placeholder="What should you remember here? (Enter pins it)" style="width:100%;box-sizing:border-box;resize:vertical;padding:6px 8px;font:13px Georgia,serif;color:#e8dcc0;background:rgba(0,0,0,.35);border:1px solid rgba(200,168,74,.3);border-radius:3px"></textarea><div style="display:flex;gap:6px;margin-top:6px"><button type="button" id="wm-note-pin" style="flex:1;padding:6px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Pin it</button><button type="button" id="wm-note-cancel" style="flex:1;padding:6px;background:#2a2020;color:#c8b8a0;border:1px solid #5a4a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Cancel</button></div>';
+    const ta=document.getElementById('wm-note');const done=pin=>{const at=MAP.noteAt;MAP.noteAt=null;if(pin&&at){const i=pinMapNote(at.x,at.z,ta.value);if(i>=0){MAP.sel='note:'+i;mapNotePanel(i);MAP.dirty=true;return;}}mapPanel(null);MAP.dirty=true;};
+    ['keydown','keyup','keypress'].forEach(t=>ta.addEventListener(t,e=>{e.stopPropagation();if(t==='keydown'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();done(true);}else if(t==='keydown'&&e.key==='Escape'){e.preventDefault();done(false);}}));
+    document.getElementById('wm-note-pin').onclick=()=>done(true);document.getElementById('wm-note-cancel').onclick=()=>done(false);ta.focus({preventScroll:true});return true;}
+  function mapNotePanel(i){const n=(worldState.mapNotes||[])[i];const body=document.getElementById('wm-panel-body');if(!body)return;if(!n){mapPanel(null);return;}
+    body.innerHTML=`<div style="font:600 15px Georgia,serif;color:#e8d8a0">Your note</div><div style="color:#b8a880;font-size:12px;margin:4px 0 8px">${_mnEsc(typeof gameDateLine==='function'?gameDateLine(n.t,n.tod,'day'):'')} · ${Math.round(Math.hypot(n.x-px,n.z-pz))}u away</div><div style="font:italic 13px Georgia,serif;color:#f0e6cc;line-height:1.5;overflow-wrap:anywhere;margin-bottom:10px">${_mnEsc(n.text)}</div><button type="button" id="wm-note-del" style="padding:6px 12px;background:#2a2020;color:#c8b8a0;border:1px solid #5a4a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Take it down</button>`;
+    document.getElementById('wm-note-del').onclick=()=>{unpinMapNote(i);mapPanel(null);};}
   function mapPanelCell(c){const body=document.getElementById('wm-panel-body');if(!body)return;const towns=c.sites.filter(t=>t.pad>0&&t.kind!=='portal');const known=towns.filter(t=>discovered(t.id)).length;
     body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${c.name||'Open sea'}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${c.type==='sea'?`Open water · ${nationOf(c.i,c.j).name}`:`${nationSubtitle(c)} · `+`${towns.length} settlements${towns.some(t=>t.kind==='city')?', a city':''}${towns.some(t=>t.kind==='port')?', ports':''} · ${c.doors.length} doors · ${known} known`}</div><div style="color:#8a7a60;font-size:11px">Scroll to zoom in.</div>`;}
   function syncMapButtons(){const tg=document.getElementById('w80-maptoggle');if(!tg)return;tg.querySelectorAll('button').forEach(x=>{x.style.background=x.dataset.m===MAP.mode?'#3a2a16':'#2a2020';x.style.color=x.dataset.m===MAP.mode?'#f0e2c0':'#c8b8a0';});}
@@ -980,7 +1007,7 @@
     const out=[];for(const c of CELLS.values()){c.sites.forEach(t=>{if(t.name&&t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:t.kind,x:t.x,z:t.z,id:t.id,kind:t.kind});});(c.doors||[]).forEach(d=>{const n=d.canonicalName||'';if(n.toLowerCase().includes(q)){const p=dungeonWorldPos[d.seed]||d;if(discovered('door_'+d.seed))out.push({name:n,sub:'gate',x:p.x,z:p.z,id:'door_'+d.seed,kind:'door'});}});}
     out.sort((a,b)=>a.name.localeCompare(b.name));box.innerHTML=out.slice(0,12).map((o,i)=>`<div class="wm-res" data-i="${i}" style="padding:5px 10px;cursor:pointer;border-bottom:1px solid rgba(60,80,40,.4);font:12px Georgia,serif;color:#e8dcc0">${o.name} <span style="color:#8a9a70">· ${o.sub}</span></div>`).join('')||'<div style="padding:6px 10px;color:#8a9a70;font:12px Georgia,serif">Nothing you know of by that name.</div>';box.style.display='block';
     box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=MAP.cv.width/2-o.x*s;MAP.oy=MAP.cv.height/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
-  function wireMapSearch(){const inp=document.getElementById('wm-search');if(!inp||inp._wired)return;inp._wired=true;inp.addEventListener('input',()=>mapSearch(inp.value));['keydown','keyup','keypress'].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));document.querySelectorAll('.wm-filt').forEach(cb=>cb.addEventListener('change',()=>{MAP.filt[cb.value]=cb.checked;MAP.dirty=true;mapDraw();}));}
+  function wireMapSearch(){const inp=document.getElementById('wm-search');if(!inp||inp._wired)return;inp._wired=true;const pb=document.getElementById('wm-pin');if(pb)pb.onclick=()=>mapNoteArm();inp.addEventListener('input',()=>mapSearch(inp.value));['keydown','keyup','keypress'].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));document.querySelectorAll('.wm-filt').forEach(cb=>cb.addEventListener('change',()=>{MAP.filt[cb.value]=cb.checked;MAP.dirty=true;mapDraw();}));}
   function mapPanel(e){
     const body=document.getElementById('wm-panel-body');if(!body)return;
     let tg=document.getElementById('w80-maptoggle');if(!tg){tg=document.createElement('div');tg.id='w80-maptoggle';tg.style.cssText='margin:0 0 10px;display:flex;gap:6px';tg.innerHTML='<button type="button" data-m="map" style="flex:1;padding:6px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Map</button><button type="button" data-m="local" style="flex:1;padding:6px;background:#2a2020;color:#c8b8a0;border:1px solid #5a4a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Local</button>';const hdr=document.getElementById('wm-panel-header');if(hdr)hdr.insertAdjacentElement('afterend',tg);tg.querySelectorAll('button').forEach(b=>b.onclick=()=>{MAP.mode=b.dataset.m;syncMapButtons();MAP.dirty=true;});}
@@ -1000,13 +1027,13 @@
       root.addEventListener('mousedown',ev=>{MAP.drag={x:ev.clientX,y:ev.clientY,ox:MAP.ox,oy:MAP.oy,moved:false};});
       window.addEventListener('mousemove',ev=>{
         if(MAP.drag){MAP.ox=MAP.drag.ox+(ev.clientX-MAP.drag.x);MAP.oy=MAP.drag.oy+(ev.clientY-MAP.drag.y);if(Math.hypot(ev.clientX-MAP.drag.x,ev.clientY-MAP.drag.y)>3)MAP.drag.moved=true;mapClamp();MAP.dirty=true;return;}
-        if(!MAP.cv||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);const id=e?e.id:null;
+        if(!MAP.cv||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const nh=mapPickNote(ev.clientX-r.left,ev.clientY-r.top);if(nh!=null){if(MAP.hover!=='note:'+nh){MAP.hover='note:'+nh;MAP.dirty=true;}showNoteCard(nh,ev.clientX-r.left,ev.clientY-r.top);return;}const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);const id=e?e.id:null;
         if(id!==MAP.hover){MAP.hover=id;MAP.dirty=true;if(!MAP.sel)mapPanel(e);}
         showTownCard(e,ev.clientX-r.left,ev.clientY-r.top);
         if(!e&&!MAP.sel){const [wx,wz]=screenToMap(ev.clientX-r.left,ev.clientY-r.top);const [i,j]=cellOf(wx,wz);const hc=(i>=0&&j>=0&&i<GRID&&j<GRID)?[i,j]:null;if(JSON.stringify(hc)!==JSON.stringify(MAP.hoverCell)){MAP.hoverCell=hc;if(hc)mapPanelCell(getCell(i,j));else mapPanel(null);}}
       });
       root.addEventListener('mouseleave',()=>showTownCard(null,0,0));
-      window.addEventListener('mouseup',ev=>{if(!MAP.drag)return;const moved=MAP.drag.moved;MAP.drag=null;if(moved||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);MAP.sel=e?e.id:null;mapPanel(e);MAP.dirty=true;});
+      window.addEventListener('mouseup',ev=>{if(!MAP.drag)return;const moved=MAP.drag.moved;MAP.drag=null;if(moved||MAP.mode!=='map')return;const r=root.getBoundingClientRect();if(mapNoteClick(ev.clientX-r.left,ev.clientY-r.top))return;const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);MAP.sel=e?e.id:null;mapPanel(e);MAP.dirty=true;});
       (function(){const kb=document.getElementById('wm-key'),bx=document.getElementById('wm-keybox');if(kb&&bx){kb.onclick=()=>{bx.style.display=bx.style.display==='none'?'block':'none';};
         if(!document.getElementById('wm-key-bld')){const seen=new Set(),rows=[];for(const k of ['home','castle','guild_f','guild_m','church','inn','weapon','potion','misc','shipwright','barber','barracks','other']){const B=BLD[k];if(seen.has(B.label))continue;seen.add(B.label);rows.push(`<span style="white-space:nowrap;margin-right:8px"><span style="display:inline-block;width:10px;height:10px;background:${B.col};border:1px solid ${B.line};vertical-align:-1px;margin-right:3px"></span>${B.label}</span>`);}
           const d=document.createElement('div');d.id='wm-key-bld';d.style.cssText='margin-top:6px';d.innerHTML=`<div style="color:#e8d8a0;margin-bottom:2px">In town <span style="color:#8a9a70;font-size:11px">(Local view \u00b7 minimap)</span></div><div>${rows.join(' ')}</div><div style="margin-top:2px"><span style="color:${BLD.castle.col}">\u25cf</span> the lord &nbsp; <span style="color:#f6d860">\u25ce</span> where you were directed &nbsp; <span style="color:#f6e27a">\u25a1</span> your house</div>`;
@@ -1025,7 +1052,7 @@
     // open at province scale, centred on the player
     MAP.zoom=Math.max(1,Math.min(64,(Math.min(root.width,root.height)*.55)/(SIZE*baseScale())));wireMapSearch();
     const s=baseScale()*MAP.zoom;MAP.ox=root.width/2-px*s;MAP.oy=root.height/2-pz*s;mapClamp();
-    MAP.sel=null;mapPanel(null);syncMapButtons();MAP.dirty=true;mapDraw();
+    MAP.sel=null;MAP.noteAt=null;mapNoteArm(false);mapPanel(null);syncMapButtons();MAP.dirty=true;mapDraw();
     if(!MAP._raf){const loop=()=>{if(MAP.cv&&MAP.cv.style.display!=='none'){mapJobs();if(MAP.dirty)mapDraw();MAP._raf=requestAnimationFrame(loop);}else MAP._raf=null;};MAP._raf=requestAnimationFrame(loop);}
   }
   function closeMap(){
@@ -1158,7 +1185,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const SOL=[];
     // solid(x,z,hw,hd,top): a block you can step or jump onto (foothold at `top`).
     const solid=(x,z,hw,hd,top)=>{const t=(top==null?.62:top)*F;SOL.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y0:-.5,y1:t});FOOTHOLDS.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y:t});};
-    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
+    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
     const bedOwner=type==='inn'?'inn':type==='home'?'home':(type==='guild_f'||type==='guild_m')?'guild':'free';
     // S289 — the room's nation (the furniture's wood) and a seed from the house id; S293: declared before the gallery uses it
     const FN=nationAt(house.doorX,house.doorZ),FSEED=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13)%100000;
@@ -1574,27 +1601,37 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S133 — the nearest region whose encounter table carries the creature: a name and a point for the compass
   function huntGround(site,creature){let best=null,bd=1e9;for(const c of CELLS.values()){if(c.type==='sea'||!c.regions)continue;for(const rg of c.regions){const tbl=ENC[rg.id]||ENC_BIOME[rg.biome];if(!tbl||!tbl.some(g=>g.name===creature))continue;const d=Math.hypot(rg.x-site.x,rg.z-site.z);if(d<bd){bd=d;best={x:rg.x,z:rg.z,name:rg.name||rg.id};}}}return best;}
   function genTask(g,site){
-    const st=gstate()[g];const r=Math.random;const tier=Math.floor(st.done/3);
+    const st=gstate()[g];const r=Math.random;const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S503 — an id of place and index (the co-op rules), not a Date.now() */const tier=Math.floor(st.done/3);
     const gold=60+tier*50+Math.floor(r()*40);
     const doors=nearDoors(site,900,false),sites=nearSites(site,700);
     const pickDoor=()=>doors[Math.floor(r()*Math.min(doors.length,6))];
     if(g==='guild_f'){
       const kind=['clear','hunt','beast','raid'][Math.floor(r()*4)];
-      if(kind==='clear'&&doors.length){const e=pickDoor();const p=dungeonWorldPos[e.seed];const name=e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate');return {id:'f'+Date.now(),g,kind,portal:'dyn_'+e.seed,need:5+tier*2,have:0,gold,desc:`${name} — ${dirWord(site.x,site.z,p.x,p.z)} of here. Clear it: put down ${5+tier*2} of whatever's inside.`,short:`Clear ${name}`};}
-      if(kind==='hunt'){const t=HUNT[Math.floor(r()*HUNT.length)];const n=4+tier*2;const where=huntGround(site,t);return {id:'f'+Date.now(),g,kind,target:t,need:n,have:0,gold,x:where?where.x:null,z:where?where.z:null,ground:where?where.name:null,desc:`${t}s have been at the roads. Kill ${n} of them in the open country${where?` — ${where.name}, ${compassWord(where.x-site.x,where.z-site.z)} of here, is their ground`:''} — and come back.`,short:`Hunt ${n} ${t}s${where?` (${where.name})`:''}`};}
-      if(kind==='beast'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];const beast=['Cave Bear','Ogre','Forest Troll'][Math.min(2,tier)];const ang=r()*Math.PI*2;const sx=t.x+Math.cos(ang)*(t.pad+70),sz=t.z+Math.sin(ang)*(t.pad+70);return {id:'f'+Date.now(),g,kind,siteId:t.id,beast,sx,sz,spawned:false,done:false,gold:gold+40,desc:`A ${beast.toLowerCase()} is taking sheep at ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here. It was last seen ${compassWord(sx-t.x,sz-t.z)} of the village. Kill it.`,short:`The beast at ${t.name}`};}
-      if(sites.length){const t=sites.filter(s=>s.kind==='village')[0]||sites[0];return {id:'f'+Date.now(),g,kind:'raid',siteId:t.id,count:6+tier*2,spawned:false,have:0,gold:gold+80,desc:`${t.name} sent a rider: bandits are coming, ${dirWord(site.x,site.z,t.x,t.z)} of here. Get there and hold the town until they're all down.`,short:`Defend ${t.name}`};}
+      if(kind==='clear'&&doors.length){const e=pickDoor();const p=dungeonWorldPos[e.seed];const name=e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate');return {id:tid,g,kind,portal:'dyn_'+e.seed,need:5+tier*2,have:0,gold,desc:`${name} — ${dirWord(site.x,site.z,p.x,p.z)} of here. Clear it: put down ${5+tier*2} of whatever's inside.`,short:`Clear ${name}`};}
+      if(kind==='hunt'){const t=HUNT[Math.floor(r()*HUNT.length)];const n=4+tier*2;const where=huntGround(site,t);return {id:tid,g,kind,target:t,need:n,have:0,gold,x:where?where.x:null,z:where?where.z:null,ground:where?where.name:null,desc:`${t}s have been at the roads. Kill ${n} of them in the open country${where?` — ${where.name}, ${compassWord(where.x-site.x,where.z-site.z)} of here, is their ground`:''} — and come back.`,short:`Hunt ${n} ${t}s${where?` (${where.name})`:''}`};}
+      if(kind==='beast'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];const beast=['Cave Bear','Ogre','Forest Troll'][Math.min(2,tier)];const ang=r()*Math.PI*2;const sx=t.x+Math.cos(ang)*(t.pad+70),sz=t.z+Math.sin(ang)*(t.pad+70);return {id:tid,g,kind,siteId:t.id,beast,sx,sz,spawned:false,done:false,gold:gold+40,desc:`A ${beast.toLowerCase()} is taking sheep at ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here. It was last seen ${compassWord(sx-t.x,sz-t.z)} of the village. Kill it.`,short:`The beast at ${t.name}`};}
+      if(sites.length){const t=sites.filter(s=>s.kind==='village')[0]||sites[0];return {id:tid,g,kind:'raid',siteId:t.id,count:6+tier*2,spawned:false,have:0,gold:gold+80,desc:`${t.name} sent a rider: bandits are coming, ${dirWord(site.x,site.z,t.x,t.z)} of here. Get there and hold the town until they're all down.`,short:`Defend ${t.name}`};}
     } else {
       const kind=['relic','gather','deliver','hearth','wizard','creature'][Math.floor(r()*6)];
-      if(kind==='relic'&&doors.length){const e=nearDoors(site,900,true)[0]||pickDoor();const p=dungeonWorldPos[e.seed];const name=e.canonicalName||'an old gate';return {id:'m'+Date.now(),g,kind,x:p.x+8,z:p.z+6,got:false,gold:gold+30,desc:`An old binding-stone lies outside ${name}, ${dirWord(site.x,site.z,p.x,p.z)} of here, by the door. Bring it back unbroken.`,short:`Relic at ${name}`};}
-      if(kind==='gather'){const pool=herbPool();const keys=Object.keys(HERB_DEF||{});const t=keys.length?keys[Math.floor(r()*keys.length)]:null;if(t){return {id:'m'+Date.now(),g,kind,herb:t,need:3+tier,have:0,gold,desc:`We're short of ${HERB_DEF[t].name}. Harvest ${3+tier} in the wild and bring them.`,short:`Gather ${HERB_DEF[t].name}`};}}
-      if(kind==='deliver'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];return {id:'m'+Date.now(),g,kind,siteId:t.id,who:null,gold,desc:`Someone in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, is sick. Take this draught to whoever answers to the name we'll give you at the gate — ask the first resident you meet.`,short:`Draught to ${t.name}`};}
-      if(kind==='hearth'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];return {id:'m'+Date.now(),g,kind,siteId:t.id,house:null,gold:gold-20,desc:`A house in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, has a hearth that won't take. Go in and light it — any flame you can cast will do.`,short:`Light a hearth in ${t.name}`};}
-      if(kind==='wizard'&&doors.length){const e=pickDoor();const p=dungeonWorldPos[e.seed];const ang=r()*Math.PI*2;return {id:'m'+Date.now(),g,kind,sx:p.x+Math.cos(ang)*30,sz:p.z+Math.sin(ang)*30,spawned:false,done:false,gold:gold+60,desc:`A rogue of ours has set up by ${e.canonicalName||'an old gate'}, ${dirWord(site.x,site.z,p.x,p.z)} of here. End him.`,short:`The rogue mage`};}
-      const lk=LAKES[0];return {id:'m'+Date.now(),g,kind:'creature',sx:lk.x+lk.r+30,sz:lk.z+20,spawned:false,done:false,gold:gold+50,desc:`Something is walking the shore of ${lk.name}, ${dirWord(site.x,site.z,lk.x,lk.z)} of here, that shouldn't be. Unmake it.`,short:`The thing at ${lk.name}`};
+      if(kind==='relic'&&doors.length){const e=nearDoors(site,900,true)[0]||pickDoor();const p=dungeonWorldPos[e.seed];const name=e.canonicalName||'an old gate';return {id:tid,g,kind,x:p.x+8,z:p.z+6,got:false,gold:gold+30,desc:`An old binding-stone lies outside ${name}, ${dirWord(site.x,site.z,p.x,p.z)} of here, by the door. Bring it back unbroken.`,short:`Relic at ${name}`};}
+      if(kind==='gather'){const pool=herbPool();const keys=Object.keys(HERB_DEF||{});const t=keys.length?keys[Math.floor(r()*keys.length)]:null;if(t){return {id:tid,g,kind,herb:t,need:3+tier,have:0,gold,desc:`We're short of ${HERB_DEF[t].name}. Harvest ${3+tier} in the wild and bring them.`,short:`Gather ${HERB_DEF[t].name}`};}}
+      if(kind==='deliver'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];return {id:tid,g,kind,siteId:t.id,who:null,gold,desc:`Someone in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, is sick. Take this draught to whoever answers to the name we'll give you at the gate — ask the first resident you meet.`,short:`Draught to ${t.name}`};}
+      if(kind==='hearth'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];return {id:tid,g,kind,siteId:t.id,house:null,gold:gold-20,desc:`A house in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, has a hearth that won't take. Go in and light it — any flame you can cast will do.`,short:`Light a hearth in ${t.name}`};}
+      if(kind==='wizard'&&doors.length){const e=pickDoor();const p=dungeonWorldPos[e.seed];const ang=r()*Math.PI*2;return {id:tid,g,kind,sx:p.x+Math.cos(ang)*30,sz:p.z+Math.sin(ang)*30,spawned:false,done:false,gold:gold+60,desc:`A rogue of ours has set up by ${e.canonicalName||'an old gate'}, ${dirWord(site.x,site.z,p.x,p.z)} of here. End him.`,short:`The rogue mage`};}
+      const lk=LAKES[0];return {id:tid,g,kind:'creature',sx:lk.x+lk.r+30,sz:lk.z+20,spawned:false,done:false,gold:gold+50,desc:`Something is walking the shore of ${lk.name}, ${dirWord(site.x,site.z,lk.x,lk.z)} of here, that shouldn't be. Unmake it.`,short:`The thing at ${lk.name}`};
     }
-    return {id:'x'+Date.now(),g,kind:'hunt',target:'Wolf',need:4,have:0,gold,desc:'Wolves. Four of them.',short:'Hunt 4 Wolves'};
+    return {id:tid,g,kind:'hunt',target:'Wolf',need:4,have:0,gold,desc:'Wolves. Four of them.',short:'Hunt 4 Wolves'};
   }
+  // S501 — dated guild work (DECISION #132, part B, as the lords' jobs in S500): one generated task in three (not the
+  // rank commissions) carries a date 7 to 14 days out, from a stream keyed by the guild, the hall's town and the day; done
+  // by then (t.doneAt, stamped by the hooks below when it is first done) it pays a quarter more; past it, undone, the guild
+  // takes it back (gLapse, from tickDatedWork).
+  function gDated(t,g,site){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);const r=seededRng('dated:'+g+':'+site.id,day);if(r()<1/3)t.due=(day+7+Math.floor(r()*8)+1)*1440;return t;}
+  function gStamp(t){if(t&&t.doneAt==null&&taskDone(t)){t.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);qJournal(t,'ready',`Done — report to the ${(GUILD_DEF[t.g]||{name:'guild'}).name}.`);}} /* S511 — the journal's line under the task's id, as the world's quests (S510) */
+  function gDatedPay(t){return t.due&&t.doneAt!=null&&t.doneAt<t.due?Math.round((t.gold||0)*1.25):(t.gold||0);}
+  function gLapse(){const G=worldState.guild;if(!G)return;const now=worldState.gameTimeAbsMinutes||0;for(const g in G){const st=G[g],t=st&&st.active;if(!t||!t.due||now<t.due)continue;gStamp(t);if(t.doneAt!=null)continue;
+    st.active=null;if(t.kind==='raid'){const S=SETTLE.get(t.siteId);if(S)S.raid=false;}if(t._obj){try{sc.remove(t._obj.m);unregLight(t._obj.l);}catch(e){}const i=pickups.findIndex(p=>p.task===t);if(i>=0)pickups.splice(i,1);}
+    if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. The date passed, and the guild has given it to someone else.`);qJournal(t,'lapsed','The date passed, and the guild has given it to someone else.');showMsg(`${GUILD_DEF[g].name}: the date has passed. The task is taken back.`,'#c8b880');}}
   function taskDone(t){
     switch(t.kind){case 'clear':case 'hunt':case 'gather':return t.have>=t.need;case 'raid':return t.spawned&&t.have>=t.count;case 'beast':case 'wizard':case 'creature':return !!t.done;case 'relic':return !!t.got;case 'deliver':return !!t.done;case 'hearth':return !!t.done;}return false;
   }
@@ -1611,34 +1648,34 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(t.kind==='hunt'&&ctx==='zone'&&e.name===t.target)t.have++;
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&e._guildTag===t.id)t.done=true;
       if(t.kind==='raid'&&e._guildTag===t.id){t.have++;if(t.have>=t.count){const S=SETTLE.get(t.siteId);if(S)S.raid=false;showMsg('The raiders are down. The town is safe.','#e8d8a0');}}
-      if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: task complete — report back.`,'#e8d8a0');}
+      gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: task complete — report back.`,'#e8d8a0');}
     }
   }
-  function onHarvest(h){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='gather'&&h.type===t.herb){t.have++;if(taskDone(t)&&!t._told){t._told=true;showMsg("Mages' Guild: that's enough — report back.",'#e8d8a0');}}}}
+  function onHarvest(h){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='gather'&&h.type===t.herb){t.have++;gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg("Mages' Guild: that's enough — report back.",'#e8d8a0');}}}}
   function onTalk(def){if(def&&def.name==='Varek'){varekTalked();return false;}if(qOnTalk(def))return true;const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='deliver'||t.done)return false;
     const S=SETTLE.get(t.siteId);if(!S||!S.houses.some(h=>h.keeper===def.name))return false;
-    if(!t.who){t.who=def.name;showMsg(`${def.name} takes the draught. "Bless you." Report back.`,'#e8d8a0');t.done=true;return true;}return false;}
+    if(!t.who){t.who=def.name;showMsg(`${def.name} takes the draught. "Bless you." Report back.`,'#e8d8a0');t.done=true;gStamp(t);return true;}return false;}
   function onEnterInterior(house){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done)return;if(house.type!=='home')return;const S=SETTLE.get(t.siteId);if(!S||!S.houses.includes(house))return;t.house=house.id;showMsg('This is the cold hearth. Stand by it and cast a flame (F).','#c8b880');}
   function onCast(){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done||!t.house)return;if(typeof currentHouse==='undefined'||!currentHouse||currentHouse.id!==t.house)return;
-    const W=currentHouse._roomW||10,D=currentHouse._roomD||10;if(Math.hypot(px-(W-.4),pz-D*.4)<2.6){t.done=true;showMsg('The hearth catches. Report back.','#e8d8a0');}}
+    const W=currentHouse._roomW||10,D=currentHouse._roomD||10;if(Math.hypot(px-(W-.4),pz-D*.4)<2.6){t.done=true;gStamp(t);showMsg('The hearth catches. Report back.','#e8d8a0');}}
   // world pickups (relics)
   const pickups=[];
   function ensureTaskWorldObjects(){
     const G=gstate();
     for(const g in G){const t=G[g].active;if(!t)continue;
-      if(t.kind==='relic'&&!t.got&&!t._obj){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),new THREE.MeshBasicMaterial({color:0x9ad0ff}));m.position.set(t.x,worldH(t.x,t.z)+.5,t.z);sc.add(m);const l=regLight(0x80c0ff,1.2,6,'task');l.position.copy(m.position);t._obj={m,l};pickups.push({x:t.x,z:t.z,task:t});}
+      if(t.kind==='relic'&&!t.got&&!t._obj){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),new THREE.MeshBasicMaterial({color:0x9ad0ff}));m.position.set(t.x,worldH(t.x,t.z)+.5,t.z);sc.add(m);const l=regLight(0x80c0ff,1.2,6,'task');l.position.copy(m.position);t._obj={m,l};pickups.push({id:t.id+':pickup',x:t.x,z:t.z,task:t});} /* S518 — a task's relic is <task id>:pickup */
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&!t.spawned&&!t.done&&Math.hypot(px-t.sx,pz-t.sz)<220){
         const name=t.kind==='beast'?t.beast:t.kind==='wizard'?'Rogue Mage':'Shore Wisp';
-        const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,level,'hard'):null));e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
+        const fid=t.id+':foe:0'; /* S504 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,level,'hard',seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
       }
-      if(t.kind==='raid'&&!t.spawned){const S=SETTLE.get(t.siteId);if(S&&Math.hypot(px-S.site.x,pz-S.site.z)<150){t.spawned=true;S.raid=true;const site=S.site;for(let i=0;i<t.count;i++){const ang=Math.random()*Math.PI*2;const ex=site.x+Math.cos(ang)*(site.pad+8),ez=site.z+Math.sin(ang)*(site.pad+8);const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Bandit',null));e._guildTag=t.id;e.alert=true;ZONES.world.enemies.push(e);}showMsg(`Raiders! ${t.count} of them. Hold ${site.name}.`,'#ff8060');}}
+      if(t.kind==='raid'&&!t.spawned){const S=SETTLE.get(t.siteId);if(S&&Math.hypot(px-S.site.x,pz-S.site.z)<150){t.spawned=true;S.raid=true;const site=S.site;const pr=seededRng('place',t.id);for(let i=0;i<t.count;i++){const ang=pr()*Math.PI*2;const ex=site.x+Math.cos(ang)*(site.pad+8),ez=site.z+Math.sin(ang)*(site.pad+8);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Bandit',null)),t.id+':foe:'+i);e._guildTag=t.id;e.alert=true;ZONES.world.enemies.push(e);}showMsg(`Raiders! ${t.count} of them. Hold ${site.name}.`,'#ff8060');}}
     }
   }
-  function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
-  function turnIn(g){const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
-    st.active=null;st.done++;const paid=questGold(t.gold);gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);
+  function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;gStamp(p.task);sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
+  function turnIn(g){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
+    st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);qJournal(t,'complete',`Turned in to the ${GUILD_DEF[g].name}: ${paid} gold.`);
     const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're a ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
-  function offer(g,site){const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const t=commissionFor(g,site)||genTask(g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+` Pay is ${t.gold} gold.`;}
+  function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
     guild_f:{

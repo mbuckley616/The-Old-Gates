@@ -169,11 +169,22 @@
   // onTalk, arriving somewhere.
   function plural(n,t){const p=t==='Wolf'?'Wolves':t==='Snow Wolf'?'Snow Wolves':t.endsWith('s')?t:t+'s';return n===1?t:p;}
   function QJ(){return worldState.quests||(worldState.quests=[]);}
+  // S510 — the world's quests write their own lines into the journal under their id, as the story's do (S487, journalQuest):
+  // the ask when taken, *done* when the work is, the pay when turned in, and a lapse; the short log lines stay
+  function qJournal(q,kind,text){if(q&&q.id&&text&&typeof journalQuest==='function')try{journalQuest(kind,q,text);}catch(e){}}
   function qFind(id){return QJ().find(q=>q.id===id);}
   function qActive(){return QJ().filter(q=>!q.turnedIn);}
-  function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
-  function qComplete(q){if(q.done)return;q.done=true;showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);}
-  function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(q.reward);q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);return paid;}
+  function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);if(q.desc)qJournal(q,'accept',q.desc);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
+  // S500 — dated work (Michael's C on DECISION #132, part B): a lord's job may carry a date, q.due (the first minute after
+  // its last day). Done by then it pays a quarter more; past it, undone, the lord takes it back. One job in three is dated,
+  // 7 to 14 days out, rolled from a stream keyed by the town and the day it was given (the co-op rule on seeded rolls).
+  function datedWork(q,site){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);const r=seededRng('dated:'+site.id,day);if(r()>=1/3)return q;q.due=(day+7+Math.floor(r()*8)+1)*1440;return q;}
+  function datedPay(q){return q.due&&q.doneAt!=null&&q.doneAt<q.due?Math.round((q.reward||0)*1.25):(q.reward||0);}
+  function datedLapse(q){if(!q||!q.due||q.done||q.turnedIn||(worldState.gameTimeAbsMinutes||0)<q.due)return false;q.turnedIn=true;q.lapsed=true;if(typeof addLog==='function')addLog('📜',`${q.title}: the date passed, and ${q.giver} has given the work to someone else.`);qJournal(q,'lapsed',`The date passed, and ${q.giver} has given the work to someone else.`);showMsg(`${q.title}: the date has passed. The work is taken back.`,'#c8b880');return true;}
+  let _datedAt=0;
+  function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(datedLapse);gLapse();}
+  function qComplete(q){if(q.done||q.lapsed)return;if(datedLapse(q))return;q.done=true;q.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);qJournal(q,'ready',`Done — report to ${q.giver}.`);}
+  function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(datedPay(q));q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);qJournal(q,'complete',paid>0?`Turned in to ${q.giver}: ${paid} gold.`:`Turned in to ${q.giver}.`);return paid;}
   // ── town quests ──
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
   // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
@@ -182,7 +193,7 @@
     const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
     const lord=lordFor(site);const r=Math.random;const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj);
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
-    const id='tq_'+site.id+'_'+Date.now();const giver=`${lord.title} ${lord.name}`;
+    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */const giver=`${lord.title} ${lord.name}`;
     const biome=dominantRegion(site.x,site.z).r.biome;
     if(kind==='cull'){const t=({tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'}[biome])||'Wolf';const n=4+tier;return {id,giver,giverSite:site.id,title:`${plural(2,t)} at ${site.name}`,desc:`${lord.name}: "${plural(2,t)} have been at the flocks. Kill ${n} of them within sight of the walls and the ${site.kind} will pay."`,objective:`Kill ${n} ${plural(n,t)} near ${site.name}`,kind,data:{target:t,need:n,have:0,x:site.x,z:site.z,radius:520},reward};}
     if(kind==='retrieve'){const doors=nearDoors(site,700,false);const e=doors[Math.floor(r()*Math.min(3,doors.length))];if(e){const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item},reward:reward+20};}}
@@ -194,8 +205,8 @@
   function lordTopics(site){
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
-    return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id))qAdd(q);if(q.done)return `You've done it? Then ${q.reward} gold, with the ${site.kind}'s thanks.`;return q.desc+` (${q.reward} gold.)`;}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+    return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
+            {label:'It\u2019s done.',quest:true,fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -215,9 +226,9 @@
   }
   function qTick(){
     for(const q of qActive()){if(q.done)continue;
-      if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({x:q.data.x,z:q.data.z,quest:q});}
+      if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
       if(q.kind==='find'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<200){q.data.spawned=true;const site=siteAnywhere(q.giverSite);const def=makeDef(site,site.reg||'irish',Math.random,'Villager',q.data.who,{x:q.data.x+1.5,z:q.data.z,bCol:0x4a3a2a,sCol:0xd4a878,keepName:true,topics:q.data.topics||[{label:'People are looking for you.',response:"Are they. I only meant to sit a while."}]});def._lost=true;if(q.rival){def.people='markman';def.sCol=0xf0dcc8;def.hairCol=0xd8c8a0;def.bCol=0x2a2a30;def.role=({crown:'Warden',league:'Reeve',compact:'Factor'})[q.faction]||def.role;Object.defineProperty(def,'greeting',{configurable:true,value:["Aye. Thought it'd be you. Sit, if you're stopping — I'm not getting up yet."]});Object.defineProperty(def,'topics',{configurable:true,get(){return [...(q.data.topics||[]),{label:'Farewell.',bye:true}];}});} /* S461 — Finding 10: her rank, her own greeting, her own topic */const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(q.data.x+1.5,worldH(q.data.x+1.5,q.data.z),q.data.z);q._npc=n;}
-      if(q.kind==='road'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<180){q.data.spawned=true;for(let k=0;k<q.data.count;k++){const a=Math.random()*Math.PI*2;const ex=q.data.x+Math.cos(a)*8,ez=q.data.z+Math.sin(a)*8;const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,q.enemy||(k===0&&level>=5?'Bandit Captain':'Bandit'),null));e._questTag=q.id;if(q.enemyName){e.name=q.enemyName;e.displayName=q.enemyName;}e.alert=false;e.homeX=q.data.x;e.homeZ=q.data.z;ZONES.world.enemies.push(e);}
+      if(q.kind==='road'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<180){q.data.spawned=true;const pr=seededRng('place',q.id);for(let k=0;k<q.data.count;k++){const a=pr()*Math.PI*2;const ex=q.data.x+Math.cos(a)*8,ez=q.data.z+Math.sin(a)*8;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,q.enemy||(k===0&&level>=5?'Bandit Captain':'Bandit'),null)),q.id+':foe:'+k); /* S504 — keyed by the job (co-op rules) */e._questTag=q.id;if(q.enemyName){e.name=q.enemyName;e.displayName=q.enemyName;}e.alert=false;e.homeX=q.data.x;e.homeZ=q.data.z;ZONES.world.enemies.push(e);}
         // a camp to go with them
         if(q.data.noCamp){showMsg(`${q.enemyName||'Someone'} is waiting.`,'#e8d8a0');continue;}
         const tentMat=new THREE.MeshLambertMaterial({color:0x6a5a44,side:THREE.DoubleSide});[[-3,-1],[3,-2]].forEach(([ox,oz])=>{const t=new THREE.Mesh(new THREE.ConeGeometry(1.8,2.2,5,1,true),tentMat);t.position.set(q.data.x+ox,worldH(q.data.x+ox,q.data.z+oz)+1.1,q.data.z+oz);sc.add(t);});const em=new THREE.Mesh(new THREE.SphereGeometry(.22,6,6),new THREE.MeshBasicMaterial({color:0xff7a22}));em.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(em);showMsg('A bandit camp.','#ffb060');}
@@ -275,7 +286,7 @@
     guild_f:[{at:2,title:'Blooded',short:'The captain of the road',kind:'commission',mk:(site)=>({sx:site.x+300,sz:site.z+200,beast:'Bandit Captain',desc:"A bandit captain has been bleeding the roads for a year. The Guild wants his head before it gives you a name. He's camped with his best a way out of town."})},{at:5,title:'Warden\u2019s Trial',short:'The troll of the hills',kind:'commission',mk:(site)=>({sx:site.x-350,sz:site.z-250,beast:'Ogre',desc:"An ogre. Alone. That's the trial. The old Wardens all did it; half of them lived."})},{at:8,title:'Champion',short:'Two at once',kind:'commission',mk:(site)=>({sx:site.x+420,sz:site.z-120,beast:'Frost Troll',desc:"There's a frost troll in the passes, and where there's one there's another. Kill it and you're Champion. Nobody's asked what happens if you don't."})}],
     guild_m:[{at:2,title:'Adept\u2019s Reading',short:'The rogue\u2019s notes',kind:'commission',mk:(site)=>({sx:site.x-280,sz:site.z+260,beast:'Rogue Mage',desc:"One of ours went rogue and took his notebook. The notebook we want. Him we're indifferent to."})},{at:5,title:'Evoker\u2019s Proof',short:'The wisp at the water',kind:'commission',mk:(site)=>({sx:site.x+380,sz:site.z+340,beast:'Shore Wisp',desc:"Wisps don't die; they unmake. Unmake one and you'll understand what an Evoker is."})},{at:8,title:'Warlock',short:'The hag\u2019s pact',kind:'commission',mk:(site)=>({sx:site.x-400,sz:site.z-300,beast:'Marsh Hag',desc:"A hag in the fen holds a pact older than the Guild. Break it. You'll know how when you're standing there."})}],
   };
-  function commissionFor(g,site){const st=gstate()[g];const c=(COMMISSIONS[g]||[]).find(c=>c.at===st.done&&!(st.commissions||[]).includes(c.at));if(!c)return null;const d=c.mk(site);(st.commissions||(st.commissions=[])).push(c.at);return Object.assign({id:g+'_c'+c.at+'_'+Date.now(),g,kind:'beast',spawned:false,done:false,gold:200+c.at*60,short:c.short,title:c.title,siteId:site.id},d);}
+  function commissionFor(g,site){const st=gstate()[g];const c=(COMMISSIONS[g]||[]).find(c=>c.at===st.done&&!(st.commissions||[]).includes(c.at));if(!c)return null;const d=c.mk(site);(st.commissions||(st.commissions=[])).push(c.at);return Object.assign({id:g+':c'+c.at,g,kind:'beast',spawned:false,done:false,gold:200+c.at*60,short:c.short,title:c.title,siteId:site.id},d);}
 
   // ═══ POINTS OF INTEREST II (Session M) ══════════════════════════════
   // Five new site kinds, generated like camps/ruins and built by genSettlement:
@@ -307,24 +318,21 @@
   }
   function siteChest(S,x,z,mult,name){const y=worldH(x,z);const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(S.site.x-x,S.site.z-z);const {lid}=buildChestShell(g,1.8,0x4a3018);S.group.add(g); // S259 — the kit's chest (S198), the old box's size, its lid on the hinge; a group, so the bake leaves it whole
     let items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});
-    const ch={x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:false,_site:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
-  function buildGlade(S,site,r){
-    const {group,sol}=S;const cx=site.x,cz=site.z;const pad=site.pad;const y=worldH(cx,cz);
-    // the pond: a bowl stamp under a water disc
-    const pr=11+r()*4;addStamp({id:'pond_'+site.id,kind:'pond',x:cx,z:cz,r:pr,blend:7,y:y-2.0});
-    const water=new THREE.Mesh(new THREE.CircleGeometry(pr+2,28),new THREE.MeshLambertMaterial({color:0x4a8ab0,transparent:true,opacity:.75}));water.rotation.x=-Math.PI/2;water.position.set(cx,y-.75,cz);water.userData.noBake=true;group.add(water);
-    ZONES.world.platforms.push({x0:cx-pr,x1:cx+pr,z0:cz-pr,z1:cz+pr,y:y-.85,site:site.id,shallow:true});
-    // reeds, a fallen log, big trees at the edge. S215 — in detail (H.5, Michael's A): clumps of reed blades and cattails,
+    const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:false,_site:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
+  // S545 — the glade's look alone, on the builder's own rolls in its order (pr is rolled and the pond stamped first, so the
+  // reeds and the log stand on the bowl): H(x,z) is the ground. buildGlade places it in the world, poiPreview on a stage.
+  function gladeGeoParts(r,cx,cz,y,pr,pad,H){
+  // reeds, a fallen log, big trees at the edge. S215 — in detail (H.5, Michael's A): clumps of reed blades and cattails,
     // a barked log with cut ends, stubs, moss and mushrooms, lily pads on the water; the old cones and cylinder the distant copy
-    {const hi=[],lo=[],C=x=>new THREE.Color(x),add=(A,geo,col,x,yy,z,rx,ry,rz,sx,sy,sz)=>A.push({geo,color:C(col),x,y:yy,z,rx,ry,rz,sx,sy,sz});
-      for(let i=0;i<14;i++){const a=r()*Math.PI*2,rr=pr+1+r()*3;const x=Math.cos(a)*rr,z=Math.sin(a)*rr,hy=worldH(cx+x,cz+z)-y,h=1.6+r()*.8;
+    const hi=[],lo=[],C=x=>new THREE.Color(x),add=(A,geo,col,x,yy,z,rx,ry,rz,sx,sy,sz)=>A.push({geo,color:C(col),x,y:yy,z,rx,ry,rz,sx,sy,sz});
+      for(let i=0;i<14;i++){const a=r()*Math.PI*2,rr=pr+1+r()*3;const x=Math.cos(a)*rr,z=Math.sin(a)*rr,hy=H(cx+x,cz+z)-y,h=1.6+r()*.8;
         add(lo,new THREE.ConeGeometry(.12,h,4),0x6a8a3a,x,hy+.7,z);
         const nb=13+Math.floor(r()*7);for(let k=0;k<nb;k++){const ba=r()*Math.PI*2,bl=h*(.55+r()*.5),lean=.08+r()*.22,g0=C(0x5a7a30).lerp(C(0x9aa04a),r());
           add(hi,SK.cone(.045,bl,3),g0.getHex(),x+Math.cos(ba)*.2,hy+bl/2-.05,z+Math.sin(ba)*.12,Math.sin(ba)*lean,ba,-Math.cos(ba)*lean,1,1,.35);}
         const nc=1+Math.floor(r()*3);for(let k=0;k<nc;k++){const ox=(r()-.5)*.25,oz=(r()-.5)*.25,sh=h*(.8+r()*.35);add(hi,SK.cyl(.012,.014,sh,5),0x7a8a40,x+ox,hy+sh/2-.05,z+oz);
           add(hi,SK.cyl(.05,.05,.24,8),0x5a381c,x+ox,hy+sh-.12,z+oz);add(hi,SK.cyl(.004,.008,.12,4),0x8a7a50,x+ox,hy+sh+.06,z+oz);}}
       // the fallen log, built along x and turned where it lies
-      const ly=r()*3,lx=pr+5,lh=worldH(cx+lx,cz)-y;
+      const ly=r()*3,lx=pr+5,lh=H(cx+lx,cz)-y;
       const lg=(geo,col,x,yy,z,rx,ry,rz,sx,sy,sz)=>{geo.scale(sx||1,sy||1,sz||1);geo.rotateZ(rz||0);geo.rotateY(ry||0);geo.rotateX(rx||0);geo.translate(x,yy,z);geo.rotateY(ly);geo.translate(lx,lh+.4,0);hi.push({geo,color:C(col)});};
       lg(SK.bumpy(SK.cyl(.4,.5,5,14,6),.035,17,9),0x4a3018,0,0,0,0,0,Math.PI/2);
       for(const sd of [1,-1]){lg(SK.cyl(sd>0?.37:.47,sd>0?.37:.47,.02,14),0xa8844e,sd*2.505,0,0,0,0,Math.PI/2);for(let k=1;k<4;k++)lg(SK.torus((sd>0?.37:.47)*k/4,.012,3,14),0x7a5a30,sd*2.52,0,0,0,Math.PI/2,0);}
@@ -335,11 +343,20 @@
       // lily pads and a few flowers near the bank
       for(let i=0;i<9;i++){const a=r()*Math.PI*2,rr=pr*(.45+r()*.45);const ps=.35+r()*.3;add(hi,new THREE.CylinderGeometry(ps,ps,.02,12,1,false,.3,Math.PI*2-.6),C(0x3a6a2a).lerp(C(0x5a8a3a),r()).getHex(),Math.cos(a)*rr,-.73,Math.sin(a)*rr,0,r()*6.28,0);
         if(r()<.35)add(hi,SK.cone(.09,.1,6),0xf0e0e8,Math.cos(a)*rr+.1,-.66,Math.sin(a)*rr);}
-      poiLod(group,mergeParts(hi),mergeParts(lo),cx,y,cz);}
+      const hiG=mergeParts(hi),loG=mergeParts(lo);
+    const trees=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2+r()*.4,rr=pad-9+r()*5;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;trees.push({x,z,h:H(x,z),ry:r()*6.28});}
+    return {hi:hiG,lo:loG,trees};}
+  function buildGlade(S,site,r){
+    const {group,sol}=S;const cx=site.x,cz=site.z;const pad=site.pad;const y=worldH(cx,cz);
+    // the pond: a bowl stamp under a water disc
+    const pr=11+r()*4;addStamp({id:'pond_'+site.id,kind:'pond',x:cx,z:cz,r:pr,blend:7,y:y-2.0});
+    const water=new THREE.Mesh(new THREE.CircleGeometry(pr+2,28),new THREE.MeshLambertMaterial({color:0x4a8ab0,transparent:true,opacity:.75}));water.rotation.x=-Math.PI/2;water.position.set(cx,y-.75,cz);water.userData.noBake=true;group.add(water);
+    ZONES.world.platforms.push({x0:cx-pr,x1:cx+pr,z0:cz-pr,z1:cz+pr,y:y-.85,site:site.id,shallow:true});
+    const gp=gladeGeoParts(r,cx,cz,y,pr,pad,worldH);poiLod(group,gp.hi,gp.lo,cx,y,cz); /* S545 — the look, split out for the inspector */
     sol.push({cx:cx+pr+5,cz,rx:2.5,rz:.5});
-    const trees=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,10);const mm=new THREE.Matrix4();for(let i=0;i<10;i++){const a=i/10*Math.PI*2+r()*.4,rr=pad-9+r()*5;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;mm.compose(new THREE.Vector3(x,worldH(x,z),z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),r()*6.28),new THREE.Vector3(1.4,1.5,1.4));trees.setMatrixAt(i,mm);trees.setColorAt(i,new THREE.Color(.9,1,.9));sol.push({cx:x,cz:z,rx:.5,rz:.5});}trees.instanceMatrix.needsUpdate=true;trees.userData.noBake=true;group.add(trees);
+    const trees=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,10);const mm=new THREE.Matrix4();for(let i=0;i<10;i++){const T=gp.trees[i];mm.compose(new THREE.Vector3(T.x,T.h,T.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),T.ry),new THREE.Vector3(1.4,1.5,1.4));trees.setMatrixAt(i,mm);trees.setColorAt(i,new THREE.Color(.9,1,.9));sol.push({cx:T.x,cz:T.z,rx:.5,rz:.5});}trees.instanceMatrix.needsUpdate=true;trees.userData.noBake=true;group.add(trees);
     // herbs: a hotspot ring of 18 around the water
-    if(typeof HERB_DEF!=='undefined'){const biome=dominantRegion(cx,cz).r.biome;const cands=herbCandidates(biome,'water').concat(herbCandidates(biome,'tree'));if(cands.length){for(let i=0;i<18;i++){const a=r()*Math.PI*2,rr=pr+2.5+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(r()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:r()*6.28};ZONES.world.herbs.push(h);(S.herbs=S.herbs||[]).push(h);}
+    if(typeof HERB_DEF!=='undefined'){const biome=dominantRegion(cx,cz).r.biome;const cands=herbCandidates(biome,'water').concat(herbCandidates(biome,'tree'));if(cands.length){for(let i=0;i<18;i++){const a=r()*Math.PI*2,rr=pr+2.5+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(r()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={id:S.site.id+':herb:'+i,x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:r()*6.28};ZONES.world.herbs.push(h);(S.herbs=S.herbs||[]).push(h); /* S514 — its id */}
       // instance them onto a chunk-less mesh owned by the settlement
       const byType={};S.herbs.forEach(h=>(byType[h.type]||(byType[h.type]=[])).push(h));for(const type in byType){const geo=herbGeoFor(type,HERB_DEF[type]);if(!geo)continue;const list=byType[type];herbIM(type,geo,list,group,h=>worldH(h.x,h.z));}}}
     // creatures at the water
@@ -366,21 +383,26 @@
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
   function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
+  // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
   function shrineInteract(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(Math.random()*SHRINE_BOONS.length)];if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
-    else{if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:1800,label:b.label,col:'#e8d8a0'});showMsg(`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
+    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
-  function buildLair(S,site,r){
-    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);const c=x=>new THREE.Color(x);const parts=[];
-    // S204 — lumpy boulders (they were dodecahedra), on the same rolls in the same order
+  // S545 — the lair's look alone (the rock heap with its cave mouth, and the bones), on the builder's rolls in its order
+  function lairGeoParts(r,cx,cz,H){const c=x=>new THREE.Color(x);const parts=[];
     const stone=c(0x5a5650);for(let i=0;i<14;i++){const a=Math.PI*.15+r()*Math.PI*1.7,rr=3+r()*4;const bs=1.4+r()*1.6;parts.push({geo:cragGeo(bs,i),color:stone,x:Math.cos(a)*rr,z:Math.sin(a)*rr-2,y:.6+r()*1.2,rx:r()*3,ry:r()*3,sy:.8,jitter:.08});}
     parts.push({geo:cragGeo(4.2,99),color:stone,z:-4.5,y:3.2,jitter:.08},{geo:new THREE.BoxGeometry(3.2,2.8,1.2),color:c(0x0a0806),z:-1.2,y:1.4});
-    const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
+    const bones=[];for(let i=0;i<8;i++){const a=r()*Math.PI*2,rr=3+r()*7;const len=.7+r()*.6;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr+3;bones.push({len,x,z,h:H(x,z),ry:r()*3});}
+    return {rock:mergeParts(parts),bones};}
+  function buildLair(S,site,r){
+    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
+    const lp=lairGeoParts(r,cx,cz,worldH); /* S545 — the look, split out for the inspector */
+    const m=new THREE.Mesh(lp.rock,VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
     sol.push({cx,cz:cz-4.5,rx:5,rz:3.5},{cx:cx-5,cz:cz-2,rx:2.2,rz:2.2},{cx:cx+5,cz:cz-2,rx:2.2,rz:2.2});
     // bones and a kill
-    for(let i=0;i<8;i++){const a=r()*Math.PI*2,rr=3+r()*7;const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,.7+r()*.6),new THREE.MeshLambertMaterial({color:0xe8e0d0}));const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr+3;b.position.set(x,worldH(x,z)+.05,z);b.rotation.y=r()*3;group.add(b);}
+    for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;group.add(b);}
     const biome=dominantRegion(cx,cz).r.biome;const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':r()<.5?'Cave Bear':'Ogre';
     siteCreatures(S,[[boss,cx,cz+3,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx-4,cz+5,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx+4,cz+6,false]]);
     if(S.creatures[0]){const e=S.creatures[0];const dragon=!!site.dragon;e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:4)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:2)*(1+level*.04));e.spd=(e.spd||1.4)*1.5;e.lair=site.id;if(e.mesh)e.mesh.scale.multiplyScalar(dragon?2.4:1.5);if(dragon)dragonBody(e,3.2);e.name=dragon?`${site.name.replace("'s Lair",'')} Wyrm`:`${site.name.replace("'s Lair",'')} the ${boss}`;e.boss=true;e.dragon=dragon;}
@@ -400,13 +422,11 @@
     const house={id:'g_'+site.id+'_tower',doorX:cx,doorZ:cz+R*.95+.4,doorFace:'S',exitX:cx,exitZ:cz+R*.95+2.2,exitYaw:0,name:site.name,keeper:'',type:'tower',tagline:'',w:8,d:8,two:false,reg:site.reg||'irish',style:'stone',dlg:null,siteKind:site.kind,siteId:site.id};houses.push(house);
     const lantern=new THREE.Mesh(new THREE.ConeGeometry(.14,.4,6),new THREE.MeshBasicMaterial({color:0xffd080}));lantern.position.set(cx,y+3.1,cz+R*.98);lantern.userData.noBake=true;group.add(lantern);const l=regLight(0xffb050,1.0,9,site.id);l.position.copy(lantern.position);
   }
-  function buildBanditCamp(S,site,r){
-    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
-    const tentMat=new THREE.MeshLambertMaterial({color:0x6a5a44,side:THREE.DoubleSide});const n=5+Math.floor(r()*4);
-    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.5,rr=7+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const t=new THREE.Mesh(campTentGeo(i),VC_MAT);t.position.set(x,worldH(x,z),z);t.rotation.y=r()*6;t.castShadow=true;t.userData.noBake=true;group.add(t);sol.push({cx:x,cz:z,rx:1.6,rz:1.6});} // S205 — a ridge tent of canvas on poles (it was an open cone)
-    // fire, cooking frame, crates, barrels, bones, a stockade of stakes
-    const fire=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));fire.position.set(cx,y+.28,cz);fire.userData.noBake=true;group.add(fire);const fl=regLight(0xff8a30,1.5,13,site.id);fl.position.set(cx,y+1.0,cz);
-    // S205 — on the kit, on the same dice in the same order: a ring of fire stones with logs and a cooking tripod, crates
+  // S545 — the camp's look alone (its tents and its kit: the fire ring, the tripod, crates and barrels, bones, the stakes), on
+  // the builder's rolls in its order; the fire, the banner and the light stay the builder's
+  function campGeoParts(r,cx,cz,pad,H){const n=5+Math.floor(r()*4);const tents=[];
+    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.5,rr=7+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;tents.push({k:i,x,z,geo:campTentGeo(i),h:H(x,z),ry:r()*6});} /* the tent's geometry here, in its old place among the draws */
+  // S205 — on the kit, on the same dice in the same order: a ring of fire stones with logs and a cooking tripod, crates
     // and bellied barrels, bones that are bones, pointed stakes
     const c=x=>new THREE.Color(x);const parts=[];for(let i=0;i<9;i++){const a=i/9*Math.PI*2;parts.push({geo:cragGeo(.26,i+3),color:c(0x5a5650).multiplyScalar(.85+(i%3)*.12),x:Math.cos(a)*.95,z:Math.sin(a)*.95,y:.12,ry:-a,jitter:.06});}
     for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.4;parts.push({geo:SK.cyl(.08,.1,1.1,6),color:c(0x3a2818),x:Math.cos(a)*.25,z:Math.sin(a)*.25,y:.2,rx:Math.PI/2-.35,ry:-a+Math.PI/2,jitter:.08});}
@@ -416,8 +436,15 @@
       if(i%2){parts.push({geo:SK.lathe([0,.125,.25,.375,.5,.625,.75,.875,1].map(u=>[.4*(.86+.14*Math.sin(Math.PI*u)),.9*u]),12),color:c(0x8a6a3a),x:X,z:Z,y:0});for(const u of [.15,.85])parts.push({geo:new THREE.TorusGeometry(.4*(.86+.14*Math.sin(Math.PI*u))+.01,.02,4,14),color:c(0x2a241e),x:X,z:Z,y:.9*u,rx:Math.PI/2});}
       else parts.push({geo:SK.rbox(.9,.8,.9,.05,2),color:c(0x7a5a30),x:X,z:Z,y:.4});}
     for(let i=0;i<12;i++){const a=r()*6.28,rr=2+r()*14;const L=.4+r()*.5;parts.push({geo:SK.limb(L,.05,.04),color:c(0xe8e0d0),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:.05,rx:Math.PI/2,ry:r()*3});}
-    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const rr=site.pad-6;const rx=(r()-.5)*.3,rz=(r()-.5)*.3;parts.push({geo:SK.cyl(.1,.14,2.0,6),color:c(0x4a3018),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:1.0,rx,rz,jitter:.08},{geo:SK.cone(.1,.45,6),color:c(0x6a4a28),x:Math.cos(a)*rr+Math.sin(rz)*-1.1,z:Math.sin(a)*rr+Math.sin(rx)*1.1,y:2.2,rx,rz});}
-    const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
+    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const rr=pad-6;const rx=(r()-.5)*.3,rz=(r()-.5)*.3;parts.push({geo:SK.cyl(.1,.14,2.0,6),color:c(0x4a3018),x:Math.cos(a)*rr,z:Math.sin(a)*rr,y:1.0,rx,rz,jitter:.08},{geo:SK.cone(.1,.45,6),color:c(0x6a4a28),x:Math.cos(a)*rr+Math.sin(rz)*-1.1,z:Math.sin(a)*rr+Math.sin(rx)*1.1,y:2.2,rx,rz});}
+    return {tents,kit:mergeParts(parts)};}
+  function buildBanditCamp(S,site,r){
+    const {group,sol}=S;const cx=site.x,cz=site.z;const y=worldH(cx,cz);
+    const cp=campGeoParts(r,cx,cz,site.pad,worldH); /* S545 — the look, split out for the inspector */
+    for(const T of cp.tents){const t=new THREE.Mesh(T.geo,VC_MAT);t.position.set(T.x,T.h,T.z);t.rotation.y=T.ry;t.castShadow=true;t.userData.noBake=true;group.add(t);sol.push({cx:T.x,cz:T.z,rx:1.6,rz:1.6});} // S205 — a ridge tent of canvas on poles (it was an open cone)
+    // fire, cooking frame, crates, barrels, bones, a stockade of stakes
+    const fire=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));fire.position.set(cx,y+.28,cz);fire.userData.noBake=true;group.add(fire);const fl=regLight(0xff8a30,1.5,13,site.id);fl.position.set(cx,y+1.0,cz);
+    const m=new THREE.Mesh(cp.kit,VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;group.add(m);
     // a banner and the loot
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,4,6),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(cx+3,y+2,cz-3);group.add(pole);const cloth=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.9),new THREE.MeshLambertMaterial({color:0x2a2020,side:THREE.DoubleSide}));cloth.position.set(cx+3.6,y+3.5,cz-3);group.add(cloth);
     siteChest(S,cx-3,cz+2,1.6,"Bandits' Takings");
@@ -464,6 +491,16 @@
     for(const s of [1,-1])for(const z of [-L/2+.3,L/2-.3]){const x0=s*W/2,x1=s*(W/2+.9);const gl=SK.cyl(.012,.012,Math.hypot(.9,H*.6),4);const ang=Math.atan2(.9,H*.6);add(gl,0xb09a70,(x0+x1)/2,H*.3,z,0,0,s*ang,0);add(SK.cyl(.025,.02,.25,4),0x5a4028,x1,.08,z);}
     return mergeParts(P);}
   function buildPoi(S,site,r){const k=site.kind;if(k==='glade')buildGlade(S,site,r);else if(k==='shrine')buildShrine(S,site,r);else if(k==='lair')buildLair(S,site,r);else if(k==='tower')buildTower(S,site,r);else if(k==='bcamp')buildBanditCamp(S,site,r);}
+  // S545 — a place's look on a stage, for the mesh inspector: the glade, the lair or the bandit camp built by its own
+  // geometry function at the origin on flat ground (the glade on its pond's bowl), on a fixed roll; no stamp, solid, light,
+  // herb, chest or creature reaches the world. The tower and the shrine have poiGeo already.
+  function poiPreview(kind,seed){const r=pRng(seed==null?7:seed),g=new THREE.Group(),V=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,VC_MAT);m.position.set(x||0,y||0,z||0);m.rotation.y=ry||0;m.castShadow=true;m.receiveShadow=true;g.add(m);return m;};
+    if(kind==='glade'){const pr=11+r()*4,pad=34,bowl=(x,z)=>{const d=Math.hypot(x,z);return d<pr?-2:d<pr+7?-2*(1-(d-pr)/7):0;};const gp=gladeGeoParts(r,0,0,0,pr,pad,bowl);V(gp.hi);
+      const w=new THREE.Mesh(new THREE.CircleGeometry(pr+2,28),new THREE.MeshLambertMaterial({color:0x4a8ab0,transparent:true,opacity:.75}));w.rotation.x=-Math.PI/2;w.position.y=-.75;g.add(w);
+      const t=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,gp.trees.length),mm=new THREE.Matrix4();gp.trees.forEach((T,i)=>{mm.compose(new THREE.Vector3(T.x,T.h,T.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),T.ry),new THREE.Vector3(1.4,1.5,1.4));t.setMatrixAt(i,mm);});t.instanceMatrix.needsUpdate=true;g.add(t);}
+    else if(kind==='lair'){const lp=lairGeoParts(r,0,0,()=>0);V(lp.rock);for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;g.add(b);}}
+    else if(kind==='bcamp'){const cp=campGeoParts(r,0,0,30,()=>0);for(const T of cp.tents)V(T.geo,T.x,T.h,T.z,T.ry);V(cp.kit);const f=new THREE.Mesh(new THREE.SphereGeometry(.32,7,7),new THREE.MeshBasicMaterial({color:0xff7a22}));f.position.y=.28;g.add(f);}
+    else return null;return g;}
 
   // ═══ PEOPLES AND NATIONS (Session N) ═════════════════════════════════
   // Three islands, three nations, four peoples. A province belongs to the
@@ -827,10 +864,10 @@
         if(D.state==='murder'){A.turnedIn=true;A.paid=0;st.active=null;st.closed=true;if(typeof addLog==='function')addLog('🏛',"The Captains' League has closed its gates to you.");return FLINES[fk][A.service].afterMurder;}
         if(D.state==='lost'&&!D.told){D.told=true;return "Rowe's Captain. The chair's hers till someone takes it off her on the yard, and that's your right now, same as it was hers. Give your arm a week. The ring goes up again in seven days.";}
         if(D.state==='lost'&&dayNow()<(D.retryDay||0))return "Not yet. A week, I said. Rowe's not going anywhere, and neither's the chair.";}
-      if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft} ${st.rank===3?`There's ${F.house} in it, when you want it.`:''}`;}return `Good. ${F.name} keeps count.${_aft}`;}
+      if(st.active&&!st.active.done)return `You still owe us: ${st.active.objective}.`;if(st.active&&st.active.done){const _fi=st.active.service;qTurnIn(st.active);st.done++;const before=st.rank;st.rank=Math.min(3,Math.floor(st.done/3));st.active=null;const _aft=_fi!=null?factionAfter(fk,_fi):'';if(st.rank>before){if(typeof addLog==='function')addLog('🏛',`${F.name}: named ${F.ranks[st.rank-1]}.`);if(st.rank===3)try{warFromFaction(fk);}catch(e){console.warn('war',e);}return `${F.name.replace(/^the /,'The ')} names you ${F.ranks[st.rank-1]}.${_aft}${st.rank!==3?'':fk==='compact'?(_aft?'':' A house and a ship are entered in your name, Prior; claim them when you please.'):fk==='crown'?" There's a keep goes with it. A roof's only a roof till someone sleeps under it, so come and claim it when you will.":` There's ${F.house} in it, when you want it.`}`;}return `Good. ${F.name} keeps count.${_aft}`;}
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
-    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}if(fk==='compact')grantShip(site);if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return fk==='compact'?'Entered in your name, Prior: the house, and the ship at the quay.':"It's yours.";}});}
+    if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}const g=fk==='compact'?grantShip(site):null;if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return fk==='compact'?compactClaimLine(g,site):"It's yours.";}});}
     return out;
   }
   // perks: shops of your faction's nation discount by rank; ferries free at rank 2
@@ -877,18 +914,28 @@
     ]
   };
   function factionService(fk,i){const L=FLINES[fk];return L[Math.min(i,L.length-1)];}
+  function fqId(fk,i){const pre='fq:'+fk+':'+i+':';return pre+QJ().filter(q=>String(q.id).startsWith(pre)).length;}
   function factionQuestFor(site,fk,st){
     const F=FACTIONS[fk];const i=st.done;const S=factionService(fk,i);const authored=i<FLINES[fk].length;
     const lord=lordFor(site);const voice=`${lord.title} ${lord.name}`;
     let q;
-    if(S.kind==='sail'){q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
-    else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:'fq_'+fk+'_'+i+'_'+Date.now(),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
+    if(S.kind==='sail'){q={id:fqId(fk,i),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
+    else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:fqId(fk,i),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
     else{q=townQuestFor(site,S.kind,true);
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
     if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=S.kind==='find'&&S.rival?`${voice}: "${S.brief.replace('{dir}',compassWord(q.data.x-site.x,q.data.z-site.z))}"`:`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}
     else q.title=`${F.name}: ${q.title}`;
     q.giver=F.name;q.faction=fk;q.service=i;return q;
+  }
+  // S507 — the claim answers from what grantShip did (quest review run 8, Finding 15): a new ship at the seat or at another
+  // of the Compact's quays, a refit where she lies, a raise from the bottom, or no berth found.
+  function compactClaimLine(g,seat){
+    if(!g)return "Entered in your name, Prior: the house. The ship is entered also; the Compact will name her berth when it has one.";
+    if(g.due!=null)return `Entered in your name, Prior: the house. Your ship lies on the bottom; the shipwright at ${(siteAnywhere(g.site)||{}).name||'the nearest quay'} has the Compact's order to raise her, a class better, and three days to do it.`;
+    if(g.cls)return g.up?`Entered in your name, Prior: the house. You keep a ship already, so the Compact has seen to her where she lies: mended, and refitted as a ${g.cls}, at its own charge.`:"Entered in your name, Prior: the house. You keep a ship already, so the Compact has seen to her where she lies: mended, at its own charge. There is no larger hull to enter.";
+    if(g.id===seat.id)return "Entered in your name, Prior: the house, and the ship at the quay.";
+    return `Entered in your name, Prior: the house here, and the ship at the quay at ${g.name}.`;
   }
   function factionAfter(fk,i){const S=FLINES[fk][i];return S&&S.after?' '+S.after:'';}
   // the rival's beats: what she has to say when she stands at the seat
@@ -969,7 +1016,7 @@
       const w=duelPerson({name:nm(),role:'',ico:'⚔',authored:true,people:'markman',bCol:[0x3a3a40,0x4a4038,0x2e3238][i%3],sCol:0xe8d4bc,greeting:['Iron and blood!'],topics:[{label:'Farewell.',bye:true}]},x,z,Math.atan2(cx-x,cz-z));w._duelWatch=true;DUEL.watchers.push(w);}
     DUEL.npc=duelPerson(roweDef(cx,cz+1.5),cx,cz+1.5,Math.PI);}
   function duelStart(q){if(q.data.state!=='wait'||!DUEL.npc)return;const d=q.data;const p=DUEL.npc.g.position;const x=p.x,z=p.z;duelRemoveNpc(DUEL.npc);DUEL.npc=null;
-    const e=unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,q.enemy||'Bandit Captain',null));e._questTag=q.id;e._duel=true;e.name=e.displayName=RIVAL.name;e.homeX=d.x;e.homeZ=d.z;e.alert=true;e._duelHold=false;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);DUEL.rowe=e;
+    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,q.enemy||'Bandit Captain',null)),q.id+':rival:'+dayNow());e._questTag=q.id;e._duel=true;e.name=e.displayName=RIVAL.name;e.homeX=d.x;e.homeZ=d.z;e.alert=true;e._duelHold=false;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);DUEL.rowe=e;
     d.state='fight';DUEL.inside=Math.hypot(px-d.x,pz-d.z)<=DUEL_R;DUEL.offered=false;DUEL.bark=3;
     // S482: the timer closes the sergeant's dialogue, never Rowe's yield offer, which a fast fall opens inside the 1.4 s
     setTimeout(()=>{try{if(dlgOpen&&!(dlgNPC&&dlgNPC.name===RIVAL.name))closeDialog();}catch(err){}},1400);
@@ -1221,7 +1268,32 @@
   function coachWhen(C){return (C.u>0.001&&C.u<0.999)?'goes on when the road is clear':C.u<=0.001?'leaves at six':'leaves at six in the evening';} // S348 — the prompt and the seat say the same hour
   function coachPrompt(){const C=coachNear();if(!C)return null;if(C.riding)return "Press 'E' to step down";if(C.state==='stop')return "Press 'E' to board the coach (it goes on shortly)";if(C.state==='wait')return `Press 'E' to board the coach (${coachWhen(C)})`;return "Press 'E' to swing aboard";}
   function coachInteract(){const C=coachNear();if(!C)return false;if(C.riding){C.riding=false;const ang=C.cart.rotation.y;px=C.cart.position.x+Math.cos(ang)*2.2;pz=C.cart.position.z-Math.sin(ang)*2.2;jumpY=worldH(px,pz);showMsg('You step down.','#c8b880');if(typeof saveGame==='function')saveGame();return true;} /* S353 — #66 A: stepping off the coach autosaves */C.riding=true;showMsg(C.state==='wait'?`You take a seat. The coach ${coachWhen(C)}.`:'You swing aboard.','#c8b880');if(typeof addLog==='function')addLog('🐎','Took the coach.');return true;}
-  function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const T=worldState.towns||{};let sum=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
+  function rentSum(){const T=worldState.towns||{};let sum=0,n=0;for(const id in T){if(T[id].flags.owned==null)continue;const t=siteAnywhere(id);if(!t)continue;n++;sum+=Math.round(20+T[id].p*(t.kind==='city'?3:t.kind==='town'?1.6:.8));}return {sum,n};}
+  // S498 — the weeks start on day 1, so the rent falls on the first day of the week (calDay), the day the Due view names
+  function tickRents(){const wk=Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));if(worldState._rentWk===wk)return;worldState._rentWk=wk;const sum=rentSum().sum;if(sum>0){gold+=sum;updateHUD();showMsg(`Rents: ${sum} gold from your towns.`,'#e8d8a0');}}
+  // S499 — the seasons in the weather (DECISION #132, part B; the design page: *the Gatelands' winter brings snow on the
+  // low ground and rain in autumn rises from today's weight by half; the Mark is colder in each; Aurenne's summer is
+  // drier*). Called by weatherWeights on the climate's odds, before the biome's; the season is calDay's. Day length stays.
+  function seasonWx(w,cl,at){const se=calDay(at).season;
+    if(cl==='temperate'){if(se==='autumn')w.rain*=1.5;else if(se==='winter'){w.snow+=.12;w.rain*=.7;}}
+    else if(cl==='cold'){if(se==='winter'){w.snow*=1.5;w.rain*=.5;}else if(se==='autumn'){w.rain*=1.5;w.snow*=1.2;}else if(se==='summer')w.snow*=.5;}
+    else if(cl==='warm'){if(se==='summer'){w.rain*=.5;w.storm*=.5;}}
+    return w;}
+  // S498 — what the calendar owes you (DECISION #132, part B; the Journal's Due view): every dated thing already kept,
+  // as {at, icon, text}, soonest first. The rent from the towns you own, the ship on the shipwright's slip, the masons at
+  // a town, the room you have let, the coach seat held. Read from the absolute clock alone.
+  function calendarDue(){
+    const now=worldState.gameTimeAbsMinutes||0,out=[];
+    const r=rentSum();if(r.n)out.push({at:(Math.floor(now/(1440*7))+1)*1440*7,icon:'🪙',text:`Rent from ${r.n===1?'your town':`your ${r.n} towns`}, about ${r.sum} gold at today’s prosperity.`});
+    const sh=worldState.ship;if(sh&&sh.sunk&&sh.raise){const t=siteAnywhere(sh.raise.site);out.push({at:sh.raise.due,icon:'⛵',text:`The ${sh.name||'ship'} raised and lying at ${t?t.name:'the yard'}.`});}
+    const T=worldState.towns||{};for(const id in T){const st=T[id];if(!st||!st.builds)continue;const t=siteAnywhere(id);st.builds.forEach(b=>{if(!b.done&&b.doneDay!=null)out.push({at:b.doneDay*1440,icon:'🧱',text:`The ${b.name} at ${t?t.name:'the town'} finished.`});});}
+    const rn=worldState.rented;if(rn&&rn.until>now){out.push({at:rn.until,icon:'🛏',text:'The room you let is the innkeeper’s again.'});}
+    const cs=worldState.coachSeat;if(cs&&typeof cs.at==='number'){const m=((cs.tod%1440)+1440)%1440;out.push({at:cs.at,icon:'🐎',text:`Your seat on the ${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')} coach.`});}
+    const GG=worldState.guild;if(GG)for(const g in GG){const t=GG[g]&&GG[g].active;if(t&&t.due&&t.doneAt==null&&!taskDone(t))out.push({at:t.due-1,icon:'📜',text:`${t.short} — for the ${GUILD_DEF[g].name}: ${Math.round((t.gold||0)*1.25)} gold if it is done by then; after it, the task is taken back.`});}
+    const nf=typeof nextFeast==='function'?nextFeast(now):null;if(nf)out.push({at:nf.at,icon:nf.f.ico,text:`${nf.f.name} — ${nf.f.due}`,feast:nf.f.key}); /* S550 — the next feast (today's, on the day) */
+    qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
+    return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
+  }
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══

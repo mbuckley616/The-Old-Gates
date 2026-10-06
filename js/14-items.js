@@ -15,7 +15,7 @@
 // here, but starter weapons are now picked at character creation
 // (STARTER_WEAPONS, applied in ccBegin). Save loads of pre-v61at characters
 // (no creator) get a Wooden Sword applied as a fallback in _applyLoadData.
-const EQ={head:null,chest:{name:'Tattered Tunic',ico:'👕',def:1,weight:2},hands:null,legs:{name:'Worn Breeches',ico:'👖',def:1,weight:2},feet:{name:'Leather Boots',ico:'👢',def:0,weight:1},weapon:null,offhand:null,ring:null,amulet:null,ammo:null};
+const EQ={head:null,chest:{name:'Tattered Tunic',ico:'👕',def:1,weight:2},hands:null,legs:{name:'Worn Breeches',ico:'👖',def:1,weight:2},feet:{name:'Leather Boots',ico:'👢',def:0,weight:1},weapon:null,offhand:null,ring:null,amulet:null,back:null,ammo:null};
 const BAG=[];
 // v80 S173 — every slot may be empty (Michael, 27 Sep). With no weapon you fight with your fists:
 // light, quick and weak. The starter clothes and anything else taken off go to the bag as gear
@@ -489,6 +489,27 @@ const ARMOR_FORT_REQ=[0, 0, 0, 5, 10, 16, 24, 32, 40, 48, 56];
 const TIER_BLOCK=[0,.20,.30,.40,.50,.60,.68,.75,.82,.88,.94];
 
 // Build an item object from components
+// S552 — capes and cloaks (Michael's B on DECISION #148, docs/design/capes-and-cloaks.md): a back slot and six mundane
+// kinds, def 1 and no tier, each with one small virtue in its place, read where that thing is decided: the dark hood in
+// _sneakDetectMult and witnessOf, oilskin and the cloth drag in the swim speed, the fur in the stamina regen, the
+// Aurennais cape in barterPct, the pilgrim's grey in the shrine's boon. Sold by place (cloaksFor); looted at tier 4 and
+// up, one armour drop in twelve, always with one of five cloak enchants at 0.6 of a ring's strength.
+const CLOAK_KINDS={
+  wool:   {name:'Traveller’s Cloak',  ico:'🧥',weight:1.5,buyPrice:12,swim:.9, virtue:'none: the plain one'},
+  hood:   {name:'Dark Hood',          ico:'🧥',weight:1.5,buyPrice:25,swim:.9, virtue:'seen 5% less while sneaking; a witness’s reach 12 → 11'},
+  oilskin:{name:'Oilskin Cloak',      ico:'🧥',weight:2,  buyPrice:30,swim:1,  virtue:'no drag in the water'},
+  fur:    {name:'Fur-lined Cloak',    ico:'🧥',weight:3,  buyPrice:45,swim:.85,virtue:'stamina +10% in snow, or at night above the snowline'},
+  cape:   {name:'Aurennais Short Cape',ico:'🧥',weight:.5,buyPrice:60,swim:.9, virtue:'barter +2% at Aurenne’s counters'},
+  pilgrim:{name:'Pilgrim’s Grey',     ico:'🧥',weight:1,  buyPrice:20,swim:.9, virtue:'a shrine’s boon lasts 25% longer'}};
+const CLOAK_ENCHANTS=[['stamina_boost','cloak_endurance'],['st_regen','cloak_vigor'],['mp_regen','cloak_clarity'],['hp_regen','cloak_mending'],['fortify_swift','cloak_swiftness']].map(([from,id])=>{
+  const e=ARMOR_ENCHANTS.find(x=>x.id===from);return {id,name:e.name,_unique:true,_cloak:true,apply:(it)=>{const s=e.apply(it),o={};for(const k in s)o[k]=/Bonus$/.test(k)?Math.max(1,Math.round(s[k]*.6)):Math.round(s[k]*.6*100)/100;return o;}};});
+ARMOR_ENCHANTS.push(...CLOAK_ENCHANTS);
+function makeCloak(kind,tier,enchant){const K=CLOAK_KINDS[kind]||CLOAK_KINDS.wool;
+  const it={type:'equip',slot:'back',name:K.name,ico:K.ico,def:1,weight:K.weight,buyPrice:K.buyPrice,sellMult:.4,virtue:kind,cloak:kind};
+  if(enchant){it.tier=tier||4;it.name+=` ${enchant.name}`;it.enchant=enchant;it.enchantId=enchant.id;it.enchantStats=enchant.apply(it);it.buyPrice=Math.round(K.buyPrice+40*it.tier);}
+  return it;}
+function cloakOn(kind){return !!(EQ.back&&EQ.back.virtue===kind);}
+function cloakSwimMult(){const K=EQ.back&&CLOAK_KINDS[EQ.back.virtue];return K?K.swim:1;}
 function makeItem(matTier, typeObj, enchant, isArmor){
   const mat=MATERIALS[matTier-1]||MATERIALS[0];
   const t=matTier;
@@ -704,6 +725,7 @@ function rollLoot(diffScale, theme, kind){
   const isWeapon=lootRand()<0.45;
   const typeObj=isWeapon?WEAPON_TYPES[Math.floor(lootRand()*WEAPON_TYPES.length)]
                         :ARMOR_TYPES[Math.floor(lootRand()*ARMOR_TYPES.length)];
+  if(!isWeapon&&t>=4&&lootRand()<1/12){const ks=Object.keys(CLOAK_KINDS);return makeCloak(ks[Math.floor(lootRand()*ks.length)],t,CLOAK_ENCHANTS[Math.floor(lootRand()*CLOAK_ENCHANTS.length)]);} /* S552 — a magical cloak */
   // Enchantment — rare, scales with tier
   const enchChance=Math.min(0.55,(t-1)*0.065);
   let enchant=null;

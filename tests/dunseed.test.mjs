@@ -16,8 +16,9 @@ const build = (seed, stir) => page.evaluate(async ([seed, stir]) => { const wait
   goToDungeon(p); for (let k = 0; k < 40 && !(activeZoneId === 'dungeon' && ENEMIES.length); k++) await wait(500); await wait(1500);
   const r2 = v => Math.round(v * 1000) / 1000, names = c => (c.items || []).map(it => it && (it.name + (it.qty > 1 ? '×' + it.qty : ''))).join(',');
   return { seed, name: p.name, theme: p.theme, interior: p.interior, zone: activeZoneId,
-    barrels: BARRELS.map(b => [b.floor, r2(b.x), r2(b.z), b.displayName, names(b)]),
-    chests: CHESTS.map(c => [c.floor, c.x, c.z, !!c.treasure, !!c.locked, names(c)]),
+    barrels: BARRELS.map(b => [b.floor, r2(b.x), r2(b.z), b.displayName, names(b), b.id]),
+    chests: CHESTS.map(c => [c.floor, c.x, c.z, !!c.treasure, !!c.locked, names(c), c.id]),
+    doors: DOORS.map(d => [d.floor, d.x, d.z, !!d.locked, d.id]),
     foes: ENEMIES.map(f => [f.floor, r2(f.homeX), r2(f.homeZ), f.name, f.variant || '', f.id || null, f.patrolType, r2(f.rangedCd), typeof f.rng === 'function']) }; }, [seed, stir]);
 const leave = async () => { await page.evaluate(() => goToOW()); await page.waitForTimeout(4000); await g.hide(); };
 
@@ -31,6 +32,32 @@ check(`the chests stand in the same places, locked alike, with the same loot (${
 check(`the foes stand in the same places, of the same kinds and variants, patrolling alike (${runs.map(([a]) => a.foes.length).join(', ')})`, same('foes'), runs.map(([a, b]) => [a.foes.slice(0, 3), b.foes.slice(0, 3)]));
 const idsOk = runs.every(([a]) => { const ids = a.foes.map(f => f[5]); return ids.every((id, i) => id === `${a.seed}:${a.foes[i][0]}:${id && id.split(':')[2]}` && a.foes[i][8]) && new Set(ids).size === ids.length; });
 check(`every dungeon foe is keyed <seed>:<floor>:<index>, one id each, with a stream (${runs[0][0].foes.slice(0, 3).map(f => f[5]).join(' ')})`, idsOk, runs.map(([a]) => a.foes.map(f => f[5])));
+
+// Session 514 (step 3, ids for what has none): every barrel, crate, shelf, urn, sarcophagus, rack and chest is <seed>:<floor>:<kind>:<n>,
+// one id each; the ids are in the arrays above, so the two builds of a gate give the same ids to the same things
+const cids = runs.map(([a]) => { const all = a.barrels.map(b => b[5]).concat(a.chests.map(c => c[6]));
+  const shaped = all.every(id => typeof id === 'string' && new RegExp(`^${a.seed}:[12]:(barrel|chest|shelf|urn|sarcophagus|rack):\\d+$`).test(id));
+  const floorOk = a.barrels.every(b => b[5].split(':')[1] === String(b[0])) && a.chests.every(c => c[6].split(':')[1] === String(c[0]));
+  return { n: all.length, unique: new Set(all).size === all.length, shaped, floorOk, kinds: [...new Set(all.map(id => id.split(':')[2]))], sample: all.slice(0, 3) }; });
+console.log('container ids', JSON.stringify(cids));
+const dids = runs.map(([a, b]) => ({ n: a.doors.length, same: JSON.stringify(a.doors) === JSON.stringify(b.doors), named: a.doors.every((d, i) => d[4] === `${a.seed}:1:door:${i}`), ids: a.doors.map(d => d[4]) }));
+check(`the gates' doors (Session 517) are <seed>:1:door:<n>, the same on both builds (${dids.map(d => d.n + (d.n ? ': ' + d.ids.slice(0, 2).join(' ') : '')).join('; ')})`, dids.every(d => d.same && d.named), dids);
+check(`every container in both gates has an id <seed>:<floor>:<kind>:<n>, one each (${cids.map(c => c.n + ' — ' + c.kinds.join('/')).join('; ')})`, cids.every(c => c.n > 0 && c.unique && c.shaped && c.floorOk), cids);
+
+// the lair master's hoard is <seed>:<floor>:hoard and its goods roll on its stream: two masters of one lair, Math.random stirred between, leave the same hoard
+const hoard = await page.evaluate(async (seed) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const e = WORLD.doorAnywhere(seed); const p = makePortalDef(e); const wp = (WORLD.dungeonPos || {})[seed]; if (wp) { p.x = wp.x; p.z = wp.z; px = wp.x; pz = wp.z + 3; } p.zone = 'world';
+  goToDungeon(p); for (let k = 0; k < 40 && !(activeZoneId === 'dungeon' && ENEMIES.length); k++) await wait(500); await wait(1500);
+  const out = []; if (worldState.masters) delete worldState.masters[p.seed];
+  for (const [dragon, stir] of [[false, 0], [false, 91], [true, 0], [true, 53]]) { for (let k = 0; k < stir; k++) Math.random();
+    p.lair = { place: 'Test', boss: 'Thing', dragon }; const n0 = CHESTS.length; lairFinish(p); const h = CHESTS[CHESTS.length - 1];
+    out.push(CHESTS.length > n0 ? { id: h.id, items: h.items.map(it => it.name + (it.qty > 1 ? '×' + it.qty : '') + (it.value ? ':' + it.value : '')).join(',') } : null); }
+  return { seed: p.seed, out }; }, pick[0]);
+await leave();
+console.log('hoard', JSON.stringify(hoard));
+const H = hoard.out;
+check(`the master's hoard is keyed <seed>:<floor>:hoard and holds the same goods on two machines (${H[0] && H[0].items} | ${H[1] && H[1].items}; a dragon's ${H[2] && H[2].items})`,
+  H.every(Boolean) && /^\d+:[12]:hoard$/.test(H[0].id) && H[0].id.startsWith(hoard.seed + ':') && H[0].items === H[1].items && H[2].items === H[3].items && H[0].items !== H[2].items, hoard);
 
 // a dungeon foe's blow and the master's slam roll from its stream: two foes with one id roll alike, another id its own
 const rolls = await page.evaluate(() => { const out = {}; const ex = executeStrike, sr = strikeReaches;

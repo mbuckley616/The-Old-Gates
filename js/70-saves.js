@@ -26,7 +26,7 @@ function _serItem(it){
                   'heal','mana','stam','value','weight',
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
-                  'bookId']){
+                  'bookId','virtue','cloak']){ // S552 — a cloak's kind
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){
@@ -127,7 +127,7 @@ function ssChars(){const m={};for(const e of SS.idx){const c=m[e.charId]||(m[e.c
 function ssActiveKey(){try{return localStorage.getItem(SS_ACTIVE_KEY);}catch(e){return null;}}
 function ssSetActive(key){try{localStorage.setItem(SS_ACTIVE_KEY,key);}catch(e){}}
 function ssCharId(){if(typeof worldState!=='undefined'&&worldState){if(!worldState.charId)worldState.charId='c'+Date.now().toString(36);return worldState.charId;}return 'legacy';}
-function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${slot}`,charId:d.charId||'legacy',charName:d.pName||'Unnamed',people:(d.wS&&d.wS.people)||'',arch:d.arch||'',kind,slot,level:d.level,gold:d.gold,zone:d.zone,where:d.where,place:d.placeName||'',ts:d.ts||Date.now(),size:0};}
+function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${slot}`,charId:d.charId||'legacy',charName:d.pName||'Unnamed',people:(d.wS&&d.wS.people)||'',arch:d.arch||'',kind,slot,level:d.level,gold:d.gold,zone:d.zone,where:d.where,place:d.placeName||'',at:(d.wS&&typeof d.wS.gameTimeAbsMinutes==='number')?Math.floor(d.wS.gameTimeAbsMinutes):null,tod:(d.wS&&typeof d.wS.gameTimeMinutes==='number')?Math.floor(d.wS.gameTimeMinutes)%1440:null,ts:d.ts||Date.now(),size:0};} /* S489 — at, tod: the game's date when saved, for the slot's line */
 // ═══ TWO SAVES (Session 456 — backlog K, Michael's A on #119, docs/design/online-play.md rule 1) ═══════════
 // A save is two rows. The CHARACTER row is who you are and what you carry: attributes, level, health, skills,
 // EQ, BAG, the stash, gold, the known words (spells, sigils, books, herbs), the journal, where you stand, and the
@@ -140,7 +140,7 @@ function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${sl
 // host's world row (_applyLoadData(c,w)). The index keeps one entry per slot at the character row's key;
 // the world row sits beside it at ssWorldKey(key). Loading joins the two (ssJoinPayload), so a key read from
 // either row still lands: moving a key between the lists is a change to what the next save writes, nothing more.
-const SS_CHAR_WS={charId:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1};
+const SS_CHAR_WS={charId:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1,told:1,mapNotes:1,feastMeals:1};
 const SS_WORLD_TOP={QS:1,merchantStock:1}; /* top-level fields of the one-row payload that are the world's; wS is divided by SS_CHAR_WS */
 function ssWorldKey(key){return key+'~w';}
 function ssSplitPayload(d){const c={},w={v:d.v,ts:d.ts,charId:d.charId};
@@ -163,7 +163,7 @@ function ssStringify(d){SS.cut=[];
     console.warn('save: cut circular references at',SS.cut);return s;}}
 function ssWhy(e){if(!e)return 'unknown error';if(e.name==='QuotaExceededError')return 'the browser refused the space';return ((e.name&&e.name!=='Error')?e.name+': ':'')+String(e.message||e).slice(0,140);}
 function ssWrite(kind,slot,label){let meta,str,wstr;
-  return Promise.resolve().then(()=>{const r=_buildSaveRows();str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(r.c,kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
+  return Promise.resolve().then(()=>{const r=_buildSaveRows();str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(ssJoinPayload(r.c,r.w),kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
       return ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str));}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
     .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.cache[ssWorldKey(meta.key)]=wstr;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
     .catch(e=>{const why=ssWhy(e);SS.lastErr={ts:Date.now(),why,kind};console.error('save',e);try{addLog('⚠',`Save failed (${kind==='auto'?'autosave':'slot '+(slot+1)}): ${why}`);}catch(_){}showMsg('⚠ Save failed — '+why,'#e88a8a');return null;});}
@@ -307,7 +307,7 @@ function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!ol
 function ssPlaceName(){try{
   if(activeZoneId==='dungeon')return (currentPortal&&currentPortal.name)||'';
   if(activeZoneId!=='world'||typeof WORLD==='undefined')return '';
-  if(currentHouse){const t=currentHouse.siteId&&WORLD.siteAnywhere(currentHouse.siteId);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
+  if(currentHouse){const sid=currentHouse.siteId||(currentHouse.parent&&currentHouse.parent.siteId),t=sid&&WORLD.siteAnywhere(sid);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
   let best=null,bd=1e9;for(const t of WORLD.SITES){if(!t||!t.name)continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
   if(!best)return '';return bd<(best.pad||40)+40?best.name:bd<1500?'near '+best.name:'';
 }catch(e){return '';}}
@@ -703,7 +703,8 @@ function _applyLoadData(d,w){
   // v80 S242 — keys the save always carried (wS is the whole worldState) but the load never read back: the day count,
   // the crime record, the Church's notes, the war, the Reader. Absent from the save, they are cleared, so one
   // character's record never carries into another's.
-  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  journalLoad(d.wS&&d.wS.journal); // S486 — the journal is the character's; a save without one (older than S486) starts it empty
   try{ssSanitizeLoaded();}catch(e){console.warn('sanitize',e);}  // v80 S137
   // v61aw: tutorialDone migration. Saves predating v61aw never had this
   // flag, so fall back to TRUE — those characters are already past the
@@ -875,7 +876,7 @@ function renderSLSlots(){
   const zoneOf=m=>m.place?m.place:m.zone==='world'?'the open country':(ZONE_LABEL&&ZONE_LABEL[m.zone])||m.zone||'…';
   const active=ssActiveKey();const curId=(typeof worldState!=='undefined'&&worldState&&worldState.charId)||null;
   const row=(m,kind,slot,charId)=>{const div=document.createElement('div');div.className='sl-slot'+(m&&m.key===active?' active-slot':'')+(m?'':' sl-slot-empty');div.dataset.key=m?m.key:'';
-    div.innerHTML=`<span class="sl-slot-num">${kind==='auto'?'A'+(slot+1):slot+1}</span><span class="sl-slot-ico">${m?(kind==='auto'?'⟳':'💾'):'·'}</span><span class="sl-slot-info"><div class="sl-slot-name">${m?`Lv${m.level} · ${zoneOf(m)}`:'— Empty —'}</div>${m?`<div class="sl-slot-detail">${m.gold}🪙 · ${fmtT(m.ts)}${m.size?` · ${(m.size/1024).toFixed(0)} KB`:''}</div>`:''}</span>${m?`<button type="button" class="sl-del" title="Delete this save" style="background:none;border:1px solid rgba(255,255,255,.12);color:#a08070;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">🗑</button>`:''}`;
+    div.innerHTML=`<span class="sl-slot-num">${kind==='auto'?'A'+(slot+1):slot+1}</span><span class="sl-slot-ico">${m?(kind==='auto'?'⟳':'💾'):'·'}</span><span class="sl-slot-info"><div class="sl-slot-name">${m?`Lv${m.level} · ${zoneOf(m)}`:'— Empty —'}</div>${m?`<div class="sl-slot-detail">${m.at!=null?gameDateLine(m.at,m.tod,'short')+' · ':''}${m.gold}🪙 · ${fmtT(m.ts)}${m.size?` · ${(m.size/1024).toFixed(0)} KB`:''}</div>`:''}</span>${m?`<button type="button" class="sl-del" title="Delete this save" style="background:none;border:1px solid rgba(255,255,255,.12);color:#a08070;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">🗑</button>`:''}`;
     if(m){const del=div.querySelector('.sl-del');del.onclick=(ev)=>{ev.stopPropagation();if(del.dataset.primed==='1'){ssDelete(m.key).then(()=>renderSLSlots());}else{del.dataset.primed='1';del.textContent='Delete?';del.style.color='#e88a60';setTimeout(()=>{if(del.isConnected){del.dataset.primed='0';del.textContent='🗑';del.style.color='';}},2500);}};}
     if(_slMode==='save'){if(kind==='manual')div.onclick=()=>_slotSaveClick(div,slot,m);else div.style.opacity='.6';}
     else if(m)div.onclick=()=>_slotLoadClick(div,m);

@@ -3,58 +3,37 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### A dragon lair cut taller, so its wyrm stands at 4.5? (the look builder, Session 558, 2026-10-05) — DECISION #162
-You answered B on #153: a dragon at 4.5. The open world's dragon is built at 4.5 now (Session 546). A lair's wyrm is not, because a cavern's roof is 3.2 over its floor and a 4.5 wyrm's crest stands at 3.68. So the wyrm in a dragon's lair is built at the largest size that clears the roof: 3.73, standing 3.05. That is a third larger than before, but short of your 4.5. Should a dragon's lair be cut taller?
+### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
+You answered B on #156: two more armour lines, light for the archer and robes for the mage, each in every tier with its own stats. The question said the numbers would come later from the systems builder. The look is #161; this is the numbers, so the items can be built while the bodies are.
 
-The pictures are on the inspector's stage, each beside a figure of your height (1.7). On the left is the wyrm as built today, under a 3.2 roof. On the right is the wyrm at 4.5, under a 4.4 roof.
+Today one line: five pieces (helmet, cuirass, gauntlets, greaves, boots). A full set is about 4.8 × the tier's base defence (15 at Iron, 34 at Mithril) and weighs 20; from Iron up it needs Fortitude (5, 10, 16 … 56).
 
-- **A. As it is.** The lair's wyrm stays at 3.73, with its crest just under the roof. Nothing changes.
-- **B. The whole cavern of a dragon's lair at 4.4.** The dungeon's height becomes the dungeon's own, not one number for every dungeon. The walls, roof, stairs, hanging lights, traps and the third-person camera's ceiling all read it. Other dungeons stay at 3.2. One session.
-- **C. Only the master's hall at 4.4** *(recommended)*. The rest of the cavern stays at 3.2, and the deepest room, where the wyrm waits, is a vaulted hall: its roof rises over it, and the walls at its doorways step up to meet it. You come out of a low passage into a high, dark room. One session, maybe two, because the dungeon shell has never had a room of its own height.
+- **A. Weight against defence, gated by the line's attribute, one small virtue each.** *(recommended)*
+  - Light (hood, jerkin, bracers, legs, boots): 60% of the heavy piece's defence at 40% of its weight (a set weighs 8). Needs Finesse instead of Fortitude, on the same curve. Each piece worn makes you 3% harder to notice while sneaking (15% for the five).
+  - Robes (cowl, coat, under-robe, wraps; no boots, so the feet take another line's): 25% of the defence at a quarter of the weight. Needs Intelligence. Each piece adds 3 max mana a tier (a set of four at Mithril, +60; one *of the Mage* enchant on one piece gives 50).
+  - The heavy line is unchanged. Prices: light at 90% of the heavy piece, robes at 100%.
+  - Loot: an armour drop is heavy half the time, light a quarter, robes a quarter (a robe has no boots, so a robe roll on the feet is light). The armourer sells heavy and light; robes are sold at goods shops and the Mages' Guild.
+- **B. Weight and defence only.** As A without the two virtues: light is the lighter set, robes the lightest, and nothing else differs.
+- **C. A, and a cost on the heavy line.** Each heavy piece also makes you 4% easier to notice while sneaking and slows mana regen by 5% (Morrowind's and Oblivion's trade). It changes what every player wearing armour today has.
 
-**Recommendation: C.** The point of a bigger dragon is the moment you see it, and a hall that opens over the passage makes that moment. B gets the size but loses the change of height. The fight itself does not change under any option: the wyrm's reach and breath are the systems builder's numbers, and none of them read its size.
-
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wyrmroof-side.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wyrmroof-above.png
-
-### How the light and robe armour lines look (the look builder, Session 556, 2026-10-05) — DECISION #161
-You answered B on #156: two more armour lines beside the one, **light** for the archer and **robes** for the mage. Before building them, here is how they could look. This is a prototype of all five pieces of each line, built with the game's own people kit. It is on the branch `auto/proto-armour-lines`; the game is unchanged.
-
-**Light, the archer's line:**
-- **Jerkin.** A fitted leather body, laced up the front, with a quiver strap across it and four split flaps over the hips. From Iron up it is a brigandine, with rows of rivets in the metal.
-- **Bracers.** Laced leather on both forearms, and a longer guard on the bow arm. From Iron up they have metal splints. The hands are in leather gloves.
-- **Legs.** Strapped thighs and hardened leather at the knees.
-- **Boots.** Soft boots to below the knee, with a turned-down cuff.
-- **Hood.** A hood with a short cape over the shoulders.
-
-**Robes, the mage's line:**
-- **Coat.** A coat to the knee, open at the front over a coloured panel, with a sash, a mantle at the shoulders and wide bell sleeves.
-- **Under-robe.** The legs' piece: a robe to the ankle in the coat's darker shade.
-- **Wraps.** Cloth at the wrists, with a bracelet.
-- **Cowl.** A deep hood draped at the neck.
-
-**The tiers.** The tier colours each line. The leather darkens from Wooden to Steel; from Mithril up it takes the material's colour, and its rivets and buckles are the metal. Each tier of robe has its own dye: undyed, ochre, blue, slate, mithril blue, green, black-violet, red, purple and white. The trim is plain on the first two tiers, gold on Iron and Steel, and the metal from Mithril up. From Mithril up, the glow runs in the trim and a stone sits on the brow.
-
-**The cost.** 7,500 to 10,200 triangles a body, against 10,100 to 12,900 for the plate and mail kits (theirs include a sword and shield).
-
-Pictures (Wooden, Iron, Mithril, Obsidian and Cosmic; then Iron and Mithril close up, from behind, and walking):
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-light-tiers.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-robe-tiers.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-light-close.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-robe-close.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-light-back.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/armourline-robe-walk.png
-
-- **A. Both as shown** *(recommended)*. I build them into the kit, and the systems builder gives the items a line and their stats.
-- **B. The light line as shown, the robes plainer:** one closed robe to the ankle with a sash and the mantle, and no open coat. That is closer to Oblivion's mage robes.
-- **C. The robes as shown, the light line heavier:** a studded or scaled leather coat to mid-thigh in place of the jerkin and flaps, nearer Skyrim's leather armour.
-- **D. Something else:** mark what to change on the pictures.
-
-**Recommendation: A.** Each line reads as its own at a distance, the archer's lean and strapped, the mage's long. That is the build choice your answer asked for. The tiers keep the plate line's idea that the material shows, so a Mithril archer and a Mithril knight still look like one world.
-
-**Two things for the systems builder whatever you choose.** An armour item needs to say which line it is (the look reads `line` on each piece). Boots of the two lines should take their leather or cloth colour, not the metal's.
+**Recommendation: A.** It gives each line a reason beyond its weight, small enough that an enchant still matters more, and leaves the armour already worn as it is. Every number here is a first guess to tune in play.
 
 ## Answered
+### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
+The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.
+
+Michael: **Weight vs defence, own attribute, one small virtue**. (2026-10-05)
+
+### A dragon lair cut taller, so its wyrm stands at 4.5? (the look builder, Session 558, 2026-10-05) — DECISION #162
+The question is in full on auto/backlog (pictures docs/prototypes/wyrmroof-*.png). A cavern's roof is 3.2, so a lair's wyrm is built at 3.73, not the open world's 4.5. A as it is; B the whole cavern of a dragon's lair at 4.4, the dungeon's height its own (walls, roof, stairs, lights, traps and the camera read it; other dungeons stay 3.2; one session); C only the master's hall at 4.4, a vaulted room the doorways step up to (recommended).
+
+Michael: **The whole cavern of a dragon's lair at 4.4**. (2026-10-05)
+
+### How the light and robe armour lines look (the look builder, Session 556, 2026-10-05) — DECISION #161
+The question is in full on auto/backlog (pictures docs/prototypes/armourline-*.png; the prototype is on auto/proto-armour-lines). Light: a laced jerkin, bracers, strapped legs, soft boots and a caped hood; robes: an open coat over a coloured panel, an under-robe, wraps and a deep cowl; the tier colours each line. A both as shown (recommended); B robes plainer; C light line heavier; D something else.
+
+Michael: **Both as shown**. (2026-10-05)
+
 ### Unblock main's CI — four suites failing by turns (the producer, 2026-10-05)
 Main's own check is red on its last two runs with only docs changes between them: lod, saves and parryclock failed on 10cc224 (run 37331939848), then only compactrefit on d4c1672 (run 37339883165). Different suites on the same code points to runner timing. The failed shard of the d4c1672 run was re-run once.
 - **A.** Treat these four as flakes: a branch whose only red is one of them, after one re-run, still goes ready for approval. *(recommended)*
@@ -67,14 +46,10 @@ The question is in full on auto/backlog (prototype pictures under docs/prototype
 
 Michael: **A, plus the hunched, reaching stance**. (2026-10-05)
 
-Done, Session 555 (the look builder): built as B. Under the wraith's hood there is no head, only an unlit darkness with two slanted slits of its eye colour; the wraith and the phantom have arms a quarter longer ending in four bone claws and a thumb, and stand hunched with both arms reaching at chest height. The phantom keeps its face. A wraith's blow lifts the claw over its head and rakes it down from that rest; its timing, reach and damage are unchanged. `tests/wraithhood`; pictures `docs/prototypes/wraith-hood-*.png`, `phantom-claws.png`.
-
 ### Armour for archers and mages? (the look builder, Session 540, 2026-10-05) — DECISION #156
 The question is in full on auto/backlog: one armour line today, its material tier decides the look; should there be armour cut for archers and mages? A not yet; B two more lines, light (jerkin, hood, bracers, soft boots) and robes (layered robe, mantle, cowl), each in every tier with its own stats (recommended); C light only; D robes only.
 
 Michael: **Two more lines: light and robes**. (2026-10-05)
-
-Acted on, Session 556 (the look builder): a prototype of both lines, all five pieces at five tiers, on `auto/proto-armour-lines`; how they look is DECISION #161. The items, their line and stats are the systems builder's.
 
 ### The calendar's names — take the drafted set, and which era? (the quest writer, 2026-10-05) — DECISION #146
 The calendar is built on auto/systems (Sessions 496–500) with placeholder names in one table, `CAL`, and backlog D says the names are proposed by the quest writer and picked by Michael. `docs/quest_drafts.md`, *The Year's Names*, drafts the whole set from the canon. The days are named for the gods, running outward from the hearth: **Hearthday, Stoneday, Beastday, Seaday, Skyday, Weaverday, Guestday**. The Church calls the seventh *the Closed Day*. The months are named for the year's work: **Thaw, Lambing, Sowing, Shearing, Haysel, Highsun, Reaping, Leaffall, Culling, Longnight, Wolfmonth, Lean**. A new tale opens on the 1st of Reaping. The four feasts are **the Kindling** (1st of Thaw), **the Long Light** (19th of Highsun), **the Giving** (23rd of Reaping, when the year's dead are named at the old gate) and **the Empty Chair** (28th of Longnight, a place set for the Guest). The canon names no monarch and dates nothing, so the era is the one call the draft cannot make alone.
@@ -87,6 +62,8 @@ Recommendation: **A.** Every ledger on three islands had to date by the treaty, 
 
 Michael: **The drafted set, years of the Peace**. (2026-10-05)
 
+Done, Session 549 (the systems builder, auto/systems): the names in `CAL`, the era and the date line's four lengths; the feasts follow.
+
 ### Capes and cloaks — a slot and a look, a small virtue per kind, or the hood as a face? (the designer, 2026-10-05) — DECISION #148
 You asked for capes and cloaks as an item slot with minimal bonuses unless rare or magical; today townsfolk wear cloaks that swing (S267) and your own body has the bones but can never wear one. The page (`docs/design/capes-and-cloaks.md`) fixes the shape under every option (a `back` slot, three cuts on your body, the dyer recolours it, no warmth bar, seeded drops; magical cloaks from tier 4 loot) and asks what a mundane cloak should do.
 - **A.** A slot and a look: six kinds, def 1 each, differing only in cut and colour; looted ones roll the armour enchants (1 Opus + 1 Opus look).
@@ -96,6 +73,8 @@ You asked for capes and cloaks as an item slot with minimal bonuses unless rare 
 Recommendation: **B.** The virtue is small and depends on where you are going (the best cloak at sea is the worst in the snow), so the slot has a decision in it without becoming *buy more*; every virtue reads a system already built. C rewrites the crime system's prices for a disguise nobody asked for; it can follow B later.
 
 Michael: **Each kind one small virtue in its place**. (2026-10-05)
+
+Done (the systems half), Session 552 (the systems builder, auto/systems): the slot, the six kinds and their virtues, the stock and the loot. The look half (the cuts on your body) is the look builder's.
 
 ### How large is a dragon? (the look builder, Session 524, 2026-10-05) — DECISION #153
 Michael's inspector note on the dragon: "Design looks fine, but the scale seems far too small compared to the bandit for scale. Dragons should be pretty large."
@@ -115,7 +94,6 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 The inspector at the world's size: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dragon-inspector-after.png
 
 Michael: **4.5: about twice a man's height**. (2026-10-05)
-Done, Session 546 (the look builder): the open world's dragon at 4.5 (3.68 tall); a lair's wyrm at the largest that clears the cavern's 3.2 ceiling (3.73). The "man of 1.7" above was the player's height in world units; a world-built bandit is 1.24, so the dragon stands about three bandits tall, as the pictures showed.
 
 ### The barber and dyer's fee, and whether the shop keeps a strongbox (the systems builder, 2026-10-05) — DECISION #151
 Session 512 (the look builder, auto/backlog) put one barber and dyer in every town and city, after your B on #144, and the next slice opens the creator's look page from the chair. The fee is still open. For scale: an inn room is 6–20 gold a night by place (a town 12, a city 20, ±4 by house), and a level-one job pays 52–97. A second question rides with it: every shop with a keeper has a strongbox the crime system lets you pick, holding 10 + 50 a 100 prosperity in gold (about 40 in a town of 60, at the general goods rate).
@@ -127,6 +105,8 @@ Session 512 (the look builder, auto/backlog) put one barber and dyer in every to
 Recommendation: **A.** One fee matches the one shop you chose on #144, it costs a night's lodging, which is cheap enough to try a look and dear enough not to do it daily, and it needs no price list on the page. B makes the look page a shop, and Morrowind and Skyrim never priced a haircut by the strand.
 
 Michael: **One fee per visit, an inn room's price**. (2026-10-05)
+
+Done, Session 551 (the systems builder, auto/systems): `barberFee`/`barberPay` for the chair's look page to call, and the barber's strongbox at the goods rate. The look page itself is the look builder's slice 2.
 
 ### Unblock the design proposal: a flaky watch test (the producer, 2026-10-05)
 The capes-and-cloaks proposal (PR #149, da57005) changes two docs files and no code, yet the watch test failed on it twice in a row while main, holding the same code, passed.
@@ -200,7 +180,7 @@ What it does in play, measured headless at level 1 with the starting club agains
 
 Recommendation: A. It is the rule the exhausted swing already states (*swing anyway, weakly*), and it keeps the guard a thing you read rather than a thing you mash.
 
-Michael: **No: a spent power attack lands as a guarded hit** (option A). (2026-10-04)
+Michael: **A — an exhausted power attack lands as a guarded hit** (2026-10-04, on #131). Acted, Session 485: both strike paths (the open world's and the dungeon's) let a spent power attack fall through to the guarded hit (the front block .35 on the spent 45%), with a normal swing's posture drain rather than the power attack's, and the hit's line ends *· Too spent to break the guard.* `tests/spentguard`. #131 closed.
 
 ### Journal and calendar — a dated journal only, or a calendar the world keeps? (the designer, 2026-10-04, DECISION #132)
 Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GAME_LOG`, which is never saved, so every line is lost on reload. The page (`docs/design/journal-and-calendar.md`) fixes the shape under every option (a 7-day week, a day per god; 28-day months, so a weekday keeps its dates; 12 months and 336 days, a year a long playthrough at 60 to 1; entries saved in the character row) and asks how far the calendar should reach into play.
@@ -210,7 +190,7 @@ Today the date is *Day 12 · 7:40 am* in the sleep panel, and the journal is `GA
 
 Recommendation: **B.** A calendar that only labels the clock is a name on a number; market days, god's days, feasts and dated work make the date something you plan a road around. C's topic index is a reference more than a decision, and better after the dialogue settles. The names of days, months, seasons, era and feasts are the quest writer's under every option.
 
-Michael: **B, and Morrowind's whole book** (option C). (2026-10-04)
+Michael: **C — B, and Morrowind's whole book** (2026-10-04, on #132: the dated journal, a calendar the world keeps, and the topic index). Acted, Session 486: part A's first slice, the journal saved in the character row with each line's date (`tests/journal`). The rest is in backlog E and D: the Journal tab's two views and the date line everywhere wait on the quest writer's names; B and C touch the world module and follow its break-up. #132 closed by the producer.
 
 ### The title screen and the character creator — one sheet or a book? (the concept artist, 2026-10-03, DECISION #126)
 Today the title is green text on black: the name, a stale subtitle (*Village of Ashenmoor*, a legacy zone the game no longer starts in), six lines of controls and two or three web buttons. The creator is one dark column 1,278 px tall in the 600 px game frame, 2.1 screens of scrolling with *Begin* below the fold; the style and beard rows are walls of 13 and 15 buttons. The prototype puts both on the approved parchment kit (27 Sep) with the game's own data and no rule change: the eight beginnings, six starting weapons, eight gifts at 8 points and 3 at most in one, the four peoples' lines, the look rows, and the creator's own figure photographed at full length. Prototype: `docs/prototypes/creator/` on auto/concept.

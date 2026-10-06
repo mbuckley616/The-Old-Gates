@@ -13,6 +13,7 @@ function _enterGame(){
   document.getElementById('fbtn').style.display='block';
   G.setAttribute('tabindex','0');G.focus();
   G.addEventListener('keydown',e2=>{
+    if(hubOpen&&e2.target&&(e2.target.tagName==='INPUT'||e2.target.tagName==='TEXTAREA')){if(e2.code==='Escape'){e2.target.blur();G.focus();}return;} // S490 — typing in the Journal's search is typing, not play
     if(e2.code==='Tab'){e2.preventDefault();if(hubOpen)closeHub();else openHub('map');return;}
     // Global TTS mute toggle — works from any context including mid-speech
     if(e2.code==='KeyM'&&!e2.repeat){
@@ -111,7 +112,7 @@ function _enterGame(){
     // DOM-flagged modals — checked via display style. Catches sigil overlay,
     // book reader, wait menu, save/load menu, character creator, title overlay.
     // Each id is gated on existence because the DOM is built lazily.
-    const ids=['sigil-overlay','book-overlay','wait-modal','slmenu','cc-modal','ov','quest-popup','lockpick'];
+    const ids=['sigil-overlay','book-overlay','sleepui','slmenu','cc-modal','ov','quest-popup','lockpick'];
     for(const id of ids){
       const el=document.getElementById(id);
       if(el && el.style.display && el.style.display!=='none') return true;

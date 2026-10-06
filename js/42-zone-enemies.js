@@ -14,6 +14,8 @@
 // flank, your swing's spread on it) draws from foeRand(e), so two machines that agree on the id roll the same fight.
 // A foe with no id yet (camps, raids, quest spawns) rolls Math.random, as before.
 function keyFoe(e,id){if(e){e.id=String(id);e.rng=seededRng('foe',e.id);}return e;}
+// S543 — a legacy zone's foe: the zone, the group's index in its config's enemies (not in a filtered list), and its count
+function legacyFoeId(zone,groups,group,i){const k=(groups||[]).indexOf(group);return `${zone||'zone'}:foe:${k<0?0:k}:${i}`;}
 function foeRand(e){return e&&e.rng?e.rng():Math.random();}
 // ── BOSSES (module-top) ────────────────────────────────────────────
 // v61c2 (Faolchú): boss enemies are scripted spawns, not procedural pool
@@ -445,6 +447,7 @@ function spawnLesserFaolchu(parentBoss){
   if(limbs.wolf)limbs.wolf.e=e;
   e.shape = 'wolf';
   initPosture(e);
+  if(parentBoss && parentBoss.id){parentBoss._lessers=(parentBoss._lessers||0)+1;keyFoe(e,parentBoss.id+':lesser:'+parentBoss._lessers);} // S543 — the boss's id and the add's count
   ZE.push(e);
   if(activeZoneId==='overworld' && typeof ZONES!=='undefined' && ZONES.overworld && ZONES.overworld.enemies && ZONES.overworld.enemies !== ZE){
     ZONES.overworld.enemies.push(e);
@@ -1639,6 +1642,7 @@ function killZoneEnemy(e,sc,tag=''){
   ZONE_CORPSES.push({
     x:e.x, z:e.z, y:(activeZoneId==='world')?0.45:terrainY, name:e.name, displayName:e.name, // v80 S135 — relative in the world (lookingAt adds the ground)
     items, gl:lootGl, spark:lootSpark, age:0, scene:sc, zone:activeZoneId, looted:false,
+    id:e.id?`${e.id}:corpse`:null, // S516 — a keyed foe's corpse is <foe id>:corpse (co-op rules); its loot rolls on that and the day
     body:e.mesh, // S417 — searched anywhere on the body (lookingAt)
   });
   // Dim enemy aura light now that it's a corpse (enemy.el keeps existing but dim)
@@ -1697,7 +1701,10 @@ function _resolveZoneStrike(_isPow){
     _hitsLanded++;
     // v65 — Power-vs-shielded enemy: pure stagger, no damage. Mirrors the
     // dungeon path. See attack() for the design rationale.
-    if(_isPow && e.shieldUp && !riposteOpen(e)){
+    // S485 — a power attack swung on too little stamina (_exhaustedStrike) does not break the guard (Michael's A on #131):
+    // it falls through and lands as a guarded hit, 35% of the exhausted 45%, saying so
+    const _spent=_isPow&&e.shieldUp&&!riposteOpen(e)&&_exhaustedStrike;
+    if(_isPow && e.shieldUp && !riposteOpen(e) && !_spent){
       if(typeof e.posture==='number' && !isStaggered(e)){
         applyPostureDamage(e, (e.maxPosture||999), performance.now()/1000);
         staggered.push({e, t: POSTURE_BREAK_STUN});
@@ -1732,7 +1739,7 @@ function _resolveZoneStrike(_isPow){
       // POSTURE_DRAIN_POWER (25) vs normal POSTURE_DRAIN_NORMAL (8).
       // v65: postureMult from WEAPON_TYPES scales the drain on top.
       if(e.hp>0 && typeof e.posture==='number' && !isStaggered(e)){
-        const drain = (_isPow ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult;
+        const drain = (_isPow&&!_spent ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult; // S485 — a spent power attack on a guard drains as the guarded hit it is
         const broke = applyPostureDamage(e, drain, performance.now()/1000);
         if(broke){
           staggered.push({e, t: POSTURE_BREAK_STUN});
@@ -1763,7 +1770,7 @@ function _resolveZoneStrike(_isPow){
         if(e.hp<=0){
           killZoneEnemy(e,sc,_killTag);
           if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}`,'#ff9944');
+        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}${_spent?' · Too spent to break the guard.':''}`,'#ff9944');
       }
     }
   }

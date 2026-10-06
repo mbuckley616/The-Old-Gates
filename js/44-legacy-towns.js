@@ -885,19 +885,22 @@ function buildWildernessZone(cfg){
     const basePos = group.pos || [];
     const targetCount = (typeof _scaleSpawnCount === 'function') ? _scaleSpawnCount(basePos.length) : basePos.length;
     for(let i=0; i<targetCount; i++){
+      // S543 — co-op rules: a legacy zone's foe is <zone>:foe:<group>:<i> (the group's place in the config, so a
+      // time-of-day filter or a respawn moves no other foe's id); its extra spot and its variant come from that id
+      const fid=legacyFoeId(cfg.id,cfg.enemies,group,i);
       let ex, ez;
       if(i < basePos.length){
         [ex, ez] = basePos[i];
       } else {
-        // Synthesize an extra spawn near a randomly-picked base position.
+        // Synthesize an extra spawn near a base position.
         // Jitter radius 4 units; clamps via ground sampling that
         // buildZoneEnemy already does.
         const [bx, bz] = basePos[i % basePos.length];
-        const jr = 4;
-        ex = bx + (Math.random()*2-1)*jr;
-        ez = bz + (Math.random()*2-1)*jr;
+        const jr = 4, pr = seededRng('place', fid);
+        ex = bx + (pr()*2-1)*jr;
+        ez = bz + (pr()*2-1)*jr;
       }
-      zoneEnemies.push(buildZoneEnemy(sc,sol,ex,ez,group.name,pickVariant(group.name,level,'normal')));
+      zoneEnemies.push(keyFoe(buildZoneEnemy(sc,sol,ex,ez,group.name,pickVariant(group.name,level,'normal',seededRng('variant',fid))),fid));
     }
   });
   if(typeof _markZoneSpawned === 'function' && cfg.id) _markZoneSpawned(cfg.id);

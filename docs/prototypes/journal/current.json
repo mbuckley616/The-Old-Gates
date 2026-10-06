@@ -1,0 +1,672 @@
+{
+ "L": [
+  {
+   "t": 0,
+   "icon": "🪦",
+   "text": "Traveller woke in the dark.",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 0,
+   "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace",
+   "short": "Hearthday 1 Reaping · 6:00 am",
+   "time": "6:00 am"
+  },
+  {
+   "t": 0,
+   "icon": "🌍",
+   "text": "Traveled to Hearthwick",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 0,
+   "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace",
+   "short": "Hearthday 1 Reaping · 6:00 am",
+   "time": "6:00 am"
+  },
+  {
+   "t": 0,
+   "icon": "📜",
+   "text": "I woke inside a stone coffin in a forgotten crypt. I have no memory of how I came to be here, or for how long I have lain. The air is dank and stinks of death. I need to find a way out.",
+   "q": "q0_arrival",
+   "qk": "accept",
+   "note": false,
+   "qt": "Out of the Dark",
+   "day": 0,
+   "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace",
+   "short": "Hearthday 1 Reaping · 6:00 am",
+   "time": "6:00 am"
+  },
+  {
+   "t": 0,
+   "icon": "🌍",
+   "text": "Traveled to x",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 0,
+   "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace",
+   "short": "Hearthday 1 Reaping · 6:00 am",
+   "time": "6:00 am"
+  },
+  {
+   "t": 1,
+   "icon": "🗺️",
+   "text": "Discovered Hearthwick.",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 0,
+   "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace",
+   "short": "Hearthday 1 Reaping · 6:01 am",
+   "time": "6:01 am"
+  },
+  {
+   "t": 2130,
+   "icon": "📜",
+   "text": "A letter for Elder Cormac — Mayor Niamh",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 1,
+   "date": "Stoneday, the 2nd of Reaping, in the 27th year of the Peace",
+   "short": "Stoneday 2 Reaping · 11:30 am",
+   "time": "11:30 am"
+  },
+  {
+   "t": 2130,
+   "icon": "📜",
+   "text": "Niamh: \"Carry this to Elder Cormac at Droichead, north-west of here. Put it in their hand, no one else's.\"",
+   "q": "tq:dunmore:0",
+   "qk": "accept",
+   "note": false,
+   "qt": "A letter for Elder Cormac",
+   "day": 1,
+   "date": "Stoneday, the 2nd of Reaping, in the 27th year of the Peace",
+   "short": "Stoneday 2 Reaping · 11:30 am",
+   "time": "11:30 am"
+  },
+  {
+   "t": 2650,
+   "icon": "📜",
+   "text": "Quest: First Blood",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 1,
+   "date": "Stoneday, the 2nd of Reaping, in the 27th year of the Peace",
+   "short": "Stoneday 2 Reaping · 8:10 pm",
+   "time": "8:10 pm"
+  },
+  {
+   "t": 2650,
+   "icon": "📜",
+   "text": "\"First Blood\" has been added to my journal.",
+   "q": "q1_first_blood",
+   "qk": "accept",
+   "note": false,
+   "qt": "First Blood",
+   "day": 1,
+   "date": "Stoneday, the 2nd of Reaping, in the 27th year of the Peace",
+   "short": "Stoneday 2 Reaping · 8:10 pm",
+   "time": "8:10 pm"
+  },
+  {
+   "t": 2664,
+   "icon": "✎",
+   "text": "The lord pays in silver he weighs twice. Count it at the door, not after.",
+   "q": null,
+   "qk": null,
+   "note": true,
+   "qt": null,
+   "day": 1,
+   "date": "Stoneday, the 2nd of Reaping, in the 27th year of the Peace",
+   "short": "Stoneday 2 Reaping · 8:24 pm",
+   "time": "8:24 pm"
+  },
+  {
+   "t": 3426,
+   "icon": "🗺️",
+   "text": "Discovered the Barrow of Cnoc Rua.",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 9:06 am",
+   "time": "9:06 am"
+  },
+  {
+   "t": 3700,
+   "icon": "📜",
+   "text": "Five down in the Shadows. Skeletons mostly — the sound they make when they go is dry like splitting kindling. Back to the forge.",
+   "q": "q1_first_blood",
+   "qk": "ready",
+   "note": false,
+   "qt": "First Blood",
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 1:40 pm",
+   "time": "1:40 pm"
+  },
+  {
+   "t": 3860,
+   "icon": "✅",
+   "text": "A letter for Elder Cormac: objective complete.",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 4:19 pm",
+   "time": "4:19 pm"
+  },
+  {
+   "t": 3860,
+   "icon": "📜",
+   "text": "Done — report to Mayor Niamh.",
+   "q": "tq:dunmore:0",
+   "qk": "ready",
+   "note": false,
+   "qt": "A letter for Elder Cormac",
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 4:19 pm",
+   "time": "4:19 pm"
+  },
+  {
+   "t": 4050,
+   "icon": "🏅",
+   "text": "A letter for Elder Cormac: 56 gold.",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 7:30 pm",
+   "time": "7:30 pm"
+  },
+  {
+   "t": 4050,
+   "icon": "✅",
+   "text": "Turned in to Mayor Niamh: 56 gold.",
+   "q": "tq:dunmore:0",
+   "qk": "complete",
+   "note": false,
+   "qt": "A letter for Elder Cormac",
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 7:30 pm",
+   "time": "7:30 pm"
+  },
+  {
+   "t": 4075,
+   "icon": "✅",
+   "text": "Completed quest: First Blood",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 7:55 pm",
+   "time": "7:55 pm"
+  },
+  {
+   "t": 4075,
+   "icon": "✅",
+   "text": "Iron Sword from Bram. Clean-forged, his own hammer on it. Heavier than what I came in with — sits right. He pointed me at Edna in the south cottage. Said she's been sitting on something about the Shadows for thirty years.",
+   "q": "q1_first_blood",
+   "qk": "complete",
+   "note": false,
+   "qt": "First Blood",
+   "day": 2,
+   "date": "Beastday, the 3rd of Reaping, in the 27th year of the Peace",
+   "short": "Beastday 3 Reaping · 7:55 pm",
+   "time": "7:55 pm"
+  },
+  {
+   "t": 4932,
+   "icon": "📜",
+   "text": "A letter for Harbour Reeve Róisín — Mayor Niamh",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 3,
+   "date": "Seaday, the 4th of Reaping, in the 27th year of the Peace",
+   "short": "Seaday 4 Reaping · 10:12 am",
+   "time": "10:12 am"
+  },
+  {
+   "t": 4932,
+   "icon": "📜",
+   "text": "Niamh: \"Carry this to Harbour Reeve Róisín at Portclare, east of here. Put it in their hand, no one else's.\"",
+   "q": "tq:dunmore:1",
+   "qk": "accept",
+   "note": false,
+   "qt": "A letter for Harbour Reeve Róisín",
+   "day": 3,
+   "date": "Seaday, the 4th of Reaping, in the 27th year of the Peace",
+   "short": "Seaday 4 Reaping · 10:12 am",
+   "time": "10:12 am"
+  },
+  {
+   "t": 4932,
+   "icon": "🛏️",
+   "text": "Rented the second door on the right at The Bramble Hearth for 11 gold.",
+   "q": null,
+   "qk": null,
+   "note": false,
+   "qt": null,
+   "day": 3,
+   "date": "Seaday, the 4th of Reaping, in the 27th year of the Peace",
+   "short": "Seaday 4 Reaping · 10:12 am",
+   "time": "10:12 am"
+  },
+  {
+   "t": 5616,
+   "icon": "✎",
+   "text": "Ask the smith what a barrow-blade is worth before the Giving. The whole town will be at the gate that day.",
+   "q": null,
+   "qk": null,
+   "note": true,
+   "qt": null,
+   "day": 3,
+   "date": "Seaday, the 4th of Reaping, in the 27th year of the Peace",
+   "short": "Seaday 4 Reaping · 9:36 pm",
+   "time": "9:36 pm"
+  }
+ ],
+ "T": [
+  {
+   "l": "What is this place?",
+   "s": "Gráinne",
+   "w": "Dunmore",
+   "r": "The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.",
+   "t": 2055,
+   "short": "Stoneday 2 Reaping · 10:15 am"
+  },
+  {
+   "l": "What is this place?",
+   "s": "Sorcha",
+   "w": "Dunmore",
+   "r": "The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else.",
+   "t": 2061,
+   "short": "Stoneday 2 Reaping · 10:21 am"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Lorcan",
+   "w": "Dunmore",
+   "r": "I came from Villemont, 34 years back. I'm a smith. If I want anything it's to hear from my daughter.",
+   "t": 2067,
+   "short": "Stoneday 2 Reaping · 10:27 am"
+  },
+  {
+   "l": "What do you do here?",
+   "s": "Lorcan",
+   "w": "Dunmore",
+   "r": "I'm a smith. Nails, mostly. Everyone wants swords; everyone needs nails.",
+   "t": 2073,
+   "short": "Stoneday 2 Reaping · 10:33 am"
+  },
+  {
+   "l": "Family?",
+   "s": "Lorcan",
+   "w": "Dunmore",
+   "r": "Not anymore.",
+   "t": 2079,
+   "short": "Stoneday 2 Reaping · 10:39 am"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Bríd",
+   "w": "Dunmore",
+   "r": "Born here. 6 years, man and boy. I'm a armourer. If I want anything it's a quiet year.",
+   "t": 2085,
+   "short": "Stoneday 2 Reaping · 10:45 am"
+  },
+  {
+   "l": "What do you do here?",
+   "s": "Bríd",
+   "w": "Dunmore",
+   "r": "I'm a armourer. The same as my mother did, and hers.",
+   "t": 2091,
+   "short": "Stoneday 2 Reaping · 10:51 am"
+  },
+  {
+   "l": "I’m looking for work.",
+   "s": "Niamh",
+   "w": "Dunmore",
+   "r": "Niamh: \"Carry this to Elder Cormac at Droichead, north-west of here. Put it in their hand, no one else's.\" (56 gold.)",
+   "t": 2130,
+   "short": "Stoneday 2 Reaping · 11:30 am"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Cathal",
+   "w": "Dunmore",
+   "r": "I came from Marnbrouey, 20 years back. I'm a apothecary. If I want anything it's to be left alone, mostly.",
+   "t": 2385,
+   "short": "Stoneday 2 Reaping · 3:45 pm"
+  },
+  {
+   "l": "What do you do here?",
+   "s": "Cathal",
+   "w": "Dunmore",
+   "r": "I'm a apothecary. The same as my mother did, and hers.",
+   "t": 2390,
+   "short": "Stoneday 2 Reaping · 3:50 pm"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Clodagh",
+   "w": "Dunmore",
+   "r": "I came from Ruins of Villeargent, 10 years back. I'm a trader. If I want anything it's to go to sea again.",
+   "t": 2400,
+   "short": "Stoneday 2 Reaping · 4:00 pm"
+  },
+  {
+   "l": "What do you do here?",
+   "s": "Clodagh",
+   "w": "Dunmore",
+   "r": "I'm a trader. The same as my mother did, and hers.",
+   "t": 2405,
+   "short": "Stoneday 2 Reaping · 4:04 pm"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Aoife",
+   "w": "Dunmore",
+   "r": "I came from Trodou, 42 years back. I'm a trader. Married to Tadhg, 3 children. If I want anything it's to hear from my daughter.",
+   "t": 2415,
+   "short": "Stoneday 2 Reaping · 4:15 pm"
+  },
+  {
+   "l": "Family?",
+   "s": "Aoife",
+   "w": "Dunmore",
+   "r": "Tadhg. 3 children, and they eat like it.",
+   "t": 2425,
+   "short": "Stoneday 2 Reaping · 4:25 pm"
+  },
+  {
+   "l": "It’s done.",
+   "s": "Niamh",
+   "w": "Dunmore",
+   "r": "56 gold. The town won't forget it.",
+   "t": 4050,
+   "short": "Beastday 3 Reaping · 7:30 pm"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Róisín",
+   "w": "Dunmore",
+   "r": "Born here. 14 years, man and boy. I'm a trader. If I want anything it's a quiet year.",
+   "t": 4824,
+   "short": "Seaday 4 Reaping · 8:24 am"
+  },
+  {
+   "l": "Family?",
+   "s": "Róisín",
+   "w": "Dunmore",
+   "r": "A brother somewhere. We don't write.",
+   "t": 4838,
+   "short": "Seaday 4 Reaping · 8:38 am"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Ruairí",
+   "w": "Dunmore",
+   "r": "Born here. 3 years, man and boy. I'm a innkeeper. Married to Bríd. If I want anything it's to be left alone, mostly.",
+   "t": 4845,
+   "short": "Seaday 4 Reaping · 8:45 am"
+  },
+  {
+   "l": "What do you do here?",
+   "s": "Ruairí",
+   "w": "Dunmore",
+   "r": "I'm a innkeeper. Beds, ale, and other people's trouble.",
+   "t": 4852,
+   "short": "Seaday 4 Reaping · 8:52 am"
+  },
+  {
+   "l": "Family?",
+   "s": "Ruairí",
+   "w": "Dunmore",
+   "r": "Bríd. No children. We tried.",
+   "t": 4859,
+   "short": "Seaday 4 Reaping · 8:59 am"
+  },
+  {
+   "l": "Who are you?",
+   "s": "Oisín",
+   "w": "Dunmore",
+   "r": "Born here. 8 years, man and boy. I'm a innkeeper. If I want anything it's one good harvest, just one.",
+   "t": 4866,
+   "short": "Seaday 4 Reaping · 9:06 am"
+  },
+  {
+   "l": "I’m looking for work.",
+   "s": "Niamh",
+   "w": "Dunmore",
+   "r": "Niamh: \"Carry this to Harbour Reeve Róisín at Portclare, east of here. Put it in their hand, no one else's.\" (47 gold; 59 if it is done by Weaverday, the 13th of Reaping. After that, the work goes to someone else.)",
+   "t": 4932,
+   "short": "Seaday 4 Reaping · 10:12 am"
+  },
+  {
+   "l": "A bed for the night?",
+   "s": "Ruairí",
+   "w": "Dunmore",
+   "r": "There’s one other guest in tonight. A room is 11 gold — the second door on the right, a bed, a bolt on the door, and breakfast if you’re up for it. Will I make it up for you?",
+   "t": 4932,
+   "short": "Seaday 4 Reaping · 10:12 am"
+  },
+  {
+   "l": "Yes. 11 gold.",
+   "s": "Ruairí",
+   "w": "Dunmore",
+   "r": "11 gold, and thank you. The second door on the right, up the stairs, and yours till this time tomorrow. The other doors aren’t mine to open, nor yours either.",
+   "t": 4932,
+   "short": "Seaday 4 Reaping · 10:12 am"
+  }
+ ],
+ "D": [
+  {
+   "at": 6372,
+   "icon": "🛏",
+   "text": "The room you let is the innkeeper’s again.",
+   "day": "Skyday, the 5th of Reaping",
+   "dd": 1
+  },
+  {
+   "at": 18719,
+   "icon": "📜",
+   "text": "A letter for Harbour Reeve Róisín — for Mayor Niamh: 59 gold if it is done by then; after it, the work is taken back.",
+   "day": "Weaverday, the 13th of Reaping",
+   "dd": 9
+  },
+  {
+   "at": 31680,
+   "icon": "🪨",
+   "text": "The Giving — the year’s dead named at the old gate.",
+   "feast": "giving",
+   "day": "Stoneday, the 23rd of Reaping",
+   "dd": 19
+  }
+ ],
+ "names": [
+  "Gráinne",
+  "Dunmore",
+  "Clodagh",
+  "Sorcha",
+  "Lorcan",
+  "Cathal",
+  "Róisín",
+  "Ruairí",
+  "Niamh",
+  "Aoife",
+  "Oisín",
+  "Bríd"
+ ],
+ "today": "Seaday, the 4th of Reaping, in the 27th year of the Peace · 9:36 pm",
+ "todayDay": "Seaday, the 4th of Reaping",
+ "cal": {
+  "day": {
+   "god": "muir",
+   "name": "Seaday",
+   "deep": "Lá na Mara",
+   "inst": "le jour de la Mer"
+  },
+  "dom": 4,
+  "month": "Reaping",
+  "year": 27,
+  "era": "the Peace",
+  "season": "autumn",
+  "months": [
+   "Thaw",
+   "Lambing",
+   "Sowing",
+   "Shearing",
+   "Haysel",
+   "Highsun",
+   "Reaping",
+   "Leaffall",
+   "Culling",
+   "Longnight",
+   "Wolfmonth",
+   "Lean"
+  ],
+  "days": [
+   {
+    "god": "teallach",
+    "name": "Hearthday",
+    "deep": "Lá an Teallaigh",
+    "inst": "le jour de l’Âtre"
+   },
+   {
+    "god": "cloch",
+    "name": "Stoneday",
+    "deep": "Lá na Cloiche",
+    "inst": "le jour de la Pierre"
+   },
+   {
+    "god": "beithigh",
+    "name": "Beastday",
+    "deep": "Lá na mBeithíoch",
+    "inst": "le jour des Bêtes"
+   },
+   {
+    "god": "muir",
+    "name": "Seaday",
+    "deep": "Lá na Mara",
+    "inst": "le jour de la Mer"
+   },
+   {
+    "god": "speir",
+    "name": "Skyday",
+    "deep": "Lá na Spéire",
+    "inst": "le jour du Ciel"
+   },
+   {
+    "god": "fiodoir",
+    "name": "Weaverday",
+    "deep": "Lá an Fhíodóra",
+    "inst": "le jour du Tisserand"
+   },
+   {
+    "god": "guest",
+    "name": "Guestday",
+    "deep": "Lá an Aoi",
+    "inst": "le Jour Clos"
+   }
+  ],
+  "feasts": [
+   {
+    "name": "The Kindling",
+    "month": 0,
+    "dom": 1,
+    "ico": "🔥",
+    "due": "every hearth lit from the square’s fire, and the year turns."
+   },
+   {
+    "name": "The Long Light",
+    "month": 5,
+    "dom": 19,
+    "ico": "☀",
+    "due": "the races, the yard, and the charters at noon."
+   },
+   {
+    "name": "The Giving",
+    "month": 6,
+    "dom": 23,
+    "ico": "🪨",
+    "due": "the year’s dead named at the old gate."
+   },
+   {
+    "name": "The Empty Chair",
+    "month": 9,
+    "dom": 28,
+    "ico": "🪑",
+    "due": "a place set, and the door off the latch till dawn."
+   }
+  ]
+ },
+ "who": {
+  "name": "Traveller",
+  "level": 1
+ },
+ "inn": [
+  "3. A bed for the night?",
+  "1. Yes. 11 gold.",
+  "{\"id\":\"g_dunmore_8\",\"room\":1,\"until\":6372}"
+ ],
+ "asked": [
+  "Gráinne: What is this place?",
+  "Sorcha: What is this place?",
+  "Lorcan: About you … › Who are you?",
+  "Lorcan: About you … › What do you do here?",
+  "Lorcan: About you … › Family?",
+  "Bríd: About you … › Who are you?",
+  "Bríd: About you … › What do you do here?",
+  "Bríd: About you … › Family?",
+  "Cathal: About you … › Who are you?",
+  "Cathal: About you … › What do you do here?",
+  "Cathal: About you … › Family?",
+  "Clodagh: About you … › Who are you?",
+  "Clodagh: About you … › What do you do here?",
+  "Clodagh: About you … › Family?",
+  "Aoife: About you … › Who are you?",
+  "Aoife: About you … › What do you do here?",
+  "Aoife: About you … › Family?",
+  "Róisín: About you … › Who are you?",
+  "Róisín: About you … › What do you do here?",
+  "Róisín: About you … › Family?",
+  "Ruairí: About you … › Who are you?",
+  "Ruairí: About you … › What do you do here?",
+  "Ruairí: About you … › Family?",
+  "Oisín: About you … › Who are you?",
+  "Oisín: About you … › What do you do here?",
+  "Oisín: About you … › Family?"
+ ],
+ "views": {
+  "day": "Write it\nSeaday, the 4th of Reaping, in the 27th year of the Peace\n10:12 am\n📜 A letter for Harbour Reeve Róisín — Mayor Niamh\n10:12 am\n📜 A letter for Harbour Reeve Róisín — Niamh: \"Carry this to Harbour Reeve Róisín at Portclare, east of here. Put it in their hand, no one else's.\"\n10:12 am\n🛏️ Rented the second door on the right at The Bramble Hearth for 11 gold.\n9:36 pm\n✎ Ask the smith what a barrow-blade is worth before the Giving. The whole town will be at the gate that day.\nBeastday, the 3rd of Reaping, in the 27th year of the Peace\n9:06 am\n🗺️ Discovered the Barrow of Cnoc Rua.\n1:40 pm\n📜 First Blood — Five down in the Shadows. Skeletons mostly — the sound they make when they go is dry like splitting kindling. Back to the forge.\n4:19 pm\n✅ A letter for Elder Cormac: objective complete.\n4:19 pm\n📜 A letter for Elder Cormac — Done — report to Mayor Niamh.\n7:30 pm\n🏅 A letter for Elder Cormac: 56 gold.\n7:30 pm\n✅ A letter for Elder Cormac — Turned in to Mayor Niamh: 56 gold.\n7:55 pm\n✅ Completed quest: First Blood\n7:55 pm\n✅ First Blood — Iron Sword from Bram. Clean-forged, his own hammer on it. Heavier than what I came in with — sits right. He pointed me at Edna in the south cottage. Said she's been sitting on something about the Shadows for thirty years.\nStoneday, the 2nd of Reaping, in the 27th year of the Peace\n11:30 am\n📜 A letter for Elder Cormac — Mayor Niamh\n11:30 am\n📜 A letter for Elder Cormac — Niamh: \"Carry this to Elder Cormac at Droichead, north-west of here. Put it in their hand, no one else's.\"\n8:10 pm\n📜 Quest: First Blood\n8:10 pm\n📜 First Blood — \"First Blood\" has been added to my journal.\n8:24 pm\n✎ The lord pays in silver he weighs twice. Count it at the door, not after.\nHearthday, the 1st of Reaping, in the 27th year of the Peace\n6:00 am\n🪦 Traveller woke in the dark.\n6:00 am\n🌍 Traveled to Hearthwick\n6:00 am\n📜 Out of the Dark — I woke inside a stone coffin in a forgotten crypt. I have no memory of how I came to be here, or for how long I have lain. The air is dank and stinks of death. I need to find a way out.\n6:00 am\n🌍 Traveled to x\n6:01 am\n🗺️ Discovered Hearthwick.",
+  "quest": "Out of the Dark\nin hand\nHearthday 1 Reaping · 6:00 am\nI woke inside a stone coffin in a forgotten crypt. I have no memory of how I came to be here, or for how long I have lain. The air is dank and stinks of death. I need to find a way out.\nA letter for Harbour Reeve Róisín\nin hand\nSeaday 4 Reaping · 10:12 am\nNiamh: \"Carry this to Harbour Reeve Róisín at Portclare, east of here. Put it in their hand, no one else's.\"\nA letter for Elder Cormac\ncomplete\nStoneday 2 Reaping · 11:30 am\nNiamh: \"Carry this to Elder Cormac at Droichead, north-west of here. Put it in their hand, no one else's.\"\nBeastday 3 Reaping · 4:19 pm\nDone — report to Mayor Niamh.\nBeastday 3 Reaping · 7:30 pm\nTurned in to Mayor Niamh: 56 gold.\nFirst Blood\ncomplete\nStoneday 2 Reaping · 8:10 pm\n\"First Blood\" has been added to my journal.\nBeastday 3 Reaping · 1:40 pm\nFive down in the Shadows. Skeletons mostly — the sound they make when they go is dry like splitting kindling. Back to the forge.\nBeastday 3 Reaping · 7:55 pm\nIron Sword from Bram. Clean-forged, his own hammer on it. Heavier than what I came in with — sits right. He pointed me at Edna in the south cottage. Said she's been sitting on something about the Shadows for thirty years.",
+  "topics": "A bed for the night?\ntold by Ruairí in Dunmore · Seaday 4 Reaping · 10:12 am\nThere’s one other guest in tonight. A room is 11 gold — the second door on the right, a bed, a bolt on the door, and breakfast if you’re up for it. Will I make it up for you?\nFamily?\ntold by Lorcan in Dunmore · Stoneday 2 Reaping · 10:39 am\nNot anymore.\ntold by Aoife in Dunmore · Stoneday 2 Reaping · 4:25 pm\nTadhg. 3 children, and they eat like it.\ntold by Róisín in Dunmore · Seaday 4 Reaping · 8:38 am\nA brother somewhere. We don't write.\ntold by Ruairí in Dunmore · Seaday 4 Reaping · 8:59 am\nBríd. No children. We tried.\nI’m looking for work.\ntold by Niamh in Dunmore · Stoneday 2 Reaping · 11:30 am\nNiamh: \"Carry this to Elder Cormac at Droichead, north-west of here. Put it in their hand, no one else's.\" (56 gold.)\ntold by Niamh in Dunmore · Seaday 4 Reaping · 10:12 am\nNiamh: \"Carry this to Harbour Reeve Róisín at Portclare, east of here. Put it in their hand, no one else's.\" (47 gold; 59 if it is done by Weaverday, the 13th of Reaping. After that, the work goes to someone else.)\nIt’s done.\ntold by Niamh in Dunmore · Beastday 3 Reaping · 7:30 pm\n56 gold. The town won't forget it.\nWhat do you do here?\ntold by Lorcan in Dunmore · Stoneday 2 Reaping · 10:33 am\nI'm a smith. Nails, mostly. Everyone wants swords; everyone needs nails.\ntold by Bríd in Dunmore · Stoneday 2 Reaping · 10:51 am\nI'm a armourer. The same as my mother did, and hers.\ntold by Cathal in Dunmore · Stoneday 2 Reaping · 3:50 pm\nI'm a apothecary. The same as my mother did, and hers.\ntold by Clodagh in Dunmore · Stoneday 2 Reaping · 4:04 pm\nI'm a trader. The same as my mother did, and hers.\ntold by Ruairí in Dunmore · Seaday 4 Reaping · 8:52 am\nI'm a innkeeper. Beds, ale, and other people's trouble.\nWhat is this place?\ntold by Gráinne in Dunmore · Stoneday 2 Reaping · 10:15 am\nThe Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.\ntold by Sorcha in Dunmore · Stoneday 2 Reaping · 10:21 am\nThe Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else.\nWho are you?\ntold by Lorcan in Dunmore · Stoneday 2 Reaping · 10:27 am\nI came from Villemont, 34 years back. I'm a smith. If I want anything it's to hear from my daughter.\ntold by Bríd in Dunmore · Stoneday 2 Reaping · 10:45 am\nBorn here. 6 years, man and boy. I'm a armourer. If I want anything it's a quiet year.\ntold by Cathal in Dunmore · Stoneday 2 Reaping · 3:45 pm\nI came from Marnbrouey, 20 years back. I'm a apothecary. If I want anything it's to be left alone, mostly.\ntold by Clodagh in Dunmore · Stoneday 2 Reaping · 4:00 pm\nI came from Ruins of Villeargent, 10 years back. I'm a trader. If I want anything it's to go to sea again.\ntold by Aoife in Dunmore · Stoneday 2 Reaping · 4:15 pm\nI came from Trodou, 42 years back. I'm a trader. Married to Tadhg, 3 children. If I want anything it's to hear from my daughter.\ntold by Róisín in Dunmore · Seaday 4 Reaping · 8:24 am\nBorn here. 14 years, man and boy. I'm a trader. If I want anything it's a quiet year.\ntold by Ruairí in Dunmore · Seaday 4 Reaping · 8:45 am\nBorn here. 3 years, man and boy. I'm a innkeeper. Married to Bríd. If I want anything it's to be left alone, mostly.\ntold by Oisín in Dunmore · Seaday 4 Reaping · 9:06 am\nBorn here. 8 years, man and boy. I'm a innkeeper. If I want anything it's one good harvest, just one.\nYes. 11 gold.\ntold by Ruairí in Dunmore · Seaday 4 Reaping · 10:12 am\n11 gold, and thank you. The second door on the right, up the stairs, and yours till this time tomorrow. The other doors aren’t mine to open, nor yours either.",
+  "due": "Today is Seaday, the 4th of Reaping\ntomorrow\n🛏 The room you let is the innkeeper’s again. Skyday, the 5th of Reaping\nin 9 days\n📜 A letter for Harbour Reeve Róisín — for Mayor Niamh: 59 gold if it is done by then; after it, the work is taken back. Weaverday, the 13th of Reaping\nin 19 days\n🪨 The Giving — the year’s dead named at the old gate. Stoneday, the 23rd of Reaping"
+ },
+ "job": {
+  "id": "tq:dunmore:0",
+  "title": "A letter for Elder Cormac"
+ }
+}

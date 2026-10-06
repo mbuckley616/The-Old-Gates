@@ -190,6 +190,8 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - A Windows checkout with `core.autocrlf` holds CRLF in the working copy while the index holds LF: a script that compares bytes or
   counts offsets reads with CRLF normalised (`split_world.py` and `join.py` do; `split.py` refuses a CR). Acorn's offsets are UTF-16
   code units and the files hold emoji, so an edit by acorn offset is applied on the UTF-16 form, never on Python's string.
+- What a chunk holds depends on what had loaded when it was built: the scatter skips stamps and roads registered so far, and `SETTLE` holds
+  only the towns built so far. An outcome keyed by id (a herb's kind, a spawn) must read the hash and `getCell`, never `ch.treePts` or `SETTLE` (S533).
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 
