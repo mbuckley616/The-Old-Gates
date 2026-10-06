@@ -3,6 +3,13 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Unique artifacts — placed relics, the Makers' six tools, or seam relics from the lairs? (the designer, 2026-10-06) — DECISION #175
+You asked for a few unique items, Daedric-artifact style, woven into the lore, some plainly visible behind a check (Might 30 to pull a sword from a stone); today the Faolchú's Mark is the only one. The page (`docs/design/unique-artifacts.md`) fixes the frame under every option (one of each per world, placed by the seed, unsellable, a failed check costs nothing and goes in the journal, checks move to skills at 50 when that build lands) and asks what an artifact is.
+- **A.** Placed relics: eight objects in plain sight, each behind one attribute at 30, a tier-6 enchant and one special rule; a rumour each, no quest (2 Opus).
+- **B.** The Makers' tools: one per god (Stone, Sea, Sky, Beasts, Hearth, Weaver; none for the Guest), each found by a trial in its god's manner, each changing how you play, each with a cost, and each wanted by a faction who will pay you to give it up; the Gate-Blade is your sword in the stone at Might 30, and the Wolf-Mother's Cloak is the named cloak (5 Opus, 1 look, 2 quest-writer runs).
+- **C.** Seam relics: every lair master, dragon and Act II burn leaves a named relic with one signature, like the Faolchú's Mark (2 Opus).
+
+Recommendation: **B.** Taking the artifact is the decision (keep it and carry its cost, or hand it to its claimant), and one of them, the Beasts' cloak, leaves a town poorer on the map; A is B's first slice anyway, and C is loot with a name on it.
 
 ## Answered
 ### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
