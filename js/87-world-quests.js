@@ -243,8 +243,11 @@
     for(const t of SITES){if(!t.name||t.kind==='portal')continue;const d=Math.hypot(t.x-px,t.z-pz);if(d>R||d<6)continue;out.push({x:t.x,z:t.z,glyph:POI_GLYPH[t.kind]||'✧',label:t.name,found:!!discovered(t.id),d,place:true});}
     for(const e of CELL_DOORS){const p=dungeonWorldPos[e.seed]||e;const d=Math.hypot(p.x-px,p.z-pz);if(d>R||d<6)continue;out.push({x:p.x,z:p.z,glyph:e.kind==='fort_door'?'⛫':'◠',label:e.canonicalName||'an old gate',found:!!discovered('door_'+e.seed),d,place:true});}
     return out;}
-  function compassMarkers(){
-    const out=[];if(activeZoneId!=='world')return out;
+  function compassMarkers(){if(activeZoneId!=='world')return [];return liveMarkers();}
+  let _liveMk=null; /* S587 — the map asks once a draw, not once a cell */
+  // S587 — the live objectives wherever you are: the compass shows them in the open world, the map at any time
+  function liveMarkers(){
+    const out=[];
     const push=(x,z,col,label,glyph)=>{if(x!=null&&z!=null)out.push({x,z,col,label,glyph});};
     // v80 S138 — the place someone gave you directions to
     wayTick();if(WAY){if(WAY.follow&&WAY.follow.g&&WAY.follow.g.visible){WAY.x=WAY.follow.g.position.x;WAY.z=WAY.follow.g.position.z;}push(WAY.x,WAY.z,'#f6d860',WAY.label,WAY.glyph);}
@@ -280,6 +283,10 @@
   // map markers for active objectives
   function questMarkers(cell){const out=[];{const tpush=(x,z,col,label)=>{if(x!=null&&x>=cell.ox&&x<cell.ox+SIZE&&z>=cell.oz&&z<cell.oz+SIZE)out.push({id:'q_tut_'+label,name:label,kind:'quest',x,z,sub:'A lesson',major:true});};try{tutMarkers(tpush);}catch(e){}}const S=worldState.story;if(S&&S.act>=2){const push=(x,z,name,sub)=>{if(x>=cell.ox&&x<cell.ox+SIZE&&z>=cell.oz&&z<cell.oz+SIZE)out.push({id:'q_story_'+name,name,kind:'quest',x,z,sub,major:true});};if(S.step==='proof'){for(const nk in S.gates){const g=S.gates[nk];if(!S.proof[nk])push(g.x,g.z,g.name,'An etched gate');}}if(S.step==='courier'){const pb=_anch&&_anch.blackhand;if(pb)push(pb.x,pb.z,pb.name,'Oswy Blackhand');}if(S.step==='ashfeld'){const f=siteAnywhere('ashfeld');if(f)push(f.x,f.z,'The Ashfeld','Varek');}if(S.step==='root'){const r=_anch&&_anch.root;if(r)push(r.x,r.z,'The Root','What was bound');}}const rub=worldState.rubbings||{};for(const seed in rub){const p=dungeonWorldPos[seed];if(!p)continue;if(p.x>=cell.ox&&p.x<cell.ox+SIZE&&p.z>=cell.oz&&p.z<cell.oz+SIZE)out.push({id:'q_rub_'+seed,name:rub[seed],kind:'quest',x:p.x,z:p.z,sub:'A warm stone — from a rubbing',major:true});}for(const q of qActive()){if(q.done)continue;const d=q.data;if(d&&d.x!=null&&d.x>=cell.ox&&d.x<cell.ox+SIZE&&d.z>=cell.oz&&d.z<cell.oz+SIZE)out.push({id:'q_'+q.id,name:q.title,kind:'quest',x:d.x,z:d.z,sub:q.objective,major:true});}
     const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t||taskDone(t))continue;const x=t.sx!=null?t.sx:t.x!=null?t.x:(t.siteId?(siteAnywhere(t.siteId)||{}).x:null),z=t.sz!=null?t.sz:t.z!=null?t.z:(t.siteId?(siteAnywhere(t.siteId)||{}).z:null);if(x==null)continue;if(x>=cell.ox&&x<cell.ox+SIZE&&z>=cell.oz&&z<cell.oz+SIZE)out.push({id:'gq_'+t.id,name:t.short,kind:'quest',x,z,sub:GUILD_DEF[g].name+': '+t.desc.slice(0,60)+'…',major:true});}
+    // S587 — and everything else the compass marks (a lord's job, a faction's service, a rubbing to read, the story's next giver,
+    // the place you were given directions to), unless one of the marks above stands there already
+    try{const now=performance.now();if(!_liveMk||now-_liveMk.t>250)_liveMk={t:now,v:liveMarkers()};for(const m of _liveMk.v){if(!(m.x>=cell.ox&&m.x<cell.ox+SIZE&&m.z>=cell.oz&&m.z<cell.oz+SIZE))continue;if(out.some(o=>Math.hypot(o.x-m.x,o.z-m.z)<6))continue;
+      const lb=m.label||'';out.push({id:'q_m_'+lb+'_'+Math.round(m.x)+'_'+Math.round(m.z),name:lb.charAt(0).toUpperCase()+lb.slice(1),kind:'quest',x:m.x,z:m.z,sub:m.col==='#f6d860'?'Where you were told':'On your compass',major:true});}}catch(e){}
     return out;}
   // ── guild commissions at the rank milestones ──
   const COMMISSIONS={

@@ -12631,3 +12631,20 @@ Michael's note of 5 Oct on the dialogue (backlog A): *"We also leave a lot of th
 
 ### Needs eyes
 Whether a player misses the lord's *Not yet — …* on an unfinished job; *I'm looking for work.* restates the job, but in its full ask, not the short objective.
+
+## v80 — Session 587 — Quest marks on the world map (Michael's note of 5 Oct)
+Michael, 5 Oct (backlog E): *"We need quest markers to work on the overworld map."* The map took its quest marks from a list of its own (`questMarkers`, `87-world-quests.js`). That list held the lessons, the second act's story, a guild's task, a rubbing and an unfinished job. The compass's list (`compassMarkers`) held more. The map was missing:
+- a finished job's *report to …*
+- the marks the compass takes from `factionMarkers`, `warMarkers` and `guildMarkers`
+- the main quest's next giver, and the person at the field
+- the place a townsperson gave you directions to
+
+So a finished job vanished from the map at the moment you had to walk back with it. The compass's list was also empty anywhere but the open world. And zoomed out until a cell is under 60 px (the whole world on one screen), `mapDraw` drew no marks at all, quests included.
+
+The compass's body is now `liveMarkers()`, which runs anywhere. `compassMarkers` is that list in the open world and nothing elsewhere, as before. `questMarkers` keeps its own marks, with their notes (*An etched gate*, the guild's ask). It then adds every live mark in the cell that none of its own stands within 6 of. Each takes the compass's label (*Report to Mayor Niamh*) and the note *On your compass*, or *Where you were told* for directions. The map asks for the live list once every 250 ms, not once for each cell it draws. Zoomed out below 60 px, the quest marks are drawn and nothing else, so the whole world shows where your work is. The legend's Quests toggle still hides them.
+
+### Verified (headless Chromium)
+`mapquests` 7/7 (new). In Dunmore the lord's job (*The road out of Dunmore*) is on the compass and the map, at the camp (13526, 25100). Done, the map marks *Report to Mayor Niamh* at Dunmore. With the zone set to a dungeon, the compass is empty and the map still marks it. Drawn on a 700 px canvas, the whole world (a cell 58.3 px) shows that one mark and nothing else, and at four times the zoom over Dunmore it is still there. Paid, it is gone. On the old code four of the seven fail: no report mark, none underground, none at either zoom. The job's own mark passed, as it was already in the map's list. mapnotes, shipwreck, questtargets, chapel, wayfinding, shipwright, shipwrightvoice and smoke pass. `parsecheck` clean.
+
+### Needs eyes
+Whether the marks on the whole-world view read at that size; they use the map's quest star at the smallest scale. The directions mark (*Where you were told*) on the map is new and may be more than a player wants there.

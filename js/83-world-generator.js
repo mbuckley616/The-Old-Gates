@@ -929,6 +929,7 @@
     // icons
     const entries=[];const isc=Math.max(.9,Math.min(2.2,cellPx/420))*(Math.min(cw,ch)/700);
     if(cellPx>=60){for(const c of cells)for(const e of mapEntries(c)){if(!discovered(e.id))continue;if(cellPx<160&&!e.major)continue;if(!mapAllowed(e))continue;entries.push(e);}}
+    else{for(const c of cells)for(const e of questMarkers(c)){if(mapAllowed(e))entries.push(e);}} /* S587 — zoomed out to the whole world, the quests still show */
     MAP._entries=entries;
     for(const e of entries){const [sx,sy]=mapToScreen(e.x,e.z);ctx.save();ctx.translate(sx,sy);
       if(MAP.hover===e.id||MAP.sel===e.id){ctx.beginPath();ctx.arc(0,0,13*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
