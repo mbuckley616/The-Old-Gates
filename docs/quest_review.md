@@ -6,13 +6,47 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `178e96f` | run 8, from `551e9ec`; strings compared as sets, since the world file is nine files now (S484) |
-| auto/systems | `20726f9` | run 8, Sessions 485–503 against main |
-| auto/backlog | `c475d28` | run 8: S505, the ragdoll and the tag; no string |
-| auto/producer, auto/critic | — | run 8: ahead in docs only |
-| auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/concept, auto/design, auto/split | — | run 8: merged into main, nothing ahead |
+| main | `598e95e` | run 9, from `178e96f`: Sessions 504–563 merged from auto/systems, the feasts, the dated work, the barber's first slice |
+| auto/systems | `dac8e61` | run 9, Sessions 564–567 against main |
+| auto/backlog | `e2b3109` | run 9, Sessions 568–573 against main |
+| auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates | `67487fc`, `261d0ce`, `8ce95be` | run 9: auto/backlog's sessions plus a prototype each; no string of their own |
+| auto/producer, auto/critic, auto/concept, auto/design | — | run 9: ahead in docs only, or not at all |
+| auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
-| auto/proto-sails | `4e8a5e7` | gone from origin; last read run 3 |
+
+---
+
+## Run 9 — 6 Oct 2026
+
+About 110 new strings on main, 10 on auto/systems and 30 on auto/backlog; two findings, one new and one old. Since the world files have not moved since `178e96f`, this run went back to line diffs.
+
+**main** (`178e96f..598e95e`). Findings 14, 15 and 16 are in the code as written: the Prior's tail by faction, the six claims by where the ship is, *The Compact mended the … and refitted her as a …*. The four feasts' greetings, the innkeeper's free meal and the guard's feast-day half-fine are the *Year's Names* draft word for word, and the French day names are the Church's. The dated work (*the date has passed. The work is taken back.*; *Pay is 40 gold; 50 if it is done by …*), the rest slip (*How long will you sleep?*, *Waiting restores nothing; a bed does.*, *You are ready to advance, but only sleep takes the level.*) and the journal's chrome are in the plain menu voice. The guild commissions only changed their ids. The cloak virtues (*barter +2% at Aurenne’s counters*) are item text and fine. Finding 18 is old text, found while drafting *First Words*.
+
+**auto/systems** (Sessions 564–567). The Mages' Guild head's *Browse your wares.* and the light and robe armour names add nothing to judge.
+
+**auto/backlog** (Sessions 568–573) and the three prototypes. The barber's panel brings Finding 17. *Press 'E' to sit in the barber’s chair*, *You rise from the chair, changed.* and *${fee} gold for the visit, whatever is changed; nothing, if nothing is.* are good.
+
+Michael's note of 5 Oct on greetings (*"You're a markmen? those people kill bears at 10!"*) is a change of rule, not a line, so it is drafted, not found: *First Words*, `docs/quest_drafts.md`.
+
+### Finding 17 — auto/backlog — the barber's panel speaks like the inquisitor
+
+**Where.** The barber's chair, `92-creator.js` (grep `` You have not the ${fee} gold. ``).
+
+**Text.** *You have not the 12 gold.* and *You have not the fee.*
+
+**Why.** The panel is menu chrome, which says *Not enough gold* everywhere else. *You have not the sum, Master.* is the Church's inquisitor in `86-world-crime.js`, an Aurennais voice; in the chrome it reads as a slip.
+
+**Replacement.** `` `Not enough gold: the visit is ${fee}.` `` and `'Not enough gold.'`
+
+### Finding 18 — main — the pious temper prays to a Light the canon does not have
+
+**Where.** `TEMPERS.pious`, `87-world-quests.js` (grep `The Light keeps this door.`). Any generated townsperson of any people can draw the temper.
+
+**Text.** greet *The Light keeps this door.*; bye *Walk in light.*
+
+**Why.** The gods are the Makers (§4.1) and the Church is the Church of the Weaver. There is no Light in the canon. It has been in the game since before the split and no run caught it.
+
+**Replacement.** In `greet`, `"The Light keeps this door."` becomes `"The Weaver keeps this door."`. In `bye`, `"Walk in light."` becomes `"Go with the Weaver."`. The other four lines stay.
 
 ---
 
