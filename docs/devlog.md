@@ -12573,3 +12573,12 @@ Michael's A on #163 said robes are sold *at goods shops and the Mages' Guild*. S
 
 ### Needs eyes
 Whether a guild that sells only four robes reads as a counter or as an afterthought. A guild's own stock (reagents, scrolls) would be a design question, and this session didn't ask it.
+
+## v80 — Session 567 — `saves` read the index before the slot was written (tests only)
+CI on `472e804` failed one shard with one check: `saves`, *manual slot written*, with an index of `["…_auto_0"]`. The suite saved to slot 1 and to the autosave ring, then read `SS.idx` after a fixed 0.9 s each. Both writes go through IndexedDB, and on a loaded runner the slot's write had not reached the index by then. It had a moment later: the next check, the overwrite, found the slot and loaded its gold. The producer saw `saves` fail the same way on main this morning, with nothing in the save changed. The suite now waits on the promise `saveToSlot` already returns, and waits for both keys to reach the index, up to a minute. No game code changed. This is the run's one CI-fix session.
+
+### Verified (headless Chromium)
+`saves` 6/6 with the waits: the index holds `…_auto_0, …_manual_0, …_auto_1`, and the overwrite loads 999. On this machine the unpatched suite also passed 6/6, as it did for Session 564; the race needs a slower runner than this one. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play. Whether the next CI run on the branch is green.
