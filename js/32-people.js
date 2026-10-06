@@ -209,11 +209,12 @@ function ARMOUR_LINE(X,E){
     if(T.t>=3)for(const y of [.1,.17,.24])for(let k=-4;k<=4;k++){if(!k)continue;const a=k*.24;onBody(B.spine,SK.ball(.0065,4,3),T.met,a,rAt(y)*1.07+.011,y);}
     [.42,-.42,PI-.48,PI+.48].forEach(a=>{const f=onBody(B.hips,SK.rbox(.14*bw,.17,.012,.005,1),T.lea,a,.205*bw,-.09,.8);f.rotation.x=-.12;});
     ring(.19*bw,.016,.02,T.dk,B.hips,.76);part(SK.rbox(.034,.03,.012,.004,1),T.met,B.hips,0,.02,.19*bw*.76+.012);
-    onBody(B.spine,SK.rbox(.034,.42,.008,.003,1),T.dk,0,rAt(.2)*1.07+.014,.2).rotation.z=.62;
-    onBody(B.spine,SK.rbox(.034,.42,.008,.003,1),T.dk,PI,rAt(.2)*1.07+.014,.2).rotation.z=-.62;
-    LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),T.lea,b,s*.012,-.004,0).scale.set(1.1,.72,1.15);
+    // S575 — the quiver strap .36 long, lowered .02 (was .42 at .2): its ends stood through the hood's cape at the collar
+    onBody(B.spine,SK.rbox(.034,.36,.008,.003,1),T.dk,0,rAt(.18)*1.07+.014,.18).rotation.z=.62;
+    onBody(B.spine,SK.rbox(.034,.36,.008,.003,1),T.dk,PI,rAt(.18)*1.07+.014,.18).rotation.z=-.62;
+    LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),T.lea,b,0,-.004,0).scale.set(1,.62,1.1); /* S575 — a flatter lame, in at the shoulder (was 1.1,.72,1.15 at .012 out), so the hood's cape covers it */
       part(SK.cyl(.07,.078,.04,10,1,true,c-1,2),T.dk,b,s*.008,-.035,0).scale.z=1.05;
-      if(T.t>=3)part(SK.ball(.009,5,4),T.met,b,s*.075,.01,0);});
+      if(T.t>=3)part(SK.ball(.009,5,4),T.met,b,s*.064,.019,0);});
     if(T.gl)ring(rAt(.36)*1.07+.012,.004,.355,T.gl,B.spine);}
   if(P&&P.line==='robe'){O.chest=null;const T=RT(P);
     part(SK.lathe(cp.filter(q=>q[1]>=-.01).map(q=>[q[0]*1.06+.006,q[1]]),22),T.main,B.spine).scale.z=Z;
@@ -222,7 +223,8 @@ function ARMOUR_LINE(X,E){
     [-1,1].forEach(sd=>{onBody(B.hips,SK.rbox(.024,.38,.008,.003,1),T.trim,sd*.26,.24*bw,-.16,.8).rotation.x=-.17;
       const l=onBody(B.spine,SK.rbox(.026,.3,.008,.003,1),T.trim,sd*.13,rAt(.2)*1.06+.01,.2);l.rotation.z=-sd*.22;});
     ring(.182*bw,.024,.02,T.trim,B.hips,.76);const tl=part(SK.rbox(.04,.2,.008,.003,1),T.trim,B.hips,-.08*bw,-.09,.14*bw);tl.rotation.z=.08;
-    part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),T.dk,B.spine,0,.3,0).scale.z=.8;ring(.275*bw,.008,.245,T.trim,B.spine,.8);
+    // S575 — the mantle rounds over the shoulder before it slopes to the neck: the straight slope from .28 to .2 let the top of the shirt's shoulder cap through from the side
+    part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.262*bw,.02],[.232*bw,.055],[.15*bw,.075],[0,.08]],18),T.dk,B.spine,0,.3,0).scale.z=.8;ring(.275*bw,.008,.245,T.trim,B.spine,.8);
     LR.forEach(([k,s])=>{part(SK.cyl(.06*bw,.064*bw,.155,12,1,true),T.main,B['sh'+k],0,-.08,0);
       part(SK.cyl(.052*bw,.1*bw,.15,14,1,true),T.main,B['el'+k],0,-.07,0);ring(.1*bw,.007,-.145,T.trim,B['el'+k],1,16);
       if(T.gl)ring(.1*bw,.004,-.13,T.gl,B['el'+k],1,16);});
@@ -240,7 +242,10 @@ function ARMOUR_LINE(X,E){
   // ── the legs ──
   const Lg=E.legs;
   if(Lg&&Lg.line==='light'){O.legs=null;const T=LT(Lg);
-    LR.forEach(([k,s])=>{const th=B['th'+k],kn=B['kn'+k];ring(.072*bw,.008,-L1*.35,T.dk,th,1,14);ring(.068*bw,.008,-L1*.75,T.dk,th,1,14);
+    // S575 — each thigh strap sized to the thigh at its height (SK.limb's straight run, .05 at the knee to .951 of .066 at the hip), its
+    // inner edge pressed 4 mm into the cloth: they stood 6–7 mm off the leg at .072 and .068
+    const thR=f=>(.05+(.066*.951-.05)*(1-f)*L1/(L1+.066*.309))*bw;
+    LR.forEach(([k,s])=>{const th=B['th'+k],kn=B['kn'+k];ring(thR(.35)+.004,.008,-L1*.35,T.dk,th,1,14);ring(thR(.75)+.004,.008,-L1*.75,T.dk,th,1,14);
       part(SK.ball(.05,10,7,0,PI*2,0,PI*.6),T.lea,kn,0,.0,.03).rotation.x=PI/2-.2;if(T.t>=3)part(SK.ball(.012,6,4),T.met,kn,0,.0,.075);});}
   if(Lg&&Lg.line==='robe'){O.legs=null;const T=RT(Lg);
     part(SK.lathe([[0,-.44-DL],[.25*bw,-.44-DL],[.256*bw,-.425-DL],[.215*bw,-.22-DL*.6],[.18*bw,-.05],[.165*bw,.02],[0,.045]],20),T.inner,B.hips).scale.z=.76;
@@ -255,7 +260,8 @@ function ARMOUR_LINE(X,E){
   const Hd=E.head;
   if(Hd&&Hd.line==='light'){O.head=null;const T=LT(Hd),hc=T.lea.clone().lerp(C(0x2a3424),.5);
     const h=part(SK.ball(.168*hs,18,9,0,PI*2,0,PI*.62),hc,B.head,0,.125,-.045);h.rotation.x=-.8;h.scale.set(g.jaw||1,1.05,1.1);
-    part(SK.lathe([[.27*bw,.215],[.285*bw,.225],[.2*bw,.34],[.1,.4],[.07,.41]],18),hc,B.spine).scale.z=.82;
+    // S575 — the hood's cape rounds over the jerkin's shoulder lames before it slopes to the neck (they stood 4.7 cm through its straight slope from .285 to .2)
+    part(SK.lathe([[.28*bw,.205],[.29*bw,.22],[.285*bw,.285],[.255*bw,.335],[.17*bw,.38],[.1,.405],[.07,.415]],18),hc,B.spine).scale.z=.82;
     const tp=part(SK.cone(.035,.12,6),hc,B.head,0,.2,-.16);tp.rotation.x=-2.2;}
   if(Hd&&Hd.line==='robe'){O.head=null;const T=RT(Hd);
     const h=part(SK.ball(.176*hs,18,10,0,PI*2,0,PI*.64),T.main,B.head,0,.12,-.05);h.rotation.x=-.88;h.scale.set((g.jaw||1)*1.02,1.06,1.12);

@@ -13119,3 +13119,20 @@ The quest writer's run 9 (`docs/quest_review.md` on auto/quests, PR #172) found 
 
 ### Needs eyes
 Nothing beyond the line itself.
+
+## v80 — Session 575 — The light and robe lines' rough edges (backlog H, owed since Session 556)
+Session 556's prototype listed two rough edges for the build, and Session 569 built the lines with them still there: the light leggings' thigh straps stood off the leg, and the shirt's shoulder cap showed through the robe's mantle from the side. This session measured both, and one more it found on the way: the light jerkin's shoulder lames stood through the light hood's cape.
+
+The measure is a new suite, `tests/armourfit`. It builds your body in bind pose with the baked occlusion off (`PAO.on=false`), dressed in a magenta shirt and cyan breeches, and finds each part by its colour: the same hue at its own brightness within ±3.5%, since the bake jitters colours by about 2%. A thigh is a lathe with rings only at its two ends, so its surface at a strap is the line between them, and each strap vertex is measured from the thigh's own axis. Centres come from the ring's extremes, not its mean, because a lathe's seam vertex is doubled and pulls the mean 6 mm off. That error first made the thigh look 11% deeper than wide.
+
+What it found, and what changed (`ARMOUR_LINE`, `32-people.js`):
+- **Thigh straps.** They were rings of .072 and .068 round a thigh of .058 and .053, 6–7 mm off the cloth and 2.2 cm proud. Each is now sized from `SK.limb`'s straight run at its height, its inner edge 4 mm into the cloth: 1.2 cm proud.
+- **The robe's mantle.** Its lathe sloped straight from .28 to .20 across the shoulder, and the top of the shoulder cap stood 5.6 mm through it. It now rounds over the shoulder (.262 at .02, .232 at .055) before it turns in to the neck, and clears the cap by 2.3 cm.
+- **The light hood's cape.** The same straight slope (.285 to .2) let the jerkin's leather lames through by 4.7 cm, the brown dome in `armourfit-before-thighs.png`. The first try widened the cape to .315, which read as a shelf in the picture. Instead the lames are flatter and sit in at the shoulder (scale 1, .62, 1.1, was 1.1, .72, 1.15 at .012 out), their rivet moved onto them, and the cape is only a little fuller than before (.29 at .22, .285 at .285, .255 at .335). It clears by 1.65 cm. The quiver strap's two ends stood 2.8 cm through the cape at the collar, front and back; the strap is .36 long and .02 lower (was .42).
+
+### Verified (headless Chromium)
+`armourfit` 7/7 at tiers 1, 3, 5, 7 and 10. All 20 straps sit 4 mm into the thigh and 1.2 cm proud. No vertex of the shoulder cap is outside the mantle: 572 cap vertices, the nearest 2.3 cm inside. No lame, shirt or strap vertex is outside the hood's cape, the nearest 1.65 cm inside. On the old code it fails 5 of 7: straps 6.3–7 mm off and 2.2–2.3 cm proud, 3 cap vertices through the mantle by 5.6 mm, and 223 vertices through the cape by up to 4.7 cm. `armourlines` 9/9 (the triangle counts move by under 100), `cloakbody` and `inspector` pass. Pictures: `docs/prototypes/armourfit-before-shoulders.png`/`-thighs.png` and `armourfit-after-*.png`, Iron in each line, from the front quarter.
+
+### Needs eyes
+- The cape's new curve over the shoulder, and the flatter lames, in motion: the measure is in bind pose, and an arm raised to draw a bow lifts the lame under the cape.
+- Long straight hair still hangs out of the light hood, as Session 569 noted; that may be wanted.
