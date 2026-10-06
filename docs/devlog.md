@@ -13080,3 +13080,16 @@ Prototype only: no game code changes. The prototype script built two gates in op
 ### Needs eyes
 - **Michael's choice on #169.**
 - The prototype is boxes with flat shading. The build would carry the seed's variation (the mound's size, fallen marker stones, moss, worn steps), the kit's stone texture, and solids for the jambs and the wing walls.
+
+## v80 — Session 572 — The spiral stair's railing follows the stair (backlog H, Michael's control-room note of 5 Oct, one part)
+Michael's dungeon note of 5 Oct says the staircases are ugly and don't match, "on top of the railings being totally jumbled as well". The first half is a design call. The second half was a bug.
+
+In `buildStairwell` (`56-dungeon-build.js`), each tread and rail post sits at `a0 + t·turns·2π`, where `a0` is the angle the helix starts from, facing the entrance. But each rail segment ran from that angle to the next one counted as `t·turns·2π`, without `a0`. So unless a stair happened to start at angle 0, every one of its thirty segments was a chord cut across the shaft rather than a piece of the rail's circle. In the dungeon I looked at (deep, seed 4021, a0 −1.62) the middle of every segment sat 0.53 from the post, in a tangle across the stairwell. `ang2` now starts from `a0` too, and the rail follows the stair.
+
+The before and after pictures, from above the stairwell, are `docs/prototypes/dungeon-stairrail-before.png` and `-after.png`.
+
+### Verified (headless Chromium)
+`tests/stairrail`, new, passes 4 of 4. Six seeds build the same stairwell, which starts at −1.62. It has its 30 rail segments, and the middle of each lies 0.998 from the post, against the rail circle's 1.02 (the chord of a 24° step). With the old line put back, the same check fails with every segment at 0.534. `dungeon`, `dungeonexit` and `falls` (the stair's foothold) pass.
+
+### Needs eyes
+- **The rest of the note is still open:** the stairs' style ("don't match the style at all"), the traps (Session 570 found that a blade swings along its corridor, edge-on to you), and wider passages. Each needs a prototype and a question, and none is built.

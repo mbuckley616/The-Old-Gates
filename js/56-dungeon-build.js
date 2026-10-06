@@ -1063,7 +1063,7 @@ function buildDungeon(portal){
       const rs=new THREE.Mesh(new THREE.BoxGeometry(.8,Math.abs(FLOOR2_Y)/N+.02,.05),mat);
       rs.position.set(cx+Math.cos(ang)*.62,y-FLOOR2_Y/N/2,cz+Math.sin(ang)*.62);rs.rotation.y=-ang;dScene.add(rs);
       if(i%3===0){const rp=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.9,5),railMat);rp.position.set(cx+Math.cos(ang)*1.02,y+.45,cz+Math.sin(ang)*1.02);dScene.add(rp);}
-      if(i<N){const t2=(i+1)/N,ang2=t2*turns*Math.PI*2,y2=t2*FLOOR2_Y;const ax=cx+Math.cos(ang)*1.02,az=cz+Math.sin(ang)*1.02,bx=cx+Math.cos(ang2)*1.02,bz=cz+Math.sin(ang2)*1.02;const len=Math.hypot(bx-ax,bz-az,y2-y);const rail=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,len),railMat);rail.position.set((ax+bx)/2,(y+y2)/2+.9,(az+bz)/2);rail.lookAt(bx,y2+.9,bz);dScene.add(rail);}
+      if(i<N){const t2=(i+1)/N,ang2=a0+t2*turns*Math.PI*2,y2=t2*FLOOR2_Y; /* S572 — from the tread's own angle: without a0 every rail crossed the shaft */const ax=cx+Math.cos(ang)*1.02,az=cz+Math.sin(ang)*1.02,bx=cx+Math.cos(ang2)*1.02,bz=cz+Math.sin(ang2)*1.02;const len=Math.hypot(bx-ax,bz-az,y2-y);const rail=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,len),railMat);rail.position.set((ax+bx)/2,(y+y2)/2+.9,(az+bz)/2);rail.lookAt(bx,y2+.9,bz);dScene.add(rail);}
     }
     const shaftMat=new THREE.MeshLambertMaterial({color:0x2a241e,side:THREE.DoubleSide});
     [[cx,cz-1,2,0],[cx,cz+1,2,Math.PI],[cx-1,cz,2,Math.PI/2],[cx+1,cz,2,-Math.PI/2]].forEach(([x,z,w,ry])=>{
