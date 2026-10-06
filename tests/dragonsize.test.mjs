@@ -23,7 +23,9 @@ check('its health bar sits above its body', r.barY > r.zH, r);
 check('the inspector\'s dragon stands as tall as a dragon built for the open world (within 5%)', Math.abs(r.insH - r.zH) / r.zH < .05, r);
 
 // a lair's wyrm: the cavern's master on the dragon's body, under the ceiling
-await page.evaluate(() => { level = 9; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: 'Test', boss: 'Wyrm', dragon: true } }); goToDungeon(p); });
+// its own id, as a world dungeon's (makePortalDef): PORTALS[0] is whichever door loaded first, and only a dyn_ id is read as a
+// dungeon's by tpCeil (on CI it was another kind, and the camera's ceiling read 1e9; Session 585)
+await page.evaluate(() => { level = 9; const p = Object.assign({}, PORTALS[0], { id: 'dyn_4021', theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: 'Test', boss: 'Wyrm', dragon: true } }); goToDungeon(p); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !!window._lairBoss)); k++) await page.waitForTimeout(500);
 const L = await page.evaluate(() => { const e = window._lairBoss; if (!e || !e.limbs || !e.limbs.wolf) return { none: true, name: e && e.name };
   const root = e.limbs.wolf.root; e.mesh.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(root);

@@ -13229,3 +13229,19 @@ The picture only: today's three are the game's own generators run in the page (`
 ### Needs eyes
 - **Michael's choice on #177.**
 - C's two flights up are the one thing in the picture the game cannot do yet (option B).
+
+## v80 — Session 589 — CI red on Session 584's push: `lod`, `dragonsize`, `saves` (backlog H)
+GitHub ran the suite on `5130b3d` and three shards came back red, one suite each. Each had a different cause, and one was a real fault in the look.
+
+**`lod`** failed here too, every time: one townsperson's distant copy kept 55% of the near one's triangles, and the check wants under 55. All six people over half were Dunmore's guards in the Wooden kit (guard tier 1, 11–11.7k triangles). Taking the kit apart piece by piece on the worst of them, Donnacha, the cuirass's distant copy was .51 of the near one, but the helm was .72, the vambraces .68 and the greaves .70. Three pieces did not thin. A vambrace's four boards and a greave's five are `SK.rbox(…,1)`, a rounded box of 2×2×2 segments, which is 48 triangles at any quality. The aventail under every helm with one is a `LatheGeometry` of 26 segments, fixed. In the distant copy the boards are now plain boxes (12 triangles), and the aventail's lathe takes `SK.seg(26,10)`, 13 segments. Nothing changes up close. Donnacha's distant copy goes from 6,458 to 5,576 of 11,748 (.47), and the town's sum from 215,350 to 208,420. A board's rounded edge is .003–.004 across, which is under a pixel at 17 units. The aventail is shared with the Iron kit's helm, so the mail guards' distant copies come down too. This is look-builder code: the boards are Session 540's and the aventail is Session 395's. Dunmore's guards wear wood because its prosperity is under 40.
+
+**`dragonsize`** failed on CI only. The check that the third-person camera's ceiling over the wyrm's floor reads the lair's height got `1e9`, which `tpCeil` returns when `lid` is not a world dungeon's (`dyn_…`). The test built its lair from `Object.assign({}, PORTALS[0], {…})` and kept that portal's id. In the world `PORTALS` is the loaded cells' doors in the order they loaded, so on a slow runner the first door can be of another kind. The test portal now carries its own id, `dyn_4021`, which is what `makePortalDef` gives a world dungeon. I could not reproduce the failure here, where the first door is a world dungeon's. The reading above is from the code and the one number in CI's log, not from a failing run of my own.
+
+**`saves`** failed on CI only. *Manual slot written* found only the autosave in the index. The test slept 900 ms after `saveToSlot(0)`, and the next check found the manual slot, so the write had simply landed late. It now awaits `saveToSlot`'s own promise, which resolves once the slot is in the index, and then waits for the autosave to appear, in place of both sleeps and the overwrite's. These are tests only; `70-saves.js` is unchanged.
+
+### Verified (headless Chromium)
+`lod` passes: 73 townsfolk, distant copies .37 to .50 of the near ones (max 5,576 of 11,748; was .55), bones all good. `dragonsize` 11/11, with the camera's ceiling at −.85 (floor 2 at −5, plus 4.4, less .25). `saves` 6/6. The suites that dress the same kit pass unchanged: `woodenkit` 8/8, `guardarmour` 8/8, `armourkit` 11/11 and `foearmour` 9/9. No page errors.
+
+### Needs eyes
+- Whether CI agrees on `dragonsize`. The fix is reasoned from the code, not seen failing here.
+- A Wooden-kit guard at 15–17 units, as the copies swap: the vambraces' boards lose their rounded edges in the distant copy.
