@@ -888,7 +888,7 @@ function loop(now){
                    :activeZoneId==='hearthwick'?HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
                    :activeZoneId==='ironhaven'?IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
                    // v61e1: generic per-zone houses lookup mirrors the interact handler.
-                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)||null;
+                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)||null; /* S614 — a door entered by the crosshair (the ship's hatch) is not found by standing on it */
     const nearHouse = (nearHouseRaw && activeZoneId==='overworld' && _houseDestroyed(nearHouseRaw)) ? null : nearHouseRaw;
     const activeNPCs=(ZONES[activeZoneId]&&ZONES[activeZoneId].npcs)||[];
     const nearNPC=talkAimedNPC(activeNPCs); // v80 — aimed, not near; S596 — the nearest of those aimed at, the one E talks to

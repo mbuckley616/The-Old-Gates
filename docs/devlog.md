@@ -13658,3 +13658,19 @@ Now the dead ride where they fell (`carryDead`, `85-world-sea.js`). Each tick, a
 
 ### Needs eyes
 The overboard case in the test puts the body off her side by hand. A real power blow at the rail that throws a pirate over, falling onto the water, is what play would show. A body turns with the deck only once its ragdoll has settled; while it falls (under a second) it is moved but not turned. Floating bodies do not bob.
+
+## v80 — Session 614 — The wheel and the hatch answer to the crosshair (backlog I, Michael's sailing playtest)
+Michael's sailing playtest: "targeting to pilot the ship / go below deck is area-based, not mesh-based: he often starts piloting the ship when he does not mean to". Both were areas. E within 2.4 units of the wheel took the helm whichever way you faced. E within 1.1 units of the hatch's spot went below. The town doors' generic lookup in `interact()` and the prompt in `90-main.js` also found the cabin as a house within 1.5 units of its door, so standing over the hatch went below from either path.
+
+Now the wheel and the hatch answer to the crosshair (`eyeOnBox`, `85-world-sea.js`). The eye's ray must meet the wheel's own bounds, widened by 0.15 so a ray between the spokes still counts, within 3.2 units of the eye (the reach `aimAt` uses). You must also still be on her deck within 2.4 units of it. For the hatch, the ray must meet a 1.2-unit square on the deck at its spot, within the same reach, from up to 2.2 units off (it was 1.1; a square you look at can be stood back from). The cabin carries `byAim`, and the generic house lookups pass over a house so marked, so the hatch is entered only through the ship's own E. Letting go of the wheel is unchanged: E while sailing lets go wherever you look. Boarding your ship from the water is still by nearness. Michael's other note asks for a ladder or "press E to climb" at the hull, which is a design item and not built here.
+
+### Verified (headless Chromium)
+`shipaim` 10/10 (new):
+- At the helm, 1.1 from the wheel, looking at it: *Press 'E' to pilot*, and E takes the wheel. Looking astern or over the side from the same spot: no prompt, and E does nothing.
+- On her deck 2.7 from the wheel looking at it: no prompt.
+- 1.6 from the hatch looking at it: *go below*, and both the ship's E and the generic `interact()` go below. Standing on the hatch looking over the side or astern: no prompt, and neither E goes below.
+
+ships, renewal, coachboard and shipmoor 1/1 each. `parsecheck` clean.
+
+### Needs eyes
+Whether the wheel's box (its mesh's bounds + 0.15) is easy to find in play at the helm, in first and third person, and whether 2.2 units is the right distance to stand from the hatch.

@@ -306,7 +306,14 @@
   function onDeck(){const p=SHIP.plat;return !!p&&px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-DECK_Y)<1;}
   function hullDist(){const p=SHIP.plat;if(!p)return 1e9;const dx=Math.max(p.x0-px,0,px-p.x1),dz=Math.max(p.z0-pz,0,pz-p.z1);return Math.hypot(dx,dz);}
   function nearShip(){return !!SHIP.mesh&&!onDeck()&&hullDist()<3.5&&jumpY<4;}
-  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<2.4;}
+  // S614 (Michael's sailing playtest, 6 Oct: "targeting to pilot the ship / go below deck is area-based, not mesh-based") — the
+  // wheel and the hatch answer to the crosshair: within reach, and the eye's ray meets the wheel's own box (the mesh's
+  // bounds and a hand's width round them) or the hatch's square on the deck. Standing near them looking elsewhere does nothing.
+  const _eyeR=new THREE.Ray(),_eyeD=new THREE.Vector3(),_eyeP=new THREE.Vector3(),_eyeB=new THREE.Box3();
+  function eyeOnBox(box,reach){if(typeof CAM==='undefined'||!CAM)return false;CAM.updateMatrixWorld();CAM.getWorldDirection(_eyeD);_eyeR.set(CAM.position,_eyeD);
+    const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;return !!_eyeR.intersectBox(box,_eyeP)&&CAM.position.distanceTo(_eyeP)<=reach+tpb;}
+  function wheelAimed(){const w=SHIP.mesh&&SHIP.mesh.userData.wheel;if(!w)return false;w.updateMatrixWorld(true);_eyeB.setFromObject(w).expandByScalar(.15);return eyeOnBox(_eyeB,3.2);}
+  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<2.4&&wheelAimed();}
   function shipInteract(){
     if(roofInteract())return true;
     if(coachInteract())return true;
@@ -458,7 +465,7 @@
 
   // ═══ THE LIVING SEA (Session D part 2) ═══════════════════════════════
   // Cabin: a door entry that follows the ship; interior type 'cabin'.
-  const CABIN={house:{id:'g_ship_cabin',type:'cabin',name:'',keeper:'',doorX:0,doorZ:0,doorFace:'S',exitX:0,exitZ:0,exitYaw:0,w:6,d:7,two:false,reg:'irish',style:'irish',dlg:null,tagline:''}};
+  const CABIN={house:{id:'g_ship_cabin',type:'cabin',byAim:true,name:'',keeper:'',doorX:0,doorZ:0,doorFace:'S',exitX:0,exitZ:0,exitYaw:0,w:6,d:7,two:false,reg:'irish',style:'irish',dlg:null,tagline:''}};
   function cabinUpdate(){
     if(!SHIP.mesh)return;const h=CABIN.house;h.name=`The ${SHIP.name} — cabin`;
     const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];
@@ -466,7 +473,8 @@
     h.exitX=SHIP.x+fwd[0]*(SHIP.L/2-4.4);h.exitZ=SHIP.z+fwd[1]*(SHIP.L/2-4.4);h.exitYaw=SHIP.yaw+Math.PI;
     if(!ZONES.world.houses.includes(h))ZONES.world.houses.push(h);
   }
-  function cabinPrompt(){if(!SHIP.mesh||SHIP.sailing)return null;const h=CABIN.house;return (Math.hypot(px-h.doorX,pz-h.doorZ)<1.1&&Math.abs(jumpY-DECK_Y)<1)?"Press 'E' to go below":null;}
+  function hatchAimed(){const h=CABIN.house;_eyeB.min.set(h.doorX-.6,DECK_Y-.1,h.doorZ-.6);_eyeB.max.set(h.doorX+.6,DECK_Y+.25,h.doorZ+.6);return eyeOnBox(_eyeB,3.2);}
+  function cabinPrompt(){if(!SHIP.mesh||SHIP.sailing)return null;const h=CABIN.house;return (Math.hypot(px-h.doorX,pz-h.doorZ)<2.2&&Math.abs(jumpY-DECK_Y)<1&&hatchAimed())?"Press 'E' to go below":null;}
 
   // ── whitecaps: foam by crest height + streak noise (used by the water material) ──
   function waterShader(sh){

@@ -1130,7 +1130,7 @@ function interact(){
       // gets a near-house find without per-zone hardcoded branches.
       const zHouses=(ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||null;
       if(zHouses){
-        const nearZH=zHouses.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
         if(nearZH){
           // S155 — a shop after hours or a home at night is locked: pick it (S142's lock), or come back
           if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){tryLockpick(WORLD.doorLockFor(nearZH));return;}
