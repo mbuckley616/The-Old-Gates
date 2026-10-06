@@ -12687,3 +12687,12 @@ The box's spot is now searched for when the room is built (`buildInteriorFor`, `
 
 ### Needs eyes
 The box now sits in the open in front of the waiting bench rather than against the far wall: whether that looks like a barber's strongbox, or whether the look builder would rather move the bench.
+
+## v80 — Session 592 — *What do you sell?* only where there is an answer (the critic, 6 Oct)
+The critic, 6 Oct (backlog I): at Dáire's Barbier in Coeur de Vie, *What do you sell?* answers with nothing but *← Back to topics*. Every generated keeper's def gets that topic with the house's tagline as its reply (`83-world-generator.js`), and the barber's tagline is `''` until the quest writer gives him one (Session 512, `TAGLINES.barber`). The critic offered two fixes: the line waits for the tagline, or the topic is left off while the tagline is blank. This session takes the second, which adds no words. When a tagline is written into `TAGLINES.barber`, the topic comes back by itself. The shipwright keeps his own reply. No other keeper's topics change.
+
+### Verified (headless Chromium)
+`selltopic` 4/4 (new), over the twelve settlements nearest the start. Three barbers (Dunmore, Vieux Marché, Coeur de Vie) offer *Where can I find …*, *About you …*, *About this place …*, *Other folk …*, *News …* and a farewell, and no *What do you sell?*. Every keeper who still offers the topic has an answer: 20 innkeepers, 10 priests, a shipwright and a steward, none empty. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play; the barber's tagline and his lines are the quest writer's, still owed.
