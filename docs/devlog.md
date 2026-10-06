@@ -13213,3 +13213,19 @@ In `fortKeepGeoHi` (`82-world-structures.js`) the two leaves now meet in the mid
 ### Needs eyes
 - Whether the line of light under the door is enough to find the keep's door from the compound gate at night, now the doorway itself no longer glows.
 - The legacy zones' fort doors (`_spawnFortDoor`, `24-forts.js`) were already shut and are unchanged.
+
+## v80 — Session 584 — The forts' interiors, a prototype (backlog H, Michael's note of 5 Oct; DECISION #177)
+Michael on the control room, 5 Oct: the forts and their dungeons are "still a little bland … stairs going up and/or down, but straight stairs, not spiral … more varied layouts on the interiors. I'm willing to get a little funky/creative with them." The note leaves the design open, so this session is a prototype and a question.
+
+Why they read the same: `52-dungeon-gen.js` has three fort layouts, `fort_tee`, `fort_linear` and `fort_courtyard`. Drawn from their own generators at medium size on the canonical seeds (7100–7102), all three are one long passage, three cells wide, with square rooms hung off it on doors. The treasure rooms are at the far end, and `addUpperFloor` puts its 2×2 spiral well in the largest room away from the way in, which is the same end room every time. The second floor is always below the first (`FLOOR2_Y` −5), so nothing in a fort goes up.
+
+The prototype is a plan drawing (`docs/prototypes/fort-layouts.png`; the script is `tests/fortlayoutproto.test.mjs` on `auto/proto-fort-layouts`). The top row is today's three from the generators. The bottom row is three proposed shapes drawn by hand, each built around one room you would remember, with straight flights where the spiral was. A is a pillared great hall with a flight down its middle to the undercroft. B is two rows of bunk rooms off one wide room, with the flight down to a gaol at its end. C is a ring of passage round a sunken yard seen over a rail, with a flight in each corner tower, two down and two up. The stairs' look is #173's question and the passages' width is #174's. This one is the shapes and where the stairs go.
+
+Asked as DECISION #177 (issue and `docs/decisions.md`): A, all three shapes with flights down only, which the two floors the game has already carry (recommended, one shape a session); B, the shapes and stairs up too, which first needs a floor above, a Fable job; C, today's layouts with a straight flight in place of the spiral; D, something else.
+
+### Verified (headless Chromium)
+The picture only: today's three are the game's own generators run in the page (`FORT_INTERIORS[k]('medium', seed)` through `addUpperFloor`), with no page errors. The proposed three are drawings, not generators.
+
+### Needs eyes
+- **Michael's choice on #177.**
+- C's two flights up are the one thing in the picture the game cannot do yet (option B).

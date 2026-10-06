@@ -48,6 +48,28 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-mouth.png
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-mouth.png
 
+### The forts' interiors (the look builder, Session 584, 2026-10-06) — DECISION #177
+On 5 Oct you said the forts and their dungeons are "still a little bland. I think we need to incorporate stairs going up and/or down, but straight stairs, not spiral. I also think we need more varied layouts on the interiors. I'm willing to get a little funky/creative with them." Here is why they feel the same, and three shapes they could take.
+
+**Why they feel the same.** A fort has three layouts (the tee, the linear and the courtyard; top row of the picture, from the game's own generators). All three are one long passage with square rooms off it, the treasure rooms at the far end, and the spiral stair down in the last room. Walking in, you can't tell which one you are in. Nothing goes up: the second floor is always below the first, five down.
+
+**The proposals** (bottom row, drawn by hand, smaller than they would be built). Each is built around a room you would remember, with straight flights in place of the spiral:
+- **A. The hall and the undercroft.** A pillared great hall, with a straight flight down its middle to the vaults. A kitchen and stores on one side, the armoury and a chapel on the other.
+- **B. Barracks and the gaol.** Two rows of bunk rooms off one long, wide room, and at its end a flight down to a gaol of cells.
+- **C. The ring and its towers.** A ring of passage round a sunken yard that you see over a rail before you can reach it. Each corner tower holds a short flight, two going down and two going up.
+
+How the stairs look is DECISION #173, and how wide the passages are is #174. This question is the shapes and where the stairs go.
+
+- **A. All three shapes, down only** *(recommended)*. Each fort's seed picks one of the three (or of six, if today's stay as well). Every stair is a straight flight down to the floor below, which the game already has. One shape a session, the hall first.
+- **B. The shapes and stairs up as well.** A floor above as well as below, for the towers and galleries. The dungeon has only ever had a floor below, so this is a larger job (a Fable session) before any shape.
+- **C. Today's layouts, with a straight flight in place of the spiral.** The smallest change. The forts stay one passage with rooms off it.
+- **D. Something else.** Mark what to change on the picture, or name a fort you have in mind.
+
+**Recommendation: A.** The brief asks for places that feel different. A remembered room in each fort (a hall, a gaol, a ring round a yard) does that more than more rooms off the same passage. Straight flights down fit the two floors the game already has, so the first shape can be built next session. Stairs up can follow as their own question once the shapes are in.
+
+Picture (top: today's three; bottom: the three proposed):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fort-layouts.png
+
 ## Answered
 ### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
 You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
