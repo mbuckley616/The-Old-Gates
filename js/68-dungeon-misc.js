@@ -174,11 +174,20 @@ function decorateDungeonRooms(gen,portal){
     if(r()<.6){const plate=_dBox(.62,.04,.62,0x3a3630,x,.02,z);const spikes=new THREE.Group();for(let i=0;i<9;i++){const s=new THREE.Mesh(new THREE.ConeGeometry(.04,.34,5),new THREE.MeshLambertMaterial({color:0x9a9ea6}));s.position.set(-.18+(i%3)*.18,.17,-.18+Math.floor(i/3)*.18);spikes.add(s);}spikes.position.set(x,-.4,z);dScene.add(spikes);D_TRAPS.push({kind:'spike',x,z,floor:1,plate,spikes,t:0,armed:true});}
     else{const pivot=new THREE.Group();pivot.position.set(x,FLOOR_HEIGHT-.1,z);const arm=_dBox(.06,1.4,.06,0x3a2e22,0,-.7,0);dScene.remove(arm);pivot.add(arm);const blade=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.04),new THREE.MeshLambertMaterial({color:0xb8bcc4}));blade.position.set(0,-1.55,0);pivot.add(blade);pivot.rotation.y=dir==='h'?0:Math.PI/2;dScene.add(pivot);D_TRAPS.push({kind:'blade',x,z,floor:1,pivot,ph:r()*Math.PI*2,hitT:0});}}
 }
+// S580 — the blade cuts where it is (Michael's A on #170): the player's body, a column 0.3 round from the feet to 1.72, is
+// tested against the blade's own box in the blade's own frame, so the hit follows whatever arc and shape the blade has.
+// Was: anyone within 0.7 of the cell while the swing was near its bottom. The blade is t.blade, else the pivot's lowest mesh.
+const _bladeV=new THREE.Vector3();
+function bladeTouches(t){let b=t.blade||t._bl;if(!b){for(const c of t.pivot.children)if(c.isMesh&&(!b||c.position.y<b.position.y))b=c;t._bl=b;}if(!b||!b.geometry)return false;
+  if(!b.geometry.boundingBox)b.geometry.computeBoundingBox();const bb=b.geometry.boundingBox,R=.3;t.pivot.updateMatrixWorld(true);
+  for(let k=0;k<=8;k++){_bladeV.set(px,jumpY+k*.215,pz);b.worldToLocal(_bladeV);
+    if(_bladeV.x>bb.min.x-R&&_bladeV.x<bb.max.x+R&&_bladeV.y>bb.min.y-R&&_bladeV.y<bb.max.y+R&&_bladeV.z>bb.min.z-R&&_bladeV.z<bb.max.z+R)return true;}
+  return false;}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
     if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(Math.random()*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
-    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;const sweep=Math.abs(a)<.35;t.hitT-=dt;if(sweep&&d<.7&&t.hitT<=0){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
+    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 

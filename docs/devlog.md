@@ -12600,3 +12600,12 @@ A home is named for its resident, and a big town repeats first names: the critic
 
 ### Needs eyes
 Whether *at the north-east end* reads well on the map's card and in the log. Dunmore renames 21 of its homes, so a save made before this build shows those houses under new names (the people inside are the same); a house you own keeps *Your House*.
+
+## v80 — Session 580 — The swinging blade cuts where it is (Michael's A on DECISION #170, the hit)
+Michael took A on #170: the blade swings across the passage and *the hit follows the blade*. The look half (the crescent on a longer arm, across the corridor, at the waist) is the look builder's, from its prototype on auto/proto-dungeon-traps. This session is the systems half. The old rule (`tickDungeonTraps`, `68-dungeon-misc.js`) cut anyone within 0.7 of the trap's cell while the swing was within 0.35 rad of the bottom, wherever the blade was. Now `bladeTouches(t)` takes the player's body as a column 0.3 round from the feet to 1.72, puts nine points of it into the blade's own frame, and cuts when one falls inside the blade's box grown by 0.3. It reads the blade from `t.blade`, or else the pivot's lowest mesh, so whatever shape, arm and swing the look builder gives it, the hit goes with it, with no second edit here. The damage, the block's 40% and the 1.2 s between cuts are unchanged. Only the hit line changed; the line that builds the blade is the look builder's and is untouched. `wardall` and `lvact` had stood a blade trap up as a bare `{rotation}` object; they now hang a real blade the way the builder does.
+
+### Verified (headless Chromium)
+`bladehit` 8/8 (new), on the blade in dungeon seed 11 (ruins, cave), over 120 phases of the swing at seven places along the corridor. No cut with the blade more than 0.75 from you; the old rule gave 72 such cuts. Every phase with the blade within 0.2 of you cut. At 0.9 along, past the cell, you are cut on 94 phases, all with the blade on your side. Damage 11 at level 1, once in two ticks under the blade. With the pivot turned across the passage, standing 0.45 to either side, every cut (266) came with the blade on that side. wardall, lvact pass. `parsecheck` clean.
+
+### Needs eyes
+Today's blade is 0.7 wide and swings 0.63 each way along a one-cell corridor, so at the cell's centre its edge never leaves you: you are cut on every pass. There is no gap to run through until the look builder's blade swings across the passage. Then the gap is the time between swings, and whether it is fair is a matter for play.
