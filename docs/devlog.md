@@ -13199,3 +13199,17 @@ The blade (`buildSwingBlade`, `68-dungeon-misc.js`, replacing the inline box bla
 - The swing's speed: unchanged at 2.2 radians of phase a second, about 2.9 seconds a full swing, now that you time a run across it.
 - The slots are flat dark planes on the wall's face, with no depth to them.
 - `bladehit`, as above, when auto/systems and this branch meet on main.
+
+## v80 — Session 583 — The fort keep's door shut (backlog H, Michael's note of 5 Oct)
+Michael on the control room, 5 Oct: "Fortress Doors are wide open when they should probably be closed." The note is his own words and asks for no design, so it is built as written. The door he means is the keep's, at the back of every fort compound, which is the portal into the fort's dungeon. Session 256 built its leaves swung back flat against the reveals. Behind them was a dark plane, and over the whole arched doorway a 2.2 × 3.0 orange plane at 55% stood in front, put there in Session 132 so the door would read from the gate at night. In daylight that reads as a lit, open doorway (`docs/prototypes/fortdoor-before-day.png`).
+
+In `fortKeepGeoHi` (`82-world-structures.js`) the two leaves now meet in the middle of the doorway, .85 into the wall, just in front of its dark back. Each leaf is five oak planks, each cut to the arch at its own centre, so the tops step up under the round head and the wall's arched opening hides the corners. Each leaf has three iron straps and a ring by the meeting edge, and a dark line runs down the meeting. The leaves stand on the sill. The orange plane is gone. In its place a thin warm line, .05 tall, shows in the gap under the door, between the sill's top and the leaves' foot. The windows and the two torches still mark the keep at night. The distant copy's doorway box is oak-coloured now, not black. Nothing else changes: the portal, the collider and the lights are where they were.
+
+`tests/keep` had a check that "the doorway is open to the dark at its back". It now checks the reverse. Rays into the doorway at mid-height, under the arch and out by the jamb meet the leaves at .805 in, and what they meet is oak.
+
+### Verified (headless Chromium)
+`keep` 9/9. The three rays meet the door within .03 of its face, and the three colours sampled are brown, with red over green over blue. The other checks are unchanged: 4–13k triangles, the footprint, the collider, and the near and far copies. `keepercone` and `keeperwalk` ran alongside and pass. Pictures of the fort nearest the start, before and after by day, and after at night: `docs/prototypes/fortdoor-before-day.png`, `fortdoor-after-day.png`, `fortdoor-after-night.png`. No page errors.
+
+### Needs eyes
+- Whether the line of light under the door is enough to find the keep's door from the compound gate at night, now the doorway itself no longer glows.
+- The legacy zones' fort doors (`_spawnFortDoor`, `24-forts.js`) were already shut and are unchanged.

@@ -52,14 +52,17 @@
       for(let k=0;k<6;k++){const a=k/6*Math.PI*2+.3;add(new THREE.BoxGeometry(.62,.55,.3),vary(pale,.07),x+Math.sin(a)*(R0+.16),TT+.47,z+Math.cos(a)*(R0+.16),0,a,0,.05);}
       for(let k=0;k<4;k++){const r1=(R0+.18)*(1-k/4),r2=(R0+.18)*(1-(k+1)/4);add(new THREE.CylinderGeometry(Math.max(.03,r2),r1,.45,12,1,true),vary(dk,.1),x,TT+.35+k*.45+.22,z,0,0,0,.05);}
       add(SK.cyl(.04,.04,.5,4),0x8a7a4a,x,TT+2.35,z);add(SK.ball(.1,6,5),0xc8a850,x,TT+2.62,z);}
-    // the doorway: dressed jambs in long and short stones, a ring of voussoirs with a keystone, the leaves open against
-    // the reveals, a threshold and the old two steps
+    // the doorway: dressed jambs in long and short stones, a ring of voussoirs with a keystone, the leaves (shut, Session 583),
+    // a threshold and the old two steps
     for(const s of [-1,1]){let y=0,k=0;while(y<DY-.02){const h=Math.min(DY-y,.5+rr()*.12),long=k++%2===0;add(SK.rbox(long?.62:.42,h-.04,.34,.05,1),vary(pale,.07),s*(DW+(long?.29:.19)),y+h/2,D/2+.03,0,0,0,.05);y+=h;}}
     for(let k=0;k<=10;k++){const a=k/10*Math.PI,key=k===5,rad=DW+(key?.36:.3);add(SK.rbox(.34,key?.72:.6,.36,.05,1),vary(pale,.07),Math.cos(a)*rad,DY+Math.sin(a)*rad,D/2+(key?.06:.03),0,0,a-Math.PI/2,.05);}
-    for(const s of [-1,1]){const lx=s*(DW-.06),z0=D/2-.9,lw=DW-.05;
-      for(let k=0;k<5;k++)add(new THREE.BoxGeometry(.07,DY-.1,lw/5-.015),vary(wood,.12),lx,(DY-.1)/2+.05,z0+(k+.5)*lw/5,0,0,0,.06);
-      for(const y of [.5,DY-.6])add(new THREE.BoxGeometry(.03,.1,lw-.08),iron,lx-s*.05,y,z0+lw/2,0,0,0,.03);
-      add(SK.torus(.09,.018,4,8),iron,lx-s*.06,1.25,z0+lw-.2,0,Math.PI/2,0,.02);}
+    // S583 — the leaves shut (Michael, 5 Oct: "Fortress Doors are wide open when they should probably be closed"): two leaves
+    // meet in the middle of the doorway .85 in, five planks each cut to the arch, iron straps, a ring on each leaf by the meeting
+    for(const s of [-1,1]){const pw=DW/5,zl=D/2-.85;
+      for(let k=0;k<5;k++){const xc=s*(k+.5)*pw,top=DY+Math.sqrt(DW*DW-((k+.5)*pw)**2)-.02;add(new THREE.BoxGeometry(pw-.012,top-.13,.09),vary(wood,.12),xc,.13+(top-.13)/2,zl,0,0,0,.06);}
+      for(const y of [.6,1.75,DY-.3])add(new THREE.BoxGeometry(DW-.12,.1,.03),iron,s*DW/2,y,zl+.06,0,0,0,.03);
+      add(SK.torus(.09,.018,4,8),iron,s*.2,1.25,zl+.08,0,0,0,.02);}
+    add(new THREE.BoxGeometry(.03,DY+DW-.1,.1),0x1a120a,0,(DY+DW)/2,D/2-.84,0,0,0,0);
     add(SK.rbox(2*DW+.3,.12,.9,.04,1),vary(pale,.05),0,.02,D/2-.4,0,0,0,.03);
     add(SK.rbox(3.6,.3,1.6,.06,1),vary(pale,.06),0,.15,D/2+1.0,0,0,0,.04);add(SK.rbox(4.4,.3,1.2,.06,1),vary(pale,.06),0,-.05,D/2+2.2,0,0,0,.04);
     // windows: a dark recess, dressed jambs, a round head and a sill on the string course; the lit panes stay the old planes
@@ -91,7 +94,7 @@
     // corner turrets with caps
     [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{parts.push({geo:new THREE.CylinderGeometry(1.2,1.4,H_+2.4,8),color:wall2,x:sx*(W_/2-.2),z:sz*(D_/2-.2),y:(H_+2.4)/2,jitter:.03});parts.push({geo:new THREE.ConeGeometry(1.5,1.6,8),color:dark,x:sx*(W_/2-.2),z:sz*(D_/2-.2),y:H_+2.4+.8});});
     // the doorway: a recess in the south face with an arch, and the dark of the door itself
-    parts.push({geo:new THREE.BoxGeometry(2.6,3.4,.9),color:c(0x100c0a),z:D_/2-.3,y:1.7});
+    parts.push({geo:new THREE.BoxGeometry(2.6,3.4,.9),color:c(0x3a2a18),z:D_/2-.3,y:1.7}); /* S583 — the shut door, far */
     parts.push({geo:new THREE.BoxGeometry(3.6,.3,1.6),color:wall2,z:D_/2+1.0,y:.15});parts.push({geo:new THREE.BoxGeometry(4.4,.3,1.2),color:wall2,z:D_/2+2.2,y:-.05}); // steps
     for(let k=-1;k<=1;k+=2)parts.push({geo:new THREE.BoxGeometry(.8,1.0,.15),color:c(0x2a2010),x:k*3.4,z:D_/2+.05,y:H_*.62}); // windows
     parts.push({geo:new THREE.TorusGeometry(1.5,.28,6,10,Math.PI),color:wall2,z:D_/2+.15,y:3.3,rx:0});
@@ -100,8 +103,9 @@
     parts.push({geo:new THREE.BoxGeometry(1.2,2.0,.06),color:c(nationOf(...cellOf(cx,cz)).banner),z:D_/2+.1,y:6.0});
     // S256 — the keep's meshes go into the compound's group (buildFortCompound), in detail near and these boxes far
     FORT_KEEP[p.seed]={lo:parts,x:cx,z:cz,y:y-.06,banner:nationOf(...cellOf(cx,cz)).banner};
-    // the doorway glows warm and the windows are lit, so the door reads from the gate at night
-    const glow=new THREE.Mesh(new THREE.PlaneGeometry(2.2,3.0),new THREE.MeshBasicMaterial({color:0xffa040,transparent:true,opacity:.55}));glow.position.set(cx,y+1.5,cz+D_/2+.02);sc.add(glow);
+    // the windows are lit, so the keep reads from the gate at night
+    // S583 — the door is shut now: the warm line of light under it, not a glowing doorway
+    const glow=new THREE.Mesh(new THREE.PlaneGeometry(2.2,.05),new THREE.MeshBasicMaterial({color:0xffa040}));glow.position.set(cx,y+.045,cz+D_/2-.85); /* the keep stands .06 down: the sill's top is y+.02, the leaves' foot y+.07 */sc.add(glow);
     for(let k=-1;k<=1;k+=2){const w=new THREE.Mesh(new THREE.PlaneGeometry(.6,.8),new THREE.MeshBasicMaterial({color:0xffc870}));w.position.set(cx+k*3.4,y+H_*.62,cz+D_/2+.14);sc.add(w);const fl=new THREE.Mesh(new THREE.ConeGeometry(.12,.35,6),new THREE.MeshBasicMaterial({color:0xffa030}));fl.position.set(cx+k*2.2,y+2.9,cz+D_/2+.5);sc.add(fl);}
     for(let k=-1;k<=1;k+=2){const l=regLight(0xffb060,1.4,9,'keep:'+p.seed);l.position.set(cx+k*2.2,y+2.8,cz+D_/2+.7);}
     // solids: the whole keep is a mass — the door is the portal, not a way in
