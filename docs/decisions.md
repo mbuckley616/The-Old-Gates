@@ -3,6 +3,14 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Two houses of one name in a town — must a house's name be its own? (the systems builder, 2026-10-06) — DECISION #171
+A home is named for its resident (*Séamus's House*), and residents' first names are unique in a town only while the bank lasts: twelve a sex for each people, so a town of more than about two dozen homes repeats them (Session 172 kept repeats for ordinary townsfolk, and Session 248 gave the second of a name another face). The critic found two *Séamus's House* in Carraig Mór (lots 10 and 44), both for sale, at 1,150 and 1,100: on the map, in the log, in a save's label and in a townsperson's directions the two read the same. A house is what the player buys, so the question is whether its name must point at one door. Shops, inns and guild heads are already unique (Sessions 172 and 248); nothing else changes in any option.
+- **A. The second takes the resident's trade** *(recommended)*: where a house's name is already in the town, it reads *Séamus the Cooper's House* (the trade every resident already carries: farmer, weaver, cooper, fisher; an old woman *Old Úna's House*); a plain resident, or a trade that repeats too, reads by its street end (*Séamus's House by the north gate*). No new words beyond what the game holds; the first house keeps its name, so a save that owns one keeps it.
+- **B. Residents' first names unique in the town**: the bank grows (or a family name is added) so no two homes share a name. Cleaner, but it is new names, the quest writer's, and it renames people in existing saves.
+- **C. Keep the names, say which one**: the map's card, the log and the directions add the street end (*by the north gate*) only where the name repeats; the house's own name stays.
+- **D. Leave it.**
+
+Recommendation: **A.** It reads like a village talking (*the cooper Séamus*), it needs nothing the generator does not already know, and it is one change in the generator (`83-world-generator.js`) with a test over the nearest towns.
 
 ## Answered
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
