@@ -13327,3 +13327,16 @@ The third shape of #177, after the hall (Session 599) and the barracks (Session 
 - The ring in play: whether the yard reads as a place you want to get down to. From the ring it is a well of coursed stone, 8 units deep, lit from below.
 - The towers' flights are reached by a one-cell walkway past the flight's head (the tower is five wide and the flight three). That is narrow for a fight.
 - Three shapes replace three, so every named fort's interior has changed. A save made inside a fort comes back to the old layout's spot.
+
+## v80 — Session 602 — `corpsebody`'s Cave Bear miss, made deterministic (backlog H, CI; the producer's unblock decision of 6 Oct)
+The producer's unblock decision (Slack, 6 Oct) reports that the look sessions approved at `bd1caa6` failed one check twice on CI, with the same game code, and passed on their own run. The failing check: searching a Cave Bear's corpse while aiming past it still finds it. Its recommendation was that the look builder make the test reliable.
+
+The fault was in the test, not the game. For each body, `tests/corpsebody` stands 2.2 off the body's middle with the eye at 1.6, and aims at the ground 1.4 or more past the far side, expecting no hit. For a small body the ray clears it. For a Cave Bear (extent about 2.5, so the aim point is 2.25 past the middle), the ray from the eye down to that point is about .8 high over the middle. That is about the height of a big corpse's back, so whether it touched the body's capsules depended on how the ragdoll had settled, and the settle uses cosmetic `Math.random`. That is chance, as the producer said.
+
+The aim point keeps its distance, but is never lower than .3 over the body's top (its highest bone plus the body's capsule radius). A straight ray between the eye and a point above the body's top passes above it everywhere between. Small bodies still aim along the ground as before. The game is unchanged.
+
+### Verified (headless Chromium)
+- `corpsebody` passes three runs in a row locally. All five bodies (Bandit, Wolf, Cave Bear, Cave Troll, Golem) are searchable aimed at any part from four sides, and not aimed past or at the sky.
+
+### Needs eyes
+- Nothing in play. CI on the next push is the real test.
