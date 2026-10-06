@@ -81,7 +81,7 @@
     for(const t in nouns)SHOP_NOUN[t][id]=nouns[t];
     const adj=['Grey','Black','Red','Old','Broken','Golden','Salt','Wandering','Quiet','Last'],noun=['Heron','Hound','Ram','Oar','Cup','Hearth','Lantern','Gate','Ember','Anchor'];
     INN_NAMES[id]=Array.from({length:6},()=>`The ${pick_(adj)} ${pick_(noun)}`);
-    RUMORS[id]=[`The ${word(2)} clan still pays no tithe. Nobody makes them.`,`They say a ${word(1).toLowerCase()} walks the ${pick_(['marsh','ridge','shore','wood'])} at dusk. They say a lot of things.`,`The old road to ${word(2)} is closed. Or it closed itself.`,`There's a door in the ${pick_(['hills','cliffs','wood','fen'])} that was shut when my father was a boy. Still shut.`,`Ships from ${word(2)} stopped coming two seasons back.`];
+    RUMORS[id]=[`The ${word(2)} clan still pays no tithe. Nobody makes them.`,`They say ${(w=>aOrAn(w)+' '+w)(word(1).toLowerCase())} walks the ${pick_(['marsh','ridge','shore','wood'])} at dusk. They say a lot of things.`,`The old road to ${word(2)} is closed. Or it closed itself.`,`There's a door in the ${pick_(['hills','cliffs','wood','fen'])} that was shut when my father was a boy. Still shut.`,`Ships from ${word(2)} stopped coming two seasons back.`];
     return {id,name:word(2)+pick_(['ish','ic','an','ari','ese']),reg:id,thatch};
   }
   const CULTURES={irish:{id:'irish',name:'Irish'},french:{id:'french',name:'Royale'},anglo:{id:'anglo',name:'Anglic'}};

@@ -12760,3 +12760,22 @@ On the old code 4 of the 6 checks fail. `yardplay` passes, the duel fought throu
 
 ### Needs eyes
 The talk prompt is back over every townsperson you face in the open world, and it may not have been seen since well before the split. Whether the capsule's girth (0.16 for a person) feels right at the edge of a shoulder or a hat brim. The test could not judge that.
+
+## v80 — Session 597 — *An armourer*, *an Adept*: the article before a vowel (the concept artist's note, 5 Oct)
+The concept artist's run of 5 Oct, in its Slack post, heard townsfolk say *I'm a armourer*. A townsperson's trade is spoken after a fixed *a*, in *Who are you?* and *What do you do here?* (`87-world-quests.js`). Three of the nineteen trades start with a vowel: armourer, apothecary and innkeeper. Innkeepers alone are twelve of the 110 people in Dunmore and Portclare. Looking for the same pattern found two more:
+- The Mages' Guild's rank-up (`83-world-generator.js`) said *You're a Adept*, *a Evoker* and *a Archmage of the Mages' Guild now.*
+- One of the culture rumours (`84-world-interiors.js`) said *They say a <word> walks the marsh at dusk*, and the made-up word can begin with a vowel.
+
+All three now take `aOrAn(w)`, declared beside `rankOf` in `83-world-generator.js`. It returns *an* for a vowel letter, and none of the game's words needs more than that. `84-world-interiors.js` is the look builder's file. The change there is that one rumour line, and it runs at load time, so the helper sits in the earlier file `83` (the load-order rule). The other *a ${…}* sentences were checked and left: cargo, fish, ship classes and refits have no word that starts with a vowel.
+
+### Verified (headless Chromium)
+`articles` 6/6 (new):
+- Every townsperson's replies in Dunmore and Portclare, folders included: 3,563 replies, none with *a* before a vowel. On the old code these failed, with *Bríd: a armourer*, *Cathal: a apothecary*, *Ruairí: a innkeeper* and five more.
+- `aOrAn` on the trades and the ranks.
+- The Mages' Guild's own turn-in at 3, 6, 9 and 12 tasks: *an Adept*, *an Evoker*, *a Warlock*, *an Archmage*.
+- The 40 rumours, clean.
+
+`register`, `guildfurn`, `datedguild` and `smoke` pass. `parsecheck` clean.
+
+### Needs eyes
+None: this is text. The quest writer may want to know that `aOrAn` exists for new lines that put an article before a variable word.
