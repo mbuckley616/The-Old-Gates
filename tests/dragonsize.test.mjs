@@ -3,6 +3,7 @@
 // 2.88 (the zone's 1.8 × 1.6, and the lair's dragonBody). The inspector's dragon and a zone dragon now stand the same height.
 // Session 546 (Michael's B on #153): 4.5, about twice a man's height. The open world's dragon is built at it; a lair's wyrm is
 // built at it too unless it would stand through the cavern's ceiling (FLOOR_HEIGHT, 3.2), when it is built at the largest that clears.
+// Session 564 (Michael's B on #162): a dragon's lair is cut to 4.4, so its wyrm stands at the full 4.5; other dungeons stay 3.2.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -26,10 +27,22 @@ await page.evaluate(() => { level = 9; const p = Object.assign({}, PORTALS[0], {
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !!window._lairBoss)); k++) await page.waitForTimeout(500);
 const L = await page.evaluate(() => { const e = window._lairBoss; if (!e || !e.limbs || !e.limbs.wolf) return { none: true, name: e && e.name };
   const root = e.limbs.wolf.root; e.mesh.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(root);
-  return { name: e.name, dragon: !!e.dragon, h: +(b.max.y - b.min.y).toFixed(2), ceil: FLOOR_HEIGHT, s: +(e._wyrmScale || 0).toFixed(2), parts: e.mesh.children.filter(c => c.userData && c.userData.rig).length };
+  const shell = k => { let y0 = 1e9, y1 = -1e9; dScene.traverse(o => { if (o.isMesh && o.userData && o.userData.dunShell === k) { o.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(o); y0 = Math.min(y0, bb.min.y); y1 = Math.max(y1, bb.max.y); } }); return [+y0.toFixed(2), +y1.toFixed(2)]; };
+  return { name: e.name, dragon: !!e.dragon, h: +(b.max.y - b.min.y).toFixed(2), ceil: FLOOR_HEIGHT, s: +(e._wyrmScale || 0).toFixed(2), parts: e.mesh.children.filter(c => c.userData && c.userData.rig).length,
+    ceilY: shell('ceiling'), floor: e.floor || 1, tp: (() => { const f = currentFloor; currentFloor = e.floor || 1; const c = +tpCeil().toFixed(2); currentFloor = f; return c; })() };
 });
-console.log(JSON.stringify(L));
+console.log(JSON.stringify(L)); const FLOOR2_Y_V = await page.evaluate(() => FLOOR2_Y);
 check('a lair\'s wyrm is built on the dragon\'s body', !L.none && L.dragon && L.parts === 1, L);
-check('it stands under the cavern\'s ceiling, as large as clears it (within 0.3 of it)', L.h < L.ceil && L.h > L.ceil - .3 && L.s > 3.5 && L.s <= 4.5, L);
+check('a dragon\'s lair is cut to 4.4 (Michael\'s B on #162), and the shell\'s roof reaches it (its stone stands up to .1 proud)', L.ceil === 4.4 && L.ceilY[1] >= 4.35 && L.ceilY[1] <= 4.52, L);
+check('its wyrm is built at the full 4.5, standing 3.6–3.8 under the roof', L.s === 4.5 && L.h >= 3.6 && L.h <= 3.8 && L.h < L.ceil, L);
+check('the third-person camera\'s ceiling on the wyrm\'s floor reads the lair\'s height', Math.abs(L.tp - ((L.floor === 2 ? FLOOR2_Y_V : 0) + 4.4 - .25)) < .01, L);
+
+// a lair without a dragon, and a plain cave, keep the old 3.2
+const O = await page.evaluate(() => { const out = {}; for (const [k, lair] of [['beast', { place: 'Test', boss: 'Brute', dragon: false }], ['cave', null]]) {
+  const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 4022, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair }); buildDungeon(p);
+  let y1 = -1e9; dScene.traverse(o => { if (o.isMesh && o.userData && o.userData.dunShell === 'ceiling') { o.updateMatrixWorld(true); y1 = Math.max(y1, new THREE.Box3().setFromObject(o).max.y); } });
+  out[k] = { h: FLOOR_HEIGHT, roof: +y1.toFixed(2) }; } return out; });
+console.log(JSON.stringify(O));
+check('a lair without a dragon, and a plain cave, stay at 3.2', O.beast.h === 3.2 && O.cave.h === 3.2 && O.cave.roof >= 3.15 && O.cave.roof <= 3.32 && O.beast.roof >= 3.15 && O.beast.roof <= 3.32, O);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -43,7 +43,10 @@ function intSolidAt(x,z,R,Y){const y=Y!=null?Y:jumpY;for(let i=0;i<INT_SOL.lengt
   if(s.y1!=null&&s.y1<=y+STEP_UP)continue;      // low enough to step onto / already above it
   if(s.y0!=null&&s.y0>=y+PLAYER_H)continue;      // entirely overhead
   if(x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R)return true;}return false;}
-const FLOOR_HEIGHT=3.2; // wall/ceiling height per floor
+let FLOOR_HEIGHT=3.2; // wall/ceiling height per floor; S564: the dungeon's own, set by buildDungeon (dunFloorHeight)
+// S564 — Michael's B on #162: a dragon's lair is cut to 4.4 so its wyrm stands at the world's 4.5; every other dungeon stays 3.2
+const DUN_FLOOR_H=3.2,LAIR_FLOOR_H=4.4;
+function dunFloorHeight(portal){return portal&&portal.lair&&portal.lair.dragon?LAIR_FLOOR_H:DUN_FLOOR_H;}
 
 // v61g0: FORT_INTERIORS registry — interior-layout generators selected by the
 // `interior` field on WORLD_DUNGEONS entries. Symmetric with the v61f9

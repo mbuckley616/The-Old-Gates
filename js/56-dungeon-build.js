@@ -857,7 +857,7 @@ function dKeyOf(portal,floorIdx){const p=portal||{};return String(p.seed!=null?p
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
-  currentPortal=portal;currentFloor=1;
+  currentPortal=portal;currentFloor=1;FLOOR_HEIGHT=dunFloorHeight(portal); /* S564 — the dungeon's height is its own */
   if(typeof WORLD!=='undefined'&&WORLD.onEnterPortal)try{WORLD.onEnterPortal(portal);}catch(e){} // v80 — the acts
   // v61g0: dispatch via FORT_INTERIORS registry. portal.interior selects the
   // generator; absent or unknown value falls back to 'cave' (makeDungeon).

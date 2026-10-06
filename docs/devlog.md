@@ -13006,3 +13006,15 @@ Session 552 gave the Dark Hood two virtues and tested one. The other, a witness'
 
 ### Needs eyes
 Nothing new; one unit of reach is not a thing a player sees, which is the cloak page's point.
+
+## v80 — Session 568 — A dragon's lair cut to 4.4, and its wyrm at the full 4.5 (backlog H, Michael's B on #162)
+Michael answered B on #162: the whole cavern of a dragon's lair at 4.4, so the lair's wyrm stands at the open world's 4.5 instead of the 3.73 that cleared a cavern's 3.2 roof. Session 558's scratch branch had shown it would work by raising `FLOOR_HEIGHT` before the build, and that `dragonBody`'s fit already reads the roof.
+
+So `FLOOR_HEIGHT` (`52-dungeon-gen.js`) is a `let` now, and `buildDungeon` sets it first thing from `dunFloorHeight(portal)`: 4.4 when the portal carries a lair with a dragon (the Salt Mouth and the few others the world flags), 3.2 for every other dungeon, lairs without a dragon included. Everything that stood a cavern up already read the name at build time: the shell's walls and roof, the stair shafts between floors, the hanging chains and lights, the swinging-blade traps, and the third-person camera's ceiling (`tpCeil`). None of them needed a change. The lower floor still lies at −5, so its roof sits at −0.6, 0.6 under the upper floor. The fort staircases assume 3.2 (eight risers of 0.38), but forts never carry a dragon, so they are untouched. The value is set on every entry, so a 3.2 cave after a lair is 3.2 again.
+
+### Verified (headless Chromium)
+`tests/dragonsize`, extended, passes 10 of 10. In the lair (deep, seed 4021), `FLOOR_HEIGHT` is 4.4. The shell's roof reaches 4.47 (its stone stands up to .08 proud of the line). The wyrm is built at scale 4.5, 3.68 tall, the same as the open world's dragon; it was 3.05 under 3.2. It waits on the lower floor, where the camera's ceiling reads −0.85 (−5 + 4.4 − .25). A lair with a beast and no dragon, and a plain cave (seed 4022), are both back at 3.2, with the roof at 3.28. `dungeon` and `dungeonexit` pass, and so do `dunseed`, `falls`, `masterslam`, `wyrm`, `targetof` and `chestpicks` (see below). There were no page errors.
+
+### Needs eyes
+- **The moment you meet it.** A 4.4 cavern is 1.2 taller everywhere in the lair, which is what Michael chose over the vaulted hall (C). Whether the torches, set at their old heights, light a taller roof enough is a playtest call.
+- **The systems builder's reach and breath** still do not read the wyrm's size (Session 546's note). That is more pressing now that the lair's wyrm is 20% larger.
