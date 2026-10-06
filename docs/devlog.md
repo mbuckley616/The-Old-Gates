@@ -12872,3 +12872,26 @@ What it says: a rich town's box holds about 9 more coins and costs about a quart
 
 ### Needs eyes
 Whether a rich town's all-4 shops are fair is still the feel. By the numbers, the floor of 4 matters less than the hand: a 1-in-3 hand loses money everywhere, and a 1-in-10 hand profits everywhere. If Michael wants burglary to pay for a beginner, the lever is the pick's price or the box, not the pins. That would be a decision, and none is raised here.
+
+## v80 — Session 609 — Night burglary against the watch, measured (backlog G, Session 166's owed check)
+Backlog G has carried since Session 166: *whether night burglary is now fair before the numbers are tuned*. The feel is Michael's. This session measured the numbers, and no rule changed. A town lock picked under anyone's eye is a crime seen. `pickSeen` asks on every frame of the pick (Session 327). Outdoors a witness sees you to 6 units at night, or 3 if you sneak, with a clear line (`witnessOf`). The new suite stands at each of Dunmore's seven shop doors through one night, from 20:15 to 4:15. The town's own ticks walk the watch, the guards and the stragglers, for 20 s of town time an hour, sampled every quarter second. It counts how often someone would see a pick there: at an instant, and over a five-second pick (any sample in a window of 20).
+
+| hour | out | seen at an instant, walking / sneaking | seen over a 5 s pick | doors ever seen | by |
+|---|---|---|---|---|---|
+| 20h | 36 | 56.8% / 40.5% | 62.5% / 44.6% | 7 / 6 | keepers at their doors |
+| 21h | 3 | 0 / 0 | 0 / 0 | 0 / 0 | — |
+| 22h | 3 | 27.0% / 18.0% | 28.6% / 26.8% | 2 / 2 | the watch |
+| 23h | 3 | 17.1% / 8.9% | 19.6% / 15.2% | 2 / 2 | the watch, a guard |
+| 0h | 3 | 30.5% / 16.4% | 39.3% / 25.9% | 3 / 3 | a guard, the watch |
+| 1h | 3 | 14.3% / 7.9% | 17.9% / 10.7% | 2 / 2 | the watch |
+| 2h | 3 | 12.0% / 3.0% | 17.0% / 4.5% | 2 / 1 | the watch, a guard |
+| 3h | 3 | 15.4% / 10.9% | 20.5% / 14.3% | 3 / 2 | a guard |
+| 4h | 3 | 22.1% / 12.0% | 29.5% / 17.0% | 4 / 2 | a guard |
+
+Over the night, a pick at a random door and a random moment is seen 26% of the time walking and 18% sneaking. The risk is not spread evenly. At 20h the keepers are still at their own doors and most picks are seen. From 21h the three people out are the watch and two guards, and in any hour only two to four of the seven doors are ever in their sight. The rest are never seen that hour. So night burglary rewards watching first. A player who waits for the watch's torch to pass, or picks a door off its round, is safe. One who picks at a door on the round is seen about one try in three. Sneaking roughly halves the instant risk, but less over a whole pick, because the watch walks into the 3 units as well as past them.
+
+### Verified (headless Chromium)
+`nightpick` 4/4 (new): Dunmore's 7 shop doors over nine night hours, one watch out every hour, sneaking never seen more than walking. Means over the night: instant 21.7% / 13.1%, a pick 26.1% / 17.7%. `parsecheck` clean.
+
+### Needs eyes
+Whether *watch the round, then pick* reads as fair in play, and whether 20h, with the keepers still at their doors, should count as night for a burglar. One town and one night of the watch's walk; Dunmore's prosperity is 61, so a poorer town (no watch) would be safer.
