@@ -13151,3 +13151,17 @@ Pictures only: from the room above at 3.2 out, and from the floor below looking 
 - **Michael's choice on #173.**
 - From above, the shaft is a dark hole either way; the difference shows from the floor below and on the way down.
 - Wider passages, the last part of the note, are still to be prototyped.
+
+## v80 — Session 577 — The dungeon's passages, a prototype (backlog H, Michael's control-room note of 5 Oct, the last part; DECISION #174)
+The last part of Michael's note of 5 Oct: "dungeons are very narrow and cramped — I think we can open them up a bit more and make them less claustrophobic." `makeDungeon` (`52-dungeon-gen.js`) lays a floor on a grid of one-unit cells. Its rooms are 3–10 cells a side, joined by L-shaped corridors one cell wide, under the shell's 3.2 roof. So every passage is about shoulder width, and ahead of you it is a slot.
+
+The prototype (`tests/wideproto.test.mjs` on `auto/proto-dungeon-wide`) wraps `makeDungeon` in the page. After the game's own generator has run, every corridor cell outside a room opens its neighbour: the cell below for a run east–west, the cell to the east for a run north–south, both at a corner. That gives every corridor two cells, while the rooms, the stair, the entrance and the turns stay where the seed put them. The dungeon then builds as normal. The pictures are of the longest straight corridor of a large ruins dungeon (seed 4031, 11 cells, x 20 from z 14), from its mouth looking in and from its far end looking back, today and widened. One thing learned on the way: a dungeon cell is centred on its integer (cell c runs c−½ to c+½), not on c+½. The first pictures stood the camera on a wall's face, and the walls of a one-cell corridor vanished behind the near plane.
+
+Asked as DECISION #174 (issue and `docs/decisions.md`). A: every corridor two cells wide, with a door in a narrowed one-cell doorway so doors, locks and keys work as now (recommended). B: A, and the rooms a cell larger each way. C: the whole dungeon at 1.5× the scale, a Fable job, since every system counts in cells. D: as they are.
+
+### Verified (headless Chromium)
+Pictures only: `docs/prototypes/dungeon-wide-today-run.png`, `-proto-run.png`, `-today-mouth.png`, `-proto-mouth.png`. The widened floor builds without a page error (758 floor cells on floor one).
+
+### Needs eyes
+- **Michael's choice on #174.**
+- In the prototype a door stays one cell with an open cell beside it (the generator's doors are left alone), so a door could be walked round. The build would narrow the passage to a stone doorway at each door; that is in option A and not shown.

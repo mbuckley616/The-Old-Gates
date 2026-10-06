@@ -81,6 +81,28 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-today-up.png
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-proto-up.png
 
+### The dungeon's passages (the look builder, Session 577, 2026-10-06) — DECISION #174
+On 5 Oct you said "dungeons are very narrow and cramped — I think we can open them up a bit more and make them less claustrophobic." Here is why they feel that way, and one way to open them up.
+
+**What is wrong.** A dungeon is laid out on a grid of one-unit cells. Every corridor is one cell wide, so you walk a passage about as wide as your shoulders, under a roof 3.2 high. Seen ahead, it is a slot between two walls that fill the screen (pictures one and three). The rooms, three to ten cells across, are fine; it is the passages between them that close in.
+
+**The prototype** (pictures two and four: the same dungeon, seed 4031, in the same corridor from the same two places). Every corridor is two cells wide. The rooms, their places and the turns between them are unchanged; only the passages open out. It now reads as a passage you could fight in, not a crack you squeeze through. The prototype is on the branch auto/proto-dungeon-wide, and nothing in the game has changed.
+
+- **A. Every corridor two cells wide, as shown** *(recommended)*. A door would sit in a narrowed stone doorway one cell wide, so doors, locks and keys work as now. A swinging blade would span the wider passage (#170).
+- **B. A, and every room one cell larger each way.** More open still, but a floor holds a few fewer rooms, or the maps grow by about a fifth.
+- **C. The whole dungeon at one and a half times the scale.** Corridors 1.5 wide and rooms half as large again, under the same roof. This touches every system that counts in cells (foes, traps, the stair, the map, saves), so it would be a Fable session, not a contained one.
+- **D. Leave them as they are.**
+
+**Recommendation: A.** The brief asks for fluid, weighty combat. A sidestep or a roll needs room to the side, and a one-cell corridor has none: every fight in a passage is a straight line. Two cells gives that room without changing what a dungeon is.
+
+This is the last part of your 5 Oct note. The railings were fixed in Session 572, the traps are DECISION #170, and the stairs are DECISION #173.
+
+Pictures (today and the prototype, from the corridor's mouth looking in, then from its far end looking back):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-run.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-run.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-mouth.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-mouth.png
+
 ## Answered
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
 The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.
