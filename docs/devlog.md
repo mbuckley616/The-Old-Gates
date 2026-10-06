@@ -12714,3 +12714,27 @@ The critic, 6 Oct (backlog I): Coeur de Vie has two churches side by side on the
 
 ### Needs eyes
 *Chapelle de … at the north-east end* puts the English end-word after a French name, as the homes of Aurenne's towns already do (Session 579). The quest writer may want a French form for Aurenne.
+
+## v80 — Session 595 — The main quest's far objectives marked in the open world (backlog A, Michael's note of 5 Oct)
+Michael, 5 Oct (backlog A, *Questing, a big effort pass*): *"The main quest is kinda buggy and odd … There is no quest marker if the quest requires you to travel moderately far."* Session 587 put every compass mark on the map and left the main quest's own travel marks unexamined. They come from `getActiveQuestMarkers` (`20-quests.js`), written for the legacy zones. A dungeon objective marks its door from `PORTALS`, which hold world positions, so Q1, Q2, Q4 and Q5 were marked. An objective in a *zone* (`talk_to`, `receive_item` from a giver elsewhere, `read_corpse`, `kill_in_zone`) pointed at the gate toward that zone, and `gateTowardZone` found none in the open world. So these marked nothing:
+- Q3's *talk to Aldwyn* in Ironhaven, 1,281 units from the start: the far walk Michael means.
+- Q6's *kill 20 in Ironhaven's dungeons*: `kill_in_zone` had no branch at all.
+- Q7's *talk to Brother Oswin*, *Edna* and *Aldwyn*.
+
+In the open world the legacy zones are places (Session 236, `questZoneNow`): `overworld` is the world's Ashenmoor and `ironhaven` its Ironhaven. `gateTowardZone(zone, name)` now answers in that sense through `worldZoneTarget`. A named person is marked where they stand, if they are in the world's people, or at the door of the house they keep. Failing both, the mark is on the place itself. Q6 is marked at the nearest Ironhaven dungeon whose door is known to `PORTALS` (a door is known once its cell has loaded), else at Ironhaven. Some marks stay as they were:
+- A giver waiting to be talked to or paid is the world's own mark (`liveMarkers`, Session 587), so that branch adds nothing in the world.
+- `enter_zone` stays unmarked in the world, which already counts as the overworld.
+- Outside the open world nothing changed.
+
+### Verified (headless Chromium)
+`mainmarks` 8/8 (new). From the start (13100, 25450):
+- Q3: *→ Aldwyn* at Ironhaven (13900, 24450), 1,281 off.
+- Q6: the nearest of Ironhaven's seven dungeon doors, *The Stinking Cavern of Shadows*, 1,042 off. When the doors' cells had not loaded (one run), it marked *→ Ironhaven*.
+- Q7, after the body: *→ Brother Oswin* and *→ Edna* at Ashenmoor (12800, 25750). Q7's last step: *→ Aldwyn* at Ironhaven.
+- Q1: still its door, *The Dungeon of Shadows*.
+- At Ironhaven, with the town built: Q3 marks Aldwyn's door (13920, 24460), 21 off, not the town's centre; Q6 marks *The Haunted Hall of the Forsaken*, 199 off.
+
+A probe on the old code gave no mark for Q3, Q6 or Q7. `questtargets`, `mapquests`, `smoke` and `mainrun` (Q0–Q6 from a new character) pass. `parsecheck` clean.
+
+### Needs eyes
+The labels keep the legacy arrow (*→ Aldwyn*). Q7's Oswin and Edna are both marked at once, as they were in the legacy zone (no prerequisite between them). The rest of Michael's note (the main quest's flow, 50–100 more quests) is design, not this fix.

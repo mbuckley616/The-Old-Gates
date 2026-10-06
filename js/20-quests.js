@@ -1535,7 +1535,18 @@ function getActiveQuestMarkers(){
   // v61m: rewritten to use the MAP_EDGES graph + ZONES[id].gates (uniform since v61d)
   // so quest markers work in every live zone, not just overworld/forest/ironhaven.
   // BFS picks the correct first-hop gate along multi-zone routes.
-  function gateTowardZone(targetZone){
+  // S595 — in the open world there are no gates between the legacy zones: 'overworld' is the world's Ashenmoor and 'ironhaven'
+  // its Ironhaven (questZoneNow, S236). So a target in one of them is the person, where they stand in the world or at their
+  // door, or else the place itself (backlog A, Michael's 5 Oct note: no marker when the quest needs a walk).
+  function worldZoneTarget(zone,name){
+    if(activeZoneId!=='world'||typeof WORLD==='undefined')return null;
+    if(name){const n=(ZONES.world&&ZONES.world.npcs||[]).find(n=>n.def&&n.def.name===name&&n.g&&n.g.visible);if(n)return {x:n.g.position.x,z:n.g.position.z};
+      try{for(const S of WORLD.settle.values()){const h=(S.houses||[]).find(h=>h.keeper===name);if(h)return {x:h.doorX,z:h.doorZ};}}catch(e){}}
+    const id=zone==='overworld'?'ashenmoor':zone;let t=null;try{t=WORLD.siteAnywhere(id);}catch(e){}
+    return t?{x:t.x,z:t.z}:null;
+  }
+  function gateTowardZone(targetZone,name){
+    if(activeZoneId==='world')return worldZoneTarget(targetZone,name);
     const nextZone = nextHopZone(activeZoneId, targetZone);
     if(!nextZone)return null;
     const activeGates = (ZONES[activeZoneId]&&ZONES[activeZoneId].gates)||ASHENMOOR_GATES;
@@ -1693,7 +1704,7 @@ function getActiveQuestMarkers(){
         pushNPCMarker(qDef.giver, giverZone, qDef.giver);
       } else {
         // Giver is in another zone — point to the gate
-        const gate=gateTowardZone(giverZone);
+        const gate=activeZoneId==='world'?null:gateTowardZone(giverZone); // S595 — in the world the giver is the world's own mark (liveMarkers)
         if(gate)markers.push({x:gate.x,z:gate.z,col:QM_COL_CROSS,label:'→ '+qDef.giver});
       }
       return;
@@ -1735,11 +1746,17 @@ function getActiveQuestMarkers(){
         }
       }
 
+      // S595 — kill_in_zone in the open world (Q6: Ironhaven's dungeons): the nearest world door of a dungeon of that zone
+      if(obj.type==='kill_in_zone'&&activeZoneId==='world'){let best=null,bd=1e9;
+        for(const d of WORLD_DUNGEONS){if(d.zone!==obj.zone)continue;const p=PORTALS.find(p=>p.seed===d.seed);if(!p)continue;const dd=Math.hypot(p.x-px,p.z-pz);if(dd<bd){bd=dd;best=p;}}
+        if(best)markers.push({x:best.x,z:best.z,col:QM_COL_CROSS,label:best.name});else{const t=worldZoneTarget(obj.zone);if(t)markers.push({x:t.x,z:t.z,col:QM_COL_CROSS,label:'→ '+({overworld:'Ashenmoor',ironhaven:'Ironhaven'}[obj.zone]||obj.zone)});}
+      }
+
       if(obj.type==='talk_to'){
         if(obj.zone===activeZoneId){
           pushNPCMarker(obj.npc, obj.zone, obj.npc);
         } else {
-          const gate=gateTowardZone(obj.zone);
+          const gate=gateTowardZone(obj.zone,obj.npc);
           if(gate)markers.push({x:gate.x,z:gate.z,col:QM_COL_CROSS,label:'→ '+obj.npc});
         }
       }
@@ -1770,7 +1787,7 @@ function getActiveQuestMarkers(){
           if(giverZone===activeZoneId){
             pushNPCMarker(giverName, giverZone, giverName);
           } else {
-            const gate = gateTowardZone(giverZone);
+            const gate = gateTowardZone(giverZone,giverName);
             if(gate) markers.push({x:gate.x, z:gate.z, col:QM_COL_CROSS, label:'→ '+giverName});
           }
         }
@@ -1781,7 +1798,7 @@ function getActiveQuestMarkers(){
       // so this branch naturally never shows an in-zone marker.
       // v61an: map the internal zone ID to a display label. 'overworld' is
       // the internal zone ID but the player thinks of it as Ashenmoor.
-      if(obj.type==='enter_zone' && obj.zone!==activeZoneId){
+      if(obj.type==='enter_zone' && obj.zone!==activeZoneId && activeZoneId!=='world'){ // S595 — the world is a zone's place already (questZoneNow); left unmarked as before
         const gate=gateTowardZone(obj.zone);
         if(gate){
           const zoneLabels = {
