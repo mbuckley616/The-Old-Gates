@@ -13165,3 +13165,18 @@ Pictures only: `docs/prototypes/dungeon-wide-today-run.png`, `-proto-run.png`, `
 ### Needs eyes
 - **Michael's choice on #174.**
 - In the prototype a door stays one cell with an open cell beside it (the generator's doors are left alone), so a door could be walked round. The build would narrow the passage to a stone doorway at each door; that is in option A and not shown.
+
+## v80 — Session 581 — The old gates built in the one form (backlog H, Michael's A on DECISION #169)
+Michael chose the prototype of Session 571 for every cave-type old gate, with one note: "the doorway itself doesn't look like a door - the mesh from the grassy hillock that's part of it is bursting through the doorway." He was right about why. The prototype's mound was a half-dome whose front came out to 2.2 in front of its centre, while the doorway's dark plane stood 1.25 back. So the turf rose inside the opening, up to 2.2 high, in front of the dark.
+
+The build (`buildOldGateFront`, `24-forts.js`) replaces the whole cave-door branch of `spawnPortalMeshes`: the leaning rocks, the half-dome maw, the small plank door, the torch on a stick, and the seeded clutter from `dressPortalExterior` (columns, dead trees, chains, ravens). The mound now sits further back. Within three of the door its front is cut flat at the line of a stone headwall, and past the wing walls it eases back to its own curve over 1.2. The headwall is the cut face in stone, its top following the mound's curve at the cut, coursed every .45, with the doorway cut through it. A heavy two-leaf oak door on three iron straps, with a ring on each leaf, fills that doorway. It is set a metre back from the jambs' faces, so the reveal reads as depth. The jambs, lintel, capstone, binding marks, stepped wing walls and the ring of seven marker stones nine out are the prototype's. The seed sets the mound's size, which markers have fallen (about one in five, lying on their side and without their mark), moss on the capstone and walls, and how worn the steps are. The marks glow in `THEME_GLOW`'s colour for the gate's theme: orange for the Crypt of Embers, which is elemental. `dressPortalExterior` takes a new `sigilOnly` flag and keeps only a sigil gate's glow, its particles and runes moved to the capstone's face. The gate is baked with the world's `mergeGeos` into two draws: about 1,440 triangles of stone, wood and turf, and the marks. Collision covers the jambs, the wing walls, the headwall and the mound, so you can step onto the threshold, .7 from the gate's point, well inside the 2.0 at which E enters.
+
+`tests/cavedoor` tested Session 271's rock mouth. It now tests this form instead; its old checks counted rocks that no longer exist.
+
+### Verified (headless Chromium)
+`cavedoor` 6/6. Thirty level rays cast into the doorway from three out, on a grid across its width and up to 2.5 high, all meet the door's oak first, within .15 of the door's plane. No turf-coloured vertex stands in front of the headwall within the doorway. The threshold is clear and the mound behind is solid. The gate is two meshes, with no rocks left. `drydoors`, `doorids` and the three `dungeon` suites pass. Pictures at the Crypt of Embers: from ten out, close in, from the side, and at night (`docs/prototypes/oldgate-built-ember.png`, `-near.png`, `-side.png`, `-night.png`). No page errors.
+
+### Needs eyes
+- The gate on a slope: the door's stamp flattens a radius of 7, but the marker stones at nine stand on the blend and may sit low on one side.
+- The headwall's ends at three either side, where the turf eases forward round them, seen from a sharp angle.
+- The legacy zones' cave doors (outside the open world) use the same builder. Their pictures were not taken.

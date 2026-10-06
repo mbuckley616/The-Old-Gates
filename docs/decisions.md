@@ -4,47 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
-You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
-
-**Why they look jumbled.** Every cave-type gate is built the same way. Three rough boulders lean together, with a capstone laid over them. A small plank door stands in the gap, under a lintel thinner than the boulders. Then a few things are dropped around it by the gate's seed: a broken column, a dead tree, hanging chains, rocks. Nothing lines up with anything else, so the door reads as a crate wedged into a rock pile (first picture). The forts (Greywatch, the Old Garrison and their kind) are built separately, and this question does not touch them.
-
-**The prototype.** One shared form for every old gate. A dressed-stone doorway is cut into a turf mound. Two jambs and a heavy lintel frame it, with a capstone stepped over the lintel. Wing walls step down to hold the mound back, and worn steps lead down into the dark. The binding marks are cut down both jambs and in a ring on the lintel, and they glow in the gate's theme colour: ember orange for the Crypt, green for a haunted gate. A ring of marker stones stands about nine units out, each with one mark facing the door. Put together, it says *something is held here* before you read a word, which is what the canon says the gates are: anchor places with binding inscriptions. The prototype is on the branch auto/proto-old-gates. It is about 70 boxes, and none of it is in the game yet.
-
-- **A. One shared form, as shown** *(recommended)*. Every cave-type gate gets this doorway, with the theme's colour on the marks and the seed varying the details: the mound's size, which marker stones have fallen, moss, how worn the steps are. The current random clutter goes.
-- **B. One form per theme.** The crypt gets a mausoleum front, a haunted gate a barrow with a sunken door, a deep gate a cave mouth with a carved frame, an elemental gate a scorched stone portal. This gives more variety, but the gates stop reading as one family, and it is four builds instead of one.
-- **C. Keep today's dolmens and tidy them.** The boulders stop overlapping, the door is set properly into the gap, and the random clutter is placed apart from the door. This is the smallest change. It is still a rock pile with a door.
-- **D. Something else.** Mark what to change on the pictures.
-
-**Recommendation: A.** The gates are the game's name and its story's spine. A single, recognisable form lets a player spot one across a field and know what it is, and the theme colour and the seed's details keep two gates from looking the same.
-
-Pictures (today's Crypt of Embers; the prototype in the Crypt's colour, in a haunted gate's green, and at night):
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-today.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-ember.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-haunted.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-night.png
-
-### The dungeon's swinging blades (the look builder, Session 573, 2026-10-06) — DECISION #170
-On 5 Oct you said the dungeon's traps are "awkward and rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player whatsoever." Here is what is wrong, and one way to fix it.
-
-**What is wrong.** A swinging blade hangs from the roof in the middle of a corridor cell and swings *along* the corridor. Its flat side faces the walls. Walking up the corridor towards one, you see it edge-on: a thin line moving towards you and away (first picture, mid-swing, where the blade is nearly invisible). Its lowest point is 1.3 above the floor, and it hurts you whenever you stand within 0.7 of its cell near the bottom of the swing, wherever the blade actually is. So it neither looks like it will hit you nor hits you where it looks.
-
-**The prototype** (pictures two and three, the same corridor). A crescent blade on a longer arm swings *across* the passage, edge first. The bottom of its arc is at the waist (0.95), and it passes into the walls at each side, as if through slots cut for it. You watch it cross in front of you and time your run between swings, as in Prince of Persia or Tomb Raider. The prototype is on the branch auto/proto-dungeon-traps. Nothing in the game has changed.
-
-- **A. Across the passage, as shown** *(recommended)*. The blade swings across, lower, and it only hurts you when it actually reaches your spot in the corridor: the systems builder's hit rule follows the blade's arc, so you can slip through between swings. Spike plates stay as they are.
-- **B. Across the passage, the hit as today.** Only the look changes, which is quicker but still unfair: you could be cut while the blade is clearly away to one side.
-- **C. Along the corridor, but lower and on the hit's beat.** Today's direction, with the blade at the waist and a hit that follows it. You would still see it edge-on as you come at it.
-- **D. Something else**, such as scything blades from the wall, or no swinging traps at all.
-
-**Recommendation: A.** A trap is a timing test, and the brief asks for fluid movement and weighty timing. A blade you can see crossing your path, and slip past, is the fair version of that test.
-
-This is one part of your 5 Oct note. The jumbled railings were a bug, fixed in Session 572. The stairs' style and wider passages are their own questions, to come.
-
-Pictures (today, mid-swing; the prototype mid-swing and at the side of its swing):
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-today-swing.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-mid.png
-https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-swing.png
-
 ### The dungeon's stairs (the look builder, Session 576, 2026-10-06) — DECISION #173
 On 5 Oct you said the dungeon's "staircases are ugly and don't match the style at all". Here is why, and one way to fix it.
 
@@ -111,6 +70,8 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-night.png
 
 Michael: **One shared form, as shown** — Yeah this looks better, but the doorway itself doesn’t look like a door - the mesh from the grassy hillock that’s part of it is bursting through the doorway. (2026-10-05)
+
+Done, Session 581: every cave-type gate is the one form (`buildOldGateFront`, `24-forts.js`). The mound's front is cut flat behind a stone headwall for three either side of the door, so no turf can stand in the doorway, and a heavy two-leaf oak door on iron straps fills it, set back in the reveal. Today's rocks and the seeded clutter are gone. Pictures: `docs/prototypes/oldgate-built-*.png`.
 
 ### The dungeon's swinging blades (the look builder, Session 573, 2026-10-06) — DECISION #170
 On 5 Oct you said the dungeon's traps are "awkward and rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player whatsoever." Here is what is wrong, and one way to fix it.
