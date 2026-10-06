@@ -92,6 +92,7 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   const H=FLOOR_HEIGHT,R=map.length,Cn=map[0].length,S=Object.assign({},DUN_SHELL,opts&&opts.amp!=null?{AMP:opts.amp}:{},opts&&opts.cove===false?{COVE:0}:{}),seed=(opts&&opts.seed)||1;const N1=dunNoise(seed),N2=dunNoise(seed+7),N3=dunNoise(seed+13);
   const wall=(c,r)=>r<0||r>=R||c<0||c>=Cn||map[r][c]===0;
   const skip=opts&&opts.skip||(()=>false); // cells whose floor and ceiling someone else draws (stairs, treasure)
+  const noCeil=opts&&opts.noCeil||(()=>false); // S601 — cells open to the floor above (the ring's sunken yard)
   // where a point of the wall moves: the noise, then a bevel at an outside corner or a fill at an inside one
   const corner=(X,Z)=>{const c0=Math.floor(X),r0=Math.floor(Z);let w=0;for(const [c,r] of [[c0,r0],[c0+1,r0],[c0,r0+1],[c0+1,r0+1]])if(wall(c,r))w++;return w;};
   const warp=(X,Y,Z)=>{let x=X+S.AMP*N1(X*1.3,Y*.9,Z*1.3)+.02*N2(X*5,Y*5,Z*5),z=Z+S.AMP*N3(X*1.3,Y*.9,Z*1.3)+.02*N1(Z*5,Y*5,X*5);
@@ -127,7 +128,7 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   // little uneven between its edges (never at a cell's rim, so it meets the stair and treasure planes)
   const plane=(y,down,col,kind)=>{const P2=[],U2=[],C2=[],I2=[];const n=2;
     const ao=(X,Z)=>{let w=0;for(const [c,r] of [[Math.floor(X-.25+.5),Math.floor(Z-.25+.5)],[Math.floor(X+.25+.5),Math.floor(Z-.25+.5)],[Math.floor(X-.25+.5),Math.floor(Z+.25+.5)],[Math.floor(X+.25+.5),Math.floor(Z+.25+.5)]])if(wall(c,r))w++;return 1-.13*w;};
-    for(let r=0;r<R;r++)for(let c=0;c<Cn;c++){if(skip(c,r))continue;const b=P2.length/3;
+    for(let r=0;r<R;r++)for(let c=0;c<Cn;c++){if(skip(c,r)||(down&&noCeil(c,r)))continue;const b=P2.length/3;
       for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){const X=c-.5+i/n,Z=r-.5+j/n;const rim=i===0||j===0||i===n||j===n;const dy=rim?0:(down?.08:.03)*N2(X*1.7,y,Z*1.7);
         P2.push(X,y+dy,Z);U2.push(X/S.TEXU,Z/S.TEXU);const k=ao(X,Z);const w=down?[1,1,1]:wet(X,Z,1-(1-k)*4);C2.push(k*w[0],k*w[1],k*w[2]);}
       for(let j=0;j<n;j++)for(let i=0;i<n;i++){const a=b+j*(n+1)+i,bb=a+1,cc=a+n+1,d=cc+1;if(down)I2.push(a,bb,cc,bb,d,cc);else I2.push(a,cc,bb,bb,cc,d);}}
@@ -143,11 +144,13 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
     const ix=g.index.array;for(let i=0;i<ix.length;i++)BI.push(ix[i]+b);g.dispose();};
   const wood=new THREE.Color(0x3a2818);
   // S598 — a beam stops short of the stair's shaft (opts.hole, floor 2): it ran through the treads (Michael, on #173)
-  const hole=opts&&opts.hole;const runs=(a,b,across,h0,h1,c0,c1)=>!hole||across+.09<c0||across-.09>c1?[[a,b]]:[[a,Math.min(b,h0-.04)],[Math.max(a,h1+.04),b]].filter(([p,q])=>q-p>.2);
+  // S601 — any number of holes (opts.holes: the ring's two flights and its yard), each cut from the runs in turn
+  const holes=(opts&&opts.holes)||(opts&&opts.hole?[opts.hole]:[]);const runs1=(segs,across,h0,h1,c0,c1)=>across+.09<c0||across-.09>c1?segs:segs.flatMap(([a,b])=>[[a,Math.min(b,h0-.04)],[Math.max(a,h1+.04),b]]).filter(([p,q])=>q-p>.2);
+  const runs=(a,b,across,axis)=>holes.reduce((segs,h)=>axis==='x'?runs1(segs,across,h.x0,h.x1,h.z0,h.z1):runs1(segs,across,h.z0,h.z1,h.x0,h.x1),[[a,b]]);
   for(const rm of rooms){if(Math.min(rm.w,rm.h)<3)continue;const alongX=rm.w<=rm.h;const n=alongX?rm.h:rm.w;
     for(let k=1;k<n-.5;k+=2){const y=baseY+H-.16;
-      if(alongX){const z=rm.y+k-.5+.5,x0=rm.x-.5,x1=rm.x+rm.w-.5;for(const [a,b] of runs(x0-.25,x1+.25,z,hole&&hole.x0,hole&&hole.x1,hole&&hole.z0,hole&&hole.z1))box((a+b)/2,y,z,b-a,.2,.18,wood);}
-      else{const x=rm.x+k-.5+.5,z0=rm.y-.5,z1=rm.y+rm.h-.5;for(const [a,b] of runs(z0-.25,z1+.25,x,hole&&hole.z0,hole&&hole.z1,hole&&hole.x0,hole&&hole.x1))box(x,y,(a+b)/2,.18,.2,b-a,wood);}}}
+      if(alongX){const z=rm.y+k-.5+.5,x0=rm.x-.5,x1=rm.x+rm.w-.5;for(const [a,b] of runs(x0-.25,x1+.25,z,'x'))box((a+b)/2,y,z,b-a,.2,.18,wood);}
+      else{const x=rm.x+k-.5+.5,z0=rm.y-.5,z1=rm.y+rm.h-.5;for(const [a,b] of runs(z0-.25,z1+.25,x,'z'))box(x,y,(a+b)/2,.18,.2,b-a,wood);}}}
   if(BP.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(BP,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(BN,3));g.setAttribute('color',new THREE.Float32BufferAttribute(BC,3));g.setIndex(BI);
     beams=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true}));beams.userData.dunShell='beams';}
   return {walls,floor,ceil,beams};}
@@ -857,10 +860,11 @@ function dunSmoothNormals(g){g.computeVertexNormals();const p=g.attributes.posit
   for(let i=0;i<p.count;i++){const a=acc.get(key(i));const l=Math.hypot(a[0],a[1],a[2])||1;n.setXYZ(i,a[0]/l,a[1]/l,a[2]/l);}n.needsUpdate=true;}
 // S478 — a dungeon floor's key for its seeded streams: the gate's seed (a hand-made dungeon has none: its id or name) and the floor
 function dKeyOf(portal,floorIdx){const p=portal||{};return String(p.seed!=null?p.seed:(p.id||p.name||'dungeon'))+':'+floorIdx;}
-// S599/S600 — #177 A: a fort's seed picks its shape. A third keep their own layout, a third are the hall and undercroft,
-// a third barracks and the gaol, until the ring is built; a small fort keeps its own
+// S599–S601 — #177 A: a fort's seed picks one of the three new shapes (the hall and undercroft, barracks and the gaol, the
+// ring and its towers); a small fort keeps its own layout, which has no floor below
+const FORT_SHAPES=['fort_hall','fort_barracks','fort_ring'];
 function fortShapeFor(portal){const k=portal.interior||'cave';if(!k.startsWith('fort_')||portal.size==='small')return k;
-  if(k==='fort_hall'||k==='fort_barracks')return k;const m=hashSeed((portal.seed|0)+177)%3;return m===1?'fort_hall':m===2?'fort_barracks':k;}
+  if(FORT_SHAPES.includes(k))return k;return FORT_SHAPES[hashSeed((portal.seed|0)+177)%3];}
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
@@ -1098,36 +1102,37 @@ function buildDungeon(portal){
   // enough that the soffit steps down beneath it; a stone balustrade round the hole on the hall's floor (its sides and its
   // far end, the top left open); a rope handrail on iron brackets down each side wall. A second mesh: the hole's walls,
   // coursed, from the hall's floor down to the undercroft's ceiling. The ramp is a foothold, the hall's floor the platform
-  // with the hole (gen.stairHole), and the balustrade's collision belongs to floor 1 alone, so the slot below stays open.
-  function buildFlight(c,r,mat){
-    const F=gen.flight,Y=FLOOR2_Y,x0=F.c0-.5,x1=F.c1+.5,zT=F.top+.5,zB=F.bot-.5,L=zT-zB,Wd=x1-x0,NS=24,run=L/NS,rise=Y/NS,mx=(x0+x1)/2;
+  // with the hole (gen.stairHoles), and the balustrade's collision belongs to floor 1 alone, so the slot below stays open.
+  function buildFlight(F){
+    const sg=F.dir==='s'?-1:1,Y=FLOOR2_Y,x0=F.c0-.5,x1=F.c1+.5,zT=F.top+sg*.5,zB=F.bot-sg*.5,L=Math.abs(zT-zB),Wd=x1-x0,NS=24,run=L/NS,rise=Y/NS,mx=(x0+x1)/2;
     const rnd=pRng((portal.seed|0)*7+599),stone=new THREE.Color(th.wallCol).multiplyScalar(2.6),wallC=new THREE.Color(th.wallCol).multiplyScalar(2.1),iron=new THREE.Color(0x2a2826);
     const shade=(col,k)=>col.clone().multiplyScalar(1+(rnd()-.5)*k);
     const parts=[],at=(x,y,z,ry,rx)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,0,'YXZ')),new THREE.Vector3(1,1,1));
     // the steps: step k's tread at the ramp's height over its middle, .5 deep below its riser
-    for(let k=0;k<NS;k++){const yt=rise*(k+.5),h=Math.abs(rise)+.5,zc=zT-run*(k+.5);parts.push([SK.rbox(Wd,h,run+.02,.02,1),shade(stone,.14),at(mx,yt-h/2,zc)]);}
+    for(let k=0;k<NS;k++){const yt=rise*(k+.5),h=Math.abs(rise)+.5,zc=zT-sg*run*(k+.5);parts.push([SK.rbox(Wd,h,run+.02,.02,1),shade(stone,.14),at(mx,yt-h/2,zc)]);}
     // the balustrade on the hall's floor: a plinth, a baluster every half unit, a coping; west, east and the far (north) end
     const rail=(ax,az,bx,bz)=>{const len=Math.hypot(bx-ax,bz-az),ry=Math.atan2(bx-ax,bz-az),n=Math.max(2,Math.round(len/.5));
       parts.push([SK.rbox(.26,.16,len+.26,.02,1),shade(stone,.08),at((ax+bx)/2,.08,(az+bz)/2,ry)]);
       parts.push([SK.rbox(.28,.12,len+.28,.025,1),shade(stone,.08),at((ax+bx)/2,.86,(az+bz)/2,ry)]);
       for(let i=0;i<=n;i++){const t=i/n,px_=ax+(bx-ax)*t,pz_=az+(bz-az)*t,post=i===0||i===n;parts.push([post?SK.rbox(.24,.66,.24,.02,1):new THREE.CylinderGeometry(.05,.07,.64,8),shade(stone,.1),at(px_,.16+(post?.33:.32),pz_)]);}};
-    const o=.11;rail(x0-o,zB-o,x0-o,zT);rail(x1+o,zB-o,x1+o,zT);rail(x0-o,zB-o,x1+o,zB-o);
-    for(const [ax0,ax1,az0,az1] of [[x0-.24,x0,zB-.24,zT],[x1,x1+.24,zB-.24,zT],[x0-.24,x1+.24,zB-.24,zB]])DUNGEON_PROPS.push({x0:ax0,x1:ax1,z0:az0,z1:az1,floor:1,flightRail:true});
+    const o=.11,zE=zB-sg*o;rail(x0-o,zE,x0-o,zT);rail(x1+o,zE,x1+o,zT);rail(x0-o,zE,x1+o,zE);
+    const zlo=Math.min(zB-sg*.24,zT),zhi=Math.max(zB-sg*.24,zT);
+    for(const [ax0,ax1,az0,az1] of [[x0-.24,x0,zlo,zhi],[x1,x1+.24,zlo,zhi],[x0-.24,x1+.24,Math.min(zB,zB-sg*.24),Math.max(zB,zB-sg*.24)]])DUNGEON_PROPS.push({x0:ax0,x1:ax1,z0:az0,z1:az1,floor:1,flightRail:true});
     // the rope handrails, .85 over the pitch, an iron bracket from the wall every fourth step
     const slope=Math.atan2(-Y,L);
     for(const [wx,sx] of [[x0,1],[x1,-1]]){const rx_=wx+sx*.09,len=Math.hypot(L,Y);
-      parts.push([new THREE.CylinderGeometry(.022,.022,len,6),new THREE.Color(0x7a6040),at(rx_,Y/2+.85,(zT+zB)/2,0,Math.PI/2-slope)]);
-      for(let k=2;k<NS;k+=4){const z=zT-run*k,y=rise*k+.85;parts.push([new THREE.BoxGeometry(.12,.03,.03),iron,at(wx+sx*.05,y-.03,z)]);}}
+      parts.push([new THREE.CylinderGeometry(.022,.022,len,6),new THREE.Color(0x7a6040),at(rx_,Y/2+.85,(zT+zB)/2,0,sg*(Math.PI/2-slope))]);
+      for(let k=2;k<NS;k+=4){const z=zT-sg*run*k,y=rise*k+.85;parts.push([new THREE.BoxGeometry(.12,.03,.03),iron,at(wx+sx*.05,y-.03,z)]);}}
     const stair=dunMerge(parts,'flight');stair.userData.flight={x0,x1,zT,zB,steps:NS};dScene.add(stair);
     // the hole's walls between the hall's floor and the undercroft's ceiling: west, east and the far end, in courses
     const bot=Y+FLOOR_HEIGHT-.1,Hb=-bot;
     if(Hb>.05){const wp=[],rows=Math.max(1,Math.round(Hb/.32)),rh=Hb/rows;
-      for(const [x,z,ry,len] of [[x0,(zT+zB)/2,Math.PI/2,L],[x1,(zT+zB)/2,-Math.PI/2,L],[mx,zB,0,Wd]])for(let k=0;k<rows;k++){const off=(k%2)*.2;
+      for(const [x,z,ry,len] of [[x0,(zT+zB)/2,Math.PI/2,L],[x1,(zT+zB)/2,-Math.PI/2,L],[mx,zB,sg>0?0:Math.PI,Wd]])for(let k=0;k<rows;k++){const off=(k%2)*.2;
         for(let u=-len/2-off;u<len/2;u+=.4){const u0=Math.max(-len/2,u),u1=Math.min(len/2,u+.4);if(u1-u0<.01)continue;
           wp.push([new THREE.PlaneGeometry(u1-u0,rh),wallC.clone().multiplyScalar(.82+rnd()*.36),at(x,bot+rh*(k+.5),z,ry).multiply(new THREE.Matrix4().makeTranslation((u0+u1)/2,0,0))]);}}
       dScene.add(dunMerge(wp,'flightWalls'));}
     const gl=new THREE.PointLight(0xffb060,1.4,7);gl.position.set(mx,Y*.5+1,(zT+zB)/2);dScene.add(gl);TORCHES.push({l:gl,fl:null,ph:Math.random()*Math.PI*2});
-    FOOTHOLDS.push({x0,x1,z0:zB,z1:zT,axis:'z',y0:Y,y1:0,kind:'flight'});
+    FOOTHOLDS.push({x0,x1,z0:Math.min(zB,zT),z1:Math.max(zB,zT),axis:'z',y0:sg>0?Y:0,y1:sg>0?0:Y,kind:'flight',dir:sg>0?'n':'s'});
     DUNGEON_STAIRWELL=true;
   }
   // S600 — the gaol's cells (makeFortBarracks): in each cell's doorway an iron frame, jambs and a transom with fixed bars
@@ -1143,6 +1148,29 @@ function buildDungeon(portal){
       for(const y of [.1,1.05,2.05])P.push([new THREE.BoxGeometry(.05,.07,.9),iron,at(dx,y0+y,z0-.45)]);
       for(let k=0;k<6;k++)P.push([new THREE.CylinderGeometry(.018,.018,2.0,5),iron,at(dx,y0+1.08,z0-.08-k*.16)]);}
     if(P.length)dScene.add(dunMerge(P,'gaolGrilles'));
+  }
+  // S601 — the ring's sunken yard (makeFortRing): a stone balustrade round the opening on the ring's floor, all four sides,
+  // its collision floor 1's; the opening's walls coursed from the yard's head height up to the ring's floor; a brazier's
+  // light in the yard. The yard's floor is floor 2's shell, its ceiling left off (noCeil), so from the ring you look down
+  // into it and from the yard up to the ring's roof.
+  function buildYard(){
+    const Yd=gen.yard,Y=FLOOR2_Y,x0=Yd.c0-.5,x1=Yd.c1+.5,z0=Yd.r0-.5,z1=Yd.r1+.5,rnd=pRng((portal.seed|0)*7+601);
+    const stone=new THREE.Color(th.wallCol).multiplyScalar(2.6),wallC=new THREE.Color(th.wallCol).multiplyScalar(2.1),shade=(col,k)=>col.clone().multiplyScalar(1+(rnd()-.5)*k);
+    const parts=[],at=(x,y,z,ry)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry||0,0)),new THREE.Vector3(1,1,1));
+    const rail=(ax,az,bx,bz)=>{const len=Math.hypot(bx-ax,bz-az),ry=Math.atan2(bx-ax,bz-az),n=Math.max(2,Math.round(len/.5));
+      parts.push([SK.rbox(.26,.16,len+.26,.02,1),shade(stone,.08),at((ax+bx)/2,.08,(az+bz)/2,ry)]);
+      parts.push([SK.rbox(.28,.12,len+.28,.025,1),shade(stone,.08),at((ax+bx)/2,.86,(az+bz)/2,ry)]);
+      for(let i=0;i<=n;i++){const t=i/n,post=i===0||i===n||i%6===0;parts.push([post?SK.rbox(.24,.66,.24,.02,1):new THREE.CylinderGeometry(.05,.07,.64,8),shade(stone,.1),at(ax+(bx-ax)*t,.16+(post?.33:.32),az+(bz-az)*t)]);}};
+    const o=.11;rail(x0-o,z0-o,x1+o,z0-o);rail(x0-o,z1+o,x1+o,z1+o);rail(x0-o,z0-o,x0-o,z1+o);rail(x1+o,z0-o,x1+o,z1+o);
+    for(const [a0,a1,b0,b1] of [[x0-.24,x1+.24,z0-.24,z0],[x0-.24,x1+.24,z1,z1+.24],[x0-.24,x0,z0-.24,z1+.24],[x1,x1+.24,z0-.24,z1+.24]])DUNGEON_PROPS.push({x0:a0,x1:a1,z0:b0,z1:b1,floor:1,flightRail:true});
+    dScene.add(dunMerge(parts,'yardRail'));
+    const bot=Y+FLOOR_HEIGHT-.1,Hb=-bot;
+    if(Hb>.05){const wp=[],rows=Math.max(1,Math.round(Hb/.32)),rh=Hb/rows,W_=x1-x0,D_=z1-z0;
+      for(const [x,z,ry,len] of [[x0,(z0+z1)/2,Math.PI/2,D_],[x1,(z0+z1)/2,-Math.PI/2,D_],[(x0+x1)/2,z0,0,W_],[(x0+x1)/2,z1,Math.PI,W_]])for(let k=0;k<rows;k++){const off=(k%2)*.2;
+        for(let u=-len/2-off;u<len/2;u+=.4){const u0=Math.max(-len/2,u),u1=Math.min(len/2,u+.4);if(u1-u0<.01)continue;
+          wp.push([new THREE.PlaneGeometry(u1-u0,rh),wallC.clone().multiplyScalar(.82+rnd()*.36),at(x,bot+rh*(k+.5),z,ry).multiply(new THREE.Matrix4().makeTranslation((u0+u1)/2,0,0))]);}}
+      dScene.add(dunMerge(wp,'yardWalls'));}
+    const gl=new THREE.PointLight(0xff9a50,1.6,14);gl.position.set((x0+x1)/2,Y+1.6,(z0+z1)/2);dScene.add(gl);TORCHES.push({l:gl,fl:null,ph:Math.random()*Math.PI*2});
   }
   function renderFloor(map,floorIdx,wallMat,floorMat,baseY){
     // v80 S478 — co-op rules: where the barrels, crates and chests stand is drawn from the dungeon's own stream, keyed by
@@ -1164,7 +1192,8 @@ function buildDungeon(portal){
     // the walls), in the fort's cool grey; its own floors and ceilings stay, so the shell lays ground only under walls
     const shellOn=true,fortF1=isFort&&floorIdx===1;
     if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6),amp:fortF1?.025:null,cove:!fortF1,
-        damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:floorIdx===2?(gen.rooms2||[]):(gen.rooms||[]),hole:floorIdx===2&&gen.stairC!=null?(gen.stairHole||{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}):null});
+        damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:floorIdx===2?(gen.rooms2||[]):(gen.rooms||[]),holes:floorIdx===2&&gen.stairC!=null?(gen.stairHoles||[{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}]):null,
+        noCeil:floorIdx===2&&gen.yard?((c,r)=>c>=gen.yard.c0&&c<=gen.yard.c1&&r>=gen.yard.r0&&r<=gen.yard.r1):null});
       dScene.add(sh.walls);dScene.add(sh.floor);dScene.add(sh.ceil);if(sh.beams)dScene.add(sh.beams);}
     // S191 — the floor's props, one merged mesh: rubble heaps where walls meet the floor, the theme's clutter
     const props=[],stoneCol=new THREE.Color(floorIdx===1?th.wallCol:f2WallCol).multiplyScalar(2.6);
@@ -1219,7 +1248,7 @@ function buildDungeon(portal){
           eD.rotation.x=-Math.PI/2;eD.position.set(c,baseY+.02,r);dScene.add(eD);
           const eGl=new THREE.PointLight(0x88ff44,1.2,5);eGl.position.set(c,baseY+.8,r);dScene.add(eGl);
         }
-        if(v===3&&floorIdx===1&&c===gen.stairC&&r===gen.stairR)(gen.flight?buildFlight:buildStairwell)(c,r,stairMat); // v80 S8 — climbable spiral; S599 — or the hall's straight flight
+        if(v===3&&floorIdx===1&&c===gen.stairC&&r===gen.stairR){if(gen.flights){gen.flights.forEach(buildFlight);if(gen.yard)buildYard();}else buildStairwell(c,r,stairMat);} // v80 S8 — climbable spiral; S599 — or the hall's straight flight
         if(false){ // v61 pit-and-teleport stair, superseded
           // ── SPIRAL STAIRCASE ─────────────────────────────────
           // Contained within a single cell. A central stone pole with treads
@@ -1482,6 +1511,7 @@ function buildDungeon(portal){
     const KIND_CLUSTER_RULES = {
       great_hall: {corners: [], forceAll: false},
       pillared_hall: {corners: [], forceAll: false},
+      tower: {corners: [], forceAll: false},
       lords_chamber: {corners: [], forceAll: false},
       chapel: {corners: [], forceAll: false},
       courtyard_hall: {corners: [], forceAll: false},
@@ -1860,9 +1890,11 @@ function buildDungeon(portal){
     // movement through it. The collision radius (0.27) is slightly
     // larger than the column base half-width (0.225) so the player
     // (radius 0.2) bumps the column cleanly rather than clipping it.
+    // S601 — within m of a flight's cells or the ring's yard
+    function nearOpening(x, z, m){ return (gen.flights || []).concat(gen.yard ? [{c0: gen.yard.c0, c1: gen.yard.c1, top: gen.yard.r0, bot: gen.yard.r1}] : []).some(F => x > F.c0 - m && x < F.c1 + m && z > Math.min(F.bot, F.top) - m && z < Math.max(F.bot, F.top) + m); }
     function placeColumn(x, z, h){
       // S600 — none on a flight's hole or its rim (the walkways beside the barracks' hole read as narrow halls to the passes below)
-      if(gen.flight && x > gen.flight.c0 - 1.6 && x < gen.flight.c1 + 1.6 && z > gen.flight.bot - 1.6 && z < gen.flight.top + 1.6) return;
+      if(nearOpening(x, z, 1.6)) return;
       _intColumn(dScene, x, z, h);
       DUNGEON_COLUMNS.push({x: x, z: z, r: 0.27});
     }
@@ -1968,7 +2000,7 @@ function buildDungeon(portal){
           if(c !== trunkCenter) continue;
           if(r % colInterval !== 0) continue;
           // S600 — not in front of, beside or beyond a flight's hole (the barracks' hall has one on its centre line)
-          if(gen.flight && trunkCenter >= gen.flight.c0 - 1 && trunkCenter <= gen.flight.c1 + 1 && r >= gen.flight.bot - 3 && r <= gen.flight.top + 3) continue;
+          if(nearOpening(trunkCenter, r, 3)) continue;
           // v61gb: skip if the staircase (or any prior prop) already occupies
           // this centerline position. Prevents column/staircase z-fighting.
           if(dPropHit(trunkCenter, r)) continue;
@@ -2779,7 +2811,7 @@ function buildDungeon(portal){
   // v61gb: staircase BEFORE architecture so its DUNGEON_PROPS footprints
   // are registered before the center-column pass runs. The center column
   // pass checks dPropHit and skips column placement on staircase cells.
-  if(isFort) renderFortStaircase(dMap, 0);
+  if(isFort&&!gen.flights) renderFortStaircase(dMap, 0); // S601 — not in the new shapes: their stairs are real
   if(isFort) renderFortArchitecture(dMap, 0);
   // v61g8: per-room fixed prop signatures based on room.kind. Runs after
   // architecture so column collisions are already registered (no overlap
@@ -2796,7 +2828,7 @@ function buildDungeon(portal){
   if(dMap2&&gen.gaolCells)buildGaolGrilles();
   // v80 S8 — floor 2 as a walkable platform with the shaft cut out; floor 1 is the base (0)
   try{decorateDungeonRooms(gen,portal);}catch(e){console.warn('decorate',e);} // v80 — room types, traps, containers
-  if(DUNGEON_STAIRWELL)FOOTHOLDS.push({x0:-.5,x1:dC-.5,z0:-.5,z1:dR-.5,y:Math.max(0,FLOOR2_Y),hole:gen.stairHole||{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}}); // the upper floor (floor one, now) with the shaft open (S599: or the flight's hole)
+  if(DUNGEON_STAIRWELL)FOOTHOLDS.push({x0:-.5,x1:dC-.5,z0:-.5,z1:dR-.5,y:Math.max(0,FLOOR2_Y),holes:gen.stairHoles||[{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}]}); // the upper floor (floor one, now) with the shaft open (S599: or the flights' holes, S601: and the ring's yard)
 
   // v61g6: spawn meshes for ALL doors, not just locked ones. Tile-4 (unlocked)
   // doors now have meshes too — fort interiors use only unlocked doors, and

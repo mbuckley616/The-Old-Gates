@@ -62,6 +62,8 @@ Under way. Session 599 built the first shape, the hall and the undercroft (`make
 
 Session 600 built the second shape, barracks and the gaol (`makeFortBarracks`; pictures `docs/prototypes/fortbarracks-*.png`). For now a third of the forts keep their own layout, a third are halls and a third barracks.
 
+Done, Session 601: the ring and its towers (`makeFortRing`; pictures `docs/prototypes/fortring-*.png`), with two of its four towers holding a flight down and two as guardrooms, since stairs up was not chosen. Every fort of medium size or larger is now one of the three shapes, picked by its seed (the eight named forts: five halls, two barracks, one ring). Today's three layouts remain only for small forts, which have no floor below. Keeping them in the pick as well, the six-way option, is one line if you want it.
+
 ### The dungeon's stairs (the look builder, Session 576, 2026-10-06) — DECISION #173
 On 5 Oct you said the dungeon's "staircases are ugly and don't match the style at all". Here is why, and one way to fix it.
 
