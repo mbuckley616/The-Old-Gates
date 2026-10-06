@@ -30,7 +30,9 @@ check('six side rooms, at least three of them bunk rooms, and the captain\'s roo
 check('four cells in the gaol, each with its grille', plan.every(p => p.cells === 4 && p.grilles === 4), plan.map(p => [p.cells, p.grilles]));
 check('a small fort is a hall and undercroft instead', plan.every(p => p.small === 'pillared_hall'), plan.map(p => p.small));
 
-await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 7101, size: 'medium', interior: 'fort_barracks', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
+// its own id, as a world dungeon's (makePortalDef): PORTALS[0] is whichever door loaded first, and only a dyn_ id is read as a
+// dungeon by the loop (S603: on CI it was not, so the flight was walked as open ground)
+await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { id: 'dyn_7101', theme: 'ruins', seed: 7101, size: 'medium', interior: 'fort_barracks', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && FOOTHOLDS.some(f => f.kind === 'flight'))); k++) await page.waitForTimeout(300);
 await page.waitForTimeout(1200); await g.spin(30);
 const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind === 'flight'), fl = dScene.children.find(o => o.userData && o.userData.dunShell === 'flight'), gr = dScene.children.find(o => o.userData && o.userData.dunShell === 'gaolGrilles');

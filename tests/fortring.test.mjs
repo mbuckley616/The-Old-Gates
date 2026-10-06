@@ -26,11 +26,13 @@ console.log(JSON.stringify(plan.filter(p => p.seed === 7100)));
 check('every room reachable on floor 1 from the door, and on floor 2 from the yard, 24 plans', plan.every(p => p.all1 && p.all2), plan.filter(p => !p.all1 || !p.all2));
 check('two flights, one down northward and one southward, each with its foot joined to the yard below', plan.every(p => p.flights === 'ns' && p.feet), plan.filter(p => !(p.flights === 'ns' && p.feet)));
 check('the yard is open on the ring\'s floor and floor on the floor below', plan.every(p => p.open), plan.filter(p => !p.open));
-const picks = await page.evaluate(() => { const n = {}; PORTALS.filter(p => (p.interior || '').startsWith('fort_') && p.size !== 'small').forEach(p => { const k = fortShapeFor(p); n[k] = (n[k] || 0) + 1; }); return n; });
+const picks = await page.evaluate(() => { const n = {}; WORLD_DUNGEONS.filter(p => (p.interior || '').startsWith('fort_') && p.size !== 'small').forEach(p => { const k = fortShapeFor(p); n[k] = (n[k] || 0) + 1; }); return n; });
 console.log('forts', JSON.stringify(picks));
 check('the canonical forts are all new shapes, and every shape turns up', !Object.keys(picks).some(k => !['fort_hall', 'fort_barracks', 'fort_ring'].includes(k)) && Object.keys(picks).length === 3, picks);
 
-await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 7104, size: 'medium', interior: 'fort_ring', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
+// its own id, as a world dungeon's (makePortalDef): PORTALS[0] is whichever door loaded first, and only a dyn_ id is read as a
+// dungeon by the loop (S603: on CI it was not, so the flight was walked as open ground)
+await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { id: 'dyn_7104', theme: 'ruins', seed: 7104, size: 'medium', interior: 'fort_ring', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && FOOTHOLDS.filter(f => f.kind === 'flight').length === 2)); k++) await page.waitForTimeout(300);
 await page.waitForTimeout(1200); await g.spin(30);
 const built = await page.evaluate(() => { const G = window._lastGen, Y = G.yard, fl = FOOTHOLDS.filter(f => f.kind === 'flight');

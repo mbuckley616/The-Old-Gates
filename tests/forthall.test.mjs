@@ -29,12 +29,14 @@ check('every room on both floors is reachable (floor 1 from the door, floor 2 fr
 check('the flight is the same cells on both floors, in the hall, walled at its sides below, opening north into the undercroft', plan.every(p => p.same && p.inHall && p.slot && p.foot), plan.filter(p => !(p.same && p.inHall && p.slot && p.foot)));
 check('the hall has a kitchen, storeroom, armoury and chapel off it', plan.every(p => ['pillared_hall', 'kitchen', 'storeroom', 'armory', 'chapel'].every(k => p.rooms.includes(k))), plan.map(p => p.rooms).slice(0, 2));
 // which shape the seed gives the world's forts (S600: a third each of their own, the hall, the barracks, until the ring comes)
-const picks = await page.evaluate(() => { const forts = PORTALS.filter(p => (p.interior || '').startsWith('fort_') && p.size !== 'small'), n = {}; forts.forEach(p => { const k = fortShapeFor(p); n[k] = (n[k] || 0) + 1; }); return { n: forts.length, by: n, hall: n.fort_hall || 0 }; });
+const picks = await page.evaluate(() => { const forts = WORLD_DUNGEONS.filter(p => (p.interior || '').startsWith('fort_') && p.size !== 'small'), n = {}; forts.forEach(p => { const k = fortShapeFor(p); n[k] = (n[k] || 0) + 1; }); return { n: forts.length, by: n, hall: n.fort_hall || 0 }; });
 console.log('forts', JSON.stringify(picks));
 check('some forts are halls and some are not', picks.n === 0 || (picks.hall > 0 && picks.hall < picks.n), picks);
 
 // in the game
-await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 7100, size: 'medium', interior: 'fort_hall', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
+// its own id, as a world dungeon's (makePortalDef): PORTALS[0] is whichever door loaded first, and only a dyn_ id is read as a
+// dungeon by the loop (S603: on CI it was not, so the flight was walked as open ground)
+await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { id: 'dyn_7100', theme: 'ruins', seed: 7100, size: 'medium', interior: 'fort_hall', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && FOOTHOLDS.some(f => f.kind === 'flight'))); k++) await page.waitForTimeout(300);
 await page.waitForTimeout(1200); await g.spin(30);
 const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind === 'flight'), fl = dScene.children.find(o => o.userData && o.userData.dunShell === 'flight');

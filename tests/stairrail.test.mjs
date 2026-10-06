@@ -9,7 +9,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 const rows = [];
 for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
-  await page.evaluate((seed) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, seed);
+  await page.evaluate((seed) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme: 'deep', seed, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, seed);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);
   const r = await page.evaluate((seed) => { const f = FOOTHOLDS.find(f => f.kind === 'spiral'); if (!f) return { seed, none: true };
     const st = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); if (!st) return { seed, noStair: true };

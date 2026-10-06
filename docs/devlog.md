@@ -13340,3 +13340,19 @@ The aim point keeps its distance, but is never lower than .3 over the body's top
 
 ### Needs eyes
 - Nothing in play. CI on the next push is the real test.
+
+## v80 — Session 611 — The fort suites and `parryclock`, red on CI on 3cabc81 (backlog H, CI; the producer's note of 6 Oct)
+CI on the branch's head (3cabc81, the merge of main after Session 602) failed four shards: `forthall`, `fortbarracks`, `fortring` and `parryclock`, all four passing here. The game was not at fault in any of them.
+
+The three fort suites build their fort from a copy of `PORTALS[0]` with the seed, size and interior replaced, and walk the flight on the loop's own movement. The loop reads you as in a dungeon only when the portal's id begins `dyn_` (`inDungeon` in `90-main.js`), which a world dungeon's id does (`makePortalDef`). `PORTALS[0]` is whichever door loaded first; on CI it was not a world dungeon's, so the fort was built and stood in the scene but the loop took you for being out of doors: walking down the flight you crossed the hole at the hall's height and stopped at its far edge, and walking up from the undercroft you were lifted to 0 at once. Session 589 found the same trap in `dragonsize`. Each suite now gives its fort its own id, `dyn_<seed>`. The same lists explain the other failure: `fortring`'s "the canonical forts are all new shapes" and `forthall`'s count read the forts from `PORTALS` too, which on CI held none (`forts {}`); they now read `WORLD_DUNGEONS`, the seed's fixed list the eight named forts come from. `newelstair`, `stairrail` and `wyrm` borrowed `PORTALS[0]`'s id the same way and passed by luck; they take their own ids as well. `masterslam` (the systems builder's) still borrows it.
+
+`parryclock`'s red line was its precondition, not the parry: it checks the loop ran slowly enough that real time outran the wind-up (real more than play + .2 s), because the bug it guards appears only below 20 fps. Headless here draws about a frame a second; CI's runner drew 10.9, where the two frames of the first trial are .18 s real against .1 played. The parry itself passed there. Each frame of a trial is now held a quarter of a second inside the test's own frame callback, so the two frames take at least .5 s on any machine and the check no longer depends on the runner.
+
+### Verified (headless Chromium)
+- Reproduced first: the old `fortring` with a non-dungeon door put first in `PORTALS` fails exactly as CI did (`forts {}`, the walk ending at pz 18.71, 26.29 and the yard at 25.54 with y 0), 3 checks red; the new suite under the same door passes 10/10 with `forts {"fort_barracks":2,"fort_hall":5,"fort_ring":1}`.
+- `forthall` 11/11 (8 forts: 5 hall, 2 barracks, 1 ring, read from `WORLD_DUNGEONS`), `fortbarracks` 10/10, `fortring` 10/10, `newelstair` 5/5, `stairrail` 5/5, `wyrm` 4/4.
+- `parryclock` 4/4: the first trial 2 frames, 2.13 s real, .1 s played, parried with a riposte; the second 11 frames, a held block, posture spent, no riposte.
+- Tests only; no game code changed. Build tag s476.
+
+### Needs eyes
+Nothing to see in the game. CI on this push is the check: if a fort suite is red again, its log's `forts` line and the walk's numbers say whether it is the same cause.

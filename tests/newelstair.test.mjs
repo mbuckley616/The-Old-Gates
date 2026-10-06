@@ -7,7 +7,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 const rows = [];
 for (const [theme, seed] of [['ruins', 4021], ['deep', 4012], ['crypt', 4020], ['ruins', 4002], ['haunted', 4030]]) {
-  await page.evaluate(([theme, seed]) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { theme, seed, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, [theme, seed]);
+  await page.evaluate(([theme, seed]) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme, seed, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, [theme, seed]);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);
   rows.push(await page.evaluate(([theme, seed]) => { const f = FOOTHOLDS.find(f => f.kind === 'spiral'); if (!f) return { seed, none: true };
     const near = []; let tris = 0, beamIn = 0, beamsF2 = 0;
@@ -29,7 +29,7 @@ check('each stair is two meshes and nothing else stands in its shaft', S.every(r
 check('the stair is 9–13k triangles', S.every(r => r.tris > 9000 && r.tris < 13000), S.map(r => r.tris));
 check('each has a floor-2 beam that would cross the shaft uncut, and no beam vertex lies inside it', S.every(r => r.would > 0 && r.beamsF2 > 0 && r.beamIn === 0), S.map(r => [r.would, r.beamsF2, r.beamIn]));
 // the pictures: the prototype's two places on seed 4021
-await page.evaluate(() => { window._oldStair = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 4021, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); });
+await page.evaluate(() => { window._oldStair = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_4021', theme: 'ruins', seed: 4021, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(300);
 await page.waitForTimeout(1500); await g.spin(30);
 await page.evaluate(() => { ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; }); PHP = 1e6; if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; });
