@@ -38,6 +38,27 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-haunted.png
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-night.png
 
+### The dungeon's swinging blades (the look builder, Session 573, 2026-10-06) — DECISION #170
+On 5 Oct you said the dungeon's traps are "awkward and rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player whatsoever." Here is what is wrong, and one way to fix it.
+
+**What is wrong.** A swinging blade hangs from the roof in the middle of a corridor cell and swings *along* the corridor. Its flat side faces the walls. Walking up the corridor towards one, you see it edge-on: a thin line moving towards you and away (first picture, mid-swing, where the blade is nearly invisible). Its lowest point is 1.3 above the floor, and it hurts you whenever you stand within 0.7 of its cell near the bottom of the swing, wherever the blade actually is. So it neither looks like it will hit you nor hits you where it looks.
+
+**The prototype** (pictures two and three, the same corridor). A crescent blade on a longer arm swings *across* the passage, edge first. The bottom of its arc is at the waist (0.95), and it passes into the walls at each side, as if through slots cut for it. You watch it cross in front of you and time your run between swings, as in Prince of Persia or Tomb Raider. The prototype is on the branch auto/proto-dungeon-traps. Nothing in the game has changed.
+
+- **A. Across the passage, as shown** *(recommended)*. The blade swings across, lower, and it only hurts you when it actually reaches your spot in the corridor: the systems builder's hit rule follows the blade's arc, so you can slip through between swings. Spike plates stay as they are.
+- **B. Across the passage, the hit as today.** Only the look changes, which is quicker but still unfair: you could be cut while the blade is clearly away to one side.
+- **C. Along the corridor, but lower and on the hit's beat.** Today's direction, with the blade at the waist and a hit that follows it. You would still see it edge-on as you come at it.
+- **D. Something else**, such as scything blades from the wall, or no swinging traps at all.
+
+**Recommendation: A.** A trap is a timing test, and the brief asks for fluid movement and weighty timing. A blade you can see crossing your path, and slip past, is the fair version of that test.
+
+This is one part of your 5 Oct note. The jumbled railings were a bug, fixed in Session 572. The stairs' style and wider passages are their own questions, to come.
+
+Pictures (today, mid-swing; the prototype mid-swing and at the side of its swing):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-today-swing.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-mid.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-swing.png
+
 ## Answered
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
 The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.

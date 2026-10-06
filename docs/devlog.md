@@ -13093,3 +13093,18 @@ The before and after pictures, from above the stairwell, are `docs/prototypes/du
 
 ### Needs eyes
 - **The rest of the note is still open:** the stairs' style ("don't match the style at all"), the traps (Session 570 found that a blade swings along its corridor, edge-on to you), and wider passages. Each needs a prototype and a question, and none is built.
+
+## v80 — Session 573 — The dungeon's swinging blades, a prototype (backlog H, Michael's control-room note of 5 Oct, the traps; DECISION #170)
+Michael's dungeon note says the traps are "rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player". I took pictures of a blade where it stands (ruins, seed 777, the blade at 24.5, 11.5). It hangs mid-cell and swings *along* its corridor, with its flat side to the walls, so walking at it you see it edge-on: nearly invisible mid-swing. Its lowest point is 1.3 over the floor. `tickDungeonTraps` hurts you within 0.7 of the cell whenever the swing is near its bottom, wherever the blade actually is. How a trap should look and play is a design call, and its hit is in the systems builder's file. So this session is a prototype and a question, and the game is unchanged.
+
+**The prototype** (`tests/trapproto` on the branch `auto/proto-dungeon-traps`) replaces the blade in the same corridor with a crescent blade on a longer arm. It swings across the passage, edge first, and passes into the walls at each side. The bottom of its arc is 0.95 over the floor, and it is built from the roof down, so it works under any roof (Session 570's point). A light was set at the trap for the pictures.
+
+**The options** are in `docs/decisions.md` and issue #170: A across, with the systems builder's hit following the blade's arc so you can slip through between swings (recommended); B across, with today's hit; C along the corridor but lower, with the hit following; D something else.
+
+### Verified (headless Chromium)
+Prototype only: no game code changes. In the prototype test, with the trap tick held off and the swing posed at 0 and 0.4–0.45 rad, there were three pictures and no page errors.
+
+### Needs eyes
+- **Michael's choice on #170.**
+- **The dark upright in the middle of each picture** is a hanging chain of that corridor's dressing, in line with the camera. It is not part of the trap.
+- The stairs' style and wider passages, the rest of the note, are still to be prototyped.
