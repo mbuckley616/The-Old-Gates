@@ -1247,3 +1247,107 @@ Each feast's weekday follows from `dom` (`(dom-1)%7`, because a tale's first day
 - *The war one generation ago; the Mark remembers* (§1.4): *the Peace*, and the Markman's *since the Wastes*.
 - *The Gatelands the only island with autumn woods* (§1.1): a tale begins in Reaping, and Leaffall is theirs.
 - *Silent, and chosen plainly:* every name, the era's number (27, raised as DECISION), the order of the week, the feasts' customs.
+
+---
+
+## First Words — the townsperson's greeting, by who speaks and who listens
+
+*Unapproved.* Owed to Michael's control-room note of 5 Oct (backlog A, *Dialogue still stiff, greetings too expository*): *"There's too much exposition when greeting you ('You're a markmen? those people kill bears at 10!') — should be more subtle intros, like 'Greetings, Markman.' Or 'What is it?'"* This draft rebuilds the generated townsperson's greeting. The named cast, the lords, the guild heads, the guards with a fine to read, Rowe and the feast days keep their own lines.
+
+### What is wrong now
+
+The getter in `makeDef`'s wrapper (`87-world-quests.js`, grep `Object.defineProperty(def,'greeting'`) builds a first greeting from three parts: a stock line (the speaker's people's `greet` or the temper's), then, half the time, *"You're a Markman, by the look of you."*, then one of the speaker's opinions of your people from `PEOPLES[…].of` — the §2.1 table, slurs and all. So a stranger's first words are a census and a verdict. The §2.1 lines are good lines in the wrong place: they are what a person says when asked, not what they say at the door. They stay, unchanged, under *What do you make of the …?*
+
+Two smaller faults ride along. The return lines (*Back again?*, *You. Good.*, *I remember you.*, *Thought I'd seen the last of you.*) are one pool for all four peoples, so an Aurennais says *You. Good.* And the pious temper greets with *The Light keeps this door.* and says goodbye with *Walk in light.*: the canon has no Light (§4.1); that is Finding 18 in `quest_review.md`, and its replacement is folded in below.
+
+### What the canon fixes, and where it is silent
+
+- *NPCs greet, price, insult and trust by the player's people; descriptions of the player are consistent for the three nations* (§2.2). So a speaker may name your people, and always names it the same.
+- *If the player is Old Blood, the camouflage does not hold … the innkeeper says dark hair, the guard says grey eyes* (§2.2). The four description lines in `peopleGreeting` stay, as written; they are the canon's own device.
+- *Markmen who won't sit with you* (§2.2, for an Old Blood player). A Markman's greeting to one keeps his distance.
+- The speech row of §2 for each people.
+- *Silent:* whether a stranger names your people at first sight, and what the Old Blood call the three peoples. The plainer choice: some do and most don't, and the Old Blood name nobody's people, only what is in front of them.
+
+### The rule
+
+1. **A greeting is one line**, rarely more than eight words, and never an opinion.
+2. **First meeting** (`metCount(def.name)===0`): a line from *First words*, keyed by the speaker's people and then yours. One time in three, if the speaker has a role line (any role but Villager), the role line instead (*Mind the sparks.*, *Bowl's on the way.*): they are short already and say where you are standing.
+3. **Later meetings**: a line from *Again*, keyed by the speaker's people. One time in three, the temper's line instead (a gruff man stays gruff).
+4. **An Old Blood player**: on the first meeting, one time in three, the address is followed by one of the four description lines, as now. On later meetings the *Again* pool for that speaker is replaced by *Again, to the Old Blood*, which is where *I never could look straight at you, could I.* belongs: it needs a second look to mean anything.
+5. **The tags** (*Neighbour.*, *Guildsman.*) follow in the speaker's people's words, from *Tags*.
+6. Feast days keep their precedence (`dlgGreeting` asks `feastGreeting` first).
+
+### 1. First words — by speaker, then listener
+
+**Gatelander** (*Tírfolk*; proverbs, indirection, the Weaver)
+- *to a Gatelander:* "Weaver keep you, friend." · "You've the look of home about you." · "A face from home. Come in out of it."
+- *to a Markman:* "Good day to you, Markman." · "A long way south, and the road still under you." · "Markman. You'll find us slower than you're used to, and no worse for it."
+- *to an Aurennais:* "Good day to you, and to whoever sent you." · "From over the water, are you? Come in, so." · "An Aurennais. Weaver keep you all the same."
+- *to the Old Blood:* "Good day to you. Have we met? We'd have met." · "Weaver keep you. Stand where I can see you, so." · "You'll have walked a way."
+
+**Markman** (short, *aye*, nicknames, no honorifics)
+- *to a Markman:* "Aye." · "Aye. One of ours." · "Mark-born. Good. Speak."
+- *to a Gatelander:* "Aye, Gatelander. What is it?" · "Long way north for a turf-cutter. Speak." · "Gatelander. Go on."
+- *to an Aurennais:* "Aurennais. Buying or selling?" · "Aye. Compact. Say it plain, it's quicker." · "What is it?"
+- *to the Old Blood:* "What is it." · "Aye. Stand there, then." · "Speak. I'll not sit."
+
+**Aurennais** (formal, *Master*, qualifiers, contracts; never an oath)
+- *to an Aurennais:* "Master. Good day." · "Master. A countryman, unless I misread you." · "Good day, Master. Welcome, on the usual terms."
+- *to a Gatelander:* "Good day, Master. From the Gatelands, I take it." · "Master. You have business? Then let us do it properly." · "Master. Welcome, on account."
+- *to a Markman:* "Good day, Master." · "Master. A Markman, if I am not mistaken. You are welcome here on the same terms as anyone." · "Master. You have business? State it, and we will see."
+- *to the Old Blood:* "Master. Good day. Forgive me, I had taken you for someone else." · "Master. You have business? Then let us do it properly." · "Good day, Master."
+
+**Old Blood** (*an Seanfhuil*; sparing, exact)
+- *to a Gatelander, a Markman or an Aurennais:* "You are here." · "The stones are warm today." · "You walked. Sit."
+- *to the Old Blood:* "I know your face. No. I do not." · "You are here. That is enough." · "Sit. There are few enough of us."
+
+### 2. Again — later meetings, by speaker
+
+- **Gatelander:** "Yourself again. Come in." · "I'd a feeling it'd be you." · "Back, and the road no shorter."
+- **Markman:** "You again. Good." · "Aye. Back." · "Thought it'd be you."
+- **Aurennais:** "Master. Again, and welcome." · "Good day, Master. We have spoken before; I keep the terms." · "Master. You return. I am glad of it."
+- **Old Blood:** "You came back." · "Again. Sit." · "You are here again. Or still."
+
+**Again, to the Old Blood** (an Old Blood player, any later meeting)
+- **Gatelander:** "I never could look straight at you, could I." · "It's you. It is you. Forgive me, I'd a different face in my head."
+- **Markman:** "You. I think." · "Aye. You were taller."
+- **Aurennais:** "Master. I would swear your eyes were grey, last we met. I would not swear it in writing."
+- **Old Blood:** "You came back."
+
+### 3. Tags
+
+| | owns a house in the town | rank 3 in a guild |
+|---|---|---|
+| **Gatelander** | " Neighbour." | " Guildsman." |
+| **Markman** | " Neighbour." | " Guild-hand." |
+| **Aurennais** | " We are neighbours now, I believe." | " Of the Guild, I see." |
+| **Old Blood** | " You live here now." | " You are of the Guild." |
+
+### 4. The pious temper (Finding 18's lines, here for the whole)
+
+- greet: "Blessings on the road that brought you." · "The Weaver keeps this door." · "You carry weight, traveller. Set it down a moment."
+- bye: "Go with the Weaver." · "May the ground hold under you."
+
+### 5. Michael's second sentence — *"I'm turning in work" when there is nothing*
+
+Not lines but a rule, and the systems builder's to make: *It's done.* shows only while this giver has work of yours that is done or under way; *Any work?* stays. The guild head's *It's done.* the same. When work is under way and not done, the answer is the giver's *Not yet* line as now. No new string is needed.
+
+### What in the code would carry it
+
+- **`GREET_FIRST`**, **`GREET_AGAIN`**, **`GREET_AGAIN_OB`** and **`GREET_TAG`**, four tables beside `PEOPLES` in `87-world-quests.js` (none of the names is taken in `js/`; grep before adding). `GREET_FIRST[speaker][listener]` is an array; `GREET_AGAIN[speaker]` and `GREET_AGAIN_OB[speaker]` are arrays; `GREET_TAG[speaker]={owner,guild}`.
+- **The greeting getter** (`87-world-quests.js`, grep `Object.defineProperty(def,'greeting'`): rebuilt on the rule above. The role line is `def._roleGreet`, set in `makeDef` (`83-world-generator.js`) from `greetPool[role]` when the role has its own pool, since the wrapper cannot see `greetPool`. `peopleGreeting` keeps only its Old Blood branch (the four descriptions); its other two branches go, and the `PEOPLES[…].greet` arrays become unused (keep or drop; nothing else reads them).
+- **`PEOPLES[…].of`** unchanged: the *What do you make of …* topic still reads it.
+- **`TEMPERS.pious`**: the two lines of §4.
+- **Rolls:** cosmetic (which line is said), so `Math.random` as now. **No saved key**: `worldState.met` already counts meetings.
+- **A test** for the builder to write: a Markman villager greets a Markman player with a line from `GREET_FIRST.markman.markman` and nothing after it; the second greeting comes from `GREET_AGAIN`; no greeting contains any string from `PEOPLES[…].of`.
+
+### Checked against the canon
+
+- *Gatelanders never a bare yes or no; oaths on the Weaver* (§2): no Gatelander line answers anything; two bless by the Weaver.
+- *Markmen: short sentences, aye, nicknames, no honorifics* (§2): every line is under eight words but one; *turf-cutter* is the Mark's own word (§2), used once, as a nickname, and contradicted by the Markman of §2.1 (*A Gatelander won't leave a wounded man*).
+- *Aurennais: honorifics, qualifiers, contract metaphors, never an oath* (§2): every line has *Master*; *terms*, *on account*, *in writing*; nobody swears.
+- *Old Blood: sparing, exact* (§2): the shortest lines in the set; they name no one's people.
+- *Descriptions consistent for the three nations; inconsistent for the Old Blood* (§2.2): a speaker names a nation's player only by that nation's name; the Old Blood player is never named, and the later lines contradict each other on purpose (*grey eyes*, *taller*, *a different face*).
+- *Slurs about work, land and gods, never bodies* (§2.1): one slur in the set (*turf-cutter*, work). *You were taller* is about the camouflage failing, not a slur, and is said only to an Old Blood player.
+- *No Light in the canon* (§4.1): the pious temper's *Light* is gone.
+- *Silent, and chosen plainly:* whether strangers name your people (some do); what the Old Blood call the three peoples (nothing).
