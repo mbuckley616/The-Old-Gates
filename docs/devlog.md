@@ -12648,3 +12648,22 @@ The compass's body is now `liveMarkers()`, which runs anywhere. `compassMarkers`
 
 ### Needs eyes
 Whether the marks on the whole-world view read at that size; they use the map's quest star at the smallest scale. The directions mark (*Where you were told*) on the map is new and may be more than a player wants there.
+
+## v80 — Session 588 — The world map drawn sharp (Michael's note of 5 Oct)
+Michael, 5 Oct (backlog E): *"The overworld map is very often blurry / does not render well."* There were two causes, both in `83-world-generator.js`. The first is the canvas. It was given its CSS size as its pixel size, so on any screen with a device pixel ratio of 2 (most laptops) the browser stretched every pixel twofold. The second is the land itself. Each cell (2,400 units) was painted as a 48 px tile until it was 220 px across on screen, and as a 320 px tile beyond that. The map opens with a cell about 240 px across and zooms to 64× (a cell about 2,300 px across). So the 48 px tile was stretched up to 4.5×, and from the opening scale on the 320 px tile up to 7×. At a ratio of 2, that is 14×.
+
+Now the canvas's backing store is the device pixel ratio (up to 2) times its CSS size, and `mapDraw` scales its drawing to match. Everything that reads the map's size, the mouse, the pan, the zoom and the hit tests reads the CSS size through `mapLW`/`mapLH`, so nothing else moved. A 128 px tier (`TILE_M`) covers a cell 100–220 device px across. Past 1.25× the 320 px tile, a cell is drawn in 2×2, 4×4, 8×8 or 16×16 squares, each 320 px (`startTile(cell,res,{n,a,b})`). Only the squares on screen are made, over the 128 px tile until they are ready. The shading's slope is scaled by the square's size, so the relief reads the same at every depth. When you pan or zoom, tile work no longer on screen is dropped, and starts again if you come back. That had been a quiet cost before: tiles you had panned past were finished anyway, first in the queue. No more than 160 squares are kept, oldest first out.
+
+### Verified (headless Chromium)
+`mapsharp` 7/7 (new), at a device pixel ratio of 2 in Dunmore. The canvas is 2042×868 for a pane of 1021×434, and the map still opens centred on you, at (511, 217). The texels per device pixel at your cell, its tiles finished:
+
+| Zoom | Now | Before |
+|---|---|---|
+| 1 | 0.66 | 0.66 |
+| 2 | 0.88 | 0.33 |
+| 4, 8, 16, 32, 64 | 1.11 at each | 0.17, 0.55, 0.28, 0.14, 0.07 |
+
+The before figures are the old tiles at the same sizes. At 64 the cell is 2,315 px across and drawn at 5,120. The queue held at most 71 tiles, and 35 squares were kept. Panned away at 64, no square off the screen is in the queue. One 320 px square takes 410–460 ms headless, the 128 px tile 80–100 ms and the 48 px tile 17 ms. mapnotes (the mouse on the map), mapquests and smoke pass. `parsecheck` clean.
+
+### Needs eyes
+How long a deep zoom takes to sharpen on a real laptop. At 64× a screen needs about 30–45 squares, a quarter to half a second each headless and faster on a real GPU's machine, spread over frames. While they come in, the 128 px tile shows beneath. And whether the map at a ratio of 2 now looks as sharp as the rest of the page.

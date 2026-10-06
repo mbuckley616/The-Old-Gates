@@ -776,7 +776,7 @@
   // you zoom into a cell, generated over frames so the map never hitches.
   // Zoom 1 fits the continent; ~40 puts one province across the pane.
   const MAP={cv:null,ctx:null,zoom:1,ox:0,oy:0,drag:null,hover:null,hoverCell:null,sel:null,W:0,H:0,dirty:true,mode:'map',tiles:new Map(),jobs:[],_entries:[]};
-  const TILE_C=48,TILE_F=320;
+  const TILE_C=48,TILE_F=320,TILE_M=128; /* S588 — a middle tier, so a cell 100–220 device px across is not a 48 px tile stretched */
   const PARCH=new THREE.Color(0xd8c8a2),LOWC=new THREE.Color(0xcdb98c),HILL=new THREE.Color(0xb59d76),MTN=new THREE.Color(0x8d7c68),SNOWC=new THREE.Color(0xe9e4da),WATER=new THREE.Color(0x7d9cb0),DEEP=new THREE.Color(0x5b7d94),FORESTC=new THREE.Color(0x7c8a58),WASTEC=new THREE.Color(0xa08e74);
   // v80 S144 — the map read as brown or green because it was coloured by height: only forest (and a
   // 'wastes' test that never matched the generated 'wasteland') tinted it. Every biome the generator
@@ -796,6 +796,10 @@
   };
   const _mb=new THREE.Color();
   function tileKey(i,j,res){return i+','+j+':'+res;}
+  // S588 — the map drew at the canvas's CSS size, so a HiDPI screen stretched every pixel; its backing store is now dpr times
+  // that and the drawing is scaled, while everything else (the mouse, the pan, the zoom) stays in CSS pixels, read through these
+  function mapLW(){return MAP.lw||MAP.cv.width;}
+  function mapLH(){return MAP.lh||MAP.cv.height;}
   function withCellData(cell,fn){
     // lend this cell's AND its neighbours' regions/landmarks to worldH (unloaded ones only)
     const lent=[];
@@ -821,16 +825,16 @@
     out[0]=Math.min(255,_mc.r*255)|0;out[1]=Math.min(255,_mc.g*255)|0;out[2]=Math.min(255,_mc.b*255)|0;
   }
   // A tile job renders rows across frames; coarse tiles finish in one go.
-  function startTile(cell,res){
-    const key=tileKey(cell.i,cell.j,res);if(MAP.tiles.has(key))return MAP.tiles.get(key);
+  function startTile(cell,res,sub){
+    const key=tileKey(cell.i,cell.j,res)+(sub?'/'+sub.n+'/'+sub.a+'/'+sub.b:'');if(MAP.tiles.has(key))return MAP.tiles.get(key);
     const cv=document.createElement('canvas');cv.width=res;cv.height=res;const ctx=cv.getContext('2d');
-    const img=ctx.createImageData(res,res);const step=SIZE/res;const H=new Float32Array((res+1)*(res+1));
-    const t={cv,ctx,img,H,row:0,hrow:0,done:false,cell,res,step};MAP.tiles.set(key,t);MAP.jobs.push(t);
+    const n=sub?sub.n:1;const img=ctx.createImageData(res,res);const step=SIZE/res/n;const H=new Float32Array((res+1)*(res+1));
+    const t={cv,ctx,img,H,row:0,hrow:0,done:false,cell,res,step,sub:sub||null,key,n,X0:cell.ox+(sub?sub.a*SIZE/n:0),Z0:cell.oz+(sub?sub.b*SIZE/n:0)};MAP.tiles.set(key,t);MAP.jobs.push(t); /* S588 — sub: one of n×n squares of the cell at full resolution, for a deep zoom */
     if(res<=TILE_C){while(!t.done)tileStep(t,1e9);}
     return t;
   }
   function tileStep(t,rowsBudget){
-    const {cell,res,step,H}=t;const X0=cell.ox,Z0=cell.oz;
+    const {cell,res,step,H}=t;const X0=t.X0!=null?t.X0:cell.ox,Z0=t.Z0!=null?t.Z0:cell.oz,nS=t.n||1;
     withCellData(cell,()=>{
       // heights first (res+1 rows), then pixels
       while(t.hrow<=res&&rowsBudget>0){const j=t.hrow;for(let i=0;i<=res;i++)H[j*(res+1)+i]=worldH(X0+i*step,Z0+j*step);t.hrow++;rowsBudget--;}
@@ -839,7 +843,7 @@
       while(t.row<res&&rowsBudget>0){const j=t.row;
         for(let i=0;i<res;i++){const h=H[j*(res+1)+i];const x=X0+i*step,z=Z0+j*step;
           const hx=H[j*(res+1)+Math.min(res,i+1)]-H[j*(res+1)+Math.max(0,i-1)],hz=H[Math.min(res,j+1)*(res+1)+i]-H[Math.max(0,j-1)*(res+1)+i];
-          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*(res>=TILE_F?.045:.02)));
+          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*(res>=TILE_F?.045*nS:.02)));
           mapPixel(x,z,h,shade,px3);const k=(j*res+i)*4;d[k]=px3[0];d[k+1]=px3[1];d[k+2]=px3[2];d[k+3]=255;}
         t.row++;rowsBudget--;}
       if(t.row>=res){t.ctx.putImageData(t.img,0,0);
@@ -851,10 +855,10 @@
   }
   function mapJobs(){const t0=performance.now();while(MAP.jobs.length&&performance.now()-t0<24){const t=MAP.jobs[0];if(t.done){MAP.jobs.shift();continue;}tileStep(t,12);if(!t.done)break;}}
   // world ↔ screen
-  function baseScale(){return Math.min(MAP.cv.width,MAP.cv.height)/(SIZE*GRID);}
+  function baseScale(){return Math.min(mapLW(),mapLH())/(SIZE*GRID);}
   function mapToScreen(x,z){const s=baseScale()*MAP.zoom;return [x*s+MAP.ox,z*s+MAP.oy];}
   function screenToMap(sx,sy){const s=baseScale()*MAP.zoom;return [(sx-MAP.ox)/s,(sy-MAP.oy)/s];}
-  function mapClamp(){const s=baseScale()*MAP.zoom,w=SIZE*GRID*s,cw=MAP.cv.width,ch=MAP.cv.height;MAP.ox=Math.min(Math.max(MAP.ox,cw-w-60),60);MAP.oy=Math.min(Math.max(MAP.oy,ch-w-60),60);if(w<cw)MAP.ox=(cw-w)/2;if(w<ch)MAP.oy=(ch-w)/2;}
+  function mapClamp(){const s=baseScale()*MAP.zoom,w=SIZE*GRID*s,cw=mapLW(),ch=mapLH();MAP.ox=Math.min(Math.max(MAP.ox,cw-w-60),60);MAP.oy=Math.min(Math.max(MAP.oy,ch-w-60),60);if(w<cw)MAP.ox=(cw-w)/2;if(w<ch)MAP.oy=(ch-w)/2;}
   // icons
   function drawIcon(ctx,kind,s,known){
     ctx.save();ctx.scale(s,s);
@@ -892,23 +896,32 @@
     questMarkers(c).forEach(m=>out.push(m));
     return out;
   }
-  function visibleCells(){const [x0,z0]=screenToMap(0,0),[x1,z1]=screenToMap(MAP.cv.width,MAP.cv.height);const out=[];for(let j=Math.max(0,Math.floor(z0/SIZE));j<=Math.min(GRID-1,Math.floor(z1/SIZE));j++)for(let i=Math.max(0,Math.floor(x0/SIZE));i<=Math.min(GRID-1,Math.floor(x1/SIZE));i++)out.push(getCell(i,j));return out;}
+  function visibleCells(){const [x0,z0]=screenToMap(0,0),[x1,z1]=screenToMap(mapLW(),mapLH());const out=[];for(let j=Math.max(0,Math.floor(z0/SIZE));j<=Math.min(GRID-1,Math.floor(z1/SIZE));j++)for(let i=Math.max(0,Math.floor(x0/SIZE));i<=Math.min(GRID-1,Math.floor(x1/SIZE));i++)out.push(getCell(i,j));return out;}
   function mapDraw(){
-    const ctx=MAP.ctx;if(!ctx)return;const cw=MAP.cv.width,ch=MAP.cv.height;
+    const ctx=MAP.ctx;if(!ctx)return;const cw=mapLW(),ch=mapLH();ctx.setTransform(MAP.dpr||1,0,0,MAP.dpr||1,0,0); /* S588 */
     ctx.fillStyle='#2b241a';ctx.fillRect(0,0,cw,ch);
     if(MAP.mode==='local'){const size=Math.min(cw,ch);ctx.save();ctx.translate((cw-size)/2,(ch-size)/2);drawLocalMap(ctx,size,130,true);ctx.restore();MAP.dirty=true;return;}
     const s=baseScale()*MAP.zoom,cellPx=SIZE*s;
-    const cells=visibleCells();const fine=cellPx>=220;
+    const dpr=MAP.dpr||1;
+    const cells=visibleCells();const fine=cellPx*dpr>=220,mid=cellPx*dpr>=100;MAP.drawN=(MAP.drawN||0)+1;const seen=new Set();
+    let deep=1;while(deep<16&&TILE_F*deep*1.25<cellPx*dpr)deep*=2; /* S588 — past a 320 px tile, the cell in deep×deep squares */
     const [pi,pj]=cellOf(px,pz);
     // tiles
     for(const c of cells){
       const [sx,sy]=mapToScreen(c.ox,c.oz);
       let t=MAP.tiles.get(tileKey(c.i,c.j,TILE_C))||startTile(c,TILE_C);
-      if(fine){const f=MAP.tiles.get(tileKey(c.i,c.j,TILE_F))||startTile(c,TILE_F);if(f.done)t=f;}
+      if(mid&&(!fine||deep>1)){const m=MAP.tiles.get(tileKey(c.i,c.j,TILE_M))||startTile(c,TILE_M);seen.add(m.key);if(m.done)t=m;} /* under the squares, the cheap middle tier */
+      if(fine&&deep===1){const f=MAP.tiles.get(tileKey(c.i,c.j,TILE_F))||startTile(c,TILE_F);seen.add(f.key);if(f.done)t=f;else{const m=MAP.tiles.get(tileKey(c.i,c.j,TILE_M));if(m&&m.done)t=m;}}
       if(t&&(t.done||t.res<=TILE_C)){ctx.drawImage(t.cv,sx,sy,cellPx+.6,cellPx+.6);}
+      if(deep>1&&c.type!=='sea'){const q=cellPx/deep,W=mapLW(),Hh=mapLH();
+        for(let b=0;b<deep;b++)for(let a=0;a<deep;a++){const qx=sx+a*q,qy=sy+b*q;if(qx>W||qy>Hh||qx+q<0||qy+q<0)continue;
+          const k=tileKey(c.i,c.j,TILE_F)+'/'+deep+'/'+a+'/'+b;const st=MAP.tiles.get(k)||startTile(c,TILE_F,{n:deep,a,b});st.seen=MAP.drawN;seen.add(k);if(st.done)ctx.drawImage(st.cv,qx,qy,q+.6,q+.6);}}
       // undiscovered provinces sit under a light sepia wash
       if(c.type!=='sea'&&!(c.i===pi&&c.j===pj)&&!c.sites.some(x=>discovered(x.id))){ctx.fillStyle='rgba(60,40,20,.22)';ctx.fillRect(sx,sy,cellPx+.6,cellPx+.6);}
     }
+    // S588 — tiles panned or zoomed away are not worked on (they start again if wanted), and no more than 160 squares are kept
+    if(MAP.jobs.some(j=>!seen.has(j.key))){MAP.jobs=MAP.jobs.filter(j=>{if(seen.has(j.key))return true;MAP.tiles.delete(j.key);return false;});}
+    {let nSub=0;for(const t of MAP.tiles.values())if(t.sub)nSub++;if(nSub>160){for(const [k,t] of MAP.tiles){if(nSub<=120)break;if(t.sub&&t.done&&t.seen!==MAP.drawN){MAP.tiles.delete(k);nSub--;}}}}
     // province borders (faint) once you're in close
     if(cellPx>=140){ctx.strokeStyle='rgba(40,28,14,.25)';ctx.lineWidth=1;ctx.setLineDash([6,4]);for(const c of cells){if(c.type==='sea')continue;const [sx,sy]=mapToScreen(c.ox,c.oz);ctx.strokeRect(sx,sy,cellPx,cellPx);}ctx.setLineDash([]);}
     // roads
@@ -982,13 +995,13 @@
   function showTownCard(e,sx,sy){let el=document.getElementById('wm-hover');if(!el){el=document.createElement('div');el.id='wm-hover';el.style.cssText='position:absolute;pointer-events:none;max-width:320px;padding:8px 10px;background:rgba(28,22,14,.97);border:1px solid #8a6a3a;border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:20;display:none;color:#e8dcc0;font-family:Georgia,serif;line-height:1.4';MAP.cv.parentElement.appendChild(el);}
     if(!e||!(e.kind in BASE_P)){el.style.display='none';return;}const t=siteAnywhere(e.id);if(!t){el.style.display='none';return;}
     el.innerHTML=townCard(t);el.style.display='block';const r=MAP.cv.getBoundingClientRect();const px_=sx+16,py_=sy+16;el.style.left=Math.min(px_,r.width-310)+'px';el.style.top=Math.min(py_,r.height-el.offsetHeight-10)+'px';}
-  function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
+  function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(mapLW(),mapLH())/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
   // S496 — notes pinned to the map (Michael's C on DECISION #132, part C): *✎ Note* arms the next click on the map, which
   // opens a box in the panel for up to 500 characters; *Pin it* keeps it in worldState.mapNotes, a character key ({x,z,
   // text,t,tod}, the world spot and the minute). A pin shows its words on hover; a click opens it, with *Take it down*.
   function pinMapNote(x,z,text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t||!isFinite(x)||!isFinite(z))return -1;const L=worldState.mapNotes||(worldState.mapNotes=[]);L.push({x:Math.round(x*10)/10,z:Math.round(z*10)/10,text:t,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});MAP.dirty=true;return L.length-1;}
   function unpinMapNote(i){const L=worldState.mapNotes;if(!L||!L[i])return false;L.splice(i,1);if(!L.length)delete worldState.mapNotes;MAP.sel=null;MAP.hover=null;MAP.dirty=true;return true;}
-  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
+  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(mapLW(),mapLH())/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
   function _mnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function showNoteCard(i,sx,sy){showTownCard(null,0,0);const n=(worldState.mapNotes||[])[i];const el=document.getElementById('wm-hover');if(!n||!el)return;el.innerHTML=`<div style="font:italic 13px Georgia,serif;color:#f0e6cc">${_mnEsc(n.text)}</div><div style="color:#8a7a60;font-size:11px;margin-top:4px">${_mnEsc(typeof gameDateLine==='function'?gameDateLine(n.t,n.tod,'day'):'')}</div>`;el.style.display='block';const r=MAP.cv.getBoundingClientRect();el.style.left=Math.min(sx+16,r.width-310)+'px';el.style.top=Math.min(sy+16,r.height-el.offsetHeight-10)+'px';}
   function mapNoteArm(on){MAP.pinArmed=on===undefined?!MAP.pinArmed:!!on;const b=document.getElementById('wm-pin');if(b){b.style.background=MAP.pinArmed?'#3a2a16':'#0c1008';b.style.color=MAP.pinArmed?'#f0e2c0':'#c8b880';}if(MAP.cv)MAP.cv.style.cursor=MAP.pinArmed?'crosshair':'grab';
@@ -1015,7 +1028,7 @@
   function mapSearch(q){const box=document.getElementById('wm-results');if(!box)return;q=(q||'').trim().toLowerCase();if(!q){box.style.display='none';return;}
     const out=[];for(const c of CELLS.values()){c.sites.forEach(t=>{if(t.name&&t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:t.kind,x:t.x,z:t.z,id:t.id,kind:t.kind});});(c.doors||[]).forEach(d=>{const n=d.canonicalName||'';if(n.toLowerCase().includes(q)){const p=dungeonWorldPos[d.seed]||d;if(discovered('door_'+d.seed))out.push({name:n,sub:'gate',x:p.x,z:p.z,id:'door_'+d.seed,kind:'door'});}});}
     out.sort((a,b)=>a.name.localeCompare(b.name));box.innerHTML=out.slice(0,12).map((o,i)=>`<div class="wm-res" data-i="${i}" style="padding:5px 10px;cursor:pointer;border-bottom:1px solid rgba(60,80,40,.4);font:12px Georgia,serif;color:#e8dcc0">${o.name} <span style="color:#8a9a70">· ${o.sub}</span></div>`).join('')||'<div style="padding:6px 10px;color:#8a9a70;font:12px Georgia,serif">Nothing you know of by that name.</div>';box.style.display='block';
-    box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=MAP.cv.width/2-o.x*s;MAP.oy=MAP.cv.height/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
+    box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=mapLW()/2-o.x*s;MAP.oy=mapLH()/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
   function wireMapSearch(){const inp=document.getElementById('wm-search');if(!inp||inp._wired)return;inp._wired=true;const pb=document.getElementById('wm-pin');if(pb)pb.onclick=()=>mapNoteArm();inp.addEventListener('input',()=>mapSearch(inp.value));['keydown','keyup','keypress'].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));document.querySelectorAll('.wm-filt').forEach(cb=>cb.addEventListener('change',()=>{MAP.filt[cb.value]=cb.checked;MAP.dirty=true;mapDraw();}));}
   function mapPanel(e){
     const body=document.getElementById('wm-panel-body');if(!body)return;
@@ -1056,11 +1069,11 @@
       root.addEventListener('wheel',ev=>{ev.preventDefault();if(MAP.mode!=='map')return;const r=root.getBoundingClientRect();const mx=ev.clientX-r.left,my=ev.clientY-r.top;const [wx,wz]=screenToMap(mx,my);MAP.zoom=Math.max(1,Math.min(64,MAP.zoom*(ev.deltaY<0?1.18:1/1.18)));const s=baseScale()*MAP.zoom;MAP.ox=mx-wx*s;MAP.oy=my-wz*s;mapClamp();MAP.dirty=true;},{passive:false});
     }
     root.style.display='block';
-    const r=pane.getBoundingClientRect();root.width=Math.max(300,r.width|0);root.height=Math.max(300,r.height|0);
-    MAP.cv=root;MAP.ctx=root.getContext('2d');MAP.W=Math.min(root.width,root.height);MAP.H=root.height;MAP.mode='map';
+    const r=pane.getBoundingClientRect();const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));MAP.lw=Math.max(300,r.width|0);MAP.lh=Math.max(300,r.height|0);MAP.dpr=dpr;root.width=Math.round(MAP.lw*dpr);root.height=Math.round(MAP.lh*dpr);
+    MAP.cv=root;MAP.ctx=root.getContext('2d');MAP.W=Math.min(MAP.lw,MAP.lh);MAP.H=MAP.lh;MAP.mode='map';
     // open at province scale, centred on the player
-    MAP.zoom=Math.max(1,Math.min(64,(Math.min(root.width,root.height)*.55)/(SIZE*baseScale())));wireMapSearch();
-    const s=baseScale()*MAP.zoom;MAP.ox=root.width/2-px*s;MAP.oy=root.height/2-pz*s;mapClamp();
+    MAP.zoom=Math.max(1,Math.min(64,(Math.min(MAP.lw,MAP.lh)*.55)/(SIZE*baseScale())));wireMapSearch();
+    const s=baseScale()*MAP.zoom;MAP.ox=MAP.lw/2-px*s;MAP.oy=MAP.lh/2-pz*s;mapClamp();
     MAP.sel=null;MAP.noteAt=null;mapNoteArm(false);mapPanel(null);syncMapButtons();MAP.dirty=true;mapDraw();
     if(!MAP._raf){const loop=()=>{if(MAP.cv&&MAP.cv.style.display!=='none'){mapJobs();if(MAP.dirty)mapDraw();MAP._raf=requestAnimationFrame(loop);}else MAP._raf=null;};MAP._raf=requestAnimationFrame(loop);}
   }
