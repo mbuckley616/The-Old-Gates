@@ -13245,3 +13245,22 @@ GitHub ran the suite on `5130b3d` and three shards came back red, one suite each
 ### Needs eyes
 - Whether CI agrees on `dragonsize`. The fix is reasoned from the code, not seen failing here.
 - A Wooden-kit guard at 15–17 units, as the copies swap: the vambraces' boards lose their rounded edges in the distant copy.
+
+## v80 — Session 598 — The stone newel stair, built (backlog H, Michael's A on DECISION #173, with his two fixes)
+Michael chose A on #173, the stone newel stair as prototyped in Session 576, with two corrections: "the rail for the staircase is floating / it is not attached to the stairs at any point", and "the wooden crossbeams on the ceiling of the basement overlap with part of the staircase".
+
+`buildStairwell` (`56-dungeon-build.js`) now builds the prototype for every dungeon with a stairwell. The 117 boxes (plank treads, board risers, a smooth post, rail posts and box rails, four near-black planes) are now two merged meshes. The first is the stair: 31 wedge treads in the theme's stone (the wall colour ×2.6, as the shell's props use), each .2 thick with a bevelled nosing and its own shade; a drum of stone per tread for the newel; a chamfered stone landing; the rope; and its iron. The second is the shaft: its four walls between floor 1 and floor 2's ceiling, laid in .4 courses with alternate rows offset, each block its own shade. The shades come from a stream seeded by the dungeon, so one dungeon looks the same each visit. The helix, its start, its landing and its footholds are unchanged, so climbing is unchanged.
+
+The floating rail. In the prototype the rope hung from the shaft wall on brackets. Below the shaft, in floor 2's room, there is no wall, so from the floor below the rope hung in the air. It is now carried on iron stanchions standing on every other tread at .95 from the newel, sixteen in all. A stouter post with a knob stands at each end: at the landing above and on the last tread below. The rope runs along the stanchions' tops, so it is fixed to the stair from top to bottom.
+
+The beams. Floor 2's ceiling beams (Session 190) are laid across every room three or more cells wide, and the room at the stair's foot is one. A beam on that row ran straight through the upper treads. `buildDunShell` takes a `hole` (floor 2 only: the shaft's 2×2 cells) and cuts any beam that crosses it into the runs either side, each stopping .04 short of the shaft.
+
+### Verified (headless Chromium)
+- `tests/newelstair` (new): five dungeons (ruins 4021, deep 4012, crypt 4020, ruins 4002, haunted 4030), picked because each has a floor-2 beam on the shaft's line (one or two each, counted from the generator). In each, the stair is exactly two meshes and nothing else stands within 1.2 of the newel; the stair is 10,108 triangles; no beam vertex lies inside the shaft. With the cut switched off, the same check fails on three of the five (24, 12 and 12 beam vertices inside). No page errors. Pictures from the prototype's two places: `docs/prototypes/dungeon-stair-built-above.png`, `dungeon-stair-built-up.png`.
+- `tests/stairrail` (rewritten for the new rail): on six seeds, every stair has sixteen stanchions, two of them end posts. Every point of the rope is .95 from the newel. Every stanchion's top is within .03 of the rope, or .12 for an end post's knob. The suite used to read the next dungeon before the fade had built it, so all six seeds were really the first dungeon. It now waits for the old stair to leave the scene.
+- `dungeon`, `dragonsize`, `inspdungeons`, `intreach`, `mimic`, `lvact` pass.
+
+### Needs eyes
+- How the stone stair reads on the way down, in each theme's colour. The pictures are the ruins theme only.
+- A stanchion stands at .95 and the walk rail stops you at .97, so on the outer edge of the treads you can walk through one.
+- The forts' straight flights (#177) will use the same stone and rope.
