@@ -12738,3 +12738,25 @@ A probe on the old code gave no mark for Q3, Q6 or Q7. `questtargets`, `mapquest
 
 ### Needs eyes
 The labels keep the legacy arrow (*→ Aldwyn*). Q7's Oswin and Edna are both marked at once, as they were in the legacy zone (no prerequisite between them). The rest of Michael's note (the main quest's flow, 50–100 more quests) is design, not this fix.
+
+## v80 — Session 596 — E talks to the person you face, and the talk prompt shows again (main's red CI, `yardplay`)
+Main's CI went red on a docs-only merge (3152db7) in `yardplay`, and the producer's digest asked the systems builder to harden it. The check that failed stands the player 1.3 units in front of Captain Rowe at the League's seat, faces her and presses E; on the runner Osric, a villager, answered. That is not the runner's timing. `talkNPC` (`22-dialogue.js`) opened the nearest townsperson within 3 units and never looked at the crosshair, so anyone who stepped closer than the person you faced, a passer-by at your shoulder, took the talk.
+
+The crosshair should have decided it, and looking for why it did not found the larger fault. `aimAt` (`68-dungeon-misc.js`) asks three's raycast whether the crosshair ray meets a mesh. Every townsperson since Session 153 is one skinned mesh with its bones kept local to it, and three's raycast skins with the bones' world matrices and then applies the mesh's world matrix again, so it never meets one. Session 417 found the same thing for corpses and wrote `bodyAimed`. So in the open world, facing a townsperson showed no *Press 'E' to talk* and no talk cue on the crosshair. E still worked only because it ignored the aim. A probe in Dunmore at noon, 1.5 units in front of the mayor: the prompt hidden, the cue empty, `aimAt` false.
+
+What changed:
+- `aimAt` falls back to `skinAimed` when three's raycast meets nothing. It tests the ray against capsules along the body's bones, as `bodyAimed` does for a corpse, and keeps the bones on the object.
+- `talkAimedNPC(list)` returns the nearest person within 3.2 whom the ray meets. The talk cue (`talkTargetNow`), the prompt (`90-main.js`) and E (`talkNPC`) all use it. Before, the cue took the first one in the list, and the prompt's name came from `WORLD.nearNpcName`, the nearest.
+- E falls back to the nearest within 3 only when the crosshair is on nobody, as before.
+
+### Verified (headless Chromium)
+`talkaim` 6/6 (new), in Dunmore at noon, the eye at the game's 0.92:
+- Niamh 1.3 in front and Eilís 0.87 off at the shoulder: E, the cue and the prompt (*Niamh — Mayor — Press 'E' to talk*) all take Niamh. On the old code E took Eilís, the cue was empty and the prompt named Eilís.
+- Eilís 2.4 behind Niamh on the same line: Niamh.
+- Looking away with Eilís at 0.91: no cue, and E answers Eilís as before.
+- The real key in the game's loop: Niamh's dialogue.
+
+On the old code 4 of the 6 checks fail. `yardplay` passes, the duel fought through and Rowe met at the seat. `aimbubble`, `crime1`, `penance`, `coachinn`, `shophours`, `questtargets`, `rowelines`, `intnpcs`, `corpsebody`, `ragdollsearch` and `chapel` pass. Twelve suites side by side on four cores lost five to towns that had not finished loading; each passed run three at a time, and `chapel` failed once and then passed alone. `parsecheck` clean.
+
+### Needs eyes
+The talk prompt is back over every townsperson you face in the open world, and it may not have been seen since well before the split. Whether the capsule's girth (0.16 for a person) feels right at the edge of a shoulder or a hat brim. The test could not judge that.

@@ -17,7 +17,16 @@ function _sweepScenePool(scene){
 // v80 — look-at looting: a container counts only when it's under the crosshair (within ~14°) and within reach (3u)
 const _laDir=new THREE.Vector3(),_laTo=new THREE.Vector3();const _ray=new THREE.Raycaster();
 // aimAt: true when the crosshair ray hits this object's mesh within reach — the interaction is the mesh, not an area
-function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);return hits.length>0;}
+function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);if(hits.length>0)return true;
+  return skinAimed(obj,m,_ray.near,_ray.far);}
+// S596 — a skinned body (every townsperson since S153) is invisible to three's raycast for the reason S417 gives below, so
+// aimAt never met a townsperson: no *Press 'E' to talk* and no talk cue facing one in the open world. The ray is tested
+// against capsules along the body's bones, as bodyAimed does for a corpse; the bones are found once and kept on obj.
+function skinAimed(obj,m,near,far){if(obj._aimBones===undefined||obj._aimM!==m||(obj._aimBones&&obj._aimBones.length&&!obj._aimBones[0].parent)){obj._aimM=m;obj._aimR=null;let sk=false;const bones=[];m.traverse(o=>{if(o.isSkinnedMesh)sk=true;if(o.isBone)bones.push(o);});obj._aimBones=sk?bones:null;}
+  const bones=obj._aimBones;if(!bones||!bones.length||!m.visible)return false;m.updateMatrixWorld(true);
+  if(obj._aimR==null){_baBox.makeEmpty();for(const b of bones)_baBox.expandByPoint(b.getWorldPosition(_baA));obj._aimR=Math.max(.16,Math.min(.6,_baBox.getSize(_baA).length()*.13));}
+  const o=CAM.position;for(const b of bones){b.getWorldPosition(_baA);if(b.parent&&b.parent.isBone)b.parent.getWorldPosition(_baB);else _baB.copy(_baA);if(_raySegHit(o,_laDir,_baB,_baA,obj._aimR,near,far))return true;}
+  return false;}
 // S417 — a corpse is searched anywhere on its body, not at one spot over the kill point (Michael, 1 Oct). The crosshair
 // ray is tested against capsules along the dead body's bones and against any plain meshes it has, within reach of the
 // eye as aimAt. three's own raycast cannot see a skinned body here: it skins with the bones' world matrices and then
@@ -44,7 +53,10 @@ function lootTargetNow(){try{
   else{const c=CORPSES.find(c=>!c.looted&&c.items&&c.items.length&&lookingAt(c));if(c)return c;const ch=CHESTS.find(c=>c.floor===currentFloor&&(!c.opened||c.items.length>0)&&lookingAt(c));if(ch)return ch;const b=(typeof BARRELS!=='undefined')?BARRELS.find(b=>b.floor===currentFloor&&(!b.opened||(b.items&&b.items.length>0))&&lookingAt(b,2.6)):null;if(b)return b;}
 }catch(e){}return null;}
 function emptyTargetNow(){try{const any=(activeZoneId==='world')?ZONE_CORPSES.filter(c=>c.zone===activeZoneId):[...CORPSES,...CHESTS.filter(c=>c.floor===currentFloor),...((typeof BARRELS!=='undefined')?BARRELS.filter(b=>b.floor===currentFloor):[])];for(const c of any){const has=c.items&&c.items.length>0&&!(c.looted);if(!has&&lookingAt(c))return c;}}catch(e){}return null;}
-function talkTargetNow(){try{if(activeZoneId==='world'){const L=(ZONES.world&&ZONES.world.npcs)||[];return L.find(n=>!n._retreated&&Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2&&aimAt(n,3.6))||null;}if(typeof INT_NPCS!=='undefined'){const n=INT_NPCS.find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2&&aimAt(n,3.6));if(n)return n;}if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2&&aimAt({g:intNPCMesh},3.6))return {def:{name:''}};}catch(e){}return null;}
+// S596 — of the people within 3.2 whose body the crosshair ray meets, the nearest: the one in front, not the first in the
+// list (a second person behind them on the ray, or listed earlier, used to win). E (`talkNPC`) and the talk cue both read it.
+function talkAimedNPC(L){let best=null,bd=1e9;for(const n of (L||[])){if(!n||n._retreated||!n.g)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=3.2||d>=bd)continue;if(Math.abs(jumpY-n.g.position.y)>1.6)continue;if(aimAt(n,3.6)){bd=d;best=n;}}return best;}
+function talkTargetNow(){try{if(activeZoneId==='world'){return talkAimedNPC((ZONES.world&&ZONES.world.npcs)||[]);}if(typeof INT_NPCS!=='undefined'){const n=INT_NPCS.find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2&&aimAt(n,3.6));if(n)return n;}if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2&&aimAt({g:intNPCMesh},3.6))return {def:{name:''}};}catch(e){}return null;}
 function tickCrosshair(){const xh=document.getElementById('xh');if(!xh)return;const t=lootTargetNow();const tk=t?null:talkTargetNow();const kind=t?'loot':tk?'talk':null;if(kind!==xh._k){xh._k=kind;xh.textContent=kind==='loot'?'◇':kind==='talk'?'◦':'+';xh.style.color=kind==='loot'?'#e8c040':kind==='talk'?'#8ad0ff':'';xh.style.fontSize=kind?'22px':'';}xh._t=t;
   let lab=document.getElementById('xh-empty');if(!lab){lab=document.createElement('div');lab.id='xh-empty';lab.style.cssText='position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);font:12px Georgia,serif;color:#8a7a60;pointer-events:none;display:none;text-shadow:0 1px 2px #000';(xh.parentElement||document.body).appendChild(lab);}
   const em=t?null:emptyTargetNow();if(em){lab.textContent=`${em.displayName||em.name||(em.isEW!=null?'Chest':'Remains')} — empty`;lab.style.display='block';}else lab.style.display='none';}

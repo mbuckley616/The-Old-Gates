@@ -1191,6 +1191,9 @@ function talkNPC(){
   // zones, post-Q7); allowing E-press to open dialog with an invisible
   // mesh reads broken. Player uses the Wait button to advance to dawn.
   activeNPCs.forEach(n=>{if(n._retreated)return;if(Math.abs(jumpY-n.g.position.y)>1.6)return;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d<bd){bd=d;best=n;}}); // v80 S13 — same level
+  // S596 — the one the crosshair is on wins (the nearest of those aimed at, as the talk cue reads them), so a passer-by at
+  // your shoulder no longer takes the talk from the person you face; the nearest is kept only when nobody is aimed at.
+  let aimed=null;try{aimed=talkAimedNPC(activeNPCs);}catch(e){}if(aimed)best=aimed;
   // v80 — a world NPC whose def carries `shop` is a merchant without a building: open the shop directly.
   if(best&&best.def&&best.def.shop){currentHouse=best.def.shop;openShop();return;}
   if(best&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.guild.onTalk(best.def)){return;} // v80 S12 — deliveries

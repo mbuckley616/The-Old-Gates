@@ -891,7 +891,7 @@ function loop(now){
                    :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)||null;
     const nearHouse = (nearHouseRaw && activeZoneId==='overworld' && _houseDestroyed(nearHouseRaw)) ? null : nearHouseRaw;
     const activeNPCs=(ZONES[activeZoneId]&&ZONES[activeZoneId].npcs)||[];
-    const nearNPC=activeNPCs.some(n=>!n._retreated && Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2 && aimAt(n,3.6)); // v80 — aimed, not near
+    const nearNPC=talkAimedNPC(activeNPCs); // v80 — aimed, not near; S596 — the nearest of those aimed at, the one E talks to
     const nearHerbPrompt=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<1.1);
     // v61b: notice boards zone-scoped (each entry carries a `zone` tag).
     const nearBoard=(typeof isSettlementZone==='function' && isSettlementZone(activeZoneId))
@@ -968,7 +968,7 @@ function loop(now){
     // rationale. The fort_door portal handles its own E-prompt.
     else if(nearBoard){iprOW.textContent=`Press 'E' to read ${nearBoard.title}`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){iprOW.textContent=WORLD.shipPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} // v80 C
-    else if(nearNPC){const _nm=(typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.nearNpcName():null;iprOW.textContent=_nm?`${_nm} — Press 'E' to talk`:"Press 'E' to talk";iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(nearNPC){const _nd=nearNPC.def||{},_nm=(activeZoneId==='world'&&_nd.name)?`${_nd.name}${_nd.role&&_nd.role!=='Villager'?' — '+_nd.role:''}`:null;iprOW.textContent=_nm?`${_nm} — Press 'E' to talk`:"Press 'E' to talk";iprOW.style.opacity='1';iprOW.style.display='block';}
     else{iprOW.style.opacity='0';setTimeout(()=>{if(iprOW.style.opacity==='0')iprOW.style.display='none';},260);}
   }
   else if(lid&&isInterior()){
