@@ -29,16 +29,36 @@
       else{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}}
     const what=home?pirateStow(o,took):took.map(k=>`a ${CARGO_GOODS[k].n.toLowerCase()}`).join(', ');
     showMsg(`They hold your deck, take ${what} from the hold and go back over the rail.`,'#ff8060');}
+  // S615 (Michael's sailing playtest, 6 Oct: "a pirate ship rammed him and the ships completely overlapped") — a hull is
+  // her own deck's outline, not a circle: the deck's breadth (`userData.deck.at`) sampled down her length from stern to
+  // prow, a convex outline turned and placed with her. Two hulls touch where the outlines overlap (the separating-axis
+  // test) and are pushed apart along the axis of least overlap, by all of it. The old circle (62% of the class lengths, with
+  // the deck in truth longer and its prow forward of the middle) let a bow run five units into a hull, and held two hulls
+  // alongside eight units apart, too far to step across.
+  const HULL_POLY=new Map();
+  function hullLocal(h){const m=h.o.mesh,d=m&&m.userData.deck;const key=d||`${h.L}x${h.W}`;let P=HULL_POLY.get(key);if(P)return P;P=[];
+    if(d){const n=14,zs=[];for(let i=0;i<=n;i++)zs.push(d.z0+(d.z1-d.z0)*i/n);for(const z of zs){const w=d.at(z);if(w>.02)P.push([w,z]);}if(!P.length||d.at(d.z1)<=.02)P.push([0,d.z1]);
+      for(let i=zs.length-1;i>=0;i--){const w=d.at(zs[i]);if(w>.02)P.push([-w,zs[i]]);}if(d.at(d.z0)<=.02)P.push([0,d.z0]);}
+    else{const l=h.L/2,w=h.W/2;P=[[w,-l],[w,l],[-w,l],[-w,-l]];}
+    HULL_POLY.set(key,P);return P;}
+  function hullReach(h){const P=hullLocal(h);if(P._r==null)P._r=Math.max(...P.map(([x,z])=>Math.hypot(x,z)));return P._r;}
+  function hullWorld(h){const ry=(h.o.yaw||0)+Math.PI,c=Math.cos(ry),s=Math.sin(ry);return hullLocal(h).map(([lx,lz])=>[h.o.x+lx*c+lz*s,h.o.z-lx*s+lz*c]);}
+  function hullContact(a,b){const A=hullWorld(a),B=hullWorld(b);let pen=1e9,gap=-1e9,ux=0,uz=0;
+    for(const P of [A,B])for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];let nx=q[1]-p[1],nz=-(q[0]-p[0]);const l=Math.hypot(nx,nz);if(l<1e-6)continue;nx/=l;nz/=l;
+      let a0=1e9,a1=-1e9,b0=1e9,b1=-1e9;for(const v of A){const t=v[0]*nx+v[1]*nz;if(t<a0)a0=t;if(t>a1)a1=t;}for(const v of B){const t=v[0]*nx+v[1]*nz;if(t<b0)b0=t;if(t>b1)b1=t;}
+      const o=Math.min(a1,b1)-Math.max(a0,b0);if(-o>gap)gap=-o;if(o<pen){pen=o;const sg=(b0+b1)-(a0+a1)<0?-1:1;ux=nx*sg;uz=nz*sg;}}
+    return {pen:Math.max(0,pen),gap:Math.max(0,gap),ux,uz};}
   function tickHullCollisions(dt){
     const hulls=[];if(SHIP.mesh)hulls.push({o:SHIP,L:SHIP.L,W:SHIP.W,mine:true});for(const o of OTHER)hulls.push({o,L:o.L||13,W:o.W||4.4});
-    for(let i=0;i<hulls.length;i++)for(let j=i+1;j<hulls.length;j++){const a=hulls[i],b=hulls[j];const dx=b.o.x-a.o.x,dz=b.o.z-a.o.z;const d=Math.hypot(dx,dz)||.01;const minD=(a.L+b.L)/2*.62;
+    for(let i=0;i<hulls.length;i++)for(let j=i+1;j<hulls.length;j++){const a=hulls[i],b=hulls[j];if(Math.hypot(b.o.x-a.o.x,b.o.z-a.o.z)>hullReach(a)+hullReach(b)+1.5){if(a.mine)b.o._touch=false;continue;}
+      const C=hullContact(a,b);
       // S411 — a ram: on first touch your hull takes the closing speed × 3, half if your bow is on her; they part before it counts again
-      if(a.mine){if(d<minD&&!b.o._touch){b.o._touch=true;const ux=dx/d,uz=dz/d,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
+      if(a.mine){if(C.pen>0&&!b.o._touch){b.o._touch=true;const ux=C.ux,uz=C.uz,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
           const close=(fa[0]*(a.o.speed||0)-fb[0]*(b.o.speed||0))*ux+(fa[1]*(a.o.speed||0)-fb[1]*(b.o.speed||0))*uz;const bow=(a.o.speed||0)>.5&&fa[0]*ux+fa[1]*uz>.7;
           const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;}
           if(close>.5){const w=shipWear(close*3*(bow?.5:1),0);if(w&&w.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w.hull}.`,'#ff8060');a._bump=performance.now();}}}
-        else if(d>minD+1)b.o._touch=false;}
-      if(d<minD){const push=(minD-d)*.5;const ux=dx/d,uz=dz/d;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
+        else if(C.gap>1)b.o._touch=false;}
+      if(C.pen>0){const push=C.pen*.5;const ux=C.ux,uz=C.uz;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
   }
 
   // ═══ DIALOG II (Session J) ═══════════════════════════════════════════

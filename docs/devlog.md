@@ -13674,3 +13674,20 @@ ships, renewal, coachboard and shipmoor 1/1 each. `parsecheck` clean.
 
 ### Needs eyes
 Whether the wheel's box (its mesh's bounds + 0.15) is easy to find in play at the helm, in first and third person, and whether 2.2 units is the right distance to stand from the hatch.
+
+## v80 — Session 615 — Hulls meet at their own outline (backlog I, Michael's sailing playtest)
+Michael's sailing playtest: "a pirate ship rammed him and the ships completely overlapped, a very chaotic mess. Ships and ramming should respect the actual boundaries/perimeter of the ship." `tickHullCollisions` treated each hull as a circle, two hulls touching when their middles came within 62% of their summed class lengths. That is 8.06 units for two sloops. The real deck is longer than the class length (a sloop's runs from 6.55 aft to 8.4 forward of her middle, 14.95 in all), and the prow is forward of the middle. So a bow went up to four units into the other hull before anything pushed it out. Two hulls side by side, by contrast, were held 8 units apart, far too wide for decks 4.26 across.
+
+Now a hull is her own deck's outline: the breadth her mesh already carries (`userData.deck.at`, the shape `onShipDeck` reads), sampled at 15 points from stern to prow on both sides. That makes a convex outline, turned and placed with her each tick. Two hulls touch where their outlines overlap (the separating-axis test) and are pushed apart, half each, along the axis that overlaps least, by all of the overlap. The ram's rules are unchanged (Session 411: closing speed × 3 on first touch, half with your bow on her, parted by more than a unit before it counts again). They now read the outline's contact and its axis instead of the circle's. The quick test that skips far pairs uses the outline's own reach. My first try (Session 614b, not committed) used a capsule of the class length and failed on this: it skipped two bows at 16.8 units that were already touching.
+
+### Verified (headless Chromium)
+`hullshape` 6/6 (new). Both ships are held driving into each other every tick, and the run measures the deepest overlap and the deck area shared at the worst moment. Each meeting is run by the game's own tick, then again with the old circle swapped in:
+- A black sail into your beam at 6.5: 2.54 units deep (5.16 m² shared) before, 0.07 (0 m²) now.
+- Bow to bow at 6 and 6.5: 4.17 deep (25.08 m²) before, 0.09 (0 m²) now. The middles meet at 16.71, where the bows touch.
+- Her bow into your quarter: 4.27 deep (20.16 m²) before, 0.09 (0 m²) now.
+- Two sloops alongside 4.8 apart stay there; the old circle pushed them to 8.06.
+
+What is left is one tick's travel. shiphull (the ram's hull losses, −11 bow-on and −12 on the beam, as before), pirateram, piratehold, worldtarget, ships, shipdead, shiparchers, seaseed and blacksail: 1/1 each. `parsecheck` clean.
+
+### Needs eyes
+How a ram reads now that the bows really meet. A glancing blow slides the two hulls along each other, which the circle never did. Black sails can also lie alongside closer than before, which changes how near her boarders come.
