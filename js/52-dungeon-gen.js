@@ -974,6 +974,51 @@ function makeFortHall(size, seed){
 }
 FORT_INTERIORS.fort_hall = (size, seed) => makeFortHall(size, seed);
 
+// S600 — DECISION #177 A, the second shape: BARRACKS AND THE GAOL. One long hall seven cells wide runs north from the
+// entrance (hallway floor, so the fort pass gives it its wall columns and its centre colonnade), with three rooms off
+// each side, mostly bunk rooms, and the captain's room beyond its north end. At that end a straight flight three cells
+// wide goes down northward inside the hall, walkways either side of it to the captain's door. Below, the flight lands
+// in the gaol: a passage north between two pairs of cells, each on a narrow doorway (gen.gaolCells: where the grilles
+// hang), and the gaoler's room at its end. Built for the medium sizes and up; a smaller fort is a hall and undercroft.
+function makeFortBarracks(size, seed){
+  if(!/^(medium|large|massive)$/.test(size)) return makeFortHall(size, seed);
+  const G = makeFortHall(size, seed), {W, H, cfg} = G, r = (s => () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)(hashSeed(seed * 7 + 600));
+  const map = Array.from({length:H}, () => new Array(W).fill(0)), map2 = Array.from({length:H}, () => new Array(W).fill(0));
+  const rooms = [], rooms2 = [], treasureDoors = [], gaolCells = [];
+  const cx = Math.floor(W/2), hx0 = cx - 3, hx1 = cx + 3, hz0 = H - 42, SIDE = 8, FL = 8;
+  const fill = (m, x0, z0, w, h, t) => { for(let z = z0; z < z0 + h; z++) for(let x = x0; x < x0 + w; x++) if(z > 0 && z < H - 1 && x > 0 && x < W - 1) m[z][x] = t; };
+  const room = (list, x0, z0, w, h, kind) => list.push({x:x0, y:z0, w, h, cx:Math.floor(x0 + w/2), cy:Math.floor(z0 + h/2), kind});
+  // the long hall, to the south edge, the entrance in its middle
+  for(let z = hz0; z <= H - 1; z++) for(let x = hx0; x <= hx1; x++) map[z][x] = 7;
+  const entC = cx, entR = H - 1; map[entR][entC] = 2;
+  // the flight at the north end, three cells past it to the captain's door
+  const fb = hz0 + 3, ft = fb + FL - 1;
+  for(let z = fb; z <= ft; z++) for(let x = cx - 1; x <= cx + 1; x++){ map[z][x] = 3; map2[z][x] = 3; }
+  fill(map, cx - 4, hz0 - 9, 9, 8, 6); room(rooms, cx - 4, hz0 - 9, 9, 8, 'lords_chamber');
+  map[hz0 - 1][cx] = 4; treasureDoors.push({x:cx, z:hz0 - 1, isEW:false, locked:false});
+  // three rooms a side: bunk rooms, with a kitchen, an armoury and a guardroom among them by the seed
+  const west = ['barracks', 'barracks', r() < .5 ? 'kitchen' : 'storeroom'], east = ['barracks', r() < .5 ? 'armory' : 'guardroom', 'barracks'];
+  if(r() < .5) west.reverse(); if(r() < .5) east.reverse();
+  for(let i = 0; i < 3; i++){ const z0 = ft + 3 + i * (SIDE + 1), dz = z0 + (SIDE >> 1); if(z0 + SIDE > H - 2) break;
+    fill(map, hx0 - 1 - SIDE, z0, SIDE, SIDE, 1); room(rooms, hx0 - 1 - SIDE, z0, SIDE, SIDE, west[i]); map[dz][hx0 - 1] = 4; treasureDoors.push({x:hx0 - 1, z:dz, isEW:true, locked:false});
+    fill(map, hx1 + 2, z0, SIDE, SIDE, 1); room(rooms, hx1 + 2, z0, SIDE, SIDE, east[i]); map[dz][hx1 + 1] = 4; treasureDoors.push({x:hx1 + 1, z:dz, isEW:true, locked:false}); }
+  // the gaol: the passage, two pairs of cells, the gaoler's room
+  const pz0 = fb - 10; fill(map2, cx - 1, pz0, 3, 10, 1); room(rooms2, cx - 1, pz0, 3, 10, 'gaol');
+  for(let i = 0; i < 2; i++){ const c0 = fb - 4 - 4 * i;
+    for(const sd of [-1, 1]){ const x0 = sd < 0 ? cx - 5 : cx + 3; fill(map2, x0, c0, 3, 3, 1); room(rooms2, x0, c0, 3, 3, 'gaol_cell'); map2[c0 + 1][cx + sd * 2] = 1; gaolCells.push({x:cx + sd * 2, z:c0 + 1, sd}); } }
+  fill(map2, cx - 3, fb - 16, 7, 5, 1); room(rooms2, cx - 3, fb - 16, 7, 5, null); map2[fb - 11][cx] = 1;
+  const floorCells = [];
+  for(let z = 0; z < H; z++) for(let x = 0; x < W; x++) if(map[z][x] === 1) floorCells.push({x, y:z});
+  floorCells.sort((a, b) => Math.hypot(b.x - entC, b.y - entR) - Math.hypot(a.x - entC, a.y - entR));
+  return {
+    map, map2, W, H, rooms, rooms2, entC, entR, treasureDoors,
+    stairC: cx, stairR: ft, keyLocations: floorCells.slice(0, 1), cfg, gaolCells,
+    flight: {c0: cx - 1, c1: cx + 1, top: ft, bot: fb},
+    stairHole: {x0: cx - 1.5, x1: cx + 1.5, z0: fb - .5, z1: ft + .5},
+  };
+}
+FORT_INTERIORS.fort_barracks = (size, seed) => makeFortBarracks(size, seed);
+
 const DTHEME={d1:{fog:0x120f1a,amb:0xffa060},d2:{fog:0x1a0a08,amb:0xff6030},d3:{fog:0x08101a,amb:0x3060ff}};
 let dScene=null,dMap=[],dR=0,dC=0;
 let dMap2=null; // floor-2 map (null = single-floor dungeon)

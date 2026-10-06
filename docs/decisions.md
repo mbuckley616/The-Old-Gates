@@ -60,6 +60,8 @@ Michael: **Three new shapes, stairs down only** (A). (2026-10-06)
 
 Under way. Session 599 built the first shape, the hall and the undercroft (`makeFortHall`, `buildFlight`; pictures `docs/prototypes/forthall-*.png`). Until the barracks and gaol and the ring are built, a fort's seed makes half the forts halls, and the others keep today's layout. When all three are in, the seed picks among the three. Today's three layouts stay only if you say so (the six-way pick).
 
+Session 600 built the second shape, barracks and the gaol (`makeFortBarracks`; pictures `docs/prototypes/fortbarracks-*.png`). For now a third of the forts keep their own layout, a third are halls and a third barracks.
+
 ### The dungeon's stairs (the look builder, Session 576, 2026-10-06) — DECISION #173
 On 5 Oct you said the dungeon's "staircases are ugly and don't match the style at all". Here is why, and one way to fix it.
 

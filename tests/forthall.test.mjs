@@ -28,10 +28,10 @@ console.log(JSON.stringify(plan.filter(p => p.seed === 7100)));
 check('every room on both floors is reachable (floor 1 from the door, floor 2 from the flight\'s foot), 32 plans', plan.every(p => p.all1 && p.all2), plan.filter(p => !p.all1 || !p.all2));
 check('the flight is the same cells on both floors, in the hall, walled at its sides below, opening north into the undercroft', plan.every(p => p.same && p.inHall && p.slot && p.foot), plan.filter(p => !(p.same && p.inHall && p.slot && p.foot)));
 check('the hall has a kitchen, storeroom, armoury and chapel off it', plan.every(p => ['pillared_hall', 'kitchen', 'storeroom', 'armory', 'chapel'].every(k => p.rooms.includes(k))), plan.map(p => p.rooms).slice(0, 2));
-// how many of the world's forts the seed makes a hall (until the other two shapes come, half of them)
-const picks = await page.evaluate(() => { const forts = PORTALS.filter(p => (p.interior || '').startsWith('fort_') && p.size !== 'small'); return { n: forts.length, hall: forts.filter(p => hashSeed((p.seed | 0) + 177) & 1).length }; });
+// which shape the seed gives the world's forts (S600: a third each of their own, the hall, the barracks, until the ring comes)
+const picks = await page.evaluate(() => { const forts = PORTALS.filter(p => (p.interior || '').startsWith('fort_') && p.size !== 'small'), n = {}; forts.forEach(p => { const k = fortShapeFor(p); n[k] = (n[k] || 0) + 1; }); return { n: forts.length, by: n, hall: n.fort_hall || 0 }; });
 console.log('forts', JSON.stringify(picks));
-check('some forts are halls and some keep their layout', picks.n === 0 || (picks.hall > 0 && picks.hall < picks.n), picks);
+check('some forts are halls and some are not', picks.n === 0 || (picks.hall > 0 && picks.hall < picks.n), picks);
 
 // in the game
 await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 7100, size: 'medium', interior: 'fort_hall', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });

@@ -857,6 +857,10 @@ function dunSmoothNormals(g){g.computeVertexNormals();const p=g.attributes.posit
   for(let i=0;i<p.count;i++){const a=acc.get(key(i));const l=Math.hypot(a[0],a[1],a[2])||1;n.setXYZ(i,a[0]/l,a[1]/l,a[2]/l);}n.needsUpdate=true;}
 // S478 — a dungeon floor's key for its seeded streams: the gate's seed (a hand-made dungeon has none: its id or name) and the floor
 function dKeyOf(portal,floorIdx){const p=portal||{};return String(p.seed!=null?p.seed:(p.id||p.name||'dungeon'))+':'+floorIdx;}
+// S599/S600 — #177 A: a fort's seed picks its shape. A third keep their own layout, a third are the hall and undercroft,
+// a third barracks and the gaol, until the ring is built; a small fort keeps its own
+function fortShapeFor(portal){const k=portal.interior||'cave';if(!k.startsWith('fort_')||portal.size==='small')return k;
+  if(k==='fort_hall'||k==='fort_barracks')return k;const m=hashSeed((portal.seed|0)+177)%3;return m===1?'fort_hall':m===2?'fort_barracks':k;}
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
@@ -866,8 +870,7 @@ function buildDungeon(portal){
   // generator; absent or unknown value falls back to 'cave' (makeDungeon).
   // The fallback is intentionally defensive — a bad interior value should
   // produce a playable cave dungeon, not a hard crash on entry.
-  // S599 — #177 A: a fort's seed may make it the hall and undercroft (half of them, until the other two new shapes are built)
-  const interiorKey = ((portal.interior || 'cave').startsWith('fort_') && portal.size !== 'small' && (hashSeed((portal.seed|0) + 177) & 1) ? 'fort_hall' : (portal.interior || 'cave'));
+  const interiorKey = fortShapeFor(portal);
   const interiorFn = FORT_INTERIORS[interiorKey] || FORT_INTERIORS.cave;
   let gen=interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
@@ -1126,6 +1129,20 @@ function buildDungeon(portal){
     const gl=new THREE.PointLight(0xffb060,1.4,7);gl.position.set(mx,Y*.5+1,(zT+zB)/2);dScene.add(gl);TORCHES.push({l:gl,fl:null,ph:Math.random()*Math.PI*2});
     FOOTHOLDS.push({x0,x1,z0:zB,z1:zT,axis:'z',y0:Y,y1:0,kind:'flight'});
     DUNGEON_STAIRWELL=true;
+  }
+  // S600 — the gaol's cells (makeFortBarracks): in each cell's doorway an iron frame, jambs and a transom with fixed bars
+  // above it, and the grille door hung open flat against the passage wall; one merged mesh, no collision (the door is open)
+  function buildGaolGrilles(){
+    const P=[],iron=new THREE.Color(0x2a2826),y0=FLOOR2_Y,Hh=FLOOR_HEIGHT,at=(x,y,z)=>new THREE.Matrix4().makeTranslation(x,y,z);
+    for(const gc of gen.gaolCells||[]){const fx=gc.x-gc.sd*.5,zc=gc.z;
+      for(const dz of [-.47,.47])P.push([new THREE.BoxGeometry(.08,Hh,.08),iron,at(fx,y0+Hh/2,zc+dz)]);
+      P.push([new THREE.BoxGeometry(.08,.08,1.0),iron,at(fx,y0+2.2,zc)]);
+      for(let k=-2;k<=2;k++)P.push([new THREE.CylinderGeometry(.018,.018,Hh-2.2,5),iron,at(fx,y0+2.2+(Hh-2.2)/2,zc+k*.18)]);
+      // the door, open: its hinge at the frame's north jamb, laid along the passage wall
+      const dx=fx-gc.sd*.06,z0=zc-.47;
+      for(const y of [.1,1.05,2.05])P.push([new THREE.BoxGeometry(.05,.07,.9),iron,at(dx,y0+y,z0-.45)]);
+      for(let k=0;k<6;k++)P.push([new THREE.CylinderGeometry(.018,.018,2.0,5),iron,at(dx,y0+1.08,z0-.08-k*.16)]);}
+    if(P.length)dScene.add(dunMerge(P,'gaolGrilles'));
   }
   function renderFloor(map,floorIdx,wallMat,floorMat,baseY){
     // v80 S478 — co-op rules: where the barrels, crates and chests stand is drawn from the dungeon's own stream, keyed by
@@ -1844,6 +1861,8 @@ function buildDungeon(portal){
     // larger than the column base half-width (0.225) so the player
     // (radius 0.2) bumps the column cleanly rather than clipping it.
     function placeColumn(x, z, h){
+      // S600 — none on a flight's hole or its rim (the walkways beside the barracks' hole read as narrow halls to the passes below)
+      if(gen.flight && x > gen.flight.c0 - 1.6 && x < gen.flight.c1 + 1.6 && z > gen.flight.bot - 1.6 && z < gen.flight.top + 1.6) return;
       _intColumn(dScene, x, z, h);
       DUNGEON_COLUMNS.push({x: x, z: z, r: 0.27});
     }
@@ -1948,6 +1967,8 @@ function buildDungeon(portal){
           const trunkCenter = Math.floor((west + east) / 2);
           if(c !== trunkCenter) continue;
           if(r % colInterval !== 0) continue;
+          // S600 — not in front of, beside or beyond a flight's hole (the barracks' hall has one on its centre line)
+          if(gen.flight && trunkCenter >= gen.flight.c0 - 1 && trunkCenter <= gen.flight.c1 + 1 && r >= gen.flight.bot - 3 && r <= gen.flight.top + 3) continue;
           // v61gb: skip if the staircase (or any prior prop) already occupies
           // this centerline position. Prevents column/staircase z-fighting.
           if(dPropHit(trunkCenter, r)) continue;
@@ -2772,6 +2793,7 @@ function buildDungeon(portal){
   // S599 — what floor 1 has registered to collide is floor 1's: a table in the hall above no longer stops you in the vault below
   if(dMap2){for(const p of DUNGEON_PROPS)if(p.floor==null)p.floor=1;for(const p of DUNGEON_COLUMNS)if(p.floor==null)p.floor=1;}
   if(dMap2)renderFloor(dMap2,2,f2WallMat,f2FloorMat,FLOOR2_Y);
+  if(dMap2&&gen.gaolCells)buildGaolGrilles();
   // v80 S8 — floor 2 as a walkable platform with the shaft cut out; floor 1 is the base (0)
   try{decorateDungeonRooms(gen,portal);}catch(e){console.warn('decorate',e);} // v80 — room types, traps, containers
   if(DUNGEON_STAIRWELL)FOOTHOLDS.push({x0:-.5,x1:dC-.5,z0:-.5,z1:dR-.5,y:Math.max(0,FLOOR2_Y),hole:gen.stairHole||{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}}); // the upper floor (floor one, now) with the shaft open (S599: or the flight's hole)
