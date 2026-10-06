@@ -1606,55 +1606,76 @@ function spawnPortalMeshes(sc,portals,sol,getY){
       return; // skip the cave_door branch below
     }
 
-    // ── cave_door (default, existing behavior) ──────────────────────
-    const rz=p.z+0.7;
-    // v80 — a mouth in a rock face: a broad tilted slab either side, a heavy brow across, the dark of the maw behind the door,
-    // stalactite teeth under the brow, a scatter of boulders, tinted by theme; every rock solid.
-    {const th=p.theme||'ruins';const tint={undead:0x3e3a44,goblin:0x3a4a34,elemental:0x4a3a30,deep:0x2e3640,haunted:0x36403e,ruins:0x4a4038,fort:0x4a4038}[th]||0x4a4038;
-     const rM=new THREE.MeshLambertMaterial({color:tint});const dM=new THREE.MeshLambertMaterial({color:0x100c0a});const hh=(p.seed*2654435761)>>>0;const rr=(k)=>((hh^(k*7919))%1000)/1000;
-     // S271 — the mouth's rocks are the world's rocks (Session 264: Michael's A on Session 228; the cave doors waited on it): each slab, the
-     // brow and the boulders a fracture-cut rock fitted to the old box's size, the theme's tint over the stone's own colours; the old
-     // boxes where the world's rocks are not to hand (the old zones)
-     const kitOK=typeof WORLD!=='undefined'&&WORLD.rockProto&&WORLD.treeProtos;const kM=kitOK?(()=>{const c=new THREE.Color(tint),m=Math.max(c.r,c.g,c.b)||1;c.multiplyScalar(.95/m);return new THREE.MeshLambertMaterial({vertexColors:true,color:c});})():null;
-     const kitRock=(kind,w,ht,d)=>{const g=WORLD.treeProtos()[WORLD.rockProto('moor',kind)].clone();g.computeBoundingBox();const b=g.boundingBox;g.translate(-(b.min.x+b.max.x)/2,-(b.min.y+b.max.y)/2,-(b.min.z+b.max.z)/2);g.scale(w/(b.max.x-b.min.x),ht/(b.max.y-b.min.y),d/(b.max.z-b.min.z));g.computeBoundingSphere();return g;};
-     const slab=(ox,oy,w,ht,d,rz_,ry_)=>{const m=kitOK?new THREE.Mesh(kitRock(ht>2?'outcrop':'boulder',w*1.15,ht*1.05,d*1.1),kM):new THREE.Mesh(new THREE.BoxGeometry(w,ht,d),rM);m.position.set(p.x+ox,ty+oy+ht/2-.2,rz-.2+(rz_||0));m.rotation.z=ry_||0;m.rotation.y=(rr(ox*3|0)-.5)*.3;m.castShadow=true;sc.add(m);if(sol)sol.push({cx:m.position.x,cz:m.position.z,rx:w/2*.8,rz:d/2*.8});return m;};
-     slab(-2.0,0,1.6,3.6,2.2,0,.18);slab(2.0,0,1.6,3.6,2.2,0,-.18);slab(-1.1,.3,1.2,2.8,1.8,.4,.35);slab(1.1,.3,1.2,2.8,1.8,.4,-.35);
-     const brow=kitOK?new THREE.Mesh(kitRock('outcrop',5.6,1.3,2.6),kM):new THREE.Mesh(new THREE.BoxGeometry(5.2,1.1,2.4),rM);brow.position.set(p.x,ty+3.3,rz-.3);brow.rotation.z=(rr(11)-.5)*.08;brow.castShadow=true;sc.add(brow);
-     const maw=kitOK?new THREE.Mesh(SK.ball(1,14,9,0,Math.PI,0,Math.PI/2),dM):new THREE.Mesh(new THREE.BoxGeometry(2.0,2.6,1.6),dM);if(kitOK){dM.side=THREE.DoubleSide;maw.rotation.x=-Math.PI/2;maw.scale.set(1.05,.9,2.4);maw.position.set(p.x,ty-.05,rz+.95);}else maw.position.set(p.x,ty+1.1,rz+.9);sc.add(maw); // S274 — with the world's rocks, the maw a dark rounded hollow in the rock face (a half-dome, its crown into the rock), not a box standing proud
-     for(let i=0;i<6;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(.09+rr(20+i)*.08,.5+rr(30+i)*.5,5),rM);t.position.set(p.x-1.3+i*.52,ty+2.75-(.25+rr(40+i)*.25),rz+.55);t.rotation.x=Math.PI;sc.add(t);}
-     for(let i=0;i<7;i++){const a=rr(50+i)*Math.PI*2,d2=3.2+rr(60+i)*2.6;const x=p.x+Math.cos(a)*d2,z=p.z+Math.sin(a)*d2;const sz=.35+rr(70+i)*.7;const bm=kitOK?new THREE.Mesh(kitRock(rr(95+i)<.3?'cluster':'boulder',sz*2.2,sz*1.5,sz*2),kM):new THREE.Mesh(new THREE.DodecahedronGeometry(sz,0),rM);bm.position.set(x,(_y?_y(x,z):ty)+sz*.5,z);if(kitOK)bm.rotation.set(0,rr(80+i)*6.28,0);else bm.rotation.set(rr(80+i)*3,rr(90+i)*3,0);bm.castShadow=true;sc.add(bm);if(sol)sol.push({cx:x,cz:z,rx:sz*.8,rz:sz*.8});}
-     const gl=new THREE.PointLight(0x3a2a20,.6,7);gl.position.set(p.x,ty+1.2,rz+1.2);sc.add(gl);}
-
-    const faceZ=p.z-.22;
-    const voidW=0.88*.9,voidH=1.05*.9;
-
-    const cave=new THREE.Mesh(new THREE.PlaneGeometry(voidW,voidH),voidM);
-    cave.position.set(p.x,ty+voidH/2,faceZ);sc.add(cave);
-
-    const postW=0.10*.9,postH=voidH;
-    [-1,1].forEach(s=>{
-      const post=new THREE.Mesh(new THREE.BoxGeometry(postW,postH,.09),darkRockM);
-      post.position.set(p.x+s*(voidW/2+postW/2),ty+postH/2,faceZ+.05);sc.add(post);
-    });
-    const lintel=new THREE.Mesh(new THREE.BoxGeometry(voidW+postW*2,.117,.09),darkRockM);
-    lintel.position.set(p.x,ty+voidH+.059,faceZ+.05);sc.add(lintel);
-
-    const doorMat=new THREE.MeshLambertMaterial({color:0x3a2810});
-    const door=new THREE.Mesh(new THREE.BoxGeometry(voidW-.036,voidH-.036,.054),doorMat);
-    door.position.set(p.x,ty+voidH/2,faceZ-.04);door.rotation.y=Math.PI;sc.add(door);
-    const plankMat=new THREE.MeshLambertMaterial({color:0x4a3418});
-    for(let i=0;i<3;i++){
-      const pl=new THREE.Mesh(new THREE.BoxGeometry(voidW-.072,.036,.063),plankMat);
-      pl.position.set(p.x,ty+0.162+i*0.288,faceZ-.04);pl.rotation.y=Math.PI;sc.add(pl);
-    }
-
-    const tl=new THREE.PointLight(p.col,1.1,6);tl.position.set(p.x+1.25,ty+.7,p.z+.1);sc.add(tl);
-    dressPortalExterior(sc,p,ty,sol); // v80 — mystery by seed, a sigil glow in the theme's colour
-    const tf=new THREE.Mesh(new THREE.SphereGeometry(.05,5,5),new THREE.MeshBasicMaterial({color:0xffcc66}));
-    tf.position.copy(tl.position);sc.add(tf);
-    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.22,5),new THREE.MeshLambertMaterial({color:0x5a3010}));
-    stick.position.set(p.x+1.25,ty+.5,p.z+.1);sc.add(stick);
-
-    sol.push({cx:p.x,cz:p.z+.4,rx:1.5,rz:1.2});
+    // ── cave_door: an old gate (S578, Michael's A on DECISION #169) ──
+    buildOldGateFront(sc,p,ty,sol,getY);
   });
+}
+
+// S578 — an old gate (Michael's A on DECISION #169, the Session 571 prototype): a dressed-stone doorway cut into a turf mound.
+// The mound's front is cut flat behind a stone headwall whose top follows the mound's curve, so no turf stands in the doorway
+// (Michael: "the grassy hillock … is bursting through the doorway"); a heavy two-leaf door fills it, set back in the reveal.
+// Two jambs and a lintel with a capstone frame it, the binding marks glow down the jambs and in a ring on the lintel in the
+// theme's colour, stepped wing walls hold the mound, and a ring of marker stones stands nine out, one mark each facing the door.
+// The seed varies the mound's size, which markers have fallen, the moss and the wear. Faces -z, as the old mouth did.
+function buildOldGateFront(sc,p,ty,sol,getY){
+  const gy=getY||((x,z)=>ty);const h0=(p.seed*2654435761)>>>0;let rs=(h0^0x9e3779b9)>>>0;const r=()=>{rs=(rs*1664525+1013904223)>>>0;return rs/4294967296;};
+  const col=(typeof THEME_GLOW!=='undefined'&&THEME_GLOW[p.theme])||p.col||0xffd060;
+  const G=new THREE.Group();G.position.set(p.x,ty,p.z);G.name='oldGate';
+  const C=(c)=>new THREE.MeshLambertMaterial({color:c});
+  const stone=C(0x8a8478),dark=C(0x5e5a52),pale=C(0x9a9488),moss=C(0x4f6a34),turf=C(0x4e6a34),oak=C(0x3a2a18),oakDk=C(0x2c2014),iron=C(0x2a2826);
+  const glow=new THREE.MeshBasicMaterial({color:col});
+  const B=(w,h,d,m,x,y,z,rx,ry,rz,par)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,rz||0);(par||G).add(o);return o;};
+  // the mound: a half-dome behind, its front cut flat at z=.22 (inside the headwall) for three either side of the door, easing back to its own curve past the wing walls
+  const MW=6.0+r()*.9,MH=4.0+r()*.7,MD=6.4+r()*.6,MC=4.5,ZF=.22,HX=3.0;
+  const mg=new THREE.SphereGeometry(1,44,12,0,Math.PI*2,0,Math.PI/2);const mp=mg.attributes.position;
+  for(let i=0;i<mp.count;i++){const x=mp.getX(i)*MW,z=mp.getZ(i)*MD+MC,t=Math.min(1,Math.max(0,(Math.abs(x)-HX)/1.2));mp.setXYZ(i,x,mp.getY(i)*MH,z<ZF?ZF+(z-ZF)*t*t*(3-2*t):z);}
+  mg.computeVertexNormals();const mound=new THREE.Mesh(mg,turf);mound.position.y=-.25;G.add(mound);
+  // the headwall: the mound's cut face in stone, its top the mound's curve at the cut, the doorway through it
+  const cutK=1-((ZF-MC)/MD)**2,HW=Math.min(HX,MW*Math.sqrt(cutK)),topAt=x=>MH*Math.sqrt(Math.max(0,cutK-(x/MW)**2))-.25;
+  const sh=new THREE.Shape();sh.moveTo(-HW,-.25);for(let k=0;k<=24;k++){const x=-HW+2*HW*k/24;sh.lineTo(x,topAt(x)-.08);}sh.lineTo(HW,-.25);sh.lineTo(-HW,-.25);
+  const hole=new THREE.Path();hole.moveTo(-.75,-.2);hole.lineTo(.75,-.2);hole.lineTo(.75,2.7);hole.lineTo(-.75,2.7);hole.lineTo(-.75,-.2);sh.holes.push(hole);
+  const hg=new THREE.ExtrudeGeometry(sh,{depth:.5,bevelEnabled:false});const head=new THREE.Mesh(hg,stone);head.position.z=-.25;G.add(head);
+  // its courses: a thin dark line every .45, as wide as the wall at that height, broken at the doorway
+  for(let y=.45;y<MH-.4;y+=.45){const w=Math.min(HW,MW*Math.sqrt(Math.max(0,cutK-((y+.33)/MH)**2)))-.1;if(w<.4)break;
+    if(y<2.7){for(const s of[-1,1]){const a=.78,len=w-a;if(len>.1)B(len,.03,.02,dark,s*(a+len/2),y,-.26);}}else B(2*w,.03,.02,dark,0,y,-.26);}
+  // the frame: jambs, a lintel, a capstone stepped over it
+  for(const s of[-1,1]){B(.62,2.72,.8,stone,s*1.06,1.34,-.65);B(.7,.16,.88,pale,s*1.06,.05,-.65);
+    for(let i=0;i<6;i++)B(i%2?.22:.12,.05,.02,glow,s*1.06,.5+i*.34,-1.06);
+    B(.05,1.9,.02,glow,s*1.06,1.35,-1.06);
+    // wing walls stepping down, splayed a little, in front of the headwall
+    for(let k=0;k<3;k++){const x=s*(1.95+k*.95),ht=Math.min(topAt(Math.abs(x))-.2,2.5-k*.6);B(.95,ht,.6,k%2?dark:stone,x,ht/2-.05,-.55-k*.12,0,s*-.22,0);
+      if(r()<.45)B(.9,.05,.5,moss,x,ht-.03,-.55-k*.12,0,s*-.22,0);}
+    sol.push({cx:p.x+s*1.06,cz:p.z-.65,rx:.31,rz:.4},{cx:p.x+s*3.0,cz:p.z-.7,rx:1.55,rz:.45});}
+  B(3.0,.55,.95,stone,0,2.97,-.68);B(2.3,.32,.8,dark,0,3.4,-.6);if(r()<.6)B(1.6+r()*.5,.05,.6,moss,(r()-.5)*.4,3.58,-.6);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.2,.035,6,20),glow);ring.position.set(0,2.97,-1.16);G.add(ring);
+  B(.05,.3,.02,glow,0,2.97,-1.16);B(.3,.05,.02,glow,0,2.97,-1.16);
+  // the door, set back in the reveal: two leaves of planks on iron straps, a ring on each, the seam dark between them
+  const DZ=-.02;B(1.52,.04,.14,oakDk,0,2.68,DZ);
+  for(const s of[-1,1]){const lf=new THREE.Group();lf.position.set(s*.375,0,DZ);G.add(lf);
+    for(let i=0;i<4;i++)B(.18,2.66,.09,i%2?oakDk:oak,s*(-.27+i*.18),1.33,0,0,0,0,lf);
+    for(const y of[.45,1.35,2.25])B(.72,.09,.03,iron,0,y,-.06,0,0,0,lf);
+    const rg=new THREE.Mesh(new THREE.TorusGeometry(.09,.016,5,12),iron);rg.position.set(-s*.24,1.1,-.08);lf.add(rg);}
+  B(.02,2.66,.1,C(0x0a0806),0,1.33,DZ-.02);
+  // a threshold slab under the door, worn steps out to the apron, the binding line cut along the sill
+  const wear=r();B(1.5,.12,.82,stone,0,.04,-.62);B(1.5,.08,.1,glow,0,.11,-1.06);
+  B(2.6,.13,1.0,wear<.5?stone:dark,0,.0,-1.55,0,(r()-.5)*.04,0);B(2.0,.1,.7,dark,(r()-.5)*.3,-.03,-2.35,0,(r()-.5)*.12,0);
+  if(wear>.6)B(1.2,.09,.5,stone,(r()-.5)*.8,-.06,-3.0,0,(r()-.5)*.5,0);
+  // the marker stones on a ring nine out, each with one mark facing the door; some by the seed have fallen
+  for(let k=0;k<7;k++){const a=Math.PI*(.25+k*.25)+(r()-.5)*.12,rad=8.6+r()*.8,mx=Math.sin(a)*rad,mz=-Math.cos(a)*rad*.9+1.5;
+    const ly=gy(p.x+mx,p.z+mz)-ty,fallen=r()<.22,hgt=.95+r()*.35;
+    const st=fallen?B(.45,hgt,.32,stone,mx,ly+.14,mz,Math.PI/2-.1,a+(r()-.5),0):B(.45,hgt,.32,k%2?stone:pale,mx,ly+hgt/2-.12,mz,0,a,(r()-.5)*.16);
+    if(!fallen){const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.4,.02),glow);m.position.set(0,hgt*.12,-.17);st.add(m);sol.push({cx:p.x+mx,cz:p.z+mz,rx:.3,rz:.3});}}
+  // the mound itself is solid, from the headwall back
+  sol.push({cx:p.x,cz:p.z+1.5,rx:HW,rz:1.75},{cx:p.x,cz:p.z+MC,rx:MW*.8,rz:MD*.6});
+  const L=new THREE.PointLight(col,1.2,9);L.position.set(0,1.6,-1.9);G.add(L);
+  // baked to two draws (the stone, wood and turf by vertex colour; the marks), with the world's mergeGeos where it is loaded
+  if(typeof mergeGeos==='function'){G.position.set(0,0,0);G.updateMatrixWorld(true);const solidL=[],glowL=[],dead=[];
+    G.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry;(o.material===glow?glowL:solidL).push([g,o.matrixWorld.clone(),o.material.color]);dead.push(o);});
+    dead.forEach(o=>{o.parent.remove(o);o.geometry.dispose();});G.children.filter(o=>o.isGroup).forEach(o=>G.remove(o));
+    const ms=new THREE.Mesh(mergeGeos(solidL),new THREE.MeshLambertMaterial({vertexColors:true}));ms.castShadow=true;ms.receiveShadow=true;G.add(ms);
+    G.add(new THREE.Mesh(mergeGeos(glowL),new THREE.MeshBasicMaterial({vertexColors:true})));G.position.set(p.x,ty,p.z);}
+  else G.traverse(o=>{if(o.isMesh&&o.material!==glow)o.castShadow=true;});
+  sc.add(G);
+  if(typeof dressPortalExterior==='function')dressPortalExterior(sc,p,ty,sol,true); // the sigil's glow, for a sigil gate
+  return G;
 }

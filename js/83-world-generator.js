@@ -1211,7 +1211,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const SOL=[];
     // solid(x,z,hw,hd,top): a block you can step or jump onto (foothold at `top`).
     const solid=(x,z,hw,hd,top)=>{const t=(top==null?.62:top)*F;SOL.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y0:-.5,y1:t});FOOTHOLDS.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y:t});};
-    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
+    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
     const bedOwner=type==='inn'?'inn':type==='home'?'home':(type==='guild_f'||type==='guild_m')?'guild':'free';
     // S289 — the room's nation (the furniture's wood) and a seed from the house id; S293: declared before the gallery uses it
     const FN=nationAt(house.doorX,house.doorZ),FSEED=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13)%100000;
@@ -1407,7 +1407,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // the bench of razors and towels on the west wall, the dyer's vat and hanks of wool along the back wall; no counter,
       // the barber stands at the chair. One bake, the Session 505 prototype's pieces
       {const K=furnKit(),room=K.bake(K.barber(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      const cx=W*.36;solid(cx,1.35,.24,.26,1.2);solid(cx+.75,.7,.17,.17,.75);solid(.3,2.6,.22,.47,.76);
+      const cx=W*.36;solid(cx,1.35,.24,.26,1.2);INT_CHAIR={x:cx,z:1.35,house}; /* S561 — sit in it: openBarberChair */solid(cx+.75,.7,.17,.17,.75);solid(.3,2.6,.22,.47,.76);
       solid(W-3.0,1.0,.33,.33,.75);solid(W-1.05,.8,.57,.25,.76);solid(.35,D*.6,.14,.82,.44);
       light(cx,1.9,1.6,0xffc880,1.1,6);light(W-2.2,1.6,1.4,0xffb070,.7,5);
       npc={x:cx-.8,z:1.3,maxZ:1.6,paused:true};

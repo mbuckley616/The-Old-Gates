@@ -38,45 +38,21 @@ function _chestArmColors(){
   if(!c.matCol) return { sleeve: ARM_CLOTH.sleeve, accent: ARM_CLOTH.accent };
   return { sleeve: c.matCol, accent: c.matGuard || c.matCol };
 }
-// Build a fist gripping at local origin, with a forearm + upper-arm that recede
-// behind+below toward the player's body (so it's not a floating hand). The arm
-// segments are coloured by the chestplate (sleeve), the hand by gauntlets.
-// isLeft mirrors the thumb side. scale sizes the whole unit.
+// S536 — the hand on every held weapon, shield and torch is the fists' own (Michael, the inspector: "the fist/hand mesh is very
+// dated and ugly ... at least in sync with the 'fists' weapon mesh"; it was a box with a knuckle bar, a thumb and a cuff). It
+// is buildFistMesh closed round the haft: the haft runs along y through the curl of the fingers, the index finger uppermost,
+// the back of the hand outward (+x for the right hand), and a short forearm (GRIP_FOREARM) back towards you and a little down
+// and out to that side, where the arm bridge takes it to the shoulder. The anchor sits on the haft; userData.elbow is the
+// forearm's end. isLeft mirrors it; scale sizes the whole unit.
+const GRIP_FOREARM=.2;
 function buildHandMesh(isLeft, scale){
-  scale = scale || 1.0;
-  const c = _gauntletHandColors();
-  const palmMat = new THREE.MeshLambertMaterial({ color: c.palm });
-  const cuffMat = new THREE.MeshLambertMaterial({ color: c.cuff });
-  const h = new THREE.Group();
-  const sx = isLeft ? -1 : 1;   // mirror thumb to the correct side
-  // v70.3 — Simplified to read as ONE fist at viewmodel scale. Previously the
-  // fist + a separate large cuff cube + a knuckle prism + finger bars all
-  // rendered as distinct chunks (the "4 pieces" report). Now: a single fist
-  // block, knuckle ridges fused flush to its front face, a small thumb, and a
-  // short cuff fused flush to the back (gauntlet accent) — no free-floating
-  // boxes. The arm cylinder (built separately) is the only other piece.
-  // Main fist block — the bulk of the hand.
-  const fist = new THREE.Mesh(new THREE.BoxGeometry(.080,.092,.070), palmMat);
-  fist.position.set(0, 0, 0);
-  h.add(fist);
-  // Knuckle ridge — one low bar fused to the FRONT face (toward -Z), reading as
-  // curled-finger knuckles rather than four separate bars.
-  const knuckles = new THREE.Mesh(new THREE.BoxGeometry(.078,.060,.020), palmMat);
-  knuckles.position.set(0, .004, -.040);
-  h.add(knuckles);
-  // Thumb — small, tucked against the grip side.
-  const thumb = new THREE.Mesh(new THREE.BoxGeometry(.020,.044,.026), palmMat);
-  thumb.position.set(sx*0.040, .004, -.010);
-  thumb.rotation.z = sx*0.45;
-  h.add(thumb);
-  // Cuff — fused flush to the BACK of the fist (toward the wrist), accent
-  // colour so leather/steel reads. Same width as the fist so it looks like the
-  // base of the same shape, not a stacked second cube.
-  const cuff = new THREE.Mesh(new THREE.BoxGeometry(.082,.040,.072), cuffMat);
-  cuff.position.set(0, .064, .002);
-  h.add(cuff);
-  h.userData.isHandAnchor = true;
-  h.scale.setScalar(scale);
+  const h=new THREE.Group(),sd=isLeft?-1:1;
+  const tilt=new THREE.Group();tilt.rotation.order='YXZ';tilt.rotation.set(.32,sd*.5,0);h.add(tilt);
+  const turn=new THREE.Group();turn.rotation.z=-sd*Math.PI/2;tilt.add(turn);
+  // the fist's curl (where the fingers close on the palm) is about (0,−.02,−.022) in its own frame: put that on the haft
+  const f=buildFistMesh(!!isLeft,GRIP_FOREARM);f.position.set(0,.02,.022);turn.add(f);
+  h.userData.isHandAnchor=true;h.userData.elbow=f.userData.elbow;h.userData.fist=f;
+  h.scale.setScalar(scale||1);
   return h;
 }
 // ── v70.2 — Dynamic arm bridges (two-anchor) ──────────────────────────────
@@ -150,8 +126,8 @@ function _fpMerge(parts){
   let N=0;gs.forEach(q=>N+=q.attributes.position.count);const P=new Float32Array(N*3),Nm=new Float32Array(N*3),Cl=new Float32Array(N*3);let o=0;
   gs.forEach(q=>{P.set(q.attributes.position.array,o*3);Nm.set(q.attributes.normal.array,o*3);Cl.set(q.attributes.color.array,o*3);o+=q.attributes.position.count;q.dispose();});
   const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(P,3));out.setAttribute('normal',new THREE.BufferAttribute(Nm,3));out.setAttribute('color',new THREE.BufferAttribute(Cl,3));return out;}
-function buildFistMesh(left){
-  const sx=left?1:-1,hc=_gauntletHandColors(),ac=_chestArmColors(),parts=[];
+function buildFistMesh(left,el){
+  el=el||FIST_ELBOW;const sx=left?1:-1,hc=_gauntletHandColors(),ac=_chestArmColors(),parts=[];
   // the view scene's light is bright and warm: the skin is taken down to read as skin there (as the prototype's)
   const dim=(h,k)=>new THREE.Color(h).multiplyScalar(k).getHex();
   const metal=!!hc.metal,skin=dim(hc.palm,metal?.9:.64),shade=dim(hc.palm,metal?.72:.54),cuff=dim(hc.cuff,metal?.85:.6);
@@ -172,12 +148,12 @@ function buildFistMesh(left){
   parts.push([SK.rbox(.036,.019,.02,.009,2),skin,M(sx*.014,-.04,-.05,0,0,sx*.05)]);
   // the wrist, narrower than the hand, and the forearm to the elbow
   parts.push([SK.cyl(.03,.027,.05,12),metal?cuff:skin,M(0,.0,.06,Math.PI/2,0,0,[1.2,1,.85])]);
-  parts.push([SK.cyl(.041,.03,FIST_ELBOW-.085,12),bare?skin:sleeve,M(0,.0,.085+(FIST_ELBOW-.085)/2,Math.PI/2,0,0,[1.12,1,.9])]);
+  parts.push([SK.cyl(.041,.03,el-.085,12),bare?skin:sleeve,M(0,.0,.085+(el-.085)/2,Math.PI/2,0,0,[1.12,1,.9])]);
   if(!bare)parts.push([SK.torus(.031,.005,5,14),dim(ac.accent,.85),M(0,.0,.088,0,0,0,[1.12,.9,1])]);
-  parts.push([SK.ball(.043,10,8),bare?skin:sleeve,M(0,.0,FIST_ELBOW,0,0,0,[1.1,.95,1])]);
+  parts.push([SK.ball(.043,10,8),bare?skin:sleeve,M(0,.0,el,0,0,0,[1.1,.95,1])]);
   const geo=_fpMerge(parts),mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true}));
   const g=new THREE.Group();g.add(mesh);g.rotation.order='YXZ';
-  const elbow=new THREE.Object3D();elbow.position.set(0,0,FIST_ELBOW);g.add(elbow);g.userData.elbow=elbow;g.userData.fist=true;g.userData.armCol=bare?skin:sleeve;
+  const elbow=new THREE.Object3D();elbow.position.set(0,0,el);g.add(elbow);g.userData.elbow=elbow;g.userData.fist=true;g.userData.armCol=bare?skin:sleeve;
   return g;}
 // the arm from the shoulder to the fist's elbow, in the forearm's own colour
 const FIST_SHOULDER_R=new THREE.Vector3(.3,-.78,-.12),FIST_SHOULDER_L=new THREE.Vector3(-.3,-.78,-.12);
@@ -698,7 +674,7 @@ function buildViewmodel(){
   if(vmArmR){ VM_SCENE.remove(vmArmR); vmArmR=null; }
   vmArmR = buildArmBridge();
   vmArmR.userData.shoulder = SHOULDER_R;
-  vmArmR.userData.wristHand = handMain;     // tracked each frame
+  vmArmR.userData.wristHand = handMain.userData.elbow||handMain;     // tracked each frame (S536: the grip's forearm end)
   VM_SCENE.add(vmArmR);
   // v70.1 — Raise 1H melee weapons slightly (feedback: they sat low). 2H and
   // bow keep the original height (they're longer / already framed well).
@@ -744,7 +720,7 @@ function buildShieldViewmodel(){
     if(_w && _w.twoHand && vmSword && vmSword.userData.handLow){
       vmArmL = buildArmBridge();
       vmArmL.userData.shoulder = SHOULDER_L;
-      vmArmL.userData.wristHand = vmSword.userData.handLow;
+      vmArmL.userData.wristHand = vmSword.userData.handLow.userData.elbow||vmSword.userData.handLow;
       VM_SCENE.add(vmArmL);
     }
     return;
@@ -779,6 +755,7 @@ function buildShieldViewmodel(){
     torchHand.position.set(0,-.04,.02);
     g.add(torchHand);
     g.userData.handMain=torchHand;
+    vmArmL=buildArmBridge();vmArmL.userData.shoulder=SHOULDER_L;vmArmL.userData.wristHand=torchHand.userData.elbow;VM_SCENE.add(vmArmL); /* S536 */
     // Position: held in left hand, angled slightly upward
     g.position.set(-.28,-.26,-.50);
     g.rotation.set(-.25,-.15,.08);
@@ -814,9 +791,10 @@ function buildShieldViewmodel(){
     // body via buildHandMesh's own arm bend. Pushed below centre where a
     // forearm strap sits.
     const shieldHand=buildHandMesh(true,1.0);
-    shieldHand.position.set(0,-.10,.10);
+    shieldHand.position.set(.05,-.08,.05); /* S536 — the fists' hand on the strap, behind the face */
     g.add(shieldHand);
     g.userData.handMain=shieldHand;
+    vmArmL=buildArmBridge();vmArmL.userData.shoulder=SHOULDER_L;vmArmL.userData.wristHand=shieldHand.userData.elbow;VM_SCENE.add(vmArmL); /* S536 */
     g.position.set(-.28,-.32,-.55);g.rotation.set(.1,-.5,.08);
     VM_SCENE.add(g);vmShield=g;
   }

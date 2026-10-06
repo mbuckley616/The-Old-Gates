@@ -12332,6 +12332,476 @@ The ghoul was the risen dead's genome with a greener skin and nothing else: the 
 - At play distance, whether the patches read as rot or as a rash. Their size and darkness are three numbers in one line.
 - **Owed.** The ghoul's limp and its more zombie-like walk: a dragged leg and a lurch in the gait for ghouls alone.
 
+## v80 — Session 534 — The ghoul limps (backlog H, Michael's inspector note, second part)
+Michael, from the inspector, of the ghoul: "Their walk should probably have a limp as well / be more zombie-like." Session 529 did the face and left the walk owed. The ghoul walked on the townsfolk's gait, upright and even, and broke into the same run as a bandit when it chased you.
+
+`pwWalk` (`32-people.js`) takes a new option, `limp`, the bad leg's side. That leg's swing barely lifts (.008 of the leg against .055) and points its toe down, so the foot drags and scuffs forward. The hip on its side hitches up through the swing to clear it. While the bad leg stands, the hips drop by up to .045 of the leg, so its knee gives, and the pelvis sways further over it. A new `pwShamble` sets the trunk and arms over the limp: the spine leans forward .3 to .36 (a walker's .07), lurching more and tipping towards the bad side as it takes the weight; the head hangs forward and lolls to that side; the arms hang forward and swing little, the bad side's lower and slacker. A ghoul's mode is never `run`: chasing you, it hobbles faster on the same gait, the phase still driven by the ground covered so the feet stay planted. Which leg is bad comes from the ghoul's seed, so the same ghoul limps on the same leg every visit. The options a rig walks with are now built in one place, `pwOpts(rig)`, which `tickPeople` and the inspector's walk both call, so the inspector shows the limp. Nothing changes for any other body: the option is 0 and the code paths are skipped.
+
+### Verified (headless Chromium)
+`tests/ghoulwalk.test.mjs` (new), 8/8, from the bones over a 48-step walk cycle:
+- **One bad leg.** Four ghouls limp, three on the left and one on the right. A bandit, a Hollowed and an Ash Wight do not.
+- **The drag.** The bad ankle rises .009 over the cycle against the good one's .060–.065.
+- **The knee gives.** The hips' lowest point over the bad leg is 3.6–3.9 cm under their lowest over the good.
+- **Hunched.** The spine leans .30–.36 forward. A bandit's is .07.
+- **No foot sinks.** The lowest ankle is .054–.058, against a bandit's .060.
+- **The others are unchanged.** Their two legs lift alike (.064–.066).
+- **No run.** In `tickPeople`, moved at 4 a second for 90 frames, a bandit is all run and a ghoul all walk.
+- **Errors.** No page errors.
+
+On the old code the suite fails at once (`pwOpts` is not defined). `foes`, `ghoulface`, `inspector`, `skirtlegs` and `wraithfloat` pass. Pictures: `docs/prototypes/ghoulwalk-before-a.png`/`-b.png` and `ghoulwalk-after-a.png`/`-b.png`, the walk at two points of the stride from the side. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- In play, at a ghoul's chase pace, whether the hobble reads as a limp or as a stumble. The drag, the dip and the lean are each one number.
+- The idle is the elder's stoop, not the shamble's hunch: a ghoul that stops straightens a little over a third of a second.
+- The ghoul's attack poses are unchanged.
+
+## v80 — Session 535 — The goblin crouched, long-armed and meaner, with a knife (backlog H, Michael's inspector note)
+Michael, from the inspector, of the goblin: "Looks a bit too friendly/humanoid." Distort and contort the body, make them smaller, and they should "probably not be holding a cane". The goblin was a person's body with a big green head and long ears. It stood upright, as tall as a bandit in the inspector, with an old man's walking stick. The inspector showed it at 1, while the game builds every goblin at .72 in the open world and in dungeons.
+
+What changed, in `32-people.js`:
+- **The posture.** `pwOpts` passes `goblin`. Standing, its thighs come forward .62 and its knees bend 1.2, spread and bowed, so its hips sit at .85 of a bandit's. Walking, the hips drop .075 of the leg and the gait's IK bends the knees to match. Running, the knees bow and the trunk leans further in. A new `pwGoblin` hunches the spine .38 forward and tips the neck back against it, so the face is thrust forward and still looks ahead. It also hangs the arms wide from the shoulders, bent a little and swinging.
+- **The body.** A new genome field, `g.armK`, lengthens the upper arm and forearm. A goblin's is 1.22, so its hands reach its knees. Each hand ends in three yellowed claws. Its height is .88 of what its genome drew.
+- **The face.** The brows are heavier and angled into a scowl. It has a long hooked nose, and a wide dark mouth with two fangs up from the lower lip.
+- **The weapon.** The goblin is armed from the kit with a rusted knife (`wpn:'dagger'`) in place of the stick. The slinger still holds nothing.
+
+With the game's .72 its head stands at .5–.6 of a bandit's. In `97-inspector.js` the goblin's entry is built at that .72, as Session 524 did for the dragon, so the inspector shows the size you meet. The idle there now also reads its options from `pwOpts`. A goblin costs about a thousand triangles more (5,018 → 6,036 in the inspector entry).
+
+### Verified (headless Chromium)
+`tests/goblinbody.test.mjs` (new), 9/9, from the bones of four goblins against three bandits at the game's sizes:
+- **No cane.** Each goblin holds the kit's dagger, and the slinger holds no stick.
+- **Smaller.** A goblin's head stands at .51–.60 of the tallest bandit's. By its .72 scale alone it would be .72.
+- **Crouched.** In its own units the hips are at .54 standing and .49 walking, against a bandit's .64 and .60.
+- **Hunched.** The spine leans .37 standing. A bandit's is −.01.
+- **Long arms.** Shoulder to wrist is .36, against a bandit's .295.
+- **No foot sinks.** In the crouched walk the lowest ankle is .071, against a bandit's .070.
+- **The others are untouched.** A bandit, a ghoul, a kobold and a cultist have no crouch and their arms are unchanged.
+- **The inspector.** It builds the goblin at .54, which is .72 of its genome's height.
+- **Errors.** No page errors.
+
+`foes`, `foeweapons`, `inspector`, `dungeonfoes`, `ragdoll` and `ghoulwalk` pass. Pictures: `docs/prototypes/goblin-before-front.png`/`-side.png`/`-face.png` and `goblin-after-front.png`/`-side.png`/`-face.png`, standing beside a bandit, mid-stride from the side, and the face close. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At play distance, whether the crouch and the arms read as goblin or as a crouching child. The crouch, the hunch and the arms' length are each one number.
+- The knife's rust reads pinkish under the noon light in the inspector.
+- The goblin's attack poses are unchanged: the swing comes from the hunched trunk.
+- The inspector entry's key is unchanged and its size changed. The control room's Meshes tab carries the old triangle count until it is republished from `docs/inspector-catalogue.json`.
+
+## v80 — Session 536 — The hands on every held weapon are the fists' hand (backlog H, Michael's inspector note)
+Michael, from the inspector: "the fist/hand mesh is very dated and ugly. We need to update across the board so that it is at least in sync with the 'fists' weapon mesh for the player. Hands need to look like hands, especially in first person." In first person, every weapon, shield and torch was held by `buildHandMesh` (`16-viewmodel.js`), four boxes: a block for the fist, a bar of knuckles, a thumb and a cuff, 48 triangles. The empty hand has been a real one since Session 396 (`buildFistMesh`): the back of the hand over the palm, four fingers folded in two joints, the knuckles, the thumb laid across, the wrist and the forearm, in one vertex-coloured mesh.
+
+`buildHandMesh` now builds that same fist, closed round the haft:
+- **The grip.** The haft runs through the curl of the fingers, with the index finger uppermost and the back of the hand outward. The hand is tipped .32 so the haft crosses the palm on a slant, as a held grip does.
+- **The forearm.** `buildFistMesh` takes the forearm's length (default .34, the fists' own as before). A grip's forearm is .2 (`GRIP_FOREARM`) and runs back towards you, a little down and out to its own side.
+- **The arm.** The arm bridge now reaches from the shoulder to the forearm's end (`userData.elbow`) rather than to the hand.
+- **The left hand.** The torch's and the shield's hands had no arm and floated. Each now has a left arm from the left shoulder. The shield's hand is moved in to its strap.
+- **What it costs.** Each hand is 3,108 triangles, the fists' own count. With two in view that is about six thousand in the view model, as the fists already are.
+- **Unchanged.** The fists themselves, third person and the townsfolk's hands.
+
+### Verified (headless Chromium)
+`tests/fphands.test.mjs` (new), 8/8. It equips five sets: a sword and kite shield, an axe, a staff, a bow, and a dagger and torch.
+- **Nine hands.** Five main hands, the staff's and the bow's second hands, the shield's and the torch's.
+- **The fists' hand.** Each is the vertex-coloured fist, 3,108 triangles, with no box in it. Before: 48 triangles, four boxes.
+- **Round the haft.** The grip point lies inside each hand, with hand on both sides of it across and along the view.
+- **The forearm.** Each forearm's end is .09–.18 back towards you and .04–.10 below the grip.
+- **The arms.** The right arm reaches the forearm's end on all five weapons. A left arm reaches the staff's and the bow's second hands, the shield's and the torch's. The one-handed axe has none.
+- **The fists.** The fists' forearm is still .34.
+- **Errors.** No page errors.
+
+`fpshield`, `fpweapons` and `fists` pass. Picture: `docs/prototypes/fphands-before.png` (the old boxes, as seen in play) and `fphands-after.png`. The top row is as you see it in play. The bottom row is the view model from its camera lowered .2 and drawn back .12, so the hands are in frame. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At rest, the grips sit at the bottom edge of the view, as the boxes did, so in play you mostly see the fingers and the knuckles. Raising the resting weapon is a framing call, not part of this note.
+- The shield's hand sits at the lower edge of the face in the close view. It is below the frame in play.
+- The staff's second arm, and the arm to the torch, cross the lower view nearly level from the left shoulder. The bridge is one straight limb.
+- Gauntlets and gloves colour the hand as before (the fists' colouring). A gauntlet's own shape is not modelled.
+
+## v80 — Session 537 — The bronze helm is a Corinthian (backlog H, Michael's inspector note)
+Michael, from the inspector, of the bronze kit: "Great other than the helmet. It splits right down the middle" at the forehead and the brow ridge. He expected "more like a classic hoplite helmet", and "Long hair and clothing cut right through it." The bronze ("muscle") helm was one sphere (`SK.ball`) with a one-radian gap for the face. A sphere's gap runs the full height from its pole, so the face's opening ran on up over the forehead to the crown, and the crest stood over the cleft. Under it, long straight hair was wider than the shell at the sides and hung out through it.
+
+The helm (`ARMOUR_DRESS`, `32-people.js`) is now a Corinthian, lathed from one profile, `BRONZE_HELM` (radius and height on the head bone). It is cut in three bands at the heights in `BRONZE_HELM_EYE`:
+- **The crown.** Closed all round, down to the brow line just above the eyes.
+- **The eye band.** Open across the face, .62 radians either side of the front.
+- **The cheek and neck guards.** Down past the jaw, with only the mouth's slit (.15 either side) between them, and flaring out at the rim behind the neck.
+
+A raised brow ridge in the guard colour runs along the top of the eye opening. A nasal hangs from it between the eyes. The red crest stays, front to back. The profile keeps the guards clear of the hair beneath them: straight, braided and twinned hair now stays inside the helm and comes out below the rim. The profile first ran top to bottom, which turned the lathe's faces inward and shaded it dark; it runs bottom to top now. The full bronze kit is 10,962 triangles in the inspector (was 10,638).
+
+`docs/inspector-catalogue.json` is refreshed. It also carries Session 536's first-person entries, now that their hands are the fists' hand: a one-handed weapon about 4,200 triangles, a two-handed one about 7,300 and the shield 3,896.
+
+### Verified (headless Chromium)
+`tests/bronzehelm.test.mjs` (new), 7/7, from the bind pose of your body in the bronze kit, read in the head bone's frame:
+- **The family.** The helm is still the crested `muscle` family.
+- **Closed over the forehead.** It has helm vertices in front between the brow and the crown. The old shell had none there.
+- **Open across the eyes.** There is no helm either side of the nasal at the eyes' height.
+- **Closed down the cheeks.** It has helm vertices on the cheeks.
+- **No hair outside the helm.** With straight, braided or twinned hair, none of the 45–48 hair vertices between the crown and the rim stands outside the profile. The braid poked 6–8 mm through the nape until the neck was eased out.
+- **The iron kit.** It keeps its mail helm.
+- **Errors.** No page errors.
+
+The lathe has vertices only at its profile's rows, so the counts are small (2 at the forehead, 8–9 on the cheeks); they are counted where the old shell had none. `armourkit`, `foearmour`, `guardarmour` and `inspector` pass. Pictures: `docs/prototypes/bronzehelm-before-front.png`/`-back.png` and `bronzehelm-after-front.png`/`-back.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The cheek guards' inner edges are straight. A real Corinthian curves them in towards the chin, which would take a profile of its own for the guards.
+- The crest is still the old hoop of red, not a horsehair brush.
+- "Clothing cut right through it" is not this session's. The armour-kits note covers clothing through the armour across the sets.
+
+## v80 — Session 538 — The Demonic kit carved in red (backlog H, Michael's inspector note, first part)
+Michael, from the inspector, of the Demonic kit: "more detail and colour, red carved designs across the armour, similar to Daedric armor in Oblivion/Skyrim", with the purple staying dominant. The Demonic tier (9) wears the plate with the `spiked` signature: horns on the helm, spikes on the pauldrons and the breastplate, all of it one purple with the guard's darker purple on the spikes.
+
+`ARMOUR_DRESS` (`32-people.js`) now lays thin lines of red (`CARVE`, 0xc41c1c) into the spiked plate:
+- **The cuirass.** The lower edge of each of the three fauld lames and of the breastplate. A ridge down the breastplate's keel, with three chevrons either side of it. A long slash on each flank.
+- **The pauldrons.** The lower edge of each of their three lames.
+- **The helm.** A line over the crown from brow to nape, beside the horns. A ring at the brow, sized to the shell at that height. Two cuts slanting back from the forehead.
+- **The vambraces.** A ring at each end and a chevron between them.
+- **The greaves.** A ring at the knee and at the ankle, a chevron down the shin, and one on the thigh plate.
+
+The lines are 3 to 5 mm across and laid on the plate's own surface, so they read as carving rather than as added pieces. They come to 5.9% of the plate's surface, so the purple stays dominant. Only the `spiked` signature carries them. The first pass put the set at 12,982 triangles, over the 12,600 budget that `armourkit` holds every full set to. The carvings' rings now take fewer segments, which a line that thin does not need, and the set is 12,082 (10,546 → 12,934 in the inspector entry, with the sword and buckler).
+
+### Verified (headless Chromium)
+`tests/demonickit.test.mjs` (new), 5/5, from the bake of your body in each plate tier's full kit, measured by surface:
+- **The signature.** The Demonic kit is the `spiked` plate.
+- **Where the red is.** Red carving on the breastplate (101 cm²), the pauldrons (55), the helm (36), the greaves (34) and the vambraces (8).
+- **Purple dominant.** The carvings are 234 cm² against the plate's 3,943 (5.9%; under a tenth is the check).
+- **The other tiers.** Steel, Mithril, Obsidian and Draconic carry none.
+- **Errors.** No page errors.
+
+`armourkit`, `foearmour`, `guardarmour`, `bronzehelm` and `inspector` pass. `docs/inspector-catalogue.json` is refreshed. Pictures: `docs/prototypes/demonic-before-front.png`/`-chest.png`/`-back.png` and `demonic-after-*.png`, the full figure, the chest close and the back. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The red is a flat colour, not lit from within. Daedric's seams glow at night. A glow would take a material of its own, or the enchantment's light.
+- **Owed.** The second half of the note: "some very very light particle effect" on enchanted items. It is a separate item in the backlog line.
+- Long hair still shows through the Demonic helm's sides, as on the other closed helms. That belongs to the armour-kits note.
+
+## v80 — Session 539 — Enchanted pieces glint (backlog H, Michael's inspector note, second part)
+Michael, from the inspector, with the Demonic kit's note: enchanted items should carry "some very very light particle effect" to show they are magical. In first person an enchanted weapon already had a light and three orbiting sparks (v61), and so does a shield's light. Your body in third person showed nothing: an enchanted sword looked like any other.
+
+`tpBuild` (`54-thirdperson.js`) now gives each enchanted piece on your body a few motes (`tpMotes`):
+- **Where.** The weapon, the shield, the helm, the cuirass, the gauntlets, the greaves and the boots.
+- **How many and how faint.** One `THREE.Points` of seven motes per piece, additive, at opacity .55. A soft round glint, white at the heart and fading out, made once on a canvas and tinted by the material.
+- **Their colour.** A weapon's motes take the enchantment's own colour (Flames orange, Frost blue, and so on). Armour enchantments have no colour, so their motes take the material's glow, or a pale blue where it has none.
+- **How they move.** A held piece's motes rise through its bounds. A worn piece's rise round a ring just outside the plate, since inside it they are hidden. Each drifts a centimetre side to side and comes round again at the bottom. They rise at .07 a second, give or take, and `tpPose` moves them (`tpMotesTick`), so they keep time with the clock, not the frame count.
+- **Disposal.** `tpDispose` now disposes Points as well as meshes, so rebuilding the body on an equipment change lets them go.
+
+The numbers are in `TP_MOTE`. Townsfolk and foes are untouched, as no foe carries an enchanted item.
+
+### Verified (headless Chromium)
+`tests/enchantmotes.test.mjs` (new), 8/8. On your body with a Steel sword, cuirass and buckler:
+- **Plain pieces.** Unenchanted, they carry no motes.
+- **Enchanted pieces.** With the sword of Flames and a cuirass and buckler of Vitality, each carries one set: three in all.
+- **Faint.** Seven motes each, additive, opacity .55.
+- **Colour.** The sword's are the enchantment's ff4400. The Steel armour, which has no glow, gives b8d0ff.
+- **Placement.** Every mote lies within its piece's bounds.
+- **Movement.** All three sets move between two ticks half a second apart.
+- **Disposal.** Disposing the body disposes all three.
+- **Errors.** No page errors.
+
+`armourkit`, `tpweapons`, `tpguard`, `tpshots` and `tpswing` pass. Picture: `docs/prototypes/enchantmotes.png`, the body alone on a dusk stage, close, front and three-quarters. The first try's glints were hard squares 2–4 pixels across and mostly hidden inside the cuirass. They are now soft and ring the plate. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- Whether the glints read at play distance (three to four metres behind you), where each is a few pixels, and whether they read in daylight. Size, opacity and count are three numbers in `TP_MOTE`.
+- The amulet and the ring are enchanted too, but are too small on the body to carry motes.
+
+## v80 — Session 540 — The wooden kit reads as wood (backlog H, Michael's inspector note on the armour kits, first part)
+Michael, from the inspector: "the wooden kit is the best of them but reads as leather, not wood." The Wooden tier's lamellar (`ARMOUR_DRESS`, `32-people.js`) was five smooth hoops on the trunk and two over the hips, each one continuous lathe in the material's brown taken down to .72. That is a hide brown, laced with dark cords: exactly how leather lamellar looks.
+
+Each hoop is now a ring of separate boards:
+- **The boards.** Sixteen a ring, each an open sector of the hoop's old shape (four triangles), with a gap either side.
+- **The wood.** Three tones, the material's brown taken a third of the way to a pale oak and varied board to board. Its lightness is .44 against the old .28.
+- **The backing.** A dark leather hoop sits behind the boards and shows in the gaps.
+- **The lacing.** It runs through every other board.
+- **The pauldrons.** Their three rows are six boards each over the same backing.
+- **The rest of the kit.** The helm's bowl, and the vambraces' and greaves' slats, take the wood's tone.
+
+The boards of one tone in a ring are joined into one part. As sixteen separate parts, `personAO` read each board as an occluder pressed on the tunic beneath and darkened it. `armourkit` caught that: its count of the look's own tunic colour under the armour fell from 35 to 4. Joined, a ring shades as the hoop did, and the count is 56.
+
+The distant copy has no backing and eight boards a ring. `guardarmour` holds a poorly paid guard's distant copy under 6,500 triangles; it is 5,994 (was 5,722), and the full copy 11,090 (was 10,942). The full Wooden set on your body is 11,752 triangles (was 11,604).
+
+### Verified (headless Chromium)
+`tests/woodenkit.test.mjs` (new), 8/8, from the bake of your body in the Wooden and the Bronze full kits, measured by surface:
+- **The family.** The Wooden kit is the lamellar.
+- **The boards.** The cuirass's three wood tones cover 358, 642 and 187 cm².
+- **The backing.** The dark backing shows between them.
+- **The old brown.** Of the old hide brown, 31 cm² remains on the trunk, against 3,625 before.
+- **Lighter.** The wood is lighter: .44 against .28.
+- **The rest of the kit.** The helm (1,589 cm²), the greaves (47) and the vambraces (11) are in the wood's tones.
+- **Bronze.** The Bronze kit has no boards.
+- **Errors.** No page errors.
+
+`armourkit`, `guardarmour`, `foearmour` and `inspector` pass. `docs/inspector-catalogue.json` is refreshed: the Wooden kit is 12,604 and the bandit captain 12,726. Pictures: `docs/prototypes/wooden-before-*.png` and `wooden-after-*.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- At play distance the boards may read as stripes. The gaps are about a twelfth of each board's width.
+- **Still open, from the same note.** Hair and clothing breaking through the armour sets, across all of them.
+- **Still open, from the same note.** "Are there armour sets for ranged and magic yet?" There are not: every kit is a material's lamellar, cuirass, mail or plate, and a robe is cloth. Archer's and mage's sets are a design question for Michael, raised through the producer.
+
+## v80 — Session 541 — The inspector's dungeons, and what the crag is (backlog H, Michael's inspector note)
+Michael, from the inspector, of `buildings/places/poi-crag`: "Not even sure what this is meant to be honestly." He added that there was no dungeon mesh in the inspector either, "and maybe a few others that should probably be in this list."
+
+The crag was never a place. `WORLD.poiGeo('crag')` is `cragGeo(2,1)`: one lumpy boulder, an icosahedron with its corners pushed in and out. Lairs heap it into their rock piles and cave mouths, a bandit camp rings its fire with it, and interiors use it for rubble. The inspector listed it beside the tower and the shrine as if it were one of them. It is now under *Plants, trees, rocks* › *Rocks* as **crag boulder (lairs, camps, rock piles)**, key `plants-trees-rocks/rocks/crag-boulder-lairs-camps-rock-piles`. The old key is gone, so a note left on it no longer finds its piece.
+
+The inspector now has a *Dungeons* section under *Buildings*, with one floor of each theme in `THEME_DEF`: undead, goblin, elemental, deep, haunted and ruins. Each is a tiny dungeon laid out by the game's own `makeDungeon` from a seed of the theme's name. It is dressed by `buildDunShell` (Session 189's shell) in that theme's wall and floor colours and damp, with walls, floor and beams. The ceiling is left off so the stage looks in. Each is 4,700–6,300 triangles. The first try added the new entries in the middle of the list, which split *Buildings* and *Plants, trees, rocks* into two runs each. They are now added inside their own groups.
+
+### Verified (headless Chromium)
+`tests/inspdungeons.test.mjs` (new), 4/4:
+- **Every theme has a floor.** Each of the six is three meshes and 4,700–6,260 triangles.
+- **The crag.** It is listed once, under the rocks, and `buildings/places/poi-crag` is gone.
+- **No split groups.** No group of the list is split in two.
+- **Errors.** No page errors.
+
+`inspector` passes (409 entries). `docs/inspector-catalogue.json` is refreshed with the seven new keys and without the old one. The control room's Meshes tab needs republishing from it (the producer's job). Pictures: `docs/prototypes/inspector-dungeon-ruins.png` and `-goblin.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The dungeon floors show the shell only. A floor's props, doors, chests and furniture are built by `buildDungeon` straight into the dungeon's scene, and are already in the inspector as pieces under *Props and furniture*.
+- **Still open.** "A few others": the lair, the glade and the bandit camp. Their builders (`87-world-quests.js`, the systems builder's file) build the place, its creatures, its chest, its lights and its ground stamps in one go. Showing them in the inspector needs a geometry-only builder split out first, as the tower and the shrine have (`towerGeoHi`, `shrineGeoHi`). That is a change to a shared file for a later session, agreed with the systems builder.
+
+## v80 — Session 546 — The dragon at twice the size it was (backlog H, Michael's B on #153)
+Michael's inspector note on the dragon said it was far too small beside the bandit. Session 524 found that every dragon in play is built at 2.88, and asked how large it should be. Michael answered B: 4.5.
+
+`WOLF_KINDS.Dragon.world` is now 4.5, and the two places that build a dragon read it instead of their own constants. The open world's dragon (`buildZoneEnemy`, which built it at the zone scale × 1.6) is built at 4.5: 3.68 tall and 8.8 long, wings 6.5 across. Its health bar moved up with it, to 4.36. The inspector shows the same size, because it reads the same number.
+
+A lair's wyrm (`lairFinish` → `dragonBody`) could not simply take 4.5. A cavern's ceiling is `FLOOR_HEIGHT`, 3.2 over its floor, and a 4.5 dragon's crest stands at 3.68: its head would be through the rock. `dragonBody` now builds the wyrm at the kind's size, measures it, and when it stands taller than the ceiling less .15 it builds it again at the largest that clears. In the test's cavern that is 3.73, 3.05 tall. That is still a third larger than the 2.88 it was, but it is not Michael's 4.5, and I have not raised the cavern's roof for it. That is in Needs eyes.
+
+A correction to Session 524's question: it compared the dragon with "a man of 1.7". That is the player's height in the world's units. A bandit as the world builds him (the people kit, at the bandit's zone scale) stands 1.24. So the 4.5 dragon stands about three bandits tall, not two. The pictures Michael chose from showed the bandit beside each size, so the size he saw is the size built.
+
+Reach, the width a blow must find, and the breath's range are the systems builder's numbers. None of them reads the dragon's scale, so none changed. A dragon half as big again with the same reach may strike from inside its own body's length.
+
+### Verified (headless Chromium)
+`tests/dragonsize.test.mjs`, extended, 7/7:
+- **The kind.** The inspector builds the dragon at 4.5, and `WOLF_KINDS.Dragon.world` is 4.5.
+- **The open world.** A dragon built by `buildZoneEnemy` stands 3.68, against a world-built bandit's 1.24 (2.97×). The inspector's dragon is the same height.
+- **The bar.** Its health bar is at 4.36, above its body.
+- **A lair.** A dragon lair's cavern (theme deep, seed 4021) gives its master the dragon's body, one rig, at 3.73, standing 3.05 under the 3.2 ceiling.
+- **Errors.** No page errors.
+
+`inspector`, `wolves`, `wyrm` and `masterslam` pass. Picture: `docs/prototypes/dragon-4.5-inspector.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- The open world's dragon among trees and over a road, and whether three bandits tall reads as Michael meant "twice a man".
+- **The lair's wyrm is 3.73, not 4.5.** Raising the master's room ceiling (or the cavern's) to about 4 would let it stand at 4.5. That is the dungeon shell's height for one room, and a question for Michael through the producer.
+- **For the systems builder:** reach and hit width at the new size (`42-zone-enemies.js`), and the breath's 11-unit range (`dragonBreath`).
+
+## v80 — Session 547 — Long hair tucked under the plate helms (backlog H, Michael's inspector note on the armour kits)
+Michael's note on the armour kits said that "hair and clothing break through many of the armour sets". This session takes the hair under the helms. Clothing under the body armour is the next part.
+
+To find where hair goes through, I baked your body in each material's full kit with each of the thirteen hair styles: 130 bodies. Each was read in the head bone's frame, with the helm coloured pure magenta and the hair pure green. A hair vertex breaks through when the line from the head's centre to it crosses the helm and nothing of the helm lies beyond it.
+
+Only the plate helms (Steel to Cosmic) had a fault. Their shell is a sphere closed to .8π from the crown, so it comes down over the nape and the sides of the neck. A braid left it through the back (191 vertices, up to 11.9 cm out), two braids through the sides (311, up to 11.4 cm) and a tied tail through the back (9, up to 7.9 cm). The bronze Corinthian (Session 537), the mail helm and the wooden helm are open below, and had nothing through them.
+
+My first fix kept the plaits and pulled them in under the shell until they cleared its rim. That brought the plate helms to nothing through. But it took the braid from under the rim straight into the steel gorget, which is only 7 cm from the neck's axis there, and it came out through the gorget in flecks of brown. Session 398 had already ruled that the full styles (curls, an afro, a shag, a crest, warrior braids, a bun) are cut to the skull under any helm. So under a closed plate helm a braid, two braids and a tied tail are now cut to the skull too, as the shorn cap. Under the wooden, bronze and iron helms they still hang as before. The rule is one test in `buildPerson`'s hair (`32-people.js`), on the helm's family. A guard or foe in a plate kit takes the same rule, because they are built by the same code.
+
+### Verified (headless Chromium)
+`tests/helmhair.test.mjs` (new), 5/5, over the ten kits × thirteen styles:
+- **Coverage.** All 130 have a helm and hair.
+- **Nothing through.** No hair stands more than 6 mm out through any helm. The worst is 5 mm: a thinning fringe against the faceted helm's flat facets (Obsidian). Before, it was 11.9 cm under every plate helm.
+- **Plate helms.** Under a plate helm, a braid, two braids and a tied tail have the buzz's 203 hair vertices.
+- **The open helms.** Under the wooden, bronze and iron helms they keep their 887, 1,250 and 223 vertices.
+- **Errors.** No page errors.
+
+`bronzehelm`, `armourkit`, `woodenkit`, `guardarmour`, `foearmour` and `inspector` pass. Pictures (the helm from behind, the hair tucked away): `docs/prototypes/helmhair-steel-braid-after.png` and `helmhair-mithril-twin-after.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **Whether a plait should show at all in full plate.** Skyrim and Oblivion hide hair under a closed helm, as this does. A plait could instead come out of a slot at the nape and lie over the backplate. That would need the backplate's shape at the hair's height, which the hair does not know when it is built (the armour is laid on after it).
+- **Still open, from the same note.** Clothing through the armour: a tunic's skirt or a dress under the cuirass and greaves, measured the same way, next.
+
+## v80 — Session 548 — The wraith, a prototype (backlog H, Michael's inspector note; DECISION #158)
+Session 527 answered half of Michael's note on the wraith and the phantom ("Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening"): no legs or feet, a torn hem, a glide. From the front it still reads as a pale woman in a dress. The body is one see-through mesh, so the face, the arms and the mitten hands of a person all show through the robe. How to make it frightening is a design call, so this session is a prototype and a question, and the game is unchanged.
+
+The prototype was built in the people kit behind flags no foe set, rendered on the inspector's stage, and taken out again:
+- **A hollow hood.** A deeper hood, and under it darkness in place of the face. The darkness is an unlit mesh of its own on the head bone, as the dead's eye glow already is. It had to be: a dark part baked into the see-through body let the head show through it, which was my first try. Two narrow slits of the wraith's eye colour sit in the dark with a faint halo.
+- **Claws.** Arms a quarter longer, ending in four long bone-white claws.
+- **A hunting stance.** Hunched, the head low and thrust forward, both clawed arms reaching at chest height.
+
+A is the hood and the claws, B adds the stance (recommended), C leaves it as it is. A and B are 3,870 triangles against 3,652. The question is in `docs/decisions.md` and issue #158. Pictures: `docs/prototypes/wraith-proto-lineup.png` (today's, A, B, with a Gatelands woman for scale), `wraith-proto-faces.png` and `wraith-proto-side.png`.
+
+### Verified (headless Chromium)
+Prototype only: no game code is changed and no test was added. In the prototype, B's left wrist stood at 0.97 high and 0.4 in front of its body, so the reach holds on the stage. The first attempt's stance never showed, and was not checked; this one was.
+
+### Needs eyes
+- Michael's choice on #158. The phantom would take the claws and the stance but keep its face (the recommendation).
+- **Still open, from the armour note.** Clothing through the armour. I built a measure like Session 547's: the Wooden, Bronze, Iron, Steel and Demonic kits through eight phases of the walk, every cloth colour green and every armour colour magenta, plus false-colour pictures mid-stride. Cloth shows only in the kits' own gaps: the thighs under the bronze strips, the sleeve between pauldron and bracer, and the knees and elbows as they bend. It does not show through a plate. With no defect found, no fix was built. A note from Michael on the inspector key of the piece he saw would point to it.
+
+## v80 — Session 555 — The wraith's hollow hood, claws and hunting stance (backlog H, Michael's B on #158)
+Session 548 put a prototype to Michael for his note on the wraith and the phantom ("Too clearly just a rip of the regular human mesh - should be a bit more ghostly & frightening"), and took it out again. He answered B: the hollow hood and the claws, with the hunched, reaching stance. This session builds it in the people kit (`32-people.js`), from the prototype's pictures, since its code was not kept.
+
+**The hood.** The wraith (not the phantom) has a new flag in its genome, `hollow`. Under it the bake hangs nothing on the head bone: no skull, face, ears or hair. That had to go too, because the body is see-through and anything behind the darkness showed through it. The hood is deeper, its opening turned to the front and a little down, with a short peak at the back of the crown. In it `buildFoe` hangs three meshes of their own on the head bone (`rig.hollow`). The first is an unlit near-black ball that fills the hood. The second is two narrow slits of the wraith's eye colour, slanted down to the middle. The third is a faint additive glow behind them. The dot eyes the dead are given are not added under the hood.
+
+**The claws.** The wraith and the phantom have arms a quarter longer (`armK` 1.25, the goblin's mechanism). Each hand is a narrower palm with four bone-white claws 12 cm long, splayed and hooked, and a thumb claw.
+
+**The stance.** `pwWraith` in the pose kit is the wraith's idle, and a wraith takes no other (tickPeople already held it to idle). The trunk is hunched forward by .42 and the head pushed out, the face tipped back up so the hood's dark looks at you. Both arms reach forward at chest height with the elbows a little bent, and the claws flex slowly. The inspector's walk shows the same reach. In the test the wrists stand .9 to .96 up and .48 in front of the figure, and the head is .19 forward of the hips.
+
+**The blow.** `attackPose` (`42-zone-enemies.js`, the systems builder's file, one expression) set the right shoulder to a wind and strike measured from the arm hanging. A reaching wraith dropped its arm to its side for every frame of a fight. For a wraith it now swings from the reaching rest that `tickPeople` leaves (`rig.wraithArm`). The wind lifts the claw a radian over its head, and the strike rakes it 1.3 down past the rest. The timing, reach and damage are unchanged, and every other foe's blow is as it was.
+
+The wraith is 3,202 triangles with its three new meshes, against 3,652 before (the face it lost was 450). It is four draw calls, against one.
+
+### Verified (headless Chromium)
+`tests/wraithhood.test.mjs` (new), 13/13:
+- **No face.** No body vertex lies in front of the wraith's skull. The phantom keeps its face (442 vertices there), and the bandit his (719).
+- **The darkness.** The darkness and the slits are unlit meshes on the head bone, coloured 0x06070b and the eye colour 0xa0e0ff.
+- **The eyes.** There are no dot eyes under the hood. The phantom keeps its glow.
+- **The arms.** Both have arms 1.25× a bandit's (upper arm .194 against .155). Their claws reach .157 from the wrist, against a bandit's mitten at .081.
+- **The stance.** After 90 ticks of `tickPeople`, both wrists are at chest height (.89 to .96) and .48 to .5 in front. A bandit's free hand stays at his side (.03).
+- **The blow.** The wraith's wind lifts its arm to 1.0 over the rest, and its strike carries it 1.3 past. A bandit's is 1.4 and −1.3, as before.
+- **Triangles.** 3,202, at or under the old 3,652.
+- **Errors.** No page errors.
+
+`wraithfloat`, `foes`, `dungeonfoes`, `ragdoll`, `wardall`, `weapons` and `inspector` pass. Pictures: `docs/prototypes/wraith-hood-front.png`, `wraith-hood-side.png`, `wraith-hood-face.png` and `phantom-claws.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **In a crypt's dark.** The hood's darkness is unlit, so in a torch-lit room it stays black while the robe around it lights. That is meant, but whether the slits read at ten paces is not something the stage can show.
+- **From the side.** The see-through hood shows the dark ball through it, so the head reads as a dark sphere inside a pale shell. The prototype did the same.
+- **The blow.** The claw rakes down from over the head. Whether that reads as a swipe at a running player is a playtest question.
+- **For the systems builder:** `attackPose` now reads `limbs.person.wraithArm` for a wraith. Any later change to the shared pose should keep that rest.
+
+## v80 — Session 556 — The light and robe armour lines, a prototype (backlog H, Michael's B on #156; DECISION #161)
+Michael answered B on #156: two more armour lines beside the one, light for the archer and robes for the mage, each in every tier. The question had promised a prototype of each line once it was answered, and how they look is a design call. So this session is a prototype and a question, and the game is unchanged.
+
+The prototype is a function of its own, `ARMOUR_LINE`, called at the head of `ARMOUR_DRESS`. It dresses any worn piece whose `line` is 'light' or 'robe' and hands the rest to the old kit. It is on the branch `auto/proto-armour-lines`, so the next session can take it as it is once Michael answers, rather than rebuild it from pictures as Session 555 had to.
+
+**Light.**
+- **Jerkin.** A fitted leather jerkin laced up the front, with a quiver strap across it and four split flaps over the hips. Two leather lames at each shoulder. Rows of rivets in the metal from Iron up.
+- **Hands.** Laced bracers, the bow arm's longer, with metal splints from Iron up, and leather gloves.
+- **Legs.** Thigh straps and hardened leather at the knee.
+- **Boots.** Soft boots to below the knee, with a turned cuff.
+- **Hood.** A hood with a short cape over the shoulders.
+
+**Robes.**
+- **Coat.** A coat to the knee, open at the front over a panel of the darker shade, with trim down its front edges and in a V at the chest. A sash with a hanging tail, a mantle, and bell sleeves with trimmed mouths.
+- **Legs.** The legs' piece is an under-robe to the ankle.
+- **Hands.** Cloth wraps at the wrist with a bracelet.
+- **Cowl.** A deep hood with a cowl at the neck.
+
+**The tiers.** The leather darkens from Wooden to Steel, and from Mithril up it is lerped .45 toward the material's guard colour. Each tier of robe has its own dye (`LINE_ROBE`). The trim is the cloth lightened on tiers 1 and 2, gold on Iron and Steel, and the metal from Mithril up. From Mithril up the glow runs in a ring of the trim, and the cowl has a stone at the brow.
+
+**Two first tries were wrong and are fixed in the prototype.** The hoods sat down over the eyes; they are turned up and set back, so the face shows. The robe's open front showed the tunic's brown skirt; a panel under the coat now fills it.
+
+The bodies are 7,500 to 10,200 triangles (the light line the heavier, for its rivets), against 10,100 to 12,900 for the plate and mail kits in the inspector (theirs with a sword and shield).
+
+### Verified (headless Chromium)
+Prototype only: nothing on auto/backlog's game code changes, and no test was added. On the prototype branch `tests/armourlineproto` builds ten bodies of each line, five tiers × two sexes, idle and mid-stride, with no page errors. That is how the pictures were made.
+
+### Needs eyes
+- **Michael's choice on #161.** A both as shown (recommended), B plainer closed robes, C a heavier studded leather coat for the archer, D marked changes.
+- **Rough edges, owed in the build, not in the question.** The thigh straps stand a little off the leg. The tunic's shoulder cap shows through the mantle from the side. Long straight hair hangs out of the light hood, which may be wanted.
+- **For the systems builder:** an armour item has to say its line (the look reads `line` on each worn piece). The two lines' boots should take their leather or cloth colour, not the metal's (`tpBuild`'s `bootCol`).
+
+## v80 — Session 557 — The lair, the glade and the bandit camp in the inspector (backlog H, Michael's inspector note via Session 541)
+Session 541 left one part of Michael's inspector note open: "maybe a few others that should probably be in this list". They were the lair, the glade and the bandit camp. Their builders make the place in one go: stamp, footholds, foes, chest and light with the look. So each needed a builder of its look alone, as the tower and the shrine have. The systems builder made those in Session 545 on auto/systems (`gladeGeoParts`, `lairGeoParts`, `campGeoParts`, and `WORLD.poiPreview(kind, seed)`, which builds one at the origin and touches nothing in the world). The entries were left to me.
+
+**The entries.** `97-inspector.js` lists `poi glade`, `poi lair` and `poi bandit camp` under Buildings › Places, at seed 7. Their keys are `buildings/places/poi-glade`, `…/poi-lair` and `…/poi-bandit-camp`. `WORLD.poiPreview` is not on auto/backlog or main yet. The entries are added only when it exists, so this branch alone lists nothing new and breaks nothing. Once both branches are merged the three appear. The control room's Meshes tab takes them from `docs/inspector-catalogue.json` at the next inspector run after the merge. Republishing the control room is the producer's.
+
+**Two faults found on the way, both fixed in the inspector.**
+- **The glade had no trees.** Its ten trees are the world's `PROTO.broadleaf`, and the world builds its tree prototypes on entry. Opened from the title screen, the glade's tree ring was an instanced mesh of nothing. The entry now builds the prototypes first, as the inspector's own tree entries do.
+- **The camera stood inside the trees.** `inspBox` framed every piece by `Box3.setFromObject`, which reads an instanced mesh's geometry only at the mesh's own place. It now adds each instance where it stands. Nothing else in the inspector is instanced, and `inspector` and `inspdungeons` pass as before.
+
+### Verified (headless Chromium)
+`tests/inspplaces.test.mjs` (new). It checks whichever case it finds:
+- **On auto/backlog alone** (no `WORLD.poiPreview`), 2/2: the three are not listed, and there are no page errors.
+- **In a scratch worktree with origin/auto/systems merged in**, 5/5:
+  - The glade builds: 9,560 triangles, 3 draw calls.
+  - The lair builds: 1,308 triangles, 9 draw calls.
+  - The camp builds: 6,626 triangles, 7 draw calls.
+  - The glade's ten trees are built from the title screen, before the world is entered.
+  - No page errors.
+
+The merge in the worktree had conflicts only in the docs and the build tag. Pictures, from that worktree: `docs/prototypes/inspector-poi-glade.png`, `-lair.png` and `-bandit-camp.png`. `inspector` and `inspdungeons` pass. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **The three at seed 7, against the places in the world.** The preview builds the camp on flat ground and the glade on a bowl like its pond's, so a real place on a slope will differ from the stage.
+- **The lair's bones** are separate plain boxes, as in the world.
+
+## v80 — Session 558 — A dragon lair's roof, a question (backlog H, the wyrm at Michael's 4.5; DECISION #162)
+Session 546 built the open world's dragon at Michael's 4.5 (#153). It left a lair's wyrm at 3.73, the largest that clears a cavern's 3.2 roof, and called a taller room his call. That question was never put to him. This session puts it, with pictures. The game is unchanged.
+
+**The pictures.** The first try was the lair itself. On a scratch branch, `FLOOR_HEIGHT` was made a `let` and raised to 4.4 before the dungeon was built. The wyrm then built at 4.5 (3.68 tall, scale 1.73, against 3.05 and 1.43 under the 3.2 roof). That confirms `dragonBody`'s fit reads the roof, as Session 546 meant. But the master stands on the lair's lower floor, in a cramped room with a skeleton in front of it, and both pictures were too dark and too blocked to judge size by. The branch was dropped.
+
+The pictures in the question are on the inspector's stage instead. The wyrm at 3.73 stands under a slab at 3.2, and the wyrm at 4.5 under a slab at 4.4, each beside a figure scaled to your height of 1.7.
+
+**The options.** A as it is. B, a dragon lair's whole cavern at 4.4, with the dungeon's height made per-dungeon. C, recommended, only the master's hall at 4.4: a vaulted room the shell has never had, its walls stepping up at the doorways. The question is in `docs/decisions.md` and issue #162.
+
+### Verified (headless Chromium)
+Prototype only: no game code changes and no test was added. On the scratch branch, the lair (theme deep, seed 4021) built its wyrm at 3.05 tall under the 3.2 roof and 3.68 tall under 4.4. There were no page errors.
+
+### Needs eyes
+- **Michael's choice on #162.**
+- **Whichever he picks,** the systems builder's reach and breath (Session 546's note) still do not read the wyrm's size.
+
+## v80 — Session 559 — The goblins suite caught up with the goblin's knife (backlog H, tests only; the producer's note)
+The producer's note in the room asked for the `goblins` suite to be fixed. It failed one check: *the goblin is … with a club*. In Session 535, on Michael's inspector note ("probably not be holding a cane"), the goblin's club became a rusted knife from the weapon kit (`gear` 'kit', `wpn` 'dagger'). That session ran its own new suite (`goblinbody`), which checks the knife, but not this older one from Session 184, which still asked for `gear === 'stick'`. The game is right and the check was stale. It now asks for the kit's dagger. Its other conditions (green, big-headed, bare-headed, beardless; the slinger empty-handed) are unchanged.
+
+### Verified (headless Chromium)
+`goblins` 7/7, and it fails on the old check: the goblin's gear is 'kit' and its weapon 'dagger'. `goblinbody` 9/9. Build tag bumped.
+
+### Needs eyes
+Nothing in the game changed.
+
+## v80 — Session 560 — Your cloak on your body (backlog H; Michael's B on #148, the look half)
+Michael answered B on #148, capes and cloaks: a back slot and six kinds, each with one small virtue. The systems builder built the slot, the kinds and the virtues on auto/systems in Session 552 (`EQ.back`, an item whose `cloak` is the kind). Its post asked for the look builder's half: the cloak on your body. The design page gives it as three cuts on the two-half cloak the townsfolk already wear (Session 267): the long cloak, a short cape to the waist, and a hood or a fur collar at the shoulders. That half is this session.
+
+**What it reads.** `tpBuild` (`54-thirdperson.js`) reads `EQ.back.cloak` through a table, `TP_CLOAK`:
+- **The plain wool:** a long cloak in a brown-grey.
+- **The dark hood:** a long cloak in near-black, with a hood laid down on the shoulders.
+- **Oilskin:** a long cloak in a waxed olive.
+- **The Markish fur-lined:** a long cloak in a dark brown, with a fur collar.
+- **The Aurennais short cape:** blue, cut to the waist, with a gold hem.
+- **The pilgrim's grey:** a long cloak in grey, with a hood.
+
+A cloak with its own `col` (what the dyer will set, in barber slice 2) takes that colour. `tpSig` now includes the back slot and its colour, so putting a cloak on, taking it off or dyeing it rebuilds the body. The swing is Session 277's (`peopleSwing` on your rig).
+
+**The bake.** In the people kit the cloak reads `g.cloakCol`, `g.cloakCut`, `g.cloakHood`, `g.cloakFur` and `g.cloakTrim`. A townsperson sets none of them, so every townsperson's cloak is unchanged. The short cut leaves the lower half off, so its hinge bone carries nothing.
+
+**On this branch.** `EQ.back` is not on main or auto/backlog yet, so nothing here changes until the systems builder's slot merges.
+
+**The inspector.** A new section, *Your body in a cloak*, shows your body in each of the six, turned to show the back.
+
+### Verified (headless Chromium)
+`tests/cloakbody.test.mjs` (new), 13/13:
+- **Nothing in the slot.** No cloak and no cloak bone (4,724 triangles).
+- **Each kind.** Each of the six puts a cloak on its own bones in its own colour, within a couple of bytes after the bake's shading. It adds 164 to 472 triangles: the wool and oilskin 192, the hooded two 374, the fur-lined 472, the cape 164.
+- **The cuts.** The five long cuts hang a lower half (45 vertices on the lower bone). The cape has none, and has its hem.
+- **Hood and collar.** The hooded two have the hood, and the fur-lined its collar.
+- **Dyeing.** A dyed cloak (0x8a1c1c) shows its dye.
+- **Rebuilding.** Putting a cloak on, or dyeing it, changes the body's signature.
+- **The inspector.** It lists all six (5,904 to 6,212 triangles with the weapon), and leaves the back slot as it found it.
+- **Errors.** No page errors.
+
+`tpshots`, `inspector`, `armourkit` and `helmhair` pass. Pictures: `docs/prototypes/cloak-fur.png`, `cloak-cape.png` and `cloak-hood.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **The hood** reads as a soft rim at the shoulders from behind. It is a hood lying down, and the picture does not make that obvious. A raised hood (the design's C, the hood as a face) was not chosen.
+- **A cloak over armour.** The cloak hangs at the radius the townsfolk's does, so plate pauldrons and the light line's capelet may show through it. That has not been measured.
+- **The colours** are mine. The design page names the kinds, not their dyes.
+
+## v80 — Session 561 — The barber's chair (backlog H, barber slice 2; Michael's B on #144 and A on #151)
+Slice 1 (Session 512) put a barber and dyer in every town and city, with a chair that did nothing until the fee was decided. Michael answered A on #151 (one fee for the visit, an inn room's price). The systems builder built it on auto/systems in Session 551 as `barberPay(house, changed)`: 'free' when nothing changed, 'poor' when the purse is short and nothing is taken, 'paid' otherwise. Its post asked the look builder to call it from the chair. This is slice 2.
+
+**The chair.** `buildInteriorFor`'s barber room records its chair (`INT_CHAIR`: where it stands, and the house). Within 1.5 of the chair the prompt reads *Press 'E' to sit in the barber's chair*, and E opens the slip (`interact`). The barber stands 0.8 from the chair. Standing between them, you could be 0.87 from the chair and 1.08 from him, and the first build took the E that `tests/barber` gives him. Now, within 1.2 of the barber, E is his. One function, `nearBarberChair`, decides for both the prompt and the key.
+
+**The slip.** It is the creator's look panel (Session 127) on a parchment slip like the sleep slip, with the shop's name at its head. The panel's functions now draw where `CCL.ui` points: the creator's canvas and rows, or the slip's. On the slip:
+- **The rows.** Hair, style, beard, the dyes of your own tunic, breeches and boots, and a Cloak row of the tunic dyes when you wear one (`EQ.back`, Session 560). There is no Skin row: the skin is not the barber's.
+- **The preview.** A live preview of you, turned by dragging.
+- **The fee.** When `barberFee` exists, a line gives it and says that nothing changed costs nothing.
+- **Rise** asks `barberPay` whether anything changed. On 'poor' you stay in the chair, with the fee line saying so. Otherwise the look is yours (`worldState.look`, and the cloak's `col`), `applyLook` and the first-person hands follow, and your body rebuilds on its signature.
+- **Leave as you came** changes nothing.
+
+While the slip is open the game's input is held, as it is for the sleep slip.
+
+**On this branch.** `barberPay` and `barberFee` are on auto/systems, not here yet. Without them Rise applies the change with no fee. Once both are merged the fee is charged.
+
+### Verified (headless Chromium)
+`tests/barberchair.test.mjs` (new), 15/15, in Séamus's Barber near Dunmore, with a stand-in `barberPay` charging 10:
+- **The chair.** The chair is in the room with its house. Within 1.2 of the barber the chair does not take E. Next to the chair the prompt asks you to sit.
+- **The slip.** E opens it with a live preview. Its rows are Hair, Style, Beard, Tunic, Breeches, Boots and Cloak, with no Skin. It gives the fee.
+- **A short purse.** With 3 gold you stay seated, and nothing is taken or changed.
+- **Paying.** With 50 gold the new style ('short' → 'long') and the dyed cloak are yours, 10 gold is paid and the slip closes. Your body's signature moved, and `barberPay` was told *changed* both times.
+- **Free and leaving.** Rising with nothing changed is free. *Leave as you came* keeps your look and your gold.
+- **Afterwards.** The look panel points at the creator's again.
+- **Errors.** No page errors.
+
+`barber` 11/11 (it failed on this session's first build, as said above), `creator` and `bedrollprompt` pass. Picture: `docs/prototypes/barber-chair-slip.png`. `parsecheck` clean. Build tag bumped.
+
+### Needs eyes
+- **The slip's looks.** The creator's dark buttons sit on the parchment, and the rows are long (fourteen beards). The UI overhaul (backlog E) will restyle both.
+- **The words.** *Rise*, *Leave as you came*, *You rise from the chair, changed.* and the fee line are new player-readable text, for the quest writer's next review.
+- **For the systems builder:** the chair calls `barberPay(house, changed)` and reads `barberFee(house)` for the line. A cloak's dye is set as `EQ.back.col`. The save of the back slot should keep it; I have not checked that, because the slot is not on this branch.
 ## v80 — Session 530 — A house is sold once, and its seller moves out (the critic, 5 Oct, s418)
 The critic bought Órla's House in Carraig Mór and found three things wrong, all filed on auto/critic. **The seller kept selling the house.** Two seconds after the sale she offered *Buy this house (900 gold)* again, and each click took 900 more: `buyHouse` (`86-world-crime.js`) never asked whether the house was yours, and the topic sat on her `_extra` from the town's build. Now `buyHouse` charges nothing for a house you own, and the sale takes the topic off her (it carries the house's id, `_house`, so it can be found). **She stood at your door day and night.** `buyHouse` hid her and gave her the schedule `gone`, which `scheduleFor` has no case for, so the town tick showed her again at her home spot. The town's resident stream would also have spawned her again whenever you walked 95 units off and came back, and after a reload the generator made her the house's resident once more. Now the sale takes her out of the town's residents and out of the scene, as the stream does when you walk away, and `genSettlement` (`83-world-generator.js`) makes no resident for a house you own. Session 82, which built buying, said the resident moves out for good; now she does. **A save in your cellar named no town** (*Your House — cellar*). The cellar's record has no `siteId`, so `ssPlaceName` (`70-saves.js`) now reads its parent's. All three come from one walk through buying a house, so they are one session.
 
@@ -12583,6 +13053,165 @@ CI on `472e804` failed one shard with one check: `saves`, *manual slot written*,
 ### Needs eyes
 Nothing in play. Whether the next CI run on the branch is green.
 
+## v80 — Session 568 — A dragon's lair cut to 4.4, and its wyrm at the full 4.5 (backlog H, Michael's B on #162)
+Michael answered B on #162: the whole cavern of a dragon's lair at 4.4, so the lair's wyrm stands at the open world's 4.5 instead of the 3.73 that cleared a cavern's 3.2 roof. Session 558's scratch branch had shown it would work by raising `FLOOR_HEIGHT` before the build, and that `dragonBody`'s fit already reads the roof.
+
+So `FLOOR_HEIGHT` (`52-dungeon-gen.js`) is a `let` now, and `buildDungeon` sets it first thing from `dunFloorHeight(portal)`: 4.4 when the portal carries a lair with a dragon (the Salt Mouth and the few others the world flags), 3.2 for every other dungeon, lairs without a dragon included. Everything that stood a cavern up already read the name at build time: the shell's walls and roof, the stair shafts between floors, the hanging chains and lights, the swinging-blade traps, and the third-person camera's ceiling (`tpCeil`). None of them needed a change. The lower floor still lies at −5, so its roof sits at −0.6, 0.6 under the upper floor. The fort staircases assume 3.2 (eight risers of 0.38), but forts never carry a dragon, so they are untouched. The value is set on every entry, so a 3.2 cave after a lair is 3.2 again.
+
+### Verified (headless Chromium)
+`tests/dragonsize`, extended, passes 10 of 10. In the lair (deep, seed 4021), `FLOOR_HEIGHT` is 4.4. The shell's roof reaches 4.47 (its stone stands up to .08 proud of the line). The wyrm is built at scale 4.5, 3.68 tall, the same as the open world's dragon; it was 3.05 under 3.2. It waits on the lower floor, where the camera's ceiling reads −0.85 (−5 + 4.4 − .25). A lair with a beast and no dragon, and a plain cave (seed 4022), are both back at 3.2, with the roof at 3.28. `dungeon` and `dungeonexit` pass, and so do `dunseed`, `falls`, `masterslam`, `wyrm`, `targetof` and `chestpicks` (see below). There were no page errors.
+
+### Needs eyes
+- **The moment you meet it.** A 4.4 cavern is 1.2 taller everywhere in the lair, which is what Michael chose over the vaulted hall (C). Whether the torches, set at their old heights, light a taller roof enough is a playtest call.
+- **The systems builder's reach and breath** still do not read the wyrm's size (Session 546's note). That is more pressing now that the lair's wyrm is 20% larger.
+
+## v80 — Session 569 — The light and robe armour lines on your body (backlog H, Michael's A on #161)
+Michael answered A on #161: both lines as Session 556's prototype showed them. The systems builder has already given the items their `line` on auto/systems (their Session 564, after Michael's A on #163). A Hood, Jerkin, Bracers, Leggings or Soft Boots carries 'light', and a Cowl, Robe, Wraps or Under-robe carries 'robe'. So this session takes the prototype into the game as it was, and wires it to what the items say.
+
+`ARMOUR_LINE` comes over from `auto/proto-armour-lines` unchanged except for its header comment and a stray blank line. It runs at the head of `ARMOUR_DRESS`. It dresses each worn piece of the two lines and hands every other piece to the heavy kit, so plate, mail, lamellar and the bronze are untouched. `AR_FROM_EQ` now passes an item's `line` on. A line's piece has the line as its family and no plate mark, so the heavy kit's `fam` tests never see it. Three things on your body (`tpBuild`) were wrong for the lines, and they were found by building the bodies:
+- A chest named "… Robe" made the genome a dress, which would have stood a skirt under the coat. A robe with a `line` is no longer the dress.
+- A "… Hood" read as cloth, so the old cloth hood would have been drawn inside the line's hood. The line's head now sets the hat to none, as a helm of the kit does.
+- Soft boots took the metal's colour from the material's name, which made Iron boots grey. They take the line's leather now, through a new `armourLineLeather(tier)`: the leather of tiers 1 to 4, and from Mithril up the leather lerped .45 toward the material's guard colour, as the jerkin is.
+
+The robe line has no boots, so under a robe your own boots show.
+
+The inspector has two new sections under Weapons and armour, *Your body in light armour* and *Your body in robes*, at Wooden, Iron, Mithril, Obsidian and Cosmic. Each is your body as `tpBuild` makes it, the light line with a bow. `docs/inspector-catalogue.json` is regenerated with the ten entries. The control room's Meshes tab carries that file, so it wants republishing; the producer does that.
+
+### Verified (headless Chromium)
+`tests/armourlines`, new, passes 9 of 9:
+- `AR_FROM_EQ` reads a light set as `light`, with no mark and with feet; a robe set has no feet; a heavy Mithril set is `plate`/`fluted` as before.
+- On your body, the light line is 9,138 to 10,118 triangles and the robes 8,396 to 9,132, against 4,778 bare and 9,579 to 11,720 for the heavy kit at the same tiers.
+- Each tier's robe dye is on its body (344 to 486 vertices of it), and the light leather is on every light body (344 to 618).
+- No line body is a dress or wears the old hood.
+- The soft boots are leather: 0x7a5634 at Wooden, darkening to 0x2e2017 at Obsidian.
+- The ten inspector entries build, and there were no page errors.
+
+`inspector`, `armourkit`, `bronzehelm`, `cloakbody`, `demonickit`, `helmhair`, `underclothes` and `woodenkit` pass. `cloakbody` first failed on one check, and the cause was not this session. Main's Session 552 (the systems builder) gave `EQ` a `back: null` slot, and my Session 560 test expected the slot to be missing after the inspector put it back. The test now accepts either. This is a correction to Session 560's test. The two pictures, Iron and Mithril of each line on your own body, are `docs/prototypes/armourline-ingame-light.png` and `-robe.png`.
+
+### Needs eyes
+- **Session 556's rough edges are still there.** The thigh straps stand a little off the leg, and the tunic's shoulder cap shows through the mantle from the side. Under the light jerkin's flaps your own tunic shows, in your look's colour (red in the picture, tan in the prototype's). Long straight hair hangs out of the light hood, which may be wanted.
+- **No light or robe item exists on auto/backlog** until the systems branch merges. Until then the bodies are only in the inspector and the test. After it merges, a dropped Jerkin on your body is the check.
+
+## v80 — Session 570 — A swinging blade under a lair's taller roof (backlog H; a correction to Session 568)
+Session 568 made a dragon's lair 4.4 tall and said everything that stands a cavern up reads `FLOOR_HEIGHT`. The swinging blade does read it, but only for its pivot, which hangs at the roof. Its arm was a fixed 1.4 long and its blade a fixed 1.55 below the pivot. So in a lair the blade swung 1.2 higher than anywhere else: its centre was 2.75 over the floor, above your head. The trap still hurt you by distance (within .7 of its cell, at the bottom of the swing). In a lair, then, a blade that visibly passed over you would have cut you. I found it while looking at a trap for Michael's dungeon note, and this session corrects it.
+
+The arm is now 1.4 plus the roof's extra height, and the blade hangs that much lower, so it swings at 1.55 above the floor under any roof. Under 3.2 nothing changes. The blade carries `userData.trapBlade` so a test can find it.
+
+Michael's note on the traps (*rarely oriented properly … doesn't look like it would touch the player*) is still open, along with the stairs and the cramped passages in the same note. I took a picture of a blade trap today (ruins, seed 777): it swings along its corridor, edge-on to you as you walk at it. Whether it should swing across the passage, and how the hit should follow the blade, is part of that pass. It needs a prototype and a question, and the trap code is in `68-dungeon-misc.js`, the systems builder's range. That is for a later run.
+
+### Verified (headless Chromium)
+`tests/dragonsize` passes 11 of 11 with a new check. Two blades in each of a dragon's lair and a plain cave (ruins, seeds from 5000), at rest, have their blade centres at 1.55 above the floor in both (`FLOOR_HEIGHT` 4.4 and 3.2). Before this fix the lair's blades would have been at 2.75. `lvact` and `wardall`, the two suites that spring a trap, pass.
+
+### Needs eyes
+- Nothing new beyond Session 568's. A blade's arm in a lair is 2.6 long.
+
+## v80 — Session 571 — The old gates in the overworld, a prototype (backlog H, Michael's control-room note of 5 Oct; DECISION #169)
+On 5 Oct Michael wrote that the old gates in the overworld (the Crypt of Embers and the rest) "look like hot dookie … very very jumbled", and asked for a full pass. How they should look is his call, so this session is a prototype and a question. The game is unchanged.
+
+**Why they look jumbled.** I took a picture of the Crypt of Embers where it stands (seed 137, at 12,936, 25,631). Every cave-type gate (the forEach at the foot of `24-forts.js`) is three rough boulders leaning together under a capstone. A plank door 0.9 wide stands in the gap, under a lintel thinner than the stones around it. Then `dressPortalExterior` (`68-dungeon-misc.js`) drops a broken column, a dead tree, chains or rocks around it by seed. Nothing lines up with anything else, so the door reads as a crate wedged into a rock pile. The forts are built separately (`FORT_EXTERIORS`) and are not part of the question.
+
+**The prototype** (`protoGate`, on the branch `auto/proto-old-gates`, built beside the real Crypt in a test) is one shared form, about 70 boxes:
+- A dressed-stone doorway cut into a turf mound: two jambs and a heavy lintel, with a capstone stepped over it.
+- Wing walls stepping down on each side to hold the mound back, and worn steps going down into the dark.
+- The binding marks down both jambs and in a ring on the lintel, in the gate's theme colour.
+- A ring of seven marker stones about nine units out, each with one mark.
+
+It is meant to say *something is held here*, which is what the canon's anchor places are. The pictures show it in the Crypt's ember orange, in a haunted gate's green, and at night, next to today's Crypt.
+
+**The options** are in `docs/decisions.md` and issue #169: A one shared form as shown (recommended), B one form per theme, C keep the dolmens and tidy them, D something else.
+
+### Verified (headless Chromium)
+Prototype only: no game code changes. The prototype script built two gates in open ground east of the Crypt and took four pictures at 11h and 22h, with no page errors.
+
+### Needs eyes
+- **Michael's choice on #169.**
+- The prototype is boxes with flat shading. The build would carry the seed's variation (the mound's size, fallen marker stones, moss, worn steps), the kit's stone texture, and solids for the jambs and the wing walls.
+
+## v80 — Session 572 — The spiral stair's railing follows the stair (backlog H, Michael's control-room note of 5 Oct, one part)
+Michael's dungeon note of 5 Oct says the staircases are ugly and don't match, "on top of the railings being totally jumbled as well". The first half is a design call. The second half was a bug.
+
+In `buildStairwell` (`56-dungeon-build.js`), each tread and rail post sits at `a0 + t·turns·2π`, where `a0` is the angle the helix starts from, facing the entrance. But each rail segment ran from that angle to the next one counted as `t·turns·2π`, without `a0`. So unless a stair happened to start at angle 0, every one of its thirty segments was a chord cut across the shaft rather than a piece of the rail's circle. In the dungeon I looked at (deep, seed 4021, a0 −1.62) the middle of every segment sat 0.53 from the post, in a tangle across the stairwell. `ang2` now starts from `a0` too, and the rail follows the stair.
+
+The before and after pictures, from above the stairwell, are `docs/prototypes/dungeon-stairrail-before.png` and `-after.png`.
+
+### Verified (headless Chromium)
+`tests/stairrail`, new, passes 4 of 4. Six seeds build the same stairwell, which starts at −1.62. It has its 30 rail segments, and the middle of each lies 0.998 from the post, against the rail circle's 1.02 (the chord of a 24° step). With the old line put back, the same check fails with every segment at 0.534. `dungeon`, `dungeonexit` and `falls` (the stair's foothold) pass.
+
+### Needs eyes
+- **The rest of the note is still open:** the stairs' style ("don't match the style at all"), the traps (Session 570 found that a blade swings along its corridor, edge-on to you), and wider passages. Each needs a prototype and a question, and none is built.
+
+## v80 — Session 573 — The dungeon's swinging blades, a prototype (backlog H, Michael's control-room note of 5 Oct, the traps; DECISION #170)
+Michael's dungeon note says the traps are "rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player". I took pictures of a blade where it stands (ruins, seed 777, the blade at 24.5, 11.5). It hangs mid-cell and swings *along* its corridor, with its flat side to the walls, so walking at it you see it edge-on: nearly invisible mid-swing. Its lowest point is 1.3 over the floor. `tickDungeonTraps` hurts you within 0.7 of the cell whenever the swing is near its bottom, wherever the blade actually is. How a trap should look and play is a design call, and its hit is in the systems builder's file. So this session is a prototype and a question, and the game is unchanged.
+
+**The prototype** (`tests/trapproto` on the branch `auto/proto-dungeon-traps`) replaces the blade in the same corridor with a crescent blade on a longer arm. It swings across the passage, edge first, and passes into the walls at each side. The bottom of its arc is 0.95 over the floor, and it is built from the roof down, so it works under any roof (Session 570's point). A light was set at the trap for the pictures.
+
+**The options** are in `docs/decisions.md` and issue #170: A across, with the systems builder's hit following the blade's arc so you can slip through between swings (recommended); B across, with today's hit; C along the corridor but lower, with the hit following; D something else.
+
+### Verified (headless Chromium)
+Prototype only: no game code changes. In the prototype test, with the trap tick held off and the swing posed at 0 and 0.4–0.45 rad, there were three pictures and no page errors.
+
+### Needs eyes
+- **Michael's choice on #170.**
+- **The dark upright in the middle of each picture** is a hanging chain of that corridor's dressing, in line with the camera. It is not part of the trap.
+- The stairs' style and wider passages, the rest of the note, are still to be prototyped.
+
+## v80 — Session 574 — The barber's short purse in the menu's voice (the quest review's Finding 17)
+The quest writer's run 9 (`docs/quest_review.md` on auto/quests, PR #172) found that the barber's slip, when you cannot pay, said *You have not the 12 gold.*, which is the Church inquisitor's Aurennais turn in `86-world-crime.js`, not the menu's. The slip is chrome, and the chrome says *Not enough gold* everywhere else. Applied word for word as the review proposes: `` `Not enough gold: the visit is ${fee}.` ``, and `'Not enough gold.'` when no fee is known (`92-creator.js`).
+
+`tests/barberchair` had gone red on this branch before the change, in two checks: it put in a stand-in `barberPay` only when none existed, and the systems builder's real one has landed here since, so its spy never saw a call ("barberPay was told it changed" read `[]`). The stand-in now goes over the real one, at the same 10 gold; the real fee by town is `barberfee`'s to test.
+
+### Verified (headless Chromium)
+`barberchair` 15/15 (13/15 before, both failures the spy): with 3 gold the slip stays open and reads *Not enough gold: the visit is 10.*; with 50 the look is yours and 40 is left.
+
+### Needs eyes
+Nothing beyond the line itself.
+
+## v80 — Session 575 — The light and robe lines' rough edges (backlog H, owed since Session 556)
+Session 556's prototype listed two rough edges for the build, and Session 569 built the lines with them still there: the light leggings' thigh straps stood off the leg, and the shirt's shoulder cap showed through the robe's mantle from the side. This session measured both, and one more it found on the way: the light jerkin's shoulder lames stood through the light hood's cape.
+
+The measure is a new suite, `tests/armourfit`. It builds your body in bind pose with the baked occlusion off (`PAO.on=false`), dressed in a magenta shirt and cyan breeches, and finds each part by its colour: the same hue at its own brightness within ±3.5%, since the bake jitters colours by about 2%. A thigh is a lathe with rings only at its two ends, so its surface at a strap is the line between them, and each strap vertex is measured from the thigh's own axis. Centres come from the ring's extremes, not its mean, because a lathe's seam vertex is doubled and pulls the mean 6 mm off. That error first made the thigh look 11% deeper than wide.
+
+What it found, and what changed (`ARMOUR_LINE`, `32-people.js`):
+- **Thigh straps.** They were rings of .072 and .068 round a thigh of .058 and .053, 6–7 mm off the cloth and 2.2 cm proud. Each is now sized from `SK.limb`'s straight run at its height, its inner edge 4 mm into the cloth: 1.2 cm proud.
+- **The robe's mantle.** Its lathe sloped straight from .28 to .20 across the shoulder, and the top of the shoulder cap stood 5.6 mm through it. It now rounds over the shoulder (.262 at .02, .232 at .055) before it turns in to the neck, and clears the cap by 2.3 cm.
+- **The light hood's cape.** The same straight slope (.285 to .2) let the jerkin's leather lames through by 4.7 cm, the brown dome in `armourfit-before-thighs.png`. The first try widened the cape to .315, which read as a shelf in the picture. Instead the lames are flatter and sit in at the shoulder (scale 1, .62, 1.1, was 1.1, .72, 1.15 at .012 out), their rivet moved onto them, and the cape is only a little fuller than before (.29 at .22, .285 at .285, .255 at .335). It clears by 1.65 cm. The quiver strap's two ends stood 2.8 cm through the cape at the collar, front and back; the strap is .36 long and .02 lower (was .42).
+
+### Verified (headless Chromium)
+`armourfit` 7/7 at tiers 1, 3, 5, 7 and 10. All 20 straps sit 4 mm into the thigh and 1.2 cm proud. No vertex of the shoulder cap is outside the mantle: 572 cap vertices, the nearest 2.3 cm inside. No lame, shirt or strap vertex is outside the hood's cape, the nearest 1.65 cm inside. On the old code it fails 5 of 7: straps 6.3–7 mm off and 2.2–2.3 cm proud, 3 cap vertices through the mantle by 5.6 mm, and 223 vertices through the cape by up to 4.7 cm. `armourlines` 9/9 (the triangle counts move by under 100), `cloakbody` and `inspector` pass. Pictures: `docs/prototypes/armourfit-before-shoulders.png`/`-thighs.png` and `armourfit-after-*.png`, Iron in each line, from the front quarter.
+
+### Needs eyes
+- The cape's new curve over the shoulder, and the flatter lames, in motion: the measure is in bind pose, and an arm raised to draw a bow lifts the lame under the cape.
+- Long straight hair still hangs out of the light hood, as Session 569 noted; that may be wanted.
+
+## v80 — Session 576 — The dungeon's stairs, a prototype (backlog H, Michael's control-room note of 5 Oct, the stairs; DECISION #173)
+Michael's note of 5 Oct said the dungeon's staircases "are ugly and don't match the style at all". The spiral down to the second floor (`buildStairwell`, `56-dungeon-build.js`) is plain three.js boxes: a pale plank tread (.8 × .09 × .36, 0x6a5e48) and a board riser for each of 31 steps, a smooth .2 cylinder post, a post every third step and a rail, and a shaft of four flat near-black planes. That is 117 meshes. Everything else in a dungeon is now the shell's coursed, worn stone (Session 189 on), so the stair is the one thing in the room that looks like another game.
+
+The prototype (`tests/stairproto.test.mjs` on `auto/proto-dungeon-stairs`, built over a real ruins dungeon, seed 4021, with today's stair hidden) is a stone newel stair in the shell's stone, the theme's wall colour ×2.6 as the shell's props use. Each tread is an extruded annular wedge from the newel (.2) to the wall (1.0), .2 thick, so from below the underside steps down the helix, with a bevelled nosing and its own shade within ±8%. The newel is a drum per step, alternate drums .008 proud, so it reads as courses. The four shaft walls are planes cut into .4 × .32 blocks, each block its own shade, alternate courses offset. A rope handrail runs at .9 on an iron bracket and eye every third step, and the landing is a chamfered slab. The helix, its two turns, its start and its landing are today's, so the climb is unchanged. 91 meshes and about 10,800 triangles as built; for the game it would be one merged mesh like the shell's props.
+
+Asked as DECISION #173 (issue and `docs/decisions.md`): A, the stone newel stair as shown (recommended, with the forts' straight staircase following in stone); B, stone with today's post rail; C, today's wooden stair tidied, in dark timber with stone shaft walls; D, something else, such as a straight flight, which would change the layout.
+
+### Verified (headless Chromium)
+Pictures only: from the room above at 3.2 out, and from the floor below looking up, today against the prototype in the same places (`docs/prototypes/dungeon-stair-today-above.png`, `-proto-above.png`, `-today-up.png`, `-proto-up.png`). No page errors.
+
+### Needs eyes
+- **Michael's choice on #173.**
+- From above, the shaft is a dark hole either way; the difference shows from the floor below and on the way down.
+- Wider passages, the last part of the note, are still to be prototyped.
+
+## v80 — Session 577 — The dungeon's passages, a prototype (backlog H, Michael's control-room note of 5 Oct, the last part; DECISION #174)
+The last part of Michael's note of 5 Oct: "dungeons are very narrow and cramped — I think we can open them up a bit more and make them less claustrophobic." `makeDungeon` (`52-dungeon-gen.js`) lays a floor on a grid of one-unit cells. Its rooms are 3–10 cells a side, joined by L-shaped corridors one cell wide, under the shell's 3.2 roof. So every passage is about shoulder width, and ahead of you it is a slot.
+
+The prototype (`tests/wideproto.test.mjs` on `auto/proto-dungeon-wide`) wraps `makeDungeon` in the page. After the game's own generator has run, every corridor cell outside a room opens its neighbour: the cell below for a run east–west, the cell to the east for a run north–south, both at a corner. That gives every corridor two cells, while the rooms, the stair, the entrance and the turns stay where the seed put them. The dungeon then builds as normal. The pictures are of the longest straight corridor of a large ruins dungeon (seed 4031, 11 cells, x 20 from z 14), from its mouth looking in and from its far end looking back, today and widened. One thing learned on the way: a dungeon cell is centred on its integer (cell c runs c−½ to c+½), not on c+½. The first pictures stood the camera on a wall's face, and the walls of a one-cell corridor vanished behind the near plane.
+
+Asked as DECISION #174 (issue and `docs/decisions.md`). A: every corridor two cells wide, with a door in a narrowed one-cell doorway so doors, locks and keys work as now (recommended). B: A, and the rooms a cell larger each way. C: the whole dungeon at 1.5× the scale, a Fable job, since every system counts in cells. D: as they are.
+
+### Verified (headless Chromium)
+Pictures only: `docs/prototypes/dungeon-wide-today-run.png`, `-proto-run.png`, `-today-mouth.png`, `-proto-mouth.png`. The widened floor builds without a page error (758 floor cells on floor one).
+
+### Needs eyes
+- **Michael's choice on #174.**
+- In the prototype a door stays one cell with an open cell beside it (the generator's doors are left alone), so a door could be walked round. The build would narrow the passage to a stone doorway at each door; that is in option A and not shown.
+
 ## v80 — Session 578 — The pious temper's Weaver (quest review run 9, Finding 18)
 A register fix, applied as the review wrote it. Any generated townsperson can draw the pious temper (`TEMPERS.pious`, `87-world-quests.js`), and it greeted you with *The Light keeps this door.* and saw you off with *Walk in light.* The canon has no Light: the gods are the Makers and the Church is the Weaver's. The greeting is now *The Weaver keeps this door.* and the farewell *Go with the Weaver.* The other four lines stay. Finding 17 (the barber's *You have not the 12 gold.*) is in the look builder's code on auto/backlog and is theirs to apply.
 
@@ -12609,6 +13238,70 @@ Michael took A on #170: the blade swings across the passage and *the hit follows
 
 ### Needs eyes
 Today's blade is 0.7 wide and swings 0.63 each way along a one-cell corridor, so at the cell's centre its edge never leaves you: you are cut on every pass. There is no gap to run through until the look builder's blade swings across the passage. Then the gap is the time between swings, and whether it is fair is a matter for play.
+
+## v80 — Session 581 — The old gates built in the one form (backlog H, Michael's A on DECISION #169)
+Michael chose the prototype of Session 571 for every cave-type old gate, with one note: "the doorway itself doesn't look like a door - the mesh from the grassy hillock that's part of it is bursting through the doorway." He was right about why. The prototype's mound was a half-dome whose front came out to 2.2 in front of its centre, while the doorway's dark plane stood 1.25 back. So the turf rose inside the opening, up to 2.2 high, in front of the dark.
+
+The build (`buildOldGateFront`, `24-forts.js`) replaces the whole cave-door branch of `spawnPortalMeshes`: the leaning rocks, the half-dome maw, the small plank door, the torch on a stick, and the seeded clutter from `dressPortalExterior` (columns, dead trees, chains, ravens). The mound now sits further back. Within three of the door its front is cut flat at the line of a stone headwall, and past the wing walls it eases back to its own curve over 1.2. The headwall is the cut face in stone, its top following the mound's curve at the cut, coursed every .45, with the doorway cut through it. A heavy two-leaf oak door on three iron straps, with a ring on each leaf, fills that doorway. It is set a metre back from the jambs' faces, so the reveal reads as depth. The jambs, lintel, capstone, binding marks, stepped wing walls and the ring of seven marker stones nine out are the prototype's. The seed sets the mound's size, which markers have fallen (about one in five, lying on their side and without their mark), moss on the capstone and walls, and how worn the steps are. The marks glow in `THEME_GLOW`'s colour for the gate's theme: orange for the Crypt of Embers, which is elemental. `dressPortalExterior` takes a new `sigilOnly` flag and keeps only a sigil gate's glow, its particles and runes moved to the capstone's face. The gate is baked with the world's `mergeGeos` into two draws: about 1,440 triangles of stone, wood and turf, and the marks. Collision covers the jambs, the wing walls, the headwall and the mound, so you can step onto the threshold, .7 from the gate's point, well inside the 2.0 at which E enters.
+
+`tests/cavedoor` tested Session 271's rock mouth. It now tests this form instead; its old checks counted rocks that no longer exist.
+
+### Verified (headless Chromium)
+`cavedoor` 6/6. Thirty level rays cast into the doorway from three out, on a grid across its width and up to 2.5 high, all meet the door's oak first, within .15 of the door's plane. No turf-coloured vertex stands in front of the headwall within the doorway. The threshold is clear and the mound behind is solid. The gate is two meshes, with no rocks left. `drydoors`, `doorids` and the three `dungeon` suites pass. Pictures at the Crypt of Embers: from ten out, close in, from the side, and at night (`docs/prototypes/oldgate-built-ember.png`, `-near.png`, `-side.png`, `-night.png`). No page errors.
+
+### Needs eyes
+- The gate on a slope: the door's stamp flattens a radius of 7, but the marker stones at nine stand on the blend and may sit low on one side.
+- The headwall's ends at three either side, where the turf eases forward round them, seen from a sharp angle.
+- The legacy zones' cave doors (outside the open world) use the same builder. Their pictures were not taken.
+
+## v80 — Session 582 — The swinging blade across the passage (backlog H, Michael's A on DECISION #170, the look)
+Michael chose the Session 573 prototype: a crescent blade that swings across the passage, edge first, the bottom of its arc at the waist, into the walls. The hit that follows the blade is the systems builder's (Session 580, `bladeTouches`, on auto/systems). This session is the blade itself.
+
+Building it turned up the cause of half of Michael's note ("swinging axes scrape along the same wall"). `decorateDungeonRooms` put every trap at `c+.5, r+.5`. But a dungeon cell is centred on its integer, running c−½ to c+½ (`dSolid` floors `x+.5`), which Session 577 found while taking pictures. So every trap stood on its cell's corner. A blade in a corridor along x hung on the line of one wall and swung along it, and a spike plate was half under a wall. Traps now stand at the cell's centre (`x=c, z=r`). The draw from the seed is unchanged, so each dungeon has the same traps in the same cells.
+
+The blade (`buildSwingBlade`, `68-dungeon-misc.js`, replacing the inline box blade) is the prototype's. A crescent of steel (an outer arc of .55, cut by an inner arc of .45) on an iron arm from a hub, hung on a bar across the roof. The pivot turns so the swing goes across the corridor, and the blade's flat face looks up it, so you see it cross in front of you. The arm is the roof's height less .95, so the edge passes at .95 under a cave's 3.2 roof and a lair's 4.4 alike (Session 570's rule kept). At the ends of its .42 swing the steel's centre is .75 to the side and its tip passes .84 into the wall, where a dark slot .12 wide and 1.3 tall is cut in each wall in the plane of the swing. The steel's own centre is its mesh's origin, and the trap carries it as `t.blade`, which is what `bladeTouches` reads first.
+
+`tests/dragonsize`'s Session 570 check pinned the old box blade's centre at 1.55. It now reads the crescent's, 1.26 (its edge at .95), under both roofs.
+
+**For the systems builder.** `bladehit` (auto/systems, not on this branch) was run here against this blade, with `bladeTouches` patched in, in a scratch copy. Four of its checks pass: under the blade you are always cut, the side rule holds, the end-of-swing timing holds, and the damage and cooldown are unchanged. Two fail on assumptions about today's blade, not on the rule. "None cut with the blade more than 0.75 away" measures from the blade's centre, but the crescent is .98 wide, so a body .3 round is cut up to about .8 from it, where the blade really is. "Turned across the passage" turns the pivot a quarter turn to put the blade across, and the pivot is already across, so the turn puts it along.
+
+### Verified (headless Chromium)
+`swingblade` 9/9 (seed 11: three blades and a spike plate). Every trap is at a cell's centre on corridor floor. Each blade hangs with a wall .6 to either side and the corridor open along it. At the ends of its swing the steel's centre is .75 to each side and 0 along. Its face normal lies along the corridor (dot 1.0). The lowest point at mid-swing is .94. The tip reaches 1.34 to each side, into the walls, and each blade has two slots. `dragonsize`, `lvact` and `wardall` pass. Picture: `docs/prototypes/dungeon-trap-built-swing.png`, from three cells up the corridor with the blade near the side of its swing. No page errors.
+
+### Needs eyes
+- The swing's speed: unchanged at 2.2 radians of phase a second, about 2.9 seconds a full swing, now that you time a run across it.
+- The slots are flat dark planes on the wall's face, with no depth to them.
+- `bladehit`, as above, when auto/systems and this branch meet on main.
+
+## v80 — Session 583 — The fort keep's door shut (backlog H, Michael's note of 5 Oct)
+Michael on the control room, 5 Oct: "Fortress Doors are wide open when they should probably be closed." The note is his own words and asks for no design, so it is built as written. The door he means is the keep's, at the back of every fort compound, which is the portal into the fort's dungeon. Session 256 built its leaves swung back flat against the reveals. Behind them was a dark plane, and over the whole arched doorway a 2.2 × 3.0 orange plane at 55% stood in front, put there in Session 132 so the door would read from the gate at night. In daylight that reads as a lit, open doorway (`docs/prototypes/fortdoor-before-day.png`).
+
+In `fortKeepGeoHi` (`82-world-structures.js`) the two leaves now meet in the middle of the doorway, .85 into the wall, just in front of its dark back. Each leaf is five oak planks, each cut to the arch at its own centre, so the tops step up under the round head and the wall's arched opening hides the corners. Each leaf has three iron straps and a ring by the meeting edge, and a dark line runs down the meeting. The leaves stand on the sill. The orange plane is gone. In its place a thin warm line, .05 tall, shows in the gap under the door, between the sill's top and the leaves' foot. The windows and the two torches still mark the keep at night. The distant copy's doorway box is oak-coloured now, not black. Nothing else changes: the portal, the collider and the lights are where they were.
+
+`tests/keep` had a check that "the doorway is open to the dark at its back". It now checks the reverse. Rays into the doorway at mid-height, under the arch and out by the jamb meet the leaves at .805 in, and what they meet is oak.
+
+### Verified (headless Chromium)
+`keep` 10/10. The three rays meet the door within .03 of its face, and the three colours sampled are brown, with red over green over blue. The other checks are unchanged: 4–13k triangles, the footprint, the collider, and the near and far copies. `keepercone` and `keeperwalk` ran alongside and pass. Pictures of the fort nearest the start, before and after by day, and after at night: `docs/prototypes/fortdoor-before-day.png`, `fortdoor-after-day.png`, `fortdoor-after-night.png`. No page errors.
+
+### Needs eyes
+- Whether the line of light under the door is enough to find the keep's door from the compound gate at night, now the doorway itself no longer glows.
+- The legacy zones' fort doors (`_spawnFortDoor`, `24-forts.js`) were already shut and are unchanged.
+
+## v80 — Session 584 — The forts' interiors, a prototype (backlog H, Michael's note of 5 Oct; DECISION #177)
+Michael on the control room, 5 Oct: the forts and their dungeons are "still a little bland … stairs going up and/or down, but straight stairs, not spiral … more varied layouts on the interiors. I'm willing to get a little funky/creative with them." The note leaves the design open, so this session is a prototype and a question.
+
+Why they read the same: `52-dungeon-gen.js` has three fort layouts, `fort_tee`, `fort_linear` and `fort_courtyard`. Drawn from their own generators at medium size on the canonical seeds (7100–7102), all three are one long passage, three cells wide, with square rooms hung off it on doors. The treasure rooms are at the far end, and `addUpperFloor` puts its 2×2 spiral well in the largest room away from the way in, which is the same end room every time. The second floor is always below the first (`FLOOR2_Y` −5), so nothing in a fort goes up.
+
+The prototype is a plan drawing (`docs/prototypes/fort-layouts.png`; the script is `tests/fortlayoutproto.test.mjs` on `auto/proto-fort-layouts`). The top row is today's three from the generators. The bottom row is three proposed shapes drawn by hand, each built around one room you would remember, with straight flights where the spiral was. A is a pillared great hall with a flight down its middle to the undercroft. B is two rows of bunk rooms off one wide room, with the flight down to a gaol at its end. C is a ring of passage round a sunken yard seen over a rail, with a flight in each corner tower, two down and two up. The stairs' look is #173's question and the passages' width is #174's. This one is the shapes and where the stairs go.
+
+Asked as DECISION #177 (issue and `docs/decisions.md`): A, all three shapes with flights down only, which the two floors the game has already carry (recommended, one shape a session); B, the shapes and stairs up too, which first needs a floor above, a Fable job; C, today's layouts with a straight flight in place of the spiral; D, something else.
+
+### Verified (headless Chromium)
+The picture only: today's three are the game's own generators run in the page (`FORT_INTERIORS[k]('medium', seed)` through `addUpperFloor`), with no page errors. The proposed three are drawings, not generators.
+
+### Needs eyes
+- **Michael's choice on #177.**
+- C's two flights up are the one thing in the picture the game cannot do yet (option B).
 
 ## v80 — Session 585 — `bladehit` reads the blade it tests (tests only)
 The look builder ran `bladehit` against its own crossing blade (Session 582, on auto/backlog) and two of eight checks failed. Merged, the two branches would turn CI red. The rule in `bladeTouches` held. The suite had assumed today's box blade in two places. "No cut with the blade more than 0.75 away" measured from the blade's centre, which is right for a box 0.7 wide. The crescent is .98 wide and tilts .42 at the ends of its swing, so a body 0.3 round is truly touched up to .89 from its centre. "Turned across the passage" turned the pivot a quarter to put the blade across, and the crescent's pivot is already across, so the turn put it along. Its side test then asked for the blade's centre within .3 of your side, which a blade half a unit wide does not meet when its edge reaches you.
@@ -12667,6 +13360,22 @@ The before figures are the old tiles at the same sizes. At 64 the cell is 2,315 
 
 ### Needs eyes
 How long a deep zoom takes to sharpen on a real laptop. At 64× a screen needs about 30–45 squares, about 0.45 s each headless (the cost is the terrain's height function on the CPU, likely several times faster on a laptop), spread over frames. While they come in, the 128 px tile shows beneath. And whether the map at a ratio of 2 now looks as sharp as the rest of the page.
+
+## v80 — Session 589 — CI red on Session 584's push: `lod`, `dragonsize`, `saves` (backlog H)
+GitHub ran the suite on `5130b3d` and three shards came back red, one suite each. Each had a different cause, and one was a real fault in the look.
+
+**`lod`** failed here too, every time: one townsperson's distant copy kept 55% of the near one's triangles, and the check wants under 55. All six people over half were Dunmore's guards in the Wooden kit (guard tier 1, 11–11.7k triangles). Taking the kit apart piece by piece on the worst of them, Donnacha, the cuirass's distant copy was .51 of the near one, but the helm was .72, the vambraces .68 and the greaves .70. Three pieces did not thin. A vambrace's four boards and a greave's five are `SK.rbox(…,1)`, a rounded box of 2×2×2 segments, which is 48 triangles at any quality. The aventail under every helm with one is a `LatheGeometry` of 26 segments, fixed. In the distant copy the boards are now plain boxes (12 triangles), and the aventail's lathe takes `SK.seg(26,10)`, 13 segments. Nothing changes up close. Donnacha's distant copy goes from 6,458 to 5,576 of 11,748 (.47), and the town's sum from 215,350 to 208,420. A board's rounded edge is .003–.004 across, which is under a pixel at 17 units. The aventail is shared with the Iron kit's helm, so the mail guards' distant copies come down too. This is look-builder code: the boards are Session 540's and the aventail is Session 395's. Dunmore's guards wear wood because its prosperity is under 40.
+
+**`dragonsize`** failed on CI only. The check that the third-person camera's ceiling over the wyrm's floor reads the lair's height got `1e9`, which `tpCeil` returns when `lid` is not a world dungeon's (`dyn_…`). The test built its lair from `Object.assign({}, PORTALS[0], {…})` and kept that portal's id. In the world `PORTALS` is the loaded cells' doors in the order they loaded, so on a slow runner the first door can be of another kind. The test portal now carries its own id, `dyn_4021`, which is what `makePortalDef` gives a world dungeon. I could not reproduce the failure here, where the first door is a world dungeon's. The reading above is from the code and the one number in CI's log, not from a failing run of my own.
+
+**`saves`** failed on CI only. *Manual slot written* found only the autosave in the index. The test slept 900 ms after `saveToSlot(0)`, and the next check found the manual slot, so the write had simply landed late. It now awaits `saveToSlot`'s own promise, which resolves once the slot is in the index, and then waits for the autosave to appear, in place of both sleeps and the overwrite's. These are tests only; `70-saves.js` is unchanged.
+
+### Verified (headless Chromium)
+`lod` passes: 73 townsfolk, distant copies .37 to .50 of the near ones (max 5,576 of 11,748; was .55), bones all good. `dragonsize` 11/11, with the camera's ceiling at −.85 (floor 2 at −5, plus 4.4, less .25). `saves` 6/6. The suites that dress the same kit pass unchanged: `woodenkit` 8/8, `guardarmour` 8/8, `armourkit` 11/11 and `foearmour` 9/9. No page errors.
+
+### Needs eyes
+- Whether CI agrees on `dragonsize`. The fix is reasoned from the code, not seen failing here.
+- A Wooden-kit guard at 15–17 units, as the copies swap: the vambraces' boards lose their rounded edges in the distant copy.
 
 ## v80 — Session 590 — The cloak's cell on the paper doll (the critic, 6 Oct)
 The critic, 6 Oct, in Coeur de Vie (backlog I): a Dark Hood bought and clicked in the bag says *Equipped Dark Hood!* and leaves the bag, and then it is nowhere. Session 552 gave `EQ_SLOTS` a `back` slot, but the inventory's paper doll is markup in `index.html`, and it had no `ds-back` cell, so `renderHubInv` found no element for it and skipped it. A worn cloak could not be seen, hovered or taken off; only another cloak swapped it. `cloaks` read `EQ_SLOTS`, not the page, so it never saw the gap. The doll now has a Back cell in its second row, beside the Amulet, where an empty cell stood. The render, the tooltip and the click to unequip are the ones every other slot uses; no code changed.
