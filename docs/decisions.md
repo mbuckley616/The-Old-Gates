@@ -5,6 +5,13 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 ## Pending
 
 ## Answered
+### Main's CI is red on 6b01495 — saveui and a shard timeout (the producer, 2026-10-06)
+Main's own check failed after the look merge (6b01495): saveui could not save to an empty slot on shard 3, and shard 5 ran out of time. saveui passes on auto/backlog, which carries all of main's code. A: a flake, let the re-run settle it; if saveui fails twice, the systems builder hardens it. B: the systems builder fixes saveui next run whatever the re-run shows.
+
+Michael: **Flake: let the re-run settle it** (A). (2026-10-06)
+
+The re-run (run 37502634335, attempt 2): saveui passed and shard 5 passed; shard 3 failed on parryclock alone (37/38), the frame-rate suite already red on auto/backlog, which the look builder is fixing.
+
 ### Unique artifacts — placed relics, the Makers' six tools, or seam relics from the lairs? (the designer, 2026-10-06) — DECISION #175
 You asked for a few unique items, Daedric-artifact style, woven into the lore, some plainly visible behind a check (Might 30 to pull a sword from a stone); today the Faolchú's Mark is the only one. The page (`docs/design/unique-artifacts.md`) fixes the frame under every option (one of each per world, placed by the seed, unsellable, a failed check costs nothing and goes in the journal, checks move to skills at 50 when that build lands) and asks what an artifact is.
 - **A.** Placed relics: eight objects in plain sight, each behind one attribute at 30, a tier-6 enchant and one special rule; a rumour each, no quest (2 Opus).
