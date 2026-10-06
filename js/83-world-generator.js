@@ -267,6 +267,7 @@
     // the resident's trade (*Séamus the Cooper's House*, *Old Úna's House*); a plain resident, or a trade that repeats too, its
     // end of the town (*Séamus's House at the north end*). Lots are named in their own order, so the same house keeps its name.
     const homeNames=new Set();
+    const _churchNames=new Set();
     function homeName(nm,tag,end){const tr={farmer:'Farmer',weaver:'Weaver',cooper:'Cooper',fisher:'Fisher'}[tag];
       const c=[`${nm}'s House`,tr?`${nm} the ${tr}'s House`:tag==='old woman'?`Old ${nm}'s House`:null,`${nm}'s House at the ${end} end`,tr?`${nm} the ${tr}'s House at the ${end} end`:tag==='old woman'?`Old ${nm}'s House at the ${end} end`:null].filter(Boolean);
       let n=c.find(x=>!homeNames.has(x));for(let k=2;!n;k++){const x=`${c[c.length-1]} (${k})`;if(!homeNames.has(x))n=x;}homeNames.add(n);return n;}
@@ -327,6 +328,9 @@
       const noun=SHOP_NOUN[type]?(SHOP_NOUN[type][reg]||SHOP_NOUN[type].irish||''):'';
       let name=heroH?heroH.name:type==='inn'?keptName('i'+lot.n,pickFree(r,INN_NAMES[reg],_innNames)):type==='church'?(reg==='french'?`Chapelle de ${site.name}`:`${/^(la|le|les|l'|l’|the) /i.test(site.name)?'':'The '}${site.name} ${noun}`):type==='castle'?`${site.name} Keep`:(type==='guild_f'||type==='guild_m')?GUILD_DEF[type].name:`${keeper}'s ${noun}`;
       if(type==='inn')_innNames.add(name);
+      // S594 — a city's second church takes its end of the town, as a second house of a name does (Michael's A on #171; the critic,
+      // 6 Oct: Coeur de Vie's two *Chapelle de Coeur de Vie* side by side on the square)
+      if(type==='church'&&!heroH){if(_churchNames.has(name)){const b=`${name} at the ${compassWord(lot.x-site.x,lot.z-site.z)} end`;name=b;for(let k=2;_churchNames.has(name);k++)name=`${b} (${k})`;}_churchNames.add(name);}
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
       const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};

@@ -12705,3 +12705,12 @@ The critic, 6 Oct (backlog I): at 1280 × 720, in a rented room at La Lanterne i
 
 ### Needs eyes
 Whether a two-line date in the slip's head reads well, or whether the place should always sit on its own line.
+
+## v80 — Session 594 — A city's second church takes its end of the town (the critic, 6 Oct)
+The critic, 6 Oct (backlog I): Coeur de Vie has two churches side by side on the square, `g_coeur_de_vie_2` and `_3`, both *Chapelle de Coeur de Vie*, so neither the map nor the log can tell them apart. A church is named for its town (`Chapelle de <site>`, `The <site> Oratory` / `Chapel`), and a city's plan draws two. Michael's A on #171 (Session 579) settled the same fault for homes: a second house of a name takes its end of the town. A second church of a name now does the same, by the same `compassWord` from the town's centre, so Coeur de Vie's is *Chapelle de Coeur de Vie at the north-east end*. The first keeps its name, ids are unchanged, and no random draw is added, so nothing else in the town moves. A save that knew the second church by its old name now shows the new one; nothing is keyed by a church's name.
+
+### Verified (headless Chromium)
+`churchnames` 4/4 (new), over the forty settlements nearest the start: 19 churches, two cities with two each. Coeur de Vie: *Chapelle de Coeur de Vie* and *Chapelle de Coeur de Vie at the north-east end*. Glencarra: *The Glencarra Oratory* and *The Glencarra Oratory at the east end*. No settlement has two churches of one name. `homenames` and `penance` pass. `parsecheck` clean.
+
+### Needs eyes
+*Chapelle de … at the north-east end* puts the English end-word after a French name, as the homes of Aurenne's towns already do (Session 579). The quest writer may want a French form for Aurenne.
