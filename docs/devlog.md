@@ -13604,3 +13604,27 @@ Over the night, a pick at a random door and a random moment is seen 26% of the t
 
 ### Needs eyes
 Whether *watch the round, then pick* reads as fair in play, and whether 20h, with the keepers still at their doors, should count as night for a burglar. One town and one night of the watch's walk; Dunmore's prosperity is 61, so a poorer town (no watch) would be safer.
+
+## v80 — Session 610 — The cavern master's slam against your health, measured (backlog C, Session 404's owed damage)
+Backlog C has carried since Session 404: *the damage, by play*, for the cavern master's slam. Session 404 asked whether a slam of twice the master's blow was a fair last room. This session measured it and changed no rule. The new suite builds 18 real lair caverns, at levels 1, 3, 6, 10, 15 and 20 and three seeds each. It builds them the way a world lair door does (`makePortalDef`), so the cavern's difficulty follows your level. Each master's slam goes through the game's own `slamBlow` 300 times. That is done bare, in a full heavy kit at the best tier a lair can drop at that level, and over a sweep of armour from 0 to 60. The slam is set against two characters' health: a Scholar who never takes Fortitude (100 + 10 a level) and a Sentinel who starts with 3 and takes the archetype's +1 every level (130 + 20 a level).
+
+| level | the cavern | masters (kind × its blow) | slam bare | in the kit (armour) | bare, mean as a share of health (Scholar / Sentinel) |
+|---|---|---|---|---|---|
+| 1 | very easy | Slime ×1.8, Skeleton ×2.25 (twice) | 36–90 | 26–76 (7) | 63% / 49% |
+| 3 | easy | Cave Troll ×8.9 (three times) | 178–356 | 18–196 (18) | 225% / 159% |
+| 6 | normal | Mimic ×15.6, Cave Troll ×18.3, Mimic ×12.5 | 250–734 | 2–184 (30) | 309% / 201% |
+| 10 | hard | Mimic ×31.4, Cave Troll ×36.9, Mimic ×25.1 | 502–1,474 | 2 (58) | 490% / 301% |
+| 15 | very hard | Mimic ×57.6, Cave Troll ×81.1, Mimic ×46.1 | 922–3,244 | 2 (146) | 766% / 449% |
+| 20 | very hard | Mimic ×64.8, Cave Troll ×91.2, Mimic ×51.8 | 1,036–3,650 | 2 (186) | 713% / 406% |
+
+What it says. A master's blow multiplies five factors. They are its kind (a Cave Troll 4.4), the cavern's difficulty by your level (×0.45 to ×2.0), the second floor (×1.5, and all 18 masters stood on it), the level scale (to ×2.0) and the master's own 1.6 × (1 + level × .04). So from level 3 a bare slam kills either character outright, every time. Armour comes off before the multiplier, half a point a point, from a roll of 10–20, and the blow is floored at 1. So from 40 armour every slam of every master is 2. The cliff lies between 20 and 40. The level-10 Cave Troll's slam averages 1,102 bare, 747 at 10 armour, 351 at 20, 103 at 30 and 2 at 40. Only at level 1 is the slam what Session 404 meant: about half your health, in armour or out. The same flat subtraction is in every dungeon foe's blow (`74-strikes.js`), so the cliff is not the slam's alone.
+
+How the slam should land is a rule of play, so it is DECISION #181 (`docs/decisions.md`). The options are to leave it; armour as a share for every dungeon blow (with the attack table); the slam alone as a share of your health (45%, 60% with no chest piece), which I recommend now; or trimming the master's stack. Nothing changes until Michael answers.
+
+The suite's first run threw on every frame after leaving a cavern, from `skyBodies`. That was the test's own portal, made with no `x`/`z`, so leaving put you at an undefined spot. The door now stands where you do. It was not a fault in the game: a world door always carries its place.
+
+### Verified (headless Chromium)
+`slamdamage` 6/6 (new): 18 caverns, 18 masters; every slam rolled by `slamBlow` lies within twice the ordinary blow's computed range, bare and in the kit. The cavern's difficulty is very easy at level 1 and very hard at 15 and 20. From 40 armour every slam of every master is 2. No page errors. `masterslam` 16/16 alongside. `parsecheck` clean.
+
+### Needs eyes
+The numbers above are of the blow alone. How often a player stands bare or under 40 armour in a cavern, and so whether the cliff is met in play, is what a real fight would show. The answer to #181 decides what is built.
