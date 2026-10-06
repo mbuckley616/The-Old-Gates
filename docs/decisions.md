@@ -18,6 +18,26 @@ Today one line: five pieces (helmet, cuirass, gauntlets, greaves, boots). A full
 
 **Recommendation: A.** It gives each line a reason beyond its weight, small enough that an enchant still matters more, and leaves the armour already worn as it is. Every number here is a first guess to tune in play.
 
+### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
+You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
+
+**Why they look jumbled.** Every cave-type gate is built the same way. Three rough boulders lean together, with a capstone laid over them. A small plank door stands in the gap, under a lintel thinner than the boulders. Then a few things are dropped around it by the gate's seed: a broken column, a dead tree, hanging chains, rocks. Nothing lines up with anything else, so the door reads as a crate wedged into a rock pile (first picture). The forts (Greywatch, the Old Garrison and their kind) are built separately, and this question does not touch them.
+
+**The prototype.** One shared form for every old gate. A dressed-stone doorway is cut into a turf mound. Two jambs and a heavy lintel frame it, with a capstone stepped over the lintel. Wing walls step down to hold the mound back, and worn steps lead down into the dark. The binding marks are cut down both jambs and in a ring on the lintel, and they glow in the gate's theme colour: ember orange for the Crypt, green for a haunted gate. A ring of marker stones stands about nine units out, each with one mark facing the door. Put together, it says *something is held here* before you read a word, which is what the canon says the gates are: anchor places with binding inscriptions. The prototype is on the branch auto/proto-old-gates. It is about 70 boxes, and none of it is in the game yet.
+
+- **A. One shared form, as shown** *(recommended)*. Every cave-type gate gets this doorway, with the theme's colour on the marks and the seed varying the details: the mound's size, which marker stones have fallen, moss, how worn the steps are. The current random clutter goes.
+- **B. One form per theme.** The crypt gets a mausoleum front, a haunted gate a barrow with a sunken door, a deep gate a cave mouth with a carved frame, an elemental gate a scorched stone portal. This gives more variety, but the gates stop reading as one family, and it is four builds instead of one.
+- **C. Keep today's dolmens and tidy them.** The boulders stop overlapping, the door is set properly into the gap, and the random clutter is placed apart from the door. This is the smallest change. It is still a rock pile with a door.
+- **D. Something else.** Mark what to change on the pictures.
+
+**Recommendation: A.** The gates are the game's name and its story's spine. A single, recognisable form lets a player spot one across a field and know what it is, and the theme colour and the seed's details keep two gates from looking the same.
+
+Pictures (today's Crypt of Embers; the prototype in the Crypt's colour, in a haunted gate's green, and at night):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-today.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-ember.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-haunted.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/oldgate-proto-night.png
+
 ## Answered
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
 The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.

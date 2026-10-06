@@ -13058,3 +13058,25 @@ Michael's note on the traps (*rarely oriented properly … doesn't look like it 
 
 ### Needs eyes
 - Nothing new beyond Session 568's. A blade's arm in a lair is 2.6 long.
+
+## v80 — Session 571 — The old gates in the overworld, a prototype (backlog H, Michael's control-room note of 5 Oct; DECISION #169)
+On 5 Oct Michael wrote that the old gates in the overworld (the Crypt of Embers and the rest) "look like hot dookie … very very jumbled", and asked for a full pass. How they should look is his call, so this session is a prototype and a question. The game is unchanged.
+
+**Why they look jumbled.** I took a picture of the Crypt of Embers where it stands (seed 137, at 12,936, 25,631). Every cave-type gate (the forEach at the foot of `24-forts.js`) is three rough boulders leaning together under a capstone. A plank door 0.9 wide stands in the gap, under a lintel thinner than the stones around it. Then `dressPortalExterior` (`68-dungeon-misc.js`) drops a broken column, a dead tree, chains or rocks around it by seed. Nothing lines up with anything else, so the door reads as a crate wedged into a rock pile. The forts are built separately (`FORT_EXTERIORS`) and are not part of the question.
+
+**The prototype** (`protoGate`, on the branch `auto/proto-old-gates`, built beside the real Crypt in a test) is one shared form, about 70 boxes:
+- A dressed-stone doorway cut into a turf mound: two jambs and a heavy lintel, with a capstone stepped over it.
+- Wing walls stepping down on each side to hold the mound back, and worn steps going down into the dark.
+- The binding marks down both jambs and in a ring on the lintel, in the gate's theme colour.
+- A ring of seven marker stones about nine units out, each with one mark.
+
+It is meant to say *something is held here*, which is what the canon's anchor places are. The pictures show it in the Crypt's ember orange, in a haunted gate's green, and at night, next to today's Crypt.
+
+**The options** are in `docs/decisions.md` and issue #169: A one shared form as shown (recommended), B one form per theme, C keep the dolmens and tidy them, D something else.
+
+### Verified (headless Chromium)
+Prototype only: no game code changes. The prototype script built two gates in open ground east of the Crypt and took four pictures at 11h and 22h, with no page errors.
+
+### Needs eyes
+- **Michael's choice on #169.**
+- The prototype is boxes with flat shading. The build would carry the seed's variation (the mound's size, fallen marker stones, moss, worn steps), the kit's stone texture, and solids for the jambs and the wing walls.
