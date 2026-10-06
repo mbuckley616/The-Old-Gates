@@ -33,6 +33,7 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-mouth.png
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-mouth.png
 
+## Answered
 ### The forts' interiors (the look builder, Session 584, 2026-10-06) — DECISION #177
 On 5 Oct you said the forts and their dungeons are "still a little bland. I think we need to incorporate stairs going up and/or down, but straight stairs, not spiral. I also think we need more varied layouts on the interiors. I'm willing to get a little funky/creative with them." Here is why they feel the same, and three shapes they could take.
 
@@ -55,7 +56,10 @@ How the stairs look is DECISION #173, and how wide the passages are is #174. Thi
 Picture (top: today's three; bottom: the three proposed):
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fort-layouts.png
 
-## Answered
+Michael: **Three new shapes, stairs down only** (A). (2026-10-06)
+
+Under way. Session 599 built the first shape, the hall and the undercroft (`makeFortHall`, `buildFlight`; pictures `docs/prototypes/forthall-*.png`). Until the barracks and gaol and the ring are built, a fort's seed makes half the forts halls, and the others keep today's layout. When all three are in, the seed picks among the three. Today's three layouts stay only if you say so (the six-way pick).
+
 ### The dungeon's stairs (the look builder, Session 576, 2026-10-06) — DECISION #173
 On 5 Oct you said the dungeon's "staircases are ugly and don't match the style at all". Here is why, and one way to fix it.
 

@@ -4,6 +4,7 @@ let D_BEDS=[]; // v80 S9 — {x,z,floor} cots you can rest on (forts)
 function dPropHit(x, z){
   if(!DUNGEON_PROPS || DUNGEON_PROPS.length === 0) return false;
   for(const p of DUNGEON_PROPS){
+    if(p.floor && p.floor !== currentFloor) continue; // S599 — a prop belongs to its floor
     if(x >= p.x0 && x <= p.x1 && z >= p.z0 && z <= p.z1) return true;
   }
   return false;
@@ -865,7 +866,8 @@ function buildDungeon(portal){
   // generator; absent or unknown value falls back to 'cave' (makeDungeon).
   // The fallback is intentionally defensive — a bad interior value should
   // produce a playable cave dungeon, not a hard crash on entry.
-  const interiorKey = portal.interior || 'cave';
+  // S599 — #177 A: a fort's seed may make it the hall and undercroft (half of them, until the other two new shapes are built)
+  const interiorKey = ((portal.interior || 'cave').startsWith('fort_') && portal.size !== 'small' && (hashSeed((portal.seed|0) + 177) & 1) ? 'fort_hall' : (portal.interior || 'cave'));
   const interiorFn = FORT_INTERIORS[interiorKey] || FORT_INTERIORS.cave;
   let gen=interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
@@ -1088,6 +1090,43 @@ function buildDungeon(portal){
     FOOTHOLDS.push({kind:'spiral',cx,cz,r0:.22,r1:1.05,y0:0,y1:Y,turns,a0});
     DUNGEON_STAIRWELL=true;
   }
+  // S599 — the straight flight of the hall and undercroft (#177 A; makeFortHall): three cells wide, from the hall's floor
+  // down to floor 2 northward, in the same stone as the newel stair (#173). One merged mesh: 24 steps, each a block thick
+  // enough that the soffit steps down beneath it; a stone balustrade round the hole on the hall's floor (its sides and its
+  // far end, the top left open); a rope handrail on iron brackets down each side wall. A second mesh: the hole's walls,
+  // coursed, from the hall's floor down to the undercroft's ceiling. The ramp is a foothold, the hall's floor the platform
+  // with the hole (gen.stairHole), and the balustrade's collision belongs to floor 1 alone, so the slot below stays open.
+  function buildFlight(c,r,mat){
+    const F=gen.flight,Y=FLOOR2_Y,x0=F.c0-.5,x1=F.c1+.5,zT=F.top+.5,zB=F.bot-.5,L=zT-zB,Wd=x1-x0,NS=24,run=L/NS,rise=Y/NS,mx=(x0+x1)/2;
+    const rnd=pRng((portal.seed|0)*7+599),stone=new THREE.Color(th.wallCol).multiplyScalar(2.6),wallC=new THREE.Color(th.wallCol).multiplyScalar(2.1),iron=new THREE.Color(0x2a2826);
+    const shade=(col,k)=>col.clone().multiplyScalar(1+(rnd()-.5)*k);
+    const parts=[],at=(x,y,z,ry,rx)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,0,'YXZ')),new THREE.Vector3(1,1,1));
+    // the steps: step k's tread at the ramp's height over its middle, .5 deep below its riser
+    for(let k=0;k<NS;k++){const yt=rise*(k+.5),h=Math.abs(rise)+.5,zc=zT-run*(k+.5);parts.push([SK.rbox(Wd,h,run+.02,.02,1),shade(stone,.14),at(mx,yt-h/2,zc)]);}
+    // the balustrade on the hall's floor: a plinth, a baluster every half unit, a coping; west, east and the far (north) end
+    const rail=(ax,az,bx,bz)=>{const len=Math.hypot(bx-ax,bz-az),ry=Math.atan2(bx-ax,bz-az),n=Math.max(2,Math.round(len/.5));
+      parts.push([SK.rbox(.26,.16,len+.26,.02,1),shade(stone,.08),at((ax+bx)/2,.08,(az+bz)/2,ry)]);
+      parts.push([SK.rbox(.28,.12,len+.28,.025,1),shade(stone,.08),at((ax+bx)/2,.86,(az+bz)/2,ry)]);
+      for(let i=0;i<=n;i++){const t=i/n,px_=ax+(bx-ax)*t,pz_=az+(bz-az)*t,post=i===0||i===n;parts.push([post?SK.rbox(.24,.66,.24,.02,1):new THREE.CylinderGeometry(.05,.07,.64,8),shade(stone,.1),at(px_,.16+(post?.33:.32),pz_)]);}};
+    const o=.11;rail(x0-o,zB-o,x0-o,zT);rail(x1+o,zB-o,x1+o,zT);rail(x0-o,zB-o,x1+o,zB-o);
+    for(const [ax0,ax1,az0,az1] of [[x0-.24,x0,zB-.24,zT],[x1,x1+.24,zB-.24,zT],[x0-.24,x1+.24,zB-.24,zB]])DUNGEON_PROPS.push({x0:ax0,x1:ax1,z0:az0,z1:az1,floor:1,flightRail:true});
+    // the rope handrails, .85 over the pitch, an iron bracket from the wall every fourth step
+    const slope=Math.atan2(-Y,L);
+    for(const [wx,sx] of [[x0,1],[x1,-1]]){const rx_=wx+sx*.09,len=Math.hypot(L,Y);
+      parts.push([new THREE.CylinderGeometry(.022,.022,len,6),new THREE.Color(0x7a6040),at(rx_,Y/2+.85,(zT+zB)/2,0,Math.PI/2-slope)]);
+      for(let k=2;k<NS;k+=4){const z=zT-run*k,y=rise*k+.85;parts.push([new THREE.BoxGeometry(.12,.03,.03),iron,at(wx+sx*.05,y-.03,z)]);}}
+    const stair=dunMerge(parts,'flight');stair.userData.flight={x0,x1,zT,zB,steps:NS};dScene.add(stair);
+    // the hole's walls between the hall's floor and the undercroft's ceiling: west, east and the far end, in courses
+    const bot=Y+FLOOR_HEIGHT-.1,Hb=-bot;
+    if(Hb>.05){const wp=[],rows=Math.max(1,Math.round(Hb/.32)),rh=Hb/rows;
+      for(const [x,z,ry,len] of [[x0,(zT+zB)/2,Math.PI/2,L],[x1,(zT+zB)/2,-Math.PI/2,L],[mx,zB,0,Wd]])for(let k=0;k<rows;k++){const off=(k%2)*.2;
+        for(let u=-len/2-off;u<len/2;u+=.4){const u0=Math.max(-len/2,u),u1=Math.min(len/2,u+.4);if(u1-u0<.01)continue;
+          wp.push([new THREE.PlaneGeometry(u1-u0,rh),wallC.clone().multiplyScalar(.82+rnd()*.36),at(x,bot+rh*(k+.5),z,ry).multiply(new THREE.Matrix4().makeTranslation((u0+u1)/2,0,0))]);}}
+      dScene.add(dunMerge(wp,'flightWalls'));}
+    const gl=new THREE.PointLight(0xffb060,1.4,7);gl.position.set(mx,Y*.5+1,(zT+zB)/2);dScene.add(gl);TORCHES.push({l:gl,fl:null,ph:Math.random()*Math.PI*2});
+    FOOTHOLDS.push({x0,x1,z0:zB,z1:zT,axis:'z',y0:Y,y1:0,kind:'flight'});
+    DUNGEON_STAIRWELL=true;
+  }
   function renderFloor(map,floorIdx,wallMat,floorMat,baseY){
     // v80 S478 — co-op rules: where the barrels, crates and chests stand is drawn from the dungeon's own stream, keyed by
     // its seed and floor, so one seed's floor is the same on two machines; each container's loot is keyed by its place and
@@ -1108,7 +1147,7 @@ function buildDungeon(portal){
     // the walls), in the fort's cool grey; its own floors and ceilings stay, so the shell lays ground only under walls
     const shellOn=true,fortF1=isFort&&floorIdx===1;
     if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6),amp:fortF1?.025:null,cove:!fortF1,
-        damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:floorIdx===2?(gen.rooms2||[]):(gen.rooms||[]),hole:floorIdx===2&&gen.stairC!=null?{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}:null});
+        damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:floorIdx===2?(gen.rooms2||[]):(gen.rooms||[]),hole:floorIdx===2&&gen.stairC!=null?(gen.stairHole||{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}):null});
       dScene.add(sh.walls);dScene.add(sh.floor);dScene.add(sh.ceil);if(sh.beams)dScene.add(sh.beams);}
     // S191 — the floor's props, one merged mesh: rubble heaps where walls meet the floor, the theme's clutter
     const props=[],stoneCol=new THREE.Color(floorIdx===1?th.wallCol:f2WallCol).multiplyScalar(2.6);
@@ -1163,7 +1202,7 @@ function buildDungeon(portal){
           eD.rotation.x=-Math.PI/2;eD.position.set(c,baseY+.02,r);dScene.add(eD);
           const eGl=new THREE.PointLight(0x88ff44,1.2,5);eGl.position.set(c,baseY+.8,r);dScene.add(eGl);
         }
-        if(v===3&&floorIdx===1&&c===gen.stairC&&r===gen.stairR)buildStairwell(c,r,stairMat); // v80 S8 — climbable spiral
+        if(v===3&&floorIdx===1&&c===gen.stairC&&r===gen.stairR)(gen.flight?buildFlight:buildStairwell)(c,r,stairMat); // v80 S8 — climbable spiral; S599 — or the hall's straight flight
         if(false){ // v61 pit-and-teleport stair, superseded
           // ── SPIRAL STAIRCASE ─────────────────────────────────
           // Contained within a single cell. A central stone pole with treads
@@ -1425,6 +1464,7 @@ function buildDungeon(portal){
     //   null/untagged  → original 50% any-corner behavior (cave rooms)
     const KIND_CLUSTER_RULES = {
       great_hall: {corners: [], forceAll: false},
+      pillared_hall: {corners: [], forceAll: false},
       lords_chamber: {corners: [], forceAll: false},
       chapel: {corners: [], forceAll: false},
       courtyard_hall: {corners: [], forceAll: false},
@@ -2049,6 +2089,7 @@ function buildDungeon(portal){
     // and don't read as needing rugs.
     const rugMat = new THREE.MeshLambertMaterial({color: 0x8a1818}); // crimson
     for(const room of gen.rooms){
+      if(room.kind === 'pillared_hall') continue; // S599 — its middle is the flight's hole; its own decor lays the runners
       // Check whether room contains treasure floor (Great Hall or
       // Lord's Chamber). Skip Lord's Chamber by detecting if it's the
       // smaller treasure room.
@@ -2467,6 +2508,24 @@ function buildDungeon(portal){
         FP.put(FK.dresser(1.4, FN, FS + 10 + k), hp.wx, wz, hp.n ? 0 : Math.PI); registerProp(hp.wx, hp.n ? wz + 0.25 : wz - 0.25, 1.4, 0.5);
         kitCandle(hp.wx, 1.64, hp.n ? wz + 0.2 : wz - 0.2); });
     }
+    else if(room.kind === 'pillared_hall'){
+      // S599 — the hall and undercroft (#177 A): the flight takes the middle, so the high table stands across the north end
+      // beyond the balustrade, under the banner, and a long table with its benches runs down each side between the
+      // colonnade and the wall; a runner from the door to the flight's head; dressers flank the banner
+      const F = gen.flight, hiZ = room.y + 1.6, hiLen = Math.min(room.w - 8, 7);
+      FP.put(FK.table(hiLen, 1.0, FN, FS), cx, hiZ, 0); registerProp(cx, hiZ, hiLen, 1.0);
+      FP.put(FK.bench(hiLen - .2, FN, FS + 1), cx, hiZ + 0.9, 0); registerProp(cx, hiZ + 0.9, hiLen - .2, 0.32);
+      FP.put(FK.banner(0x8a3320, FS + 5), cx, wallN + 0.08, 0, 2.95);
+      for(let i = 1; i <= 3; i++) kitCandle(cx - hiLen/2 + i * hiLen/4, 0.46, hiZ);
+      for(const sd of [-1, 1]){ FP.put(FK.dresser(1.4, FN, FS + 10 + sd), cx + sd * (hiLen/2 + 1.2), wallN + 0.02, 0); registerProp(cx + sd * (hiLen/2 + 1.2), wallN + 0.27, 1.4, 0.5); }
+      const sideLen = Math.min(room.h - 10, 8), sz = room.y + room.h/2;
+      for(const sd of [-1, 1]){ const tx = sd < 0 ? room.x + 1.8 : room.x + room.w - 2.8;
+        FP.put(FK.table(sideLen, 1.0, FN, FS + 20 + sd), tx, sz, Math.PI/2); registerProp(tx, sz, 1.0, sideLen);
+        const bx = tx - sd * 0.9; FP.put(FK.bench(sideLen - .2, FN, FS + 22 + sd), bx, sz, Math.PI/2); registerProp(bx, sz, 0.32, sideLen - .2);
+        kitCandle(tx, 0.46, sz - sideLen/4); kitCandle(tx, 0.46, sz + sideLen/4); }
+      if(F){ const rugMat = new THREE.MeshLambertMaterial({color: 0x8a1818}), z0 = F.top + 0.9, z1 = room.y + room.h - 0.8;
+        if(z1 > z0){ const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.2, z1 - z0), rugMat); rug.rotation.x = -Math.PI/2; rug.position.set(cx, baseY + 0.01, (z0 + z1)/2); dScene.add(rug); } }
+    }
     else if(room.kind === 'lords_chamber'){
       // the kit's box bed, its head to the north wall; a small table with a candle beside it; the chest at its foot
       const bedZ = wallN + 0.77;
@@ -2710,10 +2769,12 @@ function buildDungeon(portal){
       decorateFortRoom(room, 0);
     }
   }
+  // S599 — what floor 1 has registered to collide is floor 1's: a table in the hall above no longer stops you in the vault below
+  if(dMap2){for(const p of DUNGEON_PROPS)if(p.floor==null)p.floor=1;for(const p of DUNGEON_COLUMNS)if(p.floor==null)p.floor=1;}
   if(dMap2)renderFloor(dMap2,2,f2WallMat,f2FloorMat,FLOOR2_Y);
   // v80 S8 — floor 2 as a walkable platform with the shaft cut out; floor 1 is the base (0)
   try{decorateDungeonRooms(gen,portal);}catch(e){console.warn('decorate',e);} // v80 — room types, traps, containers
-  if(DUNGEON_STAIRWELL)FOOTHOLDS.push({x0:-.5,x1:dC-.5,z0:-.5,z1:dR-.5,y:Math.max(0,FLOOR2_Y),hole:{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}}); // the upper floor (floor one, now) with the shaft open
+  if(DUNGEON_STAIRWELL)FOOTHOLDS.push({x0:-.5,x1:dC-.5,z0:-.5,z1:dR-.5,y:Math.max(0,FLOOR2_Y),hole:gen.stairHole||{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}}); // the upper floor (floor one, now) with the shaft open (S599: or the flight's hole)
 
   // v61g6: spawn meshes for ALL doors, not just locked ones. Tile-4 (unlocked)
   // doors now have meshes too — fort interiors use only unlocked doors, and
