@@ -12860,7 +12860,7 @@ What a new world holds at the start: 46 places with shops. Five are under 40 pro
 | 40–59 | 27 | 3 (2 in 3) or 4 | 34 | 0.80 / 2.00 / 4.87 (10 / 24 / 58 gold) |
 | 60–79 | 14 | all 4 | 43 | 0.97 / 2.45 / 6.12 (12 / 29 / 73 gold) |
 
-What it says: a rich town's box holds about 9 more coins and costs about a quarter more picks. A steady hand (1 in 10) robs any shop at a profit of 20–30 gold before the stolen item. A hand that misses 1 in 3, a new character's first tries, spends 58–73 gold in picks for 29–43 coins. That is a loss before the item, and a bigger one in a rich town. Homes are cheap: 65 homes in Dunmore and Portclare, 44 at 2 pins and 21 at 3, door and chest alike, for 2–12 coins and a keepsake.
+What it says: a rich town's box holds about 9 more coins and costs about a quarter more picks. A steady hand (1 in 10) robs any shop at a profit of 19–31 gold before the stolen item. A hand that misses 1 in 3, a new character's first tries, spends 58–73 gold in picks for 29–43 coins. That is a loss before the item, and a bigger one in a rich town. Homes are cheap: 65 homes in Dunmore and Portclare, 44 at 2 pins and 21 at 3, door and chest alike, for 2–12 coins and a keepsake.
 
 ### Verified (headless Chromium)
 `townlocks` 5/5 (new). The real locks through the game's `lpDifficulty`:
