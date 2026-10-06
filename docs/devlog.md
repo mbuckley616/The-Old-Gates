@@ -12676,3 +12676,14 @@ The critic, 6 Oct, in Coeur de Vie (backlog I): a Dark Hood bought and clicked i
 
 ### Needs eyes
 Whether the Back cell in the doll's right column, level with the Amulet, reads as the cloak's place.
+
+## v80 — Session 591 — The barber sees his own strongbox (the critic, 6 Oct)
+The critic, 6 Oct (backlog I): in Coeur de Vie's barber at noon they picked the strongbox with the barber turned to face them, unseen, for 54 gold and a Dungeon Map. The barber stands still at his chair and faces into the room (Session 512; his sway is ±0.08 about +z). Session 551 gave him a strongbox, and it took the shops' spot, W − 1 by D × .55, on the east wall. Indoors a witness sees you within six units and 60° of the way they face (Session 368, Michael's B on #73). A walking keeper turns and sometimes sees the box, but the barber never does: the spot before it was 6.8–8.5 units from him and off to his side. So every barber's box was a free theft at noon.
+
+The box's spot is now searched for when the room is built (`buildInteriorFor`, `83-world-generator.js`). The search starts against the west wall and steps towards the chair, and takes the first free spot in front of him (0.1 clear of the room's solids) from which every spot it can be opened from, 1.6 round it, is within 5.6 of him and within 50° of his face. The margin is 10° inside the cone, so the sway does not matter. In the 9 × 8 room it stands just off the west wall at (1.0, 4.4), before the waiting bench. In a 13-wide room it stands nearer the chair. If no spot is found, the box stays at the old spot (none of the six measured). The rule of sight is unchanged, and so are the other shops' boxes.
+
+### Verified (headless Chromium)
+`barberbox` 5/5 (new), in six barbers of the towns nearest the start (9 × 8, 9 × 10, 11 × 10, 13 × 8). From every spot the box opens from (116–192 a room, the furthest 4.9–5.5 from him), the barber sees you at noon, at the centre of his sway and at both ends. The box stands clear of the furniture and the wall. Taken in front of him in Dunmore's barber, 41 gold, and a fine of 95. On the old spot, Pádraig's Barber (13 × 8) had the box at (12, 4.4), 9.8 from him, and 0 of its 149 opening spots were seen. `barberfee` (the box clear of furniture, reached and picked), `barber`, `keepercone` and `shopsight` pass. `parsecheck` clean.
+
+### Needs eyes
+The box now sits in the open in front of the waiting bench rather than against the far wall: whether that looks like a barber's strongbox, or whether the look builder would rather move the bench.

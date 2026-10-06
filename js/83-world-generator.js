@@ -1502,8 +1502,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     }catch(e){console.warn('interior variety',e);}
     if(hasCellar(house)){const hx=Math.min(W-1.6,3.2),hz=D-2.6;boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
     // v80 S155 — a shop's strongbox in the back room (or behind the counter), a home's small chest: locked, and worth something
-    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';const bx=home?1.0:(house._backRoom?W-.9:W-1.0),bz=home?D-1.0:(house._backRoom?D-2.6:D*.55);
-      const bg=new THREE.Group();const shell=buildChestShell(bg,home?.45:.6,home?0x6a4a2c:0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=home?Math.PI*.5:Math.PI;sc_.add(bg);solid(bx,bz,.32,.28,.5);
+    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?1.0:(house._backRoom?W-.9:W-1.0),bz=home?D-1.0:(house._backRoom?D-2.6:D*.55),bry=home?Math.PI*.5:Math.PI;
+      // S590 — the barber stands still at his chair facing into the room (+z), so his box goes where the 6-unit indoor witness and his
+      // 120° cone cover every spot it opens from (1.6 round it): the wall-most free spot in front of him whose worst spot on that ring is
+      // within 5.6 of him and 50° of his face (the critic, 6 Oct: at W−1, D×.55 it stood 6.8–8.5 from him and was picked unseen at noon).
+      // Against the west wall when the room allows, nearer his chair in a wide one. No such spot: the old one.
+      if(type==='barber'&&npc){const fr=(x,z)=>!SOL.some(q=>x+.32>q.x0-.1&&x-.32<q.x1+.1&&z+.32>q.z0-.1&&z-.32<q.z1+.1);
+        const ok=(x,z)=>{for(let k=0;k<24;k++){const ux=x+Math.sin(k*Math.PI/12)*1.6,uz=z+Math.cos(k*Math.PI/12)*1.6;if(ux<.25||uz<.25||ux>W-.25||uz>D-.25)continue;
+          const dx=ux-npc.x,dz=uz-npc.z,d=Math.hypot(dx,dz);if(d>5.6||dz/d<Math.cos(50*Math.PI/180))return false;}return true;};
+        found:for(let x=.62;x<=npc.x+.01;x+=.2)for(let z=npc.z+1.4;z<D-1.6;z+=.1)if(fr(x,z)&&ok(x,z)){bx=x;bz=z;bry=Math.PI*.5;break found;}}
+      const bg=new THREE.Group();const shell=buildChestShell(bg,home?.45:.6,home?0x6a4a2c:0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=bry;sc_.add(bg);if(bry===Math.PI*.5&&!home)solid(bx,bz,.28,.32,.5);else solid(bx,bz,.32,.28,.5);
       INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:home?'home':'shop',type,house,open:false};}
     // S342 (#62 A) — the frame, built last so a post gives way to whatever stands against the wall. Plastered rooms: posts at the
     // corners and under each beam's ends (a short bracket where a window is within 1.2), knee braces, a sole plate and a wall
