@@ -11,7 +11,7 @@ const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
   ['Goblin', 'Goblin Slinger', 'Kobold', 'Bandit'].forEach((n, i) => { const x = px + fx * 30 + (i - 2) * 2, z = pz + fz * 30;
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; _G[n] = e; const r = e.limbs && e.limbs.person;
     e.mesh.updateMatrixWorld(true); const bb = r ? new THREE.Box3().setFromObject(r.mesh) : null;
-    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, goblin: !!r.g.goblin, head: r.g.head, hat: r.g.hat, beard: r.g.beard, gear: r.g.gear,
+    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, goblin: !!r.g.goblin, head: r.g.head, hat: r.g.hat, beard: r.g.beard, gear: r.g.gear, wpn: r.g.wpn || null,
       green: r.g.skin.g > r.g.skin.r && r.g.skin.g > r.g.skin.b, tris: r.tris, scale: +r.root.scale.y.toFixed(2) } : { person: false }; });
   const b2 = buildZoneEnemy(WORLD.scene, [], px + fx * 30, pz + fz * 30 + 3, 'Goblin', null); out.differ = b2.limbs.person.g.seed !== _G.Goblin.limbs.person.g.seed; b2.mesh.parent.remove(b2.mesh);
   // the ears: a goblin's head carries more geometry out to the side than a person's (the cones reach past the skull)
@@ -19,7 +19,9 @@ const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
     for (let i = 0; i < pos.count; i++) if (sk.getX(i) === h.userData.i) far = Math.max(far, Math.abs(pos.getX(i))); PEOPLE_RIGS.delete(r); r.mesh.geometry.dispose(); return +far.toFixed(3); };
   out.earGoblin = span('Goblin'); out.earBandit = span('Bandit'); return out; });
 check('goblins, slingers and kobolds are people on their own material, the right shoulder striking', ['Goblin', 'Goblin Slinger', 'Kobold'].every(n => built[n].person && built[n].skinned && built[n].ownMat && built[n].armR), built);
-check('the goblin is green and big-headed, bare-headed, beardless, with a club; the slinger empty-handed', built.Goblin.goblin && built.Goblin.green && built.Goblin.head > 1.3 && built.Goblin.hat === 'none' && built.Goblin.beard === 'none' && built.Goblin.gear === 'stick' && built['Goblin Slinger'].goblin && built['Goblin Slinger'].gear === null, built.Goblin);
+// S559 — Session 535 (Michael, the inspector: "probably not be holding a cane") gave the goblin a rusted knife from the kit for its club;
+// the club was this check's, and it went red on CI with that change
+check('the goblin is green and big-headed, bare-headed, beardless, with a rusted knife from the kit; the slinger empty-handed', built.Goblin.goblin && built.Goblin.green && built.Goblin.head > 1.3 && built.Goblin.hat === 'none' && built.Goblin.beard === 'none' && built.Goblin.gear === 'kit' && built.Goblin.wpn === 'dagger' && built['Goblin Slinger'].goblin && built['Goblin Slinger'].gear === null, built.Goblin);
 check('the goblin\'s ears reach out past a person\'s', built.earGoblin > built.earBandit * 1.5, { goblin: built.earGoblin, bandit: built.earBandit });
 check('the kobold is a small hooded greybeard with a mattock', !built.Kobold.goblin && built.Kobold.hat === 'hood' && built.Kobold.beard === 'long' && built.Kobold.gear === 'hammer' && built.Kobold.scale < .7 && built.Kobold.scale < built.Bandit.scale * .75, { kobold: built.Kobold, bandit: built.Bandit.scale });
 check('two goblins met in different places are different', built.differ, { differ: built.differ });

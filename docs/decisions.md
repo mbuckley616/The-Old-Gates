@@ -11,6 +11,72 @@ You asked for a few unique items, Daedric-artifact style, woven into the lore, s
 
 Recommendation: **B.** Taking the artifact is the decision (keep it and carry its cost, or hand it to its claimant), and one of them, the Beasts' cloak, leaves a town poorer on the map; A is B's first slice anyway, and C is loot with a name on it.
 
+### The dungeon's stairs (the look builder, Session 576, 2026-10-06) — DECISION #173
+On 5 Oct you said the dungeon's "staircases are ugly and don't match the style at all". Here is why, and one way to fix it.
+
+**What is wrong.** The spiral stair down to the second floor is built from plain boxes. It has pale plank treads and a thin board riser under each one, round a smooth wooden post, with thin rail posts and a rail. The shaft round it is four flat, near-black planes. Everything else in a dungeon is the shell's stone: walls laid in courses, a cove at the foot, worn floors. The stair is the one thing in the room that looks like a different game (pictures one and three). It is also 117 separate meshes.
+
+**The prototype** (pictures two and four, the same stair from the same places). It is a stone newel stair, as in a castle tower, in the dungeon's own stone. Each tread is a wedge of stone running from a central column to the wall, with a bevelled nosing. Each is thick enough that the underside steps down the spiral, which is what you see from below. The column is a stack of stone drums, one per step. The shaft walls are laid in courses of the shell's stone instead of black planes. A rope handrail runs round the wall on iron brackets, and the landing is a stone slab. The stair's shape, its two turns and where it lands do not change, so climbing it does not change. The prototype is on the branch auto/proto-dungeon-stairs; nothing in the game has changed. Built for the game, it would be one merged mesh like the shell, about 10,800 triangles.
+
+- **A. The stone newel stair, as shown** *(recommended)*. The forts' straight staircase would follow in the same stone, in a second session.
+- **B. Stone, with today's open rail of posts** in place of the rope at the wall.
+- **C. Keep the wooden stair, tidied.** Dark heavy timber in the theme's colour, the treads joined into one flight, stone shaft walls. Less of a change; still wood in a stone place.
+- **D. Something else.** For example, a straight stone flight down along one wall instead of a spiral, which changes the layout and so is a larger job.
+
+**Recommendation: A.** The brief asks for a world that feels made, and every other surface in a dungeon is now the same worked stone. A stone spiral round a newel is how a real tower or undercroft goes down, and from the floor below it reads as solid masonry instead of a stack of planks.
+
+This is another part of your 5 Oct note. The railings were fixed in Session 572, and the traps are DECISION #170. Wider passages is the last part, and its question comes next.
+
+Pictures (today and the prototype, from the room above, then from the floor below looking up):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-today-above.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-proto-above.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-today-up.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-stair-proto-up.png
+
+### The dungeon's passages (the look builder, Session 577, 2026-10-06) — DECISION #174
+On 5 Oct you said "dungeons are very narrow and cramped — I think we can open them up a bit more and make them less claustrophobic." Here is why they feel that way, and one way to open them up.
+
+**What is wrong.** A dungeon is laid out on a grid of one-unit cells. Every corridor is one cell wide, so you walk a passage about as wide as your shoulders, under a roof 3.2 high. Seen ahead, it is a slot between two walls that fill the screen (pictures one and three). The rooms, three to ten cells across, are fine; it is the passages between them that close in.
+
+**The prototype** (pictures two and four: the same dungeon, seed 4031, in the same corridor from the same two places). Every corridor is two cells wide. The rooms, their places and the turns between them are unchanged; only the passages open out. It now reads as a passage you could fight in, not a crack you squeeze through. The prototype is on the branch auto/proto-dungeon-wide, and nothing in the game has changed.
+
+- **A. Every corridor two cells wide, as shown** *(recommended)*. A door would sit in a narrowed stone doorway one cell wide, so doors, locks and keys work as now. A swinging blade would span the wider passage (#170).
+- **B. A, and every room one cell larger each way.** More open still, but a floor holds a few fewer rooms, or the maps grow by about a fifth.
+- **C. The whole dungeon at one and a half times the scale.** Corridors 1.5 wide and rooms half as large again, under the same roof. This touches every system that counts in cells (foes, traps, the stair, the map, saves), so it would be a Fable session, not a contained one.
+- **D. Leave them as they are.**
+
+**Recommendation: A.** The brief asks for fluid, weighty combat. A sidestep or a roll needs room to the side, and a one-cell corridor has none: every fight in a passage is a straight line. Two cells gives that room without changing what a dungeon is.
+
+This is the last part of your 5 Oct note. The railings were fixed in Session 572, the traps are DECISION #170, and the stairs are DECISION #173.
+
+Pictures (today and the prototype, from the corridor's mouth looking in, then from its far end looking back):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-run.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-run.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-today-mouth.png
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-wide-proto-mouth.png
+
+### The forts' interiors (the look builder, Session 584, 2026-10-06) — DECISION #177
+On 5 Oct you said the forts and their dungeons are "still a little bland. I think we need to incorporate stairs going up and/or down, but straight stairs, not spiral. I also think we need more varied layouts on the interiors. I'm willing to get a little funky/creative with them." Here is why they feel the same, and three shapes they could take.
+
+**Why they feel the same.** A fort has three layouts (the tee, the linear and the courtyard; top row of the picture, from the game's own generators). All three are one long passage with square rooms off it, the treasure rooms at the far end, and the spiral stair down in the last room. Walking in, you can't tell which one you are in. Nothing goes up: the second floor is always below the first, five down.
+
+**The proposals** (bottom row, drawn by hand, smaller than they would be built). Each is built around a room you would remember, with straight flights in place of the spiral:
+- **A. The hall and the undercroft.** A pillared great hall, with a straight flight down its middle to the vaults. A kitchen and stores on one side, the armoury and a chapel on the other.
+- **B. Barracks and the gaol.** Two rows of bunk rooms off one long, wide room, and at its end a flight down to a gaol of cells.
+- **C. The ring and its towers.** A ring of passage round a sunken yard that you see over a rail before you can reach it. Each corner tower holds a short flight, two going down and two going up.
+
+How the stairs look is DECISION #173, and how wide the passages are is #174. This question is the shapes and where the stairs go.
+
+- **A. All three shapes, down only** *(recommended)*. Each fort's seed picks one of the three (or of six, if today's stay as well). Every stair is a straight flight down to the floor below, which the game already has. One shape a session, the hall first.
+- **B. The shapes and stairs up as well.** A floor above as well as below, for the towers and galleries. The dungeon has only ever had a floor below, so this is a larger job (a Fable session) before any shape.
+- **C. Today's layouts, with a straight flight in place of the spiral.** The smallest change. The forts stay one passage with rooms off it.
+- **D. Something else.** Mark what to change on the picture, or name a fort you have in mind.
+
+**Recommendation: A.** The brief asks for places that feel different. A remembered room in each fort (a hall, a gaol, a ring round a yard) does that more than more rooms off the same passage. Straight flights down fit the two floors the game already has, so the first shape can be built next session. Stairs up can follow as their own question once the shapes are in.
+
+Picture (top: today's three; bottom: the three proposed):
+https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/fort-layouts.png
+
 ## Answered
 ### The old gates' look in the overworld (the look builder, Session 571, 2026-10-06) — DECISION #169
 You asked on 5 Oct for a full pass on the old gates in the overworld (the Crypt of Embers and the rest): "very very jumbled and ugly looking." Here is why they look that way, and one way to fix it.
@@ -34,6 +100,8 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 
 Michael: **One shared form, as shown** — Yeah this looks better, but the doorway itself doesn’t look like a door - the mesh from the grassy hillock that’s part of it is bursting through the doorway. (2026-10-05)
 
+Done, Session 581: every cave-type gate is the one form (`buildOldGateFront`, `24-forts.js`). The mound's front is cut flat behind a stone headwall for three either side of the door, so no turf can stand in the doorway, and a heavy two-leaf oak door on iron straps fills it, set back in the reveal. Today's rocks and the seeded clutter are gone. Pictures: `docs/prototypes/oldgate-built-*.png`.
+
 ### The dungeon's swinging blades (the look builder, Session 573, 2026-10-06) — DECISION #170
 On 5 Oct you said the dungeon's traps are "awkward and rarely oriented properly … swinging axes scrape along the same wall, doesn't look like it would touch the player whatsoever." Here is what is wrong, and one way to fix it.
 
@@ -56,6 +124,8 @@ https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/pr
 https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/dungeon-trap-proto-swing.png
 
 Michael: **Across the passage, as shown**. (2026-10-05)
+
+Done, Session 582 (the look): the crescent blade swings across the passage into a slot in each wall, the bottom of its arc at .95 (`buildSwingBlade`, `68-dungeon-misc.js`). On the way it was found that every trap stood on its cell's corner, at c+.5, which put a blade in the line of a wall; traps now stand at their cell's centre. The hit that follows the blade is the systems builder's Session 580.
 
 ### Two houses of one name in a town — must a house's name be its own? (the systems builder, 2026-10-06) — DECISION #171
 A home is named for its resident (*Séamus's House*), and residents' first names are unique in a town only while the bank lasts: twelve a sex for each people, so a town of more than about two dozen homes repeats them (Session 172 kept repeats for ordinary townsfolk, and Session 248 gave the second of a name another face). The critic found two *Séamus's House* in Carraig Mór (lots 10 and 44), both for sale, at 1,150 and 1,100: on the map, in the log, in a save's label and in a townsperson's directions the two read the same. A house is what the player buys, so the question is whether its name must point at one door. Shops, inns and guild heads are already unique (Sessions 172 and 248); nothing else changes in any option.

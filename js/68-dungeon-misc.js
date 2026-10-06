@@ -170,10 +170,28 @@ function decorateDungeonRooms(gen,portal){
   const run=corridor.filter(([c,rr,dir])=>dir==='h'?(isFloor(c-2,rr)&&isFloor(c+2,rr)&&!isFloor(c,rr-1)&&!isFloor(c,rr+1)):(isFloor(c,rr-2)&&isFloor(c,rr+2)&&!isFloor(c-1,rr)&&!isFloor(c+1,rr)));
   corridor.length=0;corridor.push(...run);
   const nTraps=Math.min(corridor.length,2+Math.floor(r()*4));
-  for(let k=0;k<nTraps;k++){const [c,rr,dir]=corridor[Math.floor(r()*corridor.length)];const x=c+.5,z=rr+.5;if(D_TRAPS.some(t=>Math.hypot(t.x-x,t.z-z)<3))continue;
+  for(let k=0;k<nTraps;k++){const [c,rr,dir]=corridor[Math.floor(r()*corridor.length)];const x=c,z=rr; /* S582 — a cell is centred on its integer (c−½ to c+½): at c+.5 every trap stood on its cell's corner, a blade in the wall's line */if(D_TRAPS.some(t=>Math.hypot(t.x-x,t.z-z)<3))continue;
     if(r()<.6){const plate=_dBox(.62,.04,.62,0x3a3630,x,.02,z);const spikes=new THREE.Group();for(let i=0;i<9;i++){const s=new THREE.Mesh(new THREE.ConeGeometry(.04,.34,5),new THREE.MeshLambertMaterial({color:0x9a9ea6}));s.position.set(-.18+(i%3)*.18,.17,-.18+Math.floor(i/3)*.18);spikes.add(s);}spikes.position.set(x,-.4,z);dScene.add(spikes);D_TRAPS.push({kind:'spike',x,z,floor:1,plate,spikes,t:0,armed:true});}
-    else{const pivot=new THREE.Group();pivot.position.set(x,FLOOR_HEIGHT-.1,z);const arm=_dBox(.06,1.4,.06,0x3a2e22,0,-.7,0);dScene.remove(arm);pivot.add(arm);const blade=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.04),new THREE.MeshLambertMaterial({color:0xb8bcc4}));blade.position.set(0,-1.55,0);pivot.add(blade);pivot.rotation.y=dir==='h'?0:Math.PI/2;dScene.add(pivot);D_TRAPS.push({kind:'blade',x,z,floor:1,pivot,ph:r()*Math.PI*2,hitT:0});}}
+    else{D_TRAPS.push(buildSwingBlade(x,z,dir,r));}}
 }
+// S582 — the swinging blade across the passage (Michael's A on DECISION #170, the Session 573 prototype): a crescent of steel on an
+// iron arm hung from a bracket in the roof, its flat face to you as you come up the corridor, swinging from wall to wall with the
+// bottom of its arc at the waist (.95) and into a dark slot cut in each wall. The arm is as long as the roof is high (a lair's 4.4).
+// The pivot swings about its own z (tickDungeonTraps), so it is turned to put that swing across the corridor: a corridor along x
+// ('h') swings in z. t.blade is the steel, for the hit.
+function buildSwingBlade(x,z,dir,r){const top=FLOOR_HEIGHT-.1,low=.95,L=top-low,pivot=new THREE.Group();pivot.position.set(x,top,z);pivot.rotation.y=dir==='h'?Math.PI/2:0;
+  const iron=new THREE.MeshLambertMaterial({color:0x3a3a3c}),steel=new THREE.MeshLambertMaterial({color:0xc8ccd4,side:THREE.DoubleSide}),slotM=new THREE.MeshBasicMaterial({color:0x050403,side:THREE.DoubleSide});
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.07,L-.25,.07),iron);arm.position.y=-(L-.25)/2;pivot.add(arm);
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.22,10),iron);hub.rotation.x=Math.PI/2;pivot.add(hub);
+  const sh=new THREE.Shape();sh.absarc(0,0,.55,Math.PI*1.15,Math.PI*1.85,false);sh.absarc(0,.32,.45,Math.PI*1.8,Math.PI*1.2,true);
+  const bg=new THREE.ExtrudeGeometry(sh,{depth:.03,bevelEnabled:true,bevelSize:.012,bevelThickness:.01,bevelSegments:1});bg.computeBoundingBox();const bc=new THREE.Vector3();bg.boundingBox.getCenter(bc);bg.translate(-bc.x,-bc.y,-bc.z); /* the steel's own centre is the mesh's origin, so its position is where the blade is */
+  const blade=new THREE.Mesh(bg,steel);blade.position.set(bc.x,-L+.55+bc.y,0);blade.userData.trapBlade=true;pivot.add(blade);
+  dScene.add(pivot);
+  // the bracket in the roof: a bar across the passage the hub turns on
+  const br=new THREE.Mesh(new THREE.BoxGeometry(dir==='h'?.12:1.0,.1,dir==='h'?1.0:.12),iron);br.position.set(x,top+.04,z);dScene.add(br);
+  // the slots the blade passes into, one in each wall in the plane of its swing
+  for(const s of[-1,1]){const sl=new THREE.Mesh(new THREE.PlaneGeometry(.12,1.3),slotM);if(dir==='h'){sl.position.set(x,1.35,z+s*.49);}else{sl.position.set(x+s*.49,1.35,z);sl.rotation.y=Math.PI/2;}dScene.add(sl);}
+  return {kind:'blade',x,z,floor:1,pivot,blade,ph:r()*Math.PI*2,hitT:0};}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
     if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(Math.random()*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
@@ -243,15 +261,15 @@ function tickEnemyDetail(){const E=activeZoneId==='world'?(ZONES.world&&ZONES.wo
 // ── exteriors: mystery by seed, and a sigil glow in the theme's colour ──
 const THEME_GLOW={undead:0x9a60ff,goblin:0x60ff80,elemental:0xff8040,deep:0x4080ff,haunted:0x40e0d0,ruins:0xffd060,fort:0xffd060};
 const PORTAL_FX=[];
-function dressPortalExterior(sc,p,ty,sol){try{const solid=(x,z,r)=>{if(sol)sol.push({cx:x,cz:z,rx:r,rz:r});};const h=(p.seed*2654435761)>>>0;const r=((k)=>{let s=(h^(k*7919))>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})(1);
+function dressPortalExterior(sc,p,ty,sol,sigilOnly){try{const solid=(x,z,r)=>{if(sol)sol.push({cx:x,cz:z,rx:r,rz:r});};const h=(p.seed*2654435761)>>>0;const r=((k)=>{let s=(h^(k*7919))>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})(1);
   const M=(c,em)=>new THREE.MeshLambertMaterial({color:c,emissive:em||0});const put=(m,x,y,z,ry)=>{m.position.set(x,y,z);if(ry)m.rotation.y=ry;sc.add(m);return m;};
   // a set piece that changes the silhouette: standing stones, a ruined arch, a fallen tower, a sunken approach — one per gate by seed
-  const set=['stones','arch','tower','pit','none'][Math.floor(r()*5)];const M2=(c)=>new THREE.MeshLambertMaterial({color:c});const gy=(x,z)=>(typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.worldH(x,z):ty;
+  const set=sigilOnly?'none':['stones','arch','tower','pit','none'][Math.floor(r()*5)];const M2=(c)=>new THREE.MeshLambertMaterial({color:c});const gy=(x,z)=>(typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.worldH(x,z):ty;
   if(set==='stones'){const n=5+Math.floor(r()*3);for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r()*.3;const rr=4.2+r()*.8;const x=p.x+Math.cos(a)*rr,z=p.z+Math.sin(a)*rr;const hgt=1.6+r()*1.4;const m=new THREE.Mesh(new THREE.BoxGeometry(.5+r()*.3,hgt,.35+r()*.2),M2([0x6a665e,0x5a564e,0x74706a][i%3]));m.position.set(x,gy(x,z)+hgt/2-.1,z);m.rotation.y=r()*3;m.rotation.z=(r()-.5)*.12;m.castShadow=true;sc.add(m);solid(x,z,.45);}}
   else if(set==='arch'){for(let s=-1;s<=1;s+=2){const x=p.x+s*2.0,z=p.z+3.2;const m=new THREE.Mesh(new THREE.CylinderGeometry(.32,.38,3.2,8),M2(0x8a8478));m.position.set(x,gy(x,z)+1.6,z);sc.add(m);solid(x,z,.45);const cap=new THREE.Mesh(new THREE.BoxGeometry(.9,.3,.9),M2(0x9a948a));cap.position.set(x,gy(x,z)+3.35,z);sc.add(cap);}const lin=new THREE.Mesh(new THREE.BoxGeometry(4.9,.42,.9),M2(0x9a948a));lin.position.set(p.x,gy(p.x,p.z+3.2)+3.7,p.z+3.2);lin.rotation.z=(r()-.5)*.06;sc.add(lin);for(let i=0;i<5;i++){const x=p.x+(r()-.5)*5,z=p.z+3.2+(r()-.5)*2;const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.35,.5),M2(0x7a766e));m.position.set(x,gy(x,z)+.15,z);m.rotation.y=r()*3;sc.add(m);}}
   else if(set==='tower'){const x=p.x+3.4,z=p.z-1.5;const h0=gy(x,z);const wall=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.6,3.4,10,1,true),new THREE.MeshLambertMaterial({color:0x6a665e,side:THREE.DoubleSide}));wall.position.set(x,h0+1.7,z);sc.add(wall);solid(x,z,1.7);for(let i=0;i<7;i++){const a=i/7*Math.PI*2;const m=new THREE.Mesh(new THREE.BoxGeometry(.6,.5+r()*.6,.5),M2(0x5a564e));m.position.set(x+Math.cos(a)*1.55,h0+3.4+.3,z+Math.sin(a)*1.55);m.rotation.y=-a;sc.add(m);}for(let i=0;i<6;i++){const xx=x+(r()-.5)*5,zz=z+(r()-.5)*5;const m=new THREE.Mesh(new THREE.BoxGeometry(.4+r()*.5,.3,.4+r()*.5),M2(0x6a665e));m.position.set(xx,gy(xx,zz)+.12,zz);m.rotation.y=r()*3;sc.add(m);}}
   else if(set==='pit'){for(let i=0;i<2;i++)for(let s=-1;s<=1;s+=2){const x=p.x+s*1.6,z=p.z+2.2+i*1.6;const m=new THREE.Mesh(new THREE.BoxGeometry(.3,1.2+i*.3,.3),M2(0x5a564e));m.position.set(x,gy(x,z)+.6+i*.15,z);sc.add(m);}for(let i=0;i<6;i++){const z=p.z+1.6+i*.55;const m=new THREE.Mesh(new THREE.BoxGeometry(3.0,.1,.5),M2(0x7a766e));m.position.set(p.x,gy(p.x,z)-.02-i*.02,z);sc.add(m);}}
-  const picks=[];const pool=['skull','chains','tree','bones','cairn','mist','ravens'];while(picks.length<3){const k=pool[Math.floor(r()*pool.length)];if(!picks.includes(k))picks.push(k);}
+  const picks=[];const pool=['skull','chains','tree','bones','cairn','mist','ravens'];while(!sigilOnly&&picks.length<3){const k=pool[Math.floor(r()*pool.length)];if(!picks.includes(k))picks.push(k);}
   for(const k of picks){const a=r()*Math.PI*2,dd=2.6+r()*2.2;const x=p.x+Math.cos(a)*dd,z=p.z+Math.sin(a)*dd;const y=(typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.worldH(x,z):ty;
     if(k==='skull'){solid(x,z,.18);put(new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,1.6,5),M(0x3a2a1a)),x,y+.8,z);put(new THREE.Mesh(new THREE.SphereGeometry(.13,7,6),M(0xe0d8c8)),x,y+1.7,z);}
     else if(k==='chains'){solid(x+.15,z,.25);for(let i=0;i<2;i++){put(new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,1.2,4),M(0x4a4a50)),x+i*.3,y+1.4,z);put(new THREE.Mesh(new THREE.TorusGeometry(.08,.02,4,8),M(0x4a4a50)),x+i*.3,y+.78,z,0);}}
@@ -260,9 +278,9 @@ function dressPortalExterior(sc,p,ty,sol){try{const solid=(x,z,r)=>{if(sol)sol.p
     else if(k==='cairn'){solid(x,z,.4);for(let i=0;i<5;i++)put(new THREE.Mesh(new THREE.BoxGeometry(.5-i*.07,.18,.4-i*.05),M(0x6a665e)),x,y+.09+i*.17,z,r()*.6);}
     else if(k==='mist'){const N=18;const pos=new Float32Array(N*3);for(let i=0;i<N;i++){pos[i*3]=(r()-.5)*7;pos[i*3+1]=.2+r()*.5;pos[i*3+2]=(r()-.5)*7;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const m=new THREE.Points(g,new THREE.PointsMaterial({color:0xd0d0d8,size:1.6,transparent:true,opacity:.18,depthWrite:false,sizeAttenuation:true}));m.position.set(p.x,ty,p.z);sc.add(m);PORTAL_FX.push({kind:'mist',m,ph:r()*6});}
     else if(k==='ravens'){for(let i=0;i<3;i++)put(new THREE.Mesh(new THREE.BoxGeometry(.14,.1,.22),M(0x101010)),x+(r()-.5),y+.06,z+(r()-.5),r()*3);}}
-  if(p.sigil||p.kind==='fort_door'){const col=THEME_GLOW[p.theme]||0xffd060;const l=new THREE.PointLight(col,1.6,9);l.position.set(p.x,ty+1.4,p.z+.6);sc.add(l);
-    const N=28;const pos=new Float32Array(N*3);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const pts=new THREE.Points(g,new THREE.PointsMaterial({color:col,size:.16,transparent:true,opacity:.85,depthWrite:false}));pts.position.set(p.x,ty,p.z);sc.add(pts);
-    const runes=[];for(let i=0;i<5;i++){const rm=put(new THREE.Mesh(new THREE.BoxGeometry(.16,.18,.03),M(col,col)),p.x-1.0+i*.5,ty+2.3,p.z+.35);rm.material.emissiveIntensity=.8;runes.push(rm);}
+  if(p.sigil||p.kind==='fort_door'){const col=THEME_GLOW[p.theme]||0xffd060;const l=new THREE.PointLight(col,1.6,9);const fz=sigilOnly?-1.6:0;l.position.set(p.x,ty+1.4,p.z+.6+fz);sc.add(l);
+    const N=28;const pos=new Float32Array(N*3);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const pts=new THREE.Points(g,new THREE.PointsMaterial({color:col,size:.16,transparent:true,opacity:.85,depthWrite:false}));pts.position.set(p.x,ty,p.z+fz);sc.add(pts);
+    const runes=[];for(let i=0;i<5;i++){const rm=put(new THREE.Mesh(new THREE.BoxGeometry(.16,.18,.03),M(col,col)),p.x-1.0+i*.5,ty+(sigilOnly?3.4:2.3),p.z+(sigilOnly?-1.02:.35));rm.material.emissiveIntensity=.8;runes.push(rm);}
     PORTAL_FX.push({kind:'sigil',pts,N,l,col,ph:r()*6,base:l.intensity});}
 }catch(e){}}
 function tickPortalFx(dt){const t=performance.now()*.001;for(const f of PORTAL_FX){if(f.kind==='mist'){f.m.material.opacity=.14+Math.sin(t*.4+f.ph)*.06;f.m.rotation.y+=dt*.03;}
@@ -433,7 +451,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const dragon=!!L.dragon;e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${L.boss}`;e.boss=true;e.dragon=dragon;
   e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
-  if(dragon)dragonBody(e,2.88); // S219 — the world's dragon's size (its zone scale 1.8 × 1.6)
+  if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88); // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
   // the hoard beside it
   const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(e.x+1.2,(e.floor===2?FLOOR2_Y:0),e.z+.6);dScene.add(group);
@@ -453,7 +471,11 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
 // health bar planes and the lights stay. rs is the dragon's scale in the world's own units, whatever the group's scale.
 function dragonBody(e,rs){if(!e||!e.mesh||!WOLF_KINDS.Dragon)return;const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{};
   g.children.slice().forEach(c=>{if(c===L.hpBg||c===e.hpFg||c===e.hpBg||c.isLight)return;g.remove(c);});
-  const w=buildWolf('Dragon',rs/(g.scale.x||1));g.add(w.root);w.e=e;
+  let w=buildWolf('Dragon',rs/(g.scale.x||1));g.add(w.root);
+  // S546 — a cavern's ceiling is FLOOR_HEIGHT over its floor: a wyrm taller than that is built again at the largest that clears it
+  {g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(w.root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;
+  if(h>room){g.remove(w.root);w=buildWolf('Dragon',rs*room/h/(g.scale.x||1));g.add(w.root);}}
+  w.e=e;e._wyrmScale=w.root.scale.x*(g.scale.x||1);
   e.limbs={torso:w.mesh,wolf:w,hpBg:L.hpBg};e._dragonBuilt=true;e._detailed=true;return w;}
 // dragon: wings, a long neck and head, a tail, horns — grown on the creature's base mesh
 function detailDragon(e){if(!e.mesh||!e.mesh.isGroup||e._dragonBuilt)return;if(e.limbs&&e.limbs.wolf){e._dragonBuilt=true;return;}e._dragonBuilt=true;const g=e.mesh;const s=1/(g.scale.x||1); // parts are in local units; the group is scaled

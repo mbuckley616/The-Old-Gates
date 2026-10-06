@@ -19,6 +19,10 @@ try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=pa
 const LOOK_TUNICS=[0x6a5a44,0x5a2a20,0x2a3a6a,0x3a4a2a,0x6a4a1a,0x2a2a2a,0x7a6a5a,0x4a2a4a];
 const LOOK_BREECHES=[0x3a2a1a,0x4a4030,0x2a2a3a,0x5a3a2a,0x1a1a1a];
 const LOOK_BOOTS=[0x2a1c10,0x4a3018,0x1a1a1a,0x5a4a3a];
+// S560 — the six cloaks' cuts and colours (docs/design/capes-and-cloaks.md): the plain wool, the dark hood, oilskin, the Markish
+// fur-lined, the Aurennais short cape to the waist with a gold hem, the pilgrim's grey with its hood
+const TP_CLOAK={wool:{col:0x6a5a46,cut:'long'},hood:{col:0x24242a,cut:'long',hood:true},oilskin:{col:0x4e4a2e,cut:'long'},
+  fur:{col:0x4a382a,cut:'long',fur:0x9a8a70},cape:{col:0x2a3a7a,cut:'short',trim:0xc8a040},pilgrim:{col:0x8a8880,cut:'long',hood:true}};
 const LOOK_STYLES=[['short','Cropped'],['long','Long'],['tied','Tied back'],['bald','Shorn'],['braid','A braid'],['twin','Two braids'],['warrior','Warrior braids'],['mohawk','A crest'],['curly','Curly'],['afro','An afro'],['shaggy','Shaggy'],['bun','A bun'],['thin','Thinning']];
 const LOOK_BEARDS=[['no','None'],['full','Full'],['short','Trimmed'],['long','Long'],['braided','Braided'],['forked','Forked'],['goatee','Goatee'],['vandyke','Goatee and moustache'],['walrus','Walrus'],['handlebar','Handlebar'],['pencil','Pencil'],['horseshoe','Horseshoe'],['mutton','Mutton chops'],['chinstrap','Chinstrap'],['stubble','Stubble']];
 function lookDefault(pp,arch,name){let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const h=[...(name||'you')].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
@@ -29,7 +33,7 @@ function tpHex(s,def){if(typeof s==='number')return s;if(typeof s==='string'&&s[
 function tpMatColor(it,def){if(!it)return def;if(it.matCol!=null)return it.matCol;const name=(it.name||'').toLowerCase();for(const k in ICO_MAT){if((it.material||'').toLowerCase()===k||name.startsWith(k+' ')||name.includes(' '+k+' '))return tpHex(ICO_MAT[k],def);}
   if(/leather|hide|hood|cap\b|boots|breeches|gloves/.test(name))return 0x6a4a2e;if(/tunic|robe|cloth|shirt|trousers/.test(name))return 0x6a5a44;if(/iron|rusty/.test(name))return 0x8a8f98;if(/steel|plate|chain|mail/.test(name))return 0xb8bcc4;return def;}
 function tpIsCloth(it){if(!it)return true;const n=(it.name||'').toLowerCase();return /tunic|robe|cloth|breeches|trousers|shirt|hood|cap\b|leather|hide|worn|tattered|boots|gloves/.test(n)&&!/cuirass|plate|mail|helm|greaves|gauntlet|sabaton/.test(n);}
-function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo'].map(s=>EQ[s]?(EQ[s].name||'?'):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
+function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
 function tpBox(w,h,d,col,parent,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));m.position.set(x||0,y||0,z||0);parent.add(m);return m;}
 function tpGroup(parent,x,y,z){const g=new THREE.Group();g.position.set(x||0,y||0,z||0);g.rotation.order='YXZ';parent.add(g);return g;}
 // ── weapons: built along +y from the grip (the hand's local "up" once the forearm is raised) ──
@@ -51,7 +55,7 @@ function tpBuild(lookIn,ppIn){
   const own=it=>it&&it.matCol==null&&tpIsCloth(it);
   const chestCol=!ch?LK.tunic:own(ch)?LK.tunic:tpMatColor(ch,archCol),chestCloth=tpIsCloth(ch);
   const legCol=!lg?LK.breeches:own(lg)?LK.breeches:tpMatColor(lg,0x3a2a1a),legCloth=tpIsCloth(lg);
-  const bootCol=!ft?LK.boots:own(ft)?LK.boots:tpMatColor(ft,0x2a1c10);
+  const bootCol=!ft?LK.boots:ft.line==='light'&&ft.tier?armourLineLeather(ft.tier):own(ft)?LK.boots:tpMatColor(ft,0x2a1c10); /* S569 — soft boots are leather, not the metal */
   // the genome: the look's choices over the people's build, never re-rolled
   const styleMap={short:'crop',long:'straight',bald:'buzz'};
   // S384 — the worn armour kit: under a piece of it the tunic and breeches are your own cloth, and its helm replaces the bowl
@@ -59,10 +63,14 @@ function tpBuild(lookIn,ppIn){
   const g=personGenome({name:playerName||'you',role:'',people:pp,sCol:LK.skin,hairCol:LK.hair,bCol:chestCol},{key:'player'});
   Object.assign(g,{skin:new THREE.Color(LK.skin),hair:new THREE.Color(LK.hair),style:styleMap[LK.style]||LK.style||'crop',beard:LK.beard===true?'full':LK.beard||'none',
     cloth:new THREE.Color(clothCol),sleeve:new THREE.Color(clothCol).multiplyScalar(.9),legs:new THREE.Color(legsCol),boot:new THREE.Color(bootCol),
-    dress:!!(ch&&/robe/i.test(ch.name||'')),cloak:false,apron:null,gear:null,extras:[],freckles:false,ruddy:false,age:'adult',child:false,height:1,build:1,
-    hat:hd?(tpIsCloth(hd)?'hood':AR&&AR.head?'none':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
+    dress:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),cloak:false,apron:null,gear:null,extras:[],freckles:false,ruddy:false,age:'adult',child:false,height:1,build:1,
+    hat:hd?(hd.line&&AR&&AR.head?'none':tpIsCloth(hd)?'hood':AR&&AR.head?'none':'helm'):'none',hoodCol:hd?tpMatColor(hd,0x8a8f98):null,helmCol:hd?tpMatColor(hd,0x8a8f98):null,
     eq:{armour:AR,chest:ch?{col:chestCol,cloth:chestCloth}:null,legs:lg?{col:legCol,cloth:legCloth}:null,hands:gl?{col:tpMatColor(gl,0x5a3a20)}:null,amulet:!!EQ.amulet,quiver:!!(EQ.ammo||(EQ.weapon&&EQ.weapon.weaponShape==='bow'))},
     bodyScale:[P&&P.width||1,P&&P.height||1,P&&P.width||1]});
+  // S560 — the cloak in the back slot (Michael's B on #148; the slot and the six kinds are the systems builder's, EQ.back.cloak):
+  // its cut and colour by kind (TP_CLOAK), a dyed one by its own colour (EQ.back.col, the dyer's)
+  {const bk=EQ.back,K=bk&&bk.cloak?(TP_CLOAK[bk.cloak]||TP_CLOAK.wool):null;
+    if(K)Object.assign(g,{cloak:true,cloakCol:bk.col!=null?bk.col:K.col,cloakCut:K.cut,cloakHood:!!K.hood,cloakFur:K.fur!=null?K.fur:null,cloakTrim:K.trim!=null?K.trim:null});}
   // S394 — an empty slot is the body's own underclothes (Michael's B on #83): an undyed linen shirt cut at the shoulder,
   // linen braies, bare feet; the look's colours dye the starting tunic, breeches and boots, which are items
   if(!ch){g.shirt=true;g.bareArms=true;g.dress=false;g.cloth=new THREE.Color(TP_LINEN);g.sleeve=g.skin.clone();}
@@ -82,18 +90,44 @@ function tpBuild(lookIn,ppIn){
     // S246: where the left hand goes on a two-handed grip: a hand's width from the right fist towards the pommel (the
     // shorter end of the weapon from the fist), in the weapon's own frame
     if(R.twoH){const bb=new THREE.Box3().setFromObject(wm),dn=Math.abs(bb.min.y)<Math.abs(bb.max.y)?-1:1,end=Math.abs(dn<0?bb.min.y:bb.max.y);R.gripL=new THREE.Vector3(0,dn*Math.max(.05,Math.min(.1,end*.7)),0);}
-    if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}}
+    const wb=w.enchant&&w.enchant.col!=null?new THREE.Box3().setFromObject(wm):null;
+    if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}
+    if(wb&&!wb.isEmpty())tpMotes(R,wm,w.enchant.col,wb);}
   R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
     // S227 — the kit's shields: planked and round with a rim and boss, the kite, or (S231) the tower shield; the face is
     // the item's material colour, the rim and boss its guard's
     const kk=round?'round':big&&!/kite/i.test(oh.name||'')?'tower':'kite';const k=buildWeapon(kk,{tint:{face:c,guard:rim,metal:rim}});if(round&&/buckler/i.test(oh.name||''))k.scale.setScalar(.8);sg.add(k);sg.userData.kit=kk; // S231 — a tower shield its own shape
-    sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;}
+    sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;
+    if(oh.enchant){const sb=new THREE.Box3().setFromObject(k);if(!sb.isEmpty())tpMotes(R,sg,oh.enchant.col!=null?oh.enchant.col:tpHex(oh.matGlow,TP_MOTE.armour),sb);}}
   else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
+  // the worn pieces: a box about the bone each hangs on, in that bone's frame
+  const BX=(x0,y0,z0,x1,y1,z1)=>new THREE.Box3(new THREE.Vector3(x0,y0,z0),new THREE.Vector3(x1,y1,z1));
+  [[hd,B.head,BX(-.19,.04,-.19,.19,.32,.19)],[ch,B.spine,BX(-.24,-.02,-.2,.24,.36,.2)],[gl,B.elR,BX(-.07,-.2,-.07,.07,0,.07)],[gl,B.elL,BX(-.07,-.2,-.07,.07,0,.07)],
+    [lg,B.knL,BX(-.085,-.3,-.085,.085,0,.085)],[lg,B.knR,BX(-.085,-.3,-.085,.085,0,.085)],[ft,B.anL,BX(-.07,-.06,-.07,.07,.04,.12)]].forEach(([it,b,bx])=>{
+    if(it&&it.enchant&&b)tpMotes(R,b,it.enchant.col!=null?it.enchant.col:tpHex(it.matGlow,TP_MOTE.armour),bx,true);});
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.userData.tp=true;}});
   return R;}
-function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
+// S539 — an enchanted piece shows it with "some very very light particle effect" (Michael, the inspector, with the Demonic kit's
+// note): a few faint motes in the enchantment's colour (an armour enchantment has none: the material's glow, else a pale blue)
+// drifting up through the piece and round again, additive, a few millimetres each. One Points object per enchanted piece, on the
+// bone or in the hand that carries it; tpMotesTick moves them in tpPose. TP_MOTE is how many and how faint.
+const TP_MOTE={n:7,size:.045,opacity:.55,rise:.07,armour:0xb8d0ff,map:null};
+// a soft round glint, made once: white at the heart fading out, which the material's colour tints
+function tpMoteMap(){if(TP_MOTE.map)return TP_MOTE.map;const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d'),gr=x.createRadialGradient(16,16,0,16,16,16);
+  gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,32,32);return TP_MOTE.map=new THREE.CanvasTexture(c);}
+function tpMotes(R,parent,col,box,shell){const n=TP_MOTE.n,P=new Float32Array(n*3),seed=[],cx=(box.min.x+box.max.x)/2,cz=(box.min.z+box.max.z)/2,hx=(box.max.x-box.min.x)/2,hz=(box.max.z-box.min.z)/2;
+  // in a held piece's bounds; round a worn piece, on the ring of its box (shell), so they drift just outside the plate
+  for(let i=0;i<n;i++){const u=(i*.618+.13)%1,v=(i*.382+.71)%1,a=u*Math.PI*2;
+    seed.push([shell?cx+hx*Math.sin(a):box.min.x+2*hx*u,shell?cz+hz*Math.cos(a):box.min.z+2*hz*v,(i/n),.6+((i*.53)%1)*.8]);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:col,size:TP_MOTE.size,map:tpMoteMap(),transparent:true,opacity:TP_MOTE.opacity,blending:THREE.AdditiveBlending,depthWrite:false}));
+  pts.userData={box,seed,motes:true};pts.frustumCulled=false;parent.add(pts);(R.motes||(R.motes=[])).push(pts);tpMotesTick(R,0);return pts;}
+function tpMotesTick(R,t){if(!R||!R.motes)return;for(const m of R.motes){const {box,seed}=m.userData,a=m.geometry.attributes.position,h=box.max.y-box.min.y||.1;
+  for(let i=0;i<seed.length;i++){const [x,z,ph,sp]=seed[i],f=(ph+t*TP_MOTE.rise*sp/h)%1;a.setXYZ(i,x+.012*Math.sin(t*1.3+i*2.1),box.min.y+f*h,z+.012*Math.cos(t*1.1+i*1.7));}
+  a.needsUpdate=true;}}
+function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
 function tpSet(g,x,y,z,k){g.rotation.x=_tpL(g.rotation.x,x,k);g.rotation.y=_tpL(g.rotation.y,y||0,k);g.rotation.z=_tpL(g.rotation.z,z||0,k);}
 // ── camera collision ──
@@ -133,6 +167,7 @@ const TP_SWING_NEW=true;
 function tpPose(R,dt,st){
   const k=Math.min(1,dt*14),kf=Math.min(1,dt*22);
   const now=st.now/1000;
+  if(R.motes)tpMotesTick(R,now); // S539
   // hurt / death
   if(TP.lastHP!=null&&PHP<TP.lastHP-.5)TP.hurtT=.28;TP.lastHP=PHP;TP.hurtT=Math.max(0,TP.hurtT-dt);
   if(dead){TP.deadT=Math.min(1,TP.deadT+dt*2.2);}else TP.deadT=Math.max(0,TP.deadT-dt*4);

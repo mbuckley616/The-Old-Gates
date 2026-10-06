@@ -31,7 +31,9 @@ function footholdY(x,z,py,base){
   }
   return best;
 }
-let INT_BEDS=[];let INT_DOORS=[]; // v80 S143 — doors inside buildings
+let INT_BEDS=[];let INT_DOORS=[];let INT_CHAIR=null; /* S561 — the barber's chair in a generated room: {x, z, house} */
+// S561 — within reach of the barber's chair and nearer it than the barber who stands beside it; within 1.2 of him, E talks to him
+function nearBarberChair(){if(!INT_CHAIR)return false;const d=Math.hypot(px-INT_CHAIR.x,pz-INT_CHAIR.z);if(d>=1.5)return false;const k=typeof intNPCPos!=='undefined'&&intNPCPos&&intNPCMesh?Math.hypot(px-intNPCPos.x,pz-intNPCPos.z):1e9;return k>=1.2&&d<k;} // v80 S143 — doors inside buildings
 // v80 S11 — solids carry a height band {y0,y1}. An object whose top is
 // within a step of your feet doesn't block (you step onto it — it's also a
 // foothold); an object entirely above your head doesn't block (you walk
@@ -41,7 +43,10 @@ function intSolidAt(x,z,R,Y){const y=Y!=null?Y:jumpY;for(let i=0;i<INT_SOL.lengt
   if(s.y1!=null&&s.y1<=y+STEP_UP)continue;      // low enough to step onto / already above it
   if(s.y0!=null&&s.y0>=y+PLAYER_H)continue;      // entirely overhead
   if(x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R)return true;}return false;}
-const FLOOR_HEIGHT=3.2; // wall/ceiling height per floor
+let FLOOR_HEIGHT=3.2; // wall/ceiling height per floor; S564: the dungeon's own, set by buildDungeon (dunFloorHeight)
+// S564 — Michael's B on #162: a dragon's lair is cut to 4.4 so its wyrm stands at the world's 4.5; every other dungeon stays 3.2
+const DUN_FLOOR_H=3.2,LAIR_FLOOR_H=4.4;
+function dunFloorHeight(portal){return portal&&portal.lair&&portal.lair.dragon?LAIR_FLOOR_H:DUN_FLOOR_H;}
 
 // v61g0: FORT_INTERIORS registry — interior-layout generators selected by the
 // `interior` field on WORLD_DUNGEONS entries. Symmetric with the v61f9

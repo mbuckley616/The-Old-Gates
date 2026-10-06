@@ -173,14 +173,109 @@ const GUARD_ROLE=/guard|captain|sergeant|watch|blade|warden|recruit|soldier|cons
 function guardArmourTier(role,pr){return /captain/.test(role)?4:pr<40?1:3;}
 function AR_FROM_EQ(EQ,mode){
   const piece=it=>{if(!it||!it.material||!it.tier)return null;const t=Math.max(1,Math.min(10,it.tier)),m=MATERIALS[t-1];if(m.name!==it.material)return null;
-    return {tier:t,fam:AR_FAM[t],sig:mode==='A'?null:AR_SIG[t],metal:m.blade,guard:m.guard,glow:m.glow};};
+    const ln=it.line==='light'||it.line==='robe'?it.line:null; /* S569 — a light or robe piece is dressed by ARMOUR_LINE */
+    return {tier:t,fam:ln||AR_FAM[t],line:ln,sig:mode==='A'||ln?null:AR_SIG[t],metal:m.blade,guard:m.guard,glow:m.glow};};
   const o={head:piece(EQ.head),chest:piece(EQ.chest),hands:piece(EQ.hands),legs:piece(EQ.legs),feet:piece(EQ.feet)};
   return (o.head||o.chest||o.hands||o.legs||o.feet)?o:null;}
 
+// S569 — the light and robe lines (Michael's B on #156, and A on #161: both as Session 556's prototype showed them): a piece with
+// `line` 'light' (the archer's: a jerkin, bracers, soft boots, a hood) or 'robe' (the mage's: an open coat, an under-robe, bell
+// sleeves, a mantle, a cowl) is dressed here, and ARMOUR_DRESS gets the rest. The item's `line` is the systems builder's (S564). The tier colours the line: the light line's leather darkens and takes the material's
+// colour from Mithril up, its rivets and buckles are the metal; the robe's cloth is a dye per tier, its trim gold or the metal.
+const LINE_ROBE=[null,0x7a6e5a,0x8a5a2a,0x2e3e5e,0x4a4e5a,0x2a3a7a,0x1e5030,0x241c30,0x7a1812,0x40125a,0xd8e4ee];
+const LINE_LEA=[null,0x7a5634,0x6a4628,0x5a3a22,0x4a3020];
+// the light line's leather at a tier, as a hex: tpBuild gives it to the foot under the soft boots
+function armourLineLeather(t){t=Math.max(1,Math.min(10,t||1));const c=new THREE.Color(LINE_LEA[Math.min(4,t)]);if(t>4)c.lerp(new THREE.Color(MATERIALS[t-1].guard),.45);return c.getHex();}
+function ARMOUR_LINE(X,E){
+  const {part,B,C,SK,THREE,bw,chestPts,g}=X;const PI=Math.PI,L1=PW.L1,L2=PW.L2,DL=PW.DL,hs=g.head||1,Z=.78,LR=[['L',1],['R',-1]];
+  const cp=chestPts.map(q=>[q[0]*bw,q[1]]);
+  const rAt=y=>{for(let i=1;i<cp.length;i++){const a=cp[i-1],b=cp[i];if(a[1]!==b[1]&&(y-a[1])*(y-b[1])<=0)return a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1]);}return cp[1][0];};
+  const ring=(r,t,y,col,b,sz,seg)=>{const o=part(SK.torus(r,t,4,seg||22),col,b,0,y,0);o.rotation.x=PI/2;o.scale.y=sz||Z;return o;};
+  const onBody=(b,geo,col,a,r,y,z)=>{const o=part(geo,col,b,Math.sin(a)*r,y,Math.cos(a)*r*(z||Z));o.rotation.order='YXZ';o.rotation.y=a;return o;};
+  const openLathe=(pts,seg,gap)=>new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]),q[1])),SK.seg(seg,8),gap/2,PI*2-gap);
+  const O=Object.assign({},E);
+  const LT=P=>{const t=P.tier,m=MATERIALS[t-1];const lea=t<=4?C(LINE_LEA[t]):C(LINE_LEA[4]).clone().lerp(C(m.guard),.45);
+    return {t,lea,dk:lea.clone().multiplyScalar(.62),hi:lea.clone().lerp(C(0xd8c098),.3),met:C(m.blade).clone().multiplyScalar(.8),gl:m.glow!=null?C(m.glow):null};};
+  const RT=P=>{const t=P.tier,m=MATERIALS[t-1],main=C(LINE_ROBE[t]);const inner=t===10?main.clone().lerp(C(0x4a90b0),.45):main.clone().lerp(C(0x000000),.35);
+    const trim=t<=2?main.clone().lerp(C(0xffffff),.28):t<=4?C(0xb8963e):C(m.blade).clone().lerp(C(0xffffff),.2);
+    return {t,main,inner,trim,dk:main.clone().multiplyScalar(.7),gl:m.glow!=null?C(m.glow):null};};
+  // ── the chest ──
+  const P=E.chest;
+  if(P&&P.line==='light'){O.chest=null;const T=LT(P);
+    part(SK.lathe(cp.filter(q=>q[1]>=-.01).map(q=>[q[0]*1.07+.008,q[1]]),22),T.lea,B.spine).scale.z=Z;
+    part(SK.cyl(.062,.07,.05,14,1,true),T.lea,B.neck,0,.005,0);
+    onBody(B.spine,SK.rbox(.014,.3,.006,.003,1),T.dk,0,rAt(.2)*1.07+.012,.2);
+    for(let i=0;i<6;i++){const y=.08+i*.05;onBody(B.spine,SK.rbox(.03,.005,.004,.002,1),T.hi,0,rAt(y)*1.07+.016,y).rotation.z=i%2?.6:-.6;}
+    if(T.t>=3)for(const y of [.1,.17,.24])for(let k=-4;k<=4;k++){if(!k)continue;const a=k*.24;onBody(B.spine,SK.ball(.0065,4,3),T.met,a,rAt(y)*1.07+.011,y);}
+    [.42,-.42,PI-.48,PI+.48].forEach(a=>{const f=onBody(B.hips,SK.rbox(.14*bw,.17,.012,.005,1),T.lea,a,.205*bw,-.09,.8);f.rotation.x=-.12;});
+    ring(.19*bw,.016,.02,T.dk,B.hips,.76);part(SK.rbox(.034,.03,.012,.004,1),T.met,B.hips,0,.02,.19*bw*.76+.012);
+    // S575 — the quiver strap .36 long, lowered .02 (was .42 at .2): its ends stood through the hood's cape at the collar
+    onBody(B.spine,SK.rbox(.034,.36,.008,.003,1),T.dk,0,rAt(.18)*1.07+.014,.18).rotation.z=.62;
+    onBody(B.spine,SK.rbox(.034,.36,.008,.003,1),T.dk,PI,rAt(.18)*1.07+.014,.18).rotation.z=-.62;
+    LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),T.lea,b,0,-.004,0).scale.set(1,.62,1.1); /* S575 — a flatter lame, in at the shoulder (was 1.1,.72,1.15 at .012 out), so the hood's cape covers it */
+      part(SK.cyl(.07,.078,.04,10,1,true,c-1,2),T.dk,b,s*.008,-.035,0).scale.z=1.05;
+      if(T.t>=3)part(SK.ball(.009,5,4),T.met,b,s*.064,.019,0);});
+    if(T.gl)ring(rAt(.36)*1.07+.012,.004,.355,T.gl,B.spine);}
+  if(P&&P.line==='robe'){O.chest=null;const T=RT(P);
+    part(SK.lathe(cp.filter(q=>q[1]>=-.01).map(q=>[q[0]*1.06+.006,q[1]]),22),T.main,B.spine).scale.z=Z;
+    part(SK.lathe([[.235*bw,-.36],[.232*bw,-.2],[.226*bw,-.12],[.205*bw,-.05],[.18*bw,.02],[.17*bw,.045]],20),T.inner,B.hips).scale.z=.8;
+    part(openLathe([[.275*bw,-.36],[.282*bw,-.345],[.25*bw,-.2],[.235*bw,-.12],[.21*bw,-.05],[.19*bw,.02],[.18*bw,.045]],22,.5),T.main,B.hips).scale.z=.8;
+    [-1,1].forEach(sd=>{onBody(B.hips,SK.rbox(.024,.38,.008,.003,1),T.trim,sd*.26,.24*bw,-.16,.8).rotation.x=-.17;
+      const l=onBody(B.spine,SK.rbox(.026,.3,.008,.003,1),T.trim,sd*.13,rAt(.2)*1.06+.01,.2);l.rotation.z=-sd*.22;});
+    ring(.182*bw,.024,.02,T.trim,B.hips,.76);const tl=part(SK.rbox(.04,.2,.008,.003,1),T.trim,B.hips,-.08*bw,-.09,.14*bw);tl.rotation.z=.08;
+    // S575 — the mantle rounds over the shoulder before it slopes to the neck: the straight slope from .28 to .2 let the top of the shirt's shoulder cap through from the side
+    part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.262*bw,.02],[.232*bw,.055],[.15*bw,.075],[0,.08]],18),T.dk,B.spine,0,.3,0).scale.z=.8;ring(.275*bw,.008,.245,T.trim,B.spine,.8);
+    LR.forEach(([k,s])=>{part(SK.cyl(.06*bw,.064*bw,.155,12,1,true),T.main,B['sh'+k],0,-.08,0);
+      part(SK.cyl(.052*bw,.1*bw,.15,14,1,true),T.main,B['el'+k],0,-.07,0);ring(.1*bw,.007,-.145,T.trim,B['el'+k],1,16);
+      if(T.gl)ring(.1*bw,.004,-.13,T.gl,B['el'+k],1,16);});
+    if(T.gl)ring(.28*bw,.004,.257,T.gl,B.spine,.8);}
+  // ── the hands ──
+  const H=E.hands;
+  if(H&&H.line==='light'){O.hands=null;const T=LT(H);B.handL.userData.col=B.handR.userData.col=T.lea;
+    LR.forEach(([k,s])=>{const el=B['el'+k],bow=k==='L';part(SK.cyl(.052*bw*(bow?1.06:1),.046*bw,bow?.13:.11,12,1,true),T.lea,el,0,-.08,0);
+      [-.035,-.08,-.125].forEach(y=>ring(.05*bw,.003,y,T.hi,el,1,12));
+      if(T.t>=3)for(let i=-1;i<=1;i++)part(SK.rbox(.01,.1,.006,.003,1),T.met,el,s*.044*Math.cos(i*.4),-.08,.044*Math.sin(i*.4)).rotation.y=s*PI/2-i*.4;
+      if(bow)part(SK.rbox(.05,.08,.01,.004,1),T.dk,el,0,-.08,.05);});}
+  if(H&&H.line==='robe'){O.hands=null;const T=RT(H);
+    LR.forEach(([k,s])=>{const el=B['el'+k];part(SK.cyl(.046*bw,.04*bw,.07,12,1,true),T.inner,el,0,-.11,0);ring(.042,.006,-.142,T.trim,el,1,14);
+      if(T.gl)ring(.044,.0035,-.128,T.gl,el,1,14);});}
+  // ── the legs ──
+  const Lg=E.legs;
+  if(Lg&&Lg.line==='light'){O.legs=null;const T=LT(Lg);
+    // S575 — each thigh strap sized to the thigh at its height (SK.limb's straight run, .05 at the knee to .951 of .066 at the hip), its
+    // inner edge pressed 4 mm into the cloth: they stood 6–7 mm off the leg at .072 and .068
+    const thR=f=>(.05+(.066*.951-.05)*(1-f)*L1/(L1+.066*.309))*bw;
+    LR.forEach(([k,s])=>{const th=B['th'+k],kn=B['kn'+k];ring(thR(.35)+.004,.008,-L1*.35,T.dk,th,1,14);ring(thR(.75)+.004,.008,-L1*.75,T.dk,th,1,14);
+      part(SK.ball(.05,10,7,0,PI*2,0,PI*.6),T.lea,kn,0,.0,.03).rotation.x=PI/2-.2;if(T.t>=3)part(SK.ball(.012,6,4),T.met,kn,0,.0,.075);});}
+  if(Lg&&Lg.line==='robe'){O.legs=null;const T=RT(Lg);
+    part(SK.lathe([[0,-.44-DL],[.25*bw,-.44-DL],[.256*bw,-.425-DL],[.215*bw,-.22-DL*.6],[.18*bw,-.05],[.165*bw,.02],[0,.045]],20),T.inner,B.hips).scale.z=.76;
+    ring(.252*bw,.008,-.43-DL,T.trim,B.hips,.76);}
+  // ── the feet: soft boots for the light line, slippers in the under-robe's colour for the robe ──
+  const Ft=E.feet;
+  if(Ft&&Ft.line==='light'){O.feet=null;const T=LT(Ft);
+    LR.forEach(([k])=>{const kn=B['kn'+k];part(SK.cyl(.058*bw,.05*bw,L2*.72,12,1,true),T.lea,kn,0,-L2*.62,0);
+      const cf=part(SK.torus(.06*bw,.012,5,14),T.dk,kn,0,-L2*.27,0);cf.rotation.x=PI/2;ring(.054*bw,.005,-L2*.6,T.dk,kn,1,12);});}
+  if(Ft&&Ft.line==='robe'){O.feet=null;}
+  // ── the head: a hood and a short cape at the shoulders (light), a deep cowl draped at the neck (robe) ──
+  const Hd=E.head;
+  if(Hd&&Hd.line==='light'){O.head=null;const T=LT(Hd),hc=T.lea.clone().lerp(C(0x2a3424),.5);
+    const h=part(SK.ball(.168*hs,18,9,0,PI*2,0,PI*.62),hc,B.head,0,.125,-.045);h.rotation.x=-.8;h.scale.set(g.jaw||1,1.05,1.1);
+    // S575 — the hood's cape rounds over the jerkin's shoulder lames before it slopes to the neck (they stood 4.7 cm through its straight slope from .285 to .2)
+    part(SK.lathe([[.28*bw,.205],[.29*bw,.22],[.285*bw,.285],[.255*bw,.335],[.17*bw,.38],[.1,.405],[.07,.415]],18),hc,B.spine).scale.z=.82;
+    const tp=part(SK.cone(.035,.12,6),hc,B.head,0,.2,-.16);tp.rotation.x=-2.2;}
+  if(Hd&&Hd.line==='robe'){O.head=null;const T=RT(Hd);
+    const h=part(SK.ball(.176*hs,18,10,0,PI*2,0,PI*.64),T.main,B.head,0,.12,-.05);h.rotation.x=-.88;h.scale.set((g.jaw||1)*1.02,1.06,1.12);
+    const cw=part(SK.torus(.105,.04,6,18),T.main,B.neck,0,.0,-.01);cw.rotation.x=PI/2;cw.scale.y=.9;
+    if(T.gl){const c=part(SK.ball(.012,8,6),T.gl,B.head,0,.24,.13*hs);c.scale.set(1,1.3,.6);}}
+  return O;}
+
 function ARMOUR_DRESS(X){
-  const {part,B,C,SK,THREE,bw,chestPts,E,g}=X;const PI=Math.PI,L1=PW.L1,L2=PW.L2;
+  const {part,B,C,SK,THREE,bw,chestPts,g}=X;const E=ARMOUR_LINE(X,X.E);const PI=Math.PI,L1=PW.L1,L2=PW.L2;
   const hs=g.head||1,jaw=g.jaw||1,Z=.78,LR=[['L',1],['R',-1]];
   const leather=C(0x4a3020),dark=C(0x120e0c),MT=h=>C(h).clone().multiplyScalar(.72),GD=h=>C(h).clone().multiplyScalar(.85);
+  // S538 — the Demonic plate's carvings (Michael, the inspector: "red carved designs across the armour, similar to Daedric armor",
+  // purple dominant): thin lines of red laid in the plate along its edges and in chevrons, the 'spiked' signature's alone
+  const CARVE=C(0xc41c1c),cut=(geo,b,x,y,z)=>part(geo,CARVE,b,x,y,z);
   const cp=chestPts.map(q=>[q[0]*bw,q[1]]);
   const rAt=y=>{for(let i=1;i<cp.length;i++){const a=cp[i-1],b=cp[i];if(a[1]!==b[1]&&(y-a[1])*(y-b[1])<=0)return a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1]);}return cp[1][0];};
   // shapes: a thick flared hoop (a lame), a profile made dense for the mail's rings, a front keel, facets
@@ -199,12 +294,25 @@ function ARMOUR_DRESS(X){
       // S395 — the distant copy laces every third slat and rounds its hoops in half the segments (a guard's lamellar was
       // .58 of the full figure there, the heaviest distant copy in a town)
       // five laced hoops of slats from the belt to the chest, each flared over the one below; two more over the hips
-      const N=5,y0=0,y1=.34;for(let i=0;i<N;i++){const ya=y0+(y1-y0)*i/N-.004,yb=y0+(y1-y0)*(i+1)/N+.01,ra=rAt(Math.max(.01,ya))*1.1+.016,rb=rAt(yb)*1.08+.004;
-        part(hoop(ya,yb,ra,rb,.01,SK.seg(20,10)),m,B.spine).scale.z=Z;ring(rb,.0045,yb,gd,B.spine);
-        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.004,(ya+yb)/2);}}
-      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb])=>{part(hoop(ya,yb,ra*bw,rb*bw,.01,SK.seg(20,10)),m,B.hips).scale.z=.78;ring(rb*bw,.0045,yb,gd,B.hips,.78);
-        for(let k=0;k<12;k+=SK.q<1?3:1){const a=k/12*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.004,(ya+yb)/2);}});
-      LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;for(let i=0;i<3;i++){const r=.078-.004*i;part(SK.cyl(r,r+.014,.045,12,1,true,c-1.2,2.4),i%2?gd:m,b,s*.01,-.02-i*.036,0).scale.z=1.1;}
+      // S540 — wooden boards, not a leather hoop (Michael, the inspector: the wooden kit "reads as leather, not wood"): each hoop is
+      // a ring of separate boards in three tones of the wood, lighter than the old hide brown, a gap between each onto a dark
+      // leather backing (the distant copy has none, and eight boards a ring), and the lacing through every other board. A board is
+      // an open sector of the hoop: four triangles.
+      const WB=[.98,.86,1.1].map((k,i)=>C(P.metal).clone().lerp(C(0xc89a62),.28+.1*i).multiplyScalar(k)),backing=C(0x2a1a10);
+      // a ring's boards of one tone are one part (their sectors share the ring's centre, so they simply join): one part per tone
+      // keeps the ring one occluder to personAO, as the hoop was, instead of sixteen small ones pressed on the tunic beneath
+      const joinG=gs=>{const P=[],Nn=[];gs.forEach(q=>{const u=q.index?q.toNonIndexed():q;P.push(...u.attributes.position.array);Nn.push(...u.attributes.normal.array);u.dispose();q.dispose();});
+        const o=new THREE.BufferGeometry();o.setAttribute('position',new THREE.Float32BufferAttribute(P,3));o.setAttribute('normal',new THREE.Float32BufferAttribute(Nn,3));return o;};
+      const boards=(b,ya,yb,ra,rb,n,a0,len,sz,x,ti)=>{const w=len/n,by=[[],[],[]];for(let k=0;k<n;k++)by[(k*7+ti*5)%3].push(SK.cyl(rb,ra,yb-ya,2,1,true,a0+k*w+w*.06,w*.88));
+        by.forEach((gs,t)=>{if(gs.length){const o=part(joinG(gs),WB[t],b,x||0,(ya+yb)/2,0);o.scale.z=sz;}});};
+      const N=5,y0=0,y1=.34,nb=SK.q<1?8:16;for(let i=0;i<N;i++){const ya=y0+(y1-y0)*i/N-.004,yb=y0+(y1-y0)*(i+1)/N+.01,ra=rAt(Math.max(.01,ya))*1.1+.016,rb=rAt(yb)*1.08+.004;
+        if(SK.q>=1)part(hoop(ya,yb,ra-.004,rb-.004,.008,SK.seg(14,8)),backing,B.spine).scale.z=Z;boards(B.spine,ya,yb,ra,rb,nb,0,PI*2,Z,0,i);ring(rb,.0045,yb,gd,B.spine);
+        for(let k=0;k<nb;k+=SK.q<1?3:2){const a=(k+.5)/nb*PI*2;onBody(B.spine,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2+.003,(ya+yb)/2);}}
+      [[.0,-.085,.235,.2],[-.075,-.16,.255,.225]].forEach(([yb,ya,ra,rb],j)=>{if(SK.q>=1)part(hoop(ya,yb,(ra-.004)*bw,(rb-.004)*bw,.008,SK.seg(14,8)),backing,B.hips).scale.z=.78;
+        boards(B.hips,ya,yb,ra*bw,rb*bw,nb,0,PI*2,.78,0,j+N);ring(rb*bw,.0045,yb,gd,B.hips,.78);
+        for(let k=0;k<nb;k+=SK.q<1?3:2){const a=(k+.5)/nb*PI*2;onBody(B.hips,SK.cyl(.003,.003,yb-ya-.006,3,1,true),gd,a,(ra+rb)/2*bw+.003,(ya+yb)/2);}});
+      LR.forEach(([k,s])=>{const b=B['sh'+k],c=s>0?PI/2:PI*1.5;for(let i=0;i<3;i++){const r=.078-.004*i;if(SK.q>=1)part(SK.cyl(r-.003,r+.011,.045,10,1,true,c-1.2,2.4),backing,b,s*.01,-.02-i*.036,0).scale.z=1.1;
+          boards(b,-.0425-i*.036,.0025-i*.036,r+.014,r,6,c-1.2,2.4,1.1,s*.01,i+7);}
         part(SK.ball(.074,12,6,0,PI*2,0,PI*.5),leather,b,s*.012,-.004,0).scale.set(1.1,.7,1.15);});
     } else if(P.fam==='muscle'){
       // a cuirass modelled on the body: pectorals and belly in the bronze, rolled rims, leather strips (pteruges) over the hips
@@ -238,6 +346,7 @@ function ARMOUR_DRESS(X){
         if(S==='heavy')part(SK.rbox(.02,.075,.15,.006,1),m,b,s*.03,.055,0);
         if(S==='fluted')for(let i=-1;i<=1;i++)part(SK.cyl(.004,.004,.1,4),m,b,s*.03+i*.028*s*.3,.03,i*.04).rotation.z=s*.9;
         if(S==='spiked')for(let i=0;i<3;i++){const sp=part(SK.cone(.024,.15-.03*i,6),gd,b,s*(.06+.02*i),.05-.02*i,-.04+.04*i);sp.rotation.z=-s*(.7+.3*i);}
+        if(S==='spiked')for(let i=0;i<3;i++){const r=(.084-.005*i)*ps+.0125,o=cut(SK.cyl(r,r,.005,9,1,true,c-1.35,2.7),b,s*.014,-.052-i*.034,0);o.scale.z=1.15;}
         if(S==='scaled')for(let i=0;i<9;i++){const c2=c-1.1+i%3*1.1,y=-.005-Math.floor(i/3)*.035;const sc=part(SK.ball(.024,4,3),gd,b,Math.sin(c2)*.096+s*.014,y,Math.cos(c2)*.1);sc.rotation.set(.35,c2,0);sc.scale.set(1,1.25,.4);}
         if(gl&&(S==='faceted'||S==='inlaid'||S==='fluted'))ring(.086*ps,.004,-.06,gl,b,1.15);});
       // tassets hang from the faulds over the front of each thigh, on the thigh's own bone so a stride carries them
@@ -246,6 +355,13 @@ function ARMOUR_DRESS(X){
       if(S==='heavy')for(let i=0;i<10;i++){const a=(i-4.5)*.3;onBody(B.spine,SK.ball(.009,5,4),gd,a,rAt(.1)*1.12+.02,.098);}
       if(S==='scaled')for(let r=0;r<5;r++)for(let i=0;i<9;i++){const a=(i-4+(r%2)*.5)*.19,y=.3-r*.045;const sc=onBody(B.spine,SK.ball(.026,4,3),gd,a,rAt(y)*1.12+.016+.02*Math.pow(Math.cos(a),8),y);sc.rotation.x=.35;sc.scale.set(1,1.3,.42);}
       if(S==='spiked')[-1,1].forEach(sd=>{const sp=onBody(B.spine,SK.cone(.013,.07,6),gd,sd*.5,rAt(.26)*1.12+.02,.26);sp.rotation.x=PI/2;});
+      if(S==='spiked'){const sr=(y,a)=>rAt(y)*1.12+.008+.024*Math.pow(Math.max(0,Math.cos(a)),6)+.003;
+        // the edge of each lame of the faulds, a ridge down the breastplate's keel, and three chevrons either side of it
+        for(let i=0;i<3;i++){const ya=.1-i*.042-.05;ring(rAt(Math.max(0,ya))*1.12+.017+i*.006,.0032,ya+.003,CARVE,B.spine,Z,14);}
+        ring(rAt(.1)*1.12+.016,.0032,.098,CARVE,B.spine,Z,14);
+        onBody(B.spine,SK.cyl(.0035,.0035,.2,4),CARVE,0,sr(.21,0),.21);
+        [.29,.22,.15].forEach((y,j)=>[-1,1].forEach(sd=>{const a=sd*(.2+.03*j),o=onBody(B.spine,SK.rbox(.0055,.075-.008*j,.004,.002,1),CARVE,a,sr(y,a),y);o.rotation.z=sd*.95;}));
+        [-1,1].forEach(sd=>{const a=sd*.62,o=onBody(B.spine,SK.rbox(.005,.11,.004,.002,1),CARVE,a,sr(.24,a)-.002,.24);o.rotation.z=-sd*.25;});}
       if(gl&&S==='inlaid')[.14,.24,.32].forEach(y=>ring(rAt(y)*1.12+.013+.004,.004,y,gl,B.spine));
       if(gl&&S==='faceted')[.096,.058,.016].forEach(y=>ring(rAt(y)*1.12+.02,.0035,y,gl,B.spine));
       if(gl&&S==='fluted'){ring(rAt(.1)*1.12+.02,.004,.095,gl,B.spine);ring(.08,.004,.064,gl,B.neck,1);}
@@ -255,24 +371,31 @@ function ARMOUR_DRESS(X){
   const H=E.hands;
   if(H){const m=MT(H.metal),F=H.sig==='faceted'?facet:(x=>x);B.handL.userData.col=B.handR.userData.col=H.fam==='lamellar'||H.fam==='muscle'?leather:m;
     LR.forEach(([k,s])=>{const el=B['el'+k],wr=B['wr'+k];
-      if(H.fam==='lamellar'){for(let i=0;i<4;i++){const a=i/4*PI*2+.4;part(SK.rbox(.02,.1,.008,.003,1),m,el,Math.sin(a)*.047,-.085,Math.cos(a)*.047).rotation.y=a;}ring(.047,.004,-.05,GD(H.guard),el,1);ring(.045,.004,-.12,GD(H.guard),el,1);}
+      // S585 — in the distant copy the vambraces' and greaves' boards are plain boxes (a rounded board is 48 triangles at any
+      // quality, 12 here) and the aventail's lathe takes half its segments: a guard's wooden kit kept 55% of its triangles far off
+      if(H.fam==='lamellar'){for(let i=0;i<4;i++){const a=i/4*PI*2+.4;part(SK.q<1?new THREE.BoxGeometry(.02,.1,.008):SK.rbox(.02,.1,.008,.003,1),C(H.metal).clone().lerp(C(0xc89a62),.28+.1*(i%3)),el,Math.sin(a)*.047,-.085,Math.cos(a)*.047).rotation.y=a;}ring(.047,.004,-.05,GD(H.guard),el,1);ring(.045,.004,-.12,GD(H.guard),el,1);}
       else if(H.fam==='muscle')part(SK.cyl(.052*bw,.044*bw,.11,14,1,true),m,el,0,-.08,0);
       else if(H.fam==='mail'){part(mailTex(SK.cyl(.05*bw,.045*bw,.12,16,3,true)),m,el,0,-.075,0);part(SK.cyl(.054,.044,.045,12,1,true),GD(H.guard),wr,0,.0,0);}
       else{part(F(SK.cyl(.049*bw,.043*bw,.12,12,1,true)),m,el,0,-.075,0);part(F(SK.cyl(.058,.044,.055,12,1,true)),m,wr,0,-.004,0);
         part(F(SK.rbox(.052,.016,.04,.006,1)),m,wr,0,-.052,.014);
-        if(H.sig==='spiked')part(SK.cone(.012,.06,6),GD(H.guard),el,s*.03,.0,-.04).rotation.set(-1.2,0,s*.5);}});}
+        if(H.sig==='spiked'){part(SK.cone(.012,.06,6),GD(H.guard),el,s*.03,.0,-.04).rotation.set(-1.2,0,s*.5);
+          [-.03,-.125].forEach(y=>cut(SK.torus(.047*bw,.003,3,12),el,0,y,0).rotation.x=PI/2);
+          [-1,1].forEach(sd=>{const o=cut(SK.rbox(.004,.05,.004,.002,1),el,sd*.012,-.078,.046*bw);o.rotation.z=sd*.5;});}}});}
   // ── the legs' piece ──
   const Lg=E.legs;
   if(Lg){const m=MT(Lg.metal),gd=GD(Lg.guard),F=Lg.sig==='faceted'?facet:(x=>x);
     LR.forEach(([k,s])=>{const th=B['th'+k],kn=B['kn'+k];
-      if(Lg.fam==='lamellar'){for(let i=0;i<5;i++){const a=(i-2)*.42;part(SK.rbox(.022,L2*.62,.01,.004,1),m,kn,Math.sin(a)*.058*bw,-L2*.48,Math.cos(a)*.058*bw).rotation.y=a;}
+      if(Lg.fam==='lamellar'){for(let i=0;i<5;i++){const a=(i-2)*.42;part(SK.q<1?new THREE.BoxGeometry(.022,L2*.62,.01):SK.rbox(.022,L2*.62,.01,.004,1),C(Lg.metal).clone().lerp(C(0xc89a62),.28+.1*(i%3)),kn,Math.sin(a)*.058*bw,-L2*.48,Math.cos(a)*.058*bw).rotation.y=a;}
         ring(.06*bw,.005,-L2*.25,gd,kn,1);ring(.056*bw,.005,-L2*.7,gd,kn,1);}
       else if(Lg.fam==='muscle'){part(SK.cyl(.062*bw,.052*bw,L2*.72,14,2,true,-1.9,3.8),m,kn,0,-L2*.5,0);part(SK.ball(.036,10,7),m,kn,0,-.01,.05).scale.set(1,1.1,.6);}
       else if(Lg.fam==='mail'){part(mailTex(SK.cyl(.074*bw,.062*bw,L1*.8,16,4,true)),m,th,0,-L1*.52,0);part(mailTex(SK.cyl(.06*bw,.05*bw,L2*.7,16,4,true)),m,kn,0,-L2*.5,0);
         part(SK.ball(.046,10,7,0,PI*2,0,PI*.6),m,kn,0,.0,.03).rotation.x=PI/2-.2;}
       else{part(F(SK.cyl(.078*bw,.066*bw,L1*.62,12,1,true)),m,th,0,-L1*.55,0);part(F(SK.cyl(.062*bw,.05*bw,L2*.74,12,1,true)),m,kn,0,-L2*.52,0);
         part(F(SK.ball(.052,10,7)),m,kn,0,.0,.024).scale.set(1,.92,.85);part(F(SK.cyl(.034,.034,.008,12)),m,kn,s*.052,0,.01).rotation.z=PI/2;
-        if(Lg.sig==='spiked'){const sp=part(SK.cone(.013,.07,6),gd,kn,0,.01,.07);sp.rotation.x=PI/2;}
+        if(Lg.sig==='spiked'){const sp=part(SK.cone(.013,.07,6),gd,kn,0,.01,.07);sp.rotation.x=PI/2;
+          [-L2*.17,-L2*.88].forEach(y=>cut(SK.torus((.062-.012*(-y/L2))*bw+.002,.0032,3,12),kn,0,y,0).rotation.x=PI/2);
+          [-1,1].forEach(sd=>{const o=cut(SK.rbox(.005,.08,.004,.002,1),kn,sd*.016,-L2*.45,.058*bw);o.rotation.z=sd*.45;});
+          [-1,1].forEach(sd=>{const o=cut(SK.rbox(.005,.06,.004,.002,1),th,sd*.018,-L1*.5,.074*bw);o.rotation.z=-sd*.4;});}
         if(Lg.glow!=null&&(Lg.sig==='inlaid'||Lg.sig==='faceted'))ring(.058*bw,.0035,-L2*.3,C(Lg.glow),kn,1);}});}
   // ── the feet: sabatons for plate (the boots take the metal's colour already) ──
   const Ft=E.feet;
@@ -281,13 +404,23 @@ function ARMOUR_DRESS(X){
   const Hd=E.head;
   if(Hd){const m=MT(Hd.metal),gd=GD(Hd.guard),gl=Hd.glow!=null?C(Hd.glow):null,S=Hd.sig,F=S==='faceted'?facet:(x=>x),hd=B.head,R=.158*hs;
     const bowl=(pts,tilt,col,seg)=>{const o=part(SK.lathe(pts.map(q=>[q[0]*hs,q[1]*hs]),seg||20),col||m,hd,0,.12,-.004);o.rotation.x=tilt;o.scale.x=jaw;return o;};
-    const aventail=(col,tex)=>{const geo=new THREE.LatheGeometry(dense([[.19,-.16],[.168,-.08],[.157,-.01],[.152,.03]],3).map(q=>new THREE.Vector2(q[0]*hs,q[1])),26,.75,PI*2-1.5);
+    const aventail=(col,tex)=>{const geo=new THREE.LatheGeometry(dense([[.19,-.16],[.168,-.08],[.157,-.01],[.152,.03]],3).map(q=>new THREE.Vector2(q[0]*hs,q[1])),SK.seg(26,10),.75,PI*2-1.5);
       part(tex?mailTex(geo):geo,col,hd,0,.12,-.004).scale.x=jaw;};
-    if(Hd.fam==='lamellar'){bowl([[.158,.02],[.156,.06],[.138,.12],[.1,.165],[.05,.19],[.012,.2],[0,.2]],-.3);
+    if(Hd.fam==='lamellar'){bowl([[.158,.02],[.156,.06],[.138,.12],[.1,.165],[.05,.19],[.012,.2],[0,.2]],-.3,C(Hd.metal).clone().lerp(C(0xc89a62),.33)); /* S540 — the wood's own tone, as the boards */
       ring(.16*hs,.009,.14,gd,hd,1.02).rotation.x=PI/2-.3;ring(.15*hs,.006,.19,gd,hd,1.02).rotation.x=PI/2-.3;
       part(SK.cone(.018,.05,6),gd,hd,0,.33,-.06).rotation.x=-.3;aventail(leather,false);}
-    else if(Hd.fam==='muscle'){const g2=SK.ball(R,20,12,PI/2+.5,PI*2-1,0,PI*.74);const o=part(g2,m,hd,0,.12,.0);o.scale.set(jaw*1.02,1.06,1.1);o.rotation.x=-.08;
-      const cg=SK.torus(.19*hs,.03,6,18,PI*.7);cg.rotateZ(PI*.12);const cr=part(cg,C(0x8a2016),hd,0,.12,-.02);cr.rotation.y=PI/2;cr.scale.set(1,1,.45);}
+    // S536 — the bronze helm is a Corinthian (Michael, the inspector: "It splits right down the middle" at the forehead — the old
+    // shell was a sphere with its face gap running up to the crown — "expected more like a classic hoplite helmet"; long hair cut
+    // through it). Three bands of one lathed profile (BRONZE_HELM, r and y on the head bone): the crown closed over the brow, the eye
+    // band open across the face, and the cheek and neck guards down to a flared rim with only the mouth's slit between them; a
+    // nasal down from the brow, a raised brow ridge, and the red crest front to back. The guards stand clear of the hair beneath.
+    else if(Hd.fam==='muscle'){const band=(y0,y1,w)=>{const pts=BRONZE_HELM.filter(q=>q[1]<=y0+1e-6&&q[1]>=y1-1e-6).reverse(); /* bottom to top, so the faces look out */
+        const geo=new THREE.LatheGeometry(pts.map(q=>SK.v2(Math.max(1e-4,q[0]*hs),.12+(q[1]-.12)*hs)),SK.seg(24,12),w,PI*2-2*w);const o=part(geo,m,hd,0,0,.004);o.scale.x=jaw;return o;};
+      band(1,BRONZE_HELM_EYE[0],0);band(BRONZE_HELM_EYE[0],BRONZE_HELM_EYE[1],.62);band(BRONZE_HELM_EYE[1],-1,.15);
+      const yb=.12+(BRONZE_HELM_EYE[0]-.12)*hs,rb=.172*hs;
+      const br=part(SK.torus(rb,.006,4,20,1.5),gd,hd,0,yb,.004);br.rotation.set(PI/2,0,PI/2-.75);br.scale.y=jaw;
+      const na=part(SK.rbox(.022,.06*hs,.01,.004,1),m,hd,0,yb-.026*hs,.172*hs+.008);na.rotation.x=-.08;
+      const cg=SK.torus(.2*hs,.03,6,18,PI*.7);cg.rotateZ(PI*.12);const cr=part(cg,C(0x8a2016),hd,0,.12,-.02);cr.rotation.y=PI/2;cr.scale.set(1,1,.45);}
     else if(Hd.fam==='mail'){bowl([[.16,.02],[.159,.05],[.14,.12],[.095,.18],[.04,.22],[.008,.235],[0,.236]],-.28);ring(.162*hs,.011,.13,gd,hd,1.02).rotation.x=PI/2-.28;
       part(SK.rbox(.02,.085,.012,.004,1),m,hd,0,.14,.162).rotation.x=-.12;aventail(m,true);}
     else{const g2=keel(SK.ball(R,S==='faceted'?9:22,S==='faceted'?7:14,0,PI*2,0,PI*.8),.045,5);const o=part(F(g2),m,hd,0,.12,.004);o.scale.set(jaw*1.02,1.06,1.08);
@@ -299,10 +432,17 @@ function ARMOUR_DRESS(X){
           p.addScaledVector(d,len*.96);r*=.74;d.applyAxisAngle(new THREE.Vector3(0,0,1),-sd*.32);d.applyAxisAngle(new THREE.Vector3(1,0,0),fwd?.35:-.25);d.normalize();}
         const tip=part(SK.cone(r,.05,7),gd,hd,p.x+d.x*.025,p.y+d.y*.025,p.z+d.z*.025);tip.quaternion.setFromUnitVectors(up,d);};
       if(S==='scaled'){[-1,1].forEach(sd=>horn(sd,false));for(let i=0;i<5;i++){const sp=part(SK.cone(.014,.045,5),gd,hd,0,.28-i*.045,-.06-i*.03);sp.rotation.x=-.6-i*.25;}}
-      if(S==='spiked')[-1,1].forEach(sd=>horn(sd,true));
+      if(S==='spiked'){[-1,1].forEach(sd=>horn(sd,true));
+        const cr=part(SK.torus(R*1.05,.0035,3,12,PI*.95),CARVE,hd,0,.12,.004);cr.rotation.set(0,PI/2,PI*.03);cr.scale.set(1,1.06,1.08);
+        ring(Math.sqrt(R*R-(.055/1.06)**2)+.004,.0032,.175,CARVE,hd,1.08,14).scale.x=jaw*1.02; /* the shell's own radius at that height */
+        [-1,1].forEach(sd=>{const o=part(SK.rbox(.005,.05,.004,.002,1),CARVE,hd,sd*.07*jaw,.21,R*.82);o.rotation.set(-.6,sd*.4,sd*.7);});}
       if(gl&&S==='inlaid'){const ha=part(SK.torus(.13*hs,.007,4,28),gl,hd,0,.2,-.16);ha.rotation.x=-.2;ring(R*1.02,.004,.19,gl,hd,1.08).scale.x=jaw*1.02;}
       if(gl&&(S==='faceted'||S==='fluted'))ring(R*1.03,.004,.2,gl,hd,1.08).scale.x=jaw*1.02;}}
 }
+// S536 — the Corinthian helm's profile, [radius, height] on the head bone (the head's ball is .13 about .12): the crown, the eye
+// band between BRONZE_HELM_EYE's two heights, then the cheek and neck guards flaring to the rim below the jaw
+const BRONZE_HELM=[[0,.292],[.06,.287],[.11,.268],[.146,.236],[.166,.198],[.173,.165],[.174,.15],[.174,.115],[.174,.08],[.174,.04],[.177,.01],[.185,-.02],[.198,-.045]];
+const BRONZE_HELM_EYE=[.15,.115];
 // S525 — the drape of what hangs from the hips: top, how far below the hip joint it starts to follow the thighs; d, the depth
 // over which it comes to follow them fully; k, how much (1 would be the thigh's own swing).
 const SK_DRAPE={top:.015,d:.1,k:.5};
@@ -338,17 +478,30 @@ function personBakeQ(g,q){
   const spine=bone('spine',hips,0,.03,0);
   const chestPts=fem?[[0,-.01],[.155,-.01],[.15,.06],[.17,.15],[.172,.22],[.15,.3],[.095,.36],[.052,.39],[0,.4]]:[[0,-.01],[.165,-.01],[.172,.05],[.19,.17],[.188,.25],[.16,.32],[.1,.37],[.055,.395],[0,.4]];
   part(SK.lathe(chestPts.map(q=>[q[0]*bw,q[1]])),cloth,spine).scale.z=.72;if(WL<.3)part(SK.ball(.036,7,5),mixC(cloth,0x3a3024,.4),spine,-.07*bw,.13,.124*bw).scale.set(1,1.1,.26);if(WL>.7){const ch=part(SK.torus(.085*bw,.005,4,18),gold,spine,0,.35,.035);ch.rotation.x=Math.PI/2-.55;part(SK.ball(.018,8,6),gold,spine,0,.285,.13*bw).scale.z=.5;}
-  if(g.cloak){const cb=bone('cloak',spine,0,.33,-.1),cb2=bone('cloak2',cb,0,-.31,-.08),cc=mixC(cloth,0x000000,.3); /* S267 — the cloak hangs from its own bone at the shoulders, in two halves hinged at the middle of the back (peopleSwing) */part(SK.cyl(.17*bw,.225*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb,0,-.17,.095).scale.z=.8;part(SK.cyl(.215*bw,.27*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb2,0,-.14,.175).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);}
+  // S560 — your cloak (Michael's B on #148, the look half; docs/design/capes-and-cloaks.md): g.cloakCol dyes it, g.cloakCut 'short'
+  // drops the lower half (a cape to the waist, trimmed at the hem in g.cloakTrim), g.cloakHood lays a hood down on the shoulders,
+  // g.cloakFur rings them with a fur collar. A townsperson's cloak is as it was.
+  if(g.cloak){const cb=bone('cloak',spine,0,.33,-.1),cb2=bone('cloak2',cb,0,-.31,-.08),cc=g.cloakCol!=null?C(g.cloakCol):mixC(cloth,0x000000,.3); /* S267 — the cloak hangs from its own bone at the shoulders, in two halves hinged at the middle of the back (peopleSwing) */part(SK.cyl(.17*bw,.225*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb,0,-.17,.095).scale.z=.8;if(g.cloakCut!=='short')part(SK.cyl(.215*bw,.27*bw,.34,14,2,true,Math.PI/2+.25,Math.PI-.5),cc,cb2,0,-.14,.175).scale.z=.8;part(SK.ball(.018,8,6),C(0xb89a4a),spine,0,.33,.12);
+    if(g.cloakCut==='short'&&g.cloakTrim!=null)part(SK.cyl(.228*bw,.228*bw,.022,14,1,true,Math.PI/2+.25,Math.PI-.5),C(g.cloakTrim),cb,0,-.33,.095).scale.z=.8;
+    if(g.cloakHood){const h=part(SK.ball(.12*bw,14,7,0,Math.PI*2,0,Math.PI*.55),mixC(cc,0x000000,.12),cb,0,.03,-.01);h.rotation.x=1.15;h.scale.set(1.05,.8,.75);}
+    if(g.cloakFur!=null){const f=part(SK.bumpy(SK.torus(.135*bw,.04,7,20),.012,23,3),C(g.cloakFur),spine,0,.345,-.005);f.rotation.x=Math.PI/2;f.scale.y=.82;}}
   if(g.extras.includes('mantle'))part(SK.lathe([[0,-.06],[.27*bw,-.06],[.28*bw,-.04],[.2*bw,.06],[0,.08]],18),C(0x6a1010),spine,0,.3,0).scale.z=.8;
   if(g.ogre)part(SK.ball(.12*bw,12,9),skin,spine,0,.1,.085*bw).scale.set(1.1,.85,.9); // S221 — an ogre's belly, bare below the jerkin
   const neck=bone('neck',spine,0,.39,0);part(SK.cyl(.043,.05,.09,10),skin,neck,0,.03,0);
   const head=bone('head',neck,0,.07,0);
+  // S555 — a hollow-hooded wraith (Michael's B on #158) has no head, face or hair: the darkness under its hood is its own unlit
+  // mesh (buildFoe), and anything of a face behind it showed through the see-through body. The bones stay; nothing is hung on them.
+  if(g.hollow)bodyOpen=false;
   part(SK.ball(.13*hs,14,10),skin,head,0,.12,0).scale.set(g.jaw,fem?1.05:1.08,1.02);
   if(g.troll)part(SK.ball(.12*hs,12,8),skin,head,0,.06,.03).scale.set(1.1,.6,1); // S208 — the troll's heavy jaw
   // every feature sits on the head's own surface: zs(x,y) is how far forward the skin is at that point
   const R=.13*hs,zs=(x,y)=>R*1.02*Math.sqrt(Math.max(0,1-(x/(R*g.jaw))**2-((y-.12)/(R*(fem?1.05:1.08)))**2));
   part(SK.ball(.017,8,6),skin,head,0,.102,zs(0,.102)+.002).scale.set(g.nose[0]*.9,g.nose[1]*1.25,1);
   part(SK.cyl(.005,.005,.036,5),mixC(skin,0x7a3a30,.45),head,0,.066,zs(0,.066)+.001).rotation.z=Math.PI/2;
+  // S535 — a goblin's face: a long hooked nose, a wide dark mouth with two fangs up from the lower lip
+  if(g.goblin){const n=part(SK.cone(.018,.095,6),skin,head,0,.097,zs(0,.1)+.03);n.rotation.set(Math.PI/2+.35,0,0);
+    part(SK.cyl(.007,.007,.085,6),C(0x1e1410),head,0,.064,zs(0,.064)+.001).rotation.z=Math.PI/2;
+    [-1,1].forEach(s=>part(SK.cone(.008,.03,5),C(0xe0d8a8),head,s*.026,.071,zs(s*.026,.071)+.005).rotation.set(-.2,0,s*.15));}
   [-1,1].forEach(s=>{const ex=s*.046*g.jaw,ez=zs(ex,.135);
     part(SK.ball(.0165,8,6),C(0xf0ece4),head,ex,.135,ez-.002).scale.set(1,.78,.45);
     part(SK.ball(.0095,8,6),C(g.eye),head,ex,.135,ez+.0035);eyes.push([ex,.135,ez+.006]);
@@ -377,7 +530,12 @@ function personBakeQ(g,q){
   const capHair=()=>{const cap=part(SK.ball(.139*hs,14,7,0,Math.PI*2,0,Math.PI*.52),hair,head,0,.13,-.008);cap.rotation.x=-.32;cap.scale.set(g.jaw,1.06,1.04);return cap;};
   // S398 — under a helm of the armour kit the full styles (curls, an afro, a shag, a crest, warrior braids, a bun) are cut to
   // the skull, or they stood out through the helm (Session 397's prototype); hair that hangs below the helm stays
-  let cap=null;const st=g.eq&&g.eq.armour&&g.eq.armour.head&&/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)?'buzz':g.style;
+  // S547 — and under a closed plate helm (Steel and up; Michael, the inspector: "hair and clothing break through many of the armour
+  // sets") a braid, two braids or a tied tail are tucked away too: the shell closes to .8π from the crown, and they went out through
+  // its back and sides (191, 311 and 9 hair vertices, up to 12 cm out), or, pulled under its rim, through the gorget below it.
+  // The bronze, mail and wooden helms are open below and keep them.
+  const HD=g.eq&&g.eq.armour&&g.eq.armour.head;
+  let cap=null;const st=HD&&(/^(curly|afro|shaggy|mohawk|warrior|bun)$/.test(g.style)||(/^(braid|twin|tied)$/.test(g.style)&&!/^(muscle|mail|lamellar|light|robe)$/.test(HD.fam)))?'buzz':g.style;
   if(st==='thin'){const f=part(SK.torus(.118*hs,.03,5,14,Math.PI*1.2),hair,head,0,.135,-.01);f.rotation.set(-Math.PI/2,0,Math.PI*-.1);f.scale.set(g.jaw,1,1);}
   else if(st==='buzz')cap=shorn(.7);
   else if(st==='mohawk'){shorn();for(let i=0;i<11;i++){const a=-.95+i*.2,rr=.142*hs;const h=1+.9*Math.cos(a*1.1);const t=part(SK.cone(.042,.11*h,6),hair,head,0,.12+rr*Math.cos(a),rr*Math.sin(-a));t.rotation.x=-a;t.scale.set(.5,1,1.25);}}
@@ -421,12 +579,16 @@ function personBakeQ(g,q){
     if(Bd==='horseshoe'){tache('bar');[-1,1].forEach(sd=>lump(.012,sd*.04,.045,zs(sd*.04,.045)+.002,1,3.2,.8,0));}
     if(Bd==='mutton'){tache('walrus');[-1,1].forEach(sd=>{const x=sd*.1*g.jaw;lump(.04,x,.075,zs(x,.075)-.012,.55,1.6,.9,.008).rotation.z=sd*.25;});}
   }
+  if(g.hollow)bodyOpen=true;
   // hats
   if(g.hat==='coif'&&cap){cap.userData.col=C(0xd8d0c0);cap.scale.set(g.jaw*1.05,1.1,1.08);}
   if(g.hat==='kerchief'&&cap){cap.userData.col=mixC(cloth,0xffffff,.2);cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),mixC(cloth,0xffffff,.2),head,0,.06,-.13);}
   if(g.hat==='flatcap')part(SK.lathe([[0,0],[.15,0],[.155,.02],[.14,.05],[0,.06]],16),mixC(sleeve,0x000000,.2),head,0,.21,.01).rotation.x=-.2;
   if(g.hat==='fur'){part(SK.cyl(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(SK.torus(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
-  if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
+  // S555 — the wraith's hood is deeper, its opening turned to the front and a little down, with a peak at the back of the crown
+  if(g.hat==='hood'&&g.hollow){const hc=mixC(cloth,0x000000,.2),h=part(SK.ball(.18*hs,18,10,0,Math.PI*2,0,Math.PI*.72),hc,head,0,.125,0);h.rotation.x=-1.27;h.scale.set(g.jaw*1.03,1.08,1.08);
+    const pk=part(SK.cone(.04,.1,6),hc,head,0,.29,-.1);pk.rotation.x=-.6;}
+  else   if(g.hat==='hood'){const h=part(SK.ball(.16*hs,18,9,0,Math.PI*2,0,Math.PI*.62),g.hoodCol!=null?C(g.hoodCol):mixC(cloth,0x000000,.2),head,0,.12,-.02);h.rotation.x=-.5;h.scale.set(g.jaw,1.05,1.1);}
   if(g.hat==='chaperon'){part(SK.torus(.125*hs,.042,8,20),sleeve,head,0,.2,-.01).rotation.x=Math.PI/2;part(SK.ball(.1*hs,14,7,0,Math.PI*2,0,Math.PI*.5),sleeve,head,0,.21,-.01);}
   if(g.hat==='straw'){part(SK.lathe([[0,0],[.27,0],[.28,.012],[.26,.02],[.135,.035],[.125,.1],[.09,.14],[0,.15]],20),C(0xd4a830),head,0,.2,-.01).rotation.x=-.12;part(SK.torus(.128,.012,6,20),C(0x6a3a1a),head,0,.24,-.01).rotation.x=Math.PI/2-.12;}
   // S520 — the brim hat at a hat's size (Michael, the inspector, of the highwayman: "comically large"): a brim of .2 (was .245, twice
@@ -438,12 +600,13 @@ function personBakeQ(g,q){
   // arms and legs: side 1 is the figure's left (+x), -1 its right
   ['L','R'].forEach((k,i)=>{const s=i===0?1:-1;
     // S394 — g.bareArms: the shirt is cut at the shoulder, so the shoulder's cap is the shirt and the arm below it skin, no cuff
-    const sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),g.bareArms?cloth:sleeve,sh).scale.set(1,.9,.9);
-    part(SK.limb(.155,.05*bw,.044*bw),g.bareArms?skin:sleeve,sh);
-    const el=bone('el'+k,sh,0,-.155,0);part(SK.limb(.13,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
+    // S535 — g.armK lengthens the upper arm and forearm (a goblin's reach to its knees)
+    const ak=g.armK||1,sh=bone('sh'+k,spine,s*(fem?.17:.185)*bw,.305,0);part(SK.ball(.062*bw,10,7),g.bareArms?cloth:sleeve,sh).scale.set(1,.9,.9);
+    part(SK.limb(.155*ak,.05*bw,.044*bw),g.bareArms?skin:sleeve,sh);
+    const el=bone('el'+k,sh,0,-.155*ak,0);part(SK.limb(.13*ak,.043*bw,.036*bw),g.bareArms?skin:sleeve,el);
     if(!g.bareArms)part(SK.torus(.036*bw,.008,5,12),trim,el,0,-.12,0).rotation.x=Math.PI/2;
     if(g.tattoo)[-.105,-.09].forEach(y=>part(SK.torus(.031,.0045,4,14),C(0x26283a),el,0,y-.035,0).rotation.x=Math.PI/2);
-    const wr=bone('wr'+k,el,0,-.14,0);
+    const wr=bone('wr'+k,el,0,-.14*ak,0);
     // S411 — g.fists[k] (Michael's D on #99, the player's empty hand): a folded fist in place of the mitten, a squarer palm,
     // four knuckles across the front, the curled fingers under them and the thumb laid across; B['fist'+k] lists its
     // pieces so a glove or gauntlet colours all of them
@@ -451,8 +614,14 @@ function personBakeQ(g,q){
       for(let q=0;q<4;q++){const kn=part(SK.ball(.0105,6,5),skin,wr,0,-.071,-.015+q*.0105);kn.scale.set(1.15,.9,1);F.push(kn);}
       F.push(part(SK.rbox(.03,.03,.048,.012,2),skin,wr,s*-.016,-.06,.005));
       const tb=part(SK.ball(.012,6,5),skin,wr,s*-.024,-.052,.026);tb.scale.set(1,1,1.7);F.push(tb);B['fist'+k]=F;}
+    // S555 — a wraith's hand (Michael's B on #158): a narrow palm and four long bone-white claws, splayed and hooked
+    else if(g.wraith){const hand=part(SK.ball(.034,8,6),skin,wr,0,-.03,.004);hand.scale.set(.8,1.2,.55);B['hand'+k]=hand;
+      for(let q=0;q<4;q++){const cl=part(SK.cone(.0075,.12,5),C(0xd8d2bc),wr,s*(q-1.5)*.012,-.1,.012-Math.abs(q-1.5)*.004);cl.rotation.set(Math.PI-.3,0,s*(q-1.5)*.12);}
+      const th=part(SK.cone(.007,.07,5),C(0xd8d2bc),wr,s*-.03,-.06,.022);th.rotation.set(Math.PI-.6,0,s*-.5);}
     else{const hand=part(SK.ball(.04,8,6),skin,wr,0,-.035,.004);hand.scale.set(.78,1.15,.6);B['hand'+k]=hand;
-      part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);}
+      part(SK.ball(.016,5,4),skin,wr,s*-.028,-.022,.02).scale.set(1,1.4,1);
+      // S535 — a goblin's hand ends in three hooked claws, yellowed
+      if(g.goblin)for(let q=0;q<3;q++){const cl=part(SK.cone(.008,.045,5),C(0xc8b880),wr,s*(q-1)*.012,-.085,.012);cl.rotation.set(Math.PI-.35,0,0);}}
     // S527 — a wraith has the leg bones (its ragdoll and poses read them) but no legs or feet hung on them
     const th=bone('th'+k,hips,s*.085*bw,-.02,0);if(!g.wraith)part(SK.limb(PW.L1,.066*bw,.05*bw),legs,th);
     const kn=bone('kn'+k,th,0,-PW.L1,0);if(!g.wraith)part(SK.limb(PW.L2,.05*bw,.04*bw),legs,kn);
@@ -676,7 +845,7 @@ const FOE_DRESS={
   'Ash Wight':     {dead:true,skin:0x5a5450,cloth:0x24201e,hat:'helm',gear:'spear',kit:{head:3,chest:3,legs:3},rust:0x4a3e34},
   'Wraith':        {dead:true,wraith:true,skin:0x5e6c84,cloth:0x3a4458,hat:'hood',gear:null}, // S176 — robed, pale, see-through, gliding
   'Phantom':       {dead:true,wraith:true,phantom:true,skin:0x8a9ac8,cloth:0x2e3a78,hat:'none',gear:null}, // S212 — the dungeon's lesser ghost: bare-headed, bluer, fainter
-  'Goblin':        {goblin:true,cloth:0x5a4a32,gear:'stick'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide
+  'Goblin':        {goblin:true,cloth:0x5a4a32,wpn:'dagger'}, // S184 — the folklore goblin (Michael's A): green, big-headed, long ears, ragged hide; S535 — a rusted knife, not a cane
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
   'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace',kit:{head:4,chest:4,hands:3,legs:3}}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
@@ -698,7 +867,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
     g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
     g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth||0x3a3a3a).multiplyScalar(.8);
-    if(dr.goblin){const r=pRng(g.seed+7);g.goblin=true;g.skin=new THREE.Color(0x7a9a4a).lerp(new THREE.Color(0x5a7a3a),r());g.head=1.32;g.build=.92;g.nose=[1.7,1.5];g.beard='none';g.age='adult';g.ruddy=false;g.freckles=false;
+    if(dr.goblin){const r=pRng(g.seed+7);g.goblin=true;g.skin=new THREE.Color(0x7a9a4a).lerp(new THREE.Color(0x5a7a3a),r());g.head=1.32;g.build=.92;g.height*=.88;g.armK=1.22;g.brow=[1.5,.35];g.nose=[1.7,1.5];g.beard='none';g.age='adult';g.ruddy=false;g.freckles=false;
       g.style=r()<.5?'shaggy':'buzz';g.hair=new THREE.Color(0x2a2016);g.eye=new THREE.Color(0xd8b030);g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.8);g.legs=new THREE.Color(0x3a2e20);g.boot=new THREE.Color(0x2a2016);}
     if(dr.kobold){g.style='buzz';g.head=1.25;g.build=1.05;g.age='elder';g.beard='long';g.hair=new THREE.Color(0x8a8a82);g.skin=new THREE.Color(0xb08a6a);g.nose=[1.5,1.4];g.height=Math.min(g.height,.86);
       g.cloth=new THREE.Color(dr.cloth);g.sleeve=new THREE.Color(dr.cloth).multiplyScalar(.85);g.legs=new THREE.Color(0x3a3028);}
@@ -725,7 +894,8 @@ function buildFoe(type,x,z,genome,eyeCol){
     if(dr.kit&&typeof MATERIALS!=='undefined'){const k=dr.kit,pc=t=>{if(!t)return null;const m=MATERIALS[t-1];return {tier:t,fam:AR_FAM[t],sig:null,metal:dr.rust!=null?dr.rust:m.blade,guard:m.guard,glow:null};};
       g.eq=Object.assign({amulet:false,quiver:false},g.eq||{},{armour:{head:pc(k.head),chest:pc(k.chest),hands:pc(k.hands),legs:pc(k.legs),feet:null}});g.hat='none';}
     // a wraith: a long robe to the ground under a cloak and hood, the feet lost in it; it glides (tickPeople)
-    if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);}
+    if(dr.wraith){g.wraith=true;g.dress=true;g.cloak=true;g.beard='none';g.style='buzz';g.brow=[1.2,.25];g.legs=new THREE.Color(dr.cloth).multiplyScalar(.6);g.boot=g.legs.clone();g.trim=new THREE.Color(dr.cloth).multiplyScalar(.7);g.hair.set(0x2a2e38);
+      g.armK=1.25;g.hollow=!dr.phantom;} // S555 — arms a quarter longer for the claws' reach; the wraith's hood is hollow, the phantom keeps its face
     if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}
     // S226 — a weapon from the kit by what the foe is (a spear stays the gear kit's); a skeleton's club becomes a rusted sword
     if(dr.wpn){const r=pRng(g.seed+23);const w=Array.isArray(dr.wpn)?dr.wpn[Math.floor(r()*dr.wpn.length)]:dr.wpn;
@@ -737,7 +907,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
   // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
   // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
-  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
+  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
@@ -745,7 +915,17 @@ function buildFoe(type,x,z,genome,eyeCol){
     rig.runes=[hang(rig.B.head,.15,.026,0,.11,.126),hang(rig.B.spine,.022,.3,0,.2,.175,.6),hang(rig.B.spine,.022,.3,0,.2,.175,-.6)];}
   // a skeleton's eyes burn in its sockets (the enemy's eye colour), one small unlit mesh on the head
   if(g.gargoyle){rig.w.idle=0;rig.w.crouch=1;rig.fold=1;eyeCol=0xff5020;}
-  if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+  // S555 — the darkness under a wraith's hood (Michael's B on #158): an unlit, opaque mesh of its own on the head bone, filling the
+  // hood (a dark part baked into the see-through body let the head show through it), and in it two narrow slanted slits of the
+  // wraith's eye colour with a faint halo. rig.hollow is the three meshes.
+  if(g.hollow){const hs=g.head,ec=eyeCol!=null?eyeCol:0xa0e0ff,hb=rig.B.head;
+    const dk=new THREE.Mesh(new THREE.SphereGeometry(.16*hs,16,12),new THREE.MeshBasicMaterial({color:0x06070b}));dk.position.set(0,.12,-.005);dk.scale.set(g.jaw,1.05,1);hb.add(dk);
+    const sg=new THREE.BufferGeometry(),P=[],I=[];[-1,1].forEach(sd=>{const g1=new THREE.SphereGeometry(.013,8,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3,cz=Math.cos(sd*.3),sz=Math.sin(sd*.3);
+      for(let i=0;i<a.length;i+=3){const x=a[i]*1.7,y=a[i+1]*.32,z=a[i+2]*.5;P.push(sd*.036*hs+x*cz-y*sz,.128+x*sz+y*cz,.156*hs+z);}for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();});
+    sg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));sg.setIndex(I);const sl=new THREE.Mesh(sg,new THREE.MeshBasicMaterial({color:ec}));hb.add(sl);
+    const ha=new THREE.Mesh(new THREE.SphereGeometry(.055*hs,10,6),new THREE.MeshBasicMaterial({color:ec,transparent:true,opacity:.1,depthWrite:false,blending:THREE.AdditiveBlending}));ha.position.set(0,.128,.16*hs);ha.scale.set(1.35,.42,.3);hb.add(ha);
+    rig.hollow=[dk,sl,ha];}
+  if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null&&!g.hollow){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
   return rig;
 }
@@ -777,28 +957,56 @@ function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),
   p.shL=[.02*b,0,.07+.01*b];p.shR=[.02*b,0,-.07-.01*b];p.elL=[-.12,0,0];p.elR=[-.12,0,0];p.wrL=[0,0,.05];p.wrR=[0,0,-.05];
   p.thL=[-.03,0,.02*w+.02];p.thR=[.03,0,.02*w-.02];p.knL=[.06+.04*Math.max(0,w)+.06*old,0,0];p.knR=[.06+.04*Math.max(0,-w)+.06*old,0,0];
   p.anL=[-.03,0,-.02];p.anR=[-.03,0,.02];p.sway=.012*w;
+  if(o.goblin){p.thL=[-.62,0,.16+.02*w];p.thR=[-.62,0,-.16+.02*w];p.knL=[1.2+.05*Math.max(0,w),0,0];p.knR=[1.2+.05*Math.max(0,-w),0,0];p.anL=[-.58,0,-.16];p.anR=[-.58,0,.16];}
   p.hipsY=Math.max(pwReach(p.thL[0],p.knL[0]),pwReach(p.thR[0],p.knR[0]))+PW.HIPJ;
+  if(o.goblin)pwGoblin(p,b*.05);
+  if(o.wraith)pwWraith(p,t);
   if(o.holds)pwHold(p,.02*b,o.gear);return p;}
 // A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
 // forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
+// S534 — a ghoul's limp (Michael, the inspector: "Their walk should probably have a limp as well / be more zombie-like"):
+// o.limp is the bad leg's side (1 the left, -1 the right). That leg swings stiff and low, its toe scuffing the ground, the
+// hip on its side hitched to clear it; standing on it the knee gives and the body drops and lurches over it.
 function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
   p.hipsY=PW.FOOT+PW.HIPJ+(.352-.01*Math.cos(2*a))*PW.LEGK; // the hip joint's height over the foot, scaled with the leg
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.07*c,.025*s];
+  if(o.goblin)p.hipsY-=.075*PW.LEGK; // S535 — a goblin walks crouched, the knees well bent
+  const lim=o.limp||0,fb=lim>0?phL:phR,bs=fb<D?Math.sin(Math.PI*fb/D):0,bw=fb<D?0:Math.sin(Math.PI*(fb-D)/(1-D));
+  if(lim){p.hipsY-=.045*PW.LEGK*bs;p.hips[2]+=lim*(.07*bw-.03*bs);}
   // the pelvis turns and tips as it walks, which carries each hip joint fore and aft: the leg aims from where
   // the joint actually is, so the planted foot stays put and the joint moves around it
   const foot=(f,sd)=>{let z,lift=0,toe=0;
-    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*PW.LEGK*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));}
+    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=.055*PW.LEGK*Math.sin(Math.PI*u);toe=.3*Math.sin(Math.PI*Math.min(1,u*1.4));
+      if(sd===lim){lift=.008*PW.LEGK*Math.sin(Math.PI*u);toe=-.3*Math.sin(Math.PI*u);}} // the bad leg drags, its toe down
     const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
   const L=foot(phL,1),Rr=foot(phR,-1);
   // the pelvis sways and tips sideways over the standing foot; the thighs aim across so the feet stay put
-  p.sway=.014*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
+  p.sway=.014*s+(lim?lim*.022*bs:0);const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
   p.thL=[L[0],-p.hips[1],.02+lat];p.knL=[L[1],0,0];p.anL=[L[2],0,0];p.thR=[Rr[0],-p.hips[1],-.02+lat];p.knR=[Rr[1],0,0];p.anR=[Rr[2],0,0];
   p.spine=[.07,.11*c,-.02*s];p.neck=[-.05,-.04*c,0];p.head=[-.02,0,-.01*s];
   p.shL=[.32*c,0,.09];p.shR=[-.32*c,0,-.09];
   p.elL=[-.24-.2*Math.max(0,-Math.cos(a-.6)),0,0];p.elR=[-.24-.2*Math.max(0,Math.cos(a-.6)),0,0];
   p.wrL=[-.08,0,.05];p.wrR=[-.08,0,-.05];
+  if(lim)pwShamble(p,c,s,lim,bs);
+  if(o.goblin){pwGoblin(p,.3*c);p.thL[2]+=.1;p.thR[2]-=.1;p.anL[2]-=.1;p.anR[2]+=.1;}
+  if(o.wraith)pwWraith(p,ph*6.28); // the game never walks a wraith (tickPeople); the inspector's walk shows it reaching as it glides
   if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+// S535 — a goblin (Michael, the inspector: "Looks a bit too friendly/humanoid", distort and contort it): crouched and hunched,
+// the head thrust forward on the neck so the face stays up, the long arms hanging wide and swinging (sw)
+function pwGoblin(p,sw){p.spine[0]+=.38;p.neck[0]-=.32;p.head[0]-=.06;
+  p.shL=[-.18+sw,0,.22];p.shR=[-.18-sw,0,-.22];p.elL=[-.4,0,0];p.elR=[-.4,0,0];p.wrL=[.2,0,.1];p.wrR=[.2,0,-.1];}
+// S555 — a wraith's hunting stance (Michael's B on #158): hunched, the head low and thrust forward with the hood's dark turned up
+// at you, both clawed arms reaching out at chest height, the elbows a little bent, the claws flexing. It is its idle, and a
+// wraith takes no other (tickPeople). A blow (attackPose) swings the right arm from here; rig.wraithArm is its rest.
+function pwWraith(p,t){const b=Math.sin(t*1.3),f=Math.sin(t*2.1);p.spine=[.42+.03*b,0,p.spine[2]];p.neck=[.22,0,0];p.head=[-.42+.03*b,0,0];
+  p.shL=[-1.8+.07*b,0,.08];p.shR=[-1.74-.07*b,0,-.08];p.elL=[-.3,0,.04];p.elR=[-.3,0,-.04];p.wrL=[.28+.12*f,0,0];p.wrR=[.28-.12*f,0,0];}
+// the ghoul's trunk and arms over its limp: hunched forward, lurching over the bad leg as it takes the weight, the head
+// lolling to that side, the arms hanging forward and swinging little, the bad side's lower and slacker
+function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.neck=[.12,-.03*c,-lim*.12];p.head=[.1,0,-lim*(.14+.06*bs)];
+  const q=lim>0?['shL','elL','wrL','shR','elR','wrR']:['shR','elR','wrR','shL','elL','wrL'],sg=lim>0?1:-1;
+  p[q[0]]=[-.2+.08*c*sg,0,.05*sg];p[q[1]]=[-.1,0,0];p[q[2]]=[.15,0,.05*sg];
+  p[q[3]]=[-.45-.1*c*sg,0,-.08*sg];p[q[4]]=[-.5,0,0];p[q[5]]=[.25,0,-.05*sg];}
 // A run (S162): each foot is down for only a third of the stride, so both are off the ground between steps. The
 // body sits lowest over the standing foot and rises through the flight; the heel kicks up behind as the leg swings
 // through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
@@ -806,7 +1014,7 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
 PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*PW.LEGK,LIFT:.15*PW.LEGK,on:1.4,off:1.15};
 PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
-  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2));
+  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2))-(o.goblin?.06*PW.LEGK:0);
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.09*c,.02*s];
   const foot=(f,sd)=>{let z,lift=0,toe=0;
@@ -820,6 +1028,7 @@ function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%
   p.shL=[.6*c,0,.12];p.shR=[-.6*c,0,-.12];
   p.elL=[-1.2-.3*Math.max(0,-Math.cos(a-.4)),0,0];p.elR=[-1.2-.3*Math.max(0,Math.cos(a-.4)),0,0];
   p.wrL=[-.1,0,.1];p.wrR=[-.1,0,-.1];
+  if(o.goblin){p.spine[0]+=.25;p.neck[0]-=.25;p.thL[2]+=.08;p.thR[2]-=.08;}
   if(o.holds)pwHold(p,-.15*c,o.gear);return p;}
 // the ground one stride cycle covers, for a mix of walk and run
 function pwCycle(w){const a=w.walk||0,b=w.run||0;return a+b>.001?(a*PW.cycle+b*PW.RUN.cycle)/(a+b):PW.cycle;}
@@ -827,6 +1036,8 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   if(o.holds){p.shL=[-.25,0,2.35];p.elL=[0,.2,.55-.42*w];p.wrL=[0,0,-.25*w];p.neck=[0,.18,0];p.head=[.04,0,.08];p.spine=[p.spine[0],.06,-.03];}
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
+// the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
+function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1009,9 +1220,10 @@ function tickPeople(dt,now){
     rig.lastNear=near;
     let mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
+    if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
     const t=now/1000*rig.g.tempo+rig.g.phase;
-    pwApply(rig,pwBlend(rig,mode,t,rig.phase,dt,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
+    {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod)peopleSwing(rig,dt); // S267
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
