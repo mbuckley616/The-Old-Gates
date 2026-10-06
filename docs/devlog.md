@@ -12837,3 +12837,14 @@ On the old code three checks fail: the pinned values gave 8 six times and 15 six
 
 ### Needs eyes
 None.
+
+## v80 — Session 607 — Whether black sails sack a port rolls on the port and the day (backlog K, the co-op door's step 1)
+`tickPortsDay` (`87-world-quests.js`) asked `Math.random` once a day for each unprotected port whether black sails sack it. The risk is 2.5% from Act II, and 5% while the Mark is at war; a harbour, walls or a stone wall keeps a port out. A sack takes 25 prosperity and flags the town for a month, so it is an outcome. A host and a guest, or a save reloaded before the day's tick, could disagree on whether Portclare burned. The roll is now `seededRng('sack', '<site>:<day>')`. The same port on the same day falls or stands whatever `Math.random` says, and the odds are unchanged.
+
+The audit of the systems files (Sessions 604–607) leaves one outcome roll on `Math.random`. A Mystic Scroll's spell (`readScroll`, `64-spells.js`) is picked from those you do not know. A scroll in the bag has no id, and whether bag items get one is a question for the co-op build, not a fix. Every other remaining call is cosmetic (sparks, shards, wander, barks, phase offsets) or dead code.
+
+### Verified (headless Chromium)
+`sackseed` 4/4 (new). Eight ports, three of them unprotected, over 200 days of Act II with no war: 15 sacks (2.5% of 600 port-days), the same ports on the same days with `Math.random` pinned at .001 and at .999 (Portclare on days 187 and 226). On the old code the pinned .001 sacked every unprotected port every day (600) and .999 none, and two checks fail. `parsecheck` clean.
+
+### Needs eyes
+None. The odds are as they were.

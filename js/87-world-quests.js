@@ -712,8 +712,9 @@
   function warMarkers(push){const W=war();if(!W)return;for(const t of allSites()){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;if(st.flags.besieged!=null)push(t.x,t.z,RED,`siege — ${t.name}`);else if(st.flags.occupied!=null&&Math.hypot(px-t.x,pz-t.z)<1500)push(t.x,t.z,RED,`occupied — ${t.name}`);}}
   // ── ports: black sails come for the unprotected ──
   function portProtected(t){const st=TS(t);return st.builds.some(b=>(b.key==='harbour'||b.key==='walls')&&b.done)||wallTierFor(t)==='stone'||wallTierFor(t)==='dressed';}
+  // S607 — whether black sails sack a port today rolls on the port and the day, `<site>:<day>` (co-op rules), not Math.random
   function tickPortsDay(){const S=story();const W=war();const risk=(W&&(W.a==='mark'||W.b==='mark'))?.05:S.act>=2?.025:0;if(!risk)return;
-    for(const t of allSites()){if(t.kind!=='port')continue;const st=TS(t);if(st.flags.sacked!=null||st.flags.burned!=null||st.flags.abandoned!=null||portProtected(t))continue;if(Math.random()<risk){flag(t,'sacked',true);st.p=Math.max(10,st.p-25);if(typeof addLog==='function')addLog('🏴',`${t.name} was sacked from the sea by black sails.`);showMsg(`Word comes that black sails have sacked ${t.name}.`,'#ff8060');}}}
+    for(const t of allSites()){if(t.kind!=='port')continue;const st=TS(t);if(st.flags.sacked!=null||st.flags.burned!=null||st.flags.abandoned!=null||portProtected(t))continue;if(seededRng('sack',t.id+':'+dayNow())()<risk){flag(t,'sacked',true);st.p=Math.max(10,st.p-25);if(typeof addLog==='function')addLog('🏴',`${t.name} was sacked from the sea by black sails.`);showMsg(`Word comes that black sails have sacked ${t.name}.`,'#ff8060');}}}
   // ── plague: a gate left uncleared too long ──
   function tickPlagueDay(){const L=worldState.lairDays||(worldState.lairDays={});const day=dayNow();
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=TS(t);
