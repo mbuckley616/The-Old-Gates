@@ -873,7 +873,7 @@ function openBarberChair(house){
   ov.querySelector('#barber-leave').onclick=()=>{window._ccLook=null;close();};
   ov.querySelector('#barber-rise').onclick=()=>{const L=window._ccLook,changed=JSON.stringify(L)!==was||(cloak&&CCL.ui.cloakCol!==cloakWas);
     const res=typeof barberPay==='function'?barberPay(house,changed):(changed?'paid':'free');
-    if(res==='poor'){ov.querySelector('#barber-fee').textContent=fee!=null?`You have not the ${fee} gold.`:'You have not the fee.';return;}
+    if(res==='poor'){ov.querySelector('#barber-fee').textContent=fee!=null?`Not enough gold: the visit is ${fee}.`:'Not enough gold.';return;}
     if(changed){worldState.look=JSON.parse(JSON.stringify(L));if(cloak&&CCL.ui.cloakCol!=null)cloak.col=CCL.ui.cloakCol;applyLook();try{buildViewmodel();}catch(e){}}
     window._ccLook=null;close();showMsg(changed?'You rise from the chair, changed.':'You rise from the chair as you sat down.','#c8b880');};
   ov.style.display='flex';barberOpen=true;CCL.yaw=0;CCL.touch=performance.now();ccLookRows();ccLookRebuild();}

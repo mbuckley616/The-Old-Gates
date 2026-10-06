@@ -13108,3 +13108,14 @@ Prototype only: no game code changes. In the prototype test, with the trap tick 
 - **Michael's choice on #170.**
 - **The dark upright in the middle of each picture** is a hanging chain of that corridor's dressing, in line with the camera. It is not part of the trap.
 - The stairs' style and wider passages, the rest of the note, are still to be prototyped.
+
+## v80 — Session 574 — The barber's short purse in the menu's voice (the quest review's Finding 17)
+The quest writer's run 9 (`docs/quest_review.md` on auto/quests, PR #172) found that the barber's slip, when you cannot pay, said *You have not the 12 gold.*, which is the Church inquisitor's Aurennais turn in `86-world-crime.js`, not the menu's. The slip is chrome, and the chrome says *Not enough gold* everywhere else. Applied word for word as the review proposes: `` `Not enough gold: the visit is ${fee}.` ``, and `'Not enough gold.'` when no fee is known (`92-creator.js`).
+
+`tests/barberchair` had gone red on this branch before the change, in two checks: it put in a stand-in `barberPay` only when none existed, and the systems builder's real one has landed here since, so its spy never saw a call ("barberPay was told it changed" read `[]`). The stand-in now goes over the real one, at the same 10 gold; the real fee by town is `barberfee`'s to test.
+
+### Verified (headless Chromium)
+`barberchair` 15/15 (13/15 before, both failures the spy): with 3 gold the slip stays open and reads *Not enough gold: the visit is 10.*; with 50 the look is yours and 40 is left.
+
+### Needs eyes
+Nothing beyond the line itself.

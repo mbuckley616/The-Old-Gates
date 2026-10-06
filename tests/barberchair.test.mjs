@@ -13,8 +13,8 @@ const found = await page.evaluate(() => { let h = null;
 check('a barber\'s shop is found and entered', !!found, found);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_CHAIR)); k++) await page.waitForTimeout(250);
 await g.spin(10);
-// the stand-in fee: 10 gold, as barberPay would charge (the systems builder's is the inn room's price)
-await page.evaluate(() => { window._pays = []; if (typeof barberPay !== 'function') { window.barberPay = (h, c) => { _pays.push(c); if (!c) return 'free'; if (gold < 10) return 'poor'; gold -= 10; return 'paid'; }; window.barberFee = () => 10; window._stood = true; }
+// the stand-in fee: 10 gold, put over the systems builder's barberPay (the inn room's price, which varies by town; `barberfee` tests that)
+await page.evaluate(() => { window._pays = []; { window.barberPay = (h, c) => { _pays.push(c); if (!c) return 'free'; if (gold < 10) return 'poor'; gold -= 10; return 'paid'; }; window.barberFee = () => 10; window._stood = true; }
   EQ.back = { slot: 'back', cloak: 'wool', name: 'Traveller’s Cloak' }; });
 const near = await page.evaluate(() => { const C = INT_CHAIR; px = C.x; pz = C.z + 1.0; return { chair: !!C, house: C && C.house === _S }; });
 await g.spin(4); await g.frames(3);
@@ -37,7 +37,7 @@ const pick = await page.evaluate(() => { const L0 = JSON.parse(JSON.stringify(wi
   gold = 50; document.getElementById('barber-rise').click();
   return { poor, paid: { open: barberOpen, gold, style: worldState.look.style, was: L0.style, col: EQ.back.col, want: LOOK_TUNICS[1], sigMoved: tpSig() !== sig0 }, ui: CCL.ui.cv, pays: _pays.slice() }; });
 console.log(JSON.stringify(pick));
-check('a short purse: you stay in the chair, nothing taken, nothing changed', pick.poor.open && pick.poor.gold === 3 && pick.poor.look && pick.poor.col == null && /have not the 10 gold/.test(pick.poor.msg), pick.poor);
+check('a short purse: you stay in the chair, nothing taken, nothing changed', pick.poor.open && pick.poor.gold === 3 && pick.poor.look && pick.poor.col == null && /Not enough gold: the visit is 10\./.test(pick.poor.msg), pick.poor);
 check('Rise with the fee: the new style and the dyed cloak are yours, 10 gold paid, the slip closed', !pick.paid.open && pick.paid.gold === 40 && pick.paid.style !== pick.paid.was && pick.paid.col === pick.paid.want, pick.paid);
 check('your body is rebuilt in the new look (its signature moved)', pick.paid.sigMoved, pick.paid);
 check('barberPay was told it changed', pick.pays.join() === 'true,true', pick.pays);
