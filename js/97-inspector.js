@@ -16,8 +16,8 @@ const INSPECTOR={open:false,entries:[],groups:[],built:new Map(),sel:null,pins:[
 function inspRegistry(){
   const E=[];const slug=x=>String(x).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   const add=(group,sub,name,file,build)=>E.push({id:E.length,key:slug(group)+'/'+slug(sub)+'/'+slug(name),group,sub,name,file,build});
-  const idlePerson=rig=>(t)=>pwApply(rig,pwIdle(t,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));
-  const personAnim=rig=>{let ph=0;return (t,dt,mode)=>{if(mode==='walk'){ph=(ph+dt*1.4)%1;pwApply(rig,pwWalk(ph,{holds:rig.holds,gear:rig.g.gear}));}
+  const idlePerson=rig=>(t)=>pwApply(rig,pwIdle(t,pwOpts(rig)));
+  const personAnim=rig=>{let ph=0;return (t,dt,mode)=>{if(mode==='walk'){ph=(ph+dt*1.4)%1;pwApply(rig,pwWalk(ph,pwOpts(rig)));}
     else if(mode==='wave')pwApply(rig,pwWave(t,{holds:rig.holds,gear:rig.g.gear,elder:rig.g.age==='elder'}));else idlePerson(rig)(t);};};
   // 1. People — the townsfolk of each people in their nation's dress, by role, then the foes on the people's body
   const PEOPLE=[['gatelander','gatelands','Gatelanders'],['markman','mark','Markmen'],['aurennais','aurenne','Aurennais'],['oldblood','gatelands','Oldblood']];
@@ -28,7 +28,7 @@ function inspRegistry(){
       const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig);const anim=personAnim(rig);anim(0,0,'idle');
       return {obj:rig.root,anim,modes:['idle','walk','wave']};});}
   for(const type of Object.keys(FOE_DRESS))add('People','Foes on the body',type,'32-people.js',()=>{
-    const rig=buildFoe(type,0,0);PEOPLE_RIGS.delete(rig);const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
+    const rig=buildFoe(type,0,0);PEOPLE_RIGS.delete(rig);if(FOE_DRESS[type].goblin)rig.root.scale.multiplyScalar(.72); /* S535 — at the size the game builds a goblin */const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
   // 2. Creatures — the wolf kit's kinds, the spider kit's, then the zone and dungeon foes that have a body of their own
   for(const name of Object.keys(WOLF_KINDS))add('Creatures','On the wolf kit',name,'34-creatures.js',()=>{
     const rig=buildWolf(name,WOLF_KINDS[name].world||1);WOLF_RIGS.delete(rig);let ph=0; /* S524 — at the size the game builds it (the dragon's 2.88) */
@@ -62,9 +62,18 @@ function inspRegistry(){
   add('Buildings','Walls and gates','wall segment','82-world-structures.js',()=>({obj:inspMesh(wallSegHi(1.2,12,4.5,0,new THREE.Color(0x8a8478),new THREE.Color(0x6e695f),0,0,pRng(11),false))}));
   add('Buildings','Walls and gates','gate tower','82-world-structures.js',()=>({obj:inspMesh(gateTowerHi(1.2,6.5,new THREE.Color(0x6e695f),new THREE.Color(0x5a3a2a),pRng(13)))}));
   add('Buildings','Walls and gates','bridge','82-world-structures.js',()=>({obj:inspMesh(bridgeGeo(24,2,7))}));
-  for(const k of ['tower','shrine','crag'])add('Buildings','Places','poi '+k,'87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo(k))}));
+  for(const k of ['tower','shrine'])add('Buildings','Places','poi '+k,'87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo(k))}));
+  // S557 — the lair, the glade and the bandit camp (Michael's note, S541: "maybe a few others that should probably be in this list"),
+  // on the systems builder's geometry-only previews (S545, WORLD.poiPreview, seed 7): the look alone, with no stamp, foe, chest or light.
+  // From the title screen the world's tree prototypes are not built yet; the glade's ring of trees needs them, as the trees' own entries do
+  if(typeof WORLD!=='undefined'&&WORLD.poiPreview)for(const [k,n] of [['glade','poi glade'],['lair','poi lair'],['bcamp','poi bandit camp']])add('Buildings','Places',n,'87-world-quests.js',()=>{if(!PROTO.oak)buildProtos();return {obj:WORLD.poiPreview(k,7)};}); /* the glade's trees are the world's prototypes, built at world entry */
   for(const k of ['well','stall','tent','ruin','stone'])add('Buildings','Town furniture',k,'82-world-structures.js',()=>{
     const r=WORLD.furnProto(k,pHash('insp|'+k));return {obj:inspMesh(r.hi),lo:r.lo&&inspMesh(r.lo)};});
+  // S541 — the dungeons (Michael: "No dungeon mesh in the inspector either"): one small floor of each theme, laid out by the game's
+  // makeDungeon and dressed by its buildDunShell in the theme's colours and damp, without its ceiling so the stage looks in
+  for(const theme of Object.keys(THEME_DEF))add('Buildings','Dungeons',theme+' floor','56-dungeon-build.js',()=>{const th=THEME_DEF[theme],seed=pHash('insp|'+theme)%1e5+1,gen=makeDungeon('tiny',seed),map=gen.map;
+    const sh=buildDunShell(map,0,th.wallCol,th.floorCol,{seed,damp:DUN_DAMP[theme]||DUN_DAMP.ruins,rooms:gen.rooms||[]}),g=new THREE.Group();
+    [sh.walls,sh.floor,sh.beams].forEach(m=>{if(m)g.add(m);});if(sh.ceil){sh.ceil.geometry.dispose();}g.position.set(-map[0].length/2,0,-map.length/2);const o=new THREE.Group();o.add(g);return {obj:o};});
   // 4. Ships — each class in each look with its rig, the sails trimming to a wind that walks round; the harbour boats
   for(const [kind,L,W] of [['sloop',13,4.4],['cog',17,5.6],['galleon',22,7]])for(const look of ['player','pirate','merchant'])
     add('Ships',kind,look,'85-world-sea.js',()=>{const m=WORLD.buildShipMesh(L,W,look);let th=0;
@@ -80,6 +89,9 @@ function inspRegistry(){
     add('Plants, trees, rocks','Mushrooms',n,'80-world-terrain.js',()=>{if(!PROTO.oak)buildProtos();return {obj:inspMesh(PROTO[k])};});
   for(const dress of Object.keys(ROCK_DRESS))for(const kind of ['boulder','outcrop','cluster'])add('Plants, trees, rocks','Rocks: '+dress,kind,'80-world-terrain.js',()=>{
     const key=rockProto(dress,kind);return {obj:inspMesh(PROTO[key])};});
+  // S541 — the "poi crag" was not a place (Michael: "Not even sure what this is meant to be"): it is the lumpy boulder that lairs,
+  // bandit camps' fire rings and rock piles are laid from (cragGeo). It is listed with the rocks now, by what it is.
+  add('Plants, trees, rocks','Rocks','crag boulder (lairs, camps, rock piles)','87-world-quests.js',()=>({obj:inspMesh(WORLD.poiGeo('crag'))}));
   // 6. Props and furniture: the furniture kit every room is dressed from, the dungeon's chest and barrel, the sigil stones,
   //    and the town's lamp, signpost, trade signs, camp tents, the coach's cart and a quay
   const FURN=[['table',(K,N)=>K.table(1.4,.8,N,3)],['bench',(K,N)=>K.bench(1.6,N,5)],['chair',(K,N)=>K.chair(N,7)],['stool',(K,N)=>K.stool(N,9)],
@@ -115,6 +127,14 @@ function inspRegistry(){
   for(const tier of [1,2,3,4,5,7,9])add('Weapons and armour','Your body in a full kit',MATERIALS[tier-1].name,'54-thirdperson.js',()=>withEQ(()=>{
       for(const t of ['Cuirass','Greaves','Helmet','Gauntlets','Boots'])EQ[ARMOR_TYPES.find(a=>a.type===t).slot]=armorOf(tier,t);EQ.weapon=makeItem(tier,WEAPON_TYPES.find(w=>w.type==='Sword'),null,false);EQ.offhand=armorOf(tier,'Buckler');},
     ()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);return {obj:R.root};}));
+  // S569 — your body in the light and robe lines (Michael's A on #161), each piece the heavy one's item with the systems builder's `line`
+  const LINE_NAMES={light:{Helmet:'Hood',Cuirass:'Jerkin',Gauntlets:'Bracers',Greaves:'Leggings',Boots:'Soft Boots'},robe:{Helmet:'Cowl',Cuirass:'Robe',Gauntlets:'Wraps',Greaves:'Under-robe'}};
+  for(const ln of ['light','robe'])for(const tier of [1,3,5,7,10])add('Weapons and armour',ln==='light'?'Your body in light armour':'Your body in robes',MATERIALS[tier-1].name,'32-people.js',()=>withEQ(()=>{
+      for(const t in LINE_NAMES[ln]){const it=armorOf(tier,t);it.line=ln;it.name=MATERIALS[tier-1].name+' '+LINE_NAMES[ln][t];EQ[it.slot]=it;}if(ln==='robe')EQ.feet=null;EQ.weapon=ln==='light'?makeItem(tier,WEAPON_TYPES.find(w=>w.type==='Bow'),null,false):null;EQ.offhand=null;},
+    ()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);return {obj:R.root};}));
+  // S560 — your body in each of the six cloaks (Michael's B on #148), over the starting clothes; the back slot is EQ.back
+  for(const k of Object.keys(TP_CLOAK))add('Weapons and armour','Your body in a cloak',k,'54-thirdperson.js',()=>withEQ(()=>{EQ.back={slot:'back',cloak:k,name:'cloak '+k};},
+    ()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);R.root.rotation.y=Math.PI+.25;return {obj:R.root};})); /* turned to show the back */
   add('Weapons and armour','Your body in a full kit','as equipped now','54-thirdperson.js',()=>{const R=tpBuild(null,'gatelander');if(R.rig)PEOPLE_RIGS.delete(R.rig);return {obj:R.root};});
   return E;
 }
@@ -123,7 +143,11 @@ function inspMesh(geo){const m=new THREE.Mesh(geo,VC_MAT);m.castShadow=true;m.re
 // ── stats of a built thing ──
 function inspStats(obj){let tris=0,calls=0;obj.updateMatrixWorld(true);obj.traverse(o=>{if(!o.isMesh||!o.visible)return;const g=o.geometry;if(!g)return;
   const n=(g.index?g.index.count:g.attributes.position?g.attributes.position.count:0)/3;tris+=n*(o.isInstancedMesh?o.count:1);calls++;});return {tris:Math.round(tris),calls};}
-function inspBox(obj){obj.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(obj);if(b.isEmpty())b.set(new THREE.Vector3(-.5,0,-.5),new THREE.Vector3(.5,1,.5));return b;}
+// S557 — an instanced mesh counts each instance where it stands (Box3 reads only its geometry, at the mesh's own place): the glade's
+// ring of trees framed from inside it
+function inspBox(obj){obj.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(obj);
+  obj.traverse(o=>{if(!o.isInstancedMesh||!o.geometry.attributes.position)return;if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();const m=new THREE.Matrix4(),q=new THREE.Box3();
+    for(let i=0;i<o.count;i++){o.getMatrixAt(i,m);b.union(q.copy(o.geometry.boundingBox).applyMatrix4(m.premultiply(o.matrixWorld)));}});if(b.isEmpty())b.set(new THREE.Vector3(-.5,0,-.5),new THREE.Vector3(.5,1,.5));return b;}
 
 // ── building and showing ──
 function inspBuild(e){if(INSPECTOR.built.has(e.id))return INSPECTOR.built.get(e.id);

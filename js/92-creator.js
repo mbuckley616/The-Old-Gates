@@ -793,7 +793,9 @@ function ccBegin(){
 // Wire the creator's begin button (defensive — element may not exist yet
 // if HTML hasn't fully parsed, but on a normal load it will).
 // ── v80 S127 — the look panel: swatches and a live preview of the third-person rig ──
-window.CCL={r:null,s:null,c:null,rig:null,raf:0,explicit:{},yaw:0,touch:-1e9,last:0};
+window.CCL={r:null,s:null,c:null,rig:null,raf:0,explicit:{},yaw:0,touch:-1e9,last:0,rCv:null,
+  // S561 — where the panel draws: the creator's, or the barber's chair (openBarberChair), which leaves out the skin and adds the cloak
+  ui:{cv:'cc-look-cv',rows:'cc-look-rows',modal:'cc-modal',skin:true,cloak:false,cloakCol:null}};
 // S188 — the preview (Michael, playtest s162): framed head to knees whatever the height, facing you to start, turned by
 // dragging on it or with the arrow keys; it turns itself slowly only after four seconds untouched
 const CCL_IDLE=4000,CCL_SPIN=.3;
@@ -809,32 +811,72 @@ function ccLookTurn(d){CCL.yaw+=d;CCL.touch=performance.now();if(CCL.rig)CCL.rig
     if(e.code==='ArrowLeft'||e.code==='ArrowRight'){e.preventDefault();ccLookTurn((e.code==='ArrowLeft'?-1:1)*.2);}});})();
 function ccLookPeople(pp){const L=lookDefault(pp,window._ccArch||playerArchetype,document.getElementById('cc-name')&&document.getElementById('cc-name').value);const cur=window._ccLook||{};
   window._ccLook=Object.assign(L,{style:cur.style||L.style,beard:!!cur.beard,tunic:CCL.explicit.tunic?cur.tunic:L.tunic,breeches:cur.breeches!=null?cur.breeches:L.breeches,boots:cur.boots!=null?cur.boots:L.boots});ccLookRows();ccLookRebuild();}
-function ccLookRows(){const box=document.getElementById('cc-look-rows');if(!box)return;const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const L=window._ccLook;
-  const row=(label,items,get,set)=>{const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap';const l=document.createElement('span');l.textContent=label;l.style.cssText='width:64px;color:#b8a880;font-size:12px;flex:none';r.appendChild(l);
+function ccLookRows(){const box=document.getElementById(CCL.ui.rows);if(!box)return;const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const L=window._ccLook;
+  const row=(label,items,get,set)=>{const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap';const l=document.createElement('span');l.textContent=label;l.style.cssText='width:64px;color:'+(CCL.ui.ink||'#b8a880')+';font-size:12px;flex:none';r.appendChild(l);
     for(const it of items){const b=document.createElement('button');b.type='button';const col=typeof it==='number';b.title=col?'#'+it.toString(16).padStart(6,'0'):it[1];b.textContent=col?'':it[1];const on=get()===(col?it:it[0]);
       b.style.cssText=col?`width:22px;height:22px;border-radius:50%;cursor:pointer;background:#${it.toString(16).padStart(6,'0')};border:2px solid ${on?'#e8c860':'rgba(0,0,0,.5)'};box-shadow:${on?'0 0 0 1px #e8c860':'none'}`:`padding:3px 8px;cursor:pointer;font:12px Georgia,serif;border-radius:4px;background:${on?'#3a2a16':'#2a2020'};color:${on?'#f0e2c0':'#c8b8a0'};border:1px solid ${on?'#c8a84a':'#5a4a3a'}`;
       b.onclick=()=>{set(col?it:it[0]);ccLookRows();ccLookRebuild();};r.appendChild(b);}
     box.appendChild(r);};
   box.innerHTML='';
-  row('Skin',P&&P.skin||[0xd4a878],()=>L.skin,v=>{L.skin=v;});
+  if(CCL.ui.skin)row('Skin',P&&P.skin||[0xd4a878],()=>L.skin,v=>{L.skin=v;});
   row('Hair',P&&P.hair||[0x3a2a1a],()=>L.hair,v=>{L.hair=v;});
   row('Style',LOOK_STYLES,()=>L.style,v=>{L.style=v;});
   row('Beard',LOOK_BEARDS,()=>L.beard===true?'full':L.beard||'no',v=>{L.beard=v==='no'?false:v;});
   row('Tunic',LOOK_TUNICS,()=>L.tunic,v=>{L.tunic=v;CCL.explicit.tunic=true;});
   row('Breeches',LOOK_BREECHES,()=>L.breeches,v=>{L.breeches=v;});
-  row('Boots',LOOK_BOOTS,()=>L.boots,v=>{L.boots=v;});}
-function ccLookRebuild(){const cv=document.getElementById('cc-look-cv');if(!cv||!window._ccLook)return;
-  if(!CCL.r){try{CCL.r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});CCL.r.setSize(200,250,false);CCL.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));CCL.s=new THREE.Scene();CCL.s.add(new THREE.AmbientLight(0xffffff,.55));const d=new THREE.DirectionalLight(0xfff0d0,.9);d.position.set(1.2,2,1.6);CCL.s.add(d);const d2=new THREE.DirectionalLight(0xc0c8ff,.35);d2.position.set(-1.5,.8,-1);CCL.s.add(d2);CCL.c=new THREE.PerspectiveCamera(28,200/250,.1,10);}catch(e){CCL.r=null;return;}}
+  row('Boots',LOOK_BOOTS,()=>L.boots,v=>{L.boots=v;});
+  if(CCL.ui.cloak)row('Cloak',LOOK_TUNICS,()=>CCL.ui.cloakCol,v=>{CCL.ui.cloakCol=v;});}
+function ccLookRebuild(){const cv=document.getElementById(CCL.ui.cv);if(!cv||!window._ccLook)return;
+  if(CCL.r&&CCL.rCv!==cv){try{CCL.r.dispose();}catch(e){}CCL.r=null;}
+  if(!CCL.r){CCL.rCv=cv;try{CCL.r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});CCL.r.setSize(200,250,false);CCL.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));CCL.s=new THREE.Scene();CCL.s.add(new THREE.AmbientLight(0xffffff,.55));const d=new THREE.DirectionalLight(0xfff0d0,.9);d.position.set(1.2,2,1.6);CCL.s.add(d);const d2=new THREE.DirectionalLight(0xc0c8ff,.35);d2.position.set(-1.5,.8,-1);CCL.s.add(d2);CCL.c=new THREE.PerspectiveCamera(28,200/250,.1,10);}catch(e){CCL.r=null;return;}}
   if(CCL.rig)tpDispose(CCL.rig);
-  const keep={};for(const k in EQ){keep[k]=EQ[k];}EQ.head=null;EQ.chest={name:'Tattered Tunic'};EQ.legs={name:'Worn Breeches'};EQ.feet={name:'Leather Boots'};EQ.hands=null;EQ.weapon=null;EQ.offhand=null;EQ.ammo=null;EQ.amulet=null;
+  const keep={};for(const k in EQ){keep[k]=EQ[k];}EQ.head=null;EQ.chest={name:'Tattered Tunic'};EQ.legs={name:'Worn Breeches'};EQ.feet={name:'Leather Boots'};EQ.hands=null;EQ.weapon=null;EQ.offhand=null;EQ.ammo=null;EQ.amulet=null;if(EQ.back&&CCL.ui.cloakCol!=null)EQ.back=Object.assign({},EQ.back,{col:CCL.ui.cloakCol});
   try{CCL.rig=tpBuild(window._ccLook,window._ccPeople||'gatelander');}finally{for(const k in keep)EQ[k]=keep[k];}
   if(CCL.rig){CCL.rig.root.position.set(0,0,0);CCL.s.add(CCL.rig.root);
     // an easy stance: arms down, a slight turn of the head
     tpSet(CCL.rig.shL,.05,0,.08,1);tpSet(CCL.rig.shR,.05,0,-.08,1);tpSet(CCL.rig.elL,-.15,0,0,1);tpSet(CCL.rig.elR,-.15,0,0,1);tpSet(CCL.rig.head,0,-.15,0,1);ccLookFrame();}
   if(!CCL.raf)ccLookLoop();}
-function ccLookLoop(){CCL.raf=requestAnimationFrame(ccLookLoop);const m=document.getElementById('cc-modal');if(!m||m.style.display==='none'){ccLookStop();return;}const now=performance.now(),dt=Math.min(.1,(now-(CCL.last||now))/1000);CCL.last=now;if(CCL.r&&CCL.rig){if(now-CCL.touch>CCL_IDLE)CCL.yaw+=dt*CCL_SPIN;CCL.rig.root.rotation.y=CCL.yaw;try{CCL.r.render(CCL.s,CCL.c);}catch(e){}}}
+function ccLookLoop(){CCL.raf=requestAnimationFrame(ccLookLoop);const m=document.getElementById(CCL.ui.modal);if(!m||m.style.display==='none'){ccLookStop();return;}const now=performance.now(),dt=Math.min(.1,(now-(CCL.last||now))/1000);CCL.last=now;if(CCL.r&&CCL.rig){if(now-CCL.touch>CCL_IDLE)CCL.yaw+=dt*CCL_SPIN;CCL.rig.root.rotation.y=CCL.yaw;try{CCL.r.render(CCL.s,CCL.c);}catch(e){}}}
 function ccLookStop(){if(CCL.raf)cancelAnimationFrame(CCL.raf);CCL.raf=0;}
 (function(){const sh=document.getElementById('cc-look-shuffle');if(sh)sh.onclick=()=>{const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const pk=a=>a[Math.floor(Math.random()*a.length)];const L=window._ccLook||lookDefault(pp,playerArchetype);L.skin=pk(P&&P.skin||[L.skin]);L.hair=pk(P&&P.hair||[L.hair]);L.style=pk(LOOK_STYLES)[0];L.beard=Math.random()<.35?pk(LOOK_BEARDS.slice(1))[0]:false;L.tunic=pk(LOOK_TUNICS);L.breeches=pk(LOOK_BREECHES);L.boots=pk(LOOK_BOOTS);CCL.explicit.tunic=true;window._ccLook=L;ccLookRows();ccLookRebuild();};})();
+// S561 — the barber's chair (barber slice 2; Michael's B on #144, the fee his A on #151): the look panel on a parchment slip, your
+// hair, style and beard, the dyes of your own tunic, breeches and boots, and your cloak's if you wear one. The skin is not the
+// barber's. Rising keeps what you chose and pays the visit's fee through the systems builder's barberPay(house, changed): nothing
+// changed is free, a short purse keeps you in the chair with nothing taken. "Leave as you came" puts it all back.
+let barberOpen=false;
+function openBarberChair(house){
+  if(!worldState.look)worldState.look=lookDefault((()=>{try{return WORLD.playerPeople();}catch(e){return 'gatelander';}})(),playerArchetype,playerName);
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('barberui');
+  if(!ov){ov=document.createElement('div');ov.id='barberui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:560px;max-width:94vw;padding:20px 24px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div id="barber-title" style="font-size:20px;letter-spacing:.04em;text-align:center"></div>'+
+      '<div style="display:flex;gap:14px;margin:12px 0;align-items:flex-start"><canvas id="barber-cv" width="200" height="250" style="width:200px;height:250px;background:rgba(40,28,12,.85);border:1px solid #a89060;border-radius:4px;flex:none;cursor:grab;touch-action:none"></canvas>'+
+      '<div id="barber-rows" style="flex:1;display:flex;flex-direction:column;gap:7px"></div></div>'+
+      '<div id="barber-fee" style="font-size:13px;color:#6a5a3a;text-align:center;min-height:18px"></div>'+
+      '<div style="display:flex;justify-content:space-around;border-top:1px solid #a89060;padding-top:10px;margin-top:6px">'+
+      '<button type="button" id="barber-rise" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Rise</button>'+
+      '<button type="button" id="barber-leave" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Leave as you came</button></div></div>';
+    document.body.appendChild(ov);
+    const cv=ov.querySelector('#barber-cv');let drag=null;
+    cv.addEventListener('pointerdown',e=>{drag=e.clientX;try{cv.setPointerCapture(e.pointerId);}catch(err){}ccLookTurn(0);});
+    cv.addEventListener('pointermove',e=>{if(drag==null)return;ccLookTurn((e.clientX-drag)*.012);drag=e.clientX;});
+    const up=()=>{drag=null;};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);}
+  const was=JSON.stringify(worldState.look),cloak=EQ.back&&EQ.back.cloak?EQ.back:null,cloakWas=cloak&&cloak.col!=null?cloak.col:null;
+  window._ccLook=JSON.parse(was);CCL.explicit={tunic:true};
+  CCL.ui={cv:'barber-cv',rows:'barber-rows',modal:'barberui',skin:false,cloak:!!cloak,cloakCol:cloakWas,ink:'#5a4426'};
+  ov.querySelector('#barber-title').textContent=(house&&house.name)||'The barber’s chair';
+  const fee=typeof barberFee==='function'?barberFee(house):null;
+  ov.querySelector('#barber-fee').textContent=fee!=null?`${fee} gold for the visit, whatever is changed; nothing, if nothing is.`:'';
+  const close=()=>{ov.style.display='none';barberOpen=false;ccLookStop();CCL.ui={cv:'cc-look-cv',rows:'cc-look-rows',modal:'cc-modal',skin:true,cloak:false,cloakCol:null};};
+  ov.querySelector('#barber-leave').onclick=()=>{window._ccLook=null;close();};
+  ov.querySelector('#barber-rise').onclick=()=>{const L=window._ccLook,changed=JSON.stringify(L)!==was||(cloak&&CCL.ui.cloakCol!==cloakWas);
+    const res=typeof barberPay==='function'?barberPay(house,changed):(changed?'paid':'free');
+    if(res==='poor'){ov.querySelector('#barber-fee').textContent=fee!=null?`Not enough gold: the visit is ${fee}.`:'Not enough gold.';return;}
+    if(changed){worldState.look=JSON.parse(JSON.stringify(L));if(cloak&&CCL.ui.cloakCol!=null)cloak.col=CCL.ui.cloakCol;applyLook();try{buildViewmodel();}catch(e){}}
+    window._ccLook=null;close();showMsg(changed?'You rise from the chair, changed.':'You rise from the chair as you sat down.','#c8b880');};
+  ov.style.display='flex';barberOpen=true;CCL.yaw=0;CCL.touch=performance.now();ccLookRows();ccLookRebuild();}
 const _ccBeginBtn=document.getElementById('cc-begin');
 if(_ccBeginBtn) _ccBeginBtn.onclick=ccBegin;
 const _ccNameEl=document.getElementById('cc-name');

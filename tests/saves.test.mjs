@@ -2,13 +2,15 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
-await page.evaluate(() => { playerName = 'Traveller'; gold = 359; level = 5; saveToSlot(0); }); await page.waitForTimeout(900);
-await page.evaluate(() => { SS.lastAuto = 0; saveGame(true); }); await page.waitForTimeout(900);
+// each write is waited for, not slept on: a slow runner took longer than 900 ms over the manual slot (Session 585)
+await page.evaluate(() => { playerName = 'Traveller'; gold = 359; level = 5; return saveToSlot(0); });
+await page.evaluate(() => { SS.lastAuto = 0; saveGame(true); });
+await page.waitForFunction(() => SS.idx.some(e => e.key.includes('_auto_')), null, { timeout: 30000 }).catch(() => {});
 const idx = await page.evaluate(() => SS.idx.map(e => e.key));
 check('manual slot written', idx.some(k => k.endsWith('_manual_0')), idx);
 check('autosave written', idx.some(k => k.includes('_auto_')), idx);
 const before = await page.evaluate(() => SS.idx.find(e => e.key.endsWith('_manual_0')).size);
-await page.evaluate(() => { gold = 999; saveToSlot(0); }); await page.waitForTimeout(900);
+await page.evaluate(() => { gold = 999; return saveToSlot(0); });
 const loaded = await page.evaluate(async () => { const m = SS.idx.find(e => e.key.endsWith('_manual_0')); const d = await ssLoad(m.key); return d && d.gold; });
 check('overwrite loads the newer gold', loaded === 999, { before, loaded });
 // legacy migration: the s135 way of storing a save

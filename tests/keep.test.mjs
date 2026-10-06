@@ -1,5 +1,5 @@
 // The fort's keep on the kit (Session 256, H.5, Michael's A on buildings): coursed walls on a battered plinth, round
-// turrets, a doorway of voussoirs with its leaves open, windows with sills, a corbelled parapet, in the compound's
+// turrets, a doorway of voussoirs with its leaves shut (Session 583; open before), windows with sills, a corbelled parapet, in the compound's
 // group with the old boxes as its distant copy; the keep's footprint, door, collider and lights as they were.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
@@ -9,13 +9,15 @@ fs.mkdirSync('tests/out', { recursive: true });
 const geo = await page.evaluate(() => { const W = 11, D = 9, H = 7.2; const geo = WORLD.fortKeepGeoHi(W, D, H, 0x8a2a2a, (() => { let a = 7; return () => ((a = (a * 16807) % 2147483647) / 2147483647); })()); geo.computeBoundingBox(); const bb = geo.boundingBox;
   const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })); m.updateMatrixWorld(true); const rc = new THREE.Raycaster();
   const hitZ = (x, y) => { rc.set(new THREE.Vector3(x, y, D / 2 + 5), new THREE.Vector3(0, 0, -1)); const h = rc.intersectObject(m)[0]; return h ? +h.point.z.toFixed(2) : null; };
+  const hitC = (x, y) => { rc.set(new THREE.Vector3(x, y, D / 2 + 5), new THREE.Vector3(0, 0, -1)); const h = rc.intersectObject(m)[0]; if (!h) return null; const c = geo.attributes.color; return [c.getX(h.face.a), c.getY(h.face.a), c.getZ(h.face.a)].map(v => +v.toFixed(2)); };
   return { tris: geo.attributes.position.count / 3, colours: !!geo.attributes.color, box: [bb.min.x, bb.max.x, bb.min.z, bb.max.z, bb.min.y, bb.max.y].map(v => +v.toFixed(2)),
-    door: hitZ(0, 1.5), arch: hitZ(0, 3.6), wall: hitZ(-2.8, 2.0), win: hitZ(3.4, 7.2 * .62), D }; });
+    door: hitZ(0.3, 1.5), arch: hitZ(0.3, 3.6), edge: hitZ(-1.05, 2.0), wood: [hitC(0.3, 1.5), hitC(-0.6, 2.5), hitC(0.3, 3.6)], wall: hitZ(-2.8, 2.0), win: hitZ(3.4, 7.2 * .62), D }; });
 console.log(JSON.stringify(geo));
 check('the keep is one vertex-coloured mesh of 4–13k triangles (one a fort; its ring is some fifty segments of 1–2k)', geo.colours && geo.tris > 4000 && geo.tris < 13000, geo);
 check('it keeps the old footprint (11 by 9, the turret feet within 1.5 of it, as the old turrets were within 1.2; the steps 2.8 out in front) and stands under 12.5', geo.box[0] > -7.0 && geo.box[1] < 7.0 && geo.box[2] > -6.0 && geo.box[3] < 4.5 + 2.9 && geo.box[5] < 12.5, geo.box);
 check('it runs into the ground under a slope (the plinth\'s foot below −.4)', geo.box[4] < -.4, geo.box);
-check('the doorway is open to the dark at its back (.95 into the wall), under the arch too', geo.door !== null && geo.door < geo.D / 2 - .8 && geo.arch !== null && geo.arch < geo.D / 2 - .8, geo);
+check('the doorway is shut by its leaves, .8 into the wall, under the arch too and out to the jambs (Michael, 5 Oct: the fort doors stood wide open)', [geo.door, geo.arch, geo.edge].every(z => z !== null && Math.abs(z - (geo.D / 2 - .805)) < .03), geo);
+check('what shuts it is the oak (brown: red over green over blue, dark), not the dark at the doorway\'s back', geo.wood.every(c => c && c[0] > c[1] && c[1] > c[2] && c[0] < .6 && c[0] > .2), geo.wood);
 check('the wall beside the door is its courses, proud of the face; the window is a recess behind the face', geo.wall > geo.D / 2 && geo.wall < geo.D / 2 + .2 && geo.win < geo.D / 2, geo);
 // the fort nearest the start: drain the loader so its compound builds, then find the keep's pair among its baked meshes
 const fd = await page.evaluate(() => { const out = []; const [hi, hj] = WORLD.cellOf(px, pz); for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { let c; try { c = WORLD.getCell(hi + di, hj + dj); } catch (e) { continue; } if (c) for (const e of c.doors) if (e.kind === 'fort_door') out.push({ seed: e.seed, x: e.x, z: e.z, d: Math.hypot(e.x - px, e.z - pz) }); } return out.sort((a, b) => a.d - b.d)[0] || null; });
