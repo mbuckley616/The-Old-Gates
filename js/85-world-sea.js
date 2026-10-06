@@ -617,12 +617,20 @@
     tickArrows(dt);
   }
   // volleys: arrows that fly to where you are; a hit if you're still near when they land
+  // S612 (Michael's sailing playtest, 6 Oct) — a ship looses nothing herself: each arrow is a living hand of her crew standing
+  // on her deck, loosed from where he stands, and a hand within 8 units of whom she hunts has his blade out instead. No
+  // archer, no volley: her crew killed, sent over your rail or all at close quarters, she is silent.
+  const ARCHER_CLOSE=8;
+  function shipArchers(o,T){const p=o.plat;return o.crew.filter(e=>!e.dead&&e._ship===o&&e.x>p.x0-.5&&e.x<p.x1+.5&&e.z>p.z0-.5&&e.z<p.z1+.5&&Math.hypot(T.x-e.x,T.z-e.z)>=ARCHER_CLOSE);}
   const ARROWS=[];
   function volley(o){
     const R=o.rng||Math.random,T=targetOf(o);const n=2+Math.floor(R()*2);const v={hit:false};
-    for(let k=0;k<n;k++){const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.9),new THREE.MeshLambertMaterial({color:0x3a2a18}));const sx=o.x+(Math.random()-.5)*3,sz=o.z+(Math.random()-.5)*3;m.position.set(sx,DECK_Y+1.2,sz);sc.add(m);
-      const tx=T.x+(R()-.5)*4,tz=T.z+(R()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:T.y+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v});}
-    if(typeof sfxNoise==='function')sfxNoise(.18,0,0,.08,1800);showMsg('Arrows!','#ff8060');
+    const bows=shipArchers(o,T);if(!bows.length)return 0;const shots=Math.min(n,bows.length);
+    for(let k=0;k<shots;k++){const e=bows[k];const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.9),new THREE.MeshLambertMaterial({color:0x3a2a18}));const sx=e.x,sz=e.z;m.position.set(sx,DECK_Y+1.2,sz);sc.add(m);
+      const tx=T.x+(R()-.5)*4,tz=T.z+(R()-.5)*4,dist=Math.hypot(tx-sx,tz-sz);ARROWS.push({m,sx,sz,sy:DECK_Y+1.2,tx,tz,ty:T.y+.6,t:0,dur:Math.max(.6,dist/45),k:.3+Math.random()*.4,v,from:e});
+      if(e.mesh)e.mesh.rotation.y=Math.atan2(T.x-e.x,T.z-e.z);}
+    if(typeof sfxNoise==='function')sfxNoise(.18,0,0,.08,1800);showMsg(shots>1?'Arrows!':'An arrow!','#ff8060');
+    return shots;
   }
   // S411 — a volley whose first arrow comes down on your own deck costs her 2 hull and 3 rig (once a volley)
   function volleyOnDeck(x,z,y){const p=SHIP.plat;return !!(SHIP.mesh&&worldState.ship&&p&&x>p.x0&&x<p.x1&&z>p.z0&&z<p.z1&&(!p.inside||p.inside(x,z))&&Math.abs(y-.6-p.y)<1.5);}

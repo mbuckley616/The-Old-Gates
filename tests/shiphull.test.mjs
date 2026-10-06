@@ -70,9 +70,9 @@ check('still touching, it does not count again', rams.bowAgain === 89, rams);
 check('a merchantman into your beam at 4 while you lie still: 4 × 3, hull −12 (to 88)', rams.beam.hull === 88 && /The hulls strike\. Hull −12\./.test(rams.beam.msg), rams.beam);
 check('once she has drawn off and comes again, it counts again (76)', rams.beamAgain === 76, rams);
 
-// a volley on your deck (loosed from a merchantman's place, so no black sail adds her own): 2 hull and 3 rig, once a volley however many arrows; one at you in the water off her costs her nothing
+// a volley on your deck (from a black sail's crew since S612, her own volleys and ram held off): 2 hull and 3 rig, once a volley however many arrows; one at you in the water off her costs her nothing
 const volleys = await page.evaluate(() => { const S = WORLD.ship, out = {}; worldState.ship.hull = 100; worldState.ship.rig = 100; S.sailing = true; S.speed = 0;
-  const o = WORLD.spawnOtherShip('merchant', S.x + 30, S.z); WORLD.tick(1 / 60, performance.now()); WORLD.tick(1 / 60, performance.now()); out.atHelm = +Math.hypot(px - S.helm.x, pz - S.helm.z).toFixed(2);
+  const o = WORLD.spawnOtherShip('pirate', S.x + 30, S.z); o.volleyT = 1e9; o.ramWait = 1e9; WORLD.tick(1 / 60, performance.now()); WORLD.tick(1 / 60, performance.now()); out.atHelm = +Math.hypot(px - S.helm.x, pz - S.helm.z).toFixed(2);
   const R = Math.random; Math.random = () => .5; const before = WORLD.arrows.length; PHP = maxHP; WORLD.volley(o); Math.random = R; out.arrows = WORLD.arrows.length - before;
   for (let i = 0; i < 240 && WORLD.arrows.length; i++) WORLD.tick(1 / 60, performance.now());
   out.deck = WORLD.shipBars(); out.left = WORLD.arrows.length;

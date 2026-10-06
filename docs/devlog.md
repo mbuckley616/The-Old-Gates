@@ -13628,3 +13628,16 @@ The suite's first run threw on every frame after leaving a cavern, from `skyBodi
 
 ### Needs eyes
 The numbers above are of the blow alone. How often a player stands bare or under 40 armour in a cavern, and so whether the cliff is met in play, is what a real fight would show. The answer to #181 decides what is built.
+
+## v80 — Session 612 — A ship's arrows come from her crew (backlog I, Michael's sailing playtest)
+Michael's sailing playtest (6 Oct) found that ships loose arrows on their own, and that a black sail "kept firing arrows at him after everyone on board had been killed". He wants the arrows to come from the people aboard. That was how it was built: `volley(o)` loosed two or three arrows from a point within 1.5 units of the ship's middle whenever you were within 70 units and her clock ran down. It never looked at her crew. Once her crew had been killed from range, or two had been sent over your rail as boarders (Session 168) and killed there, she went on shooting every 2.2–3.2 s for as long as you stayed in range.
+
+Now each arrow is loosed by a living hand of her crew who is standing on her deck, from where he stands, and he turns to face whom he shoots at. The volley still draws its 2–3 from her own stream (Session 508), but it looses no more arrows than she has archers. A hand within 8 units of whom she hunts doesn't shoot; that is where Michael wants the blade. With no archer, the volley is silent: no arrows, no *Arrows!* and no wear on your deck. Hands sent across as boarders have left her crew, so they don't shoot from her either. Damage, spread, flight and the deck's wear (Session 411) are unchanged. This makes the volley do what its own comment and Michael's note say it does, so no decision was asked. The bows in their hands and a draw are the look's (H). Melee at close quarters is the crew's ordinary zone fighting, as before.
+
+`tests/shiphull`'s volley check had loosed from a merchantman, because she has no volleys of her own. A merchantman has no crew, so the check now looses from a black sail with her own volleys and ram held off. The numbers it checks are the same.
+
+### Verified (headless Chromium)
+`shiparchers` 10/10 (new). A black sail's three hands loose 3 arrows, one each, from where each stands. With two killed, the last looses 1. With all three killed, `volley` returns 0. Her own tick then ran 30 s at 40 units with her clock forced below 3 s: 0 arrows, 0 damage. With her crew alive, 12 s of her tick looses 14 arrows, every one a living hand's. With whom she hunts 5 units off her endmost hand, that hand holds and the one hand still 8 or more units off looses 1. With every hand at close quarters there is no volley. `shiphull` 1/1 with the volley from a pirate's crew (hull 98, rig 97 as before); worldtarget, pirateram, piratehold, ships and seaseed 1/1 each. `parsecheck` clean.
+
+### Needs eyes
+Whether 3 hands make a fair volley at sea now that killing them stops it, and the rest of the playtest's list (hull overlap, deck props walked through, bodies over the sea, the helm's reach, the port's road), which is still open in backlog I.
