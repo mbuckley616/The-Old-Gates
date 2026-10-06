@@ -12582,3 +12582,13 @@ CI on `472e804` failed one shard with one check: `saves`, *manual slot written*,
 
 ### Needs eyes
 Nothing in play. Whether the next CI run on the branch is green.
+
+## v80 — Session 578 — The pious temper's Weaver (quest review run 9, Finding 18)
+A register fix, applied as the review wrote it. Any generated townsperson can draw the pious temper (`TEMPERS.pious`, `87-world-quests.js`), and it greeted you with *The Light keeps this door.* and saw you off with *Walk in light.* The canon has no Light: the gods are the Makers and the Church is the Weaver's. The greeting is now *The Weaver keeps this door.* and the farewell *Go with the Weaver.* The other four lines stay. Finding 17 (the barber's *You have not the 12 gold.*) is in the look builder's code on auto/backlog and is theirs to apply.
+
+### Verified (headless Chromium)
+`homenames` (Session 579's suite) reads `TEMPERS.pious` in the running game: the greeting's second line is *The Weaver keeps this door.*, the first farewell *Go with the Weaver.*, and no line of the temper says *light*. `parsecheck` clean.
+
+### Needs eyes
+Nothing.
+

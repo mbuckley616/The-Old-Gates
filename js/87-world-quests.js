@@ -46,7 +46,7 @@
     warm:  {greet:["Well now — you look half frozen. Come closer.","Good to see a new face. Truly.","Sit, sit. You've walked a way."],yes:"Of course.",no:"I'd rather not, if it's all the same.",bye:["Safe roads, friend.","Come back and tell me how it went."]},
     gruff: {greet:["What.","Say it, then.","I've work to do. Be quick."],yes:"Fine.",no:"No.",bye:["Go on, then.","Mind the door."]},
     nervous:{greet:["Oh — you startled me.","Is something wrong? You look like something's wrong.","Keep your voice down, would you?"],yes:"I suppose.",no:"I don't think that's wise.",bye:["Careful out there. Please.","Don't tell anyone I said anything."]},
-    pious: {greet:["Blessings on the road that brought you.","The Light keeps this door.","You carry weight, traveller. Set it down a moment."],yes:"As it should be.",no:"That isn't for me to give.",bye:["Walk in light.","May the ground hold under you."]},
+    pious: {greet:["Blessings on the road that brought you.","The Weaver keeps this door.","You carry weight, traveller. Set it down a moment."],yes:"As it should be.",no:"That isn't for me to give.",bye:["Go with the Weaver.","May the ground hold under you."]},
     sly:   {greet:["Now here's someone with coin in their step.","Ask me anything. Some answers cost.","You've the look of trouble. I like trouble."],yes:"Naturally.",no:"Ah. No.",bye:["Don't get caught.","We never spoke."]},
     weary: {greet:["Another one.","Mm. What is it.","I was young once, you know. Ask your question."],yes:"If you must.",no:"No. Not today.",bye:["Go well. Or go. Either.","Shut the door behind you."]},
   };
