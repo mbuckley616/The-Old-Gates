@@ -5,6 +5,24 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 ## Pending
 
 ## Answered
+### The cavern master's slam: dead outright bare, 2 in armour (the systems builder, Session 610) — DECISION #181
+**The question.** The cavern master's slam (Session 404, your A on #95) was owed *the damage, by play*. Session 610 measured it in 18 real lair caverns at levels 1–20 (`tests/slamdamage`). Nothing was changed. The numbers do not make a fight at either end:
+
+- **Bare, from level 3, every slam kills outright.** A master's blow stacks five multipliers: its kind (a Cave Troll 4.4), the lair's difficulty, which follows your level (×0.45 at 1–2 up to ×2.0 from 15), the second floor (×1.5; all 18 masters stood there), the level scale (to ×2.0) and the master's own 1.6 × (1 + level × .04). A Cave Troll master is ×8.9 at level 3, ×37 at 10 and ×91 at 20. Its slam does 178–356 at level 3 against 120–170 health, 738–1,474 at level 10 against 190–310.
+- **From 40 armour every slam is 2, at every level.** Armour comes off before the multiplier, half a point a point, from a roll of 10–20, and the result is floored at 1. So 40 armour takes the whole roll, and the blow is 1 whatever the master (2 for the slam). A full heavy kit is 18 in Iron, 30 in Steel and 58 in Adamant. The cliff is between 20 and 40. At level 10 the Cave Troll's slam averages 1,102 bare, 747 at 10 armour, 351 at 20, 103 at 30 and 2 at 40.
+
+The same flat subtraction is in every dungeon foe's blow (`74-strikes.js`), so the cliff is not the slam's alone. But the slam is where it shows worst, because it is meant to be the blow you must step out of.
+
+**Options.**
+- **A. Leave it.** The slam kills a bare or lightly armoured player and is nothing to a well armoured one.
+- **B. Armour takes a share, not a flat amount, for every dungeon blow.** For example, damage × 50 / (50 + armour), so 50 armour halves a blow and nothing ever reaches 1 by armour alone. Then retune the stack so a kit of your level leaves an ordinary blow at a tenth of your health. This is the larger change and belongs with the attack table (backlog C, B's Fable session).
+- **C. The slam alone: a share of your health.** It lands for 45% of your max health, 60% bare-chested (no chest piece), whatever the master and the armour. It still goes through any block, and a roll or a step out still takes nothing. Two slams in a row kill only if you heal neither time. Ordinary blows are untouched. One Opus session.
+- **D. Trim the stack for the master.** Drop the master's level term (a flat 1.6) and the second floor's ×1.5 on it. This halves the bare numbers at level 10 but leaves the cliff at 40 armour.
+
+**Recommendation: C now,** because it makes the slam the thing you chose: a blow you must not stand under, the same at level 3 and 20. Then put B to the attack table's session, since the cliff at 40 armour is every dungeon foe's.
+
+Michael: **The slam alone: 45% of your max health** (C). (2026-10-06)
+
 ### Main's CI is red on 6b01495 — saveui and a shard timeout (the producer, 2026-10-06)
 Main's own check failed after the look merge (6b01495): saveui could not save to an empty slot on shard 3, and shard 5 ran out of time. saveui passes on auto/backlog, which carries all of main's code. A: a flake, let the re-run settle it; if saveui fails twice, the systems builder hardens it. B: the systems builder fixes saveui next run whatever the re-run shows.
 
