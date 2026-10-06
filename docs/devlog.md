@@ -12848,3 +12848,27 @@ The audit of the systems files (Sessions 604–607) leaves one outcome roll on `
 
 ### Needs eyes
 None. The odds are as they were.
+
+## v80 — Session 608 — Town locks against the takings, measured (backlog G, Session 155's owed check)
+Backlog G has carried since Session 155: *whether four pins per shop in a rich town is fair*, and *the takings against a low-level purse*. The feel is Michael's. This session measured the numbers, and no rule changed. A shop's door and its strongbox take at least 4 pins in a town of prosperity 60 or more and at least 3 below it (`lockPins`). Before that floor, the lock's own hash gives 2–4 (`lpDifficulty`). A home's locks take one fewer, at least 2. A pick costs 12 gold. A strongbox holds `boxCoins` × 0.8–1.2 and one thing from the shop's stock. The cost of a break-in, a shop's door at night and then its box, is priced with Session 376's exact snap count (a snap drops the last pin set).
+
+What a new world holds at the start: 46 places with shops. Five are under 40 prosperity (mean 37), 27 are at 40–59 (mean 47) and 14 at 60–79 (mean 67). None is at 80 or more. So about a third of the places a player can rob have all-4-pin shops.
+
+| band | places | a shop's locks | coins in the box | picks for door + box, a hand that misses 1 in 10 / 1 in 5 / 1 in 3 |
+|---|---|---|---|---|
+| under 40 | 5 | 3 (2 in 3) or 4 | 29 | 0.80 / 2.00 / 4.87 (10 / 24 / 58 gold) |
+| 40–59 | 27 | 3 (2 in 3) or 4 | 34 | 0.80 / 2.00 / 4.87 (10 / 24 / 58 gold) |
+| 60–79 | 14 | all 4 | 43 | 0.97 / 2.45 / 6.12 (12 / 29 / 73 gold) |
+
+What it says: a rich town's box holds about 9 more coins and costs about a quarter more picks. A steady hand (1 in 10) robs any shop at a profit of 20–30 gold before the stolen item. A hand that misses 1 in 3, a new character's first tries, spends 58–73 gold in picks for 29–43 coins. That is a loss before the item, and a bigger one in a rich town. Homes are cheap: 65 homes in Dunmore and Portclare, 44 at 2 pins and 21 at 3, door and chest alike, for 2–12 coins and a keepsake.
+
+### Verified (headless Chromium)
+`townlocks` 5/5 (new). The real locks through the game's `lpDifficulty`:
+- Dunmore (prosperity 61): all 7 shops at 4 pins, door and box. Coins 32–49 by kind.
+- Portclare (56): 2 of 5 at 4 pins, the rest 3. Coins 30–46.
+- The homes are as above.
+
+`parsecheck` clean.
+
+### Needs eyes
+Whether a rich town's all-4 shops are fair is still the feel. By the numbers, the floor of 4 matters less than the hand: a 1-in-3 hand loses money everywhere, and a 1-in-10 hand profits everywhere. If Michael wants burglary to pay for a beginner, the lever is the pick's price or the box, not the pins. That would be a decision, and none is raised here.
