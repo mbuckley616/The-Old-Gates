@@ -12620,3 +12620,14 @@ The suite now reads both from the blade. The swing's direction is where the blad
 
 ### Needs eyes
 Nothing in play. The merge of 68-dungeon-misc.js between auto/backlog and this branch conflicts on adjacent blocks (the blade's builder and `bladeTouches`); keep both.
+
+## v80 — Session 586 — *It's done.* only when there is something to hand in (Michael's note of 5 Oct)
+Michael's note of 5 Oct on the dialogue (backlog A): *"We also leave a lot of things like 'I'm turning in work' open when there is nothing to actually turn in."* Two people offered *It's done.* at every visit: a town's lord (or the keep's steward), and a guild head. With nothing to give, the lord answered *You've nothing from me to finish.* and the head *You've no task from us.*; with the work under way, *Not yet — …*. A topic can now carry `avail`, and the generated townsperson's topic list (`dialogFor`, `87-world-quests.js`) and the guild head's (`83-world-generator.js`) leave out any whose `avail` says no. The lord's *It's done.* is there only while a job of the lord's own (not a faction's service) is finished and unpaid. The head's is there only while the guild's task is finished, after the dated task's lapse is checked, as the topic itself does. Both topics' own answers are unchanged, so nothing new is said. *I'm looking for work.* still restates a job under way, so the reminder *Not yet — …* gave is still one click away. The other topics that answer "nothing" (the faction's *Serve*, *My standing?*) say something true each time and are left. The greetings are the quest writer's *First Words* draft and wait for Michael.
+
+`questgold` found the guild head by its *It's done.*, which a head with no task no longer has; it now finds them by *Any work?*. `rowebeats` checked that clicking *It's done.* with only the Crown's service finished paid nothing; it now checks that the topic is not offered at all.
+
+### Verified (headless Chromium)
+`turnin` 7/7 (new). In Dunmore, Niamh with no job: no *It's done.*, *I'm looking for work.* there. The job taken (*Wolves at Dunmore*) and not done: still none. Marked done: offered, and clicking it pays 70. Paid: gone. The Fighters' Guild head: none with no task or with a relic task under way; offered once it is got, paying 80, and gone after. questgold, rowebeats (changed as above), rowelines, worldjournal, datedwork, datedguild, blacksail and mainrun pass. `parsecheck` clean.
+
+### Needs eyes
+Whether a player misses the lord's *Not yet — …* on an unfinished job; *I'm looking for work.* restates the job, but in its full ask, not the short objective.

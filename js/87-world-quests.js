@@ -136,7 +136,7 @@
     const T=TEMPERS[def.temper];
     Object.defineProperty(def,'topics',{configurable:true,get(){
       // top level: the NPC's own business (shop, ferries, quests, purchases) + three folders
-      const extra=[...(def._extra||extraTopics||[]),...(def._extraFn?def._extraFn():[])];
+      const extra=[...(def._extra||extraTopics||[]),...(def._extraFn?def._extraFn():[])].filter(t=>!t.avail||t.avail()); /* S586 — a topic with avail shows only while it has something to do (Michael, 5 Oct: no It's done. with nothing to hand in) */
       const ferries=extra.filter(t=>/^Passage to/.test(t.label)),rest=extra.filter(t=>!/^Passage to/.test(t.label));
       const rich=richTopics(site,reg,r,role,name,def);
       const folder=(label,items,say)=>({label,folder:true,response:say||pick(Math.random,['Ask, then.','Go on.','What would you know?','Well?']),follow:items});
@@ -206,7 +206,7 @@
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+            {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
