@@ -12609,3 +12609,14 @@ Michael took A on #170: the blade swings across the passage and *the hit follows
 
 ### Needs eyes
 Today's blade is 0.7 wide and swings 0.63 each way along a one-cell corridor, so at the cell's centre its edge never leaves you: you are cut on every pass. There is no gap to run through until the look builder's blade swings across the passage. Then the gap is the time between swings, and whether it is fair is a matter for play.
+
+## v80 — Session 585 — `bladehit` reads the blade it tests (tests only)
+The look builder ran `bladehit` against its own crossing blade (Session 582, on auto/backlog) and two of eight checks failed. Merged, the two branches would turn CI red. The rule in `bladeTouches` held. The suite had assumed today's box blade in two places. "No cut with the blade more than 0.75 away" measured from the blade's centre, which is right for a box 0.7 wide. The crescent is .98 wide and tilts .42 at the ends of its swing, so a body 0.3 round is truly touched up to .89 from its centre. "Turned across the passage" turned the pivot a quarter to put the blade across, and the crescent's pivot is already across, so the turn put it along. Its side test then asked for the blade's centre within .3 of your side, which a blade half a unit wide does not meet when its edge reaches you.
+
+The suite now reads both from the blade. The swing's direction is where the blade is at each end of its arc, not a guess from `rotation.y`. The reach is the blade's own half-diagonal in its swing plane, grown by the body's 0.3 (.87 for the box, 1.03 for the crescent). The quarter turn is relative to however the pivot is hung, and the test checks that it changed the swing's direction (dot 0). To each side, you are never cut while the blade is out past 80% of its swing on the other side, and the cuts' mean blade is on your side. No game code changed.
+
+### Verified (headless Chromium)
+`bladehit` 8/8 on this branch (the box blade: reach .87, the furthest cut .68, the old rule's cuts beyond it 40; turned, 266 cuts, mean blade −.32 on the near side). 8/8 in a scratch merge of auto/backlog and this branch, against the crescent: reach 1.03, the furthest cut .89, the old rule beyond it 28; 170 phases under the blade, all cut; turned, 290 cuts, the furthest .45 past the cell on the other side against a swing of .75. `wardall`, `lvact`, `swingblade` and `dragonsize` pass in the merge. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play. The merge of 68-dungeon-misc.js between auto/backlog and this branch conflicts on adjacent blocks (the blade's builder and `bladeTouches`); keep both.
