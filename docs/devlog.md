@@ -12696,3 +12696,12 @@ The critic, 6 Oct (backlog I): at Dáire's Barbier in Coeur de Vie, *What do you
 
 ### Needs eyes
 Nothing in play; the barber's tagline and his lines are the quest writer's, still owed.
+
+## v80 — Session 593 — The rest slip's head: the date apart from *Sleep*, the place whole (the critic, 6 Oct)
+The critic, 6 Oct (backlog I): at 1280 × 720, in a rented room at La Lanterne in Coeur de Vie at 9:58 pm, the rest slip's head read *Sleep*Stoneday, the 23rd of Reaping, in the 27th year of the Peace · 9:58 pm · La / Lanterne, Coeur de Vie. The title and the date shared a flex row with `space-between` and no gap. Once the date was too long for its line, it took the row's whole width, up against the title, and broke wherever the width ran out, here inside the inn's name. The row now has a 12 px gap, the title does not shrink, and the date aligns right and may wrap. The place, *· La Lanterne, Coeur de Vie*, is a span that never breaks inside, so it goes to the next line whole. The text is unchanged (`60-shop.js`, `openSleepUI`/`restSlipDraw`).
+
+### Verified (headless Chromium)
+`slipdate` 5/5 (new), at 1280 × 720 with Stoneday the 23rd of Reaping at 9:58 pm. With *La Lanterne, Coeur de Vie* the gap between title and date is 12 (it was 0), and the place stands on one line (on the old slip it broke). The title is 54.7 wide with either place. With *Dunmore* the head is one line with a gap of 13.7, as before. A first try at 16 px pushed that line onto two, so the gap is 12. `restslip` and `dateline` pass. `parsecheck` clean.
+
+### Needs eyes
+Whether a two-line date in the slip's head reads well, or whether the place should always sit on its own line.

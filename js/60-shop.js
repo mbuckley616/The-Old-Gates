@@ -351,7 +351,7 @@ function openRestSlip(mode,min){
     ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
     const btn='background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px';
     ov.innerHTML='<div id="rs-paper" style="width:560px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:20px 28px 18px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span id="rs-title" style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps"></span><span id="sleep-date" style="font-style:italic;font-size:13px;color:#5a4128"></span></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #a89060;padding-bottom:6px"><span id="rs-title" style="flex:none;font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps"></span><span id="sleep-date" style="min-width:0;text-align:right;font-style:italic;font-size:13px;color:#5a4128"></span></div>'+
       '<div id="rs-ask" style="font-style:italic;font-size:16px;margin:10px 0 2px"></div>'+
       '<div id="rs-dial"></div>'+
       '<div style="display:flex;align-items:center;gap:10px;margin:2px 0 8px"><button type="button" id="rs-minus" style="'+btn+';border-radius:50%;width:24px;height:24px;padding:0">−</button>'+
@@ -378,7 +378,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
   q('#rs-title').textContent=sleep?'Sleep':'Wait';q('#rs-go').textContent=sleep?'Sleep':'Wait';q('#rs-seal').textContent=sleep?'☾':'⧗';
   q('#rs-ask').textContent=sleep?'How long will you sleep?':'How long will you wait?';
   let place='';try{place=typeof ssPlaceName==='function'?ssPlaceName():'';}catch(e){}
-  q('#sleep-date').textContent=gameDateLine()+(place?' · '+place:'');
+  {const sd=q('#sleep-date');sd.textContent=gameDateLine();if(place){const pl=document.createElement('span');pl.style.whiteSpace='nowrap';pl.textContent=' · '+place;sd.appendChild(pl);}} /* S593 — the place wraps whole, never mid-name */
   q('#rs-dial').innerHTML=restDial(min,mode);
   const rng=q('#sleep-range');rng.value=String(Math.max(1,Math.min(24,Math.round(min/60))));
   q('#sleep-hrs').textContent=restDur(min);
