@@ -806,11 +806,13 @@
   function fishPrompt(){return nearSchool()?"Press 'E' to catch a fish":null;}
   function catchFish(){const s=nearSchool();if(!s)return false;
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const bed=worldH(px,pz);
-    const pool=(cl==='cold'&&Math.random()<.5)?FISH_KINDS.cold:(cl==='warm'&&Math.random()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
-    const name=pool[Math.floor(Math.random()*pool.length)];const big=Math.random()<.12;
+    // S605 — the catch rolls on the school's stream, `<chunk>:fish:<minute>` (co-op rules; a school is one a chunk, S508's key by place and minute)
+    const R=seededRng('fish',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':fish:'+Math.floor(worldState.gameTimeAbsMinutes||0));
+    const pool=(cl==='cold'&&R()<.5)?FISH_KINDS.cold:(cl==='warm'&&R()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
+    const name=pool[Math.floor(R()*pool.length)];const big=R()<.12;
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish'};
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
-    if(typeof bagAdd==='function')bagAdd(item);s.cool=18+Math.random()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
+    if(typeof bagAdd==='function')bagAdd(item);s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
   function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;}
   // ── whales ──
   const WHALES=[];

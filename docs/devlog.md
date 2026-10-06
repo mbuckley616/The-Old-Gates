@@ -12809,3 +12809,16 @@ On the old code four checks fail. The pinned values gave 41 against 56 gold on o
 
 ### Needs eyes
 None. The takings are the same sizes as before.
+
+## v80 — Session 605 — A catch rolls on the school's stream (backlog K, the co-op door's step 1, the last `Math.random` outcome Session 604 found)
+Session 604 left one outcome in `86-world-crime.js` on `Math.random`: `catchFish`. Swimming into a school draws three things: whether a cold or warm sea gives its own fish, which fish, and whether it is a fine one (12%, worth 26 against 9). It also sets the school's rest, 18–30 s. A school is one per chunk, and `spawnFishSchool` already tags it with `school.chunk`. So a catch is keyed `<chunk>:fish:<minute>` on `seededRng('fish', …)`, as a ship met at sea is keyed by chunk and minute (Session 508). The same school in the same game minute gives the same fish whatever `Math.random` says, and a later minute gives another roll. The draws keep their order and their odds. The rest is drawn from the same stream, because it decides when the next catch can come. Nothing in the look builder's sea file changed.
+
+### Verified (headless Chromium)
+`fishseed` 6/6 (new). The school is placed in the chunk at Portclare (217,394), as `spawnFishSchool` builds one, for the length of each cast:
+- With `Math.random` pinned at .05, .95 and .5 in one minute: a Mackerel each time, with a rest of 18.9 s.
+- Forty later minutes give Mackerel, Herring and Bream, three of them fine (12% would be about five).
+
+On the old code three checks fail. The same minute gave a Fine Herring, a Mackerel and a Bream with rests of 18.6, 29.4 and 24 s, and the pinned .05 gave a Fine Herring all forty times. `parsecheck` clean.
+
+### Needs eyes
+None. The odds are as they were.
