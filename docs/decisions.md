@@ -4,6 +4,22 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198
+You asked on 6 Oct for a bigger, clearer compass, fewer callouts at the bottom centre with damage numbers in their place, and a HUD that doesn't look dated. The prototype (`docs/prototypes/hud/`, on auto/concept) keeps the places you chose on 27 Sep (vitals bottom-left, compass bottom-centre, minimap top-right) on the parchment kit. Under every option the compass is three times as wide (600 against 200) with marks as icons on paper discs: crowded marks join into one with a count, and the one you face is named on a ribbon with its distance. Every option also puts damage numbers at the foe's head, coloured by kind.
+- **A.** The rest of the bottom centre moves to a ledger above the vitals: up to four lines, each gone after six seconds. Combat lines stop, because the numbers say it.
+- **B.** A, and the HUD clears itself at rest: out of a fight with all three bars full, the vitals and the ledger fade (Skyrim's way).
+- **C.** The numbers and the compass only. Every other line stays at the bottom centre, one at a time, on a paper slip.
+
+Recommendation: **A.** Oblivion keeps its vitals in view, and the ledger gives the quest and pickup lines somewhere to stand without covering the compass. (Carried by the producer from docs/concepts.md.)
+
+### The save register — saving and loading on the parchment (the concept artist, 2026-10-06) — DECISION #199
+Saving and loading are the last of the main panels on today's dark style. The prototype (`docs/prototypes/saves/`, on auto/concept) puts them on the parchment with two characters' real saves. Under every option the menu keeps today's rules: eight slots and five autosaves a character, a second press to load or write over, the two exports.
+- **A.** The register: your characters down the left, the chosen one's saves on the right, newest first, each dated in the calendar's words, its place, level and gold. No rule change.
+- **B.** The register with a picture: as A, and each save keeps a small picture of where you stood (about 15 KB a save), shown on its row and large beside the list. One small change: the picture is taken as the save is written.
+- **C.** Restyle only: today's one scrolling column on the paper, the same groups and words.
+
+Recommendation: **B.** Oblivion's load screen is a picture and a line, and a picture finds the day you want faster than *Lv5 · Dunmore* six times over. (Carried by the producer from docs/concepts.md.)
+
 ## Answered
 
 ### The ship in hand — what fills the log's dial: today's ships, two new hulls, or new hulls and a laden ship slower? (the designer, 2026-10-07) — DECISION #192
