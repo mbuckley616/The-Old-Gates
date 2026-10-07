@@ -891,6 +891,13 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${hitD}!`,'#ff6060');}
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
+// S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
+// the other, else a sidestep to one side, kept until that side is blocked too. It stood still behind it before, for good.
+function foeSlide(e,ux,uz,step){
+  if(Math.abs(ux)>.3&&!currentZoneSolid(e.x+ux*step,e.z)){e.x+=ux*step;return true;}
+  if(Math.abs(uz)>.3&&!currentZoneSolid(e.x,e.z+uz*step)){e.z+=uz*step;return true;}
+  const sd=e._slide||1;for(const k of [sd,-sd]){const sx=e.x-uz*step*k,sz=e.z+ux*step*k;if(!currentZoneSolid(sx,sz)){e.x=sx;e.z=sz;e._slide=k;return true;}}
+  return false;}
 function tickZoneEnemies(dt,now,sc){
   try{tickZoneArrows(dt,now);}catch(err){}
   // v59: unlock any latent enemies the player has grown into. Cheap — runs once per tick.
@@ -1151,7 +1158,7 @@ function tickZoneEnemies(dt,now,sc){
     if(!_archer&&d>_stopDist){
       const step=e.spd*dt*(e.alert&&!e.isBoss?1.25:1); // alert, they come at a run
       const nx=e.x+dx2/d*step,nz=e.z+dz2/d*step;
-      if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
+      if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}else foeSlide(e,dx2/d,dz2/d,step);
     }
     e.mesh.position.set(e.x,activeTerrainH(e.x,e.z),e.z);
     e.mesh.lookAt(T.x,activeTerrainH(e.x,e.z),T.z);

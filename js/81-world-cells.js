@@ -17,6 +17,7 @@
     }
     for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
     if(settleSolid(x,z,R))return true;
+    if(typeof shipPropSolid==='function'&&shipPropSolid(x,z,R))return true; /* S616 — barrels, crates and masts on a deck */
     return false;
   }
 

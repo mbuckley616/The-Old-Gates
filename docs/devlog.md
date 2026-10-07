@@ -13691,3 +13691,21 @@ What is left is one tick's travel. shiphull (the ram's hull losses, −11 bow-on
 
 ### Needs eyes
 How a ram reads now that the bows really meet. A glancing blow slides the two hulls along each other, which the circle never did. Black sails can also lie alongside closer than before, which changes how near her boarders come.
+
+## v80 — Session 616 — What stands on a deck is solid (backlog I, Michael's sailing playtest)
+Michael's sailing playtest found that the barrels and other things on the pirate ships, and "probably on his ship and merchant ships", are for show and can be walked through. They were: everything on a deck is baked into the ship's one mesh, with nothing solid behind it. You walked through the barrels, the crates, the masts and the wheel's post on every ship.
+
+Now the bake records what it sets on the deck, in the deck's own frame: each barrel and mast as a circle, each crate as a turned box, and the wheel's post. A sloop or a cog has six, a galleon eight. `shipPropSolid` (`85-world-sea.js`) meets them on any ship within reach (yours, a black sail, a merchantman), turned with her, widened by the walker's 0.3. `solidAt` asks it last (one line in `81-world-cells.js`). The captain's chest set on a boarded deck is a box the same way. The recording is data only, a `props` list beside each `B.add` in the look builder's `shipBake`; no shape or place changed.
+
+That broke `blacksail`, and it caught a real fault. Her crew are zone foes, and a zone foe whose straight step is blocked simply stood still. A pirate with a barrel between you and him stood behind it for good, and the test's fight left one hand alive. Now a blocked foe slides (`foeSlide`, `42-zone-enemies.js`). It takes the step's x or z alone when that part is real, else a sidestep to one side, and keeps that side until it is blocked too. This holds for every zone foe in the world: one in a town or a wood that met a post or a trunk on its way to you also stopped there before.
+
+### Verified (headless Chromium)
+`deckprops` 5/5 (new). Your ship as a sloop, a cog and a galleon, a black sail and a merchantman, each turned a different way:
+- Every prop is solid at its centre and at its edge (6, 6, 8, 6 and 6). A step clear of each is open, and the deck's middle line between them is open (20, 26, 36, 20 and 26 points).
+- Walking into her barrel with W held for two seconds through the game's own loop stops 0.58 from its middle (0.26 + 0.3 + the step).
+- A pirate on your deck with her barrel between you comes round it to within 1.6 in 1.43 s, never through it. With the slide switched off he stands 2.77 off for 5 s.
+
+blacksail 1/1 (16 swings, the deck cleared). With the slide in, 32 neighbouring suites pass. The ship suites: ships, shipaim, shipdead, shiparchers, piratehold, shipmoor, shiphull, hullshape, shipwright and riversail. The foe and combat suites: caravan, cowards, fistfight, foes, foeseed, goblins, guardplay, guardsindoor, lockon, posture, postureregen, targetof, tells, trolls, wolves, bear, captainguard, counters, dazed, spiders and crime3. `parsecheck` clean.
+
+### Needs eyes
+Whether a barrel's circle and a crate's box feel right underfoot. The slide is a step-by-step rule, not a path: a foe in a dead end (a corner of crates, a house's inside angle) can still stand. Whether foes in towns and woods now come round posts and trunks in a way that reads as natural.
