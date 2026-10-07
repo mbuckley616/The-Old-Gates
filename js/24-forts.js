@@ -1665,8 +1665,9 @@ function buildOldGateFront(sc,p,ty,sol,getY){
     const ly=gy(p.x+mx,p.z+mz)-ty,fallen=r()<.22,hgt=.95+r()*.35;
     const st=fallen?B(.45,hgt,.32,stone,mx,ly+.14,mz,Math.PI/2-.1,a+(r()-.5),0):B(.45,hgt,.32,k%2?stone:pale,mx,ly+hgt/2-.12,mz,0,a,(r()-.5)*.16);
     if(!fallen){const m=new THREE.Mesh(new THREE.BoxGeometry(.04,.4,.02),glow);m.position.set(0,hgt*.12,-.17);st.add(m);sol.push({cx:p.x+mx,cz:p.z+mz,rx:.3,rz:.3});}}
-  // the mound itself is solid, from the headwall back
-  sol.push({cx:p.x,cz:p.z+1.5,rx:HW,rz:1.75},{cx:p.x,cz:p.z+MC,rx:MW*.8,rz:MD*.6});
+  // the mound itself is solid, from the headwall back: twelve slices across its dome, each as wide as the turf stands .3 high at the slice's middle (S630; one box of .6 its depth left the back third open)
+  sol.push({cx:p.x,cz:p.z+1.5,rx:HW,rz:1.75});
+  {const zb=MC+MD*Math.sqrt(1-(.55/MH)**2),dz=(zb-ZF)/12;for(let k=0;k<12;k++){const zc=ZF+dz*(k+.5),q=1-((zc-MC)/MD)**2-(.55/MH)**2;if(q>0)sol.push({cx:p.x,cz:p.z+zc,rx:MW*Math.sqrt(q),rz:dz/2});}}
   const L=new THREE.PointLight(col,1.2,9);L.position.set(0,1.6,-1.9);G.add(L);
   // baked to two draws (the stone, wood and turf by vertex colour; the marks), with the world's mergeGeos where it is loaded
   if(typeof mergeGeos==='function'){G.position.set(0,0,0);G.updateMatrixWorld(true);const solidL=[],glowL=[],dead=[];

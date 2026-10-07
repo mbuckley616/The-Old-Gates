@@ -14037,3 +14037,18 @@ Also settled, with no change: Session 626 wondered whether foes of one kind shar
 
 ### Needs eyes
 Whether the wider brutes feel right to walk round in a corridor, a unit wide: a Golem's disc and yours together are 0.75, more than half the corridor, as a Skeleton's (0.55) already was; whether a corridor fight now feels boxed in is for play.
+
+## v80 — Session 630 — The old gate's mound is solid wherever its turf stands (backlog I, the critic's s476 run)
+The critic, 7 Oct, at the Crypt of Embers: walking in from behind the old gate you stopped at 8.8 with your head inside the turf, and from there saw the back of the headwall and the country through the mound, which has no inside faces. The cause was the mound's solid (`buildOldGateFront`, `24-forts.js`): one box from its centre, .8 of its width and .6 of its depth, where the turf runs the whole dome, out to about 11 behind the door and 6–7 either side. Measured in the world before the change, you stop 10.1 behind the door with 2.06 of turf over the ground where you stand, and 5.75 out at the side with 2.07.
+
+Now the mound is solid in twelve slices across its dome, from the headwall back, each as wide as the turf stands .3 high at the slice's middle; the box behind the headwall, the jambs, the wing walls and the marker stones are as they were. The mesh is not changed, so its missing inside faces stay, but you can no longer stand where you would see them. The legacy zones' cave doors use the same builder and get the same solid.
+
+### Verified (headless Chromium)
+`moundsolid` 6/6 (new). At five seeds, built beside you: of about 2,350 turf vertices standing .45 or more above the ground, none is within reach of the player's .3 radius (before: 462–474 were), and a ring a metre past the mound's foot, behind and round it, is open ground at all 25 points. At the Crypt of Embers in the world, walking in from 16 behind along the door's line, you stop at 11.4 with no turf under you (the turf ends at 11); from either side at 7.05 with none; the threshold and the apron in front of the door are open. On the build before this session the same suite fails 3 of 6 (10.1 and 5.75, with 2.06 and 2.07 of turf underfoot).
+
+Neighbouring suites pass: cavedoor, drydoors, doorids and thresholdname.
+
+`parsecheck` clean.
+
+### Needs eyes
+In third person, whether the camera behind you still dips into the turf when you stand at the mound's foot with your back to it (the camera's own solid test ignores boxes under .55, and these are wider). A mound on a slope: the slices are flat boxes on the gate's own level, so where the ground rises behind the mound the turf's foot may sit a little inside or outside them.
