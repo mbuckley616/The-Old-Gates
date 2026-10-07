@@ -664,7 +664,7 @@ const LOOT_POOLS={
     {w:12, roll:()=>({name:'Health Potion',ico:'🧪',type:'potion',heal:25,weight:0.5,sellMult:.4,buyPrice:18})},
     {w:10, roll:()=>({name:'Mana Draught',ico:'💧',type:'potion',mana:40,weight:0.5,sellMult:.5,buyPrice:30})},
     {w:10, roll:()=>({name:'Stamina Draught',ico:'🥤',type:'potion',stam:40,weight:0.5,sellMult:.5,buyPrice:22})},
-    {w:12, roll:()=>({name:'Lockpick',ico:'🗝',type:'misc',buyPrice:12,sellMult:.4,weight:.05,qty:3})},
+    {w:30, roll:()=>({name:'Lockpick',ico:'🗝',type:'misc',buyPrice:12,sellMult:.4,weight:.05,qty:3})}, // S633 — 12 → 30 (Michael's A on #191: about 5 picks a dungeon)
     {w:10, roll:()=>({name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:'torch',def:0,tier:1,material:'Wooden',matCol:0x6a3e12,weight:1,sellMult:.3,buyPrice:8})},
     {w: 8, roll:()=>randomLootHerb()||{name:'Health Potion',ico:'🧪',type:'potion',heal:25,weight:0.5}},
     {w: 5, roll:()=>randomBookItem()}, // rare — books only appear in chests
@@ -681,6 +681,7 @@ const LOOT_POOLS={
     {w:12, roll:()=>({name:'Health Potion',ico:'🧪',type:'potion',heal:25,weight:0.5,sellMult:.4,buyPrice:18})},
     {w:10, roll:()=>({name:'Mana Draught',ico:'💧',type:'potion',mana:40,weight:0.5,sellMult:.5,buyPrice:30})},
     {w:10, roll:()=>({name:'Stamina Draught',ico:'🥤',type:'potion',stam:40,weight:0.5,sellMult:.5,buyPrice:22})},
+    {w:30, roll:()=>({name:'Lockpick',ico:'🗝',type:'misc',buyPrice:12,sellMult:.4,weight:.05,qty:3})}, // S633 — the treasure chest rolls picks as the chest does (#191 A)
     {w:10, roll:()=>({name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:'torch',def:0,tier:1,material:'Wooden',matCol:0x6a3e12,weight:1,sellMult:.3,buyPrice:8})},
     {w: 8, roll:()=>randomLootHerb()||{name:'Health Potion',ico:'🧪',type:'potion',heal:25,weight:0.5}},
     {w: 5, roll:()=>randomBookItem()},
@@ -816,5 +817,16 @@ function rollContainerLoot(kind, diffScale, theme, baseChance, key){
     if(lootRand() < (baseChance!=null?baseChance:0.5)) items.push(rollLoot(diffScale, theme, 'corpse'));
     if(items.length && lootRand() < 0.25) items.push(rollLoot(diffScale, theme, 'corpse'));
   }
+  return items;
+}
+// S633 — a humanoid foe's body may hold 1–2 lockpicks (Michael's A on #191: chests and bodies, about 5 picks a dungeon).
+// Bandits, kobolds, skeletons and goblins, whatever their rank. A's draft said a quarter of bodies, counting on a handful a
+// dungeon; eight of the world's dungeons hold 17 on average (up to 40 skeletons), which at a quarter is 6.4 picks on top of
+// the chests' 4.9. At one body in twenty it is 1.3, and a clear finds about 6. A keyed foe rolls on its corpse key.
+const PICK_BODIES=/\b(Bandit|Kobold|Skeleton|Goblin)/, PICK_BODY_ODDS=.05;
+function bodyPicks(e,items,key){
+  if(!e||e._guard||!PICK_BODIES.test(e.name||''))return items;
+  const r=key!=null?seededRng('picks',key):lootRand;
+  if(r()<PICK_BODY_ODDS)items.push({name:'Lockpick',ico:'🗝',type:'misc',buyPrice:12,sellMult:.4,weight:.05,qty:1+Math.floor(r()*2)});
   return items;
 }

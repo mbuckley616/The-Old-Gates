@@ -1554,6 +1554,7 @@ function killZoneEnemy(e,sc,tag=''){
   sc.add(lootSpark);
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
   const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
+  bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   // v61c2 — Boss death hooks. The Faolchú gets:
   //   - guaranteed unique drop (The Faolchú's Mark amulet) prepended to
   //     the loot items array, so the corpse always carries it

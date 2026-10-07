@@ -14069,3 +14069,18 @@ No game code changed.
 
 ### Needs eyes
 Nothing in play. Why the Golem holds at 0.89 in its new place and not at its disc's edge is worth a look if a later session is in the dungeon's chase code.
+
+## v80 — Session 633 — Lockpicks in chests and on the dead (backlog B, Michael's A on DECISION #191)
+Michael's playtest of 6 Oct asked for lockpicks to be more common, especially in dungeons, and his answer to #191 was A: *chests and bodies, about 5 picks a dungeon*. A chest rolled three picks at weight 12 of 127, a treasure chest never (its pool had no entry), and a body never.
+
+Now a chest and a treasure chest both roll three picks at weight 30 (`LOOT_POOLS`, `14-items.js`), and a bandit's, kobold's, skeleton's or goblin's body, of any rank, may hold one or two (`bodyPicks`, called from `killE` and `killZoneEnemy` beside the corpse's roll). A town guard's body holds none. The body's roll draws on `seededRng('picks', <foe id>:corpse:<day>)`, the corpse's own key, so the same body holds the same picks after a reload (the co-op rule on rolls).
+
+One number departs from A as drafted, and the entry in `docs/decisions.md` says so. A gave a body picks a quarter of the time, expecting a handful of humanoid foes in a dungeon. Eight of the world's dungeons hold 17 on average and up to 40 (Moumfeirey Charnel is 40 skeletons; the Barrow of Woushdaey 20 skeletons and 20 goblins). At a quarter that is 6.4 picks from the bodies on top of the chests' 4.9: about 11 a clear, twice the *about 5* the answer names. So the bodies hold picks one time in twenty, which adds 1.3 and makes about 6. It is one constant, `PICK_BODY_ODDS`, if Michael wants the quarter whatever the total.
+
+### Verified (headless Chromium)
+`lootpicks` 9/9 (new). The pools: picks at 30 of 155 in a chest and 30 of 125 in a treasure chest, three at a time. Over 4,000 keyed chests a chest holds 0.58 picks on average and a treasure chest 0.86 (at 12, a chest held about 0.25). Over 4,000 bodies each, a Bandit, Bandit Captain, Kobold Thief, Skeleton and Goblin Slinger hold picks 4.4–5.5% of the time, 1.42–1.57 of them, never more than 2; a Wolf, a Golem, a Slime and a guard none; a keyed body rolls the same twice, 200/200. In eight dungeons spread across the world's doors, the chests hold 0–15 picks (39 in all) and the humanoid dead 0–40 (136 in all): about 6.2 picks a clear with the bodies at their expectation. A Skeleton killed through `killE` in a real dungeon holds the one pick its key rolls.
+
+Neighbours pass: lootseed, lockpicks, worldloot, corpsebody, and chestpicks, whose survey of eight dungeons now reads 29 of 50 chests locked, 4.4 locks a dungeon, picks spent a clear 1.9 / 4.7 / 11.2 at a miss of 1 in 10 / 1 in 5 / 1 in 3, and 4.9 picks in the chests. `parsecheck` clean.
+
+### Needs eyes
+Whether about six picks a dungeon is enough for Michael's hand. The small forts (Inisbeg Gate, the Tomb of Kilnagh: 2–3 chests, 8 foes) find about 3; the big caves 9–18. Picks found in a locked chest count, though you need a pick to reach them.
