@@ -1472,11 +1472,13 @@ function loop(now){
     // a tell would defeat the bait). Same 1.1u radius as the chest find.
     const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<1.1);
     const nearBarrelPrompt=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
-    const nearEntrance=currentFloor===1&&Math.hypot(px-dEntranceX,pz-dEntranceZ)<1.4;
+    const nearCot=fortCotNear(); // S624 — the cot's prompt, when it is nearer than the way out
+    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dEntranceX,pz-dEntranceZ)<1.4;
     const nearStair=dStairC!==null&&Math.hypot(px-dStairC,pz-dStairR)<1.3;
     const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<1.4);
     const iprEl=document.getElementById('ipr');
     if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearStair){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}

@@ -13953,3 +13953,18 @@ Neighbouring suites pass: talkaim, cowards, duelrhythm, guardplay, watch, shipde
 ### Needs eyes
 How a crowd in a narrow street feels. A townsperson's walk is not stopped by you, so in a doorway they shoulder you aside rather than wait. Whether a roll should pass through a foe (it does not now; in Elden Ring it does not either). The dungeon's discs are all 0.55 with you, since its foes carry no size; a Cave Troll is as narrow as a Skeleton.
 
+
+## v80 — Session 624 — At a fort's door, E leaves (backlog I, the critic's s476 run)
+The critic, 7 Oct: at every fort's door E opened the cot, not the door. A fort puts its cot one cell east of the entrance (`buildDungeon`, the first of six tries is `[1,0]`), and `interact` tried a cot within 1.3 before the way out within 1.4. On the door's cell, under *Press 'E' to leave dungeon*, the cot was 1.0 off, so E opened the rest panel; the critic got out of Pellam's Hold only by stepping to the cell's west edge. The prompt had the opposite fault on the cot's own cell: the way out is 1.0 from it, so the cot's cell also said *leave dungeon*, and the cot never had a prompt of its own.
+
+Now `fortCotNear` (`50-travel.js`) is the one rule both read: a cot within 1.3 takes E only if it is nearer to you than the way out (on floor 1, within 1.4). `interact` and the dungeon's prompt (`90-main.js`) both call it, so the prompt always names what E will do. On the cot's cell the prompt reads *Press 'E' to rest*, the wording the world's beds and bedrolls use. The cot, the door, the panel and the 1.3 and 1.4 reaches are as they were.
+
+### Verified (headless Chromium)
+`fortdoor` 4/4 (new), in four forts (the courtyard keep at the critic's seed 7104, Pellam's Hold, and the linear, tee and courtyard layouts at 11, 23 and 42), the keys pressed on the page's keyboard. Every cot stands 1.0 from its door at (31, 59). On the cot's cell the prompt says *rest* and E opens the rest panel without leaving; on the door's cell it says *leave dungeon*, E opens no panel, and you are out. On the build before this session the same suite fails 2 of 4: the cot's cell said *leave dungeon*, and on the door's cell E opened the rest panel and left you inside.
+
+Neighbouring suites pass: fortcot (Session 317's, E beside the cot from 0.6 off), dungeonexit and bedrollprompt.
+
+`parsecheck` clean.
+
+### Needs eyes
+Between the two cells, the prompt changes where the two are equally far, half a unit from each; walking in from the door the cot's prompt appears as you pass the cell's edge. The critic's two other s476 items: the dead keys after *Load last save* is the next session; the mound walked into from behind is the look builder's (the gate's solid and its turf).

@@ -1064,6 +1064,13 @@ function checkZoneRespawn(zoneId){
   return did;
 }
 
+// S624 — the fort cot E reaches: within 1.3, and nearer you than the way out (the cot stands one cell from the door, and the door's cell said *leave* while E opened the cot).
+function fortCotNear(){
+  if(typeof D_BEDS==='undefined')return null;
+  const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(!bd)return null;
+  if(currentFloor===1){const de=Math.hypot(px-dEntranceX,pz-dEntranceZ);if(de<1.4&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
+  return bd;
+}
 function interact(){
   if(lid==='overworld'){
     // Zone gates — highest priority after portals
@@ -1310,7 +1317,7 @@ function interact(){
   if(ch){ if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } // S150 — a locked chest is picked first
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
-  if(typeof D_BEDS!=='undefined'){const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(bd){openSleepUI();return;}} // v80 S9 — fort cots
+  if(fortCotNear()){openSleepUI();return;} // v80 S9 — fort cots; S624 — the exit wins when it is nearer
   const br=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
   if(br){ openLoot(br); return; }
   // exit via entrance cell (floor 1 only)
