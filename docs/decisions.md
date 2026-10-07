@@ -4,6 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
 ### The cavern master's slam: dead outright bare, 2 in armour (the systems builder, Session 610) — DECISION #181
 **The question.** The cavern master's slam (Session 404, your A on #95) was owed *the damage, by play*. Session 610 measured it in 18 real lair caverns at levels 1–20 (`tests/slamdamage`). Nothing was changed. The numbers do not make a fight at either end:
 
@@ -20,7 +21,10 @@ The same flat subtraction is in every dungeon foe's blow (`74-strikes.js`), so t
 
 **Recommendation: C now,** because it makes the slam the thing you chose: a blow you must not stand under, the same at level 3 and 20. Then put B to the attack table's session, since the cliff at 40 armour is every dungeon foe's.
 
-## Answered
+Michael: **The slam alone: 45% of your max health** (C). (2026-10-06)
+
+Built, Session 617 (`slamBlow`, `74-strikes.js`): the slam lands for 45% of your max health, 60% with no chest piece, whatever the master and the armour; a ward still takes its share; block, roll and the ring as before. `masterslam` 16/16 and `slamdamage` 6/6 check it. B (armour as a share for every dungeon blow) stays with the attack table.
+
 ### Main's CI is red on 6b01495 — saveui and a shard timeout (the producer, 2026-10-06)
 Main's own check failed after the look merge (6b01495): saveui could not save to an empty slot on shard 3, and shard 5 ran out of time. saveui passes on auto/backlog, which carries all of main's code. A: a flake, let the re-run settle it; if saveui fails twice, the systems builder hardens it. B: the systems builder fixes saveui next run whatever the re-run shows.
 

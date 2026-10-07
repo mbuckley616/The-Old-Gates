@@ -1,5 +1,5 @@
 // The cavern master's slam (Session 404, Michael's A on #95). A lair's master winds up for 0.9 s every 8–10 s with you
-// within six units, a ring of 3 units shows on the floor, and the ground blow lands for twice its ordinary blow, through
+// within six units, a ring of 3 units shows on the floor, and the ground blow lands for a share of your health (S617: 45%, 60% with no chest piece), through
 // any block: out of the ring or mid-roll you take nothing. The master's 1.6× damage (Session 130) now reaches its blows.
 // The loop is paused (the inventory flag) and the slam driven at fixed 1/60 ticks; one slam is then left to the real loop.
 // Session 434: the stage stands you at the master's floor height. The live check failed whenever the lair put its master on
@@ -37,12 +37,12 @@ await page.evaluate(() => { window._stage = (d) => { const e = window._lairBoss;
 // A. standing in the ring, a block raised at the right moment: the whole slam lands
 const a = await page.evaluate(() => { const e = window._stage(2); const def2 = _armour(), m = e.dmgMult;
   const r = window._drive(120, (t) => { blocking = true; lastBlockAttemptG = playClockS; lastBlockAttemptT = performance.now() / 1000; });
-  blocking = false; const lo = 2 * Math.max(1, Math.round((10 - Math.floor(def2 * .5)) * m)), hi = 2 * Math.max(1, Math.round((20 - Math.floor(def2 * .5)) * m));
+  blocking = false; /* S617 (#181 C): 45% of max health, 60% with no chest piece, through a ward */ const want = _warded(Math.max(1, Math.round(maxHP * (EQ.chest ? .45 : .6))), e), lo = want, hi = want;
   return { ...r, dmg: 9999 - PHP, lo, hi }; });
 check('the slam starts at once with you within six units and its timer spent', a.startedAt === 0, a);
 check('the tell is 0.9 s: 54 ticks held still, then it lands', a.landed && a.held >= 53 && a.held <= 56, a);
 check('the wind-up pose and the ring show through the tell, the ring 3 units, gone after', a.maxWind > .95 && a.ringMax > .6 && a.ringR === 3 && !a.ringOn && a.wind === 0, a);
-check('in the ring, blocking (a perfect parry\'s timing): twice an ordinary blow, nothing taken off', a.dmg >= a.lo && a.dmg <= a.hi && a.last === a.dmg, a);
+check('in the ring, blocking (a perfect parry\'s timing): 45% of your max health (60% with no chest piece), nothing taken off', a.dmg >= a.lo && a.dmg <= a.hi && a.last === a.dmg, a);
 check('the next slam waits 8–10 s', a.cd >= 8 && a.cd <= 10, a);
 
 // B. out of the ring when it lands (step back from 2 to 4 units mid-tell)

@@ -271,13 +271,18 @@ function revealMimic(e){
 
 // S404 — the cavern master's slam (Michael's A on #95). Every 8–10 s, with you within six units, a lair's master
 // (lairFinish sets e.master) stops, winds up for 0.9 s in the shared tell (the pose from e._wind, the glow in the last
-// .15 s) while a ring of its reach shows on the floor, and strikes the ground. Anyone inside the 3-unit ring takes twice
-// its ordinary blow, and no shield, block or parry takes any of it: be out of the ring, or mid-roll in the roll's
+// .15 s) while a ring of its reach shows on the floor, and strikes the ground. Anyone inside the 3-unit ring takes the
+// slam (slamBlow: since S617 a share of your health), and no shield, block or parry takes any of it: be out of the ring, or mid-roll in the roll's
 // untouchable window, when it lands. A staggered master loses its slam. Returns true while the slam is wound up, so the
 // loop holds the master still and starts no other blow.
 const SLAM_TELL=.9,SLAM_R=3,SLAM_NEAR=6,SLAM_EVERY=[8,10];
 function slamEvery(e){return SLAM_EVERY[0]+foeRand(e)*(SLAM_EVERY[1]-SLAM_EVERY[0]);}
-function slamBlow(e){const def2=_armour();return 2*Math.max(1,Math.round((10+Math.floor(foeRand(e)*11)-Math.floor(def2*.5))*(e.dmgMult||1)));}
+// S617 (Michael's C on #181) — the slam is a share of your health, not the master's blow: 45% of your max health, 60% with
+// no chest piece, whatever the master, its level and your armour (S610 measured the old twice-a-blow: dead outright bare
+// from level 3, 2 from 40 armour). A ward still takes its share (_warded, at the call); a block takes nothing, a roll or a
+// step out of the ring all of it, as before. Two slams leave you standing only if you have a chest piece on.
+const SLAM_SHARE={dressed:.45,bare:.6};
+function slamBlow(e){return Math.max(1,Math.round(maxHP*(EQ.chest?SLAM_SHARE.dressed:SLAM_SHARE.bare)));}
 function slamRing(e){
   if(!e._slamRing){const m=new THREE.Mesh(new THREE.RingGeometry(SLAM_R-.22,SLAM_R,48),new THREE.MeshBasicMaterial({color:0xff5a30,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.visible=false;e._slamRing=m;}
   const r=e._slamRing;if(r.parent!==dScene)dScene.add(r);r.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+.04,e.z);return r;}

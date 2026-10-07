@@ -13709,3 +13709,22 @@ blacksail 1/1 (16 swings, the deck cleared). With the slide in, 32 neighbouring 
 
 ### Needs eyes
 Whether a barrel's circle and a crate's box feel right underfoot. The slide is a step-by-step rule, not a path: a foe in a dead end (a corner of crates, a house's inside angle) can still stand. Whether foes in towns and woods now come round posts and trunks in a way that reads as natural.
+
+## v80 — Session 617 — The cavern master's slam is a share of your health (Michael's C on #181)
+Session 610 measured the cavern master's slam: twice the master's ordinary blow, armour taken off before the multipliers. Bare, from level 3, every slam killed outright; from 40 armour, every slam did 2. Michael chose C on #181: the slam alone lands for a share of your health.
+
+`slamBlow` (`74-strikes.js`) now returns 45% of your max health, or 60% with no chest piece, rounded and at least 1, whatever the master, its level, the cavern's difficulty and your armour (`SLAM_SHARE`). The rest of the slam is unchanged:
+- A block or a parry takes nothing off it.
+- Out of the 3-unit ring when it lands, or in a roll's untouchable window, it takes nothing.
+- A staggered master loses its slam.
+- A ward still takes its share, since `_warded` is applied at the call as it is for every blow. A ward is a spell, not armour.
+
+So two slams leave you standing only with a chest piece on and no healing between them; bare, the second kills. The master's ordinary blows are untouched. The armour cliff Session 610 found in every dungeon blow is option B, which stays with the attack table.
+
+`slamdamage` was Session 610's measure of the old rule. Its two old-rule checks now check the new one, and its per-level table stays as a record. The test's character keeps 130 health whatever level it is set to, so the table's shares against the Scholar's and the Sentinel's health by level are no longer the slam's own. The slam follows the real max health, and that is what the checks read.
+
+### Verified (headless Chromium)
+`slamdamage` 6/6: in 18 real lair caverns, levels 1–20, every master's slam rolled 300 times is 78 of 130 bare (60%) and 59 in the lair's best heavy kit (45%). It is the same 59 with a chest piece of 0, 10, 20, 30, 40 or 60 armour; it was 2 from 40 armour. `masterslam` 16/16: blocking in the ring takes 45% of your max health, a step out or a timed roll takes nothing, and the tell, ring and cooldown are as before. `parsecheck` clean.
+
+### Needs eyes
+Whether 45% reads as the blow you must step out of. A second slam without a potion between leaves you at 10%, and the master's own blows land in the 8–10 s between slams.
