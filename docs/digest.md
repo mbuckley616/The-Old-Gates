@@ -157,3 +157,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: the critic's five s455 bugs and far quest marks done; next, yardplay. Look builder: waits on the stairs, passages and forts. Critic: the Giving walks to the gate, a proposal.
 
 **Roadmap.** 176 of 226 stories done (175 yesterday on the larger count); the world map's sharpness and quest marks are under way; five stories wait on you.
+
+## 7 Oct 2026
+
+**Waiting on you.** Five decisions: the wolves and the cave bear (A, all of it), foes' chase speed and sight (A), lockpicks as loot (A), the ship in hand's dial (B, two new hulls), and unblock the design docs (A, merge anyway, docs only).
+
+**Landed on main since yesterday.** Look sessions 534–589 and 598–611 (build s476): the stone newel stair, three new fort shapes, fort furniture solid only on its own floor. The wolf-and-bear prototype. Quest writer run 10, the Makers' Things. The critic's three forts (s476). The unique-artifacts proposal and the Giving playtest.
+
+**Blocked.** Systems 564–628: the approved b37e86b no longer merges; the builder's new head 66dfbe1 is in CI and needs main merged in (backlog.md only). Main's CI went red on shard 1 (lod) after a docs-only merge; one re-run is going.
+
+**Team.** Systems builder: the critic's s476 bugs fixed (S624–628); next, chase and lockpicks once answered. Look builder: the wolves on your answer; the Crypt's mound. Critic: a lair next.
+
+**Roadmap.** 185 of 239 stories done (176 of 226 yesterday); three critic bugs under way on auto/systems; four stories wait on you.
