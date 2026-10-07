@@ -345,6 +345,7 @@ function loop(now){
   const _roll=tickRoll(performance.now()/1000);
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
   const moving=!!(mdx||mdz);
+  _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
   // v62.7 — Forward lunge boost. If lungeT > 0 AND W is currently held, add an
   // extra forward-direction displacement on top of normal WASD motion. The
   // boost is forward-only (uses fwdX/fwdZ, not the normalized WASD vector) so

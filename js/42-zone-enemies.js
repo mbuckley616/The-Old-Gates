@@ -1115,7 +1115,8 @@ function tickZoneEnemies(dt,now,sc){
     // zone previously had no LOS check, so enemies detected through walls.
     const _inWorld=activeZoneId==='world';
     if(_hasBuff('vanish')){e.alert=false;e._agg=false;} // S322 — Shadowcap's veil in the open world as underground
-    if(!e.alert && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?15:9)){ // v80 S135 — the open country sees further
+    /* S634 — a coward running for help or a kiter at range (_flee, _agg) is driven by tickBehaviours (85-world-sea.js), which takes it out of alert; seeing you here put it back each frame, and at the faster chase it ran at you between steps of its flight */
+    if(!e.alert && !e._flee && !e._agg && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?20:9)){ // v80 S135 — the open country sees further; S634 — 15 → 20 (#190 A)
       let los = true;const _losSolid=(_inWorld&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid; // trunks and posts don't hide you
       for(let t = 0.15; t < 0.9; t += 0.15){
         const tx = e.x + (T.x - e.x) * t, tz = e.z + (T.z - e.z) * t;
@@ -1157,8 +1158,8 @@ function tickZoneEnemies(dt,now,sc){
       const packN=ZE.filter(o=>!o.dead&&o.alert&&o!==e&&Math.hypot(o.x-e.x,o.z-e.z)<14).length;
       if(packN>0){if(e._flank==null)e._flank=(foeRand(e)<.5?-1:1)*(.5+foeRand(e)*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
     }
-    if(!_archer&&d>_stopDist){
-      const step=e.spd*dt*(e.alert&&!e.isBoss?1.25:1); // alert, they come at a run
+    if(!_archer&&d>_stopDist&&e._windup==null){ /* S634 — a boss winding up its heavy (85-world-sea.js) holds its ground, so a step clear stays clear at the faster chase */
+      const step=(e.alert&&!e.isBoss?chaseSpeed(e):e.spd)*dt; // alert, they come at a run (S634: near your walk)
       const nx=e.x+dx2/d*step,nz=e.z+dz2/d*step;
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}else foeSlide(e,dx2/d,dz2/d,step);
     }
@@ -1515,6 +1516,11 @@ function lootDropChance(e){
   return Math.min(0.85,0.35+fortuneBonus+diffBonus);
 }
 
+// S634 — Michael's A on #190: an alert foe in the open chases at 85–110% of your walk (3.83), so walking away fails and a
+// sprint (4.69) escapes slowly. Its own speed places it on that scale: the slowest of the table (a Forest Troll, 0.7) at
+// 85%, the beasts (a Wolf 1.6, an Ash Hound or Dire Wolf 1.9) near the top, 2.0 and over at 110%. Bosses keep their own.
+const CHASE_WALK=3.83, CHASE_LO=.85, CHASE_HI=1.10, CHASE_SPD_LO=.7, CHASE_SPD_HI=2.0;
+function chaseSpeed(e){const s=e.spd==null?1:e.spd;if(!(s>0))return 0;const k=Math.max(0,Math.min(1,(s-CHASE_SPD_LO)/(CHASE_SPD_HI-CHASE_SPD_LO)));return CHASE_WALK*(CHASE_LO+(CHASE_HI-CHASE_LO)*k);} /* a foe held at speed 0 stays held */
 function killZoneEnemy(e,sc,tag=''){
   if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12

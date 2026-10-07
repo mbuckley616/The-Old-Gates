@@ -702,6 +702,11 @@ const SNEAK_MOVE_MULT = 0.7;          // movement speed multiplier while sneakin
 // Player is "in vision cone" when dot(forward, toPlayer) > VISION_CONE_COS.
 const VISION_CONE_COS = 0.259;        // cos(75°) — half-angle of vision cone
 const HEARING_RADIUS = 0.5;           // omnidirectional detection radius (units)
+// S634 — Michael's A on #190: a foe hears you walk at 3 units, sneak at 1, in any direction; standing still you are heard
+// only at HEARING_RADIUS, as before. _pStep is set by the loop's movement each frame (90-main.js).
+const HEARING_WALK = 3, HEARING_SNEAK = 1;
+let _pStep = false;
+function hearingRadius(){return _pStep?(_sneaking?HEARING_SNEAK:HEARING_WALK):HEARING_RADIUS;}
 // Directional detection predicate. Returns true if the enemy can detect
 // the player given current distance, sneak state, and facing. Detection
 // fires when EITHER:
@@ -718,7 +723,7 @@ function canSeePlayer(e, dist, baseSightRadius){
   // Hearing: omnidirectional, NOT modulated by sneak. The player is
   // literally next to them — facing irrelevant. This is the "you can't
   // sneak through someone" guarantee.
-  if(dist < HEARING_RADIUS) return true;
+  if(dist < hearingRadius()) return true;
   // Sight: requires distance AND forward cone. If combatYaw isn't set
   // (shouldn't happen post-spawn-init, but defensive), fall back to
   // omnidirectional at the sight radius.
