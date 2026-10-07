@@ -18,6 +18,23 @@ Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "f
 - **D** — Leave the numbers; fix only the wandering cone and the hearing.
 
 
+### The wolves and the cave bear — a fiercer face, a heavier build, and how large? (the look builder, Session 620, 2026-10-07) — DECISION #187
+Michael's two mesh-inspector notes of 6 Oct: the wolves are far too small, slender and comical, and the cave bear should sit on par with a grizzly beside them. Measured first, against a bandit's height: in play a Wolf's back stands at 38% of a man's height, a Snow Wolf's 46%, a Dire Wolf's 49%, and the Cave Bear's hump at 77%. A real grey wolf is about 45% and a grizzly about 60–65%, so in play the bear is already grizzly-sized; but the mesh inspector builds every beast at size 1 rather than its size in play (the dragon was fixed the same way in Session 524), so there the wolf looks bigger than in play and the bear only a little larger than the wolf. The prototype (`docs/prototypes/wolfbear/shoot.mjs`, which patches a copy of the wolf's bake; the game is not changed) gives the wolves a new head and build and new sizes:
+
+- **The face**: a longer, lower skull; a brow ridge frowning over small slanted eyes (no round pupils, which made them look googly); a deeper muzzle with a nasal bridge into the forehead, a dark lip line and the four canines showing; smaller ears laid back; the head carried a little below the back, stalking.
+- **The build**: the chest a fifth wider and deeper, a thicker neck, the lower legs and paws 30% thicker, the ruff fuller, a line of raised hackles along the back in the saddle's colour. About 10% more triangles (5,754 → 6,314 a wolf).
+- **The sizes**: Wolf 1.05 (back at 56% of a man, was 38%), Snow Wolf 1.15, Dire Wolf 1.35 (73%, was 49%), Ash Hound 1.0, Cave Bear 1.55 (its hump at 88% of a man, was 77%), so the bear still stands clearly over the largest wolf.
+
+Pictures: [line-up today](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-lineup-today.png) · [line-up proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-lineup-proposed.png) · [heads today](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-heads-today.png) · [heads proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-heads-proposed.png) · [a pack coming at you, proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-pack-proposed.png) · [bear today](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-bear-today.png) · [bear proposed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/wolfbear-bear-proposed.png)
+
+**Options:**
+- **A.** *(recommended)* All of it as shown: the new face and build, and the new sizes. The inspector shows each beast at its size in play.
+- **B.** The new face and build, at today's sizes, with only the inspector fixed to show the size in play (in play a wolf stays a real wolf's size, the bear a grizzly's).
+- **C.** The sizes only, today's face.
+- **D.** Other (say which part to change).
+
+**Recommendation: A.** A wolf at a real wolf's size reads small on a screen, beside a man in armour, and the brief asks the wild to be dangerous; the face was the larger part of "comical". The size is only how the beast is drawn: its reach and hits are not read from it, so a bigger wolf bites from the same distance. Whether the bite should reach further with the size is the systems builder's call after this one. The size numbers live in the foes' table (`42-zone-enemies.js`, one number per kind).
+
 ## Answered
 ### The Journal on the open book — Told by person and place, by question, or one sheet? (the concept artist, 2026-10-06) — DECISION #183
 The Journal you chose on #132 (C) is in the game (Sessions 486–511, on main since the merge of Systems 485–563): By day, By quest, Topics, Due, lines of your own, names that link. It works in today's dark style. The prototype puts it on the approved kit and on the open book chosen for reading (#116), using four days of real play on that build. Under every option each quest event shows one line, not two (today *Quest: First Blood* sits beside the quest's own words, and *…: 56 gold.* beside *Turned in to Mayor Niamh: 56 gold.*). Prototype: `docs/prototypes/journal/` on auto/concept.
