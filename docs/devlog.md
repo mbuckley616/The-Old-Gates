@@ -13994,3 +13994,16 @@ Neighbouring suites pass: parrydeath (Session 565's flash on death), corpsebody 
 
 ### Needs eyes
 Nothing to see but its absence. Seen in passing, not changed: the flash lights the body's material itself, so where foes of one kind share a material (the Troll's ten parts share one) every foe of that kind on screen may flash with the one that broke. That wants a look in play before it is called a bug.
+
+## v80 — Session 627 — The save at a dungeon's door is named for the door (backlog I, the critic's s476 run)
+The critic, 7 Oct, noted but did not file: dying in the Old Garrison, the death screen said *Last save: autosave — near Hearthwick*. Going down saves you at the threshold (Session 353), and that save loads you at the door, but it is written while you still stand in the open world, so `ssPlaceName` named the nearest town. Now `goToDungeon` leaves a hint with the dungeon's name, where you stand and when (`SS_THRESHOLD`, `70-saves.js`), and `ssPlaceName` uses it for a save in the open world within 3 s and 8 units of it. An older hint, or one made somewhere else, is ignored, so a later save in the open is named as before. What the save holds and where it loads you are unchanged.
+
+### Verified (headless Chromium)
+`thresholdname` 4/4 (new): at the Old Garrison (7100) and Pellam's Hold (7104) the door's save is named *The Old Garrison* and *Pellam's Hold* in the slot index, and the death screen inside reads *Last save: autosave — The Old Garrison, level 1*. An autosave by Dunmore afterwards is named *Dunmore*. On the build before this session the same suite fails 2 of 4: *near Hearthwick* and *near Vieux Marché*.
+
+Neighbouring suites pass: autosave, placesave and saveui. saveui failed twice when run beside autosave (*— Empty —* where a slot was written), and passed alone; it has failed by turns on CI before (decisions, 5 and 6 Oct).
+
+`parsecheck` clean.
+
+### Needs eyes
+Nothing. The hint is only a label; if the door's save is skipped (an autosave within the last 90 s), there is no new save to name.

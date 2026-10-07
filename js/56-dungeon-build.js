@@ -3284,7 +3284,7 @@ function buildDungeon(portal){
 }
 
 let _preDungeonZone='overworld'; // zone to return to after exiting dungeon
-function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof saveGame==='function')saveGame(); /* S353 — #66 A: the door going down saves you at the threshold (going up already saves in goToOW) */
+function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof saveGame==='function'){if(portal.name)SS_THRESHOLD={name:portal.name,x:px,z:pz,t:performance.now()};saveGame();} /* S353 — #66 A: the door going down saves you at the threshold (going up already saves in goToOW) */
   doFade(()=>{
   _preDungeonZone=activeZoneId;
   blocking=false;staggered=[];

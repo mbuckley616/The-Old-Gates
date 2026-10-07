@@ -304,8 +304,10 @@ function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!ol
 // S475 — a save's place, for the slot list (the critic, 4 Oct: every open-world save read "the open country"). Indoors
 // activeZoneId stays 'world' and px/pz are the room's, so a house names its site; outdoors the nearest loaded place, by
 // name inside its pad, "near" it within 1,500; underground the gate's name. '' falls back to the zone's label.
+let SS_THRESHOLD=null; /* S627 — {name,x,z,t}: the door going down saves you at its threshold, so that save is named for the door, not the nearest town */
 function ssPlaceName(){try{
   if(activeZoneId==='dungeon')return (currentPortal&&currentPortal.name)||'';
+  if(SS_THRESHOLD&&activeZoneId==='world'&&performance.now()-SS_THRESHOLD.t<3000&&Math.hypot(px-SS_THRESHOLD.x,pz-SS_THRESHOLD.z)<8)return SS_THRESHOLD.name;
   if(activeZoneId!=='world'||typeof WORLD==='undefined')return '';
   if(currentHouse){const sid=currentHouse.siteId||(currentHouse.parent&&currentHouse.parent.siteId),t=sid&&WORLD.siteAnywhere(sid);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
   let best=null,bd=1e9;for(const t of WORLD.SITES){if(!t||!t.name)continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
