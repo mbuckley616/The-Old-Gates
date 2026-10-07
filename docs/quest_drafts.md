@@ -1351,3 +1351,241 @@ Not lines but a rule, and the systems builder's to make: *It's done.* shows only
 - *Slurs about work, land and gods, never bodies* (§2.1): one slur in the set (*turf-cutter*, work). *You were taller* is about the camouflage failing, not a slur, and is said only to an Old Blood player.
 - *No Light in the canon* (§4.1): the pious temper's *Light* is gone.
 - *Silent, and chosen plainly:* whether strangers name your people (some do); what the Old Blood call the three peoples (nothing).
+
+---
+
+## The Makers' Things — the six names, the hermit and the altars, the Stone's key and the Mother's mantle
+
+*Unapproved.* Owed to Michael's B on DECISION #175 (*The Makers' six tools, one per god*, 6 Oct): the design page (`docs/design/unique-artifacts.md`) gives the quest writer two runs, to name the six and to write the keepers and the claimants. This is the first of the two. It names all six, gives the two pointers that serve all six (the Old Blood hermit and the altars), and writes the first two tools in full, in the build order the page sets: the Stone's and the Beasts', both on the home island. The Sea's, the Sky's, the Hearth's and the Weaver's trials and claimants are the second run. The rules (where each lies, the check, what it does, what it costs, who pays for it) are the page's and are not changed here; every line below is fitted to them.
+
+### What the canon fixes, and where it is silent
+
+- *The Irish-register culture did not worship the loom's builders. They worshipped what the builders were making, and named the makers by their work* (§4.1). So a tool takes the name of the work, in the deep register, and a common name in the mouth of whoever found it. An institution that claims one writes it down in its own register (Part I, *three-register naming*: Irish true names, Anglo common, French institutional).
+- *The original culture didn't think of these as weapons … the current ruler class categorized them as combat abilities. Technically correct. Completely missing the point* (Part I, *What this implies*). The draft keeps the same gap in the tools: the common name says what a tool does to you, and the old name says what it was for. The Gate-Blade's old name is *the Stone's key*.
+- *The seventh has no shrine* (§4.2). The page gives the Guest no tool; the hermit says why, in one line.
+- *Every rubbing-seller and hermit who points the player at a gate is one of them* (§3.3). So the pointer is an Old Blood hermit, and speaks as one.
+- *Royal property* is the Crown's claim on the gates, and the gates' salvage is *a salvage economy of adventurers, rubbings and relics that the Crown licenses and taxes* (§1.1). So the Crown's claim on the Gate-Blade is a licence and a tax, not a theft, and its paper is written in the Crown's rolls.
+- *The antibodies are "her children who don't know their mother"* is Na Beithígh's scripture (§4.1). The cloak is the thing they know her by.
+- *Speech follows the speaker* (§1.5). The Fighters' Guild head speaks in the people of the hall's town (`guildDef`, `peopleOfSite`), so the guild's claim is written four times. The lord at Coeur de Vie is the Crown's seat's lord and a Gatelander (`lordFor`, by the nation's people).
+- *Silent:* the tools' names; whether the Makers' tools are known to the Church or the Crown; how a beast *wears* a cloak. The plainer choices: the Crown has one on its rolls (the blade it can see), the Compact claims one and the Church another (the second run), and nobody has written down the other three. The beast does not wear the cloak; it sleeps on it, and has done since before it was the master.
+
+### 1. The six names
+
+The common name is what the item is called in the bag, the log and the journal. The old name is said by the Old Blood and cut into each altar. The institution's name appears only on that institution's paper and in its claimant's mouth.
+
+| Maker | Common name (the item) | Old name, and its sense | The institution's name |
+|---|---|---|---|
+| An Chloch, the Stone | **the Gate-Blade** | *Eochair na Cloiche*, the Stone's key | the Crown: *la Lame du Seuil* |
+| An Mhuir, the Sea | **the Drowned Bell** | *Clog na Mara*, the Sea's bell | the Compact: *le Reliquaire de la Marée* |
+| An Spéir, the Sky | **the Noon Ring** | *Fáinne an Lae*, the ring of the day (it is also the old word for dawn) | none |
+| Na Beithígh, the Beasts | **the Wolf-Mother's Cloak** | *Brat na Máthar*, the Mother's mantle | none |
+| An Teallach, the Hearth | **the Waylamp** | *Lóchrann an Teallaigh*, the Hearth's lantern | none |
+| An Fíodóir, the Weaver | **the Shuttle** | *Spól an Fhíodóra*, the Weaver's shuttle (the same genitive as the canon's *Súil an Fhíodóra*) | the Church: *la Navette* |
+
+The page's working name *the Sundial Ring* becomes *the Noon Ring*: the Sky's icon is the sundial already, and the ring is read at noon. The others keep the page's working names.
+
+### 2. The hermit (Old Blood; role *Hermit*, the camp's `def`)
+
+The hermits at camps are made by `makeDef(site,reg,r,'Hermit',…)` with the region's people. §3.3 makes every hermit who points the way one of the Old Blood: the builder passes `people:'oldblood'` in that `extra`. The topic is a folder, there while any of the six is still in the world.
+
+*Did the makers leave anything behind?*
+> "Six things. One for each of the six with a shrine. Ask by name."
+
+- *The Stone's?* (while the blade is in its stone)
+  > "Eochair na Cloiche. You would say a sword. It stands in a stone by ${gate}, ${dir} of here, where anyone may look at it. Few can take it."
+- *The Sea's?* (while the bell is on its rock)
+  > "Clog na Mara. A bell. It hangs in a wreck on a rock the sea owns twice a day, ${dir} of here. Go when she has let go of it."
+- *The Sky's?* (while the ring is on its cairn)
+  > "Fáinne an Lae. A ring, on the cairn at the top of ${peak}. It is read at noon, under a clear sky, by whoever climbed fast enough to be there."
+- *The Beasts'?* (while the cloak is in its den)
+  > "Brat na Máthar. The Mother's mantle. The master of ${lair} sleeps on it. All her children lie down on it, and none of them knows why."
+- *The Hearth's?* (while no innkeeper or player holds the lamp)
+  > "Lóchrann an Teallaigh. A lantern. It goes from inn to inn and the weather does not put it out. A theft does."
+- *The Weaver's?* (while the shuttle lies in its gate)
+  > "Spól an Fhíodóra. A shuttle. It is in the deepest room of ${gate}. It shows where the unread stones are. Reading costs. It will cost you."
+- *And the seventh?* (always)
+  > "The Guest has none. You do not leave a tool for a guest. You leave the door off the latch."
+
+When a tool has been taken (by anyone: `worldState.artifacts[id]` set), its entry answers instead:
+> "Gone from where it lay. You know where. Or someone does."
+
+When all six are taken, the folder's answer is:
+> "Nothing is left lying. Everything the makers left is carried now. That has not been true for a long time."
+
+### 3. The altars (narration, the log)
+
+At a shrine whose god's tool is still where it lies, the first prayer there (per shrine, `worldState.shrineVerse[siteId]`) adds one line after the boon's, in the log only (`addLog('⛩', …)`), not on screen:
+
+| God | Log line |
+|---|---|
+| An Chloch | *Cut under the altar's lip, older than the rest: Eochair na Cloiche. The Stone's key.* |
+| An Mhuir | *Cut under the altar's lip, older than the rest: Clog na Mara. The Sea's bell.* |
+| An Spéir | *Cut under the altar's lip, older than the rest: Fáinne an Lae. The ring of the day.* |
+| Na Beithígh | *Cut under the altar's lip, older than the rest: Brat na Máthar. The Mother's mantle.* |
+| An Teallach | *Cut under the altar's lip, older than the rest: Lóchrann an Teallaigh. The Hearth's lantern.* |
+| An Fíodóir | *Cut under the altar's lip, older than the rest: Spól an Fhíodóra. The Weaver's shuttle.* |
+
+The line gives the name and no direction: the hermit gives the direction. A player who reads the altar and then hears the hermit say the same words has found the thread alone.
+
+### 4. Things not yet yours (the journal, chrome)
+
+The page's journal heading stands. One line per tool the player has failed to take, in the menu voice, with the number (the log carries the world's words; the journal carries the rule):
+
+- *The Gate-Blade — in the stone by ${gate}. Might 30.*
+- *The Wolf-Mother's Cloak — in the den at ${lair}. Resolve 30.*
+
+(The other four's lines come with their trials, next run.)
+
+### 5. The Gate-Blade — *Eochair na Cloiche*
+
+**Where.** In a standing stone outside a ruined gate on the home island, plainly visible from its road (the page; picked from the seed as `anchoredPlaces` picks).
+
+**On approach** (the first time within ten units; `showMsg`, once):
+> *A blade stands in a stone to a hand's breadth below its guard. The stone has grown round it, the way bark grows round a nail.*
+
+**Prompt:** *Press 'E' to take hold of the hilt*
+
+**Failing** (`showMsg` and `addLog('🗝', …)`; the check reads the base plus at most 2 from gear, as the page says):
+- Might below 20: *You might as well pull at the hill. The stone does not move.*
+- Might 20 to 26: *The stone does not move. Not yet.*
+- Might 27 to 29: *Something gives: a grain of grit, no more. Not yet.*
+
+**Taking it:**
+> *It comes out of the stone the way a key comes out of a lock: all at once, after nothing.*
+
+Log: *Took the Gate-Blade from the stone by ${gate}.*
+
+**The stone afterwards** (examine): *An empty slot in a standing stone. Looked at end on, it is the shape of a key.*
+
+**The item** (`name`, `desc`):
+- *The Gate-Blade*
+- *A Maker's blade, heavy for its length. The wards of a key are cut along the fuller, too fine to see without a candle. The Crown's rolls call it la Lame du Seuil. The Old Blood call it Eochair na Cloiche, the Stone's key.*
+
+**The first time it opens a gate's door without that gate's key** (once; `showMsg`):
+> *The Gate-Blade goes into the lock as if it were cut for it.*
+
+#### The claimant — the lord of Coeur de Vie (Gatelander; the Crown's seat)
+
+The topic is on the lord at the Crown's seat while the player carries the blade and has neither yielded it nor taken the licence.
+
+*The blade from the stone.*
+> "Whatever comes up out of the ground in the Gatelands, the Crown was there before it. That blade has been on the rolls a hundred years as la Lame du Seuil, and the rolls never forget a thing they never saw. Two roads, and neither of them short. Give it to the Crown, and the Crown gives you fifteen hundred gold and a commission with your name on it. Or keep it under licence, and the Crown takes a twentieth of every sale you make while you carry it. I'll not choose for you. Whoever chooses for another carries both loads."
+
+Follow-ups:
+- *Give it to the Crown.*
+  - Rank 0 with the Crown, and the Crown open to you:
+    > "Then the rolls are right at last, which will please the clerks more than it should. Fifteen hundred, and the commission. The Weaver keep you, Commissioner."
+  - Already ranked with the Crown:
+    > "Then the rolls are right at last, which will please the clerks more than it should. Fifteen hundred, and it's counted as a service to your name. The Weaver keep you."
+  - Sworn to the League or the Compact (the Crown closed; the page's gold stands, the rank cannot be given):
+    > "The Crown takes what's the Crown's, whoever carries it in. The fifteen hundred is yours. A commission it can't give to someone sworn elsewhere, and you'd not want it if it could."
+- *I'll keep it.*
+  > "Then here is the licence, and the Crown's twentieth will find you at every counter you stand at, its own or another's. It was never the blade that was dear. It's the carrying."
+- *Not now.*
+  > "The blade's not going anywhere you can't be found. Neither is the Crown."
+
+While the player keeps it under licence, the same topic becomes *The licence.*:
+> "Bring it back when it's heavy. An offer made in this house doesn't sour like milk."
+with the same *Give it to the Crown.* follow-up and the same three answers.
+
+**The licence** (an item, `unique:true`, weight 0; `name`, `desc`; the date from `calDateLine` and the era from the calendar draft):
+- *Crown Licence — the Gate-Blade*
+- *By the Crown of the Gatelands, at Coeur de Vie: licence to ${name} to hold the relic of the old gates entered in the Crown's rolls as la Lame du Seuil, on condition that a twentieth part of every sale made by the holder, at any counter, be paid to the Crown at that counter. Given ${date}, in the ${n} year of the Peace.*
+
+**At a sale** (chrome, after the sale line, the same shape as the Compact's cargo tithe): *(the Crown's twentieth, ${n})*
+
+**Rumour** (`liveRumours`, Gatelands sites within a province of the stone, while the blade is in it):
+> "There's a sword in a stone out by ${gate}. Half the young ones in the townland have had a pull at it. It's still there. So are they, mostly."
+
+### 6. The Wolf-Mother's Cloak — *Brat na Máthar*
+
+**Where.** In the master's chamber of a lair cavern on the home island, picked from the seed (the page: *worn by a lair's master*). The master sleeps on it: lying down, it is on the cloak. The builder lays the cloak under the master's spawn in `lairFinish` while `worldState.artifacts.cloak` is unset.
+
+**On entering the master's chamber** (the first time, while the master lives and the cloak is there; `showMsg`, once):
+> *The master of the cave is lying on something grey that is not its own hide.*
+
+**Prompt** (within reach of the master, weapon sheathed): *Press 'E' to take the grey cloak from under it*
+
+**Failing** (Resolve below 30; costs nothing, wakes nothing):
+> *You put out your hand, and take it back. Not yet.*
+
+**Taking it** (Resolve 30 or more):
+> *It lifts its head and looks at you for a long time. Then it lays its head down on the bare stone, and lets you go.*
+
+Log: *Took the Wolf-Mother's Cloak from under the master of ${lair}. It lives.*
+
+**The item** (`name`, `desc`):
+- *The Wolf-Mother's Cloak*
+- *Grey, and not wool, and dry in any rain. Beasts take whoever wears it for one of hers. The Old Blood call it Brat na Máthar, the Mother's mantle.*
+
+**The first beast that turns away** (once; `showMsg`):
+> *The wolf stops, looks at you, and goes about its business.*
+(The beast's own name: *The bear stops …*, *The spider stops …*.)
+
+**If the master is killed** (the page: the cloak comes off a corpse and is worth half; how much is half is the systems builder's, from the page). Killed before the cloak was taken, the cloak is on the hoard's floor:
+> *Under it, the grey cloak, soaked through. Something has gone out of it.*
+
+Killed while the player wears it:
+> *The cloak is lighter on your shoulders. Something has gone out of it.*
+
+#### The cost on the map — the town nearest the lair
+
+**Rumour** (`liveRumours`, that town and its neighbours, while the master lives and the cloak is taken):
+> "The road past ${lair} is no road at all now. The carter goes round, and charges for the going round."
+
+A second, the same condition, in that town only:
+> "Somebody walked into that cave and walked out again with not a mark on them. The beast's been bolder since. Or we're more frightened. It comes to the same."
+
+#### The claimant — the Fighters' Guild (the head, in the hall's people)
+
+The topic is on any Fighters' Guild head while the player carries the cloak taken alive and the master lives. The Guild posts a contract on the master. `${town}` is the drained town; `${fee}` is the contract's pay.
+
+*The grey cloak.*
+- Gatelander:
+  > "That's no cloak you bought at a fair. And the master of ${lair} is still breathing, I'd say, or you'd not be standing here in it. ${town} is paying for your quiet road with its own: the carts go round, and a town the carts go round goes thin. The Guild will pay ${fee} for the beast dead. A kindness done with a knife is a kindness yet."
+- Markman:
+  > "Took that off a live one, aye? Thought so. Brave. Daft, but brave. ${town}'s bleeding for it. Carts go round, the market's empty. Guild pays ${fee} for the thing dead. Your call."
+- Aurennais:
+  > "That cloak, Master, is from no loom I know, and since you are standing here, I take it its former keeper is alive. The arrangement has a third party, if I may: ${town}, whose road is closed while the beast lives, and whose ledger shows it. The Guild will pay ${fee} for the beast's death, on proof. You are under no obligation, naturally. The town is under one regardless."
+- Old Blood:
+  > "Brat na Máthar. You walked in and walked out. Few could. The beast lives, and ${town} pays for it. The Guild pays ${fee} for its death. The cloak will be less, after."
+
+Follow-ups:
+- *I'll take the contract.* (sets the contract, as the Guild's beast contract)
+  - Gatelander: "Then it's on the board with your name beside it. Go gently in. It knows you."
+  - Markman: "Good. Bring back something to show for it."
+  - Aurennais: "Entered, Master. The fee on proof, as with any contract."
+  - Old Blood: "It will know you. It will not understand."
+- *Not that one.*
+  - Gatelander: "Then it's your road and theirs both. The board will be here when the weather turns."
+  - Markman: "Your call. I said so."
+  - Aurennais: "As you wish. The offer is not withdrawn; it is only not accepted."
+  - Old Blood: "Then wear it well."
+
+**Turning in the contract** keeps the Guild's turn-in lines as they are (*Good work. ${paid} gold.*).
+
+### What in the code would carry it
+
+- **The state** is the page's: `worldState.artifacts[id]` (world row; the S242 list), with `id` one of `blade`, `bell`, `ring`, `cloak`, `lamp`, `shuttle`; the items ride the character row with `unique:true`. Changes go through `takeArtifact(id)` and `yieldArtifact(id, to)` only (the co-op rules). Two new world keys from this draft: `worldState.shrineVerse[siteId]` (the altar's line, once) and `worldState.artifacts.blade.licence` (the licence taken). Both are world keys, not character keys (they describe the shrine and the Crown's rolls), so neither goes in `SS_CHAR_WS`.
+- **The hermit**: `makeDef(site,reg,r,'Hermit',…)` in `83-world-generator.js` (grep `role:'old hermit'`) gains `people:'oldblood'` in its `extra` and the folder in `topics`, built by a function in `87-world-quests.js` beside `localLore` (`${gate}`, `${peak}`, `${lair}` from the six places; `${dir}` from `compassWord`).
+- **The altars**: `shrineInteract` (`87-world-quests.js`) adds the line after its boon's `addLog`, reading `S.god.key` and the tool's state.
+- **The blade**: a stone prop at its place, a prompt in the world's prompt chain (as `shrinePrompt`), the check in `takeArtifact`. The key-free door is the page's rule; its one line is at the first such opening.
+- **The Crown**: an `artifactTopics(site)` in the lord's `_extraFn` beside `factionTopics(site)` (`83-world-generator.js`, the `castle` branch and the lord's), shown only at `FACTIONS.crown.seat`. *Give it to the Crown* reads `fstate().crown` (`rank`, `closed`, and the others' rank ≥ 2) to pick its answer, and raises rank 0 to Commissioner through the same path the turn-in uses. The twentieth is taken in the sale path beside the cargo tithe.
+- **The cloak**: `lairFinish` (`68-dungeon-misc.js`) lays the cloak under the master and holds the master lying while the player's weapon is sheathed; the prompt is the dungeon's interact chain. The beasts' turning away is the page's rule (`34-creatures.js`'s targeting). The rumours go in `liveRumours`.
+- **The Guild**: `guildDef(g,…)` for `guild_f` adds *The grey cloak.* to its `topics` getter while the cloak is held alive; the lines are a table keyed by `gp` (`gatelander`, `markman`, `aurennais`, `oldblood`), as `GUILD_GREET` is.
+- **A test** for the builder: the hermit at a camp is Old Blood and his folder lists six; a second prayer at the same shrine adds no verse; *Give it to the Crown* at rank 0 names you Commissioner and pays 1,500; sworn to the League it pays 1,500 and leaves the Crown's rank at 0; a sale with the licence logs *(the Crown's twentieth, N)*; at Resolve 29 the cloak's prompt fails and the master does not rise.
+
+### Checked against the canon
+
+- *No chosen-one prophecies* (Part I, §4.2): no tool is meant for anyone. The hermit says *few can take it*; the blade comes out for whoever is strong enough; the cloak is taken by whoever can stand still.
+- *Gatelanders: proverbs, indirection, no bare yes or no; oaths on the Weaver* (§2): the lord never answers *yes* to anything, ends on a proverb (*Whoever chooses for another carries both loads*; *An offer made in this house doesn't sour like milk*) and blesses by the Weaver; the Gatelander guild head ends on one (*A kindness done with a knife is a kindness yet*).
+- *Markmen: short sentences, aye, no honorifics* (§2): the guild head's longest sentence is nine words, with *aye*, and he calls nobody anything.
+- *Aurennais: formal, honorifics, qualifiers, contract metaphors, never an oath* (§2): *Master*, *if I may*, *naturally*; *the arrangement has a third party*, *on proof*, *not withdrawn; only not accepted*.
+- *Old Blood: sparing, exact, the older name for the thing* (§2): the hermit and the Old Blood guild head answer *the Stone's?* with *Eochair na Cloiche* and *the grey cloak* with *Brat na Máthar*, and say no more than the thing and where.
+- *Three-register naming* (Part I): each tool has an Irish true name, an Anglo common name and, where an institution claims it, a French one (*la Lame du Seuil*, *le Reliquaire de la Marée*, *la Navette*).
+- *The makers didn't think of these as weapons* (Part I): the blade's old name is *the Stone's key*, its fuller carries a key's wards, and it comes out of the stone *the way a key comes out of a lock*.
+- *The Crown licenses and taxes the salvage* (§1.1); *the gates are royal property* (§1.1): the Crown buys or licenses; it does not seize.
+- *Her children who don't know their mother* (§4.1): *All her children lie down on it, and none of them knows why.*
+- *The Guest has no shrine, and gets no artifact* (§4.2, the page): *You do not leave a tool for a guest. You leave the door off the latch.* This agrees with the Empty Chair's door off the latch in *The Year's Names*.
+- *Slurs about work, land and gods, never bodies* (§2.1): none used.
+- *Silent, and chosen plainly:* the names (the work's, in each register); who has heard of the tools (the Crown has one on its rolls; the Compact and the Church each claim one, next run; three are written down nowhere); how a beast wears a cloak (it sleeps on it).
