@@ -3,6 +3,13 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Foes' chase speed and sight — how much faster, how far? (the systems builder, Session 622, 2026-10-07) — DECISION #190
+Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "foes' detection is weak". Both are numbers, so they are yours. Today you walk at 3.83 units a second and sprint at 4.69. An alert foe in the open chases at 1.25–2.0 (a Skeleton 1.25, a Wolf or Troll 2.0); in the dungeon at 0.37–1.2. Only the bosses keep up (the Faolchú 4.0, its lessers 5.0). A foe in the open sees you at 15 units in a 150° cone in front of it (10.5 sneaking), hears you only at 0.5; in the dungeon it sees 3.5. A wandering foe's cone never turns with its walk: it looks the way it was spawned.
+- **A** — Chase near your walk: alert foes chase at 85–110% of your walk (beasts at the top, the slow dead and the heavy at the bottom), so walking away fails and a sprint escapes slowly at a stamina cost. Sight 20 in the open, 8 underground, the cone turns as they wander, hearing 3 units walking (1 sneaking). **Recommended**: it makes a chase a threat without making every foe a wolf.
+- **B** — Only the beasts are fast: wolves, bears and spiders run at 110% of your walk, everything else as now. Sight as A.
+- **C** — Slow the player instead: walk 3.0, sprint 4.2, foes as now with A's sight.
+- **D** — Leave the numbers; fix only the wandering cone and the hearing.
+
 
 ## Answered
 ### The Journal on the open book — Told by person and place, by question, or one sheet? (the concept artist, 2026-10-06) — DECISION #183

@@ -1325,7 +1325,11 @@ function loop(now){
       const _slam=tickMasterSlam(e,dt,dist,now);
       // Ranged enemies hold at distance 3-5; melee enemies always close
       const wantsToChase=!_slam&&(!e.ranged||(dist>4.5));
-      if(wantsToChase){if(e.pathT<=0){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}}
+      e._close=false;
+      // S622 — the path is cells: in your cell it is empty, and a foe that stopped there 0.9–1.4 off never swung. It now comes
+      // straight at you in your cell, and plans again a quarter-second after you step into another cell, not up to 1.2 s later.
+      if(wantsToChase){const _tk=Math.round(T.x)+','+Math.round(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}
+        else if(dist>.6&&Math.round(e.x)===Math.round(T.x)&&Math.round(e.z)===Math.round(T.z)){const step=Math.min(e.spd*dt,dist-.6);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
       // Attack lunge animation
       let lungeFwd=0;
       if(e.atkAnim>0){e.atkAnim=Math.max(0,e.atkAnim-dt);const p=e.atkAnim/.35;lungeFwd=Math.sin(p*Math.PI)*.28;}
@@ -1339,7 +1343,7 @@ function loop(now){
       }
       // Limb walk animation — only for humanoid/brute when alert and moving
       if(e.limbs&&!e.isWraith){
-        const moving=e.path&&e.path.length>0;
+        const moving=(e.path&&e.path.length>0)||e._close;
         e.walkT+=(moving?dt*e.spd*8:dt*.5); // idle sway when still
         const swing=moving?Math.sin(e.walkT)*.55:Math.sin(e.walkT)*.04;
         const armSwing=moving?Math.sin(e.walkT)*.45:Math.sin(e.walkT)*.03;

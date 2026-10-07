@@ -13902,3 +13902,22 @@ The quest review's run 10 found that every townsperson born in their own town an
 ### Needs eyes
 Nothing. A townsperson born here with few years (the bio draws 3–42) now says *here these 3 years*, which reads as the years they count, as the old line did.
 
+## v80 — Session 622 — A dungeon foe in your cell comes to you and swings (backlog C, Michael's playtest of 6 Oct)
+Michael's playtest of 6 Oct: "overworld and dungeon foes approach and stand still, staring; it is very easy to move around and kite them so they never get close." Played headless first, half of it does not reproduce and half does.
+
+**In the open world it does not.** A Bandit, Goblin, Skeleton, Wolf and Troll set down alert 8.5 units off close to 0.99 and wind up 4–6 blows in 12 s, through the zone tick (`tickZoneEnemies`), which walks straight at you to 1.0 and starts its blow inside 1.1.
+
+**In the dungeon it does.** The dungeon's chase (`90-main.js`) follows a path of whole cells from `bfs`, and `bfs` returns an empty path when the foe stands in your cell. So a foe that reached your cell stopped where it stood. A blow starts within 0.9, and a cell is 1 across: if you stood towards its far side, the foe stood 0.9–1.4 off, facing you and swinging at nothing, until you stepped into another cell. Set in one corner of your cell with you at the other (1.19 apart), every foe tried stood still for 4 s and never wound up. The path was also planned again only every 1.2 s, so a foe walked on to the cell you had left for up to a second, which is part of how easily they were kited.
+
+Now, in your cell, a foe with no path left steps straight at you, through `dSlide` as any step, and stops 0.6 off (inside its 0.9). And when you step into another cell it plans again a quarter-second later, not up to 1.2 s. The walk animation counts the straight step as walking. Nothing else in the dungeon tick changes: the ranged foes, the flee, the master's slam, the mimic and the gargoyle are as they were.
+
+### Verified (headless Chromium)
+`dungeonchase` 6/6 (new), in two caves (seeds 4021 and 777), on 8 foes (Skeleton, Golem, Slime, Cave Troll) with open ground round them, driven by the game's own loop at fixed 1/60 ticks. Set 1.19 off in your cell, every one comes in to 0.6 and winds up within 2 s, and 4 s of it costs 62–213 health. You step into the next cell and every one plans to it within 0.02 s. On the build before this session the same suite fails 3 of 6: every foe stays at 1.19 with no blow, and none plans to the new cell within 0.3 s (2 s run).
+
+Neighbouring suites pass: dungeon (4), dungeonfoes, masterslam, mimic (2), tells, trolls, roll and posture (2).
+
+`parsecheck` clean.
+
+### Needs eyes
+Whether dungeon fights now feel pressed. The other half of Michael's note is the numbers, not a fault: a foe's chase speed in the open (1.25–2 units a second alert) and in the dungeon (0.37–1.2) against yours. That and how far foes see are DECISION #190, not changed here.
+
