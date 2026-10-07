@@ -13968,3 +13968,16 @@ Neighbouring suites pass: fortcot (Session 317's, E beside the cot from 0.6 off)
 
 ### Needs eyes
 Between the two cells, the prompt changes where the two are equally far, half a unit from each; walking in from the door the cot's prompt appears as you pass the cell's edge. The critic's two other s476 items: the dead keys after *Load last save* is the next session; the mound walked into from behind is the look builder's (the gate's solid and its turf).
+
+## v80 — Session 625 — After *Load last save*, the keys work (backlog I, the critic's s476 run)
+The critic, 7 Oct: after dying in the Old Garrison's gaol and taking *Load last save*, W did not move them and E did not open the door until they clicked the view. The game reads its keys on `#g` only (`92-creator.js`). The click on the death screen's button moved the focus to that button; the load hid the screen with the button on it, and the focus fell to the page's body, where no key reaches the game. The shop, the stash, the loot panel, the inventory and the hub all call `G.focus()` when they close; the death screen did not. Now `reloadActiveSlot` (`68-dungeon-misc.js`) does, as it hides the screen.
+
+### Verified (headless Chromium)
+`diedload` 4/4 (new): a save, a death, *Load last save* clicked with the mouse, then W held on the keyboard. In the open world the view has the focus, `K.KeyW` is true and you walk 11.43 in 60 frames; dying in a fort (the save made there loads you at its door) the same, 4.93. On the build before this session the same suite fails 2 of 4: the focus is on BODY, `K.KeyW` stays false and you do not move, as the critic found.
+
+Neighbouring suites pass: duel (dying in the ring), autosave and saves.
+
+`parsecheck` clean.
+
+### Needs eyes
+Nothing beyond the fix. The critic's small note that the threshold save is labelled for the nearest town, not the gate, is not changed here.

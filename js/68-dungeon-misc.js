@@ -583,6 +583,7 @@ function reloadActiveSlot(){
   const key=ssActiveKey();if(!key||!ssEntry(key))return false;
   ssLoad(key).then(d=>{if(!d)return;
   const ov=document.getElementById('died');if(ov)ov.style.display='none';
+  G.focus(); /* S624 — the click left focus on the hidden button, and the game reads keys only on #g */
   dead=false;
   doFade(()=>{
     _applyLoadData(d);
