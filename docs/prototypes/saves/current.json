@@ -1,0 +1,336 @@
+{
+ "idx": [
+  {
+   "key": "cmux6gtf4_auto_0",
+   "charId": "cmux6gtf4",
+   "charName": "Traveller",
+   "people": "gatelander",
+   "arch": "warrior",
+   "kind": "auto",
+   "slot": 0,
+   "level": 1,
+   "gold": 0,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 1130,
+    "z": 1480,
+    "yaw": 0
+   },
+   "place": "",
+   "at": 0,
+   "tod": 360,
+   "ts": 1791321326321,
+   "size": 4316,
+   "v": 3,
+   "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace · 6:00 am",
+   "dateShort": "Hearthday 1 Reaping · 6:00 am",
+   "cal": "Hearthday, the 1st of Reaping",
+   "zoneLine": "the open country"
+  },
+  {
+   "key": "caoife_manual_0",
+   "charId": "caoife",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "kind": "manual",
+   "slot": 0,
+   "level": 3,
+   "gold": 142,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13550,
+    "z": 25406,
+    "yaw": 0
+   },
+   "place": "Dunmore",
+   "at": 4890,
+   "tod": 570,
+   "ts": 1791321380329,
+   "size": 48189,
+   "v": 3,
+   "date": "Seaday, the 4th of Reaping, in the 27th year of the Peace · 9:30 am",
+   "dateShort": "Seaday 4 Reaping · 9:30 am",
+   "cal": "Seaday, the 4th of Reaping",
+   "zoneLine": "Dunmore"
+  },
+  {
+   "key": "caoife_auto_0",
+   "charId": "caoife",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "kind": "auto",
+   "slot": 0,
+   "level": 4,
+   "gold": 260,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13550,
+    "z": 25406,
+    "yaw": 2.4
+   },
+   "place": "Dunmore",
+   "at": 6552,
+   "tod": 792,
+   "ts": 1791321401564,
+   "size": 50671,
+   "v": 3,
+   "date": "Skyday, the 5th of Reaping, in the 27th year of the Peace · 1:12 pm",
+   "dateShort": "Skyday 5 Reaping · 1:12 pm",
+   "cal": "Skyday, the 5th of Reaping",
+   "zoneLine": "Dunmore"
+  },
+  {
+   "key": "caoife_manual_1",
+   "charId": "caoife",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "kind": "manual",
+   "slot": 1,
+   "level": 4,
+   "gold": 311,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13700,
+    "z": 25400,
+    "yaw": 1.5707963267948966
+   },
+   "place": "near Dunmore",
+   "at": 8322,
+   "tod": 1122,
+   "ts": 1791321425612,
+   "size": 50706,
+   "v": 3,
+   "date": "Weaverday, the 6th of Reaping, in the 27th year of the Peace · 6:42 pm",
+   "dateShort": "Weaverday 6 Reaping · 6:42 pm",
+   "cal": "Weaverday, the 6th of Reaping",
+   "zoneLine": "near Dunmore"
+  },
+  {
+   "key": "caoife_auto_1",
+   "charId": "caoife",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "kind": "auto",
+   "slot": 1,
+   "level": 5,
+   "gold": 388,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13700,
+    "z": 25400,
+    "yaw": 1.5707963267948966
+   },
+   "place": "near Dunmore",
+   "at": 9066,
+   "tod": 426,
+   "ts": 1791321450724,
+   "size": 50705,
+   "v": 3,
+   "date": "Guestday, the 7th of Reaping, in the 27th year of the Peace · 7:06 am",
+   "dateShort": "Guestday 7 Reaping · 7:06 am",
+   "cal": "Guestday, the 7th of Reaping",
+   "zoneLine": "near Dunmore"
+  },
+  {
+   "key": "caoife_manual_2",
+   "charId": "caoife",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "kind": "manual",
+   "slot": 2,
+   "level": 5,
+   "gold": 402,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13556,
+    "z": 25390,
+    "yaw": 1.2
+   },
+   "place": "Dunmore",
+   "at": 9936,
+   "tod": 1296,
+   "ts": 1791321481628,
+   "size": 50709,
+   "v": 3,
+   "date": "Guestday, the 7th of Reaping, in the 27th year of the Peace · 9:36 pm",
+   "dateShort": "Guestday 7 Reaping · 9:36 pm",
+   "cal": "Guestday, the 7th of Reaping",
+   "zoneLine": "Dunmore"
+  },
+  {
+   "key": "caoife_auto_2",
+   "charId": "caoife",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "kind": "auto",
+   "slot": 2,
+   "level": 5,
+   "gold": 417,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13556,
+    "z": 25390,
+    "yaw": 1.2
+   },
+   "place": "Dunmore",
+   "at": 10740,
+   "tod": 660,
+   "ts": 1791321506157,
+   "size": 50709,
+   "v": 3,
+   "date": "Hearthday, the 8th of Reaping, in the 27th year of the Peace · 11:00 am",
+   "dateShort": "Hearthday 8 Reaping · 11:00 am",
+   "cal": "Hearthday, the 8th of Reaping",
+   "zoneLine": "Dunmore"
+  },
+  {
+   "key": "ctadhg_manual_0",
+   "charId": "ctadhg",
+   "charName": "Tadhg",
+   "people": "gatelander",
+   "arch": "sentinel",
+   "kind": "manual",
+   "slot": 0,
+   "level": 9,
+   "gold": 1205,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13520,
+    "z": 25440,
+    "yaw": 5.2
+   },
+   "place": "Dunmore",
+   "at": 26844,
+   "tod": 924,
+   "ts": 1791321537599,
+   "size": 50712,
+   "v": 3,
+   "date": "Skyday, the 19th of Reaping, in the 27th year of the Peace · 3:24 pm",
+   "dateShort": "Skyday 19 Reaping · 3:24 pm",
+   "cal": "Skyday, the 19th of Reaping",
+   "zoneLine": "Dunmore"
+  },
+  {
+   "key": "ctadhg_auto_0",
+   "charId": "ctadhg",
+   "charName": "Tadhg",
+   "people": "gatelander",
+   "arch": "sentinel",
+   "kind": "auto",
+   "slot": 0,
+   "level": 9,
+   "gold": 1290,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13520,
+    "z": 25440,
+    "yaw": 5.2
+   },
+   "place": "Dunmore",
+   "at": 27960,
+   "tod": 600,
+   "ts": 1791321565743,
+   "size": 50712,
+   "v": 3,
+   "date": "Weaverday, the 20th of Reaping, in the 27th year of the Peace · 10:00 am",
+   "dateShort": "Weaverday 20 Reaping · 10:00 am",
+   "cal": "Weaverday, the 20th of Reaping",
+   "zoneLine": "Dunmore"
+  }
+ ],
+ "chars": [
+  {
+   "id": "ctadhg",
+   "name": "Tadhg",
+   "people": "gatelander",
+   "arch": "sentinel",
+   "level": 9,
+   "last": 1791321565743,
+   "n": 2
+  },
+  {
+   "id": "caoife",
+   "name": "Aoife",
+   "people": "gatelander",
+   "arch": "duelist",
+   "level": 5,
+   "last": 1791321506157,
+   "n": 6
+  },
+  {
+   "id": "cmux6gtf4",
+   "name": "Traveller",
+   "people": "gatelander",
+   "arch": "warrior",
+   "level": 1,
+   "last": 1791321326321,
+   "n": 1
+  }
+ ],
+ "archetypes": [
+  {
+   "id": "warrior",
+   "label": "Warrior"
+  },
+  {
+   "id": "sentinel",
+   "label": "Sentinel"
+  },
+  {
+   "id": "duelist",
+   "label": "Duelist"
+  },
+  {
+   "id": "scout",
+   "label": "Scout"
+  },
+  {
+   "id": "monk",
+   "label": "Monk"
+  },
+  {
+   "id": "scholar",
+   "label": "Scholar"
+  },
+  {
+   "id": "diplomat",
+   "label": "Diplomat"
+  },
+  {
+   "id": "vagrant",
+   "label": "Vagrant"
+  }
+ ],
+ "manual": 8,
+ "auto": 5,
+ "tag": "s470",
+ "now": 1791321585039,
+ "store": "IndexedDB",
+ "total": 407429,
+ "pics": {
+  "caoife_manual_0": "plate-1",
+  "caoife_auto_0": "plate-2",
+  "caoife_manual_1": "plate-3",
+  "caoife_auto_1": "plate-4",
+  "caoife_manual_2": "plate-5",
+  "caoife_auto_2": "plate-6",
+  "ctadhg_manual_0": "plate-7",
+  "ctadhg_auto_0": "plate-8"
+ },
+ "menuText": "✕\n📂 Load Game\nSave\nLoad\nSaved in IndexedDB · 9 saves, 398 KB · browser storage 0.2 of 912 MB\n⤓ Import a character from a file\nTadhg\nLv9 · gatelander · just now\n⤒ Export\n⤱ World\n🗑 Delete character\nAUTOSAVES\nA1\n⟳\nLv9 · Dunmore\nWeaverday 20 Reaping · 10:00 am · 1290🪙 · just now · 50 KB\n🗑\nSLOTS\n1\n💾\nLv9 · Dunmore\nSkyday 19 Reaping · 3:24 pm · 1205🪙 · just now · 50 KB\n🗑\nAoife (playing)\nLv5 · gatelander · 1 min ago\n⤒ Export\n⤱ World\n🗑 Delete character\nAUTOSAVES\nA3\n⟳\nLv5 · Dunmore\nHearthday 8 Reaping · 11:00 am · 417🪙 · 1 min ago · 50 KB\n🗑\nA2\n⟳\nLv5 · near Dunmore\nGuestday 7 Reaping · 7:06 am · 388🪙 · 2 min ago · 50 KB\n🗑\nA1\n⟳\nLv4 · Dunmore\nSkyday 5 Reaping · 1:12 pm · 260🪙 · 2 min ago · 49 KB\n🗑\nSLOTS\n1\n💾\nLv3 · Dunmore\nSeaday 4 Reaping · 9:30 am · 142🪙 · 3 min ago · 47 KB\n🗑\n2\n💾\nLv4 · near Dunmore\nWeaverday 6 Reaping · 6:42 pm · 311🪙 · 2 min ago · 50 KB\n🗑\n3\n💾\nLv5 · Dunmore\nGuestday 7 Reaping · 9:36 pm · 402🪙 · 1 min ago · 50 KB\n🗑\nTraveller\nLv1 · gatelander · 4 min ago\n⤒ Export\n⤱ World\n🗑 Delete character\nAUTOSAVES\nA1\n⟳\nLv1 · the open country\nHearthday 1 Reaping · 6:00 am · 0🪙 · 4 min ago · 4 KB\n🗑"
+}

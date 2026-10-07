@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The Save Register</title>
+<!-- The Old Gates — saving and loading on the approved parchment kit (docs/prototypes/ui, Michael A, 27 Sep 2026).
+     Concept, 6 Oct 2026. build.py inlines kit.css, the icon symbols (defs.html) and the game's own saves (current.json,
+     written by shoot-current.mjs: two characters played in and round Dunmore, eight saves written through ssWrite and
+     saveGame, each entry of SS.idx with its date by gameDateLine and calDateLine). Every .screen is 1280×720.
+     For the builder: plain DOM. .reg is one .parch sheet of two columns: .who, a list of .ch character cards (name, people,
+     beginning, level, last played; .on the open one), and .saves, the open character's .sv rows (a .kind mark — the quill
+     for a slot you wrote, the ring for an autosave — the date in the calendar's words, the hour, the place, level, gold,
+     how long ago in real time). A row once pressed is .primed and says what a second press does. B adds .pic, a picture of
+     the view kept with each save (320×180 JPEG from REN.domElement at the moment of saving, about 15 KB, stored in the
+     index entry as m.pic, so the list needs no read of the save itself), and .big, the chosen save's picture with its lines.
+     The foot (.regfoot) carries Import, the two exports (character, world: ssExportChar/ssExportWorld) and Delete, and the
+     seal: Load or Write. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/* Copied from docs/prototypes/ui/index.html (the approved parchment kit, 27 Sep) via books; asset paths point there. */
+
+:root{
+  /* paper */
+  --paper-hi:#ecdcb2; --paper:#e0c994; --paper-lo:#c9ab6e; --paper-edge:#7a4e1e;
+  /* ink */
+  --ink:#2e1c0c; --ink-soft:#5a4128; --ink-faint:#8a7050; --rubric:#7a1f10; --gilt:#9a7020;
+  /* metal (HUD only) */
+  --iron:#1c1812; --iron-hi:#3a3226; --bronze:#a07a38; --bronze-hi:#d8b46a; --bronze-lo:#5a4018;
+  /* vitals */
+  --hp:#a8281c; --hp-hi:#d8503a; --mp:#2c5aa6; --mp-hi:#5a8ad8; --st:#3c7e2e; --st-hi:#6aac48;
+  --display:'IM Fell English SC',Georgia,serif; --fell:'IM Fell English',Georgia,serif; --body:'EB Garamond',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141008;color:#e8dcc0;font:15px/1.4 var(--body);padding:24px 0}
+h1.page{font:28px var(--display);text-align:center;color:#e0c994;margin:8px 0 2px}
+p.lede{max-width:1100px;margin:0 auto 18px;text-align:center;color:#b8a888}
+.cap{width:1280px;margin:28px auto 8px;font:17px var(--display);color:#e0c994;letter-spacing:.04em}
+.cap small{font:13px var(--body);color:#a89878;letter-spacing:0;margin-left:10px}
+.screen{width:1280px;height:720px;margin:0 auto;position:relative;overflow:hidden;background:#000 url(../ui/backdrop.png) center/cover;font-family:var(--body)}
+.screen.menu::before{content:"";position:absolute;inset:0;backdrop-filter:blur(3px) brightness(.42) sepia(.35);z-index:0}
+svg.ico{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.15em;flex:none}
+.num{font-variant-numeric:lining-nums tabular-nums}
+
+/* ───────── parchment ───────── */
+.parch{position:absolute;isolation:isolate;color:var(--ink);z-index:2}
+.parch::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:4px;
+  background:
+    radial-gradient(ellipse at 50% 42%,rgba(255,250,230,.35) 0,transparent 45%),
+    radial-gradient(ellipse at 50% 50%,transparent 58%,rgba(110,60,15,.30) 88%,rgba(80,40,8,.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .28  0 0 0 0 .08  0 0 0 -1.6 .9'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .06  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+    linear-gradient(170deg,var(--paper-hi),var(--paper) 55%,var(--paper-lo));
+  filter:url(#deckle) drop-shadow(0 14px 22px rgba(0,0,0,.6));}
+.parch.small::before{filter:url(#deckle-s) drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.rule{height:9px;margin:6px 0 8px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='9' preserveAspectRatio='none'><path d='M0 4.5 Q200 2.5 400 4.5' stroke='%235a4128' stroke-width='1.1' fill='none'/><path d='M40 6.5 Q200 5.2 360 6.5' stroke='%235a4128' stroke-width='.5' fill='none' opacity='.6'/></svg>") center/100% 100% no-repeat}
+.h{font:22px/1 var(--display);color:var(--rubric);letter-spacing:.02em}
+.h2{font:15px/1 var(--display);color:var(--ink-soft);letter-spacing:.08em}
+.meta{font:italic 14px var(--fell);color:var(--ink-soft)}
+.faint{color:var(--ink-faint)}
+.seal{position:absolute;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#f0d8b0;font:20px var(--display);
+  background:radial-gradient(circle at 38% 34%,#c8483a,#8a1c12 55%,#5a0e08);box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,200,170,.35),0 3px 6px rgba(0,0,0,.5);
+  clip-path:polygon(50% 0,62% 4%,74% 2%,82% 11%,94% 16%,95% 29%,100% 40%,96% 52%,100% 64%,93% 74%,90% 87%,78% 92%,68% 100%,55% 96%,44% 100%,33% 94%,20% 96%,12% 86%,4% 77%,5% 64%,0 52%,4% 40%,2% 27%,10% 17%,20% 10%,32% 3%)}
+
+/* hub sheet and tabs */
+.sheet{left:52px;top:62px;width:1176px;height:620px;padding:22px 34px 0}
+.tabs{position:absolute;left:84px;top:18px;display:flex;gap:6px;z-index:1}
+.tab{position:relative;isolation:isolate;padding:9px 18px 14px;font:17px/1 var(--display);color:var(--ink-soft);display:flex;gap:8px;align-items:center}
+.tab::before{content:"";position:absolute;inset:0 0 -6px;z-index:-1;border-radius:6px 6px 0 0;background:linear-gradient(#c7a86c,#b18f55);filter:url(#deckle-s) drop-shadow(0 -2px 3px rgba(0,0,0,.4))}
+.tab.on{color:var(--rubric);top:-4px;z-index:3}
+.tab.on::before{background:linear-gradient(#ead9ae,#e6d3a6);inset:0 0 -14px}
+.tab .ico{font-size:19px}
+.close{right:-14px;top:-14px}
+.vitals{position:absolute;left:34px;right:34px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;font:15px var(--body)}
+.vital{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.vital b{font:15px var(--display);font-weight:400}
+.ibar{height:10px;border:1px solid var(--ink-soft);border-radius:1px;background:rgba(80,50,20,.12);position:relative;overflow:hidden}
+.ibar i{position:absolute;left:0;top:0;bottom:0;opacity:.85}
+.ibar i::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 3px,rgba(255,240,210,.18) 3px 4px)}
+
+/* lists */
+.cols{display:grid;grid-template-columns:30px 1fr 160px 54px 64px;gap:0 10px;align-items:center}
+.lh{font:13px var(--display);letter-spacing:.1em;color:var(--ink-faint);padding:0 10px 4px}
+.row{padding:6px 10px;font-size:17px;border-bottom:1px solid rgba(90,65,40,.18)}
+.row svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.row.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.04));box-shadow:inset 3px 0 var(--rubric)}
+.row.sel .n{color:var(--rubric)}
+.r{text-align:right}
+.qty{font:italic 14px var(--fell);color:var(--ink-faint);margin-left:6px}
+.subtabs{display:flex;gap:22px;font:16px var(--display);color:var(--ink-faint);margin:2px 0 8px 10px}
+.subtabs .on{color:var(--ink);border-bottom:2px solid var(--rubric)}
+
+/* paper-doll */
+.doll{display:grid;grid-template-columns:repeat(3,66px);grid-auto-rows:60px;gap:6px;justify-content:center}
+.slot{border:1.5px solid var(--ink-soft);border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:10px var(--display);letter-spacing:0;white-space:nowrap;color:var(--ink-faint);background:rgba(120,80,30,.07);box-shadow:inset 0 0 0 3px rgba(224,201,148,.8),inset 0 0 0 4px rgba(90,65,40,.35)}
+.slot svg.ico{width:28px;height:28px;color:var(--ink-faint);opacity:.55}
+.slot.full .ico{color:var(--ink);opacity:1}
+.slot.full{color:var(--ink-soft)}
+.gap{visibility:hidden}
+
+/* ───────── HUD (metal) ───────── */
+.plate{position:absolute;background:linear-gradient(#2c261c,#15110b);border:1px solid var(--bronze-lo);box-shadow:inset 0 0 0 1px rgba(216,180,106,.35),inset 0 1px 0 rgba(255,230,170,.25),0 3px 10px rgba(0,0,0,.6);border-radius:6px;z-index:3}
+.roundel{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:36px;color:#e6cf9a;
+  background:radial-gradient(circle at 50% 40%,#3a3124,#15110b 70%);border:3px solid var(--bronze);box-shadow:inset 0 0 0 1px var(--bronze-lo),inset 0 2px 6px rgba(0,0,0,.8),0 0 0 1px #0a0806,0 2px 6px rgba(0,0,0,.6)}
+.roundel.dim{color:#6a5a40}
+.hbar{position:relative;height:10px;border-radius:5px;background:#0b0906;box-shadow:inset 0 1px 2px #000,0 0 0 1px var(--bronze-lo),0 0 0 2px rgba(216,180,106,.25);overflow:hidden}
+.hbar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.hbar i::after{content:"";position:absolute;left:2px;right:2px;top:1px;height:3px;border-radius:2px;background:rgba(255,255,255,.28)}
+.hp i{background:linear-gradient(var(--hp-hi),var(--hp))} .mp i{background:linear-gradient(var(--mp-hi),var(--mp))} .st i{background:linear-gradient(var(--st-hi),var(--st))}
+.hudtxt{font:13px var(--body);color:#e6d4a8;text-shadow:0 1px 2px #000,0 0 6px #000}
+.compass{position:absolute;height:34px;width:380px;border-radius:17px;overflow:hidden;background:linear-gradient(#1f1a12,#0d0a07);box-shadow:inset 0 1px 4px #000,0 0 0 2px var(--bronze-lo),0 0 0 3px var(--bronze),0 0 0 4px #0a0806,0 3px 10px rgba(0,0,0,.6);z-index:3}
+.compass .strip{position:absolute;inset:0;display:flex;align-items:center;font:15px var(--display);color:#d8c290}
+.compass .strip span{position:absolute;transform:translateX(-50%)}
+.compass .tick{width:1px;height:8px;background:#8a7450;top:13px}
+.compass .n{color:#e8b050;font-size:19px}
+.compass::after{content:"";position:absolute;left:50%;top:0;width:0;height:0;border:6px solid transparent;border-top-color:var(--bronze-hi);transform:translateX(-50%)}
+.mini{position:absolute;width:150px;height:150px;border-radius:50%;background:url(../ui/mini-crop.png) center/115%;filter:sepia(.55) saturate(.8) contrast(1.05);box-shadow:inset 0 0 18px rgba(40,20,5,.7);z-index:3}
+.miniring{position:absolute;width:162px;height:162px;border-radius:50%;box-shadow:0 0 0 5px var(--bronze),0 0 0 6px #0a0806,inset 0 0 0 1px var(--bronze-lo),0 4px 12px rgba(0,0,0,.6);z-index:4}
+.miniring b{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:14px var(--display);color:#f0d8a0;background:radial-gradient(#3a3124,#15110b);border:2px solid var(--bronze);width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.ribbon{position:absolute;padding:6px 34px 7px;font:22px var(--display);color:var(--ink);z-index:3}
+.xh{position:absolute;left:640px;top:360px;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,245,220,.85);box-shadow:0 0 0 1px rgba(0,0,0,.6);z-index:3}
+.prompt{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;font:17px var(--body);color:#f0e2c0;text-shadow:0 1px 3px #000,0 0 8px #000;z-index:3}
+.key{font:14px var(--display);width:26px;height:26px;display:grid;place-items:center;border-radius:4px;color:#2e1c0c;background:linear-gradient(#ecdcb2,#c9ab6e);box-shadow:0 0 0 1px #5a4018,0 2px 3px rgba(0,0,0,.6);text-shadow:none}
+.cbar{position:absolute;right:14px;bottom:8px;font:13px var(--body);color:rgba(240,226,192,.85);text-shadow:0 1px 2px #000,0 0 5px #000;z-index:3}
+.dp{position:absolute;right:22px;bottom:92px;display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:4px;z-index:3}
+.dp div{border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(58,49,36,.85),rgba(21,17,11,.85));border:2px solid rgba(160,122,56,.8);color:#d8c290;display:grid;place-items:center;font-size:14px}
+
+/* dialogue */
+.dlg{left:260px;top:372px;width:760px;height:320px;padding:26px 40px 18px 40px}
+.dlg .who{display:flex;gap:16px;align-items:center}
+.dlg .line{font:20px/1.45 var(--body);margin:4px 0 10px;color:var(--ink)}
+.topics{display:grid;grid-template-columns:1fr 1fr;gap:2px 34px}
+.topic{font:18px/1.2 var(--body);padding:6px 4px;display:flex;gap:10px;border-bottom:1px dotted rgba(90,65,40,.35)}
+.topic i{font:italic 15px var(--fell);color:var(--ink-faint);width:14px;text-align:right}
+.topic.new{color:var(--rubric)}
+.topic.new::after{content:"❧";margin-left:auto;color:var(--gilt);font-size:15px}
+.topic.old{color:var(--ink-faint)}
+.foot{position:absolute;left:40px;right:40px;bottom:14px;font:italic 13px var(--fell);color:var(--ink-faint);display:flex;justify-content:space-between}
+
+/* magic */
+.school{font:14px var(--display);letter-spacing:.1em;color:var(--rubric);margin:10px 0 2px;display:flex;align-items:center;gap:8px}
+.school .ico{font-size:18px}
+.spell{display:grid;grid-template-columns:190px 1fr 70px;gap:10px;align-items:baseline;padding:4px 8px;font-size:16px;border-bottom:1px solid rgba(90,65,40,.14)}
+.spell .nm{font:18px var(--body);font-weight:500}
+.spell .gl{font:italic 13px var(--fell);color:var(--ink-faint);margin-left:6px}
+.spell.lock{color:var(--ink-faint)} .spell.lock .nm{font-weight:400}
+.spell.sel{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.spell.sel .nm{color:var(--rubric)}
+
+/* attributes */
+.attr{display:grid;grid-template-columns:28px 150px 40px 1fr;gap:10px;align-items:center;padding:5px 0;font-size:18px;border-bottom:1px solid rgba(90,65,40,.14)}
+.attr .v{font:22px var(--display);text-align:right;color:var(--ink)}
+.pips{display:flex;gap:4px}
+.pips span{width:13px;height:13px;border:1.2px solid var(--ink-soft);transform:rotate(45deg) scale(.8)}
+.pips span.f{background:var(--ink-soft)}
+.dv{display:flex;justify-content:space-between;font-size:17px;padding:4px 0;border-bottom:1px dotted rgba(90,65,40,.3)}
+
+/* style sheet */
+.sw{display:flex;flex-direction:column;align-items:center;gap:4px;font:12px var(--body);color:var(--ink-soft);width:72px;text-align:center}
+.sw i{width:56px;height:30px;border-radius:3px;box-shadow:0 0 0 1px rgba(46,28,12,.5)}
+.iconset{display:grid;grid-template-columns:repeat(9,1fr);gap:8px 6px;font-size:30px;color:var(--ink)}
+.iconset div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.iconset small{font:11px var(--body);color:var(--ink-faint)}
+.btn{display:inline-block;font:16px var(--display);padding:7px 18px;border:1.5px solid var(--ink-soft);border-radius:2px;color:var(--ink);background:rgba(120,80,30,.08);box-shadow:inset 0 0 0 2px rgba(224,201,148,.8),inset 0 0 0 3px rgba(90,65,40,.3)}
+.btn.hot{color:var(--rubric);border-color:var(--rubric);background:rgba(122,31,16,.1)}
+.btn.off{color:var(--ink-faint);border-color:var(--ink-faint);opacity:.7}
+
+.screen{background-size:cover;background-position:center}
+.screen.menu::before{backdrop-filter:blur(2px) brightness(.5) sepia(.3)}
+
+/* ───────── the register ───────── */
+.reg{left:60px;top:40px;width:1160px;height:640px;padding:22px 34px 18px;display:grid;grid-template-columns:300px 1fr;grid-template-rows:auto auto 1fr auto;gap:0 30px}
+.reg.b{grid-template-columns:270px 1fr 360px}
+.reghead{grid-column:1/-1;display:flex;align-items:flex-end;gap:18px}
+.reghead .h{font-size:38px;line-height:1}
+.reghead .sub{font:italic 18px var(--fell);color:var(--ink-soft);padding-bottom:3px}
+.reghead .mode{margin-left:auto;display:flex;gap:20px;font:18px var(--display);color:var(--ink-faint);padding-bottom:3px}
+.reghead .mode .on{color:var(--rubric);border-bottom:2px solid var(--rubric)}
+.reg .rule{grid-column:1/-1}
+.who{border-right:1px solid rgba(90,65,40,.3);padding-right:20px;overflow:hidden}
+.colh{font:13px var(--display);letter-spacing:.12em;color:var(--ink-faint);margin:2px 0 6px}
+.ch{padding:9px 12px 10px;border-bottom:1px solid rgba(90,65,40,.18)}
+.ch .nm{font:24px/1.05 var(--display);color:var(--ink)}
+.ch .ln{font:15.5px/1.3 var(--body);color:var(--ink-soft)}
+.ch .ln2{font:italic 14px var(--fell);color:var(--ink-faint)}
+.ch.on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.ch.on .nm{color:var(--rubric)}
+.ch .play{font:12px var(--display);letter-spacing:.1em;color:var(--gilt);margin-left:8px}
+.ch.new{color:var(--ink-faint);font:italic 16px var(--fell);border-bottom:none;padding-top:12px}
+.saves{overflow:hidden}
+.sv{display:grid;grid-template-columns:26px 1fr 150px 92px;gap:0 14px;align-items:center;padding:7px 10px;border-bottom:1px solid rgba(90,65,40,.18);min-height:58px}
+.reg.b .sv{grid-template-columns:96px 1fr 70px;gap:0 12px;padding:6px 8px;min-height:66px}
+.reg.b .sv .d{font-size:17px}
+.sv svg.ico{width:22px;height:22px;color:var(--ink-soft)}
+.sv .d{font:18px/1.2 var(--body);font-weight:500}
+.sv .d .hr{font-weight:400;color:var(--ink-soft)}
+.sv .p{font:italic 15px/1.25 var(--fell);color:var(--ink-soft)}
+.sv .k{font:12px var(--display);letter-spacing:.1em;color:var(--ink-faint)}
+.sv .st{font:16px var(--body);text-align:right;white-space:nowrap}
+.sv .st small{display:block;font:italic 13px var(--fell);color:var(--ink-faint)}
+.sv .ago{font:italic 14px var(--fell);color:var(--ink-faint);text-align:right}
+.sv.auto .d{font-weight:400}
+.sv.on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.sv.on .d{color:var(--rubric)}
+.sv.primed{box-shadow:inset 3px 0 var(--rubric),inset 0 0 0 1.5px rgba(122,31,16,.55)}
+.sv.primed .d{color:var(--rubric)}
+.sv .ask{font:italic 15px var(--fell);color:var(--rubric)}
+.sv.empty .d{font:italic 16px var(--fell);color:var(--ink-faint);font-weight:400}
+.sv.empty svg.ico{opacity:.4}
+.thumb{width:96px;height:54px;border-radius:2px;background-size:cover;background-position:center;box-shadow:0 0 0 1px rgba(46,28,12,.6),0 0 0 3px rgba(224,201,148,.7),0 0 0 4px rgba(90,65,40,.4);filter:sepia(.25) saturate(.9)}
+.thumb.none{background:repeating-linear-gradient(135deg,rgba(90,65,40,.08) 0 6px,transparent 6px 12px)}
+.sub2{font:12px var(--display);letter-spacing:.14em;color:var(--ink-faint);margin:10px 0 2px 10px;display:flex;gap:10px;align-items:center}
+.sub2::after{content:"";flex:1;height:1px;background:rgba(90,65,40,.25)}
+.big{border-left:1px solid rgba(90,65,40,.3);padding-left:22px}
+.big .pic{width:336px;height:189px;background-size:cover;background-position:center;border-radius:2px;box-shadow:0 0 0 1px rgba(46,28,12,.7),0 0 0 4px rgba(224,201,148,.8),0 0 0 5px rgba(90,65,40,.5),0 6px 12px rgba(40,20,5,.35);filter:sepia(.2) saturate(.92);margin:4px 0 14px}
+.big .t{font:22px/1.15 var(--display);color:var(--rubric)}
+.big .l{font:16.5px/1.4 var(--body);color:var(--ink)}
+.big .l.f{font:italic 15px var(--fell);color:var(--ink-faint)}
+.big .dv{font-size:16px}
+.regfoot{grid-column:1/-1;display:flex;align-items:center;gap:12px;border-top:1px solid rgba(90,65,40,.3);padding-top:10px;margin-top:6px;position:relative}
+.regfoot .btn{font-size:14.5px;padding:5px 12px;display:inline-flex;gap:7px;align-items:center}
+.regfoot .btn svg.ico{width:16px;height:16px}
+.regfoot .del{font:italic 15px var(--fell);color:var(--ink-faint)}
+.regfoot .store{font:italic 13.5px var(--fell);color:var(--ink-faint);margin-left:6px}
+.regfoot .go{margin-left:auto;font:24px var(--display);color:var(--rubric);padding-right:64px}
+.regfoot .seal{right:0;top:-2px;width:52px;height:52px;font-size:22px}
+.esc{position:absolute;right:26px;bottom:6px;font:italic 14px var(--fell);color:rgba(240,226,192,.8);display:flex;gap:8px;align-items:center;z-index:3;text-shadow:0 1px 2px #000}
+.esc .key{width:auto;padding:0 6px}
+
+/* ───────── C: today's column, restyled ───────── */
+.c1{left:240px;top:30px;width:800px;height:660px;padding:22px 36px;overflow:hidden}
+.c1 .scroll{position:absolute;left:36px;right:36px;top:150px;bottom:20px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 85%,transparent)}
+.c1 .tt{display:flex;gap:16px;align-items:baseline}
+.c1 .tt .h{font-size:26px}
+.c1 .tb{font:16px var(--display);color:var(--ink-faint)} .c1 .tb.on{color:var(--rubric);border-bottom:2px solid var(--rubric)}
+.c1 .st{font:italic 13px var(--fell);color:var(--ink-faint);margin:4px 0}
+.c1 .gh{display:flex;gap:10px;align-items:baseline;margin:10px 0 3px;font:18px var(--display);color:var(--ink)}
+.c1 .gh small{font:italic 13px var(--fell);color:var(--ink-faint)}
+.c1 .gh .btn{font-size:12px;padding:2px 8px;margin-left:6px}
+.c1 .ss{font:11px var(--display);letter-spacing:.2em;color:var(--ink-faint);margin:4px 0 2px 4px}
+.c1 .r1{display:grid;grid-template-columns:26px 22px 1fr 30px;gap:8px;align-items:center;padding:5px 10px;border-bottom:1px solid rgba(90,65,40,.18)}
+.c1 .r1 .n{font:14px var(--display);color:var(--ink-faint)} .c1 .r1 .a{font:15.5px var(--body);font-weight:500} .c1 .r1 .b{font:italic 13px var(--fell);color:var(--ink-faint)}
+.c1 .r1 svg.ico{width:18px;height:18px;color:var(--ink-soft)}
+
+/* the page around the screens */
+.cmp{background:#1a140c}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
+.pair figure{margin:0}
+.pair figcaption{font:18px var(--display);color:#e0c994;margin-bottom:6px}
+.pair figcaption small{font:13px var(--body);color:#a89878;margin-left:8px}
+.pair img{width:100%;display:block;box-shadow:0 0 0 1px #5a4018}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="deckle" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="4" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="deckle-s" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <!-- ink icon set: 24×24, stroked in currentColor; one <symbol> each, lifted straight into the game -->
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="M19.5 4.5 9 15M19.5 4.5l-.8 3.6M19.5 4.5l-3.6.8M7 12.5l4.5 4.5M9 15l-4.2 4.2"/><circle cx="4.3" cy="19.7" r="1"/></symbol>
+    <symbol id="i-dagger" viewBox="0 0 24 24"><path d="M17.5 6.5 10.5 13.5M17.5 6.5l-.6 2.6M17.5 6.5l-2.6.6M8.5 11.5l4 4M10.5 13.5l-3.2 3.2"/><circle cx="6.8" cy="17.2" r=".9"/></symbol>
+    <symbol id="i-club" viewBox="0 0 24 24"><path d="M5 20l6-6"/><path d="M11 14c-1.2-2.6 2.5-8.4 6-9.4 2-.5 3.3 1.2 2.6 3.2-1.2 3.3-6.2 7.6-8.6 6.2z"/><path d="M14.5 7.5l1.2 1.2M16.5 9.8l1 1"/></symbol>
+    <symbol id="i-helm" viewBox="0 0 24 24"><path d="M5 17c0-7 3-11 7-11s7 4 7 11z"/><path d="M5 17h14M12 6v11M8.5 12h7"/></symbol>
+    <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v4.2C7.6 8.3 6 10.4 6 13.5a6 6 0 0 0 12 0c0-3.1-1.6-5.2-4.5-6.3V3"/><path d="M6.6 13.2c2.2 1 4.6-.8 10.8 0"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="3.5"/><path d="M11 12h9.5M17.5 12v3M20 12v2"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M10 11h4l-1.2 10h-1.6z"/><path d="M12 10c-2.8-1.5-2.4-4.6 0-7 .2 2.4 3 3 2.2 5.6-.3 1-1.2 1.4-2.2 1.4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M12 3v18M5 10.5h14"/></symbol>
+    <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="14.5" r="5.5"/><path d="M10 9.3 12 6l2 3.3M10 6h4"/></symbol>
+    <symbol id="i-amulet" viewBox="0 0 24 24"><path d="M6 3c0 6 3 9.5 6 10.5 3-1 6-4.5 6-10.5"/><circle cx="12" cy="16.5" r="3.2"/><circle cx="12" cy="16.5" r="1" /></symbol>
+    <symbol id="i-tunic" viewBox="0 0 24 24"><path d="M8.5 4 4 7l2 3.3 2.3-1.1V20h7.4V9.2l2.3 1.1L20 7l-4.5-3c-.8 1.8-6.2 1.8-7 0z"/></symbol>
+    <symbol id="i-legs" viewBox="0 0 24 24"><path d="M7 4h10l1 16h-4l-2-10-2 10H6z"/><path d="M7 7h10"/></symbol>
+    <symbol id="i-boot" viewBox="0 0 24 24"><path d="M8 3h5v10.5l5.6 2c1.3.5 1.3 3.5 0 3.5H8z"/><path d="M8 16h11"/></symbol>
+    <symbol id="i-glove" viewBox="0 0 24 24"><path d="M7.5 21v-8.5L5.3 8.8c-.5-1 .9-1.9 1.6-.9l1.6 2.3V5a1 1 0 0 1 2 0v4.5V4a1 1 0 0 1 2 0v5.5V5a1 1 0 0 1 2 0v5.5V7a1 1 0 0 1 2 0v7c0 3.5-1.5 5.5-2 7z"/></symbol>
+    <symbol id="i-arrows" viewBox="0 0 24 24"><path d="M4 20 18 6M18 6l-3.8.6M18 6l-.6 3.8M4 20l.8-2.8M4 20l2.8-.8M8 20 20 8M20 8l-3 .5M20 8l-.5 3"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4.8"/><path d="M12 9.5v5"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 21c-4.5 0-6-4.5-4-8 1 1.8 2.4 2 2.4 0 0-4 1.6-6.2 1.6-10 3 2.8 6 6.6 6 11.5 0 4-2.5 6.5-6 6.5z"/></symbol>
+    <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z"/><path d="M9.2 15.5a3 3 0 0 0 2.6 2.7"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></symbol>
+    <symbol id="i-stone" viewBox="0 0 24 24"><path d="M4 17 8 7l7-2 5 7-3 7H7z"/><path d="M8 7l3 5 4-7M11 12l6 7M11 12l-7 5"/></symbol>
+    <symbol id="i-shadow" viewBox="0 0 24 24"><path d="M15 4a8 8 0 1 0 5 11 6.5 6.5 0 1 1-5-11z"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-1.8z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 13.5h6L10 22l9-12h-6z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5.5 3-8 7-8s7 2.5 7 8"/></symbol>
+    <symbol id="i-quill" viewBox="0 0 24 24"><path d="M20 3C12 4 7 10 5 19l-1 2"/><path d="M5 19c5-2 11-7 15-16M8 14.5h4.5M10 11h4"/></symbol>
+    <symbol id="i-scales" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M5 7.5h14M5 7.5 3 13h4zM19 7.5 17 13h4z"/><circle cx="12" cy="4" r="1"/></symbol>
+    <symbol id="i-pack" viewBox="0 0 24 24"><path d="M7 8c0-3 2-5 5-5s5 2 5 5"/><path d="M5 8h14l-1 13H6z"/><path d="M9 12h6v4H9z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+    <!-- creator additions (concept, 3 Oct 2026): six 24×24 ink icons in the kit's stroke -->
+    <symbol id="i-bow" viewBox="0 0 24 24"><path d="M6 3c7 2 11 8 13 15"/><path d="M6 3 19 18"/><path d="M4 12.5l9-.5M13 12l-2.4-1.8M13 12l-2.2 2"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><path d="M6 21 17.5 6.5"/><path d="M17.5 6.5c-.3-1.8.8-3.3 2.5-3.5.2 1.7-.9 3.2-2.5 3.5zM15.8 8.6c-1.6-.2-2.6-1.3-2.6-2.8 1.5 0 2.6 1.2 2.6 2.8z"/></symbol>
+    <symbol id="i-rapier" viewBox="0 0 24 24"><path d="M20.5 3.5 9.5 14.5"/><path d="M7.2 12.2c-1.4 1.6-1.2 3.6.2 4.6 1 1.4 3 1.6 4.6.2"/><path d="M9.5 14.5 5 19"/><circle cx="4.4" cy="19.6" r=".9"/></symbol>
+    <symbol id="i-enso" viewBox="0 0 24 24"><path d="M15.5 4.6A8 8 0 1 0 20 12c0-1.2-.3-2.3-.8-3.3"/><path d="M15.5 4.6c.6.3 1.2.6 1.7 1"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C9.5 4.8 6.5 4.5 3.5 5v13c3-.5 6-.2 8.5 1.5 2.5-1.7 5.5-2 8.5-1.5V5c-3-.5-6-.2-8.5 1.5z"/><path d="M12 6.5v13"/></symbol>
+    <symbol id="i-speech" viewBox="0 0 24 24"><path d="M4 6.5C4 5 5 4 6.5 4h11C19 4 20 5 20 6.5v7c0 1.5-1 2.5-2.5 2.5H11l-4.5 4v-4h0C5 16 4 15 4 13.5z"/><path d="M8 9h8M8 12h5"/></symbol>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute"><defs>
+ <symbol id="i-autoring" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95"/><path d="M19.5 4.5v3.2h-3.2"/><path d="M12 8.5V12l2.4 1.6"/></symbol>
+ <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 11h7M9 14.5h7M9 18h4"/></symbol>
+ <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4 16v4h16v-4"/></symbol>
+ <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="M8 7.5l4-4 4 4"/><path d="M4 16v4h16v-4"/></symbol>
+ <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17"/></symbol>
+</defs></svg>
+<h1 class="page">The Save Register — saving and loading on the parchment</h1>
+<p class="lede">Two characters played in this browser: Aoife, a Duelist on her seventh day round Dunmore, and Tadhg, a Sentinel two weeks in. Every save was written by the game's own ssWrite and saveGame; every date, place, level and sum is from its index.</p>
+<div id="out"></div>
+<script>
+const DATA={"idx": [{"key": "cmux6gtf4_auto_0", "charId": "cmux6gtf4", "charName": "Traveller", "people": "gatelander", "arch": "warrior", "kind": "auto", "slot": 0, "level": 1, "gold": 0, "zone": "world", "where": {"kind": "world", "x": 1130, "z": 1480, "yaw": 0}, "place": "", "at": 0, "tod": 360, "ts": 1791321326321, "size": 4316, "v": 3, "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace · 6:00 am", "dateShort": "Hearthday 1 Reaping · 6:00 am", "cal": "Hearthday, the 1st of Reaping", "zoneLine": "the open country"}, {"key": "caoife_manual_0", "charId": "caoife", "charName": "Aoife", "people": "gatelander", "arch": "duelist", "kind": "manual", "slot": 0, "level": 3, "gold": 142, "zone": "world", "where": {"kind": "world", "x": 13550, "z": 25406, "yaw": 0}, "place": "Dunmore", "at": 4890, "tod": 570, "ts": 1791321380329, "size": 48189, "v": 3, "date": "Seaday, the 4th of Reaping, in the 27th year of the Peace · 9:30 am", "dateShort": "Seaday 4 Reaping · 9:30 am", "cal": "Seaday, the 4th of Reaping", "zoneLine": "Dunmore"}, {"key": "caoife_auto_0", "charId": "caoife", "charName": "Aoife", "people": "gatelander", "arch": "duelist", "kind": "auto", "slot": 0, "level": 4, "gold": 260, "zone": "world", "where": {"kind": "world", "x": 13550, "z": 25406, "yaw": 2.4}, "place": "Dunmore", "at": 6552, "tod": 792, "ts": 1791321401564, "size": 50671, "v": 3, "date": "Skyday, the 5th of Reaping, in the 27th year of the Peace · 1:12 pm", "dateShort": "Skyday 5 Reaping · 1:12 pm", "cal": "Skyday, the 5th of Reaping", "zoneLine": "Dunmore"}, {"key": "caoife_manual_1", "charId": "caoife", "charName": "Aoife", "people": "gatelander", "arch": "duelist", "kind": "manual", "slot": 1, "level": 4, "gold": 311, "zone": "world", "where": {"kind": "world", "x": 13700, "z": 25400, "yaw": 1.5707963267948966}, "place": "near Dunmore", "at": 8322, "tod": 1122, "ts": 1791321425612, "size": 50706, "v": 3, "date": "Weaverday, the 6th of Reaping, in the 27th year of the Peace · 6:42 pm", "dateShort": "Weaverday 6 Reaping · 6:42 pm", "cal": "Weaverday, the 6th of Reaping", "zoneLine": "near Dunmore"}, {"key": "caoife_auto_1", "charId": "caoife", "charName": "Aoife", "people": "gatelander", "arch": "duelist", "kind": "auto", "slot": 1, "level": 5, "gold": 388, "zone": "world", "where": {"kind": "world", "x": 13700, "z": 25400, "yaw": 1.5707963267948966}, "place": "near Dunmore", "at": 9066, "tod": 426, "ts": 1791321450724, "size": 50705, "v": 3, "date": "Guestday, the 7th of Reaping, in the 27th year of the Peace · 7:06 am", "dateShort": "Guestday 7 Reaping · 7:06 am", "cal": "Guestday, the 7th of Reaping", "zoneLine": "near Dunmore"}, {"key": "caoife_manual_2", "charId": "caoife", "charName": "Aoife", "people": "gatelander", "arch": "duelist", "kind": "manual", "slot": 2, "level": 5, "gold": 402, "zone": "world", "where": {"kind": "world", "x": 13556, "z": 25390, "yaw": 1.2}, "place": "Dunmore", "at": 9936, "tod": 1296, "ts": 1791321481628, "size": 50709, "v": 3, "date": "Guestday, the 7th of Reaping, in the 27th year of the Peace · 9:36 pm", "dateShort": "Guestday 7 Reaping · 9:36 pm", "cal": "Guestday, the 7th of Reaping", "zoneLine": "Dunmore"}, {"key": "caoife_auto_2", "charId": "caoife", "charName": "Aoife", "people": "gatelander", "arch": "duelist", "kind": "auto", "slot": 2, "level": 5, "gold": 417, "zone": "world", "where": {"kind": "world", "x": 13556, "z": 25390, "yaw": 1.2}, "place": "Dunmore", "at": 10740, "tod": 660, "ts": 1791321506157, "size": 50709, "v": 3, "date": "Hearthday, the 8th of Reaping, in the 27th year of the Peace · 11:00 am", "dateShort": "Hearthday 8 Reaping · 11:00 am", "cal": "Hearthday, the 8th of Reaping", "zoneLine": "Dunmore"}, {"key": "ctadhg_manual_0", "charId": "ctadhg", "charName": "Tadhg", "people": "gatelander", "arch": "sentinel", "kind": "manual", "slot": 0, "level": 9, "gold": 1205, "zone": "world", "where": {"kind": "world", "x": 13520, "z": 25440, "yaw": 5.2}, "place": "Dunmore", "at": 26844, "tod": 924, "ts": 1791321537599, "size": 50712, "v": 3, "date": "Skyday, the 19th of Reaping, in the 27th year of the Peace · 3:24 pm", "dateShort": "Skyday 19 Reaping · 3:24 pm", "cal": "Skyday, the 19th of Reaping", "zoneLine": "Dunmore"}, {"key": "ctadhg_auto_0", "charId": "ctadhg", "charName": "Tadhg", "people": "gatelander", "arch": "sentinel", "kind": "auto", "slot": 0, "level": 9, "gold": 1290, "zone": "world", "where": {"kind": "world", "x": 13520, "z": 25440, "yaw": 5.2}, "place": "Dunmore", "at": 27960, "tod": 600, "ts": 1791321565743, "size": 50712, "v": 3, "date": "Weaverday, the 20th of Reaping, in the 27th year of the Peace · 10:00 am", "dateShort": "Weaverday 20 Reaping · 10:00 am", "cal": "Weaverday, the 20th of Reaping", "zoneLine": "Dunmore"}], "chars": [{"id": "ctadhg", "name": "Tadhg", "people": "gatelander", "arch": "sentinel", "level": 9, "last": 1791321565743, "n": 2}, {"id": "caoife", "name": "Aoife", "people": "gatelander", "arch": "duelist", "level": 5, "last": 1791321506157, "n": 6}, {"id": "cmux6gtf4", "name": "Traveller", "people": "gatelander", "arch": "warrior", "level": 1, "last": 1791321326321, "n": 1}], "archetypes": [{"id": "warrior", "label": "Warrior"}, {"id": "sentinel", "label": "Sentinel"}, {"id": "duelist", "label": "Duelist"}, {"id": "scout", "label": "Scout"}, {"id": "monk", "label": "Monk"}, {"id": "scholar", "label": "Scholar"}, {"id": "diplomat", "label": "Diplomat"}, {"id": "vagrant", "label": "Vagrant"}], "manual": 8, "auto": 5, "tag": "s470", "now": 1791321585039, "store": "IndexedDB", "total": 407429, "pics": {"caoife_manual_0": "plate-1", "caoife_auto_0": "plate-2", "caoife_manual_1": "plate-3", "caoife_auto_1": "plate-4", "caoife_manual_2": "plate-5", "caoife_auto_2": "plate-6", "ctadhg_manual_0": "plate-7", "ctadhg_auto_0": "plate-8"}, "menuText": "✕\n📂 Load Game\nSave\nLoad\nSaved in IndexedDB · 9 saves, 398 KB · browser storage 0.2 of 912 MB\n⤓ Import a character from a file\nTadhg\nLv9 · gatelander · just now\n⤒ Export\n⤱ World\n🗑 Delete character\nAUTOSAVES\nA1\n⟳\nLv9 · Dunmore\nWeaverday 20 Reaping · 10:00 am · 1290🪙 · just now · 50 KB\n🗑\nSLOTS\n1\n💾\nLv9 · Dunmore\nSkyday 19 Reaping · 3:24 pm · 1205🪙 · just now · 50 KB\n🗑\nAoife (playing)\nLv5 · gatelander · 1 min ago\n⤒ Export\n⤱ World\n🗑 Delete character\nAUTOSAVES\nA3\n⟳\nLv5 · Dunmore\nHearthday 8 Reaping · 11:00 am · 417🪙 · 1 min ago · 50 KB\n🗑\nA2\n⟳\nLv5 · near Dunmore\nGuestday 7 Reaping · 7:06 am · 388🪙 · 2 min ago · 50 KB\n🗑\nA1\n⟳\nLv4 · Dunmore\nSkyday 5 Reaping · 1:12 pm · 260🪙 · 2 min ago · 49 KB\n🗑\nSLOTS\n1\n💾\nLv3 · Dunmore\nSeaday 4 Reaping · 9:30 am · 142🪙 · 3 min ago · 47 KB\n🗑\n2\n💾\nLv4 · near Dunmore\nWeaverday 6 Reaping · 6:42 pm · 311🪙 · 2 min ago · 50 KB\n🗑\n3\n💾\nLv5 · Dunmore\nGuestday 7 Reaping · 9:36 pm · 402🪙 · 1 min ago · 50 KB\n🗑\nTraveller\nLv1 · gatelander · 4 min ago\n⤒ Export\n⤱ World\n🗑 Delete character\nAUTOSAVES\nA1\n⟳\nLv1 · the open country\nHearthday 1 Reaping · 6:00 am · 0🪙 · 4 min ago · 4 KB\n🗑"};
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${id}"/></svg>`;
+const screens=[];
+function screen(id,cap,cls,html){const bg=cls.includes('menu')&&PIC[savesOf(OPEN)[0].key]?` style="background-image:url(${PIC[savesOf(OPEN)[0].key]}.jpg)"`:'';screens.push(id);document.getElementById('out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen ${cls}" id="${id}"${bg}>${html}</div>`);}
+const ARCH=Object.fromEntries(DATA.archetypes.map(a=>[a.id,a.label]));
+const PEOPLE={gatelander:'Gatelander',gatelands:'Gatelander',mark:'of the Mark',aurenne:'Aurennois'};
+const peo=p=>PEOPLE[String(p||'').toLowerCase()]||p||'';
+const ago=ts=>{const d=Math.floor((DATA.now-ts)/60000);return d<1?'just now':d<60?`${d} min ago`:d<1440?`${Math.floor(d/60)} h ago`:`${Math.floor(d/1440)} d ago`;};
+// the row reads the calendar's words (calDateLine) and the hour; the era is kept for the large pane
+const parts=m=>{const s=m.date||'';const i=s.lastIndexOf(' · ');return [m.cal||s,i<0?'':s.slice(i+3)];};
+const era=m=>{const s=m.date||'';const i=s.indexOf(', in the ');return i<0?'':s.slice(i+2,s.lastIndexOf(' · '));};
+const place=m=>m.zoneLine||'';
+// the run wrote every save within minutes; for the pictures, the real-time stamps are spread back over a week, newest last
+const REAL={}; {const rk=m=>m.charId==='caoife'?0:m.charId==='ctadhg'?1:2;const order=[...DATA.idx].sort((a,b)=>rk(a)-rk(b)||b.ts-a.ts);const mins=[8,52,190,1440+300,2*1440+90,4*1440,8*1440,9*1440+200,30*1440];order.forEach((m,i)=>REAL[m.key]=DATA.now-mins[Math.min(i,mins.length-1)]*60000);}
+// the picture each save was written over (shoot-current.mjs photographs the view before every save)
+const PIC=DATA.pics||{};
+const pic=m=>PIC[m.key]?`background-image:url(${PIC[m.key]}.jpg)`:'';
+const chars=DATA.chars.map(c=>({...c,last:Math.max(...DATA.idx.filter(m=>m.charId===c.id).map(m=>REAL[m.key]))})).sort((a,b)=>b.last-a.last);
+const OPEN='caoife';
+const savesOf=id=>DATA.idx.filter(m=>m.charId===id).sort((a,b)=>REAL[b.key]-REAL[a.key]);
+
+function who(sel,playing){
+  return `<div class="who"><div class="colh">CHARACTERS</div>${chars.map(c=>{const last=savesOf(c.id)[0];
+    return `<div class="ch ${c.id===sel?'on':''}"><div class="nm">${c.name}${c.id===playing?'<span class="play">PLAYING</span>':''}</div>
+    <div class="ln">${[ARCH[c.arch]||c.arch,peo(c.people)].filter(Boolean).join(' · ')} · level ${c.level}</div>
+    <div class="ln2">${parts(last)[0]}, ${place(last)}</div><div class="ln2">${c.n} save${c.n===1?'':'s'} · ${ago(c.last)}</div></div>`;}).join('')}
+    <div class="ch new">${ico('i-import')} or bring one in from a file…</div></div>`;}
+
+function svRow(m,o={}){const [d,h]=parts(m);const auto=m.kind==='auto';
+  const mark=auto?ico('i-autoring'):ico('i-quill');
+  const kind=auto?'AUTOSAVE':`SLOT ${m.slot+1}`;
+  if(o.pics) return `<div class="sv ${auto?'auto':''} ${o.on?'on':''} ${o.primed?'primed':''}"><div class="thumb ${PIC[m.key]?'':'none'}" style="${pic(m)}"></div>
+    <div><div class="d">${d}</div><div class="p">${o.primed?`<span class="ask">${o.primed}</span>`:`${h}, ${place(m)} · <span class="k">${kind}</span>`}</div></div>
+    <div class="ago">${ago(REAL[m.key])}</div></div>`;
+  return `<div class="sv ${auto?'auto':''} ${o.on?'on':''} ${o.primed?'primed':''}">${mark}
+    <div><div class="d">${d} <span class="hr">· ${h}</span></div><div class="p">${o.primed?`<span class="ask">${o.primed}</span>`:`${place(m)} · <span class="k">${kind}</span>`}</div></div>
+    <div class="st">level ${m.level} · ${m.gold} gold<small>${(m.size/1024).toFixed(0)} KB</small></div><div class="ago">${ago(REAL[m.key])}</div></div>`;}
+
+function foot(mode){return `<div class="regfoot"><span class="btn">${ico('i-import')} Import</span><span class="btn">${ico('i-export')} Export Aoife</span><span class="btn">${ico('i-globe')} Export her world</span>
+  <span class="del">· Delete this save · Delete Aoife</span><span class="store">${DATA.idx.length} saves, ${(DATA.total/1024).toFixed(0)} KB in this browser</span>
+  <span class="go">${mode==='load'?'Load':'Write'}</span><span class="seal">${mode==='load'?'L':'W'}</span></div>`;}
+const head=(mode,sub)=>`<div class="reghead"><span class="h">The Register</span><span class="sub">${sub}</span><span class="mode"><span class="${mode==='save'?'on':''}">Save</span><span class="${mode==='load'?'on':''}">Load</span></span></div><div class="rule"></div>`;
+const ESC=`<div class="esc"><span class="key">↑</span><span class="key">↓</span> choose · <span class="key">E</span> twice to load · <span class="key">Tab</span> save / load · <span class="key">Esc</span> close</div>`;
+
+// ── A: load, no pictures
+{const S=savesOf(OPEN);const sel=S[1];
+ const manual=S.filter(m=>m.kind==='manual'),auto=S.filter(m=>m.kind==='auto');
+ screen('a-load','A — The register <small>characters on the left, the open one\'s saves on the right, newest first; every line in the calendar\'s words</small>','menu',
+ `<div class="parch reg">${head('load','Choose a day to go back to.')}${who(OPEN,OPEN)}
+  <div class="saves"><div class="colh">AOIFE'S SAVES</div>${S.map(m=>svRow(m,{on:m===sel,primed:m===sel?'Press again to load: the day as it was. What you have not saved is lost.':''})).join('')}</div>
+  ${foot('load')}</div>${ESC}`);}
+
+// ── A: save
+{const S=savesOf(OPEN);const slots=[...Array(DATA.manual)].map((_,i)=>S.find(m=>m.kind==='manual'&&m.slot===i)||null);
+ const rows=slots.slice(0,5).map((m,i)=>m?svRow(m,{primed:i===1?'Press again to write over Slot 2. The day it holds is lost.':'',on:i===1}):
+   `<div class="sv empty">${ico('i-leaf')}<div><div class="d">An empty leaf</div><div class="p"><span class="k">SLOT ${i+1}</span></div></div><div class="st"></div><div class="ago"></div></div>`).join('');
+ screen('a-save','A — Saving <small>today\'s eight slots as leaves; a full slot asks before it is written over, in words</small>','menu',
+ `<div class="parch reg">${head('save',`${parts(savesOf(OPEN)[0]).join(' · ')}, ${place(savesOf(OPEN)[0])}`)}${who(OPEN,OPEN)}
+  <div class="saves"><div class="colh">WRITE THIS DAY IN A SLOT · ${DATA.manual} SLOTS, ${DATA.auto} AUTOSAVES KEPT</div>${rows}
+  <div class="sub2">THREE MORE EMPTY LEAVES</div></div>${foot('save')}</div>${ESC}`);}
+
+// ── B: load, with pictures
+{const S=savesOf(OPEN);const sel=S.find(m=>m.kind==='manual'&&m.slot===0)||S[2];const [d,h]=parts(sel);
+ screen('b-load','B — The register with a picture <small>each save keeps a small picture of where you stood (about 15 KB); the chosen one shown large with its lines</small>','menu',
+ `<div class="parch reg b">${head('load','Choose a day to go back to.')}${who(OPEN,OPEN)}
+  <div class="saves"><div class="colh">AOIFE'S SAVES</div>${S.map(m=>svRow(m,{pics:1,on:m===sel})).join('')}</div>
+  <div class="big"><div class="colh">${sel.kind==='auto'?'AUTOSAVE':'SLOT '+(sel.slot+1)}</div><div class="pic" style="${pic(sel)}"></div>
+   <div class="t">${d}</div><div class="l">${era(sel)}</div><div class="l">${h}, ${place(sel)}</div><div class="rule"></div>
+   <div class="dv"><span>Level</span><b>${sel.level}</b></div><div class="dv"><span>Gold</span><b>${sel.gold}</b></div><div class="dv"><span>Written</span><b>${ago(REAL[sel.key])}</b></div>
+   <div class="l f" style="margin-top:8px">${(sel.size/1024).toFixed(0)} KB · ${DATA.store||'IndexedDB'} · build ${DATA.tag||''}</div></div>
+  ${foot('load')}</div>${ESC}`);}
+
+// ── B: save
+{const NOW=savesOf(OPEN)[0];const S=savesOf(OPEN);const slots=[...Array(DATA.manual)].map((_,i)=>S.find(m=>m.kind==='manual'&&m.slot===i)||null);
+ const rows=slots.slice(0,6).map((m,i)=>m?svRow(m,{pics:1,on:i===1,primed:i===1?'Press again to write over Slot 2.':''}):
+   `<div class="sv empty"><div class="thumb none"></div><div><div class="d">An empty leaf</div><div class="p"><span class="k">SLOT ${i+1}</span></div></div><div class="ago"></div></div>`).join('');
+ screen('b-save','B — Saving, with the picture <small>the view you will keep, beside the day it replaces</small>','menu',
+ `<div class="parch reg b">${head('save',`${parts(savesOf(OPEN)[0]).join(' · ')}, ${place(savesOf(OPEN)[0])}`)}${who(OPEN,OPEN)}
+  <div class="saves"><div class="colh">WRITE THIS DAY IN A SLOT</div>${rows}</div>
+  <div class="big"><div class="colh">NOW</div><div class="pic" style="${pic(NOW)}"></div>
+   <div class="t">${parts(NOW)[0]}</div><div class="l">${parts(NOW)[1]}, ${place(NOW)} · level ${NOW.level} · ${NOW.gold} gold</div><div class="rule"></div>
+   <div class="l f">Slot 2 holds ${parts(slots[1])[0]}, ${place(slots[1])}. Writing over it keeps this picture and loses that day.</div></div>
+  ${foot('save')}</div>${ESC}`);}
+
+// ── C: today's menu on the paper
+{const rows=(list)=>list.map(m=>`<div class="r1"><span class="n">${m.kind==='auto'?'A'+(m.slot+1):m.slot+1}</span>${ico(m.kind==='auto'?'i-autoring':'i-leaf')}<span><span class="a">Lv${m.level} · ${place(m)}</span><br><span class="b">${m.dateShort} · ${m.gold} gold · ${ago(REAL[m.key])} · ${(m.size/1024).toFixed(0)} KB</span></span><span class="b">✕</span></div>`).join('');
+ const body=chars.map(c=>{const S=savesOf(c.id);return `<div class="gh">${c.name}${c.id===OPEN?' <small>(playing)</small>':''} <small>Lv${c.level}${c.people?' · '+c.people:''} · ${ago(c.last)}</small><span class="btn">Export</span><span class="btn">World</span><span class="btn">Delete character</span></div>
+   <div class="ss">AUTOSAVES</div>${rows(S.filter(m=>m.kind==='auto'))}<div class="ss">SLOTS</div>${rows(S.filter(m=>m.kind==='manual').sort((a,b)=>a.slot-b.slot))}`;}).join('');
+ screen('c-restyle','C — Restyle only <small>today\'s one column on the paper: the same groups, the same words</small>','menu',
+ `<div class="parch c1"><div class="tt"><span class="h">Load Game</span><span class="tb">Save</span><span class="tb on">Load</span></div><div class="rule"></div>
+  <div class="st">Saved in ${DATA.store||'IndexedDB'} · ${DATA.idx.length} saves, ${(DATA.total/1024).toFixed(0)} KB</div><span class="btn" style="font-size:13px;padding:3px 10px">Import a character from a file</span><div class="scroll">${body}</div></div>`);}
+
+// ── comparison
+screen('cmp-load','Today beside B — loading','cmp',`<div class="pair"><figure><figcaption>Today <small>the Load tab, two characters</small></figcaption><img src="current-load.png"></figure><figure><figcaption>B, the register with a picture</figcaption><img id="cl-b" src=""></figure></div>`);
+window.SCREENS=screens;
+</script>
+</body>
+</html>

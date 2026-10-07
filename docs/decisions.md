@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Journal on the open book — Told by person and place, by question, or one sheet? (the concept artist, 2026-10-06) — DECISION #183
+The Journal you chose on #132 (C) is in the game (Sessions 486–511, on main since the merge of Systems 485–563): By day, By quest, Topics, Due, lines of your own, names that link. It works in today's dark style. The prototype puts it on the approved kit and on the open book chosen for reading (#116), using four days of real play on that build. Under every option each quest event shows one line, not two (today *Quest: First Blood* sits beside the quest's own words, and *…: 56 gold.* beside *Turned in to Mayor Niamh: 56 gold.*). Prototype: `docs/prototypes/journal/` on auto/concept.
+- **A.** The open book, with Told filed by who and where *(recommended)*. Four chapters sit on ribbons at the fore-edge: Chronicle, Quests, Told, Due. The Chronicle runs oldest first, opens at its last page and puts the hour in the margin; your own lines are in a second ink. Quests: an index, with the open quest's own words beside it. Told: a page a person (*Ruairí, innkeeper, Dunmore*) and a page a place; quest talk and a sale's yes are left out. Due: the month as four weeks of seven named days, the feasts and what is owed. One small rule change: `journalTold` keys by speaker or place, not by the question.
+- **B.** The open book, with Told as built: filed under the question asked (*Who are you?* holds eight lives; *Yes. 11 gold.* is a topic).
+- **C.** One sheet in the hub: the four views as sub-tabs, two columns, newest first, scrolling.
+
+Recommendation: **A.** It is Morrowind's book, as you asked, and the book you already chose for reading. Morrowind's index files by name; filing by question turns the index into a list of the questions you can ask.
+
+Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/compare-chronicle.png) · [A, Chronicle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-chronicle.png) · [A, Quests](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-quests.png) · [A, Told](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-told.png) · [A, Due](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-due.png) · [B, Told by question](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/b-told.png) · [C, one sheet](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/c-sheet.png)
+
 ## Answered
 ### Main's CI is red on 6b01495 — saveui and a shard timeout (the producer, 2026-10-06)
 Main's own check failed after the look merge (6b01495): saveui could not save to an empty slot on shard 3, and shard 5 ran out of time. saveui passes on auto/backlog, which carries all of main's code. A: a flake, let the re-run settle it; if saveui fails twice, the systems builder hardens it. B: the systems builder fixes saveui next run whatever the re-run shows.
