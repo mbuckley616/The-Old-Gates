@@ -125,7 +125,7 @@
     const base=[];
     const t=[];
     t.push({label:'What is this place?',response:siteBlurb(site)+` ${lord.title} ${lord.name} has the say here — ${lord.style}.`});
-    t.push({label:'Who are you?',response:(bio.born===site.name?`Born here. ${bio.years} years, man and boy.`:`I came from ${bio.born}, ${bio.years} years back.`)+` I'm ${aOrAn(bio.trade)} ${bio.trade}.`+(bio.spouse?` Married to ${bio.spouse}${bio.kids?`, ${bio.kids} ${bio.kids>1?'children':'child'}`:''}.`:'')+` If I want anything it's ${bio.wish}.`,then:[{label:'Anything troubling you?',response:`Since you ask — ${bio.worry}. ${T.no==='No.'?"Not that it's your business.":"Nobody listens, so."}`}]});
+    t.push({label:'Who are you?',response:(bio.born===site.name?`Born here, and here these ${bio.years} years.`:`I came from ${bio.born}, ${bio.years} years back.`)+` I'm ${aOrAn(bio.trade)} ${bio.trade}.`+(bio.spouse?` Married to ${bio.spouse}${bio.kids?`, ${bio.kids} ${bio.kids>1?'children':'child'}`:''}.`:'')+` If I want anything it's ${bio.wish}.`,then:[{label:'Anything troubling you?',response:`Since you ask — ${bio.worry}. ${T.no==='No.'?"Not that it's your business.":"Nobody listens, so."}`}]});
     t.push({label:'Where do the roads go?',response:def._roadLine});
     t.push({label:'Anything dangerous nearby?',response:def._doorLine,then:[{label:'What would you do about it?',response:pick(Math.random,["Leave it be. That's what I'd do.","Hire the Fighters' Guild. That's what they're for.","Go in daylight, with a friend, and don't touch the walls.","Nothing. It's been there longer than us."])}]});
     t.push({label:'Any news?',get response(){const live=liveRumours(site);return live.length&&Math.random()<.7?pick(Math.random,live):pick(Math.random,RUMORS[reg]||RUMORS.irish);}});

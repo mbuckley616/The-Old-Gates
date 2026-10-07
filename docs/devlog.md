@@ -13892,3 +13892,13 @@ Two tests were made to wait for the game rather than race it:
 
 ### Needs eyes
 Nothing to see on the home island. Off it, every generated road takes a new line once, and with it the layout of the towns along it. A save that owns a house off the home island holds the id of a lot, and that lot may now be another building. That was already possible from one evening to the next.
+
+## v80 — Session 621 — *Born here*, not *man and boy* (register fix, quest review run 10, Finding 19)
+The quest review's run 10 found that every townsperson born in their own town answered *Who are you?* with *Born here. N years, man and boy.* (`richTopics`, `87-world-quests.js`), women as well as men: a townsperson's sex follows the name's bank, and the line never looked at it. The review's replacement is applied exactly as written, `Born here, and here these ${bio.years} years.` It needs neither sex nor people, so it is one line for all four peoples. The rest of the answer (the trade, the spouse, the wish) is unchanged.
+
+### Verified (headless Chromium)
+`bornhere` 4/4 (new): in Dunmore and Portclare, 52 townsfolk born in their town answer *Who are you?*, 25 of them women. None says *man and boy*; they say, for one, *Born here, and here these 6 years. I'm an armourer.* On the build before this session the same suite fails 2 of 4, with Bríd, Róisín and three more saying *man and boy*. `articles` passes. `parsecheck` clean.
+
+### Needs eyes
+Nothing. A townsperson born here with few years (the bio draws 3–42) now says *here these 3 years*, which reads as the years they count, as the old line did.
+
