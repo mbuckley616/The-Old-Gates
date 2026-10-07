@@ -2,7 +2,8 @@
 // 0.05 s a frame; the parry window was read on the real clock. Below 20 fps the two part: a block raised two frames before
 // the blow is 0.1 s of wind-up but, at a second a frame, two seconds of real time, and the 0.2 s window had shut. Now the
 // window is read on `playClockS`, the loop's capped dt summed. Headless Chromium draws the world at about a frame a second,
-// so this test runs the game's own loop, not fixed ticks: it is the slow machine.
+// so this test runs the game's own loop, not fixed ticks: it is the slow machine. A CI runner drew it at 10.9 fps, where two
+// frames are only .18 s, so each frame of a trial is held a quarter of a second: under 4 fps on any machine (S603).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -17,7 +18,7 @@ const trial = (left) => page.evaluate((left) => new Promise(res => {
   PHP = maxHP; PPOST.posture = PPOST.maxPosture; PPOST.stagUntil = 0; ROLL = null; stamina = 100;
   blocking = true; lastBlockAttemptT = performance.now() / 1000; lastBlockAttemptG = playClockS;
   const t0 = performance.now(), c0 = playClockS, hp0 = PHP, post0 = PPOST.posture; let n = 0;
-  const f = () => { n++;
+  const f = () => { n++; const until = performance.now() + 250; while (performance.now() < until) {}
     const struck = e.telegraphT <= 0 && e.atkCd > 0;
     if (struck || n > 60) { const out = { left, frames: n, real: +((performance.now() - t0) / 1000).toFixed(2), play: +(playClockS - c0).toFixed(3), struck,
         lost: hp0 - PHP, postureLost: +(post0 - PPOST.posture).toFixed(1), riposte: typeof e._ripUntil === 'number' && e._ripUntil > 0, fps: +(n / ((performance.now() - t0) / 1000)).toFixed(1) };
