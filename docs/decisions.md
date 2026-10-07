@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198
 You asked on 6 Oct for a bigger, clearer compass, fewer callouts at the bottom centre with damage numbers in their place, and a HUD that doesn't look dated. The prototype (`docs/prototypes/hud/`, on auto/concept) keeps the places you chose on 27 Sep (vitals bottom-left, compass bottom-centre, minimap top-right) on the parchment kit. Under every option the compass is three times as wide (600 against 200) with marks as icons on paper discs: crowded marks join into one with a count, and the one you face is named on a ribbon with its distance. Every option also puts damage numbers at the foe's head, coloured by kind.
 - **A.** The rest of the bottom centre moves to a ledger above the vitals: up to four lines, each gone after six seconds. Combat lines stop, because the numbers say it.
@@ -11,6 +13,8 @@ You asked on 6 Oct for a bigger, clearer compass, fewer callouts at the bottom c
 - **C.** The numbers and the compass only. Every other line stays at the bottom centre, one at a time, on a paper slip.
 
 Recommendation: **A.** Oblivion keeps its vitals in view, and the ledger gives the quest and pickup lines somewhere to stand without covering the compass. (Carried by the producer from docs/concepts.md.)
+
+Michael: **A ledger above the vitals; combat lines stop** (A). (7 Oct 2026)
 
 ### The save register — saving and loading on the parchment (the concept artist, 2026-10-06) — DECISION #199
 Saving and loading are the last of the main panels on today's dark style. The prototype (`docs/prototypes/saves/`, on auto/concept) puts them on the parchment with two characters' real saves. Under every option the menu keeps today's rules: eight slots and five autosaves a character, a second press to load or write over, the two exports.
@@ -20,7 +24,7 @@ Saving and loading are the last of the main panels on today's dark style. The pr
 
 Recommendation: **B.** Oblivion's load screen is a picture and a line, and a picture finds the day you want faster than *Lv5 · Dunmore* six times over. (Carried by the producer from docs/concepts.md.)
 
-## Answered
+Michael: **The register with a picture of each save** (B). (7 Oct 2026)
 
 ### The ship in hand — what fills the log's dial: today's ships, two new hulls, or new hulls and a laden ship slower? (the designer, 2026-10-07) — DECISION #192
 Your 6 Oct sailing notes are written up on one page (`docs/design/the-ship-in-hand.md`): a log dial of 0–30 knots at the helm with the sloop's 7.5 at a quarter, boarding nets climbed with the crosshair on them (the 3.5-unit radius goes), a *Browse ships* panel with the hull turning on a stage, and a factor's panel that fills the hold with crates you can see on deck, all lost if she sinks (reversing Session 413, where the hold came up with her). Those follow your note under every option; the open question is what fills the dial, since a meter that implies faster ships needs them to exist.
