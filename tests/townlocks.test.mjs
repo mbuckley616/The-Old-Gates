@@ -10,7 +10,9 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 
 const world = await page.evaluate(() => { const out = [];
-  for (const t of WORLD.SITES) { if (!/^(village|town|city|port|garrison)$/.test(t.kind)) continue; out.push({ id: t.id, kind: t.kind, p: WORLD.prosperity(t) }); }
+  /* S618 — every cell's places, not the loaded ones (WORLD.SITES held 15 to 46 by when the loader had got to) */
+  const all = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) all.push(...getCell(i, j).sites);
+  for (const t of all) { if (!/^(village|town|city|port|garrison)$/.test(t.kind)) continue; out.push({ id: t.id, kind: t.kind, p: WORLD.prosperity(t) }); }
   const lp = BAG.find(b => b.name === 'Lockpick'); return { towns: out, pickPrice: 12, carried: lp ? lp.qty || 1 : 0, gold }; });
 
 const locks = [];

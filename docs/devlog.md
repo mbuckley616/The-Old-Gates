@@ -13839,3 +13839,29 @@ So two slams leave you standing only with a chest piece on and no healing betwee
 
 ### Needs eyes
 Whether 45% reads as the blow you must step out of. A second slam without a potion between leaves you at 10%, and the master's own blows land in the 8–10 s between slams.
+
+## v80 — Session 618 — A port's lane down to the quay (backlog I, Michael's sailing playtest)
+Michael's sailing playtest: "Ports have no clear connection from the town to the ship buying/upgrading area, not even a road." He was right. A port's quay head is found by stepping from the pad's edge toward the sea until the ground drops to the water, and the shipwright's yard is set beside it on its own flat pad. Both stand outside the town's perimeter lane, and nothing joined them to it. At Portclare the quay lies 174 units from the centre, behind a ridge: from the perimeter lane the ground climbs from 7.6 to 13.4, then drops 12 units in 14 to the quay. That left 81 units with no street, trees on the line, and a walk with W held that stuck on the slope 87.5 units short. At the three smaller ports nearest Dunmore the gap is 7 units. The shipwright's footpath was a 7-unit stub that ended in the grass 2 units short of anything.
+
+Now each port has a lane, a road of its own built when the port's cell loads (`addQuayLane`, `82-world-structures.js`, called beside the cell's roads in `81-world-cells.js`). It runs straight from the perimeter lane (the pad's radius less 8, toward the sea) to the quay head. It is graded evenly from the pad's height to the quay's, so at Portclare it cuts through the ridge rather than climbing it. Because it is a road, the ground takes its bed, the scatter keeps off it, and its ribbon and its line on the local map are drawn like any road's. The trees already standing on it are cleared with the stamps' own pass. The shipwright's footpath now ends on the lane.
+
+Two things keep it out of what it should not touch:
+- Its def is its own (`quay_<site>`, `via:'quay'`), not the site's. The code that takes "the site's first road" for a siege, a road job or a coach never finds it, and fort spurs do not join it.
+- `roadInfo` takes a third argument that skips it. The town's plan uses that argument for its lots, the street and perimeter ribbons, and the barrels. The barrels use it too, because a refused barrel spot changes the rest of the town's random stream, and the plaza villagers' names come after it. With the plan blind to the lane, the town is planned as if the lane were not there.
+
+### Verified (headless Chromium)
+`portlane` 6/6 (new), at the four ports nearest Dunmore (Portclare and three others):
+- From the perimeter lane to the quay head the line is street all the way: 92 units at Portclare, 8 at the others.
+- The shipwright's footpath ends on the lane (0.00 off). Nothing solid stands on it.
+- A walk with W held through the game's own loop reaches the quay head: 23.6 s at Portclare, 1.7 s at the others.
+
+On the build before this session the same suite fails 3 of 6. The line had 81 units off street at Portclare and 7 at the others, the footpath stopped 1.8–2.1 short, and the walk stuck 87.5 units from Portclare's quay.
+
+A comparison against that build, town by town, of every building's id, kind and place and every townsperson's name and role, run twice on each build. At Portclare and the second port the four runs are identical. At the other two ports the layout is not the same from run to run *on the old build itself*: the same ids sit at other places, and other people stand there. So those two towns cannot show whether the lane changes anything. The fault is older than this session. It is the next session's work, filed in backlog I.
+
+Neighbouring suites pass alone: shipwright, shipwrightvoice, harbour, shipmoor, ships, riverquay, townroads (no building on a road, at most 2% of a town's street on a road), cargo, placenames, boxspots, signs, shoperrands, towngate, waybands, blacksail and placesave. riverquay and townroads had failed when run four at a time; both pass alone, on this build and the old.
+
+`townlocks` (Session 608's) failed here and passed on the old build. That came from the test, not the game. It counted the places in `WORLD.SITES`, which are the cells loaded so far. Three probes of the old build alone, three seconds apart, read 15, 15 and 25 places, and the check wants more than 20. It now reads every cell's places through `getCell`, as `allPorts` does: 522 places, in the four bands 95 / 293 / 130 / 4. `parsecheck` clean.
+
+### Needs eyes
+How the cutting through Portclare's ridge looks: the lane's bed is up to about 8 units below the ridge top, and the banks blend over the road's usual 9.5. It may want a retaining wall or a stair, which is the look builder's. The lane is straight from the perimeter lane to the quay; where a house or a stall stands near its start inside the town, it is not routed round.

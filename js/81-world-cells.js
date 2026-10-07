@@ -561,12 +561,12 @@
            // ports: the shore shelf that meets the quay, stamped now so the chunks are built with it
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head
-             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});
+             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};t.quayLane={a:{x:t.x+sd.dx*(t.pad-8),z:t.z+sd.dz*(t.pad-8)},b:{x,z}};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});
            // S433 — a bank town's quay spot: the water line below the pad, found now; a stamp there clears the trees and rocks off the bank without flattening it
            c.sites.forEach(t=>{if(!t.bank||t.kind==='port')return;const B=t.bank;let x=t.x+B.dx*t.pad,z=t.z+B.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;let wx=x,wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx;wz+=B.dz;n++;}if(Math.hypot(wx-x,wz-z)>30)return;
              t.quaySpot={x:wx,z:wz};const qs=addStamp({id:'rquay_'+t.id,kind:'door',noFlat:true,x:wx-B.dx*5,z:wz-B.dz*5,r:17,blend:2,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(qs);});},
-      ()=>{c.roadDefs.forEach(def=>{const rd=buildRoad(def);if(rd){rd.cell=k;L.roads.push(rd);}});try{track(()=>buildBridges(c,k,L));}catch(e){console.warn('bridges',e);}},
-      ()=>{solStart=STATIC_SOL.length;c.doors.forEach(e=>{const w=placeDoor(e,k);if(w)L.doorSeeds.push(e.seed);});c.doors.forEach(e=>{if(e.kind==='fort_door'&&dungeonWorldPos[e.seed])addFortSpur(e,k);});L.stamps.push(...STAMPS.filter(s=>s.cell===k&&s.kind==='door'));try{L.cleared=clearScatterUnder(L.stamps);}catch(e){console.warn('clear',e);}},
+      ()=>{c.roadDefs.forEach(def=>{const rd=buildRoad(def);if(rd){rd.cell=k;L.roads.push(rd);}});c.sites.forEach(t=>{if(t.quayLane){const rd=addQuayLane(t);if(rd){rd.cell=k;L.roads.push(rd);}}}); /* S618 — a port's lane to its quay */try{track(()=>buildBridges(c,k,L));}catch(e){console.warn('bridges',e);}},
+      ()=>{solStart=STATIC_SOL.length;c.doors.forEach(e=>{const w=placeDoor(e,k);if(w)L.doorSeeds.push(e.seed);});c.doors.forEach(e=>{if(e.kind==='fort_door'&&dungeonWorldPos[e.seed])addFortSpur(e,k);});L.stamps.push(...STAMPS.filter(s=>s.cell===k&&s.kind==='door'));try{L.cleared=clearScatterUnder([...L.stamps,...L.roads.filter(rd=>rd.def.via==='quay').flatMap(rd=>rd.pts.map(p=>({x:p.x,z:p.z,r:ROAD_HALF+3})))]);}catch(e){console.warn('clear',e);}},
       ()=>track(()=>buildImpostorsFor(c)),
       ()=>track(()=>buildFarFor(c)),
       ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)STATIC_SOL[n].cell=k;L.pending=false;if(c.home)homeLoaded();},

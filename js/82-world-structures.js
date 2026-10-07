@@ -404,20 +404,27 @@
     {
       const p=dungeonWorldPos[e.seed];if(!p)return;const gx=p.x,gz=p.z+33; // just outside the compound gate
       let best=null,bd=1e9;
-      for(const r of ROADS){if(r.def.via==='spur')continue;for(const q of r.pts){const d=Math.hypot(q.x-gx,q.z-gz);if(d<bd){bd=d;best=q;}}}
+      for(const r of ROADS){if(r.def.via==='spur'||r.def.via==='quay')continue;for(const q of r.pts){const d=Math.hypot(q.x-gx,q.z-gz);if(d<bd){bd=d;best=q;}}}
       if(!best)return;
       const n=Math.max(2,Math.round(bd/6));const pts=[];
       for(let i=0;i<=n;i++){const t=i/n;pts.push({x:gx+(best.x-gx)*t,z:gz+(best.z-gz)*t});}
       const rd=registerRoad({a:'door_'+e.seed,b:'road',via:'spur'},pts);if(rd){rd.cell=cellK;const L=LOADED.get(cellK);if(L)L.roads.push(rd);}
     }
   }
-  // Nearest road within RREACH: {d, y, seg} or null.
-  function roadInfo(x,z){
+  // S618 — a port's lane: from the town's ring (the perimeter lane, pad-8 out) straight down to the quay head, graded evenly
+  // from the pad's height to the quay's, so it cuts through a rise rather than climbing it (Portclare's quay lies under a
+  // 13-unit ridge). Its own def, not the site's: the site's roads (sieges, road jobs, the coaches) never find it.
+  function addQuayLane(t){const A=t.quayLane.a,B=t.quayLane.b,L=Math.hypot(B.x-A.x,B.z-A.z);if(L<3)return null;
+    const ya=baseH(A.x,A.z),yb=Math.max(SEA_Y+.6,baseH(B.x,B.z)),n=Math.max(2,Math.round(L/3)),pts=[];
+    for(let i=0;i<=n;i++){const u=i/n;pts.push({x:A.x+(B.x-A.x)*u,z:A.z+(B.z-A.z)*u,y:ya+(yb-ya)*u});}
+    const road={def:{a:'quay_'+t.id,b:'road',via:'quay'},pts};ROADS.push(road);indexRoad(road);return road;}
+  // Nearest road within RREACH: {d, y, seg} or null. noLane: a port's lane is not counted (the town's own plan, S618)
+  function roadInfo(x,z,noLane){
     const arr=RGRID.get(rcell(x,z));
     if(!arr)return null;
     let best=null,bd=RREACH;
     for(let i=0;i<arr.length;i++){
-      const s=RSEG[arr[i]];
+      const s=RSEG[arr[i]];if(noLane&&s.road.def.via==='quay')continue;
       const vx=s.bx-s.ax,vz=s.bz-s.az;
       let t=s.len2>0?((x-s.ax)*vx+(z-s.az)*vz)/s.len2:0;
       t=t<0?0:t>1?1:t;

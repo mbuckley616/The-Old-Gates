@@ -160,13 +160,14 @@
         // S193 — where a road already runs along or across the street, the road is the street: the ribbon breaks
         // there rather than doubling it or weaving beside it (the playtest's overlapping patterns)
         let run=[];const flush=()=>{if(run.length>1&&Math.hypot(run[run.length-1].x-run[0].x,run[run.length-1].z-run[0].z)>3)paths.push({w:2.4,pts:[run[0],run[run.length-1]]});run=[];};
-        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+1.2+3.5)flush();else run.push({x,z});}flush();
+        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z,true);if(ri&&ri.d<ROAD_HALF+1.2+3.5)flush();else run.push({x,z});}flush();
       });
       // a perimeter lane every street runs into (no dead ends in a field)
       // (S193: broken where a road crosses it, the road being the way through there)
-      {let ring=[];const n=Math.max(48,Math.round(inner/1.5));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2,x=cx+Math.cos(a)*inner,z=cz+Math.sin(a)*inner;const ri=roadInfo(x,z);
+      {let ring=[];const n=Math.max(48,Math.round(inner/1.5));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2,x=cx+Math.cos(a)*inner,z=cz+Math.sin(a)*inner;const ri=roadInfo(x,z,true);
         if(ri&&ri.d<ROAD_HALF+1.2+1.5){if(ring.length>1)paths.push({w:2.2,pts:ring});ring=[];}else ring.push({x,z});}if(ring.length>1)paths.push({w:2.2,pts:ring});}
     }
+    const quayLane=site.kind==='port'?site.quayLane:null; // S618 — the lane to the quay is a road of its own (addQuayLane); the plan below is drawn as if it were not there, so lots and ids stay
     // v80 S243 — the lots as a function of prosperity, so that a house's id follows its lot. A rebuild at another
     // prosperity (fewer lots; the guild halls gone below 60) used to hand every id in the town to another building, and
     // your own house (worldState.owned is keyed by id) with it. Ids are now the lot's place in the town's layout at its
@@ -185,7 +186,7 @@
             const lx=mx+nx*side*(lat+d/2),lz=mz+nz*side*(lat+d/2);
             const dc=Math.hypot(lx-cx,lz-cz);
             if(dc>inner-4||dc<13)continue;
-            const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
+            const ri=roadInfo(lx,lz,true);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
             // keep clear of every street line (grid) — not in an intersection
             let nearStreet=false;
             for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;const dist=Math.abs(ex*(-l.dz)+ez*l.dx);if(dist<Math.max(w,d)/2+2.2&&!(Math.abs(l.dx-dx)<1e-6&&Math.abs(l.dz-dz)<1e-6&&Math.abs(ex*(-l.dz)+ez*l.dx-0)<1e-3)){/* different line too close */ if(!(l.px===px_&&l.pz===pz_&&l.dx===dx&&l.dz===dz))nearStreet=true;}}
@@ -220,7 +221,7 @@
         const ang=r()*Math.PI*2,rad0=18+r()*Math.max(8,inner-30);
         const lx=cx+Math.cos(ang)*rad0,lz=cz+Math.sin(ang)*rad0;
         const w=5+Math.floor(r()*3),d=4+Math.floor(r()*3);
-        const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
+        const ri=roadInfo(lx,lz,true);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
         let nearStreet=false;for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;if(Math.abs(ex*(-l.dz)+ez*l.dx)<Math.max(w,d)/2+2.2)nearStreet=true;}
         if(nearStreet)continue;
         const rad=Math.max(w,d)/2+2.0;
@@ -241,7 +242,7 @@
       const kept=[];
       // S193 — a lot made bigger above (a keep, a guild hall, a church) is checked against the roads again: its corners
       // could reach one (3 of 1,062 buildings in thirty towns stood on a road)
-      const lotOnRoad=lot=>{const c=Math.cos(lot.ry),s_=Math.sin(lot.ry);for(let u=-1;u<=1;u+=.5)for(let v=-1;v<=1;v+=.5){const lx=u*lot.w/2,lz=v*lot.d/2;const ri=roadInfo(lot.x+lx*c+lz*s_,lot.z-lx*s_+lz*c);if(ri&&ri.d<ROAD_HALF+.6)return true;}return false;};
+      const lotOnRoad=lot=>{const c=Math.cos(lot.ry),s_=Math.sin(lot.ry);for(let u=-1;u<=1;u+=.5)for(let v=-1;v<=1;v+=.5){const lx=u*lot.w/2,lz=v*lot.d/2;const ri=roadInfo(lot.x+lx*c+lz*s_,lot.z-lx*s_+lz*c,true);if(ri&&ri.d<ROAD_HALF+.6)return true;}return false;};
       lots.forEach(lot=>{const rad=Math.max(lot.w,lot.d)/2+2.0;if(Math.hypot(lot.x-cx,lot.z-cz)>inner-Math.max(lot.w,lot.d)/2-1)return; // whole footprint inside the ring
         if(lot.w*lot.d>60&&lotOnRoad(lot))return;
         if(kept.some(k=>Math.hypot(k.x-lot.x,k.z-lot.z)<Math.max(k.w,k.d)/2+2.0+rad))return;kept.push(lot);});
@@ -304,6 +305,7 @@
         const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
         let ex=fx+lot.tx*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND)),ez=fz+lot.tz*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND));
         const ri=roadInfo(ex,ez);if(ri&&ri.d>ROAD_HALF+1&&!lot.street){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,t=ri.t;ex=sg.ax+vx*t;ez=sg.az+vz*t;}
+        if(lot.k==='sw'&&quayLane){const A=quayLane.a,B=quayLane.b,vx=B.x-A.x,vz=B.z-A.z,L2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((fx-A.x)*vx+(fz-A.z)*vz)/L2));ex=A.x+vx*u;ez=A.z+vz*u;} /* S618 — the yard's path ends on the quay lane */
         footReq.push({fx,fz,ex,ez,lot,hid:`g_${site.id}_${i}`}); // S193 — routed once every building stands (below)
       }
       const doorX=lot.x+lot.tx*(lot.d/2+.15),doorZ=lot.z+lot.tz*(lot.d/2+.15);
@@ -407,7 +409,7 @@
       addMesh(wellGeo(),cx+6,cz+4,r()*Math.PI,1.3);
       for(let i=0;i<plan.stalls;i++){
         const ang=r()*Math.PI*2,rad0=9+r()*5,sx=cx+Math.cos(ang)*rad0,sz=cz+Math.sin(ang)*rad0;
-        const ri=roadInfo(sx,sz);if(ri&&ri.d<4)continue;
+        const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;
         addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);
       }
     }
