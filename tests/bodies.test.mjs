@@ -31,7 +31,8 @@ check('and each still closes and winds up its blow on you', world.every(w => w.t
 
 const folk = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const n = S.npcs.find(n => n.g.visible && n.sched && n.sched.type === 'villager') || S.npcs.find(n => n.g.visible);
   const p = n.g.position; const hx = p.x, hz = p.z; px = hx; pz = hz + 2;
-  const r = _walkInto(() => ({ x: n.g.position.x, z: n.g.position.z })); return { name: n.def.name, ...r }; });
+  /* S629 — held where she stands each frame: her own step into you (she moves you aside, by design) read 0.501 once in four runs */
+  const r = _walkInto(() => { n.g.position.x = hx; n.g.position.z = hz; return { x: hx, z: hz }; }); return { name: n.def.name, ...r }; });
 console.log(JSON.stringify(folk));
 check('W into a townsperson in Dunmore stops you at 0.55 (0.3 + 0.25)', folk.min >= .52 && folk.min < 1.5, folk);
 
