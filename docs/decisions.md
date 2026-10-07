@@ -3,7 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-
 ### The wolves and the cave bear — a fiercer face, a heavier build, and how large? (the look builder, Session 620, 2026-10-07) — DECISION #187
 Michael's two mesh-inspector notes of 6 Oct: the wolves are far too small, slender and comical, and the cave bear should sit on par with a grizzly beside them. Measured first, against a bandit's height: in play a Wolf's back stands at 38% of a man's height, a Snow Wolf's 46%, a Dire Wolf's 49%, and the Cave Bear's hump at 77%. A real grey wolf is about 45% and a grizzly about 60–65%, so in play the bear is already grizzly-sized; but the mesh inspector builds every beast at size 1 rather than its size in play (the dragon was fixed the same way in Session 524), so there the wolf looks bigger than in play and the bear only a little larger than the wolf. The prototype (`docs/prototypes/wolfbear/shoot.mjs`, which patches a copy of the wolf's bake; the game is not changed) gives the wolves a new head and build and new sizes:
 
@@ -22,6 +21,15 @@ Pictures: [line-up today](https://raw.githubusercontent.com/mbuckley616/The-Old-
 **Recommendation: A.** A wolf at a real wolf's size reads small on a screen, beside a man in armour, and the brief asks the wild to be dangerous; the face was the larger part of "comical". The size is only how the beast is drawn: its reach and hits are not read from it, so a bigger wolf bites from the same distance. Whether the bite should reach further with the size is the systems builder's call after this one. The size numbers live in the foes' table (`42-zone-enemies.js`, one number per kind).
 
 ## Answered
+
+### Main's CI is red on 9ecc10d — saveui and lod again (the producer, 2026-10-07)
+Main's own check failed on 9ecc10d, a docs-only merge: `saveui` on shard 3 and `lod` on shard 1; the other suites passed. Both have failed this way on unchanged code before and passed on a re-run. The next main run (759200d, the quest drafts, docs only) is the re-check.
+- **A.** *(recommended)* Treat them as flakes; approved branches merge under their own green CI, and the systems builder makes `saveui` and `lod` sturdy on a slow runner.
+- **B.** Hold code merges until main is green on its own.
+- **C.** Re-run the failed shards and decide again.
+
+Withdrawn by the producer: main's own check passed on all eight shards at 6ea6f47 (05:19Z run), so no call was needed; the same two flaky suites (`lod`, plus `shoresave`) failed on auto/systems b67812f and stay with the systems builder. (2026-10-07)
+
 ### The Journal on the open book — Told by person and place, by question, or one sheet? (the concept artist, 2026-10-06) — DECISION #183
 The Journal you chose on #132 (C) is in the game (Sessions 486–511, on main since the merge of Systems 485–563): By day, By quest, Topics, Due, lines of your own, names that link. It works in today's dark style. The prototype puts it on the approved kit and on the open book chosen for reading (#116), using four days of real play on that build. Under every option each quest event shows one line, not two (today *Quest: First Blood* sits beside the quest's own words, and *…: 56 gold.* beside *Turned in to Mayor Niamh: 56 gold.*). Prototype: `docs/prototypes/journal/` on auto/concept.
 - **A.** The open book, with Told filed by who and where *(recommended)*. Four chapters sit on ribbons at the fore-edge: Chronicle, Quests, Told, Due. The Chronicle runs oldest first, opens at its last page and puts the hour in the margin; your own lines are in a second ink. Quests: an index, with the open quest's own words beside it. Told: a page a person (*Ruairí, innkeeper, Dunmore*) and a page a place; quest talk and a sale's yes are left out. Due: the month as four weeks of seven named days, the feasts and what is owed. One small rule change: `journalTold` keys by speaker or place, not by the question.
