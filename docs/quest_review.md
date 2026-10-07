@@ -6,13 +6,35 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `598e95e` | run 9, from `178e96f`: Sessions 504–563 merged from auto/systems, the feasts, the dated work, the barber's first slice |
-| auto/systems | `dac8e61` | run 9, Sessions 564–567 against main |
-| auto/backlog | `e2b3109` | run 9, Sessions 568–573 against main |
-| auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates | `67487fc`, `261d0ce`, `8ce95be` | run 9: auto/backlog's sessions plus a prototype each; no string of their own |
-| auto/producer, auto/critic, auto/concept, auto/design | — | run 9: ahead in docs only, or not at all |
+| main | `9ecc10d` | run 10, from `598e95e`: the look sessions 598–611 merged, the barber's panel with Finding 17 applied, the producer's docs |
+| auto/systems | `3c62b39` | run 10, Sessions 591–618 against main |
+| auto/backlog | `89f1046` | run 10: level with main |
+| auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | run 10: one prototype commit each; no string a player reads |
+| auto/producer, auto/critic, auto/concept, auto/design | — | run 10: level with main, or ahead in docs only |
 | auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+
+---
+
+## Run 10 — 7 Oct 2026
+
+About 35 new strings on main and 60 on auto/systems; one finding, on a line older than the baseline that auto/systems touched this week.
+
+**main** (`598e95e..9ecc10d`). Finding 17 is in the code as written (*Not enough gold: the visit is ${fee}.*, *Not enough gold.*). The barber's *Leave as you came* and *You rise from the chair as you sat down.* are good. The rest is the inspector's chrome (*Plants, trees, rocks*, *Your body in robes*) and the armour kit's names (*Bracers*, *Leggings*, *Soft Boots*, *Under-robe*, *Worn Breeches*, *Tattered Tunic*), which are plain and right.
+
+**auto/systems** (Sessions 591–618). Finding 18 is in the code as written: the pious temper keeps *The Weaver keeps this door.* and *Go with the Weaver.* The new house names (*Old ${nm}'s House*, *${nm} the Cooper's House at the north end*), the quest markers on the map (*Where you were told*, *On your compass*), *An arrow!*, the trades' articles (*an armourer*, *an Adept*) and *It's done.* shown only when something is done (Michael's note of 5 Oct, second sentence) are all good. The strongbox's keepsakes (*A lock of hair in paper*, *A child’s top*) are the best item names in the build. Finding 19 is old text in a line Session 597 changed.
+
+**Drafted:** *The Makers' Things* (`docs/quest_drafts.md`), the first of the two runs Michael's B on #175 gives the quest writer.
+
+### Finding 19 — main and auto/systems — every townsperson born in their town says *man and boy*
+
+**Where.** `richTopics`, the *Who are you?* answer, `87-world-quests.js` (grep `man and boy`).
+
+**Text.** *Born here. ${bio.years} years, man and boy.*
+
+**Why.** Every woman in a town she was born in says *man and boy* of herself (a townsperson's sex is the name's, `female` in `makeDef`). The line needs neither sex nor people to say what it says, so it is mended once for all four peoples.
+
+**Replacement.** `` `Born here, and here these ${bio.years} years.` ``
 
 ---
 
