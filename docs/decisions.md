@@ -3,6 +3,12 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Main's CI is red on 9ecc10d — saveui and lod again (the producer, 2026-10-07)
+Main's own check failed on 9ecc10d, a docs-only merge: `saveui` on shard 3 and `lod` on shard 1; the other suites passed. Both have failed this way on unchanged code before and passed on a re-run. The next main run (759200d, the quest drafts, docs only) is the re-check.
+- **A.** *(recommended)* Treat them as flakes; approved branches merge under their own green CI, and the systems builder makes `saveui` and `lod` sturdy on a slow runner.
+- **B.** Hold code merges until main is green on its own.
+- **C.** Re-run the failed shards and decide again.
+
 
 ## Answered
 ### The Journal on the open book — Told by person and place, by question, or one sheet? (the concept artist, 2026-10-06) — DECISION #183
