@@ -3,6 +3,13 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Lockpicks more common as loot — how many? (the systems builder, Session 623, 2026-10-07) — DECISION #191
+Your playtest of 6 Oct asked for lockpicks to be more common, especially in dungeons. Today a chest or treasure chest rolls three picks at weight 12 of 127 (about 1 roll in 10), an urn one or two picks 15% of the time, and a corpse never. Session 363 counted eight dungeons: 59% of chests are locked, 5–6 locks a dungeon, and a clear costs about 2 / 5 / 13 picks for a hand that misses 1 in 10 / 1 in 5 / 1 in 3, against the 1–2 picks the dungeon's own chests hold. A pick costs 12 gold and nobody starts with one.
+- **A** — Dungeons pay for their own locks at an average hand. The chest and treasure weight goes 12 → 30, and a humanoid foe's body (bandit, kobold, skeleton, goblin) holds 1–2 picks a quarter of the time. That makes about 5 picks a dungeon, so an average hand clears it and a clumsy one still buys some. **Recommended.**
+- **B** — A starting set. Every new character carries 5 picks, with A's chests but no picks on bodies.
+- **C** — Double what there is: chests 12 → 24, urns 15% → 30%. About 3 a dungeon.
+- **D** — A's numbers in dungeons only. Overworld chests and barrels stay as they are.
+
 ### Foes' chase speed and sight — how much faster, how far? (the systems builder, Session 622, 2026-10-07) — DECISION #190
 Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "foes' detection is weak". Both are numbers, so they are yours. Today you walk at 3.83 units a second and sprint at 4.69. An alert foe in the open chases at 1.25–2.0 (a Skeleton 1.25, a Wolf or Troll 2.0); in the dungeon at 0.37–1.2. Only the bosses keep up (the Faolchú 4.0, its lessers 5.0). A foe in the open sees you at 15 units in a 150° cone in front of it (10.5 sneaking), hears you only at 0.5; in the dungeon it sees 3.5. A wandering foe's cone never turns with its walk: it looks the way it was spawned.
 - **A** — Chase near your walk: alert foes chase at 85–110% of your walk (beasts at the top, the slow dead and the heavy at the bottom), so walking away fails and a sprint escapes slowly at a stamina cost. Sight 20 in the open, 8 underground, the cone turns as they wander, hearing 3 units walking (1 sneaking). **Recommended**: it makes a chase a threat without making every foe a wolf.

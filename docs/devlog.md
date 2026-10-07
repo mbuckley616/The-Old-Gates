@@ -13921,3 +13921,18 @@ Neighbouring suites pass: dungeon (4), dungeonfoes, masterslam, mimic (2), tells
 ### Needs eyes
 Whether dungeon fights now feel pressed. The other half of Michael's note is the numbers, not a fault: a foe's chase speed in the open (1.25–2 units a second alert) and in the dungeon (0.37–1.2) against yours. That and how far foes see are DECISION #190, not changed here.
 
+## v80 — Session 623 — Foes and townsfolk are solid to you (backlog C, Michael's playtest of 6 Oct)
+Michael's playtest of 6 Oct: "NPCs and monsters should collide: you should not be able to walk through them." Nothing stopped you: your step was tested against walls, trees and furniture, never against a body. You could stand inside a foe, and a foe swinging from inside you was hard to read.
+
+Now, after your step each frame, `pushFromBodies` (`90-main.js`) treats every live foe and every townsperson out in the world as a disc and pushes you to its edge. If the edge is inside a wall it pushes you along the one axis that is free, or leaves you where you are. Your disc is 0.25. A townsperson's is 0.3, indoors too (`INT_NPCS`). A foe's is 0.3 × its size from its def, carried now on the foe as `size` (a Wolf 0.75, a Bandit 1, an Ogre 1.6, the Faolchú 1.85). It is capped so the foe can still come inside its own blow: 0.7 in the open (0.9 a boss), where a foe stops at 1.0 and swings within 1.1, and 0.5 underground, where it stops at 0.6 (Session 622) and swings within 0.9. Only you are pushed. Foes and townsfolk still pass through one another, and a townsperson who walks into you moves you aside. Dead foes, hidden townsfolk and the locked foes you have not grown into are not bodies.
+
+### Verified (headless Chromium)
+`bodies` 8/8 (new), W held straight into each for 3 s through the game's loop. In the open, a Bandit, a Wolf and an Ogre stop you at 0.55, 0.475 and 0.73, their discs plus yours, and each still closes and winds up 2 blows. A townsperson in Dunmore (Niamh) stops you at 0.546. Underground, a Slime, a Golem and a Cave Troll stop you at 0.54–0.544, and each winds up 1–2 blows. On the build before this session the suite does not run (no `bodyR`); there you walked through.
+
+Neighbouring suites pass: talkaim, cowards, duelrhythm, guardplay, watch, shipdead, deckprops, captainguard, keepercone and innrooms. Lockpicks as loot, the next item, wants a number: DECISION #191.
+
+`parsecheck` clean.
+
+### Needs eyes
+How a crowd in a narrow street feels. A townsperson's walk is not stopped by you, so in a doorway they shoulder you aside rather than wait. Whether a roll should pass through a foe (it does not now; in Elden Ring it does not either). The dungeon's discs are all 0.55 with you, since its foes carry no size; a Cave Troll is as narrow as a Skeleton.
+

@@ -271,7 +271,7 @@ function faolchuAt(sc, sx, sz, ey){
     homeX:sx, homeZ:sz,
     name:d.displayName, displayName:d.displayName,
     mesh:g, hpFg, hpBg, limbs, el,
-    spd:d.spd, dmg:d.dmg, atk:d.atk, atkSpd:d.atk, atkCd:0,
+    size:d.scale, spd:d.spd, dmg:d.dmg, atk:d.atk, atkSpd:d.atk, atkCd:0,
     xpVal:d.xpVal,
     dead:false, alert:false, locked:false,
     walkT:Math.random()*Math.PI*2,
@@ -427,7 +427,7 @@ function spawnLesserFaolchu(parentBoss){
     homeX:sx, homeZ:sz,
     name:'Lesser Faolchú', displayName:'Lesser Faolchú',
     mesh:g, hpFg, hpBg, limbs, el,
-    spd:lesserDef.spd, dmg:lesserDef.dmg, atk:lesserDef.atk, atkSpd:lesserDef.atk, atkCd:0.5,
+    size:lesserDef.scale, spd:lesserDef.spd, dmg:lesserDef.dmg, atk:lesserDef.atk, atkSpd:lesserDef.atk, atkCd:0.5,
     xpVal:lesserDef.xpVal,
     dead:false, alert:true, locked:false,
     walkT:Math.random()*Math.PI*2,
@@ -860,7 +860,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // v61gj — Build the zone enemy state, init posture, then return. Stamp `shape`
   // so the posture-family lookup resolves directly (zone shapes are wolf/spider/
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
-  const zoneE = {limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
+  const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*sc2;} // the bar over a person's head

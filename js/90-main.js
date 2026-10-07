@@ -25,6 +25,23 @@ function perfNote(now,tLoop,tDraw0,tDraw1){
   PERF.last=r;PERF.el.textContent=`${r.fps} fps · frame ${r.frameMs} ms (worst ${r.worstMs}) · loop ${r.jsMs} · draw ${r.drawMs}\n${r.calls} calls · ${(r.tris/1000).toFixed(0)}k tris · ${r.w}×${r.h} at ${r.px}× · shadows ${r.shadows?'on':'off'}`;
   PERF.n=0;PERF.t0=now;PERF.frame=0;PERF.worst=0;PERF.js=0;PERF.draw=0;PERF.calls=0;PERF.tris=0;}
 let _bareSwingMax=0; // v80 S382 — the length of a swing with no view model, latched on its first frame (issue #81)
+// S623 — Michael's playtest of 6 Oct: you walked through foes and townsfolk. After your step, a live foe or a townsperson in
+// sight of the world stands as a disc and pushes you out to its edge, never into a wall. A foe's disc follows its size, capped
+// so it can still come inside its own blow (the dungeon's foes stop at 0.6 and swing within 0.9; the open world's at 1.0, 1.1).
+const BODY_YOU=.25;
+function bodyR(e,cap){const s=e.size||(e.mesh&&e.mesh.scale&&e.mesh.scale.x)||1;return Math.max(.2,Math.min(cap,.3*s));}
+function pushFromBodies(){
+  if(dead)return;
+  const _int=isInterior(),inD=!_int&&activeZoneId==='dungeon';
+  const free=(x,z)=>_int?!intSolidAt(x,z,.3,0):inD?!dBlk(x,z):!currentZoneSolid(x,z);
+  const push=(bx,bz,r)=>{const dx=px-bx,dz=pz-bz,d=Math.hypot(dx,dz),R=r+BODY_YOU;if(d>=R)return;
+    const ux=d>1e-4?dx/d:-fwdX,uz=d>1e-4?dz/d:-fwdZ;const nx=bx+ux*R,nz=bz+uz*R;
+    if(free(nx,nz)){px=nx;pz=nz;}else if(free(nx,pz))px=nx;else if(free(px,nz))pz=nz;};
+  if(_int){if(typeof INT_NPCS!=='undefined')for(const n of INT_NPCS){if(n&&n.g&&n.g.visible)push(n.g.position.x,n.g.position.z,.3);}return;}
+  if(inD){if(typeof ENEMIES!=='undefined')for(const e of ENEMIES){if(e.dead||e.floor!==currentFloor||Math.abs(e.x-px)>2||Math.abs(e.z-pz)>2)continue;push(e.x,e.z,bodyR(e,.5));}return;}
+  for(const e of ZE){if(!e||e.dead||e.locked||Math.abs(e.x-px)>3||Math.abs(e.z-pz)>3)continue;if(e.mesh&&!e.mesh.visible)continue;push(e.x,e.z,bodyR(e,e.isBoss||e.boss?.9:.7));}
+  if(activeZoneId==='world'&&typeof npcs!=='undefined')for(const n of npcs){if(!n.g||!n.g.visible)continue;const p=n.g.position;if(Math.abs(p.x-px)>2||Math.abs(p.z-pz)>2)continue;push(p.x,p.z,.3);}
+}
 function loop(now){
   const _pfL=PERF.on?performance.now():0;
   requestAnimationFrame(loop);
@@ -359,6 +376,7 @@ function loop(now){
       if(nz2>R&&nz2<iD-R&&!behindCounter)pz+=dz;
     }
     else{const[nx,nz]=dSlide(px,pz,tdx,tdz);px=nx;pz=nz;}}
+  try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
 
   // Jump physics
   const GRAVITY=18,JUMP_VEL=5.5;
