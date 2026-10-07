@@ -1528,7 +1528,7 @@ function killZoneEnemy(e,sc,tag=''){
   if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,activeTerrainH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.set(e.x, terrainY+0.15, e.z);}
-  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);}});
+  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);if(c.material.emissive&&c.material.emissive.getHex()===0xffaa00)c.material.emissive.setHex(0);}}); /* S626 — a guard-break flash still on at the kill: its timer clears the old material, not this clone */
   // Hide HP bar
   if(e.hpFg){e.hpFg.visible=false;if(e.hpFg.parent)e.hpFg.parent.children.forEach(c=>{if(c.geometry&&c.geometry.type==='PlaneGeometry')c.visible=false;});}
   // Loot glow + spark (scene-aware — uses the scene the enemy was added to)

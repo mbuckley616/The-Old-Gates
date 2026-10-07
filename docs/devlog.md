@@ -13981,3 +13981,16 @@ Neighbouring suites pass: duel (dying in the ring), autosave and saves.
 
 ### Needs eyes
 Nothing beyond the fix. The critic's small note that the threshold save is labelled for the nearest town, not the gate, is not changed here.
+
+## v80 — Session 626 — A foe killed in a guard-break flash falls in its own colours (backlog I, the critic's s476 run)
+The critic, 7 Oct, noted but did not file: every corpse they made under the harness glowed flat orange. A guard break (a bash, a power attack into a raised shield, the dungeon's and the open world's versions) lights the body's material orange (`emissive` 0xffaa00) and a 220 ms `setTimeout` puts it back. The kill, `killE` in a dungeon and `killZoneEnemy` in the open, clones every material of the body to darken it to 35%. A kill inside those 220 ms cloned the orange as well, and the timer then cleared the material the body no longer wore. The critic's loop swung faster than the timer could fire; in play it needs a kill within 220 ms of a break, which a power attack into a just-broken guard can do. Now each kill's clone drops that one colour as it darkens. A body's own emissive (an ember eye, a wraith's glow) is any other colour and is kept.
+
+### Verified (headless Chromium)
+`corpseglow` 3/3 (new). Eight foes flashed exactly as the guard-break code does it and killed at once: a Bandit, Skeleton, Wolf and Troll in the open, two Skeletons and two Goblins in a fort, read 0.6 s later. No material of any corpse is still orange. On the build before this session the same suite fails: every corpse keeps one lit material, and the Troll ten of its sixteen parts, which share one material.
+
+Neighbouring suites pass: parrydeath (Session 565's flash on death), corpsebody and ragdoll (2).
+
+`parsecheck` clean.
+
+### Needs eyes
+Nothing to see but its absence. Seen in passing, not changed: the flash lights the body's material itself, so where foes of one kind share a material (the Troll's ten parts share one) every foe of that kind on screen may flash with the one that broke. That wants a look in play before it is called a bug.

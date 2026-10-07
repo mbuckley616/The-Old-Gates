@@ -362,7 +362,7 @@ function killE(e,tag=''){
   if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,()=>floorGroundY,(x,z)=>dSolid(x,z)))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.y=floorGroundY+0.15;}
-  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);}});
+  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);if(c.material.emissive&&c.material.emissive.getHex()===0xffaa00)c.material.emissive.setHex(0);}}); /* S626 — a guard-break flash still on at the kill: its timer clears the old material, not this clone */
   // Hide HP bar
   e.hpFg.visible=false;if(e.hpFg.parent)e.hpFg.parent.children.forEach(c=>{if(c.geometry&&c.geometry.type==='PlaneGeometry')c.visible=false;});
   // Loot glow — small pulsing light over corpse, at correct floor height
