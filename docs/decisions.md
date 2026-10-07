@@ -4,7 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The ship in hand — what fills the log's dial: today's ships, two new hulls, or new hulls and a laden ship slower? (the designer, 2026-10-07)
+### The ship in hand — what fills the log's dial: today's ships, two new hulls, or new hulls and a laden ship slower? (the designer, 2026-10-07) — DECISION #192
 Your 6 Oct sailing notes are written up on one page (`docs/design/the-ship-in-hand.md`): a log dial of 0–30 knots at the helm with the sloop's 7.5 at a quarter, boarding nets climbed with the crosshair on them (the 3.5-unit radius goes), a *Browse ships* panel with the hull turning on a stage, and a factor's panel that fills the hold with crates you can see on deck, all lost if she sinks (reversing Session 413, where the hold came up with her). Those follow your note under every option; the open question is what fills the dial, since a meter that implies faster ships needs them to exist.
 - **A.** Today's three hulls (best 13.1, 44% of the dial); the top half is the far continents' yards, empty until the expansions. Four Opus and two look sessions.
 - **B.** Two new hulls, each a trade and each sold on one island (the Mark's cutter 12 bare, 80 hull, 25 hold; Aurenne's caravel 11, 130, 55), sails as +12% a tier with a fourth tier, refits branching; the best home hull reaches 17.8 (60%), the last third the far yards'. A plus one Opus and one look session.
