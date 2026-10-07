@@ -32,8 +32,11 @@ const probe = await page.evaluate(() => {
       let nNew = 0, nOld = 0, nAll = 0;
       for (const p of pts) { if (p.distanceTo(from) > 3.4) continue; nAll++; aim(from, p);
         if (lookingAt(c)) nNew++; const b = c.body; c.body = null; if (lookingAt(c)) nOld++; c.body = b; }
-      // and a miss: aim 1.4 units past the body's far side, along the ground
-      const away = mid.clone().sub(from).setY(0).normalize(); const miss = mid.clone().addScaledVector(away, Math.max(1.4, c._ext * .5 + 1)); miss.y = gy + .05;
+      // and a miss: aim 1.4 units past the body's far side, along the ground. S602: never lower than .3 over the body's top,
+      // since for a body as big as a Cave Bear's the ray down to the ground beyond crossed its back, and whether it did hung
+      // on how the ragdoll had settled (red on CI twice, green locally)
+      const away = mid.clone().sub(from).setY(0).normalize(); const miss = mid.clone().addScaledVector(away, Math.max(1.4, c._ext * .5 + 1));
+      const top = Math.max(...pts.map(q => q.y)) + (c._r || .3); miss.y = Math.max(gy + .05, top + .3);
       aim(from, miss); const offBody = !lookingAt(c);
       // and straight up over it
       aim(from, new V(mid.x, gy + 4, mid.z)); const sky = !lookingAt(c);

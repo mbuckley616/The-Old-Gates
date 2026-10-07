@@ -25,6 +25,7 @@ function footholdY(x,z,py,base){
     }
     if(x<f.x0||x>f.x1||z<f.z0||z>f.z1)continue;
     if(f.hole&&x>f.hole.x0&&x<f.hole.x1&&z>f.hole.z0&&z<f.hole.z1)continue;
+    if(f.holes&&f.holes.some(h=>x>h.x0&&x<h.x1&&z>h.z0&&z<h.z1))continue; // S601 — a floor with several openings
     let y=f.y;
     if(f.axis){const t=f.axis==='x'?(x-f.x0)/(f.x1-f.x0):(z-f.z0)/(f.z1-f.z0);y=f.y0+(f.y1-f.y0)*Math.max(0,Math.min(1,t));}
     if(y<=py+STEP_UP&&y>best)best=y;
@@ -911,6 +912,163 @@ function makeFortInterior_courtyard(size, seed){
 FORT_INTERIORS.fort_linear = (size, seed) => makeFortInterior_linear(size, seed);
 FORT_INTERIORS.fort_courtyard = (size, seed) => makeFortInterior_courtyard(size, seed);
 
+// S599 — DECISION #177 A (Michael, 6 Oct: three new shapes, stairs down only), the first: THE HALL AND THE UNDERCROFT.
+// A pillared great hall (treasure floor, so the fort pass gives it its colonnades and chandeliers) at the end of a short
+// entry passage, with a straight flight three cells wide down its middle to the undercroft; a kitchen and stores off its
+// west wall, the armoury and a chapel off its east. Below: the flight lands in a walled slot that opens north into the
+// undercroft, a long low room under the hall's north end, with a vault either side and a crypt beyond, joined by arches.
+// The flight is tile 3 on both floors (the hole in the hall's floor and the slot below); gen.flight carries its cells,
+// gen.stairHoles the rectangles the upper floor's foothold leaves open (S601: gen.flights, several), gen.stairC/R its top cell (the markers' 'Ascend').
+function makeFortHall(size, seed){
+  function rng(s){let v=s;return()=>{v=(v*1664525+1013904223)>>>0;return v/4294967296;};}
+  const r=rng(hashSeed(seed*7+177));
+  const cfg = {
+    tiny:    {W:40, H:40, en:8,  tr:1, ur:1, floors:2},
+    small:   {W:48, H:48, en:11, tr:1, ur:2, floors:2},
+    medium:  {W:60, H:60, en:14, tr:2, ur:3, floors:2},
+    large:   {W:72, H:72, en:20, tr:2, ur:4, floors:2},
+    massive: {W:88, H:88, en:27, tr:3, ur:5, floors:2},
+  }[size] || {W:60, H:60, en:14, tr:2, ur:3, floors:2};
+  const {W, H} = cfg;
+  const map = Array.from({length:H}, () => new Array(W).fill(0)), map2 = Array.from({length:H}, () => new Array(W).fill(0));
+  const rooms = [], rooms2 = [], treasureDoors = [];
+  const cx = Math.floor(W/2), big = W >= 56;
+  const HW = big ? 19 : 15, HD = big ? 24 : 20, FL = 8, SIDE = big ? 8 : 6;
+  const hx0 = cx - (HW - 1)/2, hz0 = H - HD - (big ? 12 : 9), hz1 = hz0 + HD - 1;
+  const fill = (m, x0, z0, w, h, t) => { for(let z = z0; z < z0 + h; z++) for(let x = x0; x < x0 + w; x++) if(z > 0 && z < H - 1 && x > 0 && x < W - 1) m[z][x] = t; };
+  const room = (list, x0, z0, w, h, kind) => list.push({x:x0, y:z0, w, h, cx:Math.floor(x0 + w/2), cy:Math.floor(z0 + h/2), kind});
+  // the hall
+  fill(map, hx0, hz0, HW, HD, 6); room(rooms, hx0, hz0, HW, HD, 'pillared_hall');
+  // the entry passage, five cells wide, from the hall's door to the entrance at the south edge
+  for(let z = hz1 + 2; z <= H - 1; z++) for(let x = cx - 2; x <= cx + 2; x++) map[z][x] = 7;
+  map[hz1 + 1][cx] = 4; treasureDoors.push({x:cx, z:hz1 + 1, isEW:false, locked:false});
+  const entC = cx, entR = H - 1; map[entR][entC] = 2;
+  // the side rooms, two a side, each on a door in the hall's wall; the seed says which of each pair is nearer the door
+  const west = r() < .5 ? ['kitchen', 'storeroom'] : ['storeroom', 'kitchen'], east = r() < .5 ? ['armory', 'chapel'] : ['chapel', 'armory'];
+  const rowZ = [hz0 + 2, hz0 + HD - SIDE - 2];
+  for(let i = 0; i < 2; i++){
+    const z0 = rowZ[i], dz = z0 + Math.floor(SIDE/2);
+    const wx0 = hx0 - 1 - SIDE; if(wx0 >= 1){ fill(map, wx0, z0, SIDE, SIDE, 1); room(rooms, wx0, z0, SIDE, SIDE, west[1 - i]); map[dz][hx0 - 1] = 4; treasureDoors.push({x:hx0 - 1, z:dz, isEW:true, locked:false}); }
+    const ex0 = hx0 + HW + 1; if(ex0 + SIDE <= W - 1){ fill(map, ex0, z0, SIDE, SIDE, 1); room(rooms, ex0, z0, SIDE, SIDE, east[1 - i]); map[dz][hx0 + HW] = 4; treasureDoors.push({x:hx0 + HW, z:dz, isEW:true, locked:false}); }
+  }
+  // the flight: three cells wide, FL long, its top at the south (the hall's door end), going down northward
+  const ft = hz1 - 6, fb = ft - FL + 1;
+  for(let z = fb; z <= ft; z++) for(let x = cx - 1; x <= cx + 1; x++){ map[z][x] = 3; map2[z][x] = 3; }
+  // below: the undercroft north of the slot, a vault either side, the crypt beyond; arches one cell wide between them
+  const UW = big ? 15 : 11, UD = big ? 9 : 7, ux0 = cx - (UW - 1)/2, uz1 = fb - 1, uz0 = uz1 - UD + 1;
+  fill(map2, ux0, uz0, UW, UD, 1); room(rooms2, ux0, uz0, UW, UD, 'undercroft');
+  const VW = big ? 7 : 5, vz0 = uz0 + 1, VD = UD - 2;
+  if(ux0 - 1 - VW >= 1){ fill(map2, ux0 - 1 - VW, vz0, VW, VD, 1); room(rooms2, ux0 - 1 - VW, vz0, VW, VD, 'vault'); map2[vz0 + (VD >> 1)][ux0 - 1] = 1; }
+  if(ux0 + UW + 1 + VW <= W - 1){ fill(map2, ux0 + UW + 1, vz0, VW, VD, 1); room(rooms2, ux0 + UW + 1, vz0, VW, VD, 'vault'); map2[vz0 + (VD >> 1)][ux0 + UW] = 1; }
+  const CW = big ? 9 : 7, CD = big ? 7 : 5, cz1 = uz0 - 2, cz0 = cz1 - CD + 1;
+  if(cz0 >= 1){ fill(map2, cx - (CW - 1)/2, cz0, CW, CD, 1); room(rooms2, cx - (CW - 1)/2, cz0, CW, CD, 'crypt'); map2[uz0 - 1][cx] = 1; }
+  // keys: the farthest room floor from the way in, as the other forts do (no locked doors here, so one is enough)
+  const floorCells = [];
+  for(let z = 0; z < H; z++) for(let x = 0; x < W; x++) if(map[z][x] === 1) floorCells.push({x, y:z});
+  floorCells.sort((a, b) => Math.hypot(b.x - entC, b.y - entR) - Math.hypot(a.x - entC, a.y - entR));
+  return {
+    map, map2, W, H, rooms, rooms2, entC, entR, treasureDoors,
+    stairC: cx, stairR: ft, keyLocations: floorCells.slice(0, 1), cfg,
+    flight: {c0: cx - 1, c1: cx + 1, top: ft, bot: fb}, flights: [{c0: cx - 1, c1: cx + 1, top: ft, bot: fb, dir: 'n'}],
+    stairHoles: [{x0: cx - 1.5, x1: cx + 1.5, z0: fb - .5, z1: ft + .5}],
+  };
+}
+FORT_INTERIORS.fort_hall = (size, seed) => makeFortHall(size, seed);
+
+// S600 — DECISION #177 A, the second shape: BARRACKS AND THE GAOL. One long hall seven cells wide runs north from the
+// entrance (hallway floor, so the fort pass gives it its wall columns and its centre colonnade), with three rooms off
+// each side, mostly bunk rooms, and the captain's room beyond its north end. At that end a straight flight three cells
+// wide goes down northward inside the hall, walkways either side of it to the captain's door. Below, the flight lands
+// in the gaol: a passage north between two pairs of cells, each on a narrow doorway (gen.gaolCells: where the grilles
+// hang), and the gaoler's room at its end. Built for the medium sizes and up; a smaller fort is a hall and undercroft.
+function makeFortBarracks(size, seed){
+  if(!/^(medium|large|massive)$/.test(size)) return makeFortHall(size, seed);
+  const G = makeFortHall(size, seed), {W, H, cfg} = G, r = (s => () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)(hashSeed(seed * 7 + 600));
+  const map = Array.from({length:H}, () => new Array(W).fill(0)), map2 = Array.from({length:H}, () => new Array(W).fill(0));
+  const rooms = [], rooms2 = [], treasureDoors = [], gaolCells = [];
+  const cx = Math.floor(W/2), hx0 = cx - 3, hx1 = cx + 3, hz0 = H - 42, SIDE = 8, FL = 8;
+  const fill = (m, x0, z0, w, h, t) => { for(let z = z0; z < z0 + h; z++) for(let x = x0; x < x0 + w; x++) if(z > 0 && z < H - 1 && x > 0 && x < W - 1) m[z][x] = t; };
+  const room = (list, x0, z0, w, h, kind) => list.push({x:x0, y:z0, w, h, cx:Math.floor(x0 + w/2), cy:Math.floor(z0 + h/2), kind});
+  // the long hall, to the south edge, the entrance in its middle
+  for(let z = hz0; z <= H - 1; z++) for(let x = hx0; x <= hx1; x++) map[z][x] = 7;
+  const entC = cx, entR = H - 1; map[entR][entC] = 2;
+  // the flight at the north end, three cells past it to the captain's door
+  const fb = hz0 + 3, ft = fb + FL - 1;
+  for(let z = fb; z <= ft; z++) for(let x = cx - 1; x <= cx + 1; x++){ map[z][x] = 3; map2[z][x] = 3; }
+  fill(map, cx - 4, hz0 - 9, 9, 8, 6); room(rooms, cx - 4, hz0 - 9, 9, 8, 'lords_chamber');
+  map[hz0 - 1][cx] = 4; treasureDoors.push({x:cx, z:hz0 - 1, isEW:false, locked:false});
+  // three rooms a side: bunk rooms, with a kitchen, an armoury and a guardroom among them by the seed
+  const west = ['barracks', 'barracks', r() < .5 ? 'kitchen' : 'storeroom'], east = ['barracks', r() < .5 ? 'armory' : 'guardroom', 'barracks'];
+  if(r() < .5) west.reverse(); if(r() < .5) east.reverse();
+  for(let i = 0; i < 3; i++){ const z0 = ft + 3 + i * (SIDE + 1), dz = z0 + (SIDE >> 1); if(z0 + SIDE > H - 2) break;
+    fill(map, hx0 - 1 - SIDE, z0, SIDE, SIDE, 1); room(rooms, hx0 - 1 - SIDE, z0, SIDE, SIDE, west[i]); map[dz][hx0 - 1] = 4; treasureDoors.push({x:hx0 - 1, z:dz, isEW:true, locked:false});
+    fill(map, hx1 + 2, z0, SIDE, SIDE, 1); room(rooms, hx1 + 2, z0, SIDE, SIDE, east[i]); map[dz][hx1 + 1] = 4; treasureDoors.push({x:hx1 + 1, z:dz, isEW:true, locked:false}); }
+  // the gaol: the passage, two pairs of cells, the gaoler's room
+  const pz0 = fb - 10; fill(map2, cx - 1, pz0, 3, 10, 1); room(rooms2, cx - 1, pz0, 3, 10, 'gaol');
+  for(let i = 0; i < 2; i++){ const c0 = fb - 4 - 4 * i;
+    for(const sd of [-1, 1]){ const x0 = sd < 0 ? cx - 5 : cx + 3; fill(map2, x0, c0, 3, 3, 1); room(rooms2, x0, c0, 3, 3, 'gaol_cell'); map2[c0 + 1][cx + sd * 2] = 1; gaolCells.push({x:cx + sd * 2, z:c0 + 1, sd}); } }
+  fill(map2, cx - 3, fb - 16, 7, 5, 1); room(rooms2, cx - 3, fb - 16, 7, 5, null); map2[fb - 11][cx] = 1;
+  const floorCells = [];
+  for(let z = 0; z < H; z++) for(let x = 0; x < W; x++) if(map[z][x] === 1) floorCells.push({x, y:z});
+  floorCells.sort((a, b) => Math.hypot(b.x - entC, b.y - entR) - Math.hypot(a.x - entC, a.y - entR));
+  return {
+    map, map2, W, H, rooms, rooms2, entC, entR, treasureDoors,
+    stairC: cx, stairR: ft, keyLocations: floorCells.slice(0, 1), cfg, gaolCells,
+    flight: {c0: cx - 1, c1: cx + 1, top: ft, bot: fb}, flights: [{c0: cx - 1, c1: cx + 1, top: ft, bot: fb, dir: 'n'}],
+    stairHoles: [{x0: cx - 1.5, x1: cx + 1.5, z0: fb - .5, z1: ft + .5}],
+  };
+}
+FORT_INTERIORS.fort_barracks = (size, seed) => makeFortBarracks(size, seed);
+
+// S601 — DECISION #177 A, the third shape: THE RING AND ITS TOWERS. A passage three cells wide runs round a sunken yard,
+// which you see over a balustrade from the ring before you can reach it. Four towers stand off the ring's corners: two
+// hold a straight flight down (north-east going north, south-west going south), two are guardrooms; Michael chose stairs
+// down only, so no tower goes up. Below, each flight lands at its tower's base, and a passage leads from it to the yard,
+// which is floor 2's (its ceiling left open: gen.yard). Built for the medium sizes and up; a smaller fort is a hall.
+function makeFortRing(size, seed){
+  if(!/^(medium|large|massive)$/.test(size)) return makeFortHall(size, seed);
+  const {W, H, cfg} = makeFortHall(size, seed), r = (s => () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)(hashSeed(seed * 7 + 601));
+  const map = Array.from({length:H}, () => new Array(W).fill(0)), map2 = Array.from({length:H}, () => new Array(W).fill(0));
+  const rooms = [], rooms2 = [], treasureDoors = [], cx = Math.floor(W/2), cz = Math.floor(H/2);
+  const fill = (m, x0, z0, w, h, t) => { for(let z = z0; z < z0 + h; z++) for(let x = x0; x < x0 + w; x++) if(z > 0 && z < H - 1 && x > 0 && x < W - 1) m[z][x] = t; };
+  const room = (list, x0, z0, w, h, kind) => list.push({x:x0, y:z0, w, h, cx:Math.floor(x0 + w/2), cy:Math.floor(z0 + h/2), kind});
+  const door = (x, z, isEW) => { map[z][x] = 4; treasureDoors.push({x, z, isEW, locked:false}); };
+  // the ring and the yard (open on floor 1, tile 3; floor on floor 2)
+  for(let z = cz - 9; z <= cz + 8; z++) for(let x = cx - 9; x <= cx + 8; x++) map[z][x] = 7;
+  for(let z = cz - 6; z <= cz + 5; z++) for(let x = cx - 6; x <= cx + 5; x++){ map[z][x] = 3; map2[z][x] = 1; }
+  room(rooms2, cx - 6, cz - 6, 12, 12, 'yard');
+  // the way in, from the south edge to the ring
+  for(let z = cz + 9; z <= H - 1; z++) for(let x = cx - 2; x <= cx + 2; x++) map[z][x] = 7;
+  const entC = cx, entR = H - 1; map[entR][entC] = 2;
+  // the towers with flights: north-east (down northward) and south-west (down southward)
+  const flights = [];
+  fill(map, cx + 10, cz - 14, 5, 12, 1); room(rooms, cx + 10, cz - 14, 5, 12, 'tower'); door(cx + 9, cz - 3, true);
+  flights.push({c0: cx + 11, c1: cx + 13, top: cz - 4, bot: cz - 11, dir: 'n'});
+  fill(map, cx - 15, cz + 2, 5, 12, 1); room(rooms, cx - 15, cz + 2, 5, 12, 'tower'); door(cx - 10, cz + 3, true);
+  flights.push({c0: cx - 14, c1: cx - 12, top: cz + 3, bot: cz + 10, dir: 's'});
+  for(const F of flights) for(let z = Math.min(F.top, F.bot); z <= Math.max(F.top, F.bot); z++) for(let x = F.c0; x <= F.c1; x++){ map[z][x] = 3; map2[z][x] = 3; }
+  // the two guardrooms at the other corners; the seed says which is the armoury
+  const kinds = r() < .5 ? ['guardroom', 'armory'] : ['armory', 'guardroom'];
+  fill(map, cx - 16, cz - 12, 6, 6, 1); room(rooms, cx - 16, cz - 12, 6, 6, kinds[0]); door(cx - 10, cz - 9, true);
+  fill(map, cx + 10, cz + 7, 6, 6, 1); room(rooms, cx + 10, cz + 7, 6, 6, kinds[1]); door(cx + 9, cz + 8, true);
+  // below: each tower's base, and a passage from it to the yard
+  fill(map2, cx + 10, cz - 14, 5, 3, 1); room(rooms2, cx + 10, cz - 14, 5, 3, null);
+  for(let x = cx; x <= cx + 9; x++) map2[cz - 13][x] = 1; for(let z = cz - 13; z <= cz - 7; z++) map2[z][cx] = 1;
+  fill(map2, cx - 15, cz + 11, 5, 3, 1); room(rooms2, cx - 15, cz + 11, 5, 3, null);
+  for(let x = cx - 10; x <= cx - 1; x++) map2[cz + 12][x] = 1; for(let z = cz + 6; z <= cz + 12; z++) map2[z][cx - 1] = 1;
+  const floorCells = [];
+  for(let z = 0; z < H; z++) for(let x = 0; x < W; x++) if(map[z][x] === 1) floorCells.push({x, y:z});
+  floorCells.sort((a, b) => Math.hypot(b.x - entC, b.y - entR) - Math.hypot(a.x - entC, a.y - entR));
+  const hole = F => ({x0: F.c0 - .5, x1: F.c1 + .5, z0: Math.min(F.top, F.bot) - .5, z1: Math.max(F.top, F.bot) + .5});
+  return {
+    map, map2, W, H, rooms, rooms2, entC, entR, treasureDoors,
+    stairC: flights[0].c0 + 1, stairR: flights[0].top, keyLocations: floorCells.slice(0, 1), cfg,
+    flight: flights[0], flights, yard: {c0: cx - 6, c1: cx + 5, r0: cz - 6, r1: cz + 5},
+    stairHoles: flights.map(hole).concat([{x0: cx - 6.5, x1: cx + 5.5, z0: cz - 6.5, z1: cz + 5.5}]),
+  };
+}
+FORT_INTERIORS.fort_ring = (size, seed) => makeFortRing(size, seed);
+
 const DTHEME={d1:{fog:0x120f1a,amb:0xffa060},d2:{fog:0x1a0a08,amb:0xff6030},d3:{fog:0x08101a,amb:0x3060ff}};
 let dScene=null,dMap=[],dR=0,dC=0;
 let dMap2=null; // floor-2 map (null = single-floor dungeon)
@@ -1036,6 +1194,7 @@ let DUNGEON_COLUMNS = [];
 function dColumnHit(x, z){
   if(!DUNGEON_COLUMNS || DUNGEON_COLUMNS.length === 0) return false;
   for(const col of DUNGEON_COLUMNS){
+    if(col.floor && col.floor !== currentFloor) continue; // S599 — a column belongs to its floor
     const dx = x - col.x;
     const dz = z - col.z;
     if(dx*dx + dz*dz < col.r * col.r) return true;

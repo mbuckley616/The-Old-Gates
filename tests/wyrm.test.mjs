@@ -17,7 +17,7 @@ const world = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz);
 check('a dragon lair\'s beast in the world is the skinned dragon, linked to its enemy, with no box parts or person left on it', !world.none && !world.noBeast && world.dragon && world.wolf && world.isDragon && world.linked && world.inRigs && world.boxes === 0 && world.persons === 0, world);
 
 // a lair cavern with a dragon: its deepest foe becomes the wyrm
-await page.evaluate(() => { level = 8; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 21, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { dragon: true, place: 'Test', boss: 'Wyrm' } }); goToDungeon(p); });
+await page.evaluate(() => { level = 8; const p = Object.assign({}, PORTALS[0], { id: 'dyn_21', theme: 'deep', seed: 21, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { dragon: true, place: 'Test', boss: 'Wyrm' } }); goToDungeon(p); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
 await page.waitForTimeout(1500);
 const cave = await page.evaluate(() => { const e = window._lairBoss; if (!e) return { none: true }; const w = e.limbs && e.limbs.wolf; let t = 9e5; for (let k = 0; k < 10; k++) { tickPeople(1 / 60, t += 16.7); tickCreatures(1 / 60, t); }
