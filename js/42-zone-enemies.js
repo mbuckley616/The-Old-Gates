@@ -1139,6 +1139,8 @@ function tickZoneEnemies(dt,now,sc){
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
       const ety=activeTerrainH(e.x,e.z);
       e.mesh.position.set(e.x,ety,e.z);e.el.position.set(e.x,ety+.8,e.z);
+      /* S628 — it faces the way it walks, and looks that way: the body stood at its spawn's turn and the sight cone at a random one, as the dungeon's wander (90-main.js) already turns both */
+      if(!e.isBoss){e.combatYaw=Math.atan2(dx2,dz2);e.mesh.lookAt(e.x+dx2/wd,ety,e.z+dz2/wd);}
       return;
     }
     // Chase player

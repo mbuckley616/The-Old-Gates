@@ -14007,3 +14007,18 @@ Neighbouring suites pass: autosave, placesave and saveui. saveui failed twice wh
 
 ### Needs eyes
 Nothing. The hint is only a label; if the door's save is skipped (an autosave within the last 90 s), there is no new save to name.
+
+## v80 — Session 628 — A wandering foe faces the way it walks, and sees that way (backlog C, Michael's playtest of 6 Oct)
+Michael's playtest of 6 Oct: "foes' detection is weak: you can walk up to most monsters unseen unless they face you within a few feet." Most of that is numbers, asked as DECISION #190 (Session 622). One part of it is not a number, and every option of #190 includes it: in the open world a wandering foe's sight never turned with its walk. Measured first: the open world's wander (`tickZoneEnemies`, `42-zone-enemies.js`) moved a foe round its home in a circle of 3 but never turned it. Its body stood at rotation 0 whatever way it went, so it slid sideways and walked backwards (up to 3.1 rad off its walk), and its sight cone (`combatYaw`, the 150° arc `canSeePlayer` reads) stayed at the random angle it was given at spawn, matching neither the body nor the walk. So whether it saw you was luck: a Skeleton saw you 8 units behind it, and a Wolf, a Skeleton and a Troll walked straight at you without seeing you. The dungeon's wander (`90-main.js`) already turns both.
+
+Now each step of the wander turns the body to face the way it walks and sets the cone to the same heading. Nothing else changes: the 15-unit sight, the 0.5 hearing, sneaking, the line-of-sight check, the chase and the blow are as they were.
+
+### Verified (headless Chromium)
+`wanderface` 5/5 (new), by Dunmore by day, through the game's loop at fixed 1/60 ticks, a Bandit, a Wolf, a Skeleton and a Troll. Sampled every half second for 6 s, each body faces within 0.10 rad of the way it walks and the cone within the same. Set 8 units ahead of its walk, in the open, each sees you on the next frame; set 8 behind, walking, none does in a second. On the build before this session the same suite fails 4 of 5: bodies up to 3.13 rad off their walk, the cone up to 3.11; three of the four do not see you ahead, and the Skeleton sees you behind.
+
+Neighbouring suites pass: captainguard, counters, guardlevel1, posture (2), targetof, spentguard, foes (2) and sitefoes.
+
+`parsecheck` clean.
+
+### Needs eyes
+How the wandering foes look now that they turn: a body that walked sideways round its home now walks forwards round it, turning steadily. Whether a foe now notices you too soon, or still too late, is #190's numbers.

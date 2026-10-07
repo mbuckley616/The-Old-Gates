@@ -17,6 +17,8 @@ Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "f
 - **C** — Slow the player instead: walk 3.0, sprint 4.2, foes as now with A's sight.
 - **D** — Leave the numbers; fix only the wandering cone and the hearing.
 
+*Session 628:* the wandering cone is fixed, since all four options include it: a wandering foe in the open faces the way it walks and sees that way (`tests/wanderface`). The chase speeds, the sight ranges and the hearing are still yours.
+
 
 ### The wolves and the cave bear — a fiercer face, a heavier build, and how large? (the look builder, Session 620, 2026-10-07) — DECISION #187
 Michael's two mesh-inspector notes of 6 Oct: the wolves are far too small, slender and comical, and the cave bear should sit on par with a grizzly beside them. Measured first, against a bandit's height: in play a Wolf's back stands at 38% of a man's height, a Snow Wolf's 46%, a Dire Wolf's 49%, and the Cave Bear's hump at 77%. A real grey wolf is about 45% and a grizzly about 60–65%, so in play the bear is already grizzly-sized; but the mesh inspector builds every beast at size 1 rather than its size in play (the dragon was fixed the same way in Session 524), so there the wolf looks bigger than in play and the bear only a little larger than the wolf. The prototype (`docs/prototypes/wolfbear/shoot.mjs`, which patches a copy of the wolf's bake; the game is not changed) gives the wolves a new head and build and new sizes:
