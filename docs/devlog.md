@@ -13865,3 +13865,30 @@ Neighbouring suites pass alone: shipwright, shipwrightvoice, harbour, shipmoor, 
 
 ### Needs eyes
 How the cutting through Portclare's ridge looks: the lane's bed is up to about 8 units below the ridge top, and the banks blend over the road's usual 9.5. It may want a retaining wall or a stair, which is the look builder's. The lane is straight from the perimeter lane to the quay; where a house or a stall stands near its start inside the town, it is not routed round.
+
+## v80 — Session 619 — A road is the same road whatever loaded first (backlog I, found in Session 618)
+Session 618 settled the four ports nearest Dunmore twice on the same build. Two of them came out differently each time: the same house ids at other places, other people at the plaza. A house's id is its lot's place in the town's layout (S243), and `worldState.owned` is keyed by it. So a house you bought could become another building on a later evening, if the layout moved.
+
+The layout moved because the roads did. `buildRoad` (`82-world-structures.js`) bends a road through three control points, offset by noise seeded with `ri=ROAD_DEFS.length`. That is the number of roads registered before this one, which depends on which cells loaded first. It changes with the job queue's timing and with where you walk, and every cell unload rebuilds the list with the fort spurs counted in. Two runs of the same probe gave Rathowen Road 54 samples in one and 53 in the other. A town's lots keep clear of its roads and run along them, so the town followed its road.
+
+Now a road is seeded by itself:
+- A home road (`HOME_ROAD_DEFS`) keeps its index there plus one. That is the number every home road has always had, because the home cell loads first. So the home island's roads, and Dunmore, Portclare and the rest of the home towns, are point for point as before.
+- Any other road is seeded by a hash of its two ends and its name.
+
+Generated roads off the home island will bend differently from how they did. But they already bent differently from run to run, so no layout was ever settled there.
+
+### Verified (headless Chromium)
+`roadseed` 4/4 (new). After a walk to Portclare and a port in cell 4,9, every loaded road (21 home, 30 generated) is built again from its def. It comes out as loaded, and the same again with seven more roads registered before it. On the build before this session the same suite fails: the home roads included, rebuilt now, came out different from what had loaded.
+
+A probe against that build: the 21 home roads' points are identical, to the third decimal, in three runs out of three. The four ports nearest Dunmore lay out the same in three runs (every building's id, kind and place). Before, two of the four moved between runs. One run had two more plaza villagers out than the other two, with the same names; that is who is outside at that moment, not the layout.
+
+Neighbouring suites pass, run two at a time: captainguard, caravan, coach, coachboard, coachinn, coachseat, coachstop, coachvoice, due (3), homefurn, houses, innrooms, keepercone, questfoes, siegeturn, sitefoes, towngate and mainrun.
+
+Two tests were made to wait for the game rather than race it:
+- `townroads` measures the first thirty places of the loaded cells. One run asked when only fifteen had loaded, so it now waits for thirty: 6/6, 30 towns, no building on a road, the worst street 0.9% in a building.
+- `portlane` (Session 618's) read a port that one settle's minute had not yet built on a busy runner, so it settles again until the port is there: 6/6.
+
+`parsecheck` clean.
+
+### Needs eyes
+Nothing to see on the home island. Off it, every generated road takes a new line once, and with it the layout of the towns along it. A save that owns a house off the home island holds the id of a lot, and that lot may now be another building. That was already possible from one evening to the next.

@@ -16,7 +16,7 @@ await page.evaluate(() => { window._drive = (step, max) => {
 const ports = await page.evaluate(() => { const s = WORLD.siteAnywhere('dunmore'); return WORLD.allPorts().sort((a, b) => Math.hypot(a.x - s.x, a.z - s.z) - Math.hypot(b.x - s.x, b.z - s.z)).map(p => p.id); });
 const rows = [];
 for (const id of ports.slice(0, 4)) {
-  await g.settle(id);
+  for (let k = 0; k < 3 && !(await page.evaluate(id => !!WORLD.settle.get(id), id)); k++) await g.settle(id); // a busy runner can take longer than one settle's minute
   const r = await page.evaluate(id => {
     const S = WORLD.settle.get(id), t = siteAnywhere(id), sd = shoreDir(t), q = t.quayStart;
     const segs = []; (S.paths || []).forEach(p => { for (let i = 0; i < p.pts.length - 1; i++) segs.push([p.pts[i], p.pts[i + 1], p.w]); });

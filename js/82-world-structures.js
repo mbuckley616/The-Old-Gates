@@ -301,7 +301,10 @@
   function buildRoad(def){
       const A=SITE[def.a],B=SITE[def.b];if(!A||!B)return null;
       ROAD_DEFS.push(def);
-      const ri=ROAD_DEFS.length;
+      // S619 — the bends are seeded by the road itself. They were seeded by ROAD_DEFS.length, the count of roads loaded before
+      // it, so a road and every town planned along it moved with the order the cells loaded in (house ids with them). A home
+      // road keeps the number it always had, its place in HOME_ROAD_DEFS (the home cell loads first); any other, its ends.
+      const hi=HOME_ROAD_DEFS.indexOf(def);const ri=hi>=0?hi+1:1000+String(def.a+'|'+def.b+'|'+(def.via||'')).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%50000;
       const dx=B.x-A.x,dz=B.z-A.z,L=Math.hypot(dx,dz);
       const nx=-dz/L,nz=dx/L; // left normal
       const ctrl=[{x:A.x,z:A.z}];
