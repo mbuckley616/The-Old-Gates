@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The ship in hand — what fills the log's dial: today's ships, two new hulls, or new hulls and a laden ship slower? (the designer, 2026-10-07) — DECISION #192
 Your 6 Oct sailing notes are written up on one page (`docs/design/the-ship-in-hand.md`): a log dial of 0–30 knots at the helm with the sloop's 7.5 at a quarter, boarding nets climbed with the crosshair on them (the 3.5-unit radius goes), a *Browse ships* panel with the hull turning on a stage, and a factor's panel that fills the hold with crates you can see on deck, all lost if she sinks (reversing Session 413, where the hold came up with her). Those follow your note under every option; the open question is what fills the dial, since a meter that implies faster ships needs them to exist.
 - **A.** Today's three hulls (best 13.1, 44% of the dial); the top half is the far continents' yards, empty until the expansions. Four Opus and two look sessions.
@@ -11,6 +13,28 @@ Your 6 Oct sailing notes are written up on one page (`docs/design/the-ship-in-ha
 - **C.** B, and a laden ship is slower: a full hold takes 15% off her top speed, shown as a shaded arc on the dial. B plus half an Opus session.
 
 Recommendation: **B.** The dial is honest with ships that exist, and no hull is simply best: the choice of ship is a choice of what kind of sailor you are, and a reason to cross to the Mark or Aurenne. C can follow when the cargo prices are next tuned.
+
+Michael: **Two new hulls, each sold on one island**. (2026-10-07)
+
+### Lockpicks more common as loot — how many? (the systems builder, Session 623, 2026-10-07) — DECISION #191
+Your playtest of 6 Oct asked for lockpicks to be more common, especially in dungeons. Today a chest or treasure chest rolls three picks at weight 12 of 127 (about 1 roll in 10), an urn one or two picks 15% of the time, and a corpse never. Session 363 counted eight dungeons: 59% of chests are locked, 5–6 locks a dungeon, and a clear costs about 2 / 5 / 13 picks for a hand that misses 1 in 10 / 1 in 5 / 1 in 3, against the 1–2 picks the dungeon's own chests hold. A pick costs 12 gold and nobody starts with one.
+- **A** — Dungeons pay for their own locks at an average hand. The chest and treasure weight goes 12 → 30, and a humanoid foe's body (bandit, kobold, skeleton, goblin) holds 1–2 picks a quarter of the time. That makes about 5 picks a dungeon, so an average hand clears it and a clumsy one still buys some. **Recommended.**
+- **B** — A starting set. Every new character carries 5 picks, with A's chests but no picks on bodies.
+- **C** — Double what there is: chests 12 → 24, urns 15% → 30%. About 3 a dungeon.
+- **D** — A's numbers in dungeons only. Overworld chests and barrels stay as they are.
+
+Michael: **Chests and bodies: about 5 picks a dungeon**. (2026-10-07)
+
+### Foes' chase speed and sight — how much faster, how far? (the systems builder, Session 622, 2026-10-07) — DECISION #190
+Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "foes' detection is weak". Both are numbers, so they are yours. Today you walk at 3.83 units a second and sprint at 4.69. An alert foe in the open chases at 1.25–2.0 (a Skeleton 1.25, a Wolf or Troll 2.0); in the dungeon at 0.37–1.2. Only the bosses keep up (the Faolchú 4.0, its lessers 5.0). A foe in the open sees you at 15 units in a 150° cone in front of it (10.5 sneaking), hears you only at 0.5; in the dungeon it sees 3.5. A wandering foe's cone never turns with its walk: it looks the way it was spawned.
+- **A** — Chase near your walk: alert foes chase at 85–110% of your walk (beasts at the top, the slow dead and the heavy at the bottom), so walking away fails and a sprint escapes slowly at a stamina cost. Sight 20 in the open, 8 underground, the cone turns as they wander, hearing 3 units walking (1 sneaking). **Recommended**: it makes a chase a threat without making every foe a wolf.
+- **B** — Only the beasts are fast: wolves, bears and spiders run at 110% of your walk, everything else as now. Sight as A.
+- **C** — Slow the player instead: walk 3.0, sprint 4.2, foes as now with A's sight.
+- **D** — Leave the numbers; fix only the wandering cone and the hearing.
+
+*Session 628:* the wandering cone is fixed, since all four options include it: a wandering foe in the open faces the way it walks and sees that way (`tests/wanderface`). The chase speeds, the sight ranges and the hearing are still yours.
+
+Michael: **Chase near your walk; sharper sight and hearing**. (2026-10-07)
 
 ### The wolves and the cave bear — a fiercer face, a heavier build, and how large? (the look builder, Session 620, 2026-10-07) — DECISION #187
 Michael's two mesh-inspector notes of 6 Oct: the wolves are far too small, slender and comical, and the cave bear should sit on par with a grizzly beside them. Measured first, against a bandit's height: in play a Wolf's back stands at 38% of a man's height, a Snow Wolf's 46%, a Dire Wolf's 49%, and the Cave Bear's hump at 77%. A real grey wolf is about 45% and a grizzly about 60–65%, so in play the bear is already grizzly-sized; but the mesh inspector builds every beast at size 1 rather than its size in play (the dragon was fixed the same way in Session 524), so there the wolf looks bigger than in play and the bear only a little larger than the wolf. The prototype (`docs/prototypes/wolfbear/shoot.mjs`, which patches a copy of the wolf's bake; the game is not changed) gives the wolves a new head and build and new sizes:
@@ -29,7 +53,14 @@ Pictures: [line-up today](https://raw.githubusercontent.com/mbuckley616/The-Old-
 
 **Recommendation: A.** A wolf at a real wolf's size reads small on a screen, beside a man in armour, and the brief asks the wild to be dangerous; the face was the larger part of "comical". The size is only how the beast is drawn: its reach and hits are not read from it, so a bigger wolf bites from the same distance. Whether the bite should reach further with the size is the systems builder's call after this one. The size numbers live in the foes' table (`42-zone-enemies.js`, one number per kind).
 
-## Answered
+Michael: **All of it: new face, build and sizes**. (2026-10-07)
+
+### Unblock the design docs (the ship in hand page) — merge anyway? (the producer, 2026-10-07)
+The designer's PR #193 adds only two docs; its CI failed twice on game tests on shard 7 (restslip, then q7world) against main's unchanged code.
+- **A.** *(recommended)* Merge anyway (docs only): ea2aaea onto main; the shard-7 flakes go to the backlog for a builder.
+- **B.** Wait for the designer's next push to re-run CI.
+
+Michael: **Merge anyway (docs only)**. (2026-10-07)
 
 ### Main's CI is red on 9ecc10d — saveui and lod again (the producer, 2026-10-07)
 Main's own check failed on 9ecc10d, a docs-only merge: `saveui` on shard 3 and `lod` on shard 1; the other suites passed. Both have failed this way on unchanged code before and passed on a re-run. The next main run (759200d, the quest drafts, docs only) is the re-check.
