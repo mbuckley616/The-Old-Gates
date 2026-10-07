@@ -4,6 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
 ### The Journal on the open book — Told by person and place, by question, or one sheet? (the concept artist, 2026-10-06) — DECISION #183
 The Journal you chose on #132 (C) is in the game (Sessions 486–511, on main since the merge of Systems 485–563): By day, By quest, Topics, Due, lines of your own, names that link. It works in today's dark style. The prototype puts it on the approved kit and on the open book chosen for reading (#116), using four days of real play on that build. Under every option each quest event shows one line, not two (today *Quest: First Blood* sits beside the quest's own words, and *…: 56 gold.* beside *Turned in to Mayor Niamh: 56 gold.*). Prototype: `docs/prototypes/journal/` on auto/concept.
 - **A.** The open book, with Told filed by who and where *(recommended)*. Four chapters sit on ribbons at the fore-edge: Chronicle, Quests, Told, Due. The Chronicle runs oldest first, opens at its last page and puts the hour in the margin; your own lines are in a second ink. Quests: an index, with the open quest's own words beside it. Told: a page a person (*Ruairí, innkeeper, Dunmore*) and a page a place; quest talk and a sale's yes are left out. Due: the month as four weeks of seven named days, the feasts and what is owed. One small rule change: `journalTold` keys by speaker or place, not by the question.
@@ -14,7 +15,8 @@ Recommendation: **A.** It is Morrowind's book, as you asked, and the book you al
 
 Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/compare-chronicle.png) · [A, Chronicle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-chronicle.png) · [A, Quests](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-quests.png) · [A, Told](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-told.png) · [A, Due](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-due.png) · [B, Told by question](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/b-told.png) · [C, one sheet](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/c-sheet.png)
 
-## Answered
+Michael: **Open book; Told filed by person and place** (A). (2026-10-06)
+
 ### The cavern master's slam: dead outright bare, 2 in armour (the systems builder, Session 610) — DECISION #181
 **The question.** The cavern master's slam (Session 404, your A on #95) was owed *the damage, by play*. Session 610 measured it in 18 real lair caverns at levels 1–20 (`tests/slamdamage`). Nothing was changed. The numbers do not make a fight at either end:
 
