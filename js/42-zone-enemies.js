@@ -714,13 +714,13 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     // still spawn their full data structure, but are flagged `locked` — mesh hidden, AI + collision
     // skipped — until the player reaches minLevel. On first tick past the gate, they unlock and appear.
     // This lets a zone built at level 1 still produce Forest Trolls and Bandits once the player grows.
-    Wolf:           {minLevel:1, col:0x706058,eyeCol:0xddaa44,hp:18, maxHp:18, spd:1.6,dmg:5, atk:1.4, xpVal:12, scale:.75,shape:'wolf',     def:1, resist:{tine:1.35}},
+    Wolf:           {minLevel:1, col:0x706058,eyeCol:0xddaa44,hp:18, maxHp:18, spd:1.6,dmg:5, atk:1.4, xpVal:12, scale:1.05,shape:'wolf',     def:1, resist:{tine:1.35}},
     Spider:         {minLevel:1, col:0x282030,eyeCol:0xff2200,hp:12, maxHp:12, spd:1.4,dmg:4, atk:1.2, xpVal:8,  scale:.60,shape:'spider',   def:0, resist:{tine:1.5, scath:0.7, pierce:1.2, blunt:1.1}},
     'Forest Troll': {minLevel:2, col:0x3a5030,eyeCol:0xff4400,hp:35, maxHp:35, spd:.7, dmg:9, atk:1.6, xpVal:30, scale:1.2,shape:'brute',    def:3, resist:{tine:1.5, cloch:0.7, blunt:1.2}},
     Bandit:         {minLevel:2, col:0x604828,eyeCol:0xcc8822,hp:25, maxHp:25, spd:1.2,dmg:7, atk:1.3, xpVal:20, scale:1.0,shape:'humanoid', def:2, resist:{}},
     // v80 — regional encounter types for the streamed world.
-    'Cave Bear':    {minLevel:4, col:0x4a3a2a,eyeCol:0xffc860,hp:60, maxHp:60, spd:.9, dmg:12,atk:1.8, xpVal:55, scale:1.35,shape:'brute',   def:4, resist:{blunt:0.8, pierce:1.15}},
-    'Ash Hound':    {minLevel:4, col:0x5a5048,eyeCol:0xff5020,hp:28, maxHp:28, spd:1.9,dmg:8, atk:1.2, xpVal:26, scale:.8, shape:'wolf',    def:2, resist:{tine:0.6, scath:1.3}},
+    'Cave Bear':    {minLevel:4, col:0x4a3a2a,eyeCol:0xffc860,hp:60, maxHp:60, spd:.9, dmg:12,atk:1.8, xpVal:55, scale:1.55,shape:'brute',   def:4, resist:{blunt:0.8, pierce:1.15}},
+    'Ash Hound':    {minLevel:4, col:0x5a5048,eyeCol:0xff5020,hp:28, maxHp:28, spd:1.9,dmg:8, atk:1.2, xpVal:26, scale:1.0, shape:'wolf',    def:2, resist:{tine:0.6, scath:1.3}},
     'Hollowed':     {minLevel:5, col:0x8a8478,eyeCol:0xa0ffe0,hp:40, maxHp:40, spd:.8, dmg:10,atk:1.5, xpVal:40, scale:1.0,shape:'humanoid',def:3, resist:{tine:0.7, blunt:0.85, pierce:1.2}},
     // v80 S5 — dungeon-familiar faces in the open country, away from settlements.
     'Goblin':       {minLevel:1, col:0x5a7a2a,eyeCol:0xffe040,hp:14, maxHp:14, spd:1.5,dmg:5, atk:1.0, xpVal:12, scale:.72,shape:'humanoid',def:1, resist:{}},
@@ -741,8 +741,8 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     'Cultist':      {minLevel:4, col:0x3a2a4a,eyeCol:0xc080ff,hp:30, maxHp:30, spd:1.2,dmg:10,atk:1.4, xpVal:38, scale:1.0,shape:'humanoid',def:2, resist:{scath:0.6}},
     'Ghoul':        {minLevel:3, col:0x6a7a5a,eyeCol:0xe0ff80,hp:30, maxHp:30, spd:1.8,dmg:8, atk:1.1, xpVal:30, scale:.95,shape:'humanoid',def:1, resist:{tine:1.3, pierce:0.8}},
     'Wraith':       {minLevel:6, col:0x8090b0,eyeCol:0xa0e0ff,hp:48, maxHp:48, spd:1.4,dmg:12,atk:1.5, xpVal:75, scale:1.05,shape:'humanoid',def:2, resist:{pierce:0.4, blunt:0.5, scath:1.4}},
-    'Dire Wolf':    {minLevel:4, col:0x3a3230,eyeCol:0xffb030,hp:40, maxHp:40, spd:1.9,dmg:10,atk:1.3, xpVal:40, scale:.95,shape:'wolf',    def:2, resist:{tine:1.2}},
-    'Snow Wolf':    {minLevel:3, col:0xdcdce0,eyeCol:0x80c0ff,hp:34, maxHp:34, spd:1.9,dmg:9, atk:1.3, xpVal:34, scale:.9, shape:'wolf',    def:2, resist:{cloch:0.6}},
+    'Dire Wolf':    {minLevel:4, col:0x3a3230,eyeCol:0xffb030,hp:40, maxHp:40, spd:1.9,dmg:10,atk:1.3, xpVal:40, scale:1.35,shape:'wolf',    def:2, resist:{tine:1.2}},
+    'Snow Wolf':    {minLevel:3, col:0xdcdce0,eyeCol:0x80c0ff,hp:34, maxHp:34, spd:1.9,dmg:9, atk:1.3, xpVal:34, scale:1.15, shape:'wolf',    def:2, resist:{cloch:0.6}},
     'Bog Crawler':  {minLevel:3, col:0x2a3a28,eyeCol:0xa0ff60,hp:26, maxHp:26, spd:1.5,dmg:7, atk:1.2, xpVal:24, scale:.8, shape:'spider',  def:1, resist:{tine:1.4}},
     'Sand Scorpion':{minLevel:3, col:0xb89a50,eyeCol:0x202020,hp:30, maxHp:30, spd:1.3,dmg:9, atk:1.4, xpVal:30, scale:.85,shape:'spider',  def:3, resist:{pierce:0.7}},
     'Frost Troll':  {minLevel:6, col:0xd8e0e8,eyeCol:0x60a0ff,hp:95, maxHp:95, spd:.75,dmg:16,atk:1.9, xpVal:95, scale:1.55,shape:'brute',   def:5, resist:{cloch:0.5, tine:1.5}},
