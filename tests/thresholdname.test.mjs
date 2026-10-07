@@ -8,7 +8,7 @@ await g.intoWorld();
 const lastAuto = () => page.evaluate(() => { const a = SS.idx.filter(e => e.kind === 'auto').sort((x, y) => y.ts - x.ts)[0]; return a ? { ts: a.ts, place: a.place } : null; });
 const out = [];
 for (const seed of [7100, 7104]) {
-  const t0 = await page.evaluate((seed) => { const p = PORTALS.find(p => p.seed === seed); const w = WORLD.dungeonPos[seed];
+  const t0 = await page.evaluate((seed) => { const p = PORTALS.find(p => p.seed === seed) || makePortalDef(WORLD_DUNGEONS.find(d => d.seed === seed)); /* S631 — not in PORTALS on CI */ const w = WORLD.dungeonPos[seed];
     if (w) { px = w.x; pz = w.z + 3; } SS.lastAuto = 0; const t = Date.now(); goToDungeon(p); return { t, name: p.name, at: !!w }; }, seed);
   await page.waitForFunction((t) => SS.idx.some(e => e.kind === 'auto' && e.ts >= t), t0.t, { timeout: 20000 });
   const a = await lastAuto();

@@ -36,13 +36,19 @@ const folk = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); 
 console.log(JSON.stringify(folk));
 check('W into a townsperson in Dunmore stops you at 0.55 (0.3 + 0.25)', folk.min >= .52 && folk.min < 1.5, folk);
 
-await page.evaluate(() => { level = 4; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); });
+/* S631 — the door is built from its own seed (`makePortalDef`), not copied from PORTALS[0] (another door on CI). Each foe is set on
+   open ground found by a scan of floor 1, not on its own cell: the foes wander through the real-time waits, and on CI one had
+   walked off open ground, so only two were measured */
+await page.evaluate(() => { level = 4; const p = makePortalDef({ theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world' }); goToDungeon(p); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
 await page.waitForTimeout(1500);
 const dun = await page.evaluate(() => { const out = [];
   const live = ENEMIES.filter(e => !e.dead && !e.disguised && !e.dormant && e.floor === 1 && !e.ranged && !e.master);
-  for (const e of live) { if (out.length >= 3) break; const c = Math.round(e.x), r = Math.round(e.z); let open = true;
-    for (let i = -1; i <= 1; i++) for (let j = -3; j <= 1; j++) if (dSolid(c + i, r + j)) open = false; if (!open) continue;
+  const spots = []; currentFloor = 1;
+  for (let r = 3; r < dR - 1; r++) for (let c = 1; c < dC - 1; c++) { let open = true;
+    for (let i = -1; i <= 1 && open; i++) for (let j = -3; j <= 1; j++) if (dSolid(c + i, r + j)) { open = false; break; }
+    if (open && spots.every(s => Math.hypot(s.c - c, s.r - r) > 6)) spots.push({ c, r }); }
+  for (const e of live) { if (out.length >= 3 || !spots.length) break; const { c, r } = spots.shift();
     ENEMIES.forEach(x => { if (x !== e && !x.dead) { x.dead = true; x._tmp = true; } });
     e.x = c; e.z = r - 1; px = c; pz = r + 1; jumpY = 0; currentFloor = 1; staggered.length = 0; e.fleeT = 0; e._fleeTriggered = true;
     const w = _walkInto(() => ({ x: e.x, z: e.z }), () => { e.alert = true; e.atkCd = 0; e.telegraphT = 0; return e; });
@@ -50,7 +56,7 @@ const dun = await page.evaluate(() => { const out = [];
     ENEMIES.forEach(x => { if (x._tmp) { x.dead = false; x._tmp = false; } }); e.dead = true; }
   return out; });
 console.log(JSON.stringify(dun));
-check('underground, W into three foes stops you at each one\'s edge', dun.length >= 3 && dun.every(w => w.min >= w.R - .03), dun);
+check('underground, W into three foes stops you at each one\'s edge', dun.length >= 3 && dun.every(w => w.min >= w.R - .03 && w.min < 1.2), dun);
 check('and each still winds up its blow', dun.every(w => w.tells >= 1), dun.map(w => w.tells));
 const discs = await page.evaluate(() => { const o = {}; for (const e of ENEMIES) { const k = e.baseType || e.name; (o[k] = o[k] || new Set()).add(+bodyR(e, .5).toFixed(3) + '@' + e.size); }
   const r = {}; for (const k in o) r[k] = [...o[k]]; return { r, unsized: ENEMIES.filter(e => !e.size).length }; });

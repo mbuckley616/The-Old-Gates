@@ -14052,3 +14052,20 @@ Neighbouring suites pass: cavedoor, drydoors, doorids and thresholdname.
 
 ### Needs eyes
 In third person, whether the camera behind you still dips into the turf when you stand at the mound's foot with your back to it (the camera's own solid test ignores boxes under .55, and these are wider). A mound on a slope: the slices are flat boxes on the gate's own level, so where the ground rises behind the mound the turf's foot may sit a little inside or outside them.
+
+## v80 — Session 631 — Two suites that read the wrong door on CI (CI fix; the producer's note of 7 Oct)
+CI on `0ff2144` failed two of this branch's suites, `thresholdname` (shard 5) and `bodies` (shard 2); main is green. Both were faults in the tests, not the game.
+
+`thresholdname` (Session 627) found the Old Garrison and Pellam's Hold in `PORTALS`, the list of doors loaded so far. On CI neither had loaded, so the lookup gave nothing and `goToDungeon(undefined)` threw *Cannot read properties of undefined (reading 'tutorial')*. Reproduced locally by taking the two forts out of `PORTALS` before the lookup: the same error, 0/1. The test now builds the door from its `WORLD_DUNGEONS` entry with the game's own `makePortalDef` when it has not loaded, as the fort suites have done since Session 611.
+
+`bodies` (Sessions 623 and 629) walks into three foes on floor 1 of a deep dungeon, taking the first three that stood with open ground round them. On CI it measured two, a Golem and a Cave Troll, both at their edges; the Slime was not among them. CI's list of discs on that floor is the same as a local run's, so the floor was the same; the foes wander through the test's real-time waits, and on CI's slower frames one had walked off open ground. The test now scans floor 1 for open places (three cells across, five deep, six apart) and sets each foe on one, so it no longer depends on where they have wandered. It also builds its door from its own seed with `makePortalDef` instead of copying `PORTALS[0]`, which is another door on CI. The underground check now also requires each foe to be reached within 1.2, as the open-world check does.
+
+No game code changed.
+
+### Verified (headless Chromium)
+`thresholdname` 4/4; with the two forts taken out of `PORTALS` first, 4/4 with the fix, and the old test throws CI's error. `bodies` 9/9 in three runs: underground a Cave Troll stops you at 0.69 (its edge 0.7), a Slime at 0.45 (0.46), a Golem at 0.885–0.891 (0.75): it comes no nearer than that before it swings, which the earlier placement did not show (0.744). The CI failure in `bodies` itself was not reproduced locally, where the foes wander less between frames.
+
+`parsecheck` clean.
+
+### Needs eyes
+Nothing in play. Why the Golem holds at 0.89 in its new place and not at its disc's edge is worth a look if a later session is in the dungeon's chase code.
