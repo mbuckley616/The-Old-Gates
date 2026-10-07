@@ -14036,4 +14036,4 @@ Also settled, with no change: Session 626 wondered whether foes of one kind shar
 `parsecheck` clean.
 
 ### Needs eyes
-Whether the wider brutes feel right to walk round in a corridor, a unit wide: a Golem with you is 0.75 across, so two cannot be passed abreast.
+Whether the wider brutes feel right to walk round in a corridor, a unit wide: a Golem's disc and yours together are 0.75, more than half the corridor, so you cannot slip past one there, where before (0.55) you could.
