@@ -396,7 +396,7 @@ function killE(e,tag=''){
       dScene.add(nb.g);
       const el = new THREE.PointLight(smallDef.light, 0.5, 3); el.position.set(sx, byE+0.5, sz); dScene.add(el);
       ENEMIES.push({x:sx, z:sz, hp:smallDef.hp, maxHp:smallDef.hp, mesh:nb.g, hpFg:nb.hpFg, limbs:nb.limbs, el,
-        name:'Small Slime', spd:smallDef.spd, dead:false, alert:true, atkCd:0.5, ph:Math.random()*Math.PI*2,
+        name:'Small Slime', spd:smallDef.spd, size:smallDef.scale||1, dead:false, alert:true, atkCd:0.5, ph:Math.random()*Math.PI*2,
         path:[], pathT:0, _origCol:smallDef.col, baseY:byE, isWraith:false, atkAnim:0, atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2, ranged:false, rangedCd:0, dmgMult:smallDef.dmgMult, hasCried:true,
         floor:e.floor, def:smallDef.def, resist:smallDef.resist, baseType:'Slime', variant:'small',

@@ -51,5 +51,11 @@ const dun = await page.evaluate(() => { const out = [];
 console.log(JSON.stringify(dun));
 check('underground, W into three foes stops you at each one\'s edge', dun.length >= 3 && dun.every(w => w.min >= w.R - .03), dun);
 check('and each still winds up its blow', dun.every(w => w.tells >= 1), dun.map(w => w.tells));
+const discs = await page.evaluate(() => { const o = {}; for (const e of ENEMIES) { const k = e.baseType || e.name; (o[k] = o[k] || new Set()).add(+bodyR(e, .5).toFixed(3) + '@' + e.size); }
+  const r = {}; for (const k in o) r[k] = [...o[k]]; return { r, unsized: ENEMIES.filter(e => !e.size).length }; });
+console.log(JSON.stringify(discs));
+const d1 = k => discs.r[k] && parseFloat(discs.r[k][0]);
+check('S629: every dungeon foe carries its size, so its disc follows its build (a Golem or Cave Troll wider than a Skeleton, a Goblin narrower)',
+  discs.unsized === 0 && Object.keys(discs.r).length >= 3 && (d1('Golem') || d1('Cave Troll') || 0) > d1('Skeleton') && (!d1('Goblin') || d1('Goblin') < d1('Skeleton')), discs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

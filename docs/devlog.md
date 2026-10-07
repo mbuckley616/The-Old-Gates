@@ -14022,3 +14022,18 @@ Neighbouring suites pass: captainguard, counters, guardlevel1, posture (2), targ
 
 ### Needs eyes
 How the wandering foes look now that they turn: a body that walked sideways round its home now walks forwards round it, turning steadily. Whether a foe now notices you too soon, or still too late, is #190's numbers.
+
+## v80 — Session 629 — A Cave Troll is wider than a Skeleton underground (backlog C, after Sessions 623 and 626)
+Session 623 made foes solid to you: each is a disc of 0.3 × its size, capped at 0.5 underground. Its own devlog owed that the dungeon's foes carried no `size`, so `bodyR` fell back to the group's scale, which is 1 for every dungeon foe (the build scales the parts inside it), and every disc underground was 0.3: a Cave Troll as narrow as a Skeleton, a Goblin or a Slime as wide as one. Now a dungeon foe carries `size` from its def's scale (`56-dungeon-build.js`), the variant's scale included, and a slime's split carries the Small Slime's (`62-actions.js`). Underground a Golem is 0.5 (the cap), a Cave Troll 0.45, a Gargoyle 0.405, a Skeleton 0.3, a Mimic 0.225, a Goblin 0.216, a Slime 0.21, a Small Slime 0.2 (the floor). Nothing else reads a dungeon foe's `size`.
+
+Also settled, with no change: Session 626 wondered whether foes of one kind share a body material, so that the guard-break flash on one would light every foe of the kind on screen. They do not. Every open-world kind and every dungeon kind builds its own body material per foe; the Troll's ten parts that share one are one foe's own.
+
+### Verified (headless Chromium)
+`bodies` 9/9, extended: in a level-4 deep dungeon (seed 4021) every foe carries a size, and the discs read Golem 0.5, Cave Troll 0.45, Skeleton 0.3, Mimic 0.225, Slime 0.21. W into a Slime, a Golem and a Cave Troll stops you at 0.45, 0.744 and 0.69, each disc plus yours, and each still winds up 1–2 blows. On the build before this session every disc reads 0.3. The townsperson check (W into Niamh in Dunmore, 0.55) read 0.501 once in four runs and 0.541–0.556 in the other three; she walks, and a townsperson who walks into you moves you aside (Session 623), so that reading is her step, not this change: the build before reads 0.544–0.549.
+
+`flashshare` 3/3 (new): in the open twelve kinds built in pairs, one of each pair lit as the guard-break code lights it, and the twin stays dark, with no body material shared; underground at level 12, three dungeons and ten kinds with two or more on a floor, none shares.
+
+`parsecheck` clean.
+
+### Needs eyes
+Whether the wider brutes feel right to walk round in a corridor, a unit wide: a Golem with you is 0.75 across, so two cannot be passed abreast.
