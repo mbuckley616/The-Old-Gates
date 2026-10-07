@@ -40,6 +40,8 @@ Michael: **Chase near your walk; sharper sight and hearing**. (2026-10-07)
 
 *Built in the open world, Session 634 (`tests/chasesight`):* an alert foe chases at 85–110% of your walk, placed by its own speed (a Forest Troll 3.26, a Skeleton 3.48, a Bandit 3.62, a Wolf 3.92, an Ash Hound or Dire Wolf 4.14); sight 20; hearing 3 walking and 1 sneaking, in the dungeon too. Standing still you are heard only at 0.5, as before. The dungeon's chase and its sight of 8 follow.
 
+*Built underground, Session 635 (`tests/dungeonpace`):* the same band on the dungeon's own table, read from the foe's own speed and not the difficulty's (a Golem 3.26, a Slime 3.39, a Cave Troll 3.41, a Skeleton 3.81, a Kobold Thief 4.14, a Goblin 4.21); sight 8. All of A is built.
+
 ### The wolves and the cave bear — a fiercer face, a heavier build, and how large? (the look builder, Session 620, 2026-10-07) — DECISION #187
 Michael's two mesh-inspector notes of 6 Oct: the wolves are far too small, slender and comical, and the cave bear should sit on par with a grizzly beside them. Measured first, against a bandit's height: in play a Wolf's back stands at 38% of a man's height, a Snow Wolf's 46%, a Dire Wolf's 49%, and the Cave Bear's hump at 77%. A real grey wolf is about 45% and a grizzly about 60–65%, so in play the bear is already grizzly-sized; but the mesh inspector builds every beast at size 1 rather than its size in play (the dragon was fixed the same way in Session 524), so there the wolf looks bigger than in play and the bear only a little larger than the wolf. The prototype (`docs/prototypes/wolfbear/shoot.mjs`, which patches a copy of the wolf's bake; the game is not changed) gives the wolves a new head and build and new sizes:
 

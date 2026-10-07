@@ -14101,3 +14101,18 @@ Michael's playtest of 6 Oct: *you outrun everything after a level or two* and *f
 
 ### Needs eyes
 Whether a chase now feels like a threat and not a leash. A Goblin or a Wolf matches your walk, so only the sprint shakes it, and the sprint costs stamina. Whether 20 units of sight makes a road too busy: a camp now wakes as you come round a bend.
+
+## v80 — Session 635 — Dungeon foes chase near your walk and see at 8 (backlog C, Michael's A on DECISION #190)
+The dungeon's half of A, after Session 634's open world. An alert dungeon foe walked its path of cells at its def's speed times the difficulty's: at normal 0.42 a second for a Golem, 0.65 a Slime, 1.35 a Skeleton, 2.02 a Goblin, against your 3.83 walk (the same underground: measured at 3.96 in a second down a straight run, the frame's rounding). Its sight was 3.5 cells.
+
+Now `dungeonChaseSpeed(e)` (`42-zone-enemies.js`) places it on the same 85–110% of your walk, on the dungeon's own table: a Golem (0.42) at 85%, a Goblin (2.02) at 110%. A Slime chases at 3.39, a Cave Troll 3.41, a Skeleton 3.81, a Kobold Thief 4.14, a Goblin 4.21. It reads the def's speed, carried on the foe as `rankSpd` (`56-dungeon-build.js`), not the speed the difficulty scaled: A gives a band, and a very hard dungeon's goblins at 1.3 × 110% would outrun your sprint. The difficulty still scales a foe's health, damage and its wander. A slime's split carries no `rankSpd` and is placed by its own 0.75 (3.45). The chase (`90-main.js`) uses it on the path and in your cell. Sight is 8 cells in the cone (was 3.5), and a foe forgets you past 14, as before. The lair's master still stops for its slam.
+
+The faster chase showed one fault. A foe's path ends at the centre of your cell, and only the step inside your cell stopped short of you, at 0.6. At the old pace a foe never covered the last of its path before you moved. At the new pace it walked into you, to 0.44 in `dungeonchase` and 0.30 inside a Cave Troll's 0.7 edge in `bodies`. Both steps now stop at the foe's disc plus yours (at least 0.6): a Skeleton or Slime at 0.6, a Cave Troll 0.7, a Golem 0.75. Session 631's question, why a Golem held at 0.89, is the same edge seen from the other side.
+
+### Verified (headless Chromium)
+`dungeonpace` 6/6 (new), in a deep cave (seed 4021) and an undead cave (seed 777) through the game's loop at 1/60 ticks. On the longest straight run three cells wide, a Golem, Slime, Cave Troll and Skeleton set alert at one end cover 3.36, 3.51, 3.52 and 3.81 cells in half a second's ×2 (their marks 3.26, 3.39, 3.41, 3.81), whatever their scaled speed (0.37–1.19). Your walk down the same run is 3.96 in a second. A foe whose cone is on you sees you at 7 cells and not at 9.5, in both dungeons.
+
+`dungeonchase` and `bodies` failed on the first build of this session (foes at 0.44–0.46, and 0.30–0.40 inside three foes underground) and pass after the stop: foes at 0.6–0.75, and W into a Cave Troll, Golem and Slime stops you at 0.7, 0.752 and 0.643. Neighbours pass: dungeon, dungeonfoes, dungeonexit, flashshare, dunseed, gargoyle, goblins, golem, masterslam, mimic, mimicspots, slamdamage, slimeseed, slimesplit and wardall. `parsecheck` clean.
+
+### Needs eyes
+Whether the dungeon's corridors now press too hard: a foe at your walk in a corridor cannot be outpaced except at a sprint, and a room of eight skeletons wakes at 8 cells instead of 3.5. Whether a Golem at 85% of your walk still reads as heavy.

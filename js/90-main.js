@@ -1195,7 +1195,7 @@ function loop(now){
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
-      if(!e.alert && canSeePlayer(e, dist, 3.5)){
+      if(!e.alert && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
@@ -1347,8 +1347,8 @@ function loop(now){
       e._close=false;
       // S622 — the path is cells: in your cell it is empty, and a foe that stopped there 0.9–1.4 off never swung. It now comes
       // straight at you in your cell, and plans again a quarter-second after you step into another cell, not up to 1.2 s later.
-      if(wantsToChase){const _tk=Math.round(T.x)+','+Math.round(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}
-        else if(dist>.6&&Math.round(e.x)===Math.round(T.x)&&Math.round(e.z)===Math.round(T.z)){const step=Math.min(e.spd*dt,dist-.6);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
+      if(wantsToChase){const _cs=dungeonChaseSpeed(e),_sr=Math.max(.6,bodyR(e,.5)+.25); /* S635 — near your walk (#190 A); it stops at its disc and yours, which at the old pace it never reached along its path */const _tk=Math.round(T.x)+','+Math.round(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=_cs*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);if(Math.hypot(nx-T.x,nz-T.z)>=_sr||Math.hypot(nx-T.x,nz-T.z)>dist){e.x=nx;e.z=nz;}}}
+        else if(dist>_sr&&Math.round(e.x)===Math.round(T.x)&&Math.round(e.z)===Math.round(T.z)){const step=Math.min(_cs*dt,dist-_sr);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
       // Attack lunge animation
       let lungeFwd=0;
       if(e.atkAnim>0){e.atkAnim=Math.max(0,e.atkAnim-dt);const p=e.atkAnim/.35;lungeFwd=Math.sin(p*Math.PI)*.28;}

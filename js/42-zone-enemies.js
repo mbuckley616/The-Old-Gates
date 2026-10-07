@@ -1520,7 +1520,11 @@ function lootDropChance(e){
 // sprint (4.69) escapes slowly. Its own speed places it on that scale: the slowest of the table (a Forest Troll, 0.7) at
 // 85%, the beasts (a Wolf 1.6, an Ash Hound or Dire Wolf 1.9) near the top, 2.0 and over at 110%. Bosses keep their own.
 const CHASE_WALK=3.83, CHASE_LO=.85, CHASE_HI=1.10, CHASE_SPD_LO=.7, CHASE_SPD_HI=2.0;
-function chaseSpeed(e){const s=e.spd==null?1:e.spd;if(!(s>0))return 0;const k=Math.max(0,Math.min(1,(s-CHASE_SPD_LO)/(CHASE_SPD_HI-CHASE_SPD_LO)));return CHASE_WALK*(CHASE_LO+(CHASE_HI-CHASE_LO)*k);} /* a foe held at speed 0 stays held */
+function chaseSpeed(e,lo=CHASE_SPD_LO,hi=CHASE_SPD_HI,sp){const s=sp!=null?sp:(e.spd==null?1:e.spd);if(!(s>0))return 0;const k=Math.max(0,Math.min(1,(s-lo)/(hi-lo)));return CHASE_WALK*(CHASE_LO+(CHASE_HI-CHASE_LO)*k);} /* a foe held at speed 0 stays held */
+// S635 — underground the same band, placed on the dungeon's own table: a Golem (0.42) at 85%, a Goblin (2.02) at 110%. It reads
+// the def's speed (rankSpd), not the speed the difficulty scaled, so a very hard dungeon's goblins stay at 110% of your walk.
+const DCHASE_SPD_LO=.42, DCHASE_SPD_HI=2.02;
+function dungeonChaseSpeed(e){if(!(e.spd>0))return 0;return chaseSpeed(e,DCHASE_SPD_LO,DCHASE_SPD_HI,e.rankSpd!=null?e.rankSpd:e.spd);}
 function killZoneEnemy(e,sc,tag=''){
   if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12

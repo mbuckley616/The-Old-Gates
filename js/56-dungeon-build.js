@@ -3134,7 +3134,7 @@ function buildDungeon(portal){
       // Mimic chest: no aura at all. Gargoyle statue: very dim. Both restored to .7 on reveal/activation.
       if(d.disguise) el.intensity = 0;
       else if(d.dormant) el.intensity = 0.15;
-      ENEMIES.push({x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,size:d.scale||1, /* S629 — its body's disc (bodyR) is its size, as in the open world */
+      ENEMIES.push({x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,rankSpd:d.spd,size:d.scale||1, /* S635 — rankSpd places its chase (dungeonChaseSpeed); S629 — its body's disc (bodyR) is its size, as in the open world */
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
