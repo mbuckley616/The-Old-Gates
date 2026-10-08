@@ -59,6 +59,8 @@ function aimBox(x,z,y0,hx,hz,h){CAM.getWorldDirection(_laDir);const o=CAM.positi
   for(let i=0;i<3;i++){if(Math.abs(D[i])<1e-9){if(O[i]<lo[i]||O[i]>hi[i])return false;continue;}let ta=(lo[i]-O[i])/D[i],tb=(hi[i]-O[i])/D[i];if(ta>tb){const t=ta;ta=tb;tb=t;}if(ta>t0)t0=ta;if(tb<t1)t1=tb;if(t0>t1)return false;}
   return typeof intSightLine!=='function'||intSightLine(px,pz,x,z);}
 function bedAimed(b){return aimBox(b.x,b.z,b.y||0,.5,.82,.78);}
+/* S656 — the stash chest (the safehouse's, the cabin's hold): in reach and under the crosshair, its body .85 × .55 and the lid */
+function stashAimed(){return !!intStashPos&&Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4&&Math.abs(jumpY)<.9&&aimBox(intStashPos.x,intStashPos.z,0,.48,.33,.72);}
 function intBedTarget(){let best=null,bd=1e9;for(const b of (INT_BEDS||[])){const d=Math.hypot(px-b.x,pz-b.z);if(d>=1.6||d>=bd||Math.abs(jumpY-(b.y||0))>=.9)continue;if(bedAimed(b)){bd=d;best=b;}}return best;}
 function lootTargetNow(){try{
   if(activeZoneId==='world'){const c=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.items&&c.items.length>0&&lookingAt(c));if(c)return c;}

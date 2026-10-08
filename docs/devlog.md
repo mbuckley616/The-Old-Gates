@@ -14362,3 +14362,14 @@ Under every option of DECISION #183, each quest event shows one line, not two. T
 
 ### Needs eyes
 Nothing beyond the open book, still owed.
+
+## v80 — Session 656 — The barber's chair and the stash chest answer to the crosshair (backlog E, Michael's 6 Oct playtest)
+Michael's 6 Oct note asks that E need range and the reticle on the object. Sessions 645 and 646 did the beds, the strongbox, the home's chest, the tower's chest and the hatches. Two things in a room were still found by nearness alone: the barber's chair and the stash chest (the legacy safehouse's, and the hold in a ship's cabin, which reads the same `intStashPos`).
+
+`nearBarberChair` (`52-dungeon-gen.js`) now asks for the chair in reach (1.5, as before), on the floor, and under the crosshair (`aimBox` on the chair's solid, a little wider: 0.64 × 0.68 × 1.2). The old rule gave E to the barber whenever he stood within 1.2 of you or nearer than the chair, which with him standing 0.8 from his chair made the chair hard to reach. Now he takes E only when he is nearer and the crosshair is on him. The new `stashAimed()` (`68-dungeon-misc.js`, beside `bedAimed`) does the same for the stash chest: in reach (1.4, as before) and the crosshair on its body and lid (0.96 × 0.66 × 0.72). `interact` (`50-travel.js`) and the room's prompt (`90-main.js`) both read it, so the prompt shows only when E would open the stash.
+
+### Verified (headless Chromium)
+`chairstash` 6/6 (new). In Séamus's Barber, from 0.9 off the chair, looking at it: *Press 'E' to sit in the barber’s chair* and E sits you. From the same spot looking away: no prompt, and E goes to the barber's talk. Beside the barber (0.95 from him, 1.39 from the chair) with the crosshair on him, the chair does not take E. In the safehouse, from 1.02 off the stash chest: looking at it, *Press 'E' to access stash* and E opens it; looking away, neither. On the old build each looking-away check fails by construction, since both answered to nearness alone. `barberchair` 14/14, updated to aim at the chair, and its keeper check now aims at the barber. Neighbours: barber, barberbox, barberfee, intaim, bedaim, oddfurn. `parsecheck` clean.
+
+### Needs eyes
+Whether the chair's box (a little wider than its frame) feels easy to find when the barber stands at its side. Indoors, only the doors in doorways still answer to nearness (`intDoorNear`, the look builder's file).

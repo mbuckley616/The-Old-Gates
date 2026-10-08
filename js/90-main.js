@@ -1014,7 +1014,7 @@ function loop(now){
     const nearExit=pz>_rd-1.6&&Math.abs(px-_rw/2)<1.6&&jumpY<.6; // v80 S13 — at the door, on the ground floor
     // v61d4 — Stash + bed proximity prompts. Both check the live globals
     // set by buildInterior's safehouse branch; null in any other interior.
-    const nearStash=intStashPos && Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4;
+    const nearStash=stashAimed(); /* S656 — the prompt asks what E does */
     const _nbd=INT_BEDS.length?intBedTarget():null;const nearBed=INT_BEDS.length?(!!_nbd&&!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)); /* S645 — the prompt asks what E does: under the crosshair, and intBedPos only where E reads it */ // v80 — any usable bed
     const iprInt=document.getElementById('ipr');
     const _dpr=(typeof WORLD!=='undefined'&&WORLD.intDoorPrompt)?WORLD.intDoorPrompt():null; // v80 S143

@@ -1272,7 +1272,7 @@ function interact(){
     // of one masking the other given they're on opposite walls of the
     // safehouse, but the tighter check means accidental triggers from
     // walking past don't fire.
-    if(intStashPos && Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4){
+    if(stashAimed()){ /* S656 — under the crosshair */
       openStash();
       return;
     }
