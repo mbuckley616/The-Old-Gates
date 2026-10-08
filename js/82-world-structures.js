@@ -1192,9 +1192,9 @@
       ax=ch.cx*CHUNK+8+hash01(ch.cx,ch.cz,96)*(CHUNK-16);az=ch.cz*CHUNK+8+hash01(ch.cz,ch.cx,97)*(CHUNK-16);
     }
     for(let i=0;i<count;i++){
-      let ex=ax,ez=az,ok=false;
+      let ex=ax,ez=az,ok=false;const pr=seededRng('packspot',key+':'+i); // S651 — a member's place is drawn from its chunk and index; hash01(i,k,98) named no chunk, so every pack stood in one shape
       for(let k=0;k<8;k++){
-        ex=ax+(hash01(i,k,98)-.5)*14;ez=az+(hash01(k,i,99)-.5)*14;
+        ex=ax+(pr()-.5)*14;ez=az+(pr()-.5)*14;
         if(worldH(ex,ez)>1.5&&slopeNormalY(ex,ez)>.6&&!solidAt(ex,ez)&&!(stampAt(ex,ez)&&stampAt(ex,ez).kind==='site')){ok=true;break;}
       }
       if(!ok)continue;

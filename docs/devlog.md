@@ -14294,3 +14294,14 @@ Also raised during this session: **DECISION #206**, the critic's other s477 numb
 
 ### Needs eyes
 The suite tries unrented inn beds. The rented room the critic stood in takes the same path (`bedPrompt` says *Your room — press 'E' to rest*), but it was not rented in the test.
+
+## v80 — Session 651 — A pack stands in its own shape (backlog I, the critic's s477)
+`spawnChunkEncounters` (`82-world-structures.js`) placed each pack member at its anchor plus an offset drawn from `hash01(i,k,98)` and `hash01(k,i,99)`, where `i` is the member's index and `k` the try. Neither names the chunk, so every pack in the world stood in the same shape. Member 1 was about (+4.4, +0.9) from member 0, member 2 (+7.7, +2.5), and member 3 (−4.1, +9.0), whatever the chunk. The critic found two packs near Vieux Marché that matched to a tenth of a unit, and on the minimap a fresh pack showed as three dots in a diagonal row. Only where a try failed (water, a steep slope, a solid) did a pack break the pattern.
+
+A member's tries now come from `seededRng('packspot', <chunk>:<index>)`, a stream keyed by the chunk and the member's index (the co-op rule for rolls keyed by place and id). A chunk spawned twice stands the same, and no two chunks share a shape. The anchor, the group, the count and the foe ids (`<chunk>:<epoch>:<index>`, Session 477) are unchanged. The file is the look builder's, but the change is one spawn roll, with no mesh or terrain in it.
+
+### Verified (headless Chromium)
+`packshape` 4/4 (new). Spawned over the 19 × 19 chunks round Vieux Marché (the town's own 5 × 5 left out), 69 packs of two or more formed. All 69 have the second member in a different place (at most one pack per offset). Five chunks spawned twice stand the same to the float. On the old code, 61 of 68 packs put the second member at (+4.4, +0.9), and the suite fails there. `parsecheck` clean.
+
+### Needs eyes
+Packs on the minimap, which should now look scattered rather than drawn with a ruler.
