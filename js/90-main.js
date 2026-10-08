@@ -1015,7 +1015,7 @@ function loop(now){
     // v61d4 — Stash + bed proximity prompts. Both check the live globals
     // set by buildInterior's safehouse branch; null in any other interior.
     const nearStash=intStashPos && Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4;
-    const _nbd=INT_BEDS.length?INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9):null;const nearBed=_nbd?!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd)):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4); // v80 — any usable bed
+    const _nbd=INT_BEDS.length?intBedTarget():null;const nearBed=INT_BEDS.length?(!!_nbd&&!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)); /* S645 — the prompt asks what E does: under the crosshair, and intBedPos only where E reads it */ // v80 — any usable bed
     const iprInt=document.getElementById('ipr');
     const _dpr=(typeof WORLD!=='undefined'&&WORLD.intDoorPrompt)?WORLD.intDoorPrompt():null; // v80 S143
     if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}

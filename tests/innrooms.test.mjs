@@ -71,6 +71,7 @@ for (const sel of sels) {
   const beds = await tryBeds(); refusals.push({ inn, room: last.room, guests: last.guests, n, beds });
   if (refusals.length === 1) {
     const sl = await page.evaluate(async () => { const b = INT_BEDS.find(b => b.room === worldState.rented.room); px = b.x; pz = b.z; jumpY = b.y || 0;
+      /* S645: a bed answers E only under the crosshair, so stand at it and look down at it */ yaw = 0; pitch = -1.45; CAM.position.set(px, jumpY + 1.2, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true);
       const t0 = worldState.gameTimeAbsMinutes; interact(); const opened = sleepOpen; document.getElementById('sleep-go').click();
       await new Promise(r => setTimeout(r, 3500)); return { opened, slept: Math.round(worldState.gameTimeAbsMinutes - t0), indoors: isInterior(), stillMine: WORLD.bedPrompt(b) }; });
     refusals[0].sleep = sl;

@@ -48,6 +48,15 @@ function lookingAt(c,reach){if(c.body&&c.body.parent)return bodyAimed(c,reach); 
   const dx=c.x-px,dz=c.z-pz,dh=Math.hypot(dx,dz);if(dh>(reach||3.0))return false;if(c.mesh||c.g||c.group)return aimAt(c,(reach||3.0)+.6); // the mesh itself when there is one
   const floorY=(activeZoneId!=='world')?(currentFloor===2?FLOOR2_Y:0):((typeof WORLD!=='undefined')?WORLD.worldH(c.x,c.z):0);const cy=floorY+(c.y!=null?c.y:0.45);
   CAM.getWorldDirection(_laDir);_laTo.set(c.x-CAM.position.x,cy-CAM.position.y,c.z-CAM.position.z);const len=_laTo.length();if(len<.001)return true;_laTo.multiplyScalar(1/len);return _laTo.dot(_laDir)>0.96;}
+// S645 — a bed answers E only with the crosshair on it (Michael, 6 Oct 2026: "E should need range AND the reticle on the
+// object"; the inn's bed showed as usable from downstairs). In range as before (1.6 across, your own floor within .9), the
+// crosshair ray meets the bed's frame (the kit's bed: .86 wide on x, 1.5 long on z, .72 to the posts, padded a little), and
+// no wall stands between you. The prompt and E both ask this one function, so they cannot disagree.
+function bedAimed(b){const y0=b.y||0;CAM.getWorldDirection(_laDir);const o=CAM.position,lo=[b.x-.5,y0,b.z-.82],hi=[b.x+.5,y0+.78,b.z+.82],O=[o.x,o.y,o.z],D=[_laDir.x,_laDir.y,_laDir.z];
+  let t0=0,t1=3.2+(thirdPerson?TP.dist:0);
+  for(let i=0;i<3;i++){if(Math.abs(D[i])<1e-9){if(O[i]<lo[i]||O[i]>hi[i])return false;continue;}let ta=(lo[i]-O[i])/D[i],tb=(hi[i]-O[i])/D[i];if(ta>tb){const t=ta;ta=tb;tb=t;}if(ta>t0)t0=ta;if(tb<t1)t1=tb;if(t0>t1)return false;}
+  return typeof intSightLine!=='function'||intSightLine(px,pz,b.x,b.z);}
+function intBedTarget(){let best=null,bd=1e9;for(const b of (INT_BEDS||[])){const d=Math.hypot(px-b.x,pz-b.z);if(d>=1.6||d>=bd||Math.abs(jumpY-(b.y||0))>=.9)continue;if(bedAimed(b)){bd=d;best=b;}}return best;}
 function lootTargetNow(){try{
   if(activeZoneId==='world'){const c=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.items&&c.items.length>0&&lookingAt(c));if(c)return c;}
   else{const c=CORPSES.find(c=>!c.looted&&c.items&&c.items.length&&lookingAt(c));if(c)return c;const ch=CHESTS.find(c=>c.floor===currentFloor&&(!c.opened||c.items.length>0)&&lookingAt(c));if(ch)return ch;const b=(typeof BARRELS!=='undefined')?BARRELS.find(b=>b.floor===currentFloor&&(!b.opened||(b.items&&b.items.length>0))&&lookingAt(b,2.6)):null;if(b)return b;}

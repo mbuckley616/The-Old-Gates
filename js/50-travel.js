@@ -1260,7 +1260,7 @@ function interact(){
       if(typeof WORLD!=='undefined'&&WORLD.guestInteract())return; // v80 — Cill an Aoi
       if(typeof WORLD!=='undefined'&&WORLD.intDoorInteract())return; // v80 S143 — the door in the doorway
       if(nearBarberChair()){openBarberChair(INT_CHAIR.house);return;} // S561 — the barber's chair
-      const bd=INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9);
+      const bd=intBedTarget(); /* S645 — in range and under the crosshair */
       if(bd){if(typeof WORLD!=='undefined'&&WORLD.bedInteract(bd))return;openSleepUI();return;}
     }
     // v61d4 — Safehouse interactables. Stash chest opens the deposit/withdraw
@@ -1274,7 +1274,7 @@ function interact(){
       openStash();
       return;
     }
-    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
+    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
       openSleepUI();
       return;
     }
