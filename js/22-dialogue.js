@@ -991,6 +991,7 @@ function pickDialogChoice(i){
   }
   if(c.bye){closeDialog();return;}
   if(typeof c.fn==='function'){const r=c.fn(c);if(typeof r==='string')c.response=r;} // v80 S12 — dynamic topics (guild tasks)
+  if(typeof c.panel==='function'){closeDialog();c.panel();return;} // S641 — a topic that opens a panel in place of the chat (the factor's board)
   if(c.trade){
     // v61e2: outdoor trade:true recovery. openShop() returns silently if
     // currentHouse is null, which only ever gets set by goToInterior(). So

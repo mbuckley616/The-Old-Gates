@@ -196,7 +196,7 @@
     for(const k in CARGO_GOODS){const g=CARGO_GOODS[k];if(g.home!==nk)continue;rows.push({label:`Buy a ${g.n.toLowerCase()} (${cargoAsk(site,k)} gold)`,quest:true,fn:(c)=>{const r=cargoBuy(site,k);c.follow=cargoRows(site);return r+' '+cargoBoard(site);}});}
     for(const k in CARGO_GOODS){const h=cargoHave(k);const n=(shipHere(site)?h.hold:0)+h.bag;if(!n)continue;rows.push({label:`Sell a ${CARGO_GOODS[k].n.toLowerCase()} (${cargoBid(site,k).net} gold, ${n} on hand)`,quest:true,fn:(c)=>{const r=cargoSell(site,k);c.follow=cargoRows(site);return r+' '+cargoBoard(site);}});}
     return rows;}
-  function cargoTopic(site){return {label:'Cargo — the factor’s prices',quest:true,fn:(c)=>{c.follow=cargoRows(site);return cargoBoard(site);}};}
+  function cargoTopic(site){return {label:'Cargo — the factor’s prices',quest:true,panel:()=>openCargoPanel(site)};} /* S641 — the factor's panel (86-world-crime.js) in place of the chat rows; cargoRows and cargoBoard stay for the suites */
   // S250 — the harbour in detail (H.5, Michael's A): the quay along local z (seaward +z), its deck's top at .1 as the old
   // deck's; faces of coursed blocks on a mortar core, a kerbed coping, a paved deck, steps down to the water on the right
   // side near the head, iron mooring rings; everything below the tide line (sea level + .3, in the mesh's own y, dy the

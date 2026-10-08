@@ -905,3 +905,56 @@
       const t=now*.0009+w.ph;const surf=Math.sin(t);const y=SEA_Y-3.2+surf*3.4;w.m.position.set(w.x,y,w.z);w.m.rotation.y=w.yaw+Math.PI;w.m.rotation.x=-Math.cos(t)*.25;
       const up=surf>.85;w.spout.visible=up;if(up){const p=w.spout.geometry.attributes.position.array;for(let k=0;k<60;k++){const h=(k/60)*(4+surf*2),spread=.2+h*.25;p[k*3]=w.x+fx*4+(Math.random()-.5)*spread;p[k*3+1]=y+1.8+h;p[k*3+2]=w.z+fz*4+(Math.random()-.5)*spread;}w.spout.geometry.attributes.position.needsUpdate=true;if(!w._blew){w._blew=true;if(typeof sfxNoise==='function'&&Math.hypot(w.x-px,w.z-pz)<120)sfxNoise(.9,0,0,.12,900);}}else w._blew=false;}
   }
+// S641 — the factor's panel (Michael's B on #192, the ship in hand, item 4): the harbourmaster's *Cargo* opens a parchment
+// panel in place of the chat rows. One row per good: the ask (only the island's own goods are sold here), the bid, what you
+// hold aboard and on your back, − and + a crate, and Fill (as many of one good as the hold takes and the purse pays for);
+// under it the hold's bar, used of capacity. Every change goes through cargoBuy/cargoSell (84-world-interiors.js), so the
+// prices, the 4% step, the tithe and where a crate goes are what they were in the chat. The crates on deck are the look's.
+let cargoOpen=false,cargoSite=null,cargoSaid='';
+function cargoNotes(site){const nk=cargoNation(site);let s='';
+  if(nk==='aurenne')s+=` The Compact tithes every sale a tenth.`;
+  if(cargoHard(site))s+=` Grain and iron are dear here: the town has been hard used.`;
+  if(cargoAtWar(site))s+=` The war has put up iron and horses.`;
+  if(cargoBlockaded(site))s+=` Black sails off the coast: goods from abroad are dearer.`;
+  return s.trim();}
+function cargoFill(site,key){const g=CARGO_GOODS[key];if(!g||g.home!==cargoNation(site))return 'That is not sold here.';
+  if(!worldState.ship)return 'You have no ship to fill.';if(!shipHere(site))return `The ${SHIP.name} is not at this harbour.`;
+  let n=0,paid=0;while(n<200&&holdUsed()+g.w<=holdCap()){const p=cargoAsk(site,key);if(gold<p)break;if(!/^Bought/.test(cargoBuy(site,key)))break;n++;paid+=p;}
+  if(!n)return holdUsed()+g.w>holdCap()?'No room in the hold.':`A ${g.n.toLowerCase()} is ${cargoAsk(site,key)} gold.`;
+  return `Took aboard ${n} × ${g.n.toLowerCase()} for ${paid} gold.`;}
+function cargoPanelDraw(){const ov=document.getElementById('cargoui');if(!ov||!cargoSite)return;const site=cargoSite,nk=cargoNation(site),here=shipHere(site);
+  const B='background:none;border:1px solid #8a7040;border-radius:3px;font:14px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 7px;margin-left:3px';
+  const keys=Object.keys(CARGO_GOODS).sort((a,b)=>(CARGO_GOODS[a].home===nk?0:1)-(CARGO_GOODS[b].home===nk?0:1));
+  let h='<tr style="font-size:12px;color:#6a5a3a;text-align:right"><td style="text-align:left">Good</td><td>Ask</td><td>Bid</td><td>Held</td><td></td></tr>';
+  for(const k of keys){const g=CARGO_GOODS[k],own=g.home===nk,hv=cargoHave(k),held=(here?hv.hold:0)+hv.bag,bid=cargoBid(site,k).net;
+    const heldTxt=held?(hv.bag&&here&&hv.hold?`${hv.hold} + ${hv.bag}`:`${held}`):'—';
+    h+=`<tr data-k="${k}" style="text-align:right"><td style="text-align:left">${g.n}</td><td>${own?cargoAsk(site,k):'—'}</td><td>${bid}</td><td title="aboard + carried">${heldTxt}</td><td style="white-space:nowrap">`+
+      `<button type="button" data-a="sell" style="${B}"${held?'':' disabled'}>−</button><button type="button" data-a="buy" style="${B}"${own?'':' disabled'}>+</button>`+
+      `<button type="button" data-a="fill" style="${B}"${own&&here?'':' disabled'}>Fill</button></td></tr>`;}
+  ov.querySelector('#cargo-rows').innerHTML=h;
+  for(const b of ov.querySelectorAll('#cargo-rows button')){if(b.disabled)b.style.opacity='.35';const k=b.closest('tr').dataset.k,a=b.dataset.a;
+    b.onclick=()=>{cargoSaid=a==='buy'?cargoBuy(site,k):a==='sell'?cargoSell(site,k):cargoFill(site,k);cargoPanelDraw();};}
+  const ship=worldState.ship,used=here?holdUsed():0,cap=here?holdCap():0;
+  ov.querySelector('#cargo-hold').innerHTML=!ship?'You have no ship: what you buy, you carry.':!here?`The ${SHIP.name} is not at this harbour; what you buy, you carry.`:
+    `The ${SHIP.name}'s hold: ${used} of ${cap}<div style="height:9px;margin-top:4px;border:1px solid #8a7040;background:rgba(138,112,64,.12)"><div id="cargo-bar" style="height:100%;width:${Math.min(100,Math.round(used/Math.max(1,cap)*100))}%;background:#8a6a3a"></div></div>`;
+  ov.querySelector('#cargo-notes').textContent=cargoNotes(site);
+  ov.querySelector('#cargo-said').textContent=cargoSaid;ov.querySelector('#cargo-gold').textContent=`Your purse: ${gold} gold`;}
+function openCargoPanel(site){if(!site)return;
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('cargoui');
+  if(!ov){ov=document.createElement('div');ov.id='cargoui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:560px;max-width:94vw;max-height:92vh;overflow:auto;padding:18px 22px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div id="cargo-title" style="font-size:20px;letter-spacing:.04em;text-align:center"></div>'+
+      '<div id="cargo-notes" style="font-size:13px;color:#6a5a3a;text-align:center;margin:4px 0 8px"></div>'+
+      '<table id="cargo-rows" style="width:100%;border-collapse:collapse;font-size:15px;line-height:1.7"></table>'+
+      '<div id="cargo-hold" style="font-size:14px;margin:10px 0 4px"></div>'+
+      '<div id="cargo-said" style="font-size:13px;color:#6a5a3a;text-align:center;min-height:18px"></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #a89060;padding-top:8px;margin-top:6px">'+
+      '<span id="cargo-gold" style="font-size:14px"></span>'+
+      '<button type="button" id="cargo-done" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Done</button></div></div>';
+    document.body.appendChild(ov);ov.querySelector('#cargo-done').onclick=closeCargoPanel;}
+  cargoSite=site;cargoSaid='';ov.querySelector('#cargo-title').textContent=`The factor’s board — ${site.name}`;
+  ov.style.display='flex';cargoOpen=true;cargoPanelDraw();}
+function closeCargoPanel(){const ov=document.getElementById('cargoui');if(ov)ov.style.display='none';cargoOpen=false;cargoSite=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
+window.addEventListener('keydown',e=>{if(!cargoOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeCargoPanel();e.preventDefault();e.stopPropagation();}},true);
