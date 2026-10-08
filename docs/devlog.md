@@ -14189,3 +14189,12 @@ One thing the size changed that the prototype could not show: the falls. `beastf
 - The bite now visibly starts further out than it lands, because the bigger wolf bites from the same distance. Whether it should reach further is for the systems builder.
 - The Cave Bear's own face was not touched (the note asked only about its size).
 - Fewer bodies come to rest leaning; a few more end on their backs (Dire Wolf 2 in 400, the bear 5).
+
+## v80 — Session 640 — Finding 20: the boarding lines name the net (register fix, quest review run 11)
+The quest review's run 11 (on `auto/quests`, PR #201) found three lines Session 638 made untrue: since the boarding nets, a ship is boarded with the eye on her net, or by swimming against it, and a player told to stand *beside her* stands there and nothing happens. Applied word for word, without a decision, as the review asks. The shipwright's sale (`buyShip`, `85-world-sea.js`) ends *Walk to the end of the quay, look at the net down her side and press E to climb aboard; E again for the wheel.* Corwin's `ship` stage (`tutSeaStage`, `88-world-ticks.js`) says *There's a net down each side of her: put your eye on it and press E, and up you go. E again at the wheel.*, and his `board` stage *come alongside, put your eye on her net and press E, and clear her deck once you're over the rail.* The rest of each line stands.
+
+### Verified (headless Chromium)
+`boardlines` 6/6 (new): a ship bought at the port nearest Dunmore (the *Old Ram*) and the sale's line read back whole; Corwin's two stages read from `tutSeaStage` with the tutorial set to each; none of the three says *beside her* or *E to board*. Neighbours pass: shipwright, shipwrightvoice. `parsecheck` clean.
+
+### Needs eyes
+Nothing beyond reading the lines in play.

@@ -79,9 +79,9 @@
     const E=TUT().sea;const tgt=E&&E.target?siteAnywhere(E.target):null;const shipName=(worldState.ship&&worldState.ship.name)||'your ship';
     return ({
       ferry:{desc:`Corwin: "Before you own a boat, ride in one. Ask the harbourmaster for passage — any port, anywhere. You'll see what the sea costs in hours and coin."`,obj:'Take a ferry from any harbour (ask the harbourmaster)'},
-      ship:{desc:`Corwin: "Now buy a hull. Any shipwright. Show them my note — a quarter off; they owe me for a winter's timber. E beside her to board, E at the wheel. W and S for the sails, A and D to steer."`,obj:`Buy a ship from a shipwright (Corwin's note: a quarter off)`},
+      ship:{desc:`Corwin: "Now buy a hull. Any shipwright. Show them my note — a quarter off; they owe me for a winter's timber. There's a net down each side of her: put your eye on it and press E, and up you go. E again at the wheel. W and S for the sails, A and D to steer."`,obj:`Buy a ship from a shipwright (Corwin's note: a quarter off)`},
       crossing:{desc:`Corwin: "A ferry takes you. A ship, you take. Sail the ${shipName} yourself to a harbour on another island${tgt?` — ${tgt.name} is nearest`:''}. Keep off the rocks; they don't move for anyone."`,obj:`Sail the ${shipName} to a harbour on another island${tgt?` (${tgt.name})`:''}`},
-      board:{desc:`Corwin: "Out on the water you'll meet black sails. They shoot first. Don't run — come alongside, E to board, and clear her deck. The captain's chest is yours after."`,obj:'Board a pirate ship and clear her deck'},
+      board:{desc:`Corwin: "Out on the water you'll meet black sails. They shoot first. Don't run — come alongside, put your eye on her net and press E, and clear her deck once you're over the rail. The captain's chest is yours after."`,obj:'Board a pirate ship and clear her deck'},
       report:{desc:`Corwin: "Come and tell me. I'm at whatever harbour you're at — it's a talent."`,obj:'Tell Corwin at any harbour',done:true}
     })[E?E.step:'ferry'];
   }
