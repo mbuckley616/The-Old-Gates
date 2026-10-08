@@ -1589,3 +1589,301 @@ Follow-ups:
 - *The Guest has no shrine, and gets no artifact* (§4.2, the page): *You do not leave a tool for a guest. You leave the door off the latch.* This agrees with the Empty Chair's door off the latch in *The Year's Names*.
 - *Slurs about work, land and gods, never bodies* (§2.1): none used.
 - *Silent, and chosen plainly:* the names (the work's, in each register); who has heard of the tools (the Crown has one on its rolls; the Compact and the Church each claim one, next run; three are written down nowhere); how a beast wears a cloak (it sleeps on it).
+
+---
+
+## The Makers' Things, the second run — the Drowned Bell, the Noon Ring, the Waylamp and the Shuttle
+
+*Unapproved.* The second of the two runs Michael's B on DECISION #175 gives the quest writer (`docs/design/unique-artifacts.md`). The first run (above) named all six, wrote the hermit and the altars, and wrote the Gate-Blade and the Wolf-Mother's Cloak in full. This one writes the other four in full, in the page's build order after those two: the Sea's and the Hearth's, then the Sky's and the Weaver's. The rules (where each lies, the check, what it does, what it costs, who wants it) are the page's and are not changed; every line is fitted to them. Two places where the page leaves a rule open are read here the plain way and marked **Rule read** for the systems builder to confirm or change; neither changes a line's meaning.
+
+### What the canon fixes, and where it is silent
+
+- *An Mhuir — tides, ships, whales; "the sea owns them twice a day" is scripture* (§4.1); the tide is low from hours 0 to 6 and 12 to 18 (Part I, the day/night system). So the Bell's trial is the tide, and the lines say *twice a day*, not hours.
+- *An Spéir — weather, day and night; the sundial* (§4.1). The ring is read at noon; its old name, *Fáinne an Lae*, is also the old word for dawn. The draft keeps that doubleness unexplained: a ring of the day that is taken at noon.
+- *An Teallach — towns, roads, names; the merchants' god* (§4.1). The Hearth's tool belongs to no house: it goes from inn to inn, and every innkeeper speaks for it in their own people (`INN_ROOM_LINES`, `86-world-crime.js`, already keys the inn's lines by people).
+- *An Fíodóir — the binding; the loom the sigils are the seams of* (§4.1). *The Withdrawal forbade the reading of sigils; touching is permitted, understanding is not* (§3.1). *The Church of the Weaver is a later Aurennais institution that took the name and forgot the price* (§3.1). So the Church wants the Shuttle sealed for a true reason it cannot give: a thing that finds the unread stones invites reading them. The Prior says only what the Church believes.
+- *The Compact: merchant houses under the Church. Priors over the church's towns, Factors over the houses' ports* (§1.3); *the Compact's sealing of gates* (§3.1); *gate-grubbing … is sacrilege to the Church* (§1.3). The game already has the Compact's service *What the Sea Gave Back* (`FLINES.compact[3]`): *A relic was taken from a sealed gate — sealed by us, at cost. It must not be sold.* The Bell's claim is the same claim, written down: the Compact's rolls enter the bell as *le Reliquaire de la Marée*, a sealed gate's reliquary lost at sea. That is the Compact's reading, not the truth; the hermit and the altar give the truth (the Sea's bell), and nobody reconciles them.
+- *The Cold: each Mastery-tier reading takes warmth* (§3.3); the Shuttle's cost raises it a point a week (the page). The Cold has no effect yet but is shown on the hub, so the Shuttle's one line about it is felt, not counted.
+- *Speech follows the speaker* (§1.5): the Factor and the Prior are Aurennais (`lordFor` takes the nation's people, and Aurenne's titles are *Factor* and *Prior*); innkeepers and priests speak in the people of their house.
+- *Aldwyn's thanks* (the page) has no Aldwyn to say it in the open world: he is not one of the generated world's people. Corwin is the travelling face of Act II (§8.2), so Corwin carries it.
+- *Silent:* how a bell rides a wreck; what a ring does at night; who held the Waylamp first; where the Church keeps what it seals. The plainer choices: the bell hangs where the ship that carried it went down; the ring does nothing at night and says so; the lamp has always been at an inn, and the first innkeeper does not know whose; the Church keeps it *under seal in the cathedral* and says no more.
+
+### 1. Things not yet yours (the journal, chrome) — the other four
+
+The first run gave the Gate-Blade's and the Cloak's lines. The Bell and the Waylamp have no attribute, so their lines go on the page from the first time the hermit names them or the player sees them, and come off when taken.
+
+- *The Drowned Bell — in the wreck on the rock off ${coast}. At low tide.*
+- *The Noon Ring — on the cairn at ${peak}. At noon, under a clear sky. Swiftness 30.*
+- *The Waylamp — over the door of ${inn}, at ${town}. Five towns' inns, and no crime.*
+- *The Shuttle — in the deepest room of ${gate}. Intelligence 35.*
+
+### 2. The Drowned Bell — *Clog na Mara*
+
+**Where.** A wreck on a rock off a coast of the home island, above water only at low tide (hours 0–6 and 12–18), picked from the seed (the page). The rock lies within sight of a beach or a quay.
+
+**On approach** (the first time within forty units; `showMsg`, once). At high tide:
+> *A mast stands up out of the sea off the rock, and the water runs over everything below it.*
+
+At low tide:
+> *The sea has drawn back off a rock and left a wreck on it, ribs and a mast and green weed. Something hangs from the last beam.*
+
+**Prompt** (at low tide, within reach of the beam): *Press 'E' to take the bell*
+
+**At high tide** (E at the mast, swimming): *The sea has it now. It gives it back twice a day.*
+
+**Taking it:**
+> *The bell comes off its beam green to the lip. You knock it on the ribs getting it out, and it does not ring.*
+
+Log: *Took the Drowned Bell from the wreck off ${coast}.*
+
+**The wreck afterwards** (examine at low tide): *An empty beam, and a bright ring of wood where something hung for a long time.*
+
+**The item** (`name`, `desc`):
+- *The Drowned Bell*
+- *A ship's bell, small, and heavier than its bronze. Weed grows back on it overnight. The Compact's rolls enter it as le Reliquaire de la Marée. The Old Blood call it Clog na Mara, the Sea's bell.*
+
+**The first storm she rides with it aboard** (once; `showMsg`):
+> *The sea is running high, and she rides it as if she had been told to.*
+
+**The cost, the first time a black sail turns for you** (once; `showMsg` and `addLog('⛵', …)`):
+> *The bell in your pack rings once, with no sea running. Off the ${dir} quarter, a black sail has put about.*
+
+**Rumour** (`liveRumours`, coastal Gatelands sites within a province of the rock, while the bell is on it):
+> "There's a wreck on the rock off ${coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry."
+
+#### The claimant — a Factor of the Compact (Aurennais; any Factor at an Aurennais port)
+
+The topic is on any Factor in Aurenne (`lordFor` at an Aurennais port or town) while the player carries the bell and has not yielded it. `${seat}` is the Compact's seat (`FACTIONS.compact.seat`).
+
+*The bell.*
+> "Forgive me, Master. The Compact's rolls enter a bell of that size and that weight as le Reliquaire de la Marée: the reliquary of a gate the Church sealed, entered on a ship's manifest, and lost with the ship. The manifest is in the house's books still; the ship is on a rock. You will appreciate that a thing entered in the rolls is the Compact's wherever it is found, and that the Compact prefers to settle such matters by agreement rather than by any other means. The house offers a cog, entered in your name, and the rank of Factor. Or you may keep it. The rolls will record which."
+
+Follow-ups:
+- *Give it to the Compact.*
+  - Below Factor, and the Compact open to you:
+    > "Then the manifest is closed at last, which the clerks will find more satisfying than they should. You are entered as Factor of the Compact, Master, from today. The cog is entered also."
+  - Already Factor or Prior:
+    > "Then the manifest is closed at last. It is entered as a service to the house, Master, beside your name. The cog is entered also."
+  - Sworn to the Crown or the League (the Compact closed to you):
+    > "The reliquary is received, Master, and the house is obliged. The rank the house cannot give to someone sworn elsewhere; that is not a judgment, only a clause. The cog stands."
+- *I'll keep it.*
+  > "As you wish. The rolls will show it held by you, which is a kind of agreement also. I would only observe that the sea has taken it once already, and the sea does not consider itself bound by our books."
+- *Not now.*
+  > "Of course. The offer is entered, and stands until withdrawn. It has not been withdrawn."
+
+**The cog** (after *Give it to the Compact.*, in place of *The cog is entered also.* / *The cog stands.*, by what `grantShip` does; the same four outcomes as `compactClaimLine`):
+- No ship: *The cog is at the quay here.* (or *at the quay at ${port}.*)
+- Her ship is smaller than a cog: *Your own ship will be refitted as a cog where she lies, at the house's charge.*
+- Her ship is a cog or larger: *You keep a ship already, and a larger one. The house will pay the cog's worth instead: ${n} gold.*
+- Her ship is on the bottom: *Your ship is on the bottom; the house has ordered her raised, a cog, in three days.*
+
+**Rule read.** The page gives *Factor rank and a cog*. Read here: below Factor, the rank rises to Factor (rank 2); at Factor or above it counts as one service; with the Compact closed, the cog alone. A player whose own hull is a cog or larger takes the cog's worth in gold (1,300, `SHIP_CLASSES.cog.worth`), because a smaller ship given to a sailor with a bigger one is no gift. The systems builder may choose otherwise; only the cog's line then changes.
+
+### 3. The Waylamp — *Lóchrann an Teallaigh*
+
+**Where.** Over the door of one inn on the home island, picked from the seed (the page: *passed from inn to inn*). While no one carries it, it hangs at the last inn it was given to.
+
+**The trial** (the page): carry it lit into the inns of five other towns, without a crime on your account while you carry it. Each innkeeper trims the wick (a topic). On the fifth, it is yours. **Rule read** (the page is silent on a crime during the trial): a crime puts the lamp out, as it does after; the count goes back to nothing, and the lamp lights again at the next inn after seven days.
+
+**On approach** (the first time within twenty units of the inn that holds it; `showMsg`, once):
+> *A lamp burns over the inn's door in broad day. The rain does not seem to reach it.*
+
+**The innkeeper who holds it** (the topic *The lamp over the door?*, while the lamp hangs there; by the inn's people):
+- Gatelander:
+  > "That lamp was over the door when my mother had the house, and over some other door before that, and nobody I ever asked could say whose door it was first. It goes from house to house, and the one rule is it goes with somebody honest. Carry it to five inns in five towns, and keep your hands to yourself the length of the road, and it's yours. A light's no use to a house that keeps it."
+- Markman:
+  > "Lamp's not mine. Never was. Goes inn to inn. Carry it to five towns' inns, lit, no thieving on the way, and it's yours. That's the rule. I didn't make it."
+- Aurennais:
+  > "The lamp is not the house's property, Master, though it is in the house's keeping. It passes from inn to inn on one condition: that whoever carries it carries it into five towns' inns, lit, without a crime against their name. On the fifth it becomes theirs. No one has written the terms down. No one has needed to."
+- Old Blood:
+  > "Lóchrann an Teallaigh. It goes from hearth to hearth. Five inns, five towns. Steal nothing. Then it is yours."
+
+Follow-ups:
+- *I'll carry it.* (`takeArtifact('lamp')` in its trial state; the count at nothing)
+  - Gatelander: "Then take it down yourself; it'll not come for me. Mind it, now. A lamp's like a name: easy carried, hard lit again."
+  - Markman: "Take it, then. Keep it lit."
+  - Aurennais: "It is in your keeping from this moment, Master. The house wishes you a straight road."
+  - Old Blood: "Take it down."
+- *Not today.*
+  - Gatelander: "It's waited longer than you'll keep it waiting."
+  - Markman: "It'll be here."
+  - Aurennais: "It will be here, Master. It generally is."
+  - Old Blood: "It waits."
+
+**At each inn on the way** (the topic *The lamp.*, at an inn in a town not yet counted; the count rises by one; `${n}` the count, `${left}` how many are left):
+- Gatelander: "You're carrying the lamp. Here, let me trim it. ${n} houses, and ${left} to go; a road's shorter walked than talked about."
+- Markman: "The lamp. Give it here. Wick's trimmed. ${n} done, ${left} left."
+- Aurennais: "The lamp, Master. Allow me to trim it. That is ${n} houses entered, and ${left} remaining."
+- Old Blood: "The lamp. There. ${n}. ${left} more."
+
+At an inn in a town already counted: *"This house has trimmed it once. It's another town's turn."* (Gatelander); *"Trimmed it already. Next town."* (Markman); *"This house has trimmed it already, Master. Another town's house must."* (Aurennais); *"Not here again."* (Old Blood).
+
+**The fifth** (in place of the count line):
+- Gatelander: "That's five, and it's yours, and I'd not take it off you now if you asked. They say the lamp knows the road it came by. If it does, it's said nothing to me."
+- Markman: "Five. It's yours. Don't lose it."
+- Aurennais: "That is the fifth house, Master. The lamp is yours by the only terms it has ever had, and the house is honoured to have witnessed them."
+- Old Blood: "Five. It is yours. It was always going to someone."
+
+Log: *The Waylamp is yours: five towns' inns, and nothing on your account.*
+
+**The item** (`name`, `desc`):
+- *The Waylamp*
+- *An inn lamp of old brass with a horn window. It burns without oil and no weather puts it out. The Old Blood call it Lóchrann an Teallaigh, the Hearth's lantern.*
+
+**Holding it** (the room offer's first sentence, at any inn, before the house's own offer; by the inn's people):
+- Gatelander: "There's no charge to the one carrying that lamp. There never was, and I'd not be the first."
+- Markman: "You've the lamp. No charge."
+- Aurennais: "The lamp's bearer is not charged, Master. That is the custom, and the house keeps it."
+- Old Blood: "The lamp pays."
+
+**The coach** (at the coachman, chrome after the seat line): *(the lamp: no fare)*
+
+**The lamp goes out** (any crime while carrying it, in the trial or after; `showMsg` and `addLog('🏮', …)`):
+> *The Waylamp goes out in your hand. The bounty on you is doubled.*
+
+Seven days on (`addLog('🏮', …)`): *The Waylamp is lit again. Nobody lit it.*
+
+#### The claim — the innkeepers (any inn, by the inn's people)
+
+The topic *Give the lamp to the house.* is at any inn while the player holds the lamp as their own. Given, the lamp hangs over that inn's door and the round can begin again from it; that town's favour rises by 2 (`addFavor`).
+
+- Gatelander:
+  > "Over my door? You'll not want it back, now; that's the way of it. The town will know who brought it, and a town's memory is longer than a lord's. Sit; the first cup's the house's, and so's the last."
+- Markman:
+  > "Over this door? Good. The town'll know it was you. Drink's on the house."
+- Aurennais:
+  > "You do the house a great honour, Master, and the town also; the town will know whose. Permit me to say that very few who earn the lamp give it up. Fewer than the custom would like."
+- Old Blood:
+  > "Here. Good. The town will remember you."
+
+Log: *Gave the Waylamp to ${inn}, at ${town}.*
+
+**Rumour** (`liveRumours`, the town whose inn holds the lamp and its neighbours, while it hangs there):
+> "There's a lamp over the inn door at ${town} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${town}."
+
+### 4. The Noon Ring — *Fáinne an Lae*
+
+**Where.** On the cairn at the top of a peak on the home island (`PEAKS`), picked from the seed (the page). The cairn's top stone has a hollow worn to fit the ring, and a line cut across it that the cairn's shadow covers at noon.
+
+**On approach** (the first time within ten units of the cairn; `showMsg`, once):
+> *A cairn at the top of the world, and on its top stone a ring of gold in a hollow worn to fit it. A line is cut across the stone, and the cairn's shadow lies on it.*
+
+**Prompt:** *Press 'E' to take the ring*
+
+**Failing** (`showMsg` and `addLog('☀', …)`; first the hour, then the sky, then Swiftness; the check is the page's: noon, a clear day, Swiftness 30 for the climb against the clock):
+- Not noon: *The ring will not lift. The light is wrong for it.*
+- Noon, under cloud, rain or snow: *Noon, and no sun to read it by. The ring stays where it is.*
+- Noon and clear, Swiftness below 30: *The cairn's shadow is already off the line by the time your hand is on the stone. Not yet.*
+
+**Rule read.** *Noon* here is the window the systems builder chooses (the sundial's hour of noon); the lines assume one game hour.
+
+**Taking it:**
+> *At noon the cairn has no shadow, and the ring is only a ring. It comes up into your hand.*
+
+Log: *Took the Noon Ring from the cairn on ${peak}.*
+
+**The cairn afterwards** (examine): *An empty hollow in the top stone, and a line no shadow reaches at noon.*
+
+**The item** (`name`, `desc`):
+- *The Noon Ring*
+- *A plain gold band, cut inside with twelve marks and a sun. Worn, it is warm at noon and cold at midnight. The Old Blood call it Fáinne an Lae, the ring of the day, which is also their word for dawn.*
+
+**Turning the weather** (the item's use, once a day; `showMsg` and `addLog('☀', …)`):
+- Clear to rain: *You turn the ring a quarter on your finger. By the time you look up, the sky has begun to close.*
+- Rain to clear: *You turn the ring back. The rain thins and stops, and the light comes through as if it had only been waiting.*
+- Already turned today: *The ring will not turn again today.*
+- Any other sky (fog, snow, storm, grey): *The ring does not turn under this sky.*
+
+**The cost** (a strike within forty units in a storm, the page's one in three; `showMsg`, the first time only):
+> *Lightning comes down a stone's throw from you. The ring is warm.*
+
+Afterwards each strike logs only: *Lightning, close.*
+
+**Rumour** (`liveRumours`, sites within a province of the peak, while the ring is on it):
+> "There's gold on the cairn at the top of ${peak}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours."
+
+No claimant (the page): the peak is the cost.
+
+### 5. The Shuttle — *Spól an Fhíodóra*
+
+**Where.** In the deepest room of the gate nearest the home island's last unread sigil (the page; `sigilDoors`, `nearestSigilDoor`). It lies on the floor before the sigil, as if put down a moment ago.
+
+**On entering the deepest room** (the first time, while the Shuttle lies there; `showMsg`, once):
+> *Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.*
+
+**Prompt:** *Press 'E' to take up the shuttle*
+
+**Failing** (Intelligence below 35; costs nothing):
+> *You can see it, and you cannot see where it is. Your hand closes beside it every time. Not yet.*
+
+**Taking it** (Intelligence 35 or more):
+> *You pick it up the way you would pick up something you had put down a moment ago.*
+
+Log: *Took the Shuttle from the deepest room of ${gate}.*
+
+**The item** (`name`, `desc`):
+- *The Shuttle*
+- *A weaver's shuttle of pale wood, worn smooth by a hand that is not yours, with a thread end in it that nothing will pull out. The Church calls it la Navette. The Old Blood call it Spól an Fhíodóra, the Weaver's shuttle.*
+
+**The compass** (the first time the needle turns for it; `showMsg`, once):
+> *The compass needle leans, and keeps leaning, toward a stone you have not read.*
+
+**The Cold** (each week it rises by the Shuttle; `addLog('❄', …)`, no screen line):
+> *Your hands are colder than the weather.*
+
+#### The claimant — the Church: the Prior at the Compact's seat (Aurennais)
+
+The topic is on the Prior at Aurenne's capital (`lordFor(seat)`, the `castle` branch's lord) while the player carries the Shuttle and has not yielded it. The Church wants it sealed. The page's price: Compact standing +3 (three services) and Aldwyn's thanks.
+
+*The shuttle.*
+> "I will be candid with you, Master, since candour is cheaper than the alternative. The Church enters that object as la Navette, and it has been on our books as lost for longer than the Compact has kept books. It finds the stones no one has read. The Church holds that the Weaver's work is to be kept, not read, and that a thing which finds the unread stones is an invitation, and an invitation is half an act. We would have it under seal in the cathedral, where it invites no one. In return the Compact will enter three services to your name, and I will write to the Royal Herald at Ironhaven, who has asked the Church for the same thing in other words for many years. Or you may keep it, and the Church will pray for you, which you may count as you please."
+
+Follow-ups:
+- *Give it to the Church.*
+  - The Compact open to you:
+    > "Received, and entered: three services to your name, Master, and a letter to the Herald by tonight's post. It will be under seal before the bells. The Church is in your debt, which it records."
+  - Sworn to the Crown or the League (the Compact closed to you):
+    > "Received. The services the Compact cannot enter to someone sworn elsewhere; that is a clause, not a sentiment. The letter to the Herald I can write, and will. It will be under seal before the bells."
+- *I'll keep it.*
+  > "Then I will not argue the point; arguing with a free man is a contract with no consideration. I would ask only this: when it leans, ask yourself who is being led, and by whom."
+- *Not now.*
+  > "The offer stands, Master. The Church is accustomed to waiting. It has had practice."
+
+Log (given): *Gave the Shuttle to the Church at ${seat}.*
+
+**A priest anywhere** (the topic *The shuttle.*, on any `Priest` while the player carries it; a pointer, by the church's people):
+- Gatelander: "There's a thing in your pack the Prior in Aurenne would cross the sea for, and I'd not say that of many things. Take it to her, or don't. But don't bring it in here."
+- Markman: "That's the Church's business, not mine. The Prior's in Aurenne. Take it there or don't."
+- Aurennais: "That object is the Prior's concern, Master, at ${seat}, and not this house's. I would take it to her. I would not keep it."
+- Old Blood: "Spól an Fhíodóra. Put it back, or give it to the ones who will shut it in. Do not use it."
+
+(*Her*/*him* for the Prior follows `lordFor(seat).female`.)
+
+**Aldwyn's thanks** (Corwin, the next time he stands at a harbour after the Shuttle is given; one topic, *Word from Aldwyn?*, shown once):
+> "Aldwyn had a letter from the Prior. He's not a man for thanks; he'd sooner owe you than say so, and he owes half the island on those terms. But he asked me to say it, so here it is, said. A thing put out of reach is a thing he can stop lying awake over. He lies awake anyway. It's one thing fewer."
+
+### What in the code would carry it
+
+- **The state** is the first run's: `worldState.artifacts[id]` with `id` `bell`, `ring`, `lamp`, `shuttle`, changed only through `takeArtifact(id)` and `yieldArtifact(id, to)`. New world keys from this draft: `worldState.artifacts.lamp.inn` (the inn it hangs at), `.count` and `.towns` (the trial), `.outUntil` (the lamp out); `worldState.artifacts.ring.turned` (the day it last turned); `worldState.artifacts.bell.blackSailSeen`, `ring.struck`, `shuttle.compassSeen` (the once-only lines). All describe the tools, so all are world keys, not in `SS_CHAR_WS`; each goes in the S242 list. Who holds the lamp in the trial rides the character row with the item, as the others do.
+- **The Bell**: the wreck prop on a rock (`85-world-sea.js`, beside `wreckGeo`), its prompt gated on `isTideOut()`; the storm line in `shipWear`; the black sail's turn in the pirates' steering (`OTHER`, `kind:'pirate'`). The Factor's topic is in the lord's `_extraFn` (as `factionTopics`), shown at any Aurennais `port` or `town`; *Give it to the Compact* reads `fstate().compact` and reuses `grantShip` for the cog, its line picked as `compactClaimLine` picks.
+- **The Waylamp**: `innTopics(house, people)` (`86-world-crime.js`) gains the three topics (*The lamp over the door?*, *The lamp.*, *Give the lamp to the house.*) and the room offer's first sentence, in a table keyed like `INN_ROOM_LINES`; the free room and the free coach seat in `innPrice` and the coach fare; the crime hook in the crime record (`bountyAt`), which doubles that bounty and sets `outUntil`.
+- **The Noon Ring**: the cairn prop at a `PEAKS` entry, its prompt and check reading `gameHour()`, `WX.type` and Swiftness; the use in `useItem` (`62-actions.js`), setting `WX` through the weather's own setter (`devWeather` shows the path); the strike in the storm's lightning.
+- **The Shuttle**: laid in `buildDungeon` (`56-dungeon-build.js`) in the deepest room of the gate `nearestSigilDoor` picks for the home island; the check in `takeArtifact`; the compass in the Weaver's Eye path (`nearestSigilDoor`, already there for the spell); the Cold in `worldState.cold`; Varek's sooner discovery in `varekDue`. The Prior's topic in the castle lord's `_extraFn` at `FACTIONS.compact.seat`; the priests' pointer in `richTopics`' `Priest` branch (`87-world-quests.js`, beside *A blessing?*); Corwin's line in `tickCorwin`'s topics.
+- **The rumours** go in `liveRumours`, each while its tool is still where it lies.
+- **A test** for the builder: at hour 8 the bell's prompt answers *The sea has it now*, at hour 3 it takes; the Factor's *Give it to the Compact* at rank 0 names you Factor and grants a cog, and with a galleon pays 1,300; five inns in five towns make the lamp yours and a sixth inn in a counted town refuses; a crime puts it out and doubles the bounty; the ring at hour 9 says *The light is wrong for it*, and at noon in rain *no sun to read it by*; turned twice in a day it answers *will not turn again today*; the Shuttle at Intelligence 34 does not lift; given to the Prior it enters three services, and with the League's rank at 2 it enters none.
+
+### Checked against the canon
+
+- *No chosen-one prophecies* (Part I, §4.2): nothing is waiting for anyone. The bell is taken by whoever comes at the ebb, the ring by whoever is fast enough at noon, the lamp by whoever is honest for five towns, the Shuttle by whoever can see it. The first innkeeper's *It was always going to someone* is Old Blood plainness, not a prophecy: someone, not you.
+- *Gatelanders: proverbs, indirection, no bare yes or no; oaths on the Weaver* (§2): the innkeeper never says *yes*; every Gatelander line has its saying (*A light's no use to a house that keeps it*; *A lamp's like a name: easy carried, hard lit again*; *a road's shorter walked than talked about*; *a town's memory is longer than a lord's*). No Gatelander here swears, so no oath is wanted.
+- *Markmen: short sentences, aye, no honorifics* (§2): the Markish innkeeper's longest sentence is ten words, and nobody is called anything.
+- *Aurennais: formal, honorifics, qualifiers, contract metaphors, never an oath* (§2): the Factor and the Prior say *Master*, *forgive me*, *permit me*, *I would only observe*; the contract runs through both (*entered*, *the manifest is closed*, *a clause, not a sentiment*, *a contract with no consideration*). Neither swears; the Prior's *the Church will pray for you* is a promise of the Church's, not an oath.
+- *Old Blood: sparing, exact, the older name for the thing* (§2): the Old Blood innkeeper answers the lamp with *Lóchrann an Teallaigh*, and the Old Blood priest answers the shuttle with *Spól an Fhíodóra* and three short orders.
+- *Three-register naming* (Part I): Irish true names (*Clog na Mara*, *Fáinne an Lae*, *Lóchrann an Teallaigh*, *Spól an Fhíodóra*), Anglo common names, and French where an institution writes it down (*le Reliquaire de la Marée*, *la Navette*).
+- *The sea owns them twice a day* (§4.1): *The sea has it now. It gives it back twice a day.*
+- *The Withdrawal: touching is permitted; understanding is not* (§3.1); *the Church took the name and forgot the price*: the Prior wants the Shuttle sealed because *a thing which finds the unread stones is an invitation* — right in its fear, wrong in its reasons, and it never says *the Clearing*.
+- *The Compact seals gates* (§3.1, §8.2) and *gate-grubbing is sacrilege* (§1.3): the Compact's claim on the bell is that it came from a gate the Church sealed, as *What the Sea Gave Back* already says of its reliquary.
+- *Aldwyn: old, careful, withholds* (Part I): Corwin's *He's not a man for thanks; he'd sooner owe you than say so* and *He lies awake anyway* keep him so. Corwin stays *knowing, faintly amused*.
+- *The Cold: a pressure, the sense of being regarded* (§3.3): the Shuttle's one line is about the hands only. Nothing in the draft says *window*.
+- *Slurs about work, land and gods, never bodies* (§2.1): none used.
+- *Silent, and chosen plainly:* the bell hangs where the ship that carried it went down; the ring does nothing at night; the lamp has always been at some inn; the Church keeps the Shuttle *under seal in the cathedral* (not the Guest's chapel, which is under the same cathedral and is Michael's).

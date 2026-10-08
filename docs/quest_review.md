@@ -6,13 +6,39 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `9ecc10d` | run 10, from `598e95e`: the look sessions 598–611 merged, the barber's panel with Finding 17 applied, the producer's docs |
-| auto/systems | `3c62b39` | run 10, Sessions 591–618 against main |
-| auto/backlog | `89f1046` | run 10: level with main |
-| auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | run 10: one prototype commit each; no string a player reads |
-| auto/producer, auto/critic, auto/concept, auto/design | — | run 10: level with main, or ahead in docs only |
+| main | `4a1cf46` | run 11, from `9ecc10d`: the look session 632 (the wolves) merged; no string a player reads |
+| auto/systems | `15accb0` | run 11, Sessions 621–639 against main |
+| auto/backlog | `c8d0c85` | run 11: level with main |
+| auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
+| auto/wip-moundsolid | `0ff2144` | run 11: Session 630's commit, already inside auto/systems |
+| auto/producer, auto/critic, auto/concept, auto/design | — | run 11: level with main, or ahead in docs only |
 | auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+
+---
+
+## Run 11 — 8 Oct 2026
+
+No new strings on main (the wolves are shape only). About 20 on auto/systems, Sessions 621–639; one finding, three lines older than the baseline that Session 638's boarding nets made untrue. The systems builder named them in the channel on 7 Oct.
+
+**auto/systems.** Finding 19 is in the code as written (*Born here, and here these N years.*). The new lines are good: *The ${ship} goes down. Any shipwright can raise her.*, *sank with N crates in her hold*, *You climb aboard. E again for the wheel.*, *Refit her as a cutter (the yard pays N gold)*, *Better sails, tier N*, and *Press 'E' to rest* on a fort's cot. The shipwrights' refit lines in four peoples are unchanged; cut at the first full stop for a hull no longer than hers, each still stands as a sentence in its register (*She is a caravel now, Master.*, *A cutter now.*).
+
+**Drafted:** *The Makers' Things, the second run* (`docs/quest_drafts.md`): the Drowned Bell, the Noon Ring, the Waylamp and the Shuttle, with the Compact's claim and the Church's.
+
+### Finding 20 — auto/systems — three lines still say *E beside her to board*
+
+**Where.** The shipwright's sale, `buyShip` in `85-world-sea.js` (grep `press E beside her`), and Corwin's sea line, `tutSeaStage` in `88-world-ticks.js`: the `ship` stage and the `board` stage.
+
+**Why.** Since Session 638 you board by the net with your eye on it, or by swimming against it, and the black sails' nets work the same way. A player told to stand *beside her* stands beside her and nothing happens. Corwin is a Gatelander, but these are a tutor's instructions, and his old lines are plain on purpose; the mending keeps his voice and his order of things.
+
+**Text, and replacement** (each line whole; keep the file's `\u2019` escapes in the first):
+
+1. *Walk out, press E beside her to board, E again for the wheel.* (the end of the sale line) →
+   `` Walk to the end of the quay, look at the net down her side and press E to climb aboard; E again for the wheel. ``
+2. `ship` stage: *…they owe me for a winter's timber. E beside her to board, E at the wheel. W and S for the sails, A and D to steer."* →
+   `` Corwin: "Now buy a hull. Any shipwright. Show them my note — a quarter off; they owe me for a winter's timber. There's a net down each side of her: put your eye on it and press E, and up you go. E again at the wheel. W and S for the sails, A and D to steer." ``
+3. `board` stage: *Don't run — come alongside, E to board, and clear her deck.* →
+   `` Corwin: "Out on the water you'll meet black sails. They shoot first. Don't run — come alongside, put your eye on her net and press E, and clear her deck once you're over the rail. The captain's chest is yours after." ``
 
 ---
 
