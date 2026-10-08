@@ -14329,3 +14329,25 @@ The concept page put the picture in the index entry itself, so the list could dr
 
 ### Needs eyes
 Whether 0.72 is sharp enough at the register's large size (the next slice shows the picture at 320 × 180). A save made in the dark or in thick fog will be a dark or grey picture, which is true to the moment.
+
+## v80 — Session 654 — Told, filed by person and place (Michael's A on #183, the filing)
+Michael chose A on DECISION #183 (6 Oct): the Journal on the open book, with Told filed by who told you and where. The concept named one rule change under it: `journalTold` keys by the speaker, or by the place for *What is this place?*, and quest talk and a sale's yes are not filed. Nothing had been built. This session builds that rule and a Told view in today's style. The open book itself (the leaves, the ribbons, the one line per quest event in the Chronicle, the Due month) is still owed.
+
+`journalTold` (`66-hub.js`) now files each answer on a page:
+- **A person's page.** The page is the speaker: name, town and the town's `_twin` number, so three Ruairís in two towns keep three pages. Each question is kept once, the first telling. Session 490 filed the generated townsfolk by town and words, so a rumour every villager repeats was kept once. Under A each teller keeps their own words, as the concept's Told page shows them.
+- **A place's page.** *What is this place?* goes on the page of the building you stood in (`currentHouse`, *The Bramble Hearth*). Outdoors it goes on the town's page, and indoors in the legacy zones on the zone's. A place keeps one answer per teller.
+- **Not filed.** A topic marked `quest`, *I'm looking for work.*, *It's done.*, *Any work?*, and any label that names a price (*Yes. 11 gold.*).
+
+An entry carries `k`, `pk`, `pn` and `ro` beside the old fields. Entries saved before this build have none and are read as their teller's page.
+
+The Journal's third button is now *Told* (it was *Topics*; it still opens `journalView('topics')`). With no search, the view is an index by town: *Dunmore · People* (name, trade, how many answers), then *Dunmore · Places* (place, told by whom). A row opens its page: the name, *innkeeper · Dunmore · first met Seaday 4 Reaping*, then each question with its date and the answer, and *← All you were told* goes back. A search shows the matching answers under their pages. A name in a journal line still links to the search for it (Session 495).
+
+### Verified (headless Chromium)
+`toldpages` 5/5 (new). Ruairí the innkeeper's *Who are you?* and *A bed for the night?* are filed. His *I'm looking for work.*, *It's done.*, *Yes. 11 gold.* and a quest topic are not. Ruairí of Portclare and Dunmore's second Ruairí keep pages of their own. *What is this place?* asked in The Bramble Hearth is that inn's page. The index reads *Dunmore · People: Ruairí innkeeper, Ruairí trader · Dunmore · Places: The Bramble Hearth told by Ruairí · Portclare · People: Ruairí smith*.
+
+`told` 11/11, updated to the new rule. Old Tadhg's answers sit on his page with the question and the time, and asked again they are filed once. The two guild heads and two householders, asked about the place in the street, are four answers on Dunmore's place page, one per teller. The folder is not filed. The index is by town, and his page shows *first met Seaday 4 Reaping* and each question. The search, the typing and the reload are as before. On the old filing this suite's new checks fail by design, since Session 490 kept one rumour for the whole town.
+
+Neighbours: jnlinks, journal. `parsecheck` clean.
+
+### Needs eyes
+Whether a person's page should name the trade from `roleTag` (*innkeeper*, *trader*) or the generator's `bio.trade`. The book's look waits for the open-book slice.

@@ -133,24 +133,46 @@ function renderLog(){
 // label in worldState.told, a character key. A person with a name of their own (the legacy villages, the quest givers)
 // files by name; the generated townsfolk (they number thousands) file by the town and the words, so a rumour every
 // villager repeats is kept once and a keeper's answer about their own house is kept beside the next one's.
+// S654 — Michael's A on DECISION #183: Told is filed by who told you, a page a person (name, town and the town's
+// number for a second of that name), or for *What is this place?* by the place you stood in (a page a place, *The
+// Fighters' Guild*, or the town). Each page keeps a question once, the first telling. Quest talk and a sale's yes are
+// not filed (a topic marked quest, *I'm looking for work.*, *It's done.*, a label that names a price). Entries filed
+// before S654 (keyed by the question) have no page of their own and are read as their teller's page.
+const JN_NOT_TOLD=/^(I'm looking for work|It's done|Any work)\b|\b\d+ gold\b/i;
 function journalTold(npc,c){
-  if(!npc||!c||c.folder||!c.label||typeof c.response!=='string'||!c.response.trim())return;
-  const label=String(c.label).replace(/^[📜🗝⚑★☆✦]\s*/u,'').trim();if(!label)return;
+  if(!npc||!c||c.folder||c.quest||!c.label||typeof c.response!=='string'||!c.response.trim())return;
+  const label=String(c.label).replace(/^[📜🗝⚑★☆✦]\s*/u,'').trim();if(!label||JN_NOT_TOLD.test(label))return;
   const T=worldState.told||(worldState.told={});const site=npc._siteId||null;
-  let h=0;if(site)for(let i=0;i<c.response.length;i++)h=(h*31+c.response.charCodeAt(i))|0;
-  const key=label+'|'+(site?'@'+site+':'+(h>>>0).toString(36):(npc.name||'?'));if(T[key])return;
   let town='';if(site){try{const st=WORLD.siteAnywhere(site);town=(st&&st.name)||'';}catch(e){}}
-  T[key]={l:label,s:npc.name||'',w:town,r:c.response,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440};
+  const place=/^What is this place\?$/.test(label);let pn,pk;
+  if(place){pn=(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.name)||town||(typeof ZONE_LABEL!=='undefined'&&ZONE_LABEL[activeZoneId])||npc.name||'This place';pk='w:'+(site||activeZoneId||'')+':'+pn;}
+  else{pn=npc.name||'Someone';pk='p:'+pn+'|'+(site||'')+'|'+(npc._twin||0);}
+  const key=pk+'|'+label+(place?'|'+(npc.name||''):'');if(T[key])return; /* a place keeps each teller's answer */
+  T[key]={k:place?'w':'p',pk,pn,ro:String(npc.roleTag||npc.role||'').toLowerCase(),l:label,s:npc.name||'',w:town,r:c.response,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440};
 }
-let _jnSearch='';
+let _jnSearch='',_jnPage=null;
+function _jnToldPages(){const T=worldState.told||{},P=new Map();
+  for(const e of Object.values(T)){if(!e||!e.l)continue;const pk=e.pk||('p:'+(e.s||'Someone')+'|'+(e.w||'')+'|old');
+    if(!P.has(pk))P.set(pk,{pk,k:e.k||'p',name:e.pn||e.s||'Someone',ro:e.ro||'',w:e.w||'',tellers:new Set(),es:[]});const pg=P.get(pk);pg.es.push(e);if(e.s)pg.tellers.add(e.s);if(!pg.ro&&e.ro)pg.ro=e.ro;}
+  for(const pg of P.values()){pg.es.sort((a,b)=>(a.t||0)-(b.t||0));pg.first=pg.es[0].t||0;}return [...P.values()];}
+function _jnPageHTML(pg,only){const es=only||pg.es;const sub=pg.k==='w'?`told by ${[...pg.tellers].map(_jnEsc).join(', ')}${pg.w&&pg.w!==pg.name?' · '+_jnEsc(pg.w):''}`:`${pg.ro?_jnEsc(pg.ro)+' · ':''}${pg.w?_jnEsc(pg.w)+' · ':''}first met ${_jnEsc(gameDateLine(pg.first,pg.es[0].tod,'short'))}`;
+  return `<div class="jn-day jn-page" data-pk="${_jnEsc(pg.pk).replace(/"/g,'&quot;')}"><div class="jn-head">${_jnEsc(pg.name)}</div><div class="jn-time">${sub}</div>`+
+    es.map(e=>`<div class="jn-told"><div class="jn-time">${_jnEsc(e.l)} · ${_jnEsc(gameDateLine(e.t,e.tod,'short'))}${pg.k==='w'&&pg.tellers.size>1?' · '+_jnEsc(e.s):''}</div><div class="jn-text">${_jnEsc(e.r)}</div></div>`).join('')+'</div>';}
 function _jnTopicsHTML(){
-  const T=worldState.told||{};const q=_jnSearch.trim().toLowerCase();
-  const all=Object.values(T).filter(e=>e&&e.l&&(!q||[e.l,e.s,e.w,e.r].some(x=>String(x||'').toLowerCase().includes(q))));
-  if(!all.length)return `<div class="jn-empty">${Object.keys(T).length?'Nothing you were told matches.':'Nobody has told you anything worth keeping yet.'}</div>`;
-  const by=new Map();all.forEach(e=>{if(!by.has(e.l))by.set(e.l,[]);by.get(e.l).push(e);});
-  return [...by.keys()].sort((a,b)=>a.localeCompare(b)).map(l=>`<div class="jn-day"><div class="jn-head">${_jnEsc(l)}</div>`+
-    by.get(l).sort((a,b)=>(a.t||0)-(b.t||0)).map(e=>`<div class="jn-told"><div class="jn-time">told by ${_jnEsc(e.s||'someone')}${e.w?' in '+_jnEsc(e.w):''} · ${_jnEsc(gameDateLine(e.t,e.tod,'short'))}</div><div class="jn-text">${_jnEsc(e.r)}</div></div>`).join('')+'</div>').join('');
+  const T=worldState.told||{};const q=_jnSearch.trim().toLowerCase();const pages=_jnToldPages();
+  if(!pages.length)return `<div class="jn-empty">Nobody has told you anything worth keeping yet.</div>`;
+  if(q){const hit=e=>[e.l,e.s,e.w,e.r,e.pn,e.ro].some(x=>String(x||'').toLowerCase().includes(q));
+    const got=pages.map(pg=>{const nameHit=[pg.name,pg.w,pg.ro].some(x=>String(x||'').toLowerCase().includes(q));return {pg,es:nameHit?pg.es:pg.es.filter(hit)};}).filter(x=>x.es.length);
+    if(!got.length)return `<div class="jn-empty">Nothing you were told matches.</div>`;
+    return got.sort((a,b)=>a.pg.name.localeCompare(b.pg.name)).map(x=>_jnPageHTML(x.pg,x.es)).join('');}
+  const open=_jnPage&&pages.find(pg=>pg.pk===_jnPage);
+  if(open)return `<div class="jn-back"><a href="#" onclick="journalPage(null);return false">← All you were told</a></div>`+_jnPageHTML(open);
+  const towns=new Map();for(const pg of pages){const w=pg.w||'Elsewhere';if(!towns.has(w))towns.set(w,{p:[],w:[]});towns.get(w)[pg.k==='w'?'w':'p'].push(pg);}
+  const row=pg=>`<div class="jn-line jn-who" data-pk="${_jnEsc(pg.pk).replace(/"/g,'&quot;')}" onclick="journalPage(this.dataset.pk)"><span class="jn-time">${pg.es.length}</span><span class="jn-text"><b>${_jnEsc(pg.name)}</b> <span class="jn-state">${pg.k==='w'?'told by '+[...pg.tellers].map(_jnEsc).join(', '):_jnEsc(pg.ro)}</span></span></div>`;
+  return [...towns.keys()].sort((a,b)=>a.localeCompare(b)).map(w=>{const t=towns.get(w);const by=(a,b)=>a.name.localeCompare(b.name);
+    return (t.p.length?`<div class="jn-day"><div class="jn-head">${_jnEsc(w)} · People</div>${t.p.sort(by).map(row).join('')}</div>`:'')+(t.w.length?`<div class="jn-day"><div class="jn-head">${_jnEsc(w)} · Places</div>${t.w.sort(by).map(row).join('')}</div>`:'');}).join('');
 }
+function journalPage(pk){_jnPage=pk||null;const L=document.getElementById('jn-topics');if(L)L.innerHTML=_jnTopicsHTML();}
 // S491 — a line of your own (DECISION #132, part C): written from the Journal's By day view, up to 500 characters, kept
 // as a journal line of kind 'note' with its date like any other
 function journalNote(text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t)return false;addLog('✎',t);GAME_LOG[GAME_LOG.length-1].note=true;return true;}
@@ -175,7 +197,7 @@ function _jnLinked(text,names){
   let out='',at=0;text.replace(re,(m,pre,name,off)=>{const i=off+pre.length;out+=_jnEsc(text.slice(at,i))+`<a class="jn-link" href="#" data-n="${_jnEsc(name).replace(/"/g,'&quot;')}" onclick="journalLink(this.dataset.n);return false">${_jnEsc(name)}</a>`;at=i+name.length;return m;});
   return out+_jnEsc(text.slice(at));
 }
-function journalLink(name){_jnSearch=String(name||'');journalView('topics');}
+function journalLink(name){_jnSearch=String(name||'');_jnPage=null;journalView('topics');}
 function _jnTime(e){return gameDateLine(e.t,e.tod,'time');}
 function renderJournal(){
   const body=document.getElementById('jn-body');if(!body)return;

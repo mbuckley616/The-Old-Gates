@@ -541,6 +541,7 @@
 #jn-views{display:flex;gap:6px;margin:0 0 12px}
 #jn-views button{font:600 12px Georgia,serif;letter-spacing:.04em;padding:5px 14px;background:transparent;color:#a89878;border:1px solid rgba(200,168,74,.25);border-radius:3px;cursor:pointer}
 #jn-views button.active{color:#f0e2c0;border-color:#c8a040;background:rgba(200,160,64,.12)}
+.jn-who{cursor:pointer}.jn-who:hover{background:rgba(200,160,64,.08)}.jn-back{margin:2px 0 8px;font:12px Georgia,serif}.jn-back a{color:#c8a040}
 .jn-day{margin:0 0 14px}
 .jn-head{font:600 13px Georgia,serif;color:#e8d8a0;letter-spacing:.05em;padding:0 0 4px;margin:0 0 4px;border-bottom:1px solid rgba(120,100,70,.25);display:flex;justify-content:space-between}
 .jn-state{font-weight:400;font-size:11px;color:#8a7a60}
@@ -783,7 +784,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s520</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s521</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1034,7 +1035,7 @@
         <div id="qlog-body"></div>
       </div>
       <div class="hub-panel" id="hpanel-journal">
-        <div id="jn-views"><button data-v="day" class="active" onclick="journalView('day')">By day</button><button data-v="quest" onclick="journalView('quest')">By quest</button><button data-v="topics" onclick="journalView('topics')">Topics</button><button data-v="due" onclick="journalView('due')">Due</button></div>
+        <div id="jn-views"><button data-v="day" class="active" onclick="journalView('day')">By day</button><button data-v="quest" onclick="journalView('quest')">By quest</button><button data-v="topics" onclick="journalView('topics')">Told</button><button data-v="due" onclick="journalView('due')">Due</button></div>
         <div id="jn-body"></div>
       </div>
       <div class="hub-panel" id="hpanel-log">
