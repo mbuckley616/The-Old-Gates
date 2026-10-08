@@ -14373,3 +14373,18 @@ Michael's 6 Oct note asks that E need range and the reticle on the object. Sessi
 
 ### Needs eyes
 Whether the chair's box (a little wider than its frame) feels easy to find when the barber stands at its side. Indoors, only the doors in doorways still answer to nearness (`intDoorNear`, the look builder's file).
+
+## v80 — Session 658 — A save the store refuses once is tried again (backlog F, main's `saveui` on CI)
+The producer's 8 Oct note: main's `tests/saveui` failed every time on CI (ac0eb3c twice, docs PR #203 once, 5bd8722 since), on code unchanged since a green run. The first two checks fail. Michael's A on the 6 Oct unblock card gives the systems builder the hardening.
+
+The failure never showed in this container, alone or with six copies side by side. The container runs the preinstalled Chromium 141 (build 1194). CI installs Playwright's own, build 1243. So the cause was found from CI's own detail. *The menu saves to an empty slot and closes* fails with the slot empty and the menu open after 30 s. Then *an overwrite asks once* finds slot 1 still *— Empty —*, and the next click writes 654 within 600 ms. With main's store timings (an open gives up at 8 s, a write at 10 s), a 30 s wait that ends with the menu open means the save ended in its failure branch: `ssWrite`'s catch, which re-renders the menu with the reason. It was not slow. A probe that makes the store refuse the first manual write reproduces CI's exact pattern, check for check. Two other causes were ruled out: a page blocked for 9 and 11 s does not make the store's timers fire before its answer, and two writes racing on a brand-new database both land.
+
+A player meets the same failure as *⚠ Save failed — …* and saves again with a second click. Now `ssWrite` (`70-saves.js`) tries a refused write of the two rows once more, on a freshly opened connection, before it reports the failure. The first refusal's reason is kept in `SS.retried` (and in a console warning). A second refusal fails as before, with the reason in the menu. The picture is still written after the rows, and a lost picture still never fails a save.
+
+`tests/saveui` now waits for the arrival autosave before its first click and gives each write up to 90 s (was 30). A wait ends early only on a failure newer than the click. When a check fails, its detail carries the store's state, `SS.lastErr`, `SS.retried` and the page's save messages, so the next red run names its cause. The first check's detail always shows `retried`. A green CI run with a reason there means the retry saved it.
+
+### Verified (headless Chromium)
+`saveretry` 6/6 (new). Refused once, slot 1 holds 321 and reads back whole from both rows, and `SS.retried` is *refused by the test*. Refused twice, there is no slot 2, and the menu says *Last save failed … refused by the test*. A store that answers writes once with nothing retried. On the old build the first check fails as on CI, and the suite stops at the read-back. `saveui` 13/13, four copies side by side, each first save 0:321. With the probe's single refusal and no retry, it fails as CI did (`ask` *— Empty —*, `now` 654), and the detail names the refusal. Neighbours: coopsaves, savepic. `parsecheck` clean.
+
+### Needs eyes
+CI's next runs. If `saveui` goes green with a `retried` reason in its first check's detail, that reason is the store's real complaint on Chromium 1243, and it may want its own fix. If it fails again, the detail now says why. Also owed: this container's Chromium is not CI's, so a CI-only failure can't be reproduced here. The same gap may lie behind main's other two red suites on 5bd8722 (captainguard, yardplay).
