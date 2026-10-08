@@ -144,7 +144,7 @@
     salt:{n:'Sack of Salt',home:'aurenne',v:20,w:8},dyes:{n:'Crate of Dyes',home:'aurenne',v:70,w:4},
     glass:{n:'Crate of Glass',home:'aurenne',v:55,w:7},fish:{n:'Barrel of Salt Fish',home:'aurenne',v:26,w:7},
     horse:{n:'Horse',home:'gatelands',v:110,w:20,hold:true}}; // S391 — B names horses; a horse goes only in a hold
-  const CARGO_HOME=.6,CARGO_ABROAD=1.4,CARGO_CUT=.9,CARGO_STEP=.04,CARGO_HEAL=.7,CARGO_TITHE=.1,CARGO_HOLD={sloop:40,cog:60,galleon:90};
+  const CARGO_HOME=.6,CARGO_ABROAD=1.4,CARGO_CUT=.9,CARGO_STEP=.04,CARGO_HEAL=.7,CARGO_TITHE=.1,CARGO_HOLD={sloop:40,cog:60,galleon:90,cutter:25,caravel:55};
   function cargoNation(site){return nationAt(site.x,site.z);}
   // S391 — prices that follow the world (B): a sacked or occupied town (or one under siege) pays half again for grain and
   // iron; a war raises iron and horses by 30% at the quays of the two nations in it; black sails at sea within 600 units

@@ -296,7 +296,7 @@
   // free (sloop → cog → galleon; a galleon is only mended), where she lies. A sunk ship is raised free by the shipwright
   // nearest her wreck (three days, as a paid raise) a class up; one already being raised comes up a class up.
   function compactRefit(){
-    const st=shipCfg();const cls=st.cls||'sloop';const next=cls==='sloop'?'cog':cls==='cog'?'galleon':null;if(next)st.cls=next;
+    const st=shipCfg();const cls=st.cls||'sloop';const next=nextHullUp(cls);if(next)st.cls=next; /* S636 — the next hull up by worth */
     const nm=st.name||SHIP.name;
     if(st.sunk){if(!st.raise){const port=allPorts().filter(p=>shoreDir(p)).sort((a,b)=>Math.hypot(a.x-st.sunk.x,a.z-st.sunk.z)-Math.hypot(b.x-st.sunk.x,b.z-st.sunk.z))[0];
         if(port)st.raise={site:port.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};}

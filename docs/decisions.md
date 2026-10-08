@@ -35,6 +35,7 @@ Your 6 Oct sailing notes are written up on one page (`docs/design/the-ship-in-ha
 Recommendation: **B.** The dial is honest with ships that exist, and no hull is simply best: the choice of ship is a choice of what kind of sailor you are, and a reason to cross to the Mark or Aurenne. C can follow when the cargo prices are next tuned.
 
 Michael: **Two new hulls, each sold on one island**. (2026-10-07)
+Built (the hulls' rules): Session 636, `tests/shiphulls`. The page's *the difference less a third* is read as two thirds paid back on a trade down; a refit up pays the difference in worth, as the ladder always did.
 
 ### Lockpicks more common as loot — how many? (the systems builder, Session 623, 2026-10-07) — DECISION #191
 Your playtest of 6 Oct asked for lockpicks to be more common, especially in dungeons. Today a chest or treasure chest rolls three picks at weight 12 of 127 (about 1 roll in 10), an urn one or two picks 15% of the time, and a corpse never. Session 363 counted eight dungeons: 59% of chests are locked, 5–6 locks a dungeon, and a clear costs about 2 / 5 / 13 picks for a hand that misses 1 in 10 / 1 in 5 / 1 in 3, against the 1–2 picks the dungeon's own chests hold. A pick costs 12 gold and nobody starts with one.

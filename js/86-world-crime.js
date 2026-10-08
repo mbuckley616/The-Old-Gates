@@ -667,12 +667,25 @@
   // Ship classes and upgrades (speed, cargo, hull size — no hull HP),
   // fish you catch by swimming up to a school, whales in deep water,
   // pirates who board you, and hulls that push each other apart.
-  const SHIP_CLASSES={sloop:{L:13,W:4.4,name:'sloop',price:0,speed:7.5,hull:100},cog:{L:17,W:5.6,name:'cog',price:900,speed:8.5,hull:140},galleon:{L:22,W:7.0,name:'galleon',price:2200,speed:9.5,hull:200}};
-  const SAIL_TIERS=[0,250,450,700]; // price to reach tier 1..3, +1.2 u/s each
+  // S636 — Michael's B on #192 (docs/design/the-ship-in-hand.md): two hulls more, each a trade and each sold on one island, the
+  // Mark's cutter (fast, thin-skinned, a small hold) and Aurenne's caravel. `worth` is what the hull stands at, the sloop's 400
+  // plus the refits up to it (the cog 1,300 and the galleon 3,500, as the ladder has always cost); `price` stays the fee from
+  // a sloop. `at` names the nation whose yards sell her. Until the look builder gives the two their own hulls, the cutter is
+  // drawn on the sloop's and the caravel on the cog's, so L and W are those hulls' (buildShipMesh picks the bake by L).
+  const SHIP_CLASSES={sloop:{L:13,W:4.4,name:'sloop',price:0,worth:400,speed:7.5,hull:100},cog:{L:17,W:5.6,name:'cog',price:900,worth:1300,speed:8.5,hull:140},galleon:{L:22,W:7.0,name:'galleon',price:2200,worth:3500,speed:9.5,hull:200},
+    cutter:{L:13,W:4.4,name:'cutter',price:1600,worth:2000,speed:12,hull:80,at:'mark'},caravel:{L:17,W:5.6,name:'caravel',price:2800,worth:3200,speed:11,hull:130,at:'aurenne'}};
+  // the hulls a yard sells: the three everywhere, the cutter at the Mark's, the caravel at Aurenne's
+  function yardHulls(site){let nat='gatelands';try{nat=nationAt(site.x,site.z);}catch(e){}return Object.keys(SHIP_CLASSES).filter(k=>!SHIP_CLASSES[k].at||SHIP_CLASSES[k].at===nat);}
+  // a refit from one hull to any other pays the difference in worth; to a hull worth less, the yard pays back two thirds of it
+  function refitCost(from,to){const d=SHIP_CLASSES[to].worth-SHIP_CLASSES[from||'sloop'].worth;return d>=0?d:-Math.round(-d*2/3);}
+  // the next hull up by worth (the Compact's refit): sloop → cog → cutter → caravel → galleon
+  function nextHullUp(cls){const order=Object.keys(SHIP_CLASSES).sort((a,b)=>SHIP_CLASSES[a].worth-SHIP_CLASSES[b].worth);const i=order.indexOf(cls||'sloop');return i>=0&&i<order.length-1?order[i+1]:null;}
+  const SAIL_TIERS=[0,250,450,700,1100]; // price to reach tier 1..4; S636: each tier +12% of her bare speed (was +1.2 u/s, three tiers)
+  const SAIL_STEP=.12;
   const CARGO_TIERS=[0,200,400];    // +25 carry each while aboard or within 20u of her
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
-  function shipTopSpeed(){return shipClass().speed+((worldState.ship&&worldState.ship.sails)||0)*1.2;}
+  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP);}
   // S411 — Michael's A on #85 (docs/design/sailing.md): a hull by class and a rig of 100, kept in worldState.ship (saved).
   // Under half her hull she ships water (speed ×0.8), under a quarter ×0.6; the rig sets ×(0.5 + 0.5 × rig/100);
   // at 0 hull she is waterlogged and makes 2.5 at most. The shipwright mends 4 gold a hull point, 3 a rig point, an hour a 20.
@@ -705,7 +718,7 @@
   // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any
   // shipwright raises her, class and tiers, for 30% of what they cost, and she lies at his quay three game days later. The hold
   // comes up with her; the stash is the safehouse's, untouched.
-  function shipCostAll(){const st=shipCfg();const cls=st.cls||'sloop';let c=SHIP_PRICE+(cls!=='sloop'?SHIP_CLASSES.cog.price:0)+(cls==='galleon'?SHIP_CLASSES.galleon.price:0);
+  function shipCostAll(){const st=shipCfg();const cls=st.cls||'sloop';let c=(SHIP_CLASSES[cls]||SHIP_CLASSES.sloop).worth;
     for(let i=1;i<=(st.sails||0);i++)c+=SAIL_TIERS[i];for(let i=1;i<=(st.cargo||0);i++)c+=CARGO_TIERS[i];return c;}
   function shipRaiseCost(){return Math.round(shipCostAll()*.3);}
   function shipSink(){const st=shipCfg();const aboard=SHIP.sailing||onDeck();
@@ -794,9 +807,14 @@
     const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
       const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
       if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}
-    const cls=st.cls||'sloop';const next=cls==='sloop'?'cog':cls==='cog'?'galleon':null;
-    if(next)out.push({label:`Refit her as a ${next} (${SHIP_CLASSES[next].price} gold)`,quest:true,fn:()=>{const p=SHIP_CLASSES[next].price;if(gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);return L.refitted(next);}});
-    const sails=st.sails||0;if(sails<3)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
+    // S636 — refits branch: every hull this yard sells but hers, up for the difference, down with two thirds of it paid back.
+    // A hull no bigger than hers takes the shipwright's first sentence only (*Longer, broader* is not true of a cutter).
+    const cls=st.cls||'sloop';
+    for(const next of yardHulls(site)){if(next===cls)continue;const c0=refitCost(cls,next);
+      out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
+        st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
+        const line=L.refitted(next);return SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';}});}
+    const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
     const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
     return out;
   }
