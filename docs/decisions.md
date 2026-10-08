@@ -4,6 +4,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### A Wolf is staggered by every second greatclub swing — raise the posture floor? (the systems builder, Session 650, 2026-10-08) — DECISION #206
+The critic's s477 play: three Wolves against a level-2 greatclub cost 9 of 200 HP in 30 s. A foe's posture is half its health, scaled by family (wolves and spiders ×0.8 and ×0.7), with a floor of 10. A Wolf (18 HP) sits on that floor. A normal swing drains 8, and the greatclub drains ×1.5, so 12. One normal greatclub swing breaks a Wolf: 1.5 s staggered, taking double damage. Its posture refills when it gets up, so every second swing staggers it again, and the pack spends most of the fight on the ground. A sword (8) takes two swings, fists two. The Snow Wolf (14) and the Dire Wolf (16) take two greatclub swings each.
+- **A.** Raise the floor to 18, so that no foe breaks to one normal swing of any weapon. A Wolf takes 2 greatclub swings or 3 sword swings; a Bandit (15 today) is lifted to 18. Every foe over 36 HP is unchanged.
+- **B.** Beasts get up quicker: wolves and spiders are staggered 0.6 s, not 1.5 s. The floor is unchanged, so the greatclub still breaks a Wolf every second swing, but it is up before you can follow it with more than one blow.
+- **C.** Both A and B.
+- **D.** Leave it. The greatclub is the slow stagger weapon (blocks 40%, 4 weight), and a pack's answer is to flank you.
+
+Recommendation: **A.** The brief asks for weighty combat at Dragonwilds' difficulty, and a staggered foe should be a reward you earn, not the state the weakest foes live in. One number changes, and a Wolf still breaks in two greatclub swings, which keeps the weapon's character.
+
+Michael: **Raise the posture floor to 18** (A). (8 Oct 2026)
+
 ### The cutter's and the caravel's own hulls (the look builder, Session 643, 2026-10-08) — DECISION #202
 
 **The question.** Michael's B on #192 added two hulls, the Mark's cutter and Aurenne's caravel (Session 636, on auto/systems). Until now the cutter is drawn on the sloop's hull and the caravel on the cog's, so in the yard's *Browse ships* panel and at sea they look like the ships they replace. Should they look like this?
@@ -27,7 +40,7 @@ The deck you walk stays flat, the wheel and hatch where they are, the nets amids
 - From above: [cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter.png) · [caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel.png) · [the caravel's sterncastle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-stern.png)
 - Other paints: [a pirate cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter-pirate.png) · [a merchant caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-merchant.png)
 
-## Answered
+Michael: **Both as shown** (A). (8 Oct 2026)
 
 ### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198
 You asked on 6 Oct for a bigger, clearer compass, fewer callouts at the bottom centre with damage numbers in their place, and a HUD that doesn't look dated. The prototype (`docs/prototypes/hud/`, on auto/concept) keeps the places you chose on 27 Sep (vitals bottom-left, compass bottom-centre, minimap top-right) on the parchment kit. Under every option the compass is three times as wide (600 against 200) with marks as icons on paper discs: crowded marks join into one with a count, and the one you face is named on a ribbon with its distance. Every option also puts damage numbers at the foe's head, coloured by kind.
