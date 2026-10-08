@@ -14270,3 +14270,14 @@ The critic turned in a first Fighters' Guild commission at Vieux Marché and ask
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 649 — Who you have met is a person, not a first name (backlog I, the critic's s477)
+`metCount` and `noteMet` (`87-world-quests.js`) kept `worldState.met` by the first name alone. A townsperson's greeting reads the count: nought gives a stranger's greeting, more gives *Back again?*, *You. Good.*, *I remember you.* or *Thought I'd seen the last of you.* The names come from small pools, and Vieux Marché's householders alone count five Pádraigs and five Ruairís. After a few talks, most strangers in the world remembered you. The critic met Róisín in Ironhaven, and Róisín in La Grise said *Back again?*.
+
+The key is now the person: `name|town|number`, where the town is the def's `_siteId` and the number is the town's own `_twin` for a second person of one name (Session 248's, 0 for the first). The guild heads, keepers and householders built by `dialogFor` all carry both. `met` stays a character key (`SS_CHAR_WS`) and is saved as before. A save made before this build keeps its old first-name keys, which no greeting reads now. Its people greet you once more as strangers, and from then on they remember you as themselves.
+
+### Verified (headless Chromium)
+`metkey` 5/5 (new), in Dunmore and Portclare (112 townsfolk with a greeting). Over six trials, Róisín of Dunmore greets you as a stranger and then remembers you. Róisín of Portclare is then still a stranger. In Dunmore, the second Bríd (`_twin` 1) is a stranger after the first Bríd's two greetings. The keys read `Bríd|dunmore|0` and `Bríd|dunmore|1`. On the old code, Portclare's Róisín opens with *Back again?* and the key is `Bríd`. Neighbours: bornhere, dlgkeys, constable, coopsaves, twins, twinsrebuild. `parsecheck` clean.
+
+### Needs eyes
+Nothing.

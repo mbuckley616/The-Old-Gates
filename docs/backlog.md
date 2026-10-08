@@ -292,6 +292,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - ~~Ports have no clear connection from the town to the ship buying/upgrading area, not even a road.~~ — **done, Session 618** (`tests/portlane`): a lane runs from the town's perimeter lane straight down to the quay head, graded evenly from the pad to the quay (`addQuayLane`), and the shipwright's footpath ends on it; Portclare's 81 units of open ground and a 12-unit drop are a walk of 23.6 s. The town's plan does not see the lane, so its houses, ids and people are as before. Owed (H): whether the cutting through Portclare's ridge wants a bank or a wall.
 - **The critic's s477 bugs (8 Oct 2026; filed in full on auto/critic, PR #205):**
   - ~~*1 tasks done.* at a guild head's *My standing?*~~ — **fixed, Session 648** (`tests/standingcount`): *1 task done.*, and *N tasks done.* otherwise.
+  - ~~A stranger greets you as someone you have met (`worldState.met` keyed by the first name)~~ — **fixed, Session 649** (`tests/metkey`): keyed `name|town|_twin`; Róisín of Portclare is a stranger after Róisín of Dunmore, as is Dunmore's second Bríd after the first.
 
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.

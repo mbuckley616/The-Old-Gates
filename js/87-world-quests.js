@@ -81,8 +81,10 @@
   const WISHES=["to see the capital before I die","a roof that doesn't leak","one good harvest, just one","to hear from my daughter","a quiet year","to go to sea again","to be left alone, mostly"];
   const TRADES_BY_ROLE={Villager:['farmer','weaver','cooper','fisher','shepherd','thatcher','midwife','carter','beekeeper','net-mender'],Guard:['soldier'],Smith:['smith'],Armourer:['armourer'],Apothecary:['apothecary'],Merchant:['trader'],Innkeeper:['innkeeper'],Priest:['priest'],Harbourmaster:['harbourmaster'],Shipwright:['shipwright']};
   function temperOf(name){const h=String(name).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return TEMPER_IDS[h%TEMPER_IDS.length];}
-  function metCount(name){return (worldState.met&&worldState.met[name])||0;}
-  function noteMet(name){(worldState.met||(worldState.met={}))[name]=metCount(name)+1;}
+  // S649 — keyed by the person, not the first name: name, town and the town's number for a second of that name (_twin)
+  function metKey(def,site){return def.name+'|'+(def._siteId||(site&&site.id)||'')+'|'+(def._twin||0);}
+  function metCount(key){return (worldState.met&&worldState.met[key])||0;}
+  function noteMet(key){(worldState.met||(worldState.met={}))[key]=metCount(key)+1;}
   function bioFor(site,reg,r,role,name){
     const cells=[...CELLS.values()].filter(c=>c.type!=='sea');const other=cells.length?pick(r,pick(r,cells).sites.filter(t=>t.pad>0&&t.id!==site.id)):null;
     const born=r()<.55?site.name:(other?other.name:site.name);const years=3+Math.floor(r()*40);
@@ -182,7 +184,7 @@
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
-    Object.defineProperty(def,'greeting',{configurable:true,get(){const n=metCount(def.name);const P=PEOPLES[def.people||'gatelander'];const pg=peopleGreeting(def);const pp=playerPeople();const asideOK=n===0&&pg&&(pp==='oldblood'||Math.random()<.5);const aside=asideOK?(pp==='oldblood'?' '+pg:(pp===def.people?' '+pg:` You're ${pp==='aurennais'?'Aurennais':pp==='markman'?'a Markman':'a Gatelander'}, by the look of you. ${pg}`)):'';const g=(n>0?pick(Math.random,["Back again?","You. Good.","I remember you.","Thought I'd seen the last of you."]):(Math.random()<.5?pick(Math.random,P.greet):pick(Math.random,T.greet)))+aside;const rank=worldState.guild&&(worldState.guild.guild_f.done>=3||worldState.guild.guild_m.done>=3)?" Guildsman.":"";const owner=worldState.owned&&Object.values(worldState.owned).some(o=>o.site===site.id)?" Neighbour.":"";noteMet(name);return [g+owner+rank];}});
+    Object.defineProperty(def,'greeting',{configurable:true,get(){const n=metCount(metKey(def,site));const P=PEOPLES[def.people||'gatelander'];const pg=peopleGreeting(def);const pp=playerPeople();const asideOK=n===0&&pg&&(pp==='oldblood'||Math.random()<.5);const aside=asideOK?(pp==='oldblood'?' '+pg:(pp===def.people?' '+pg:` You're ${pp==='aurennais'?'Aurennais':pp==='markman'?'a Markman':'a Gatelander'}, by the look of you. ${pg}`)):'';const g=(n>0?pick(Math.random,["Back again?","You. Good.","I remember you.","Thought I'd seen the last of you."]):(Math.random()<.5?pick(Math.random,P.greet):pick(Math.random,T.greet)))+aside;const rank=worldState.guild&&(worldState.guild.guild_f.done>=3||worldState.guild.guild_m.done>=3)?" Guildsman.":"";const owner=worldState.owned&&Object.values(worldState.owned).some(o=>o.site===site.id)?" Neighbour.":"";noteMet(metKey(def,site));return [g+owner+rank];}});
     return def;
   }
 
