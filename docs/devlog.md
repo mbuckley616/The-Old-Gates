@@ -14399,3 +14399,14 @@ The check (`tests/captainguard`) now holds each front hit to the rule it states.
 
 ### Needs eyes
 Main's third red on 5bd8722 is `yardplay`'s *Rowe holds the chair at the seat for the week*. The dialogue opened on Mildrith, a villager, instead of the seat's lord. This run did not take it, since a run gets one CI fix. It is the next one if it repeats.
+
+## v80 — Session 660 — Correction to Session 658: main's `saveui` failure was a slow first save
+A correction, found after Session 658 was pushed. Session 658 said CI's `saveui` waited 30 s and found the first menu save in its failure branch. It did not. Main's `tests/saveui` is still the old suite, which waits 1.2 s after each click. The 30 s waits are the look builder's Session 647 (`d82db51`, on PR #203, not yet on main), and this branch already carried them. Read against main's 1.2 s, CI's detail is a slow first save on a cold store. At 1.2 s the slot was not yet written and the menu still open. The overwrite's first click came 400 ms after the menu reopened, found the slot still empty, and wrote 654. The 321 save landed later, under it. That is what Session 647 fixed. The probe in Session 658 reproduces the same detail, but a slow save gives it too, so the probe did not tell the two apart.
+
+What stands from Session 658: the retry is still sound and tested (`saveretry` 6/6). A write the store refuses is now tried once more before the player is told it failed, and a second refusal fails as before. That is robustness against a failure nobody has yet seen in play. It is not the fix for CI. `saveui`'s waits are kept (the arrival autosave first, 90 s a write, the store's state and words in a failed check's detail); they agree with Session 647's and go further. On a merge with #203 the two edits to `tests/saveui.test.mjs` meet in the same lines, and this branch's version holds both.
+
+### Verified (headless Chromium)
+Nothing new to run. `git diff origin/main` on `tests/saveui.test.mjs` shows main's `await W(1200)` after each click, where this branch's file before Session 658 had Session 647's 30 s waits.
+
+### Needs eyes
+Nothing.
