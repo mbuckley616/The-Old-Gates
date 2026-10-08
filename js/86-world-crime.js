@@ -561,7 +561,7 @@
   function boxCoins(p,type){const mult=/weapon|armor|armoury|forge/.test(type)?1.2:/potion|apothecary/.test(type)?.8:1;return (10+50*Math.max(0,Math.min(100,p))/100)*mult;}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
     return INT_BOX.open?'open':'locked';}
-  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>1.6||jumpY>.6)return null;const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
+  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>1.6||jumpY>.6)return null;if(!aimBox(INT_BOX.x,INT_BOX.z,0,.42,.42,.7))return null; /* S646 — and under the crosshair */const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
     return st==='empty'?(INT_BOX.kind==='home'?'The chest is empty':'The strongbox is empty'):st==='locked'?`Press 'E' to pick the lock on ${name}`:`Press 'E' to open ${name}`;}
   function boxInteract(){if(!boxPrompt())return false;const st=boxState(),X=INT_BOX;
     if(st==='empty'){showMsg(X.kind==='home'?'Nothing left in it.':'The takings are gone; they will not have refilled it yet.','#c8b880');return true;}
@@ -578,12 +578,15 @@
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
     if(typeof renderInv==='function')renderInv();return true;}
   let INT_LOOT=null;
-  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2)return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
+  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
   function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock
   function lootInteract(){if(!lootPrompt())return false;
     if(towerLocked()){const id=INT_LOOT.id;if(typeof tryLockpick==='function')tryLockpick({seed:'tower_'+id,minPins:4,lockTitle:'A locked chest',onPick:()=>{(worldState.towerPicked||(worldState.towerPicked={}))[id]=true;lootInteract();}});return true;}
     const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1,'tower:'+INT_LOOT.id):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
-  function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9)return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
+  function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9&&intHatchAimed())return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
+  // S646 — the hatch under the crosshair: a way up (the roof's, a cellar's or the chapel's ladder) is the column from its floor to
+  // the ceiling, a way down the square of the hatch (1.1 across) and a little above it
+  function intHatchAimed(){const up=HATCH.roof||(currentHouse&&(currentHouse.type==='cellar'||currentHouse.type==='chapel'));return aimBox(HATCH.x,HATCH.z,HATCH.y-.1,.65,.65,up?3.2:.6);}
   function hatchInteract(){if(!hatchPrompt())return false;const h=currentHouse;
     if(HATCH.roof){const S=SETTLE.get((h.siteId)||'');const site=siteAnywhere(h.siteId);const roof=(S&&S.roof)||(site?roofFor(site):null);if(!roof)return false;const hh=h;if(typeof exitInterior==='function'){window._pendingWorldPos={x:roof.x,z:roof.z+1.2,yaw:Math.PI,jumpY:roof.y};exitInterior();}showMsg('Wind. The whole country, from up here.','#c8b880');return true;}
     if(h.type==='cellar'||h.type==='chapel'){const p=h.parent;goToInterior(p);setTimeout(()=>{if(currentHouse===p&&p._hatch){px=p._hatch.x;pz=p._hatch.z+.9;jumpY=0;}},900);return true;}

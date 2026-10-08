@@ -25,7 +25,7 @@ for (const s of shops.slice(0, 6)) {
     K.rotation.y = 0; // his sway is ±.08 about facing into the room; measured at its centre and at both ends below
     let n = 0, seen = 0, seenSway = 0, far = 0;
     for (let r = .5; r <= 1.55; r += .15) for (let a = 0; a < 24; a++) { const x = X.x + Math.sin(a / 24 * Math.PI * 2) * r, z = X.z + Math.cos(a / 24 * Math.PI * 2) * r;
-      if (intSolidAt(x, z, .3, 0) || x < .3 || z < .3 || x > (h._roomW || 99) - .3) continue; px = x; pz = z;
+      if (intSolidAt(x, z, .3, 0) || x < .3 || z < .3 || x > (h._roomW || 99) - .3) continue; px = x; pz = z; lookAtPt(X.x, .3, X.z);
       if (!WORLD.boxPrompt()) continue; n++; far = Math.max(far, Math.hypot(x - K.position.x, z - K.position.z));
       if (WORLD.witnessOf(h)) seen++;
       K.rotation.y = .08; const a1 = !!WORLD.witnessOf(h); K.rotation.y = -.08; const a2 = !!WORLD.witnessOf(h); K.rotation.y = 0; if (a1 && a2) seenSway++; }
@@ -36,7 +36,7 @@ for (const s of shops.slice(0, 6)) {
   // the theft itself, at the box, in his sight: fined
   if (rows.length === 1) {
     const t = await page.evaluate(() => { const X = WORLD.intBox, h = window._h, S = WORLD.settle.get(h.siteId) || WORLD.settlements.get(h.siteId); const site = S.site;
-      px = X.x + 1.0; pz = X.z; jumpY = 0; const b0 = WORLD.bountyAt(site), g0 = gold; X.open = true; WORLD.boxInteract(); return { took: gold - g0, fined: WORLD.bountyAt(site) - b0 }; });
+      px = X.x + 1.0; pz = X.z; jumpY = 0; lookAtPt(X.x, .3, X.z); const b0 = WORLD.bountyAt(site), g0 = gold; X.open = true; WORLD.boxInteract(); return { took: gold - g0, fined: WORLD.bountyAt(site) - b0 }; });
     console.log('theft', JSON.stringify(t)); rows[0].theft = t;
   }
 }

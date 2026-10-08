@@ -67,7 +67,7 @@ const tower = await page.evaluate(async () => { const wait = ms => new Promise(r
   for (let k = 0; k < 40 && !WORLD.settle.get(s.id); k++) { WORLD.tick(1 / 60, performance.now()); await wait(250); }
   const h = ZONES.world.houses.find(x => x.id === 'g_' + s.id + '_tower'); if (!h) return { noHouse: s.id };
   goToInterior(h); await wait(4000);
-  const L = WORLD.intLoot; if (!L) return { noLoot: true }; px = L.x; pz = L.z; jumpY = L.y;
+  const L = WORLD.intLoot; if (!L) return { noLoot: true }; px = L.x; pz = L.z; jumpY = L.y; lookAtPt(L.x, L.y + .3, L.z);
   const prompt = WORLD.lootPrompt(); const gold0 = BAG.length;
   WORLD.lootInteract(); const pins = LP.pins.length, title = document.getElementById('lp-title').textContent;
   for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }

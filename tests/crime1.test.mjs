@@ -22,7 +22,7 @@ const inside = await page.evaluate(() => ({ inside: currentHouse === window._h, 
 check('with a pick, the shop door opens as a lock and lets you in; the pick is remembered as a crime', /shop door/i.test(picked.title) && picked.pins >= 3 && picked.picked && picked.crimes.includes('lock') && inside.inside && inside.box && inside.kind === 'shop', { picked, inside });
 
 // the strongbox: locked, picked, emptied; the takings scale with the town; then it is empty till it refills
-const box = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; px = X.x; pz = X.z + .8; jumpY = 0;
+const box = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z);
   const p1 = WORLD.boxPrompt(); WORLD.boxInteract(); const title = document.getElementById('lp-title').textContent; const gold0 = gold, bag0 = BAG.length;
   for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
   await wait(900); const got = gold - gold0, items = BAG.length - bag0; const p2 = WORLD.boxPrompt(); WORLD.boxInteract(); const goldAgain = gold - gold0;
@@ -37,7 +37,7 @@ const home = await page.evaluate(async () => { const wait = ms => new Promise(r 
   (worldState.owned || (worldState.owned = {}))[h.id] = true; const owned = !!WORLD.doorLockNow(h); delete worldState.owned[h.id];
   const shopDay = (() => { forceTime(12); const r = !!WORLD.doorLockNow(window._h); forceTime(23); return r; })();
   px = h.exitX; pz = h.exitZ; goToInterior(h); await wait(4500); const X = WORLD.intBox; if (!X) return { night, day, owned, shopDay, none: true };
-  px = X.x; pz = X.z + .8; jumpY = 0; WORLD.boxInteract(); const title = document.getElementById('lp-title').textContent; const gold0 = gold, bag0 = BAG.length;
+  px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); WORLD.boxInteract(); const title = document.getElementById('lp-title').textContent; const gold0 = gold, bag0 = BAG.length;
   for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
   await wait(900); return { night, day, owned, shopDay, kind: X.kind, title, got: gold - gold0, items: BAG.length - bag0, keepsake: BAG[BAG.length - 1].name }; });
 check('a home is locked at night, open by day, never locked when it is yours; its chest holds a few coins and a keepsake', home.night && !home.day && !home.owned && !home.shopDay && home.kind === 'home' && /chest/i.test(home.title) && home.got >= 2 && home.got <= 12 && home.items === 1, home);

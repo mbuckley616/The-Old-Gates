@@ -21,7 +21,7 @@ const leave = async () => { await page.evaluate(() => exitInterior()); await pag
 // in the page: open the box on day `day` with Math.random pinned to `rnd`, and read what it hands over
 const takings = (rnd, day) => page.evaluate(([rnd, day]) => {
   const X = WORLD.intBox; worldState.gameTimeAbsMinutes = day * 1440 + 13 * 60; worldState.crime = {};
-  if (worldState.boxes) delete worldState.boxes[X.id]; X.open = true; px = X.x; pz = X.z + .8; jumpY = 0;
+  if (worldState.boxes) delete worldState.boxes[X.id]; X.open = true; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z);
   const gold0 = gold, got = [], _ba = window.bagAdd, _r = Math.random, _m = showMsg;
   window.bagAdd = function (it) { got.push(it.name + ':' + (it.buyPrice || 0)); return true; }; Math.random = () => rnd; showMsg = () => {};
   try { boxInteract(); } finally { Math.random = _r; window.bagAdd = _ba; showMsg = _m; }

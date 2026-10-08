@@ -16,13 +16,15 @@ const leave = async () => { await page.evaluate(() => exitInterior()); await pag
 // with the sleep panel and the bed's own answer caught
 const stand = (p) => page.evaluate(async (p) => { px = p.x; pz = p.z; jumpY = p.y; onGround = true;
   if (window._hold) for (const n of (INT_NPCS || [])) if (n.g) n.g.position.set(-50, n.g.position.y, -50);
-  const aim = () => { const ey = CAM.position.y; if (p.away) { yaw = Math.atan2(px - p.tx, pz - p.tz); pitch = 0; } else { yaw = Math.atan2(-(p.tx - px), -(p.tz - pz)); pitch = Math.atan2(p.ty - ey, Math.hypot(p.tx - px, p.tz - pz)); } };
-  for (let i = 0; i < 4; i++) { aim(); await new Promise(r => requestAnimationFrame(() => r())); }
-  aim(); CAM.position.set(px, CAM.position.y, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); const t = typeof intBedTarget === 'function' ? intBedTarget() : null; const want = t ? WORLD.bedPrompt(t) : null; const ipr = document.getElementById('ipr'), ob = document.getElementById('ob');
+  const aim = () => { if (p.away) lookAtPt(px - (p.tx - px) * 3, jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6), pz - (p.tz - pz) * 3); else lookAtPt(p.tx, p.ty, p.tz); };
+  // the prompt is the loop's: wait until a frame has drawn the eye at this spot (a busy page can hold the first frames back)
+  const at = () => Math.abs(CAM.position.y - (jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6))) < .05 && Math.hypot(CAM.position.x - px, CAM.position.z - pz) < .05;
+  for (let i = 0; i < 60; i++) { aim(); CAM.position.set(-99, -99, -99); await new Promise(r => requestAnimationFrame(() => r())); if (i >= 3 && at()) break; }
+  aim(); const t = typeof intBedTarget === 'function' ? intBedTarget() : null; const want = t ? WORLD.bedPrompt(t) : null; const ipr = document.getElementById('ipr'), ob = document.getElementById('ob');
   const prompt = [ipr && ipr.style.display !== 'none' && +ipr.style.opacity > 0 ? ipr.textContent : '', ob ? ob.textContent : ''].join(' | ');
   const S0 = openSleepUI, B0 = WORLD.bedInteract; let slept = false, bed = false; openSleepUI = () => { slept = true; }; WORLD.bedInteract = (b) => { bed = true; return true; };
-  const M0 = showMsg; showMsg = () => {};
-  try { interact(); } finally { openSleepUI = S0; WORLD.bedInteract = B0; showMsg = M0; }
+  const M0 = showMsg, D0 = openDialog, P0 = openShop; showMsg = () => {}; openDialog = () => {}; openShop = () => {}; /* E looking away may reach the keeper: caught, so no dialogue stops the loop's prompts */
+  try { interact(); } finally { openSleepUI = S0; WORLD.bedInteract = B0; showMsg = M0; openDialog = D0; openShop = P0; }
   const dbg = { d: +Math.hypot(px - p.tx, pz - p.tz).toFixed(2), cam: [CAM.position.x, CAM.position.y, CAM.position.z].map(v => +v.toFixed(2)), p: [px, jumpY, pz].map(v => +v.toFixed(2)), yaw: +yaw.toFixed(2), pitch: +pitch.toFixed(2), tp: thirdPerson, sight: intSightLine(px, pz, p.tx, p.tz) };
   return { dbg, target: !!t, rest: want ? prompt.includes(want) : /rest|sleep|bed|a room/i.test(prompt), want, prompt: prompt.slice(0, 80), e: slept || bed }; }, p);
 const out = [];

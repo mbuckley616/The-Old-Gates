@@ -52,10 +52,13 @@ function lookingAt(c,reach){if(c.body&&c.body.parent)return bodyAimed(c,reach); 
 // object"; the inn's bed showed as usable from downstairs). In range as before (1.6 across, your own floor within .9), the
 // crosshair ray meets the bed's frame (the kit's bed: .86 wide on x, 1.5 long on z, .72 to the posts, padded a little), and
 // no wall stands between you. The prompt and E both ask this one function, so they cannot disagree.
-function bedAimed(b){const y0=b.y||0;CAM.getWorldDirection(_laDir);const o=CAM.position,lo=[b.x-.5,y0,b.z-.82],hi=[b.x+.5,y0+.78,b.z+.82],O=[o.x,o.y,o.z],D=[_laDir.x,_laDir.y,_laDir.z];
+// S646 — the same test for anything indoors without a mesh of its own to cast at: does the crosshair ray, out to 3.2 (plus the
+// third-person camera's distance), meet the box x±hx, z±hz, y0 to y0+h; and does no wall stand between you and its centre.
+function aimBox(x,z,y0,hx,hz,h){CAM.getWorldDirection(_laDir);const o=CAM.position,lo=[x-hx,y0,z-hz],hi=[x+hx,y0+h,z+hz],O=[o.x,o.y,o.z],D=[_laDir.x,_laDir.y,_laDir.z];
   let t0=0,t1=3.2+(thirdPerson?TP.dist:0);
   for(let i=0;i<3;i++){if(Math.abs(D[i])<1e-9){if(O[i]<lo[i]||O[i]>hi[i])return false;continue;}let ta=(lo[i]-O[i])/D[i],tb=(hi[i]-O[i])/D[i];if(ta>tb){const t=ta;ta=tb;tb=t;}if(ta>t0)t0=ta;if(tb<t1)t1=tb;if(t0>t1)return false;}
-  return typeof intSightLine!=='function'||intSightLine(px,pz,b.x,b.z);}
+  return typeof intSightLine!=='function'||intSightLine(px,pz,x,z);}
+function bedAimed(b){return aimBox(b.x,b.z,b.y||0,.5,.82,.78);}
 function intBedTarget(){let best=null,bd=1e9;for(const b of (INT_BEDS||[])){const d=Math.hypot(px-b.x,pz-b.z);if(d>=1.6||d>=bd||Math.abs(jumpY-(b.y||0))>=.9)continue;if(bedAimed(b)){bd=d;best=b;}}return best;}
 function lootTargetNow(){try{
   if(activeZoneId==='world'){const c=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.items&&c.items.length>0&&lookingAt(c));if(c)return c;}
