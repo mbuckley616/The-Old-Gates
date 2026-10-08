@@ -14351,3 +14351,14 @@ Neighbours: jnlinks, journal. `parsecheck` clean.
 
 ### Needs eyes
 Whether a person's page should name the trade from `roleTag` (*innkeeper*, *trader*) or the generator's `bio.trade`. The book's look waits for the open-book slice.
+
+## v80 — Session 655 — One line a quest event in the Journal (Michael's A on #183)
+Under every option of DECISION #183, each quest event shows one line, not two. Today the By day view prints *Quest: First Blood* beside the quest's own words, and *First Blood: 56 gold.* beside *Turned in to Mayor Niamh: 56 gold.* The concept gave the rule: a log line of the same minute that repeats a quest line's title is not shown.
+
+`renderJournal` (`66-hub.js`) applies it in the By day view. A plain line (no quest id, not a line of your own) is left out when a quest line of the same game minute exists and the plain line contains that quest's title (from `QUEST_DEFS`, or the line's kept `qt` for a world quest or guild task; three letters at least). Only the view changes. `GAME_LOG`, the Log tab and the save keep every line, and By quest showed only the quest's own words already.
+
+### Verified (headless Chromium)
+`jnecho` 5/5 (new), with a world quest, *The Miller's Rats*. Its accept and turn-in show with the title (*The Miller's Rats — Turned in to Mayor Niamh: 56 gold.*). *Quest: The Miller's Rats* and *The Miller's Rats: 56 gold.*, written in the same minutes, are not shown. A line naming it a minute later, a line of your own naming it, and an unrelated line all show. `GAME_LOG` keeps all 7. On the old view the second check fails by construction. Neighbours: journal, told, jnlinks. `parsecheck` clean.
+
+### Needs eyes
+Nothing beyond the open book, still owed.

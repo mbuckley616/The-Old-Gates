@@ -227,7 +227,10 @@ function renderJournal(){
   } else {
     const days=new Map();L.forEach(e=>{const k=typeof e.t==='number'?Math.floor(e.t/1440):-1;if(!days.has(k))days.set(k,[]);days.get(k).push(e);});
     [...days.keys()].sort((a,b)=>b-a).forEach(k=>{
-      html+=`<div class="jn-day"><div class="jn-head">${k<0?'Undated':_jnEsc(gameDateLine(k*1440,0,'date'))}</div>`+days.get(k).map(e=>line(e,true)).join('')+'</div>';});
+      // S654 — one line a quest event (Michael's A on #183): a plain line of the same minute that repeats a quest line's title (*Quest: First Blood*, *First Blood: 56 gold.*) is not shown beside the quest's own words
+      const D=days.get(k),qs=D.filter(e=>e.q&&typeof e.t==='number').map(e=>({t:e.t,title:String((qd(e.q)||{}).title||e.qt||'')})).filter(x=>x.title.length>=3);
+      const echo=e=>!e.q&&!e.note&&typeof e.t==='number'&&qs.some(x=>x.t===e.t&&String(e.text).includes(x.title));
+      html+=`<div class="jn-day"><div class="jn-head">${k<0?'Undated':_jnEsc(gameDateLine(k*1440,0,'date'))}</div>`+D.filter(e=>!echo(e)).map(e=>line(e,true)).join('')+'</div>';});
   }
   body.innerHTML=noteBox+html;
 }
