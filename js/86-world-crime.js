@@ -868,15 +868,23 @@
     const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
       const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
       if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}
+    return out;
+  }
+  // S642 — the yard's offers (Michael's B on #192, item 3): the buy, the refits, the sails and the hold, as {label, fn} rows
+  // with the shipwright's own lines for answers. They were chat rows (upgradeTopics) until the yard panel (openYardPanel)
+  // took them; the panel shows these labels as its buttons. With no ship only the sloop is sold, as before; sunk, nothing.
+  function yardOffers(site){
+    if(!worldState.ship){const p=shipPriceNow();return [{label:`Buy a ship (${p} gold${p<SHIP_PRICE?", with Corwin's note":''})`,cls:'sloop',quest:true,fn:()=>buyShip(site)}];}
+    const st=shipCfg();const out=[];const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman;if(st.sunk)return out;
     // S636 — refits branch: every hull this yard sells but hers, up for the difference, down with two thirds of it paid back.
     // A hull no bigger than hers takes the shipwright's first sentence only (*Longer, broader* is not true of a cutter).
     const cls=st.cls||'sloop';
     for(const next of yardHulls(site)){if(next===cls)continue;const c0=refitCost(cls,next);
-      out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
+      out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,cls:next,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
         st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
         const line=L.refitted(next);return SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';}});}
-    const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
-    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
+    const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,cls,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
+    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,cls,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
     return out;
   }
   // ── fish ──
@@ -958,3 +966,70 @@ function openCargoPanel(site){if(!site)return;
   ov.style.display='flex';cargoOpen=true;cargoPanelDraw();}
 function closeCargoPanel(){const ov=document.getElementById('cargoui');if(ov)ov.style.display='none';cargoOpen=false;cargoSite=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
 window.addEventListener('keydown',e=>{if(!cargoOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeCargoPanel();e.preventDefault();e.stopPropagation();}},true);
+// S642 — the yard panel (Michael's B on #192, the ship in hand, item 3): the shipwright's *Browse ships* opens a parchment
+// slip. The hulls this yard sells down the left; the chosen one turning in the middle on a small stage of its own (its own
+// renderer on a 320 × 240 canvas, built by buildShipMesh as the inspector builds it, drawn only while the slip is open); on
+// the right her numbers on the helm's dial (a band from her bare speed to her speed under full sails), hull, hold and worth,
+// and the yard's offers for her (yardOffers: the buy, a refit, the sails, the hold) with the shipwright's lines for answers.
+// Mend, raise and fetch stay in his chat.
+let yardOpen=false;const YARD={site:null,cls:'sloop',said:'',r:null,s:null,c:null,m:{},raf:0,last:0,yaw:0};
+function yardDialSVG(bare,full){const ink='#2a2014';let t='';
+  for(let k=0;k<=LOG_MAX;k+=5){const [x0,y0]=logPt(k,LOG_R-(k%10?5:8)),[x1,y1]=logPt(k,LOG_R);t+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${ink}" stroke-width="${k%10?1:1.6}"/>`;
+    if(k%10===0){const [lx,ly]=logPt(k,LOG_R-16);t+=`<text x="${lx+(k===0?3:k===LOG_MAX?-3:0)}" y="${ly+(k%LOG_MAX?3:-3)}" text-anchor="middle" font-size="9" fill="${ink}">${k}</text>`;}}
+  const [a0,b0]=logPt(bare,LOG_R+2),[a1,b1]=logPt(full,LOG_R+2),[nx,ny]=logPt(bare,LOG_R-4),[mx0,my0]=logPt(full,LOG_R-12),[mx1,my1]=logPt(full,LOG_R+4);
+  const [ax,ay]=logPt(0,LOG_R),[bx,by]=logPt(LOG_MAX,LOG_R);
+  return `<svg id="yard-dial" data-bare="${bare.toFixed(2)}" data-full="${full.toFixed(2)}" width="134" height="80" viewBox="0 0 134 80" style="display:block;margin:0 auto;font-family:Georgia,serif">`+
+    `<path d="M${ax-4} ${ay} A${LOG_R+4} ${LOG_R+4} 0 0 1 ${bx+4} ${by} Z" fill="#f2e8cc" stroke="#a08a5a"/>`+
+    `<path d="M${a0} ${b0} A${LOG_R+2} ${LOG_R+2} 0 0 1 ${a1} ${b1}" fill="none" stroke="#b08a30" stroke-width="5" opacity=".55"/>`+t+
+    `<line x1="${mx0}" y1="${my0}" x2="${mx1}" y2="${my1}" stroke="#b08a30" stroke-width="3"/>`+
+    `<line x1="${LOG_CX}" y1="${LOG_CY}" x2="${nx}" y2="${ny}" stroke="#8a2a1a" stroke-width="1.8" stroke-linecap="round"/>`+
+    `<circle cx="${LOG_CX}" cy="${LOG_CY}" r="3" fill="${ink}"/></svg>`;}
+function yardStage(){if(YARD.r)return true;const cv=document.getElementById('yard-cv');if(!cv)return false;
+  try{YARD.r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});YARD.r.setSize(320,240,false);YARD.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+    YARD.s=new THREE.Scene();YARD.s.add(new THREE.AmbientLight(0xffffff,.6));const d=new THREE.DirectionalLight(0xfff0d0,.85);d.position.set(10,16,12);YARD.s.add(d);
+    YARD.c=new THREE.PerspectiveCamera(30,320/240,.5,200);}catch(e){YARD.r=null;return false;}return true;}
+function yardShow(cls){const C=SHIP_CLASSES[cls];if(!C||!yardStage())return;for(const k in YARD.m)YARD.m[k].visible=false;
+  let m=YARD.m[cls];if(!m){try{m=buildShipMesh(C.L,C.W,'player');}catch(e){return;}YARD.m[cls]=m;YARD.s.add(m);}
+  m.visible=true;const d=C.L*1.9;YARD.c.position.set(0,C.L*.55,d);YARD.c.lookAt(0,2.2,0);}
+function yardLoop(){if(!yardOpen){YARD.raf=0;return;}YARD.raf=requestAnimationFrame(yardLoop);const now=performance.now(),dt=Math.min(.1,(now-(YARD.last||now))/1000);YARD.last=now;
+  YARD.yaw+=dt*.35;const m=YARD.m[YARD.cls];if(m)m.rotation.y=YARD.yaw;if(YARD.r)try{YARD.r.render(YARD.s,YARD.c);}catch(e){}}
+function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YARD.site)return;const site=YARD.site,hulls=yardHulls(site),st=worldState.ship;
+  if(!hulls.includes(YARD.cls))YARD.cls=hulls[0];const cls=YARD.cls,C=SHIP_CLASSES[cls],mine=st&&!st.sunk?(st.cls||'sloop'):null;
+  const B='display:block;width:100%;text-align:left;background:none;border:none;border-left:3px solid transparent;font:16px Georgia,serif;color:#3a2c18;cursor:pointer;padding:4px 8px;text-transform:capitalize';
+  ov.querySelector('#yard-list').innerHTML=hulls.map(k=>`<button type="button" data-cls="${k}" style="${B}${k===cls?';border-left-color:#8a6a3a;background:rgba(138,112,64,.15)':''}">${k}${k===mine?' <span style="font-size:12px;color:#6a5a3a;text-transform:none">(yours)</span>':''}</button>`).join('');
+  for(const b of ov.querySelectorAll('#yard-list button'))b.onclick=()=>{YARD.cls=b.dataset.cls;YARD.said='';yardPanelDraw();};
+  const bare=C.speed,full=C.speed*(1+(SAIL_TIERS.length-1)*SAIL_STEP);
+  let h=yardDialSVG(bare,full)+`<div id="yard-kn" style="text-align:center;font-size:13px;margin-bottom:6px">${bare.toFixed(1)} kn bare, ${full.toFixed(1)} under full sails</div>`+
+    `<table style="width:100%;font-size:14px;line-height:1.6"><tr><td>Hull</td><td style="text-align:right">${C.hull}</td></tr><tr><td>Hold</td><td style="text-align:right">${CARGO_HOLD[cls]}</td></tr><tr><td>Worth</td><td style="text-align:right">${C.worth} gold</td></tr>`;
+  if(mine)h+=`<tr><td>Yours, a ${mine}</td><td style="text-align:right">${SHIP_CLASSES[mine].worth} gold</td></tr>`;
+  if(mine===cls)h+=`<tr><td>Sails</td><td style="text-align:right">tier ${st.sails||0} of ${SAIL_TIERS.length-1}</td></tr><tr><td>Hold tier</td><td style="text-align:right">${st.cargo||0} of ${CARGO_TIERS.length-1}</td></tr>`;
+  h+='</table>';ov.querySelector('#yard-info').innerHTML=h;
+  const offers=yardOffers(site).filter(o=>o.cls===cls);let note='';
+  if(st&&st.sunk)note=`The ${st.name||SHIP.name} lies on the bottom. Ask about raising her.`;
+  else if(!st&&cls!=='sloop')note=`Sold as a sloop; refitted as a ${cls} for ${refitCost('sloop',cls)} gold more.`;
+  const A='display:block;width:100%;margin-top:6px;background:none;border:1px solid #8a7040;border-radius:3px;font:15px Georgia,serif;color:#3a2c18;cursor:pointer;padding:4px 8px';
+  ov.querySelector('#yard-acts').innerHTML=offers.map((o,i)=>`<button type="button" data-i="${i}" style="${A}">${o.label}</button>`).join('')+(note?`<div style="font-size:13px;color:#6a5a3a;margin-top:6px">${note}</div>`:'');
+  for(const b of ov.querySelectorAll('#yard-acts button'))b.onclick=()=>{const o=offers[+b.dataset.i];const r=o.fn();YARD.said=typeof r==='string'?r:'';if(worldState.ship&&!worldState.ship.sunk)YARD.cls=yardHulls(site).includes(worldState.ship.cls||'sloop')?(worldState.ship.cls||'sloop'):YARD.cls;yardPanelDraw();};
+  ov.querySelector('#yard-said').textContent=YARD.said;ov.querySelector('#yard-gold').textContent=`Your purse: ${gold} gold`;
+  yardShow(cls);}
+function openYardPanel(site){if(!site)return;
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('yardui');
+  if(!ov){ov=document.createElement('div');ov.id='yardui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:820px;max-width:96vw;max-height:94vh;overflow:auto;padding:18px 22px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div id="yard-title" style="font-size:20px;letter-spacing:.04em;text-align:center"></div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:14px;margin:12px 0;align-items:flex-start;justify-content:center">'+
+      '<div id="yard-list" style="width:130px;flex:none"></div>'+
+      '<canvas id="yard-cv" width="320" height="240" style="width:320px;height:240px;max-width:100%;background:rgba(40,28,12,.85);border:1px solid #a89060;border-radius:4px;flex:none"></canvas>'+
+      '<div style="width:220px;flex:none"><div id="yard-info"></div><div id="yard-acts"></div></div></div>'+
+      '<div id="yard-said" style="font-size:14px;color:#5a4426;text-align:center;min-height:20px;font-style:italic"></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #a89060;padding-top:8px;margin-top:6px">'+
+      '<span id="yard-gold" style="font-size:14px"></span>'+
+      '<button type="button" id="yard-done" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Done</button></div></div>';
+    document.body.appendChild(ov);ov.querySelector('#yard-done').onclick=closeYardPanel;}
+  YARD.site=site;YARD.said='';const st=worldState.ship;YARD.cls=st&&!st.sunk&&yardHulls(site).includes(st.cls||'sloop')?(st.cls||'sloop'):'sloop';
+  ov.querySelector('#yard-title').textContent=`The yard at ${site.name}`;
+  ov.style.display='flex';yardOpen=true;yardPanelDraw();YARD.last=0;if(!YARD.raf)YARD.raf=requestAnimationFrame(yardLoop);}
+function closeYardPanel(){const ov=document.getElementById('yardui');if(ov)ov.style.display='none';yardOpen=false;YARD.site=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
+window.addEventListener('keydown',e=>{if(!yardOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeYardPanel();e.preventDefault();e.stopPropagation();}},true);

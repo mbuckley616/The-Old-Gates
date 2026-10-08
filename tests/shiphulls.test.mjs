@@ -18,7 +18,7 @@ const t = await page.evaluate((ports) => {
   // the refit rows at each nation's yard, from a sloop
   const site = id => siteAnywhere(id);
   out.rows = {}; for (const n of ['gatelands', 'mark', 'aurenne']) { worldState.ship = { cls: 'sloop', sails: 0, cargo: 0, hold: {}, name: 'Test Gull' };
-    out.rows[n] = upgradeTopics(site(ports[n].id)).map(x => x.label).filter(l => /^Refit|^Better sails/.test(l)); }
+    out.rows[n] = yardOffers(site(ports[n].id)).map(x => x.label).filter(l => /^Refit|^Better sails/.test(l)); }
   return out; }, ports);
 console.log(JSON.stringify(t));
 const c = t.cls;
@@ -39,7 +39,7 @@ check('sails go to a fourth tier', has('gatelands', /^Better sails, tier 1 \(250
 // refits clicked at the Mark's yard on a real ship: cog → cutter, cutter → sloop (paid back), sails to tier 4
 const r = await page.evaluate((id) => { const s = siteAnywhere(id), out = {};
   worldState.ship = { cls: 'cog', sails: 3, cargo: 0, hold: {}, name: 'Test Gull' }; spawnShip(s.x + 60, s.z + 60, 0); worldState.ship.hull = 70; gold = 1000;
-  const pick = re => upgradeTopics(s).find(x => re.test(x.label));
+  const pick = re => yardOffers(s).find(x => re.test(x.label));
   out.label = pick(/^Refit her as a cutter/).label; out.said = pick(/^Refit her as a cutter/).fn();
   out.cutter = { cls: worldState.ship.cls, gold, hull: shipBars().hull, hullMax: shipBars().hullMax, L: SHIP.L, mesh: !!SHIP.mesh, kind: SHIP.mesh && SHIP.mesh.userData.kind, top: +shipTopSpeed().toFixed(2) };
   const down = pick(/^Refit her as a sloop/); out.downLabel = down.label; out.downSaid = down.fn(); out.sloop = { cls: worldState.ship.cls, gold, hull: shipBars().hull };

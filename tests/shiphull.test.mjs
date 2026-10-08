@@ -99,7 +99,7 @@ const yard = await page.evaluate(() => { const s = _port, S = WORLD.ship, st = w
   out.afterLabels = WORLD.upgradeTopics(s).map(x => x.label).filter(l => /^Mend/.test(l));
   st.hull = 90; gold = 30; const t2 = WORLD.upgradeTopics(s).find(x => /^Mend her/.test(x.label)); out.poor = t2 && t2.fn(); out.poorHull = WORLD.shipBars().hull; out.poorGold = gold;
   S.x = s.x + 400; out.far = WORLD.upgradeTopics(s).some(x => /^Mend/.test(x.label)); S.x = s.x + 60;
-  st.cls = 'sloop'; gold = 5000; st.hull = 100; const r = WORLD.upgradeTopics(s).find(x => /^Refit her as a cog/.test(x.label)); if (r) r.fn(); out.cog = WORLD.shipBars();
+  st.cls = 'sloop'; gold = 5000; st.hull = 100; const r = yardOffers(s).find(x => /^Refit her as a cog/.test(x.label)); if (r) r.fn(); out.cog = WORLD.shipBars();
   return out; });
 console.log(port, JSON.stringify(yard));
 check('in port, the shipwright offers "Mend her: hull 55 of 100, rig 80 of 100 (240 gold)"', yard.label === 'Mend her: hull 55 of 100, rig 80 of 100 (240 gold)', yard.label);
