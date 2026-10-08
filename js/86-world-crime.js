@@ -734,11 +734,35 @@
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} is raised and lies at ${site.name}.`);}
   function shipMendCost(){const b=shipBars();const h=b.hullMax-b.hull,r=100-b.rig;return {hull:h,rig:r,gold:h*4+r*3,mins:Math.round((h+r)*3)};}
   const SHIPBAR={ui:null};
+  // S637 — the log (Michael's B on #192, the page's shared ground): a half-dial of 0 to 30 knots on the helm panel, parchment and
+  // ink, one knot one unit a second; the needle at her speed, a brass tick at the most she can make now (top speed × hull and
+  // rig), the number under it, and a notch on the rim at each hull's top under full sails, so the dial is also the ladder
+  const LOG_MAX=30,LOG_CX=67,LOG_CY=62,LOG_R=50;
+  function logPt(v,r){const a=Math.PI*(1-Math.max(0,Math.min(LOG_MAX,v))/LOG_MAX);return [+(LOG_CX+Math.cos(a)*r).toFixed(2),+(LOG_CY-Math.sin(a)*r).toFixed(2)];}
+  function shipLogSVG(){const ink='#2a2014';let t='';
+    for(let k=0;k<=LOG_MAX;k+=5){const [x0,y0]=logPt(k,LOG_R-(k%10?5:8)),[x1,y1]=logPt(k,LOG_R);t+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${ink}" stroke-width="${k%10?1:1.6}"/>`;
+      if(k%10===0){const [lx,ly]=logPt(k,LOG_R-16);t+=`<text x="${lx+(k===0?3:k===LOG_MAX?-3:0)}" y="${ly+(k%LOG_MAX?3:-3)}" text-anchor="middle" font-size="9" fill="${ink}">${k}</text>`;}}
+    const full=Object.keys(SHIP_CLASSES).map(k=>SHIP_CLASSES[k].speed*(1+(SAIL_TIERS.length-1)*SAIL_STEP));
+    for(const v of full){const [x0,y0]=logPt(v,LOG_R+5),[x1,y1]=logPt(v,LOG_R+10);t+=`<line class="log-notch" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="#d8c8a0" stroke-width="1.6"/>`;}
+    const [ax,ay]=logPt(0,LOG_R),[bx,by]=logPt(LOG_MAX,LOG_R);
+    return `<svg id="shipbars-log" width="134" height="80" viewBox="0 0 134 80" style="display:block;margin:0 auto 2px;font-family:Georgia,serif">`+
+      `<path d="M${ax-4} ${ay} A${LOG_R+4} ${LOG_R+4} 0 0 1 ${bx+4} ${by} Z" fill="#e8dcb8" stroke="#a08a5a"/>`+t+
+      `<line id="shipbars-max" x1="${LOG_CX}" y1="${LOG_CY}" x2="${LOG_CX}" y2="${LOG_CY}" stroke="#b08a30" stroke-width="3"/>`+
+      `<line id="shipbars-needle" x1="${LOG_CX}" y1="${LOG_CY}" x2="${LOG_CX}" y2="${LOG_CY}" stroke="#8a2a1a" stroke-width="1.8" stroke-linecap="round"/>`+
+      `<circle cx="${LOG_CX}" cy="${LOG_CY}" r="3" fill="${ink}"/>`+
+      `<text id="shipbars-kn" x="${LOG_CX}" y="77" text-anchor="middle" font-size="11" fill="#e8dcc0">0.0 kn</text></svg>`;}
+  // every frame while the panel shows: her speed and her most, written only when the tenth changes
+  function shipLogUI(){const v=SHIP.sailing?Math.abs(SHIP.speed||0):0,mx=shipSpeedNow();const key=v.toFixed(1)+'|'+mx.toFixed(1);if(key===SHIPBAR.logKey)return;SHIPBAR.logKey=key;
+    const q=id=>document.getElementById(id);const n=q('shipbars-needle'),m=q('shipbars-max'),k=q('shipbars-kn');if(!n||!m||!k)return;
+    const [nx,ny]=logPt(v,LOG_R-6);n.setAttribute('x2',nx);n.setAttribute('y2',ny);
+    const [m0x,m0y]=logPt(mx,LOG_R-9),[m1x,m1y]=logPt(mx,LOG_R);m.setAttribute('x1',m0x);m.setAttribute('y1',m0y);m.setAttribute('x2',m1x);m.setAttribute('y2',m1y);
+    k.textContent=`${v.toFixed(1)} kn`;SHIPBAR.log={v:+v.toFixed(1),max:+mx.toFixed(1),needle:[nx,ny]};}
   function shipBarsUI(){
     if(typeof document==='undefined'||!document.body)return;
     let el=SHIPBAR.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='shipbars';el.style.cssText='position:fixed;right:14px;bottom:150px;width:150px;padding:5px 8px;background:rgba(40,30,18,.82);border:1px solid #a08a5a;border-radius:4px;color:#e8dcc0;font:11px Georgia,serif;display:none;z-index:50';
-      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div><div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
+      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div>'+shipLogSVG()+'<div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
     const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
+    if(show)shipLogUI();
     const b=show?shipBars():null,hint=show?seaHint():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
     const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
     q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';

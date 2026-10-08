@@ -14131,3 +14131,16 @@ The shipwright's *refitted* line says *Longer, broader, and she'll carry more sa
 
 ### Needs eyes
 The cutter and the caravel look like a sloop and a cog until the look session. Whether five refit rows in the shipwright's chat is too many before the yard panel replaces them. A trade down to a hull whose hold is smaller than the crates aboard (a galleon's 90 to a cutter's 25) keeps the crates; nothing more can go in until she is under her cap. Whether the third on a trade down is what Michael meant (above).
+
+## v80 — Session 637 — The log at the helm (backlog J, Michael's B on DECISION #192, the shared ground's first piece)
+Michael's 6 Oct note asked for a speedometer at the helm, in knots, ideally one that implies faster ships exist, the starter ship at about a quarter. The page (`docs/design/the-ship-in-hand.md`) puts it on the helm panel as a half-dial; Session 636 made the ships that fill it.
+
+The helm panel (`shipBarsUI`, `86-world-crime.js`) now carries the log under her name: a parchment half-dial of 0 to 30 knots, ticks every 5 and numbers every 10, in ink. The needle stands at her speed (one knot is one unit a second, so the shipwright's *She'll make 11.1 knots* is what the dial shows); a brass tick stands at the most she can make now, her top speed under her sails times her hull and rig (`shipSpeedNow`), so a hull under half pulls it back; the figure under the dial reads *7.5 kn*. Outside the rim a pale notch marks each hull's top under full sails (sloop 11.1, cog 12.6, galleon 14.1, caravel 16.3, cutter 17.8), so the dial is also the ladder, and the last third is empty, the far continents' yards'. The needle and the tick are written only when their tenth of a knot changes; the dial is drawn once, with the panel. A ship let go of shows 0: the needle reads her way under your hand at the wheel.
+
+### Verified (headless Chromium)
+`shiplog` 10/10 (new), on the open sea off the nearest port, sailed with W held through the world's tick at 1/60 and the needle's end read back into knots from its angle. At the wheel the log reads *0.0 kn*; two seconds under W she makes 6.06 and the needle reads 6.06 (*6.1 kn*); at full way a bare sloop's 7.5 stands at 25% of the dial with the brass tick on it. The five notches read 11.1, 12.58, 14.06, 16.28 and 17.76. At hull 45 of 100 the tick falls to 6.0 and she slows to it. A cutter under four tiers of sail reaches *17.8 kn*, the top notch, 59% of the dial. Ashore 200 units off the panel is hidden. The picture is `docs/prototypes/ship-in-hand/log-ingame.png` (the panel at twice its size).
+
+Neighbours pass: seahint, seawear, shiphull, shipwreck, shiphulls. `parsecheck` clean.
+
+### Needs eyes
+The dial at its real size (134 × 80 px) on a laptop: whether the numbers at 9 px read, and whether the needle's red against the cream is clear at dusk. The panel is still the old dark box under the dial; the HUD's parchment (#198) is the look builder's.
