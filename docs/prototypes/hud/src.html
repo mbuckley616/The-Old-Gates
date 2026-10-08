@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The HUD</title>
+<!-- The Old Gates — the HUD rethought (Michael's playtest notes of 6 Oct: the compass too small and crowded by quest marks,
+     too many bottom-centre callouts, damage numbers wanted, the whole HUD dated). It keeps the layout Michael chose on
+     27 Sep (A: Oblivion's places — vitals bottom-left, compass bottom-centre, minimap top-right) and the parchment kit.
+     Concept, 7 Oct 2026. build.py inlines kit.css, the icon symbols (defs.html) and the game's own data (current.json,
+     written by shoot-current.mjs from a run of build s476: four of Mayor Niamh's jobs in Dunmore, an Iron Mace of Flames
+     on a Bandit and a Skeleton, every number through the game's own formulas). Every .screen is 1280×720; shoot.mjs
+     photographs them.
+     For the builder: plain DOM over the canvas, no canvas compass.
+     .band — the compass, 600×46 (today 200×38), 180° across (today 135°), so 3.33 px a degree; .cd cardinal letters,
+       .tk ticks every 15°. Each mark is a .mk roundel (24 px, an ink glyph on paper; .q a job, rubric ring; .pl a place,
+       bronze ring) hung in the band's lower lane. Marks closer than 30 px join one .mk with a .ct count, the nearest on top.
+       A mark past the band's edge is pinned there with a .edge chevron. .lbl is the one label, a paper ribbon over the
+       band naming the marks the heading is on (within 12°): the job, what is there, and its distance in steps.
+     .vit — the approved plate: weapon and spell roundels, three .hbar with numbers; .tail is the pale stretch a bar has
+       just lost (kept 0.8 s, then it drains), the only sign of damage taken.
+     .ledger — up to four .ln paper slips above the plate, newest at the foot, each gone after 6 s: everything that today
+       goes to #msg except combat. showMsg(t) keeps its signature; a combat line is not written at all.
+     .dn — a damage number at the foe's head (projected from e.mesh), rising 40 px and fading over 0.9 s. Kinds by class:
+       (none) plain, .weak (×1.25 or more), .res (×0.75 or less), .back (from behind), .crit (staggered, riposte, finisher,
+       fortune), .fire / .frost / .shock for a rune's rider, .sm the word under it. .foe is the target's name and bar under
+       the crosshair while it is struck or locked. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+.screen{background-size:cover;background-position:center}
+.screen.town{background-image:url(plate-town.png)}
+.screen.fight{background-image:url(plate-fight.png)}
+.screen.menu::before{backdrop-filter:blur(2px) brightness(.45) sepia(.3)}
+
+/* ───────── the compass band ───────── */
+.band{position:absolute;left:340px;bottom:24px;width:600px;height:46px;border-radius:8px;background:linear-gradient(#251f15,#0d0a07);
+  box-shadow:inset 0 1px 4px #000,0 0 0 2px var(--bronze-lo),0 0 0 3px var(--bronze),0 0 0 4px #0a0806,0 3px 12px rgba(0,0,0,.6);z-index:3}
+.band .in{position:absolute;inset:0;overflow:hidden;border-radius:8px}
+.band .cd{position:absolute;top:3px;transform:translateX(-50%);font:16px var(--display);color:#d8c290;letter-spacing:.04em}
+.band .cd.big{font-size:21px;top:0;color:#e8b050}
+.band .tk{position:absolute;top:4px;width:1px;height:7px;background:#8a7450;transform:translateX(-.5px)}
+.band .tk.h{height:4px;background:#5a4a32}
+.band::before{content:"";position:absolute;left:50%;top:-9px;border:7px solid transparent;border-top-color:var(--bronze-hi);transform:translateX(-50%);z-index:5;filter:drop-shadow(0 1px 1px #000)}
+.band::after{content:"";position:absolute;left:12px;right:12px;top:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(160,122,56,.45) 15%,rgba(160,122,56,.45) 85%,transparent)}
+.mk{position:absolute;top:22px;width:24px;height:24px;margin-left:-12px;border-radius:50%;display:grid;place-items:center;font-size:17px;color:var(--ink);
+  background:radial-gradient(circle at 50% 38%,#f2e4bc,#d4b97e 75%);box-shadow:0 0 0 1.5px var(--bronze),0 0 0 2.5px #0a0806,0 1px 3px rgba(0,0,0,.7);z-index:2}
+.mk.q{box-shadow:0 0 0 2px var(--rubric),0 0 0 3px #0a0806,0 1px 3px rgba(0,0,0,.7);color:var(--rubric)}
+.mk.far{opacity:.82;transform:scale(.86)}
+.mk .ct{position:absolute;right:-9px;top:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--rubric);color:#f6e6c0;font:11px/15px var(--body);text-align:center;box-shadow:0 0 0 1px #0a0806}
+.mk.edge{top:22px}
+.mk .chev{position:absolute;top:5px;font:13px var(--body);color:var(--bronze-hi)}
+.lbl{position:absolute;left:640px;bottom:82px;transform:translateX(-50%);padding:5px 22px 6px;white-space:nowrap;z-index:3}
+.lbl .r{display:flex;gap:9px;align-items:center;font:16px var(--body);color:var(--ink);line-height:1.3}
+.lbl .r svg{font-size:15px;color:var(--rubric)}
+.lbl .r b{font:600 16px var(--body);color:var(--rubric)}
+.lbl .r i{font:italic 15px var(--fell);color:var(--ink-soft)}
+.lbl .r .d{margin-left:auto;padding-left:14px;font:15px var(--body);color:var(--ink-soft)}
+.sunr{position:absolute;left:958px;bottom:20px;width:54px;height:54px;font-size:28px;color:#f0c860;z-index:3}
+
+/* ───────── vitals ───────── */
+.vit{left:18px;bottom:20px;width:306px;height:100px;padding:12px 12px;display:flex;gap:8px;align-items:center}
+.vit .roundel{width:48px;height:48px;font-size:26px}
+.vit .bars{flex:1;display:flex;flex-direction:column;gap:6px;padding-left:4px}
+.vit .br{display:grid;grid-template-columns:13px 1fr 56px;gap:6px;align-items:center}
+.vit .br svg{font-size:13px}
+.vit .br .v{font:13px var(--body);color:#e6d4a8;text-align:right;text-shadow:0 1px 2px #000}
+.vit .lv{display:flex;justify-content:space-between;font-size:12px;opacity:.85}
+.hbar .tail{background:linear-gradient(#f4e2c0,#c8a878)!important;opacity:.85}
+.hbar .tail::after{display:none}
+.xpbar{height:3px;border-radius:2px;background:#0b0906;box-shadow:0 0 0 1px rgba(90,64,24,.8);margin-top:1px;overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#a07a38,#e8c070)}
+
+/* ───────── the ledger ───────── */
+.ledger{position:absolute;left:18px;bottom:134px;width:430px;display:flex;flex-direction:column;gap:6px;z-index:3}
+.ln{position:relative;align-self:flex-start;padding:5px 16px 5px 12px;font:15px var(--body);color:var(--ink);display:flex;gap:9px;align-items:center;isolation:isolate}
+.ln::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:3px;background:linear-gradient(#ecdcb2,#d8bf88);filter:url(#deckle-s);box-shadow:0 2px 5px rgba(0,0,0,.55)}
+.ln svg{font-size:16px;color:var(--rubric)}
+.ln b{font-weight:600;color:var(--rubric)}
+.ln .ago{font:italic 12px var(--fell);color:var(--ink-faint);margin-left:6px}
+
+/* ───────── damage numbers ───────── */
+.dn{position:absolute;transform:translate(-50%,-100%);text-align:center;z-index:4;pointer-events:none;font:500 30px/1 var(--body);font-variant-numeric:lining-nums tabular-nums;color:#f6ecd4;
+  -webkit-text-stroke:5px #1a0f06;paint-order:stroke fill;text-shadow:0 2px 6px rgba(0,0,0,.6);letter-spacing:.02em}
+.dn .sm{display:block;font:italic 15px/1.1 var(--fell);-webkit-text-stroke:3px #1a0f06;letter-spacing:0;margin-top:1px}
+.dn.weak{color:#f2c25a;font-size:36px}
+.dn.res{color:#b4aa94;font-size:22px}
+.dn.back{color:#e8d8f0;font-size:34px}
+.dn.crit{color:#f05a32;font-size:46px;transform:translate(-50%,-100%) rotate(-5deg)}
+.dn.crit::before{content:"✶ ";font-size:.55em;vertical-align:.35em}
+.dn.fire{color:#ff9a3c;font-size:23px} .dn.frost{color:#a8dcff;font-size:23px} .dn.shock{color:#c8a8ff;font-size:23px}
+.dn svg{font-size:.8em;vertical-align:-.08em;stroke:#1a0f06;stroke-width:5;paint-order:stroke}
+.dn.old{opacity:.68}
+.foe{position:absolute;left:640px;top:384px;transform:translateX(-50%);text-align:center;z-index:3}
+.foe .nm{font:15px var(--display);color:#f0e2c0;letter-spacing:.06em;text-shadow:0 1px 3px #000,0 0 6px #000}
+.foe .hbar{width:180px;height:8px;margin:3px auto 0}
+
+/* ───────── the key of numbers ───────── */
+.keyc{left:150px;top:44px;width:980px;padding:26px 40px 22px}
+.keyc .h{font-size:28px}
+.kr{display:grid;grid-template-columns:150px 150px 1fr 190px;gap:16px;align-items:center;padding:7px 0;border-top:1px solid rgba(90,65,40,.28)}
+.kr .sw2{height:60px;overflow:hidden;border-radius:4px;background:url(plate-fight.png) 52% 44%/1100px;position:relative;box-shadow:inset 0 0 0 1px rgba(60,40,20,.5)}
+.kr .sw2 .dn{left:50%;top:86%}
+.kr .sw2 .dn.crit{font-size:40px;top:90%}
+.kr .k{font:19px var(--display);color:var(--ink)}
+.kr .why{font:15px/1.3 var(--body);color:var(--ink-soft)}
+.kr .today{font:italic 14px/1.25 var(--fell);color:var(--ink-faint)}
+.kr .today code{font:13px ui-monospace,monospace;color:#7a5a30;font-style:normal}
+
+/* ───────── C: today's line, on paper ───────── */
+.slipc{left:640px;bottom:84px;transform:translateX(-50%);padding:6px 22px;font:16px var(--body);white-space:nowrap}
+
+/* today's compass, enlarged, for the comparison */
+.zoom{position:absolute;background:url(current-town.png) no-repeat;image-rendering:auto;box-shadow:0 0 0 1px #5a4018,0 3px 10px rgba(0,0,0,.6)}
+.tag{position:absolute;font:15px var(--display);color:#e0c994;letter-spacing:.05em;text-shadow:0 1px 3px #000}
+.tag small{font:italic 13px var(--fell);color:#b8a888;letter-spacing:0;margin-left:8px}
+.half{position:absolute;width:640px;height:360px;overflow:hidden}
+.half img,.half iframe{width:1280px;height:720px;transform:scale(.5);transform-origin:0 0;border:0}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-skull" viewBox="0 0 24 24"><path d="M12 3.5c-4.4 0-7.5 3-7.5 7 0 2.4 1.1 4 2.8 5v3.2h9.4V15.5c1.7-1 2.8-2.6 2.8-5 0-4-3.1-7-7.5-7z"/><circle cx="9.2" cy="11" r="1.7"/><circle cx="14.8" cy="11" r="1.7"/><path d="M12 13.6l-.9 1.8h1.8zM10 18.7v-2M14 18.7v-2"/></symbol>
+  <symbol id="i-tent" viewBox="0 0 24 24"><path d="M3 20L12 5l9 15z"/><path d="M12 5v15M9.5 20l2.5-5 2.5 5M10.5 4l1.5 1 1.5-1"/></symbol>
+  <symbol id="i-gem" viewBox="0 0 24 24"><path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18M9 4l-1.5 5L12 20l4.5-11L15 4"/></symbol>
+  <symbol id="i-letter" viewBox="0 0 24 24"><path d="M3.5 6.5h17v11h-17z"/><path d="M3.5 6.5L12 13l8.5-6.5"/><circle cx="12" cy="15.6" r="1.6"/></symbol>
+  <symbol id="i-figure" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.6"/><path d="M8 21l1-7-2.5-1.5L9 9h6l2.5 3.5L15 14l1 7M12 14v7"/></symbol>
+  <symbol id="i-mace" viewBox="0 0 24 24"><path d="M5 20l7.5-7.5"/><circle cx="15.5" cy="8.5" r="4"/><path d="M15.5 2.5v2M21.5 8.5h-2M15.5 14.5v-2M11.5 4.5l1.3 1.3M19.5 4.5l-1.3 1.3M19.5 12.5l-1.3-1.3"/></symbol>
+  <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M7 4h11a2 2 0 0 1 0 4h-1v10a2 2 0 0 1-2 2H6a2 2 0 0 1 0-4h1z"/><path d="M6 20a2 2 0 0 0 2-2v-2M17 8H9.5M10 11.5h4.5M10 14.5h4.5"/></symbol>
+</defs></svg>
+
+<h1 class="page">The HUD</h1>
+<p class="lede">Michael’s notes of 6 Oct: the compass is too small and quest marks crowd it; too many callouts at the bottom centre, damage numbers instead; the HUD looks dated beside the menus. This keeps the places chosen on 27 Sep (vitals bottom-left, compass bottom-centre, minimap top-right) and the parchment kit, with a run of build s476 behind every word and number.</p>
+
+<div class="cap">A · The town <small>Dunmore at 2 pm with four of Mayor Niamh’s jobs taken. The compass is 600 wide and spans 180°; two marks 5° apart are one roundel with a count, and the label names both.</small></div>
+<section class="screen town" id="a-town"></section>
+
+<div class="cap">A · The fight <small>an Iron Mace of Flames on a Bandit and a Skeleton: each blow a number at the head, its kind in its colour; the bar under the crosshair is the one you struck</small></div>
+<section class="screen fight" id="a-fight"></section>
+
+<div class="cap">The numbers <small>each kind with the game’s own value for this character, and what the bottom centre says for it today</small></div>
+<section class="screen fight menu" id="numbers"></section>
+
+<div class="cap">B · A, clearing itself at rest <small>out of a fight and with all three bars full, the plate and the ledger fade; the compass, the minimap and the crosshair stay</small></div>
+<section class="screen town" id="b-calm"></section>
+
+<div class="cap">C · Numbers and the compass only <small>the damage numbers and the new compass; every other line stays at the bottom centre, one at a time, on a paper slip</small></div>
+<section class="screen town" id="c-slip"></section>
+
+<div class="cap">Today beside A</div>
+<section class="screen" id="compare-hud" style="background:#141008"></section>
+
+<script>
+/*DATA*/
+const T = DATA.town, H = DATA.hits, P = (DATA.proj || {})['plate-fight'] || [];
+const ico = (id, cls = '') => `<svg class="ico ${cls}"><use href="#${id}"/></svg>`;
+const GLYPH = { '☠': 'i-skull', '⛺': 'i-tent', '◆': 'i-gem', '⌂': 'i-letter', '⚓': 'i-letter', '👤': 'i-figure', '⚔': 'i-sword' };
+const KIND = { '☠': 'cull', '⛺': 'road', '◆': 'retrieve', '⌂': 'deliver', '⚓': 'deliver', '👤': 'find' };
+const jobOf = m => (DATA.jobs.find(j => j.kind === KIND[m.glyph]) || {}).title || m.label;
+const wrap = a => ((a % 360) + 540) % 360 - 180;
+const steps = d => d < 20 ? 'here' : d + ' steps';
+const bearing = m => (Math.atan2(m.x - T.px, -(m.z - T.pz)) * 180 / Math.PI + 360) % 360;
+
+function band(screen) {
+  const W = 600, SPAN = 180, k = W / SPAN, yaw = T.yawDeg;
+  let h = '<div class="band"><div class="in">';
+  const NAMES = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
+  for (let a = 0; a < 360; a += 15) { const r = wrap(a - yaw); if (Math.abs(r) > SPAN / 2 - 4) continue; const x = W / 2 + r * k;
+    if (NAMES[a] != null) h += `<span class="cd ${a % 90 === 0 ? 'big' : ''}" style="left:${x}px">${NAMES[a]}</span>`;
+    else h += `<span class="tk ${a % 45 ? 'h' : ''}" style="left:${x}px"></span>`; }
+  // marks: on the band, or pinned at its edge; marks closer than 30 px join, the nearest on top
+  const ms = T.markers.map(m => ({ ...m, r: wrap(bearing(m) - yaw) })).map(m => ({ ...m, edge: Math.abs(m.r) > SPAN / 2 - 6, x: Math.abs(m.r) > SPAN / 2 - 6 ? (m.r < 0 ? 16 : W - 16) : W / 2 + m.r * k }));
+  ms.sort((a, b) => a.x - b.x); const groups = [];
+  for (const m of ms) { const g = groups[groups.length - 1]; if (g && Math.abs(m.x - g.x) < 30 && g.edge === m.edge) { g.list.push(m); g.x = (g.x * (g.list.length - 1) + m.x) / g.list.length; } else groups.push({ x: m.x, edge: m.edge, list: [m] }); }
+  for (const g of groups) { g.list.sort((a, b) => a.d - b.d); const top = g.list[0];
+    h += `<div class="mk q ${top.d > 500 ? 'far' : ''} ${g.edge ? 'edge' : ''}" style="left:${g.x}px">${ico(GLYPH[top.glyph] || 'i-star')}${g.list.length > 1 ? `<span class="ct">${g.list.length}</span>` : ''}${g.edge ? `<span class="chev" style="${g.x < W / 2 ? 'left:-14px' : 'right:-14px'}">${g.x < W / 2 ? '‹' : '›'}</span>` : ''}</div>`; }
+  h += '</div></div>';
+  // the one label: the marks the heading is on, within 12°
+  const on = groups.filter(g => !g.edge && Math.abs(g.x - W / 2) <= 12 * k).flatMap(g => g.list);
+  if (on.length) h += `<div class="parch small lbl">${on.map(m => `<div class="r">${ico(GLYPH[m.glyph] || 'i-star')}<b>${jobOf(m)}</b><i>${m.glyph === '☠' ? 'within sight of the walls' : m.label}</i><span class="d num">${steps(m.d)}</span></div>`).join('')}</div>`;
+  h += `<div class="roundel sunr">${ico('i-sun')}</div>`;
+  screen.insertAdjacentHTML('beforeend', h);
+}
+function vitals(screen, v) {
+  const pc = (a, b) => Math.max(0, Math.min(100, a / b * 100));
+  const bar = (cls, icon, col, cur, max, tail) => `<div class="br">${ico(icon)}<div class="hbar ${cls}">${tail ? `<i class="tail" style="width:${pc(tail, max)}%"></i>` : ''}<i style="width:${pc(cur, max)}%"></i></div><span class="v num">${cur} / ${max}</span></div>`.replace('<svg class="ico ', `<svg style="color:${col}" class="ico `);
+  screen.insertAdjacentHTML('beforeend', `<div class="plate vit"><div class="roundel">${ico('i-mace')}</div><div class="roundel dim">${ico('i-star')}</div><div class="bars">
+    ${bar('hp', 'i-heart', 'var(--hp-hi)', v.hp[0], v.hp[1], v.hpTail)}${bar('mp', 'i-star', 'var(--mp-hi)', v.mana[0], v.mana[1])}${bar('st', 'i-bolt', 'var(--st-hi)', v.st[0], v.st[1])}
+    <div class="hudtxt num lv"><span>Level ${T.level}</span><span>${T.xp} / ${T.xpNext}</span></div><div class="xpbar"><i style="width:${pc(T.xp, T.xpNext)}%"></i></div></div></div>`);
+}
+const mini = s => s.insertAdjacentHTML('beforeend', '<div class="mini" style="right:30px;top:30px"></div><div class="miniring" style="right:24px;top:24px"><b>N</b></div><div class="xh"></div>');
+function ledger(s, lines) { s.insertAdjacentHTML('beforeend', `<div class="ledger">${lines.map(l => `<div class="ln" style="opacity:${l.o}">${ico(l.i)}<span>${l.t}</span>${l.ago ? `<span class="ago">${l.ago}</span>` : ''}</div>`).join('')}</div>`); }
+const quests = DATA.jobs.map((j, i, a) => ({ i: 'i-scroll', t: `New quest: <b>${j.title}</b>`, o: [.55, .7, .85, 1][4 - a.length + i] }));
+
+// A — the town
+{ const s = document.getElementById('a-town'); mini(s); band(s); vitals(s, T); ledger(s, quests);
+  s.insertAdjacentHTML('beforeend', `<div class="prompt" style="top:392px"><span class="key">E</span>Talk</div>`); }
+// A — the fight
+const dn = (x, y, cls, txt, sm) => `<div class="dn ${cls}" style="left:${x}px;top:${y}px">${txt}${sm ? `<span class="sm">${sm}</span>` : ''}</div>`;
+{ const s = document.getElementById('a-fight'); mini(s); band(s); const F = DATA.fightNow;
+  vitals(s, { hp: F.hp, mana: T.mana, st: F.st, hpTail: F.hp[0] + 14 });
+  const [b, k] = [P.find(p => p.name === 'Bandit'), P.find(p => p.name === 'Skeleton')];
+  const sk = DATA.fight.find(f => f.name === 'Skeleton');
+  s.insertAdjacentHTML('beforeend', dn(k.x, k.y - 4, 'weak', H.skeleton.dmg, 'weak') + dn(k.x + 46, k.y - 40, 'fire', `+${H.riders.fire.extra} ${ico('i-fire')}`) + dn(b.x, b.y - 34, 'old', H.bandit.dmg));
+  s.insertAdjacentHTML('beforeend', `<div class="foe"><div class="nm">Skeleton</div><div class="hbar hp"><i class="tail" style="width:${(sk.maxHp) / sk.maxHp * 100}%"></i><i style="width:${(sk.maxHp - H.skeleton.dmg) / sk.maxHp * 100}%"></i></div></div>`); }
+// the key
+{ const s = document.getElementById('numbers'); const w = H.weapon;
+  const rows = [
+    ['', H.bandit.dmg, '', 'Plain', `${w} on a Bandit: the weapon’s ${H.atk[0]}–${H.atk[1]} at the middle, level 6, Might 5, less the Bandit’s armour of 2.`, `Hit Bandit for ${H.bandit.dmg}!`],
+    ['weak', H.skeleton.dmg, 'weak', 'Weak', `The same blow on a Skeleton: blunt ×${H.skeleton.resistMult} against bone.`, `Hit Skeleton for ${H.skeleton.dmg}!${H.tagWeak}`],
+    ['res', H.resisted, 'resisted', 'Resisted', `A spear’s blow on the Skeleton: pierce ×${H.pierceMult}.`, `…${H.tagRes}`],
+    ['back', H.backstab.dmg, 'from behind', 'From behind', `The Bandit struck from behind, ×1.5 (a dagger’s is larger).`, `(BACKSTAB)`],
+    ['crit', H.crit, 'riposte', 'Critical', `The Bandit staggered by a parry, ×${H.critMult}; a finisher and a lucky blow take this colour too.`, `(CRIT) · (RIPOSTE) · (FINISHER)`],
+    ['fire', `+${H.riders.fire.extra} ${ico('i-fire')}`, '', 'A rune’s rider', `Flames add a quarter of the blow; frost a fifth (+${H.riders.frost.extra}, in ice blue), shock 22% (+${H.riders.shock.extra}, in violet). It rises beside the blow.`, `${H.riders.fire.msg} +${H.riders.fire.extra}!`],
+  ];
+  s.insertAdjacentHTML('beforeend', `<div class="parch keyc"><div class="h">Damage numbers</div><div class="meta" style="margin:2px 0 8px">At the foe’s head, rising and gone in 0.9 s. Blows you take show as the pale stretch your health bar has just lost, not as numbers over you.</div>
+    ${rows.map(r => `<div class="kr"><div class="sw2">${dn('50%', '86%', r[0], r[1], r[2]).replace('left:50%px;top:86%px', 'left:50%;top:86%')}</div><div class="k">${r[3]}</div><div class="why">${r[4]}</div><div class="today">Today: <code>${r[5]}</code></div></div>`).join('')}</div>`); }
+// B — calm: bars full, plate and ledger gone
+{ const s = document.getElementById('b-calm'); mini(s); band(s); s.insertAdjacentHTML('beforeend', `<div class="prompt" style="top:392px"><span class="key">E</span>Talk</div>`); }
+// C — the slip
+{ const s = document.getElementById('c-slip'); mini(s); band(s); vitals(s, T); s.querySelector('.lbl') && s.querySelector('.lbl').remove();
+  s.insertAdjacentHTML('beforeend', `<div class="parch small slipc">New quest: <b style="color:var(--rubric);font-weight:600">${DATA.jobs[DATA.jobs.length - 1].title}</b></div><div class="prompt" style="top:392px"><span class="key">E</span>Talk</div>`); }
+// today beside A
+{ const s = document.getElementById('compare-hud');
+  s.innerHTML = `<div class="tag" style="left:20px;top:10px">Today <small>build s476, the same moment</small></div><div class="tag" style="left:660px;top:10px">A <small>the approved places, the new compass and ledger</small></div>
+   <div class="half" style="left:0;top:36px"><img src="current-town.png"></div><div class="half" style="left:640px;top:36px" id="cmp-a"></div>
+   <div class="tag" style="left:20px;top:420px">Today’s compass, 200 × 38, at 2.5× <small>three distances printed over each other</small></div>
+   <div class="zoom" style="left:20px;top:452px;width:500px;height:95px;background-size:3200px 1800px;background-position:-1350px -25px"></div>
+   <div class="tag" style="left:560px;top:420px">A’s compass at 1× <small>600 × 46, 180°</small></div>
+   <div id="cmp-band" style="position:absolute;left:560px;top:452px;width:700px;height:200px;overflow:hidden"></div>`; }
+window.SCREENS = ['a-town', 'a-fight', 'numbers', 'b-calm', 'c-slip', 'compare-hud'];
+</script>
+</body>
+</html>
