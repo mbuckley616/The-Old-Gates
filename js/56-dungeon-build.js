@@ -1094,7 +1094,9 @@ function buildDungeon(portal){
       const shaft=dunMerge(wp,'stairShaft');dScene.add(shaft);}
     const gl=new THREE.PointLight(0xffb060,1.6,6);gl.position.set(cx,Y*.5,cz);dScene.add(gl);TORCHES.push({l:gl,fl:null,ph:Math.random()*Math.PI*2});
     const gl2=new THREE.PointLight(0xffb060,1.2,5);gl2.position.set(cx,Y+1.2,cz);dScene.add(gl2);
-    FOOTHOLDS.push({kind:'spiral',cx,cz,r0:.22,r1:1.05,y0:0,y1:Y,turns,a0});
+    // S657 — the walk rail stops inboard of the stanchions (it stopped at r1−.08=.97, the posts stand at .95, so you walked
+    // through one). The treads still carry you to r1; you simply cannot stand on their outer lip, where the rail is.
+    FOOTHOLDS.push({kind:'spiral',cx,cz,r0:.22,r1:1.05,rwalk:+(RR-.09).toFixed(3),y0:0,y1:Y,turns,a0});
     DUNGEON_STAIRWELL=true;
   }
   // S599 — the straight flight of the hall and undercroft (#177 A; makeFortHall): three cells wide, from the hall's floor

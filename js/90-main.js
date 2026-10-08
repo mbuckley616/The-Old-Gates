@@ -382,7 +382,7 @@ function loop(now){
   // v80 — indoors: follow the foothold under you (climb a ramp) or step off it (fall)
   if((inDungeon||isInterior())&&onGround){if(floorBaseY>=jumpY-.02)jumpY+=(floorBaseY-jumpY)*Math.min(1,dt*18);else if(jumpY-floorBaseY>.06){onGround=false;velY=0;}}
   if(inDungeon&&DUNGEON_STAIRWELL){const nf=(FLOOR2_Y>0?jumpY>FLOOR2_Y*.5:jumpY<FLOOR2_Y*.5)?2:1;if(nf!==currentFloor)currentFloor=nf;
-    const sp=FOOTHOLDS.find(f=>f.kind==='spiral');if(sp){const lo=Math.min(0,FLOOR2_Y)+.25,hi=Math.max(0,FLOOR2_Y)-.25;if(jumpY>lo&&jumpY<hi&&Math.abs(px-sp.cx)<1.6&&Math.abs(pz-sp.cz)<1.6){const dx=px-sp.cx,dz=pz-sp.cz,rd=Math.hypot(dx,dz)||.001;const rmax=sp.r1-.08,rmin=sp.r0+.12;if(rd>rmax){px=sp.cx+dx/rd*rmax;pz=sp.cz+dz/rd*rmax;}else if(rd<rmin){px=sp.cx+dx/rd*rmin;pz=sp.cz+dz/rd*rmin;}}}} // v80 — which floor is live follows your height; a rail keeps you on the helix
+    const sp=FOOTHOLDS.find(f=>f.kind==='spiral');if(sp){const lo=Math.min(0,FLOOR2_Y)+.25,hi=Math.max(0,FLOOR2_Y)-.25;if(jumpY>lo&&jumpY<hi&&Math.abs(px-sp.cx)<1.6&&Math.abs(pz-sp.cz)<1.6){const dx=px-sp.cx,dz=pz-sp.cz,rd=Math.hypot(dx,dz)||.001;const rmax=(sp.rwalk!=null?sp.rwalk:sp.r1-.08),rmin=sp.r0+.12;if(rd>rmax){px=sp.cx+dx/rd*rmax;pz=sp.cz+dz/rd*rmax;}else if(rd<rmin){px=sp.cx+dx/rd*rmin;pz=sp.cz+dz/rd*rmin;}}}} // v80 — which floor is live follows your height; a rail keeps you on the helix
   // Terrain height follow — only in open overworld zones
   let terrainY=0;
   if(inOverworld){

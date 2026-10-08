@@ -13417,3 +13417,20 @@ Every item in section H is done or waits on Michael (DECISION #202, the cutter's
 
 ### Needs eyes
 Nothing to see in the game. Still waiting: DECISION #202, and Sessions 636–642 on main before the hulls, the nets, the climb pose and the stowage can be built.
+
+## v80 — Session 657 — You walked through the stair's rail posts (backlog H, the rough edge Session 598 left)
+Every item in section H on main is done or waits on Michael (DECISION #202, the cutter's and the caravel's hulls), on a Fable session (the dungeon at 1.5×) or on the systems builder's work reaching main (the ship classes of Sessions 636–642, the quay lane of Session 618). CI on this branch's head is green on all eight shards. So this run takes the one thing in H still owed and in this builder's own files: the rough edge Session 598 listed under *Needs eyes* when it built Michael's stone newel stair (his A on #173) — "a stanchion stands at .95 and the walk rail stops you at .97, so on the outer edge of the treads you can walk through one".
+
+Measured in the game first. The helix's walk rail is derived in the loop from the foothold's own radius (`90-main.js`: `rmax=sp.r1-.08`, and the spiral foothold's `r1` is 1.05), so it held the player at .97 from the newel. The rail's iron stanchions stand at .95 and are .026 across, so a player on a tread's outer lip stood .02 from a post's centre — inside it. Pushed outward at each of the thirteen posts the rail reaches, the body ended .019–.020 from every one of them on all six seeds.
+
+The fix is where the stair is built, not in the loop's numbers: `buildStairwell` (`56-dungeon-build.js`) now publishes the walk radius with the foothold, `rwalk: RR-.09` (.86), and the loop uses it where one is given and keeps `r1-.08` where none is (the wizard's tower's helix in `83-world-generator.js` pushes a spiral foothold too). The treads still carry you out to 1.05, so nothing about climbing or falling changes; you simply cannot stand on a tread's outer .14, which is where the rail is — as on a real stair, you walk inside the rope. The standable band is .32 to .86 of a tread that runs from .2 to 1.0.
+
+Two posts are untouched by this: the end posts, at the landing above and on the last tread below, sit outside the height band in which the loop's rail holds you (it stops .25 short of each floor so that you can walk in at the stair's foot and off at its head). Both are noted below.
+
+### Verified (headless Chromium)
+`tests/stairrail` (extended; six seeds, 4021–4026, each a large *deep* dungeon with the stone stair): the player is stood on the outer lip at each stanchion's own angle and height and the loop given two frames. The rail holds the body at .860 on every seed (it was .970), thirteen of the sixteen posts are inside the band where it holds, and the nearest post in plan is .090 away (it was .019–.020). The suite's older checks are unchanged and pass: sixteen stanchions, two of them end posts; every rope point .949–.951 from the newel; every stanchion's top within .12 of the rope. With `rwalk` switched off, the clearance check fails on all six seeds at .019–.020 and the rail check with it. No page errors. Also green, for the climb and the drop: `newelstair` (5/5), `falls` (11/11, the stairwell's five units included), `oddfurn` (the tower's helix and its spiral foothold), `dungeon` (3/3).
+
+### Needs eyes
+- The two end posts. The rail does not hold you within .25 of either floor, so at the head of the stair (the landing) and on the last tread you can still walk through the stouter post and its knob. Narrowing that margin would snap a player stepping onto the landing onto the helix, so it wants either a solid for the two posts (a collision change, the systems builder's) or the clamp made to read the helix's own surface.
+- Whether .86 feels like enough tread underfoot going down, or whether the rail now reads as holding you too far from it.
+- Still waiting: DECISION #202, and Sessions 636–642 on main before the hulls, the nets, the climb pose and the stowage can be built.
