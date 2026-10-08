@@ -12,6 +12,28 @@ The critic's s477 play: three Wolves against a level-2 greatclub cost 9 of 200 H
 - **D.** Leave it. The greatclub is the slow stagger weapon (blocks 40%, 4 weight), and a pack's answer is to flank you.
 
 Recommendation: **A.** The brief asks for weighty combat at Dragonwilds' difficulty, and a staggered foe should be a reward you earn, not the state the weakest foes live in. One number changes, and a Wolf still breaks in two greatclub swings, which keeps the weapon's character.
+### The cutter's and the caravel's own hulls (the look builder, Session 643, 2026-10-08) — DECISION #202
+
+**The question.** Michael's B on #192 added two hulls, the Mark's cutter and Aurenne's caravel (Session 636, on auto/systems). Until now the cutter is drawn on the sloop's hull and the caravel on the cog's, so in the yard's *Browse ships* panel and at sea they look like the ships they replace. Should they look like this?
+
+- **The cutter** (the fast one, thin-skinned, small hold): a deep, narrow, low hull with a near-plumb stem, tarred black above a gilt line; one tall mast stepped well forward with a topmast, a big gaff mainsail with a gaff topsail over it, a staysail to the stem and a jib out on a long bowsprit. 14 × 4.0 (the sloop's 13 × 4.4). 4,857 triangles (the sloop 4,525).
+- **The caravel**: three lateen masts raked forward, the main tallest, each long yard low forward and high aft (they swing to leeward with the wind like the gaffs); a square stern under a high sterncastle of three rails with blue and gold boards; no forecastle; Aurenne's blue band and gold wale. 17.5 × 5.0 (the cog's 17 × 5.6). 6,082 triangles (the cog 5,366).
+
+The deck you walk stays flat, the wheel and hatch where they are, the nets amidships as now (still the systems builder's stand-in; the real nets are a separate look session). A pirate or merchant flying either hull takes its own paint.
+
+**Options**
+- **A. Both as shown** *(recommended)*: each reads at a glance as its nation's ship and as a different trade: the cutter all sail on a small hull, the caravel the lateen silhouette no other ship in the game has.
+- **B. As shown, but the caravel square-rigged on the foremast** (a *caravela redonda*: one square sail forward, two lateens aft), nearer the cog's family, faster-looking downwind.
+- **C. Keep today's hulls, repainted only** (the sloop black with a gilt line, the cog in Aurenne's blue): no new silhouettes, nothing for the yard's stage to show.
+- **D. Other.**
+
+**What it touches.** The bakes are the look builder's (`shipBake` in `85-world-sea.js`). Two small lines are the systems builder's: `SHIP_CLASSES` takes each hull's own length and beam, and `applyShipClass` passes the class's name to `buildShipMesh` (today it picks the bake by length, so a 17.5 caravel would come out a cog).
+
+**Pictures** (the mesh inspector, noon; the prototype is on `auto/proto-ship-hulls`):
+- Today, broadside: [sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-sloop-side.png) · [cog](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cog-side.png)
+- Proposed, broadside: [cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter-side.png) · [caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-side.png)
+- From above: [cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter.png) · [caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel.png) · [the caravel's sterncastle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-stern.png)
+- Other paints: [a pirate cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter-pirate.png) · [a merchant caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-merchant.png)
 
 ## Answered
 
