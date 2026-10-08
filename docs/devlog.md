@@ -14388,3 +14388,14 @@ A player meets the same failure as *⚠ Save failed — …* and saves again wit
 
 ### Needs eyes
 CI's next runs. If `saveui` goes green with a `retried` reason in its first check's detail, that reason is the store's real complaint on Chromium 1243, and it may want its own fix. If it fails again, the detail now says why. Also owed: this container's Chromium is not CI's, so a CI-only failure can't be reproduced here. The same gap may lie behind main's other two red suites on 5bd8722 (captainguard, yardplay).
+
+## v80 — Session 659 — The captain's guard check holds to its own rule (main's `captainguard` on CI)
+Main's CI on 5bd8722 had two more red suites besides `saveui`. One was `captainguard`. *From the front the guard holds* failed with ten front hits of `[1,1,1,1,1,2,1,1,1,1]` against open blows of 5 and 6, a mean ratio of 0.197 against a floor of 0.2. Nothing in the game was wrong. A front hit is the swing's roll × 0.35, floored (`shieldFrontMult`, `42-zone-enemies.js`), so with this weapon at this level each one is 1 or 2. Nine rolls of 5 in ten puts the mean under 0.2. With about half the rolls a 5, that happens in roughly 2% of runs, and CI met it. Run here the same suite rolled `[2,2,2,2,2,1,1,2,2,2]`, ratio 0.35.
+
+The check (`tests/captainguard`) now holds each front hit to the rule it states. Each must lie in the floored 35% of the open rolls' range (1–2 here) and below the smallest open blow. The mean ratio band is 0.15–0.45, and every mix of 1s and 2s against 5s and 6s stays inside it. A guard that let a blow through whole (5 or 6) still fails both. No game code changed.
+
+### Verified (headless Chromium)
+`captainguard` 8/8 here (front `[2,2,2,2,2,1,1,2,2,2]`, band 1–2, ratio 0.35). CI's failing numbers checked against the new condition pass: band 1–2, every hit in it, ratio 0.197 inside 0.15–0.45. An open blow of 5 or 6 lies above the band. `parsecheck` clean.
+
+### Needs eyes
+Main's third red on 5bd8722 is `yardplay`'s *Rowe holds the chair at the seat for the week*. The dialogue opened on Mildrith, a villager, instead of the seat's lord. This run did not take it, since a run gets one CI fix. It is the next one if it repeats.
