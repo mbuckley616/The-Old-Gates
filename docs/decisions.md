@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### A Wolf is staggered by every second greatclub swing — raise the posture floor? (the systems builder, Session 650, 2026-10-08) — DECISION #206
+The critic's s477 play: three Wolves against a level-2 greatclub cost 9 of 200 HP in 30 s. A foe's posture is half its health, scaled by family (wolves and spiders ×0.8 and ×0.7), with a floor of 10. A Wolf (18 HP) sits on that floor. A normal swing drains 8, and the greatclub drains ×1.5, so 12. One normal greatclub swing breaks a Wolf: 1.5 s staggered, taking double damage. Its posture refills when it gets up, so every second swing staggers it again, and the pack spends most of the fight on the ground. A sword (8) takes two swings, fists two. The Snow Wolf (14) and the Dire Wolf (16) take two greatclub swings each.
+- **A.** Raise the floor to 18, so that no foe breaks to one normal swing of any weapon. A Wolf takes 2 greatclub swings or 3 sword swings; a Bandit (15 today) is lifted to 18. Every foe over 36 HP is unchanged.
+- **B.** Beasts get up quicker: wolves and spiders are staggered 0.6 s, not 1.5 s. The floor is unchanged, so the greatclub still breaks a Wolf every second swing, but it is up before you can follow it with more than one blow.
+- **C.** Both A and B.
+- **D.** Leave it. The greatclub is the slow stagger weapon (blocks 40%, 4 weight), and a pack's answer is to flank you.
+
+Recommendation: **A.** The brief asks for weighty combat at Dragonwilds' difficulty, and a staggered foe should be a reward you earn, not the state the weakest foes live in. One number changes, and a Wolf still breaks in two greatclub swings, which keeps the weapon's character.
+
 ## Answered
 
 ### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198

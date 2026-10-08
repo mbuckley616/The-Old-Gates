@@ -293,6 +293,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - **The critic's s477 bugs (8 Oct 2026; filed in full on auto/critic, PR #205):**
   - ~~*1 tasks done.* at a guild head's *My standing?*~~ — **fixed, Session 648** (`tests/standingcount`): *1 task done.*, and *N tasks done.* otherwise.
   - ~~A stranger greets you as someone you have met (`worldState.met` keyed by the first name)~~ — **fixed, Session 649** (`tests/metkey`): keyed `name|town|_twin`; Róisín of Portclare is a stranger after Róisín of Dunmore, as is Dunmore's second Bríd after the first.
+  - ~~In an inn room, E shuts the door instead of sleeping~~ — **fixed, Session 650** (`tests/doorbed`): a bed under the crosshair that offers something wins over a door that is only near, in E and in the middle prompt; looking away, the door works as before. The critic's wolf numbers (a Wolf on the posture floor, staggered by every second greatclub swing) are **DECISION #206**.
 
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.

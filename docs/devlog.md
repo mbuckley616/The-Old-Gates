@@ -14281,3 +14281,16 @@ The key is now the person: `name|town|number`, where the town is the def's `_sit
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 650 — A bed under the crosshair wins over a door that is only near (backlog I, the critic's s477)
+In The Rowan Cup at Vieux Marché, the critic stood at the foot of room 0's bed. The action bar said *Your room — press 'E' to rest*, the middle of the screen said *Press 'E' to close the door*, and E shut the door 1.1 away. `interact` (`50-travel.js`) asked the door in the doorway (`intDoorInteract`, anything within 1.5) before the bed. Since Session 645 the bed answers only with the crosshair on it, and the door still answers to nearness. So the one thing you were looking at lost to the one you were only beside.
+
+Now, when `intBedTarget()` finds a bed under the crosshair and that bed offers something (`bedPrompt`: rest, *Ask the innkeeper for a room*, the gallery's own lines), E goes to the bed. The door and the barber's chair, both still by nearness, wait. The middle prompt (`90-main.js`) reads the same test, so it names the bed and not the door. A stranger's bed offers nothing and takes nothing from the door, as before. Looking anywhere but the bed, the door works as it did. The door's own aim line is still owed in `84-world-interiors.js` (the look builder's, Session 646's note); this session needs no edit there.
+
+Also raised during this session: **DECISION #206**, the critic's other s477 number. A Wolf sits on the posture floor of 10, under one greatclub swing's 12, so every second swing staggers it. A recommends raising the floor to 18.
+
+### Verified (headless Chromium)
+`doorbed` 5/5 (new), in three inns each at Dunmore and Vieux Marché: 18 spots within 1.4 of a door and in reach of a bed on its floor. Looking at the bed, E goes to the bed and the door stays as it was, and the middle prompt is the bed's own (*Ask the innkeeper for a room (11 gold)*). From the same 18 spots looking away, E opens the door and the prompt says *Press 'E' to open the door*. On the old code both bed checks fail at every spot: the door opens and the prompt is the door's. Neighbours: bedaim, innrooms, intaim, intreach, barberchair. `parsecheck` clean.
+
+### Needs eyes
+The suite tries unrented inn beds. The rented room the critic stood in takes the same path (`bedPrompt` says *Your room — press 'E' to rest*), but it was not rented in the test.

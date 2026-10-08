@@ -1019,7 +1019,7 @@ function loop(now){
     const iprInt=document.getElementById('ipr');
     const _dpr=(typeof WORLD!=='undefined'&&WORLD.intDoorPrompt)?WORLD.intDoorPrompt():null; // v80 S143
     if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}
-    else if(_dpr){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
+    else if(_dpr&&!(_nbd&&nearBed)){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearStash){iprInt.textContent="Press 'E' to access stash";iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearBed){iprInt.textContent=(_nbd&&typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))||"Press 'E' to rest";iprInt.style.opacity='1';iprInt.style.display='block';} // v80 S141 — the bed says whose it is
     else if(nearKeeper){iprInt.textContent=(currentHouse&&currentHouse.keeper?currentHouse.keeper+" — ":"")+"Press 'E' to talk";iprInt.style.opacity='1';iprInt.style.display='block';}

@@ -1258,9 +1258,11 @@ function interact(){
       if(typeof WORLD!=='undefined'&&WORLD.boxInteract())return; // S155 — the strongbox, the home's chest
       if(typeof WORLD!=='undefined'&&WORLD.lootInteract())return; // v80 — tower chest
       if(typeof WORLD!=='undefined'&&WORLD.guestInteract())return; // v80 — Cill an Aoi
-      if(typeof WORLD!=='undefined'&&WORLD.intDoorInteract())return; // v80 S143 — the door in the doorway
-      if(nearBarberChair()){openBarberChair(INT_CHAIR.house);return;} // S561 — the barber's chair
       const bd=intBedTarget(); /* S645 — in range and under the crosshair */
+      // S650 — a bed under the crosshair that offers rest wins over a door that is only near (the door is still found by nearness); the prompt in 90-main.js reads the same test
+      const bdWins=!!bd&&(typeof WORLD==='undefined'||!!WORLD.bedPrompt(bd));
+      if(!bdWins&&typeof WORLD!=='undefined'&&WORLD.intDoorInteract())return; // v80 S143 — the door in the doorway
+      if(!bdWins&&nearBarberChair()){openBarberChair(INT_CHAIR.house);return;} // S561 — the barber's chair
       if(bd){if(typeof WORLD!=='undefined'&&WORLD.bedInteract(bd))return;openSleepUI();return;}
     }
     // v61d4 — Safehouse interactables. Stash chest opens the deposit/withdraw
