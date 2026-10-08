@@ -169,3 +169,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: the critic's s476 bugs fixed (S624–628); next, chase and lockpicks once answered. Look builder: the wolves on your answer; the Crypt's mound. Critic: a lair next.
 
 **Roadmap.** 185 of 239 stories done (176 of 226 yesterday); three critic bugs under way on auto/systems; four stories wait on you.
+
+## 8 Oct 2026
+
+**Waiting on you.** Two decisions: the cutter's and the caravel's own hulls (#202, A recommended) and wolves staggered by every second greatclub swing (#206, A: raise the posture floor to 18). One merge: Look sessions 643–647, which fixes the two tests that kept every branch red.
+
+**Landed on main since yesterday.** Look session 632 (build s477): the wolves' fiercer face and new sizes, the cave bear. Quest writer run 11, the Makers' Things second run. The critic's guild commission at Vieux Marché. The HUD and save-register concepts, with your answers on #198 (A) and #199 (B). Main's CI is green again on ba12f5b.
+
+**Blocked.** Systems 564–655: four runs in a row were cut off at GitHub's 60-minute limit; the builder split CI into twelve shards (S652) and the new head 7c53d67 is in CI now. A fresh card goes up when it is green.
+
+**Team.** Systems builder: the critic's four s477 bugs fixed (S648–651), a picture in each save, Told filed by person and place; next, the posture floor on your answer. Look builder: the hulls on your answer, then nets and stowage once systems lands. Critic: a lair next.
+
+**Roadmap.** 186 of 247 stories done (185 of 239 yesterday); four critic bugs under way on auto/systems; two stories wait on you.
