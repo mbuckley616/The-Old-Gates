@@ -14261,3 +14261,12 @@ The harness gains `lookAtPt(x, y, z)` (`tests/lib/game.mjs`, an init script). It
 
 ### Needs eyes
 A low chest, 0.8 away, wants the eye about 30° down. Whether the ladder column is generous enough when you stand under the hatch and look straight up. The interior doors are still by nearness: they are in `84-world-interiors.js`, the look builder's file, and want one line there (`aimBox` on the door's `box`), which I have left to that file's owner or the producer's routing.
+
+## v80 — Session 648 — *1 task done.* (backlog I, the critic's s477)
+The critic turned in a first Fighters' Guild commission at Vieux Marché and asked the head *My standing?*: *Recruit of the Fighters' Guild. 1 tasks done.* The line in `guildDef` (`83-world-generator.js`) printed the count with a fixed plural. It now takes the singular at one. The words are otherwise the line's own, so it is a fix, not new dialogue.
+
+### Verified (headless Chromium)
+`standingcount` 3/3 (new): Dunmore's Fighters' Guild head at 0, 1, 2 and 7 tasks says *0 tasks done.*, *1 task done.*, *2 tasks done.*, *7 tasks done.* (the rank by the count as before: Recruit, then Warden at 7). On the old line the first check fails by construction. `parsecheck` clean.
+
+### Needs eyes
+Nothing.
