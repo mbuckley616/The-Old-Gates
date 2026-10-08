@@ -767,6 +767,40 @@
     const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
     q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';
   }
+  // S638 — the boarding nets (Michael's B on #192, the page's shared ground; his 6 Oct note: *a netting or ladder on either
+  // side to walk up, or "press E to climb" when looking at the mesh — not a general "board" option always available in
+  // range*). Every hull hangs a net on each side amidships, from below the waterline to over the rail, 2.6 long. E climbs
+  // only with the crosshair on a net (the eye's ray meets its box in the hull's own frame, within 5 of the eye: a ship moored
+  // off a quay lies with her nearest net up to 4.5 from its edge, Beaurouge's, and is still boarded from it), or while swimming
+  // against it. The climb takes 0.8 s
+  // and sets you at the rail above the net. A black sail's or a merchantman's net boards her when you reach her rail, and
+  // landing on her deck any other way (a jump from your rail, lying alongside) boards her the moment you land.
+  const NET_HALF=1.3,NET_REACH=5,NET_CLIMB=.8;
+  const _netInv=new THREE.Matrix4(),_netO=new THREE.Vector3(),_netD=new THREE.Vector3(),_netR=new THREE.Ray(),_netB=new THREE.Box3(),_netH=new THREE.Vector3(),_netA=new THREE.Vector3(),_netC=new THREE.Vector3();
+  function netBox(W,side){const hw=W/2;return _netB.set(_netA.set(side>0?hw-.25:-hw-.35,-.9,-NET_HALF),_netC.set(side>0?hw+.35:-hw+.25,SHIP_DECK+.55,NET_HALF));}
+  // the side (1 or −1, the hull's +x or −x) whose net the crosshair is on, or that you swim against; 0 for none
+  function shipNetSide(mesh,W){if(!mesh)return 0;mesh.updateMatrixWorld(true);_netInv.copy(mesh.matrixWorld).invert();
+    if(isSwimming()){_netO.set(px,SEA_Y,pz).applyMatrix4(_netInv);for(const sd of [1,-1]){const off=sd*_netO.x-W/2;if(Math.abs(_netO.z)<=NET_HALF+.3&&off>-.4&&off<1.1)return sd;}}
+    if(typeof CAM==='undefined'||!CAM)return 0;CAM.updateMatrixWorld();CAM.getWorldDirection(_netD);_netO.copy(CAM.position).applyMatrix4(_netInv);_netD.transformDirection(_netInv);_netR.set(_netO,_netD);
+    const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;let best=0,bd=NET_REACH+tpb;
+    for(const sd of [1,-1])if(_netR.intersectBox(netBox(W,sd),_netH)){const d=_netO.distanceTo(_netH);if(d<=bd){bd=d;best=sd;}}return best;}
+  // the rail above a side's net, in the world
+  function netRail(mesh,W,side){mesh.updateMatrixWorld(true);const v=new THREE.Vector3(side*(W/2-.8),SHIP_DECK,0).applyMatrix4(mesh.matrixWorld);return {x:v.x,z:v.z};}
+  let CLIMB=null;
+  function startClimb(mesh,W,side,other){CLIMB={t:0,mesh,W,side,other:other||null,x0:px,z0:pz,y0:jumpY};return true;}
+  function climbing(){return !!CLIMB;}
+  // every world tick: the climb follows the hull as she moves, and a deck landed on is boarded
+  function tickNetClimb(dt){
+    if(CLIMB){const C=CLIMB;if(!C.mesh.parent){CLIMB=null;return;}C.t+=Math.min(dt,.1);const u=Math.min(1,C.t/NET_CLIMB);const r=netRail(C.mesh,C.W,C.side);
+      px=C.x0+(r.x-C.x0)*u;pz=C.z0+(r.z-C.z0)*u;jumpY=C.y0+(DECK_Y-C.y0)*u;velY=0;onGround=true;
+      if(u>=1){CLIMB=null;px=r.x;pz=r.z;jumpY=DECK_Y;if(C.other)boardOther(C.other,r);else showMsg('You climb aboard. E again for the wheel.','#c8b880');}return;}
+    for(const o of OTHER){if(o.boarded||o.dead)continue;const p=o.plat;if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&Math.abs(jumpY-DECK_Y)<1&&(!p.inside||p.inside(px,pz))){boardOther(o,{x:px,z:pz});break;}}}
+  // until the look builder hangs the real nets: a plain rope net on each side, 2.6 by 2.3, about 170 triangles a side
+  function shipNetMesh(W){const c=new THREE.Color(0x6a5434),parts=[];
+    for(const sd of [1,-1]){const x=sd*(W/2+.07);
+      for(let k=0;k<7;k++)parts.push({geo:new THREE.BoxGeometry(.05,2.3,.05),color:c,x,y:-.7+1.15+.05,z:-1.2+k*.4});
+      for(let k=0;k<7;k++)parts.push({geo:new THREE.BoxGeometry(.05,.05,2.5),color:c,x,y:-.6+k*.32,z:0});}
+    const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.name='nets';return m;}
   function applyShipClass(){const c=shipClass();SHIP.L=c.L;SHIP.W=c.W;if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=buildShipMesh(SHIP.L,SHIP.W);sc.add(SHIP.mesh);shipUpdatePlacement();}}
   function cargoBonus(){if(!SHIP.mesh)return 0;const t=(worldState.ship&&worldState.ship.cargo)||0;if(!t)return 0;return (Math.hypot(px-SHIP.x,pz-SHIP.z)<20||onDeck())?t*25:0;}
   const SHIPWRIGHT_LINES={

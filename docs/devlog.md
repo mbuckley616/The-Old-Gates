@@ -14144,3 +14144,22 @@ Neighbours pass: seahint, seawear, shiphull, shipwreck, shiphulls. `parsecheck` 
 
 ### Needs eyes
 The dial at its real size (134 × 80 px) on a laptop: whether the numbers at 9 px read, and whether the needle's red against the cream is clear at dusk. The panel is still the old dark box under the dial; the HUD's parchment (#198) is the look builder's.
+
+## v80 — Session 638 — Boarding nets under the crosshair (backlog J, Michael's B on DECISION #192, the shared ground's second piece)
+Michael's 6 Oct note: *Boarding is awkward: a netting or ladder on either side to walk up, or a "press E to climb" when looking at the mesh — not a general "board" option always available in range, which conflicts with other E actions; the same for merchants and pirates.* Today `nearShip` put *Press 'E' to board* up anywhere within 3.5 of her deck's box and lifted you onto her stern, and `nearOther` did the same for another ship and set you at her centre.
+
+Now every hull hangs a boarding net on each side amidships, 2.6 long, from below the waterline to over the rail (`shipNetSide`, `86-world-crime.js`). *Press 'E' to climb aboard the …* shows only with the crosshair on a net, tested as the eye's ray against the net's box in the hull's own frame, or while you swim against it. E starts a climb of 0.8 s that follows the hull as she moves and sets you at the rail above the net (`tickNetClimb`, from the ship's tick), not at her stern. A black sail's or a merchantman's net boards her at her rail: her crew turns and her chest is set, as `boardOther` always did, now at the rail instead of her centre. Landing on her deck any other way, by a jump from your rail when you lie alongside, boards her the moment you land. `boardOther(o)` with no place still sets you at her centre, for the suites and anything else that calls it.
+
+One number departs from the page. It says *within 2.5 units*. Your own moored ship lies with her nearest net 4.47 from Beaurouge's quay edge (`blacksail` measures it), so at 2.5, or at the old 3.5, she could not be boarded from the quay at all. The reach is 5 from the eye: the crosshair still decides, and from the quay you climb as before. 
+
+The nets themselves are the look builder's (about 300 triangles a side on the page). So that there is something to aim at until then, a plain rope net of fourteen strands a side hangs there (`shipNetMesh`, about 170 triangles a side, added to the hull in `buildShipMesh`).
+
+Two tests followed the rule. `blacksail` stood a metre off the pirate's turned deck box facing her centre, and stood on the quay facing your ship's centre. It now aims at a net in both places, and in the fight it walks to the nearest of her crew: landed at her rail rather than her centre, the test's player otherwise only swung at what came to it, and her archer kept his range. `ships` counts four meshes on a hull: the hull, the wheel, the rig and the nets.
+
+### Verified (headless Chromium)
+`shipnets` 11/11 (new), on the open sea off the nearest port. Swimming against her net: *Press 'E' to climb aboard the Test Gull*. Swimming at her side by the bow, nothing (the old radius offered *board* there). 2.6 off her other side with the crosshair on that net, the prompt; the same spot looking away, nothing; 7 off, nothing. E: at 0.4 s you are on the net at 0.41–0.5 of the deck's height; at 0.9 s you stand on her deck at the rail, 1.38–1.42 across and 0 along. A black sail's net: *Press 'E' to climb aboard a black-sailed ship*, and climbed she is boarded at her rail (1.4 across), her three crew alert, her chest set. Set down on a merchantman's deck, she is boarded where you landed.
+
+`blacksail` passes with the new aim: her net from the water, the climb, her crew cut down in 17 swings, and at Beaurouge E on your ship's net from the quay (4.47 off) boards her. Neighbours pass: saltwater, shipaim, ships, hullshape, piratehold, containerids, seaseed, renewal, shipwreck, deckprops, shipdead, shiparchers, shipmoor and shiplog. `parsecheck` clean.
+
+### Needs eyes
+The climb has no pose: you glide up the net in 0.8 s (H). From a quay 4.5 off, the climb crosses the gap through the air. The stand-in net is a plain grid of ropes. Corwin's tutorial lines still say *E beside her to board* (`88-world-ticks.js`), and the shipwright's sale says *press E beside her to board*: the quest writer's text, now out of step with the rule. I have left both alone.

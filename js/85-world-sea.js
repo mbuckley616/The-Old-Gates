@@ -228,6 +228,7 @@
     const kind=(SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop';const r=shipBake(kind,look||'player');
     const mesh=new THREE.Mesh(r.geo,SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=shipWheelMesh();wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);
+    mesh.add(shipNetMesh(SHIP_W||r.W||4.4)); /* S638 — the boarding nets (a stand-in until the look builder's) */
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
@@ -319,7 +320,7 @@
   // E near the wheel takes / leaves the helm
   function onDeck(){const p=SHIP.plat;return !!p&&px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-DECK_Y)<1;}
   function hullDist(){const p=SHIP.plat;if(!p)return 1e9;const dx=Math.max(p.x0-px,0,px-p.x1),dz=Math.max(p.z0-pz,0,pz-p.z1);return Math.hypot(dx,dz);}
-  function nearShip(){return !!SHIP.mesh&&!onDeck()&&hullDist()<3.5&&jumpY<4;}
+  function nearShip(){return !!SHIP.mesh&&!onDeck()&&jumpY<4&&!climbing()&&!!shipNetSide(SHIP.mesh,SHIP.W);} /* S638 — her net under the crosshair, or swum against */
   // S614 (Michael's sailing playtest, 6 Oct: "targeting to pilot the ship / go below deck is area-based, not mesh-based") — the
   // wheel and the hatch answer to the crosshair: within reach, and the eye's ray meets the wheel's own box (the mesh's
   // bounds and a hand's width round them) or the hatch's square on the deck. Standing near them looking elsewhere does nothing.
@@ -329,6 +330,7 @@
   function wheelAimed(){const w=SHIP.mesh&&SHIP.mesh.userData.wheel;if(!w)return false;w.updateMatrixWorld(true);_eyeB.setFromObject(w).expandByScalar(.15);return eyeOnBox(_eyeB,3.2);}
   function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<2.4&&wheelAimed();}
   function shipInteract(){
+    if(climbing())return true;
     if(roofInteract())return true;
     if(coachInteract())return true;
     if(shrineInteract())return true;
@@ -338,13 +340,13 @@
     if(!SHIP.sailing&&cabinPrompt()){goToInterior(CABIN.house);return true;}
     if(SHIP.sailing){SHIP.sailing=false;SHIP.speed=0;Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw,name:SHIP.name});showMsg('You let go of the wheel.','#c8b880');return true;}
     if(nearWheel()){px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=DECK_Y;yaw=SHIP.yaw;SHIP.sailing=true;showMsg(`You take the wheel of the ${SHIP.name}. W/S sail, A/D turn, E to let go.`,'#c8b880');return true;}
-    if(nearShip()){px=SHIP.x-Math.sin(SHIP.yaw)*-1.5;pz=SHIP.z-Math.cos(SHIP.yaw)*-1.5;jumpY=DECK_Y;onGround=true;velY=0;showMsg('You climb aboard. E again for the wheel.','#c8b880');return true;}
+    if(nearShip())return startClimb(SHIP.mesh,SHIP.W,shipNetSide(SHIP.mesh,SHIP.W),null);
     return false;
   }
   function nearNpcName(){let best=null,bd=3.2;for(const n of npcs){if(n._retreated||!n.g.visible)continue;const d=Math.hypot(n.g.position.x-px,n.g.position.z-pz);if(d<bd){bd=d;best=n;}}return best?`${best.def.name}${best.def.role&&best.def.role!=='Villager'?' — '+best.def.role:''}`:null;}
   function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<1.4)return "Press 'E' to climb back down";}return null;}
   function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<1.4){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
-  function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;if(!SHIP.mesh)return null;if(SHIP.sailing)return "Press 'E' to let go of the wheel";const cp=cabinPrompt();if(cp)return cp;if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to board the ${SHIP.name}`;return null;}
+  function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;if(!SHIP.mesh)return null;if(SHIP.sailing)return "Press 'E' to let go of the wheel";const cp=cabinPrompt();if(cp)return cp;if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
   // ── sea sounds (use the engine's AX / sfxGain) ──
   const SND={wind:null,windG:null,creakT:0,splashT:0,wasSwim:false};
   function ensureWind(){if(SND.wind||typeof AX==='undefined'||!AX)return;const buf=AX.createBuffer(1,AX.sampleRate*2,AX.sampleRate);const d=buf.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=l*.97+(Math.random()*2-1)*.03;d[i]=l*4;}const src=AX.createBufferSource();src.buffer=buf;src.loop=true;const f=AX.createBiquadFilter();f.type='lowpass';f.frequency.value=380;const g=AX.createGain();g.gain.value=0;src.connect(f);f.connect(g);g.connect(sfxGain);src.start();SND.wind=src;SND.windG=g;}
@@ -361,6 +363,7 @@
   }
   function tickShip(dt){
     tickSeaSounds(dt);
+    tickNetClimb(dt);
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
     if(!SHIP.mesh)return;
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
@@ -662,14 +665,15 @@
       if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
   }
   // boarding: E beside another ship (hulls close, or swimming up to her)
-  function nearOther(){let best=null,bd=1e9;for(const o of OTHER){const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));if(d>0&&d<3.5&&d<bd&&jumpY<4){bd=d;best=o;}}return best;}
+  // S638 — her net under the crosshair, or swum against (shipNetSide, 86-world-crime.js); off her deck
+  function nearOther(){if(climbing()||jumpY>=4)return null;let best=null,bd=1e9;for(const o of OTHER){if(o.boarded||o.dead)continue;const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));const on=d===0&&Math.abs(jumpY-DECK_Y)<1&&(!p.inside||p.inside(px,pz));if(!on&&d<bd&&d<8&&shipNetSide(o.mesh,o.W)){bd=d;best=o;}}return best;}
   function crewUp(o,alert){
     if(o.crew.length)return;
     for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const fid=o.id?`${o.id}:crew:${k}`:null;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',level,'normal',fid?seededRng('variant',fid):undefined):null);if(fid)keyFoe(e,fid);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
   }
-  function boardOther(o){
+  function boardOther(o,at){
     o.boarded=true;o.speed=0;o._fled=false;
-    px=o.x;pz=o.z;jumpY=DECK_Y;onGround=true;velY=0;
+    if(at){px=at.x;pz=at.z;}else{px=o.x;pz=o.z;}jumpY=DECK_Y;onGround=true;velY=0; /* S638 — at the rail she was climbed or landed on */
     if(o.kind==='pirate'){crewUp(o,true);o.crew.forEach(e=>{if(!e.dead)e.alert=true;});showMsg('You board her. The crew turns.','#ff8060');} else if(o.kind==='merchant'){showMsg('A merchantman. Her crew keep their heads down.','#c8b880');}
     if(!o.chest){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const cx=o.x+fwd[0]*(-o.L/2+3.2),cz=o.z+fwd[1]*(-o.L/2+3.2);const g=new THREE.Mesh(new THREE.BoxGeometry(.9,.6,.6),new THREE.MeshLambertMaterial({color:0x4a3018}));g.position.set(cx,DECK_Y+.3,cz);sc.add(g);const lid=new THREE.Mesh(new THREE.BoxGeometry(.92,.12,.62),new THREE.MeshLambertMaterial({color:0x7a5a2a}));lid.position.set(cx,DECK_Y+.65,cz);sc.add(lid);
       let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',o.kind==='pirate'?1.8:1.2,null,1,o.id?`${o.id}:chest`:undefined):[])||[];if(!items.length)items.push({name:'Pirate Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120});
@@ -697,8 +701,8 @@
   function pirateFled(o){if(o.kind!=='pirate'||o._fled||PHP<=0||!o.crew.some(e=>!e.dead))return;if(deckOff(o.plat)<1.5&&!onDeck())return;
     o._fled=true;if(!worldState.ship||!SHIP.mesh||Math.hypot(SHIP.x-o.x,SHIP.z-o.z)>PIRATE_REACH)return;const took=pirateTake();if(!took.length)return;
     showMsg(`They come over your rail behind you and take ${pirateStow(o,took)} from the hold.`,'#ff8060');}
-  function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to board ${o.name}`:null;}
-  function otherInteract(){const o=nearOther();if(o&&!o.boarded){boardOther(o);return true;}return false;}
+  function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to climb aboard ${o.name}`:null;}
+  function otherInteract(){const o=nearOther();if(o&&!o.boarded)return startClimb(o.mesh,o.W,shipNetSide(o.mesh,o.W),o);return false;}
   // S613 (Michael's sailing playtest, 6 Oct) — the dead ride where they fell. A hand killed on her deck (or a boarder on
   // yours) is carried with the ship, turned with her as she turns, ragdoll, body, search and glow alike; the sea is a floor
   // to a falling body, so one that goes over the side comes to rest on the water and floats where it fell. A body on a
