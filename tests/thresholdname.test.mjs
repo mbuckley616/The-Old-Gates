@@ -16,10 +16,13 @@ for (const seed of [7100, 7104]) {
   await page.waitForTimeout(1000);
   // the death screen reads the same entry
   const died = await page.evaluate(() => { PHP = 0; playerDead(); const s = document.getElementById('died-sub').textContent; document.getElementById('died').style.display = 'none'; dead = false; PHP = maxHP; return s; });
-  await page.evaluate(() => goToOW()); for (let k = 0; k < 40 && await page.evaluate(() => activeZoneId === 'dungeon'); k++) await page.waitForTimeout(500);
+  await page.evaluate(() => goToOW()); for (let k = 0; k < 120 && !(await page.evaluate(() => activeZoneId === 'world')); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1000);
   out.push({ seed, name: t0.name, place: a && a.place, died }); console.log(' ', JSON.stringify(out[out.length - 1]));
 }
+// CI (8 Oct): the ordinary save read *place: ''*, a save from the climb out still settling when it was taken; the climb is
+// now awaited until the zone is the world, and the store given a moment before the ordinary save is made
+await page.waitForTimeout(3000);
 // an ordinary autosave in the open, by Dunmore, a few seconds later: the town, as before
 const town = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x + 5; pz = t.z + 5; SS.lastAuto = 0; const ts = Date.now(); saveGame(true); return { ts, name: t.name }; });
 await page.waitForFunction((t) => SS.idx.some(e => e.kind === 'auto' && e.ts >= t), town.ts, { timeout: 20000 });

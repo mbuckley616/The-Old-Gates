@@ -14493,3 +14493,18 @@ The critic's s477 play found three Wolves against a level-2 greatclub costing 9 
 
 ### Needs eyes
 Whether a pack of three Wolves against a greatclub now pushes back at level 2 — the critic's fight, by hand. A Bandit (25 HP) went from 13 to 18 too, so a sword takes three swings to break one, not two. DECISION #211 for the war hammer. Found on the way: the backlog's last outcome on `Math.random`, the Mystic Scroll's spell, is dead code (`readScroll` has no caller; a scroll used crumbles to nothing), and its tooltip still promises a spell; noted under K.
+
+## v80 — Session 664 — A door saved on a drowned village's dry edge goes with the village; two suites wait for the slow runner (this PR's CI)
+CI on Session 662's head (`ced6a8f`) failed three suites on two shards. Each was read from the job's log and run here.
+
+**`shoresave`, a real fault, reproduced here.** *A save behind a door there puts you outside that door in the moved village* put the player at the door's old spot instead. When Session 452's routing moved 42 places to the shore, Session 455 made a save in the old place follow it: `_applyZoneFromSave` asks `movedPlaceAt(x, z)`, which takes a spot within 1.5 pads of the old centre, but only if that spot is now water, so that a spot left on dry ground is never moved. The suite's village, Diawor, has house 5's door 30 units from its old centre. On this branch that spot is on the dry shore (on main the same house stands 30 units nearer the water and the suite passes there, so the check had only been lucky). The door was left behind and the player woke on the lake's edge 220 units from the house. A door's save names its house, and the house names its place. So `_movedDoorPlace` (`70-saves.js`) now asks first: if the save is behind a door, the door's place (`where.site`, or the place in the house id `g_<site>_<lot>`) is one the routing moved, and the door stands within 1.5 pads of where it was drawn, the door moves with the place whether its old spot is wet or dry. A door already saved at the new place is 200 units from the old centre and is left alone. A world save, and a door save in a place that never moved, still go through `movedPlaceAt` as before.
+
+**`moundsolid`, the test.** It threw at `WORLD.dungeonPos[137].x`. The Crypt of Embers' position is recorded only when its cell loads, and on the runner that cell had not loaded yet when the walk began. The suite now waits for it, up to 120 s.
+
+**`thresholdname`, the test, as far as can be told.** *An ordinary autosave in the open is still named for the town* read `place: ''`. The suite climbed out of the second dungeon and waited only while the zone was still `dungeon`. `currentPortal` is never cleared, so the name could come back empty only from a save made outside both the dungeon and the world, which is the climb out. That reading is not proven: the empty name did not reproduce here. The suite now waits until the zone is the world (up to 60 s) and gives the store 3 s before the ordinary save.
+
+### Verified (headless Chromium)
+`shoresave` 8/8: the door save wakes you at house 5's own door in moved Diawor (4062.1, 4304.3; it was 3848.6, 4251.1, the door's old spot) and then back in the same room; the world save and the untouched control are as before. On main's code (`--src`) the suite passes, its house on wet ground. `moundsolid` 6/6, `thresholdname` 4/4 here. Neighbours: `autosave`, `placesave`, `savelabel` green. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see. CI on this push is the real proof for the two waits.

@@ -24,6 +24,8 @@ const built = await page.evaluate(() => { const out = [];
 for (const b of built) console.log('  built', JSON.stringify(b));
 // the Crypt of Embers in the world: walk in from 16 behind its door along the door's line until the world's solid stops you,
 // then read the turf's height under you by a ray down onto the gate
+// the crypt's door is placed when its cell loads; a slow runner may not have loaded it yet (CI, 8 Oct)
+await page.waitForFunction(() => WORLD.dungeonPos[137], null, { timeout: 120000, polling: 500 }).catch(() => {});
 const crypt = await page.evaluate(async () => { const w = WORLD.dungeonPos[137]; px = w.x; pz = w.z + 20;
   for (let i = 0; i < 400; i++) { WORLD.tick(1 / 60, performance.now()); if (i % 40 === 39) await new Promise(r => setTimeout(r, 50)); }
   let G = null, d = 1e9; WORLD.scene.traverse(o => { if (o.name === 'oldGate') { const k = Math.hypot(o.position.x - w.x, o.position.z - w.z); if (k < d) { d = k; G = o; } } });

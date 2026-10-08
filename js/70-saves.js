@@ -773,6 +773,17 @@ function _applyLoadData(d,w){
   // ACTIVE_BUFFS intentionally cleared on load
 }
 
+// S664 — a door's save names its place: if that place was moved to the shore (S452) and the door stands by where it was drawn,
+// the door goes with it, even when its old spot is dry ground (a door on the edge of a drowned village; movedPlaceAt alone reads
+// that spot as unmoved). A door already at the new place is far from the old centre and is left alone.
+function _movedDoorPlace(W,r){
+  if(!W||W.kind==='world'||!W.door||!WORLD.routed)return null;
+  if(!WORLD.routed.ready&&WORLD.routeWorld)WORLD.routeWorld();
+  const L=WORLD.routed.shore&&WORLD.routed.shore.list;if(!L)return null;
+  const site=W.site||(typeof W.id==='string'&&(W.id.match(/^g_(.+)_[^_]+$/)||[])[1])||null;if(!site)return null;
+  for(const m of L)if(m.id===site&&Math.hypot(r.x-m.from.x,r.z-m.from.z)<=m.pad*1.5)return m;
+  return null;
+}
 function _applyZoneFromSave(d){
   _clearInteractPrompt();
   let sz=d.zone||'overworld';
@@ -794,7 +805,7 @@ function _applyZoneFromSave(d){
     const W=d.where||(d.wret?Object.assign({kind:'world'},d.wret):null);
     let r=(W&&W.kind==='world')?W:(W&&W.door)?W.door:(d.wret||null);
     // S455 — saved in a place the lakes were laid over (S452 moved 42 to the shore): the spot goes with the place, door and all
-    if(r&&r.x!=null&&WORLD.movedPlaceAt){const m=WORLD.movedPlaceAt(r.x,r.z);if(m){r=Object.assign({},r,{x:r.x+m.dx,z:r.z+m.dz});if(W&&W.kind!=='world'&&W.door)W.door=Object.assign({},W.door,{x:W.door.x+m.dx,z:W.door.z+m.dz});}}
+    if(r&&r.x!=null&&WORLD.movedPlaceAt){const m=_movedDoorPlace(W,r)||WORLD.movedPlaceAt(r.x,r.z);if(m){r=Object.assign({},r,{x:r.x+m.dx,z:r.z+m.dz});if(W&&W.kind!=='world'&&W.door)W.door=Object.assign({},W.door,{x:W.door.x+m.dx,z:W.door.z+m.dz});}}
     // an old save made indoors carries interior coordinates as if they were the world's — never trust a position in the sea
     if(!r||r.x==null||WORLD.worldH(r.x,r.z)<0.5){const lp=WORLD.lastWorldPos;r=(lp&&WORLD.worldH(lp.x,lp.z)>0.5)?lp:(WORLD.spawn||{x:px,z:pz,yaw:0});}
     px=r.x;pz=r.z;if(r.yaw!=null)yaw=r.yaw;sz='world';
