@@ -14226,3 +14226,12 @@ Tests that reached the rows through the chat now reach them through `yardOffers`
 
 ### Needs eyes
 The stage at its real size: the camera stands back 1.9 hull-lengths and turns her once in 18 s; whether a galleon fits and a sloop is not lost in it. The cutter and the caravel turn as a sloop and a cog until the look builder's hulls. Whether a slip 820 px wide wants to be narrower on a laptop (it wraps under 820).
+
+## v80 — Session 644 — Tab reopens the hub where you left it (backlog E, Michael's 6 Oct playtest)
+Michael's note: *Tab always opens the Map; it should return to the exact tab last open (e.g. Inventory, Armour).* The keydown handler in `92-creator.js` called `openHub('map')` every time. The bag's sub-tab (`invSubtab`) and the Journal's view (`_jnView`) were already module state and survived a close; only the hub's own tab was forgotten. `hubTab` now records the tab it shows in `hubLastTab` (`66-hub.js`, beside `hubOpen`), and Tab opens `openHub(hubLastTab)`. It starts at `'map'`, so a game's first Tab opens the Map as before. Any way of reaching a tab counts: a click on its button, I for the inventory, or a quest line that opens the Journal. It is not saved, so a reload starts at the Map again. That matches how the sub-tabs already behave and needs no new `worldState` key.
+
+### Verified (headless Chromium)
+`hubreturn` 7/7 (new), with real key presses and clicks. The first Tab opens the Map and the second closes it. Closed on the Map, Tab reopens the Map. Inventory clicked, then *Armour*, closed with Tab: Tab reopens Inventory with Armour chosen. Left on the Journal, it reopens the Journal. Opened with I, a later Tab reopens Inventory. Focus is back on the view after every close, and there are no page errors. Neighbours that open the hub: mapnotes, mapsharp, told, unequip. `parsecheck` clean.
+
+### Needs eyes
+Whether the Map, not the last tab, should win when a quest marker or the compass sends you to it. Nothing does that today.

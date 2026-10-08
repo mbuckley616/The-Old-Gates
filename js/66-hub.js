@@ -212,12 +212,15 @@ function renderJournal(){
 function journalView(v){_jnView=(v==='quest'||v==='topics'||v==='due')?v:'day';renderJournal();}
 // ── HUB ──────────────────────────────────────────────────────
 let hubOpen=false,dollSelectedSlot=null;
+// The tab the hub last showed: Tab reopens the hub there (Michael, 6 Oct 2026). Map until a tab has been seen.
+let hubLastTab='map';
 function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(id);if(b)b.style.width=Math.max(0,Math.min(100,v/m*100))+'%';const t=document.getElementById(n);if(t)t.textContent=Math.floor(v)+' / '+m;};s('hv-hp',PHP,effMaxHP(),'hv-hpn');s('hv-mp',mana,effMaxMana(),'hv-mpn');s('hv-st',stamina,effMaxStamina(),'hv-stn');}catch(e){}}
 let _hubVitalsT=null;
 function openHub(tab){_hubVitals();if(!_hubVitalsT)_hubVitalsT=setInterval(()=>{if(!hubOpen){clearInterval(_hubVitalsT);_hubVitalsT=null;return;}_hubVitals();},200);_releasePointerLockForMenu();hubOpen=true;blocking=false;document.getElementById('hub').style.display='flex';hubTab(tab||'inv');}
 function closeHub(){hubOpen=false;document.getElementById('hub').style.display='none';hideBagTooltip();setQuickDestroy(false);G.focus();}
 function hubTab(name){sndTabSwitch();
   const tabs=['inv','magic','attrs','quests','journal','log','map'];
+  if(tabs.includes(name))hubLastTab=name;
   document.querySelectorAll('.hub-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.hub-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('hpanel-'+name).classList.add('active');
