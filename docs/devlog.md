@@ -14410,3 +14410,18 @@ Nothing new to run. `git diff origin/main` on `tests/saveui.test.mjs` shows main
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 662 — The door's save is named before its picture is taken; `bodies` holds the disc to the size (this PR's CI)
+CI on this branch's head (`f1eccb7`) was red in three suites: `thresholdname`, `bodies` and `moundsolid`. All three are this branch's own suites (Sessions 623–631), not main's.
+
+`thresholdname` was red on `4d392aa` too and failed here every time, at the second door (Pellam's Hold, seed 7104), named *near Vieux Marché*. The cause is in the game. Going down saves you at the threshold, and Session 627 names that save for the door if it is written within 3 s of stepping through (`SS_THRESHOLD`). But `ssWrite` took the save's picture (`ssShot`) before it built the rows, and the place's name is read in the rows. A probe timed the picture at 2.1 s at the Old Garrison and 2.8 s at Pellam's Hold on this container's software GL, so the window was nearly gone before the name was read, and on CI it ran out. A slow laptop would do the same. Now `ssWrite` (`70-saves.js`) builds the rows first and takes the picture after; nothing in the picture depends on the rows. The 3 s window is left as it is: the name is now read within a millisecond of the door.
+
+`bodies` checked that the Wolf's disc is narrower than the Bandit's, from when the Wolf was 0.75 (Session 623). Session 632 (Michael's #187) made the Wolf 1.05, so its disc is 0.315 against the Bandit's 0.3 (with yours, 0.565 against 0.55). The game is right and the check's premise was stale. The check now holds each disc to its rule, 0.3 × its size kept within 0.2–0.7, plus yours. The three discs must rank as their sizes do, with the Ogre's the widest. A disc that ignored size would fail it.
+
+`moundsolid` failed on `f1eccb7` and passed on `4d392aa`, and it passes here in two runs (crypt found, stop at 11.4, turf 0 at the stop). The gate is in the scene at the first 40 ticks here. CI's log was not readable from this container, because the log store is blocked by its proxy and the summary carries only *FAILED*. So its cause is not found, and nothing was changed for it. The next CI run is its one re-run; if it fails again, that is real, and its detail line (`crypt {...}`) names which check.
+
+### Verified (headless Chromium)
+`thresholdname` 4/4: Old Garrison and Pellam's Hold both named for the gate, on the slot and on the death screen; the Dunmore autosave still *Dunmore*. It failed 2 of 4 before the change, as on CI. `bodies` all ok: Bandit size 1, R 0.55; Wolf 1.05, R 0.565; Ogre 1.6, R 0.73. Neighbours of `ssWrite`: `savepic`, `saveretry`, `coopsaves`, all passed. `moundsolid` passed. `parsecheck` clean.
+
+### Needs eyes
+`moundsolid` on CI's next run. Main's own red on `17811d2` (`headless (7)`) is main's, not this PR's, and was not taken.

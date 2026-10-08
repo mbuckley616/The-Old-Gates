@@ -22,11 +22,15 @@ const world = await page.evaluate(() => { const out = []; const L = ZONES.world.
   for (const kind of ['Bandit', 'Wolf', 'Ogre']) { px = t.x + 40; pz = t.z + 40; yaw = 0;
     const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], px, pz - 2, kind, null)); L.push(e);
     const r = _walkInto(() => ({ x: e.x, z: e.z }), () => { e.alert = true; return e; });
-    out.push({ kind, R: +(bodyR(e, .7) + BODY_YOU).toFixed(3), ...r }); e.dead = true; WORLD.scene.remove(e.mesh); L.splice(L.indexOf(e), 1); }
+    out.push({ kind, size: +(e.size || (e.mesh && e.mesh.scale && e.mesh.scale.x) || 1).toFixed(3), R: +(bodyR(e, .7) + BODY_YOU).toFixed(3), ...r }); e.dead = true; WORLD.scene.remove(e.mesh); L.splice(L.indexOf(e), 1); }
   return out; });
 console.log(JSON.stringify(world));
 check('in the open, W into a Bandit, a Wolf and an Ogre stops you at the foe\'s edge (never more than 0.03 inside it)', world.length === 3 && world.every(w => w.min >= w.R - .03 && w.min < 1.2), world);
-check('the disc follows the foe\'s size: the Wolf\'s (0.75) narrower than the Bandit\'s, the Ogre\'s (1.6) wider', world[1].R < world[0].R && world[2].R > world[0].R, world.map(w => w.R));
+/* S662 — the Wolf was 0.75 when this was written (S623); Session 632 (#187) made it 1.05, so its disc is now a shade wider than the
+   Bandit's. The rule is the size: each disc is 0.3 × its size (0.2–0.7) plus yours, and they rank as the sizes do */
+check('the disc follows the foe\'s size: each is 0.3 × its size (0.2–0.7) plus yours, ranked as the sizes are (the Ogre\'s widest)',
+  world.every(w => Math.abs(w.R - (Math.max(.2, Math.min(.7, .3 * w.size)) + .25)) < .002)
+  && world.every(a => world.every(b => a.size <= b.size ? a.R <= b.R : a.R >= b.R)) && world[2].R > world[0].R, world.map(w => ({ kind: w.kind, size: w.size, R: w.R })));
 check('and each still closes and winds up its blow on you', world.every(w => w.tells >= 1), world.map(w => w.tells));
 
 const folk = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const n = S.npcs.find(n => n.g.visible && n.sched && n.sched.type === 'villager') || S.npcs.find(n => n.g.visible);
