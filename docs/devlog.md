@@ -13404,3 +13404,16 @@ The caravel: the lateen silhouette, which no ship in the game has. Three masts r
 - DECISION #202 (A both as shown, recommended; B the caravel with a square foresail; C today's hulls repainted; D other). Building A on main needs Sessions 636–642 merged first, and two one-line changes in the systems builder's `86-world-crime.js`: each class's own length and beam in `SHIP_CLASSES`, and `applyShipClass` passing the class's name to `buildShipMesh`.
 - The lateen yards' swing at sea, which the inspector's walking wind shows only roughly.
 - Still owed from #192 once it is on main: the real nets, a climb pose, the stowage.
+
+## v80 — Session 647 — `saveui` and `yardplay` red on CI, both test faults (backlog H, CI)
+Every item in section H is done or waits on Michael (DECISION #202, the cutter's and the caravel's hulls) or on the systems builder's work reaching main (the ship classes of Sessions 636–642, the quay lane of Session 618). CI had already reported two red shards on this branch's head (`eecebf2`, which changed only docs and pictures; its `js/` and `tests/` are main's byte for byte), so this run's one session is that.
+
+`saveui` failed on both this branch and main (`ac0eb3c`): *the menu saves to an empty slot and closes* read the slot list empty and the menu still open 1.2 s after the click, and in one of the two runs the overwrite's first click then found the slot still empty and wrote at once instead of asking. The menu's save goes through IndexedDB; the test waited a fixed 1.2 s for it, which a slow runner outran. It passed here in 2.5 minutes. Each of the three writes (the slot, the overwrite, the autosave) is now awaited on the state the check reads, the slot or the gold in `SS.idx`, up to 30 s; nothing in the game changed.
+
+`yardplay` failed once on this branch and passed on main with the same code: after the lost first fight, *Rowe holds the chair at the seat* pressed E in front of Rowe and opened Osric, a villager. `meet` set the stand 1.3 in front of her, let two frames pass, set it again and pressed E; on a slow runner a frame falls between that evaluate and the key, and a walker who steps nearer than Rowe takes the E. The same race was fixed in `hourhitch`/`shoperrands` by Sessions 483 and 501, and `meet` now does what `shoperrands` does: the stand is taken again in a capture keydown listener (which runs before the game's own), and any townsperson within 3 units of it is set 6 units off.
+
+### Verified (headless Chromium)
+`saveui`: 13 of 13 checks (the slot `0:321`, the overwrite asked then wrote 654, the autosave 700, Continue, Load, export, delete, import). `yardplay`: 15 of 15, the first fight lost as on CI and the meeting at the seat reaching Rowe (*Captain Rowe, for a week at least.*), then the rematch won and the Captain's lines; no page errors in either. Both run here, not on the slow runner; CI on this push is the real proof.
+
+### Needs eyes
+Nothing to see in the game. Still waiting: DECISION #202, and Sessions 636–642 on main before the hulls, the nets, the climb pose and the stowage can be built.
