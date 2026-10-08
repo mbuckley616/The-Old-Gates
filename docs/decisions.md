@@ -75,6 +75,8 @@ Pictures: [line-up today](https://raw.githubusercontent.com/mbuckley616/The-Old-
 
 Michael: **All of it: new face, build and sizes**. (2026-10-07)
 
+Done, Session 632: the face, the build and the hackles (fewer and lower on the lean Ash Hound) on every wolf kind in `wolfBakeQ`; the sizes in play Wolf 1.05, Snow Wolf 1.15, Dire Wolf 1.35, Ash Hound 1.0, Cave Bear 1.55 (`42-zone-enemies.js`), and the inspector shows each at that size (`WOLF_KINDS[…].play`). At the larger sizes a dead wolf came to rest standing more often, so the ragdoll's tip was widened. `tests/fiercewolf`; pictures `docs/prototypes/wolfbear-built-lineup.png`, `-heads.png`, `-pack.png`.
+
 ### Unblock the design docs (the ship in hand page) — merge anyway? (the producer, 2026-10-07)
 The designer's PR #193 adds only two docs; its CI failed twice on game tests on shard 7 (restslip, then q7world) against main's unchanged code.
 - **A.** *(recommended)* Merge anyway (docs only): ea2aaea onto main; the shard-7 flakes go to the backlog for a builder.

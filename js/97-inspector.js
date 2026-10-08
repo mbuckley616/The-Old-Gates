@@ -31,7 +31,7 @@ function inspRegistry(){
     const rig=buildFoe(type,0,0);PEOPLE_RIGS.delete(rig);if(FOE_DRESS[type].goblin)rig.root.scale.multiplyScalar(.72); /* S535 — at the size the game builds a goblin */const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
   // 2. Creatures — the wolf kit's kinds, the spider kit's, then the zone and dungeon foes that have a body of their own
   for(const name of Object.keys(WOLF_KINDS))add('Creatures','On the wolf kit',name,'34-creatures.js',()=>{
-    const rig=buildWolf(name,WOLF_KINDS[name].world||1);WOLF_RIGS.delete(rig);let ph=0; /* S524 — at the size the game builds it (the dragon's 2.88) */
+    const rig=buildWolf(name,WOLF_KINDS[name].world||WOLF_KINDS[name].play||1);WOLF_RIGS.delete(rig);let ph=0; /* S524 — at the size the game builds it (the dragon's 2.88); S632 — the wolves' and the bear's too (play) */
     const anim=(t,dt,mode)=>{WG_L=wolfLegs(rig.k);WG_LK=rig.k.legK||1;const s=rig.root.scale.x;let out;
       if(mode==='trot'||mode==='gallop'){const G=mode==='gallop'?WG.GALLOP:WG.TROT;const v=mode==='gallop'?5.2:2.2;ph=(ph+v*dt/(G.cycle*s*WG_LK))%1;out=wgStride(G,ph,t,mode==='gallop');}
       else out=wgStand(t);
