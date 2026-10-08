@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The Pause Leaf</title>
+<!-- The Old Gates — a pause menu on Esc, with settings, on the approved parchment kit (docs/prototypes/ui, Michael A, 27 Sep 2026).
+     Concept, 8 Oct 2026 (backlog E, Michael's playtest note of 6 Oct: "A proper pause menu on Esc: Save/Load and settings
+     (sensitivity, volume by type, brightness), maybe a difficulty slider as in Elder Scrolls").
+     build.py inlines kit.css, the icon symbols (defs.html) and today's numbers (current.json, from shoot-current.mjs, build s477).
+     Every .screen is 1280×720; plate.jpg is Dunmore at 4:24 pm with the HUD hidden.
+     For the builder: plain DOM, one #pause element.
+       .leaf  the pause leaf: .mi rows (an icon, the word, a faint note, the key); .on is the chosen row; ↑/↓ and E or a click.
+       .set   the settings sheet: .grp columns of .sl sliders (a <input type=range> styled as an ink track, .v its value) and
+              .tg choices (words, the chosen one in rubric). Settings live in localStorage under 'og.settings' (this device,
+              every character), never in the save: master, music, effects, voices (0–100), look (0.25–3, ×0.004 rad a pixel),
+              invertY, brightness (−50…+50, a CSS brightness() on the canvas, 0.5–1.5), fov (60–100, CAM's 75 today), numbers
+              (the damage numbers of #198), full screen.
+       B only: challenge (0–4) is the world's, saved in the world row (worldState.challenge, added to the S242 list, not to
+              SS_CHAR_WS): in a co-op world the host's setting rules. It scales damage alone: yours ×[2,1.5,1,.75,.5], the foes'
+              ×[.5,.75,1,1.5,2], applied in applyMeleeDamage, the arrows' and the spells' hit and the foes' strike on you.
+     Esc and the pointer: in a real browser the first Esc in play is taken by the browser to let the pointer go, and the page
+     never sees the key. So the leaf opens on 'pointerlockchange' when the lock is lost and no menu asked for it, and on an Esc
+     keydown when the pointer was already free; Esc on the leaf (or Resume) closes it and asks for the lock back (a keypress
+     is a user gesture). Every panel that closes on Esc today keeps doing so first: the leaf opens only when none is open. -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+.screen{background-size:cover;background-position:center}
+.screen.menu::before{backdrop-filter:blur(2px) brightness(.55) sepia(.3)}
+
+/* ───────── the pause leaf ───────── */
+.leaf{left:72px;top:64px;width:420px;height:592px;padding:30px 34px 22px;display:flex;flex-direction:column}
+.leaf .h{font-size:44px;line-height:1}
+.leaf .wait{font:italic 18px var(--fell);color:var(--ink-soft);margin-top:4px}
+.leaf .when{font:18px/1.3 var(--body);font-weight:500;color:var(--ink)}
+.leaf .where{font:italic 16px var(--fell);color:var(--ink-soft);margin-bottom:6px}
+.mi{display:grid;grid-template-columns:28px 1fr auto;gap:0 14px;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(90,65,40,.18)}
+.mi svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.mi .w{font:25px/1.05 var(--display);color:var(--ink)}
+.mi .n{font:italic 14.5px var(--fell);color:var(--ink-faint);display:block;margin-top:1px}
+.mi .key{width:auto;min-width:26px;padding:0 6px;font-size:13px}
+.mi.on{background:linear-gradient(90deg,rgba(122,31,16,.15),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.mi.on .w{color:var(--rubric)} .mi.on svg.ico{color:var(--rubric)}
+.mi.quit .w{font-size:21px;color:var(--ink-soft)}
+.mi.primed{box-shadow:inset 3px 0 var(--rubric),inset 0 0 0 1.5px rgba(122,31,16,.55)}
+.mi.primed .n{color:var(--rubric)}
+.leaf .who{margin-top:auto;border-top:1px solid rgba(90,65,40,.3);padding-top:8px;display:flex;justify-content:space-between;font:15px var(--body);color:var(--ink-soft)}
+.leaf .who b{font:18px var(--display);font-weight:400;color:var(--ink)}
+.leaf .who .tag{font:italic 13px var(--fell);color:var(--ink-faint);align-self:flex-end}
+.esc{position:absolute;right:26px;bottom:10px;font:italic 14px var(--fell);color:rgba(240,226,192,.85);display:flex;gap:8px;align-items:center;z-index:3;text-shadow:0 1px 2px #000}
+.esc .key{width:auto;padding:0 6px}
+.still{position:absolute;right:40px;top:40px;font:15px var(--display);letter-spacing:.2em;color:rgba(240,226,192,.75);z-index:3;text-shadow:0 1px 3px #000}
+
+/* ───────── the settings sheet ───────── */
+.set{left:56px;top:34px;width:1168px;height:652px;padding:24px 34px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto 1fr auto;gap:0 30px}
+.sethead{grid-column:1/-1;display:flex;align-items:flex-end;gap:18px}
+.sethead .h{font-size:38px;line-height:1}
+.sethead .sub{font:italic 18px var(--fell);color:var(--ink-soft);padding-bottom:3px}
+.sethead .back{margin-left:auto;font:16px var(--display);color:var(--ink-faint);padding-bottom:3px}
+.set .rule{grid-column:1/-1}
+.grp{border-right:1px solid rgba(90,65,40,.25);padding-right:24px;overflow:hidden}
+.grp:last-of-type{border-right:none;padding-right:0}
+.colh{font:14px var(--display);letter-spacing:.12em;color:var(--ink-faint);margin:2px 0 8px;display:flex;gap:8px;align-items:center}
+.colh svg.ico{width:18px;height:18px}
+.colh.two{margin-top:20px}
+.sl{padding:7px 8px 9px;border-bottom:1px solid rgba(90,65,40,.16)}
+.sl .lb{display:flex;justify-content:space-between;align-items:baseline}
+.sl .lb span{font:19px var(--body);font-weight:500}
+.sl .lb .v{font:17px var(--display);color:var(--rubric)}
+.sl .tr{position:relative;height:16px;margin:6px 2px 0}
+.sl .tr::before{content:"";position:absolute;left:0;right:0;top:7px;height:2px;background:var(--ink-faint);opacity:.6;border-radius:1px}
+.sl .tr i{position:absolute;left:0;top:6px;height:4px;background:var(--ink);border-radius:2px}
+.sl .tr b{position:absolute;top:0;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#b8402a,#7a1f10 60%,#4a1208);box-shadow:0 1px 2px rgba(40,20,5,.6),0 0 0 1px #4a1208}
+.sl .tr u{position:absolute;top:2px;width:1px;height:12px;background:var(--ink-faint)}
+.sl .nt{font:italic 14px/1.25 var(--fell);color:var(--ink-faint);margin-top:4px}
+.sl.on{background:linear-gradient(90deg,rgba(122,31,16,.12),rgba(122,31,16,.02));box-shadow:inset 3px 0 var(--rubric)}
+.tg{display:flex;justify-content:space-between;align-items:baseline;padding:8px 8px;border-bottom:1px solid rgba(90,65,40,.16)}
+.tg span{font:19px var(--body);font-weight:500}
+.tg em{font:17px var(--display);font-style:normal;color:var(--ink-faint);margin-left:12px}
+.tg em.on{color:var(--rubric);border-bottom:2px solid var(--rubric)}
+.tg .nt{display:block;font:italic 14px var(--fell);color:var(--ink-faint);font-weight:400}
+.card{display:flex;gap:10px;margin:8px 8px 2px;align-items:center}
+.card div{width:46px;height:30px;border-radius:2px;box-shadow:0 0 0 1px rgba(46,28,12,.5);display:grid;place-items:center}
+.card div i{width:20px;height:12px;border-radius:50% 50% 0 0;display:block}
+.card small{font:italic 13.5px/1.2 var(--fell);color:var(--ink-faint);flex:1}
+/* the five stops of the challenge */
+.stops{display:grid;grid-template-columns:repeat(5,1fr);margin:6px 0 0;text-align:center;font:14px var(--display);color:var(--ink-faint)}
+.stops .on{color:var(--rubric)}
+.chal .lb .v{font-size:19px}
+.chal .eff{display:grid;grid-template-columns:1fr auto;font:16.5px/1.5 var(--body);margin-top:6px}
+.chal .eff b{font:17px var(--display);font-weight:400;color:var(--rubric);text-align:right}
+.setfoot{grid-column:1/-1;display:flex;align-items:center;gap:14px;border-top:1px solid rgba(90,65,40,.3);padding-top:9px;margin-top:6px;position:relative}
+.setfoot .btn{font-size:14.5px;padding:5px 12px}
+.setfoot .nt{font:italic 14px var(--fell);color:var(--ink-faint)}
+.setfoot .go{margin-left:auto;font:22px var(--display);color:var(--rubric);padding-right:62px}
+.setfoot .seal{right:0;top:-3px;width:50px;height:50px;font-size:21px}
+
+/* ───────── the keys ───────── */
+.keys{left:72px;top:64px;width:760px;height:592px;padding:28px 36px 20px}
+.keys .h{font-size:38px}
+.kcols{display:grid;grid-template-columns:1fr 1fr;gap:0 34px;margin-top:6px}
+.kr{display:grid;grid-template-columns:130px 1fr;align-items:center;padding:6px 4px;border-bottom:1px solid rgba(90,65,40,.16);font:17.5px var(--body)}
+.kr .ks{display:flex;gap:4px;flex-wrap:wrap}
+.kr .key{width:auto;min-width:26px;padding:0 6px;font-size:13px;height:24px}
+.kr .m{font:13px var(--display);letter-spacing:.06em;color:var(--ink-soft);padding:1px 6px;border:1px solid var(--ink-faint);border-radius:9px}
+.keys .nt{font:italic 14.5px var(--fell);color:var(--ink-faint);margin-top:12px}
+
+/* ───────── C: the hub's eighth tab ───────── */
+.hubsheet{left:60px;top:62px;width:1160px;height:624px;padding:22px 34px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto 1fr;gap:0 30px;align-content:start}
+.hubsheet .rule{grid-column:1/-1}
+.hubsheet .top{grid-column:1/-1;display:flex;align-items:flex-end;gap:16px}
+.hubsheet .top .h{font-size:30px}
+.tabs.c{left:84px;top:14px}
+
+/* the page around the screens */
+.cmp{background:#1a140c}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
+.pair figure{margin:0}
+.pair figcaption{font:18px var(--display);color:#e0c994;margin-bottom:6px}
+.pair figcaption small{font:13px var(--body);color:#a89878;margin-left:8px}
+.pair img{width:100%;display:block;box-shadow:0 0 0 1px #5a4018}
+.pair .under{font:14px/1.4 var(--body);color:#b8a888;margin-top:8px}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<svg width="0" height="0" style="position:absolute"><defs>
+ <symbol id="i-resume" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></symbol>
+ <symbol id="i-leafbook" viewBox="0 0 24 24"><path d="M4 5.5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6.5v13"/></symbol>
+ <symbol id="i-dials" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></symbol>
+ <symbol id="i-keycap" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M7 10h1.5M11 10h2M15.5 10H17M8 14h8"/></symbol>
+ <symbol id="i-door" viewBox="0 0 24 24"><path d="M6 20.5V4.5h9v16"/><path d="M15 6.5l4 1.2v12.8"/><path d="M3.5 20.5h17"/><circle cx="12.2" cy="12.8" r=".7"/></symbol>
+ <symbol id="i-ear" viewBox="0 0 24 24"><path d="M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a3 3 0 0 1-5.5 1.6"/><path d="M10 9.5a2 2 0 0 1 4 0c0 1.4-1.2 1.8-1.6 2.8"/></symbol>
+ <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12c3-5 16-5 19 0-3 5-16 5-19 0z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10.5V4a1.5 1.5 0 0 1 3 0v6.5M14 10.5V5.5a1.5 1.5 0 0 1 3 0V13c0 4-2.5 7-6 7-2.5 0-4-1.5-5.5-4L4 12.5a1.4 1.4 0 0 1 2.3-1.5L8 13"/></symbol>
+ <symbol id="i-skull" viewBox="0 0 24 24"><path d="M6 15.5C3.5 13 4 4.5 12 4.5s8.5 8.5 6 11V19H6z"/><circle cx="9.3" cy="11.5" r="1.7"/><circle cx="14.7" cy="11.5" r="1.7"/><path d="M10 19v-2M14 19v-2M12 14l-.8 1.6h1.6z"/></symbol>
+</defs></svg>
+<h1 class="page">The Pause Leaf — Esc, and the settings</h1>
+<p class="lede">Michael's note of 6 Oct: a proper pause menu on Esc, with Save and Load and the settings (look speed, volume by kind, brightness), and maybe a difficulty slider as in the Elder Scrolls. Aoife, a level 5 Warrior in Dunmore at 4:24 pm on build s477; every number on the settings is today's.</p>
+<div id="out"></div>
+<script>
+/*DATA*/
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${id}"/></svg>`;
+const screens=[];
+function screen(id,cap,cls,html){const bg=cls.includes('menu')?` style="background-image:url(plate.jpg)"`:'';screens.push(id);document.getElementById('out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen ${cls}" id="${id}"${bg}>${html}</div>`);}
+const D=DATA;
+const HOUR='4:24 pm';
+const ARCH={warrior:'Warrior',duelist:'Duelist',sentinel:'Sentinel'};
+const key=k=>`<span class="key">${k}</span>`;
+
+// ── the leaf
+function leaf(o={}){
+  const rows=[
+    ['i-resume','Resume','back to the road','Esc'],
+    ['i-quill','Save','write this day in the register',''],
+    ['i-leafbook','Load','go back to a day you kept',''],
+    ['i-dials','Settings','sound, look speed, the light'+(o.b?', the challenge':''),''],
+    ['i-keycap','The keys','what each key does',''],
+    ['i-door','Quit to the title','',''],
+  ];
+  return `<div class="parch leaf"><div class="h">Paused</div><div class="wait">The world waits for you.</div><div class="rule"></div>
+   <div class="when">${D.cal} · ${HOUR}</div><div class="where">${D.place}</div>
+   ${rows.map((r,i)=>{const on=i===(o.sel||0),q=i===5;const pr=q&&o.primed;
+     return `<div class="mi ${on?'on':''} ${q?'quit':''} ${pr?'primed':''}">${ico(r[0])}<div><span class="w">${r[1]}</span><span class="n">${pr?'Press again to leave. What is unsaved is lost.':(q?'what you have not saved is lost':r[2])}</span></div>${r[3]?key(r[3]):'<span></span>'}</div>`;}).join('')}
+   <div class="who"><span><b>${D.name}</b> · ${ARCH[D.arch]||D.arch} · level ${D.level} · ${D.gold} gold</span><span class="tag">build ${D.tag}</span></div></div>
+   <div class="still">THE WORLD STANDS STILL</div>
+   <div class="esc">${key('↑')}${key('↓')} choose · ${key('E')} take · ${key('Esc')} resume</div>`;}
+
+// ── the settings
+const sl=(lb,v,frac,nt,o={})=>`<div class="sl ${o.on?'on':''}"><div class="lb"><span>${lb}</span><span class="v">${v}</span></div><div class="tr">${(o.ticks||[]).map(t=>`<u style="left:${t*100}%"></u>`).join('')}<i style="width:${frac*100}%"></i><b style="left:${frac*100}%"></b></div>${nt?`<div class="nt">${nt}</div>`:''}</div>`;
+const tg=(lb,opts,on,nt)=>`<div class="tg"><span>${lb}${nt?`<span class="nt">${nt}</span>`:''}</span><span>${opts.map((w,i)=>`<em class="${i===on?'on':''}">${w}</em>`).join('')}</span></div>`;
+const deg=(D.turnPerPx*180/Math.PI).toFixed(2);
+function sound(){return `<div class="colh">${ico('i-ear')} SOUND</div>
+  ${sl('Everything','100',1,'Today one button steps through three: off, quiet, loud. Loud is 100 here.',{on:1})}
+  ${sl('Music','100',1,`by the place you stand; today ${D.vol.music[2]} at loud, ${D.vol.music[1]} at quiet`)}
+  ${sl('Blows and steps','100',1,'the sword, the bow, the doors, the weather')}
+  ${sl('Spoken lines','100',1,`the people's voices; ${'M'} still mutes them anywhere`)}`;}
+function look(){return `<div class="colh">${ico('i-hand')} THE MOUSE</div>
+  ${sl('Look speed','1.0×',(1-.25)/(3-.25),`${deg}° a pixel of movement, as today; from a quarter to three times`,{ticks:[(1-.25)/2.75]})}
+  ${tg('Up and down',['As is','Inverted'],0)}
+  ${tg('Lock on',['R · wheel'],0,'as today')}`;}
+function sight(){return `<div class="colh">${ico('i-eye')} THE LIGHT</div>
+  ${sl('Brightness','0',.5,'Set it so the left mark can only just be seen.',{ticks:[.5]})}
+  <div class="card"><div style="background:#0d0b08"><i style="background:#1a1712"></i></div><div style="background:#0d0b08"><i style="background:#2c2720"></i></div><div style="background:#0d0b08"><i style="background:#4a4236"></i></div><small>three marks on the night's black</small></div>
+  ${sl('Field of view',D.fov+'°',(D.fov-60)/40,'today\'s 75; from 60 to 100',{ticks:[(D.fov-60)/40]})}
+  ${tg('Damage numbers',['Shown','Hidden'],0,'the numbers you chose on 7 Oct')}
+  ${tg('Full screen',['On','Off'],1)}`;}
+function chal(){return `<div class="colh two">${ico('i-skull')} THE CHALLENGE</div>
+  <div class="sl chal"><div class="lb"><span>How hard the world strikes</span><span class="v">Adept</span></div>
+   <div class="tr">${[0,.25,.5,.75,1].map(t=>`<u style="left:${t*100}%"></u>`).join('')}<i style="width:50%"></i><b style="left:50%"></b></div>
+   <div class="stops"><span>Novice</span><span>Apprentice</span><span class="on">Adept</span><span>Expert</span><span>Master</span></div>
+   <div class="eff"><span>Your blows</span><b>×1</b><span>The foes' blows</span><b>×1</b></div>
+   <div class="nt">Adept is today's game. At Expert your 22 on a Skeleton is 17 and its blows land half as hard again. Kept with this world; levels, loot and gold stay.</div></div>`;}
+function sheet(b){return `<div class="parch set"><div class="sethead"><span class="h">Settings</span><span class="sub">Kept in this browser, for every character${b?'; the challenge is kept with the world':''}.</span><span class="back">Esc · back to the leaf</span></div><div class="rule"></div>
+  <div class="grp">${sound()}</div><div class="grp">${sight()}</div><div class="grp">${look()}${b?chal():''}</div>
+  <div class="setfoot"><span class="btn">As they were</span><span class="nt">Every change is heard or seen at once, behind the sheet.</span><span class="go">Done</span><span class="seal">✓</span></div></div>
+  <div class="esc">${key('↑')}${key('↓')} choose · ${key('←')}${key('→')} set · ${key('Esc')} back</div>`;}
+
+// ── A: the leaf
+screen('a-pause','A — The pause leaf <small>Esc in play stops the world and opens one leaf: Resume, Save, Load, Settings, The keys, Quit to the title</small>','menu',leaf());
+screen('a-settings','A — Settings <small>sound by kind, the mouse, the light; this browser\'s, for every character; no challenge</small>','menu',sheet(false));
+screen('b-settings','B — Settings with the challenge <small>A, and five steps of how hard the world strikes, kept with the world as the Elder Scrolls keep it</small>','menu',sheet(true));
+screen('a-quit','A, B — Quit asks once <small>a second press leaves; the line says what is lost</small>','menu',leaf({sel:5,primed:1,b:1}));
+
+// ── the keys (every option)
+{const cb=D.cbar;const K=[
+  [['W','A','S','D'],'walk'],[['Mouse'],'look'],[['<span class="m">LEFT</span>'],'strike; hold for a power blow'],[['<span class="m">RIGHT</span>'],'block'],[['Q'],'roll'],[['R','<span class="m">WHEEL</span>'],'lock on, and let go'],[['Ctrl'],'sneak'],
+  [['E'],'speak, open, take, use'],[['F'],'cast the spell in hand'],[['I'],'your pack'],[['Tab'],'the book: map, quests, journal'],[['M'],'mute the spoken lines'],[['Esc'],'close a panel; in play, this leaf'],[['1','–','0'],'answer in a talk']];
+ screen('a-keys','A, B — The keys <small>today\'s controls line, written out (no rebinding: that would be another question)</small>','menu',
+ `<div class="parch keys"><div class="h">The Keys</div><div class="meta">Today they sit in one line at the foot of the screen: <i>${cb.replace(/build s\d+/,'').trim().slice(0,96)}…</i></div><div class="rule"></div>
+  <div class="kcols">${[K.slice(0,7),K.slice(7)].map(c=>`<div>${c.map(([ks,w])=>`<div class="kr"><span class="ks">${ks.map(k=>k.startsWith('<')?k:key(k)).join('')}</span><span>${w}</span></div>`).join('')}</div>`).join('')}</div>
+  <div class="nt">With this page the line at the foot of the screen can go: Esc, then The keys, finds them.</div></div>
+  <div class="esc">${key('Esc')} back to the leaf</div>`);}
+
+// ── C: an eighth tab in the hub
+screen('c-hub','C — A Settings tab in the book <small>no pause leaf: Tab opens the book and Settings is its eighth tab; Esc closes panels as today, and a lost pointer shows today\'s "Click to resume"</small>','menu',
+ `<div class="tabs c">${[['⚔','Inventory'],['✦','Magic'],['📊','Attributes'],['📜','Quests'],['📖','Journal'],['👤','Character'],['🗺','Map'],['','Settings']].map(([i,w],k)=>`<span class="tab ${k===7?'on':''}">${k===7?ico('i-dials'):''}${w}</span>`).join('')}</div>
+  <div class="parch hubsheet"><div class="top"><span class="h">Settings</span><span class="meta">Save and Load stay behind the 💾 button at the top right.</span></div><div class="rule"></div>
+  <div class="grp">${sound()}</div><div class="grp">${sight()}</div><div class="grp">${look()}</div></div>`);
+
+// ── comparison
+screen('cmp-esc','Today beside A — Esc in play','cmp',`<div class="pair"><figure><figcaption>Today <small>after Esc (build ${D.tag})</small></figcaption><img src="current-esc.png"><div class="under">Nothing opens. In a real browser the Esc lets the pointer go and the world plays on; the "⏸ Paused · Click to resume" box was written for this (v62.1) but never shows (see the note on the page). Settings today: one volume button of three steps, M for the voices, and nothing else.</div></figure><figure><figcaption>A, the pause leaf</figcaption><img id="ce-a" src=""></figure></div>`);
+window.SCREENS=screens;
+</script>
+</body>
+</html>
