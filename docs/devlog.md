@@ -14305,3 +14305,14 @@ A member's tries now come from `seededRng('packspot', <chunk>:<index>)`, a strea
 
 ### Needs eyes
 Packs on the minimap, which should now look scattered rather than drawn with a ruler.
+
+## v80 — Session 652 — CI in twelve shards (the PR's CI, cancelled at 60 minutes)
+Systems sessions' CI had not reported since 644c6f4. On ab0ee3f, six of the eight headless shards were cancelled at the 60-minute limit. The two that finished took 46 and 59 minutes. The two runs before were cancelled by the next push, which is the workflow's rule. Main's run on ac0eb3c failed at 55 minutes and auto/backlog's on d82db51 at 56. The job logs could not be read from here (the log store answers 403), so the run times are the evidence. `tests/run.mjs` balances the shards by its table of CI seconds. With 360 suites, that table puts every one of eight shards at 60 minutes before the install. Session 454 raised the limit from 45 to 60 for the same reason.
+
+The workflow (`.github/workflows/check.yml`) now runs twelve shards (`--shard=N/12`). By the same table, each comes to 40 minutes, which leaves the install and a slow runner about a third of the hour. The limit stays 60, so a suite that hangs is still caught. The runner minutes are about the same; there are only four more installs.
+
+### Verified (headless Chromium)
+No game code changed. The table's split over the 360 suites: 8 shards at 60 / 60 / … / 60 minutes, 12 shards at 40 to 41. Every suite lands in exactly one shard, since the split is the same greedy pass as before. The proof is the PR's next CI run.
+
+### Needs eyes
+Twelve jobs a push, against GitHub's 20 concurrent jobs. With two or three branches pushing at once, some shards will queue rather than run side by side. That costs wall time, but it does not fail a run.
