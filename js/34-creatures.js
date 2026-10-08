@@ -7,14 +7,16 @@
 // and slides back under the body at the pace it moved, as the townsfolk's feet do. Prototype: docs/prototypes/creatures.
 // At scale 1 the wolf has the old box wolf's size (shoulder about .47, nose at z about .6), so reach and hits are unchanged.
 const WOLF_KINDS={
-  'Wolf':      {coat:0x7a6a5c,saddle:0x3e342c,belly:0xd8ccb4,eye:0xddaa44,ruff:1.0,ears:1.0,muzzle:1.0},
-  'Snow Wolf': {coat:0xdcdce0,saddle:0x9a9ca4,belly:0xf4f2ee,eye:0x80c0ff,ruff:1.25,ears:.85,muzzle:.95},
-  'Dire Wolf': {coat:0x3a3230,saddle:0x1a1614,belly:0x6a5e54,eye:0xffb030,ruff:1.35,ears:.9,muzzle:1.12,bulk:1.15},
-  'Ash Hound': {coat:0x5a5048,saddle:0x2a2420,belly:0x8a7a6a,eye:0xff5020,ruff:.55,ears:1.25,muzzle:1.2,lean:.86,embers:true},
+  // S632 — Michael's A on #187: a fiercer face, a heavier build (bulk), the head carried below the back (neck); play: the size each
+  // is built at in play (42-zone-enemies.js, its `scale`), which the inspector shows
+  'Wolf':      {coat:0x7a6a5c,saddle:0x3e342c,belly:0xd8ccb4,eye:0xddaa44,ruff:1.15,ears:1.0,muzzle:1.05,bulk:1.1,neck:.12,play:1.05},
+  'Snow Wolf': {coat:0xdcdce0,saddle:0x9a9ca4,belly:0xf4f2ee,eye:0x80c0ff,ruff:1.35,ears:.85,muzzle:.95,bulk:1.1,neck:.12,play:1.15},
+  'Dire Wolf': {coat:0x3a3230,saddle:0x1a1614,belly:0x6a5e54,eye:0xffb030,ruff:1.45,ears:.9,muzzle:1.12,bulk:1.22,neck:.14,play:1.35},
+  'Ash Hound': {coat:0x5a5048,saddle:0x2a2420,belly:0x8a7a6a,eye:0xff5020,ruff:.7,ears:1.25,muzzle:1.2,lean:.86,bulk:1.05,neck:.12,embers:true,play:1},
   // the boar shares the wolf's bones and gait; its parts are its own (wolfBakeQ's k.boar), its head carried low (neck)
   'Boar':      {coat:0x5a4030,saddle:0x2e2016,belly:0x8a6a50,eye:0x3a2010,boar:true,neck:.35,bulk:1.05},
   // S223 — the Cave Bear (Michael's answer B on Session 214, as shown): the wolf's bones and gait under its own heavy body (k.bear)
-  'Cave Bear': {coat:0x4a3a2a,saddle:0x2e2218,belly:0x6a5440,eye:0x1a1008,bear:true,neck:.3,bulk:1.3,eyePos:[.04,.035,.062]},
+  'Cave Bear': {coat:0x4a3a2a,saddle:0x2e2218,belly:0x6a5440,eye:0x1a1008,bear:true,neck:.3,bulk:1.3,eyePos:[.04,.035,.062],play:1.55},
   // S262 — the coach's horses (Michael's A on Session 230): the wolf's bones on a horse's legs (a high hock, long cannons), a body of
   // their own (k.horse), a bay and a grey; legK scales the gait's stride to the longer legs
   'Horse':     {coat:0x6a4428,saddle:0x24160c,belly:0x8a6444,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
@@ -192,35 +194,44 @@ function wolfBakeQ(k,q){
     const tl=part(SK.limb(.13,.014,.01),coat,B.tail1,0,0,0,true);tl.rotation.x=Math.atan2(.1,.05);part(SK.bumpy(SK.ball(.025,7,5),.008,19,2),C(k.saddle),B.tail2,0,-.02,-.02);
   }else{
   // the body: a deep chest on the spine (narrower than the prototype's, which was heavy from the front), a tucked waist and haunches on the hips
-  part(zlathe([[0,-.22],[.07,-.21],[.12,-.15],[.145,-.05],[.15,.03],[.13,.11],[.08,.16],[0,.18]],16),coat,B.spine,0,-.04,0,true).scale.set(.63*bw*ln,1.08*bw,1);
+  part(zlathe([[0,-.22],[.07,-.21],[.12,-.15],[.145,-.05],[.15,.03],[.13,.11],[.08,.16],[0,.18]],16),coat,B.spine,0,-.04,0,true).scale.set(.76*bw*ln,1.16*bw,1);
   part(zlathe([[0,-.15],[.08,-.14],[.11,-.07],[.108,.02],[.092,.12],[.085,.2],[0,.24]],14),coat,hips,0,.005,0,true).scale.set(.8*bw*ln,1*bw,1);
   // the neck and its ruff
-  seg(B.spine,[.14,.13],.075*bw,.062*bw,.006).position.set(0,-.02,.06);
+  seg(B.spine,[.14,.13],.088*bw,.074*bw,.006).position.set(0,-.02,.06);
   if(k.ruff>0)part(SK.bumpy(SK.ball(.1*k.ruff*bw,16,11),.018,19,3),coat,B.neck,0,-.01,0,true).scale.set(.84*ln,1.05,.85);
-  // the head: a skull, cheeks, a tapering muzzle over a hinged jaw, a nose, eyes, ears with dark insides
-  const head=B.head,M=k.muzzle;
-  part(SK.ball(.072,14,10),coat,head,0,.01,-.005,true).scale.set(.95,.85,1.05);
-  [-1,1].forEach(s=>part(SK.ball(.04,10,7),coat,head,s*.04,-.01,.01,true).scale.set(.9,.9,1.1));
-  part(zlathe([[0,0],[.045,0],[.04,.07],[.03,.13],[.018,.155],[0,.16]].map(p=>[p[0],p[1]*M]),12),coat,head,0,-.005,.03,true).scale.set(1,.72,1);
-  part(zlathe([[0,0],[.034,0],[.028,.08],[.016,.13],[0,.135]].map(p=>[p[0],p[1]*M]),10),coat,B.jaw,0,-.008,0,true).scale.set(1,.45,1);
-  part(SK.ball(.019,8,6),dark,head,0,.012,.03+.155*M).scale.set(1.25,.9,1);
+  // the head (S632, Michael's A on #187): a longer, lower skull; a brow ridge frowning over small slanted eyes with no round
+  // pupil (the round ones read googly); a deep muzzle with a nasal bridge into the forehead, the jaw tucked under it, a dark
+  // lip line and the four canines showing; small ears laid back. Then raised hackles along the back, fewer and lower on a lean kind
+  const head=B.head,M=k.muzzle*1.2;
+  part(SK.ball(.07,14,10),coat,head,0,.004,-.012,true).scale.set(.9,.76,1.22);
+  [-1,1].forEach(s=>part(SK.ball(.042,10,7),coat,head,s*.04,-.014,.012,true).scale.set(.85,.85,1.25));
+  [-1,1].forEach(s=>{const br=part(SK.ball(.024,9,6),coat,head,s*.028,.036,.044,true);br.scale.set(1.5,.5,1.15);br.rotation.z=s*.38;});
+  part(zlathe([[0,0],[.054,0],[.05,.06],[.04,.115],[.026,.15],[0,.16]].map(p=>[p[0],p[1]*M]),12),coat,head,0,-.008,.03,true).scale.set(.95,.92,1);
+  part(SK.ball(.042,10,7),coat,head,0,.026,.07,true).scale.set(.85,.62,2.1);
+  part(zlathe([[0,0],[.04,0],[.034,.08],[.02,.13],[0,.135]].map(p=>[p[0],p[1]*M]),10),coat,B.jaw,0,.002,0,true).scale.set(.9,.62,1);
+  part(SK.ball(.02,8,6),dark,head,0,.006,.03+.155*M).scale.set(1.3,.85,1);
+  [-1,1].forEach(s=>{const lp=part(SK.ball(.02,8,5),dark,head,s*.03,-.03,.03+.085*M);lp.scale.set(.25,.22,3.2);lp.rotation.y=-s*.12;
+    const ct=part(SK.cone(.0065,.03,5),C(0xece4d0),head,s*.019,-.038,.03+.13*M);ct.rotation.x=Math.PI;
+    part(SK.cone(.006,.024,5),C(0xece4d0),B.jaw,s*.015,.004,.11*M);});
   [-1,1].forEach(s=>{
-    if(q>=1){part(SK.ball(.013,8,6),C(k.eye),head,s*.037,.03,.052);part(SK.ball(.006,6,4),dark,head,s*.039,.03,.061);}
-    const e=part(SK.cone(.032,.085*k.ears,6),coat,head,s*.042,.078,-.02,true);e.rotation.set(-.25,0,-s*.28);e.scale.set(1,1,.5);
-    const ei=part(SK.cone(.02,.06*k.ears,5),C(0x3a2a24),head,s*.042,.072,-.012);ei.rotation.set(-.25,0,-s*.28);ei.scale.set(1,1,.3);
+    if(q>=1){const ey=part(SK.ball(.0095,8,6),C(k.eye),head,s*.034,.024,.058);ey.scale.set(1.5,.55,.6);ey.rotation.z=s*.35;}
+    const e=part(SK.cone(.03,.07*k.ears,6),coat,head,s*.046,.07,-.04,true);e.rotation.set(-.55,0,-s*.36);e.scale.set(1,1,.5);
+    const ei=part(SK.cone(.019,.05*k.ears,5),C(0x3a2a24),head,s*.046,.065,-.033);ei.rotation.set(-.55,0,-s*.36);ei.scale.set(1,1,.3);
   });
+  for(let i=0;i<8;i++){if(ln<1&&i%2)continue;const onSp=i<5,b=onSp?B.spine:hips,z=onSp?.17-i*.065:.12-(i-5)*.08;const h=(.07-Math.abs(i-2)*.007)*(ln<1?.6:1);
+    const o=part(SK.bumpy(SK.cone(.03,h,6),.004,17,i),C(k.saddle),b,0,onSp?.13:.12,z);o.rotation.x=-1.0;o.scale.set(.75,.75,1.3);}
   // legs: a shoulder blade and a haunch worked into the body, muscled upper segments, slim cannons, knobbed joints
   const F=wolfLegs(k).fore,H=wolfLegs(k).hind;
   ['L','R'].forEach((K,i)=>{const s=i===0?1:-1;
     const sh=B['sh'+K],el=B['el'+K],wr=B['wr'+K],pf=B['pf'+K],th=B['th'+K],kn=B['kn'+K],hk=B['hk'+K],ph=B['ph'+K];
     part(SK.ball(.066*bw,10,8),coat,sh,-s*.01,.02,0,true).scale.set(.5,1.4,.95);
     seg(sh,F.a,.05*bw,.032*bw,.012*bw);part(SK.ball(.03,7,5),coat,el,0,0,-.006,true).scale.set(.9,1,1.15);
-    seg(el,F.b,.03,.021,.006);part(SK.ball(.024,7,5),coat,wr,0,0,.004,true).scale.set(.95,1.1,1.05);
-    seg(wr,F.c,.021,.019,0);part(SK.ball(.03,9,6),coat,pf,0,-.005,.018,true).scale.set(1,.6,1.45);
+    seg(el,F.b,.039,.027,.006);part(SK.ball(.024,7,5),coat,wr,0,0,.004,true).scale.set(.95,1.1,1.05);
+    seg(wr,F.c,.027,.025,0);part(SK.ball(.03,9,6),coat,pf,0,-.005,.018,true).scale.set(1,.6,1.45);
     part(SK.ball(.084*bw,11,8),coat,th,-s*.014,-.02,.01,true).scale.set(.55,1.15,1.05);
     seg(th,H.a,.064*bw,.034*bw,.016*bw);part(SK.ball(.033,7,5),coat,kn,0,0,.004,true).scale.set(.9,1,1.1);
-    seg(kn,H.b,.032,.021,.007);part(SK.ball(.024,7,5),coat,hk,0,.004,-.012,true).scale.set(.9,1.1,1.25);
-    seg(hk,H.c,.02,.018,0);part(SK.ball(.029,9,6),coat,ph,0,-.004,.016,true).scale.set(1,.6,1.4);
+    seg(kn,H.b,.042,.027,.007);part(SK.ball(.024,7,5),coat,hk,0,.004,-.012,true).scale.set(.9,1.1,1.25);
+    seg(hk,H.c,.026,.023,0);part(SK.ball(.029,9,6),coat,ph,0,-.004,.016,true).scale.set(1,.6,1.4);
   });
   // the tail: a brush of bumped lobes, darker at the tip, each running down and back along its bone to the next joint
   const tseg=(b,dy,dz,r0,r1,col,fur,k2)=>{const L=Math.hypot(dy,dz)*1.25;const o=part(SK.bumpy(SK.limb(L,r0,r1),.009,21,k2),col,b,0,0,0,fur);o.rotation.x=Math.atan2(-dz,-dy);o.scale.set(.85,1,.95);return o;};
@@ -386,7 +397,10 @@ function creatureRagdollStep(R){
   // the other): in about one fall in a hundred and fifty the
   // trunk's roll was spent against the legs folding under, and the wolf came to rest standing on them (CI's beastfall, up .97)
   if(R.t>.35&&R.t<1.2){const z=_crd1.subVectors(P[R.I.neck].p,P[R.I.hips].p).normalize(),x=_crd2.subVectors(P[R.I.thL].p,P[R.I.thR].p);x.addScaledVector(z,-x.dot(z)).normalize();
-    if(_crd3.crossVectors(z,x).y>.8){R.tipped=(R.tipped||0)+1;for(const n of ['hips','spine','neck','chest','belly'])P[R.I[n]].q.addScaledVector(R.lat,(n==='chest'||n==='belly'?1:-1)*R.roll*R.s*1.2*RD_DT);}}
+  // S632 — at Michael's larger sizes (A on #187) a bigger body falls slower against the same gravity and push, and came to rest standing
+  // in 3 Wolf falls of 400 and 7 Dire Wolf falls (the Cave Bear already 7 at 1.35); it is now turned while it stands past .6 (was .8),
+  // twice as hard: 0 in 400 for the Wolf, the Snow Wolf and the Ash Hound, 1 for the Dire Wolf and the bear
+    if(_crd3.crossVectors(z,x).y>.6){R.tipped=(R.tipped||0)+1;for(const n of ['hips','spine','neck','chest','belly'])P[R.I[n]].q.addScaledVector(R.lat,(n==='chest'||n==='belly'?1:-1)*R.roll*R.s*2.4*RD_DT);}}
   for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
   for(let it=0;it<10;it++){
     for(const [a,b,len,min] of C){const pa=P[a].p,pb=P[b].p,d=_crd1.subVectors(pb,pa),l=d.length()||1e-6;if(min&&l>=len)continue;const k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
