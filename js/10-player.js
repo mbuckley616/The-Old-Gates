@@ -1138,6 +1138,7 @@ function enemyPostureFamily(e){
 }
 // Compute and stamp the posture fields on an entity. Idempotent — defensive default
 // for save-load on entries that don't have posture yet.
+const ENEMY_POSTURE_FLOOR=18;
 function initPosture(e){
   if(!e) return;
   if(typeof e.posture==='number' && typeof e.maxPosture==='number') return; // already stamped
@@ -1146,9 +1147,10 @@ function initPosture(e){
   // Base posture = half maxHp scaled by family. Mirrors enemy HP scaling so high-HP
   // enemies are also sturdier on posture (doesn't reduce all fights to posture-spam
   // on tanks). The 0.5 coefficient keeps a typical enemy at ~4-6 normal hits to break
-  // (e.g. 30 HP skeleton → 15 posture / 8 drain → 2 hits; 80 HP troll → 60 → 8 hits).
+  // (e.g. 30 HP skeleton → 15 posture, floored to 18 / 8 drain → 3 hits; 80 HP troll → 60 → 8 hits).
+  // The floor is 18 (Michael's A on DECISION #206): over a greatclub's 12, so no foe breaks to one normal swing.
   const baseHp = e.maxHp || e.hp || 30;
-  e.maxPosture = Math.max(10, Math.round(baseHp * 0.5 * mult));
+  e.maxPosture = Math.max(ENEMY_POSTURE_FLOOR, Math.round(baseHp * 0.5 * mult));
   e.posture = e.maxPosture;
   e.lastHitAt = 0;
 }
