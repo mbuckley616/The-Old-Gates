@@ -14163,3 +14163,14 @@ Two tests followed the rule. `blacksail` stood a metre off the pirate's turned d
 
 ### Needs eyes
 The climb has no pose: you glide up the net in 0.8 s (H). From a quay 4.5 off, the climb crosses the gap through the air. The stand-in net is a plain grid of ropes. Corwin's tutorial lines still say *E beside her to board* (`88-world-ticks.js`), and the shipwright's sale says *press E beside her to board*: the quest writer's text, now out of step with the rule. I have left both alone.
+
+## v80 — Session 639 — The hold goes down with her (backlog J, Michael's B on DECISION #192, the shared ground)
+Michael's 6 Oct note on supplies: *a menu to buy trading goods up to the ship's capacity, placed on the ship, all lost if the ship is destroyed.* The page takes that last clause under every option, reversing Session 413, where the hold came up with a raised ship. This session is that clause alone. The factor's panel and the crates seen on deck come later; the stowage is the look builder's.
+
+`shipSink` (`86-world-crime.js`) now empties `worldState.ship.hold` as she goes down, horse and all, and the log says how much went with her (*The Test Gull sank with 3 crates in her hold.*; with an empty hold it says *sank.* as before). A raised ship comes up empty. Nothing else about the wreck changes: the raise is 30% of her worth and tiers, three days, at the shipwright's quay. The pirates' take (Session 399) is unchanged; it happens on a deck you flee, not at a sinking.
+
+### Verified (headless Chromium)
+`shipwreck` updated and passing. A sloop carrying two crates of grain and a horse, waterlogged and then one more point of storm wear: she goes down, the hold reads `{}`, and the log reads *The Test Gull sank with 3 crates in her hold.* A reload does not raise her. Raised at the port three days later she is sound, 100 / 100, with the same name and an empty hold. The raise sums are unchanged (255; a full galleon 1,650). Neighbours pass: shipwrightvoice, compactrefit and piratehold. `parsecheck` clean.
+
+### Needs eyes
+Nothing in play beyond the sinking itself. Until the factor's panel and the stowage show the crates, a player is told of the loss only by the log line.
