@@ -1,0 +1,363 @@
+{
+ "kit": {
+  "weapon": "Iron Mace of Flames",
+  "atk": [
+   12,
+   15
+  ],
+  "level": 6,
+  "might": 5
+ },
+ "jobs": [
+  {
+   "kind": "deliver",
+   "title": "A letter for Elder Lorcan",
+   "giver": "Mayor Niamh"
+  },
+  {
+   "kind": "road",
+   "title": "The road out of Dunmore",
+   "giver": "Mayor Niamh"
+  },
+  {
+   "kind": "retrieve",
+   "title": "The reeve's seal",
+   "giver": "Mayor Niamh"
+  },
+  {
+   "kind": "cull",
+   "title": "Wolves at Dunmore",
+   "giver": "Mayor Niamh"
+  }
+ ],
+ "town": {
+  "markers": [
+   {
+    "x": 13100,
+    "z": 25450,
+    "d": 452,
+    "glyph": "⌂",
+    "col": "#66dd66",
+    "label": "Lorcan"
+   },
+   {
+    "x": 13525.64151979858,
+    "z": 25099.946540016786,
+    "d": 305,
+    "glyph": "⛺",
+    "col": "#66dd66",
+    "label": "the camp"
+   },
+   {
+    "x": 13292.890121533726,
+    "z": 24824.54379551566,
+    "d": 634,
+    "glyph": "◆",
+    "col": "#66dd66",
+    "label": "the reeve's seal"
+   },
+   {
+    "x": 13550,
+    "z": 25400,
+    "d": 4,
+    "glyph": "☠",
+    "col": "#66dd66",
+    "label": "Wolves"
+   }
+  ],
+  "places": [],
+  "hp": [
+   94,
+   130
+  ],
+  "mana": [
+   56,
+   100
+  ],
+  "st": [
+   95,
+   115
+  ],
+  "level": 6,
+  "xp": 682,
+  "xpNext": 1100,
+  "gold": 0,
+  "px": 13550,
+  "pz": 25404,
+  "yawDeg": 0,
+  "weapon": "Iron Mace of Flames",
+  "belt": "⚔️ Wooden GreatClub",
+  "ob": "Press E near a villager to talk · Press E near a door or cave to enter",
+  "compass": {
+   "w": 200,
+   "h": 38
+  },
+  "time": "Hearthday, the 1st of Reaping, in the 27th year of the Peace · 2:00 pm"
+ },
+ "fight": [
+  {
+   "name": "Bandit",
+   "hp": 44,
+   "maxHp": 44,
+   "def": 2,
+   "resist": {}
+  },
+  {
+   "name": "Skeleton",
+   "hp": 46,
+   "maxHp": 46,
+   "def": 2,
+   "resist": {
+    "pierce": 0.5,
+    "blunt": 1.4
+   }
+  }
+ ],
+ "hits": {
+  "weapon": "Iron Mace of Flames",
+  "wType": "blunt",
+  "raw": 23,
+  "atk": [
+   12,
+   15
+  ],
+  "bandit": {
+   "dmg": 21,
+   "resistMult": 1,
+   "wType": "blunt",
+   "crit": false,
+   "lucky": false,
+   "backstab": false,
+   "riposte": false,
+   "finisher": false
+  },
+  "skeleton": {
+   "dmg": 30,
+   "resistMult": 1.4,
+   "wType": "blunt",
+   "crit": false,
+   "lucky": false,
+   "backstab": false,
+   "riposte": false,
+   "finisher": false
+  },
+  "backstab": {
+   "dmg": 33,
+   "resistMult": 1,
+   "wType": "blunt",
+   "crit": false,
+   "lucky": false,
+   "backstab": true,
+   "riposte": false,
+   "finisher": false
+  },
+  "crit": 33,
+  "critMult": 1.5,
+  "resisted": 10,
+  "pierceMult": 0.5,
+  "tagWeak": " (Weak!)",
+  "tagRes": " (Heavily resisted)",
+  "riders": {
+   "fire": {
+    "extra": 5,
+    "msg": "🔥 Fire"
+   },
+   "frost": {
+    "extra": 4,
+    "msg": "❄ Frost"
+   },
+   "shock": {
+    "extra": 4,
+    "msg": "⚡ Shock"
+   },
+   "absorb_hp": {
+    "extra": 0,
+    "msg": "🩸 Drain"
+   },
+   "absorb_st": {
+    "extra": 0,
+    "msg": "💪 Fatigue"
+   },
+   "absorb_mp": {
+    "extra": 0,
+    "msg": "✦ Soul Tap"
+   }
+  }
+ },
+ "fightNow": {
+  "hp": [
+   53,
+   130
+  ],
+  "st": [
+   28,
+   115
+  ],
+  "foes": [
+   {
+    "name": "Bandit",
+    "hp": 44
+   },
+   {
+    "name": "Skeleton",
+    "hp": 46
+   }
+  ],
+  "lines": [
+   {
+    "f": "showMsg",
+    "t": "Hit Skeleton for 30! (Weak!)",
+    "c": "#ff9944",
+    "s": 26.94
+   },
+   {
+    "f": "showMsg",
+    "t": "Swing!",
+    "c": "#888",
+    "s": 45.22
+   }
+  ]
+ },
+ "near": {
+  "towns": [
+   {
+    "name": "Dunmore",
+    "kind": "town",
+    "d": 4,
+    "b": 0
+   },
+   {
+    "name": "Cill Beag",
+    "kind": "village",
+    "d": 317,
+    "b": 219
+   },
+   {
+    "name": "Droichead",
+    "kind": "village",
+    "d": 363,
+    "b": 304
+   },
+   {
+    "name": "La Grise",
+    "kind": "village",
+    "d": 407,
+    "b": 331
+   },
+   {
+    "name": "Portclare",
+    "kind": "port",
+    "d": 429,
+    "b": 69
+   },
+   {
+    "name": "Foothill Track Bridge",
+    "kind": "bridge",
+    "d": 445,
+    "b": 312
+   },
+   {
+    "name": "Hermit's Camp",
+    "kind": "camp",
+    "d": 451,
+    "b": 26
+   },
+   {
+    "name": "Hearthwick",
+    "kind": "village",
+    "d": 452,
+    "b": 264
+   },
+   {
+    "name": "Colmán's Rest",
+    "kind": "village",
+    "d": 571,
+    "b": 286
+   },
+   {
+    "name": "Vieux Marché",
+    "kind": "town",
+    "d": 606,
+    "b": 355
+   }
+  ],
+  "npcs": [
+   {
+    "name": "Maeve",
+    "role": "Smith",
+    "d": null
+   },
+   {
+    "name": "Órla",
+    "role": "Apothecary",
+    "d": null
+   },
+   {
+    "name": "Eoin",
+    "role": "Merchant",
+    "d": null
+   },
+   {
+    "name": "Róisín",
+    "role": "Innkeeper",
+    "d": null
+   },
+   {
+    "name": "Sinéad",
+    "role": "Elder",
+    "d": null
+   },
+   {
+    "name": "Eilís",
+    "role": "Guard",
+    "d": null
+   },
+   {
+    "name": "Aoife",
+    "role": "Villager",
+    "d": null
+   },
+   {
+    "name": "Oisín",
+    "role": "Villager",
+    "d": null
+   },
+   {
+    "name": "Lonán",
+    "role": "Villager",
+    "d": null
+   },
+   {
+    "name": "Pádraig",
+    "role": "Guard",
+    "d": null
+   },
+   {
+    "name": "Aoife",
+    "role": "Smith",
+    "d": null
+   },
+   {
+    "name": "Donnacha",
+    "role": "Apothecary",
+    "d": null
+   }
+  ],
+  "yawDeg": 0
+ },
+ "proj": {
+  "plate-fight:yaw": 0,
+  "plate-fight": [
+   {
+    "name": "Bandit",
+    "x": 504,
+    "y": 297
+   },
+   {
+    "name": "Skeleton",
+    "x": 749,
+    "y": 308
+   }
+  ]
+ }
+}
