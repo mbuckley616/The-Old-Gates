@@ -7,6 +7,9 @@
 // Session 657 (the rough edge Session 598 left): the helix's walk rail stopped the player at .97 from the newel and the stanchions
 // stand at .95, so on a tread's outer lip you walked through one. The rail now stops at the foothold's own `rwalk` (.86), inboard
 // of every post, and the player is driven outward up the helix to prove it.
+// Session 661 (what Session 657 left): the two end posts, at the landing and on the last tread, stand within .25 of a floor, where
+// that rail lets go of you. The stair publishes them on its foothold and the loop keeps the body .25 from each at its own height;
+// the player is stood on each post from eight sides, and at the post's angle on the inner tread, which must stay walkable.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -32,7 +35,18 @@ for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
       if (Math.abs(jumpY - y) > .3 || bd > 1.4) continue;
       n++; walkMax = Math.max(walkMax, bd); stood = Math.min(stood, bd);
       clear = Math.min(clear, Math.hypot(bx - x, bz - z)); }
-    return { seed, a0: +f.a0.toFixed(2), n: R.stanchions.length, min: +Math.min(...rd).toFixed(3), max: +Math.max(...rd).toFixed(3), gap: +worst.toFixed(3), ends: R.stanchions.filter(s => s[3]).length,
+    // the end posts: stand on each at its floor's height from eight sides (and dead on it), two frames, measure the clearance
+    let endClear = 9, endN = 0, inner = 0;
+    for (const q of (f.posts || [])) for (let k = 0; k <= 8; k++) { const a = k * Math.PI / 4, off = k === 8 ? 0 : .08;
+      jumpY = q[1]; onGround = true; velY = 0; px = q[0] + Math.cos(a) * off; pz = q[2] + Math.sin(a) * off;
+      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+      endN++; endClear = Math.min(endClear, Math.hypot(px - q[0], pz - q[2])); }
+    // the way past it stays open: at the post's own angle, .6 from the newel (on the tread, inside the rail), nothing moves you
+    for (const q of (f.posts || [])) { const ang = Math.atan2(q[2] - f.cz, q[0] - f.cx), sx = f.cx + Math.cos(ang) * .6, sz = f.cz + Math.sin(ang) * .6;
+      jumpY = q[1]; onGround = true; velY = 0; px = sx; pz = sz;
+      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+      inner = Math.max(inner, Math.hypot(px - sx, pz - sz)); }
+    return { seed, a0: +f.a0.toFixed(2), n: R.stanchions.length, posts: (f.posts || []).length, endN, endClear: +endClear.toFixed(3), inner: +inner.toFixed(3), min: +Math.min(...rd).toFixed(3), max: +Math.max(...rd).toFixed(3), gap: +worst.toFixed(3), ends: R.stanchions.filter(s => s[3]).length,
       rwalk: f.rwalk, held: n, walkMax: +walkMax.toFixed(3), stood: +stood.toFixed(3), clear: +clear.toFixed(3) }; }, seed);
   console.log(JSON.stringify(r)); rows.push(r);
 }
@@ -45,5 +59,8 @@ check('the walk rail stops the player inboard of the stanchion line (at the foot
 check('a tread is still wide enough to stand on (the rail holds you between .32 and .86, not against the newel)', S.every(r => r.stood >= .32), S.map(r => r.stood));
 check('the rail holds the player at the dozen posts along the run', S.every(r => r.held >= 12), S.map(r => r.held));
 check('standing at a post\u2019s own angle, the body clears it in plan by 0.05 or more (it stood 0.02 inside one before)', S.every(r => r.clear >= .05), S.map(r => r.clear));
+check('the stair publishes its two end posts, one at each floor', S.every(r => r.posts === 2), S.map(r => r.posts));
+check('stood on an end post from any side at its floor\u2019s height, the body ends .24 or more from it (it stood on it before)', S.every(r => r.endN === 18 && r.endClear >= .24), S.map(r => [r.endN, r.endClear]));
+check('at an end post\u2019s angle, on the tread .6 from the newel, nothing pushes you (the way past it is open)', S.every(r => r.inner <= .02), S.map(r => r.inner));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

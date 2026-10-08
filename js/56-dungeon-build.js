@@ -1068,7 +1068,7 @@ function buildDungeon(portal){
       const lx0=cx+Math.min(0,open.dx)*1.1-(open.dx===0?1.1:0),lx1=cx+Math.max(0,open.dx)*1.1+(open.dx===0?1.1:0),lz0=cz+Math.min(0,open.dz)*1.1-(open.dz===0?1.1:0),lz1=cz+Math.max(0,open.dz)*1.1+(open.dz===0?1.1:0);
       FOOTHOLDS.push({x0:Math.min(lx0,lx1),x1:Math.max(lx0,lx1),z0:Math.min(lz0,lz1),z1:Math.max(lz0,lz1),y:Math.max(0,Y)});
       parts.push([SK.rbox(open.dx===0?2.2:1.1,.14,open.dz===0?2.2:1.1,.025,2),shade(stone,.1),at(cx+open.dx*.55,Math.max(0,Y)-.07,cz+open.dz*.55)]);}
-    const RR=.95,RH=.85,rail=[];
+    const RR=.95,RH=.85,rail=[],ends=[];
     for(let i=0;i<=N;i++){const t=i/N,ang=a0+t*turns*Math.PI*2,y=t*Y;
       // the tread: an annular wedge from the newel (.2) to the wall (1.0), .2 thick, a small bevel at the nosing
       const sh=new THREE.Shape(),r0=.2,r1=1.0,h=span*.56;sh.moveTo(r0*Math.cos(-h),r0*Math.sin(-h));sh.absarc(0,0,r1,-h,h,false);sh.lineTo(r0*Math.cos(h),r0*Math.sin(h));sh.absarc(0,0,r0,h,-h,true);
@@ -1079,6 +1079,7 @@ function buildDungeon(portal){
       // an iron stanchion on every other tread, from the tread to the rope, and a stouter post at each end
       if(i%2===0){const end=i===0||i===N,w=end?.05:.026,hh=RH+(end?.12:.03);parts.push([new THREE.BoxGeometry(w,hh,w),new THREE.Color(0x2a2826),at(cx+Math.cos(ang)*RR,y+hh/2,cz+Math.sin(ang)*RR,-ang)]);
         if(end)parts.push([new THREE.SphereGeometry(.045,8,6),new THREE.Color(0x2a2826),at(cx+Math.cos(ang)*RR,y+hh,cz+Math.sin(ang)*RR)]);
+        if(end)ends.push([+(cx+Math.cos(ang)*RR).toFixed(3),+y.toFixed(3),+(cz+Math.sin(ang)*RR).toFixed(3)]);
         rail.push([+(Math.cos(ang)*RR).toFixed(3),+(y+hh).toFixed(3),+(Math.sin(ang)*RR).toFixed(3),end?1:0]);}}
     parts.push([new THREE.CylinderGeometry(.24,.21,.1,12),shade(stone,.06),at(cx,Math.max(0,Y)+.05,cz)]);
     // the rope: along the stanchions' tops
@@ -1096,7 +1097,9 @@ function buildDungeon(portal){
     const gl2=new THREE.PointLight(0xffb060,1.2,5);gl2.position.set(cx,Y+1.2,cz);dScene.add(gl2);
     // S657 — the walk rail stops inboard of the stanchions (it stopped at r1−.08=.97, the posts stand at .95, so you walked
     // through one). The treads still carry you to r1; you simply cannot stand on their outer lip, where the rail is.
-    FOOTHOLDS.push({kind:'spiral',cx,cz,r0:.22,r1:1.05,rwalk:+(RR-.09).toFixed(3),y0:0,y1:Y,turns,a0});
+    // S661 — the two end posts (the landing's and the last tread's) stand where the rail lets go of you, within .25 of a floor:
+    // they ride on the foothold as `posts` ([x, base y, z]), and the loop keeps the body `postR` from each at its own height.
+    FOOTHOLDS.push({kind:'spiral',cx,cz,r0:.22,r1:1.05,rwalk:+(RR-.09).toFixed(3),y0:0,y1:Y,turns,a0,posts:ends,postR:.25});
     DUNGEON_STAIRWELL=true;
   }
   // S599 — the straight flight of the hall and undercroft (#177 A; makeFortHall): three cells wide, from the hall's floor
