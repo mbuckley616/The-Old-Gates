@@ -35,7 +35,11 @@ const meet = async (getter) => { const ok = await page.evaluate((src) => { const
     const dx = Math.sin(n.g.rotation.y), dz = Math.cos(n.g.rotation.y); px = n.g.position.x + dx * 1.3; pz = n.g.position.z + dz * 1.3; jumpY = n.g.position.y; yaw = Math.atan2(dx, dz); pitch = 0;
     try { if (dlgOpen) closeDialog(); } catch (e) {} return true; }, getter);
   if (!ok) return null; await g.frames(2);
-  await page.evaluate(() => { const n = window._n; const dx = Math.sin(n.g.rotation.y), dz = Math.cos(n.g.rotation.y); px = n.g.position.x + dx * 1.3; pz = n.g.position.z + dz * 1.3; yaw = Math.atan2(dx, dz); });
+  // the stand is taken again as the key goes down (a capture listener runs before the game's own), and any townsperson within 3 units
+  // of it is set 6 units off: on a slow runner a frame passes between an evaluate and the key, and a passer-by (Osric) took the E (S647, as S483/S501)
+  await page.evaluate(() => { const pin = () => { const n = window._n; const dx = Math.sin(n.g.rotation.y), dz = Math.cos(n.g.rotation.y); px = n.g.position.x + dx * 1.3; pz = n.g.position.z + dz * 1.3; yaw = Math.atan2(dx, dz);
+      for (const S of WORLD.settle.values()) for (const m of (S.npcs || [])) { if (m === n || !m.g) continue; const ex = m.g.position.x - px, ez = m.g.position.z - pz, d = Math.hypot(ex, ez); if (d < 3) { const k = 6 / Math.max(d, .01); m.g.position.x = px + (d > .01 ? ex : 1) * k; m.g.position.z = pz + (d > .01 ? ez : 0) * k; } } };
+    pin(); window.addEventListener('keydown', pin, { capture: true, once: true }); });
   await page.keyboard.press('e'); await g.frames(2);
   return page.evaluate(() => ({ open: !!dlgOpen, name: (document.getElementById('dlg-name') || {}).textContent, role: (document.getElementById('dlg-role') || {}).textContent, greet: (document.getElementById('dlg-text') || {}).textContent, labels: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, '')) })); };
 

@@ -11,18 +11,22 @@ const where = await page.evaluate(() => { playerName = 'Wren'; gold = 321; level
 
 // a slot, by the menu
 await page.evaluate(() => openSLMenu('save', false)); await W(400);
-const first = await clickRow(0); await W(1200);
+const first = await clickRow(0);
+await page.waitForFunction(() => document.getElementById('slmenu').style.display === 'none' && SS.idx.some(e => e.kind === 'manual' && e.slot === 0), null, { timeout: 30000 }).catch(() => {});
 const s1 = await page.evaluate(() => ({ open: document.getElementById('slmenu').style.display, slot: SS.idx.filter(e => e.kind === 'manual').map(e => e.slot + ':' + e.gold) }));
 check('the menu saves to an empty slot and closes', first === '— Empty —' && s1.open === 'none' && s1.slot.includes('0:321'), { first, s1 });
 
 // an overwrite, by the menu: the first click asks, the second writes
 await page.evaluate(() => { gold = 654; openSLMenu('save', false); }); await W(400);
 const ask = await clickRow(0); await W(600); const still = await page.evaluate(() => SS.idx.find(e => e.kind === 'manual' && e.slot === 0).gold);
-await clickRow(0); await W(1200); const now = await page.evaluate(() => SS.idx.find(e => e.kind === 'manual' && e.slot === 0).gold);
+await clickRow(0);
+await page.waitForFunction(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold === 654, null, { timeout: 30000 }).catch(() => {});
+const now = await page.evaluate(() => SS.idx.find(e => e.kind === 'manual' && e.slot === 0).gold);
 check('an overwrite asks once, then writes', ask === 'Click again to overwrite' && still === 321 && now === 654, { ask, still, now });
 
 // an autosave, the way the game makes one
-await page.evaluate(() => { gold = 700; SS.lastAuto = 0; saveGame(true); }); await W(1200);
+await page.evaluate(() => { gold = 700; SS.lastAuto = 0; saveGame(true); });
+await page.waitForFunction(() => SS.idx.some(e => e.kind === 'auto' && e.gold === 700), null, { timeout: 30000 }).catch(() => {});
 const autos = await page.evaluate(() => SS.idx.filter(e => e.kind === 'auto').map(e => e.gold));
 check('an autosave is written', autos.includes(700), autos);
 

@@ -16,6 +16,29 @@ Recommendation: **B.** It is Oblivion's and Skyrim's Esc. The challenge is your 
 
 Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/compare-esc.png) · [A, the leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-pause.png) · [A, settings](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-settings.png) · [B, settings with the challenge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/b-settings.png) · [quit asks once](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-quit.png) · [the keys](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-keys.png) · [C, the eighth tab](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/c-hub.png)
 
+### The cutter's and the caravel's own hulls (the look builder, Session 643, 2026-10-08) — DECISION #202
+
+**The question.** Michael's B on #192 added two hulls, the Mark's cutter and Aurenne's caravel (Session 636, on auto/systems). Until now the cutter is drawn on the sloop's hull and the caravel on the cog's, so in the yard's *Browse ships* panel and at sea they look like the ships they replace. Should they look like this?
+
+- **The cutter** (the fast one, thin-skinned, small hold): a deep, narrow, low hull with a near-plumb stem, tarred black above a gilt line; one tall mast stepped well forward with a topmast, a big gaff mainsail with a gaff topsail over it, a staysail to the stem and a jib out on a long bowsprit. 14 × 4.0 (the sloop's 13 × 4.4). 4,857 triangles (the sloop 4,525).
+- **The caravel**: three lateen masts raked forward, the main tallest, each long yard low forward and high aft (they swing to leeward with the wind like the gaffs); a square stern under a high sterncastle of three rails with blue and gold boards; no forecastle; Aurenne's blue band and gold wale. 17.5 × 5.0 (the cog's 17 × 5.6). 6,082 triangles (the cog 5,366).
+
+The deck you walk stays flat, the wheel and hatch where they are, the nets amidships as now (still the systems builder's stand-in; the real nets are a separate look session). A pirate or merchant flying either hull takes its own paint.
+
+**Options**
+- **A. Both as shown** *(recommended)*: each reads at a glance as its nation's ship and as a different trade: the cutter all sail on a small hull, the caravel the lateen silhouette no other ship in the game has.
+- **B. As shown, but the caravel square-rigged on the foremast** (a *caravela redonda*: one square sail forward, two lateens aft), nearer the cog's family, faster-looking downwind.
+- **C. Keep today's hulls, repainted only** (the sloop black with a gilt line, the cog in Aurenne's blue): no new silhouettes, nothing for the yard's stage to show.
+- **D. Other.**
+
+**What it touches.** The bakes are the look builder's (`shipBake` in `85-world-sea.js`). Two small lines are the systems builder's: `SHIP_CLASSES` takes each hull's own length and beam, and `applyShipClass` passes the class's name to `buildShipMesh` (today it picks the bake by length, so a 17.5 caravel would come out a cog).
+
+**Pictures** (the mesh inspector, noon; the prototype is on `auto/proto-ship-hulls`):
+- Today, broadside: [sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-sloop-side.png) · [cog](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cog-side.png)
+- Proposed, broadside: [cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter-side.png) · [caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-side.png)
+- From above: [cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter.png) · [caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel.png) · [the caravel's sterncastle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-stern.png)
+- Other paints: [a pirate cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter-pirate.png) · [a merchant caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-merchant.png)
+
 ## Answered
 
 ### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198
