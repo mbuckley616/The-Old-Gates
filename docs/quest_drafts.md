@@ -1887,3 +1887,188 @@ Log (given): *Gave the Shuttle to the Church at ${seat}.*
 - *The Cold: a pressure, the sense of being regarded* (§3.3): the Shuttle's one line is about the hands only. Nothing in the draft says *window*.
 - *Slurs about work, land and gods, never bodies* (§2.1): none used.
 - *Silent, and chosen plainly:* the bell hangs where the ship that carried it went down; the ring does nothing at night; the lamp has always been at some inn; the Church keeps the Shuttle *under seal in the cathedral* (not the Guest's chapel, which is under the same cathedral and is Michael's).
+
+---
+
+## The Root — the rooms beneath all the gates
+
+*Unapproved.* Backlog A: *The Root's cavern wants authored rooms (a set piece at the root itself), not only the* deep *generator.* Today the Root (seed 9001, `build()` in `87-world-quests.js`) is a large `deep` cavern from the generator, with a renamed Ogre as its master and a hoard of gold and a sword. When the master dies, Varek appears outside, at the mouth (`onLeavePortal`, `tickRoot`, `88-world-ticks.js`). This draft keeps the generator for the first floor, the way down, and makes the lowest floor six authored rooms in a line: the place where the loom was made, the count it kept, what the count was of, the day the makers stopped, and the glass. Varek stands in the last room and not at the mouth. His question reads the player's real pause. The guard is DECISION #214. The draft writes it for A and marks the lines that depend on it.
+
+### What the canon fixes, and where it is silent
+
+- *The root beneath all the gates, on Aurenne's far side under deep water, reached by ship and Water Breathing, the first instanced lair. Discovery 5. The final beat* (§8.3). *The place beneath all the dungeons where the original binding was made* (Part I, Act III).
+- *The Fíodóirí, the Weavers: a small endogamous priesthood of makers who strung the loom about fifteen centuries ago. They built a gate in every province. They ruled nobody* (§3.1). *An Fíodóir … a shuttle* is the Weaver's icon (§4.1). So the makers' mark in the stone is a shuttle.
+- *The Clearing.* Every sigil is carved over a grave; the sigils are where the departed are burned out of reality, *unmade* (§3.1). This draft never states it. The Count shows that something was being counted, gate by gate. The biers show shrouds that hold a shape and nothing else. The player puts the two together, or does not.
+- *The Withdrawal. When the loom was finished it worked; the makers saw what it did to the dead, and something looked through the window they had made. They broke their own order the same year … forbade the reading of sigils (touching is permitted; understanding is not)* (§3.1). So the last room before the glass is the day the work stopped, tidily, and over its door is the law. The law's words are this draft's: *Lámh, ní léamh*, a hand, not a reading. *Lámh* and *léamh* rhyme in the old tongue.
+- *The tattoos are cultural: given at coming-of-age to children who show the marks, by elders who no longer remember why the script is the script* (§3.1). Read here: the law is what the elders say when they give the marks, and nobody knows why. **Canon silent; the plainer choice** would be to say nothing of it. Marked for Michael.
+- *Discovery 5, the window: the player is not in the world; the world is turned toward them; the binding is glass and he has stood on the wrong side of it for 250 years. "When you look at me — what is between us?" He never hears the answer; he reads it in how long the player takes to reply* (§6). The build asks the question, offers only *…*, and gives one reply whatever the pause. Here the reply is chosen by the real time the player took, read from the clock (the dropped-frame rule), in three bands.
+- *The final beat* (§6, the first candidate) is already in the build: *Two hundred and fifty years. Every death written down. And I was the whole of your evening.* It stays as written and closes each band.
+- *Dragons do not hoard by choice* (§5); a hoard at the root of the world reads as a dungeon's habit, not this place's. The draft gives no hoard.
+- *Silent:* what the rooms look like, what is in them, what guards them, what touching the root does. The plainer choices: stone and bronze, benches and biers, nothing gilded; the guard is #214; touching the root lets you feel every gate and nothing more. There is no boon, as there is none at the Guest's chapel. The four seconds of black belong to the chapel alone (§4.2: *the one thing the game is otherwise never allowed to do*), so the Root never uses them.
+
+### The shape
+
+- **Giver.** The Act III quest, *What Was Bound* (`act3_root`, Varek at the Ashfeld), as built. Its objective changes from *Reach the Root and kill what guards it* to *Go down to the Root*.
+- **Steps.** (1) Reach the islet and go in, as built. (2) Go down through the first floor, the generator's `deep` cavern, as built. (3) The lowest floor: the Stair's Foot, the Workroom, the Count, the Biers, the Last Bench (the guard), the Root. The rooms are in a line, and each opens only into the next. (4) The guard dies (`S.rootCleared`, as built). (5) Varek is at the glass. (6) The ending, as built.
+- **States.** `worldState.story.rootSeen` = `{stair, work, count, biers, last, root}` (each room's first entry line, once). `story.rootTouched` (the glass). `story.rootCleared` (as built). `worldState.varek.rootPause` (the seconds the player took; `varek` is in `SS_CHAR_WS`, so it rides with the character, which is right: it is what Varek knows about *you*). `story.ending` (as built).
+- **Turn-in and reward.** None: the ending is the turn-in. No hoard. One misc item, the chisel (below), if #214 is A.
+- **What it changes.** After a *sealed* or *open* ending the game goes on, so the Root can be visited again. The glass room reads differently after each (below). An *unbound* ending ends the game, as built.
+
+### Approach — a rumour at Aurenne's eastern ports (`liveRumours`, while `story.step==='root'`)
+
+At the Aurennais sites nearest the Root, by the speaker's people (*speech follows the speaker*, §1.5):
+
+- *Aurennais:* "The rock off the far shore, Master? The charts mark it, and the Church's chart marks it twice, which I am given to understand means: not for fishing. My father's boats went round it at a cable's length all his life. Nothing nests on it. Not even the gulls, who are not otherwise particular."
+- *Markman:* "The black rock east. Nothing lands on it. Not gulls. Not us."
+- *Gatelander:* "There's a rock out east the birds go round. When the gulls won't sit on a thing, I'd not be the first to try it."
+- *Old Blood:* "*Fréamh.* The root. Not the rock."
+
+### The first floor (the generator's, as built)
+
+On reaching the stair down to the lowest floor (`showMsg`, once):
+> *The stair goes on down past where the sea should be, and the sea does not come in. You can hear it through the walls, close on every side, the whole weight of it held off.*
+
+### 1. The Stair's Foot — `rootSeen.stair`
+
+**On entry:**
+> *The stair ends in a short hall, cut square. Nothing grows here, not even the salt.*
+
+**Examine the walls** (*Press 'E' to look at the stonework*):
+> *The walls are cut, not worn. At the corner of every course there is a mark the size of a thumbnail, the way a mason marks his work: a shuttle. The same mark, course after course, all the way down.*
+
+### 2. The Workroom — `rootSeen.work`
+
+**On entry:**
+> *A long room with benches down both sides, and stools at them too low for you.*
+
+(For an Old Blood player, the stools are not too low: *A long room with benches down both sides, and low stools at them, the height you would have made them.*)
+
+**Examine a bench** (*Press 'E' to look at the bench*):
+> *Stone dust lies along the bench, gone hard where it fell. Bronze chisels, green through. Between them, flat stones the size of a door, laid in rows, each cut with a sigil. You know the shapes. You have put your hand on some of them, at the bottom of gates.*
+>
+> *There are more blank stones than cut ones.*
+
+An Old Blood player reads one more line after the first paragraph:
+> *The marks cut on the bench ends are the marks on your wrists.*
+
+### 3. The Count — `rootSeen.count`
+
+**On entry:**
+> *One wall is cut from the floor to as high as a hand can reach with short strokes in fives, row on row.*
+
+**Examine the wall** (*Press 'E' to look at the wall*):
+> *Over each row is a gate's mark. Some you know: the Shadows under Ashenmoor, the Crypt of Embers, the Vault of the Tide. Under each mark, strokes, more than you could count in a day. Low on the wall they are deep and even. Higher up they are quick and shallow, as if whoever cut them had stopped looking at what they cut. At the top they stop, in the middle of a five.*
+>
+> *Somebody down here was counting something, gate by gate, for a long time. Then they stopped.*
+
+**Examine the floor below the last row** (a second point; *Press 'E' to look closer*):
+> *The ceiling over the last row is black with lamp soot, newer than anything else down here. Under it the dust is wiped from the floor in a patch the size of a man sitting. Somebody has sat here often, with a lamp, and read the wall.*
+
+(It is Varek. Nobody says so. *He keeps a list*; the makers kept a count. The rhyme is the room's whole point, and it stays unspoken.)
+
+### 4. The Biers — `rootSeen.biers`
+
+**On entry:**
+> *Stone biers in two rows, and on each a shroud laid out the length of a body.*
+
+**Examine a bier**, the first time (*Press 'E' to look at the shroud*):
+> *The linen lies as it was laid, folded at the head, tied at the feet. It keeps the shape of someone small. It is flat. Nothing has been taken out of it: the knots are whole and the folds are dusty and unbroken. There is no one in it. There was, once.*
+
+If the Count has been examined, one more line:
+> *You think of the strokes on the wall in the room behind you.*
+
+The second bier: *This one too.* Any after: *All of them.*
+
+### 5. The Last Bench — `rootSeen.last`
+
+**On entry** (#214 A, the guard at work):
+> *Here the work stopped. Something is sitting at the last bench with its back to you, cutting.*
+
+(If #214 is B or C, the line is only *Here the work stopped.*)
+
+**Examine the bench** (once the guard is dead; *Press 'E' to look at the stone*):
+> *A stone on the bench with a sigil half cut into it, the chisel standing in the groove. Beside it the mallet, laid down, not dropped. On every bench in the room it is the same: tools set down square, stools pushed in. Whoever worked here finished nothing and left everything tidy.*
+
+**Examine the lintel over the far door** (*Press 'E' to look at the words over the door*). Which line you read depends on who you are:
+- *Old Blood player:*
+  > *Two words over the far door, cut deeper than anything else in the room. You know them the way you know your own wrists: Lámh, ní léamh. A hand, not a reading. It is what the old women say when they put the marks on a child, and nobody has ever said why.*
+- *Read at Mastery at least once* (`worldState.masteries>=1`):
+  > *Two words over the far door, cut deeper than anything else in the room: Lámh, ní léamh. Hand, not reading. In the old tongue the two words rhyme, which is how a thing is made to be remembered by people who will not be told why.*
+- *Anyone else:*
+  > *Two words over the far door, cut deeper than anything else in the room. You cannot read them. You have the feeling you are not meant to.*
+
+#### The guard (#214 A: *an Fíodóir Folamh*, the Empty Weaver; working name)
+
+The master is placed at the last bench, not drawn from the farthest foe (`lairFinish`, for seed 9001). Its health bar reads its name. The log lines follow the Faolchú's (*terse, observational, never melodramatic*); the icon is the builder's choice.
+- On sight: *It sets the chisel down, square, and stands.*
+- At two thirds: *The script along its wrists burns white.*
+- At one third: *Its seams open along the arms. Under the script is more script, and under that, nothing.*
+- **Optional, the systems builder's call:** below a third it sometimes turns back to the bench between blows, open to a hit, as if the work could still be finished. The log, the first time: *It turns back to the stone, as if there were still time.*
+- On death: *It comes apart along its seams and lies down flat, like the linen in the room behind you.*
+- Then (`showMsg`, replacing *The Root is quiet. Something is standing at its mouth.*):
+  > *The stone underfoot stops humming. Past the far door, someone is standing very still.*
+
+**The chisel** (on its body; no hoard):
+- *A Maker's Chisel*, misc, weight .3, no worth to a merchant (`buyPrice:0`), not sold.
+- *Bronze, green through. The handle is worn to the shape of a grip that is not yours.*
+
+### 6. The Root — `rootSeen.root`
+
+**On entry:**
+> *The floor runs out at an edge, and past the edge there is a black that is not water and not stone. It gives back no light. Not even yours.*
+
+**Prompt** at the edge: *Press 'E' to put your hand on it*
+
+**The first touch** (`story.rootTouched`):
+> *It is warm, the way a sigil is warm. Then it is every sigil at once: the stones under the Gatelands' fens, under the Mark's snow, under Aurenne's salt, near and far, all of them, as plain as your own teeth.*
+>
+> *And on the far side of it, close, something that is not a stone. It is looking where you are looking.*
+
+Log: *You put your hand on the Root.*
+
+**Every touch after:** *Warm. All of them. And the far side, still looking where you look.*
+
+**Rule read.** *Put your hand on it and you'll feel them all* (Varek's greeting, as built) is taken literally: the first touch marks every sigil gate on the three islands on the world map, as a rubbing marks one (§7). There is no other effect and no boon. If the systems builder would rather it marked nothing, only the log line stays.
+
+#### Varek, at the glass
+
+He is in this room once the guard is dead, standing at the edge, facing the black, not the door (`tickRoot` spawns him in the dungeon, not at the mouth). His greeting is as built:
+> "Here it is. The root of every gate. Put your hand on it and you'll feel them all — and you'll feel the other side. I've stood here a long time. When you look at me — what is between us?"
+
+The first row is *…*, alone, as built. His reply is chosen by the time between the greeting being shown and the row being chosen, read from `performance.now()` (the dropped-frame rule; a panel open or a tab away does not stop it). The seconds are kept in `worldState.varek.rootPause`. `${n}` is the pause in breaths, `Math.max(2, Math.round(seconds/4))`. Each band ends with the final beat, as built.
+
+- **Under 4 seconds:**
+  > "No time at all. You'd heard enough voices today to know how this one ends. Two hundred and fifty years. Every death written down. And I was the whole of your evening."
+- **4 seconds to 2 minutes:**
+  > "${n} breaths. I counted them. You weren't looking for a word. You were somewhere else, deciding whether I was worth one. Two hundred and fifty years. Every death written down. And I was the whole of your evening."
+- **Over 2 minutes, or the page was hidden between** (`document.hidden` seen while the greeting stood):
+  > "You went away. Your body stood here and you were gone, and the stones went quiet the way they do. You can leave. I never could. That's what's between us. Two hundred and fifty years. Every death written down. And I was the whole of your evening."
+
+The three ending rows and his answers to them are as built (*Break it. Let the world unbind.* / *Seal it. Close the window.* / *Leave it open. Knowing.*), and so is the ending screen.
+
+#### The Root afterwards (the game goes on after *sealed* and *open*)
+
+- *Sealed*, entering the room:
+  > *Where the black was there is stone, grey and cut flat, with a shuttle at its corner like every other course. It is cold.*
+
+  The prompt does not show. Varek is not here.
+- *Open*, entering the room:
+  > *The black is still there past the edge. You could feel it warm from the foot of the stair.*
+
+  The touch stays, with its *every touch after* line. Varek is not here; the canon puts him *at fields, at a distance*.
+
+### What in the code would carry it
+
+- **The floor.** For `portal.root` (seed 9001), the lowest floor is laid by hand instead of by `makeDungeon`: six rooms in a line, joined by single doorways, the stair from the floor above landing in the first. `furnBuild` and the room kits supply benches (the banquet table, lowered), stools, biers (the tutorial crypt's sarcophagus without its lid, a shroud mesh flat on it), the wall of strokes (a carved-face decal like the keystones'), and the black (an unlit plane with `depthWrite` and no reflection). How it is built is the look builder's call. The room list and what each must show are this draft's.
+- **The examine points.** One prompt and one `showMsg` each, like the Mouth's and the keystones'. Room entries fire once, keyed `9001:2:<room>` (the co-op rule on ids) into `story.rootSeen`.
+- **The guard.** `lairFinish` skips the farthest-foe pick for seed 9001 and places the master at the last bench, named by #214. With #214 A, the body is the people's rig at the Old Blood proportions, arms lengthened, the seams lit like the Faolchú's. No hoard; `CHESTS` gets nothing. The chisel goes on the corpse's loot.
+- **The order.** `onLeavePortal`'s cleared check becomes the guard's death. `tickRoot` spawns Varek inside the dungeon scene at the edge. Its `greeting` getter stamps `ROOTS.askedAt=performance.now()` and watches `visibilitychange` for the third band. The `…` row's `fn` picks the band.
+- **The map.** `story.rootTouched` stars every sigil gate (the rubbings' map mark, `worldState.rubbings`).
+- **The rumour.** `liveRumours` at Aurennais sites within one province of the Root while `story.step==='root'`.
+- **The quest's objective** in `finishAsh`: *Go down to the Root*.
+- **Saves.** Nothing new at the top of `worldState`: `story` is already read back (`_applyLoadData`) and is the world's; `varek` is already the character's.
+
+### Questions for Michael
+
+- **DECISION #214:** what guards the Root (a maker's shape, the uncleared, or the Ogre as built), and if the first, its name.
+- When promoting: whether the Withdrawal's law should be the words said at the marking of Old Blood children (canon silent; the draft says yes, in one Old Blood line).

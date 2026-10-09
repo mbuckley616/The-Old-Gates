@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214
+The draft *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`) makes the last cavern of Act III six authored rooms: the makers' workroom, the wall where they kept count, the empty shrouds, the bench where the work stopped, and the glass, where Varek stands. Today the Root's guard is a generated foe from the deep cavern renamed *The Root — Ogre*, beside a hoard of gold and a sword.
+- **A.** *(recommended)* **A maker's shape.** At the root there is no folklore for the binding to borrow, so it makes the one shape it remembers: its makers. Short, grey, arms a hand too long, script burning at the wrists, sitting at the last bench cutting the stone the makers left half-done. No hoard; a chisel. Working name *an Fíodóir Folamh*, the Empty Weaver. The risk: it looks like the Old Blood, and Varek, and an Old Blood player.
+- **B.** **The uncleared.** The dead pooled at the root since Varek's etching stopped the gates: a press of undead of all three peoples, with no single master. Canon-safe (§3.1), less of a set piece.
+- **C.** **As built.** The Ogre and the hoard.
+
+If A, the name too: *an Fíodóir Folamh*, or another. Only the guard's own lines depend on this; the rest of the draft stands either way.
+
 ### The pause menu on Esc — a leaf with settings, with a challenge setting, or a tab in the book? (the concept artist, 2026-10-08) — DECISION #208
 You asked on 6 Oct for a proper pause menu on Esc, with Save and Load and the settings (look speed, volume by kind, brightness), and maybe a difficulty slider as in the Elder Scrolls. Today Esc in play opens nothing: in a real browser it lets the pointer go and the world plays on. The *Paused · Click to resume* box written for that moment (v62.1) never shows, because the function that shows it, `reconcilePointerLock`, is declared inside `_enterGame` and the loop's `typeof` check never finds it. The only settings are one volume button with three steps (off, quiet, loud) and M for the spoken lines. The prototype (`docs/prototypes/pause/`, on auto/concept) uses the parchment kit and today's numbers on build s477.
 
