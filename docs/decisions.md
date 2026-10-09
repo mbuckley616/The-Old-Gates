@@ -4,6 +4,22 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The world map — sharp at every zoom, and your quests on it (the concept artist, 2026-10-09) — DECISION #220
+You asked on 5 Oct for quest markers on the overworld map, and said the map is very often blurry. The prototype (`docs/prototypes/worldmap/`, on auto/concept) is today's game (build s482) with the proposal loaded over its map, photographed as a laptop screen sees it.
+
+Why it blurs, measured: the canvas ignores the screen's pixel ratio, so on a laptop it is drawn at half resolution (1021×433 stretched to 2042×866). The sharp tile for a province is built 12 rows a frame, one tile at a time: 54 frames each, so the 15 provinces the map opens on finish 13.5 s after Tab, and until then each is a 48-pixel tile stretched across 240–810 screen pixels. Zoomed in, nothing gets finer: at ×3.4 one tile pixel covers 5 screen pixels on a laptop.
+
+Why the markers fail: the map keeps its own list, apart from the compass's. With four of Dunmore's jobs taken and one done, the compass shows four marks and the map three. The map has no mark for a job waiting to be reported, nor for directions, factions, the war, Corwin or Act I's givers. It shows no marks at all when the whole continent is in view, and a mark off the edge of the view is simply gone.
+
+All three options make the map sharp: drawn at the screen's own resolution, and finer tiles as you zoom (five levels, down to 75 units a tile). Each tile is built in the middle of the view first. Until it lands, the next coarser one stands in, never the 48-pixel one.
+- **A.** Sharp, and the compass's marks on the map *(recommended)*. Every quest mark shows at every zoom as a numbered wax seal: red, go there; gilt with a tick, report back; blue, directions. A mark beyond the view sits on the map's edge with an arrow and its distance. With nothing hovered, the side panel lists them under *Where your work is*, and a click centres the map on one.
+- **B.** Sharp, and the compass's marks as today's yellow stars, at every zoom. No numbers, no edge arrows, no list.
+- **C.** Sharp only. The marks stay as they are until the map is put on the parchment.
+
+Recommendation: **A.** Oblivion's map shows your active quest's mark wherever you look, and Skyrim's sits on the edge when it's off the view. With four jobs near Dunmore, numbered seals stay readable where four stars sit on top of one another.
+
+Screens: [opening, today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-settled.png) · [zoomed into Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-town.png) · [the continent](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-continent.png) · [A, close in, marks on the edge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-deep.png) · [A, whole screen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-town.png)
+
 ## Answered
 
 ### A guild task that can't be done — a way to hand it back? (the systems builder, Session 675, 2026-10-09) — DECISION #217
