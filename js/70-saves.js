@@ -717,7 +717,7 @@ function _applyLoadData(d,w){
   // v80 S242 — keys the save always carried (wS is the whole worldState) but the load never read back: the day count,
   // the crime record, the Church's notes, the war, the Reader. Absent from the save, they are cleared, so one
   // character's record never carries into another's.
-  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals','challenge'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
   journalLoad(d.wS&&d.wS.journal); // S486 — the journal is the character's; a save without one (older than S486) starts it empty
   try{ssSanitizeLoaded();}catch(e){console.warn('sanitize',e);}  // v80 S137
   // v61aw: tutorialDone migration. Saves predating v61aw never had this

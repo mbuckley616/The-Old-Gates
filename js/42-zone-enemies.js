@@ -1382,6 +1382,7 @@ function tickZoneBalls(dt,sc){
           showMsg(`🔥 Faolchú's fire hits you for ${finalDmg}!`,'#ff5522');
           sndPlayerHurt();
         }
+        finalDmg = challengeTaken(finalDmg); /* S684 — the challenge (her fire never went through _warded) */
         PHP = Math.max(0, PHP-finalDmg);
         hurtT = .4;
         lvAct.damageTaken += finalDmg;
@@ -1419,6 +1420,7 @@ function tickZoneBalls(dt,sc){
           let dmg = Math.max(1, Math.floor(arrowRawFor(fb.userData, e) * resistMult * _fortuneCrit(e)));
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
+          dmg = challengeDealt(dmg); /* S684 — the challenge */
           e.hp = Math.max(0, e.hp - dmg);
           e.alert = true;
           if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }

@@ -14729,3 +14729,27 @@ CI on `5cd715d` (Sessions 680–682) failed four shards, one suite each. Three a
 ### Needs eyes
 - The Browse-ships stage with the cutter and the caravel chosen: their own hulls should turn there now.
 - `thresholdname` on CI: if it is red again, its output names the zone, the loaded cells and the nearest place at the moment of the save.
+
+## v80 — Session 684 — The challenge's rule: five steps, damage only (Michael's B on DECISION #208)
+Michael chose B on #208: the pause leaf on Esc, plus a challenge setting of five steps, Novice to Master, as in Oblivion and Skyrim. The setting changes damage only. Your blows are ×2, 1.5, 1, .75 or .5 and the foes' are ×.5, .75, 1, 1.5 or 2, so at Expert your 22 on a Skeleton becomes 17. Adept is the game as it was. The setting is kept with the world, so in co-op the host's step rules. Foe levels, loot and gold stay as they are. The leaf and its settings sheet are interface work (backlog E) and have not been routed. This session builds the rule the sheet's control will set, which is the systems half and needs no screen.
+
+`10-player.js` defines `CHALLENGE_STEPS` (Novice, Apprentice, Adept, Expert, Master) and the two factor rows. `challengeStep()` reads `worldState.challenge` and gives 2 when the key is absent or out of range. `challengeDealt(d)` and `challengeTaken(d)` round the scaled damage and never go below 1. `setChallenge(n)` is the one way the step changes (the co-op rules' named action); it refuses anything outside 0–4, and Adept deletes the key, so a world that never touched the setting saves as before. The key is in the S242 list in `_applyLoadData` and not in `SS_CHAR_WS`, so it rides in the world row, and a save from before today loads at Adept.
+
+Where it applies:
+- Your blows, at the end of each damage function after resist and armour. That is `applyMeleeDamage` (every melee hit, in the open world and below it) and `applySpellDamage` (every spell). Arrows apply it at their two sites (`42-zone-enemies.js` and `90-main.js`), after armour and the dormant bonus.
+- The foes' blows, at the end of `_warded` (`50-travel.js`), the one function every foe's damage on you already passes through. That covers melee strikes and slams, arrows from the land and from ships, magic bolts and drains, the dragon's breath and the sea's creatures. The Faolchú's fire never went through `_warded`, so it takes `challengeTaken` directly.
+- Traps are not foes. The spike and the swinging blade pass `TRAP_SRC` and are not scaled. Falling and drowning were never foes' blows and are untouched.
+
+### Verified (headless Chromium)
+`challenge` 12/12 (new), through the game's own functions with the dice held still (no lucky crit, no backstab, the spell's spread at its middle):
+- A sword's 22 on a Skeleton reads 44 / 33 / 22 / 17 / 11 across the five steps. A Fire Bolt reads 40 / 30 / 20 / 15 / 10.
+- A Bandit's 20 through `executeStrike` reads 10 / 15 / 20 / 30 / 40, and so does `_warded(20)`. A spike trap's 20 is 20 at every step.
+- A new world is Adept and keeps no key.
+- At Expert the world row carries `challenge: 3` and the character row has none. Loaded back, it is Expert. A save without the key loads at Adept.
+- `setChallenge` refuses 7, −1 and a word.
+
+Neighbours green: `coopsaves`, `counters`, `herbhidden`, `faolchu`, `hitseed`, `slamdamage`, `trapseed`, `wardall`, `wardswift`. `parsecheck` clean.
+
+### Needs eyes
+- Nothing to see until the leaf is built: the step can be set only from the console (`setChallenge(3)`).
+- Whether Novice's ×2 makes the early fights trivial and Master's ×2 makes a Wolf pack lethal at level 1 is a feel question for when the slider exists.

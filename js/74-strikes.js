@@ -23,7 +23,7 @@ function applySpellDamage(e, sp, tier){
   // Smól Mastery — The Quiet-Sent-Out: ignores armor entirely. Resist still applies.
   const defPierced = (sp.id==='smol' && tier===3);
   const effDef = defPierced ? 0 : (e.def || 0);
-  const dmg = Math.max(1, Math.round(afterMults) - effDef);
+  const dmg = challengeDealt(Math.max(1, Math.round(afterMults) - effDef)); /* S684 — the challenge */
   return {dmg, resistMult, defPierced};
 }
 
@@ -52,7 +52,7 @@ function applyMeleeDamage(e, rawDmg){
   // applyBackstab for the trigger rules and exclusion list.
   const backstabMult = applyBackstab(e);
   const luckMult = _fortuneCrit(e);
-  const dmg = Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef);
+  const dmg = challengeDealt(Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef)); /* S684 — the challenge */
   return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0 || luckMult > 1.0, lucky: luckMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
 }
 

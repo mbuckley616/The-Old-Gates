@@ -1116,6 +1116,7 @@ function loop(now){
             if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
             // Dormant Gargoyle bonus (matches melee path: dormant enemies take 2×).
             if(e.dormant) dmg = Math.floor(dmg * 2);
+            dmg = challengeDealt(dmg); /* S684 — the challenge */
             e.hp = Math.max(0, e.hp - dmg);
             if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
             e.alert = true;

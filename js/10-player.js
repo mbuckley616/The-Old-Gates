@@ -1104,6 +1104,16 @@ function _stickArrowToEnemy(arrow, body, scene){
 // and Intelligence (spells) all read this.
 const ATTR_DMG_PER_POINT = 0.01;
 const BOW_FINESSE_DMG = ATTR_DMG_PER_POINT;
+// S684 — the challenge (Michael's B on DECISION #208, Oblivion's and Skyrim's slider): five steps, Novice to Master, that change
+// damage only. Your blows ×2, 1.5, 1, .75, .5 and the foes' ×.5, .75, 1, 1.5, 2; Adept (2) is the game as it was. The step is the
+// world's (`worldState.challenge`, the world row), so in co-op the host's rules. A trap is not a foe and is not scaled.
+const CHALLENGE_STEPS = ['Novice','Apprentice','Adept','Expert','Master'];
+const CHALLENGE_DEALT = [2, 1.5, 1, .75, .5], CHALLENGE_TAKEN = [.5, .75, 1, 1.5, 2];
+function challengeStep(){const n=typeof worldState!=='undefined'&&worldState?worldState.challenge:undefined;return Number.isInteger(n)&&n>=0&&n<=4?n:2;}
+function challengeDealt(d){const m=CHALLENGE_DEALT[challengeStep()];return m===1||!(d>0)?d:Math.max(1,Math.round(d*m));}
+function challengeTaken(d){const m=CHALLENGE_TAKEN[challengeStep()];return m===1||!(d>0)?d:Math.max(1,Math.round(d*m));}
+// the named action (the co-op rules): the one way the step changes
+function setChallenge(n){n=Math.round(+n);if(!(n>=0&&n<=4))return false;if(n===2)delete worldState.challenge;else worldState.challenge=n;return CHALLENGE_STEPS[n];}
 // Family multipliers on posture max (brutes are sturdier, light enemies break faster).
 // Resolved from enemy build-family field (`buildFn` for dungeon enemies; `shape` for
 // zone enemies; bosses keyed on `bossId`). Default 1.0 covers anything unrecognised.

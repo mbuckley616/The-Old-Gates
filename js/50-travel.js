@@ -292,7 +292,8 @@ const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
 const RENEWAL_RATE=.5;
 function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
-function _warded(d,src){return d>0?Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1))):d;}
+function _warded(d,src){if(!(d>0))return d;d=Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1)));return src&&src.trap?d:challengeTaken(d);} /* S684 — the challenge scales a foe's blow after the ward; a trap's is its own */
+const TRAP_SRC={trap:true};
 // S321 — the herbs' hidden effects, read where their text says: Wolf's Bane (`beastResist`, above, from a beast's blow),
 // Thornberry (`blockBoost`, a raised guard stops a larger share, to .9), Briarweed (`atkSpeed`, in `_weaponSwingFactor`),
 // Duilleog Ghorm (`spellDuration`, in `applySpellBuff`)
