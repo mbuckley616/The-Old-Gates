@@ -13481,3 +13481,16 @@ The home's furniture is one bake (`furnKit().home`, `56-dungeon-build.js`), its 
 - The cold firebox in a lit room: whether the grey ash and dark logs read as *won't take* rather than as a missing fire.
 - The catch is instant, flames and light in one frame; a slow kindle (the light rising over a second) would be a small follow-up if it feels abrupt.
 - Until you enter one, every home in the task's town is drawn cold, because the task names the town and binds to the first home you enter (the systems builder's `onEnterInterior`); after that only the bound house is.
+
+## v80 — Session 686 — `sailtrim` red again, and its cause: the ships the test holds still were turning (backlog H, CI)
+Shard 5 failed on `791df85` with `guardsindoor`, and its one re-run failed with `sailtrim` instead (`guardsindoor` passed in that re-run). The check that failed was *four seconds on, they have settled to the new wind*: the merchant's yard and the jib were on their marks, but the pirate's gaff was .043 off and her flag .075. Session 668 had read the same kind of miss on the flag as a slow runner's lag and given flags .05. That was a correction to the symptom, not the cause, and this entry corrects it.
+
+The test holds each ship's heading by setting her waypoint once, 5,000 units dead ahead, so that the rigs trail only the wind. But she still sails at her 4.5 or 6.5 towards it, and the game's own loop keeps running in wall time between the test's steps: the slower the runner, the further she gets. When her bow reaches water shallower than 1.8, `tickOtherShips` stops her, drops the waypoint and picks a random one 150–400 units off, and she turns at half a radian a second. Her gaff (easing at 1.2 a second) and her flag (3 a second) then chase a mark that is still moving. The test now holds each ship by her own state: her speed reads 0 whatever the tick sets, and her waypoint is a getter that always lies 5,000 units along her current heading, so her wanted heading is always the one she has. She cannot reach shallows, and she cannot turn. The player is on land, so `atSea()` is false and the pirate does not hunt. The flag is back to .02 like every other rig, and Session 668's allowance is gone. No game code changed.
+
+`guardsindoor`'s failure on the first run is the systems builder's test and was reported on the PR. It passed in the re-run and passes locally.
+
+### Verified (headless Chromium)
+`sailtrim` passes twice locally with every rig at .02, the flag included: at settle the merchant's yard is .002 off, the pirate's gaff .004, the jib 0, the flag 0. CI's failing run had the gaff at .043 and the flag at .075 at the same check.
+
+### Needs eyes
+- Nothing to play. If `sailtrim` misses again, the wind's own drift with the clock between steps is the next suspect; the ships are now ruled out.
