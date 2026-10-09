@@ -1639,7 +1639,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S133 — the nearest region whose encounter table carries the creature: a name and a point for the compass
   function huntGround(site,creature){let best=null,bd=1e9;for(const c of CELLS.values()){if(c.type==='sea'||!c.regions)continue;for(const rg of c.regions){const tbl=ENC[rg.id]||ENC_BIOME[rg.biome];if(!tbl||!tbl.some(g=>g.name===creature))continue;const d=Math.hypot(rg.x-site.x,rg.z-site.z);if(d<bd){bd=d;best={x:rg.x,z:rg.z,name:rg.name||rg.id};}}}return best;}
   function genTask(g,site){
-    const st=gstate()[g];const r=Math.random;const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S503 — an id of place and index (the co-op rules), not a Date.now() */const tier=Math.floor(st.done/3);
+    const st=gstate()[g];const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S503 — an id of place and index (the co-op rules), not a Date.now() */const r=seededRng('task',tid); /* S678 — the task's kind, place and pay roll on its own id (the co-op rules), not Math.random */const tier=Math.floor(st.done/3);
     const gold=60+tier*50+Math.floor(r()*40);
     const doors=nearDoors(site,900,false),sites=nearSites(site,700);
     const housed=sites.filter(t=>{const P=KIND_PLAN[t.kind];return !!P&&P.n[0]>0;}),homed=sites.filter(t=>{const P=KIND_PLAN[t.kind];return !!P&&P.n[0]>P.shops.length;}); /* S675 — a draught wants a keeper and a hearth a home: never a camp, a ruin or a shrine (the critic's s480 Hermit's Camp) */

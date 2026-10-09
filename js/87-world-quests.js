@@ -217,11 +217,12 @@
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
   // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
   // from this site that is not a service, and a service asks for a fresh one (`fresh`) to dress in its own words
-  function townQuestFor(site,force,fresh){
+  function townQuestFor(site,force,fresh,key){
     const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
-    const lord=lordFor(site);const r=Math.random;const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj);
+    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */
+    const lord=lordFor(site);const r=seededRng('tq',key||id);const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj); /* S678 — the job's kind, place and pay roll on its own id (a faction's service on the service's), not Math.random */
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
-    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */const giver=`${lord.title} ${lord.name}`;
+const giver=`${lord.title} ${lord.name}`;
     const biome=dominantRegion(site.x,site.z).r.biome;
     if(kind==='cull'){const t=({tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'}[biome])||'Wolf';const n=4+tier;return {id,giver,giverSite:site.id,title:`${plural(2,t)} at ${site.name}`,desc:`${lord.name}: "${plural(2,t)} have been at the flocks. Kill ${n} of them within sight of the walls and the ${site.kind} will pay."`,objective:`Kill ${n} ${plural(n,t)} near ${site.name}`,kind,data:{target:t,need:n,have:0,x:site.x,z:site.z,radius:520},reward};}
     if(kind==='retrieve'){const doors=nearDoors(site,700,false);const e=doors[Math.floor(r()*Math.min(3,doors.length))];if(e){const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item},reward:reward+20};}}
@@ -957,7 +958,7 @@
     let q;
     if(S.kind==='sail'){q={id:fqId(fk,i),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
     else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:fqId(fk,i),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
-    else{q=townQuestFor(site,S.kind,true);
+    else{q=townQuestFor(site,S.kind,true,fqId(fk,i));
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
     if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=S.kind==='find'&&S.rival?`${voice}: "${S.brief.replace('{dir}',compassWord(q.data.x-site.x,q.data.z-site.z))}"`:`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}

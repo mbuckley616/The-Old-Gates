@@ -14628,3 +14628,14 @@ The green bar the critic saw is the foe's own health bar in the scene, frozen be
 
 ### Needs eyes
 Nothing to judge by eye. The touch buttons sit under the death screen, so a phone cannot press them either; that was not tested on a touch device.
+
+## v80 — Session 678 — A job's draw rolls on its own id (the co-op rules; the critic's s480 note)
+The critic's s480 run noted, small and not filed, that `genTask` (`83-world-generator.js`) still rolled a guild task's kind and gold on `Math.random`. The co-op rules (Session 456) say a roll that decides an outcome comes from a seeded stream keyed by place and id. A guild task already had an id of guild, town and count (Session 503). The lord's jobs (`townQuestFor`, `87-world-quests.js`) had one too, `tq:<site>:<count>`, but rolled the same way. So two players, or one player across a reload, could draw different work under the same id. That is the case the rules exist to prevent. This is backlog K's step 1 carried to the jobs, with no rule of play changed.
+
+`genTask` now draws from `seededRng('task', <id>)`, made after the id. `townQuestFor` makes its id first and draws from `seededRng('tq', <id>)`. A faction's service dresses a lord's job in its own words. It now passes its own `fq:` id as the stream's key (a new fourth argument), so a service draws apart from the town's next job. Which kinds exist, their odds, the pay's range and the places each kind may name are as before. Only where the dice come from has changed. Asking a lord for work twice without taking the job gives the same job, which it already did: the job is added the moment it is offered.
+
+### Verified (headless Chromium)
+`jobseed` 5/5 (new). 36 guild tasks drawn at Ironhaven, Vieux Marché and Dunmore (six from each hall), each drawn twice under its id with Math.random pinned at .001 and then at .999, are the same task both times. Across the 36 there are 10 kinds and 29 different sums of gold. 15 lords' jobs, plain and forced to each kind, are the same both times. A service drawn under two `fq:` ids gives two different jobs. On the old code four of the five fail: every draw follows Math.random, and the 36 tasks come out in 2 kinds and 2 sums of gold. Neighbours: `taskhomes`, `datedguild`, `jobids`, `questgold`, `huntvariant`. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see. Still on Math.random in `87-world-quests.js` and left for their own sessions: a shrine's boon, the war's border sieges, the plague's onset and a camp's threat (noted in backlog K).
