@@ -422,7 +422,6 @@ function takeLevelIfReady(){
   sndLevelUp();openLevelUp();return true;
 }
 function castSpell(){
-  if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast(); // v80 S12 — hearth task
   // Empty-knownSpells hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownSpells).length===0){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
@@ -474,8 +473,9 @@ function castSpell(){
     }
   }
 
+  if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast(sp); /* S672 — the hearth task: a spell that went off, not a press of F */
   // Animation type: projectile spells use the forward-thrust curve; heal/self uses the raise-up curve
-  if(sp.role==='buff'){startCastAnim(sp,'self');applySpellBuff(sp,tier);if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast();return;} // v80 — self spells
+  if(sp.role==='buff'){startCastAnim(sp,'self');applySpellBuff(sp,tier);return;} // v80 — self spells
   const animType = sp.role==='heal' ? 'self' : 'projectile';
   startCastAnim(sp, animType);
   // Charge-up sound — per-school ambient buildup that plays during the cast animation.

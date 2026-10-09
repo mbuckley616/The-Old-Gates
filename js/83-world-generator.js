@@ -1693,8 +1693,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function onTalk(def){if(def&&def.name==='Varek'){varekTalked();return false;}if(qOnTalk(def))return true;const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='deliver'||t.done)return false;
     const S=SETTLE.get(t.siteId);if(!S||!S.houses.some(h=>h.keeper===def.name))return false;
     if(!t.who){t.who=def.name;showMsg(`${def.name} takes the draught. "Bless you." Report back.`,'#e8d8a0');t.done=true;gStamp(t);return true;}return false;}
-  function onEnterInterior(house){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done)return;if(house.type!=='home')return;const S=SETTLE.get(t.siteId);if(!S||!S.houses.includes(house))return;t.house=house.id;showMsg('This is the cold hearth. Stand by it and cast a flame (F).','#c8b880');}
-  function onCast(){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done||!t.house)return;if(typeof currentHouse==='undefined'||!currentHouse||currentHouse.id!==t.house)return;
+  function onEnterInterior(house){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done)return false;if(house.type!=='home')return false;const S=SETTLE.get(t.siteId);if(!S||!S.houses.includes(house))return false;t.house=house.id;showMsg('This is the cold hearth. Stand by it and cast a flame (F).','#c8b880');return true;}
+  function onCast(sp){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done||!t.house)return;if(!sp||sp.school!=='tine')return; /* S672 — only a flame lights it */
+    if(typeof currentHouse==='undefined'||!currentHouse||currentHouse.id!==t.house)return;
     const W=currentHouse._roomW||10,D=currentHouse._roomD||10;if(Math.hypot(px-(W-.4),pz-D*.4)<2.6){t.done=true;gStamp(t);showMsg('The hearth catches. Report back.','#e8d8a0');}}
   // world pickups (relics)
   const pickups=[];

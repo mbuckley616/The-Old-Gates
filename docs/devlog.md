@@ -14567,3 +14567,16 @@ The quest writer's run 12 (PR #215, `docs/quest_review.md` on auto/quests) filed
 
 ### Needs eyes
 Nothing beyond reading the lines in play. The Root's own lines are the quest writer's draft and wait on #214.
+
+## v80 — Session 672 — The hearth task is lit only by a flame that goes off (the critic's s480 note)
+The critic's s480 run (PR #216, filed in backlog I on auto/critic; copied here so it can be marked) found that F by the hearth completed the Mages' Guild's *Light a hearth* with no magic at all: `castSpell` (`62-actions.js`) called `WORLD.guild.onCast()` on its first line, before it asked whether you knew a spell, had the mana or were cooling down, so the screen said *You know no magic.* and the task said *The hearth catches.* Any spell counted too, though the task reads *any flame you can cast will do*. Making the task do what it says is a fix, not a rule.
+
+`castSpell` now calls `onCast(sp)` once the spell has gone off: after the known-spell, casting, mana and cooldown checks, after the mana is spent, and after an Impression's fizzle (which returns, so a fizzled Fireball lights nothing). The one call serves both the bolts and the self spells, so the second call in the buff branch is gone. `onCast` takes the spell and counts only school `tine`. Today that is the Fireball (Caor) alone, so a Mages' hearth task wants a Fireball. The distance to the hearth (2.6 of the hearth's spot) is as before.
+
+The critic also noted that indoors `#fbtn` is hidden (`goToInterior`), so on a touch screen the task could not be cast at all. `onEnterInterior` now says whether the room is the task's house, and there `goToInterior` leaves the cast button shown; every other room hides it as before.
+
+### Verified (headless Chromium)
+`hearthcast` 9/9 (new), in a Dunmore home bound to a hearth task: the button is shown there; by the hearth, F with no spells, a Frost bolt that went off (20 mana spent), a Fireball with no mana, one cooling down, one that fizzled, and one cast from the room's far corner leave the task undone; a Fireball by the hearth lights it and spends its 30 mana. Another home with no task hides the button. On a scratch copy of the old code (`--src`) six of the nine fail. Neighbours: `questgold`, `pickupids`, `datedguild`, `interiors`. `parsecheck` clean.
+
+### Needs eyes
+The task's hearth is drawn with its fire already burning when you arrive (the critic's note); the cold hearth wants its own look, the look builder's. Whether a Mages' task should want the Fireball, or any school, is Michael's if he wants it otherwise; the task's own words say a flame.
