@@ -14639,3 +14639,14 @@ The critic's s480 run noted, small and not filed, that `genTask` (`83-world-gene
 
 ### Needs eyes
 Nothing to see. Still on Math.random in `87-world-quests.js` and left for their own sessions: a shrine's boon, the war's border sieges, the plague's onset and a camp's threat (noted in backlog K).
+
+## v80 — Session 679 — The world's daily rolls ride the place and the day (the co-op rules)
+Session 678 left four rolls on `Math.random` in `87-world-quests.js`, each deciding something the world keeps. A shrine with no god's boon gave a boon drawn at random. In a war, the day's siege was drawn at random: whether one was laid, by which side and against which town. A town held 30 days by an uncleared lair caught the plague on a random 8%. A bandit camp near a trade route picked the hour of its ambush at random. Session 607 already moved the port's sack onto `seededRng('sack', <site>:<day>)`; these four follow it, with no rate or rule changed.
+
+`shrineInteract` draws the boon from `seededRng('boon', <shrine>:<day>)`. `tickWarDay` makes one stream per war and day, `seededRng('siege', <a>:<b>:<day>)`, and takes the chance, the side and the town from it in that order. `tickPlagueDay` rolls `seededRng('plague', <town>:<day>)`. `tickRoutesDay` sets the ambush's place on the road from `seededRng('threat', <route>:<day>)`. So a reload, or a host and a guest, see the same day.
+
+### Verified (headless Chromium)
+`dayseed` 7/7 (new). Each roll ran twice from one saved state, once with Math.random pinned at .001 and once at .999. War between the Mark and the Gatelands over 120 days: 8 sieges, both runs the same days, towns and sides. The plague at three towns by a live lair, held at 30 days for 100 days: 22 onsets in 300 town-days, the old 8% near enough, the same both runs. A route by a camp over 30 days: 30 ambush hours, all different, spread .175–.324, the same both runs. The Shrine of An Teallach prayed at on six days gives four different boons, the same both runs. On the old code four of the seven fail: Math.random at .001 gives a siege every day and the plague everywhere, at .999 none, every ambush at .1752, and a different boon each run. Neighbours: `calendar`, `cloaks`, `caravan`, `siegeturn`. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see.
