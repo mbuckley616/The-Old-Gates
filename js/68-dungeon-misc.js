@@ -54,10 +54,10 @@ function lookingAt(c,reach){if(c.body&&c.body.parent)return bodyAimed(c,reach); 
 // no wall stands between you. The prompt and E both ask this one function, so they cannot disagree.
 // S646 — the same test for anything indoors without a mesh of its own to cast at: does the crosshair ray, out to 3.2 (plus the
 // third-person camera's distance), meet the box x±hx, z±hz, y0 to y0+h; and does no wall stand between you and its centre.
-function aimBox(x,z,y0,hx,hz,h){CAM.getWorldDirection(_laDir);const o=CAM.position,lo=[x-hx,y0,z-hz],hi=[x+hx,y0+h,z+hz],O=[o.x,o.y,o.z],D=[_laDir.x,_laDir.y,_laDir.z];
+function aimBox(x,z,y0,hx,hz,h,sx,sz){CAM.getWorldDirection(_laDir); /* S680 — sx, sz: where the wall test looks, when the box's centre is inside a wall (a door's leaf) */const o=CAM.position,lo=[x-hx,y0,z-hz],hi=[x+hx,y0+h,z+hz],O=[o.x,o.y,o.z],D=[_laDir.x,_laDir.y,_laDir.z];
   let t0=0,t1=3.2+(thirdPerson?TP.dist:0);
   for(let i=0;i<3;i++){if(Math.abs(D[i])<1e-9){if(O[i]<lo[i]||O[i]>hi[i])return false;continue;}let ta=(lo[i]-O[i])/D[i],tb=(hi[i]-O[i])/D[i];if(ta>tb){const t=ta;ta=tb;tb=t;}if(ta>t0)t0=ta;if(tb<t1)t1=tb;if(t0>t1)return false;}
-  return typeof intSightLine!=='function'||intSightLine(px,pz,x,z);}
+  return typeof intSightLine!=='function'||intSightLine(px,pz,sx!=null?sx:x,sz!=null?sz:z);}
 function bedAimed(b){return aimBox(b.x,b.z,b.y||0,.5,.82,.78);}
 /* S656 — the stash chest (the safehouse's, the cabin's hold): in reach and under the crosshair, its body .85 × .55 and the lid */
 function stashAimed(){return !!intStashPos&&Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4&&Math.abs(jumpY)<.9&&aimBox(intStashPos.x,intStashPos.z,0,.48,.33,.72);}

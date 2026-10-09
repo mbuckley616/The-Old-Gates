@@ -2,6 +2,8 @@
 // standing at the foot of room 0's bed, the HUD said *Your room — press 'E' to rest*, the middle *Press 'E' to close the door*,
 // and E shut the door). Since Session 650: with a bed in reach under the crosshair that offers something, E goes to the bed
 // and the middle prompt is the bed's; the same spot looking away from the bed, E still opens or shuts the door.
+// Since Session 680 a door answers only with the crosshair on its doorway: looking at the bed the door is not offered at
+// all, and the second look is at the door itself (it was away from the bed, anywhere).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -22,26 +24,27 @@ for (const site of ['dunmore', 'vieux_marche']) {
       const r = await page.evaluate(async ([s, away]) => { px = s.x; pz = s.z; jumpY = s.y; onGround = true;
         for (const n of (INT_NPCS || [])) if (n.g) n.g.position.set(-50, n.g.position.y, -50);
         const eh = () => jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6);
-        const aim = () => away ? lookAtPt(px - (s.bx - px) * 3, eh(), pz - (s.bz - pz) * 3) : lookAtPt(s.bx, s.y + .45, s.bz);
+        const door = INT_DOORS[s.di];
+        const aim = () => away ? lookAtPt(door.x, door.y + .8, door.z) : lookAtPt(s.bx, s.y + .45, s.bz);
         const at = () => Math.abs(CAM.position.y - eh()) < .05 && Math.hypot(CAM.position.x - px, CAM.position.z - pz) < .05;
         for (let i = 0; i < 60; i++) { aim(); CAM.position.set(-99, -99, -99); await new Promise(r => requestAnimationFrame(() => r())); if (i >= 3 && at()) break; }
         aim(); const t = intBedTarget(); const want = t ? WORLD.bedPrompt(t) : null; const ipr = document.getElementById('ipr');
         const mid = ipr && ipr.style.display !== 'none' && +ipr.style.opacity > 0 ? ipr.textContent : '';
-        const door = INT_DOORS[s.di]; const o0 = !!door.open;
+        const o0 = !!door.open;
         const S0 = openSleepUI, B0 = WORLD.bedInteract, M0 = showMsg, D0 = openDialog, P0 = openShop; let bed = false;
         openSleepUI = () => { bed = true; }; WORLD.bedInteract = () => { bed = true; return true; }; showMsg = () => {}; openDialog = () => {}; openShop = () => {};
         try { interact(); } finally { openSleepUI = S0; WORLD.bedInteract = B0; showMsg = M0; openDialog = D0; openShop = P0; }
-        const toggled = !!door.open !== o0; if (toggled && typeof WORLD.intDoorInteract === 'function') WORLD.intDoorInteract();
+        const toggled = !!door.open !== o0; if (toggled && typeof WORLD.intDoorInteract === 'function') WORLD.intDoorInteract(door);
         return { target: !!t, want, mid: mid.slice(0, 70), bed, toggled, doorNear: !!WORLD.intDoorPrompt() }; }, [s, away]);
       out.push(Object.assign({ site, house: id, away }, r)); }
     await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000 }); await g.frames(2);
   }
 }
 for (const o of out) console.log(' ', JSON.stringify(o));
-const on = out.filter(o => !o.away && o.target && o.want && o.doorNear), off = out.filter(o => o.away && o.doorNear);
+const on = out.filter(o => !o.away && o.target && o.want), off = out.filter(o => o.away && o.doorNear);
 check(`spots in reach of a bed and a door found (${on.length})`, on.length >= 3, out.length);
-check('looking at the bed: E goes to the bed and leaves the door', on.every(o => o.bed && !o.toggled), on);
+check('looking at the bed: E goes to the bed and leaves the door, which is not offered', on.every(o => o.bed && !o.toggled && !o.doorNear), on);
 check('looking at the bed: the middle prompt is the bed\'s, not the door\'s', on.every(o => o.mid === o.want), on.map(o => [o.mid, o.want]));
-check('the same spots looking away: E opens or shuts the door, and the prompt names the door', off.length >= 3 && off.every(o => o.toggled && !o.bed && /door/.test(o.mid)), off);
+check('the same spots looking at the door: E opens or shuts it, and the prompt names the door', off.length >= 3 && off.every(o => o.toggled && !o.bed && /door/.test(o.mid)), off);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -19,10 +19,14 @@
     INT_DOORS.push({id:(INT_DOORS.house||'room')+':door:'+INT_DOORS.length,x,z,y:by,g,ang,dir,open:false,a:0,from:0,want:0,t0:0,sol,box:{x0:sol.x0,x1:sol.x1,z0:sol.z0,z1:sol.z1}});
     return INT_DOORS[INT_DOORS.length-1];
   }
-  function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<1.5&&Math.abs(jumpY-d.y)<1.3)||null;}
+  // S680 — in reach AND under the crosshair (Michael, 6 Oct playtest): the ray meets the doorway, shut or open, and nothing stands
+  // between you and its near face (the sight line stops short of the leaf on your side, which would block a line to its middle)
+  function intDoorAimed(d){if(typeof aimBox!=='function')return true;const b=d.box,nx=Math.cos(d.ang),nz=-Math.sin(d.ang),side=((px-d.x)*nx+(pz-d.z)*nz)<0?-1:1;
+    return aimBox((b.x0+b.x1)/2,(b.z0+b.z1)/2,d.y,(b.x1-b.x0)/2,(b.z1-b.z0)/2,1.5,d.x+nx*side*.2,d.z+nz*side*.2);}
+  function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<1.5&&Math.abs(jumpY-d.y)<1.3&&intDoorAimed(d))||null;}
   function intDoorPrompt(){const d=intDoorNear();if(!d)return null;return d.open?"Press 'E' to close the door":"Press 'E' to open the door";}
-  function intDoorInteract(){
-    const d=intDoorNear();if(!d)return false;
+  function intDoorInteract(door){ /* S680 — door: the one to work, named (a test, a later host); none, the one in reach under the crosshair */
+    const d=door||intDoorNear();if(!d)return false;
     if(d.open){ // don't close it on somebody
       const inWay=INT_NPCS.some(n=>Math.hypot(n.g.position.x-d.x,n.g.position.z-d.z)<.8);
       if(inWay){showMsg('Someone is in the doorway.','#c8b880');return true;}

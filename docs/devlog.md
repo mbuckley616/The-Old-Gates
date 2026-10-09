@@ -14650,3 +14650,16 @@ Session 678 left four rolls on `Math.random` in `87-world-quests.js`, each decid
 
 ### Needs eyes
 Nothing to see.
+
+## v80 — Session 680 — A door indoors answers only to the crosshair (Michael's 6 Oct playtest, the last of it)
+Michael's 6 Oct playtest asked that E need range *and* the reticle on the object, because nearness alone makes crossings where you cannot choose what you mean. Sessions 645, 646 and 656 moved the beds, the strongboxes and chests, the hatches, the barber's chair and the stash onto the crosshair. The doors in doorways were left by nearness: `intDoorNear` (`84-world-interiors.js`) took any door within 1.5 on your floor, wherever you looked. That is why Session 650 had to make a bed under the crosshair win over a door that was only near.
+
+`intDoorNear` now also asks `intDoorAimed`. The crosshair's ray must meet the doorway's box (the shut leaf's bounds, kept in `d.box` whether the door stands open or shut, up to 1.5 high). No wall may stand between you and the doorway's near face. `aimBox` (`68-dungeon-misc.js`, Session 646) takes two optional numbers for where that wall test looks. A door's centre lies inside its own leaf, so the line is drawn to a point 0.2 out on your side. The reach is 1.5 as before. The prompt in the middle and E read the same function, so they agree. Session 650's rule stands, but the crossing it settled can no longer happen: looking at the bed, the door is not offered at all. This is the one line the backlog named in the look builder's file, and the door's look and swing are untouched.
+
+`intDoorInteract` takes an optional door, so a door can be worked by name (the co-op rules' named action): E passes none and gets the one under the crosshair. Three tests worked a door by standing near it and calling `intDoorInteract()`: `backroomdoor`, `interiors` and `doorbed`'s reset. They now name the door they mean. `doorbed`'s second look was "away from the bed" and expected the door to answer. It now looks at the door itself, and its first look also checks that the door is not offered.
+
+### Verified (headless Chromium)
+`intdooraim` 6/6 (new). 28 door sides in seven houses (inns and back-room shops in Dunmore and Vieux Marché), standing 1.0 out. Looking at the doorway, the prompt names the door, E opens it and E shuts it again. Looking along the wall or back into the room, no door is offered and E leaves it shut. From 1.8 away, looking straight at it, it is out of reach. On the old code the along-the-wall and back-into-the-room looks fail at every side (E opens the door). `doorbed` 5/5 (18 bed spots, the door not offered; looking at the door, E works it). Neighbours: `intdoors`, `interiors`, `backroomdoor` (failed on the first run, because it worked the door by nearness; green once it names the door), `guardsindoor`, `doorids`, `bedaim`, `intaim`, `chairstash`, `innrooms`. `parsecheck` clean.
+
+### Needs eyes
+Whether 1.5 with the crosshair feels like the right reach for a door in a real hand: you now have to look at the gap, not just stand by it.

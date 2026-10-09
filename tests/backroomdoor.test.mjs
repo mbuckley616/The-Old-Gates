@@ -27,7 +27,7 @@ for (const town of TOWNS) {
       const sx = X.x, sz = X.z + .8;
       const k0 = { x: K.position.x, z: K.position.z, ry: K.rotation.y };
       const run = (open) => {
-        if (door.open !== open) { px = door.x; pz = door.z + (open ? -.6 : -.6); intDoorInteract(); }
+        if (door.open !== open) { px = door.x; pz = door.z + (open ? -.6 : -.6); intDoorInteract(door); }
         K.position.x = k0.x; K.position.z = k0.z; K.rotation.y = k0.ry;
         const rec = []; let inR = 0, faces = 0, line = 0, all3 = 0, lineInR = 0, minD = 1e9;
         for (let f = 0; f < 60 * 600; f++) { intAmbleStep(K, 1 / 60); if (f % 6) continue;
@@ -48,7 +48,7 @@ for (const town of TOWNS) {
       const ctl = () => { K.position.x = door.x; K.position.z = door.z - 2.5; K.rotation.y = 0; px = door.x; pz = door.z + .8;
         return { line: WORLD.intSightLine(K.position.x, K.position.z, px, pz), seen: !!WORLD.witnessOf(h) }; };
       const ctlOpen = ctl();
-      px = door.x; pz = door.z - .6; intDoorInteract();
+      px = door.x; pz = door.z - .6; intDoorInteract(door);
       const ctlShut = Object.assign(ctl(), { open: door.open });
       exitInterior();
       return { town, name: h.name, type: h.type, box: { x: +X.x.toFixed(2), z: +X.z.toFixed(2) }, door: { x: +door.x.toFixed(2), z: +door.z.toFixed(2) },
