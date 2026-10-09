@@ -181,3 +181,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: the critic's four s477 bugs fixed (S648–651), a picture in each save, Told filed by person and place; next, the posture floor on your answer. Look builder: the hulls on your answer, then nets and stowage once systems lands. Critic: a lair next.
 
 **Roadmap.** 186 of 247 stories done (185 of 239 yesterday); four critic bugs under way on auto/systems; two stories wait on you.
+
+## 9 Oct 2026
+
+**Waiting on you.** Four decisions: the pause menu on Esc (#208, B: the leaf plus a challenge setting), the war hammer's one-swing stagger (#211, A: raise the floor to 19), what guards the Root (#214, A: the Empty Weaver) and handing a guild task back (#217, A: a no-cost topic). One merge: Look sessions 665–668, the Mark's cutter and Aurenne's caravel on hulls of their own (c4b51b5, CI green).
+
+**Landed on main since yesterday.** Look sessions 643–661 (fc16622). The pause-menu concept (#209). Quest writer run 12, the Root's six rooms. The critic's Mages' Guild at Ironhaven (s480). Main's CI is green on 59e2555.
+
+**Blocked.** Systems 564–675: red on 7b76cf8, where thresholdname and stairrail still fail and the new deathplace test fails too; the builder's next run (about 09:00) owns the fix, then a fresh card goes up.
+
+**Team.** Systems builder: the critic's four s480 guild bugs fixed same day (S672–675); next, the three red tests. Look builder: the hulls wait on you; nets and stowage after systems lands. Critic: a lair next.
+
+**Roadmap.** 186 of 252 stories done (186 of 247 yesterday); four new critic bugs under way on auto/systems; two stories wait on you.
