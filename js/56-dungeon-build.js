@@ -272,7 +272,7 @@ function furnBuild(THREE, SK) {
   // a stone hearth against a wall: a chimney breast of coursed stones to the ceiling, a timber lintel over an arched-back fire
   // opening, a mantel with odds on it, a hearthstone, firedogs and logs, flames (unlit, in the fire list) and a pot on a crane.
   // Local: the wall at z=0, the room towards +z, centred on x=0.
-  function hearth(bw, ceil, n, seed) { const r = rng(seed || 23), p = Parts(), W = WOOD[n] || WOOD.gatelands, dep = .62, ow = bw * .55, oh = .62, ld = .45;
+  function hearth(bw, ceil, n, seed, cold) { const r = rng(seed || 23), p = Parts(), fp = cold ? Parts() : p, W = WOOD[n] || WOOD.gatelands, dep = .62, ow = bw * .55, oh = .62, ld = .45;
     const stone = () => jit(STONE, r, .12).offsetHSL((r() - .5) * .02, 0, 0);
     const course = (y0, h, x0, x1, zf, dz) => { let x = x0; const off = r() * .1; x += off - .1; while (x < x1 - .02) { const L = Math.min(x1 - x, .22 + r() * .22), lx = Math.max(x, x0);
         const w = Math.min(x + L, x1) - lx; if (w > .03) p(SK.rbox(w - .012, h - .014, dz - .01, .02, 1), stone(), lx + w / 2, y0 + h / 2, zf - dz / 2 + (r() - .5) * .012); x += L; } };
@@ -288,9 +288,11 @@ function furnBuild(THREE, SK) {
     for (const s of [-1, 1]) { p(SK.rbox(.02, .12, .02, .004, 1), IRON, s * .15, .06, dep - .15); p(SK.rbox(.02, .02, .3, .004, 1), IRON, s * .15, .1, dep - .3); }
     p(SK.limb(.5, .05, .045), 0x5a3a20, -.25, .16, dep - .3, 0, 0, Math.PI / 2 + .12);
     p(SK.limb(.46, .045, .04), 0x4a3018, .2, .19, dep - .28, 0, .3, -Math.PI / 2 + .1);
-    p(SK.ball(.14, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0x3a1a0c, 0, .02, dep - .3, 0, 0, 0, 1.6, .35, 1);
-    p.flame(SK.ball(.12, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0xff5a18, 0, .06, dep - .3, 0, 0, 0, 1.4, .3, .9);
-    for (const [fx, fh, fr, c] of [[0, .32, .07, 0xffb040], [-.1, .22, .05, 0xff8a28], [.11, .25, .055, 0xff9a30], [.02, .16, .09, 0xff6a20]]) p.flame(SK.cone(fr, fh, 6), c, fx, .2 + fh / 2, dep - .3 + (r() - .5) * .06);
+    p(SK.ball(.14, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), cold ? 0x5c5852 : 0x3a1a0c, 0, .02, dep - .3, 0, 0, 0, 1.6, .35, 1);
+    fp.flame(SK.ball(.12, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0xff5a18, 0, .06, dep - .3, 0, 0, 0, 1.4, .3, .9);
+    for (const [fx, fh, fr, c] of [[0, .32, .07, 0xffb040], [-.1, .22, .05, 0xff8a28], [.11, .25, .055, 0xff9a30], [.02, .16, .09, 0xff6a20]]) fp.flame(SK.cone(fr, fh, 6), c, fx, .2 + fh / 2, dep - .3 + (r() - .5) * .06);
+    // S676 — a cold hearth (the Mages' task's): grey ash for the ember bed, and the flames kept aside on p.unlit, for the room to light
+    if (cold) p.unlit = fp;
     p(SK.cyl(.012, .012, oh - .06, 6), IRON, ow / 2 - .08, (oh - .06) / 2, dep - .12); p(SK.rbox(.34, .018, .018, .004, 1), IRON, ow / 2 - .25, oh - .12, dep - .12);
     p(SK.cyl(.004, .004, .05, 4), IRON, ow / 2 - .4, oh - .1, dep - .12);
     p(lathe([[.001, 0], [.06, .005], [.1, .05], [.105, .09], [.085, .14], [.09, .15], [.08, .15]], 12), 0x1e1c1a, ow / 2 - .4, oh - .3, dep - .12);
@@ -775,12 +777,13 @@ function furnBuild(THREE, SK) {
   function bake(p) { const G = new THREE.Group();
     const body = new THREE.Mesh(merge(p.list, true), MAT); G.add(body);
     let fire = null; if (p.fire.length) { fire = new THREE.Mesh(merge(p.fire, false), FIRE); G.add(fire); }
-    G.userData.tris = body.geometry.index.count / 3 + (fire ? fire.geometry.index.count / 3 : 0); G.userData.fire = fire; return G; }
+    let hf = null; if (p.hearth && p.hearth.fire.length) { hf = new THREE.Mesh(merge(p.hearth.fire, false), FIRE); hf.visible = false; G.add(hf); }
+    G.userData.tris = body.geometry.index.count / 3 + (fire ? fire.geometry.index.count / 3 : 0); G.userData.fire = fire; G.userData.hearthFire = hf; return G; }
 
   // ── the two rooms, at the places buildInteriorFor puts today's boxes (W×D room, ceiling H, x east, z south, door at z=D) ──
-  function home(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+  function home(W, D, H, n, seed, cold) { const p = Parts(), s = seed || 1;
     p.put(bed(n, s + 1), 1.2, 1.2, 0);
-    p.put(hearth(1.8, H, n, s + 2), W, D * .4, -Math.PI / 2);
+    { const h = hearth(1.8, H, n, s + 2, cold); p.put(h, W, D * .4, -Math.PI / 2); if (h.unlit) { p.hearth = Parts(); p.hearth.put(h.unlit, W, D * .4, -Math.PI / 2); } }
     p.put(table(1.5, .9, n, s + 3), W / 2, D * .5, 0);
     p.put(chair(n, s + 4), W / 2 - 1.0, D * .5, Math.PI / 2 + .12); p.put(chair(n, s + 5), W / 2 + 1.0, D * .5, -Math.PI / 2 - .2);
     { const q = Parts(); candle(q, 0, .46, 0); q(bowl(.08), 0x9a7050, .3, .46, .12); tankard(q, -.25, .46, -.15, 0x7a6a4a); p.put(q, W / 2, D * .5, 0); }
