@@ -2,6 +2,7 @@
 // and never under 18: a Wolf (18 HP, ×0.8) sat on the old floor of 10, under one greatclub swing's 12, so every second
 // swing staggered it. Every zone foe is built by the game's own builder and read; then a Wolf takes real greatclub and
 // sword swings through the zone resolver, the dice pinned, and the swings to its first stagger are counted.
+// Session 681 (Michael's A on DECISION #211): the floor is 19, so the war hammer's 18 a swing takes two as well.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -34,13 +35,14 @@ const r = await page.evaluate(() => {
 });
 stop();
 
-const low = Object.entries(r.foes).filter(([, v]) => v.posture < 18);
-check('the floor is 18', r.floor === 18, r.floor);
-check('no zone foe stands under 18 posture', low.length === 0 && Object.keys(r.foes).length === 14, r.foes);
-check('a Wolf and a Bandit sit on the floor, an Ogre (90 HP) above it as before', r.foes.Wolf.posture === 18 && r.foes.Bandit.posture === 18 && r.foes.Ogre.posture > 18, { wolf: r.foes.Wolf, bandit: r.foes.Bandit, ogre: r.foes.Ogre });
-check('a dungeon Skeleton (20 HP) is lifted to 18; an 80 HP troll keeps 60', r.dungeonSkel === 18 && r.bigTroll === 60, { skel: r.dungeonSkel, troll: r.bigTroll });
+const low = Object.entries(r.foes).filter(([, v]) => v.posture < 19);
+check('the floor is 19', r.floor === 19, r.floor);
+check('no zone foe stands under 19 posture', low.length === 0 && Object.keys(r.foes).length === 14, r.foes);
+check('a Wolf and a Bandit sit on the floor, an Ogre (90 HP) above it as before', r.foes.Wolf.posture === 19 && r.foes.Bandit.posture === 19 && r.foes.Ogre.posture > 19, { wolf: r.foes.Wolf, bandit: r.foes.Bandit, ogre: r.foes.Ogre });
+check('a dungeon Skeleton (20 HP) is lifted to 19; an 80 HP troll keeps 60', r.dungeonSkel === 19 && r.bigTroll === 60, { skel: r.dungeonSkel, troll: r.bigTroll });
 check('a Wolf takes two greatclub swings to stagger (one before)', r.greatclub.swings === 2 && r.greatclub.mult === 1.5, r.greatclub);
 check('and three sword swings, two claymore swings', r.sword.swings === 3 && r.claymore.swings === 2, { sword: r.sword, claymore: r.claymore });
 console.log('war hammer (×2.25 = 18 a swing):', JSON.stringify(r.hammer));
+check('a Wolf takes two war hammer swings to stagger (one at the floor of 18)', r.hammer.swings === 2 && r.hammer.mult === 2.25, r.hammer);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

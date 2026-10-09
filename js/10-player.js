@@ -1138,7 +1138,7 @@ function enemyPostureFamily(e){
 }
 // Compute and stamp the posture fields on an entity. Idempotent — defensive default
 // for save-load on entries that don't have posture yet.
-const ENEMY_POSTURE_FLOOR=18;
+const ENEMY_POSTURE_FLOOR=19; /* S681 — Michael's A on #211: 19, so a normal war hammer swing (8 × 2.25 = 18) no longer breaks a Wolf at once (was 18, S663) */
 function initPosture(e){
   if(!e) return;
   if(typeof e.posture==='number' && typeof e.maxPosture==='number') return; // already stamped

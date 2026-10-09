@@ -14663,3 +14663,14 @@ Michael's 6 Oct playtest asked that E need range *and* the reticle on the object
 
 ### Needs eyes
 Whether 1.5 with the crosshair feels like the right reach for a door in a real hand: you now have to look at the gap, not just stand by it.
+
+## v80 — Session 681 — The foes' posture floor is 19 (Michael's A on DECISION #211)
+Session 663 raised the foes' posture floor to 18 on Michael's A on #206, so that no small foe breaks to one normal swing. Its question had missed one weapon. A normal war hammer swing drains 8 × 2.25 = 18, exactly the floor, so the war hammer still staggered a Wolf, a Bandit, a Goblin or a Skeleton with its first swing each time. #211 asked whether to raise the floor to 19 or keep the hammer's one-blow break as its character. Michael chose A, 19.
+
+`ENEMY_POSTURE_FLOOR` (`10-player.js`) is 19. Every foe whose half-health posture fell below it now sits on 19: all fourteen zone kinds under the Forest Troll (26), and a dungeon Skeleton (20 HP). The Troll, the Ogre (68) and the big dungeon foes (an 80 HP troll keeps 60) are above the floor and do not move. With the dice pinned, a Wolf now takes two war hammer swings to stagger, two greatclub, two claymore and three sword swings. Nothing else changes.
+
+### Verified (headless Chromium)
+`posturefloor` 8/8, updated to the new number with a war hammer check added: the floor is 19, no zone foe under it, Wolf and Bandit at 19, Ogre 68, a dungeon Skeleton lifted to 19, an 80 HP troll at 60. To the first stagger of a Wolf: greatclub 2 (×1.5), sword 3, claymore 2 (×1.75), war hammer 2 (×2.25, was 1). Neighbours: `posture`, `fistfight`, `postureregen`, `counters`, `tells`, `guardlevel1`, `parryclock`, `lvact`. `parsecheck` clean.
+
+### Needs eyes
+Whether the war hammer still feels like the heaviest stagger weapon when a Wolf takes two blows from it: its second swing breaks what the sword needs three for.
