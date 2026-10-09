@@ -6,14 +6,55 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `4a1cf46` | run 11, from `9ecc10d`: the look session 632 (the wolves) merged; no string a player reads |
-| auto/systems | `15accb0` | run 11, Sessions 621–639 against main |
-| auto/backlog | `c8d0c85` | run 11: level with main |
+| main | `9b86e34` | run 12, from `4a1cf46`: the look sessions 657 and 661 (the stair's posts) and the build tag; no string a player reads |
+| auto/systems | `409cae6` | run 12, Sessions 640–667 against `15accb0` |
+| auto/backlog | `cda563a` | run 12: Session 665, the two hulls; no string a player reads |
+| auto/proto-ship-hulls | `fab53f6` | run 12: new; the same hulls as Session 665, on auto/systems; no string a player reads |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
-| auto/wip-moundsolid | `0ff2144` | run 11: Session 630's commit, already inside auto/systems |
-| auto/producer, auto/critic, auto/concept, auto/design | — | run 11: level with main, or ahead in docs only |
-| auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/split | — | merged into main, nothing ahead |
+| auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
+| auto/producer, auto/critic, auto/concept, auto/design | — | run 12: level with main, or ahead in docs only |
+| auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/split | — | merged into main, nothing ahead (auto/split's old history is not main's) |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 12 — 9 Oct 2026
+
+About 45 player-readable strings read on auto/systems and none on main or the other branches. Two findings: one new, and one old line found while drafting.
+
+**auto/systems** (Sessions 640–667). Finding 20 is in the code as written, all three lines. The factor's board and the yard are now panels. Most of their text is the chat rows' lines moved, and those were read in runs 5 and 8. New: *You have no ship to fill.*, *Took aboard N × crate of iron for N gold.*, *The yard at {town}*, *Sold as a sloop; refitted as a caravel for N gold more.*, and the dial's *N kn bare, N under full sails*. All plain, all right. The Journal's *Told* (*told by Gráinne, Niamh*, *first met …*, *← All you were told*, *Nothing you were told matches.*) is in the menu voice and good. *1 task done.* is right. The shipwright's *Hulls. Sound ones. And rope, if you ask nicely.* is older than the baseline and stays. Finding 21 is the yard's note on a sunk ship.
+
+**main**, **auto/backlog** and **auto/proto-ship-hulls** add no string a player reads (the stair's posts, the two hulls, the inspector's chrome).
+
+**Drafted:** *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`), backlog A's last open story item. The draft needs one call, DECISION #214 (what guards the Root). Finding 22 is old text met while drafting it: the field scene that sends you to the Root argues against the canon's Varek.
+
+### Finding 21 — auto/systems — the yard says *ask about raising her* after you have paid to raise her
+
+**Where.** The yard panel, `yardPanelDraw` in `86-world-crime.js` (grep `Ask about raising her.`).
+
+**Text.** *The ${name} lies on the bottom. Ask about raising her.*
+
+**Why.** Once the raising is paid (`st.raise` set), `upgradeTopics` offers nothing, because the work is in hand. The note still sends you to ask, and there is nothing to ask. The note should say the work is under way, and when it will be done.
+
+**Replacement.** The line becomes:
+`` if(st&&st.sunk){const n=st.name||SHIP.name;if(st.raise){const d=Math.max(1,Math.ceil((st.raise.due-(worldState.gameTimeAbsMinutes||0))/1440)),y=(siteAnywhere(st.raise.site)||{}).name||'the quay';note=`The ${n} lies on the bottom. The yard at ${y} is raising her: ${d===1?'one day':d+' days'} yet.`;}else note=`The ${n} lies on the bottom. Ask about raising her.`;} ``
+(the `else if(!st&&cls!=='sloop')` branch after it is unchanged).
+
+### Finding 22 — main and auto/systems — at the Ashfeld, Varek argues for closing the window, which is the canon's *stop him*
+
+**Where.** `tickAshfeld`, `88-world-ticks.js` (grep `They were never a loom`): the first topic's response, and the `stop` and `help` rows. Older than the baseline; run 6 noted it and did not find it. It is a finding now because the Root's draft follows the canon, so the field and the Root would argue opposite things one scene apart.
+
+**Text.**
+- *Then what are you doing to the sigils?* → *Writing over them. Every one I can reach. Not to take — to *close*. They were never a loom. They're a window, and the ones who built them opened it, and something has been reading us through it since. I've spent two hundred years pulling the shutters. You've spent a season undoing it, gate by gate, for coin.*
+- *Stop. Leave the gates.* → *You'd have me stop, and let it read. Then go and see what it is. …*
+- *I'll help you close them.* → *… Meet me there and we'll shut the last window with our hands.*
+
+**Why.** Canon §3.1: his heresy is *"they built a cage and called it a loom"*, and it is about the Clearing; *he believes unbinding will let the dead stay*. §11: *help him* means *unbind*, and the code's `help` choice leads to the Root's *Break it*. As written, he wants the opposite of what he wants, and helping him reads as sealing. His voice stays his own (Part I: he asks questions; he is tired, not angry), and so does the shape of each line. *Two hundred years* becomes the canon's *two hundred and fifty*.
+
+**Replacement** (each line whole; the `fn`s are unchanged):
+- The first topic's `response`: `"Unwriting them. Every one I can reach. They built a cage and called it a loom, and the dead pay for its keeping. Take it apart, and the dead can stay. I've spent two hundred and fifty years at it, stone by stone. You've spent a season keeping it running, gate by gate, for coin. Did anyone ever tell you what it runs on?"`
+- The `stop` row's return: `"You'd have me leave it running. Then go and see what it runs on. The place beneath all the gates is on the far side of Aurenne, under the water. The Root. I'll be there before you, because I always am. Decide there."`
+- The `help` row's `label`: `"I'll help you unbind it."`; its return: `"Then there is one gate left that matters, and it isn't a gate. The Root, under the water off Aurenne's far shore. Everything runs back to it. Meet me there, and we'll take the last stone out with our hands."`
+- The `third` row is canon as written and stays.
 
 ---
 
