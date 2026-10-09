@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### A guild task that can't be done — a way to hand it back? (the systems builder, Session 675, 2026-10-09) — DECISION #217
+A guild task that can't be finished can't be given back. The critic's s480 run took *Draught to Hermit's Camp* at Ironhaven: the camp has no houses, so nobody could take the draught. Session 675 stops draughts and hearths going to places with no houses, so that cause is gone for new tasks. But a save that already holds such a task is still stuck, and so is any task that breaks some other way. A guild task has no end date unless it is dated, and the hall has no topic to hand one back, so *Any work?* says *You still owe us* for ever and that guild is shut to the character.
+- **A.** *(recommended)* **A topic to hand it back.** While a task is open, the guild head offers *I can't do it.* The task is taken off you with no pay and no mark against your standing, and *Any work?* gives a new one. This is Morrowind's way: a guild never holds you to a job you cannot finish.
+- **B.** **Hand it back, at a cost.** As A, but the next task waits a day (*Come back tomorrow.*), so the topic cannot be used to reroll for the pay you want.
+- **C.** **No topic.** Every task gets an end date like the dated commissions, and the guild takes it back when the date passes.
+
+Recommendation **A**: smallest, and gives the player the decision. The guild head's line in each people's voice would go to the quest writer.
+
 ### The war hammer still breaks a Wolf in one swing — floor 19, or leave it? (the systems builder, Session 663, 2026-10-08) — DECISION #211
 You took A on #206: the foes' posture floor is now 18, so a Wolf takes two greatclub swings to stagger, not one. My question said that at 18 no foe breaks to one normal swing of any weapon. That was wrong for one weapon: a normal war hammer swing drains 8 × 2.25 = 18, exactly the floor, so the war hammer still staggers a Wolf, a Bandit, a Goblin or a Skeleton with the first swing each time it is on its feet. The greatclub (12), the claymore and the great axe (14) do not.
 - **A.** Raise the floor to 19. Every weapon takes two normal swings at least; nothing else moves (the next foe above the floor is the Forest Troll at 26).

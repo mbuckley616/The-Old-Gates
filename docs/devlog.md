@@ -14602,3 +14602,16 @@ The critic's s480 run died to the Shore Wisp of a Mages' task, took *Load last s
 
 ### Needs eyes
 Nothing to see. The duel's rival after an in-page load mid-duel was not looked at; it is the duel's to keep.
+
+## v80 — Session 675 — A Mages' draught or hearth goes to a place with houses (the critic's s480 note, its first half)
+The critic's s480 run took *Draught to Hermit's Camp* at Ironhaven and could never finish it. `genTask` (`83-world-generator.js`) sent a *deliver* or a *hearth* task to one of the three nearest sites with a pad, whatever the site was. Hermit's Camp is a camp: tents and one Hermit, no houses. `onTalk` takes the draught only from a house's keeper, and the hearth task wants a home, so neither could be done there. The task says *ask the first resident you meet* and *a house … has a hearth*. Sending it only where those exist makes it do what it says.
+
+The choice now reads each near site's plan (`KIND_PLAN`, which a site's kind sets before the town is built, so it does not depend on what has loaded). A draught goes only to a place whose plan has buildings (`n[0] > 0`). A hearth goes only to one whose plan has more buildings than shops, so it has homes. Each is still one of the three nearest such places. Where there are none, the roll falls through to the next kind, as it did when there were no sites at all. The Fighters' beast and raid still use every near site, since they happen outdoors.
+
+The critic's second ask, a way to hand a task back to the hall, is a new topic and a rule, so it is a question: DECISION #217. Until it is answered, a save that already holds a task for Hermit's Camp stays stuck.
+
+### Verified (headless Chromium)
+`taskhomes` 6/6 (new). Hermit's Camp is the third-nearest place to Ironhaven and the second to Vieux Marché. 400 Mages' tasks drawn from each hall on a fixed stream give 57/68 draughts/hearths to Vieux Marché from Ironhaven, and 21–23 each to La Grise, Droichead and Ironhaven from Vieux Marché. None go to Hermit's Camp. Each place named, once built, has keepers (7–61) and homes (2–47). On a scratch copy of the old code (`--src`), three of the six fail: Hermit's Camp is named, with 0 keepers and 0 homes. Neighbour: `datedguild`. `parsecheck` clean.
+
+### Needs eyes
+Found on the way: Caer Uaigneach, Ironhaven's nearest site, is a *ruin* by kind but is built with two keepers and two homes. The old code could send a task there and it could be done. It is now left out, because its plan says a ruin has no houses. Whether those two houses are meant is the look builder's question.
