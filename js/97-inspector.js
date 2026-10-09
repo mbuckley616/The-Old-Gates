@@ -78,6 +78,10 @@ function inspRegistry(){
   for(const [kind,L,W] of [['sloop',13,4.4],['cog',17,5.6],['galleon',22,7]])for(const look of ['player','pirate','merchant'])
     add('Ships',kind,look,'85-world-sea.js',()=>{const m=WORLD.buildShipMesh(L,W,look);let th=0;
       return {obj:m,anim:(t,dt)=>{th=Math.sin(t*.25)*Math.PI;shipTrim(m,th,dt);},modes:['sails']};});
+  // S665 (Michael's A on #202): the Mark's cutter and Aurenne's caravel on hulls of their own
+  for(const [kind,L,W] of [['cutter',14,4.0],['caravel',17.5,5.0]])for(const look of ['player','pirate','merchant'])
+    add('Ships',kind,look,'85-world-sea.js',()=>{const m=WORLD.buildShipMesh(L,W,look,kind);let th=0;
+      return {obj:m,anim:(t,dt)=>{th=Math.sin(t*.25)*Math.PI;shipTrim(m,th,dt);},modes:['sails']};});
   for(let v=0;v<4;v++)add('Ships','Harbour boats','boat '+(v+1),'85-world-sea.js',()=>{const r=WORLD.boatBake(v);return {obj:new THREE.Mesh(r.geo,SHIP_MAT)};});
   // 5. Plants, trees and rocks — every herb whole and picked, the tree and scrub prototypes, the rocks of each biome
   for(const key of Object.keys(HERB_DEF))add('Plants, trees, rocks','Herbs',HERB_DEF[key].name||key,'30-plants.js',()=>{
