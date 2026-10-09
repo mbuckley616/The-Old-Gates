@@ -572,7 +572,7 @@ function playerDead(){
   if(typeof WORLD!=='undefined')WORLD.noteDeath(); // v80 — the reader counts
   if(dead)return;dead=true;
   // v80 S9 — no respawn, no bag wipe, no autosave: a death screen that loads a save.
-  const dunName=currentPortal?currentPortal.name:(activeZoneId==='world'?'the open country':'the wild');
+  const dunName=(activeZoneId==='dungeon'&&currentPortal)?currentPortal.name:(activeZoneId==='world'?'the open country':'the wild'); /* S673 — currentPortal outlives the dungeon (goToOW keeps it): name it only while you are in it */
   addLog('💀','Fell in '+dunName+'.');
   silenceSigilHum();castT=0;blocking=false;staggered=[];
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();

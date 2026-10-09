@@ -14580,3 +14580,14 @@ The critic also noted that indoors `#fbtn` is hidden (`goToInterior`), so on a t
 
 ### Needs eyes
 The task's hearth is drawn with its fire already burning when you arrive (the critic's note); the cold hearth wants its own look, the look builder's. Whether a Mages' task should want the Fireball, or any school, is Michael's if he wants it otherwise; the task's own words say a flame.
+
+## v80 — Session 673 — A death outdoors is logged outdoors (the critic's s480 note)
+The critic's s480 run found every open-world death logged as *Fell in The Crypt of First Light.* `playerDead` (`68-dungeon-misc.js`) named `currentPortal` whenever it was set, and `currentPortal` is set by `goToDungeon` and never cleared: `goToOW` reads it on the way out (the tutorial's exit, `onLeavePortal`), and the quest checks read its seed. So after the tutorial every death outside was the crypt's, and after any other dungeon, that one's.
+
+The log now names the dungeon only while you are in one (`activeZoneId==='dungeon'`), and otherwise says *the open country* in the world and *the wild* in a legacy zone, as it always meant to. `currentPortal` itself is left as it is, because the way out and the quest checks read it; clearing it is a wider change than this note asks for.
+
+### Verified (headless Chromium)
+`deathplace` 4/4 (new): with the tutorial's portal still set, a death in the world logs *Fell in the open country.*; in a generated dungeon (*The Dungeon of Shadows*) it names the dungeon; walked out through `goToOW`, with the portal still remembered, a death logs *the open country* again. On a scratch copy of the old code two of the three fail (the crypt's and the dungeon's names outdoors). `diedload` green. `parsecheck` clean.
+
+### Needs eyes
+Nothing. Found on the way and not touched: a death inside a house in the world reads *the open country* too, as it did before the tutorial; naming the house would be a new line.
