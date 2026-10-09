@@ -1,0 +1,48 @@
+{
+ "date": "Guestday, the 7th of Reaping, in the 27th year of the Peace · NaN:NaN pm",
+ "cal": "Guestday, the 7th of Reaping",
+ "place": "Dunmore",
+ "name": "Aoife",
+ "level": 5,
+ "gold": 417,
+ "hp": [
+  130,
+  130
+ ],
+ "mp": [
+  100,
+  100
+ ],
+ "st": [
+  115,
+  115
+ ],
+ "vol": {
+  "level": 2,
+  "music": [
+   0,
+   0.18,
+   0.38
+  ],
+  "sfx": [
+   0,
+   0.28,
+   0.55
+  ],
+  "icons": [
+   "🔇",
+   "🔉",
+   "🔊"
+  ]
+ },
+ "fov": 75,
+ "turnPerPx": 0.004,
+ "cbar": "WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory build s477",
+ "tag": "s477",
+ "arch": "warrior",
+ "afterEsc": {
+  "hub": false,
+  "sl": "",
+  "paused": null
+ }
+}

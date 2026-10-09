@@ -11,6 +11,20 @@ You took A on #206: the foes' posture floor is now 18, so a Wolf takes two great
 
 Recommendation: **A.** It is what you chose #206 for, and one number changes.
 
+### The pause menu on Esc — a leaf with settings, with a challenge setting, or a tab in the book? (the concept artist, 2026-10-08) — DECISION #208
+You asked on 6 Oct for a proper pause menu on Esc, with Save and Load and the settings (look speed, volume by kind, brightness), and maybe a difficulty slider as in the Elder Scrolls. Today Esc in play opens nothing: in a real browser it lets the pointer go and the world plays on. The *Paused · Click to resume* box written for that moment (v62.1) never shows, because the function that shows it, `reconcilePointerLock`, is declared inside `_enterGame` and the loop's `typeof` check never finds it. The only settings are one volume button with three steps (off, quiet, loud) and M for the spoken lines. The prototype (`docs/prototypes/pause/`, on auto/concept) uses the parchment kit and today's numbers on build s477.
+
+All three options have the same settings sheet, kept in this browser for every character, never in a save: four volume sliders (everything, music, blows and steps, spoken lines); look speed from a quarter to three times today's 0.23° a pixel; invert up and down; brightness with a three-mark test card; field of view 60–100° (75 today); damage numbers shown or hidden; full screen. A page of the keys replaces the line at the foot of the screen.
+- **A.** The pause leaf. When no panel is open, Esc stops the world and opens one leaf over it, with the date, the place and six rows: Resume, Save, Load, Settings, The keys, Quit to the title. Quit asks a second time before it leaves. Every panel that closes on Esc today still does.
+- **B.** A, plus a challenge setting with five steps from Novice to Master. It only changes damage: your blows ×2, 1.5, 1, 0.75 or 0.5, and the foes' blows ×0.5, 0.75, 1, 1.5 or 2. Adept is today's game. At Expert your 22 on a Skeleton becomes 17. It is kept with the world, so in co-op the host's setting rules. Foe levels, loot and gold stay as they are.
+- **C.** No leaf. Settings becomes an eighth tab in the Tab book. Esc keeps closing panels, Save and Load stay behind the 💾 button, and the *Click to resume* box is mended so that a lost pointer pauses the game.
+
+Recommendation: **B.** It is Oblivion's and Skyrim's Esc. The challenge is your "maybe", and it costs one number in the damage rule. It also gives a player who finds the new chase speed (#190) too sharp a way to ease it without changing it for everyone.
+
+Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/compare-esc.png) · [A, the leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-pause.png) · [A, settings](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-settings.png) · [B, settings with the challenge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/b-settings.png) · [quit asks once](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-quit.png) · [the keys](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-keys.png) · [C, the eighth tab](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/c-hub.png)
+
+## Answered
+
 ### The cutter's and the caravel's own hulls (the look builder, Session 643, 2026-10-08) — DECISION #202
 
 **The question.** Michael's B on #192 added two hulls, the Mark's cutter and Aurenne's caravel (Session 636, on auto/systems). Until now the cutter is drawn on the sloop's hull and the caravel on the cog's, so in the yard's *Browse ships* panel and at sea they look like the ships they replace. Should they look like this?
@@ -34,7 +48,7 @@ The deck you walk stays flat, the wheel and hatch where they are, the nets amids
 - From above: [cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter.png) · [caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel.png) · [the caravel's sterncastle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-stern.png)
 - Other paints: [a pirate cutter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-cutter-pirate.png) · [a merchant caravel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/shiphulls-caravel-merchant.png)
 
-## Answered
+Michael: **Both as shown** (A). (8 Oct 2026)
 
 ### A Wolf is staggered by every second greatclub swing — raise the posture floor? (the systems builder, Session 650, 2026-10-08) — DECISION #206
 The critic's s477 play: three Wolves against a level-2 greatclub cost 9 of 200 HP in 30 s. A foe's posture is half its health, scaled by family (wolves and spiders ×0.8 and ×0.7), with a floor of 10. A Wolf (18 HP) sits on that floor. A normal swing drains 8, and the greatclub drains ×1.5, so 12. One normal greatclub swing breaks a Wolf: 1.5 s staggered, taking double damage. Its posture refills when it gets up, so every second swing staggers it again, and the pack spends most of the fight on the ground. A sword (8) takes two swings, fists two. The Snow Wolf (14) and the Dire Wolf (16) take two greatclub swings each.
