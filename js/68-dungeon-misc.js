@@ -575,6 +575,7 @@ function playerDead(){
   const dunName=(activeZoneId==='dungeon'&&currentPortal)?currentPortal.name:(activeZoneId==='world'?'the open country':'the wild'); /* S673 — currentPortal outlives the dungeon (goToOW keeps it): name it only while you are in it */
   addLog('💀','Fell in '+dunName+'.');
   silenceSigilHum();castT=0;blocking=false;staggered=[];
+  {const ip=document.getElementById('ipr');if(ip){ip.style.opacity='0';ip.style.display='none';}const ob=document.getElementById('ob');if(ob)ob.textContent='';} /* S677 — the loop stops at death, so the last prompt stood behind the screen */
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   let ov=document.getElementById('died');
   if(!ov){

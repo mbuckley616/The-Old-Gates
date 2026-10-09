@@ -14615,3 +14615,16 @@ The critic's second ask, a way to hand a task back to the hall, is a new topic a
 
 ### Needs eyes
 Found on the way: Caer Uaigneach, Ironhaven's nearest site, is a *ruin* by kind but is built with two keepers and two homes. The old code could send a task there and it could be done. It is now left out, because its plan says a ruin has no houses. Whether those two houses are meant is the look builder's question.
+
+## v80 — Session 677 — The death screen holds the keys (the critic's s480 note)
+The critic's s480 run noted, small and not filed, that its death screen still showed *Press 'E' to catch a fish* through its dimming. Following it up found more than a stale line. The loop returns early once `dead` is set, so the prompt in the middle (`#ipr`) and the HUD's line under the bars (`#ob`) kept whatever they said at the moment of death. The view keeps the focus at death too, and the key handler (`92-creator.js`) had no `dead` check. So behind *YOU DIED*, E still reached `interact` and F cast the spell in hand and spent its mana. I and Tab opened the book over the death screen. A dead hand that can still fish, cast and read is a bug, not a rule.
+
+The key handler now ignores every key while you are dead, except M (the spoken lines' mute). Tab's default is still prevented, so focus stays on the view. `playerDead` (`68-dungeon-misc.js`) hides `#ipr` and clears `#ob` as the screen comes up. *Load last save* gives the keys back as before (Session 624's focus), and the loop writes the prompts again on its first frame. The roll already refused a dead body (`startRoll`). The mouse never reached the game, because the death screen covers the canvas.
+
+The green bar the critic saw is the foe's own health bar in the scene, frozen behind the 86% dimming like the rest of the view, so it is left as it is.
+
+### Verified (headless Chromium)
+`deadkeys` 7/7 (new). Died in the world with a Fireball in hand, full mana and a fishing prompt up, with the view focused: at death `#ipr` is hidden and `#ob` is empty. E then calls `interact` 0 times, F spends 0 mana and sets no cooldown, I and Tab leave the book shut, and Q does nothing. After *Load last save*, F spends 30 mana and I opens the book. On the old code four of the checks fail: the prompt stayed up, E reached `interact` once, F spent 30 mana and I and Tab opened the book. Neighbours: `diedload`, `deathplace`, `hearthcast`. `parsecheck` clean.
+
+### Needs eyes
+Nothing to judge by eye. The touch buttons sit under the death screen, so a phone cannot press them either; that was not tested on a touch device.
