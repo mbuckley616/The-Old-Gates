@@ -14508,3 +14508,16 @@ CI on Session 662's head (`ced6a8f`) failed three suites on two shards. Each was
 
 ### Needs eyes
 Nothing to see. CI on this push is the real proof for the two waits.
+
+## v80 — Session 666 — A back-room strongbox with its door open (backlog G, Session 167's owed check)
+Section I is clear on this branch, the register review's findings are all in the code, and B and C hold nothing left that is not the look builder's or waiting on Michael (#208, #211). So this session takes the one owed check in section G that a headless run can settle: Session 167's *steal from a back room with the door shut and then open*. Session 365 measured the shut half (a back-room box is never seen); nobody had measured what opening the door changes.
+
+Nothing in the game changed. `tests/backroomdoor` enters every shop with a back room and a strongbox in Dunmore, Portclare, Ironhaven and Ashenmoor at 13h (ten shops) and runs the keeper's own amble (`intAmbleStep`) for ten minutes of fixed 1/60 steps twice, once with the back room's door shut and once after `intDoorInteract` has opened it, as E does. Every tenth of a second a thief standing at the box asks `witnessOf`, and the test also records the three things an indoor witness needs: within 6 units, facing you within 60°, and a clear line through the rooms (`intSightLine`).
+
+The answer is that the door does not matter. Opening it hides you no worse than shutting it, because the room is laid out so that the doorway never looks at the box: the partition's door is cut at 0.3 of the shop's width (`partition`, `83-world-generator.js`) and the box stands in the far corner at the width less 0.9. A line from the keeper's floor to the box crosses the partition 5–8 units from the doorway. Swept on a 0.25 grid, 1 to 4 spots of 850–2,850 on each shop floor have a clear line through the open doorway, all of them in the far corner more than 6 units away, where no keeper sees. So a back-room box is safe by day with the door open or shut. A thief standing just inside the open doorway is a different matter: a keeper 2.5 units in front of it, facing it, sees them, and does not once the door is shut.
+
+### Verified (headless Chromium)
+`backroomdoor` 11/11 (new). Ten back-room shops in four towns: seen 0% of the ten minutes with the door shut and 0% with it open, so 0 on a pick of 0, 3, 6 or 10 s either way. With the door open the keeper was within 6 units of the thief 0–68% of the time and facing them about a third of it, but never with a clear line. The control at the doorway sees with the door open and not shut in all ten. The door's leaf blocks while shut and leaves the collision set when E opens it. No page errors. `parsecheck` clean.
+
+### Needs eyes
+Whether a back-room box that is safe at any hour with the door open is what Michael wants. If the back room should be a risk with its door left open, the box would have to stand where the doorway looks, or the keeper would have to walk into the back room; either would be a rule change, so it is not built. The test shows both sides of the trade if it is ever asked.
