@@ -1683,7 +1683,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const G=gstate();
     for(const g in G){const t=G[g].active;if(!t)continue;
       if(t.kind==='clear'&&ctx==='dungeon'&&typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.id===t.portal)t.have++;
-      if(t.kind==='hunt'&&ctx==='zone'&&e.name===t.target)t.have++;
+      if(t.kind==='hunt'&&ctx==='zone'&&(e.name===t.target||e.baseName===t.target))t.have++; /* S667 — a Greater Wolf or a Shadow Skeleton is the creature hunted (its variant's name has a prefix); a Dire Wolf is a kind of its own */
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&e._guildTag===t.id)t.done=true;
       if(t.kind==='raid'&&e._guildTag===t.id){t.have++;if(t.have>=t.count){const S=SETTLE.get(t.siteId);if(S)S.raid=false;showMsg('The raiders are down. The town is safe.','#e8d8a0');}}
       gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: task complete — report back.`,'#e8d8a0');}

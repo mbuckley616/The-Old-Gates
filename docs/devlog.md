@@ -14521,3 +14521,14 @@ The answer is that the door does not matter. Opening it hides you no worse than 
 
 ### Needs eyes
 Whether a back-room box that is safe at any hour with the door open is what Michael wants. If the back room should be a risk with its door left open, the box would have to stand where the doorway looks, or the keeper would have to walk into the back room; either would be a rule change, so it is not built. The test shows both sides of the trade if it is ever asked.
+
+## v80 — Session 667 — A guild hunt counts a Greater Wolf as a Wolf (the critic's s477 note)
+The critic's s477 run left one small thing unfiled: a Fighters' Guild hunt counts a kill only when the foe's name is the target's exactly (`onKill`, `83-world-generator.js`). The critic thought of a Dire Wolf, which is a kind of its own (its own row in the zone table, 40 HP, from level 4). But the same test also refuses the variants. A variant foe is built from its creature with a label in front of the name (`applyVariantToDef`, `74-strikes.js`): *Greater* for any creature, *Shadow* for a Skeleton, *Frost* for the trolls, the Golem and the Wraith. So on a *Hunt 4 Wolves*, the hunt's own ground (chosen by `huntGround` from the tables that hold Wolves) could raise a Greater Wolf, and killing it did not count. The hunt's line is *Kill N of them*; a Greater Wolf is one of them. Counting it makes the task do what it says, so this is a fix and not a rule.
+
+A zone foe now carries the creature it was built from, `baseName` (the `type` passed to `buildZoneEnemy`), and a hunt counts a kill when either the name or the base name is the target. A Dire Wolf's base name is *Dire Wolf*, so it still does not count for Wolves; whether it should is a design question nobody has asked, and it is left alone. Only open-world foes count for a hunt, as before.
+
+### Verified (headless Chromium)
+`huntvariant` 6/6 (new). Foes built by `buildZoneEnemy` and killed through `killZoneEnemy` against an active Wolf hunt: a Wolf counts (1), a Greater Wolf counts (2), a Dire Wolf and a Greater Goblin do not (still 2). Against a Skeleton hunt, a Shadow Skeleton counts and a plain one after it (1, 2). On a scratch copy with the old exact-name test (`--src`), four of the six fail: the Greater Wolf and the Shadow Skeleton went uncounted. Neighbours green: `datedguild`, `jobids`, `foeseed`, `sitefoes`. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see beyond the count going up. Whether a Dire Wolf should count for a Wolf hunt is Michael's if he wants it.
