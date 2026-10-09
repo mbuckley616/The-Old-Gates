@@ -14674,3 +14674,16 @@ Session 663 raised the foes' posture floor to 18 on Michael's A on #206, so that
 
 ### Needs eyes
 Whether the war hammer still feels like the heaviest stagger weapon when a Wolf takes two blows from it: its second swing breaks what the sword needs three for.
+
+## v80 — Session 682 — A guild task can be handed back (Michael's A on DECISION #217)
+The critic's s480 run took *Draught to Hermit's Camp* at Ironhaven and could never finish it. The camp has no houses, the task had no date, and the hall had no way to take it back, so *Any work?* answered *You still owe us* for ever and the Mages' Guild was shut to that character. Session 675 stopped new draughts and hearths going to places with no houses. A save already holding one, or a task that breaks some other way, still had no way out. Michael chose A: a topic to hand it back, with no cost. That is Morrowind's way: a guild never holds you to a job you cannot finish.
+
+While a task is open and not yet done, the guild head now offers *I can’t do it.* (`handBack`, `83-world-generator.js`). The task is taken off you. No pay or XP is given, and the count of tasks done and the rank are untouched. The log and the journal say *Handed back*, under the task's own id. What the task had put into the world is cleared the way a lapsed dated task clears it (`gLapse`, Session 501): a raid's town is no longer held under raid, and a relic left lying is taken up. *Any work?* then gives another task under a new id. A task that is done offers *It's done.*, not the hand-back. A rank commission handed back comes round again on the next *Any work?*, because the rank waits on it. Without that, handing one back would lose the commission and with it the rank. A foe a task has already raised is left in the world, as a lapsed task leaves it.
+
+The head answers in one plain line, *Then it goes back on the board. Ask when you want another.* The decision gave the line in each people's voice to the quest writer, and it is noted for them in the backlog.
+
+### Verified (headless Chromium)
+`handback` 9/9 (new), through the head's own topics at Ironhaven's Mages' Guild. With the critic's stuck draught in hand, *Any work?* says *You still owe us* and *I can’t do it.* is offered. Handed back: gold +0, XP +0, tasks done +0, the same rank, a *Handed back* line in the log and a lapsed line in the task's journal, and the topic gone. *Any work?* then gives a new task (a Shore Wisp at Loch Liath). A done task offers *It's done.* and not the hand-back. A relic handed back is taken out of the scene and the pickups. A raid handed back clears the town's raid. The rank-2 commission (`guild_m:c2`) handed back is offered again. Neighbours: `datedguild`, `standingcount`, `jobseed`, `taskhomes`, `guildfurn`. `parsecheck` clean.
+
+### Needs eyes
+The head's line, which wants each people's voice (the quest writer's). Whether a free hand-back with a new task at once is used to reroll for pay is the risk B would have priced; Michael chose A knowing it.
