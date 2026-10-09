@@ -12,7 +12,9 @@ const die = () => page.evaluate(() => { dead = false; PHP = 0; playerDead(); con
 const out = {};
 await page.evaluate(() => { currentPortal = { id: 'tutorial_crypt', name: 'The Crypt of First Light', tutorial: true }; });
 out.afterTutorial = await die();
-await enterDungeon(page, { theme: 'ruins', seed: 11, interior: 'fort_linear', size: 'medium' });
+// S683 — the dungeon is named by the test: `enterDungeon` copies `PORTALS[0]`, which in the open world is the first sigil door
+// a cell has loaded, and on a slow runner none has yet, so the portal had no name (CI read *Fell in undefined.*)
+await enterDungeon(page, { theme: 'ruins', seed: 11, interior: 'fort_linear', size: 'medium', name: 'The Old Garrison' });
 out.inDungeon = await die();
 await page.evaluate(() => goToOW());
 await page.waitForFunction(() => activeZoneId === 'world', null, { timeout: 20000 }); await page.waitForTimeout(1500);

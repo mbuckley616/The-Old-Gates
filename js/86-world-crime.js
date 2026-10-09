@@ -992,7 +992,7 @@ function yardStage(){if(YARD.r)return true;const cv=document.getElementById('yar
     YARD.s=new THREE.Scene();YARD.s.add(new THREE.AmbientLight(0xffffff,.6));const d=new THREE.DirectionalLight(0xfff0d0,.85);d.position.set(10,16,12);YARD.s.add(d);
     YARD.c=new THREE.PerspectiveCamera(30,320/240,.5,200);}catch(e){YARD.r=null;return false;}return true;}
 function yardShow(cls){const C=SHIP_CLASSES[cls];if(!C||!yardStage())return;for(const k in YARD.m)YARD.m[k].visible=false;
-  let m=YARD.m[cls];if(!m){try{m=buildShipMesh(C.L,C.W,'player');}catch(e){return;}YARD.m[cls]=m;YARD.s.add(m);}
+  let m=YARD.m[cls];if(!m){try{m=buildShipMesh(C.L,C.W,'player',cls);} /* S683 — the stage shows each class on its own hull (S665's cutter and caravel), not the hull of her length */catch(e){return;}YARD.m[cls]=m;YARD.s.add(m);}
   m.visible=true;const d=C.L*1.9;YARD.c.position.set(0,C.L*.55,d);YARD.c.lookAt(0,2.2,0);}
 function yardLoop(){if(!yardOpen){YARD.raf=0;return;}YARD.raf=requestAnimationFrame(yardLoop);const now=performance.now(),dt=Math.min(.1,(now-(YARD.last||now))/1000);YARD.last=now;
   YARD.yaw+=dt*.35;const m=YARD.m[YARD.cls];if(m)m.rotation.y=YARD.yaw;if(YARD.r)try{YARD.r.render(YARD.s,YARD.c);}catch(e){}}

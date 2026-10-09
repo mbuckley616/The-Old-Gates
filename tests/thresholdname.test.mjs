@@ -24,11 +24,16 @@ for (const seed of [7100, 7104]) {
 // now awaited until the zone is the world, and the store given a moment before the ordinary save is made
 await page.waitForTimeout(3000);
 // an ordinary autosave in the open, by Dunmore, a few seconds later: the town, as before
-const town = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x + 5; pz = t.z + 5; SS.lastAuto = 0; const ts = Date.now(); saveGame(true); return { ts, name: t.name }; });
+// S683 — CI on 5cd715d read *place: ''* once more, and no run here does (nor at a quarter of the CPU). The arrival is now made as a
+// fast travel makes it (the cells round you loaded first), and the state the name is read from is kept, so a failure says why.
+const town = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x + 5; pz = t.z + 5; tickCells(0, true); SS.lastAuto = 0;
+  let near = null, nd = 1e9; for (const s of WORLD.SITES) { const d = Math.hypot(px - s.x, pz - s.z); if (d < nd) { nd = d; near = s.name; } }
+  const at = { zone: activeZoneId, house: !!currentHouse, name: ssPlaceName(), sites: WORLD.SITES.length, loaded: [...WORLD.LOADED.keys()], near, nd: Math.round(nd), dead };
+  const ts = Date.now(); saveGame(true); return { ts, name: t.name, at }; });
 await page.waitForFunction((t) => SS.idx.some(e => e.kind === 'auto' && e.ts >= t), town.ts, { timeout: 20000 });
 const ord = await lastAuto(); console.log('  ordinary', JSON.stringify(ord), town.name);
 check('the save at a dungeon\'s door is named for the dungeon', out.every(o => o.name && o.place === o.name), out);
 check('the death screen inside names it too', out.every(o => o.died.includes(o.name)), out.map(o => o.died));
-check('an ordinary autosave in the open is still named for the town', ord && ord.place === town.name, { ord, town: town.name });
+check('an ordinary autosave in the open is still named for the town', ord && ord.place === town.name, { ord, town: town.name, at: town.at });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

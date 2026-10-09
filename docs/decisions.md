@@ -6,16 +6,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
-### A guild task that can't be done — a way to hand it back? (the systems builder, Session 675, 2026-10-09) — DECISION #217
-A guild task that can't be finished can't be given back. The critic's s480 run took *Draught to Hermit's Camp* at Ironhaven: the camp has no houses, so nobody could take the draught. Session 675 stops draughts and hearths going to places with no houses, so that cause is gone for new tasks. But a save that already holds such a task is still stuck, and so is any task that breaks some other way. A guild task has no end date unless it is dated, and the hall has no topic to hand one back, so *Any work?* says *You still owe us* for ever and that guild is shut to the character.
-- **A.** *(recommended)* **A topic to hand it back.** While a task is open, the guild head offers *I can't do it.* The task is taken off you with no pay and no mark against your standing, and *Any work?* gives a new one. This is Morrowind's way: a guild never holds you to a job you cannot finish.
-- **B.** **Hand it back, at a cost.** As A, but the next task waits a day (*Come back tomorrow.*), so the topic cannot be used to reroll for the pay you want.
-- **C.** **No topic.** Every task gets an end date like the dated commissions, and the guild takes it back when the date passes.
-
-Recommendation **A**: smallest, and gives the player the decision. The guild head's line in each people's voice would go to the quest writer.
-
-Michael: **A topic to hand it back** (A). (9 Oct 2026)
-
 ### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214
 The draft *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`) makes the last cavern of Act III six authored rooms: the makers' workroom, the wall where they kept count, the empty shrouds, the bench where the work stopped, and the glass, where Varek stands. Today the Root's guard is a generated foe from the deep cavern renamed *The Root — Ogre*, beside a hoard of gold and a sword.
 - **A.** *(recommended)* **A maker's shape.** At the root there is no folklore for the binding to borrow, so it makes the one shape it remembers: its makers. Short, grey, arms a hand too long, script burning at the wrists, sitting at the last bench cutting the stone the makers left half-done. No hoard; a chisel. Working name *an Fíodóir Folamh*, the Empty Weaver. The risk: it looks like the Old Blood, and Varek, and an Old Blood player.
@@ -25,15 +15,6 @@ The draft *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`
 If A, the name too: *an Fíodóir Folamh*, or another. Only the guard's own lines depend on this; the rest of the draft stands either way.
 
 Michael: **A maker's shape, the Empty Weaver** (A). (9 Oct 2026)
-
-### The war hammer still breaks a Wolf in one swing — floor 19, or leave it? (the systems builder, Session 663, 2026-10-08) — DECISION #211
-You took A on #206: the foes' posture floor is now 18, so a Wolf takes two greatclub swings to stagger, not one. My question said that at 18 no foe breaks to one normal swing of any weapon. That was wrong for one weapon: a normal war hammer swing drains 8 × 2.25 = 18, exactly the floor, so the war hammer still staggers a Wolf, a Bandit, a Goblin or a Skeleton with the first swing each time it is on its feet. The greatclub (12), the claymore and the great axe (14) do not.
-- **A.** Raise the floor to 19. Every weapon takes two normal swings at least; nothing else moves (the next foe above the floor is the Forest Troll at 26).
-- **B.** Leave it at 18. The war hammer is the heaviest stagger weapon (weight 7, two hands, ×2.25), and breaking the small foes in one blow is its character.
-
-Recommendation: **A.** It is what you chose #206 for, and one number changes.
-
-Michael: **Raise the floor to 19** (A). (9 Oct 2026)
 
 ### The pause menu on Esc — a leaf with settings, with a challenge setting, or a tab in the book? (the concept artist, 2026-10-08) — DECISION #208
 You asked on 6 Oct for a proper pause menu on Esc, with Save and Load and the settings (look speed, volume by kind, brightness), and maybe a difficulty slider as in the Elder Scrolls. Today Esc in play opens nothing: in a real browser it lets the pointer go and the world plays on. The *Paused · Click to resume* box written for that moment (v62.1) never shows, because the function that shows it, `reconcilePointerLock`, is declared inside `_enterGame` and the loop's `typeof` check never finds it. The only settings are one volume button with three steps (off, quiet, loud) and M for the spoken lines. The prototype (`docs/prototypes/pause/`, on auto/concept) uses the parchment kit and today's numbers on build s477.

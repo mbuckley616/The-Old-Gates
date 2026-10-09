@@ -12,7 +12,7 @@ const R = () => page.evaluate(() => { const d = document.getElementById('yard-di
     acts: [...document.querySelectorAll('#yard-acts button')].map(b => b.textContent.trim()), note: (document.querySelector('#yard-acts div') || {}).textContent || '',
     info: document.getElementById('yard-info').textContent, kn: document.getElementById('yard-kn').textContent, bare: d && +d.dataset.bare, full: d && +d.dataset.full,
     said: document.getElementById('yard-said').textContent, gold, cls: worldState.ship && worldState.ship.cls, sails: worldState.ship && worldState.ship.sails, cargo: worldState.ship && worldState.ship.cargo,
-    stage: !!(YARD.m[YARD.cls] && YARD.m[YARD.cls].visible), tris: YARD.r ? YARD.r.info.render.triangles : -1 }; });
+    stage: !!(YARD.m[YARD.cls] && YARD.m[YARD.cls].visible), kind: YARD.m[YARD.cls] && YARD.m[YARD.cls].userData.kind, tris: YARD.r ? YARD.r.info.render.triangles : -1 }; });
 const pick = (k) => page.evaluate(k => document.querySelector(`#yard-list button[data-cls="${k}"]`).click(), k);
 const act = (re) => page.evaluate(src => { const b = [...document.querySelectorAll('#yard-acts button')].find(x => new RegExp(src).test(x.textContent)); if (b) b.click(); return !!b; }, re);
 
@@ -27,6 +27,8 @@ check('her numbers: 7.5 bare, 11.1 under full sails on the dial; hull 100, hold 
 check('the stage draws her', a.stage && a.tris > 1000, { stage: a.stage, tris: a.tris });
 await pick('cutter'); await g.frames(2); const b = await R();
 check('choosing the cutter: 12 bare, 17.8 full, hull 80, hold 25; with no ship, sold as a sloop and refitted for 1600 more', b.sel === 'cutter' && b.bare === 12 && Math.abs(b.full - 17.76) < .01 && /Hull80/.test(b.info) && /Hold25/.test(b.info) && b.acts.length === 0 && /refitted as a cutter for 1600 gold more/.test(b.note) && b.stage, b);
+// S683 — the stage draws each class on her own hull (the look builder's S665): the cutter is not the sloop of her length
+check('the stage draws the sloop on the sloop’s hull and the cutter on the cutter’s', a.kind === 'sloop' && b.kind === 'cutter', { sloop: a.kind, cutter: b.kind });
 await pick('sloop'); await act('^Buy a ship'); await g.frames(2); const c = await R();
 check('buying the sloop: 400 taken, the ship yours, the shipwright’s line', c.cls === undefined && c.list.includes('sloop (yours)') && c.gold === 5600 && /she’s yours/.test(c.said) && c.list.includes('sloop (yours)'), c);
 check('the sloop, hers: sails tier 1 (250) and hold tier 1 (200) offered, and her tiers shown', c.acts.includes('Better sails, tier 1 (250 gold)') && c.acts.includes('Bigger hold, tier 1 (200 gold)') && /Sailstier 0 of 4/.test(c.info), c);

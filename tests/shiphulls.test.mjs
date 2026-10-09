@@ -48,8 +48,9 @@ const r = await page.evaluate((id) => { const s = siteAnywhere(id), out = {};
   worldState.ship.cls = 'cutter'; worldState.ship.cargo = 0; out.raise = shipRaiseCost();
   return out; }, ports.mark.id);
 console.log(JSON.stringify(r));
-check(`${r.label}: 700 taken, she is a cutter, hull ${r.cutter.hull} of ${r.cutter.hullMax}, on the sloop's ${r.cutter.kind} hull`,
-  r.label === 'Refit her as a cutter (700 gold)' && r.cutter.cls === 'cutter' && r.cutter.gold === 300 && r.cutter.hull === 80 && r.cutter.hullMax === 80 && r.cutter.L === 13 && r.cutter.mesh && r.cutter.kind === 'sloop', r);
+// S683 — since Session 665 (the look builder, Michael's A on #202) your own ship takes her class's hull: the cutter has her own
+check(`${r.label}: 700 taken, she is a cutter, hull ${r.cutter.hull} of ${r.cutter.hullMax}, on her own ${r.cutter.kind} hull`,
+  r.label === 'Refit her as a cutter (700 gold)' && r.cutter.cls === 'cutter' && r.cutter.gold === 300 && r.cutter.hull === 80 && r.cutter.hullMax === 80 && r.cutter.L === 13 && r.cutter.mesh && r.cutter.kind === 'cutter', r);
 check(`her three tiers carry: ${r.cutter.top} (12 × 1.36)`, Math.abs(r.cutter.top - 16.32) < .01, r.cutter);
 check(`a cutter no bigger than the cog: the shipwright says only "${r.said}"`, /^(She's a|She is a|A) cutter now(, Master)?\.$/.test(r.said), r.said);
 check(`${r.downLabel}: the yard pays two thirds of 1,600, and she is a sloop of 100`, r.downLabel === 'Refit her as a sloop (the yard pays 1067 gold)' && r.sloop.cls === 'sloop' && r.sloop.gold === 1367 && r.sloop.hull === 100, r);
