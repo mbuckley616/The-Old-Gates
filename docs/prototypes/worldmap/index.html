@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>World Map Sharp</title>
+<style>
+:root{--paper:#efe3c6;--ink:#2a1c10;--rubric:#9a2a20;--gilt:#b8862a;--muted:#6e5a40;--rule:#c9b48a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#1d1812;--ink:#eadcbc;--rubric:#d06050;--gilt:#d8a84a;--muted:#b0a080;--rule:#4a3c2a}}
+:root[data-theme="dark"]{--paper:#1d1812;--ink:#eadcbc;--rubric:#d06050;--gilt:#d8a84a;--muted:#b0a080;--rule:#4a3c2a}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Georgia,serif}
+main{max-width:1640px;margin:0 auto;padding:24px 16px 60px}
+h1{font:italic 600 30px Georgia,serif;margin:0 0 4px} h2{font:italic 600 21px Georgia,serif;margin:34px 0 8px;color:var(--rubric)}
+p,li{max-width:900px} .sub{color:var(--muted);margin:0 0 20px}
+img{display:block;max-width:100%;height:auto;border:1px solid var(--rule);margin:8px 0 18px}
+table{border-collapse:collapse;margin:10px 0;font-size:14px} td,th{border-bottom:1px solid var(--rule);padding:5px 12px 5px 0;text-align:left;vertical-align:top}
+code{font:13px ui-monospace,Menlo,monospace}
+.opt{border-left:3px solid var(--gilt);padding:4px 0 4px 14px;margin:10px 0;max-width:900px}
+</style></head><body><main>
+<h1>The world map, sharp, with your quests on it</h1>
+<p class="sub">Concept artist, 9 Oct 2026 · backlog E, Michael's notes of 5 Oct: <i>"We need quest markers to work on the overworld map"</i> and <i>"The overworld map is very often blurry / does not render well."</i> Today's build is s482 (main, 9 Oct). Every picture is the game itself in headless Chromium at 1280×720, the proposal loaded over it from <code>proposal.js</code>.</p>
+
+<h2>Why it is blurry</h2>
+<ol>
+<li><b>The canvas ignores the screen's pixel ratio.</b> It is sized in CSS pixels (<code>root.width = r.width</code> in <code>openMap</code>): on a laptop's screen (ratio 2) the map pane is 1021×433 CSS pixels and so 1021×433 canvas pixels, stretched to 2042×866. Every tile, road, icon and letter is drawn at half the screen's resolution.</li>
+<li><b>The fine tiles crawl.</b> A province's fine tile (320 px) is built by <code>mapJobs</code>, which does one 12-row step a frame and then <code>break</code>s whatever its 24 ms budget: 54 frames a tile, one tile at a time. The map opens on 15 tiles, so the last province turns sharp 810 frames (13.5 s at 60 fps) after you press Tab. Until then a province is its 48-pixel coarse tile stretched across 240–810 screen pixels: the blocky mush in the pictures.</li>
+<li><b>Past one zoom step nothing gets finer.</b> The fine tile is 320 px a province; the map opens at 238 px a province and zooms to 64 times that. At ×3.4 a tile pixel covers 2.5 screen pixels (5 on a laptop).</li>
+</ol>
+
+<h2>Why the quest marks don't work</h2>
+<p>The map keeps its own list of marks (<code>questMarkers</code>, 87-world-quests.js) and the compass another (<code>compassMarkers</code>). With four of Dunmore's jobs taken and one done, the compass shows four marks and the map three: the map has no mark for a job that is done (<i>report to Mayor Niamh</i>), and none for a find quest's person on the move, a townsperson's directions, the faction, war and guild marks, Corwin, or Act I's givers. The map draws no marks at all below 60 px a province (the whole continent: 0 entries), every mark is the same yellow star, and a mark off the edge of the view is simply gone.</p>
+
+<h2>The proposal</h2>
+<ul>
+<li>The canvas at CSS size × the pixel ratio, drawn in CSS units through <code>setTransform</code>, so nothing else in the map's maths changes.</li>
+<li>Tiles in a quadtree: a province, its quarters, their quarters, five levels down (75 units a tile side), 256 px each, the level chosen so a tile pixel is never more than 1.15 screen pixels. The jobs spend their budget (8 ms a frame) on tiles nearest the middle first; a tile not ready is drawn from its best finished ancestor, cropped, never from the 48-px tile once something finer exists. Water hatching keeps 45 units between its lines at every level.</li>
+<li><code>mapMarks()</code>: the compass's list, each mark carrying its quest's title and line. Every mark is drawn at every zoom as a numbered wax seal — red: go there; gilt with a tick: report back; blue: directions — with a tag pointing at the spot. Seals on one spot stand side by side; a title is printed only where it clears the others. A mark off the view sits on the frame with an arrow and its distance. With nothing hovered, the panel lists the marks under <i>Where your work is</i>, numbered as on the map; a click centres the map on one.</li>
+</ul>
+
+<h2>Today and proposed</h2>
+<img src="compare-settled.png" alt="Where the map opens, today and proposed">
+<img src="compare-town.png" alt="Zoomed into Dunmore, today and proposed">
+<img src="compare-pan.png" alt="Dragged one province east, today and proposed">
+<img src="compare-continent.png" alt="The whole continent, today and proposed">
+<h2>The proposal, whole screens (laptop ratio)</h2>
+<img src="proposed-town.png" alt="Proposed, zoomed into Dunmore">
+<img src="proposed-deep.png" alt="Proposed, close in, with marks off the frame">
+<img src="proposed-continent.png" alt="Proposed, the continent with every mark">
+
+<h2>Numbers</h2>
+<table>
+<tr><th></th><th>Today</th><th>Proposed</th></tr>
+<tr><td>Canvas on a ratio-2 screen</td><td>1021×433</td><td>2042×866</td></tr>
+<tr><td>Where it opens (238 px a province)</td><td>15 tiles of 320, 810 frames to sharp, at 1× only</td><td>36 tiles of 256 at 2×: 7.6 s of work on this container, 908 frames of 8 ms; the middle first</td></tr>
+<tr><td>Zoomed ×3.4 (810 px a province)</td><td>the same 320 tiles stretched ×2.5 (×5 at ratio 2)</td><td>55 more tiles at level 3, 11.2 s of work here, 1,339 frames</td></tr>
+<tr><td>Marks with four jobs taken, one done</td><td>3 of the compass's 4; none on the continent</td><td>4 of 4 at every zoom; the off-view ones on the frame</td></tr>
+</table>
+<p>The work is measured in this container, which runs about five times slower than a desktop (a 320 tile takes 551 ms here; the same frame budget gets several times as far on a real machine). A tile is kept once built, so a province is paid for once a session. Today's own tiles cost the same work per pixel; they only dribble it out.</p>
+
+<h2>For the builder</h2>
+<p><code>proposal.js</code> is a plain script; each function in it replaces its namesake in <code>js/83-world-generator.js</code> (<code>baseScale</code>, <code>mapClamp</code>, <code>visibleCells</code>, <code>openMap</code>, <code>mapJobs</code>, <code>mapDraw</code>, <code>mapPanel</code>) and adds <code>startQ</code>/<code>stepQ</code>/<code>drawCell</code>, <code>mapMarks</code>, <code>drawMarks</code> and <code>mapPickMark</code>. <code>WORLD.openMap</code> must point at the new one (the hub opens it through the export). Still owed in a build: <code>mapPick</code>, <code>mapPickNote</code> and the search's centring read <code>MAP.cv.width</code> and want the CSS size; the hover card should open on a seal (<code>mapPickMark</code>); the Key's <i>★ a quest</i> line becomes the three seals; <code>questMarkers</code> can go once the map reads <code>mapMarks</code>. Scripts: <code>shoot-current.mjs</code> (today), <code>shoot.mjs</code> (the proposal), <code>compare.mjs</code> (the plates).</p>
+</main></body></html>
