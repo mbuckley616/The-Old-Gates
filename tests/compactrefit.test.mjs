@@ -51,6 +51,8 @@ console.log('galleon', JSON.stringify(c3), JSON.stringify(s3));
 check(`a galleon stays a galleon and is mended (hull ${s3.hull}, rig ${s3.rig})`, c3.clicked && /mended, at its own charge\. There is no larger hull to enter\.$/.test(c3.said) && s3.cls === 'galleon' && s3.hull === 200 && s3.rig === 100 && /The Compact mended the /.test(log3), { s3, log3 });
 
 // sunk: raised free by the shipwright nearest the wreck, a class up
+// (three days from the claim: the clock runs on between the click and the reading, so the time left is read as three days
+// less under half an hour; on CI 4,319.98 minutes failed an exact 4,320, S670)
 const sk = await page.evaluate(() => { worldState.ship.cls = 'sloop'; WORLD.ship.sailing = false; const S = WORLD.ship; const x0 = S.x, z0 = S.z;
   WORLD.shipWear(999, 0); WORLD.shipWear(5, 0); return { sunk: worldState.ship.sunk, x0, z0 }; });
 const g4 = await page.evaluate(() => gold);
@@ -59,7 +61,7 @@ const raise = await page.evaluate(() => { const st = worldState.ship; const site
   const near = st.sunk ? ports.slice().sort((a, b) => Math.hypot(a.x - st.sunk.x, a.z - st.sunk.z) - Math.hypot(b.x - st.sunk.x, b.z - st.sunk.z)).slice(0, 3).map(p => p.id) : [];
   return { site: site && site.name, id: site && site.id, near, dueIn: st.raise ? st.raise.due - (worldState.gameTimeAbsMinutes || 0) : null }; });
 console.log('sunk', JSON.stringify(sk), JSON.stringify(c4), JSON.stringify(s4), JSON.stringify(raise));
-check(`sunk, she is raised free at ${raise.site} (near her wreck) in three days, refitted as a cog`, !!sk.sunk && c4.clicked && c4.said === `Entered in your name, Prior: the house. Your ship lies on the bottom; the shipwright at ${raise.site} has the Compact's order to raise her, a class better, and three days to do it.` && s4.sunk && s4.cls === 'cog' && raise.dueIn === 3 * 1440 && raise.near.includes(raise.id) && s4.gold === g4, { sk, s4, raise });
+check(`sunk, she is raised free at ${raise.site} (near her wreck) in three days, refitted as a cog`, !!sk.sunk && c4.clicked && c4.said === `Entered in your name, Prior: the house. Your ship lies on the bottom; the shipwright at ${raise.site} has the Compact's order to raise her, a class better, and three days to do it.` && s4.sunk && s4.cls === 'cog' && raise.dueIn > 3 * 1440 - 30 && raise.dueIn <= 3 * 1440 && raise.near.includes(raise.id) && s4.gold === g4, { sk, s4, raise });
 const up = await page.evaluate(() => { worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 3 * 1440 + 1; for (let i = 0; i < 70; i++) WORLD.tick(1 / 60 * 60, performance.now());
   const st = worldState.ship; return { sunk: !!st.sunk, mesh: !!WORLD.ship.mesh, cls: st.cls, hull: st.hull, L: WORLD.ship.L }; });
 console.log('raised', JSON.stringify(up));

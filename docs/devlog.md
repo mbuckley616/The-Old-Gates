@@ -14545,3 +14545,12 @@ Main's own CI failed `lod` on adbbf75 (shard 1) and `q7world` on 9b86e34 and aga
 
 ### Needs eyes
 Not a fault the test can call, but seen in the reproduction: a player who stands beside the Faolchú and both lessers is staggered about 93% of the time and gets almost no swing away. Whether being held down by three wolves like that is the fight Michael wants is a question for play, not for this test. Also on 66fa792, shard 1: `compactrefit` failed; it is not in this item and was not looked at this session.
+
+## v80 — Session 670 — `compactrefit` reads three days from the claim, not to the second (main's CI on 66fa792)
+Main's CI on 66fa792 failed `compactrefit` on shard 1, which Session 669 left owed. Only one check failed, *sunk, she is raised free at Beaurouge (near her wreck) in three days, refitted as a cog*. Every part of it held except the time left on the order: 4,319.98 minutes where the check wanted exactly 4,320. The order is written `due = now + 3 × 1440` at the click (`85-world-sea.js`, `86-world-crime.js`), which is right. The test reads the time left a few real frames later, after the dialogue has closed. Here no game time passes in those frames, so it reads 4,320. On the runner a frame of game time passed (the clock had moved 0.02 minutes), and the exact equality failed. The check now takes three days less under half an hour, which still tells three days from two or four. Nothing in `js/` changed.
+
+### Verified (headless Chromium)
+`compactrefit` 11/11 twice (4,320 here both times). In CI's own reading, 4,319.98, the new bound holds and the old one fails. `parsecheck` clean.
+
+### Needs eyes
+Nothing.
