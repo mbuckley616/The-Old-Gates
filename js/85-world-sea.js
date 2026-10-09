@@ -123,25 +123,45 @@
     if(o.topsail){const y2=D+h*.95;R.rod([-yardW*.35,y2,zr+.14],[yardW*.35,y2,zr+.14],.045,.045,mc,6);shipSail(R,yardW*.66,yardW*.84,h*.2,yardW*.07,o.sail,o.seam,[0,y2-.04,zr+.18]);}
     if(o.rigs)o.rigs.push({geo:R.bake(),z,type:'square'});
     return yy;}
+  // a three-cornered sail, filled: head, tack and clew, bellied to leeward (+x) most in its middle (the sloop's jib, the cutter's headsails)
+  function shipTriSail(B,jh,jt,jc,col,belly){const jp=[],jcl=[];const N=7;const c=shC(col),bl=belly==null?12:belly*8;
+    const pt=(a,b)=>{const w=1-a-b;return [jh[0]*w+jt[0]*a+jc[0]*b+bl*a*b*w,jh[1]*w+jt[1]*a+jc[1]*b,jh[2]*w+jt[2]*a+jc[2]*b];};
+    for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){const A=pt(i/N,j/N),Bq=pt((i+1)/N,j/N),Cq=pt(i/N,(j+1)/N);jp.push(...A,...Bq,...Cq);jcl.push(c.r,c.g,c.b,c.r,c.g,c.b,c.r,c.g,c.b);
+      if(j<N-i-1){const Dq=pt((i+1)/N,(j+1)/N);jp.push(...Bq,...Dq,...Cq);jcl.push(c.r,c.g,c.b,c.r,c.g,c.b,c.r,c.g,c.b);}}
+    const jg=new THREE.BufferGeometry();jg.setAttribute('position',new THREE.Float32BufferAttribute(jp,3));jg.setAttribute('color',new THREE.Float32BufferAttribute(jcl,3));jg.computeVertexNormals();B.add(jg);}
+  // a lateen in the mast's own frame: a long yard slung at ym across the mast, low forward and high aft, the sail hung
+  // under it to a clew aft near the deck, bellied to leeward; seams run down from the yard
+  function shipLateen(B,ym,yl,drop,lk){const D=SHIP_DECK,f=[0,ym-drop*.42,yl*.42],a=[0,ym+drop*.62,-yl*.58];
+    B.rod(f,a,.06,.04,0x5a3c1e,6);const cl=[0,D+1.15,-yl*.42];const tk=[0,f[1]-.05,f[2]-.1],hd=[0,a[1]-.08,a[2]+.1];
+    const nx=8,ny=7,pos=[],col=[];const c0=shC(lk.sail),c1=shC(lk.seam);
+    const P=(i,j)=>{const u=i/nx,v=j/ny;const top=[tk[0]+(hd[0]-tk[0])*u,tk[1]+(hd[1]-tk[1])*u,tk[2]+(hd[2]-tk[2])*u];
+      const bot=[tk[0]+(cl[0]-tk[0])*u,tk[1]+(cl[1]-tk[1])*u,tk[2]+(cl[2]-tk[2])*u];
+      const x=1.3*Math.sin(Math.PI*u)*Math.sin(Math.PI*(.15+.75*v))*(1-.3*v)*Math.min(1,u*4);return [x,top[1]+(bot[1]-top[1])*v,top[2]+(bot[2]-top[2])*v];};
+    for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const q=[P(i,j),P(i+1,j),P(i+1,j+1),P(i,j+1)];const c=i%2?c1:c0;for(const k of [0,1,2,0,2,3])pos.push(q[k][0],q[k][1],q[k][2]),col.push(c.r,c.g,c.b);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();B.add(g);}
   const SHIP_LOOKS={
     player:{strakes:[0x6a4424,0x5c3a1e,0x714a28],wale:0x3a2410,band:null,bottom:0x2e2620,sail:0xece2c8,seam:0xdccfac,trim:0x3a2410,deck:[0xa8865a,0x9c7c52,0xb08e62]},
     pirate:{strakes:[0x2e2824,0x26201c,0x322a24],wale:0x6a1a14,band:0x1a1614,bottom:0x1e1a16,sail:0x2a2624,seam:0x1e1a18,trim:0x6a1a14,deck:[0x6a5a44,0x5e503c,0x72604a]},
     merchant:{strakes:[0x7a5a34,0x6e5030,0x84623a],wale:0x2a4a3a,band:0x3a6a52,bottom:0x3a2e24,sail:0xeee2c6,seam:0xa84a30,trim:0x2a4a3a,deck:[0xb09264,0xa48658,0xb89a6c]}
   };
   const SHIP_GEO=new Map();
-  // kind 'sloop' | 'cog' | 'galleon'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
+  // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
   function shipBake(kind,look){const key=kind+'|'+look;let r=SHIP_GEO.get(key);if(r)return r;
     const D=SHIP_DECK,lk=SHIP_LOOKS[look]||SHIP_LOOKS.player;const B=new ShipBake();B.props=[]; /* S616 — what stands on her deck, kept for shipPropSolid */
-    const cls={sloop:{L:13,W:4.4},cog:{L:17,W:5.6},galleon:{L:22,W:7.0}}[kind];const L=cls.L,W=cls.W;
+    const cls={sloop:{L:13,W:4.4},cog:{L:17,W:5.6},galleon:{L:22,W:7.0},cutter:{L:14,W:4.0},caravel:{L:17.5,W:5.0}}[kind];const L=cls.L,W=cls.W;
     const hopt={sloop:{draft:1.05,sheer:.42,bowRise:.45,sternRise:.3,stem:2.4,transom:.34,full:1.8},
       cog:{draft:1.25,sheer:.55,bowRise:.85,sternRise:.9,stem:1.4,transom:0,full:1.3},
-      galleon:{draft:1.5,sheer:.5,bowRise:.7,sternRise:1.25,stem:3.0,transom:.62,full:2.0}}[kind];
-    const H=shipHull(Object.assign({L,W,strakes:lk.strakes,wale:lk.wale,band:lk.band,bottom:lk.bottom,transomCol:lk.strakes[1],stations:kind==='galleon'?34:28},hopt));
+      galleon:{draft:1.5,sheer:.5,bowRise:.7,sternRise:1.25,stem:3.0,transom:.62,full:2.0},
+      cutter:{draft:1.45,sheer:.3,bowRise:.28,sternRise:.18,stem:1.3,transom:.28,full:1.45},
+      caravel:{draft:1.3,sheer:.48,bowRise:.5,sternRise:1.15,stem:1.9,transom:.6,full:1.6}}[kind];
+    /* the Mark's cutter goes tarred black above a gilt line, Aurenne's caravel takes the blue band of its yards */
+    const nat=kind==='cutter'&&look==='player'?{band:0x1e1c1c,wale:0xb08a3a}:kind==='caravel'&&look==='player'?{band:0x1e3a7a,wale:0xc8a850}:{};
+    const H=shipHull(Object.assign({L,W,strakes:lk.strakes,wale:nat.wale||lk.wale,band:nat.band||lk.band,bottom:lk.bottom,transomCol:lk.strakes[1],stations:kind==='galleon'?34:28},hopt));
     B.add(H.geo);if(H.tgeo)B.add(H.tgeo);const deckAt=shipDeck(B,H,L,lk.deck);
     shipRail(B,H,.06,lk.trim,.02);shipWale(B,H,D-.15,.07,lk.wale);shipKeel(B,H,.09,lk.trim,kind==='cog'?.2:.45);
     const st=H.at(H.zs+.01);B.rod([0,st.k-.1,H.zs-.05],[0,st.g+.1,H.zs-.12],.08,.08,lk.trim,5);
     const rud=new THREE.BoxGeometry(.12,1,1);rud.translate(0,-.5,-.5);B.add(rud,[0,D-.15,H.zs-.1],null,[1,1.1+hopt.draft*.7,.8],lk.trim);
-    const bow=H.at(H.zb-.3);const sp=kind==='cog'?1.8:kind==='galleon'?6:4.4;const bz=H.zb-.6,by=bow.g-.05;
+    const bow=H.at(H.zb-.3);const sp=kind==='cog'?1.8:kind==='galleon'?6:kind==='cutter'?6.2:kind==='caravel'?2.6:4.4;const bz=H.zb-.6,by=bow.g-.05;
     const spA=[0,by-.15,bz-1.2],spB=[0,by+sp*.35,bz+sp];B.rod(spA,spB,.13,.06,lk.trim,6);
     B.props.push({x:0,z:-L/2+2.92,r:.13});B.add(SK.cyl(.1,.13,.95,6),[0,D+.475,-L/2+2.92],0,null,0x4a3018); // the wheel's post; the wheel itself turns (shipWheelMesh)
     shipHatch(B,L/2-3.2);
@@ -186,6 +206,40 @@
       const gp=look==='merchant'?0:6;for(const s of [1,-1])for(let k=0;k<gp;k++){const z=-5+k*2.1;const a=H.at(z);B.add(new THREE.BoxGeometry(.06,.42,.5),[a.b*s*1.005,D-.45,z],0,null,0x1a1614);}
       shipLantern(B,-1.6,H.at(-L/2).g+.5,H.zs+.2);shipLantern(B,1.6,H.at(-L/2).g+.5,H.zs+.2);
     }
+    if(kind==='cutter'){
+      // S665 (Michael's A on #202) — the Mark's cutter: a deep, narrow, low hull with a plumb stem, one tall mast stepped
+      // well forward, a gaff main with a topsail over it, a staysail to the stem and a jib out on a long bowsprit
+      const mz=1.6,mh=10.8;if(B.props)B.props.push({x:0,z:mz,r:.17});B.add(SK.cyl(.1,.17,mh+.8,8),[0,D-.8+(mh+.8)/2,mz],0,null,0x5a3c1e);
+      B.add(SK.cyl(.06,.08,2.2,6),[0,D+mh+1.0,mz],0,null,0x5a3c1e);
+      shipShrouds(B,H,mz,D+mh*.86,3,.5,0x2e2820);
+      B.rod([0,D+mh*.86,mz],[0,by+sp*.33,bz+sp-.2],.022,.022,0x2e2820,3);B.rod([0,D+mh*.78,mz],[0,H.at(H.zb-.4).g+.1,H.zb-.4],.02,.02,0x2e2820,3);
+      B.rod([0,D+mh,mz],[0,H.at(-L/2).g,-L/2+.3],.02,.02,0x2e2820,3);
+      shipGaff(B,mz,D+1.35,D+mh*.8,8.6,6.0,lk,rigs);
+      // the gaff topsail: from the topmast head down to the gaff's peak and its throat, set on the gaff's own rig so it swings with it
+      {const G=rigs[rigs.length-1],TB=new ShipBake(),y0=D+mh*.8;shipTriSail(TB,[0,D+mh+2,-.12],[0,y0+6*.3-.05,-5.9],[0,y0+.1,-.2],lk.sail,.5);
+        G.extra=TB.bake();}
+      const sh=(a,b,c,bl)=>{const JB=new ShipBake();shipTriSail(JB,a,b,c,lk.sail,bl);rigs.push({geo:JB.bake(),z:0,type:'jib'});};
+      sh([0,D+mh*.84,mz+.25],[0,by+sp*.3,bz+sp-.5],[0,D+.7,L/2+1.6],1.4);
+      sh([0,D+mh*.76,mz+.22],[0,H.at(H.zb-.4).g+.25,H.zb-.5],[0,D+.6,mz+1.0],1.0);
+    }
+    if(kind==='caravel'){
+      // S665 (Michael's A on #202) — Aurenne's caravel: three lateen masts raked forward, the main tallest; a square
+      // stern under a high sterncastle of rails and painted boards (the deck you walk stays flat); no forecastle
+      const ms=[[4.6,8.2,9.4],[.4,10.4,12.2],[-4.4,7.0,7.6]];
+      for(const [z,h,y] of ms){if(B.props)B.props.push({x:0,z,r:.16});const mh=h*.82+1.2;B.add(SK.cyl(.09,.16,mh,8),[0,D-.8+mh/2,z],[.06,0,0],null,0x5a3c1e);
+        shipShrouds(B,H,z,D+h*.78,2,.6,0x2e2820);
+        const LB=new ShipBake();shipLateen(LB,D+h*.82,y,h*.82-1.1,lk);rigs.push({geo:LB.bake(),z,type:'lateen'});}
+      B.rod([0,D+10.4*.86,.4],[0,by+sp*.3,bz+sp-.1],.022,.022,0x2e2820,3);
+      // the sterncastle: three rails rising aft on posts, painted boards between the lowest two, a stern lantern pair
+      const pc=lk===SHIP_LOOKS.player?0x1e3a7a:lk.wale,gc=lk===SHIP_LOOKS.player?0xc8a850:lk.trim;
+      for(const s of [1,-1]){const z0=-L/2-.05,z1=-L/2+5.2;for(let z=z0;z<=z1+.01;z+=.65){const a=H.at(z);B.rod([a.b*s*.95,a.g,z],[a.b*s*.95,a.g+1.25,z],.045,.045,lk.trim,4);}
+        for(const [dy,r,c] of [[.45,.04,gc],[.85,.045,lk.trim],[1.25,.055,lk.trim]]){const pts=[];for(let z=z0;z<=z1+.01;z+=.5){const a=H.at(z);pts.push(new THREE.Vector3(a.b*s*.95,a.g+dy,z));}
+          B.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),12,r,4,false),null,null,null,c);}
+        for(let z=z0+.32;z<z1-.2;z+=.65){const a=H.at(z);B.add(new THREE.BoxGeometry(.04,.36,.58),[a.b*s*.955,a.g+.23,z],0,null,(Math.round((z-z0)/.65)%2)?pc:gc);}}
+      {const a=H.at(-L/2-.05);for(let x=-a.b*.9;x<=a.b*.9+.01;x+=a.b*.3)B.rod([x,a.g,H.zs-.04],[x,a.g+1.25,H.zs-.04],.04,.04,lk.trim,4);
+        B.rod([-a.b*.95,a.g+1.25,H.zs-.04],[a.b*.95,a.g+1.25,H.zs-.04],.05,.05,lk.trim,4);B.add(new THREE.BoxGeometry(a.b*1.8,.36,.05),[0,a.g+.23,H.zs-.03],0,null,pc);}
+      shipLantern(B,-1.1,H.at(-L/2).g+1.75,H.zs+.1);shipLantern(B,1.1,H.at(-L/2).g+1.75,H.zs+.1);
+    }
     if(look==='pirate'){const fl=new THREE.PlaneGeometry(1.4,.9,3,1);const p=fl.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*3)*.08);fl.computeVertexNormals();
       const FB=new ShipBake();FB.add(fl,[0,mastTop+.9,-.8],[0,Math.PI/2,0],null,0x111111);FB.add(SK.ball(.14,8,6),[.03,mastTop+.95,-.8],0,[1,1,.6],0xd8d0c0);rigs.push({geo:FB.bake(),z:mastZ,type:'flag'});/* S332 — the black flag streams downwind */B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
     r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs,props:B.props};SHIP_GEO.set(key,r);return r;}
@@ -223,14 +277,16 @@
     for(const o of OTHER){if(Math.hypot(x-o.x,z-o.z)>(o.L||13))continue;if(shipPropHit(o.mesh,x,z,R))return true;
       if(o.chest&&o.chest.g&&Math.abs(x-o.chest.x)<.45+R&&Math.abs(z-o.chest.z)<.3+R)return true;}
     return false;}
-  // the ship's mesh: the class by its length, the look by who sails her; the wheel a child that turns with the helm
-  function buildShipMesh(SHIP_L,SHIP_W,look){
-    const kind=(SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop';const r=shipBake(kind,look||'player');
+  // the ship's mesh: the class by its length (or `hull`), the look by who sails her; the wheel a child that turns with the helm
+  // S665 — `hull` names the bake outright; without it your own ship (no look given) takes her class's hull when it has one of its own
+  function buildShipMesh(SHIP_L,SHIP_W,look,hull){
+    const own=!look&&!hull&&worldState.ship&&worldState.ship.cls;if(own==='cutter'||own==='caravel')hull=own;
+    const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');
     const mesh=new THREE.Mesh(r.geo,SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=shipWheelMesh();wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);
     mesh.add(shipNetMesh(SHIP_W||r.W||4.4)); /* S638 — the boarding nets (a stand-in until the look builder's) */
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];
-    mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);return {m,type:q.type,a:0};});
+    mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     return mesh;
   }
@@ -238,7 +294,7 @@
   // +/-PI/2 on the beam, towards +x or -x). Square yards brace round to bisect the wind and the bow, at most 35 degrees; a gaff's
   // boom swings to leeward, out to 72 degrees running and in to 15 close-hauled; the gaff sails and the jib belly to leeward
   function shipTrim(mesh,th,dt){const R=mesh&&mesh.userData.rigs;if(!R)return;th=Math.atan2(Math.sin(th),Math.cos(th));const side=Math.sin(th)>=0?1:-1;
-    for(const q of R){let t=0;if(q.type==='square')t=Math.max(-.61,Math.min(.61,th/2));else if(q.type==='gaff')t=-side*Math.max(.26,Math.min(1.25,(Math.PI-Math.abs(th))/2));
+    for(const q of R){let t=0;if(q.type==='square')t=Math.max(-.61,Math.min(.61,th/2));else if(q.type==='gaff')t=-side*Math.max(.26,Math.min(1.25,(Math.PI-Math.abs(th))/2));else if(q.type==='lateen')t=-side*Math.max(.12,Math.min(.75,(Math.PI-Math.abs(th))/3));
       // S332 — a flag has no bound: it points the way the wind goes (its cloth runs aft at 0) and turns the short way round, quicker than a sail
       if(q.type==='flag'){t=th+Math.PI;const d=Math.atan2(Math.sin(t-q.a),Math.cos(t-q.a));q.a=dt==null?t:q.a+d*Math.min(1,dt*3);q.m.rotation.y=q.a;continue;}
       q.a=dt==null?t:q.a+(t-q.a)*Math.min(1,dt*1.2);q.m.rotation.y=q.a;if(q.type!=='square')q.m.scale.x=side;}}

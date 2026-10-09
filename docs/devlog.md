@@ -14509,6 +14509,19 @@ CI on Session 662's head (`ced6a8f`) failed three suites on two shards. Each was
 ### Needs eyes
 Nothing to see. CI on this push is the real proof for the two waits.
 
+## v80 — Session 665 — The cutter's and the caravel's own hulls (backlog H, Michael's A on DECISION #202)
+Michael answered #202 on 8 Oct: both hulls as Session 643's prototype showed them. Until now the systems builder's two new classes of #192 (Session 636, on auto/systems) are drawn on the sloop's hull and the cog's, because `buildShipMesh` picks the bake by length. This session moves the prototype from `auto/proto-ship-hulls` into `85-world-sea.js` unchanged in shape: the Mark's cutter, a deep, narrow, low hull tarred black above a gilt line, one tall mast well forward with a gaff main, a gaff topsail riding on the gaff's own rig so it swings with it, a staysail and a jib on a long bowsprit (14 × 4.0); and Aurenne's caravel, three lateen masts raked forward, each yard low forward and high aft and swinging to leeward like a gaff (to at most 43°, at least 7°), a square stern under a sterncastle of three rails with blue and gold boards, the blue band and gold wale (17.5 × 5.0). Two helpers came with it, `shipTriSail` (a filled, bellied three-cornered sail) and `shipLateen`; the sloop keeps its own inline jib, so its bake is byte-for-byte what it was.
+
+How the hull is chosen. #202 said the systems builder would pass the class's name to `buildShipMesh`; the prototype's fourth argument, `hull`, is kept for that, and the inspector uses it. But so that your own ship needs nothing more from them, `buildShipMesh` reads her class itself when it is building your ship (called with no look, as `spawnShip` and `applyShipClass` both do): a `worldState.ship.cls` of `cutter` or `caravel` takes that hull; anything else, and every other ship, still goes by length. The prototype pushed the masts into `B.props` (the deck's solids, Session 616, on auto/systems, not on main); here the push is guarded, so the bake runs on main and fills the solids once that work lands. The merge with auto/systems will meet in two places, both small and both "keep both sides": the `cls` line of `shipBake` (their `B.props=[]` on the line above) and `buildShipMesh`'s `userData` lines (their stand-in nets).
+
+### Verified (headless Chromium)
+`tests/hullbakes` (new, 14 checks; named so as not to meet the systems builder's `shiphulls` of Session 636): the cutter bakes 14 × 4.0 in all three paints with a gaff carrying its topsail and two headsails, 4,857 triangles (4,951 under a pirate's flag); the caravel 17.5 × 5.0 with three lateens, 6,082 (6,176). The sloop (4,525), cog (5,366) and galleon (6,600) are the counts they had. With the wind on the starboard beam the caravel's three yards stand at −.52, with it on the port beam at +.52. Your own ship built with no look: a cutter's class gives the cutter, a caravel's the caravel, a sloop's and a cog's their own; other ships at 13, 17 and 22 still come out sloop, cog and galleon. The inspector lists six new pieces (`ships/cutter/*`, `ships/caravel/*`). No page errors. Pictures: `docs/prototypes/shiphulls-ingame-cutter.png`, `-caravel.png`, and both broadside (`-side`). Also green: `ships`, `shiphull`, `shipmoor`, `sailtrim`, and `inspector` (which rewrote `docs/inspector-catalogue.json` with the six new keys; the control room's Meshes tab is republished from it by the producer).
+
+### Needs eyes
+- Both hulls under sail at sea once auto/systems is on main and you can buy one: the lateens' swing in a tack, the cutter's topsail over the gaff as it crosses.
+- The deck's mast solids on the new hulls arrive with Session 616's `B.props` when PR #167 merges; until then you could walk through the caravel's masts on a branch that has the classes but not the solids (none does).
+- Still owed from #192: the real boarding nets, a climb pose and the stowage, once Sessions 636–642 are on main.
+
 ## v80 — Session 666 — A back-room strongbox with its door open (backlog G, Session 167's owed check)
 Section I is clear on this branch, the register review's findings are all in the code, and B and C hold nothing left that is not the look builder's or waiting on Michael (#208, #211). So this session takes the one owed check in section G that a headless run can settle: Session 167's *steal from a back room with the door shut and then open*. Session 365 measured the shut half (a back-room box is never seen); nobody had measured what opening the door changes.
 
@@ -14532,6 +14545,15 @@ A zone foe now carries the creature it was built from, `baseName` (the `type` pa
 
 ### Needs eyes
 Nothing to see beyond the count going up. Whether a Dire Wolf should count for a Wolf hunt is Michael's if he wants it.
+
+## v80 — Session 668 — `sailtrim` red on this PR's CI, a test fault (backlog H, CI)
+After the producer merged main into this branch (one backlog line, `b53a2b6`), shard 5 failed on `sailtrim`. The same code passed every shard on `cda563a` an hour earlier. The check that failed reads every rig on two ships two seconds after they are put to sea and wants each within .02 rad of the rule's trim. All the sails met it. The pirate's black flag did not: it wanted 1.827 and read 1.852, .025 behind. A flag chases the wind at 3 a second, faster than the sails and with no bound, so while the pirate's heading is still drifting after its spawn, on a runner that slow it trails by a few hundredths. Nothing in Session 665 touches the sloop, its flag or the trim of any rig but the new lateen. The check now gives a flag .05 and keeps the sails at .02. That the flag streams downwind is still checked by its own test, which measures where its fly end points (1.5 along the wind in that same run). The game is unchanged.
+
+### Verified (headless Chromium)
+`sailtrim` passes locally with the change (the flag .000 off here, where the runner is quicker). CI's numbers for the same moment: the merchant's yard 0 off, the pirate's gaff .014, the jib 0, the flag .025, all inside the new bounds.
+
+### Needs eyes
+- Nothing to play. If the flag ever reads more than .05 behind on CI, the fix is to let the test wait for the pirate's heading to settle, not to widen the bound again.
 
 ## v80 — Session 669 — `lod` and `q7world` made to hold on the slow runner (backlog I, the producer's 9 Oct note)
 Main's own CI failed `lod` on adbbf75 (shard 1) and `q7world` on 9b86e34 and again on 66fa792 (shard 7), on code whose PR runs had passed. Neither is a fault in the game; both checks depended on what the runner did between steps. Nothing in `js/` changed.

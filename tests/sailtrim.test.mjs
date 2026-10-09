@@ -35,7 +35,9 @@ const rule = () => page.evaluate(() => { const w = WORLD.windDir(), res = [];
   return { w: +w.toFixed(3), res }; });
 await g.spin(null, 120);
 const r1 = await rule();
-check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad)', r1.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < .02), r1);
+// a flag chases the wind at 3 a second, so on a slow runner, while the pirate's heading still drifts, it trails by up to ~.03
+// (CI, 9 Oct: .025); its streaming is checked on its own below, by where its fly end points
+check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad, a flag .05)', r1.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < (q.type === 'flag' ? .05 : .02)), r1);
 check('square yards brace no more than 35°', r1.res.filter(q => q.type === 'square').every(q => Math.abs(q.got) <= .611), r1.res);
 check('the black sail\'s flag streams downwind (its fly end 1.4 along the wind from the pole)', r1.res.some(q => q.type === 'flag') && r1.res.filter(q => q.type === 'flag').every(q => q.down > 1.3), r1.res.filter(q => q.type === 'flag'));
 check('a gaff\'s boom lies to leeward', r1.res.filter(q => q.type === 'gaff').every(q => q.lee > 0 || Math.abs(q.th) > 3.1), r1.res);
