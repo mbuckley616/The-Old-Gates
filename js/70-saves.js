@@ -208,6 +208,11 @@ function ssSanitizeLoaded(){
   const G=worldState.guild;if(G&&typeof G==='object')for(const g in G){const t=G[g]&&G[g].active;if(!t)continue;delete t._obj;
     if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&t.spawned&&!t.done)t.spawned=false;
     if(t.kind==='raid'&&t.spawned&&(t.have||0)<(t.count||0))t.spawned=false;}
+  /* S674 — the foes a job raised (a guild task's beast or raiders, a road quest's band) are raised again by the loaded job
+     when you come near, as on a fresh page; the ones from before the load go, or a load made before the spawn doubles them
+     (two Shore Wisps, one id). The duel's rival is the duel's own and stays. */
+  const ZW=typeof ZONES!=='undefined'&&ZONES.world&&ZONES.world.enemies;if(ZW)for(let i=ZW.length-1;i>=0;i--){const e=ZW[i];if(!e||!(e._guildTag||(e._questTag&&!e._duel)))continue;
+    e.dead=true;try{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);}catch(err){}ZW.splice(i,1);}
 }
 // ── v80 S139: a character as a file, out of the browser and back ──
 // One file holds a character's saves as they are stored, so it survives a cleared profile, a new

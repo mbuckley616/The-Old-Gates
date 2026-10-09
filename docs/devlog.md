@@ -14591,3 +14591,14 @@ The log now names the dungeon only while you are in one (`activeZoneId==='dungeo
 
 ### Needs eyes
 Nothing. Found on the way and not touched: a death inside a house in the world reads *the open country* too, as it did before the tutorial; naming the house would be a new line.
+
+## v80 — Session 674 — A load no longer doubles a job's foe (the critic's s480 note)
+The critic's s480 run died to the Shore Wisp of a Mages' task, took *Load last save* from a save made before it spawned, and walked back to two Wisps, both keyed `guild_m:ironhaven:1:foe:0`, both paying XP. A load inside the page (the death screen, the save menu) applies the save to the live world. `ssSanitizeLoaded` (`70-saves.js`, Session 137) already resets a job's spawn flag so the loaded job raises its foe again, because a fresh page has none. But the foe from before the load was never taken away: it stood in `ZONES.world.enemies` at its damaged health, and the job raised a second beside it. The same held for a guild raid's Bandits and a road quest's band.
+
+`ssSanitizeLoaded` now also drops every live zone foe a job raised (one with a `_guildTag`, or a `_questTag` that is not the duel's rival): it is marked dead, taken out of the scene and out of the list. The loaded job raises its own when you come within its range, at full health, so an in-page load ends where a fresh page would. The duel's rival belongs to the duel's own state and is left alone.
+
+### Verified (headless Chromium)
+`jobfoereload` 4/4 (new): a creature task saved before its foe spawned; walking near raises one foe, `guild_m:test:1:foe:0`, at 61/61; hurt to 20 and the save reloaded through `reloadActiveSlot` (the death screen's path), the task raises one foe at 61/61, and a duel's rival placed beside it is still there. On a scratch copy of the old code the same steps leave two foes of that id, at 20/61 and 61/61, as the critic saw. Neighbours: `coopsaves`, `qsfresh`, `jobids`, `diedload`. `parsecheck` clean.
+
+### Needs eyes
+Nothing to see. The duel's rival after an in-page load mid-duel was not looked at; it is the duel's to keep.
