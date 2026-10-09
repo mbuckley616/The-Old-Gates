@@ -380,6 +380,7 @@ function _buildSavePayload(){
 
 function _applyLoadData(d,w){
   if(w)d=ssJoinPayload(d,w); /* Session 456 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
+  _castMin=null; /* S685 — a load starts the caster's count afresh, so a cast made after loading rolls as it did after the save (casterRand) */
   xp=d.xp||0; level=d.level||1; xpNext=d.xpNext||200;
   kills=d.kills||0; gold=d.gold||0;
   maxHP=d.maxHP||100; PHP=d.PHP||maxHP; /* S335 — clamped to the worn maximum once the gear is back, below */

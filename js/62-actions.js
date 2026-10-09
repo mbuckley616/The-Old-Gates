@@ -421,6 +421,21 @@ function takeLevelIfReady(){
   xp-=xpNext;level++;xpNext=Math.floor(xpNext*1.4);maxStamina+=10;stamina=Math.min(stamina+10,maxStamina);_lvlReadyShown=false;try{const b=document.getElementById('lvready');if(b)b.style.display=(xp>=xpNext)?'inline-block':'none';}catch(e){}
   sndLevelUp();openLevelUp();return true;
 }
+// S685 — the caster's own rolls (co-op rules): an Impression's wild chance, its pattern and a scatter's swing draw from a
+// stream keyed by where you cast (the house, the dungeon's floor, or the world's chunk), the game minute and the count of
+// casts in that minute, not Math.random. Loaded back at the same minute in the same place, the same casts go the same way.
+let _castMin=null,_castN=0;
+function casterHereKey(){
+  if(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.id)return 'h:'+currentHouse.id;
+  if(activeZoneId==='dungeon'&&typeof currentPortal!=='undefined'&&currentPortal)return 'd:'+dKeyOf(currentPortal,currentFloor||1);
+  if(activeZoneId==='world'){const C=(typeof WORLD!=='undefined'&&WORLD.CHUNK)||64;return 'w:'+Math.floor(px/C)+','+Math.floor(pz/C);}
+  return 'z:'+activeZoneId;
+}
+function casterRand(spId){
+  const m=Math.floor(worldState.gameTimeAbsMinutes||0),here=casterHereKey();
+  if(_castMin!==here+':'+m){_castMin=here+':'+m;_castN=0;}
+  return seededRng('wild',_castMin+':'+(_castN++)+':'+spId);
+}
 function castSpell(){
   // Empty-knownSpells hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownSpells).length===0){
@@ -450,8 +465,9 @@ function castSpell(){
   let wildPattern=null;
   let selfDmgOnResolve=0;
   let aimJitter=0; // radians added to yaw for scatter
-  if(tier===1 && sp.wild && sp.wild.length && Math.random()<IMPRESSION_WILD_CHANCE){
-    wildPattern=sp.wild[Math.floor(Math.random()*sp.wild.length)];
+  const wr=(tier===1 && sp.wild && sp.wild.length)?casterRand(sp.id):null;
+  if(wr && wr()<IMPRESSION_WILD_CHANCE){
+    wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
       mana=Math.min(effMaxMana(),mana+Math.round(actualCost*0.5));
@@ -460,7 +476,7 @@ function castSpell(){
       startCastAnim(sp, 'fizzle');
       return;
     } else if(wildPattern==='scatter'){
-      aimJitter=(Math.random()*2-1)*(20*Math.PI/180); // ±20°
+      aimJitter=(wr()*2-1)*(20*Math.PI/180); // ±20°
       showMsg(`${sp.ico} ${sp.nameIr} wavers in the casting...`,'#a8a8d4');
     } else if(wildPattern==='backlash'){
       // Telegraph; actual damage applied after cast body runs.

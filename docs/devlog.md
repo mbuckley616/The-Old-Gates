@@ -14753,3 +14753,25 @@ Neighbours green: `coopsaves`, `counters`, `herbhidden`, `faolchu`, `hitseed`, `
 ### Needs eyes
 - Nothing to see until the leaf is built: the step can be set only from the console (`setChallenge(3)`).
 - Whether Novice's ×2 makes the early fights trivial and Master's ×2 makes a Wolf pack lethal at level 1 is a feel question for when the slider exists.
+
+## v80 — Session 685 — The caster's own rolls on a seeded stream (backlog K, the co-op rules)
+The producer routed the last of backlog K's step 1 here: the rolls that are the caster's own. A spell known at its first tier, an Impression, has a .40 chance to go wild when cast, and then draws a pattern from the spell's list: it fizzles (half the mana back, nothing cast), scatters (the aim swings up to 20° either way), bites back, or, for the healing spell, stings first. All three draws were `Math.random`, so the same cast at the same moment went one way on the host's machine and another on a friend's. The co-op rules want an outcome from a stream keyed by place and id. A cast has no struck foe yet, so it cannot use the foe's stream as the spell's damage does (Session 480).
+
+`casterRand(spellId)` (`62-actions.js`, beside `castSpell`) gives each cast its own stream, `seededRng('wild', <place>:<minute>:<n>:<spell>)`. The place is the house you are in, the dungeon's floor (`dKeyOf`), or the world's chunk. The minute is the game's. `n` counts the casts in that place and minute and starts again when either changes. The fish (Session 605) and the ships met at sea (Session 508) are keyed by place and minute in the same way. `castSpell` draws the chance, the pattern and the scatter from that one stream; a spell above its first tier draws nothing, as before. `_applyLoadData` clears the count, so after a load the casts made in that minute roll as they did after the save. The rate is unchanged.
+
+The other caster's roll named in the backlog, a Mystic Scroll's spell (`readScroll`), needs no change: Session 663 found that nothing calls it, and the save drops every scroll from the bag on load. With this, nothing in the cast or the hit is left on `Math.random`.
+
+`hearthcast` (Session 672) forced its fizzle by pinning `Math.random`, which the cast no longer reads. On this build the fizzle didn't happen, the cast lit the hearth, and the next two checks failed. The test now holds `casterRand` instead. Its checks are unchanged.
+
+### Verified (headless Chromium)
+`wildseed` 7/7 (new), through `castSpell` itself with the Fire Bolt (*caor*: scatter, fizzle, backlash):
+- Twenty casts at one place and minute come out the same with `Math.random` pinned at .001 and at .999: `.F....SB.BF.....B...` both times. On the old code they read twenty scatters and twenty clean casts.
+- The next minute and a chunk 200 units off each roll their own sequence.
+- Ten casts and ten more in the same minute give the same twenty.
+- A load clears the count.
+- 400 casts over 40 minutes: 174 wild (43.5% against the .40 chance), with 60 fizzles, 53 scatters and 61 backlashes.
+
+On the old code the suite fails five of its seven checks. `hearthcast` 9/9 with the test change (two failures without it). Neighbours `hitseed`, `challenge` and `coopsaves` are green. `tpshots` casts at tier 2, so it rolls nothing. `parsecheck` clean.
+
+### Needs eyes
+Nothing changes in play. An Impression still goes wild about two casts in five.
