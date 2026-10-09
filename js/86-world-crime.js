@@ -1008,7 +1008,7 @@ function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YAR
   if(mine===cls)h+=`<tr><td>Sails</td><td style="text-align:right">tier ${st.sails||0} of ${SAIL_TIERS.length-1}</td></tr><tr><td>Hold tier</td><td style="text-align:right">${st.cargo||0} of ${CARGO_TIERS.length-1}</td></tr>`;
   h+='</table>';ov.querySelector('#yard-info').innerHTML=h;
   const offers=yardOffers(site).filter(o=>o.cls===cls);let note='';
-  if(st&&st.sunk)note=`The ${st.name||SHIP.name} lies on the bottom. Ask about raising her.`;
+  if(st&&st.sunk){const n=st.name||SHIP.name;if(st.raise){const d=Math.max(1,Math.ceil((st.raise.due-(worldState.gameTimeAbsMinutes||0))/1440)),y=(siteAnywhere(st.raise.site)||{}).name||'the quay';note=`The ${n} lies on the bottom. The yard at ${y} is raising her: ${d===1?'one day':d+' days'} yet.`;}else note=`The ${n} lies on the bottom. Ask about raising her.`;}
   else if(!st&&cls!=='sloop')note=`Sold as a sloop; refitted as a ${cls} for ${refitCost('sloop',cls)} gold more.`;
   const A='display:block;width:100%;margin-top:6px;background:none;border:1px solid #8a7040;border-radius:3px;font:15px Georgia,serif;color:#3a2c18;cursor:pointer;padding:4px 8px';
   ov.querySelector('#yard-acts').innerHTML=offers.map((o,i)=>`<button type="button" data-i="${i}" style="${A}">${o.label}</button>`).join('')+(note?`<div style="font-size:13px;color:#6a5a3a;margin-top:6px">${note}</div>`:'');

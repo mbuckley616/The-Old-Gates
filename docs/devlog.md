@@ -14554,3 +14554,16 @@ Main's CI on 66fa792 failed `compactrefit` on shard 1, which Session 669 left ow
 
 ### Needs eyes
 Nothing.
+
+## v80 — Session 671 — Register fixes: the yard's note on a raising, and Varek's side at the Ashfeld (the quest writer's Findings 21 and 22)
+The quest writer's run 12 (PR #215, `docs/quest_review.md` on auto/quests) filed two findings with their replacement lines and asked for them to be applied word for word. Register fixes come before other work and need no decision, so they are applied here exactly as proposed.
+
+**Finding 21** (`yardPanelDraw`, `86-world-crime.js`). Once the raising of a sunk ship is paid for (`st.raise` is set), the shipwright has nothing more to offer, yet the yard's note still said *Ask about raising her.* The note now names the yard that has her and the days left, counted up to whole days: *The {ship} lies on the bottom. The yard at {town} is raising her: 3 days yet.*, or *one day yet.* Before it is paid for, the note is unchanged.
+
+**Finding 22** (`tickAshfeld`, `88-world-ticks.js`). At the Ashfeld, Varek argued that the gates were a window to be shuttered. That is the opposite of the canon's Varek (§3.1, *they built a cage and called it a loom*; §11, helping him is unbinding), and the game's own *help* choice leads to the Root's *Break it*. Three lines are replaced as written: his answer to *Then what are you doing to the sigils?*, the *Stop* row's reply, and the *help* row's label and reply (*I'll help you unbind it.*). The *third* row stands. Every choice still sets the same `S.choice` and step, so the Root and the endings read them as before.
+
+### Verified (headless Chromium)
+`raisevarek` 6/6 (new). At Woushstouir's yard, with a sunk cog called the Ember Wake: before payment the note says *Ask about raising her.*; paid, *The yard at Woushstouir is raising her: 3 days yet.*; with under a day left, *one day yet.* At the Ashfeld, Varek's spawned dialogue carries the three new lines exactly, the old *close them* label is gone, and *help* still sets `choice: 'help'` and the step `root`. Neighbours: `yardpanel` and `reader` (Varek at the Ashfeld) green. `parsecheck` clean.
+
+### Needs eyes
+Nothing beyond reading the lines in play. The Root's own lines are the quest writer's draft and wait on #214.
