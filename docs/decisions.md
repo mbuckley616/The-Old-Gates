@@ -85,6 +85,8 @@ The deck you walk stays flat, the wheel and hatch where they are, the nets amids
 
 Michael: **Both as shown** (A). (8 Oct 2026)
 
+Built, Session 665 (the look builder): both hulls in `shipBake` as the prototype showed them; your own ship takes her class's hull from `worldState.ship.cls`, so nothing more is owed from the systems builder for her (other ships still go by length).
+
 ### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198
 You asked on 6 Oct for a bigger, clearer compass, fewer callouts at the bottom centre with damage numbers in their place, and a HUD that doesn't look dated. The prototype (`docs/prototypes/hud/`, on auto/concept) keeps the places you chose on 27 Sep (vitals bottom-left, compass bottom-centre, minimap top-right) on the parchment kit. Under every option the compass is three times as wide (600 against 200) with marks as icons on paper discs: crowded marks join into one with a count, and the one you face is named on a ribbon with its distance. Every option also puts damage numbers at the foe's head, coloured by kind.
 - **A.** The rest of the bottom centre moves to a ledger above the vitals: up to four lines, each gone after six seconds. Combat lines stop, because the numbers say it.
