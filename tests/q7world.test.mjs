@@ -31,6 +31,13 @@ console.log(JSON.stringify({ adds }));
 check('at its second phase a lesser wolf splits from its flank, in the world', adds.phase === 2 && adds.n === 1 && adds.d[0] < 4 && adds.sameScene, adds);
 await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); e.hp = 5; e.alert = true; window._hud = null; });
 await g.frames(4); await page.evaluate(() => { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; });
+// (what the slow runner does with its real frames here, done on purpose: four seconds of the fight with nobody swinging,
+// so the lessers are at your heels when the swings begin; the loop below must win from there)
+await page.evaluate(() => { const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); let t = performance.now();
+  try { for (let n = 0; n < 240; n++) { PHP = maxHP; px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); t += 1000 / 60; loop(t); } }
+  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+  window._heels = ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).map(x => +Math.hypot(x.x - px, x.z - pz).toFixed(2)); });
 // the swings are driven by the game's own loop at fixed 1/60 ticks with the draw and the browser's frames held off (as
 // `duelrhythm` does, S423): on real frames a frame of this fight took seconds on a loaded runner and the Faolchú moved
 // far enough between the swing and its blow that twelve swings all missed (S401, S428, and again on 0fbebd9; S465)
@@ -38,7 +45,13 @@ await page.evaluate(() => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
   const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); let t = performance.now();
   try { for (let n = 0; n < 60 * 30 && !e.dead; n++) {
-    PHP = maxHP; px = e.x; pz = e.z + 1.6; jumpY = WORLD.worldH(px, pz); const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; stamina = 100;
+    // (posture is held full with health and stamina, and you stand on the Faolchú's far side from its wolves: on the runner
+    // the real frames before this loop let both lessers close to 0.8 units, and the three of them kept your posture broken
+    // on 1,667 of 1,800 ticks, so two swings left in 30 s and it stood at 5 HP; and a blow lands on the nearest in its arc)
+    PHP = maxHP; stamina = 100; PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0;
+    const L = ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead); let ax = 0, az = 1;
+    if (L.length) { let cx = 0, cz = 0; L.forEach(x => { cx += x.x / L.length; cz += x.z / L.length; }); const h = Math.hypot(e.x - cx, e.z - cz); if (h > .01) { ax = (e.x - cx) / h; az = (e.z - cz) / h; } }
+    px = e.x + ax * 1.6; pz = e.z + az * 1.6; jumpY = WORLD.worldH(px, pz); const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1;
     if (atkCd <= 0 && !_pendingStrike && swingT === 0) attack(false);
     t += 1000 / 60; loop(t);
     if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } } }
@@ -46,7 +59,7 @@ await page.evaluate(() => {
 await g.frames(2);
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu');
   const corpse = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark"));
-  return { hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse, lessers: ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).length }; });
+  return { heels: window._heels, hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse, lessers: ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).length }; });
 console.log(JSON.stringify({ early, fight }), await obj());
 check('reading Bram first does nothing yet (his objective waits on the Faolchú)', early === 0, early);
 check('the Faolchú falls to your blows: defeated, its bar shown while it fought, the Mark on its body, its wolves gone', fight.dead && fight.defeated && fight.hud === 'block' && fight.mark && fight.lessers === 0, fight);

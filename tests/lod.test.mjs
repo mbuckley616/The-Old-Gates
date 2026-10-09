@@ -72,9 +72,15 @@ const view = async (where) => { await page.evaluate(w => { forceTime(12); const 
       REN.render(scene, CAM); REN.render(scene, CAM); return { calls: REN.info.render.calls, triangles: REN.info.render.triangles }; };
     const saved = { far: PEOPLE_LOD.far, near: PEOPLE_LOD.near }; PEOPLE_LOD.far = PEOPLE_LOD.near = 1e9; const all = run(true);
     PEOPLE_LOD.far = saved.far; PEOPLE_LOD.near = saved.near; const lod = run(false);
-    return { people: rs.length, distant: rs.filter(r => r.lod).length, fullDetail: all, withLod: lod, saved: all.triangles - lod.triangles }; }); };
+    // (each person is tagged, so the two views can be compared on the same people: the town's head-count changes between
+    // them as folk go in and out of doors, and on CI 94 at the square against 81 from the road once left fewer distant)
+    rs.forEach(r => { if (!r._tid) r._tid = window._tidN = (window._tidN || 0) + 1; });
+    return { people: rs.length, distant: rs.filter(r => r.lod).length, fullDetail: all, withLod: lod, saved: all.triangles - lod.triangles, ids: rs.map(r => r._tid), far: rs.filter(r => r.lod).map(r => r._tid) }; }); };
 const sq = await view('square'), road = await view('road');
-check('the town view draws fewer triangles with the distant copies, the same draw calls', [sq, road].every(m => m.distant > 0 && m.saved > 0 && m.withLod.calls === m.fullDetail.calls) && road.distant > sq.distant, { square: sq, road });
+const both = new Set(sq.ids.filter(i => road.ids.includes(i)));
+const same = { people: both.size, distantSquare: sq.far.filter(i => both.has(i)).length, distantRoad: road.far.filter(i => both.has(i)).length };
+for (const m of [sq, road]) { delete m.ids; delete m.far; }
+check('the town view draws fewer triangles with the distant copies, the same draw calls; more of the same people are distant from the road', [sq, road].every(m => m.distant > 0 && m.saved > 0 && m.withLod.calls === m.fullDetail.calls) && same.people > 0 && same.distantRoad > same.distantSquare, { square: sq, road, same });
 
 // (how many townsfolk stand in the sun's reach from the road varies with loading and the hour: it can be none)
 // the shadow pass: what the townsfolk cost it at full detail (eye and shadow), with the distant copies (the eye's by range,

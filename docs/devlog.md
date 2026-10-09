@@ -14532,3 +14532,16 @@ A zone foe now carries the creature it was built from, `baseName` (the `type` pa
 
 ### Needs eyes
 Nothing to see beyond the count going up. Whether a Dire Wolf should count for a Wolf hunt is Michael's if he wants it.
+
+## v80 — Session 669 — `lod` and `q7world` made to hold on the slow runner (backlog I, the producer's 9 Oct note)
+Main's own CI failed `lod` on adbbf75 (shard 1) and `q7world` on 9b86e34 and again on 66fa792 (shard 7), on code whose PR runs had passed. Neither is a fault in the game; both checks depended on what the runner did between steps. Nothing in `js/` changed.
+
+**`lod`.** The failing check was *the town view draws fewer triangles with the distant copies*, on its last clause: more townsfolk must be distant from the road outside Dunmore than from its square. The log read 38 at the square and 35 from the road, but the square view counted 94 people and the road view 81. The two views are taken a few seconds apart, folk go in and out of doors between them, and so the clause compared two different crowds. Each person is now tagged in the page, and the clause is judged on the people present in both views. The triangle and draw-call clauses are unchanged.
+
+**`q7world`, reproduced here.** The fight loop has driven the game's own `loop` at fixed 1/60 ticks since Session 465, holding the player's health and stamina full, but not the player's posture (Session 281). At 5 HP the Faolchú is in its third phase with two Lesser Faolchú out, 250 HP each. Run straight after they spawn, the first swing kills it (19 ticks, here and with the clock slowed twentyfold, so the real clock is not the cause). The runner's real frames between the setup and the loop let the fight go on with nobody swinging. A copy of the suite that idles the fight four seconds first (240 ticks, the player held beside it) reproduces the CI result exactly: both lessers close to 0.8–0.9 units, the three foes keep the player's posture broken on 1,667 of 1,800 ticks, two swings leave in 30 s, one of them lands on a lesser, and the Faolchú stands at 5 HP. The loop now holds posture full with the rest, and puts the player on the Faolchú's far side from its wolves, since a one-handed blow lands on the nearest foe in its arc (`CLEAVE_DEFAULT` 1). The suite also does those four idle seconds itself, so the slow runner's case is tested every run rather than left to chance.
+
+### Verified (headless Chromium)
+`lod` 9/9: the same 79 people, 28 distant from the square and 33 from the road; the triangles saved 48,070 and 87,005 at equal draw calls. `q7world` 8/8 with the four idle seconds built in: the lessers at 0.97 and 0.99 units when the swings begin, the Faolchú dead, its bar shown, the Mark on its body, its wolves gone, and Q7 complete at Aldwyn. With the old loop after the same idle (the scratch copy) it stood at 5 HP after 30 s, as on CI. `parsecheck` clean.
+
+### Needs eyes
+Not a fault the test can call, but seen in the reproduction: a player who stands beside the Faolchú and both lessers is staggered about 93% of the time and gets almost no swing away. Whether being held down by three wolves like that is the fight Michael wants is a question for play, not for this test. Also on 66fa792, shard 1: `compactrefit` failed; it is not in this item and was not looked at this session.
