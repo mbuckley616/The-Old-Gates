@@ -1,0 +1,114 @@
+{
+ "town": {
+  "house": "Clodagh's Goods",
+  "keeper": "Clodagh",
+  "type": "misc",
+  "site": "Dunmore",
+  "lockTitle": "A shop door, locked for the night",
+  "pins": 4,
+  "dwell": 172,
+  "fall": 476,
+  "rise": 170,
+  "finesse": 0,
+  "title": "A shop door, locked for the night — a good lock",
+  "picks": "picks: 7 · pins set: 2/4",
+  "keys": "click or space to push · ← → choose a pin · Esc to step back",
+  "live": true
+ },
+ "window": {
+  "fin0": {
+   "dunmore": {
+    "n": 57,
+    "min": 168,
+    "max": 243,
+    "under150": 0,
+    "pins": [
+     28,
+     14,
+     15,
+     0
+    ]
+   },
+   "dungeonDoors": {
+    "n": 1600,
+    "min": 121,
+    "max": 244,
+    "under150": 104,
+    "pins": [
+     399,
+     535,
+     533,
+     133
+    ]
+   },
+   "treasure": {
+    "n": 400,
+    "min": 121,
+    "max": 216,
+    "under150": 125,
+    "pins": [
+     0,
+     112,
+     125,
+     163
+    ]
+   }
+  },
+  "fin5": {
+   "dunmore": {
+    "n": 57,
+    "min": 278,
+    "max": 353,
+    "under150": 0,
+    "pins": [
+     28,
+     14,
+     15,
+     0
+    ]
+   },
+   "dungeonDoors": {
+    "n": 1600,
+    "min": 231,
+    "max": 354,
+    "under150": 0,
+    "pins": [
+     399,
+     535,
+     533,
+     133
+    ]
+   },
+   "treasure": {
+    "n": 400,
+    "min": 231,
+    "max": 326,
+    "under150": 0,
+    "pins": [
+     0,
+     112,
+     125,
+     163
+    ]
+   }
+  }
+ },
+ "dungeon": {
+  "name": "The Forge of Beauneuf",
+  "theme": "elemental",
+  "chest": {
+   "x": 7,
+   "z": 25,
+   "floor": 1,
+   "treasure": true
+  },
+  "title": "A locked treasure chest",
+  "pins": 3,
+  "dwell": 210,
+  "fall": 426,
+  "live": false,
+  "picks": "picks: 7 · pins set: 2/3"
+ },
+ "tag": "s488",
+ "errs": []
+}
