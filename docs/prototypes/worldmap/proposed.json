@@ -1,0 +1,118 @@
+{
+ "dpr2": {
+  "cssW": 1021,
+  "cssH": 433,
+  "bw": 2042,
+  "bh": 866,
+  "cellPx": 238.15,
+  "jobs": 36,
+  "marks": [
+   {
+    "n": 1,
+    "title": "Wolves at Dunmore",
+    "line": "Kill 4 Wolves near Dunmore",
+    "st": "go"
+   },
+   {
+    "n": 2,
+    "title": "A bolt of dyed cloth",
+    "line": "Recover a bolt of dyed cloth near The Old Mound",
+    "st": "go"
+   },
+   {
+    "n": 3,
+    "title": "A letter for Elder Cormac",
+    "line": "Report to Mayor Niamh",
+    "st": "back"
+   },
+   {
+    "n": 4,
+    "title": "Where is Róisín?",
+    "line": "Find Róisín west of Dunmore",
+    "st": "go"
+   }
+  ],
+  "sharp": {
+   "ms": 7603,
+   "frames": 908,
+   "s60": 15.1
+  },
+  "tiles": 36,
+  "town": {
+   "ms": 11159,
+   "frames": 1339,
+   "s60": 22.3
+  },
+  "townLevel": {
+   "cellPx": 809.7099999999999,
+   "tiles": {
+    "1": 36,
+    "3": 55
+   }
+  },
+  "deep": {
+   "ms": 7042,
+   "frames": 844,
+   "s60": 14.1
+  },
+  "errs": []
+ },
+ "dpr1": {
+  "cssW": 1021,
+  "cssH": 434,
+  "bw": 1021,
+  "bh": 434,
+  "cellPx": 238.70000000000002,
+  "jobs": 15,
+  "marks": [
+   {
+    "n": 1,
+    "title": "Wolves at Dunmore",
+    "line": "Kill 4 Wolves near Dunmore",
+    "st": "go"
+   },
+   {
+    "n": 2,
+    "title": "The reeve's seal",
+    "line": "Recover the reeve's seal near The Old Garrison",
+    "st": "go"
+   },
+   {
+    "n": 3,
+    "title": "A letter for Harbour Reeve Róisín",
+    "line": "Report to Mayor Niamh",
+    "st": "back"
+   },
+   {
+    "n": 4,
+    "title": "Where is Donnacha?",
+    "line": "Find Donnacha west of Dunmore",
+    "st": "go"
+   }
+  ],
+  "sharp": {
+   "ms": 3170,
+   "frames": 380,
+   "s60": 6.3
+  },
+  "tiles": 15,
+  "town": {
+   "ms": 3709,
+   "frames": 445,
+   "s60": 7.4
+  },
+  "townLevel": {
+   "cellPx": 811.58,
+   "tiles": {
+    "0": 15,
+    "2": 18
+   }
+  },
+  "deep": {
+   "ms": 1858,
+   "frames": 221,
+   "s60": 3.7
+  },
+  "errs": []
+ }
+}
