@@ -13541,3 +13541,12 @@ The challenge. Its rule is the systems builder's (Session 684, on auto/systems, 
 - Full screen from the sheet (a click or E is the gesture it needs); headless cannot show it.
 - The challenge row on a build that has #167, and that the systems builder's `setChallenge` takes the step as the sheet gives it (0–4).
 - For the merge of #167: the loop's pause line in `90-main.js` will conflict, since auto/systems added `cargoOpen` and `yardOpen` to it and this branch added `pauseOpen`. Keep all three. The leaf also refuses to open over the factor's board and the yard (`openPauseLeaf` reads both flags if they exist), because they are not in the input code's `_isMenuOpen` list.
+
+## v80 — Session 693 — `compactrefit` red on this PR, and the systems builder's fix for it ported (backlog H, CI)
+Shard 1 failed on `4a1af34` (main merged in: the pause leaf and its settings sheet, Sessions 690–691) with `compactrefit`. The check that failed was *sunk, she is raised free … in three days*. It wanted the raise due in exactly 3 × 1,440 game minutes, and on the runner it read 4,319.98, because the clock runs on between the claim's click and the test's reading. Every other condition held. The systems builder's Session 670 (`d661d0c`, on auto/systems, not yet on main) found the same thing and accepts three days less under half an hour. That one hunk, the comment and the bound, is ported here word for word; the rest of their change to the file (the refit ladder through the cutter and the caravel) depends on Session 636's classes and stays theirs. The merge of #167 meets identical lines. No game code changed.
+
+### Verified (headless Chromium)
+`compactrefit` passes locally with the port (the raise read at 4,320 here, where the clock does not run on).
+
+### Needs eyes
+- Nothing to play. `guardplay`'s exact `sC.hour === 7` is the same kind of miss and still has no fix anywhere; the patch is proposed on PR #212 for the systems builder.
