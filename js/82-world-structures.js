@@ -527,7 +527,7 @@
         for(const t of SITES){if(t.pad<=0)continue;const dd=Math.hypot(wx-t.x,wz-t.z);const min=t.pad+120;if(dd<min){const dx=wx-t.x,dz=wz-t.z,L=Math.hypot(dx,dz)||1;wx=t.x+dx/L*min;wz=t.z+dz/L*min;}}
       } else if(e.zone==='gen'){
         wx=e.x;wz=e.z;
-        for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=stampAt(wx,wz);
+        for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=e.lairDoor?(stampsNear(wx,wz).find(o=>o.id!=='site_'+e.lairSite&&Math.hypot(wx-o.x,wz-o.z)<o.r)||null):stampAt(wx,wz); /* S702 — a lair's own pad does not push its cavern door out */
           if(ri&&ri.d<=16){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;const side=(hash01(e.seed,1,77)<.5?-1:1);wx+=(-vz/L)*side*(18-ri.d+4);wz+=(vx/L)*side*(18-ri.d+4);continue;}
           if(st&&st.kind!=='door'){const dx=wx-st.x,dz=wz-st.z,L=Math.hypot(dx,dz)||1;wx=st.x+dx/L*(st.r+14);wz=st.z+dz/L*(st.r+14);continue;}
           let near=null,nd=1e9;for(const o of stampsNear(wx,wz)){if(o.kind!=='door')continue;const d=Math.hypot(wx-o.x,wz-o.z);if(d<nd){nd=d;near=o;}}

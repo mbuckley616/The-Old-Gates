@@ -14938,3 +14938,26 @@ Session 699 left one thing unexplained: Carrigowen, never moved, read *Cave Bear
 
 ### Needs eyes
 The load-order dependence is wider than lairs. Anything that reads `dominantRegion` for an outcome near a cell's edge is affected: a cavern's theme, the beasts at a glade, encounter tables, the ground's colour. It is the world's (`80-world-terrain.js`, the look builder's file), and is named here for routing, not fixed.
+
+## v80 — Session 702 — A lair's cavern door stands in the lair, facing it; and you come up out of an old gate in front of it (the critic's s482, the door)
+The critic found every lair's cavern 46 units off, facing away. The causes were two. `lairDoorFor` put the door 6 units north of the lair's centre, behind the crag. The placement (`placeDoor`, `82-world-structures.js`, the `gen` branch) then pushed any door inside a site's stamp out to the stamp's edge plus 14, and the lair's own pad counted. Every lair's door stood 52 out (38 + 14) to the north. An old gate always faces −z (S578), so its face looked north, away from the lair, with the crag in between.
+
+The door now stands 16 units south of the lair's centre, inside its pad (38), and its face looks back at the crag's mouth and the beast before it. The lair's own pad no longer pushes it. A road, another stamp or another door still does, as before. The mound reaches 11 units behind the door, so it ends inside the pad's 38. The beast and its wolves stand 3–6 south of the centre, between the crag and the gate.
+
+Found on the way, and fixed because it is the same walk: `goToOW` put you at the portal's z + 2 on the way out. That was right for the old mouth, but since S578 an old gate's mound stands there. You came up inside its solid (6 by 3.5 units behind the headwall), and no key moved you. That held at every old gate in the world, a lair's or not. A world old gate (`cave_door`) now lets you out 2.5 in front of its face, looking away from it. A fort's door and the legacy zones keep z + 2.
+
+Also found, not fixed: three islet lairs near the start (Dainddaios's, a Glenshane's, Rathmore's) stand in cells past the grid's edge (z 30,000–35,000, against `SIZE*GRID` = 28,800). `solidAt` reads everything past that edge as the continent's rim, so nothing there can be walked. The test leaves them out. Filed in I for routing.
+
+### Verified (headless Chromium)
+`lairdoor` 9/9 (new). Fourteen lairs within four cells of the start, each with its door placed:
+- Every door is 16 from its lair (was 52) and faces it.
+- At every lair the threshold is open ground, and the line from it to the beast's spot crosses no solid. On the old code 24–25 of its half-unit steps were solid, because the crag stood between.
+- Out of Fornbaios's cavern you stand 2.5 in front of the door, 13.5 from the lair's centre, on open ground, and W walks you away. On the old code you stood in the mound, 50 from the lair, and moved 0.
+- Out of an ordinary old gate (seed 283823) you stand 2.5 in front of it on open ground. On the old code you were 2 behind it, in a solid.
+
+On the old code six of the nine checks fail. Neighbours `dungeonexit`, `thresholdname`, `lairname`, `lairload`, `sitechest`, `wyrm`, `poipreview`, `lairhoard`, `deathplace` and `fortwalk` are green. `parsecheck` is clean.
+
+### Needs eyes
+- Whether 16 units reads as the lair's own cavern from the crag in the fen fog, and whether the marker ring (nine out from the gate) crowding the bones reads well. That is the look builder's to judge.
+- The fight now has the gate at your back as you face the beast from the south. That is a matter of feel.
+- A cavern door placed before this build, at its old spot, is simply rebuilt at the new one. Nothing saved is keyed by a door's position.

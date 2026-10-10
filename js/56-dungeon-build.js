@@ -3399,7 +3399,8 @@ function goToOW(){
     activeZoneId=returnZone;
     // Spawn near the portal entrance — use src coords for all zones
     const spawnX=src?src.x:15;
-    const spawnZ=src?src.z+2:20;
+    // S702 — an old gate in the world faces -z with its mound behind it (S578): come up in front of it, not inside the mound (z+2 held you fast)
+    const spawnZ=src?(src.zone==='world'&&(src.kind||'cave_door')==='cave_door'?src.z-2.5:src.z+2):20;
     // v61: data-driven zone restore (same pattern as exitInterior). Hearthwick
     // and Bealach-South have no dungeons today so this branch is defensive,
     // but if a future settlement/wilderness zone gains a portal, the dungeon

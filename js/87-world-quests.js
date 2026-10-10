@@ -349,10 +349,12 @@ const giver=`${lord.title} ${lord.name}`;
     return (best||near).biome;}
   function lairBeast(site){const seed=lairSeed(site),biome=lairBiome(site);
     return biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';}
+  // S702 — the cavern's old gate stands in the lair's own pad, 16 south of its centre: the gate faces -z, so it looks back at the crag's mouth
+  // and the beast before it (it was 6 north, behind the crag, and the placement pushed it out of the pad, 46 off and facing away).
   function lairDoorFor(site,c){const seed=lairSeed(site);const biome=dominantRegion(site.x,site.z).r.biome;
     const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre'; /* S701 — read as the cell is made, and so not lairBeast (which reads the cells round it); lairFinish names the master by lairBeast */
     const dragon=!!site.dragon||cellHash(seed%9973,seed%7919,5)<.08;site.dragon=dragon;
-    return {zone:'gen',x:site.x,z:site.z-6,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
+    return {zone:'gen',x:site.x,z:site.z+16,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
   // ── finding sigils: rubbings, rumours, the Weaver's Eye ──
   function sigilDoors(){const out=[];for(const c of CELLS.values()){if(!c.doors)continue;c.doors.forEach(e=>{if(!e.wet&&(e.sigil||e.kind==='fort_door'))out.push(e);});}return out;}
