@@ -1,5 +1,5 @@
 // The pause leaf (Session 690; backlog E, Michael's B on #208, the leaf routed to the look builder). Esc in play with no panel
-// open stops the world and opens one parchment leaf: the date, the place, Resume, Save, Load, The keys, Quit to the title. A lock
+// open stops the world and opens one parchment leaf: the date, the place, Resume, Save, Load, Settings, The keys, Quit to the title. A lock
 // lost that no panel asked for opens it too (the browser keeps the first Esc for itself). Esc with a panel open still only closes
 // the panel. Save and Load go out from the leaf and come back to it; a load that replaced the world leaves it closed. Quit asks twice.
 import { boot, check } from './lib/game.mjs';
@@ -18,7 +18,7 @@ await esc();
 const a = await state();
 console.log(JSON.stringify({ ...a, text: a.text.slice(0, 160) }));
 check('Esc in play, no panel open, opens the leaf', a.open && a.shown, a);
-check('its rows: Resume, Save, Load, The keys, Quit to the title; Resume chosen', JSON.stringify(a.rows) === JSON.stringify(['Resume', 'Save', 'Load', 'The keys', 'Quit to the title']) && a.on === 0, a.rows);
+check('its rows: Resume, Save, Load, Settings, The keys, Quit to the title; Resume chosen', JSON.stringify(a.rows) === JSON.stringify(['Resume', 'Save', 'Load', 'Settings', 'The keys', 'Quit to the title']) && a.on === 0, a.rows);
 check('it heads with the date and the place, and ends with who you are', /Paused/.test(a.text) && /4:2\d pm/.test(a.text) && /Dunmore/.test(a.text) && /level \d+ · \d+ gold/.test(a.text), a.text.slice(0, 200));
 await page.screenshot({ path: 'docs/prototypes/pauseleaf-ingame.png' });
 
@@ -31,14 +31,14 @@ await page.keyboard.press('KeyI'); await page.keyboard.press('KeyF'); await g.fr
 const c = await state();
 check('I and F under the leaf open nothing and cast nothing', !c.inv && c.open, c);
 
-// 3. ↓ ↓ ↓ to The keys, E opens the page, Esc back to the leaf
-for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowDown');
+// 3. ↓ four times to The keys, E opens the page, Esc back to the leaf
+for (let k = 0; k < 4; k++) await page.keyboard.press('ArrowDown');
 await g.frames(1);
 const d0 = await state();
 await page.keyboard.press('KeyE'); await g.frames(2);
 const d = await state();
 console.log(JSON.stringify({ on: d0.on, view: d.view, text: d.text.slice(0, 200) }));
-check('↓ three times chooses The keys; E opens the page of keys', d0.on === 3 && d.view === 'keys' && /strike; hold for a power blow/.test(d.text) && /the book: map, quests, journal/.test(d.text), d.text.slice(0, 120));
+check('↓ four times chooses The keys; E opens the page of keys', d0.on === 4 && d.view === 'keys' && /strike; hold for a power blow/.test(d.text) && /the book: map, quests, journal/.test(d.text), d.text.slice(0, 120));
 await page.screenshot({ path: 'docs/prototypes/pauseleaf-keys.png' });
 await page.keyboard.press('Escape'); await g.frames(2);
 const e = await state();
@@ -91,7 +91,7 @@ check('a lock lost with no panel asking opens the leaf; a panel\'s own release d
 
 // 9. Quit, twice, goes to the title
 await esc();
-await page.evaluate(() => { pauseLeaf.on = 4; });
+await page.evaluate(() => { pauseLeaf.on = 5; });
 await page.keyboard.press('KeyE'); await g.frames(1);
 const nav = page.waitForEvent('load', { timeout: 180000 });
 await page.keyboard.press('KeyE');

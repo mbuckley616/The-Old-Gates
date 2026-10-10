@@ -424,8 +424,8 @@ function _enterGame(){
     if(document.pointerLockElement!==CV) return;
     if(invOpen) return;
     if(LOCK.t){lockFlick(e2.movementX||0,performance.now());return;}
-    yaw-=e2.movementX*.004;
-    pitch=Math.max(-1.45,Math.min(1.45,pitch-e2.movementY*.004));
+    yaw-=e2.movementX*.004*SETTINGS.look; // S691 — look speed and up-and-down from the settings
+    pitch=Math.max(-1.45,Math.min(1.45,pitch-e2.movementY*.004*SETTINGS.look*(SETTINGS.invert?-1:1)));
   });
   // Touch input keeps its drag-based model — pointer lock is desktop only.
   CV.addEventListener('touchstart',e2=>{e2.preventDefault();const t=e2.touches[0];drag=true;dx0=t.clientX;dy0=t.clientY;},{passive:false});
@@ -883,15 +883,57 @@ function openBarberChair(house){
   ov.style.display='flex';barberOpen=true;CCL.yaw=0;CCL.touch=performance.now();ccLookRows();ccLookRebuild();}
 // S690 — the pause leaf (backlog E, Michael's B on #208; the leaf routed to the look builder by the producer, 9 Oct). Esc in play,
 // with no panel open, stops the world and opens one parchment leaf over it: the date, the place and the rows (Resume, Save, Load,
-// The keys, Quit to the title). In a real browser the first Esc in play is the browser's, to let the pointer go, and the page never
+// Settings (S691), The keys, Quit to the title). In a real browser the first Esc in play is the browser's, to let the pointer go, and the page never
 // sees the key: so the leaf also opens when the lock is lost and no panel asked for that (`_lockReleaseAskedAt`, 10-player.js).
 // ↑/↓ choose, E or Enter takes, Esc resumes (or goes back from the keys). Quit asks a second time. The world stays stopped while
 // Save or Load is open from here, and the leaf comes back when that menu closes, unless a load replaced the world.
 let pauseOpen=false;
-const PAUSE_ROWS=[['resume','Resume','back to the road','▷'],['save','Save','write this day in the register','✒'],['load','Load','go back to a day you kept','❧'],['keys','The keys','what each key does','⌨'],['quit','Quit to the title','what you have not saved is lost','⎋']];
+const PAUSE_ROWS=[['resume','Resume','back to the road','▷'],['save','Save','write this day in the register','✒'],['load','Load','go back to a day you kept','❧'],['settings','Settings','sound, look speed, the light','⚙'],['keys','The keys','what each key does','⌨'],['quit','Quit to the title','what you have not saved is lost','⎋']];
 const PAUSE_KEYS=[[['W','A','S','D'],'walk'],[['Mouse'],'look'],[['Left'],'strike; hold for a power blow'],[['Right'],'block; strike while blocking to bash'],[['Shift'],'run'],[['Space'],'jump'],[['Q'],'roll'],[['R','Wheel'],'lock on, and let go'],
   [['Ctrl'],'sneak'],[['E'],'speak, open, take, use'],[['F'],'cast the spell in hand'],[['I'],'your pack'],[['Tab'],'the book: map, quests, journal'],[['M'],'mute the spoken lines'],[['Esc'],'close a panel; in play, this leaf'],[['1','–','0'],'answer in a talk']];
-const pauseLeaf={on:0,view:'leaf',quit:false,sub:null};
+const pauseLeaf={on:0,view:'leaf',quit:false,sub:null,set:0};
+// S691 — the settings sheet: the rows in order (↑/↓ walk them, ←/→ set). The challenge row is there only when the systems builder's
+// rule is (`setChallenge`, `challengeStep`, Session 684 on auto/systems): it is kept with the world, the rest in this browser.
+const CHALLENGE_MUL=[[2,.5],[1.5,.75],[1,1],[.75,1.5],[.5,2]];
+function settingRows(){const r=[
+  {k:'master',g:'Sound',w:'Everything',min:0,max:100,st:5,note:'over the speaker button’s loud or quiet'},
+  {k:'music',w:'Music',min:0,max:100,st:5,note:'by the place you stand'},
+  {k:'effects',w:'Blows and steps',min:0,max:100,st:5,note:'the sword, the bow, the doors, the weather'},
+  {k:'voices',w:'Spoken lines',min:0,max:100,st:5,note:'the people’s voices; M still mutes them anywhere'},
+  {k:'bright',g:'The light',w:'Brightness',min:-50,max:50,st:5,note:'set it so the left mark can only just be seen',marks:true},
+  {k:'fov',w:'Field of view',min:60,max:100,st:5,fmt:v=>v+'°',note:'75 as it was; from 60 to 100'},
+  {k:'full',w:'Full screen',opts:['On','Off'],get:()=>document.fullscreenElement?0:1},
+  {k:'look',g:'The mouse',w:'Look speed',min:.25,max:3,st:.05,fmt:v=>v.toFixed(2)+'×',note:'at 1×, 0.23° a pixel, as it was; from a quarter to three times'},
+  {k:'invert',w:'Up and down',opts:['As is','Inverted'],get:()=>SETTINGS.invert?1:0}];
+  if(typeof setChallenge==='function'&&typeof challengeStep==='function'&&typeof CHALLENGE_STEPS!=='undefined')
+    r.push({k:'challenge',g:'The challenge',w:'How hard the world strikes',opts:CHALLENGE_STEPS,get:()=>challengeStep()});
+  return r;}
+function settingSet(row,v){
+  if(row.opts){v=Math.max(0,Math.min(row.opts.length-1,v));
+    if(row.k==='full'){try{if(v===0&&!document.fullscreenElement){const p=document.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>{});}else if(v===1&&document.fullscreenElement)document.exitFullscreen();}catch(e){}}
+    else if(row.k==='invert'){SETTINGS.invert=v===1;settingsSave();}
+    else if(row.k==='challenge')setChallenge(v);
+    return;}
+  v=Math.max(row.min,Math.min(row.max,Math.round(v/row.st)*row.st));SETTINGS[row.k]=+v.toFixed(2);settingsSave();
+  if(['master','music','effects','voices'].includes(row.k)&&typeof applyVolumes==='function')applyVolumes();
+  if(row.k==='bright')settingsLight();}
+function settingsBack(){Object.assign(SETTINGS,SETTINGS_DEF);settingsSave();if(typeof applyVolumes==='function')applyVolumes();settingsLight();}
+function settingsSheetHTML(){const L=pauseLeaf,rows=settingRows(),ink='#3a2c18',rub='#7a1f10',soft='#8a7050';
+  const cols=[['Sound'],['The light'],['The mouse','The challenge']],grp={};let cur=null;rows.forEach((r,i)=>{if(r.g)cur=r.g;(grp[cur]=grp[cur]||[]).push([r,i]);});
+  const rowHTML=([r,i])=>{const on=i===L.set,wide=r.k==='challenge';let ctl='',val=wide?r.opts[r.get()]:'';
+    if(r.opts){const sel=r.get();ctl=`<span style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">${r.opts.map((o,j)=>`<span data-so="${i}:${j}" style="cursor:pointer;font-variant:small-caps;font-size:15px;color:${j===sel?rub:soft};border-bottom:${j===sel?'2px solid '+rub:'2px solid transparent'}">${o}</span>`).join('')}</span>`;}
+    else{val=r.fmt?r.fmt(SETTINGS[r.k]):String(SETTINGS[r.k]);ctl=`<input type="range" data-sr="${i}" min="${r.min}" max="${r.max}" step="${r.st}" value="${SETTINGS[r.k]}" style="width:100%;accent-color:${rub};margin:4px 0 0">`;}
+    let extra='';
+    if(r.marks)extra='<div style="display:flex;gap:8px;align-items:center;margin-top:4px">'+['#060606','#0d0d0d','#161616'].map((c,j)=>`<span style="width:44px;height:24px;border-radius:3px;background:#020202;display:flex;align-items:flex-end;justify-content:center"><span style="width:18px;height:9px;border-radius:9px 9px 0 0;background:${c};margin-bottom:5px;filter:brightness(${(1+SETTINGS.bright/100).toFixed(2)})"></span></span>`).join('')+`<span style="font-style:italic;font-size:11px;color:${soft}">three marks on the night’s black</span></div>`;
+    if(r.k==='challenge'){const n=r.get(),m=typeof CHALLENGE_DEALT!=='undefined'&&typeof CHALLENGE_TAKEN!=='undefined'?[CHALLENGE_DEALT[n],CHALLENGE_TAKEN[n]]:CHALLENGE_MUL[n]||[1,1];extra=`<div style="font-size:13px;margin-top:6px;display:flex;justify-content:space-between"><span>Your blows</span><span style="color:${rub}">×${m[0]}</span></div><div style="font-size:13px;display:flex;justify-content:space-between"><span>The foes’ blows</span><span style="color:${rub}">×${m[1]}</span></div>`;}
+    const note=r.k==='challenge'?'Adept is the game as it was. Only blows change: levels, loot and gold stay. Kept with this world.':r.note||'';
+    return `<div data-srow="${i}" style="padding:8px 10px;border-top:1px solid #c8b48a;border-left:3px solid ${on?rub:'transparent'};background:${on?'rgba(122,31,16,.07)':'none'}">`+
+      `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><span style="font-size:17px;color:${ink}">${r.w}</span>${r.opts&&!wide?ctl:`<span data-sv="${i}" style="color:${rub};font-variant:small-caps">${val}</span>`}</div>`+
+      (r.opts&&!wide?'':`<div style="margin-top:4px">${ctl}</div>`)+extra+(note?`<div style="font-style:italic;font-size:11px;color:${soft};margin-top:2px">${note}</div>`:'')+'</div>';};
+  return `<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:34px;color:${rub};font-variant:small-caps;letter-spacing:.04em">Settings</span><span style="flex:1;font-style:italic;font-size:14px;color:#5a4128">Kept in this browser, for every character${rows.some(r=>r.k==='challenge')?'; the challenge is kept with the world':''}.</span><span data-pk="back" style="cursor:pointer;font-variant:small-caps;color:${soft}">${pauseKeyCap('Esc')} back to the leaf</span></div>`+
+    '<div style="border-top:1px solid #a89060;margin:8px 0 4px"></div>'+
+    `<div style="display:flex;gap:22px;flex-wrap:wrap">${cols.map(gs=>`<div style="flex:1 1 240px;min-width:220px">${gs.filter(g=>grp[g]).map(g=>`<div style="font-variant:small-caps;letter-spacing:.12em;color:${soft};font-size:14px;margin:8px 0 2px">${g}</div>`+grp[g].map(rowHTML).join('')).join('')}</div>`).join('')}</div>`+
+    `<div style="border-top:1px solid #a89060;margin:10px 0 6px"></div><div style="display:flex;align-items:center;gap:14px"><button type="button" data-sb="reset" style="background:none;border:1px solid #8a7040;border-radius:2px;padding:3px 10px;font:14px Georgia,serif;color:${ink};font-variant:small-caps;cursor:pointer">As they were</button><span style="flex:1;font-style:italic;font-size:12px;color:${soft}">Every change is heard or seen at once, behind the sheet.</span><button type="button" data-pk="back" style="background:none;border:none;cursor:pointer;font:20px Georgia,serif;color:${rub};font-variant:small-caps">Done</button></div>`;}
 function pauseKeyCap(k){return k==='–'?'<span style="margin:0 2px;color:#8a7050">–</span>':`<span style="display:inline-block;min-width:16px;padding:1px 6px;margin-right:3px;border:1px solid #8a7040;border-bottom-width:2px;border-radius:3px;background:#f3e8d0;font:12px Georgia,serif;color:#3a2c18;text-align:center">${k}</span>`;}
 function pauseLeafEl(){let ov=document.getElementById('pauseui');if(ov)return ov;
   ov=document.createElement('div');ov.id='pauseui';
@@ -902,7 +944,16 @@ function pauseLeafEl(){let ov=document.getElementById('pauseui');if(ov)return ov
   document.body.appendChild(ov);return ov;}
 function pauseLeafDraw(){const ov=pauseLeafEl(),P=ov.querySelector('#pause-paper'),L=pauseLeaf;
   const rule='<div style="border-top:1px solid #a89060;margin:10px 0 8px"></div>';
-  if(L.view==='keys'){
+  P.style.width=L.view==='settings'?'min(1100px, calc(100vw - 32px))':'420px';P.style.left=L.view==='settings'?'50%':'max(16px,6vw)';P.style.transform=L.view==='settings'?'translate(-50%,-50%)':'translateY(-50%)';
+  if(L.view==='settings'){
+    P.innerHTML=settingsSheetHTML();
+    ov.querySelector('#pause-foot').innerHTML=`${pauseKeyCap('↑')}${pauseKeyCap('↓')} choose · ${pauseKeyCap('←')}${pauseKeyCap('→')} set · ${pauseKeyCap('Esc')} back`;
+    const rows=settingRows();
+    P.querySelectorAll('[data-sr]').forEach(inp=>{const i=+inp.dataset.sr;inp.oninput=()=>{L.set=i;settingSet(rows[i],+inp.value);const sv=P.querySelector(`[data-sv="${i}"]`);if(sv)sv.textContent=rows[i].fmt?rows[i].fmt(SETTINGS[rows[i].k]):String(SETTINGS[rows[i].k]);if(rows[i].marks)P.querySelectorAll('[data-srow="'+i+'"] span span').forEach(s=>s.style.filter=`brightness(${(1+SETTINGS.bright/100).toFixed(2)})`);};inp.onchange=()=>pauseLeafDraw();});
+    P.querySelectorAll('[data-so]').forEach(s=>{const [i,j]=s.dataset.so.split(':').map(Number);s.onclick=()=>{L.set=i;settingSet(rows[i],j);pauseLeafDraw();setTimeout(pauseLeafDraw,250);};});
+    P.querySelectorAll('[data-srow]').forEach(r=>{r.onmousedown=()=>{L.set=+r.dataset.srow;};});
+    const rs=P.querySelector('[data-sb="reset"]');if(rs)rs.onclick=()=>{settingsBack();pauseLeafDraw();};
+  } else if(L.view==='keys'){
     P.innerHTML='<div style="font-size:32px;color:#7a1f10;font-variant:small-caps;letter-spacing:.04em">The keys</div>'+rule+
       PAUSE_KEYS.map(([ks,w])=>`<div style="display:flex;align-items:baseline;gap:10px;padding:3px 0;font-size:14px"><span style="min-width:120px">${ks.map(pauseKeyCap).join('')}</span><span style="font-style:italic">${w}</span></div>`).join('')+
       rule+`<button type="button" data-pk="back" style="background:none;border:none;cursor:pointer;padding:0;font:16px Georgia,serif;color:#7a1f10;font-variant:small-caps">${pauseKeyCap('Esc')} back to the leaf</button>`;
@@ -925,7 +976,7 @@ function pauseLeafDraw(){const ov=pauseLeafEl(),P=ov.querySelector('#pause-paper
     ov.querySelector('#pause-foot').innerHTML=`${pauseKeyCap('↑')}${pauseKeyCap('↓')} choose · ${pauseKeyCap('E')} take · ${pauseKeyCap('Esc')} resume`;
   }
   P.querySelectorAll('[data-pi]').forEach(r=>{r.onmouseenter=()=>{if(L.on!==+r.dataset.pi){L.on=+r.dataset.pi;L.quit=false;pauseLeafDraw();}};r.onclick=()=>{L.on=+r.dataset.pi;pauseTake();};});
-  const back=P.querySelector('[data-pk="back"]');if(back)back.onclick=()=>{L.view='leaf';pauseLeafDraw();};}
+  P.querySelectorAll('[data-pk="back"]').forEach(b=>b.onclick=()=>{L.view='leaf';pauseLeafDraw();});}
 function openPauseLeaf(){
   if(pauseOpen||!started||dead||won)return false;
   if(typeof isMenuOpenNow==='function'&&isMenuOpenNow())return false;
@@ -943,6 +994,7 @@ function pauseTake(){const L=pauseLeaf,id=PAUSE_ROWS[L.on][0];
   if(id==='resume'){closePauseLeaf(true);return;}
   if(id==='save'||id==='load'){L.sub=id;_slLoaded=false;const G=document.getElementById('g');if(G)G.focus();document.getElementById('pauseui').style.display='none';openSLMenu(id,false);return;}
   if(id==='keys'){L.view='keys';pauseLeafDraw();return;}
+  if(id==='settings'){L.view='settings';L.set=0;pauseLeafDraw();return;}
   if(id==='quit'){if(!L.quit){L.quit=true;pauseLeafDraw();return;}location.reload();}}
 // closeSLMenu calls this: back to the leaf after a save, or out of it when a load has replaced the world.
 function pauseReturn(){if(!pauseOpen||!pauseLeaf.sub)return;pauseLeaf.sub=null;
@@ -950,6 +1002,12 @@ function pauseReturn(){if(!pauseOpen||!pauseLeaf.sub)return;pauseLeaf.sub=null;
   document.getElementById('pauseui').style.display='block';pauseLeafDraw();}
 window.addEventListener('keydown',e=>{if(!pauseOpen||pauseLeaf.sub)return;const c=e.code,L=pauseLeaf;let hit=true;
   if(c==='KeyM')hit=false;
+  else if(L.view==='settings'){const rows=settingRows(),r=rows[L.set];
+    if(c==='Escape'||c==='Backspace'){L.view='leaf';pauseLeafDraw();}
+    else if(c==='ArrowUp'||c==='KeyW'){L.set=(L.set+rows.length-1)%rows.length;pauseLeafDraw();}
+    else if(c==='ArrowDown'||c==='KeyS'){L.set=(L.set+1)%rows.length;pauseLeafDraw();}
+    else if(r&&(c==='ArrowLeft'||c==='ArrowRight'||c==='KeyA'||c==='KeyD')){const d=(c==='ArrowLeft'||c==='KeyA')?-1:1;settingSet(r,r.opts?r.get()+d:SETTINGS[r.k]+d*r.st);pauseLeafDraw();}
+    else if(r&&r.opts&&(c==='KeyE'||c==='Enter'||c==='Space')){settingSet(r,(r.get()+1)%r.opts.length);pauseLeafDraw();}}
   else if(L.view==='keys'){if(c==='Escape'||c==='KeyE'||c==='Enter'||c==='Backspace'){L.view='leaf';pauseLeafDraw();}}
   else if(c==='Escape'){if(L.quit){L.quit=false;pauseLeafDraw();}else closePauseLeaf(true);}
   else if(c==='ArrowUp'||c==='KeyW'){L.on=(L.on+PAUSE_ROWS.length-1)%PAUSE_ROWS.length;L.quit=false;pauseLeafDraw();}

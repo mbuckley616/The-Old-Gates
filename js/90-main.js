@@ -317,7 +317,7 @@ function loop(now){
   // FOV shift for sprint. v62.7: LUNGE_FOV (92) overrides while lungeT > 0
   // for a small "rush" punch. Reverts to sprint/idle FOV after lunge expires
   // via the same dt*8 lerp.
-  const targetFOV = lungeT > 0 ? LUNGE_FOV : (sprinting?85:75);
+  const targetFOV = (lungeT > 0 ? LUNGE_FOV : (sprinting?85:75)) + SETTINGS.fov - 75; /* S691 — the settings' field of view moves all three */
   CAM.fov+=(targetFOV-CAM.fov)*Math.min(1,dt*8);CAM.updateProjectionMatrix();
 
   let mdx=0,mdz=0;
