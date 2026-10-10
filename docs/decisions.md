@@ -38,6 +38,17 @@ The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carr
 
 Recommendation: **A.** The lair is named for its beast, and the dragon lair already works this way: its master is the wyrm, whatever stood there. A gives every lair what the wyrm has. B is honest but makes a lair's master a slime half the time.
 
+### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
+Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
+
+Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:herb:<i>`). They are picked and grow back like any herb. Nothing reads the lairs.
+
+- **A. As the canon says.** The glade nearest a dead lair, within 1,500 units, grows a ring of 36 herbs, the second 18 keyed `<site>:herb:18…35`. It holds from the day the beast dies, and the save already carries that. The card shows *the glade is thick with herbs since the beast died*. One session.
+- **B. Doubled, but by the glade's own nearness.** The same, but only a glade within 700 units of the lair. That is the radius at which a lair already weighs on towns (the drift, the plague). Farther glades are untouched. One session.
+- **C. Leave it.** The canon's line stays a note until alchemy is a skill (J's survival skills), when herbs are worth more.
+
+Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
+
 ## Answered
 
 ### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214

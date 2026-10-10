@@ -14961,3 +14961,14 @@ On the old code six of the nine checks fail. Neighbours `dungeonexit`, `threshol
 - Whether 16 units reads as the lair's own cavern from the crag in the fen fog, and whether the marker ring (nine out from the gate) crowding the bones reads well. That is the look builder's to judge.
 - The fight now has the gate at your back as you face the beast from the south. That is a matter of feel.
 - A cavern door placed before this build, at its old spot, is simply rebuilt at the new one. Nothing saved is keyed by a door's position.
+
+## v80 — Session 703 — A correction to Session 702, and canon §12's glade asked (docs only)
+**Correction to Session 702.** Its entry says three islet lairs near the start stand past the grid's edge, where `solidAt` reads all ground as the continent's rim, and files that in I. It is not a fault in play. The game never makes a cell past `GRID` (12): the streamer clamps its chunks to `SIZE*GRID`, and the cell loaders (`82-world-structures.js`, `83-world-generator.js`) skip any `i` or `j` outside 0–11. Only the test's own loop of `getCell` calls round the start reached cells (1,13), (6,12) and (6,14). The test still leaves those lairs out, and the line in I is struck as not a bug.
+
+**Asked.** Section I is worked through, except the cavern master's body (DECISION #225). Section C is done, B is done, and the crime system's owed items are done. G's open items are all feel. So this run raises the one systems item the critic named that nothing tracks: canon §12 gives a dead lair *nearest glade doubles herbs*, and it is not built. DECISION #227 asks it: A, as written, within 1,500 units; B, within the 700 units at which a lair already weighs on a town (recommended); C, leave it until alchemy is a skill. The rumour half is the quest writer's, under the critic's proposal *The town speaks of its beast*.
+
+### Verified (headless Chromium)
+Nothing new to run. The claim about the loaders was read from the code: `82-world-structures.js` grep `i>=GRID||j>=GRID`, `83-world-generator.js` the same, `80-world-terrain.js` `maxC`.
+
+### Needs eyes
+Nothing.
