@@ -1098,6 +1098,10 @@
   // flames flickered by tickInterior
   let FURN_LIVE=[];
   function furnSwap(room){FURN_LIVE.push(room);}
+  // S676 — the house a Mages' hearth task sends you to keeps its hearth cold (ash, no flames, no light) until the task is done;
+  // the interior's tick lights it (tickInterior, 84-world-interiors.js) the moment the guild marks the task done
+  function coldHearthHouse(house){if(!house||house.type!=='home')return false;const G=worldState.guild,t=G&&G.guild_m&&G.guild_m.active;
+    if(!t||t.kind!=='hearth'||t.done)return false;if(t.house&&t.house!==house.id)return false;const S=SETTLE.get(t.siteId);return !!(S&&S.houses.includes(house));}
   function furnFree(){for(const r of FURN_LIVE)r.traverse(o=>{if(o.isMesh)o.geometry.dispose();});FURN_LIVE=[];}
   // S356 — the kit shell's ceiling and four shaded walls, for the generated rooms (S342) and the legacy builder's (S356)
   function shellWalls(sc_,W,D,H,wallKind,reg){
@@ -1437,8 +1441,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S286 — the home's furniture on the kit (#46 A): a box bed, the stone hearth, a table and two chairs with a candle, the
       // chest, two dressed shelves and a rag rug, by the nation's wood, baked to one mesh (and the flames); the old boxes' places
       {const K=furnKit(),seed=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%100000;
-        const room=K.bake(K.home(W,D,H,nationAt(house.doorX,house.doorZ),seed));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      const hx=W-.4;light(hx-.8,.7,D*.4,0xff6a20,1.2,6);solid(W-.35,D*.4,.35,.95,1.3);
+        const cold=coldHearthHouse(house),room=K.bake(K.home(W,D,H,nationAt(house.doorX,house.doorZ),seed,cold));room.userData.furn=true;sc_.add(room);furnSwap(room);
+        const hl=light(W-1.2,.7,D*.4,0xff6a20,cold?0:1.2,6);if(cold){room.userData.coldHouse=house;room.userData.hearthLight=hl;}}
+      solid(W-.35,D*.4,.35,.95,1.3);
       solid(W/2,D*.5,.75,.45,.76);
       const role=(house.dlg&&house.dlg.role)||'';
       if(/weaver/i.test(house.roleTag||''))box(W-2.2,.9,D-2.2,1.6,1.7,.4,0x5a3a1c);
