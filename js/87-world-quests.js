@@ -77,7 +77,7 @@
     weary: {greet:["Another one.","Mm. What is it.","I was young once, you know. Ask your question."],yes:"If you must.",no:"No. Not today.",bye:["Go well. Or go. Either.","Shut the door behind you."]},
   };
   const TEMPER_IDS=Object.keys(TEMPERS);
-  const WORRIES=["the wolves came right up to the fence last winter","the tithe went up again and nobody says why","my brother took the king's coin and never wrote","the well's gone brackish and the elder does nothing","there's a light in the old ruin some nights","the road hasn't seen a merchant cart in a month","the priest talks less than he used to","the fish have moved off the shallows"];
+  const WORRIES=["the wolves came right up to the fence last winter","the dues went up again and nobody says why","my brother went for a soldier and never wrote","the well's gone brackish and the elder does nothing","there's a light in the old ruin some nights","the road hasn't seen a merchant cart in a month","the priest talks less than he used to","the fish have moved off the shallows"];
   const WISHES=["to see the capital before I die","a roof that doesn't leak","one good harvest, just one","to hear from my daughter","a quiet year","to go to sea again","to be left alone, mostly"];
   const TRADES_BY_ROLE={Villager:['farmer','weaver','cooper','fisher','shepherd','thatcher','midwife','carter','beekeeper','net-mender'],Guard:['soldier'],Smith:['smith'],Armourer:['armourer'],Apothecary:['apothecary'],Merchant:['trader'],Innkeeper:['innkeeper'],Priest:['priest'],Harbourmaster:['harbourmaster'],Shipwright:['shipwright']};
   function temperOf(name){const h=String(name).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return TEMPER_IDS[h%TEMPER_IDS.length];}

@@ -42,6 +42,10 @@ const r = await page.evaluate(() => {
   topic('guild_m', 'I can’t do it.').fn();
   topic('guild_m', 'Any work?').fn(); const c2 = st.active && st.active.id;
   out.commission = { c1, c2 };
+  // S692 — the head's line is in their own people's voice (quest review, run 13, finding 23); the worries name no king or tithe (finding 24)
+  out.people = head('guild_m').people; out.voices = {};
+  for (const p of ['gatelander', 'markman', 'aurennais', 'oldblood', 'other']) { st.active = { id: 'guild_m:ironhaven:40', g: 'guild_m', kind: 'deliver', siteId: 'hermit_camp', gold: 10, short: 'x' }; out.voices[p] = handBack('guild_m', p); }
+  out.worries = WORRIES.filter(w => /king|tithe/.test(w)); out.soldier = WORRIES.includes('my brother went for a soldier and never wrote') && WORRIES.includes('the dues went up again and nobody says why');
   st.active = null; st.done = 0; st.commissions = []; fs.active = null;
   return out;
 });
@@ -51,11 +55,14 @@ console.log('  next', JSON.stringify(r.next));
 console.log('  done', JSON.stringify(r.done), 'relic', JSON.stringify(r.relic), 'raid', JSON.stringify(r.raid), 'commission', JSON.stringify(r.commission));
 check('with the stuck draught, *Any work?* says you still owe it, and *I can’t do it.* is offered', /still owe us/.test(r.before.work) && r.before.labels.includes('I can’t do it.') && !r.before.labels.includes("It's done."), r.before);
 check('handed back: the task is gone, with no pay, no XP and no mark against your standing', r.after.active === null && r.after.gold === 0 && r.after.xp === 0 && r.after.done === 0 && r.after.rank, r.after);
-check('the head answers, the log and the journal say it was handed back, and the topic goes', /back on the board/.test(r.after.said) && r.after.log.some(t => /Handed back/.test(t)) && r.after.jl.includes('lapsed') && !r.after.labels.includes('I can’t do it.'), r.after);
+check('the head answers, the log and the journal say it was handed back, and the topic goes', /[Bb]ack/.test(r.after.said) && r.after.said === r.voices[r.people] && r.after.log.some(t => /Handed back/.test(t)) && r.after.jl.includes('lapsed') && !r.after.labels.includes('I can’t do it.'), r.after);
 check('*Any work?* then gives a new task', !!r.next.id && r.next.id !== 'guild_m:ironhaven:9' && !/still owe/.test(r.next.said), r.next);
 check('a task that is done offers *It’s done.*, not the hand-back', r.done.labels.includes("It's done.") && !r.done.labels.includes('I can’t do it.'), r.done);
 check('a relic handed back is taken up from the world', r.relic.hadObj && r.relic.inPick && r.relic.objGone && r.relic.pickGone, r.relic);
 check('a raid handed back leaves the town no longer under raid', r.raid.active === null && !r.raid.raid, r.raid);
 check('a rank commission handed back comes round again', !!r.commission.c1 && /:c2$/.test(r.commission.c1) && r.commission.c2 === r.commission.c1, r.commission);
+console.log('  voices', JSON.stringify(r.voices), 'worries', JSON.stringify(r.worries));
+check('each people hands back in its own voice: four different lines and a plain one for anyone else', new Set(Object.values(r.voices)).size === 5 && /Master/.test(r.voices.aurennais) && /^Aye\./.test(r.voices.markman) && /set down/.test(r.voices.gatelander) && /Someone else will carry it/.test(r.voices.oldblood), r.voices);
+check('no townsperson’s worry names a king or a tithe', r.worries.length === 0 && r.soldier, r.worries);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -14804,3 +14804,10 @@ The critic's s480 run read *Novice of the Mages' Guild. 1 tasks done.* Session 6
 
 ### Needs eyes
 Nothing beyond reading the Standing page after a first commission.
+
+## v80 — Session 692 — The guild head hands a task back in their own voice; the worries lose the king and the tithe (quest review, run 13, findings 23 and 24)
+A register session, applied exactly as the review wrote it. Finding 23: Session 682's hand-back answered *Then it goes back on the board. Ask when you want another.* in one plain voice for all four peoples, and the comment there left the line to the quest writer by name. `handBack(g,gp)` now takes the head's people from `guildDef` (where `gp` was already in scope) and answers in it: the Gatelander's proverb, the Markman's *Aye. Back on the board.*, the Aurennais's void contract and *Master*, the Old Blood's *Someone else will carry it.*, and a plain line for anyone else. Finding 24: `WORRIES` in `87-world-quests.js` is one pool for every nation, so a Markman could worry about the king's coin and a Gatelander about the tithe; the brother now *went for a soldier* and the *dues* went up.
+### Verified (headless Chromium)
+`tests/handback.test.mjs`, extended: all its eight checks still pass, the head's answer at Ironhaven is now the Gatelander line (the regex on *back on the board* became a match on that people's own line, since the Markman's says *Back*), the five voices are five different lines (the Aurennais's says *Master*, the Markman's opens *Aye.*), and no worry in `WORRIES` names a king or a tithe (0 of 8). 11/11.
+### Needs eyes
+Nothing beyond reading the lines in a hall of each people.
