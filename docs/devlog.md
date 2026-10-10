@@ -15164,6 +15164,8 @@ Session 711 left `lairname`'s red on CI unexplained: Rathmore's Lair read Marsh 
 ## v80 — Session 713 — A hoard piece's metal and tier asked (docs only; DECISION #232)
 Session 708 found that a lair hoard's sword or cuirass rolls its metal and its tier on two draws, so the name can lie: a *Steel Cuirass* at tier 3, a wyrm's tier-6 *Silver Sword*. *Silver* and *Gold* are no tier at all. Making the name follow the tier changes what a hoard gives, so it is asked as DECISION #232. A is recommended: the name follows `MATERIALS`, and the draw is kept so that no other roll moves. B makes the tier follow the name, with Silver and Gold as precious pieces. C leaves it.
 
+A correction to Session 712. Rathmore's Lair (`c6_14_i0`) stands in a cell beyond the 12×12 grid, and the game never makes such a cell (Session 703). Only `lairname`'s scan, from the start ±4 cells, made it. So it explains that test's red, but it is not a lair a player meets. The fix still matters in play, because islet lairs inside the grid took the same fallback: Ardbeg's (`c10_11`) and Stinouma's (`c11_10`) moved from forest to fen in `lairtheme` before the fix. Of the 15 lairs with no region in their nine cells, those in-grid ones are the ones that count.
+
 ### Verified (headless Chromium)
 Nothing to run.
 
