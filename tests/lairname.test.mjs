@@ -11,7 +11,7 @@ const r = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); con
   const rows = [];
   for (const { t, door, cell } of lairs.slice(0, 14)) { WORLD.loadCell(...cell); const site = WORLD.SITE[t.id] || t; let S = WORLD.settlements.get(site.id); if (!S) S = WORLD.genSettlement(site);
     const e = S && S.creatures && S.creatures[0]; const crag = e ? (e.baseName || e.type || '').replace(/^.* the /, '') : null;
-    rows.push({ id: site.id, name: site.name, moved: !!site.drawnAt, biome: dominantRegion(site.x, site.z).r.biome, crag, crag2: e ? e.name : null, beast: lairBeast(site), door: door && door.lair ? door.lair.boss : null }); }
+    rows.push({ id: site.id, name: site.name, moved: !!site.drawnAt, biome: dominantRegion(site.x, site.z).r.biome, crag, crag2: e ? e.name : null, beast: lairBeast(site), at: [+site.x.toFixed(1), +site.z.toFixed(1)], door: door && door.lair ? door.lair.boss : null }); }
   return rows; });
 console.log(JSON.stringify(r));
 check('lairs found round the start, each with its beast built', r.length >= 6 && r.every(x => x.crag), r.length);
@@ -21,7 +21,7 @@ check('the beast at the crag is lairBeast(site) at every lair', r.every(x => x.c
 const lo = await page.evaluate((rows) => { const out = { same: 0, diff: [], liveDiff: [] };
   const live0 = rows.map(x => dominantRegion(WORLD.SITE[x.id].x, WORLD.SITE[x.id].z).r.biome);
   for (const x of rows) { const s = WORLD.SITE[x.id]; const [ci, cj] = WORLD.cellOf(s.x, s.z); for (let i = ci - 2; i <= ci + 2; i++) for (let j = cj - 2; j <= cj + 2; j++) { WORLD.getCell(i, j); if (Math.abs(i - ci) <= 1 && Math.abs(j - cj) <= 1) WORLD.loadCell(i, j); } }
-  rows.forEach((x, k) => { const s = WORLD.SITE[x.id]; if (!s) return; const b = lairBeast(s); if (b === x.beast) out.same++; else out.diff.push([x.name, x.beast, b]);
+  rows.forEach((x, k) => { const s = WORLD.SITE[x.id]; if (!s) return; const b = lairBeast(s); if (b === x.beast) out.same++; else out.diff.push([x.name, x.beast, b, { at0: x.at, at1: [+s.x.toFixed(1), +s.z.toFixed(1)], moved: !!s.drawnAt }]);
     const l = dominantRegion(s.x, s.z).r.biome; if (l !== live0[k]) out.liveDiff.push([x.name, live0[k], l]); });
   return out; }, r);
 console.log(JSON.stringify(lo));

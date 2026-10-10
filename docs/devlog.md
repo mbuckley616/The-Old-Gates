@@ -15115,3 +15115,17 @@ Nothing to run; the numbers are `tests/lairmaster`'s formula at each grade.
 
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 710 — Four red suites on this PR's CI at `288bdeb`: two stale tests fixed, two made to say why (CI)
+CI on `288bdeb` (Session 703) failed four shards. Each was a different suite.
+
+- **`shoreplaces`**, shard 4: *a moved lair keeps its cavern door at its mouth (6 units)* read 16 at Cuma's and Glenree's lairs. Session 702 put the door 16 south of the lair's centre, in its pad, on purpose, and this check was not moved with it. It now wants 16, and passes.
+- **`dunseed`**, shard 9: the dragon's hoard came out the same as the plain lair's. The test calls `lairFinish` four times on one gate, and since Session 694 a hoard is rolled once and kept in `worldState.masters`. So the second, third and fourth calls gave back the first hoard. Each call now starts from no record. The plain lair's two builds agree (Gold Coins 153, a Silver Sword, two Greater Potions), and the dragon's differs (255, a Mithril Sword, two Dragon Scales, two Greater Potions). The suite passes.
+- **`hoardspot`**, shard 12, here and on `93132ac` before it: *stood 1.5 off and looking at it, nearly level, the chest answers* was false at all ten caverns on the runner and is true at all ten locally. I could not reproduce it. `lookingAt` reads `CAM`, which only moves in a frame the loop runs through, so my guess is that the runner's loop had not carried the camera to the test's spot. That is not shown. The check now records, when the chest does not answer: where the camera stands against you, your height and the floor, and whether any panel or death holds the loop. The next red run will show which.
+- **`lairname`**, shard 10: *every lair's beast is the same after the cells round it are made and loaded* found Rathmore's Lair reading Marsh Hag, then Cave Bear. Locally all 14 lairs hold. `lairBiome` reads the regions of the nine cells round the lair, and they are fixed by the cell's own generation. So my guess is that the site itself stood somewhere else at the first read (the shore move, `drawnAt`). That is also not shown. The check now records where the site stood at each read, and whether it was moved. If that is the cause, it is a real fault in Session 701's fix.
+
+### Verified (headless Chromium)
+`shoreplaces`, `dunseed`, `hoardspot` and `lairname` pass locally on this head.
+
+### Needs eyes
+- The next CI run: `hoardspot`'s and `lairname`'s extra fields, if they go red again, name the cause. If they do, it is the next session's fix.
