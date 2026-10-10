@@ -68,7 +68,7 @@ await click('^The cells'); const cellsLine = await said(); await page.waitForTim
 const sC = await state(); const afterCells = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const keep = S.houses.find(h => h.type === 'castle');
   return { stolenLeft: BAG.filter(i => i.stolen).length, keep: !!keep, nearKeep: keep ? Math.hypot(px - keep.exitX, pz - keep.exitZ) : Math.hypot(px - S.site.x, pz - S.site.z), drawn: ZONES.world.enemies.filter(e => e._guard && !e.dead).length, guardBack: window._gd.g.visible && !window._gd._drawn }; });
 console.log('cells', cellsLine, JSON.stringify(sC), JSON.stringify(afterCells));
-check('the cells: morning at seven by the keep (Dunmore has none: the town\'s centre), the ring and the 40 gold gone, the fine cleared, half health, the guard back on his beat', /Come along|cells/.test(cellsLine) && sC.hour === 7 && afterCells.nearKeep != null && afterCells.nearKeep < 3 && afterCells.stolenLeft === 0 && sC.gold === 460 && sC.bounty === 0 && sC.hp >= sC.maxHP * .5 && afterCells.drawn === 0 && afterCells.guardBack, { sC, afterCells });
+check('the cells: morning at seven by the keep (Dunmore has none: the town\'s centre), the ring and the 40 gold gone, the fine cleared, half health, the guard back on his beat', /Come along|cells/.test(cellsLine) && Math.abs(sC.hour - 7) < .05 && afterCells.nearKeep != null && afterCells.nearKeep < 3 && afterCells.stolenLeft === 0 && sC.gold === 460 && sC.bounty === 0 && sC.hp >= sC.maxHP * .5 && afterCells.drawn === 0 && afterCells.guardBack, { sC, afterCells });
 check('the cells clear the fine, not the record: favour still −3, three points still owed', sC.favor === -3 && sC.debt === 3, sC);
 
 // 6. a guard struck: he draws at once; killed, the gates shut and the Church hears

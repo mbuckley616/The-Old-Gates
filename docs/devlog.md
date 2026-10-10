@@ -15086,3 +15086,12 @@ The dragon lair is unchanged. A load works as before: the master is built again 
 - The fight. On hard, floor 2, level 1, a Frost Troll master has 693 health and averages about 58 a blow before armour. An old slot was as strong when a Skeleton stood there (about 255) and far stronger under a Cave Troll, but far weaker under a Slime (the critic's 49). The beast outside, at the crag, is the kind × 4 health, × 2 a blow. Michael should judge whether the master inside should be the harder fight.
 - The look builder: each body at 1.5× in a cavern's light, the shrunk Troll and Ogre (do they read as cramped or as right?), and whether the Hag's staff and the Ogre's club clear the walls in the master's room.
 - The master's light now takes the kind's eye colour (the Hag's pale yellow, the Wight's ember).
+
+## v80 — Session 707 — `guardplay` reads seven in the cells within three minutes, not to the minute (the look builder's note on PR #212)
+Shard 8 on PR #212 (`27dd374`) failed `guardplay` on one condition of *the cells: morning at seven by the keep*: `sC.hour === 7`. Everything else held. The runner read 7.01, because on a slow runner the clock ran one game minute between waking in the cells and the test's read. It is the same kind of miss Session 670 fixed in `compactrefit`. The look builder proposed the patch (Session 693's note); it is applied as proposed: `Math.abs(sC.hour - 7) < .05`, within three game minutes of seven. The game is unchanged.
+
+### Verified (headless Chromium)
+`guardplay` passes all 14 checks locally (the cells read 7 here; the run's later states read 7.02, which shows the clock does move on between reads).
+
+### Needs eyes
+- Nothing to play.
