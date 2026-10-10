@@ -13494,3 +13494,12 @@ The test holds each ship's heading by setting her waypoint once, 5,000 units dea
 
 ### Needs eyes
 - Nothing to play. If `sailtrim` misses again, the wind's own drift with the clock between steps is the next suspect; the ships are now ruled out.
+
+## v80 — Session 687 — `q7world` red on this PR, and the systems builder's fix for it ported (backlog H, CI)
+Shard 7 failed on `90d7441` (main merged in, docs only) with `q7world`: the Faolchú stood at 5 HP after its thirty seconds of swings, and the Mark, Bram, Edna and Aldwyn steps failed after it. This is the failure the producer logged in backlog I on 9 Oct as red on main itself (`9b86e34`). The systems builder's Session 669 (`03d0dc5`, on auto/systems, not yet on main) found its cause: on a slow runner the real frames before the fight loop let both lesser wolves close to your heels, and the three of them kept your posture broken on 1,667 of 1,800 ticks. Their fix holds your posture full in the fight loop and stands you on the Faolchú's far side from its wolves. The same commit also fixes `lod`, the other suite in that backlog line, by comparing the same people in both views. Both test files are ported here unchanged, so that this PR goes green now; the change does nothing once auto/systems reaches main with the same lines. No game code changed.
+
+### Verified (headless Chromium)
+`q7world` and `lod` pass locally with the ported files. Both applied cleanly: this branch had main's versions of both.
+
+### Needs eyes
+- Nothing to play. The fix is the systems builder's (Session 669's entry, on auto/systems); this is a copy of it, kept identical so that the merge of #167 meets no conflict in these two files.
