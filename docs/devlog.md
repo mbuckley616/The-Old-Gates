@@ -14811,3 +14811,21 @@ A register session, applied exactly as the review wrote it. Finding 23: Session 
 `tests/handback.test.mjs`, extended: all its eight checks still pass, the head's answer at Ironhaven is now the Gatelander line (the regex on *back on the board* became a match on that people's own line, since the Markman's says *Back*), the five voices are five different lines (the Aurennais's says *Master*, the Markman's opens *Aye.*), and no worry in `WORRIES` names a king or a tithe (0 of 8). 11/11.
 ### Needs eyes
 Nothing beyond reading the lines in a hall of each people.
+
+## v80 — Session 694 — A cavern's master dies at the blow, and its hoard is rolled once (the critic's s482)
+The critic's s482 run at Carrigowen's Lair killed the cavern's master and took *The Hoard*: 153 gold, a Steel Sword that sells for 108, and two Greater Potions. They left with 26 foes alive and went straight back in. The master stood at 49/49 over the same full hoard, which is 261 gold a trip at level 1 with no limit. The master was marked dead only by `onLeavePortal(portal, ENEMIES.every(e=>e.dead))`, so a cavern not cleared to its last foe forgot the kill. The hoard rolled on `lootDay()`, so on the same day it was the same hoard again, and on the next day a new one.
+
+Two changes, both in `68-dungeon-misc.js` beside `lairFinish`. `slayMaster(portal)` is the named action that marks the master dead. `killE` calls it when the foe it kills is the master, so the master is dead from the blow that kills it. The old leaving rule still calls it as a fallback. The hoard now rolls once, on its first entry, and is kept in `worldState.masters[seed]` as `{dead, hoard:{x,z,floor,items}}`. The chest's items are that list, so what you take stays taken. On a later entry, a living master stands over what is left. A dead one is gone, and *Its hoard is where you left it.* if anything remains, or *long gone* once it is empty. An old save's `true` still reads dead and gone. `masters` was already in the world row and in the S242 list, so the save needs no new key.
+
+### Verified (headless Chromium)
+`lairhoard` 11/11 (new), on a lair cavern at seed 4021 with 28 foes, entering and leaving by `goToDungeon`/`goToOW`:
+- The first entry has one master and a hoard of three (153 gold, an Iron Cuirass, Greater Potions), recorded with the master alive.
+- Take the gold, leave with the master alive, and come back two days later: the master stands again, and the hoard is the cuirass and the potions, not a new roll.
+- Kill the master with 29 of the cavern's foes alive: it is marked dead at once. Back in, there is no master, and the hoard holds the one thing you left in it.
+- The same holds through the save's JSON.
+- Once the hoard is emptied it is *long gone* next time, and an old save's `true` gives no master and no hoard.
+
+On the old code 5 of the 11 checks fail. The master came back, the hoard was full again (153 gold), and nothing was recorded. Neighbours `masterslam` and `wyrm` are green. `parsecheck` is clean.
+
+### Needs eyes
+Nothing in the fight changes. A master you leave alive still comes back at full health, as the rest of the cavern does, but its hoard does not refill.

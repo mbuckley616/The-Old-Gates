@@ -340,6 +340,7 @@ function fireArrow(strength){
 function killE(e,tag=''){
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'dungeon');} // v80 S12
   e.dead=true;e.el.intensity=0;
+  if(e.master&&currentPortal&&typeof slayMaster==='function')slayMaster(currentPortal); /* S694 — the master dies once, at the blow */
   if(e._slamRing)e._slamRing.visible=false;
   if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
   sndEnemyDeath();kills++;lvAct.kills++;xp+=Math.round(e.maxHp*_buffMult('xpBoost',1));chkLvl();

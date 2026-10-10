@@ -481,7 +481,14 @@ function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)
 // Every lair carries a cavern (a portal flagged lair:{...}); the beast at the mouth still guards the approach,
 // and inside, in the deepest room, the lair's true master waits on its hoard. Dragons are the largest antibodies:
 // where the binding tore worst, what the world made has wings. The Salt Mouth has one; a few lairs beyond do too.
-function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return;const L=portal.lair;if(worldState.masters&&worldState.masters[portal.seed]){showMsg('The master of this place is dead. Its hoard is long gone.','#a89878');return;}
+// S694 — worldState.masters[seed]: true (an old save: dead, the hoard gone) or {dead, hoard:{x,z,floor,items}}. The hoard rolls once
+// and its items are the chest's own list, so what you take stays taken and a day's turn does not refill it; the master is dead from
+// the blow that kills him (slayMaster), not from a cavern cleared to the last rat.
+function lairHoardChest(portal,h,dragon){const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(h.x,(h.floor===2?FLOOR2_Y:0),h.z);dScene.add(group);
+  CHESTS.push({id:`${dKeyOf(portal,h.floor||1)}:hoard`,x:h.x,z:h.z,opened:false,lid,treasure:true,floor:h.floor||1,mesh:group,items:h.items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});}
+function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;}
+function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return;const L=portal.lair;const M=worldState.masters||(worldState.masters={}),rec=M[portal.seed];
+  if(rec===true||(rec&&rec.dead)){const h=rec&&rec.hoard;if(h&&h.items&&h.items.length){lairHoardChest(portal,h,!!L.dragon);showMsg('The master of this place is dead. Its hoard is where you left it.','#a89878');}else showMsg('The master of this place is dead. Its hoard is long gone.','#a89878');return;}
   // the deepest room: the enemy farthest from the entrance, on the lowest floor there is
   const ent={x:(typeof dEntranceX!=='undefined')?dEntranceX:0,z:(typeof dEntranceZ!=='undefined')?dEntranceZ:0};
   const pool=ENEMIES.filter(e=>!e.dead);const low=Math.max(...pool.map(e=>e.floor||1));const cand=pool.filter(e=>(e.floor||1)===low).sort((a,b)=>Math.hypot(b.x-ent.x,b.z-ent.z)-Math.hypot(a.x-ent.x,a.z-ent.z));
@@ -492,7 +499,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88); // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
   // the hoard beside it
-  const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(e.x+1.2,(e.floor===2?FLOOR2_Y:0),e.z+.6);dScene.add(group);
+  if(rec&&rec.hoard){lairHoardChest(portal,rec.hoard,dragon);showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');window._lairBoss=e;return;}
   // S514 — the hoard is <seed>:<floor>:hoard, and its goods roll on its stream and the day, not Math.random (co-op rules)
   const hid=`${dKeyOf(portal,e.floor||1)}:hoard`,hr=seededRng('loot',hid+':'+lootDay());
   const items=[];const gv=Math.round((60+level*25)*(dragon?3:1.8));items.push({name:'Gold Coins',ico:'●',type:'gold',value:gv,qty:1});
@@ -500,7 +507,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   items.push(hr()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
   if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});
   items.push({name:'Greater Potion',ico:'🧪',type:'potion',heal:60,buyPrice:45,sellMult:.4,qty:2});
-  CHESTS.push({id:hid,x:e.x+1.2,z:e.z+.6,opened:false,lid,treasure:true,floor:e.floor||1,mesh:group,items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});
+  const hoard={x:e.x+1.2,z:e.z+.6,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
   showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');
   window._lairBoss=e;}catch(err){console.warn('lairFinish',err);}}
 // S219 — a lair's wyrm on the dragon's own body (S177, the wolf's bones with a neck, a tail and wings): the master keeps

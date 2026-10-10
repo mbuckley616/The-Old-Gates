@@ -192,7 +192,7 @@
   function removeAsh(){const n=ASH.npc;if(!n)return;sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);ASH.npc=null;}
   // the Root: when its beast is dead, Varek, and the ending
   const ROOTS={npc:null,done:false};
-  function onLeavePortal(portal,cleared){if(portal&&cleared&&portal.lair){(worldState.masters||(worldState.masters={}))[portal.seed]=true;} // v80 — the master of a cavern dies once
+  function onLeavePortal(portal,cleared){if(portal&&cleared&&portal.lair&&typeof slayMaster==='function')slayMaster(portal); // v80 — the master of a cavern dies once; S694 — at the blow (killE), this only a fallback, and it keeps the hoard's record
     if(!portal||portal.seed!==9001)return;if(cleared){const S=story();S.rootCleared=true;showMsg('The Root is quiet. Something is standing at its mouth.','#a0a8c0');}}
   function tickRoot(){const S=story();if(S.step!=='root')return;const r=anchoredPlaces().root;if(!r)return;if(!S.rootCleared)return;if(ROOTS.npc)return;
     const c=S.choice;const def={name:'Varek',role:'',ico:'✒',authored:true,people:'oldblood',sCol:0xd0c8c4,hairCol:0x0e0c0c,bodyScale:[.92,.96,.92],bCol:0x2a2a30,x:r.x+3,z:r.z+4,greeting:["Here it is. The root of every gate. Put your hand on it and you'll feel them all — and you'll feel the other side. I've stood here a long time. When you look at me — what is between us?"],
