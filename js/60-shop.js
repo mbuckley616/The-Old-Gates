@@ -101,6 +101,7 @@ function takeLootItem(idx){
     }
   }
   currentLootContainer.items.splice(idx, 1);
+  if(currentLootContainer._keepSite&&typeof keepSiteChest==='function')keepSiteChest(currentLootContainer); /* S700 — a lair's Hoard or a camp's Takings keeps what is left */
   // v61ae: when the hammer is taken off Bram's body, remove the goblin axe
   // from the scene too — the in-fiction read is "the weapon he went out
   // holding" not "another decorative prop the player can walk around." Guard

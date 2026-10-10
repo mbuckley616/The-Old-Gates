@@ -339,6 +339,7 @@ const giver=`${lord.title} ${lord.name}`;
   // when asked (the door's lair.boss is read when its cell is first made, and can disagree: Carrigowen, in fen and never moved,
   // has a Marsh Hag at the crag and *Cave Bear* on its door), and off those biomes by the lair's own hash. The beast at the crag
   // rolled Cave Bear or Ogre on its build stream, the master on this hash.
+  function keepSiteChest(ch){if(!ch||!ch._keepSite)return;(worldState.siteChests||(worldState.siteChests={}))[ch._keepSite]=ch.items;} // S700 — the named action: a site's chest, taken from, keeps what is left
   function lairSeed(site){return 100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);}
   function lairBeast(site){const seed=lairSeed(site),biome=dominantRegion(site.x,site.z).r.biome;
     return biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';}
@@ -361,8 +362,12 @@ const giver=`${lord.title} ${lord.name}`;
     for(const [name,x,z,alert] of list){const fid=S.site.id+':foe:'+S.creatures.length; /* S479 — a site's foe is its site and index (co-op rules) */ const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,name,typeof pickVariant==='function'?pickVariant(name,level,'normal',seededRng('variant',fid)):null),fid);if(e.locked){e.locked=false;if(e.mesh)e.mesh.visible=true;} /* v80 — a lair's beast is there whatever your level */ e.alert=!!alert;e.homeX=x;e.homeZ=z;e._site=S.site.id;ZONES.world.enemies.push(e);S.creatures.push(e);}
   }
   function siteChest(S,x,z,mult,name){const y=worldH(x,z);const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(S.site.x-x,S.site.z-z);const {lid}=buildChestShell(g,1.8,0x4a3018);S.group.add(g); // S259 — the kit's chest (S198), the old box's size, its lid on the hinge; a group, so the bake leaves it whole
-    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});
-    const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:false,_site:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
+    /* S700 — a site's chest (a lair's Hoard, a camp's Takings) rolls until you first take from it; from then its items are kept in
+       worldState.siteChests[site] (keepSiteChest, from takeLootItem), so what you take stays taken. It was built full again each time
+       its site was (a walk out of range and back), on the same day the same goods. */
+    const kept=worldState.siteChests&&worldState.siteChests[S.site.id];
+    let items=kept||(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!kept){if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});}
+    const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:!!kept,_site:S.site.id,_keepSite:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
   // S545 — the glade's look alone, on the builder's own rolls in its order (pr is rolled and the pond stamped first, so the
   // reeds and the log stand on the bowl): H(x,z) is the ground. buildGlade places it in the world, poiPreview on a stage.
   function gladeGeoParts(r,cx,cz,y,pr,pad,H){

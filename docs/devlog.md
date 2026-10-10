@@ -14911,3 +14911,19 @@ The suite cannot run on the old code, which has no `lairBeast`. Neighbours `wyrm
 ### Needs eyes
 - Why Carrigowen's cell read another biome when it was made is not found. The name no longer depends on it, but the cavern's theme still does (*deep*, where a fen lair's is *haunted*).
 - The cavern door still stands 46 units from its lair, facing away (the critic's fifth s482 item). The push-out is in `82-world-structures.js`, and the mound is the look builder's, so it is left for the producer to route.
+
+## v80 — Session 700 — A lair's Hoard and a camp's Takings keep what you leave in them (found in Session 695)
+Session 695's *Needs eyes* named this. A site's chest (`siteChest`, `87-world-quests.js`: the *Hoard* beside a lair's crag, the bandit camp's *Takings*) was rolled on its site and the day each time its site was built. You could empty it, walk out of range (1,000 units) and back, and find it full again with the same goods; a day later it held a new roll. That is the critic's cavern exploit (Session 694) above ground, and with S695 a load rebuilds these sites too.
+
+The chest still rolls on its site and the day until you first take from it, so an untouched chest is as before. The first take calls `keepSiteChest(ch)`, the named action, from `takeLootItem` (`60-shop.js`). It keeps the chest's items in `worldState.siteChests[site]`, and the chest is built from that list from then on. What you take stays taken, through a rebuild, a turned day and a load. `siteChests` is a world key, added to the S242 list in `_applyLoadData`. It is not the character's, so it is not in `SS_CHAR_WS`.
+
+### Verified (headless Chromium)
+`sitechest` 9/9 (new), at Carrigkeel's Lair and the nearest bandit camp:
+- Untouched, a rebuilt chest on the same day is the same roll.
+- Take one thing and rebuild: the camp's *Takings* hold the buckler alone, and the lair's one-potion *Hoard* is empty. Three days on, still the same.
+- Save, empty the camp's chest, and load: it holds the buckler again, as at the save.
+
+On the old code four checks fail. The chest is rebuilt full (the boots and the buckler), and three days on it is a new roll (*Caor Dubh* and three lockpicks). Neighbours `campsack`, `coopsaves`, `lairload` and `export` are green. `parsecheck` is clean.
+
+### Needs eyes
+Nothing in play beyond an emptied chest staying empty. A lair's outdoor *Hoard* rolled one Health Potion at Carrigkeel. It rolls on the `treasure` table at ×2.2, which can give little. That is a matter of numbers, not raised here.

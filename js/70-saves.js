@@ -716,6 +716,7 @@ function _applyLoadData(d,w){
   try{applyLook();}catch(e){}
   worldState.stats            = (d.wS && d.wS.stats) || null;     // v80 — the Character tab's counters
   worldState.masters          = (d.wS && d.wS.masters) || null;   // v80 — cavern masters slain
+  worldState.siteChests       = (d.wS && d.wS.siteChests) || null;   // S700 — a lair's Hoard, a camp's Takings, once taken from
   worldState.cold             = (d.wS && d.wS.cold) || 0;         // v80 P — an Old Blood reader's cost
   worldState.sigilsRead       = (d.wS && d.wS.sigilsRead) || null;
   worldState.rented           = (d.wS && d.wS.rented) || null;    // v80 G — the inn room you rented
