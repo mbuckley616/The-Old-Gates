@@ -358,7 +358,7 @@ function openLockpick(door){
   LP.live=!!(door&&door.live);LP.hp=PHP;if(LP.live){const KK=window._K;if(KK)for(const k in KK)KK[k]=false;blocking=false;}
   lockOpen=true;_releasePointerLockForMenu();
   const el=document.getElementById('lockpick');el.style.display='flex';
-  document.getElementById('lp-title').textContent=(door&&door.lockTitle)?(d.pins>=4?door.lockTitle+' — a good lock':door.lockTitle):(d.pins>=4?'A good lock':'A locked door');
+  document.getElementById('lpk-title').textContent=(door&&door.lockTitle)?(d.pins>=4?door.lockTitle+' — a good lock':door.lockTitle):(d.pins>=4?'A good lock':'A locked door');
   lpRender();lpStatus('Push a pin. Press again when it holds.');
   if(!LP.raf)LP.raf=requestAnimationFrame(lpTick);
 }

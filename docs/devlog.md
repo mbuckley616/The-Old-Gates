@@ -15186,3 +15186,14 @@ Both failures reproduce here exactly. A probe made the old portal with `PORTALS`
 ### Needs eyes
 - The next CI run. `sailtrim` is the look builder's if it is red again.
 - Other suites still copy `PORTALS[0]` without an id (`lairhoard`, `lairmaster`, `masterslam`, `foelogname`, `dungeonchase`, `dungeonpace`). They have not gone red. If one does with the floor or `lid` wrong, this is the cause.
+
+## v80 — Session 715 — The lock panel shows the lock's name (backlog I, the concept artist's s488)
+The concept artist found that `index.html` had two elements with `id="lp-title"`: the loot panel's `<h2>` and, later in the page, the lockpick panel's title. `getElementById` returns the first. So since Session 142, `openLockpick` has written the lock's name (*A locked treasure chest*, *Clodagh's shop door — a good lock*) into the hidden loot panel. The lock panel always showed its placeholder, *A locked door*, whether the lock was a chest, a strongbox or a door. Opening a chest then overwrote the loot title with the container's name, so the loot panel showed nothing wrong either.
+
+The lock panel's title is now `lpk-title`, with the same style (the CSS rule names both). `openLockpick` writes to it, and the loot panel keeps `lp-title`. Four tests had read the lock's name from `lp-title`, the hidden loot heading, so they passed on the bug: `crime1` (three reads), `lockpicks` and `locks` (two). They now read `lpk-title`.
+
+### Verified (headless Chromium)
+`locks` gains two checks, and all pass. Picking a treasure chest, the shown lock panel reads *A locked treasure chest*, and the loot heading stays *Chest*, as it was before the pick. No id in the page is used twice (0 duplicates). On the old page the new checks cannot pass, because there is no lock title of its own. `crime1`, `lockpicks`, `dunconts` (which reads the loot heading), `lockfair`, `chestpicks` and `livepick` pass.
+
+### Needs eyes
+- The lock panel's title at real size, now that it shows: the concept artist's prototype draws it as an engraving's caption.

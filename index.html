@@ -39,7 +39,7 @@
 .sl-slot-time{color:#3a3020;font-size:10px;flex-shrink:0}
 #lockpick{display:none;position:fixed;inset:0;background:rgba(6,5,3,.72);z-index:60;align-items:center;justify-content:center;cursor:pointer}
 #lp-box{background:linear-gradient(#17140e,#0e0c08);border:1px solid #4a3f28;border-radius:8px;padding:16px 18px 12px;min-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.6);font:13px Georgia,serif;color:#d8ccb0;text-align:center}
-#lp-title{color:#e8d8a0;font-size:15px;letter-spacing:.04em;margin-bottom:10px}
+#lp-title,#lpk-title{color:#e8d8a0;font-size:15px;letter-spacing:.04em;margin-bottom:10px}
 #lp-lock{position:relative;height:150px;background:radial-gradient(circle at 50% 30%,#2a2418,#14110b);border:1px solid #3a3222;border-radius:6px;overflow:hidden}
 #lp-pins{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;gap:14px;padding:0 18px 12px}
 #lp-shear{position:absolute;left:8px;right:8px;top:30px;height:1px;background:repeating-linear-gradient(90deg,rgba(200,168,74,.5) 0 6px,transparent 6px 12px)}
@@ -784,7 +784,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s566</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s567</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -890,7 +890,7 @@
   <!-- LOCKPICKING (v80 S142) -->
   <div id="lockpick">
     <div id="lp-box">
-      <div id="lp-title">A locked door</div>
+      <div id="lpk-title">A locked door</div>
       <div id="lp-lock"><div id="lp-pins"></div><div id="lp-shear"></div></div>
       <div id="lp-status">Push a pin. Press again when it holds.</div>
       <div id="lp-foot"><span id="lp-picks"></span><span id="lp-keys">click or <b>space</b> to push · <b>← →</b> choose a pin · <b>Esc</b> to step back</span></div>

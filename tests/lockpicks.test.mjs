@@ -20,7 +20,7 @@ check('bought picks stack, and picks found in loot join the same stack; the lock
 // a pick bought at the counter opens the lock at a door, and spends like any other
 const door = await page.evaluate(async () => { exitInterior(); await new Promise(r => setTimeout(r, 2500)); forceTime(23); const S = WORLD.settle.get('dunmore');
   const h = S.houses.find(x => /weapon|armor|potion/.test(x.type) && x.keeper); px = h.doorX; pz = h.doorZ + .3; jumpY = 0;
-  const opened = tryLockpick(WORLD.doorLockFor(h)); const title = document.getElementById('lp-title').textContent; const before = lpPicks(); const left = lpSpendPick();
+  const opened = tryLockpick(WORLD.doorLockFor(h)); const title = document.getElementById('lpk-title').textContent; const before = lpPicks(); const left = lpSpendPick();
   closeLockpick(); return { opened, title, before, left }; });
 check('with a bought pick the town lock opens to the pick; spending one leaves the rest', door.opened && /door/i.test(door.title) && door.before === 6 && door.left === 5, door);
 check('no page errors', g.errs.length === 0, g.errs);
