@@ -271,7 +271,7 @@ function faolchuAt(sc, sx, sz, ey){
     homeX:sx, homeZ:sz,
     name:d.displayName, displayName:d.displayName,
     mesh:g, hpFg, hpBg, limbs, el,
-    spd:d.spd, dmg:d.dmg, atk:d.atk, atkSpd:d.atk, atkCd:0,
+    size:d.scale, spd:d.spd, dmg:d.dmg, atk:d.atk, atkSpd:d.atk, atkCd:0,
     xpVal:d.xpVal,
     dead:false, alert:false, locked:false,
     walkT:Math.random()*Math.PI*2,
@@ -427,7 +427,7 @@ function spawnLesserFaolchu(parentBoss){
     homeX:sx, homeZ:sz,
     name:'Lesser Faolchú', displayName:'Lesser Faolchú',
     mesh:g, hpFg, hpBg, limbs, el,
-    spd:lesserDef.spd, dmg:lesserDef.dmg, atk:lesserDef.atk, atkSpd:lesserDef.atk, atkCd:0.5,
+    size:lesserDef.scale, spd:lesserDef.spd, dmg:lesserDef.dmg, atk:lesserDef.atk, atkSpd:lesserDef.atk, atkCd:0.5,
     xpVal:lesserDef.xpVal,
     dead:false, alert:true, locked:false,
     walkT:Math.random()*Math.PI*2,
@@ -708,8 +708,8 @@ function attackPose(e,inDungeon){
   if(e.mesh&&(!arm||isTail)&&!(e.limbs&&e.limbs.wolf)){const lean=-w*.22+s*.18;if(inDungeon)e.mesh.rotateX(lean);else e.mesh.rotation.x=lean;}
   if(e.mesh&&e.mesh._hover){const t=performance.now()*.003;e.mesh.position.y=(e.baseY||e.mesh.position.y-Math.sin(t-.05)*.08)+Math.sin(t)*.08;e.mesh.children.forEach(c=>{if(c._mote!=null){c.position.x=Math.cos(t+c._mote)*.3*(e.mesh.scale.x||1);c.position.z=Math.sin(t+c._mote)*.3;}});}
 }
-function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
-  const ZDEF={
+// S688 — the zone foes' table, at the top level so prewarmFoes can name every kind; buildZoneEnemy reads it as ZDEF.
+const ZONE_FOE_DEF={
     // v59: minLevel gates zone enemies the same way dungeon enemies are gated. Below-gate enemies
     // still spawn their full data structure, but are flagged `locked` — mesh hidden, AI + collision
     // skipped — until the player reaches minLevel. On first tick past the gate, they unlock and appear.
@@ -750,6 +750,8 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     'Ash Wight':    {minLevel:7, col:0x3a3634,eyeCol:0xff6020,hp:70, maxHp:70, spd:1.2,dmg:15,atk:1.5, xpVal:110,scale:1.1,shape:'humanoid',def:4, resist:{tine:0.4, cloch:1.4}},
     'Pirate':       {minLevel:1, col:0x3a2a2a,eyeCol:0xffd080,hp:32, maxHp:32, spd:1.3,dmg:9, atk:1.3, xpVal:34, scale:1.0,shape:'humanoid',def:2, resist:{}},
   };
+function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
+  const ZDEF=ZONE_FOE_DEF;
   const baseDef=ZDEF[type]||ZDEF.Wolf;
   // Apply variant overlay if one was selected upstream. Zones pass diff='normal' to pickVariant so only Greater can apply.
   const vr=applyVariantToDef(baseDef, type, variantKey);
@@ -860,7 +862,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // v61gj — Build the zone enemy state, init posture, then return. Stamp `shape`
   // so the posture-family lookup resolves directly (zone shapes are wolf/spider/
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
-  const zoneE = {limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
+  const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*sc2;} // the bar over a person's head
@@ -874,6 +876,26 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
 
 // v80 S386 — a foe a quest or the war sets down on purpose (a duel, a commission, a raid, a road job, a caravan's attackers, a siege) is there at any level:
 // the minLevel gate is for the wild's own spawns, and a latent one is hidden, never ticked and can't be hit
+// S688 — the first wolf, or the first night's foes, compiled their shader programs on the frame they first drew: a hitch on a
+// GPU, seconds on software GL (Session 233). Once a page, behind the world's loading fade, one foe of every kind is built
+// into a group the world never ticks, its light taken out (a light would change every program's key), and REN.compile
+// builds their programs against the world's own lights and fog. The group is then dropped and its rigs struck from the
+// tick lists; the materials are not disposed, so the programs stay in three.js's cache for the real foes that follow.
+let _foesWarm=null;
+function prewarmFoes(sc,cam){
+  if(_foesWarm||typeof REN==='undefined'||!REN||!sc||!cam)return null;_foesWarm=true;
+  const t0=performance.now(),p0=REN.info.programs?REN.info.programs.length:0,tmp=new THREE.Group(),kinds=Object.keys(ZONE_FOE_DEF);
+  for(const k of kinds){try{buildZoneEnemy(tmp,[],0,0,k,null);}catch(e){}}
+  try{buildZoneEnemy(tmp,[],0,0,'Bandit',null,{genome:personGenome({name:'warm',role:'guard'},{key:'warm'})});}catch(e){} /* a town guard drawn on you: a Bandit on a townsman's genome */
+  const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
+  tmp.traverse(o=>{o.frustumCulled=false;});
+  if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */
+  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}sc.remove(tmp);
+  const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;};
+  for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
+  for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
+  return _foesWarm={kinds:kinds.length+1,programs:(REN.info.programs?REN.info.programs.length:0)-p0,ms:Math.round(performance.now()-t0)};
+}
 function unlockFoe(e){if(!e)return e;e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;return e;}
 
 // v80 S135 — one of them sees you, the rest of the camp hears: everyone within reach wakes
@@ -891,6 +913,13 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${hitD}!`,'#ff6060');}
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
+// S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
+// the other, else a sidestep to one side, kept until that side is blocked too. It stood still behind it before, for good.
+function foeSlide(e,ux,uz,step){
+  if(Math.abs(ux)>.3&&!currentZoneSolid(e.x+ux*step,e.z)){e.x+=ux*step;return true;}
+  if(Math.abs(uz)>.3&&!currentZoneSolid(e.x,e.z+uz*step)){e.z+=uz*step;return true;}
+  const sd=e._slide||1;for(const k of [sd,-sd]){const sx=e.x-uz*step*k,sz=e.z+ux*step*k;if(!currentZoneSolid(sx,sz)){e.x=sx;e.z=sz;e._slide=k;return true;}}
+  return false;}
 function tickZoneEnemies(dt,now,sc){
   try{tickZoneArrows(dt,now);}catch(err){}
   // v59: unlock any latent enemies the player has grown into. Cheap — runs once per tick.
@@ -1108,7 +1137,8 @@ function tickZoneEnemies(dt,now,sc){
     // zone previously had no LOS check, so enemies detected through walls.
     const _inWorld=activeZoneId==='world';
     if(_hasBuff('vanish')){e.alert=false;e._agg=false;} // S322 — Shadowcap's veil in the open world as underground
-    if(!e.alert && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?15:9)){ // v80 S135 — the open country sees further
+    /* S634 — a coward running for help or a kiter at range (_flee, _agg) is driven by tickBehaviours (85-world-sea.js), which takes it out of alert; seeing you here put it back each frame, and at the faster chase it ran at you between steps of its flight */
+    if(!e.alert && !e._flee && !e._agg && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?20:9)){ // v80 S135 — the open country sees further; S634 — 15 → 20 (#190 A)
       let los = true;const _losSolid=(_inWorld&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid; // trunks and posts don't hide you
       for(let t = 0.15; t < 0.9; t += 0.15){
         const tx = e.x + (T.x - e.x) * t, tz = e.z + (T.z - e.z) * t;
@@ -1132,6 +1162,8 @@ function tickZoneEnemies(dt,now,sc){
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
       const ety=activeTerrainH(e.x,e.z);
       e.mesh.position.set(e.x,ety,e.z);e.el.position.set(e.x,ety+.8,e.z);
+      /* S628 — it faces the way it walks, and looks that way: the body stood at its spawn's turn and the sight cone at a random one, as the dungeon's wander (90-main.js) already turns both */
+      if(!e.isBoss){e.combatYaw=Math.atan2(dx2,dz2);e.mesh.lookAt(e.x+dx2/wd,ety,e.z+dz2/wd);}
       return;
     }
     // Chase player
@@ -1148,10 +1180,10 @@ function tickZoneEnemies(dt,now,sc){
       const packN=ZE.filter(o=>!o.dead&&o.alert&&o!==e&&Math.hypot(o.x-e.x,o.z-e.z)<14).length;
       if(packN>0){if(e._flank==null)e._flank=(foeRand(e)<.5?-1:1)*(.5+foeRand(e)*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
     }
-    if(!_archer&&d>_stopDist){
-      const step=e.spd*dt*(e.alert&&!e.isBoss?1.25:1); // alert, they come at a run
+    if(!_archer&&d>_stopDist&&e._windup==null){ /* S634 — a boss winding up its heavy (85-world-sea.js) holds its ground, so a step clear stays clear at the faster chase */
+      const step=(e.alert&&!e.isBoss?chaseSpeed(e):e.spd)*dt; // alert, they come at a run (S634: near your walk)
       const nx=e.x+dx2/d*step,nz=e.z+dz2/d*step;
-      if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
+      if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}else foeSlide(e,dx2/d,dz2/d,step);
     }
     e.mesh.position.set(e.x,activeTerrainH(e.x,e.z),e.z);
     e.mesh.lookAt(T.x,activeTerrainH(e.x,e.z),T.z);
@@ -1372,6 +1404,7 @@ function tickZoneBalls(dt,sc){
           showMsg(`🔥 Faolchú's fire hits you for ${finalDmg}!`,'#ff5522');
           sndPlayerHurt();
         }
+        finalDmg = challengeTaken(finalDmg); /* S684 — the challenge (her fire never went through _warded) */
         PHP = Math.max(0, PHP-finalDmg);
         hurtT = .4;
         lvAct.damageTaken += finalDmg;
@@ -1409,6 +1442,7 @@ function tickZoneBalls(dt,sc){
           let dmg = Math.max(1, Math.floor(arrowRawFor(fb.userData, e) * resistMult * _fortuneCrit(e)));
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
+          dmg = challengeDealt(dmg); /* S684 — the challenge */
           e.hp = Math.max(0, e.hp - dmg);
           e.alert = true;
           if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
@@ -1506,6 +1540,18 @@ function lootDropChance(e){
   return Math.min(0.85,0.35+fortuneBonus+diffBonus);
 }
 
+// S634 — Michael's A on #190: an alert foe in the open chases at 85–110% of your walk (3.83), so walking away fails and a
+// sprint (4.69) escapes slowly. Its own speed places it on that scale: the slowest of the table (a Forest Troll, 0.7) at
+// 85%, the beasts (a Wolf 1.6, an Ash Hound or Dire Wolf 1.9) near the top, 2.0 and over at 110%. Bosses keep their own.
+const CHASE_WALK=3.83, CHASE_LO=.85, CHASE_HI=1.10, CHASE_SPD_LO=.7, CHASE_SPD_HI=2.0;
+function chaseSpeed(e,lo=CHASE_SPD_LO,hi=CHASE_SPD_HI,sp){const s=sp!=null?sp:(e.spd==null?1:e.spd);if(!(s>0))return 0;const k=Math.max(0,Math.min(1,(s-lo)/(hi-lo)));return CHASE_WALK*(CHASE_LO+(CHASE_HI-CHASE_LO)*k);} /* a foe held at speed 0 stays held */
+// S635 — underground the same band, placed on the dungeon's own table: a Golem (0.42) at 85%, a Goblin (2.02) at 110%. It reads
+// the def's speed (rankSpd), not the speed the difficulty scaled, so a very hard dungeon's goblins stay at 110% of your walk.
+const DCHASE_SPD_LO=.42, DCHASE_SPD_HI=2.02;
+function dungeonChaseSpeed(e){if(!(e.spd>0))return 0;return chaseSpeed(e,DCHASE_SPD_LO,DCHASE_SPD_HI,e.rankSpd!=null?e.rankSpd:e.spd);}
+// S697 — a foe as the log names it: a named one bare (a lair's beast or master, a wyrm, a duel's rival: *slew Carrigowen the
+// Marsh Hag*, not *slew a Carrigowen the Marsh Hag*), the rest with *a* or *an* as the word begins (*an Ogre*).
+function foeLogName(e){const n=String((e&&e.name)||'');if(e&&(e.boss||e.master||e.lair||e._duel||e.named)||/ — | the /.test(n))return n;return (/^[aeiou]/i.test(n)?'an ':'a ')+n;}
 function killZoneEnemy(e,sc,tag=''){
   if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12
@@ -1513,14 +1559,15 @@ function killZoneEnemy(e,sc,tag=''){
   if(e._guard&&typeof WORLD!=='undefined'&&WORLD.guardKilled)try{WORLD.guardKilled(e);}catch(err){} // S157
   sndEnemyDeath();kills++;lvAct.kills++;xp+=Math.round(e.xpVal*_buffMult('xpBoost',1));chkLvl();
   const firstKill=!seenEnemyTypes.has(e.name);
-  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew a '+e.name);}
+  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
   const terrainY = typeof activeTerrainH==='function' ? activeTerrainH(e.x,e.z) : 0;
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
+  if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
   if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,activeTerrainH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.set(e.x, terrainY+0.15, e.z);}
-  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);}});
+  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);if(c.material.emissive&&c.material.emissive.getHex()===0xffaa00)c.material.emissive.setHex(0);}}); /* S626 — a guard-break flash still on at the kill: its timer clears the old material, not this clone */
   // Hide HP bar
   if(e.hpFg){e.hpFg.visible=false;if(e.hpFg.parent)e.hpFg.parent.children.forEach(c=>{if(c.geometry&&c.geometry.type==='PlaneGeometry')c.visible=false;});}
   // Loot glow + spark (scene-aware — uses the scene the enemy was added to)
@@ -1544,6 +1591,7 @@ function killZoneEnemy(e,sc,tag=''){
   sc.add(lootSpark);
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
   const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
+  bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   // v61c2 — Boss death hooks. The Faolchú gets:
   //   - guaranteed unique drop (The Faolchú's Mark amulet) prepended to
   //     the loot items array, so the corpse always carries it

@@ -352,13 +352,16 @@
     for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
   // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
   const INT_FOV=Math.cos(Math.PI/3);
+  const WIT_HEAR=2;
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house){
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5; /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
       if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
       const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
-    let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
+    // S705 — the street as the shop (Michael's A on #222): a townsperson or guard sees in the same 120° cone the way they face,
+    // to the same ranges; within two units they hear you whichever way they face
+    let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(d>=WIT_HEAR&&!intFaces(n.g))continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
     if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
@@ -561,27 +564,32 @@
   function boxCoins(p,type){const mult=/weapon|armor|armoury|forge/.test(type)?1.2:/potion|apothecary/.test(type)?.8:1;return (10+50*Math.max(0,Math.min(100,p))/100)*mult;}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
     return INT_BOX.open?'open':'locked';}
-  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>1.6||jumpY>.6)return null;const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
+  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>1.6||jumpY>.6)return null;if(!aimBox(INT_BOX.x,INT_BOX.z,0,.42,.42,.7))return null; /* S646 — and under the crosshair */const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
     return st==='empty'?(INT_BOX.kind==='home'?'The chest is empty':'The strongbox is empty'):st==='locked'?`Press 'E' to pick the lock on ${name}`:`Press 'E' to open ${name}`;}
   function boxInteract(){if(!boxPrompt())return false;const st=boxState(),X=INT_BOX;
     if(st==='empty'){showMsg(X.kind==='home'?'Nothing left in it.':'The takings are gone; they will not have refilled it yet.','#c8b880');return true;}
     if(st==='locked'){if(typeof tryLockpick==='function')tryLockpick({seed:'box_'+X.id,live:true,house:X.house,minPins:lockPins(X.house),lockBonus:X.kind==='home'?-1:0,lockTitle:X.kind==='home'?'A small chest':'A strongbox',onPick:()=>{X.open=true;if(X.lid)X.lid.rotation.x=-Math.PI/3;boxInteract();}});return true;}
     // open: the takings by the town's prosperity and one thing from the stock; a home's few coins and a keepsake
+    // S604 — the takings roll on the box's own stream, `<house id>:box:<day>` (CLAUDE.md's co-op rules), as the barrels do (S471)
+    const R=seededRng('loot',X.id+':box:'+lootDay()),rpick=a=>a[Math.floor(R()*a.length)];
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
-    if(X.kind==='home'){coins=2+Math.floor(Math.random()*11);items.push({name:bpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(Math.random()*22),qty:1,stolen:true});}
-    else{coins=Math.round(boxCoins(p,X.type)*(.8+Math.random()*.4));
-      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},bpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
+    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true});}
+    else{coins=Math.round(boxCoins(p,X.type)*(.8+R()*.4));
+      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
     if(typeof renderInv==='function')renderInv();return true;}
   let INT_LOOT=null;
-  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2)return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
+  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
   function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock
   function lootInteract(){if(!lootPrompt())return false;
     if(towerLocked()){const id=INT_LOOT.id;if(typeof tryLockpick==='function')tryLockpick({seed:'tower_'+id,minPins:4,lockTitle:'A locked chest',onPick:()=>{(worldState.towerPicked||(worldState.towerPicked={}))[id]=true;lootInteract();}});return true;}
     const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1,'tower:'+INT_LOOT.id):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
-  function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9)return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
+  function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9&&intHatchAimed())return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
+  // S646 — the hatch under the crosshair: a way up (the roof's, a cellar's or the chapel's ladder) is the column from its floor to
+  // the ceiling, a way down the square of the hatch (1.1 across) and a little above it
+  function intHatchAimed(){const up=HATCH.roof||(currentHouse&&(currentHouse.type==='cellar'||currentHouse.type==='chapel'));return aimBox(HATCH.x,HATCH.z,HATCH.y-.1,.65,.65,up?3.2:.6);}
   function hatchInteract(){if(!hatchPrompt())return false;const h=currentHouse;
     if(HATCH.roof){const S=SETTLE.get((h.siteId)||'');const site=siteAnywhere(h.siteId);const roof=(S&&S.roof)||(site?roofFor(site):null);if(!roof)return false;const hh=h;if(typeof exitInterior==='function'){window._pendingWorldPos={x:roof.x,z:roof.z+1.2,yaw:Math.PI,jumpY:roof.y};exitInterior();}showMsg('Wind. The whole country, from up here.','#c8b880');return true;}
     if(h.type==='cellar'||h.type==='chapel'){const p=h.parent;goToInterior(p);setTimeout(()=>{if(currentHouse===p&&p._hatch){px=p._hatch.x;pz=p._hatch.z+.9;jumpY=0;}},900);return true;}
@@ -665,12 +673,25 @@
   // Ship classes and upgrades (speed, cargo, hull size — no hull HP),
   // fish you catch by swimming up to a school, whales in deep water,
   // pirates who board you, and hulls that push each other apart.
-  const SHIP_CLASSES={sloop:{L:13,W:4.4,name:'sloop',price:0,speed:7.5,hull:100},cog:{L:17,W:5.6,name:'cog',price:900,speed:8.5,hull:140},galleon:{L:22,W:7.0,name:'galleon',price:2200,speed:9.5,hull:200}};
-  const SAIL_TIERS=[0,250,450,700]; // price to reach tier 1..3, +1.2 u/s each
+  // S636 — Michael's B on #192 (docs/design/the-ship-in-hand.md): two hulls more, each a trade and each sold on one island, the
+  // Mark's cutter (fast, thin-skinned, a small hold) and Aurenne's caravel. `worth` is what the hull stands at, the sloop's 400
+  // plus the refits up to it (the cog 1,300 and the galleon 3,500, as the ladder has always cost); `price` stays the fee from
+  // a sloop. `at` names the nation whose yards sell her. Until the look builder gives the two their own hulls, the cutter is
+  // drawn on the sloop's and the caravel on the cog's, so L and W are those hulls' (buildShipMesh picks the bake by L).
+  const SHIP_CLASSES={sloop:{L:13,W:4.4,name:'sloop',price:0,worth:400,speed:7.5,hull:100},cog:{L:17,W:5.6,name:'cog',price:900,worth:1300,speed:8.5,hull:140},galleon:{L:22,W:7.0,name:'galleon',price:2200,worth:3500,speed:9.5,hull:200},
+    cutter:{L:13,W:4.4,name:'cutter',price:1600,worth:2000,speed:12,hull:80,at:'mark'},caravel:{L:17,W:5.6,name:'caravel',price:2800,worth:3200,speed:11,hull:130,at:'aurenne'}};
+  // the hulls a yard sells: the three everywhere, the cutter at the Mark's, the caravel at Aurenne's
+  function yardHulls(site){let nat='gatelands';try{nat=nationAt(site.x,site.z);}catch(e){}return Object.keys(SHIP_CLASSES).filter(k=>!SHIP_CLASSES[k].at||SHIP_CLASSES[k].at===nat);}
+  // a refit from one hull to any other pays the difference in worth; to a hull worth less, the yard pays back two thirds of it
+  function refitCost(from,to){const d=SHIP_CLASSES[to].worth-SHIP_CLASSES[from||'sloop'].worth;return d>=0?d:-Math.round(-d*2/3);}
+  // the next hull up by worth (the Compact's refit): sloop → cog → cutter → caravel → galleon
+  function nextHullUp(cls){const order=Object.keys(SHIP_CLASSES).sort((a,b)=>SHIP_CLASSES[a].worth-SHIP_CLASSES[b].worth);const i=order.indexOf(cls||'sloop');return i>=0&&i<order.length-1?order[i+1]:null;}
+  const SAIL_TIERS=[0,250,450,700,1100]; // price to reach tier 1..4; S636: each tier +12% of her bare speed (was +1.2 u/s, three tiers)
+  const SAIL_STEP=.12;
   const CARGO_TIERS=[0,200,400];    // +25 carry each while aboard or within 20u of her
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
-  function shipTopSpeed(){return shipClass().speed+((worldState.ship&&worldState.ship.sails)||0)*1.2;}
+  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP);}
   // S411 — Michael's A on #85 (docs/design/sailing.md): a hull by class and a rig of 100, kept in worldState.ship (saved).
   // Under half her hull she ships water (speed ×0.8), under a quarter ×0.6; the rig sets ×(0.5 + 0.5 × rig/100);
   // at 0 hull she is waterlogged and makes 2.5 at most. The shipwright mends 4 gold a hull point, 3 a rig point, an hour a 20.
@@ -702,16 +723,19 @@
     if(H||R){SHIP._wh-=H;SHIP._wr-=R;shipWear(H,R);}}
   // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any
   // shipwright raises her, class and tiers, for 30% of what they cost, and she lies at his quay three game days later. The hold
-  // comes up with her; the stash is the safehouse's, untouched.
-  function shipCostAll(){const st=shipCfg();const cls=st.cls||'sloop';let c=SHIP_PRICE+(cls!=='sloop'?SHIP_CLASSES.cog.price:0)+(cls==='galleon'?SHIP_CLASSES.galleon.price:0);
+  // came up with her until S639 (it is lost now, below); the stash is the safehouse's, untouched.
+  function shipCostAll(){const st=shipCfg();const cls=st.cls||'sloop';let c=(SHIP_CLASSES[cls]||SHIP_CLASSES.sloop).worth;
     for(let i=1;i<=(st.sails||0);i++)c+=SAIL_TIERS[i];for(let i=1;i<=(st.cargo||0);i++)c+=CARGO_TIERS[i];return c;}
   function shipRaiseCost(){return Math.round(shipCostAll()*.3);}
+  // S639 — Michael's 6 Oct note and B on #192 (the page's shared ground): what she carries is *all lost if the ship is
+  // destroyed*. The hold goes down with her, horse and all, and a raised ship comes up empty (Session 413 kept it).
   function shipSink(){const st=shipCfg();const aboard=SHIP.sailing||onDeck();
+    const lost=Object.values(st.hold||{}).reduce((a,n)=>a+(n>0?n:0),0);st.hold={};
     st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
     for(const e of BOARDERS){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}BOARDERS.length=0;
     if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=null;}if(SHIP.plat){const j=ZONES.world.platforms.indexOf(SHIP.plat);if(j>=0)ZONES.world.platforms.splice(j,1);SHIP.plat=null;}
     if(aboard){jumpY=SWIM_Y;velY=0;onGround=false;}splash(true);
-    showMsg(`The ${SHIP.name} goes down. Any shipwright can raise her.`,'#ff6060');if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} sank.`);shipBarsUI();}
+    showMsg(`The ${SHIP.name} goes down. Any shipwright can raise her.`,'#ff6060');if(typeof addLog==='function')addLog('⛵',lost?`The ${SHIP.name} sank with ${lost} ${lost===1?'crate':'crates'} in her hold.`:`The ${SHIP.name} sank.`);shipBarsUI();}
   // once a second: a raised ship due at her quay is put there
   function tickShipRaise(){const st=worldState.ship;if(!st||!st.sunk||!st.raise||SHIP.mesh)return;if((worldState.gameTimeAbsMinutes||0)<st.raise.due)return;
     const site=siteAnywhere(st.raise.site);if(!site)return;const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};
@@ -719,15 +743,73 @@
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} is raised and lies at ${site.name}.`);}
   function shipMendCost(){const b=shipBars();const h=b.hullMax-b.hull,r=100-b.rig;return {hull:h,rig:r,gold:h*4+r*3,mins:Math.round((h+r)*3)};}
   const SHIPBAR={ui:null};
+  // S637 — the log (Michael's B on #192, the page's shared ground): a half-dial of 0 to 30 knots on the helm panel, parchment and
+  // ink, one knot one unit a second; the needle at her speed, a brass tick at the most she can make now (top speed × hull and
+  // rig), the number under it, and a notch on the rim at each hull's top under full sails, so the dial is also the ladder
+  const LOG_MAX=30,LOG_CX=67,LOG_CY=62,LOG_R=50;
+  function logPt(v,r){const a=Math.PI*(1-Math.max(0,Math.min(LOG_MAX,v))/LOG_MAX);return [+(LOG_CX+Math.cos(a)*r).toFixed(2),+(LOG_CY-Math.sin(a)*r).toFixed(2)];}
+  function shipLogSVG(){const ink='#2a2014';let t='';
+    for(let k=0;k<=LOG_MAX;k+=5){const [x0,y0]=logPt(k,LOG_R-(k%10?5:8)),[x1,y1]=logPt(k,LOG_R);t+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${ink}" stroke-width="${k%10?1:1.6}"/>`;
+      if(k%10===0){const [lx,ly]=logPt(k,LOG_R-16);t+=`<text x="${lx+(k===0?3:k===LOG_MAX?-3:0)}" y="${ly+(k%LOG_MAX?3:-3)}" text-anchor="middle" font-size="9" fill="${ink}">${k}</text>`;}}
+    const full=Object.keys(SHIP_CLASSES).map(k=>SHIP_CLASSES[k].speed*(1+(SAIL_TIERS.length-1)*SAIL_STEP));
+    for(const v of full){const [x0,y0]=logPt(v,LOG_R+5),[x1,y1]=logPt(v,LOG_R+10);t+=`<line class="log-notch" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="#d8c8a0" stroke-width="1.6"/>`;}
+    const [ax,ay]=logPt(0,LOG_R),[bx,by]=logPt(LOG_MAX,LOG_R);
+    return `<svg id="shipbars-log" width="134" height="80" viewBox="0 0 134 80" style="display:block;margin:0 auto 2px;font-family:Georgia,serif">`+
+      `<path d="M${ax-4} ${ay} A${LOG_R+4} ${LOG_R+4} 0 0 1 ${bx+4} ${by} Z" fill="#e8dcb8" stroke="#a08a5a"/>`+t+
+      `<line id="shipbars-max" x1="${LOG_CX}" y1="${LOG_CY}" x2="${LOG_CX}" y2="${LOG_CY}" stroke="#b08a30" stroke-width="3"/>`+
+      `<line id="shipbars-needle" x1="${LOG_CX}" y1="${LOG_CY}" x2="${LOG_CX}" y2="${LOG_CY}" stroke="#8a2a1a" stroke-width="1.8" stroke-linecap="round"/>`+
+      `<circle cx="${LOG_CX}" cy="${LOG_CY}" r="3" fill="${ink}"/>`+
+      `<text id="shipbars-kn" x="${LOG_CX}" y="77" text-anchor="middle" font-size="11" fill="#e8dcc0">0.0 kn</text></svg>`;}
+  // every frame while the panel shows: her speed and her most, written only when the tenth changes
+  function shipLogUI(){const v=SHIP.sailing?Math.abs(SHIP.speed||0):0,mx=shipSpeedNow();const key=v.toFixed(1)+'|'+mx.toFixed(1);if(key===SHIPBAR.logKey)return;SHIPBAR.logKey=key;
+    const q=id=>document.getElementById(id);const n=q('shipbars-needle'),m=q('shipbars-max'),k=q('shipbars-kn');if(!n||!m||!k)return;
+    const [nx,ny]=logPt(v,LOG_R-6);n.setAttribute('x2',nx);n.setAttribute('y2',ny);
+    const [m0x,m0y]=logPt(mx,LOG_R-9),[m1x,m1y]=logPt(mx,LOG_R);m.setAttribute('x1',m0x);m.setAttribute('y1',m0y);m.setAttribute('x2',m1x);m.setAttribute('y2',m1y);
+    k.textContent=`${v.toFixed(1)} kn`;SHIPBAR.log={v:+v.toFixed(1),max:+mx.toFixed(1),needle:[nx,ny]};}
   function shipBarsUI(){
     if(typeof document==='undefined'||!document.body)return;
     let el=SHIPBAR.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='shipbars';el.style.cssText='position:fixed;right:14px;bottom:150px;width:150px;padding:5px 8px;background:rgba(40,30,18,.82);border:1px solid #a08a5a;border-radius:4px;color:#e8dcc0;font:11px Georgia,serif;display:none;z-index:50';
-      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div><div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
+      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div>'+shipLogSVG()+'<div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
     const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
+    if(show)shipLogUI();
     const b=show?shipBars():null,hint=show?seaHint():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
     const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
     q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';
   }
+  // S638 — the boarding nets (Michael's B on #192, the page's shared ground; his 6 Oct note: *a netting or ladder on either
+  // side to walk up, or "press E to climb" when looking at the mesh — not a general "board" option always available in
+  // range*). Every hull hangs a net on each side amidships, from below the waterline to over the rail, 2.6 long. E climbs
+  // only with the crosshair on a net (the eye's ray meets its box in the hull's own frame, within 5 of the eye: a ship moored
+  // off a quay lies with her nearest net up to 4.5 from its edge, Beaurouge's, and is still boarded from it), or while swimming
+  // against it. The climb takes 0.8 s
+  // and sets you at the rail above the net. A black sail's or a merchantman's net boards her when you reach her rail, and
+  // landing on her deck any other way (a jump from your rail, lying alongside) boards her the moment you land.
+  const NET_HALF=1.3,NET_REACH=5,NET_CLIMB=.8;
+  const _netInv=new THREE.Matrix4(),_netO=new THREE.Vector3(),_netD=new THREE.Vector3(),_netR=new THREE.Ray(),_netB=new THREE.Box3(),_netH=new THREE.Vector3(),_netA=new THREE.Vector3(),_netC=new THREE.Vector3();
+  function netBox(W,side){const hw=W/2;return _netB.set(_netA.set(side>0?hw-.25:-hw-.35,-.9,-NET_HALF),_netC.set(side>0?hw+.35:-hw+.25,SHIP_DECK+.55,NET_HALF));}
+  // the side (1 or −1, the hull's +x or −x) whose net the crosshair is on, or that you swim against; 0 for none
+  function shipNetSide(mesh,W){if(!mesh)return 0;mesh.updateMatrixWorld(true);_netInv.copy(mesh.matrixWorld).invert();
+    if(isSwimming()){_netO.set(px,SEA_Y,pz).applyMatrix4(_netInv);for(const sd of [1,-1]){const off=sd*_netO.x-W/2;if(Math.abs(_netO.z)<=NET_HALF+.3&&off>-.4&&off<1.1)return sd;}}
+    if(typeof CAM==='undefined'||!CAM)return 0;CAM.updateMatrixWorld();CAM.getWorldDirection(_netD);_netO.copy(CAM.position).applyMatrix4(_netInv);_netD.transformDirection(_netInv);_netR.set(_netO,_netD);
+    const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;let best=0,bd=NET_REACH+tpb;
+    for(const sd of [1,-1])if(_netR.intersectBox(netBox(W,sd),_netH)){const d=_netO.distanceTo(_netH);if(d<=bd){bd=d;best=sd;}}return best;}
+  // the rail above a side's net, in the world
+  function netRail(mesh,W,side){mesh.updateMatrixWorld(true);const v=new THREE.Vector3(side*(W/2-.8),SHIP_DECK,0).applyMatrix4(mesh.matrixWorld);return {x:v.x,z:v.z};}
+  let CLIMB=null;
+  function startClimb(mesh,W,side,other){CLIMB={t:0,mesh,W,side,other:other||null,x0:px,z0:pz,y0:jumpY};return true;}
+  function climbing(){return !!CLIMB;}
+  // every world tick: the climb follows the hull as she moves, and a deck landed on is boarded
+  function tickNetClimb(dt){
+    if(CLIMB){const C=CLIMB;if(!C.mesh.parent){CLIMB=null;return;}C.t+=Math.min(dt,.1);const u=Math.min(1,C.t/NET_CLIMB);const r=netRail(C.mesh,C.W,C.side);
+      px=C.x0+(r.x-C.x0)*u;pz=C.z0+(r.z-C.z0)*u;jumpY=C.y0+(DECK_Y-C.y0)*u;velY=0;onGround=true;
+      if(u>=1){CLIMB=null;px=r.x;pz=r.z;jumpY=DECK_Y;if(C.other)boardOther(C.other,r);else showMsg('You climb aboard. E again for the wheel.','#c8b880');}return;}
+    for(const o of OTHER){if(o.boarded||o.dead)continue;const p=o.plat;if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&Math.abs(jumpY-DECK_Y)<1&&(!p.inside||p.inside(px,pz))){boardOther(o,{x:px,z:pz});break;}}}
+  // until the look builder hangs the real nets: a plain rope net on each side, 2.6 by 2.3, about 170 triangles a side
+  function shipNetMesh(W){const c=new THREE.Color(0x6a5434),parts=[];
+    for(const sd of [1,-1]){const x=sd*(W/2+.07);
+      for(let k=0;k<7;k++)parts.push({geo:new THREE.BoxGeometry(.05,2.3,.05),color:c,x,y:-.7+1.15+.05,z:-1.2+k*.4});
+      for(let k=0;k<7;k++)parts.push({geo:new THREE.BoxGeometry(.05,.05,2.5),color:c,x,y:-.6+k*.32,z:0});}
+    const m=new THREE.Mesh(mergeParts(parts),VC_MAT);m.name='nets';return m;}
   function applyShipClass(){const c=shipClass();SHIP.L=c.L;SHIP.W=c.W;if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=buildShipMesh(SHIP.L,SHIP.W);sc.add(SHIP.mesh);shipUpdatePlacement();}}
   function cargoBonus(){if(!SHIP.mesh)return 0;const t=(worldState.ship&&worldState.ship.cargo)||0;if(!t)return 0;return (Math.hypot(px-SHIP.x,pz-SHIP.z)<20||onDeck())?t*25:0;}
   const SHIPWRIGHT_LINES={
@@ -792,10 +874,23 @@
     const mc=shipMendCost();if(mc.gold>0&&shipHere(site)){const b=shipBars();out.push({label:`Mend her: hull ${b.hull} of ${b.hullMax}, rig ${b.rig} of 100 (${mc.gold} gold)`,quest:true,fn:()=>{const m=shipMendCost();if(gold<m.gold)return L.mendPoor(m.gold);gold-=m.gold;updateHUD();
       const s2=shipCfg();s2.hull=shipClass().hull;s2.rig=100;if(typeof advanceClock==='function')advanceClock(m.mins);else worldState.gameTimeMinutes+=m.mins;shipBarsUI();const h=Math.max(1,Math.round(m.mins/60));
       if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} mended at ${site.name}.`);return L.mended(h===1?'An hour':h+' hours');}});}
-    const cls=st.cls||'sloop';const next=cls==='sloop'?'cog':cls==='cog'?'galleon':null;
-    if(next)out.push({label:`Refit her as a ${next} (${SHIP_CLASSES[next].price} gold)`,quest:true,fn:()=>{const p=SHIP_CLASSES[next].price;if(gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);return L.refitted(next);}});
-    const sails=st.sails||0;if(sails<3)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
-    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
+    return out;
+  }
+  // S642 — the yard's offers (Michael's B on #192, item 3): the buy, the refits, the sails and the hold, as {label, fn} rows
+  // with the shipwright's own lines for answers. They were chat rows (upgradeTopics) until the yard panel (openYardPanel)
+  // took them; the panel shows these labels as its buttons. With no ship only the sloop is sold, as before; sunk, nothing.
+  function yardOffers(site){
+    if(!worldState.ship){const p=shipPriceNow();return [{label:`Buy a ship (${p} gold${p<SHIP_PRICE?", with Corwin's note":''})`,cls:'sloop',quest:true,fn:()=>buyShip(site)}];}
+    const st=shipCfg();const out=[];const L=SHIPWRIGHT_LINES[peopleOfSite(site)]||SHIPWRIGHT_LINES.markman;if(st.sunk)return out;
+    // S636 — refits branch: every hull this yard sells but hers, up for the difference, down with two thirds of it paid back.
+    // A hull no bigger than hers takes the shipwright's first sentence only (*Longer, broader* is not true of a cutter).
+    const cls=st.cls||'sloop';
+    for(const next of yardHulls(site)){if(next===cls)continue;const c0=refitCost(cls,next);
+      out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,cls:next,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
+        st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
+        const line=L.refitted(next);return SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';}});}
+    const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,cls,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
+    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,cls,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
     return out;
   }
   // ── fish ──
@@ -804,11 +899,13 @@
   function fishPrompt(){return nearSchool()?"Press 'E' to catch a fish":null;}
   function catchFish(){const s=nearSchool();if(!s)return false;
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const bed=worldH(px,pz);
-    const pool=(cl==='cold'&&Math.random()<.5)?FISH_KINDS.cold:(cl==='warm'&&Math.random()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
-    const name=pool[Math.floor(Math.random()*pool.length)];const big=Math.random()<.12;
+    // S605 — the catch rolls on the school's stream, `<chunk>:fish:<minute>` (co-op rules; a school is one a chunk, S508's key by place and minute)
+    const R=seededRng('fish',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':fish:'+Math.floor(worldState.gameTimeAbsMinutes||0));
+    const pool=(cl==='cold'&&R()<.5)?FISH_KINDS.cold:(cl==='warm'&&R()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
+    const name=pool[Math.floor(R()*pool.length)];const big=R()<.12;
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish'};
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
-    if(typeof bagAdd==='function')bagAdd(item);s.cool=18+Math.random()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
+    if(typeof bagAdd==='function')bagAdd(item);s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
   function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;}
   // ── whales ──
   const WHALES=[];
@@ -822,3 +919,123 @@
       const t=now*.0009+w.ph;const surf=Math.sin(t);const y=SEA_Y-3.2+surf*3.4;w.m.position.set(w.x,y,w.z);w.m.rotation.y=w.yaw+Math.PI;w.m.rotation.x=-Math.cos(t)*.25;
       const up=surf>.85;w.spout.visible=up;if(up){const p=w.spout.geometry.attributes.position.array;for(let k=0;k<60;k++){const h=(k/60)*(4+surf*2),spread=.2+h*.25;p[k*3]=w.x+fx*4+(Math.random()-.5)*spread;p[k*3+1]=y+1.8+h;p[k*3+2]=w.z+fz*4+(Math.random()-.5)*spread;}w.spout.geometry.attributes.position.needsUpdate=true;if(!w._blew){w._blew=true;if(typeof sfxNoise==='function'&&Math.hypot(w.x-px,w.z-pz)<120)sfxNoise(.9,0,0,.12,900);}}else w._blew=false;}
   }
+// S641 — the factor's panel (Michael's B on #192, the ship in hand, item 4): the harbourmaster's *Cargo* opens a parchment
+// panel in place of the chat rows. One row per good: the ask (only the island's own goods are sold here), the bid, what you
+// hold aboard and on your back, − and + a crate, and Fill (as many of one good as the hold takes and the purse pays for);
+// under it the hold's bar, used of capacity. Every change goes through cargoBuy/cargoSell (84-world-interiors.js), so the
+// prices, the 4% step, the tithe and where a crate goes are what they were in the chat. The crates on deck are the look's.
+let cargoOpen=false,cargoSite=null,cargoSaid='';
+function cargoNotes(site){const nk=cargoNation(site);let s='';
+  if(nk==='aurenne')s+=` The Compact tithes every sale a tenth.`;
+  if(cargoHard(site))s+=` Grain and iron are dear here: the town has been hard used.`;
+  if(cargoAtWar(site))s+=` The war has put up iron and horses.`;
+  if(cargoBlockaded(site))s+=` Black sails off the coast: goods from abroad are dearer.`;
+  return s.trim();}
+function cargoFill(site,key){const g=CARGO_GOODS[key];if(!g||g.home!==cargoNation(site))return 'That is not sold here.';
+  if(!worldState.ship)return 'You have no ship to fill.';if(!shipHere(site))return `The ${SHIP.name} is not at this harbour.`;
+  let n=0,paid=0;while(n<200&&holdUsed()+g.w<=holdCap()){const p=cargoAsk(site,key);if(gold<p)break;if(!/^Bought/.test(cargoBuy(site,key)))break;n++;paid+=p;}
+  if(!n)return holdUsed()+g.w>holdCap()?'No room in the hold.':`A ${g.n.toLowerCase()} is ${cargoAsk(site,key)} gold.`;
+  return `Took aboard ${n} × ${g.n.toLowerCase()} for ${paid} gold.`;}
+function cargoPanelDraw(){const ov=document.getElementById('cargoui');if(!ov||!cargoSite)return;const site=cargoSite,nk=cargoNation(site),here=shipHere(site);
+  const B='background:none;border:1px solid #8a7040;border-radius:3px;font:14px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 7px;margin-left:3px';
+  const keys=Object.keys(CARGO_GOODS).sort((a,b)=>(CARGO_GOODS[a].home===nk?0:1)-(CARGO_GOODS[b].home===nk?0:1));
+  let h='<tr style="font-size:12px;color:#6a5a3a;text-align:right"><td style="text-align:left">Good</td><td>Ask</td><td>Bid</td><td>Held</td><td></td></tr>';
+  for(const k of keys){const g=CARGO_GOODS[k],own=g.home===nk,hv=cargoHave(k),held=(here?hv.hold:0)+hv.bag,bid=cargoBid(site,k).net;
+    const heldTxt=held?(hv.bag&&here&&hv.hold?`${hv.hold} + ${hv.bag}`:`${held}`):'—';
+    h+=`<tr data-k="${k}" style="text-align:right"><td style="text-align:left">${g.n}</td><td>${own?cargoAsk(site,k):'—'}</td><td>${bid}</td><td title="aboard + carried">${heldTxt}</td><td style="white-space:nowrap">`+
+      `<button type="button" data-a="sell" style="${B}"${held?'':' disabled'}>−</button><button type="button" data-a="buy" style="${B}"${own?'':' disabled'}>+</button>`+
+      `<button type="button" data-a="fill" style="${B}"${own&&here?'':' disabled'}>Fill</button></td></tr>`;}
+  ov.querySelector('#cargo-rows').innerHTML=h;
+  for(const b of ov.querySelectorAll('#cargo-rows button')){if(b.disabled)b.style.opacity='.35';const k=b.closest('tr').dataset.k,a=b.dataset.a;
+    b.onclick=()=>{cargoSaid=a==='buy'?cargoBuy(site,k):a==='sell'?cargoSell(site,k):cargoFill(site,k);cargoPanelDraw();};}
+  const ship=worldState.ship,used=here?holdUsed():0,cap=here?holdCap():0;
+  ov.querySelector('#cargo-hold').innerHTML=!ship?'You have no ship: what you buy, you carry.':!here?`The ${SHIP.name} is not at this harbour; what you buy, you carry.`:
+    `The ${SHIP.name}'s hold: ${used} of ${cap}<div style="height:9px;margin-top:4px;border:1px solid #8a7040;background:rgba(138,112,64,.12)"><div id="cargo-bar" style="height:100%;width:${Math.min(100,Math.round(used/Math.max(1,cap)*100))}%;background:#8a6a3a"></div></div>`;
+  ov.querySelector('#cargo-notes').textContent=cargoNotes(site);
+  ov.querySelector('#cargo-said').textContent=cargoSaid;ov.querySelector('#cargo-gold').textContent=`Your purse: ${gold} gold`;}
+function openCargoPanel(site){if(!site)return;
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('cargoui');
+  if(!ov){ov=document.createElement('div');ov.id='cargoui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:560px;max-width:94vw;max-height:92vh;overflow:auto;padding:18px 22px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div id="cargo-title" style="font-size:20px;letter-spacing:.04em;text-align:center"></div>'+
+      '<div id="cargo-notes" style="font-size:13px;color:#6a5a3a;text-align:center;margin:4px 0 8px"></div>'+
+      '<table id="cargo-rows" style="width:100%;border-collapse:collapse;font-size:15px;line-height:1.7"></table>'+
+      '<div id="cargo-hold" style="font-size:14px;margin:10px 0 4px"></div>'+
+      '<div id="cargo-said" style="font-size:13px;color:#6a5a3a;text-align:center;min-height:18px"></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #a89060;padding-top:8px;margin-top:6px">'+
+      '<span id="cargo-gold" style="font-size:14px"></span>'+
+      '<button type="button" id="cargo-done" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Done</button></div></div>';
+    document.body.appendChild(ov);ov.querySelector('#cargo-done').onclick=closeCargoPanel;}
+  cargoSite=site;cargoSaid='';ov.querySelector('#cargo-title').textContent=`The factor’s board — ${site.name}`;
+  ov.style.display='flex';cargoOpen=true;cargoPanelDraw();}
+function closeCargoPanel(){const ov=document.getElementById('cargoui');if(ov)ov.style.display='none';cargoOpen=false;cargoSite=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
+window.addEventListener('keydown',e=>{if(!cargoOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeCargoPanel();e.preventDefault();e.stopPropagation();}},true);
+// S642 — the yard panel (Michael's B on #192, the ship in hand, item 3): the shipwright's *Browse ships* opens a parchment
+// slip. The hulls this yard sells down the left; the chosen one turning in the middle on a small stage of its own (its own
+// renderer on a 320 × 240 canvas, built by buildShipMesh as the inspector builds it, drawn only while the slip is open); on
+// the right her numbers on the helm's dial (a band from her bare speed to her speed under full sails), hull, hold and worth,
+// and the yard's offers for her (yardOffers: the buy, a refit, the sails, the hold) with the shipwright's lines for answers.
+// Mend, raise and fetch stay in his chat.
+let yardOpen=false;const YARD={site:null,cls:'sloop',said:'',r:null,s:null,c:null,m:{},raf:0,last:0,yaw:0};
+function yardDialSVG(bare,full){const ink='#2a2014';let t='';
+  for(let k=0;k<=LOG_MAX;k+=5){const [x0,y0]=logPt(k,LOG_R-(k%10?5:8)),[x1,y1]=logPt(k,LOG_R);t+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${ink}" stroke-width="${k%10?1:1.6}"/>`;
+    if(k%10===0){const [lx,ly]=logPt(k,LOG_R-16);t+=`<text x="${lx+(k===0?3:k===LOG_MAX?-3:0)}" y="${ly+(k%LOG_MAX?3:-3)}" text-anchor="middle" font-size="9" fill="${ink}">${k}</text>`;}}
+  const [a0,b0]=logPt(bare,LOG_R+2),[a1,b1]=logPt(full,LOG_R+2),[nx,ny]=logPt(bare,LOG_R-4),[mx0,my0]=logPt(full,LOG_R-12),[mx1,my1]=logPt(full,LOG_R+4);
+  const [ax,ay]=logPt(0,LOG_R),[bx,by]=logPt(LOG_MAX,LOG_R);
+  return `<svg id="yard-dial" data-bare="${bare.toFixed(2)}" data-full="${full.toFixed(2)}" width="134" height="80" viewBox="0 0 134 80" style="display:block;margin:0 auto;font-family:Georgia,serif">`+
+    `<path d="M${ax-4} ${ay} A${LOG_R+4} ${LOG_R+4} 0 0 1 ${bx+4} ${by} Z" fill="#f2e8cc" stroke="#a08a5a"/>`+
+    `<path d="M${a0} ${b0} A${LOG_R+2} ${LOG_R+2} 0 0 1 ${a1} ${b1}" fill="none" stroke="#b08a30" stroke-width="5" opacity=".55"/>`+t+
+    `<line x1="${mx0}" y1="${my0}" x2="${mx1}" y2="${my1}" stroke="#b08a30" stroke-width="3"/>`+
+    `<line x1="${LOG_CX}" y1="${LOG_CY}" x2="${nx}" y2="${ny}" stroke="#8a2a1a" stroke-width="1.8" stroke-linecap="round"/>`+
+    `<circle cx="${LOG_CX}" cy="${LOG_CY}" r="3" fill="${ink}"/></svg>`;}
+function yardStage(){if(YARD.r)return true;const cv=document.getElementById('yard-cv');if(!cv)return false;
+  try{YARD.r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});YARD.r.setSize(320,240,false);YARD.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+    YARD.s=new THREE.Scene();YARD.s.add(new THREE.AmbientLight(0xffffff,.6));const d=new THREE.DirectionalLight(0xfff0d0,.85);d.position.set(10,16,12);YARD.s.add(d);
+    YARD.c=new THREE.PerspectiveCamera(30,320/240,.5,200);}catch(e){YARD.r=null;return false;}return true;}
+function yardShow(cls){const C=SHIP_CLASSES[cls];if(!C||!yardStage())return;for(const k in YARD.m)YARD.m[k].visible=false;
+  let m=YARD.m[cls];if(!m){try{m=buildShipMesh(C.L,C.W,'player',cls);} /* S683 — the stage shows each class on its own hull (S665's cutter and caravel), not the hull of her length */catch(e){return;}YARD.m[cls]=m;YARD.s.add(m);}
+  m.visible=true;const d=C.L*1.9;YARD.c.position.set(0,C.L*.55,d);YARD.c.lookAt(0,2.2,0);}
+function yardLoop(){if(!yardOpen){YARD.raf=0;return;}YARD.raf=requestAnimationFrame(yardLoop);const now=performance.now(),dt=Math.min(.1,(now-(YARD.last||now))/1000);YARD.last=now;
+  YARD.yaw+=dt*.35;const m=YARD.m[YARD.cls];if(m)m.rotation.y=YARD.yaw;if(YARD.r)try{YARD.r.render(YARD.s,YARD.c);}catch(e){}}
+function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YARD.site)return;const site=YARD.site,hulls=yardHulls(site),st=worldState.ship;
+  if(!hulls.includes(YARD.cls))YARD.cls=hulls[0];const cls=YARD.cls,C=SHIP_CLASSES[cls],mine=st&&!st.sunk?(st.cls||'sloop'):null;
+  const B='display:block;width:100%;text-align:left;background:none;border:none;border-left:3px solid transparent;font:16px Georgia,serif;color:#3a2c18;cursor:pointer;padding:4px 8px;text-transform:capitalize';
+  ov.querySelector('#yard-list').innerHTML=hulls.map(k=>`<button type="button" data-cls="${k}" style="${B}${k===cls?';border-left-color:#8a6a3a;background:rgba(138,112,64,.15)':''}">${k}${k===mine?' <span style="font-size:12px;color:#6a5a3a;text-transform:none">(yours)</span>':''}</button>`).join('');
+  for(const b of ov.querySelectorAll('#yard-list button'))b.onclick=()=>{YARD.cls=b.dataset.cls;YARD.said='';yardPanelDraw();};
+  const bare=C.speed,full=C.speed*(1+(SAIL_TIERS.length-1)*SAIL_STEP);
+  let h=yardDialSVG(bare,full)+`<div id="yard-kn" style="text-align:center;font-size:13px;margin-bottom:6px">${bare.toFixed(1)} kn bare, ${full.toFixed(1)} under full sails</div>`+
+    `<table style="width:100%;font-size:14px;line-height:1.6"><tr><td>Hull</td><td style="text-align:right">${C.hull}</td></tr><tr><td>Hold</td><td style="text-align:right">${CARGO_HOLD[cls]}</td></tr><tr><td>Worth</td><td style="text-align:right">${C.worth} gold</td></tr>`;
+  if(mine)h+=`<tr><td>Yours, a ${mine}</td><td style="text-align:right">${SHIP_CLASSES[mine].worth} gold</td></tr>`;
+  if(mine===cls)h+=`<tr><td>Sails</td><td style="text-align:right">tier ${st.sails||0} of ${SAIL_TIERS.length-1}</td></tr><tr><td>Hold tier</td><td style="text-align:right">${st.cargo||0} of ${CARGO_TIERS.length-1}</td></tr>`;
+  h+='</table>';ov.querySelector('#yard-info').innerHTML=h;
+  const offers=yardOffers(site).filter(o=>o.cls===cls);let note='';
+  if(st&&st.sunk){const n=st.name||SHIP.name;if(st.raise){const d=Math.max(1,Math.ceil((st.raise.due-(worldState.gameTimeAbsMinutes||0))/1440)),y=(siteAnywhere(st.raise.site)||{}).name||'the quay';note=`The ${n} lies on the bottom. The yard at ${y} is raising her: ${d===1?'one day':d+' days'} yet.`;}else note=`The ${n} lies on the bottom. Ask about raising her.`;}
+  else if(!st&&cls!=='sloop')note=`Sold as a sloop; refitted as a ${cls} for ${refitCost('sloop',cls)} gold more.`;
+  const A='display:block;width:100%;margin-top:6px;background:none;border:1px solid #8a7040;border-radius:3px;font:15px Georgia,serif;color:#3a2c18;cursor:pointer;padding:4px 8px';
+  ov.querySelector('#yard-acts').innerHTML=offers.map((o,i)=>`<button type="button" data-i="${i}" style="${A}">${o.label}</button>`).join('')+(note?`<div style="font-size:13px;color:#6a5a3a;margin-top:6px">${note}</div>`:'');
+  for(const b of ov.querySelectorAll('#yard-acts button'))b.onclick=()=>{const o=offers[+b.dataset.i];const r=o.fn();YARD.said=typeof r==='string'?r:'';if(worldState.ship&&!worldState.ship.sunk)YARD.cls=yardHulls(site).includes(worldState.ship.cls||'sloop')?(worldState.ship.cls||'sloop'):YARD.cls;yardPanelDraw();};
+  ov.querySelector('#yard-said').textContent=YARD.said;ov.querySelector('#yard-gold').textContent=`Your purse: ${gold} gold`;
+  yardShow(cls);}
+function openYardPanel(site){if(!site)return;
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('yardui');
+  if(!ov){ov=document.createElement('div');ov.id='yardui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:820px;max-width:96vw;max-height:94vh;overflow:auto;padding:18px 22px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div id="yard-title" style="font-size:20px;letter-spacing:.04em;text-align:center"></div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:14px;margin:12px 0;align-items:flex-start;justify-content:center">'+
+      '<div id="yard-list" style="width:130px;flex:none"></div>'+
+      '<canvas id="yard-cv" width="320" height="240" style="width:320px;height:240px;max-width:100%;background:rgba(40,28,12,.85);border:1px solid #a89060;border-radius:4px;flex:none"></canvas>'+
+      '<div style="width:220px;flex:none"><div id="yard-info"></div><div id="yard-acts"></div></div></div>'+
+      '<div id="yard-said" style="font-size:14px;color:#5a4426;text-align:center;min-height:20px;font-style:italic"></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #a89060;padding-top:8px;margin-top:6px">'+
+      '<span id="yard-gold" style="font-size:14px"></span>'+
+      '<button type="button" id="yard-done" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Done</button></div></div>';
+    document.body.appendChild(ov);ov.querySelector('#yard-done').onclick=closeYardPanel;}
+  YARD.site=site;YARD.said='';const st=worldState.ship;YARD.cls=st&&!st.sunk&&yardHulls(site).includes(st.cls||'sloop')?(st.cls||'sloop'):'sloop';
+  ov.querySelector('#yard-title').textContent=`The yard at ${site.name}`;
+  ov.style.display='flex';yardOpen=true;yardPanelDraw();YARD.last=0;if(!YARD.raf)YARD.raf=requestAnimationFrame(yardLoop);}
+function closeYardPanel(){const ov=document.getElementById('yardui');if(ov)ov.style.display='none';yardOpen=false;YARD.site=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
+window.addEventListener('keydown',e=>{if(!yardOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeYardPanel();e.preventDefault();e.stopPropagation();}},true);

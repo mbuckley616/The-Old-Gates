@@ -27,11 +27,16 @@ const buy = await page.evaluate(([port]) => { worldState.ship = null; WORLD.tut.
 await g.frames(2); await page.evaluate(() => _place());
 await page.keyboard.press('e'); await g.frames(2);
 const ch = await page.evaluate(() => [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()));
-await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /Buy a ship/.test(x.textContent)); if (b) b.click(); });
+// S642 — the buy is in the yard panel: Browse ships, then the sloop's button
+await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /Browse ships/.test(x.textContent)); if (b) b.click(); });
 await g.frames(2);
-const after = await page.evaluate(() => ({ ship: !!worldState.ship, gold, step: WORLD.tut.sea && WORLD.tut.sea.step, text: (document.getElementById('dlg-text') || document.body).textContent.slice(0, 160) }));
+const acts = await page.evaluate(() => [...document.querySelectorAll('#yard-acts button')].map(x => x.textContent.trim()));
+await page.evaluate(() => { const b = [...document.querySelectorAll('#yard-acts button')].find(x => /Buy a ship/.test(x.textContent)); if (b) b.click(); });
+await g.frames(2);
+const after = await page.evaluate(() => ({ ship: !!worldState.ship, gold, step: WORLD.tut.sea && WORLD.tut.sea.step, text: document.getElementById('yard-said').textContent.slice(0, 160) }));
+await page.evaluate(() => closeYardPanel());
 console.log(buy, JSON.stringify(ch), JSON.stringify(after));
-check('at 23h E on him offers "Buy a ship" at the note’s price (300)', ch.some(c => /Buy a ship \(300 gold, with Corwin/.test(c)), ch);
+check('at 23h E on him offers "Browse ships", and the yard offers "Buy a ship" at the note’s price (300)', ch.some(c => /Browse ships/.test(c)) && acts.some(c => /^Buy a ship \(300 gold, with Corwin/.test(c)), { ch, acts });
 check('and buying it gives you the ship for 300', after.ship && after.gold === 700, after);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

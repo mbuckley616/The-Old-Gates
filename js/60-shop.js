@@ -101,6 +101,7 @@ function takeLootItem(idx){
     }
   }
   currentLootContainer.items.splice(idx, 1);
+  if(currentLootContainer._keepSite&&typeof keepSiteChest==='function')keepSiteChest(currentLootContainer); /* S700 — a lair's Hoard or a camp's Takings keeps what is left */
   // v61ae: when the hammer is taken off Bram's body, remove the goblin axe
   // from the scene too — the in-fiction read is "the weapon he went out
   // holding" not "another decorative prop the player can walk around." Guard
@@ -351,7 +352,7 @@ function openRestSlip(mode,min){
     ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
     const btn='background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px';
     ov.innerHTML='<div id="rs-paper" style="width:560px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:20px 28px 18px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span id="rs-title" style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps"></span><span id="sleep-date" style="font-style:italic;font-size:13px;color:#5a4128"></span></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #a89060;padding-bottom:6px"><span id="rs-title" style="flex:none;font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps"></span><span id="sleep-date" style="min-width:0;text-align:right;font-style:italic;font-size:13px;color:#5a4128"></span></div>'+
       '<div id="rs-ask" style="font-style:italic;font-size:16px;margin:10px 0 2px"></div>'+
       '<div id="rs-dial"></div>'+
       '<div style="display:flex;align-items:center;gap:10px;margin:2px 0 8px"><button type="button" id="rs-minus" style="'+btn+';border-radius:50%;width:24px;height:24px;padding:0">−</button>'+
@@ -378,7 +379,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
   q('#rs-title').textContent=sleep?'Sleep':'Wait';q('#rs-go').textContent=sleep?'Sleep':'Wait';q('#rs-seal').textContent=sleep?'☾':'⧗';
   q('#rs-ask').textContent=sleep?'How long will you sleep?':'How long will you wait?';
   let place='';try{place=typeof ssPlaceName==='function'?ssPlaceName():'';}catch(e){}
-  q('#sleep-date').textContent=gameDateLine()+(place?' · '+place:'');
+  {const sd=q('#sleep-date');sd.textContent=gameDateLine();if(place){const pl=document.createElement('span');pl.style.whiteSpace='nowrap';pl.textContent=' · '+place;sd.appendChild(pl);}} /* S593 — the place wraps whole, never mid-name */
   q('#rs-dial').innerHTML=restDial(min,mode);
   const rng=q('#sleep-range');rng.value=String(Math.max(1,Math.min(24,Math.round(min/60))));
   q('#sleep-hrs').textContent=restDur(min);
@@ -663,7 +664,7 @@ function _chaExtraItem(stock, cha){
   stock.forEach(it=>{if(it.type==='equip'&&it.tier&&!it.enchant&&!it.torchType&&(!best||it.tier>best.tier))best=it;});
   if(best&&best.tier<MATERIALS.length){
     const typeName=best.weaponType||best.name.slice(best.material.length+1);
-    const w=WEAPON_TYPES.find(t=>t.type===typeName), a=!w&&ARMOR_TYPES.find(t=>t.type===typeName);
+    const w=WEAPON_TYPES.find(t=>t.type===typeName), a=!w&&(best.line?lineType(best.line,best.slot):ARMOR_TYPES.find(t=>t.type===typeName));
     if(w||a){const x=makeItem(best.tier+1,w||a,null,!w);if(!has(x.name))return Object.assign(x,{_chaExtra:true});}
     return null;
   }
@@ -680,7 +681,7 @@ function renderShop(){
   document.getElementById('sh-gold-val').textContent=gold;
   // Stock list
   const stockTable=currentHouse.id&&currentHouse.id.startsWith('ih')?IH_SHOP_STOCK:SHOP_STOCK;
-  let stock=stockTable[currentHouse.type]||stockTable.misc||SHOP_STOCK.misc;
+  let stock=stockTable[currentHouse.type]||(currentHouse.type==='guild_m'?[]:(stockTable.misc||SHOP_STOCK.misc)); // S566 — the Mages' Guild sells its robes and nothing of a goods shop's
   // v61ad: post-Q7, Dagna ("War Supplies", Ironhaven ih2) opens her back-room
   // stock to commissioned players — the full Master tier lineup beyond what
   // she normally keeps front-of-house. Spread into a new array so we don't
@@ -694,6 +695,7 @@ function renderShop(){
     if(extra.length) stock=[...stock, ...extra];
   }
   if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
+  {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];} // S564 — the light line at the armourer, robes at a goods shop
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
   stock = stock.filter(it => !it.chaReq || _cha >= it.chaReq);
@@ -828,6 +830,10 @@ function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const
     if(t.kind==='town'||t.kind==='city')out.push('hood');if(t.kind==='port')out.push('oilskin');if(nk==='mark')out.push('fur');if(nk==='aurenne')out.push('cape');
     if(S&&S.houses&&S.houses.some(x=>x.type==='church'))out.push('pilgrim');}}catch(e){}
   return out.map(k=>makeCloak(k));}
+// S564 — the light and robe lines at a counter (#163): the armourer sells the light line beside the heavy, at the heavy stock's
+// tiers (the jerkin a tier up, as the cuirass is); a goods shop and the Mages' Guild (S566, its head's *Browse your wares.*) sell robes.
+function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':(h.type==='misc'||h.type==='guild_m')?'robe':null);if(!ln)return [];
+  return ARMOR_LINE_TYPES.filter(t=>t.line===ln).map(t=>makeItem(t.slot==='chest'?3:2,t,null,true));}
 // S552 — the Aurennais cape: +2% at a counter in Aurenne, the nation whose cut it is (#148)
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
 // S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
@@ -951,6 +957,7 @@ function getArmorEnchantBonuses(){
            mightBonus:0,fortitudeBonus:0,finesseBonus:0,swiftnessBonus:0,intBonus:0};
   Object.values(EQ).forEach(it=>{
     if(it&&it.enchantStats){for(const[k,v] of Object.entries(it.enchantStats))if(b[k]!==undefined)b[k]+=v;}
+    if(it&&it.line==='robe')b.maxManaBonus+=3*(it.tier||1); /* S564 — a robe piece: 3 max mana a tier */
   });
   _armorBonusCache=b;_armorBonusDirty=false;
   return b;

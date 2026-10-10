@@ -27,7 +27,7 @@ check('the routing moves 35–50 cut-off places and leaves none stuck', r.shore.
 check('no place is cut off now, and none has water on all 16 bearings', r.stillCut.length === 0 && r.ring16 === 0, { stillCut: r.stillCut, ring16: r.ring16 });
 check('every moved place stands in its own cell on dry ground (centre ≥ 1.8, pad and ring ≥ 1.5), clear of the other pads', r.bad.length === 0, r.bad.slice(0, 5));
 check('each moved within 600 units of where it was drawn', r.moved.every(m => m.d <= 600), Math.max(...r.moved.map(m => m.d)));
-check('a moved lair keeps its cavern door at its mouth (6 units)', r.lairs.length > 0 && r.lairs.every(l => l.gap != null && Math.abs(l.gap - 6) < .01), r.lairs);
+check('a moved lair keeps its cavern door in its pad, 16 units off (Session 702; it was 6)', r.lairs.length > 0 && r.lairs.every(l => l.gap != null && Math.abs(l.gap - 16) < .01), r.lairs);
 
 // Diawor, Session 448's example, loaded: built where it now stands, on the stamped ground, with dry land round its pad
 await g.settle(r.diawor.id);

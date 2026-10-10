@@ -129,6 +129,7 @@ function goToZone(targetZone,spawnX,spawnZ,spawnYaw,label){
       px=spawnX; pz=spawnZ; yaw=spawnYaw||0;
     }
     pitch=0;velY=0;jumpY=0;onGround=true;
+    if(targetZone==='world'&&typeof prewarmFoes==='function'&&typeof WORLD!=='undefined')prewarmFoes(WORLD.scene,CAM); /* S688 — every foe's shaders, once, behind the fade */
     showZoneName((ZONE_BUILDERS[targetZone]&&ZONE_BUILDERS[targetZone].displayName)||'—');
     document.getElementById('fbtn').style.display='block';
     // v61b: per-zone music track. Each ZONE_BUILDERS entry has a `musicTrack`
@@ -292,7 +293,8 @@ const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
 const RENEWAL_RATE=.5;
 function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
-function _warded(d,src){return d>0?Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1))):d;}
+function _warded(d,src){if(!(d>0))return d;d=Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1)));return src&&src.trap?d:challengeTaken(d);} /* S684 — the challenge scales a foe's blow after the ward; a trap's is its own */
+const TRAP_SRC={trap:true};
 // S321 — the herbs' hidden effects, read where their text says: Wolf's Bane (`beastResist`, above, from a beast's blow),
 // Thornberry (`blockBoost`, a raised guard stops a larger share, to .9), Briarweed (`atkSpeed`, in `_weaponSwingFactor`),
 // Duilleog Ghorm (`spellDuration`, in `applySpellBuff`)
@@ -1064,6 +1066,13 @@ function checkZoneRespawn(zoneId){
   return did;
 }
 
+// S624 — the fort cot E reaches: within 1.3, and nearer you than the way out (the cot stands one cell from the door, and the door's cell said *leave* while E opened the cot).
+function fortCotNear(){
+  if(typeof D_BEDS==='undefined')return null;
+  const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(!bd)return null;
+  if(currentFloor===1){const de=Math.hypot(px-dEntranceX,pz-dEntranceZ);if(de<1.4&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
+  return bd;
+}
 function interact(){
   if(lid==='overworld'){
     // Zone gates — highest priority after portals
@@ -1130,7 +1139,7 @@ function interact(){
       // gets a near-house find without per-zone hardcoded branches.
       const zHouses=(ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||null;
       if(zHouses){
-        const nearZH=zHouses.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
         if(nearZH){
           // S155 — a shop after hours or a home at night is locked: pick it (S142's lock), or come back
           if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){tryLockpick(WORLD.doorLockFor(nearZH));return;}
@@ -1251,9 +1260,11 @@ function interact(){
       if(typeof WORLD!=='undefined'&&WORLD.boxInteract())return; // S155 — the strongbox, the home's chest
       if(typeof WORLD!=='undefined'&&WORLD.lootInteract())return; // v80 — tower chest
       if(typeof WORLD!=='undefined'&&WORLD.guestInteract())return; // v80 — Cill an Aoi
-      if(typeof WORLD!=='undefined'&&WORLD.intDoorInteract())return; // v80 S143 — the door in the doorway
-      if(nearBarberChair()){openBarberChair(INT_CHAIR.house);return;} // S561 — the barber's chair
-      const bd=INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9);
+      const bd=intBedTarget(); /* S645 — in range and under the crosshair */
+      // S650 — a bed under the crosshair that offers rest wins over a door that is only near (the door is still found by nearness); the prompt in 90-main.js reads the same test
+      const bdWins=!!bd&&(typeof WORLD==='undefined'||!!WORLD.bedPrompt(bd));
+      if(!bdWins&&typeof WORLD!=='undefined'&&WORLD.intDoorInteract())return; // v80 S143 — the door in the doorway
+      if(!bdWins&&nearBarberChair()){openBarberChair(INT_CHAIR.house);return;} // S561 — the barber's chair
       if(bd){if(typeof WORLD!=='undefined'&&WORLD.bedInteract(bd))return;openSleepUI();return;}
     }
     // v61d4 — Safehouse interactables. Stash chest opens the deposit/withdraw
@@ -1263,11 +1274,11 @@ function interact(){
     // of one masking the other given they're on opposite walls of the
     // safehouse, but the tighter check means accidental triggers from
     // walking past don't fire.
-    if(intStashPos && Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4){
+    if(stashAimed()){ /* S656 — under the crosshair */
       openStash();
       return;
     }
-    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
+    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
       openSleepUI();
       return;
     }
@@ -1310,7 +1321,7 @@ function interact(){
   if(ch){ if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } // S150 — a locked chest is picked first
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
-  if(typeof D_BEDS!=='undefined'){const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(bd){openSleepUI();return;}} // v80 S9 — fort cots
+  if(fortCotNear()){openSleepUI();return;} // v80 S9 — fort cots; S624 — the exit wins when it is nearer
   const br=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
   if(br){ openLoot(br); return; }
   // exit via entrance cell (floor 1 only)

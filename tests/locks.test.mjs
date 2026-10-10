@@ -30,11 +30,16 @@ check('without a pick a locked chest stays shut', !bare.r && !bare.lockOpen && !
 const pick = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
   BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 5 });
   const ch = CHESTS.find(c => c.locked); const title0 = document.getElementById('lp-title').textContent;
-  tryLockpick(ch); const title = document.getElementById('lp-title').textContent, pins = LP.pins.length;
+  tryLockpick(ch); const title = document.getElementById('lpk-title').textContent, pins = LP.pins.length;
+  // S715 — the lock panel's title is its own element, shown, and the loot panel's is left alone (both were `lp-title`, the loot's first)
+  const tEl = document.getElementById('lpk-title'), shown = !!tEl.offsetParent && tEl.closest('#lockpick') !== null, lootTitle = document.getElementById('lp-title').textContent;
+  const ids = {}; for (const el of document.querySelectorAll('[id]')) ids[el.id] = (ids[el.id] || 0) + 1; const dupIds = Object.keys(ids).filter(k => ids[k] > 1);
   for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
   await wait(900);
-  const out = { title, pins, locked: ch.locked, opened: ch.opened, loot: lootOpen, same: currentLootContainer === ch, meshKept: !!ch.mesh.parent, picks: lpPicks(), treasure: ch.treasure };
+  const out = { title, shown, lootTitle, title0, dupIds, pins, locked: ch.locked, opened: ch.opened, loot: lootOpen, same: currentLootContainer === ch, meshKept: !!ch.mesh.parent, picks: lpPicks(), treasure: ch.treasure };
   try { closeLoot(); } catch (e) {} return out; });
+check('the lock panel shows the lock\'s own title, and the loot panel\'s title is untouched by it', /chest|good lock/i.test(pick.title) && pick.shown && pick.lootTitle === pick.title0, pick);
+check('no id in the page is used twice', pick.dupIds.length === 0, pick.dupIds);
 check('picking a chest opens it in place', /chest|good lock/i.test(pick.title) && !pick.locked && pick.opened && pick.loot && pick.same && pick.meshKept && pick.picks === 5, pick);
 
 // the real key: stand at a locked chest, look at it, press E — the pick comes out, not the loot panel
@@ -67,9 +72,9 @@ const tower = await page.evaluate(async () => { const wait = ms => new Promise(r
   for (let k = 0; k < 40 && !WORLD.settle.get(s.id); k++) { WORLD.tick(1 / 60, performance.now()); await wait(250); }
   const h = ZONES.world.houses.find(x => x.id === 'g_' + s.id + '_tower'); if (!h) return { noHouse: s.id };
   goToInterior(h); await wait(4000);
-  const L = WORLD.intLoot; if (!L) return { noLoot: true }; px = L.x; pz = L.z; jumpY = L.y;
+  const L = WORLD.intLoot; if (!L) return { noLoot: true }; px = L.x; pz = L.z; jumpY = L.y; lookAtPt(L.x, L.y + .3, L.z);
   const prompt = WORLD.lootPrompt(); const gold0 = BAG.length;
-  WORLD.lootInteract(); const pins = LP.pins.length, title = document.getElementById('lp-title').textContent;
+  WORLD.lootInteract(); const pins = LP.pins.length, title = document.getElementById('lpk-title').textContent;
   for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
   await wait(900);
   return { id: s.id, prompt, pins, title, picked: !!(worldState.towerPicked && worldState.towerPicked[L.id]), taken: !!(worldState.towerLoot && worldState.towerLoot[L.id]), got: BAG.length - gold0, after: WORLD.lootPrompt() }; });

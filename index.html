@@ -31,6 +31,7 @@
 .sl-slot.active-slot{border-color:rgba(100,200,80,.4);background:rgba(80,160,40,.08)}
 .sl-slot-num{color:#3a3020;font-size:11px;width:16px;flex-shrink:0}
 .sl-slot-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.sl-thumb{width:96px;height:54px;object-fit:cover;flex-shrink:0;border:1px solid rgba(232,216,160,.35);border-radius:3px;background:#1a1610}
 .sl-slot-info{flex:1}
 .sl-slot-name{color:#c8a84a;font-size:12px;font-weight:500}
 .sl-slot-detail{color:#5a4a28;font-size:10px;margin-top:1px}
@@ -38,7 +39,7 @@
 .sl-slot-time{color:#3a3020;font-size:10px;flex-shrink:0}
 #lockpick{display:none;position:fixed;inset:0;background:rgba(6,5,3,.72);z-index:60;align-items:center;justify-content:center;cursor:pointer}
 #lp-box{background:linear-gradient(#17140e,#0e0c08);border:1px solid #4a3f28;border-radius:8px;padding:16px 18px 12px;min-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.6);font:13px Georgia,serif;color:#d8ccb0;text-align:center}
-#lp-title{color:#e8d8a0;font-size:15px;letter-spacing:.04em;margin-bottom:10px}
+#lp-title,#lpk-title{color:#e8d8a0;font-size:15px;letter-spacing:.04em;margin-bottom:10px}
 #lp-lock{position:relative;height:150px;background:radial-gradient(circle at 50% 30%,#2a2418,#14110b);border:1px solid #3a3222;border-radius:6px;overflow:hidden}
 #lp-pins{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;gap:14px;padding:0 18px 12px}
 #lp-shear{position:absolute;left:8px;right:8px;top:30px;height:1px;background:repeating-linear-gradient(90deg,rgba(200,168,74,.5) 0 6px,transparent 6px 12px)}
@@ -540,6 +541,7 @@
 #jn-views{display:flex;gap:6px;margin:0 0 12px}
 #jn-views button{font:600 12px Georgia,serif;letter-spacing:.04em;padding:5px 14px;background:transparent;color:#a89878;border:1px solid rgba(200,168,74,.25);border-radius:3px;cursor:pointer}
 #jn-views button.active{color:#f0e2c0;border-color:#c8a040;background:rgba(200,160,64,.12)}
+.jn-who{cursor:pointer}.jn-who:hover{background:rgba(200,160,64,.08)}.jn-back{margin:2px 0 8px;font:12px Georgia,serif}.jn-back a{color:#c8a040}
 .jn-day{margin:0 0 14px}
 .jn-head{font:600 13px Georgia,serif;color:#e8d8a0;letter-spacing:.05em;padding:0 0 4px;margin:0 0 4px;border-bottom:1px solid rgba(120,100,70,.25);display:flex;justify-content:space-between}
 .jn-state{font-weight:400;font-size:11px;color:#8a7a60}
@@ -782,7 +784,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s488</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s571</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -888,7 +890,7 @@
   <!-- LOCKPICKING (v80 S142) -->
   <div id="lockpick">
     <div id="lp-box">
-      <div id="lp-title">A locked door</div>
+      <div id="lpk-title">A locked door</div>
       <div id="lp-lock"><div id="lp-pins"></div><div id="lp-shear"></div></div>
       <div id="lp-status">Push a pin. Press again when it holds.</div>
       <div id="lp-foot"><span id="lp-picks"></span><span id="lp-keys">click or <b>space</b> to push · <b>← →</b> choose a pin · <b>Esc</b> to step back</span></div>
@@ -945,10 +947,10 @@
             <div class="eq-slot-empty"></div>
             <div class="eq-slot" id="ds-head"    data-slot="head">    <span class="eq-slot-ico">🪖</span><span class="eq-slot-lbl">Head</span></div>
             <div class="eq-slot-empty"></div>
-            <!-- Row 2: empty, Amulet, empty -->
+            <!-- Row 2: empty, Amulet, Back (S590: the cloak's slot, S552) -->
             <div class="eq-slot-empty"></div>
             <div class="eq-slot" id="ds-amulet"  data-slot="amulet">  <span class="eq-slot-ico">📿</span><span class="eq-slot-lbl">Amulet</span></div>
-            <div class="eq-slot-empty"></div>
+            <div class="eq-slot" id="ds-back"    data-slot="back">    <span class="eq-slot-ico">🧥</span><span class="eq-slot-lbl">Back</span></div>
             <!-- Row 3: Offhand, Chest, Weapon -->
             <div class="eq-slot" id="ds-offhand" data-slot="offhand"> <span class="eq-slot-ico">🛡</span><span class="eq-slot-lbl">Off-hand</span></div>
             <div class="eq-slot" id="ds-chest"   data-slot="chest">   <span class="eq-slot-ico">👕</span><span class="eq-slot-lbl">Chest</span></div>
@@ -1033,7 +1035,7 @@
         <div id="qlog-body"></div>
       </div>
       <div class="hub-panel" id="hpanel-journal">
-        <div id="jn-views"><button data-v="day" class="active" onclick="journalView('day')">By day</button><button data-v="quest" onclick="journalView('quest')">By quest</button><button data-v="topics" onclick="journalView('topics')">Topics</button><button data-v="due" onclick="journalView('due')">Due</button></div>
+        <div id="jn-views"><button data-v="day" class="active" onclick="journalView('day')">By day</button><button data-v="quest" onclick="journalView('quest')">By quest</button><button data-v="topics" onclick="journalView('topics')">Told</button><button data-v="due" onclick="journalView('due')">Due</button></div>
         <div id="jn-body"></div>
       </div>
       <div class="hub-panel" id="hpanel-log">

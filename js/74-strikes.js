@@ -23,7 +23,7 @@ function applySpellDamage(e, sp, tier){
   // Smól Mastery — The Quiet-Sent-Out: ignores armor entirely. Resist still applies.
   const defPierced = (sp.id==='smol' && tier===3);
   const effDef = defPierced ? 0 : (e.def || 0);
-  const dmg = Math.max(1, Math.round(afterMults) - effDef);
+  const dmg = challengeDealt(Math.max(1, Math.round(afterMults) - effDef)); /* S684 — the challenge */
   return {dmg, resistMult, defPierced};
 }
 
@@ -52,7 +52,7 @@ function applyMeleeDamage(e, rawDmg){
   // applyBackstab for the trigger rules and exclusion list.
   const backstabMult = applyBackstab(e);
   const luckMult = _fortuneCrit(e);
-  const dmg = Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef);
+  const dmg = challengeDealt(Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef)); /* S684 — the challenge */
   return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0 || luckMult > 1.0, lucky: luckMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
 }
 
@@ -81,6 +81,8 @@ function strikeReaches(e,arc){
   if(typeof e.combatYaw!=='number'||d<.35)return true;
   return (dx*Math.sin(e.combatYaw)+dz*Math.cos(e.combatYaw))/d>=Math.cos(arc.deg*Math.PI/360);
 }
+// S564 — undo a perfect parry's flash: the body's own material back (see executeStrike)
+function parryFlashEnd(e){const P=e&&e._parryFlash;if(!P)return;e._parryFlash=null;if(P.body.material===P.fl)P.body.material=P.orig;try{P.fl.dispose();}catch(_){}}
 function executeStrike(e, rawDmg, now){
   // S275 — mid-roll you are not there to be hit
   if(rollUntouchable(now/1000)){sndSwing();e._lunge=.3;showMsg(`${e.name} strikes empty air.`,'#c8b880');return;}
@@ -131,15 +133,18 @@ function executeStrike(e, rawDmg, now){
     // renders on the torso of every enemy shape — goblins, trolls, the
     // Faolchú, the lessers — bringing the visual into parity with the
     // sndParry audio cue that had been carrying the feedback alone.
+    // S564 — the flash is a tinted copy of the body's own material, and the undo puts that material back, alive or dead.
+    // It was a new plain Lambert: on a skinned body (the people-bodied foes, the skeleton among them) that draws the bind
+    // pose, the undo made another plain one, and a foe killed inside the 1.2 s kept the yellow one over its ragdoll,
+    // standing (Michael, 5 Oct). killE and killZoneEnemy end it before they darken the corpse.
     const _staggerBody = enemyBodyMesh(e);
-    if(_staggerBody){
-      const staggerMat = new THREE.MeshLambertMaterial({color:0xffdd44, emissive:0x664400});
-      _staggerBody.material = staggerMat;
-      setTimeout(()=>{
-        if(e.dead) return;
-        const _restoreBody = enemyBodyMesh(e);
-        if(_restoreBody) _restoreBody.material = new THREE.MeshLambertMaterial({color:e._origCol||0x909090});
-      }, 1200);
+    if(_staggerBody && _staggerBody.material){
+      parryFlashEnd(e);
+      const orig = _staggerBody.material, fl = orig.clone();
+      if(fl.color) fl.color.setHex(0xffdd44);
+      if(fl.emissive) fl.emissive.setHex(0x664400);
+      _staggerBody.material = fl; e._parryFlash = {body:_staggerBody, orig, fl};
+      setTimeout(()=>parryFlashEnd(e), 1200);
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
@@ -266,13 +271,18 @@ function revealMimic(e){
 
 // S404 — the cavern master's slam (Michael's A on #95). Every 8–10 s, with you within six units, a lair's master
 // (lairFinish sets e.master) stops, winds up for 0.9 s in the shared tell (the pose from e._wind, the glow in the last
-// .15 s) while a ring of its reach shows on the floor, and strikes the ground. Anyone inside the 3-unit ring takes twice
-// its ordinary blow, and no shield, block or parry takes any of it: be out of the ring, or mid-roll in the roll's
+// .15 s) while a ring of its reach shows on the floor, and strikes the ground. Anyone inside the 3-unit ring takes the
+// slam (slamBlow: since S617 a share of your health), and no shield, block or parry takes any of it: be out of the ring, or mid-roll in the roll's
 // untouchable window, when it lands. A staggered master loses its slam. Returns true while the slam is wound up, so the
 // loop holds the master still and starts no other blow.
 const SLAM_TELL=.9,SLAM_R=3,SLAM_NEAR=6,SLAM_EVERY=[8,10];
 function slamEvery(e){return SLAM_EVERY[0]+foeRand(e)*(SLAM_EVERY[1]-SLAM_EVERY[0]);}
-function slamBlow(e){const def2=_armour();return 2*Math.max(1,Math.round((10+Math.floor(foeRand(e)*11)-Math.floor(def2*.5))*(e.dmgMult||1)));}
+// S617 (Michael's C on #181) — the slam is a share of your health, not the master's blow: 45% of your max health, 60% with
+// no chest piece, whatever the master, its level and your armour (S610 measured the old twice-a-blow: dead outright bare
+// from level 3, 2 from 40 armour). A ward still takes its share (_warded, at the call); a block takes nothing, a roll or a
+// step out of the ring all of it, as before. Two slams leave you standing only if you have a chest piece on.
+const SLAM_SHARE={dressed:.45,bare:.6};
+function slamBlow(e){return Math.max(1,Math.round(maxHP*(EQ.chest?SLAM_SHARE.dressed:SLAM_SHARE.bare)));}
 function slamRing(e){
   if(!e._slamRing){const m=new THREE.Mesh(new THREE.RingGeometry(SLAM_R-.22,SLAM_R,48),new THREE.MeshBasicMaterial({color:0xff5a30,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.visible=false;e._slamRing=m;}
   const r=e._slamRing;if(r.parent!==dScene)dScene.add(r);r.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+.04,e.z);return r;}

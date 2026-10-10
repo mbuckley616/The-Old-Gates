@@ -19,10 +19,14 @@
     INT_DOORS.push({id:(INT_DOORS.house||'room')+':door:'+INT_DOORS.length,x,z,y:by,g,ang,dir,open:false,a:0,from:0,want:0,t0:0,sol,box:{x0:sol.x0,x1:sol.x1,z0:sol.z0,z1:sol.z1}});
     return INT_DOORS[INT_DOORS.length-1];
   }
-  function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<1.5&&Math.abs(jumpY-d.y)<1.3)||null;}
+  // S680 — in reach AND under the crosshair (Michael, 6 Oct playtest): the ray meets the doorway, shut or open, and nothing stands
+  // between you and its near face (the sight line stops short of the leaf on your side, which would block a line to its middle)
+  function intDoorAimed(d){if(typeof aimBox!=='function')return true;const b=d.box,nx=Math.cos(d.ang),nz=-Math.sin(d.ang),side=((px-d.x)*nx+(pz-d.z)*nz)<0?-1:1;
+    return aimBox((b.x0+b.x1)/2,(b.z0+b.z1)/2,d.y,(b.x1-b.x0)/2,(b.z1-b.z0)/2,1.5,d.x+nx*side*.2,d.z+nz*side*.2);}
+  function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<1.5&&Math.abs(jumpY-d.y)<1.3&&intDoorAimed(d))||null;}
   function intDoorPrompt(){const d=intDoorNear();if(!d)return null;return d.open?"Press 'E' to close the door":"Press 'E' to open the door";}
-  function intDoorInteract(){
-    const d=intDoorNear();if(!d)return false;
+  function intDoorInteract(door){ /* S680 — door: the one to work, named (a test, a later host); none, the one in reach under the crosshair */
+    const d=door||intDoorNear();if(!d)return false;
     if(d.open){ // don't close it on somebody
       const inWay=INT_NPCS.some(n=>Math.hypot(n.g.position.x-d.x,n.g.position.z-d.z)<.8);
       if(inWay){showMsg('Someone is in the doorway.','#c8b880');return true;}
@@ -85,7 +89,7 @@
     for(const t in nouns)SHOP_NOUN[t][id]=nouns[t];
     const adj=['Grey','Black','Red','Old','Broken','Golden','Salt','Wandering','Quiet','Last'],noun=['Heron','Hound','Ram','Oar','Cup','Hearth','Lantern','Gate','Ember','Anchor'];
     INN_NAMES[id]=Array.from({length:6},()=>`The ${pick_(adj)} ${pick_(noun)}`);
-    RUMORS[id]=[`The ${word(2)} clan still pays no tithe. Nobody makes them.`,`They say a ${word(1).toLowerCase()} walks the ${pick_(['marsh','ridge','shore','wood'])} at dusk. They say a lot of things.`,`The old road to ${word(2)} is closed. Or it closed itself.`,`There's a door in the ${pick_(['hills','cliffs','wood','fen'])} that was shut when my father was a boy. Still shut.`,`Ships from ${word(2)} stopped coming two seasons back.`];
+    RUMORS[id]=[`The ${word(2)} clan still pays no tithe. Nobody makes them.`,`They say ${(w=>aOrAn(w)+' '+w)(word(1).toLowerCase())} walks the ${pick_(['marsh','ridge','shore','wood'])} at dusk. They say a lot of things.`,`The old road to ${word(2)} is closed. Or it closed itself.`,`There's a door in the ${pick_(['hills','cliffs','wood','fen'])} that was shut when my father was a boy. Still shut.`,`Ships from ${word(2)} stopped coming two seasons back.`];
     return {id,name:word(2)+pick_(['ish','ic','an','ari','ese']),reg:id,thatch};
   }
   const CULTURES={irish:{id:'irish',name:'Irish'},french:{id:'french',name:'Royale'},anglo:{id:'anglo',name:'Anglic'}};
@@ -148,7 +152,7 @@
     salt:{n:'Sack of Salt',home:'aurenne',v:20,w:8},dyes:{n:'Crate of Dyes',home:'aurenne',v:70,w:4},
     glass:{n:'Crate of Glass',home:'aurenne',v:55,w:7},fish:{n:'Barrel of Salt Fish',home:'aurenne',v:26,w:7},
     horse:{n:'Horse',home:'gatelands',v:110,w:20,hold:true}}; // S391 — B names horses; a horse goes only in a hold
-  const CARGO_HOME=.6,CARGO_ABROAD=1.4,CARGO_CUT=.9,CARGO_STEP=.04,CARGO_HEAL=.7,CARGO_TITHE=.1,CARGO_HOLD={sloop:40,cog:60,galleon:90};
+  const CARGO_HOME=.6,CARGO_ABROAD=1.4,CARGO_CUT=.9,CARGO_STEP=.04,CARGO_HEAL=.7,CARGO_TITHE=.1,CARGO_HOLD={sloop:40,cog:60,galleon:90,cutter:25,caravel:55};
   function cargoNation(site){return nationAt(site.x,site.z);}
   // S391 — prices that follow the world (B): a sacked or occupied town (or one under siege) pays half again for grain and
   // iron; a war raises iron and horses by 30% at the quays of the two nations in it; black sails at sea within 600 units
@@ -200,7 +204,7 @@
     for(const k in CARGO_GOODS){const g=CARGO_GOODS[k];if(g.home!==nk)continue;rows.push({label:`Buy a ${g.n.toLowerCase()} (${cargoAsk(site,k)} gold)`,quest:true,fn:(c)=>{const r=cargoBuy(site,k);c.follow=cargoRows(site);return r+' '+cargoBoard(site);}});}
     for(const k in CARGO_GOODS){const h=cargoHave(k);const n=(shipHere(site)?h.hold:0)+h.bag;if(!n)continue;rows.push({label:`Sell a ${CARGO_GOODS[k].n.toLowerCase()} (${cargoBid(site,k).net} gold, ${n} on hand)`,quest:true,fn:(c)=>{const r=cargoSell(site,k);c.follow=cargoRows(site);return r+' '+cargoBoard(site);}});}
     return rows;}
-  function cargoTopic(site){return {label:'Cargo — the factor’s prices',quest:true,fn:(c)=>{c.follow=cargoRows(site);return cargoBoard(site);}};}
+  function cargoTopic(site){return {label:'Cargo — the factor’s prices',quest:true,panel:()=>openCargoPanel(site)};} /* S641 — the factor's panel (86-world-crime.js) in place of the chat rows; cargoRows and cargoBoard stay for the suites */
   // S250 — the harbour in detail (H.5, Michael's A): the quay along local z (seaward +z), its deck's top at .1 as the old
   // deck's; faces of coursed blocks on a mortar core, a kerbed coping, a paved deck, steps down to the water on the right
   // side near the head, iron mooring rings; everything below the tide line (sea level + .3, in the mesh's own y, dy the

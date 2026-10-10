@@ -34,7 +34,9 @@ function footholdY(x,z,py,base){
 }
 let INT_BEDS=[];let INT_DOORS=[];let INT_CHAIR=null; /* S561 — the barber's chair in a generated room: {x, z, house} */
 // S561 — within reach of the barber's chair and nearer it than the barber who stands beside it; within 1.2 of him, E talks to him
-function nearBarberChair(){if(!INT_CHAIR)return false;const d=Math.hypot(px-INT_CHAIR.x,pz-INT_CHAIR.z);if(d>=1.5)return false;const k=typeof intNPCPos!=='undefined'&&intNPCPos&&intNPCMesh?Math.hypot(px-intNPCPos.x,pz-intNPCPos.z):1e9;return k>=1.2&&d<k;} // v80 S143 — doors inside buildings
+/* S656 — the chair answers to the crosshair (Michael's 6 Oct playtest): in reach, on the floor, its frame under the crosshair; the barber
+   takes E instead only when he is nearer and the crosshair is on him */
+function nearBarberChair(){if(!INT_CHAIR)return false;const d=Math.hypot(px-INT_CHAIR.x,pz-INT_CHAIR.z);if(d>=1.5||Math.abs(jumpY)>=.9)return false;if(!aimBox(INT_CHAIR.x,INT_CHAIR.z,0,.32,.34,1.2))return false;const k=typeof intNPCPos!=='undefined'&&intNPCPos&&intNPCMesh?Math.hypot(px-intNPCPos.x,pz-intNPCPos.z):1e9;return !(k<d&&aimAt({g:intNPCMesh},3.6));} // v80 S143 — doors inside buildings
 // v80 S11 — solids carry a height band {y0,y1}. An object whose top is
 // within a step of your feet doesn't block (you step onto it — it's also a
 // foothold); an object entirely above your head doesn't block (you walk

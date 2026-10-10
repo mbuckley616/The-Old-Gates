@@ -14,7 +14,8 @@ function _enterGame(){
   G.setAttribute('tabindex','0');G.focus();
   G.addEventListener('keydown',e2=>{
     if(hubOpen&&e2.target&&(e2.target.tagName==='INPUT'||e2.target.tagName==='TEXTAREA')){if(e2.code==='Escape'){e2.target.blur();G.focus();}return;} // S490 — typing in the Journal's search is typing, not play
-    if(e2.code==='Tab'){e2.preventDefault();if(hubOpen)closeHub();else openHub('map');return;}
+    if(dead&&e2.code!=='KeyM'){if(e2.code==='Tab')e2.preventDefault();return;} /* S677 — the death screen holds the keys: E, F, I, Tab and Q played on behind it */
+    if(e2.code==='Tab'){e2.preventDefault();if(hubOpen)closeHub();else openHub(hubLastTab);return;}
     // Global TTS mute toggle — works from any context including mid-speech
     if(e2.code==='KeyM'&&!e2.repeat){
       if(!(e2.target&&(e2.target.tagName==='INPUT'||e2.target.tagName==='TEXTAREA'))){

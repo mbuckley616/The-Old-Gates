@@ -17,7 +17,10 @@ const rows = [];
 for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
   await page.evaluate((seed) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme: 'deep', seed, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, seed);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);
-  const r = await page.evaluate(async (seed) => { const f = FOOTHOLDS.find(f => f.kind === 'spiral'); if (!f) return { seed, none: true };
+  // S683 — the dungeon's foes are taken out first: since Session 634 they see you at 8 underground and chase at your walk, and
+  // since Session 623 a live foe's body pushes you, so on the systems branch a foe that reached you moved the body during the two
+  // frames these checks wait (`inner` read .07–.65 on four seeds of six, a different four each run). The stair alone is measured.
+  const r = await page.evaluate(async (seed) => { ENEMIES.forEach(e => { if (e.mesh) e.mesh.visible = false; }); ENEMIES = []; const f = FOOTHOLDS.find(f => f.kind === 'spiral'); if (!f) return { seed, none: true };
     const st = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); if (!st) return { seed, noStair: true };
     const R = st.userData.rail, rd = R.pts.map(p => Math.hypot(p[0], p[2]));
     // each stanchion's top against the rope's height at its angle: the helix is y = t·FLOOR2_Y + h, t from the angle walked

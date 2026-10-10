@@ -1,7 +1,8 @@
-// What you were told (Session 490, Michael's C on DECISION #132, part C's topic index): an answer to a topic is filed once
-// under its label in worldState.told (a character key, saved in the character row), with who told you, where and when.
-// A person of their own files by name; a town's generated people file by the town. The Journal's Topics view lists them
-// by label with a search box, and typing in it is not play (the hub's keys stay quiet).
+// What you were told (Session 490, Michael's C on DECISION #132, part C; filed by person and place since Session 654,
+// Michael's A on DECISION #183): an answer is filed once on its teller's page in worldState.told (a character key, saved in
+// the character row), with where and when; *What is this place?* is filed on the place's page, one answer a teller; quest
+// talk and a sale's yes are not filed. The Journal's Told view is an index by town (people, then places), a page each, and
+// a search box that shows the matching answers; typing in it is not play (the hub's keys stay quiet).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -29,20 +30,23 @@ for (let i = 0; i < 2; i++) { await page.evaluate((i) => openDialog(window._home
 console.log(JSON.stringify({ town, askAll, rumour }).slice(0, 900));
 const r = await page.evaluate(() => { const T = worldState.told; return { keys: Object.keys(T), T }; });
 console.log(JSON.stringify(r).slice(0, 1500));
-const T = r.T, hill = T['What is under the hill?|Old Tadhg'], bones = T['Whose bones?|Old Tadhg'];
-check('a person\'s answer is filed under the topic, with who told it and when', c1 && hill && hill.s === 'Old Tadhg' && hill.r === 'Bones, and the gate the bones were guarding.' && hill.t === 1440 * 3 + 600 && hill.tod === 600, hill);
+const T = r.T, E = Object.values(T), hill = E.find(e => e.l === 'What is under the hill?' && e.s === 'Old Tadhg'), bones = E.find(e => e.l === 'Whose bones?' && e.s === 'Old Tadhg');
+check('a person\'s answer is filed on their page, with the question and when', c1 && hill && hill.k === 'p' && hill.pn === 'Old Tadhg' && hill.s === 'Old Tadhg' && hill.r === 'Bones, and the gate the bones were guarding.' && hill.t === 1440 * 3 + 600 && hill.tod === 600, hill);
 check('a follow-up is a topic of its own', c2 && bones && bones.r === 'Nobody has asked them.', bones);
-check('asked again, it is filed once, the first telling kept', Object.keys(T).filter(k => /^What is under the hill\?/.test(k)).length === 1 && hill.t === 1440 * 3 + 600, r.keys);
-const place = Object.entries(T).filter(([k]) => /^What is this place\?\|@dunmore:/.test(k)).map(([, e]) => e);
-const fromHomes = place.filter(e => e.s === town.home || e.s === town.home + ' the younger');
-check('the two guild heads\' answers about their houses are two entries, filed by the town, with its name', askAll.filter(Boolean).length === 2 && place.some(e => e.s === town.f) && place.some(e => e.s === town.m) && place.every(e => e.w === 'Dunmore'), place.map(e => [e.s, e.r.slice(0, 40)]));
-check('the same answer from two of the town\'s people is filed once (the first teller kept), and the folder itself is not filed', rumour.every(x => x.b) && fromHomes.length === 1 && fromHomes[0].s === town.home && place.length === 3 && !Object.keys(T).some(k => /^About this place/.test(k)), { fromHomes: fromHomes.map(e => e.s), n: place.length, keys: Object.keys(T) });
+check('asked again, it is filed once, the first telling kept', E.filter(e => e.l === 'What is under the hill?').length === 1 && hill.t === 1440 * 3 + 600, r.keys);
+const place = E.filter(e => e.l === 'What is this place?');
+const fromHomes = E.filter(e => e.s === town.home || e.s === town.home + ' the younger');
+check('the two guild heads\' answers about the place are on the place\'s page (asked in the street: Dunmore), one a teller', askAll.filter(Boolean).length === 2 && place.some(e => e.s === town.f) && place.some(e => e.s === town.m) && place.every(e => e.k === 'w' && e.pn === 'Dunmore' && e.w === 'Dunmore'), place.map(e => [e.s, e.pn, e.r.slice(0, 40)]));
+check('two of the town\'s people asked about the place: each answer is kept on the place\'s page under its teller, and the folder itself is not filed', rumour.every(x => x.b) && fromHomes.length === 2 && fromHomes.every(e => e.k === 'w' && e.pk === place[0].pk) && new Set(place.map(e => e.s)).size === place.length && !E.some(e => /^About this place/.test(e.l)), { fromHomes: fromHomes.map(e => [e.s, e.pk]), keys: Object.keys(T) });
 // 3. the Journal's Topics view, and its search
-const v = await page.evaluate(() => { openHub('journal'); journalView('topics'); const all = document.getElementById('jn-body').innerText; const inp = document.getElementById('jn-search');
+const v = await page.evaluate(() => { openHub('journal'); journalView('topics'); const all = document.getElementById('jn-body').innerText;
+  const who = [...document.querySelectorAll('#jn-topics .jn-who')].find(d => /Old Tadhg/.test(d.textContent)); if (who) who.click(); const page = document.getElementById('jn-topics').innerText; journalPage(null);
+  const inp = document.getElementById('jn-search');
   inp.value = 'bones'; inp.dispatchEvent(new Event('input')); const found = document.getElementById('jn-topics').innerText;
-  inp.value = 'nothing like this'; inp.dispatchEvent(new Event('input')); const none = document.getElementById('jn-topics').innerText; inp.value = ''; inp.dispatchEvent(new Event('input')); return { all, found, none }; });
+  inp.value = 'nothing like this'; inp.dispatchEvent(new Event('input')); const none = document.getElementById('jn-topics').innerText; inp.value = ''; inp.dispatchEvent(new Event('input')); return { all, page, found, none }; });
 console.log(JSON.stringify(v).slice(0, 900));
-check('the Topics view lists what you were told by its topic, the teller and the date', /What is under the hill\?/.test(v.all) && /told by Old Tadhg · Seaday 4 Reaping · 10:00 am/.test(v.all) && /Bones, and the gate/.test(v.all), v.all.slice(0, 400));
+check('the Told view is an index by town: people, then places', /Elsewhere · People[\s\S]*Old Tadhg/.test(v.all) && /Dunmore · Places[\s\S]*Dunmore told by Gráinne, Sorcha/.test(v.all) && !/Bones, and the gate/.test(v.all), v.all.slice(0, 500));
+check('a person\'s page: who, when first met, each question with its date and the answer', /^Old Tadhg/m.test(v.page) && /first met Seaday 4 Reaping/.test(v.page) && /What is under the hill\? · Seaday 4 Reaping · 10:00 am/.test(v.page) && /Bones, and the gate/.test(v.page) && /Whose bones\?/.test(v.page), v.page.slice(0, 400));
 check('the search finds by any word of it and says so when nothing matches', /What is under the hill\?/.test(v.found) && /Whose bones\?/.test(v.found) && !/What is this place/.test(v.found) && /Nothing you were told matches\./.test(v.none), { found: v.found.slice(0, 200), none: v.none });
 // typing in the search: X does not arm quick-destroy, Tab does not close the hub
 await page.focus('#jn-search'); await page.keyboard.type('xw'); await page.keyboard.press('Tab');
@@ -54,7 +58,7 @@ await page.evaluate(async () => { await saveToSlot(0); });
 const rows = await page.evaluate(async () => { const m = SS.idx.find(e => e.kind === 'manual' && e.slot === 0); const c = JSON.parse(await ssGet(m.key)), w = JSON.parse(await ssGet(ssWorldKey(m.key))); return { c: c.wS && c.wS.told && Object.keys(c.wS.told).length, w: w.wS && w.wS.told }; });
 g.errs.length = 0; await page.reload(); await page.waitForTimeout(5000);
 await page.evaluate(() => document.getElementById('cb').click()); await page.waitForTimeout(12000); await g.hide();
-const back = await page.evaluate(() => ({ n: worldState.told ? Object.keys(worldState.told).length : 0, hill: worldState.told && worldState.told['What is under the hill?|Old Tadhg'] && worldState.told['What is under the hill?|Old Tadhg'].r }));
+const back = await page.evaluate(() => ({ n: worldState.told ? Object.keys(worldState.told).length : 0, hill: worldState.told && (Object.values(worldState.told).find(e => e.l === 'What is under the hill?') || {}).r }));
 check('what you were told rides the character row and comes back on a reload', rows.c === Object.keys(T).length && rows.w === undefined && back.n === rows.c && /^Bones/.test(back.hill || ''), { rows, back });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

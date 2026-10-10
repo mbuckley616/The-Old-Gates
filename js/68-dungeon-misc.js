@@ -17,7 +17,16 @@ function _sweepScenePool(scene){
 // v80 — look-at looting: a container counts only when it's under the crosshair (within ~14°) and within reach (3u)
 const _laDir=new THREE.Vector3(),_laTo=new THREE.Vector3();const _ray=new THREE.Raycaster();
 // aimAt: true when the crosshair ray hits this object's mesh within reach — the interaction is the mesh, not an area
-function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);return hits.length>0;}
+function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);if(hits.length>0)return true;
+  return skinAimed(obj,m,_ray.near,_ray.far);}
+// S596 — a skinned body (every townsperson since S153) is invisible to three's raycast for the reason S417 gives below, so
+// aimAt never met a townsperson: no *Press 'E' to talk* and no talk cue facing one in the open world. The ray is tested
+// against capsules along the body's bones, as bodyAimed does for a corpse; the bones are found once and kept on obj.
+function skinAimed(obj,m,near,far){if(obj._aimBones===undefined||obj._aimM!==m||(obj._aimBones&&obj._aimBones.length&&!obj._aimBones[0].parent)){obj._aimM=m;obj._aimR=null;let sk=false;const bones=[];m.traverse(o=>{if(o.isSkinnedMesh)sk=true;if(o.isBone)bones.push(o);});obj._aimBones=sk?bones:null;}
+  const bones=obj._aimBones;if(!bones||!bones.length||!m.visible)return false;m.updateMatrixWorld(true);
+  if(obj._aimR==null){_baBox.makeEmpty();for(const b of bones)_baBox.expandByPoint(b.getWorldPosition(_baA));obj._aimR=Math.max(.16,Math.min(.6,_baBox.getSize(_baA).length()*.13));}
+  const o=CAM.position;for(const b of bones){b.getWorldPosition(_baA);if(b.parent&&b.parent.isBone)b.parent.getWorldPosition(_baB);else _baB.copy(_baA);if(_raySegHit(o,_laDir,_baB,_baA,obj._aimR,near,far))return true;}
+  return false;}
 // S417 — a corpse is searched anywhere on its body, not at one spot over the kill point (Michael, 1 Oct). The crosshair
 // ray is tested against capsules along the dead body's bones and against any plain meshes it has, within reach of the
 // eye as aimAt. three's own raycast cannot see a skinned body here: it skins with the bones' world matrices and then
@@ -39,12 +48,29 @@ function lookingAt(c,reach){if(c.body&&c.body.parent)return bodyAimed(c,reach); 
   const dx=c.x-px,dz=c.z-pz,dh=Math.hypot(dx,dz);if(dh>(reach||3.0))return false;if(c.mesh||c.g||c.group)return aimAt(c,(reach||3.0)+.6); // the mesh itself when there is one
   const floorY=(activeZoneId!=='world')?(currentFloor===2?FLOOR2_Y:0):((typeof WORLD!=='undefined')?WORLD.worldH(c.x,c.z):0);const cy=floorY+(c.y!=null?c.y:0.45);
   CAM.getWorldDirection(_laDir);_laTo.set(c.x-CAM.position.x,cy-CAM.position.y,c.z-CAM.position.z);const len=_laTo.length();if(len<.001)return true;_laTo.multiplyScalar(1/len);return _laTo.dot(_laDir)>0.96;}
+// S645 — a bed answers E only with the crosshair on it (Michael, 6 Oct 2026: "E should need range AND the reticle on the
+// object"; the inn's bed showed as usable from downstairs). In range as before (1.6 across, your own floor within .9), the
+// crosshair ray meets the bed's frame (the kit's bed: .86 wide on x, 1.5 long on z, .72 to the posts, padded a little), and
+// no wall stands between you. The prompt and E both ask this one function, so they cannot disagree.
+// S646 — the same test for anything indoors without a mesh of its own to cast at: does the crosshair ray, out to 3.2 (plus the
+// third-person camera's distance), meet the box x±hx, z±hz, y0 to y0+h; and does no wall stand between you and its centre.
+function aimBox(x,z,y0,hx,hz,h,sx,sz){CAM.getWorldDirection(_laDir); /* S680 — sx, sz: where the wall test looks, when the box's centre is inside a wall (a door's leaf) */const o=CAM.position,lo=[x-hx,y0,z-hz],hi=[x+hx,y0+h,z+hz],O=[o.x,o.y,o.z],D=[_laDir.x,_laDir.y,_laDir.z];
+  let t0=0,t1=3.2+(thirdPerson?TP.dist:0);
+  for(let i=0;i<3;i++){if(Math.abs(D[i])<1e-9){if(O[i]<lo[i]||O[i]>hi[i])return false;continue;}let ta=(lo[i]-O[i])/D[i],tb=(hi[i]-O[i])/D[i];if(ta>tb){const t=ta;ta=tb;tb=t;}if(ta>t0)t0=ta;if(tb<t1)t1=tb;if(t0>t1)return false;}
+  return typeof intSightLine!=='function'||intSightLine(px,pz,sx!=null?sx:x,sz!=null?sz:z);}
+function bedAimed(b){return aimBox(b.x,b.z,b.y||0,.5,.82,.78);}
+/* S656 — the stash chest (the safehouse's, the cabin's hold): in reach and under the crosshair, its body .85 × .55 and the lid */
+function stashAimed(){return !!intStashPos&&Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4&&Math.abs(jumpY)<.9&&aimBox(intStashPos.x,intStashPos.z,0,.48,.33,.72);}
+function intBedTarget(){let best=null,bd=1e9;for(const b of (INT_BEDS||[])){const d=Math.hypot(px-b.x,pz-b.z);if(d>=1.6||d>=bd||Math.abs(jumpY-(b.y||0))>=.9)continue;if(bedAimed(b)){bd=d;best=b;}}return best;}
 function lootTargetNow(){try{
   if(activeZoneId==='world'){const c=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.items&&c.items.length>0&&lookingAt(c));if(c)return c;}
   else{const c=CORPSES.find(c=>!c.looted&&c.items&&c.items.length&&lookingAt(c));if(c)return c;const ch=CHESTS.find(c=>c.floor===currentFloor&&(!c.opened||c.items.length>0)&&lookingAt(c));if(ch)return ch;const b=(typeof BARRELS!=='undefined')?BARRELS.find(b=>b.floor===currentFloor&&(!b.opened||(b.items&&b.items.length>0))&&lookingAt(b,2.6)):null;if(b)return b;}
 }catch(e){}return null;}
 function emptyTargetNow(){try{const any=(activeZoneId==='world')?ZONE_CORPSES.filter(c=>c.zone===activeZoneId):[...CORPSES,...CHESTS.filter(c=>c.floor===currentFloor),...((typeof BARRELS!=='undefined')?BARRELS.filter(b=>b.floor===currentFloor):[])];for(const c of any){const has=c.items&&c.items.length>0&&!(c.looted);if(!has&&lookingAt(c))return c;}}catch(e){}return null;}
-function talkTargetNow(){try{if(activeZoneId==='world'){const L=(ZONES.world&&ZONES.world.npcs)||[];return L.find(n=>!n._retreated&&Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2&&aimAt(n,3.6))||null;}if(typeof INT_NPCS!=='undefined'){const n=INT_NPCS.find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2&&aimAt(n,3.6));if(n)return n;}if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2&&aimAt({g:intNPCMesh},3.6))return {def:{name:''}};}catch(e){}return null;}
+// S596 — of the people within 3.2 whose body the crosshair ray meets, the nearest: the one in front, not the first in the
+// list (a second person behind them on the ray, or listed earlier, used to win). E (`talkNPC`) and the talk cue both read it.
+function talkAimedNPC(L){let best=null,bd=1e9;for(const n of (L||[])){if(!n||n._retreated||!n.g)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=3.2||d>=bd)continue;if(Math.abs(jumpY-n.g.position.y)>1.6)continue;if(aimAt(n,3.6)){bd=d;best=n;}}return best;}
+function talkTargetNow(){try{if(activeZoneId==='world'){return talkAimedNPC((ZONES.world&&ZONES.world.npcs)||[]);}if(typeof INT_NPCS!=='undefined'){const n=INT_NPCS.find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2&&aimAt(n,3.6));if(n)return n;}if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2&&aimAt({g:intNPCMesh},3.6))return {def:{name:''}};}catch(e){}return null;}
 function tickCrosshair(){const xh=document.getElementById('xh');if(!xh)return;const t=lootTargetNow();const tk=t?null:talkTargetNow();const kind=t?'loot':tk?'talk':null;if(kind!==xh._k){xh._k=kind;xh.textContent=kind==='loot'?'◇':kind==='talk'?'◦':'+';xh.style.color=kind==='loot'?'#e8c040':kind==='talk'?'#8ad0ff':'';xh.style.fontSize=kind?'22px':'';}xh._t=t;
   let lab=document.getElementById('xh-empty');if(!lab){lab=document.createElement('div');lab.id='xh-empty';lab.style.cssText='position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);font:12px Georgia,serif;color:#8a7a60;pointer-events:none;display:none;text-shadow:0 1px 2px #000';(xh.parentElement||document.body).appendChild(lab);}
   const em=t?null:emptyTargetNow();if(em){lab.textContent=`${em.displayName||em.name||(em.isEW!=null?'Chest':'Remains')} — empty`;lab.style.display='block';}else lab.style.display='none';}
@@ -174,6 +200,18 @@ function decorateDungeonRooms(gen,portal){
     if(r()<.6){const plate=_dBox(.62,.04,.62,0x3a3630,x,.02,z);const spikes=new THREE.Group();for(let i=0;i<9;i++){const s=new THREE.Mesh(new THREE.ConeGeometry(.04,.34,5),new THREE.MeshLambertMaterial({color:0x9a9ea6}));s.position.set(-.18+(i%3)*.18,.17,-.18+Math.floor(i/3)*.18);spikes.add(s);}spikes.position.set(x,-.4,z);dScene.add(spikes);D_TRAPS.push({kind:'spike',x,z,floor:1,plate,spikes,t:0,armed:true});}
     else{D_TRAPS.push(buildSwingBlade(x,z,dir,r));}}
 }
+// S580 — the blade cuts where it is (Michael's A on #170): the player's body, a column 0.3 round from the feet to 1.72, is
+// tested against the blade's own box in the blade's own frame, so the hit follows whatever arc and shape the blade has.
+// Was: anyone within 0.7 of the cell while the swing was near its bottom. The blade is t.blade, else the pivot's lowest mesh.
+const _bladeV=new THREE.Vector3();
+function bladeTouches(t){let b=t.blade||t._bl;if(!b){for(const c of t.pivot.children)if(c.isMesh&&(!b||c.position.y<b.position.y))b=c;t._bl=b;}if(!b||!b.geometry)return false;
+  if(!b.geometry.boundingBox)b.geometry.computeBoundingBox();const bb=b.geometry.boundingBox,R=.3;t.pivot.updateMatrixWorld(true);
+  for(let k=0;k<=8;k++){_bladeV.set(px,jumpY+k*.215,pz);b.worldToLocal(_bladeV);
+    if(_bladeV.x>bb.min.x-R&&_bladeV.x<bb.max.x+R&&_bladeV.y>bb.min.y-R&&_bladeV.y<bb.max.y+R&&_bladeV.z>bb.min.z-R&&_bladeV.z<bb.max.z+R)return true;}
+  return false;}
+// S606 — a trap's hit rolls on its own stream (co-op rules): its id is the dungeon's seed, the floor and its place in the list
+// the seeded placement made, `<seed>:<floor>:trap:<n>`, given the first time it is sprung, as a foe's is (`keyFoe`)
+function trapRand(t){if(!t.rng){t.id=t.id||(((typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||1)+':'+(t.floor||1)+':trap:'+D_TRAPS.indexOf(t));t.rng=seededRng('trap',t.id);}return t.rng();}
 // S582 — the swinging blade across the passage (Michael's A on DECISION #170, the Session 573 prototype): a crescent of steel on an
 // iron arm hung from a bracket in the roof, its flat face to you as you come up the corridor, swinging from wall to wall with the
 // bottom of its arc at the waist (.95) and into a dark slot cut in each wall. The arm is as long as the roof is high (a lair's 4.4).
@@ -194,9 +232,9 @@ function buildSwingBlade(x,z,dir,r){const top=FLOOR_HEIGHT-.1,low=.95,L=top-low,
   return {kind:'blade',x,z,floor:1,pivot,blade,ph:r()*Math.PI*2,hitT:0};}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
-    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(Math.random()*8)+Math.floor(level*.8));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
+    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(trapRand(t)*8)+Math.floor(level*.8),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
-    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;const sweep=Math.abs(a)<.35;t.hitT-=dt;if(sweep&&d<.7&&t.hitT<=0){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
+    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 
@@ -296,7 +334,8 @@ function lpDifficulty(door){ // steady per door: how many pins, and how long the
   const depth=Math.max(0,(door&&door.floor||1)-1);
   const pins=Math.min(5,Math.max((door&&door.minPins)||0,2+(h%3)+(depth>2?1:0)+((door&&door.lockBonus)||0))); // S150 — chests carry a bonus or a floor
   const fin=attrEff('finesse');
-  const dwell=Math.round(Math.max(110,300-pins*28-(h%40)+fin*22)); // a steady hand buys time
+  /* a steady hand buys time; S716 — never under 150 ms, the co-op rule's floor for a timing window (Michael's A on #119): it was 110 */
+  const dwell=Math.round(Math.max(150,300-pins*28-(h%40)+fin*22));
   return {pins,dwell,fall:Math.round(420+ (h%120))};
 }
 // S150 — which dungeon chests are locked: every treasure chest, and ordinary ones by floor (1 in 5 on the
@@ -320,7 +359,7 @@ function openLockpick(door){
   LP.live=!!(door&&door.live);LP.hp=PHP;if(LP.live){const KK=window._K;if(KK)for(const k in KK)KK[k]=false;blocking=false;}
   lockOpen=true;_releasePointerLockForMenu();
   const el=document.getElementById('lockpick');el.style.display='flex';
-  document.getElementById('lp-title').textContent=(door&&door.lockTitle)?(d.pins>=4?door.lockTitle+' — a good lock':door.lockTitle):(d.pins>=4?'A good lock':'A locked door');
+  document.getElementById('lpk-title').textContent=(door&&door.lockTitle)?(d.pins>=4?door.lockTitle+' — a good lock':door.lockTitle):(d.pins>=4?'A good lock':'A locked door');
   lpRender();lpStatus('Push a pin. Press again when it holds.');
   if(!LP.raf)LP.raf=requestAnimationFrame(lpTick);
 }
@@ -443,28 +482,74 @@ function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)
 // Every lair carries a cavern (a portal flagged lair:{...}); the beast at the mouth still guards the approach,
 // and inside, in the deepest room, the lair's true master waits on its hoard. Dragons are the largest antibodies:
 // where the binding tore worst, what the world made has wings. The Salt Mouth has one; a few lairs beyond do too.
-function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return;const L=portal.lair;if(worldState.masters&&worldState.masters[portal.seed]){showMsg('The master of this place is dead. Its hoard is long gone.','#a89878');return;}
+// S694 — worldState.masters[seed]: true (an old save: dead, the hoard gone) or {dead, hoard:{x,z,floor,items}}. The hoard rolls once
+// and its items are the chest's own list, so what you take stays taken and a day's turn does not refill it; the master is dead from
+// the blow that kills him (slayMaster), not from a cavern cleared to the last rat.
+function lairHoardChest(portal,h,dragon){const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(h.x,(h.floor===2?FLOOR2_Y:0),h.z);dScene.add(group);
+  CHESTS.push({id:`${dKeyOf(portal,h.floor||1)}:hoard`,x:h.x,z:h.z,opened:false,lid,treasure:true,floor:h.floor||1,mesh:group,items:h.items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});}
+// S696 — the hoard's spot: beside the master, on an open cell of its own floor. It stood at the master's spot plus (1.2, .6),
+// which was often inside a wall (Carrigowen's floor 2: the chest unseen, its prompt only when you looked down at the bricks). A
+// cell is 1 unit and the chest 1.3 across, so a cell whose eight neighbours are open is first, then one with its four, then any.
+function lairHoardSpot(e){const map=(e.floor===2&&dMap2)?dMap2:dMap;const fl=e.floor||1;
+  const open=(c,r)=>!!(map&&r>=0&&r<dR&&c>=0&&c<dC&&map[r][c]!==0&&map[r][c]!==4&&map[r][c]!==5&&!CHESTS.some(ch=>(ch.floor||1)===fl&&Math.floor(ch.x+.5)===c&&Math.floor(ch.z+.5)===r));
+  const room=(c,r,n)=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){if(!i&&!j)continue;if(n===4&&i&&j)continue;if(!open(c+i,r+j))return false;}return true;};
+  const c0=Math.floor(e.x+.5),r0=Math.floor(e.z+.5);const cells=[];
+  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){if(!i&&!j)continue;const c=c0+i,r=r0+j;if(open(c,r))cells.push({c,r,d:Math.hypot(c-e.x-1.2,r-e.z-.6)});}
+  cells.sort((a,b)=>a.d-b.d);const best=cells.find(k=>room(k.c,k.r,8))||cells.find(k=>room(k.c,k.r,4))||cells[0];
+  return best?{x:best.c,z:best.r}:{x:e.x,z:e.z};}
+function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;}
+function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return;const L=portal.lair;const M=worldState.masters||(worldState.masters={}),rec=M[portal.seed];
+  if(rec===true||(rec&&rec.dead)){const h=rec&&rec.hoard;if(h&&h.items&&h.items.length){lairHoardChest(portal,h,!!L.dragon);showMsg('The master of this place is dead. Its hoard is where you left it.','#a89878');}else showMsg('The master of this place is dead. Its hoard is long gone.','#a89878');return;}
   // the deepest room: the enemy farthest from the entrance, on the lowest floor there is
   const ent={x:(typeof dEntranceX!=='undefined')?dEntranceX:0,z:(typeof dEntranceZ!=='undefined')?dEntranceZ:0};
   const pool=ENEMIES.filter(e=>!e.dead);const low=Math.max(...pool.map(e=>e.floor||1));const cand=pool.filter(e=>(e.floor||1)===low).sort((a,b)=>Math.hypot(b.x-ent.x,b.z-ent.z)-Math.hypot(a.x-ent.x,a.z-ent.z));
   const e=cand[0];if(!e)return;
-  const dragon=!!L.dragon;e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${L.boss}`;e.boss=true;e.dragon=dragon;
+  const dragon=!!L.dragon;const site=L.siteId&&typeof siteAnywhere==='function'?siteAnywhere(L.siteId):null;const bossName=site&&typeof lairBeast==='function'?lairBeast(site):L.boss; /* S699 — the beast of the lair where it stands now, as at the crag */e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${bossName}`;e.boss=true;e.dragon=dragon;
+  if(!dragon)lairMasterBody(e,bossName,portal); /* S706 — Michael's A on #225: the lair's own beast, not the deepest foe renamed */
   e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
-  if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88); // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
+  if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88);
+  if(!dragon&&e._lairBody){e._detailed=true;masterUnderCeiling(e);delete e.posture;delete e.maxPosture;initPosture(e);} /* S706 — its posture from its own health, as the world's beast's */ // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
   // the hoard beside it
-  const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(e.x+1.2,(e.floor===2?FLOOR2_Y:0),e.z+.6);dScene.add(group);
+  if(rec&&rec.hoard){lairHoardChest(portal,rec.hoard,dragon);showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');window._lairBoss=e;return;}
   // S514 — the hoard is <seed>:<floor>:hoard, and its goods roll on its stream and the day, not Math.random (co-op rules)
   const hid=`${dKeyOf(portal,e.floor||1)}:hoard`,hr=seededRng('loot',hid+':'+lootDay());
   const items=[];const gv=Math.round((60+level*25)*(dragon?3:1.8));items.push({name:'Gold Coins',ico:'●',type:'gold',value:gv,qty:1});
-  const MATS=dragon?['Silver','Gold','Mithril']:['Iron','Steel','Silver'];const mt=MATS[Math.floor(hr()*MATS.length)];const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);
+  /* S717 — the piece is named for its tier's metal (Michael's A on #232: it named Iron/Steel/Silver, a wyrm's Silver/Gold/Mithril, on a draw
+     of its own); that draw is still taken, so every roll after it comes out as before */
+  hr();const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);const mt=(MATERIALS.find(q=>q.tier===tier)||MATERIALS[2]).name;
   items.push(hr()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
+  {const it=items[1];if(it.slot==='weapon'){const m=MATERIALS.find(q=>q.tier===tier);if(m&&m.reqAttr){it.reqAttr=m.reqAttr;it.reqVal=m.reqVal;}}else Object.assign(it,armorReq(tier,armorTypeOf(it)));} /* S708 — the hoard's piece asks what its tier asks of any other (it was built bare: a Steel Sword with no requirement) */
   if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});
   items.push({name:'Greater Potion',ico:'🧪',type:'potion',heal:60,buyPrice:45,sellMult:.4,qty:2});
-  CHESTS.push({id:hid,x:e.x+1.2,z:e.z+.6,opened:false,lid,treasure:true,floor:e.floor||1,mesh:group,items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});
+  const hs=lairHoardSpot(e);const hoard={x:hs.x,z:hs.z,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
   showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');
   window._lairBoss=e;}catch(err){console.warn('lairFinish',err);}}
+// S706 — a lair cavern's master is the lair's own beast (Michael's A on DECISION #225): the foe standing deepest gives up its
+// place and floor, and is built again as the beast the lair is named for, on the open world's body for that kind (a Marsh Hag,
+// a Frost Troll, an Ash Wight, a Cave Bear or an Ogre: buildZoneEnemy's rig, moved into the cavern's group as the wyrm's is).
+// Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty,
+// the floor (1.5 below) and your level; a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
+// average) lands the kind's own blow. lairFinish then makes it the master (×3 health, ×1.6 a blow, 1.5× the size) as before.
+function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'&&ZONE_FOE_DEF[kind];if(!D||!e||!e.mesh)return false;
+  const z=buildZoneEnemy(new THREE.Group(),[],0,0,kind,null);const rig=z.limbs&&(z.limbs.person||z.limbs.wolf);if(!rig||!rig.root)return false;
+  const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{};const hpBg=L.hpBg||e.hpBg;
+  g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
+  if(rig.root.parent)rig.root.parent.remove(rig.root);g.add(rig.root);rig.e=e;
+  e.limbs={torso:z.limbs.torso,hpBg};if(z.limbs.person){e.limbs.person=z.limbs.person;e.limbs.armR=z.limbs.armR;}if(z.limbs.wolf)e.limbs.wolf=z.limbs.wolf;
+  const ds=portal.diffScale||DIFF_SCALE.normal,fm=(e.floor||1)>1?1.5:1;
+  e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale()));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale();delete e.dmg;
+  e.spd=D.spd*ds.spd*(fm>1?1.1:1);e.rankSpd=D.spd;e.size=D.scale||1;e.def=D.def||0;e.resist={...(D.resist||{})};
+  e.baseType=kind;e.buildFn=D.shape==='brute'?'brute':'humanoid';e._origCol=D.col;e.variant=null;e.xpMult=1;
+  e.isWraith=false;e.ranged=false;e.disguised=false;e.dormant=false;e.shieldUp=false;e.canFlee=false;e._burstNext=false;
+  e.baseY=(e.floor===2&&typeof FLOOR2_Y!=='undefined')?FLOOR2_Y:0;g.position.y=e.baseY;
+  const top=(z.limbs.person?1.3:1.25)*(D.scale||1);if(hpBg)hpBg.position.y=top;if(e.hpFg)e.hpFg.position.y=top;
+  if(e.el){e.el.color.setHex(D.eyeCol||0xffb040);e.el.intensity=.7;}
+  e._lairBody=kind;e._detailed=true;return true;}
+// the master is 1.5× the beast: one that would stand through the cavern's ceiling is made the largest that clears it
+function masterUnderCeiling(e){const g=e&&e.mesh;if(!g)return;const rig=e.limbs&&(e.limbs.person||e.limbs.wolf);const root=rig&&rig.root;if(!root)return;
+  g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;if(h>room)g.scale.multiplyScalar(room/h);}
 // S219 — a lair's wyrm on the dragon's own body (S177, the wolf's bones with a neck, a tail and wings): the master keeps
 // the numbers it was given (the lair's beast or the cavern's deepest foe, scaled up), and only its body is swapped. What it
 // wore goes (a person's rig drops out of tickPeople once its root has no parent; a box brute's parts are removed); the
@@ -534,9 +619,10 @@ function playerDead(){
   if(typeof WORLD!=='undefined')WORLD.noteDeath(); // v80 — the reader counts
   if(dead)return;dead=true;
   // v80 S9 — no respawn, no bag wipe, no autosave: a death screen that loads a save.
-  const dunName=currentPortal?currentPortal.name:(activeZoneId==='world'?'the open country':'the wild');
+  const dunName=(activeZoneId==='dungeon'&&currentPortal)?currentPortal.name:(activeZoneId==='world'?'the open country':'the wild'); /* S673 — currentPortal outlives the dungeon (goToOW keeps it): name it only while you are in it */
   addLog('💀','Fell in '+dunName+'.');
   silenceSigilHum();castT=0;blocking=false;staggered=[];
+  {const ip=document.getElementById('ipr');if(ip){ip.style.opacity='0';ip.style.display='none';}const ob=document.getElementById('ob');if(ob)ob.textContent='';} /* S677 — the loop stops at death, so the last prompt stood behind the screen */
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   let ov=document.getElementById('died');
   if(!ov){
@@ -559,6 +645,7 @@ function reloadActiveSlot(){
   const key=ssActiveKey();if(!key||!ssEntry(key))return false;
   ssLoad(key).then(d=>{if(!d)return;
   const ov=document.getElementById('died');if(ov)ov.style.display='none';
+  G.focus(); /* S624 — the click left focus on the hidden button, and the game reads keys only on #g */
   dead=false;
   doFade(()=>{
     _applyLoadData(d);

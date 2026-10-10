@@ -34,7 +34,8 @@ const d = await page.evaluate(() => {
   const took = (f) => { PHP = maxHP; lvAct.damageTaken = 0; f(); return { hp: maxHP - PHP, counted: lvAct.damageTaken }; };
   out.spike = took(() => { jumpY = gy; D_TRAPS.length = 0; D_TRAPS.push({ kind: 'spike', floor: currentFloor, x: px, z: pz, armed: true, t: 0, spikes: { position: { y: 0 } } });
     tickDungeonTraps(1 / 60); D_TRAPS.length = 0; });
-  out.blade = took(() => { blocking = false; D_TRAPS.length = 0; D_TRAPS.push({ kind: 'blade', floor: currentFloor, x: px, z: pz, ph: 0, hitT: 0, pivot: { rotation: { z: 0, y: 0 } } });
+  const hangBlade = (x, z, gy) => { const p = new THREE.Group(); p.position.set(x, gy + FLOOR_HEIGHT - .1, z); const b = new THREE.Mesh(new THREE.BoxGeometry(.7, .5, .04)); b.position.y = -1.55; p.add(b); return p; }; // S580 — the hit reads the blade's own box
+  out.blade = took(() => { blocking = false; jumpY = gy; D_TRAPS.length = 0; D_TRAPS.push({ kind: 'blade', floor: currentFloor, x: px, z: pz, ph: 0, hitT: 0, pivot: hangBlade(px, pz, gy) });
     tickDungeonTraps(1 / 60); D_TRAPS.length = 0; });
   PHP = maxHP; return out; });
 console.log(' ', JSON.stringify(d));

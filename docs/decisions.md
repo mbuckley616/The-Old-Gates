@@ -4,7 +4,45 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+
 ## Answered
+
+### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
+Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
+
+Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:herb:<i>`). They are picked and grow back like any herb. Nothing reads the lairs.
+
+- **A. As the canon says.** The glade nearest a dead lair, within 1,500 units, grows a ring of 36 herbs, the second 18 keyed `<site>:herb:18…35`. It holds from the day the beast dies, and the save already carries that. The card shows *the glade is thick with herbs since the beast died*. One session.
+- **B. Doubled, but by the glade's own nearness.** The same, but only a glade within 700 units of the lair. That is the radius at which a lair already weighs on towns (the drift, the plague). Farther glades are untouched. One session.
+- **C. Leave it.** The canon's line stays a note until alchemy is a skill (J's survival skills), when herbs are worth more.
+
+Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
+
+Michael: **B** — doubled, only a glade within 700 units (2026-10-10, on #227; written to auto/producer aab94ff). **Built, Session 719** (`tests/gladeherbs`). The card's line (A's *the glade is thick with herbs since the beast died*) is not built: it is new text, the quest writer's.
+
+### A lair's cavern — your level's difficulty, a grade above it, or always Hard? (systems builder, 2026-10-10) — DECISION #230
+Since Session 9 every old gate's difficulty is your level's grade: Very Easy to level 2, Easy to 5, Normal to 9, Hard to 14, then Very Hard (`levelDiffKey`). A door you found early stays a fair fight later. A lair's cavern door is written `diff:'hard'`, and a dragon lair's `veryhard`, but nothing reads either: the portal's difficulty is always your level's. The critic saw *[Very Easy · deep · medium]* on Carrigowen's cavern at level 1, where the beast outside had killed them twice.
+
+Measured with Session 706's masters (a Marsh Hag, floor 2, level 1): on Very Easy, as today, the master has 97 health; Easy, 149; Hard, 321. The beast at the crag outside has 190.
+
+- **A. A lair's cavern one grade above your level, a wyrm's two** (Easy at level 1, up to Very Hard). The cavern stays fair at any level, as Session 9 wants, and is still the harder place. Every foe inside is scaled, and so is the loot (`rollLoot` reads the grade). One short session.
+- **B. As written: a lair's cavern is always Hard, a wyrm's Very Hard.** At level 1 that is 1.5× health and 1.45× blows on every foe in the cave.
+- **C. Leave it.** Every door is your level's grade, and the dead field is taken out.
+
+Recommendation: **A.** In Skyrim a dungeon's level is set from yours with a floor and a cap, and a named lair sits above the common ones. A keeps Session 9's promise that a door is a fair fight at any level, and it makes the cavern under the beast's crag worth its name. B would make the first lair a new character finds a wall.
+
+Michael: **A** — one grade above your level, a wyrm's two (2026-10-10, on #230; written to auto/producer aab94ff). **Built, Session 718** (`tests/lairgrade`).
+
+### A lair hoard's piece: should its metal follow its tier? (systems builder, 2026-10-10) — DECISION #232
+A lair cavern's hoard holds one piece, a sword or a cuirass, and `lairFinish` (`68-dungeon-misc.js`) rolls it on two separate draws: the metal in its name (`Iron/Steel/Silver`; a wyrm's `Silver/Gold/Mithril`) and its tier (3–4; a wyrm's 5–6). The tier sets the attack, the defence, the price and, since Session 708, the requirement. The name does not follow it. So a *Steel Cuirass* can be tier 3 and an *Iron Sword* tier 4. *Silver* and *Gold* are no tier in `MATERIALS`. A wyrm's tier-6 piece can be called *Silver*, where every other tier-6 blade is Adamant. Found in Session 708 (the critic's s482 *Steel Sword* with no requirement).
+
+- **A. The name follows the tier** (`MATERIALS`: 3 Iron, 4 Steel, 5 Mithril, 6 Adamant). The metal draw is still taken, so every other roll in the hoard comes out as before; only the name changes. Silver and Gold leave the hoard. One short session.
+- **B. The tier follows the name.** Iron 3, Steel 4, Mithril 5; Silver and Gold become precious pieces at tier 4 and 5, with a higher price and no gain in attack. This adds two metals the rest of the game does not have. One session.
+- **C. Leave it.** The name is flavour; the requirement and the numbers already follow the tier.
+
+Recommendation: **A.** Everywhere else in the game a sword's metal tells you what it does: an Iron Sword asks Might 5, a Steel Sword Might 10. A hoard that breaks that rule teaches the player that names lie. A changes no numbers, only the word.
+
+Michael: **A** — the name follows the tier (2026-10-10, on #232; written to auto/producer aab94ff). **Built, Session 717** (`tests/hoardmetal`).
 
 ### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
 The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carrigowen — Cave Bear*. `lairFinish` takes whichever foe stands farthest from the entrance on the lowest floor and gives it the lair's name, 3× health and a 1.5× scale. It keeps its own body. Only a dragon lair gives its master a new body, the wyrm's (Session 219). Session 699 made the name agree with the beast at the crag outside, but the body is still whatever stood deepest: a slime, a skeleton, a spider.
@@ -15,6 +53,7 @@ The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carr
 
 Recommendation: **A.** The lair is named for its beast, and the dragon lair already works this way: its master is the wyrm, whatever stood there. A gives every lair what the wyrm has. B is honest but makes a lair's master a slime half the time.
 Michael: **The master is the lair's own beast** (A). (10 Oct 2026)
+Built: Session 706 on auto/systems (`lairMasterBody`, `tests/lairmaster`).
 
 ### Witnesses in the street — all round, or only what they face, as in a shop? (systems builder, 2026-10-10) — DECISION #222
 In the street, a townsperson or guard sees a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood). They see it whichever way they face. Indoors, since your B on #73, a keeper sees only what they face, in a cone of about 120° within six units. So in the street you can never pick a lock behind someone's back, and inside a shop you can. Measured (Session 609, `tests/nightpick`): at Dunmore's seven shop doors from 20h to 4h, a pick is seen 26% of the time walking and 18% sneaking.
@@ -25,6 +64,7 @@ In the street, a townsperson or guard sees a crime all round: anyone awake withi
 
 Recommendation: **B.** Oblivion and Skyrim judge a witness by line of sight and facing, so a back turned is a chance. That is your call on #73, and A carries it outdoors. B keeps one thing: the guard is the one you can't slip past by timing a turned head. That keeps the night watch's beat (S166) a threat, and the 26% at the doors would fall mostly where townsfolk stand, not where the watch walks.
 Michael: **The street as the shop: everyone by a 120° cone** (A). (10 Oct 2026)
+Built: Session 705 on auto/systems (`witnessOf`, `tests/streetcone`).
 
 ### The world map — sharp at every zoom, and your quests on it (the concept artist, 2026-10-09) — DECISION #220
 You asked on 5 Oct for quest markers on the overworld map, and said the map is very often blurry. The prototype (`docs/prototypes/worldmap/`, on auto/concept) is today's game (build s482) with the proposal loaded over its map, photographed as a laptop screen sees it.
@@ -43,16 +83,6 @@ Recommendation: **A.** Oblivion's map shows your active quest's mark wherever yo
 Screens: [opening, today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-settled.png) · [zoomed into Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-town.png) · [the continent](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-continent.png) · [A, close in, marks on the edge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-deep.png) · [A, whole screen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-town.png)
 Michael: **Sharp, and the compass's marks as numbered seals** (A). (10 Oct 2026)
 
-### A guild task that can't be done — a way to hand it back? (the systems builder, Session 675, 2026-10-09) — DECISION #217
-A guild task that can't be finished can't be given back. The critic's s480 run took *Draught to Hermit's Camp* at Ironhaven: the camp has no houses, so nobody could take the draught. Session 675 stops draughts and hearths going to places with no houses, so that cause is gone for new tasks. But a save that already holds such a task is still stuck, and so is any task that breaks some other way. A guild task has no end date unless it is dated, and the hall has no topic to hand one back, so *Any work?* says *You still owe us* for ever and that guild is shut to the character.
-- **A.** *(recommended)* **A topic to hand it back.** While a task is open, the guild head offers *I can't do it.* The task is taken off you with no pay and no mark against your standing, and *Any work?* gives a new one. This is Morrowind's way: a guild never holds you to a job you cannot finish.
-- **B.** **Hand it back, at a cost.** As A, but the next task waits a day (*Come back tomorrow.*), so the topic cannot be used to reroll for the pay you want.
-- **C.** **No topic.** Every task gets an end date like the dated commissions, and the guild takes it back when the date passes.
-
-Recommendation **A**: smallest, and gives the player the decision. The guild head's line in each people's voice would go to the quest writer.
-
-Michael: **A topic to hand it back** (A). (9 Oct 2026)
-
 ### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214
 The draft *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`) makes the last cavern of Act III six authored rooms: the makers' workroom, the wall where they kept count, the empty shrouds, the bench where the work stopped, and the glass, where Varek stands. Today the Root's guard is a generated foe from the deep cavern renamed *The Root — Ogre*, beside a hoard of gold and a sword.
 - **A.** *(recommended)* **A maker's shape.** At the root there is no folklore for the binding to borrow, so it makes the one shape it remembers: its makers. Short, grey, arms a hand too long, script burning at the wrists, sitting at the last bench cutting the stone the makers left half-done. No hoard; a chisel. Working name *an Fíodóir Folamh*, the Empty Weaver. The risk: it looks like the Old Blood, and Varek, and an Old Blood player.
@@ -62,15 +92,6 @@ The draft *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`
 If A, the name too: *an Fíodóir Folamh*, or another. Only the guard's own lines depend on this; the rest of the draft stands either way.
 
 Michael: **A maker's shape, the Empty Weaver** (A). (9 Oct 2026)
-
-### The war hammer still breaks a Wolf in one swing — floor 19, or leave it? (the systems builder, Session 663, 2026-10-08) — DECISION #211
-You took A on #206: the foes' posture floor is now 18, so a Wolf takes two greatclub swings to stagger, not one. My question said that at 18 no foe breaks to one normal swing of any weapon. That was wrong for one weapon: a normal war hammer swing drains 8 × 2.25 = 18, exactly the floor, so the war hammer still staggers a Wolf, a Bandit, a Goblin or a Skeleton with the first swing each time it is on its feet. The greatclub (12), the claymore and the great axe (14) do not.
-- **A.** Raise the floor to 19. Every weapon takes two normal swings at least; nothing else moves (the next foe above the floor is the Forest Troll at 26).
-- **B.** Leave it at 18. The war hammer is the heaviest stagger weapon (weight 7, two hands, ×2.25), and breaking the small foes in one blow is its character.
-
-Recommendation: **A.** It is what you chose #206 for, and one number changes.
-
-Michael: **Raise the floor to 19** (A). (9 Oct 2026)
 
 ### The pause menu on Esc — a leaf with settings, with a challenge setting, or a tab in the book? (the concept artist, 2026-10-08) — DECISION #208
 You asked on 6 Oct for a proper pause menu on Esc, with Save and Load and the settings (look speed, volume by kind, brightness), and maybe a difficulty slider as in the Elder Scrolls. Today Esc in play opens nothing: in a real browser it lets the pointer go and the world plays on. The *Paused · Click to resume* box written for that moment (v62.1) never shows, because the function that shows it, `reconcilePointerLock`, is declared inside `_enterGame` and the loop's `typeof` check never finds it. The only settings are one volume button with three steps (off, quiet, loud) and M for the spoken lines. The prototype (`docs/prototypes/pause/`, on auto/concept) uses the parchment kit and today's numbers on build s477.
@@ -84,18 +105,26 @@ Recommendation: **B.** It is Oblivion's and Skyrim's Esc. The challenge is your 
 
 Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/compare-esc.png) · [A, the leaf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-pause.png) · [A, settings](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-settings.png) · [B, settings with the challenge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/b-settings.png) · [quit asks once](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-quit.png) · [the keys](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/a-keys.png) · [C, the eighth tab](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/pause/c-hub.png)
 
-Michael: **The leaf, plus a challenge setting** (B). (9 Oct 2026)
+Michael: **The leaf, plus a challenge setting** (B). (9 Oct 2026) **The challenge's rule built, Session 684** (the systems builder; `tests/challenge`): `worldState.challenge` and `setChallenge(n)`, the factors at the damage functions. The leaf and the settings sheet are still to be routed.
 
-### A Wolf is staggered by every second greatclub swing — raise the posture floor? (the systems builder, Session 650, 2026-10-08) — DECISION #206
-The critic's s477 play: three Wolves against a level-2 greatclub cost 9 of 200 HP in 30 s. A foe's posture is half its health, scaled by family (wolves and spiders ×0.8 and ×0.7), with a floor of 10. A Wolf (18 HP) sits on that floor. A normal swing drains 8, and the greatclub drains ×1.5, so 12. One normal greatclub swing breaks a Wolf: 1.5 s staggered, taking double damage. Its posture refills when it gets up, so every second swing staggers it again, and the pack spends most of the fight on the ground. A sword (8) takes two swings, fists two. The Snow Wolf (14) and the Dire Wolf (16) take two greatclub swings each.
-- **A.** Raise the floor to 18, so that no foe breaks to one normal swing of any weapon. A Wolf takes 2 greatclub swings or 3 sword swings; a Bandit (15 today) is lifted to 18. Every foe over 36 HP is unchanged.
-- **B.** Beasts get up quicker: wolves and spiders are staggered 0.6 s, not 1.5 s. The floor is unchanged, so the greatclub still breaks a Wolf every second swing, but it is up before you can follow it with more than one blow.
-- **C.** Both A and B.
-- **D.** Leave it. The greatclub is the slow stagger weapon (blocks 40%, 4 weight), and a pack's answer is to flank you.
+### A guild task that can't be done — a way to hand it back? (the systems builder, Session 675, 2026-10-09) — DECISION #217
+A guild task that can't be finished can't be given back. The critic's s480 run took *Draught to Hermit's Camp* at Ironhaven: the camp has no houses, so nobody could take the draught. Session 675 stops draughts and hearths going to places with no houses, so that cause is gone for new tasks. But a save that already holds such a task is still stuck, and so is any task that breaks some other way. A guild task has no end date unless it is dated, and the hall has no topic to hand one back, so *Any work?* says *You still owe us* for ever and that guild is shut to the character.
+- **A.** *(recommended)* **A topic to hand it back.** While a task is open, the guild head offers *I can't do it.* The task is taken off you with no pay and no mark against your standing, and *Any work?* gives a new one. This is Morrowind's way: a guild never holds you to a job you cannot finish.
+- **B.** **Hand it back, at a cost.** As A, but the next task waits a day (*Come back tomorrow.*), so the topic cannot be used to reroll for the pay you want.
+- **C.** **No topic.** Every task gets an end date like the dated commissions, and the guild takes it back when the date passes.
 
-Recommendation: **A.** The brief asks for weighty combat at Dragonwilds' difficulty, and a staggered foe should be a reward you earn, not the state the weakest foes live in. One number changes, and a Wolf still breaks in two greatclub swings, which keeps the weapon's character.
+Recommendation **A**: smallest, and gives the player the decision. The guild head's line in each people's voice would go to the quest writer.
 
-Michael: **Raise the posture floor to 18** (A). (8 Oct 2026)
+Michael: **A topic to hand it back** (A). (9 Oct 2026; issue #217, carried by the producer.) **Done, Session 682** (`tests/handback`): *I can’t do it.* while a task is open and not done; no pay, no mark, *Any work?* gives another. One plain line for the head's answer; the line in each people's voice is owed to the quest writer.
+
+### The war hammer still breaks a Wolf in one swing — floor 19, or leave it? (the systems builder, Session 663, 2026-10-08) — DECISION #211
+You took A on #206: the foes' posture floor is now 18, so a Wolf takes two greatclub swings to stagger, not one. My question said that at 18 no foe breaks to one normal swing of any weapon. That was wrong for one weapon: a normal war hammer swing drains 8 × 2.25 = 18, exactly the floor, so the war hammer still staggers a Wolf, a Bandit, a Goblin or a Skeleton with the first swing each time it is on its feet. The greatclub (12), the claymore and the great axe (14) do not.
+- **A.** Raise the floor to 19. Every weapon takes two normal swings at least; nothing else moves (the next foe above the floor is the Forest Troll at 26).
+- **B.** Leave it at 18. The war hammer is the heaviest stagger weapon (weight 7, two hands, ×2.25), and breaking the small foes in one blow is its character.
+
+Recommendation: **A.** It is what you chose #206 for, and one number changes.
+
+Michael: **Raise the floor to 19** (A). (9 Oct 2026; issue #211, carried by the producer.) **Done, Session 681** (`tests/posturefloor`): `ENEMY_POSTURE_FLOOR` is 19; a Wolf takes two war hammer swings to stagger.
 
 ### The cutter's and the caravel's own hulls (the look builder, Session 643, 2026-10-08) — DECISION #202
 
@@ -123,6 +152,17 @@ The deck you walk stays flat, the wheel and hatch where they are, the nets amids
 Michael: **Both as shown** (A). (8 Oct 2026)
 
 Built, Session 665 (the look builder): both hulls in `shipBake` as the prototype showed them; your own ship takes her class's hull from `worldState.ship.cls`, so nothing more is owed from the systems builder for her (other ships still go by length).
+
+### A Wolf is staggered by every second greatclub swing — raise the posture floor? (the systems builder, Session 650, 2026-10-08) — DECISION #206
+The critic's s477 play: three Wolves against a level-2 greatclub cost 9 of 200 HP in 30 s. A foe's posture is half its health, scaled by family (wolves and spiders ×0.8 and ×0.7), with a floor of 10. A Wolf (18 HP) sits on that floor. A normal swing drains 8, and the greatclub drains ×1.5, so 12. One normal greatclub swing breaks a Wolf: 1.5 s staggered, taking double damage. Its posture refills when it gets up, so every second swing staggers it again, and the pack spends most of the fight on the ground. A sword (8) takes two swings, fists two. The Snow Wolf (14) and the Dire Wolf (16) take two greatclub swings each.
+- **A.** Raise the floor to 18, so that no foe breaks to one normal swing of any weapon. A Wolf takes 2 greatclub swings or 3 sword swings; a Bandit (15 today) is lifted to 18. Every foe over 36 HP is unchanged.
+- **B.** Beasts get up quicker: wolves and spiders are staggered 0.6 s, not 1.5 s. The floor is unchanged, so the greatclub still breaks a Wolf every second swing, but it is up before you can follow it with more than one blow.
+- **C.** Both A and B.
+- **D.** Leave it. The greatclub is the slow stagger weapon (blocks 40%, 4 weight), and a pack's answer is to flank you.
+
+Recommendation: **A.** The brief asks for weighty combat at Dragonwilds' difficulty, and a staggered foe should be a reward you earn, not the state the weakest foes live in. One number changes, and a Wolf still breaks in two greatclub swings, which keeps the weapon's character.
+
+Michael: **A, raise the posture floor to 18** (8 Oct 2026, on the issue). Built in Session 663 (`ENEMY_POSTURE_FLOOR`, `10-player.js`; `tests/posturefloor`). Correction to the question: A said no foe would break to one normal swing of any weapon, but the war hammer drains 8 × 2.25 = 18, so it still breaks a foe on the floor in one swing; the follow-up is DECISION #211 below.
 
 ### The HUD — the wide compass, a ledger and damage numbers (the concept artist, 2026-10-07) — DECISION #198
 You asked on 6 Oct for a bigger, clearer compass, fewer callouts at the bottom centre with damage numbers in their place, and a HUD that doesn't look dated. The prototype (`docs/prototypes/hud/`, on auto/concept) keeps the places you chose on 27 Sep (vitals bottom-left, compass bottom-centre, minimap top-right) on the parchment kit. Under every option the compass is three times as wide (600 against 200) with marks as icons on paper discs: crowded marks join into one with a count, and the one you face is named on a ribbon with its distance. Every option also puts damage numbers at the foe's head, coloured by kind.
@@ -153,6 +193,7 @@ Your 6 Oct sailing notes are written up on one page (`docs/design/the-ship-in-ha
 Recommendation: **B.** The dial is honest with ships that exist, and no hull is simply best: the choice of ship is a choice of what kind of sailor you are, and a reason to cross to the Mark or Aurenne. C can follow when the cargo prices are next tuned.
 
 Michael: **Two new hulls, each sold on one island**. (2026-10-07)
+Built (the hulls' rules): Session 636, `tests/shiphulls`. The page's *the difference less a third* is read as two thirds paid back on a trade down; a refit up pays the difference in worth, as the ladder always did.
 
 ### Lockpicks more common as loot — how many? (the systems builder, Session 623, 2026-10-07) — DECISION #191
 Your playtest of 6 Oct asked for lockpicks to be more common, especially in dungeons. Today a chest or treasure chest rolls three picks at weight 12 of 127 (about 1 roll in 10), an urn one or two picks 15% of the time, and a corpse never. Session 363 counted eight dungeons: 59% of chests are locked, 5–6 locks a dungeon, and a clear costs about 2 / 5 / 13 picks for a hand that misses 1 in 10 / 1 in 5 / 1 in 3, against the 1–2 picks the dungeon's own chests hold. A pick costs 12 gold and nobody starts with one.
@@ -162,6 +203,8 @@ Your playtest of 6 Oct asked for lockpicks to be more common, especially in dung
 - **D** — A's numbers in dungeons only. Overworld chests and barrels stay as they are.
 
 Michael: **Chests and bodies: about 5 picks a dungeon**. (2026-10-07)
+
+*Built, Session 633 (the systems builder, `tests/lootpicks`):* chests and treasure chests roll three picks at weight 30, as A says. The bodies' quarter was A's means to about 5 a dungeon, counted on a handful of humanoid dead; eight of the world's dungeons hold 17 on average (Moumfeirey Charnel 40 skeletons, the Barrow of Woushdaey 20 skeletons and 20 goblins), so at a quarter they add 6.4 picks to the chests' 4.9, about 11 a clear. Built at one body in twenty instead (1–2 picks, keyed on the corpse), which adds 1.3: about 6 a clear. If you meant the quarter whatever the total, it is one number (`PICK_BODY_ODDS`, `14-items.js`).
 
 ### Foes' chase speed and sight — how much faster, how far? (the systems builder, Session 622, 2026-10-07) — DECISION #190
 Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "foes' detection is weak". Both are numbers, so they are yours. Today you walk at 3.83 units a second and sprint at 4.69. An alert foe in the open chases at 1.25–2.0 (a Skeleton 1.25, a Wolf or Troll 2.0); in the dungeon at 0.37–1.2. Only the bosses keep up (the Faolchú 4.0, its lessers 5.0). A foe in the open sees you at 15 units in a 150° cone in front of it (10.5 sneaking), hears you only at 0.5; in the dungeon it sees 3.5. A wandering foe's cone never turns with its walk: it looks the way it was spawned.
@@ -173,6 +216,10 @@ Michael's playtest of 6 Oct: "You outrun everything after a level or two" and "f
 *Session 628:* the wandering cone is fixed, since all four options include it: a wandering foe in the open faces the way it walks and sees that way (`tests/wanderface`). The chase speeds, the sight ranges and the hearing are still yours.
 
 Michael: **Chase near your walk; sharper sight and hearing**. (2026-10-07)
+
+*Built in the open world, Session 634 (`tests/chasesight`):* an alert foe chases at 85–110% of your walk, placed by its own speed (a Forest Troll 3.26, a Skeleton 3.48, a Bandit 3.62, a Wolf 3.92, an Ash Hound or Dire Wolf 4.14); sight 20; hearing 3 walking and 1 sneaking, in the dungeon too. Standing still you are heard only at 0.5, as before. The dungeon's chase and its sight of 8 follow.
+
+*Built underground, Session 635 (`tests/dungeonpace`):* the same band on the dungeon's own table, read from the foe's own speed and not the difficulty's (a Golem 3.26, a Slime 3.39, a Cave Troll 3.41, a Skeleton 3.81, a Kobold Thief 4.14, a Goblin 4.21); sight 8. All of A is built.
 
 ### The wolves and the cave bear — a fiercer face, a heavier build, and how large? (the look builder, Session 620, 2026-10-07) — DECISION #187
 Michael's two mesh-inspector notes of 6 Oct: the wolves are far too small, slender and comical, and the cave bear should sit on par with a grizzly beside them. Measured first, against a bandit's height: in play a Wolf's back stands at 38% of a man's height, a Snow Wolf's 46%, a Dire Wolf's 49%, and the Cave Bear's hump at 77%. A real grey wolf is about 45% and a grizzly about 60–65%, so in play the bear is already grizzly-sized; but the mesh inspector builds every beast at size 1 rather than its size in play (the dragon was fixed the same way in Session 524), so there the wolf looks bigger than in play and the bear only a little larger than the wolf. The prototype (`docs/prototypes/wolfbear/shoot.mjs`, which patches a copy of the wolf's bake; the game is not changed) gives the wolves a new head and build and new sizes:
@@ -221,6 +268,7 @@ Recommendation: **A.** It is Morrowind's book, as you asked, and the book you al
 Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/compare-chronicle.png) · [A, Chronicle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-chronicle.png) · [A, Quests](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-quests.png) · [A, Told](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-told.png) · [A, Due](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/a-due.png) · [B, Told by question](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/b-told.png) · [C, one sheet](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/journal/c-sheet.png)
 
 Michael: **Open book; Told filed by person and place** (A). (2026-10-06)
+Built (the filing): Session 654, `tests/toldpages` — Told keyed by the speaker (or the place, for *What is this place?*), quest talk and a sale's yes not filed, an index by town and a page each in today's style. Owed: the open book itself (leaves, ribbons, one line per quest event in the Chronicle, the Due month).
 
 ### The cavern master's slam: dead outright bare, 2 in armour (the systems builder, Session 610) — DECISION #181
 **The question.** The cavern master's slam (Session 404, your A on #95) was owed *the damage, by play*. Session 610 measured it in 18 real lair caverns at levels 1–20 (`tests/slamdamage`). Nothing was changed. The numbers do not make a fight at either end:
@@ -239,6 +287,8 @@ The same flat subtraction is in every dungeon foe's blow (`74-strikes.js`), so t
 **Recommendation: C now,** because it makes the slam the thing you chose: a blow you must not stand under, the same at level 3 and 20. Then put B to the attack table's session, since the cliff at 40 armour is every dungeon foe's.
 
 Michael: **The slam alone: 45% of your max health** (C). (2026-10-06)
+
+Built, Session 617 (`slamBlow`, `74-strikes.js`): the slam lands for 45% of your max health, 60% with no chest piece, whatever the master and the armour; a ward still takes its share; block, roll and the ring as before. `masterslam` 16/16 and `slamdamage` 6/6 check it. B (armour as a share for every dungeon blow) stays with the attack table.
 
 ### Main's CI is red on 6b01495 — saveui and a shard timeout (the producer, 2026-10-06)
 Main's own check failed after the look merge (6b01495): saveui could not save to an empty slot on shard 3, and shard 5 ran out of time. saveui passes on auto/backlog, which carries all of main's code. A: a flake, let the re-run settle it; if saveui fails twice, the systems builder hardens it. B: the systems builder fixes saveui next run whatever the re-run shows.
@@ -402,12 +452,14 @@ A home is named for its resident (*Séamus's House*), and residents' first names
 
 Recommendation: **A.** It reads like a village talking (*the cooper Séamus*), it needs nothing the generator does not already know, and it is one change in the generator (`83-world-generator.js`) with a test over the nearest towns.
 
-Michael: **The second takes the resident's trade**. (2026-10-05)
+Michael: **A** (the second house takes the resident's trade). (2026-10-06) Built in Session 579; towns have no gates the generator knows of, so the street end reads *at the north end*.
 
 ### The light and robe lines — their numbers (the systems builder, Session 562, 2026-10-05) — DECISION #163
 The question is in full on auto/systems. Today one armour line (a set about 4.8 × the tier's base defence, weight 20, Fortitude from Iron). A light at 60% defence and 40% weight gated by Finesse, each piece 3% harder to notice sneaking; robes (no boots) at 25% defence and a quarter weight gated by Intelligence, +3 max mana a tier a piece; light priced 90%, robes 100%; drops half heavy, a quarter each light and robes (recommended); B weight and defence only; C A plus a sneak and mana cost on the heavy line.
 
 Michael: **Weight vs defence, own attribute, one small virtue**. (2026-10-05)
+
+*Done, Session 564 (the systems builder, `tests/armourlines`):* A as asked: light 60% defence at 40% weight, Finesse, 3% harder to notice sneaking a piece; robes 25% at a quarter, Intelligence, +3 max mana a tier a piece; 90% and 100% of the heavy price; drops half heavy, a quarter each; the light line at the armourer, robes at goods shops. The Mages' Guild's robes followed in Session 566: its head's *Browse your wares.* opens a counter of the four.
 
 ### A dragon lair cut taller, so its wyrm stands at 4.5? (the look builder, Session 558, 2026-10-05) — DECISION #162
 The question is in full on auto/backlog (pictures docs/prototypes/wyrmroof-*.png). A cavern's roof is 3.2, so a lair's wyrm is built at 3.73, not the open world's 4.5. A as it is; B the whole cavern of a dragon's lair at 4.4, the dungeon's height its own (walls, roof, stairs, lights, traps and the camera read it; other dungeons stay 3.2; one session); C only the master's hall at 4.4, a vaulted room the doorways step up to (recommended).

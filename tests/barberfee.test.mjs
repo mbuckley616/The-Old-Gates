@@ -33,7 +33,7 @@ await page.evaluate(() => { forceTime(12); const h = _B; px = h.exitX; pz = h.ex
 await page.waitForTimeout(4000); await g.hide();
 const box = await page.evaluate(() => { const X = WORLD.intBox, h = _B; if (!X) return null; const W = h.intW, D = h.intD;
   const under = FOOTHOLDS.filter(f => f.y > .2 && Math.hypot((f.x0 + f.x1) / 2 - X.x, (f.z0 + f.z1) / 2 - X.z) > .05 && X.x + .35 > f.x0 && X.x - .35 < f.x1 && X.z + .35 > f.z0 && X.z - .35 < f.z1), onFurn = under.length > 0, fh = under.map(f => [f.x0, f.x1, f.z0, f.z1, f.y].map(v => +v.toFixed(2)));
-  px = X.x; pz = X.z + .8; jumpY = 0; const standClear = !intSolidAt(px, pz, .1); const prompt = WORLD.boxPrompt();
+  px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const standClear = !intSolidAt(px, pz, .1); const prompt = WORLD.boxPrompt();
   const site = WORLD.settle.get(h.siteId) ? WORLD.settle.get(h.siteId).site : SITE[h.siteId]; const p = WORLD.prosperity(site);
   return { kind: X.kind, type: X.type, x: X.x, z: X.z, W, D, onFurn, fh, standClear, prompt, mean: WORLD.boxCoins(p, X.type), goods: WORLD.boxCoins(p, 'misc'), lock: lockPins(h) }; });
 console.log(JSON.stringify(box));

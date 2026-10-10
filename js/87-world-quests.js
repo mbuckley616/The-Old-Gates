@@ -13,8 +13,14 @@
     }
     pirateBoardersHold();
     // keep boarders aboard
-    const p=SHIP.plat;for(let i=BOARDERS.length-1;i>=0;i--){const e=BOARDERS[i];if(e.dead){BOARDERS.splice(i,1);continue;}if(!e._lx){e._lx=SHIP.x;e._lz=SHIP.z;}e.x+=SHIP.x-e._lx;e.z+=SHIP.z-e._lz;e._lx=SHIP.x;e._lz=SHIP.z;e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));e.homeX=SHIP.x;e.homeZ=SHIP.z;}
+    const p=SHIP.plat;for(let i=BOARDERS.length-1;i>=0;i--){const e=BOARDERS[i];if(e.dead){BOARDERS.splice(i,1);DECK_DEAD.push(e);continue;}if(!e._lx){e._lx=SHIP.x;e._lz=SHIP.z;}e.x+=SHIP.x-e._lx;e.z+=SHIP.z-e._lz;e._lx=SHIP.x;e._lz=SHIP.z;e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));e.homeX=SHIP.x;e.homeZ=SHIP.z;}
   }
+  // S613 — a boarder killed on your deck lies there and sails with her (carryDead, 85-world-sea.js) until you are 700 units off
+  const DECK_DEAD=[];let _deckPose=null;
+  function tickDeckDead(){if(!DECK_DEAD.length){_deckPose=null;return;}
+    if(!SHIP.mesh||!SHIP.plat){for(const e of DECK_DEAD.splice(0))if(!e._afloat)purgeBody(e);_deckPose=null;return;}
+    if(_deckPose)carryDead(DECK_DEAD,SHIP.plat,SHIP.x,SHIP.z,SHIP.yaw,_deckPose.x,_deckPose.z,_deckPose.yaw);_deckPose={x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw};
+    for(let i=DECK_DEAD.length-1;i>=0;i--){const e=DECK_DEAD[i];if(e._afloat){DECK_DEAD.splice(i,1);continue;}if(Math.hypot(e.x-px,e.z-pz)>BODY_FAR){DECK_DEAD.splice(i,1);purgeBody(e);}}}
   // S399 — leave your own deck while boarders stand on it and they take half the hold, then go back over the rail to their ship
   function pirateBoardersHold(){if(PHP<=0||!worldState.ship||!SHIP.plat||deckOff(SHIP.plat)<1.5)return;const live=BOARDERS.filter(e=>!e.dead);if(!live.length)return;
     const took=pirateTake();if(!took.length)return;const o=live[0]._from,home=!!(o&&OTHER.includes(o));
@@ -23,16 +29,36 @@
       else{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}}
     const what=home?pirateStow(o,took):took.map(k=>`a ${CARGO_GOODS[k].n.toLowerCase()}`).join(', ');
     showMsg(`They hold your deck, take ${what} from the hold and go back over the rail.`,'#ff8060');}
+  // S615 (Michael's sailing playtest, 6 Oct: "a pirate ship rammed him and the ships completely overlapped") — a hull is
+  // her own deck's outline, not a circle: the deck's breadth (`userData.deck.at`) sampled down her length from stern to
+  // prow, a convex outline turned and placed with her. Two hulls touch where the outlines overlap (the separating-axis
+  // test) and are pushed apart along the axis of least overlap, by all of it. The old circle (62% of the class lengths, with
+  // the deck in truth longer and its prow forward of the middle) let a bow run five units into a hull, and held two hulls
+  // alongside eight units apart, too far to step across.
+  const HULL_POLY=new Map();
+  function hullLocal(h){const m=h.o.mesh,d=m&&m.userData.deck;const key=d||`${h.L}x${h.W}`;let P=HULL_POLY.get(key);if(P)return P;P=[];
+    if(d){const n=14,zs=[];for(let i=0;i<=n;i++)zs.push(d.z0+(d.z1-d.z0)*i/n);for(const z of zs){const w=d.at(z);if(w>.02)P.push([w,z]);}if(!P.length||d.at(d.z1)<=.02)P.push([0,d.z1]);
+      for(let i=zs.length-1;i>=0;i--){const w=d.at(zs[i]);if(w>.02)P.push([-w,zs[i]]);}if(d.at(d.z0)<=.02)P.push([0,d.z0]);}
+    else{const l=h.L/2,w=h.W/2;P=[[w,-l],[w,l],[-w,l],[-w,-l]];}
+    HULL_POLY.set(key,P);return P;}
+  function hullReach(h){const P=hullLocal(h);if(P._r==null)P._r=Math.max(...P.map(([x,z])=>Math.hypot(x,z)));return P._r;}
+  function hullWorld(h){const ry=(h.o.yaw||0)+Math.PI,c=Math.cos(ry),s=Math.sin(ry);return hullLocal(h).map(([lx,lz])=>[h.o.x+lx*c+lz*s,h.o.z-lx*s+lz*c]);}
+  function hullContact(a,b){const A=hullWorld(a),B=hullWorld(b);let pen=1e9,gap=-1e9,ux=0,uz=0;
+    for(const P of [A,B])for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];let nx=q[1]-p[1],nz=-(q[0]-p[0]);const l=Math.hypot(nx,nz);if(l<1e-6)continue;nx/=l;nz/=l;
+      let a0=1e9,a1=-1e9,b0=1e9,b1=-1e9;for(const v of A){const t=v[0]*nx+v[1]*nz;if(t<a0)a0=t;if(t>a1)a1=t;}for(const v of B){const t=v[0]*nx+v[1]*nz;if(t<b0)b0=t;if(t>b1)b1=t;}
+      const o=Math.min(a1,b1)-Math.max(a0,b0);if(-o>gap)gap=-o;if(o<pen){pen=o;const sg=(b0+b1)-(a0+a1)<0?-1:1;ux=nx*sg;uz=nz*sg;}}
+    return {pen:Math.max(0,pen),gap:Math.max(0,gap),ux,uz};}
   function tickHullCollisions(dt){
     const hulls=[];if(SHIP.mesh)hulls.push({o:SHIP,L:SHIP.L,W:SHIP.W,mine:true});for(const o of OTHER)hulls.push({o,L:o.L||13,W:o.W||4.4});
-    for(let i=0;i<hulls.length;i++)for(let j=i+1;j<hulls.length;j++){const a=hulls[i],b=hulls[j];const dx=b.o.x-a.o.x,dz=b.o.z-a.o.z;const d=Math.hypot(dx,dz)||.01;const minD=(a.L+b.L)/2*.62;
+    for(let i=0;i<hulls.length;i++)for(let j=i+1;j<hulls.length;j++){const a=hulls[i],b=hulls[j];if(Math.hypot(b.o.x-a.o.x,b.o.z-a.o.z)>hullReach(a)+hullReach(b)+1.5){if(a.mine)b.o._touch=false;continue;}
+      const C=hullContact(a,b);
       // S411 — a ram: on first touch your hull takes the closing speed × 3, half if your bow is on her; they part before it counts again
-      if(a.mine){if(d<minD&&!b.o._touch){b.o._touch=true;const ux=dx/d,uz=dz/d,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
+      if(a.mine){if(C.pen>0&&!b.o._touch){b.o._touch=true;const ux=C.ux,uz=C.uz,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
           const close=(fa[0]*(a.o.speed||0)-fb[0]*(b.o.speed||0))*ux+(fa[1]*(a.o.speed||0)-fb[1]*(b.o.speed||0))*uz;const bow=(a.o.speed||0)>.5&&fa[0]*ux+fa[1]*uz>.7;
           const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;}
           if(close>.5){const w=shipWear(close*3*(bow?.5:1),0);if(w&&w.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w.hull}.`,'#ff8060');a._bump=performance.now();}}}
-        else if(d>minD+1)b.o._touch=false;}
-      if(d<minD){const push=(minD-d)*.5;const ux=dx/d,uz=dz/d;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
+        else if(C.gap>1)b.o._touch=false;}
+      if(C.pen>0){const push=C.pen*.5;const ux=C.ux,uz=C.uz;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
   }
 
   // ═══ DIALOG II (Session J) ═══════════════════════════════════════════
@@ -46,20 +72,22 @@
     warm:  {greet:["Well now — you look half frozen. Come closer.","Good to see a new face. Truly.","Sit, sit. You've walked a way."],yes:"Of course.",no:"I'd rather not, if it's all the same.",bye:["Safe roads, friend.","Come back and tell me how it went."]},
     gruff: {greet:["What.","Say it, then.","I've work to do. Be quick."],yes:"Fine.",no:"No.",bye:["Go on, then.","Mind the door."]},
     nervous:{greet:["Oh — you startled me.","Is something wrong? You look like something's wrong.","Keep your voice down, would you?"],yes:"I suppose.",no:"I don't think that's wise.",bye:["Careful out there. Please.","Don't tell anyone I said anything."]},
-    pious: {greet:["Blessings on the road that brought you.","The Light keeps this door.","You carry weight, traveller. Set it down a moment."],yes:"As it should be.",no:"That isn't for me to give.",bye:["Walk in light.","May the ground hold under you."]},
+    pious: {greet:["Blessings on the road that brought you.","The Weaver keeps this door.","You carry weight, traveller. Set it down a moment."],yes:"As it should be.",no:"That isn't for me to give.",bye:["Go with the Weaver.","May the ground hold under you."]},
     sly:   {greet:["Now here's someone with coin in their step.","Ask me anything. Some answers cost.","You've the look of trouble. I like trouble."],yes:"Naturally.",no:"Ah. No.",bye:["Don't get caught.","We never spoke."]},
     weary: {greet:["Another one.","Mm. What is it.","I was young once, you know. Ask your question."],yes:"If you must.",no:"No. Not today.",bye:["Go well. Or go. Either.","Shut the door behind you."]},
   };
   const TEMPER_IDS=Object.keys(TEMPERS);
-  const WORRIES=["the wolves came right up to the fence last winter","the tithe went up again and nobody says why","my brother took the king's coin and never wrote","the well's gone brackish and the elder does nothing","there's a light in the old ruin some nights","the road hasn't seen a merchant cart in a month","the priest talks less than he used to","the fish have moved off the shallows"];
+  const WORRIES=["the wolves came right up to the fence last winter","the dues went up again and nobody says why","my brother went for a soldier and never wrote","the well's gone brackish and the elder does nothing","there's a light in the old ruin some nights","the road hasn't seen a merchant cart in a month","the priest talks less than he used to","the fish have moved off the shallows"];
   const WISHES=["to see the capital before I die","a roof that doesn't leak","one good harvest, just one","to hear from my daughter","a quiet year","to go to sea again","to be left alone, mostly"];
   const TRADES_BY_ROLE={Villager:['farmer','weaver','cooper','fisher','shepherd','thatcher','midwife','carter','beekeeper','net-mender'],Guard:['soldier'],Smith:['smith'],Armourer:['armourer'],Apothecary:['apothecary'],Merchant:['trader'],Innkeeper:['innkeeper'],Priest:['priest'],Harbourmaster:['harbourmaster'],Shipwright:['shipwright']};
   function temperOf(name){const h=String(name).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,5);return TEMPER_IDS[h%TEMPER_IDS.length];}
-  function metCount(name){return (worldState.met&&worldState.met[name])||0;}
-  function noteMet(name){(worldState.met||(worldState.met={}))[name]=metCount(name)+1;}
+  // S649 — keyed by the person, not the first name: name, town and the town's number for a second of that name (_twin)
+  function metKey(def,site){return def.name+'|'+(def._siteId||(site&&site.id)||'')+'|'+(def._twin||0);}
+  function metCount(key){return (worldState.met&&worldState.met[key])||0;}
+  function noteMet(key){(worldState.met||(worldState.met={}))[key]=metCount(key)+1;}
   function bioFor(site,reg,r,role,name){
-    const cells=[...CELLS.values()].filter(c=>c.type!=='sea');const other=cells.length?pick(r,pick(r,cells).sites.filter(t=>t.pad>0&&t.id!==site.id)):null;
-    const born=r()<.55?site.name:(other?other.name:site.name);const years=3+Math.floor(r()*40);
+    const cells=[...CELLS.values()].filter(c=>c.type!=='sea');const other=cells.length?pick(r,pick(r,cells).sites.filter(t=>t.pad>0&&t.id!==site.id&&(KIND_PLAN[t.kind]||{n:[0]}).n[0]>0)):null; /* S698 — born in a place people live (KIND_PLAN), not a lair or a ruin */
+    const born=r()<.55?site.name:(other?other.name:site.name);const years=3+Math.floor(r()*40)+(born===site.name?15:0); /* S698 — the born-here count their age, so no fewer than eighteen (a priest said *Born here. 7 years*); the same draw */
     const names=NAMES[reg]||NAMES.irish;const spouse=r()<.5?pick(r,r()<.5?names.m:names.f):null;const kids=r()<.5?1+Math.floor(r()*3):0;
     const trade=pick(r,TRADES_BY_ROLE[role]||TRADES_BY_ROLE.Villager);
     return {born,years,spouse,kids,trade,worry:pick(r,WORRIES),wish:pick(r,WISHES)};
@@ -99,7 +127,7 @@
     const base=[];
     const t=[];
     t.push({label:'What is this place?',response:siteBlurb(site)+` ${lord.title} ${lord.name} has the say here — ${lord.style}.`});
-    t.push({label:'Who are you?',response:(bio.born===site.name?`Born here. ${bio.years} years, man and boy.`:`I came from ${bio.born}, ${bio.years} years back.`)+` I'm a ${bio.trade}.`+(bio.spouse?` Married to ${bio.spouse}${bio.kids?`, ${bio.kids} ${bio.kids>1?'children':'child'}`:''}.`:'')+` If I want anything it's ${bio.wish}.`,then:[{label:'Anything troubling you?',response:`Since you ask — ${bio.worry}. ${T.no==='No.'?"Not that it's your business.":"Nobody listens, so."}`}]});
+    t.push({label:'Who are you?',response:(bio.born===site.name?`Born here, and here these ${bio.years} years.`:`I came from ${bio.born}, ${bio.years} years back.`)+` I'm ${aOrAn(bio.trade)} ${bio.trade}.`+(bio.spouse?` Married to ${bio.spouse}${bio.kids?`, ${bio.kids} ${bio.kids>1?'children':'child'}`:''}.`:'')+` If I want anything it's ${bio.wish}.`,then:[{label:'Anything troubling you?',response:`Since you ask — ${bio.worry}. ${T.no==='No.'?"Not that it's your business.":"Nobody listens, so."}`}]});
     t.push({label:'Where do the roads go?',response:def._roadLine});
     t.push({label:'Anything dangerous nearby?',response:def._doorLine,then:[{label:'What would you do about it?',response:pick(Math.random,["Leave it be. That's what I'd do.","Hire the Fighters' Guild. That's what they're for.","Go in daylight, with a friend, and don't touch the walls.","Nothing. It's been there longer than us."])}]});
     t.push({label:'Any news?',get response(){const live=liveRumours(site);return live.length&&Math.random()<.7?pick(Math.random,live):pick(Math.random,RUMORS[reg]||RUMORS.irish);}});
@@ -110,7 +138,7 @@
     // ── depth: every role gets a full set in each folder ──
     const [ni,nj]=cellOf(site.x,site.z);const NAT=nationOf(ni,nj);const P=PEOPLES[def.people||NAT.people]||PEOPLES.gatelander;
     const shopsHere=(SETTLE.get(site.id)||{houses:[]}).houses.filter(h=>h.type!=='home').map(h=>h.type);const have=k=>shopsHere.includes(k);
-    t.push({cat:'you',label:'What do you do here?',response:`I'm a ${bio.trade}. ${bio.trade==='farmer'?'Barley, when it comes up. Mud, when it doesn\'t.':bio.trade==='fisher'?'Nets in the dark, fish in the morning, if the Sea\'s in the mood.':bio.trade==='smith'?'Nails, mostly. Everyone wants swords; everyone needs nails.':bio.trade==='soldier'?'I stand where I\'m put and I don\'t sleep much.':bio.trade==='priest'?'I bury people and tell the rest not to worry. One of those I\'m good at.':bio.trade==='innkeeper'?'Beds, ale, and other people\'s trouble.':'The same as my mother did, and hers.'}`});
+    t.push({cat:'you',label:'What do you do here?',response:`I'm ${aOrAn(bio.trade)} ${bio.trade}. ${bio.trade==='farmer'?'Barley, when it comes up. Mud, when it doesn\'t.':bio.trade==='fisher'?'Nets in the dark, fish in the morning, if the Sea\'s in the mood.':bio.trade==='smith'?'Nails, mostly. Everyone wants swords; everyone needs nails.':bio.trade==='soldier'?'I stand where I\'m put and I don\'t sleep much.':bio.trade==='priest'?'I bury people and tell the rest not to worry. One of those I\'m good at.':bio.trade==='innkeeper'?'Beds, ale, and other people\'s trouble.':'The same as my mother did, and hers.'}`});
     t.push({cat:'you',label:'Family?',response:bio.spouse?`${bio.spouse}. ${bio.kids?`${bio.kids} ${bio.kids>1?'children':'child'}, and they eat like it.`:'No children. We tried.'}`:pick(Math.random,["Not anymore.","Never got round to it. The work doesn't leave much.","A brother somewhere. We don't write."])});
     t.push({cat:'you',label:'How long have you lived here?',response:bio.born===site.name?`All my life. ${bio.years} years, if you're counting. I stopped.`:`${bio.years} years, since ${bio.born}. It's home now. Mostly.`});
     t.push({cat:'you',label:'What do you want out of life?',response:`${bio.wish.charAt(0).toUpperCase()+bio.wish.slice(1)}. ${pick(Math.random,["Ask me again when I'm old.","Is that so much?","Don't laugh.","You asked."])}`});
@@ -120,7 +148,7 @@
     t.push({cat:'place',label:'What can I buy here?',response:shopsHere.length?`${[...new Set(shopsHere.map(k=>({forge:'the smith',weapon:'the smith',armoury:'the armourer',armor:'the armourer',apothecary:'the apothecary',potion:'the apothecary',goods:'the general goods',misc:'the general goods',inn:'the inn',church:'the church',shipwright:'the shipwright',guild_f:"the Fighters' Guild",guild_m:"the Mages' Guild",castle:'the keep',keep:'the keep'})[k]||k))].join(', ')}. ${prosperity(site)<40?'Not much on the shelves lately.':'Fair prices, mostly.'}`:'Nothing. We trade with each other and with the carts, when carts come.'});
     t.push({cat:'place',label:'What\u2019s the law here?',response:NAT.people==='markman'?"The Captain's word, and a duel if you don't like it. Fair, in its way.":NAT.people==='aurennais'?"The Compact's. Everything's written, everything's tithed, and the Prior reads it back to you slowly.":"The Crown's. Patrols on the roads, a magistrate twice a year, and the old gates are royal property — so they say."});
     t.push({cat:'place',label:'The nearest old gate?',get response(){const d=nearestSigilDoorFrom(site);const doors=(getCell(ni,nj).doors||[]).map(e=>({e,p:dungeonWorldPos[e.seed]||e})).sort((a,b)=>Math.hypot(a.p.x-site.x,a.p.z-site.z)-Math.hypot(b.p.x-site.x,b.p.z-site.z));const n=doors[0];return n?`${n.e.canonicalName||(typeof dungeonName==='function'?dungeonName(n.e.seed,n.e.theme):'An old gate')}, ${compassWord(n.p.x-site.x,n.p.z-site.z)} of here. ${d&&d.seed===n.e.seed?'There\'s a warm stone in it, they say.':'Leave it be, unless you\'re the sort who doesn\'t.'}`:'None near. Count yourself lucky.';}});
-    t.push({cat:'place',label:'How are things here, honestly?',get response(){return `${stateLine(site)}. ${prosperity(site)>=60?'Better than my father saw.':prosperity(site)>=35?'We get by.':'You can see for yourself.'}`;}});
+    t.push({cat:'place',label:'How are things here, honestly?',get response(){return `${stateSaid(site).replace(/^./,c=>c.toUpperCase())}. ${prosperity(site)>=60?'Better than my father saw.':prosperity(site)>=35?'We get by.':'You can see for yourself.'}`;}});
     t.push({cat:'news',label:`What of ${NAT.crown}?`,response:NAT.people==='markman'?"The League? Captains arguing in a hall. They agree on one thing — the Crown's ships shouldn't be in our strait.":NAT.people==='aurennais'?"The Compact tithes and the Church blesses the tithe. Between them they own the sea. Don't say I said it.":"The Crown wants the gates. Says they're royal. My grandmother said they were the Weaver's. Neither of them's ever been down one."});
     t.push({cat:'news',label:'Any word from the sea?',get response(){const pirates=OTHER.some(o=>o.kind==='pirate');return pirates?"Black sails, this week. The fishermen came in early and won't say why.":pick(Math.random,["The ferries are running. That's news enough.","A whale off the point, they say. Big as a church.","Quiet. Too quiet for the harbourmaster, who likes a tithe."]);}});
     t.push({cat:'news',label:'How\u2019s trade?',get response(){const R=worldState.routes||{};const open=Object.keys(R).filter(k=>!R[k].broken&&(R[k].a===site.id||R[k].b===site.id)).length;return open?`A cart in the morning, a cart at night. ${open>1?'Two routes now.':'One route.'} Prices are kinder for it.`:prosperity(site)>=50?"Steady. We could do with a route to somewhere, if anyone with coin were listening.":"What trade. The road's a road; nothing comes down it.";}});
@@ -136,7 +164,7 @@
     const T=TEMPERS[def.temper];
     Object.defineProperty(def,'topics',{configurable:true,get(){
       // top level: the NPC's own business (shop, ferries, quests, purchases) + three folders
-      const extra=[...(def._extra||extraTopics||[]),...(def._extraFn?def._extraFn():[])];
+      const extra=[...(def._extra||extraTopics||[]),...(def._extraFn?def._extraFn():[])].filter(t=>!t.avail||t.avail()); /* S586 — a topic with avail shows only while it has something to do (Michael, 5 Oct: no It's done. with nothing to hand in) */
       const ferries=extra.filter(t=>/^Passage to/.test(t.label)),rest=extra.filter(t=>!/^Passage to/.test(t.label));
       const rich=richTopics(site,reg,r,role,name,def);
       const folder=(label,items,say)=>({label,folder:true,response:say||pick(Math.random,['Ask, then.','Go on.','What would you know?','Well?']),follow:items});
@@ -156,7 +184,7 @@
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
-    Object.defineProperty(def,'greeting',{configurable:true,get(){const n=metCount(def.name);const P=PEOPLES[def.people||'gatelander'];const pg=peopleGreeting(def);const pp=playerPeople();const asideOK=n===0&&pg&&(pp==='oldblood'||Math.random()<.5);const aside=asideOK?(pp==='oldblood'?' '+pg:(pp===def.people?' '+pg:` You're ${pp==='aurennais'?'Aurennais':pp==='markman'?'a Markman':'a Gatelander'}, by the look of you. ${pg}`)):'';const g=(n>0?pick(Math.random,["Back again?","You. Good.","I remember you.","Thought I'd seen the last of you."]):(Math.random()<.5?pick(Math.random,P.greet):pick(Math.random,T.greet)))+aside;const rank=worldState.guild&&(worldState.guild.guild_f.done>=3||worldState.guild.guild_m.done>=3)?" Guildsman.":"";const owner=worldState.owned&&Object.values(worldState.owned).some(o=>o.site===site.id)?" Neighbour.":"";noteMet(name);return [g+owner+rank];}});
+    Object.defineProperty(def,'greeting',{configurable:true,get(){const n=metCount(metKey(def,site));const P=PEOPLES[def.people||'gatelander'];const pg=peopleGreeting(def);const pp=playerPeople();const asideOK=n===0&&pg&&(pp==='oldblood'||Math.random()<.5);const aside=asideOK?(pp==='oldblood'?' '+pg:(pp===def.people?' '+pg:` You're ${pp==='aurennais'?'Aurennais':pp==='markman'?'a Markman':'a Gatelander'}, by the look of you. ${pg}`)):'';const g=(n>0?pick(Math.random,["Back again?","You. Good.","I remember you.","Thought I'd seen the last of you."]):(Math.random()<.5?pick(Math.random,P.greet):pick(Math.random,T.greet)))+aside;const rank=worldState.guild&&(worldState.guild.guild_f.done>=3||worldState.guild.guild_m.done>=3)?" Guildsman.":"";const owner=worldState.owned&&Object.values(worldState.owned).some(o=>o.site===site.id)?" Neighbour.":"";noteMet(metKey(def,site));return [g+owner+rank];}});
     return def;
   }
 
@@ -189,11 +217,12 @@
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
   // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
   // from this site that is not a service, and a service asks for a fresh one (`fresh`) to dress in its own words
-  function townQuestFor(site,force,fresh){
+  function townQuestFor(site,force,fresh,key){
     const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
-    const lord=lordFor(site);const r=Math.random;const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj);
+    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */
+    const lord=lordFor(site);const r=seededRng('tq',key||id);const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj); /* S678 — the job's kind, place and pay roll on its own id (a faction's service on the service's), not Math.random */
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
-    const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */const giver=`${lord.title} ${lord.name}`;
+const giver=`${lord.title} ${lord.name}`;
     const biome=dominantRegion(site.x,site.z).r.biome;
     if(kind==='cull'){const t=({tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'}[biome])||'Wolf';const n=4+tier;return {id,giver,giverSite:site.id,title:`${plural(2,t)} at ${site.name}`,desc:`${lord.name}: "${plural(2,t)} have been at the flocks. Kill ${n} of them within sight of the walls and the ${site.kind} will pay."`,objective:`Kill ${n} ${plural(n,t)} near ${site.name}`,kind,data:{target:t,need:n,have:0,x:site.x,z:site.z,radius:520},reward};}
     if(kind==='retrieve'){const doors=nearDoors(site,700,false);const e=doors[Math.floor(r()*Math.min(3,doors.length))];if(e){const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item},reward:reward+20};}}
@@ -206,8 +235,8 @@
     const _st=TS(site);if(_st.flags.occupied!=null){const by=nationName(_st.occupier);return [{label:'Who holds the town?',response:`${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`}];}
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
-            {label:'It\u2019s done.',quest:true,fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
-            {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
+            {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+            {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
   // ── hooks ──
@@ -243,8 +272,11 @@
     for(const t of SITES){if(!t.name||t.kind==='portal')continue;const d=Math.hypot(t.x-px,t.z-pz);if(d>R||d<6)continue;out.push({x:t.x,z:t.z,glyph:POI_GLYPH[t.kind]||'✧',label:t.name,found:!!discovered(t.id),d,place:true});}
     for(const e of CELL_DOORS){const p=dungeonWorldPos[e.seed]||e;const d=Math.hypot(p.x-px,p.z-pz);if(d>R||d<6)continue;out.push({x:p.x,z:p.z,glyph:e.kind==='fort_door'?'⛫':'◠',label:e.canonicalName||'an old gate',found:!!discovered('door_'+e.seed),d,place:true});}
     return out;}
-  function compassMarkers(){
-    const out=[];if(activeZoneId!=='world')return out;
+  function compassMarkers(){if(activeZoneId!=='world')return [];return liveMarkers();}
+  let _liveMk=null; /* S587 — the map asks once a draw, not once a cell */
+  // S587 — the live objectives wherever you are: the compass shows them in the open world, the map at any time
+  function liveMarkers(){
+    const out=[];
     const push=(x,z,col,label,glyph)=>{if(x!=null&&z!=null)out.push({x,z,col,label,glyph});};
     // v80 S138 — the place someone gave you directions to
     wayTick();if(WAY){if(WAY.follow&&WAY.follow.g&&WAY.follow.g.visible){WAY.x=WAY.follow.g.position.x;WAY.z=WAY.follow.g.position.z;}push(WAY.x,WAY.z,'#f6d860',WAY.label,WAY.glyph);}
@@ -280,6 +312,10 @@
   // map markers for active objectives
   function questMarkers(cell){const out=[];{const tpush=(x,z,col,label)=>{if(x!=null&&x>=cell.ox&&x<cell.ox+SIZE&&z>=cell.oz&&z<cell.oz+SIZE)out.push({id:'q_tut_'+label,name:label,kind:'quest',x,z,sub:'A lesson',major:true});};try{tutMarkers(tpush);}catch(e){}}const S=worldState.story;if(S&&S.act>=2){const push=(x,z,name,sub)=>{if(x>=cell.ox&&x<cell.ox+SIZE&&z>=cell.oz&&z<cell.oz+SIZE)out.push({id:'q_story_'+name,name,kind:'quest',x,z,sub,major:true});};if(S.step==='proof'){for(const nk in S.gates){const g=S.gates[nk];if(!S.proof[nk])push(g.x,g.z,g.name,'An etched gate');}}if(S.step==='courier'){const pb=_anch&&_anch.blackhand;if(pb)push(pb.x,pb.z,pb.name,'Oswy Blackhand');}if(S.step==='ashfeld'){const f=siteAnywhere('ashfeld');if(f)push(f.x,f.z,'The Ashfeld','Varek');}if(S.step==='root'){const r=_anch&&_anch.root;if(r)push(r.x,r.z,'The Root','What was bound');}}const rub=worldState.rubbings||{};for(const seed in rub){const p=dungeonWorldPos[seed];if(!p)continue;if(p.x>=cell.ox&&p.x<cell.ox+SIZE&&p.z>=cell.oz&&p.z<cell.oz+SIZE)out.push({id:'q_rub_'+seed,name:rub[seed],kind:'quest',x:p.x,z:p.z,sub:'A warm stone — from a rubbing',major:true});}for(const q of qActive()){if(q.done)continue;const d=q.data;if(d&&d.x!=null&&d.x>=cell.ox&&d.x<cell.ox+SIZE&&d.z>=cell.oz&&d.z<cell.oz+SIZE)out.push({id:'q_'+q.id,name:q.title,kind:'quest',x:d.x,z:d.z,sub:q.objective,major:true});}
     const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t||taskDone(t))continue;const x=t.sx!=null?t.sx:t.x!=null?t.x:(t.siteId?(siteAnywhere(t.siteId)||{}).x:null),z=t.sz!=null?t.sz:t.z!=null?t.z:(t.siteId?(siteAnywhere(t.siteId)||{}).z:null);if(x==null)continue;if(x>=cell.ox&&x<cell.ox+SIZE&&z>=cell.oz&&z<cell.oz+SIZE)out.push({id:'gq_'+t.id,name:t.short,kind:'quest',x,z,sub:GUILD_DEF[g].name+': '+t.desc.slice(0,60)+'…',major:true});}
+    // S587 — and everything else the compass marks (a lord's job, a faction's service, a rubbing to read, the story's next giver,
+    // the place you were given directions to), unless one of the marks above stands there already
+    try{const now=performance.now();if(!_liveMk||now-_liveMk.t>250)_liveMk={t:now,v:liveMarkers()};for(const m of _liveMk.v){if(!(m.x>=cell.ox&&m.x<cell.ox+SIZE&&m.z>=cell.oz&&m.z<cell.oz+SIZE))continue;if(out.some(o=>Math.hypot(o.x-m.x,o.z-m.z)<6))continue;
+      const lb=m.label||'';out.push({id:'q_m_'+lb+'_'+Math.round(m.x)+'_'+Math.round(m.z),name:lb.charAt(0).toUpperCase()+lb.slice(1),kind:'quest',x:m.x,z:m.z,sub:m.col==='#f6d860'?'Where you were told':'On your compass',major:true});}}catch(e){}
     return out;}
   // ── guild commissions at the rank milestones ──
   const COMMISSIONS={
@@ -299,10 +335,33 @@
   const POI_KINDS=['glade','shrine','lair','tower','bcamp'];
   const POI_PAD={glade:52,shrine:28,lair:38,tower:26,bcamp:40};
   // a cavern behind every lair's mouth: a portal record the engine builds as a dungeon; the beast outside still guards it
-  function lairDoorFor(site,c){const seed=100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);const biome=dominantRegion(site.x,site.z).r.biome;
-    const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';
+  // S699 — a lair's beast, one answer for the beast at the crag and the master below: by the biome where the lair stands, read
+  // when asked (the door's lair.boss is read when its cell is first made, and can disagree: Carrigowen, in fen and never moved,
+  // has a Marsh Hag at the crag and *Cave Bear* on its door), and off those biomes by the lair's own hash. The beast at the crag
+  // rolled Cave Bear or Ogre on its build stream, the master on this hash.
+  function keepSiteChest(ch){if(!ch||!ch._keepSite)return;(worldState.siteChests||(worldState.siteChests={}))[ch._keepSite]=ch.items;} // S700 — the named action: a site's chest, taken from, keeps what is left
+  function lairSeed(site){return 100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);}
+  // S701 — the biome from the regions of the lair's cell and its eight neighbours, not the live REGIONS (the loaded cells' only:
+  // the same lair read Marsh Hag or Cave Bear by which cells were loaded). Never called while a cell is being made (getCell).
+  // S712 — a lair on an islet in open sea has no region in its nine cells, and fell back to the live dominantRegion: the ring now widens
+  // a cell at a time, to three, over the cells' own regions, and is the coast if none is found.
+  function lairBiome(site){const [ci,cj]=cellOf(site.x,site.z);const regs=[];
+    for(let k=1;k<=3&&!regs.length;k++)for(let i=ci-k;i<=ci+k;i++)for(let j=cj-k;j<=cj+k;j++){const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
+    if(!regs.length)return 'coast';let best=null,bw=0,near=null,nd=1e9;
+    for(const r_ of regs){const d=Math.hypot(site.x-r_.x,site.z-r_.z);const w=Math.max(0,1-d/r_.r);if(w>bw){bw=w;best=r_;}if(d/r_.r<nd){nd=d/r_.r;near=r_;}}
+    return (best||near).biome;}
+  function lairBeast(site){const seed=lairSeed(site),biome=lairBiome(site);
+    return biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';}
+  // S702 — the cavern's old gate stands in the lair's own pad, 16 south of its centre: the gate faces -z, so it looks back at the crag's mouth
+  // and the beast before it (it was 6 north, behind the crag, and the placement pushed it out of the pad, 46 off and facing away).
+  // S712 — the cavern's theme and its stored beast are read when asked, by lairBiome and lairBeast, as the beast at the crag is: read as the
+  // cell was made they followed the live REGIONS (the loaded cells' only), so 11 of 41 doors stored another beast and 5 fen caverns were built 'deep'.
+  // Never read while the cell is being made (lairBiome calls getCell); makePortalDef reads the theme as the cell loads.
+  function lairDoorFor(site,c){const seed=lairSeed(site);
     const dragon=!!site.dragon||cellHash(seed%9973,seed%7919,5)<.08;site.dragon=dragon;
-    return {zone:'gen',x:site.x,z:site.z-6,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
+    const e={zone:'gen',x:site.x,z:site.z+16,seed,size:dragon?'large':'medium',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),get boss(){return lairBeast(site);},dragon,siteId:site.id}};
+    Object.defineProperty(e,'theme',{get(){const b=lairBiome(site);return b==='swamp'||b==='fen'?'haunted':'deep';},enumerable:true,configurable:true});
+    return e;}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
   // ── finding sigils: rubbings, rumours, the Weaver's Eye ──
   function sigilDoors(){const out=[];for(const c of CELLS.values()){if(!c.doors)continue;c.doors.forEach(e=>{if(!e.wet&&(e.sigil||e.kind==='fort_door'))out.push(e);});}return out;}
@@ -314,11 +373,16 @@
   const GATE_WORDS={ruins:['Barrow','Hollow','Tomb','Crypt','Vault'],goblin:['Warren','Den','Burrow','Hole','Nest'],haunted:['Crypt','Sepulchre','Mound','Silence','Deep'],cave:['Cave','Hollow','Mouth','Cleft','Undercroft'],fort:['Hold','Keep','Bastion','Watch','Gate'],elemental:['Furnace','Well','Cistern','Forge','Kiln'],undead:['Ossuary','Charnel','Grave','Barrow','Catacomb'],forest:['Root','Hollow','Bower','Warren','Nest'],deep:['Wound','Scar','Pit','Silence','Seam']};
   function canonicalGateName(e,cell){const words=GATE_WORDS[e.theme]||GATE_WORDS.cave;const rr=cellRng(e.seed%9973,e.seed%7919,3);const w=words[Math.floor(rr()*words.length)];const n=genName(rr,cell.reg||'irish');const q=rr();return q<.35?`${n} ${w}`:q<.6?`The ${w} of ${n}`:q<.8?`${n}'s ${w}`:`The ${['Old','Cold','Black','Broken','Sunken','Grey'][Math.floor(rr()*6)]} ${w}`;}
   function siteCreatures(S,list){ // zone enemies that belong to a site; removed with it
-    S.creatures=S.creatures||[];for(const [name,x,z,alert] of list){const fid=S.site.id+':foe:'+S.creatures.length; /* S479 — a site's foe is its site and index (co-op rules) */ const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,name,typeof pickVariant==='function'?pickVariant(name,level,'normal',seededRng('variant',fid)):null),fid);if(e.locked){e.locked=false;if(e.mesh)e.mesh.visible=true;} /* v80 — a lair's beast is there whatever your level */ e.alert=!!alert;e.homeX=x;e.homeZ=z;e._site=S.site.id;ZONES.world.enemies.push(e);S.creatures.push(e);}
+    S.creatures=S.creatures||[];if(worldState.lairs&&worldState.lairs[S.site.id]){S._deadMarked=true;return;} /* S695 — a site's beasts die once (markLairDead): only the glade checked, and then raised them anyway */
+    for(const [name,x,z,alert] of list){const fid=S.site.id+':foe:'+S.creatures.length; /* S479 — a site's foe is its site and index (co-op rules) */ const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,name,typeof pickVariant==='function'?pickVariant(name,level,'normal',seededRng('variant',fid)):null),fid);if(e.locked){e.locked=false;if(e.mesh)e.mesh.visible=true;} /* v80 — a lair's beast is there whatever your level */ e.alert=!!alert;e.homeX=x;e.homeZ=z;e._site=S.site.id;ZONES.world.enemies.push(e);S.creatures.push(e);}
   }
   function siteChest(S,x,z,mult,name){const y=worldH(x,z);const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(S.site.x-x,S.site.z-z);const {lid}=buildChestShell(g,1.8,0x4a3018);S.group.add(g); // S259 — the kit's chest (S198), the old box's size, its lid on the hinge; a group, so the bake leaves it whole
-    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});
-    const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:false,_site:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
+    /* S700 — a site's chest (a lair's Hoard, a camp's Takings) rolls until you first take from it; from then its items are kept in
+       worldState.siteChests[site] (keepSiteChest, from takeLootItem), so what you take stays taken. It was built full again each time
+       its site was (a walk out of range and back), on the same day the same goods. */
+    const kept=worldState.siteChests&&worldState.siteChests[S.site.id];
+    let items=kept||(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!kept){if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});}
+    const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:!!kept,_site:S.site.id,_keepSite:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
   // S545 — the glade's look alone, on the builder's own rolls in its order (pr is rolled and the pond stamped first, so the
   // reeds and the log stand on the bowl): H(x,z) is the ground. buildGlade places it in the world, poiPreview on a stage.
   function gladeGeoParts(r,cx,cz,y,pr,pad,H){
@@ -357,6 +421,8 @@
     const trees=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,10);const mm=new THREE.Matrix4();for(let i=0;i<10;i++){const T=gp.trees[i];mm.compose(new THREE.Vector3(T.x,T.h,T.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),T.ry),new THREE.Vector3(1.4,1.5,1.4));trees.setMatrixAt(i,mm);trees.setColorAt(i,new THREE.Color(.9,1,.9));sol.push({cx:T.x,cz:T.z,rx:.5,rz:.5});}trees.instanceMatrix.needsUpdate=true;trees.userData.noBake=true;group.add(trees);
     // herbs: a hotspot ring of 18 around the water
     if(typeof HERB_DEF!=='undefined'){const biome=dominantRegion(cx,cz).r.biome;const cands=herbCandidates(biome,'water').concat(herbCandidates(biome,'tree'));if(cands.length){for(let i=0;i<18;i++){const a=r()*Math.PI*2,rr=pr+2.5+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(r()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={id:S.site.id+':herb:'+i,x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:r()*6.28};ZONES.world.herbs.push(h);(S.herbs=S.herbs||[]).push(h); /* S514 — its id */}
+        /* S719 — a dead lair’s glade grows a second ring of 18 (#227 B), on a stream of its own so that no roll of the glade's moves */
+        if(gladeDoubled(site)){const g2=seededRng('glade',site.id);for(let i=18;i<36;i++){const a=g2()*Math.PI*2,rr=pr+2.5+g2()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(g2()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={id:S.site.id+':herb:'+i,x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:g2()*6.28};ZONES.world.herbs.push(h);S.herbs.push(h);}}
       // instance them onto a chunk-less mesh owned by the settlement
       const byType={};S.herbs.forEach(h=>(byType[h.type]||(byType[h.type]=[])).push(h));for(const type in byType){const geo=herbGeoFor(type,HERB_DEF[type]);if(!geo)continue;const list=byType[type];herbIM(type,geo,list,group,h=>worldH(h.x,h.z));}}}
     // creatures at the water
@@ -387,7 +453,7 @@
   function shrineInteract(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
-    const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(Math.random()*SHRINE_BOONS.length)];if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
+    const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
     else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
   // S545 — the lair's look alone (the rock heap with its cave mouth, and the bones), on the builder's rolls in its order
@@ -403,7 +469,7 @@
     sol.push({cx,cz:cz-4.5,rx:5,rz:3.5},{cx:cx-5,cz:cz-2,rx:2.2,rz:2.2},{cx:cx+5,cz:cz-2,rx:2.2,rz:2.2});
     // bones and a kill
     for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;group.add(b);}
-    const biome=dominantRegion(cx,cz).r.biome;const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':r()<.5?'Cave Bear':'Ogre';
+    const biome=dominantRegion(cx,cz).r.biome;const boss=lairBeast(site);if(!['tundra','wasteland','wastes','swamp','fen'].includes(biome))r(); /* S701 — biome here is still the live read, so the draw is taken exactly when it was */ /* S699 — the master's answer; the draw it replaced is still taken, so the rest of the build rolls as before */
     siteCreatures(S,[[boss,cx,cz+3,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx-4,cz+5,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx+4,cz+6,false]]);
     if(S.creatures[0]){const e=S.creatures[0];const dragon=!!site.dragon;e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:4)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:2)*(1+level*.04));e.spd=(e.spd||1.4)*1.5;e.lair=site.id;if(e.mesh)e.mesh.scale.multiplyScalar(dragon?2.4:1.5);if(dragon)dragonBody(e,3.2);e.name=dragon?`${site.name.replace("'s Lair",'')} Wyrm`:`${site.name.replace("'s Lair",'')} the ${boss}`;e.boss=true;e.dragon=dragon;}
     siteChest(S,cx+2.2,cz-.2,2.2,'The Hoard');
@@ -647,6 +713,13 @@
   function sack(t,camp){const st=TS(t);flag(t,'sacked',true);st.p=15;const lord=lordFor(t);if(typeof addLog==='function')addLog('🔥',`${t.name} was sacked by the bandits of ${camp.name}.`);showMsg(`Word comes that ${t.name} has been sacked.`,'#ff8060');}
   function markRoadCleared(a,b){(worldState.roadsCleared||(worldState.roadsCleared={}))[a+'|'+b]=worldState.gameTimeAbsMinutes||0;}
   function markLairDead(siteId){(worldState.lairs||(worldState.lairs={}))[siteId]=worldState.gameTimeAbsMinutes||0;}
+  // S719 — canon §12, Michael’s B on #227: a slain lair-beast doubles the herbs of the glade nearest its lair, if that glade lies
+  // within 700 units (the reach at which a lair weighs on a town). Read from the cells' own sites, whatever has loaded; a cell is
+  // 2,400 across, so the glades within 700 of any lair within 700 of this glade lie in the 5×5 cells round it.
+  function gladeDoubled(site){const L=worldState.lairs;if(!L||!site||site.kind!=='glade')return false;
+    const [ci,cj]=cellOf(site.x,site.z),near=[];for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const c=getCell(i,j);if(c&&c.sites)for(const t of c.sites)if(t.kind==='lair'||t.kind==='glade')near.push(t);}
+    return near.some(l=>{if(l.kind!=='lair'||L[l.id]==null)return false;const d=Math.hypot(l.x-site.x,l.z-site.z);if(d>700)return false;
+      return !near.some(q=>q.kind==='glade'&&q.id!==site.id&&Math.hypot(q.x-l.x,q.z-l.z)<d);});}
   // ═══ SETTLEMENT AND WORLD SYSTEMS (Session 129) ══════════════════════
   // Wall tiers by prosperity; the cold peace breaking into a war of
   // sieges and occupations; pirates sacking ports; plague from a
@@ -682,7 +755,8 @@
   function warFromFaction(fk){const a=FACTIONS[fk].nation,b=OPPONENT[fk];const seat=FACTIONS[fk].seat?siteAnywhere(FACTIONS[fk].seat):null;let first=null;const bt=borderTowns(a,b);if(seat&&bt.some(t=>t.id===seat.id))first=seat.id;else if(seat&&bt.length)first=bt.slice().sort((p,q)=>Math.hypot(p.x-seat.x,p.z-seat.z)-Math.hypot(q.x-seat.x,q.z-seat.z))[0].id;startWar(a,b,first);}
   function tickWarDay(){const W=war();if(!W)return;const day=dayNow();
     for(const t of allSites()){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(st&&st.flags.besieged!=null&&day-(st.siegeDay||day)>=12)occupy(t);}
-    if(Math.random()<.15){const side=Math.random()<.5?[W.a,W.b]:[W.b,W.a];const cand=borderTowns(side[0],side[1]).filter(t=>{const st=TS(t);return st.flags.besieged==null&&st.flags.occupied==null&&st.flags.abandoned==null;});if(cand.length)laySiege(cand[Math.floor(Math.random()*cand.length)],side[1]);}}
+    const r=seededRng('siege',W.a+':'+W.b+':'+day); /* S679 — whether a siege is laid today, by whom and where rolls on the war and the day (co-op rules), not Math.random */
+    if(r()<.15){const side=r()<.5?[W.a,W.b]:[W.b,W.a];const cand=borderTowns(side[0],side[1]).filter(t=>{const st=TS(t);return st.flags.besieged==null&&st.flags.occupied==null&&st.flags.abandoned==null;});if(cand.length)laySiege(cand[Math.floor(r()*cand.length)],side[1]);}}
   // soldiers outside the walls, or a garrison on the plaza; kill them all and the town is yours again
   const SIEGES=new Map();
   function soldierName(nk){return nk==='mark'?'Markish Soldier':nk==='aurenne'?'Compact Man-at-arms':"Crown Soldier";}
@@ -705,15 +779,16 @@
   function warMarkers(push){const W=war();if(!W)return;for(const t of allSites()){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;if(st.flags.besieged!=null)push(t.x,t.z,RED,`siege — ${t.name}`);else if(st.flags.occupied!=null&&Math.hypot(px-t.x,pz-t.z)<1500)push(t.x,t.z,RED,`occupied — ${t.name}`);}}
   // ── ports: black sails come for the unprotected ──
   function portProtected(t){const st=TS(t);return st.builds.some(b=>(b.key==='harbour'||b.key==='walls')&&b.done)||wallTierFor(t)==='stone'||wallTierFor(t)==='dressed';}
+  // S607 — whether black sails sack a port today rolls on the port and the day, `<site>:<day>` (co-op rules), not Math.random
   function tickPortsDay(){const S=story();const W=war();const risk=(W&&(W.a==='mark'||W.b==='mark'))?.05:S.act>=2?.025:0;if(!risk)return;
-    for(const t of allSites()){if(t.kind!=='port')continue;const st=TS(t);if(st.flags.sacked!=null||st.flags.burned!=null||st.flags.abandoned!=null||portProtected(t))continue;if(Math.random()<risk){flag(t,'sacked',true);st.p=Math.max(10,st.p-25);if(typeof addLog==='function')addLog('🏴',`${t.name} was sacked from the sea by black sails.`);showMsg(`Word comes that black sails have sacked ${t.name}.`,'#ff8060');}}}
+    for(const t of allSites()){if(t.kind!=='port')continue;const st=TS(t);if(st.flags.sacked!=null||st.flags.burned!=null||st.flags.abandoned!=null||portProtected(t))continue;if(seededRng('sack',t.id+':'+dayNow())()<risk){flag(t,'sacked',true);st.p=Math.max(10,st.p-25);if(typeof addLog==='function')addLog('🏴',`${t.name} was sacked from the sea by black sails.`);showMsg(`Word comes that black sails have sacked ${t.name}.`,'#ff8060');}}}
   // ── plague: a gate left uncleared too long ──
   function tickPlagueDay(){const L=worldState.lairDays||(worldState.lairDays={});const day=dayNow();
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=TS(t);
       let near=null,nd=1e9;for(const o of SITES){if(o.kind==='lair'&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
       const dead=near&&worldState.lairs&&worldState.lairs[near.id];
       if(st.flags.plague!=null){if(dead||day-st.flags.plague/1440>=20||st.plagueGone){flag(t,'plague',false);delete st.plagueGone;if(typeof addLog==='function')addLog('🕯',`The sickness at ${t.name} has passed.`);}continue;}
-      if(near&&nd<700&&!dead){L[t.id]=(L[t.id]||0)+1;if(L[t.id]>=30&&Math.random()<.08){flag(t,'plague',true);L[t.id]=0;st.plagueFrom=near.name;if(typeof addLog==='function')addLog('🕯',`A sickness at ${t.name}. They say it came up out of ${near.name}.`);showMsg(`Word comes of a sickness at ${t.name}.`,'#ff8060');}}else L[t.id]=0;}}
+      if(near&&nd<700&&!dead){L[t.id]=(L[t.id]||0)+1;if(L[t.id]>=30&&seededRng('plague',t.id+':'+day)()<.08){flag(t,'plague',true);L[t.id]=0;st.plagueFrom=near.name;if(typeof addLog==='function')addLog('🕯',`A sickness at ${t.name}. They say it came up out of ${near.name}.`);showMsg(`Word comes of a sickness at ${t.name}.`,'#ff8060');}}else L[t.id]=0;}}
   // ── a ruin re-founded ──
   function refoundTopics(site){const out=[];if(favor(site)<3)return out;for(const t of SITES){if(!(t.kind in BASE_P)||t.id===site.id)continue;const st=worldState.towns&&worldState.towns[t.id];if(!st||st.flags.abandoned==null)continue;if(Math.hypot(t.x-site.x,t.z-site.z)>1500)continue;const cost=900;
     out.push({label:`Send settlers to re-found ${t.name} (${cost} gold)`,quest:true,fn:()=>{if(gold<cost)return `Settlers, seed grain, a year's bread: ${cost} gold to re-found ${t.name}.`;gold-=cost;updateHUD();flag(t,'abandoned',false);const ts=TS(t);ts.p=25;ts.flags={};flag(t,'owned',true);addFavor(t,3);if(typeof addLog==='function')addLog('🏘',`${t.name} re-founded under your name.`);return `Then ${t.name} lives again, and it's yours. Twenty families go out in the morning. Keep the roads clean and they'll stay.`;}});}
@@ -766,7 +841,7 @@
       if(rt.threat&&!rt.threat.won){breakRoute(key,rt,rt.threat.camp);continue;}
       delete rt.threat;
       // the camp picks an hour on the outbound leg, u .35–.65 of the road; tickCaravans springs it (Session 179)
-      if(camp)rt.threat={day:Math.floor((worldState.gameTimeAbsMinutes||0)/1440),camp:camp.name,f:.175+Math.random()*.15,won:false,started:false};
+      if(camp){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);rt.threat={day,camp:camp.name,f:.175+seededRng('threat',key+':'+day)()*.15,won:false,started:false};} /* S679 — the hour rolls on the route and the day (co-op rules), not Math.random */
       setProsperity(a,prosperity(a)+.8);setProsperity(b,prosperity(b)+.8);}
     const Cs=coaches();for(const key in Cs){const a=siteAnywhere(Cs[key].a),b=siteAnywhere(Cs[key].b);if(a&&b){setProsperity(a,prosperity(a)+1);setProsperity(b,prosperity(b)+1);}}}
   function caravanDef(a,b){const [i,j]=cellOf(a.x,a.z);const nat=nationOf(i,j);return makeDef(a,a.reg||'irish',Math.random,'Merchant',pick(Math.random,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m),{people:nat.people,x:a.x,z:a.z,bCol:0x6a4a2a,sCol:0xd4a878,topics:[{label:'What are you carrying?',response:`${a.name} wool and ${b.name} iron, this week. Next week the other way round. The road's kinder than it was.`},{label:'Anything for sale?',trade:true,goods:[{name:'Travel Ration',ico:'🍞',type:'potion',heal:12,buyPrice:6,sellMult:.4},{name:'Lamp Oil',ico:'🪔',type:'misc',buyPrice:9,sellMult:.5},{name:'Bolt of Cloth',ico:'🧵',type:'misc',buyPrice:22,sellMult:.6}]}]});}
@@ -921,7 +996,7 @@
     let q;
     if(S.kind==='sail'){q={id:fqId(fk,i),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:'Board a black-sailed ship in the strait and clear her deck',kind:'sail',data:{},reward:220+level*20};}
     else if(S.kind==='duel'){const x=site.x+(site.pad||30)+14,z=site.z;q={id:fqId(fk,i),giver:F.name,giverSite:site.id,title:S.title,desc:'',objective:`Meet ${RIVAL.name} in the ring east of ${site.name}`,kind:'duel',data:{x,z,state:'wait',retryDay:null},enemy:'Bandit Captain',enemyName:RIVAL.name,reward:220+level*20};}
-    else{q=townQuestFor(site,S.kind,true);
+    else{q=townQuestFor(site,S.kind,true,fqId(fk,i));
       if(S.kind==='find'&&S.rival){const old=q.data.who;q.data.who=RIVAL.name;q.title=S.title;q.objective=q.objective.split(old).join(RIVAL.name);q.desc=q.desc.split(old).join(RIVAL.name).replace('Find them — there\'s a camp out that way — and send them home.','Find her — there\'s a camp out that way — and bring her back.');q.rival='trouble';q.data.topics=[{label:'The seat sent me for you.',response:"Did they. Then they've noticed I'm not there. I sat down and my legs stopped agreeing with me. Tell them Rowe's coming — and tell them who found her."}];}
       if(S.item&&q.kind==='retrieve'){const old=q.data.item;q.data.item=S.item;q.objective=q.objective.split(old).join(S.item);q.desc=q.desc.split(old).join(S.item);}}
     if(authored){const mech=q.desc.replace(/^[^:]+: "/,'').replace(/"$/,'');q.title=`${F.name}: ${S.title}`;q.desc=S.kind==='find'&&S.rival?`${voice}: "${S.brief.replace('{dir}',compassWord(q.data.x-site.x,q.data.z-site.z))}"`:`${voice}: "${S.brief}${mech?' '+mech:''}"`;if(S.set)q.reward=Math.max(q.reward,200+level*20);}
@@ -1294,6 +1369,8 @@
     qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }
+  // S698 — the state as a person says it: the word alone. stateLine is the map card's, with the number and the flags.
+  function stateSaid(site){return stateLine(site).split(' (')[0];}
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══

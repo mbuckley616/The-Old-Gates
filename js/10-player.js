@@ -713,6 +713,11 @@ const SNEAK_MOVE_MULT = 0.7;          // movement speed multiplier while sneakin
 // Player is "in vision cone" when dot(forward, toPlayer) > VISION_CONE_COS.
 const VISION_CONE_COS = 0.259;        // cos(75°) — half-angle of vision cone
 const HEARING_RADIUS = 0.5;           // omnidirectional detection radius (units)
+// S634 — Michael's A on #190: a foe hears you walk at 3 units, sneak at 1, in any direction; standing still you are heard
+// only at HEARING_RADIUS, as before. _pStep is set by the loop's movement each frame (90-main.js).
+const HEARING_WALK = 3, HEARING_SNEAK = 1;
+let _pStep = false;
+function hearingRadius(){return _pStep?(_sneaking?HEARING_SNEAK:HEARING_WALK):HEARING_RADIUS;}
 // Directional detection predicate. Returns true if the enemy can detect
 // the player given current distance, sneak state, and facing. Detection
 // fires when EITHER:
@@ -729,7 +734,7 @@ function canSeePlayer(e, dist, baseSightRadius){
   // Hearing: omnidirectional, NOT modulated by sneak. The player is
   // literally next to them — facing irrelevant. This is the "you can't
   // sneak through someone" guarantee.
-  if(dist < HEARING_RADIUS) return true;
+  if(dist < hearingRadius()) return true;
   // Sight: requires distance AND forward cone. If combatYaw isn't set
   // (shouldn't happen post-spawn-init, but defensive), fall back to
   // omnidirectional at the sight radius.
@@ -760,7 +765,7 @@ function _sneakDetectMult(){
   if(!_sneaking) return 1.0;
   const fin = attrEff('finesse');
   const mult = SNEAK_DETECT_BASE - SNEAK_DETECT_PER_FINESSE * fin;
-  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1); // S552 — the dark hood
+  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1)*(1-.03*(typeof linePieces==='function'?linePieces('light'):0)); // S552 — the dark hood; S564 — 3% a light piece worn
 }
 // Toggle sneak. Called from the Ctrl keydown handler. No-ops if a modal
 // is open (handler-level guard handles that, but defensive here too).
@@ -1110,6 +1115,16 @@ function _stickArrowToEnemy(arrow, body, scene){
 // and Intelligence (spells) all read this.
 const ATTR_DMG_PER_POINT = 0.01;
 const BOW_FINESSE_DMG = ATTR_DMG_PER_POINT;
+// S684 — the challenge (Michael's B on DECISION #208, Oblivion's and Skyrim's slider): five steps, Novice to Master, that change
+// damage only. Your blows ×2, 1.5, 1, .75, .5 and the foes' ×.5, .75, 1, 1.5, 2; Adept (2) is the game as it was. The step is the
+// world's (`worldState.challenge`, the world row), so in co-op the host's rules. A trap is not a foe and is not scaled.
+const CHALLENGE_STEPS = ['Novice','Apprentice','Adept','Expert','Master'];
+const CHALLENGE_DEALT = [2, 1.5, 1, .75, .5], CHALLENGE_TAKEN = [.5, .75, 1, 1.5, 2];
+function challengeStep(){const n=typeof worldState!=='undefined'&&worldState?worldState.challenge:undefined;return Number.isInteger(n)&&n>=0&&n<=4?n:2;}
+function challengeDealt(d){const m=CHALLENGE_DEALT[challengeStep()];return m===1||!(d>0)?d:Math.max(1,Math.round(d*m));}
+function challengeTaken(d){const m=CHALLENGE_TAKEN[challengeStep()];return m===1||!(d>0)?d:Math.max(1,Math.round(d*m));}
+// the named action (the co-op rules): the one way the step changes
+function setChallenge(n){n=Math.round(+n);if(!(n>=0&&n<=4))return false;if(n===2)delete worldState.challenge;else worldState.challenge=n;return CHALLENGE_STEPS[n];}
 // Family multipliers on posture max (brutes are sturdier, light enemies break faster).
 // Resolved from enemy build-family field (`buildFn` for dungeon enemies; `shape` for
 // zone enemies; bosses keyed on `bossId`). Default 1.0 covers anything unrecognised.
@@ -1144,6 +1159,7 @@ function enemyPostureFamily(e){
 }
 // Compute and stamp the posture fields on an entity. Idempotent — defensive default
 // for save-load on entries that don't have posture yet.
+const ENEMY_POSTURE_FLOOR=19; /* S681 — Michael's A on #211: 19, so a normal war hammer swing (8 × 2.25 = 18) no longer breaks a Wolf at once (was 18, S663) */
 function initPosture(e){
   if(!e) return;
   if(typeof e.posture==='number' && typeof e.maxPosture==='number') return; // already stamped
@@ -1152,9 +1168,10 @@ function initPosture(e){
   // Base posture = half maxHp scaled by family. Mirrors enemy HP scaling so high-HP
   // enemies are also sturdier on posture (doesn't reduce all fights to posture-spam
   // on tanks). The 0.5 coefficient keeps a typical enemy at ~4-6 normal hits to break
-  // (e.g. 30 HP skeleton → 15 posture / 8 drain → 2 hits; 80 HP troll → 60 → 8 hits).
+  // (e.g. 30 HP skeleton → 15 posture, floored to 18 / 8 drain → 3 hits; 80 HP troll → 60 → 8 hits).
+  // The floor is 18 (Michael's A on DECISION #206): over a greatclub's 12, so no foe breaks to one normal swing.
   const baseHp = e.maxHp || e.hp || 30;
-  e.maxPosture = Math.max(10, Math.round(baseHp * 0.5 * mult));
+  e.maxPosture = Math.max(ENEMY_POSTURE_FLOOR, Math.round(baseHp * 0.5 * mult));
   e.posture = e.maxPosture;
   e.lastHitAt = 0;
 }

@@ -16,11 +16,11 @@ await g.spin(10);
 // the stand-in fee: 10 gold, put over the systems builder's barberPay (the inn room's price, which varies by town; `barberfee` tests that)
 await page.evaluate(() => { window._pays = []; { window.barberPay = (h, c) => { _pays.push(c); if (!c) return 'free'; if (gold < 10) return 'poor'; gold -= 10; return 'paid'; }; window.barberFee = () => 10; window._stood = true; }
   EQ.back = { slot: 'back', cloak: 'wool', name: 'Traveller’s Cloak' }; });
-const near = await page.evaluate(() => { const C = INT_CHAIR; px = C.x; pz = C.z + 1.0; return { chair: !!C, house: C && C.house === _S }; });
+const near = await page.evaluate(() => { const C = INT_CHAIR; px = C.x; pz = C.z + 1.0; jumpY = 0; lookAtPt(C.x, .6, C.z); /* S656: the chair answers to the crosshair */ return { chair: !!C, house: C && C.house === _S }; });
 await g.spin(4); await g.frames(3);
 const prompt = await page.evaluate(() => document.getElementById('ob').textContent);
-const byKeeper = await page.evaluate(() => { const x = px, z = pz; px = intNPCPos.x + .6; pz = intNPCPos.z + .9; const n = nearBarberChair(); px = x; pz = z; return n; });
-check('within 1.2 of the barber, E is his (the chair does not take it)', byKeeper === false, byKeeper);
+const byKeeper = await page.evaluate(() => { const x = px, z = pz; px = intNPCPos.x - .3; pz = intNPCPos.z + .9; lookAtPt(intNPCPos.x, 1.1, intNPCPos.z); const n = nearBarberChair(); px = x; pz = z; lookAtPt(INT_CHAIR.x, .6, INT_CHAIR.z); return n; });
+check('beside the barber with the crosshair on him, E is his (the chair does not take it)', byKeeper === false, byKeeper);
 check('the chair is in the room, its house the shop, and next to it the prompt asks you to sit', near.chair && near.house && /barber’s chair/.test(prompt), { near, prompt });
 const open = await page.evaluate(() => { const before = JSON.stringify(worldState.look || null); interact(); const ov = document.getElementById('barberui'), rows = [...document.querySelectorAll('#barber-rows > div > span')].map(s => s.textContent);
   return { open: barberOpen && ov && ov.style.display === 'flex', rows, rig: !!(CCL.rig && CCL.rig.rig), fee: document.getElementById('barber-fee').textContent, before }; });
