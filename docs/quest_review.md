@@ -6,16 +6,52 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `9b86e34` | run 12, from `4a1cf46`: the look sessions 657 and 661 (the stair's posts) and the build tag; no string a player reads |
-| auto/systems | `409cae6` | run 12, Sessions 640–667 against `15accb0` |
-| auto/backlog | `cda563a` | run 12: Session 665, the two hulls; no string a player reads |
-| auto/proto-ship-hulls | `fab53f6` | run 12: new; the same hulls as Session 665, on auto/systems; no string a player reads |
+| main | `5decc89` | run 13, from `9b86e34`: Sessions 665–668 merged (the hulls, the sailtrim test) and the inspector's ship entries; no string a player reads |
+| auto/systems | `f36d96c` | run 13, Sessions 672–689 against `409cae6` |
+| auto/backlog | `9ef5a55` | run 13: Sessions 676, 686, 687 (the cold hearth's look, test fixes); no string a player reads |
+| auto/proto-ship-hulls | `fab53f6` | unchanged since run 12 |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
 | auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
-| auto/producer, auto/critic, auto/concept, auto/design | — | run 12: level with main, or ahead in docs only |
-| auto/fable-co-op-door, auto/fable-rivers, auto/fable-world-file, auto/split | — | merged into main, nothing ahead (auto/split's old history is not main's) |
+| auto/producer, auto/critic, auto/concept, auto/design, auto/fable-co-op-door, auto/fable-world-file | — | run 13: level with main, or ahead in docs only |
+| auto/fable-rivers | — | run 13: no merge base with main now (its last commit is 3 Oct, merged long since); not read |
+| auto/split | — | merged into main, nothing ahead (auto/split's old history is not main's) |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 13 — 10 Oct 2026
+
+About 30 player-readable strings read on auto/systems, none on main or auto/backlog. Two findings: one new line in one voice for four peoples, and one old pool found while drafting.
+
+**auto/systems** (Sessions 672–689). Findings 21 and 22 are in the code as written: the yard's note on a ship being raised, and Varek's three lines at the Ashfeld. New and good: *This is the cold hearth. Stand by it and cast a flame (F).* (unchanged, now only for a flame), the Standing page's *1 service* and *1 task*, *Handed back to the {guild}.* in the Journal, the label *I can't do it.*, and the challenge's five names (*Novice* to *Master*, menu voice). The death of a traveller outdoors now reads *the open country*, not the last gate entered: right. Finding 23 is the guild head's hand-back line, which Session 682 left to this desk by name.
+
+**main** and **auto/backlog** add no string a player reads (the hulls, the inspector's ship entries, the cold hearth's ash and flames, test fixes).
+
+**Drafted:** *Asked in Passing — six townsfolk's errands* (`docs/quest_drafts.md`), the first piece of Michael's 5 Oct note on *50–100 quests to stumble upon, that make you talk to people*. No decision needed. Finding 24 is old text met while drafting it: the townsfolk's worries name a king and a tithe in every nation.
+
+### Finding 23 — auto/systems — the guild head hands a task back in one voice for four peoples
+
+**Where.** `handBack` in `83-world-generator.js` (grep `Then it goes back on the board`), and its topic row in `guildDef` (grep `fn:()=>handBack(g)`). Session 682's comment: *The guild head's line in each people's voice is the quest writer's.*
+
+**Text.** *Then it goes back on the board. Ask when you want another.*
+
+**Why.** The head who greets you in their people's voice (`GUILD_GREET`, Finding 1) answers this in one plain voice. A Markman would not say *Ask when you want another* to someone who has just given up; an Aurennais would speak of the contract and say *Master*; a Gatelander would not let a thing go without a proverb over it; the Old Blood would say less. No line blames: Michael's A on #217 says no mark against your standing, so none of them scolds.
+
+**Replacement.**
+- The topic row's `fn:()=>handBack(g)` becomes `fn:()=>handBack(g,gp)` (`gp` is the head's people, already in scope in `guildDef`).
+- `function handBack(g){` becomes `function handBack(g,gp){`.
+- Its last line, `return 'Then it goes back on the board. Ask when you want another.';}`, becomes:
+`` return ({gatelander:"Better a thing set down than a thing dropped. It goes back on the board, and there'll be another when you want one.",markman:"Aye. Back on the board. Come back when you want another.",aurennais:"Then the contract is void, Master, and nothing is owed on either side. It returns to the board; another can be drawn up when you wish.",oldblood:"Then it goes back. Someone else will carry it. Come when you want another."})[gp]||"Then it goes back on the board. Come back when you want another.";} ``
+
+### Finding 24 — main and auto/systems — every townsperson's worry can be a king and a tithe
+
+**Where.** `WORRIES` in `87-world-quests.js` (grep `took the king's coin`). The pool is one list for all three nations; `bioFor` picks from it for anyone.
+
+**Text.** *my brother took the king's coin and never wrote* · *the tithe went up again and nobody says why*
+
+**Why.** Canon §1: the Gatelands has a Crown, the Mark *no king and a scorn for the word*, Aurenne a Compact; *every "royal" string in the game means this crown and no other* (§10: *the crown* only of the Gatelands). A tithe is the Compact's (§1.3). In the Mark both lines are wrong, and in the Gatelands the second is. Each line keeps its worry and loses the nation: the brother who went soldiering and never wrote serves the Unanswered Letter (drafted this run), and any lord's dues can go up.
+
+**Replacement.** In `WORRIES`, `"my brother took the king's coin and never wrote"` becomes `"my brother went for a soldier and never wrote"`, and `"the tithe went up again and nobody says why"` becomes `"the dues went up again and nobody says why"`. The other six stay.
+
 
 ## Run 12 — 9 Oct 2026
 
