@@ -14892,3 +14892,22 @@ Neighbours `bornhere` and `toldpages` are green. `parsecheck` is clean.
 
 ### Needs eyes
 Nothing beyond talking to a few people. Those from elsewhere now name other places than before, because the filter changes the pick and not the draw.
+
+## v80 — Session 699 — A lair's beast and its cavern's master answer to one name (the critic's s482, its naming half)
+At Carrigowen's Lair, in a fen, the beast at the crag was *Carrigowen the Marsh Hag* and the cavern's master *Carrigowen — Cave Bear*. Two things disagreed. The cavern door's `lair.boss` is read by `lairDoorFor` when the lair's cell is first made. Carrigowen, never moved by the shore routing, reads fen now and *Cave Bear* on its door, so the biome read then was not the one the crag reads. Off the four named biomes, the crag's beast also rolled Cave Bear or Ogre on its build stream (`r()<.5`), while the door rolled on the lair's own hash.
+
+`lairBeast(site)` (`87-world-quests.js`) is now the one answer: the biome where the lair stands, read when asked, and off those biomes the lair's hash. The crag's beast takes it. The draw it replaced is still taken, so the rest of the lair builds as before. `lairDoorFor` takes it. `lairFinish` (`68-dungeon-misc.js`) names the master from the lair's site when that is loaded, and from the door's stored name otherwise. The dungeon's theme, which the door also stores, is unchanged, so no cavern's layout moves.
+
+What the master *is* stays as built: the deepest foe in the cavern, of whatever kind, renamed. That is a design call, asked as DECISION #225 (A: the lair's own beast, as the dragon lair already gives its wyrm; B: named for its own kind; C: leave it).
+
+### Verified (headless Chromium)
+`lairname` 4/4 (new). Fourteen lairs within four cells of the start were built:
+- At every one the crag's beast is `lairBeast(site)`: thirteen Cave Bears and Ogres, and Carrigowen's Marsh Hag.
+- Carrigowen's door still stores *Cave Bear*, and it is the only one of the fourteen that disagrees.
+- In a cavern whose door stores the other beast, the master is named for the lair's: *Fornbaios — Cave Bear* against a stored *Ogre*.
+
+The suite cannot run on the old code, which has no `lairBeast`. Neighbours `wyrm`, `lairload`, `lairhoard` and `poipreview` are green. `parsecheck` is clean.
+
+### Needs eyes
+- Why Carrigowen's cell read another biome when it was made is not found. The name no longer depends on it, but the cavern's theme still does (*deep*, where a fen lair's is *haunted*).
+- The cavern door still stands 46 units from its lair, facing away (the critic's fifth s482 item). The push-out is in `82-world-structures.js`, and the mound is the look builder's, so it is left for the producer to route.

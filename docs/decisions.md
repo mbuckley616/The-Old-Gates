@@ -29,6 +29,15 @@ In the street, a townsperson or guard sees a crime all round: anyone awake withi
 
 Recommendation: **B.** Oblivion and Skyrim judge a witness by line of sight and facing, so a back turned is a chance. That is your call on #73, and A carries it outdoors. B keeps one thing: the guard is the one you can't slip past by timing a turned head. That keeps the night watch's beat (S166) a threat, and the 26% at the doors would fall mostly where townsfolk stand, not where the watch walks.
 
+### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
+The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carrigowen — Cave Bear*. `lairFinish` takes whichever foe stands farthest from the entrance on the lowest floor and gives it the lair's name, 3× health and a 1.5× scale. It keeps its own body. Only a dragon lair gives its master a new body, the wyrm's (Session 219). Session 699 made the name agree with the beast at the crag outside, but the body is still whatever stood deepest: a slime, a skeleton, a spider.
+
+- **A. The master is the lair's own beast.** A Marsh Hag in a fen, a Frost Troll on the tundra, an Ash Wight in the wastes, and a Cave Bear or an Ogre elsewhere. It is built on the open world's body for that kind in the cavern, as the wyrm already is. One systems session; the look builder then checks it under the cavern's ceiling.
+- **B. The master keeps its body and is named for it.** It becomes *Carrigowen — Slime*, and the master is the strongest kind on the deepest floor, not the farthest foe.
+- **C. Leave it.** Any deepest foe, named for the lair's beast.
+
+Recommendation: **A.** The lair is named for its beast, and the dragon lair already works this way: its master is the wyrm, whatever stood there. A gives every lair what the wyrm has. B is honest but makes a lair's master a slime half the time.
+
 ## Answered
 
 ### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214

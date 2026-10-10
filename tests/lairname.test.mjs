@@ -1,0 +1,27 @@
+// A lair's beast and its cavern's master are named for one beast (Session 699, the critic's s482). At Carrigowen's Lair (fen)
+// the beast at the crag was *Carrigowen the Marsh Hag* and the cavern's master *Carrigowen — Cave Bear*: the door's
+// `lair.boss` was read before the routing moved the lair (S452's shoreSites), and off the special biomes the beast rolled
+// Cave Bear or Ogre on its build stream while the master rolled on the lair's hash. `lairBeast(site)` is now the one answer.
+import { boot, check } from './lib/game.mjs';
+const g = await boot(); const { page } = g;
+await g.intoWorld();
+const r = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); const lairs = [];
+  for (let i = hi - 4; i <= hi + 4; i++) for (let j = hj - 4; j <= hj + 4; j++) { const c = WORLD.getCell(i, j); if (!c || !c.sites) continue;
+    for (const t of c.sites) if (t.kind === 'lair' && t.pad > 0 && !t.dragon) { const door = (c.doors || []).find(d => d.lairDoor && d.lairSite === t.id); lairs.push({ t, door, cell: [i, j] }); } }
+  const rows = [];
+  for (const { t, door, cell } of lairs.slice(0, 14)) { WORLD.loadCell(...cell); const site = WORLD.SITE[t.id] || t; let S = WORLD.settlements.get(site.id); if (!S) S = WORLD.genSettlement(site);
+    const e = S && S.creatures && S.creatures[0]; const crag = e ? (e.baseName || e.type || '').replace(/^.* the /, '') : null;
+    rows.push({ id: site.id, name: site.name, moved: !!site.drawnAt, biome: dominantRegion(site.x, site.z).r.biome, crag, crag2: e ? e.name : null, beast: lairBeast(site), door: door && door.lair ? door.lair.boss : null }); }
+  return rows; });
+console.log(JSON.stringify(r));
+check('lairs found round the start, each with its beast built', r.length >= 6 && r.every(x => x.crag), r.length);
+check('the beast at the crag is lairBeast(site) at every lair', r.every(x => x.crag === x.beast || (x.crag2 || '').endsWith(' the ' + x.beast)), r.map(x => [x.name, x.crag2, x.beast]));
+// the cavern: its master takes the same name, even when the door's stored boss says otherwise
+const cave = await page.evaluate((rows) => { const x = rows[0]; const site = WORLD.SITE[x.id]; const other = x.beast === 'Ogre' ? 'Cave Bear' : 'Ogre';
+  window._lairBoss = null; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: site.name.replace(/'s Lair$/, ''), boss: other, siteId: site.id } });
+  goToDungeon(p); return { other, beast: x.beast, place: site.name.replace(/'s Lair$/, '') }; }, r);
+for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && !!window._lairBoss)) break; }
+const m = await page.evaluate(() => window._lairBoss && window._lairBoss.name);
+check('in the cavern, a door that stored another beast: the master is named for the lair\'s beast', m === `${cave.place} — ${cave.beast}`, { m, ...cave });
+check('no page errors', g.errs.length === 0, g.errs);
+await g.close();

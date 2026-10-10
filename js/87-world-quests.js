@@ -335,8 +335,15 @@ const giver=`${lord.title} ${lord.name}`;
   const POI_KINDS=['glade','shrine','lair','tower','bcamp'];
   const POI_PAD={glade:52,shrine:28,lair:38,tower:26,bcamp:40};
   // a cavern behind every lair's mouth: a portal record the engine builds as a dungeon; the beast outside still guards it
-  function lairDoorFor(site,c){const seed=100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);const biome=dominantRegion(site.x,site.z).r.biome;
-    const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';
+  // S699 — a lair's beast, one answer for the beast at the crag and the master below: by the biome where the lair stands, read
+  // when asked (the door's lair.boss is read when its cell is first made, and can disagree: Carrigowen, in fen and never moved,
+  // has a Marsh Hag at the crag and *Cave Bear* on its door), and off those biomes by the lair's own hash. The beast at the crag
+  // rolled Cave Bear or Ogre on its build stream, the master on this hash.
+  function lairSeed(site){return 100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);}
+  function lairBeast(site){const seed=lairSeed(site),biome=dominantRegion(site.x,site.z).r.biome;
+    return biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';}
+  function lairDoorFor(site,c){const seed=lairSeed(site);const biome=dominantRegion(site.x,site.z).r.biome;
+    const boss=lairBeast(site);
     const dragon=!!site.dragon||cellHash(seed%9973,seed%7919,5)<.08;site.dragon=dragon;
     return {zone:'gen',x:site.x,z:site.z-6,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
@@ -440,7 +447,7 @@ const giver=`${lord.title} ${lord.name}`;
     sol.push({cx,cz:cz-4.5,rx:5,rz:3.5},{cx:cx-5,cz:cz-2,rx:2.2,rz:2.2},{cx:cx+5,cz:cz-2,rx:2.2,rz:2.2});
     // bones and a kill
     for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;group.add(b);}
-    const biome=dominantRegion(cx,cz).r.biome;const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':r()<.5?'Cave Bear':'Ogre';
+    const biome=dominantRegion(cx,cz).r.biome;const boss=lairBeast(site);if(!['tundra','wasteland','wastes','swamp','fen'].includes(biome))r(); /* S699 — the master's answer; the draw it replaced is still taken, so the rest of the build rolls as before */
     siteCreatures(S,[[boss,cx,cz+3,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx-4,cz+5,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx+4,cz+6,false]]);
     if(S.creatures[0]){const e=S.creatures[0];const dragon=!!site.dragon;e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:4)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:2)*(1+level*.04));e.spd=(e.spd||1.4)*1.5;e.lair=site.id;if(e.mesh)e.mesh.scale.multiplyScalar(dragon?2.4:1.5);if(dragon)dragonBody(e,3.2);e.name=dragon?`${site.name.replace("'s Lair",'')} Wyrm`:`${site.name.replace("'s Lair",'')} the ${boss}`;e.boss=true;e.dragon=dragon;}
     siteChest(S,cx+2.2,cz-.2,2.2,'The Hoard');
