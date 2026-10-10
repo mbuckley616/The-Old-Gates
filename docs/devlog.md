@@ -14875,3 +14875,20 @@ The critic's journal read *First blood — slew a Carrigowen the Marsh Hag*, and
 
 ### Needs eyes
 Nothing beyond reading the Journal after a lair.
+
+## v80 — Session 698 — The townsfolk say how the town fares in words, come from places people live, and are grown (the critic's s482)
+Two of the critic's s482 notes on the townsfolk's talk, both in `87-world-quests.js`.
+
+*How are things here, honestly?* answered with `stateLine(site)`, which is the map card's line with its number and flags: Glencarra's smith said *prosperous (77). Better than my father saw.* The *How fares the town?* topic did the same. Both now use `stateSaid(site)`, the word alone (*Prosperous. Better than my father saw.*, *Dunmore is prosperous.*). The map card keeps `stateLine`.
+
+`bioFor` drew a birthplace from any site with a pad, so Cormac came *from Glenree's Lair* and Bríd from *Ruins of Rathkeel*. It now draws only from places people live, the kinds whose plan (`KIND_PLAN`) has houses. Its `years` (3–42) was read as an age by the born-here (*Born here, and here these 7 years.*), so a priest was seven. Someone born in their town now counts 15 more, from 18 to 57. It is the same draw, so the rest of each bio (spouse, children, trade, worry) is unchanged. A newcomer's years in the town are unchanged too.
+
+### Verified (headless Chromium)
+`townbio` 5/5 (new), over Dunmore and Portclare, 110 townsfolk: 52 born there, all 18 or over, and 58 from elsewhere. The newcomers come from 37 villages, 8 ports, 6 towns and 7 outposts, none from a lair, ruin, glade, tower or camp. Every *How are things here, honestly?* is in words with no digit.
+
+On the old code three checks fail. Eight born-here were 3 to 14 (*Ruairí 3*). Newcomers came from a ruin, glades and a spire. The answer read *prosperous (61).*
+
+Neighbours `bornhere` and `toldpages` are green. `parsecheck` is clean.
+
+### Needs eyes
+Nothing beyond talking to a few people. Those from elsewhere now name other places than before, because the filter changes the pick and not the draw.

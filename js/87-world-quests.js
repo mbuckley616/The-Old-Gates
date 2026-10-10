@@ -86,8 +86,8 @@
   function metCount(key){return (worldState.met&&worldState.met[key])||0;}
   function noteMet(key){(worldState.met||(worldState.met={}))[key]=metCount(key)+1;}
   function bioFor(site,reg,r,role,name){
-    const cells=[...CELLS.values()].filter(c=>c.type!=='sea');const other=cells.length?pick(r,pick(r,cells).sites.filter(t=>t.pad>0&&t.id!==site.id)):null;
-    const born=r()<.55?site.name:(other?other.name:site.name);const years=3+Math.floor(r()*40);
+    const cells=[...CELLS.values()].filter(c=>c.type!=='sea');const other=cells.length?pick(r,pick(r,cells).sites.filter(t=>t.pad>0&&t.id!==site.id&&(KIND_PLAN[t.kind]||{n:[0]}).n[0]>0)):null; /* S698 — born in a place people live (KIND_PLAN), not a lair or a ruin */
+    const born=r()<.55?site.name:(other?other.name:site.name);const years=3+Math.floor(r()*40)+(born===site.name?15:0); /* S698 — the born-here count their age, so no fewer than eighteen (a priest said *Born here. 7 years*); the same draw */
     const names=NAMES[reg]||NAMES.irish;const spouse=r()<.5?pick(r,r()<.5?names.m:names.f):null;const kids=r()<.5?1+Math.floor(r()*3):0;
     const trade=pick(r,TRADES_BY_ROLE[role]||TRADES_BY_ROLE.Villager);
     return {born,years,spouse,kids,trade,worry:pick(r,WORRIES),wish:pick(r,WISHES)};
@@ -148,7 +148,7 @@
     t.push({cat:'place',label:'What can I buy here?',response:shopsHere.length?`${[...new Set(shopsHere.map(k=>({forge:'the smith',weapon:'the smith',armoury:'the armourer',armor:'the armourer',apothecary:'the apothecary',potion:'the apothecary',goods:'the general goods',misc:'the general goods',inn:'the inn',church:'the church',shipwright:'the shipwright',guild_f:"the Fighters' Guild",guild_m:"the Mages' Guild",castle:'the keep',keep:'the keep'})[k]||k))].join(', ')}. ${prosperity(site)<40?'Not much on the shelves lately.':'Fair prices, mostly.'}`:'Nothing. We trade with each other and with the carts, when carts come.'});
     t.push({cat:'place',label:'What\u2019s the law here?',response:NAT.people==='markman'?"The Captain's word, and a duel if you don't like it. Fair, in its way.":NAT.people==='aurennais'?"The Compact's. Everything's written, everything's tithed, and the Prior reads it back to you slowly.":"The Crown's. Patrols on the roads, a magistrate twice a year, and the old gates are royal property — so they say."});
     t.push({cat:'place',label:'The nearest old gate?',get response(){const d=nearestSigilDoorFrom(site);const doors=(getCell(ni,nj).doors||[]).map(e=>({e,p:dungeonWorldPos[e.seed]||e})).sort((a,b)=>Math.hypot(a.p.x-site.x,a.p.z-site.z)-Math.hypot(b.p.x-site.x,b.p.z-site.z));const n=doors[0];return n?`${n.e.canonicalName||(typeof dungeonName==='function'?dungeonName(n.e.seed,n.e.theme):'An old gate')}, ${compassWord(n.p.x-site.x,n.p.z-site.z)} of here. ${d&&d.seed===n.e.seed?'There\'s a warm stone in it, they say.':'Leave it be, unless you\'re the sort who doesn\'t.'}`:'None near. Count yourself lucky.';}});
-    t.push({cat:'place',label:'How are things here, honestly?',get response(){return `${stateLine(site)}. ${prosperity(site)>=60?'Better than my father saw.':prosperity(site)>=35?'We get by.':'You can see for yourself.'}`;}});
+    t.push({cat:'place',label:'How are things here, honestly?',get response(){return `${stateSaid(site).replace(/^./,c=>c.toUpperCase())}. ${prosperity(site)>=60?'Better than my father saw.':prosperity(site)>=35?'We get by.':'You can see for yourself.'}`;}});
     t.push({cat:'news',label:`What of ${NAT.crown}?`,response:NAT.people==='markman'?"The League? Captains arguing in a hall. They agree on one thing — the Crown's ships shouldn't be in our strait.":NAT.people==='aurennais'?"The Compact tithes and the Church blesses the tithe. Between them they own the sea. Don't say I said it.":"The Crown wants the gates. Says they're royal. My grandmother said they were the Weaver's. Neither of them's ever been down one."});
     t.push({cat:'news',label:'Any word from the sea?',get response(){const pirates=OTHER.some(o=>o.kind==='pirate');return pirates?"Black sails, this week. The fishermen came in early and won't say why.":pick(Math.random,["The ferries are running. That's news enough.","A whale off the point, they say. Big as a church.","Quiet. Too quiet for the harbourmaster, who likes a tithe."]);}});
     t.push({cat:'news',label:'How\u2019s trade?',get response(){const R=worldState.routes||{};const open=Object.keys(R).filter(k=>!R[k].broken&&(R[k].a===site.id||R[k].b===site.id)).length;return open?`A cart in the morning, a cart at night. ${open>1?'Two routes now.':'One route.'} Prices are kinder for it.`:prosperity(site)>=50?"Steady. We could do with a route to somewhere, if anyone with coin were listening.":"What trade. The road's a road; nothing comes down it.";}});
@@ -236,7 +236,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(_st.flags.besieged!=null){const by=nationName(_st.siegeBy);return [{label:'The siege?',response:`${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
             {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
-            {label:'How fares the town?',get response(){return `${site.name} is ${stateLine(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
+            {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
   // ── hooks ──
@@ -1333,6 +1333,8 @@ const giver=`${lord.title} ${lord.name}`;
     qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }
+  // S698 — the state as a person says it: the word alone. stateLine is the map card's, with the number and the flags.
+  function stateSaid(site){return stateLine(site).split(' (')[0];}
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══
