@@ -1549,6 +1549,9 @@ function chaseSpeed(e,lo=CHASE_SPD_LO,hi=CHASE_SPD_HI,sp){const s=sp!=null?sp:(e
 // the def's speed (rankSpd), not the speed the difficulty scaled, so a very hard dungeon's goblins stay at 110% of your walk.
 const DCHASE_SPD_LO=.42, DCHASE_SPD_HI=2.02;
 function dungeonChaseSpeed(e){if(!(e.spd>0))return 0;return chaseSpeed(e,DCHASE_SPD_LO,DCHASE_SPD_HI,e.rankSpd!=null?e.rankSpd:e.spd);}
+// S697 — a foe as the log names it: a named one bare (a lair's beast or master, a wyrm, a duel's rival: *slew Carrigowen the
+// Marsh Hag*, not *slew a Carrigowen the Marsh Hag*), the rest with *a* or *an* as the word begins (*an Ogre*).
+function foeLogName(e){const n=String((e&&e.name)||'');if(e&&(e.boss||e.master||e.lair||e._duel||e.named)||/ — | the /.test(n))return n;return (/^[aeiou]/i.test(n)?'an ':'a ')+n;}
 function killZoneEnemy(e,sc,tag=''){
   if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12
@@ -1556,7 +1559,7 @@ function killZoneEnemy(e,sc,tag=''){
   if(e._guard&&typeof WORLD!=='undefined'&&WORLD.guardKilled)try{WORLD.guardKilled(e);}catch(err){} // S157
   sndEnemyDeath();kills++;lvAct.kills++;xp+=Math.round(e.xpVal*_buffMult('xpBoost',1));chkLvl();
   const firstKill=!seenEnemyTypes.has(e.name);
-  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew a '+e.name);}
+  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
   const terrainY = typeof activeTerrainH==='function' ? activeTerrainH(e.x,e.z) : 0;
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before

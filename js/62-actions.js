@@ -353,8 +353,8 @@ function killE(e,tag=''){
   // Notable kill logging
   const isBrute=e.name==='Cave Troll'||e.name==='Golem';
   const firstKill=!seenEnemyTypes.has(e.name);
-  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew a '+e.name);}
-  else if(isBrute){addLog('⚔','Slew a '+e.name+' in '+(currentPortal?currentPortal.name:'the old gate'));}
+  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
+  else if(isBrute){addLog('⚔','Slew '+foeLogName(e)+' in '+(currentPortal?currentPortal.name:'the old gate'));}
   else if(kills===10||kills===25||kills===50||kills===100){addLog('⚔',kills+' enemies slain');}
   // Slump mesh — rotate to lie flat, tint dark
   // Floor base: wraith baseY includes float offset, so use the floor's ground Y

@@ -14864,3 +14864,14 @@ On the old code the old spot was inside a wall on 6 of the 10, and two checks fa
 
 ### Needs eyes
 Whether the hoard reads as the master's, standing a cell or three away in its room.
+
+## v80 — Session 697 — The log names a named foe without *a* (the critic's s482)
+The critic's journal read *First blood — slew a Carrigowen the Marsh Hag*, and in the cavern it would read *a Carrigowen — Cave Bear*. Both kill logs, `killZoneEnemy` (`42-zone-enemies.js`) and `killE` (`62-actions.js`), wrote `'slew a '+e.name` whatever the name was. That also gave *a Ogre* and *a Ash Wight*.
+
+`foeLogName(e)` (`42-zone-enemies.js`) now names the foe for the log. A named foe stands bare: a lair's beast or master, a wyrm, a duel's rival, or any name with *the* or a dash in it. The rest take *a* or *an* by the first letter. Both *First blood* lines and *Slew a Cave Troll in …* use it. The words around the name are unchanged.
+
+### Verified (headless Chromium)
+`foelogname` 8/8 (new). Through `killZoneEnemy`, a lair's beast logs *First blood — slew Carrigowen the Marsh Hag*, an Ogre *slew an Ogre*, and a Wolf *slew a Wolf*. In a lair cavern through `killE`, the master logs *First blood — slew Carrigowen — Cave Bear*, and a Cave Troll *Slew a Cave Troll in The Dungeon of Shadows*. A wyrm, the duel's rival (*Rowe*) and *Glenree — Ogre* stand bare. *an Ash Wight*, *a Skeleton*. `dungeonfoes` is green. `parsecheck` is clean.
+
+### Needs eyes
+Nothing beyond reading the Journal after a lair.
