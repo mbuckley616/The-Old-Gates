@@ -334,7 +334,8 @@ function lpDifficulty(door){ // steady per door: how many pins, and how long the
   const depth=Math.max(0,(door&&door.floor||1)-1);
   const pins=Math.min(5,Math.max((door&&door.minPins)||0,2+(h%3)+(depth>2?1:0)+((door&&door.lockBonus)||0))); // S150 — chests carry a bonus or a floor
   const fin=attrEff('finesse');
-  const dwell=Math.round(Math.max(110,300-pins*28-(h%40)+fin*22)); // a steady hand buys time
+  /* a steady hand buys time; S716 — never under 150 ms, the co-op rule's floor for a timing window (Michael's A on #119): it was 110 */
+  const dwell=Math.round(Math.max(150,300-pins*28-(h%40)+fin*22));
   return {pins,dwell,fall:Math.round(420+ (h%120))};
 }
 // S150 — which dungeon chests are locked: every treasure chest, and ordinary ones by floor (1 in 5 on the

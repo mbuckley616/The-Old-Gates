@@ -36,7 +36,9 @@ console.log('expected picks snapped to open a lock:'); for (const t of table) co
 const f0 = res.out[0];
 check('a new character has Finesse 0 here', res.fin0 === 0, res.fin0);
 check('every town and dungeon lock was read at Finesse 0, 5 and 10', f0.length === res.out[5].length && f0.length > 200 && Object.keys(kinds).length >= 5, Object.keys(kinds));
-check('the hold never falls below its 110 ms floor, and Finesse only lengthens it', f0.every((l, i) => l.dwell >= 110 && res.out[5][i].dwell >= l.dwell && res.out[10][i].dwell >= res.out[5][i].dwell), null);
+// S716 — the floor is the co-op rule's 150 ms (CLAUDE.md, Michael's A on #119); it was 110, and 121 ms holds were found (the concept artist, s488)
+check('the hold never falls below its 150 ms floor, and Finesse only lengthens it', f0.every((l, i) => l.dwell >= 150 && res.out[5][i].dwell >= l.dwell && res.out[10][i].dwell >= res.out[5][i].dwell), null);
 check('the exact snap count matches a simulation (4 pins, 1 in 3, 200,000 locks)', (() => { let snaps = 0; const N = 200000; for (let i = 0; i < N; i++) { let k = 0; while (k < 4) { if (Math.random() < 1 / 3) { snaps++; if (k > 0) k--; } else k++; } } return Math.abs(snaps / N - picks(4, 1 / 3, true)) < .05; })(), picks(4, 1 / 3, true));
+check('some locks at Finesse 0 stand on the floor, so it is the floor that holds them', f0.some(l => l.dwell === 150), Math.min(...f0.map(l => l.dwell)));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

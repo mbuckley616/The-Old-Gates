@@ -15197,3 +15197,12 @@ The lock panel's title is now `lpk-title`, with the same style (the CSS rule nam
 
 ### Needs eyes
 - The lock panel's title at real size, now that it shows: the concept artist's prototype draws it as an engraving's caption.
+
+## v80 — Session 716 — A lock's hold is never under 150 ms (backlog I, the concept artist's s488)
+CLAUDE.md's co-op rules (Michael's A on #119) say *no timing window under 150 ms*. That way a 60–100 ms connection still leaves a fair press. The lock's hold window is one of those timing windows: the press must land while the pin holds at the shear. But `lpDifficulty` floored it at 110 ms (Session 142, before the rule). The concept artist sampled holds down to 121 ms at Finesse 0, on 104 of 1,600 dungeon doors and 125 of 400 treasure chests. The floor is now 150. Nothing else moves: the rise (170 ms), the fall, the pins and Finesse's +22 ms a point are as they were. Only the locks that were under 150 at your Finesse get longer holds. This applies a rule Michael has already set, so it was not asked again.
+
+### Verified (headless Chromium)
+`lockfair` reads 366 town and dungeon locks at Finesse 0, 5 and 10. Its floor check now asks for 150, and a new check finds locks standing on that floor, so the floor is doing the holding. On the old code the floor check fails. Treasure chests at Finesse 0 now hold 150–216 ms, where they held 122–216 (mean 168 → 171). Shop doors (153–188), strongboxes, homes and dungeon chests (150–242) were already at 150 or above and are unchanged. `mimicspots` reads the tower hoard's lock at 150–188 ms.
+
+### Needs eyes
+- The hardest treasure chests are a little easier at Finesse 0: by feel, whether a 150 ms hold still feels like a good lock.
