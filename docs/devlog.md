@@ -14848,3 +14848,19 @@ On the old code three checks fail: after the load the beast is still at 130/389,
 ### Needs eyes
 - A cleared lair, camp or glade no longer comes back after you wander off and return. Whether a camp should ever be manned again is a design call nobody has made. Today the roads and the towns' talk have always treated it as cleared for good.
 - The outdoor lair's chest (*The Hoard* beside the crag) still rolls on its site and the day each time the site is built, as before. Taken and left, it is full again the next day.
+
+## v80 — Session 696 — A cavern's hoard stands on open floor, not in a wall (the critic's s482)
+At Carrigowen's Lair the master stood at (27, 12) on floor 2 and its hoard at (28.2, 12.6), inside a solid cell. No chest showed, and its prompt came only when you looked down at the bricks from 0.96 away. `lairFinish` put the hoard at the master's spot plus (1.2, .6) without looking at the map.
+
+`lairHoardSpot(e)` (`68-dungeon-misc.js`) now picks the spot. It takes the open cells of the master's own floor within three cells of it, never a wall, a door or a cell another chest holds, and sorts them by distance from the old offset. A cell is 1 unit and the chest 1.3 across, so it takes first a cell whose eight neighbours are all open (in a room), then one whose four are, then any open cell. The chest stands at the cell's centre. A hoard Session 694 already recorded keeps its spot.
+
+### Verified (headless Chromium)
+`hoardspot` 7/7 (new), on ten lair caverns (seeds 4021–4030; every master is on floor 2):
+- Every hoard stands on an open cell, 1 to 3 units from its master.
+- Nine of the ten are in a room with all eight neighbours open, and the tenth has six.
+- Stood 1.5 units off, with the crosshair at a slight downward pitch, each chest answers `lookingAt`.
+
+On the old code the old spot was inside a wall on 6 of the 10, and two checks fail (open cells, rooms: 8, 8, 6, 3, 3, 1, 2, 8, 2, 1). The look check passed on the old code too, because the aim ray meets the mesh through the wall. So it is the cells that show the fault, and the critic's prompt angle came from the chest standing in the wall. Neighbours `lairhoard` and `masterslam` are green. `parsecheck` is clean.
+
+### Needs eyes
+Whether the hoard reads as the master's, standing a cell or three away in its room.

@@ -486,6 +486,16 @@ function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)
 // the blow that kills him (slayMaster), not from a cavern cleared to the last rat.
 function lairHoardChest(portal,h,dragon){const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(h.x,(h.floor===2?FLOOR2_Y:0),h.z);dScene.add(group);
   CHESTS.push({id:`${dKeyOf(portal,h.floor||1)}:hoard`,x:h.x,z:h.z,opened:false,lid,treasure:true,floor:h.floor||1,mesh:group,items:h.items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});}
+// S696 — the hoard's spot: beside the master, on an open cell of its own floor. It stood at the master's spot plus (1.2, .6),
+// which was often inside a wall (Carrigowen's floor 2: the chest unseen, its prompt only when you looked down at the bricks). A
+// cell is 1 unit and the chest 1.3 across, so a cell whose eight neighbours are open is first, then one with its four, then any.
+function lairHoardSpot(e){const map=(e.floor===2&&dMap2)?dMap2:dMap;const fl=e.floor||1;
+  const open=(c,r)=>!!(map&&r>=0&&r<dR&&c>=0&&c<dC&&map[r][c]!==0&&map[r][c]!==4&&map[r][c]!==5&&!CHESTS.some(ch=>(ch.floor||1)===fl&&Math.floor(ch.x+.5)===c&&Math.floor(ch.z+.5)===r));
+  const room=(c,r,n)=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){if(!i&&!j)continue;if(n===4&&i&&j)continue;if(!open(c+i,r+j))return false;}return true;};
+  const c0=Math.floor(e.x+.5),r0=Math.floor(e.z+.5);const cells=[];
+  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){if(!i&&!j)continue;const c=c0+i,r=r0+j;if(open(c,r))cells.push({c,r,d:Math.hypot(c-e.x-1.2,r-e.z-.6)});}
+  cells.sort((a,b)=>a.d-b.d);const best=cells.find(k=>room(k.c,k.r,8))||cells.find(k=>room(k.c,k.r,4))||cells[0];
+  return best?{x:best.c,z:best.r}:{x:e.x,z:e.z};}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;}
 function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return;const L=portal.lair;const M=worldState.masters||(worldState.masters={}),rec=M[portal.seed];
   if(rec===true||(rec&&rec.dead)){const h=rec&&rec.hoard;if(h&&h.items&&h.items.length){lairHoardChest(portal,h,!!L.dragon);showMsg('The master of this place is dead. Its hoard is where you left it.','#a89878');}else showMsg('The master of this place is dead. Its hoard is long gone.','#a89878');return;}
@@ -507,7 +517,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   items.push(hr()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
   if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});
   items.push({name:'Greater Potion',ico:'🧪',type:'potion',heal:60,buyPrice:45,sellMult:.4,qty:2});
-  const hoard={x:e.x+1.2,z:e.z+.6,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
+  const hs=lairHoardSpot(e);const hoard={x:hs.x,z:hs.z,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
   showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');
   window._lairBoss=e;}catch(err){console.warn('lairFinish',err);}}
 // S219 — a lair's wyrm on the dragon's own body (S177, the wolf's bones with a neck, a tail and wings): the master keeps
