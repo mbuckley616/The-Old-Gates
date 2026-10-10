@@ -14829,3 +14829,22 @@ On the old code 5 of the 11 checks fail. The master came back, the hoard was ful
 
 ### Needs eyes
 Nothing in the fight changes. A master you leave alive still comes back at full health, as the rest of the cavern does, but its hoard does not refill.
+
+## v80 — Session 695 — A load gives a lair's beasts back as they were saved, and a killed lair stays dead (the critic's s482)
+At Carrigowen's Lair the critic saved before the fight, killed the two Dire Wolves, wore the Marsh Hag from 190 to 86, died and loaded. The Hag stood at 86 and the wolves stayed dead, while their 80 XP was taken back. Two more deaths ground her to 19 and then to dead. The beasts a site raises (`siteCreatures`, `87-world-quests.js`) live in `ZONES.world.enemies`, and `_applyLoadData` never touched them. Session 674 dropped only the foes a job raised.
+
+`ssSanitizeLoaded` (`70-saves.js`) now puts down every loaded site that holds beasts (`disposeSettlement`), whether it has a lair, a camp or a glade. The settlement tick builds each one again as you come near, from the loaded `worldState.lairs`, which is what walking 1,000 units away and back already did.
+
+Rebuilding showed a second fault. The rule *a lair's beast dies once* (`markLairDead`, which writes `worldState.lairs[id]`) was checked only by the glade's builder, and even there `siteCreatures` raised the beasts straight afterwards. So a lair or a bandit camp you had cleared came back whenever its site was built again: after a walk out of range, or a page reload. The towns' talk and the roads (`roadBroken`, the threat to nearby towns) went on reading it as cleared. `siteCreatures` now raises nothing for a site in `worldState.lairs`, so a cleared site stays quiet.
+
+### Verified (headless Chromium)
+`lairload` 6/6 (new), at Carrigkeel's Lair, the nearest lair to the start:
+- The lair is built with its beast (389 HP) and two wolves (40 each), and you save 57 units off.
+- Wound the beast to 130 and kill both wolves, then load: the site is built again, not the one you left, with three alive and all whole.
+- Kill all three, let the site mark itself dead, save and load: the site is built with no beasts.
+
+On the old code three checks fail: after the load the beast is still at 130/389, both wolves are still dead, and the dead lair is the old site with its three bodies. With the load fix alone, before the `siteCreatures` check, the killed lair was built again with all three beasts alive (389, 40, 40). Neighbours `jobfoereload`, `campsack` and `wyrm` are green. `parsecheck` is clean.
+
+### Needs eyes
+- A cleared lair, camp or glade no longer comes back after you wander off and return. Whether a camp should ever be manned again is a design call nobody has made. Today the roads and the towns' talk have always treated it as cleared for good.
+- The outdoor lair's chest (*The Hoard* beside the crag) still rolls on its site and the day each time the site is built, as before. Taken and left, it is full again the next day.

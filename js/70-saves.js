@@ -213,6 +213,10 @@ function ssSanitizeLoaded(){
      (two Shore Wisps, one id). The duel's rival is the duel's own and stays. */
   const ZW=typeof ZONES!=='undefined'&&ZONES.world&&ZONES.world.enemies;if(ZW)for(let i=ZW.length-1;i>=0;i--){const e=ZW[i];if(!e||!(e._guildTag||(e._questTag&&!e._duel)))continue;
     e.dead=true;try{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);}catch(err){}ZW.splice(i,1);}
+  /* S695 — a site's beasts (a lair's, a camp's, a glade's) are the site's, raised by its builder from the save's worldState.lairs:
+     a loaded site is put down and built again as you come near, so a load gives them back as they were when you saved, not as
+     you left them (a wounded Marsh Hag stayed wounded through a death and a load, and her dead wolves stayed dead). */
+  if(typeof SETTLE!=='undefined'&&typeof disposeSettlement==='function')for(const [id,S] of [...SETTLE])if(S&&S.creatures&&(S.creatures.length||S._deadMarked))disposeSettlement(id);
 }
 // ── v80 S139: a character as a file, out of the browser and back ──
 // One file holds a character's saves as they are stored, so it survives a cleared profile, a new
