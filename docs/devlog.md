@@ -14793,3 +14793,14 @@ No page errors. Neighbours green: `hourhitch` (6/6), `foes`, `faolchu`, `bear`, 
 ### Needs eyes
 - On the laptop: the first wolf of a session, and the first night, should no longer hitch. The first entry to the world takes a little longer behind its fade (under a second here).
 - The dungeon's foes are not prewarmed. Their builders and the dungeon's lights are their own, so a first skeleton below can still hitch.
+
+## v80 — Session 689 — The Standing page counts one task as one (the critic's s480 note, the ledger's half)
+The critic's s480 run read *Novice of the Mages' Guild. 1 tasks done.* Session 648 mended the guild head's *My standing?*, but the hub's Standing page (`renderHubAttrs`, `66-hub.js`) still wrote the count with the plural fixed: *Novice · 1 tasks* for a guild and *Commissioner · 1 services* for a faction. Both now take the singular at one, as the dialogue does. The words are the page's own; only the *s* changed.
+
+**Correction to Session 688's *Needs eyes*.** It said a first skeleton below could still hitch. Measured headless since (a probe, not kept): a dungeon builds all its foes when you enter, so their programs compile on the dungeon's first frame (3 programs on the ruins at seed 11), not when the first skeleton comes into view. Killing three of its foes changed nothing: the scene's lights stayed at 22 and no shader compiled. So the dungeon has one compile, at the door, and none in the fight.
+
+### Verified (headless Chromium)
+`ledgerplural` 6/6 (new), through `renderHubAttrs`: at one, the Mages' Guild reads *Novice · 1 task* and the Crown *Commissioner · 1 service*. At two they read *2 tasks* and *2 services*, and a guild with none done reads *not a member*. On the old page the two checks at one fail (*1 tasks*, *1 services*). The dialogue's own suite `standingcount` is still 2/2 plus its page-error check. `parsecheck` clean.
+
+### Needs eyes
+Nothing beyond reading the Standing page after a first commission.
