@@ -16,6 +16,16 @@ const r = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); con
 console.log(JSON.stringify(r));
 check('lairs found round the start, each with its beast built', r.length >= 6 && r.every(x => x.crag), r.length);
 check('the beast at the crag is lairBeast(site) at every lair', r.every(x => x.crag === x.beast || (x.crag2 || '').endsWith(' the ' + x.beast)), r.map(x => [x.name, x.crag2, x.beast]));
+// load order (Session 701): the live REGIONS hold only the loaded cells' regions, so the biome read at a lair moved with what was
+// loaded. Read every lair's beast, make and load the cells round each, and read again: lairBeast is unchanged; the live read is not always
+const lo = await page.evaluate((rows) => { const out = { same: 0, diff: [], liveDiff: [] };
+  const live0 = rows.map(x => dominantRegion(WORLD.SITE[x.id].x, WORLD.SITE[x.id].z).r.biome);
+  for (const x of rows) { const s = WORLD.SITE[x.id]; const [ci, cj] = WORLD.cellOf(s.x, s.z); for (let i = ci - 2; i <= ci + 2; i++) for (let j = cj - 2; j <= cj + 2; j++) { WORLD.getCell(i, j); if (Math.abs(i - ci) <= 1 && Math.abs(j - cj) <= 1) WORLD.loadCell(i, j); } }
+  rows.forEach((x, k) => { const s = WORLD.SITE[x.id]; if (!s) return; const b = lairBeast(s); if (b === x.beast) out.same++; else out.diff.push([x.name, x.beast, b]);
+    const l = dominantRegion(s.x, s.z).r.biome; if (l !== live0[k]) out.liveDiff.push([x.name, live0[k], l]); });
+  return out; }, r);
+console.log(JSON.stringify(lo));
+check('every lair\'s beast is the same after the cells round it are made and loaded', lo.diff.length === 0 && lo.same === r.length, lo);
 // the cavern: its master takes the same name, even when the door's stored boss says otherwise
 const cave = await page.evaluate((rows) => { const x = rows[0]; const site = WORLD.SITE[x.id]; const other = x.beast === 'Ogre' ? 'Cave Bear' : 'Ogre';
   window._lairBoss = null; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: site.name.replace(/'s Lair$/, ''), boss: other, siteId: site.id } });

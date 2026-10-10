@@ -192,6 +192,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
   code units and the files hold emoji, so an edit by acorn offset is applied on the UTF-16 form, never on Python's string.
 - What a chunk holds depends on what had loaded when it was built: the scatter skips stamps and roads registered so far, and `SETTLE` holds
   only the towns built so far. An outcome keyed by id (a herb's kind, a spawn) must read the hash and `getCell`, never `ch.treePts` or `SETTLE` (S533).
+- `dominantRegion(x,z)` (and `regionWeights`, `regionScalar`) read `REGIONS`, the loaded cells' regions only: near a cell's edge the biome at a fixed spot changes with what is loaded (6 of 14 lairs near the start, S701). An outcome keyed by a place reads its cell's and the eight neighbours' `c.regions` through `getCell` (`lairBiome`), never while a cell is being made.
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 

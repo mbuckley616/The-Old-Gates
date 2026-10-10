@@ -341,10 +341,16 @@ const giver=`${lord.title} ${lord.name}`;
   // rolled Cave Bear or Ogre on its build stream, the master on this hash.
   function keepSiteChest(ch){if(!ch||!ch._keepSite)return;(worldState.siteChests||(worldState.siteChests={}))[ch._keepSite]=ch.items;} // S700 — the named action: a site's chest, taken from, keeps what is left
   function lairSeed(site){return 100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);}
-  function lairBeast(site){const seed=lairSeed(site),biome=dominantRegion(site.x,site.z).r.biome;
+  // S701 — the biome from the regions of the lair's cell and its eight neighbours, not the live REGIONS (the loaded cells' only:
+  // the same lair read Marsh Hag or Cave Bear by which cells were loaded). Never called while a cell is being made (getCell).
+  function lairBiome(site){const [ci,cj]=cellOf(site.x,site.z);const regs=[];for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
+    if(!regs.length)return dominantRegion(site.x,site.z).r.biome;let best=null,bw=0,near=null,nd=1e9;
+    for(const r_ of regs){const d=Math.hypot(site.x-r_.x,site.z-r_.z);const w=Math.max(0,1-d/r_.r);if(w>bw){bw=w;best=r_;}if(d/r_.r<nd){nd=d/r_.r;near=r_;}}
+    return (best||near).biome;}
+  function lairBeast(site){const seed=lairSeed(site),biome=lairBiome(site);
     return biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';}
   function lairDoorFor(site,c){const seed=lairSeed(site);const biome=dominantRegion(site.x,site.z).r.biome;
-    const boss=lairBeast(site);
+    const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre'; /* S701 — read as the cell is made, and so not lairBeast (which reads the cells round it); lairFinish names the master by lairBeast */
     const dragon=!!site.dragon||cellHash(seed%9973,seed%7919,5)<.08;site.dragon=dragon;
     return {zone:'gen',x:site.x,z:site.z-6,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
@@ -452,7 +458,7 @@ const giver=`${lord.title} ${lord.name}`;
     sol.push({cx,cz:cz-4.5,rx:5,rz:3.5},{cx:cx-5,cz:cz-2,rx:2.2,rz:2.2},{cx:cx+5,cz:cz-2,rx:2.2,rz:2.2});
     // bones and a kill
     for(const B of lp.bones){const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,B.len),new THREE.MeshLambertMaterial({color:0xe8e0d0}));b.position.set(B.x,B.h+.05,B.z);b.rotation.y=B.ry;group.add(b);}
-    const biome=dominantRegion(cx,cz).r.biome;const boss=lairBeast(site);if(!['tundra','wasteland','wastes','swamp','fen'].includes(biome))r(); /* S699 — the master's answer; the draw it replaced is still taken, so the rest of the build rolls as before */
+    const biome=dominantRegion(cx,cz).r.biome;const boss=lairBeast(site);if(!['tundra','wasteland','wastes','swamp','fen'].includes(biome))r(); /* S701 — biome here is still the live read, so the draw is taken exactly when it was */ /* S699 — the master's answer; the draw it replaced is still taken, so the rest of the build rolls as before */
     siteCreatures(S,[[boss,cx,cz+3,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx-4,cz+5,false],[biome==='tundra'?'Snow Wolf':'Dire Wolf',cx+4,cz+6,false]]);
     if(S.creatures[0]){const e=S.creatures[0];const dragon=!!site.dragon;e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:4)*(1+level*.08));e.dmg=Math.round(e.dmg*(dragon?2.2:2)*(1+level*.04));e.spd=(e.spd||1.4)*1.5;e.lair=site.id;if(e.mesh)e.mesh.scale.multiplyScalar(dragon?2.4:1.5);if(dragon)dragonBody(e,3.2);e.name=dragon?`${site.name.replace("'s Lair",'')} Wyrm`:`${site.name.replace("'s Lair",'')} the ${boss}`;e.boss=true;e.dragon=dragon;}
     siteChest(S,cx+2.2,cz-.2,2.2,'The Hoard');

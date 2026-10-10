@@ -14927,3 +14927,14 @@ On the old code four checks fail. The chest is rebuilt full (the boots and the b
 
 ### Needs eyes
 Nothing in play beyond an emptied chest staying empty. A lair's outdoor *Hoard* rolled one Health Potion at Carrigkeel. It rolls on the `treasure` table at ×2.2, which can give little. That is a matter of numbers, not raised here.
+
+## v80 — Session 701 — A lair's beast is the same whatever cells are loaded (Session 699's owed cause)
+Session 699 left one thing unexplained: Carrigowen, never moved, read *Cave Bear* on its door and fen at its crag. The cause is `dominantRegion` (`80-world-terrain.js`). It weighs `REGIONS`, which holds only the loaded cells' regions, so near a cell's edge the biome at a fixed spot changes with what is loaded. The door is made when its cell is first made, often with its neighbours unmade. In `lairname` the live read at six of fourteen lairs near the start changed once the cells around each were made and loaded: Grandmuros fen → forest, Dunowen forest → autumn, four plains ↔ coast. So Session 699's `lairBeast`, which read the live biome, could still name a lair's beast by the order you walked.
+
+`lairBiome(site)` (`87-world-quests.js`) now reads the regions of the lair's cell and its eight neighbours through `getCell`, which are the same whatever is loaded. `lairBeast` asks it. `lairDoorFor` runs while a cell is being made, where `getCell` on the neighbours would make them in turn, so it keeps its own live read for the door's stored name and theme. Nothing names the master from that stored name any more (S699). At the crag the draw is still taken exactly when it was. The wolves beside the beast (Snow Wolves on the tundra) and the cavern's theme still read the live biome. A gotcha line in CLAUDE.md says so for the next session.
+
+### Verified (headless Chromium)
+`lairname` 5/5 (extended). Read every lair's beast, then make the cells within two of each and load the nine round it, and read again. `lairBeast` is unchanged at all 14 lairs; the live `dominantRegion` read changed at 6. The crag's beasts and the cavern's master still agree (*Fornbaios — Cave Bear*). Neighbours `wyrm`, `lairload`, `sitechest` and `poipreview` are green. `parsecheck` is clean.
+
+### Needs eyes
+The load-order dependence is wider than lairs. Anything that reads `dominantRegion` for an outcome near a cell's edge is affected: a cavern's theme, the beasts at a glade, encounter tables, the ground's colour. It is the world's (`80-world-terrain.js`, the look builder's file), and is named here for routing, not fixed.
