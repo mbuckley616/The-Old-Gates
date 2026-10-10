@@ -421,6 +421,8 @@ const giver=`${lord.title} ${lord.name}`;
     const trees=new THREE.InstancedMesh(PROTO.broadleaf,SCATTER_MAT,10);const mm=new THREE.Matrix4();for(let i=0;i<10;i++){const T=gp.trees[i];mm.compose(new THREE.Vector3(T.x,T.h,T.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),T.ry),new THREE.Vector3(1.4,1.5,1.4));trees.setMatrixAt(i,mm);trees.setColorAt(i,new THREE.Color(.9,1,.9));sol.push({cx:T.x,cz:T.z,rx:.5,rz:.5});}trees.instanceMatrix.needsUpdate=true;trees.userData.noBake=true;group.add(trees);
     // herbs: a hotspot ring of 18 around the water
     if(typeof HERB_DEF!=='undefined'){const biome=dominantRegion(cx,cz).r.biome;const cands=herbCandidates(biome,'water').concat(herbCandidates(biome,'tree'));if(cands.length){for(let i=0;i<18;i++){const a=r()*Math.PI*2,rr=pr+2.5+r()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(r()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={id:S.site.id+':herb:'+i,x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:r()*6.28};ZONES.world.herbs.push(h);(S.herbs=S.herbs||[]).push(h); /* S514 — its id */}
+        /* S719 — a dead lair’s glade grows a second ring of 18 (#227 B), on a stream of its own so that no roll of the glade's moves */
+        if(gladeDoubled(site)){const g2=seededRng('glade',site.id);for(let i=18;i<36;i++){const a=g2()*Math.PI*2,rr=pr+2.5+g2()*8;const x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;const type=cands[Math.floor(g2()*cands.length)][0];const def=HERB_DEF[type];const g=new THREE.Group();g.position.set(x,worldH(x,z),z);const h={id:S.site.id+':herb:'+i,x,z,type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:g2()*6.28};ZONES.world.herbs.push(h);S.herbs.push(h);}}
       // instance them onto a chunk-less mesh owned by the settlement
       const byType={};S.herbs.forEach(h=>(byType[h.type]||(byType[h.type]=[])).push(h));for(const type in byType){const geo=herbGeoFor(type,HERB_DEF[type]);if(!geo)continue;const list=byType[type];herbIM(type,geo,list,group,h=>worldH(h.x,h.z));}}}
     // creatures at the water
@@ -711,6 +713,13 @@ const giver=`${lord.title} ${lord.name}`;
   function sack(t,camp){const st=TS(t);flag(t,'sacked',true);st.p=15;const lord=lordFor(t);if(typeof addLog==='function')addLog('🔥',`${t.name} was sacked by the bandits of ${camp.name}.`);showMsg(`Word comes that ${t.name} has been sacked.`,'#ff8060');}
   function markRoadCleared(a,b){(worldState.roadsCleared||(worldState.roadsCleared={}))[a+'|'+b]=worldState.gameTimeAbsMinutes||0;}
   function markLairDead(siteId){(worldState.lairs||(worldState.lairs={}))[siteId]=worldState.gameTimeAbsMinutes||0;}
+  // S719 — canon §12, Michael’s B on #227: a slain lair-beast doubles the herbs of the glade nearest its lair, if that glade lies
+  // within 700 units (the reach at which a lair weighs on a town). Read from the cells' own sites, whatever has loaded; a cell is
+  // 2,400 across, so the glades within 700 of any lair within 700 of this glade lie in the 5×5 cells round it.
+  function gladeDoubled(site){const L=worldState.lairs;if(!L||!site||site.kind!=='glade')return false;
+    const [ci,cj]=cellOf(site.x,site.z),near=[];for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const c=getCell(i,j);if(c&&c.sites)for(const t of c.sites)if(t.kind==='lair'||t.kind==='glade')near.push(t);}
+    return near.some(l=>{if(l.kind!=='lair'||L[l.id]==null)return false;const d=Math.hypot(l.x-site.x,l.z-site.z);if(d>700)return false;
+      return !near.some(q=>q.kind==='glade'&&q.id!==site.id&&Math.hypot(q.x-l.x,q.z-l.z)<d);});}
   // ═══ SETTLEMENT AND WORLD SYSTEMS (Session 129) ══════════════════════
   // Wall tiers by prosperity; the cold peace breaking into a war of
   // sieges and occupations; pirates sacking ports; plague from a

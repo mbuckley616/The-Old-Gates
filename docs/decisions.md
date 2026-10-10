@@ -4,6 +4,9 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+
+## Answered
+
 ### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
 Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
 
@@ -15,8 +18,7 @@ Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:
 
 Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
 
-
-## Answered
+Michael: **B** — doubled, only a glade within 700 units (2026-10-10, on #227; written to auto/producer aab94ff). **Built, Session 719** (`tests/gladeherbs`). The card's line (A's *the glade is thick with herbs since the beast died*) is not built: it is new text, the quest writer's.
 
 ### A lair's cavern — your level's difficulty, a grade above it, or always Hard? (systems builder, 2026-10-10) — DECISION #230
 Since Session 9 every old gate's difficulty is your level's grade: Very Easy to level 2, Easy to 5, Normal to 9, Hard to 14, then Very Hard (`levelDiffKey`). A door you found early stays a fair fight later. A lair's cavern door is written `diff:'hard'`, and a dragon lair's `veryhard`, but nothing reads either: the portal's difficulty is always your level's. The critic saw *[Very Easy · deep · medium]* on Carrigowen's cavern at level 1, where the beast outside had killed them twice.

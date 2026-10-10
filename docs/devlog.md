@@ -15226,3 +15226,16 @@ Michael chose A. Since Session 9, every old gate's difficulty is your level's gr
 
 ### Needs eyes
 - A lair's cavern at level 1 by play: Easy, with the master at about 149 against the crag's 190. Is it the harder place now, without being a wall?
+
+## v80 — Session 719 — A slain lair-beast doubles its nearest glade's herbs (Michael's B on #227)
+Canon §12 gives a lair's beast killed three effects: it stays dead, the nearest glade doubles its herbs, and a rumour spreads within two provinces. Only the first was built. Michael chose B for the glade: doubled, but only when the glade lies within 700 units of the lair. That is the reach at which a lair already weighs on a town's prosperity.
+
+`gladeDoubled(site)` (`87-world-quests.js`, beside `markLairDead`) is true for a glade when some lair whose beast is dead (`worldState.lairs`) lies within 700 units of it, and no other glade lies nearer that lair. It reads the sites from the cells' own data (`getCell`, the 5×5 cells round the glade, clamped to the grid), not the live `SITES`. So the answer is the same whatever has loaded, as Sessions 699–712 did for the lairs' beasts. `worldState.lairs` also marks a glade's own beasts and a broken bandit camp. Those are not lair-beasts and are passed over by kind. `buildGlade` grows its 18 herbs as before. When the glade is doubled, it then grows a second ring of 18, `<glade>:herb:18…35`, on `seededRng('glade', <glade id>)`. That is a stream of its own, so the glade's first 18 herbs, its beasts and every other roll of its build come out exactly as before (the co-op rules). It holds from the next time the glade is built after the beast dies, which is the next time its cell loads. The save already carries the death.
+
+Not built: A's line on the glade's card (*the glade is thick with herbs since the beast died*). It is new player-readable text, so it is the quest writer's if wanted. The rumour is the proposal *The town speaks of its beast*.
+
+### Verified (headless Chromium)
+`tests/gladeherbs` (new, 9 checks). On the whole grid there are 41 lairs and 80 glades, and 7 lairs have their nearest glade within 700. Dogiaen's Lair and Nordaey Glade lie 631 apart. With the beast alive the glade grows 18 herbs. With it dead, the glade grows 36, the second ring keyed `c2_3_p1:herb:18` to `:35`, and the first 18 herbs and its 3 beasts are the same, place for place. A lair whose nearest glade is 1,234 off doubles nothing. A broken bandit camp 601 from a glade doubles nothing, and neither does the glade's own mark. On this grid no second glade lay within 700 of that lair, so the *not its nearest* check had nothing to try. `herbparity`, `herbstub`, `lairload`, `poipreview`, `sitechest`, `plants` and `lairname` pass.
+
+### Needs eyes
+- A doubled glade by eye: 36 herbs in the ring round the pond, whether it reads as thick or as crowded.
