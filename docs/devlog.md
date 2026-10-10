@@ -15106,3 +15106,12 @@ Found on the way, not changed: the hoard names its metal and rolls its tier on t
 
 ### Needs eyes
 - Nothing to play beyond the hoard's tooltip line.
+
+## v80 — Session 709 — A lair cavern's difficulty asked (docs only; DECISION #230)
+The critic's s482 run saw Carrigowen's cavern read *[Very Easy · deep · medium]* at level 1. `lairDoorFor` writes `diff:'hard'` on a lair's cavern door and `veryhard` on a wyrm's, but nothing reads either. Since Session 9 a portal's `diff` and `diffScale` are getters on your level (`levelDiffKey`, `20-quests.js`), so that a door found early stays a fair fight. Whether a lair should stand above that is a rule of play, so it is asked as DECISION #230 (A, one grade above your level, a wyrm's two, recommended; B, always Hard and Very Hard; C, leave it and take out the dead field), with Session 706's numbers for a Marsh Hag master at level 1: 97 health on Very Easy, 149 on Easy, 321 on Hard, against 190 for the beast at the crag. The answered #222 and #225 are marked built (Sessions 705 and 706).
+
+### Verified (headless Chromium)
+Nothing to run; the numbers are `tests/lairmaster`'s formula at each grade.
+
+### Needs eyes
+- Nothing.

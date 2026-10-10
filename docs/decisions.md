@@ -15,6 +15,17 @@ Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:
 
 Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
 
+### A lair's cavern — your level's difficulty, a grade above it, or always Hard? (systems builder, 2026-10-10) — DECISION #230
+Since Session 9 every old gate's difficulty is your level's grade: Very Easy to level 2, Easy to 5, Normal to 9, Hard to 14, then Very Hard (`levelDiffKey`). A door you found early stays a fair fight later. A lair's cavern door is written `diff:'hard'`, and a dragon lair's `veryhard`, but nothing reads either: the portal's difficulty is always your level's. The critic saw *[Very Easy · deep · medium]* on Carrigowen's cavern at level 1, where the beast outside had killed them twice.
+
+Measured with Session 706's masters (a Marsh Hag, floor 2, level 1): on Very Easy, as today, the master has 97 health; Easy, 149; Hard, 321. The beast at the crag outside has 190.
+
+- **A. A lair's cavern one grade above your level, a wyrm's two** (Easy at level 1, up to Very Hard). The cavern stays fair at any level, as Session 9 wants, and is still the harder place. Every foe inside is scaled, and so is the loot (`rollLoot` reads the grade). One short session.
+- **B. As written: a lair's cavern is always Hard, a wyrm's Very Hard.** At level 1 that is 1.5× health and 1.45× blows on every foe in the cave.
+- **C. Leave it.** Every door is your level's grade, and the dead field is taken out.
+
+Recommendation: **A.** In Skyrim a dungeon's level is set from yours with a floor and a cap, and a named lair sits above the common ones. A keeps Session 9's promise that a door is a fair fight at any level, and it makes the cavern under the beast's crag worth its name. B would make the first lair a new character finds a wall.
+
 ## Answered
 
 ### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
@@ -26,6 +37,7 @@ The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carr
 
 Recommendation: **A.** The lair is named for its beast, and the dragon lair already works this way: its master is the wyrm, whatever stood there. A gives every lair what the wyrm has. B is honest but makes a lair's master a slime half the time.
 Michael: **The master is the lair's own beast** (A). (10 Oct 2026)
+Built: Session 706 on auto/systems (`lairMasterBody`, `tests/lairmaster`).
 
 ### Witnesses in the street — all round, or only what they face, as in a shop? (systems builder, 2026-10-10) — DECISION #222
 In the street, a townsperson or guard sees a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood). They see it whichever way they face. Indoors, since your B on #73, a keeper sees only what they face, in a cone of about 120° within six units. So in the street you can never pick a lock behind someone's back, and inside a shop you can. Measured (Session 609, `tests/nightpick`): at Dunmore's seven shop doors from 20h to 4h, a pick is seen 26% of the time walking and 18% sneaking.
@@ -36,6 +48,7 @@ In the street, a townsperson or guard sees a crime all round: anyone awake withi
 
 Recommendation: **B.** Oblivion and Skyrim judge a witness by line of sight and facing, so a back turned is a chance. That is your call on #73, and A carries it outdoors. B keeps one thing: the guard is the one you can't slip past by timing a turned head. That keeps the night watch's beat (S166) a threat, and the 26% at the doors would fall mostly where townsfolk stand, not where the watch walks.
 Michael: **The street as the shop: everyone by a 120° cone** (A). (10 Oct 2026)
+Built: Session 705 on auto/systems (`witnessOf`, `tests/streetcone`).
 
 ### The world map — sharp at every zoom, and your quests on it (the concept artist, 2026-10-09) — DECISION #220
 You asked on 5 Oct for quest markers on the overworld map, and said the map is very often blurry. The prototype (`docs/prototypes/worldmap/`, on auto/concept) is today's game (build s482) with the proposal loaded over its map, photographed as a laptop screen sees it.
