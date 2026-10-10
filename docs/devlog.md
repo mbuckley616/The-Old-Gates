@@ -15095,3 +15095,14 @@ Shard 8 on PR #212 (`27dd374`) failed `guardplay` on one condition of *the cells
 
 ### Needs eyes
 - Nothing to play.
+
+## v80 — Session 708 — A cavern hoard's sword or cuirass asks what its tier asks (the critic's s482 note)
+The critic's s482 run found that the hoard's Steel Sword showed no requirement, where a tier-4 sword should. `lairFinish` builds the hoard's one piece by hand: a sword, or a cuirass, of tier 3 or 4 (5 or 6 for a wyrm). It never set the `reqAttr`/`reqVal` that `makeItem` gives every tiered weapon from `MATERIALS` (Iron Might 5, Steel 10, Mithril 16, Adamant 24), or that `armorReq` gives armour (Fortitude by `ARMOR_FORT_REQ`). It now sets them the same way. That is the game's own rule for any item of that tier, so it is not a new rule. A hoard already rolled and saved keeps its items as they were saved.
+
+Found on the way, not changed: the hoard names its metal and rolls its tier on two separate draws (`MATS[hr()*3]`, then `3+hr()*2`). So a "Steel Cuirass" can be tier 3, and a "Silver Sword" is a metal no tier has. The requirement follows the tier, as the attack and the price already do. Making the name follow the tier would change what the hoard gives, which is a loot call. It is noted in backlog I.
+
+### Verified (headless Chromium)
+`lairmaster` gains an 11th check, and all pass: each of the five caverns' hoard pieces asks what its tier asks. Steel Sword (tier 4), Might 10. Iron Sword (3), Might 5. Iron Cuirass (3), Fortitude 5. A Steel Cuirass at tier 3 asks Fortitude 5, which is the mismatch above.
+
+### Needs eyes
+- Nothing to play beyond the hoard's tooltip line.

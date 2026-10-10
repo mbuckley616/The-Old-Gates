@@ -22,6 +22,7 @@ for (const [k, kind] of KINDS.entries()) {
     return { kind, name: e.name, baseType: e.baseType, person: !!e.limbs.person, wolf: !!e.limbs.wolf, rigOnMesh: !!root && root.parent === e.mesh, rigE: !!rig && rig.e === e,
       hp: e.maxHp, hpWant: hp, dmgMult: +e.dmgMult.toFixed(3), dmgWant: +dm.toFixed(3), resist: JSON.stringify(e.resist) === JSON.stringify(D.resist || {}), def: e.def === (D.def || 0),
       height: b ? +(b.max.y - b.min.y).toFixed(2) : null, ceiling: FLOOR_HEIGHT, oldBoxes: boxes, master: !!e.master, boss: !!e.boss, posture: e.maxPosture, floor: e.floor || 1,
+      hoard: (() => { const it = worldState.masters[currentPortal.seed].hoard.items[1]; const want = it.slot === 'weapon' ? MATERIALS.find(q => q.tier === it.tier) : armorReq(it.tier, armorTypeOf(it)); return { name: it.name, tier: it.tier, reqAttr: it.reqAttr, reqVal: it.reqVal, ok: !!it.reqAttr && it.reqAttr === want.reqAttr && it.reqVal === want.reqVal && it.reqVal > 0 }; })(),
       slimeless: !e.disguised && !e.dormant && !e.isWraith && !e.ranged, inScene: !!e.mesh.parent }; }, kind));
 }
 console.log(JSON.stringify(rows));
@@ -34,5 +35,6 @@ check('its blow is the kind\'s (dmgMult so the cavern\'s 15 lands the kind\'s bl
 check('its armour and resistances are the kind\'s, and nothing of the slot\'s ambush or range is left', rows.every(r => r.resist && r.def && r.slimeless), rows);
 check('it stands under the cavern\'s ceiling', rows.every(r => r.height > .8 && r.height <= r.ceiling - .14), rows.map(r => [r.kind, r.height, r.ceiling]));
 check('its posture is from its own health', rows.every(r => r.posture >= Math.round(r.hp * .5 * .9) || r.posture >= 18), rows.map(r => [r.kind, r.hp, r.posture]));
+check('the hoard\'s sword or cuirass asks what its tier asks (Session 708: it was built with no requirement)', rows.every(r => r.hoard && r.hoard.ok), rows.map(r => r.hoard));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
