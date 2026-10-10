@@ -86,7 +86,7 @@ function loop(now){
   const _qpop = document.getElementById('quest-popup');
   const _qpopOpen = _qpop && _qpop.style.display==='flex';
   if(typeof lockOpen!=='undefined'&&lockOpen&&LP.live)lpWatch(); // S327 — before the pause: a halt's dialogue must close the lock
-  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof yardOpen!=='undefined'&&yardOpen))return;
+  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof yardOpen!=='undefined'&&yardOpen)||(typeof pauseOpen!=='undefined'&&pauseOpen))return;
   // v61e6 Session A: clock tick. Placed AFTER the pause bailout so UI-open
   // pauses the clock (consistent with stamina/buffs/cooldowns pausing).
   advanceClock(dt);
@@ -334,7 +334,7 @@ function loop(now){
   // FOV shift for sprint. v62.7: LUNGE_FOV (92) overrides while lungeT > 0
   // for a small "rush" punch. Reverts to sprint/idle FOV after lunge expires
   // via the same dt*8 lerp.
-  const targetFOV = lungeT > 0 ? LUNGE_FOV : (sprinting?85:75);
+  const targetFOV = (lungeT > 0 ? LUNGE_FOV : (sprinting?85:75)) + SETTINGS.fov - 75; /* S691 — the settings' field of view moves all three */
   CAM.fov+=(targetFOV-CAM.fov)*Math.min(1,dt*8);CAM.updateProjectionMatrix();
 
   let mdx=0,mdz=0;

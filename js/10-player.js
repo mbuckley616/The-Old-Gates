@@ -216,8 +216,19 @@ function _clearOffhandForTwoHander(reason){
 // menu shows). The reconciler still calls exit as a defense-in-depth fallback
 // for any code paths that didn't go through an open* function. Cursor-toggle
 // trick in pointerlockchange handler forces the OS cursor cache to invalidate.
+// S691 — the settings (Michael's B on #208): kept in this browser under 'og.settings', for every character, never in a save. The volumes
+// are percentages over the loud/quiet/off button's levels (`applyVolumes`, 72-audio.js); look speed multiplies the mouse's .004 a
+// pixel; brightness is a CSS filter on the canvas; the field of view is the resting one (sprint adds 10, a lunge 17, as before).
+const SETTINGS_DEF={master:100,music:100,effects:100,voices:100,look:1,invert:false,bright:0,fov:75};
+const SETTINGS=Object.assign({},SETTINGS_DEF);
+try{const s=JSON.parse(localStorage.getItem('og.settings')||'{}');for(const k in SETTINGS_DEF)if(typeof s[k]===typeof SETTINGS_DEF[k])SETTINGS[k]=s[k];}catch(e){}
+function settingsSave(){try{localStorage.setItem('og.settings',JSON.stringify(SETTINGS));}catch(e){}}
+function settingsLight(){CV.style.filter=SETTINGS.bright?`brightness(${(1+SETTINGS.bright/100).toFixed(2)})`:'';}
+settingsLight();
+let _lockReleaseAskedAt=-1e9; // S690 — when a panel last let the pointer go: a lock lost without one opens the pause leaf
 function _releasePointerLockForMenu(){
   if(document.pointerLockElement){
+    _lockReleaseAskedAt=performance.now();
     try{ document.exitPointerLock(); }catch(_){}
   }
 }

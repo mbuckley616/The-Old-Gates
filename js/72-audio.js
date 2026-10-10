@@ -24,9 +24,9 @@ function initAudio(){
   try{
     AX=new(window.AudioContext||window.webkitAudioContext)();
     masterGain=AX.createGain();masterGain.gain.value=1;masterGain.connect(AX.destination);
-    musicGain=AX.createGain();musicGain.gain.value=VOL_MUSIC[volLevel];musicGain.connect(masterGain);
-    sfxGain=AX.createGain();sfxGain.gain.value=VOL_SFX[volLevel];sfxGain.connect(masterGain);
-    uiGain=AX.createGain();uiGain.gain.value=VOL_SFX[volLevel]*.28;uiGain.connect(masterGain);
+    musicGain=AX.createGain();musicGain.gain.value=VOL_MUSIC[volLevel]*volKind('music');musicGain.connect(masterGain);
+    sfxGain=AX.createGain();sfxGain.gain.value=VOL_SFX[volLevel]*volKind('effects');sfxGain.connect(masterGain);
+    uiGain=AX.createGain();uiGain.gain.value=VOL_SFX[volLevel]*.28*volKind('effects');uiGain.connect(masterGain);
     if(_initialMusicOverride){
       startMusic(_initialMusicOverride.zone, _initialMusicOverride.theme);
     } else {
@@ -37,10 +37,15 @@ function initAudio(){
 function cycleVol(){
   volLevel=(volLevel+1)%3;
   document.getElementById('vol-btn').textContent=VOL_ICONS[volLevel];
+  applyVolumes();
+}
+// S691 — the settings sheet's four volumes (everything, music, blows and steps, spoken lines) over the button's level
+function volKind(k){return (SETTINGS.master/100)*(SETTINGS[k]/100);}
+function applyVolumes(){
   if(!AX)return;
-  musicGain.gain.setTargetAtTime(VOL_MUSIC[volLevel],AX.currentTime,.1);
-  sfxGain.gain.setTargetAtTime(VOL_SFX[volLevel],AX.currentTime,.1);
-  if(uiGain)uiGain.gain.setTargetAtTime(VOL_SFX[volLevel]*.28,AX.currentTime,.1);
+  musicGain.gain.setTargetAtTime(VOL_MUSIC[volLevel]*volKind('music'),AX.currentTime,.1);
+  sfxGain.gain.setTargetAtTime(VOL_SFX[volLevel]*volKind('effects'),AX.currentTime,.1);
+  if(uiGain)uiGain.gain.setTargetAtTime(VOL_SFX[volLevel]*.28*volKind('effects'),AX.currentTime,.1);
 }
 
 // ── SFX HELPERS ───────────────────────────────────────────────────────────

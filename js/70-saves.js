@@ -889,6 +889,7 @@ function closeSLMenu(){
     const G=document.getElementById('g');
     if(G)G.focus();
   }
+  if(typeof pauseReturn==='function')pauseReturn(); /* S690 — opened from the pause leaf: back to it */
 }
 
 function setSLTab(mode){

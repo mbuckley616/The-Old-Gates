@@ -390,7 +390,7 @@ function speakLine(text,npcName,revealEl){
     // robotically identical across lines. Small enough to stay "in character".
     u.rate=p.rate+(Math.random()-0.5)*0.06;
     u.pitch=p.pitch+(Math.random()-0.5)*0.06;
-    u.volume=ttsVolume;
+    u.volume=ttsVolume*(SETTINGS.master/100)*(SETTINGS.voices/100); /* S691 — the settings' everything and spoken lines */
     // Word-sync reveal: onboundary fires at each word. e.charIndex is the start
     // of the upcoming word, so slicing [0, charIndex) gives us everything said
     // so far. Some engines don't fire boundary events — if we haven't seen one

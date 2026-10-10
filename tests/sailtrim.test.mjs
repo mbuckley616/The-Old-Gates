@@ -21,8 +21,12 @@ check('a ship is still 4.3–7k triangles all told (the prototype\'s 4.6–6.0k,
 const sea = await page.evaluate(() => {
   let sx = null, sz = null; for (let r = 30; r < 2000 && sx === null; r += 30) for (let a = 0; a < 6.28; a += .3) { const x = px + Math.cos(a) * r, z = pz + Math.sin(a) * r; if (WORLD.worldH(x, z) < -4 && WORLD.worldH(x + 30, z) < -4 && WORLD.worldH(x - 30, z) < -4 && WORLD.worldH(x, z + 30) < -4 && WORLD.worldH(x, z - 30) < -4) { sx = x; sz = z; break; } }
   if (sx === null) return null; window._O = [WORLD.spawnOtherShip('merchant', sx, sz), WORLD.spawnOtherShip('pirate', sx + 40, sz)];
-  // each holds its heading (a far waypoint dead ahead), so what the rig lags behind is the wind, not a turn
-  for (const o of _O) o.wp = { x: o.x - Math.sin(o.yaw) * 5000, z: o.z - Math.cos(o.yaw) * 5000 }; return [Math.round(sx), Math.round(sz)]; });
+  // each holds its heading, so what the rig lags behind is the wind, not a turn: her waypoint always dead ahead, and she lies
+  // still, so she never sails into shallows, where the game drops the waypoint and picks a random one (on a slow runner the
+  // game's own loop ran on between the test's steps, and a turn left the gaff .04 and the flag .08 behind; CI, 9 Oct)
+  for (const o of _O) { Object.defineProperty(o, 'wp', { get: () => ({ x: o.x - Math.sin(o.yaw) * 5000, z: o.z - Math.cos(o.yaw) * 5000 }), set: () => {}, configurable: true });
+    Object.defineProperty(o, 'speed', { get: () => 0, set: () => {}, configurable: true }); }
+  return [Math.round(sx), Math.round(sz)]; });
 check('found open water for two ships', !!sea, sea);
 const rule = () => page.evaluate(() => { const w = WORLD.windDir(), res = [];
   for (const o of _O) { const m = o.mesh, th0 = w - m.rotation.y, th = Math.atan2(Math.sin(th0), Math.cos(th0)), side = Math.sin(th) >= 0 ? 1 : -1;
@@ -35,9 +39,7 @@ const rule = () => page.evaluate(() => { const w = WORLD.windDir(), res = [];
   return { w: +w.toFixed(3), res }; });
 await g.spin(null, 120);
 const r1 = await rule();
-// a flag chases the wind at 3 a second, so on a slow runner, while the pirate's heading still drifts, it trails by up to ~.03
-// (CI, 9 Oct: .025); its streaming is checked on its own below, by where its fly end points
-check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad, a flag .05)', r1.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < (q.type === 'flag' ? .05 : .02)), r1);
+check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad)', r1.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < .02), r1);
 check('square yards brace no more than 35°', r1.res.filter(q => q.type === 'square').every(q => Math.abs(q.got) <= .611), r1.res);
 check('the black sail\'s flag streams downwind (its fly end 1.4 along the wind from the pole)', r1.res.some(q => q.type === 'flag') && r1.res.filter(q => q.type === 'flag').every(q => q.down > 1.3), r1.res.filter(q => q.type === 'flag'));
 check('a gaff\'s boom lies to leeward', r1.res.filter(q => q.type === 'gaff').every(q => q.lee > 0 || Math.abs(q.th) > 3.1), r1.res);

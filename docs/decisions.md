@@ -4,6 +4,39 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
+Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
+
+Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:herb:<i>`). They are picked and grow back like any herb. Nothing reads the lairs.
+
+- **A. As the canon says.** The glade nearest a dead lair, within 1,500 units, grows a ring of 36 herbs, the second 18 keyed `<site>:herb:18…35`. It holds from the day the beast dies, and the save already carries that. The card shows *the glade is thick with herbs since the beast died*. One session.
+- **B. Doubled, but by the glade's own nearness.** The same, but only a glade within 700 units of the lair. That is the radius at which a lair already weighs on towns (the drift, the plague). Farther glades are untouched. One session.
+- **C. Leave it.** The canon's line stays a note until alchemy is a skill (J's survival skills), when herbs are worth more.
+
+Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
+
+## Answered
+
+### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
+The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carrigowen — Cave Bear*. `lairFinish` takes whichever foe stands farthest from the entrance on the lowest floor and gives it the lair's name, 3× health and a 1.5× scale. It keeps its own body. Only a dragon lair gives its master a new body, the wyrm's (Session 219). Session 699 made the name agree with the beast at the crag outside, but the body is still whatever stood deepest: a slime, a skeleton, a spider.
+
+- **A. The master is the lair's own beast.** A Marsh Hag in a fen, a Frost Troll on the tundra, an Ash Wight in the wastes, and a Cave Bear or an Ogre elsewhere. It is built on the open world's body for that kind in the cavern, as the wyrm already is. One systems session; the look builder then checks it under the cavern's ceiling.
+- **B. The master keeps its body and is named for it.** It becomes *Carrigowen — Slime*, and the master is the strongest kind on the deepest floor, not the farthest foe.
+- **C. Leave it.** Any deepest foe, named for the lair's beast.
+
+Recommendation: **A.** The lair is named for its beast, and the dragon lair already works this way: its master is the wyrm, whatever stood there. A gives every lair what the wyrm has. B is honest but makes a lair's master a slime half the time.
+Michael: **The master is the lair's own beast** (A). (10 Oct 2026)
+
+### Witnesses in the street — all round, or only what they face, as in a shop? (systems builder, 2026-10-10) — DECISION #222
+In the street, a townsperson or guard sees a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood). They see it whichever way they face. Indoors, since your B on #73, a keeper sees only what they face, in a cone of about 120° within six units. So in the street you can never pick a lock behind someone's back, and inside a shop you can. Measured (Session 609, `tests/nightpick`): at Dunmore's seven shop doors from 20h to 4h, a pick is seen 26% of the time walking and 18% sneaking.
+
+- **A. The street as the shop.** Outdoors a witness sees in a 120° cone the way they face, to the same ranges. Anyone within 2 units hears you whichever way they face. A guard on his beat faces the way he walks, so you can work a door once he has passed. One session; the night-pick numbers are measured again.
+- **B. A guard sees all round, townsfolk by their cone.** The watch is paid to look about. Villagers and keepers in the street see only what they face. One session.
+- **C. Leave it.** The street is busy and people turn their heads. Only indoors has the cone.
+
+Recommendation: **B.** Oblivion and Skyrim judge a witness by line of sight and facing, so a back turned is a chance. That is your call on #73, and A carries it outdoors. B keeps one thing: the guard is the one you can't slip past by timing a turned head. That keeps the night watch's beat (S166) a threat, and the 26% at the doors would fall mostly where townsfolk stand, not where the watch walks.
+Michael: **The street as the shop: everyone by a 120° cone** (A). (10 Oct 2026)
+
 ### The world map — sharp at every zoom, and your quests on it (the concept artist, 2026-10-09) — DECISION #220
 You asked on 5 Oct for quest markers on the overworld map, and said the map is very often blurry. The prototype (`docs/prototypes/worldmap/`, on auto/concept) is today's game (build s482) with the proposal loaded over its map, photographed as a laptop screen sees it.
 
@@ -19,37 +52,7 @@ All three options make the map sharp: drawn at the screen's own resolution, and 
 Recommendation: **A.** Oblivion's map shows your active quest's mark wherever you look, and Skyrim's sits on the edge when it's off the view. With four jobs near Dunmore, numbered seals stay readable where four stars sit on top of one another.
 
 Screens: [opening, today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-settled.png) · [zoomed into Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-town.png) · [the continent](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-continent.png) · [A, close in, marks on the edge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-deep.png) · [A, whole screen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-town.png)
-
-### Witnesses in the street — all round, or only what they face, as in a shop? (systems builder, 2026-10-10) — DECISION #222
-In the street, a townsperson or guard sees a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood). They see it whichever way they face. Indoors, since your B on #73, a keeper sees only what they face, in a cone of about 120° within six units. So in the street you can never pick a lock behind someone's back, and inside a shop you can. Measured (Session 609, `tests/nightpick`): at Dunmore's seven shop doors from 20h to 4h, a pick is seen 26% of the time walking and 18% sneaking.
-
-- **A. The street as the shop.** Outdoors a witness sees in a 120° cone the way they face, to the same ranges. Anyone within 2 units hears you whichever way they face. A guard on his beat faces the way he walks, so you can work a door once he has passed. One session; the night-pick numbers are measured again.
-- **B. A guard sees all round, townsfolk by their cone.** The watch is paid to look about. Villagers and keepers in the street see only what they face. One session.
-- **C. Leave it.** The street is busy and people turn their heads. Only indoors has the cone.
-
-Recommendation: **B.** Oblivion and Skyrim judge a witness by line of sight and facing, so a back turned is a chance. That is your call on #73, and A carries it outdoors. B keeps one thing: the guard is the one you can't slip past by timing a turned head. That keeps the night watch's beat (S166) a threat, and the 26% at the doors would fall mostly where townsfolk stand, not where the watch walks.
-
-### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
-The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carrigowen — Cave Bear*. `lairFinish` takes whichever foe stands farthest from the entrance on the lowest floor and gives it the lair's name, 3× health and a 1.5× scale. It keeps its own body. Only a dragon lair gives its master a new body, the wyrm's (Session 219). Session 699 made the name agree with the beast at the crag outside, but the body is still whatever stood deepest: a slime, a skeleton, a spider.
-
-- **A. The master is the lair's own beast.** A Marsh Hag in a fen, a Frost Troll on the tundra, an Ash Wight in the wastes, and a Cave Bear or an Ogre elsewhere. It is built on the open world's body for that kind in the cavern, as the wyrm already is. One systems session; the look builder then checks it under the cavern's ceiling.
-- **B. The master keeps its body and is named for it.** It becomes *Carrigowen — Slime*, and the master is the strongest kind on the deepest floor, not the farthest foe.
-- **C. Leave it.** Any deepest foe, named for the lair's beast.
-
-Recommendation: **A.** The lair is named for its beast, and the dragon lair already works this way: its master is the wyrm, whatever stood there. A gives every lair what the wyrm has. B is honest but makes a lair's master a slime half the time.
-
-### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
-Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
-
-Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:herb:<i>`). They are picked and grow back like any herb. Nothing reads the lairs.
-
-- **A. As the canon says.** The glade nearest a dead lair, within 1,500 units, grows a ring of 36 herbs, the second 18 keyed `<site>:herb:18…35`. It holds from the day the beast dies, and the save already carries that. The card shows *the glade is thick with herbs since the beast died*. One session.
-- **B. Doubled, but by the glade's own nearness.** The same, but only a glade within 700 units of the lair. That is the radius at which a lair already weighs on towns (the drift, the plague). Farther glades are untouched. One session.
-- **C. Leave it.** The canon's line stays a note until alchemy is a skill (J's survival skills), when herbs are worth more.
-
-Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
-
-## Answered
+Michael: **Sharp, and the compass's marks as numbered seals** (A). (10 Oct 2026)
 
 ### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214
 The draft *The Root — the rooms beneath all the gates* (`docs/quest_drafts.md`) makes the last cavern of Act III six authored rooms: the makers' workroom, the wall where they kept count, the empty shrouds, the bench where the work stopped, and the glass, where Varek stands. Today the Root's guard is a generated foe from the deep cavern renamed *The Root — Ogre*, beside a hoard of gold and a sword.
