@@ -15160,3 +15160,12 @@ Session 711 left `lairname`'s red on CI unexplained: Rathmore's Lair read Marsh 
 ### Needs eyes
 - The 5 fen and swamp caverns that were *deep*, Carrigowen's among them, are now *haunted*: the look builder's theme, in a lair.
 - `hoardspot`'s CI trail is still owed (Session 711).
+
+## v80 — Session 713 — A hoard piece's metal and tier asked (docs only; DECISION #232)
+Session 708 found that a lair hoard's sword or cuirass rolls its metal and its tier on two draws, so the name can lie: a *Steel Cuirass* at tier 3, a wyrm's tier-6 *Silver Sword*. *Silver* and *Gold* are no tier at all. Making the name follow the tier changes what a hoard gives, so it is asked as DECISION #232. A is recommended: the name follows `MATERIALS`, and the draw is kept so that no other roll moves. B makes the tier follow the name, with Silver and Gold as precious pieces. C leaves it.
+
+### Verified (headless Chromium)
+Nothing to run.
+
+### Needs eyes
+- Nothing.
