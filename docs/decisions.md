@@ -4,12 +4,47 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### A lair hoard's piece: should its metal follow its tier? (systems builder, 2026-10-10) — DECISION #232
+A lair cavern's hoard holds one piece, a sword or a cuirass, and `lairFinish` (`68-dungeon-misc.js`) rolls it on two separate draws: the metal in its name (`Iron/Steel/Silver`; a wyrm's `Silver/Gold/Mithril`) and its tier (3–4; a wyrm's 5–6). The tier sets the attack, the defence, the price and, since Session 708, the requirement. The name does not follow it. So a *Steel Cuirass* can be tier 3 and an *Iron Sword* tier 4. *Silver* and *Gold* are no tier in `MATERIALS`. A wyrm's tier-6 piece can be called *Silver*, where every other tier-6 blade is Adamant. Found in Session 708 (the critic's s482 *Steel Sword* with no requirement).
+
+- **A. The name follows the tier** (`MATERIALS`: 3 Iron, 4 Steel, 5 Mithril, 6 Adamant). The metal draw is still taken, so every other roll in the hoard comes out as before; only the name changes. Silver and Gold leave the hoard. One short session.
+- **B. The tier follows the name.** Iron 3, Steel 4, Mithril 5; Silver and Gold become precious pieces at tier 4 and 5, with a higher price and no gain in attack. This adds two metals the rest of the game does not have. One session.
+- **C. Leave it.** The name is flavour; the requirement and the numbers already follow the tier.
+
+Recommendation: **A.** Everywhere else in the game a sword's metal tells you what it does: an Iron Sword asks Might 5, a Steel Sword Might 10. A hoard that breaks that rule teaches the player that names lie. A changes no numbers, only the word.
+Michael: **The name follows the tier** (A). (10 Oct 2026)
+
+### A lair's cavern — your level's difficulty, a grade above it, or always Hard? (systems builder, 2026-10-10) — DECISION #230
+Since Session 9 every old gate's difficulty is your level's grade: Very Easy to level 2, Easy to 5, Normal to 9, Hard to 14, then Very Hard (`levelDiffKey`). A door you found early stays a fair fight later. A lair's cavern door is written `diff:'hard'`, and a dragon lair's `veryhard`, but nothing reads either: the portal's difficulty is always your level's. The critic saw *[Very Easy · deep · medium]* on Carrigowen's cavern at level 1, where the beast outside had killed them twice.
+
+Measured with Session 706's masters (a Marsh Hag, floor 2, level 1): on Very Easy, as today, the master has 97 health; Easy, 149; Hard, 321. The beast at the crag outside has 190.
+
+- **A. A lair's cavern one grade above your level, a wyrm's two** (Easy at level 1, up to Very Hard). The cavern stays fair at any level, as Session 9 wants, and is still the harder place. Every foe inside is scaled, and so is the loot (`rollLoot` reads the grade). One short session.
+- **B. As written: a lair's cavern is always Hard, a wyrm's Very Hard.** At level 1 that is 1.5× health and 1.45× blows on every foe in the cave.
+- **C. Leave it.** Every door is your level's grade, and the dead field is taken out.
+
+Recommendation: **A.** In Skyrim a dungeon's level is set from yours with a floor and a cap, and a named lair sits above the common ones. A keeps Session 9's promise that a door is a fair fight at any level, and it makes the cavern under the beast's crag worth its name. B would make the first lair a new character finds a wall.
+Michael: **One grade above your level, a wyrm's two** (A). (10 Oct 2026)
+
+### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
+Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
+
+Today a glade grows a ring of 18 herbs of its biome (`buildGlade`, each `<site>:herb:<i>`). They are picked and grow back like any herb. Nothing reads the lairs.
+
+- **A. As the canon says.** The glade nearest a dead lair, within 1,500 units, grows a ring of 36 herbs, the second 18 keyed `<site>:herb:18…35`. It holds from the day the beast dies, and the save already carries that. The card shows *the glade is thick with herbs since the beast died*. One session.
+- **B. Doubled, but by the glade's own nearness.** The same, but only a glade within 700 units of the lair. That is the radius at which a lair already weighs on towns (the drift, the plague). Farther glades are untouched. One session.
+- **C. Leave it.** The canon's line stays a note until alchemy is a skill (J's survival skills), when herbs are worth more.
+
+Recommendation: **B.** It ties the reward to the same 700 units at which the beast harms a town, so killing it is felt on the same ground. 1,500 would often double a glade a province away from anything the player connects with the lair. A is the canon read literally; B is the canon read through the rules already built.
+Michael: **Doubled, only a glade within 700 units** (B). (10 Oct 2026)
+
 ### Unblock main's CI — the suite outgrew eight shards (the producer, 2026-10-10)
 Main's own check was cancelled at the 60-minute limit on its last two runs (dc7b2d9, c282127): shard 5 of 8 ran out of time while the other shards passed. The suite is too long for eight shards. The systems builder already split it into twelve (Session 652, `6120465`, only `.github/workflows/check.yml`), but that rides Systems sessions 564–710, whose CI is red on five suites.
 - **A.** Port Session 652's twelve-shard change to main now as its own small PR, which you approve; main and every branch get a full CI run again. *(recommended)*
 - **B.** Wait: the twelve shards land when Systems sessions 564–710 merge.
-
-## Answered
+Michael: **Port the twelve shards to main now** (A). (10 Oct 2026)
 
 ### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
 The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carrigowen — Cave Bear*. `lairFinish` takes whichever foe stands farthest from the entrance on the lowest floor and gives it the lair's name, 3× health and a 1.5× scale. It keeps its own body. Only a dragon lair gives its master a new body, the wyrm's (Session 219). Session 699 made the name agree with the beast at the crag outside, but the body is still whatever stood deepest: a slime, a skeleton, a spider.
