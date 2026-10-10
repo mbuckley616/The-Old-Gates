@@ -4,6 +4,11 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Unblock main's CI — the suite outgrew eight shards (the producer, 2026-10-10)
+Main's own check was cancelled at the 60-minute limit on its last two runs (dc7b2d9, c282127): shard 5 of 8 ran out of time while the other shards passed. The suite is too long for eight shards. The systems builder already split it into twelve (Session 652, `6120465`, only `.github/workflows/check.yml`), but that rides Systems sessions 564–710, whose CI is red on five suites.
+- **A.** Port Session 652's twelve-shard change to main now as its own small PR, which you approve; main and every branch get a full CI run again. *(recommended)*
+- **B.** Wait: the twelve shards land when Systems sessions 564–710 merge.
+
 ## Answered
 
 ### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
