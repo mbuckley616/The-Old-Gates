@@ -193,3 +193,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: the critic's four s480 guild bugs fixed same day (S672–675); next, the three red tests. Look builder: the hulls wait on you; nets and stowage after systems lands. Critic: a lair next.
 
 **Roadmap.** 186 of 252 stories done (186 of 247 yesterday); four new critic bugs under way on auto/systems; two stories wait on you.
+
+## 10 Oct 2026
+
+**Waiting on you.** Three decisions: the world map sharp at every zoom with your quests on it (#220, A: numbered seals), witnesses in the street (#222, B: guards see all round, townsfolk by their cone) and what a lair cavern's master is (#225, A: the lair's own beast). Two merges: Systems sessions 564–692 (996368b, CI green) and Look sessions 676–687, the hearth that goes cold until the Mages' task is done (9ef5a55, CI green).
+
+**Landed on main since yesterday.** Look sessions 665–668, the cutter's and caravel's own hulls (c4b51b5). Your answers on #208, #211, #214 and #217. The world-map concept (#221). Quest writer run 13, Asked in Passing and Findings 21–24 (#223). The critic's lair playtest at Carrigowen (#224). Main's CI is green on 7c81b8e.
+
+**Blocked.** Nothing. The look branch's newest head (e1627df, the pause leaf on Esc) lost one shard to the hour limit; re-run this morning.
+
+**Team.** Systems builder: seven of the critic's eight lair bugs fixed (S694–701), CI running; next the master's body after #225. Look builder: the pause leaf and its settings sheet. Critic: the cavern door 46 units out is still open.
+
+**Roadmap.** 187 of 260 stories done (186 of 252 yesterday); seven new lair stories, six under way on auto/systems, one waiting on you.
