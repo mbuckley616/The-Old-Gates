@@ -346,7 +346,9 @@ const THEME_DEF={
 // v80 S9 — dungeon difficulty is the player's level, not an authored grade.
 // Portals resolve diff/diffScale at use time so a door you found at L2 is
 // still a fair fight at L12.
-function levelDiffKey(){const L=(typeof level==='number')?level:1;return L<=2?'veryeasy':L<=5?'easy':L<=9?'normal':L<=14?'hard':'veryhard';}
+// S718 — `up` grades above your level's, to Very Hard at most: a lair's cavern stands one above, a wyrm's two (Michael's A on #230)
+function levelDiffKey(up){const L=(typeof level==='number')?level:1;const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
+function portalGradeUp(entry){const L=entry&&entry.lair;return L?(L.dragon?2:1):0;}
 function makePortalDef(entry){
   const td=THEME_DEF[entry.theme]||THEME_DEF.ruins;
   const ds=DIFF_SCALE[entry.diff]||DIFF_SCALE.normal;
@@ -360,8 +362,8 @@ function makePortalDef(entry){
     zone:entry.zone,
     keyBase:dungeonKeyBase(entry.seed),
     theme:entry.theme,
-    get diff(){return levelDiffKey();},
-    get diffScale(){return DIFF_SCALE[levelDiffKey()];},
+    get diff(){return levelDiffKey(portalGradeUp(entry));},
+    get diffScale(){return DIFF_SCALE[levelDiffKey(portalGradeUp(entry))];},
     kind:entry.kind || 'cave_door',  // v61f8: forward-compat field. 'cave_door' (default, carved-rock-and-door "old gate") or 'fort_door' (built-stonework fort entrance).
     exterior:entry.exterior || 'gatehouse',  // v61f9: which FORT_EXTERIORS entry to use for fort_door portals. Default 'gatehouse'. Ignored for cave_door.
     interior:entry.interior || 'cave',  // v61g0: which FORT_INTERIORS entry to use for procedural interior generation. Default 'cave' (makeDungeon, random rooms + L-corridors). 'fort_tee' selects the trunk+cross fort interior. Independent of kind/exterior — a cave_door can technically host any interior, though canonically only fort_door entries set this.

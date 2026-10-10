@@ -15215,3 +15215,14 @@ Michael chose A: the name follows the tier. `lairFinish` drew the piece's metal 
 
 ### Needs eyes
 - Nothing beyond the name in the loot panel.
+
+## v80 — Session 718 — A lair's cavern stands a grade above your level, a wyrm's two (Michael's A on #230)
+Michael chose A. Since Session 9, every old gate's difficulty is your level's grade (`levelDiffKey`), read when asked, so a door found early stays a fair fight. A lair's cavern took the same grade. The `diff:'hard'` (a wyrm's `veryhard`) written on its door was never read. So Carrigowen's cavern read *Very Easy* at level 1, under a beast that had killed the critic twice.
+
+`levelDiffKey(up)` now takes a number of grades above your own, to Very Hard at most. `makePortalDef`'s `diff` and `diffScale` getters ask for one more grade when the door has a `lair`, and two when its lair is a wyrm's. Both are read from the door's own `lair` when asked, so the Salt Mouth, made a wyrm's lair after its door exists, reads two grades up as well. Everything that scales by grade reads those getters: the foes' health, blows and speed, the master (whose health is the cavern's grade times its kind's), the variants, the loot and the door's prompt. So the whole cavern moves with it. At level 1 a cavern is Easy (a wyrm's Normal); at 3, Normal; at 6, Hard (a wyrm's Very Hard); from 10, Very Hard. By Session 706's numbers, a Marsh Hag master on floor 2 at level 1 goes from 97 health to 149, against the 190 of the beast at the crag. A plain old gate, a sigil door, a fort and the Root are unchanged. The dead `diff` field on the lair's door is left as it is: `makePortalDef` never read a door's `diff`.
+
+### Verified (headless Chromium)
+`tests/lairgrade` (new, 7 checks) reads 16 lair doors and 276 old gates round the start, at levels 1, 2, 3, 6, 10, 15 and 20. Every lair's cavern is exactly one grade above that level's (easy, easy, normal, hard, veryhard, veryhard, veryhard). A wyrm's is two above (normal, normal, hard, then veryhard from 6). Every plain gate is the level's own grade. The scale is the grade's on every portal. A door the world has just loaded (*Glenshane's Lair — the cavern*) reads Easy at level 1 and Hard at 6, on the same object. On the old code the three lair checks fail (*veryeasy* at level 1). `lairmaster`, `lairdoor`, `lairhoard`, `dragonsize`, `dunseed`, `wyrm` and `dungeonfoes` pass.
+
+### Needs eyes
+- A lair's cavern at level 1 by play: Easy, with the master at about 149 against the crag's 190. Is it the harder place now, without being a wall?
