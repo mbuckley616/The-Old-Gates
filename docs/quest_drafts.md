@@ -1892,7 +1892,7 @@ Log (given): *Gave the Shuttle to the Church at ${seat}.*
 
 ## The Root — the rooms beneath all the gates
 
-*Unapproved.* Backlog A: *The Root's cavern wants authored rooms (a set piece at the root itself), not only the* deep *generator.* Today the Root (seed 9001, `build()` in `87-world-quests.js`) is a large `deep` cavern from the generator, with a renamed Ogre as its master and a hoard of gold and a sword. When the master dies, Varek appears outside, at the mouth (`onLeavePortal`, `tickRoot`, `88-world-ticks.js`). This draft keeps the generator for the first floor, the way down, and makes the lowest floor six authored rooms in a line: the place where the loom was made, the count it kept, what the count was of, the day the makers stopped, and the glass. Varek stands in the last room and not at the mouth. His question reads the player's real pause. The guard is DECISION #214. The draft writes it for A and marks the lines that depend on it.
+*Unapproved.* Michael answered DECISION #214 on 9 Oct: **A**, the maker's shape, *an Fíodóir Folamh*, the Empty Weaver; the lines marked *#214 A* below are the ones that stand. Backlog A: *The Root's cavern wants authored rooms (a set piece at the root itself), not only the* deep *generator.* Today the Root (seed 9001, `build()` in `87-world-quests.js`) is a large `deep` cavern from the generator, with a renamed Ogre as its master and a hoard of gold and a sword. When the master dies, Varek appears outside, at the mouth (`onLeavePortal`, `tickRoot`, `88-world-ticks.js`). This draft keeps the generator for the first floor, the way down, and makes the lowest floor six authored rooms in a line: the place where the loom was made, the count it kept, what the count was of, the day the makers stopped, and the glass. Varek stands in the last room and not at the mouth. His question reads the player's real pause. The guard is DECISION #214. The draft writes it for A and marks the lines that depend on it.
 
 ### What the canon fixes, and where it is silent
 
@@ -2072,3 +2072,311 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 - **DECISION #214:** what guards the Root (a maker's shape, the uncleared, or the Ogre as built), and if the first, its name.
 - When promoting: whether the Withdrawal's law should be the words said at the marking of Old Blood children (canon silent; the draft says yes, in one Old Blood line).
+
+---
+
+## Asked in Passing — six townsfolk's errands
+
+*Unapproved.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+
+### What the canon fixes, and where it is silent
+
+- The speech row of §2 for each people; the greeting is short and never an opinion (*First Words*, this file, and Michael's note on exposition).
+- §12: *`favor[siteId]` ±1 per quest done*. The errands spend favour in both directions, at the giver's town and at the town they send you to.
+- §3.1: *the three peoples were told their dead held the world*; *the Church blesses the dead into the gates*. Errand 4 is that custom, done by ordinary people, and the player may know what it is for.
+- §1.2 and §1.3: the Mark scorns priests and ledgers; the Compact keeps paper over oaths. The debt (errand 5) reads differently in each.
+- *Silent:* whether ordinary townsfolk give work at all; whether anyone in the street dies in a side errand. The plainer choices: they do, small work for small pay; and nobody dies on screen or by the player's lateness. The letter's addressee may be dead already, which is the only death here, and it happened before you came.
+
+### The frame (all six)
+
+- **Who offers.** A generated townsperson (`makeDef`), not a lord, guard on duty, guild head or named cast. About one in five has an errand on any game-week, rolled on `seededRng('errand', site.id+':'+def.name+':'+week)` (co-op rules: a roll that decides an outcome is seeded by place and id). The errand's template is chosen from those their trade allows (table under each errand). One errand open per giver.
+- **How you find it.** Two ways, both small. The greeting gets one more short line after *First Words* (the *hint*, below), only while an errand is on offer and only on the second meeting or later, or the first if the player has already asked *What do you do here?*. And the *you* folder gets one topic, the *ask* label, which is in the player's voice and names nothing the player could not have heard. The giver's existing topics change nothing; `bio.worry` and `bio.wish` choose the errand where they fit (noted under each), so a player who listened is rewarded with the errand that follows from it.
+- **What it pays.** Small: 15–40 gold by tier, less than a lord's job, and a point of the giver's town's favour. Errands 2 and 5 can cost you instead.
+- **The ids.** `er:<site>:<giver name>:<n>`, `n` the count of errands that giver has given (co-op rules: place and index, never a position or a `Date.now()`). Each errand is a quest record in `QJ()` with `kind:'errand'` and `sub:` one of `letter`, `borrowed`, `fever`, `name`, `debt`, `watch`; the giver's later lines read the record by id, so nothing new is needed in `worldState` (and so nothing new in the S242 list or `SS_CHAR_WS`).
+- **Shared lines** (every errand; *Not yet* is the reply to *About that errand* while it is open, *Not now* to the player's decline):
+
+| | Not now (the player declines) | Not yet | Done, paid |
+|---|---|---|---|
+| **Gatelander** | "A thing asked isn't a thing owed. Another day, maybe." | "The day's long yet, and so's the road." | "Weaver keep you. That's off my mind, and here's for your trouble." |
+| **Markman** | "Aye. Someone else, then." | "Not done, then. Off you go." | "Good. Here. We're square." |
+| **Aurennais** | "Of course, Master. The offer stands until it is taken up elsewhere." | "When it is done, Master, and not before. The terms are as they were." | "Done as agreed, Master. Your fee, and my thanks besides." |
+| **Old Blood** | "Then not." | "Not yet." | "Good. Take this." |
+
+The player's labels: **ask** (per errand, below); **I'll do it.** · **Not now.** · **About that errand.** · and the errand's own choices.
+
+---
+
+### 1. The Unanswered Letter
+
+*Trades:* any. *Chosen first when* `bio.wish` is *to hear from my daughter* or `bio.worry` is *my brother went for a soldier and never wrote* (Finding 24's line). The addressee is the daughter or the brother then; otherwise a sister or an old friend.
+
+**Shape.** The giver has written to someone in another town (a site of 45 pad or more within 900, as the lord's letter picks) and had no answer. Take the letter; ask after the addressee there. One of three things is true, rolled on the errand's id: *there, and will not write* · *gone* (to sea, to the Mark's iron, to Aurenne's ships) · *dead*, a season since. You learn it from the first resident you ask (any generated townsperson at the target site gets the topic *I've a letter for {name}.* while the errand is open). Then the choice is on the way home: what you tell the giver.
+
+**The hint** (in the greeting):
+- Gatelander: "No post on the road today, I suppose."
+- Markman: "Carter come through? No. Didn't think so."
+- Aurennais: "You have not, by chance, passed a courier on the road, Master?"
+- Old Blood: "Nothing came today."
+
+**Ask:** *You're waiting on word from someone?*
+
+**The offer.**
+- Gatelander: "My {daughter} is in {town}, {direction} of here. Three letters I've sent, and the silence back is heavier than any of them. A letter in the hand gets read where one in the post gets lost. Would you carry it, and look at her while she reads it?"
+- Markman: "{Brother}. In {town}, {direction}. Wrote him twice. Nothing. Take this to him. Put it in his hand and see what his face does."
+- Aurennais: "My {daughter} is at {town}, Master, {direction} of here. I have written three times, and I would rather be told no than told nothing. If you would put this into her hands, I will pay as for a courier, and a little over for the distance."
+- Old Blood: "{Name}. At {town}. {Direction}. This is for them. I want to know they read it."
+
+**At the target town**, the resident asked (*I've a letter for {name}.*), by the resident's people and what is true:
+
+*There, and will not write.* The addressee is spawned at their house door (`spawnNPC`, the lost person's machinery) and says one line, then nothing:
+- Gatelander: "Leave it on the sill. I'll read it when I'm able, and I'm not able."
+- Markman: "Aye. I know what it says. Tell them I'm well. That's all they're getting."
+- Aurennais: "Thank you. I will read it, Master. I cannot promise an answer, and I would rather not promise what I cannot keep."
+- Old Blood: "I know the hand. Thank you. No answer."
+
+*Gone.* The resident:
+- Gatelander: "{Name}? Gone a month, on a boat out of the harbour. Where to, the sea knows, and the sea's not saying."
+- Markman: "Gone. Signed on with a captain for the iron in the ranges. Won't be back before the thaw."
+- Aurennais: "{Name} left us in the spring, Master, on a contract with one of the houses. A ship to the south, I believe. The house may have an address; I do not."
+- Old Blood: "Gone. To the water."
+
+*Dead.* The resident:
+- Gatelander: "Ah, the creature. We buried {name} at the turn of the season. A fever, and quick. Nobody knew who to write to. The Weaver forgive us, we should have asked."
+- Markman: "Dead. Fever, spring. We burned the bed and put {him} in the ground. Nobody knew there was anyone to tell."
+- Aurennais: "I am sorry to be the one, Master. {Name} died this spring, of a fever. The Prior saw to it, and {his} name was taken to the gate. We did not know there was family to write to."
+- Old Blood: "Dead. The spring. They took the name to the door."
+
+The letter stays in your bag (`type:'letter'`, a misc item, weight 0) in every case except the first.
+
+**Back at the giver.** The labels, by what you learned:
+- *There, and will not write:* **{Name} read it.** (the truth) · **{Name} sends love. A letter's coming.** (a lie)
+- *Gone:* **{Name}'s gone to sea.** (the truth) · **{Name} sends love. A letter's coming.** (a lie)
+- *Dead:* **{Name} died this spring.** (the truth) · **{Name} sends love. A letter's coming.** (a lie)
+
+The truth, by the giver's people (the line for *will not write* / *gone* / *dead*):
+- Gatelander: "Read it, and kept the answer. Well. A door shut is still a door; it can be knocked on." / "The sea owns them twice a day, and some days it keeps them. I'll write to the harbour, so." / "…Ah. Ah, Weaver. I'd a feeling. You don't get a feeling for nothing. Thank you for not dressing it."
+- Markman: "Read it and said nothing. That's him. Aye. That's him." / "The iron. Should have guessed. He'll write when he's drunk enough." / "Dead. Right. …Right. You told it straight. Good."
+- Aurennais: "Then it was delivered, Master, and the rest is not your account. Thank you." / "Then I will write to the house that holds the contract. They keep addresses. They keep everything." / "Then I was writing to no one. Forgive me, Master. Thank you for the plain words. They are the only kind I could take."
+- Old Blood: "Read it. Good." / "The water has them, then." / "Dead. I knew. I wanted it said."
+
+The lie, any case:
+- Gatelander: "A letter coming! There, now. Didn't I say a hand-carried letter gets read? Weaver keep you."
+- Markman: "Ha. About time. Good."
+- Aurennais: "Then I have worried for nothing, Master, and I am glad to have paid for the news."
+- Old Blood: "…Good."
+
+**What it changes.**
+- Pay as the shared table, either way. The truth, on *dead*: the giver offers errand 4 (*Say {name} at the door*) at once, for the addressee. That errand is how the truth is paid for.
+- The lie is remembered (`q.told='lie'` on the record). From the next game-week the giver's *Again* greeting is, one time in two, the waiting line:
+  - Gatelander: "Nothing yet. The roads are slow this time of year."
+  - Markman: "Nothing yet. He'll write."
+  - Aurennais: "No letter yet, Master. I expect the courier is delayed."
+  - Old Blood: "Nothing yet."
+  After four game-weeks the giver gives an errand 1 again for the same addressee: a second letter. The player can carry it and tell the truth then, or lie again. (On *dead*, the second telling is the giver's *dead* line, with *You knew. You knew last time.* first, in their people's form: Gatelander *"You knew. You knew the last time."*, Markman *"You knew. Last time. You knew."*, Aurennais *"You knew, Master, when you were last here."*, Old Blood *"You knew."*)
+
+---
+
+### 2. The Borrowed Thing
+
+*Trades and the thing:* farmer, the plough-iron · weaver, the warping-frame · cooper, the croze · fisher, the long net · shepherd, the good shears · thatcher, the leggett · carter, the spare wheel · beekeeper, the smoker · midwife, the birthing stool · net-mender, the netting needles · smith, the swage block · any other, the long ladder.
+
+**Shape.** Someone in a town within 700 borrowed the giver's {thing} and has not brought it back. Ask for it. The borrower (spawned at their door, named on the errand) has one of two reasons, rolled on the errand's id: they *need it yet*, or they *sold it*. Then the choice.
+
+**The hint:**
+- Gatelander: "A good {thing} is missed most when it's lent."
+- Markman: "Haven't got my {thing}. Annoys me."
+- Aurennais: "I find myself without my {thing}, Master. A loan, overdue."
+- Old Blood: "My {thing} is not here."
+
+**Ask:** *Something of yours gone missing?*
+
+**The offer.**
+- Gatelander: "{Borrower}, over in {town}, had the lend of my {thing} at the back end of last year. A lend's a lend, but a year is a gift, and I never gave it. Would you put them in mind of it? Kindly, now."
+- Markman: "{Borrower}. {Town}. Took my {thing} in the autumn. Said a week. Get it back."
+- Aurennais: "I lent my {thing} to {Borrower} of {town}, Master, on a handshake, which was my error. There was no term set. I would like it returned, or its value."
+- Old Blood: "{Borrower}. {Town}. They have my {thing}. Bring it."
+
+**The borrower** (*{Giver} wants the {thing} back.*):
+
+*Needs it yet.*
+- Gatelander: "Ah, now. I'll not say it's not theirs. But the {work} is half done and there's no doing the half without it. Another month, and I'll carry it back myself and a cake with it."
+- Markman: "Aye, I've got it. Using it. Two weeks more and they'll have it back. Tell them that."
+- Aurennais: "I have it, Master, and I do not dispute the debt. I would ask an extension, a month, on the same terms. The work is contracted and I cannot finish it without."
+- Old Blood: "I have it. I am using it. A month."
+
+*Sold it.*
+- Gatelander: "…I sold it. Winter was long and the children were longer. I've {n} gold of what it fetched. Take that, and my shame with it, and tell them I'm sorry."
+- Markman: "Sold it. Needed the coin. Here's what I got for it. {n} gold. Not all of it, but most."
+- Aurennais: "I must be candid, Master. It was sold, in a bad month. I can offer {n} gold toward its value now, and the balance by the season's end."
+- Old Blood: "Sold. Here is the coin."
+
+The labels: *Needs it yet* → **Hand it over. It's not yours.** · **Keep it a month. I'll tell them.** *Sold it* → **I'll take the coin.** · **Keep it. You need it more.**
+
+**What it changes.**
+- *Hand it over:* you carry the {thing} back (a misc item); full pay; the borrower's town −1 favour. The borrower: Gatelander "Take it, so. And may you never need a thing you haven't got." · Markman "Fine. Take it." · Aurennais "As you say, Master. The debt is discharged." · Old Blood "Take it."
+- *Keep it a month:* half pay; the borrower's town +1 favour; in 30 game-days the borrower walks it home (a line in the giver's greeting: Gatelander "{Borrower} brought back the {thing}, and a cake. A cake!" · Markman "Got my {thing} back. Took him long enough." · Aurennais "The {thing} was returned, Master, on the day. I was mistaken in {Borrower}." · Old Blood "It came back.").
+- *I'll take the coin:* you carry {n} gold, which you can hand to the giver (*Here's what it sold for.*) or keep (the errand lapses, and the giver's town −1 favour when the 14 days are out: Gatelander "{Borrower} says you had the coin. I'd not have thought it of you." · Markman "Heard you took the coin. Heard you kept it." · Aurennais "I am told the sum was paid to you, Master. I have not received it." · Old Blood "You had the coin."). Handed over: full pay.
+- *Keep it, you need it more:* no pay; the borrower's town +2 favour. The giver: Gatelander "Well. A kindness done with another's goods is still a kindness, I suppose. I'll get over it." · Markman "My {thing}. Your charity. Aye. Thanks for nothing." · Aurennais "That was not yours to forgive, Master. But it is done." · Old Blood "Then it is theirs."
+
+---
+
+### 3. A Fever
+
+*Trades:* midwife, apothecary, priest, and any giver whose `bio.kids` > 0. A dated errand (the S457 machinery: `datedWork`, pay ×1.25 by the date, lapse after).
+
+**Shape.** Someone in the house is down with a fever and the giver wants {n} of an herb that grows near (two to four of the region's herb, by biome: **Silverleaf** in the temperate woods, **Coldmoss** in the cold, **Ashwort** on the moor, **Goldenrod** on the roadsides, the nearest that `HERB_DEF` places within 500). By the date: full pay and a line. After: the lapse line, and from then the giver's *Again* line is colder for one game-week. Nobody dies: the fever breaks either way, and the lateness is what is remembered.
+
+**The hint:**
+- Gatelander: "Mind the door, there's sickness in the house."
+- Markman: "Sick in the house. Keep your voice down."
+- Aurennais: "Forgive me, Master. There is illness in the house; I am a little distracted."
+- Old Blood: "Quiet. Someone is ill."
+
+**Ask:** *Who's sick?*
+
+**The offer.**
+- Gatelander: "My youngest. A fever that won't break. My mother swore by {herb}, and I've none, and I can't leave the bed. It grows out {direction}, by the {place}. {n} of it, before {date}, and I'll owe you more than the coin."
+- Markman: "Little one. Fever. Needs {herb}. {n} of them. Grows {direction}. Before {date}. Go."
+- Aurennais: "My son, Master. A fever. The apothecary prescribes {herb}, and has none to sell me before the next ship. If you could bring {n}, by {date}, I would pay above the market, and gladly."
+- Old Blood: "A child. A fever. {Herb}, {n} of it. It grows {direction}. Before {date}."
+
+**Turned in by the date** (the bag holds {n}; they are taken):
+- Gatelander: "There. There, now. Steep it and she'll sleep. The Weaver sent you, and I don't care who denies it."
+- Markman: "Good. That'll do it. Here."
+- Aurennais: "You have my thanks, Master, and more than the agreed sum. The account between us is in your favour."
+- Old Blood: "Yes. That one. Good."
+
+**After the date** (the lapse; the herbs are not taken):
+- Gatelander: "It broke on its own, the third night. Keep them. They'll keep longer than a promise does."
+- Markman: "Fever broke. No thanks to you. Keep them."
+- Aurennais: "The fever broke without them, Master. Keep the herbs. The contract lapsed on the date; I would rather not discuss it further."
+- Old Blood: "It broke. Keep them."
+
+The colder *Again* line for a week: Gatelander "Yourself. Well." · Markman "You." · Aurennais "Master." · Old Blood "…"
+
+---
+
+### 4. Say the Name at the Door
+
+*Trades:* any Gatelander or Aurennais giver; a Markman giver only if a widow or widower (`bio.spouse` set and the roll); **never** an Old Blood giver (below). Offered at once after the truth in errand 1, on *dead*.
+
+**Shape.** The giver buried someone and wants the name said aloud at the door of the nearest old gate, so that the dead go into the stone and hold the world, as everyone has always been told (§3.1). Go to the nearest `CELL_DOOR` (the gate by name), stand at its door and press E: the prompt is *Say the name*. No foe, no loot; the walk is the errand. Pay is small (a Gatelander gives bread and 10 gold; an Aurennais the fee; a Markman nothing but a drink owed). It is the errand where the player who knows what the gates do (Varek's first beat onward, or an Old Blood player) knows what they have just done, and nobody in the street does.
+
+**The hint:**
+- Gatelander: "We buried {name} on {weekday}. The house is too quiet for itself."
+- Markman: "Buried {name}. Last week. Don't say sorry."
+- Aurennais: "You will forgive the black, Master. We buried {name} this week."
+- Old Blood: *(none; the Old Blood never offer this errand)*
+
+**Ask:** *Can I do anything for you?*
+
+**The offer.**
+- Gatelander: "There's one thing. The old custom: the name said at the door of the gate, so they go into the stone and hold up the rest of us. I can't walk that far now, and the priest only says it in the chapel. {Gate} is {direction} of here. Say '{name}' at the door for me. That's all. That's all it is."
+- Markman: "Aye. One thing. My mother held with it: you say the name at a gate, they go in the stone. Priests want paying to say it. I'll not pay a priest. {Gate}. {Direction}. Say '{name}' there."
+- Aurennais: "Perhaps one thing, Master. The Prior blessed {name} into the gate at the service, as is proper, but the custom of my family is that the name is also spoken at the door itself, by someone living. {Gate} lies {direction} of here. I would pay the usual fee."
+
+**At the door** (E, *Say the name*). The log (`addLog('🕯', …)`) and a `showMsg`:
+- Any player: *You say the name at the door of {gate}: {name}.*
+- And then, if the player has had Varek's first beat or is Old Blood, a second line (a `showMsg` only, not the log, `#a8b8c8`): *The stone is warm under your hand. Then it is not.*
+
+Nothing else. No one explains it.
+
+**Back at the giver** (*I said the name.*):
+- Gatelander: "Then {name}'s in the stone, and the stone's holding. Weaver keep {him}. Here, take the bread at least, and this."
+- Markman: "Good. Done, then. I owe you a drink. Collect it."
+- Aurennais: "Then it is properly done, Master, by the Church and by the family both. Your fee."
+
+**Why no Old Blood giver.** §3.1: the Old Blood carry *the folk memory nobody can articulate*. One who is asked about it says so, in the *What do you make of …* folder's place, as one line to the player's *ask* when the Old Blood giver has a dead in the house (Old Blood: "We bury ours in the ground. Not at the doors. My grandmother would not say why. I do not either."). That line is the whole of the Old Blood's errand 4, and it pays nothing.
+
+---
+
+### 5. The Debt
+
+*Trades:* innkeeper, trader, smith, cooper, carter; any Aurennais giver.
+
+**Shape.** A man or woman in a town within 700 owes the giver {n} gold (30–80, by tier) for goods or drink or work. Collect it. The debtor (spawned at their door) is poor, rolled on the errand's id, for one of three reasons (a bad harvest, a lost boat, a sick parent). The choice, at the debtor's door: take it, pay it yourself, or let it go.
+
+**The hint:**
+- Gatelander: "There's money owed me that'll never walk here on its own."
+- Markman: "Someone owes me. Annoys me more than the money."
+- Aurennais: "There is an account outstanding, Master, that I would like to close."
+- Old Blood: "I am owed."
+
+**Ask:** *Who owes you?*
+
+**The offer.**
+- Gatelander: "{Debtor}, in {town}. {n} gold, for {goods}, since the spring. A debt's like a stone in the shoe: no weight at all, and you feel it every step. Get it from them and a fifth of it's yours."
+- Markman: "{Debtor}. {Town}, {direction}. Owes me {n}. Get it. You keep a fifth."
+- Aurennais: "{Debtor}, of {town}, owes this house {n} gold, Master, against {goods}. The note is here, witnessed. Collect it and a fifth is your commission; it is the standard rate."
+- Old Blood: "{Debtor}. {Town}. {n} gold. A fifth is yours."
+
+**The debtor** (*{Giver} sent me about the money.*), by the reason; one line each, by the debtor's people:
+- Gatelander: "I know. I know it. The barley came up black this year and the {n} is the seed for next. If I give it you, there's no next. But it's theirs, and I'll not say it's not."
+- Markman: "Aye. I owe it. Boat went down in the strait. Got this much left. Take it if you're taking it."
+- Aurennais: "I acknowledge the debt, Master, and the note. My father is ill and the physician's account came first. I can pay it; I cannot pay it and him."
+- Old Blood: "I owe it. I have it. I need it."
+
+The labels: **Pay it. It's owed.** · **I'll pay it for you.** (costs {n}) · **Keep it. I'll tell them something.**
+
+**What it changes.**
+- *Pay it:* you carry {n}; turned in, a fifth is yours; the giver's town +1, the debtor's town −1. The debtor: Gatelander "There. And may it do them more good than it'd have done me." · Markman "There. Go." · Aurennais "Paid, Master. Witnessed, if they want it witnessed." · Old Blood "There."
+- *I'll pay it for you:* {n} from your purse; turned in, the giver pays the fifth as if collected, and does not know; the debtor's town +2. The debtor: Gatelander "Why would you — no, don't tell me, I'd only argue. Weaver keep you, stranger." · Markman "Why? …Never mind. Aye. Thanks." · Aurennais "I am in your debt now, Master, and I do not know the terms. I will find them out." · Old Blood "I will remember the face." (For an Old Blood player: "I will try to remember the face.")
+- *Keep it:* no pay; the debtor's town +1, the giver's −1. Back at the giver, the label is **They haven't got it.**: Gatelander "Haven't, or won't? No, don't answer that. I'll write it off, and I'll not be lending there again." · Markman "Then I'll go myself." · Aurennais "Then the note stands, Master, and I will put it in the hands of someone less sentimental." · Old Blood "Then they have not."
+
+---
+
+### 6. The Watch
+
+*Trades:* shepherd, farmer, beekeeper, soldier off duty; any giver in a village or a camp (`site.kind` village, hermit_camp, outpost).
+
+**Shape.** Something has been at the fold, the hives, the store. Sit the night by it: be within 25 of the place (the giver's lot, or the town's edge on the side of the nearest wild cell) from 22:00 until the morning bell at 05:00, game time (`gameTimeAbsMinutes`, never the frame count: the pause-proof rule). One time in two, rolled on the errand's id and the night, a pair of the region's cull beast (`townQuestFor`'s table) comes at 02:00; kill them. The other time nothing comes. Either way, at 05:00 the errand is done and the giver pays in the morning. Leaving the circle for more than a game-hour, or sleeping, lapses it.
+
+**The hint:**
+- Gatelander: "Lost another {beast} in the night. There'll be none left by the feast at this rate."
+- Markman: "Something's at the {fold}. Nights. I sleep through it."
+- Aurennais: "We have had losses at night, Master, and nobody willing to sit up."
+- Old Blood: "Something comes at night."
+
+**Ask:** *What's coming at night?*
+
+**The offer.**
+- Gatelander: "If I knew, I'd not need you. Something that's fond of {beast}. Sit up by the {fold} tonight, from the last light to the first bell, and if it comes, see it doesn't go home. I'll have breakfast and {n} gold waiting."
+- Markman: "Don't know. Want you to find out. Sit up at the {fold}, dark to the bell. Kill it if it comes."
+- Aurennais: "I could not say, Master. Sit the night at the {fold}, from ten until the morning bell, and whatever comes, deal with it. The fee is for the night; I do not pay by the carcass."
+- Old Blood: "Sit by the {fold}. Dark to the bell. You will see."
+
+At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if they come: *Something moves past the {fold}.* At 05:00: *The bell. The night is done.*
+
+**Turned in, if they came** (*I sat the night. {Beasts}.*):
+- Gatelander: "{Beasts}! I'd have said a fox. That's what comes of saying. Here, and eat."
+- Markman: "Thought so. Good. Here."
+- Aurennais: "Then the losses are explained, Master, and ended. Your fee."
+- Old Blood: "Yes. Them."
+
+**Turned in, if nothing came** (*I sat the night. Nothing came.*):
+- Gatelander: "Nothing came, and nothing was lost. A quiet night's a night's work all the same. Here."
+- Markman: "Nothing? Then it knew you were there. That's the job. Here."
+- Aurennais: "Nothing, Master? Then the fee was well spent; the night was kept. Here."
+- Old Blood: "It did not come. It saw you. Good."
+
+**Lapsed** (you left the circle or slept):
+- Gatelander: "Lost another, and you abed. Ah well. A watch kept asleep is a fence made of wishes."
+- Markman: "Lost another. You weren't there."
+- Aurennais: "We lost another in the night, Master. The fee was for the night entire."
+- Old Blood: "It came. You were not there."
+
+---
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**, beside `townQuestFor`: an `ERRANDS` table keyed by `sub`, each entry the trades it allows, its `bio` preference, and its lines by people (`hint`, `offer`, and the turn-in lines by outcome); `errandFor(def,site)` rolls `seededRng('errand', site.id+':'+def.name+':'+week)` and returns the template or null; `errandTopics(def,site)` returns the *ask* topic (in `cat:'you'`), *About that errand.* while it is open, and the outcome labels when the record says the choice is due. The greeting getter in `makeDef`'s wrapper adds the `hint` after the *First Words* line, under the rule above.
+- **The target's side.** Errands 1, 2 and 5 spawn one named person at the target town with `spawnNPC`, as `qTick` spawns the lost person for `find` (`def._lost` is not set; a `def._errand` points to the record, and `qOnTalk` opens the person's one topic). Errand 1's resident lines are a topic any generated townsperson at the target site carries while the record is open.
+- **Errand 3** reads the bag (`BAG` by herb name) and is dated with `datedWork`, as a lord's job is. **Errand 4** adds a door prompt in the world's door interaction (`88-world-ticks.js`, where a `CELL_DOOR`'s E is handled) while a `name` record names that door's seed. **Errand 6** is a tick on the record against `gameTimeAbsMinutes`, the beasts spawned by `buildZoneEnemy` and keyed `er:…:foe:<k>` (co-op rules), the circle checked once a game-minute.
+- **Favour** through `addFavor(site,±n)`, already the §12 hook. The record's `told`, `outcome` and `site` fields are all that later greetings read; nothing new in `worldState`.
+- **Actions, by name** (co-op rules): `errandAccept`, `errandChoose(id, choice)`, `errandTurnIn(id)`.
+- **The journal** gets each as a quest (`qJournal`), titled: *A letter for {name}* · *{Giver}'s {thing}* · *{Herb} for a fever* · *A name at {gate}* · *{Debtor}'s debt* · *A night at the {fold}*.
+
+### Owed, and not drafted here
+
+- Six more templates for a second run, on the same frame: a cart stuck on the road; a dog gone after a deer; a wedding wanting a fish from a named lake; a boy who went to look at a gate; a rubbing someone wants read and should not; a quarrel between two neighbours where both ask you.
+- The Fighters' and Mages' heads could hand an errand on to a member of the public ("There's a woman in the square asking for a sword."), which is the easiest bridge from the guilds to the street.
