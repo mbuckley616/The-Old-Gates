@@ -20,6 +20,15 @@ Recommendation: **A.** Oblivion's map shows your active quest's mark wherever yo
 
 Screens: [opening, today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-settled.png) · [zoomed into Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-town.png) · [the continent](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/compare-continent.png) · [A, close in, marks on the edge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-deep.png) · [A, whole screen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/worldmap/proposed-town.png)
 
+### Witnesses in the street — all round, or only what they face, as in a shop? (systems builder, 2026-10-10) — DECISION #222
+In the street, a townsperson or guard sees a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood). They see it whichever way they face. Indoors, since your B on #73, a keeper sees only what they face, in a cone of about 120° within six units. So in the street you can never pick a lock behind someone's back, and inside a shop you can. Measured (Session 609, `tests/nightpick`): at Dunmore's seven shop doors from 20h to 4h, a pick is seen 26% of the time walking and 18% sneaking.
+
+- **A. The street as the shop.** Outdoors a witness sees in a 120° cone the way they face, to the same ranges. Anyone within 2 units hears you whichever way they face. A guard on his beat faces the way he walks, so you can work a door once he has passed. One session; the night-pick numbers are measured again.
+- **B. A guard sees all round, townsfolk by their cone.** The watch is paid to look about. Villagers and keepers in the street see only what they face. One session.
+- **C. Leave it.** The street is busy and people turn their heads. Only indoors has the cone.
+
+Recommendation: **B.** Oblivion and Skyrim judge a witness by line of sight and facing, so a back turned is a chance. That is your call on #73, and A carries it outdoors. B keeps one thing: the guard is the one you can't slip past by timing a turned head. That keeps the night watch's beat (S166) a threat, and the 26% at the doors would fall mostly where townsfolk stand, not where the watch walks.
+
 ## Answered
 
 ### What guards the Root, and its name (the quest writer, 2026-10-09) — DECISION #214
