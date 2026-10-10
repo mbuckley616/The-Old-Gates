@@ -503,7 +503,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const ent={x:(typeof dEntranceX!=='undefined')?dEntranceX:0,z:(typeof dEntranceZ!=='undefined')?dEntranceZ:0};
   const pool=ENEMIES.filter(e=>!e.dead);const low=Math.max(...pool.map(e=>e.floor||1));const cand=pool.filter(e=>(e.floor||1)===low).sort((a,b)=>Math.hypot(b.x-ent.x,b.z-ent.z)-Math.hypot(a.x-ent.x,a.z-ent.z));
   const e=cand[0];if(!e)return;
-  const dragon=!!L.dragon;const site=L.siteId&&typeof SITE!=='undefined'?SITE[L.siteId]:null;const bossName=site&&typeof lairBeast==='function'?lairBeast(site):L.boss; /* S699 — the beast of the lair where it stands now, as at the crag */e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${bossName}`;e.boss=true;e.dragon=dragon;
+  const dragon=!!L.dragon;const site=L.siteId&&typeof siteAnywhere==='function'?siteAnywhere(L.siteId):null;const bossName=site&&typeof lairBeast==='function'?lairBeast(site):L.boss; /* S699 — the beast of the lair where it stands now, as at the crag */e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${bossName}`;e.boss=true;e.dragon=dragon;
   if(!dragon)lairMasterBody(e,bossName,portal); /* S706 — Michael's A on #225: the lair's own beast, not the deepest foe renamed */
   e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}

@@ -10,7 +10,7 @@ const r = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); con
   for (let i = hi - 4; i <= hi + 4; i++) for (let j = hj - 4; j <= hj + 4; j++) { const c = WORLD.getCell(i, j); if (!c || !c.sites) continue;
     for (const t of c.sites) if (t.kind === 'lair' && t.pad > 0 && t.x < WORLD.SIZE * GRID && t.z < WORLD.SIZE * GRID) rows.push({ id: t.id, cell: [i, j] }); }
   const out = [];
-  for (const x of rows.slice(0, 14)) { WORLD.loadCell(...x.cell); const s = WORLD.SITE[x.id]; const c = WORLD.getCell(...x.cell);
+  for (const x of rows.slice(0, 14)) { WORLD.loadCell(...x.cell); const s = WORLD.siteAnywhere(x.id); const c = WORLD.getCell(...x.cell);
     const door = (c.doors || []).find(d => d.lairDoor && d.lairSite === x.id); if (!door) continue; const w = dungeonWorldPos[door.seed];
     if (!w) { out.push({ name: s.name, placed: false }); continue; }
     const d = Math.hypot(w.x - s.x, w.z - s.z);
@@ -30,14 +30,14 @@ check('every door faces its lair (the lair lies on the gate\'s -z side)', placed
 check('the threshold is open ground and the walk from it to the beast is clear', placed.every(x => !x.frontSolid && x.blocked === 0), placed.map(x => [x.name, x.frontSolid, x.blocked]));
 // walk in and out: the cavern is the lair's, and you come out at its door
 const p = placed[0];
-const ent = await page.evaluate((p) => { const s = WORLD.SITE[p.id]; const portal = (ZONES.world.portals || []).find(q => q.seed === p.seed);
+const ent = await page.evaluate((p) => { const s = WORLD.siteAnywhere(p.id); const portal = (ZONES.world.portals || []).find(q => q.seed === p.seed);
   if (!portal) return { ok: false }; px = portal.x; pz = portal.z - 2.5; goToDungeon(portal); return { ok: true, lair: portal.lair && portal.lair.siteId }; }, p);
 for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon')) break; }
 const inside = await page.evaluate(() => activeZoneId);
 await page.evaluate(() => goToOW());
 for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'world')) break; }
 await g.spin(30);
-const out = await page.evaluate((p) => { const s = WORLD.SITE[p.id]; const w = dungeonWorldPos[p.seed]; return { zone: activeZoneId, fromDoor: +Math.hypot(px - w.x, pz - w.z).toFixed(1), fromLair: +Math.hypot(px - s.x, pz - s.z).toFixed(1), solid: solidAt(px, pz) }; }, p);
+const out = await page.evaluate((p) => { const s = WORLD.siteAnywhere(p.id); const w = dungeonWorldPos[p.seed]; return { zone: activeZoneId, fromDoor: +Math.hypot(px - w.x, pz - w.z).toFixed(1), fromLair: +Math.hypot(px - s.x, pz - s.z).toFixed(1), solid: solidAt(px, pz) }; }, p);
 console.log(JSON.stringify({ ent, inside, out }));
 check('the lair\'s portal is the cavern\'s, and it opens', ent.ok && ent.lair === p.id && inside === 'dungeon', { ent, inside });
 check('out of the cavern you stand by its door, in the lair, on open ground', out.zone === 'world' && out.fromDoor < 8 && out.fromLair <= p.pad && !out.solid, out);

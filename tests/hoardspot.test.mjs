@@ -7,7 +7,9 @@ await g.intoWorld();
 const SEEDS = [4021, 4022, 4023, 4024, 4025, 4026, 4027, 4028, 4029, 4030];
 const rows = [];
 for (const seed of SEEDS) {
-  await page.evaluate((seed) => { window._lairBoss = null; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: 'Test', boss: 'Troll King' } }); goToDungeon(p); }, seed);
+  // S714 — the cavern has its own dyn_ id: PORTALS[0] is whichever door loaded first, or none on a slow runner, and a portal with
+  // no id leaves `lid` undefined, so the loop held you to the ground outside (jumpY eased from −5 to 0 on floor 2; CI, Sessions 710–713)
+  await page.evaluate((seed) => { window._lairBoss = null; const p = Object.assign({}, PORTALS[0], { id: 'dyn_hoardspot_' + seed, theme: 'deep', seed, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: 'Test', boss: 'Troll King' } }); goToDungeon(p); }, seed);
   for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !!window._lairBoss && CHESTS.some(c => /:hoard$/.test(c.id)))) break; }
   rows.push(await page.evaluate((seed) => { const e = window._lairBoss, h = CHESTS.find(c => /:hoard$/.test(c.id)); if (!e || !h) return { seed, none: true };
     const map = (e.floor === 2 && dMap2) ? dMap2 : dMap; const cell = (x, z) => { const c = Math.floor(x + .5), r = Math.floor(z + .5); return (r < 0 || r >= dR || c < 0 || c >= dC) ? 0 : map[r][c]; };
