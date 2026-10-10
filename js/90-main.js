@@ -69,7 +69,7 @@ function loop(now){
   const _qpop = document.getElementById('quest-popup');
   const _qpopOpen = _qpop && _qpop.style.display==='flex';
   if(typeof lockOpen!=='undefined'&&lockOpen&&LP.live)lpWatch(); // S327 — before the pause: a halt's dialogue must close the lock
-  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen))return;
+  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof pauseOpen!=='undefined'&&pauseOpen))return;
   // v61e6 Session A: clock tick. Placed AFTER the pause bailout so UI-open
   // pauses the clock (consistent with stamina/buffs/cooldowns pausing).
   advanceClock(dt);

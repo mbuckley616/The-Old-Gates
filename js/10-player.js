@@ -216,8 +216,10 @@ function _clearOffhandForTwoHander(reason){
 // menu shows). The reconciler still calls exit as a defense-in-depth fallback
 // for any code paths that didn't go through an open* function. Cursor-toggle
 // trick in pointerlockchange handler forces the OS cursor cache to invalidate.
+let _lockReleaseAskedAt=-1e9; // S690 — when a panel last let the pointer go: a lock lost without one opens the pause leaf
 function _releasePointerLockForMenu(){
   if(document.pointerLockElement){
+    _lockReleaseAskedAt=performance.now();
     try{ document.exitPointerLock(); }catch(_){}
   }
 }

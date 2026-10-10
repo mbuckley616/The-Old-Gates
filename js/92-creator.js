@@ -72,6 +72,7 @@ function _enterGame(){
     }
     if(invOpen){if(e2.code==='KeyI'||e2.code==='Escape')closeInv();return;}
     if(luOpen)return;
+    if(e2.code==='Escape'){e2.preventDefault();openPauseLeaf();return;} // S690 — Esc in play, no panel open: the pause leaf
     K[e2.code]=true;if(['KeyW','KeyS','KeyA','KeyD','KeyF','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e2.code))e2.preventDefault();if(e2.code==='KeyF')castSpell();if(e2.code==='KeyI')openHub('inv');if(e2.code==='KeyE'){e2.preventDefault();interact();}
     if(e2.code==='KeyQ'&&!e2.repeat)startRoll(performance.now()/1000,K); // S275 — the roll
     // S389 — R locks on as the middle button does (Michael's A on #89: a trackpad has no middle button); again, it lets go.
@@ -112,13 +113,14 @@ function _enterGame(){
     // DOM-flagged modals — checked via display style. Catches sigil overlay,
     // book reader, wait menu, save/load menu, character creator, title overlay.
     // Each id is gated on existence because the DOM is built lazily.
-    const ids=['sigil-overlay','book-overlay','sleepui','slmenu','cc-modal','ov','quest-popup','lockpick'];
+    const ids=['sigil-overlay','book-overlay','sleepui','slmenu','cc-modal','ov','quest-popup','lockpick','barberui','pauseui'];
     for(const id of ids){
       const el=document.getElementById(id);
       if(el && el.style.display && el.style.display!=='none') return true;
     }
     return false;
   }
+  window.isMenuOpenNow=_isMenuOpen; // S690 — the pause leaf asks the same question
   // Build the resume overlay once. Reused for the lifetime of the page.
   let _resumeOverlay=null;
   function _ensureResumeOverlay(){
@@ -212,6 +214,8 @@ function _enterGame(){
       lungeT=0; // v62.7 — kill any in-flight lunge on lock loss
       powerSwingDelayT=0;powerSwingDelayPower=false; // v62.8 — drop any pending swing
       _bowDrawing=false;_bowDrawT=0; // v64 — drop any in-progress bow draw on lock loss
+      // S690 — a lock lost that no panel asked for (the browser's own Esc, or the pointer let go some other way) opens the pause leaf
+      if(!document.hidden&&performance.now()-_lockReleaseAskedAt>600&&!_isMenuOpen())openPauseLeaf();
       // v62.2/v62.3 — Restore the OS cursor. Chrome and other browsers
       // sometimes leave the cursor invisible after exitPointerLock() until the
       // user moves the mouse OR hits Esc (Esc forces the browser's native exit
@@ -877,6 +881,81 @@ function openBarberChair(house){
     if(changed){worldState.look=JSON.parse(JSON.stringify(L));if(cloak&&CCL.ui.cloakCol!=null)cloak.col=CCL.ui.cloakCol;applyLook();try{buildViewmodel();}catch(e){}}
     window._ccLook=null;close();showMsg(changed?'You rise from the chair, changed.':'You rise from the chair as you sat down.','#c8b880');};
   ov.style.display='flex';barberOpen=true;CCL.yaw=0;CCL.touch=performance.now();ccLookRows();ccLookRebuild();}
+// S690 — the pause leaf (backlog E, Michael's B on #208; the leaf routed to the look builder by the producer, 9 Oct). Esc in play,
+// with no panel open, stops the world and opens one parchment leaf over it: the date, the place and the rows (Resume, Save, Load,
+// The keys, Quit to the title). In a real browser the first Esc in play is the browser's, to let the pointer go, and the page never
+// sees the key: so the leaf also opens when the lock is lost and no panel asked for that (`_lockReleaseAskedAt`, 10-player.js).
+// ↑/↓ choose, E or Enter takes, Esc resumes (or goes back from the keys). Quit asks a second time. The world stays stopped while
+// Save or Load is open from here, and the leaf comes back when that menu closes, unless a load replaced the world.
+let pauseOpen=false;
+const PAUSE_ROWS=[['resume','Resume','back to the road','▷'],['save','Save','write this day in the register','✒'],['load','Load','go back to a day you kept','❧'],['keys','The keys','what each key does','⌨'],['quit','Quit to the title','what you have not saved is lost','⎋']];
+const PAUSE_KEYS=[[['W','A','S','D'],'walk'],[['Mouse'],'look'],[['Left'],'strike; hold for a power blow'],[['Right'],'block; strike while blocking to bash'],[['Shift'],'run'],[['Space'],'jump'],[['Q'],'roll'],[['R','Wheel'],'lock on, and let go'],
+  [['Ctrl'],'sneak'],[['E'],'speak, open, take, use'],[['F'],'cast the spell in hand'],[['I'],'your pack'],[['Tab'],'the book: map, quests, journal'],[['M'],'mute the spoken lines'],[['Esc'],'close a panel; in play, this leaf'],[['1','–','0'],'answer in a talk']];
+const pauseLeaf={on:0,view:'leaf',quit:false,sub:null};
+function pauseKeyCap(k){return k==='–'?'<span style="margin:0 2px;color:#8a7050">–</span>':`<span style="display:inline-block;min-width:16px;padding:1px 6px;margin-right:3px;border:1px solid #8a7040;border-bottom-width:2px;border-radius:3px;background:#f3e8d0;font:12px Georgia,serif;color:#3a2c18;text-align:center">${k}</span>`;}
+function pauseLeafEl(){let ov=document.getElementById('pauseui');if(ov)return ov;
+  ov=document.createElement('div');ov.id='pauseui';
+  ov.style.cssText='position:fixed;inset:0;z-index:8400;display:none;background:rgba(10,8,4,.45);backdrop-filter:blur(2px) sepia(.25);-webkit-backdrop-filter:blur(2px) sepia(.25);cursor:default';
+  ov.innerHTML='<div style="position:absolute;top:28px;right:36px;font:14px Georgia,serif;letter-spacing:.32em;color:#e9dcc2cc;text-transform:uppercase;pointer-events:none">The world stands still</div>'+
+    '<div id="pause-paper" style="position:absolute;left:max(16px,6vw);top:50%;transform:translateY(-50%);width:420px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:24px 30px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a"></div>'+
+    '<div id="pause-foot" style="position:absolute;right:36px;bottom:22px;font:italic 12px Georgia,serif;color:#e9dcc2cc;pointer-events:none"></div>';
+  document.body.appendChild(ov);return ov;}
+function pauseLeafDraw(){const ov=pauseLeafEl(),P=ov.querySelector('#pause-paper'),L=pauseLeaf;
+  const rule='<div style="border-top:1px solid #a89060;margin:10px 0 8px"></div>';
+  if(L.view==='keys'){
+    P.innerHTML='<div style="font-size:32px;color:#7a1f10;font-variant:small-caps;letter-spacing:.04em">The keys</div>'+rule+
+      PAUSE_KEYS.map(([ks,w])=>`<div style="display:flex;align-items:baseline;gap:10px;padding:3px 0;font-size:14px"><span style="min-width:120px">${ks.map(pauseKeyCap).join('')}</span><span style="font-style:italic">${w}</span></div>`).join('')+
+      rule+`<button type="button" data-pk="back" style="background:none;border:none;cursor:pointer;padding:0;font:16px Georgia,serif;color:#7a1f10;font-variant:small-caps">${pauseKeyCap('Esc')} back to the leaf</button>`;
+    ov.querySelector('#pause-foot').innerHTML='';
+  } else {
+    let place='';try{place=typeof ssPlaceName==='function'?ssPlaceName()||'':'';}catch(e){}
+    let when='';try{when=gameDateLine();}catch(e){}
+    const arch=(ARCHETYPES.find(a=>a.id===playerArchetype)||{}).label||'';
+    const tag=((document.getElementById('cbar')||{}).textContent||'').match(/build s\d+/);
+    P.innerHTML='<div style="font-size:40px;line-height:1;color:#7a1f10;font-variant:small-caps;letter-spacing:.04em">Paused</div>'+
+      '<div style="font-style:italic;font-size:16px;color:#5a4128;margin-top:4px">The world waits for you.</div>'+rule+
+      `<div style="font-size:16px">${when}</div><div style="font-style:italic;font-size:14px;color:#5a4128">${place}</div>`+
+      '<div style="margin-top:8px">'+PAUSE_ROWS.map(([id,w,note,ic],i)=>{const on=i===L.on,ask=id==='quit'&&L.quit;
+        return `<div data-pi="${i}" style="display:flex;align-items:center;gap:14px;padding:7px 10px;border-top:${i?'1px solid #c8b48a':'none'};border-left:3px solid ${on?'#7a1f10':'transparent'};background:${on?'rgba(122,31,16,.08)':'none'};cursor:pointer">`+
+          `<span style="width:20px;text-align:center;font-size:17px;color:${on?'#7a1f10':'#5a4128'}">${ic}</span>`+
+          `<span style="flex:1"><span style="display:block;font-size:21px;font-variant:small-caps;letter-spacing:.03em;color:${on?'#7a1f10':'#3a2c18'}">${ask?'Leave without saving?':w}</span>`+
+          `<span style="display:block;font-style:italic;font-size:12px;color:#8a7050">${ask?'E again to go to the title; Esc to stay':note}</span></span>`+
+          (id==='resume'?pauseKeyCap('Esc'):'')+'</div>';}).join('')+'</div>'+rule+
+      `<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px"><span><span style="font-variant:small-caps">${playerName}</span> · ${arch} · level ${level} · ${gold} gold</span><span style="font-style:italic;font-size:11px;color:#a08a60">${tag?tag[0]:''}</span></div>`;
+    ov.querySelector('#pause-foot').innerHTML=`${pauseKeyCap('↑')}${pauseKeyCap('↓')} choose · ${pauseKeyCap('E')} take · ${pauseKeyCap('Esc')} resume`;
+  }
+  P.querySelectorAll('[data-pi]').forEach(r=>{r.onmouseenter=()=>{if(L.on!==+r.dataset.pi){L.on=+r.dataset.pi;L.quit=false;pauseLeafDraw();}};r.onclick=()=>{L.on=+r.dataset.pi;pauseTake();};});
+  const back=P.querySelector('[data-pk="back"]');if(back)back.onclick=()=>{L.view='leaf';pauseLeafDraw();};}
+function openPauseLeaf(){
+  if(pauseOpen||!started||dead||won)return false;
+  if(typeof isMenuOpenNow==='function'&&isMenuOpenNow())return false;
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  K.KeyW=K.KeyA=K.KeyS=K.KeyD=K.ShiftLeft=K.Space=false;blocking=false;powerCharging=false;powerCharge=0;
+  Object.assign(pauseLeaf,{on:0,view:'leaf',quit:false,sub:null});
+  pauseOpen=true;pauseLeafEl().style.display='block';pauseLeafDraw();return true;}
+function closePauseLeaf(relock){
+  const ov=document.getElementById('pauseui');if(ov)ov.style.display='none';
+  pauseOpen=false;pauseLeaf.sub=null;pauseLeaf.quit=false;
+  const G=document.getElementById('g');if(G)G.focus();
+  if(relock&&started&&!dead&&!won&&document.pointerLockElement!==CV){try{const p=CV.requestPointerLock();if(p&&p.catch)p.catch(()=>{});}catch(e){}}}
+function pauseTake(){const L=pauseLeaf,id=PAUSE_ROWS[L.on][0];
+  if(id!=='quit')L.quit=false;
+  if(id==='resume'){closePauseLeaf(true);return;}
+  if(id==='save'||id==='load'){L.sub=id;_slLoaded=false;const G=document.getElementById('g');if(G)G.focus();document.getElementById('pauseui').style.display='none';openSLMenu(id,false);return;}
+  if(id==='keys'){L.view='keys';pauseLeafDraw();return;}
+  if(id==='quit'){if(!L.quit){L.quit=true;pauseLeafDraw();return;}location.reload();}}
+// closeSLMenu calls this: back to the leaf after a save, or out of it when a load has replaced the world.
+function pauseReturn(){if(!pauseOpen||!pauseLeaf.sub)return;pauseLeaf.sub=null;
+  if(_slLoaded){closePauseLeaf(false);return;}
+  document.getElementById('pauseui').style.display='block';pauseLeafDraw();}
+window.addEventListener('keydown',e=>{if(!pauseOpen||pauseLeaf.sub)return;const c=e.code,L=pauseLeaf;let hit=true;
+  if(c==='KeyM')hit=false;
+  else if(L.view==='keys'){if(c==='Escape'||c==='KeyE'||c==='Enter'||c==='Backspace'){L.view='leaf';pauseLeafDraw();}}
+  else if(c==='Escape'){if(L.quit){L.quit=false;pauseLeafDraw();}else closePauseLeaf(true);}
+  else if(c==='ArrowUp'||c==='KeyW'){L.on=(L.on+PAUSE_ROWS.length-1)%PAUSE_ROWS.length;L.quit=false;pauseLeafDraw();}
+  else if(c==='ArrowDown'||c==='KeyS'){L.on=(L.on+1)%PAUSE_ROWS.length;L.quit=false;pauseLeafDraw();}
+  else if(c==='KeyE'||c==='Enter'||c==='Space'){if(!e.repeat)pauseTake();}
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
 const _ccBeginBtn=document.getElementById('cc-begin');
 if(_ccBeginBtn) _ccBeginBtn.onclick=ccBegin;
 const _ccNameEl=document.getElementById('cc-name');
