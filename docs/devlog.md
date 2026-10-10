@@ -15144,3 +15144,19 @@ CI on this PR's head (`d86c60b`, Session 710) failed five suites on three shards
 
 ### Needs eyes
 - The next CI run: `hoardspot`'s trail and `lairname`'s fields, if either goes red again.
+
+## v80 — Session 712 — A lair's cavern and its beast follow the lair's own ground, whatever has loaded (backlog I, found in Sessions 710–711)
+Session 711 left `lairname`'s red on CI unexplained: Rathmore's Lair read Marsh Hag, then Cave Bear, with the site unmoved. While looking at the lair doors, I found two load-order reads, and the second is that failure.
+
+**The door.** `lairDoorFor` wrote the cavern's `theme` (*haunted* in fen or swamp, *deep* elsewhere) and its stored `lair.boss` from the live `dominantRegion` as the cell was made. Every cell is made in one sweep at the first `getCell` (the names pass), and REGIONS then holds only the loaded cells' regions. So, measured over the 41 lairs on the grid, 11 doors stored a beast other than `lairBeast`, and 5 caverns under fen or swamp lairs were built *deep*. Carrigowen's, the critic's lair, was one of them. Session 701 knew the door read early and named the master by `lairBeast` instead. But the cavern's look still came from the early read, and the stored boss is the fallback. Both are now read when asked: `lair.boss` is a getter on `lairBeast(site)`, and `theme` a getter on `lairBiome(site)`. `makePortalDef` copies the theme as the cell loads, after every cell exists, so `lairBiome`'s `getCell` calls never run inside a cell's own making. A door's size, difficulty and dragon roll are unchanged.
+
+**The beast.** `lairBiome` reads the regions of the lair's cell and its eight neighbours. If there are none, it fell back to the live `dominantRegion`. That happens for a lair on an islet in a sea cell, where the nine cells are all sea: 15 of the world's 54 lairs, counting the cells beyond the 12×12 grid. Rathmore's Lair (`c6_14_i0`, beyond the grid) is one. Ardbeg's and Stinouma's read forest, an Ogre, with little loaded, and fen, a Marsh Hag, once the cells round the fen lairs had loaded. The ring now widens a cell at a time, to three, over the cells' own regions. If it still finds none, the lair is on the coast. So each of the 15 has one beast for the whole game. Rathmore's is a Cave Bear (coast), Ardbeg's and Stinouma's Ogres (autumn). A save whose islet lair's beast was met under the other read will see the new one at the next rebuild. No beast is stored except a master already rolled (`worldState.masters`), which keeps its record.
+
+`lairname`'s own crash here is a test race, fixed as `sitechest`'s was in Session 711. It read `WORLD.SITE[id]` for a cell whose load was still queued, which threw on `.name` before and after this change. It now reads `siteAnywhere`.
+
+### Verified (headless Chromium)
+`tests/lairtheme` (new, 5 checks) scans every lair from cell −3 to the grid's edge +3: 54 lairs, 6 under fen or swamp, 15 with no region in their nine cells. Every door's stored beast is `lairBeast`'s, and every cavern is *haunted* in fen or swamp and *deep* elsewhere. The cells round 21 lairs are then loaded (six, fen first, and the 15 islet lairs), and no lair's biome, beast or theme moves. Carrigowen's portal is built *haunted*. No page errors. Before the fix, Ardbeg's and Stinouma's moved from forest to fen in this same test. `lairname` (14 lairs the same; `liveDiff` still shows the live read moving at six of them, as it should), `lairmaster`, `lairdoor`, `lairhoard`, `lairload`, `shoreplaces` and `dunseed` pass.
+
+### Needs eyes
+- The 5 fen and swamp caverns that were *deep*, Carrigowen's among them, are now *haunted*: the look builder's theme, in a lair.
+- `hoardspot`'s CI trail is still owed (Session 711).

@@ -343,18 +343,25 @@ const giver=`${lord.title} ${lord.name}`;
   function lairSeed(site){return 100000+(String(site.id).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%800000);}
   // S701 — the biome from the regions of the lair's cell and its eight neighbours, not the live REGIONS (the loaded cells' only:
   // the same lair read Marsh Hag or Cave Bear by which cells were loaded). Never called while a cell is being made (getCell).
-  function lairBiome(site){const [ci,cj]=cellOf(site.x,site.z);const regs=[];for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
-    if(!regs.length)return dominantRegion(site.x,site.z).r.biome;let best=null,bw=0,near=null,nd=1e9;
+  // S712 — a lair on an islet in open sea has no region in its nine cells, and fell back to the live dominantRegion: the ring now widens
+  // a cell at a time, to three, over the cells' own regions, and is the coast if none is found.
+  function lairBiome(site){const [ci,cj]=cellOf(site.x,site.z);const regs=[];
+    for(let k=1;k<=3&&!regs.length;k++)for(let i=ci-k;i<=ci+k;i++)for(let j=cj-k;j<=cj+k;j++){const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
+    if(!regs.length)return 'coast';let best=null,bw=0,near=null,nd=1e9;
     for(const r_ of regs){const d=Math.hypot(site.x-r_.x,site.z-r_.z);const w=Math.max(0,1-d/r_.r);if(w>bw){bw=w;best=r_;}if(d/r_.r<nd){nd=d/r_.r;near=r_;}}
     return (best||near).biome;}
   function lairBeast(site){const seed=lairSeed(site),biome=lairBiome(site);
     return biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre';}
   // S702 — the cavern's old gate stands in the lair's own pad, 16 south of its centre: the gate faces -z, so it looks back at the crag's mouth
   // and the beast before it (it was 6 north, behind the crag, and the placement pushed it out of the pad, 46 off and facing away).
-  function lairDoorFor(site,c){const seed=lairSeed(site);const biome=dominantRegion(site.x,site.z).r.biome;
-    const boss=biome==='tundra'?'Frost Troll':biome==='wasteland'||biome==='wastes'?'Ash Wight':biome==='swamp'||biome==='fen'?'Marsh Hag':cellHash(seed%9973,seed%7919,4)<.5?'Cave Bear':'Ogre'; /* S701 — read as the cell is made, and so not lairBeast (which reads the cells round it); lairFinish names the master by lairBeast */
+  // S712 — the cavern's theme and its stored beast are read when asked, by lairBiome and lairBeast, as the beast at the crag is: read as the
+  // cell was made they followed the live REGIONS (the loaded cells' only), so 11 of 41 doors stored another beast and 5 fen caverns were built 'deep'.
+  // Never read while the cell is being made (lairBiome calls getCell); makePortalDef reads the theme as the cell loads.
+  function lairDoorFor(site,c){const seed=lairSeed(site);
     const dragon=!!site.dragon||cellHash(seed%9973,seed%7919,5)<.08;site.dragon=dragon;
-    return {zone:'gen',x:site.x,z:site.z+16,seed,size:dragon?'large':'medium',theme:biome==='tundra'?'deep':biome==='swamp'||biome==='fen'?'haunted':'deep',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),boss,dragon,siteId:site.id}};}
+    const e={zone:'gen',x:site.x,z:site.z+16,seed,size:dragon?'large':'medium',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),get boss(){return lairBeast(site);},dragon,siteId:site.id}};
+    Object.defineProperty(e,'theme',{get(){const b=lairBiome(site);return b==='swamp'||b==='fen'?'haunted':'deep';},enumerable:true,configurable:true});
+    return e;}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
   // ── finding sigils: rubbings, rumours, the Weaver's Eye ──
   function sigilDoors(){const out=[];for(const c of CELLS.values()){if(!c.doors)continue;c.doors.forEach(e=>{if(!e.wet&&(e.sigil||e.kind==='fort_door'))out.push(e);});}return out;}
