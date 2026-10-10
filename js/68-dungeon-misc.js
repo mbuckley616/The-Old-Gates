@@ -504,9 +504,11 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const pool=ENEMIES.filter(e=>!e.dead);const low=Math.max(...pool.map(e=>e.floor||1));const cand=pool.filter(e=>(e.floor||1)===low).sort((a,b)=>Math.hypot(b.x-ent.x,b.z-ent.z)-Math.hypot(a.x-ent.x,a.z-ent.z));
   const e=cand[0];if(!e)return;
   const dragon=!!L.dragon;const site=L.siteId&&typeof SITE!=='undefined'?SITE[L.siteId]:null;const bossName=site&&typeof lairBeast==='function'?lairBeast(site):L.boss; /* S699 — the beast of the lair where it stands now, as at the crag */e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${bossName}`;e.boss=true;e.dragon=dragon;
+  if(!dragon)lairMasterBody(e,bossName,portal); /* S706 — Michael's A on #225: the lair's own beast, not the deepest foe renamed */
   e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
-  if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88); // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
+  if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88);
+  if(!dragon&&e._lairBody){e._detailed=true;masterUnderCeiling(e);delete e.posture;delete e.maxPosture;initPosture(e);} /* S706 — its posture from its own health, as the world's beast's */ // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
   if(e.hpFg&&e.hpFg.parent&&e.hpFg.parent.material)e.hpFg.parent.material.color.setHex(dragon?0xff5020:0xffb040);
   // the hoard beside it
   if(rec&&rec.hoard){lairHoardChest(portal,rec.hoard,dragon);showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');window._lairBoss=e;return;}
@@ -520,6 +522,30 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const hs=lairHoardSpot(e);const hoard={x:hs.x,z:hs.z,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
   showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');
   window._lairBoss=e;}catch(err){console.warn('lairFinish',err);}}
+// S706 — a lair cavern's master is the lair's own beast (Michael's A on DECISION #225): the foe standing deepest gives up its
+// place and floor, and is built again as the beast the lair is named for, on the open world's body for that kind (a Marsh Hag,
+// a Frost Troll, an Ash Wight, a Cave Bear or an Ogre: buildZoneEnemy's rig, moved into the cavern's group as the wyrm's is).
+// Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty,
+// the floor (1.5 below) and your level; a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
+// average) lands the kind's own blow. lairFinish then makes it the master (×3 health, ×1.6 a blow, 1.5× the size) as before.
+function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'&&ZONE_FOE_DEF[kind];if(!D||!e||!e.mesh)return false;
+  const z=buildZoneEnemy(new THREE.Group(),[],0,0,kind,null);const rig=z.limbs&&(z.limbs.person||z.limbs.wolf);if(!rig||!rig.root)return false;
+  const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{};const hpBg=L.hpBg||e.hpBg;
+  g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
+  if(rig.root.parent)rig.root.parent.remove(rig.root);g.add(rig.root);rig.e=e;
+  e.limbs={torso:z.limbs.torso,hpBg};if(z.limbs.person){e.limbs.person=z.limbs.person;e.limbs.armR=z.limbs.armR;}if(z.limbs.wolf)e.limbs.wolf=z.limbs.wolf;
+  const ds=portal.diffScale||DIFF_SCALE.normal,fm=(e.floor||1)>1?1.5:1;
+  e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale()));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale();delete e.dmg;
+  e.spd=D.spd*ds.spd*(fm>1?1.1:1);e.rankSpd=D.spd;e.size=D.scale||1;e.def=D.def||0;e.resist={...(D.resist||{})};
+  e.baseType=kind;e.buildFn=D.shape==='brute'?'brute':'humanoid';e._origCol=D.col;e.variant=null;e.xpMult=1;
+  e.isWraith=false;e.ranged=false;e.disguised=false;e.dormant=false;e.shieldUp=false;e.canFlee=false;e._burstNext=false;
+  e.baseY=(e.floor===2&&typeof FLOOR2_Y!=='undefined')?FLOOR2_Y:0;g.position.y=e.baseY;
+  const top=(z.limbs.person?1.3:1.25)*(D.scale||1);if(hpBg)hpBg.position.y=top;if(e.hpFg)e.hpFg.position.y=top;
+  if(e.el){e.el.color.setHex(D.eyeCol||0xffb040);e.el.intensity=.7;}
+  e._lairBody=kind;e._detailed=true;return true;}
+// the master is 1.5× the beast: one that would stand through the cavern's ceiling is made the largest that clears it
+function masterUnderCeiling(e){const g=e&&e.mesh;if(!g)return;const rig=e.limbs&&(e.limbs.person||e.limbs.wolf);const root=rig&&rig.root;if(!root)return;
+  g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;if(h>room)g.scale.multiplyScalar(room/h);}
 // S219 — a lair's wyrm on the dragon's own body (S177, the wolf's bones with a neck, a tail and wings): the master keeps
 // the numbers it was given (the lair's beast or the cavern's deepest foe, scaled up), and only its body is swapped. What it
 // wore goes (a person's rig drops out of tickPeople once its root has no parent; a box brute's parts are removed); the
