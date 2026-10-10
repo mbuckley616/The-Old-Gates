@@ -708,8 +708,8 @@ function attackPose(e,inDungeon){
   if(e.mesh&&(!arm||isTail)&&!(e.limbs&&e.limbs.wolf)){const lean=-w*.22+s*.18;if(inDungeon)e.mesh.rotateX(lean);else e.mesh.rotation.x=lean;}
   if(e.mesh&&e.mesh._hover){const t=performance.now()*.003;e.mesh.position.y=(e.baseY||e.mesh.position.y-Math.sin(t-.05)*.08)+Math.sin(t)*.08;e.mesh.children.forEach(c=>{if(c._mote!=null){c.position.x=Math.cos(t+c._mote)*.3*(e.mesh.scale.x||1);c.position.z=Math.sin(t+c._mote)*.3;}});}
 }
-function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
-  const ZDEF={
+// S688 — the zone foes' table, at the top level so prewarmFoes can name every kind; buildZoneEnemy reads it as ZDEF.
+const ZONE_FOE_DEF={
     // v59: minLevel gates zone enemies the same way dungeon enemies are gated. Below-gate enemies
     // still spawn their full data structure, but are flagged `locked` — mesh hidden, AI + collision
     // skipped — until the player reaches minLevel. On first tick past the gate, they unlock and appear.
@@ -750,6 +750,8 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     'Ash Wight':    {minLevel:7, col:0x3a3634,eyeCol:0xff6020,hp:70, maxHp:70, spd:1.2,dmg:15,atk:1.5, xpVal:110,scale:1.1,shape:'humanoid',def:4, resist:{tine:0.4, cloch:1.4}},
     'Pirate':       {minLevel:1, col:0x3a2a2a,eyeCol:0xffd080,hp:32, maxHp:32, spd:1.3,dmg:9, atk:1.3, xpVal:34, scale:1.0,shape:'humanoid',def:2, resist:{}},
   };
+function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
+  const ZDEF=ZONE_FOE_DEF;
   const baseDef=ZDEF[type]||ZDEF.Wolf;
   // Apply variant overlay if one was selected upstream. Zones pass diff='normal' to pickVariant so only Greater can apply.
   const vr=applyVariantToDef(baseDef, type, variantKey);
@@ -874,6 +876,26 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
 
 // v80 S386 — a foe a quest or the war sets down on purpose (a duel, a commission, a raid, a road job, a caravan's attackers, a siege) is there at any level:
 // the minLevel gate is for the wild's own spawns, and a latent one is hidden, never ticked and can't be hit
+// S688 — the first wolf, or the first night's foes, compiled their shader programs on the frame they first drew: a hitch on a
+// GPU, seconds on software GL (Session 233). Once a page, behind the world's loading fade, one foe of every kind is built
+// into a group the world never ticks, its light taken out (a light would change every program's key), and REN.compile
+// builds their programs against the world's own lights and fog. The group is then dropped and its rigs struck from the
+// tick lists; the materials are not disposed, so the programs stay in three.js's cache for the real foes that follow.
+let _foesWarm=null;
+function prewarmFoes(sc,cam){
+  if(_foesWarm||typeof REN==='undefined'||!REN||!sc||!cam)return null;_foesWarm=true;
+  const t0=performance.now(),p0=REN.info.programs?REN.info.programs.length:0,tmp=new THREE.Group(),kinds=Object.keys(ZONE_FOE_DEF);
+  for(const k of kinds){try{buildZoneEnemy(tmp,[],0,0,k,null);}catch(e){}}
+  try{buildZoneEnemy(tmp,[],0,0,'Bandit',null,{genome:personGenome({name:'warm',role:'guard'},{key:'warm'})});}catch(e){} /* a town guard drawn on you: a Bandit on a townsman's genome */
+  const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
+  tmp.traverse(o=>{o.frustumCulled=false;});
+  if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */
+  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}sc.remove(tmp);
+  const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;};
+  for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
+  for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
+  return _foesWarm={kinds:kinds.length+1,programs:(REN.info.programs?REN.info.programs.length:0)-p0,ms:Math.round(performance.now()-t0)};
+}
 function unlockFoe(e){if(!e)return e;e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;return e;}
 
 // v80 S135 — one of them sees you, the rest of the camp hears: everyone within reach wakes

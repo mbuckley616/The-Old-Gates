@@ -14775,3 +14775,21 @@ On the old code the suite fails five of its seven checks. `hearthcast` 9/9 with 
 
 ### Needs eyes
 Nothing changes in play. An Impression still goes wild about two casts in five.
+
+## v80 — Session 688 — Every foe's shaders compiled behind the loading fade (backlog D, Session 233's owed prewarm)
+Section I has nothing open on this branch, G's owed checks are all feel, and B and C hold only look and feel. Backlog D's performance item still owed one systems piece from Session 233: the first foe of a kind compiles its shader programs on the frame it first draws. That is the first wolf, or what the first night brings. On a GPU it is a hitch; on software GL it was the critic's 20-second frame. Session 233 found that `REN.compile(scene, CAM)` pays for programs ahead of time only for objects already in the scene, and the night's foes are not there until night. So the owed fix was to build each creature family once behind the loading fade.
+
+`prewarmFoes(sc, cam)` (`42-zone-enemies.js`) does that once a page. It builds one foe of every kind in the zone foes' table, and one Bandit on a townsman's genome (a drawn guard), into a group the world never ticks, through `buildZoneEnemy` itself. It takes their glow lights out, because a light added would change every program's key, then adds the group to the world's scene, calls `REN.compile`, and takes the group out again. The rigs are struck from `WOLF_RIGS` and `PEOPLE_RIGS` so the ticks never see them. The materials are not disposed. Disposing would release the programs, and keeping them in three.js's cache is the point. To name every kind, the table that was `ZDEF` inside `buildZoneEnemy` is now the top-level `ZONE_FOE_DEF`, and the function reads it as before.
+
+It is called behind the fade of the first entry to the world, from `goToZone('world')` (`50-travel.js`), `WORLD.enter` and `WORLD.restore` (a load). The first try compiled against the wrong lights. Before the world's first tick the scene holds 44 point lights, and `sweepLights` folds them into the pool of 24 only on that tick, so every program was keyed to 44 and was compiled again when the foes drew. The prewarm now runs the sweep first when it is given the world's scene.
+
+### Verified (headless Chromium)
+`foewarm` 4/4 (new). In Dunmore at noon, once nothing more compiles, all 32 kinds are raised in front of you through `buildZoneEnemy` in the world's own scene, unlocked and drawn:
+- With the prewarm, drawing them compiles 0 shaders and adds 0 programs (36 before, 36 after). The prewarm itself built 33 foes and compiled 13 programs in 768 ms on SwiftShader, behind the first fade. Some of those 13 are the world's own, which `REN.compile` compiles in passing.
+- With it held off (`FOEWARM=0`), the same frame compiles 6 shaders and 3 programs (34 → 37), and its four frames took 16 s against 7 s.
+- Before the sweep was added, the prewarm's programs were keyed to 44 point lights against the world's 24, and the foes still compiled 3.
+No page errors. Neighbours green: `hourhitch` (6/6), `foes`, `faolchu`, `bear`, `gait`, `fiercewolf`, `dungeonfoes`, `guardplay`. `parsecheck` clean.
+
+### Needs eyes
+- On the laptop: the first wolf of a session, and the first night, should no longer hitch. The first entry to the world takes a little longer behind its fade (under a second here).
+- The dungeon's foes are not prewarmed. Their builders and the dungeon's lights are their own, so a first skeleton below can still hitch.

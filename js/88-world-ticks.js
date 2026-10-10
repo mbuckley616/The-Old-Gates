@@ -248,6 +248,7 @@
       freeSpot();
       jumpY=worldH(px,pz);
       atmosphere(10);
+      if(typeof prewarmFoes==='function')prewarmFoes(sc,CAM); /* S688 — every foe's shaders, once, behind the fade */
       showZoneName(label||'🌍 The open country');
       const fb=document.getElementById('fbtn');if(fb)fb.style.display='block';
       if(typeof saveGame==='function')saveGame();
@@ -277,6 +278,7 @@
     tickSettlements(0,true);
     freeSpot();
     atmosphere(10);
+    if(typeof prewarmFoes==='function')prewarmFoes(sc,CAM); /* S688 — and on a load into the world */
     showZoneName('🌍 The open country');
   }
   // If the player is standing inside a trunk/rock/door, spiral outward to

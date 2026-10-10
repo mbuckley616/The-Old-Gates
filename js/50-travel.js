@@ -129,6 +129,7 @@ function goToZone(targetZone,spawnX,spawnZ,spawnYaw,label){
       px=spawnX; pz=spawnZ; yaw=spawnYaw||0;
     }
     pitch=0;velY=0;jumpY=0;onGround=true;
+    if(targetZone==='world'&&typeof prewarmFoes==='function'&&typeof WORLD!=='undefined')prewarmFoes(WORLD.scene,CAM); /* S688 — every foe's shaders, once, behind the fade */
     showZoneName((ZONE_BUILDERS[targetZone]&&ZONE_BUILDERS[targetZone].displayName)||'—');
     document.getElementById('fbtn').style.display='block';
     // v61b: per-zone music track. Each ZONE_BUILDERS entry has a `musicTrack`
