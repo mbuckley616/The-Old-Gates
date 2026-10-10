@@ -15206,3 +15206,12 @@ CLAUDE.md's co-op rules (Michael's A on #119) say *no timing window under 150 ms
 
 ### Needs eyes
 - The hardest treasure chests are a little easier at Finesse 0: by feel, whether a 150 ms hold still feels like a good lock.
+
+## v80 — Session 717 — A hoard's sword or cuirass is named for its tier (Michael's A on #232)
+Michael chose A: the name follows the tier. `lairFinish` drew the piece's metal from `Iron/Steel/Silver` (a wyrm's `Silver/Gold/Mithril`) and then rolled its tier on the next draw. So a *Steel Cuirass* could be tier 3, and a wyrm's tier-6 blade *Silver*. The metal is now `MATERIALS`' name for the tier: 3 Iron, 4 Steel, 5 Mithril, 6 Adamant. The piece's `material` follows it, so its look and its sale read the same metal. The metal's draw is still taken and thrown away, so every roll after it in the hoard's stream lands as before: the tier, sword or cuirass, a wyrm's scales. Silver and Gold leave the hoard. A hoard already rolled and kept in a save (`worldState.masters`) keeps the name it was saved with.
+
+### Verified (headless Chromium)
+`tests/hoardmetal` (new, 6 checks) builds forty hoards in one cavern over twenty days, plain and a wyrm's. Every piece is named for its tier's metal and carries it as its material, and none is Silver or Gold. The tier, the slot and a wyrm's scales match the old draw order replayed on each hoard's own stream, on all forty. Both tiers of each kind turn up. On the old code the two naming checks fail (*Steel Sword* at tier 3, *Silver Cuirass* at tier 6, *Gold Sword* at 5). In `dunseed`, seed 519737's plain hoard is *Gold Coins 153, Steel Sword, Greater Potion×2* and its wyrm's *Gold Coins 255, Adamant Sword, Dragon Scale×2, Greater Potion×2*. The gold and the potions are as Session 710 recorded, and the swords are the tier's metal, where they were *Silver* and *Mithril*. `lairmaster` (the piece's requirement) and `lairhoard` pass.
+
+### Needs eyes
+- Nothing beyond the name in the loot panel.

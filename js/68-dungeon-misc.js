@@ -516,7 +516,9 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   // S514 — the hoard is <seed>:<floor>:hoard, and its goods roll on its stream and the day, not Math.random (co-op rules)
   const hid=`${dKeyOf(portal,e.floor||1)}:hoard`,hr=seededRng('loot',hid+':'+lootDay());
   const items=[];const gv=Math.round((60+level*25)*(dragon?3:1.8));items.push({name:'Gold Coins',ico:'●',type:'gold',value:gv,qty:1});
-  const MATS=dragon?['Silver','Gold','Mithril']:['Iron','Steel','Silver'];const mt=MATS[Math.floor(hr()*MATS.length)];const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);
+  /* S717 — the piece is named for its tier's metal (Michael's A on #232: it named Iron/Steel/Silver, a wyrm's Silver/Gold/Mithril, on a draw
+     of its own); that draw is still taken, so every roll after it comes out as before */
+  hr();const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);const mt=(MATERIALS.find(q=>q.tier===tier)||MATERIALS[2]).name;
   items.push(hr()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
   {const it=items[1];if(it.slot==='weapon'){const m=MATERIALS.find(q=>q.tier===tier);if(m&&m.reqAttr){it.reqAttr=m.reqAttr;it.reqVal=m.reqVal;}}else Object.assign(it,armorReq(tier,armorTypeOf(it)));} /* S708 — the hoard's piece asks what its tier asks of any other (it was built bare: a Steel Sword with no requirement) */
   if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});

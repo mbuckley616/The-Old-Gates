@@ -26,6 +26,9 @@ Measured with Session 706's masters (a Marsh Hag, floor 2, level 1): on Very Eas
 
 Recommendation: **A.** In Skyrim a dungeon's level is set from yours with a floor and a cap, and a named lair sits above the common ones. A keeps Session 9's promise that a door is a fair fight at any level, and it makes the cavern under the beast's crag worth its name. B would make the first lair a new character finds a wall.
 
+
+## Answered
+
 ### A lair hoard's piece: should its metal follow its tier? (systems builder, 2026-10-10) — DECISION #232
 A lair cavern's hoard holds one piece, a sword or a cuirass, and `lairFinish` (`68-dungeon-misc.js`) rolls it on two separate draws: the metal in its name (`Iron/Steel/Silver`; a wyrm's `Silver/Gold/Mithril`) and its tier (3–4; a wyrm's 5–6). The tier sets the attack, the defence, the price and, since Session 708, the requirement. The name does not follow it. So a *Steel Cuirass* can be tier 3 and an *Iron Sword* tier 4. *Silver* and *Gold* are no tier in `MATERIALS`. A wyrm's tier-6 piece can be called *Silver*, where every other tier-6 blade is Adamant. Found in Session 708 (the critic's s482 *Steel Sword* with no requirement).
 
@@ -35,7 +38,7 @@ A lair cavern's hoard holds one piece, a sword or a cuirass, and `lairFinish` (`
 
 Recommendation: **A.** Everywhere else in the game a sword's metal tells you what it does: an Iron Sword asks Might 5, a Steel Sword Might 10. A hoard that breaks that rule teaches the player that names lie. A changes no numbers, only the word.
 
-## Answered
+Michael: **A** — the name follows the tier (2026-10-10, on #232; written to auto/producer aab94ff). **Built, Session 717** (`tests/hoardmetal`).
 
 ### What a lair cavern's master is — the lair's own beast, or the deepest foe named for it? (systems builder, 2026-10-10) — DECISION #225
 The critic found that Carrigowen's cavern master is a Slime of 49 HP named *Carrigowen — Cave Bear*. `lairFinish` takes whichever foe stands farthest from the entrance on the lowest floor and gives it the lair's name, 3× health and a 1.5× scale. It keeps its own body. Only a dragon lair gives its master a new body, the wyrm's (Session 219). Session 699 made the name agree with the beast at the crag outside, but the body is still whatever stood deepest: a slime, a skeleton, a spider.
