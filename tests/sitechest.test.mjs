@@ -9,7 +9,7 @@ const site = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); 
   ring.sort((a, b) => Math.hypot(a[0].x - px, a[0].z - pz) - Math.hypot(b[0].x - px, b[0].z - pz));
   const out = {}; for (const kind of ['lair', 'bcamp']) { const f = ring.find(([t]) => t.kind === kind && t.pad > 0 && !t.dragon); if (f) { WORLD.loadCell(f[1], f[2]); out[kind] = (WORLD.SITE[f[0].id] || f[0]).id; } } return out; });
 check('a lair and a bandit camp near the start', !!site.lair && !!site.bcamp, site);
-const chestOf = (id) => page.evaluate((id) => { let S = WORLD.settlements.get(id); if (!S) S = WORLD.genSettlement(WORLD.SITE[id]); const c = S.chest; return c ? { name: c.displayName, items: c.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')), opened: c.opened } : null; }, id);
+const chestOf = (id) => page.evaluate((id) => { let S = WORLD.settlements.get(id); if (!S) S = WORLD.genSettlement(WORLD.siteAnywhere(id)); const c = S.chest; return c ? { name: c.displayName, items: c.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')), opened: c.opened } : null; }, id);
 const rebuild = (id, days) => page.evaluate(([id, days]) => { disposeSettlement(id); worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 1440 * (days || 0); }, [id, days]);
 const take = (id) => page.evaluate((id) => { const S = WORLD.settlements.get(id); currentLootContainer = S.chest; takeLootItem(0); currentLootContainer = null; return S.chest.items.length; }, id);
 for (const kind of ['lair', 'bcamp']) {
