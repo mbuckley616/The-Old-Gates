@@ -13540,3 +13540,4 @@ The challenge. Its rule is the systems builder's (Session 684, on auto/systems, 
 - The brightness marks on a real screen: the left mark should only just show at the right setting. A CSS filter on the canvas costs a little compositing on a weak machine; if the frame rate drops with brightness off zero, say so.
 - Full screen from the sheet (a click or E is the gesture it needs); headless cannot show it.
 - The challenge row on a build that has #167, and that the systems builder's `setChallenge` takes the step as the sheet gives it (0–4).
+- For the merge of #167: the loop's pause line in `90-main.js` will conflict, since auto/systems added `cargoOpen` and `yardOpen` to it and this branch added `pauseOpen`. Keep all three. The leaf also refuses to open over the factor's board and the yard (`openPauseLeaf` reads both flags if they exist), because they are not in the input code's `_isMenuOpen` list.
