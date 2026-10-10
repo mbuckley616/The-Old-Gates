@@ -767,8 +767,17 @@
   // (48px) for the wide view, generated quickly; a fine tile (320px) when
   // you zoom into a cell, generated over frames so the map never hitches.
   // Zoom 1 fits the continent; ~40 puts one province across the pane.
-  const MAP={cv:null,ctx:null,zoom:1,ox:0,oy:0,drag:null,hover:null,hoverCell:null,sel:null,W:0,H:0,dirty:true,mode:'map',tiles:new Map(),jobs:[],_entries:[]};
+  const MAP={cv:null,ctx:null,zoom:1,ox:0,oy:0,drag:null,hover:null,hoverCell:null,sel:null,W:0,H:0,dirty:true,mode:'map',tiles:new Map(),jobs:[],_entries:[],cssW:0,cssH:0,dpr:1,drawN:0};
   const TILE_C=48,TILE_F=320;
+  // S704 — Michael's A on #220: the map at the screen's own pixels, and finer tiles as you zoom. The maths is in CSS pixels
+  // (MAP.cssW/cssH, what the mouse reads); the canvas store is that times devicePixelRatio, drawn through setTransform.
+  // A province's tiles are a quadtree: the province, its quarters, theirs, five levels (75 units a tile at the deepest),
+  // the level chosen so a tile pixel is never more than 1.15 screen pixels. The concept artist's prototype, lifted.
+  const MAP_TQ=256,MAP_LMAX=5;
+  function mapCssW(){return MAP.cssW||MAP.cv.width;}
+  function mapCssH(){return MAP.cssH||MAP.cv.height;}
+  function mapFit(){const pane=document.getElementById('wm-map-pane'),root=MAP.cv;if(!pane||!root)return;const r=pane.getBoundingClientRect(),d=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+    MAP.cssW=Math.max(300,r.width|0);MAP.cssH=Math.max(300,r.height|0);MAP.dpr=d;root.width=Math.round(MAP.cssW*d);root.height=Math.round(MAP.cssH*d);MAP.W=Math.min(MAP.cssW,MAP.cssH);MAP.H=MAP.cssH;}
   const PARCH=new THREE.Color(0xd8c8a2),LOWC=new THREE.Color(0xcdb98c),HILL=new THREE.Color(0xb59d76),MTN=new THREE.Color(0x8d7c68),SNOWC=new THREE.Color(0xe9e4da),WATER=new THREE.Color(0x7d9cb0),DEEP=new THREE.Color(0x5b7d94),FORESTC=new THREE.Color(0x7c8a58),WASTEC=new THREE.Color(0xa08e74);
   // v80 S144 — the map read as brown or green because it was coloured by height: only forest (and a
   // 'wastes' test that never matched the generated 'wasteland') tinted it. Every biome the generator
@@ -841,12 +850,57 @@
         t.done=true;const k=MAP.jobs.indexOf(t);if(k>=0)MAP.jobs.splice(k,1);MAP.dirty=true;}
     });
   }
-  function mapJobs(){const t0=performance.now();while(MAP.jobs.length&&performance.now()-t0<24){const t=MAP.jobs[0];if(t.done){MAP.jobs.shift();continue;}tileStep(t,12);if(!t.done)break;}}
+  // A quadtree tile (cell, L, qi, qj) at res pixels: heights first, then pixels, as tileStep does, to a time budget. The relief
+  // is shaded by slope per world unit, so a deep tile is shaded as strongly as the old fine tile.
+  function mapQKey(c,L,qi,qj,res){return 'q'+c.i+','+c.j+':'+L+':'+qi+','+qj+':'+res;}
+  function mapStartQ(c,L,qi,qj,res){const key=mapQKey(c,L,qi,qj,res);let t=MAP.tiles.get(key);if(t)return t;
+    const span=SIZE/(1<<L);const cv=document.createElement('canvas');cv.width=res;cv.height=res;const ctx=cv.getContext('2d');
+    t={cv,ctx,img:ctx.createImageData(res,res),H:new Float32Array((res+1)*(res+1)),row:0,hrow:0,done:false,cell:c,res,L,qi,qj,span,step:span/res,X0:c.ox+qi*span,Z0:c.oz+qj*span,q:true,key,want:MAP.drawN};
+    MAP.tiles.set(key,t);MAP.jobs.push(t);return t;}
+  function mapStepQ(t,budgetMs,t0){const {res,step,X0,Z0}=t;const H=t.H;
+    withCellData(t.cell,()=>{
+      while(t.hrow<=res&&performance.now()-t0<budgetMs){const j=t.hrow;for(let i=0;i<=res;i++)H[j*(res+1)+i]=worldH(X0+i*step,Z0+j*step);t.hrow++;}
+      if(t.hrow<=res)return;const d=t.img.data,px3=[0,0,0],k=.045*(SIZE/TILE_F)/step;
+      while(t.row<res&&performance.now()-t0<budgetMs){const j=t.row;
+        for(let i=0;i<res;i++){const h=H[j*(res+1)+i];
+          const hx=H[j*(res+1)+Math.min(res,i+1)]-H[j*(res+1)+Math.max(0,i-1)],hz=H[Math.min(res,j+1)*(res+1)+i]-H[Math.max(0,j-1)*(res+1)+i];
+          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*k));mapPixel(X0+i*step,Z0+j*step,h,shade,px3);const o=(j*res+i)*4;d[o]=px3[0];d[o+1]=px3[1];d[o+2]=px3[2];d[o+3]=255;}
+        t.row++;}
+      if(t.row>=res){t.ctx.putImageData(t.img,0,0);
+        if(step<=10){const c=t.ctx,gap=Math.max(4,Math.round(45/step/1.5));c.strokeStyle='rgba(60,90,110,.22)';c.lineWidth=1;
+          /* the hatched water, its lines about 45 units apart at any zoom */
+          for(let j=gap>>1;j<res;j+=gap){c.beginPath();let on=false;for(let i=0;i<res;i++){const h=H[j*(res+1)+i];if(h<-.6){if(!on){c.moveTo(i,j);on=true;}else c.lineTo(i,j);}else on=false;}c.stroke();}}
+        t.H=null;t.img=null;t.done=true;MAP.dirty=true;}
+    });}
+  // the jobs: 8 ms a frame, spent across tiles, nearest the middle of the view first; a tile scrolled out of view waits
+  // (it is queued again when seen), and past 160 finished quad tiles the longest unseen are let go
+  function mapJobs(){const t0=performance.now();
+    MAP.jobs=MAP.jobs.filter(t=>!t.done&&(!t.q||t.want>=MAP.drawN-2));
+    MAP.jobs.sort((a,b)=>(a.pri||0)-(b.pri||0));
+    for(const t of MAP.jobs){if(performance.now()-t0>=8)break;if(t.q)mapStepQ(t,8,t0);else tileStep(t,1e9);}
+    MAP.jobs=MAP.jobs.filter(t=>!t.done);
+    const qs=[];for(const t of MAP.tiles.values())if(t.q)qs.push(t);
+    if(qs.length>160){qs.sort((a,b)=>a.want-b.want);for(let n=0;n<qs.length-160;n++){const t=qs[n];if(t.want>=MAP.drawN-2)break;MAP.tiles.delete(t.key);}}}
+  function mapLevelFor(dev){if(dev<=MAP_TQ*1.15)return 0;return Math.min(MAP_LMAX,Math.ceil(Math.log2(dev/(MAP_TQ*1.15))));}
+  function mapResFor(dev,L){if(L>0)return MAP_TQ;return Math.max(32,Math.min(MAP_TQ,Math.ceil(dev/32)*32));}
+  // one province: its coarse tile (always there), then each visible quad tile, or the best finished ancestor cropped
+  function mapDrawCell(ctx,c,cellPx,cw,ch){
+    const [sx,sy]=mapToScreen(c.ox,c.oz);const co=MAP.tiles.get(tileKey(c.i,c.j,TILE_C))||startTile(c,TILE_C);
+    ctx.imageSmoothingQuality='high';ctx.drawImage(co.cv,sx,sy,cellPx+.6,cellPx+.6);
+    const dev=cellPx*MAP.dpr,L=mapLevelFor(dev),res=mapResFor(dev,L),n=1<<L,tp=cellPx/n;
+    const i0=Math.max(0,Math.floor(-sx/tp)),i1=Math.min(n-1,Math.floor((cw-sx)/tp)),j0=Math.max(0,Math.floor(-sy/tp)),j1=Math.min(n-1,Math.floor((ch-sy)/tp));
+    for(let qj=j0;qj<=j1;qj++)for(let qi=i0;qi<=i1;qi++){
+      const t=mapStartQ(c,L,qi,qj,res);t.want=MAP.drawN;if(!t.done&&!MAP.jobs.includes(t))MAP.jobs.push(t);const tx=sx+qi*tp,ty=sy+qj*tp;t.pri=L*1e-3+Math.hypot(tx+tp/2-cw/2,ty+tp/2-ch/2);
+      if(t.done){ctx.drawImage(t.cv,tx,ty,tp+.5,tp+.5);continue;}
+      for(let a=L-1;a>=0;a--){const sh=L-a,ai=qi>>sh,aj=qj>>sh;let best=null;
+        for(const r of [MAP_TQ,224,192,160,128,96,64,32]){const u=MAP.tiles.get(mapQKey(c,a,ai,aj,r));if(u&&u.done){best=u;break;}}
+        if(best){best.want=MAP.drawN;const f=best.res/(1<<sh);ctx.drawImage(best.cv,(qi-(ai<<sh))*f,(qj-(aj<<sh))*f,f,f,tx,ty,tp+.5,tp+.5);break;}}
+    }}
   // world ↔ screen
-  function baseScale(){return Math.min(MAP.cv.width,MAP.cv.height)/(SIZE*GRID);}
+  function baseScale(){return Math.min(mapCssW(),mapCssH())/(SIZE*GRID);}
   function mapToScreen(x,z){const s=baseScale()*MAP.zoom;return [x*s+MAP.ox,z*s+MAP.oy];}
   function screenToMap(sx,sy){const s=baseScale()*MAP.zoom;return [(sx-MAP.ox)/s,(sy-MAP.oy)/s];}
-  function mapClamp(){const s=baseScale()*MAP.zoom,w=SIZE*GRID*s,cw=MAP.cv.width,ch=MAP.cv.height;MAP.ox=Math.min(Math.max(MAP.ox,cw-w-60),60);MAP.oy=Math.min(Math.max(MAP.oy,ch-w-60),60);if(w<cw)MAP.ox=(cw-w)/2;if(w<ch)MAP.oy=(ch-w)/2;}
+  function mapClamp(){const s=baseScale()*MAP.zoom,w=SIZE*GRID*s,cw=mapCssW(),ch=mapCssH();MAP.ox=Math.min(Math.max(MAP.ox,cw-w-60),60);MAP.oy=Math.min(Math.max(MAP.oy,ch-w-60),60);if(w<cw)MAP.ox=(cw-w)/2;if(w<ch)MAP.oy=(ch-w)/2;}
   // icons
   function drawIcon(ctx,kind,s,known){
     ctx.save();ctx.scale(s,s);
@@ -884,20 +938,19 @@
     questMarkers(c).forEach(m=>out.push(m));
     return out;
   }
-  function visibleCells(){const [x0,z0]=screenToMap(0,0),[x1,z1]=screenToMap(MAP.cv.width,MAP.cv.height);const out=[];for(let j=Math.max(0,Math.floor(z0/SIZE));j<=Math.min(GRID-1,Math.floor(z1/SIZE));j++)for(let i=Math.max(0,Math.floor(x0/SIZE));i<=Math.min(GRID-1,Math.floor(x1/SIZE));i++)out.push(getCell(i,j));return out;}
+  function visibleCells(){const [x0,z0]=screenToMap(0,0),[x1,z1]=screenToMap(mapCssW(),mapCssH());const out=[];for(let j=Math.max(0,Math.floor(z0/SIZE));j<=Math.min(GRID-1,Math.floor(z1/SIZE));j++)for(let i=Math.max(0,Math.floor(x0/SIZE));i<=Math.min(GRID-1,Math.floor(x1/SIZE));i++)out.push(getCell(i,j));return out;}
   function mapDraw(){
-    const ctx=MAP.ctx;if(!ctx)return;const cw=MAP.cv.width,ch=MAP.cv.height;
+    const ctx=MAP.ctx;if(!ctx)return;if(!MAP.cssW)mapFit();MAP.drawN++;const cw=mapCssW(),ch=mapCssH();
+    ctx.setTransform(MAP.dpr||1,0,0,MAP.dpr||1,0,0);
     ctx.fillStyle='#2b241a';ctx.fillRect(0,0,cw,ch);
     if(MAP.mode==='local'){const size=Math.min(cw,ch);ctx.save();ctx.translate((cw-size)/2,(ch-size)/2);drawLocalMap(ctx,size,130,true);ctx.restore();MAP.dirty=true;return;}
     const s=baseScale()*MAP.zoom,cellPx=SIZE*s;
-    const cells=visibleCells();const fine=cellPx>=220;
+    const cells=visibleCells();
     const [pi,pj]=cellOf(px,pz);
     // tiles
     for(const c of cells){
       const [sx,sy]=mapToScreen(c.ox,c.oz);
-      let t=MAP.tiles.get(tileKey(c.i,c.j,TILE_C))||startTile(c,TILE_C);
-      if(fine){const f=MAP.tiles.get(tileKey(c.i,c.j,TILE_F))||startTile(c,TILE_F);if(f.done)t=f;}
-      if(t&&(t.done||t.res<=TILE_C)){ctx.drawImage(t.cv,sx,sy,cellPx+.6,cellPx+.6);}
+      mapDrawCell(ctx,c,cellPx,cw,ch);
       // undiscovered provinces sit under a light sepia wash
       if(c.type!=='sea'&&!(c.i===pi&&c.j===pj)&&!c.sites.some(x=>discovered(x.id))){ctx.fillStyle='rgba(60,40,20,.22)';ctx.fillRect(sx,sy,cellPx+.6,cellPx+.6);}
     }
@@ -920,7 +973,7 @@
     if(cellPx>=520){ctx.font='italic 600 14px Georgia, serif';for(const c of cells){ctx.fillStyle='rgba(70,50,30,.55)';c.regions.forEach(r=>{const [x,y]=mapToScreen(r.x,r.z);ctx.fillText(r.name||r.id,x,y-14);});ctx.fillStyle='rgba(60,70,90,.6)';c.lakes.forEach(l=>{const [x,y]=mapToScreen(l.x,l.z);ctx.fillText(l.name,x,y+4);});ctx.fillStyle='rgba(60,50,40,.7)';c.peaks.forEach(p=>{const [x,y]=mapToScreen(p.x,p.z);ctx.fillText(p.name,x,y-10);});ctx.font='italic 600 20px Georgia, serif';ctx.fillStyle='rgba(70,50,30,.45)';const [nx,ny]=mapToScreen(c.ox+SIZE/2,c.oz+120);ctx.fillText(c.name||'',nx,ny);ctx.font='italic 600 14px Georgia, serif';}}
     // icons
     const entries=[];const isc=Math.max(.9,Math.min(2.2,cellPx/420))*(Math.min(cw,ch)/700);
-    if(cellPx>=60){for(const c of cells)for(const e of mapEntries(c)){if(!discovered(e.id))continue;if(cellPx<160&&!e.major)continue;if(!mapAllowed(e))continue;entries.push(e);}}
+    if(cellPx>=60){for(const c of cells)for(const e of mapEntries(c)){if(e.kind==='quest')continue;if(!discovered(e.id))continue;if(cellPx<160&&!e.major)continue;if(!mapAllowed(e))continue;entries.push(e);}}
     MAP._entries=entries;
     for(const e of entries){const [sx,sy]=mapToScreen(e.x,e.z);ctx.save();ctx.translate(sx,sy);
       if(MAP.hover===e.id||MAP.sel===e.id){ctx.beginPath();ctx.arc(0,0,13*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
@@ -936,11 +989,66 @@
     for(const o of OTHER){const [sx,sy]=mapToScreen(o.x,o.z);ctx.fillStyle=o.kind==='pirate'?'#b02020':'#8a8a8a';ctx.beginPath();ctx.arc(sx,sy,Math.max(2,3*isc),0,Math.PI*2);ctx.fill();}
     const _mp=(activeZoneId==='world')?{x:px,z:pz}:(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.exitX!=null)?{x:currentHouse.exitX,z:currentHouse.exitZ}:(typeof currentPortal!=='undefined'&&currentPortal&&dungeonWorldPos[currentPortal.seed])?dungeonWorldPos[currentPortal.seed]:{x:px,z:pz};
     const [pxs,pys]=mapToScreen(_mp.x,_mp.z);ctx.save();ctx.translate(pxs,pys);ctx.rotate(-yaw);ctx.beginPath();ctx.moveTo(0,-9*isc);ctx.lineTo(6*isc,7*isc);ctx.lineTo(0,3*isc);ctx.lineTo(-6*isc,7*isc);ctx.closePath();ctx.fillStyle='#c8322a';ctx.fill();ctx.strokeStyle='#2a0c08';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+    mapDrawMarks(ctx,cw,ch,cellPx);
     // compass, frame
     ctx.save();ctx.translate(cw-46,52);ctx.strokeStyle='rgba(40,28,14,.7)';ctx.fillStyle='rgba(240,228,200,.75)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,24,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(0,-20);ctx.lineTo(5,0);ctx.lineTo(0,20);ctx.lineTo(-5,0);ctx.closePath();ctx.fillStyle='#8a2a22';ctx.fill();ctx.fillStyle='#2a1c10';ctx.font='bold 11px Georgia';ctx.textAlign='center';ctx.fillText('N',0,-27);ctx.restore();
     const [fx,fy]=mapToScreen(0,0);ctx.strokeStyle='rgba(40,28,14,.8)';ctx.lineWidth=3;ctx.strokeRect(fx,fy,SIZE*GRID*s,SIZE*GRID*s);
     MAP.dirty=MAP.jobs.length>0;
   }
+  // ── S704 — the compass's marks on the map (Michael's A on #220) ──
+  // One list for the compass and the map: each of your quests and guild tasks with its name and line, a job done marked at
+  // whoever gave it, then everything else the compass points at (directions, the story, factions, the war, rubbings, Act I's
+  // givers). Every mark is a numbered wax seal at every zoom: red, go there; gilt with a tick, report back; blue, directions.
+  // A mark beyond the view sits on the map's edge with an arrow and its distance; the panel lists them under *Where your work is*.
+  const MK_COL={go:'#9a2a20',back:'#b8862a',way:'#3f6488'};
+  function mapMarks(){const out=[];const add=m=>{if(m&&m.x!=null&&m.z!=null&&isFinite(m.x)&&isFinite(m.z))out.push(m);};
+    for(const q of qActive()){const d=q.data||{};let x=null,z=null,line=q.objective,st='go';
+      if(q.done){const g=q.giverSite?siteAnywhere(q.giverSite):null;if(g){x=g.x;z=g.z;}line=`Report to ${q.giver}`;st='back';}
+      else if(q.kind==='deliver'){const t=siteAnywhere(d.siteId);if(t){x=t.x;z=t.z;}}
+      else if(q.kind==='find'&&q._npc&&q._npc.g){x=q._npc.g.position.x;z=q._npc.g.position.z;}
+      else if(q.kind==='retrieve'&&d.got){const g=q.giverSite?siteAnywhere(q.giverSite):null;if(g){x=g.x;z=g.z;}line=`Bring ${d.item||'it'} to ${q.giver}`;st='back';}
+      else if(q.kind==='duel'&&d.state==='lost')continue;
+      else{x=d.x;z=d.z;}
+      add({id:'mk_'+q.id,title:q.title,line,x,z,st});}
+    const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t)continue;const done=taskDone(t);const site=t.siteId?siteAnywhere(t.siteId):null;
+      const x=t.sx!=null?t.sx:t.x!=null?t.x:site?site.x:null,z=t.sz!=null?t.sz:t.z!=null?t.z:site?site.z:null;
+      add({id:'mk_g_'+g,title:t.title||t.short,line:done?'Report to the guild':t.short,x,z,st:done?'back':'go'});}
+    let comp=[];try{comp=compassMarkers();}catch(e){}
+    for(const m of comp){if(out.some(o=>Math.hypot(o.x-m.x,o.z-m.z)<2))continue;const way=!!(WAY&&m.x===WAY.x&&m.z===WAY.z);const lb=String(m.label||'');
+      add({id:'mk_c_'+Math.round(m.x)+'_'+Math.round(m.z),title:way?'Directions':lb.replace(/^report to /,'Report to ').replace(/^./,ch=>ch.toUpperCase()),line:way?`${lb}, as you were told`:'',x:m.x,z:m.z,st:way?'way':/^report to /.test(lb)?'back':'go'});}
+    out.forEach((m,i)=>m.n=i+1);return out;}
+  function mapSeal(ctx,m,r,on){const col=MK_COL[m.st]||MK_COL.go;
+    ctx.save();if(on){ctx.beginPath();ctx.arc(0,0,r+6,0,Math.PI*2);ctx.fillStyle='rgba(255,236,170,.45)';ctx.fill();}
+    ctx.beginPath();for(let k=0;k<14;k++){const a=k/14*Math.PI*2,rr=r*(k%2?1:.9);ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}ctx.closePath();
+    ctx.fillStyle=col;ctx.shadowColor='rgba(30,15,5,.45)';ctx.shadowBlur=3;ctx.shadowOffsetY=1;ctx.fill();ctx.shadowColor='transparent';
+    ctx.lineWidth=1;ctx.strokeStyle='rgba(30,12,6,.7)';ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.66,0,Math.PI*2);ctx.strokeStyle='rgba(255,230,190,.45)';ctx.stroke();
+    ctx.fillStyle='#fbefd6';ctx.font=`700 ${Math.round(r*1.05)}px Georgia, serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(m.st==='back'?'✓':String(m.n),0,1);ctx.restore();}
+  function mapLabel(ctx,text,x,y,size,italic){ctx.save();ctx.font=`${italic?'italic ':''}600 ${size}px Georgia, serif`;ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.lineJoin='round';ctx.lineWidth=3.5;ctx.strokeStyle='rgba(244,233,206,.92)';ctx.strokeText(text,x,y);ctx.fillStyle='#2a1c10';ctx.fillText(text,x,y);ctx.restore();}
+  function mapDist(m){const d=Math.hypot(m.x-px,m.z-pz);if(d<40)return 'here';return d>=1000?(d/1000).toFixed(1).replace(/\.0$/,'')+'k u':Math.round(d/10)*10+' u';}
+  function mapDrawMarks(ctx,cw,ch,cellPx){MAP._marks=[];MAP._labels=[];if(MAP.filt.quests===false)return;const marks=mapMarks();const r=cellPx<100?8:10;
+    // seals on one spot (a cull and a report-back both at the town) stand side by side, not on top of each other
+    const at=marks.map(m=>mapToScreen(m.x,m.z));for(let a=0;a<marks.length;a++){if(at[a].fanned)continue;const grp=[a];for(let b=a+1;b<marks.length;b++)if(!at[b].fanned&&Math.hypot(at[a][0]-at[b][0],at[a][1]-at[b][1])<2*r)grp.push(b);
+      if(grp.length>1){const [ax,ay]=at[a];grp.forEach((g,k)=>{at[g]=[ax+(k-(grp.length-1)/2)*(2*r+3),ay];at[g].fanned=true;});}}
+    const boxes=[],edges=[],labels=[];const free=(x,y,w,h)=>{if(boxes.some(b=>x<b[0]+b[2]&&x+w>b[0]&&y<b[1]+b[3]&&y+h>b[1]))return false;boxes.push([x,y,w,h]);return true;};
+    for(let mi=0;mi<marks.length;mi++){const m=marks[mi];const [sx,sy]=at[mi];const on=MAP.hover===m.id||MAP.sel===m.id;const col=MK_COL[m.st]||MK_COL.go;
+      if(sx>=-r&&sy>=-r&&sx<=cw+r&&sy<=ch+r){MAP._marks.push({m,sx,sy:sy-r-4});ctx.save();ctx.translate(sx,sy-r-4);
+        ctx.beginPath();ctx.moveTo(0,r+4);ctx.lineTo(-3,r-1);ctx.lineTo(3,r-1);ctx.closePath();ctx.fillStyle='rgba(40,20,10,.85)';ctx.fill();
+        mapSeal(ctx,m,r,on);ctx.restore();if(cellPx>=100||on)labels.push({m,sx,sy,on});continue;}
+      // off the edge: a seal on the frame, an arrow towards the mark, and how far; marks off one side stack along it
+      const cx=cw/2,cy=ch/2,dx=sx-cx,dy=sy-cy,pad=26,kx=(cw/2-pad)/Math.abs(dx||1e-6),ky=(ch/2-pad)/Math.abs(dy||1e-6),k=Math.min(kx,ky),a=Math.atan2(dy,dx);let ex=cx+dx*k,ey=cy+dy*k;
+      const side=kx<ky;for(let g=0;g<12&&edges.some(e=>Math.hypot(e[0]-ex,e[1]-ey)<2*r+22);g++){if(side)ey+=(ey>cy?-1:1)*(2*r+22);else ex+=(ex>cx?-1:1)*(2*r+22);}edges.push([ex,ey]);
+      MAP._marks.push({m,sx:ex,sy:ey,edge:true});ctx.save();ctx.translate(ex,ey);ctx.save();ctx.rotate(a);ctx.beginPath();ctx.moveTo(r+9,0);ctx.lineTo(r+1,-5);ctx.lineTo(r+1,5);ctx.closePath();ctx.fillStyle=col;ctx.fill();ctx.restore();
+      mapSeal(ctx,m,r-1,on);mapLabel(ctx,mapDist(m),0,ey>ch/2?-r-6:r+15,11,false);ctx.restore();}
+    // the names, the hovered one first: a label goes only where it is clear of the labels already placed
+    labels.sort((a,b)=>b.on-a.on);ctx.font='italic 600 12px Georgia, serif';
+    for(const L of labels){const w=ctx.measureText(L.m.title).width+6;if(free(L.sx-w/2,L.sy-2*r-24,w,15)||L.on){mapLabel(ctx,L.m.title,L.sx,L.sy-2*r-9,12,true);MAP._labels.push([L.sx-w/2,L.sy-2*r-24,w,15]);}ctx.font='italic 600 12px Georgia, serif';}}
+  function mapPickMark(sx,sy){let best=null,bd=14;(MAP._marks||[]).forEach(o=>{const d=Math.hypot(sx-o.sx,sy-o.sy);if(d<bd){bd=d;best=o;}});return best;}
+  // the list under the panel, numbered as on the map; a click centres the map on the mark
+  function mapMarksHtml(){const marks=MAP.filt.quests===false?[]:mapMarks();if(!marks.length)return '';const far=m=>Math.hypot(m.x-px,m.z-pz)<40?'':' '+compassWord(m.x-px,m.z-pz);
+    return `<div class="mk-sec">Where your work is</div>`+marks.map(m=>`<div class="mk-row" data-id="${m.id}"><span class="mk-n mk-${m.st}">${m.st==='back'?'✓':m.n}</span><span><b>${m.title}</b>${m.line?`<br><i>${m.line}</i>`:''}<br><small>${mapDist(m)}${far(m)}</small></span></div>`).join('');}
+  function mapWireMarks(body){body.querySelectorAll('.mk-row').forEach(el=>el.onclick=()=>{const m=mapMarks().find(o=>o.id===el.dataset.id);if(!m)return;const s=baseScale()*MAP.zoom;MAP.ox=mapCssW()/2-m.x*s;MAP.oy=mapCssH()/2-m.z*s;mapClamp();MAP.sel=m.id;MAP.dirty=true;mapMarkPanel(m);});}
+  function mapMarkPanel(m){const body=document.getElementById('wm-panel-body');if(!body||!m)return;const near=Math.hypot(m.x-px,m.z-pz)<40;
+    body.innerHTML=`<div class="mk-head"><span class="mk-n mk-${m.st}">${m.st==='back'?'✓':m.n}</span>${m.title}</div>${m.line?`<div class="mk-line">${m.line}</div>`:''}<div class="mk-line">${mapDist(m)}${near?'':' '+compassWord(m.x-px,m.z-pz)+' of you'}</div>`;}
   // ── hover card for settlements: prosperity, services, guilds, issues, culture, people ──
   const SHOP_WORD={forge:'smith',goods:'goods',inn:'inn',apothecary:'apothecary',church:'church',armoury:'armoury',shipwright:'shipwright',guild_f:"Fighters' Guild",guild_m:"Mages' Guild",barber:'barber',keep:'keep',castle:'keep',weapon:'smith',armor:'armoury',potion:'apothecary',misc:'goods'};
   function townCard(t){
@@ -973,13 +1081,13 @@
   function showTownCard(e,sx,sy){let el=document.getElementById('wm-hover');if(!el){el=document.createElement('div');el.id='wm-hover';el.style.cssText='position:absolute;pointer-events:none;max-width:320px;padding:8px 10px;background:rgba(28,22,14,.97);border:1px solid #8a6a3a;border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:20;display:none;color:#e8dcc0;font-family:Georgia,serif;line-height:1.4';MAP.cv.parentElement.appendChild(el);}
     if(!e||!(e.kind in BASE_P)){el.style.display='none';return;}const t=siteAnywhere(e.id);if(!t){el.style.display='none';return;}
     el.innerHTML=townCard(t);el.style.display='block';const r=MAP.cv.getBoundingClientRect();const px_=sx+16,py_=sy+16;el.style.left=Math.min(px_,r.width-310)+'px';el.style.top=Math.min(py_,r.height-el.offsetHeight-10)+'px';}
-  function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
+  function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(mapCssW(),mapCssH())/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
   // S496 — notes pinned to the map (Michael's C on DECISION #132, part C): *✎ Note* arms the next click on the map, which
   // opens a box in the panel for up to 500 characters; *Pin it* keeps it in worldState.mapNotes, a character key ({x,z,
   // text,t,tod}, the world spot and the minute). A pin shows its words on hover; a click opens it, with *Take it down*.
   function pinMapNote(x,z,text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t||!isFinite(x)||!isFinite(z))return -1;const L=worldState.mapNotes||(worldState.mapNotes=[]);L.push({x:Math.round(x*10)/10,z:Math.round(z*10)/10,text:t,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});MAP.dirty=true;return L.length-1;}
   function unpinMapNote(i){const L=worldState.mapNotes;if(!L||!L[i])return false;L.splice(i,1);if(!L.length)delete worldState.mapNotes;MAP.sel=null;MAP.hover=null;MAP.dirty=true;return true;}
-  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
+  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(mapCssW(),mapCssH())/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
   function _mnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function showNoteCard(i,sx,sy){showTownCard(null,0,0);const n=(worldState.mapNotes||[])[i];const el=document.getElementById('wm-hover');if(!n||!el)return;el.innerHTML=`<div style="font:italic 13px Georgia,serif;color:#f0e6cc">${_mnEsc(n.text)}</div><div style="color:#8a7a60;font-size:11px;margin-top:4px">${_mnEsc(typeof gameDateLine==='function'?gameDateLine(n.t,n.tod,'day'):'')}</div>`;el.style.display='block';const r=MAP.cv.getBoundingClientRect();el.style.left=Math.min(sx+16,r.width-310)+'px';el.style.top=Math.min(sy+16,r.height-el.offsetHeight-10)+'px';}
   function mapNoteArm(on){MAP.pinArmed=on===undefined?!MAP.pinArmed:!!on;const b=document.getElementById('wm-pin');if(b){b.style.background=MAP.pinArmed?'#3a2a16':'#0c1008';b.style.color=MAP.pinArmed?'#f0e2c0':'#c8b880';}if(MAP.cv)MAP.cv.style.cursor=MAP.pinArmed?'crosshair':'grab';
@@ -997,7 +1105,7 @@
     body.innerHTML=`<div style="font:600 15px Georgia,serif;color:#e8d8a0">Your note</div><div style="color:#b8a880;font-size:12px;margin:4px 0 8px">${_mnEsc(typeof gameDateLine==='function'?gameDateLine(n.t,n.tod,'day'):'')} · ${Math.round(Math.hypot(n.x-px,n.z-pz))}u away</div><div style="font:italic 13px Georgia,serif;color:#f0e6cc;line-height:1.5;overflow-wrap:anywhere;margin-bottom:10px">${_mnEsc(n.text)}</div><button type="button" id="wm-note-del" style="padding:6px 12px;background:#2a2020;color:#c8b8a0;border:1px solid #5a4a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Take it down</button>`;
     document.getElementById('wm-note-del').onclick=()=>{unpinMapNote(i);mapPanel(null);};}
   function mapPanelCell(c){const body=document.getElementById('wm-panel-body');if(!body)return;const towns=c.sites.filter(t=>t.pad>0&&t.kind!=='portal');const known=towns.filter(t=>discovered(t.id)).length;
-    body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${c.name||'Open sea'}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${c.type==='sea'?`Open water · ${nationOf(c.i,c.j).name}`:`${nationSubtitle(c)} · `+`${towns.length} settlements${towns.some(t=>t.kind==='city')?', a city':''}${towns.some(t=>t.kind==='port')?', ports':''} · ${c.doors.length} doors · ${known} known`}</div><div style="color:#8a7a60;font-size:11px">Scroll to zoom in.</div>`;}
+    body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${c.name||'Open sea'}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${c.type==='sea'?`Open water · ${nationOf(c.i,c.j).name}`:`${nationSubtitle(c)} · `+`${towns.length} settlements${towns.some(t=>t.kind==='city')?', a city':''}${towns.some(t=>t.kind==='port')?', ports':''} · ${c.doors.length} doors · ${known} known`}</div><div style="color:#8a7a60;font-size:11px;margin-bottom:12px">Scroll to zoom in.</div>`+mapMarksHtml();mapWireMarks(body);}
   function syncMapButtons(){const tg=document.getElementById('w80-maptoggle');if(!tg)return;tg.querySelectorAll('button').forEach(x=>{x.style.background=x.dataset.m===MAP.mode?'#3a2a16':'#2a2020';x.style.color=x.dataset.m===MAP.mode?'#f0e2c0':'#c8b8a0';});}
   // ── search and filters ──
   MAP.filt={towns:true,gates:true,pois:true,quests:true};
@@ -1006,12 +1114,12 @@
   function mapSearch(q){const box=document.getElementById('wm-results');if(!box)return;q=(q||'').trim().toLowerCase();if(!q){box.style.display='none';return;}
     const out=[];for(const c of CELLS.values()){c.sites.forEach(t=>{if(t.name&&t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:t.kind,x:t.x,z:t.z,id:t.id,kind:t.kind});});(c.doors||[]).forEach(d=>{const n=d.canonicalName||'';if(n.toLowerCase().includes(q)){const p=dungeonWorldPos[d.seed]||d;if(discovered('door_'+d.seed))out.push({name:n,sub:'gate',x:p.x,z:p.z,id:'door_'+d.seed,kind:'door'});}});}
     out.sort((a,b)=>a.name.localeCompare(b.name));box.innerHTML=out.slice(0,12).map((o,i)=>`<div class="wm-res" data-i="${i}" style="padding:5px 10px;cursor:pointer;border-bottom:1px solid rgba(60,80,40,.4);font:12px Georgia,serif;color:#e8dcc0">${o.name} <span style="color:#8a9a70">· ${o.sub}</span></div>`).join('')||'<div style="padding:6px 10px;color:#8a9a70;font:12px Georgia,serif">Nothing you know of by that name.</div>';box.style.display='block';
-    box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=MAP.cv.width/2-o.x*s;MAP.oy=MAP.cv.height/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
+    box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=mapCssW()/2-o.x*s;MAP.oy=mapCssH()/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
   function wireMapSearch(){const inp=document.getElementById('wm-search');if(!inp||inp._wired)return;inp._wired=true;const pb=document.getElementById('wm-pin');if(pb)pb.onclick=()=>mapNoteArm();inp.addEventListener('input',()=>mapSearch(inp.value));['keydown','keyup','keypress'].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));document.querySelectorAll('.wm-filt').forEach(cb=>cb.addEventListener('change',()=>{MAP.filt[cb.value]=cb.checked;MAP.dirty=true;mapDraw();}));}
   function mapPanel(e){
     const body=document.getElementById('wm-panel-body');if(!body)return;
     let tg=document.getElementById('w80-maptoggle');if(!tg){tg=document.createElement('div');tg.id='w80-maptoggle';tg.style.cssText='margin:0 0 10px;display:flex;gap:6px';tg.innerHTML='<button type="button" data-m="map" style="flex:1;padding:6px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Map</button><button type="button" data-m="local" style="flex:1;padding:6px;background:#2a2020;color:#c8b8a0;border:1px solid #5a4a3a;border-radius:4px;cursor:pointer;font:13px Georgia,serif">Local</button>';const hdr=document.getElementById('wm-panel-header');if(hdr)hdr.insertAdjacentElement('afterend',tg);tg.querySelectorAll('button').forEach(b=>b.onclick=()=>{MAP.mode=b.dataset.m;syncMapButtons();MAP.dirty=true;});}
-    if(!e){body.innerHTML='<div class="wm-placeholder">Scroll to zoom, drag to pan.<br><br>Hover a place to learn more; click a discovered place to travel there.<br><br>Places appear as you find them.</div>';return;}
+    if(!e){const mk=mapMarksHtml();body.innerHTML=mk||'<div class="wm-placeholder">Scroll to zoom, drag to pan.<br><br>Hover a place to learn more; click a discovered place to travel there.<br><br>Places appear as you find them.</div>';if(mk)mapWireMarks(body);return;}
     const k=discovered(e.id);
     const tsite=(e.kind in BASE_P)?siteAnywhere(e.id):null;
     body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${e.name}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${e.sub}${tsite?' · '+stateLine(tsite):''}</div>`+(k?`<button type="button" id="w80-travel" style="padding:8px 12px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:14px Georgia,serif">Travel to ${e.name}</button><div style="color:#8a7a60;font-size:11px;margin-top:6px">${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:'<div style="color:#8a7a60;font-size:12px">Not yet discovered.</div>');
@@ -1027,13 +1135,13 @@
       root.addEventListener('mousedown',ev=>{MAP.drag={x:ev.clientX,y:ev.clientY,ox:MAP.ox,oy:MAP.oy,moved:false};});
       window.addEventListener('mousemove',ev=>{
         if(MAP.drag){MAP.ox=MAP.drag.ox+(ev.clientX-MAP.drag.x);MAP.oy=MAP.drag.oy+(ev.clientY-MAP.drag.y);if(Math.hypot(ev.clientX-MAP.drag.x,ev.clientY-MAP.drag.y)>3)MAP.drag.moved=true;mapClamp();MAP.dirty=true;return;}
-        if(!MAP.cv||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const nh=mapPickNote(ev.clientX-r.left,ev.clientY-r.top);if(nh!=null){if(MAP.hover!=='note:'+nh){MAP.hover='note:'+nh;MAP.dirty=true;}showNoteCard(nh,ev.clientX-r.left,ev.clientY-r.top);return;}const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);const id=e?e.id:null;
+        if(!MAP.cv||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const mk=mapPickMark(ev.clientX-r.left,ev.clientY-r.top);if(mk){showTownCard(null,0,0);if(MAP.hover!==mk.m.id){MAP.hover=mk.m.id;MAP.hoverCell=null;MAP.dirty=true;if(!MAP.sel)mapMarkPanel(mk.m);}return;}const nh=mapPickNote(ev.clientX-r.left,ev.clientY-r.top);if(nh!=null){if(MAP.hover!=='note:'+nh){MAP.hover='note:'+nh;MAP.dirty=true;}showNoteCard(nh,ev.clientX-r.left,ev.clientY-r.top);return;}const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);const id=e?e.id:null;
         if(id!==MAP.hover){MAP.hover=id;MAP.dirty=true;if(!MAP.sel)mapPanel(e);}
         showTownCard(e,ev.clientX-r.left,ev.clientY-r.top);
         if(!e&&!MAP.sel){const [wx,wz]=screenToMap(ev.clientX-r.left,ev.clientY-r.top);const [i,j]=cellOf(wx,wz);const hc=(i>=0&&j>=0&&i<GRID&&j<GRID)?[i,j]:null;if(JSON.stringify(hc)!==JSON.stringify(MAP.hoverCell)){MAP.hoverCell=hc;if(hc)mapPanelCell(getCell(i,j));else mapPanel(null);}}
       });
       root.addEventListener('mouseleave',()=>showTownCard(null,0,0));
-      window.addEventListener('mouseup',ev=>{if(!MAP.drag)return;const moved=MAP.drag.moved;MAP.drag=null;if(moved||MAP.mode!=='map')return;const r=root.getBoundingClientRect();if(mapNoteClick(ev.clientX-r.left,ev.clientY-r.top))return;const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);MAP.sel=e?e.id:null;mapPanel(e);MAP.dirty=true;});
+      window.addEventListener('mouseup',ev=>{if(!MAP.drag)return;const moved=MAP.drag.moved;MAP.drag=null;if(moved||MAP.mode!=='map')return;const r=root.getBoundingClientRect();const mk=!MAP.pinArmed&&mapPickMark(ev.clientX-r.left,ev.clientY-r.top);if(mk){const m=mk.m;if(mk.edge){const s=baseScale()*MAP.zoom;MAP.ox=mapCssW()/2-m.x*s;MAP.oy=mapCssH()/2-m.z*s;mapClamp();}MAP.sel=m.id;mapMarkPanel(m);MAP.dirty=true;return;}if(mapNoteClick(ev.clientX-r.left,ev.clientY-r.top))return;const e=mapPick(ev.clientX-r.left,ev.clientY-r.top);MAP.sel=e?e.id:null;mapPanel(e);MAP.dirty=true;});
       (function(){const kb=document.getElementById('wm-key'),bx=document.getElementById('wm-keybox');if(kb&&bx){kb.onclick=()=>{bx.style.display=bx.style.display==='none'?'block':'none';};
         if(!document.getElementById('wm-key-bld')){const seen=new Set(),rows=[];for(const k of ['home','castle','guild_f','guild_m','church','inn','weapon','potion','misc','shipwright','barber','barracks','other']){const B=BLD[k];if(seen.has(B.label))continue;seen.add(B.label);rows.push(`<span style="white-space:nowrap;margin-right:8px"><span style="display:inline-block;width:10px;height:10px;background:${B.col};border:1px solid ${B.line};vertical-align:-1px;margin-right:3px"></span>${B.label}</span>`);}
           const d=document.createElement('div');d.id='wm-key-bld';d.style.cssText='margin-top:6px';d.innerHTML=`<div style="color:#e8d8a0;margin-bottom:2px">In town <span style="color:#8a9a70;font-size:11px">(Local view \u00b7 minimap)</span></div><div>${rows.join(' ')}</div><div style="margin-top:2px"><span style="color:${BLD.castle.col}">\u25cf</span> the lord &nbsp; <span style="color:#f6d860">\u25ce</span> where you were directed &nbsp; <span style="color:#f6e27a">\u25a1</span> your house</div>`;
@@ -1044,14 +1152,20 @@
           const d2=document.createElement('div');d2.id='wm-key-bio';d2.style.cssText='margin-top:6px';
           d2.innerHTML=`<div style="color:#e8d8a0;margin-bottom:2px">The land</div><div>${rows.join(' ')}</div><div style="margin-top:2px;color:#8a9a70;font-size:11px">Colour is the country; shading is the height. Peaks go to rock and snow whatever grows there.</div>`;
           const tip2=bx.lastElementChild;bx.insertBefore(d2,tip2);}}})(); // v80 S131 — the key; S138 — the town colours; S144 — the land
+      window.addEventListener('resize',()=>{if(MAP.cv&&MAP.cv.style.display!=='none'){mapFit();mapClamp();MAP.dirty=true;}});
+      if(!document.getElementById('mk-style')){const st=document.createElement('style');st.id='mk-style';st.textContent=`.mk-sec{font:600 11px Georgia,serif;letter-spacing:.14em;text-transform:uppercase;color:#c8b880;margin:0 0 8px}
+.mk-row{display:flex;gap:8px;align-items:flex-start;padding:6px 4px;border-bottom:1px solid rgba(120,100,60,.25);cursor:pointer;font:12px/1.35 Georgia,serif;color:#e8dcc0}
+.mk-row:hover{background:rgba(200,168,74,.08)} .mk-row i{color:#b8a880} .mk-row small{color:#8a7a60}
+.mk-n{flex:0 0 20px;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 11px Georgia,serif;color:#fbefd6;background:${MK_COL.go};margin-right:6px;vertical-align:2px}
+.mk-n.mk-back{background:${MK_COL.back}} .mk-n.mk-way{background:${MK_COL.way}}
+.mk-head{font:600 16px Georgia,serif;color:#e8d8a0} .mk-line{color:#b8a880;font-size:12px;margin-top:4px}`;document.head.appendChild(st);}
       root.addEventListener('wheel',ev=>{ev.preventDefault();if(MAP.mode!=='map')return;const r=root.getBoundingClientRect();const mx=ev.clientX-r.left,my=ev.clientY-r.top;const [wx,wz]=screenToMap(mx,my);MAP.zoom=Math.max(1,Math.min(64,MAP.zoom*(ev.deltaY<0?1.18:1/1.18)));const s=baseScale()*MAP.zoom;MAP.ox=mx-wx*s;MAP.oy=my-wz*s;mapClamp();MAP.dirty=true;},{passive:false});
     }
     root.style.display='block';
-    const r=pane.getBoundingClientRect();root.width=Math.max(300,r.width|0);root.height=Math.max(300,r.height|0);
-    MAP.cv=root;MAP.ctx=root.getContext('2d');MAP.W=Math.min(root.width,root.height);MAP.H=root.height;MAP.mode='map';
+    MAP.cv=root;MAP.ctx=root.getContext('2d');mapFit();MAP.mode='map';
     // open at province scale, centred on the player
-    MAP.zoom=Math.max(1,Math.min(64,(Math.min(root.width,root.height)*.55)/(SIZE*baseScale())));wireMapSearch();
-    const s=baseScale()*MAP.zoom;MAP.ox=root.width/2-px*s;MAP.oy=root.height/2-pz*s;mapClamp();
+    MAP.zoom=Math.max(1,Math.min(64,(Math.min(MAP.cssW,MAP.cssH)*.55)/(SIZE*baseScale())));wireMapSearch();
+    const s=baseScale()*MAP.zoom;MAP.ox=MAP.cssW/2-px*s;MAP.oy=MAP.cssH/2-pz*s;mapClamp();
     MAP.sel=null;MAP.noteAt=null;mapNoteArm(false);mapPanel(null);syncMapButtons();MAP.dirty=true;mapDraw();
     if(!MAP._raf){const loop=()=>{if(MAP.cv&&MAP.cv.style.display!=='none'){mapJobs();if(MAP.dirty)mapDraw();MAP._raf=requestAnimationFrame(loop);}else MAP._raf=null;};MAP._raf=requestAnimationFrame(loop);}
   }
