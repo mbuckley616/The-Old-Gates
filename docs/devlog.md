@@ -15053,3 +15053,19 @@ Shard 1 failed on `4a1af34` (main merged in: the pause leaf and its settings she
 
 ### Needs eyes
 - Nothing to play. `guardplay`'s exact `sC.hour === 7` is the same kind of miss and still has no fix anywhere; the patch is proposed on PR #212 for the systems builder.
+
+## v80 — Session 705 — A witness in the street sees what they face (Michael's A on DECISION #222)
+Michael answered #222 with A: the street as the shop. Until now a townsperson or a guard outdoors saw a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood), whichever way they faced. Indoors, since his B on #73 (Session 368), a keeper sees only a 120° cone the way they face. So a lock could be worked behind a keeper's back and never behind a villager's.
+
+`witnessOf` (`86-world-crime.js`) now asks the indoor test of the street's witnesses too: `intFaces`, the way they face as (sin ry, cos ry), 60° either side. The ranges are unchanged. A new rule from the option's own text: within 2 units (`WIT_HEAR`) they hear you whichever way they face, so you cannot pick the lock a step behind someone. The hearing is the street's only; indoors stays exactly as #73 made it. Nothing else had to change for the guard's beat: `npcStep` already turns a walker to the way it walks, and a person standing within 5 units of you already turns toward you over about a second (the town tick), so standing close to an idle person still gets you seen once they have turned.
+
+`witnessrange` placed its witness without turning it to you; it now turns it, so it tests the ranges as before, and its head comment says why.
+
+### Verified (headless Chromium)
+`tests/streetcone` (new, 9 checks), in Dunmore's street by day. A townsperson facing you at 8 units sees you, and at 55° off either side; at 65° off either side, or with their back turned at 8 and at 11.5 units, they do not. Back turned, 1.9 units: heard; 2.1: not; side on at 3: not. Sneaking at night the 3-unit reach holds in the cone (2.9 seen facing) and the hearing behind (1.9 seen, 2.5 not). A guard (Eilís) is judged by the same cone: seen facing, not with his back turned or 70° off, heard at 1.5. A lock picked behind a turned back at 6 units: `pickSeen` gives no witness and no crime is noted. Over 600 ticks of the town at 14h the three guards took 1,200 steps, and every one lay within 25° of the way the guard faced (the worst dot product 1.0).
+`witnessrange` (turned witnesses) passes all its checks: 12 / 6 / 6 / 3, the hood's 11, the house between, nobody out of the street. `nightpick`, re-measured as the option asked: over a night from 20h to 4h at Dunmore's seven shop doors, a five-second pick is seen 14.9% of the time walking and 11.3% sneaking (Session 609: 26% and 18%); at an instant 10.6% and 7.3%. The hours that still see you are the watch's and the guards' (22h: 23%, all the watch; 0h: 37%, mostly a guard). `witness`, `crime2`, `crime5`, `theft`, `shopsight` and the indoor suites pass.
+
+### Needs eyes
+- Whether a night pick at 15% is now too easy, or right: the watch still walks the doors, and a pick is safe once he has passed. The numbers by play are Michael's.
+- The 5-unit turn: a townsperson idle near you turns to you within about a second, and so sees you. That is the town's old manners, not a new rule; say if a crime done beside a standing person should get the second before they turn.
+- Nobody shows which way a person faces, beyond their body: from behind at night, a dark figure's back may be hard to read.

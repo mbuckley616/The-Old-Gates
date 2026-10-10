@@ -352,13 +352,16 @@
     for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
   // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
   const INT_FOV=Math.cos(Math.PI/3);
+  const WIT_HEAR=2;
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house){
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5; /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
       if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
       const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
-    let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
+    // S705 — the street as the shop (Michael's A on #222): a townsperson or guard sees in the same 120° cone the way they face,
+    // to the same ranges; within two units they hear you whichever way they face
+    let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(d>=WIT_HEAR&&!intFaces(n.g))continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
     if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
