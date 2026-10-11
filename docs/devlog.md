@@ -13583,3 +13583,12 @@ Reproduced first: the test with its spins forced to storm and then thirty frames
 
 ### Needs eyes
 Nothing in the game changed. If `blacksail` or `riversail` ever go red on a sail's angle, look first at the weather the run came up with.
+
+## v80 — Session 721 — `smoke` red on this PR: the old village was not there yet (backlog H, CI)
+Shard 2 failed on `06bad30` with `smoke`. The check *in the old village the game's own loop drives the smoke* read `loopRan: false`. The next step then threw in `smokeLegacy` reading the scene's chimneys, which did not exist yet. The game code on that head is byte-for-byte what passed CI on `49a8d7c`; the commits since change only `tests/sailtrim`. So it is the test, not the game. `goToZone('overworld', …)` fades before it builds the old Ashenmoor, and the test gave it six frames. On the runner the scene had not switched, so the forge's chimney was not in it, and the main loop, which smokes a scene only when `scene.userData.chimneys` exists, rightly did nothing. The test now waits for the old village's scene and its chimney before it reads the smoke's clock (up to 120 s). No game code changed.
+
+### Verified (headless Chromium)
+`smoke` passes, 13/13, locally (`loopRan: true`, the forge's 24 puffs rising 2+ and drifting downwind). The fault did not reproduce here, where the fade finishes inside six frames.
+
+### Needs eyes
+- Nothing to play.
