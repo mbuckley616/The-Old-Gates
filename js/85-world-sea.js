@@ -242,7 +242,7 @@
     }
     if(look==='pirate'){const fl=new THREE.PlaneGeometry(1.4,.9,3,1);const p=fl.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*3)*.08);fl.computeVertexNormals();
       const FB=new ShipBake();FB.add(fl,[0,mastTop+.9,-.8],[0,Math.PI/2,0],null,0x111111);FB.add(SK.ball(.14,8,6),[.03,mastTop+.95,-.8],0,[1,1,.6],0xd8d0c0);rigs.push({geo:FB.bake(),z:mastZ,type:'flag'});/* S332 — the black flag streams downwind */B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
-    r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs,props:B.props};SHIP_GEO.set(key,r);return r;}
+    r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs,props:B.props,at:H.at};SHIP_GEO.set(key,r);return r;}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -277,6 +277,118 @@
     for(const o of OTHER){if(Math.hypot(x-o.x,z-o.z)>(o.L||13))continue;if(shipPropHit(o.mesh,x,z,R))return true;
       if(o.chest&&o.chest.g&&Math.abs(x-o.chest.x)<.45+R&&Math.abs(z-o.chest.z)<.3+R)return true;}
     return false;}
+  // S723 — the boarding nets (the ship-in-hand page, item 2: "a net of rope over the rail, about 300 triangles a side"). Each side's
+  // net is laid on the hull's own section amidships (`at`, the loft's half-breadth, gunwale and keel), 2.6 long like S638's box,
+  // from over the rail to .6 below the waterline: a diamond mesh of tarred rope, each strand a flat ribbon 4 cm wide lying on
+  // the planking a few centimetres off it, a darker selvedge down the sides and along the foot, a head rope lying on the rail
+  // and lashed inboard. One bake a hull, on SHIP_MAT (two-sided), cached on the bake; the climb and the crosshair's box (86) unchanged.
+  function shipNetsGeo(at){const pos=[],nor=[],col=[];const H=1.3,N=10,h=2*H/N,BOT=-.6;
+    const sec=z=>{const a=at(z),P=[];let s=0,q=null;for(let k=0;k<=60;k++){const th=Math.PI/2*(1-k/60),sx=Math.pow(Math.sin(th),.45),cy=Math.pow(Math.cos(th),.55),fl=1+.05*Math.max(0,(1-cy)-.6);
+      const x=a.b*sx*fl,y=a.g-(a.g-a.k)*cy;if(q)s+=Math.hypot(x-q[0],y-q[1]);P.push([x,y,s]);q=[x,y];if(y<BOT-.1)break;}return {P,a};};
+    const S=new Map(),secAt=z=>{const k=Math.round(z*100);let o=S.get(k);if(!o){o=sec(k/100);S.set(k,o);}return o;};
+    const vBot=z=>{const {P}=secAt(z);for(let i=1;i<P.length;i++)if(P[i][1]<=BOT){const t=(P[i-1][1]-BOT)/(P[i-1][1]-P[i][1]);return P[i-1][2]+(P[i][2]-P[i-1][2])*t;}return P[P.length-1][2];};
+    const VM=vBot(0),M=Math.max(4,Math.round(VM/h)),hv=VM/M;
+    // a point on the net: u along her (z), v down the planking from the gunwale; off, how far it stands off the hull
+    const pt=(u,v,off)=>{const {P}=secAt(u);let i=1;while(i<P.length-1&&P[i][2]<v)i++;const A=P[i-1],B=P[i],t=Math.max(0,Math.min(1,(v-A[2])/((B[2]-A[2])||1)));
+      let tx=B[0]-A[0],ty=B[1]-A[1];const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;const nx=-ty,ny=tx;return [A[0]+(B[0]-A[0])*t+nx*off,A[1]+(B[1]-A[1])*t+ny*off,u,nx,ny];};
+    const hash=(i,j)=>{const x=Math.sin(i*127.1+j*311.7)*43758.5453;return x-Math.floor(x);};
+    const node=(i,j)=>pt(-H+i*h,j*hv,.035+.025*hash(i,j)*(j/M));
+    // a flat strand from p to q, w wide, lying across the hull's normal
+    const strand=(p,q,w,c)=>{const dx=q[0]-p[0],dy=q[1]-p[1],dz=q[2]-p[2];const nx=(p[3]+q[3])/2,ny=(p[4]+q[4])/2;
+      let wx=dy*0-dz*ny,wy=dz*nx-dx*0,wz=dx*ny-dy*nx;const l=Math.hypot(wx,wy,wz)||1;wx*=w/2/l;wy*=w/2/l;wz*=w/2/l;
+      const v=[[p[0]-wx,p[1]-wy,p[2]-wz],[p[0]+wx,p[1]+wy,p[2]+wz],[q[0]+wx,q[1]+wy,q[2]+wz],[q[0]-wx,q[1]-wy,q[2]-wz]];
+      for(const k of [0,1,2,0,2,3]){pos.push(...v[k]);nor.push(nx,ny,0);col.push(c.r,c.g,c.b);}};
+    // a round rope (three sides) along a polyline, for the head rope on the rail
+    const rope=(pts,r,c)=>{for(let k=0;k+1<pts.length;k++){const p=pts[k],q=pts[k+1];for(let f=0;f<3;f++){const a0=f/3*Math.PI*2,a1=(f+1)/3*Math.PI*2;
+      const o=(P,a)=>[P[0]+Math.cos(a)*r,P[1]+Math.sin(a)*r,P[2]];const quad=[o(p,a0),o(p,a1),o(q,a1),o(q,a0)];const nx=Math.cos((a0+a1)/2),ny=Math.sin((a0+a1)/2);
+      for(const k2 of [0,1,2,0,2,3]){pos.push(...quad[k2]);nor.push(nx,ny,0);col.push(c.r,c.g,c.b);}}}};
+    const tar=shC(0x5e4c32),old=shC(0x6e5a3c),edge=shC(0x3a2e20);
+    for(let j=0;j<M;j++)for(let i=0;i<N;i++){if((i+j)%2)continue;const c=hash(i,j)<.5?tar:old;
+      strand(node(i,j),node(i+1,j+1),.04,c);strand(node(i+1,j),node(i,j+1),.04,c);}
+    for(const i of [0,N])for(let j=0;j<M;j++)strand(node(i,j),node(i,j+1),.065,edge);
+    for(let i=0;i<N;i+=2)strand(node(i,M),node(i+2,M),.065,edge);
+    const head=[];for(let i=0;i<=N;i+=2){const a=at(-H+i*h);head.push([a.b,a.g+.12,-H+i*h]);}rope(head,.035,edge);
+    for(let i=0;i<=N;i+=2){const a=at(-H+i*h),top=node(i,0),z=-H+i*h;strand(top,[a.b,a.g+.12,z,1,0],.05,edge);
+      if(i%4===0){strand([a.b,a.g+.12,z,0,1],[a.b-.16,a.g+.04,z,0,1],.045,edge);strand([a.b-.16,a.g+.04,z,-1,0],[a.b-.16,a.g-.14,z,-1,0],.045,edge);}}
+    const one=pos.length;for(let k=0;k<one;k+=3){pos.push(-pos[k],pos[k+1],pos[k+2]);nor.push(-nor[k],nor[k+1],nor[k+2]);col.push(col[k],col[k+1],col[k+2]);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeBoundingSphere();g.userData.perSide=one/9;return g;}
+  function shipNetsMesh(r){if(!r.nets)r.nets=shipNetsGeo(r.at);const m=new THREE.Mesh(r.nets,SHIP_MAT);m.name='nets';m.castShadow=false;m.receiveShadow=true;return m;}
+  // S724 — the hold seen on deck (the ship-in-hand page, item 4: "stowed in her waist under a lashing net, one box, sack or barrel per
+  // crate in its good's shape ... merged into one mesh, about 12 triangles a crate"). The waist's slots are worked out once a bake:
+  // a strip down her middle from 4.2 forward of her stern to 4.2 short of her bow (the hatch and the wheel kept clear), each slot
+  // .56 square and clear of every mast, barrel and crate the bake records, and narrow enough to leave the rail's walk free where the
+  // nets set you down (`netRail`, W/2−.8). Slots fill nearest the middle first, each stacked to the top (three high, two on the
+  // cutter, whose boom is low) before the next, so a small cargo is one pile by the mast. The pile is solid by rows; a row that
+  // would close over you waits until you are clear of it. What does not fit on deck is below and not drawn (a sloop's waist holds
+  // 66 of her 90 at the third tier). Your own ship only; it follows `worldState.ship.hold` each tick, rebuilt when it changes.
+  const STOW_U=.56,STOW_LAYER=.5;
+  const STOW_FORM={grain:'sack',salt:'sack',wool:'bale',furs:'bale',hides:'bale',beef:'cask',fish:'cask',iron:'crate',silver:'chest',dyes:'crate',glass:'crate',timber:'timber'};
+  const STOW_COL={grain:0xb39a66,salt:0xd2c9b4,wool:0xd6c9aa,furs:0x6a4a30,hides:0x986a44,beef:0x7a5228,fish:0x5e4424,iron:0x6e5638,silver:0x4a3222,dyes:0x8a6a40,glass:0xa8865a,timber:0xa27a4a};
+  function shipStowSlots(key){const r=SHIP_GEO.get(key);if(!r||!r.deck)return null;if(r.stow)return r.stow;
+    const L=r.L,W=r.W,P=r.props||[],kind=key.split('|')[0],lim=W/2-.8-.35-.27;const n=Math.max(1,Math.floor(2*Math.max(0,lim)/STOW_U)+1);
+    const zA=-L/2+4.2,zB=L/2-4.2,zM=(zA+zB)/2,slots=[];
+    for(let z=zA+STOW_U/2;z<=zB-STOW_U/2+1e-6;z+=STOW_U)for(let i=0;i<n;i++){const x=(i-(n-1)/2)*STOW_U;
+      if(Math.abs(x)+.28>r.deck.at(z)-.9)continue;
+      if(P.some(p=>p.r!=null?Math.hypot(x-p.x,z-p.z)<p.r+.34:Math.abs(x-p.x)<p.hx+.32&&Math.abs(z-p.z)<p.hz+.32))continue;
+      slots.push({x,z});}
+    slots.sort((a,b)=>Math.hypot(a.x*1.5,a.z-zM)-Math.hypot(b.x*1.5,b.z-zM));
+    r.stow={slots,layers:kind==='cutter'?2:3};return r.stow;}
+  function shipStowGeo(stow,hold,seed){const pos=[],nor=[],col=[];const D=SHIP_DECK;
+    const quad=(a,b,c_,d,n,cl)=>{for(const q of [a,b,c_,a,c_,d]){pos.push(q[0],q[1],q[2]);nor.push(n[0],n[1],n[2]);col.push(cl.r,cl.g,cl.b);}};
+    // a box turned by ry, its top shrunk by k (a sack's neck): 12 triangles
+    const box=(cx,y0,cz,hx,h,hz,ry,k,cl)=>{const c=Math.cos(ry),s_=Math.sin(ry),v=(x,y,z)=>[cx+x*c+z*s_,y0+y,cz-x*s_+z*c],rn=(x,z)=>[x*c+z*s_,0,-x*s_+z*c];
+      const b=[v(-hx,0,-hz),v(hx,0,-hz),v(hx,0,hz),v(-hx,0,hz)],t=[v(-hx*k,h,-hz*k),v(hx*k,h,-hz*k),v(hx*k,h,hz*k),v(-hx*k,h,hz*k)];
+      const dk=cl.clone().multiplyScalar(.8);quad(t[0],t[3],t[2],t[1],[0,1,0],cl);quad(b[0],b[1],b[2],b[3],[0,-1,0],dk);
+      quad(b[0],t[0],t[1],b[1],rn(0,-1),dk);quad(b[1],t[1],t[2],b[2],rn(1,0),cl);quad(b[2],t[2],t[3],b[3],rn(0,1),dk);quad(b[3],t[3],t[0],b[0],rn(-1,0),cl);};
+    // a cask standing: six staves and its head, 16 triangles
+    const cask=(cx,y0,cz,rad,h,a0,cl)=>{const ring=(y,rr)=>{const o=[];for(let k=0;k<6;k++){const a=a0+k/6*Math.PI*2;o.push([cx+Math.cos(a)*rr,y0+y,cz+Math.sin(a)*rr]);}return o;};
+      const lo=ring(0,rad*.86),hi=ring(h,rad*.86),dk=cl.clone().multiplyScalar(.75);
+      for(let k=0;k<6;k++){const k2=(k+1)%6,a=a0+(k+.5)/6*Math.PI*2;quad(lo[k],hi[k],hi[k2],lo[k2],[Math.cos(a),0,Math.sin(a)],k%2?cl:dk);}
+      for(let k=1;k<5;k++)for(const q of [hi[0],hi[k+1],hi[k]]){pos.push(q[0],q[1],q[2]);nor.push(0,1,0);col.push(dk.r,dk.g,dk.b);}};
+    const keys=Object.keys(hold).filter(k=>STOW_FORM[k]&&hold[k]>0).sort((a,b)=>(CARGO_GOODS[b].w||0)-(CARGO_GOODS[a].w||0)||(a<b?-1:1));
+    const list=[];for(const k of keys)for(let i=0;i<hold[k];i++)list.push(k);
+    const n=Math.min(list.length,stow.slots.length*stow.layers),top=new Map();
+    for(let i=0;i<n;i++){const k=list[i],sl=stow.slots[Math.floor(i/stow.layers)],ly=i%stow.layers,y=D+ly*STOW_LAYER,f=STOW_FORM[k];
+      const h1=Math.sin((i+1)*12.9898+seed)*43758.5453,j=h1-Math.floor(h1),cl=new THREE.Color(STOW_COL[k]).multiplyScalar(.9+.18*j),ry=(j-.5)*.16;
+      if(f==='cask')cask(sl.x,y,sl.z,.27,.48,j,cl);
+      else if(f==='sack')box(sl.x,y,sl.z,.25,.42,.24,ry,.62,cl);
+      else if(f==='bale')box(sl.x,y,sl.z,.26,.4,.25,ry,.9,cl);
+      else if(f==='timber')box(sl.x,y,sl.z,.2,.44,.27,ry*.5,1,cl);
+      else box(sl.x,y,sl.z,.25,f==='chest'?.38:.46,.25,ry,1,cl);
+      top.set(sl,y+(f==='chest'?.38:f==='bale'?.4:f==='sack'?.42:.47));}
+    // the lashing net: a rope over every other row of the pile, athwartships, from the deck up over the tops and down again,
+    // and one fore and aft along every other file; flat ribbons 5 cm wide
+    const rope=new THREE.Color(0x4a3a26),rib=(a,b,up,ax)=>{const dx=b[0]-a[0],dz=b[2]-a[2],l=Math.hypot(dx,dz)||1,w=.025;
+      const ox=up?-dz/l*w:ax==='z'?w:0,oz=up?dx/l*w:ax==='x'?w:0,n=up?[0,1,0]:ax==='x'?[1,0,0]:[0,0,1];
+      quad([a[0]-ox,a[1],a[2]-oz],[a[0]+ox,a[1],a[2]+oz],[b[0]+ox,b[1],b[2]+oz],[b[0]-ox,b[1],b[2]-oz],n,rope);};
+    const rows=new Map(),files=new Map();for(const [sl,t] of top){const zr=Math.round(sl.z*100),xf=Math.round(sl.x*100);
+      if(!rows.has(zr))rows.set(zr,[]);rows.get(zr).push([sl,t]);if(!files.has(xf))files.set(xf,[]);files.get(xf).push([sl,t]);}
+    const lash=(L,ax)=>{L.sort((a,b)=>a[0][ax]-b[0][ax]);const runs=[];let cur=[];for(const e of L){if(cur.length&&e[0][ax]-cur[cur.length-1][0][ax]>STOW_U*1.5){runs.push(cur);cur=[];}cur.push(e);}if(cur.length)runs.push(cur);
+      for(const R of runs){const P=[];const at=(sl,d)=>ax==='x'?[sl.x+d,0,sl.z]:[sl.x,0,sl.z+d];
+        const f0=at(R[0][0],-.29);P.push([f0[0],D+.02,f0[2]],[f0[0],R[0][1]+.02,f0[2]]);
+        for(const [sl,t] of R){const a=at(sl,-.27),b=at(sl,.27);P.push([a[0],t+.02,a[2]],[b[0],t+.02,b[2]]);}
+        const l=R[R.length-1],f1=at(l[0],.29);P.push([f1[0],l[1]+.02,f1[2]],[f1[0],D+.02,f1[2]]);
+        for(let k=0;k+1<P.length;k++){const a=P[k],b=P[k+1];if(Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<1e-3)continue;rib(a,b,Math.abs(a[1]-b[1])<1e-3,ax);}}};
+    [...rows.keys()].sort((a,b)=>a-b).forEach((zr,i)=>{if(i%2===0)lash(rows.get(zr),'x');});
+    [...files.keys()].sort((a,b)=>a-b).forEach((xf,i)=>{if(i%2===0)lash(files.get(xf),'z');});
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeBoundingSphere();g.userData.shown=n;
+    // the pile solid by rows (one box a run of slots at one z)
+    const boxes=[];for(const [zr,R] of rows){const xs=R.map(e=>e[0].x);boxes.push({x:(Math.min(...xs)+Math.max(...xs))/2,z:zr/100,hx:(Math.max(...xs)-Math.min(...xs))/2+.28,hz:.28,ry:0});}
+    return {geo:g,boxes,shown:n};}
+  // put a hold's pile on a ship's mesh (a dev and test entry as well as the tick's): replaces any pile there
+  function shipStowOn(mesh,hold){const key=mesh&&mesh.userData.bakeKey;const stow=key&&shipStowSlots(key);const ud=mesh.userData;
+    const old=mesh.getObjectByName('stow');if(old){mesh.remove(old);old.geometry.dispose();}ud.stowBoxes=[];ud.props=(SHIP_GEO.get(key)||{}).props||ud.props;
+    if(!stow||!hold)return 0;const out=shipStowGeo(stow,hold,7);if(!out.shown){out.geo.dispose();return 0;}
+    const m=new THREE.Mesh(out.geo,SHIP_MAT);m.name='stow';m.castShadow=true;m.receiveShadow=true;mesh.add(m);ud.stowBoxes=out.boxes.map(b=>Object.assign(b,{off:true}));shipStowSolid(mesh);return out.shown;}
+  // a row of the pile turns solid once you are not standing in it
+  function shipStowSolid(mesh){const ud=mesh.userData,B=ud.stowBoxes;if(!B||!B.some(b=>b.off))return;const ry=mesh.rotation.y,c=Math.cos(ry),s_=Math.sin(ry);
+    const dx=px-mesh.position.x,dz=pz-mesh.position.z,lx=dx*c-dz*s_,lz=dx*s_+dz*c;let ch=false;
+    for(const b of B)if(b.off&&!(Math.abs(lx-b.x)<b.hx+.35&&Math.abs(lz-b.z)<b.hz+.35)){b.off=false;ch=true;}
+    if(ch)ud.props=((SHIP_GEO.get(ud.bakeKey)||{}).props||[]).concat(B.filter(b=>!b.off));}
+  function shipStowSync(){const m=SHIP.mesh;if(!m)return;const st=worldState.ship,h=st&&!st.sunk&&st.hold||null;
+    const sig=h?Object.keys(h).sort().map(k=>k+':'+h[k]).join(','):'';if(m.userData.stowSig!==sig){m.userData.stowSig=sig;shipStowOn(m,h);}else shipStowSolid(m);}
   // the ship's mesh: the class by its length (or `hull`), the look by who sails her; the wheel a child that turns with the helm
   // S665 — `hull` names the bake outright; without it your own ship (no look given) takes her class's hull when it has one of its own
   function buildShipMesh(SHIP_L,SHIP_W,look,hull){
@@ -284,8 +396,8 @@
     const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');
     const mesh=new THREE.Mesh(r.geo,SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=shipWheelMesh();wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);
-    mesh.add(shipNetMesh(SHIP_W||r.W||4.4)); /* S638 — the boarding nets (a stand-in until the look builder's) */
-    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];
+    mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
+    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=kind+'|'+(look||'player');
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     return mesh;
@@ -300,7 +412,7 @@
       q.a=dt==null?t:q.a+(t-q.a)*Math.min(1,dt*1.2);q.m.rotation.y=q.a;if(q.type!=='square')q.m.scale.x=side;}}
   // every ship afloat trims to the world's wind; a ship just built sets its sails at once, then eases round through a turn
   function tickSailTrim(dt){const w=windDir();const one=m=>{if(!m||!m.userData.rigs)return;const snap=m.userData.trimSnap;m.userData.trimSnap=false;shipTrim(m,w-m.rotation.y,snap?null:dt);};
-    one(SHIP.mesh);for(const o of OTHER)one(o.mesh);}
+    shipStowSync();one(SHIP.mesh);for(const o of OTHER)one(o.mesh);}
   // the deck platform's box: the hull turned by yaw (the bow's deck reaches past L/2 now); the deck's own outline is plat.inside
   function shipPlatBox(plat,mesh,x,z,yaw,L,W){const d=mesh&&mesh.userData.deck;const hl=d?Math.max(-d.z0,d.z1):L/2;
     const c=Math.abs(Math.cos(yaw)),s=Math.abs(Math.sin(yaw));const hw=W/2*c+hl*s,hd=W/2*s+hl*c;
