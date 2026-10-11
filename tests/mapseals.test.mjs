@@ -35,7 +35,10 @@ check('zoomed into one district, the marks off the view stand on the frame', dee
 // 4. sharp: the level keeps a tile pixel at or under 1.15 screen pixels, and the deep tiles build and are drawn
 const lv = await page.evaluate(() => { const out = []; for (const z of [1, 4, 12, 30, 64]) { const cellPx = SIZE * baseScale() * z, dev = cellPx * MAP.dpr, L = mapLevelFor(dev); out.push({ z, L, ratio: +(dev / (1 << L) / MAP_TQ).toFixed(2) }); } return out; });
 check('at every zoom the tile level gives at most 1.15 screen pixels a tile pixel (the old fine tile, 320 px a province, gave 14 at ×64)', lv.every(o => o.ratio <= 1.15) && lv[lv.length - 1].L === 4, lv);
-const built = await page.evaluate(() => { const t0 = performance.now(); let n = 0; while (n < 6000 && (MAP.jobs.length || n < 2)) { mapDraw(); mapJobs(); n++; } mapDraw();
+// the jobs run with a draw only when the queue is empty (a draw re-queues what the view still wants): a draw every step left
+// 1,266 frames of the canvas queued unseen, which SwiftShader then rasterised at the next read, 325 s on its own (Session 731)
+await page.evaluate(() => { window._mapBuild = (max) => { let n = 0; mapDraw(); while (n < max) { if (!MAP.jobs.length) { mapDraw(); if (!MAP.jobs.length) break; } mapJobs(); n++; } mapDraw(); return n; }; });
+const built = await page.evaluate(() => { const t0 = performance.now(); const n = _mapBuild(6000);
   const q = [...MAP.tiles.values()].filter(t => t.q && t.L === 4); return { calls: n, ms: Math.round(performance.now() - t0), deep: q.length, done: q.filter(t => t.done).length, left: MAP.jobs.length }; });
 check('the deepest tiles in view are built, middle first, until no job is left', built.deep >= 4 && built.done === built.deep && built.left === 0, built);
 // detail: the middle of the view, drawn from the deep tiles, against the same view drawn from the province's coarse tile alone
@@ -66,7 +69,7 @@ const off = await page.evaluate(() => { document.querySelector('.wm-filt[value="
 check('the quests filter hides the seals and brings them back', off.n === 0 && off.back === 4, off);
 // pictures of the map canvas itself, at its device pixels (a page screenshot at ratio 2 outran its timeout on SwiftShader)
 const shot = async (file) => { const b64 = await page.evaluate(() => MAP.cv.toDataURL('image/png').split(',')[1]); fs.writeFileSync(file, Buffer.from(b64, 'base64')); };
-await page.evaluate(() => { MAP.sel = null; MAP.hover = null; MAP.zoom = 30; const d = WORLD.siteAnywhere('dunmore'); const s = baseScale() * MAP.zoom; MAP.ox = MAP.cssW / 2 - (d.x + 120) * s; MAP.oy = MAP.cssH / 2 - (d.z - 60) * s; mapClamp(); let n = 0; while (n < 400 && (MAP.jobs.length || n < 2)) { mapDraw(); mapJobs(); n++; } MAP.dirty = true; mapDraw(); });
+await page.evaluate(() => { MAP.sel = null; MAP.hover = null; MAP.zoom = 30; const d = WORLD.siteAnywhere('dunmore'); const s = baseScale() * MAP.zoom; MAP.ox = MAP.cssW / 2 - (d.x + 120) * s; MAP.oy = MAP.cssH / 2 - (d.z - 60) * s; mapClamp(); _mapBuild(400); MAP.dirty = true; mapDraw(); });
 await shot('docs/prototypes/mapseals-ingame.png');
 await page.evaluate(() => { MAP.zoom = 1; mapClamp(); MAP.dirty = true; mapDraw(); });
 await shot('docs/prototypes/mapseals-continent.png');

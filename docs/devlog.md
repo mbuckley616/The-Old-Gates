@@ -15364,3 +15364,14 @@ The run's other checks on this branch: the twelve ship and cargo suites that rea
 ### Needs eyes
 - Nothing beyond reading the three lines in a barber's mouth.
 
+
+## v80 — Session 731 — `mapseals` ran nine minutes and took shard 5 past the hour (tests only)
+CI on this branch's head (ace36ce) cancelled shard 5 at 60:00 with all 34 of its suites passed: they came to 59.5 minutes, and `mapseals` (Session 704) was the longest at 589 s. Timed step by step here, the suite took 535 s, and 325 s of that was one call: the first `getImageData` in the detail check. The second, a moment later, took 0.24 s. The cost was not the read. The check before it builds the deep tiles by calling `mapDraw()` and `mapJobs()` in turn, 1,266 times inside one `page.evaluate`. No frame is shown in between, so Chrome keeps the canvas's draw calls queued, and the first read made SwiftShader draw all 1,266 frames of the map at 2042×866. The pictures' build loop at the end did the same with its 400 steps (122 s).
+
+The test now draws only when the job queue is empty (`_mapBuild`): `mapJobs` runs while there are jobs, and a draw re-queues whatever the view still wants, until a draw queues nothing. The jobs are the same and run in the same order (each tile keeps the priority its last draw gave it). The game is unchanged: in play the map draws once a frame and each frame is shown. `run.mjs`'s shard table has no entry for `mapseals`, which keeps the default 60 s weight; at about 80 s that is close enough not to reshuffle every shard.
+
+### Verified (headless Chromium)
+`mapseals` 14/14 in 82 s, down from 535 s here (589 s on CI). The deep tiles: 32 of 32 built, none left. The detail check reads 2.47 against 0.91, as before. The two pictures come out the same as the committed ones, apart from the quest names that the jobs' rolls give, so they are not recommitted.
+
+### Needs eyes
+- Nothing in the game. Shard 5 should come in at about 52 minutes on the next run. `placesave` (the systems builder's) ran 521 s there against the table's 363.
