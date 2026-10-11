@@ -50,7 +50,7 @@ const hoard = await page.evaluate(async (seed) => { const wait = ms => new Promi
   goToDungeon(p); for (let k = 0; k < 40 && !(activeZoneId === 'dungeon' && ENEMIES.length); k++) await wait(500); await wait(1500);
   const out = []; if (worldState.masters) delete worldState.masters[p.seed];
   for (const [dragon, stir] of [[false, 0], [false, 91], [true, 0], [true, 53]]) { for (let k = 0; k < stir; k++) Math.random();
-    p.lair = { place: 'Test', boss: 'Thing', dragon }; const n0 = CHESTS.length; lairFinish(p); const h = CHESTS[CHESTS.length - 1];
+    if (worldState.masters) delete worldState.masters[p.seed]; /* S710 — a hoard is rolled once and kept (S694): each build here starts from no record */ p.lair = { place: 'Test', boss: 'Thing', dragon }; const n0 = CHESTS.length; lairFinish(p); const h = CHESTS[CHESTS.length - 1];
     out.push(CHESTS.length > n0 ? { id: h.id, items: h.items.map(it => it.name + (it.qty > 1 ? '×' + it.qty : '') + (it.value ? ':' + it.value : '')).join(',') } : null); }
   return { seed: p.seed, out }; }, pick[0]);
 await leave();

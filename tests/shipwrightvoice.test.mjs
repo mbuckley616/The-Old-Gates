@@ -30,9 +30,9 @@ const r = await page.evaluate(() => {
     worldState.ship.hull = 60;
     gold = 1; row.mendPoor = pick(WORLD.upgradeTopics(s), /^Mend/).fn();
     gold = 10000; row.mended = pick(WORLD.upgradeTopics(s), /^Mend/).fn();
-    gold = 1; row.refitPoor = pick(WORLD.upgradeTopics(s), /^Refit/).fn(); row.sailsPoor = pick(WORLD.upgradeTopics(s), /^Better sails/).fn(); row.holdPoor = pick(WORLD.upgradeTopics(s), /^Bigger hold/).fn();
-    gold = 100000; row.refitted = pick(WORLD.upgradeTopics(s), /^Refit/).fn(); row.sailed = pick(WORLD.upgradeTopics(s), /^Better sails/).fn();
-    worldState.ship.cargo = 1; row.held = pick(WORLD.upgradeTopics(s), /^Bigger hold/).fn();
+    gold = 1; row.refitPoor = pick(yardOffers(s), /^Refit/).fn(); row.sailsPoor = pick(yardOffers(s), /^Better sails/).fn(); row.holdPoor = pick(yardOffers(s), /^Bigger hold/).fn();
+    gold = 100000; row.refitted = pick(yardOffers(s), /^Refit/).fn(); row.sailed = pick(yardOffers(s), /^Better sails/).fn();
+    worldState.ship.cargo = 1; row.held = pick(yardOffers(s), /^Bigger hold/).fn();
     row.gold = gold; out.push(row); }
   return { rows: out, names: WORLD.NAMES.anglo.m };
 });

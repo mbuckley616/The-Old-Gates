@@ -19,7 +19,7 @@ const gh = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); co
 if (gh) {
   await page.waitForTimeout(4500); await g.hide();
   const r = await page.evaluate((gk) => {
-    const d = currentHouse && currentHouse.dlg; const head = d && d.topics.some(t => t.label === "It's done.") ? { def: d } : null;
+    const d = currentHouse && currentHouse.dlg; const head = d && d.topics.some(t => t.label === 'Any work?') ? { def: d } : null;
     if (!head) return { head: false, house: currentHouse && currentHouse.type, zone: activeZoneId, npcs: WORLD.intNpcs.map(n => [n.def && n.def.name, n.def && n.def.topics && n.def.topics.map(t => t.label).join('|')]) };
     const pay = (cha) => { ATTRS.charisma = cha; WORLD.guild.state()[gk].active = { kind: 'relic', got: true, gold: 80, short: 'a test' }; const g0 = gold;
       const s = head.def.topics.find(t => t.label === "It's done.").fn(); return { got: gold - g0, s }; };

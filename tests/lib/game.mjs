@@ -53,6 +53,10 @@ export async function boot(opts = {}) {
   page.setDefaultNavigationTimeout(180000);
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.slice(0, 200)));
+  // S646: indoors, E reaches a thing only with the crosshair on it. A suite that puts you beside one calls lookAtPt(x, y, z) in the
+  // page: the eye goes where the loop would put it (px, jumpY + the eye height, pz) and turns to the point, as yaw and pitch do
+  await page.addInitScript(() => { window.lookAtPt = (x, y, z) => { const ey = jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6);
+    yaw = Math.atan2(-(x - px), -(z - pz)); pitch = Math.atan2(y - ey, Math.hypot(x - px, z - pz)); CAM.position.set(px, ey, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); }; });
   await page.goto('file://' + file);
   await page.waitForTimeout(4000);
 

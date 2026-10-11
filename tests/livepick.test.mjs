@@ -11,7 +11,7 @@ await page.evaluate(() => { forceTime(23); const S = WORLD.settle.get('dunmore')
   BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 12 });
   // residents spawn in as the world runs (two every half second), so everyone but the chosen witness is parked every frame
   window._park = () => S.npcs.forEach(n => { if (n === window._keep) return; n.g.visible = false; n.g.position.set(S.site.x + 400, 0, S.site.z + 400); if (n.sched) n.sched = { type: 'guard', a: { x: S.site.x + 400, z: S.site.z + 400 }, b: { x: S.site.x + 400, z: S.site.z + 400 } }; });
-  window._keep = null; const f = () => { window._park(); requestAnimationFrame(f); }; requestAnimationFrame(f); const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; px = h.doorX + dx / L * .8; pz = h.doorZ + dz / L * .8; jumpY = 0; });
+  window._keep = null; const f = () => { window._park(); const k = window._keep; if (k) k.g.rotation.y = Math.atan2(px - k.g.position.x, pz - k.g.position.z); requestAnimationFrame(f); }; requestAnimationFrame(f); const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; px = h.doorX + dx / L * .8; pz = h.doorZ + dz / L * .8; jumpY = 0; });
 await g.frames(3);
 
 // 1. the world runs while you pick, and you stand still
@@ -23,11 +23,11 @@ const ran = await page.evaluate(() => ({ ...window._r0, t1: (worldState.gameTime
 console.log('ran', JSON.stringify(ran));
 check('picking a shop door at night, the clock turns (it stood still), the pick stays open with nobody about, and you do not walk off with W held', ran.live && ran.open && ran.still && ran.t1 > ran.t && ran.moved < .01 && ran.crimes === 0, ran);
 
-// 2. a watchman comes within three units with a clear line: seen, the lock crime, and the pick breaks off
+// 2. a watchman comes within three units with a clear line, facing you (since Session 705 the street sees in a 120° cone): seen, the lock crime, and the pick breaks off
 const seen = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = window._h, site = S.site; const w = S.npcs.find(n => n.sched) || S.npcs[0];
   window._s0 = { f: WORLD.favor(site), b: WORLD.bountyAt ? WORLD.bountyAt(site) : ((worldState.crime || {})[site.id] || { bounty: 0 }).bounty, n: (worldState.crimes || []).length };
   const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; const x = h.doorX + dx / L * 3.8, z = h.doorZ + dz / L * 3.8;
-  window._keep = w; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x, z }, b: { x, z } }; w.g.position.set(x, WORLD.worldH(x, z), z); return w.def && w.def.name; });
+  window._keep = w; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x, z }, b: { x, z } }; w.g.position.set(x, WORLD.worldH(x, z), z); w.g.rotation.y = Math.atan2(px - x, pz - z); return w.def && w.def.name; });
 await g.frames(4);
 const after = await page.evaluate(() => { const site = WORLD.settle.get('dunmore').site; const C = (worldState.crime || {})[site.id] || { bounty: 0 };
   return { ...window._s0, open: lockOpen, f1: WORLD.favor(site), b1: C.bounty, crimes: (worldState.crimes || []).slice(window._s0.n).map(c => c.kind), picked: WORLD.doorPicked(window._h), msg: document.getElementById('msg') ? document.getElementById('msg').textContent : null }; });

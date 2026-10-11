@@ -2,7 +2,7 @@
 // lines in real play — Rowe at the seat, the duel on the yard, the black sail"). The Compact's ninth service sends you to
 // board a black-sailed hull in the strait and clear her deck. Here it is taken the way a player takes it: the Compact at
 // eight services, the service asked for in the Fortargent lord's own dialogue, your own ship put out to sea, the black
-// sail that the open service calls up, E beside her hull to board, her crew cut down by your own swings (the game's own
+// sail that the open service calls up, E on her boarding net (Session 638), her crew cut down by your own swings (the game's own
 // loop at fixed 1/60 ticks, the draw held off, as `saltwater` does), the service turned in at the seat for the rank of
 // Prior, Rowe at the seat with the Prior's lines, and *Claim a house and a ship.*
 import { boot, check } from './lib/game.mjs';
@@ -48,23 +48,25 @@ const sail = await page.evaluate(() => { let n = 0; for (; n < 60 * 10; n++) { W
 console.log('at sea', JSON.stringify(out), JSON.stringify(sail));
 check(`at sea in your own ship ${out && out.fromSeat} units off ${seat.name}, a black sail comes up while the service is open`, !!out && sail.pirate && sail.ticks <= 60 * 3, { out, sail });
 
-// alongside her: off your own deck, E beside her hull
+// alongside her: off your own deck, in the water a pace off her side, the crosshair on her boarding net (Session 638: E climbs
+// a net under the crosshair, in 0.8 s, and boards her at her rail)
 const along = await page.evaluate(() => { const o = WORLD.others.find(o => o.kind === 'pirate'); const S = WORLD.ship; S.sailing = false; window._o = o;
-  o.speed = 0; const side = [Math.cos(o.yaw), -Math.sin(o.yaw)]; const half = (o.plat.x1 - o.plat.x0 + o.plat.z1 - o.plat.z0) / 4;
-  let x = o.x, z = o.z, k = 0; for (; k < 200; k++) { x += side[0] * .1; z += side[1] * .1; const p = o.plat; const d = Math.hypot(Math.max(p.x0 - x, 0, x - p.x1), Math.max(p.z0 - z, 0, z - p.z1)); if (d > 1) break; }
-  px = x; pz = z; jumpY = 0; yaw = Math.atan2(-(o.x - px), -(o.z - pz)); return { name: o.name, prompt: (typeof promptText === 'function') ? promptText() : null }; });
+  o.speed = 0; o.mesh.updateMatrixWorld(true); const p = new THREE.Vector3(o.W / 2 + 1.5, 0, 0).applyMatrix4(o.mesh.matrixWorld), q = new THREE.Vector3(o.W / 2, 0.6, 0).applyMatrix4(o.mesh.matrixWorld);
+  px = p.x; pz = p.z; jumpY = SWIM_Y; velY = 0; pitch = 0; yaw = Math.atan2(-(q.x - px), -(q.z - pz)); return { name: o.name }; });
 await g.frames(2);
-await page.keyboard.press('e'); await g.frames(2);
+along.prompt = await page.evaluate(() => shipPrompt());
+await page.keyboard.press('e'); await g.frames(1);
+await page.evaluate(() => { for (let i = 0; i < 60; i++) { window._o.speed = 0; WORLD.tick(1 / 60, performance.now()); } });
 const boarded = await page.evaluate(() => { const o = window._o; return { boarded: !!o.boarded, crew: o.crew.length, onHer: Math.hypot(px - o.x, pz - o.z) < 3 }; });
 console.log('alongside', JSON.stringify(along), JSON.stringify(boarded));
-check(`alongside ${along.name}, E boards her and her crew (${boarded.crew}) turns`, boarded.boarded && boarded.crew >= 3 && boarded.onHer, { along, boarded });
+check(`alongside ${along.name}, "${along.prompt}", E climbs her net and boards her, and her crew (${boarded.crew}) turns`, along.prompt === `Press 'E' to climb aboard ${along.name}` && boarded.boarded && boarded.crew >= 3 && boarded.onHer, { along, boarded });
 
 const fought = await page.evaluate(() => { const o = window._o; let swings = 0;
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
   let t = performance.now(), n = 0; try { for (; n < 60 * 120; n++) { const live = o.crew.filter(e => !e.dead); if (!live.length) break; PHP = maxHP; dead = false; stamina = maxStamina; PPOST.stagUntil = 0;
       let e = live[0], d = 1e9; for (const x of live) { const dd = Math.hypot(x.x - px, x.z - pz); if (dd < d) { d = dd; e = x; } }
-      yaw = Math.atan2(-(e.x - px), -(e.z - pz)); if (d < 1.8 && atkCd <= 0 && !_pendingStrike) { attack(false); swings++; } t += 1000 / 60; loop(t); } }
-  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+      yaw = Math.atan2(-(e.x - px), -(e.z - pz)); K.KeyW = d >= 1.4; /* S638: boarded at her rail, you walk to the nearest of her crew */ if (d < 1.8 && atkCd <= 0 && !_pendingStrike) { attack(false); swings++; } t += 1000 / 60; loop(t); } }
+  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; K.KeyW = false; }
   for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
   return { swings, frames: n, left: o.crew.filter(e => !e.dead).length, msg: (document.getElementById('msg') || {}).textContent || '' }; });
 const s2 = await svc();
@@ -102,13 +104,16 @@ const atq = await page.evaluate((pid) => { const P = WORLD.siteAnywhere(pid); px
 await g.settle(s4.port.id);
 const q5 = await page.evaluate((pid) => { const plat = ZONES.world.platforms.find(p => p.site === pid && !p.river && !p.shallow); const S = WORLD.ship;
   if (!plat) return { plat: false }; const cx = (plat.x0 + plat.x1) / 2, cz = (plat.z0 + plat.z1) / 2;
-  let best = null, bd = 1e9; for (let i = 0; i <= 40; i++) for (let k = 0; k <= 40; k++) { const x = plat.x0 + (plat.x1 - plat.x0) * i / 40, z = plat.z0 + (plat.z1 - plat.z0) * k / 40;
-    const dx = Math.max(S.plat.x0 - x, 0, x - S.plat.x1), dz = Math.max(S.plat.z0 - z, 0, z - S.plat.z1); const d = Math.hypot(dx, dz); if (d > 0 && d < bd) { bd = d; best = { x, z }; } }
-  px = best.x; pz = best.z; jumpY = plat.y; yaw = Math.atan2(-(S.x - px), -(S.z - pz)); return { plat: true, gap: +bd.toFixed(2), y: plat.y }; }, s4.port.id);
-await g.frames(2); await page.keyboard.press('e'); await g.frames(3);
+  // S638: the quay's point nearest either of her boarding nets (amidships, at her rail), and the crosshair on that net
+  S.mesh.updateMatrixWorld(true); const nets = [1, -1].map(sd => new THREE.Vector3(sd * S.W / 2, 1.4, 0).applyMatrix4(S.mesh.matrixWorld));
+  let best = null, bd = 1e9, net = null; for (let i = 0; i <= 40; i++) for (let k = 0; k <= 40; k++) { const x = plat.x0 + (plat.x1 - plat.x0) * i / 40, z = plat.z0 + (plat.z1 - plat.z0) * k / 40;
+    for (const n of nets) { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; best = { x, z }; net = n; } } }
+  px = best.x; pz = best.z; jumpY = plat.y; yaw = Math.atan2(-(net.x - px), -(net.z - pz)); pitch = Math.atan2(net.y - (plat.y + 1.6), Math.hypot(net.x - px, net.z - pz)); return { plat: true, gap: +bd.toFixed(2), y: plat.y }; }, s4.port.id);
+await g.frames(2); q5.prompt = await page.evaluate(() => shipPrompt()); await page.keyboard.press('e'); await g.frames(1);
+await page.evaluate(() => { for (let i = 0; i < 60; i++) WORLD.tick(1 / 60, performance.now()); });
 const on5 = await page.evaluate(() => { const S = WORLD.ship; const p = S.plat; return { onDeck: px > p.x0 && px < p.x1 && pz > p.z0 && pz < p.z1 && Math.abs(jumpY - p.y) < 1 }; });
 console.log('at', atq, JSON.stringify(q5), JSON.stringify(on5));
-check(`at ${atq}, built, she lies alongside the quay (${q5.gap} from its edge), and E from the quay boards her`, q5.plat && q5.gap < 3.5 && on5.onDeck, { q5, on5 });
+check(`at ${atq}, built, she lies alongside the quay (her nearest net ${q5.gap} from its edge), and E on that net from the quay boards her`, q5.plat && q5.gap < 4.8 && q5.prompt === `Press 'E' to climb aboard the ${s4.ship.name}` && on5.onDeck, { q5, on5 });
 // with a ship already yours, the claim leaves her where she is (and refits her, Session 467, Michael's B on #128: tests/compactrefit)
 const keep = await page.evaluate(() => { const C = WORLD.fstate().compact; C.house = false; const S = WORLD.ship; const before = { x: Math.round(S.x), z: Math.round(S.z), name: S.name };
   const s = WORLD.siteAnywhere(WORLD.FACTIONS.compact.seat); const px0 = px, pz0 = pz; px = s.x; pz = s.z; const t = WORLD.factionTopics(s).find(x => /^Claim /.test(x.label)); const said = t.fn(); px = px0; pz = pz0;

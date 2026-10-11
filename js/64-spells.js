@@ -456,6 +456,7 @@ function showSigilOverlay(sp, flavor, grantedTier, intNeeded){
 function closeSigilOverlay(){
   const el=document.getElementById('sigil-overlay');
   if(el)el.style.display='none';
+  refocusView(); /* S722 */
 }
 
 // ── QUEST UPDATE POPUP (v61af, reworked v61ag) ───────────────────────────
@@ -674,6 +675,7 @@ function closeQuestUpdatePopup(){
   const el = document.getElementById('quest-popup');
   if(el) el.style.display='none';
   _questPopupOpen = false;
+  refocusView(); /* S722 */
   // If more items queued, kick off another drain attempt.
   if(_questPopupQueue.length){
     _ensureQuestPopupDrainPoll();

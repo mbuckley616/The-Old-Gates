@@ -109,13 +109,17 @@ await page.keyboard.press('e'); await g.frames(2);
 const click = (re) => page.evaluate((src) => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => new RegExp(src).test(x.textContent)); if (b) b.click(); return !!b; }, re);
 const ch = await page.evaluate(() => [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()));
 const c1 = await click('Cargo'); await g.frames(1);
-const board = await page.evaluate(() => ({ text: document.getElementById('dlg-text').textContent, rows: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()) }));
-const c2 = await click('Buy a chest of silver'); await g.frames(1);
-const bought = await page.evaluate(() => ({ gold, text: document.getElementById('dlg-text').textContent, rows: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()), bag: (BAG.find(b => b.cargo === 'silver') || {}).qty || 0 }));
+// S641 — the topic opens the factor's panel in place of the chat rows
+const row = (k) => page.evaluate((k) => { const r = document.querySelector(`#cargo-rows tr[data-k="${k}"]`); return r ? [...r.children].slice(0, 4).map(td => td.textContent) : null; }, k);
+const board = await page.evaluate(() => ({ open: cargoOpen, dlg: dlgOpen, notes: document.getElementById('cargo-notes').textContent, hold: document.getElementById('cargo-hold').textContent }));
+board.iron = await row('iron');
+const c2 = await page.evaluate(() => { const b = document.querySelector('#cargo-rows tr[data-k="silver"] button[data-a="buy"]'); if (b) b.click(); return !!b; }); await g.frames(1);
+const bought = await page.evaluate(() => ({ gold, text: document.getElementById('cargo-said').textContent, sell: !document.querySelector('#cargo-rows tr[data-k="silver"] button[data-a="sell"]').disabled, bag: (BAG.find(b => b.cargo === 'silver') || {}).qty || 0 }));
+bought.row = await row('silver');
 console.log(talk, JSON.stringify(ch), JSON.stringify(board), JSON.stringify(bought));
-check('the harbourmaster offers the factor’s prices', c1 && /Selling: Grain|Selling: Iron/.test(board.text) && board.rows.some(r => /Buy a crate of iron \(24 gold\)/.test(r)), { ch, board });
-check('buying there takes the gold, puts the chest in your bag, and the board stays open with a sell row', c2 && bought.gold === 243 && bought.bag === 1 && /Bought a chest of silver for 57/.test(bought.text) && bought.rows.some(r => /Sell a chest of silver/.test(r)), bought);
-await page.evaluate(() => { closeDialog(); for (let k = BAG.length - 1; k >= 0; k--) if (BAG[k].type === 'cargo') BAG.splice(k, 1); });
+check('the harbourmaster’s Cargo opens the factor’s board, iron asked at 24', c1 && board.open && !board.dlg && board.iron && board.iron[1] === '24', { ch, board });
+check('buying there takes the gold, puts the chest in your bag, and the row now holds one to sell', c2 && bought.gold === 243 && bought.bag === 1 && /Bought a chest of silver for 57/.test(bought.text) && bought.sell && bought.row[3] === '1', bought);
+await page.evaluate(() => { closeCargoPanel(); closeDialog(); for (let k = BAG.length - 1; k >= 0; k--) if (BAG[k].type === 'cargo') BAG.splice(k, 1); });
 
 stop();
 check('no page errors', g.errs.length === 0, g.errs);

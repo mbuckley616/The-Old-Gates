@@ -160,13 +160,14 @@
         // S193 — where a road already runs along or across the street, the road is the street: the ribbon breaks
         // there rather than doubling it or weaving beside it (the playtest's overlapping patterns)
         let run=[];const flush=()=>{if(run.length>1&&Math.hypot(run[run.length-1].x-run[0].x,run[run.length-1].z-run[0].z)>3)paths.push({w:2.4,pts:[run[0],run[run.length-1]]});run=[];};
-        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+1.2+3.5)flush();else run.push({x,z});}flush();
+        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z,true);if(ri&&ri.d<ROAD_HALF+1.2+3.5)flush();else run.push({x,z});}flush();
       });
       // a perimeter lane every street runs into (no dead ends in a field)
       // (S193: broken where a road crosses it, the road being the way through there)
-      {let ring=[];const n=Math.max(48,Math.round(inner/1.5));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2,x=cx+Math.cos(a)*inner,z=cz+Math.sin(a)*inner;const ri=roadInfo(x,z);
+      {let ring=[];const n=Math.max(48,Math.round(inner/1.5));for(let k=0;k<=n;k++){const a=k/n*Math.PI*2,x=cx+Math.cos(a)*inner,z=cz+Math.sin(a)*inner;const ri=roadInfo(x,z,true);
         if(ri&&ri.d<ROAD_HALF+1.2+1.5){if(ring.length>1)paths.push({w:2.2,pts:ring});ring=[];}else ring.push({x,z});}if(ring.length>1)paths.push({w:2.2,pts:ring});}
     }
+    const quayLane=site.kind==='port'?site.quayLane:null; // S618 — the lane to the quay is a road of its own (addQuayLane); the plan below is drawn as if it were not there, so lots and ids stay
     // v80 S243 — the lots as a function of prosperity, so that a house's id follows its lot. A rebuild at another
     // prosperity (fewer lots; the guild halls gone below 60) used to hand every id in the town to another building, and
     // your own house (worldState.owned is keyed by id) with it. Ids are now the lot's place in the town's layout at its
@@ -185,7 +186,7 @@
             const lx=mx+nx*side*(lat+d/2),lz=mz+nz*side*(lat+d/2);
             const dc=Math.hypot(lx-cx,lz-cz);
             if(dc>inner-4||dc<13)continue;
-            const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
+            const ri=roadInfo(lx,lz,true);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
             // keep clear of every street line (grid) — not in an intersection
             let nearStreet=false;
             for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;const dist=Math.abs(ex*(-l.dz)+ez*l.dx);if(dist<Math.max(w,d)/2+2.2&&!(Math.abs(l.dx-dx)<1e-6&&Math.abs(l.dz-dz)<1e-6&&Math.abs(ex*(-l.dz)+ez*l.dx-0)<1e-3)){/* different line too close */ if(!(l.px===px_&&l.pz===pz_&&l.dx===dx&&l.dz===dz))nearStreet=true;}}
@@ -220,7 +221,7 @@
         const ang=r()*Math.PI*2,rad0=18+r()*Math.max(8,inner-30);
         const lx=cx+Math.cos(ang)*rad0,lz=cz+Math.sin(ang)*rad0;
         const w=5+Math.floor(r()*3),d=4+Math.floor(r()*3);
-        const ri=roadInfo(lx,lz);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
+        const ri=roadInfo(lx,lz,true);if(ri&&ri.d<ROAD_BLEND+d/2)continue;
         let nearStreet=false;for(const l of streetLines){const ex=lx-l.px,ez=lz-l.pz;if(Math.abs(ex*(-l.dz)+ez*l.dx)<Math.max(w,d)/2+2.2)nearStreet=true;}
         if(nearStreet)continue;
         const rad=Math.max(w,d)/2+2.0;
@@ -241,7 +242,7 @@
       const kept=[];
       // S193 — a lot made bigger above (a keep, a guild hall, a church) is checked against the roads again: its corners
       // could reach one (3 of 1,062 buildings in thirty towns stood on a road)
-      const lotOnRoad=lot=>{const c=Math.cos(lot.ry),s_=Math.sin(lot.ry);for(let u=-1;u<=1;u+=.5)for(let v=-1;v<=1;v+=.5){const lx=u*lot.w/2,lz=v*lot.d/2;const ri=roadInfo(lot.x+lx*c+lz*s_,lot.z-lx*s_+lz*c);if(ri&&ri.d<ROAD_HALF+.6)return true;}return false;};
+      const lotOnRoad=lot=>{const c=Math.cos(lot.ry),s_=Math.sin(lot.ry);for(let u=-1;u<=1;u+=.5)for(let v=-1;v<=1;v+=.5){const lx=u*lot.w/2,lz=v*lot.d/2;const ri=roadInfo(lot.x+lx*c+lz*s_,lot.z-lx*s_+lz*c,true);if(ri&&ri.d<ROAD_HALF+.6)return true;}return false;};
       lots.forEach(lot=>{const rad=Math.max(lot.w,lot.d)/2+2.0;if(Math.hypot(lot.x-cx,lot.z-cz)>inner-Math.max(lot.w,lot.d)/2-1)return; // whole footprint inside the ring
         if(lot.w*lot.d>60&&lotOnRoad(lot))return;
         if(kept.some(k=>Math.hypot(k.x-lot.x,k.z-lot.z)<Math.max(k.w,k.d)/2+2.0+rad))return;kept.push(lot);});
@@ -263,6 +264,14 @@
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
+    // S579 — a home's name points at one door (Michael's A on #171): the first of a name keeps *Séamus's House*; a second takes
+    // the resident's trade (*Séamus the Cooper's House*, *Old Úna's House*); a plain resident, or a trade that repeats too, its
+    // end of the town (*Séamus's House at the north end*). Lots are named in their own order, so the same house keeps its name.
+    const homeNames=new Set();
+    const _churchNames=new Set();
+    function homeName(nm,tag,end){const tr={farmer:'Farmer',weaver:'Weaver',cooper:'Cooper',fisher:'Fisher'}[tag];
+      const c=[`${nm}'s House`,tr?`${nm} the ${tr}'s House`:tag==='old woman'?`Old ${nm}'s House`:null,`${nm}'s House at the ${end} end`,tr?`${nm} the ${tr}'s House at the ${end} end`:tag==='old woman'?`Old ${nm}'s House at the ${end} end`:null].filter(Boolean);
+      let n=c.find(x=>!homeNames.has(x));for(let k=2;!n;k++){const x=`${c[c.length-1]} (${k})`;if(!homeNames.has(x))n=x;}homeNames.add(n);return n;}
     // v80 S244 — a person, once drawn for a lot (or a gate's post), is the town's for good: a rebuild at another prosperity
     // draws the stream in another order and used to rename most of the town. makeDef keeps the name and people under
     // extra.nameKey in the town's state (TST.nm) and still makes every draw, so the stream and all else drawn from it is
@@ -296,6 +305,7 @@
         const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
         let ex=fx+lot.tx*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND)),ez=fz+lot.tz*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND));
         const ri=roadInfo(ex,ez);if(ri&&ri.d>ROAD_HALF+1&&!lot.street){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,t=ri.t;ex=sg.ax+vx*t;ez=sg.az+vz*t;}
+        if(lot.k==='sw'&&quayLane){const A=quayLane.a,B=quayLane.b,vx=B.x-A.x,vz=B.z-A.z,L2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((fx-A.x)*vx+(fz-A.z)*vz)/L2));ex=A.x+vx*u;ez=A.z+vz*u;} /* S618 — the yard's path ends on the quay lane */
         footReq.push({fx,fz,ex,ez,lot,hid:`g_${site.id}_${i}`}); // S193 — routed once every building stands (below)
       }
       const doorX=lot.x+lot.tx*(lot.d/2+.15),doorZ=lot.z+lot.tz*(lot.d/2+.15);
@@ -306,8 +316,9 @@
         const exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
         const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:lot.n,x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
         rdef.roleTag=rdef.role;rdef.role='Villager';
-        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:`${rdef.name}'s House`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
-        if(lot._shuttered){hh.shuttered=true;hh.name=`${rdef.name}'s House (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
+        const hName=homeName(rdef.name,rdef.roleTag,compassWord(lot.x-site.x,lot.z-site.z));
+        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
+        if(lot._shuttered){hh.shuttered=true;hh.name=`${hName} (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
         // residents stream in by distance (a city has 150+ of them)
@@ -319,6 +330,9 @@
       const noun=SHOP_NOUN[type]?(SHOP_NOUN[type][reg]||SHOP_NOUN[type].irish||''):'';
       let name=heroH?heroH.name:type==='inn'?keptName('i'+lot.n,pickFree(r,INN_NAMES[reg],_innNames)):type==='church'?(reg==='french'?`Chapelle de ${site.name}`:`${/^(la|le|les|l'|l’|the) /i.test(site.name)?'':'The '}${site.name} ${noun}`):type==='castle'?`${site.name} Keep`:(type==='guild_f'||type==='guild_m')?GUILD_DEF[type].name:`${keeper}'s ${noun}`;
       if(type==='inn')_innNames.add(name);
+      // S594 — a city's second church takes its end of the town, as a second house of a name does (Michael's A on #171; the critic,
+      // 6 Oct: Coeur de Vie's two *Chapelle de Coeur de Vie* side by side on the square)
+      if(type==='church'&&!heroH){if(_churchNames.has(name)){const b=`${name} at the ${compassWord(lot.x-site.x,lot.z-site.z)} end`;name=b;for(let k=2;_churchNames.has(name);k++)name=`${b} (${k})`;}_churchNames.add(name);}
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
       const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};
@@ -353,11 +367,11 @@
       const kx=doorX+lot.tx*1.6+lot.tz*.9,kz=doorZ+lot.tz*1.6-lot.tx*.9;
       const role=SHOP_ROLE[type]||'Merchant';
       if(type==='guild_f'||type==='guild_m'){house.guild=type;house.dlg=null;}
-      const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{get label(){return `Buy a ship (${shipPriceNow()} gold${shipPriceNow()<SHIP_PRICE?", with Corwin's note":''})`;},quest:true,fn:()=>buyShip(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:[{label:`What do you sell?`,response:house.tagline}]});
+      const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{label:'Browse ships',quest:true,panel:()=>openYardPanel(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:house.tagline?[{label:`What do you sell?`,response:house.tagline}]:[]}); /* S592 — no topic while the tagline is blank (the barber's waits on the quest writer) */
       def._houseId=house.id; // v80 S138 — who keeps what, by identity (names collide)
       house.keeper=def.name;house._twin=def._twin;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
       if(signY!==null)buildTradeSign(group,type,house.name,doorX,doorZ,lot.tx,lot.tz,lot.ry,signY);
-      if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[...upgradeTopics(site),...rest]:[buy,...rest];}});}
+      if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[buy,...upgradeTopics(site),...rest]:[buy,...rest];}});}
       if(house.guild||type==='shipwright'||type==='inn'||type==='barber')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
       if(type==='inn')def._extra.unshift(...innTopics(house,def.people)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
@@ -395,7 +409,7 @@
       addMesh(wellGeo(),cx+6,cz+4,r()*Math.PI,1.3);
       for(let i=0;i<plan.stalls;i++){
         const ang=r()*Math.PI*2,rad0=9+r()*5,sx=cx+Math.cos(ang)*rad0,sz=cz+Math.sin(ang)*rad0;
-        const ri=roadInfo(sx,sz);if(ri&&ri.d<4)continue;
+        const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;
         addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);
       }
     }
@@ -768,7 +782,7 @@
   // you zoom into a cell, generated over frames so the map never hitches.
   // Zoom 1 fits the continent; ~40 puts one province across the pane.
   const MAP={cv:null,ctx:null,zoom:1,ox:0,oy:0,drag:null,hover:null,hoverCell:null,sel:null,W:0,H:0,dirty:true,mode:'map',tiles:new Map(),jobs:[],_entries:[]};
-  const TILE_C=48,TILE_F=320;
+  const TILE_C=48,TILE_F=320,TILE_M=128; /* S588 — a middle tier, so a cell 100–220 device px across is not a 48 px tile stretched */
   const PARCH=new THREE.Color(0xd8c8a2),LOWC=new THREE.Color(0xcdb98c),HILL=new THREE.Color(0xb59d76),MTN=new THREE.Color(0x8d7c68),SNOWC=new THREE.Color(0xe9e4da),WATER=new THREE.Color(0x7d9cb0),DEEP=new THREE.Color(0x5b7d94),FORESTC=new THREE.Color(0x7c8a58),WASTEC=new THREE.Color(0xa08e74);
   // v80 S144 — the map read as brown or green because it was coloured by height: only forest (and a
   // 'wastes' test that never matched the generated 'wasteland') tinted it. Every biome the generator
@@ -788,6 +802,10 @@
   };
   const _mb=new THREE.Color();
   function tileKey(i,j,res){return i+','+j+':'+res;}
+  // S588 — the map drew at the canvas's CSS size, so a HiDPI screen stretched every pixel; its backing store is now dpr times
+  // that and the drawing is scaled, while everything else (the mouse, the pan, the zoom) stays in CSS pixels, read through these
+  function mapLW(){return MAP.lw||MAP.cv.width;}
+  function mapLH(){return MAP.lh||MAP.cv.height;}
   function withCellData(cell,fn){
     // lend this cell's AND its neighbours' regions/landmarks to worldH (unloaded ones only)
     const lent=[];
@@ -813,16 +831,16 @@
     out[0]=Math.min(255,_mc.r*255)|0;out[1]=Math.min(255,_mc.g*255)|0;out[2]=Math.min(255,_mc.b*255)|0;
   }
   // A tile job renders rows across frames; coarse tiles finish in one go.
-  function startTile(cell,res){
-    const key=tileKey(cell.i,cell.j,res);if(MAP.tiles.has(key))return MAP.tiles.get(key);
+  function startTile(cell,res,sub){
+    const key=tileKey(cell.i,cell.j,res)+(sub?'/'+sub.n+'/'+sub.a+'/'+sub.b:'');if(MAP.tiles.has(key))return MAP.tiles.get(key);
     const cv=document.createElement('canvas');cv.width=res;cv.height=res;const ctx=cv.getContext('2d');
-    const img=ctx.createImageData(res,res);const step=SIZE/res;const H=new Float32Array((res+1)*(res+1));
-    const t={cv,ctx,img,H,row:0,hrow:0,done:false,cell,res,step};MAP.tiles.set(key,t);MAP.jobs.push(t);
+    const n=sub?sub.n:1;const img=ctx.createImageData(res,res);const step=SIZE/res/n;const H=new Float32Array((res+1)*(res+1));
+    const t={cv,ctx,img,H,row:0,hrow:0,done:false,cell,res,step,sub:sub||null,key,n,X0:cell.ox+(sub?sub.a*SIZE/n:0),Z0:cell.oz+(sub?sub.b*SIZE/n:0)};MAP.tiles.set(key,t);MAP.jobs.push(t); /* S588 — sub: one of n×n squares of the cell at full resolution, for a deep zoom */
     if(res<=TILE_C){while(!t.done)tileStep(t,1e9);}
     return t;
   }
   function tileStep(t,rowsBudget){
-    const {cell,res,step,H}=t;const X0=cell.ox,Z0=cell.oz;
+    const {cell,res,step,H}=t;const X0=t.X0!=null?t.X0:cell.ox,Z0=t.Z0!=null?t.Z0:cell.oz,nS=t.n||1;
     withCellData(cell,()=>{
       // heights first (res+1 rows), then pixels
       while(t.hrow<=res&&rowsBudget>0){const j=t.hrow;for(let i=0;i<=res;i++)H[j*(res+1)+i]=worldH(X0+i*step,Z0+j*step);t.hrow++;rowsBudget--;}
@@ -831,7 +849,7 @@
       while(t.row<res&&rowsBudget>0){const j=t.row;
         for(let i=0;i<res;i++){const h=H[j*(res+1)+i];const x=X0+i*step,z=Z0+j*step;
           const hx=H[j*(res+1)+Math.min(res,i+1)]-H[j*(res+1)+Math.max(0,i-1)],hz=H[Math.min(res,j+1)*(res+1)+i]-H[Math.max(0,j-1)*(res+1)+i];
-          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*(res>=TILE_F?.045:.02)));
+          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*(res>=TILE_F?.045*nS:.02)));
           mapPixel(x,z,h,shade,px3);const k=(j*res+i)*4;d[k]=px3[0];d[k+1]=px3[1];d[k+2]=px3[2];d[k+3]=255;}
         t.row++;rowsBudget--;}
       if(t.row>=res){t.ctx.putImageData(t.img,0,0);
@@ -843,10 +861,10 @@
   }
   function mapJobs(){const t0=performance.now();while(MAP.jobs.length&&performance.now()-t0<24){const t=MAP.jobs[0];if(t.done){MAP.jobs.shift();continue;}tileStep(t,12);if(!t.done)break;}}
   // world ↔ screen
-  function baseScale(){return Math.min(MAP.cv.width,MAP.cv.height)/(SIZE*GRID);}
+  function baseScale(){return Math.min(mapLW(),mapLH())/(SIZE*GRID);}
   function mapToScreen(x,z){const s=baseScale()*MAP.zoom;return [x*s+MAP.ox,z*s+MAP.oy];}
   function screenToMap(sx,sy){const s=baseScale()*MAP.zoom;return [(sx-MAP.ox)/s,(sy-MAP.oy)/s];}
-  function mapClamp(){const s=baseScale()*MAP.zoom,w=SIZE*GRID*s,cw=MAP.cv.width,ch=MAP.cv.height;MAP.ox=Math.min(Math.max(MAP.ox,cw-w-60),60);MAP.oy=Math.min(Math.max(MAP.oy,ch-w-60),60);if(w<cw)MAP.ox=(cw-w)/2;if(w<ch)MAP.oy=(ch-w)/2;}
+  function mapClamp(){const s=baseScale()*MAP.zoom,w=SIZE*GRID*s,cw=mapLW(),ch=mapLH();MAP.ox=Math.min(Math.max(MAP.ox,cw-w-60),60);MAP.oy=Math.min(Math.max(MAP.oy,ch-w-60),60);if(w<cw)MAP.ox=(cw-w)/2;if(w<ch)MAP.oy=(ch-w)/2;}
   // icons
   function drawIcon(ctx,kind,s,known){
     ctx.save();ctx.scale(s,s);
@@ -884,23 +902,32 @@
     questMarkers(c).forEach(m=>out.push(m));
     return out;
   }
-  function visibleCells(){const [x0,z0]=screenToMap(0,0),[x1,z1]=screenToMap(MAP.cv.width,MAP.cv.height);const out=[];for(let j=Math.max(0,Math.floor(z0/SIZE));j<=Math.min(GRID-1,Math.floor(z1/SIZE));j++)for(let i=Math.max(0,Math.floor(x0/SIZE));i<=Math.min(GRID-1,Math.floor(x1/SIZE));i++)out.push(getCell(i,j));return out;}
+  function visibleCells(){const [x0,z0]=screenToMap(0,0),[x1,z1]=screenToMap(mapLW(),mapLH());const out=[];for(let j=Math.max(0,Math.floor(z0/SIZE));j<=Math.min(GRID-1,Math.floor(z1/SIZE));j++)for(let i=Math.max(0,Math.floor(x0/SIZE));i<=Math.min(GRID-1,Math.floor(x1/SIZE));i++)out.push(getCell(i,j));return out;}
   function mapDraw(){
-    const ctx=MAP.ctx;if(!ctx)return;const cw=MAP.cv.width,ch=MAP.cv.height;
+    const ctx=MAP.ctx;if(!ctx)return;const cw=mapLW(),ch=mapLH();ctx.setTransform(MAP.dpr||1,0,0,MAP.dpr||1,0,0); /* S588 */
     ctx.fillStyle='#2b241a';ctx.fillRect(0,0,cw,ch);
     if(MAP.mode==='local'){const size=Math.min(cw,ch);ctx.save();ctx.translate((cw-size)/2,(ch-size)/2);drawLocalMap(ctx,size,130,true);ctx.restore();MAP.dirty=true;return;}
     const s=baseScale()*MAP.zoom,cellPx=SIZE*s;
-    const cells=visibleCells();const fine=cellPx>=220;
+    const dpr=MAP.dpr||1;
+    const cells=visibleCells();const fine=cellPx*dpr>=220,mid=cellPx*dpr>=100;MAP.drawN=(MAP.drawN||0)+1;const seen=new Set();
+    let deep=1;while(deep<16&&TILE_F*deep*1.25<cellPx*dpr)deep*=2; /* S588 — past a 320 px tile, the cell in deep×deep squares */
     const [pi,pj]=cellOf(px,pz);
     // tiles
     for(const c of cells){
       const [sx,sy]=mapToScreen(c.ox,c.oz);
       let t=MAP.tiles.get(tileKey(c.i,c.j,TILE_C))||startTile(c,TILE_C);
-      if(fine){const f=MAP.tiles.get(tileKey(c.i,c.j,TILE_F))||startTile(c,TILE_F);if(f.done)t=f;}
+      if(mid&&(!fine||deep>1)){const m=MAP.tiles.get(tileKey(c.i,c.j,TILE_M))||startTile(c,TILE_M);seen.add(m.key);if(m.done)t=m;} /* under the squares, the cheap middle tier */
+      if(fine&&deep===1){const f=MAP.tiles.get(tileKey(c.i,c.j,TILE_F))||startTile(c,TILE_F);seen.add(f.key);if(f.done)t=f;else{const m=MAP.tiles.get(tileKey(c.i,c.j,TILE_M));if(m&&m.done)t=m;}}
       if(t&&(t.done||t.res<=TILE_C)){ctx.drawImage(t.cv,sx,sy,cellPx+.6,cellPx+.6);}
+      if(deep>1&&c.type!=='sea'){const q=cellPx/deep,W=mapLW(),Hh=mapLH();
+        for(let b=0;b<deep;b++)for(let a=0;a<deep;a++){const qx=sx+a*q,qy=sy+b*q;if(qx>W||qy>Hh||qx+q<0||qy+q<0)continue;
+          const k=tileKey(c.i,c.j,TILE_F)+'/'+deep+'/'+a+'/'+b;const st=MAP.tiles.get(k)||startTile(c,TILE_F,{n:deep,a,b});st.seen=MAP.drawN;seen.add(k);if(st.done)ctx.drawImage(st.cv,qx,qy,q+.6,q+.6);}}
       // undiscovered provinces sit under a light sepia wash
       if(c.type!=='sea'&&!(c.i===pi&&c.j===pj)&&!c.sites.some(x=>discovered(x.id))){ctx.fillStyle='rgba(60,40,20,.22)';ctx.fillRect(sx,sy,cellPx+.6,cellPx+.6);}
     }
+    // S588 — tiles panned or zoomed away are not worked on (they start again if wanted), and no more than 160 squares are kept
+    if(MAP.jobs.some(j=>!seen.has(j.key))){MAP.jobs=MAP.jobs.filter(j=>{if(seen.has(j.key))return true;MAP.tiles.delete(j.key);return false;});}
+    {let nSub=0;for(const t of MAP.tiles.values())if(t.sub)nSub++;if(nSub>160){for(const [k,t] of MAP.tiles){if(nSub<=120)break;if(t.sub&&t.done&&t.seen!==MAP.drawN){MAP.tiles.delete(k);nSub--;}}}}
     // province borders (faint) once you're in close
     if(cellPx>=140){ctx.strokeStyle='rgba(40,28,14,.25)';ctx.lineWidth=1;ctx.setLineDash([6,4]);for(const c of cells){if(c.type==='sea')continue;const [sx,sy]=mapToScreen(c.ox,c.oz);ctx.strokeRect(sx,sy,cellPx,cellPx);}ctx.setLineDash([]);}
     // roads
@@ -921,6 +948,7 @@
     // icons
     const entries=[];const isc=Math.max(.9,Math.min(2.2,cellPx/420))*(Math.min(cw,ch)/700);
     if(cellPx>=60){for(const c of cells)for(const e of mapEntries(c)){if(!discovered(e.id))continue;if(cellPx<160&&!e.major)continue;if(!mapAllowed(e))continue;entries.push(e);}}
+    else{for(const c of cells)for(const e of questMarkers(c)){if(mapAllowed(e))entries.push(e);}} /* S587 — zoomed out to the whole world, the quests still show */
     MAP._entries=entries;
     for(const e of entries){const [sx,sy]=mapToScreen(e.x,e.z);ctx.save();ctx.translate(sx,sy);
       if(MAP.hover===e.id||MAP.sel===e.id){ctx.beginPath();ctx.arc(0,0,13*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
@@ -973,13 +1001,13 @@
   function showTownCard(e,sx,sy){let el=document.getElementById('wm-hover');if(!el){el=document.createElement('div');el.id='wm-hover';el.style.cssText='position:absolute;pointer-events:none;max-width:320px;padding:8px 10px;background:rgba(28,22,14,.97);border:1px solid #8a6a3a;border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:20;display:none;color:#e8dcc0;font-family:Georgia,serif;line-height:1.4';MAP.cv.parentElement.appendChild(el);}
     if(!e||!(e.kind in BASE_P)){el.style.display='none';return;}const t=siteAnywhere(e.id);if(!t){el.style.display='none';return;}
     el.innerHTML=townCard(t);el.style.display='block';const r=MAP.cv.getBoundingClientRect();const px_=sx+16,py_=sy+16;el.style.left=Math.min(px_,r.width-310)+'px';el.style.top=Math.min(py_,r.height-el.offsetHeight-10)+'px';}
-  function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
+  function mapPick(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(mapLW(),mapLH())/700);let best=null,bd=16*isc;(MAP._entries||[]).forEach(e=>{const [x,y]=mapToScreen(e.x,e.z);const d=Math.hypot(sx-x,sy-y);if(d<bd){bd=d;best=e;}});return best;}
   // S496 — notes pinned to the map (Michael's C on DECISION #132, part C): *✎ Note* arms the next click on the map, which
   // opens a box in the panel for up to 500 characters; *Pin it* keeps it in worldState.mapNotes, a character key ({x,z,
   // text,t,tod}, the world spot and the minute). A pin shows its words on hover; a click opens it, with *Take it down*.
   function pinMapNote(x,z,text){const t=String(text||'').replace(/\s+/g,' ').trim().slice(0,500);if(!t||!isFinite(x)||!isFinite(z))return -1;const L=worldState.mapNotes||(worldState.mapNotes=[]);L.push({x:Math.round(x*10)/10,z:Math.round(z*10)/10,text:t,t:Math.floor(worldState.gameTimeAbsMinutes||0),tod:Math.floor(worldState.gameTimeMinutes||0)%1440});MAP.dirty=true;return L.length-1;}
   function unpinMapNote(i){const L=worldState.mapNotes;if(!L||!L[i])return false;L.splice(i,1);if(!L.length)delete worldState.mapNotes;MAP.sel=null;MAP.hover=null;MAP.dirty=true;return true;}
-  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(MAP.cv.width,MAP.cv.height)/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
+  function mapPickNote(sx,sy){const isc=Math.max(.9,Math.min(2.2,SIZE*baseScale()*MAP.zoom/420))*(Math.min(mapLW(),mapLH())/700);let best=null,bd=12*isc;(MAP._notes||[]).forEach(n=>{const d=Math.hypot(sx-n.sx-4*isc,sy-n.sy+8*isc);if(d<bd){bd=d;best=n.i;}});return best;}
   function _mnEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function showNoteCard(i,sx,sy){showTownCard(null,0,0);const n=(worldState.mapNotes||[])[i];const el=document.getElementById('wm-hover');if(!n||!el)return;el.innerHTML=`<div style="font:italic 13px Georgia,serif;color:#f0e6cc">${_mnEsc(n.text)}</div><div style="color:#8a7a60;font-size:11px;margin-top:4px">${_mnEsc(typeof gameDateLine==='function'?gameDateLine(n.t,n.tod,'day'):'')}</div>`;el.style.display='block';const r=MAP.cv.getBoundingClientRect();el.style.left=Math.min(sx+16,r.width-310)+'px';el.style.top=Math.min(sy+16,r.height-el.offsetHeight-10)+'px';}
   function mapNoteArm(on){MAP.pinArmed=on===undefined?!MAP.pinArmed:!!on;const b=document.getElementById('wm-pin');if(b){b.style.background=MAP.pinArmed?'#3a2a16':'#0c1008';b.style.color=MAP.pinArmed?'#f0e2c0':'#c8b880';}if(MAP.cv)MAP.cv.style.cursor=MAP.pinArmed?'crosshair':'grab';
@@ -1006,7 +1034,7 @@
   function mapSearch(q){const box=document.getElementById('wm-results');if(!box)return;q=(q||'').trim().toLowerCase();if(!q){box.style.display='none';return;}
     const out=[];for(const c of CELLS.values()){c.sites.forEach(t=>{if(t.name&&t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:t.kind,x:t.x,z:t.z,id:t.id,kind:t.kind});});(c.doors||[]).forEach(d=>{const n=d.canonicalName||'';if(n.toLowerCase().includes(q)){const p=dungeonWorldPos[d.seed]||d;if(discovered('door_'+d.seed))out.push({name:n,sub:'gate',x:p.x,z:p.z,id:'door_'+d.seed,kind:'door'});}});}
     out.sort((a,b)=>a.name.localeCompare(b.name));box.innerHTML=out.slice(0,12).map((o,i)=>`<div class="wm-res" data-i="${i}" style="padding:5px 10px;cursor:pointer;border-bottom:1px solid rgba(60,80,40,.4);font:12px Georgia,serif;color:#e8dcc0">${o.name} <span style="color:#8a9a70">· ${o.sub}</span></div>`).join('')||'<div style="padding:6px 10px;color:#8a9a70;font:12px Georgia,serif">Nothing you know of by that name.</div>';box.style.display='block';
-    box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=MAP.cv.width/2-o.x*s;MAP.oy=MAP.cv.height/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
+    box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=mapLW()/2-o.x*s;MAP.oy=mapLH()/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
   function wireMapSearch(){const inp=document.getElementById('wm-search');if(!inp||inp._wired)return;inp._wired=true;const pb=document.getElementById('wm-pin');if(pb)pb.onclick=()=>mapNoteArm();inp.addEventListener('input',()=>mapSearch(inp.value));['keydown','keyup','keypress'].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));document.querySelectorAll('.wm-filt').forEach(cb=>cb.addEventListener('change',()=>{MAP.filt[cb.value]=cb.checked;MAP.dirty=true;mapDraw();}));}
   function mapPanel(e){
     const body=document.getElementById('wm-panel-body');if(!body)return;
@@ -1047,11 +1075,11 @@
       root.addEventListener('wheel',ev=>{ev.preventDefault();if(MAP.mode!=='map')return;const r=root.getBoundingClientRect();const mx=ev.clientX-r.left,my=ev.clientY-r.top;const [wx,wz]=screenToMap(mx,my);MAP.zoom=Math.max(1,Math.min(64,MAP.zoom*(ev.deltaY<0?1.18:1/1.18)));const s=baseScale()*MAP.zoom;MAP.ox=mx-wx*s;MAP.oy=my-wz*s;mapClamp();MAP.dirty=true;},{passive:false});
     }
     root.style.display='block';
-    const r=pane.getBoundingClientRect();root.width=Math.max(300,r.width|0);root.height=Math.max(300,r.height|0);
-    MAP.cv=root;MAP.ctx=root.getContext('2d');MAP.W=Math.min(root.width,root.height);MAP.H=root.height;MAP.mode='map';
+    const r=pane.getBoundingClientRect();const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));MAP.lw=Math.max(300,r.width|0);MAP.lh=Math.max(300,r.height|0);MAP.dpr=dpr;root.width=Math.round(MAP.lw*dpr);root.height=Math.round(MAP.lh*dpr);
+    MAP.cv=root;MAP.ctx=root.getContext('2d');MAP.W=Math.min(MAP.lw,MAP.lh);MAP.H=MAP.lh;MAP.mode='map';
     // open at province scale, centred on the player
-    MAP.zoom=Math.max(1,Math.min(64,(Math.min(root.width,root.height)*.55)/(SIZE*baseScale())));wireMapSearch();
-    const s=baseScale()*MAP.zoom;MAP.ox=root.width/2-px*s;MAP.oy=root.height/2-pz*s;mapClamp();
+    MAP.zoom=Math.max(1,Math.min(64,(Math.min(MAP.lw,MAP.lh)*.55)/(SIZE*baseScale())));wireMapSearch();
+    const s=baseScale()*MAP.zoom;MAP.ox=MAP.lw/2-px*s;MAP.oy=MAP.lh/2-pz*s;mapClamp();
     MAP.sel=null;MAP.noteAt=null;mapNoteArm(false);mapPanel(null);syncMapButtons();MAP.dirty=true;mapDraw();
     if(!MAP._raf){const loop=()=>{if(MAP.cv&&MAP.cv.style.display!=='none'){mapJobs();if(MAP.dirty)mapDraw();MAP._raf=requestAnimationFrame(loop);}else MAP._raf=null;};MAP._raf=requestAnimationFrame(loop);}
   }
@@ -1485,8 +1513,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     }catch(e){console.warn('interior variety',e);}
     if(hasCellar(house)){const hx=Math.min(W-1.6,3.2),hz=D-2.6;boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
     // v80 S155 — a shop's strongbox in the back room (or behind the counter), a home's small chest: locked, and worth something
-    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';const bx=home?1.0:(house._backRoom?W-.9:W-1.0),bz=home?D-1.0:(house._backRoom?D-2.6:D*.55);
-      const bg=new THREE.Group();const shell=buildChestShell(bg,home?.45:.6,home?0x6a4a2c:0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=home?Math.PI*.5:Math.PI;sc_.add(bg);solid(bx,bz,.32,.28,.5);
+    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?1.0:(house._backRoom?W-.9:W-1.0),bz=home?D-1.0:(house._backRoom?D-2.6:D*.55),bry=home?Math.PI*.5:Math.PI;
+      // S590 — the barber stands still at his chair facing into the room (+z), so his box goes where the 6-unit indoor witness and his
+      // 120° cone cover every spot it opens from (1.6 round it): the wall-most free spot in front of him whose worst spot on that ring is
+      // within 5.6 of him and 50° of his face (the critic, 6 Oct: at W−1, D×.55 it stood 6.8–8.5 from him and was picked unseen at noon).
+      // Against the west wall when the room allows, nearer his chair in a wide one. No such spot: the old one.
+      if(type==='barber'&&npc){const fr=(x,z)=>!SOL.some(q=>x+.32>q.x0-.1&&x-.32<q.x1+.1&&z+.32>q.z0-.1&&z-.32<q.z1+.1);
+        const ok=(x,z)=>{for(let k=0;k<24;k++){const ux=x+Math.sin(k*Math.PI/12)*1.6,uz=z+Math.cos(k*Math.PI/12)*1.6;if(ux<.25||uz<.25||ux>W-.25||uz>D-.25)continue;
+          const dx=ux-npc.x,dz=uz-npc.z,d=Math.hypot(dx,dz);if(d>5.6||dz/d<Math.cos(50*Math.PI/180))return false;}return true;};
+        found:for(let x=.62;x<=npc.x+.01;x+=.2)for(let z=npc.z+1.4;z<D-1.6;z+=.1)if(fr(x,z)&&ok(x,z)){bx=x;bz=z;bry=Math.PI*.5;break found;}}
+      const bg=new THREE.Group();const shell=buildChestShell(bg,home?.45:.6,home?0x6a4a2c:0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=bry;sc_.add(bg);if(bry===Math.PI*.5&&!home)solid(bx,bz,.28,.32,.5);else solid(bx,bz,.32,.28,.5);
       INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:home?'home':'shop',type,house,open:false};}
     // S342 (#62 A) — the frame, built last so a post gives way to whatever stands against the wall. Plastered rooms: posts at the
     // corners and under each beam's ends (a short bracket where a window is within 1.2), knee braces, a sole plate and a wall
@@ -1598,6 +1634,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     guild_m:{name:"Mages' Guild",role:'Archmage',ranks:['Novice','Adept','Evoker','Warlock','Archmage'],sign:'guild_m',col:0x203a6a},
   };
   function gstate(){if(!worldState.guild)worldState.guild={guild_f:{done:0,active:null},guild_m:{done:0,active:null}};return worldState.guild;}
+  // S597 — the article for a word said after it: *an armourer*, *an Adept*, *a farmer* (a vowel letter takes *an*).
+  function aOrAn(w){return /^[aeiou]/i.test(String(w||''))?'an':'a';}
   function rankOf(g){const st=gstate()[g];return GUILD_DEF[g].ranks[Math.min(4,Math.floor(st.done/3))];}
   function dirWord(fx,fz,tx,tz){return compassWord(tx-fx,tz-fz);}
   function nearSites(site,maxD){return SITES.filter(t=>t.id!==site.id&&t.pad>0&&Math.hypot(t.x-site.x,t.z-site.z)<maxD).sort((a,b)=>Math.hypot(a.x-site.x,a.z-site.z)-Math.hypot(b.x-site.x,b.z-site.z));}
@@ -1606,9 +1644,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // v80 S133 — the nearest region whose encounter table carries the creature: a name and a point for the compass
   function huntGround(site,creature){let best=null,bd=1e9;for(const c of CELLS.values()){if(c.type==='sea'||!c.regions)continue;for(const rg of c.regions){const tbl=ENC[rg.id]||ENC_BIOME[rg.biome];if(!tbl||!tbl.some(g=>g.name===creature))continue;const d=Math.hypot(rg.x-site.x,rg.z-site.z);if(d<bd){bd=d;best={x:rg.x,z:rg.z,name:rg.name||rg.id};}}}return best;}
   function genTask(g,site){
-    const st=gstate()[g];const r=Math.random;const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S503 — an id of place and index (the co-op rules), not a Date.now() */const tier=Math.floor(st.done/3);
+    const st=gstate()[g];const tid=g+':'+site.id+':'+(st.n=(st.n||0)+1); /* S503 — an id of place and index (the co-op rules), not a Date.now() */const r=seededRng('task',tid); /* S678 — the task's kind, place and pay roll on its own id (the co-op rules), not Math.random */const tier=Math.floor(st.done/3);
     const gold=60+tier*50+Math.floor(r()*40);
     const doors=nearDoors(site,900,false),sites=nearSites(site,700);
+    const housed=sites.filter(t=>{const P=KIND_PLAN[t.kind];return !!P&&P.n[0]>0;}),homed=sites.filter(t=>{const P=KIND_PLAN[t.kind];return !!P&&P.n[0]>P.shops.length;}); /* S675 — a draught wants a keeper and a hearth a home: never a camp, a ruin or a shrine (the critic's s480 Hermit's Camp) */
     const pickDoor=()=>doors[Math.floor(r()*Math.min(doors.length,6))];
     if(g==='guild_f'){
       const kind=['clear','hunt','beast','raid'][Math.floor(r()*4)];
@@ -1620,8 +1659,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const kind=['relic','gather','deliver','hearth','wizard','creature'][Math.floor(r()*6)];
       if(kind==='relic'&&doors.length){const e=nearDoors(site,900,true)[0]||pickDoor();const p=dungeonWorldPos[e.seed];const name=e.canonicalName||'an old gate';return {id:tid,g,kind,x:p.x+8,z:p.z+6,got:false,gold:gold+30,desc:`An old binding-stone lies outside ${name}, ${dirWord(site.x,site.z,p.x,p.z)} of here, by the door. Bring it back unbroken.`,short:`Relic at ${name}`};}
       if(kind==='gather'){const pool=herbPool();const keys=Object.keys(HERB_DEF||{});const t=keys.length?keys[Math.floor(r()*keys.length)]:null;if(t){return {id:tid,g,kind,herb:t,need:3+tier,have:0,gold,desc:`We're short of ${HERB_DEF[t].name}. Harvest ${3+tier} in the wild and bring them.`,short:`Gather ${HERB_DEF[t].name}`};}}
-      if(kind==='deliver'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];return {id:tid,g,kind,siteId:t.id,who:null,gold,desc:`Someone in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, is sick. Take this draught to whoever answers to the name we'll give you at the gate — ask the first resident you meet.`,short:`Draught to ${t.name}`};}
-      if(kind==='hearth'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];return {id:tid,g,kind,siteId:t.id,house:null,gold:gold-20,desc:`A house in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, has a hearth that won't take. Go in and light it — any flame you can cast will do.`,short:`Light a hearth in ${t.name}`};}
+      if(kind==='deliver'&&housed.length){const t=housed[Math.floor(r()*Math.min(3,housed.length))];return {id:tid,g,kind,siteId:t.id,who:null,gold,desc:`Someone in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, is sick. Take this draught to whoever answers to the name we'll give you at the gate — ask the first resident you meet.`,short:`Draught to ${t.name}`};}
+      if(kind==='hearth'&&homed.length){const t=homed[Math.floor(r()*Math.min(3,homed.length))];return {id:tid,g,kind,siteId:t.id,house:null,gold:gold-20,desc:`A house in ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here, has a hearth that won't take. Go in and light it — any flame you can cast will do.`,short:`Light a hearth in ${t.name}`};}
       if(kind==='wizard'&&doors.length){const e=pickDoor();const p=dungeonWorldPos[e.seed];const ang=r()*Math.PI*2;return {id:tid,g,kind,sx:p.x+Math.cos(ang)*30,sz:p.z+Math.sin(ang)*30,spawned:false,done:false,gold:gold+60,desc:`A rogue of ours has set up by ${e.canonicalName||'an old gate'}, ${dirWord(site.x,site.z,p.x,p.z)} of here. End him.`,short:`The rogue mage`};}
       const lk=LAKES[0];return {id:tid,g,kind:'creature',sx:lk.x+lk.r+30,sz:lk.z+20,spawned:false,done:false,gold:gold+50,desc:`Something is walking the shore of ${lk.name}, ${dirWord(site.x,site.z,lk.x,lk.z)} of here, that shouldn't be. Unmake it.`,short:`The thing at ${lk.name}`};
     }
@@ -1650,7 +1689,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const G=gstate();
     for(const g in G){const t=G[g].active;if(!t)continue;
       if(t.kind==='clear'&&ctx==='dungeon'&&typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.id===t.portal)t.have++;
-      if(t.kind==='hunt'&&ctx==='zone'&&e.name===t.target)t.have++;
+      if(t.kind==='hunt'&&ctx==='zone'&&(e.name===t.target||e.baseName===t.target))t.have++; /* S667 — a Greater Wolf or a Shadow Skeleton is the creature hunted (its variant's name has a prefix); a Dire Wolf is a kind of its own */
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&e._guildTag===t.id)t.done=true;
       if(t.kind==='raid'&&e._guildTag===t.id){t.have++;if(t.have>=t.count){const S=SETTLE.get(t.siteId);if(S)S.raid=false;showMsg('The raiders are down. The town is safe.','#e8d8a0');}}
       gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: task complete — report back.`,'#e8d8a0');}
@@ -1660,8 +1699,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function onTalk(def){if(def&&def.name==='Varek'){varekTalked();return false;}if(qOnTalk(def))return true;const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='deliver'||t.done)return false;
     const S=SETTLE.get(t.siteId);if(!S||!S.houses.some(h=>h.keeper===def.name))return false;
     if(!t.who){t.who=def.name;showMsg(`${def.name} takes the draught. "Bless you." Report back.`,'#e8d8a0');t.done=true;gStamp(t);return true;}return false;}
-  function onEnterInterior(house){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done)return;if(house.type!=='home')return;const S=SETTLE.get(t.siteId);if(!S||!S.houses.includes(house))return;t.house=house.id;showMsg('This is the cold hearth. Stand by it and cast a flame (F).','#c8b880');}
-  function onCast(){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done||!t.house)return;if(typeof currentHouse==='undefined'||!currentHouse||currentHouse.id!==t.house)return;
+  function onEnterInterior(house){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done)return false;if(house.type!=='home')return false;const S=SETTLE.get(t.siteId);if(!S||!S.houses.includes(house))return false;t.house=house.id;showMsg('This is the cold hearth. Stand by it and cast a flame (F).','#c8b880');return true;}
+  function onCast(sp){const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='hearth'||t.done||!t.house)return;if(!sp||sp.school!=='tine')return; /* S672 — only a flame lights it */
+    if(typeof currentHouse==='undefined'||!currentHouse||currentHouse.id!==t.house)return;
     const W=currentHouse._roomW||10,D=currentHouse._roomD||10;if(Math.hypot(px-(W-.4),pz-D*.4)<2.6){t.done=true;gStamp(t);showMsg('The hearth catches. Report back.','#e8d8a0');}}
   // world pickups (relics)
   const pickups=[];
@@ -1679,7 +1719,15 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;gStamp(p.task);sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
   function turnIn(g){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
     st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);qJournal(t,'complete',`Turned in to the ${GUILD_DEF[g].name}: ${paid} gold.`);
-    const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're a ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
+    const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're ${aOrAn(rk)} ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
+  // S682 — Michael's A on DECISION #217: a task you cannot finish is handed back, with no pay and no mark against your standing,
+  // and *Any work?* gives another. Cleared as a lapse clears it (the raid's flag, a relic left lying); a rank commission
+  // handed back comes round again, since the rank waits on it. The guild head's line in each people's voice is the quest writer's.
+  function handBack(g,gp){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(taskDone(t))return 'It\u2019s done already. Tell me so.';
+    st.active=null;if(t.kind==='raid'){const S=SETTLE.get(t.siteId);if(S)S.raid=false;}if(t._obj){try{sc.remove(t._obj.m);unregLight(t._obj.l);}catch(e){}const i=pickups.findIndex(p=>p.task===t);if(i>=0)pickups.splice(i,1);}
+    if(/:c\d+$/.test(String(t.id))&&st.commissions){const at=+String(t.id).split(':c').pop();st.commissions=st.commissions.filter(x=>x!==at);}
+    if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. Handed back.`);qJournal(t,'lapsed',`Handed back to the ${GUILD_DEF[g].name}.`);
+    return ({gatelander:"Better a thing set down than a thing dropped. It goes back on the board, and there'll be another when you want one.",markman:"Aye. Back on the board. Come back when you want another.",aurennais:"Then the contract is void, Master, and nothing is owed on either side. It returns to the board; another can be drawn up when you wish.",oldblood:"Then it goes back. Someone else will carry it. Come when you want another."})[gp]||"Then it goes back on the board. Come back when you want another.";}
   function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
@@ -1698,5 +1746,5 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const gr=rngFor(site.c*31+(g==='guild_f'?101:211),site.r*17+5); // S172 — the same head every visit (was Math.random: a new name and face each time)
     const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pickFor(gr,gr()<.4?gb.f:gb.m,true);const tk='tw:'+g,tr=_curNM&&_curNM[tk]?String(_curNM[tk]).split('|'):null;const tw=noteName(keeper,true,tr&&tr[0]===keeper?tr[1]:null);if(_curNM)_curNM[tk]=keeper+'|'+tw;
     return Object.assign({name:keeper,_twin:tw||undefined,_siteId:site.id,people:gp,sCol:pick(gr,PEOPLES[gp].skin),hairCol:pick(gr,PEOPLES[gp].hair),bodyScale:[PEOPLES[gp].width,PEOPLES[gp].height,PEOPLES[gp].width],role:gd.role,ico:g==='guild_f'?'⚔':'✨',greeting:(GUILD_GREET[g][gp]||GUILD_GREET[g].markman),
-      get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site)},{label:"It's done.",quest:true,fn:()=>turnIn(g)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} tasks done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));return base.concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
+      get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site)},{label:"It's done.",quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&taskDone(t);},fn:()=>turnIn(g)},{label:'I can\u2019t do it.',quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&!taskDone(t);},fn:()=>handBack(g,gp)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} task${gstate()[g].done===1?'':'s'} done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_m')base.push({label:'Browse your wares.',trade:true}); /* S566 — robes at the Mages' Guild (#163) */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));return base.filter(t=>!t.avail||t.avail()).concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
   }

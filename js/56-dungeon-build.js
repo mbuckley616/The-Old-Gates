@@ -3142,7 +3142,7 @@ function buildDungeon(portal){
       // Mimic chest: no aura at all. Gargoyle statue: very dim. Both restored to .7 on reveal/activation.
       if(d.disguise) el.intensity = 0;
       else if(d.dormant) el.intensity = 0.15;
-      ENEMIES.push({x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,
+      ENEMIES.push({x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,rankSpd:d.spd,size:d.scale||1, /* S635 — rankSpd places its chase (dungeonChaseSpeed); S629 — its body's disc (bodyR) is its size, as in the open world */
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
@@ -3292,7 +3292,7 @@ function buildDungeon(portal){
 }
 
 let _preDungeonZone='overworld'; // zone to return to after exiting dungeon
-function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof saveGame==='function')saveGame(); /* S353 — #66 A: the door going down saves you at the threshold (going up already saves in goToOW) */
+function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof saveGame==='function'){if(portal.name)SS_THRESHOLD={name:portal.name,x:px,z:pz,t:performance.now()};saveGame();} /* S353 — #66 A: the door going down saves you at the threshold (going up already saves in goToOW) */
   doFade(()=>{
   _preDungeonZone=activeZoneId;
   blocking=false;staggered=[];
@@ -3402,7 +3402,8 @@ function goToOW(){
     activeZoneId=returnZone;
     // Spawn near the portal entrance — use src coords for all zones
     const spawnX=src?src.x:15;
-    const spawnZ=src?src.z+2:20;
+    // S702 — an old gate in the world faces -z with its mound behind it (S578): come up in front of it, not inside the mound (z+2 held you fast)
+    const spawnZ=src?(src.zone==='world'&&(src.kind||'cave_door')==='cave_door'?src.z-2.5:src.z+2):20;
     // v61: data-driven zone restore (same pattern as exitInterior). Hearthwick
     // and Bealach-South have no dungeons today so this branch is defensive,
     // but if a future settlement/wilderness zone gains a portal, the dungeon
