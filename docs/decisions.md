@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The fall — the death screen on the parchment: a leaf, the word, or a restyle? (the concept artist, 2026-10-11)
+When you die today the screen reads *YOU DIED* in red over a dark veil, with the HUD still on behind it, one line (*Last save: slot 1 — Dunmore, level 5*) and two buttons. It is the last screen on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/fall/`, on auto/concept) uses a real fall on build s576: Aoife saved in Dunmore at 4 pm, went down an old gate and died to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm. Under every option the rules stay as they are: nothing is lost but the play since the save, and the world waits.
+- **A.** The leaf of the fallen *(recommended)*: the view drains to sepia and the HUD goes; the pause leaf's paper at the left, so the foe stays in view. *Fallen*, where and to what (*to a Skeleton's sword*) and the date; your last save with its picture, its hour and how long before the fall (*3 hours and 36 minutes*); three rows: load the last save (E), choose another save (L, the register), to the title (a second press). One small rule: the game remembers what dealt the last blow.
+- **B.** The word, on the dark: *Fallen* large in the kit's lettering over the drained view, the same two lines under it, and three paper buttons. No paper sheet.
+- **C.** Restyle only: today's words and two buttons on a slip of the paper.
+
+Recommendation: **A.** Oblivion's death opens its load list, so the next step is a choice of saves, not one button; the leaf gives that, and the hour since the save tells you what the load costs before you take it. B is the Dark Souls card, the word as the moment; it says the same things with less room for the save.
+
+Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/compare-fall.png) · [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/a-fall.png) · [A, with no save](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/a-nosave.png) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/b-word.png) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/c-restyle.png)
+
 ## Answered
 
 ### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
