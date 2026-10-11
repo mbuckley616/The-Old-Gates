@@ -6,17 +6,69 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `5decc89` | run 13, from `9b86e34`: Sessions 665–668 merged (the hulls, the sailtrim test) and the inspector's ship entries; no string a player reads |
-| auto/systems | `f36d96c` | run 13, Sessions 672–689 against `409cae6` |
-| auto/backlog | `9ef5a55` | run 13: Sessions 676, 686, 687 (the cold hearth's look, test fixes); no string a player reads |
+| main | `c282127` | run 14, from `5decc89`: the pause leaf and the settings sheet (Sessions 690–691), the cold hearth (676); menu voice, clean |
+| auto/systems | `3143cda` | run 14, Sessions 692–722 against `f36d96c` |
+| auto/backlog | `cdb7d48` | run 14: Session 704 (the map's seals and *Where your work is*), 720–721 (tests); clean |
+| auto/producer | `82a71e9` | run 14: carries Look 704 only; read with auto/backlog |
 | auto/proto-ship-hulls | `fab53f6` | unchanged since run 12 |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
 | auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
-| auto/producer, auto/critic, auto/concept, auto/design, auto/fable-co-op-door, auto/fable-world-file | — | run 13: level with main, or ahead in docs only |
-| auto/fable-rivers | — | run 13: no merge base with main now (its last commit is 3 Oct, merged long since); not read |
-| auto/split | — | merged into main, nothing ahead (auto/split's old history is not main's) |
+| auto/critic, auto/concept, auto/design, auto/ci-shards | — | run 14: level with main, or ahead in docs or CI only |
+| auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
+| auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 14 — 11 Oct 2026
+
+About 60 player-readable strings read: some 40 on main (the pause leaf, its keys and the settings sheet), 6 on auto/backlog (the map's seals), about 15 on auto/systems. Three findings: one new line on auto/systems, two owed lines this desk was asked for.
+
+**main** (Sessions 676, 690–691). The pause leaf and the settings sheet are in the menu voice and good: *The world waits for you.*, *write this day in the register*, *go back to a day you kept*, *what you have not saved is lost*, *Leave without saving?*, *As they were*, *Adept is the game as it was.* No finding.
+
+**auto/backlog** (Session 704). *Where your work is*, *Report to {giver}*, *Bring {item} to {giver}*, *Report to the guild*, *{place}, as you were told*: plain and right. No finding.
+
+**auto/systems** (Sessions 692–722). Findings 23 and 24 are in the code as written. New and good: *The master of this place is dead. Its hoard is where you left it.*, *Something large is waiting further in.*, *A locked door* / *A good lock*, *slew Carrigowen — Marsh Hag* and *slew an Ogre* (`foeLogName`), the born-here who are eighteen or older, *Steel Sword* named for its tier. Finding 25 is the honest answer about the town, which lost its number in Session 698 and now says one thing twice. Finding 27 answers Session 719's ask for the doubled glade's card line, with the lair rumour canon §12 also owes.
+
+**Drafted:** *Asked in Passing, the second run — six more errands* (`docs/quest_drafts.md`): a cart in the ditch, a child at a gate, a fish for a wedding, a rubbing to be read, a hedge two neighbours both ask you about, a prayer carried to a shrine. No decision needed.
+
+### Finding 25 — auto/systems — *How are things here, honestly?* says *Getting by. We get by.*, and praises an occupied town
+
+**Where.** `richTopics` in `87-world-quests.js` (grep `How are things here, honestly`).
+
+**Text.** `${stateSaid(site)…}. ${prosperity(site)>=60?'Better than my father saw.':prosperity(site)>=35?'We get by.':'You can see for yourself.'}`
+
+**Why.** Session 698 rightly took the number out, and the word is now said aloud: between 40 and 59 the answer is *Getting by. We get by.*, the same thing twice. The second sentence reads only prosperity, so an occupied or besieged town at 60 or more says *Occupied. Better than my father saw.* And it is one voice for four peoples, on the question a person answers most like themselves: a Gatelander does not answer *honestly?* with a bare word.
+
+**Replacement.** The topic becomes:
+`` t.push({cat:'place',label:'How are things here, honestly?',get response(){const st=TS(site),p=prosperity(site),pp=def.people||NAT.people;const k=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'held':p>=60?'good':p>=35?'fair':'poor';const H={gatelander:{good:"Fat years, these. Better than my father saw. You don't say so aloud, mind, or the weather hears.",fair:"Neither fat nor lean. A middling year's a good one, if you've lived through the other kind.",poor:"You've eyes. An empty street says more than I'd like to.",siege:"Their camp's on the road and the gate's shut. A town under siege counts its loaves, not its blessings.",held:"Their flag's on the gate and their boots are on the square. We keep our heads down and our names to ourselves."},markman:{good:"Good. Better than my father saw. Don't spread it.",fair:"We get by. Could be worse. Has been.",poor:"Bad. You've eyes.",siege:"Siege. Their camp's on the road. We eat less and sharpen more.",held:"Their soldiers on our square. For now."},aurennais:{good:"Prosperous, Master, by any accounting. The books have not looked so well in my lifetime.",fair:"Solvent, Master, though not by much. The accounts balance, which is more than some towns can say.",poor:"In arrears, Master, and not only in coin. You can see it from the street.",siege:"Under siege, Master. A town that cannot trade cannot long pay what it owes.",held:"Under another's administration, Master. Their terms are not ours, and we were not asked to sign them."},oldblood:{good:"Full. The barns and the wells.",fair:"Enough. Not more.",poor:"Thin. As the year before a hunger.",siege:"Shut in. The camp is on the road.",held:"Held. Not by us."}};return (H[pp]||H.gatelander)[k];}}); ``
+The lord's *How fares the town?* (`lordTopics`) is reached only when the town is neither held nor besieged, and *{town} is getting by.* reads well; it stays.
+
+### Finding 26 — main and auto/systems — the barber has no tagline and cannot be asked the way to
+
+**Where.** `TAGLINES.barber` in `82-world-structures.js` (grep `no tagline until the quest writer`), and `WAY_ASK` / `WAY_ORDER` in `83-world-generator.js` (grep `const WAY_ASK`). Owed to this desk since Session 512; the critic's s455 note (backlog I) is the empty reply it leaves to *What do you sell?*.
+
+**Text.** `barber:[''],` — and no barber in `WAY_ASK`, so *Where can I find …* lists every shop in a town but the barber.
+
+**Why.** A blank tagline is a blank answer in the keeper's mouth. The taglines are sign-words, in no people's voice, like the smith's *"If it bends, I did not make it."*
+
+**Replacement.**
+- `barber:[''], // S512 — no tagline until the quest writer gives the barber one` becomes `barber:['"Shorn, shaved, or dyed. Sit still."','"A sharp razor and a steady hand."','"Come in rough, go out kempt."'],`
+- In `WAY_ASK`, after `misc:[…],` add `barber:['A barber?','barbers'],`
+- In `WAY_ORDER`, `'misc','shipwright'` becomes `'misc','barber','shipwright'`.
+
+### Finding 27 — auto/systems — the doubled glade has no line, and canon §12's lair rumour none either
+
+**Where.** `mapEntries` in `83-world-generator.js` (grep `const SUB={glade:'Glade'`), and `liveRumours` in `87-world-quests.js` (grep `function liveRumours`). Session 719 asked this desk for the glade's card line; the critic's s482 notes found §12's *a rumour within two provinces* unbuilt.
+
+**Text.** A glade's card reads *Glade* whether or not its herbs are doubled; no townsperson within two provinces mentions a lair, live or dead.
+
+**Why.** Canon §12: *`lairs[id].dead` … stays dead; nearest glade doubles herbs; a rumour within two provinces.* The first two are built; nothing tells the player either the glade or the town has noticed. Rumours are one voice in `liveRumours` already, and these keep to it.
+
+**Replacement.**
+- In `mapEntries`, `sub:SUB[t.kind]||…` becomes `sub:t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t)?'Glade · grown thick since the beast died':SUB[t.kind]||…` (the rest of the expression as it is). If the map's draw finds `gladeDoubled` dear, it may be cached by the game-day.
+- In `liveRumours`, before `if(isNight())`, add:
+`` {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}} ``
+  (*within two provinces* is the five-by-five cells round the town; a live lair is spoken of only within 700, the reach at which it harms a town.)
 
 ## Run 13 — 10 Oct 2026
 
