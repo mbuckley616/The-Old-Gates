@@ -992,7 +992,7 @@ function loop(now){
   }
   else if(lid&&isInterior()){
     // Interior NPC — amble + animation
-    if(intNPCMesh){
+    if(intNPCMesh&&!intNPCMesh.userData.asleep){ /* S739 — a sleeper lies still */
       const am=intNPCMesh.userData.amble;
       if(am&&!am.paused){
         intAmbleStep(intNPCMesh,dt); // S365 — the step lives in intAmbleStep so a test can walk the keeper

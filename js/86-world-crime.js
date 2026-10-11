@@ -357,12 +357,33 @@
   function witnessOf(house){
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5; /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
-      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
+      if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
+      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
       const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     // S705 — the street as the shop (Michael's A on #222): a townsperson or guard sees in the same 120° cone the way they face,
     // to the same ranges; within two units they hear you whichever way they face
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(d>=WIT_HEAR&&!intFaces(n.g))continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
     return best?{name:(best.def&&best.def.name)||'someone',npc:best}:null;}
+  // S739 — a householder sleeps (Michael's A on #240): from 23h to 5h a home's resident lies on their own bed, sees nothing, and wakes
+  // only to someone within two units (the street's hearing) or to E; awake from 21h to 23h and 5h to 7h. A picked door does not wake
+  // them. One woken stays up for the rest of your visit. Asleep is a rule of the hour and the house, no roll. The lying pose is the
+  // look builder's (H): until then the standing body lies on the bed turned flat, head to the bed's head (-z for every home's bed).
+  const SLEEP_H=[23,5];
+  function homeAsleepNow(house){if(!house||house.type!=='home'||!npcInsideNow(house))return false;const h=hourNow();return h>=SLEEP_H[0]||h<SLEEP_H[1];}
+  function residentBed(){return (INT_BEDS||[]).find(b=>b.owner==='home')||null;}
+  function sleeperAsleep(){return !!(typeof intNPCMesh!=='undefined'&&intNPCMesh&&intNPCMesh.userData.asleep);}
+  function laySleeper(m){const b=residentBed();if(!m||!b)return false;const am=m.userData.amble;if(am&&am.stand==null)am.stand=!!am.paused;
+    m.userData.asleep={x:b.x,z:b.z,y:b.y||0};if(am)am.paused=true;m.rotation.set(-Math.PI/2,0,0);m.position.set(b.x,(b.y||0)+.55,b.z+.95);
+    intNPCPos.x=b.x;intNPCPos.z=b.z;return true;}
+  function wakeSleeper(m,woken){if(!m||!m.userData.asleep)return false;const b=m.userData.asleep;m.userData.asleep=null;if(woken)m.userData.woke=true;
+    const am=m.userData.amble;if(am){am.paused=!!am.stand;am.wt=1.5;}
+    let x=b.x+1.1,z=b.z+.6;for(const [ox,oz] of [[1.1,.6],[1.1,1.4],[0,1.6],[1.1,-.2]]){if(!intSolidAt(b.x+ox,b.z+oz,.3,b.y)){x=b.x+ox;z=b.z+oz;break;}}
+    m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);intNPCPos.x=x;intNPCPos.z=z;return true;}
+  function sleeperNear(){const b=sleeperAsleep()&&intNPCMesh.userData.asleep;return !!b&&Math.hypot(px-b.x,pz-b.z)<WIT_HEAR&&Math.abs(jumpY-b.y)<1.2;}
+  // each frame indoors: to bed at 23h, up at 5h, and awake to whoever comes within two units of the bed
+  function tickSleeper(){if(typeof intNPCMesh==='undefined'||!intNPCMesh||!currentHouse||currentHouse.type!=='home')return;const m=intNPCMesh;
+    if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
+    else if(!m.userData.woke&&homeAsleepNow(currentHouse))laySleeper(m);}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
     if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;

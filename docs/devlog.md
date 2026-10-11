@@ -15484,3 +15484,18 @@ With the portal's id taken away: on the old code *another floor* fails (bar show
 
 ### Needs eyes
 - None.
+
+## v80 — Session 739 — A householder sleeps, 23h to 5h (Michael's A on #240)
+The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside. She turned as the chest opened and saw it. Section B's witness rule says *not asleep indoors*, but nobody slept: a home's resident was in from 21h to 7h and walked the room all night. That made the home the harder target at night, and the shop the easier one. Michael chose A: asleep in bed from 23h to 5h.
+
+The rule is in `86-world-crime.js`, beside `witnessOf`. `homeAsleepNow(house)` is true for a home whose resident is in (`npcInsideNow`) from 23h to before 5h. When the room is built in those hours, `laySleeper` lies the resident on the home's bed (the first `INT_BEDS` entry owned by `home`). They lie flat, head to the bed's head, feet at the foot. The talk point (`intNPCPos`) moves to the bed. `tickSleeper`, called from `tickInterior`, sends an awake resident to bed at 23h and gets a sleeper up at 5h, standing beside the bed. It wakes a sleeper when you come within two units of the bed. That is the street's *hears you whichever way they face* (`WIT_HEAR`), and it covers a blow too, which is struck from closer than that. Pressing E within talking reach (2.2 of the bed) also wakes them, and the talk opens. One woken stays up for the rest of your visit, facing you. One who rises at 5h faces the room. Indoors, `witnessOf` skips a sleeper unless you are within the two units. In that case they wake and are the witness. A picked door does not wake them. There is no roll: asleep is a rule of the hour and the house, as the co-op rules ask. The main loop's sway and breath bob (`90-main.js`) leave a sleeper alone. The lying pose belongs to the look builder (H). Until they make one, the standing body lies on the bed turned flat, as the decision said.
+
+Michael's A on #241 (the Cave Bear's cavern at level 1) is *leave it*: no session; the backlog item is closed.
+
+### Verified (headless Chromium)
+`tests/homesleep` (new, 14 checks) in Dunmore. At 23h30 Tadhg lies on his bed at (1.2, 1.4), laid flat (rotation −π/2) and .55 up. Of 125 standing points in the room more than 2.3 from the bed, none is seen (at 22h, awake, 32 of the same 125 are seen; at 6h, 15). At the chest, 7.6 from the bed, the critic's s572 case, `witnessOf` is null. After two seconds of ticks and twenty frames he is still asleep and flat. At 1.7 from the bed he wakes, stands and is the witness, and five seconds later, across the room, he is still up. At 1h, in another home, a theft beside the bed is seen, and woke Fionn. At 2h, E from 2.1 off wakes a third home's sleeper and opens the talk. A resident awake at 22h59 goes to bed at 23h02 with you in the room, and gets up at 5h02 facing the room. At noon a home's resident is out and not asleep. No page errors. `keepercone` passes.
+
+### Needs eyes
+- The flat body on the bed, by play: it is the standing pose laid down, and its feet hang a little past the bed's foot. The look builder owes the lying pose (H).
+- Going to bed at 23h and rising at 5h happen in one frame if you are in the room. Whether that jars, or whether nobody stays long enough to see it.
+- Whether two units is the right hearing for a sleeper. The chest is 7.6 from the bed in the four Dunmore homes measured, so a burglary at night is now unseen unless you go to the bed.

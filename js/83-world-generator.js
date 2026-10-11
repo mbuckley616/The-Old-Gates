@@ -1640,6 +1640,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const g=buildNPCMesh({role:roleName,name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
     g.rotation.y=type==='church'?0:Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
     intNPCMesh.userData.amble={wa:Math.random()*Math.PI*2,wt:1+Math.random()*3,minZ:.6,maxZ:npc.maxZ,minX:.8,maxX:W-.8,speed:.25,paused:npc.paused};
+    if(homeAsleepNow(house))laySleeper(intNPCMesh); /* S739 — asleep in bed, 23h to 5h (#240 A) */
     } else {intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
