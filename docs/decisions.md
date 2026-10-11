@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
+Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?
+
+- **A.** A dry-stone retaining wall at the foot of each bank wherever the cut is deeper than 1.2: coursed grey stone, its face battered back 1 in 5, a cap of flat stones, at most 2.6 high, with the turf bank going on above it. At Portclare that is about 2,550 triangles in one mesh, built with the lane. **Recommended:** the lane reads as made by people, and the walls frame the way down to the water.
+- **B.** Leave the cut as it is: turf banks, no stone.
+- **C.** Steps instead of a cut: the lane climbs over the ridge as it stood and goes down its seaward side by stone steps. This undoes Session 618's even grade. Not prototyped.
+
+Pictures (left today, right A; the wall is laid in the page by `docs/prototypes/quaycut/shoot.mjs`, not in the game):
+- From the lane in the deepest part of the cut, looking down to the quay: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-lane.png
+- From above the lane: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-above.png
+
 
 
 ## Answered

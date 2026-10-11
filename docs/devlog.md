@@ -15329,3 +15329,14 @@ Correction to Session 723's entry: it left the climb's and hulls' suites to the 
 - Holds beyond the waist (a sloop's or a cutter's third tier) draw what fits. A tier-three sloop could stack four high instead, but her boom says no.
 - Still owed from #192: the climb pose.
 
+## v80 — Session 725 — Portclare's cut to the quay, a prototype (docs only; DECISION #236)
+The backlog's last owed look item from the sailing playtest: the systems builder's quay lane (Session 618, on main since today) is graded evenly from Portclare down to its quay, so it cuts through the ridge behind the town. Session 620 left the question of a wall or steps until the lane reached main. Measured along the lane every 4 units, the ground 8 out stands over it by up to 8.9 on the north side and 7.1 on the south. The cut runs for about 70 of the lane's 92 units, deepest from 36 to 60. Its sides are the road's own blend: steep turf banks going straight up from the verge.
+
+The prototype (`docs/prototypes/quaycut/shoot.mjs`) loads the cut's ground, then shoots it twice from the same two places, once as it is and once with a wall laid in the page. The wall stands at the foot of each bank wherever the ground 8 out is more than 1.2 over the lane. It is coursed grey stone in courses of about .35, its face battered back 1 in 5, with a cap of flat stones and at most 2.6 high, with the turf bank going on above it. The first try ran the wall to the bank's full height and made a canyon of stone, which is why it stops at 2.6. At Portclare it comes to 2,550 triangles. The question went to Michael as DECISION #236: A the wall (recommended), B the banks as they are, C steps over the ridge instead of the cut. Nothing in the game changed.
+
+### Verified (headless Chromium)
+The script's profile, Portclare's lane from the perimeter lane (7.6) to the quay head (1.0): the north side's ground 8 out stands 1.3 over it at 0, 5.8 at 8, 7.3 at 20, 8.7 at 40, 8.9 at 52–56, 8.0 at 64, 2.3 at 72, and level from 76. The south side reads 1.3 at 8, 5.9 at 32, 7.1 at 40–44, 4.4 at 64, and level from 68. Pictures: `docs/prototypes/quaycut-lane.png` (in the cut, looking down to the quay; left today, right the wall), `docs/prototypes/quaycut-above.png` (from over the lane).
+
+### Needs eyes
+- Michael's answer on #236. Under A, the wall would be built with the lane (`addQuayLane`'s cell) and the bank behind it flattened to the wall's top, so it does not stand free of the turf as it does in the prototype's overhead picture.
+
