@@ -205,3 +205,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: seven of the critic's eight lair bugs fixed (S694–701), CI running; next the master's body after #225. Look builder: the pause leaf and its settings sheet. Critic: the cavern door 46 units out is still open.
 
 **Roadmap.** 187 of 260 stories done (186 of 252 yesterday); seven new lair stories, six under way on auto/systems, one waiting on you.
+
+## 11 Oct 2026
+
+**Waiting on you.** Three decisions: Portclare's cut to the quay (#236, A: a dry-stone wall), the climb up a boarding net (#237, A: hand over hand), a householder at night (#240, A: asleep in bed 23h–5h). Two merges: Look sessions 704–731, the world map sharp with your work on it as seals (48a0d2f, CI green), and Systems sessions 728–730, how a town really is, in each people's voice (735aef9, CI green).
+
+**Landed on main since yesterday.** Look sessions 676–693 (dc7b2d9). Systems sessions 564–722: witnesses by their cone, a lair's own beast as master, hoard metals by tier, the doubled glade, the lock's 150 ms floor (a2f4144). CI in twelve shards, so main's check finishes inside the hour (64edef4). Quest writer run 14, six more errands and Findings 25–27 (#235). Main's CI is green on a2f4144.
+
+**Blocked.** Nothing on you. The systems branch's newest head (d43c4ae, Sessions 732–734) is red on its own new boss-bar test; the systems builder's next run. The critic's and concept artist's docs PRs wait on Systems 728–730, which fixes the test that keeps them red.
+
+**Team.** Systems builder: four of the critic's five burglary bugs fixed (S732–734), the fifth waits on #240. Look builder: the quay wall and the net climb after your answers. Critic: a Cave Bear's master at level 1 is a wall, not a step up.
+
+**Roadmap.** 219 of 272 stories done (187 of 260 yesterday); five new burglary stories, three under way, one waiting on you.
