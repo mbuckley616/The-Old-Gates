@@ -15292,3 +15292,14 @@ The critic's s572 run robbed a goods shop's strongbox in Carraig Mór. The thing
 
 ### Needs eyes
 - The bag shows two *Lockpick* rows with nothing to tell them apart. Whether a stolen thing should say so in the bag (a word on its tooltip) is the quest writer's line and Michael's call. Nothing is built for it.
+
+## v80 — Session 733 — The boss bar below ground (the critic's s572)
+The critic's s572 run came to Dunderry's cavern door with the crag's Cave Bear on it. The bar *Dunderry the Cave Bear*, full, came down into the cavern and stayed through both floors. It was still at 100% while the critic fought the master, *Dunderry — Cave Bear*, whose own bar never showed, and it hung over the death screen. `tickBossHud` (`42-zone-enemies.js`) was called only from the loop's open-world branches (`90-main.js`). Its fallback reads `ENEMIES` for *the masters below*, but nothing below ground ever reached it.
+
+The loop's dungeon branch now calls it each frame. Below ground (`lid` other than the open world's) it skips the world's `ZE` and `ZONES.world.enemies`. In a dungeon it reads the cavern's own `ENEMIES`, and only those on your floor, by the rule it already had: a living boss that has seen you, within 40. In a room of another kind there is no boss and the bar is hidden. No rule of play changes.
+
+### Verified (headless Chromium)
+`tests/bossbarunder` (new, 8 checks), on real frames of the loop. Outdoors by Dunmore, a Cave Bear built as a boss, alert and 3 units off, shows *Testcrag the Cave Bear* at 100%. Then a lair's cavern (seed 5199, *Testcrag*), with that beast still alert at the door. Below ground its bar is gone, and with the master not yet alert there is no bar. On floor 2 (`goToFloor2`), with the master alert 2 units off, the bar reads *Testcrag — Cave Bear* at 100%, and at half its health 50.1%. Moved to another floor, it shows no bar; dead, no bar. No page errors. Not run on the old code. There, the dungeon never calls the tick, so the outdoor bar stays up below ground and the first check below ground fails. `q7world` (the Faolchú's bar in the world) passes, 8 checks.
+
+### Needs eyes
+- In a real cavern: the master's bar appearing as it wakes, and not before.

@@ -1026,6 +1026,7 @@ function loop(now){
     else{iprInt.style.opacity='0';setTimeout(()=>{if(iprInt.style.opacity==='0')iprInt.style.display='none';},260);}
   }
   else{
+    if(typeof tickBossHud==='function')tickBossHud(); /* S732 — the bar below ground: the master's, or none */
     KEYS.forEach(k=>{if(k.collected||k.floor!==currentFloor)return;k.obj.rotation.y+=dt*2.2;k.obj.position.y=.5+Math.sin(swT*1.9)*.08;if(Math.hypot(px-k.x,pz-k.z)<.8){k.collected=true;bagAdd({name:k.keyName,ico:'🗝',type:'misc',qty:1});dScene.remove(k.obj);dScene.remove(k.gl);addLog('🗝','Found the '+k.keyName);showMsg('Found the '+k.keyName+'!','#ffd700');}});
     for(let i=BALLS.length-1;i>=0;i--){const fb=BALLS[i];
       // v64.2 — Arrow motion path (gravity, sub-stepped collision, stuck states).
