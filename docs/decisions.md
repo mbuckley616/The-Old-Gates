@@ -28,7 +28,7 @@ The boarding nets (Session 638's rule, Session 723's look) are climbed with E in
 Under A, first person could also show both hands reaching up into view on the rope. That is not prototyped; say if you want it.
 
 Picture (top row today, bottom row A; a quarter, a half and nine-tenths of the way up; the pose is laid in the page by `docs/prototypes/climb/shoot.mjs`, not in the game): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/climb-net.png
-Michael: **Hand over hand on the net, then over the rail** (A). (11 Oct 2026)
+Michael: **Hand over hand on the net, then over the rail** (A). (11 Oct 2026) **Built, Session 743** (`tests/netclimb`, `docs/prototypes/climb-built.png`).
 
 ### A householder at night — asleep in bed, asleep but light, or awake as now? (systems builder, 2026-10-11) — DECISION #240
 Section B's witness rule says *anyone awake … not asleep indoors*. Nobody sleeps. A home's resident is inside from 21h to 7h (`npcInsideNow`), on their feet the whole night, walking the room between the door and the hearth. The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside; she turned as the chest's lock opened and saw it. So every night burglary of a home is done in front of its owner, and the only way to rob a home unseen is to time her turned back. Outdoors at night the street is nearly empty (Carraig Mór has one man awake after 21h), so the home is now the harder target than the shop, which is the wrong way round.

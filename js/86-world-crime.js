@@ -796,12 +796,22 @@
   // the rail above a side's net, in the world
   function netRail(mesh,W,side){mesh.updateMatrixWorld(true);const v=new THREE.Vector3(side*(W/2-.8),SHIP_DECK,0).applyMatrix4(mesh.matrixWorld);return {x:v.x,z:v.z};}
   let CLIMB=null;
-  function startClimb(mesh,W,side,other){CLIMB={t:0,mesh,W,side,other:other||null,x0:px,z0:pz,y0:jumpY};return true;}
+  function startClimb(mesh,W,side,other){mesh.updateMatrixWorld(true);_netInv.copy(mesh.matrixWorld).invert();const lz=_netO.set(px,0,pz).applyMatrix4(_netInv).z;
+    CLIMB={t:0,mesh,W,side,other:other||null,x0:px,z0:pz,y0:jumpY,lz:Math.max(-NET_HALF+.3,Math.min(NET_HALF-.3,lz))};return true;}
   function climbing(){return !!CLIMB;}
+  // S743 — Michael's A on #237: the body is held on the net, .35 off the planking, where it took hold (the first .15 of the
+  // climb carries it there from the water or the quay), rising evenly to the deck's height by four-fifths of the climb; the
+  // last fifth swings it in over the rail (an arc of .5 over the deck) to the rail's walk. `climbPose()` gives the third
+  // person's body the climb's progress and the way to face (the hull).
+  const NET_OFF=.38;
+  function climbNetPt(C){return new THREE.Vector3(C.side*(C.W/2+NET_OFF),SHIP_DECK,C.lz||0).applyMatrix4(C.mesh.matrixWorld);}
+  function climbPose(){if(!CLIMB)return null;const C=CLIMB;C.mesh.updateMatrixWorld(true);const n=climbNetPt(C),c=new THREE.Vector3(0,SHIP_DECK,C.lz||0).applyMatrix4(C.mesh.matrixWorld);
+    return {u:Math.min(1,C.t/NET_CLIMB),ry:Math.atan2(c.x-n.x,c.z-n.z)};}
   // every world tick: the climb follows the hull as she moves, and a deck landed on is boarded
   function tickNetClimb(dt){
-    if(CLIMB){const C=CLIMB;if(!C.mesh.parent){CLIMB=null;return;}C.t+=Math.min(dt,.1);const u=Math.min(1,C.t/NET_CLIMB);const r=netRail(C.mesh,C.W,C.side);
-      px=C.x0+(r.x-C.x0)*u;pz=C.z0+(r.z-C.z0)*u;jumpY=C.y0+(DECK_Y-C.y0)*u;velY=0;onGround=true;
+    if(CLIMB){const C=CLIMB;if(!C.mesh.parent){CLIMB=null;return;}C.t+=Math.min(dt,.1);const u=Math.min(1,C.t/NET_CLIMB);const r=netRail(C.mesh,C.W,C.side),n=climbNetPt(C);
+      const a=Math.min(1,u/.15),e=a*a*(3-2*a),k=Math.max(0,(u-.8)/.2),hx=C.x0+(n.x-C.x0)*e,hz=C.z0+(n.z-C.z0)*e;
+      px=hx+(r.x-hx)*k;pz=hz+(r.z-hz)*k;jumpY=k>0?DECK_Y+.1*(1-k)+.5*Math.sin(Math.PI*k):C.y0+(DECK_Y+.1-C.y0)*Math.min(1,u/.8);velY=0;onGround=true;
       if(u>=1){CLIMB=null;px=r.x;pz=r.z;jumpY=DECK_Y;if(C.other)boardOther(C.other,r);else showMsg('You climb aboard. E again for the wheel.','#c8b880');}return;}
     for(const o of OTHER){if(o.boarded||o.dead)continue;const p=o.plat;if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&Math.abs(jumpY-DECK_Y)<1&&(!p.inside||p.inside(px,pz))){boardOther(o,{x:px,z:pz});break;}}}
   // until the look builder hangs the real nets: a plain rope net on each side, 2.6 by 2.3, about 170 triangles a side
