@@ -15281,3 +15281,14 @@ Shard 11 failed on `sitechest` on the head of PR #238: `Cannot read properties o
 
 ### Needs eyes
 - None.
+
+## v80 — Session 732 — Stolen goods keep their mark in a stack (the critic's s572)
+The critic's s572 run robbed a goods shop's strongbox in Carraig Mór. The thing it held was a Lockpick, marked `stolen`. It went onto the three picks bought that morning, and the stack read honest. `bagAdd` (`14-items.js`) stacked by name alone, and the cells take only the entries marked `BAG[i].stolen`, so any stolen potion, torch, pick or arrow that joined one of yours was laundered. The other way round, picks bought after a stolen one joined the stolen stack, and a night in the cells took them all. The filed line is in section I on auto/critic, not yet on main.
+
+`sameStack(a,b)` (`14-items.js`, beside `bagAdd`) is one name and one mark. `bagAdd`, the stash's `_stashAdd` and the buy-back's merge (`60-shop.js`) stack through it, so a stolen thing is a stack of its own. The lock counted the first stack of picks only. `lpPicks` (`68-dungeon-misc.js`) now adds every stack, so you can still use all your picks. A spent pick comes off the first stack in the bag, as before. No rule of play changes. The cells take what the spec says they take.
+
+### Verified (headless Chromium)
+`tests/stolenstack` (new, 10 checks). In Dunmore's goods shop (`g_dunmore_5`) the strongbox's own stream gives a Lockpick on day 44, and the box is opened through `WORLD.boxInteract`. With three picks bought first, the bag holds 3 honest and 1 stolen. The lock counts 4. After the cells' rule, the 3 bought picks are left. With the stolen pick first and three bought after, it is again 1 stolen and 3 honest. In the stash and back out they stay two stacks, 1 and 3. Spending picks one at a time counts 3, 2, 1, 0 and then stops. No page errors. Not run against the old code. There, `bagAdd`'s merge by name makes a single stack of 4, which the first check rejects.
+
+### Needs eyes
+- The bag shows two *Lockpick* rows with nothing to tell them apart. Whether a stolen thing should say so in the bag (a word on its tooltip) is the quest writer's line and Michael's call. Nothing is built for it.

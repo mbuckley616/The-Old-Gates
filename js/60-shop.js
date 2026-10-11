@@ -237,7 +237,7 @@ function withdrawFromStash(idx){
 // 5 onto the existing stash stack, not 1).
 function _stashAdd(item){
   if(isStackable(item)){
-    const ex=stashBag.find(b=>b.name===item.name);
+    const ex=stashBag.find(b=>sameStack(b,item));
     if(ex){ex.qty=(ex.qty||1)+(item.qty||1);return;}
   }
   stashBag.push({...item, qty: item.qty||1});
@@ -440,7 +440,7 @@ function _pushBuyBack(it, sp){
   const entry={...it, _boughtBack:true, buyPrice:Math.max(1,sp), _bagPrice:it.buyPrice}; // S366 — _bagPrice: its own price, restored when bought back
   if(isStackable(it)){
     // Merge into an existing same-name buy-back stack.
-    const ex=arr.find(s=>s.name===it.name && s._boughtBack);
+    const ex=arr.find(s=>sameStack(s,it) && s._boughtBack);
     if(ex){ ex.qty=(ex.qty||1)+(it.qty||1); return; }
     entry.qty=it.qty||1;
   } else {
