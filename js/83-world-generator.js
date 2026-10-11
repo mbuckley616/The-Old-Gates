@@ -9,8 +9,8 @@
   // v80 S138 — directions. Ask anyone in a town where something is; they answer from where you're both
   // standing, and the place goes on your compass until you reach it or leave town.
   let WAY=null;
-  const WAY_ASK={castle:['The keep?','keeps'],inn:['An inn?','inns'],guild_f:['The Fighters\u2019 Guild?',''],guild_m:['The Mages\u2019 Guild?',''],church:['The church?','churches'],weapon:['A smith?','smithies'],armor:['An armourer?','armouries'],potion:['An apothecary?','apothecaries'],misc:['Somewhere for supplies?','goods stores'],shipwright:['The shipwright?','']};
-  const WAY_ORDER=['castle','inn','guild_f','guild_m','church','weapon','armor','potion','misc','shipwright'];
+  const WAY_ASK={castle:['The keep?','keeps'],inn:['An inn?','inns'],guild_f:['The Fighters\u2019 Guild?',''],guild_m:['The Mages\u2019 Guild?',''],church:['The church?','churches'],weapon:['A smith?','smithies'],armor:['An armourer?','armouries'],potion:['An apothecary?','apothecaries'],misc:['Somewhere for supplies?','goods stores'],barber:['A barber?','barbers'],shipwright:['The shipwright?','']};
+  const WAY_ORDER=['castle','inn','guild_f','guild_m','church','weapon','armor','potion','misc','barber','shipwright'];
   function wayFar(d,dir,open){return d<14?(open?`right here, just ${dir} of you`:`just ${dir} of here, you're nearly at the door`):d<55?`${dir} of here, a short walk`:d<130?`${dir} of here, on across the town`:`${dir} of here, the far side of town`;}
   function waySet(x,z,label,glyph,siteId){WAY={x,z,label,glyph:glyph||'\u25c9',siteId};showMsg(`On your compass: ${label}`,'#f0dca0');}
   // indoors px/pz are the room's own coordinates: measure from the building's front door instead

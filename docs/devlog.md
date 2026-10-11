@@ -15351,3 +15351,16 @@ The script's three moments on a sloop at sea, today and the prototype, from one 
 ### Needs eyes
 - Michael's answer on #237. The prototype's camera is close; the pose's timing (three reaches in 0.8 s) is a guess and wants seeing in motion once built.
 
+## v80 — Session 727 — The barber's taglines and the way to him (the quest writer's Finding 26, a register fix)
+The quest writer's run 14 (`docs/quest_review.md`, Finding 26) asked the look builder or the systems builder to apply it. The barber was the one keeper with a blank tagline (`TAGLINES.barber`, `82-world-structures.js`, left blank by Session 512 for the quest writer), so Session 592 had to drop his *What do you sell?*. He was also missing from the ways a townsperson can be asked (`WAY_ASK`/`WAY_ORDER`, `83-world-generator.js`), so *Where can I find …* listed every shop in a town but his. Applied as the review gives it, word for word: the three taglines *"Shorn, shaved, or dyed. Sit still."*, *"A sharp razor and a steady hand."* and *"Come in rough, go out kempt."*; `barber:['A barber?','barbers']` in `WAY_ASK`; and the barber between the goods store and the shipwright in `WAY_ORDER`. The tagline is still one draw from the town's stream (one `pick`, as before), so nothing else in a town moves. The systems branch had not applied it (checked on `origin/auto/systems` at 02:28 UTC).
+
+`tests/selltopic`'s check that no barber offers the topic while his tagline is blank now asks the opposite: every barber offers it, and answers with one of the three. A new check asks that every town with a barber has *A barber?* among a townsperson's directions.
+
+The run's other checks on this branch: the twelve ship and cargo suites that read the ship's mesh or its deck (`cargo`, `compactrefit`, `deckprops`, `factorpanel`, `hullshape`, `piratehold`, `riversail`, `sailtrim`, `seaseed`, `shipaim`, `shiphulls`, `ships`) pass on Sessions 723–724's code. `compactrefit` failed once with three browsers running side by side, and passed when run alone.
+
+### Verified (headless Chromium)
+`selltopic` 5/5: three barbers in the twelve towns nearest Dunmore (Séamus's Barber at Dunmore, Bríd's at Vieux Marché, Dáire's Barbier at Coeur de Vie). Each offers *What do you sell?* with one of the three taglines, and each town's directions include *A barber?*. Every keeper who offers the topic has an answer: 20 inns, 10 churches, 3 barbers, a shipwright and a keep. `wayfinding`, `signs` and the four barber suites pass.
+
+### Needs eyes
+- Nothing beyond reading the three lines in a barber's mouth.
+
