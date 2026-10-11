@@ -15323,3 +15323,4 @@ A register fix, applied as the review wrote it. Since Session 512 the barber's t
 
 ### Needs eyes
 - None.
+Correction to Session 735, the same day: the look builder had already applied Finding 26 word for word as their Session 727, on auto/backlog, not yet on main. I missed it because I checked only my branch and main. The two code changes are identical, so `82-world-structures.js` and `83-world-generator.js` merge without a conflict. `tests/selltopic` now takes auto/backlog's version, which checks the same rule and the way to the barber (5/5 here), so that file merges cleanly too. `tests/barberway` stays as a second check. A run that applies a quest-review finding should first grep the other builder's branch for it.
