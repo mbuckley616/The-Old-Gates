@@ -87,6 +87,7 @@ function closeBookReader(){
   const ov=document.getElementById('book-overlay');
   if(ov)ov.style.display='none';
   _bookState={bagIndex:-1, bookDef:null, page:0, firstRead:false};
+  refocusView(); /* S722 */
 }
 function isBookOpen(){
   const ov=document.getElementById('book-overlay');

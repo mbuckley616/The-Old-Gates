@@ -1167,6 +1167,7 @@ function closeDialog(){
   dlgNPC=null;
   dlgNode=null;
   document.getElementById('dlg').style.display='none';
+  refocusView(); /* S722 */
 }
 
 let nbOpen=false;
@@ -1180,6 +1181,7 @@ function openNoticeBoard(nb){
 function closeNoticeBoard(){
   nbOpen=false;
   document.getElementById('nb-popup').style.display='none';
+  refocusView(); /* S722 */
 }
 
 function talkNPC(){

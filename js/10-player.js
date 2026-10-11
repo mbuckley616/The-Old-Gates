@@ -43,6 +43,10 @@ window._debugResetBurn = function(){
 console.log('%c_debugResetBurn() is ready. Type it in the console to reset the burn state.', 'color:#88ccff');
 
 const G=document.getElementById('g'),CV=document.getElementById('c');
+// S722 — a panel that closes hands the keys back to the view. A button clicked inside it held the focus, and when the panel
+// hid, the focus fell to the page, where the game reads no keys: W did nothing until you clicked the view. A text field you
+// are still typing in keeps it (a popup can close on its own while you write in the Journal).
+function refocusView(){const a=document.activeElement;if(a&&a!==G&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.offsetParent!==null)return;if(G)G.focus();}
 let REN;
 try {
   REN=new THREE.WebGLRenderer({canvas:CV,antialias:true,powerPreference:'high-performance'});

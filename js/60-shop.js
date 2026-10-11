@@ -397,7 +397,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
 }
 function restSlipStep(d){const h=Math.round(restSlip.min/60)+d;restSlip.min=Math.max(1,Math.min(24,h))*60;restSlipDraw();}
 function restSlipGo(){const {mode,min}=restSlip;closeSleepUI();if(mode==='sleep')restAtBed(min/60);else if(typeof passTimeMinutes==='function')passTimeMinutes(min);}
-function closeSleepUI(){const ov=document.getElementById('sleepui');if(ov)ov.style.display='none';sleepOpen=false;}
+function closeSleepUI(){const ov=document.getElementById('sleepui');if(ov)ov.style.display='none';sleepOpen=false;refocusView();} /* S722 — and the keys go back to the view */
 function openSleepUI(){openRestSlip('sleep',480);}
 window.addEventListener('keydown',e=>{if(!sleepOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeSleepUI();else if(c==='ArrowLeft')restSlipStep(-1);else if(c==='ArrowRight')restSlipStep(1);
@@ -508,6 +508,7 @@ function openQtyModal(it, side, bagIdx){
 function closeQtyModal(){
   document.getElementById('qty-modal').style.display='none';
   _qtyCtx=null;
+  refocusView(); /* S722 */
 }
 function _qtyReadout(units){
   const el=document.getElementById('qty-readout'); if(!el||!_qtyCtx)return;
