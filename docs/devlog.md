@@ -15261,3 +15261,14 @@ The topic in `richTopics` (`87-world-quests.js`) now picks a state, then a line.
 
 ### Needs eyes
 - None by play; the lines are the quest writer's.
+
+## v80 — Session 729 — The doubled glade's card line, and canon §12's lair rumour (the quest writer's Finding 27)
+A register fix, applied as the review wrote it. Session 719 built the doubled glade and asked the quest writer for its line on the map's card. The critic's s482 notes found canon §12's third effect of a slain lair-beast unbuilt: *a rumour within two provinces*. Finding 27 gives both.
+
+`mapEntries` (`83-world-generator.js`) gives a glade the sub-line *Glade · grown thick since the beast died* when `gladeDoubled` says its herbs are doubled, and *Glade* otherwise. `liveRumours` (`87-world-quests.js`) now reads the lairs in the 5×5 cells round the town (*within two provinces*). A live lair within 700 is *Something lives up at {lair}. The sheep won't graze that way, and you can't make them.* A slain one anywhere in that square is *Somebody killed the thing at {lair}.*, followed by *The herbs have come up thick in {glade} since.* when a doubled glade lies in the lair's own cell, or *The sheep go that way again.* otherwise. The review's 700 is the reach at which a lair already harms a town. The lines are deterministic (no `Math.random`), and the sites come from the cells' own data, so the answer does not depend on what has loaded. The review allowed caching `gladeDoubled` by the game-day if the map's draw found it dear. It is not cached: it is called once per glade in a drawn cell, over 25 cells' sites.
+
+### Verified (headless Chromium)
+`tests/lairrumour` (new, 7 checks) on the whole grid: 41 lairs, 521 places where people live. Nordaey Glade, 631 from Dogiaen's Lair and in its cell, reads *Glade* with the beast alive and *Glade · grown thick since the beast died* once it is slain. Woushwor, within two provinces, then says *Somebody killed the thing at Dogiaen's Lair. The herbs have come up thick in Nordaey Glade since.* Dianaen, 437 from the live Trabrou's Lair, says *Something lives up at Trabrou's Lair…*. Trostouir, 2,470 off, says nothing of it alive; slain, it says *…The sheep go that way again.* A lair beyond two provinces is never named, even slain. `gladeherbs`, `duel` and `shipwreck` pass.
+
+### Needs eyes
+- The rumour by play: once a lair's beast is dead, ask in a nearby town's tavern, and see whether the line reads as news or as noise beside the others.
