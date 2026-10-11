@@ -16,6 +16,18 @@ Pictures (left today, right A; the wall is laid in the page by `docs/prototypes/
 
 
 
+### The climb up a boarding net: a hand-over-hand pose on the net, the pose alone, or as it is? (the look builder, Session 726, 2026-10-11) — DECISION #237
+The boarding nets (Session 638's rule, Session 723's look) are climbed with E in 0.8 s. In third person today the body slides on a straight line from the water to the rail in whatever pose it had: it stands upright with its arms down, and for most of the climb it passes through the hull's planking and cannot be seen (the top row, the middle frame). First person shows nothing of it. How should the climb look?
+
+- **A.** As the bottom row shows: the body faces the hull and climbs hand over hand, three reaches in the 0.8 s, the knees stepping up the mesh and the head tipped up. It is held on the net, .35 off the planking, until the last fifth of the climb, when it swings in over the rail. The pose goes in the third-person body (`54-thirdperson.js`); the path is one change to the climb's tick (`tickNetClimb`, the systems builder's file, which I would ask them to take or leave to me). **Recommended:** the body stays on the net, which is the point of a net.
+- **B.** The pose alone, with the path as it is (the body still passes through the planking for most of the climb).
+- **C.** Leave it. The climb is 0.8 s and most play is in first person.
+
+Under A, first person could also show both hands reaching up into view on the rope. That is not prototyped; say if you want it.
+
+Picture (top row today, bottom row A; a quarter, a half and nine-tenths of the way up; the pose is laid in the page by `docs/prototypes/climb/shoot.mjs`, not in the game): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/climb-net.png
+
+
 ## Answered
 
 ### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227

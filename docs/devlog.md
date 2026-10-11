@@ -15340,3 +15340,14 @@ The script's profile, Portclare's lane from the perimeter lane (7.6) to the quay
 ### Needs eyes
 - Michael's answer on #236. Under A, the wall would be built with the lane (`addQuayLane`'s cell) and the bank behind it flattened to the wall's top, so it does not stand free of the turf as it does in the prototype's overhead picture.
 
+## v80 — Session 726 — The climb up a net, a prototype (docs only; DECISION #237)
+The last look item owed from #192 is a climb pose. Session 638's climb moves you from where you started (in the water off the net, or on a quay) to the rail above the net on a straight line in 0.8 s, and the third-person body keeps whatever pose it had. Shot from beside the sloop at a quarter, a half and nine-tenths of the way, it stands upright with its arms down and its sword up. At the half it is inside the hull and not seen at all: the line from the water to a point .8 inboard of the rail runs through the planking.
+
+The prototype (`docs/prototypes/climb/shoot.mjs`) lays a pose over the body in the page, after the game's own `tpUpdate`. The body faces the hull and climbs hand over hand, three reaches in the 0.8 s, shoulders at −2.55 ± .45 rad alternating, the elbows bending as each hand comes down. The knees step up the mesh in time (thighs −.95 ± .35, knees 1.35 ± .3), the head is tipped up, and the torso leans into the net. It is held on the net, .35 off the planking, rising evenly to the deck's height by four-fifths of the climb, then swings in over the rail as the legs straighten. The path is the systems builder's (`tickNetClimb`, `86-world-crime.js`) and the pose this builder's (`tpPose`, `54-thirdperson.js`), so the question (DECISION #237) offers the pose and the path together (A, recommended), the pose alone (B), or neither (C). Nothing in the game changed.
+
+### Verified (headless Chromium)
+The script's three moments on a sloop at sea, today and the prototype, from one camera 4.2 off her side: today at a quarter the body stands on the net's foot. At a half it is hidden in the hull. At nine-tenths its head shows over the rail. The prototype is on the net and in the climbing pose at all three, with its head over the rail at nine-tenths. No page errors. Picture: `docs/prototypes/climb-net.png`.
+
+### Needs eyes
+- Michael's answer on #237. The prototype's camera is close; the pose's timing (three reaches in 0.8 s) is a guess and wants seeing in motion once built.
+
