@@ -12,7 +12,7 @@ let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only |
 // seconds each took on CI (Session 254's local run; refreshed from CI's 2 Oct run on f71586a, Session 434; every suite
 // refreshed from CI's 3 Oct run on 0af251a (auto/systems), Session 454, when shard 2 ran past its 45 minutes: keeperwalk took
 // 605 s and was counted as 60). A suite not listed counts as 60.
-const SECS = { keeperwalk: 605, mainrun: 462, falls: 449, fortwalk: 381, placesave: 363, renewal: 360, intreach: 279,
+const SECS = { keeperwalk: 605, mainrun: 462, falls: 449, fortwalk: 381, placesave: 521, renewal: 360, intreach: 279,
   hourhitch: 258, reader: 254, shopsight: 244, saltwater: 226, innrooms: 210, smoke: 207, guardsindoor: 187, lod: 173,
   questfoes: 169, saveui: 163, people: 162, guardplay: 158, burglary: 151, questtargets: 146, beat: 136, perf: 134,
   boxspots: 133, dungeonexit: 132, q7world: 132, lockon: 131, fortfurn: 124, bedrollprompt: 123, weather: 121,
@@ -39,7 +39,7 @@ const SECS = { keeperwalk: 605, mainrun: 462, falls: 449, fortwalk: 381, placesa
   fortunecaor: 48, fortunecard: 48, hubregen: 48, shipwrightvoice: 48, attrdmg: 47, foearmour: 47, innvoice: 47,
   postureregen: 47, windows: 47, armourkit: 46, ogre: 46, riversail: 46, shells: 46, posture: 45, stonecress: 45,
   secondary: 44, tradebits: 43, wardall: 43, herbhidden: 42, lockswitch: 42, unequip: 41, combatmusic: 16, creator: 14,
-  featurenames: 9, doublenames: 60, yardplay: 330 };
+  featurenames: 9, doublenames: 60, yardplay: 330, carraignight: 960, homesleep: 150, gateguards: 180 };
 if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const load = Array(n).fill(0), mine = new Set();
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
   [...files].sort((a, b) => w(b) - w(a) || a.localeCompare(b)).forEach(f => { const j = load.indexOf(Math.min(...load)); load[j] += w(f); if (j === k - 1) mine.add(f); });

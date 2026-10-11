@@ -15535,3 +15535,4 @@ So the home is now the easier target from 23h to 5h and the harder one at either
 
 ### Needs eyes
 - Michael, by play: a night pick at Carraig Mór's shops seen about 1 time in 18, against Dunmore's 1 in 7. Is the poorer town's street right to be the easier one?
+Added to Session 742 in the same run: `tests/run.mjs` gives CI's shard balancing the new suites' weights: `carraignight` 960 s (about 15 minutes here), `homesleep` 150 and `gateguards` 180. Unlisted, each would have counted as 60. It also takes `placesave` from 363 to 521, the time the look builder saw on CI (Session 731's run).
