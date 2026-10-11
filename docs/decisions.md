@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The lockpick on the parchment — the lock in section? (the concept artist, 2026-10-10)
 The lockpick is the last main panel still on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/lockpick/`, on auto/concept) puts it on the parchment with real locks from build s488. Under every option the rules stay as they are: two to five pins, push, and press again while the pin holds at the shear; a snap costs a pick and drops the last pin set.
 - **A.** The lock in section: a parchment slip in the middle of the screen with the lock drawn as an engraving (brass and iron pins, springs, the shear ruled in red, the pick under the pin you work); the title says which lock it is; the picks a row of pick marks. *(recommended)*
@@ -11,8 +13,7 @@ The lockpick is the last main panel still on the dark style the UI overhaul repl
 - **C.** Restyle only: today's bars and words, on the paper.
 
 Recommendation: **A.** Oblivion draws the lock in section and you see the pins move; today's bars don't say what is being pushed or why the press must wait. B covers the right third of the view.
-
-## Answered
+Michael: **The lock in section, engraved, centred** (A). (11 Oct 2026)
 
 ### A lair hoard's piece: should its metal follow its tier? (systems builder, 2026-10-10) — DECISION #232
 A lair cavern's hoard holds one piece, a sword or a cuirass, and `lairFinish` (`68-dungeon-misc.js`) rolls it on two separate draws: the metal in its name (`Iron/Steel/Silver`; a wyrm's `Silver/Gold/Mithril`) and its tier (3–4; a wyrm's 5–6). The tier sets the attack, the defence, the price and, since Session 708, the requirement. The name does not follow it. So a *Steel Cuirass* can be tier 3 and an *Iron Sword* tier 4. *Silver* and *Gold* are no tier in `MATERIALS`. A wyrm's tier-6 piece can be called *Silver*, where every other tier-6 blade is Adamant. Found in Session 708 (the critic's s482 *Steel Sword* with no requirement).
