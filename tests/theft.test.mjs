@@ -13,7 +13,7 @@ for (const id of ids) {
   await page.evaluate((id) => { const h = WORLD.settle.get('dunmore').houses.find(x => x.id === id); window._h = h; forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, id);
   await page.waitForTimeout(4500); await g.hide();
   const r = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null;
-    px = X.x; pz = X.z + .8; jumpY = 0; const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
+    px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
     const seenHere = !!WORLD.witnessOf(window._h);
     const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold; const added = [], _ba = window.bagAdd; window.bagAdd = function (it) { added.push({ name: it.name, buyPrice: (it.buyPrice || 0) * (it.qty || 1) }); return _ba.apply(this, arguments); }; WORLD.boxInteract();
     for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }

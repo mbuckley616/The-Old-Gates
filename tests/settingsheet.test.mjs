@@ -16,7 +16,9 @@ const sheet = () => page.evaluate(() => { const P = document.querySelector('#pau
 await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
 const a = await sheet();
 console.log(JSON.stringify(a.rows));
-check('Settings on the leaf opens the sheet with its nine rows (no challenge without the rule)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down']), a.rows);
+const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
+const nine = ['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down'];
+check('Settings on the leaf opens the sheet with its nine rows (and the challenge only where the rule is built)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(hasRule ? [...nine, 'How hard the world strikes'] : nine), { hasRule, rows: a.rows });
 check('everything starts as it was: 100s, brightness 0, field of view 75, look 1×', a.S.master === 100 && a.S.music === 100 && a.S.bright === 0 && a.S.fov === 75 && a.S.look === 1 && a.S.invert === false, a.S);
 
 // the sound: everything to 80, music to 50
@@ -49,7 +51,7 @@ const m = await page.evaluate(() => { const S = { ...SETTINGS }; closePauseLeaf(
 check('look speed 2× and inverted: 100 pixels across turn you .8 (was .4), 50 down look up .4', m.S.look === 2 && m.S.invert === true && m.dyaw === -.8 && m.dpitch === .4, m);
 
 // the challenge, when the rule is there (stood in for: the systems builder's names and tables)
-const c = await page.evaluate(() => { window.CHALLENGE_STEPS = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master']; window.setChallenge = n => { worldState.challenge = n; return CHALLENGE_STEPS[n]; };
+const c = await page.evaluate(() => { if (typeof setChallenge === 'function') { delete worldState.challenge; return true; } window.CHALLENGE_STEPS = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master']; window.setChallenge = n => { worldState.challenge = n; return CHALLENGE_STEPS[n]; };
   window.challengeStep = () => (Number.isInteger(worldState.challenge) ? worldState.challenge : 2); delete worldState.challenge; return true; });
 await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
 await key('ArrowUp'); await key('ArrowRight');

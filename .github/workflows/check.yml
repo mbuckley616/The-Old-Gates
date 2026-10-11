@@ -27,16 +27,18 @@ jobs:
     # twice in a row on auto/systems; the limit measured the runner, not the tests.
     # 3 Oct 2026 (Session 454): 60, not 45. The suites now add up to 19,054 s on CI, about 40 minutes a shard before
     # the install, so 45 left three minutes of slack; shard 2 was cancelled at 45:19 on 0af251a.
+    # 8 Oct 2026 (Session 652): twelve shares, not eight. 360 suites came to about 52 minutes a shard before the install;
+    # on auto/systems six of eight shards were cancelled at 60:00 on ab0ee3f, and main and auto/backlog failed at 55-56.
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - run: node tests/run.mjs --shard=${{ matrix.shard }}/8
+      - run: node tests/run.mjs --shard=${{ matrix.shard }}/12

@@ -79,9 +79,9 @@
     const E=TUT().sea;const tgt=E&&E.target?siteAnywhere(E.target):null;const shipName=(worldState.ship&&worldState.ship.name)||'your ship';
     return ({
       ferry:{desc:`Corwin: "Before you own a boat, ride in one. Ask the harbourmaster for passage — any port, anywhere. You'll see what the sea costs in hours and coin."`,obj:'Take a ferry from any harbour (ask the harbourmaster)'},
-      ship:{desc:`Corwin: "Now buy a hull. Any shipwright. Show them my note — a quarter off; they owe me for a winter's timber. E beside her to board, E at the wheel. W and S for the sails, A and D to steer."`,obj:`Buy a ship from a shipwright (Corwin's note: a quarter off)`},
+      ship:{desc:`Corwin: "Now buy a hull. Any shipwright. Show them my note — a quarter off; they owe me for a winter's timber. There's a net down each side of her: put your eye on it and press E, and up you go. E again at the wheel. W and S for the sails, A and D to steer."`,obj:`Buy a ship from a shipwright (Corwin's note: a quarter off)`},
       crossing:{desc:`Corwin: "A ferry takes you. A ship, you take. Sail the ${shipName} yourself to a harbour on another island${tgt?` — ${tgt.name} is nearest`:''}. Keep off the rocks; they don't move for anyone."`,obj:`Sail the ${shipName} to a harbour on another island${tgt?` (${tgt.name})`:''}`},
-      board:{desc:`Corwin: "Out on the water you'll meet black sails. They shoot first. Don't run — come alongside, E to board, and clear her deck. The captain's chest is yours after."`,obj:'Board a pirate ship and clear her deck'},
+      board:{desc:`Corwin: "Out on the water you'll meet black sails. They shoot first. Don't run — come alongside, put your eye on her net and press E, and clear her deck once you're over the rail. The captain's chest is yours after."`,obj:'Board a pirate ship and clear her deck'},
       report:{desc:`Corwin: "Come and tell me. I'm at whatever harbour you're at — it's a talent."`,obj:'Tell Corwin at any harbour',done:true}
     })[E?E.step:'ferry'];
   }
@@ -182,9 +182,9 @@
   const ASH={npc:null};
   function tickAshfeld(){const S=story();if(S.step!=='ashfeld'){if(ASH.npc)removeAsh();return;}const f=siteAnywhere('ashfeld');if(!f)return;if(Math.hypot(px-f.x,pz-f.z)>200){if(ASH.npc&&Math.hypot(px-f.x,pz-f.z)>400)removeAsh();return;}if(ASH.npc)return;
     const def={name:'Varek',role:'',ico:'✒',authored:true,people:'oldblood',sCol:0xd0c8c4,hairCol:0x0e0c0c,bodyScale:[.92,.96,.92],bCol:0x2a2a30,x:f.x+3,z:f.z-4,greeting:["You have his log. I know what it says; I've had letters like it for a hundred years. Sailors think someone is behind them. Someone is. It isn't me."],
-      topics:[{label:'Then what are you doing to the sigils?',response:"Writing over them. Every one I can reach. Not to take — to *close*. They were never a loom. They're a window, and the ones who built them opened it, and something has been reading us through it since. I've spent two hundred years pulling the shutters. You've spent a season undoing it, gate by gate, for coin."},
-              {label:'Stop. Leave the gates.',quest:true,fn:()=>{S.choice='stop';S.step='root';finishAsh();return "You'd have me stop, and let it read. Then go and see what it is. The place beneath all the gates is on the far side of Aurenne, under the water. The Root. I'll be there before you, because I always am. Decide there.";}},
-              {label:"I'll help you close them.",quest:true,fn:()=>{S.choice='help';S.step='root';finishAsh();return "Then there is one gate left that matters, and it isn't a gate. The Root, under the water off Aurenne's far shore. Everything runs back to it. Meet me there and we'll shut the last window with our hands.";}},
+      topics:[{label:'Then what are you doing to the sigils?',response:"Unwriting them. Every one I can reach. They built a cage and called it a loom, and the dead pay for its keeping. Take it apart, and the dead can stay. I've spent two hundred and fifty years at it, stone by stone. You've spent a season keeping it running, gate by gate, for coin. Did anyone ever tell you what it runs on?"},
+              {label:'Stop. Leave the gates.',quest:true,fn:()=>{S.choice='stop';S.step='root';finishAsh();return "You'd have me leave it running. Then go and see what it runs on. The place beneath all the gates is on the far side of Aurenne, under the water. The Root. I'll be there before you, because I always am. Decide there.";}},
+              {label:"I'll help you unbind it.",quest:true,fn:()=>{S.choice='help';S.step='root';finishAsh();return "Then there is one gate left that matters, and it isn't a gate. The Root, under the water off Aurenne's far shore. Everything runs back to it. Meet me there, and we'll take the last stone out with our hands.";}},
               {label:'Neither. I want to see it first.',quest:true,fn:()=>{S.choice='third';S.step='root';finishAsh();return "That's the first honest thing anyone has said to me on this field. The Root, then. Off Aurenne's far shore, under the water. Come and look, and then tell me what you see between us.";}},
               {label:'Farewell.',bye:true}]};def.temper='weary';
     const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);ASH.npc=n;showMsg('He is standing at the edge of the field, looking out.','#a0a8c0');}
@@ -192,7 +192,7 @@
   function removeAsh(){const n=ASH.npc;if(!n)return;sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);ASH.npc=null;}
   // the Root: when its beast is dead, Varek, and the ending
   const ROOTS={npc:null,done:false};
-  function onLeavePortal(portal,cleared){if(portal&&cleared&&portal.lair){(worldState.masters||(worldState.masters={}))[portal.seed]=true;} // v80 — the master of a cavern dies once
+  function onLeavePortal(portal,cleared){if(portal&&cleared&&portal.lair&&typeof slayMaster==='function')slayMaster(portal); // v80 — the master of a cavern dies once; S694 — at the blow (killE), this only a fallback, and it keeps the hoard's record
     if(!portal||portal.seed!==9001)return;if(cleared){const S=story();S.rootCleared=true;showMsg('The Root is quiet. Something is standing at its mouth.','#a0a8c0');}}
   function tickRoot(){const S=story();if(S.step!=='root')return;const r=anchoredPlaces().root;if(!r)return;if(!S.rootCleared)return;if(ROOTS.npc)return;
     const c=S.choice;const def={name:'Varek',role:'',ico:'✒',authored:true,people:'oldblood',sCol:0xd0c8c4,hairCol:0x0e0c0c,bodyScale:[.92,.96,.92],bCol:0x2a2a30,x:r.x+3,z:r.z+4,greeting:["Here it is. The root of every gate. Put your hand on it and you'll feel them all — and you'll feel the other side. I've stood here a long time. When you look at me — what is between us?"],
@@ -248,6 +248,7 @@
       freeSpot();
       jumpY=worldH(px,pz);
       atmosphere(10);
+      if(typeof prewarmFoes==='function')prewarmFoes(sc,CAM); /* S688 — every foe's shaders, once, behind the fade */
       showZoneName(label||'🌍 The open country');
       const fb=document.getElementById('fbtn');if(fb)fb.style.display='block';
       if(typeof saveGame==='function')saveGame();
@@ -277,6 +278,7 @@
     tickSettlements(0,true);
     freeSpot();
     atmosphere(10);
+    if(typeof prewarmFoes==='function')prewarmFoes(sc,CAM); /* S688 — and on a load into the world */
     showZoneName('🌍 The open country');
   }
   // If the player is standing inside a trunk/rock/door, spiral outward to

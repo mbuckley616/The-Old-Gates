@@ -1,6 +1,7 @@
 // The witnesses' ranges (Session 156's spec, settled headless in Session 400, backlog G): outdoors anyone awake within
 // 12 units with a clear line sees a crime; sneaking halves the range, night halves it again (12 / 6 / 6 / 3). A house
-// between you blocks the line; someone indoors asleep (not in the street) sees nothing.
+// between you blocks the line; someone indoors asleep (not in the street) sees nothing. Since Session 705 (#222 A) a
+// witness sees only in the 120° cone they face, so the witness here is turned to you; `streetcone` tests the cone.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -12,7 +13,7 @@ const r = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); con
     for (let b = 0; b < 8 && !at; b++) { const hd = b / 8 * Math.PI * 2, ex = x + Math.cos(hd) * 13, ez = z + Math.sin(hd) * 13; let ok = true; for (let t = 0; t <= 26 && ok; t++) { if (WORLD.solidAt(x + Math.cos(hd) * t / 2, z + Math.sin(hd) * t / 2)) ok = false; } if (ok) at = { x, z, hd }; } }
   if (!at) return { noGround: true };
   px = at.x; pz = at.z; jumpY = 0;
-  const put = d => { const x = at.x + Math.cos(at.hd) * d, z = at.z + Math.sin(at.hd) * d; w.g.visible = true; w._retreated = false; w.g.position.set(x, WORLD.worldH(x, z), z); };
+  const put = d => { const x = at.x + Math.cos(at.hd) * d, z = at.z + Math.sin(at.hd) * d; w.g.visible = true; w._retreated = false; w.g.position.set(x, WORLD.worldH(x, z), z); w.g.rotation.y = Math.atan2(px - x, pz - z); };
   const ds = [2.9, 3.1, 5.9, 6.1, 11.9, 12.1]; const out = { rows: {} };
   for (const [label, hour, sn] of [['day', 13, false], ['day, sneaking', 13, true], ['night', 23, false], ['night, sneaking', 23, true]]) {
     forceTime(hour); _sneaking = sn; out.rows[label] = ds.filter(d => { put(d); return !!WORLD.witnessOf(h); }); }
@@ -27,7 +28,7 @@ const r = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); con
     if (!WORLD.solidAt(cx, cz)) continue; for (let b = 0; b < 16 && !across; b++) { const hd = b / 16 * Math.PI * 2; for (let e = 5; e <= 9 && !across; e += 1) { const ax = cx - Math.cos(hd) * e, az = cz - Math.sin(hd) * e, bx = cx + Math.cos(hd) * e, bz = cz + Math.sin(hd) * e;
       if (!WORLD.solidAt(ax, az) && !WORLD.solidAt(bx, bz) && Math.hypot(bx - ax, bz - az) < 12) across = { ax, az, bx, bz, house: o.name }; } } if (across) break; }
   out.across = across;
-  if (across) { px = across.ax; pz = across.az; w.g.position.set(across.bx, 0, across.bz); out.blocked = !WORLD.witnessOf(h); out.acrossD = +Math.hypot(across.bx - across.ax, across.bz - across.az).toFixed(1); }
+  if (across) { px = across.ax; pz = across.az; w.g.position.set(across.bx, 0, across.bz); w.g.rotation.y = Math.atan2(px - across.bx, pz - across.bz); out.blocked = !WORLD.witnessOf(h); out.acrossD = +Math.hypot(across.bx - across.ax, across.bz - across.az).toFixed(1); }
   // asleep indoors: the townsperson is out of the street (hidden), at 2 units
   px = at.x; pz = at.z; put(2); out.near = !!WORLD.witnessOf(h); w.g.visible = false; out.hidden = !WORLD.witnessOf(h); w.g.visible = true; w._retreated = true; out.retreated = !WORLD.witnessOf(h); w._retreated = false;
   out.witness = w.def.name; return out; });

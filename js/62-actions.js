@@ -340,7 +340,9 @@ function fireArrow(strength){
 function killE(e,tag=''){
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'dungeon');} // v80 S12
   e.dead=true;e.el.intensity=0;
+  if(e.master&&currentPortal&&typeof slayMaster==='function')slayMaster(currentPortal); /* S694 — the master dies once, at the blow */
   if(e._slamRing)e._slamRing.visible=false;
+  if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
   sndEnemyDeath();kills++;lvAct.kills++;xp+=Math.round(e.maxHp*_buffMult('xpBoost',1));chkLvl();
   // Quest progress — dungeon kill events
   if(currentPortal){
@@ -351,8 +353,8 @@ function killE(e,tag=''){
   // Notable kill logging
   const isBrute=e.name==='Cave Troll'||e.name==='Golem';
   const firstKill=!seenEnemyTypes.has(e.name);
-  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew a '+e.name);}
-  else if(isBrute){addLog('⚔','Slew a '+e.name+' in '+(currentPortal?currentPortal.name:'the old gate'));}
+  if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
+  else if(isBrute){addLog('⚔','Slew '+foeLogName(e)+' in '+(currentPortal?currentPortal.name:'the old gate'));}
   else if(kills===10||kills===25||kills===50||kills===100){addLog('⚔',kills+' enemies slain');}
   // Slump mesh — rotate to lie flat, tint dark
   // Floor base: wraith baseY includes float offset, so use the floor's ground Y
@@ -361,7 +363,7 @@ function killE(e,tag=''){
   if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,()=>floorGroundY,(x,z)=>dSolid(x,z)))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.y=floorGroundY+0.15;}
-  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);}});
+  e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);if(c.material.emissive&&c.material.emissive.getHex()===0xffaa00)c.material.emissive.setHex(0);}}); /* S626 — a guard-break flash still on at the kill: its timer clears the old material, not this clone */
   // Hide HP bar
   e.hpFg.visible=false;if(e.hpFg.parent)e.hpFg.parent.children.forEach(c=>{if(c.geometry&&c.geometry.type==='PlaneGeometry')c.visible=false;});
   // Loot glow — small pulsing light over corpse, at correct floor height
@@ -375,6 +377,7 @@ function killE(e,tag=''){
   const ds = currentPortal?currentPortal.diffScale:null;
   const th = currentPortal?currentPortal.theme:null;
   const items = rollContainerLoot('corpse', ds, th, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
+  bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   const drops = items.length > 0;
   CORPSES.push({id:e.id?`${e.id}:corpse`:null,x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});
   if(drops){showMsg(`${e.name} slain!${tag} Press E to loot.`,'#c8a84a');}
@@ -395,7 +398,7 @@ function killE(e,tag=''){
       dScene.add(nb.g);
       const el = new THREE.PointLight(smallDef.light, 0.5, 3); el.position.set(sx, byE+0.5, sz); dScene.add(el);
       ENEMIES.push({x:sx, z:sz, hp:smallDef.hp, maxHp:smallDef.hp, mesh:nb.g, hpFg:nb.hpFg, limbs:nb.limbs, el,
-        name:'Small Slime', spd:smallDef.spd, dead:false, alert:true, atkCd:0.5, ph:Math.random()*Math.PI*2,
+        name:'Small Slime', spd:smallDef.spd, size:smallDef.scale||1, dead:false, alert:true, atkCd:0.5, ph:Math.random()*Math.PI*2,
         path:[], pathT:0, _origCol:smallDef.col, baseY:byE, isWraith:false, atkAnim:0, atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2, ranged:false, rangedCd:0, dmgMult:smallDef.dmgMult, hasCried:true,
         floor:e.floor, def:smallDef.def, resist:smallDef.resist, baseType:'Slime', variant:'small',
@@ -419,8 +422,22 @@ function takeLevelIfReady(){
   xp-=xpNext;level++;xpNext=Math.floor(xpNext*1.4);maxStamina+=10;stamina=Math.min(stamina+10,maxStamina);_lvlReadyShown=false;try{const b=document.getElementById('lvready');if(b)b.style.display=(xp>=xpNext)?'inline-block':'none';}catch(e){}
   sndLevelUp();openLevelUp();return true;
 }
+// S685 — the caster's own rolls (co-op rules): an Impression's wild chance, its pattern and a scatter's swing draw from a
+// stream keyed by where you cast (the house, the dungeon's floor, or the world's chunk), the game minute and the count of
+// casts in that minute, not Math.random. Loaded back at the same minute in the same place, the same casts go the same way.
+let _castMin=null,_castN=0;
+function casterHereKey(){
+  if(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.id)return 'h:'+currentHouse.id;
+  if(activeZoneId==='dungeon'&&typeof currentPortal!=='undefined'&&currentPortal)return 'd:'+dKeyOf(currentPortal,currentFloor||1);
+  if(activeZoneId==='world'){const C=(typeof WORLD!=='undefined'&&WORLD.CHUNK)||64;return 'w:'+Math.floor(px/C)+','+Math.floor(pz/C);}
+  return 'z:'+activeZoneId;
+}
+function casterRand(spId){
+  const m=Math.floor(worldState.gameTimeAbsMinutes||0),here=casterHereKey();
+  if(_castMin!==here+':'+m){_castMin=here+':'+m;_castN=0;}
+  return seededRng('wild',_castMin+':'+(_castN++)+':'+spId);
+}
 function castSpell(){
-  if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast(); // v80 S12 — hearth task
   // Empty-knownSpells hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownSpells).length===0){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
@@ -449,8 +466,9 @@ function castSpell(){
   let wildPattern=null;
   let selfDmgOnResolve=0;
   let aimJitter=0; // radians added to yaw for scatter
-  if(tier===1 && sp.wild && sp.wild.length && Math.random()<IMPRESSION_WILD_CHANCE){
-    wildPattern=sp.wild[Math.floor(Math.random()*sp.wild.length)];
+  const wr=(tier===1 && sp.wild && sp.wild.length)?casterRand(sp.id):null;
+  if(wr && wr()<IMPRESSION_WILD_CHANCE){
+    wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
       mana=Math.min(effMaxMana(),mana+Math.round(actualCost*0.5));
@@ -459,7 +477,7 @@ function castSpell(){
       startCastAnim(sp, 'fizzle');
       return;
     } else if(wildPattern==='scatter'){
-      aimJitter=(Math.random()*2-1)*(20*Math.PI/180); // ±20°
+      aimJitter=(wr()*2-1)*(20*Math.PI/180); // ±20°
       showMsg(`${sp.ico} ${sp.nameIr} wavers in the casting...`,'#a8a8d4');
     } else if(wildPattern==='backlash'){
       // Telegraph; actual damage applied after cast body runs.
@@ -472,8 +490,9 @@ function castSpell(){
     }
   }
 
+  if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast(sp); /* S672 — the hearth task: a spell that went off, not a press of F */
   // Animation type: projectile spells use the forward-thrust curve; heal/self uses the raise-up curve
-  if(sp.role==='buff'){startCastAnim(sp,'self');applySpellBuff(sp,tier);if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast();return;} // v80 — self spells
+  if(sp.role==='buff'){startCastAnim(sp,'self');applySpellBuff(sp,tier);return;} // v80 — self spells
   const animType = sp.role==='heal' ? 'self' : 'projectile';
   startCastAnim(sp, animType);
   // Charge-up sound — per-school ambient buildup that plays during the cast animation.
@@ -910,7 +929,7 @@ function updateHUD(){
   if(activeZoneId==='forest'){const alive=ZE.filter(e=>!e.dead&&!e.locked).length;ob.textContent=alive?`${alive} creature${alive>1?'s':''} nearby · Stay on the path`:'Deep in the Deepwood Forest · E near gate to travel';}
   else if(activeZoneId==='ironhaven'){ob.textContent='Press E near a soldier or gate · Press E near a building to enter';}
   else{ob.textContent='Press E near a villager to talk · Press E near a door or cave to enter';}
-}else if(lid==='overworld'&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){ob.style.color='#c8b880';ob.textContent=WORLD.shipPrompt();}else if(lid&&isInterior()){ob.style.color='#c8b880';const _nb=INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9);const _hp=(typeof WORLD!=='undefined')?(WORLD.guestPrompt()||WORLD.hatchPrompt()||WORLD.lootPrompt()||WORLD.boxPrompt()):null;ob.textContent=_hp?_hp:nearBarberChair()?"Press 'E' to sit in the barber’s chair":_nb?((typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nb))||"Someone else's bed")+' · Walk south to exit':(intNPCMesh?'Press E near the keeper to talk · Walk south to exit':'No one is in · Walk south to exit');}else{const a=ENEMIES.filter(e=>!e.dead).length;const uk=KEYS.filter(k=>!k.collected).length;const ud=DOORS.filter(d=>!d.open&&d.locked).length;const sh=EQ.offhand&&EQ.offhand.shieldType==='shield';ob.style.color=blocking?'#88aaff':'#c8a84a';ob.textContent=a+' enemies'+(uk?' · '+uk+' key'+(uk>1?'s':'')+(ud?' to find':''):'')+(ud&&!uk?' · '+ud+' locked door'+(ud>1?'s':''):'')+(blocking?' · 🛡 '+(sh?'Blocking':'Guarding'):'');}}
+}else if(lid==='overworld'&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){ob.style.color='#c8b880';ob.textContent=WORLD.shipPrompt();}else if(lid&&isInterior()){ob.style.color='#c8b880';const _nb=intBedTarget();const _hp=(typeof WORLD!=='undefined')?(WORLD.guestPrompt()||WORLD.hatchPrompt()||WORLD.lootPrompt()||WORLD.boxPrompt()):null;ob.textContent=_hp?_hp:nearBarberChair()?"Press 'E' to sit in the barber’s chair":_nb?((typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nb))||"Someone else's bed")+' · Walk south to exit':(intNPCMesh?'Press E near the keeper to talk · Walk south to exit':'No one is in · Walk south to exit');}else{const a=ENEMIES.filter(e=>!e.dead).length;const uk=KEYS.filter(k=>!k.collected).length;const ud=DOORS.filter(d=>!d.open&&d.locked).length;const sh=EQ.offhand&&EQ.offhand.shieldType==='shield';ob.style.color=blocking?'#88aaff':'#c8a84a';ob.textContent=a+' enemies'+(uk?' · '+uk+' key'+(uk>1?'s':'')+(ud?' to find':''):'')+(ud&&!uk?' · '+ud+' locked door'+(ud>1?'s':''):'')+(blocking?' · 🛡 '+(sh?'Blocking':'Guarding'):'');}}
 
 const mmC=document.getElementById('mm').getContext('2d');
 function drawMM(){

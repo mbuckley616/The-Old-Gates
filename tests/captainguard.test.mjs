@@ -69,7 +69,14 @@ console.log(JSON.stringify(r));
 const ratio = r.means && r.means.open ? r.means.front / r.means.open : 0, flankRatio = r.means && r.means.open ? r.means.flank / r.means.open : 0;
 console.log(JSON.stringify({ frontOverOpen: +ratio.toFixed(2), flankOverOpen: +flankRatio.toFixed(2) }));
 check('a Bandit Captain stands with the guard up: the shield on its arm, raised across the body', !r.noSpot && r.built.shieldUp && r.built.prop && r.built.armX === -1.15, r.built);
-check('from the front the guard holds: ten swings land at about a third of an open blow (35%, floored to whole points), and it stays up', r.frontUp && r.raws.front.length >= 8 && ratio > .2 && ratio < .45, { n: r.raws.front.length, ratio });
+// Session 659: each front hit is the swing's roll × 0.35, floored (`shieldFrontMult`), and the roll is the open blow's (5 or 6 with the
+// starting weapon at this level), so a front hit is 1 or 2. The mean ratio was held above 0.2, which nine 1s in ten (a roll of 5
+// nine times, about 2% of runs) fell under: main's CI on 5bd8722, front [1,1,1,1,1,2,1,1,1,1]. Each hit is now held to the floored
+// 35% of the open rolls' range, and the mean to 0.15–0.45, which every mix of 1s and 2s against 5s and 6s keeps.
+const op = r.raws ? r.raws.open : [], fr = r.raws ? r.raws.front : [];
+const fLo = op.length ? Math.floor(Math.min(...op) * .35) : 1, fHi = op.length ? Math.floor((Math.max(...op) + 1) * .35) : 0;
+const inBand = fr.length > 0 && fr.every(x => x >= Math.max(1, fLo) && x <= fHi && x < Math.min(...op));
+check('from the front the guard holds: ten swings land at about a third of an open blow (35%, floored to whole points), and it stays up', r.frontUp && fr.length >= 8 && inBand && ratio > .15 && ratio < .45, { n: fr.length, front: fr, band: [fLo, fHi], ratio });
 check('a bash from the front glances off the raised shield', r.bash.some(m => /glances off/.test(m)) && r.bashUp, r.bash);
 check('a power attack breaks the guard every time: it staggers, the shield arm drops, and that blow does no damage', r.cycles.length === 4 && r.cycles.every(c => c.broke && c.staggered && c.hpLost === 0 && c.msg.some(m => /guard breaks/.test(m)) && c.armX !== -1.15), r.cycles);
 check('while it reels, follow-up swings land in full', r.raws.open.length >= 4 && r.cycles.every(c => c.followUps >= 1), r.raws.open);
