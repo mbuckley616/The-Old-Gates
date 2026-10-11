@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The Fall</title>
+<!-- The Old Gates — the death screen on the approved parchment kit (docs/prototypes/ui, Michael A, 27 Sep 2026). Concept, 11 Oct 2026
+     (backlog E, the UI overhaul: "every panel"; #died is built in playerDead, 68-dungeon-misc.js, and is the last screen on the
+     dark style: YOU DIED in #b02828 on rgba(10,4,4,.86), one line, two buttons).
+     build.py inlines kit.css, the icon symbols (defs.html) and today's numbers (current.json, from shoot-current.mjs, build s576).
+     Every .screen is 1280×720; plate-clean.jpg is the Dungeon of Shadows, floor 1, at the blow, the HUD put away; save-pic.jpg
+     is the picture the game took with slot 1 in Dunmore (S653, 320×180, 12 KB).
+     For the builder: one element, #died, plain DOM; the leaf is the pause leaf's .leaf and .mi rows (Session 676's CSS).
+       The view: the canvas takes `filter: grayscale(.75) sepia(.35) brightness(.42)` over 1.2 s (a CSS transition on #g canvas),
+       the HUD (#hud, compass, minimap, #ipr, #msg) goes to visibility:hidden; the leaf fades in over .4 s after the 1.2 s.
+       The rows: Enter or E loads the last save (the row is .on when the leaf opens), L opens the save register on its Load page
+       (Michael's B on #199), and To the title is a second press (.primed), as the pause leaf's Quit. No Esc: a stray Esc at the
+       moment of death must not do anything.
+       Under A the leaf names the blow. One small rule: `_warded(d,src)` (50-travel.js) already receives the source of almost
+       every blow; it keeps `lastBlow={name,kind,at}` (a foe's name, a trap, a fall, the sea), cleared on load; playerDead reads it.
+       The gap line is the game clock: now minus the save's `at` (ssEntry(k).at), in hours and minutes of the day.
+     -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<style>
+/*KIT*/
+.screen{background-size:cover;background-position:center}
+.view{position:absolute;inset:0;background-size:cover;background-position:center;filter:grayscale(.75) sepia(.35) brightness(.42)}
+.view::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,transparent 30%,rgba(8,4,2,.75) 100%),linear-gradient(rgba(8,4,2,.9),transparent 16%)}
+
+/* ───────── A: the leaf of the fallen ───────── */
+.leaf{left:72px;top:64px;width:420px;height:592px;padding:28px 34px 20px;display:flex;flex-direction:column}
+.leaf .h{font-size:46px;line-height:1;color:var(--rubric);text-align:center;letter-spacing:.04em}
+.leaf .epi{font:italic 18px/1.32 var(--fell);color:var(--ink);text-align:center;margin-top:8px;text-wrap:balance}
+.leaf .epi b{font:inherit;font-style:normal;font-family:var(--display);font-size:19px}
+.leaf .when{font:15.5px var(--body);color:var(--ink-soft);text-align:center;margin-top:4px}
+.last{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:start;padding:4px 2px 10px}
+.last img{width:150px;height:84px;object-fit:cover;display:block;box-shadow:0 0 0 1px #5a4018,0 2px 4px rgba(60,30,8,.45);filter:sepia(.18)}
+.last .lbl{font:italic 13.5px var(--fell);color:var(--ink-faint)}
+.last .pl{font:21px/1.05 var(--display);color:var(--ink)}
+.last .dt{font:14.5px/1.25 var(--body);color:var(--ink-soft);margin-top:2px}
+.last .since{font:italic 14px/1.25 var(--fell);color:var(--rubric);margin-top:3px}
+.mi{display:grid;grid-template-columns:28px 1fr auto;gap:0 14px;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(90,65,40,.18)}
+.mi svg.ico{width:24px;height:24px;color:var(--ink-soft)}
+.mi .w{font:24px/1.05 var(--display);color:var(--ink)}
+.mi .n{font:italic 14px var(--fell);color:var(--ink-faint);display:block;margin-top:1px}
+.mi .key{width:auto;min-width:26px;padding:0 6px;font-size:13px}
+.mi.on{background:linear-gradient(90deg,rgba(122,31,16,.15),rgba(122,31,16,.03));box-shadow:inset 3px 0 var(--rubric)}
+.mi.on .w{color:var(--rubric)} .mi.on svg.ico{color:var(--rubric)}
+.mi.quit .w{font-size:20px;color:var(--ink-soft)}
+.mi.dead .w,.mi.dead svg.ico{color:var(--ink-faint);opacity:.55}
+.leaf .who{margin-top:auto;border-top:1px solid rgba(90,65,40,.3);padding-top:8px;display:flex;justify-content:space-between;align-items:flex-end;font:15px var(--body);color:var(--ink-soft)}
+.leaf .who b{font:18px var(--display);font-weight:400;color:var(--ink)}
+.leaf .who .tag{font:italic 13px var(--fell);color:var(--ink-faint)}
+.none{font:italic 16px/1.35 var(--fell);color:var(--ink-soft);text-align:center;padding:16px 8px 18px;text-wrap:balance}
+
+/* ───────── B: the word ───────── */
+.word{position:absolute;left:0;right:0;top:206px;text-align:center;z-index:2}
+.word .big{font:96px/1 var(--display);letter-spacing:.14em;color:#c8a058;text-shadow:0 0 2px #2a1404,0 4px 18px rgba(0,0,0,.9)}
+.word .big::first-letter{color:#b8402a}
+.word .sub{font:italic 21px var(--fell);color:#e0c994;margin-top:14px;text-shadow:0 1px 3px #000}
+.word .sub2{font:16px var(--body);color:#b8a888;margin-top:4px;text-shadow:0 1px 3px #000}
+.word .row{display:flex;justify-content:center;gap:14px;margin-top:34px;border:0;padding:0}
+.btn{position:relative;isolation:isolate;padding:10px 22px 9px;font:21px var(--display);color:var(--ink);display:flex;gap:10px;align-items:center}
+.btn::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:3px;background:linear-gradient(#ecdcb2,#d4ba82);box-shadow:0 0 0 1px #5a4018,0 3px 8px rgba(0,0,0,.7)}
+.btn.on{color:var(--rubric)} .btn.on::before{box-shadow:0 0 0 1.5px var(--rubric),0 3px 8px rgba(0,0,0,.7)}
+.btn.dim{color:var(--ink-soft);font-size:18px}
+.btn .key{width:auto;min-width:22px;height:22px;padding:0 5px;font-size:12px}
+
+/* ───────── C: today's on the paper ───────── */
+.slipc{left:400px;top:250px;width:480px;height:200px;padding:24px 28px;text-align:center}
+.slipc .h{font-size:44px;letter-spacing:.18em;color:var(--rubric)}
+.slipc .s{font:16px var(--body);color:var(--ink-soft);margin:6px 0 22px}
+.slipc .bb{display:flex;justify-content:center;gap:14px}
+.slipc .b{font:18px var(--display);padding:8px 18px;border:1px solid rgba(90,65,40,.6);border-radius:3px;background:rgba(255,248,225,.35)}
+
+.cmp{background:#1a140c}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
+.pair figure{margin:0}
+.pair figcaption{font:18px var(--display);color:#e0c994;margin-bottom:6px}
+.pair figcaption small{font:13px var(--body);color:#a89878;margin-left:8px}
+.pair img{width:100%;display:block;box-shadow:0 0 0 1px #5a4018}
+.pair .under{font:14px/1.4 var(--body);color:#b8a888;margin-top:8px}
+</style>
+</head>
+<body>
+<!--DEFS-->
+<svg width="0" height="0" style="position:absolute"><defs>
+ <symbol id="i-leafbook" viewBox="0 0 24 24"><path d="M4 5.5c3-1.4 5.6-1.2 8 .6 2.4-1.8 5-2 8-.6v13c-3-1.4-5.6-1.2-8 .6-2.4-1.8-5-2-8-.6z"/><path d="M12 6.1v13"/></symbol>
+ <symbol id="i-door" viewBox="0 0 24 24"><path d="M6 21V4.5h10V21M4 21h16"/><path d="M16 4.5l3 1.5V21"/><circle cx="13.2" cy="13" r=".9"/></symbol>
+ <symbol id="i-autoring" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 4.2v3.6h-3.6"/></symbol>
+</defs></svg>
+<h1 class="page">The Fall — the death screen on the parchment</h1>
+<p class="lede">The screen you see when you die is the last one on the old dark style. Aoife, level 5, saved in Dunmore at 4 pm, went down an old gate and fell to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm, on build s576. Every rule is today's: nothing is lost but the time since the save, and the game waits.</p>
+<div id="out"></div>
+<script>
+/*DATA*/
+const ico=(id,c='ico')=>`<svg class="${c}"><use href="#${id}"/></svg>`;
+const key=k=>`<span class="key">${k}</span>`;
+const screens=[];
+function screen(id,cap,html){screens.push(id);document.getElementById('out').insertAdjacentHTML('beforeend',`<div class="cap">${cap}</div><div class="screen" id="${id}"><div class="view" style="background-image:url(plate-clean.jpg)"></div>${html}</div>`);}
+const D=DATA,S=D.save,F=D.fall,E=S.entry;
+// the gap, in the game's hours: the fall's minute of the day against the save's
+const fallTod=(()=>{const m=F.at.match(/(\d+):(\d+) (am|pm)$/);return ((+m[1])%12+(m[3]==='pm'?12:0))*60+(+m[2]);})();
+const gapM=fallTod-E.tod,gapLine=`${Math.floor(gapM/60)} hours and ${gapM%60} minutes before the fall`;
+const fallDay=F.at.replace(/, in the .*? · /,' · ');
+const arch=E.arch[0].toUpperCase()+E.arch.slice(1);
+const ord=['','first','second','third','fourth','fifth'];
+
+function leaf(o){
+  const last=o.save?`<div class="last"><img src="save-pic.jpg"><div><div class="lbl">Your last save · slot ${E.slot+1}</div><div class="pl">${E.place}</div>
+     <div class="dt">${S.short} · level ${E.level} · ${E.gold} gold</div><div class="since">Saved ${gapLine}</div></div></div>`
+    :`<div class="none">Aoife has no save yet. The tale can begin again from the title, with a new name or the same.</div>`;
+  const rows=o.save?[
+    ['i-autoring','Load the last save',`back to ${E.place}, ${S.short.split(' · ')[1]}`,key('E'),'on'],
+    ['i-leafbook','Choose another save','the register, on its Load page',key('L'),''],
+    ['i-door','To the title',o.primed?'press again to leave':'the world as last saved is kept','',`quit${o.primed?' on':''}`]]
+   :[['i-autoring','Load the last save','there is none','', 'dead'],['i-leafbook','Choose another save','the register',key('L'),''],['i-door','To the title','begin a new tale',key('E'),'quit on']];
+  return `<div class="parch leaf"><div class="h">Fallen</div>
+   <div class="epi"><b>Aoife</b> fell on the ${ord[F.floor]} floor of ${F.dungeon.replace(/^The /,'the ')}${o.blow?`,<br>to a ${F.foe}’s sword`:''}.</div>
+   <div class="when">${fallDay}</div><div class="rule"></div>
+   ${last}<div class="rule"></div>
+   ${rows.map(r=>`<div class="mi ${r[4]}">${ico(r[0])}<span><span class="w">${r[1]}</span><span class="n">${r[2]}</span></span>${r[3]}</div>`).join('')}
+   <div class="who"><span><b>Aoife</b> · level ${E.level} ${arch}</span><span class="tag">Gatelander</span></div></div>`;
+}
+
+screen('a-fall','A — the leaf of the fallen <small>the view drains to sepia; one leaf: what happened, where your last save stands and how long ago, and three rows (E loads)</small>',leaf({save:true,blow:true}));
+screen('a-nosave','A — with no save <small>a first fall before any save: the load row is struck, and E goes to the title</small>',leaf({save:false,blow:true}));
+screen('b-word','B — the word, on the dark <small>no paper: one word in the display face over the drained view, a line, and three paper tabs</small>',
+  `<div class="word"><div class="big">Fallen</div><div class="sub">Aoife fell on the first floor of the Dungeon of Shadows, to a ${F.foe}’s sword.</div>
+   <div class="sub2">Last save: slot ${E.slot+1}, ${E.place}, ${S.short} — ${gapLine}</div>
+   <div class="row"><span class="btn on">${ico('i-autoring')}Load the last save ${key('E')}</span><span class="btn">${ico('i-leafbook')}Choose another ${key('L')}</span><span class="btn dim">${ico('i-door')}To the title</span></div></div>`);
+screen('c-restyle','C — restyle only <small>today\'s words and two buttons, on a slip of the paper</small>',
+  `<div class="parch slipc"><div class="h">You Died</div><div class="s">${F.sub}</div><div class="bb"><span class="b">${F.buttons[0]}</span><span class="b">${F.buttons[1]}</span></div></div>`);
+// comparison
+screens.push('cmp-fall');
+document.getElementById('out').insertAdjacentHTML('beforeend',`<div class="cap">Today beside A</div><div class="screen cmp" id="cmp-fall"><div class="pair">
+ <figure><figcaption>Today <small>build ${D.tag}</small></figcaption><img src="current-died.png"><div class="under">YOU DIED in red over a dark veil; the HUD, the foe's flat health bar and the controls line stay on behind it. One line names the save's slot, place and level; nothing says where or when you fell, or how much play the load gives back.</div></figure>
+ <figure><figcaption>A <small>the leaf of the fallen</small></figcaption><img id="ce-a" src="a-fall.png"><div class="under">The pause leaf's form. Where and when you fell and to what; the last save with its picture, its hour and the time since; E loads it, L opens the register, the title is a second press.</div></figure></div></div>`);
+window.SCREENS=screens;
+</script>
+</body>
+</html>

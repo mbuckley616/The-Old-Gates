@@ -1,0 +1,45 @@
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="deckle" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="4" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="deckle-s" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <!-- ink icon set: 24×24, stroked in currentColor; one <symbol> each, lifted straight into the game -->
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="M19.5 4.5 9 15M19.5 4.5l-.8 3.6M19.5 4.5l-3.6.8M7 12.5l4.5 4.5M9 15l-4.2 4.2"/><circle cx="4.3" cy="19.7" r="1"/></symbol>
+    <symbol id="i-dagger" viewBox="0 0 24 24"><path d="M17.5 6.5 10.5 13.5M17.5 6.5l-.6 2.6M17.5 6.5l-2.6.6M8.5 11.5l4 4M10.5 13.5l-3.2 3.2"/><circle cx="6.8" cy="17.2" r=".9"/></symbol>
+    <symbol id="i-club" viewBox="0 0 24 24"><path d="M5 20l6-6"/><path d="M11 14c-1.2-2.6 2.5-8.4 6-9.4 2-.5 3.3 1.2 2.6 3.2-1.2 3.3-6.2 7.6-8.6 6.2z"/><path d="M14.5 7.5l1.2 1.2M16.5 9.8l1 1"/></symbol>
+    <symbol id="i-helm" viewBox="0 0 24 24"><path d="M5 17c0-7 3-11 7-11s7 4 7 11z"/><path d="M5 17h14M12 6v11M8.5 12h7"/></symbol>
+    <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v4.2C7.6 8.3 6 10.4 6 13.5a6 6 0 0 0 12 0c0-3.1-1.6-5.2-4.5-6.3V3"/><path d="M6.6 13.2c2.2 1 4.6-.8 10.8 0"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="3.5"/><path d="M11 12h9.5M17.5 12v3M20 12v2"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M10 11h4l-1.2 10h-1.6z"/><path d="M12 10c-2.8-1.5-2.4-4.6 0-7 .2 2.4 3 3 2.2 5.6-.3 1-1.2 1.4-2.2 1.4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M12 3v18M5 10.5h14"/></symbol>
+    <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="14.5" r="5.5"/><path d="M10 9.3 12 6l2 3.3M10 6h4"/></symbol>
+    <symbol id="i-amulet" viewBox="0 0 24 24"><path d="M6 3c0 6 3 9.5 6 10.5 3-1 6-4.5 6-10.5"/><circle cx="12" cy="16.5" r="3.2"/><circle cx="12" cy="16.5" r="1" /></symbol>
+    <symbol id="i-tunic" viewBox="0 0 24 24"><path d="M8.5 4 4 7l2 3.3 2.3-1.1V20h7.4V9.2l2.3 1.1L20 7l-4.5-3c-.8 1.8-6.2 1.8-7 0z"/></symbol>
+    <symbol id="i-legs" viewBox="0 0 24 24"><path d="M7 4h10l1 16h-4l-2-10-2 10H6z"/><path d="M7 7h10"/></symbol>
+    <symbol id="i-boot" viewBox="0 0 24 24"><path d="M8 3h5v10.5l5.6 2c1.3.5 1.3 3.5 0 3.5H8z"/><path d="M8 16h11"/></symbol>
+    <symbol id="i-glove" viewBox="0 0 24 24"><path d="M7.5 21v-8.5L5.3 8.8c-.5-1 .9-1.9 1.6-.9l1.6 2.3V5a1 1 0 0 1 2 0v4.5V4a1 1 0 0 1 2 0v5.5V5a1 1 0 0 1 2 0v5.5V7a1 1 0 0 1 2 0v7c0 3.5-1.5 5.5-2 7z"/></symbol>
+    <symbol id="i-arrows" viewBox="0 0 24 24"><path d="M4 20 18 6M18 6l-3.8.6M18 6l-.6 3.8M4 20l.8-2.8M4 20l2.8-.8M8 20 20 8M20 8l-3 .5M20 8l-.5 3"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4.8"/><path d="M12 9.5v5"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 21c-4.5 0-6-4.5-4-8 1 1.8 2.4 2 2.4 0 0-4 1.6-6.2 1.6-10 3 2.8 6 6.6 6 11.5 0 4-2.5 6.5-6 6.5z"/></symbol>
+    <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z"/><path d="M9.2 15.5a3 3 0 0 0 2.6 2.7"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></symbol>
+    <symbol id="i-stone" viewBox="0 0 24 24"><path d="M4 17 8 7l7-2 5 7-3 7H7z"/><path d="M8 7l3 5 4-7M11 12l6 7M11 12l-7 5"/></symbol>
+    <symbol id="i-shadow" viewBox="0 0 24 24"><path d="M15 4a8 8 0 1 0 5 11 6.5 6.5 0 1 1-5-11z"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-1.8z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 13.5h6L10 22l9-12h-6z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5.5 3-8 7-8s7 2.5 7 8"/></symbol>
+    <symbol id="i-quill" viewBox="0 0 24 24"><path d="M20 3C12 4 7 10 5 19l-1 2"/><path d="M5 19c5-2 11-7 15-16M8 14.5h4.5M10 11h4"/></symbol>
+    <symbol id="i-scales" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M5 7.5h14M5 7.5 3 13h4zM19 7.5 17 13h4z"/><circle cx="12" cy="4" r="1"/></symbol>
+    <symbol id="i-pack" viewBox="0 0 24 24"><path d="M7 8c0-3 2-5 5-5s5 2 5 5"/><path d="M5 8h14l-1 13H6z"/><path d="M9 12h6v4H9z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+    <!-- creator additions (concept, 3 Oct 2026): six 24×24 ink icons in the kit's stroke -->
+    <symbol id="i-bow" viewBox="0 0 24 24"><path d="M6 3c7 2 11 8 13 15"/><path d="M6 3 19 18"/><path d="M4 12.5l9-.5M13 12l-2.4-1.8M13 12l-2.2 2"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><path d="M6 21 17.5 6.5"/><path d="M17.5 6.5c-.3-1.8.8-3.3 2.5-3.5.2 1.7-.9 3.2-2.5 3.5zM15.8 8.6c-1.6-.2-2.6-1.3-2.6-2.8 1.5 0 2.6 1.2 2.6 2.8z"/></symbol>
+    <symbol id="i-rapier" viewBox="0 0 24 24"><path d="M20.5 3.5 9.5 14.5"/><path d="M7.2 12.2c-1.4 1.6-1.2 3.6.2 4.6 1 1.4 3 1.6 4.6.2"/><path d="M9.5 14.5 5 19"/><circle cx="4.4" cy="19.6" r=".9"/></symbol>
+    <symbol id="i-enso" viewBox="0 0 24 24"><path d="M15.5 4.6A8 8 0 1 0 20 12c0-1.2-.3-2.3-.8-3.3"/><path d="M15.5 4.6c.6.3 1.2.6 1.7 1"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C9.5 4.8 6.5 4.5 3.5 5v13c3-.5 6-.2 8.5 1.5 2.5-1.7 5.5-2 8.5-1.5V5c-3-.5-6-.2-8.5 1.5z"/><path d="M12 6.5v13"/></symbol>
+    <symbol id="i-speech" viewBox="0 0 24 24"><path d="M4 6.5C4 5 5 4 6.5 4h11C19 4 20 5 20 6.5v7c0 1.5-1 2.5-2.5 2.5H11l-4.5 4v-4h0C5 16 4 15 4 13.5z"/><path d="M8 9h8M8 12h5"/></symbol>
+  </defs>
+</svg>
